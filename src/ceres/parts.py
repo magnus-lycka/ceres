@@ -27,4 +27,3 @@ class ShipPart(BaseModel):
         if self.tons_value is None:
             raise ValueError("tons is derived in this subclass")
         return self.tons_value
-        

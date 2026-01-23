@@ -7,4 +7,3 @@ def test_base_part():
     assert part.tl == 9
     assert part.power == 3.14
     assert part.tons == 4.44
-
