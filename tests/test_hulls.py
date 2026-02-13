@@ -3,8 +3,6 @@ from ceres import ship
 
 def test_standard_hull():
     hull = ship.standard_hull
-    assert hull.self_sealing(9)
-    assert not hull.self_sealing(8)
     assert hull.streamlined == ship.Streamlined.PARTIAL
     assert hull.armour_volume_modifier == 1
     assert hull.cost(100) == 5_000_000

@@ -1,107 +1,120 @@
-from pydantic import Field, computed_field, model_validator
+from typing import ClassVar
 
-from .parts import ShipPart
+from .parts import ShipPart, TechLevel, Power
 
 
 class Armour(ShipPart):
+    power: Power = Power(value=0)
     protection: int
-    displacement: int = Field(ge=5)
-    _cost_per_ton = 0
-    _tonnage_consumed = 0
+    _min_tl: ClassVar[int] = 0
+    _cost_per_ton: ClassVar[int] = 0
+    _tonnage_consumed: ClassVar[int] = 0
+    _explicit_cost = False
+    _explicit_power = True
+    _explicit_tons = False
 
-    @model_validator(mode="before")
-    @classmethod
-    def forbid_cost(cls, data):
-        if "cost" in data:
-            raise ValueError("cost is derived for Armour")
-        return data
+    def check_protection_limit(self):
+        return NotImplemented
 
-    @model_validator(mode="before")
-    @classmethod
-    def forbid_tons(cls, data):
-        if "tons" in data:
-            raise ValueError("tons is derived for Armour")
-        return data
+    def calculate_cost(self) -> int:
+        self.check_protection_limit()
+        return self.owner.displacement * self._cost_per_ton * self.protection
 
-    @model_validator(mode="before")
-    @classmethod
-    def forbid_power(cls, data):
-        if "power" in data:
-            raise ValueError("power is derived for Armour")
-        return data
-
-    @computed_field
-    @property
-    def cost(self) -> int:
-        return self.displacement * self._cost_per_ton * self.protection
-
-    @computed_field
-    @property
-    def tons(self) -> int:
-        if self.displacement < 16:
+    def calculate_tons(self) -> int:
+        self.check_protection_limit()
+        if self.owner.displacement < 5:
+            raise ValueError("Displacement must be at least 5 tons for armour.")
+        if self.owner.displacement < 16:
             size_factor = 4
-        elif self.displacement < 26:
+        elif self.owner.displacement < 26:
             size_factor = 3
-        elif self.displacement < 100:
+        elif self.owner.displacement < 100:
             size_factor = 2
         else:
             size_factor = 1
         return (
-            self.displacement * self._tonnage_consumed * self.protection * size_factor
+            self.owner.displacement
+            * self._tonnage_consumed
+            * self.protection
+            * size_factor
         )
 
 
 class TitaniumSteelArmour(Armour):
     _cost_per_ton = 50_000
     _tonnage_consumed = 0.025
-    tl: int = Field(ge=7)
+    _min_tl = 7
+    tl: TechLevel
 
-    @model_validator(mode="before")
-    @classmethod
-    def protection_limit(cls, data):
-        if data.get("protection", 0) > data["tl"]:
+    def check_protection_limit(self):
+        if self.tl:
+            if self.owner.tl < self.tl:
+                raise ValueError("Ship TL is below stated part TL")
+            tl = self.tl
+        else:
+            tl = self.owner.tl
+        if tl < self._min_tl:
+            raise ValueError(f"Titanium Steel Armour needs TL {self._min_tl}")
+        if self.protection > tl:
             raise ValueError("Protection can't be more than TL")
-        if data.get("protection", 0) > 9:
+        if self.protection > 9:
             raise ValueError("Protection can't be more than 9")
-        return data
 
 
 class CrystalironArmour(Armour):
     _cost_per_ton = 200_000
     _tonnage_consumed = 0.0125
-    tl: int = Field(ge=10)
+    _min_tl = 10
+    tl: TechLevel
 
-    @model_validator(mode="before")
-    @classmethod
-    def protection_limit(cls, data):
-        if data.get("protection", 0) > data["tl"]:
+    def check_protection_limit(self):
+        if self.tl:
+            if self.owner.tl < self.tl:
+                raise ValueError("Ship TL is below stated part TL")
+            tl = self.tl
+        else:
+            tl = self.owner.tl
+        if tl < self._min_tl:
+            raise ValueError(f"Crystaliron Armour needs TL {self._min_tl}")
+        if self.protection > tl:
             raise ValueError("Protection can't be more than TL")
-        if data.get("protection", 0) > 13:
-            raise ValueError("Protection can't be more than 9")
-        return data
+        if self.protection > 13:
+            raise ValueError("Protection can't be more than 13")
 
 
 class BondedSuperdenseArmour(Armour):
     _cost_per_ton = 500_000
     _tonnage_consumed = 0.008
-    tl: int = Field(ge=14)
+    _min_tl = 14
+    tl: TechLevel
 
-    @model_validator(mode="before")
-    @classmethod
-    def protection_limit(cls, data):
-        if data.get("protection", 0) > data["tl"]:
+    def check_protection_limit(self):
+        if self.tl:
+            if self.owner.tl < self.tl:
+                raise ValueError("Ship TL is below stated part TL")
+            tl = self.tl
+        else:
+            tl = self.owner.tl
+        if tl < self._min_tl:
+            raise ValueError(f"Bonded Superdense Armour needs TL {self._min_tl}")
+        if self.protection > tl:
             raise ValueError("Protection can't be more than TL")
-        return data
 
 
 class MolecularBondedArmour(Armour):
     _cost_per_ton = 1_500_000
     _tonnage_consumed = 0.005
-    tl: int = Field(ge=16)
+    _min_tl = 16
+    tl: TechLevel
 
-    @model_validator(mode="before")
-    @classmethod
-    def protection_limit(cls, data):
-        if data.get("protection", 0) > data["tl"]:
-            raise ValueError("Protection can't be more than TL")
-        return data
+    def check_protection_limit(self):
+        if self.tl:
+            if self.owner.tl < self.tl:
+                raise ValueError("Ship TL is below stated part TL")
+            tl = self.tl
+        else:
+            tl = self.owner.tl
+        if tl < self._min_tl:
+            raise ValueError(f"Molecular Bonded Armour needs TL {self._min_tl}")
+        if self.protection > tl + 4:
+            raise ValueError("Protection can't be more than TL+4")
