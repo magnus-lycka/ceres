@@ -4,12 +4,17 @@
 
 ```
 src/ceres/
-  parts.py    # Base classes: ShipPart, Cost, Power, Tons, TechLevel
+  base.py     # Shared ship base model
+  parts.py    # Base class for installed ship parts
   armour.py   # Armour types (TitaniumSteel, Crystaliron, BondedSuperdense, MolecularBonded)
-  ship.py     # Ship, Hull, HullConfiguration, HullOptions, Stealth classes
+  sensors.py  # Sensor packages
+  drives.py   # M-drive, fusion plants, operation fuel
+  ship.py     # Ship, Hull, HullConfiguration, stealth classes, ship-level aggregates
 tests/
+  ships/      # Regression tests for complete ship designs
   test_parts.py
   test_armour.py
+  test_drives.py
   test_hulls.py
   test_ship.py
 ```
@@ -21,69 +26,56 @@ tests/
 All models use Pydantic `BaseModel` with `frozen = True`. Objects are immutable
 after construction.
 
-### Lazy-Evaluated Value Types
+### Parts Use Plain Numeric Values
 
-`Cost`, `Power`, `Tons` extend `FloatModel` - Pydantic models that wrap a
-`float | None` value. They resolve lazily via `resolve()`:
+`ShipPart` stores `cost`, `power`, and `tons` as ordinary `float` fields.
+There are no wrapper value types for derived quantities.
 
-- If an explicit `value` was provided, return it.
-- Otherwise, call the owning `ShipPart`'s `calculate_cost()` / `calculate_power()` /
-  `calculate_tons()`.
+Parts that derive their values override:
 
-These types implement arithmetic and comparison operators so they can be used
-directly in expressions (e.g. `part.cost == 50000`).
+- `compute_cost()`
+- `compute_power()`
+- `compute_tons()`
 
-`TechLevel` follows the same pattern but wraps `int | None` and defaults to the
-ship's TL if not set explicitly.
+The base `ShipPart` implementation simply returns the stored values unchanged.
 
 ### Binding
 
 Construction happens in two phases:
 
-1. **Part creation** - `ShipPart.__init__` binds its value fields (`cost`, `power`,
-   `tons`, `tl`) to itself so they can call back `calculate_*` methods.
-2. **Ship binding** - `Ship.model_post_init` calls `part.bind(ship)` on every part.
-   This sets the part's owner and eagerly evaluates all values to trigger validation
-   (TL checks, protection limits, etc.).
+1. **Part creation** - parts are created as plain frozen models.
+2. **Ship binding** - `Ship.model_post_init()` calls `part.bind(ship)` on every
+   installed part. This sets the part owner, validates TL requirements, and
+   recalculates derived values such as cost, power, and tons.
 
 ### Owner Properties
 
-`FloatModel`, `TechLevel`, and `ShipPart` each have a private `_owner` attribute
-(initially `None`) and a public `owner` property that raises `RuntimeError` if
-accessed before binding. This gives clean type narrowing without scattered asserts.
+`ShipPart` has a private `_owner` attribute and a public `owner` property that
+raises `RuntimeError` if accessed before binding. This keeps ship-dependent logic
+explicit and gives clean type narrowing without scattered asserts.
 
-### Derived data in madel json
+### Derived Data In Model JSON
 
-**TODO:**
+Derived part data such as `cost`, `power`, and `tons` is included in JSON so the
+serialized model can be used directly for rendering and reporting.
 
-Some of the data in the model, such as cost, power and displacement need for
-parts is calculated by the model. It's still included in the json, since the
-the json is used to create textual representations etc. Such data is simply
-recalculated after import (on model validation?), regardless of json content.
+On import and validation, derived values are recalculated by the model and win
+over whatever JSON happened to contain. JSON is therefore a serialization format
+for the current state of the model, not the authoritative source for derived
+part values.
 
-What's written below is a misunderstanding of requirements, and needs to be
-fixed/removed. We shouldn't have any _explicit_cost: ClassVar[bool] = False etc.
+### Tech Level Model
 
+Tech levels are plain integers.
 
-`ShipPart` subclasses control which fields are user-supplied vs computed using
-class variables:
+- `ship.tl` is the ship TL
+- `part.minimum_tl` is the minimum TL required to install or use that part
+- `part.ship_tl` is the owning ship's TL
+- `part.effective_tl` is the TL the part uses for calculations
 
-```python
-_explicit_cost: ClassVar[bool] = False   # cost computed by calculate_cost()
-_explicit_tons: ClassVar[bool] = False   # tons computed by calculate_tons()
-_explicit_power: ClassVar[bool] = True   # power set explicitly
-```
-
-Model validators reject attempts to pass values for derived fields.
-
-### Field Coercion
-
-Pydantic `field_validator(mode="before")` methods on `ShipPart` coerce plain
-values to wrapper types: `int` -> `TechLevel`, `float` -> `Cost`/`Power`/`Tons`.
-This means parts can be created with `tl=12` instead of `tl=TechLevel(value=12)`.
-
-Note: ty cannot see this coercion statically, so `invalid-argument-type` is
-suppressed in tests via `pyproject.toml`.
+The default `ShipPart.effective_tl` is the ship TL, but subclasses may override
+this when a part represents a specific technology variant rather than merely a
+minimum availability threshold.
 
 ### Hull System
 
@@ -91,8 +83,58 @@ suppressed in tests via `pyproject.toml`.
 points modifier, usage factor, etc.). Seven predefined configurations exist as
 module-level instances (e.g. `standard_hull`, `streamlined_hull`, `planetoid`).
 
-`Hull` combines a `HullConfiguration`, optional `Armour`, and `HullOptions`
-(stealth, shielding). It registers its sub-parts into the ship's parts set.
+`Hull` combines a `HullConfiguration`, optional armour, and optional stealth.
+`armour` and `stealth` are represented as discriminated unions keyed by their
+human-readable `description` fields, which are also included in JSON. This keeps
+the Python API natural (`hull.armour`, `hull.stealth`) while still allowing
+roundtrip serialization back to the correct concrete part type.
+
+`Hull` exposes its installed sub-parts so `Ship` can bind and aggregate them.
+
+### Ship Aggregation
+
+`Ship` owns the full installed-part graph and is responsible for aggregating
+ship-level values such as:
+
+- `hull_cost`
+- `design_cost`
+- `discount_cost`
+- `mortgage_cost`
+- `maintenance_cost`
+- `life_support_cost`
+- `total_expenses`
+- `total_income`
+- `total_loss`
+- `crew_roles`
+- `total_crew`
+- `crew_salary_cost`
+- `available_power`
+- `basic_hull_power_load`
+- `maneuver_power_load`
+- `sensor_power_load`
+- `weapon_power_load`
+- `battle_power_load`
+- `maximum_power_load`
+- `total_power_load`
+- `power_margin`
+- `cargo`
+- `software_packages`
+- `has_fuel_scoops`
+- `fuel_scoop_cost`
+- `fuel_scoop_tons`
+
+These remain ship-level properties rather than cached part data.
+
+`Ship.sensors` is modeled as a ship-level installed part, similar to `Hull.armour`
+and `Hull.stealth`, rather than encoding the specific sensor package name in the
+attribute itself.
+
+Some of these ship-level properties are still intentionally minimal and currently
+exist to support regression-tested ship sheets such as the ultralight fighter.
+For example, the crew model presently covers the small-craft case directly used
+by that sheet, and `battle_power_load` reflects the sheet convention currently
+used by the regression tests rather than a full general-purpose power management
+system.
 
 ### Armour Hierarchy
 
@@ -100,4 +142,5 @@ module-level instances (e.g. `standard_hull`, `streamlined_hull`, `planetoid`).
 (`TitaniumSteelArmour`, `CrystalironArmour`, etc.) define cost-per-ton,
 tonnage-consumed, min TL, and protection limits via class variables and
 `check_protection_limit()`. Small ships (< 100 tons) have size-factor multipliers
-on armour tonnage.
+on armour tonnage. Armour types also expose human-readable `description` values
+used both for rendering and as discriminators during JSON roundtripping.

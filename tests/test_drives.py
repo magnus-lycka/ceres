@@ -37,7 +37,7 @@ def test_mdrive_standard_cost():
 def test_mdrive_power():
     d = MDrive(rating=6)
     d.bind(DummyOwner(12, 6))
-    assert float(d.power) == 4  # ceil(0.1 * 6 * 6) = ceil(3.6) = 4
+    assert d.power == 4  # ceil(0.1 * 6 * 6) = ceil(3.6) = 4
 
 
 def test_mdrive_budget_increased_size_tons():
@@ -59,18 +59,16 @@ def test_mdrive_tl_too_low():
         d.bind(DummyOwner(11, 6))
 
 
-def test_mdrive_cannot_set_cost():
-    from pydantic import ValidationError
+def test_mdrive_recomputes_cost_from_input():
+    d = MDrive.model_validate({'rating': 6, 'cost': 999})
+    d.bind(DummyOwner(12, 6))
+    assert d.cost == pytest.approx(720_000)
 
-    with pytest.raises(ValidationError):
-        MDrive.model_validate({'rating': 6, 'cost': 999})
 
-
-def test_mdrive_cannot_set_tons():
-    from pydantic import ValidationError
-
-    with pytest.raises(ValidationError):
-        MDrive.model_validate({'rating': 6, 'tons': 999})
+def test_mdrive_recomputes_tons_from_input():
+    d = MDrive.model_validate({'rating': 6, 'tons': 999})
+    d.bind(DummyOwner(12, 6))
+    assert d.tons == pytest.approx(0.36)
 
 
 # --- FusionPlant ---
@@ -100,7 +98,7 @@ def test_fusion_plant_power_zero():
     # Power plant generates power; it does not consume it
     p = FusionPlantTL12(output=8)
     p.bind(DummyOwner(12, 6))
-    assert float(p.power) == 0
+    assert p.power == 0
 
 
 def test_fusion_plant_budget_increased_size_tons():
@@ -115,11 +113,10 @@ def test_fusion_plant_budget_increased_size_cost():
     assert float(p.cost) == pytest.approx(8 / 15 * 1_000_000 * 0.75)
 
 
-def test_fusion_plant_cannot_set_tons():
-    from pydantic import ValidationError
-
-    with pytest.raises(ValidationError):
-        FusionPlantTL12.model_validate({'output': 8, 'tons': 999})
+def test_fusion_plant_recomputes_tons_from_input():
+    p = FusionPlantTL12.model_validate({'output': 8, 'tons': 999})
+    p.bind(DummyOwner(12, 6))
+    assert p.tons == pytest.approx(8 / 15)
 
 
 def test_fusion_plant_tl8_variant():
@@ -170,12 +167,12 @@ def test_operation_fuel_1_week_tons():
 
 def test_operation_fuel_cost_zero():
     _, fuel = _make_ship_with_plant(budget=True, increased_size=True)
-    assert float(fuel.cost) == 0
+    assert fuel.cost == 0
 
 
 def test_operation_fuel_power_zero():
     _, fuel = _make_ship_with_plant(budget=True, increased_size=True)
-    assert float(fuel.power) == 0
+    assert fuel.power == 0
 
 
 def test_operation_fuel_requires_plant():

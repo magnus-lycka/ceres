@@ -1,4 +1,3 @@
-from pydantic import ValidationError
 import pytest
 
 from ceres.base import ShipBase
@@ -83,11 +82,13 @@ def test_fixed_firmpoint_energy_efficient_power():
     assert float(fp.power) == 2
 
 
-def test_fixed_firmpoint_cannot_set_cost():
-    with pytest.raises(ValidationError):
-        FixedFirmpoint.model_validate({'weapon': {}, 'cost': 999})
+def test_fixed_firmpoint_recomputes_cost_from_input():
+    fp = FixedFirmpoint.model_validate({'weapon': {}, 'cost': 999})
+    fp.bind(DummyOwner(12, 6))
+    assert fp.cost == pytest.approx(1_100_000)
 
 
-def test_fixed_firmpoint_cannot_set_tons():
-    with pytest.raises(ValidationError):
-        FixedFirmpoint.model_validate({'weapon': {}, 'tons': 999})
+def test_fixed_firmpoint_recomputes_tons_from_input():
+    fp = FixedFirmpoint.model_validate({'weapon': {}, 'tons': 999})
+    fp.bind(DummyOwner(12, 6))
+    assert fp.tons == 0

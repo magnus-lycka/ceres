@@ -5,26 +5,16 @@ from pydantic import BaseModel
 
 from .parts import ShipPart
 
-_PULSE_LASER_POWER = 4
-_PULSE_LASER_COST = 1_000_000
-_FIXED_MOUNT_COST = 100_000
-
 
 class PulseLaser(BaseModel):
     """Pulse laser weapon (TL9, 2D damage, Long range)."""
 
     model_config = {'frozen': True}
+    base_cost: ClassVar[int] = 1_000_000
+    base_power: ClassVar[int] = 4
 
     very_high_yield: bool = False  # 2 advantages
     energy_efficient: bool = False  # 1 advantage
-
-    @property
-    def base_cost(self) -> int:
-        return _PULSE_LASER_COST
-
-    @property
-    def base_power(self) -> int:
-        return _PULSE_LASER_POWER
 
     @property
     def cost_modifier(self) -> float:
@@ -44,19 +34,17 @@ class PulseLaser(BaseModel):
 
 
 class FixedFirmpoint(ShipPart):
-    _explicit_cost: ClassVar[bool] = False
-    _explicit_tons: ClassVar[bool] = False
-    _explicit_power: ClassVar[bool] = False
+    mount_cost: ClassVar[int] = 100_000
     minimum_tl = 9
     weapon: PulseLaser
 
-    def calculate_tons(self) -> float:
+    def compute_tons(self) -> float:
         return 0.0
 
-    def calculate_cost(self) -> float:
-        return _FIXED_MOUNT_COST + self.weapon.base_cost * self.weapon.cost_modifier
+    def compute_cost(self) -> float:
+        return self.mount_cost + self.weapon.base_cost * self.weapon.cost_modifier
 
-    def calculate_power(self) -> float:
+    def compute_power(self) -> float:
         power = self.weapon.base_power
         if self.weapon.energy_efficient:
             power *= 0.75

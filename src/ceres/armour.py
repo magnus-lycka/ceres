@@ -1,26 +1,25 @@
-from typing import ClassVar
+from typing import ClassVar, Literal
 
-from .parts import Power, ShipPart
+from .parts import ShipPart
 
 
 class Armour(ShipPart):
-    power: Power = Power(value=0)
+    power: float = 0.0
+    description: str
     protection: int
     _min_tl: ClassVar[int] = 0
     _cost_per_ton: ClassVar[int] = 0
     _tonnage_consumed: ClassVar[int] = 0
-    _explicit_cost = False
-    _explicit_power = True
-    _explicit_tons = False
 
     def check_protection_limit(self):
         return NotImplemented
 
-    def calculate_cost(self) -> float:
+    def compute_cost(self) -> float:
         self.check_protection_limit()
-        return self.calculate_tons() * self._cost_per_ton
+        tons = self.compute_tons()
+        return tons * self._cost_per_ton
 
-    def calculate_tons(self) -> float:
+    def compute_tons(self) -> float:
         self.check_protection_limit()
         displacement = self.owner.displacement
         if displacement < 5:
@@ -38,6 +37,7 @@ class Armour(ShipPart):
 
 
 class TitaniumSteelArmour(Armour):
+    description: Literal['Titanium Steel'] = 'Titanium Steel'
     _cost_per_ton = 50_000
     _tonnage_consumed = 0.025
     _min_tl = 7
@@ -59,6 +59,7 @@ class TitaniumSteelArmour(Armour):
 
 
 class CrystalironArmour(Armour):
+    description: Literal['Crystaliron'] = 'Crystaliron'
     _cost_per_ton = 200_000
     _tonnage_consumed = 0.0125
     _min_tl = 10
@@ -80,6 +81,7 @@ class CrystalironArmour(Armour):
 
 
 class BondedSuperdenseArmour(Armour):
+    description: Literal['Bonded Superdense'] = 'Bonded Superdense'
     _cost_per_ton = 500_000
     _tonnage_consumed = 0.008
     _min_tl = 14
@@ -99,6 +101,7 @@ class BondedSuperdenseArmour(Armour):
 
 
 class MolecularBondedArmour(Armour):
+    description: Literal['Molecular Bonded'] = 'Molecular Bonded'
     _cost_per_ton = 1_500_000
     _tonnage_consumed = 0.005
     _min_tl = 16

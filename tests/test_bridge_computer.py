@@ -1,4 +1,3 @@
-from pydantic import ValidationError
 import pytest
 
 from ceres.base import ShipBase
@@ -35,17 +34,19 @@ def test_cockpit_holographic_cost():
 def test_cockpit_power_zero():
     c = Cockpit()
     c.bind(DummyOwner(12, 6))
-    assert float(c.power) == 0
+    assert c.power == 0
 
 
-def test_cockpit_cannot_set_tons():
-    with pytest.raises(ValidationError):
-        Cockpit.model_validate({'tons': 999})
+def test_cockpit_recomputes_tons_from_input():
+    c = Cockpit.model_validate({'tons': 999})
+    c.bind(DummyOwner(12, 6))
+    assert c.tons == 1.5
 
 
-def test_cockpit_cannot_set_cost():
-    with pytest.raises(ValidationError):
-        Cockpit.model_validate({'cost': 999})
+def test_cockpit_recomputes_cost_from_input():
+    c = Cockpit.model_validate({'cost': 999})
+    c.bind(DummyOwner(12, 6))
+    assert c.cost == 10_000
 
 
 # --- Computer ---
@@ -81,7 +82,7 @@ def test_computer_tons_zero():
 def test_computer_power_zero():
     c = Computer(rating=5)
     c.bind(DummyOwner(12, 6))
-    assert float(c.power) == 0
+    assert c.power == 0
 
 
 def test_computer_5_min_tl():
@@ -91,6 +92,7 @@ def test_computer_5_min_tl():
         c.bind(DummyOwner(6, 100))
 
 
-def test_computer_cannot_set_cost():
-    with pytest.raises(ValidationError):
-        Computer.model_validate({'rating': 5, 'cost': 999})
+def test_computer_recomputes_cost_from_input():
+    c = Computer.model_validate({'rating': 5, 'cost': 999})
+    c.bind(DummyOwner(12, 6))
+    assert c.cost == 30_000

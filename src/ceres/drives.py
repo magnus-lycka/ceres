@@ -1,7 +1,7 @@
 import math
 from typing import ClassVar, Literal
 
-from .parts import Power, ShipPart
+from .parts import ShipPart
 
 _THRUST_PERCENT: dict[int, float] = {
     0: 0.005,
@@ -37,10 +37,6 @@ _FUSION_COST_PER_TON: dict[int, int] = {8: 500_000, 12: 1_000_000, 15: 2_000_000
 
 
 class MDrive(ShipPart):
-    _explicit_cost: ClassVar[bool] = False
-    _explicit_tons: ClassVar[bool] = False
-    _explicit_power: ClassVar[bool] = False
-
     rating: int
     budget: bool = False
     increased_size: bool = False
@@ -52,27 +48,23 @@ class MDrive(ShipPart):
     def minimum_tl(self) -> int:
         return _THRUST_MIN_TL[self.rating]
 
-    def calculate_tons(self) -> float:
+    def compute_tons(self) -> float:
         base = self._base_tons()
         return base * 1.25 if self.increased_size else base
 
-    def calculate_cost(self) -> float:
+    def compute_cost(self) -> float:
         base = self._base_tons() * 2_000_000
         return base * 0.75 if self.budget else base
 
-    def calculate_power(self) -> float:
+    def compute_power(self) -> float:
         return float(math.ceil(0.1 * self.owner.displacement * self.rating))
 
 
 class _FusionPlant(ShipPart):
-    _explicit_cost: ClassVar[bool] = False
-    _explicit_tons: ClassVar[bool] = False
-    _explicit_power: ClassVar[bool] = True
-
     minimum_tl: ClassVar[int]
     power_per_ton: ClassVar[int]
     cost_per_ton: ClassVar[int]
-    power: Power = Power(value=0)
+    power: float = 0.0
     output: int
     budget: bool = False
     increased_size: bool = False
@@ -88,11 +80,11 @@ class _FusionPlant(ShipPart):
     def effective_tl(self):
         return self.minimum_tl
 
-    def calculate_tons(self) -> float:
+    def compute_tons(self) -> float:
         base = self._base_tons()
         return base * 1.25 if self.increased_size else base
 
-    def calculate_cost(self) -> float:
+    def compute_cost(self) -> float:
         base = self._base_tons() * self.cost_per_ton
         return base * 0.75 if self.budget else base
 
@@ -123,22 +115,18 @@ FusionPlant = FusionPlantTL12
 
 
 class OperationFuel(ShipPart):
-    _explicit_cost: ClassVar[bool] = False
-    _explicit_tons: ClassVar[bool] = False
-    _explicit_power: ClassVar[bool] = True
-
-    power: Power = Power(value=0)
+    power: float = 0.0
     weeks: int
 
-    def calculate_tons(self) -> float:
+    def compute_tons(self) -> float:
         plant = getattr(self.owner, 'fusion_plant', None)
         if plant is None:
             raise ValueError('Ship must have a FusionPlant to compute OperationFuel')
-        pp_tons = plant.calculate_tons()
+        pp_tons = plant.tons
         monthly = 0.10 * pp_tons
         weekly = monthly / 4
         total = weekly * self.weeks
         return math.ceil(total * 100) / 100
 
-    def calculate_cost(self) -> float:
+    def compute_cost(self) -> float:
         return 0.0

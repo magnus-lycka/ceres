@@ -21,15 +21,15 @@ ultralight = Ship(
     displacement=6,
     hull=Hull(
         configuration=ship.streamlined_hull,
-        crystaliron_armour=armour.CrystalironArmour(tl=12, protection=6),
-        basic_stealth=BasicStealth(),
+        armour=armour.CrystalironArmour(tl=12, protection=6),
+        stealth=BasicStealth(),
     ),
     m_drive=MDrive(rating=6, budget=True, increased_size=True),
     fusion_plant=FusionPlantTL12(output=8, budget=True, increased_size=True),
     operation_fuel=OperationFuel(weeks=1),
     cockpit=Cockpit(holographic=True),
     computer=Computer(rating=5),
-    civilian_sensors=CivilianGradeSensors(),
+    sensors=CivilianGradeSensors(),
     fixed_firmpoints=[FixedFirmpoint(weapon=PulseLaser(very_high_yield=True, energy_efficient=True))],
 )
 
@@ -51,23 +51,24 @@ def test_dump_bare_ship_contains_tl_and_displacement():
 
 def test_dump_armour_in_hull():
     data = json.loads(ultralight.model_dump_json())
-    assert data['hull']['crystaliron_armour']['protection'] == 6
-    assert data['hull']['crystaliron_armour']['tl'] == 12
+    assert data['hull']['armour']['description'] == 'Crystaliron'
+    assert data['hull']['armour']['protection'] == 6
+    assert data['hull']['armour']['tl'] == 12
 
 
 def test_dump_no_armour_is_null():
     data = json.loads(bare.model_dump_json())
-    assert data['hull'].get('crystaliron_armour') is None
+    assert data['hull'].get('armour') is None
 
 
 def test_dump_stealth_in_hull():
     data = json.loads(ultralight.model_dump_json())
-    assert data['hull']['basic_stealth'] is not None
+    assert data['hull']['stealth']['description'] == 'Basic Stealth'
 
 
 def test_dump_no_stealth_is_null():
     data = json.loads(bare.model_dump_json())
-    assert data['hull'].get('basic_stealth') is None
+    assert data['hull'].get('stealth') is None
 
 
 def test_dump_m_drive_present():
@@ -75,6 +76,9 @@ def test_dump_m_drive_present():
     assert data['m_drive']['rating'] == 6
     assert data['m_drive']['budget'] is True
     assert data['m_drive']['increased_size'] is True
+    assert data['m_drive']['cost'] == 540_000
+    assert data['m_drive']['power'] == 4
+    assert data['m_drive']['tons'] == pytest.approx(0.45)
 
 
 def test_dump_weapon_in_fixed_firmpoints():
@@ -106,8 +110,8 @@ def test_roundtrip_hull_configuration():
 
 def test_roundtrip_armour_type_and_protection():
     loaded = _roundtrip(ultralight)
-    orig = ultralight.hull.crystaliron_armour
-    rt = loaded.hull.crystaliron_armour
+    orig = ultralight.hull.armour
+    rt = loaded.hull.armour
     assert orig is not None
     assert rt is not None
     assert type(rt) is type(orig)
@@ -116,18 +120,17 @@ def test_roundtrip_armour_type_and_protection():
 
 def test_roundtrip_no_armour():
     loaded = _roundtrip(bare)
-    assert loaded.hull.crystaliron_armour is None
-    assert loaded.hull.titanium_steel_armour is None
+    assert loaded.hull.armour is None
 
 
 def test_roundtrip_stealth():
     loaded = _roundtrip(ultralight)
-    assert isinstance(loaded.hull.basic_stealth, BasicStealth)
+    assert isinstance(loaded.hull.stealth, BasicStealth)
 
 
 def test_roundtrip_no_stealth():
     loaded = _roundtrip(bare)
-    assert loaded.hull.basic_stealth is None
+    assert loaded.hull.stealth is None
 
 
 def test_roundtrip_m_drive_attributes():
@@ -137,6 +140,18 @@ def test_roundtrip_m_drive_attributes():
     assert loaded.m_drive.rating == ultralight.m_drive.rating
     assert loaded.m_drive.budget == ultralight.m_drive.budget
     assert loaded.m_drive.increased_size == ultralight.m_drive.increased_size
+
+
+def test_roundtrip_recomputes_derived_part_values():
+    data = json.loads(ultralight.model_dump_json())
+    data['m_drive']['cost'] = 1
+    data['m_drive']['power'] = 999
+    data['m_drive']['tons'] = 999
+    loaded = Ship.model_validate_json(json.dumps(data))
+    assert loaded.m_drive is not None
+    assert loaded.m_drive.cost == 540_000
+    assert loaded.m_drive.power == 4
+    assert loaded.m_drive.tons == pytest.approx(0.45)
 
 
 def test_roundtrip_fusion_plant_attributes():
@@ -164,7 +179,7 @@ def test_roundtrip_computer():
 
 def test_roundtrip_sensors():
     loaded = _roundtrip(ultralight)
-    assert isinstance(loaded.civilian_sensors, CivilianGradeSensors)
+    assert isinstance(loaded.sensors, CivilianGradeSensors)
 
 
 def test_roundtrip_weapon_attributes():

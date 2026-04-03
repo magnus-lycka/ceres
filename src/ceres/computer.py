@@ -1,6 +1,4 @@
-from typing import ClassVar
-
-from .parts import Power, ShipPart
+from .parts import ShipPart
 
 _COMPUTER_COST: dict[int, int] = {
     5: 30_000,
@@ -23,11 +21,7 @@ _COMPUTER_MIN_TL: dict[int, int] = {
 
 
 class Computer(ShipPart):
-    _explicit_cost: ClassVar[bool] = False
-    _explicit_tons: ClassVar[bool] = False
-    _explicit_power: ClassVar[bool] = True
-
-    power: Power = Power(value=0)
+    power: float = 0.0
     rating: int
 
     @property
@@ -38,8 +32,8 @@ class Computer(ShipPart):
     def effective_tl(self):
         return self.ship_tl
 
-    def calculate_tons(self) -> float:
+    def compute_tons(self) -> float:
         return 0.0
 
-    def calculate_cost(self) -> float:
+    def compute_cost(self) -> float:
         return float(_COMPUTER_COST[self.rating])

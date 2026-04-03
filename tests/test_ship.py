@@ -49,7 +49,7 @@ def test_ship_with_armour():
         tl=12,
         hull=ship.Hull(
             configuration=ship.standard_hull,
-            crystaliron_armour=armour.CrystalironArmour(protection=4, tl=12),
+            armour=armour.CrystalironArmour(protection=4, tl=12),
         ),
         displacement=100,
     )
@@ -89,7 +89,7 @@ def test_ship_design_cost_custom_has_no_multiplier():
         displacement=6,
         design_type=ship.ShipDesignType.CUSTOM,
         hull=ship.Hull(configuration=ship.streamlined_hull.model_copy(update={'light': True})),
-        civilian_sensors=CivilianGradeSensors(),
+        sensors=CivilianGradeSensors(),
     )
     assert my_ship.design_cost == 3_270_000
     assert my_ship.discount_cost == 3_270_000
@@ -101,7 +101,7 @@ def test_ship_design_cost_standard_gets_discount():
         displacement=6,
         design_type=ship.ShipDesignType.STANDARD,
         hull=ship.Hull(configuration=ship.streamlined_hull.model_copy(update={'light': True})),
-        civilian_sensors=CivilianGradeSensors(),
+        sensors=CivilianGradeSensors(),
     )
     assert my_ship.discount_cost == 2_943_000
 
@@ -112,7 +112,7 @@ def test_ship_design_cost_new_gets_markup():
         displacement=6,
         design_type=ship.ShipDesignType.NEW,
         hull=ship.Hull(configuration=ship.streamlined_hull.model_copy(update={'light': True})),
-        civilian_sensors=CivilianGradeSensors(),
+        sensors=CivilianGradeSensors(),
     )
     assert my_ship.discount_cost == 3_302_700
 
@@ -143,7 +143,7 @@ def test_ship_total_power_load_includes_basic_and_active_systems():
         hull=ship.Hull(configuration=ship.standard_hull),
         m_drive=MDrive(rating=6),
         cockpit=Cockpit(),
-        civilian_sensors=CivilianGradeSensors(),
+        sensors=CivilianGradeSensors(),
         fixed_firmpoints=[FixedFirmpoint(weapon=PulseLaser(very_high_yield=True, energy_efficient=True))],
     )
     assert my_ship.total_power_load == 8
@@ -157,7 +157,52 @@ def test_ship_power_margin():
         fusion_plant=FusionPlantTL12(output=8),
         m_drive=MDrive(rating=6),
         cockpit=Cockpit(),
-        civilian_sensors=CivilianGradeSensors(),
+        sensors=CivilianGradeSensors(),
         fixed_firmpoints=[FixedFirmpoint(weapon=PulseLaser(very_high_yield=True, energy_efficient=True))],
     )
     assert my_ship.power_margin == 0
+
+
+def test_small_craft_uses_single_pilot_crew_model():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=6,
+        hull=ship.Hull(configuration=ship.standard_hull),
+        cockpit=Cockpit(),
+    )
+    assert [(role.role, role.count, role.monthly_salary) for role in my_ship.crew_roles] == [('PILOT', 1, 6_000)]
+    assert my_ship.total_crew == 1
+    assert my_ship.crew_salary_cost == 6_000
+
+
+def test_ship_mortgage_cost_uses_purchase_price_divided_by_240():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=6,
+        design_type=ship.ShipDesignType.STANDARD,
+        hull=ship.Hull(configuration=ship.streamlined_hull.model_copy(update={'light': True})),
+        sensors=CivilianGradeSensors(),
+    )
+    assert my_ship.discount_cost == 2_943_000
+    assert my_ship.mortgage_cost == pytest.approx(12_262.50)
+
+
+def test_ship_maintenance_cost_is_rounded_to_whole_credits():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=6,
+        design_type=ship.ShipDesignType.STANDARD,
+        hull=ship.Hull(configuration=ship.streamlined_hull.model_copy(update={'light': True})),
+        sensors=CivilianGradeSensors(),
+    )
+    assert my_ship.maintenance_cost == 245.00
+
+
+def test_cockpit_only_small_craft_has_no_monthly_life_support_cost():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=6,
+        hull=ship.Hull(configuration=ship.standard_hull),
+        cockpit=Cockpit(),
+    )
+    assert my_ship.life_support_cost == 0.00

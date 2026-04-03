@@ -1,10 +1,9 @@
 from enum import Enum, StrEnum
-from typing import Any, ClassVar
+from typing import Annotated, Any, ClassVar, Literal
 
 from pydantic import BaseModel, Field
 
 from .armour import (
-    Armour,
     BondedSuperdenseArmour,
     CrystalironArmour,
     MolecularBondedArmour,
@@ -14,7 +13,7 @@ from .base import ShipBase
 from .bridge import Cockpit
 from .computer import Computer
 from .drives import FusionPlantTL8, FusionPlantTL12, FusionPlantTL15, MDrive, OperationFuel
-from .parts import Power, ShipPart
+from .parts import ShipPart
 from .sensors import CivilianGradeSensors
 from .weapons import FixedFirmpoint
 
@@ -37,6 +36,22 @@ class ShipDesignType(StrEnum):
             ShipDesignType.CUSTOM: 1.0,
             ShipDesignType.NEW: 1.01,
         }[self]
+
+
+class CrewRole(BaseModel):
+    role: str
+    count: int
+    monthly_salary: int
+
+    @property
+    def total_salary(self) -> int:
+        return self.count * self.monthly_salary
+
+
+class SoftwarePackage(BaseModel):
+    name: str
+    tons: float = 0.0
+    cost: float = 0.0
 
 
 class HullConfiguration(BaseModel):
@@ -128,28 +143,22 @@ buffered_planetoid = HullConfiguration(
 
 
 class Stealth(ShipPart):
-    _explicit_cost: ClassVar[bool] = False
-    _explicit_tons: ClassVar[bool] = False
     minimum_tl: ClassVar[int] = 0
-    description: ClassVar[str] = ''
+    description: str
     cost_per_ton: ClassVar[int] = 0
     tonnage: ClassVar[float] = 0
     sensors_dm: ClassVar[int] = 0
-    power: Power = Power(value=0)
+    power: float = 0.0
 
-    def calculate_cost(self):
+    def compute_cost(self):
         return self.owner.displacement * self.cost_per_ton
 
-    def calculate_tons(self):
+    def compute_tons(self):
         return self.owner.displacement * self.tonnage
 
 
-class NoStealth(Stealth):
-    minimum_tl = 0
-
-
 class BasicStealth(Stealth):
-    description = 'Basic Stealth'
+    description: Literal['Basic Stealth'] = 'Basic Stealth'
     minimum_tl = 7
     cost_per_ton = 40_000
     sensors_dm = -2
@@ -157,66 +166,45 @@ class BasicStealth(Stealth):
 
 
 class ImprovedStealth(Stealth):
-    description = 'Improved Stealth'
+    description: Literal['Improved Stealth'] = 'Improved Stealth'
     minimum_tl = 10
     cost_per_ton = 100_000
     sensors_dm = -2
 
 
 class EnhancedStealth(Stealth):
-    description = 'Enhanced Stealth'
+    description: Literal['Enhanced Stealth'] = 'Enhanced Stealth'
     minimum_tl = 12
     cost_per_ton = 500_000
     sensors_dm = -4
 
 
 class AdvancedStealth(Stealth):
-    description = 'Advanced Stealth'
+    description: Literal['Advanced Stealth'] = 'Advanced Stealth'
     minimum_tl = 14
     cost_per_ton = 1_000_000
     sensors_dm = -6
 
 
+HullArmour = Annotated[
+    TitaniumSteelArmour | CrystalironArmour | BondedSuperdenseArmour | MolecularBondedArmour,
+    Field(discriminator='description'),
+]
+
+HullStealth = Annotated[
+    BasicStealth | ImprovedStealth | EnhancedStealth | AdvancedStealth,
+    Field(discriminator='description'),
+]
+
+
 class Hull(BaseModel):
     configuration: HullConfiguration
-    # Armour — at most one type at a time
-    titanium_steel_armour: TitaniumSteelArmour | None = None
-    crystaliron_armour: CrystalironArmour | None = None
-    bonded_superdense_armour: BondedSuperdenseArmour | None = None
-    molecular_bonded_armour: MolecularBondedArmour | None = None
-    # Stealth — at most one type at a time
-    basic_stealth: BasicStealth | None = None
-    improved_stealth: ImprovedStealth | None = None
-    enhanced_stealth: EnhancedStealth | None = None
-    advanced_stealth: AdvancedStealth | None = None
+    armour: HullArmour | None = None
+    stealth: HullStealth | None = None
     # Hull surface options
     heat_shielding: bool = False
     radiation_shielding: bool = False
     reflec: bool = False
-
-    @property
-    def armour(self) -> Armour | None:
-        for a in (
-            self.titanium_steel_armour,
-            self.crystaliron_armour,
-            self.bonded_superdense_armour,
-            self.molecular_bonded_armour,
-        ):
-            if a is not None:
-                return a
-        return None
-
-    @property
-    def stealth(self) -> Stealth | None:
-        for s in (
-            self.basic_stealth,
-            self.improved_stealth,
-            self.enhanced_stealth,
-            self.advanced_stealth,
-        ):
-            if s is not None:
-                return s
-        return None
 
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = []
@@ -235,7 +223,7 @@ class Ship(ShipBase):
     operation_fuel: OperationFuel | None = None
     cockpit: Cockpit | None = None
     computer: Computer | None = None
-    civilian_sensors: CivilianGradeSensors | None = None
+    sensors: CivilianGradeSensors | None = None
     fixed_firmpoints: list[FixedFirmpoint] = Field(default_factory=list)
 
     @property
@@ -259,8 +247,36 @@ class Ship(ShipBase):
         return 1.0
 
     @property
+    def basic_hull_power_load(self) -> float:
+        return self.basic_power_load
+
+    @property
+    def maneuver_power_load(self) -> float:
+        if self.m_drive is None:
+            return 0.0
+        return self.m_drive.power
+
+    @property
+    def sensor_power_load(self) -> float:
+        if self.sensors is None:
+            return 0.0
+        return self.sensors.power
+
+    @property
+    def weapon_power_load(self) -> float:
+        return sum(part.power for part in self.fixed_firmpoints)
+
+    @property
     def total_power_load(self) -> float:
-        return self.basic_power_load + sum(float(part.power) for part in self._all_parts())
+        return self.basic_power_load + sum(part.power for part in self._all_parts())
+
+    @property
+    def battle_power_load(self) -> float:
+        return self.total_power_load - self.sensor_power_load
+
+    @property
+    def maximum_power_load(self) -> float:
+        return self.total_power_load
 
     @property
     def power_margin(self) -> float:
@@ -268,11 +284,76 @@ class Ship(ShipBase):
 
     @property
     def design_cost(self) -> float:
-        return self.hull_cost + sum(float(part.cost) for part in self._all_parts())
+        return self.hull_cost + sum(part.cost for part in self._all_parts())
 
     @property
     def discount_cost(self) -> float:
         return self.design_cost * self.design_type.cost_multiplier
+
+    @property
+    def crew_roles(self) -> list[CrewRole]:
+        # Small craft without jump drives typically operate with a single pilot.
+        if self.displacement <= 100:
+            return [CrewRole(role='PILOT', count=1, monthly_salary=6_000)]
+        return []
+
+    @property
+    def total_crew(self) -> int:
+        return sum(role.count for role in self.crew_roles)
+
+    @property
+    def crew_salary_cost(self) -> float:
+        return float(sum(role.total_salary for role in self.crew_roles))
+
+    @property
+    def mortgage_cost(self) -> float:
+        return round(self.discount_cost / 240, 2)
+
+    @property
+    def maintenance_cost(self) -> float:
+        return float(round(self.discount_cost / 12_000))
+
+    @property
+    def life_support_cost(self) -> float:
+        if self.cockpit is not None:
+            return 0.0
+        return 0.0
+
+    @property
+    def software_packages(self) -> list[SoftwarePackage]:
+        if self.computer is None:
+            return []
+        return [
+            SoftwarePackage(name='Library'),
+            SoftwarePackage(name='Maneuver/0'),
+            SoftwarePackage(name='Intellect'),
+        ]
+
+    @property
+    def has_fuel_scoops(self) -> bool:
+        return self.hull.configuration.streamlined is Streamlined.YES
+
+    @property
+    def fuel_scoop_cost(self) -> float:
+        if self.has_fuel_scoops:
+            return 0.0
+        return 1_000_000.0
+
+    @property
+    def fuel_scoop_tons(self) -> float:
+        return 0.0
+
+    @property
+    def total_expenses(self) -> float:
+        return self.mortgage_cost + self.maintenance_cost + self.life_support_cost + self.crew_salary_cost
+
+    @property
+    def total_income(self) -> float:
+        return 0.0
+
+    @property
+    def total_loss(self) -> float:
+        return self.total_income - self.total_expenses
 
     def _all_parts(self) -> list[ShipPart]:
         parts = list(self.hull._all_parts())
@@ -282,7 +363,7 @@ class Ship(ShipBase):
             self.operation_fuel,
             self.cockpit,
             self.computer,
-            self.civilian_sensors,
+            self.sensors,
         ):
             if part is not None:
                 parts.append(part)
