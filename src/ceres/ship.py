@@ -247,6 +247,26 @@ class Ship(ShipBase):
         return float(self.hull.configuration.cost(self.displacement))
 
     @property
+    def available_power(self) -> float:
+        if self.fusion_plant is None:
+            return 0.0
+        return float(self.fusion_plant.output)
+
+    @property
+    def basic_power_load(self) -> float:
+        if self.hull.configuration.non_gravity:
+            return 0.5
+        return 1.0
+
+    @property
+    def total_power_load(self) -> float:
+        return self.basic_power_load + sum(float(part.power) for part in self._all_parts())
+
+    @property
+    def power_margin(self) -> float:
+        return self.available_power - self.total_power_load
+
+    @property
     def design_cost(self) -> float:
         return self.hull_cost + sum(float(part.cost) for part in self._all_parts())
 

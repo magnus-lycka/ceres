@@ -36,3 +36,6 @@ combine-as-imports = true
 
 [tool.deptry]
 exclude = ["tests", ".venv"]
+
+[tool.coverage.run]
+source_pkgs = ["ceres"]

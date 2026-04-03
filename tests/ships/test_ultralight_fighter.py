@@ -92,6 +92,9 @@ def test_ultralight_fighter_matches_modeled_reference_values():
     assert fighter.hull_cost == 270_000
     assert fighter.design_cost == 6_524_500
     assert fighter.discount_cost == 5_872_050
+    assert fighter.available_power == 8
+    assert fighter.total_power_load == 8
+    assert fighter.power_margin == 0
 
     # The reference sheet rounds this to 0.09 tons.
     assert float(fighter.cargo) == pytest.approx(0.08333333333333393)
