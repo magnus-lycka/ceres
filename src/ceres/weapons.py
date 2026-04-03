@@ -3,7 +3,7 @@ from typing import ClassVar
 
 from pydantic import BaseModel
 
-from .parts import ShipPart, TechLevel, Power
+from .parts import ShipPart
 
 _PULSE_LASER_POWER = 4
 _PULSE_LASER_COST = 1_000_000
@@ -47,8 +47,7 @@ class FixedFirmpoint(ShipPart):
     _explicit_cost: ClassVar[bool] = False
     _explicit_tons: ClassVar[bool] = False
     _explicit_power: ClassVar[bool] = False
-
-    tl: TechLevel = TechLevel(value=9)  # min TL for pulse laser
+    minimum_tl = 9
     weapon: PulseLaser
 
     def calculate_tons(self) -> float:

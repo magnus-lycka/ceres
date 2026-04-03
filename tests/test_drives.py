@@ -1,7 +1,12 @@
-import math
 import pytest
 from ceres import ship
-from ceres.drives import MDrive, FusionPlant, OperationFuel
+from ceres.drives import (
+    MDrive,
+    FusionPlantTL8,
+    FusionPlantTL12,
+    FusionPlantTL15,
+    OperationFuel,
+)
 
 
 class DummyOwner:
@@ -15,6 +20,9 @@ class DummyOwner:
 def test_mdrive_standard_tons():
     d = MDrive(rating=6)
     d.bind(DummyOwner(12, 6))
+    assert d.minimum_tl == 12
+    assert d.ship_tl == 12
+    assert d.effective_tl == 12
     assert float(d.tons) == pytest.approx(0.36)
 
 
@@ -64,37 +72,40 @@ def test_mdrive_cannot_set_tons():
 # --- FusionPlant ---
 
 def test_fusion_plant_base_tons():
-    p = FusionPlant(fusion_tl=12, output=8)
+    p = FusionPlantTL12(output=8)
     p.bind(DummyOwner(12, 6))
+    assert p.minimum_tl == 12
+    assert p.ship_tl == 12
+    assert p.effective_tl == 12
     assert float(p.tons) == pytest.approx(8 / 15)
 
 
 def test_fusion_plant_base_cost():
-    p = FusionPlant(fusion_tl=12, output=8)
+    p = FusionPlantTL12(output=8)
     p.bind(DummyOwner(12, 6))
     assert float(p.cost) == pytest.approx(8 / 15 * 1_000_000)
 
 
 def test_fusion_plant_output():
-    p = FusionPlant(fusion_tl=12, output=8)
+    p = FusionPlantTL12(output=8)
     assert p.output == 8
 
 
 def test_fusion_plant_power_zero():
     # Power plant generates power; it does not consume it
-    p = FusionPlant(fusion_tl=12, output=8)
+    p = FusionPlantTL12(output=8)
     p.bind(DummyOwner(12, 6))
     assert float(p.power) == 0
 
 
 def test_fusion_plant_budget_increased_size_tons():
-    p = FusionPlant(fusion_tl=12, output=8, budget=True, increased_size=True)
+    p = FusionPlantTL12(output=8, budget=True, increased_size=True)
     p.bind(DummyOwner(12, 6))
     assert float(p.tons) == pytest.approx(8 / 15 * 1.25)
 
 
 def test_fusion_plant_budget_increased_size_cost():
-    p = FusionPlant(fusion_tl=12, output=8, budget=True, increased_size=True)
+    p = FusionPlantTL12(output=8, budget=True, increased_size=True)
     p.bind(DummyOwner(12, 6))
     assert float(p.cost) == pytest.approx(8 / 15 * 1_000_000 * 0.75)
 
@@ -102,7 +113,30 @@ def test_fusion_plant_budget_increased_size_cost():
 def test_fusion_plant_cannot_set_tons():
     from pydantic import ValidationError
     with pytest.raises(ValidationError):
-        FusionPlant(fusion_tl=12, output=8, tons=999)
+        FusionPlantTL12(output=8, tons=999)
+
+
+def test_fusion_plant_tl8_variant():
+    p = FusionPlantTL8(output=8)
+    p.bind(DummyOwner(12, 6))
+    assert p.minimum_tl == 8
+    assert p.effective_tl == 8
+    assert float(p.tons) == pytest.approx(0.8)
+    assert float(p.cost) == pytest.approx(400_000)
+
+
+def test_fusion_plant_tl15_variant():
+    p = FusionPlantTL15(output=8)
+    p.bind(DummyOwner(15, 6))
+    assert p.minimum_tl == 15
+    assert p.effective_tl == 15
+    assert float(p.tons) == pytest.approx(0.4)
+    assert float(p.cost) == pytest.approx(800_000)
+
+
+def test_fusion_plant_rejects_ship_below_minimum_tl():
+    with pytest.raises(ValueError):
+        FusionPlantTL12(output=8).bind(DummyOwner(11, 6))
 
 
 # --- OperationFuel ---
@@ -113,7 +147,7 @@ def _make_ship_with_plant(**kwargs):
         tl=12,
         displacement=6,
         hull=ship.Hull(configuration=ship.streamlined_hull),
-        fusion_plant=FusionPlant(fusion_tl=12, output=8, **kwargs),
+        fusion_plant=FusionPlantTL12(output=8, **kwargs),
         operation_fuel=fuel,
     )
     return s, s.operation_fuel

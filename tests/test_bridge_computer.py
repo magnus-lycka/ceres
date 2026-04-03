@@ -51,6 +51,9 @@ def test_cockpit_cannot_set_cost():
 def test_computer_5_cost():
     c = Computer(rating=5)
     c.bind(DummyOwner(12, 6))
+    assert c.minimum_tl == 7
+    assert c.ship_tl == 12
+    assert c.effective_tl == 12
     assert float(c.cost) == 30_000
 
 

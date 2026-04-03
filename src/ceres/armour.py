@@ -1,6 +1,6 @@
 from typing import ClassVar
 
-from .parts import ShipPart, TechLevel, Power
+from .parts import ShipPart, Power
 
 
 class Armour(ShipPart):
@@ -47,7 +47,7 @@ class TitaniumSteelArmour(Armour):
     _cost_per_ton = 50_000
     _tonnage_consumed = 0.025
     _min_tl = 7
-    tl: TechLevel
+    tl: int | None = None
 
     def check_protection_limit(self):
         if self.tl:
@@ -68,7 +68,7 @@ class CrystalironArmour(Armour):
     _cost_per_ton = 200_000
     _tonnage_consumed = 0.0125
     _min_tl = 10
-    tl: TechLevel
+    tl: int | None = None
 
     def check_protection_limit(self):
         if self.tl:
@@ -89,7 +89,7 @@ class BondedSuperdenseArmour(Armour):
     _cost_per_ton = 500_000
     _tonnage_consumed = 0.008
     _min_tl = 14
-    tl: TechLevel
+    tl: int | None = None
 
     def check_protection_limit(self):
         if self.tl:
@@ -108,7 +108,7 @@ class MolecularBondedArmour(Armour):
     _cost_per_ton = 1_500_000
     _tonnage_consumed = 0.005
     _min_tl = 16
-    tl: TechLevel
+    tl: int | None = None
 
     def check_protection_limit(self):
         if self.tl:

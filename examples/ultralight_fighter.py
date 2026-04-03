@@ -12,15 +12,17 @@ Expected totals from reference:
 from ceres import armour, ship
 from ceres.bridge import Cockpit
 from ceres.computer import Computer
-from ceres.drives import FusionPlant, MDrive, OperationFuel
+from ceres.drives import FusionPlantTL12, MDrive, OperationFuel
 from ceres.sensors import CivilianGradeSensors
 from ceres.weapons import FixedFirmpoint, PulseLaser
 
 ultralight_fighter = ship.Ship(
     tl=12,
     displacement=6,
+    design_type=ship.ShipDesignType.STANDARD,
     hull=ship.Hull(
-        configuration=ship.streamlined_hull,  # Streamlined-Wedge
+        configuration=ship.streamlined_hull.model_copy(update={"light": True}),
+        # Streamlined-Wedge, Light Hull
         crystaliron_armour=armour.CrystalironArmour(tl=12, protection=6),
         # Expected: 2.16 tons, Cr 432,000
         basic_stealth=ship.BasicStealth(),
@@ -28,7 +30,7 @@ ultralight_fighter = ship.Ship(
     ),
     m_drive=MDrive(rating=6, budget=True, increased_size=True),
     # Expected: 0.45 tons, Cr 540,000, 4 PP
-    fusion_plant=FusionPlant(fusion_tl=12, output=8, budget=True, increased_size=True),
+    fusion_plant=FusionPlantTL12(output=8, budget=True, increased_size=True),
     # Expected: 0.67 tons, Cr 400,000, generates 8 PP
     operation_fuel=OperationFuel(weeks=1),
     # Expected: 0.02 tons, Cr 0
@@ -51,8 +53,10 @@ if __name__ == "__main__":
     a = s.hull.crystaliron_armour
     st = s.hull.basic_stealth
 
-    print(f"Ultralight Fighter (Revised) - TL {s.tl}, {s.displacement} tons")
-    print(f"Hull cost: {s.hull.configuration.cost(s.displacement):,.0f} CR")
+    print(f"Ultralight Fighter (Revised) - TL {int(s.tl)}, {s.displacement} tons")
+    print(f"Hull cost: {s.hull_cost:,.0f} CR")
+    print(f"Design cost: {s.design_cost:,.0f} CR")
+    print(f"Discount cost: {s.discount_cost:,.0f} CR")
     print(f"Armour: Crystaliron protection {a.protection}, "
           f"{float(a.tons):.2f} tons (exp 2.16), "
           f"{int(a.cost):,} CR (exp 432,000)")

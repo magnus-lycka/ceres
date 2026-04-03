@@ -1,6 +1,5 @@
 from typing import ClassVar
 
-from pydantic import model_validator
 
 from .parts import ShipPart, Power
 
@@ -26,25 +25,16 @@ class Computer(ShipPart):
     power: Power = Power(value=0)
     rating: int
 
-    @model_validator(mode="before")
-    @classmethod
-    def _set_tl(cls, data: dict) -> dict:
-        if "tl" not in data:
-            rating = data.get("rating")
-            if rating in _COMPUTER_MIN_TL:
-                data["tl"] = _COMPUTER_MIN_TL[rating]
-        return data
+    @property
+    def minimum_tl(self) -> int:
+        return _COMPUTER_MIN_TL[self.rating]
 
-    def _check_tl(self) -> None:
-        min_tl = _COMPUTER_MIN_TL[self.rating]
-        if self.owner.tl < min_tl:
-            raise ValueError(
-                f"Computer/{self.rating} requires TL{min_tl}, ship is TL{self.owner.tl}"
-            )
+    @property
+    def effective_tl(self):
+        return self.ship_tl
 
     def calculate_tons(self) -> float:
         return 0.0
 
     def calculate_cost(self) -> float:
-        self._check_tl()
         return float(_COMPUTER_COST[self.rating])

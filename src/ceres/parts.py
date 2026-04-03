@@ -2,7 +2,7 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field, field_validator, model_validator, PrivateAttr
 
-from .base import ShipBase, TechLevel
+from .base import ShipBase
 
 Number = int | float
 
@@ -25,7 +25,7 @@ class FloatModel(BaseModel):
         return NotImplemented
 
     def __float__(self) -> float:
-        return self.resolve()
+        return float(self.resolve())
 
     def __int__(self) -> int:
         return int(self.resolve())
@@ -86,10 +86,10 @@ class Tons(FloatModel):
 
 
 class ShipPart(BaseModel):
-    tl: TechLevel = Field(default_factory=TechLevel)
     cost: Cost = Field(default_factory=Cost)
     power: Power = Field(default_factory=Power)
     tons: Tons = Field(default_factory=Tons)
+    minimum_tl: ClassVar[int] = 0
     _explicit_cost: ClassVar[bool] = True
     _explicit_power: ClassVar[bool] = True
     _explicit_tons: ClassVar[bool] = True
@@ -138,17 +138,6 @@ class ShipPart(BaseModel):
                 raise ValueError(f"power is derived for {cls.__name__}")
         return data
 
-    @field_validator("tl", mode="before")
-    @classmethod
-    def _wrap_tl(cls, v):
-        if isinstance(v, TechLevel):
-            return v
-        if isinstance(v, int):
-            return TechLevel(value=v)
-        if isinstance(v, dict):
-            return TechLevel(**v)
-        raise TypeError(f"Expected TechLevel or int, got {type(v)!r}")
-
     @field_validator("cost", mode="before")
     @classmethod
     def _wrap_cost(cls, v):
@@ -186,17 +175,31 @@ class ShipPart(BaseModel):
         self.cost.bind(self)
         self.power.bind(self)
         self.tons.bind(self)
-        self.tl.bind(self)
 
     def bind(self, owner: ShipBase) -> None:
         self._owner = owner
+        self.validate_tl()
         int(self.cost)
         int(self.power)
         int(self.tons)
-        int(self.tl)
 
     @property
     def owner(self) -> ShipBase:
         if self._owner is None:
             raise RuntimeError(f"{self.__class__.__name__} not bound to a Ship")
         return self._owner
+
+    @property
+    def ship_tl(self) -> int:
+        return self.owner.tl
+
+    @property
+    def effective_tl(self) -> int:
+        return self.ship_tl
+
+    def validate_tl(self) -> None:
+        if self.ship_tl < self.minimum_tl:
+            raise ValueError(
+                f"{self.__class__.__name__} requires TL{self.minimum_tl}, "
+                f"ship is TL{self.ship_tl}"
+            )

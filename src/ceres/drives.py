@@ -1,7 +1,7 @@
 import math
-from typing import ClassVar
+from typing import ClassVar, Literal
 
-from .parts import ShipPart, TechLevel, Power
+from .parts import ShipPart, Power
 
 _THRUST_PERCENT: dict[int, float] = {
     0: 0.005, 1: 0.01, 2: 0.02, 3: 0.03, 4: 0.04,
@@ -28,20 +28,15 @@ class MDrive(ShipPart):
     def _base_tons(self) -> float:
         return self.owner.displacement * _THRUST_PERCENT[self.rating]
 
-    def _check_tl(self) -> None:
-        min_tl = _THRUST_MIN_TL[self.rating]
-        if self.owner.tl < min_tl:
-            raise ValueError(
-                f"MDrive rating {self.rating} requires TL{min_tl}, ship is TL{self.owner.tl}"
-            )
+    @property
+    def minimum_tl(self) -> int:
+        return _THRUST_MIN_TL[self.rating]
 
     def calculate_tons(self) -> float:
-        self._check_tl()
         base = self._base_tons()
         return base * 1.25 if self.increased_size else base
 
     def calculate_cost(self) -> float:
-        self._check_tl()
         base = self._base_tons() * 2_000_000
         return base * 0.75 if self.budget else base
 
@@ -49,27 +44,62 @@ class MDrive(ShipPart):
         return float(math.ceil(0.1 * self.owner.displacement * self.rating))
 
 
-class FusionPlant(ShipPart):
+class _FusionPlant(ShipPart):
     _explicit_cost: ClassVar[bool] = False
     _explicit_tons: ClassVar[bool] = False
     _explicit_power: ClassVar[bool] = True
 
+    minimum_tl: ClassVar[int]
+    power_per_ton: ClassVar[int]
+    cost_per_ton: ClassVar[int]
     power: Power = Power(value=0)
-    fusion_tl: int
     output: int
     budget: bool = False
     increased_size: bool = False
 
     def _base_tons(self) -> float:
-        return self.output / _FUSION_POWER_PER_TON[self.fusion_tl]
+        return self.output / self.power_per_ton
+
+    @property
+    def fusion_tl(self) -> int:
+        return self.minimum_tl
+
+    @property
+    def effective_tl(self):
+        return self.minimum_tl
 
     def calculate_tons(self) -> float:
         base = self._base_tons()
         return base * 1.25 if self.increased_size else base
 
     def calculate_cost(self) -> float:
-        base = self._base_tons() * _FUSION_COST_PER_TON[self.fusion_tl]
+        base = self._base_tons() * self.cost_per_ton
         return base * 0.75 if self.budget else base
+
+
+class FusionPlantTL8(_FusionPlant):
+    plant_type: Literal["fusion_tl8"] = "fusion_tl8"
+    minimum_tl = 8
+    power_per_ton = 10
+    cost_per_ton = 500_000
+
+
+class FusionPlantTL12(_FusionPlant):
+    plant_type: Literal["fusion_tl12"] = "fusion_tl12"
+    minimum_tl = 12
+    power_per_ton = 15
+    cost_per_ton = 1_000_000
+
+
+class FusionPlantTL15(_FusionPlant):
+    plant_type: Literal["fusion_tl15"] = "fusion_tl15"
+    minimum_tl = 15
+    power_per_ton = 20
+    cost_per_ton = 2_000_000
+
+
+# Compatibility alias while the codebase migrates to explicit variants.
+FusionPlant = FusionPlantTL12
 
 
 class OperationFuel(ShipPart):

@@ -13,8 +13,8 @@ from .armour import (
 from .base import ShipBase
 from .bridge import Cockpit
 from .computer import Computer
-from .drives import MDrive, FusionPlant, OperationFuel
-from .parts import ShipPart, Power, TechLevel
+from .drives import MDrive, FusionPlantTL8, FusionPlantTL12, FusionPlantTL15, OperationFuel
+from .parts import ShipPart, Power
 from .sensors import CivilianGradeSensors
 from .weapons import FixedFirmpoint
 
@@ -23,6 +23,20 @@ class Streamlined(Enum):
     YES = 1
     PARTIAL = 2
     NO = 3
+
+
+class ShipDesignType(str, Enum):
+    STANDARD = "STANDARD"
+    CUSTOM = "CUSTOM"
+    NEW = "NEW"
+
+    @property
+    def cost_multiplier(self) -> float:
+        return {
+            ShipDesignType.STANDARD: 0.9,
+            ShipDesignType.CUSTOM: 1.0,
+            ShipDesignType.NEW: 1.01,
+        }[self]
 
 
 class HullConfiguration(BaseModel):
@@ -40,11 +54,33 @@ class HullConfiguration(BaseModel):
     protection: int = 0
     usage_factor: float = 1
 
+    @property
+    def effective_hull_cost_modifier(self) -> float:
+        modifier = self.hull_cost_modifier
+        if self.reinforced:
+            modifier *= 1.5
+        if self.light:
+            modifier *= 0.75
+        if self.military:
+            modifier *= 1.25
+        if self.non_gravity:
+            modifier *= 0.5
+        return modifier
+
+    @property
+    def effective_hull_points_modifier(self) -> float:
+        modifier = self.hull_points_modifier
+        if self.reinforced:
+            modifier *= 1.1
+        if self.light:
+            modifier *= 0.9
+        return modifier
+
     def cost(self, ton):
-        return 50000 * ton * self.hull_cost_modifier
+        return 50000 * ton * self.effective_hull_cost_modifier
 
     def points(self, ton):
-        return (ton * self.hull_points_modifier) // 2.5
+        return (ton * self.effective_hull_points_modifier) // 2.5
 
 
 standard_hull = HullConfiguration(streamlined=Streamlined.PARTIAL)
@@ -88,6 +124,7 @@ buffered_planetoid = HullConfiguration(
 class Stealth(ShipPart):
     _explicit_cost: ClassVar[bool] = False
     _explicit_tons: ClassVar[bool] = False
+    minimum_tl: ClassVar[int] = 0
     description: ClassVar[str] = ""
     cost_per_ton: ClassVar[int] = 0
     tonnage: ClassVar[float] = 0
@@ -102,12 +139,12 @@ class Stealth(ShipPart):
 
 
 class NoStealth(Stealth):
-    tl: TechLevel = TechLevel(value=0)
+    minimum_tl = 0
 
 
 class BasicStealth(Stealth):
     description = "Basic Stealth"
-    tl: TechLevel = TechLevel(value=7)
+    minimum_tl = 7
     cost_per_ton = 40_000
     sensors_dm = -2
     tonnage = 0.02
@@ -115,21 +152,21 @@ class BasicStealth(Stealth):
 
 class ImprovedStealth(Stealth):
     description = "Improved Stealth"
-    tl: TechLevel = TechLevel(value=10)
+    minimum_tl = 10
     cost_per_ton = 100_000
     sensors_dm = -2
 
 
 class EnhancedStealth(Stealth):
     description = "Enhanced Stealth"
-    tl: TechLevel = TechLevel(value=12)
+    minimum_tl = 12
     cost_per_ton = 500_000
     sensors_dm = -4
 
 
 class AdvancedStealth(Stealth):
     description = "Advanced Stealth"
-    tl: TechLevel = TechLevel(value=14)
+    minimum_tl = 14
     cost_per_ton = 1_000_000
     sensors_dm = -6
 
@@ -185,9 +222,10 @@ class Hull(BaseModel):
 
 
 class Ship(ShipBase):
+    design_type: ShipDesignType = ShipDesignType.CUSTOM
     hull: Hull
     m_drive: MDrive | None = None
-    fusion_plant: FusionPlant | None = None
+    fusion_plant: FusionPlantTL8 | FusionPlantTL12 | FusionPlantTL15 | None = None
     operation_fuel: OperationFuel | None = None
     cockpit: Cockpit | None = None
     computer: Computer | None = None
@@ -197,6 +235,18 @@ class Ship(ShipBase):
     @property
     def armour_volume_modifier(self) -> float:
         return self.hull.configuration.armour_volume_modifier
+
+    @property
+    def hull_cost(self) -> float:
+        return float(self.hull.configuration.cost(self.displacement))
+
+    @property
+    def design_cost(self) -> float:
+        return self.hull_cost + sum(float(part.cost) for part in self._all_parts())
+
+    @property
+    def discount_cost(self) -> float:
+        return self.design_cost * self.design_type.cost_multiplier
 
     def _all_parts(self) -> list[ShipPart]:
         parts = list(self.hull._all_parts())

@@ -5,9 +5,9 @@ import pytest
 from ceres import armour, ship
 from ceres.bridge import Cockpit
 from ceres.computer import Computer
-from ceres.drives import FusionPlant, MDrive, OperationFuel
+from ceres.drives import FusionPlantTL12, MDrive, OperationFuel
 from ceres.sensors import CivilianGradeSensors
-from ceres.ship import NoStealth, BasicStealth, Ship, Hull
+from ceres.ship import BasicStealth, Ship, Hull
 from ceres.weapons import FixedFirmpoint, PulseLaser
 
 
@@ -24,7 +24,7 @@ ultralight = Ship(
         basic_stealth=BasicStealth(),
     ),
     m_drive=MDrive(rating=6, budget=True, increased_size=True),
-    fusion_plant=FusionPlant(fusion_tl=12, output=8, budget=True, increased_size=True),
+    fusion_plant=FusionPlantTL12(output=8, budget=True, increased_size=True),
     operation_fuel=OperationFuel(weeks=1),
     cockpit=Cockpit(holographic=True),
     computer=Computer(rating=5),
@@ -43,14 +43,14 @@ def test_dump_produces_valid_json():
 
 def test_dump_bare_ship_contains_tl_and_displacement():
     data = json.loads(bare.model_dump_json())
-    assert data["tl"]["value"] == 12
+    assert data["tl"] == 12
     assert data["displacement"] == 6
 
 
 def test_dump_armour_in_hull():
     data = json.loads(ultralight.model_dump_json())
     assert data["hull"]["crystaliron_armour"]["protection"] == 6
-    assert data["hull"]["crystaliron_armour"]["tl"]["value"] == 12
+    assert data["hull"]["crystaliron_armour"]["tl"] == 12
 
 
 def test_dump_no_armour_is_null():
