@@ -21,12 +21,12 @@ def test_ship_needs_hull():
 
 def test_ship_needs_displacement():
     with pytest.raises(ValidationError):
-        ship.Ship.model_validate(dict(tl=15, hull_configuration=ship.sphere))
+        ship.Ship.model_validate(dict(tl=15, hull=ship.Hull(configuration=ship.sphere)))
 
 
 def test_ship_needs_tech_level():
     with pytest.raises(ValidationError):
-        ship.Ship.model_validate(dict(hull_configuration=ship.sphere, displacement=100))
+        ship.Ship.model_validate(dict(hull=ship.Hull(configuration=ship.sphere), displacement=100))
 
 
 def test_ship_initial_bulky():
@@ -41,7 +41,7 @@ def test_ship_with_armour():
         tl=12,
         hull=ship.Hull(
             configuration=ship.standard_hull,
-            armour=armour.CrystalironArmour(protection=4, tl=12),
+            crystaliron_armour=armour.CrystalironArmour(protection=4, tl=12),
         ),
         displacement=100,
     )
@@ -64,14 +64,3 @@ def test_ship_selfhealing():
         displacement=100,
     )
     assert my_ship.self_sealing
-
-
-# def test_ship_heat_shielding():
-#     tons =  555
-#     my_ship = ship.Ship(
-#         tl=9,
-#         hull_configuration=ship.standard_hull,
-#         displacement=tons,
-#     )
-#     base_cost = my_ship.cost()
-#     my_ship.

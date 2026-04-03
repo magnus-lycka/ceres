@@ -16,27 +16,30 @@ class Armour(ShipPart):
     def check_protection_limit(self):
         return NotImplemented
 
-    def calculate_cost(self) -> int:
+    def calculate_cost(self) -> float:
         self.check_protection_limit()
-        return self.owner.displacement * self._cost_per_ton * self.protection
+        return self.calculate_tons() * self._cost_per_ton
 
-    def calculate_tons(self) -> int:
+    def calculate_tons(self) -> float:
         self.check_protection_limit()
-        if self.owner.displacement < 5:
+        displacement = self.owner.displacement
+        if displacement < 5:
             raise ValueError("Displacement must be at least 5 tons for armour.")
-        if self.owner.displacement < 16:
+        if displacement < 16:
             size_factor = 4
-        elif self.owner.displacement < 26:
+        elif displacement < 26:
             size_factor = 3
-        elif self.owner.displacement < 100:
+        elif displacement < 100:
             size_factor = 2
         else:
             size_factor = 1
+        armour_volume_modifier = self.owner.armour_volume_modifier
         return (
-            self.owner.displacement
+            displacement
             * self._tonnage_consumed
             * self.protection
             * size_factor
+            * armour_volume_modifier
         )
 
 

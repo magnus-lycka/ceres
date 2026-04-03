@@ -6,6 +6,8 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "pydantic>=2.12.5",
+    "pymupdf-layout>=1.27.1",
+    "pymupdf4llm>=0.3.3",
 ]
 [build-system]
 requires = ["uv_build>=0.9.26,<0.10.0"]
@@ -18,5 +20,5 @@ dev = [
 ]
 
 [[tool.ty.overrides]]
-include = ["tests/"]
-rules = {invalid-argument-type = "ignore"}
+include = ["tests/", "examples/"]
+rules = {invalid-argument-type = "ignore", unresolved-attribute = "ignore"}

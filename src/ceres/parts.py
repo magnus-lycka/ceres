@@ -1,23 +1,22 @@
-from typing import Any, Optional, Union, ClassVar, TYPE_CHECKING
+from typing import Any, Union, ClassVar
 
 from pydantic import BaseModel, Field, field_validator, model_validator, PrivateAttr
 
-if TYPE_CHECKING:
-    from .ship import Ship
+from .base import ShipBase, TechLevel
 
 Number = Union[int, float]
 
 
 class FloatModel(BaseModel):
     value: float | None = None
-    _owner: Optional["ShipPart"] = PrivateAttr(default=None)
+    _owner: ShipPart | None = PrivateAttr(default=None)
     model_config = {"frozen": True}
 
     def bind(self, owner: ShipPart) -> None:
         self._owner = owner
 
     @property
-    def owner(self) -> "ShipPart":
+    def owner(self) -> ShipPart:
         if self._owner is None:
             raise RuntimeError(f"{self.__class__.__name__} not bound to a ShipPart")
         return self._owner
@@ -52,10 +51,10 @@ class FloatModel(BaseModel):
     def __rmul__(self, other: Number) -> float:
         return float(other) * self.resolve()
 
-    def __div__(self, other: Number) -> float:
+    def __truediv__(self, other: Number) -> float:
         return self.resolve() / float(other)
 
-    def __rdiv__(self, other: Number) -> float:
+    def __rtruediv__(self, other: Number) -> float:
         return float(other) / self.resolve()
 
     def __eq__(self, other: object) -> bool:
@@ -85,65 +84,6 @@ class Tons(FloatModel):
         return self.owner.calculate_tons()
 
 
-class TechLevel(BaseModel):
-    value: int | None = None
-    _owner: Optional["ShipPart"] = PrivateAttr(default=None)
-    model_config = {"frozen": True}
-
-    def bind(self, owner: ShipPart) -> None:
-        self._owner = owner
-
-    @property
-    def owner(self) -> "ShipPart":
-        if self._owner is None:
-            raise RuntimeError(f"{self.__class__.__name__} not bound to a ShipPart")
-        return self._owner
-
-    def resolve(self) -> int:
-        # Default to and compare with ships TL
-        if self.value is not None:
-            if self.owner.ship_tl < self.value:
-                raise ValueError("Part TL can't be higher than Ship TL.")
-            return self.value
-        return self.owner.ship_tl
-
-    def __eq__(self, other: object):
-        if not isinstance(other, int):
-            return NotImplemented
-        return self.resolve() == other
-
-    def __ne__(self, other: object):
-        if not isinstance(other, int):
-            return NotImplemented
-        return self.resolve() != other
-
-    def __ge__(self, other: int):
-        return self.resolve() >= other
-
-    def __gt__(self, other: int):
-        return self.resolve() > other
-
-    def __le__(self, other: int):
-        return self.resolve() <= other
-
-    def __lt__(self, other: int):
-        return self.resolve() < other
-
-    def __add__(self, other: Number) -> int:
-        return self.resolve() + int(other)
-
-    def __radd__(self, other: Number) -> int:
-        return int(other) + self.resolve()
-
-    def __sub__(self, other: Number) -> int:
-        return self.resolve() - int(other)
-
-    def __rsub__(self, other: Number) -> int:
-        return int(other) - self.resolve()
-
-    def __int__(self) -> int:
-        return int(self.resolve())
-
 
 class ShipPart(BaseModel):
     tl: TechLevel = Field(default_factory=TechLevel)
@@ -153,7 +93,7 @@ class ShipPart(BaseModel):
     _explicit_cost: ClassVar[bool] = True
     _explicit_power: ClassVar[bool] = True
     _explicit_tons: ClassVar[bool] = True
-    _owner: Optional["Ship"] = PrivateAttr(default=None)
+    _owner: ShipBase | None = PrivateAttr(default=None)
     model_config = {"frozen": True}
 
     def calculate_cost(self) -> float:
@@ -169,66 +109,78 @@ class ShipPart(BaseModel):
     @classmethod
     def forbid_cost(cls, data):
         if "cost" in data and not cls._explicit_cost:
-            raise ValueError(f"cost is derived for {cls.__name__}")
+            v = data["cost"]
+            if isinstance(v, dict):
+                v = v.get("value")
+            if v is not None:
+                raise ValueError(f"cost is derived for {cls.__name__}")
         return data
 
     @model_validator(mode="before")
     @classmethod
     def forbid_tons(cls, data):
         if "tons" in data and not cls._explicit_tons:
-            raise ValueError(f"tons is derived for {cls.__name__}")
+            v = data["tons"]
+            if isinstance(v, dict):
+                v = v.get("value")
+            if v is not None:
+                raise ValueError(f"tons is derived for {cls.__name__}")
         return data
 
     @model_validator(mode="before")
     @classmethod
     def forbid_power(cls, data):
         if "power" in data and not cls._explicit_power:
-            raise ValueError(f"power is derived for {cls.__name__}")
+            v = data["power"]
+            if isinstance(v, dict):
+                v = v.get("value")
+            if v is not None:
+                raise ValueError(f"power is derived for {cls.__name__}")
         return data
 
     @field_validator("tl", mode="before")
     @classmethod
     def _wrap_tl(cls, v):
         if isinstance(v, TechLevel):
-            tl = v
-        elif isinstance(v, int):
-            tl = TechLevel(value=v)
-        else:
-            raise TypeError(f"Expected TechLevel or int, got {type(v)!r}")
-        return tl
+            return v
+        if isinstance(v, int):
+            return TechLevel(value=v)
+        if isinstance(v, dict):
+            return TechLevel(**v)
+        raise TypeError(f"Expected TechLevel or int, got {type(v)!r}")
 
     @field_validator("cost", mode="before")
     @classmethod
     def _wrap_cost(cls, v):
         if isinstance(v, Cost):
-            cost = v
-        elif isinstance(v, (int, float)):
-            cost = Cost(value=float(v))
-        else:
-            raise TypeError(f"Expected Cost or number, got {type(v)!r}")
-        return cost
+            return v
+        if isinstance(v, (int, float)):
+            return Cost(value=float(v))
+        if isinstance(v, dict):
+            return Cost(**v)
+        raise TypeError(f"Expected Cost or number, got {type(v)!r}")
 
     @field_validator("power", mode="before")
     @classmethod
     def _wrap_power(cls, v):
         if isinstance(v, Power):
-            power = v
-        elif isinstance(v, (int, float)):
-            power = Power(value=float(v))
-        else:
-            raise TypeError(f"Expected Power or number, got {type(v)!r}")
-        return power
+            return v
+        if isinstance(v, (int, float)):
+            return Power(value=float(v))
+        if isinstance(v, dict):
+            return Power(**v)
+        raise TypeError(f"Expected Power or number, got {type(v)!r}")
 
     @field_validator("tons", mode="before")
     @classmethod
     def _wrap_tons(cls, v):
         if isinstance(v, Tons):
-            tons = v
-        elif isinstance(v, (int, float)):
-            tons = Tons(value=v)
-        else:
-            raise TypeError(f"Expected Tons or number, got {type(v)!r}")
-        return tons
+            return v
+        if isinstance(v, (int, float)):
+            return Tons(value=v)
+        if isinstance(v, dict):
+            return Tons(**v)
+        raise TypeError(f"Expected Tons or number, got {type(v)!r}")
 
     def model_post_init(self, __context: Any) -> None:
         self.cost.bind(self)
@@ -236,19 +188,15 @@ class ShipPart(BaseModel):
         self.tons.bind(self)
         self.tl.bind(self)
 
-    def register_parts(self, container: set):
-        container.add(self)
-
-    def bind(self, owner: Ship) -> None:
+    def bind(self, owner: ShipBase) -> None:
         self._owner = owner
-        # Provoke value errors relying on binding to ship
         int(self.cost)
         int(self.power)
         int(self.tons)
         int(self.tl)
 
     @property
-    def owner(self) -> "Ship":
+    def owner(self) -> ShipBase:
         if self._owner is None:
             raise RuntimeError(f"{self.__class__.__name__} not bound to a Ship")
         return self._owner

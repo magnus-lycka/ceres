@@ -3,8 +3,20 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field
 
-from .armour import Armour
+from .armour import (
+    Armour,
+    TitaniumSteelArmour,
+    CrystalironArmour,
+    BondedSuperdenseArmour,
+    MolecularBondedArmour,
+)
+from .base import ShipBase
+from .bridge import Cockpit
+from .computer import Computer
+from .drives import MDrive, FusionPlant, OperationFuel
 from .parts import ShipPart, Power, TechLevel
+from .sensors import CivilianGradeSensors
+from .weapons import FixedFirmpoint
 
 
 class Streamlined(Enum):
@@ -76,23 +88,21 @@ buffered_planetoid = HullConfiguration(
 class Stealth(ShipPart):
     _explicit_cost: ClassVar[bool] = False
     _explicit_tons: ClassVar[bool] = False
-    sensors_dm: ClassVar[int] = 0
     description: ClassVar[str] = ""
     cost_per_ton: ClassVar[int] = 0
-    tonnage: ClassVar[int] = 0
-    hull: int
+    tonnage: ClassVar[float] = 0
+    sensors_dm: ClassVar[int] = 0
     power: Power = Power(value=0)
 
     def calculate_cost(self):
-        return self.hull * self.cost_per_ton
+        return self.owner.displacement * self.cost_per_ton
 
     def calculate_tons(self):
-        return self.hull * self.tonnage
+        return self.owner.displacement * self.tonnage
 
 
 class NoStealth(Stealth):
     tl: TechLevel = TechLevel(value=0)
-    hull: int = 0
 
 
 class BasicStealth(Stealth):
@@ -124,34 +134,89 @@ class AdvancedStealth(Stealth):
     sensors_dm = -6
 
 
-class HullOptions(BaseModel):
+class Hull(BaseModel):
+    configuration: HullConfiguration
+    # Armour — at most one type at a time
+    titanium_steel_armour: TitaniumSteelArmour | None = None
+    crystaliron_armour: CrystalironArmour | None = None
+    bonded_superdense_armour: BondedSuperdenseArmour | None = None
+    molecular_bonded_armour: MolecularBondedArmour | None = None
+    # Stealth — at most one type at a time
+    basic_stealth: BasicStealth | None = None
+    improved_stealth: ImprovedStealth | None = None
+    enhanced_stealth: EnhancedStealth | None = None
+    advanced_stealth: AdvancedStealth | None = None
+    # Hull surface options
     heat_shielding: bool = False
     radiation_shielding: bool = False
     reflec: bool = False
-    stealth: Stealth = Field(default_factory=NoStealth)
+
+    @property
+    def armour(self) -> Armour | None:
+        for a in (
+            self.titanium_steel_armour,
+            self.crystaliron_armour,
+            self.bonded_superdense_armour,
+            self.molecular_bonded_armour,
+        ):
+            if a is not None:
+                return a
+        return None
+
+    @property
+    def stealth(self) -> Stealth | None:
+        for s in (
+            self.basic_stealth,
+            self.improved_stealth,
+            self.enhanced_stealth,
+            self.advanced_stealth,
+        ):
+            if s is not None:
+                return s
+        return None
+
+    def _all_parts(self) -> list[ShipPart]:
+        parts: list[ShipPart] = []
+        if (a := self.armour) is not None:
+            parts.append(a)
+        if (s := self.stealth) is not None:
+            parts.append(s)
+        return parts
 
 
-class Hull(BaseModel):
-    configuration: HullConfiguration
-    armour: Armour | None = None
-    options: HullOptions = Field(default_factory=HullOptions)
-
-    def register_parts(self, container: set):
-        if self.armour is not None:
-            container.add(self.armour)
-        container.add(self.options.stealth)
-
-
-class Ship(BaseModel):
-    tl: int
-    displacement: int
+class Ship(ShipBase):
     hull: Hull
-    parts: set[ShipPart] = Field(default_factory=set)
+    m_drive: MDrive | None = None
+    fusion_plant: FusionPlant | None = None
+    operation_fuel: OperationFuel | None = None
+    cockpit: Cockpit | None = None
+    computer: Computer | None = None
+    civilian_sensors: CivilianGradeSensors | None = None
+    fixed_firmpoints: list[FixedFirmpoint] = Field(default_factory=list)
+
+    @property
+    def armour_volume_modifier(self) -> float:
+        return self.hull.configuration.armour_volume_modifier
+
+    def _all_parts(self) -> list[ShipPart]:
+        parts = list(self.hull._all_parts())
+        for part in (
+            self.m_drive,
+            self.fusion_plant,
+            self.operation_fuel,
+            self.cockpit,
+            self.computer,
+            self.civilian_sensors,
+        ):
+            if part is not None:
+                parts.append(part)
+        parts.extend(self.fixed_firmpoints)
+        return parts
 
     @property
     def cargo(self):
         cargo = self.displacement * self.hull.configuration.usage_factor
-        for part in self.parts:
+        for part in self._all_parts():
             cargo -= part.tons
         return cargo
 
@@ -160,6 +225,5 @@ class Ship(BaseModel):
         return self.tl >= 9
 
     def model_post_init(self, __context: Any) -> None:
-        self.hull.register_parts(self.parts)
-        for part in self.parts:
+        for part in self._all_parts():
             part.bind(self)
