@@ -3,7 +3,7 @@ import pytest
 
 from ceres import armour, ship
 from ceres.bridge import Cockpit
-from ceres.drives import FusionPlantTL12, MDrive
+from ceres.drives import FusionPlantTL12, MDrive6
 from ceres.sensors import CivilianGradeSensors
 from ceres.weapons import FixedFirmpoint, PulseLaser
 
@@ -141,7 +141,7 @@ def test_ship_total_power_load_includes_basic_and_active_systems():
         tl=12,
         displacement=6,
         hull=ship.Hull(configuration=ship.standard_hull),
-        m_drive=MDrive(rating=6),
+        m_drive=MDrive6(),
         cockpit=Cockpit(),
         sensors=CivilianGradeSensors(),
         fixed_firmpoints=[FixedFirmpoint(weapon=PulseLaser(very_high_yield=True, energy_efficient=True))],
@@ -155,7 +155,7 @@ def test_ship_power_margin():
         displacement=6,
         hull=ship.Hull(configuration=ship.standard_hull),
         fusion_plant=FusionPlantTL12(output=8),
-        m_drive=MDrive(rating=6),
+        m_drive=MDrive6(),
         cockpit=Cockpit(),
         sensors=CivilianGradeSensors(),
         fixed_firmpoints=[FixedFirmpoint(weapon=PulseLaser(very_high_yield=True, energy_efficient=True))],

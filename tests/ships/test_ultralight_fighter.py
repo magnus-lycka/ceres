@@ -2,8 +2,8 @@ import pytest
 
 from ceres import armour, ship
 from ceres.bridge import Cockpit
-from ceres.computer import Computer
-from ceres.drives import FusionPlantTL12, MDrive, OperationFuel
+from ceres.computer import Computer5
+from ceres.drives import FusionPlantTL12, MDrive6, OperationFuel
 from ceres.sensors import CivilianGradeSensors
 from ceres.weapons import FixedFirmpoint, PulseLaser
 
@@ -18,7 +18,7 @@ def build_ultralight_fighter() -> ship.Ship:
             armour=armour.CrystalironArmour(tl=12, protection=6),
             stealth=ship.BasicStealth(),
         ),
-        m_drive=MDrive(rating=6, budget=True, increased_size=True),
+        m_drive=MDrive6(budget=True, increased_size=True),
         fusion_plant=FusionPlantTL12(
             output=8,
             budget=True,
@@ -26,7 +26,7 @@ def build_ultralight_fighter() -> ship.Ship:
         ),
         operation_fuel=OperationFuel(weeks=1),
         cockpit=Cockpit(holographic=True),
-        computer=Computer(rating=5),
+        computer=Computer5(),
         sensors=CivilianGradeSensors(),
         fixed_firmpoints=[
             FixedFirmpoint(
@@ -78,6 +78,7 @@ def test_ultralight_fighter_matches_modeled_reference_values():
 
     assert computer is not None
     assert float(computer.tons) == pytest.approx(0)
+    assert computer.processing == 5
     assert int(computer.cost) == 30_000
     assert [(package.name, package.tons, package.cost) for package in fighter.software_packages] == [
         ('Library', 0.0, 0.0),

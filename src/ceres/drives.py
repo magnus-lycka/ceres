@@ -3,50 +3,16 @@ from typing import ClassVar, Literal
 
 from .parts import ShipPart
 
-_THRUST_PERCENT: dict[int, float] = {
-    0: 0.005,
-    1: 0.01,
-    2: 0.02,
-    3: 0.03,
-    4: 0.04,
-    5: 0.05,
-    6: 0.06,
-    7: 0.07,
-    8: 0.08,
-    9: 0.09,
-    10: 0.10,
-    11: 0.11,
-}
-_THRUST_MIN_TL: dict[int, int] = {
-    0: 9,
-    1: 9,
-    2: 10,
-    3: 10,
-    4: 11,
-    5: 11,
-    6: 12,
-    7: 13,
-    8: 14,
-    9: 15,
-    10: 16,
-    11: 17,
-}
-
-_FUSION_POWER_PER_TON: dict[int, int] = {8: 10, 12: 15, 15: 20}
-_FUSION_COST_PER_TON: dict[int, int] = {8: 500_000, 12: 1_000_000, 15: 2_000_000}
-
 
 class MDrive(ShipPart):
     rating: int
+    minimum_tl: ClassVar[int]
+    tons_percent: ClassVar[float]
     budget: bool = False
     increased_size: bool = False
 
     def _base_tons(self) -> float:
-        return self.owner.displacement * _THRUST_PERCENT[self.rating]
-
-    @property
-    def minimum_tl(self) -> int:
-        return _THRUST_MIN_TL[self.rating]
+        return self.owner.displacement * self.tons_percent
 
     def compute_tons(self) -> float:
         base = self._base_tons()
@@ -58,6 +24,129 @@ class MDrive(ShipPart):
 
     def compute_power(self) -> float:
         return float(math.ceil(0.1 * self.owner.displacement * self.rating))
+
+
+class MDrive0(MDrive):
+    rating: Literal[0] = 0
+    minimum_tl = 9
+    tons_percent = 0.005
+
+
+class MDrive1(MDrive):
+    rating: Literal[1] = 1
+    minimum_tl = 9
+    tons_percent = 0.01
+
+
+class MDrive2(MDrive):
+    rating: Literal[2] = 2
+    minimum_tl = 10
+    tons_percent = 0.02
+
+
+class MDrive3(MDrive):
+    rating: Literal[3] = 3
+    minimum_tl = 10
+    tons_percent = 0.03
+
+
+class MDrive4(MDrive):
+    rating: Literal[4] = 4
+    minimum_tl = 11
+    tons_percent = 0.04
+
+
+class MDrive5(MDrive):
+    rating: Literal[5] = 5
+    minimum_tl = 11
+    tons_percent = 0.05
+
+
+class MDrive6(MDrive):
+    rating: Literal[6] = 6
+    minimum_tl = 12
+    tons_percent = 0.06
+
+
+class MDrive7(MDrive):
+    rating: Literal[7] = 7
+    minimum_tl = 13
+    tons_percent = 0.07
+
+
+class MDrive8(MDrive):
+    rating: Literal[8] = 8
+    minimum_tl = 14
+    tons_percent = 0.08
+
+
+class MDrive9(MDrive):
+    rating: Literal[9] = 9
+    minimum_tl = 15
+    tons_percent = 0.09
+
+
+class MDrive10(MDrive):
+    rating: Literal[10] = 10
+    minimum_tl = 16
+    tons_percent = 0.10
+
+
+class MDrive11(MDrive):
+    rating: Literal[11] = 11
+    minimum_tl = 17
+    tons_percent = 0.11
+
+
+class JumpDrive(ShipPart):
+    rating: int
+    minimum_tl: ClassVar[int]
+    tons_percent: ClassVar[float]
+
+    def compute_tons(self) -> float:
+        return self.owner.displacement * self.tons_percent + 5
+
+    def compute_cost(self) -> float:
+        return self.compute_tons() * 1_500_000
+
+    def compute_power(self) -> float:
+        return float(math.ceil(0.1 * self.owner.displacement * self.rating))
+
+
+class JumpDrive1(JumpDrive):
+    rating: Literal[1] = 1
+    minimum_tl = 9
+    tons_percent = 0.02
+
+
+class JumpDrive2(JumpDrive):
+    rating: Literal[2] = 2
+    minimum_tl = 11
+    tons_percent = 0.05
+
+
+class JumpDrive3(JumpDrive):
+    rating: Literal[3] = 3
+    minimum_tl = 12
+    tons_percent = 0.10
+
+
+class JumpDrive4(JumpDrive):
+    rating: Literal[4] = 4
+    minimum_tl = 13
+    tons_percent = 0.15
+
+
+class JumpDrive5(JumpDrive):
+    rating: Literal[5] = 5
+    minimum_tl = 14
+    tons_percent = 0.25
+
+
+class JumpDrive6(JumpDrive):
+    rating: Literal[6] = 6
+    minimum_tl = 15
+    tons_percent = 0.35
 
 
 class _FusionPlant(ShipPart):
@@ -126,7 +215,28 @@ class OperationFuel(ShipPart):
         monthly = 0.10 * pp_tons
         weekly = monthly / 4
         total = weekly * self.weeks
-        return math.ceil(total * 100) / 100
+        return math.ceil(total * 100 - 1e-9) / 100
 
     def compute_cost(self) -> float:
         return 0.0
+
+
+class JumpFuel(ShipPart):
+    power: float = 0.0
+    parsecs: int
+
+    def compute_tons(self) -> float:
+        return self.owner.displacement * 0.1 * self.parsecs
+
+    def compute_cost(self) -> float:
+        return 0.0
+
+
+class FuelProcessor(ShipPart):
+    tons: float
+
+    def compute_cost(self) -> float:
+        return self.tons * 50_000
+
+    def compute_power(self) -> float:
+        return self.tons

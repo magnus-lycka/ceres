@@ -6,7 +6,7 @@ from ceres.drives import (
     FusionPlantTL8,
     FusionPlantTL12,
     FusionPlantTL15,
-    MDrive,
+    MDrive6,
     OperationFuel,
 )
 
@@ -20,7 +20,7 @@ class DummyOwner(ShipBase):
 
 
 def test_mdrive_standard_tons():
-    d = MDrive(rating=6)
+    d = MDrive6()
     d.bind(DummyOwner(12, 6))
     assert d.minimum_tl == 12
     assert d.ship_tl == 12
@@ -29,25 +29,25 @@ def test_mdrive_standard_tons():
 
 
 def test_mdrive_standard_cost():
-    d = MDrive(rating=6)
+    d = MDrive6()
     d.bind(DummyOwner(12, 6))
     assert float(d.cost) == pytest.approx(720_000)
 
 
 def test_mdrive_power():
-    d = MDrive(rating=6)
+    d = MDrive6()
     d.bind(DummyOwner(12, 6))
     assert d.power == 4  # ceil(0.1 * 6 * 6) = ceil(3.6) = 4
 
 
 def test_mdrive_budget_increased_size_tons():
-    d = MDrive(rating=6, budget=True, increased_size=True)
+    d = MDrive6(budget=True, increased_size=True)
     d.bind(DummyOwner(12, 6))
     assert float(d.tons) == pytest.approx(0.45)  # 0.36 * 1.25
 
 
 def test_mdrive_budget_increased_size_cost():
-    d = MDrive(rating=6, budget=True, increased_size=True)
+    d = MDrive6(budget=True, increased_size=True)
     d.bind(DummyOwner(12, 6))
     assert float(d.cost) == pytest.approx(540_000)  # 720_000 * 0.75
 
@@ -55,18 +55,18 @@ def test_mdrive_budget_increased_size_cost():
 def test_mdrive_tl_too_low():
     # Rating 6 requires TL12; TL11 ship should fail at bind time
     with pytest.raises(ValueError):
-        d = MDrive(rating=6)
+        d = MDrive6()
         d.bind(DummyOwner(11, 6))
 
 
 def test_mdrive_recomputes_cost_from_input():
-    d = MDrive.model_validate({'rating': 6, 'cost': 999})
+    d = MDrive6.model_validate({'cost': 999})
     d.bind(DummyOwner(12, 6))
     assert d.cost == pytest.approx(720_000)
 
 
 def test_mdrive_recomputes_tons_from_input():
-    d = MDrive.model_validate({'rating': 6, 'tons': 999})
+    d = MDrive6.model_validate({'tons': 999})
     d.bind(DummyOwner(12, 6))
     assert d.tons == pytest.approx(0.36)
 

@@ -51,3 +51,16 @@ class FixedFirmpoint(ShipPart):
         # Firmpoint reduces power by 25%; apply combined then floor
         power *= 0.75
         return float(math.floor(power))
+
+
+class DoubleTurret(ShipPart):
+    minimum_tl = 8
+
+    def compute_tons(self) -> float:
+        return 1.0
+
+    def compute_cost(self) -> float:
+        return 500_000.0
+
+    def compute_power(self) -> float:
+        return 1.0

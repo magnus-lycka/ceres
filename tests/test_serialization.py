@@ -6,8 +6,8 @@ import pytest
 
 from ceres import armour, ship
 from ceres.bridge import Cockpit
-from ceres.computer import Computer
-from ceres.drives import FusionPlantTL12, MDrive, OperationFuel
+from ceres.computer import Computer5
+from ceres.drives import FusionPlantTL12, MDrive6, OperationFuel
 from ceres.sensors import CivilianGradeSensors
 from ceres.ship import BasicStealth, Hull, Ship
 from ceres.weapons import FixedFirmpoint, PulseLaser
@@ -24,11 +24,11 @@ ultralight = Ship(
         armour=armour.CrystalironArmour(tl=12, protection=6),
         stealth=BasicStealth(),
     ),
-    m_drive=MDrive(rating=6, budget=True, increased_size=True),
+    m_drive=MDrive6(budget=True, increased_size=True),
     fusion_plant=FusionPlantTL12(output=8, budget=True, increased_size=True),
     operation_fuel=OperationFuel(weeks=1),
     cockpit=Cockpit(holographic=True),
-    computer=Computer(rating=5),
+    computer=Computer5(),
     sensors=CivilianGradeSensors(),
     fixed_firmpoints=[FixedFirmpoint(weapon=PulseLaser(very_high_yield=True, energy_efficient=True))],
 )
@@ -73,7 +73,6 @@ def test_dump_no_stealth_is_null():
 
 def test_dump_m_drive_present():
     data = json.loads(ultralight.model_dump_json())
-    assert data['m_drive']['rating'] == 6
     assert data['m_drive']['budget'] is True
     assert data['m_drive']['increased_size'] is True
     assert data['m_drive']['cost'] == 540_000
@@ -137,6 +136,7 @@ def test_roundtrip_m_drive_attributes():
     loaded = _roundtrip(ultralight)
     assert loaded.m_drive is not None
     assert ultralight.m_drive is not None
+    assert type(loaded.m_drive) is type(ultralight.m_drive)
     assert loaded.m_drive.rating == ultralight.m_drive.rating
     assert loaded.m_drive.budget == ultralight.m_drive.budget
     assert loaded.m_drive.increased_size == ultralight.m_drive.increased_size
@@ -174,7 +174,8 @@ def test_roundtrip_computer():
     loaded = _roundtrip(ultralight)
     assert loaded.computer is not None
     assert ultralight.computer is not None
-    assert loaded.computer.rating == ultralight.computer.rating
+    assert type(loaded.computer) is type(ultralight.computer)
+    assert loaded.computer.processing == ultralight.computer.processing
 
 
 def test_roundtrip_sensors():

@@ -10,12 +10,53 @@ from .armour import (
     TitaniumSteelArmour,
 )
 from .base import ShipBase
-from .bridge import Cockpit
-from .computer import Computer
-from .drives import FusionPlantTL8, FusionPlantTL12, FusionPlantTL15, MDrive, OperationFuel
+from .bridge import Bridge, Cockpit
+from .computer import (
+    Computer5,
+    Computer10,
+    Computer15,
+    Computer20,
+    Computer25,
+    Computer30,
+    Computer35,
+    Core40,
+    Core50,
+    Core60,
+    Core70,
+    Core80,
+    Core90,
+    Core100,
+)
+from .drives import (
+    FuelProcessor,
+    FusionPlantTL8,
+    FusionPlantTL12,
+    FusionPlantTL15,
+    JumpDrive1,
+    JumpDrive2,
+    JumpDrive3,
+    JumpDrive4,
+    JumpDrive5,
+    JumpDrive6,
+    JumpFuel,
+    MDrive0,
+    MDrive1,
+    MDrive2,
+    MDrive3,
+    MDrive4,
+    MDrive5,
+    MDrive6,
+    MDrive7,
+    MDrive8,
+    MDrive9,
+    MDrive10,
+    MDrive11,
+    OperationFuel,
+)
+from .habitation import Staterooms
 from .parts import ShipPart
-from .sensors import CivilianGradeSensors
-from .weapons import FixedFirmpoint
+from .sensors import CivilianGradeSensors, MilitaryGradeSensors
+from .weapons import DoubleTurret, FixedFirmpoint
 
 
 class Streamlined(Enum):
@@ -196,6 +237,45 @@ HullStealth = Annotated[
     Field(discriminator='description'),
 ]
 
+ShipMDrive = Annotated[
+    MDrive0
+    | MDrive1
+    | MDrive2
+    | MDrive3
+    | MDrive4
+    | MDrive5
+    | MDrive6
+    | MDrive7
+    | MDrive8
+    | MDrive9
+    | MDrive10
+    | MDrive11,
+    Field(discriminator='rating'),
+]
+
+ShipJumpDrive = Annotated[
+    JumpDrive1 | JumpDrive2 | JumpDrive3 | JumpDrive4 | JumpDrive5 | JumpDrive6,
+    Field(discriminator='rating'),
+]
+
+ShipComputer = Annotated[
+    Computer5
+    | Computer10
+    | Computer15
+    | Computer20
+    | Computer25
+    | Computer30
+    | Computer35
+    | Core40
+    | Core50
+    | Core60
+    | Core70
+    | Core80
+    | Core90
+    | Core100,
+    Field(discriminator='description'),
+]
+
 
 class Hull(BaseModel):
     configuration: HullConfiguration
@@ -218,12 +298,18 @@ class Hull(BaseModel):
 class Ship(ShipBase):
     design_type: ShipDesignType = ShipDesignType.CUSTOM
     hull: Hull
-    m_drive: MDrive | None = None
+    m_drive: ShipMDrive | None = None
+    jump_drive: ShipJumpDrive | None = None
     fusion_plant: FusionPlantTL8 | FusionPlantTL12 | FusionPlantTL15 | None = None
+    jump_fuel: JumpFuel | None = None
     operation_fuel: OperationFuel | None = None
+    fuel_processor: FuelProcessor | None = None
+    bridge: Bridge | None = None
     cockpit: Cockpit | None = None
-    computer: Computer | None = None
-    sensors: CivilianGradeSensors | None = None
+    computer: ShipComputer | None = None
+    sensors: CivilianGradeSensors | MilitaryGradeSensors | None = None
+    staterooms: Staterooms | None = None
+    turrets: list[DoubleTurret] = Field(default_factory=list)
     fixed_firmpoints: list[FixedFirmpoint] = Field(default_factory=list)
 
     @property
@@ -242,6 +328,8 @@ class Ship(ShipBase):
 
     @property
     def basic_power_load(self) -> float:
+        if self.bridge is not None:
+            return 20.0
         if self.hull.configuration.non_gravity:
             return 0.5
         return 1.0
@@ -263,12 +351,28 @@ class Ship(ShipBase):
         return self.sensors.power
 
     @property
+    def jump_power_load(self) -> float:
+        if self.jump_drive is None:
+            return 0.0
+        return self.jump_drive.power
+
+    @property
+    def fuel_power_load(self) -> float:
+        if self.fuel_processor is None:
+            return 0.0
+        return self.fuel_processor.power
+
+    @property
     def weapon_power_load(self) -> float:
-        return sum(part.power for part in self.fixed_firmpoints)
+        return sum(part.power for part in self.fixed_firmpoints) + sum(part.power for part in self.turrets)
+
+    @property
+    def non_drive_power_load(self) -> float:
+        return sum(part.power for part in self._all_parts() if part not in {self.m_drive, self.jump_drive})
 
     @property
     def total_power_load(self) -> float:
-        return self.basic_power_load + sum(part.power for part in self._all_parts())
+        return self.basic_power_load + max(self.maneuver_power_load, self.jump_power_load) + self.non_drive_power_load
 
     @property
     def battle_power_load(self) -> float:
@@ -292,6 +396,12 @@ class Ship(ShipBase):
 
     @property
     def crew_roles(self) -> list[CrewRole]:
+        if self.displacement <= 100 and self.jump_drive is not None:
+            return [
+                CrewRole(role='PILOT', count=1, monthly_salary=6_000),
+                CrewRole(role='ASTROGATOR', count=1, monthly_salary=5_000),
+                CrewRole(role='ENGINEER', count=1, monthly_salary=4_000),
+            ]
         # Small craft without jump drives typically operate with a single pilot.
         if self.displacement <= 100:
             return [CrewRole(role='PILOT', count=1, monthly_salary=6_000)]
@@ -317,6 +427,8 @@ class Ship(ShipBase):
     def life_support_cost(self) -> float:
         if self.cockpit is not None:
             return 0.0
+        if self.staterooms is not None:
+            return self.staterooms.life_support_cost
         return 0.0
 
     @property
@@ -359,14 +471,20 @@ class Ship(ShipBase):
         parts = list(self.hull._all_parts())
         for part in (
             self.m_drive,
+            self.jump_drive,
             self.fusion_plant,
+            self.jump_fuel,
             self.operation_fuel,
+            self.fuel_processor,
+            self.bridge,
             self.cockpit,
             self.computer,
             self.sensors,
+            self.staterooms,
         ):
             if part is not None:
                 parts.append(part)
+        parts.extend(self.turrets)
         parts.extend(self.fixed_firmpoints)
         return parts
 
