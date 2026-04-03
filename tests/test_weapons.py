@@ -1,15 +1,17 @@
-import pytest
 from pydantic import ValidationError
-from ceres.weapons import PulseLaser, FixedFirmpoint
+import pytest
+
+from ceres.base import ShipBase
+from ceres.weapons import FixedFirmpoint, PulseLaser
 
 
-class DummyOwner:
+class DummyOwner(ShipBase):
     def __init__(self, tl, displacement):
-        self.tl = tl
-        self.displacement = displacement
+        super().__init__(tl=tl, displacement=displacement)
 
 
 # --- PulseLaser ---
+
 
 def test_pulse_laser_base_cost():
     w = PulseLaser()
@@ -45,6 +47,7 @@ def test_pulse_laser_high_technology_cost_modifier():
 
 
 # --- FixedFirmpoint ---
+
 
 def test_fixed_firmpoint_base_cost():
     fp = FixedFirmpoint(weapon=PulseLaser())
@@ -82,9 +85,9 @@ def test_fixed_firmpoint_energy_efficient_power():
 
 def test_fixed_firmpoint_cannot_set_cost():
     with pytest.raises(ValidationError):
-        FixedFirmpoint(weapon=PulseLaser(), cost=999)
+        FixedFirmpoint.model_validate({'weapon': {}, 'cost': 999})
 
 
 def test_fixed_firmpoint_cannot_set_tons():
     with pytest.raises(ValidationError):
-        FixedFirmpoint(weapon=PulseLaser(), tons=999)
+        FixedFirmpoint.model_validate({'weapon': {}, 'tons': 999})

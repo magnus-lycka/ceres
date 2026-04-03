@@ -1,6 +1,6 @@
 from typing import ClassVar
 
-from .parts import ShipPart, Power
+from .parts import Power, ShipPart
 
 
 class Armour(ShipPart):
@@ -24,7 +24,7 @@ class Armour(ShipPart):
         self.check_protection_limit()
         displacement = self.owner.displacement
         if displacement < 5:
-            raise ValueError("Displacement must be at least 5 tons for armour.")
+            raise ValueError('Displacement must be at least 5 tons for armour.')
         if displacement < 16:
             size_factor = 4
         elif displacement < 26:
@@ -34,13 +34,7 @@ class Armour(ShipPart):
         else:
             size_factor = 1
         armour_volume_modifier = self.owner.armour_volume_modifier
-        return (
-            displacement
-            * self._tonnage_consumed
-            * self.protection
-            * size_factor
-            * armour_volume_modifier
-        )
+        return displacement * self._tonnage_consumed * self.protection * size_factor * armour_volume_modifier
 
 
 class TitaniumSteelArmour(Armour):
@@ -52,12 +46,12 @@ class TitaniumSteelArmour(Armour):
     def check_protection_limit(self):
         if self.tl:
             if self.owner.tl < self.tl:
-                raise ValueError("Ship TL is below stated part TL")
+                raise ValueError('Ship TL is below stated part TL')
             tl = self.tl
         else:
             tl = self.owner.tl
         if tl < self._min_tl:
-            raise ValueError(f"Titanium Steel Armour needs TL {self._min_tl}")
+            raise ValueError(f'Titanium Steel Armour needs TL {self._min_tl}')
         if self.protection > tl:
             raise ValueError("Protection can't be more than TL")
         if self.protection > 9:
@@ -73,12 +67,12 @@ class CrystalironArmour(Armour):
     def check_protection_limit(self):
         if self.tl:
             if self.owner.tl < self.tl:
-                raise ValueError("Ship TL is below stated part TL")
+                raise ValueError('Ship TL is below stated part TL')
             tl = self.tl
         else:
             tl = self.owner.tl
         if tl < self._min_tl:
-            raise ValueError(f"Crystaliron Armour needs TL {self._min_tl}")
+            raise ValueError(f'Crystaliron Armour needs TL {self._min_tl}')
         if self.protection > tl:
             raise ValueError("Protection can't be more than TL")
         if self.protection > 13:
@@ -94,12 +88,12 @@ class BondedSuperdenseArmour(Armour):
     def check_protection_limit(self):
         if self.tl:
             if self.owner.tl < self.tl:
-                raise ValueError("Ship TL is below stated part TL")
+                raise ValueError('Ship TL is below stated part TL')
             tl = self.tl
         else:
             tl = self.owner.tl
         if tl < self._min_tl:
-            raise ValueError(f"Bonded Superdense Armour needs TL {self._min_tl}")
+            raise ValueError(f'Bonded Superdense Armour needs TL {self._min_tl}')
         if self.protection > tl:
             raise ValueError("Protection can't be more than TL")
 
@@ -113,11 +107,11 @@ class MolecularBondedArmour(Armour):
     def check_protection_limit(self):
         if self.tl:
             if self.owner.tl < self.tl:
-                raise ValueError("Ship TL is below stated part TL")
+                raise ValueError('Ship TL is below stated part TL')
             tl = self.tl
         else:
             tl = self.owner.tl
         if tl < self._min_tl:
-            raise ValueError(f"Molecular Bonded Armour needs TL {self._min_tl}")
+            raise ValueError(f'Molecular Bonded Armour needs TL {self._min_tl}')
         if self.protection > tl + 4:
             raise ValueError("Protection can't be more than TL+4")

@@ -1,7 +1,6 @@
 from typing import ClassVar
 
-
-from .parts import ShipPart, Power
+from .parts import Power, ShipPart
 
 _COMPUTER_COST: dict[int, int] = {
     5: 30_000,
@@ -13,7 +12,13 @@ _COMPUTER_COST: dict[int, int] = {
     35: 30_000_000,
 }
 _COMPUTER_MIN_TL: dict[int, int] = {
-    5: 7, 10: 9, 15: 11, 20: 12, 25: 13, 30: 14, 35: 15,
+    5: 7,
+    10: 9,
+    15: 11,
+    20: 12,
+    25: 13,
+    30: 14,
+    35: 15,
 }
 
 

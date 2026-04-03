@@ -1,20 +1,20 @@
-from enum import Enum
+from enum import Enum, StrEnum
 from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field
 
 from .armour import (
     Armour,
-    TitaniumSteelArmour,
-    CrystalironArmour,
     BondedSuperdenseArmour,
+    CrystalironArmour,
     MolecularBondedArmour,
+    TitaniumSteelArmour,
 )
 from .base import ShipBase
 from .bridge import Cockpit
 from .computer import Computer
-from .drives import MDrive, FusionPlantTL8, FusionPlantTL12, FusionPlantTL15, OperationFuel
-from .parts import ShipPart, Power
+from .drives import FusionPlantTL8, FusionPlantTL12, FusionPlantTL15, MDrive, OperationFuel
+from .parts import Power, ShipPart
 from .sensors import CivilianGradeSensors
 from .weapons import FixedFirmpoint
 
@@ -25,10 +25,10 @@ class Streamlined(Enum):
     NO = 3
 
 
-class ShipDesignType(str, Enum):
-    STANDARD = "STANDARD"
-    CUSTOM = "CUSTOM"
-    NEW = "NEW"
+class ShipDesignType(StrEnum):
+    STANDARD = 'STANDARD'
+    CUSTOM = 'CUSTOM'
+    NEW = 'NEW'
 
     @property
     def cost_multiplier(self) -> float:
@@ -86,15 +86,21 @@ class HullConfiguration(BaseModel):
 standard_hull = HullConfiguration(streamlined=Streamlined.PARTIAL)
 
 streamlined_hull = HullConfiguration(
-    streamlined=Streamlined.YES, armour_volume_modifier=1.2, hull_cost_modifier=1.2
+    streamlined=Streamlined.YES,
+    armour_volume_modifier=1.2,
+    hull_cost_modifier=1.2,
 )
 
 sphere = HullConfiguration(
-    streamlined=Streamlined.PARTIAL, armour_volume_modifier=0.9, hull_cost_modifier=1.1
+    streamlined=Streamlined.PARTIAL,
+    armour_volume_modifier=0.9,
+    hull_cost_modifier=1.1,
 )
 
 close_structure = HullConfiguration(
-    streamlined=Streamlined.PARTIAL, armour_volume_modifier=1.5, hull_cost_modifier=0.8
+    streamlined=Streamlined.PARTIAL,
+    armour_volume_modifier=1.5,
+    hull_cost_modifier=0.8,
 )
 
 dispersed_structure = HullConfiguration(
@@ -125,7 +131,7 @@ class Stealth(ShipPart):
     _explicit_cost: ClassVar[bool] = False
     _explicit_tons: ClassVar[bool] = False
     minimum_tl: ClassVar[int] = 0
-    description: ClassVar[str] = ""
+    description: ClassVar[str] = ''
     cost_per_ton: ClassVar[int] = 0
     tonnage: ClassVar[float] = 0
     sensors_dm: ClassVar[int] = 0
@@ -143,7 +149,7 @@ class NoStealth(Stealth):
 
 
 class BasicStealth(Stealth):
-    description = "Basic Stealth"
+    description = 'Basic Stealth'
     minimum_tl = 7
     cost_per_ton = 40_000
     sensors_dm = -2
@@ -151,21 +157,21 @@ class BasicStealth(Stealth):
 
 
 class ImprovedStealth(Stealth):
-    description = "Improved Stealth"
+    description = 'Improved Stealth'
     minimum_tl = 10
     cost_per_ton = 100_000
     sensors_dm = -2
 
 
 class EnhancedStealth(Stealth):
-    description = "Enhanced Stealth"
+    description = 'Enhanced Stealth'
     minimum_tl = 12
     cost_per_ton = 500_000
     sensors_dm = -4
 
 
 class AdvancedStealth(Stealth):
-    description = "Advanced Stealth"
+    description = 'Advanced Stealth'
     minimum_tl = 14
     cost_per_ton = 1_000_000
     sensors_dm = -6

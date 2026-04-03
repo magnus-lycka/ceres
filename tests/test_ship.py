@@ -1,12 +1,14 @@
-import pytest
 from pydantic import ValidationError
+import pytest
 
 from ceres import armour, ship
 
 
 def test_ship_initial():
     my_ship = ship.Ship(
-        tl=15, displacement=300, hull=ship.Hull(configuration=ship.sphere)
+        tl=15,
+        displacement=300,
+        hull=ship.Hull(configuration=ship.sphere),
     )
     assert my_ship.tl == 15
     assert my_ship.displacement == 300
@@ -31,7 +33,9 @@ def test_ship_needs_tech_level():
 
 def test_ship_initial_bulky():
     my_ship = ship.Ship(
-        tl=15, displacement=100, hull=ship.Hull(configuration=ship.buffered_planetoid)
+        tl=15,
+        displacement=100,
+        hull=ship.Hull(configuration=ship.buffered_planetoid),
     )
     assert my_ship.cargo == 65
 

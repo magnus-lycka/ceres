@@ -3,12 +3,12 @@ from typing import ClassVar
 import pytest
 
 from ceres import parts
+from ceres.base import ShipBase
 
 
-class DummyShip:
-    def __init__(self, tl=14):
-        self.tl = tl
-        self.displacement = 100
+class DummyShip(ShipBase):
+    def __init__(self, tl=14, displacement=100):
+        super().__init__(tl=tl, displacement=displacement)
 
 
 class FixedPart(parts.ShipPart):
@@ -20,7 +20,7 @@ class HighTlPart(parts.ShipPart):
 
 
 def test_base_part():
-    part = FixedPart(cost=1, power=3.14, tons=4.44)
+    part = FixedPart.model_validate({'cost': 1, 'power': 3.14, 'tons': 4.44})
     owner = DummyShip()
     part.bind(owner)
     assert part.cost == 1
@@ -33,4 +33,4 @@ def test_base_part():
 
 def test_part_rejects_ship_below_minimum_tl():
     with pytest.raises(ValueError):
-        HighTlPart(cost=1, power=0, tons=0).bind(DummyShip(tl=14))
+        HighTlPart.model_validate({'cost': 1, 'power': 0, 'tons': 0}).bind(DummyShip(tl=14))

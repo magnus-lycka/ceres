@@ -1,24 +1,28 @@
-import pytest
 from pydantic import ValidationError
+import pytest
 
 from ceres import armour
+from ceres.base import ShipBase
 
 
-class DummyOwner:
-    def __init__(self, tl, displacement, armour_volume_modifier=1):
-        self.tl = tl
-        self.displacement = displacement
-        self.armour_volume_modifier = armour_volume_modifier
+class DummyOwner(ShipBase):
+    def __init__(self, tl, displacement, armour_volume_modifier=1.0):
+        super().__init__(tl=tl, displacement=displacement)
+        self._armour_volume_modifier = armour_volume_modifier
+
+    @property
+    def armour_volume_modifier(self) -> float:
+        return self._armour_volume_modifier
 
 
 def test_cannot_set_cost_for_armour():
     with pytest.raises(ValidationError):
-        armour.Armour(tl=7, protection=2, cost=5)
+        armour.TitaniumSteelArmour.model_validate({'tl': 7, 'protection': 2, 'cost': 5})
 
 
 def test_cannot_set_tons_for_armour():
     with pytest.raises(ValidationError):
-        armour.Armour(tl=7, protection=2, tons=500)
+        armour.TitaniumSteelArmour.model_validate({'tl': 7, 'protection': 2, 'tons': 500})
 
 
 def test_titanium_steel_armour_too_low_tl():

@@ -1,21 +1,23 @@
 import pytest
+
 from ceres import ship
+from ceres.base import ShipBase
 from ceres.drives import (
-    MDrive,
     FusionPlantTL8,
     FusionPlantTL12,
     FusionPlantTL15,
+    MDrive,
     OperationFuel,
 )
 
 
-class DummyOwner:
+class DummyOwner(ShipBase):
     def __init__(self, tl, displacement):
-        self.tl = tl
-        self.displacement = displacement
+        super().__init__(tl=tl, displacement=displacement)
 
 
 # --- MDrive ---
+
 
 def test_mdrive_standard_tons():
     d = MDrive(rating=6)
@@ -59,17 +61,20 @@ def test_mdrive_tl_too_low():
 
 def test_mdrive_cannot_set_cost():
     from pydantic import ValidationError
+
     with pytest.raises(ValidationError):
-        MDrive(rating=6, cost=999)
+        MDrive.model_validate({'rating': 6, 'cost': 999})
 
 
 def test_mdrive_cannot_set_tons():
     from pydantic import ValidationError
+
     with pytest.raises(ValidationError):
-        MDrive(rating=6, tons=999)
+        MDrive.model_validate({'rating': 6, 'tons': 999})
 
 
 # --- FusionPlant ---
+
 
 def test_fusion_plant_base_tons():
     p = FusionPlantTL12(output=8)
@@ -112,8 +117,9 @@ def test_fusion_plant_budget_increased_size_cost():
 
 def test_fusion_plant_cannot_set_tons():
     from pydantic import ValidationError
+
     with pytest.raises(ValidationError):
-        FusionPlantTL12(output=8, tons=999)
+        FusionPlantTL12.model_validate({'output': 8, 'tons': 999})
 
 
 def test_fusion_plant_tl8_variant():
@@ -140,6 +146,7 @@ def test_fusion_plant_rejects_ship_below_minimum_tl():
 
 
 # --- OperationFuel ---
+
 
 def _make_ship_with_plant(**kwargs):
     fuel = OperationFuel(weeks=1)
@@ -172,7 +179,7 @@ def test_operation_fuel_power_zero():
 
 
 def test_operation_fuel_requires_plant():
-    with pytest.raises(ValueError, match="FusionPlant"):
+    with pytest.raises(ValueError, match='FusionPlant'):
         ship.Ship(
             tl=12,
             displacement=6,

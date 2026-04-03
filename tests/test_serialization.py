@@ -1,5 +1,7 @@
 """Roundtrip serialization tests using Pydantic's native model_dump_json / model_validate_json."""
+
 import json
+
 import pytest
 
 from ceres import armour, ship
@@ -7,9 +9,8 @@ from ceres.bridge import Cockpit
 from ceres.computer import Computer
 from ceres.drives import FusionPlantTL12, MDrive, OperationFuel
 from ceres.sensors import CivilianGradeSensors
-from ceres.ship import BasicStealth, Ship, Hull
+from ceres.ship import BasicStealth, Hull, Ship
 from ceres.weapons import FixedFirmpoint, PulseLaser
-
 
 # Minimal ship for structural tests
 bare = Ship(tl=12, displacement=6, hull=Hull(configuration=ship.standard_hull))
@@ -37,54 +38,56 @@ ultralight = Ship(
 # JSON output is valid and contains expected structure
 # ---------------------------------------------------------------------------
 
+
 def test_dump_produces_valid_json():
     assert json.loads(ultralight.model_dump_json())
 
 
 def test_dump_bare_ship_contains_tl_and_displacement():
     data = json.loads(bare.model_dump_json())
-    assert data["tl"] == 12
-    assert data["displacement"] == 6
+    assert data['tl'] == 12
+    assert data['displacement'] == 6
 
 
 def test_dump_armour_in_hull():
     data = json.loads(ultralight.model_dump_json())
-    assert data["hull"]["crystaliron_armour"]["protection"] == 6
-    assert data["hull"]["crystaliron_armour"]["tl"] == 12
+    assert data['hull']['crystaliron_armour']['protection'] == 6
+    assert data['hull']['crystaliron_armour']['tl'] == 12
 
 
 def test_dump_no_armour_is_null():
     data = json.loads(bare.model_dump_json())
-    assert data["hull"].get("crystaliron_armour") is None
+    assert data['hull'].get('crystaliron_armour') is None
 
 
 def test_dump_stealth_in_hull():
     data = json.loads(ultralight.model_dump_json())
-    assert data["hull"]["basic_stealth"] is not None
+    assert data['hull']['basic_stealth'] is not None
 
 
 def test_dump_no_stealth_is_null():
     data = json.loads(bare.model_dump_json())
-    assert data["hull"].get("basic_stealth") is None
+    assert data['hull'].get('basic_stealth') is None
 
 
 def test_dump_m_drive_present():
     data = json.loads(ultralight.model_dump_json())
-    assert data["m_drive"]["rating"] == 6
-    assert data["m_drive"]["budget"] is True
-    assert data["m_drive"]["increased_size"] is True
+    assert data['m_drive']['rating'] == 6
+    assert data['m_drive']['budget'] is True
+    assert data['m_drive']['increased_size'] is True
 
 
 def test_dump_weapon_in_fixed_firmpoints():
     data = json.loads(ultralight.model_dump_json())
-    fp = data["fixed_firmpoints"][0]
-    assert fp["weapon"]["very_high_yield"] is True
-    assert fp["weapon"]["energy_efficient"] is True
+    fp = data['fixed_firmpoints'][0]
+    assert fp['weapon']['very_high_yield'] is True
+    assert fp['weapon']['energy_efficient'] is True
 
 
 # ---------------------------------------------------------------------------
 # Roundtrip: model_dump_json → model_validate_json
 # ---------------------------------------------------------------------------
+
 
 def _roundtrip(s: Ship) -> Ship:
     return Ship.model_validate_json(s.model_dump_json())
@@ -105,6 +108,7 @@ def test_roundtrip_armour_type_and_protection():
     loaded = _roundtrip(ultralight)
     orig = ultralight.hull.crystaliron_armour
     rt = loaded.hull.crystaliron_armour
+    assert orig is not None
     assert rt is not None
     assert type(rt) is type(orig)
     assert rt.protection == orig.protection
@@ -128,6 +132,8 @@ def test_roundtrip_no_stealth():
 
 def test_roundtrip_m_drive_attributes():
     loaded = _roundtrip(ultralight)
+    assert loaded.m_drive is not None
+    assert ultralight.m_drive is not None
     assert loaded.m_drive.rating == ultralight.m_drive.rating
     assert loaded.m_drive.budget == ultralight.m_drive.budget
     assert loaded.m_drive.increased_size == ultralight.m_drive.increased_size
@@ -135,6 +141,8 @@ def test_roundtrip_m_drive_attributes():
 
 def test_roundtrip_fusion_plant_attributes():
     loaded = _roundtrip(ultralight)
+    assert loaded.fusion_plant is not None
+    assert ultralight.fusion_plant is not None
     assert loaded.fusion_plant.fusion_tl == ultralight.fusion_plant.fusion_tl
     assert loaded.fusion_plant.output == ultralight.fusion_plant.output
     assert loaded.fusion_plant.budget == ultralight.fusion_plant.budget
@@ -142,11 +150,15 @@ def test_roundtrip_fusion_plant_attributes():
 
 def test_roundtrip_cockpit():
     loaded = _roundtrip(ultralight)
+    assert loaded.cockpit is not None
+    assert ultralight.cockpit is not None
     assert loaded.cockpit.holographic == ultralight.cockpit.holographic
 
 
 def test_roundtrip_computer():
     loaded = _roundtrip(ultralight)
+    assert loaded.computer is not None
+    assert ultralight.computer is not None
     assert loaded.computer.rating == ultralight.computer.rating
 
 

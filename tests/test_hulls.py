@@ -34,6 +34,6 @@ def test_close_hull():
 
 
 def test_light_streamlined_hull():
-    hull = ship.streamlined_hull.model_copy(update={"light": True})
+    hull = ship.streamlined_hull.model_copy(update={'light': True})
     assert hull.cost(6) == 270_000
     assert hull.points(100) == 36

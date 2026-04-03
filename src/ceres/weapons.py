@@ -13,7 +13,7 @@ _FIXED_MOUNT_COST = 100_000
 class PulseLaser(BaseModel):
     """Pulse laser weapon (TL9, 2D damage, Long range)."""
 
-    model_config = {"frozen": True}
+    model_config = {'frozen': True}
 
     very_high_yield: bool = False  # 2 advantages
     energy_efficient: bool = False  # 1 advantage

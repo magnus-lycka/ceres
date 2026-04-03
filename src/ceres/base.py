@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 class ShipBase(BaseModel):
     """Minimal ship interface that ShipPart subclasses depend on."""
+
     tl: int
     displacement: int
 

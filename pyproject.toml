@@ -6,8 +6,6 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "pydantic>=2.12.5",
-    "pymupdf-layout>=1.27.1",
-    "pymupdf4llm>=0.3.3",
 ]
 [build-system]
 requires = ["uv_build>=0.9.26,<0.10.0"]
@@ -15,10 +13,26 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "deptry>=0.25.1",
     "pytest>=9.0.2",
     "pytest-cov>=7.0.0",
 ]
 
-[[tool.ty.overrides]]
-include = ["tests/", "examples/"]
-rules = {invalid-argument-type = "ignore", unresolved-attribute = "ignore"}
+[tool.ruff]
+line-length = 120
+target-version = "py314"
+fix = true
+
+[tool.ruff.format]
+quote-style = "single"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "RUF005"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["ceres"]
+force-sort-within-sections = true
+combine-as-imports = true
+
+[tool.deptry]
+exclude = ["tests", ".venv"]

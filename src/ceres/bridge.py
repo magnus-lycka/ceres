@@ -1,6 +1,6 @@
 from typing import ClassVar
 
-from .parts import ShipPart, Power
+from .parts import Power, ShipPart
 
 
 class Cockpit(ShipPart):

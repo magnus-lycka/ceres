@@ -1,12 +1,13 @@
-import pytest
 from pydantic import ValidationError
+import pytest
+
+from ceres.base import ShipBase
 from ceres.sensors import CivilianGradeSensors
 
 
-class DummyOwner:
+class DummyOwner(ShipBase):
     def __init__(self, tl, displacement):
-        self.tl = tl
-        self.displacement = displacement
+        super().__init__(tl=tl, displacement=displacement)
 
 
 def test_civilian_grade_tons():
@@ -32,12 +33,12 @@ def test_civilian_grade_power():
 
 def test_civilian_grade_cannot_set_tons():
     with pytest.raises(ValidationError):
-        CivilianGradeSensors(tons=999)
+        CivilianGradeSensors.model_validate({'tons': 999})
 
 
 def test_civilian_grade_cannot_set_cost():
     with pytest.raises(ValidationError):
-        CivilianGradeSensors(cost=999)
+        CivilianGradeSensors.model_validate({'cost': 999})
 
 
 def test_civilian_grade_tl_too_low():

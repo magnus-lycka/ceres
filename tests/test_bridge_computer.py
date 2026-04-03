@@ -1,16 +1,18 @@
-import pytest
 from pydantic import ValidationError
+import pytest
+
+from ceres.base import ShipBase
 from ceres.bridge import Cockpit
 from ceres.computer import Computer
 
 
-class DummyOwner:
+class DummyOwner(ShipBase):
     def __init__(self, tl, displacement):
-        self.tl = tl
-        self.displacement = displacement
+        super().__init__(tl=tl, displacement=displacement)
 
 
 # --- Cockpit ---
+
 
 def test_cockpit_tons():
     c = Cockpit()
@@ -38,15 +40,16 @@ def test_cockpit_power_zero():
 
 def test_cockpit_cannot_set_tons():
     with pytest.raises(ValidationError):
-        Cockpit(tons=999)
+        Cockpit.model_validate({'tons': 999})
 
 
 def test_cockpit_cannot_set_cost():
     with pytest.raises(ValidationError):
-        Cockpit(cost=999)
+        Cockpit.model_validate({'cost': 999})
 
 
 # --- Computer ---
+
 
 def test_computer_5_cost():
     c = Computer(rating=5)
@@ -90,4 +93,4 @@ def test_computer_5_min_tl():
 
 def test_computer_cannot_set_cost():
     with pytest.raises(ValidationError):
-        Computer(rating=5, cost=999)
+        Computer.model_validate({'rating': 5, 'cost': 999})
