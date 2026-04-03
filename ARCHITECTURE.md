@@ -52,7 +52,18 @@ Construction happens in two phases:
 (initially `None`) and a public `owner` property that raises `RuntimeError` if
 accessed before binding. This gives clean type narrowing without scattered asserts.
 
-### Derived vs Explicit Fields
+### Derived data in madel json
+
+**TODO:**
+
+Some of the data in the model, such as cost, power and displacement need for
+parts is calculated by the model. It's still included in the json, since the
+the json is used to create textual representations etc. Such data is simply
+recalculated after import (on model validation?), regardless of json content.
+
+What's written below is a misunderstanding of requirements, and needs to be
+fixed/removed. We shouldn't have any _explicit_cost: ClassVar[bool] = False etc.
+
 
 `ShipPart` subclasses control which fields are user-supplied vs computed using
 class variables:

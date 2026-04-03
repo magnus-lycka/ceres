@@ -18,11 +18,15 @@ class TechLevel(BaseModel):
         return self._owner
 
     def resolve(self) -> int:
+        owner_tl = None
+        if self._owner is not None:
+            owner_tl = self._owner.owner.tl
+
         if self.value is not None:
-            if self._owner is not None and self._owner.ship_tl < self.value:
+            if owner_tl is not None and owner_tl < self.value:
                 raise ValueError("Part TL can't be higher than Ship TL.")
             return self.value
-        return int(self._owner.ship_tl)  # type: ignore[union-attr]
+        return int(owner_tl)
 
     def _coerce(self, other: int | TechLevel) -> int:
         return int(other) if isinstance(other, TechLevel) else other
@@ -87,10 +91,6 @@ class ShipBase(BaseModel):
         if isinstance(v, dict):
             return TechLevel(**v)
         raise TypeError(f"Expected TechLevel or int, got {type(v)!r}")
-
-    @property
-    def ship_tl(self) -> TechLevel:
-        return self.tl
 
     @property
     def armour_volume_modifier(self) -> float:

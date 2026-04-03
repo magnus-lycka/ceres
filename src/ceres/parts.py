@@ -1,10 +1,10 @@
-from typing import Any, Union, ClassVar
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field, field_validator, model_validator, PrivateAttr
 
 from .base import ShipBase, TechLevel
 
-Number = Union[int, float]
+Number = int | float
 
 
 class FloatModel(BaseModel):
@@ -200,7 +200,3 @@ class ShipPart(BaseModel):
         if self._owner is None:
             raise RuntimeError(f"{self.__class__.__name__} not bound to a Ship")
         return self._owner
-
-    @property
-    def ship_tl(self):
-        return self.owner.tl
