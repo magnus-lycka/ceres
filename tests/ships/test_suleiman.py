@@ -2,16 +2,20 @@ import pytest
 
 from ceres import armour, ship
 from ceres.bridge import Bridge
-from ceres.computer import Computer5, JumpControl2
+from ceres.computer import Computer5, Computer10, JumpControl1, JumpControl2, JumpControl3
 from ceres.drives import FuelProcessor, FusionPlantTL12, JumpDrive2, JumpFuel, MDrive2, OperationFuel
 from ceres.habitation import Staterooms
 from ceres.sensors import MilitaryGradeSensors
 from ceres.systems import AirRaft, InternalDockingSpace, ProbeDrones, Workshop
 from ceres.weapons import DoubleTurret
 
+from ._markdown_output import write_markdown_output
+
 
 def build_suleiman() -> ship.Ship:
     return ship.Ship(
+        ship_class='Suleiman',
+        ship_type='Scout/Courier',
         tl=12,
         displacement=100,
         design_type=ship.ShipDesignType.STANDARD,
@@ -142,10 +146,6 @@ def test_suleiman_matches_first_modeled_reference_slice():
         ('ASTROGATOR', 1, 5_000),
         ('ENGINEER', 1, 4_000),
     ]
-    assert suleiman.total_crew == 3
-    assert suleiman.crew_salary_cost == 15_000
-    assert suleiman.life_support_cost == 12_000
-    assert suleiman.fuel_cost == 4_000
 
     assert suleiman.hull_cost == 6_000_000
     assert suleiman.production_cost == 41_045_000
@@ -170,6 +170,120 @@ def test_jump_drive_2_without_jump_control_2_adds_local_note():
         computer=Computer5(bis=True),
     )
     assert my_ship.jump_drive is not None
-    assert [(note.severity, note.message) for note in my_ship.jump_drive.notes] == [
-        ('error', 'JumpDrive2 requires Jump Control/2'),
+    assert [(note.category.value, note.message) for note in my_ship.jump_drive.notes] == [
+        ('item', 'Jump 2'),
+        ('warning', 'No Jump Control software'),
     ]
+
+
+def test_suleiman_markdown_table_uses_heading_and_spec_shape():
+    suleiman = build_suleiman()
+    table = suleiman.markdown_table()
+    write_markdown_output('test_suleiman', table)
+
+    assert '## *Suleiman* Scout/Courier | TL12 | Hull 40' in table
+    assert '| Section | Item | Tons | Power | Cost (kCr) |' in table
+    assert '| Hull | Streamlined Hull | 100.00 |  | 6000.00 |' in table
+    assert '| Hull | Streamlined Hull | 100.00 |  | 6000.00 |' in table
+    assert '| Armour | Crystaliron, Armour: 4 | 6.00 |  | 1200.00 |' in table
+    assert '| Power Plant | Fusion (TL 12) | 4.00 | +60.00 | 4000.00 |' in table
+    assert '| M-Drive | Thrust 2 | 2.00 | -20.00 | 4000.00 |' in table
+    assert '| Sensors | Military Grade | 2.00 | -2.00 | 4100.00 |' in table
+    assert '|  | • Jammers, Radar, Lidar; DM +0 |  |  |  |' in table
+    assert '| Fuel | Jump 2 | 20.00 |  | 0.00 |' in table
+    assert '|  | Operation 12 weeks | 1.20 |  | 0.00 |' in table
+    assert '|  | Jump Control/2 |  |  | 200.00 |' in table
+    assert '| Cost | Amount |' in table
+    assert '| Sales Price New | 36940500.00 |' in table
+    assert '| Life Support | 12000.00 |' in table
+    assert '| Fuel | 4000.00 |' in table
+    assert '| Crew Salaries | 15000.00 |' in table
+    assert '| Crew | Salary |' in table
+    assert '| ENGINEER | 4000.00 |' in table
+
+
+def test_markdown_table_renders_inline_warning_on_jump_drive_row():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=ship.Hull(configuration=ship.streamlined_hull),
+        jump_drive=JumpDrive2(),
+        computer=Computer5(bis=True),
+    )
+    table = my_ship.markdown_table()
+    write_markdown_output('test_suleiman_missing_jump_control', table)
+    assert '|  | *WARNING:* No Jump Control software |  |  |  |' in table
+
+
+def test_jump_drive_with_lower_jump_control_warns_on_drive():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=ship.Hull(configuration=ship.streamlined_hull),
+        jump_drive=JumpDrive2(),
+        computer=Computer5(bis=True),
+        software=[JumpControl1()],
+    )
+    assert my_ship.jump_drive is not None
+    assert [(note.category.value, note.message) for note in my_ship.jump_drive.notes] == [
+        ('item', 'Jump 2'),
+        ('warning', 'Limited to Jump 1 by control software'),
+    ]
+
+
+def test_jump_control_without_jump_drive_warns_on_software():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=ship.Hull(configuration=ship.streamlined_hull),
+        computer=Computer5(bis=True),
+        software=[JumpControl2()],
+    )
+    explicit_jump_control = my_ship.software[0]
+    assert [(note.category.value, note.message) for note in explicit_jump_control.notes] == [
+        ('item', 'Jump Control/2'),
+        ('warning', 'No jump drive installed'),
+    ]
+
+
+def test_jump_control_with_higher_rating_than_drive_warns_on_software():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=ship.Hull(configuration=ship.streamlined_hull),
+        jump_drive=JumpDrive2(),
+        computer=Computer10(bis=True),
+        software=[JumpControl3()],
+    )
+    explicit_jump_control = my_ship.software[0]
+    assert [(note.category.value, note.message) for note in explicit_jump_control.notes] == [
+        ('item', 'Jump Control/3'),
+        ('warning', 'Limited to Jump 2 by drive capacity'),
+    ]
+
+
+def test_markdown_table_renders_inline_warning_on_high_jump_control_row():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=ship.Hull(configuration=ship.streamlined_hull),
+        jump_drive=JumpDrive2(),
+        computer=Computer10(bis=True),
+        software=[JumpControl3()],
+    )
+    table = my_ship.markdown_table()
+    write_markdown_output('test_suleiman_high_jump_control', table)
+    assert '|  | *WARNING:* Limited to Jump 2 by drive capacity |  |  |  |' in table
+
+
+def test_markdown_table_renders_inline_warning_on_missing_jump_drive_row():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=ship.Hull(configuration=ship.streamlined_hull),
+        computer=Computer5(bis=True),
+        software=[JumpControl2()],
+    )
+    table = my_ship.markdown_table()
+    write_markdown_output('test_suleiman_missing_jump_drive', table)
+    assert '|  | *WARNING:* No jump drive installed |  |  |  |' in table

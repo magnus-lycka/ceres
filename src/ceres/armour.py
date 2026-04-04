@@ -14,6 +14,9 @@ class Armour(ShipPart):
     def check_protection_limit(self):
         return NotImplemented
 
+    def build_item(self) -> str | None:
+        return f'{self.description}, Armour: {self.protection}'
+
     def compute_cost(self) -> float:
         self.check_protection_limit()
         tons = self.compute_tons()

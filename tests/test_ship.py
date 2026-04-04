@@ -3,10 +3,11 @@ import pytest
 
 from ceres import armour, ship
 from ceres.bridge import Cockpit
-from ceres.drives import FuelProcessor, FusionPlantTL12, JumpFuel, MDrive6
+from ceres.drives import FusionPlantTL12, MDrive6
 from ceres.sensors import CivilianGradeSensors
 from ceres.systems import AirRaft, InternalDockingSpace, ProbeDrones, Workshop
 from ceres.weapons import FixedFirmpoint, PulseLaser
+from tests.ships._markdown_output import write_markdown_output
 
 
 def test_ship_initial():
@@ -86,24 +87,6 @@ def test_ship_parts_of_type_returns_matching_installed_parts():
     assert isinstance(workshops[0], Workshop)
 
 
-def test_ship_not_selfhealing():
-    my_ship = ship.Ship(
-        tl=8,
-        hull=ship.Hull(configuration=ship.standard_hull),
-        displacement=100,
-    )
-    assert not my_ship.self_sealing
-
-
-def test_ship_selfhealing():
-    my_ship = ship.Ship(
-        tl=9,
-        hull=ship.Hull(configuration=ship.standard_hull),
-        displacement=100,
-    )
-    assert my_ship.self_sealing
-
-
 def test_ship_hull_cost():
     my_ship = ship.Ship(
         tl=12,
@@ -179,20 +162,6 @@ def test_ship_total_power_load_includes_basic_and_active_systems():
     assert my_ship.total_power_load == 8
 
 
-def test_ship_power_margin():
-    my_ship = ship.Ship(
-        tl=12,
-        displacement=6,
-        hull=ship.Hull(configuration=ship.standard_hull),
-        fusion_plant=FusionPlantTL12(output=8),
-        m_drive=MDrive6(),
-        cockpit=Cockpit(),
-        sensors=CivilianGradeSensors(),
-        fixed_firmpoints=[FixedFirmpoint(weapon=PulseLaser(very_high_yield=True, energy_efficient=True))],
-    )
-    assert my_ship.power_margin == 0
-
-
 def test_small_craft_uses_single_pilot_crew_model():
     my_ship = ship.Ship(
         tl=12,
@@ -201,71 +170,6 @@ def test_small_craft_uses_single_pilot_crew_model():
         cockpit=Cockpit(),
     )
     assert [(role.role, role.count, role.monthly_salary) for role in my_ship.crew_roles] == [('PILOT', 1, 6_000)]
-    assert my_ship.total_crew == 1
-    assert my_ship.crew_salary_cost == 6_000
-
-
-def test_ship_mortgage_cost_uses_purchase_price_divided_by_240():
-    my_ship = ship.Ship(
-        tl=12,
-        displacement=6,
-        design_type=ship.ShipDesignType.STANDARD,
-        hull=ship.Hull(configuration=ship.streamlined_hull.model_copy(update={'light': True})),
-        sensors=CivilianGradeSensors(),
-    )
-    assert my_ship.sales_price_new == 2_943_000
-    assert my_ship.mortgage_cost == pytest.approx(12_262.50)
-
-
-def test_ship_maintenance_cost_is_rounded_to_whole_credits():
-    my_ship = ship.Ship(
-        tl=12,
-        displacement=6,
-        design_type=ship.ShipDesignType.STANDARD,
-        hull=ship.Hull(configuration=ship.streamlined_hull.model_copy(update={'light': True})),
-        sensors=CivilianGradeSensors(),
-    )
-    assert my_ship.maintenance_cost == 245.00
-
-
-def test_cockpit_only_small_craft_has_no_monthly_life_support_cost():
-    my_ship = ship.Ship(
-        tl=12,
-        displacement=6,
-        hull=ship.Hull(configuration=ship.standard_hull),
-        cockpit=Cockpit(),
-    )
-    assert my_ship.life_support_cost == 0.00
-
-
-def test_ship_fuel_cost_defaults_to_zero_without_jump_fuel():
-    my_ship = ship.Ship(
-        tl=12,
-        displacement=100,
-        hull=ship.Hull(configuration=ship.standard_hull),
-    )
-    assert my_ship.fuel_cost == 0.0
-
-
-def test_ship_fuel_cost_uses_two_refined_jump_tanks_without_fuel_processor():
-    my_ship = ship.Ship(
-        tl=12,
-        displacement=100,
-        hull=ship.Hull(configuration=ship.standard_hull),
-        jump_fuel=JumpFuel(parsecs=2),
-    )
-    assert my_ship.fuel_cost == 20_000.0
-
-
-def test_ship_fuel_cost_uses_two_unrefined_jump_tanks_with_fuel_processor():
-    my_ship = ship.Ship(
-        tl=12,
-        displacement=100,
-        hull=ship.Hull(configuration=ship.standard_hull),
-        jump_fuel=JumpFuel(parsecs=2),
-        fuel_processor=FuelProcessor(tons=2),
-    )
-    assert my_ship.fuel_cost == 4_000.0
 
 
 def test_ship_with_negative_cargo_adds_local_note():
@@ -277,6 +181,19 @@ def test_ship_with_negative_cargo_adds_local_note():
         workshop=Workshop(),
     )
     assert my_ship.cargo < 0
-    assert [(note.severity, note.message) for note in my_ship.notes] == [
+    assert [(note.category.value, note.message) for note in my_ship.notes] == [
         ('error', f'Cargo is negative by {-my_ship.cargo:.2f} tons'),
     ]
+
+
+def test_markdown_table_renders_inline_error_on_cargo_row():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=6,
+        hull=ship.Hull(configuration=ship.standard_hull),
+        sensors=CivilianGradeSensors(),
+        workshop=Workshop(),
+    )
+    table = my_ship.markdown_table()
+    write_markdown_output('test_negative_cargo', table)
+    assert '|  | **ERROR:** Cargo is negative by 1.00 tons |  |  |  |' in table

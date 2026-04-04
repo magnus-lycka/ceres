@@ -1,7 +1,7 @@
 import pytest
 
 from ceres.base import ShipBase
-from ceres.sensors import CivilianGradeSensors
+from ceres.sensors import CivilianGradeSensors, MilitaryGradeSensors
 
 
 class DummyOwner(ShipBase):
@@ -28,6 +28,24 @@ def test_civilian_grade_power():
     s = CivilianGradeSensors()
     s.bind(DummyOwner(12, 6))
     assert s.power == 1
+
+
+def test_civilian_grade_notes_describe_suite_and_dm():
+    s = CivilianGradeSensors()
+    s.bind(DummyOwner(12, 6))
+    assert [(note.category.value, note.message) for note in s.notes] == [
+        ('item', 'Civilian Grade'),
+        ('info', 'Radar, Lidar; DM -2'),
+    ]
+
+
+def test_military_grade_notes_describe_suite_and_dm():
+    s = MilitaryGradeSensors()
+    s.bind(DummyOwner(12, 100))
+    assert [(note.category.value, note.message) for note in s.notes] == [
+        ('item', 'Military Grade'),
+        ('info', 'Jammers, Radar, Lidar; DM +0'),
+    ]
 
 
 def test_civilian_grade_recomputes_tons_from_input():

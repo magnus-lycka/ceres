@@ -23,6 +23,9 @@ class SoftwarePackage(CeresModel):
     def tons(self) -> float:
         return 0.0
 
+    def build_item(self) -> str | None:
+        return self.description
+
 
 class Library(SoftwarePackage):
     description: Literal['Library'] = 'Library'
@@ -105,6 +108,14 @@ class Computer(ShipPart):
     base_cost: ClassVar[float]
     bis: bool = False
     fib: bool = False
+
+    def build_item(self) -> str | None:
+        item = self.description
+        if self.bis:
+            item += '/bis'
+        if self.fib:
+            item += '/fib'
+        return item
 
     @property
     def effective_tl(self):

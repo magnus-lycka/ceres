@@ -9,7 +9,7 @@ from .armour import (
     MolecularBondedArmour,
     TitaniumSteelArmour,
 )
-from .base import CeresModel, ShipBase
+from .base import CeresModel, NoteCategory, ShipBase
 from .bridge import Bridge, Cockpit
 from .computer import (
     Computer5,
@@ -102,6 +102,7 @@ class CrewRole(CeresModel):
 
 
 class HullConfiguration(CeresModel):
+    description: str = 'Standard Hull'
     streamlined: Streamlined
     armour_volume_modifier: float = 1
     hull_points_modifier: float = 1
@@ -144,28 +145,35 @@ class HullConfiguration(CeresModel):
     def points(self, ton):
         return (ton * self.effective_hull_points_modifier) // 2.5
 
+    def build_item(self) -> str | None:
+        return self.description
 
-standard_hull = HullConfiguration(streamlined=Streamlined.PARTIAL)
+
+standard_hull = HullConfiguration(description='Standard Hull', streamlined=Streamlined.PARTIAL)
 
 streamlined_hull = HullConfiguration(
+    description='Streamlined Hull',
     streamlined=Streamlined.YES,
     armour_volume_modifier=1.2,
     hull_cost_modifier=1.2,
 )
 
 sphere = HullConfiguration(
+    description='Sphere Hull',
     streamlined=Streamlined.PARTIAL,
     armour_volume_modifier=0.9,
     hull_cost_modifier=1.1,
 )
 
 close_structure = HullConfiguration(
+    description='Close Structure Hull',
     streamlined=Streamlined.PARTIAL,
     armour_volume_modifier=1.5,
     hull_cost_modifier=0.8,
 )
 
 dispersed_structure = HullConfiguration(
+    description='Dispersed Structure Hull',
     streamlined=Streamlined.NO,
     armour_volume_modifier=2,
     hull_points_modifier=0.9,
@@ -173,6 +181,7 @@ dispersed_structure = HullConfiguration(
 )
 
 planetoid = HullConfiguration(
+    description='Planetoid Hull',
     streamlined=Streamlined.NO,
     hull_points_modifier=1.25,
     hull_cost_modifier=0.08,
@@ -181,6 +190,7 @@ planetoid = HullConfiguration(
 )
 
 buffered_planetoid = HullConfiguration(
+    description='Buffered Planetoid Hull',
     streamlined=Streamlined.NO,
     hull_points_modifier=1.5,
     hull_cost_modifier=0.08,
@@ -305,6 +315,9 @@ class Hull(CeresModel):
     radiation_shielding: bool = False
     reflec: bool = False
 
+    def build_item(self) -> str | None:
+        return self.configuration.build_item()
+
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = []
         if (a := self.armour) is not None:
@@ -315,6 +328,8 @@ class Hull(CeresModel):
 
 
 class Ship(ShipBase):
+    ship_class: str | None = None
+    ship_type: str | None = None
     design_type: ShipDesignType = ShipDesignType.CUSTOM
     hull: Hull
     m_drive: ShipMDrive | None = None
@@ -344,22 +359,22 @@ class Ship(ShipBase):
         return float(self.hull.configuration.cost(self.displacement))
 
     @property
+    def hull_points(self) -> float:
+        return float(self.hull.configuration.points(self.displacement))
+
+    @property
     def available_power(self) -> float:
         if self.fusion_plant is None:
             return 0.0
         return float(self.fusion_plant.output)
 
     @property
-    def basic_power_load(self) -> float:
+    def basic_hull_power_load(self) -> float:
         if self.bridge is not None:
             return 20.0
         if self.hull.configuration.non_gravity:
             return 0.5
         return 1.0
-
-    @property
-    def basic_hull_power_load(self) -> float:
-        return self.basic_power_load
 
     @property
     def maneuver_power_load(self) -> float:
@@ -390,16 +405,11 @@ class Ship(ShipBase):
         return sum(part.power for part in self.fixed_firmpoints) + sum(part.power for part in self.turrets)
 
     @property
-    def non_drive_power_load(self) -> float:
-        return sum(part.power for part in self._all_parts() if part is not self.m_drive and part is not self.jump_drive)
-
-    @property
     def total_power_load(self) -> float:
-        return self.basic_power_load + max(self.maneuver_power_load, self.jump_power_load) + self.non_drive_power_load
-
-    @property
-    def power_margin(self) -> float:
-        return self.available_power - self.total_power_load
+        non_drive_power_load = sum(
+            part.power for part in self._all_parts() if part is not self.m_drive and part is not self.jump_drive
+        )
+        return self.basic_hull_power_load + max(self.maneuver_power_load, self.jump_power_load) + non_drive_power_load
 
     @property
     def production_cost(self) -> float:
@@ -417,6 +427,31 @@ class Ship(ShipBase):
     def sales_price_new(self) -> float:
         return self.production_cost * self.design_type.cost_multiplier
 
+    def _crew_salary_cost(self) -> float:
+        return float(sum(role.total_salary for role in self.crew_roles))
+
+    def _mortgage_cost(self) -> float:
+        return round(self.sales_price_new / 240, 2)
+
+    def _maintenance_cost(self) -> float:
+        return float(round(self.sales_price_new / 12_000))
+
+    def _life_support_cost(self) -> float:
+        if self.cockpit is not None:
+            return 0.0
+        if self.staterooms is not None:
+            return self.staterooms.life_support_cost
+        return 0.0
+
+    def _fuel_cost(self) -> float:
+        if self.jump_fuel is None:
+            return 0.0
+        fuel_cost_per_ton = 100 if self.fuel_processor is not None else 500
+        return float(self.jump_fuel.tons * 2 * fuel_cost_per_ton)
+
+    def _total_expenses(self) -> float:
+        return self._mortgage_cost() + self._maintenance_cost() + self._life_support_cost() + self._crew_salary_cost()
+
     @property
     def crew_roles(self) -> list[CrewRole]:
         if self.displacement <= 100 and self.jump_drive is not None:
@@ -431,53 +466,10 @@ class Ship(ShipBase):
         return []
 
     @property
-    def total_crew(self) -> int:
-        return sum(role.count for role in self.crew_roles)
-
-    @property
-    def crew_salary_cost(self) -> float:
-        return float(sum(role.total_salary for role in self.crew_roles))
-
-    @property
-    def mortgage_cost(self) -> float:
-        return round(self.sales_price_new / 240, 2)
-
-    @property
-    def maintenance_cost(self) -> float:
-        return float(round(self.sales_price_new / 12_000))
-
-    @property
-    def life_support_cost(self) -> float:
-        if self.cockpit is not None:
-            return 0.0
-        if self.staterooms is not None:
-            return self.staterooms.life_support_cost
-        return 0.0
-
-    @property
-    def fuel_cost(self) -> float:
-        if self.jump_fuel is None:
-            return 0.0
-        fuel_cost_per_ton = 100 if self.fuel_processor is not None else 500
-        return float(self.jump_fuel.tons * 2 * fuel_cost_per_ton)
-
-    @property
     def software_packages(self) -> list[SoftwarePackage]:
         if self.computer is None:
             return []
         return [*self.computer.included_software, *self.software]
-
-    @property
-    def total_expenses(self) -> float:
-        return self.mortgage_cost + self.maintenance_cost + self.life_support_cost + self.crew_salary_cost
-
-    @property
-    def total_income(self) -> float:
-        return 0.0
-
-    @property
-    def total_loss(self) -> float:
-        return self.total_income - self.total_expenses
 
     def _all_parts(self) -> list[ShipPart]:
         parts = list(self.hull._all_parts())
@@ -507,59 +499,176 @@ class Ship(ShipBase):
         return [part for part in self._all_parts() if isinstance(part, part_cls)]
 
     def markdown_table(self) -> str:
-        def add_row(item: str, details: str, tons: float | None, cost: float | None, power: float | None) -> str:
+        last_section = None
+        crew_salary_cost = self._crew_salary_cost()
+        mortgage_cost = self._mortgage_cost()
+        maintenance_cost = self._maintenance_cost()
+        life_support_cost = self._life_support_cost()
+        fuel_cost = self._fuel_cost()
+        total_expenses = self._total_expenses()
+
+        def add_row(
+            section: str,
+            item: str,
+            tons: float | None,
+            power: float | None,
+            cost: float | None,
+        ) -> str:
+            nonlocal last_section
             tons_text = '' if tons is None else f'{tons:.2f}'
-            cost_text = '' if cost is None else f'{cost:.2f}'
-            power_text = '' if power is None else f'{power:.2f}'
-            return f'| {item} | {details} | {tons_text} | {cost_text} | {power_text} |'
+            if power is None:
+                power_text = ''
+            elif power > 0:
+                power_text = f'+{power:.2f}'
+            elif power < 0:
+                power_text = f'{power:.2f}'
+            else:
+                power_text = ''
+            cost_text = '' if cost is None else f'{cost / 1000:.2f}'
+            section_text = '' if section == last_section else section
+            last_section = section
+            return f'| {section_text} | {item} | {tons_text} | {power_text} | {cost_text} |'
+
+        def add_cost_row(item: str, cost: float) -> str:
+            return f'| {item} | {cost:.2f} |'
+
+        def add_crew_row(role: str, salary: float) -> str:
+            return f'| {role} | {salary:.2f} |'
+
+        def item_text(obj, fallback: str) -> str:
+            for note in obj.notes:
+                if note.category is NoteCategory.ITEM:
+                    return note.message
+            return fallback
+
+        def add_note_rows(notes: list) -> list[str]:
+            rows: list[str] = []
+            for note in notes:
+                if note.category is NoteCategory.ITEM:
+                    continue
+                if note.category is NoteCategory.INFO:
+                    message = f'• {note.message}'
+                elif note.category is NoteCategory.ERROR:
+                    message = f'**ERROR:** {note.message}'
+                elif note.category is NoteCategory.WARNING:
+                    message = f'*WARNING:* {note.message}'
+                else:
+                    message = note.message
+                rows.append(f'|  | {message} |  |  |  |')
+            return rows
+
+        heading_bits: list[str] = []
+        if self.ship_class is not None and self.ship_type is not None:
+            heading_bits.append(f'*{self.ship_class}* {self.ship_type}')
+        elif self.ship_class is not None:
+            heading_bits.append(f'*{self.ship_class}*')
+        elif self.ship_type is not None:
+            heading_bits.append(self.ship_type)
+        heading_bits.append(f'TL{self.tl}')
+        heading_bits.append(f'Hull {self.hull_points:.0f}')
+        heading = f'## {" | ".join(heading_bits)}'
 
         lines = [
-            '| Item | Details | Tons | Cost | Power |',
+            heading,
+            '',
+            '| Section | Item | Tons | Power | Cost (kCr) |',
             '| --- | --- | ---: | ---: | ---: |',
             add_row(
                 'Hull',
-                f'{self.hull.configuration.streamlined.name.title()} hull',
+                item_text(self.hull, 'Hull'),
                 self.displacement,
-                self.hull_cost,
                 None,
+                self.hull_cost,
             ),
         ]
         if self.hull.armour is not None:
-            lines.append(
-                add_row(
-                    'Armour',
-                    self.hull.armour.description,
-                    self.hull.armour.tons,
-                    self.hull.armour.cost,
-                    self.hull.armour.power,
-                ),
+            armour_row = add_row(
+                'Armour',
+                item_text(self.hull.armour, self.hull.armour.description),
+                self.hull.armour.tons,
+                -self.hull.armour.power if self.hull.armour.power else None,
+                self.hull.armour.cost,
             )
+            lines.append(
+                armour_row,
+            )
+            lines.extend(add_note_rows(self.hull.armour.notes))
         if self.hull.stealth is not None:
-            lines.append(
-                add_row(
-                    'Stealth',
-                    self.hull.stealth.description,
-                    self.hull.stealth.tons,
-                    self.hull.stealth.cost,
-                    self.hull.stealth.power,
-                ),
+            stealth_row = add_row(
+                'Hull',
+                item_text(self.hull.stealth, self.hull.stealth.description),
+                self.hull.stealth.tons,
+                -self.hull.stealth.power if self.hull.stealth.power else None,
+                self.hull.stealth.cost,
             )
+            lines.append(
+                stealth_row,
+            )
+            lines.extend(add_note_rows(self.hull.stealth.notes))
         for part in self._all_parts():
             if part in self.hull._all_parts():
                 continue
-            details = getattr(part, 'description', part.__class__.__name__)
-            lines.append(add_row(part.__class__.__name__, details, part.tons, part.cost, part.power))
+            details = item_text(part, getattr(part, 'description', part.__class__.__name__))
+            section = part.__class__.__name__
+            if part is self.m_drive:
+                section = 'M-Drive'
+            elif part is self.jump_drive:
+                section = 'J-Drive'
+            elif part is self.fusion_plant:
+                section = 'Power Plant'
+            elif part is self.jump_fuel or part is self.operation_fuel:
+                section = 'Fuel'
+            elif part is self.bridge or part is self.cockpit:
+                section = 'Bridge'
+            elif part is self.computer:
+                section = 'Computer'
+            elif part is self.sensors:
+                section = 'Sensors'
+            elif part is self.docking_space:
+                section = 'Craft'
+            elif part is self.staterooms:
+                section = 'Staterooms'
+            elif part is self.probe_drones or part is self.workshop or part is self.fuel_processor:
+                section = 'Systems'
+            elif part in self.turrets or part in self.fixed_firmpoints:
+                section = 'Weapons'
+            power = None
+            if part is self.fusion_plant:
+                power = float(self.fusion_plant.output)
+            elif part.power:
+                power = -part.power
+            lines.append(add_row(section, details, part.tons, power, part.cost))
+            lines.extend(add_note_rows(part.notes))
         for package in self.software_packages:
-            lines.append(add_row('Software', package.description, 0.0, package.cost, 0.0))
+            lines.append(add_row('Software', item_text(package, package.description), None, None, package.cost))
+            lines.extend(add_note_rows(package.notes))
+        lines.append(add_row('Cargo', 'Cargo Hold', self.cargo, None, 0.0))
+        lines.extend(add_note_rows(self.notes))
         lines.extend(
             [
-                add_row('Cargo', 'Remaining capacity', self.cargo, 0.0, 0.0),
-                add_row('Production Cost', 'Total', None, self.production_cost, None),
-                add_row('Sales Price New', 'Total', None, self.sales_price_new, None),
-                add_row('Available Power', 'Total', None, None, self.available_power),
-                add_row('Total Power Load', 'Total', None, None, self.total_power_load),
+                '',
+                '| Cost | Amount |',
+                '| --- | ---: |',
+                add_cost_row('Production Cost', self.production_cost),
+                add_cost_row('Sales Price New', self.sales_price_new),
+                add_cost_row('Mortgage', mortgage_cost),
+                add_cost_row('Maintenance', maintenance_cost),
+                add_cost_row('Life Support', life_support_cost),
+                add_cost_row('Fuel', fuel_cost),
+                add_cost_row('Crew Salaries', crew_salary_cost),
+                add_cost_row('Total Expenses', total_expenses),
             ],
         )
+        if self.crew_roles:
+            lines.extend(
+                [
+                    '',
+                    '| Crew | Salary |',
+                    '| --- | ---: |',
+                ],
+            )
+            for role in self.crew_roles:
+                lines.append(add_crew_row(role.role, role.total_salary))
         return '\n'.join(lines)
 
     @property
@@ -569,32 +678,29 @@ class Ship(ShipBase):
             cargo -= part.tons
         return cargo
 
-    @property
-    def self_sealing(self):
-        return self.tl >= 9
-
     def model_post_init(self, __context: Any) -> None:
         self.clear_notes()
         for part in self._all_parts():
             part.bind(self)
         if self.software and self.computer is None:
-            self.error('Ship software requires a computer')
+            for package in self.software:
+                package.warning('Ship software requires a computer')
         for package in self.software_packages:
             if self.tl < package.minimum_tl:
                 package.error(f'{package.description} requires TL{package.minimum_tl}')
             if self.computer is not None and not self.computer.can_run(package):
                 package.error(f'{self.computer.description} cannot run {package.description}')
+        jump_controls = [package for package in self.software_packages if isinstance(package, JumpControl)]
+        highest_jump_control = max(jump_controls, key=lambda package: package.rating, default=None)
         if self.jump_drive is not None:
-            if self.computer is None:
-                self.jump_drive.error(
-                    f'JumpDrive{self.jump_drive.rating} requires Jump Control/{self.jump_drive.rating}',
-                )
-            elif not any(
-                isinstance(package, JumpControl) and package.rating >= self.jump_drive.rating
-                for package in self.software_packages
-            ):
-                self.jump_drive.error(
-                    f'JumpDrive{self.jump_drive.rating} requires Jump Control/{self.jump_drive.rating}',
-                )
+            if highest_jump_control is None:
+                self.jump_drive.warning('No Jump Control software')
+            elif highest_jump_control.rating < self.jump_drive.rating:
+                self.jump_drive.warning(f'Limited to Jump {highest_jump_control.rating} by control software')
+        if highest_jump_control is not None:
+            if self.jump_drive is None:
+                highest_jump_control.warning('No jump drive installed')
+            elif highest_jump_control.rating > self.jump_drive.rating:
+                highest_jump_control.warning(f'Limited to Jump {self.jump_drive.rating} by drive capacity')
         if self.cargo < 0:
             self.error(f'Cargo is negative by {-self.cargo:.2f} tons')

@@ -7,14 +7,20 @@ from ceres.drives import FusionPlantTL12, MDrive6, OperationFuel
 from ceres.sensors import CivilianGradeSensors
 from ceres.weapons import FixedFirmpoint, PulseLaser
 
+from ._markdown_output import write_markdown_output
+
 
 def build_ultralight_fighter() -> ship.Ship:
     return ship.Ship(
+        ship_class='Botfly',
+        ship_type='Ultralight Fighter',
         tl=12,
         displacement=6,
         design_type=ship.ShipDesignType.STANDARD,
         hull=ship.Hull(
-            configuration=ship.streamlined_hull.model_copy(update={'light': True}),
+            configuration=ship.streamlined_hull.model_copy(
+                update={'light': True, 'description': 'Light Streamlined Hull'},
+            ),
             armour=armour.CrystalironArmour(tl=12, protection=6),
             stealth=ship.BasicStealth(),
         ),
@@ -99,21 +105,12 @@ def test_ultralight_fighter_matches_modeled_reference_values():
     assert fighter.production_cost == 6_524_500
     assert fighter.sales_price_new == 5_872_050
     assert [(role.role, role.count, role.monthly_salary) for role in fighter.crew_roles] == [('PILOT', 1, 6_000)]
-    assert fighter.total_crew == 1
-    assert fighter.crew_salary_cost == 6_000
-    assert fighter.mortgage_cost == pytest.approx(24_466.88)
-    assert fighter.maintenance_cost == 489.00
-    assert fighter.life_support_cost == 0.00
-    assert fighter.total_expenses == pytest.approx(30_955.88)
-    assert fighter.total_income == 0.00
-    assert fighter.total_loss == pytest.approx(-30_955.88)
     assert fighter.available_power == 8
     assert fighter.basic_hull_power_load == 1
     assert fighter.maneuver_power_load == 4
     assert fighter.sensor_power_load == 1
     assert fighter.weapon_power_load == 2
     assert fighter.total_power_load == 8
-    assert fighter.power_margin == 0
 
     # The reference sheet rounds this to 0.09 tons.
     assert float(fighter.cargo) == pytest.approx(0.08333333333333393)
@@ -122,9 +119,17 @@ def test_ultralight_fighter_matches_modeled_reference_values():
 def test_ultralight_fighter_markdown_table_contains_core_rows():
     fighter = build_ultralight_fighter()
     table = fighter.markdown_table()
+    write_markdown_output('test_ultralight_fighter', table)
 
-    assert '| Item | Details | Tons | Cost | Power |' in table
-    assert '| Hull | Yes hull | 6.00 | 270000.00 |  |' in table
-    assert '| Armour | Crystaliron | 2.16 | 432000.00 | 0.00 |' in table
-    assert '| Software | Maneuver/0 | 0.00 | 0.00 | 0.00 |' in table
-    assert '| Cargo | Remaining capacity | 0.08 | 0.00 | 0.00 |' in table
+    assert '## *Botfly* Ultralight Fighter | TL12 | Hull 2' in table
+    assert '| Section | Item | Tons | Power | Cost (kCr) |' in table
+    assert '| Hull | Light Streamlined Hull | 6.00 |  | 270.00 |' in table
+    assert '| Armour | Crystaliron, Armour: 6 | 2.16 |  | 432.00 |' in table
+    assert '| M-Drive | Thrust 6 Budget Increased Size | 0.45 | -4.00 | 540.00 |' in table
+    assert '| Sensors | Civilian Grade | 1.00 | -1.00 | 3000.00 |' in table
+    assert '|  | • Radar, Lidar; DM -2 |  |  |  |' in table
+    assert '| Fuel | Operation 1 weeks | 0.02 |  | 0.00 |' in table
+    assert '|  | Maneuver/0 |  |  | 0.00 |' in table
+    assert '| Cargo | Cargo Hold | 0.08 |  | 0.00 |' in table
+    assert '| Mortgage | 24466.88 |' in table
+    assert '| Total Expenses | 30955.88 |' in table

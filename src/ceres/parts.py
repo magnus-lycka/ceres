@@ -36,7 +36,7 @@ class ShipPart(CeresModel):
         self._refresh_field('tons', 'compute_tons')
 
     def model_post_init(self, __context: Any) -> None:
-        pass
+        self.clear_notes()
 
     def bind(self, owner: ShipBase) -> None:
         self._owner = owner

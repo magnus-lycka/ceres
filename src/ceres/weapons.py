@@ -15,6 +15,14 @@ class PulseLaser(CeresModel):
     very_high_yield: bool = False  # 2 advantages
     energy_efficient: bool = False  # 1 advantage
 
+    def build_item(self) -> str | None:
+        parts = ['Pulse Laser']
+        if self.very_high_yield:
+            parts.append('Very High Yield')
+        if self.energy_efficient:
+            parts.append('Energy Efficient')
+        return ', '.join(parts)
+
     @property
     def cost_modifier(self) -> float:
         advantages = 0
@@ -37,6 +45,9 @@ class FixedFirmpoint(ShipPart):
     minimum_tl = 9
     weapon: PulseLaser
 
+    def build_item(self) -> str | None:
+        return self.weapon.build_item()
+
     def compute_tons(self) -> float:
         return 0.0
 
@@ -54,6 +65,9 @@ class FixedFirmpoint(ShipPart):
 
 class DoubleTurret(ShipPart):
     minimum_tl = 8
+
+    def build_item(self) -> str | None:
+        return 'Double Turret'
 
     def compute_tons(self) -> float:
         return 1.0

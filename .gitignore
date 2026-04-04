@@ -14,3 +14,7 @@ refs/
 
 # Coverage
 .coverage
+
+# Generated markdown from ship regression tests
+tests/ships/generated_md/
+.DS_Store

@@ -14,6 +14,14 @@ class MDrive(ShipPart):
     def _base_tons(self) -> float:
         return self.owner.displacement * self.tons_percent
 
+    def build_item(self) -> str | None:
+        parts = [f'Thrust {self.rating}']
+        if self.budget:
+            parts.append('Budget')
+        if self.increased_size:
+            parts.append('Increased Size')
+        return ' '.join(parts)
+
     def compute_tons(self) -> float:
         base = self._base_tons()
         return base * 1.25 if self.increased_size else base
@@ -103,6 +111,9 @@ class JumpDrive(ShipPart):
     minimum_tl: ClassVar[int]
     tons_percent: ClassVar[float]
 
+    def build_item(self) -> str | None:
+        return f'Jump {self.rating}'
+
     def compute_tons(self) -> float:
         return self.owner.displacement * self.tons_percent + 5
 
@@ -161,6 +172,14 @@ class _FusionPlant(ShipPart):
     def _base_tons(self) -> float:
         return self.output / self.power_per_ton
 
+    def build_item(self) -> str | None:
+        parts = [f'Fusion (TL {self.minimum_tl})']
+        if self.budget:
+            parts.append('Budget')
+        if self.increased_size:
+            parts.append('Increased Size')
+        return ' '.join(parts)
+
     @property
     def fusion_tl(self) -> int:
         return self.minimum_tl
@@ -207,6 +226,9 @@ class OperationFuel(ShipPart):
     power: float = 0.0
     weeks: int
 
+    def build_item(self) -> str | None:
+        return f'Operation {self.weeks} weeks'
+
     def compute_tons(self) -> float:
         plant = getattr(self.owner, 'fusion_plant', None)
         if plant is None:
@@ -225,6 +247,9 @@ class JumpFuel(ShipPart):
     power: float = 0.0
     parsecs: int
 
+    def build_item(self) -> str | None:
+        return f'Jump {self.parsecs}'
+
     def compute_tons(self) -> float:
         return self.owner.displacement * 0.1 * self.parsecs
 
@@ -234,6 +259,9 @@ class JumpFuel(ShipPart):
 
 class FuelProcessor(ShipPart):
     tons: float
+
+    def build_item(self) -> str | None:
+        return f'Fuel Processor ({self.tons:g} tons/day)'
 
     def compute_cost(self) -> float:
         return self.tons * 50_000

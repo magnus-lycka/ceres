@@ -5,6 +5,11 @@ class Cockpit(ShipPart):
     power: float = 0.0
     holographic: bool = False
 
+    def build_item(self) -> str | None:
+        if self.holographic:
+            return 'Holographic Cockpit'
+        return 'Cockpit'
+
     def compute_tons(self) -> float:
         return 1.5
 
@@ -17,6 +22,11 @@ class Cockpit(ShipPart):
 
 class Bridge(ShipPart):
     small: bool = False
+
+    def build_item(self) -> str | None:
+        if self.small:
+            return 'Smaller Bridge'
+        return 'Bridge'
 
     def _standard_tons(self) -> float:
         displacement = self.owner.displacement
