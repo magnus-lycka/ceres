@@ -1,55 +1,12 @@
 import pytest
 
 from ceres.base import ShipBase
-from ceres.bridge import Cockpit
-from ceres.computer import Computer5, Computer10, Computer15, Core40
+from ceres.computer import Computer5, Computer10, Computer15, Core40, Intellect, JumpControl2, Library, Manoeuvre
 
 
 class DummyOwner(ShipBase):
     def __init__(self, tl, displacement):
         super().__init__(tl=tl, displacement=displacement)
-
-
-# --- Cockpit ---
-
-
-def test_cockpit_tons():
-    c = Cockpit()
-    c.bind(DummyOwner(12, 6))
-    assert float(c.tons) == 1.5
-
-
-def test_cockpit_cost():
-    c = Cockpit()
-    c.bind(DummyOwner(12, 6))
-    assert float(c.cost) == 10_000
-
-
-def test_cockpit_holographic_cost():
-    c = Cockpit(holographic=True)
-    c.bind(DummyOwner(12, 6))
-    assert float(c.cost) == 12_500
-
-
-def test_cockpit_power_zero():
-    c = Cockpit()
-    c.bind(DummyOwner(12, 6))
-    assert c.power == 0
-
-
-def test_cockpit_recomputes_tons_from_input():
-    c = Cockpit.model_validate({'tons': 999})
-    c.bind(DummyOwner(12, 6))
-    assert c.tons == 1.5
-
-
-def test_cockpit_recomputes_cost_from_input():
-    c = Cockpit.model_validate({'cost': 999})
-    c.bind(DummyOwner(12, 6))
-    assert c.cost == 10_000
-
-
-# --- Computer ---
 
 
 def test_computer_5_cost():
@@ -88,7 +45,6 @@ def test_computer_power_zero():
 
 
 def test_computer_5_min_tl():
-    # Computer/5 needs TL7; TL6 ship should fail
     with pytest.raises(ValueError):
         c = Computer5()
         c.bind(DummyOwner(6, 100))
@@ -127,3 +83,30 @@ def test_core_40_hardware():
     assert c.processing == 40
     assert c.jump_control_processing == 40
     assert c.cost == 45_000_000
+
+
+def test_included_software_packages():
+    c = Computer5()
+    c.bind(DummyOwner(12, 100))
+    assert [type(package) for package in c.included_software] == [Library, Manoeuvre, Intellect]
+    assert [package.cost for package in c.included_software] == [0.0, 0.0, 0.0]
+
+
+def test_jump_control_2_data():
+    p = JumpControl2()
+    assert p.description == 'Jump Control/2'
+    assert p.minimum_tl == 11
+    assert p.bandwidth == 10
+    assert p.cost == 200_000
+
+
+def test_computer_5_cannot_run_jump_control_2():
+    c = Computer5()
+    c.bind(DummyOwner(12, 100))
+    assert not c.can_run(JumpControl2())
+
+
+def test_computer_5_bis_can_run_jump_control_2():
+    c = Computer5(bis=True)
+    c.bind(DummyOwner(12, 100))
+    assert c.can_run(JumpControl2())

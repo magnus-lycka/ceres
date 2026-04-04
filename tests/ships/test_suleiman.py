@@ -2,7 +2,7 @@ import pytest
 
 from ceres import armour, ship
 from ceres.bridge import Bridge
-from ceres.computer import Computer5
+from ceres.computer import Computer5, JumpControl2
 from ceres.drives import FuelProcessor, FusionPlantTL12, JumpDrive2, JumpFuel, MDrive2, OperationFuel
 from ceres.habitation import Staterooms
 from ceres.sensors import MilitaryGradeSensors
@@ -26,6 +26,7 @@ def build_suleiman() -> ship.Ship:
         fuel_processor=FuelProcessor(tons=2),
         bridge=Bridge(),
         computer=Computer5(bis=True),
+        software=[JumpControl2()],
         sensors=MilitaryGradeSensors(),
         turrets=[DoubleTurret()],
         staterooms=Staterooms(count=4),
@@ -93,6 +94,12 @@ def test_suleiman_matches_first_modeled_reference_slice():
     assert suleiman.computer.processing == 5
     assert suleiman.computer.jump_control_processing == 10
     assert suleiman.computer.cost == 45_000
+    assert [(package.description, package.cost) for package in suleiman.software_packages] == [
+        ('Library', 0.0),
+        ('Maneuver/0', 0.0),
+        ('Intellect', 0.0),
+        ('Jump Control/2', 200_000),
+    ]
 
     assert sensors is not None
     assert sensors.tons == pytest.approx(2.0)
@@ -123,3 +130,14 @@ def test_suleiman_matches_first_modeled_reference_slice():
     assert suleiman.sensor_power_load == 2
     assert suleiman.weapon_power_load == 1
     assert suleiman.total_power_load == 45
+
+
+def test_jump_drive_2_requires_jump_control_2():
+    with pytest.raises(ValueError, match='Jump Control/2'):
+        ship.Ship(
+            tl=12,
+            displacement=100,
+            hull=ship.Hull(configuration=ship.streamlined_hull),
+            jump_drive=JumpDrive2(),
+            computer=Computer5(bis=True),
+        )

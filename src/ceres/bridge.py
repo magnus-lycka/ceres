@@ -16,7 +16,9 @@ class Cockpit(ShipPart):
 
 
 class Bridge(ShipPart):
-    def compute_tons(self) -> float:
+    small: bool = False
+
+    def _standard_tons(self) -> float:
         displacement = self.owner.displacement
         if displacement <= 50:
             return 3.0
@@ -28,7 +30,40 @@ class Bridge(ShipPart):
             return 20.0
         if displacement <= 2_000:
             return 40.0
-        return 60.0
+        if displacement <= 100_000:
+            return 60.0
+        extra_steps = (displacement - 100_001) // 100_000 + 1
+        return 60.0 + extra_steps * 20.0
+
+    def _small_tons(self) -> float:
+        displacement = self.owner.displacement
+        if displacement <= 99:
+            return 3.0
+        if displacement <= 200:
+            return 6.0
+        if displacement <= 1_000:
+            return 10.0
+        if displacement <= 2_000:
+            return 20.0
+        if displacement <= 100_000:
+            return 40.0
+        if displacement <= 200_000:
+            return 60.0
+        extra_steps = (displacement - 200_001) // 100_000 + 1
+        return 60.0 + extra_steps * 20.0
+
+    def compute_tons(self) -> float:
+        if self.small:
+            return self._small_tons()
+        return self._standard_tons()
 
     def compute_cost(self) -> float:
-        return float(((self.owner.displacement - 1) // 100 + 1) * 500_000)
+        factor = 0.5 if self.small else 1
+        cost = float(((self.owner.displacement - 1) // 100 + 1) * 500_000)
+        return cost * factor
+
+    @property
+    def operations_dm(self) -> int:
+        if self.small:
+            return -1
+        return 0

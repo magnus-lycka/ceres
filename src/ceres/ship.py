@@ -26,6 +26,17 @@ from .computer import (
     Core80,
     Core90,
     Core100,
+    Intellect,
+    JumpControl,
+    JumpControl1,
+    JumpControl2,
+    JumpControl3,
+    JumpControl4,
+    JumpControl5,
+    JumpControl6,
+    Library,
+    Manoeuvre,
+    SoftwarePackage,
 )
 from .drives import (
     FuelProcessor,
@@ -87,12 +98,6 @@ class CrewRole(BaseModel):
     @property
     def total_salary(self) -> int:
         return self.count * self.monthly_salary
-
-
-class SoftwarePackage(BaseModel):
-    name: str
-    tons: float = 0.0
-    cost: float = 0.0
 
 
 class HullConfiguration(BaseModel):
@@ -276,6 +281,19 @@ ShipComputer = Annotated[
     Field(discriminator='description'),
 ]
 
+ShipSoftware = Annotated[
+    Library
+    | Manoeuvre
+    | Intellect
+    | JumpControl1
+    | JumpControl2
+    | JumpControl3
+    | JumpControl4
+    | JumpControl5
+    | JumpControl6,
+    Field(discriminator='description'),
+]
+
 
 class Hull(BaseModel):
     configuration: HullConfiguration
@@ -307,6 +325,7 @@ class Ship(ShipBase):
     bridge: Bridge | None = None
     cockpit: Cockpit | None = None
     computer: ShipComputer | None = None
+    software: list[ShipSoftware] = Field(default_factory=list)
     sensors: CivilianGradeSensors | MilitaryGradeSensors | None = None
     staterooms: Staterooms | None = None
     turrets: list[DoubleTurret] = Field(default_factory=list)
@@ -388,7 +407,11 @@ class Ship(ShipBase):
 
     @property
     def design_cost(self) -> float:
-        return self.hull_cost + sum(part.cost for part in self._all_parts())
+        return (
+            self.hull_cost
+            + sum(part.cost for part in self._all_parts())
+            + sum(package.cost for package in self.software_packages)
+        )
 
     @property
     def discount_cost(self) -> float:
@@ -435,11 +458,7 @@ class Ship(ShipBase):
     def software_packages(self) -> list[SoftwarePackage]:
         if self.computer is None:
             return []
-        return [
-            SoftwarePackage(name='Library'),
-            SoftwarePackage(name='Maneuver/0'),
-            SoftwarePackage(name='Intellect'),
-        ]
+        return [*self.computer.included_software, *self.software]
 
     @property
     def has_fuel_scoops(self) -> bool:
@@ -502,3 +521,18 @@ class Ship(ShipBase):
     def model_post_init(self, __context: Any) -> None:
         for part in self._all_parts():
             part.bind(self)
+        if self.software and self.computer is None:
+            raise ValueError('Ship software requires a computer')
+        for package in self.software_packages:
+            if self.tl < package.minimum_tl:
+                raise ValueError(f'{package.description} requires TL{package.minimum_tl}')
+            if self.computer is not None and not self.computer.can_run(package):
+                raise ValueError(f'{self.computer.description} cannot run {package.description}')
+        if self.jump_drive is not None:
+            if self.computer is None:
+                raise ValueError(f'JumpDrive{self.jump_drive.rating} requires Jump Control/{self.jump_drive.rating}')
+            if not any(
+                isinstance(package, JumpControl) and package.rating >= self.jump_drive.rating
+                for package in self.software_packages
+            ):
+                raise ValueError(f'JumpDrive{self.jump_drive.rating} requires Jump Control/{self.jump_drive.rating}')
