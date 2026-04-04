@@ -107,18 +107,24 @@ def test_ultralight_fighter_matches_modeled_reference_values():
     assert fighter.total_expenses == pytest.approx(30_955.88)
     assert fighter.total_income == 0.00
     assert fighter.total_loss == pytest.approx(-30_955.88)
-    assert fighter.has_fuel_scoops is True
-    assert fighter.fuel_scoop_cost == 0.00
-    assert fighter.fuel_scoop_tons == 0.00
     assert fighter.available_power == 8
     assert fighter.basic_hull_power_load == 1
     assert fighter.maneuver_power_load == 4
     assert fighter.sensor_power_load == 1
     assert fighter.weapon_power_load == 2
     assert fighter.total_power_load == 8
-    assert fighter.battle_power_load == 7
-    assert fighter.maximum_power_load == 8
     assert fighter.power_margin == 0
 
     # The reference sheet rounds this to 0.09 tons.
     assert float(fighter.cargo) == pytest.approx(0.08333333333333393)
+
+
+def test_ultralight_fighter_markdown_table_contains_core_rows():
+    fighter = build_ultralight_fighter()
+    table = fighter.markdown_table()
+
+    assert '| Item | Details | Tons | Cost | Power |' in table
+    assert '| Hull | Yes hull | 6.00 | 270000.00 |  |' in table
+    assert '| Armour | Crystaliron | 2.16 | 432000.00 | 0.00 |' in table
+    assert '| Software | Maneuver/0 | 0.00 | 0.00 | 0.00 |' in table
+    assert '| Cargo | Remaining capacity | 0.08 | 0.00 | 0.00 |' in table

@@ -1,11 +1,10 @@
 from typing import ClassVar, Literal
 
-from pydantic import BaseModel
-
+from .base import CeresModel
 from .parts import ShipPart
 
 
-class SoftwarePackage(BaseModel):
+class SoftwarePackage(CeresModel):
     description: str
     minimum_tl: ClassVar[int]
     bandwidth: ClassVar[int]

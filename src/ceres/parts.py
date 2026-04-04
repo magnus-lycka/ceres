@@ -1,11 +1,11 @@
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, PrivateAttr
+from pydantic import PrivateAttr
 
-from .base import ShipBase
+from .base import CeresModel, ShipBase
 
 
-class ShipPart(BaseModel):
+class ShipPart(CeresModel):
     cost: float = 0.0
     power: float = 0.0
     tons: float = 0.0
@@ -40,6 +40,7 @@ class ShipPart(BaseModel):
 
     def bind(self, owner: ShipBase) -> None:
         self._owner = owner
+        self.clear_notes()
         self.validate_tl()
         self.refresh_derived_values()
 

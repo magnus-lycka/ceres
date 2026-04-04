@@ -1,8 +1,7 @@
 import math
 from typing import ClassVar
 
-from pydantic import BaseModel
-
+from .base import CeresModel
 from .parts import ShipPart
 
 
@@ -29,7 +28,7 @@ class ProbeDrones(ShipPart):
         return (self.count / self.drones_per_ton) * self.cost_per_ton
 
 
-class SmallCraft(BaseModel):
+class SmallCraft(CeresModel):
     shipping_size: int
     cost: float
     model_config = {'frozen': True}

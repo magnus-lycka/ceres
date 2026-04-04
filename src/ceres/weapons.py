@@ -1,12 +1,11 @@
 import math
 from typing import ClassVar
 
-from pydantic import BaseModel
-
+from .base import CeresModel
 from .parts import ShipPart
 
 
-class PulseLaser(BaseModel):
+class PulseLaser(CeresModel):
     """Pulse laser weapon (TL9, 2D damage, Long range)."""
 
     model_config = {'frozen': True}

@@ -1,7 +1,7 @@
 from enum import Enum, StrEnum
 from typing import Annotated, Any, ClassVar, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from .armour import (
     BondedSuperdenseArmour,
@@ -9,7 +9,7 @@ from .armour import (
     MolecularBondedArmour,
     TitaniumSteelArmour,
 )
-from .base import ShipBase
+from .base import CeresModel, ShipBase
 from .bridge import Bridge, Cockpit
 from .computer import (
     Computer5,
@@ -91,7 +91,7 @@ class ShipDesignType(StrEnum):
         }[self]
 
 
-class CrewRole(BaseModel):
+class CrewRole(CeresModel):
     role: str
     count: int
     monthly_salary: int
@@ -101,7 +101,7 @@ class CrewRole(BaseModel):
         return self.count * self.monthly_salary
 
 
-class HullConfiguration(BaseModel):
+class HullConfiguration(CeresModel):
     streamlined: Streamlined
     armour_volume_modifier: float = 1
     hull_points_modifier: float = 1
@@ -296,7 +296,7 @@ ShipSoftware = Annotated[
 ]
 
 
-class Hull(BaseModel):
+class Hull(CeresModel):
     configuration: HullConfiguration
     armour: HullArmour | None = None
     stealth: HullStealth | None = None
@@ -391,19 +391,11 @@ class Ship(ShipBase):
 
     @property
     def non_drive_power_load(self) -> float:
-        return sum(part.power for part in self._all_parts() if part not in {self.m_drive, self.jump_drive})
+        return sum(part.power for part in self._all_parts() if part is not self.m_drive and part is not self.jump_drive)
 
     @property
     def total_power_load(self) -> float:
         return self.basic_power_load + max(self.maneuver_power_load, self.jump_power_load) + self.non_drive_power_load
-
-    @property
-    def battle_power_load(self) -> float:
-        return self.total_power_load - self.sensor_power_load
-
-    @property
-    def maximum_power_load(self) -> float:
-        return self.total_power_load
 
     @property
     def power_margin(self) -> float:
@@ -476,20 +468,6 @@ class Ship(ShipBase):
         return [*self.computer.included_software, *self.software]
 
     @property
-    def has_fuel_scoops(self) -> bool:
-        return self.hull.configuration.streamlined is Streamlined.YES
-
-    @property
-    def fuel_scoop_cost(self) -> float:
-        if self.has_fuel_scoops:
-            return 0.0
-        return 1_000_000.0
-
-    @property
-    def fuel_scoop_tons(self) -> float:
-        return 0.0
-
-    @property
     def total_expenses(self) -> float:
         return self.mortgage_cost + self.maintenance_cost + self.life_support_cost + self.crew_salary_cost
 
@@ -525,6 +503,65 @@ class Ship(ShipBase):
         parts.extend(self.fixed_firmpoints)
         return parts
 
+    def parts_of_type(self, part_cls: type) -> list[ShipPart]:
+        return [part for part in self._all_parts() if isinstance(part, part_cls)]
+
+    def markdown_table(self) -> str:
+        def add_row(item: str, details: str, tons: float | None, cost: float | None, power: float | None) -> str:
+            tons_text = '' if tons is None else f'{tons:.2f}'
+            cost_text = '' if cost is None else f'{cost:.2f}'
+            power_text = '' if power is None else f'{power:.2f}'
+            return f'| {item} | {details} | {tons_text} | {cost_text} | {power_text} |'
+
+        lines = [
+            '| Item | Details | Tons | Cost | Power |',
+            '| --- | --- | ---: | ---: | ---: |',
+            add_row(
+                'Hull',
+                f'{self.hull.configuration.streamlined.name.title()} hull',
+                self.displacement,
+                self.hull_cost,
+                None,
+            ),
+        ]
+        if self.hull.armour is not None:
+            lines.append(
+                add_row(
+                    'Armour',
+                    self.hull.armour.description,
+                    self.hull.armour.tons,
+                    self.hull.armour.cost,
+                    self.hull.armour.power,
+                ),
+            )
+        if self.hull.stealth is not None:
+            lines.append(
+                add_row(
+                    'Stealth',
+                    self.hull.stealth.description,
+                    self.hull.stealth.tons,
+                    self.hull.stealth.cost,
+                    self.hull.stealth.power,
+                ),
+            )
+        for part in self._all_parts():
+            if part in self.hull._all_parts():
+                continue
+            details = getattr(part, 'description', part.__class__.__name__)
+            lines.append(add_row(part.__class__.__name__, details, part.tons, part.cost, part.power))
+        for package in self.software_packages:
+            lines.append(add_row('Software', package.description, 0.0, package.cost, 0.0))
+        lines.extend(
+            [
+                add_row('Cargo', 'Remaining capacity', self.cargo, 0.0, 0.0),
+                add_row('Production Cost', 'Total', None, self.production_cost, None),
+                add_row('Sales Price New', 'Total', None, self.sales_price_new, None),
+                add_row('Available Power', 'Total', None, None, self.available_power),
+                add_row('Total Power Load', 'Total', None, None, self.total_power_load),
+            ],
+        )
+        return '\n'.join(lines)
+
     @property
     def cargo(self):
         cargo = self.displacement * self.hull.configuration.usage_factor
@@ -537,20 +574,27 @@ class Ship(ShipBase):
         return self.tl >= 9
 
     def model_post_init(self, __context: Any) -> None:
+        self.clear_notes()
         for part in self._all_parts():
             part.bind(self)
         if self.software and self.computer is None:
-            raise ValueError('Ship software requires a computer')
+            self.error('Ship software requires a computer')
         for package in self.software_packages:
             if self.tl < package.minimum_tl:
-                raise ValueError(f'{package.description} requires TL{package.minimum_tl}')
+                package.error(f'{package.description} requires TL{package.minimum_tl}')
             if self.computer is not None and not self.computer.can_run(package):
-                raise ValueError(f'{self.computer.description} cannot run {package.description}')
+                package.error(f'{self.computer.description} cannot run {package.description}')
         if self.jump_drive is not None:
             if self.computer is None:
-                raise ValueError(f'JumpDrive{self.jump_drive.rating} requires Jump Control/{self.jump_drive.rating}')
-            if not any(
+                self.jump_drive.error(
+                    f'JumpDrive{self.jump_drive.rating} requires Jump Control/{self.jump_drive.rating}',
+                )
+            elif not any(
                 isinstance(package, JumpControl) and package.rating >= self.jump_drive.rating
                 for package in self.software_packages
             ):
-                raise ValueError(f'JumpDrive{self.jump_drive.rating} requires Jump Control/{self.jump_drive.rating}')
+                self.jump_drive.error(
+                    f'JumpDrive{self.jump_drive.rating} requires Jump Control/{self.jump_drive.rating}',
+                )
+        if self.cargo < 0:
+            self.error(f'Cargo is negative by {-self.cargo:.2f} tons')

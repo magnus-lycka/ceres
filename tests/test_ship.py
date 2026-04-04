@@ -69,6 +69,23 @@ def test_ship_cargo_subtracts_modeled_part_tonnage():
     assert my_ship.cargo == pytest.approx(100 - 5 - 2 - 6)
 
 
+def test_ship_parts_of_type_returns_matching_installed_parts():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=ship.Hull(configuration=ship.streamlined_hull),
+        probe_drones=ProbeDrones(count=10),
+        workshop=Workshop(),
+        sensors=CivilianGradeSensors(),
+    )
+    probe_drones = my_ship.parts_of_type(ProbeDrones)
+    workshops = my_ship.parts_of_type(Workshop)
+    assert len(probe_drones) == 1
+    assert isinstance(probe_drones[0], ProbeDrones)
+    assert len(workshops) == 1
+    assert isinstance(workshops[0], Workshop)
+
+
 def test_ship_not_selfhealing():
     my_ship = ship.Ship(
         tl=8,
@@ -249,3 +266,17 @@ def test_ship_fuel_cost_uses_two_unrefined_jump_tanks_with_fuel_processor():
         fuel_processor=FuelProcessor(tons=2),
     )
     assert my_ship.fuel_cost == 4_000.0
+
+
+def test_ship_with_negative_cargo_adds_local_note():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=6,
+        hull=ship.Hull(configuration=ship.standard_hull),
+        sensors=CivilianGradeSensors(),
+        workshop=Workshop(),
+    )
+    assert my_ship.cargo < 0
+    assert [(note.severity, note.message) for note in my_ship.notes] == [
+        ('error', f'Cargo is negative by {-my_ship.cargo:.2f} tons'),
+    ]

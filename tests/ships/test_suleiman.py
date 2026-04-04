@@ -161,12 +161,15 @@ def test_suleiman_matches_first_modeled_reference_slice():
     assert suleiman.total_power_load == 45
 
 
-def test_jump_drive_2_requires_jump_control_2():
-    with pytest.raises(ValueError, match='Jump Control/2'):
-        ship.Ship(
-            tl=12,
-            displacement=100,
-            hull=ship.Hull(configuration=ship.streamlined_hull),
-            jump_drive=JumpDrive2(),
-            computer=Computer5(bis=True),
-        )
+def test_jump_drive_2_without_jump_control_2_adds_local_note():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=ship.Hull(configuration=ship.streamlined_hull),
+        jump_drive=JumpDrive2(),
+        computer=Computer5(bis=True),
+    )
+    assert my_ship.jump_drive is not None
+    assert [(note.severity, note.message) for note in my_ship.jump_drive.notes] == [
+        ('error', 'JumpDrive2 requires Jump Control/2'),
+    ]

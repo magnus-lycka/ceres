@@ -113,15 +113,11 @@ ship-level values such as:
 - `maneuver_power_load`
 - `sensor_power_load`
 - `weapon_power_load`
-- `battle_power_load`
-- `maximum_power_load`
 - `total_power_load`
 - `power_margin`
 - `cargo`
 - `software_packages`
-- `has_fuel_scoops`
-- `fuel_scoop_cost`
-- `fuel_scoop_tons`
+- `markdown_table()`
 
 These remain ship-level properties rather than cached part data.
 
@@ -132,9 +128,8 @@ attribute itself.
 Some of these ship-level properties are still intentionally minimal and currently
 exist to support regression-tested ship sheets such as the ultralight fighter.
 For example, the crew model presently covers the small-craft case directly used
-by that sheet, and `battle_power_load` reflects the sheet convention currently
-used by the regression tests rather than a full general-purpose power management
-system.
+by that sheet, while presentation concerns are starting to move toward
+`markdown_table()` instead of additional one-off report properties.
 
 ### Armour Hierarchy
 
