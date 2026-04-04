@@ -96,8 +96,8 @@ def test_ultralight_fighter_matches_modeled_reference_values():
     assert int(weapon_mount.power) == 2
 
     assert fighter.hull_cost == 270_000
-    assert fighter.design_cost == 6_524_500
-    assert fighter.discount_cost == 5_872_050
+    assert fighter.production_cost == 6_524_500
+    assert fighter.sales_price_new == 5_872_050
     assert [(role.role, role.count, role.monthly_salary) for role in fighter.crew_roles] == [('PILOT', 1, 6_000)]
     assert fighter.total_crew == 1
     assert fighter.crew_salary_cost == 6_000

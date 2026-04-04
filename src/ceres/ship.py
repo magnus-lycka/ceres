@@ -67,6 +67,7 @@ from .drives import (
 from .habitation import Staterooms
 from .parts import ShipPart
 from .sensors import CivilianGradeSensors, MilitaryGradeSensors
+from .systems import InternalDockingSpace, ProbeDrones, Workshop
 from .weapons import DoubleTurret, FixedFirmpoint
 
 
@@ -327,7 +328,10 @@ class Ship(ShipBase):
     computer: ShipComputer | None = None
     software: list[ShipSoftware] = Field(default_factory=list)
     sensors: CivilianGradeSensors | MilitaryGradeSensors | None = None
+    docking_space: InternalDockingSpace | None = None
     staterooms: Staterooms | None = None
+    probe_drones: ProbeDrones | None = None
+    workshop: Workshop | None = None
     turrets: list[DoubleTurret] = Field(default_factory=list)
     fixed_firmpoints: list[FixedFirmpoint] = Field(default_factory=list)
 
@@ -406,16 +410,20 @@ class Ship(ShipBase):
         return self.available_power - self.total_power_load
 
     @property
-    def design_cost(self) -> float:
+    def production_cost(self) -> float:
+        craft_cost = 0.0
+        if self.docking_space is not None:
+            craft_cost += self.docking_space.craft.cost
         return (
             self.hull_cost
             + sum(part.cost for part in self._all_parts())
             + sum(package.cost for package in self.software_packages)
+            + craft_cost
         )
 
     @property
-    def discount_cost(self) -> float:
-        return self.design_cost * self.design_type.cost_multiplier
+    def sales_price_new(self) -> float:
+        return self.production_cost * self.design_type.cost_multiplier
 
     @property
     def crew_roles(self) -> list[CrewRole]:
@@ -440,11 +448,11 @@ class Ship(ShipBase):
 
     @property
     def mortgage_cost(self) -> float:
-        return round(self.discount_cost / 240, 2)
+        return round(self.sales_price_new / 240, 2)
 
     @property
     def maintenance_cost(self) -> float:
-        return float(round(self.discount_cost / 12_000))
+        return float(round(self.sales_price_new / 12_000))
 
     @property
     def life_support_cost(self) -> float:
@@ -453,6 +461,13 @@ class Ship(ShipBase):
         if self.staterooms is not None:
             return self.staterooms.life_support_cost
         return 0.0
+
+    @property
+    def fuel_cost(self) -> float:
+        if self.jump_fuel is None:
+            return 0.0
+        fuel_cost_per_ton = 100 if self.fuel_processor is not None else 500
+        return float(self.jump_fuel.tons * 2 * fuel_cost_per_ton)
 
     @property
     def software_packages(self) -> list[SoftwarePackage]:
@@ -499,7 +514,10 @@ class Ship(ShipBase):
             self.cockpit,
             self.computer,
             self.sensors,
+            self.docking_space,
             self.staterooms,
+            self.probe_drones,
+            self.workshop,
         ):
             if part is not None:
                 parts.append(part)

@@ -3,8 +3,9 @@ import pytest
 
 from ceres import armour, ship
 from ceres.bridge import Cockpit
-from ceres.drives import FusionPlantTL12, MDrive6
+from ceres.drives import FuelProcessor, FusionPlantTL12, JumpFuel, MDrive6
 from ceres.sensors import CivilianGradeSensors
+from ceres.systems import AirRaft, InternalDockingSpace, ProbeDrones, Workshop
 from ceres.weapons import FixedFirmpoint, PulseLaser
 
 
@@ -56,6 +57,18 @@ def test_ship_with_armour():
     assert my_ship.cargo == 100 - (100 * 4 * 0.0125)
 
 
+def test_ship_cargo_subtracts_modeled_part_tonnage():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=ship.Hull(configuration=ship.streamlined_hull),
+        docking_space=InternalDockingSpace(craft=AirRaft()),
+        probe_drones=ProbeDrones(count=10),
+        workshop=Workshop(),
+    )
+    assert my_ship.cargo == pytest.approx(100 - 5 - 2 - 6)
+
+
 def test_ship_not_selfhealing():
     my_ship = ship.Ship(
         tl=8,
@@ -83,7 +96,7 @@ def test_ship_hull_cost():
     assert my_ship.hull_cost == 270_000
 
 
-def test_ship_design_cost_custom_has_no_multiplier():
+def test_ship_production_cost_custom_has_no_multiplier():
     my_ship = ship.Ship(
         tl=12,
         displacement=6,
@@ -91,11 +104,11 @@ def test_ship_design_cost_custom_has_no_multiplier():
         hull=ship.Hull(configuration=ship.streamlined_hull.model_copy(update={'light': True})),
         sensors=CivilianGradeSensors(),
     )
-    assert my_ship.design_cost == 3_270_000
-    assert my_ship.discount_cost == 3_270_000
+    assert my_ship.production_cost == 3_270_000
+    assert my_ship.sales_price_new == 3_270_000
 
 
-def test_ship_design_cost_standard_gets_discount():
+def test_ship_sales_price_new_standard_gets_discount():
     my_ship = ship.Ship(
         tl=12,
         displacement=6,
@@ -103,10 +116,10 @@ def test_ship_design_cost_standard_gets_discount():
         hull=ship.Hull(configuration=ship.streamlined_hull.model_copy(update={'light': True})),
         sensors=CivilianGradeSensors(),
     )
-    assert my_ship.discount_cost == 2_943_000
+    assert my_ship.sales_price_new == 2_943_000
 
 
-def test_ship_design_cost_new_gets_markup():
+def test_ship_sales_price_new_new_gets_markup():
     my_ship = ship.Ship(
         tl=12,
         displacement=6,
@@ -114,7 +127,7 @@ def test_ship_design_cost_new_gets_markup():
         hull=ship.Hull(configuration=ship.streamlined_hull.model_copy(update={'light': True})),
         sensors=CivilianGradeSensors(),
     )
-    assert my_ship.discount_cost == 3_302_700
+    assert my_ship.sales_price_new == 3_302_700
 
 
 def test_ship_available_power_without_plant_is_zero():
@@ -183,7 +196,7 @@ def test_ship_mortgage_cost_uses_purchase_price_divided_by_240():
         hull=ship.Hull(configuration=ship.streamlined_hull.model_copy(update={'light': True})),
         sensors=CivilianGradeSensors(),
     )
-    assert my_ship.discount_cost == 2_943_000
+    assert my_ship.sales_price_new == 2_943_000
     assert my_ship.mortgage_cost == pytest.approx(12_262.50)
 
 
@@ -206,3 +219,33 @@ def test_cockpit_only_small_craft_has_no_monthly_life_support_cost():
         cockpit=Cockpit(),
     )
     assert my_ship.life_support_cost == 0.00
+
+
+def test_ship_fuel_cost_defaults_to_zero_without_jump_fuel():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=ship.Hull(configuration=ship.standard_hull),
+    )
+    assert my_ship.fuel_cost == 0.0
+
+
+def test_ship_fuel_cost_uses_two_refined_jump_tanks_without_fuel_processor():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=ship.Hull(configuration=ship.standard_hull),
+        jump_fuel=JumpFuel(parsecs=2),
+    )
+    assert my_ship.fuel_cost == 20_000.0
+
+
+def test_ship_fuel_cost_uses_two_unrefined_jump_tanks_with_fuel_processor():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=ship.Hull(configuration=ship.standard_hull),
+        jump_fuel=JumpFuel(parsecs=2),
+        fuel_processor=FuelProcessor(tons=2),
+    )
+    assert my_ship.fuel_cost == 4_000.0

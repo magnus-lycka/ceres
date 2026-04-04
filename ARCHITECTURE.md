@@ -97,8 +97,8 @@ roundtrip serialization back to the correct concrete part type.
 ship-level values such as:
 
 - `hull_cost`
-- `design_cost`
-- `discount_cost`
+- `production_cost`
+- `sales_price_new`
 - `mortgage_cost`
 - `maintenance_cost`
 - `life_support_cost`

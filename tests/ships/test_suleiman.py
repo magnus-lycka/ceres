@@ -6,6 +6,7 @@ from ceres.computer import Computer5, JumpControl2
 from ceres.drives import FuelProcessor, FusionPlantTL12, JumpDrive2, JumpFuel, MDrive2, OperationFuel
 from ceres.habitation import Staterooms
 from ceres.sensors import MilitaryGradeSensors
+from ceres.systems import AirRaft, InternalDockingSpace, ProbeDrones, Workshop
 from ceres.weapons import DoubleTurret
 
 
@@ -29,7 +30,10 @@ def build_suleiman() -> ship.Ship:
         software=[JumpControl2()],
         sensors=MilitaryGradeSensors(),
         turrets=[DoubleTurret()],
+        docking_space=InternalDockingSpace(craft=AirRaft()),
         staterooms=Staterooms(count=4),
+        probe_drones=ProbeDrones(count=10),
+        workshop=Workshop(),
     )
 
 
@@ -45,7 +49,10 @@ def test_suleiman_matches_first_modeled_reference_slice():
     fuel_processor = suleiman.fuel_processor
     bridge = suleiman.bridge
     sensors = suleiman.sensors
+    docking_space = suleiman.docking_space
     staterooms = suleiman.staterooms
+    probe_drones = suleiman.probe_drones
+    workshop = suleiman.workshop
 
     assert suleiman.tl == 12
     assert suleiman.displacement == 100
@@ -106,10 +113,29 @@ def test_suleiman_matches_first_modeled_reference_slice():
     assert sensors.cost == 4_100_000
     assert sensors.power == 2
 
+    assert docking_space is not None
+    assert docking_space.craft.shipping_size == 4
+    assert docking_space.tons == pytest.approx(5.0)
+    assert docking_space.cost == 1_250_000
+    assert docking_space.power == 0
+
     assert staterooms is not None
     assert staterooms.count == 4
     assert staterooms.tons == pytest.approx(16.0)
     assert staterooms.cost == 2_000_000
+
+    assert probe_drones is not None
+    assert probe_drones.count == 10
+    assert probe_drones.tons == pytest.approx(2.0)
+    assert probe_drones.cost == 1_000_000
+    assert probe_drones.power == 0
+
+    assert workshop is not None
+    assert workshop.tons == pytest.approx(6.0)
+    assert workshop.cost == 900_000
+    assert workshop.power == 0
+
+    assert suleiman.cargo == pytest.approx(12.8)
 
     assert [(role.role, role.count, role.monthly_salary) for role in suleiman.crew_roles] == [
         ('PILOT', 1, 6_000),
@@ -119,8 +145,11 @@ def test_suleiman_matches_first_modeled_reference_slice():
     assert suleiman.total_crew == 3
     assert suleiman.crew_salary_cost == 15_000
     assert suleiman.life_support_cost == 12_000
+    assert suleiman.fuel_cost == 4_000
 
     assert suleiman.hull_cost == 6_000_000
+    assert suleiman.production_cost == 41_045_000
+    assert suleiman.sales_price_new == 36_940_500
 
     assert suleiman.available_power == 60
     assert suleiman.basic_hull_power_load == 20
