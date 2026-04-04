@@ -10,6 +10,7 @@ from ceres.computer import Computer5
 from ceres.drives import FusionPlantTL12, MDrive6, OperationFuel
 from ceres.sensors import CivilianGradeSensors
 from ceres.ship import BasicStealth, Hull, Ship
+from ceres.systems import Airlock
 from ceres.weapons import FixedFirmpoint, PulseLaser
 
 # Minimal ship for structural tests
@@ -202,3 +203,16 @@ def test_roundtrip_no_parts():
     assert loaded.fusion_plant is None
     assert loaded.cockpit is None
     assert loaded.fixed_firmpoints == []
+
+
+def test_roundtrip_airlock():
+    ship_with_airlock = Ship(
+        tl=12,
+        displacement=100,
+        hull=Hull(configuration=ship.streamlined_hull),
+        airlocks=[Airlock()],
+    )
+    loaded = _roundtrip(ship_with_airlock)
+    assert len(loaded.airlocks) == 1
+    assert loaded.airlocks[0].tons == pytest.approx(0.0)
+    assert loaded.airlocks[0].cost == 0.0

@@ -123,10 +123,11 @@ def test_ultralight_fighter_markdown_table_contains_core_rows():
 
     assert '## *Botfly* Ultralight Fighter | TL12 | Hull 2' in table
     assert '| Section | Item | Tons | Power | Cost (kCr) |' in table
-    assert '| Hull | Light Streamlined Hull | 6.00 |  | 270.00 |' in table
+    assert '| Hull | Light Streamlined Hull | **6.00** |  | 270.00 |' in table
     assert '| Armour | Crystaliron, Armour: 6 | 2.16 |  | 432.00 |' in table
-    assert '| M-Drive | Thrust 6 Budget Increased Size | 0.45 | -4.00 | 540.00 |' in table
-    assert '| Sensors | Civilian Grade | 1.00 | -1.00 | 3000.00 |' in table
+    assert '| M-Drive | Thrust 6 Budget Increased Size | 0.45 | 4.00 | 540.00 |' in table
+    assert '| Power Plant | Fusion (TL 12) Budget Increased Size | 0.67 | **8.00** | 400.00 |' in table
+    assert '| Sensors | Civilian Grade | 1.00 | 1.00 | 3000.00 |' in table
     assert '|  | • Radar, Lidar; DM -2 |  |  |  |' in table
     assert '| Fuel | Operation 1 weeks | 0.02 |  | 0.00 |' in table
     assert '|  | Maneuver/0 |  |  | 0.00 |' in table

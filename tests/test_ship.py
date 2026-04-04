@@ -5,7 +5,7 @@ from ceres import armour, ship
 from ceres.bridge import Cockpit
 from ceres.drives import FusionPlantTL12, MDrive6
 from ceres.sensors import CivilianGradeSensors
-from ceres.systems import AirRaft, InternalDockingSpace, ProbeDrones, Workshop
+from ceres.systems import Airlock, AirRaft, InternalDockingSpace, ProbeDrones, Workshop
 from ceres.weapons import FixedFirmpoint, PulseLaser
 from tests.ships._markdown_output import write_markdown_output
 
@@ -197,3 +197,13 @@ def test_markdown_table_renders_inline_error_on_cargo_row():
     table = my_ship.markdown_table()
     write_markdown_output('test_negative_cargo', table)
     assert '|  | **ERROR:** Cargo is negative by 1.00 tons |  |  |  |' in table
+
+
+def test_ship_roundtrips_airlocks_in_parts_list():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=ship.Hull(configuration=ship.streamlined_hull),
+        airlocks=[Airlock()],
+    )
+    assert len(my_ship.parts_of_type(Airlock)) == 1

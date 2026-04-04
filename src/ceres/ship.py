@@ -67,7 +67,7 @@ from .drives import (
 from .habitation import Staterooms
 from .parts import ShipPart
 from .sensors import CivilianGradeSensors, MilitaryGradeSensors
-from .systems import InternalDockingSpace, ProbeDrones, Workshop
+from .systems import Aerofins, Airlock, InternalDockingSpace, ProbeDrones, Workshop
 from .weapons import DoubleTurret, FixedFirmpoint
 
 
@@ -345,6 +345,8 @@ class Ship(ShipBase):
     sensors: CivilianGradeSensors | MilitaryGradeSensors | None = None
     docking_space: InternalDockingSpace | None = None
     staterooms: Staterooms | None = None
+    airlocks: list[Airlock] = Field(default_factory=list)
+    aerofins: Aerofins | None = None
     probe_drones: ProbeDrones | None = None
     workshop: Workshop | None = None
     turrets: list[DoubleTurret] = Field(default_factory=list)
@@ -486,11 +488,13 @@ class Ship(ShipBase):
             self.sensors,
             self.docking_space,
             self.staterooms,
+            self.aerofins,
             self.probe_drones,
             self.workshop,
         ):
             if part is not None:
                 parts.append(part)
+        parts.extend(self.airlocks)
         parts.extend(self.turrets)
         parts.extend(self.fixed_firmpoints)
         return parts
@@ -513,17 +517,19 @@ class Ship(ShipBase):
             tons: float | None,
             power: float | None,
             cost: float | None,
+            emphasize_tons: bool = False,
+            emphasize_power: bool = False,
         ) -> str:
             nonlocal last_section
             tons_text = '' if tons is None else f'{tons:.2f}'
+            if emphasize_tons and tons_text:
+                tons_text = f'**{tons_text}**'
             if power is None:
                 power_text = ''
-            elif power > 0:
-                power_text = f'+{power:.2f}'
-            elif power < 0:
-                power_text = f'{power:.2f}'
             else:
-                power_text = ''
+                power_text = f'{abs(power):.2f}'
+            if emphasize_power and power_text:
+                power_text = f'**{power_text}**'
             cost_text = '' if cost is None else f'{cost / 1000:.2f}'
             section_text = '' if section == last_section else section
             last_section = section
@@ -579,6 +585,7 @@ class Ship(ShipBase):
                 self.displacement,
                 None,
                 self.hull_cost,
+                emphasize_tons=True,
             ),
         ]
         if self.hull.armour is not None:
@@ -628,16 +635,24 @@ class Ship(ShipBase):
                 section = 'Craft'
             elif part is self.staterooms:
                 section = 'Staterooms'
-            elif part is self.probe_drones or part is self.workshop or part is self.fuel_processor:
+            elif (
+                part is self.probe_drones
+                or part is self.workshop
+                or part is self.fuel_processor
+                or part is self.aerofins
+                or part in self.airlocks
+            ):
                 section = 'Systems'
             elif part in self.turrets or part in self.fixed_firmpoints:
                 section = 'Weapons'
             power = None
+            emphasize_power = False
             if part is self.fusion_plant:
                 power = float(self.fusion_plant.output)
+                emphasize_power = True
             elif part.power:
                 power = -part.power
-            lines.append(add_row(section, details, part.tons, power, part.cost))
+            lines.append(add_row(section, details, part.tons, power, part.cost, emphasize_power=emphasize_power))
             lines.extend(add_note_rows(part.notes))
         for package in self.software_packages:
             lines.append(add_row('Software', item_text(package, package.description), None, None, package.cost))
@@ -704,3 +719,5 @@ class Ship(ShipBase):
                 highest_jump_control.warning(f'Limited to Jump {self.jump_drive.rating} by drive capacity')
         if self.cargo < 0:
             self.error(f'Cargo is negative by {-self.cargo:.2f} tons')
+        if self.bridge is not None and not self.airlocks:
+            self.error('No airlock installed')

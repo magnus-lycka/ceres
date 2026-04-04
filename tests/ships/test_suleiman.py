@@ -6,7 +6,7 @@ from ceres.computer import Computer5, Computer10, JumpControl1, JumpControl2, Ju
 from ceres.drives import FuelProcessor, FusionPlantTL12, JumpDrive2, JumpFuel, MDrive2, OperationFuel
 from ceres.habitation import Staterooms
 from ceres.sensors import MilitaryGradeSensors
-from ceres.systems import AirRaft, InternalDockingSpace, ProbeDrones, Workshop
+from ceres.systems import Airlock, AirRaft, InternalDockingSpace, ProbeDrones, Workshop
 from ceres.weapons import DoubleTurret
 
 from ._markdown_output import write_markdown_output
@@ -36,6 +36,7 @@ def build_suleiman() -> ship.Ship:
         turrets=[DoubleTurret()],
         docking_space=InternalDockingSpace(craft=AirRaft()),
         staterooms=Staterooms(count=4),
+        airlocks=[Airlock()],
         probe_drones=ProbeDrones(count=10),
         workshop=Workshop(),
     )
@@ -55,6 +56,7 @@ def test_suleiman_matches_first_modeled_reference_slice():
     sensors = suleiman.sensors
     docking_space = suleiman.docking_space
     staterooms = suleiman.staterooms
+    airlocks = suleiman.airlocks
     probe_drones = suleiman.probe_drones
     workshop = suleiman.workshop
 
@@ -128,6 +130,10 @@ def test_suleiman_matches_first_modeled_reference_slice():
     assert staterooms.tons == pytest.approx(16.0)
     assert staterooms.cost == 2_000_000
 
+    assert len(airlocks) == 1
+    assert airlocks[0].tons == pytest.approx(0.0)
+    assert airlocks[0].cost == 0.0
+
     assert probe_drones is not None
     assert probe_drones.count == 10
     assert probe_drones.tons == pytest.approx(2.0)
@@ -183,13 +189,13 @@ def test_suleiman_markdown_table_uses_heading_and_spec_shape():
 
     assert '## *Suleiman* Scout/Courier | TL12 | Hull 40' in table
     assert '| Section | Item | Tons | Power | Cost (kCr) |' in table
-    assert '| Hull | Streamlined Hull | 100.00 |  | 6000.00 |' in table
-    assert '| Hull | Streamlined Hull | 100.00 |  | 6000.00 |' in table
+    assert '| Hull | Streamlined Hull | **100.00** |  | 6000.00 |' in table
     assert '| Armour | Crystaliron, Armour: 4 | 6.00 |  | 1200.00 |' in table
-    assert '| Power Plant | Fusion (TL 12) | 4.00 | +60.00 | 4000.00 |' in table
-    assert '| M-Drive | Thrust 2 | 2.00 | -20.00 | 4000.00 |' in table
-    assert '| Sensors | Military Grade | 2.00 | -2.00 | 4100.00 |' in table
+    assert '| Power Plant | Fusion (TL 12) | 4.00 | **60.00** | 4000.00 |' in table
+    assert '| M-Drive | Thrust 2 | 2.00 | 20.00 | 4000.00 |' in table
+    assert '| Sensors | Military Grade | 2.00 | 2.00 | 4100.00 |' in table
     assert '|  | • Jammers, Radar, Lidar; DM +0 |  |  |  |' in table
+    assert '|  | Airlock | 0.00 |  | 0.00 |' in table
     assert '| Fuel | Jump 2 | 20.00 |  | 0.00 |' in table
     assert '|  | Operation 12 weeks | 1.20 |  | 0.00 |' in table
     assert '|  | Jump Control/2 |  |  | 200.00 |' in table

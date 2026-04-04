@@ -1,3 +1,4 @@
+from .base import Note, NoteCategory
 from .parts import ShipPart
 
 
@@ -27,6 +28,11 @@ class Bridge(ShipPart):
         if self.small:
             return 'Smaller Bridge'
         return 'Bridge'
+
+    def build_notes(self) -> list[Note]:
+        if self.small:
+            return [Note(category=NoteCategory.INFO, message='DM -1 to Pilot checks')]
+        return []
 
     def _standard_tons(self) -> float:
         displacement = self.owner.displacement
