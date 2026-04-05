@@ -101,7 +101,6 @@ class JumpControl6(JumpControl):
 
 
 class Computer(ShipPart):
-    power: float = 0.0
     description: str
     minimum_tl: ClassVar[int]
     processing: ClassVar[int]

@@ -5,7 +5,6 @@ from .parts import ShipPart
 
 
 class Armour(ShipPart):
-    power: float = 0.0
     description: str
     protection: int
     _min_tl: ClassVar[int] = 0

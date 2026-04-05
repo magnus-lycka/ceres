@@ -205,7 +205,6 @@ class Stealth(ShipPart):
     cost_per_ton: ClassVar[int] = 0
     tonnage: ClassVar[float] = 0
     sensors_dm: ClassVar[int] = 0
-    power: float = 0.0
 
     def compute_cost(self):
         return self.owner.displacement * self.cost_per_ton

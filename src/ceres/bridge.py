@@ -3,7 +3,6 @@ from .parts import ShipPart
 
 
 class Cockpit(ShipPart):
-    power: float = 0.0
     holographic: bool = False
 
     def build_item(self) -> str | None:

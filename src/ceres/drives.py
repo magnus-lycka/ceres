@@ -164,7 +164,6 @@ class _FusionPlant(ShipPart):
     minimum_tl: ClassVar[int]
     power_per_ton: ClassVar[int]
     cost_per_ton: ClassVar[int]
-    power: float = 0.0
     output: int
     budget: bool = False
     increased_size: bool = False
@@ -219,7 +218,6 @@ class FusionPlantTL15(_FusionPlant):
 
 
 class OperationFuel(ShipPart):
-    power: float = 0.0
     weeks: int
 
     def build_item(self) -> str | None:
@@ -240,7 +238,6 @@ class OperationFuel(ShipPart):
 
 
 class JumpFuel(ShipPart):
-    power: float = 0.0
     parsecs: int
 
     def build_item(self) -> str | None:

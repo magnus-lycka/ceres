@@ -6,8 +6,6 @@ from .parts import ShipPart
 
 
 class Workshop(ShipPart):
-    power: float = 0.0
-
     def build_item(self) -> str | None:
         return 'Workshop'
 
@@ -19,7 +17,6 @@ class Workshop(ShipPart):
 
 
 class CommonArea(ShipPart):
-    power: float = 0.0
     tons: float
 
     def build_item(self) -> str | None:
@@ -30,7 +27,6 @@ class CommonArea(ShipPart):
 
 
 class Airlock(ShipPart):
-    power: float = 0.0
     size: float = 2.0
 
     def build_item(self) -> str | None:
@@ -57,8 +53,6 @@ class Airlock(ShipPart):
 
 
 class Aerofins(ShipPart):
-    power: float = 0.0
-
     @property
     def atmospheric_pilot_dm(self) -> int:
         return 2
@@ -79,7 +73,6 @@ class Aerofins(ShipPart):
 class ProbeDrones(ShipPart):
     drones_per_ton: ClassVar[int] = 5
     cost_per_ton: ClassVar[float] = 500_000.0
-    power: float = 0.0
     count: int
 
     def build_item(self) -> str | None:
@@ -110,7 +103,6 @@ class AirRaft(SmallCraft):
 
 
 class InternalDockingSpace(ShipPart):
-    power: float = 0.0
     craft: AirRaft
 
     def build_item(self) -> str | None:

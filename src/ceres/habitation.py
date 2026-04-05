@@ -11,7 +11,6 @@ class Staterooms(ShipPart):
     life_support_per_occupant: ClassVar[float] = 1_000.0
 
     count: int
-    power: float = 0.0
 
     def compute_tons(self) -> float:
         return self.count * self.tons_per_stateroom
