@@ -201,12 +201,12 @@ def test_suleiman_markdown_table_uses_heading_and_spec_shape():
     assert '|  | Operation 12 weeks | 1.20 |  |  |' in table
     assert '|  | Jump Control/2 |  |  | 200.00 |' in table
     assert '| Cost | Amount |' in table
-    assert '| Sales Price New | 36940500.00 |' in table
-    assert '| Life Support | 12000.00 |' in table
-    assert '| Fuel | 4000.00 |' in table
-    assert '| Crew Salaries | 15000.00 |' in table
+    assert '| Sales Price New | 36940500 |' in table
+    assert '| Life Support | 12000 |' in table
+    assert '| Fuel | 4000 |' in table
+    assert '| Crew Salaries | 15000 |' in table
     assert '| Crew | Salary |' in table
-    assert '| ENGINEER | 4000.00 |' in table
+    assert '| ENGINEER | 4000 |' in table
 
 
 def test_markdown_table_renders_inline_warning_on_jump_drive_row():

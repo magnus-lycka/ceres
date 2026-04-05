@@ -133,5 +133,5 @@ def test_ultralight_fighter_markdown_table_contains_core_rows():
     assert '| Fuel | Operation 1 weeks | 0.02 |  |  |' in table
     assert '|  | Manoeuvre/0 |  |  |  |' in table
     assert '| Cargo | Cargo Hold | 0.08 |  |  |' in table
-    assert '| Mortgage | 24466.88 |' in table
-    assert '| Total Expenses | 30955.88 |' in table
+    assert '| Mortgage | 24467 |' in table
+    assert '| Total Expenses | 30956 |' in table

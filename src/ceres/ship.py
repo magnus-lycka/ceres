@@ -455,7 +455,13 @@ class Ship(ShipBase):
         return float(self.jump_fuel.tons * 2 * fuel_cost_per_ton)
 
     def _total_expenses(self) -> float:
-        return self._mortgage_cost() + self._maintenance_cost() + self._life_support_cost() + self._crew_salary_cost()
+        return (
+            self._mortgage_cost()
+            + self._maintenance_cost()
+            + self._life_support_cost()
+            + self._crew_salary_cost()
+            + self._fuel_cost()
+        )
 
     @property
     def crew_roles(self) -> list[CrewRole]:
@@ -540,10 +546,10 @@ class Ship(ShipBase):
             return f'| {section_text} | {item} | {tons_text} | {power_text} | {cost_text} |'
 
         def add_cost_row(item: str, cost: float) -> str:
-            return f'| {item} | {cost:.2f} |'
+            return f'| {item} | {round(cost)} |'
 
         def add_crew_row(role: str, salary: float) -> str:
-            return f'| {role} | {salary:.2f} |'
+            return f'| {role} | {round(salary)} |'
 
         def item_text(obj, fallback: str) -> str:
             for note in obj.notes:
