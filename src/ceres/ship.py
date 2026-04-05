@@ -67,7 +67,7 @@ from .drives import (
 from .habitation import Staterooms
 from .parts import ShipPart
 from .sensors import BasicSensors, CivilianSensors, MilitarySensors
-from .systems import Aerofins, Airlock, CommonArea, InternalDockingSpace, ProbeDrones, Workshop
+from .systems import Aerofins, Airlock, CommonArea, FuelScoops, InternalDockingSpace, ProbeDrones, Workshop
 from .weapons import DoubleTurret, FixedFirmpoint
 
 
@@ -354,6 +354,7 @@ class Ship(ShipBase):
     aerofins: Aerofins | None = None
     probe_drones: ProbeDrones | None = None
     workshop: Workshop | None = None
+    fuel_scoops: FuelScoops | None = None
     turrets: list[DoubleTurret] = Field(default_factory=list)
     fixed_firmpoints: list[FixedFirmpoint] = Field(default_factory=list)
 
@@ -501,6 +502,7 @@ class Ship(ShipBase):
             self.aerofins,
             self.probe_drones,
             self.workshop,
+            self.fuel_scoops,
         ):
             if part is not None:
                 parts.append(part)
@@ -652,6 +654,7 @@ class Ship(ShipBase):
                 or part is self.workshop
                 or part is self.fuel_processor
                 or part is self.aerofins
+                or part is self.fuel_scoops
                 or part in self.airlocks
             ):
                 section = 'Systems'
@@ -666,6 +669,9 @@ class Ship(ShipBase):
                 power = -part.power
             lines.append(add_row(section, details, part.tons, power, part.cost, emphasize_power=emphasize_power))
             lines.extend(add_note_rows(part.notes))
+            if part is self.docking_space:
+                craft = self.docking_space.craft
+                lines.append(add_row('Craft', craft.build_item() or craft.__class__.__name__, None, None, craft.cost))
         for package in self.software_packages:
             lines.append(add_row('Software', item_text(package, package.description), None, None, package.cost))
             lines.extend(add_note_rows(package.notes))
@@ -706,6 +712,8 @@ class Ship(ShipBase):
         return cargo
 
     def model_post_init(self, __context: Any) -> None:
+        if self.hull.configuration.streamlined == Streamlined.YES:
+            object.__setattr__(self, 'fuel_scoops', FuelScoops(free=True))
         self.clear_notes()
         for part in self._all_parts():
             part.bind(self)

@@ -88,3 +88,14 @@ tonnage or binding, only cost and bandwidth requirements. `Computer.can_run()`
 checks bandwidth against the computer's processing rating; `Core` computers
 have unlimited jump control bandwidth. A computer automatically includes
 `Library`, `Manoeuvre/0`, and (from TL11) `Intellect` in its software list.
+
+## Intentional differences from Mark F. Anderson's reference sheets
+
+The `refs/` directory contains ship designs built with Mark F. Anderson's
+design tool. Our output differs in the following intentional ways:
+
+- **Stores & Spares** — not modelled. HG only specifies this for capital ships,
+  and the tonnage is considered to fit within existing spaces rather than
+  reducing cargo capacity.
+- **Battle Load** — Anderson shows power figures for both normal and battle
+  load. We only model normal load and do not plan to add battle load.

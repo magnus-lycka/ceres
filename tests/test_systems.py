@@ -1,6 +1,6 @@
 from ceres import ship
 from ceres.base import ShipBase
-from ceres.systems import Airlock, AirRaft, CommonArea, InternalDockingSpace, ProbeDrones, Workshop
+from ceres.systems import Airlock, AirRaft, CommonArea, FuelScoops, InternalDockingSpace, ProbeDrones, Workshop
 
 
 class DummyOwner(ShipBase):
@@ -68,6 +68,58 @@ def test_internal_docking_space_for_air_raft():
     assert d.tons == 5.0
     assert d.cost == 1_250_000
     assert d.power == 0
+
+
+def test_fuel_scoops_auto_included_for_streamlined_hull():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=ship.Hull(configuration=ship.streamlined_hull),
+    )
+    assert my_ship.fuel_scoops is not None
+
+
+def test_fuel_scoops_free_with_streamlined_hull():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=ship.Hull(configuration=ship.streamlined_hull),
+    )
+    assert my_ship.fuel_scoops is not None
+    assert my_ship.fuel_scoops.tons == 0.0
+    assert my_ship.fuel_scoops.cost == 0.0
+
+
+def test_fuel_scoops_not_auto_included_for_standard_hull():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=ship.Hull(configuration=ship.standard_hull),
+    )
+    assert my_ship.fuel_scoops is None
+
+
+def test_fuel_scoops_paid_when_added_to_standard_hull():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=ship.Hull(configuration=ship.standard_hull),
+        fuel_scoops=FuelScoops(),
+    )
+    assert my_ship.fuel_scoops is not None
+    assert my_ship.fuel_scoops.tons == 0.0
+    assert my_ship.fuel_scoops.cost == 1_000_000.0
+
+
+def test_fuel_scoops_explicit_on_streamlined_hull_still_free():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=ship.Hull(configuration=ship.streamlined_hull),
+        fuel_scoops=FuelScoops(),
+    )
+    assert my_ship.fuel_scoops is not None
+    assert my_ship.fuel_scoops.cost == 0.0
 
 
 def test_airlock_is_free_on_100_ton_ship():

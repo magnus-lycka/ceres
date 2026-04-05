@@ -207,6 +207,8 @@ def test_suleiman_markdown_table_uses_heading_and_spec_shape():
     assert '| Crew Salaries | 15000 |' in table
     assert '| Crew | Salary |' in table
     assert '| ENGINEER | 4000 |' in table
+    assert 'Fuel Scoops' in table
+    assert '|  | Air/Raft |  |  | 250.00 |' in table
 
 
 def test_markdown_table_renders_inline_warning_on_jump_drive_row():

@@ -5,6 +5,24 @@ from .base import CeresModel, Note, NoteCategory
 from .parts import ShipPart
 
 
+class FuelScoops(ShipPart):
+    free: bool = False
+
+    def build_item(self) -> str | None:
+        return 'Fuel Scoops'
+
+    def build_notes(self) -> list[Note]:
+        if self.free:
+            return [Note(category=NoteCategory.INFO, message='Included free with streamlined hull')]
+        return []
+
+    def compute_tons(self) -> float:
+        return 0.0
+
+    def compute_cost(self) -> float:
+        return 0.0 if self.free else 1_000_000.0
+
+
 class Workshop(ShipPart):
     def build_item(self) -> str | None:
         return 'Workshop'
