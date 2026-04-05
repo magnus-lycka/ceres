@@ -88,7 +88,7 @@ def test_ultralight_fighter_matches_modeled_reference_values():
     assert int(computer.cost) == 30_000
     assert [(package.name, package.tons, package.cost) for package in fighter.software_packages] == [
         ('Library', 0.0, 0.0),
-        ('Maneuver/0', 0.0, 0.0),
+        ('Manoeuvre/0', 0.0, 0.0),
         ('Intellect', 0.0, 0.0),
     ]
 
@@ -131,7 +131,7 @@ def test_ultralight_fighter_markdown_table_contains_core_rows():
     assert '| Sensors | Civilian Grade | 1.00 | 1.00 | 3000.00 |' in table
     assert '|  | • Radar, Lidar; DM -2 |  |  |  |' in table
     assert '| Fuel | Operation 1 weeks | 0.02 |  |  |' in table
-    assert '|  | Maneuver/0 |  |  |  |' in table
+    assert '|  | Manoeuvre/0 |  |  |  |' in table
     assert '| Cargo | Cargo Hold | 0.08 |  |  |' in table
     assert '| Mortgage | 24466.88 |' in table
     assert '| Total Expenses | 30955.88 |' in table

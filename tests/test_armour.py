@@ -1,7 +1,7 @@
 import pytest
 
 from ceres import armour
-from ceres.base import ShipBase
+from ceres.base import NoteCategory, ShipBase
 
 
 class DummyOwner(ShipBase):
@@ -12,6 +12,10 @@ class DummyOwner(ShipBase):
     @property
     def armour_volume_modifier(self) -> float:
         return self._armour_volume_modifier
+
+
+def error_messages(part) -> list[str]:
+    return [note.message for note in part.notes if note.category is NoteCategory.ERROR]
 
 
 def test_armour_recomputes_cost_from_input():
@@ -26,10 +30,10 @@ def test_armour_recomputes_tons_from_input():
     assert my_armour.tons == 100 * 2 * 0.025
 
 
-def test_titanium_steel_armour_too_low_tl():
-    with pytest.raises(ValueError):
-        a = armour.TitaniumSteelArmour(tl=6, protection=2)
-        a.bind(DummyOwner(7, 99))
+def test_titanium_steel_armour_too_low_tl_adds_error_note():
+    a = armour.TitaniumSteelArmour(tl=6, protection=2)
+    a.bind(DummyOwner(7, 99))
+    assert any('TL' in msg for msg in error_messages(a))
 
 
 def test_titanium_steel_armour():
@@ -76,30 +80,39 @@ def test_titanium_steel_armour_26_99ton():
 
 
 def test_max_protection_titanium_steel_tl7():
-    armour.TitaniumSteelArmour(tl=7, protection=7)
-    with pytest.raises(ValueError):
-        a = armour.TitaniumSteelArmour(tl=7, protection=8)
-        a.bind(DummyOwner(99, 999))
+    a_ok = armour.TitaniumSteelArmour(tl=7, protection=7)
+    a_ok.bind(DummyOwner(99, 999))
+    assert not error_messages(a_ok)
+
+    a_bad = armour.TitaniumSteelArmour(tl=7, protection=8)
+    a_bad.bind(DummyOwner(99, 999))
+    assert error_messages(a_bad)
 
 
 def test_max_protection_titanium_steel_tl8():
-    armour.TitaniumSteelArmour(tl=8, protection=8)
-    with pytest.raises(ValueError):
-        a = armour.TitaniumSteelArmour(tl=8, protection=9)
-        a.bind(DummyOwner(99, 999))
+    a_ok = armour.TitaniumSteelArmour(tl=8, protection=8)
+    a_ok.bind(DummyOwner(99, 999))
+    assert not error_messages(a_ok)
+
+    a_bad = armour.TitaniumSteelArmour(tl=8, protection=9)
+    a_bad.bind(DummyOwner(99, 999))
+    assert error_messages(a_bad)
 
 
 def test_max_protection_titanium_steel_tl15():
-    armour.TitaniumSteelArmour(tl=15, protection=9)
-    with pytest.raises(ValueError):
-        a = armour.TitaniumSteelArmour(tl=15, protection=10)
-        a.bind(DummyOwner(99, 999))
+    a_ok = armour.TitaniumSteelArmour(tl=15, protection=9)
+    a_ok.bind(DummyOwner(99, 999))
+    assert not error_messages(a_ok)
+
+    a_bad = armour.TitaniumSteelArmour(tl=15, protection=10)
+    a_bad.bind(DummyOwner(99, 999))
+    assert error_messages(a_bad)
 
 
-def test_crystaliron_armour_too_low_tl():
-    with pytest.raises(ValueError):
-        a = armour.CrystalironArmour(tl=9, protection=2)
-        a.bind(DummyOwner(15, 555))
+def test_crystaliron_armour_too_low_tl_adds_error_note():
+    a = armour.CrystalironArmour(tl=9, protection=2)
+    a.bind(DummyOwner(15, 555))
+    assert any('TL' in msg for msg in error_messages(a))
 
 
 def test_crystaliron_armour():
@@ -114,16 +127,20 @@ def test_crystaliron_armour():
 def test_max_protection_crystaliron_armour():
     for tl in range(10, 16):
         max_prot = min(tl, 13)
-        armour.CrystalironArmour(tl=tl, protection=max_prot)
-        with pytest.raises(ValueError):
-            a = armour.CrystalironArmour(tl=tl, protection=max_prot + 1)
-            a.bind(DummyOwner(tl, 999))
+
+        a_ok = armour.CrystalironArmour(tl=tl, protection=max_prot)
+        a_ok.bind(DummyOwner(tl, 999))
+        assert not error_messages(a_ok)
+
+        a_bad = armour.CrystalironArmour(tl=tl, protection=max_prot + 1)
+        a_bad.bind(DummyOwner(tl, 999))
+        assert error_messages(a_bad)
 
 
-def test_bonded_superdense_armour_too_low_tl():
-    with pytest.raises(ValueError):
-        a = armour.BondedSuperdenseArmour(tl=13, protection=2)
-        a.bind(DummyOwner(13, 999))
+def test_bonded_superdense_armour_too_low_tl_adds_error_note():
+    a = armour.BondedSuperdenseArmour(tl=13, protection=2)
+    a.bind(DummyOwner(13, 999))
+    assert any('TL' in msg for msg in error_messages(a))
 
 
 def test_bonded_superdense_armour():
@@ -138,16 +155,20 @@ def test_bonded_superdense_armour():
 def test_max_protection_bonded_superdense_armour():
     for tl in range(14, 16):
         max_prot = tl
-        armour.BondedSuperdenseArmour(tl=tl, protection=max_prot)
-        with pytest.raises(ValueError):
-            a = armour.BondedSuperdenseArmour(tl=tl, protection=max_prot + 1)
-            a.bind(DummyOwner(tl, 999))
+
+        a_ok = armour.BondedSuperdenseArmour(tl=tl, protection=max_prot)
+        a_ok.bind(DummyOwner(tl, 999))
+        assert not error_messages(a_ok)
+
+        a_bad = armour.BondedSuperdenseArmour(tl=tl, protection=max_prot + 1)
+        a_bad.bind(DummyOwner(tl, 999))
+        assert error_messages(a_bad)
 
 
-def test_molecular_bonded_armour_too_low_tl():
-    with pytest.raises(ValueError):
-        a1 = armour.MolecularBondedArmour(tl=15, protection=2)
-        a1.bind(DummyOwner(15, 999))
+def test_molecular_bonded_armour_too_low_tl_adds_error_note():
+    a = armour.MolecularBondedArmour(tl=15, protection=2)
+    a.bind(DummyOwner(15, 999))
+    assert any('TL' in msg for msg in error_messages(a))
 
 
 def test_molecular_bonded_armour():
@@ -162,7 +183,11 @@ def test_molecular_bonded_armour():
 def test_max_protection_molecular_bonded_armour():
     for tl in range(16, 20):
         max_prot = tl + 4
-        armour.MolecularBondedArmour(tl=tl, protection=max_prot)
-        with pytest.raises(ValueError):
-            a = armour.MolecularBondedArmour(tl=tl, protection=max_prot + 1)
-            a.bind(DummyOwner(tl, 999))
+
+        a_ok = armour.MolecularBondedArmour(tl=tl, protection=max_prot)
+        a_ok.bind(DummyOwner(tl, 999))
+        assert not error_messages(a_ok)
+
+        a_bad = armour.MolecularBondedArmour(tl=tl, protection=max_prot + 1)
+        a_bad.bind(DummyOwner(tl, 999))
+        assert error_messages(a_bad)

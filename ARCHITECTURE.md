@@ -1,132 +1,90 @@
 # Architecture
 
-## Project Structure
+## Core patterns
 
-```
-src/ceres/
-  base.py     # Shared ship base model
-  parts.py    # Base class for installed ship parts
-  armour.py   # Armour types (TitaniumSteel, Crystaliron, BondedSuperdense, MolecularBonded)
-  sensors.py  # Sensor packages
-  drives.py   # M-drive, fusion plants, operation fuel
-  ship.py     # Ship, Hull, HullConfiguration, stealth classes, ship-level aggregates
-tests/
-  ships/      # Regression tests for complete ship designs
-  test_parts.py
-  test_armour.py
-  test_drives.py
-  test_hulls.py
-  test_ship.py
-```
-
-## Core Patterns
-
-### Pydantic Frozen Models
+### Pydantic frozen models
 
 All models use Pydantic `BaseModel` with `frozen = True`. Objects are immutable
 after construction.
 
-### Parts Use Plain Numeric Values
+### Parts use plain numeric values
 
 `ShipPart` stores `cost`, `power`, and `tons` as ordinary `float` fields.
-There are no wrapper value types for derived quantities.
+Parts that derive their values override `compute_cost()`, `compute_power()`,
+and `compute_tons()`. The base implementation simply returns the stored values.
 
-Parts that derive their values override:
+### Two-phase construction: creation then binding
 
-- `compute_cost()`
-- `compute_power()`
-- `compute_tons()`
+Parts are created as plain frozen models. `Ship.model_post_init()` then calls
+`part.bind(ship)` on every installed part, which sets the owner, validates TL
+requirements, and recalculates derived values. Ship-dependent logic lives in
+`compute_*` methods and is only callable after binding.
 
-The base `ShipPart` implementation simply returns the stored values unchanged.
+### Derived data in model JSON
 
-### Binding
+Derived values (`cost`, `power`, `tons`) are included in JSON so a serialized
+model can be used directly for rendering. On deserialization, derived values
+are recalculated by the model and override whatever the JSON contained — JSON
+is a snapshot of current state, not the authoritative source.
 
-Construction happens in two phases:
+### Tech level model
 
-1. **Part creation** - parts are created as plain frozen models.
-2. **Ship binding** - `Ship.model_post_init()` calls `part.bind(ship)` on every
-   installed part. This sets the part owner, validates TL requirements, and
-   recalculates derived values such as cost, power, and tons.
+`ship.tl` is the ship TL. `part.minimum_tl` is the minimum TL required.
+`part.effective_tl` is what the part uses for calculations — it defaults to
+the ship TL, but subclasses may override this when a part represents a specific
+technology variant rather than just a minimum availability threshold.
+`FusionPlant` is the primary example: it always uses its own fixed TL, not the
+ship's.
 
-### Owner Properties
+### Notes and validation
 
-`ShipPart` has a private `_owner` attribute and a public `owner` property that
-raises `RuntimeError` if accessed before binding. This keeps ship-dependent logic
-explicit and gives clean type narrowing without scattered asserts.
+Errors, warnings, and informational messages are stored as `Note` objects on
+the part or ship that detected the problem. `build_notes()` is called during
+binding and produces static notes (e.g. sensor DM). Validation logic in
+`model_post_init` adds dynamic notes (e.g. missing airlock, jump control
+mismatch, negative cargo). Notes with category `ITEM` are special: they carry
+the human-readable row label for the stat sheet.
 
-### Derived Data In Model JSON
-
-Derived part data such as `cost`, `power`, and `tons` is included in JSON so the
-serialized model can be used directly for rendering and reporting.
-
-On import and validation, derived values are recalculated by the model and win
-over whatever JSON happened to contain. JSON is therefore a serialization format
-for the current state of the model, not the authoritative source for derived
-part values.
-
-### Tech Level Model
-
-Tech levels are plain integers.
-
-- `ship.tl` is the ship TL
-- `part.minimum_tl` is the minimum TL required to install or use that part
-- `part.ship_tl` is the owning ship's TL
-- `part.effective_tl` is the TL the part uses for calculations
-
-The default `ShipPart.effective_tl` is the ship TL, but subclasses may override
-this when a part represents a specific technology variant rather than merely a
-minimum availability threshold.
-
-### Hull System
+### Hull
 
 `HullConfiguration` defines hull properties (streamlining, cost modifier, hull
 points modifier, usage factor, etc.). Seven predefined configurations exist as
-module-level instances (e.g. `standard_hull`, `streamlined_hull`, `planetoid`).
+module-level instances (`standard_hull`, `streamlined_hull`, `planetoid`, etc.)
+and can be modified further with flags such as `reinforced`, `light`, and
+`military`.
 
-`Hull` combines a `HullConfiguration`, optional armour, and optional stealth.
-`armour` and `stealth` are represented as discriminated unions keyed by their
-human-readable `description` fields, which are also included in JSON. This keeps
-the Python API natural (`hull.armour`, `hull.stealth`) while still allowing
-roundtrip serialization back to the correct concrete part type.
+`Hull` combines a `HullConfiguration` with optional armour, optional stealth,
+and optional surface options (`heat_shielding`, `radiation_shielding`, `reflec`).
+Armour and stealth are discriminated unions keyed by their `description` fields
+so the Python API remains natural while roundtrip serialization still resolves
+the correct concrete type.
 
-`Hull` exposes its installed sub-parts so `Ship` can bind and aggregate them.
+### Ship aggregation
 
-### Ship Aggregation
+`Ship` owns the full installed-part graph and aggregates ship-level values such
+as power budget (available, load by category), production cost, sales price,
+cargo, crew roles, and operating expenses. `markdown_table()` renders the
+complete stat sheet as a Markdown table. These remain ship-level concerns rather
+than cached part data.
 
-`Ship` owns the full installed-part graph and is responsible for aggregating
-ship-level values such as:
+### Armour
 
-- `hull_cost`
-- `production_cost`
-- `sales_price_new`
-- `crew_roles`
-- `available_power`
-- `basic_hull_power_load`
-- `maneuver_power_load`
-- `sensor_power_load`
-- `weapon_power_load`
-- `total_power_load`
-- `cargo`
-- `software_packages`
-- `markdown_table()`
+`Armour` extends `ShipPart` with derived cost and tonnage. Tonnage scales with
+displacement and a per-type `_tonnage_consumed` constant; small ships (< 100 t)
+get a size-factor multiplier. Each concrete armour type enforces its own
+protection limits and minimum TL via `check_protection_limit()`.
 
-These remain ship-level properties rather than cached part data.
+### Weapons
 
-`Ship.sensors` is modeled as a ship-level installed part, similar to `Hull.armour`
-and `Hull.stealth`, rather than encoding the specific sensor package name in the
-attribute itself.
+`FixedFirmpoint` composes a `PulseLaser` value object. The laser carries
+advantage flags (`very_high_yield`, `energy_efficient`) that affect cost and
+power; the firmpoint applies mount-level modifiers on top. `DoubleTurret` is
+a fixed-cost part with no configurable weapon.
 
-Some of these ship-level properties are still intentionally minimal and currently
-exist to support regression-tested ship sheets such as the ultralight fighter.
-For example, the crew model presently covers the small-craft case directly used
-by that sheet, while presentation concerns are starting to move toward
-`markdown_table()` instead of additional one-off report properties.
+### Software
 
-### Armour Hierarchy
-
-`Armour` extends `ShipPart` with derived cost and tons. Concrete types
-(`TitaniumSteelArmour`, `CrystalironArmour`, etc.) define cost-per-ton,
-tonnage-consumed, min TL, and protection limits via class variables and
-`check_protection_limit()`. Small ships (< 100 tons) have size-factor multipliers
-on armour tonnage. Armour types also expose human-readable `description` values
-used both for rendering and as discriminators during JSON roundtripping.
+`SoftwarePackage` is a separate hierarchy from `ShipPart` — software has no
+tonnage or binding, only cost and bandwidth requirements. `Computer.can_run()`
+checks bandwidth against the computer's processing rating; `Core` computers
+have unlimited jump control bandwidth. A computer automatically includes
+`Library`, `Manoeuvre/0`, and (from TL11) `Intellect` in its software list.

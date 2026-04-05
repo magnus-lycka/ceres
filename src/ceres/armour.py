@@ -1,5 +1,6 @@
 from typing import ClassVar, Literal
 
+from .base import ShipBase
 from .parts import ShipPart
 
 
@@ -11,19 +12,37 @@ class Armour(ShipPart):
     _cost_per_ton: ClassVar[int] = 0
     _tonnage_consumed: ClassVar[int] = 0
 
-    def check_protection_limit(self):
-        return NotImplemented
+    def bind(self, owner: ShipBase) -> None:
+        super().bind(owner)
+        self.check_protection_limit()
+
+    def _effective_tl(self) -> int | None:
+        """Resolve the TL to use for protection-limit checks.
+
+        Returns None and adds an error note if the TL is invalid.
+        """
+        if self.tl:
+            if self.owner.tl < self.tl:
+                self.error(f'Ship TL{self.owner.tl} is below armour TL{self.tl}')
+                return None
+            tl = self.tl
+        else:
+            tl = self.owner.tl
+        if tl < self._min_tl:
+            self.error(f'{self.description} requires TL{self._min_tl}')
+            return None
+        return tl
+
+    def check_protection_limit(self) -> None:
+        pass
 
     def build_item(self) -> str | None:
         return f'{self.description}, Armour: {self.protection}'
 
     def compute_cost(self) -> float:
-        self.check_protection_limit()
-        tons = self.compute_tons()
-        return tons * self._cost_per_ton
+        return self.compute_tons() * self._cost_per_ton
 
     def compute_tons(self) -> float:
-        self.check_protection_limit()
         displacement = self.owner.displacement
         if displacement < 5:
             raise ValueError('Displacement must be at least 5 tons for armour.')
@@ -46,19 +65,14 @@ class TitaniumSteelArmour(Armour):
     _min_tl = 7
     tl: int | None = None
 
-    def check_protection_limit(self):
-        if self.tl:
-            if self.owner.tl < self.tl:
-                raise ValueError('Ship TL is below stated part TL')
-            tl = self.tl
-        else:
-            tl = self.owner.tl
-        if tl < self._min_tl:
-            raise ValueError(f'Titanium Steel Armour needs TL {self._min_tl}')
+    def check_protection_limit(self) -> None:
+        tl = self._effective_tl()
+        if tl is None:
+            return
         if self.protection > tl:
-            raise ValueError("Protection can't be more than TL")
-        if self.protection > 9:
-            raise ValueError("Protection can't be more than 9")
+            self.error(f'Protection {self.protection} exceeds TL{tl}')
+        elif self.protection > 9:
+            self.error(f'Protection {self.protection} exceeds maximum 9 for Titanium Steel')
 
 
 class CrystalironArmour(Armour):
@@ -68,19 +82,14 @@ class CrystalironArmour(Armour):
     _min_tl = 10
     tl: int | None = None
 
-    def check_protection_limit(self):
-        if self.tl:
-            if self.owner.tl < self.tl:
-                raise ValueError('Ship TL is below stated part TL')
-            tl = self.tl
-        else:
-            tl = self.owner.tl
-        if tl < self._min_tl:
-            raise ValueError(f'Crystaliron Armour needs TL {self._min_tl}')
+    def check_protection_limit(self) -> None:
+        tl = self._effective_tl()
+        if tl is None:
+            return
         if self.protection > tl:
-            raise ValueError("Protection can't be more than TL")
-        if self.protection > 13:
-            raise ValueError("Protection can't be more than 13")
+            self.error(f'Protection {self.protection} exceeds TL{tl}')
+        elif self.protection > 13:
+            self.error(f'Protection {self.protection} exceeds maximum 13 for Crystaliron')
 
 
 class BondedSuperdenseArmour(Armour):
@@ -90,17 +99,12 @@ class BondedSuperdenseArmour(Armour):
     _min_tl = 14
     tl: int | None = None
 
-    def check_protection_limit(self):
-        if self.tl:
-            if self.owner.tl < self.tl:
-                raise ValueError('Ship TL is below stated part TL')
-            tl = self.tl
-        else:
-            tl = self.owner.tl
-        if tl < self._min_tl:
-            raise ValueError(f'Bonded Superdense Armour needs TL {self._min_tl}')
+    def check_protection_limit(self) -> None:
+        tl = self._effective_tl()
+        if tl is None:
+            return
         if self.protection > tl:
-            raise ValueError("Protection can't be more than TL")
+            self.error(f'Protection {self.protection} exceeds TL{tl}')
 
 
 class MolecularBondedArmour(Armour):
@@ -110,14 +114,9 @@ class MolecularBondedArmour(Armour):
     _min_tl = 16
     tl: int | None = None
 
-    def check_protection_limit(self):
-        if self.tl:
-            if self.owner.tl < self.tl:
-                raise ValueError('Ship TL is below stated part TL')
-            tl = self.tl
-        else:
-            tl = self.owner.tl
-        if tl < self._min_tl:
-            raise ValueError(f'Molecular Bonded Armour needs TL {self._min_tl}')
+    def check_protection_limit(self) -> None:
+        tl = self._effective_tl()
+        if tl is None:
+            return
         if self.protection > tl + 4:
-            raise ValueError("Protection can't be more than TL+4")
+            self.error(f'Protection {self.protection} exceeds TL{tl}+4')

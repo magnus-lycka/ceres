@@ -35,7 +35,7 @@ class Library(SoftwarePackage):
 
 
 class Manoeuvre(SoftwarePackage):
-    description: Literal['Maneuver/0'] = 'Maneuver/0'
+    description: Literal['Manoeuvre/0'] = 'Manoeuvre/0'
     minimum_tl = 8
     bandwidth = 0
     base_cost = 0.0

@@ -218,10 +218,6 @@ class FusionPlantTL15(_FusionPlant):
     cost_per_ton = 2_000_000
 
 
-# Compatibility alias while the codebase migrates to explicit variants.
-FusionPlant = FusionPlantTL12
-
-
 class OperationFuel(ShipPart):
     power: float = 0.0
     weeks: int
