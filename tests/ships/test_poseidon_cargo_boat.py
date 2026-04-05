@@ -10,6 +10,9 @@ from ceres.systems import Aerofins, Airlock, CommonArea
 from ._markdown_output import write_markdown_output
 
 POSEIDON_TLS = [9, 10, 12]
+POSEIDON_HULL = ship.streamlined_hull.model_copy(
+    update={'light': True, 'description': 'Light Streamlined Hull'},
+)
 
 
 def build_poseidon_cargo_boat(tl: int) -> ship.Ship:
@@ -20,7 +23,7 @@ def build_poseidon_cargo_boat(tl: int) -> ship.Ship:
         tl=tl,
         displacement=100,
         design_type=ship.ShipDesignType.STANDARD,
-        hull=ship.Hull(configuration=ship.streamlined_hull),
+        hull=ship.Hull(configuration=POSEIDON_HULL),
         m_drive=MDrive3(),
         fusion_plant=fusion_plant,
         operation_fuel=OperationFuel(weeks=16),
@@ -39,7 +42,8 @@ def test_poseidon_cargo_boat_generates_markdown_for_visual_comparison(tl: int):
     table = cargo_boat.markdown_table()
     write_markdown_output(f'test_poseidon_100t_tl{tl}', table)
 
-    assert f'## *Poseidon* Cargo Boat | TL{tl} | Hull 40' in table
+    assert f'## *Poseidon* Cargo Boat | TL{tl} | Hull 36' in table
+    assert '| Hull | Light Streamlined Hull | **100.00** |  | 4500.00 |' in table
     assert '|  | Basic Ship Systems |  | 20.00 |  |' in table
     assert '| Bridge | Smaller Bridge | 6.00 |  | 250.00 |' in table
     assert '|  | • DM -1 to Pilot checks |  |  |  |' in table
@@ -95,7 +99,7 @@ def test_ship_with_bridge_and_no_airlock_adds_error():
     my_ship = ship.Ship(
         tl=12,
         displacement=99,
-        hull=ship.Hull(configuration=ship.streamlined_hull),
+        hull=ship.Hull(configuration=POSEIDON_HULL),
         bridge=Bridge(small=True),
         computer=Computer5(),
         staterooms=Staterooms(count=1),
@@ -112,7 +116,7 @@ def test_markdown_table_renders_inline_error_on_missing_airlock():
         displacement=99,
         ship_class='Poseidon',
         ship_type='Cargo Boat',
-        hull=ship.Hull(configuration=ship.streamlined_hull),
+        hull=ship.Hull(configuration=POSEIDON_HULL),
         bridge=Bridge(small=True),
         computer=Computer5(),
         staterooms=Staterooms(count=1),
@@ -126,7 +130,7 @@ def test_ship_with_staterooms_and_no_common_area_adds_warning():
     my_ship = ship.Ship(
         tl=12,
         displacement=99,
-        hull=ship.Hull(configuration=ship.streamlined_hull),
+        hull=ship.Hull(configuration=POSEIDON_HULL),
         bridge=Bridge(small=True),
         computer=Computer5(),
         staterooms=Staterooms(count=1),
@@ -143,7 +147,7 @@ def test_markdown_table_renders_inline_warning_on_missing_common_area():
         displacement=99,
         ship_class='Poseidon',
         ship_type='Cargo Boat',
-        hull=ship.Hull(configuration=ship.streamlined_hull),
+        hull=ship.Hull(configuration=POSEIDON_HULL),
         bridge=Bridge(small=True),
         computer=Computer5(),
         staterooms=Staterooms(count=1),
