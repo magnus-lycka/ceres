@@ -8,7 +8,7 @@ from ceres import armour, ship
 from ceres.bridge import Cockpit
 from ceres.computer import Computer5
 from ceres.drives import FusionPlantTL12, MDrive6, OperationFuel
-from ceres.sensors import CivilianGradeSensors
+from ceres.sensors import BasicSensors, CivilianSensors
 from ceres.ship import BasicStealth, Hull, Ship
 from ceres.systems import Airlock
 from ceres.weapons import FixedFirmpoint, PulseLaser
@@ -30,7 +30,7 @@ ultralight = Ship(
     operation_fuel=OperationFuel(weeks=1),
     cockpit=Cockpit(holographic=True),
     computer=Computer5(),
-    sensors=CivilianGradeSensors(),
+    sensors=CivilianSensors(),
     fixed_firmpoints=[FixedFirmpoint(weapon=PulseLaser(very_high_yield=True, energy_efficient=True))],
 )
 
@@ -181,7 +181,12 @@ def test_roundtrip_computer():
 
 def test_roundtrip_sensors():
     loaded = _roundtrip(ultralight)
-    assert isinstance(loaded.sensors, CivilianGradeSensors)
+    assert isinstance(loaded.sensors, CivilianSensors)
+
+
+def test_roundtrip_basic_sensors():
+    loaded = _roundtrip(bare)
+    assert isinstance(loaded.sensors, BasicSensors)
 
 
 def test_roundtrip_weapon_attributes():

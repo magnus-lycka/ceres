@@ -1,7 +1,5 @@
 from typing import ClassVar
 
-import pytest
-
 from ceres import parts
 from ceres.base import ShipBase
 
@@ -32,5 +30,6 @@ def test_base_part():
 
 
 def test_part_rejects_ship_below_minimum_tl():
-    with pytest.raises(ValueError):
-        HighTlPart.model_validate({'cost': 1, 'power': 0, 'tons': 0}).bind(DummyShip(tl=14))
+    part = HighTlPart.model_validate({'cost': 1, 'power': 0, 'tons': 0})
+    part.bind(DummyShip(tl=14))
+    assert [('error', 'Requires TL15, ship is TL14')] == [(note.category.value, note.message) for note in part.notes]

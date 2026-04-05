@@ -4,7 +4,7 @@ from ceres import armour, ship
 from ceres.bridge import Cockpit
 from ceres.computer import Computer5
 from ceres.drives import FusionPlantTL12, MDrive6, OperationFuel
-from ceres.sensors import CivilianGradeSensors
+from ceres.sensors import CivilianSensors
 from ceres.weapons import FixedFirmpoint, PulseLaser
 
 from ._markdown_output import write_markdown_output
@@ -33,7 +33,7 @@ def build_ultralight_fighter() -> ship.Ship:
         operation_fuel=OperationFuel(weeks=1),
         cockpit=Cockpit(holographic=True),
         computer=Computer5(),
-        sensors=CivilianGradeSensors(),
+        sensors=CivilianSensors(),
         fixed_firmpoints=[
             FixedFirmpoint(
                 weapon=PulseLaser(very_high_yield=True, energy_efficient=True),
@@ -124,13 +124,14 @@ def test_ultralight_fighter_markdown_table_contains_core_rows():
     assert '## *Botfly* Ultralight Fighter | TL12 | Hull 2' in table
     assert '| Section | Item | Tons | Power | Cost (kCr) |' in table
     assert '| Hull | Light Streamlined Hull | **6.00** |  | 270.00 |' in table
+    assert '|  | Basic Ship Systems |  | 1.00 |  |' in table
     assert '| Armour | Crystaliron, Armour: 6 | 2.16 |  | 432.00 |' in table
     assert '| M-Drive | Thrust 6 Budget Increased Size | 0.45 | 4.00 | 540.00 |' in table
     assert '| Power Plant | Fusion (TL 12) Budget Increased Size | 0.67 | **8.00** | 400.00 |' in table
     assert '| Sensors | Civilian Grade | 1.00 | 1.00 | 3000.00 |' in table
     assert '|  | • Radar, Lidar; DM -2 |  |  |  |' in table
-    assert '| Fuel | Operation 1 weeks | 0.02 |  | 0.00 |' in table
-    assert '|  | Maneuver/0 |  |  | 0.00 |' in table
-    assert '| Cargo | Cargo Hold | 0.08 |  | 0.00 |' in table
+    assert '| Fuel | Operation 1 weeks | 0.02 |  |  |' in table
+    assert '|  | Maneuver/0 |  |  |  |' in table
+    assert '| Cargo | Cargo Hold | 0.08 |  |  |' in table
     assert '| Mortgage | 24466.88 |' in table
     assert '| Total Expenses | 30955.88 |' in table

@@ -66,8 +66,8 @@ from .drives import (
 )
 from .habitation import Staterooms
 from .parts import ShipPart
-from .sensors import CivilianGradeSensors, MilitaryGradeSensors
-from .systems import Aerofins, Airlock, InternalDockingSpace, ProbeDrones, Workshop
+from .sensors import BasicSensors, CivilianSensors, MilitarySensors
+from .systems import Aerofins, Airlock, CommonArea, InternalDockingSpace, ProbeDrones, Workshop
 from .weapons import DoubleTurret, FixedFirmpoint
 
 
@@ -305,6 +305,11 @@ ShipSoftware = Annotated[
     Field(discriminator='description'),
 ]
 
+ShipSensors = Annotated[
+    BasicSensors | CivilianSensors | MilitarySensors,
+    Field(discriminator='description'),
+]
+
 
 class Hull(CeresModel):
     configuration: HullConfiguration
@@ -342,9 +347,10 @@ class Ship(ShipBase):
     cockpit: Cockpit | None = None
     computer: ShipComputer | None = None
     software: list[ShipSoftware] = Field(default_factory=list)
-    sensors: CivilianGradeSensors | MilitaryGradeSensors | None = None
+    sensors: ShipSensors = Field(default_factory=BasicSensors)
     docking_space: InternalDockingSpace | None = None
     staterooms: Staterooms | None = None
+    common_area: CommonArea | None = None
     airlocks: list[Airlock] = Field(default_factory=list)
     aerofins: Aerofins | None = None
     probe_drones: ProbeDrones | None = None
@@ -386,8 +392,6 @@ class Ship(ShipBase):
 
     @property
     def sensor_power_load(self) -> float:
-        if self.sensors is None:
-            return 0.0
         return self.sensors.power
 
     @property
@@ -488,6 +492,7 @@ class Ship(ShipBase):
             self.sensors,
             self.docking_space,
             self.staterooms,
+            self.common_area,
             self.aerofins,
             self.probe_drones,
             self.workshop,
@@ -521,16 +526,16 @@ class Ship(ShipBase):
             emphasize_power: bool = False,
         ) -> str:
             nonlocal last_section
-            tons_text = '' if tons is None else f'{tons:.2f}'
+            tons_text = '' if tons is None or tons == 0 else f'{tons:.2f}'
             if emphasize_tons and tons_text:
                 tons_text = f'**{tons_text}**'
-            if power is None:
+            if power is None or power == 0:
                 power_text = ''
             else:
                 power_text = f'{abs(power):.2f}'
             if emphasize_power and power_text:
                 power_text = f'**{power_text}**'
-            cost_text = '' if cost is None else f'{cost / 1000:.2f}'
+            cost_text = '' if cost is None or cost == 0 else f'{cost / 1000:.2f}'
             section_text = '' if section == last_section else section
             last_section = section
             return f'| {section_text} | {item} | {tons_text} | {power_text} | {cost_text} |'
@@ -587,6 +592,7 @@ class Ship(ShipBase):
                 self.hull_cost,
                 emphasize_tons=True,
             ),
+            add_row('Hull', 'Basic Ship Systems', None, self.basic_hull_power_load, 0.0),
         ]
         if self.hull.armour is not None:
             armour_row = add_row(
@@ -636,7 +642,8 @@ class Ship(ShipBase):
             elif part is self.staterooms:
                 section = 'Staterooms'
             elif (
-                part is self.probe_drones
+                part is self.common_area
+                or part is self.probe_drones
                 or part is self.workshop
                 or part is self.fuel_processor
                 or part is self.aerofins
@@ -721,3 +728,8 @@ class Ship(ShipBase):
             self.error(f'Cargo is negative by {-self.cargo:.2f} tons')
         if self.bridge is not None and not self.airlocks:
             self.error('No airlock installed')
+        if self.staterooms is not None:
+            recommended_common_area = self.staterooms.tons / 4
+            actual_common_area = 0.0 if self.common_area is None else self.common_area.tons
+            if actual_common_area < recommended_common_area:
+                self.warning(f'Recommended common area is {recommended_common_area:.2f} tons')

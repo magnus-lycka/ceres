@@ -60,6 +60,6 @@ class ShipPart(CeresModel):
 
     def validate_tl(self) -> None:
         if self.ship_tl < self.minimum_tl:
-            raise ValueError(
-                f'{self.__class__.__name__} requires TL{self.minimum_tl}, ship is TL{self.ship_tl}',
+            self.error(
+                f'Requires TL{self.minimum_tl}, ship is TL{self.ship_tl}',
             )

@@ -1,5 +1,3 @@
-import pytest
-
 from ceres.base import ShipBase
 from ceres.computer import Computer5, Computer10, Computer15, Core40, Intellect, JumpControl2, Library, Manoeuvre
 
@@ -45,9 +43,11 @@ def test_computer_power_zero():
 
 
 def test_computer_5_min_tl():
-    with pytest.raises(ValueError):
-        c = Computer5()
-        c.bind(DummyOwner(6, 100))
+    c = Computer5()
+    c.bind(DummyOwner(6, 100))
+    assert ('error', 'Requires TL7, ship is TL6') in [
+        (note.category.value, note.message) for note in c.notes
+    ]
 
 
 def test_computer_recomputes_cost_from_input():

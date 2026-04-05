@@ -18,6 +18,17 @@ class Workshop(ShipPart):
         return 900_000.0
 
 
+class CommonArea(ShipPart):
+    power: float = 0.0
+    tons: float
+
+    def build_item(self) -> str | None:
+        return 'Common Area'
+
+    def compute_cost(self) -> float:
+        return self.tons * 100_000.0
+
+
 class Airlock(ShipPart):
     power: float = 0.0
     size: float = 2.0

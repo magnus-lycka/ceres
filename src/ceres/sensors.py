@@ -1,12 +1,35 @@
+from typing import Literal
+
 from .base import Note, NoteCategory
 from .parts import ShipPart
 
 
-class CivilianGradeSensors(ShipPart):
+class BasicSensors(ShipPart):
+    description: Literal['Basic'] = 'Basic'
+    minimum_tl = 8
+
+    def build_item(self) -> str | None:
+        return self.description
+
+    def build_notes(self) -> list[Note]:
+        return [Note(category=NoteCategory.INFO, message='Radar, Lidar; DM -4')]
+
+    def compute_tons(self) -> float:
+        return 0.0
+
+    def compute_cost(self) -> float:
+        return 0.0
+
+    def compute_power(self) -> float:
+        return 0.0
+
+
+class CivilianSensors(ShipPart):
+    description: Literal['Civilian Grade'] = 'Civilian Grade'
     minimum_tl = 9
 
     def build_item(self) -> str | None:
-        return 'Civilian Grade'
+        return self.description
 
     def build_notes(self) -> list[Note]:
         return [Note(category=NoteCategory.INFO, message='Radar, Lidar; DM -2')]
@@ -21,11 +44,12 @@ class CivilianGradeSensors(ShipPart):
         return 1.0
 
 
-class MilitaryGradeSensors(ShipPart):
+class MilitarySensors(ShipPart):
+    description: Literal['Military Grade'] = 'Military Grade'
     minimum_tl = 10
 
     def build_item(self) -> str | None:
-        return 'Military Grade'
+        return self.description
 
     def build_notes(self) -> list[Note]:
         return [Note(category=NoteCategory.INFO, message='Jammers, Radar, Lidar; DM +0')]

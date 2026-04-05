@@ -53,10 +53,11 @@ def test_mdrive_budget_increased_size_cost():
 
 
 def test_mdrive_tl_too_low():
-    # Rating 6 requires TL12; TL11 ship should fail at bind time
-    with pytest.raises(ValueError):
-        d = MDrive6()
-        d.bind(DummyOwner(11, 6))
+    d = MDrive6()
+    d.bind(DummyOwner(11, 6))
+    assert ('error', 'Requires TL12, ship is TL11') in [
+        (note.category.value, note.message) for note in d.notes
+    ]
 
 
 def test_mdrive_recomputes_cost_from_input():
@@ -138,8 +139,11 @@ def test_fusion_plant_tl15_variant():
 
 
 def test_fusion_plant_rejects_ship_below_minimum_tl():
-    with pytest.raises(ValueError):
-        FusionPlantTL12(output=8).bind(DummyOwner(11, 6))
+    plant = FusionPlantTL12(output=8)
+    plant.bind(DummyOwner(11, 6))
+    assert ('error', 'Requires TL12, ship is TL11') in [
+        (note.category.value, note.message) for note in plant.notes
+    ]
 
 
 # --- OperationFuel ---

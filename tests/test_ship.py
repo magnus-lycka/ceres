@@ -4,7 +4,7 @@ import pytest
 from ceres import armour, ship
 from ceres.bridge import Cockpit
 from ceres.drives import FusionPlantTL12, MDrive6
-from ceres.sensors import CivilianGradeSensors
+from ceres.sensors import CivilianSensors
 from ceres.systems import Airlock, AirRaft, InternalDockingSpace, ProbeDrones, Workshop
 from ceres.weapons import FixedFirmpoint, PulseLaser
 from tests.ships._markdown_output import write_markdown_output
@@ -77,7 +77,7 @@ def test_ship_parts_of_type_returns_matching_installed_parts():
         hull=ship.Hull(configuration=ship.streamlined_hull),
         probe_drones=ProbeDrones(count=10),
         workshop=Workshop(),
-        sensors=CivilianGradeSensors(),
+        sensors=CivilianSensors(),
     )
     probe_drones = my_ship.parts_of_type(ProbeDrones)
     workshops = my_ship.parts_of_type(Workshop)
@@ -102,7 +102,7 @@ def test_ship_production_cost_custom_has_no_multiplier():
         displacement=6,
         design_type=ship.ShipDesignType.CUSTOM,
         hull=ship.Hull(configuration=ship.streamlined_hull.model_copy(update={'light': True})),
-        sensors=CivilianGradeSensors(),
+        sensors=CivilianSensors(),
     )
     assert my_ship.production_cost == 3_270_000
     assert my_ship.sales_price_new == 3_270_000
@@ -114,7 +114,7 @@ def test_ship_sales_price_new_standard_gets_discount():
         displacement=6,
         design_type=ship.ShipDesignType.STANDARD,
         hull=ship.Hull(configuration=ship.streamlined_hull.model_copy(update={'light': True})),
-        sensors=CivilianGradeSensors(),
+        sensors=CivilianSensors(),
     )
     assert my_ship.sales_price_new == 2_943_000
 
@@ -125,7 +125,7 @@ def test_ship_sales_price_new_new_gets_markup():
         displacement=6,
         design_type=ship.ShipDesignType.NEW,
         hull=ship.Hull(configuration=ship.streamlined_hull.model_copy(update={'light': True})),
-        sensors=CivilianGradeSensors(),
+        sensors=CivilianSensors(),
     )
     assert my_ship.sales_price_new == 3_302_700
 
@@ -156,7 +156,7 @@ def test_ship_total_power_load_includes_basic_and_active_systems():
         hull=ship.Hull(configuration=ship.standard_hull),
         m_drive=MDrive6(),
         cockpit=Cockpit(),
-        sensors=CivilianGradeSensors(),
+        sensors=CivilianSensors(),
         fixed_firmpoints=[FixedFirmpoint(weapon=PulseLaser(very_high_yield=True, energy_efficient=True))],
     )
     assert my_ship.total_power_load == 8
@@ -177,7 +177,7 @@ def test_ship_with_negative_cargo_adds_local_note():
         tl=12,
         displacement=6,
         hull=ship.Hull(configuration=ship.standard_hull),
-        sensors=CivilianGradeSensors(),
+        sensors=CivilianSensors(),
         workshop=Workshop(),
     )
     assert my_ship.cargo < 0
@@ -191,7 +191,7 @@ def test_markdown_table_renders_inline_error_on_cargo_row():
         tl=12,
         displacement=6,
         hull=ship.Hull(configuration=ship.standard_hull),
-        sensors=CivilianGradeSensors(),
+        sensors=CivilianSensors(),
         workshop=Workshop(),
     )
     table = my_ship.markdown_table()

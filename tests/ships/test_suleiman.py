@@ -5,7 +5,7 @@ from ceres.bridge import Bridge
 from ceres.computer import Computer5, Computer10, JumpControl1, JumpControl2, JumpControl3
 from ceres.drives import FuelProcessor, FusionPlantTL12, JumpDrive2, JumpFuel, MDrive2, OperationFuel
 from ceres.habitation import Staterooms
-from ceres.sensors import MilitaryGradeSensors
+from ceres.sensors import MilitarySensors
 from ceres.systems import Airlock, AirRaft, InternalDockingSpace, ProbeDrones, Workshop
 from ceres.weapons import DoubleTurret
 
@@ -32,7 +32,7 @@ def build_suleiman() -> ship.Ship:
         bridge=Bridge(),
         computer=Computer5(bis=True),
         software=[JumpControl2()],
-        sensors=MilitaryGradeSensors(),
+        sensors=MilitarySensors(),
         turrets=[DoubleTurret()],
         docking_space=InternalDockingSpace(craft=AirRaft()),
         staterooms=Staterooms(count=4),
@@ -190,14 +190,15 @@ def test_suleiman_markdown_table_uses_heading_and_spec_shape():
     assert '## *Suleiman* Scout/Courier | TL12 | Hull 40' in table
     assert '| Section | Item | Tons | Power | Cost (kCr) |' in table
     assert '| Hull | Streamlined Hull | **100.00** |  | 6000.00 |' in table
+    assert '|  | Basic Ship Systems |  | 20.00 |  |' in table
     assert '| Armour | Crystaliron, Armour: 4 | 6.00 |  | 1200.00 |' in table
     assert '| Power Plant | Fusion (TL 12) | 4.00 | **60.00** | 4000.00 |' in table
     assert '| M-Drive | Thrust 2 | 2.00 | 20.00 | 4000.00 |' in table
     assert '| Sensors | Military Grade | 2.00 | 2.00 | 4100.00 |' in table
     assert '|  | • Jammers, Radar, Lidar; DM +0 |  |  |  |' in table
-    assert '|  | Airlock | 0.00 |  | 0.00 |' in table
-    assert '| Fuel | Jump 2 | 20.00 |  | 0.00 |' in table
-    assert '|  | Operation 12 weeks | 1.20 |  | 0.00 |' in table
+    assert '|  | Airlock |  |  |  |' in table
+    assert '| Fuel | Jump 2 | 20.00 |  |  |' in table
+    assert '|  | Operation 12 weeks | 1.20 |  |  |' in table
     assert '|  | Jump Control/2 |  |  | 200.00 |' in table
     assert '| Cost | Amount |' in table
     assert '| Sales Price New | 36940500.00 |' in table

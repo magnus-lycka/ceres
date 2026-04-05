@@ -1,7 +1,5 @@
-import pytest
-
 from ceres.base import ShipBase
-from ceres.sensors import CivilianGradeSensors, MilitaryGradeSensors
+from ceres.sensors import BasicSensors, CivilianSensors, MilitarySensors
 
 
 class DummyOwner(ShipBase):
@@ -9,8 +7,25 @@ class DummyOwner(ShipBase):
         super().__init__(tl=tl, displacement=displacement)
 
 
+def test_basic_sensors_have_zero_tons_cost_and_power():
+    s = BasicSensors()
+    s.bind(DummyOwner(12, 100))
+    assert s.tons == 0
+    assert s.cost == 0
+    assert s.power == 0
+
+
+def test_basic_sensors_notes_describe_suite_and_dm():
+    s = BasicSensors()
+    s.bind(DummyOwner(12, 100))
+    assert [(note.category.value, note.message) for note in s.notes] == [
+        ('item', 'Basic'),
+        ('info', 'Radar, Lidar; DM -4'),
+    ]
+
+
 def test_civilian_grade_tons():
-    s = CivilianGradeSensors()
+    s = CivilianSensors()
     s.bind(DummyOwner(12, 6))
     assert s.minimum_tl == 9
     assert s.ship_tl == 12
@@ -19,19 +34,19 @@ def test_civilian_grade_tons():
 
 
 def test_civilian_grade_cost():
-    s = CivilianGradeSensors()
+    s = CivilianSensors()
     s.bind(DummyOwner(12, 6))
     assert float(s.cost) == 3_000_000
 
 
 def test_civilian_grade_power():
-    s = CivilianGradeSensors()
+    s = CivilianSensors()
     s.bind(DummyOwner(12, 6))
     assert s.power == 1
 
 
 def test_civilian_grade_notes_describe_suite_and_dm():
-    s = CivilianGradeSensors()
+    s = CivilianSensors()
     s.bind(DummyOwner(12, 6))
     assert [(note.category.value, note.message) for note in s.notes] == [
         ('item', 'Civilian Grade'),
@@ -40,7 +55,7 @@ def test_civilian_grade_notes_describe_suite_and_dm():
 
 
 def test_military_grade_notes_describe_suite_and_dm():
-    s = MilitaryGradeSensors()
+    s = MilitarySensors()
     s.bind(DummyOwner(12, 100))
     assert [(note.category.value, note.message) for note in s.notes] == [
         ('item', 'Military Grade'),
@@ -49,19 +64,20 @@ def test_military_grade_notes_describe_suite_and_dm():
 
 
 def test_civilian_grade_recomputes_tons_from_input():
-    s = CivilianGradeSensors.model_validate({'tons': 999})
+    s = CivilianSensors.model_validate({'tons': 999})
     s.bind(DummyOwner(12, 6))
     assert s.tons == 1
 
 
 def test_civilian_grade_recomputes_cost_from_input():
-    s = CivilianGradeSensors.model_validate({'cost': 999})
+    s = CivilianSensors.model_validate({'cost': 999})
     s.bind(DummyOwner(12, 6))
     assert s.cost == 3_000_000
 
 
 def test_civilian_grade_tl_too_low():
-    # Civilian Grade needs TL9; TL8 ship should fail
-    with pytest.raises(ValueError):
-        s = CivilianGradeSensors()
-        s.bind(DummyOwner(8, 100))
+    s = CivilianSensors()
+    s.bind(DummyOwner(8, 100))
+    assert ('error', 'Requires TL9, ship is TL8') in [
+        (note.category.value, note.message) for note in s.notes
+    ]

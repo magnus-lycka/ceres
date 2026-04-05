@@ -1,6 +1,6 @@
 from ceres import ship
 from ceres.base import ShipBase
-from ceres.systems import Airlock, AirRaft, InternalDockingSpace, ProbeDrones, Workshop
+from ceres.systems import Airlock, AirRaft, CommonArea, InternalDockingSpace, ProbeDrones, Workshop
 
 
 class DummyOwner(ShipBase):
@@ -24,6 +24,18 @@ def test_workshop_power_zero():
     w = Workshop()
     w.bind(DummyOwner(12, 100))
     assert w.power == 0
+
+
+def test_common_area_cost():
+    c = CommonArea(tons=1.0)
+    c.bind(DummyOwner(12, 100))
+    assert c.cost == 100_000
+
+
+def test_common_area_power_zero():
+    c = CommonArea(tons=1.0)
+    c.bind(DummyOwner(12, 100))
+    assert c.power == 0
 
 
 def test_probe_drones_tons():
