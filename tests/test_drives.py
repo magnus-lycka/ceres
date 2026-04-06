@@ -73,17 +73,6 @@ def test_mdrive_power():
     assert d.power == 4  # ceil(0.1 * 6 * 6) = ceil(3.6) = 4
 
 
-def test_mdrive_budget_increased_size_tons():
-    d = MDrive6(budget=True, increased_size=True)
-    d.bind(DummyOwner(12, 6))
-    assert float(d.tons) == pytest.approx(0.45)  # 0.36 * 1.25
-
-
-def test_mdrive_budget_increased_size_cost():
-    d = MDrive6(budget=True, increased_size=True)
-    d.bind(DummyOwner(12, 6))
-    assert float(d.cost) == pytest.approx(540_000)  # 720_000 * 0.75
-
 
 def test_mdrive_tl_too_low():
     d = MDrive6()
@@ -135,17 +124,6 @@ def test_fusion_plant_power_zero():
     assert p.power == 0
 
 
-def test_fusion_plant_budget_increased_size_tons():
-    p = FusionPlantTL12(output=8, budget=True, increased_size=True)
-    p.bind(DummyOwner(12, 6))
-    assert float(p.tons) == pytest.approx(8 / 15 * 1.25)
-
-
-def test_fusion_plant_budget_increased_size_cost():
-    p = FusionPlantTL12(output=8, budget=True, increased_size=True)
-    p.bind(DummyOwner(12, 6))
-    assert float(p.cost) == pytest.approx(8 / 15 * 1_000_000 * 0.75)
-
 
 def test_fusion_plant_recomputes_tons_from_input():
     p = FusionPlantTL12.model_validate({'output': 8, 'tons': 999})
@@ -182,33 +160,32 @@ def test_fusion_plant_rejects_ship_below_minimum_tl():
 # --- OperationFuel ---
 
 
-def _make_ship_with_plant(**kwargs):
+def _make_ship_with_plant():
     fuel = OperationFuel(weeks=1)
     s = ship.Ship(
         tl=12,
         displacement=6,
         hull=ship.Hull(configuration=ship.streamlined_hull),
-        fusion_plant=FusionPlantTL12(output=8, **kwargs),
+        fusion_plant=FusionPlantTL12(output=8),
         operation_fuel=fuel,
     )
     return s, s.operation_fuel
 
 
 def test_operation_fuel_1_week_tons():
-    # 10% of plant modified tons / 4 weeks, ceil to 2 decimal places
-    # plant modified tons = 8/15 * 1.25 ≈ 0.6667
-    # monthly = 0.0667, weekly = 0.01667, ceil_2dp = 0.02
-    _, fuel = _make_ship_with_plant(budget=True, increased_size=True)
+    # 10% of plant tons / 4 weeks, ceil to 2 decimal places
+    # plant tons = 8/15 ≈ 0.5333, monthly = 0.0533, weekly = 0.01333, ceil_2dp = 0.02
+    _, fuel = _make_ship_with_plant()
     assert float(fuel.tons) == pytest.approx(0.02)
 
 
 def test_operation_fuel_cost_zero():
-    _, fuel = _make_ship_with_plant(budget=True, increased_size=True)
+    _, fuel = _make_ship_with_plant()
     assert fuel.cost == 0
 
 
 def test_operation_fuel_power_zero():
-    _, fuel = _make_ship_with_plant(budget=True, increased_size=True)
+    _, fuel = _make_ship_with_plant()
     assert fuel.power == 0
 
 

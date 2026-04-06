@@ -1,4 +1,5 @@
 from enum import Enum, StrEnum
+import itertools
 from typing import Annotated, Any, ClassVar, Literal
 
 from pydantic import Field
@@ -648,30 +649,27 @@ class Ship(ShipBase):
                 stealth_row,
             )
             lines.extend(add_note_rows(self.hull.stealth.notes))
-        for part in self._all_parts():
-            if part in self.hull._all_parts():
-                continue
-            details = item_text(part, getattr(part, 'description', part.__class__.__name__))
-            section = part.__class__.__name__
+
+        def part_section(part: ShipPart) -> str:
             if part is self.m_drive:
-                section = 'M-Drive'
-            elif part is self.jump_drive:
-                section = 'J-Drive'
-            elif part is self.fusion_plant:
-                section = 'Power Plant'
-            elif part is self.jump_fuel or part is self.operation_fuel:
-                section = 'Fuel'
-            elif part is self.bridge or part is self.cockpit:
-                section = 'Bridge'
-            elif part is self.computer:
-                section = 'Computer'
-            elif part is self.sensors:
-                section = 'Sensors'
-            elif part is self.docking_space:
-                section = 'Craft'
-            elif part is self.staterooms or part is self.low_berths:
-                section = 'Staterooms'
-            elif (
+                return 'M-Drive'
+            if part is self.jump_drive:
+                return 'J-Drive'
+            if part is self.fusion_plant:
+                return 'Power Plant'
+            if part is self.jump_fuel or part is self.operation_fuel:
+                return 'Fuel'
+            if part is self.bridge or part is self.cockpit:
+                return 'Bridge'
+            if part is self.computer:
+                return 'Computer'
+            if part is self.sensors:
+                return 'Sensors'
+            if part is self.docking_space:
+                return 'Craft'
+            if part is self.staterooms or part is self.low_berths:
+                return 'Staterooms'
+            if (
                 part is self.common_area
                 or part is self.medical_bay
                 or part is self.probe_drones
@@ -681,21 +679,38 @@ class Ship(ShipBase):
                 or part is self.fuel_scoops
                 or part in self.airlocks
             ):
-                section = 'Systems'
-            elif part in self.turrets or part in self.fixed_firmpoints:
-                section = 'Weapons'
+                return 'Systems'
+            if part in self.turrets or part in self.fixed_firmpoints:
+                return 'Weapons'
+            return part.__class__.__name__
+
+        hull_parts = self.hull._all_parts()
+        non_hull_parts = [p for p in self._all_parts() if p not in hull_parts]
+
+        def group_key(part: ShipPart) -> tuple:
+            return (part_section(part), item_text(part, getattr(part, 'description', part.__class__.__name__)))
+
+        for (section, details), group_iter in itertools.groupby(non_hull_parts, key=group_key):
+            group = list(group_iter)
+            n = len(group)
+            label = f'{n}x {details}' if n > 1 else details
+            total_tons = sum(p.tons for p in group)
+            total_cost = sum(p.cost for p in group)
             power = None
             emphasize_power = False
-            if part is self.fusion_plant:
+            if group[0] is self.fusion_plant:
                 power = float(self.fusion_plant.output)
                 emphasize_power = True
-            elif part.power:
-                power = -part.power
-            lines.append(add_row(section, details, part.tons, power, part.cost, emphasize_power=emphasize_power))
-            lines.extend(add_note_rows(part.notes))
-            if part is self.docking_space:
-                craft = self.docking_space.craft
-                lines.append(add_row('Craft', craft.build_item() or craft.__class__.__name__, None, None, craft.cost))
+            elif any(p.power for p in group):
+                power = -sum(p.power for p in group)
+            lines.append(add_row(section, label, total_tons, power, total_cost, emphasize_power=emphasize_power))
+            for part in group:
+                lines.extend(add_note_rows(part.notes))
+                if part is self.docking_space:
+                    craft = self.docking_space.craft
+                    lines.append(
+                        add_row('Craft', craft.build_item() or craft.__class__.__name__, None, None, craft.cost)
+                    )
         for package in self.software_packages:
             lines.append(add_row('Software', item_text(package, package.description), None, None, package.cost))
             lines.extend(add_note_rows(package.notes))

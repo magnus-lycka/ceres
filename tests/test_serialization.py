@@ -25,8 +25,8 @@ ultralight = Ship(
         armour=armour.CrystalironArmour(tl=12, protection=6),
         stealth=BasicStealth(),
     ),
-    m_drive=MDrive6(budget=True, increased_size=True),
-    fusion_plant=FusionPlantTL12(output=8, budget=True, increased_size=True),
+    m_drive=MDrive6(),
+    fusion_plant=FusionPlantTL12(output=8),
     operation_fuel=OperationFuel(weeks=1),
     cockpit=Cockpit(holographic=True),
     computer=Computer5(),
@@ -74,11 +74,9 @@ def test_dump_no_stealth_is_null():
 
 def test_dump_m_drive_present():
     data = json.loads(ultralight.model_dump_json())
-    assert data['m_drive']['budget'] is True
-    assert data['m_drive']['increased_size'] is True
-    assert data['m_drive']['cost'] == 540_000
+    assert data['m_drive']['cost'] == 720_000
     assert data['m_drive']['power'] == 4
-    assert data['m_drive']['tons'] == pytest.approx(0.45)
+    assert data['m_drive']['tons'] == pytest.approx(0.36)
 
 
 def test_dump_weapon_in_fixed_firmpoints():
@@ -139,8 +137,6 @@ def test_roundtrip_m_drive_attributes():
     assert ultralight.m_drive is not None
     assert type(loaded.m_drive) is type(ultralight.m_drive)
     assert loaded.m_drive.rating == ultralight.m_drive.rating
-    assert loaded.m_drive.budget == ultralight.m_drive.budget
-    assert loaded.m_drive.increased_size == ultralight.m_drive.increased_size
 
 
 def test_roundtrip_recomputes_derived_part_values():
@@ -150,9 +146,9 @@ def test_roundtrip_recomputes_derived_part_values():
     data['m_drive']['tons'] = 999
     loaded = Ship.model_validate_json(json.dumps(data))
     assert loaded.m_drive is not None
-    assert loaded.m_drive.cost == 540_000
+    assert loaded.m_drive.cost == 720_000
     assert loaded.m_drive.power == 4
-    assert loaded.m_drive.tons == pytest.approx(0.45)
+    assert loaded.m_drive.tons == pytest.approx(0.36)
 
 
 def test_roundtrip_fusion_plant_attributes():
@@ -161,7 +157,6 @@ def test_roundtrip_fusion_plant_attributes():
     assert ultralight.fusion_plant is not None
     assert loaded.fusion_plant.fusion_tl == ultralight.fusion_plant.fusion_tl
     assert loaded.fusion_plant.output == ultralight.fusion_plant.output
-    assert loaded.fusion_plant.budget == ultralight.fusion_plant.budget
 
 
 def test_roundtrip_cockpit():

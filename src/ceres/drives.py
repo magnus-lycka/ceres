@@ -8,27 +8,15 @@ class MDrive(ShipPart):
     rating: int
     minimum_tl: ClassVar[int]
     tons_percent: ClassVar[float]
-    budget: bool = False
-    increased_size: bool = False
-
-    def _base_tons(self) -> float:
-        return self.owner.displacement * self.tons_percent
 
     def build_item(self) -> str | None:
-        parts = [f'Thrust {self.rating}']
-        if self.budget:
-            parts.append('Budget')
-        if self.increased_size:
-            parts.append('Increased Size')
-        return ' '.join(parts)
+        return f'Thrust {self.rating}'
 
     def compute_tons(self) -> float:
-        base = self._base_tons()
-        return base * 1.25 if self.increased_size else base
+        return self.owner.displacement * self.tons_percent
 
     def compute_cost(self) -> float:
-        base = self._base_tons() * 2_000_000
-        return base * 0.75 if self.budget else base
+        return self.compute_tons() * 2_000_000
 
     def compute_power(self) -> float:
         return float(math.ceil(0.1 * self.owner.displacement * self.rating))
@@ -183,19 +171,9 @@ class _FusionPlant(ShipPart):
     power_per_ton: ClassVar[int]
     cost_per_ton: ClassVar[int]
     output: int
-    budget: bool = False
-    increased_size: bool = False
-
-    def _base_tons(self) -> float:
-        return self.output / self.power_per_ton
 
     def build_item(self) -> str | None:
-        parts = [f'Fusion (TL {self.minimum_tl})']
-        if self.budget:
-            parts.append('Budget')
-        if self.increased_size:
-            parts.append('Increased Size')
-        return ' '.join(parts)
+        return f'Fusion (TL {self.minimum_tl})'
 
     @property
     def fusion_tl(self) -> int:
@@ -206,12 +184,10 @@ class _FusionPlant(ShipPart):
         return self.minimum_tl
 
     def compute_tons(self) -> float:
-        base = self._base_tons()
-        return base * 1.25 if self.increased_size else base
+        return self.output / self.power_per_ton
 
     def compute_cost(self) -> float:
-        base = self._base_tons() * self.cost_per_ton
-        return base * 0.75 if self.budget else base
+        return self.compute_tons() * self.cost_per_ton
 
 
 class FusionPlantTL8(_FusionPlant):

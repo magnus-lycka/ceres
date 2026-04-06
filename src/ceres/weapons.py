@@ -1,7 +1,7 @@
 import math
 from typing import ClassVar
 
-from .base import CeresModel
+from .base import CeresModel, Note, NoteCategory
 from .parts import ShipPart
 
 
@@ -68,6 +68,9 @@ class DoubleTurret(ShipPart):
 
     def build_item(self) -> str | None:
         return 'Double Turret'
+
+    def build_notes(self) -> list[Note]:
+        return [Note(category=NoteCategory.INFO, message='No weapons in turret')]
 
     def compute_tons(self) -> float:
         return 1.0

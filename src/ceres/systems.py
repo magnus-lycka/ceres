@@ -12,8 +12,6 @@ class FuelScoops(ShipPart):
         return 'Fuel Scoops'
 
     def build_notes(self) -> list[Note]:
-        if self.free:
-            return [Note(category=NoteCategory.INFO, message='Included free with streamlined hull')]
         return []
 
     def compute_tons(self) -> float:
