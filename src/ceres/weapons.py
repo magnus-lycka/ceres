@@ -1,5 +1,7 @@
 import math
-from typing import ClassVar
+from typing import Annotated, ClassVar, Literal
+
+from pydantic import Field
 
 from .base import CeresModel, Note, NoteCategory
 from .parts import ShipPart
@@ -64,6 +66,7 @@ class FixedFirmpoint(ShipPart):
 
 
 class DoubleTurret(ShipPart):
+    mount_type: Literal['double'] = 'double'
     minimum_tl = 8
 
     def build_item(self) -> str | None:
@@ -80,3 +83,69 @@ class DoubleTurret(ShipPart):
 
     def compute_power(self) -> float:
         return 1.0
+
+
+class TurretBeamLaser(CeresModel):
+    weapon_type: Literal['beam_laser'] = 'beam_laser'
+    model_config = {'frozen': True}
+    weapon_cost: ClassVar[int] = 500_000
+    weapon_power: ClassVar[int] = 4
+
+    def build_item(self) -> str | None:
+        return 'Beam Laser'
+
+
+class TurretMissileRack(CeresModel):
+    weapon_type: Literal['missile_rack'] = 'missile_rack'
+    model_config = {'frozen': True}
+    weapon_cost: ClassVar[int] = 750_000
+    weapon_power: ClassVar[int] = 0
+
+    def build_item(self) -> str | None:
+        return 'Missile Rack'
+
+
+TurretWeapon = Annotated[TurretBeamLaser | TurretMissileRack, Field(discriminator='weapon_type')]
+
+
+class TripleTurret(ShipPart):
+    mount_type: Literal['triple'] = 'triple'
+    minimum_tl = 9
+    weapons: list[TurretWeapon] = Field(default_factory=list)
+
+    def build_item(self) -> str | None:
+        if not self.weapons:
+            return 'Triple Turret'
+        weapon_names = [w.build_item() for w in self.weapons]
+        unique = list(dict.fromkeys(weapon_names))
+        label = ', '.join(unique)
+        return f'Triple Turret ({label})'
+
+    def build_notes(self) -> list[Note]:
+        if not self.weapons:
+            return [Note(category=NoteCategory.INFO, message='No weapons in turret')]
+        return []
+
+    def compute_tons(self) -> float:
+        return 1.0
+
+    def compute_cost(self) -> float:
+        return 1_000_000.0 + sum(w.weapon_cost for w in self.weapons)
+
+    def compute_power(self) -> float:
+        return 1.0 + sum(w.weapon_power for w in self.weapons)
+
+
+class MissileStorage(ShipPart):
+    """Magazine for missiles: 12 missiles per ton, no cost."""
+
+    count: int
+
+    def build_item(self) -> str | None:
+        return f'Missile Storage ({self.count})'
+
+    def compute_tons(self) -> float:
+        return self.count / 12
+
+    def compute_cost(self) -> float:
+        return 0.0

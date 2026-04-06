@@ -62,3 +62,40 @@ class MilitarySensors(ShipPart):
 
     def compute_power(self) -> float:
         return 2.0
+
+
+class ImprovedSensors(ShipPart):
+    description: Literal['Improved'] = 'Improved'
+    minimum_tl = 12
+
+    def build_item(self) -> str | None:
+        return self.description
+
+    def build_notes(self) -> list[Note]:
+        return [Note(category=NoteCategory.INFO, message='Radar, Lidar, EMS, Densitometer; DM +1')]
+
+    def compute_tons(self) -> float:
+        return 3.0
+
+    def compute_cost(self) -> float:
+        return 4_300_000.0
+
+    def compute_power(self) -> float:
+        return 3.0
+
+
+class CountermeasuresSuite(ShipPart):
+    description: Literal['Countermeasures Suite'] = 'Countermeasures Suite'
+    minimum_tl = 11
+
+    def build_item(self) -> str | None:
+        return self.description
+
+    def compute_tons(self) -> float:
+        return 2.0
+
+    def compute_cost(self) -> float:
+        return 4_000_000.0
+
+    def compute_power(self) -> float:
+        return 2.0

@@ -77,6 +77,6 @@ uvx ty check                                           # type check
 
 All four must pass before a change is considered complete.
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for patterns and technical decisions,
+See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for patterns and technical decisions,
 and [AI_README.md](AI_README.md) for contributor guidance (including AI
 assistants).

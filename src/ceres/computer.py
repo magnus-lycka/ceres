@@ -100,6 +100,76 @@ class JumpControl6(JumpControl):
     rating: Literal[6] = 6
 
 
+class AutoRepair1(SoftwarePackage):
+    description: Literal['Auto-Repair/1'] = 'Auto-Repair/1'
+    minimum_tl = 11
+    bandwidth = 10
+    base_cost = 5_000_000.0
+
+
+class AutoRepair2(SoftwarePackage):
+    description: Literal['Auto-Repair/2'] = 'Auto-Repair/2'
+    minimum_tl = 12
+    bandwidth = 20
+    base_cost = 10_000_000.0
+
+
+class FireControl1(SoftwarePackage):
+    description: Literal['Fire Control/1'] = 'Fire Control/1'
+    minimum_tl = 9
+    bandwidth = 5
+    base_cost = 2_000_000.0
+
+
+class FireControl2(SoftwarePackage):
+    description: Literal['Fire Control/2'] = 'Fire Control/2'
+    minimum_tl = 11
+    bandwidth = 10
+    base_cost = 4_000_000.0
+
+
+class FireControl3(SoftwarePackage):
+    description: Literal['Fire Control/3'] = 'Fire Control/3'
+    minimum_tl = 12
+    bandwidth = 15
+    base_cost = 6_000_000.0
+
+
+class FireControl4(SoftwarePackage):
+    description: Literal['Fire Control/4'] = 'Fire Control/4'
+    minimum_tl = 13
+    bandwidth = 20
+    base_cost = 8_000_000.0
+
+
+class FireControl5(SoftwarePackage):
+    description: Literal['Fire Control/5'] = 'Fire Control/5'
+    minimum_tl = 14
+    bandwidth = 25
+    base_cost = 10_000_000.0
+
+
+class Evade1(SoftwarePackage):
+    description: Literal['Evade/1'] = 'Evade/1'
+    minimum_tl = 9
+    bandwidth = 5
+    base_cost = 1_000_000.0
+
+
+class Evade2(SoftwarePackage):
+    description: Literal['Evade/2'] = 'Evade/2'
+    minimum_tl = 11
+    bandwidth = 10
+    base_cost = 2_000_000.0
+
+
+class Evade3(SoftwarePackage):
+    description: Literal['Evade/3'] = 'Evade/3'
+    minimum_tl = 12
+    bandwidth = 15
+    base_cost = 3_000_000.0
+
+
 class Computer(ShipPart):
     description: str
     minimum_tl: ClassVar[int]

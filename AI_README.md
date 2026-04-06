@@ -8,7 +8,7 @@ objects and parameters. The goals are:
 - Legality checks (tonnage, budget, TL consistency, required components)
 - A data structure usable by other code (passenger transport, cargo, etc.)
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for patterns and technical choices.
+See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for patterns and technical choices.
 
 ## Rules Reference
 

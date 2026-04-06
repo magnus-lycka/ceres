@@ -150,3 +150,16 @@ class ProbeDrones(ShipPart):
 
     def compute_cost(self) -> float:
         return (self.count / self.drones_per_ton) * self.cost_per_ton
+
+
+class RepairDrones(ShipPart):
+    """Repair drones: 1 ton per 100 tons of displacement, Cr200,000 per ton."""
+
+    def build_item(self) -> str | None:
+        return 'Repair Drones'
+
+    def compute_tons(self) -> float:
+        return self.owner.displacement / 100
+
+    def compute_cost(self) -> float:
+        return self.compute_tons() * 200_000.0

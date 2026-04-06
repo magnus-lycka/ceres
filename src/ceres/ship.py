@@ -12,6 +12,8 @@ from .armour import (
 from .base import CeresModel, NoteCategory, ShipBase
 from .bridge import Bridge, Cockpit
 from .computer import (
+    AutoRepair1,
+    AutoRepair2,
     Computer5,
     Computer10,
     Computer15,
@@ -26,6 +28,14 @@ from .computer import (
     Core80,
     Core90,
     Core100,
+    Evade1,
+    Evade2,
+    Evade3,
+    FireControl1,
+    FireControl2,
+    FireControl3,
+    FireControl4,
+    FireControl5,
     Intellect,
     JumpControl,
     JumpControl1,
@@ -70,10 +80,20 @@ from .drives import (
 )
 from .habitation import LowBerths, Staterooms
 from .parts import ShipPart
-from .sensors import BasicSensors, CivilianSensors, MilitarySensors
+from .sensors import BasicSensors, CivilianSensors, CountermeasuresSuite, ImprovedSensors, MilitarySensors
 from .spec import CrewRow as SpecCrewRow, ExpenseRow, ShipSpec, SpecRow, SpecSection
-from .systems import Aerofins, Airlock, CargoHold, CommonArea, FuelScoops, MedicalBay, ProbeDrones, Workshop
-from .weapons import DoubleTurret, FixedFirmpoint
+from .systems import (
+    Aerofins,
+    Airlock,
+    CargoHold,
+    CommonArea,
+    FuelScoops,
+    MedicalBay,
+    ProbeDrones,
+    RepairDrones,
+    Workshop,
+)
+from .weapons import DoubleTurret, FixedFirmpoint, MissileStorage, TripleTurret
 
 
 class Streamlined(Enum):
@@ -305,14 +325,26 @@ ShipSoftware = Annotated[
     | JumpControl3
     | JumpControl4
     | JumpControl5
-    | JumpControl6,
+    | JumpControl6
+    | AutoRepair1
+    | AutoRepair2
+    | FireControl1
+    | FireControl2
+    | FireControl3
+    | FireControl4
+    | FireControl5
+    | Evade1
+    | Evade2
+    | Evade3,
     Field(discriminator='description'),
 ]
 
 ShipSensors = Annotated[
-    BasicSensors | CivilianSensors | MilitarySensors,
+    BasicSensors | CivilianSensors | MilitarySensors | ImprovedSensors,
     Field(discriminator='description'),
 ]
+
+ShipTurret = Annotated[DoubleTurret | TripleTurret, Field(discriminator='mount_type')]
 
 
 class Hull(CeresModel):
@@ -362,9 +394,12 @@ class Ship(ShipBase):
     aerofins: Aerofins | None = None
     probe_drones: ProbeDrones | None = None
     workshop: Workshop | None = None
+    repair_drones: RepairDrones | None = None
     fuel_scoops: FuelScoops | None = None
-    turrets: list[DoubleTurret] = Field(default_factory=list)
+    countermeasures: CountermeasuresSuite | None = None
+    turrets: list[ShipTurret] = Field(default_factory=list)
     fixed_firmpoints: list[FixedFirmpoint] = Field(default_factory=list)
+    missile_storage: MissileStorage | None = None
 
     @property
     def armour_volume_modifier(self) -> float:
@@ -506,6 +541,7 @@ class Ship(ShipBase):
             self.cockpit,
             self.computer,
             self.sensors,
+            self.countermeasures,
             self.docking_space,
             self.staterooms,
             self.low_berths,
@@ -513,8 +549,10 @@ class Ship(ShipBase):
             self.medical_bay,
             self.aerofins,
             self.probe_drones,
+            self.repair_drones,
             self.workshop,
             self.fuel_scoops,
+            self.missile_storage,
         ):
             if part is not None:
                 parts.append(part)
@@ -697,8 +735,12 @@ class Ship(ShipBase):
             )
 
         add_part(SpecSection.SENSORS, self.sensors)
+        if self.countermeasures is not None:
+            add_part(SpecSection.SENSORS, self.countermeasures)
 
         add_grouped_parts(SpecSection.WEAPONS, [*self.turrets, *self.fixed_firmpoints])
+        if self.missile_storage is not None:
+            add_part(SpecSection.WEAPONS, self.missile_storage)
 
         if self.docking_space is not None:
             add_part(SpecSection.CRAFT, self.docking_space)
@@ -716,7 +758,7 @@ class Ship(ShipBase):
             if habitation_part is not None:
                 add_part(SpecSection.HABITATION, habitation_part)
 
-        for system_part in [self.workshop, self.medical_bay, self.probe_drones]:
+        for system_part in [self.workshop, self.medical_bay, self.probe_drones, self.repair_drones]:
             if system_part is not None:
                 add_part(SpecSection.SYSTEMS, system_part)
 

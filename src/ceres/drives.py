@@ -6,17 +6,30 @@ from .parts import ShipPart
 
 class MDrive(ShipPart):
     rating: int
+    armored: bool = False
     minimum_tl: ClassVar[int]
     tons_percent: ClassVar[float]
 
     def build_item(self) -> str | None:
-        return f'M-Drive {self.rating}'
+        label = f'M-Drive {self.rating}'
+        if self.armored:
+            label += ' (Armored)'
+        return label
 
-    def compute_tons(self) -> float:
+    def _base_tons(self) -> float:
         return self.owner.displacement * self.tons_percent
 
+    def compute_tons(self) -> float:
+        tons = self._base_tons()
+        if self.armored:
+            tons *= 1.1
+        return tons
+
     def compute_cost(self) -> float:
-        return self.compute_tons() * 2_000_000
+        cost = self._base_tons() * 2_000_000
+        if self.armored:
+            cost *= 1.01
+        return cost
 
     def compute_power(self) -> float:
         return float(math.ceil(0.1 * self.owner.displacement * self.rating))
