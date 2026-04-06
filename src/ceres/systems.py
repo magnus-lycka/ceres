@@ -44,6 +44,57 @@ class CommonArea(ShipPart):
         return self.tons * 100_000.0
 
 
+class CargoCrane(CeresModel):
+    def build_item(self) -> str | None:
+        return 'Cargo Crane'
+
+    def tons_for_space(self, cargo_space: float) -> float:
+        return 2.5 + 0.5 * math.ceil(cargo_space / 150)
+
+    def cost_for_space(self, cargo_space: float) -> float:
+        return self.tons_for_space(cargo_space) * 1_000_000.0
+
+
+class CargoHold(CeresModel):
+    tons: float | None = None
+    crane: CargoCrane | None = None
+
+    def build_item(self) -> str | None:
+        return 'Cargo Hold'
+
+    def total_tons(self, owner) -> float:
+        if self.tons is not None:
+            return self.tons
+        return owner.cargo_space_for(self)
+
+    def crane_tons(self, owner) -> float:
+        if self.crane is None:
+            return 0.0
+        return self.crane.tons_for_space(self.total_tons(owner))
+
+    def crane_cost(self, owner) -> float:
+        if self.crane is None:
+            return 0.0
+        return self.crane.cost_for_space(self.total_tons(owner))
+
+    def usable_tons(self, owner) -> float:
+        return self.total_tons(owner) - self.crane_tons(owner)
+
+
+class MedicalBay(ShipPart):
+    def build_item(self) -> str | None:
+        return 'Medical Bay'
+
+    def compute_tons(self) -> float:
+        return 4.0
+
+    def compute_cost(self) -> float:
+        return 2_000_000.0
+
+    def compute_power(self) -> float:
+        return 1.0
+
+
 class Airlock(ShipPart):
     size: float = 2.0
 
@@ -101,33 +152,3 @@ class ProbeDrones(ShipPart):
 
     def compute_cost(self) -> float:
         return (self.count / self.drones_per_ton) * self.cost_per_ton
-
-
-class SmallCraft(CeresModel):
-    shipping_size: int
-    cost: float
-    model_config = {'frozen': True}
-
-    def build_item(self) -> str | None:
-        return self.__class__.__name__
-
-
-class AirRaft(SmallCraft):
-    shipping_size: int = 4
-    cost: float = 250_000.0
-
-    def build_item(self) -> str | None:
-        return 'Air/Raft'
-
-
-class InternalDockingSpace(ShipPart):
-    craft: AirRaft
-
-    def build_item(self) -> str | None:
-        return f'Internal Docking Space: {self.craft.build_item()}'
-
-    def compute_tons(self) -> float:
-        return float(math.ceil(self.craft.shipping_size * 1.1))
-
-    def compute_cost(self) -> float:
-        return self.compute_tons() * 250_000.0

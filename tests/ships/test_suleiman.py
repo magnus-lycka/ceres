@@ -3,10 +3,11 @@ import pytest
 from ceres import armour, ship
 from ceres.bridge import Bridge
 from ceres.computer import Computer5, Computer10, JumpControl1, JumpControl2, JumpControl3
+from ceres.crafts import AirRaft, InternalDockingSpace
 from ceres.drives import FuelProcessor, FusionPlantTL12, JumpDrive2, JumpFuel, MDrive2, OperationFuel
 from ceres.habitation import Staterooms
 from ceres.sensors import MilitarySensors
-from ceres.systems import Airlock, AirRaft, InternalDockingSpace, ProbeDrones, Workshop
+from ceres.systems import Airlock, ProbeDrones, Workshop
 from ceres.weapons import DoubleTurret
 
 from ._markdown_output import write_markdown_output

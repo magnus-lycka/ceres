@@ -62,3 +62,6 @@ class ShipBase(CeresModel):
 
     def parts_of_type(self, part_cls: type) -> list:
         return []
+
+    def cargo_space_for(self, hold) -> float:
+        return 0.0

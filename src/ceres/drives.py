@@ -127,7 +127,7 @@ class JumpDrive(ShipPart):
 class JumpDrive1(JumpDrive):
     rating: Literal[1] = 1
     minimum_tl = 9
-    tons_percent = 0.02
+    tons_percent = 0.025
 
 
 class JumpDrive2(JumpDrive):
@@ -139,25 +139,43 @@ class JumpDrive2(JumpDrive):
 class JumpDrive3(JumpDrive):
     rating: Literal[3] = 3
     minimum_tl = 12
-    tons_percent = 0.10
+    tons_percent = 0.075
 
 
 class JumpDrive4(JumpDrive):
     rating: Literal[4] = 4
     minimum_tl = 13
-    tons_percent = 0.15
+    tons_percent = 0.10
 
 
 class JumpDrive5(JumpDrive):
     rating: Literal[5] = 5
     minimum_tl = 14
-    tons_percent = 0.25
+    tons_percent = 0.125
 
 
 class JumpDrive6(JumpDrive):
     rating: Literal[6] = 6
     minimum_tl = 15
-    tons_percent = 0.35
+    tons_percent = 0.15
+
+
+class JumpDrive7(JumpDrive):
+    rating: Literal[7] = 7
+    minimum_tl = 16
+    tons_percent = 0.175
+
+
+class JumpDrive8(JumpDrive):
+    rating: Literal[8] = 8
+    minimum_tl = 17
+    tons_percent = 0.20
+
+
+class JumpDrive9(JumpDrive):
+    rating: Literal[9] = 9
+    minimum_tl = 18
+    tons_percent = 0.225
 
 
 class _FusionPlant(ShipPart):
@@ -226,7 +244,8 @@ class OperationFuel(ShipPart):
     def compute_tons(self) -> float:
         plant = getattr(self.owner, 'fusion_plant', None)
         if plant is None:
-            raise ValueError('Ship must have a FusionPlant to compute OperationFuel')
+            self.error('Ship must have a FusionPlant to compute OperationFuel')
+            return 0.0
         pp_tons = plant.tons
         monthly = 0.10 * pp_tons
         weekly = monthly / 4

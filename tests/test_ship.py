@@ -3,9 +3,10 @@ import pytest
 
 from ceres import armour, ship
 from ceres.bridge import Cockpit
+from ceres.crafts import AirRaft, InternalDockingSpace
 from ceres.drives import FusionPlantTL12, MDrive6
 from ceres.sensors import CivilianSensors
-from ceres.systems import Airlock, AirRaft, InternalDockingSpace, ProbeDrones, Workshop
+from ceres.systems import Airlock, CargoCrane, CargoHold, ProbeDrones, Workshop
 from ceres.weapons import FixedFirmpoint, PulseLaser
 from tests.ships._markdown_output import write_markdown_output
 
@@ -68,6 +69,28 @@ def test_ship_cargo_subtracts_modeled_part_tonnage():
         workshop=Workshop(),
     )
     assert my_ship.cargo == pytest.approx(100 - 5 - 2 - 6)
+
+
+def test_ship_default_cargo_hold_uses_remaining_space():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=ship.Hull(configuration=ship.streamlined_hull),
+        workshop=Workshop(),
+        cargo_holds=[CargoHold()],
+    )
+    assert my_ship.cargo == pytest.approx(94.0)
+
+
+def test_ship_explicit_cargo_hold_with_crane_reduces_usable_capacity_and_adds_cost():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=ship.Hull(configuration=ship.standard_hull),
+        cargo_holds=[CargoHold(tons=150, crane=CargoCrane())],
+    )
+    assert my_ship.cargo == pytest.approx(147.0)
+    assert my_ship.production_cost == pytest.approx(10_000_000 + 3_000_000)
 
 
 def test_ship_parts_of_type_returns_matching_installed_parts():

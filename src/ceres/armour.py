@@ -44,7 +44,8 @@ class Armour(ShipPart):
     def compute_tons(self) -> float:
         displacement = self.owner.displacement
         if displacement < 5:
-            raise ValueError('Displacement must be at least 5 tons for armour.')
+            self.error('Displacement must be at least 5 tons for armour.')
+            return 0.0
         if displacement < 16:
             size_factor = 4
         elif displacement < 26:

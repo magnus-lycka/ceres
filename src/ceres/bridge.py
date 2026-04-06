@@ -1,3 +1,5 @@
+from bisect import bisect_left
+
 from .base import Note, NoteCategory
 from .parts import ShipPart
 
@@ -22,59 +24,37 @@ class Cockpit(ShipPart):
 
 class Bridge(ShipPart):
     small: bool = False
+    holographic: bool = False
 
     def build_item(self) -> str | None:
-        if self.small:
-            return 'Smaller Bridge'
-        return 'Bridge'
+        smaller = 'Smaller ' if self.small else ''
+        holo = ' (Holographic)' if self.holographic else ''
+        return f'{smaller}Bridge{holo}'
 
     def build_notes(self) -> list[Note]:
         if self.small:
             return [Note(category=NoteCategory.INFO, message='DM -1 to Pilot checks')]
         return []
 
-    def _standard_tons(self) -> float:
+    def compute_tons(self) -> float:
         displacement = self.owner.displacement
-        if displacement <= 50:
-            return 3.0
-        if displacement <= 99:
-            return 6.0
-        if displacement <= 200:
-            return 10.0
-        if displacement <= 1_000:
-            return 20.0
-        if displacement <= 2_000:
-            return 40.0
-        if displacement <= 100_000:
-            return 60.0
+        if displacement <= 200_000:
+            weight_limits = [50, 99, 200, 1000, 2000, 100_000]
+            ix = bisect_left(weight_limits, displacement)
+            if ix > 0 and self.small:
+                ix -= 1
+            return [3.0, 6.0, 10.0, 20.0, 40.0, 60.0, 80.0][ix]
+        # more than 200 000
+        if self.small:
+            displacement -= 100_000
         extra_steps = (displacement - 100_001) // 100_000 + 1
         return 60.0 + extra_steps * 20.0
-
-    def _small_tons(self) -> float:
-        displacement = self.owner.displacement
-        if displacement <= 99:
-            return 3.0
-        if displacement <= 200:
-            return 6.0
-        if displacement <= 1_000:
-            return 10.0
-        if displacement <= 2_000:
-            return 20.0
-        if displacement <= 100_000:
-            return 40.0
-        if displacement <= 200_000:
-            return 60.0
-        extra_steps = (displacement - 200_001) // 100_000 + 1
-        return 60.0 + extra_steps * 20.0
-
-    def compute_tons(self) -> float:
-        if self.small:
-            return self._small_tons()
-        return self._standard_tons()
 
     def compute_cost(self) -> float:
         factor = 0.5 if self.small else 1
         cost = float(((self.owner.displacement - 1) // 100 + 1) * 500_000)
+        if self.holographic:
+            cost *= 1.25
         return cost * factor
 
     @property

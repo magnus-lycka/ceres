@@ -1,3 +1,4 @@
+import math
 from typing import ClassVar
 
 from .parts import ShipPart
@@ -25,3 +26,22 @@ class Staterooms(ShipPart):
     @property
     def life_support_cost(self) -> float:
         return self.count * self.life_support_per_stateroom + self.occupancy * self.life_support_per_occupant
+
+
+class LowBerths(ShipPart):
+    tons_per_berth: ClassVar[float] = 0.5
+    cost_per_berth: ClassVar[float] = 50_000.0
+
+    count: int
+
+    def build_item(self) -> str | None:
+        return 'Low Berths'
+
+    def compute_tons(self) -> float:
+        return self.count * self.tons_per_berth
+
+    def compute_cost(self) -> float:
+        return self.count * self.cost_per_berth
+
+    def compute_power(self) -> float:
+        return float(math.ceil(self.count / 10))

@@ -38,6 +38,7 @@ from .computer import (
     Manoeuvre,
     SoftwarePackage,
 )
+from .crafts import InternalDockingSpace
 from .drives import (
     FuelProcessor,
     FusionPlantTL8,
@@ -49,6 +50,9 @@ from .drives import (
     JumpDrive4,
     JumpDrive5,
     JumpDrive6,
+    JumpDrive7,
+    JumpDrive8,
+    JumpDrive9,
     JumpFuel,
     MDrive0,
     MDrive1,
@@ -64,10 +68,10 @@ from .drives import (
     MDrive11,
     OperationFuel,
 )
-from .habitation import Staterooms
+from .habitation import LowBerths, Staterooms
 from .parts import ShipPart
 from .sensors import BasicSensors, CivilianSensors, MilitarySensors
-from .systems import Aerofins, Airlock, CommonArea, FuelScoops, InternalDockingSpace, ProbeDrones, Workshop
+from .systems import Aerofins, Airlock, CargoHold, CommonArea, FuelScoops, MedicalBay, ProbeDrones, Workshop
 from .weapons import DoubleTurret, FixedFirmpoint
 
 
@@ -269,7 +273,7 @@ ShipMDrive = Annotated[
 ]
 
 ShipJumpDrive = Annotated[
-    JumpDrive1 | JumpDrive2 | JumpDrive3 | JumpDrive4 | JumpDrive5 | JumpDrive6,
+    JumpDrive1 | JumpDrive2 | JumpDrive3 | JumpDrive4 | JumpDrive5 | JumpDrive6 | JumpDrive7 | JumpDrive8 | JumpDrive9,
     Field(discriminator='rating'),
 ]
 
@@ -348,8 +352,11 @@ class Ship(ShipBase):
     software: list[ShipSoftware] = Field(default_factory=list)
     sensors: ShipSensors = Field(default_factory=BasicSensors)
     docking_space: InternalDockingSpace | None = None
+    cargo_holds: list[CargoHold] = Field(default_factory=list)
     staterooms: Staterooms | None = None
+    low_berths: LowBerths | None = None
     common_area: CommonArea | None = None
+    medical_bay: MedicalBay | None = None
     airlocks: list[Airlock] = Field(default_factory=list)
     aerofins: Aerofins | None = None
     probe_drones: ProbeDrones | None = None
@@ -379,7 +386,7 @@ class Ship(ShipBase):
     @property
     def basic_hull_power_load(self) -> float:
         if self.bridge is not None:
-            return 20.0
+            return self.displacement * 0.2
         if self.hull.configuration.non_gravity:
             return 0.5
         return 1.0
@@ -422,11 +429,13 @@ class Ship(ShipBase):
         craft_cost = 0.0
         if self.docking_space is not None:
             craft_cost += self.docking_space.craft.cost
+        cargo_hold_cost = sum(cargo_hold.crane_cost(self) for cargo_hold in self.cargo_holds)
         return (
             self.hull_cost
             + sum(part.cost for part in self._all_parts())
             + sum(package.cost for package in self.software_packages)
             + craft_cost
+            + cargo_hold_cost
         )
 
     @property
@@ -498,7 +507,9 @@ class Ship(ShipBase):
             self.sensors,
             self.docking_space,
             self.staterooms,
+            self.low_berths,
             self.common_area,
+            self.medical_bay,
             self.aerofins,
             self.probe_drones,
             self.workshop,
@@ -511,8 +522,20 @@ class Ship(ShipBase):
         parts.extend(self.fixed_firmpoints)
         return parts
 
+    def _remaining_cargo_space_without_default_holds(self) -> float:
+        cargo = self.displacement * self.hull.configuration.usage_factor
+        for part in self._all_parts():
+            cargo -= part.tons
+        for cargo_hold in self.cargo_holds:
+            if cargo_hold.tons is not None:
+                cargo -= cargo_hold.tons
+        return cargo
+
     def parts_of_type(self, part_cls: type) -> list[ShipPart]:
         return [part for part in self._all_parts() if isinstance(part, part_cls)]
+
+    def cargo_space_for(self, hold) -> float:
+        return self._remaining_cargo_space_without_default_holds()
 
     def markdown_table(self) -> str:
         last_section = None
@@ -646,10 +669,11 @@ class Ship(ShipBase):
                 section = 'Sensors'
             elif part is self.docking_space:
                 section = 'Craft'
-            elif part is self.staterooms:
+            elif part is self.staterooms or part is self.low_berths:
                 section = 'Staterooms'
             elif (
                 part is self.common_area
+                or part is self.medical_bay
                 or part is self.probe_drones
                 or part is self.workshop
                 or part is self.fuel_processor
@@ -675,7 +699,29 @@ class Ship(ShipBase):
         for package in self.software_packages:
             lines.append(add_row('Software', item_text(package, package.description), None, None, package.cost))
             lines.extend(add_note_rows(package.notes))
-        lines.append(add_row('Cargo', 'Cargo Hold', self.cargo, None, 0.0))
+        if self.cargo_holds:
+            for cargo_hold in self.cargo_holds:
+                lines.append(
+                    add_row(
+                        'Cargo',
+                        cargo_hold.build_item() or 'Cargo Hold',
+                        cargo_hold.usable_tons(self),
+                        None,
+                        0.0,
+                    ),
+                )
+                if cargo_hold.crane is not None:
+                    lines.append(
+                        add_row(
+                            'Cargo',
+                            cargo_hold.crane.build_item() or 'Cargo Crane',
+                            cargo_hold.crane_tons(self),
+                            None,
+                            cargo_hold.crane_cost(self),
+                        ),
+                    )
+        else:
+            lines.append(add_row('Cargo', 'Cargo Hold', self.cargo, None, 0.0))
         lines.extend(add_note_rows(self.notes))
         lines.extend(
             [
@@ -706,10 +752,9 @@ class Ship(ShipBase):
 
     @property
     def cargo(self):
-        cargo = self.displacement * self.hull.configuration.usage_factor
-        for part in self._all_parts():
-            cargo -= part.tons
-        return cargo
+        if self.cargo_holds:
+            return sum(cargo_hold.usable_tons(self) for cargo_hold in self.cargo_holds)
+        return self._remaining_cargo_space_without_default_holds()
 
     def model_post_init(self, __context: Any) -> None:
         if self.hull.configuration.streamlined == Streamlined.YES:

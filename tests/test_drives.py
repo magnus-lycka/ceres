@@ -6,6 +6,15 @@ from ceres.drives import (
     FusionPlantTL8,
     FusionPlantTL12,
     FusionPlantTL15,
+    JumpDrive1,
+    JumpDrive2,
+    JumpDrive3,
+    JumpDrive4,
+    JumpDrive5,
+    JumpDrive6,
+    JumpDrive7,
+    JumpDrive8,
+    JumpDrive9,
     MDrive6,
     OperationFuel,
 )
@@ -14,6 +23,30 @@ from ceres.drives import (
 class DummyOwner(ShipBase):
     def __init__(self, tl, displacement):
         super().__init__(tl=tl, displacement=displacement)
+
+
+# --- JumpDrive ---
+
+
+@pytest.mark.parametrize('cls, rating, tl, pct', [
+    (JumpDrive1, 1, 9, 0.025),
+    (JumpDrive2, 2, 11, 0.05),
+    (JumpDrive3, 3, 12, 0.075),
+    (JumpDrive4, 4, 13, 0.10),
+    (JumpDrive5, 5, 14, 0.125),
+    (JumpDrive6, 6, 15, 0.15),
+    (JumpDrive7, 7, 16, 0.175),
+    (JumpDrive8, 8, 17, 0.20),
+    (JumpDrive9, 9, 18, 0.225),
+])
+def test_jump_drive_tons_cost_tl(cls, rating, tl, pct):
+    d = cls()
+    d.bind(DummyOwner(tl, 200))
+    expected_tons = 200 * pct + 5
+    assert d.minimum_tl == tl
+    assert d.rating == rating
+    assert float(d.tons) == pytest.approx(expected_tons)
+    assert float(d.cost) == pytest.approx(expected_tons * 1_500_000)
 
 
 # --- MDrive ---
@@ -180,10 +213,14 @@ def test_operation_fuel_power_zero():
 
 
 def test_operation_fuel_requires_plant():
-    with pytest.raises(ValueError, match='FusionPlant'):
-        ship.Ship(
-            tl=12,
-            displacement=6,
-            hull=ship.Hull(configuration=ship.streamlined_hull),
-            operation_fuel=OperationFuel(weeks=1),
-        )
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=6,
+        hull=ship.Hull(configuration=ship.streamlined_hull),
+        operation_fuel=OperationFuel(weeks=1),
+    )
+    assert my_ship.operation_fuel is not None
+    assert my_ship.operation_fuel.tons == 0.0
+    assert ('error', 'Ship must have a FusionPlant to compute OperationFuel') in [
+        (note.category.value, note.message) for note in my_ship.operation_fuel.notes
+    ]

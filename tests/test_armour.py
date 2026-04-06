@@ -1,5 +1,3 @@
-import pytest
-
 from ceres import armour
 from ceres.base import NoteCategory, ShipBase
 
@@ -46,10 +44,10 @@ def test_titanium_steel_armour():
 
 
 def test_titanium_steel_armour_4ton():
-    with pytest.raises(ValueError):
-        armour4 = armour.TitaniumSteelArmour(tl=7, protection=2)
-        armour4.bind(DummyOwner(7, 4))
-        armour4.compute_tons()
+    armour4 = armour.TitaniumSteelArmour(tl=7, protection=2)
+    armour4.bind(DummyOwner(7, 4))
+    assert armour4.tons == 0.0
+    assert 'Displacement must be at least 5 tons for armour.' in error_messages(armour4)
 
 
 def test_titanium_steel_armour_5_15ton():

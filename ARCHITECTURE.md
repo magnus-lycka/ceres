@@ -89,13 +89,21 @@ checks bandwidth against the computer's processing rating; `Core` computers
 have unlimited jump control bandwidth. A computer automatically includes
 `Library`, `Manoeuvre/0`, and (from TL11) `Intellect` in its software list.
 
-## Intentional differences from Mark F. Anderson's reference sheets
+## Rules interpretations
 
-The `refs/` directory contains ship designs built with Mark F. Anderson's
-design tool. Our output differs in the following intentional ways:
+We follow the latest versions of Mongoose Traveller 2nd Edition Core Rules and
+High Guard. Where the two books conflict, **High Guard takes precedence**.
+
+We have studied Mark F. Anderson's ship design tool output and deviate from it
+in the following intentional ways:
 
 - **Stores & Spares** — not modelled. HG only specifies this for capital ships,
   and the tonnage is considered to fit within existing spaces rather than
   reducing cargo capacity.
+- **Passenger Storage Capacity** — not modelled as a separate line item. For
+  Middle Passage or worse, luggage fits within the stateroom allocation. For
+  High Passage, cargo simply decreases by 1 dTon per passenger, but this is
+  tracked operationally rather than reserved in the design. The net effect is
+  that our cargo figure will be slightly higher than Anderson's.
 - **Battle Load** — Anderson shows power figures for both normal and battle
   load. We only model normal load and do not plan to add battle load.

@@ -1,3 +1,5 @@
+import pytest
+
 from ceres.base import ShipBase
 from ceres.bridge import Bridge, Cockpit
 
@@ -79,6 +81,18 @@ def test_small_bridges():
         b.bind(DummyOwner(12, size))
         assert b.tons == weight
         assert b.cost == ((size - 1) // 100 + 1) * 250_000
+
+
+def test_bridge_holographic_cost():
+    b = Bridge(holographic=True)
+    b.bind(DummyOwner(12, 200))
+    assert b.cost == pytest.approx(1_250_000)
+
+
+def test_bridge_holographic_build_item():
+    b = Bridge(holographic=True)
+    b.bind(DummyOwner(12, 200))
+    assert b.build_item() == 'Bridge (Holographic)'
 
 
 def test_normal_bridges():
