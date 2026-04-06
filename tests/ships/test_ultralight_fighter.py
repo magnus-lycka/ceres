@@ -106,9 +106,9 @@ def test_ultralight_fighter_markdown_table():
     assert '## *Botfly* Ultralight Fighter | TL12 | Hull 2' in table
     assert '| Hull | Light Streamlined Hull | **6.00** |  | 270.00 |' in table
     assert '|  | Basic Ship Systems |  | 1.00 |  |' in table
-    assert '| Armour | Crystaliron, Armour: 6 | 2.16 |  | 432.00 |' in table
-    assert '| M-Drive | Thrust 6 | 0.36 | 4.00 | 720.00 |' in table
-    assert '| Power Plant | Fusion (TL 12) | 0.53 | **8.00** | 533.33 |' in table
+    assert '|  | Crystaliron, Armour: 6 | 2.16 |  | 432.00 |' in table
+    assert '| Propulsion | M-Drive 6 | 0.36 | 4.00 | 720.00 |' in table
+    assert '| Power | Fusion (TL 12) | 0.53 | **8.00** | 533.33 |' in table
     assert '| Sensors | Civilian Grade | 1.00 | 1.00 | 3000.00 |' in table
-    assert '| Fuel | Operation 1 weeks | 0.02 |  |  |' in table
+    assert '| Fuel | 1 week of operation | 0.02 |  |  |' in table
     assert '|  | Manoeuvre/0 |  |  |  |' in table

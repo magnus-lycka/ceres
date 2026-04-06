@@ -205,7 +205,7 @@ def test_ship_with_negative_cargo_adds_local_note():
     )
     assert my_ship.cargo < 0
     assert [(note.category.value, note.message) for note in my_ship.notes] == [
-        ('error', f'Cargo is negative by {-my_ship.cargo:.2f} tons'),
+        ('error', f'Hull overloaded by {-my_ship.cargo:.2f} tons'),
     ]
 
 
@@ -219,7 +219,7 @@ def test_markdown_table_renders_inline_error_on_cargo_row():
     )
     table = my_ship.markdown_table()
     write_markdown_output('test_negative_cargo', table)
-    assert '|  | **ERROR:** Cargo is negative by 1.00 tons |  |  |  |' in table
+    assert '|  | **ERROR:** Hull overloaded by 1.00 tons |  |  |  |' in table
 
 
 def test_ship_roundtrips_airlocks_in_parts_list():

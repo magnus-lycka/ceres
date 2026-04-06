@@ -1,5 +1,4 @@
 from enum import Enum, StrEnum
-import itertools
 from typing import Annotated, Any, ClassVar, Literal
 
 from pydantic import Field
@@ -72,6 +71,7 @@ from .drives import (
 from .habitation import LowBerths, Staterooms
 from .parts import ShipPart
 from .sensors import BasicSensors, CivilianSensors, MilitarySensors
+from .spec import CrewRow as SpecCrewRow, ExpenseRow, ShipSpec, SpecRow, SpecSection
 from .systems import Aerofins, Airlock, CargoHold, CommonArea, FuelScoops, MedicalBay, ProbeDrones, Workshop
 from .weapons import DoubleTurret, FixedFirmpoint
 
@@ -538,231 +538,307 @@ class Ship(ShipBase):
     def cargo_space_for(self, hold) -> float:
         return self._remaining_cargo_space_without_default_holds()
 
-    def markdown_table(self) -> str:
-        last_section = None
-        crew_salary_cost = self._crew_salary_cost()
-        mortgage_cost = self._mortgage_cost()
-        maintenance_cost = self._maintenance_cost()
-        life_support_cost = self._life_support_cost()
-        fuel_cost = self._fuel_cost()
-        total_expenses = self._total_expenses()
+    def _item_text(self, obj, fallback: str) -> str:
+        for note in obj.notes:
+            if note.category is NoteCategory.ITEM:
+                return note.message
+        return fallback
 
-        def add_row(
-            section: str,
-            item: str,
-            tons: float | None,
-            power: float | None,
-            cost: float | None,
-            emphasize_tons: bool = False,
+    def _display_notes(self, obj) -> list:
+        return [note for note in obj.notes if note.category is not NoteCategory.ITEM]
+
+    def build_spec(self) -> ShipSpec:
+        def operation_weeks_label(weeks: int) -> str:
+            unit = 'week' if weeks == 1 else 'weeks'
+            return f'{weeks} {unit} of operation'
+
+        def fuel_item() -> str | None:
+            parts: list[str] = []
+            if self.jump_fuel is not None:
+                parts.append(f'J-{self.jump_fuel.parsecs}')
+            if self.operation_fuel is not None:
+                parts.append(operation_weeks_label(self.operation_fuel.weeks))
+            if not parts:
+                return None
+            return ', '.join(parts)
+
+        spec = ShipSpec(
+            ship_class=self.ship_class,
+            ship_type=self.ship_type,
+            tl=self.tl,
+            hull_points=self.hull_points,
+        )
+
+        def add_row(section: SpecSection, row: SpecRow) -> None:
+            spec.add_row(row, section=section)
+
+        def add_part(
+            section: SpecSection,
+            part: ShipPart,
+            *,
+            item: str | None = None,
+            power: float | None = None,
             emphasize_power: bool = False,
-        ) -> str:
-            nonlocal last_section
-            tons_text = '' if tons is None or tons == 0 else f'{tons:.2f}'
-            if emphasize_tons and tons_text:
-                tons_text = f'**{tons_text}**'
-            if power is None or power == 0:
-                power_text = ''
-            else:
-                power_text = f'{abs(power):.2f}'
-            if emphasize_power and power_text:
-                power_text = f'**{power_text}**'
-            cost_text = '' if cost is None or cost == 0 else f'{cost / 1000:.2f}'
-            section_text = '' if section == last_section else section
-            last_section = section
-            return f'| {section_text} | {item} | {tons_text} | {power_text} | {cost_text} |'
+        ) -> None:
+            resolved_item = item or self._item_text(part, getattr(part, 'description', part.__class__.__name__))
+            resolved_power = power
+            if resolved_power is None and part.power:
+                resolved_power = -part.power
+            add_row(
+                section,
+                SpecRow(
+                    section=section,
+                    item=resolved_item,
+                    tons=part.tons or None,
+                    power=resolved_power,
+                    cost=part.cost or None,
+                    emphasize_power=emphasize_power,
+                    notes=self._display_notes(part),
+                ),
+            )
 
-        def add_cost_row(item: str, cost: float) -> str:
-            return f'| {item} | {round(cost)} |'
-
-        def add_crew_row(role: str, salary: float) -> str:
-            return f'| {role} | {round(salary)} |'
-
-        def item_text(obj, fallback: str) -> str:
-            for note in obj.notes:
-                if note.category is NoteCategory.ITEM:
-                    return note.message
-            return fallback
-
-        def add_note_rows(notes: list) -> list[str]:
-            rows: list[str] = []
-            for note in notes:
-                if note.category is NoteCategory.ITEM:
-                    continue
-                if note.category is NoteCategory.INFO:
-                    message = f'• {note.message}'
-                elif note.category is NoteCategory.ERROR:
-                    message = f'**ERROR:** {note.message}'
-                elif note.category is NoteCategory.WARNING:
-                    message = f'*WARNING:* {note.message}'
+        def add_grouped_parts(section: SpecSection, parts: list[ShipPart]) -> None:
+            groups: list[tuple[str, list[ShipPart]]] = []
+            for part in parts:
+                item = self._item_text(part, getattr(part, 'description', part.__class__.__name__))
+                if groups and groups[-1][0] == item:
+                    groups[-1][1].append(part)
                 else:
-                    message = note.message
-                rows.append(f'|  | {message} |  |  |  |')
-            return rows
+                    groups.append((item, [part]))
+
+            for item, group in groups:
+                label = f'{len(group)}x {item}' if len(group) > 1 else item
+                total_tons = sum(part.tons for part in group) or None
+                total_cost = sum(part.cost for part in group) or None
+                total_power = sum(part.power for part in group)
+                add_row(
+                    section,
+                    SpecRow(
+                        section=section,
+                        item=label,
+                        tons=total_tons,
+                        power=(-total_power) if total_power else None,
+                        cost=total_cost,
+                        notes=[note for part in group for note in self._display_notes(part)],
+                    ),
+                )
+
+        add_row(
+            SpecSection.HULL,
+            SpecRow(
+                section=SpecSection.HULL,
+                item=self._item_text(self.hull, 'Hull'),
+                tons=float(self.displacement),
+                cost=self.hull_cost,
+                emphasize_tons=True,
+                notes=self._display_notes(self.hull),
+            ),
+        )
+        add_row(
+            SpecSection.HULL,
+            SpecRow(
+                section=SpecSection.HULL,
+                item='Basic Ship Systems',
+                power=self.basic_hull_power_load,
+            ),
+        )
+        if self.hull.armour is not None:
+            add_part(SpecSection.HULL, self.hull.armour)
+        if self.hull.stealth is not None:
+            add_part(SpecSection.HULL, self.hull.stealth)
+        add_grouped_parts(SpecSection.HULL, [*self.airlocks, *([self.aerofins] if self.aerofins is not None else [])])
+
+        if self.jump_drive is not None:
+            add_part(SpecSection.JUMP, self.jump_drive)
+        if self.m_drive is not None:
+            add_part(SpecSection.PROPULSION, self.m_drive)
+        if self.fusion_plant is not None:
+            add_part(
+                SpecSection.POWER,
+                self.fusion_plant,
+                power=float(self.fusion_plant.output),
+                emphasize_power=True,
+            )
+
+        combined_fuel_item = fuel_item()
+        if combined_fuel_item is not None:
+            total_fuel_tons = 0.0
+            if self.jump_fuel is not None:
+                total_fuel_tons += self.jump_fuel.tons
+            if self.operation_fuel is not None:
+                total_fuel_tons += self.operation_fuel.tons
+            add_row(
+                SpecSection.FUEL,
+                SpecRow(
+                    section=SpecSection.FUEL,
+                    item=combined_fuel_item,
+                    tons=total_fuel_tons or None,
+                ),
+            )
+        for fuel_part in [self.fuel_scoops, self.fuel_processor]:
+            if fuel_part is not None:
+                add_part(SpecSection.FUEL, fuel_part)
+
+        for command_part in [self.bridge, self.cockpit]:
+            if command_part is not None:
+                add_part(SpecSection.COMMAND, command_part)
+
+        if self.computer is not None:
+            add_part(SpecSection.COMPUTER, self.computer)
+        for package in self.software_packages:
+            add_row(
+                SpecSection.COMPUTER,
+                SpecRow(
+                    section=SpecSection.COMPUTER,
+                    item=self._item_text(package, package.description),
+                    cost=package.cost or None,
+                    notes=self._display_notes(package),
+                ),
+            )
+
+        add_part(SpecSection.SENSORS, self.sensors)
+
+        add_grouped_parts(SpecSection.WEAPONS, [*self.turrets, *self.fixed_firmpoints])
+
+        if self.docking_space is not None:
+            add_part(SpecSection.CRAFT, self.docking_space)
+            craft = self.docking_space.craft
+            add_row(
+                SpecSection.CRAFT,
+                SpecRow(
+                    section=SpecSection.CRAFT,
+                    item=craft.build_item() or craft.__class__.__name__,
+                    cost=craft.cost,
+                ),
+            )
+
+        for habitation_part in [self.staterooms, self.low_berths, self.common_area]:
+            if habitation_part is not None:
+                add_part(SpecSection.HABITATION, habitation_part)
+
+        for system_part in [self.workshop, self.medical_bay, self.probe_drones]:
+            if system_part is not None:
+                add_part(SpecSection.SYSTEMS, system_part)
+
+        if self.cargo_holds:
+            for cargo_hold in self.cargo_holds:
+                add_row(
+                    SpecSection.CARGO,
+                    SpecRow(
+                        section=SpecSection.CARGO,
+                        item=cargo_hold.build_item() or 'Cargo Hold',
+                        tons=cargo_hold.usable_tons(self) or None,
+                    ),
+                )
+                if cargo_hold.crane is not None:
+                    add_row(
+                        SpecSection.CARGO,
+                        SpecRow(
+                            section=SpecSection.CARGO,
+                            item=cargo_hold.crane.build_item() or 'Cargo Crane',
+                            tons=cargo_hold.crane_tons(self) or None,
+                            cost=cargo_hold.crane_cost(self) or None,
+                        ),
+                    )
+        else:
+            add_row(
+                SpecSection.CARGO,
+                SpecRow(
+                    section=SpecSection.CARGO,
+                    item='Cargo Hold',
+                    tons=self.cargo or None,
+                ),
+            )
+
+        # Ship-level notes (e.g. hull overloaded) appended to the last row
+        for note in self.notes:
+            spec.rows_for_section(SpecSection.CARGO)[-1].notes.append(note)
+
+        expenses = [
+            ExpenseRow('Production Cost', self.production_cost),
+            ExpenseRow('Sales Price New', self.sales_price_new),
+            ExpenseRow('Mortgage', self._mortgage_cost()),
+            ExpenseRow('Maintenance', self._maintenance_cost()),
+            ExpenseRow('Life Support', self._life_support_cost()),
+            ExpenseRow('Fuel', self._fuel_cost()),
+            ExpenseRow('Crew Salaries', self._crew_salary_cost()),
+            ExpenseRow('Total Expenses', self._total_expenses()),
+        ]
+
+        crew = [SpecCrewRow(role=r.role, salary=r.total_salary) for r in self.crew_roles]
+
+        spec.expenses = expenses
+        spec.crew = crew
+        return spec
+
+    def markdown_table(self) -> str:
+        spec = self.build_spec()
+        last_section: str | None = None
 
         heading_bits: list[str] = []
-        if self.ship_class is not None and self.ship_type is not None:
-            heading_bits.append(f'*{self.ship_class}* {self.ship_type}')
-        elif self.ship_class is not None:
-            heading_bits.append(f'*{self.ship_class}*')
-        elif self.ship_type is not None:
-            heading_bits.append(self.ship_type)
-        heading_bits.append(f'TL{self.tl}')
-        heading_bits.append(f'Hull {self.hull_points:.0f}')
+        if spec.ship_class is not None and spec.ship_type is not None:
+            heading_bits.append(f'*{spec.ship_class}* {spec.ship_type}')
+        elif spec.ship_class is not None:
+            heading_bits.append(f'*{spec.ship_class}*')
+        elif spec.ship_type is not None:
+            heading_bits.append(spec.ship_type)
+        if spec.tl is not None:
+            heading_bits.append(f'TL{spec.tl}')
+        if spec.hull_points is not None:
+            heading_bits.append(f'Hull {spec.hull_points:.0f}')
         heading = f'## {" | ".join(heading_bits)}'
+
+        def fmt_row(row: SpecRow) -> list[str]:
+            nonlocal last_section
+            tons_text = '' if row.tons is None or row.tons == 0 else f'{row.tons:.2f}'
+            if row.emphasize_tons and tons_text:
+                tons_text = f'**{tons_text}**'
+            if row.power is None or row.power == 0:
+                power_text = ''
+            else:
+                power_text = f'{abs(row.power):.2f}'
+            if row.emphasize_power and power_text:
+                power_text = f'**{power_text}**'
+            cost_text = '' if row.cost is None or row.cost == 0 else f'{row.cost / 1000:.2f}'
+            section_text = '' if row.section == last_section else row.section.value
+            last_section = row.section
+            lines = [f'| {section_text} | {row.item} | {tons_text} | {power_text} | {cost_text} |']
+            for note in row.notes:
+                if note.category is NoteCategory.INFO:
+                    msg = f'• {note.message}'
+                elif note.category is NoteCategory.ERROR:
+                    msg = f'**ERROR:** {note.message}'
+                elif note.category is NoteCategory.WARNING:
+                    msg = f'*WARNING:* {note.message}'
+                else:
+                    msg = note.message
+                lines.append(f'|  | {msg} |  |  |  |')
+            return lines
 
         lines = [
             heading,
             '',
             '| Section | Item | Tons | Power | Cost (kCr) |',
-            '| --- | --- | ---: | ---: | ---: |',
-            add_row(
-                'Hull',
-                item_text(self.hull, 'Hull'),
-                self.displacement,
-                None,
-                self.hull_cost,
-                emphasize_tons=True,
-            ),
-            add_row('Hull', 'Basic Ship Systems', None, self.basic_hull_power_load, 0.0),
+            '| ------- | --------------- | ---: | ---: | ---: |',
         ]
-        if self.hull.armour is not None:
-            armour_row = add_row(
-                'Armour',
-                item_text(self.hull.armour, self.hull.armour.description),
-                self.hull.armour.tons,
-                -self.hull.armour.power if self.hull.armour.power else None,
-                self.hull.armour.cost,
-            )
-            lines.append(
-                armour_row,
-            )
-            lines.extend(add_note_rows(self.hull.armour.notes))
-        if self.hull.stealth is not None:
-            stealth_row = add_row(
-                'Hull',
-                item_text(self.hull.stealth, self.hull.stealth.description),
-                self.hull.stealth.tons,
-                -self.hull.stealth.power if self.hull.stealth.power else None,
-                self.hull.stealth.cost,
-            )
-            lines.append(
-                stealth_row,
-            )
-            lines.extend(add_note_rows(self.hull.stealth.notes))
+        for row in spec.rows:
+            lines.extend(fmt_row(row))
 
-        def part_section(part: ShipPart) -> str:
-            if part is self.m_drive:
-                return 'M-Drive'
-            if part is self.jump_drive:
-                return 'J-Drive'
-            if part is self.fusion_plant:
-                return 'Power Plant'
-            if part is self.jump_fuel or part is self.operation_fuel:
-                return 'Fuel'
-            if part is self.bridge or part is self.cockpit:
-                return 'Bridge'
-            if part is self.computer:
-                return 'Computer'
-            if part is self.sensors:
-                return 'Sensors'
-            if part is self.docking_space:
-                return 'Craft'
-            if part is self.staterooms or part is self.low_berths:
-                return 'Staterooms'
-            if (
-                part is self.common_area
-                or part is self.medical_bay
-                or part is self.probe_drones
-                or part is self.workshop
-                or part is self.fuel_processor
-                or part is self.aerofins
-                or part is self.fuel_scoops
-                or part in self.airlocks
-            ):
-                return 'Systems'
-            if part in self.turrets or part in self.fixed_firmpoints:
-                return 'Weapons'
-            return part.__class__.__name__
-
-        hull_parts = self.hull._all_parts()
-        non_hull_parts = [p for p in self._all_parts() if p not in hull_parts]
-
-        def group_key(part: ShipPart) -> tuple:
-            return (part_section(part), item_text(part, getattr(part, 'description', part.__class__.__name__)))
-
-        for (section, details), group_iter in itertools.groupby(non_hull_parts, key=group_key):
-            group = list(group_iter)
-            n = len(group)
-            label = f'{n}x {details}' if n > 1 else details
-            total_tons = sum(p.tons for p in group)
-            total_cost = sum(p.cost for p in group)
-            power = None
-            emphasize_power = False
-            if group[0] is self.fusion_plant:
-                power = float(self.fusion_plant.output)
-                emphasize_power = True
-            elif any(p.power for p in group):
-                power = -sum(p.power for p in group)
-            lines.append(add_row(section, label, total_tons, power, total_cost, emphasize_power=emphasize_power))
-            for part in group:
-                lines.extend(add_note_rows(part.notes))
-                if part is self.docking_space:
-                    craft = self.docking_space.craft
-                    lines.append(
-                        add_row('Craft', craft.build_item() or craft.__class__.__name__, None, None, craft.cost)
-                    )
-        for package in self.software_packages:
-            lines.append(add_row('Software', item_text(package, package.description), None, None, package.cost))
-            lines.extend(add_note_rows(package.notes))
-        if self.cargo_holds:
-            for cargo_hold in self.cargo_holds:
-                lines.append(
-                    add_row(
-                        'Cargo',
-                        cargo_hold.build_item() or 'Cargo Hold',
-                        cargo_hold.usable_tons(self),
-                        None,
-                        0.0,
-                    ),
-                )
-                if cargo_hold.crane is not None:
-                    lines.append(
-                        add_row(
-                            'Cargo',
-                            cargo_hold.crane.build_item() or 'Cargo Crane',
-                            cargo_hold.crane_tons(self),
-                            None,
-                            cargo_hold.crane_cost(self),
-                        ),
-                    )
-        else:
-            lines.append(add_row('Cargo', 'Cargo Hold', self.cargo, None, 0.0))
-        lines.extend(add_note_rows(self.notes))
         lines.extend(
             [
                 '',
                 '| Cost | Amount |',
-                '| --- | ---: |',
-                add_cost_row('Production Cost', self.production_cost),
-                add_cost_row('Sales Price New', self.sales_price_new),
-                add_cost_row('Mortgage', mortgage_cost),
-                add_cost_row('Maintenance', maintenance_cost),
-                add_cost_row('Life Support', life_support_cost),
-                add_cost_row('Fuel', fuel_cost),
-                add_cost_row('Crew Salaries', crew_salary_cost),
-                add_cost_row('Total Expenses', total_expenses),
-            ],
+                '| ------------ | ---: |',
+            ]
         )
-        if self.crew_roles:
-            lines.extend(
-                [
-                    '',
-                    '| Crew | Salary |',
-                    '| --- | ---: |',
-                ],
-            )
-            for role in self.crew_roles:
-                lines.append(add_crew_row(role.role, role.total_salary))
+        for exp in spec.expenses:
+            lines.append(f'| {exp.label} | {round(exp.amount):,} |')
+
+        if spec.crew:
+            lines.extend(['', '| Crew | Salary |', '| ------------ | ---: |'])
+            for c in spec.crew:
+                lines.append(f'| {c.role} | {round(c.salary):,} |')
+
         return '\n'.join(lines)
 
     @property
@@ -798,7 +874,7 @@ class Ship(ShipBase):
             elif highest_jump_control.rating > self.jump_drive.rating:
                 highest_jump_control.warning(f'Limited to Jump {self.jump_drive.rating} by drive capacity')
         if self.cargo < 0:
-            self.error(f'Cargo is negative by {-self.cargo:.2f} tons')
+            self.error(f'Hull overloaded by {-self.cargo:.2f} tons')
         if self.bridge is not None and not self.airlocks:
             self.error('No airlock installed')
         if self.staterooms is not None:

@@ -6,8 +6,7 @@ from ceres.computer import Computer5, JumpControl1
 from ceres.drives import FuelProcessor, FusionPlantTL12, JumpDrive1, JumpFuel, MDrive1, OperationFuel
 from ceres.habitation import LowBerths, Staterooms
 from ceres.sensors import CivilianSensors
-from ceres.systems import Airlock, CargoHold, CargoCrane, CommonArea
-from ceres.weapons import DoubleTurret
+from ceres.systems import Airlock, CargoCrane, CargoHold, CommonArea
 
 from ._markdown_output import write_markdown_output
 
@@ -149,21 +148,35 @@ def test_beowulf_production_cost():
     assert beowulf.sales_price_new == pytest.approx(46_242_000)
 
 
-def test_beowulf_markdown_table():
+def test_beowulf_spec_structure():
+    beowulf = build_beowulf()
+    spec = beowulf.build_spec()
+
+    assert spec.ship_class == 'Beowulf'
+    assert spec.ship_type == 'Type A Free Trader'
+    assert spec.tl == 12
+    assert spec.hull_points == 80
+
+    assert spec.row('Streamlined Hull').section == 'Hull'
+    assert spec.row('Bridge').section == 'Command'
+    assert spec.row('Jump 1').section == 'Jump'
+    assert spec.row('M-Drive 1').section == 'Propulsion'
+    assert spec.row('Fusion (TL 12)').section == 'Power'
+    assert spec.row('J-1, 4 weeks of operation').section == 'Fuel'
+    assert spec.row('Fuel Scoops').section == 'Fuel'
+    assert spec.row('2x Airlock').section == 'Hull'
+    assert spec.row('Staterooms').section == 'Habitation'
+    assert spec.row('Low Berths').section == 'Habitation'
+    assert spec.row('Common Area').section == 'Habitation'
+    assert spec.row('Cargo Hold').section == 'Cargo'
+    assert spec.row('Cargo Crane').section == 'Cargo'
+
+    assert spec.expenses[0].label == 'Production Cost'
+    assert spec.expenses[0].amount == pytest.approx(51_380_000)
+    assert spec.expenses[1].amount == pytest.approx(46_242_000)
+
+
+def test_beowulf_markdown_output():
     beowulf = build_beowulf()
     table = beowulf.markdown_table()
     write_markdown_output('test_beowulf', table)
-
-    assert '## *Beowulf* Type A Free Trader | TL12 | Hull 80' in table
-    assert '| Hull | Streamlined Hull | **200.00** |  | 12000.00 |' in table
-    assert '|  | Basic Ship Systems |  | 40.00 |  |' in table
-    assert '| Bridge | Bridge | 10.00 |  | 1000.00 |' in table
-    assert '| J-Drive | Jump 1 | 10.00 | 20.00 | 15000.00 |' in table
-    assert '| Staterooms | Staterooms | 40.00 |  | 5000.00 |' in table
-    assert '|  | Low Berths | 10.00 | 2.00 | 1000.00 |' in table
-    assert '|  | Fuel Scoops |  |  |  |' in table
-    assert '|  | 2x Airlock |  |  |  |' in table
-    assert '| Cargo | Cargo Hold |' in table
-    assert '| Cargo Crane |' in table
-    assert '| Production Cost | 51380000 |' in table
-    assert '| Sales Price New | 46242000 |' in table

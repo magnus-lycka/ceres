@@ -10,7 +10,7 @@ class MDrive(ShipPart):
     tons_percent: ClassVar[float]
 
     def build_item(self) -> str | None:
-        return f'Thrust {self.rating}'
+        return f'M-Drive {self.rating}'
 
     def compute_tons(self) -> float:
         return self.owner.displacement * self.tons_percent

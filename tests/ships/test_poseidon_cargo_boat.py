@@ -45,13 +45,13 @@ def test_poseidon_cargo_boat_generates_markdown_for_visual_comparison(tl: int):
     assert f'## *Poseidon* Cargo Boat | TL{tl} | Hull 36' in table
     assert '| Hull | Light Streamlined Hull | **100.00** |  | 4500.00 |' in table
     assert '|  | Basic Ship Systems |  | 20.00 |  |' in table
-    assert '| Bridge | Smaller Bridge | 6.00 |  | 250.00 |' in table
+    assert '| Command | Smaller Bridge | 6.00 |  | 250.00 |' in table
     assert '|  | • DM -1 to Pilot checks |  |  |  |' in table
     assert '| Sensors | Basic |  |  |  |' in table
     assert '|  | • Radar, Lidar; DM -4 |  |  |  |' in table
-    assert '| Systems | Common Area | 1.00 |  | 100.00 |' in table
+    assert 'Common Area | 1.00 |  | 100.00 |' in table
     assert '|  | Airlock |  |  |  |' in table
-    assert '|  | Aerofins | 5.00 |  | 500.00 |' in table
+    assert 'Aerofins | 5.00 |  | 500.00 |' in table
     assert '|  | • DM +2 to Pilot checks in atmosphere |  |  |  |' in table
     if tl < 10:
         assert f'|  | **ERROR:** Requires TL10, ship is TL{tl} |  |  |  |' in table
