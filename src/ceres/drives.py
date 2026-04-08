@@ -1,9 +1,9 @@
 import math
-from typing import ClassVar, Literal
+from typing import Annotated, ClassVar, Literal
 
-from .base import CeresModel
+from pydantic import Field
+
 from .parts import ShipPart
-from .systems import FuelScoops
 
 
 class MDrive(ShipPart):
@@ -181,6 +181,28 @@ class JumpDrive9(JumpDrive):
     tons_percent = 0.225
 
 
+ShipMDrive = Annotated[
+    MDrive0
+    | MDrive1
+    | MDrive2
+    | MDrive3
+    | MDrive4
+    | MDrive5
+    | MDrive6
+    | MDrive7
+    | MDrive8
+    | MDrive9
+    | MDrive10
+    | MDrive11,
+    Field(discriminator='rating'),
+]
+
+ShipJumpDrive = Annotated[
+    JumpDrive1 | JumpDrive2 | JumpDrive3 | JumpDrive4 | JumpDrive5 | JumpDrive6 | JumpDrive7 | JumpDrive8 | JumpDrive9,
+    Field(discriminator='rating'),
+]
+
+
 class _FusionPlant(ShipPart):
     minimum_tl: ClassVar[int]
     power_per_ton: ClassVar[int]
@@ -224,64 +246,3 @@ class FusionPlantTL15(_FusionPlant):
     minimum_tl = 15
     power_per_ton = 20
     cost_per_ton = 2_000_000
-
-
-class OperationFuel(ShipPart):
-    weeks: int
-
-    def build_item(self) -> str | None:
-        return f'Operation {self.weeks} weeks'
-
-    def compute_tons(self) -> float:
-        plant = getattr(self.owner, 'fusion_plant', None)
-        if plant is None:
-            self.error('Ship must have a FusionPlant to compute OperationFuel')
-            return 0.0
-        pp_tons = plant.tons
-        monthly = 0.10 * pp_tons
-        weekly = monthly / 4
-        total = weekly * self.weeks
-        return math.ceil(total * 100 - 1e-9) / 100
-
-    def compute_cost(self) -> float:
-        return 0.0
-
-
-class JumpFuel(ShipPart):
-    parsecs: int
-
-    def build_item(self) -> str | None:
-        return f'Jump {self.parsecs}'
-
-    def compute_tons(self) -> float:
-        return self.owner.displacement * 0.1 * self.parsecs
-
-    def compute_cost(self) -> float:
-        return 0.0
-
-
-class FuelProcessor(ShipPart):
-    tons: float
-
-    def build_item(self) -> str | None:
-        return f'Fuel Processor ({self.tons:g} tons/day)'
-
-    def compute_cost(self) -> float:
-        return self.tons * 50_000
-
-    def compute_power(self) -> float:
-        return self.tons
-
-
-class FuelSection(CeresModel):
-    jump_fuel: JumpFuel | None = None
-    operation_fuel: OperationFuel | None = None
-    fuel_scoops: FuelScoops | None = None
-    fuel_processor: FuelProcessor | None = None
-
-    def _all_parts(self) -> list[ShipPart]:
-        parts: list[ShipPart] = []
-        for part in (self.jump_fuel, self.operation_fuel, self.fuel_scoops, self.fuel_processor):
-            if part is not None:
-                parts.append(part)
-        return parts

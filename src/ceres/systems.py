@@ -1,24 +1,7 @@
-import math
 from typing import ClassVar
 
-from .base import CeresModel, Note, NoteCategory
+from .base import Note, NoteCategory
 from .parts import ShipPart
-
-
-class FuelScoops(ShipPart):
-    free: bool = False
-
-    def build_item(self) -> str | None:
-        return 'Fuel Scoops'
-
-    def build_notes(self) -> list[Note]:
-        return []
-
-    def compute_tons(self) -> float:
-        return 0.0
-
-    def compute_cost(self) -> float:
-        return 0.0 if self.free else 1_000_000.0
 
 
 class Workshop(ShipPart):
@@ -40,43 +23,6 @@ class CommonArea(ShipPart):
 
     def compute_cost(self) -> float:
         return self.tons * 100_000.0
-
-
-class CargoCrane(CeresModel):
-    def build_item(self) -> str | None:
-        return 'Cargo Crane'
-
-    def tons_for_space(self, cargo_space: float) -> float:
-        return 2.5 + 0.5 * math.ceil(cargo_space / 150)
-
-    def cost_for_space(self, cargo_space: float) -> float:
-        return self.tons_for_space(cargo_space) * 1_000_000.0
-
-
-class CargoHold(CeresModel):
-    tons: float | None = None
-    crane: CargoCrane | None = None
-
-    def build_item(self) -> str | None:
-        return 'Cargo Hold'
-
-    def total_tons(self, owner) -> float:
-        if self.tons is not None:
-            return self.tons
-        return owner.cargo_space_for(self)
-
-    def crane_tons(self, owner) -> float:
-        if self.crane is None:
-            return 0.0
-        return self.crane.tons_for_space(self.total_tons(owner))
-
-    def crane_cost(self, owner) -> float:
-        if self.crane is None:
-            return 0.0
-        return self.crane.cost_for_space(self.total_tons(owner))
-
-    def usable_tons(self, owner) -> float:
-        return self.total_tons(owner) - self.crane_tons(owner)
 
 
 class MedicalBay(ShipPart):

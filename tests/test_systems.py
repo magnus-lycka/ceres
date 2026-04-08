@@ -1,14 +1,9 @@
-import pytest
-
 from ceres import ship
 from ceres.base import ShipBase
-from ceres.drives import FuelSection
+from ceres.storage import FuelScoops, FuelSection
 from ceres.systems import (
     Airlock,
-    CargoCrane,
-    CargoHold,
     CommonArea,
-    FuelScoops,
     MedicalBay,
     ProbeDrones,
     Workshop,
@@ -87,34 +82,6 @@ def test_medical_bay_power():
     m = MedicalBay()
     m.bind(DummyOwner(12, 200))
     assert m.power == 1.0
-
-
-def test_cargo_crane_tons_up_to_150():
-    c = CargoCrane()
-    assert c.tons_for_space(67) == pytest.approx(3.0)  # 2.5 + 0.5 * ceil(67/150) = 3.0
-
-
-def test_cargo_crane_tons_exactly_150():
-    c = CargoCrane()
-    assert c.tons_for_space(150) == pytest.approx(3.0)
-
-
-def test_cargo_crane_tons_over_150():
-    c = CargoCrane()
-    assert c.tons_for_space(151) == pytest.approx(3.5)  # 2.5 + 0.5 * ceil(151/150) = 3.5
-
-
-def test_cargo_crane_cost():
-    c = CargoCrane()
-    assert c.cost_for_space(150) == pytest.approx(3_000_000)
-
-
-def test_cargo_hold_usable_tons_subtracts_crane():
-    hold = CargoHold(tons=150, crane=CargoCrane())
-    owner = DummyOwner(12, 200)
-    assert hold.total_tons(owner) == pytest.approx(150)
-    assert hold.crane_tons(owner) == pytest.approx(3.0)
-    assert hold.usable_tons(owner) == pytest.approx(147.0)
 
 
 def test_fuel_scoops_auto_included_for_streamlined_hull():

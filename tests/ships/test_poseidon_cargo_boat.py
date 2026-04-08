@@ -3,8 +3,9 @@ import pytest
 from ceres import ship
 from ceres.bridge import Bridge, CommandSection
 from ceres.computer import Computer5, ComputerSection
-from ceres.drives import FuelSection, FusionPlantTL8, FusionPlantTL12, MDrive3, OperationFuel
+from ceres.drives import FusionPlantTL8, FusionPlantTL12, MDrive3
 from ceres.habitation import HabitationSection, Staterooms
+from ceres.storage import FuelSection, OperationFuel
 from ceres.systems import Aerofins, Airlock, CommonArea
 
 from ._markdown_output import write_markdown_output

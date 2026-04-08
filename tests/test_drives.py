@@ -3,7 +3,6 @@ import pytest
 from ceres import ship
 from ceres.base import ShipBase
 from ceres.drives import (
-    FuelSection,
     FusionPlantTL8,
     FusionPlantTL12,
     FusionPlantTL15,
@@ -17,8 +16,8 @@ from ceres.drives import (
     JumpDrive8,
     JumpDrive9,
     MDrive6,
-    OperationFuel,
 )
+from ceres.storage import FuelSection, OperationFuel
 
 
 class DummyOwner(ShipBase):
@@ -156,9 +155,6 @@ def test_fusion_plant_rejects_ship_below_minimum_tl():
     assert ('error', 'Requires TL12, ship is TL11') in [
         (note.category.value, note.message) for note in plant.notes
     ]
-
-
-# --- OperationFuel ---
 
 
 def _make_ship_with_plant():

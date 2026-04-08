@@ -7,9 +7,10 @@ import pytest
 from ceres import armour, ship
 from ceres.bridge import Cockpit, CommandSection
 from ceres.computer import Computer5, ComputerSection
-from ceres.drives import FuelSection, FusionPlantTL12, MDrive6, OperationFuel
+from ceres.drives import FusionPlantTL12, MDrive6
 from ceres.sensors import BasicSensors, CivilianSensors, SensorsSection
 from ceres.ship import BasicStealth, Hull, Ship
+from ceres.storage import FuelSection, OperationFuel
 from ceres.systems import Airlock
 from ceres.weapons import FixedFirmpoint, PulseLaser, WeaponsSection
 

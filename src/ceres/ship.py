@@ -18,40 +18,18 @@ from .computer import (
 )
 from .crafts import InternalDockingSpace
 from .drives import (
-    FuelProcessor,
-    FuelSection,
     FusionPlantTL8,
     FusionPlantTL12,
     FusionPlantTL15,
-    JumpDrive1,
-    JumpDrive2,
-    JumpDrive3,
-    JumpDrive4,
-    JumpDrive5,
-    JumpDrive6,
-    JumpDrive7,
-    JumpDrive8,
-    JumpDrive9,
-    JumpFuel,
-    MDrive0,
-    MDrive1,
-    MDrive2,
-    MDrive3,
-    MDrive4,
-    MDrive5,
-    MDrive6,
-    MDrive7,
-    MDrive8,
-    MDrive9,
-    MDrive10,
-    MDrive11,
-    OperationFuel,
+    ShipJumpDrive,
+    ShipMDrive,
 )
 from .habitation import HabitationSection
 from .parts import ShipPart
 from .sensors import SensorsSection
 from .spec import CrewRow as SpecCrewRow, ExpenseRow, ShipSpec, SpecRow, SpecSection
-from .systems import Aerofins, Airlock, CargoHold, FuelScoops, MedicalBay, ProbeDrones, RepairDrones, Workshop
+from .storage import CargoHold, FuelProcessor, FuelScoops, FuelSection, JumpFuel, OperationFuel
+from .systems import Aerofins, Airlock, MedicalBay, ProbeDrones, RepairDrones, Workshop
 from .weapons import WeaponsSection
 
 
@@ -234,27 +212,6 @@ HullArmour = Annotated[
 HullStealth = Annotated[
     BasicStealth | ImprovedStealth | EnhancedStealth | AdvancedStealth,
     Field(discriminator='description'),
-]
-
-ShipMDrive = Annotated[
-    MDrive0
-    | MDrive1
-    | MDrive2
-    | MDrive3
-    | MDrive4
-    | MDrive5
-    | MDrive6
-    | MDrive7
-    | MDrive8
-    | MDrive9
-    | MDrive10
-    | MDrive11,
-    Field(discriminator='rating'),
-]
-
-ShipJumpDrive = Annotated[
-    JumpDrive1 | JumpDrive2 | JumpDrive3 | JumpDrive4 | JumpDrive5 | JumpDrive6 | JumpDrive7 | JumpDrive8 | JumpDrive9,
-    Field(discriminator='rating'),
 ]
 
 

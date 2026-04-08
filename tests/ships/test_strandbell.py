@@ -3,10 +3,11 @@ import pytest
 from ceres import armour, ship
 from ceres.bridge import Bridge, CommandSection
 from ceres.computer import AutoRepair1, Computer35, ComputerSection, Evade2, FireControl2
-from ceres.drives import FuelProcessor, FuelSection, FusionPlantTL12, MDrive9, OperationFuel
+from ceres.drives import FusionPlantTL12, MDrive9
 from ceres.habitation import HabitationSection, Staterooms
 from ceres.sensors import CountermeasuresSuite, ImprovedSensors, SensorsSection
-from ceres.systems import Airlock, CommonArea, FuelScoops, MedicalBay, RepairDrones
+from ceres.storage import FuelProcessor, FuelScoops, FuelSection, OperationFuel
+from ceres.systems import Airlock, CommonArea, MedicalBay, RepairDrones
 from ceres.weapons import MissileStorage, TripleTurret, TurretBeamLaser, TurretMissileRack, WeaponsSection
 
 from ._markdown_output import write_markdown_output

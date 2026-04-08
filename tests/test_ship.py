@@ -6,7 +6,8 @@ from ceres.bridge import Cockpit, CommandSection
 from ceres.crafts import AirRaft, InternalDockingSpace
 from ceres.drives import FusionPlantTL12, MDrive6
 from ceres.sensors import CivilianSensors, SensorsSection
-from ceres.systems import Airlock, CargoCrane, CargoHold, ProbeDrones, Workshop
+from ceres.storage import CargoCrane, CargoHold
+from ceres.systems import Airlock, ProbeDrones, Workshop
 from ceres.weapons import FixedFirmpoint, PulseLaser, WeaponsSection
 from tests.ships._markdown_output import write_markdown_output
 

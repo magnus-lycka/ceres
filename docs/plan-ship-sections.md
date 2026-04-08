@@ -96,10 +96,10 @@ Working interpretation:
 5. ✅ **`HabitationSection`** in `habitation.py` — `staterooms`, `low_berths`, `common_area` → `Ship.habitation: HabitationSection | None`.
 6. **`SystemsSection`** in `systems.py` — `medical_bay`, `workshop`, `probe_drones`, `repair_drones` → `Ship.systems: SystemsSection | None`.
    - Good candidate once more systems accumulate or when `_all_parts()`/construction starts to feel noisy there.
-7. 🟡 **`FuelSection`** in `storage.py` — `jump_fuel`, `operation_fuel`, `fuel_scoops`, `fuel_processor` → `Ship.fuel: FuelSection | None`.
+7. ✅ **`FuelSection`** in `storage.py` — `jump_fuel`, `operation_fuel`, `fuel_scoops`, `fuel_processor` → `Ship.fuel: FuelSection | None`.
    - Strong candidate because the parts already behave as one conceptual group.
-   - Current code already has `Ship.fuel: FuelSection | None`, but the section currently lives in `drives.py` as an interim step.
-   - The remaining work is to move the concept to `storage.py`, not to invent the section itself.
+   - Implemented in `storage.py`.
+   - The remaining storage-side work is now `CargoSection`, not `FuelSection`.
 8. ✅ **`CommandSection`** in `bridge.py` — `bridge`, `cockpit` → `Ship.command: CommandSection | None`.
    - Implemented. Convenience access via `ship.bridge` / `ship.cockpit` may still remain where useful.
 9. **`DriveSection`** in `drives.py` — `m_drive`, `jump_drive` → `Ship.drives: DriveSection | None`.

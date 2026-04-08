@@ -4,9 +4,10 @@ from ceres import armour, ship
 from ceres.bridge import Bridge, CommandSection
 from ceres.computer import Computer5, Computer10, ComputerSection, JumpControl1, JumpControl2, JumpControl3
 from ceres.crafts import AirRaft, InternalDockingSpace
-from ceres.drives import FuelProcessor, FuelSection, FusionPlantTL12, JumpDrive2, JumpFuel, MDrive2, OperationFuel
+from ceres.drives import FusionPlantTL12, JumpDrive2, MDrive2
 from ceres.habitation import HabitationSection, Staterooms
 from ceres.sensors import MilitarySensors, SensorsSection
+from ceres.storage import FuelProcessor, FuelSection, JumpFuel, OperationFuel
 from ceres.systems import Airlock, ProbeDrones, Workshop
 from ceres.weapons import DoubleTurret, WeaponsSection
 
