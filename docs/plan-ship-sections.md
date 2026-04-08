@@ -9,6 +9,14 @@ both the construction API and `_all_parts()` are getting hard to scan.
 The spec has a well-defined section taxonomy. `Hull` already works as a
 sub-object. The goal is to apply the same pattern to every section.
 
+Current status note:
+
+- The report/spec layer already has an explicit section taxonomy via
+  `SpecSection` and `ShipSpec`.
+- The remaining work in this plan is about making the Python-side `Ship`
+  structure match the same reality more cleanly, so the implementation of the
+  rules becomes easier to extend.
+
 ---
 
 ## Proposed structure
@@ -56,11 +64,19 @@ its `_all_parts()` method, and mirrors the matching Python module.
 2. ✅ **`WeaponsSection`** in `weapons.py` — `Ship.weapons: WeaponsSection | None`.
 3. ✅ **`SensorsSection`** in `sensors.py` — `Ship.sensors: SensorsSection` (always present, defaults to BasicSensors).
 4. ✅ **`ComputerSection`** in `computer.py` — `Ship.computer: ComputerSection | None`.
-5. **`HabitationSection`** in `habitation.py` — `staterooms`, `low_berths`, `common_area` → `Ship.habitation: HabitationSection | None`.
+5. ✅ **`HabitationSection`** in `habitation.py` — `staterooms`, `low_berths`, `common_area` → `Ship.habitation: HabitationSection | None`.
 6. **`SystemsSection`** in `systems.py` — `medical_bay`, `workshop`, `probe_drones`, `repair_drones` → `Ship.systems: SystemsSection | None`.
 7. **`FuelSection`** in `drives.py` — `jump_fuel`, `operation_fuel`, `fuel_scoops`, `fuel_processor` → `Ship.fuel: FuelSection | None`.
 8. **`CommandSection`** in `bridge.py` — `bridge`, `cockpit` → `Ship.command: CommandSection | None`.
 9. **`DriveSection`** in `drives.py` — `m_drive`, `jump_drive` → `Ship.drives: DriveSection | None`.
+
+Additional status note:
+
+- `Hull` is not only started but already contains `armour`, `stealth`,
+  `airlocks`, and `aerofins` as intended.
+- On the report side, section ordering and section ownership are already much
+  clearer than this migration list implies, because `ShipSpec`/`SpecSection`
+  already drive the spec output.
 
 ---
 
