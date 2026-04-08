@@ -4,25 +4,26 @@ import json
 
 import pytest
 
-from ceres import armour, ship
+from ceres import armour, hull
 from ceres.bridge import Cockpit, CommandSection
 from ceres.computer import Computer5, ComputerSection
 from ceres.drives import FusionPlantTL12, MDrive6
+from ceres.hull import BasicStealth, Hull
 from ceres.sensors import BasicSensors, CivilianSensors, SensorsSection
-from ceres.ship import BasicStealth, Hull, Ship
+from ceres.ship import Ship
 from ceres.storage import FuelSection, OperationFuel
 from ceres.systems import Airlock
 from ceres.weapons import FixedFirmpoint, PulseLaser, WeaponsSection
 
 # Minimal ship for structural tests
-bare = Ship(tl=12, displacement=6, hull=Hull(configuration=ship.standard_hull))
+bare = Ship(tl=12, displacement=6, hull=Hull(configuration=hull.standard_hull))
 
 # Full ship matching the ultralight fighter spec
 ultralight = Ship(
     tl=12,
     displacement=6,
     hull=Hull(
-        configuration=ship.streamlined_hull,
+        configuration=hull.streamlined_hull,
         armour=armour.CrystalironArmour(tl=12, protection=6),
         stealth=BasicStealth(),
     ),
@@ -216,7 +217,7 @@ def test_roundtrip_airlock():
     ship_with_airlock = Ship(
         tl=12,
         displacement=100,
-        hull=Hull(configuration=ship.streamlined_hull, airlocks=[Airlock()]),
+        hull=Hull(configuration=hull.streamlined_hull, airlocks=[Airlock()]),
     )
     loaded = _roundtrip(ship_with_airlock)
     assert len(loaded.hull.airlocks) == 1

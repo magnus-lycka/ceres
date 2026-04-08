@@ -1,6 +1,6 @@
 import pytest
 
-from ceres import armour, ship
+from ceres import armour, hull, ship
 from ceres.bridge import Bridge, CommandSection
 from ceres.computer import Computer5, ComputerSection, JumpControl1
 from ceres.drives import FusionPlantTL12, JumpDrive1, MDrive1
@@ -19,8 +19,8 @@ def build_beowulf() -> ship.Ship:
         tl=12,
         displacement=200,
         design_type=ship.ShipDesignType.STANDARD,
-        hull=ship.Hull(
-            configuration=ship.streamlined_hull,
+        hull=hull.Hull(
+            configuration=hull.streamlined_hull,
             armour=armour.CrystalironArmour(protection=2),
             airlocks=[Airlock(), Airlock()],
         ),

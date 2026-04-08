@@ -1,6 +1,6 @@
 import pytest
 
-from ceres import armour, ship
+from ceres import armour, hull, ship
 from ceres.bridge import Bridge, CommandSection
 from ceres.computer import Computer5, Computer10, ComputerSection, JumpControl1, JumpControl2, JumpControl3
 from ceres.crafts import AirRaft, InternalDockingSpace
@@ -8,7 +8,7 @@ from ceres.drives import FusionPlantTL12, JumpDrive2, MDrive2
 from ceres.habitation import HabitationSection, Staterooms
 from ceres.sensors import MilitarySensors, SensorsSection
 from ceres.storage import FuelProcessor, FuelSection, JumpFuel, OperationFuel
-from ceres.systems import Airlock, ProbeDrones, Workshop
+from ceres.systems import Airlock, ProbeDrones, SystemsSection, Workshop
 from ceres.weapons import DoubleTurret, WeaponsSection
 
 from ._markdown_output import write_markdown_output
@@ -21,8 +21,8 @@ def build_suleiman() -> ship.Ship:
         tl=12,
         displacement=100,
         design_type=ship.ShipDesignType.STANDARD,
-        hull=ship.Hull(
-            configuration=ship.streamlined_hull,
+        hull=hull.Hull(
+            configuration=hull.streamlined_hull,
             armour=armour.CrystalironArmour(tl=12, protection=4),
             airlocks=[Airlock()],
         ),
@@ -40,8 +40,7 @@ def build_suleiman() -> ship.Ship:
         weapons=WeaponsSection(turrets=[DoubleTurret()]),
         docking_space=InternalDockingSpace(craft=AirRaft()),
         habitation=HabitationSection(staterooms=Staterooms(count=4)),
-        probe_drones=ProbeDrones(count=10),
-        workshop=Workshop(),
+        systems=SystemsSection(probe_drones=ProbeDrones(count=10), workshop=Workshop()),
     )
 
 
@@ -176,7 +175,7 @@ def test_jump_drive_2_without_jump_control_2_adds_local_note():
     my_ship = ship.Ship(
         tl=12,
         displacement=100,
-        hull=ship.Hull(configuration=ship.streamlined_hull),
+        hull=hull.Hull(configuration=hull.streamlined_hull),
         jump_drive=JumpDrive2(),
         computer=ComputerSection(hardware=Computer5(bis=True)),
     )
@@ -263,7 +262,7 @@ def test_markdown_table_renders_inline_warning_on_jump_drive_row():
     my_ship = ship.Ship(
         tl=12,
         displacement=100,
-        hull=ship.Hull(configuration=ship.streamlined_hull),
+        hull=hull.Hull(configuration=hull.streamlined_hull),
         jump_drive=JumpDrive2(),
         computer=ComputerSection(hardware=Computer5(bis=True)),
     )
@@ -276,7 +275,7 @@ def test_jump_drive_with_lower_jump_control_warns_on_drive():
     my_ship = ship.Ship(
         tl=12,
         displacement=100,
-        hull=ship.Hull(configuration=ship.streamlined_hull),
+        hull=hull.Hull(configuration=hull.streamlined_hull),
         jump_drive=JumpDrive2(),
         computer=ComputerSection(hardware=Computer5(bis=True), software=[JumpControl1()]),
     )
@@ -291,7 +290,7 @@ def test_jump_control_without_jump_drive_warns_on_software():
     my_ship = ship.Ship(
         tl=12,
         displacement=100,
-        hull=ship.Hull(configuration=ship.streamlined_hull),
+        hull=hull.Hull(configuration=hull.streamlined_hull),
         computer=ComputerSection(hardware=Computer5(bis=True), software=[JumpControl2()]),
     )
     assert my_ship.computer is not None
@@ -306,7 +305,7 @@ def test_jump_control_with_higher_rating_than_drive_warns_on_software():
     my_ship = ship.Ship(
         tl=12,
         displacement=100,
-        hull=ship.Hull(configuration=ship.streamlined_hull),
+        hull=hull.Hull(configuration=hull.streamlined_hull),
         jump_drive=JumpDrive2(),
         computer=ComputerSection(hardware=Computer10(bis=True), software=[JumpControl3()]),
     )
@@ -322,7 +321,7 @@ def test_markdown_table_renders_inline_warning_on_high_jump_control_row():
     my_ship = ship.Ship(
         tl=12,
         displacement=100,
-        hull=ship.Hull(configuration=ship.streamlined_hull),
+        hull=hull.Hull(configuration=hull.streamlined_hull),
         jump_drive=JumpDrive2(),
         computer=ComputerSection(hardware=Computer10(bis=True), software=[JumpControl3()]),
     )
@@ -335,7 +334,7 @@ def test_markdown_table_renders_inline_warning_on_missing_jump_drive_row():
     my_ship = ship.Ship(
         tl=12,
         displacement=100,
-        hull=ship.Hull(configuration=ship.streamlined_hull),
+        hull=hull.Hull(configuration=hull.streamlined_hull),
         computer=ComputerSection(hardware=Computer5(bis=True), software=[JumpControl2()]),
     )
     table = my_ship.markdown_table()

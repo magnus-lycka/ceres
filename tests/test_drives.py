@@ -1,6 +1,6 @@
 import pytest
 
-from ceres import ship
+from ceres import hull, ship
 from ceres.base import ShipBase
 from ceres.drives import (
     FusionPlantTL8,
@@ -162,7 +162,7 @@ def _make_ship_with_plant():
     s = ship.Ship(
         tl=12,
         displacement=6,
-        hull=ship.Hull(configuration=ship.streamlined_hull),
+        hull=hull.Hull(configuration=hull.streamlined_hull),
         fusion_plant=FusionPlantTL12(output=8),
         fuel=FuelSection(operation_fuel=fuel),
     )
@@ -190,7 +190,7 @@ def test_operation_fuel_requires_plant():
     my_ship = ship.Ship(
         tl=12,
         displacement=6,
-        hull=ship.Hull(configuration=ship.streamlined_hull),
+        hull=hull.Hull(configuration=hull.streamlined_hull),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=1)),
     )
     assert my_ship.operation_fuel is not None

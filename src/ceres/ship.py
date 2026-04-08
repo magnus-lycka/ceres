@@ -3,6 +3,7 @@ from typing import Any
 
 from pydantic import Field
 
+from . import hull as hull_model
 from .base import CeresModel, NoteCategory, ShipBase
 from .bridge import Bridge, Cockpit, CommandSection
 from .computer import (
@@ -19,40 +20,14 @@ from .drives import (
     ShipMDrive,
 )
 from .habitation import HabitationSection
-from .hull import (
-    BasicStealth,
-    Hull,
-    Streamlined,
-    buffered_planetoid,
-    close_structure,
-    dispersed_structure,
-    planetoid,
-    sphere,
-    standard_hull,
-    streamlined_hull,
-)
 from .parts import ShipPart
 from .sensors import SensorsSection
 from .spec import CrewRow as SpecCrewRow, ExpenseRow, ShipSpec, SpecRow, SpecSection
 from .storage import CargoHold, CargoSection, FuelProcessor, FuelScoops, FuelSection, JumpFuel, OperationFuel
-from .systems import MedicalBay, ProbeDrones, RepairDrones, Workshop
+from .systems import MedicalBay, ProbeDrones, RepairDrones, SystemsSection, Workshop
 from .weapons import WeaponsSection
 
-__all__ = [
-    'BasicStealth',
-    'buffered_planetoid',
-    'close_structure',
-    'CrewRole',
-    'dispersed_structure',
-    'Hull',
-    'planetoid',
-    'Ship',
-    'ShipDesignType',
-    'sphere',
-    'standard_hull',
-    'streamlined_hull',
-    'Streamlined',
-]
+__all__ = ['CrewRole', 'Ship', 'ShipDesignType']
 
 
 class ShipDesignType(StrEnum):
@@ -83,7 +58,7 @@ class Ship(ShipBase):
     ship_class: str | None = None
     ship_type: str | None = None
     design_type: ShipDesignType = ShipDesignType.CUSTOM
-    hull: Hull
+    hull: hull_model.Hull
     m_drive: ShipMDrive | None = None
     jump_drive: ShipJumpDrive | None = None
     fusion_plant: FusionPlantTL8 | FusionPlantTL12 | FusionPlantTL15 | None = None
@@ -94,10 +69,7 @@ class Ship(ShipBase):
     docking_space: InternalDockingSpace | None = None
     cargo: CargoSection | None = None
     habitation: HabitationSection | None = None
-    medical_bay: MedicalBay | None = None
-    probe_drones: ProbeDrones | None = None
-    workshop: Workshop | None = None
-    repair_drones: RepairDrones | None = None
+    systems: SystemsSection | None = None
     weapons: WeaponsSection | None = None
 
     @property
@@ -159,6 +131,30 @@ class Ship(ShipBase):
         if self.cargo is None:
             return []
         return self.cargo.cargo_holds
+
+    @property
+    def medical_bay(self) -> MedicalBay | None:
+        if self.systems is None:
+            return None
+        return self.systems.medical_bay
+
+    @property
+    def probe_drones(self) -> ProbeDrones | None:
+        if self.systems is None:
+            return None
+        return self.systems.probe_drones
+
+    @property
+    def repair_drones(self) -> RepairDrones | None:
+        if self.systems is None:
+            return None
+        return self.systems.repair_drones
+
+    @property
+    def workshop(self) -> Workshop | None:
+        if self.systems is None:
+            return None
+        return self.systems.workshop
 
     @property
     def basic_hull_power_load(self) -> float:
@@ -289,15 +285,11 @@ class Ship(ShipBase):
         parts.extend(self.sensors._all_parts())
         if self.habitation is not None:
             parts.extend(self.habitation._all_parts())
-        for part in (
-            self.docking_space,
-            self.medical_bay,
-            self.probe_drones,
-            self.repair_drones,
-            self.workshop,
-        ):
+        for part in (self.docking_space,):
             if part is not None:
                 parts.append(part)
+        if self.systems is not None:
+            parts.extend(self.systems._all_parts())
         if self.weapons is not None:
             parts.extend(self.weapons._all_parts())
         return parts
@@ -501,8 +493,8 @@ class Ship(ShipBase):
             for habitation_part in self.habitation._all_parts():
                 add_part(SpecSection.HABITATION, habitation_part)
 
-        for system_part in [self.workshop, self.medical_bay, self.probe_drones, self.repair_drones]:
-            if system_part is not None:
+        if self.systems is not None:
+            for system_part in self.systems._all_parts():
                 add_part(SpecSection.SYSTEMS, system_part)
 
         if self.cargo_holds:
@@ -633,7 +625,7 @@ class Ship(ShipBase):
         return self._remaining_cargo_space_without_default_holds()
 
     def model_post_init(self, __context: Any) -> None:
-        if self.hull.configuration.streamlined == Streamlined.YES:
+        if self.hull.configuration.streamlined == hull_model.Streamlined.YES:
             if self.fuel is None:
                 object.__setattr__(self, 'fuel', FuelSection(fuel_scoops=FuelScoops(free=True)))
             elif self.fuel.fuel_scoops is None or not self.fuel.fuel_scoops.free:

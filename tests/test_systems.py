@@ -1,4 +1,4 @@
-from ceres import ship
+from ceres import hull, ship
 from ceres.base import ShipBase
 from ceres.storage import FuelScoops, FuelSection
 from ceres.systems import (
@@ -6,6 +6,8 @@ from ceres.systems import (
     CommonArea,
     MedicalBay,
     ProbeDrones,
+    RepairDrones,
+    SystemsSection,
     Workshop,
 )
 
@@ -88,7 +90,7 @@ def test_fuel_scoops_auto_included_for_streamlined_hull():
     my_ship = ship.Ship(
         tl=12,
         displacement=100,
-        hull=ship.Hull(configuration=ship.streamlined_hull),
+        hull=hull.Hull(configuration=hull.streamlined_hull),
     )
     assert my_ship.fuel_scoops is not None
 
@@ -97,7 +99,7 @@ def test_fuel_scoops_free_with_streamlined_hull():
     my_ship = ship.Ship(
         tl=12,
         displacement=100,
-        hull=ship.Hull(configuration=ship.streamlined_hull),
+        hull=hull.Hull(configuration=hull.streamlined_hull),
     )
     assert my_ship.fuel_scoops is not None
     assert my_ship.fuel_scoops.tons == 0.0
@@ -108,7 +110,7 @@ def test_fuel_scoops_not_auto_included_for_standard_hull():
     my_ship = ship.Ship(
         tl=12,
         displacement=100,
-        hull=ship.Hull(configuration=ship.standard_hull),
+        hull=hull.Hull(configuration=hull.standard_hull),
     )
     assert my_ship.fuel_scoops is None
 
@@ -117,7 +119,7 @@ def test_fuel_scoops_paid_when_added_to_standard_hull():
     my_ship = ship.Ship(
         tl=12,
         displacement=100,
-        hull=ship.Hull(configuration=ship.standard_hull),
+        hull=hull.Hull(configuration=hull.standard_hull),
         fuel=FuelSection(fuel_scoops=FuelScoops()),
     )
     assert my_ship.fuel_scoops is not None
@@ -129,7 +131,7 @@ def test_fuel_scoops_explicit_on_streamlined_hull_still_free():
     my_ship = ship.Ship(
         tl=12,
         displacement=100,
-        hull=ship.Hull(configuration=ship.streamlined_hull),
+        hull=hull.Hull(configuration=hull.streamlined_hull),
         fuel=FuelSection(fuel_scoops=FuelScoops()),
     )
     assert my_ship.fuel_scoops is not None
@@ -140,7 +142,7 @@ def test_airlock_is_free_on_100_ton_ship():
     my_ship = ship.Ship(
         tl=12,
         displacement=100,
-        hull=ship.Hull(configuration=ship.streamlined_hull, airlocks=[Airlock()]),
+        hull=hull.Hull(configuration=hull.streamlined_hull, airlocks=[Airlock()]),
     )
     airlock = my_ship.hull.airlocks[0]
     assert airlock.tons == 0.0
@@ -151,8 +153,18 @@ def test_airlock_costs_tonnage_and_money_on_99_ton_ship():
     my_ship = ship.Ship(
         tl=12,
         displacement=99,
-        hull=ship.Hull(configuration=ship.streamlined_hull, airlocks=[Airlock()]),
+        hull=hull.Hull(configuration=hull.streamlined_hull, airlocks=[Airlock()]),
     )
     airlock = my_ship.hull.airlocks[0]
     assert airlock.tons == 2.0
     assert airlock.cost == 200_000.0
+
+
+def test_systems_section_all_parts():
+    systems = SystemsSection(
+        workshop=Workshop(),
+        medical_bay=MedicalBay(),
+        probe_drones=ProbeDrones(count=10),
+        repair_drones=RepairDrones(),
+    )
+    assert [type(part) for part in systems._all_parts()] == [Workshop, MedicalBay, ProbeDrones, RepairDrones]

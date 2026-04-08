@@ -1,6 +1,6 @@
 from typing import ClassVar
 
-from .base import Note, NoteCategory
+from .base import CeresModel, Note, NoteCategory
 from .parts import ShipPart
 
 
@@ -109,3 +109,17 @@ class RepairDrones(ShipPart):
 
     def compute_cost(self) -> float:
         return self.compute_tons() * 200_000.0
+
+
+class SystemsSection(CeresModel):
+    medical_bay: MedicalBay | None = None
+    probe_drones: ProbeDrones | None = None
+    repair_drones: RepairDrones | None = None
+    workshop: Workshop | None = None
+
+    def _all_parts(self) -> list[ShipPart]:
+        parts: list[ShipPart] = []
+        for part in (self.workshop, self.medical_bay, self.probe_drones, self.repair_drones):
+            if part is not None:
+                parts.append(part)
+        return parts

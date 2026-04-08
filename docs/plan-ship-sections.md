@@ -93,8 +93,8 @@ Working interpretation:
 3. ✅ **`SensorsSection`** in `sensors.py` — `Ship.sensors: SensorsSection` (always present, defaults to BasicSensors).
 4. ✅ **`ComputerSection`** in `computer.py` — `Ship.computer: ComputerSection | None`.
 5. ✅ **`HabitationSection`** in `habitation.py` — `staterooms`, `low_berths`, `common_area` → `Ship.habitation: HabitationSection | None`.
-6. **`SystemsSection`** in `systems.py` — `medical_bay`, `workshop`, `probe_drones`, `repair_drones` → `Ship.systems: SystemsSection | None`.
-   - Good candidate once more systems accumulate or when `_all_parts()`/construction starts to feel noisy there.
+6. ✅ **`SystemsSection`** in `systems.py` — `medical_bay`, `workshop`, `probe_drones`, `repair_drones` → `Ship.systems: SystemsSection | None`.
+   - Implemented. Convenience access via `ship.medical_bay`, `ship.workshop`, `ship.probe_drones`, and `ship.repair_drones` may still remain where useful.
 7. ✅ **`FuelSection`** in `storage.py` — `jump_fuel`, `operation_fuel`, `fuel_scoops`, `fuel_processor` → `Ship.fuel: FuelSection | None`.
    - Strong candidate because the parts already behave as one conceptual group.
    - Implemented in `storage.py`.

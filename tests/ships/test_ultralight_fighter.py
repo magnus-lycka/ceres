@@ -1,6 +1,6 @@
 import pytest
 
-from ceres import armour, ship
+from ceres import armour, hull, ship
 from ceres.bridge import Cockpit, CommandSection
 from ceres.computer import Computer5, ComputerSection
 from ceres.drives import FusionPlantTL12, MDrive6
@@ -18,12 +18,12 @@ def build_ultralight_fighter() -> ship.Ship:
         tl=12,
         displacement=6,
         design_type=ship.ShipDesignType.STANDARD,
-        hull=ship.Hull(
-            configuration=ship.streamlined_hull.model_copy(
+        hull=hull.Hull(
+            configuration=hull.streamlined_hull.model_copy(
                 update={'light': True, 'description': 'Light Streamlined Hull'},
             ),
             armour=armour.CrystalironArmour(tl=12, protection=6),
-            stealth=ship.BasicStealth(),
+            stealth=hull.BasicStealth(),
         ),
         m_drive=MDrive6(),
         fusion_plant=FusionPlantTL12(output=8),

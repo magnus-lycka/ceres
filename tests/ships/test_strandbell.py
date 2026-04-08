@@ -1,18 +1,18 @@
 import pytest
 
-from ceres import armour, ship
+from ceres import armour, hull, ship
 from ceres.bridge import Bridge, CommandSection
 from ceres.computer import AutoRepair1, Computer35, ComputerSection, Evade2, FireControl2
 from ceres.drives import FusionPlantTL12, MDrive9
 from ceres.habitation import HabitationSection, Staterooms
 from ceres.sensors import CountermeasuresSuite, ImprovedSensors, SensorsSection
 from ceres.storage import FuelProcessor, FuelScoops, FuelSection, OperationFuel
-from ceres.systems import Airlock, CommonArea, MedicalBay, RepairDrones
+from ceres.systems import Airlock, CommonArea, MedicalBay, RepairDrones, SystemsSection
 from ceres.weapons import MissileStorage, TripleTurret, TurretBeamLaser, TurretMissileRack, WeaponsSection
 
 from ._markdown_output import write_markdown_output
 
-STRANDBELL_HULL = ship.standard_hull.model_copy(
+STRANDBELL_HULL = hull.standard_hull.model_copy(
     update={'reinforced': True, 'description': 'Standard Reinforced Hull'},
 )
 
@@ -24,7 +24,7 @@ def build_strandbell() -> ship.Ship:
         tl=15,
         displacement=200,
         design_type=ship.ShipDesignType.STANDARD,
-        hull=ship.Hull(
+        hull=hull.Hull(
             configuration=STRANDBELL_HULL,
             armour=armour.CrystalironArmour(protection=13),
             airlocks=[Airlock(), Airlock()],
@@ -46,8 +46,7 @@ def build_strandbell() -> ship.Ship:
             ],
             missile_storage=MissileStorage(count=240),
         ),
-        repair_drones=RepairDrones(),
-        medical_bay=MedicalBay(),
+        systems=SystemsSection(repair_drones=RepairDrones(), medical_bay=MedicalBay()),
         habitation=HabitationSection(staterooms=Staterooms(count=15), common_area=CommonArea(tons=4.0)),
     )
 
