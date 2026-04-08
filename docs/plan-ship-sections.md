@@ -67,8 +67,7 @@ Working interpretation:
   clearer
 - `FuelSection` and `CargoSection` should be designed with future shared
   storage logic in mind
-- the `Hull` area is now large enough that it should eventually move out of
-  `ship.py` into its own `hull.py`, even though the public `Ship.hull` shape
+- the `Hull` area is now in `hull.py`, while the public `Ship.hull` shape
   stays the same
 
 ---
@@ -104,17 +103,18 @@ Working interpretation:
    - Implemented. Convenience access via `ship.bridge` / `ship.cockpit` may still remain where useful.
 9. **`DriveSection`** in `drives.py` — `m_drive`, `jump_drive` → `Ship.drives: DriveSection | None`.
    - Required by this plan, but worth doing only when we can keep the API as clear as the current flat fields.
-10. **`CargoSection`** in `storage.py` — `cargo_holds` → `Ship.cargo: CargoSection | None`.
+10. ✅ **`CargoSection`** in `storage.py` — `cargo_holds` → `Ship.cargo: CargoSection | None`.
    - Keep this close to `FuelSection`, since future rules are likely to blur the boundary between cargo and fuel storage.
-11. ⬜ **Move hull types to `hull.py`** — `Streamlined`, `HullConfiguration`, predefined hull configs, stealth types, `HullArmour`, `HullStealth`, and `Hull`.
+   - Implemented. The numeric remaining-capacity property is now separate (`cargo_tons`) so `ship.cargo` can mean the section object.
+11. ✅ **Move hull types to `hull.py`** — `Streamlined`, `HullConfiguration`, predefined hull configs, stealth types, `HullArmour`, `HullStealth`, and `Hull`.
    - This does not change the desired `Ship.hull` API.
-   - It is mainly a module-boundary cleanup so `ship.py` stops carrying a large amount of hull-specific code.
+   - Done as a module-boundary cleanup so `ship.py` no longer carries the bulk of the hull-specific code.
 
 Additional status note:
 
 - `Hull` is not only started but already contains `armour`, `stealth`,
   `airlocks`, and `aerofins` as intended.
-- `Hull` is also now large enough to deserve its own module; that is a code-organization step, not a change in plan direction.
+- `Hull` now has its own module, which was a code-organization step, not a change in plan direction.
 - On the report side, section ordering and section ownership are already much
   clearer than this migration list implies, because `ShipSpec`/`SpecSection`
   already drive the spec output.
