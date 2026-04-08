@@ -5,7 +5,7 @@ import json
 import pytest
 
 from ceres import armour, ship
-from ceres.bridge import Cockpit
+from ceres.bridge import Cockpit, CommandSection
 from ceres.computer import Computer5, ComputerSection
 from ceres.drives import FuelSection, FusionPlantTL12, MDrive6, OperationFuel
 from ceres.sensors import BasicSensors, CivilianSensors, SensorsSection
@@ -28,7 +28,7 @@ ultralight = Ship(
     m_drive=MDrive6(),
     fusion_plant=FusionPlantTL12(output=8),
     fuel=FuelSection(operation_fuel=OperationFuel(weeks=1)),
-    cockpit=Cockpit(holographic=True),
+    command=CommandSection(cockpit=Cockpit(holographic=True)),
     computer=ComputerSection(hardware=Computer5()),
     sensors=SensorsSection(primary=CivilianSensors()),
     weapons=WeaponsSection(

@@ -10,7 +10,7 @@ from .armour import (
     TitaniumSteelArmour,
 )
 from .base import CeresModel, NoteCategory, ShipBase
-from .bridge import Bridge, Cockpit
+from .bridge import Bridge, Cockpit, CommandSection
 from .computer import (
     ComputerSection,
     JumpControl,
@@ -293,8 +293,7 @@ class Ship(ShipBase):
     jump_drive: ShipJumpDrive | None = None
     fusion_plant: FusionPlantTL8 | FusionPlantTL12 | FusionPlantTL15 | None = None
     fuel: FuelSection | None = None
-    bridge: Bridge | None = None
-    cockpit: Cockpit | None = None
+    command: CommandSection | None = None
     computer: ComputerSection | None = None
     sensors: SensorsSection = Field(default_factory=SensorsSection)
     docking_space: InternalDockingSpace | None = None
@@ -347,6 +346,18 @@ class Ship(ShipBase):
         if self.fuel is None:
             return None
         return self.fuel.fuel_scoops
+
+    @property
+    def bridge(self) -> Bridge | None:
+        if self.command is None:
+            return None
+        return self.command.bridge
+
+    @property
+    def cockpit(self) -> Cockpit | None:
+        if self.command is None:
+            return None
+        return self.command.cockpit
 
     @property
     def basic_hull_power_load(self) -> float:
@@ -465,13 +476,13 @@ class Ship(ShipBase):
             self.m_drive,
             self.jump_drive,
             self.fusion_plant,
-            self.bridge,
-            self.cockpit,
         ):
             if part is not None:
                 parts.append(part)
         if self.fuel is not None:
             parts.extend(self.fuel._all_parts())
+        if self.command is not None:
+            parts.extend(self.command._all_parts())
         if self.computer is not None:
             parts.extend(self.computer._all_parts())
         parts.extend(self.sensors._all_parts())

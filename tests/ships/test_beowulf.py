@@ -1,7 +1,7 @@
 import pytest
 
 from ceres import armour, ship
-from ceres.bridge import Bridge
+from ceres.bridge import Bridge, CommandSection
 from ceres.computer import Computer5, ComputerSection, JumpControl1
 from ceres.drives import FuelProcessor, FuelSection, FusionPlantTL12, JumpDrive1, JumpFuel, MDrive1, OperationFuel
 from ceres.habitation import HabitationSection, LowBerths, Staterooms
@@ -31,7 +31,7 @@ def build_beowulf() -> ship.Ship:
             operation_fuel=OperationFuel(weeks=4),
             fuel_processor=FuelProcessor(tons=1),
         ),
-        bridge=Bridge(),
+        command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer5(), software=[JumpControl1()]),
         sensors=SensorsSection(primary=CivilianSensors()),
         habitation=HabitationSection(

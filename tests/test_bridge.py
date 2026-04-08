@@ -1,7 +1,7 @@
 import pytest
 
 from ceres.base import ShipBase
-from ceres.bridge import Bridge, Cockpit
+from ceres.bridge import Bridge, Cockpit, CommandSection
 
 
 class DummyOwner(ShipBase):
@@ -116,3 +116,8 @@ def test_normal_bridges():
         b.bind(DummyOwner(12, size))
         assert b.tons == weight
         assert b.cost == ((size - 1) // 100 + 1) * 500_000
+
+
+def test_command_section_all_parts():
+    command = CommandSection(bridge=Bridge(), cockpit=Cockpit())
+    assert [type(part) for part in command._all_parts()] == [Bridge, Cockpit]

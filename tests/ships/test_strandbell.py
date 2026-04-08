@@ -1,7 +1,7 @@
 import pytest
 
 from ceres import armour, ship
-from ceres.bridge import Bridge
+from ceres.bridge import Bridge, CommandSection
 from ceres.computer import AutoRepair1, Computer35, ComputerSection, Evade2, FireControl2
 from ceres.drives import FuelProcessor, FuelSection, FusionPlantTL12, MDrive9, OperationFuel
 from ceres.habitation import HabitationSection, Staterooms
@@ -35,7 +35,7 @@ def build_strandbell() -> ship.Ship:
             fuel_processor=FuelProcessor(tons=1),
             fuel_scoops=FuelScoops(),
         ),
-        bridge=Bridge(),
+        command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer35(), software=[AutoRepair1(), FireControl2(), Evade2()]),
         sensors=SensorsSection(primary=ImprovedSensors(), countermeasures=CountermeasuresSuite()),
         weapons=WeaponsSection(

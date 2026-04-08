@@ -30,7 +30,7 @@ its `_all_parts()` method, and mirrors the matching Python module.
 
 | `Ship` field      | Class               | Module         | Contains                                               |
 |-------------------|---------------------|----------------|--------------------------------------------------------|
-| `ship.hull`       | `Hull`              | `ship.py`      | configuration, armour, stealth, airlocks, aerofins     |
+| `ship.hull`       | `Hull`              | `hull.py`      | configuration, armour, stealth, airlocks, aerofins     |
 | `ship.drives`     | `DriveSection`      | `drives.py`    | m_drive, jump_drive                                    |
 | `ship.power`      | `PowerSection`      | `drives.py`    | fusion_plant                                           |
 | `ship.fuel`       | `FuelSection`       | `storage.py`   | jump_fuel, operation_fuel, scoops, processor           |
@@ -67,6 +67,9 @@ Working interpretation:
   clearer
 - `FuelSection` and `CargoSection` should be designed with future shared
   storage logic in mind
+- the `Hull` area is now large enough that it should eventually move out of
+  `ship.py` into its own `hull.py`, even though the public `Ship.hull` shape
+  stays the same
 
 ---
 
@@ -93,20 +96,25 @@ Working interpretation:
 5. ✅ **`HabitationSection`** in `habitation.py` — `staterooms`, `low_berths`, `common_area` → `Ship.habitation: HabitationSection | None`.
 6. **`SystemsSection`** in `systems.py` — `medical_bay`, `workshop`, `probe_drones`, `repair_drones` → `Ship.systems: SystemsSection | None`.
    - Good candidate once more systems accumulate or when `_all_parts()`/construction starts to feel noisy there.
-7. **`FuelSection`** in `storage.py` — `jump_fuel`, `operation_fuel`, `fuel_scoops`, `fuel_processor` → `Ship.fuel: FuelSection | None`.
+7. 🟡 **`FuelSection`** in `storage.py` — `jump_fuel`, `operation_fuel`, `fuel_scoops`, `fuel_processor` → `Ship.fuel: FuelSection | None`.
    - Strong candidate because the parts already behave as one conceptual group.
-   - Current code has an interim `FuelSection` in `drives.py`; the plan is to move that concept to `storage.py`.
-8. **`CommandSection`** in `bridge.py` — `bridge`, `cockpit` → `Ship.command: CommandSection | None`.
-   - Strong candidate because bridge/cockpit are mutually exclusive alternatives.
+   - Current code already has `Ship.fuel: FuelSection | None`, but the section currently lives in `drives.py` as an interim step.
+   - The remaining work is to move the concept to `storage.py`, not to invent the section itself.
+8. ✅ **`CommandSection`** in `bridge.py` — `bridge`, `cockpit` → `Ship.command: CommandSection | None`.
+   - Implemented. Convenience access via `ship.bridge` / `ship.cockpit` may still remain where useful.
 9. **`DriveSection`** in `drives.py` — `m_drive`, `jump_drive` → `Ship.drives: DriveSection | None`.
    - Required by this plan, but worth doing only when we can keep the API as clear as the current flat fields.
 10. **`CargoSection`** in `storage.py` — `cargo_holds` → `Ship.cargo: CargoSection | None`.
    - Keep this close to `FuelSection`, since future rules are likely to blur the boundary between cargo and fuel storage.
+11. ⬜ **Move hull types to `hull.py`** — `Streamlined`, `HullConfiguration`, predefined hull configs, stealth types, `HullArmour`, `HullStealth`, and `Hull`.
+   - This does not change the desired `Ship.hull` API.
+   - It is mainly a module-boundary cleanup so `ship.py` stops carrying a large amount of hull-specific code.
 
 Additional status note:
 
 - `Hull` is not only started but already contains `armour`, `stealth`,
   `airlocks`, and `aerofins` as intended.
+- `Hull` is also now large enough to deserve its own module; that is a code-organization step, not a change in plan direction.
 - On the report side, section ordering and section ownership are already much
   clearer than this migration list implies, because `ShipSpec`/`SpecSection`
   already drive the spec output.

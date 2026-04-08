@@ -1,7 +1,7 @@
 import pytest
 
 from ceres import armour, ship
-from ceres.bridge import Bridge
+from ceres.bridge import Bridge, CommandSection
 from ceres.computer import Computer5, Computer10, ComputerSection, JumpControl1, JumpControl2, JumpControl3
 from ceres.crafts import AirRaft, InternalDockingSpace
 from ceres.drives import FuelProcessor, FuelSection, FusionPlantTL12, JumpDrive2, JumpFuel, MDrive2, OperationFuel
@@ -33,7 +33,7 @@ def build_suleiman() -> ship.Ship:
             operation_fuel=OperationFuel(weeks=12),
             fuel_processor=FuelProcessor(tons=2),
         ),
-        bridge=Bridge(),
+        command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer5(bis=True), software=[JumpControl2()]),
         sensors=SensorsSection(primary=MilitarySensors()),
         weapons=WeaponsSection(turrets=[DoubleTurret()]),

@@ -1,6 +1,6 @@
 from bisect import bisect_left
 
-from .base import Note, NoteCategory
+from .base import CeresModel, Note, NoteCategory
 from .parts import ShipPart
 
 
@@ -62,3 +62,15 @@ class Bridge(ShipPart):
         if self.small:
             return -1
         return 0
+
+
+class CommandSection(CeresModel):
+    bridge: Bridge | None = None
+    cockpit: Cockpit | None = None
+
+    def _all_parts(self) -> list[ShipPart]:
+        parts: list[ShipPart] = []
+        for part in (self.bridge, self.cockpit):
+            if part is not None:
+                parts.append(part)
+        return parts

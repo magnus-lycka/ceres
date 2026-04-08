@@ -2,7 +2,7 @@ from pydantic import ValidationError
 import pytest
 
 from ceres import armour, ship
-from ceres.bridge import Cockpit
+from ceres.bridge import Cockpit, CommandSection
 from ceres.crafts import AirRaft, InternalDockingSpace
 from ceres.drives import FusionPlantTL12, MDrive6
 from ceres.sensors import CivilianSensors, SensorsSection
@@ -178,7 +178,7 @@ def test_ship_total_power_load_includes_basic_and_active_systems():
         displacement=6,
         hull=ship.Hull(configuration=ship.standard_hull),
         m_drive=MDrive6(),
-        cockpit=Cockpit(),
+        command=CommandSection(cockpit=Cockpit()),
         sensors=SensorsSection(primary=CivilianSensors()),
         weapons=WeaponsSection(
             fixed_firmpoints=[FixedFirmpoint(weapon=PulseLaser(very_high_yield=True, energy_efficient=True))],
@@ -192,7 +192,7 @@ def test_small_craft_uses_single_pilot_crew_model():
         tl=12,
         displacement=6,
         hull=ship.Hull(configuration=ship.standard_hull),
-        cockpit=Cockpit(),
+        command=CommandSection(cockpit=Cockpit()),
     )
     assert [(role.role, role.count, role.monthly_salary) for role in my_ship.crew_roles] == [('PILOT', 1, 6_000)]
 

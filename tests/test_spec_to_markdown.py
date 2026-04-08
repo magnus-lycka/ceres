@@ -8,7 +8,7 @@ that Ship.build_spec() computes correct values.
 from typing import Any
 
 from ceres import ship
-from ceres.bridge import Bridge
+from ceres.bridge import Bridge, CommandSection
 from ceres.computer import Computer5, ComputerSection
 from ceres.drives import FusionPlantTL12, MDrive1
 from ceres.habitation import HabitationSection, Staterooms
@@ -76,7 +76,7 @@ def test_warning_note_rendered_with_italic_prefix():
         tl=12,
         displacement=99,
         hull=ship.Hull(configuration=ship.streamlined_hull, airlocks=[Airlock()]),
-        bridge=Bridge(small=True),
+        command=CommandSection(bridge=Bridge(small=True)),
         computer=ComputerSection(hardware=Computer5()),
         habitation=HabitationSection(staterooms=Staterooms(count=1)),
     )
@@ -89,7 +89,7 @@ def test_error_note_rendered_with_bold_prefix():
         tl=12,
         displacement=99,
         hull=ship.Hull(configuration=ship.streamlined_hull),
-        bridge=Bridge(small=True),
+        command=CommandSection(bridge=Bridge(small=True)),
         computer=ComputerSection(hardware=Computer5()),
         habitation=HabitationSection(staterooms=Staterooms(count=1)),
     )
@@ -112,7 +112,7 @@ def test_expenses_table_present():
 
 
 def test_crew_table_present_when_crew_exists():
-    my_ship = _minimal_ship(bridge=Bridge(), computer=ComputerSection(hardware=Computer5()))
+    my_ship = _minimal_ship(command=CommandSection(bridge=Bridge()), computer=ComputerSection(hardware=Computer5()))
     table = my_ship.markdown_table()
     assert '| Crew | Salary |' in table
     assert '| PILOT |' in table

@@ -1,7 +1,7 @@
 import pytest
 
 from ceres import ship
-from ceres.bridge import Bridge
+from ceres.bridge import Bridge, CommandSection
 from ceres.computer import Computer5, ComputerSection
 from ceres.drives import FuelSection, FusionPlantTL8, FusionPlantTL12, MDrive3, OperationFuel
 from ceres.habitation import HabitationSection, Staterooms
@@ -27,7 +27,7 @@ def build_poseidon_cargo_boat(tl: int) -> ship.Ship:
         m_drive=MDrive3(),
         fusion_plant=fusion_plant,
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=16)),
-        bridge=Bridge(small=True),
+        command=CommandSection(bridge=Bridge(small=True)),
         computer=ComputerSection(hardware=Computer5()),
         habitation=HabitationSection(staterooms=Staterooms(count=1), common_area=CommonArea(tons=1.0)),
     )
@@ -97,7 +97,7 @@ def test_ship_with_bridge_and_no_airlock_adds_error():
         tl=12,
         displacement=99,
         hull=ship.Hull(configuration=POSEIDON_HULL),
-        bridge=Bridge(small=True),
+        command=CommandSection(bridge=Bridge(small=True)),
         computer=ComputerSection(hardware=Computer5()),
         habitation=HabitationSection(staterooms=Staterooms(count=1)),
     )
@@ -114,7 +114,7 @@ def test_markdown_table_renders_inline_error_on_missing_airlock():
         ship_class='Poseidon',
         ship_type='Cargo Boat',
         hull=ship.Hull(configuration=POSEIDON_HULL),
-        bridge=Bridge(small=True),
+        command=CommandSection(bridge=Bridge(small=True)),
         computer=ComputerSection(hardware=Computer5()),
         habitation=HabitationSection(staterooms=Staterooms(count=1)),
     )
@@ -128,7 +128,7 @@ def test_ship_with_staterooms_and_no_common_area_adds_warning():
         tl=12,
         displacement=99,
         hull=ship.Hull(configuration=POSEIDON_HULL, airlocks=[Airlock()]),
-        bridge=Bridge(small=True),
+        command=CommandSection(bridge=Bridge(small=True)),
         computer=ComputerSection(hardware=Computer5()),
         habitation=HabitationSection(staterooms=Staterooms(count=1)),
     )
@@ -144,7 +144,7 @@ def test_markdown_table_renders_inline_warning_on_missing_common_area():
         ship_class='Poseidon',
         ship_type='Cargo Boat',
         hull=ship.Hull(configuration=POSEIDON_HULL, airlocks=[Airlock()]),
-        bridge=Bridge(small=True),
+        command=CommandSection(bridge=Bridge(small=True)),
         computer=ComputerSection(hardware=Computer5()),
         habitation=HabitationSection(staterooms=Staterooms(count=1)),
     )
