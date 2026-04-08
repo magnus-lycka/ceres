@@ -17,6 +17,10 @@ Current status note:
   structure match the same reality more cleanly, so the implementation of the
   rules becomes easier to extend.
 
+This plan is therefore about the Python construction model first, not about the
+Markdown/PDF rendering layer. The spec layer already has a workable section
+taxonomy; the remaining problem is that `Ship` itself is still too flat.
+
 ---
 
 ## Proposed structure
@@ -46,6 +50,14 @@ its `_all_parts()` method, and mirrors the matching Python module.
 > **Fuel boundary:** Jump fuel and operation fuel live in `FuelSection` alongside
 > scoops and processor. The drives themselves carry no fuel.
 
+Working interpretation:
+
+- the section objects are primarily for making `Ship` smaller and clearer
+- the fact that they also line up with the report/spec sections is a benefit,
+  not the primary reason for the refactor
+- we should still prefer the section object only when it makes the Python API
+  clearer
+
 ---
 
 ## Design rules
@@ -55,6 +67,10 @@ its `_all_parts()` method, and mirrors the matching Python module.
 - Sections that may be absent are `Optional` and default to `None`.
 - Section classes live in the module matching their content.
 - `Ship._all_parts()` becomes a simple concatenation of each section's `_all_parts()`.
+- `ShipSpec` / `SpecSection` remain the place where report ordering is defined.
+- A report section and a Python section object usually correspond, but the plan
+  should not force a Python section object before it makes the construction API
+  better.
 
 ---
 
@@ -66,9 +82,13 @@ its `_all_parts()` method, and mirrors the matching Python module.
 4. ✅ **`ComputerSection`** in `computer.py` — `Ship.computer: ComputerSection | None`.
 5. ✅ **`HabitationSection`** in `habitation.py` — `staterooms`, `low_berths`, `common_area` → `Ship.habitation: HabitationSection | None`.
 6. **`SystemsSection`** in `systems.py` — `medical_bay`, `workshop`, `probe_drones`, `repair_drones` → `Ship.systems: SystemsSection | None`.
+   - Good candidate once more systems accumulate or when `_all_parts()`/construction starts to feel noisy there.
 7. **`FuelSection`** in `drives.py` — `jump_fuel`, `operation_fuel`, `fuel_scoops`, `fuel_processor` → `Ship.fuel: FuelSection | None`.
+   - Strong candidate because the parts already behave as one conceptual group.
 8. **`CommandSection`** in `bridge.py` — `bridge`, `cockpit` → `Ship.command: CommandSection | None`.
+   - Strong candidate because bridge/cockpit are mutually exclusive alternatives.
 9. **`DriveSection`** in `drives.py` — `m_drive`, `jump_drive` → `Ship.drives: DriveSection | None`.
+   - Required by this plan, but worth doing only when we can keep the API as clear as the current flat fields.
 
 Additional status note:
 
@@ -78,6 +98,12 @@ Additional status note:
   clearer than this migration list implies, because `ShipSpec`/`SpecSection`
   already drive the spec output.
 
+Practical implication:
+
+- steps 6–9 no longer block a clean report
+- they are now about cleaning up the Python construction model so the rules are
+  easier to implement and reason about
+
 ---
 
 ## Compatibility note
@@ -85,6 +111,13 @@ Additional status note:
 JSON keys change as fields become nested objects. No serialized JSON is
 persisted outside tests, so this is not a concern in practice — tests are
 updated in the same commit as each step.
+
+Implementation note:
+
+- when taking one migration step, do the matching JSON/test updates in the same
+  commit
+- avoid partial nesting where both the old flat field and the new section field
+  coexist for long
 
 ---
 
