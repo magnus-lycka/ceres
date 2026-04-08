@@ -2,6 +2,7 @@ import pytest
 
 from ceres import ship
 from ceres.base import ShipBase
+from ceres.drives import FuelSection
 from ceres.systems import (
     Airlock,
     CargoCrane,
@@ -150,7 +151,7 @@ def test_fuel_scoops_paid_when_added_to_standard_hull():
         tl=12,
         displacement=100,
         hull=ship.Hull(configuration=ship.standard_hull),
-        fuel_scoops=FuelScoops(),
+        fuel=FuelSection(fuel_scoops=FuelScoops()),
     )
     assert my_ship.fuel_scoops is not None
     assert my_ship.fuel_scoops.tons == 0.0
@@ -162,7 +163,7 @@ def test_fuel_scoops_explicit_on_streamlined_hull_still_free():
         tl=12,
         displacement=100,
         hull=ship.Hull(configuration=ship.streamlined_hull),
-        fuel_scoops=FuelScoops(),
+        fuel=FuelSection(fuel_scoops=FuelScoops()),
     )
     assert my_ship.fuel_scoops is not None
     assert my_ship.fuel_scoops.cost == 0.0

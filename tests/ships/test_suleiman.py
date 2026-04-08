@@ -4,7 +4,7 @@ from ceres import armour, ship
 from ceres.bridge import Bridge
 from ceres.computer import Computer5, Computer10, ComputerSection, JumpControl1, JumpControl2, JumpControl3
 from ceres.crafts import AirRaft, InternalDockingSpace
-from ceres.drives import FuelProcessor, FusionPlantTL12, JumpDrive2, JumpFuel, MDrive2, OperationFuel
+from ceres.drives import FuelProcessor, FuelSection, FusionPlantTL12, JumpDrive2, JumpFuel, MDrive2, OperationFuel
 from ceres.habitation import HabitationSection, Staterooms
 from ceres.sensors import MilitarySensors, SensorsSection
 from ceres.systems import Airlock, ProbeDrones, Workshop
@@ -28,9 +28,11 @@ def build_suleiman() -> ship.Ship:
         m_drive=MDrive2(),
         jump_drive=JumpDrive2(),
         fusion_plant=FusionPlantTL12(output=60),
-        jump_fuel=JumpFuel(parsecs=2),
-        operation_fuel=OperationFuel(weeks=12),
-        fuel_processor=FuelProcessor(tons=2),
+        fuel=FuelSection(
+            jump_fuel=JumpFuel(parsecs=2),
+            operation_fuel=OperationFuel(weeks=12),
+            fuel_processor=FuelProcessor(tons=2),
+        ),
         bridge=Bridge(),
         computer=ComputerSection(hardware=Computer5(bis=True), software=[JumpControl2()]),
         sensors=SensorsSection(primary=MilitarySensors()),

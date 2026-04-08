@@ -7,7 +7,7 @@ import pytest
 from ceres import armour, ship
 from ceres.bridge import Cockpit
 from ceres.computer import Computer5, ComputerSection
-from ceres.drives import FusionPlantTL12, MDrive6, OperationFuel
+from ceres.drives import FuelSection, FusionPlantTL12, MDrive6, OperationFuel
 from ceres.sensors import BasicSensors, CivilianSensors, SensorsSection
 from ceres.ship import BasicStealth, Hull, Ship
 from ceres.systems import Airlock
@@ -27,7 +27,7 @@ ultralight = Ship(
     ),
     m_drive=MDrive6(),
     fusion_plant=FusionPlantTL12(output=8),
-    operation_fuel=OperationFuel(weeks=1),
+    fuel=FuelSection(operation_fuel=OperationFuel(weeks=1)),
     cockpit=Cockpit(holographic=True),
     computer=ComputerSection(hardware=Computer5()),
     sensors=SensorsSection(primary=CivilianSensors()),

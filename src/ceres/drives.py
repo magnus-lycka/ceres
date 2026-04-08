@@ -1,7 +1,9 @@
 import math
 from typing import ClassVar, Literal
 
+from .base import CeresModel
 from .parts import ShipPart
+from .systems import FuelScoops
 
 
 class MDrive(ShipPart):
@@ -269,3 +271,17 @@ class FuelProcessor(ShipPart):
 
     def compute_power(self) -> float:
         return self.tons
+
+
+class FuelSection(CeresModel):
+    jump_fuel: JumpFuel | None = None
+    operation_fuel: OperationFuel | None = None
+    fuel_scoops: FuelScoops | None = None
+    fuel_processor: FuelProcessor | None = None
+
+    def _all_parts(self) -> list[ShipPart]:
+        parts: list[ShipPart] = []
+        for part in (self.jump_fuel, self.operation_fuel, self.fuel_scoops, self.fuel_processor):
+            if part is not None:
+                parts.append(part)
+        return parts

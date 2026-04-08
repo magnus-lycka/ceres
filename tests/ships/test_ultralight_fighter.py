@@ -3,7 +3,7 @@ import pytest
 from ceres import armour, ship
 from ceres.bridge import Cockpit
 from ceres.computer import Computer5, ComputerSection
-from ceres.drives import FusionPlantTL12, MDrive6, OperationFuel
+from ceres.drives import FuelSection, FusionPlantTL12, MDrive6, OperationFuel
 from ceres.sensors import CivilianSensors, SensorsSection
 from ceres.weapons import FixedFirmpoint, PulseLaser, WeaponsSection
 
@@ -26,7 +26,7 @@ def build_ultralight_fighter() -> ship.Ship:
         ),
         m_drive=MDrive6(),
         fusion_plant=FusionPlantTL12(output=8),
-        operation_fuel=OperationFuel(weeks=1),
+        fuel=FuelSection(operation_fuel=OperationFuel(weeks=1)),
         cockpit=Cockpit(holographic=True),
         computer=ComputerSection(hardware=Computer5()),
         sensors=SensorsSection(primary=CivilianSensors()),

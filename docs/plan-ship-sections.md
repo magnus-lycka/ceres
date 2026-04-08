@@ -33,7 +33,7 @@ its `_all_parts()` method, and mirrors the matching Python module.
 | `ship.hull`       | `Hull`              | `ship.py`      | configuration, armour, stealth, airlocks, aerofins     |
 | `ship.drives`     | `DriveSection`      | `drives.py`    | m_drive, jump_drive                                    |
 | `ship.power`      | `PowerSection`      | `drives.py`    | fusion_plant                                           |
-| `ship.fuel`       | `FuelSection`       | `drives.py`    | jump_fuel, operation_fuel, scoops, processor           |
+| `ship.fuel`       | `FuelSection`       | `storage.py`   | jump_fuel, operation_fuel, scoops, processor           |
 | `ship.command`    | `CommandSection`    | `bridge.py`    | bridge or cockpit                                      |
 | `ship.computer`   | `ComputerSection`   | `computer.py`  | hardware + software list                               |
 | `ship.sensors`    | `SensorsSection`    | `sensors.py`   | primary sensors + countermeasures                      |
@@ -41,14 +41,22 @@ its `_all_parts()` method, and mirrors the matching Python module.
 | `ship.craft`      | `CraftSection`      | `crafts.py`    | docking_space (+ carried craft)                        |
 | `ship.habitation` | `HabitationSection` | `habitation.py`| staterooms, low_berths, common_area                    |
 | `ship.systems`    | `SystemsSection`    | `systems.py`   | medical_bay, workshop, probe_drones, repair_drones     |
-| `ship.cargo`      | `CargoSection`      | `systems.py`   | cargo_holds                                            |
+| `ship.cargo`      | `CargoSection`      | `storage.py`   | cargo_holds                                            |
 
 > **Jump + Propulsion merged:** The original plan had separate `JumpSection`
 > and `PropulsionSection`. These are merged into `DriveSection` — both drives
 > live together and the spec renders them in separate visual sections regardless.
 
-> **Fuel boundary:** Jump fuel and operation fuel live in `FuelSection` alongside
-> scoops and processor. The drives themselves carry no fuel.
+> **Fuel boundary:** Jump fuel and operation fuel live in `FuelSection`
+> alongside scoops and processor, but the section belongs in `storage.py`,
+> not `drives.py`. The interfaces to jump drive and power plant are clear
+> enough already; the likely future overlap is with storage/cargo concepts,
+> not with drive hardware.
+
+> **Storage direction:** Fuel and cargo should live next to each other in
+> `storage.py`, since future rules are likely to involve shared storage logic:
+> fuel bladders in cargo space, combined fuel/cargo containers, fuel tank
+> compartments, and mountable tanks.
 
 Working interpretation:
 
@@ -57,6 +65,8 @@ Working interpretation:
   not the primary reason for the refactor
 - we should still prefer the section object only when it makes the Python API
   clearer
+- `FuelSection` and `CargoSection` should be designed with future shared
+  storage logic in mind
 
 ---
 
@@ -83,12 +93,15 @@ Working interpretation:
 5. ✅ **`HabitationSection`** in `habitation.py` — `staterooms`, `low_berths`, `common_area` → `Ship.habitation: HabitationSection | None`.
 6. **`SystemsSection`** in `systems.py` — `medical_bay`, `workshop`, `probe_drones`, `repair_drones` → `Ship.systems: SystemsSection | None`.
    - Good candidate once more systems accumulate or when `_all_parts()`/construction starts to feel noisy there.
-7. **`FuelSection`** in `drives.py` — `jump_fuel`, `operation_fuel`, `fuel_scoops`, `fuel_processor` → `Ship.fuel: FuelSection | None`.
+7. **`FuelSection`** in `storage.py` — `jump_fuel`, `operation_fuel`, `fuel_scoops`, `fuel_processor` → `Ship.fuel: FuelSection | None`.
    - Strong candidate because the parts already behave as one conceptual group.
+   - Current code has an interim `FuelSection` in `drives.py`; the plan is to move that concept to `storage.py`.
 8. **`CommandSection`** in `bridge.py` — `bridge`, `cockpit` → `Ship.command: CommandSection | None`.
    - Strong candidate because bridge/cockpit are mutually exclusive alternatives.
 9. **`DriveSection`** in `drives.py` — `m_drive`, `jump_drive` → `Ship.drives: DriveSection | None`.
    - Required by this plan, but worth doing only when we can keep the API as clear as the current flat fields.
+10. **`CargoSection`** in `storage.py` — `cargo_holds` → `Ship.cargo: CargoSection | None`.
+   - Keep this close to `FuelSection`, since future rules are likely to blur the boundary between cargo and fuel storage.
 
 Additional status note:
 
@@ -100,7 +113,7 @@ Additional status note:
 
 Practical implication:
 
-- steps 6–9 no longer block a clean report
+- steps 6–10 no longer block a clean report
 - they are now about cleaning up the Python construction model so the rules are
   easier to implement and reason about
 

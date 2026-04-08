@@ -3,7 +3,7 @@ import pytest
 from ceres import armour, ship
 from ceres.bridge import Bridge
 from ceres.computer import AutoRepair1, Computer35, ComputerSection, Evade2, FireControl2
-from ceres.drives import FuelProcessor, FusionPlantTL12, MDrive9, OperationFuel
+from ceres.drives import FuelProcessor, FuelSection, FusionPlantTL12, MDrive9, OperationFuel
 from ceres.habitation import HabitationSection, Staterooms
 from ceres.sensors import CountermeasuresSuite, ImprovedSensors, SensorsSection
 from ceres.systems import Airlock, CommonArea, FuelScoops, MedicalBay, RepairDrones
@@ -30,8 +30,11 @@ def build_strandbell() -> ship.Ship:
         ),
         m_drive=MDrive9(armored=True),
         fusion_plant=FusionPlantTL12(output=240),
-        operation_fuel=OperationFuel(weeks=12),
-        fuel_processor=FuelProcessor(tons=1),
+        fuel=FuelSection(
+            operation_fuel=OperationFuel(weeks=12),
+            fuel_processor=FuelProcessor(tons=1),
+            fuel_scoops=FuelScoops(),
+        ),
         bridge=Bridge(),
         computer=ComputerSection(hardware=Computer35(), software=[AutoRepair1(), FireControl2(), Evade2()]),
         sensors=SensorsSection(primary=ImprovedSensors(), countermeasures=CountermeasuresSuite()),
@@ -43,7 +46,6 @@ def build_strandbell() -> ship.Ship:
             missile_storage=MissileStorage(count=240),
         ),
         repair_drones=RepairDrones(),
-        fuel_scoops=FuelScoops(),
         medical_bay=MedicalBay(),
         habitation=HabitationSection(staterooms=Staterooms(count=15), common_area=CommonArea(tons=4.0)),
     )

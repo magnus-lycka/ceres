@@ -19,6 +19,7 @@ from .computer import (
 from .crafts import InternalDockingSpace
 from .drives import (
     FuelProcessor,
+    FuelSection,
     FusionPlantTL8,
     FusionPlantTL12,
     FusionPlantTL15,
@@ -48,20 +49,9 @@ from .drives import (
 )
 from .habitation import HabitationSection
 from .parts import ShipPart
-from .sensors import (
-    SensorsSection,
-)
+from .sensors import SensorsSection
 from .spec import CrewRow as SpecCrewRow, ExpenseRow, ShipSpec, SpecRow, SpecSection
-from .systems import (
-    Aerofins,
-    Airlock,
-    CargoHold,
-    FuelScoops,
-    MedicalBay,
-    ProbeDrones,
-    RepairDrones,
-    Workshop,
-)
+from .systems import Aerofins, Airlock, CargoHold, FuelScoops, MedicalBay, ProbeDrones, RepairDrones, Workshop
 from .weapons import WeaponsSection
 
 
@@ -302,9 +292,7 @@ class Ship(ShipBase):
     m_drive: ShipMDrive | None = None
     jump_drive: ShipJumpDrive | None = None
     fusion_plant: FusionPlantTL8 | FusionPlantTL12 | FusionPlantTL15 | None = None
-    jump_fuel: JumpFuel | None = None
-    operation_fuel: OperationFuel | None = None
-    fuel_processor: FuelProcessor | None = None
+    fuel: FuelSection | None = None
     bridge: Bridge | None = None
     cockpit: Cockpit | None = None
     computer: ComputerSection | None = None
@@ -316,7 +304,6 @@ class Ship(ShipBase):
     probe_drones: ProbeDrones | None = None
     workshop: Workshop | None = None
     repair_drones: RepairDrones | None = None
-    fuel_scoops: FuelScoops | None = None
     weapons: WeaponsSection | None = None
 
     @property
@@ -336,6 +323,30 @@ class Ship(ShipBase):
         if self.fusion_plant is None:
             return 0.0
         return float(self.fusion_plant.output)
+
+    @property
+    def jump_fuel(self) -> JumpFuel | None:
+        if self.fuel is None:
+            return None
+        return self.fuel.jump_fuel
+
+    @property
+    def operation_fuel(self) -> OperationFuel | None:
+        if self.fuel is None:
+            return None
+        return self.fuel.operation_fuel
+
+    @property
+    def fuel_processor(self) -> FuelProcessor | None:
+        if self.fuel is None:
+            return None
+        return self.fuel.fuel_processor
+
+    @property
+    def fuel_scoops(self) -> FuelScoops | None:
+        if self.fuel is None:
+            return None
+        return self.fuel.fuel_scoops
 
     @property
     def basic_hull_power_load(self) -> float:
@@ -454,14 +465,13 @@ class Ship(ShipBase):
             self.m_drive,
             self.jump_drive,
             self.fusion_plant,
-            self.jump_fuel,
-            self.operation_fuel,
-            self.fuel_processor,
             self.bridge,
             self.cockpit,
         ):
             if part is not None:
                 parts.append(part)
+        if self.fuel is not None:
+            parts.extend(self.fuel._all_parts())
         if self.computer is not None:
             parts.extend(self.computer._all_parts())
         parts.extend(self.sensors._all_parts())
@@ -473,7 +483,6 @@ class Ship(ShipBase):
             self.probe_drones,
             self.repair_drones,
             self.workshop,
-            self.fuel_scoops,
         ):
             if part is not None:
                 parts.append(part)
@@ -813,7 +822,10 @@ class Ship(ShipBase):
 
     def model_post_init(self, __context: Any) -> None:
         if self.hull.configuration.streamlined == Streamlined.YES:
-            object.__setattr__(self, 'fuel_scoops', FuelScoops(free=True))
+            if self.fuel is None:
+                object.__setattr__(self, 'fuel', FuelSection(fuel_scoops=FuelScoops(free=True)))
+            elif self.fuel.fuel_scoops is None or not self.fuel.fuel_scoops.free:
+                object.__setattr__(self, 'fuel', self.fuel.model_copy(update={'fuel_scoops': FuelScoops(free=True)}))
         self.clear_notes()
         for part in self._all_parts():
             part.bind(self)
