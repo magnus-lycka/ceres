@@ -4,7 +4,7 @@ import pytest
 from ceres import armour, hull, ship
 from ceres.bridge import Cockpit, CommandSection
 from ceres.crafts import AirRaft, InternalDockingSpace
-from ceres.drives import FusionPlantTL12, MDrive6
+from ceres.drives import DriveSection, FusionPlantTL12, MDrive6
 from ceres.sensors import CivilianSensors, SensorsSection
 from ceres.storage import CargoCrane, CargoHold, CargoSection
 from ceres.systems import Airlock, ProbeDrones, SystemsSection, Workshop
@@ -176,7 +176,7 @@ def test_ship_total_power_load_includes_basic_and_active_systems():
         tl=12,
         displacement=6,
         hull=hull.Hull(configuration=hull.standard_hull),
-        m_drive=MDrive6(),
+        drives=DriveSection(m_drive=MDrive6()),
         command=CommandSection(cockpit=Cockpit()),
         sensors=SensorsSection(primary=CivilianSensors()),
         weapons=WeaponsSection(

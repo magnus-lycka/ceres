@@ -3,7 +3,7 @@ import pytest
 from ceres import armour, hull, ship
 from ceres.bridge import Bridge, CommandSection
 from ceres.computer import Computer5, ComputerSection, JumpControl1
-from ceres.drives import FusionPlantTL12, JumpDrive1, MDrive1
+from ceres.drives import DriveSection, FusionPlantTL12, JumpDrive1, MDrive1
 from ceres.habitation import HabitationSection, LowBerths, Staterooms
 from ceres.sensors import CivilianSensors, SensorsSection
 from ceres.storage import CargoCrane, CargoHold, CargoSection, FuelProcessor, FuelSection, JumpFuel, OperationFuel
@@ -24,8 +24,7 @@ def build_beowulf() -> ship.Ship:
             armour=armour.CrystalironArmour(protection=2),
             airlocks=[Airlock(), Airlock()],
         ),
-        m_drive=MDrive1(),
-        jump_drive=JumpDrive1(),
+        drives=DriveSection(m_drive=MDrive1(), jump_drive=JumpDrive1()),
         fusion_plant=FusionPlantTL12(output=75),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=1),

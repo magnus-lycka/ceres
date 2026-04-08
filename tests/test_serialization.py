@@ -7,7 +7,7 @@ import pytest
 from ceres import armour, hull
 from ceres.bridge import Cockpit, CommandSection
 from ceres.computer import Computer5, ComputerSection
-from ceres.drives import FusionPlantTL12, MDrive6
+from ceres.drives import DriveSection, FusionPlantTL12, MDrive6
 from ceres.hull import BasicStealth, Hull
 from ceres.sensors import BasicSensors, CivilianSensors, SensorsSection
 from ceres.ship import Ship
@@ -27,7 +27,7 @@ ultralight = Ship(
         armour=armour.CrystalironArmour(tl=12, protection=6),
         stealth=BasicStealth(),
     ),
-    m_drive=MDrive6(),
+    drives=DriveSection(m_drive=MDrive6()),
     fusion_plant=FusionPlantTL12(output=8),
     fuel=FuelSection(operation_fuel=OperationFuel(weeks=1)),
     command=CommandSection(cockpit=Cockpit(holographic=True)),
@@ -78,9 +78,9 @@ def test_dump_no_stealth_is_null():
 
 def test_dump_m_drive_present():
     data = json.loads(ultralight.model_dump_json())
-    assert data['m_drive']['cost'] == 720_000
-    assert data['m_drive']['power'] == 4
-    assert data['m_drive']['tons'] == pytest.approx(0.36)
+    assert data['drives']['m_drive']['cost'] == 720_000
+    assert data['drives']['m_drive']['power'] == 4
+    assert data['drives']['m_drive']['tons'] == pytest.approx(0.36)
 
 
 def test_dump_weapon_in_fixed_firmpoints():
@@ -145,9 +145,9 @@ def test_roundtrip_m_drive_attributes():
 
 def test_roundtrip_recomputes_derived_part_values():
     data = json.loads(ultralight.model_dump_json())
-    data['m_drive']['cost'] = 1
-    data['m_drive']['power'] = 999
-    data['m_drive']['tons'] = 999
+    data['drives']['m_drive']['cost'] = 1
+    data['drives']['m_drive']['power'] = 999
+    data['drives']['m_drive']['tons'] = 999
     loaded = Ship.model_validate_json(json.dumps(data))
     assert loaded.m_drive is not None
     assert loaded.m_drive.cost == 720_000

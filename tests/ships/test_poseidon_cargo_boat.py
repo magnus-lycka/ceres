@@ -3,7 +3,7 @@ import pytest
 from ceres import hull, ship
 from ceres.bridge import Bridge, CommandSection
 from ceres.computer import Computer5, ComputerSection
-from ceres.drives import FusionPlantTL8, FusionPlantTL12, MDrive3
+from ceres.drives import DriveSection, FusionPlantTL8, FusionPlantTL12, MDrive3
 from ceres.habitation import HabitationSection, Staterooms
 from ceres.storage import FuelSection, OperationFuel
 from ceres.systems import Aerofins, Airlock, CommonArea
@@ -25,7 +25,7 @@ def build_poseidon_cargo_boat(tl: int) -> ship.Ship:
         displacement=100,
         design_type=ship.ShipDesignType.STANDARD,
         hull=hull.Hull(configuration=POSEIDON_HULL, airlocks=[Airlock()], aerofins=Aerofins()),
-        m_drive=MDrive3(),
+        drives=DriveSection(m_drive=MDrive3()),
         fusion_plant=fusion_plant,
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=16)),
         command=CommandSection(bridge=Bridge(small=True)),

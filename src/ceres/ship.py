@@ -13,6 +13,7 @@ from .computer import (
 )
 from .crafts import InternalDockingSpace
 from .drives import (
+    DriveSection,
     FusionPlantTL8,
     FusionPlantTL12,
     FusionPlantTL15,
@@ -59,8 +60,7 @@ class Ship(ShipBase):
     ship_type: str | None = None
     design_type: ShipDesignType = ShipDesignType.CUSTOM
     hull: hull_model.Hull
-    m_drive: ShipMDrive | None = None
-    jump_drive: ShipJumpDrive | None = None
+    drives: DriveSection | None = None
     fusion_plant: FusionPlantTL8 | FusionPlantTL12 | FusionPlantTL15 | None = None
     fuel: FuelSection | None = None
     command: CommandSection | None = None
@@ -89,6 +89,18 @@ class Ship(ShipBase):
         if self.fusion_plant is None:
             return 0.0
         return float(self.fusion_plant.output)
+
+    @property
+    def m_drive(self) -> ShipMDrive | None:
+        if self.drives is None:
+            return None
+        return self.drives.m_drive
+
+    @property
+    def jump_drive(self) -> ShipJumpDrive | None:
+        if self.drives is None:
+            return None
+        return self.drives.jump_drive
 
     @property
     def jump_fuel(self) -> JumpFuel | None:
@@ -269,11 +281,9 @@ class Ship(ShipBase):
 
     def _all_parts(self) -> list[ShipPart]:
         parts = list(self.hull._all_parts())
-        for part in (
-            self.m_drive,
-            self.jump_drive,
-            self.fusion_plant,
-        ):
+        if self.drives is not None:
+            parts.extend(self.drives._all_parts())
+        for part in (self.fusion_plant,):
             if part is not None:
                 parts.append(part)
         if self.fuel is not None:

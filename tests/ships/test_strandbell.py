@@ -3,7 +3,7 @@ import pytest
 from ceres import armour, hull, ship
 from ceres.bridge import Bridge, CommandSection
 from ceres.computer import AutoRepair1, Computer35, ComputerSection, Evade2, FireControl2
-from ceres.drives import FusionPlantTL12, MDrive9
+from ceres.drives import DriveSection, FusionPlantTL12, MDrive9
 from ceres.habitation import HabitationSection, Staterooms
 from ceres.sensors import CountermeasuresSuite, ImprovedSensors, SensorsSection
 from ceres.storage import FuelProcessor, FuelScoops, FuelSection, OperationFuel
@@ -29,7 +29,7 @@ def build_strandbell() -> ship.Ship:
             armour=armour.CrystalironArmour(protection=13),
             airlocks=[Airlock(), Airlock()],
         ),
-        m_drive=MDrive9(armored=True),
+        drives=DriveSection(m_drive=MDrive9(armored=True)),
         fusion_plant=FusionPlantTL12(output=240),
         fuel=FuelSection(
             operation_fuel=OperationFuel(weeks=12),

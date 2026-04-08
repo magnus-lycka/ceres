@@ -3,6 +3,7 @@ import pytest
 from ceres import hull, ship
 from ceres.base import ShipBase
 from ceres.drives import (
+    DriveSection,
     FusionPlantTL8,
     FusionPlantTL12,
     FusionPlantTL15,
@@ -71,6 +72,11 @@ def test_mdrive_power():
     d = MDrive6()
     d.bind(DummyOwner(12, 6))
     assert d.power == 4  # ceil(0.1 * 6 * 6) = ceil(3.6) = 4
+
+
+def test_drive_section_all_parts():
+    drives = DriveSection(m_drive=MDrive6(), jump_drive=JumpDrive2())
+    assert drives._all_parts() == [drives.m_drive, drives.jump_drive]
 
 
 

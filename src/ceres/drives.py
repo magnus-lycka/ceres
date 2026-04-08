@@ -203,6 +203,14 @@ ShipJumpDrive = Annotated[
 ]
 
 
+class DriveSection(ShipPart):
+    m_drive: ShipMDrive | None = None
+    jump_drive: ShipJumpDrive | None = None
+
+    def _all_parts(self) -> list[ShipPart]:
+        return [part for part in [self.m_drive, self.jump_drive] if part is not None]
+
+
 class _FusionPlant(ShipPart):
     minimum_tl: ClassVar[int]
     power_per_ton: ClassVar[int]

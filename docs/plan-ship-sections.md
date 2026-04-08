@@ -101,8 +101,8 @@ Working interpretation:
    - The remaining storage-side work is now `CargoSection`, not `FuelSection`.
 8. ✅ **`CommandSection`** in `bridge.py` — `bridge`, `cockpit` → `Ship.command: CommandSection | None`.
    - Implemented. Convenience access via `ship.bridge` / `ship.cockpit` may still remain where useful.
-9. **`DriveSection`** in `drives.py` — `m_drive`, `jump_drive` → `Ship.drives: DriveSection | None`.
-   - Required by this plan, but worth doing only when we can keep the API as clear as the current flat fields.
+9. ✅ **`DriveSection`** in `drives.py` — `m_drive`, `jump_drive` → `Ship.drives: DriveSection | None`.
+   - Implemented. Convenience access via `ship.m_drive` / `ship.jump_drive` may still remain where useful.
 10. ✅ **`CargoSection`** in `storage.py` — `cargo_holds` → `Ship.cargo: CargoSection | None`.
    - Keep this close to `FuelSection`, since future rules are likely to blur the boundary between cargo and fuel storage.
    - Implemented. The numeric remaining-capacity property is now separate (`cargo_tons`) so `ship.cargo` can mean the section object.

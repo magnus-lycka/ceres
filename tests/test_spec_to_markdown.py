@@ -10,7 +10,7 @@ from typing import Any
 from ceres import hull, ship
 from ceres.bridge import Bridge, CommandSection
 from ceres.computer import Computer5, ComputerSection
-from ceres.drives import FusionPlantTL12, MDrive1
+from ceres.drives import DriveSection, FusionPlantTL12, MDrive1
 from ceres.habitation import HabitationSection, Staterooms
 
 
@@ -47,7 +47,7 @@ def test_power_plant_output_is_bold():
 
 
 def test_section_header_shown_on_first_row_in_section():
-    my_ship = _minimal_ship(m_drive=MDrive1())
+    my_ship = _minimal_ship(drives=DriveSection(m_drive=MDrive1()))
     table = my_ship.markdown_table()
     assert '| Propulsion | ' in table
 
@@ -98,7 +98,7 @@ def test_error_note_rendered_with_bold_prefix():
 
 
 def test_cost_formatted_in_kcr():
-    my_ship = _minimal_ship(m_drive=MDrive1())
+    my_ship = _minimal_ship(drives=DriveSection(m_drive=MDrive1()))
     table = my_ship.markdown_table()
     # MDrive1 costs 2_000_000 → 2000.00 kCr
     assert '2000.00' in table
