@@ -150,7 +150,7 @@ def test_suleiman_matches_first_modeled_reference_slice():
     assert workshop.cost == 900_000
     assert workshop.power == 0
 
-    assert suleiman.cargo == pytest.approx(12.8)
+    assert suleiman.cargo_tons == pytest.approx(12.8)
 
     assert [(role.role, role.count, role.monthly_salary) for role in suleiman.crew_roles] == [
         ('PILOT', 1, 6_000),

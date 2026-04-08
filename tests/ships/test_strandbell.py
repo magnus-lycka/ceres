@@ -157,7 +157,7 @@ def test_strandbell_cargo():
     # Ref: 13.8t cargo + 2.0t stores + 3.1t armored bulkheads = 18.9t.
     # We don't model stores or armored bulkheads so cargo = 18.9t.
     sdb = build_strandbell()
-    assert sdb.cargo == pytest.approx(18.9, abs=0.01)
+    assert sdb.cargo_tons == pytest.approx(18.9, abs=0.01)
 
 
 def test_strandbell_cost():

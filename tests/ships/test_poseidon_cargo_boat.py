@@ -74,7 +74,7 @@ def test_poseidon_tl12_variant_trades_cost_for_cargo_with_better_power_plant():
     assert tl12.fusion_plant is not None
     assert isinstance(tl10.fusion_plant, FusionPlantTL8)
     assert isinstance(tl12.fusion_plant, FusionPlantTL12)
-    assert tl12.cargo > tl10.cargo
+    assert tl12.cargo_tons > tl10.cargo_tons
     assert tl12.production_cost > tl10.production_cost
 
 

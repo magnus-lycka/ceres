@@ -28,7 +28,7 @@ from .habitation import HabitationSection
 from .parts import ShipPart
 from .sensors import SensorsSection
 from .spec import CrewRow as SpecCrewRow, ExpenseRow, ShipSpec, SpecRow, SpecSection
-from .storage import CargoHold, FuelProcessor, FuelScoops, FuelSection, JumpFuel, OperationFuel
+from .storage import CargoHold, CargoSection, FuelProcessor, FuelScoops, FuelSection, JumpFuel, OperationFuel
 from .systems import Aerofins, Airlock, MedicalBay, ProbeDrones, RepairDrones, Workshop
 from .weapons import WeaponsSection
 
@@ -254,7 +254,7 @@ class Ship(ShipBase):
     computer: ComputerSection | None = None
     sensors: SensorsSection = Field(default_factory=SensorsSection)
     docking_space: InternalDockingSpace | None = None
-    cargo_holds: list[CargoHold] = Field(default_factory=list)
+    cargo: CargoSection | None = None
     habitation: HabitationSection | None = None
     medical_bay: MedicalBay | None = None
     probe_drones: ProbeDrones | None = None
@@ -315,6 +315,12 @@ class Ship(ShipBase):
         if self.command is None:
             return None
         return self.command.cockpit
+
+    @property
+    def cargo_holds(self) -> list[CargoHold]:
+        if self.cargo is None:
+            return []
+        return self.cargo.cargo_holds
 
     @property
     def basic_hull_power_load(self) -> float:
@@ -687,7 +693,7 @@ class Ship(ShipBase):
                 SpecRow(
                     section=SpecSection.CARGO,
                     item='Cargo Hold',
-                    tons=self.cargo or None,
+                    tons=self.cargo_tons or None,
                 ),
             )
 
@@ -783,7 +789,7 @@ class Ship(ShipBase):
         return '\n'.join(lines)
 
     @property
-    def cargo(self):
+    def cargo_tons(self):
         if self.cargo_holds:
             return sum(cargo_hold.usable_tons(self) for cargo_hold in self.cargo_holds)
         return self._remaining_cargo_space_without_default_holds()
@@ -821,8 +827,8 @@ class Ship(ShipBase):
                 highest_jump_control.warning('No jump drive installed')
             elif highest_jump_control.rating > self.jump_drive.rating:
                 highest_jump_control.warning(f'Limited to Jump {self.jump_drive.rating} by drive capacity')
-        if self.cargo < 0:
-            self.error(f'Hull overloaded by {-self.cargo:.2f} tons')
+        if self.cargo_tons < 0:
+            self.error(f'Hull overloaded by {-self.cargo_tons:.2f} tons')
         if self.bridge is not None and not self.hull.airlocks:
             self.error('No airlock installed')
         if self.habitation is not None and self.habitation.staterooms is not None:

@@ -201,7 +201,7 @@ def test_roundtrip_weapon_attributes():
 
 def test_roundtrip_cargo():
     loaded = _roundtrip(ultralight)
-    assert float(loaded.cargo) == pytest.approx(float(ultralight.cargo))
+    assert float(loaded.cargo_tons) == pytest.approx(float(ultralight.cargo_tons))
 
 
 def test_roundtrip_no_parts():

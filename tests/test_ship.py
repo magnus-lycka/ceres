@@ -6,7 +6,7 @@ from ceres.bridge import Cockpit, CommandSection
 from ceres.crafts import AirRaft, InternalDockingSpace
 from ceres.drives import FusionPlantTL12, MDrive6
 from ceres.sensors import CivilianSensors, SensorsSection
-from ceres.storage import CargoCrane, CargoHold
+from ceres.storage import CargoCrane, CargoHold, CargoSection
 from ceres.systems import Airlock, ProbeDrones, Workshop
 from ceres.weapons import FixedFirmpoint, PulseLaser, WeaponsSection
 from tests.ships._markdown_output import write_markdown_output
@@ -21,7 +21,7 @@ def test_ship_initial():
     assert my_ship.tl == 15
     assert my_ship.displacement == 300
     assert my_ship.hull.configuration.points(300) == 120
-    assert my_ship.cargo == 300
+    assert my_ship.cargo_tons == 300
 
 
 def test_ship_needs_hull():
@@ -45,7 +45,7 @@ def test_ship_initial_bulky():
         displacement=100,
         hull=ship.Hull(configuration=ship.buffered_planetoid),
     )
-    assert my_ship.cargo == 65
+    assert my_ship.cargo_tons == 65
 
 
 def test_ship_with_armour():
@@ -57,7 +57,7 @@ def test_ship_with_armour():
         ),
         displacement=100,
     )
-    assert my_ship.cargo == 100 - (100 * 4 * 0.0125)
+    assert my_ship.cargo_tons == 100 - (100 * 4 * 0.0125)
 
 
 def test_ship_cargo_subtracts_modeled_part_tonnage():
@@ -69,7 +69,7 @@ def test_ship_cargo_subtracts_modeled_part_tonnage():
         probe_drones=ProbeDrones(count=10),
         workshop=Workshop(),
     )
-    assert my_ship.cargo == pytest.approx(100 - 5 - 2 - 6)
+    assert my_ship.cargo_tons == pytest.approx(100 - 5 - 2 - 6)
 
 
 def test_ship_default_cargo_hold_uses_remaining_space():
@@ -78,9 +78,9 @@ def test_ship_default_cargo_hold_uses_remaining_space():
         displacement=100,
         hull=ship.Hull(configuration=ship.streamlined_hull),
         workshop=Workshop(),
-        cargo_holds=[CargoHold()],
+        cargo=CargoSection(cargo_holds=[CargoHold()]),
     )
-    assert my_ship.cargo == pytest.approx(94.0)
+    assert my_ship.cargo_tons == pytest.approx(94.0)
 
 
 def test_ship_explicit_cargo_hold_with_crane_reduces_usable_capacity_and_adds_cost():
@@ -88,9 +88,9 @@ def test_ship_explicit_cargo_hold_with_crane_reduces_usable_capacity_and_adds_co
         tl=12,
         displacement=200,
         hull=ship.Hull(configuration=ship.standard_hull),
-        cargo_holds=[CargoHold(tons=150, crane=CargoCrane())],
+        cargo=CargoSection(cargo_holds=[CargoHold(tons=150, crane=CargoCrane())]),
     )
-    assert my_ship.cargo == pytest.approx(147.0)
+    assert my_ship.cargo_tons == pytest.approx(147.0)
     assert my_ship.production_cost == pytest.approx(10_000_000 + 3_000_000)
 
 
@@ -206,9 +206,9 @@ def test_ship_with_negative_cargo_adds_local_note():
         sensors=SensorsSection(primary=CivilianSensors()),
         workshop=Workshop(),
     )
-    assert my_ship.cargo < 0
+    assert my_ship.cargo_tons < 0
     assert [(note.category.value, note.message) for note in my_ship.notes] == [
-        ('error', f'Hull overloaded by {-my_ship.cargo:.2f} tons'),
+        ('error', f'Hull overloaded by {-my_ship.cargo_tons:.2f} tons'),
     ]
 
 

@@ -1,5 +1,7 @@
 import math
 
+from pydantic import Field
+
 from .base import CeresModel, Note
 from .parts import ShipPart
 
@@ -116,3 +118,7 @@ class CargoHold(CeresModel):
 
     def usable_tons(self, owner) -> float:
         return self.total_tons(owner) - self.crane_tons(owner)
+
+
+class CargoSection(CeresModel):
+    cargo_holds: list[CargoHold] = Field(default_factory=list)

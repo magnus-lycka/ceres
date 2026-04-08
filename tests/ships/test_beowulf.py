@@ -6,7 +6,7 @@ from ceres.computer import Computer5, ComputerSection, JumpControl1
 from ceres.drives import FusionPlantTL12, JumpDrive1, MDrive1
 from ceres.habitation import HabitationSection, LowBerths, Staterooms
 from ceres.sensors import CivilianSensors, SensorsSection
-from ceres.storage import CargoCrane, CargoHold, FuelProcessor, FuelSection, JumpFuel, OperationFuel
+from ceres.storage import CargoCrane, CargoHold, CargoSection, FuelProcessor, FuelSection, JumpFuel, OperationFuel
 from ceres.systems import Airlock, CommonArea
 
 from ._markdown_output import write_markdown_output
@@ -40,7 +40,7 @@ def build_beowulf() -> ship.Ship:
             low_berths=LowBerths(count=20),
             common_area=CommonArea(tons=10.0),
         ),
-        cargo_holds=[CargoHold(crane=CargoCrane())],
+        cargo=CargoSection(cargo_holds=[CargoHold(crane=CargoCrane())]),
     )
 
 
@@ -135,7 +135,7 @@ def test_beowulf_cargo():
     # Anderson shows 80.0t cargo + 0.80 luggage + 0.70 stores = 81.50t.
     # We don't model luggage or stores, so we get ~81.50t total.
     beowulf = build_beowulf()
-    assert beowulf.cargo == pytest.approx(81.5, abs=0.01)
+    assert beowulf.cargo_tons == pytest.approx(81.5, abs=0.01)
 
 
 def test_beowulf_power():
