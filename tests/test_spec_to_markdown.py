@@ -5,15 +5,17 @@ These tests verify that markdown_table() correctly renders spec data, not
 that Ship.build_spec() computes correct values.
 """
 
-import pytest
+from typing import Any
 
 from ceres import ship
+from ceres.bridge import Bridge
+from ceres.computer import Computer5, ComputerSection
 from ceres.drives import FusionPlantTL12, MDrive1
-from ceres.sensors import BasicSensors
+from ceres.habitation import HabitationSection, Staterooms
 
 
 def _minimal_ship(**kwargs) -> ship.Ship:
-    defaults = dict(
+    defaults: dict[str, Any] = dict(
         tl=12,
         displacement=100,
         hull=ship.Hull(configuration=ship.streamlined_hull),
@@ -54,8 +56,8 @@ def test_section_header_collapsed_for_continuation_rows():
     # Hull has at least two rows: hull config + Basic Ship Systems.
     my_ship = _minimal_ship()
     lines = my_ship.markdown_table().splitlines()
-    hull_config_idx = next(i for i, l in enumerate(lines) if '| Hull | Streamlined Hull |' in l)
-    basic_systems_idx = next(i for i, l in enumerate(lines) if 'Basic Ship Systems' in l)
+    hull_config_idx = next(i for i, line in enumerate(lines) if '| Hull | Streamlined Hull |' in line)
+    basic_systems_idx = next(i for i, line in enumerate(lines) if 'Basic Ship Systems' in line)
     assert basic_systems_idx > hull_config_idx
     assert lines[basic_systems_idx].startswith('|  |')
 
@@ -68,41 +70,28 @@ def test_info_note_rendered_with_bullet():
 
 
 def test_warning_note_rendered_with_italic_prefix():
-    my_ship = ship.Ship(
-        tl=12,
-        displacement=99,
-        hull=ship.Hull(configuration=ship.streamlined_hull),
-    )
-    # No airlocks and no bridge, but with staterooms it would warn about common area.
-    # Simpler: a ship with staterooms and no common area generates a warning.
-    from ceres.habitation import Staterooms
     from ceres.systems import Airlock
-    from ceres.bridge import Bridge
-    from ceres.computer import Computer5
+
     my_ship = ship.Ship(
         tl=12,
         displacement=99,
-        hull=ship.Hull(configuration=ship.streamlined_hull),
+        hull=ship.Hull(configuration=ship.streamlined_hull, airlocks=[Airlock()]),
         bridge=Bridge(small=True),
-        computer=Computer5(),
-        staterooms=Staterooms(count=1),
-        airlocks=[Airlock()],
+        computer=ComputerSection(hardware=Computer5()),
+        habitation=HabitationSection(staterooms=Staterooms(count=1)),
     )
     table = my_ship.markdown_table()
     assert '|  | *WARNING:* Recommended common area is 1.00 tons |  |  |  |' in table
 
 
 def test_error_note_rendered_with_bold_prefix():
-    from ceres.bridge import Bridge
-    from ceres.computer import Computer5
-    from ceres.habitation import Staterooms
     my_ship = ship.Ship(
         tl=12,
         displacement=99,
         hull=ship.Hull(configuration=ship.streamlined_hull),
         bridge=Bridge(small=True),
-        computer=Computer5(),
-        staterooms=Staterooms(count=1),
+        computer=ComputerSection(hardware=Computer5()),
+        habitation=HabitationSection(staterooms=Staterooms(count=1)),
     )
     table = my_ship.markdown_table()
     assert '|  | **ERROR:** No airlock installed |  |  |  |' in table
@@ -123,9 +112,7 @@ def test_expenses_table_present():
 
 
 def test_crew_table_present_when_crew_exists():
-    from ceres.bridge import Bridge
-    from ceres.computer import Computer5
-    my_ship = _minimal_ship(bridge=Bridge(), computer=Computer5())
+    my_ship = _minimal_ship(bridge=Bridge(), computer=ComputerSection(hardware=Computer5()))
     table = my_ship.markdown_table()
     assert '| Crew | Salary |' in table
     assert '| PILOT |' in table

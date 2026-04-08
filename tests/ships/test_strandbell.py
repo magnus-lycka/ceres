@@ -2,12 +2,12 @@ import pytest
 
 from ceres import armour, ship
 from ceres.bridge import Bridge
-from ceres.computer import AutoRepair1, Computer35, Evade2, FireControl2
+from ceres.computer import AutoRepair1, Computer35, ComputerSection, Evade2, FireControl2
 from ceres.drives import FuelProcessor, FusionPlantTL12, MDrive9, OperationFuel
-from ceres.habitation import Staterooms
-from ceres.sensors import CountermeasuresSuite, ImprovedSensors
+from ceres.habitation import HabitationSection, Staterooms
+from ceres.sensors import CountermeasuresSuite, ImprovedSensors, SensorsSection
 from ceres.systems import Airlock, CommonArea, FuelScoops, MedicalBay, RepairDrones
-from ceres.weapons import MissileStorage, TripleTurret, TurretBeamLaser, TurretMissileRack
+from ceres.weapons import MissileStorage, TripleTurret, TurretBeamLaser, TurretMissileRack, WeaponsSection
 
 from ._markdown_output import write_markdown_output
 
@@ -26,27 +26,26 @@ def build_strandbell() -> ship.Ship:
         hull=ship.Hull(
             configuration=STRANDBELL_HULL,
             armour=armour.CrystalironArmour(protection=13),
+            airlocks=[Airlock(), Airlock()],
         ),
         m_drive=MDrive9(armored=True),
         fusion_plant=FusionPlantTL12(output=240),
         operation_fuel=OperationFuel(weeks=12),
         fuel_processor=FuelProcessor(tons=1),
         bridge=Bridge(),
-        computer=Computer35(),
-        software=[AutoRepair1(), FireControl2(), Evade2()],
-        sensors=ImprovedSensors(),
-        countermeasures=CountermeasuresSuite(),
-        turrets=[
-            TripleTurret(weapons=[TurretBeamLaser(), TurretBeamLaser(), TurretBeamLaser()]),
-            TripleTurret(weapons=[TurretMissileRack(), TurretMissileRack(), TurretMissileRack()]),
-        ],
+        computer=ComputerSection(hardware=Computer35(), software=[AutoRepair1(), FireControl2(), Evade2()]),
+        sensors=SensorsSection(primary=ImprovedSensors(), countermeasures=CountermeasuresSuite()),
+        weapons=WeaponsSection(
+            turrets=[
+                TripleTurret(weapons=[TurretBeamLaser(), TurretBeamLaser(), TurretBeamLaser()]),
+                TripleTurret(weapons=[TurretMissileRack(), TurretMissileRack(), TurretMissileRack()]),
+            ],
+            missile_storage=MissileStorage(count=240),
+        ),
         repair_drones=RepairDrones(),
         fuel_scoops=FuelScoops(),
-        airlocks=[Airlock(), Airlock()],
         medical_bay=MedicalBay(),
-        common_area=CommonArea(tons=4.0),
-        staterooms=Staterooms(count=15),
-        missile_storage=MissileStorage(count=240),
+        habitation=HabitationSection(staterooms=Staterooms(count=15), common_area=CommonArea(tons=4.0)),
     )
 
 
@@ -95,20 +94,21 @@ def test_strandbell_fuel():
 
 def test_strandbell_sensors():
     sdb = build_strandbell()
-    assert sdb.sensors.tons == pytest.approx(3.0)
-    assert sdb.sensors.cost == 4_300_000
-    assert sdb.sensors.power == 3.0
-    assert sdb.countermeasures is not None
-    assert sdb.countermeasures.tons == pytest.approx(2.0)
-    assert sdb.countermeasures.cost == 4_000_000
-    assert sdb.countermeasures.power == 2.0
+    assert sdb.sensors.primary.tons == pytest.approx(3.0)
+    assert sdb.sensors.primary.cost == 4_300_000
+    assert sdb.sensors.primary.power == 3.0
+    assert sdb.sensors.countermeasures is not None
+    assert sdb.sensors.countermeasures.tons == pytest.approx(2.0)
+    assert sdb.sensors.countermeasures.cost == 4_000_000
+    assert sdb.sensors.countermeasures.power == 2.0
 
 
 def test_strandbell_turrets():
     sdb = build_strandbell()
-    assert len(sdb.turrets) == 2
-    beam_turret = sdb.turrets[0]
-    missile_turret = sdb.turrets[1]
+    assert sdb.weapons is not None
+    assert len(sdb.weapons.turrets) == 2
+    beam_turret = sdb.weapons.turrets[0]
+    missile_turret = sdb.weapons.turrets[1]
     assert beam_turret.cost == pytest.approx(2_500_000)
     assert beam_turret.power == pytest.approx(13.0)  # 1 mount + 3 × 4 beam
     assert missile_turret.cost == pytest.approx(3_250_000)
@@ -117,10 +117,11 @@ def test_strandbell_turrets():
 
 def test_strandbell_missile_storage():
     sdb = build_strandbell()
-    assert sdb.missile_storage is not None
-    assert sdb.missile_storage.count == 240
-    assert sdb.missile_storage.tons == pytest.approx(20.0)
-    assert sdb.missile_storage.cost == 0
+    assert sdb.weapons is not None
+    assert sdb.weapons.missile_storage is not None
+    assert sdb.weapons.missile_storage.count == 240
+    assert sdb.weapons.missile_storage.tons == pytest.approx(20.0)
+    assert sdb.weapons.missile_storage.cost == 0
 
 
 def test_strandbell_systems():
@@ -128,15 +129,16 @@ def test_strandbell_systems():
     assert sdb.repair_drones is not None
     assert sdb.repair_drones.tons == pytest.approx(2.0)
     assert sdb.repair_drones.cost == 400_000
-    assert len(sdb.airlocks) == 2
-    assert sdb.airlocks[0].tons == 0.0  # 2 free for 200t
-    assert sdb.airlocks[1].tons == 0.0
+    assert len(sdb.hull.airlocks) == 2
+    assert sdb.hull.airlocks[0].tons == 0.0  # 2 free for 200t
+    assert sdb.hull.airlocks[1].tons == 0.0
     assert sdb.medical_bay is not None
-    assert sdb.staterooms is not None
-    assert sdb.staterooms.count == 15
-    assert sdb.staterooms.tons == pytest.approx(60.0)
-    assert sdb.common_area is not None
-    assert sdb.common_area.tons == pytest.approx(4.0)
+    assert sdb.habitation is not None
+    assert sdb.habitation.staterooms is not None
+    assert sdb.habitation.staterooms.count == 15
+    assert sdb.habitation.staterooms.tons == pytest.approx(60.0)
+    assert sdb.habitation.common_area is not None
+    assert sdb.habitation.common_area.tons == pytest.approx(4.0)
 
 
 def test_strandbell_power():

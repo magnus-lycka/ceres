@@ -7,6 +7,7 @@ from .parts import ShipPart
 class Armour(ShipPart):
     description: str
     protection: int
+    tl: int | None = None
     _min_tl: ClassVar[int] = 0
     _cost_per_ton: ClassVar[int] = 0
     _tonnage_consumed: ClassVar[int] = 0
@@ -63,7 +64,6 @@ class TitaniumSteelArmour(Armour):
     _cost_per_ton = 50_000
     _tonnage_consumed = 0.025
     _min_tl = 7
-    tl: int | None = None
 
     def check_protection_limit(self) -> None:
         tl = self._effective_tl()
@@ -80,7 +80,6 @@ class CrystalironArmour(Armour):
     _cost_per_ton = 200_000
     _tonnage_consumed = 0.0125
     _min_tl = 10
-    tl: int | None = None
 
     def check_protection_limit(self) -> None:
         tl = self._effective_tl()
@@ -97,7 +96,6 @@ class BondedSuperdenseArmour(Armour):
     _cost_per_ton = 500_000
     _tonnage_consumed = 0.008
     _min_tl = 14
-    tl: int | None = None
 
     def check_protection_limit(self) -> None:
         tl = self._effective_tl()
@@ -112,7 +110,6 @@ class MolecularBondedArmour(Armour):
     _cost_per_ton = 1_500_000
     _tonnage_consumed = 0.005
     _min_tl = 16
-    tl: int | None = None
 
     def check_protection_limit(self) -> None:
         tl = self._effective_tl()

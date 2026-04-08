@@ -1,0 +1,88 @@
+# List of potential things to do
+
+# Implement armoured bulkhead
+
+Armoured bulkheads protect specific areas and
+systems, such as the jump drive or fuel tanks, making
+them much more resilient to damage.
+Adding armoured bulkheads consumes an amount of
+space equal to 10% of the tonnage of the protected
+item. During space combat, the Severity of any critical
+hit to the protected space is reduced by -1 (to a
+minimum of Severity 1).
+
+Option Cost
+Armoured Bulkhead MCr0.2 per ton
+
+## Limit TL
+
+Make a note in ARCHITECTURE.md that support is limited to TL16 and lower, and
+stick to that when writing code. For now we cap ship TL to 16 and don't bother
+to implement TL17+ features.
+
+## Sort out weapons.py
+
+All ships have hardpoint in proportion to displacement, except smallcraft which have firmpoints.
+
+Fixed mounts, turrets, barbettes and bays can be mounted in hardpoints of firmpoints (not bays in firmpoints).
+
+Some weapons are designed to be mounted either on fixed mounts or turrests, some on barbettes and some in bays.
+
+Firmpoint mounting of weapons reduces/limits range and reduces power.
+
+The code as written matches the rules structure poorly.
+
+## DETERMINE CREW
+
+Calculate crew needs. Means we need to have a way to determine if military or civilian ship,
+or if we want civilian or military crew analysis.
+
+Calculate crew by rules if not given. Warning, not error, given if stated crew seems understaffed.
+
+### Large ships crew reduction
+
+For ships of more than 5,000 tons, the
+Referee can reduce the required crew by multiplying
+the crew complement by the Crew Reduction Multipler
+in the Crew Reduction table.
+
+Crew reductions can only be applied to the following
+roles: engineer, maintenance, gunner, administrators
+and sensor operators. Calculate officers and medics
+after reducing the other roles.
+
+Crew Reduction
+Ship Size Crew Reduction Multiplier
+5,001–19,999 75%
+20,000–49,999 67%
+50,000–99,999 50%
+100,000+ 33%
+
+For the dispöacement based roles, maintenance &
+sensor operators, make sure you don't need more than
+a larger ship, i.e. min(crew_need(displacement), crew_need(next limit))
+
+## Combine propulsion and jump sections
+
+Maybe it's better to combine jump and propulsion to a drives section?
+
+## Reaction drives
+
+Handle R-drives in additioin to M-drives and J-drives
+
+## Handle non-fusion power plants
+
+Support Chemical and Fission drives.
+
+## MASSIVE SHIPS
+
+Very large ships require a lot more internal bracing to support their mass under acceleration but this has the effect of increasing their durability under fire. Ships of 25,000–99,999 tons have 1 Hull point for every 2 tons of hull. Ships of 100,000 tons or more have 1 Hull point for every 1.5 tons of hull.
+
+## COMMAND BRIDGES
+
+A command bridge adds 40 tons to an existing
+bridge, can be used by any ship of more than 5,000
+tons and adds an additional MCr30 to the cost of the
+bridge. The command bridge grants DM+1 to all Tactics
+(naval) checks made within it.
+

@@ -116,7 +116,7 @@ class TripleTurret(ShipPart):
     def build_item(self) -> str | None:
         if not self.weapons:
             return 'Triple Turret'
-        weapon_names = [w.build_item() for w in self.weapons]
+        weapon_names = [w.build_item() or w.__class__.__name__ for w in self.weapons]
         unique = list(dict.fromkeys(weapon_names))
         label = ', '.join(unique)
         return f'Triple Turret ({label})'
@@ -149,3 +149,18 @@ class MissileStorage(ShipPart):
 
     def compute_cost(self) -> float:
         return 0.0
+
+
+ShipTurret = Annotated[DoubleTurret | TripleTurret, Field(discriminator='mount_type')]
+
+
+class WeaponsSection(CeresModel):
+    turrets: list[ShipTurret] = Field(default_factory=list)
+    fixed_firmpoints: list[FixedFirmpoint] = Field(default_factory=list)
+    missile_storage: MissileStorage | None = None
+
+    def _all_parts(self) -> list[ShipPart]:
+        parts: list[ShipPart] = [*self.turrets, *self.fixed_firmpoints]
+        if self.missile_storage is not None:
+            parts.append(self.missile_storage)
+        return parts

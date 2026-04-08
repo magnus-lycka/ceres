@@ -2,10 +2,10 @@ import pytest
 
 from ceres import armour, ship
 from ceres.bridge import Bridge
-from ceres.computer import Computer5, JumpControl1
+from ceres.computer import Computer5, ComputerSection, JumpControl1
 from ceres.drives import FuelProcessor, FusionPlantTL12, JumpDrive1, JumpFuel, MDrive1, OperationFuel
-from ceres.habitation import LowBerths, Staterooms
-from ceres.sensors import CivilianSensors
+from ceres.habitation import HabitationSection, LowBerths, Staterooms
+from ceres.sensors import CivilianSensors, SensorsSection
 from ceres.systems import Airlock, CargoCrane, CargoHold, CommonArea
 
 from ._markdown_output import write_markdown_output
@@ -21,6 +21,7 @@ def build_beowulf() -> ship.Ship:
         hull=ship.Hull(
             configuration=ship.streamlined_hull,
             armour=armour.CrystalironArmour(protection=2),
+            airlocks=[Airlock(), Airlock()],
         ),
         m_drive=MDrive1(),
         jump_drive=JumpDrive1(),
@@ -29,13 +30,13 @@ def build_beowulf() -> ship.Ship:
         operation_fuel=OperationFuel(weeks=4),
         fuel_processor=FuelProcessor(tons=1),
         bridge=Bridge(),
-        computer=Computer5(),
-        software=[JumpControl1()],
-        sensors=CivilianSensors(),
-        staterooms=Staterooms(count=10),
-        low_berths=LowBerths(count=20),
-        common_area=CommonArea(tons=10.0),
-        airlocks=[Airlock(), Airlock()],
+        computer=ComputerSection(hardware=Computer5(), software=[JumpControl1()]),
+        sensors=SensorsSection(primary=CivilianSensors()),
+        habitation=HabitationSection(
+            staterooms=Staterooms(count=10),
+            low_berths=LowBerths(count=20),
+            common_area=CommonArea(tons=10.0),
+        ),
         cargo_holds=[CargoHold(crane=CargoCrane())],
     )
 
@@ -97,22 +98,24 @@ def test_beowulf_bridge():
 
 def test_beowulf_staterooms():
     beowulf = build_beowulf()
-    assert beowulf.staterooms is not None
-    assert beowulf.staterooms.count == 10
-    assert beowulf.staterooms.tons == pytest.approx(40.0)
-    assert beowulf.staterooms.cost == 5_000_000
+    assert beowulf.habitation is not None
+    assert beowulf.habitation.staterooms is not None
+    assert beowulf.habitation.staterooms.count == 10
+    assert beowulf.habitation.staterooms.tons == pytest.approx(40.0)
+    assert beowulf.habitation.staterooms.cost == 5_000_000
 
-    assert beowulf.low_berths is not None
-    assert beowulf.low_berths.count == 20
-    assert beowulf.low_berths.tons == pytest.approx(10.0)
-    assert beowulf.low_berths.cost == 1_000_000
-    assert beowulf.low_berths.power == 2
+    assert beowulf.habitation.low_berths is not None
+    assert beowulf.habitation.low_berths.count == 20
+    assert beowulf.habitation.low_berths.tons == pytest.approx(10.0)
+    assert beowulf.habitation.low_berths.cost == 1_000_000
+    assert beowulf.habitation.low_berths.power == 2
 
 
 def test_beowulf_systems():
     beowulf = build_beowulf()
-    assert beowulf.common_area is not None
-    assert beowulf.common_area.tons == pytest.approx(10.0)
+    assert beowulf.habitation is not None
+    assert beowulf.habitation.common_area is not None
+    assert beowulf.habitation.common_area.tons == pytest.approx(10.0)
     assert beowulf.fuel_scoops is not None
     assert beowulf.fuel_scoops.cost == 0.0
 
@@ -120,9 +123,9 @@ def test_beowulf_systems():
 def test_beowulf_airlocks_free():
     # 200t ship gets 2 free airlocks
     beowulf = build_beowulf()
-    assert len(beowulf.airlocks) == 2
-    assert beowulf.airlocks[0].tons == 0.0
-    assert beowulf.airlocks[1].tons == 0.0
+    assert len(beowulf.hull.airlocks) == 2
+    assert beowulf.hull.airlocks[0].tons == 0.0
+    assert beowulf.hull.airlocks[1].tons == 0.0
 
 
 def test_beowulf_cargo():

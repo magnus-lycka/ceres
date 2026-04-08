@@ -2,10 +2,10 @@ import pytest
 
 from ceres import armour, ship
 from ceres.bridge import Cockpit
-from ceres.computer import Computer5
+from ceres.computer import Computer5, ComputerSection
 from ceres.drives import FusionPlantTL12, MDrive6, OperationFuel
-from ceres.sensors import CivilianSensors
-from ceres.weapons import FixedFirmpoint, PulseLaser
+from ceres.sensors import CivilianSensors, SensorsSection
+from ceres.weapons import FixedFirmpoint, PulseLaser, WeaponsSection
 
 from ._markdown_output import write_markdown_output
 
@@ -28,13 +28,13 @@ def build_ultralight_fighter() -> ship.Ship:
         fusion_plant=FusionPlantTL12(output=8),
         operation_fuel=OperationFuel(weeks=1),
         cockpit=Cockpit(holographic=True),
-        computer=Computer5(),
-        sensors=CivilianSensors(),
-        fixed_firmpoints=[
-            FixedFirmpoint(
-                weapon=PulseLaser(very_high_yield=True, energy_efficient=True),
-            ),
-        ],
+        computer=ComputerSection(hardware=Computer5()),
+        sensors=SensorsSection(primary=CivilianSensors()),
+        weapons=WeaponsSection(
+            fixed_firmpoints=[
+                FixedFirmpoint(weapon=PulseLaser(very_high_yield=True, energy_efficient=True)),
+            ],
+        ),
     )
 
 
@@ -73,14 +73,16 @@ def test_ultralight_fighter_part_values():
     assert int(fighter.cockpit.cost) == 12_500
 
     assert fighter.computer is not None
-    assert fighter.computer.processing == 5
-    assert int(fighter.computer.cost) == 30_000
+    assert fighter.computer.hardware is not None
+    assert fighter.computer.hardware.processing == 5
+    assert int(fighter.computer.hardware.cost) == 30_000
 
     assert fighter.sensors is not None
-    assert float(fighter.sensors.tons) == pytest.approx(1)
-    assert int(fighter.sensors.cost) == 3_000_000
+    assert float(fighter.sensors.primary.tons) == pytest.approx(1)
+    assert int(fighter.sensors.primary.cost) == 3_000_000
 
-    weapon_mount = fighter.fixed_firmpoints[0]
+    assert fighter.weapons is not None
+    weapon_mount = fighter.weapons.fixed_firmpoints[0]
     assert float(weapon_mount.tons) == pytest.approx(0)
     assert int(weapon_mount.cost) == 1_600_000
     assert int(weapon_mount.power) == 2

@@ -2,9 +2,9 @@ import pytest
 
 from ceres import ship
 from ceres.bridge import Bridge
-from ceres.computer import Computer5
+from ceres.computer import Computer5, ComputerSection
 from ceres.drives import FusionPlantTL8, FusionPlantTL12, MDrive3, OperationFuel
-from ceres.habitation import Staterooms
+from ceres.habitation import HabitationSection, Staterooms
 from ceres.systems import Aerofins, Airlock, CommonArea
 
 from ._markdown_output import write_markdown_output
@@ -23,16 +23,13 @@ def build_poseidon_cargo_boat(tl: int) -> ship.Ship:
         tl=tl,
         displacement=100,
         design_type=ship.ShipDesignType.STANDARD,
-        hull=ship.Hull(configuration=POSEIDON_HULL),
+        hull=ship.Hull(configuration=POSEIDON_HULL, airlocks=[Airlock()], aerofins=Aerofins()),
         m_drive=MDrive3(),
         fusion_plant=fusion_plant,
         operation_fuel=OperationFuel(weeks=16),
         bridge=Bridge(small=True),
-        computer=Computer5(),
-        staterooms=Staterooms(count=1),
-        common_area=CommonArea(tons=1.0),
-        airlocks=[Airlock()],
-        aerofins=Aerofins(),
+        computer=ComputerSection(hardware=Computer5()),
+        habitation=HabitationSection(staterooms=Staterooms(count=1), common_area=CommonArea(tons=1.0)),
     )
 
 
@@ -62,10 +59,10 @@ def test_poseidon_cargo_boat_small_bridge_is_overcompensated_in_atmosphere(tl: i
     cargo_boat = build_poseidon_cargo_boat(tl)
 
     assert cargo_boat.bridge is not None
-    assert cargo_boat.aerofins is not None
+    assert cargo_boat.hull.aerofins is not None
     assert cargo_boat.bridge.operations_dm == -1
-    assert cargo_boat.aerofins.atmospheric_pilot_dm == 2
-    assert cargo_boat.bridge.operations_dm + cargo_boat.aerofins.atmospheric_pilot_dm == 1
+    assert cargo_boat.hull.aerofins.atmospheric_pilot_dm == 2
+    assert cargo_boat.bridge.operations_dm + cargo_boat.hull.aerofins.atmospheric_pilot_dm == 1
 
 
 def test_poseidon_tl12_variant_trades_cost_for_cargo_with_better_power_plant():
@@ -91,8 +88,8 @@ def test_poseidon_below_tl10_puts_error_on_mdrive(tl: int):
 
 def test_poseidon_100_tons_gets_free_airlock():
     poseidon_100 = build_poseidon_cargo_boat(12)
-    assert poseidon_100.airlocks[0].tons == 0.0
-    assert poseidon_100.airlocks[0].cost == 0.0
+    assert poseidon_100.hull.airlocks[0].tons == 0.0
+    assert poseidon_100.hull.airlocks[0].cost == 0.0
 
 
 def test_ship_with_bridge_and_no_airlock_adds_error():
@@ -101,8 +98,8 @@ def test_ship_with_bridge_and_no_airlock_adds_error():
         displacement=99,
         hull=ship.Hull(configuration=POSEIDON_HULL),
         bridge=Bridge(small=True),
-        computer=Computer5(),
-        staterooms=Staterooms(count=1),
+        computer=ComputerSection(hardware=Computer5()),
+        habitation=HabitationSection(staterooms=Staterooms(count=1)),
     )
     assert ('error', 'No airlock installed') in [(note.category.value, note.message) for note in my_ship.notes]
     assert ('warning', 'Recommended common area is 1.00 tons') in [
@@ -118,8 +115,8 @@ def test_markdown_table_renders_inline_error_on_missing_airlock():
         ship_type='Cargo Boat',
         hull=ship.Hull(configuration=POSEIDON_HULL),
         bridge=Bridge(small=True),
-        computer=Computer5(),
-        staterooms=Staterooms(count=1),
+        computer=ComputerSection(hardware=Computer5()),
+        habitation=HabitationSection(staterooms=Staterooms(count=1)),
     )
     table = my_ship.markdown_table()
     write_markdown_output('test_poseidon_missing_airlock', table)
@@ -130,11 +127,10 @@ def test_ship_with_staterooms_and_no_common_area_adds_warning():
     my_ship = ship.Ship(
         tl=12,
         displacement=99,
-        hull=ship.Hull(configuration=POSEIDON_HULL),
+        hull=ship.Hull(configuration=POSEIDON_HULL, airlocks=[Airlock()]),
         bridge=Bridge(small=True),
-        computer=Computer5(),
-        staterooms=Staterooms(count=1),
-        airlocks=[Airlock()],
+        computer=ComputerSection(hardware=Computer5()),
+        habitation=HabitationSection(staterooms=Staterooms(count=1)),
     )
     assert ('warning', 'Recommended common area is 1.00 tons') in [
         (note.category.value, note.message) for note in my_ship.notes
@@ -147,11 +143,10 @@ def test_markdown_table_renders_inline_warning_on_missing_common_area():
         displacement=99,
         ship_class='Poseidon',
         ship_type='Cargo Boat',
-        hull=ship.Hull(configuration=POSEIDON_HULL),
+        hull=ship.Hull(configuration=POSEIDON_HULL, airlocks=[Airlock()]),
         bridge=Bridge(small=True),
-        computer=Computer5(),
-        staterooms=Staterooms(count=1),
-        airlocks=[Airlock()],
+        computer=ComputerSection(hardware=Computer5()),
+        habitation=HabitationSection(staterooms=Staterooms(count=1)),
     )
     table = my_ship.markdown_table()
     write_markdown_output('test_poseidon_missing_common_area', table)

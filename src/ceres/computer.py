@@ -1,4 +1,6 @@
-from typing import ClassVar, Literal
+from typing import Annotated, ClassVar, Literal
+
+from pydantic import Field
 
 from .base import CeresModel
 from .parts import ShipPart
@@ -323,3 +325,56 @@ class Core100(Core):
     minimum_tl = 15
     processing = 100
     base_cost = 130_000_000.0
+
+
+ShipComputer = Annotated[
+    Computer5
+    | Computer10
+    | Computer15
+    | Computer20
+    | Computer25
+    | Computer30
+    | Computer35
+    | Core40
+    | Core50
+    | Core60
+    | Core70
+    | Core80
+    | Core90
+    | Core100,
+    Field(discriminator='description'),
+]
+
+ShipSoftware = Annotated[
+    Library
+    | Manoeuvre
+    | Intellect
+    | JumpControl1
+    | JumpControl2
+    | JumpControl3
+    | JumpControl4
+    | JumpControl5
+    | JumpControl6
+    | AutoRepair1
+    | AutoRepair2
+    | FireControl1
+    | FireControl2
+    | FireControl3
+    | FireControl4
+    | FireControl5
+    | Evade1
+    | Evade2
+    | Evade3,
+    Field(discriminator='description'),
+]
+
+
+class ComputerSection(CeresModel):
+    hardware: ShipComputer | None = None
+    software: list[ShipSoftware] = Field(default_factory=list)
+
+    def _all_parts(self) -> list[ShipPart]:
+        parts: list[ShipPart] = []
+        if self.hardware is not None:
+            parts.append(self.hardware)
+        return parts

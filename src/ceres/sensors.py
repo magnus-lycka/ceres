@@ -1,6 +1,8 @@
-from typing import Literal
+from typing import Annotated, Literal
 
-from .base import Note, NoteCategory
+from pydantic import Field
+
+from .base import CeresModel, Note, NoteCategory
 from .parts import ShipPart
 
 
@@ -99,3 +101,20 @@ class CountermeasuresSuite(ShipPart):
 
     def compute_power(self) -> float:
         return 2.0
+
+
+ShipSensors = Annotated[
+    BasicSensors | CivilianSensors | MilitarySensors | ImprovedSensors,
+    Field(discriminator='description'),
+]
+
+
+class SensorsSection(CeresModel):
+    primary: ShipSensors = Field(default_factory=BasicSensors)
+    countermeasures: CountermeasuresSuite | None = None
+
+    def _all_parts(self) -> list[ShipPart]:
+        parts: list[ShipPart] = [self.primary]
+        if self.countermeasures is not None:
+            parts.append(self.countermeasures)
+        return parts

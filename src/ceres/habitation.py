@@ -1,7 +1,9 @@
 import math
 from typing import ClassVar
 
+from .base import CeresModel
 from .parts import ShipPart
+from .systems import CommonArea
 
 
 class Staterooms(ShipPart):
@@ -45,3 +47,16 @@ class LowBerths(ShipPart):
 
     def compute_power(self) -> float:
         return float(math.ceil(self.count / 10))
+
+
+class HabitationSection(CeresModel):
+    staterooms: Staterooms | None = None
+    low_berths: LowBerths | None = None
+    common_area: CommonArea | None = None
+
+    def _all_parts(self) -> list[ShipPart]:
+        parts: list[ShipPart] = []
+        for part in (self.staterooms, self.low_berths, self.common_area):
+            if part is not None:
+                parts.append(part)
+        return parts

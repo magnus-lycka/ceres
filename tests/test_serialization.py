@@ -6,12 +6,12 @@ import pytest
 
 from ceres import armour, ship
 from ceres.bridge import Cockpit
-from ceres.computer import Computer5
+from ceres.computer import Computer5, ComputerSection
 from ceres.drives import FusionPlantTL12, MDrive6, OperationFuel
-from ceres.sensors import BasicSensors, CivilianSensors
+from ceres.sensors import BasicSensors, CivilianSensors, SensorsSection
 from ceres.ship import BasicStealth, Hull, Ship
 from ceres.systems import Airlock
-from ceres.weapons import FixedFirmpoint, PulseLaser
+from ceres.weapons import FixedFirmpoint, PulseLaser, WeaponsSection
 
 # Minimal ship for structural tests
 bare = Ship(tl=12, displacement=6, hull=Hull(configuration=ship.standard_hull))
@@ -29,9 +29,11 @@ ultralight = Ship(
     fusion_plant=FusionPlantTL12(output=8),
     operation_fuel=OperationFuel(weeks=1),
     cockpit=Cockpit(holographic=True),
-    computer=Computer5(),
-    sensors=CivilianSensors(),
-    fixed_firmpoints=[FixedFirmpoint(weapon=PulseLaser(very_high_yield=True, energy_efficient=True))],
+    computer=ComputerSection(hardware=Computer5()),
+    sensors=SensorsSection(primary=CivilianSensors()),
+    weapons=WeaponsSection(
+        fixed_firmpoints=[FixedFirmpoint(weapon=PulseLaser(very_high_yield=True, energy_efficient=True))],
+    ),
 )
 
 
@@ -81,7 +83,7 @@ def test_dump_m_drive_present():
 
 def test_dump_weapon_in_fixed_firmpoints():
     data = json.loads(ultralight.model_dump_json())
-    fp = data['fixed_firmpoints'][0]
+    fp = data['weapons']['fixed_firmpoints'][0]
     assert fp['weapon']['very_high_yield'] is True
     assert fp['weapon']['energy_efficient'] is True
 
@@ -170,24 +172,28 @@ def test_roundtrip_computer():
     loaded = _roundtrip(ultralight)
     assert loaded.computer is not None
     assert ultralight.computer is not None
-    assert type(loaded.computer) is type(ultralight.computer)
-    assert loaded.computer.processing == ultralight.computer.processing
+    assert loaded.computer.hardware is not None
+    assert ultralight.computer.hardware is not None
+    assert type(loaded.computer.hardware) is type(ultralight.computer.hardware)
+    assert loaded.computer.hardware.processing == ultralight.computer.hardware.processing
 
 
 def test_roundtrip_sensors():
     loaded = _roundtrip(ultralight)
-    assert isinstance(loaded.sensors, CivilianSensors)
+    assert isinstance(loaded.sensors.primary, CivilianSensors)
 
 
 def test_roundtrip_basic_sensors():
     loaded = _roundtrip(bare)
-    assert isinstance(loaded.sensors, BasicSensors)
+    assert isinstance(loaded.sensors.primary, BasicSensors)
 
 
 def test_roundtrip_weapon_attributes():
     loaded = _roundtrip(ultralight)
-    orig_fp = ultralight.fixed_firmpoints[0]
-    rt_fp = loaded.fixed_firmpoints[0]
+    assert ultralight.weapons is not None
+    assert loaded.weapons is not None
+    orig_fp = ultralight.weapons.fixed_firmpoints[0]
+    rt_fp = loaded.weapons.fixed_firmpoints[0]
     assert rt_fp.weapon.very_high_yield == orig_fp.weapon.very_high_yield
     assert rt_fp.weapon.energy_efficient == orig_fp.weapon.energy_efficient
 
@@ -202,17 +208,16 @@ def test_roundtrip_no_parts():
     assert loaded.m_drive is None
     assert loaded.fusion_plant is None
     assert loaded.cockpit is None
-    assert loaded.fixed_firmpoints == []
+    assert loaded.weapons is None
 
 
 def test_roundtrip_airlock():
     ship_with_airlock = Ship(
         tl=12,
         displacement=100,
-        hull=Hull(configuration=ship.streamlined_hull),
-        airlocks=[Airlock()],
+        hull=Hull(configuration=ship.streamlined_hull, airlocks=[Airlock()]),
     )
     loaded = _roundtrip(ship_with_airlock)
-    assert len(loaded.airlocks) == 1
-    assert loaded.airlocks[0].tons == pytest.approx(0.0)
-    assert loaded.airlocks[0].cost == 0.0
+    assert len(loaded.hull.airlocks) == 1
+    assert loaded.hull.airlocks[0].tons == pytest.approx(0.0)
+    assert loaded.hull.airlocks[0].cost == 0.0

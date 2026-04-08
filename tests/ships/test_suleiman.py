@@ -2,13 +2,13 @@ import pytest
 
 from ceres import armour, ship
 from ceres.bridge import Bridge
-from ceres.computer import Computer5, Computer10, JumpControl1, JumpControl2, JumpControl3
+from ceres.computer import Computer5, Computer10, ComputerSection, JumpControl1, JumpControl2, JumpControl3
 from ceres.crafts import AirRaft, InternalDockingSpace
 from ceres.drives import FuelProcessor, FusionPlantTL12, JumpDrive2, JumpFuel, MDrive2, OperationFuel
-from ceres.habitation import Staterooms
-from ceres.sensors import MilitarySensors
+from ceres.habitation import HabitationSection, Staterooms
+from ceres.sensors import MilitarySensors, SensorsSection
 from ceres.systems import Airlock, ProbeDrones, Workshop
-from ceres.weapons import DoubleTurret
+from ceres.weapons import DoubleTurret, WeaponsSection
 
 from ._markdown_output import write_markdown_output
 
@@ -23,6 +23,7 @@ def build_suleiman() -> ship.Ship:
         hull=ship.Hull(
             configuration=ship.streamlined_hull,
             armour=armour.CrystalironArmour(tl=12, protection=4),
+            airlocks=[Airlock()],
         ),
         m_drive=MDrive2(),
         jump_drive=JumpDrive2(),
@@ -31,13 +32,11 @@ def build_suleiman() -> ship.Ship:
         operation_fuel=OperationFuel(weeks=12),
         fuel_processor=FuelProcessor(tons=2),
         bridge=Bridge(),
-        computer=Computer5(bis=True),
-        software=[JumpControl2()],
-        sensors=MilitarySensors(),
-        turrets=[DoubleTurret()],
+        computer=ComputerSection(hardware=Computer5(bis=True), software=[JumpControl2()]),
+        sensors=SensorsSection(primary=MilitarySensors()),
+        weapons=WeaponsSection(turrets=[DoubleTurret()]),
         docking_space=InternalDockingSpace(craft=AirRaft()),
-        staterooms=Staterooms(count=4),
-        airlocks=[Airlock()],
+        habitation=HabitationSection(staterooms=Staterooms(count=4)),
         probe_drones=ProbeDrones(count=10),
         workshop=Workshop(),
     )
@@ -54,10 +53,11 @@ def test_suleiman_matches_first_modeled_reference_slice():
     operation_fuel = suleiman.operation_fuel
     fuel_processor = suleiman.fuel_processor
     bridge = suleiman.bridge
-    sensors = suleiman.sensors
+    sensors = suleiman.sensors.primary
     docking_space = suleiman.docking_space
-    staterooms = suleiman.staterooms
-    airlocks = suleiman.airlocks
+    assert suleiman.habitation is not None
+    staterooms = suleiman.habitation.staterooms
+    airlocks = suleiman.hull.airlocks
     probe_drones = suleiman.probe_drones
     workshop = suleiman.workshop
 
@@ -105,9 +105,10 @@ def test_suleiman_matches_first_modeled_reference_slice():
     assert bridge.cost == 500_000
 
     assert suleiman.computer is not None
-    assert suleiman.computer.processing == 5
-    assert suleiman.computer.jump_control_processing == 10
-    assert suleiman.computer.cost == 45_000
+    assert suleiman.computer.hardware is not None
+    assert suleiman.computer.hardware.processing == 5
+    assert suleiman.computer.hardware.jump_control_processing == 10
+    assert suleiman.computer.hardware.cost == 45_000
     assert [(package.description, package.cost) for package in suleiman.software_packages] == [
         ('Library', 0.0),
         ('Manoeuvre/0', 0.0),
@@ -174,7 +175,7 @@ def test_jump_drive_2_without_jump_control_2_adds_local_note():
         displacement=100,
         hull=ship.Hull(configuration=ship.streamlined_hull),
         jump_drive=JumpDrive2(),
-        computer=Computer5(bis=True),
+        computer=ComputerSection(hardware=Computer5(bis=True)),
     )
     assert my_ship.jump_drive is not None
     assert [(note.category.value, note.message) for note in my_ship.jump_drive.notes] == [
@@ -261,7 +262,7 @@ def test_markdown_table_renders_inline_warning_on_jump_drive_row():
         displacement=100,
         hull=ship.Hull(configuration=ship.streamlined_hull),
         jump_drive=JumpDrive2(),
-        computer=Computer5(bis=True),
+        computer=ComputerSection(hardware=Computer5(bis=True)),
     )
     table = my_ship.markdown_table()
     write_markdown_output('test_suleiman_missing_jump_control', table)
@@ -274,8 +275,7 @@ def test_jump_drive_with_lower_jump_control_warns_on_drive():
         displacement=100,
         hull=ship.Hull(configuration=ship.streamlined_hull),
         jump_drive=JumpDrive2(),
-        computer=Computer5(bis=True),
-        software=[JumpControl1()],
+        computer=ComputerSection(hardware=Computer5(bis=True), software=[JumpControl1()]),
     )
     assert my_ship.jump_drive is not None
     assert [(note.category.value, note.message) for note in my_ship.jump_drive.notes] == [
@@ -289,10 +289,10 @@ def test_jump_control_without_jump_drive_warns_on_software():
         tl=12,
         displacement=100,
         hull=ship.Hull(configuration=ship.streamlined_hull),
-        computer=Computer5(bis=True),
-        software=[JumpControl2()],
+        computer=ComputerSection(hardware=Computer5(bis=True), software=[JumpControl2()]),
     )
-    explicit_jump_control = my_ship.software[0]
+    assert my_ship.computer is not None
+    explicit_jump_control = my_ship.computer.software[0]
     assert [(note.category.value, note.message) for note in explicit_jump_control.notes] == [
         ('item', 'Jump Control/2'),
         ('warning', 'No jump drive installed'),
@@ -305,10 +305,10 @@ def test_jump_control_with_higher_rating_than_drive_warns_on_software():
         displacement=100,
         hull=ship.Hull(configuration=ship.streamlined_hull),
         jump_drive=JumpDrive2(),
-        computer=Computer10(bis=True),
-        software=[JumpControl3()],
+        computer=ComputerSection(hardware=Computer10(bis=True), software=[JumpControl3()]),
     )
-    explicit_jump_control = my_ship.software[0]
+    assert my_ship.computer is not None
+    explicit_jump_control = my_ship.computer.software[0]
     assert [(note.category.value, note.message) for note in explicit_jump_control.notes] == [
         ('item', 'Jump Control/3'),
         ('warning', 'Limited to Jump 2 by drive capacity'),
@@ -321,8 +321,7 @@ def test_markdown_table_renders_inline_warning_on_high_jump_control_row():
         displacement=100,
         hull=ship.Hull(configuration=ship.streamlined_hull),
         jump_drive=JumpDrive2(),
-        computer=Computer10(bis=True),
-        software=[JumpControl3()],
+        computer=ComputerSection(hardware=Computer10(bis=True), software=[JumpControl3()]),
     )
     table = my_ship.markdown_table()
     write_markdown_output('test_suleiman_high_jump_control', table)
@@ -334,8 +333,7 @@ def test_markdown_table_renders_inline_warning_on_missing_jump_drive_row():
         tl=12,
         displacement=100,
         hull=ship.Hull(configuration=ship.streamlined_hull),
-        computer=Computer5(bis=True),
-        software=[JumpControl2()],
+        computer=ComputerSection(hardware=Computer5(bis=True), software=[JumpControl2()]),
     )
     table = my_ship.markdown_table()
     write_markdown_output('test_suleiman_missing_jump_drive', table)

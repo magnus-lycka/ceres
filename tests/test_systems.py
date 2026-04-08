@@ -172,10 +172,9 @@ def test_airlock_is_free_on_100_ton_ship():
     my_ship = ship.Ship(
         tl=12,
         displacement=100,
-        hull=ship.Hull(configuration=ship.streamlined_hull),
-        airlocks=[Airlock()],
+        hull=ship.Hull(configuration=ship.streamlined_hull, airlocks=[Airlock()]),
     )
-    airlock = my_ship.airlocks[0]
+    airlock = my_ship.hull.airlocks[0]
     assert airlock.tons == 0.0
     assert airlock.cost == 0.0
 
@@ -184,9 +183,8 @@ def test_airlock_costs_tonnage_and_money_on_99_ton_ship():
     my_ship = ship.Ship(
         tl=12,
         displacement=99,
-        hull=ship.Hull(configuration=ship.streamlined_hull),
-        airlocks=[Airlock()],
+        hull=ship.Hull(configuration=ship.streamlined_hull, airlocks=[Airlock()]),
     )
-    airlock = my_ship.airlocks[0]
+    airlock = my_ship.hull.airlocks[0]
     assert airlock.tons == 2.0
     assert airlock.cost == 200_000.0

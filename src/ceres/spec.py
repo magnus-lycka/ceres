@@ -4,6 +4,8 @@ from enum import StrEnum
 from .base import Note
 
 
+# Update the sections to merge jump and propulsion into drive
+# See docs/plan-ship-sections.md and docs/todo_maybe.md
 class SpecSection(StrEnum):
     HULL = 'Hull'
     JUMP = 'Jump'

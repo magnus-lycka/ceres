@@ -12,40 +12,8 @@ from .armour import (
 from .base import CeresModel, NoteCategory, ShipBase
 from .bridge import Bridge, Cockpit
 from .computer import (
-    AutoRepair1,
-    AutoRepair2,
-    Computer5,
-    Computer10,
-    Computer15,
-    Computer20,
-    Computer25,
-    Computer30,
-    Computer35,
-    Core40,
-    Core50,
-    Core60,
-    Core70,
-    Core80,
-    Core90,
-    Core100,
-    Evade1,
-    Evade2,
-    Evade3,
-    FireControl1,
-    FireControl2,
-    FireControl3,
-    FireControl4,
-    FireControl5,
-    Intellect,
+    ComputerSection,
     JumpControl,
-    JumpControl1,
-    JumpControl2,
-    JumpControl3,
-    JumpControl4,
-    JumpControl5,
-    JumpControl6,
-    Library,
-    Manoeuvre,
     SoftwarePackage,
 )
 from .crafts import InternalDockingSpace
@@ -78,22 +46,23 @@ from .drives import (
     MDrive11,
     OperationFuel,
 )
-from .habitation import LowBerths, Staterooms
+from .habitation import HabitationSection
 from .parts import ShipPart
-from .sensors import BasicSensors, CivilianSensors, CountermeasuresSuite, ImprovedSensors, MilitarySensors
+from .sensors import (
+    SensorsSection,
+)
 from .spec import CrewRow as SpecCrewRow, ExpenseRow, ShipSpec, SpecRow, SpecSection
 from .systems import (
     Aerofins,
     Airlock,
     CargoHold,
-    CommonArea,
     FuelScoops,
     MedicalBay,
     ProbeDrones,
     RepairDrones,
     Workshop,
 )
-from .weapons import DoubleTurret, FixedFirmpoint, MissileStorage, TripleTurret
+from .weapons import WeaponsSection
 
 
 class Streamlined(Enum):
@@ -298,59 +267,13 @@ ShipJumpDrive = Annotated[
     Field(discriminator='rating'),
 ]
 
-ShipComputer = Annotated[
-    Computer5
-    | Computer10
-    | Computer15
-    | Computer20
-    | Computer25
-    | Computer30
-    | Computer35
-    | Core40
-    | Core50
-    | Core60
-    | Core70
-    | Core80
-    | Core90
-    | Core100,
-    Field(discriminator='description'),
-]
-
-ShipSoftware = Annotated[
-    Library
-    | Manoeuvre
-    | Intellect
-    | JumpControl1
-    | JumpControl2
-    | JumpControl3
-    | JumpControl4
-    | JumpControl5
-    | JumpControl6
-    | AutoRepair1
-    | AutoRepair2
-    | FireControl1
-    | FireControl2
-    | FireControl3
-    | FireControl4
-    | FireControl5
-    | Evade1
-    | Evade2
-    | Evade3,
-    Field(discriminator='description'),
-]
-
-ShipSensors = Annotated[
-    BasicSensors | CivilianSensors | MilitarySensors | ImprovedSensors,
-    Field(discriminator='description'),
-]
-
-ShipTurret = Annotated[DoubleTurret | TripleTurret, Field(discriminator='mount_type')]
-
 
 class Hull(CeresModel):
     configuration: HullConfiguration
     armour: HullArmour | None = None
     stealth: HullStealth | None = None
+    airlocks: list[Airlock] = Field(default_factory=list)
+    aerofins: Aerofins | None = None
     # Hull surface options
     heat_shielding: bool = False
     radiation_shielding: bool = False
@@ -365,6 +288,9 @@ class Hull(CeresModel):
             parts.append(a)
         if (s := self.stealth) is not None:
             parts.append(s)
+        parts.extend(self.airlocks)
+        if (af := self.aerofins) is not None:
+            parts.append(af)
         return parts
 
 
@@ -381,25 +307,17 @@ class Ship(ShipBase):
     fuel_processor: FuelProcessor | None = None
     bridge: Bridge | None = None
     cockpit: Cockpit | None = None
-    computer: ShipComputer | None = None
-    software: list[ShipSoftware] = Field(default_factory=list)
-    sensors: ShipSensors = Field(default_factory=BasicSensors)
+    computer: ComputerSection | None = None
+    sensors: SensorsSection = Field(default_factory=SensorsSection)
     docking_space: InternalDockingSpace | None = None
     cargo_holds: list[CargoHold] = Field(default_factory=list)
-    staterooms: Staterooms | None = None
-    low_berths: LowBerths | None = None
-    common_area: CommonArea | None = None
+    habitation: HabitationSection | None = None
     medical_bay: MedicalBay | None = None
-    airlocks: list[Airlock] = Field(default_factory=list)
-    aerofins: Aerofins | None = None
     probe_drones: ProbeDrones | None = None
     workshop: Workshop | None = None
     repair_drones: RepairDrones | None = None
     fuel_scoops: FuelScoops | None = None
-    countermeasures: CountermeasuresSuite | None = None
-    turrets: list[ShipTurret] = Field(default_factory=list)
-    fixed_firmpoints: list[FixedFirmpoint] = Field(default_factory=list)
-    missile_storage: MissileStorage | None = None
+    weapons: WeaponsSection | None = None
 
     @property
     def armour_volume_modifier(self) -> float:
@@ -435,7 +353,7 @@ class Ship(ShipBase):
 
     @property
     def sensor_power_load(self) -> float:
-        return self.sensors.power
+        return sum(p.power for p in self.sensors._all_parts())
 
     @property
     def jump_power_load(self) -> float:
@@ -451,7 +369,9 @@ class Ship(ShipBase):
 
     @property
     def weapon_power_load(self) -> float:
-        return sum(part.power for part in self.fixed_firmpoints) + sum(part.power for part in self.turrets)
+        if self.weapons is None:
+            return 0.0
+        return sum(part.power for part in self.weapons._all_parts())
 
     @property
     def total_power_load(self) -> float:
@@ -490,8 +410,8 @@ class Ship(ShipBase):
     def _life_support_cost(self) -> float:
         if self.cockpit is not None:
             return 0.0
-        if self.staterooms is not None:
-            return self.staterooms.life_support_cost
+        if self.habitation is not None and self.habitation.staterooms is not None:
+            return self.habitation.staterooms.life_support_cost
         return 0.0
 
     def _fuel_cost(self) -> float:
@@ -524,9 +444,9 @@ class Ship(ShipBase):
 
     @property
     def software_packages(self) -> list[SoftwarePackage]:
-        if self.computer is None:
+        if self.computer is None or self.computer.hardware is None:
             return []
-        return [*self.computer.included_software, *self.software]
+        return [*self.computer.hardware.included_software, *self.computer.software]
 
     def _all_parts(self) -> list[ShipPart]:
         parts = list(self.hull._all_parts())
@@ -539,26 +459,26 @@ class Ship(ShipBase):
             self.fuel_processor,
             self.bridge,
             self.cockpit,
-            self.computer,
-            self.sensors,
-            self.countermeasures,
+        ):
+            if part is not None:
+                parts.append(part)
+        if self.computer is not None:
+            parts.extend(self.computer._all_parts())
+        parts.extend(self.sensors._all_parts())
+        if self.habitation is not None:
+            parts.extend(self.habitation._all_parts())
+        for part in (
             self.docking_space,
-            self.staterooms,
-            self.low_berths,
-            self.common_area,
             self.medical_bay,
-            self.aerofins,
             self.probe_drones,
             self.repair_drones,
             self.workshop,
             self.fuel_scoops,
-            self.missile_storage,
         ):
             if part is not None:
                 parts.append(part)
-        parts.extend(self.airlocks)
-        parts.extend(self.turrets)
-        parts.extend(self.fixed_firmpoints)
+        if self.weapons is not None:
+            parts.extend(self.weapons._all_parts())
         return parts
 
     def _remaining_cargo_space_without_default_holds(self) -> float:
@@ -684,7 +604,9 @@ class Ship(ShipBase):
             add_part(SpecSection.HULL, self.hull.armour)
         if self.hull.stealth is not None:
             add_part(SpecSection.HULL, self.hull.stealth)
-        add_grouped_parts(SpecSection.HULL, [*self.airlocks, *([self.aerofins] if self.aerofins is not None else [])])
+        add_grouped_parts(
+            SpecSection.HULL, [*self.hull.airlocks, *([self.hull.aerofins] if self.hull.aerofins is not None else [])]
+        )
 
         if self.jump_drive is not None:
             add_part(SpecSection.JUMP, self.jump_drive)
@@ -721,8 +643,8 @@ class Ship(ShipBase):
             if command_part is not None:
                 add_part(SpecSection.COMMAND, command_part)
 
-        if self.computer is not None:
-            add_part(SpecSection.COMPUTER, self.computer)
+        if self.computer is not None and self.computer.hardware is not None:
+            add_part(SpecSection.COMPUTER, self.computer.hardware)
         for package in self.software_packages:
             add_row(
                 SpecSection.COMPUTER,
@@ -734,13 +656,13 @@ class Ship(ShipBase):
                 ),
             )
 
-        add_part(SpecSection.SENSORS, self.sensors)
-        if self.countermeasures is not None:
-            add_part(SpecSection.SENSORS, self.countermeasures)
+        for sensor_part in self.sensors._all_parts():
+            add_part(SpecSection.SENSORS, sensor_part)
 
-        add_grouped_parts(SpecSection.WEAPONS, [*self.turrets, *self.fixed_firmpoints])
-        if self.missile_storage is not None:
-            add_part(SpecSection.WEAPONS, self.missile_storage)
+        if self.weapons is not None:
+            add_grouped_parts(SpecSection.WEAPONS, [*self.weapons.turrets, *self.weapons.fixed_firmpoints])
+            if self.weapons.missile_storage is not None:
+                add_part(SpecSection.WEAPONS, self.weapons.missile_storage)
 
         if self.docking_space is not None:
             add_part(SpecSection.CRAFT, self.docking_space)
@@ -754,8 +676,8 @@ class Ship(ShipBase):
                 ),
             )
 
-        for habitation_part in [self.staterooms, self.low_berths, self.common_area]:
-            if habitation_part is not None:
+        if self.habitation is not None:
+            for habitation_part in self.habitation._all_parts():
                 add_part(SpecSection.HABITATION, habitation_part)
 
         for system_part in [self.workshop, self.medical_bay, self.probe_drones, self.repair_drones]:
@@ -895,14 +817,18 @@ class Ship(ShipBase):
         self.clear_notes()
         for part in self._all_parts():
             part.bind(self)
-        if self.software and self.computer is None:
-            for package in self.software:
+        if self.computer is not None and self.computer.software and self.computer.hardware is None:
+            for package in self.computer.software:
                 package.warning('Ship software requires a computer')
         for package in self.software_packages:
             if self.tl < package.minimum_tl:
                 package.error(f'{package.description} requires TL{package.minimum_tl}')
-            if self.computer is not None and not self.computer.can_run(package):
-                package.error(f'{self.computer.description} cannot run {package.description}')
+            if (
+                self.computer is not None
+                and self.computer.hardware is not None
+                and not self.computer.hardware.can_run(package)
+            ):
+                package.error(f'{self.computer.hardware.description} cannot run {package.description}')
         jump_controls = [package for package in self.software_packages if isinstance(package, JumpControl)]
         highest_jump_control = max(jump_controls, key=lambda package: package.rating, default=None)
         if self.jump_drive is not None:
@@ -917,10 +843,10 @@ class Ship(ShipBase):
                 highest_jump_control.warning(f'Limited to Jump {self.jump_drive.rating} by drive capacity')
         if self.cargo < 0:
             self.error(f'Hull overloaded by {-self.cargo:.2f} tons')
-        if self.bridge is not None and not self.airlocks:
+        if self.bridge is not None and not self.hull.airlocks:
             self.error('No airlock installed')
-        if self.staterooms is not None:
-            recommended_common_area = self.staterooms.tons / 4
-            actual_common_area = 0.0 if self.common_area is None else self.common_area.tons
+        if self.habitation is not None and self.habitation.staterooms is not None:
+            recommended_common_area = self.habitation.staterooms.tons / 4
+            actual_common_area = 0.0 if self.habitation.common_area is None else self.habitation.common_area.tons
             if actual_common_area < recommended_common_area:
                 self.warning(f'Recommended common area is {recommended_common_area:.2f} tons')
