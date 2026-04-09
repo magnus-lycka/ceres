@@ -2,7 +2,7 @@ import pytest
 
 from ceres import hull, ship
 from ceres.base import ShipBase
-from ceres.weapons import DoubleTurret, FixedFirmpoint, PulseLaser, SingleTurret, TripleTurret, WeaponsSection
+from ceres.weapons import DoubleTurret, FixedMount, PulseLaser, SingleTurret, TripleTurret, WeaponsSection
 
 
 class DummyOwner(ShipBase):
@@ -46,64 +46,64 @@ def test_pulse_laser_high_technology_cost_modifier():
     assert w.cost_modifier == pytest.approx(1.50)
 
 
-# --- FixedFirmpoint ---
+# --- FixedMount ---
 
 
 def test_fixed_firmpoint_base_cost():
-    fp = FixedFirmpoint(weapon=PulseLaser())
+    fp = FixedMount(weapon=PulseLaser())
     fp.bind(DummyOwner(12, 6))
     # mount MCr0.1 + weapon MCr1 * 1.0 = 1,100,000
     assert float(fp.cost) == pytest.approx(1_100_000)
 
 
 def test_fixed_firmpoint_high_technology_cost():
-    fp = FixedFirmpoint(weapon=PulseLaser(very_high_yield=True, energy_efficient=True))
+    fp = FixedMount(weapon=PulseLaser(very_high_yield=True, energy_efficient=True))
     fp.bind(DummyOwner(12, 6))
     # mount 100,000 + weapon 1,000,000 * 1.5 = 1,600,000
     assert float(fp.cost) == pytest.approx(1_600_000)
 
 
 def test_fixed_firmpoint_tons_zero():
-    fp = FixedFirmpoint(weapon=PulseLaser())
+    fp = FixedMount(weapon=PulseLaser())
     fp.bind(DummyOwner(12, 6))
     assert float(fp.tons) == 0
 
 
 def test_fixed_firmpoint_base_power():
     # Firmpoint reduces by 25%: floor(4 * 0.75) = 3
-    fp = FixedFirmpoint(weapon=PulseLaser())
+    fp = FixedMount(weapon=PulseLaser())
     fp.bind(DummyOwner(12, 6))
     assert float(fp.power) == 3
 
 
 def test_fixed_firmpoint_energy_efficient_power():
     # Firmpoint -25% * energy_efficient -25%: floor(4 * 0.75 * 0.75) = floor(2.25) = 2
-    fp = FixedFirmpoint(weapon=PulseLaser(very_high_yield=True, energy_efficient=True))
+    fp = FixedMount(weapon=PulseLaser(very_high_yield=True, energy_efficient=True))
     fp.bind(DummyOwner(12, 6))
     assert float(fp.power) == 2
 
 
 def test_fixed_firmpoint_recomputes_cost_from_input():
-    fp = FixedFirmpoint.model_validate({'weapon': {'weapon_type': 'pulse_laser'}, 'cost': 999})
+    fp = FixedMount.model_validate({'weapon': {'weapon_type': 'pulse_laser'}, 'cost': 999})
     fp.bind(DummyOwner(12, 6))
     assert fp.cost == pytest.approx(1_100_000)
 
 
 def test_fixed_firmpoint_recomputes_tons_from_input():
-    fp = FixedFirmpoint.model_validate({'weapon': {'weapon_type': 'pulse_laser'}, 'tons': 999})
+    fp = FixedMount.model_validate({'weapon': {'weapon_type': 'pulse_laser'}, 'tons': 999})
     fp.bind(DummyOwner(12, 6))
     assert fp.tons == 0
 
 
 def test_fixed_firmpoint_can_carry_multiple_weapons_on_larger_ship():
-    fp = FixedFirmpoint(weapons=[PulseLaser(), PulseLaser(energy_efficient=True)])
+    fp = FixedMount(weapons=[PulseLaser(), PulseLaser(energy_efficient=True)])
     fp.bind(DummyOwner(12, 100))
     assert float(fp.cost) == pytest.approx(100_000 + 1_000_000 + 1_100_000)
     assert float(fp.power) == 5
 
 
 def test_fixed_firmpoint_with_multiple_weapons_reports_fixed_mount_item():
-    fp = FixedFirmpoint(weapons=[PulseLaser(), PulseLaser()])
+    fp = FixedMount(weapons=[PulseLaser(), PulseLaser()])
     assert [(note.category.value, note.message) for note in fp.notes] == [
         ('item', 'Fixed Mount'),
         ('info', 'Pulse Laser'),
@@ -139,14 +139,14 @@ def test_small_craft_fixed_mount_cannot_carry_more_than_one_weapon():
         displacement=99,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         weapons=WeaponsSection(
-            fixed_firmpoints=[FixedFirmpoint(weapons=[PulseLaser(), PulseLaser()])],
+            fixed_mounts=[FixedMount(weapons=[PulseLaser(), PulseLaser()])],
         ),
     )
 
     assert my_ship.weapons is not None
     assert any(
         note.message == 'Fixed mount can carry at most 1 weapon on this ship'
-        for note in my_ship.weapons.fixed_firmpoints[0].notes
+        for note in my_ship.weapons.fixed_mounts[0].notes
     )
 
 
@@ -189,7 +189,7 @@ def test_weapon_mounts_cannot_exceed_hardpoints():
         hull=hull.Hull(configuration=hull.streamlined_hull),
         weapons=WeaponsSection(
             turrets=[DoubleTurret()],
-            fixed_firmpoints=[FixedFirmpoint(weapon=PulseLaser())],
+            fixed_mounts=[FixedMount(weapon=PulseLaser())],
         ),
     )
 
@@ -207,15 +207,15 @@ def test_weapon_mounts_cannot_exceed_firmpoints():
         displacement=34,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         weapons=WeaponsSection(
-            fixed_firmpoints=[
-                FixedFirmpoint(weapon=PulseLaser()),
-                FixedFirmpoint(weapon=PulseLaser()),
+            fixed_mounts=[
+                FixedMount(weapon=PulseLaser()),
+                FixedMount(weapon=PulseLaser()),
             ],
         ),
     )
 
     assert my_ship.weapons is not None
-    overflow_part = my_ship.weapons.fixed_firmpoints[1]
+    overflow_part = my_ship.weapons.fixed_mounts[1]
     assert any(
         note.message == 'Exceeds available firmpoints: 2 mounts installed, capacity is 1'
         for note in overflow_part.notes

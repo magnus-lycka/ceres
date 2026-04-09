@@ -162,6 +162,7 @@ Rules model (for reference):
 - Weapons are designed for specific mount types (most fit fixed or turret;
   barbettes and bays are their own category).
 - Firmpoint mounting reduces effective range and power.
-- The current `FixedFirmpoint` is really a firmpoint mount wrapping a
-  `PulseLaser`. `DoubleTurret`/`TripleTurret` model turret mounts but don't
-  enforce hardpoint limits or separate mount from weapon consistently.
+- The old `FixedFirmpoint` naming was misleading; the model is moving toward
+  `FixedMount` plus explicit firmpoint restrictions on small craft.
+- Turret mounts are now separate from the weapons mounted in them, but
+  barbettes and bays are still not modeled.

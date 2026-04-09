@@ -6,7 +6,7 @@ from ceres.computer import Computer5, ComputerSection
 from ceres.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection
 from ceres.sensors import CivilianSensors, SensorsSection
 from ceres.storage import FuelSection, OperationFuel
-from ceres.weapons import FixedFirmpoint, PulseLaser, WeaponsSection
+from ceres.weapons import FixedMount, PulseLaser, WeaponsSection
 
 from ._markdown_output import write_markdown_output
 
@@ -32,8 +32,8 @@ def build_ultralight_fighter() -> ship.Ship:
         computer=ComputerSection(hardware=Computer5()),
         sensors=SensorsSection(primary=CivilianSensors()),
         weapons=WeaponsSection(
-            fixed_firmpoints=[
-                FixedFirmpoint(weapon=PulseLaser(very_high_yield=True, energy_efficient=True)),
+            fixed_mounts=[
+                FixedMount(weapon=PulseLaser(very_high_yield=True, energy_efficient=True)),
             ],
         ),
     )
@@ -87,7 +87,7 @@ def test_ultralight_fighter_part_values():
     assert int(fighter.sensors.primary.cost) == 3_000_000
 
     assert fighter.weapons is not None
-    weapon_mount = fighter.weapons.fixed_firmpoints[0]
+    weapon_mount = fighter.weapons.fixed_mounts[0]
     assert float(weapon_mount.tons) == pytest.approx(0)
     assert int(weapon_mount.cost) == 1_600_000
     assert int(weapon_mount.power) == 2

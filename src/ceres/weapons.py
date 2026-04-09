@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 from typing import Annotated, ClassVar, Literal
 
-from pydantic import Field
+from pydantic import AliasChoices, Field
 
 from .base import CeresModel, Note, NoteCategory
 from .parts import ShipPart
@@ -56,7 +56,7 @@ class PulseLaser(CeresModel):
         return float(self.base_power)
 
 
-class FixedFirmpoint(ShipPart):
+class FixedMount(ShipPart):
     mount_cost: ClassVar[int] = 100_000
     minimum_tl = 9
     weapon: TurretWeapon | None = None
@@ -190,7 +190,10 @@ ShipTurret = Annotated[SingleTurret | DoubleTurret | TripleTurret, Field(discrim
 
 class WeaponsSection(CeresModel):
     turrets: list[ShipTurret] = Field(default_factory=list)
-    fixed_firmpoints: list[FixedFirmpoint] = Field(default_factory=list)
+    fixed_mounts: list[FixedMount] = Field(
+        default_factory=list,
+        validation_alias=AliasChoices('fixed_mounts', 'fixed_firmpoints'),
+    )
     missile_storage: MissileStorage | None = None
 
     @staticmethod
@@ -208,11 +211,11 @@ class WeaponsSection(CeresModel):
         return ship.displacement // 100
 
     def validate_mounting(self, ship) -> None:
-        total_mounts = len(self.turrets) + len(self.fixed_firmpoints)
+        total_mounts = len(self.turrets) + len(self.fixed_mounts)
         capacity = self.mount_capacity(ship)
         if total_mounts > capacity:
             overflow = total_mounts - capacity
-            overflowing_parts = [*self.fixed_firmpoints, *self.turrets][-overflow:]
+            overflowing_parts = [*self.fixed_mounts, *self.turrets][-overflow:]
             mount_kind = 'firmpoints' if self.is_small_craft(ship) else 'hardpoints'
             for part in overflowing_parts:
                 part.error(
@@ -228,7 +231,7 @@ class WeaponsSection(CeresModel):
         else:
             fixed_mount_capacity = 3
 
-        for fixed_mount in self.fixed_firmpoints:
+        for fixed_mount in self.fixed_mounts:
             if len(fixed_mount.weapons) > fixed_mount_capacity:
                 fixed_mount.error(
                     f'Fixed mount can carry at most {fixed_mount_capacity} weapon'
@@ -236,7 +239,7 @@ class WeaponsSection(CeresModel):
                 )
 
     def _all_parts(self) -> list[ShipPart]:
-        parts: list[ShipPart] = [*self.turrets, *self.fixed_firmpoints]
+        parts: list[ShipPart] = [*self.turrets, *self.fixed_mounts]
         if self.missile_storage is not None:
             parts.append(self.missile_storage)
         return parts
@@ -244,7 +247,10 @@ class WeaponsSection(CeresModel):
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
         for turret in self.turrets:
             spec.add_row(ship._spec_row_for_part(SpecSection.WEAPONS, turret))
-        for row in ship._grouped_spec_rows(SpecSection.WEAPONS, self.fixed_firmpoints):
+        for row in ship._grouped_spec_rows(SpecSection.WEAPONS, self.fixed_mounts):
             spec.add_row(row)
         if self.missile_storage is not None:
             spec.add_row(ship._spec_row_for_part(SpecSection.WEAPONS, self.missile_storage))
+
+
+FixedFirmpoint = FixedMount

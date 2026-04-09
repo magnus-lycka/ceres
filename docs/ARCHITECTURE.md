@@ -93,10 +93,11 @@ protection limits and minimum TL via `check_protection_limit()`.
 
 ### Weapons
 
-`FixedFirmpoint` composes a `PulseLaser` value object. The laser carries
-advantage flags (`very_high_yield`, `energy_efficient`) that affect cost and
-power; the firmpoint applies mount-level modifiers on top. `DoubleTurret` is
-a fixed-cost part with no configurable weapon.
+`FixedMount` and the turret classes compose weapon value objects. Weapon models
+carry their own cost/power characteristics while the mount applies mount-level
+rules such as firmpoint reductions or turret mount overhead. `WeaponsSection`
+owns capacity checks such as hardpoints versus firmpoints and the small-craft
+restriction to single turrets.
 
 ### Software
 
