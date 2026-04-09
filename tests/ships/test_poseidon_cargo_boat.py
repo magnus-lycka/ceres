@@ -107,8 +107,9 @@ def test_ship_with_bridge_and_no_airlock_adds_error():
         habitation=HabitationSection(staterooms=Staterooms(count=1)),
     )
     assert ('error', 'No airlock installed') in [(note.category.value, note.message) for note in my_ship.notes]
+    assert my_ship.habitation is not None
     assert ('warning', 'Recommended common area is 1.00 tons') in [
-        (note.category.value, note.message) for note in my_ship.notes
+        (note.category.value, note.message) for note in my_ship.habitation.notes
     ]
 
 
@@ -137,8 +138,9 @@ def test_ship_with_staterooms_and_no_common_area_adds_warning():
         computer=ComputerSection(hardware=Computer5()),
         habitation=HabitationSection(staterooms=Staterooms(count=1)),
     )
+    assert my_ship.habitation is not None
     assert ('warning', 'Recommended common area is 1.00 tons') in [
-        (note.category.value, note.message) for note in my_ship.notes
+        (note.category.value, note.message) for note in my_ship.habitation.notes
     ]
 
 

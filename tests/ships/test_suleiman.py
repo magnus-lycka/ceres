@@ -115,7 +115,7 @@ def test_suleiman_matches_first_modeled_reference_slice():
     assert suleiman.computer.hardware.processing == 5
     assert suleiman.computer.hardware.jump_control_processing == 10
     assert suleiman.computer.hardware.cost == 45_000
-    assert [(package.description, package.cost) for package in suleiman.software_packages] == [
+    assert [(package.description, package.cost) for package in suleiman.computer.software_packages] == [
         ('Library', 0.0),
         ('Manoeuvre/0', 0.0),
         ('Intellect', 0.0),

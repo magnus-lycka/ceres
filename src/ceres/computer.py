@@ -373,6 +373,12 @@ class ComputerSection(CeresModel):
     hardware: ShipComputer | None = None
     software: list[ShipSoftware] = Field(default_factory=list)
 
+    @property
+    def software_packages(self) -> list[SoftwarePackage]:
+        if self.hardware is None:
+            return []
+        return [*self.hardware.included_software, *self.software]
+
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = []
         if self.hardware is not None:

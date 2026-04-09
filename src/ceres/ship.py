@@ -6,11 +6,7 @@ from pydantic import Field
 from . import hull as hull_model
 from .base import CeresModel, NoteCategory, ShipBase
 from .bridge import CommandSection
-from .computer import (
-    ComputerSection,
-    JumpControl,
-    SoftwarePackage,
-)
+from .computer import ComputerSection, JumpControl
 from .crafts import InternalDockingSpace
 from .drives import (
     DriveSection,
@@ -138,12 +134,11 @@ class Ship(ShipBase):
             craft_cost += self.docking_space.craft.cost
         cargo_holds = [] if self.cargo is None else self.cargo.cargo_holds
         cargo_hold_cost = sum(cargo_hold.crane_cost(self) for cargo_hold in cargo_holds)
+        software_cost = 0.0
+        if self.computer is not None:
+            software_cost = sum(package.cost for package in self.computer.software_packages)
         return (
-            self.hull_cost
-            + sum(part.cost for part in self._all_parts())
-            + sum(package.cost for package in self.software_packages)
-            + craft_cost
-            + cargo_hold_cost
+            self.hull_cost + sum(part.cost for part in self._all_parts()) + software_cost + craft_cost + cargo_hold_cost
         )
 
     @property
@@ -193,12 +188,6 @@ class Ship(ShipBase):
         if self.displacement <= 100:
             return [CrewRole(role='PILOT', count=1, monthly_salary=6_000)]
         return []
-
-    @property
-    def software_packages(self) -> list[SoftwarePackage]:
-        if self.computer is None or self.computer.hardware is None:
-            return []
-        return [*self.computer.hardware.included_software, *self.computer.software]
 
     def _all_parts(self) -> list[ShipPart]:
         parts = list(self.hull._all_parts())
@@ -391,16 +380,17 @@ class Ship(ShipBase):
 
         if self.computer is not None and self.computer.hardware is not None:
             add_part(SpecSection.COMPUTER, self.computer.hardware)
-        for package in self.software_packages:
-            add_row(
-                SpecSection.COMPUTER,
-                SpecRow(
-                    section=SpecSection.COMPUTER,
-                    item=self._item_text(package, package.description),
-                    cost=package.cost or None,
-                    notes=self._display_notes(package),
-                ),
-            )
+        if self.computer is not None:
+            for package in self.computer.software_packages:
+                add_row(
+                    SpecSection.COMPUTER,
+                    SpecRow(
+                        section=SpecSection.COMPUTER,
+                        item=self._item_text(package, package.description),
+                        cost=package.cost or None,
+                        notes=self._display_notes(package),
+                    ),
+                )
 
         for sensor_part in self.sensors._all_parts():
             add_part(SpecSection.SENSORS, sensor_part)
@@ -425,6 +415,9 @@ class Ship(ShipBase):
         if self.habitation is not None:
             for habitation_part in self.habitation._all_parts():
                 add_part(SpecSection.HABITATION, habitation_part)
+            habitation_rows = spec.rows_for_section(SpecSection.HABITATION)
+            if habitation_rows:
+                habitation_rows[-1].notes.extend(self._display_notes(self.habitation))
 
         if self.systems is not None:
             for system_part in self.systems._all_parts():
@@ -566,19 +559,20 @@ class Ship(ShipBase):
         self.clear_notes()
         for part in self._all_parts():
             part.bind(self)
+        if self.habitation is not None:
+            self.habitation.clear_notes()
         if self.computer is not None and self.computer.software and self.computer.hardware is None:
             for package in self.computer.software:
                 package.warning('Ship software requires a computer')
-        for package in self.software_packages:
-            if self.tl < package.minimum_tl:
-                package.error(f'{package.description} requires TL{package.minimum_tl}')
-            if (
-                self.computer is not None
-                and self.computer.hardware is not None
-                and not self.computer.hardware.can_run(package)
-            ):
-                package.error(f'{self.computer.hardware.description} cannot run {package.description}')
-        jump_controls = [package for package in self.software_packages if isinstance(package, JumpControl)]
+        if self.computer is not None:
+            for package in self.computer.software_packages:
+                if self.tl < package.minimum_tl:
+                    package.error(f'{package.description} requires TL{package.minimum_tl}')
+                if self.computer.hardware is not None and not self.computer.hardware.can_run(package):
+                    package.error(f'{self.computer.hardware.description} cannot run {package.description}')
+            jump_controls = [package for package in self.computer.software_packages if isinstance(package, JumpControl)]
+        else:
+            jump_controls = []
         highest_jump_control = max(jump_controls, key=lambda package: package.rating, default=None)
         if self.drives is not None and self.drives.jump_drive is not None:
             if highest_jump_control is None:
@@ -594,8 +588,3 @@ class Ship(ShipBase):
             self.error(f'Hull overloaded by {-self.cargo_tons:.2f} tons')
         if self.command is not None and self.command.bridge is not None and not self.hull.airlocks:
             self.error('No airlock installed')
-        if self.habitation is not None and self.habitation.staterooms is not None:
-            recommended_common_area = self.habitation.staterooms.tons / 4
-            actual_common_area = 0.0 if self.habitation.common_area is None else self.habitation.common_area.tons
-            if actual_common_area < recommended_common_area:
-                self.warning(f'Recommended common area is {recommended_common_area:.2f} tons')
