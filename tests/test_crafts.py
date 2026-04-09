@@ -1,5 +1,5 @@
 from ceres.base import ShipBase
-from ceres.crafts import AirRaft, InternalDockingSpace
+from ceres.crafts import AirRaft, CraftSection, InternalDockingSpace
 
 
 class DummyOwner(ShipBase):
@@ -19,3 +19,10 @@ def test_internal_docking_space_for_air_raft():
     assert d.tons == 5.0
     assert d.cost == 1_250_000
     assert d.power == 0
+
+
+def test_craft_section_all_parts():
+    section = CraftSection(docking_space=InternalDockingSpace(craft=AirRaft()))
+
+    assert len(section._all_parts()) == 1
+    assert isinstance(section._all_parts()[0], InternalDockingSpace)

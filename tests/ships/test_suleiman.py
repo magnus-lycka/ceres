@@ -3,7 +3,7 @@ import pytest
 from ceres import armour, hull, ship
 from ceres.bridge import Bridge, CommandSection
 from ceres.computer import Computer5, Computer10, ComputerSection, JumpControl, JumpControl1, JumpControl2, JumpControl3
-from ceres.crafts import AirRaft, InternalDockingSpace
+from ceres.crafts import AirRaft, CraftSection, InternalDockingSpace
 from ceres.drives import DriveSection, FusionPlantTL12, JumpDrive2, MDrive2, PowerSection
 from ceres.habitation import HabitationSection, Staterooms
 from ceres.sensors import MilitarySensors, SensorsSection
@@ -37,7 +37,7 @@ def build_suleiman() -> ship.Ship:
         computer=ComputerSection(hardware=Computer5(bis=True), software=[JumpControl2()]),
         sensors=SensorsSection(primary=MilitarySensors()),
         weapons=WeaponsSection(turrets=[DoubleTurret()]),
-        docking_space=InternalDockingSpace(craft=AirRaft()),
+        craft=CraftSection(docking_space=InternalDockingSpace(craft=AirRaft())),
         habitation=HabitationSection(staterooms=Staterooms(count=4)),
         systems=SystemsSection(probe_drones=ProbeDrones(count=10), workshop=Workshop()),
     )
@@ -59,7 +59,8 @@ def test_suleiman_matches_first_modeled_reference_slice():
     assert suleiman.command is not None
     bridge = suleiman.command.bridge
     sensors = suleiman.sensors.primary
-    docking_space = suleiman.docking_space
+    assert suleiman.craft is not None
+    docking_space = suleiman.craft.docking_space
     assert suleiman.habitation is not None
     staterooms = suleiman.habitation.staterooms
     airlocks = suleiman.hull.airlocks

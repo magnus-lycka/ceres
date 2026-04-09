@@ -7,7 +7,7 @@ from . import hull as hull_model
 from .base import CeresModel, NoteCategory, ShipBase
 from .bridge import CommandSection
 from .computer import ComputerSection, SoftwarePackage
-from .crafts import InternalDockingSpace
+from .crafts import CraftSection
 from .drives import (
     DriveSection,
     PowerSection,
@@ -58,7 +58,7 @@ class Ship(ShipBase):
     command: CommandSection | None = None
     computer: ComputerSection | None = None
     sensors: SensorsSection = Field(default_factory=SensorsSection)
-    docking_space: InternalDockingSpace | None = None
+    craft: CraftSection | None = None
     cargo: CargoSection | None = None
     habitation: HabitationSection | None = None
     systems: SystemsSection | None = None
@@ -130,8 +130,8 @@ class Ship(ShipBase):
     @property
     def production_cost(self) -> float:
         craft_cost = 0.0
-        if self.docking_space is not None:
-            craft_cost += self.docking_space.craft.cost
+        if self.craft is not None and self.craft.docking_space is not None:
+            craft_cost += self.craft.docking_space.craft.cost
         cargo_holds = [] if self.cargo is None else self.cargo.cargo_holds
         cargo_hold_cost = sum(cargo_hold.crane_cost(self) for cargo_hold in cargo_holds)
         software_cost = 0.0
@@ -204,9 +204,8 @@ class Ship(ShipBase):
         parts.extend(self.sensors._all_parts())
         if self.habitation is not None:
             parts.extend(self.habitation._all_parts())
-        for part in (self.docking_space,):
-            if part is not None:
-                parts.append(part)
+        if self.craft is not None:
+            parts.extend(self.craft._all_parts())
         if self.systems is not None:
             parts.extend(self.systems._all_parts())
         if self.weapons is not None:
@@ -312,16 +311,8 @@ class Ship(ShipBase):
         if self.weapons is not None:
             self.weapons.add_spec_rows(self, spec)
 
-        if self.docking_space is not None:
-            spec.add_row(self._spec_row_for_part(SpecSection.CRAFT, self.docking_space))
-            craft = self.docking_space.craft
-            spec.add_row(
-                SpecRow(
-                    section=SpecSection.CRAFT,
-                    item=craft.build_item() or craft.__class__.__name__,
-                    cost=craft.cost,
-                ),
-            )
+        if self.craft is not None:
+            self.craft.add_spec_rows(self, spec)
 
         if self.habitation is not None:
             self.habitation.add_spec_rows(self, spec)

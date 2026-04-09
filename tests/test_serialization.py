@@ -7,6 +7,7 @@ import pytest
 from ceres import armour, hull
 from ceres.bridge import Cockpit, CommandSection
 from ceres.computer import Computer5, ComputerSection
+from ceres.crafts import AirRaft, CraftSection, InternalDockingSpace
 from ceres.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection
 from ceres.hull import BasicStealth, Hull
 from ceres.sensors import BasicSensors, CivilianSensors, SensorsSection
@@ -33,6 +34,7 @@ ultralight = Ship(
     command=CommandSection(cockpit=Cockpit(holographic=True)),
     computer=ComputerSection(hardware=Computer5()),
     sensors=SensorsSection(primary=CivilianSensors()),
+    craft=CraftSection(docking_space=InternalDockingSpace(craft=AirRaft())),
     weapons=WeaponsSection(
         fixed_firmpoints=[FixedFirmpoint(weapon=PulseLaser(very_high_yield=True, energy_efficient=True))],
     ),

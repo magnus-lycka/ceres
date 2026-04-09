@@ -3,7 +3,7 @@ import pytest
 
 from ceres import armour, hull, ship
 from ceres.bridge import Cockpit, CommandSection
-from ceres.crafts import AirRaft, InternalDockingSpace
+from ceres.crafts import AirRaft, CraftSection, InternalDockingSpace
 from ceres.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection
 from ceres.sensors import CivilianSensors, SensorsSection
 from ceres.storage import CargoCrane, CargoHold, CargoSection
@@ -65,7 +65,7 @@ def test_ship_cargo_subtracts_modeled_part_tonnage():
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        docking_space=InternalDockingSpace(craft=AirRaft()),
+        craft=CraftSection(docking_space=InternalDockingSpace(craft=AirRaft())),
         systems=SystemsSection(probe_drones=ProbeDrones(count=10), workshop=Workshop()),
     )
     assert my_ship.cargo_tons == pytest.approx(100 - 5 - 2 - 6)

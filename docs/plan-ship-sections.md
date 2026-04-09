@@ -108,7 +108,9 @@ Working interpretation:
 11. ✅ **`CargoSection`** in `storage.py` — `cargo_holds` → `Ship.cargo: CargoSection | None`.
    - Keep this close to `FuelSection`, since future rules are likely to blur the boundary between cargo and fuel storage.
    - Implemented. The numeric remaining-capacity property is now separate (`cargo_tons`) so `ship.cargo` can mean the section object.
-12. ✅ **Move hull types to `hull.py`** — `Streamlined`, `HullConfiguration`, predefined hull configs, stealth types, `HullArmour`, `HullStealth`, and `Hull`.
+12. ✅ **`CraftSection`** in `crafts.py` — `docking_space` → `Ship.craft: CraftSection | None`.
+   - Implemented. Docking space and its carried craft row are now owned by `CraftSection`.
+13. ✅ **Move hull types to `hull.py`** — `Streamlined`, `HullConfiguration`, predefined hull configs, stealth types, `HullArmour`, `HullStealth`, and `Hull`.
    - This does not change the desired `Ship.hull` API.
    - Done as a module-boundary cleanup so `ship.py` no longer carries the bulk of the hull-specific code.
 
@@ -120,6 +122,8 @@ Additional status note:
 - On the report side, section ordering and section ownership are already much
   clearer than this migration list implies, because `ShipSpec`/`SpecSection`
   already drive the spec output.
+- The planned section split is now complete. What remains after this document is
+  separate follow-up work, such as the later `weapons.py` rewrite below.
 
 Practical implication:
 
