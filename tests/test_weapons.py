@@ -84,15 +84,31 @@ def test_fixed_firmpoint_energy_efficient_power():
 
 
 def test_fixed_firmpoint_recomputes_cost_from_input():
-    fp = FixedFirmpoint.model_validate({'weapon': {}, 'cost': 999})
+    fp = FixedFirmpoint.model_validate({'weapon': {'weapon_type': 'pulse_laser'}, 'cost': 999})
     fp.bind(DummyOwner(12, 6))
     assert fp.cost == pytest.approx(1_100_000)
 
 
 def test_fixed_firmpoint_recomputes_tons_from_input():
-    fp = FixedFirmpoint.model_validate({'weapon': {}, 'tons': 999})
+    fp = FixedFirmpoint.model_validate({'weapon': {'weapon_type': 'pulse_laser'}, 'tons': 999})
     fp.bind(DummyOwner(12, 6))
     assert fp.tons == 0
+
+
+def test_fixed_firmpoint_can_carry_multiple_weapons_on_larger_ship():
+    fp = FixedFirmpoint(weapons=[PulseLaser(), PulseLaser(energy_efficient=True)])
+    fp.bind(DummyOwner(12, 100))
+    assert float(fp.cost) == pytest.approx(100_000 + 1_000_000 + 1_100_000)
+    assert float(fp.power) == 5
+
+
+def test_fixed_firmpoint_with_multiple_weapons_reports_fixed_mount_item():
+    fp = FixedFirmpoint(weapons=[PulseLaser(), PulseLaser()])
+    assert [(note.category.value, note.message) for note in fp.notes] == [
+        ('item', 'Fixed Mount'),
+        ('info', 'Pulse Laser'),
+        ('info', 'Pulse Laser'),
+    ]
 
 
 def test_double_turret_cost_and_power_include_weapons():
@@ -115,6 +131,23 @@ def test_single_turret_is_allowed_on_small_craft():
         ('item', 'Single Turret'),
         ('info', 'No weapons in turret'),
     ]
+
+
+def test_small_craft_fixed_mount_cannot_carry_more_than_one_weapon():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=99,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        weapons=WeaponsSection(
+            fixed_firmpoints=[FixedFirmpoint(weapons=[PulseLaser(), PulseLaser()])],
+        ),
+    )
+
+    assert my_ship.weapons is not None
+    assert any(
+        note.message == 'Fixed mount can carry at most 1 weapon on this ship'
+        for note in my_ship.weapons.fixed_firmpoints[0].notes
+    )
 
 
 def test_small_craft_cannot_mount_double_turret():

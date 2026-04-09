@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import math
 from typing import Annotated, ClassVar, Literal
 
@@ -57,19 +59,34 @@ class PulseLaser(CeresModel):
 class FixedFirmpoint(ShipPart):
     mount_cost: ClassVar[int] = 100_000
     minimum_tl = 9
-    weapon: PulseLaser
+    weapon: TurretWeapon | None = None
+    weapons: list[TurretWeapon] = Field(default_factory=list)
 
     def build_item(self) -> str | None:
-        return self.weapon.build_item()
+        if len(self.weapons) == 1:
+            return self.weapons[0].build_item()
+        return 'Fixed Mount'
+
+    def build_notes(self) -> list[Note]:
+        if not self.weapons:
+            return [Note(category=NoteCategory.INFO, message='No weapons in mount')]
+        if len(self.weapons) == 1:
+            return []
+        return [Note(category=NoteCategory.INFO, message=w.build_item() or w.__class__.__name__) for w in self.weapons]
+
+    def model_post_init(self, __context) -> None:
+        if self.weapon is not None and not self.weapons:
+            object.__setattr__(self, 'weapons', [self.weapon])
+        super().model_post_init(__context)
 
     def compute_tons(self) -> float:
         return 0.0
 
     def compute_cost(self) -> float:
-        return self.mount_cost + self.weapon.weapon_cost
+        return self.mount_cost + sum(w.weapon_cost for w in self.weapons)
 
     def compute_power(self) -> float:
-        power = self.weapon.weapon_power
+        power = sum(w.weapon_power for w in self.weapons)
         # Firmpoint reduces power by 25%; apply combined then floor
         power *= 0.75
         return float(math.floor(power))
@@ -207,6 +224,16 @@ class WeaponsSection(CeresModel):
                 if isinstance(turret, SingleTurret):
                     continue
                 turret.error('Small craft may only upgrade one firmpoint to a single turret')
+            fixed_mount_capacity = 1
+        else:
+            fixed_mount_capacity = 3
+
+        for fixed_mount in self.fixed_firmpoints:
+            if len(fixed_mount.weapons) > fixed_mount_capacity:
+                fixed_mount.error(
+                    f'Fixed mount can carry at most {fixed_mount_capacity} weapon'
+                    f'{"s" if fixed_mount_capacity != 1 else ""} on this ship',
+                )
 
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = [*self.turrets, *self.fixed_firmpoints]

@@ -205,6 +205,8 @@ def test_roundtrip_weapon_attributes():
     assert loaded.weapons is not None
     orig_fp = ultralight.weapons.fixed_firmpoints[0]
     rt_fp = loaded.weapons.fixed_firmpoints[0]
+    assert isinstance(orig_fp.weapon, PulseLaser)
+    assert isinstance(rt_fp.weapon, PulseLaser)
     assert rt_fp.weapon.very_high_yield == orig_fp.weapon.very_high_yield
     assert rt_fp.weapon.energy_efficient == orig_fp.weapon.energy_efficient
 
