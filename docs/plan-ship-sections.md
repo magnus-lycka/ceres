@@ -94,13 +94,13 @@ Working interpretation:
 4. ✅ **`ComputerSection`** in `computer.py` — `Ship.computer: ComputerSection | None`.
 5. ✅ **`HabitationSection`** in `habitation.py` — `staterooms`, `low_berths`, `common_area` → `Ship.habitation: HabitationSection | None`.
 6. ✅ **`SystemsSection`** in `systems.py` — `medical_bay`, `workshop`, `probe_drones`, `repair_drones` → `Ship.systems: SystemsSection | None`.
-   - Implemented. Convenience access via `ship.medical_bay`, `ship.workshop`, `ship.probe_drones`, and `ship.repair_drones` may still remain where useful.
+   - Implemented.
 7. ✅ **`FuelSection`** in `storage.py` — `jump_fuel`, `operation_fuel`, `fuel_scoops`, `fuel_processor` → `Ship.fuel: FuelSection | None`.
    - Strong candidate because the parts already behave as one conceptual group.
    - Implemented in `storage.py`.
    - The remaining storage-side work is now `CargoSection`, not `FuelSection`.
 8. ✅ **`CommandSection`** in `bridge.py` — `bridge`, `cockpit` → `Ship.command: CommandSection | None`.
-   - Implemented. Convenience access via `ship.bridge` / `ship.cockpit` may still remain where useful.
+   - Implemented.
 9. ✅ **`DriveSection`** in `drives.py` — `m_drive`, `jump_drive` → `Ship.drives: DriveSection | None`.
    - Implemented.
 10. ✅ **`PowerSection`** in `drives.py` — `fusion_plant` → `Ship.power: PowerSection | None`.

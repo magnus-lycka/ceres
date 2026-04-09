@@ -39,11 +39,13 @@ ship's.
 ### Notes and validation
 
 Errors, warnings, and informational messages are stored as `Note` objects on
-the part or ship that detected the problem. `build_notes()` is called during
-binding and produces static notes (e.g. sensor DM). Validation logic in
-`model_post_init` adds dynamic notes (e.g. missing airlock, jump control
-mismatch, negative cargo). Notes with category `ITEM` are special: they carry
-the human-readable row label for the stat sheet.
+the part or ship that detected the problem. Intrinsic notes are created during
+`model_post_init()` from `build_item()` and `build_notes()`. Context-dependent
+validation adds later notes without clearing the earlier ones. This is
+intentional: if something triggers duplicate or strange notes, that should be
+visible instead of being masked by a note-reset step. Notes with category
+`ITEM` are special: they carry the human-readable row label for the stat
+sheet.
 
 ### Hull
 
@@ -67,6 +69,21 @@ cargo, crew roles, and operating expenses. `markdown_table()` renders the
 complete stat sheet as a Markdown table. These remain ship-level concerns rather
 than cached part data.
 
+The installed-part graph is now section-based rather than mostly flat:
+
+- `hull`
+- `drives`
+- `power`
+- `fuel`
+- `command`
+- `computer`
+- `sensors`
+- `weapons`
+- `craft`
+- `habitation`
+- `systems`
+- `cargo`
+
 ### Armour
 
 `Armour` extends `ShipPart` with derived cost and tonnage. Tonnage scales with
@@ -84,10 +101,29 @@ a fixed-cost part with no configurable weapon.
 ### Software
 
 `SoftwarePackage` is a separate hierarchy from `ShipPart` — software has no
-tonnage or binding, only cost and bandwidth requirements. `Computer.can_run()`
-checks bandwidth against the computer's processing rating; `Core` computers
-have unlimited jump control bandwidth. A computer automatically includes
-`Library`, `Manoeuvre/0`, and (from TL11) `Intellect` in its software list.
+tonnage or owner-binding. `Computer.can_run()` checks bandwidth against the
+computer's processing rating; `Core` computers have unlimited jump control
+bandwidth. A computer automatically includes `Library`, `Manoeuvre/0`, and
+(from TL11) `Intellect` in its software list.
+
+`ComputerSection` normalizes installed software as singleton families. For
+packages such as `Jump Control`, `Evade`, `Fire Control`, and `Auto-Repair`,
+only the highest installed rating counts for cost and capability. Lower
+redundant entries are not kept as active packages; instead, the retained
+package gets a warning note describing the redundancy.
+
+Cross-checks between `JumpDrive` and `Jump Control` are initiated from
+`Ship.model_post_init()` but owned by the relevant sections:
+
+- `DriveSection` warns on the jump drive if control software is missing or too weak
+- `ComputerSection` warns on jump control software if there is no jump drive or
+  the drive rating is lower than the software rating
+
+### Crew
+
+Crew logic now lives in `crew.py`. `Ship` still exposes `crew_roles`, but
+delegates the actual role calculation there so crew rules can grow without
+`Ship` becoming the source of truth.
 
 ## Rules interpretations
 

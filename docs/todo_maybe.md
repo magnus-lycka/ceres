@@ -25,6 +25,24 @@ Move substantial parts of Ship.build_spec() out to the
 sections that own the rows, such as storage, computer,
 habitation and systems.
 
+Current status:
+
+- done for hull
+- done for drives / power
+- done for storage (fuel + cargo)
+- done for command
+- done for computer
+- done for sensors
+- done for habitation
+- done for systems
+- done for weapons
+- done for craft
+
+Remaining:
+
+- expense / crew summary blocks
+- possibly move more generic row-grouping helpers out of Ship if it still feels worth it
+
 ## Implement armoured bulkhead
 
 Armoured bulkheads protect specific areas and

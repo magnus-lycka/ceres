@@ -6,14 +6,16 @@ rules. A ship is an ordinary Python object: instantiate `Ship`, pass it part
 objects and parameters, and get back a fully-costed, validated design.
 
 ```python
-from ceres import ship, armour
-from ceres.bridge import Bridge
-from ceres.computer import Computer5, JumpControl2
-from ceres.drives import FusionPlantTL12, JumpDrive2, JumpFuel, MDrive2, OperationFuel, FuelProcessor
-from ceres.habitation import Staterooms
-from ceres.sensors import MilitarySensors
-from ceres.systems import Airlock, AirRaft, InternalDockingSpace, ProbeDrones, Workshop
-from ceres.weapons import DoubleTurret
+from ceres import armour, hull, ship
+from ceres.bridge import Bridge, CommandSection
+from ceres.computer import Computer5, ComputerSection, JumpControl2
+from ceres.crafts import AirRaft, CraftSection, InternalDockingSpace
+from ceres.drives import DriveSection, FusionPlantTL12, JumpDrive2, MDrive2, PowerSection
+from ceres.habitation import HabitationSection, Staterooms
+from ceres.sensors import MilitarySensors, SensorsSection
+from ceres.storage import FuelProcessor, FuelSection, JumpFuel, OperationFuel
+from ceres.systems import Airlock, ProbeDrones, SystemsSection, Workshop
+from ceres.weapons import DoubleTurret, WeaponsSection
 
 scout = ship.Ship(
     ship_class='Suleiman',
@@ -21,26 +23,25 @@ scout = ship.Ship(
     tl=12,
     displacement=100,
     design_type=ship.ShipDesignType.STANDARD,
-    hull=ship.Hull(
-        configuration=ship.streamlined_hull,
+    hull=hull.Hull(
+        configuration=hull.streamlined_hull,
         armour=armour.CrystalironArmour(tl=12, protection=4),
+        airlocks=[Airlock()],
     ),
-    m_drive=MDrive2(),
-    jump_drive=JumpDrive2(),
-    fusion_plant=FusionPlantTL12(output=60),
-    jump_fuel=JumpFuel(parsecs=2),
-    operation_fuel=OperationFuel(weeks=12),
-    fuel_processor=FuelProcessor(tons=2),
-    bridge=Bridge(),
-    computer=Computer5(bis=True),
-    software=[JumpControl2()],
-    sensors=MilitarySensors(),
-    turrets=[DoubleTurret()],
-    docking_space=InternalDockingSpace(craft=AirRaft()),
-    staterooms=Staterooms(count=4),
-    airlocks=[Airlock()],
-    probe_drones=ProbeDrones(count=10),
-    workshop=Workshop(),
+    drives=DriveSection(m_drive=MDrive2(), jump_drive=JumpDrive2()),
+    power=PowerSection(fusion_plant=FusionPlantTL12(output=60)),
+    fuel=FuelSection(
+        jump_fuel=JumpFuel(parsecs=2),
+        operation_fuel=OperationFuel(weeks=12),
+        fuel_processor=FuelProcessor(tons=2),
+    ),
+    command=CommandSection(bridge=Bridge()),
+    computer=ComputerSection(hardware=Computer5(bis=True), software=[JumpControl2()]),
+    sensors=SensorsSection(primary=MilitarySensors()),
+    weapons=WeaponsSection(turrets=[DoubleTurret()]),
+    craft=CraftSection(docking_space=InternalDockingSpace(craft=AirRaft())),
+    habitation=HabitationSection(staterooms=Staterooms(count=4)),
+    systems=SystemsSection(probe_drones=ProbeDrones(count=10), workshop=Workshop()),
 )
 
 print(scout.markdown_table())
