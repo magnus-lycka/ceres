@@ -4,10 +4,11 @@ from typing import Any
 from pydantic import Field
 
 from . import hull as hull_model
-from .base import CeresModel, NoteCategory, ShipBase
+from .base import NoteCategory, ShipBase
 from .bridge import CommandSection
 from .computer import ComputerSection, SoftwarePackage
 from .crafts import CraftSection
+from .crew import CrewRole, required_crew_roles
 from .drives import (
     DriveSection,
     PowerSection,
@@ -35,16 +36,6 @@ class ShipDesignType(StrEnum):
             ShipDesignType.CUSTOM: 1.0,
             ShipDesignType.NEW: 1.01,
         }[self]
-
-
-class CrewRole(CeresModel):
-    role: str
-    count: int
-    monthly_salary: int
-
-    @property
-    def total_salary(self) -> int:
-        return self.count * self.monthly_salary
 
 
 class Ship(ShipBase):
@@ -178,16 +169,7 @@ class Ship(ShipBase):
 
     @property
     def crew_roles(self) -> list[CrewRole]:
-        if self.displacement <= 100 and self.drives is not None and self.drives.jump_drive is not None:
-            return [
-                CrewRole(role='PILOT', count=1, monthly_salary=6_000),
-                CrewRole(role='ASTROGATOR', count=1, monthly_salary=5_000),
-                CrewRole(role='ENGINEER', count=1, monthly_salary=4_000),
-            ]
-        # Small craft without jump drives typically operate with a single pilot.
-        if self.displacement <= 100:
-            return [CrewRole(role='PILOT', count=1, monthly_salary=6_000)]
-        return []
+        return required_crew_roles(self)
 
     def _all_parts(self) -> list[ShipPart]:
         parts = list(self.hull._all_parts())

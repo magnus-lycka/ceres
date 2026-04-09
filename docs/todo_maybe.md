@@ -57,7 +57,7 @@ Firmpoint mounting of weapons reduces/limits range and reduces power.
 
 The code as written matches the rules structure poorly.
 
-## DETERMINE CREW
+## DETERMINE CREW [doing]
 
 Calculate crew needs. Means we need to have a way to determine if military or civilian ship,
 or if we want civilian or military crew analysis.
