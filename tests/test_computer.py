@@ -1,5 +1,17 @@
 from ceres.base import ShipBase
-from ceres.computer import Computer5, Computer10, Computer15, Core40, Intellect, JumpControl2, Library, Manoeuvre
+from ceres.computer import (
+    Computer5,
+    Computer10,
+    Computer15,
+    ComputerSection,
+    Core40,
+    Intellect,
+    JumpControl,
+    JumpControl2,
+    JumpControl3,
+    Library,
+    Manoeuvre,
+)
 
 
 class DummyOwner(ShipBase):
@@ -110,3 +122,30 @@ def test_computer_5_bis_can_run_jump_control_2():
     c = Computer5(bis=True)
     c.bind(DummyOwner(12, 100))
     assert c.can_run(JumpControl2())
+
+
+def test_software_packages_keep_highest_singleton_rank():
+    hardware = Computer5(bis=True)
+    hardware.bind(DummyOwner(12, 100))
+    section = ComputerSection(hardware=hardware, software=[JumpControl2(), JumpControl3()])
+
+    assert [package.description for package in section.software_packages.values()] == [
+        'Library',
+        'Manoeuvre/0',
+        'Intellect',
+        'Jump Control/3',
+    ]
+
+    assert isinstance(section.software_packages[JumpControl], JumpControl3)
+
+
+def test_software_packages_warn_about_redundant_lower_singleton():
+    hardware = Computer5(bis=True)
+    hardware.bind(DummyOwner(12, 100))
+    section = ComputerSection(hardware=hardware, software=[JumpControl2(), JumpControl3()])
+
+    jump_control = section.software_packages[JumpControl]
+    assert [(note.category.value, note.message) for note in jump_control.notes] == [
+        ('item', 'Jump Control/3'),
+        ('warning', 'Redundant Jump Control/2 added'),
+    ]

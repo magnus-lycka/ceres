@@ -1,6 +1,6 @@
 from typing import Annotated, ClassVar, Literal
 
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 
 from .base import CeresModel
 from .parts import ShipPart
@@ -28,6 +28,14 @@ class SoftwarePackage(CeresModel):
     def build_item(self) -> str | None:
         return self.description
 
+    @property
+    def singleton_type(self) -> type[SoftwarePackage]:
+        return type(self)
+
+    @property
+    def singleton_rank(self) -> int:
+        return 0
+
 
 class Library(SoftwarePackage):
     description: Literal['Library'] = 'Library'
@@ -52,6 +60,14 @@ class Intellect(SoftwarePackage):
 
 class JumpControl(SoftwarePackage):
     rating: int
+
+    @property
+    def singleton_type(self) -> type[SoftwarePackage]:
+        return JumpControl
+
+    @property
+    def singleton_rank(self) -> int:
+        return self.rating
 
 
 class JumpControl1(JumpControl):
@@ -102,74 +118,120 @@ class JumpControl6(JumpControl):
     rating: Literal[6] = 6
 
 
-class AutoRepair1(SoftwarePackage):
+class AutoRepair(SoftwarePackage):
+    rating: int
+
+    @property
+    def singleton_type(self) -> type[SoftwarePackage]:
+        return AutoRepair
+
+    @property
+    def singleton_rank(self) -> int:
+        return self.rating
+
+
+class AutoRepair1(AutoRepair):
     description: Literal['Auto-Repair/1'] = 'Auto-Repair/1'
     minimum_tl = 11
     bandwidth = 10
     base_cost = 5_000_000.0
+    rating: Literal[1] = 1
 
 
-class AutoRepair2(SoftwarePackage):
+class AutoRepair2(AutoRepair):
     description: Literal['Auto-Repair/2'] = 'Auto-Repair/2'
     minimum_tl = 12
     bandwidth = 20
     base_cost = 10_000_000.0
+    rating: Literal[2] = 2
 
 
-class FireControl1(SoftwarePackage):
+class FireControl(SoftwarePackage):
+    rating: int
+
+    @property
+    def singleton_type(self) -> type[SoftwarePackage]:
+        return FireControl
+
+    @property
+    def singleton_rank(self) -> int:
+        return self.rating
+
+
+class FireControl1(FireControl):
     description: Literal['Fire Control/1'] = 'Fire Control/1'
     minimum_tl = 9
     bandwidth = 5
     base_cost = 2_000_000.0
+    rating: Literal[1] = 1
 
 
-class FireControl2(SoftwarePackage):
+class FireControl2(FireControl):
     description: Literal['Fire Control/2'] = 'Fire Control/2'
     minimum_tl = 11
     bandwidth = 10
     base_cost = 4_000_000.0
+    rating: Literal[2] = 2
 
 
-class FireControl3(SoftwarePackage):
+class FireControl3(FireControl):
     description: Literal['Fire Control/3'] = 'Fire Control/3'
     minimum_tl = 12
     bandwidth = 15
     base_cost = 6_000_000.0
+    rating: Literal[3] = 3
 
 
-class FireControl4(SoftwarePackage):
+class FireControl4(FireControl):
     description: Literal['Fire Control/4'] = 'Fire Control/4'
     minimum_tl = 13
     bandwidth = 20
     base_cost = 8_000_000.0
+    rating: Literal[4] = 4
 
 
-class FireControl5(SoftwarePackage):
+class FireControl5(FireControl):
     description: Literal['Fire Control/5'] = 'Fire Control/5'
     minimum_tl = 14
     bandwidth = 25
     base_cost = 10_000_000.0
+    rating: Literal[5] = 5
 
 
-class Evade1(SoftwarePackage):
+class Evade(SoftwarePackage):
+    rating: int
+
+    @property
+    def singleton_type(self) -> type[SoftwarePackage]:
+        return Evade
+
+    @property
+    def singleton_rank(self) -> int:
+        return self.rating
+
+
+class Evade1(Evade):
     description: Literal['Evade/1'] = 'Evade/1'
     minimum_tl = 9
     bandwidth = 5
     base_cost = 1_000_000.0
+    rating: Literal[1] = 1
 
 
-class Evade2(SoftwarePackage):
+class Evade2(Evade):
     description: Literal['Evade/2'] = 'Evade/2'
     minimum_tl = 11
     bandwidth = 10
     base_cost = 2_000_000.0
+    rating: Literal[2] = 2
 
 
-class Evade3(SoftwarePackage):
+class Evade3(Evade):
     description: Literal['Evade/3'] = 'Evade/3'
     minimum_tl = 12
     bandwidth = 15
     base_cost = 3_000_000.0
+    rating: Literal[3] = 3
 
 
 class Computer(ShipPart):
@@ -372,12 +434,57 @@ ShipSoftware = Annotated[
 class ComputerSection(CeresModel):
     hardware: ShipComputer | None = None
     software: list[ShipSoftware] = Field(default_factory=list)
+    _software_packages: dict[type[SoftwarePackage], SoftwarePackage] = PrivateAttr(default_factory=dict)
 
     @property
-    def software_packages(self) -> list[SoftwarePackage]:
+    def software_packages(self) -> dict[type[SoftwarePackage], SoftwarePackage]:
+        if not self._software_packages:
+            self.refresh_software_packages()
+        return self._software_packages
+
+    def refresh_software_packages(self) -> None:
+        packages: list[SoftwarePackage] = []
+        if self.hardware is not None:
+            packages.extend(package.model_copy(deep=True) for package in self.hardware.included_software)
+        packages.extend(package.model_copy(deep=True) for package in self.software)
+        selected: dict[type[SoftwarePackage], SoftwarePackage] = {}
+        redundant: dict[type[SoftwarePackage], list[str]] = {}
+        for package in packages:
+            key = package.singleton_type
+            current = selected.get(key)
+            if current is None:
+                selected[key] = package
+                continue
+            if package.singleton_rank > current.singleton_rank:
+                redundant.setdefault(key, []).append(f'Redundant {current.description} added')
+                selected[key] = package
+                continue
+            redundant.setdefault(key, []).append(f'Redundant {package.description} added')
+        for key, package in selected.items():
+            for message in redundant.get(key, []):
+                package.warning(message)
+        object.__setattr__(self, '_software_packages', selected)
+
+    def validate_software(self, ship_tl: int) -> None:
         if self.hardware is None:
-            return []
-        return [*self.hardware.included_software, *self.software]
+            for package in self.software_packages.values():
+                package.warning('Ship software requires a computer')
+            return
+        for package in self.software_packages.values():
+            if ship_tl < package.minimum_tl:
+                package.error(f'{package.description} requires TL{package.minimum_tl}')
+            if not self.hardware.can_run(package):
+                package.error(f'{self.hardware.description} cannot run {package.description}')
+
+    def validate_jump_drive(self, drives) -> None:
+        jump_control = self.software_packages.get(JumpControl)
+        if not isinstance(jump_control, JumpControl):
+            return
+        if drives is None or drives.jump_drive is None:
+            jump_control.warning('No jump drive installed')
+            return
+        if jump_control.rating > drives.jump_drive.rating:
+            jump_control.warning(f'Limited to Jump {drives.jump_drive.rating} by drive capacity')
 
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = []

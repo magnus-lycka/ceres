@@ -1,7 +1,7 @@
 import math
 from typing import ClassVar
 
-from .base import CeresModel, Note
+from .base import CeresModel
 from .parts import ShipPart
 from .systems import CommonArea
 
@@ -54,15 +54,13 @@ class HabitationSection(CeresModel):
     low_berths: LowBerths | None = None
     common_area: CommonArea | None = None
 
-    def build_notes(self) -> list[Note]:
-        notes = super().build_notes()
+    def validate_common_area(self) -> None:
         if self.staterooms is None:
-            return notes
+            return
         recommended_common_area = self.staterooms.tons / 4
         actual_common_area = 0.0 if self.common_area is None else self.common_area.tons
         if actual_common_area < recommended_common_area:
             self.warning(f'Recommended common area is {recommended_common_area:.2f} tons')
-        return notes
 
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = []

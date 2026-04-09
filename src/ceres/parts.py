@@ -36,11 +36,10 @@ class ShipPart(CeresModel):
         self._refresh_field('tons', 'compute_tons')
 
     def model_post_init(self, __context: Any) -> None:
-        self.clear_notes()
+        super().model_post_init(__context)
 
     def bind(self, owner: ShipBase) -> None:
         self._owner = owner
-        self.clear_notes()
         self.validate_tl()
         self.refresh_derived_values()
 

@@ -3,6 +3,7 @@ from typing import Annotated, ClassVar, Literal
 
 from pydantic import Field
 
+from .computer import JumpControl, SoftwarePackage
 from .parts import ShipPart
 
 
@@ -209,6 +210,16 @@ class DriveSection(ShipPart):
 
     def _all_parts(self) -> list[ShipPart]:
         return [part for part in [self.m_drive, self.jump_drive] if part is not None]
+
+    def validate_jump_control(self, software_packages: dict[type[SoftwarePackage], SoftwarePackage]) -> None:
+        if self.jump_drive is None:
+            return
+        jump_control = software_packages.get(JumpControl)
+        if not isinstance(jump_control, JumpControl):
+            self.jump_drive.warning('No Jump Control software')
+            return
+        if jump_control.rating < self.jump_drive.rating:
+            self.jump_drive.warning(f'Limited to Jump {jump_control.rating} by control software')
 
 
 class _FusionPlant(ShipPart):

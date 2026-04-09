@@ -2,7 +2,7 @@ import pytest
 
 from ceres import armour, hull, ship
 from ceres.bridge import Bridge, CommandSection
-from ceres.computer import Computer5, Computer10, ComputerSection, JumpControl1, JumpControl2, JumpControl3
+from ceres.computer import Computer5, Computer10, ComputerSection, JumpControl, JumpControl1, JumpControl2, JumpControl3
 from ceres.crafts import AirRaft, InternalDockingSpace
 from ceres.drives import DriveSection, FusionPlantTL12, JumpDrive2, MDrive2, PowerSection
 from ceres.habitation import HabitationSection, Staterooms
@@ -115,7 +115,7 @@ def test_suleiman_matches_first_modeled_reference_slice():
     assert suleiman.computer.hardware.processing == 5
     assert suleiman.computer.hardware.jump_control_processing == 10
     assert suleiman.computer.hardware.cost == 45_000
-    assert [(package.description, package.cost) for package in suleiman.computer.software_packages] == [
+    assert [(package.description, package.cost) for package in suleiman.computer.software_packages.values()] == [
         ('Library', 0.0),
         ('Manoeuvre/0', 0.0),
         ('Intellect', 0.0),
@@ -300,7 +300,7 @@ def test_jump_control_without_jump_drive_warns_on_software():
         computer=ComputerSection(hardware=Computer5(bis=True), software=[JumpControl2()]),
     )
     assert my_ship.computer is not None
-    explicit_jump_control = my_ship.computer.software[0]
+    explicit_jump_control = my_ship.computer.software_packages[JumpControl]
     assert [(note.category.value, note.message) for note in explicit_jump_control.notes] == [
         ('item', 'Jump Control/2'),
         ('warning', 'No jump drive installed'),
@@ -316,10 +316,33 @@ def test_jump_control_with_higher_rating_than_drive_warns_on_software():
         computer=ComputerSection(hardware=Computer10(bis=True), software=[JumpControl3()]),
     )
     assert my_ship.computer is not None
-    explicit_jump_control = my_ship.computer.software[0]
+    explicit_jump_control = my_ship.computer.software_packages[JumpControl]
     assert [(note.category.value, note.message) for note in explicit_jump_control.notes] == [
         ('item', 'Jump Control/3'),
         ('warning', 'Limited to Jump 2 by drive capacity'),
+    ]
+
+
+def test_higher_jump_control_replaces_lower_one():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        drives=DriveSection(jump_drive=JumpDrive2()),
+        computer=ComputerSection(hardware=Computer10(bis=True), software=[JumpControl2(), JumpControl3()]),
+    )
+
+    assert my_ship.computer is not None
+    assert [package.description for package in my_ship.computer.software_packages.values()] == [
+        'Library',
+        'Manoeuvre/0',
+        'Intellect',
+        'Jump Control/3',
+    ]
+
+    jump_control = my_ship.computer.software_packages[JumpControl]
+    assert ('warning', 'Redundant Jump Control/2 added') in [
+        (note.category.value, note.message) for note in jump_control.notes
     ]
 
 

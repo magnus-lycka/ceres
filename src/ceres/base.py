@@ -24,12 +24,6 @@ class CeresModel(BaseModel):
     def build_notes(self) -> list[Note]:
         return []
 
-    def clear_notes(self) -> None:
-        object.__setattr__(self, 'notes', [])
-        if message := self.build_item():
-            self.item(message)
-        self.notes.extend(self.build_notes())
-
     def item(self, message: str) -> None:
         item_note = Note(category=NoteCategory.ITEM, message=message)
         if self.notes and self.notes[0].category is NoteCategory.ITEM:
@@ -47,7 +41,9 @@ class CeresModel(BaseModel):
         self.notes.append(Note(category=NoteCategory.WARNING, message=message))
 
     def model_post_init(self, __context) -> None:
-        self.clear_notes()
+        if message := self.build_item():
+            self.item(message)
+        self.notes.extend(self.build_notes())
 
 
 class ShipBase(CeresModel):

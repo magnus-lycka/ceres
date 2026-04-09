@@ -1,6 +1,25 @@
 # List of potential things to do
 
-# Implement armoured bulkhead
+## Software Singleton
+
+Note that Software Packages are Singletons
+
+If user e.g. lists JumpContrl/2 and then JumpControl/3,
+they have (and pay for) JumpControl/3, and a warning that
+redundant JumpControl/2 was added. Note the included
+JumpControl SW in Core models. I assume that if your main
+is a Core, and your spare is a (non Core) computer, it
+can still run the Core supplied SW within the capacity of
+its rating.
+
+## Quantities
+
+If we have 10 staterooms, it should say 10 ✕ Staterooms.
+The same is probably true for many other items. If it's
+just one, I guesws it could say 1 ✕ Staterooms or just
+Stateroom
+
+## Implement armoured bulkhead
 
 Armoured bulkheads protect specific areas and
 systems, such as the jump drive or fuel tanks, making

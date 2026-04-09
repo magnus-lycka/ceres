@@ -6,7 +6,7 @@ from pydantic import Field
 from . import hull as hull_model
 from .base import CeresModel, NoteCategory, ShipBase
 from .bridge import CommandSection
-from .computer import ComputerSection, JumpControl
+from .computer import ComputerSection, SoftwarePackage
 from .crafts import InternalDockingSpace
 from .drives import (
     DriveSection,
@@ -136,7 +136,7 @@ class Ship(ShipBase):
         cargo_hold_cost = sum(cargo_hold.crane_cost(self) for cargo_hold in cargo_holds)
         software_cost = 0.0
         if self.computer is not None:
-            software_cost = sum(package.cost for package in self.computer.software_packages)
+            software_cost = sum(package.cost for package in self.computer.software_packages.values())
         return (
             self.hull_cost + sum(part.cost for part in self._all_parts()) + software_cost + craft_cost + cargo_hold_cost
         )
@@ -381,7 +381,7 @@ class Ship(ShipBase):
         if self.computer is not None and self.computer.hardware is not None:
             add_part(SpecSection.COMPUTER, self.computer.hardware)
         if self.computer is not None:
-            for package in self.computer.software_packages:
+            for package in self.computer.software_packages.values():
                 add_row(
                     SpecSection.COMPUTER,
                     SpecRow(
@@ -556,34 +556,21 @@ class Ship(ShipBase):
                 object.__setattr__(self, 'fuel', FuelSection(fuel_scoops=FuelScoops(free=True)))
             elif self.fuel.fuel_scoops is None or not self.fuel.fuel_scoops.free:
                 object.__setattr__(self, 'fuel', self.fuel.model_copy(update={'fuel_scoops': FuelScoops(free=True)}))
-        self.clear_notes()
         for part in self._all_parts():
             part.bind(self)
         if self.habitation is not None:
-            self.habitation.clear_notes()
-        if self.computer is not None and self.computer.software and self.computer.hardware is None:
-            for package in self.computer.software:
-                package.warning('Ship software requires a computer')
+            self.habitation.validate_common_area()
         if self.computer is not None:
-            for package in self.computer.software_packages:
-                if self.tl < package.minimum_tl:
-                    package.error(f'{package.description} requires TL{package.minimum_tl}')
-                if self.computer.hardware is not None and not self.computer.hardware.can_run(package):
-                    package.error(f'{self.computer.hardware.description} cannot run {package.description}')
-            jump_controls = [package for package in self.computer.software_packages if isinstance(package, JumpControl)]
-        else:
-            jump_controls = []
-        highest_jump_control = max(jump_controls, key=lambda package: package.rating, default=None)
-        if self.drives is not None and self.drives.jump_drive is not None:
-            if highest_jump_control is None:
-                self.drives.jump_drive.warning('No Jump Control software')
-            elif highest_jump_control.rating < self.drives.jump_drive.rating:
-                self.drives.jump_drive.warning(f'Limited to Jump {highest_jump_control.rating} by control software')
-        if highest_jump_control is not None:
-            if self.drives is None or self.drives.jump_drive is None:
-                highest_jump_control.warning('No jump drive installed')
-            elif highest_jump_control.rating > self.drives.jump_drive.rating:
-                highest_jump_control.warning(f'Limited to Jump {self.drives.jump_drive.rating} by drive capacity')
+            self.computer.refresh_software_packages()
+            self.computer.validate_software(self.tl)
+            self.computer.validate_jump_drive(self.drives)
+        if self.drives is not None:
+            software_packages: dict[type[SoftwarePackage], SoftwarePackage]
+            if self.computer is None:
+                software_packages = {}
+            else:
+                software_packages = self.computer.software_packages
+            self.drives.validate_jump_control(software_packages)
         if self.cargo_tons < 0:
             self.error(f'Hull overloaded by {-self.cargo_tons:.2f} tons')
         if self.command is not None and self.command.bridge is not None and not self.hull.airlocks:
