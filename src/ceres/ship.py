@@ -295,32 +295,7 @@ class Ship(ShipBase):
             tl=self.tl,
             hull_points=self.hull_points,
         )
-
-        spec.add_row(
-            SpecRow(
-                section=SpecSection.HULL,
-                item=self._item_text(self.hull, 'Hull'),
-                tons=float(self.displacement),
-                cost=self.hull_cost,
-                emphasize_tons=True,
-                notes=self._display_notes(self.hull),
-            ),
-        )
-        spec.add_row(
-            SpecRow(
-                section=SpecSection.HULL,
-                item='Basic Ship Systems',
-                power=self.basic_hull_power_load,
-            ),
-        )
-        if self.hull.armour is not None:
-            spec.add_row(self._spec_row_for_part(SpecSection.HULL, self.hull.armour))
-        if self.hull.stealth is not None:
-            spec.add_row(self._spec_row_for_part(SpecSection.HULL, self.hull.stealth))
-        for row in self._grouped_spec_rows(
-            SpecSection.HULL, [*self.hull.airlocks, *([self.hull.aerofins] if self.hull.aerofins is not None else [])]
-        ):
-            spec.add_row(row)
+        self.hull.add_spec_rows(self, spec)
 
         if self.drives is not None:
             self.drives.add_spec_rows(self, spec)

@@ -11,6 +11,7 @@ from .armour import (
 )
 from .base import CeresModel
 from .parts import ShipPart
+from .spec import ShipSpec, SpecRow, SpecSection
 from .systems import Aerofins, Airlock
 
 
@@ -195,3 +196,31 @@ class Hull(CeresModel):
         if (af := self.aerofins) is not None:
             parts.append(af)
         return parts
+
+    def add_spec_rows(self, ship, spec: ShipSpec) -> None:
+        spec.add_row(
+            SpecRow(
+                section=SpecSection.HULL,
+                item=ship._item_text(self, 'Hull'),
+                tons=float(ship.displacement),
+                cost=ship.hull_cost,
+                emphasize_tons=True,
+                notes=ship._display_notes(self),
+            )
+        )
+        spec.add_row(
+            SpecRow(
+                section=SpecSection.HULL,
+                item='Basic Ship Systems',
+                power=ship.basic_hull_power_load,
+            )
+        )
+        if self.armour is not None:
+            spec.add_row(ship._spec_row_for_part(SpecSection.HULL, self.armour))
+        if self.stealth is not None:
+            spec.add_row(ship._spec_row_for_part(SpecSection.HULL, self.stealth))
+        for row in ship._grouped_spec_rows(
+            SpecSection.HULL,
+            [*self.airlocks, *([self.aerofins] if self.aerofins is not None else [])],
+        ):
+            spec.add_row(row)
