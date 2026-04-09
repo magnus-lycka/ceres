@@ -3,7 +3,7 @@ import pytest
 from ceres import armour, hull, ship
 from ceres.bridge import Bridge, CommandSection
 from ceres.computer import Computer5, ComputerSection, JumpControl1
-from ceres.drives import DriveSection, FusionPlantTL12, JumpDrive1, MDrive1
+from ceres.drives import DriveSection, FusionPlantTL12, JumpDrive1, MDrive1, PowerSection
 from ceres.habitation import HabitationSection, LowBerths, Staterooms
 from ceres.sensors import CivilianSensors, SensorsSection
 from ceres.storage import CargoCrane, CargoHold, CargoSection, FuelProcessor, FuelSection, JumpFuel, OperationFuel
@@ -25,7 +25,7 @@ def build_beowulf() -> ship.Ship:
             airlocks=[Airlock(), Airlock()],
         ),
         drives=DriveSection(m_drive=MDrive1(), jump_drive=JumpDrive1()),
-        fusion_plant=FusionPlantTL12(output=75),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=75)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=1),
             operation_fuel=OperationFuel(weeks=4),
@@ -73,7 +73,8 @@ def test_beowulf_drives():
 
 def test_beowulf_fusion_plant():
     beowulf = build_beowulf()
-    fp = beowulf.fusion_plant
+    assert beowulf.power is not None
+    fp = beowulf.power.fusion_plant
     assert fp is not None
     assert fp.output == 75
     assert fp.tons == pytest.approx(5.0)

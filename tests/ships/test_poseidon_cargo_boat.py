@@ -3,7 +3,7 @@ import pytest
 from ceres import hull, ship
 from ceres.bridge import Bridge, CommandSection
 from ceres.computer import Computer5, ComputerSection
-from ceres.drives import DriveSection, FusionPlantTL8, FusionPlantTL12, MDrive3
+from ceres.drives import DriveSection, FusionPlantTL8, FusionPlantTL12, MDrive3, PowerSection
 from ceres.habitation import HabitationSection, Staterooms
 from ceres.storage import FuelSection, OperationFuel
 from ceres.systems import Aerofins, Airlock, CommonArea
@@ -26,7 +26,7 @@ def build_poseidon_cargo_boat(tl: int) -> ship.Ship:
         design_type=ship.ShipDesignType.STANDARD,
         hull=hull.Hull(configuration=POSEIDON_HULL, airlocks=[Airlock()], aerofins=Aerofins()),
         drives=DriveSection(m_drive=MDrive3()),
-        fusion_plant=fusion_plant,
+        power=PowerSection(fusion_plant=fusion_plant),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=16)),
         command=CommandSection(bridge=Bridge(small=True)),
         computer=ComputerSection(hardware=Computer5()),
@@ -71,10 +71,12 @@ def test_poseidon_tl12_variant_trades_cost_for_cargo_with_better_power_plant():
     tl10 = build_poseidon_cargo_boat(10)
     tl12 = build_poseidon_cargo_boat(12)
 
-    assert tl10.fusion_plant is not None
-    assert tl12.fusion_plant is not None
-    assert isinstance(tl10.fusion_plant, FusionPlantTL8)
-    assert isinstance(tl12.fusion_plant, FusionPlantTL12)
+    assert tl10.power is not None
+    assert tl12.power is not None
+    assert tl10.power.fusion_plant is not None
+    assert tl12.power.fusion_plant is not None
+    assert isinstance(tl10.power.fusion_plant, FusionPlantTL8)
+    assert isinstance(tl12.power.fusion_plant, FusionPlantTL12)
     assert tl12.cargo_tons > tl10.cargo_tons
     assert tl12.production_cost > tl10.production_cost
 

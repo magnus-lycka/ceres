@@ -4,7 +4,7 @@ from ceres import armour, hull, ship
 from ceres.bridge import Bridge, CommandSection
 from ceres.computer import Computer5, Computer10, ComputerSection, JumpControl1, JumpControl2, JumpControl3
 from ceres.crafts import AirRaft, InternalDockingSpace
-from ceres.drives import DriveSection, FusionPlantTL12, JumpDrive2, MDrive2
+from ceres.drives import DriveSection, FusionPlantTL12, JumpDrive2, MDrive2, PowerSection
 from ceres.habitation import HabitationSection, Staterooms
 from ceres.sensors import MilitarySensors, SensorsSection
 from ceres.storage import FuelProcessor, FuelSection, JumpFuel, OperationFuel
@@ -27,7 +27,7 @@ def build_suleiman() -> ship.Ship:
             airlocks=[Airlock()],
         ),
         drives=DriveSection(m_drive=MDrive2(), jump_drive=JumpDrive2()),
-        fusion_plant=FusionPlantTL12(output=60),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=60)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=2),
             operation_fuel=OperationFuel(weeks=12),
@@ -50,7 +50,8 @@ def test_suleiman_matches_first_modeled_reference_slice():
     assert suleiman.drives is not None
     m_drive = suleiman.drives.m_drive
     jump_drive = suleiman.drives.jump_drive
-    fusion_plant = suleiman.fusion_plant
+    assert suleiman.power is not None
+    fusion_plant = suleiman.power.fusion_plant
     assert suleiman.fuel is not None
     jump_fuel = suleiman.fuel.jump_fuel
     operation_fuel = suleiman.fuel.operation_fuel

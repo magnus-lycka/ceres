@@ -29,7 +29,8 @@ class OperationFuel(ShipPart):
         return f'Operation {self.weeks} weeks'
 
     def compute_tons(self) -> float:
-        plant = getattr(self.owner, 'fusion_plant', None)
+        power = getattr(self.owner, 'power', None)
+        plant = None if power is None else power.fusion_plant
         if plant is None:
             self.error('Ship must have a FusionPlant to compute OperationFuel')
             return 0.0

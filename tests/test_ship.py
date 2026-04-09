@@ -4,7 +4,7 @@ import pytest
 from ceres import armour, hull, ship
 from ceres.bridge import Cockpit, CommandSection
 from ceres.crafts import AirRaft, InternalDockingSpace
-from ceres.drives import DriveSection, FusionPlantTL12, MDrive6
+from ceres.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection
 from ceres.sensors import CivilianSensors, SensorsSection
 from ceres.storage import CargoCrane, CargoHold, CargoSection
 from ceres.systems import Airlock, ProbeDrones, SystemsSection, Workshop
@@ -166,7 +166,7 @@ def test_ship_available_power_with_plant_uses_output():
         tl=12,
         displacement=6,
         hull=hull.Hull(configuration=hull.standard_hull),
-        fusion_plant=FusionPlantTL12(output=8),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=8)),
     )
     assert my_ship.available_power == 8
 

@@ -102,11 +102,13 @@ Working interpretation:
 8. ✅ **`CommandSection`** in `bridge.py` — `bridge`, `cockpit` → `Ship.command: CommandSection | None`.
    - Implemented. Convenience access via `ship.bridge` / `ship.cockpit` may still remain where useful.
 9. ✅ **`DriveSection`** in `drives.py` — `m_drive`, `jump_drive` → `Ship.drives: DriveSection | None`.
-   - Implemented. Convenience access via `ship.m_drive` / `ship.jump_drive` may still remain where useful.
-10. ✅ **`CargoSection`** in `storage.py` — `cargo_holds` → `Ship.cargo: CargoSection | None`.
+   - Implemented.
+10. ✅ **`PowerSection`** in `drives.py` — `fusion_plant` → `Ship.power: PowerSection | None`.
+   - Implemented. `OperationFuel` now depends on `ship.power.fusion_plant`, not a flat `ship.fusion_plant`.
+11. ✅ **`CargoSection`** in `storage.py` — `cargo_holds` → `Ship.cargo: CargoSection | None`.
    - Keep this close to `FuelSection`, since future rules are likely to blur the boundary between cargo and fuel storage.
    - Implemented. The numeric remaining-capacity property is now separate (`cargo_tons`) so `ship.cargo` can mean the section object.
-11. ✅ **Move hull types to `hull.py`** — `Streamlined`, `HullConfiguration`, predefined hull configs, stealth types, `HullArmour`, `HullStealth`, and `Hull`.
+12. ✅ **Move hull types to `hull.py`** — `Streamlined`, `HullConfiguration`, predefined hull configs, stealth types, `HullArmour`, `HullStealth`, and `Hull`.
    - This does not change the desired `Ship.hull` API.
    - Done as a module-boundary cleanup so `ship.py` no longer carries the bulk of the hull-specific code.
 
@@ -121,7 +123,7 @@ Additional status note:
 
 Practical implication:
 
-- steps 6–10 no longer block a clean report
+- steps 6–11 no longer block a clean report
 - they are now about cleaning up the Python construction model so the rules are
   easier to implement and reason about
 

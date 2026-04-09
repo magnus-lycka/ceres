@@ -3,7 +3,7 @@ import pytest
 from ceres import armour, hull, ship
 from ceres.bridge import Cockpit, CommandSection
 from ceres.computer import Computer5, ComputerSection
-from ceres.drives import DriveSection, FusionPlantTL12, MDrive6
+from ceres.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection
 from ceres.sensors import CivilianSensors, SensorsSection
 from ceres.storage import FuelSection, OperationFuel
 from ceres.weapons import FixedFirmpoint, PulseLaser, WeaponsSection
@@ -26,7 +26,7 @@ def build_ultralight_fighter() -> ship.Ship:
             stealth=hull.BasicStealth(),
         ),
         drives=DriveSection(m_drive=MDrive6()),
-        fusion_plant=FusionPlantTL12(output=8),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=8)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=1)),
         command=CommandSection(cockpit=Cockpit(holographic=True)),
         computer=ComputerSection(hardware=Computer5()),
@@ -62,7 +62,8 @@ def test_ultralight_fighter_part_values():
     assert int(m.cost) == 720_000
     assert int(m.power) == 4
 
-    fp = fighter.fusion_plant
+    assert fighter.power is not None
+    fp = fighter.power.fusion_plant
     assert fp is not None
     assert float(fp.tons) == pytest.approx(8 / 15)
     assert int(fp.cost) == 533_333

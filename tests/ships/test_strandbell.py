@@ -3,7 +3,7 @@ import pytest
 from ceres import armour, hull, ship
 from ceres.bridge import Bridge, CommandSection
 from ceres.computer import AutoRepair1, Computer35, ComputerSection, Evade2, FireControl2
-from ceres.drives import DriveSection, FusionPlantTL12, MDrive9
+from ceres.drives import DriveSection, FusionPlantTL12, MDrive9, PowerSection
 from ceres.habitation import HabitationSection, Staterooms
 from ceres.sensors import CountermeasuresSuite, ImprovedSensors, SensorsSection
 from ceres.storage import FuelProcessor, FuelScoops, FuelSection, OperationFuel
@@ -30,7 +30,7 @@ def build_strandbell() -> ship.Ship:
             airlocks=[Airlock(), Airlock()],
         ),
         drives=DriveSection(m_drive=MDrive9(armored=True)),
-        fusion_plant=FusionPlantTL12(output=240),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=240)),
         fuel=FuelSection(
             operation_fuel=OperationFuel(weeks=12),
             fuel_processor=FuelProcessor(tons=1),
@@ -77,7 +77,8 @@ def test_strandbell_armored_m_drive():
 
 def test_strandbell_fusion_plant():
     sdb = build_strandbell()
-    fp = sdb.fusion_plant
+    assert sdb.power is not None
+    fp = sdb.power.fusion_plant
     assert fp is not None
     assert fp.output == 240
     assert fp.tons == pytest.approx(16.0)

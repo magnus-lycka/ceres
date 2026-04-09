@@ -254,3 +254,10 @@ class FusionPlantTL15(_FusionPlant):
     minimum_tl = 15
     power_per_ton = 20
     cost_per_ton = 2_000_000
+
+
+class PowerSection(ShipPart):
+    fusion_plant: FusionPlantTL8 | FusionPlantTL12 | FusionPlantTL15 | None = None
+
+    def _all_parts(self) -> list[ShipPart]:
+        return [part for part in [self.fusion_plant] if part is not None]

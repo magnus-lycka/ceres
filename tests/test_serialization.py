@@ -7,7 +7,7 @@ import pytest
 from ceres import armour, hull
 from ceres.bridge import Cockpit, CommandSection
 from ceres.computer import Computer5, ComputerSection
-from ceres.drives import DriveSection, FusionPlantTL12, MDrive6
+from ceres.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection
 from ceres.hull import BasicStealth, Hull
 from ceres.sensors import BasicSensors, CivilianSensors, SensorsSection
 from ceres.ship import Ship
@@ -28,7 +28,7 @@ ultralight = Ship(
         stealth=BasicStealth(),
     ),
     drives=DriveSection(m_drive=MDrive6()),
-    fusion_plant=FusionPlantTL12(output=8),
+    power=PowerSection(fusion_plant=FusionPlantTL12(output=8)),
     fuel=FuelSection(operation_fuel=OperationFuel(weeks=1)),
     command=CommandSection(cockpit=Cockpit(holographic=True)),
     computer=ComputerSection(hardware=Computer5()),
@@ -160,10 +160,12 @@ def test_roundtrip_recomputes_derived_part_values():
 
 def test_roundtrip_fusion_plant_attributes():
     loaded = _roundtrip(ultralight)
-    assert loaded.fusion_plant is not None
-    assert ultralight.fusion_plant is not None
-    assert loaded.fusion_plant.fusion_tl == ultralight.fusion_plant.fusion_tl
-    assert loaded.fusion_plant.output == ultralight.fusion_plant.output
+    assert loaded.power is not None
+    assert ultralight.power is not None
+    assert loaded.power.fusion_plant is not None
+    assert ultralight.power.fusion_plant is not None
+    assert loaded.power.fusion_plant.fusion_tl == ultralight.power.fusion_plant.fusion_tl
+    assert loaded.power.fusion_plant.output == ultralight.power.fusion_plant.output
 
 
 def test_roundtrip_cockpit():
@@ -213,7 +215,7 @@ def test_roundtrip_cargo():
 def test_roundtrip_no_parts():
     loaded = _roundtrip(bare)
     assert loaded.drives is None
-    assert loaded.fusion_plant is None
+    assert loaded.power is None
     assert loaded.command is None or loaded.command.cockpit is None
     assert loaded.weapons is None
 

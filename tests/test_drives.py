@@ -17,6 +17,7 @@ from ceres.drives import (
     JumpDrive8,
     JumpDrive9,
     MDrive6,
+    PowerSection,
 )
 from ceres.storage import FuelSection, OperationFuel
 
@@ -77,6 +78,11 @@ def test_mdrive_power():
 def test_drive_section_all_parts():
     drives = DriveSection(m_drive=MDrive6(), jump_drive=JumpDrive2())
     assert drives._all_parts() == [drives.m_drive, drives.jump_drive]
+
+
+def test_power_section_all_parts():
+    power = PowerSection(fusion_plant=FusionPlantTL12(output=8))
+    assert power._all_parts() == [power.fusion_plant]
 
 
 
@@ -169,7 +175,7 @@ def _make_ship_with_plant():
         tl=12,
         displacement=6,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        fusion_plant=FusionPlantTL12(output=8),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=8)),
         fuel=FuelSection(operation_fuel=fuel),
     )
     assert s.fuel is not None

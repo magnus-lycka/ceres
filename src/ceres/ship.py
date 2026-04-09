@@ -14,9 +14,7 @@ from .computer import (
 from .crafts import InternalDockingSpace
 from .drives import (
     DriveSection,
-    FusionPlantTL8,
-    FusionPlantTL12,
-    FusionPlantTL15,
+    PowerSection,
 )
 from .habitation import HabitationSection
 from .parts import ShipPart
@@ -59,7 +57,7 @@ class Ship(ShipBase):
     design_type: ShipDesignType = ShipDesignType.CUSTOM
     hull: hull_model.Hull
     drives: DriveSection | None = None
-    fusion_plant: FusionPlantTL8 | FusionPlantTL12 | FusionPlantTL15 | None = None
+    power: PowerSection | None = None
     fuel: FuelSection | None = None
     command: CommandSection | None = None
     computer: ComputerSection | None = None
@@ -84,9 +82,9 @@ class Ship(ShipBase):
 
     @property
     def available_power(self) -> float:
-        if self.fusion_plant is None:
+        if self.power is None or self.power.fusion_plant is None:
             return 0.0
-        return float(self.fusion_plant.output)
+        return float(self.power.fusion_plant.output)
 
     @property
     def basic_hull_power_load(self) -> float:
@@ -206,9 +204,8 @@ class Ship(ShipBase):
         parts = list(self.hull._all_parts())
         if self.drives is not None:
             parts.extend(self.drives._all_parts())
-        for part in (self.fusion_plant,):
-            if part is not None:
-                parts.append(part)
+        if self.power is not None:
+            parts.extend(self.power._all_parts())
         if self.fuel is not None:
             parts.extend(self.fuel._all_parts())
         if self.command is not None:
@@ -359,11 +356,11 @@ class Ship(ShipBase):
             add_part(SpecSection.JUMP, self.drives.jump_drive)
         if self.drives is not None and self.drives.m_drive is not None:
             add_part(SpecSection.PROPULSION, self.drives.m_drive)
-        if self.fusion_plant is not None:
+        if self.power is not None and self.power.fusion_plant is not None:
             add_part(
                 SpecSection.POWER,
-                self.fusion_plant,
-                power=float(self.fusion_plant.output),
+                self.power.fusion_plant,
+                power=float(self.power.fusion_plant.output),
                 emphasize_power=True,
             )
 

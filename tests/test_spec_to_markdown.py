@@ -10,7 +10,7 @@ from typing import Any
 from ceres import hull, ship
 from ceres.bridge import Bridge, CommandSection
 from ceres.computer import Computer5, ComputerSection
-from ceres.drives import DriveSection, FusionPlantTL12, MDrive1
+from ceres.drives import DriveSection, FusionPlantTL12, MDrive1, PowerSection
 from ceres.habitation import HabitationSection, Staterooms
 
 
@@ -41,7 +41,7 @@ def test_hull_tons_is_bold():
 
 
 def test_power_plant_output_is_bold():
-    my_ship = _minimal_ship(fusion_plant=FusionPlantTL12(output=30))
+    my_ship = _minimal_ship(power=PowerSection(fusion_plant=FusionPlantTL12(output=30)))
     table = my_ship.markdown_table()
     assert '**30.00**' in table
 
