@@ -208,9 +208,9 @@ def test_strandbell_spec_structure():
     assert spec.row('Missile Storage (240)').section == 'Weapons'
     assert spec.row('Medical Bay').section == 'Systems'
     assert spec.row('Repair Drones').section == 'Systems'
-    assert spec.row('Staterooms').section == 'Habitation'
+    assert spec.row('15 × Staterooms').section == 'Habitation'
     assert spec.row('Common Area').section == 'Habitation'
-    assert spec.row('2x Airlock').section == 'Hull'
+    assert spec.row('2 × Airlock (2 tons)').section == 'Hull'
 
 
 def test_strandbell_markdown_output():

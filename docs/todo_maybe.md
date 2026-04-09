@@ -12,12 +12,18 @@ is a Core, and your spare is a (non Core) computer, it
 can still run the Core supplied SW within the capacity of
 its rating.
 
-## Quantities
+## Quantities [done]
 
 If we have 10 staterooms, it should say 10 ✕ Staterooms.
 The same is probably true for many other items. If it's
 just one, I guesws it could say 1 ✕ Staterooms or just
-Stateroom
+Stateroom.
+
+Current status:
+
+- done for Staterooms
+- done for Low Berths
+- done for Probe Drones
 
 ## Decentralize build_spec [done]
 

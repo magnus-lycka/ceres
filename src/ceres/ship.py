@@ -237,7 +237,7 @@ class Ship(ShipBase):
 
         rows: list[SpecRow] = []
         for item, group in groups:
-            label = f'{len(group)}x {item}' if len(group) > 1 else item
+            label = f'{len(group)} × {item}' if len(group) > 1 else item
             total_tons = sum(part.tons for part in group) or None
             total_cost = sum(part.cost for part in group) or None
             total_power = sum(part.power for part in group)

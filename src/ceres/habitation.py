@@ -16,6 +16,11 @@ class Staterooms(ShipPart):
 
     count: int
 
+    def build_item(self) -> str | None:
+        if self.count == 1:
+            return 'Stateroom'
+        return f'{self.count} × Staterooms'
+
     def compute_tons(self) -> float:
         return self.count * self.tons_per_stateroom
 
@@ -38,7 +43,9 @@ class LowBerths(ShipPart):
     count: int
 
     def build_item(self) -> str | None:
-        return 'Low Berths'
+        if self.count == 1:
+            return 'Low Berth'
+        return f'{self.count} × Low Berths'
 
     def compute_tons(self) -> float:
         return self.count * self.tons_per_berth

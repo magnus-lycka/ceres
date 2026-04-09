@@ -48,7 +48,7 @@ def test_poseidon_cargo_boat_generates_markdown_for_visual_comparison(tl: int):
     assert '| Sensors | Basic |  |  |  |' in table
     assert '|  | • Radar, Lidar; DM -4 |  |  |  |' in table
     assert 'Common Area | 1.00 |  | 100.00 |' in table
-    assert '|  | Airlock |  |  |  |' in table
+    assert '|  | Airlock (2 tons) |  |  |  |' in table
     assert 'Aerofins | 5.00 |  | 500.00 |' in table
     assert '|  | • DM +2 to Pilot checks in atmosphere |  |  |  |' in table
     if tl < 10:

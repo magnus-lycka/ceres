@@ -3,7 +3,7 @@ import pytest
 from ceres import hull, ship
 from ceres.bridge import Bridge, CommandSection
 from ceres.computer import Computer5, ComputerSection
-from ceres.drives import DriveSection, FusionPlantTL12, JumpDrive2, MDrive2, PowerSection
+from ceres.drives import DriveSection, FusionPlantTL8, FusionPlantTL12, JumpDrive2, MDrive1, MDrive2, PowerSection
 from ceres.expense import expense_rows, fuel_cost, life_support_cost, maintenance_cost, mortgage_cost, production_cost
 from ceres.habitation import HabitationSection, Staterooms
 from ceres.storage import FuelProcessor, FuelSection, JumpFuel, OperationFuel
@@ -55,3 +55,18 @@ def test_expense_rows_include_expected_labels():
         'Crew Salaries',
         'Total Expenses',
     ]
+
+
+def test_operation_fuel_contributes_monthly_unrefined_cost():
+    my_ship = ship.Ship(
+        tl=9,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.close_structure.model_copy(update={'light': True})),
+        drives=DriveSection(m_drive=MDrive1()),
+        power=PowerSection(fusion_plant=FusionPlantTL8(output=80)),
+        fuel=FuelSection(operation_fuel=OperationFuel(weeks=12)),
+        command=CommandSection(bridge=Bridge(small=True)),
+        computer=ComputerSection(hardware=Computer5()),
+        habitation=HabitationSection(staterooms=Staterooms(count=1)),
+    )
+    assert fuel_cost(my_ship) == pytest.approx(80.0)

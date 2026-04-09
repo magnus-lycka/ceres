@@ -44,7 +44,7 @@ class Airlock(ShipPart):
     size: float = 2.0
 
     def build_item(self) -> str | None:
-        return 'Airlock'
+        return f'Airlock ({self.size:g} tons)'
 
     def am_i_for_free(self) -> bool:
         free_airlocks = self.owner.displacement // 100
@@ -90,7 +90,9 @@ class ProbeDrones(ShipPart):
     count: int
 
     def build_item(self) -> str | None:
-        return f'{self.count} Probes'
+        if self.count == 1:
+            return 'Probe Drone'
+        return f'{self.count} × Probe Drones'
 
     def compute_tons(self) -> float:
         return self.count / self.drones_per_ton

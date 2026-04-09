@@ -230,7 +230,7 @@ def test_suleiman_spec_structure():
     assert sensors.section == 'Sensors'
     assert any('Jammers' in n.message for n in sensors.notes)
 
-    airlock = spec.row('Airlock')
+    airlock = spec.row('Airlock (2 tons)')
     assert airlock.section == 'Hull'
     assert airlock.tons is None
 
@@ -252,7 +252,7 @@ def test_suleiman_spec_structure():
     assert spec.expenses[1].label == 'Sales Price New'
     assert spec.expenses[1].amount == 36_940_500
     assert any(e.label == 'Life Support' and e.amount == 12_000 for e in spec.expenses)
-    assert any(e.label == 'Fuel' and e.amount == 4_000 for e in spec.expenses)
+    assert any(e.label == 'Fuel' and e.amount == 4_040 for e in spec.expenses)
     assert any(e.label == 'Crew Salaries' and e.amount == 15_000 for e in spec.expenses)
 
     assert any(c.role == 'ENGINEER' and c.salary == 4_000 for c in spec.crew)

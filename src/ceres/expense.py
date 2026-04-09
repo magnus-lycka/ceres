@@ -34,10 +34,19 @@ def life_support_cost(ship) -> float:
 
 
 def fuel_cost(ship) -> float:
-    if ship.fuel is None or ship.fuel.jump_fuel is None:
+    if ship.fuel is None:
         return 0.0
-    fuel_cost_per_ton = 100 if ship.fuel.fuel_processor is not None else 500
-    return float(ship.fuel.jump_fuel.tons * 2 * fuel_cost_per_ton)
+
+    cost = 0.0
+    if ship.fuel.jump_fuel is not None:
+        fuel_cost_per_ton = 100 if ship.fuel.fuel_processor is not None else 500
+        cost += ship.fuel.jump_fuel.tons * 2 * fuel_cost_per_ton
+
+    if ship.fuel.operation_fuel is not None:
+        monthly_tons = ship.fuel.operation_fuel.tons * (4 / ship.fuel.operation_fuel.weeks)
+        cost += monthly_tons * 100
+
+    return float(cost)
 
 
 def total_expenses(ship) -> float:
