@@ -287,16 +287,7 @@ class Ship(ShipBase):
             self.habitation.add_spec_rows(self, spec)
         if self.systems is not None:
             self.systems.add_spec_rows(self, spec)
-        if self.cargo is not None:
-            self.cargo.add_spec_rows(self, spec)
-        else:
-            spec.add_row(
-                SpecRow(
-                    section=SpecSection.CARGO,
-                    item='Cargo Hold',
-                    tons=self.cargo_tons or None,
-                ),
-            )
+        CargoSection.add_spec_rows_for_ship(self, spec)
 
         # Ship-level notes (e.g. hull overloaded) appended to the last row
         for note in self.notes:

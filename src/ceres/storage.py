@@ -176,3 +176,8 @@ class CargoSection(CeresModel):
                 tons=ship.cargo_tons or None,
             )
         )
+
+    @classmethod
+    def add_spec_rows_for_ship(cls, ship, spec: ShipSpec) -> None:
+        cargo = ship.cargo if ship.cargo is not None else cls()
+        cargo.add_spec_rows(ship, spec)
