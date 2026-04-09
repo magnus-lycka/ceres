@@ -14,16 +14,17 @@ its rating.
 
 ## Quantities [done]
 
-If we have 10 staterooms, it should say 10 ✕ Staterooms.
+If we have 10 staterooms, it should say Staterooms ✕ 10.
 The same is probably true for many other items. If it's
-just one, I guesws it could say 1 ✕ Staterooms or just
-Stateroom.
+just one, it can just say Stateroom.
 
 Current status:
 
 - done for Staterooms
 - done for Low Berths
 - done for Probe Drones
+- done for grouped spec rows such as Airlocks
+- done for crew table rows
 
 ## Decentralize build_spec [done]
 
@@ -93,7 +94,16 @@ Use new module crew.py as single source of truth for crew.
 Structural status:
 
 - `crew.py` now exists and `Ship` delegates there
-- remaining work is rule expansion, not structure
+- commercial rules implemented
+- military rules implemented
+- large ship crew reduction implemented
+- remaining work is further rule expansion and validation, not structure
+
+Remaining ideas:
+
+- understaffing warning if explicitly stated crew is too small
+- steward / passenger rules
+- decide whether ship role inference should remain explicit (`military=True`) or become partly automatic
 
 ## Expense module [done]
 

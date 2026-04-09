@@ -1,7 +1,8 @@
 import pytest
 
+from ceres import hull, ship
 from ceres.base import ShipBase
-from ceres.weapons import FixedFirmpoint, PulseLaser
+from ceres.weapons import DoubleTurret, FixedFirmpoint, PulseLaser, TripleTurret, WeaponsSection
 
 
 class DummyOwner(ShipBase):
@@ -92,3 +93,75 @@ def test_fixed_firmpoint_recomputes_tons_from_input():
     fp = FixedFirmpoint.model_validate({'weapon': {}, 'tons': 999})
     fp.bind(DummyOwner(12, 6))
     assert fp.tons == 0
+
+
+def test_small_craft_cannot_mount_double_turret():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=99,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        weapons=WeaponsSection(turrets=[DoubleTurret()]),
+    )
+
+    assert my_ship.weapons is not None
+    assert [(note.category.value, note.message) for note in my_ship.weapons.turrets[0].notes] == [
+        ('item', 'Double Turret'),
+        ('info', 'No weapons in turret'),
+        ('error', 'Small craft may only upgrade one firmpoint to a single turret'),
+    ]
+
+
+def test_small_craft_cannot_mount_triple_turret():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=99,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        weapons=WeaponsSection(turrets=[TripleTurret()]),
+    )
+
+    assert my_ship.weapons is not None
+    assert [(note.category.value, note.message) for note in my_ship.weapons.turrets[0].notes] == [
+        ('item', 'Triple Turret'),
+        ('info', 'No weapons in turret'),
+        ('error', 'Small craft may only upgrade one firmpoint to a single turret'),
+    ]
+
+
+def test_weapon_mounts_cannot_exceed_hardpoints():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        weapons=WeaponsSection(
+            turrets=[DoubleTurret()],
+            fixed_firmpoints=[FixedFirmpoint(weapon=PulseLaser())],
+        ),
+    )
+
+    assert my_ship.weapons is not None
+    overflow_part = my_ship.weapons.turrets[0]
+    assert any(
+        note.message == 'Exceeds available hardpoints: 2 mounts installed, capacity is 1'
+        for note in overflow_part.notes
+    )
+
+
+def test_weapon_mounts_cannot_exceed_firmpoints():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=34,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        weapons=WeaponsSection(
+            fixed_firmpoints=[
+                FixedFirmpoint(weapon=PulseLaser()),
+                FixedFirmpoint(weapon=PulseLaser()),
+            ],
+        ),
+    )
+
+    assert my_ship.weapons is not None
+    overflow_part = my_ship.weapons.fixed_firmpoints[1]
+    assert any(
+        note.message == 'Exceeds available firmpoints: 2 mounts installed, capacity is 1'
+        for note in overflow_part.notes
+    )

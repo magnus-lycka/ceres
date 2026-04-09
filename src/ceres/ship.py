@@ -388,6 +388,8 @@ class Ship(ShipBase):
             else:
                 software_packages = self.computer.software_packages
             self.drives.validate_jump_control(software_packages)
+        if self.weapons is not None:
+            self.weapons.validate_mounting(self)
         cargo_tons = CargoSection.cargo_tons_for_ship(self)
         if cargo_tons < 0:
             self.error(f'Hull overloaded by {-cargo_tons:.2f} tons')

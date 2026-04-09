@@ -155,6 +155,38 @@ class WeaponsSection(CeresModel):
     fixed_firmpoints: list[FixedFirmpoint] = Field(default_factory=list)
     missile_storage: MissileStorage | None = None
 
+    @staticmethod
+    def is_small_craft(ship) -> bool:
+        return ship.displacement < 100
+
+    @classmethod
+    def mount_capacity(cls, ship) -> int:
+        if cls.is_small_craft(ship):
+            if ship.displacement < 35:
+                return 1
+            if ship.displacement <= 70:
+                return 2
+            return 3
+        return ship.displacement // 100
+
+    def validate_mounting(self, ship) -> None:
+        total_mounts = len(self.turrets) + len(self.fixed_firmpoints)
+        capacity = self.mount_capacity(ship)
+        if total_mounts > capacity:
+            overflow = total_mounts - capacity
+            overflowing_parts = [*self.fixed_firmpoints, *self.turrets][-overflow:]
+            mount_kind = 'firmpoints' if self.is_small_craft(ship) else 'hardpoints'
+            for part in overflowing_parts:
+                part.error(
+                    f'Exceeds available {mount_kind}: {total_mounts} mounts installed, capacity is {capacity}',
+                )
+
+        if self.is_small_craft(ship):
+            for turret in self.turrets:
+                if not isinstance(turret, DoubleTurret) and not isinstance(turret, TripleTurret):
+                    continue
+                turret.error('Small craft may only upgrade one firmpoint to a single turret')
+
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = [*self.turrets, *self.fixed_firmpoints]
         if self.missile_storage is not None:
