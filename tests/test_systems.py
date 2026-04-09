@@ -92,7 +92,8 @@ def test_fuel_scoops_auto_included_for_streamlined_hull():
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
     )
-    assert my_ship.fuel_scoops is not None
+    assert my_ship.fuel is not None
+    assert my_ship.fuel.fuel_scoops is not None
 
 
 def test_fuel_scoops_free_with_streamlined_hull():
@@ -101,9 +102,10 @@ def test_fuel_scoops_free_with_streamlined_hull():
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
     )
-    assert my_ship.fuel_scoops is not None
-    assert my_ship.fuel_scoops.tons == 0.0
-    assert my_ship.fuel_scoops.cost == 0.0
+    assert my_ship.fuel is not None
+    assert my_ship.fuel.fuel_scoops is not None
+    assert my_ship.fuel.fuel_scoops.tons == 0.0
+    assert my_ship.fuel.fuel_scoops.cost == 0.0
 
 
 def test_fuel_scoops_not_auto_included_for_standard_hull():
@@ -112,7 +114,7 @@ def test_fuel_scoops_not_auto_included_for_standard_hull():
         displacement=100,
         hull=hull.Hull(configuration=hull.standard_hull),
     )
-    assert my_ship.fuel_scoops is None
+    assert my_ship.fuel is None or my_ship.fuel.fuel_scoops is None
 
 
 def test_fuel_scoops_paid_when_added_to_standard_hull():
@@ -122,9 +124,10 @@ def test_fuel_scoops_paid_when_added_to_standard_hull():
         hull=hull.Hull(configuration=hull.standard_hull),
         fuel=FuelSection(fuel_scoops=FuelScoops()),
     )
-    assert my_ship.fuel_scoops is not None
-    assert my_ship.fuel_scoops.tons == 0.0
-    assert my_ship.fuel_scoops.cost == 1_000_000.0
+    assert my_ship.fuel is not None
+    assert my_ship.fuel.fuel_scoops is not None
+    assert my_ship.fuel.fuel_scoops.tons == 0.0
+    assert my_ship.fuel.fuel_scoops.cost == 1_000_000.0
 
 
 def test_fuel_scoops_explicit_on_streamlined_hull_still_free():
@@ -134,8 +137,9 @@ def test_fuel_scoops_explicit_on_streamlined_hull_still_free():
         hull=hull.Hull(configuration=hull.streamlined_hull),
         fuel=FuelSection(fuel_scoops=FuelScoops()),
     )
-    assert my_ship.fuel_scoops is not None
-    assert my_ship.fuel_scoops.cost == 0.0
+    assert my_ship.fuel is not None
+    assert my_ship.fuel.fuel_scoops is not None
+    assert my_ship.fuel.fuel_scoops.cost == 0.0
 
 
 def test_airlock_is_free_on_100_ton_ship():

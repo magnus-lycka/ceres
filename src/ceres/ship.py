@@ -5,7 +5,7 @@ from pydantic import Field
 
 from . import hull as hull_model
 from .base import CeresModel, NoteCategory, ShipBase
-from .bridge import Bridge, Cockpit, CommandSection
+from .bridge import CommandSection
 from .computer import (
     ComputerSection,
     JumpControl,
@@ -17,15 +17,13 @@ from .drives import (
     FusionPlantTL8,
     FusionPlantTL12,
     FusionPlantTL15,
-    ShipJumpDrive,
-    ShipMDrive,
 )
 from .habitation import HabitationSection
 from .parts import ShipPart
 from .sensors import SensorsSection
 from .spec import CrewRow as SpecCrewRow, ExpenseRow, ShipSpec, SpecRow, SpecSection
-from .storage import CargoHold, CargoSection, FuelProcessor, FuelScoops, FuelSection, JumpFuel, OperationFuel
-from .systems import MedicalBay, ProbeDrones, RepairDrones, SystemsSection, Workshop
+from .storage import CargoSection, FuelScoops, FuelSection
+from .systems import SystemsSection
 from .weapons import WeaponsSection
 
 __all__ = ['CrewRole', 'Ship', 'ShipDesignType']
@@ -91,86 +89,8 @@ class Ship(ShipBase):
         return float(self.fusion_plant.output)
 
     @property
-    def m_drive(self) -> ShipMDrive | None:
-        if self.drives is None:
-            return None
-        return self.drives.m_drive
-
-    @property
-    def jump_drive(self) -> ShipJumpDrive | None:
-        if self.drives is None:
-            return None
-        return self.drives.jump_drive
-
-    @property
-    def jump_fuel(self) -> JumpFuel | None:
-        if self.fuel is None:
-            return None
-        return self.fuel.jump_fuel
-
-    @property
-    def operation_fuel(self) -> OperationFuel | None:
-        if self.fuel is None:
-            return None
-        return self.fuel.operation_fuel
-
-    @property
-    def fuel_processor(self) -> FuelProcessor | None:
-        if self.fuel is None:
-            return None
-        return self.fuel.fuel_processor
-
-    @property
-    def fuel_scoops(self) -> FuelScoops | None:
-        if self.fuel is None:
-            return None
-        return self.fuel.fuel_scoops
-
-    @property
-    def bridge(self) -> Bridge | None:
-        if self.command is None:
-            return None
-        return self.command.bridge
-
-    @property
-    def cockpit(self) -> Cockpit | None:
-        if self.command is None:
-            return None
-        return self.command.cockpit
-
-    @property
-    def cargo_holds(self) -> list[CargoHold]:
-        if self.cargo is None:
-            return []
-        return self.cargo.cargo_holds
-
-    @property
-    def medical_bay(self) -> MedicalBay | None:
-        if self.systems is None:
-            return None
-        return self.systems.medical_bay
-
-    @property
-    def probe_drones(self) -> ProbeDrones | None:
-        if self.systems is None:
-            return None
-        return self.systems.probe_drones
-
-    @property
-    def repair_drones(self) -> RepairDrones | None:
-        if self.systems is None:
-            return None
-        return self.systems.repair_drones
-
-    @property
-    def workshop(self) -> Workshop | None:
-        if self.systems is None:
-            return None
-        return self.systems.workshop
-
-    @property
     def basic_hull_power_load(self) -> float:
-        if self.bridge is not None:
+        if self.command is not None and self.command.bridge is not None:
             return self.displacement * 0.2
         if self.hull.configuration.non_gravity:
             return 0.5
@@ -178,9 +98,9 @@ class Ship(ShipBase):
 
     @property
     def maneuver_power_load(self) -> float:
-        if self.m_drive is None:
+        if self.drives is None or self.drives.m_drive is None:
             return 0.0
-        return self.m_drive.power
+        return self.drives.m_drive.power
 
     @property
     def sensor_power_load(self) -> float:
@@ -188,15 +108,15 @@ class Ship(ShipBase):
 
     @property
     def jump_power_load(self) -> float:
-        if self.jump_drive is None:
+        if self.drives is None or self.drives.jump_drive is None:
             return 0.0
-        return self.jump_drive.power
+        return self.drives.jump_drive.power
 
     @property
     def fuel_power_load(self) -> float:
-        if self.fuel_processor is None:
+        if self.fuel is None or self.fuel.fuel_processor is None:
             return 0.0
-        return self.fuel_processor.power
+        return self.fuel.fuel_processor.power
 
     @property
     def weapon_power_load(self) -> float:
@@ -206,8 +126,10 @@ class Ship(ShipBase):
 
     @property
     def total_power_load(self) -> float:
+        m_drive = None if self.drives is None else self.drives.m_drive
+        jump_drive = None if self.drives is None else self.drives.jump_drive
         non_drive_power_load = sum(
-            part.power for part in self._all_parts() if part is not self.m_drive and part is not self.jump_drive
+            part.power for part in self._all_parts() if part is not m_drive and part is not jump_drive
         )
         return self.basic_hull_power_load + max(self.maneuver_power_load, self.jump_power_load) + non_drive_power_load
 
@@ -216,7 +138,8 @@ class Ship(ShipBase):
         craft_cost = 0.0
         if self.docking_space is not None:
             craft_cost += self.docking_space.craft.cost
-        cargo_hold_cost = sum(cargo_hold.crane_cost(self) for cargo_hold in self.cargo_holds)
+        cargo_holds = [] if self.cargo is None else self.cargo.cargo_holds
+        cargo_hold_cost = sum(cargo_hold.crane_cost(self) for cargo_hold in cargo_holds)
         return (
             self.hull_cost
             + sum(part.cost for part in self._all_parts())
@@ -239,17 +162,17 @@ class Ship(ShipBase):
         return float(round(self.sales_price_new / 12_000))
 
     def _life_support_cost(self) -> float:
-        if self.cockpit is not None:
+        if self.command is not None and self.command.cockpit is not None:
             return 0.0
         if self.habitation is not None and self.habitation.staterooms is not None:
             return self.habitation.staterooms.life_support_cost
         return 0.0
 
     def _fuel_cost(self) -> float:
-        if self.jump_fuel is None:
+        if self.fuel is None or self.fuel.jump_fuel is None:
             return 0.0
-        fuel_cost_per_ton = 100 if self.fuel_processor is not None else 500
-        return float(self.jump_fuel.tons * 2 * fuel_cost_per_ton)
+        fuel_cost_per_ton = 100 if self.fuel.fuel_processor is not None else 500
+        return float(self.fuel.jump_fuel.tons * 2 * fuel_cost_per_ton)
 
     def _total_expenses(self) -> float:
         return (
@@ -262,7 +185,7 @@ class Ship(ShipBase):
 
     @property
     def crew_roles(self) -> list[CrewRole]:
-        if self.displacement <= 100 and self.jump_drive is not None:
+        if self.displacement <= 100 and self.drives is not None and self.drives.jump_drive is not None:
             return [
                 CrewRole(role='PILOT', count=1, monthly_salary=6_000),
                 CrewRole(role='ASTROGATOR', count=1, monthly_salary=5_000),
@@ -308,7 +231,8 @@ class Ship(ShipBase):
         cargo = self.displacement * self.hull.configuration.usage_factor
         for part in self._all_parts():
             cargo -= part.tons
-        for cargo_hold in self.cargo_holds:
+        cargo_holds = [] if self.cargo is None else self.cargo.cargo_holds
+        for cargo_hold in cargo_holds:
             if cargo_hold.tons is not None:
                 cargo -= cargo_hold.tons
         return cargo
@@ -335,10 +259,10 @@ class Ship(ShipBase):
 
         def fuel_item() -> str | None:
             parts: list[str] = []
-            if self.jump_fuel is not None:
-                parts.append(f'J-{self.jump_fuel.parsecs}')
-            if self.operation_fuel is not None:
-                parts.append(operation_weeks_label(self.operation_fuel.weeks))
+            if self.fuel is not None and self.fuel.jump_fuel is not None:
+                parts.append(f'J-{self.fuel.jump_fuel.parsecs}')
+            if self.fuel is not None and self.fuel.operation_fuel is not None:
+                parts.append(operation_weeks_label(self.fuel.operation_fuel.weeks))
             if not parts:
                 return None
             return ', '.join(parts)
@@ -431,10 +355,10 @@ class Ship(ShipBase):
             SpecSection.HULL, [*self.hull.airlocks, *([self.hull.aerofins] if self.hull.aerofins is not None else [])]
         )
 
-        if self.jump_drive is not None:
-            add_part(SpecSection.JUMP, self.jump_drive)
-        if self.m_drive is not None:
-            add_part(SpecSection.PROPULSION, self.m_drive)
+        if self.drives is not None and self.drives.jump_drive is not None:
+            add_part(SpecSection.JUMP, self.drives.jump_drive)
+        if self.drives is not None and self.drives.m_drive is not None:
+            add_part(SpecSection.PROPULSION, self.drives.m_drive)
         if self.fusion_plant is not None:
             add_part(
                 SpecSection.POWER,
@@ -446,10 +370,10 @@ class Ship(ShipBase):
         combined_fuel_item = fuel_item()
         if combined_fuel_item is not None:
             total_fuel_tons = 0.0
-            if self.jump_fuel is not None:
-                total_fuel_tons += self.jump_fuel.tons
-            if self.operation_fuel is not None:
-                total_fuel_tons += self.operation_fuel.tons
+            if self.fuel is not None and self.fuel.jump_fuel is not None:
+                total_fuel_tons += self.fuel.jump_fuel.tons
+            if self.fuel is not None and self.fuel.operation_fuel is not None:
+                total_fuel_tons += self.fuel.operation_fuel.tons
             add_row(
                 SpecSection.FUEL,
                 SpecRow(
@@ -458,13 +382,15 @@ class Ship(ShipBase):
                     tons=total_fuel_tons or None,
                 ),
             )
-        for fuel_part in [self.fuel_scoops, self.fuel_processor]:
-            if fuel_part is not None:
-                add_part(SpecSection.FUEL, fuel_part)
+        if self.fuel is not None:
+            for fuel_part in [self.fuel.fuel_scoops, self.fuel.fuel_processor]:
+                if fuel_part is not None:
+                    add_part(SpecSection.FUEL, fuel_part)
 
-        for command_part in [self.bridge, self.cockpit]:
-            if command_part is not None:
-                add_part(SpecSection.COMMAND, command_part)
+        if self.command is not None:
+            for command_part in [self.command.bridge, self.command.cockpit]:
+                if command_part is not None:
+                    add_part(SpecSection.COMMAND, command_part)
 
         if self.computer is not None and self.computer.hardware is not None:
             add_part(SpecSection.COMPUTER, self.computer.hardware)
@@ -507,8 +433,8 @@ class Ship(ShipBase):
             for system_part in self.systems._all_parts():
                 add_part(SpecSection.SYSTEMS, system_part)
 
-        if self.cargo_holds:
-            for cargo_hold in self.cargo_holds:
+        if self.cargo is not None and self.cargo.cargo_holds:
+            for cargo_hold in self.cargo.cargo_holds:
                 add_row(
                     SpecSection.CARGO,
                     SpecRow(
@@ -630,8 +556,8 @@ class Ship(ShipBase):
 
     @property
     def cargo_tons(self):
-        if self.cargo_holds:
-            return sum(cargo_hold.usable_tons(self) for cargo_hold in self.cargo_holds)
+        if self.cargo is not None and self.cargo.cargo_holds:
+            return sum(cargo_hold.usable_tons(self) for cargo_hold in self.cargo.cargo_holds)
         return self._remaining_cargo_space_without_default_holds()
 
     def model_post_init(self, __context: Any) -> None:
@@ -657,19 +583,19 @@ class Ship(ShipBase):
                 package.error(f'{self.computer.hardware.description} cannot run {package.description}')
         jump_controls = [package for package in self.software_packages if isinstance(package, JumpControl)]
         highest_jump_control = max(jump_controls, key=lambda package: package.rating, default=None)
-        if self.jump_drive is not None:
+        if self.drives is not None and self.drives.jump_drive is not None:
             if highest_jump_control is None:
-                self.jump_drive.warning('No Jump Control software')
-            elif highest_jump_control.rating < self.jump_drive.rating:
-                self.jump_drive.warning(f'Limited to Jump {highest_jump_control.rating} by control software')
+                self.drives.jump_drive.warning('No Jump Control software')
+            elif highest_jump_control.rating < self.drives.jump_drive.rating:
+                self.drives.jump_drive.warning(f'Limited to Jump {highest_jump_control.rating} by control software')
         if highest_jump_control is not None:
-            if self.jump_drive is None:
+            if self.drives is None or self.drives.jump_drive is None:
                 highest_jump_control.warning('No jump drive installed')
-            elif highest_jump_control.rating > self.jump_drive.rating:
-                highest_jump_control.warning(f'Limited to Jump {self.jump_drive.rating} by drive capacity')
+            elif highest_jump_control.rating > self.drives.jump_drive.rating:
+                highest_jump_control.warning(f'Limited to Jump {self.drives.jump_drive.rating} by drive capacity')
         if self.cargo_tons < 0:
             self.error(f'Hull overloaded by {-self.cargo_tons:.2f} tons')
-        if self.bridge is not None and not self.hull.airlocks:
+        if self.command is not None and self.command.bridge is not None and not self.hull.airlocks:
             self.error('No airlock installed')
         if self.habitation is not None and self.habitation.staterooms is not None:
             recommended_common_area = self.habitation.staterooms.tons / 4

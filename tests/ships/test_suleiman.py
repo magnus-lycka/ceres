@@ -47,20 +47,24 @@ def test_suleiman_matches_first_modeled_reference_slice():
     suleiman = build_suleiman()
 
     armour_part = suleiman.hull.armour
-    m_drive = suleiman.m_drive
-    jump_drive = suleiman.jump_drive
+    assert suleiman.drives is not None
+    m_drive = suleiman.drives.m_drive
+    jump_drive = suleiman.drives.jump_drive
     fusion_plant = suleiman.fusion_plant
-    jump_fuel = suleiman.jump_fuel
-    operation_fuel = suleiman.operation_fuel
-    fuel_processor = suleiman.fuel_processor
-    bridge = suleiman.bridge
+    assert suleiman.fuel is not None
+    jump_fuel = suleiman.fuel.jump_fuel
+    operation_fuel = suleiman.fuel.operation_fuel
+    fuel_processor = suleiman.fuel.fuel_processor
+    assert suleiman.command is not None
+    bridge = suleiman.command.bridge
     sensors = suleiman.sensors.primary
     docking_space = suleiman.docking_space
     assert suleiman.habitation is not None
     staterooms = suleiman.habitation.staterooms
     airlocks = suleiman.hull.airlocks
-    probe_drones = suleiman.probe_drones
-    workshop = suleiman.workshop
+    assert suleiman.systems is not None
+    probe_drones = suleiman.systems.probe_drones
+    workshop = suleiman.systems.workshop
 
     assert suleiman.tl == 12
     assert suleiman.displacement == 100
@@ -178,8 +182,9 @@ def test_jump_drive_2_without_jump_control_2_adds_local_note():
         drives=DriveSection(jump_drive=JumpDrive2()),
         computer=ComputerSection(hardware=Computer5(bis=True)),
     )
-    assert my_ship.jump_drive is not None
-    assert [(note.category.value, note.message) for note in my_ship.jump_drive.notes] == [
+    assert my_ship.drives is not None
+    assert my_ship.drives.jump_drive is not None
+    assert [(note.category.value, note.message) for note in my_ship.drives.jump_drive.notes] == [
         ('item', 'Jump 2'),
         ('warning', 'No Jump Control software'),
     ]
@@ -278,8 +283,9 @@ def test_jump_drive_with_lower_jump_control_warns_on_drive():
         drives=DriveSection(jump_drive=JumpDrive2()),
         computer=ComputerSection(hardware=Computer5(bis=True), software=[JumpControl1()]),
     )
-    assert my_ship.jump_drive is not None
-    assert [(note.category.value, note.message) for note in my_ship.jump_drive.notes] == [
+    assert my_ship.drives is not None
+    assert my_ship.drives.jump_drive is not None
+    assert [(note.category.value, note.message) for note in my_ship.drives.jump_drive.notes] == [
         ('item', 'Jump 2'),
         ('warning', 'Limited to Jump 1 by control software'),
     ]

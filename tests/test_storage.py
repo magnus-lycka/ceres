@@ -51,7 +51,8 @@ def _make_ship_with_plant():
         fusion_plant=FusionPlantTL12(output=8),
         fuel=FuelSection(operation_fuel=fuel),
     )
-    return s, s.operation_fuel
+    assert s.fuel is not None
+    return s, s.fuel.operation_fuel
 
 
 def test_operation_fuel_1_week_tons():
@@ -79,8 +80,9 @@ def test_operation_fuel_requires_plant():
         hull=hull.Hull(configuration=hull.streamlined_hull),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=1)),
     )
-    assert my_ship.operation_fuel is not None
-    assert my_ship.operation_fuel.tons == 0.0
+    assert my_ship.fuel is not None
+    assert my_ship.fuel.operation_fuel is not None
+    assert my_ship.fuel.operation_fuel.tons == 0.0
     assert ('error', 'Ship must have a FusionPlant to compute OperationFuel') in [
-        (note.category.value, note.message) for note in my_ship.operation_fuel.notes
+        (note.category.value, note.message) for note in my_ship.fuel.operation_fuel.notes
     ]

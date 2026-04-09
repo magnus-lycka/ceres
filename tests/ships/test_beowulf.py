@@ -59,15 +59,16 @@ def test_beowulf_armour():
 
 def test_beowulf_drives():
     beowulf = build_beowulf()
-    assert beowulf.m_drive is not None
-    assert beowulf.m_drive.tons == pytest.approx(2.0)
-    assert beowulf.m_drive.cost == 4_000_000
-    assert beowulf.m_drive.power == 20
+    assert beowulf.drives is not None
+    assert beowulf.drives.m_drive is not None
+    assert beowulf.drives.m_drive.tons == pytest.approx(2.0)
+    assert beowulf.drives.m_drive.cost == 4_000_000
+    assert beowulf.drives.m_drive.power == 20
 
-    assert beowulf.jump_drive is not None
-    assert beowulf.jump_drive.tons == pytest.approx(10.0)
-    assert beowulf.jump_drive.cost == 15_000_000
-    assert beowulf.jump_drive.power == 20
+    assert beowulf.drives.jump_drive is not None
+    assert beowulf.drives.jump_drive.tons == pytest.approx(10.0)
+    assert beowulf.drives.jump_drive.cost == 15_000_000
+    assert beowulf.drives.jump_drive.power == 20
 
 
 def test_beowulf_fusion_plant():
@@ -81,18 +82,20 @@ def test_beowulf_fusion_plant():
 
 def test_beowulf_fuel():
     beowulf = build_beowulf()
-    assert beowulf.jump_fuel is not None
-    assert beowulf.jump_fuel.tons == pytest.approx(20.0)
-    assert beowulf.operation_fuel is not None
-    assert beowulf.operation_fuel.tons == pytest.approx(0.50)
-    assert beowulf.fuel_processor is not None
-    assert beowulf.fuel_processor.tons == pytest.approx(1.0)
-    assert beowulf.fuel_processor.cost == 50_000
+    assert beowulf.fuel is not None
+    assert beowulf.fuel.jump_fuel is not None
+    assert beowulf.fuel.jump_fuel.tons == pytest.approx(20.0)
+    assert beowulf.fuel.operation_fuel is not None
+    assert beowulf.fuel.operation_fuel.tons == pytest.approx(0.50)
+    assert beowulf.fuel.fuel_processor is not None
+    assert beowulf.fuel.fuel_processor.tons == pytest.approx(1.0)
+    assert beowulf.fuel.fuel_processor.cost == 50_000
 
 
 def test_beowulf_bridge():
     beowulf = build_beowulf()
-    b = beowulf.bridge
+    assert beowulf.command is not None
+    b = beowulf.command.bridge
     assert b is not None
     assert b.tons == pytest.approx(10.0)
     assert b.cost == 1_000_000
@@ -118,8 +121,9 @@ def test_beowulf_systems():
     assert beowulf.habitation is not None
     assert beowulf.habitation.common_area is not None
     assert beowulf.habitation.common_area.tons == pytest.approx(10.0)
-    assert beowulf.fuel_scoops is not None
-    assert beowulf.fuel_scoops.cost == 0.0
+    assert beowulf.fuel is not None
+    assert beowulf.fuel.fuel_scoops is not None
+    assert beowulf.fuel.fuel_scoops.cost == 0.0
 
 
 def test_beowulf_airlocks_free():

@@ -68,10 +68,11 @@ def test_strandbell_armour():
 
 def test_strandbell_armored_m_drive():
     sdb = build_strandbell()
-    assert sdb.m_drive is not None
-    assert sdb.m_drive.tons == pytest.approx(19.8)
-    assert sdb.m_drive.cost == pytest.approx(36_360_000)
-    assert sdb.m_drive.power == pytest.approx(180)
+    assert sdb.drives is not None
+    assert sdb.drives.m_drive is not None
+    assert sdb.drives.m_drive.tons == pytest.approx(19.8)
+    assert sdb.drives.m_drive.cost == pytest.approx(36_360_000)
+    assert sdb.drives.m_drive.power == pytest.approx(180)
 
 
 def test_strandbell_fusion_plant():
@@ -85,13 +86,14 @@ def test_strandbell_fusion_plant():
 
 def test_strandbell_fuel():
     sdb = build_strandbell()
-    assert sdb.operation_fuel is not None
-    assert sdb.operation_fuel.tons == pytest.approx(4.8)
-    assert sdb.fuel_processor is not None
-    assert sdb.fuel_processor.tons == pytest.approx(1.0)
-    assert sdb.fuel_processor.cost == 50_000
-    assert sdb.fuel_scoops is not None
-    assert sdb.fuel_scoops.cost == 1_000_000
+    assert sdb.fuel is not None
+    assert sdb.fuel.operation_fuel is not None
+    assert sdb.fuel.operation_fuel.tons == pytest.approx(4.8)
+    assert sdb.fuel.fuel_processor is not None
+    assert sdb.fuel.fuel_processor.tons == pytest.approx(1.0)
+    assert sdb.fuel.fuel_processor.cost == 50_000
+    assert sdb.fuel.fuel_scoops is not None
+    assert sdb.fuel.fuel_scoops.cost == 1_000_000
 
 
 def test_strandbell_sensors():
@@ -128,13 +130,14 @@ def test_strandbell_missile_storage():
 
 def test_strandbell_systems():
     sdb = build_strandbell()
-    assert sdb.repair_drones is not None
-    assert sdb.repair_drones.tons == pytest.approx(2.0)
-    assert sdb.repair_drones.cost == 400_000
+    assert sdb.systems is not None
+    assert sdb.systems.repair_drones is not None
+    assert sdb.systems.repair_drones.tons == pytest.approx(2.0)
+    assert sdb.systems.repair_drones.cost == 400_000
     assert len(sdb.hull.airlocks) == 2
     assert sdb.hull.airlocks[0].tons == 0.0  # 2 free for 200t
     assert sdb.hull.airlocks[1].tons == 0.0
-    assert sdb.medical_bay is not None
+    assert sdb.systems.medical_bay is not None
     assert sdb.habitation is not None
     assert sdb.habitation.staterooms is not None
     assert sdb.habitation.staterooms.count == 15

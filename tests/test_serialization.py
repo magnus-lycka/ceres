@@ -137,10 +137,12 @@ def test_roundtrip_no_stealth():
 
 def test_roundtrip_m_drive_attributes():
     loaded = _roundtrip(ultralight)
-    assert loaded.m_drive is not None
-    assert ultralight.m_drive is not None
-    assert type(loaded.m_drive) is type(ultralight.m_drive)
-    assert loaded.m_drive.rating == ultralight.m_drive.rating
+    assert loaded.drives is not None
+    assert ultralight.drives is not None
+    assert loaded.drives.m_drive is not None
+    assert ultralight.drives.m_drive is not None
+    assert type(loaded.drives.m_drive) is type(ultralight.drives.m_drive)
+    assert loaded.drives.m_drive.rating == ultralight.drives.m_drive.rating
 
 
 def test_roundtrip_recomputes_derived_part_values():
@@ -149,10 +151,11 @@ def test_roundtrip_recomputes_derived_part_values():
     data['drives']['m_drive']['power'] = 999
     data['drives']['m_drive']['tons'] = 999
     loaded = Ship.model_validate_json(json.dumps(data))
-    assert loaded.m_drive is not None
-    assert loaded.m_drive.cost == 720_000
-    assert loaded.m_drive.power == 4
-    assert loaded.m_drive.tons == pytest.approx(0.36)
+    assert loaded.drives is not None
+    assert loaded.drives.m_drive is not None
+    assert loaded.drives.m_drive.cost == 720_000
+    assert loaded.drives.m_drive.power == 4
+    assert loaded.drives.m_drive.tons == pytest.approx(0.36)
 
 
 def test_roundtrip_fusion_plant_attributes():
@@ -165,9 +168,11 @@ def test_roundtrip_fusion_plant_attributes():
 
 def test_roundtrip_cockpit():
     loaded = _roundtrip(ultralight)
-    assert loaded.cockpit is not None
-    assert ultralight.cockpit is not None
-    assert loaded.cockpit.holographic == ultralight.cockpit.holographic
+    assert loaded.command is not None
+    assert ultralight.command is not None
+    assert loaded.command.cockpit is not None
+    assert ultralight.command.cockpit is not None
+    assert loaded.command.cockpit.holographic == ultralight.command.cockpit.holographic
 
 
 def test_roundtrip_computer():
@@ -207,9 +212,9 @@ def test_roundtrip_cargo():
 
 def test_roundtrip_no_parts():
     loaded = _roundtrip(bare)
-    assert loaded.m_drive is None
+    assert loaded.drives is None
     assert loaded.fusion_plant is None
-    assert loaded.cockpit is None
+    assert loaded.command is None or loaded.command.cockpit is None
     assert loaded.weapons is None
 
 

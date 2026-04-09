@@ -55,7 +55,8 @@ def test_ultralight_fighter_part_values():
     assert float(s.tons) == pytest.approx(0.12)
     assert int(s.cost) == 240_000
 
-    m = fighter.m_drive
+    assert fighter.drives is not None
+    m = fighter.drives.m_drive
     assert m is not None
     assert float(m.tons) == pytest.approx(0.36)
     assert int(m.cost) == 720_000
@@ -66,12 +67,14 @@ def test_ultralight_fighter_part_values():
     assert float(fp.tons) == pytest.approx(8 / 15)
     assert int(fp.cost) == 533_333
 
-    assert fighter.operation_fuel is not None
-    assert float(fighter.operation_fuel.tons) == pytest.approx(0.02)
+    assert fighter.fuel is not None
+    assert fighter.fuel.operation_fuel is not None
+    assert float(fighter.fuel.operation_fuel.tons) == pytest.approx(0.02)
 
-    assert fighter.cockpit is not None
-    assert float(fighter.cockpit.tons) == pytest.approx(1.5)
-    assert int(fighter.cockpit.cost) == 12_500
+    assert fighter.command is not None
+    assert fighter.command.cockpit is not None
+    assert float(fighter.command.cockpit.tons) == pytest.approx(1.5)
+    assert int(fighter.command.cockpit.cost) == 12_500
 
     assert fighter.computer is not None
     assert fighter.computer.hardware is not None

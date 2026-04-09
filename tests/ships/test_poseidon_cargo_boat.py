@@ -59,11 +59,12 @@ def test_poseidon_cargo_boat_generates_markdown_for_visual_comparison(tl: int):
 def test_poseidon_cargo_boat_small_bridge_is_overcompensated_in_atmosphere(tl: int):
     cargo_boat = build_poseidon_cargo_boat(tl)
 
-    assert cargo_boat.bridge is not None
+    assert cargo_boat.command is not None
+    assert cargo_boat.command.bridge is not None
     assert cargo_boat.hull.aerofins is not None
-    assert cargo_boat.bridge.operations_dm == -1
+    assert cargo_boat.command.bridge.operations_dm == -1
     assert cargo_boat.hull.aerofins.atmospheric_pilot_dm == 2
-    assert cargo_boat.bridge.operations_dm + cargo_boat.hull.aerofins.atmospheric_pilot_dm == 1
+    assert cargo_boat.command.bridge.operations_dm + cargo_boat.hull.aerofins.atmospheric_pilot_dm == 1
 
 
 def test_poseidon_tl12_variant_trades_cost_for_cargo_with_better_power_plant():
@@ -81,9 +82,10 @@ def test_poseidon_tl12_variant_trades_cost_for_cargo_with_better_power_plant():
 @pytest.mark.parametrize('tl', [8, 9])
 def test_poseidon_below_tl10_puts_error_on_mdrive(tl: int):
     cargo_boat = build_poseidon_cargo_boat(tl)
-    assert cargo_boat.m_drive is not None
+    assert cargo_boat.drives is not None
+    assert cargo_boat.drives.m_drive is not None
     assert ('error', f'Requires TL10, ship is TL{tl}') in [
-        (note.category.value, note.message) for note in cargo_boat.m_drive.notes
+        (note.category.value, note.message) for note in cargo_boat.drives.m_drive.notes
     ]
 
 
