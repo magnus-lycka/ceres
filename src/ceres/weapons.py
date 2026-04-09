@@ -5,6 +5,7 @@ from pydantic import Field
 
 from .base import CeresModel, Note, NoteCategory
 from .parts import ShipPart
+from .spec import ShipSpec, SpecSection
 
 
 class PulseLaser(CeresModel):
@@ -164,3 +165,9 @@ class WeaponsSection(CeresModel):
         if self.missile_storage is not None:
             parts.append(self.missile_storage)
         return parts
+
+    def add_spec_rows(self, ship, spec: ShipSpec) -> None:
+        for row in ship._grouped_spec_rows(SpecSection.WEAPONS, [*self.turrets, *self.fixed_firmpoints]):
+            spec.add_row(row)
+        if self.missile_storage is not None:
+            spec.add_row(ship._spec_row_for_part(SpecSection.WEAPONS, self.missile_storage))

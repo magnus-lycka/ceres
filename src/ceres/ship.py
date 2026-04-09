@@ -310,12 +310,7 @@ class Ship(ShipBase):
         self.sensors.add_spec_rows(self, spec)
 
         if self.weapons is not None:
-            for row in self._grouped_spec_rows(
-                SpecSection.WEAPONS, [*self.weapons.turrets, *self.weapons.fixed_firmpoints]
-            ):
-                spec.add_row(row)
-            if self.weapons.missile_storage is not None:
-                spec.add_row(self._spec_row_for_part(SpecSection.WEAPONS, self.weapons.missile_storage))
+            self.weapons.add_spec_rows(self, spec)
 
         if self.docking_space is not None:
             spec.add_row(self._spec_row_for_part(SpecSection.CRAFT, self.docking_space))
