@@ -12,6 +12,7 @@ class PulseLaser(CeresModel):
     """Pulse laser weapon (TL9, 2D damage, Long range)."""
 
     model_config = {'frozen': True}
+    weapon_type: Literal['pulse_laser'] = 'pulse_laser'
     base_cost: ClassVar[int] = 1_000_000
     base_power: ClassVar[int] = 4
 
@@ -42,6 +43,16 @@ class PulseLaser(CeresModel):
             return 1.10  # Advanced
         return 1.0
 
+    @property
+    def weapon_cost(self) -> float:
+        return self.base_cost * self.cost_modifier
+
+    @property
+    def weapon_power(self) -> float:
+        if self.energy_efficient:
+            return self.base_power * 0.75
+        return float(self.base_power)
+
 
 class FixedFirmpoint(ShipPart):
     mount_cost: ClassVar[int] = 100_000
@@ -55,35 +66,13 @@ class FixedFirmpoint(ShipPart):
         return 0.0
 
     def compute_cost(self) -> float:
-        return self.mount_cost + self.weapon.base_cost * self.weapon.cost_modifier
+        return self.mount_cost + self.weapon.weapon_cost
 
     def compute_power(self) -> float:
-        power = self.weapon.base_power
-        if self.weapon.energy_efficient:
-            power *= 0.75
+        power = self.weapon.weapon_power
         # Firmpoint reduces power by 25%; apply combined then floor
         power *= 0.75
         return float(math.floor(power))
-
-
-class DoubleTurret(ShipPart):
-    mount_type: Literal['double'] = 'double'
-    minimum_tl = 8
-
-    def build_item(self) -> str | None:
-        return 'Double Turret'
-
-    def build_notes(self) -> list[Note]:
-        return [Note(category=NoteCategory.INFO, message='No weapons in turret')]
-
-    def compute_tons(self) -> float:
-        return 1.0
-
-    def compute_cost(self) -> float:
-        return 500_000.0
-
-    def compute_power(self) -> float:
-        return 1.0
 
 
 class TurretBeamLaser(CeresModel):
@@ -106,30 +95,62 @@ class TurretMissileRack(CeresModel):
         return 'Missile Rack'
 
 
-TurretWeapon = Annotated[TurretBeamLaser | TurretMissileRack, Field(discriminator='weapon_type')]
+TurretWeapon = Annotated[PulseLaser | TurretBeamLaser | TurretMissileRack, Field(discriminator='weapon_type')]
 
 
-class TripleTurret(ShipPart):
-    mount_type: Literal['triple'] = 'triple'
-    minimum_tl = 9
+class TurretMount(ShipPart):
     weapons: list[TurretWeapon] = Field(default_factory=list)
-
-    def build_item(self) -> str | None:
-        return 'Triple Turret'
+    mount_cost: ClassVar[float]
+    capacity: ClassVar[int]
 
     def build_notes(self) -> list[Note]:
         if not self.weapons:
             return [Note(category=NoteCategory.INFO, message='No weapons in turret')]
         return [Note(category=NoteCategory.INFO, message=w.build_item() or w.__class__.__name__) for w in self.weapons]
 
+    def model_post_init(self, __context) -> None:
+        super().model_post_init(__context)
+        if len(self.weapons) > self.capacity:
+            self.error(f'Turret can mount at most {self.capacity} weapon{"s" if self.capacity != 1 else ""}')
+
     def compute_tons(self) -> float:
         return 1.0
 
     def compute_cost(self) -> float:
-        return 1_000_000.0 + sum(w.weapon_cost for w in self.weapons)
+        return self.mount_cost + sum(w.weapon_cost for w in self.weapons)
 
     def compute_power(self) -> float:
         return 1.0 + sum(w.weapon_power for w in self.weapons)
+
+
+class SingleTurret(TurretMount):
+    mount_type: Literal['single'] = 'single'
+    minimum_tl = 7
+    mount_cost = 200_000.0
+    capacity = 1
+
+    def build_item(self) -> str | None:
+        return 'Single Turret'
+
+
+class DoubleTurret(TurretMount):
+    mount_type: Literal['double'] = 'double'
+    minimum_tl = 8
+    mount_cost = 500_000.0
+    capacity = 2
+
+    def build_item(self) -> str | None:
+        return 'Double Turret'
+
+
+class TripleTurret(TurretMount):
+    mount_type: Literal['triple'] = 'triple'
+    minimum_tl = 9
+    mount_cost = 1_000_000.0
+    capacity = 3
+
+    def build_item(self) -> str | None:
+        return 'Triple Turret'
 
 
 class MissileStorage(ShipPart):
@@ -147,7 +168,7 @@ class MissileStorage(ShipPart):
         return 0.0
 
 
-ShipTurret = Annotated[DoubleTurret | TripleTurret, Field(discriminator='mount_type')]
+ShipTurret = Annotated[SingleTurret | DoubleTurret | TripleTurret, Field(discriminator='mount_type')]
 
 
 class WeaponsSection(CeresModel):
@@ -183,7 +204,7 @@ class WeaponsSection(CeresModel):
 
         if self.is_small_craft(ship):
             for turret in self.turrets:
-                if not isinstance(turret, DoubleTurret) and not isinstance(turret, TripleTurret):
+                if isinstance(turret, SingleTurret):
                     continue
                 turret.error('Small craft may only upgrade one firmpoint to a single turret')
 

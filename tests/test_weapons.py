@@ -2,7 +2,7 @@ import pytest
 
 from ceres import hull, ship
 from ceres.base import ShipBase
-from ceres.weapons import DoubleTurret, FixedFirmpoint, PulseLaser, TripleTurret, WeaponsSection
+from ceres.weapons import DoubleTurret, FixedFirmpoint, PulseLaser, SingleTurret, TripleTurret, WeaponsSection
 
 
 class DummyOwner(ShipBase):
@@ -93,6 +93,28 @@ def test_fixed_firmpoint_recomputes_tons_from_input():
     fp = FixedFirmpoint.model_validate({'weapon': {}, 'tons': 999})
     fp.bind(DummyOwner(12, 6))
     assert fp.tons == 0
+
+
+def test_double_turret_cost_and_power_include_weapons():
+    turret = DoubleTurret(weapons=[PulseLaser(), PulseLaser(energy_efficient=True)])
+    turret.bind(DummyOwner(12, 100))
+    assert turret.cost == pytest.approx(500_000 + 1_000_000 + 1_100_000)
+    assert turret.power == pytest.approx(1 + 4 + 3)
+
+
+def test_single_turret_is_allowed_on_small_craft():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=99,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        weapons=WeaponsSection(turrets=[SingleTurret()]),
+    )
+
+    assert my_ship.weapons is not None
+    assert [(note.category.value, note.message) for note in my_ship.weapons.turrets[0].notes] == [
+        ('item', 'Single Turret'),
+        ('info', 'No weapons in turret'),
+    ]
 
 
 def test_small_craft_cannot_mount_double_turret():
