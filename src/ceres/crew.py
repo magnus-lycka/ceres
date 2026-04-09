@@ -1,4 +1,5 @@
 from .base import CeresModel
+from .spec import CrewRow as SpecCrewRow
 
 
 class CrewRole(CeresModel):
@@ -21,3 +22,11 @@ def required_crew_roles(ship) -> list[CrewRole]:
     if ship.displacement <= 100:
         return [CrewRole(role='PILOT', count=1, monthly_salary=6_000)]
     return []
+
+
+def crew_salary_cost(ship) -> float:
+    return float(sum(role.total_salary for role in required_crew_roles(ship)))
+
+
+def spec_crew_rows(ship) -> list[SpecCrewRow]:
+    return [SpecCrewRow(role=role.role, salary=role.total_salary) for role in required_crew_roles(ship)]

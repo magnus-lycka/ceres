@@ -8,15 +8,25 @@ from .base import NoteCategory, ShipBase
 from .bridge import CommandSection
 from .computer import ComputerSection, SoftwarePackage
 from .crafts import CraftSection
-from .crew import CrewRole, required_crew_roles
+from .crew import CrewRole, crew_salary_cost, required_crew_roles, spec_crew_rows
 from .drives import (
     DriveSection,
     PowerSection,
 )
+from .expense import (
+    expense_rows,
+    fuel_cost,
+    life_support_cost,
+    maintenance_cost,
+    mortgage_cost,
+    production_cost,
+    sales_price_new,
+    total_expenses,
+)
 from .habitation import HabitationSection
 from .parts import ShipPart
 from .sensors import SensorsSection
-from .spec import CrewRow as SpecCrewRow, ExpenseRow, ShipSpec, SpecRow, SpecSection
+from .spec import ShipSpec, SpecRow, SpecSection
 from .storage import CargoSection, FuelScoops, FuelSection
 from .systems import SystemsSection
 from .weapons import WeaponsSection
@@ -120,52 +130,29 @@ class Ship(ShipBase):
 
     @property
     def production_cost(self) -> float:
-        craft_cost = 0.0
-        if self.craft is not None and self.craft.docking_space is not None:
-            craft_cost += self.craft.docking_space.craft.cost
-        cargo_holds = [] if self.cargo is None else self.cargo.cargo_holds
-        cargo_hold_cost = sum(cargo_hold.crane_cost(self) for cargo_hold in cargo_holds)
-        software_cost = 0.0
-        if self.computer is not None:
-            software_cost = sum(package.cost for package in self.computer.software_packages.values())
-        return (
-            self.hull_cost + sum(part.cost for part in self._all_parts()) + software_cost + craft_cost + cargo_hold_cost
-        )
+        return production_cost(self)
 
     @property
     def sales_price_new(self) -> float:
-        return self.production_cost * self.design_type.cost_multiplier
+        return sales_price_new(self)
 
     def _crew_salary_cost(self) -> float:
-        return float(sum(role.total_salary for role in self.crew_roles))
+        return crew_salary_cost(self)
 
     def _mortgage_cost(self) -> float:
-        return round(self.sales_price_new / 240, 2)
+        return mortgage_cost(self)
 
     def _maintenance_cost(self) -> float:
-        return float(round(self.sales_price_new / 12_000))
+        return maintenance_cost(self)
 
     def _life_support_cost(self) -> float:
-        if self.command is not None and self.command.cockpit is not None:
-            return 0.0
-        if self.habitation is not None and self.habitation.staterooms is not None:
-            return self.habitation.staterooms.life_support_cost
-        return 0.0
+        return life_support_cost(self)
 
     def _fuel_cost(self) -> float:
-        if self.fuel is None or self.fuel.jump_fuel is None:
-            return 0.0
-        fuel_cost_per_ton = 100 if self.fuel.fuel_processor is not None else 500
-        return float(self.fuel.jump_fuel.tons * 2 * fuel_cost_per_ton)
+        return fuel_cost(self)
 
     def _total_expenses(self) -> float:
-        return (
-            self._mortgage_cost()
-            + self._maintenance_cost()
-            + self._life_support_cost()
-            + self._crew_salary_cost()
-            + self._fuel_cost()
-        )
+        return total_expenses(self)
 
     @property
     def crew_roles(self) -> list[CrewRole]:
@@ -315,21 +302,8 @@ class Ship(ShipBase):
         for note in self.notes:
             spec.rows_for_section(SpecSection.CARGO)[-1].notes.append(note)
 
-        expenses = [
-            ExpenseRow('Production Cost', self.production_cost),
-            ExpenseRow('Sales Price New', self.sales_price_new),
-            ExpenseRow('Mortgage', self._mortgage_cost()),
-            ExpenseRow('Maintenance', self._maintenance_cost()),
-            ExpenseRow('Life Support', self._life_support_cost()),
-            ExpenseRow('Fuel', self._fuel_cost()),
-            ExpenseRow('Crew Salaries', self._crew_salary_cost()),
-            ExpenseRow('Total Expenses', self._total_expenses()),
-        ]
-
-        crew = [SpecCrewRow(role=r.role, salary=r.total_salary) for r in self.crew_roles]
-
-        spec.expenses = expenses
-        spec.crew = crew
+        spec.expenses = expense_rows(self)
+        spec.crew = spec_crew_rows(self)
         return spec
 
     def markdown_table(self) -> str:

@@ -84,6 +84,16 @@ Calculate crew by rules if not given. Warning, not error, given if stated crew s
 
 Use new module crew.py as single source of truth for crew.
 
+Structural status:
+
+- `crew.py` now exists and `Ship` delegates there
+- remaining work is rule expansion, not structure
+
+## Expense module [done]
+
+Break out expense code to its own module expense.py
+
+
 ### Large ships crew reduction
 
 For ships of more than 5,000 tons, the
