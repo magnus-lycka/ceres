@@ -174,9 +174,15 @@ def test_beowulf_spec_structure():
     assert spec.row('Fusion (TL 12)').section == 'Power'
     assert spec.row('J-1, 4 weeks of operation').section == 'Fuel'
     assert spec.row('Fuel Scoops').section == 'Fuel'
-    assert spec.row('2 × Airlock (2 tons)').section == 'Hull'
-    assert spec.row('10 × Staterooms').section == 'Habitation'
-    assert spec.row('20 × Low Berths').section == 'Habitation'
+    airlock_row = spec.row('Airlock (2 tons)', section='Hull')
+    assert airlock_row.section == 'Hull'
+    assert airlock_row.quantity == 2
+    stateroom_row = spec.row('Staterooms', section='Habitation')
+    assert stateroom_row.section == 'Habitation'
+    assert stateroom_row.quantity == 10
+    low_berth_row = spec.row('Low Berths', section='Habitation')
+    assert low_berth_row.section == 'Habitation'
+    assert low_berth_row.quantity == 20
     assert spec.row('Common Area').section == 'Habitation'
     assert spec.row('Cargo Hold').section == 'Cargo'
     assert spec.row('Cargo Crane').section == 'Cargo'

@@ -26,6 +26,7 @@ class SpecSection(StrEnum):
 class SpecRow:
     section: SpecSection
     item: str
+    quantity: int | None = None
     tons: float | None = None
     power: float | None = None  # positive = produces power, negative = consumes power
     cost: float | None = None
@@ -44,6 +45,7 @@ class ExpenseRow:
 class CrewRow:
     role: str
     salary: int
+    quantity: int | None = None
 
 
 @dataclass

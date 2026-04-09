@@ -160,6 +160,7 @@ def test_suleiman_matches_first_modeled_reference_slice():
         ('PILOT', 1, 6_000),
         ('ASTROGATOR', 1, 5_000),
         ('ENGINEER', 1, 4_000),
+        ('GUNNER', 1, 2_000),
     ]
 
     assert suleiman.hull_cost == 6_000_000
@@ -249,13 +250,22 @@ def test_suleiman_spec_structure():
     assert jc2.section == 'Computer'
     assert jc2.cost == 200_000
 
+    staterooms = spec.row('Staterooms')
+    assert staterooms.section == 'Habitation'
+    assert staterooms.quantity == 4
+
+    probe_drones = spec.row('Probe Drones')
+    assert probe_drones.section == 'Systems'
+    assert probe_drones.quantity == 10
+
     assert spec.expenses[1].label == 'Sales Price New'
     assert spec.expenses[1].amount == 36_940_500
     assert any(e.label == 'Life Support' and e.amount == 12_000 for e in spec.expenses)
     assert any(e.label == 'Fuel' and e.amount == 4_040 for e in spec.expenses)
-    assert any(e.label == 'Crew Salaries' and e.amount == 15_000 for e in spec.expenses)
+    assert any(e.label == 'Crew Salaries' and e.amount == 17_000 for e in spec.expenses)
 
-    assert any(c.role == 'ENGINEER' and c.salary == 4_000 for c in spec.crew)
+    assert any(c.role == 'ENGINEER' and c.quantity is None and c.salary == 4_000 for c in spec.crew)
+    assert any(c.role == 'GUNNER' and c.quantity is None and c.salary == 2_000 for c in spec.crew)
 
 
 def test_suleiman_markdown_output():

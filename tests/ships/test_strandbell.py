@@ -21,6 +21,7 @@ def build_strandbell() -> ship.Ship:
     return ship.Ship(
         ship_class='Strandbell',
         ship_type='System Defense Boat',
+        military=True,
         tl=15,
         displacement=200,
         design_type=ship.ShipDesignType.STANDARD,
@@ -203,14 +204,26 @@ def test_strandbell_spec_structure():
     assert spec.row('Evade/2').section == 'Computer'
     assert spec.row('Improved').section == 'Sensors'
     assert spec.row('Countermeasures Suite').section == 'Sensors'
-    assert spec.row('Triple Turret (Beam Laser)').section == 'Weapons'
-    assert spec.row('Triple Turret (Missile Rack)').section == 'Weapons'
+    assert spec.row('Triple Turret', section='Weapons').section == 'Weapons'
     assert spec.row('Missile Storage (240)').section == 'Weapons'
     assert spec.row('Medical Bay').section == 'Systems'
     assert spec.row('Repair Drones').section == 'Systems'
-    assert spec.row('15 × Staterooms').section == 'Habitation'
+    stateroom_row = spec.row('Staterooms', section='Habitation')
+    assert stateroom_row.section == 'Habitation'
+    assert stateroom_row.quantity == 15
     assert spec.row('Common Area').section == 'Habitation'
-    assert spec.row('2 × Airlock (2 tons)').section == 'Hull'
+    airlock_row = spec.row('Airlock (2 tons)', section='Hull')
+    assert airlock_row.section == 'Hull'
+    assert airlock_row.quantity == 2
+
+
+def test_strandbell_uses_military_crew_rules():
+    sdb = build_strandbell()
+    assert [(role.role, role.count, role.monthly_salary) for role in sdb.crew_roles] == [
+        ('PILOT', 3, 6_000),
+        ('ENGINEER', 2, 4_000),
+        ('GUNNER', 4, 2_000),
+    ]
 
 
 def test_strandbell_markdown_output():

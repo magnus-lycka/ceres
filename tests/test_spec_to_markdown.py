@@ -12,6 +12,7 @@ from ceres.bridge import Bridge, CommandSection
 from ceres.computer import Computer5, ComputerSection
 from ceres.drives import DriveSection, FusionPlantTL12, MDrive1, PowerSection
 from ceres.habitation import HabitationSection, Staterooms
+from ceres.systems import ProbeDrones, SystemsSection
 
 
 def _minimal_ship(**kwargs) -> ship.Ship:
@@ -104,6 +105,16 @@ def test_cost_formatted_in_kcr():
     assert '2000.00' in table
 
 
+def test_quantity_rendered_as_item_times_quantity():
+    my_ship = _minimal_ship(
+        habitation=HabitationSection(staterooms=Staterooms(count=4)),
+        systems=SystemsSection(probe_drones=ProbeDrones(count=10)),
+    )
+    table = my_ship.markdown_table()
+    assert 'Staterooms × 4' in table
+    assert 'Probe Drones × 10' in table
+
+
 def test_expenses_table_present():
     my_ship = _minimal_ship()
     table = my_ship.markdown_table()
@@ -116,3 +127,16 @@ def test_crew_table_present_when_crew_exists():
     table = my_ship.markdown_table()
     assert '| Crew | Salary |' in table
     assert '| PILOT |' in table
+
+
+def test_crew_quantity_rendered_as_role_times_quantity():
+    my_ship = ship.Ship(
+        tl=12,
+        military=True,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer5()),
+    )
+    table = my_ship.markdown_table()
+    assert '| PILOT × 3 | 18,000 |' in table

@@ -65,3 +65,17 @@ def test_ship_spec_rows_matching_returns_all_rows_with_item():
     spec = build_spec()
 
     assert [row.section for row in spec.rows_matching('Jump 2')] == [SpecSection.JUMP, SpecSection.FUEL]
+
+
+def test_spec_row_can_store_quantity_separately_from_item():
+    row = SpecRow(section=SpecSection.HABITATION, item='Staterooms', quantity=10, tons=40.0)
+
+    assert row.item == 'Staterooms'
+    assert row.quantity == 10
+
+
+def test_crew_row_can_store_quantity_separately_from_role():
+    row = CrewRow(role='PILOT', quantity=3, salary=18_000)
+
+    assert row.role == 'PILOT'
+    assert row.quantity == 3

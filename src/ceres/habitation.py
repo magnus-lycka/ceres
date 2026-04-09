@@ -16,11 +16,6 @@ class Staterooms(ShipPart):
 
     count: int
 
-    def build_item(self) -> str | None:
-        if self.count == 1:
-            return 'Stateroom'
-        return f'{self.count} × Staterooms'
-
     def compute_tons(self) -> float:
         return self.count * self.tons_per_stateroom
 
@@ -41,11 +36,6 @@ class LowBerths(ShipPart):
     cost_per_berth: ClassVar[float] = 50_000.0
 
     count: int
-
-    def build_item(self) -> str | None:
-        if self.count == 1:
-            return 'Low Berth'
-        return f'{self.count} × Low Berths'
 
     def compute_tons(self) -> float:
         return self.count * self.tons_per_berth
@@ -78,7 +68,29 @@ class HabitationSection(CeresModel):
         return parts
 
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
-        for habitation_part in self._all_parts():
+        if self.staterooms is not None:
+            spec.add_row(
+                ship._spec_row_for_part(
+                    SpecSection.HABITATION,
+                    self.staterooms,
+                    item='Staterooms' if self.staterooms.count > 1 else 'Stateroom',
+                )
+            )
+            spec.rows_for_section(SpecSection.HABITATION)[-1].quantity = (
+                self.staterooms.count if self.staterooms.count > 1 else None
+            )
+        if self.low_berths is not None:
+            spec.add_row(
+                ship._spec_row_for_part(
+                    SpecSection.HABITATION,
+                    self.low_berths,
+                    item='Low Berths' if self.low_berths.count > 1 else 'Low Berth',
+                )
+            )
+            spec.rows_for_section(SpecSection.HABITATION)[-1].quantity = (
+                self.low_berths.count if self.low_berths.count > 1 else None
+            )
+        for habitation_part in [part for part in [self.common_area] if part is not None]:
             spec.add_row(ship._spec_row_for_part(SpecSection.HABITATION, habitation_part))
         habitation_rows = spec.rows_for_section(SpecSection.HABITATION)
         if habitation_rows:

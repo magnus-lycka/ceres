@@ -115,17 +115,12 @@ class TripleTurret(ShipPart):
     weapons: list[TurretWeapon] = Field(default_factory=list)
 
     def build_item(self) -> str | None:
-        if not self.weapons:
-            return 'Triple Turret'
-        weapon_names = [w.build_item() or w.__class__.__name__ for w in self.weapons]
-        unique = list(dict.fromkeys(weapon_names))
-        label = ', '.join(unique)
-        return f'Triple Turret ({label})'
+        return 'Triple Turret'
 
     def build_notes(self) -> list[Note]:
         if not self.weapons:
             return [Note(category=NoteCategory.INFO, message='No weapons in turret')]
-        return []
+        return [Note(category=NoteCategory.INFO, message=w.build_item() or w.__class__.__name__) for w in self.weapons]
 
     def compute_tons(self) -> float:
         return 1.0
@@ -167,7 +162,9 @@ class WeaponsSection(CeresModel):
         return parts
 
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
-        for row in ship._grouped_spec_rows(SpecSection.WEAPONS, [*self.turrets, *self.fixed_firmpoints]):
+        for turret in self.turrets:
+            spec.add_row(ship._spec_row_for_part(SpecSection.WEAPONS, turret))
+        for row in ship._grouped_spec_rows(SpecSection.WEAPONS, self.fixed_firmpoints):
             spec.add_row(row)
         if self.missile_storage is not None:
             spec.add_row(ship._spec_row_for_part(SpecSection.WEAPONS, self.missile_storage))

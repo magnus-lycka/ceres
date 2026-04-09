@@ -92,7 +92,7 @@ class ProbeDrones(ShipPart):
     def build_item(self) -> str | None:
         if self.count == 1:
             return 'Probe Drone'
-        return f'{self.count} × Probe Drones'
+        return 'Probe Drones'
 
     def compute_tons(self) -> float:
         return self.count / self.drones_per_ton
@@ -130,3 +130,7 @@ class SystemsSection(CeresModel):
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
         for system_part in self._all_parts():
             spec.add_row(ship._spec_row_for_part(SpecSection.SYSTEMS, system_part))
+            if isinstance(system_part, ProbeDrones):
+                spec.rows_for_section(SpecSection.SYSTEMS)[-1].quantity = (
+                    system_part.count if system_part.count > 1 else None
+                )

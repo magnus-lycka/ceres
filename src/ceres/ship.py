@@ -51,6 +51,7 @@ class ShipDesignType(StrEnum):
 class Ship(ShipBase):
     ship_class: str | None = None
     ship_type: str | None = None
+    military: bool = False
     design_type: ShipDesignType = ShipDesignType.CUSTOM
     hull: Hull
     drives: DriveSection | None = None
@@ -237,14 +238,14 @@ class Ship(ShipBase):
 
         rows: list[SpecRow] = []
         for item, group in groups:
-            label = f'{len(group)} × {item}' if len(group) > 1 else item
             total_tons = sum(part.tons for part in group) or None
             total_cost = sum(part.cost for part in group) or None
             total_power = sum(part.power for part in group)
             rows.append(
                 SpecRow(
                     section=section,
-                    item=label,
+                    item=item,
+                    quantity=len(group) if len(group) > 1 else None,
                     tons=total_tons,
                     power=(-total_power) if total_power else None,
                     cost=total_cost,
@@ -313,6 +314,7 @@ class Ship(ShipBase):
 
         def fmt_row(row: SpecRow) -> list[str]:
             nonlocal last_section
+            item_text = row.item if row.quantity is None else f'{row.item} × {row.quantity}'
             tons_text = '' if row.tons is None or row.tons == 0 else f'{row.tons:.2f}'
             if row.emphasize_tons and tons_text:
                 tons_text = f'**{tons_text}**'
@@ -325,7 +327,7 @@ class Ship(ShipBase):
             cost_text = '' if row.cost is None or row.cost == 0 else f'{row.cost / 1000:.2f}'
             section_text = '' if row.section == last_section else row.section.value
             last_section = row.section
-            lines = [f'| {section_text} | {row.item} | {tons_text} | {power_text} | {cost_text} |']
+            lines = [f'| {section_text} | {item_text} | {tons_text} | {power_text} | {cost_text} |']
             for note in row.notes:
                 if note.category is NoteCategory.INFO:
                     msg = f'• {note.message}'
@@ -360,7 +362,8 @@ class Ship(ShipBase):
         if spec.crew:
             lines.extend(['', '| Crew | Salary |', '| ------------ | ---: |'])
             for c in spec.crew:
-                lines.append(f'| {c.role} | {round(c.salary):,} |')
+                role_text = c.role if c.quantity is None else f'{c.role} × {c.quantity}'
+                lines.append(f'| {role_text} | {round(c.salary):,} |')
 
         return '\n'.join(lines)
 
