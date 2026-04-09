@@ -4,6 +4,7 @@ from pydantic import Field, PrivateAttr
 
 from .base import CeresModel
 from .parts import ShipPart
+from .spec import ShipSpec, SpecRow, SpecSection
 
 
 class SoftwarePackage(CeresModel):
@@ -491,3 +492,16 @@ class ComputerSection(CeresModel):
         if self.hardware is not None:
             parts.append(self.hardware)
         return parts
+
+    def add_spec_rows(self, ship, spec: ShipSpec) -> None:
+        if self.hardware is not None:
+            spec.add_row(ship._spec_row_for_part(SpecSection.COMPUTER, self.hardware))
+        for package in self.software_packages.values():
+            spec.add_row(
+                SpecRow(
+                    section=SpecSection.COMPUTER,
+                    item=ship._item_text(package, package.description),
+                    cost=package.cost or None,
+                    notes=ship._display_notes(package),
+                )
+            )

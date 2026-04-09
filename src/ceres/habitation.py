@@ -3,6 +3,7 @@ from typing import ClassVar
 
 from .base import CeresModel
 from .parts import ShipPart
+from .spec import ShipSpec, SpecSection
 from .systems import CommonArea
 
 
@@ -68,3 +69,10 @@ class HabitationSection(CeresModel):
             if part is not None:
                 parts.append(part)
         return parts
+
+    def add_spec_rows(self, ship, spec: ShipSpec) -> None:
+        for habitation_part in self._all_parts():
+            spec.add_row(ship._spec_row_for_part(SpecSection.HABITATION, habitation_part))
+        habitation_rows = spec.rows_for_section(SpecSection.HABITATION)
+        if habitation_rows:
+            habitation_rows[-1].notes.extend(ship._display_notes(self))

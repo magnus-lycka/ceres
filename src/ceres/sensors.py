@@ -4,6 +4,7 @@ from pydantic import Field
 
 from .base import CeresModel, Note, NoteCategory
 from .parts import ShipPart
+from .spec import ShipSpec, SpecSection
 
 
 class BasicSensors(ShipPart):
@@ -118,3 +119,7 @@ class SensorsSection(CeresModel):
         if self.countermeasures is not None:
             parts.append(self.countermeasures)
         return parts
+
+    def add_spec_rows(self, ship, spec: ShipSpec) -> None:
+        for sensor_part in self._all_parts():
+            spec.add_row(ship._spec_row_for_part(SpecSection.SENSORS, sensor_part))

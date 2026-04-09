@@ -4,6 +4,7 @@ from pydantic import Field
 
 from .base import CeresModel, Note
 from .parts import ShipPart
+from .spec import ShipSpec, SpecRow, SpecSection
 
 
 class FuelScoops(ShipPart):
@@ -83,6 +84,30 @@ class FuelSection(CeresModel):
                 parts.append(part)
         return parts
 
+    def add_spec_rows(self, ship, spec: ShipSpec) -> None:
+        parts: list[str] = []
+        if self.jump_fuel is not None:
+            parts.append(f'J-{self.jump_fuel.parsecs}')
+        if self.operation_fuel is not None:
+            unit = 'week' if self.operation_fuel.weeks == 1 else 'weeks'
+            parts.append(f'{self.operation_fuel.weeks} {unit} of operation')
+        if parts:
+            total_fuel_tons = 0.0
+            if self.jump_fuel is not None:
+                total_fuel_tons += self.jump_fuel.tons
+            if self.operation_fuel is not None:
+                total_fuel_tons += self.operation_fuel.tons
+            spec.add_row(
+                SpecRow(
+                    section=SpecSection.FUEL,
+                    item=', '.join(parts),
+                    tons=total_fuel_tons or None,
+                )
+            )
+        for fuel_part in (self.fuel_scoops, self.fuel_processor):
+            if fuel_part is not None:
+                spec.add_row(ship._spec_row_for_part(SpecSection.FUEL, fuel_part))
+
 
 class CargoCrane(CeresModel):
     def build_item(self) -> str | None:
@@ -123,3 +148,31 @@ class CargoHold(CeresModel):
 
 class CargoSection(CeresModel):
     cargo_holds: list[CargoHold] = Field(default_factory=list)
+
+    def add_spec_rows(self, ship, spec: ShipSpec) -> None:
+        if self.cargo_holds:
+            for cargo_hold in self.cargo_holds:
+                spec.add_row(
+                    SpecRow(
+                        section=SpecSection.CARGO,
+                        item=cargo_hold.build_item() or 'Cargo Hold',
+                        tons=cargo_hold.usable_tons(ship) or None,
+                    )
+                )
+                if cargo_hold.crane is not None:
+                    spec.add_row(
+                        SpecRow(
+                            section=SpecSection.CARGO,
+                            item=cargo_hold.crane.build_item() or 'Cargo Crane',
+                            tons=cargo_hold.crane_tons(ship) or None,
+                            cost=cargo_hold.crane_cost(ship) or None,
+                        )
+                    )
+            return
+        spec.add_row(
+            SpecRow(
+                section=SpecSection.CARGO,
+                item='Cargo Hold',
+                tons=ship.cargo_tons or None,
+            )
+        )

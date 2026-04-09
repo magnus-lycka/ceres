@@ -2,6 +2,7 @@ from typing import ClassVar
 
 from .base import CeresModel, Note, NoteCategory
 from .parts import ShipPart
+from .spec import ShipSpec, SpecSection
 
 
 class Workshop(ShipPart):
@@ -123,3 +124,7 @@ class SystemsSection(CeresModel):
             if part is not None:
                 parts.append(part)
         return parts
+
+    def add_spec_rows(self, ship, spec: ShipSpec) -> None:
+        for system_part in self._all_parts():
+            spec.add_row(ship._spec_row_for_part(SpecSection.SYSTEMS, system_part))

@@ -2,6 +2,7 @@ from bisect import bisect_left
 
 from .base import CeresModel, Note, NoteCategory
 from .parts import ShipPart
+from .spec import ShipSpec, SpecSection
 
 
 class Cockpit(ShipPart):
@@ -74,3 +75,8 @@ class CommandSection(CeresModel):
             if part is not None:
                 parts.append(part)
         return parts
+
+    def add_spec_rows(self, ship, spec: ShipSpec) -> None:
+        for part in (self.bridge, self.cockpit):
+            if part is not None:
+                spec.add_row(ship._spec_row_for_part(SpecSection.COMMAND, part))

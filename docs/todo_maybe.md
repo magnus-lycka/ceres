@@ -1,6 +1,6 @@
 # List of potential things to do
 
-## Software Singleton
+## Software Singleton [done]
 
 Note that Software Packages are Singletons
 
@@ -18,6 +18,12 @@ If we have 10 staterooms, it should say 10 ✕ Staterooms.
 The same is probably true for many other items. If it's
 just one, I guesws it could say 1 ✕ Staterooms or just
 Stateroom
+
+## Decentralize build_spec [doing]
+
+Move substantial parts of Ship.build_spec() out to the
+sections that own the rows, such as storage, computer,
+habitation and systems.
 
 ## Implement armoured bulkhead
 
@@ -58,6 +64,8 @@ or if we want civilian or military crew analysis.
 
 Calculate crew by rules if not given. Warning, not error, given if stated crew seems understaffed.
 
+Use new module crew.py as single source of truth for crew.
+
 ### Large ships crew reduction
 
 For ships of more than 5,000 tons, the
@@ -81,7 +89,7 @@ For the dispöacement based roles, maintenance &
 sensor operators, make sure you don't need more than
 a larger ship, i.e. min(crew_need(displacement), crew_need(next limit))
 
-## Combine propulsion and jump sections
+## Combine propulsion and jump sections [done]
 
 Maybe it's better to combine jump and propulsion to a drives section?
 
@@ -104,4 +112,3 @@ bridge, can be used by any ship of more than 5,000
 tons and adds an additional MCr30 to the cost of the
 bridge. The command bridge grants DM+1 to all Tactics
 (naval) checks made within it.
-

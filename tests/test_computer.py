@@ -1,12 +1,22 @@
 from ceres.base import ShipBase
 from ceres.computer import (
+    AutoRepair,
+    AutoRepair1,
+    AutoRepair2,
     Computer5,
     Computer10,
     Computer15,
     ComputerSection,
     Core40,
+    Evade,
+    Evade1,
+    Evade2,
+    FireControl,
+    FireControl1,
+    FireControl2,
     Intellect,
     JumpControl,
+    JumpControl1,
     JumpControl2,
     JumpControl3,
     Library,
@@ -148,4 +158,54 @@ def test_software_packages_warn_about_redundant_lower_singleton():
     assert [(note.category.value, note.message) for note in jump_control.notes] == [
         ('item', 'Jump Control/3'),
         ('warning', 'Redundant Jump Control/2 added'),
+    ]
+
+
+def test_software_singleton_lookup_uses_family_types():
+    hardware = Computer10()
+    hardware.bind(DummyOwner(12, 100))
+    section = ComputerSection(
+        hardware=hardware,
+        software=[Evade1(), Evade2(), FireControl1(), FireControl2(), AutoRepair1(), AutoRepair2()],
+    )
+
+    assert isinstance(section.software_packages[Evade], Evade2)
+    assert isinstance(section.software_packages[FireControl], FireControl2)
+    assert isinstance(section.software_packages[AutoRepair], AutoRepair2)
+
+
+def test_validate_software_warns_when_ship_has_no_hardware():
+    section = ComputerSection(software=[JumpControl1()])
+
+    section.validate_software(ship_tl=12)
+
+    jump_control = section.software_packages[JumpControl]
+    assert ('warning', 'Ship software requires a computer') in [
+        (note.category.value, note.message) for note in jump_control.notes
+    ]
+
+
+def test_validate_software_adds_tl_error():
+    hardware = Computer5(bis=True)
+    hardware.bind(DummyOwner(10, 100))
+    section = ComputerSection(hardware=hardware, software=[JumpControl2()])
+
+    section.validate_software(ship_tl=10)
+
+    jump_control = section.software_packages[JumpControl]
+    assert ('error', 'Jump Control/2 requires TL11') in [
+        (note.category.value, note.message) for note in jump_control.notes
+    ]
+
+
+def test_validate_software_adds_cannot_run_error():
+    hardware = Computer5()
+    hardware.bind(DummyOwner(12, 100))
+    section = ComputerSection(hardware=hardware, software=[JumpControl2()])
+
+    section.validate_software(ship_tl=12)
+
+    jump_control = section.software_packages[JumpControl]
+    assert ('error', 'Computer/5 cannot run Jump Control/2') in [
+        (note.category.value, note.message) for note in jump_control.notes
     ]

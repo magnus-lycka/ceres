@@ -238,21 +238,57 @@ class Ship(ShipBase):
     def _display_notes(self, obj) -> list:
         return [note for note in obj.notes if note.category is not NoteCategory.ITEM]
 
+    def _spec_row_for_part(
+        self,
+        section: SpecSection,
+        part: ShipPart,
+        *,
+        item: str | None = None,
+        power: float | None = None,
+        emphasize_power: bool = False,
+    ) -> SpecRow:
+        resolved_item = item or self._item_text(part, getattr(part, 'description', part.__class__.__name__))
+        resolved_power = power
+        if resolved_power is None and part.power:
+            resolved_power = -part.power
+        return SpecRow(
+            section=section,
+            item=resolved_item,
+            tons=part.tons or None,
+            power=resolved_power,
+            cost=part.cost or None,
+            emphasize_power=emphasize_power,
+            notes=self._display_notes(part),
+        )
+
+    def _grouped_spec_rows(self, section: SpecSection, parts: list[ShipPart]) -> list[SpecRow]:
+        groups: list[tuple[str, list[ShipPart]]] = []
+        for part in parts:
+            item = self._item_text(part, getattr(part, 'description', part.__class__.__name__))
+            if groups and groups[-1][0] == item:
+                groups[-1][1].append(part)
+            else:
+                groups.append((item, [part]))
+
+        rows: list[SpecRow] = []
+        for item, group in groups:
+            label = f'{len(group)}x {item}' if len(group) > 1 else item
+            total_tons = sum(part.tons for part in group) or None
+            total_cost = sum(part.cost for part in group) or None
+            total_power = sum(part.power for part in group)
+            rows.append(
+                SpecRow(
+                    section=section,
+                    item=label,
+                    tons=total_tons,
+                    power=(-total_power) if total_power else None,
+                    cost=total_cost,
+                    notes=[note for part in group for note in self._display_notes(part)],
+                )
+            )
+        return rows
+
     def build_spec(self) -> ShipSpec:
-        def operation_weeks_label(weeks: int) -> str:
-            unit = 'week' if weeks == 1 else 'weeks'
-            return f'{weeks} {unit} of operation'
-
-        def fuel_item() -> str | None:
-            parts: list[str] = []
-            if self.fuel is not None and self.fuel.jump_fuel is not None:
-                parts.append(f'J-{self.fuel.jump_fuel.parsecs}')
-            if self.fuel is not None and self.fuel.operation_fuel is not None:
-                parts.append(operation_weeks_label(self.fuel.operation_fuel.weeks))
-            if not parts:
-                return None
-            return ', '.join(parts)
-
         spec = ShipSpec(
             ship_class=self.ship_class,
             ship_type=self.ship_type,
@@ -260,62 +296,7 @@ class Ship(ShipBase):
             hull_points=self.hull_points,
         )
 
-        def add_row(section: SpecSection, row: SpecRow) -> None:
-            spec.add_row(row, section=section)
-
-        def add_part(
-            section: SpecSection,
-            part: ShipPart,
-            *,
-            item: str | None = None,
-            power: float | None = None,
-            emphasize_power: bool = False,
-        ) -> None:
-            resolved_item = item or self._item_text(part, getattr(part, 'description', part.__class__.__name__))
-            resolved_power = power
-            if resolved_power is None and part.power:
-                resolved_power = -part.power
-            add_row(
-                section,
-                SpecRow(
-                    section=section,
-                    item=resolved_item,
-                    tons=part.tons or None,
-                    power=resolved_power,
-                    cost=part.cost or None,
-                    emphasize_power=emphasize_power,
-                    notes=self._display_notes(part),
-                ),
-            )
-
-        def add_grouped_parts(section: SpecSection, parts: list[ShipPart]) -> None:
-            groups: list[tuple[str, list[ShipPart]]] = []
-            for part in parts:
-                item = self._item_text(part, getattr(part, 'description', part.__class__.__name__))
-                if groups and groups[-1][0] == item:
-                    groups[-1][1].append(part)
-                else:
-                    groups.append((item, [part]))
-
-            for item, group in groups:
-                label = f'{len(group)}x {item}' if len(group) > 1 else item
-                total_tons = sum(part.tons for part in group) or None
-                total_cost = sum(part.cost for part in group) or None
-                total_power = sum(part.power for part in group)
-                add_row(
-                    section,
-                    SpecRow(
-                        section=section,
-                        item=label,
-                        tons=total_tons,
-                        power=(-total_power) if total_power else None,
-                        cost=total_cost,
-                        notes=[note for part in group for note in self._display_notes(part)],
-                    ),
-                )
-
-        add_row(
-            SpecSection.HULL,
+        spec.add_row(
             SpecRow(
                 section=SpecSection.HULL,
                 item=self._item_text(self.hull, 'Hull'),
@@ -325,8 +306,7 @@ class Ship(ShipBase):
                 notes=self._display_notes(self.hull),
             ),
         )
-        add_row(
-            SpecSection.HULL,
+        spec.add_row(
             SpecRow(
                 section=SpecSection.HULL,
                 item='Basic Ship Systems',
@@ -334,77 +314,38 @@ class Ship(ShipBase):
             ),
         )
         if self.hull.armour is not None:
-            add_part(SpecSection.HULL, self.hull.armour)
+            spec.add_row(self._spec_row_for_part(SpecSection.HULL, self.hull.armour))
         if self.hull.stealth is not None:
-            add_part(SpecSection.HULL, self.hull.stealth)
-        add_grouped_parts(
+            spec.add_row(self._spec_row_for_part(SpecSection.HULL, self.hull.stealth))
+        for row in self._grouped_spec_rows(
             SpecSection.HULL, [*self.hull.airlocks, *([self.hull.aerofins] if self.hull.aerofins is not None else [])]
-        )
+        ):
+            spec.add_row(row)
 
-        if self.drives is not None and self.drives.jump_drive is not None:
-            add_part(SpecSection.JUMP, self.drives.jump_drive)
-        if self.drives is not None and self.drives.m_drive is not None:
-            add_part(SpecSection.PROPULSION, self.drives.m_drive)
-        if self.power is not None and self.power.fusion_plant is not None:
-            add_part(
-                SpecSection.POWER,
-                self.power.fusion_plant,
-                power=float(self.power.fusion_plant.output),
-                emphasize_power=True,
-            )
-
-        combined_fuel_item = fuel_item()
-        if combined_fuel_item is not None:
-            total_fuel_tons = 0.0
-            if self.fuel is not None and self.fuel.jump_fuel is not None:
-                total_fuel_tons += self.fuel.jump_fuel.tons
-            if self.fuel is not None and self.fuel.operation_fuel is not None:
-                total_fuel_tons += self.fuel.operation_fuel.tons
-            add_row(
-                SpecSection.FUEL,
-                SpecRow(
-                    section=SpecSection.FUEL,
-                    item=combined_fuel_item,
-                    tons=total_fuel_tons or None,
-                ),
-            )
+        if self.drives is not None:
+            self.drives.add_spec_rows(self, spec)
+        if self.power is not None:
+            self.power.add_spec_rows(self, spec)
         if self.fuel is not None:
-            for fuel_part in [self.fuel.fuel_scoops, self.fuel.fuel_processor]:
-                if fuel_part is not None:
-                    add_part(SpecSection.FUEL, fuel_part)
-
+            self.fuel.add_spec_rows(self, spec)
         if self.command is not None:
-            for command_part in [self.command.bridge, self.command.cockpit]:
-                if command_part is not None:
-                    add_part(SpecSection.COMMAND, command_part)
-
-        if self.computer is not None and self.computer.hardware is not None:
-            add_part(SpecSection.COMPUTER, self.computer.hardware)
+            self.command.add_spec_rows(self, spec)
         if self.computer is not None:
-            for package in self.computer.software_packages.values():
-                add_row(
-                    SpecSection.COMPUTER,
-                    SpecRow(
-                        section=SpecSection.COMPUTER,
-                        item=self._item_text(package, package.description),
-                        cost=package.cost or None,
-                        notes=self._display_notes(package),
-                    ),
-                )
-
-        for sensor_part in self.sensors._all_parts():
-            add_part(SpecSection.SENSORS, sensor_part)
+            self.computer.add_spec_rows(self, spec)
+        self.sensors.add_spec_rows(self, spec)
 
         if self.weapons is not None:
-            add_grouped_parts(SpecSection.WEAPONS, [*self.weapons.turrets, *self.weapons.fixed_firmpoints])
+            for row in self._grouped_spec_rows(
+                SpecSection.WEAPONS, [*self.weapons.turrets, *self.weapons.fixed_firmpoints]
+            ):
+                spec.add_row(row)
             if self.weapons.missile_storage is not None:
-                add_part(SpecSection.WEAPONS, self.weapons.missile_storage)
+                spec.add_row(self._spec_row_for_part(SpecSection.WEAPONS, self.weapons.missile_storage))
 
         if self.docking_space is not None:
-            add_part(SpecSection.CRAFT, self.docking_space)
+            spec.add_row(self._spec_row_for_part(SpecSection.CRAFT, self.docking_space))
             craft = self.docking_space.craft
-            add_row(
-                SpecSection.CRAFT,
+            spec.add_row(
                 SpecRow(
                     section=SpecSection.CRAFT,
                     item=craft.build_item() or craft.__class__.__name__,
@@ -413,39 +354,13 @@ class Ship(ShipBase):
             )
 
         if self.habitation is not None:
-            for habitation_part in self.habitation._all_parts():
-                add_part(SpecSection.HABITATION, habitation_part)
-            habitation_rows = spec.rows_for_section(SpecSection.HABITATION)
-            if habitation_rows:
-                habitation_rows[-1].notes.extend(self._display_notes(self.habitation))
-
+            self.habitation.add_spec_rows(self, spec)
         if self.systems is not None:
-            for system_part in self.systems._all_parts():
-                add_part(SpecSection.SYSTEMS, system_part)
-
-        if self.cargo is not None and self.cargo.cargo_holds:
-            for cargo_hold in self.cargo.cargo_holds:
-                add_row(
-                    SpecSection.CARGO,
-                    SpecRow(
-                        section=SpecSection.CARGO,
-                        item=cargo_hold.build_item() or 'Cargo Hold',
-                        tons=cargo_hold.usable_tons(self) or None,
-                    ),
-                )
-                if cargo_hold.crane is not None:
-                    add_row(
-                        SpecSection.CARGO,
-                        SpecRow(
-                            section=SpecSection.CARGO,
-                            item=cargo_hold.crane.build_item() or 'Cargo Crane',
-                            tons=cargo_hold.crane_tons(self) or None,
-                            cost=cargo_hold.crane_cost(self) or None,
-                        ),
-                    )
+            self.systems.add_spec_rows(self, spec)
+        if self.cargo is not None:
+            self.cargo.add_spec_rows(self, spec)
         else:
-            add_row(
-                SpecSection.CARGO,
+            spec.add_row(
                 SpecRow(
                     section=SpecSection.CARGO,
                     item='Cargo Hold',

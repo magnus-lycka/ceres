@@ -5,6 +5,7 @@ from pydantic import Field
 
 from .computer import JumpControl, SoftwarePackage
 from .parts import ShipPart
+from .spec import ShipSpec, SpecSection
 
 
 class MDrive(ShipPart):
@@ -221,6 +222,12 @@ class DriveSection(ShipPart):
         if jump_control.rating < self.jump_drive.rating:
             self.jump_drive.warning(f'Limited to Jump {jump_control.rating} by control software')
 
+    def add_spec_rows(self, ship, spec: ShipSpec) -> None:
+        if self.jump_drive is not None:
+            spec.add_row(ship._spec_row_for_part(SpecSection.JUMP, self.jump_drive))
+        if self.m_drive is not None:
+            spec.add_row(ship._spec_row_for_part(SpecSection.PROPULSION, self.m_drive))
+
 
 class _FusionPlant(ShipPart):
     minimum_tl: ClassVar[int]
@@ -272,3 +279,14 @@ class PowerSection(ShipPart):
 
     def _all_parts(self) -> list[ShipPart]:
         return [part for part in [self.fusion_plant] if part is not None]
+
+    def add_spec_rows(self, ship, spec: ShipSpec) -> None:
+        if self.fusion_plant is not None:
+            spec.add_row(
+                ship._spec_row_for_part(
+                    SpecSection.POWER,
+                    self.fusion_plant,
+                    power=float(self.fusion_plant.output),
+                    emphasize_power=True,
+                )
+            )
