@@ -56,6 +56,22 @@ def _drives_and_power_tonnage(ship) -> float:
     return tons
 
 
+def _commercial_gunner_count(ship) -> int:
+    if ship.weapons is None:
+        return 0
+    return len(ship.weapons.turrets) + len(ship.weapons.barbettes)
+
+
+def _military_gunner_count(ship) -> int:
+    if ship.weapons is None:
+        return 0
+    return (
+        len(ship.weapons.turrets) * 2
+        + len(ship.weapons.barbettes) * 2
+        + sum(bay.crew_required_military for bay in ship.weapons.bays)
+    )
+
+
 def _commercial_roles(ship) -> list[CrewRole]:
     if ship.displacement <= 100 and (ship.drives is None or ship.drives.jump_drive is None):
         return [CrewRole(role='PILOT', count=1, monthly_salary=PILOT_SALARY)]
@@ -74,7 +90,7 @@ def _commercial_roles(ship) -> list[CrewRole]:
     if maintenance_count:
         roles.append(CrewRole(role='MAINTENANCE', count=maintenance_count, monthly_salary=MAINTENANCE_SALARY))
 
-    gunner_count = 0 if ship.weapons is None else len(ship.weapons.turrets)
+    gunner_count = _commercial_gunner_count(ship)
     gunner_count = _apply_large_ship_reduction(ship, gunner_count)
     if gunner_count:
         roles.append(CrewRole(role='GUNNER', count=gunner_count, monthly_salary=GUNNER_SALARY))
@@ -121,9 +137,7 @@ def _military_roles(ship) -> list[CrewRole]:
     if maintenance_count:
         roles.append(CrewRole(role='MAINTENANCE', count=maintenance_count, monthly_salary=MAINTENANCE_SALARY))
 
-    gunner_count = 0
-    if ship.weapons is not None:
-        gunner_count = len(ship.weapons.turrets) * 2
+    gunner_count = _military_gunner_count(ship)
     gunner_count = _apply_large_ship_reduction(ship, gunner_count)
     if gunner_count:
         roles.append(CrewRole(role='GUNNER', count=gunner_count, monthly_salary=GUNNER_SALARY))

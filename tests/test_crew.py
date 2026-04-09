@@ -3,7 +3,7 @@ from ceres.bridge import Bridge, CommandSection
 from ceres.computer import Computer5, ComputerSection
 from ceres.crew import CrewRole, required_crew_roles
 from ceres.drives import DriveSection, FusionPlantTL12, JumpDrive1, MDrive1, MDrive2, PowerSection
-from ceres.weapons import DoubleTurret, WeaponsSection
+from ceres.weapons import Barbette, Bay, DoubleTurret, WeaponsSection
 
 
 def test_crew_role_total_salary():
@@ -101,3 +101,36 @@ def test_military_ship_uses_military_pilot_and_gunner_rules():
         ('ENGINEER', 1),
         ('GUNNER', 4),
     ]
+
+
+def test_commercial_ship_gets_gunner_for_barbette():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        drives=DriveSection(m_drive=MDrive2()),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer5()),
+        weapons=WeaponsSection(barbettes=[Barbette(weapon='pulse_laser')]),
+    )
+
+    assert ('GUNNER', 1) in [(role.role, role.count) for role in required_crew_roles(my_ship)]
+
+
+def test_military_ship_gets_gunners_for_bays():
+    my_ship = ship.Ship(
+        tl=12,
+        military=True,
+        displacement=2_000,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        drives=DriveSection(m_drive=MDrive2()),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=100)),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer5()),
+        weapons=WeaponsSection(
+            bays=[Bay(size='small', weapon='missile'), Bay(size='medium', weapon='missile')],
+        ),
+    )
+
+    assert ('GUNNER', 3) in [(role.role, role.count) for role in required_crew_roles(my_ship)]

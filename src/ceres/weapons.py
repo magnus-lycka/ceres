@@ -185,6 +185,176 @@ class MissileStorage(ShipPart):
         return 0.0
 
 
+BarbetteWeapon = Literal[
+    'beam_laser',
+    'fusion',
+    'ion_cannon',
+    'missile',
+    'particle',
+    'plasma',
+    'pulse_laser',
+    'railgun',
+    'torpedo',
+]
+
+BARBETTE_SPECS: dict[BarbetteWeapon, dict[str, float | int | str]] = {
+    'beam_laser': {'item': 'Beam Laser Barbette', 'minimum_tl': 10, 'power': 12, 'cost': 3_000_000},
+    'fusion': {'item': 'Fusion Barbette', 'minimum_tl': 12, 'power': 20, 'cost': 4_000_000},
+    'ion_cannon': {'item': 'Ion Cannon', 'minimum_tl': 12, 'power': 10, 'cost': 6_000_000},
+    'missile': {'item': 'Missile Barbette', 'minimum_tl': 7, 'power': 0, 'cost': 4_000_000},
+    'particle': {'item': 'Particle Barbette', 'minimum_tl': 11, 'power': 15, 'cost': 8_000_000},
+    'plasma': {'item': 'Plasma Barbette', 'minimum_tl': 11, 'power': 12, 'cost': 5_000_000},
+    'pulse_laser': {'item': 'Pulse Laser Barbette', 'minimum_tl': 9, 'power': 12, 'cost': 6_000_000},
+    'railgun': {'item': 'Railgun Barbette', 'minimum_tl': 10, 'power': 5, 'cost': 2_000_000},
+    'torpedo': {'item': 'Torpedo', 'minimum_tl': 7, 'power': 2, 'cost': 3_000_000},
+}
+
+
+class Barbette(ShipPart):
+    weapon: BarbetteWeapon
+
+    def build_item(self) -> str | None:
+        return str(BARBETTE_SPECS[self.weapon]['item'])
+
+    @property
+    def minimum_tl(self) -> int:  # type: ignore[override]
+        return int(BARBETTE_SPECS[self.weapon]['minimum_tl'])
+
+    @property
+    def hardpoints_required(self) -> int:
+        return 1
+
+    @property
+    def crew_required_commercial(self) -> int:
+        return 1
+
+    @property
+    def crew_required_military(self) -> int:
+        return 2
+
+    def compute_tons(self) -> float:
+        return 5.0
+
+    def compute_cost(self) -> float:
+        return float(BARBETTE_SPECS[self.weapon]['cost'])
+
+    def compute_power(self) -> float:
+        return float(BARBETTE_SPECS[self.weapon]['power'])
+
+
+BaySize = Literal['small', 'medium', 'large']
+BayWeapon = Literal[
+    'fusion_gun',
+    'ion_cannon',
+    'mass_driver',
+    'meson_gun',
+    'missile',
+    'orbital_strike_mass_driver',
+    'orbital_strike_missile',
+    'particle_beam',
+    'railgun',
+    'repulsor',
+    'torpedo',
+]
+
+BAY_SIZE_SPECS: dict[BaySize, dict[str, int]] = {
+    'small': {'tons': 50, 'hardpoints': 1, 'crew': 1},
+    'medium': {'tons': 100, 'hardpoints': 1, 'crew': 2},
+    'large': {'tons': 500, 'hardpoints': 5, 'crew': 4},
+}
+
+BAY_WEAPON_SPECS: dict[BayWeapon, dict[BaySize, dict[str, float | int | str]]] = {
+    'fusion_gun': {
+        'small': {'item': 'Small Fusion Gun Bay', 'minimum_tl': 12, 'power': 50, 'cost': 8_000_000},
+        'medium': {'item': 'Medium Fusion Gun Bay', 'minimum_tl': 12, 'power': 80, 'cost': 14_000_000},
+        'large': {'item': 'Large Fusion Gun Bay', 'minimum_tl': 12, 'power': 100, 'cost': 25_000_000},
+    },
+    'ion_cannon': {
+        'small': {'item': 'Small Ion Cannon Bay', 'minimum_tl': 12, 'power': 20, 'cost': 15_000_000},
+        'medium': {'item': 'Medium Ion Cannon Bay', 'minimum_tl': 12, 'power': 30, 'cost': 25_000_000},
+        'large': {'item': 'Large Ion Cannon Bay', 'minimum_tl': 12, 'power': 40, 'cost': 40_000_000},
+    },
+    'mass_driver': {
+        'small': {'item': 'Small Mass Driver Bay', 'minimum_tl': 8, 'power': 15, 'cost': 40_000_000},
+        'medium': {'item': 'Medium Mass Driver Bay', 'minimum_tl': 8, 'power': 25, 'cost': 60_000_000},
+        'large': {'item': 'Large Mass Driver Bay', 'minimum_tl': 8, 'power': 35, 'cost': 80_000_000},
+    },
+    'meson_gun': {
+        'small': {'item': 'Small Meson Gun Bay', 'minimum_tl': 11, 'power': 20, 'cost': 50_000_000},
+        'medium': {'item': 'Medium Meson Gun Bay', 'minimum_tl': 12, 'power': 30, 'cost': 60_000_000},
+        'large': {'item': 'Large Meson Gun Bay', 'minimum_tl': 13, 'power': 120, 'cost': 250_000_000},
+    },
+    'missile': {
+        'small': {'item': 'Small Missile Bay', 'minimum_tl': 7, 'power': 5, 'cost': 12_000_000},
+        'medium': {'item': 'Medium Missile Bay', 'minimum_tl': 7, 'power': 10, 'cost': 20_000_000},
+        'large': {'item': 'Large Missile Bay', 'minimum_tl': 7, 'power': 20, 'cost': 25_000_000},
+    },
+    'orbital_strike_mass_driver': {
+        'small': {'item': 'Small Orbital Strike Mass Driver Bay', 'minimum_tl': 10, 'power': 35, 'cost': 25_000_000},
+        'medium': {'item': 'Medium Orbital Strike Mass Driver Bay', 'minimum_tl': 10, 'power': 50, 'cost': 35_000_000},
+        'large': {'item': 'Large Orbital Strike Mass Driver Bay', 'minimum_tl': 10, 'power': 75, 'cost': 50_000_000},
+    },
+    'orbital_strike_missile': {
+        'small': {'item': 'Small Orbital Strike Missile Bay', 'minimum_tl': 10, 'power': 5, 'cost': 16_000_000},
+        'medium': {'item': 'Medium Orbital Strike Missile Bay', 'minimum_tl': 10, 'power': 15, 'cost': 20_000_000},
+        'large': {'item': 'Large Orbital Strike Missile Bay', 'minimum_tl': 10, 'power': 25, 'cost': 24_000_000},
+    },
+    'particle_beam': {
+        'small': {'item': 'Small Particle Beam Bay', 'minimum_tl': 11, 'power': 30, 'cost': 20_000_000},
+        'medium': {'item': 'Medium Particle Beam Bay', 'minimum_tl': 12, 'power': 50, 'cost': 40_000_000},
+        'large': {'item': 'Large Particle Beam Bay', 'minimum_tl': 13, 'power': 80, 'cost': 60_000_000},
+    },
+    'railgun': {
+        'small': {'item': 'Small Railgun Bay', 'minimum_tl': 10, 'power': 10, 'cost': 30_000_000},
+        'medium': {'item': 'Medium Railgun Bay', 'minimum_tl': 10, 'power': 15, 'cost': 50_000_000},
+        'large': {'item': 'Large Railgun Bay', 'minimum_tl': 10, 'power': 25, 'cost': 70_000_000},
+    },
+    'repulsor': {
+        'small': {'item': 'Small Repulsor Bay', 'minimum_tl': 15, 'power': 50, 'cost': 30_000_000},
+        'medium': {'item': 'Medium Repulsor Bay', 'minimum_tl': 14, 'power': 100, 'cost': 60_000_000},
+        'large': {'item': 'Large Repulsor Bay', 'minimum_tl': 13, 'power': 200, 'cost': 90_000_000},
+    },
+    'torpedo': {
+        'small': {'item': 'Small Torpedo Bay', 'minimum_tl': 7, 'power': 2, 'cost': 3_000_000},
+        'medium': {'item': 'Medium Torpedo Bay', 'minimum_tl': 7, 'power': 5, 'cost': 6_000_000},
+        'large': {'item': 'Large Torpedo Bay', 'minimum_tl': 7, 'power': 10, 'cost': 10_000_000},
+    },
+}
+
+
+class Bay(ShipPart):
+    size: BaySize
+    weapon: BayWeapon
+
+    def build_item(self) -> str | None:
+        return str(BAY_WEAPON_SPECS[self.weapon][self.size]['item'])
+
+    @property
+    def minimum_tl(self) -> int:  # type: ignore[override]
+        return int(BAY_WEAPON_SPECS[self.weapon][self.size]['minimum_tl'])
+
+    @property
+    def hardpoints_required(self) -> int:
+        return BAY_SIZE_SPECS[self.size]['hardpoints']
+
+    @property
+    def crew_required_commercial(self) -> int:
+        return 0
+
+    @property
+    def crew_required_military(self) -> int:
+        return BAY_SIZE_SPECS[self.size]['crew']
+
+    def compute_tons(self) -> float:
+        return float(BAY_SIZE_SPECS[self.size]['tons'])
+
+    def compute_cost(self) -> float:
+        return float(BAY_WEAPON_SPECS[self.weapon][self.size]['cost'])
+
+    def compute_power(self) -> float:
+        return float(BAY_WEAPON_SPECS[self.weapon][self.size]['power'])
+
+
 ShipTurret = Annotated[SingleTurret | DoubleTurret | TripleTurret, Field(discriminator='mount_type')]
 
 
@@ -194,6 +364,8 @@ class WeaponsSection(CeresModel):
         default_factory=list,
         validation_alias=AliasChoices('fixed_mounts', 'fixed_firmpoints'),
     )
+    barbettes: list[Barbette] = Field(default_factory=list)
+    bays: list[Bay] = Field(default_factory=list)
     missile_storage: MissileStorage | None = None
 
     @staticmethod
@@ -211,11 +383,16 @@ class WeaponsSection(CeresModel):
         return ship.displacement // 100
 
     def validate_mounting(self, ship) -> None:
-        total_mounts = len(self.turrets) + len(self.fixed_mounts)
+        total_mounts = (
+            len(self.turrets)
+            + len(self.fixed_mounts)
+            + sum(barbette.hardpoints_required for barbette in self.barbettes)
+            + sum(bay.hardpoints_required for bay in self.bays)
+        )
         capacity = self.mount_capacity(ship)
         if total_mounts > capacity:
             overflow = total_mounts - capacity
-            overflowing_parts = [*self.fixed_mounts, *self.turrets][-overflow:]
+            overflowing_parts = [*self.fixed_mounts, *self.turrets, *self.barbettes, *self.bays][-overflow:]
             mount_kind = 'firmpoints' if self.is_small_craft(ship) else 'hardpoints'
             for part in overflowing_parts:
                 part.error(
@@ -237,9 +414,12 @@ class WeaponsSection(CeresModel):
                     f'Fixed mount can carry at most {fixed_mount_capacity} weapon'
                     f'{"s" if fixed_mount_capacity != 1 else ""} on this ship',
                 )
+        if self.is_small_craft(ship):
+            for bay in self.bays:
+                bay.error('Bays cannot be mounted on small craft firmpoints')
 
     def _all_parts(self) -> list[ShipPart]:
-        parts: list[ShipPart] = [*self.turrets, *self.fixed_mounts]
+        parts: list[ShipPart] = [*self.turrets, *self.fixed_mounts, *self.barbettes, *self.bays]
         if self.missile_storage is not None:
             parts.append(self.missile_storage)
         return parts
@@ -248,6 +428,10 @@ class WeaponsSection(CeresModel):
         for turret in self.turrets:
             spec.add_row(ship._spec_row_for_part(SpecSection.WEAPONS, turret))
         for row in ship._grouped_spec_rows(SpecSection.WEAPONS, self.fixed_mounts):
+            spec.add_row(row)
+        for row in ship._grouped_spec_rows(SpecSection.WEAPONS, self.barbettes):
+            spec.add_row(row)
+        for row in ship._grouped_spec_rows(SpecSection.WEAPONS, self.bays):
             spec.add_row(row)
         if self.missile_storage is not None:
             spec.add_row(ship._spec_row_for_part(SpecSection.WEAPONS, self.missile_storage))

@@ -70,7 +70,7 @@ Make a note in ARCHITECTURE.md that support is limited to TL16 and lower, and
 stick to that when writing code. For now we cap ship TL to 16 and don't bother
 to implement TL17+ features.
 
-## Sort out weapons.py
+## Sort out weapons.py [doing]
 
 All ships have hardpoint in proportion to displacement, except smallcraft which have firmpoints.
 
@@ -81,6 +81,22 @@ Some weapons are designed to be mounted either on fixed mounts or turrests, some
 Firmpoint mounting of weapons reduces/limits range and reduces power.
 
 The code as written matches the rules structure poorly.
+
+Current status:
+
+- hardpoint / firmpoint capacity checks implemented
+- small craft restriction to single turrets implemented
+- turret mounts separated from turret weapons
+- `SingleTurret`, `DoubleTurret`, `TripleTurret` implemented with shared mount logic
+- `FixedMount` is now the primary mount concept; old `FixedFirmpoint` naming kept only as compatibility alias
+- fixed mounts can now carry multiple weapons in the model, with small-craft restrictions enforced
+
+Still missing / unclear:
+
+- explicit modeling of barbettes and bays
+- cleaner distinction between hardpoint mounting and firmpoint mounting in the public API
+- firmpoint range limitations are not yet modeled, only power / capacity effects
+- weapon families and mount compatibility are still incomplete
 
 ## DETERMINE CREW [doing]
 

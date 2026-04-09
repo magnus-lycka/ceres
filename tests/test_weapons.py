@@ -2,7 +2,16 @@ import pytest
 
 from ceres import hull, ship
 from ceres.base import ShipBase
-from ceres.weapons import DoubleTurret, FixedMount, PulseLaser, SingleTurret, TripleTurret, WeaponsSection
+from ceres.weapons import (
+    Barbette,
+    Bay,
+    DoubleTurret,
+    FixedMount,
+    PulseLaser,
+    SingleTurret,
+    TripleTurret,
+    WeaponsSection,
+)
 
 
 class DummyOwner(ShipBase):
@@ -111,6 +120,32 @@ def test_fixed_firmpoint_with_multiple_weapons_reports_fixed_mount_item():
     ]
 
 
+def test_pulse_laser_barbette_values():
+    barbette = Barbette(weapon='pulse_laser')
+    barbette.bind(DummyOwner(12, 200))
+    assert barbette.tons == 5.0
+    assert barbette.cost == 6_000_000
+    assert barbette.power == 12.0
+
+
+def test_small_missile_bay_values():
+    bay = Bay(size='small', weapon='missile')
+    bay.bind(DummyOwner(12, 1_000))
+    assert bay.tons == 50.0
+    assert bay.cost == 12_000_000
+    assert bay.power == 5.0
+    assert bay.hardpoints_required == 1
+
+
+def test_large_torpedo_bay_uses_five_hardpoints():
+    bay = Bay(size='large', weapon='torpedo')
+    bay.bind(DummyOwner(12, 10_000))
+    assert bay.tons == 500.0
+    assert bay.cost == 10_000_000
+    assert bay.power == 10.0
+    assert bay.hardpoints_required == 5
+
+
 def test_double_turret_cost_and_power_include_weapons():
     turret = DoubleTurret(weapons=[PulseLaser(), PulseLaser(energy_efficient=True)])
     turret.bind(DummyOwner(12, 100))
@@ -147,6 +182,21 @@ def test_small_craft_fixed_mount_cannot_carry_more_than_one_weapon():
     assert any(
         note.message == 'Fixed mount can carry at most 1 weapon on this ship'
         for note in my_ship.weapons.fixed_mounts[0].notes
+    )
+
+
+def test_bay_cannot_be_mounted_on_small_craft():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=99,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        weapons=WeaponsSection(bays=[Bay(size='small', weapon='missile')]),
+    )
+
+    assert my_ship.weapons is not None
+    assert any(
+        note.message == 'Bays cannot be mounted on small craft firmpoints'
+        for note in my_ship.weapons.bays[0].notes
     )
 
 
@@ -219,4 +269,19 @@ def test_weapon_mounts_cannot_exceed_firmpoints():
     assert any(
         note.message == 'Exceeds available firmpoints: 2 mounts installed, capacity is 1'
         for note in overflow_part.notes
+    )
+
+
+def test_bays_count_against_hardpoint_capacity():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        weapons=WeaponsSection(bays=[Bay(size='large', weapon='torpedo')]),
+    )
+
+    assert my_ship.weapons is not None
+    assert any(
+        note.message == 'Exceeds available hardpoints: 5 mounts installed, capacity is 2'
+        for note in my_ship.weapons.bays[0].notes
     )
