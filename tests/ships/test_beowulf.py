@@ -139,7 +139,7 @@ def test_beowulf_cargo():
     # Anderson shows 80.0t cargo + 0.80 luggage + 0.70 stores = 81.50t.
     # We don't model luggage or stores, so we get ~81.50t total.
     beowulf = build_beowulf()
-    assert beowulf.cargo_tons == pytest.approx(81.5, abs=0.01)
+    assert CargoSection.cargo_tons_for_ship(beowulf) == pytest.approx(81.5, abs=0.01)
 
 
 def test_beowulf_power():

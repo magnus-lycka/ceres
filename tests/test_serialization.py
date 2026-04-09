@@ -12,7 +12,7 @@ from ceres.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection
 from ceres.hull import BasicStealth, Hull
 from ceres.sensors import BasicSensors, CivilianSensors, SensorsSection
 from ceres.ship import Ship
-from ceres.storage import FuelSection, OperationFuel
+from ceres.storage import CargoSection, FuelSection, OperationFuel
 from ceres.systems import Airlock
 from ceres.weapons import FixedFirmpoint, PulseLaser, WeaponsSection
 
@@ -211,7 +211,9 @@ def test_roundtrip_weapon_attributes():
 
 def test_roundtrip_cargo():
     loaded = _roundtrip(ultralight)
-    assert float(loaded.cargo_tons) == pytest.approx(float(ultralight.cargo_tons))
+    loaded_cargo = float(CargoSection.cargo_tons_for_ship(loaded))
+    original_cargo = float(CargoSection.cargo_tons_for_ship(ultralight))
+    assert loaded_cargo == pytest.approx(original_cargo)
 
 
 def test_roundtrip_no_parts():

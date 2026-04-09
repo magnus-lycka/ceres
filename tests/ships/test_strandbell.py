@@ -6,7 +6,7 @@ from ceres.computer import AutoRepair1, Computer35, ComputerSection, Evade2, Fir
 from ceres.drives import DriveSection, FusionPlantTL12, MDrive9, PowerSection
 from ceres.habitation import HabitationSection, Staterooms
 from ceres.sensors import CountermeasuresSuite, ImprovedSensors, SensorsSection
-from ceres.storage import FuelProcessor, FuelScoops, FuelSection, OperationFuel
+from ceres.storage import CargoSection, FuelProcessor, FuelScoops, FuelSection, OperationFuel
 from ceres.systems import Airlock, CommonArea, MedicalBay, RepairDrones, SystemsSection
 from ceres.weapons import MissileStorage, TripleTurret, TurretBeamLaser, TurretMissileRack, WeaponsSection
 
@@ -160,7 +160,7 @@ def test_strandbell_cargo():
     # Ref: 13.8t cargo + 2.0t stores + 3.1t armored bulkheads = 18.9t.
     # We don't model stores or armored bulkheads so cargo = 18.9t.
     sdb = build_strandbell()
-    assert sdb.cargo_tons == pytest.approx(18.9, abs=0.01)
+    assert CargoSection.cargo_tons_for_ship(sdb) == pytest.approx(18.9, abs=0.01)
 
 
 def test_strandbell_cost():

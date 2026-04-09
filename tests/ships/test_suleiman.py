@@ -7,7 +7,7 @@ from ceres.crafts import AirRaft, CraftSection, InternalDockingSpace
 from ceres.drives import DriveSection, FusionPlantTL12, JumpDrive2, MDrive2, PowerSection
 from ceres.habitation import HabitationSection, Staterooms
 from ceres.sensors import MilitarySensors, SensorsSection
-from ceres.storage import FuelProcessor, FuelSection, JumpFuel, OperationFuel
+from ceres.storage import CargoSection, FuelProcessor, FuelSection, JumpFuel, OperationFuel
 from ceres.systems import Airlock, ProbeDrones, SystemsSection, Workshop
 from ceres.weapons import DoubleTurret, WeaponsSection
 
@@ -154,7 +154,7 @@ def test_suleiman_matches_first_modeled_reference_slice():
     assert workshop.cost == 900_000
     assert workshop.power == 0
 
-    assert suleiman.cargo_tons == pytest.approx(12.8)
+    assert CargoSection.cargo_tons_for_ship(suleiman) == pytest.approx(12.8)
 
     assert [(role.role, role.count, role.monthly_salary) for role in suleiman.crew_roles] == [
         ('PILOT', 1, 6_000),

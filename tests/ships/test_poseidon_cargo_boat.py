@@ -5,7 +5,7 @@ from ceres.bridge import Bridge, CommandSection
 from ceres.computer import Computer5, ComputerSection
 from ceres.drives import DriveSection, FusionPlantTL8, FusionPlantTL12, MDrive3, PowerSection
 from ceres.habitation import HabitationSection, Staterooms
-from ceres.storage import FuelSection, OperationFuel
+from ceres.storage import CargoSection, FuelSection, OperationFuel
 from ceres.systems import Aerofins, Airlock, CommonArea
 
 from ._markdown_output import write_markdown_output
@@ -77,7 +77,7 @@ def test_poseidon_tl12_variant_trades_cost_for_cargo_with_better_power_plant():
     assert tl12.power.fusion_plant is not None
     assert isinstance(tl10.power.fusion_plant, FusionPlantTL8)
     assert isinstance(tl12.power.fusion_plant, FusionPlantTL12)
-    assert tl12.cargo_tons > tl10.cargo_tons
+    assert CargoSection.cargo_tons_for_ship(tl12) > CargoSection.cargo_tons_for_ship(tl10)
     assert tl12.production_cost > tl10.production_cost
 
 

@@ -181,21 +181,18 @@ class Ship(ShipBase):
             parts.extend(self.weapons._all_parts())
         return parts
 
-    def _remaining_cargo_space_without_default_holds(self) -> float:
-        cargo = self.displacement * self.hull.configuration.usage_factor
+    def remaining_usable_tonnage(self) -> float:
+        remaining = self.displacement * self.hull.configuration.usage_factor
         for part in self._all_parts():
-            cargo -= part.tons
+            remaining -= part.tons
         cargo_holds = [] if self.cargo is None else self.cargo.cargo_holds
         for cargo_hold in cargo_holds:
             if cargo_hold.tons is not None:
-                cargo -= cargo_hold.tons
-        return cargo
+                remaining -= cargo_hold.tons
+        return remaining
 
     def parts_of_type(self, part_cls: type) -> list[ShipPart]:
         return [part for part in self._all_parts() if isinstance(part, part_cls)]
-
-    def cargo_space_for(self, hold) -> float:
-        return self._remaining_cargo_space_without_default_holds()
 
     def _item_text(self, obj, fallback: str) -> str:
         for note in obj.notes:
@@ -367,12 +364,6 @@ class Ship(ShipBase):
 
         return '\n'.join(lines)
 
-    @property
-    def cargo_tons(self):
-        if self.cargo is not None and self.cargo.cargo_holds:
-            return sum(cargo_hold.usable_tons(self) for cargo_hold in self.cargo.cargo_holds)
-        return self._remaining_cargo_space_without_default_holds()
-
     def model_post_init(self, __context: Any) -> None:
         if self.hull.configuration.streamlined == hull_model.Streamlined.YES:
             if self.fuel is None:
@@ -394,7 +385,8 @@ class Ship(ShipBase):
             else:
                 software_packages = self.computer.software_packages
             self.drives.validate_jump_control(software_packages)
-        if self.cargo_tons < 0:
-            self.error(f'Hull overloaded by {-self.cargo_tons:.2f} tons')
+        cargo_tons = CargoSection.cargo_tons_for_ship(self)
+        if cargo_tons < 0:
+            self.error(f'Hull overloaded by {-cargo_tons:.2f} tons')
         if self.command is not None and self.command.bridge is not None and not self.hull.airlocks:
             self.error('No airlock installed')

@@ -10,7 +10,7 @@ class DummyOwner(ShipBase):
     def __init__(self, tl, displacement):
         super().__init__(tl=tl, displacement=displacement)
 
-    def cargo_space_for(self, hold) -> float:
+    def remaining_usable_tonnage(self) -> float:
         return float(self.displacement)
 
 

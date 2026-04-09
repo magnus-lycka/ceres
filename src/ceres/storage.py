@@ -130,7 +130,7 @@ class CargoHold(CeresModel):
     def total_tons(self, owner) -> float:
         if self.tons is not None:
             return self.tons
-        return owner.cargo_space_for(self)
+        return owner.remaining_usable_tonnage()
 
     def crane_tons(self, owner) -> float:
         if self.crane is None:
@@ -148,6 +148,11 @@ class CargoHold(CeresModel):
 
 class CargoSection(CeresModel):
     cargo_holds: list[CargoHold] = Field(default_factory=list)
+
+    def cargo_tons(self, ship) -> float:
+        if self.cargo_holds:
+            return sum(cargo_hold.usable_tons(ship) for cargo_hold in self.cargo_holds)
+        return ship.remaining_usable_tonnage()
 
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
         if self.cargo_holds:
@@ -173,9 +178,14 @@ class CargoSection(CeresModel):
             SpecRow(
                 section=SpecSection.CARGO,
                 item='Cargo Hold',
-                tons=ship.cargo_tons or None,
+                tons=self.cargo_tons(ship) or None,
             )
         )
+
+    @classmethod
+    def cargo_tons_for_ship(cls, ship) -> float:
+        cargo = ship.cargo if ship.cargo is not None else cls()
+        return cargo.cargo_tons(ship)
 
     @classmethod
     def add_spec_rows_for_ship(cls, ship, spec: ShipSpec) -> None:

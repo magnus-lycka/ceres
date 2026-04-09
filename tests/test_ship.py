@@ -21,7 +21,7 @@ def test_ship_initial():
     assert my_ship.tl == 15
     assert my_ship.displacement == 300
     assert my_ship.hull.configuration.points(300) == 120
-    assert my_ship.cargo_tons == 300
+    assert CargoSection.cargo_tons_for_ship(my_ship) == 300
 
 
 def test_ship_needs_hull():
@@ -45,7 +45,7 @@ def test_ship_initial_bulky():
         displacement=100,
         hull=hull.Hull(configuration=hull.buffered_planetoid),
     )
-    assert my_ship.cargo_tons == 65
+    assert CargoSection.cargo_tons_for_ship(my_ship) == 65
 
 
 def test_ship_with_armour():
@@ -57,7 +57,7 @@ def test_ship_with_armour():
         ),
         displacement=100,
     )
-    assert my_ship.cargo_tons == 100 - (100 * 4 * 0.0125)
+    assert CargoSection.cargo_tons_for_ship(my_ship) == 100 - (100 * 4 * 0.0125)
 
 
 def test_ship_cargo_subtracts_modeled_part_tonnage():
@@ -68,7 +68,7 @@ def test_ship_cargo_subtracts_modeled_part_tonnage():
         craft=CraftSection(docking_space=InternalDockingSpace(craft=AirRaft())),
         systems=SystemsSection(probe_drones=ProbeDrones(count=10), workshop=Workshop()),
     )
-    assert my_ship.cargo_tons == pytest.approx(100 - 5 - 2 - 6)
+    assert CargoSection.cargo_tons_for_ship(my_ship) == pytest.approx(100 - 5 - 2 - 6)
 
 
 def test_ship_default_cargo_hold_uses_remaining_space():
@@ -79,7 +79,7 @@ def test_ship_default_cargo_hold_uses_remaining_space():
         systems=SystemsSection(workshop=Workshop()),
         cargo=CargoSection(cargo_holds=[CargoHold()]),
     )
-    assert my_ship.cargo_tons == pytest.approx(94.0)
+    assert CargoSection.cargo_tons_for_ship(my_ship) == pytest.approx(94.0)
 
 
 def test_ship_explicit_cargo_hold_with_crane_reduces_usable_capacity_and_adds_cost():
@@ -89,7 +89,7 @@ def test_ship_explicit_cargo_hold_with_crane_reduces_usable_capacity_and_adds_co
         hull=hull.Hull(configuration=hull.standard_hull),
         cargo=CargoSection(cargo_holds=[CargoHold(tons=150, crane=CargoCrane())]),
     )
-    assert my_ship.cargo_tons == pytest.approx(147.0)
+    assert CargoSection.cargo_tons_for_ship(my_ship) == pytest.approx(147.0)
     assert my_ship.production_cost == pytest.approx(10_000_000 + 3_000_000)
 
 
@@ -204,9 +204,10 @@ def test_ship_with_negative_cargo_adds_local_note():
         sensors=SensorsSection(primary=CivilianSensors()),
         systems=SystemsSection(workshop=Workshop()),
     )
-    assert my_ship.cargo_tons < 0
+    cargo_tons = CargoSection.cargo_tons_for_ship(my_ship)
+    assert cargo_tons < 0
     assert [(note.category.value, note.message) for note in my_ship.notes] == [
-        ('error', f'Hull overloaded by {-my_ship.cargo_tons:.2f} tons'),
+        ('error', f'Hull overloaded by {-cargo_tons:.2f} tons'),
     ]
 
 
