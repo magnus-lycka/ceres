@@ -3,7 +3,6 @@ from typing import Any
 
 from pydantic import Field
 
-from . import hull as hull_model
 from .base import NoteCategory, ShipBase
 from .bridge import CommandSection
 from .computer import ComputerSection, SoftwarePackage
@@ -24,6 +23,7 @@ from .expense import (
     total_expenses,
 )
 from .habitation import HabitationSection
+from .hull import Hull, Streamlined
 from .parts import ShipPart
 from .sensors import SensorsSection
 from .spec import ShipSpec, SpecRow, SpecSection
@@ -52,7 +52,7 @@ class Ship(ShipBase):
     ship_class: str | None = None
     ship_type: str | None = None
     design_type: ShipDesignType = ShipDesignType.CUSTOM
-    hull: hull_model.Hull
+    hull: Hull
     drives: DriveSection | None = None
     power: PowerSection | None = None
     fuel: FuelSection | None = None
@@ -365,7 +365,7 @@ class Ship(ShipBase):
         return '\n'.join(lines)
 
     def model_post_init(self, __context: Any) -> None:
-        if self.hull.configuration.streamlined == hull_model.Streamlined.YES:
+        if self.hull.configuration.streamlined == Streamlined.YES:
             if self.fuel is None:
                 object.__setattr__(self, 'fuel', FuelSection(fuel_scoops=FuelScoops(free=True)))
             elif self.fuel.fuel_scoops is None or not self.fuel.fuel_scoops.free:

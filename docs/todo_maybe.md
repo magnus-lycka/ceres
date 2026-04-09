@@ -19,7 +19,7 @@ The same is probably true for many other items. If it's
 just one, I guesws it could say 1 ✕ Staterooms or just
 Stateroom
 
-## Decentralize build_spec [doing]
+## Decentralize build_spec [done]
 
 Move substantial parts of Ship.build_spec() out to the
 sections that own the rows, such as storage, computer,
@@ -38,10 +38,10 @@ Current status:
 - done for weapons
 - done for craft
 
-Remaining:
+Note:
 
-- expense / crew summary blocks
-- possibly move more generic row-grouping helpers out of Ship if it still feels worth it
+- expense / crew summary now live in `expense.py` and `crew.py`
+- a couple of generic row-grouping helpers still remain in `Ship`, but the section-level decentralization itself is complete
 
 ## Implement armoured bulkhead
 
