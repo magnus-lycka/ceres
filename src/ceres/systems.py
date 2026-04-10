@@ -16,6 +16,19 @@ class Workshop(ShipPart):
         return 900_000.0
 
 
+class CrewArmory(ShipPart):
+    capacity: int
+
+    def build_item(self) -> str | None:
+        return f'Crew Armory: Supports {self.capacity} Crew'
+
+    def compute_tons(self) -> float:
+        return self.capacity / 25
+
+    def compute_cost(self) -> float:
+        return self.compute_tons() * 250_000.0
+
+
 class CommonArea(ShipPart):
     tons: float
 
@@ -38,6 +51,19 @@ class MedicalBay(ShipPart):
 
     def compute_power(self) -> float:
         return 1.0
+
+
+class Biosphere(ShipPart):
+    tons: float
+
+    def build_item(self) -> str | None:
+        return 'Biosphere'
+
+    def compute_cost(self) -> float:
+        return self.tons * 200_000.0
+
+    def compute_power(self) -> float:
+        return self.tons
 
 
 class Airlock(ShipPart):
@@ -114,15 +140,39 @@ class RepairDrones(ShipPart):
         return self.compute_tons() * 200_000.0
 
 
+class TrainingFacility(ShipPart):
+    trainees: int
+
+    def build_item(self) -> str | None:
+        return f'Training Facility: {self.trainees}-person capacity'
+
+    def compute_tons(self) -> float:
+        return self.trainees * 2.0
+
+    def compute_cost(self) -> float:
+        return self.compute_tons() * 200_000.0
+
+
 class SystemsSection(CeresModel):
+    crew_armory: CrewArmory | None = None
+    biosphere: Biosphere | None = None
     medical_bay: MedicalBay | None = None
     probe_drones: ProbeDrones | None = None
     repair_drones: RepairDrones | None = None
+    training_facility: TrainingFacility | None = None
     workshop: Workshop | None = None
 
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = []
-        for part in (self.workshop, self.medical_bay, self.probe_drones, self.repair_drones):
+        for part in (
+            self.crew_armory,
+            self.biosphere,
+            self.workshop,
+            self.medical_bay,
+            self.probe_drones,
+            self.repair_drones,
+            self.training_facility,
+        ):
             if part is not None:
                 parts.append(part)
         return parts

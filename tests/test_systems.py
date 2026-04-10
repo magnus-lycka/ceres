@@ -3,11 +3,14 @@ from ceres.base import ShipBase
 from ceres.storage import FuelScoops, FuelSection
 from ceres.systems import (
     Airlock,
+    Biosphere,
     CommonArea,
+    CrewArmory,
     MedicalBay,
     ProbeDrones,
     RepairDrones,
     SystemsSection,
+    TrainingFacility,
     Workshop,
 )
 
@@ -48,6 +51,27 @@ def test_common_area_power_zero():
     c = CommonArea(tons=1.0)
     c.bind(DummyOwner(12, 100))
     assert c.power == 0
+
+
+def test_crew_armory_values():
+    a = CrewArmory(capacity=25)
+    a.bind(DummyOwner(12, 100))
+    assert a.tons == 1.0
+    assert a.cost == 250_000
+
+
+def test_biosphere_values():
+    b = Biosphere(tons=4.0)
+    b.bind(DummyOwner(12, 100))
+    assert b.cost == 800_000
+    assert b.power == 4.0
+
+
+def test_training_facility_values():
+    t = TrainingFacility(trainees=2)
+    t.bind(DummyOwner(12, 100))
+    assert t.tons == 4.0
+    assert t.cost == 800_000
 
 
 def test_probe_drones_tons():
@@ -166,9 +190,20 @@ def test_airlock_costs_tonnage_and_money_on_99_ton_ship():
 
 def test_systems_section_all_parts():
     systems = SystemsSection(
+        crew_armory=CrewArmory(capacity=25),
+        biosphere=Biosphere(tons=4.0),
         workshop=Workshop(),
         medical_bay=MedicalBay(),
         probe_drones=ProbeDrones(count=10),
         repair_drones=RepairDrones(),
+        training_facility=TrainingFacility(trainees=2),
     )
-    assert [type(part) for part in systems._all_parts()] == [Workshop, MedicalBay, ProbeDrones, RepairDrones]
+    assert [type(part) for part in systems._all_parts()] == [
+        CrewArmory,
+        Biosphere,
+        Workshop,
+        MedicalBay,
+        ProbeDrones,
+        RepairDrones,
+        TrainingFacility,
+    ]

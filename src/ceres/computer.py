@@ -434,6 +434,7 @@ ShipSoftware = Annotated[
 
 class ComputerSection(CeresModel):
     hardware: ShipComputer | None = None
+    backup_hardware: ShipComputer | None = None
     software: list[ShipSoftware] = Field(default_factory=list)
     _software_packages: dict[type[SoftwarePackage], SoftwarePackage] = PrivateAttr(default_factory=dict)
 
@@ -471,6 +472,8 @@ class ComputerSection(CeresModel):
             for package in self.software_packages.values():
                 package.warning('Ship software requires a computer')
             return
+        if self.backup_hardware is not None and self.hardware.processing <= self.backup_hardware.processing:
+            self.backup_hardware.error('Backup computer must have lower Processing than primary computer')
         for package in self.software_packages.values():
             if ship_tl < package.minimum_tl:
                 package.error(f'{package.description} requires TL{package.minimum_tl}')
@@ -491,11 +494,21 @@ class ComputerSection(CeresModel):
         parts: list[ShipPart] = []
         if self.hardware is not None:
             parts.append(self.hardware)
+        if self.backup_hardware is not None:
+            parts.append(self.backup_hardware)
         return parts
 
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
         if self.hardware is not None:
             spec.add_row(ship._spec_row_for_part(SpecSection.COMPUTER, self.hardware))
+        if self.backup_hardware is not None:
+            spec.add_row(
+                ship._spec_row_for_part(
+                    SpecSection.COMPUTER,
+                    self.backup_hardware,
+                    item=f'B/U {ship._item_text(self.backup_hardware, self.backup_hardware.description)}',
+                )
+            )
         for package in self.software_packages.values():
             spec.add_row(
                 SpecRow(

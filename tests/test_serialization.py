@@ -6,14 +6,14 @@ import pytest
 
 from ceres import armour, hull
 from ceres.bridge import Cockpit, CommandSection
-from ceres.computer import Computer5, ComputerSection
+from ceres.computer import Computer5, Computer20, Computer25, ComputerSection
 from ceres.crafts import AirRaft, CraftSection, InternalDockingSpace
 from ceres.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection
 from ceres.hull import BasicStealth, Hull
 from ceres.sensors import BasicSensors, CivilianSensors, SensorsSection
 from ceres.ship import Ship
 from ceres.storage import CargoSection, FuelSection, OperationFuel
-from ceres.systems import Airlock
+from ceres.systems import Airlock, Biosphere, CrewArmory, SystemsSection, TrainingFacility
 from ceres.weapons import FixedMount, PulseLaser, WeaponsSection
 
 # Minimal ship for structural tests
@@ -189,6 +189,20 @@ def test_roundtrip_computer():
     assert loaded.computer.hardware.processing == ultralight.computer.hardware.processing
 
 
+def test_roundtrip_backup_computer():
+    ship_with_backup = Ship(
+        tl=13,
+        displacement=100,
+        hull=Hull(configuration=hull.standard_hull),
+        computer=ComputerSection(hardware=Computer25(), backup_hardware=Computer20(fib=True)),
+    )
+    loaded = _roundtrip(ship_with_backup)
+    assert loaded.computer is not None
+    assert loaded.computer.backup_hardware is not None
+    assert isinstance(loaded.computer.backup_hardware, Computer20)
+    assert loaded.computer.backup_hardware.fib is True
+
+
 def test_roundtrip_sensors():
     loaded = _roundtrip(ultralight)
     assert isinstance(loaded.sensors.primary, CivilianSensors)
@@ -236,3 +250,24 @@ def test_roundtrip_airlock():
     assert len(loaded.hull.airlocks) == 1
     assert loaded.hull.airlocks[0].tons == pytest.approx(0.0)
     assert loaded.hull.airlocks[0].cost == 0.0
+
+
+def test_roundtrip_new_systems():
+    ship_with_systems = Ship(
+        tl=12,
+        displacement=100,
+        hull=Hull(configuration=hull.standard_hull),
+        systems=SystemsSection(
+            crew_armory=CrewArmory(capacity=25),
+            biosphere=Biosphere(tons=4.0),
+            training_facility=TrainingFacility(trainees=2),
+        ),
+    )
+    loaded = _roundtrip(ship_with_systems)
+    assert loaded.systems is not None
+    assert loaded.systems.crew_armory is not None
+    assert loaded.systems.crew_armory.capacity == 25
+    assert loaded.systems.biosphere is not None
+    assert loaded.systems.biosphere.tons == pytest.approx(4.0)
+    assert loaded.systems.training_facility is not None
+    assert loaded.systems.training_facility.trainees == 2

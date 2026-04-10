@@ -2,7 +2,7 @@ import pytest
 
 from ceres import armour, hull, ship
 from ceres.bridge import Bridge, CommandSection
-from ceres.computer import AutoRepair1, Computer25, ComputerSection, Evade1, FireControl2
+from ceres.computer import AutoRepair1, Computer20, Computer25, ComputerSection, Evade1, FireControl2
 from ceres.drives import DriveSection, FusionPlantTL12, MDrive7, PowerSection
 from ceres.habitation import HabitationSection, Staterooms
 from ceres.hull import ImprovedStealth
@@ -15,7 +15,17 @@ from ceres.sensors import (
     SensorStations,
 )
 from ceres.storage import CargoSection, FuelSection, OperationFuel
-from ceres.systems import Airlock, CommonArea, MedicalBay, RepairDrones, SystemsSection, Workshop
+from ceres.systems import (
+    Airlock,
+    Biosphere,
+    CommonArea,
+    CrewArmory,
+    MedicalBay,
+    RepairDrones,
+    SystemsSection,
+    TrainingFacility,
+    Workshop,
+)
 from ceres.weapons import Barbette, Bay, MissileStorage, WeaponsSection
 
 from ._markdown_output import write_markdown_output
@@ -27,10 +37,8 @@ def build_dragon() -> ship.Ship:
 
     Not yet modeled from the reference:
     - armored bulkheads
-    - backup computer
     - armored weapons / advanced size reduction
     - point defense battery
-    - crew armory, biosphere, training facility
     - stores and spares
     - armored missile storage
     """
@@ -57,6 +65,7 @@ def build_dragon() -> ship.Ship:
         command=CommandSection(bridge=Bridge(holographic=True)),
         computer=ComputerSection(
             hardware=Computer25(fib=True),
+            backup_hardware=Computer20(fib=True),
             software=[AutoRepair1(), FireControl2(), Evade1()],
         ),
         sensors=SensorsSection(
@@ -72,8 +81,11 @@ def build_dragon() -> ship.Ship:
             missile_storage=MissileStorage(count=480),
         ),
         systems=SystemsSection(
+            crew_armory=CrewArmory(capacity=25),
+            biosphere=Biosphere(tons=4.0),
             repair_drones=RepairDrones(),
             medical_bay=MedicalBay(),
+            training_facility=TrainingFacility(trainees=2),
             workshop=Workshop(),
         ),
         habitation=HabitationSection(
@@ -129,6 +141,9 @@ def test_dragon_modeled_subset_matches_current_model():
     assert dragon.computer.hardware is not None
     assert dragon.computer.hardware.cost == pytest.approx(15_000_000)
     assert dragon.computer.hardware.build_item() == 'Computer/25/fib'
+    assert dragon.computer.backup_hardware is not None
+    assert dragon.computer.backup_hardware.cost == pytest.approx(7_500_000)
+    assert dragon.computer.backup_hardware.build_item() == 'Computer/20/fib'
 
     assert dragon.sensors.primary.tons == pytest.approx(3.0)
     assert dragon.sensors.primary.cost == pytest.approx(4_300_000)
@@ -156,9 +171,14 @@ def test_dragon_modeled_subset_matches_current_model():
     assert dragon.weapons.missile_storage.tons == pytest.approx(40.0)
 
     assert dragon.systems is not None
+    assert dragon.systems.crew_armory is not None
+    assert dragon.systems.crew_armory.tons == pytest.approx(1.0)
+    assert dragon.systems.biosphere is not None
+    assert dragon.systems.biosphere.tons == pytest.approx(4.0)
     assert dragon.systems.repair_drones is not None
     assert dragon.systems.repair_drones.tons == pytest.approx(4.0)
     assert dragon.systems.medical_bay is not None
+    assert dragon.systems.training_facility is not None
     assert dragon.systems.workshop is not None
 
     assert dragon.habitation is not None
@@ -167,9 +187,9 @@ def test_dragon_modeled_subset_matches_current_model():
     assert dragon.habitation.common_area is not None
     assert dragon.habitation.common_area.tons == pytest.approx(10.0)
 
-    assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(50.2)
-    assert dragon.production_cost == pytest.approx(269_260_000)
-    assert dragon.sales_price_new == pytest.approx(242_334_000)
+    assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(41.2)
+    assert dragon.production_cost == pytest.approx(278_610_000)
+    assert dragon.sales_price_new == pytest.approx(250_749_000)
 
 
 def test_dragon_power_and_crew_for_current_subset():
@@ -180,7 +200,7 @@ def test_dragon_power_and_crew_for_current_subset():
     assert dragon.maneuver_power_load == pytest.approx(280.0)
     assert dragon.sensor_power_load == pytest.approx(13.0)
     assert dragon.weapon_power_load == pytest.approx(35.0)
-    assert dragon.total_power_load == pytest.approx(409.0)
+    assert dragon.total_power_load == pytest.approx(413.0)
 
     assert [(role.role, role.count, role.monthly_salary) for role in dragon.crew_roles] == [
         ('PILOT', 3, 6_000),
@@ -202,8 +222,13 @@ def test_dragon_markdown_output():
     assert '| Propulsion | M-Drive 7 (Armored) | 30.80 | 280.00 | 56560.00 |' in table
     assert '| Power | Fusion (TL 12) | 30.00 | **450.00** | 30000.00 |' in table
     assert '| Fuel | 16 weeks of operation | 12.00 |  |  |' in table
+    assert '| Computer | Computer/25/fib |  |  | 15000.00 |' in table
+    assert '|  | B/U Computer/20/fib |  |  | 7500.00 |' in table
     assert '|  | Enhanced Signal Processing | 2.00 | 2.00 | 8000.00 |' in table
     assert '|  | Extended Arrays | 6.00 | 6.00 | 8600.00 |' in table
     assert '|  | Sensor Stations × 2 | 2.00 |  | 1000.00 |' in table
     assert '| Weapons | Particle Barbette × 2 | 10.00 | 30.00 | 16000.00 |' in table
     assert '|  | Small Missile Bay | 50.00 | 5.00 | 12000.00 |' in table
+    assert '| Systems | Crew Armory: Supports 25 Crew | 1.00 |  | 250.00 |' in table
+    assert '|  | Biosphere | 4.00 | 4.00 | 800.00 |' in table
+    assert '|  | Training Facility: 2-person capacity | 4.00 |  | 800.00 |' in table
