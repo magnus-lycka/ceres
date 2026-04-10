@@ -231,8 +231,8 @@ def test_dragon_markdown_output():
     assert '## *Dragon* System Defense Boat | TL13 | Hull 176' in table
     assert '| Hull | Streamlined-Needle Hull | **400.00** |  | 36000.00 |' in table
     assert '|  | Improved Stealth |  |  | 40000.00 |' in table
-    assert '|  | Armoured Bulkhead | 3.00 |  | 600.00 |' in table
-    assert '|  | • Protects M-Drive |  |  |  |' in table
+    assert '|  | Armoured Bulkhead for M-Drive | 3.00 |  | 600.00 |' in table
+    assert '|  | • Critical hit severity reduced by 1 if >1 |  |  |  |' in table
     assert '| Propulsion | M-Drive 7 (Armored) | 30.80 | 280.00 | 56560.00 |' in table
     assert '| Power | Fusion (TL 12) | 30.00 | **450.00** | 30000.00 |' in table
     assert '| Fuel | 16 weeks of operation | 12.00 |  |  |' in table

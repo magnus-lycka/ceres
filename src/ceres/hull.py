@@ -178,12 +178,12 @@ class ArmouredBulkhead(ShipPart):
     protected_item: str | None = None
 
     def build_item(self) -> str | None:
+        if self.protected_item is not None:
+            return f'Armoured Bulkhead for {self.protected_item}'
         return 'Armoured Bulkhead'
 
     def build_notes(self) -> list[Note]:
-        if self.protected_item is None:
-            return []
-        return [Note(category=NoteCategory.INFO, message=f'Protects {self.protected_item}')]
+        return [Note(category=NoteCategory.INFO, message='Critical hit severity reduced by 1 if >1')]
 
     def compute_tons(self) -> float:
         return self.protected_tonnage * 0.1

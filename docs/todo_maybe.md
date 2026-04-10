@@ -50,7 +50,7 @@ Note:
 - expense / crew summary now live in `expense.py` and `crew.py`
 - a couple of generic row-grouping helpers still remain in `Ship`, but the section-level decentralization itself is complete
 
-## Implement armoured bulkhead
+## Implement armoured bulkhead [done]
 
 Armoured bulkheads protect specific areas and
 systems, such as the jump drive or fuel tanks, making
@@ -63,6 +63,13 @@ minimum of Severity 1).
 
 Option Cost
 Armoured Bulkhead MCr0.2 per ton
+
+Current status:
+
+- `ArmouredBulkhead` implemented in `hull.py`
+- cost and tonnage modeled
+- protection target shown in spec notes
+- treated as a ship-design/spec concern, not as combat simulation logic
 
 ## Limit TL
 
@@ -86,17 +93,17 @@ Current status:
 
 - hardpoint / firmpoint capacity checks implemented
 - small craft restriction to single turrets implemented
-- turret mounts separated from turret weapons
-- `Turret(size='single'|'double'|'triple')` implemented with shared mount logic
-- `FixedMount` is now the primary mount concept
-- fixed mounts can now carry multiple weapons in the model, with small-craft restrictions enforced
+- turret API simplified to `Turret(size='single'|'double'|'triple', weapons=[...])`
+- `FixedMount` and `Turret` now share the same `MountWeapon(...)` weapon model
+- `Barbette`, `Bay`, `PointDefenseBattery`, `MissileStorage`, and `ArmoredMissileStorage` are modeled
+- armored and size-reduction weapon modifiers are modeled for barbettes, bays, and point defense batteries
+- fixed mounts can carry multiple weapons in the model, with small-craft restrictions enforced
 
 Still missing / unclear:
 
-- explicit modeling of barbettes and bays
-- cleaner distinction between hardpoint mounting and firmpoint mounting in the public API
 - firmpoint range limitations are not yet modeled, only power / capacity effects
 - weapon families and mount compatibility are still incomplete
+- broader weapon coverage is still incomplete (for example sandcasters and other mountable weapon families)
 
 ## DETERMINE CREW [doing]
 
