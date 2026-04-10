@@ -16,6 +16,12 @@ Use the `refs/` directory (gitignored) for your copy of
 Mongoose Traveller PDFs (High Guard 2022, etc.).
 Read relevant pages when implementing or verifying a subsystem.
 
+Do not treat any reference ship output as an unquestionable facit.
+If Ceres differs from a published ship sheet or external design tool, first
+determine which explicit rule, table, or stated interpretation would produce
+that result. Only then adjust the code. Never change the model merely to
+"match the facit" without understanding the rule path that leads there.
+
 ## Python Style
 
 - **Python 3.14+**: Use modern typing syntax throughout.
@@ -36,9 +42,12 @@ All four must pass before considering work complete.
 ## Examples
 
 The `examples/` directory contains ship definitions matching ships from the
-reference PDFs. These serve as integration targets — as subsystems are
-implemented, the examples should produce output matching the reference stat
-blocks. Expected values are documented as comments in each example file.
+reference PDFs. These serve as integration targets for rule interpretation —
+as subsystems are implemented, differences against the reference stat blocks
+should be explained by rules, omissions, or explicit project decisions.
+Expected values are documented as comments in each example file, but they are
+not to be copied blindly into the code without understanding why the rules
+lead there.
 
 ## Commands
 
