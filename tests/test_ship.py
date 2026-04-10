@@ -8,7 +8,7 @@ from ceres.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection
 from ceres.sensors import CivilianSensors, SensorsSection
 from ceres.storage import CargoCrane, CargoHold, CargoSection
 from ceres.systems import Airlock, ProbeDrones, SystemsSection, Workshop
-from ceres.weapons import FixedMount, PulseLaser, WeaponsSection
+from ceres.weapons import FixedMount, MountWeapon, WeaponsSection
 from tests.ships._markdown_output import write_markdown_output
 
 
@@ -180,7 +180,9 @@ def test_ship_total_power_load_includes_basic_and_active_systems():
         command=CommandSection(cockpit=Cockpit()),
         sensors=SensorsSection(primary=CivilianSensors()),
         weapons=WeaponsSection(
-            fixed_mounts=[FixedMount(weapon=PulseLaser(very_high_yield=True, energy_efficient=True))],
+            fixed_mounts=[
+                FixedMount(weapons=[MountWeapon(weapon='pulse_laser', very_high_yield=True, energy_efficient=True)])
+            ],
         ),
     )
     assert my_ship.total_power_load == 8

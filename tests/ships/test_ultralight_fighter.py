@@ -6,7 +6,7 @@ from ceres.computer import Computer5, ComputerSection
 from ceres.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection
 from ceres.sensors import CivilianSensors, SensorsSection
 from ceres.storage import FuelSection, OperationFuel
-from ceres.weapons import FixedMount, PulseLaser, WeaponsSection
+from ceres.weapons import FixedMount, MountWeapon, WeaponsSection
 
 from ._markdown_output import write_markdown_output
 
@@ -33,7 +33,7 @@ def build_ultralight_fighter() -> ship.Ship:
         sensors=SensorsSection(primary=CivilianSensors()),
         weapons=WeaponsSection(
             fixed_mounts=[
-                FixedMount(weapon=PulseLaser(very_high_yield=True, energy_efficient=True)),
+                FixedMount(weapons=[MountWeapon(weapon='pulse_laser', very_high_yield=True, energy_efficient=True)]),
             ],
         ),
     )

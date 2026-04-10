@@ -87,7 +87,7 @@ Current status:
 - hardpoint / firmpoint capacity checks implemented
 - small craft restriction to single turrets implemented
 - turret mounts separated from turret weapons
-- `SingleTurret`, `DoubleTurret`, `TripleTurret` implemented with shared mount logic
+- `Turret(size='single'|'double'|'triple')` implemented with shared mount logic
 - `FixedMount` is now the primary mount concept
 - fixed mounts can now carry multiple weapons in the model, with small-craft restrictions enforced
 

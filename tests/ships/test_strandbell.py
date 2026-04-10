@@ -8,7 +8,7 @@ from ceres.habitation import HabitationSection, Staterooms
 from ceres.sensors import CountermeasuresSuite, ImprovedSensors, SensorsSection
 from ceres.storage import CargoSection, FuelProcessor, FuelScoops, FuelSection, OperationFuel
 from ceres.systems import Airlock, CommonArea, MedicalBay, RepairDrones, SystemsSection
-from ceres.weapons import MissileStorage, TripleTurret, TurretBeamLaser, TurretMissileRack, WeaponsSection
+from ceres.weapons import MissileStorage, MountWeapon, Turret, WeaponsSection
 
 from ._markdown_output import write_markdown_output
 
@@ -42,8 +42,22 @@ def build_strandbell() -> ship.Ship:
         sensors=SensorsSection(primary=ImprovedSensors(), countermeasures=CountermeasuresSuite()),
         weapons=WeaponsSection(
             turrets=[
-                TripleTurret(weapons=[TurretBeamLaser(), TurretBeamLaser(), TurretBeamLaser()]),
-                TripleTurret(weapons=[TurretMissileRack(), TurretMissileRack(), TurretMissileRack()]),
+                Turret(
+                    size='triple',
+                    weapons=[
+                        MountWeapon(weapon='beam_laser'),
+                        MountWeapon(weapon='beam_laser'),
+                        MountWeapon(weapon='beam_laser'),
+                    ]
+                ),
+                Turret(
+                    size='triple',
+                    weapons=[
+                        MountWeapon(weapon='missile_rack'),
+                        MountWeapon(weapon='missile_rack'),
+                        MountWeapon(weapon='missile_rack'),
+                    ]
+                ),
             ],
             missile_storage=MissileStorage(count=240),
         ),

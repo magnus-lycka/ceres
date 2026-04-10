@@ -9,7 +9,7 @@ from ceres.habitation import HabitationSection, Staterooms
 from ceres.sensors import MilitarySensors, SensorsSection
 from ceres.storage import CargoSection, FuelProcessor, FuelSection, JumpFuel, OperationFuel
 from ceres.systems import Airlock, ProbeDrones, SystemsSection, Workshop
-from ceres.weapons import DoubleTurret, WeaponsSection
+from ceres.weapons import Turret, WeaponsSection
 
 from ._markdown_output import write_markdown_output
 
@@ -36,7 +36,7 @@ def build_suleiman() -> ship.Ship:
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer5(bis=True), software=[JumpControl2()]),
         sensors=SensorsSection(primary=MilitarySensors()),
-        weapons=WeaponsSection(turrets=[DoubleTurret()]),
+        weapons=WeaponsSection(turrets=[Turret(size='double')]),
         craft=CraftSection(docking_space=InternalDockingSpace(craft=AirRaft())),
         habitation=HabitationSection(staterooms=Staterooms(count=4)),
         systems=SystemsSection(probe_drones=ProbeDrones(count=10), workshop=Workshop()),

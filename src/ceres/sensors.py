@@ -106,17 +106,28 @@ class CountermeasuresSuite(ShipPart):
 
 class SensorStations(ShipPart):
     count: int
+    armored: bool = False
 
     def build_item(self) -> str | None:
+        if self.armored:
+            if self.count == 1:
+                return 'Additional Armored Sensor Station'
+            return 'Additional Armored Sensor Stations'
         if self.count == 1:
             return 'Sensor Station'
         return 'Sensor Stations'
 
     def compute_tons(self) -> float:
-        return float(self.count)
+        tons = float(self.count)
+        if self.armored:
+            tons *= 1.1
+        return tons
 
     def compute_cost(self) -> float:
-        return self.count * 500_000.0
+        cost = self.count * 500_000.0
+        if self.armored:
+            cost += self.count * 20_000.0
+        return cost
 
 
 class EnhancedSignalProcessing(ShipPart):

@@ -14,7 +14,7 @@ from ceres.sensors import BasicSensors, CivilianSensors, SensorsSection
 from ceres.ship import Ship
 from ceres.storage import CargoSection, FuelSection, OperationFuel
 from ceres.systems import Airlock, Biosphere, CrewArmory, SystemsSection, TrainingFacility
-from ceres.weapons import FixedMount, PulseLaser, WeaponsSection
+from ceres.weapons import FixedMount, MountWeapon, WeaponsSection
 
 # Minimal ship for structural tests
 bare = Ship(tl=12, displacement=6, hull=Hull(configuration=hull.standard_hull))
@@ -36,7 +36,9 @@ ultralight = Ship(
     sensors=SensorsSection(primary=CivilianSensors()),
     craft=CraftSection(docking_space=InternalDockingSpace(craft=AirRaft())),
     weapons=WeaponsSection(
-        fixed_mounts=[FixedMount(weapon=PulseLaser(very_high_yield=True, energy_efficient=True))],
+        fixed_mounts=[
+            FixedMount(weapons=[MountWeapon(weapon='pulse_laser', very_high_yield=True, energy_efficient=True)])
+        ],
     ),
 )
 
@@ -88,8 +90,9 @@ def test_dump_m_drive_present():
 def test_dump_weapon_in_fixed_mounts():
     data = json.loads(ultralight.model_dump_json())
     fp = data['weapons']['fixed_mounts'][0]
-    assert fp['weapon']['very_high_yield'] is True
-    assert fp['weapon']['energy_efficient'] is True
+    assert fp['weapons'][0]['weapon'] == 'pulse_laser'
+    assert fp['weapons'][0]['very_high_yield'] is True
+    assert fp['weapons'][0]['energy_efficient'] is True
 
 
 # ---------------------------------------------------------------------------
@@ -219,10 +222,9 @@ def test_roundtrip_weapon_attributes():
     assert loaded.weapons is not None
     orig_fp = ultralight.weapons.fixed_mounts[0]
     rt_fp = loaded.weapons.fixed_mounts[0]
-    assert isinstance(orig_fp.weapon, PulseLaser)
-    assert isinstance(rt_fp.weapon, PulseLaser)
-    assert rt_fp.weapon.very_high_yield == orig_fp.weapon.very_high_yield
-    assert rt_fp.weapon.energy_efficient == orig_fp.weapon.energy_efficient
+    assert rt_fp.weapons[0].weapon == orig_fp.weapons[0].weapon
+    assert rt_fp.weapons[0].very_high_yield == orig_fp.weapons[0].very_high_yield
+    assert rt_fp.weapons[0].energy_efficient == orig_fp.weapons[0].energy_efficient
 
 
 def test_roundtrip_cargo():

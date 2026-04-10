@@ -4,7 +4,7 @@ from ceres.computer import Computer5, ComputerSection
 from ceres.crew import CrewRole, required_crew_roles
 from ceres.drives import DriveSection, FusionPlantTL12, JumpDrive1, MDrive1, MDrive2, PowerSection
 from ceres.sensors import SensorsSection, SensorStations
-from ceres.weapons import Barbette, Bay, DoubleTurret, WeaponsSection
+from ceres.weapons import Barbette, Bay, Turret, WeaponsSection
 
 
 def test_crew_role_total_salary():
@@ -51,7 +51,7 @@ def test_gunner_added_for_each_turret_on_commercial_ship():
         power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer5()),
-        weapons=WeaponsSection(turrets=[DoubleTurret()]),
+        weapons=WeaponsSection(turrets=[Turret(size='double')]),
     )
 
     assert [(role.role, role.count) for role in required_crew_roles(my_ship)] == [
@@ -94,7 +94,7 @@ def test_military_ship_uses_military_pilot_and_gunner_rules():
         power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer5()),
-        weapons=WeaponsSection(turrets=[DoubleTurret(), DoubleTurret()]),
+        weapons=WeaponsSection(turrets=[Turret(size='double'), Turret(size='double')]),
     )
 
     assert [(role.role, role.count) for role in required_crew_roles(my_ship)] == [

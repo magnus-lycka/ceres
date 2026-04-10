@@ -26,7 +26,7 @@ from ceres.systems import (
     TrainingFacility,
     Workshop,
 )
-from ceres.weapons import Barbette, Bay, MissileStorage, PointDefenseBattery, WeaponsSection
+from ceres.weapons import ArmoredMissileStorage, Barbette, Bay, PointDefenseBattery, WeaponsSection
 
 from ._markdown_output import write_markdown_output
 
@@ -36,8 +36,7 @@ def build_dragon() -> ship.Ship:
     Modeled subset of refs/dragon.txt.
 
     Not yet modeled from the reference:
-    - armored weapons / advanced size reduction
-    - armored missile storage
+    - exact bay count/formatting from source export
     """
 
     return ship.Ship(
@@ -76,13 +75,13 @@ def build_dragon() -> ship.Ship:
             countermeasures=CountermeasuresSuite(),
             signal_processing=EnhancedSignalProcessing(),
             extended_arrays=ExtendedArrays(),
-            sensor_stations=SensorStations(count=2),
+            sensor_stations=SensorStations(count=2, armored=True),
         ),
         weapons=WeaponsSection(
-            barbettes=[Barbette(weapon='particle'), Barbette(weapon='particle')],
-            bays=[Bay(size='small', weapon='missile')],
-            point_defense_batteries=[PointDefenseBattery(kind='laser', rating=2)],
-            missile_storage=MissileStorage(count=480),
+            barbettes=[Barbette(weapon='particle', armored=True), Barbette(weapon='particle', armored=True)],
+            bays=[Bay(size='small', weapon='missile', armored=True, size_reduction=True)],
+            point_defense_batteries=[PointDefenseBattery(kind='laser', rating=2, armored=True)],
+            missile_storage=ArmoredMissileStorage(count=480),
         ),
         systems=SystemsSection(
             crew_armory=CrewArmory(capacity=25),
@@ -165,21 +164,23 @@ def test_dragon_modeled_subset_matches_current_model():
     assert dragon.sensors.extended_arrays.tons == pytest.approx(6.0)
     assert dragon.sensors.extended_arrays.cost == pytest.approx(8_600_000)
     assert dragon.sensors.sensor_stations is not None
-    assert dragon.sensors.sensor_stations.tons == pytest.approx(2.0)
-    assert dragon.sensors.sensor_stations.cost == pytest.approx(1_000_000)
+    assert dragon.sensors.sensor_stations.build_item() == 'Additional Armored Sensor Stations'
+    assert dragon.sensors.sensor_stations.tons == pytest.approx(2.2)
+    assert dragon.sensors.sensor_stations.cost == pytest.approx(1_040_000)
 
     assert dragon.weapons is not None
     assert len(dragon.weapons.barbettes) == 2
-    assert dragon.weapons.barbettes[0].build_item() == 'Particle Barbette'
-    assert dragon.weapons.barbettes[0].tons == pytest.approx(5.0)
+    assert dragon.weapons.barbettes[0].build_item() == 'Particle Barbette, Armored'
+    assert dragon.weapons.barbettes[0].tons == pytest.approx(5.5)
     assert len(dragon.weapons.bays) == 1
-    assert dragon.weapons.bays[0].build_item() == 'Small Missile Bay'
-    assert dragon.weapons.bays[0].tons == pytest.approx(50.0)
+    assert dragon.weapons.bays[0].build_item() == 'Small Missile Bay, Armored, Adv - Size Reduction'
+    assert dragon.weapons.bays[0].tons == pytest.approx(49.5)
     assert len(dragon.weapons.point_defense_batteries) == 1
-    assert dragon.weapons.point_defense_batteries[0].build_item() == 'Point Defense Battery: Type II-L'
-    assert dragon.weapons.point_defense_batteries[0].tons == pytest.approx(20.0)
+    assert dragon.weapons.point_defense_batteries[0].build_item() == 'Point Defense Battery: Type II-L, Armored'
+    assert dragon.weapons.point_defense_batteries[0].tons == pytest.approx(22.0)
     assert dragon.weapons.missile_storage is not None
-    assert dragon.weapons.missile_storage.tons == pytest.approx(40.0)
+    assert dragon.weapons.missile_storage.tons == pytest.approx(44.0)
+    assert dragon.weapons.missile_storage.cost == pytest.approx(800_000)
 
     assert dragon.systems is not None
     assert dragon.systems.crew_armory is not None
@@ -198,9 +199,9 @@ def test_dragon_modeled_subset_matches_current_model():
     assert dragon.habitation.common_area is not None
     assert dragon.habitation.common_area.tons == pytest.approx(10.0)
 
-    assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(13.7)
-    assert dragon.production_cost == pytest.approx(290_110_000)
-    assert dragon.sales_price_new == pytest.approx(261_099_000)
+    assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(7.0)
+    assert dragon.production_cost == pytest.approx(293_650_000)
+    assert dragon.sales_price_new == pytest.approx(264_285_000)
 
 
 def test_dragon_power_and_crew_for_current_subset():
@@ -239,11 +240,12 @@ def test_dragon_markdown_output():
     assert '|  | Backup Computer/20/fib |  |  | 7500.00 |' in table
     assert '|  | Enhanced Signal Processing | 2.00 | 2.00 | 8000.00 |' in table
     assert '|  | Extended Arrays | 6.00 | 6.00 | 8600.00 |' in table
-    assert '|  | Sensor Stations × 2 | 2.00 |  | 1000.00 |' in table
-    assert '| Weapons | Particle Barbette × 2 | 10.00 | 30.00 | 16000.00 |' in table
-    assert '|  | Small Missile Bay | 50.00 | 5.00 | 12000.00 |' in table
-    assert '|  | Point Defense Battery: Type II-L | 20.00 | 20.00 | 10000.00 |' in table
+    assert '|  | Additional Armored Sensor Stations × 2 | 2.20 |  | 1040.00 |' in table
+    assert '| Weapons | Particle Barbette, Armored × 2 | 11.00 | 30.00 | 16200.00 |' in table
+    assert '|  | Small Missile Bay, Armored, Adv - Size Reduction | 49.50 | 5.00 | 14100.00 |' in table
+    assert '|  | Point Defense Battery: Type II-L, Armored | 22.00 | 20.00 | 10400.00 |' in table
     assert '| Systems | Crew Armory: Supports 25 Crew | 1.00 |  | 250.00 |' in table
     assert '|  | Biosphere | 4.00 | 4.00 | 800.00 |' in table
     assert '|  | Training Facility: 2-person capacity | 4.00 |  | 800.00 |' in table
+    assert '|  | Magazine Armored Missile Storage (480) | 44.00 |  | 800.00 |' in table
     assert '|  | • 4.00 tons needed per 100 days of stores and spares |  |  |  |' in table

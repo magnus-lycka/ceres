@@ -100,6 +100,14 @@ def test_sensor_stations_scale_with_count():
     assert s.cost == 1_000_000
 
 
+def test_armored_sensor_stations_scale_with_count():
+    s = SensorStations(count=2, armored=True)
+    s.bind(DummyOwner(12, 400))
+    assert s.build_item() == 'Additional Armored Sensor Stations'
+    assert s.tons == 2.2
+    assert s.cost == 1_040_000
+
+
 def test_enhanced_signal_processing_values():
     s = EnhancedSignalProcessing()
     s.bind(DummyOwner(13, 400))

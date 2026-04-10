@@ -1,5 +1,6 @@
+from collections.abc import Sequence
 import math
-from typing import Annotated, ClassVar, Literal
+from typing import ClassVar, Literal
 
 from pydantic import AliasChoices, Field
 
@@ -8,27 +9,91 @@ from .parts import ShipPart
 from .spec import ShipSpec, SpecSection
 
 
-class PulseLaser(CeresModel):
-    """Pulse laser weapon (TL9, 2D damage, Long range)."""
+def _weapon_item(base_item: str, *, armored: bool = False, size_reduction: bool = False) -> str:
+    parts = [base_item]
+    if armored:
+        parts.append('Armored')
+    if size_reduction:
+        parts.append('Adv - Size Reduction')
+    return ', '.join(parts)
 
+
+def _modified_weapon_tons(base_tons: float, *, armored: bool = False, size_reduction: bool = False) -> float:
+    tons = base_tons
+    if size_reduction:
+        tons *= 0.9
+    if armored:
+        tons *= 1.1
+    return tons
+
+
+def _modified_weapon_cost(
+    base_cost: float,
+    base_tons: float,
+    *,
+    armored: bool = False,
+    size_reduction: bool = False,
+) -> float:
+    cost = base_cost
+    if size_reduction:
+        cost *= 1.1
+    if armored:
+        armored_added_tons = _modified_weapon_tons(base_tons, armored=armored, size_reduction=size_reduction) - (
+            _modified_weapon_tons(base_tons, armored=False, size_reduction=size_reduction)
+        )
+        cost += armored_added_tons * 200_000
+    return cost
+
+
+def _mounted_weapon_notes(weapons: Sequence[MountWeapon], *, empty_message: str) -> list[Note]:
+    if not weapons:
+        return [Note(category=NoteCategory.INFO, message=empty_message)]
+    return [Note(category=NoteCategory.INFO, message=w.build_item() or w.__class__.__name__) for w in weapons]
+
+
+def _mounted_weapon_cost(weapons: Sequence[MountWeapon]) -> float:
+    return sum(w.weapon_cost for w in weapons)
+
+
+def _mounted_weapon_power(weapons: Sequence[MountWeapon]) -> float:
+    return sum(w.weapon_power for w in weapons)
+
+
+MountWeaponType = Literal['pulse_laser', 'beam_laser', 'missile_rack']
+
+MOUNT_WEAPON_SPECS: dict[MountWeaponType, dict[str, float | str]] = {
+    'pulse_laser': {'item': 'Pulse Laser', 'cost': 1_000_000, 'power': 4},
+    'beam_laser': {'item': 'Beam Laser', 'cost': 500_000, 'power': 4},
+    'missile_rack': {'item': 'Missile Rack', 'cost': 750_000, 'power': 0},
+}
+
+
+class MountWeapon(CeresModel):
     model_config = {'frozen': True}
-    weapon_type: Literal['pulse_laser'] = 'pulse_laser'
-    base_cost: ClassVar[int] = 1_000_000
-    base_power: ClassVar[int] = 4
-
+    weapon: MountWeaponType
     very_high_yield: bool = False  # 2 advantages
     energy_efficient: bool = False  # 1 advantage
 
+    @property
+    def base_cost(self) -> float:
+        return float(MOUNT_WEAPON_SPECS[self.weapon]['cost'])
+
+    @property
+    def base_power(self) -> float:
+        return float(MOUNT_WEAPON_SPECS[self.weapon]['power'])
+
     def build_item(self) -> str | None:
-        parts = ['Pulse Laser']
-        if self.very_high_yield:
+        parts = [str(MOUNT_WEAPON_SPECS[self.weapon]['item'])]
+        if self.weapon == 'pulse_laser' and self.very_high_yield:
             parts.append('Very High Yield')
-        if self.energy_efficient:
+        if self.weapon == 'pulse_laser' and self.energy_efficient:
             parts.append('Energy Efficient')
         return ', '.join(parts)
 
     @property
     def cost_modifier(self) -> float:
+        if self.weapon != 'pulse_laser':
+            return 1.0
         advantages = 0
         if self.very_high_yield:
             advantages += 2
@@ -49,16 +114,15 @@ class PulseLaser(CeresModel):
 
     @property
     def weapon_power(self) -> float:
-        if self.energy_efficient:
+        if self.weapon == 'pulse_laser' and self.energy_efficient:
             return self.base_power * 0.75
-        return float(self.base_power)
+        return self.base_power
 
 
 class FixedMount(ShipPart):
     mount_cost: ClassVar[int] = 100_000
     minimum_tl = 9
-    weapon: TurretWeapon | None = None
-    weapons: list[TurretWeapon] = Field(default_factory=list)
+    weapons: list[MountWeapon] = Field(default_factory=list)
 
     def build_item(self) -> str | None:
         if len(self.weapons) == 1:
@@ -66,62 +130,53 @@ class FixedMount(ShipPart):
         return 'Fixed Mount'
 
     def build_notes(self) -> list[Note]:
-        if not self.weapons:
-            return [Note(category=NoteCategory.INFO, message='No weapons in mount')]
         if len(self.weapons) == 1:
             return []
-        return [Note(category=NoteCategory.INFO, message=w.build_item() or w.__class__.__name__) for w in self.weapons]
-
-    def model_post_init(self, __context) -> None:
-        if self.weapon is not None and not self.weapons:
-            object.__setattr__(self, 'weapons', [self.weapon])
-        super().model_post_init(__context)
+        return _mounted_weapon_notes(self.weapons, empty_message='No weapons in mount')
 
     def compute_tons(self) -> float:
         return 0.0
 
     def compute_cost(self) -> float:
-        return self.mount_cost + sum(w.weapon_cost for w in self.weapons)
+        return self.mount_cost + _mounted_weapon_cost(self.weapons)
 
     def compute_power(self) -> float:
-        power = sum(w.weapon_power for w in self.weapons)
+        power = _mounted_weapon_power(self.weapons)
         # Firmpoint reduces power by 25%; apply combined then floor
         power *= 0.75
         return float(math.floor(power))
 
 
-class TurretBeamLaser(CeresModel):
-    weapon_type: Literal['beam_laser'] = 'beam_laser'
-    model_config = {'frozen': True}
-    weapon_cost: ClassVar[int] = 500_000
-    weapon_power: ClassVar[int] = 4
+TurretSize = Literal['single', 'double', 'triple']
+
+TURRET_SPECS: dict[TurretSize, dict[str, float | int | str]] = {
+    'single': {'item': 'Single Turret', 'minimum_tl': 7, 'mount_cost': 200_000, 'capacity': 1},
+    'double': {'item': 'Double Turret', 'minimum_tl': 8, 'mount_cost': 500_000, 'capacity': 2},
+    'triple': {'item': 'Triple Turret', 'minimum_tl': 9, 'mount_cost': 1_000_000, 'capacity': 3},
+}
+
+
+class Turret(ShipPart):
+    size: TurretSize
+    weapons: list[MountWeapon] = Field(default_factory=list)
 
     def build_item(self) -> str | None:
-        return 'Beam Laser'
-
-
-class TurretMissileRack(CeresModel):
-    weapon_type: Literal['missile_rack'] = 'missile_rack'
-    model_config = {'frozen': True}
-    weapon_cost: ClassVar[int] = 750_000
-    weapon_power: ClassVar[int] = 0
-
-    def build_item(self) -> str | None:
-        return 'Missile Rack'
-
-
-TurretWeapon = Annotated[PulseLaser | TurretBeamLaser | TurretMissileRack, Field(discriminator='weapon_type')]
-
-
-class TurretMount(ShipPart):
-    weapons: list[TurretWeapon] = Field(default_factory=list)
-    mount_cost: ClassVar[float]
-    capacity: ClassVar[int]
+        return str(TURRET_SPECS[self.size]['item'])
 
     def build_notes(self) -> list[Note]:
-        if not self.weapons:
-            return [Note(category=NoteCategory.INFO, message='No weapons in turret')]
-        return [Note(category=NoteCategory.INFO, message=w.build_item() or w.__class__.__name__) for w in self.weapons]
+        return _mounted_weapon_notes(self.weapons, empty_message='No weapons in turret')
+
+    @property
+    def minimum_tl(self) -> int:  # type: ignore[override]
+        return int(TURRET_SPECS[self.size]['minimum_tl'])
+
+    @property
+    def capacity(self) -> int:
+        return int(TURRET_SPECS[self.size]['capacity'])
+
+    @property
+    def mount_cost(self) -> float:
+        return float(TURRET_SPECS[self.size]['mount_cost'])
 
     def model_post_init(self, __context) -> None:
         super().model_post_init(__context)
@@ -132,40 +187,10 @@ class TurretMount(ShipPart):
         return 1.0
 
     def compute_cost(self) -> float:
-        return self.mount_cost + sum(w.weapon_cost for w in self.weapons)
+        return self.mount_cost + _mounted_weapon_cost(self.weapons)
 
     def compute_power(self) -> float:
-        return 1.0 + sum(w.weapon_power for w in self.weapons)
-
-
-class SingleTurret(TurretMount):
-    mount_type: Literal['single'] = 'single'
-    minimum_tl = 7
-    mount_cost = 200_000.0
-    capacity = 1
-
-    def build_item(self) -> str | None:
-        return 'Single Turret'
-
-
-class DoubleTurret(TurretMount):
-    mount_type: Literal['double'] = 'double'
-    minimum_tl = 8
-    mount_cost = 500_000.0
-    capacity = 2
-
-    def build_item(self) -> str | None:
-        return 'Double Turret'
-
-
-class TripleTurret(TurretMount):
-    mount_type: Literal['triple'] = 'triple'
-    minimum_tl = 9
-    mount_cost = 1_000_000.0
-    capacity = 3
-
-    def build_item(self) -> str | None:
-        return 'Triple Turret'
+        return 1.0 + _mounted_weapon_power(self.weapons)
 
 
 class MissileStorage(ShipPart):
@@ -181,6 +206,19 @@ class MissileStorage(ShipPart):
 
     def compute_cost(self) -> float:
         return 0.0
+
+
+class ArmoredMissileStorage(MissileStorage):
+    """Armored magazine for missiles: +10% volume, Cr20_000 per base ton."""
+
+    def build_item(self) -> str | None:
+        return f'Magazine Armored Missile Storage ({self.count})'
+
+    def compute_tons(self) -> float:
+        return super().compute_tons() * 1.1
+
+    def compute_cost(self) -> float:
+        return (self.count / 12) * 20_000
 
 
 BarbetteWeapon = Literal[
@@ -210,13 +248,22 @@ BARBETTE_SPECS: dict[BarbetteWeapon, dict[str, float | int | str]] = {
 
 class Barbette(ShipPart):
     weapon: BarbetteWeapon
+    armored: bool = False
+    size_reduction: bool = False
 
     def build_item(self) -> str | None:
-        return str(BARBETTE_SPECS[self.weapon]['item'])
+        return _weapon_item(
+            str(BARBETTE_SPECS[self.weapon]['item']),
+            armored=self.armored,
+            size_reduction=self.size_reduction,
+        )
 
     @property
     def minimum_tl(self) -> int:  # type: ignore[override]
-        return int(BARBETTE_SPECS[self.weapon]['minimum_tl'])
+        tl = int(BARBETTE_SPECS[self.weapon]['minimum_tl'])
+        if self.size_reduction:
+            tl += 1
+        return tl
 
     @property
     def hardpoints_required(self) -> int:
@@ -231,10 +278,15 @@ class Barbette(ShipPart):
         return 2
 
     def compute_tons(self) -> float:
-        return 5.0
+        return _modified_weapon_tons(5.0, armored=self.armored, size_reduction=self.size_reduction)
 
     def compute_cost(self) -> float:
-        return float(BARBETTE_SPECS[self.weapon]['cost'])
+        return _modified_weapon_cost(
+            float(BARBETTE_SPECS[self.weapon]['cost']),
+            5.0,
+            armored=self.armored,
+            size_reduction=self.size_reduction,
+        )
 
     def compute_power(self) -> float:
         return float(BARBETTE_SPECS[self.weapon]['power'])
@@ -326,13 +378,22 @@ BAY_WEAPON_SPECS: dict[BayWeapon, dict[BaySize, dict[str, float | int | str]]] =
 class Bay(ShipPart):
     size: BaySize
     weapon: BayWeapon
+    armored: bool = False
+    size_reduction: bool = False
 
     def build_item(self) -> str | None:
-        return str(BAY_WEAPON_SPECS[self.weapon][self.size]['item'])
+        return _weapon_item(
+            str(BAY_WEAPON_SPECS[self.weapon][self.size]['item']),
+            armored=self.armored,
+            size_reduction=self.size_reduction,
+        )
 
     @property
     def minimum_tl(self) -> int:  # type: ignore[override]
-        return int(BAY_WEAPON_SPECS[self.weapon][self.size]['minimum_tl'])
+        tl = int(BAY_WEAPON_SPECS[self.weapon][self.size]['minimum_tl'])
+        if self.size_reduction:
+            tl += 1
+        return tl
 
     @property
     def hardpoints_required(self) -> int:
@@ -347,10 +408,19 @@ class Bay(ShipPart):
         return BAY_SIZE_SPECS[self.size]['crew']
 
     def compute_tons(self) -> float:
-        return float(BAY_SIZE_SPECS[self.size]['tons'])
+        return _modified_weapon_tons(
+            float(BAY_SIZE_SPECS[self.size]['tons']),
+            armored=self.armored,
+            size_reduction=self.size_reduction,
+        )
 
     def compute_cost(self) -> float:
-        return float(BAY_WEAPON_SPECS[self.weapon][self.size]['cost'])
+        return _modified_weapon_cost(
+            float(BAY_WEAPON_SPECS[self.weapon][self.size]['cost']),
+            float(BAY_SIZE_SPECS[self.size]['tons']),
+            armored=self.armored,
+            size_reduction=self.size_reduction,
+        )
 
     def compute_power(self) -> float:
         return float(BAY_WEAPON_SPECS[self.weapon][self.size]['power'])
@@ -373,9 +443,15 @@ POINT_DEFENSE_SPECS: dict[PointDefenseKind, dict[PointDefenseRating, dict[str, f
 class PointDefenseBattery(ShipPart):
     kind: PointDefenseKind
     rating: PointDefenseRating
+    armored: bool = False
+    size_reduction: bool = False
 
     def build_item(self) -> str | None:
-        return str(POINT_DEFENSE_SPECS[self.kind][self.rating]['item'])
+        return _weapon_item(
+            str(POINT_DEFENSE_SPECS[self.kind][self.rating]['item']),
+            armored=self.armored,
+            size_reduction=self.size_reduction,
+        )
 
     def build_notes(self) -> list[Note]:
         intercept_dice = self.rating * 2
@@ -391,27 +467,36 @@ class PointDefenseBattery(ShipPart):
 
     @property
     def minimum_tl(self) -> int:  # type: ignore[override]
-        return int(POINT_DEFENSE_SPECS[self.kind][self.rating]['minimum_tl'])
+        tl = int(POINT_DEFENSE_SPECS[self.kind][self.rating]['minimum_tl'])
+        if self.size_reduction:
+            tl += 1
+        return tl
 
     @property
     def hardpoints_required(self) -> int:
         return 1
 
     def compute_tons(self) -> float:
-        return float(POINT_DEFENSE_SPECS[self.kind][self.rating]['tons'])
+        return _modified_weapon_tons(
+            float(POINT_DEFENSE_SPECS[self.kind][self.rating]['tons']),
+            armored=self.armored,
+            size_reduction=self.size_reduction,
+        )
 
     def compute_cost(self) -> float:
-        return float(POINT_DEFENSE_SPECS[self.kind][self.rating]['cost'])
+        return _modified_weapon_cost(
+            float(POINT_DEFENSE_SPECS[self.kind][self.rating]['cost']),
+            float(POINT_DEFENSE_SPECS[self.kind][self.rating]['tons']),
+            armored=self.armored,
+            size_reduction=self.size_reduction,
+        )
 
     def compute_power(self) -> float:
         return float(POINT_DEFENSE_SPECS[self.kind][self.rating]['power'])
 
 
-ShipTurret = Annotated[SingleTurret | DoubleTurret | TripleTurret, Field(discriminator='mount_type')]
-
-
 class WeaponsSection(CeresModel):
-    turrets: list[ShipTurret] = Field(default_factory=list)
+    turrets: list[Turret] = Field(default_factory=list)
     fixed_mounts: list[FixedMount] = Field(
         default_factory=list,
         validation_alias=AliasChoices('fixed_mounts', 'fixed_firmpoints'),
@@ -419,7 +504,7 @@ class WeaponsSection(CeresModel):
     barbettes: list[Barbette] = Field(default_factory=list)
     bays: list[Bay] = Field(default_factory=list)
     point_defense_batteries: list[PointDefenseBattery] = Field(default_factory=list)
-    missile_storage: MissileStorage | None = None
+    missile_storage: MissileStorage | ArmoredMissileStorage | None = None
 
     @staticmethod
     def is_small_craft(ship) -> bool:
@@ -461,7 +546,7 @@ class WeaponsSection(CeresModel):
 
         if self.is_small_craft(ship):
             for turret in self.turrets:
-                if isinstance(turret, SingleTurret):
+                if turret.size == 'single':
                     continue
                 turret.error('Small craft may only upgrade one firmpoint to a single turret')
             fixed_mount_capacity = 1
