@@ -3,7 +3,7 @@
 **Ceres** builds Mongoose Traveller 2nd Edition starships in Python, using the
 [High Guard 2022](https://www.mongoosepublishing.com/products/traveller-high-guard-2022)
 rules. A ship is an ordinary Python object: instantiate `Ship`, pass it part
-objects and parameters, and get back a fully-costed, validated design.
+objects and parameters, and get back a validated design.
 
 A likely use for this is to handd it to an AI and build rules complient Traveller
 ships for conversing with the AI.
