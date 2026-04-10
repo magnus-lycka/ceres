@@ -1,4 +1,10 @@
 from ceres import hull
+from ceres.base import ShipBase
+
+
+class DummyOwner(ShipBase):
+    def __init__(self, tl, displacement):
+        super().__init__(tl=tl, displacement=displacement)
 
 
 def test_standard_hull():
@@ -37,3 +43,12 @@ def test_light_streamlined_hull():
     hull_config = hull.streamlined_hull.model_copy(update={'light': True})
     assert hull_config.cost(6) == 270_000
     assert hull_config.points(100) == 36
+
+
+def test_armoured_bulkhead_values():
+    bulkhead = hull.ArmouredBulkhead(protected_tonnage=30.0, protected_item='M-Drive')
+    owner = DummyOwner(12, 100)
+    bulkhead.bind(owner)
+    assert bulkhead.tons == 3.0
+    assert bulkhead.cost == 600_000
+    assert ('info', 'Protects M-Drive') in [(note.category.value, note.message) for note in bulkhead.notes]

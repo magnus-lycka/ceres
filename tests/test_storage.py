@@ -3,7 +3,8 @@ import pytest
 from ceres import hull, ship
 from ceres.base import ShipBase
 from ceres.drives import FusionPlantTL12, PowerSection
-from ceres.storage import CargoCrane, CargoHold, FuelSection, OperationFuel
+from ceres.spec import SpecSection
+from ceres.storage import CargoCrane, CargoHold, CargoSection, FuelSection, OperationFuel
 
 
 class DummyOwner(ShipBase):
@@ -85,4 +86,31 @@ def test_operation_fuel_requires_plant():
     assert my_ship.fuel.operation_fuel.tons == 0.0
     assert ('error', 'Ship must have a FusionPlant to compute OperationFuel') in [
         (note.category.value, note.message) for note in my_ship.fuel.operation_fuel.notes
+    ]
+
+
+def test_military_cargo_note_shows_maximum_stores_for_100_days():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        military=True,
+        hull=hull.Hull(configuration=hull.standard_hull),
+    )
+    cargo_row = my_ship.build_spec().rows_for_section(SpecSection.CARGO)[-1]
+    assert ('info', '2.00 tons needed per 100 days of stores and spares') in [
+        (note.category.value, note.message) for note in cargo_row.notes
+    ]
+
+
+def test_military_cargo_warning_if_below_recommended_stores_capacity():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        military=True,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        cargo=CargoSection(cargo_holds=[CargoHold(tons=1.0)]),
+    )
+    cargo_row = my_ship.build_spec().rows_for_section(SpecSection.CARGO)[-1]
+    assert ('warning', 'Cargo is below recommended 100-day stores capacity of 2.00 tons') in [
+        (note.category.value, note.message) for note in cargo_row.notes
     ]

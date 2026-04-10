@@ -36,10 +36,8 @@ def build_dragon() -> ship.Ship:
     Modeled subset of refs/dragon.txt.
 
     Not yet modeled from the reference:
-    - armored bulkheads
     - armored weapons / advanced size reduction
     - point defense battery
-    - stores and spares
     - armored missile storage
     """
 
@@ -57,6 +55,12 @@ def build_dragon() -> ship.Ship:
             stealth=ImprovedStealth(),
             radiation_shielding=True,
             armour=armour.CrystalironArmour(protection=13),
+            armoured_bulkheads=[
+                hull.ArmouredBulkhead(protected_tonnage=30.0, protected_item='M-Drive'),
+                hull.ArmouredBulkhead(protected_tonnage=12.0, protected_item='Operation Fuel'),
+                hull.ArmouredBulkhead(protected_tonnage=20.0, protected_item='Bridge'),
+                hull.ArmouredBulkhead(protected_tonnage=13.0, protected_item='Sensors'),
+            ],
             airlocks=[Airlock(), Airlock(), Airlock(), Airlock()],
         ),
         drives=DriveSection(m_drive=MDrive7(armored=True)),
@@ -111,6 +115,10 @@ def test_dragon_modeled_subset_matches_current_model():
     assert armour_part is not None
     assert armour_part.tons == pytest.approx(78.0)
     assert armour_part.cost == pytest.approx(15_600_000)
+    assert [bulkhead.tons for bulkhead in dragon.hull.armoured_bulkheads] == pytest.approx([3.0, 1.2, 2.0, 1.3])
+    assert [bulkhead.cost for bulkhead in dragon.hull.armoured_bulkheads] == pytest.approx(
+        [600_000, 240_000, 400_000, 260_000]
+    )
 
     assert len(dragon.hull.airlocks) == 4
     assert all(airlock.tons == 0.0 for airlock in dragon.hull.airlocks)
@@ -187,9 +195,9 @@ def test_dragon_modeled_subset_matches_current_model():
     assert dragon.habitation.common_area is not None
     assert dragon.habitation.common_area.tons == pytest.approx(10.0)
 
-    assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(41.2)
-    assert dragon.production_cost == pytest.approx(278_610_000)
-    assert dragon.sales_price_new == pytest.approx(250_749_000)
+    assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(33.7)
+    assert dragon.production_cost == pytest.approx(280_110_000)
+    assert dragon.sales_price_new == pytest.approx(252_099_000)
 
 
 def test_dragon_power_and_crew_for_current_subset():
@@ -219,6 +227,8 @@ def test_dragon_markdown_output():
     assert '## *Dragon* System Defense Boat | TL13 | Hull 176' in table
     assert '| Hull | Streamlined-Needle Hull | **400.00** |  | 36000.00 |' in table
     assert '|  | Improved Stealth |  |  | 40000.00 |' in table
+    assert '|  | Armoured Bulkhead | 3.00 |  | 600.00 |' in table
+    assert '|  | • Protects M-Drive |  |  |  |' in table
     assert '| Propulsion | M-Drive 7 (Armored) | 30.80 | 280.00 | 56560.00 |' in table
     assert '| Power | Fusion (TL 12) | 30.00 | **450.00** | 30000.00 |' in table
     assert '| Fuel | 16 weeks of operation | 12.00 |  |  |' in table
@@ -232,3 +242,4 @@ def test_dragon_markdown_output():
     assert '| Systems | Crew Armory: Supports 25 Crew | 1.00 |  | 250.00 |' in table
     assert '|  | Biosphere | 4.00 | 4.00 | 800.00 |' in table
     assert '|  | Training Facility: 2-person capacity | 4.00 |  | 800.00 |' in table
+    assert '|  | • 4.00 tons needed per 100 days of stores and spares |  |  |  |' in table

@@ -2,7 +2,7 @@ import math
 
 from pydantic import Field
 
-from .base import CeresModel, Note
+from .base import CeresModel, Note, NoteCategory
 from .parts import ShipPart
 from .spec import ShipSpec, SpecRow, SpecSection
 
@@ -149,6 +149,12 @@ class CargoHold(CeresModel):
 class CargoSection(CeresModel):
     cargo_holds: list[CargoHold] = Field(default_factory=list)
 
+    @staticmethod
+    def maximum_stores_tons(ship) -> float | None:
+        if not ship.military:
+            return None
+        return ship.displacement / 100
+
     def cargo_tons(self, ship) -> float:
         if self.cargo_holds:
             return sum(cargo_hold.usable_tons(ship) for cargo_hold in self.cargo_holds)
@@ -173,6 +179,7 @@ class CargoSection(CeresModel):
                             cost=cargo_hold.crane_cost(ship) or None,
                         )
                     )
+            self._add_stores_notes(ship, spec)
             return
         spec.add_row(
             SpecRow(
@@ -181,6 +188,26 @@ class CargoSection(CeresModel):
                 tons=self.cargo_tons(ship) or None,
             )
         )
+        self._add_stores_notes(ship, spec)
+
+    def _add_stores_notes(self, ship, spec: ShipSpec) -> None:
+        maximum_stores_tons = self.maximum_stores_tons(ship)
+        if maximum_stores_tons is None:
+            return
+        cargo_row = spec.rows_for_section(SpecSection.CARGO)[-1]
+        cargo_row.notes.append(
+            Note(
+                category=NoteCategory.INFO,
+                message=f'{maximum_stores_tons:.2f} tons needed per 100 days of stores and spares',
+            )
+        )
+        if self.cargo_tons(ship) < maximum_stores_tons:
+            cargo_row.notes.append(
+                Note(
+                    category=NoteCategory.WARNING,
+                    message=f'Cargo is below recommended 100-day stores capacity of {maximum_stores_tons:.2f} tons',
+                )
+            )
 
     @classmethod
     def cargo_tons_for_ship(cls, ship) -> float:

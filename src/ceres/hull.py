@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from enum import Enum
 from typing import Annotated, ClassVar, Literal
 
@@ -9,7 +11,7 @@ from .armour import (
     MolecularBondedArmour,
     TitaniumSteelArmour,
 )
-from .base import CeresModel
+from .base import CeresModel, Note, NoteCategory
 from .parts import ShipPart
 from .spec import ShipSpec, SpecRow, SpecSection
 from .systems import Aerofins, Airlock
@@ -173,10 +175,30 @@ HullStealth = Annotated[
 ]
 
 
+class ArmouredBulkhead(ShipPart):
+    protected_tonnage: float
+    protected_item: str | None = None
+
+    def build_item(self) -> str | None:
+        return 'Armoured Bulkhead'
+
+    def build_notes(self) -> list[Note]:
+        if self.protected_item is None:
+            return []
+        return [Note(category=NoteCategory.INFO, message=f'Protects {self.protected_item}')]
+
+    def compute_tons(self) -> float:
+        return self.protected_tonnage * 0.1
+
+    def compute_cost(self) -> float:
+        return self.compute_tons() * 200_000.0
+
+
 class Hull(CeresModel):
     configuration: HullConfiguration
     armour: HullArmour | None = None
     stealth: HullStealth | None = None
+    armoured_bulkheads: list[ArmouredBulkhead] = Field(default_factory=list)
     airlocks: list[Airlock] = Field(default_factory=list)
     aerofins: Aerofins | None = None
     heat_shielding: bool = False
@@ -192,6 +214,7 @@ class Hull(CeresModel):
             parts.append(a)
         if (s := self.stealth) is not None:
             parts.append(s)
+        parts.extend(self.armoured_bulkheads)
         parts.extend(self.airlocks)
         if (af := self.aerofins) is not None:
             parts.append(af)
@@ -219,6 +242,8 @@ class Hull(CeresModel):
             spec.add_row(ship._spec_row_for_part(SpecSection.HULL, self.armour))
         if self.stealth is not None:
             spec.add_row(ship._spec_row_for_part(SpecSection.HULL, self.stealth))
+        for bulkhead in self.armoured_bulkheads:
+            spec.add_row(ship._spec_row_for_part(SpecSection.HULL, bulkhead))
         for row in ship._grouped_spec_rows(
             SpecSection.HULL,
             [*self.airlocks, *([self.aerofins] if self.aerofins is not None else [])],
