@@ -9,39 +9,28 @@ from .parts import ShipPart
 from .spec import ShipSpec, SpecSection
 
 
-def _weapon_item(base_item: str, *, armored: bool = False, size_reduction: bool = False) -> str:
+def _weapon_item(base_item: str, *, size_reduction: bool = False) -> str:
     parts = [base_item]
-    if armored:
-        parts.append('Armored')
     if size_reduction:
         parts.append('Adv - Size Reduction')
     return ', '.join(parts)
 
 
-def _modified_weapon_tons(base_tons: float, *, armored: bool = False, size_reduction: bool = False) -> float:
+def _modified_weapon_tons(base_tons: float, *, size_reduction: bool = False) -> float:
     tons = base_tons
     if size_reduction:
         tons *= 0.9
-    if armored:
-        tons *= 1.1
     return tons
 
 
 def _modified_weapon_cost(
     base_cost: float,
-    base_tons: float,
     *,
-    armored: bool = False,
     size_reduction: bool = False,
 ) -> float:
     cost = base_cost
     if size_reduction:
         cost *= 1.1
-    if armored:
-        armored_added_tons = _modified_weapon_tons(base_tons, armored=armored, size_reduction=size_reduction) - (
-            _modified_weapon_tons(base_tons, armored=False, size_reduction=size_reduction)
-        )
-        cost += armored_added_tons * 200_000
     return cost
 
 
@@ -208,19 +197,6 @@ class MissileStorage(ShipPart):
         return 0.0
 
 
-class ArmoredMissileStorage(MissileStorage):
-    """Armored magazine for missiles: +10% volume, Cr20_000 per base ton."""
-
-    def build_item(self) -> str | None:
-        return f'Magazine Armored Missile Storage ({self.count})'
-
-    def compute_tons(self) -> float:
-        return super().compute_tons() * 1.1
-
-    def compute_cost(self) -> float:
-        return (self.count / 12) * 20_000
-
-
 BarbetteWeapon = Literal[
     'beam_laser',
     'fusion',
@@ -248,13 +224,11 @@ BARBETTE_SPECS: dict[BarbetteWeapon, dict[str, float | int | str]] = {
 
 class Barbette(ShipPart):
     weapon: BarbetteWeapon
-    armored: bool = False
     size_reduction: bool = False
 
     def build_item(self) -> str | None:
         return _weapon_item(
             str(BARBETTE_SPECS[self.weapon]['item']),
-            armored=self.armored,
             size_reduction=self.size_reduction,
         )
 
@@ -278,13 +252,11 @@ class Barbette(ShipPart):
         return 2
 
     def compute_tons(self) -> float:
-        return _modified_weapon_tons(5.0, armored=self.armored, size_reduction=self.size_reduction)
+        return _modified_weapon_tons(5.0, size_reduction=self.size_reduction)
 
     def compute_cost(self) -> float:
         return _modified_weapon_cost(
             float(BARBETTE_SPECS[self.weapon]['cost']),
-            5.0,
-            armored=self.armored,
             size_reduction=self.size_reduction,
         )
 
@@ -378,13 +350,11 @@ BAY_WEAPON_SPECS: dict[BayWeapon, dict[BaySize, dict[str, float | int | str]]] =
 class Bay(ShipPart):
     size: BaySize
     weapon: BayWeapon
-    armored: bool = False
     size_reduction: bool = False
 
     def build_item(self) -> str | None:
         return _weapon_item(
             str(BAY_WEAPON_SPECS[self.weapon][self.size]['item']),
-            armored=self.armored,
             size_reduction=self.size_reduction,
         )
 
@@ -410,15 +380,12 @@ class Bay(ShipPart):
     def compute_tons(self) -> float:
         return _modified_weapon_tons(
             float(BAY_SIZE_SPECS[self.size]['tons']),
-            armored=self.armored,
             size_reduction=self.size_reduction,
         )
 
     def compute_cost(self) -> float:
         return _modified_weapon_cost(
             float(BAY_WEAPON_SPECS[self.weapon][self.size]['cost']),
-            float(BAY_SIZE_SPECS[self.size]['tons']),
-            armored=self.armored,
             size_reduction=self.size_reduction,
         )
 
@@ -443,13 +410,11 @@ POINT_DEFENSE_SPECS: dict[PointDefenseKind, dict[PointDefenseRating, dict[str, f
 class PointDefenseBattery(ShipPart):
     kind: PointDefenseKind
     rating: PointDefenseRating
-    armored: bool = False
     size_reduction: bool = False
 
     def build_item(self) -> str | None:
         return _weapon_item(
             str(POINT_DEFENSE_SPECS[self.kind][self.rating]['item']),
-            armored=self.armored,
             size_reduction=self.size_reduction,
         )
 
@@ -479,15 +444,12 @@ class PointDefenseBattery(ShipPart):
     def compute_tons(self) -> float:
         return _modified_weapon_tons(
             float(POINT_DEFENSE_SPECS[self.kind][self.rating]['tons']),
-            armored=self.armored,
             size_reduction=self.size_reduction,
         )
 
     def compute_cost(self) -> float:
         return _modified_weapon_cost(
             float(POINT_DEFENSE_SPECS[self.kind][self.rating]['cost']),
-            float(POINT_DEFENSE_SPECS[self.kind][self.rating]['tons']),
-            armored=self.armored,
             size_reduction=self.size_reduction,
         )
 
@@ -504,7 +466,7 @@ class WeaponsSection(CeresModel):
     barbettes: list[Barbette] = Field(default_factory=list)
     bays: list[Bay] = Field(default_factory=list)
     point_defense_batteries: list[PointDefenseBattery] = Field(default_factory=list)
-    missile_storage: MissileStorage | ArmoredMissileStorage | None = None
+    missile_storage: MissileStorage | None = None
 
     @staticmethod
     def is_small_craft(ship) -> bool:

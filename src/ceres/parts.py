@@ -9,8 +9,10 @@ class ShipPart(CeresModel):
     cost: float = 0.0
     power: float = 0.0
     tons: float = 0.0
+    armoured_bulkhead: bool = False
     minimum_tl: ClassVar[int] = 0
     _owner: ShipBase | None = PrivateAttr(default=None)
+    _armoured_bulkhead_part: ShipPart | None = PrivateAttr(default=None)
     model_config = {'frozen': True}
 
     def compute_cost(self) -> float:
@@ -42,6 +44,7 @@ class ShipPart(CeresModel):
         self._owner = owner
         self.validate_tl()
         self.refresh_derived_values()
+        self._refresh_armoured_bulkhead(owner)
 
     @property
     def owner(self) -> ShipBase:
@@ -62,3 +65,23 @@ class ShipPart(CeresModel):
             self.error(
                 f'Requires TL{self.minimum_tl}, ship is TL{self.ship_tl}',
             )
+
+    def bulkhead_label(self) -> str:
+        return self.build_item() or self.__class__.__name__
+
+    def _refresh_armoured_bulkhead(self, owner: ShipBase) -> None:
+        if not self.armoured_bulkhead:
+            self._armoured_bulkhead_part = None
+            return
+        from .hull import ArmouredBulkhead
+
+        bulkhead = ArmouredBulkhead(
+            protected_tonnage=self.tons,
+            protected_item=self.bulkhead_label(),
+        )
+        bulkhead.bind(owner)
+        self._armoured_bulkhead_part = bulkhead
+
+    @property
+    def armoured_bulkhead_part(self) -> ShipPart | None:
+        return self._armoured_bulkhead_part

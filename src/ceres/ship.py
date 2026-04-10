@@ -23,7 +23,7 @@ from .expense import (
     total_expenses,
 )
 from .habitation import HabitationSection
-from .hull import Hull, Streamlined
+from .hull import ArmouredBulkhead, Hull, Streamlined
 from .parts import ShipPart
 from .sensors import SensorsSection
 from .spec import ShipSpec, SpecRow, SpecSection
@@ -159,7 +159,7 @@ class Ship(ShipBase):
     def crew_roles(self) -> list[CrewRole]:
         return required_crew_roles(self)
 
-    def _all_parts(self) -> list[ShipPart]:
+    def _base_parts(self) -> list[ShipPart]:
         parts = list(self.hull._all_parts())
         if self.drives is not None:
             parts.extend(self.drives._all_parts())
@@ -180,6 +180,23 @@ class Ship(ShipBase):
             parts.extend(self.systems._all_parts())
         if self.weapons is not None:
             parts.extend(self.weapons._all_parts())
+        return parts
+
+    def armoured_bulkhead_parts(self) -> list[ArmouredBulkhead]:
+        auto_bulkheads: list[ArmouredBulkhead] = []
+        manual_bulkheads: list[ArmouredBulkhead] = []
+        for part in self._base_parts():
+            if isinstance(part, ArmouredBulkhead):
+                manual_bulkheads.append(part)
+                continue
+            auto_bulkhead = part.armoured_bulkhead_part
+            if isinstance(auto_bulkhead, ArmouredBulkhead):
+                auto_bulkheads.append(auto_bulkhead)
+        return [*auto_bulkheads, *manual_bulkheads]
+
+    def _all_parts(self) -> list[ShipPart]:
+        parts = self._base_parts()
+        parts.extend(self.armoured_bulkhead_parts())
         return parts
 
     def remaining_usable_tonnage(self) -> float:
@@ -373,7 +390,7 @@ class Ship(ShipBase):
                 object.__setattr__(self, 'fuel', FuelSection(fuel_scoops=FuelScoops(free=True)))
             elif self.fuel.fuel_scoops is None or not self.fuel.fuel_scoops.free:
                 object.__setattr__(self, 'fuel', self.fuel.model_copy(update={'fuel_scoops': FuelScoops(free=True)}))
-        for part in self._all_parts():
+        for part in self._base_parts():
             part.bind(self)
         if self.habitation is not None:
             self.habitation.validate_common_area()

@@ -29,6 +29,9 @@ class OperationFuel(ShipPart):
     def build_item(self) -> str | None:
         return f'Operation {self.weeks} weeks'
 
+    def bulkhead_label(self) -> str:
+        return 'Operation Fuel'
+
     def compute_tons(self) -> float:
         power = getattr(self.owner, 'power', None)
         plant = None if power is None else power.fusion_plant

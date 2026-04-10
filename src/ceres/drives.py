@@ -20,6 +20,9 @@ class MDrive(ShipPart):
             label += ' (Armored)'
         return label
 
+    def bulkhead_label(self) -> str:
+        return 'M-Drive'
+
     def _base_tons(self) -> float:
         return self.owner.displacement * self.tons_percent
 
@@ -118,6 +121,9 @@ class JumpDrive(ShipPart):
 
     def build_item(self) -> str | None:
         return f'Jump {self.rating}'
+
+    def bulkhead_label(self) -> str:
+        return 'Jump Drive'
 
     def compute_tons(self) -> float:
         return self.owner.displacement * self.tons_percent + 5
@@ -237,6 +243,9 @@ class _FusionPlant(ShipPart):
 
     def build_item(self) -> str | None:
         return f'Fusion (TL {self.minimum_tl})'
+
+    def bulkhead_label(self) -> str:
+        return 'Power Plant'
 
     @property
     def fusion_tl(self) -> int:

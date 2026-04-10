@@ -240,8 +240,23 @@ class Hull(CeresModel):
             spec.add_row(ship._spec_row_for_part(SpecSection.HULL, self.armour))
         if self.stealth is not None:
             spec.add_row(ship._spec_row_for_part(SpecSection.HULL, self.stealth))
-        for bulkhead in self.armoured_bulkheads:
-            spec.add_row(ship._spec_row_for_part(SpecSection.HULL, bulkhead))
+        bulkheads = ship.armoured_bulkhead_parts()
+        if bulkheads:
+            protected_items = [bulkhead.protected_item for bulkhead in bulkheads if bulkhead.protected_item]
+            notes = [
+                Note(category=NoteCategory.INFO, message='Critical hit severity reduced by 1 if >1'),
+            ]
+            if protected_items:
+                notes.append(Note(category=NoteCategory.INFO, message=', '.join(protected_items)))
+            spec.add_row(
+                SpecRow(
+                    section=SpecSection.HULL,
+                    item='Armoured Bulkheads',
+                    tons=sum(bulkhead.tons for bulkhead in bulkheads) or None,
+                    cost=sum(bulkhead.cost for bulkhead in bulkheads) or None,
+                    notes=notes,
+                )
+            )
         for row in ship._grouped_spec_rows(
             SpecSection.HULL,
             [*self.airlocks, *([self.aerofins] if self.aerofins is not None else [])],

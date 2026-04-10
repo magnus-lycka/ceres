@@ -32,6 +32,9 @@ class Bridge(ShipPart):
         holo = ' (Holographic)' if self.holographic else ''
         return f'{smaller}Bridge{holo}'
 
+    def bulkhead_label(self) -> str:
+        return 'Bridge'
+
     def build_notes(self) -> list[Note]:
         if self.small:
             return [Note(category=NoteCategory.INFO, message='DM -1 to Pilot checks')]

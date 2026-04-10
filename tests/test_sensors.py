@@ -1,3 +1,5 @@
+import pytest
+
 from ceres import hull, ship
 from ceres.base import ShipBase
 from ceres.sensors import (
@@ -100,12 +102,15 @@ def test_sensor_stations_scale_with_count():
     assert s.cost == 1_000_000
 
 
-def test_armored_sensor_stations_scale_with_count():
-    s = SensorStations(count=2, armored=True)
+def test_sensor_stations_can_generate_armoured_bulkhead():
+    s = SensorStations(count=2, armoured_bulkhead=True)
     s.bind(DummyOwner(12, 400))
-    assert s.build_item() == 'Additional Armored Sensor Stations'
-    assert s.tons == 2.2
-    assert s.cost == 1_040_000
+    assert s.build_item() == 'Sensor Stations'
+    assert s.tons == 2.0
+    assert s.cost == 1_000_000
+    assert s.armoured_bulkhead_part is not None
+    assert s.armoured_bulkhead_part.tons == pytest.approx(0.2)
+    assert s.armoured_bulkhead_part.cost == pytest.approx(40_000)
 
 
 def test_enhanced_signal_processing_values():

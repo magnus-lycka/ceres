@@ -25,7 +25,7 @@ from ceres.systems import (
     TrainingFacility,
     Workshop,
 )
-from ceres.weapons import ArmoredMissileStorage, Barbette, Bay, PointDefenseBattery, WeaponsSection
+from ceres.weapons import Barbette, Bay, MissileStorage, PointDefenseBattery, WeaponsSection
 
 from ._markdown_output import write_markdown_output
 
@@ -59,20 +59,16 @@ def build_alt_dragon() -> ship.Ship:
             stealth=ImprovedStealth(),
             radiation_shielding=True,
             armour=armour.CrystalironArmour(protection=13),
-            armoured_bulkheads=[
-                hull.ArmouredBulkhead(protected_tonnage=26.16, protected_item='Power Plant'),
-                hull.ArmouredBulkhead(protected_tonnage=10.46, protected_item='Operation Fuel'),
-                hull.ArmouredBulkhead(protected_tonnage=20.0, protected_item='Bridge'),
-            ],
+            armoured_bulkheads=[],
             airlocks=[Airlock(), Airlock(), Airlock(), Airlock()],
         ),
         drives=DriveSection(m_drive=MDrive7(armored=True)),
-        power=PowerSection(fusion_plant=FusionPlantTL12(output=436)),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=436, armoured_bulkhead=True)),
         fuel=FuelSection(
-            operation_fuel=OperationFuel(weeks=16),
+            operation_fuel=OperationFuel(weeks=16, armoured_bulkhead=True),
             fuel_processor=FuelProcessor(tons=20),
         ),
-        command=CommandSection(bridge=Bridge(holographic=True)),
+        command=CommandSection(bridge=Bridge(holographic=True, armoured_bulkhead=True)),
         computer=ComputerSection(
             hardware=Core40(fib=True),
             backup_hardware=Computer20(fib=True),
@@ -86,12 +82,12 @@ def build_alt_dragon() -> ship.Ship:
         ),
         weapons=WeaponsSection(
             barbettes=[
-                Barbette(weapon='particle', armored=True, size_reduction=True),
-                Barbette(weapon='particle', armored=True, size_reduction=True),
+                Barbette(weapon='particle', size_reduction=True),
+                Barbette(weapon='particle', size_reduction=True),
             ],
-            bays=[Bay(size='small', weapon='missile', armored=True, size_reduction=True)],
-            point_defense_batteries=[PointDefenseBattery(kind='laser', rating=2, armored=True, size_reduction=True)],
-            missile_storage=ArmoredMissileStorage(count=720),
+            bays=[Bay(size='small', weapon='missile', size_reduction=True)],
+            point_defense_batteries=[PointDefenseBattery(kind='laser', rating=2, size_reduction=True)],
+            missile_storage=MissileStorage(count=720, armoured_bulkhead=True),
         ),
         systems=SystemsSection(
             crew_armory=CrewArmory(capacity=25),
@@ -128,13 +124,13 @@ def test_alt_dragon_modeled_subset_is_currently_overloaded():
     assert dragon.computer.hardware.build_item() == 'Core/40/fib'
     assert dragon.computer.hardware.cost == pytest.approx(67_500_000)
 
-    assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(-26.3586666667)
+    assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(-19.5663333333)
     assert [(note.category.value, note.message) for note in dragon.notes] == [
-        ('error', 'Hull overloaded by 26.36 tons'),
+        ('error', 'Hull overloaded by 19.57 tons'),
     ]
 
-    assert dragon.production_cost == pytest.approx(347_749_066.6667)
-    assert dragon.sales_price_new == pytest.approx(312_974_160.0)
+    assert dragon.production_cost == pytest.approx(346_390_600.0)
+    assert dragon.sales_price_new == pytest.approx(311_751_540.0)
     assert dragon.available_power == pytest.approx(436.0)
     assert dragon.total_power_load == pytest.approx(453.0)
 
@@ -148,9 +144,11 @@ def test_alt_dragon_markdown_output():
     assert '| Power | Fusion (TL 12) | 29.07 | **436.00** | 29066.67 |' in table
     assert '|  | Fuel Processor (20 tons/day) | 20.00 | 20.00 | 1000.00 |' in table
     assert '| Computer | Core/40/fib |  |  | 67500.00 |' in table
-    assert '| Weapons | Particle Barbette, Armored, Adv - Size Reduction × 2 | 9.90 | 30.00 | 17780.00 |' in table
-    assert '|  | Point Defense Battery: Type II-L, Armored, Adv - Size Reduction | 19.80 | 20.00 | 11360.00 |' in table
-    assert '|  | Magazine Armored Missile Storage (720) | 66.00 |  | 1200.00 |' in table
-    assert '| Cargo | Cargo Hold | -26.36 |  |  |' in table
+    assert '|  | Armoured Bulkheads | 12.07 |  | 2413.93 |' in table
+    assert '|  | • Power Plant, Operation Fuel, Bridge, Missile Storage (720) |  |  |  |' in table
+    assert '| Weapons | Particle Barbette, Adv - Size Reduction × 2 | 9.00 | 30.00 | 17600.00 |' in table
+    assert '|  | Point Defense Battery: Type II-L, Adv - Size Reduction | 18.00 | 20.00 | 11000.00 |' in table
+    assert '|  | Missile Storage (720) | 60.00 |  |  |' in table
+    assert '| Cargo | Cargo Hold | -19.57 |  |  |' in table
     assert '|  | *WARNING:* Cargo is below recommended 100-day stores capacity of 4.00 tons |  |  |  |' in table
-    assert '|  | **ERROR:** Hull overloaded by 26.36 tons |  |  |  |' in table
+    assert '|  | **ERROR:** Hull overloaded by 19.57 tons |  |  |  |' in table

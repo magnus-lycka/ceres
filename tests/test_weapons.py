@@ -3,10 +3,10 @@ import pytest
 from ceres import hull, ship
 from ceres.base import ShipBase
 from ceres.weapons import (
-    ArmoredMissileStorage,
     Barbette,
     Bay,
     FixedMount,
+    MissileStorage,
     MountWeapon,
     PointDefenseBattery,
     Turret,
@@ -133,12 +133,12 @@ def test_pulse_laser_barbette_values():
     assert barbette.power == 12.0
 
 
-def test_armored_particle_barbette_values():
-    barbette = Barbette(weapon='particle', armored=True)
+def test_particle_barbette_values():
+    barbette = Barbette(weapon='particle')
     barbette.bind(DummyOwner(13, 400))
-    assert barbette.build_item() == 'Particle Barbette, Armored'
-    assert barbette.tons == pytest.approx(5.5)
-    assert barbette.cost == pytest.approx(8_100_000)
+    assert barbette.build_item() == 'Particle Barbette'
+    assert barbette.tons == pytest.approx(5.0)
+    assert barbette.cost == pytest.approx(8_000_000)
 
 
 def test_small_missile_bay_values():
@@ -176,19 +176,22 @@ def test_type_ii_laser_point_defense_battery_values():
     assert battery.hardpoints_required == 1
 
 
-def test_armored_type_ii_laser_point_defense_battery_values():
-    battery = PointDefenseBattery(kind='laser', rating=2, armored=True)
+def test_type_ii_laser_point_defense_battery_item_values():
+    battery = PointDefenseBattery(kind='laser', rating=2)
     battery.bind(DummyOwner(12, 1_000))
-    assert battery.build_item() == 'Point Defense Battery: Type II-L, Armored'
-    assert battery.tons == pytest.approx(22.0)
-    assert battery.cost == pytest.approx(10_400_000)
+    assert battery.build_item() == 'Point Defense Battery: Type II-L'
+    assert battery.tons == pytest.approx(20.0)
+    assert battery.cost == pytest.approx(10_000_000)
 
 
-def test_armored_missile_storage_values():
-    storage = ArmoredMissileStorage(count=480)
+def test_missile_storage_can_generate_armoured_bulkhead():
+    storage = MissileStorage(count=480, armoured_bulkhead=True)
     storage.bind(DummyOwner(13, 400))
-    assert storage.tons == pytest.approx(44.0)
-    assert storage.cost == pytest.approx(800_000)
+    assert storage.tons == pytest.approx(40.0)
+    assert storage.cost == pytest.approx(0.0)
+    assert storage.armoured_bulkhead_part is not None
+    assert storage.armoured_bulkhead_part.tons == pytest.approx(4.0)
+    assert storage.armoured_bulkhead_part.cost == pytest.approx(800_000)
 
 
 def test_point_defense_battery_cannot_be_mounted_on_small_craft():
