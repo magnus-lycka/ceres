@@ -5,6 +5,9 @@
 rules. A ship is an ordinary Python object: instantiate `Ship`, pass it part
 objects and parameters, and get back a fully-costed, validated design.
 
+A likely use for this is to handd it to an AI and build rules complient Traveller
+ships for conversing with the AI.
+
 ```python
 from ceres import armour, hull, ship
 from ceres.bridge import Bridge, CommandSection
@@ -15,7 +18,7 @@ from ceres.habitation import HabitationSection, Staterooms
 from ceres.sensors import MilitarySensors, SensorsSection
 from ceres.storage import FuelProcessor, FuelSection, JumpFuel, OperationFuel
 from ceres.systems import Airlock, ProbeDrones, SystemsSection, Workshop
-from ceres.weapons import DoubleTurret, WeaponsSection
+from ceres.weapons import MountWeapon, Turret, WeaponsSection
 
 scout = ship.Ship(
     ship_class='Suleiman',
@@ -38,7 +41,17 @@ scout = ship.Ship(
     command=CommandSection(bridge=Bridge()),
     computer=ComputerSection(hardware=Computer5(bis=True), software=[JumpControl2()]),
     sensors=SensorsSection(primary=MilitarySensors()),
-    weapons=WeaponsSection(turrets=[DoubleTurret()]),
+    weapons=WeaponsSection(
+        turrets=[
+            Turret(
+                size='double',
+                weapons=[
+                    MountWeapon(weapon='beam_laser'),
+                    MountWeapon(weapon='beam_laser'),
+                ],
+            )
+        ],
+    ),
     craft=CraftSection(docking_space=InternalDockingSpace(craft=AirRaft())),
     habitation=HabitationSection(staterooms=Staterooms(count=4)),
     systems=SystemsSection(probe_drones=ProbeDrones(count=10), workshop=Workshop()),
