@@ -126,6 +126,13 @@ Crew logic now lives in `crew.py`. `Ship` still exposes `crew_roles`, but
 delegates the actual role calculation there so crew rules can grow without
 `Ship` becoming the source of truth.
 
+Crew rows in the spec represent rule-indicated positions / functions, not
+necessarily unique individuals. A single sophont (or sometimes robot) may
+fulfill more than one of these positions in practice.
+
+Automation and equipment can impact crew needs, e.g. with Starhip Automation
+(Traveller Companion.)
+
 ## Rules interpretations
 
 We follow the latest versions of Mongoose Traveller 2nd Edition Core Rules and

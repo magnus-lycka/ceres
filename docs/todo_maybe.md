@@ -88,7 +88,7 @@ Current status:
 - small craft restriction to single turrets implemented
 - turret mounts separated from turret weapons
 - `SingleTurret`, `DoubleTurret`, `TripleTurret` implemented with shared mount logic
-- `FixedMount` is now the primary mount concept; old `FixedFirmpoint` naming kept only as compatibility alias
+- `FixedMount` is now the primary mount concept
 - fixed mounts can now carry multiple weapons in the model, with small-craft restrictions enforced
 
 Still missing / unclear:
@@ -120,6 +120,7 @@ Remaining ideas:
 - understaffing warning if explicitly stated crew is too small
 - steward / passenger rules
 - decide whether ship role inference should remain explicit (`military=True`) or become partly automatic
+- model how automation can change crew needs.
 
 ## Expense module [done]
 

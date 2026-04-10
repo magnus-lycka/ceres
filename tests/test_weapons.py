@@ -7,6 +7,7 @@ from ceres.weapons import (
     Bay,
     DoubleTurret,
     FixedMount,
+    PointDefenseBattery,
     PulseLaser,
     SingleTurret,
     TripleTurret,
@@ -144,6 +145,30 @@ def test_large_torpedo_bay_uses_five_hardpoints():
     assert bay.cost == 10_000_000
     assert bay.power == 10.0
     assert bay.hardpoints_required == 5
+
+
+def test_type_ii_laser_point_defense_battery_values():
+    battery = PointDefenseBattery(kind='laser', rating=2)
+    battery.bind(DummyOwner(12, 1_000))
+    assert battery.tons == 20.0
+    assert battery.cost == 10_000_000
+    assert battery.power == 20.0
+    assert battery.hardpoints_required == 1
+
+
+def test_point_defense_battery_cannot_be_mounted_on_small_craft():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=99,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        weapons=WeaponsSection(point_defense_batteries=[PointDefenseBattery(kind='laser', rating=2)]),
+    )
+
+    assert my_ship.weapons is not None
+    assert any(
+        note.message == 'Point defense batteries cannot be mounted on small craft firmpoints'
+        for note in my_ship.weapons.point_defense_batteries[0].notes
+    )
 
 
 def test_double_turret_cost_and_power_include_weapons():

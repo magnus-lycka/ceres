@@ -506,7 +506,7 @@ class ComputerSection(CeresModel):
                 ship._spec_row_for_part(
                     SpecSection.COMPUTER,
                     self.backup_hardware,
-                    item=f'B/U {ship._item_text(self.backup_hardware, self.backup_hardware.description)}',
+                    item=f'Backup {ship._item_text(self.backup_hardware, self.backup_hardware.description)}',
                 )
             )
         for package in self.software_packages.values():

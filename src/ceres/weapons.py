@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import math
 from typing import Annotated, ClassVar, Literal
 
@@ -257,6 +255,9 @@ BayWeapon = Literal[
     'torpedo',
 ]
 
+PointDefenseKind = Literal['laser', 'gauss']
+PointDefenseRating = Literal[1, 2, 3]
+
 BAY_SIZE_SPECS: dict[BaySize, dict[str, int]] = {
     'small': {'tons': 50, 'hardpoints': 1, 'crew': 1},
     'medium': {'tons': 100, 'hardpoints': 1, 'crew': 2},
@@ -355,6 +356,57 @@ class Bay(ShipPart):
         return float(BAY_WEAPON_SPECS[self.weapon][self.size]['power'])
 
 
+POINT_DEFENSE_SPECS: dict[PointDefenseKind, dict[PointDefenseRating, dict[str, float | int | str]]] = {
+    'laser': {
+        1: {'item': 'Point Defense Battery: Type I-L', 'minimum_tl': 10, 'power': 10, 'tons': 20, 'cost': 5_000_000},
+        2: {'item': 'Point Defense Battery: Type II-L', 'minimum_tl': 12, 'power': 20, 'tons': 20, 'cost': 10_000_000},
+        3: {'item': 'Point Defense Battery: Type III-L', 'minimum_tl': 14, 'power': 30, 'tons': 20, 'cost': 20_000_000},
+    },
+    'gauss': {
+        1: {'item': 'Point Defense Battery: Type I-G', 'minimum_tl': 10, 'power': 5, 'tons': 20, 'cost': 3_000_000},
+        2: {'item': 'Point Defense Battery: Type II-G', 'minimum_tl': 12, 'power': 15, 'tons': 20, 'cost': 6_000_000},
+        3: {'item': 'Point Defense Battery: Type III-G', 'minimum_tl': 14, 'power': 25, 'tons': 20, 'cost': 10_000_000},
+    },
+}
+
+
+class PointDefenseBattery(ShipPart):
+    kind: PointDefenseKind
+    rating: PointDefenseRating
+
+    def build_item(self) -> str | None:
+        return str(POINT_DEFENSE_SPECS[self.kind][self.rating]['item'])
+
+    def build_notes(self) -> list[Note]:
+        intercept_dice = self.rating * 2
+        notes = [Note(category=NoteCategory.INFO, message=f'Intercept +{intercept_dice}D')]
+        if self.kind == 'gauss':
+            notes.append(
+                Note(
+                    category=NoteCategory.INFO,
+                    message='Requires ammunition storage to reload after 12 rounds',
+                )
+            )
+        return notes
+
+    @property
+    def minimum_tl(self) -> int:  # type: ignore[override]
+        return int(POINT_DEFENSE_SPECS[self.kind][self.rating]['minimum_tl'])
+
+    @property
+    def hardpoints_required(self) -> int:
+        return 1
+
+    def compute_tons(self) -> float:
+        return float(POINT_DEFENSE_SPECS[self.kind][self.rating]['tons'])
+
+    def compute_cost(self) -> float:
+        return float(POINT_DEFENSE_SPECS[self.kind][self.rating]['cost'])
+
+    def compute_power(self) -> float:
+        return float(POINT_DEFENSE_SPECS[self.kind][self.rating]['power'])
+
+
 ShipTurret = Annotated[SingleTurret | DoubleTurret | TripleTurret, Field(discriminator='mount_type')]
 
 
@@ -366,6 +418,7 @@ class WeaponsSection(CeresModel):
     )
     barbettes: list[Barbette] = Field(default_factory=list)
     bays: list[Bay] = Field(default_factory=list)
+    point_defense_batteries: list[PointDefenseBattery] = Field(default_factory=list)
     missile_storage: MissileStorage | None = None
 
     @staticmethod
@@ -388,11 +441,18 @@ class WeaponsSection(CeresModel):
             + len(self.fixed_mounts)
             + sum(barbette.hardpoints_required for barbette in self.barbettes)
             + sum(bay.hardpoints_required for bay in self.bays)
+            + sum(battery.hardpoints_required for battery in self.point_defense_batteries)
         )
         capacity = self.mount_capacity(ship)
         if total_mounts > capacity:
             overflow = total_mounts - capacity
-            overflowing_parts = [*self.fixed_mounts, *self.turrets, *self.barbettes, *self.bays][-overflow:]
+            overflowing_parts = [
+                *self.fixed_mounts,
+                *self.turrets,
+                *self.barbettes,
+                *self.bays,
+                *self.point_defense_batteries,
+            ][-overflow:]
             mount_kind = 'firmpoints' if self.is_small_craft(ship) else 'hardpoints'
             for part in overflowing_parts:
                 part.error(
@@ -417,9 +477,17 @@ class WeaponsSection(CeresModel):
         if self.is_small_craft(ship):
             for bay in self.bays:
                 bay.error('Bays cannot be mounted on small craft firmpoints')
+            for battery in self.point_defense_batteries:
+                battery.error('Point defense batteries cannot be mounted on small craft firmpoints')
 
     def _all_parts(self) -> list[ShipPart]:
-        parts: list[ShipPart] = [*self.turrets, *self.fixed_mounts, *self.barbettes, *self.bays]
+        parts: list[ShipPart] = [
+            *self.turrets,
+            *self.fixed_mounts,
+            *self.barbettes,
+            *self.bays,
+            *self.point_defense_batteries,
+        ]
         if self.missile_storage is not None:
             parts.append(self.missile_storage)
         return parts
@@ -433,8 +501,7 @@ class WeaponsSection(CeresModel):
             spec.add_row(row)
         for row in ship._grouped_spec_rows(SpecSection.WEAPONS, self.bays):
             spec.add_row(row)
+        for row in ship._grouped_spec_rows(SpecSection.WEAPONS, self.point_defense_batteries):
+            spec.add_row(row)
         if self.missile_storage is not None:
             spec.add_row(ship._spec_row_for_part(SpecSection.WEAPONS, self.missile_storage))
-
-
-FixedFirmpoint = FixedMount
