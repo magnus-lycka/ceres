@@ -153,7 +153,7 @@ Ship Size Crew Reduction Multiplier
 50,000–99,999 50%
 100,000+ 33%
 
-For the dispöacement based roles, maintenance &
+For the displacement based roles, maintenance &
 sensor operators, make sure you don't need more than
 a larger ship, i.e. min(crew_need(displacement), crew_need(next limit))
 
