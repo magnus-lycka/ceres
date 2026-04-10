@@ -3,6 +3,7 @@ from ceres.bridge import Bridge, CommandSection
 from ceres.computer import Computer5, ComputerSection
 from ceres.crew import CrewRole, required_crew_roles
 from ceres.drives import DriveSection, FusionPlantTL12, JumpDrive1, MDrive1, MDrive2, PowerSection
+from ceres.sensors import SensorsSection, SensorStations
 from ceres.weapons import Barbette, Bay, DoubleTurret, WeaponsSection
 
 
@@ -134,3 +135,15 @@ def test_military_ship_gets_gunners_for_bays():
     )
 
     assert ('GUNNER', 3) in [(role.role, role.count) for role in required_crew_roles(my_ship)]
+
+
+def test_sensor_stations_drive_sensor_operator_count():
+    my_ship = ship.Ship(
+        tl=13,
+        military=True,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        sensors=SensorsSection(sensor_stations=SensorStations(count=2)),
+    )
+
+    assert ('SENSOR OPERATOR', 3) in [(role.role, role.count) for role in required_crew_roles(my_ship)]

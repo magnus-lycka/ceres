@@ -1,5 +1,15 @@
+from ceres import hull, ship
 from ceres.base import ShipBase
-from ceres.sensors import BasicSensors, CivilianSensors, MilitarySensors
+from ceres.sensors import (
+    BasicSensors,
+    CivilianSensors,
+    EnhancedSignalProcessing,
+    ExtendedArrays,
+    ImprovedSensors,
+    MilitarySensors,
+    SensorsSection,
+    SensorStations,
+)
 
 
 class DummyOwner(ShipBase):
@@ -81,3 +91,36 @@ def test_civilian_grade_tl_too_low():
     assert ('error', 'Requires TL9, ship is TL8') in [
         (note.category.value, note.message) for note in s.notes
     ]
+
+
+def test_sensor_stations_scale_with_count():
+    s = SensorStations(count=2)
+    s.bind(DummyOwner(12, 400))
+    assert s.tons == 2
+    assert s.cost == 1_000_000
+
+
+def test_enhanced_signal_processing_values():
+    s = EnhancedSignalProcessing()
+    s.bind(DummyOwner(13, 400))
+    assert s.tons == 2
+    assert s.cost == 8_000_000
+    assert s.power == 2
+    assert ('info', 'DM +4 to all sensor-related checks') in [
+        (note.category.value, note.message) for note in s.notes
+    ]
+
+
+def test_extended_arrays_add_twice_primary_sensor_values():
+    s = ExtendedArrays()
+    owner = ship.Ship(
+        tl=13,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        sensors=SensorsSection(primary=ImprovedSensors()),
+    )
+    owner.sensors.primary.bind(owner)
+    s.bind(owner)
+    assert s.tons == 6
+    assert s.cost == 8_600_000
+    assert s.power == 6
