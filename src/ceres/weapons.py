@@ -9,29 +9,39 @@ from .parts import ShipPart
 from .spec import ShipSpec, SpecSection
 
 
-def _weapon_item(base_item: str, *, size_reduction: bool = False) -> str:
+def _customisation_cost_multiplier(advantages: int) -> float:
+    if advantages >= 3:
+        return 1.50
+    if advantages == 2:
+        return 1.25
+    if advantages == 1:
+        return 1.10
+    return 1.0
+
+
+def _size_reduction_steps(value: bool | int) -> int:
+    return 1 if value is True else int(value)
+
+
+def _weapon_item(base_item: str, *, size_reduction: int = 0) -> str:
     parts = [base_item]
-    if size_reduction:
+    if size_reduction == 1:
         parts.append('Adv - Size Reduction')
+    elif size_reduction > 1:
+        parts.append(f'Adv - Size Reduction x{size_reduction}')
     return ', '.join(parts)
 
 
-def _modified_weapon_tons(base_tons: float, *, size_reduction: bool = False) -> float:
-    tons = base_tons
-    if size_reduction:
-        tons *= 0.9
-    return tons
+def _modified_weapon_tons(base_tons: float, *, size_reduction: int = 0) -> float:
+    return base_tons * (1 - 0.1 * size_reduction)
 
 
 def _modified_weapon_cost(
     base_cost: float,
     *,
-    size_reduction: bool = False,
+    size_reduction: int = 0,
 ) -> float:
-    cost = base_cost
-    if size_reduction:
-        cost *= 1.1
-    return cost
+    return base_cost * _customisation_cost_multiplier(size_reduction)
 
 
 def _mounted_weapon_notes(weapons: Sequence[MountWeapon], *, empty_message: str) -> list[Note]:
@@ -224,7 +234,11 @@ BARBETTE_SPECS: dict[BarbetteWeapon, dict[str, float | int | str]] = {
 
 class Barbette(ShipPart):
     weapon: BarbetteWeapon
-    size_reduction: bool = False
+    size_reduction: int = 0
+
+    def model_post_init(self, __context) -> None:
+        object.__setattr__(self, 'size_reduction', _size_reduction_steps(self.size_reduction))
+        super().model_post_init(__context)
 
     def build_item(self) -> str | None:
         return _weapon_item(
@@ -350,7 +364,11 @@ BAY_WEAPON_SPECS: dict[BayWeapon, dict[BaySize, dict[str, float | int | str]]] =
 class Bay(ShipPart):
     size: BaySize
     weapon: BayWeapon
-    size_reduction: bool = False
+    size_reduction: int = 0
+
+    def model_post_init(self, __context) -> None:
+        object.__setattr__(self, 'size_reduction', _size_reduction_steps(self.size_reduction))
+        super().model_post_init(__context)
 
     def build_item(self) -> str | None:
         return _weapon_item(
@@ -410,7 +428,11 @@ POINT_DEFENSE_SPECS: dict[PointDefenseKind, dict[PointDefenseRating, dict[str, f
 class PointDefenseBattery(ShipPart):
     kind: PointDefenseKind
     rating: PointDefenseRating
-    size_reduction: bool = False
+    size_reduction: int = 0
+
+    def model_post_init(self, __context) -> None:
+        object.__setattr__(self, 'size_reduction', _size_reduction_steps(self.size_reduction))
+        super().model_post_init(__context)
 
     def build_item(self) -> str | None:
         return _weapon_item(

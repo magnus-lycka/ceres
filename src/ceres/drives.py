@@ -10,15 +10,11 @@ from .spec import ShipSpec, SpecSection
 
 class MDrive(ShipPart):
     rating: int
-    armored: bool = False
     minimum_tl: ClassVar[int]
     tons_percent: ClassVar[float]
 
     def build_item(self) -> str | None:
-        label = f'M-Drive {self.rating}'
-        if self.armored:
-            label += ' (Armored)'
-        return label
+        return f'M-Drive {self.rating}'
 
     def bulkhead_label(self) -> str:
         return 'M-Drive'
@@ -27,16 +23,10 @@ class MDrive(ShipPart):
         return self.owner.displacement * self.tons_percent
 
     def compute_tons(self) -> float:
-        tons = self._base_tons()
-        if self.armored:
-            tons *= 1.1
-        return tons
+        return self._base_tons()
 
     def compute_cost(self) -> float:
-        cost = self._base_tons() * 2_000_000
-        if self.armored:
-            cost *= 1.01
-        return cost
+        return self._base_tons() * 2_000_000
 
     def compute_power(self) -> float:
         return float(math.ceil(0.1 * self.owner.displacement * self.rating))

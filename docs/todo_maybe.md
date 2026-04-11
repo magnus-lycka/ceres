@@ -95,8 +95,8 @@ Current status:
 - small craft restriction to single turrets implemented
 - turret API simplified to `Turret(size='single'|'double'|'triple', weapons=[...])`
 - `FixedMount` and `Turret` now share the same `MountWeapon(...)` weapon model
-- `Barbette`, `Bay`, `PointDefenseBattery`, `MissileStorage`, and `ArmoredMissileStorage` are modeled
-- armored and size-reduction weapon modifiers are modeled for barbettes, bays, and point defense batteries
+- `Barbette`, `Bay`, `PointDefenseBattery`, and `MissileStorage` are modeled
+- size-reduction weapon modifiers are modeled for barbettes, bays, and point defense batteries
 - fixed mounts can carry multiple weapons in the model, with small-craft restrictions enforced
 
 Still missing / unclear:

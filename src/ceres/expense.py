@@ -10,7 +10,14 @@ def production_cost(ship) -> float:
     software_cost = 0.0
     if ship.computer is not None:
         software_cost = sum(package.cost for package in ship.computer.software_packages.values())
-    return ship.hull_cost + sum(part.cost for part in ship._all_parts()) + software_cost + craft_cost + cargo_hold_cost
+    return (
+        ship.hull_cost
+        + ship.hull.radiation_shielding_cost(ship.displacement)
+        + sum(part.cost for part in ship._all_parts())
+        + software_cost
+        + craft_cost
+        + cargo_hold_cost
+    )
 
 
 def sales_price_new(ship) -> float:

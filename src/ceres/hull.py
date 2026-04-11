@@ -176,6 +176,7 @@ HullStealth = Annotated[
 class ArmouredBulkhead(ShipPart):
     protected_tonnage: float
     protected_item: str | None = None
+    from_ship_part: bool = False
 
     def build_item(self) -> str | None:
         if self.protected_item is not None:
@@ -183,7 +184,15 @@ class ArmouredBulkhead(ShipPart):
         return 'Armoured Bulkhead'
 
     def build_notes(self) -> list[Note]:
-        return [Note(category=NoteCategory.INFO, message='Critical hit severity reduced by 1 if >1')]
+        notes = [Note(category=NoteCategory.INFO, message='Critical hit severity reduced by 1 if >1')]
+        if not self.from_ship_part:
+            notes.append(
+                Note(
+                    category=NoteCategory.WARNING,
+                    message='Prefer armoured_bulkhead=True on the protected ShipPart over manual ArmouredBulkhead',
+                )
+            )
+        return notes
 
     def compute_tons(self) -> float:
         return self.protected_tonnage * 0.1
@@ -202,6 +211,11 @@ class Hull(CeresModel):
     heat_shielding: bool = False
     radiation_shielding: bool = False
     reflec: bool = False
+
+    def radiation_shielding_cost(self, displacement: float) -> float:
+        if not self.radiation_shielding:
+            return 0.0
+        return displacement * 25_000.0
 
     def build_item(self) -> str | None:
         return self.configuration.build_item()
@@ -240,6 +254,15 @@ class Hull(CeresModel):
             spec.add_row(ship._spec_row_for_part(SpecSection.HULL, self.armour))
         if self.stealth is not None:
             spec.add_row(ship._spec_row_for_part(SpecSection.HULL, self.stealth))
+        if self.radiation_shielding:
+            spec.add_row(
+                SpecRow(
+                    section=SpecSection.HULL,
+                    item='Radiation Shielding: Reduce Rads by 1,000',
+                    tons=0.0,
+                    cost=self.radiation_shielding_cost(ship.displacement) or None,
+                )
+            )
         bulkheads = ship.armoured_bulkhead_parts()
         if bulkheads:
             protected_items = [bulkhead.protected_item for bulkhead in bulkheads if bulkhead.protected_item]

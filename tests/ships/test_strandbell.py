@@ -30,7 +30,7 @@ def build_strandbell() -> ship.Ship:
             armour=armour.CrystalironArmour(protection=13),
             airlocks=[Airlock(), Airlock()],
         ),
-        drives=DriveSection(m_drive=MDrive9(armored=True)),
+        drives=DriveSection(m_drive=MDrive9()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=240)),
         fuel=FuelSection(
             operation_fuel=OperationFuel(weeks=12),
@@ -85,8 +85,8 @@ def test_strandbell_armored_m_drive():
     sdb = build_strandbell()
     assert sdb.drives is not None
     assert sdb.drives.m_drive is not None
-    assert sdb.drives.m_drive.tons == pytest.approx(19.8)
-    assert sdb.drives.m_drive.cost == pytest.approx(36_360_000)
+    assert sdb.drives.m_drive.tons == pytest.approx(18.0)
+    assert sdb.drives.m_drive.cost == pytest.approx(36_000_000)
     assert sdb.drives.m_drive.power == pytest.approx(180)
 
 
@@ -173,16 +173,17 @@ def test_strandbell_power():
 
 def test_strandbell_cargo():
     # Ref: 13.8t cargo + 2.0t stores + 3.1t armored bulkheads = 18.9t.
-    # We don't model stores or armored bulkheads so cargo = 18.9t.
+    # We still do not model stores for Strandbell, and we no longer model a
+    # pseudo-armored M-drive, so cargo lands higher.
     sdb = build_strandbell()
-    assert CargoSection.cargo_tons_for_ship(sdb) == pytest.approx(18.9, abs=0.01)
+    assert CargoSection.cargo_tons_for_ship(sdb) == pytest.approx(20.7, abs=0.01)
 
 
 def test_strandbell_cost():
     # Ref design cost 147.13MCr includes armored bulkheads (0.62MCr) and
-    # stores/spares we don't model. Our production cost: 141.26MCr.
+    # stores/spares we don't model.
     sdb = build_strandbell()
-    assert sdb.production_cost == pytest.approx(141_260_000)
+    assert sdb.production_cost == pytest.approx(140_900_000)
 
 
 def test_strandbell_software():
@@ -208,7 +209,7 @@ def test_strandbell_spec_structure():
 
     assert spec.row('Standard Reinforced Hull').section == 'Hull'
     assert spec.row('Crystaliron, Armour: 13').section == 'Hull'
-    assert spec.row('M-Drive 9 (Armored)').section == 'Propulsion'
+    assert spec.row('M-Drive 9').section == 'Propulsion'
     assert spec.row('Fusion (TL 12)').section == 'Power'
     assert spec.row('Fuel Scoops').section == 'Fuel'
     assert spec.row('Bridge').section == 'Command'
@@ -235,7 +236,7 @@ def test_strandbell_uses_military_crew_rules():
     sdb = build_strandbell()
     assert [(role.role, role.count, role.monthly_salary) for role in sdb.crew_roles] == [
         ('PILOT', 3, 6_000),
-        ('ENGINEER', 2, 4_000),
+        ('ENGINEER', 1, 4_000),
         ('GUNNER', 4, 2_000),
     ]
 

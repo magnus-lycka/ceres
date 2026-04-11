@@ -53,13 +53,10 @@ def build_dragon() -> ship.Ship:
             stealth=ImprovedStealth(),
             radiation_shielding=True,
             armour=armour.CrystalironArmour(protection=13),
-            armoured_bulkheads=[
-                hull.ArmouredBulkhead(protected_tonnage=13.0, protected_item='Sensors'),
-            ],
             airlocks=[Airlock(), Airlock(), Airlock(), Airlock()],
         ),
-        drives=DriveSection(m_drive=MDrive7(armored=True, armoured_bulkhead=True)),
-        power=PowerSection(fusion_plant=FusionPlantTL12(output=450)),
+        drives=DriveSection(m_drive=MDrive7(armoured_bulkhead=True)),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=450, armoured_bulkhead=True)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=16, armoured_bulkhead=True)),
         command=CommandSection(bridge=Bridge(holographic=True, armoured_bulkhead=True)),
         computer=ComputerSection(
@@ -68,16 +65,19 @@ def build_dragon() -> ship.Ship:
             software=[AutoRepair1(), FireControl2(), Evade1()],
         ),
         sensors=SensorsSection(
-            primary=ImprovedSensors(),
-            countermeasures=CountermeasuresSuite(),
-            signal_processing=EnhancedSignalProcessing(),
-            extended_arrays=ExtendedArrays(),
+            primary=ImprovedSensors(armoured_bulkhead=True),
+            countermeasures=CountermeasuresSuite(armoured_bulkhead=True),
+            signal_processing=EnhancedSignalProcessing(armoured_bulkhead=True),
+            extended_arrays=ExtendedArrays(armoured_bulkhead=True),
             sensor_stations=SensorStations(count=2, armoured_bulkhead=True),
         ),
         weapons=WeaponsSection(
-            barbettes=[Barbette(weapon='particle'), Barbette(weapon='particle')],
-            bays=[Bay(size='small', weapon='missile', size_reduction=True)],
-            point_defense_batteries=[PointDefenseBattery(kind='laser', rating=2)],
+            barbettes=[
+                Barbette(weapon='particle', armoured_bulkhead=True),
+                Barbette(weapon='particle', armoured_bulkhead=True),
+            ],
+            bays=[Bay(size='small', weapon='missile', size_reduction=3, armoured_bulkhead=True)],
+            point_defense_batteries=[PointDefenseBattery(kind='laser', rating=2, armoured_bulkhead=True)],
             missile_storage=MissileStorage(count=480, armoured_bulkhead=True),
         ),
         systems=SystemsSection(
@@ -112,10 +112,25 @@ def test_dragon_modeled_subset_matches_current_model():
     assert armour_part.tons == pytest.approx(78.0)
     assert armour_part.cost == pytest.approx(15_600_000)
     assert [bulkhead.tons for bulkhead in dragon.armoured_bulkhead_parts()] == pytest.approx(
-        [3.08, 1.2, 2.0, 0.2, 4.0, 1.3]
+        [2.8, 3.0, 1.2, 2.0, 0.3, 0.2, 0.2, 0.6, 0.2, 0.5, 0.5, 3.5, 2.0, 4.0]
     )
     assert [bulkhead.cost for bulkhead in dragon.armoured_bulkhead_parts()] == pytest.approx(
-        [616_000, 240_000, 400_000, 40_000, 800_000, 260_000]
+        [
+            560_000,
+            600_000,
+            240_000,
+            400_000,
+            60_000,
+            40_000,
+            40_000,
+            120_000,
+            40_000,
+            100_000,
+            100_000,
+            700_000,
+            400_000,
+            800_000,
+        ]
     )
 
     assert len(dragon.hull.airlocks) == 4
@@ -123,8 +138,8 @@ def test_dragon_modeled_subset_matches_current_model():
 
     assert dragon.drives is not None
     assert dragon.drives.m_drive is not None
-    assert dragon.drives.m_drive.tons == pytest.approx(30.8)
-    assert dragon.drives.m_drive.cost == pytest.approx(56_560_000)
+    assert dragon.drives.m_drive.tons == pytest.approx(28.0)
+    assert dragon.drives.m_drive.cost == pytest.approx(56_000_000)
     assert dragon.drives.m_drive.power == pytest.approx(280.0)
 
     assert dragon.power is not None
@@ -172,9 +187,9 @@ def test_dragon_modeled_subset_matches_current_model():
     assert dragon.weapons.barbettes[0].build_item() == 'Particle Barbette'
     assert dragon.weapons.barbettes[0].tons == pytest.approx(5.0)
     assert len(dragon.weapons.bays) == 1
-    assert dragon.weapons.bays[0].build_item() == 'Small Missile Bay, Adv - Size Reduction'
-    assert dragon.weapons.bays[0].tons == pytest.approx(45.0)
-    assert dragon.weapons.bays[0].cost == pytest.approx(13_200_000)
+    assert dragon.weapons.bays[0].build_item() == 'Small Missile Bay, Adv - Size Reduction x3'
+    assert dragon.weapons.bays[0].tons == pytest.approx(35.0)
+    assert dragon.weapons.bays[0].cost == pytest.approx(18_000_000)
     assert len(dragon.weapons.point_defense_batteries) == 1
     assert dragon.weapons.point_defense_batteries[0].build_item() == 'Point Defense Battery: Type II-L'
     assert dragon.weapons.point_defense_batteries[0].tons == pytest.approx(20.0)
@@ -200,9 +215,9 @@ def test_dragon_modeled_subset_matches_current_model():
     assert dragon.habitation.common_area is not None
     assert dragon.habitation.common_area.tons == pytest.approx(10.0)
 
-    assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(13.12)
-    assert dragon.production_cost == pytest.approx(292_426_000)
-    assert dragon.sales_price_new == pytest.approx(263_183_400)
+    assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(18.00)
+    assert dragon.production_cost == pytest.approx(308_250_000)
+    assert dragon.sales_price_new == pytest.approx(277_425_000)
 
 
 def test_dragon_power_and_crew_for_current_subset():
@@ -232,10 +247,17 @@ def test_dragon_markdown_output():
     assert '## *Dragon* System Defense Boat | TL13 | Hull 176' in table
     assert '| Hull | Streamlined-Needle Hull | **400.00** |  | 36000.00 |' in table
     assert '|  | Improved Stealth |  |  | 40000.00 |' in table
-    assert '|  | Armoured Bulkheads | 11.78 |  | 2356.00 |' in table
+    assert '|  | Radiation Shielding: Reduce Rads by 1,000 |  |  | 10000.00 |' in table
+    assert '|  | Armoured Bulkheads | 21.00 |  | 4200.00 |' in table
     assert '|  | • Critical hit severity reduced by 1 if >1 |  |  |  |' in table
-    assert '|  | • M-Drive, Operation Fuel, Bridge, Sensor Stations, Missile Storage (480), Sensors |  |  |  |' in table
-    assert '| Propulsion | M-Drive 7 (Armored) | 30.80 | 280.00 | 56560.00 |' in table
+    bulkhead_note = (
+        '|  | • M-Drive, Power Plant, Operation Fuel, Bridge, Improved, Countermeasures Suite, '
+        'Enhanced Signal Processing, Extended Arrays, Sensor Stations, Particle Barbette, Particle Barbette, '
+        'Small Missile Bay, '
+        'Adv - Size Reduction x3, Point Defense Battery: Type II-L, Missile Storage (480) |  |  |  |'
+    )
+    assert bulkhead_note in table
+    assert '| Propulsion | M-Drive 7 | 28.00 | 280.00 | 56000.00 |' in table
     assert '| Power | Fusion (TL 12) | 30.00 | **450.00** | 30000.00 |' in table
     assert '| Fuel | 16 weeks of operation | 12.00 |  |  |' in table
     assert '| Computer | Computer/25/fib |  |  | 15000.00 |' in table
@@ -244,11 +266,11 @@ def test_dragon_markdown_output():
     assert '|  | Extended Arrays | 6.00 | 6.00 | 8600.00 |' in table
     assert '|  | Sensor Stations × 2 | 2.00 |  | 1000.00 |' in table
     assert '| Weapons | Particle Barbette × 2 | 10.00 | 30.00 | 16000.00 |' in table
-    assert '|  | Small Missile Bay, Adv - Size Reduction | 45.00 | 5.00 | 13200.00 |' in table
+    assert '|  | Small Missile Bay, Adv - Size Reduction x3 | 35.00 | 5.00 | 18000.00 |' in table
     assert '|  | Point Defense Battery: Type II-L | 20.00 | 20.00 | 10000.00 |' in table
     assert '| Systems | Crew Armory: Supports 25 Crew | 1.00 |  | 250.00 |' in table
     assert '|  | Biosphere | 4.00 | 4.00 | 800.00 |' in table
     assert '|  | Training Facility: 2-person capacity | 4.00 |  | 800.00 |' in table
     assert '|  | Missile Storage (480) | 40.00 |  |  |' in table
-    assert '| Cargo | Cargo Hold | 13.12 |  |  |' in table
+    assert '| Cargo | Cargo Hold | 18.00 |  |  |' in table
     assert '|  | • 4.00 tons needed per 100 days of stores and spares |  |  |  |' in table

@@ -158,6 +158,14 @@ def test_small_missile_bay_size_reduction_values():
     assert bay.cost == pytest.approx(13_200_000)
 
 
+def test_small_missile_bay_three_size_reduction_steps_values():
+    bay = Bay(size='small', weapon='missile', size_reduction=3)
+    bay.bind(DummyOwner(13, 1_000))
+    assert bay.build_item() == 'Small Missile Bay, Adv - Size Reduction x3'
+    assert bay.tons == pytest.approx(35.0)
+    assert bay.cost == pytest.approx(18_000_000)
+
+
 def test_large_torpedo_bay_uses_five_hardpoints():
     bay = Bay(size='large', weapon='torpedo')
     bay.bind(DummyOwner(12, 10_000))

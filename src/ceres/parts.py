@@ -78,6 +78,7 @@ class ShipPart(CeresModel):
         bulkhead = ArmouredBulkhead(
             protected_tonnage=self.tons,
             protected_item=self.bulkhead_label(),
+            from_ship_part=True,
         )
         bulkhead.bind(owner)
         self._armoured_bulkhead_part = bulkhead

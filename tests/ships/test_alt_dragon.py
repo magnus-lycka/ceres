@@ -62,7 +62,7 @@ def build_alt_dragon() -> ship.Ship:
             armoured_bulkheads=[],
             airlocks=[Airlock(), Airlock(), Airlock(), Airlock()],
         ),
-        drives=DriveSection(m_drive=MDrive7(armored=True)),
+        drives=DriveSection(m_drive=MDrive7()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=436, armoured_bulkhead=True)),
         fuel=FuelSection(
             operation_fuel=OperationFuel(weeks=16, armoured_bulkhead=True),
@@ -82,11 +82,13 @@ def build_alt_dragon() -> ship.Ship:
         ),
         weapons=WeaponsSection(
             barbettes=[
-                Barbette(weapon='particle', size_reduction=True),
-                Barbette(weapon='particle', size_reduction=True),
+                Barbette(weapon='particle', size_reduction=True, armoured_bulkhead=True),
+                Barbette(weapon='particle', size_reduction=True, armoured_bulkhead=True),
             ],
-            bays=[Bay(size='small', weapon='missile', size_reduction=True)],
-            point_defense_batteries=[PointDefenseBattery(kind='laser', rating=2, size_reduction=True)],
+            bays=[Bay(size='small', weapon='missile', size_reduction=True, armoured_bulkhead=True)],
+            point_defense_batteries=[
+                PointDefenseBattery(kind='laser', rating=2, size_reduction=True, armoured_bulkhead=True)
+            ],
             missile_storage=MissileStorage(count=720, armoured_bulkhead=True),
         ),
         systems=SystemsSection(
@@ -124,13 +126,13 @@ def test_alt_dragon_modeled_subset_is_currently_overloaded():
     assert dragon.computer.hardware.build_item() == 'Core/40/fib'
     assert dragon.computer.hardware.cost == pytest.approx(67_500_000)
 
-    assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(-19.5663333333)
+    assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(-23.9663333333)
     assert [(note.category.value, note.message) for note in dragon.notes] == [
-        ('error', 'Hull overloaded by 19.57 tons'),
+        ('error', 'Hull overloaded by 23.97 tons'),
     ]
 
-    assert dragon.production_cost == pytest.approx(346_390_600.0)
-    assert dragon.sales_price_new == pytest.approx(311_751_540.0)
+    assert dragon.production_cost == pytest.approx(357_270_600.0)
+    assert dragon.sales_price_new == pytest.approx(321_543_540.0)
     assert dragon.available_power == pytest.approx(436.0)
     assert dragon.total_power_load == pytest.approx(453.0)
 
@@ -141,14 +143,19 @@ def test_alt_dragon_markdown_output():
     write_markdown_output('test_alt_dragon', table)
 
     assert '## *Dragon* System Defense Boat, Alternate | TL13 | Hull 176' in table
+    assert '|  | Radiation Shielding: Reduce Rads by 1,000 |  |  | 10000.00 |' in table
     assert '| Power | Fusion (TL 12) | 29.07 | **436.00** | 29066.67 |' in table
     assert '|  | Fuel Processor (20 tons/day) | 20.00 | 20.00 | 1000.00 |' in table
     assert '| Computer | Core/40/fib |  |  | 67500.00 |' in table
-    assert '|  | Armoured Bulkheads | 12.07 |  | 2413.93 |' in table
-    assert '|  | • Power Plant, Operation Fuel, Bridge, Missile Storage (720) |  |  |  |' in table
+    assert '|  | Armoured Bulkheads | 19.27 |  | 3853.93 |' in table
+    assert (
+        '|  | • Power Plant, Operation Fuel, Bridge, Particle Barbette, Adv - Size Reduction, Particle Barbette, '
+        'Adv - Size Reduction, Small Missile Bay, Adv - Size Reduction, Point Defense Battery: Type II-L, '
+        'Adv - Size Reduction, Missile Storage (720) |  |  |  |'
+    ) in table
     assert '| Weapons | Particle Barbette, Adv - Size Reduction × 2 | 9.00 | 30.00 | 17600.00 |' in table
     assert '|  | Point Defense Battery: Type II-L, Adv - Size Reduction | 18.00 | 20.00 | 11000.00 |' in table
     assert '|  | Missile Storage (720) | 60.00 |  |  |' in table
-    assert '| Cargo | Cargo Hold | -19.57 |  |  |' in table
+    assert '| Cargo | Cargo Hold | -23.97 |  |  |' in table
     assert '|  | *WARNING:* Cargo is below recommended 100-day stores capacity of 4.00 tons |  |  |  |' in table
-    assert '|  | **ERROR:** Hull overloaded by 19.57 tons |  |  |  |' in table
+    assert '|  | **ERROR:** Hull overloaded by 23.97 tons |  |  |  |' in table
