@@ -148,7 +148,6 @@ class ExtendedArrays(ShipPart):
 
     def build_notes(self) -> list[Note]:
         return [
-            Note(category=NoteCategory.INFO, message='Triples primary sensor suite tons, cost and power'),
             Note(category=NoteCategory.INFO, message='Cannot expend Thrust or jump while in use'),
             Note(category=NoteCategory.INFO, message='DM +2 to detect ship while in use'),
         ]
