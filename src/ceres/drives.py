@@ -4,16 +4,26 @@ from typing import Annotated, ClassVar, Literal
 from pydantic import Field
 
 from .computer import JumpControl, SoftwarePackage
-from .parts import ShipPart
+from .parts import CustomisableShipPart, CustomisationGrade, IncreasedSize, ShipPart, SizeReduction
 from .spec import ShipSpec, SpecSection
 
 
-class MDrive(ShipPart):
+class MDrive(CustomisableShipPart):
     rating: int
     minimum_tl: ClassVar[int]
     tons_percent: ClassVar[float]
+    possible_customisations: ClassVar[tuple] = (IncreasedSize,)
     budget: bool = False
     increased_size: bool = False
+
+    def model_post_init(self, __context) -> None:
+        customisations = []
+        if self.increased_size:
+            customisations.append(IncreasedSize)
+        object.__setattr__(self, 'customisations', tuple(customisations))
+        grade = CustomisationGrade.BUDGET if self.budget else None
+        object.__setattr__(self, 'customisation_grade', grade)
+        super().model_post_init(__context)
 
     def build_item(self) -> str | None:
         item = f'M-Drive {self.rating}'
@@ -28,16 +38,11 @@ class MDrive(ShipPart):
         return self.owner.displacement * self.tons_percent
 
     def compute_tons(self) -> float:
-        tons = self._base_tons()
-        if self.increased_size:
-            tons *= 1.25
-        return tons
+        return self._base_tons() * self.customisation_tons_multiplier
 
     def compute_cost(self) -> float:
         cost = self._base_tons() * 2_000_000
-        if self.budget:
-            cost *= 0.75
-        return cost
+        return cost * self.customisation_cost_multiplier
 
     def compute_power(self) -> float:
         return float(math.ceil(0.1 * self.owner.displacement * self.rating))
@@ -236,14 +241,31 @@ class DriveSection(ShipPart):
             spec.add_row(ship._spec_row_for_part(SpecSection.PROPULSION, self.m_drive))
 
 
-class _FusionPlant(ShipPart):
+class _FusionPlant(CustomisableShipPart):
     minimum_tl: ClassVar[int]
     power_per_ton: ClassVar[int]
     cost_per_ton: ClassVar[int]
+    possible_customisations: ClassVar[tuple] = (IncreasedSize, SizeReduction)
     output: int
     budget: bool = False
     increased_size: bool = False
     size_reduction: bool = False
+
+    def model_post_init(self, __context) -> None:
+        customisations = []
+        if self.increased_size:
+            customisations.append(IncreasedSize)
+        if self.size_reduction:
+            customisations.append(SizeReduction)
+        object.__setattr__(self, 'customisations', tuple(customisations))
+        if self.budget:
+            grade = CustomisationGrade.BUDGET
+        elif self.size_reduction:
+            grade = CustomisationGrade.ADVANCED
+        else:
+            grade = None
+        object.__setattr__(self, 'customisation_grade', grade)
+        super().model_post_init(__context)
 
     def build_item(self) -> str | None:
         item = f'Fusion (TL {self.minimum_tl})'
@@ -262,24 +284,15 @@ class _FusionPlant(ShipPart):
 
     @property
     def effective_tl(self):
-        return self.minimum_tl + (1 if self.size_reduction else 0)
+        return self.minimum_tl + self.customisation_tl_delta
 
     def compute_tons(self) -> float:
         tons = self.output / self.power_per_ton
-        if self.increased_size:
-            tons *= 1.25
-        if self.size_reduction:
-            tons *= 0.9
-        return tons
+        return tons * self.customisation_tons_multiplier
 
     def compute_cost(self) -> float:
         cost = (self.output / self.power_per_ton) * self.cost_per_ton
-        if self.budget:
-            cost *= 0.75
-        advantages = 1 if self.size_reduction else 0
-        if advantages == 1:
-            cost *= 1.10
-        return cost
+        return cost * self.customisation_cost_multiplier
 
 
 class FusionPlantTL8(_FusionPlant):

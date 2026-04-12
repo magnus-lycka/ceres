@@ -18,6 +18,15 @@ class HighTlPart(parts.ShipPart):
     minimum_tl: ClassVar[int] = 15
 
 
+class CustomPart(parts.CustomisableShipPart):
+    possible_customisations: ClassVar[tuple[parts.Customisation, ...]] = (
+        parts.EnergyEfficient,
+        parts.SizeReduction,
+        parts.Budget,
+        parts.IncreasedSize,
+    )
+
+
 def test_base_part():
     part = FixedPart.model_validate({'cost': 1, 'power': 3.14, 'tons': 4.44})
     owner = DummyShip()
@@ -44,3 +53,40 @@ def test_part_can_generate_armoured_bulkhead_from_own_values():
     assert bulkhead.tons == 3.0
     assert bulkhead.cost == 600_000
     assert bulkhead.protected_item == 'FixedPart'
+
+
+def test_customisable_part_validates_grade_against_customisations():
+    part = CustomPart(
+        customisation_grade=parts.CustomisationGrade.HIGH_TECHNOLOGY,
+        customisations=(parts.EnergyEfficient, parts.SizeReduction),
+    )
+    expected = (
+        'error',
+        'Customisations do not match HIGH_TECHNOLOGY: expected 3 advantage(s) and 0 disadvantage(s), got 2 and 0',
+    )
+    assert expected in [
+        (note.category.value, note.message) for note in part.notes
+    ]
+
+
+def test_customisable_part_rejects_disallowed_customisation():
+    part = CustomPart(
+        customisation_grade=parts.CustomisationGrade.ADVANCED,
+        customisations=(parts.LongRange,),
+    )
+    assert ('error', 'Customisation not allowed for CustomPart: Long Range') in [
+        (note.category.value, note.message) for note in part.notes
+    ]
+
+
+def test_customisable_part_exposes_shared_multipliers():
+    part = CustomPart(
+        customisation_grade=parts.CustomisationGrade.HIGH_TECHNOLOGY,
+        customisations=(parts.EnergyEfficient, parts.SizeReduction, parts.SizeReduction),
+    )
+    assert part.total_advantages == 3
+    assert part.total_disadvantages == 0
+    assert part.customisation_tl_delta == 3
+    assert part.customisation_cost_multiplier == 1.5
+    assert part.customisation_tons_multiplier == 0.8
+    assert part.customisation_power_multiplier == 0.75

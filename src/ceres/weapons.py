@@ -5,18 +5,15 @@ from typing import ClassVar, Literal
 from pydantic import AliasChoices, Field
 
 from .base import CeresModel, Note, NoteCategory
-from .parts import ShipPart
+from .parts import (
+    CustomisableShipPart,
+    EnergyEfficient,
+    ShipPart,
+    SizeReduction,
+    VeryHighYield,
+    grade_for_advantages,
+)
 from .spec import ShipSpec, SpecSection
-
-
-def _customisation_cost_multiplier(advantages: int) -> float:
-    if advantages >= 3:
-        return 1.50
-    if advantages == 2:
-        return 1.25
-    if advantages == 1:
-        return 1.10
-    return 1.0
 
 
 def _size_reduction_steps(value: bool | int) -> int:
@@ -51,7 +48,8 @@ def _modified_weapon_cost(
     *,
     size_reduction: int = 0,
 ) -> float:
-    return base_cost * _customisation_cost_multiplier(size_reduction)
+    grade = grade_for_advantages(size_reduction)
+    return base_cost if grade is None else base_cost * grade.base_cost_multiplier
 
 
 def _mounted_weapon_notes(weapons: Sequence[MountWeapon], *, empty_message: str) -> list[Note]:
@@ -242,13 +240,23 @@ BARBETTE_SPECS: dict[BarbetteWeapon, dict[str, float | int | str]] = {
 }
 
 
-class Barbette(ShipPart):
+class Barbette(CustomisableShipPart):
+    possible_customisations: ClassVar[tuple] = (SizeReduction, VeryHighYield)
     weapon: BarbetteWeapon
     size_reduction: int = 0
     very_high_yield: bool = False
 
     def model_post_init(self, __context) -> None:
         object.__setattr__(self, 'size_reduction', _size_reduction_steps(self.size_reduction))
+        customisations = tuple(
+            [*([SizeReduction] * self.size_reduction), *([VeryHighYield] if self.very_high_yield else [])]
+        )
+        object.__setattr__(self, 'customisations', customisations)
+        object.__setattr__(
+            self,
+            'customisation_grade',
+            grade_for_advantages(self.size_reduction + (2 if self.very_high_yield else 0)),
+        )
         super().model_post_init(__context)
 
     def build_item(self) -> str | None:
@@ -261,9 +269,7 @@ class Barbette(ShipPart):
     @property
     def minimum_tl(self) -> int:  # type: ignore[override]
         tl = int(BARBETTE_SPECS[self.weapon]['minimum_tl'])
-        if self.size_reduction:
-            tl += 1
-        return tl
+        return tl + self.customisation_tl_delta
 
     @property
     def hardpoints_required(self) -> int:
@@ -278,11 +284,10 @@ class Barbette(ShipPart):
         return 2
 
     def compute_tons(self) -> float:
-        return _modified_weapon_tons(5.0, size_reduction=self.size_reduction)
+        return 5.0 * self.customisation_tons_multiplier
 
     def compute_cost(self) -> float:
-        advantages = self.size_reduction + (2 if self.very_high_yield else 0)
-        return float(BARBETTE_SPECS[self.weapon]['cost']) * _customisation_cost_multiplier(advantages)
+        return float(BARBETTE_SPECS[self.weapon]['cost']) * self.customisation_cost_multiplier
 
     def compute_power(self) -> float:
         return float(BARBETTE_SPECS[self.weapon]['power'])
@@ -371,13 +376,17 @@ BAY_WEAPON_SPECS: dict[BayWeapon, dict[BaySize, dict[str, float | int | str]]] =
 }
 
 
-class Bay(ShipPart):
+class Bay(CustomisableShipPart):
+    possible_customisations: ClassVar[tuple] = (SizeReduction,)
     size: BaySize
     weapon: BayWeapon
     size_reduction: int = 0
 
     def model_post_init(self, __context) -> None:
         object.__setattr__(self, 'size_reduction', _size_reduction_steps(self.size_reduction))
+        customisations = tuple([SizeReduction] * self.size_reduction)
+        object.__setattr__(self, 'customisations', customisations)
+        object.__setattr__(self, 'customisation_grade', grade_for_advantages(self.size_reduction))
         super().model_post_init(__context)
 
     def build_item(self) -> str | None:
@@ -389,9 +398,7 @@ class Bay(ShipPart):
     @property
     def minimum_tl(self) -> int:  # type: ignore[override]
         tl = int(BAY_WEAPON_SPECS[self.weapon][self.size]['minimum_tl'])
-        if self.size_reduction:
-            tl += 1
-        return tl
+        return tl + self.customisation_tl_delta
 
     @property
     def hardpoints_required(self) -> int:
@@ -406,16 +413,10 @@ class Bay(ShipPart):
         return BAY_SIZE_SPECS[self.size]['crew']
 
     def compute_tons(self) -> float:
-        return _modified_weapon_tons(
-            float(BAY_SIZE_SPECS[self.size]['tons']),
-            size_reduction=self.size_reduction,
-        )
+        return float(BAY_SIZE_SPECS[self.size]['tons']) * self.customisation_tons_multiplier
 
     def compute_cost(self) -> float:
-        return _modified_weapon_cost(
-            float(BAY_WEAPON_SPECS[self.weapon][self.size]['cost']),
-            size_reduction=self.size_reduction,
-        )
+        return float(BAY_WEAPON_SPECS[self.weapon][self.size]['cost']) * self.customisation_cost_multiplier
 
     def compute_power(self) -> float:
         return float(BAY_WEAPON_SPECS[self.weapon][self.size]['power'])
@@ -435,7 +436,8 @@ POINT_DEFENSE_SPECS: dict[PointDefenseKind, dict[PointDefenseRating, dict[str, f
 }
 
 
-class PointDefenseBattery(ShipPart):
+class PointDefenseBattery(CustomisableShipPart):
+    possible_customisations: ClassVar[tuple] = (SizeReduction, EnergyEfficient)
     kind: PointDefenseKind
     rating: PointDefenseRating
     size_reduction: int = 0
@@ -443,6 +445,15 @@ class PointDefenseBattery(ShipPart):
 
     def model_post_init(self, __context) -> None:
         object.__setattr__(self, 'size_reduction', _size_reduction_steps(self.size_reduction))
+        customisations = tuple(
+            [*([SizeReduction] * self.size_reduction), *([EnergyEfficient] if self.energy_efficient else [])]
+        )
+        object.__setattr__(self, 'customisations', customisations)
+        object.__setattr__(
+            self,
+            'customisation_grade',
+            grade_for_advantages(self.size_reduction + (1 if self.energy_efficient else 0)),
+        )
         super().model_post_init(__context)
 
     def build_item(self) -> str | None:
@@ -467,29 +478,21 @@ class PointDefenseBattery(ShipPart):
     @property
     def minimum_tl(self) -> int:  # type: ignore[override]
         tl = int(POINT_DEFENSE_SPECS[self.kind][self.rating]['minimum_tl'])
-        if self.size_reduction:
-            tl += 1
-        return tl
+        return tl + self.customisation_tl_delta
 
     @property
     def hardpoints_required(self) -> int:
         return 1
 
     def compute_tons(self) -> float:
-        return _modified_weapon_tons(
-            float(POINT_DEFENSE_SPECS[self.kind][self.rating]['tons']),
-            size_reduction=self.size_reduction,
-        )
+        return float(POINT_DEFENSE_SPECS[self.kind][self.rating]['tons']) * self.customisation_tons_multiplier
 
     def compute_cost(self) -> float:
-        advantages = self.size_reduction + (1 if self.energy_efficient else 0)
-        return float(POINT_DEFENSE_SPECS[self.kind][self.rating]['cost']) * _customisation_cost_multiplier(advantages)
+        return float(POINT_DEFENSE_SPECS[self.kind][self.rating]['cost']) * self.customisation_cost_multiplier
 
     def compute_power(self) -> float:
         power = float(POINT_DEFENSE_SPECS[self.kind][self.rating]['power'])
-        if self.energy_efficient:
-            power *= 0.75
-        return power
+        return power * self.customisation_power_multiplier
 
 
 class WeaponsSection(CeresModel):
