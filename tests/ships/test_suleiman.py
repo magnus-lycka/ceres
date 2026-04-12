@@ -261,8 +261,8 @@ def test_suleiman_spec_structure():
 
     assert spec.expenses[1].label == 'Sales Price New'
     assert spec.expenses[1].amount == 36_940_500
-    assert any(e.label == 'Life Support' and e.amount == 12_000 for e in spec.expenses)
-    assert any(e.label == 'Fuel' and e.amount == 4_040 for e in spec.expenses)
+    assert any(e.label == 'Life Support' and e.amount == 11_000 for e in spec.expenses)
+    assert any(e.label == 'Fuel' and e.amount == 0 for e in spec.expenses)
     assert any(e.label == 'Crew Salaries' and e.amount == 18_000 for e in spec.expenses)
 
     assert any(c.role == 'ENGINEER' and c.quantity is None and c.salary == 4_000 for c in spec.crew)

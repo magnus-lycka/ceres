@@ -13,6 +13,19 @@ ADMINISTRATOR_SALARY = 1_500
 SENSOR_OPERATOR_SALARY = 4_000
 MEDIC_SALARY = 4_000
 OFFICER_SALARY = 5_000
+SALARY_BY_ROLE = {
+    'CAPTAIN': 10_000,
+    'PILOT': PILOT_SALARY,
+    'ASTROGATOR': ASTROGATOR_SALARY,
+    'ENGINEER': ENGINEER_SALARY,
+    'MAINTENANCE': MAINTENANCE_SALARY,
+    'GUNNER': GUNNER_SALARY,
+    'STEWARD': STEWARD_SALARY,
+    'ADMINISTRATOR': ADMINISTRATOR_SALARY,
+    'SENSOR OPERATOR': SENSOR_OPERATOR_SALARY,
+    'MEDIC': MEDIC_SALARY,
+    'OFFICER': OFFICER_SALARY,
+}
 
 
 class CrewRole(CeresModel):
@@ -23,6 +36,14 @@ class CrewRole(CeresModel):
     @property
     def total_salary(self) -> int:
         return self.count * self.monthly_salary
+
+
+def _normalize_vector(vector) -> dict[str, int]:
+    if vector is None:
+        return {}
+    if isinstance(vector, dict):
+        return {str(role): int(count) for role, count in vector.items()}
+    return {str(role): int(count) for role, count in vector}
 
 
 def _crew_reduction_multiplier(displacement: int) -> float:
@@ -234,13 +255,40 @@ def required_crew_roles(ship) -> list[CrewRole]:
     return _commercial_roles(ship)
 
 
+def effective_crew_roles(ship) -> list[CrewRole]:
+    if ship.crew_vector is None:
+        return required_crew_roles(ship)
+
+    crew_vector = _normalize_vector(ship.crew_vector)
+    roles: list[CrewRole] = []
+    for role, count in crew_vector.items():
+        if role not in SALARY_BY_ROLE:
+            raise ValueError(f'Unknown crew role: {role}')
+        roles.append(CrewRole(role=role, count=count, monthly_salary=SALARY_BY_ROLE[role]))
+    return roles
+
+
+def crew_vector_warnings(ship) -> list[str]:
+    if ship.crew_vector is None:
+        return []
+
+    warnings: list[str] = []
+    provided = _normalize_vector(ship.crew_vector)
+    required = {role.role: role.count for role in required_crew_roles(ship)}
+    for role, required_count in required.items():
+        provided_count = provided.get(role, 0)
+        if provided_count < required_count:
+            warnings.append(f'{role} below recommended count: {provided_count} < {required_count}')
+    return warnings
+
+
 def crew_salary_cost(ship) -> float:
-    return float(sum(role.total_salary for role in required_crew_roles(ship)))
+    return float(sum(role.total_salary for role in effective_crew_roles(ship)))
 
 
 def spec_crew_rows(ship) -> list[SpecCrewRow]:
     rows: list[SpecCrewRow] = []
-    for role in required_crew_roles(ship):
+    for role in effective_crew_roles(ship):
         rows.append(
             SpecCrewRow(
                 role=role.role,

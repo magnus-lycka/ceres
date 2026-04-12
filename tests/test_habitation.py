@@ -1,7 +1,11 @@
 import pytest
 
+from ceres import hull, ship
 from ceres.base import ShipBase
-from ceres.habitation import AdvancedEntertainmentSystem, CabinSpace, LowBerths, Staterooms
+from ceres.bridge import Bridge, CommandSection
+from ceres.computer import Computer5, ComputerSection
+from ceres.drives import DriveSection, FusionPlantTL12, JumpDrive1, PowerSection
+from ceres.habitation import AdvancedEntertainmentSystem, CabinSpace, HabitationSection, LowBerths, Staterooms
 
 
 class DummyOwner(ShipBase):
@@ -27,7 +31,7 @@ def test_staterooms_power_zero():
     assert s.power == 0
 
 
-def test_staterooms_life_support_uses_full_occupancy():
+def test_staterooms_life_support_uses_full_occupancy_formula():
     s = Staterooms(count=4)
     s.bind(DummyOwner(12, 100))
     assert s.occupancy == 8
@@ -64,3 +68,183 @@ def test_cabin_space_cost():
     cabin = CabinSpace(tons=15.0)
     cabin.bind(DummyOwner(12, 100))
     assert cabin.cost == 750_000.0
+
+
+def test_habitation_default_passenger_vector_uses_unused_staterooms_and_low_berths():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=Staterooms(count=10), low_berths=LowBerths(count=4)),
+        crew_vector={'PILOT': 7},
+    )
+
+    assert my_ship.habitation is not None
+    assert my_ship.habitation.default_passenger_vector(my_ship) == {
+        'middle': 12,
+        'low': 4,
+    }
+
+
+def test_habitation_explicit_passenger_vector_overrides_default():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        drives=DriveSection(jump_drive=JumpDrive1()),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=10)),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer5()),
+        habitation=HabitationSection(staterooms=Staterooms(count=4)),
+        passenger_vector={'high': 1},
+    )
+
+    assert my_ship.habitation is not None
+    assert my_ship.habitation.passenger_vector(my_ship) == {'high': 1}
+
+
+def test_explicit_middle_passengers_must_fit_in_remaining_non_crew_beds():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=Staterooms(count=10)),
+        crew_vector={'PILOT': 7},
+        passenger_vector={'middle': 13},
+    )
+
+    assert ('error', 'Middle passage exceeds available non-crew beds: 13 > 12') in [
+        (note.category.value, note.message) for note in my_ship.habitation.notes
+    ]
+
+
+def test_explicit_low_passengers_must_fit_in_low_berths():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=Staterooms(count=1), low_berths=LowBerths(count=4)),
+        crew_vector={'PILOT': 1},
+        passenger_vector={'low': 5},
+    )
+
+    assert ('error', 'Low passage exceeds available low berths: 5 > 4') in [
+        (note.category.value, note.message) for note in my_ship.habitation.notes
+    ]
+
+
+def test_high_and_middle_passengers_can_exactly_fill_remaining_non_crew_staterooms():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=Staterooms(count=8)),
+        crew_vector={'PILOT': 4},
+        passenger_vector={'high': 4, 'middle': 4},
+    )
+
+    assert my_ship.habitation is not None
+    assert [
+        (note.category.value, note.message)
+        for note in my_ship.habitation.notes
+        if note.category.value == 'error'
+    ] == []
+
+
+def test_one_more_high_passenger_than_capacity_errors():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=Staterooms(count=8)),
+        crew_vector={'PILOT': 4},
+        passenger_vector={'high': 7, 'middle': 0},
+    )
+
+    assert ('error', 'High passage exceeds available non-crew staterooms: 7 > 6') in [
+        (note.category.value, note.message) for note in my_ship.habitation.notes
+    ]
+
+
+def test_one_more_middle_passenger_than_capacity_errors():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=Staterooms(count=8)),
+        crew_vector={'PILOT': 4},
+        passenger_vector={'high': 4, 'middle': 5},
+    )
+
+    assert ('error', 'Middle passage exceeds available non-crew beds: 5 > 4') in [
+        (note.category.value, note.message) for note in my_ship.habitation.notes
+    ]
+
+
+def test_three_crew_three_middle_three_high_fit_in_seven_staterooms():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=Staterooms(count=7)),
+        crew_vector={'PILOT': 3},
+        passenger_vector={'high': 3, 'middle': 3},
+    )
+
+    assert my_ship.habitation is not None
+    assert [
+        (note.category.value, note.message)
+        for note in my_ship.habitation.notes
+        if note.category.value == 'error'
+    ] == []
+
+
+def test_one_more_crew_still_fits_in_seven_stateroom_case():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=Staterooms(count=7)),
+        crew_vector={'PILOT': 4},
+        passenger_vector={'high': 3, 'middle': 3},
+    )
+
+    assert my_ship.habitation is not None
+    assert [
+        (note.category.value, note.message)
+        for note in my_ship.habitation.notes
+        if note.category.value == 'error'
+    ] == []
+
+
+def test_one_more_middle_still_fits_in_seven_stateroom_case():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=Staterooms(count=7)),
+        crew_vector={'PILOT': 3},
+        passenger_vector={'high': 3, 'middle': 4},
+    )
+
+    assert my_ship.habitation is not None
+    assert [
+        (note.category.value, note.message)
+        for note in my_ship.habitation.notes
+        if note.category.value == 'error'
+    ] == []
+
+
+def test_one_more_high_does_not_fit_even_with_spare_beds():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=Staterooms(count=7)),
+        crew_vector={'PILOT': 3},
+        passenger_vector={'high': 4, 'middle': 3},
+    )
+
+    assert ('error', 'Middle passage exceeds available non-crew beds: 3 > 2') in [
+        (note.category.value, note.message) for note in my_ship.habitation.notes
+    ]

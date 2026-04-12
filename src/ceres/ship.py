@@ -7,7 +7,13 @@ from .base import NoteCategory, ShipBase
 from .bridge import CommandSection
 from .computer import ComputerSection, SoftwarePackage
 from .crafts import CraftSection
-from .crew import CrewRole, crew_salary_cost, required_crew_roles, spec_crew_rows
+from .crew import (
+    CrewRole,
+    crew_salary_cost,
+    crew_vector_warnings,
+    effective_crew_roles,
+    spec_crew_rows,
+)
 from .drives import (
     DriveSection,
     PowerSection,
@@ -52,6 +58,8 @@ class Ship(ShipBase):
     ship_class: str | None = None
     ship_type: str | None = None
     military: bool = False
+    crew_vector: dict[str, int] | list[tuple[str, int]] | None = None
+    passenger_vector: dict[str, int] | list[tuple[str, int]] | None = None
     design_type: ShipDesignType = ShipDesignType.CUSTOM
     hull: Hull
     drives: DriveSection | None = None
@@ -157,7 +165,7 @@ class Ship(ShipBase):
 
     @property
     def crew_roles(self) -> list[CrewRole]:
-        return required_crew_roles(self)
+        return effective_crew_roles(self)
 
     def _base_parts(self) -> list[ShipPart]:
         parts = list(self.hull._all_parts())
@@ -394,6 +402,7 @@ class Ship(ShipBase):
             part.bind(self)
         if self.habitation is not None:
             self.habitation.validate_common_area()
+            self.habitation.validate_passenger_capacity(self)
         if self.computer is not None:
             self.computer.refresh_software_packages()
             self.computer.validate_software(self.tl)
@@ -412,3 +421,5 @@ class Ship(ShipBase):
             self.error(f'Hull overloaded by {-cargo_tons:.2f} tons')
         if self.command is not None and self.command.bridge is not None and not self.hull.airlocks:
             self.error('No airlock installed')
+        for message in crew_vector_warnings(self):
+            self.warning(message)

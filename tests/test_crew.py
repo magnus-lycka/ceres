@@ -4,6 +4,8 @@ from ceres.computer import Computer5, ComputerSection
 from ceres.crafts import AirRaft, CarriedCraft, CraftSection, InternalDockingSpace
 from ceres.crew import CrewRole, required_crew_roles
 from ceres.drives import DriveSection, FusionPlantTL12, JumpDrive1, MDrive1, MDrive2, PowerSection
+from ceres.expense import life_support_cost
+from ceres.habitation import HabitationSection, LowBerths, Staterooms
 from ceres.sensors import SensorsSection, SensorStations
 from ceres.weapons import Barbette, Bay, Turret, WeaponsSection
 
@@ -205,3 +207,93 @@ def test_sensor_stations_drive_sensor_operator_count():
     )
 
     assert ('SENSOR OPERATOR', 3) in [(role.role, role.count) for role in required_crew_roles(my_ship)]
+
+
+def test_explicit_crew_vector_overrides_rule_based_crew():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        drives=DriveSection(jump_drive=JumpDrive1()),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=10)),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer5()),
+        crew_vector={'PILOT': 1, 'ENGINEER': 1},
+    )
+
+    assert [(role.role, role.count) for role in my_ship.crew_roles] == [
+        ('PILOT', 1),
+        ('ENGINEER', 1),
+    ]
+
+
+def test_understaffed_explicit_crew_vector_emits_warning():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        drives=DriveSection(jump_drive=JumpDrive1()),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=10)),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer5()),
+        crew_vector={'PILOT': 1, 'ENGINEER': 1},
+    )
+
+    assert ('warning', 'ASTROGATOR below recommended count: 0 < 1') in [
+        (note.category.value, note.message) for note in my_ship.notes
+    ]
+    assert ('warning', 'MAINTENANCE below recommended count: 0 < 1') in [
+        (note.category.value, note.message) for note in my_ship.notes
+    ]
+
+
+def test_crew_vector_accepts_list_form():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        crew_vector=[('PILOT', 2), ('ENGINEER', 1)],
+    )
+
+    assert [(role.role, role.count) for role in my_ship.crew_roles] == [
+        ('PILOT', 2),
+        ('ENGINEER', 1),
+    ]
+
+
+def test_default_middle_passengers_use_only_unused_staterooms():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=Staterooms(count=10)),
+        crew_vector={'PILOT': 7},
+    )
+
+    assert life_support_cost(my_ship) == 29_000
+
+
+def test_high_passage_uses_one_stateroom_each():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=Staterooms(count=4)),
+        crew_vector={'PILOT': 2},
+        passenger_vector={'high': 2, 'middle': 2},
+    )
+
+    assert life_support_cost(my_ship) == 10_000
+
+
+def test_low_passage_uses_low_berths():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=Staterooms(count=1), low_berths=LowBerths(count=4)),
+        crew_vector={'PILOT': 1},
+        passenger_vector={'low': 3},
+    )
+
+    assert life_support_cost(my_ship) == 5_300

@@ -2,6 +2,7 @@ import math
 from typing import ClassVar
 
 from .base import CeresModel
+from .crew import effective_crew_roles
 from .parts import ShipPart
 from .spec import ShipSpec, SpecSection
 from .systems import CommonArea
@@ -89,12 +90,79 @@ class HabitationSection(CeresModel):
         if actual_common_area < recommended_common_area:
             self.warning(f'Recommended common area is {recommended_common_area:.2f} tons')
 
+    def validate_passenger_capacity(self, ship) -> None:
+        if ship.passenger_vector is None:
+            return
+
+        passenger_vector = self.passenger_vector(ship)
+        high_passage = passenger_vector.get('high', 0)
+        middle_passage = passenger_vector.get('middle', 0)
+        low_passage = passenger_vector.get('low', 0)
+
+        stateroom_count = 0 if self.staterooms is None else self.staterooms.count
+        crew_staterooms = math.ceil(self.crew_count(ship) / 2)
+        non_crew_staterooms = max(0, stateroom_count - crew_staterooms)
+        if high_passage > non_crew_staterooms:
+            self.error(f'High passage exceeds available non-crew staterooms: {high_passage} > {non_crew_staterooms}')
+
+        available_middle_beds = max(0, non_crew_staterooms - high_passage) * 2
+        if middle_passage > available_middle_beds:
+            self.error(f'Middle passage exceeds available non-crew beds: {middle_passage} > {available_middle_beds}')
+
+        low_berth_count = 0 if self.low_berths is None else self.low_berths.count
+        if low_passage > low_berth_count:
+            self.error(f'Low passage exceeds available low berths: {low_passage} > {low_berth_count}')
+
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = []
         for part in (self.staterooms, self.cabin_space, self.low_berths, self.common_area, self.entertainment):
             if part is not None:
                 parts.append(part)
         return parts
+
+    def crew_count(self, ship) -> int:
+        return sum(role.count for role in effective_crew_roles(ship))
+
+    def passenger_vector(self, ship) -> dict[str, int]:
+        if ship.passenger_vector is not None:
+            if isinstance(ship.passenger_vector, dict):
+                return {str(kind).lower(): int(count) for kind, count in ship.passenger_vector.items()}
+            return {str(kind).lower(): int(count) for kind, count in ship.passenger_vector}
+        return self.default_passenger_vector(ship)
+
+    def default_passenger_vector(self, ship) -> dict[str, int]:
+        if ship.military:
+            return {}
+
+        stateroom_count = 0 if self.staterooms is None else self.staterooms.count
+        low_berth_count = 0 if self.low_berths is None else self.low_berths.count
+
+        crew_staterooms = math.ceil(self.crew_count(ship) / 2)
+        remaining_staterooms = max(0, stateroom_count - crew_staterooms)
+
+        return {
+            'middle': remaining_staterooms * 2,
+            'low': low_berth_count,
+        }
+
+    def life_support_cost(self, ship) -> float:
+        crew_count = self.crew_count(ship)
+        passenger_vector = self.passenger_vector(ship)
+
+        high_passage = passenger_vector.get('high', 0)
+        middle_passage = passenger_vector.get('middle', 0)
+        low_passage = passenger_vector.get('low', 0)
+
+        stateroom_count = 0 if self.staterooms is None else self.staterooms.count
+
+        return float(
+            stateroom_count * 1_000
+            + low_passage * 100
+            + crew_count * 1_000
+            + high_passage * 1_000
+            + middle_passage * 1_000
+            + low_passage * 1_000
+        )
 
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
         if self.staterooms is not None:
