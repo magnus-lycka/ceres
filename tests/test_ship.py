@@ -171,6 +171,26 @@ def test_ship_available_power_with_plant_uses_output():
     assert my_ship.available_power == 8
 
 
+def test_ship_basic_hull_power_load_for_non_gravity_hull_is_half():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=6,
+        hull=hull.Hull(configuration=hull.standard_hull.model_copy(update={'non_gravity': True})),
+    )
+    assert my_ship.basic_hull_power_load == 0.5
+
+
+def test_ship_jump_fuel_and_weapon_power_accessors_handle_missing_sections():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=6,
+        hull=hull.Hull(configuration=hull.standard_hull),
+    )
+    assert my_ship.jump_power_load == 0.0
+    assert my_ship.fuel_power_load == 0.0
+    assert my_ship.weapon_power_load == 0.0
+
+
 def test_ship_total_power_load_includes_basic_and_active_systems():
     my_ship = ship.Ship(
         tl=12,
@@ -186,6 +206,17 @@ def test_ship_total_power_load_includes_basic_and_active_systems():
         ),
     )
     assert my_ship.total_power_load == 8
+
+
+def test_ship_armoured_bulkhead_parts_includes_manual_bulkheads():
+    bulkhead = hull.ArmouredBulkhead(protected_tonnage=10.0, protected_item='Bridge')
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.streamlined_hull, armoured_bulkheads=[bulkhead]),
+    )
+    assert len(my_ship.armoured_bulkhead_parts()) == 1
+    assert my_ship.armoured_bulkhead_parts()[0].protected_item == 'Bridge'
 
 
 def test_small_craft_uses_single_pilot_crew_model():

@@ -35,6 +35,11 @@ def test_heading_without_ship_class():
     assert '## Unnamed | TL12 | Hull 40' in my_ship.markdown_table()
 
 
+def test_heading_with_only_ship_class():
+    my_ship = _minimal_ship(ship_class='Solo')
+    assert '## *Solo* | TL12 | Hull 40' in my_ship.markdown_table()
+
+
 def test_hull_tons_is_bold():
     my_ship = _minimal_ship()
     table = my_ship.markdown_table()

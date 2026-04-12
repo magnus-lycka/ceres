@@ -40,6 +40,7 @@ def test_required_crew_roles_for_small_jump_ship():
         ('PILOT', 1, 6_000),
         ('ASTROGATOR', 1, 5_000),
         ('ENGINEER', 1, 4_000),
+        ('MAINTENANCE', 1, 1_000),
     ]
 
 
@@ -59,6 +60,7 @@ def test_gunner_added_for_each_turret_on_commercial_ship():
         ('PILOT', 1),
         ('ASTROGATOR', 1),
         ('ENGINEER', 1),
+        ('MAINTENANCE', 1),
         ('GUNNER', 1),
     ]
 
@@ -99,9 +101,13 @@ def test_military_ship_uses_military_pilot_and_gunner_rules():
     )
 
     assert [(role.role, role.count) for role in required_crew_roles(my_ship)] == [
+        ('CAPTAIN', 1),
         ('PILOT', 3),
         ('ENGINEER', 1),
+        ('MAINTENANCE', 1),
         ('GUNNER', 4),
+        ('SENSOR OPERATOR', 3),
+        ('OFFICER', 1),
     ]
 
 

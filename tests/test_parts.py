@@ -37,12 +37,25 @@ def test_base_part():
     assert part.effective_tl == 14
     assert part.power == 3.14
     assert part.tons == 4.44
+    assert part.compute_cost() == 1
+    assert part.compute_power() == 3.14
+    assert part.compute_tons() == 4.44
 
 
 def test_part_rejects_ship_below_minimum_tl():
     part = HighTlPart.model_validate({'cost': 1, 'power': 0, 'tons': 0})
     part.bind(DummyShip(tl=14))
     assert [('error', 'Requires TL15, ship is TL14')] == [(note.category.value, note.message) for note in part.notes]
+
+
+def test_part_owner_raises_before_bind():
+    part = FixedPart.model_validate({})
+    try:
+        _ = part.owner
+    except RuntimeError as exc:
+        assert str(exc) == 'FixedPart not bound to a Ship'
+    else:
+        raise AssertionError('Expected RuntimeError')
 
 
 def test_part_can_generate_armoured_bulkhead_from_own_values():
@@ -90,3 +103,26 @@ def test_customisable_part_exposes_shared_multipliers():
     assert part.customisation_cost_multiplier == 1.5
     assert part.customisation_tons_multiplier == 0.8
     assert part.customisation_power_multiplier == 0.75
+
+
+def test_customisable_part_notes_and_fuel_multiplier_are_aggregated():
+    part = CustomPart(
+        customisation_grade=parts.CustomisationGrade.ADVANCED,
+        customisations=(parts.OrbitalRange,),
+    )
+    assert part.customisation_fuel_multiplier == 1.0
+    assert [(note.category.value, note.message) for note in part.customisation_notes] == [
+        ('info', 'Operational range increased to orbital distances'),
+    ]
+
+
+def test_customisable_part_requires_grade_when_customisations_present():
+    part = CustomPart(customisations=(parts.SizeReduction,))
+    assert ('error', 'Customisations require a customisation grade') in [
+        (note.category.value, note.message) for note in part.notes
+    ]
+
+
+def test_grade_helpers_return_none_for_unknown_counts():
+    assert parts.grade_for_advantages(4) is None
+    assert parts.grade_for_disadvantages(3) is None

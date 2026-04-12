@@ -56,6 +56,12 @@ def _drives_and_power_tonnage(ship) -> float:
     return tons
 
 
+def _contained_small_craft_tonnage(ship) -> float:
+    if ship.craft is None or ship.craft.docking_space is None:
+        return 0.0
+    return float(ship.craft.docking_space.craft.shipping_size)
+
+
 def _carried_small_craft_count(ship) -> int:
     if ship.craft is None:
         return 0
@@ -81,7 +87,10 @@ def _military_gunner_count(ship) -> int:
 
 
 def _sensor_operator_count(ship, *, military: bool) -> int:
-    tonnage_based_count = (ship.displacement // 7_500) * (3 if military else 1)
+    if military:
+        tonnage_based_count = math.ceil(ship.displacement / 7_500) * 3
+    else:
+        tonnage_based_count = ship.displacement // 7_500
     station_based_count = 0
     if ship.sensors.sensor_stations is not None:
         station_based_count = ship.sensors.sensor_stations.count + 1
@@ -108,7 +117,10 @@ def _commercial_roles(ship) -> list[CrewRole]:
     if engineer_count:
         roles.append(CrewRole(role='ENGINEER', count=engineer_count, monthly_salary=ENGINEER_SALARY))
 
-    maintenance_count = _apply_large_ship_reduction(ship, ship.displacement // 1_000)
+    maintenance_count = _apply_large_ship_reduction(
+        ship,
+        math.ceil((ship.displacement + _contained_small_craft_tonnage(ship)) / 1_000),
+    )
     if maintenance_count:
         roles.append(CrewRole(role='MAINTENANCE', count=maintenance_count, monthly_salary=MAINTENANCE_SALARY))
 
@@ -136,6 +148,9 @@ def _commercial_roles(ship) -> list[CrewRole]:
 
     total_crew_before_medics_and_officers = sum(role.count for role in roles)
     medic_count = total_crew_before_medics_and_officers // 120
+    medical_bay = None if ship.systems is None else ship.systems.medical_bay
+    if medical_bay is not None and medical_bay.autodoc is None:
+        medic_count = max(medic_count, 1)
     if medic_count:
         roles.append(CrewRole(role='MEDIC', count=medic_count, monthly_salary=MEDIC_SALARY))
 
@@ -151,13 +166,14 @@ def _military_roles(ship) -> list[CrewRole]:
     if ship.displacement <= 100 and (ship.drives is None or ship.drives.jump_drive is None):
         return [CrewRole(role='PILOT', count=1, monthly_salary=PILOT_SALARY)]
 
-    roles: list[CrewRole] = [
+    roles: list[CrewRole] = [CrewRole(role='CAPTAIN', count=1, monthly_salary=10_000)]
+    roles.append(
         CrewRole(
             role='PILOT',
             count=3 + _carried_small_craft_count(ship),
             monthly_salary=PILOT_SALARY,
         )
-    ]
+    )
 
     if ship.drives is not None and ship.drives.jump_drive is not None:
         roles.append(CrewRole(role='ASTROGATOR', count=1, monthly_salary=ASTROGATOR_SALARY))
@@ -167,7 +183,10 @@ def _military_roles(ship) -> list[CrewRole]:
     if engineer_count:
         roles.append(CrewRole(role='ENGINEER', count=engineer_count, monthly_salary=ENGINEER_SALARY))
 
-    maintenance_count = _apply_large_ship_reduction(ship, ship.displacement // 500)
+    maintenance_count = _apply_large_ship_reduction(
+        ship,
+        math.ceil((ship.displacement + _contained_small_craft_tonnage(ship)) / 500),
+    )
     if maintenance_count:
         roles.append(CrewRole(role='MAINTENANCE', count=maintenance_count, monthly_salary=MAINTENANCE_SALARY))
 
@@ -195,6 +214,9 @@ def _military_roles(ship) -> list[CrewRole]:
 
     total_crew_before_medics_and_officers = sum(role.count for role in roles)
     medic_count = total_crew_before_medics_and_officers // 120
+    medical_bay = None if ship.systems is None else ship.systems.medical_bay
+    if medical_bay is not None and medical_bay.autodoc is None:
+        medic_count = max(medic_count, 1)
     if medic_count:
         roles.append(CrewRole(role='MEDIC', count=medic_count, monthly_salary=MEDIC_SALARY))
 

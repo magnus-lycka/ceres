@@ -171,10 +171,13 @@ def test_revised_dragon_power_and_crew_for_current_subset():
     assert dragon.total_power_load == pytest.approx(426.0)
 
     assert [(role.role, role.count, role.monthly_salary) for role in dragon.crew_roles] == [
+        ('CAPTAIN', 1, 10_000),
         ('PILOT', 3, 6_000),
         ('ENGINEER', 3, 4_000),
+        ('MAINTENANCE', 1, 1_000),
         ('GUNNER', 5, 2_000),
         ('SENSOR OPERATOR', 3, 4_000),
+        ('MEDIC', 1, 4_000),
         ('OFFICER', 1, 5_000),
     ]
 

@@ -235,9 +235,14 @@ def test_strandbell_spec_structure():
 def test_strandbell_uses_military_crew_rules():
     sdb = build_strandbell()
     assert [(role.role, role.count, role.monthly_salary) for role in sdb.crew_roles] == [
+        ('CAPTAIN', 1, 10_000),
         ('PILOT', 3, 6_000),
         ('ENGINEER', 1, 4_000),
+        ('MAINTENANCE', 1, 1_000),
         ('GUNNER', 4, 2_000),
+        ('SENSOR OPERATOR', 3, 4_000),
+        ('MEDIC', 1, 4_000),
+        ('OFFICER', 1, 5_000),
     ]
 
 
