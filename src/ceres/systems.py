@@ -39,15 +39,31 @@ class CommonArea(ShipPart):
         return self.tons * 100_000.0
 
 
-class MedicalBay(ShipPart):
+class BasicAutodoc(CeresModel):
     def build_item(self) -> str | None:
+        return 'Basic Autodoc'
+
+    @property
+    def cost(self) -> float:
+        return 100_000.0
+
+
+class MedicalBay(ShipPart):
+    autodoc: BasicAutodoc | None = None
+
+    def build_item(self) -> str | None:
+        if self.autodoc is not None:
+            return 'Medical Bay, Basic Autodoc'
         return 'Medical Bay'
 
     def compute_tons(self) -> float:
         return 4.0
 
     def compute_cost(self) -> float:
-        return 2_000_000.0
+        cost = 2_000_000.0
+        if self.autodoc is not None:
+            cost += self.autodoc.cost
+        return cost
 
     def compute_power(self) -> float:
         return 1.0

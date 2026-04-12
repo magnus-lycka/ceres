@@ -120,7 +120,7 @@ def test_strandbell_sensors():
     assert sdb.sensors.countermeasures is not None
     assert sdb.sensors.countermeasures.tons == pytest.approx(2.0)
     assert sdb.sensors.countermeasures.cost == 4_000_000
-    assert sdb.sensors.countermeasures.power == 2.0
+    assert sdb.sensors.countermeasures.power == 1.0
 
 
 def test_strandbell_turrets():
@@ -167,8 +167,8 @@ def test_strandbell_power():
     assert sdb.available_power == 240
     assert sdb.basic_hull_power_load == pytest.approx(40.0)
     assert sdb.maneuver_power_load == pytest.approx(180.0)
-    # sensors(3) + countermeasures(2) + beam turret(13) + missile turret(1) + medical(1) + fuel processor(1) = 21
-    assert sdb.total_power_load == pytest.approx(241.0)
+    # sensors(3) + countermeasures(1) + beam turret(13) + missile turret(1) + medical(1) + fuel processor(1) = 20
+    assert sdb.total_power_load == pytest.approx(240.0)
 
 
 def test_strandbell_cargo():

@@ -12,9 +12,14 @@ class MDrive(ShipPart):
     rating: int
     minimum_tl: ClassVar[int]
     tons_percent: ClassVar[float]
+    budget: bool = False
+    increased_size: bool = False
 
     def build_item(self) -> str | None:
-        return f'M-Drive {self.rating}'
+        item = f'M-Drive {self.rating}'
+        if self.budget and self.increased_size:
+            item += ', Budget-Increased Size'
+        return item
 
     def bulkhead_label(self) -> str:
         return 'M-Drive'
@@ -23,10 +28,16 @@ class MDrive(ShipPart):
         return self.owner.displacement * self.tons_percent
 
     def compute_tons(self) -> float:
-        return self._base_tons()
+        tons = self._base_tons()
+        if self.increased_size:
+            tons *= 1.25
+        return tons
 
     def compute_cost(self) -> float:
-        return self._base_tons() * 2_000_000
+        cost = self._base_tons() * 2_000_000
+        if self.budget:
+            cost *= 0.75
+        return cost
 
     def compute_power(self) -> float:
         return float(math.ceil(0.1 * self.owner.displacement * self.rating))
@@ -230,9 +241,17 @@ class _FusionPlant(ShipPart):
     power_per_ton: ClassVar[int]
     cost_per_ton: ClassVar[int]
     output: int
+    budget: bool = False
+    increased_size: bool = False
+    size_reduction: bool = False
 
     def build_item(self) -> str | None:
-        return f'Fusion (TL {self.minimum_tl})'
+        item = f'Fusion (TL {self.minimum_tl})'
+        if self.budget and self.increased_size:
+            item += ', Budget-Increased Size'
+        elif self.size_reduction:
+            item += ', Adv - Size Reduction'
+        return item
 
     def bulkhead_label(self) -> str:
         return 'Power Plant'
@@ -243,13 +262,24 @@ class _FusionPlant(ShipPart):
 
     @property
     def effective_tl(self):
-        return self.minimum_tl
+        return self.minimum_tl + (1 if self.size_reduction else 0)
 
     def compute_tons(self) -> float:
-        return self.output / self.power_per_ton
+        tons = self.output / self.power_per_ton
+        if self.increased_size:
+            tons *= 1.25
+        if self.size_reduction:
+            tons *= 0.9
+        return tons
 
     def compute_cost(self) -> float:
-        return self.compute_tons() * self.cost_per_ton
+        cost = (self.output / self.power_per_ton) * self.cost_per_ton
+        if self.budget:
+            cost *= 0.75
+        advantages = 1 if self.size_reduction else 0
+        if advantages == 1:
+            cost *= 1.10
+        return cost
 
 
 class FusionPlantTL8(_FusionPlant):
@@ -273,11 +303,35 @@ class FusionPlantTL15(_FusionPlant):
     cost_per_ton = 2_000_000
 
 
+class EmergencyPowerSystem(ShipPart):
+    @classmethod
+    def from_fusion_plant(cls, plant: _FusionPlant) -> EmergencyPowerSystem:
+        return cls()
+
+    def build_item(self) -> str | None:
+        return 'Emergency Power System'
+
+    @property
+    def source_plant(self) -> _FusionPlant:
+        power_section = getattr(self.owner, 'power', None)
+        plant = None if power_section is None else power_section.fusion_plant
+        if plant is None:
+            raise RuntimeError('EmergencyPowerSystem requires a fusion plant')
+        return plant
+
+    def compute_tons(self) -> float:
+        return self.source_plant.tons * 0.1
+
+    def compute_cost(self) -> float:
+        return self.source_plant.cost * 0.1
+
+
 class PowerSection(ShipPart):
     fusion_plant: FusionPlantTL8 | FusionPlantTL12 | FusionPlantTL15 | None = None
+    emergency_power_system: EmergencyPowerSystem | None = None
 
     def _all_parts(self) -> list[ShipPart]:
-        return [part for part in [self.fusion_plant] if part is not None]
+        return [part for part in [self.fusion_plant, self.emergency_power_system] if part is not None]
 
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
         if self.fusion_plant is not None:
@@ -289,3 +343,5 @@ class PowerSection(ShipPart):
                     emphasize_power=True,
                 )
             )
+        if self.emergency_power_system is not None:
+            spec.add_row(ship._spec_row_for_part(SpecSection.POWER, self.emergency_power_system))

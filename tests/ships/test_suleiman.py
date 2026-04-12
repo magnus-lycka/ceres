@@ -266,6 +266,7 @@ def test_suleiman_spec_structure():
 
     assert any(c.role == 'ENGINEER' and c.quantity is None and c.salary == 4_000 for c in spec.crew)
     assert any(c.role == 'GUNNER' and c.quantity is None and c.salary == 2_000 for c in spec.crew)
+    assert any(c.role == 'PILOT' and c.quantity is None and c.salary == 6_000 for c in spec.crew)
 
 
 def test_suleiman_markdown_output():

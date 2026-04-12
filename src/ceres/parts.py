@@ -69,6 +69,9 @@ class ShipPart(CeresModel):
     def bulkhead_label(self) -> str:
         return self.build_item() or self.__class__.__name__
 
+    def bulkhead_protected_tonnage(self) -> float:
+        return self.tons
+
     def _refresh_armoured_bulkhead(self, owner: ShipBase) -> None:
         if not self.armoured_bulkhead:
             self._armoured_bulkhead_part = None
@@ -76,7 +79,7 @@ class ShipPart(CeresModel):
         from .hull import ArmouredBulkhead
 
         bulkhead = ArmouredBulkhead(
-            protected_tonnage=self.tons,
+            protected_tonnage=self.bulkhead_protected_tonnage(),
             protected_item=self.bulkhead_label(),
             from_ship_part=True,
         )

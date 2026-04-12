@@ -1,7 +1,7 @@
 import pytest
 
 from ceres.base import ShipBase
-from ceres.habitation import LowBerths, Staterooms
+from ceres.habitation import AdvancedEntertainmentSystem, CabinSpace, LowBerths, Staterooms
 
 
 class DummyOwner(ShipBase):
@@ -51,3 +51,16 @@ def test_low_berths_power():
     assert LowBerths(count=1).compute_power() == 1   # ceil(1/10)
     assert LowBerths(count=10).compute_power() == 1
     assert LowBerths(count=11).compute_power() == 2
+
+
+def test_cheap_advanced_entertainment_system_cost():
+    system = AdvancedEntertainmentSystem(quality='cheap')
+    system.bind(DummyOwner(12, 100))
+    assert system.tons == 0
+    assert system.cost == 500.0
+
+
+def test_cabin_space_cost():
+    cabin = CabinSpace(tons=15.0)
+    cabin.bind(DummyOwner(12, 100))
+    assert cabin.cost == 750_000.0

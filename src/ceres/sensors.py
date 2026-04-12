@@ -101,7 +101,7 @@ class CountermeasuresSuite(ShipPart):
         return 4_000_000.0
 
     def compute_power(self) -> float:
-        return 2.0
+        return 1.0
 
 
 class SensorStations(ShipPart):
@@ -111,6 +111,11 @@ class SensorStations(ShipPart):
         if self.count == 1:
             return 'Sensor Station'
         return 'Sensor Stations'
+
+    def bulkhead_label(self) -> str:
+        if self.count == 1:
+            return 'Sensor Station'
+        return f'Sensor Stations × {self.count}'
 
     def compute_tons(self) -> float:
         return float(self.count)
@@ -163,7 +168,23 @@ class ExtendedArrays(ShipPart):
         return self._primary_suite.cost * 2
 
     def compute_power(self) -> float:
-        return self._primary_suite.power * 2
+        return self._primary_suite.power * 3
+
+
+class RapidDeploymentExtendedArrays(ExtendedArrays):
+    description: Literal['Rapid Deployment Extended Arrays'] = 'Rapid Deployment Extended Arrays'
+
+    def build_item(self) -> str | None:
+        return self.description
+
+    def build_notes(self) -> list[Note]:
+        return [
+            Note(category=NoteCategory.INFO, message='Can expend Thrust or jump in the same round'),
+            Note(category=NoteCategory.INFO, message='DM +2 to detect ship while in use'),
+        ]
+
+    def compute_cost(self) -> float:
+        return self._primary_suite.cost * 4
 
 
 ShipSensors = Annotated[
@@ -176,7 +197,7 @@ class SensorsSection(CeresModel):
     primary: ShipSensors = Field(default_factory=BasicSensors)
     countermeasures: CountermeasuresSuite | None = None
     signal_processing: EnhancedSignalProcessing | None = None
-    extended_arrays: ExtendedArrays | None = None
+    extended_arrays: ExtendedArrays | RapidDeploymentExtendedArrays | None = None
     sensor_stations: SensorStations | None = None
 
     def _all_parts(self) -> list[ShipPart]:

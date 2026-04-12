@@ -187,7 +187,7 @@ def test_dragon_modeled_subset_matches_current_model():
     assert dragon.weapons.barbettes[0].build_item() == 'Particle Barbette'
     assert dragon.weapons.barbettes[0].tons == pytest.approx(5.0)
     assert len(dragon.weapons.bays) == 1
-    assert dragon.weapons.bays[0].build_item() == 'Small Missile Bay, Adv - Size Reduction x3'
+    assert dragon.weapons.bays[0].build_item() == 'Small Missile Bay, Adv - Size Reduction × 3'
     assert dragon.weapons.bays[0].tons == pytest.approx(35.0)
     assert dragon.weapons.bays[0].cost == pytest.approx(18_000_000)
     assert len(dragon.weapons.point_defense_batteries) == 1
@@ -226,9 +226,9 @@ def test_dragon_power_and_crew_for_current_subset():
     assert dragon.available_power == pytest.approx(450.0)
     assert dragon.basic_hull_power_load == pytest.approx(80.0)
     assert dragon.maneuver_power_load == pytest.approx(280.0)
-    assert dragon.sensor_power_load == pytest.approx(13.0)
+    assert dragon.sensor_power_load == pytest.approx(15.0)
     assert dragon.weapon_power_load == pytest.approx(55.0)
-    assert dragon.total_power_load == pytest.approx(433.0)
+    assert dragon.total_power_load == pytest.approx(435.0)
 
     assert [(role.role, role.count, role.monthly_salary) for role in dragon.crew_roles] == [
         ('PILOT', 3, 6_000),
@@ -252,9 +252,9 @@ def test_dragon_markdown_output():
     assert '|  | • Critical hit severity reduced by 1 if >1 |  |  |  |' in table
     bulkhead_note = (
         '|  | • M-Drive, Power Plant, Operation Fuel, Bridge, Improved, Countermeasures Suite, '
-        'Enhanced Signal Processing, Extended Arrays, Sensor Stations, Particle Barbette, Particle Barbette, '
+        'Enhanced Signal Processing, Extended Arrays, Sensor Stations × 2, Particle Barbette × 2, '
         'Small Missile Bay, '
-        'Adv - Size Reduction x3, Point Defense Battery: Type II-L, Missile Storage (480) |  |  |  |'
+        'Adv - Size Reduction × 3, Point Defense Battery: Type II-L, Missile Storage (480) |  |  |  |'
     )
     assert bulkhead_note in table
     assert '| Propulsion | M-Drive 7 | 28.00 | 280.00 | 56000.00 |' in table
@@ -263,10 +263,10 @@ def test_dragon_markdown_output():
     assert '| Computer | Computer/25/fib |  |  | 15000.00 |' in table
     assert '|  | Backup Computer/20/fib |  |  | 7500.00 |' in table
     assert '|  | Enhanced Signal Processing | 2.00 | 2.00 | 8000.00 |' in table
-    assert '|  | Extended Arrays | 6.00 | 6.00 | 8600.00 |' in table
+    assert '|  | Extended Arrays | 6.00 | 9.00 | 8600.00 |' in table
     assert '|  | Sensor Stations × 2 | 2.00 |  | 1000.00 |' in table
     assert '| Weapons | Particle Barbette × 2 | 10.00 | 30.00 | 16000.00 |' in table
-    assert '|  | Small Missile Bay, Adv - Size Reduction x3 | 35.00 | 5.00 | 18000.00 |' in table
+    assert '|  | Small Missile Bay, Adv - Size Reduction × 3 | 35.00 | 5.00 | 18000.00 |' in table
     assert '|  | Point Defense Battery: Type II-L | 20.00 | 20.00 | 10000.00 |' in table
     assert '| Systems | Crew Armory: Supports 25 Crew | 1.00 |  | 250.00 |' in table
     assert '|  | Biosphere | 4.00 | 4.00 | 800.00 |' in table

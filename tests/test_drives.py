@@ -4,6 +4,7 @@ from ceres import hull, ship
 from ceres.base import ShipBase
 from ceres.drives import (
     DriveSection,
+    EmergencyPowerSystem,
     FusionPlantTL8,
     FusionPlantTL12,
     FusionPlantTL15,
@@ -17,6 +18,7 @@ from ceres.drives import (
     JumpDrive8,
     JumpDrive9,
     MDrive6,
+    MDrive7,
     PowerSection,
 )
 from ceres.storage import FuelSection, OperationFuel
@@ -73,6 +75,14 @@ def test_mdrive_power():
     d = MDrive6()
     d.bind(DummyOwner(12, 6))
     assert d.power == 4  # ceil(0.1 * 6 * 6) = ceil(3.6) = 4
+
+
+def test_budget_increased_size_mdrive_values():
+    d = MDrive7(budget=True, increased_size=True)
+    d.bind(DummyOwner(13, 400))
+    assert d.build_item() == 'M-Drive 7, Budget-Increased Size'
+    assert float(d.tons) == pytest.approx(35.0)
+    assert float(d.cost) == pytest.approx(42_000_000.0)
 
 
 def test_drive_section_all_parts():
@@ -159,6 +169,41 @@ def test_fusion_plant_tl15_variant():
     assert p.effective_tl == 15
     assert float(p.tons) == pytest.approx(0.4)
     assert float(p.cost) == pytest.approx(800_000)
+
+
+def test_budget_increased_size_fusion_plant_values():
+    p = FusionPlantTL12(output=482, budget=True, increased_size=True)
+    p.bind(DummyOwner(13, 400))
+    assert p.build_item() == 'Fusion (TL 12), Budget-Increased Size'
+    assert float(p.tons) == pytest.approx(40.1666666667)
+    assert float(p.cost) == pytest.approx(24_100_000.0)
+
+
+def test_size_reduced_fusion_plant_values():
+    p = FusionPlantTL12(output=436, size_reduction=True)
+    p.bind(DummyOwner(13, 400))
+    assert p.build_item() == 'Fusion (TL 12), Adv - Size Reduction'
+    assert float(p.tons) == pytest.approx(26.16)
+    assert float(p.cost) == pytest.approx(31_973_333.3333)
+
+
+def test_emergency_power_system_values():
+    my_ship = ship.Ship(
+        tl=13,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        power=PowerSection(
+            fusion_plant=FusionPlantTL12(output=436, size_reduction=True),
+            emergency_power_system=EmergencyPowerSystem.from_fusion_plant(
+                FusionPlantTL12(output=436, size_reduction=True)
+            ),
+        ),
+    )
+    assert my_ship.power is not None
+    eps = my_ship.power.emergency_power_system
+    assert eps is not None
+    assert eps.tons == pytest.approx(2.616)
+    assert eps.cost == pytest.approx(3_197_333.3333)
 
 
 def test_fusion_plant_rejects_ship_below_minimum_tl():

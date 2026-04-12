@@ -23,12 +23,22 @@ def _size_reduction_steps(value: bool | int) -> int:
     return 1 if value is True else int(value)
 
 
-def _weapon_item(base_item: str, *, size_reduction: int = 0) -> str:
+def _weapon_item(
+    base_item: str,
+    *,
+    size_reduction: int = 0,
+    energy_efficient: bool = False,
+    very_high_yield: bool = False,
+) -> str:
     parts = [base_item]
     if size_reduction == 1:
         parts.append('Adv - Size Reduction')
     elif size_reduction > 1:
-        parts.append(f'Adv - Size Reduction x{size_reduction}')
+        parts.append(f'Adv - Size Reduction × {size_reduction}')
+    if energy_efficient:
+        parts.append('Adv - Energy Efficient')
+    if very_high_yield:
+        parts.append('VAdv - Very High Yield')
     return ', '.join(parts)
 
 
@@ -235,6 +245,7 @@ BARBETTE_SPECS: dict[BarbetteWeapon, dict[str, float | int | str]] = {
 class Barbette(ShipPart):
     weapon: BarbetteWeapon
     size_reduction: int = 0
+    very_high_yield: bool = False
 
     def model_post_init(self, __context) -> None:
         object.__setattr__(self, 'size_reduction', _size_reduction_steps(self.size_reduction))
@@ -244,6 +255,7 @@ class Barbette(ShipPart):
         return _weapon_item(
             str(BARBETTE_SPECS[self.weapon]['item']),
             size_reduction=self.size_reduction,
+            very_high_yield=self.very_high_yield,
         )
 
     @property
@@ -269,10 +281,8 @@ class Barbette(ShipPart):
         return _modified_weapon_tons(5.0, size_reduction=self.size_reduction)
 
     def compute_cost(self) -> float:
-        return _modified_weapon_cost(
-            float(BARBETTE_SPECS[self.weapon]['cost']),
-            size_reduction=self.size_reduction,
-        )
+        advantages = self.size_reduction + (2 if self.very_high_yield else 0)
+        return float(BARBETTE_SPECS[self.weapon]['cost']) * _customisation_cost_multiplier(advantages)
 
     def compute_power(self) -> float:
         return float(BARBETTE_SPECS[self.weapon]['power'])
@@ -429,6 +439,7 @@ class PointDefenseBattery(ShipPart):
     kind: PointDefenseKind
     rating: PointDefenseRating
     size_reduction: int = 0
+    energy_efficient: bool = False
 
     def model_post_init(self, __context) -> None:
         object.__setattr__(self, 'size_reduction', _size_reduction_steps(self.size_reduction))
@@ -438,6 +449,7 @@ class PointDefenseBattery(ShipPart):
         return _weapon_item(
             str(POINT_DEFENSE_SPECS[self.kind][self.rating]['item']),
             size_reduction=self.size_reduction,
+            energy_efficient=self.energy_efficient,
         )
 
     def build_notes(self) -> list[Note]:
@@ -470,13 +482,14 @@ class PointDefenseBattery(ShipPart):
         )
 
     def compute_cost(self) -> float:
-        return _modified_weapon_cost(
-            float(POINT_DEFENSE_SPECS[self.kind][self.rating]['cost']),
-            size_reduction=self.size_reduction,
-        )
+        advantages = self.size_reduction + (1 if self.energy_efficient else 0)
+        return float(POINT_DEFENSE_SPECS[self.kind][self.rating]['cost']) * _customisation_cost_multiplier(advantages)
 
     def compute_power(self) -> float:
-        return float(POINT_DEFENSE_SPECS[self.kind][self.rating]['power'])
+        power = float(POINT_DEFENSE_SPECS[self.kind][self.rating]['power'])
+        if self.energy_efficient:
+            power *= 0.75
+        return power
 
 
 class WeaponsSection(CeresModel):

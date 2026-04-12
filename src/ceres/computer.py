@@ -242,6 +242,7 @@ class Computer(ShipPart):
     base_cost: ClassVar[float]
     bis: bool = False
     fib: bool = False
+    retro: bool = False
 
     def build_item(self) -> str | None:
         item = self.description
@@ -249,6 +250,8 @@ class Computer(ShipPart):
             item += '/bis'
         if self.fib:
             item += '/fib'
+        if self.retro:
+            item += ', (Retro*)'
         return item
 
     @property
@@ -285,7 +288,10 @@ class Computer(ShipPart):
             multiplier += 0.5
         if self.fib:
             multiplier += 0.5
-        return self.base_cost * multiplier
+        cost = self.base_cost * multiplier
+        if self.retro:
+            cost *= 0.5 ** max(self.ship_tl - self.minimum_tl, 0)
+        return cost
 
 
 class Computer5(Computer):

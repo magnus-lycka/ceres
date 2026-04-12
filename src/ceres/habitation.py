@@ -47,10 +47,39 @@ class LowBerths(ShipPart):
         return float(math.ceil(self.count / 10))
 
 
+class AdvancedEntertainmentSystem(ShipPart):
+    quality: str
+
+    def build_item(self) -> str | None:
+        return f'{self.quality.capitalize()} Advanced Entertainment System'
+
+    def compute_tons(self) -> float:
+        return 0.0
+
+    def compute_cost(self) -> float:
+        quality_costs = {
+            'cheap': 500.0,
+            'adequate': 1_250.0,
+        }
+        return quality_costs[self.quality]
+
+
+class CabinSpace(ShipPart):
+    tons: float
+
+    def build_item(self) -> str | None:
+        return 'Cabin Space'
+
+    def compute_cost(self) -> float:
+        return self.tons * 50_000.0
+
+
 class HabitationSection(CeresModel):
     staterooms: Staterooms | None = None
+    cabin_space: CabinSpace | None = None
     low_berths: LowBerths | None = None
     common_area: CommonArea | None = None
+    entertainment: AdvancedEntertainmentSystem | None = None
 
     def validate_common_area(self) -> None:
         if self.staterooms is None:
@@ -62,7 +91,7 @@ class HabitationSection(CeresModel):
 
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = []
-        for part in (self.staterooms, self.low_berths, self.common_area):
+        for part in (self.staterooms, self.cabin_space, self.low_berths, self.common_area, self.entertainment):
             if part is not None:
                 parts.append(part)
         return parts
@@ -90,7 +119,10 @@ class HabitationSection(CeresModel):
             spec.rows_for_section(SpecSection.HABITATION)[-1].quantity = (
                 self.low_berths.count if self.low_berths.count > 1 else None
             )
-        for habitation_part in [part for part in [self.common_area] if part is not None]:
+        habitation_parts = [
+            part for part in [self.cabin_space, self.common_area, self.entertainment] if part is not None
+        ]
+        for habitation_part in habitation_parts:
             spec.add_row(ship._spec_row_for_part(SpecSection.HABITATION, habitation_part))
         habitation_rows = spec.rows_for_section(SpecSection.HABITATION)
         if habitation_rows:

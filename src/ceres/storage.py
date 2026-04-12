@@ -33,6 +33,10 @@ class OperationFuel(ShipPart):
         return 'Operation Fuel'
 
     def compute_tons(self) -> float:
+        total = self._raw_tons()
+        return math.ceil(total * 100 - 1e-9) / 100
+
+    def _raw_tons(self) -> float:
         power = getattr(self.owner, 'power', None)
         plant = None if power is None else power.fusion_plant
         if plant is None:
@@ -41,8 +45,10 @@ class OperationFuel(ShipPart):
         pp_tons = plant.tons
         monthly = 0.10 * pp_tons
         weekly = monthly / 4
-        total = weekly * self.weeks
-        return math.ceil(total * 100 - 1e-9) / 100
+        return weekly * self.weeks
+
+    def bulkhead_protected_tonnage(self) -> float:
+        return self._raw_tons()
 
     def compute_cost(self) -> float:
         return 0.0
@@ -65,7 +71,7 @@ class FuelProcessor(ShipPart):
     tons: float
 
     def build_item(self) -> str | None:
-        return f'Fuel Processor ({self.tons:g} tons/day)'
+        return f'Fuel Processor ({self.tons * 20:g} tons/day)'
 
     def compute_cost(self) -> float:
         return self.tons * 50_000

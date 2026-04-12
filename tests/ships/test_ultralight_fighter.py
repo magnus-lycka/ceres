@@ -14,6 +14,7 @@ from ._markdown_output import write_markdown_output
 def build_ultralight_fighter() -> ship.Ship:
     return ship.Ship(
         ship_class='Botfly',
+        military=True,
         ship_type='Ultralight Fighter',
         tl=12,
         displacement=6,

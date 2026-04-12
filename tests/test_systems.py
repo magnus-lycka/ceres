@@ -3,6 +3,7 @@ from ceres.base import ShipBase
 from ceres.storage import FuelScoops, FuelSection
 from ceres.systems import (
     Airlock,
+    BasicAutodoc,
     Biosphere,
     CommonArea,
     CrewArmory,
@@ -108,6 +109,13 @@ def test_medical_bay_power():
     m = MedicalBay()
     m.bind(DummyOwner(12, 200))
     assert m.power == 1.0
+
+
+def test_medical_bay_with_basic_autodoc_cost():
+    m = MedicalBay(autodoc=BasicAutodoc())
+    m.bind(DummyOwner(12, 200))
+    assert m.tons == 4.0
+    assert m.cost == 2_100_000.0
 
 
 def test_fuel_scoops_auto_included_for_streamlined_hull():

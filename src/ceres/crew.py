@@ -56,6 +56,14 @@ def _drives_and_power_tonnage(ship) -> float:
     return tons
 
 
+def _carried_small_craft_count(ship) -> int:
+    if ship.craft is None:
+        return 0
+    if ship.craft.docking_space is None:
+        return 0
+    return 1 if ship.craft.docking_space.craft.requires_pilot else 0
+
+
 def _commercial_gunner_count(ship) -> int:
     if ship.weapons is None:
         return 0
@@ -84,7 +92,13 @@ def _commercial_roles(ship) -> list[CrewRole]:
     if ship.displacement <= 100 and (ship.drives is None or ship.drives.jump_drive is None):
         return [CrewRole(role='PILOT', count=1, monthly_salary=PILOT_SALARY)]
 
-    roles: list[CrewRole] = [CrewRole(role='PILOT', count=1, monthly_salary=PILOT_SALARY)]
+    roles: list[CrewRole] = [
+        CrewRole(
+            role='PILOT',
+            count=1 + _carried_small_craft_count(ship),
+            monthly_salary=PILOT_SALARY,
+        )
+    ]
 
     if ship.drives is not None and ship.drives.jump_drive is not None:
         roles.append(CrewRole(role='ASTROGATOR', count=1, monthly_salary=ASTROGATOR_SALARY))
@@ -134,7 +148,16 @@ def _commercial_roles(ship) -> list[CrewRole]:
 
 
 def _military_roles(ship) -> list[CrewRole]:
-    roles: list[CrewRole] = [CrewRole(role='PILOT', count=3, monthly_salary=PILOT_SALARY)]
+    if ship.displacement <= 100 and (ship.drives is None or ship.drives.jump_drive is None):
+        return [CrewRole(role='PILOT', count=1, monthly_salary=PILOT_SALARY)]
+
+    roles: list[CrewRole] = [
+        CrewRole(
+            role='PILOT',
+            count=3 + _carried_small_craft_count(ship),
+            monthly_salary=PILOT_SALARY,
+        )
+    ]
 
     if ship.drives is not None and ship.drives.jump_drive is not None:
         roles.append(CrewRole(role='ASTROGATOR', count=1, monthly_salary=ASTROGATOR_SALARY))

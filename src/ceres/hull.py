@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from enum import Enum
 from typing import Annotated, ClassVar, Literal
 
@@ -270,7 +271,11 @@ class Hull(CeresModel):
                 Note(category=NoteCategory.INFO, message='Critical hit severity reduced by 1 if >1'),
             ]
             if protected_items:
-                notes.append(Note(category=NoteCategory.INFO, message=', '.join(protected_items)))
+                grouped_items: OrderedDict[str, int] = OrderedDict()
+                for item in protected_items:
+                    grouped_items[item] = grouped_items.get(item, 0) + 1
+                grouped_labels = [f'{item} × {count}' if count > 1 else item for item, count in grouped_items.items()]
+                notes.append(Note(category=NoteCategory.INFO, message=', '.join(grouped_labels)))
             spec.add_row(
                 SpecRow(
                     section=SpecSection.HULL,

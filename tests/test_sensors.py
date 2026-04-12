@@ -9,6 +9,7 @@ from ceres.sensors import (
     ExtendedArrays,
     ImprovedSensors,
     MilitarySensors,
+    RapidDeploymentExtendedArrays,
     SensorsSection,
     SensorStations,
 )
@@ -100,6 +101,7 @@ def test_sensor_stations_scale_with_count():
     s.bind(DummyOwner(12, 400))
     assert s.tons == 2
     assert s.cost == 1_000_000
+    assert s.power == 0
 
 
 def test_sensor_stations_can_generate_armoured_bulkhead():
@@ -136,4 +138,20 @@ def test_extended_arrays_add_twice_primary_sensor_values():
     s.bind(owner)
     assert s.tons == 6
     assert s.cost == 8_600_000
-    assert s.power == 6
+    assert s.power == 9
+
+
+def test_rapid_deployment_extended_arrays_values():
+    s = RapidDeploymentExtendedArrays()
+    owner = ship.Ship(
+        tl=13,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        sensors=SensorsSection(primary=ImprovedSensors()),
+    )
+    owner.sensors.primary.bind(owner)
+    s.bind(owner)
+    assert s.build_item() == 'Rapid Deployment Extended Arrays'
+    assert s.tons == 6
+    assert s.cost == 17_200_000
+    assert s.power == 9

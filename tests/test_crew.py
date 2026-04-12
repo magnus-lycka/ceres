@@ -1,6 +1,7 @@
 from ceres import hull, ship
 from ceres.bridge import Bridge, CommandSection
 from ceres.computer import Computer5, ComputerSection
+from ceres.crafts import AirRaft, CarriedCraft, CraftSection, InternalDockingSpace
 from ceres.crew import CrewRole, required_crew_roles
 from ceres.drives import DriveSection, FusionPlantTL12, JumpDrive1, MDrive1, MDrive2, PowerSection
 from ceres.sensors import SensorsSection, SensorStations
@@ -101,6 +102,57 @@ def test_military_ship_uses_military_pilot_and_gunner_rules():
         ('PILOT', 3),
         ('ENGINEER', 1),
         ('GUNNER', 4),
+    ]
+
+
+def test_commercial_ship_gets_extra_pilot_for_carried_small_craft():
+    class ShipBoat(CarriedCraft):
+        shipping_size: int = 10
+        cost: float = 1_000_000.0
+
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        drives=DriveSection(m_drive=MDrive2(), jump_drive=JumpDrive1()),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer5()),
+        craft=CraftSection(docking_space=InternalDockingSpace(craft=ShipBoat())),
+    )
+
+    assert ('PILOT', 2) in [(role.role, role.count) for role in required_crew_roles(my_ship)]
+
+
+def test_air_raft_does_not_add_extra_pilot():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        drives=DriveSection(m_drive=MDrive2(), jump_drive=JumpDrive1()),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer5()),
+        craft=CraftSection(docking_space=InternalDockingSpace(craft=AirRaft())),
+    )
+
+    assert ('PILOT', 1) in [(role.role, role.count) for role in required_crew_roles(my_ship)]
+
+
+def test_military_small_non_jump_craft_still_uses_single_pilot():
+    my_ship = ship.Ship(
+        tl=12,
+        military=True,
+        displacement=6,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        drives=DriveSection(m_drive=MDrive2()),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=8)),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer5()),
+    )
+
+    assert [(role.role, role.count) for role in required_crew_roles(my_ship)] == [
+        ('PILOT', 1),
     ]
 
 

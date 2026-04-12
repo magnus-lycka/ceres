@@ -8,6 +8,7 @@ from .spec import ShipSpec, SpecRow, SpecSection
 class CarriedCraft(CeresModel):
     shipping_size: int
     cost: float
+    requires_pilot: bool = True
     model_config = {'frozen': True}
 
     def build_item(self) -> str | None:
@@ -17,13 +18,14 @@ class CarriedCraft(CeresModel):
 class AirRaft(CarriedCraft):
     shipping_size: int = 4
     cost: float = 250_000.0
+    requires_pilot: bool = False
 
     def build_item(self) -> str | None:
         return 'Air/Raft'
 
 
 class InternalDockingSpace(ShipPart):
-    craft: AirRaft
+    craft: CarriedCraft
 
     def build_item(self) -> str | None:
         return f'Internal Docking Space: {self.craft.build_item()}'

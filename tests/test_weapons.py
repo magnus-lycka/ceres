@@ -141,6 +141,15 @@ def test_particle_barbette_values():
     assert barbette.cost == pytest.approx(8_000_000)
 
 
+def test_particle_barbette_very_high_yield_values():
+    barbette = Barbette(weapon='particle', very_high_yield=True)
+    barbette.bind(DummyOwner(13, 400))
+    assert barbette.build_item() == 'Particle Barbette, VAdv - Very High Yield'
+    assert barbette.tons == pytest.approx(5.0)
+    assert barbette.cost == pytest.approx(10_000_000)
+    assert barbette.power == pytest.approx(15.0)
+
+
 def test_small_missile_bay_values():
     bay = Bay(size='small', weapon='missile')
     bay.bind(DummyOwner(12, 1_000))
@@ -161,7 +170,7 @@ def test_small_missile_bay_size_reduction_values():
 def test_small_missile_bay_three_size_reduction_steps_values():
     bay = Bay(size='small', weapon='missile', size_reduction=3)
     bay.bind(DummyOwner(13, 1_000))
-    assert bay.build_item() == 'Small Missile Bay, Adv - Size Reduction x3'
+    assert bay.build_item() == 'Small Missile Bay, Adv - Size Reduction × 3'
     assert bay.tons == pytest.approx(35.0)
     assert bay.cost == pytest.approx(18_000_000)
 
@@ -190,6 +199,15 @@ def test_type_ii_laser_point_defense_battery_item_values():
     assert battery.build_item() == 'Point Defense Battery: Type II-L'
     assert battery.tons == pytest.approx(20.0)
     assert battery.cost == pytest.approx(10_000_000)
+
+
+def test_type_ii_laser_point_defense_battery_energy_efficient_values():
+    battery = PointDefenseBattery(kind='laser', rating=2, energy_efficient=True)
+    battery.bind(DummyOwner(13, 1_000))
+    assert battery.build_item() == 'Point Defense Battery: Type II-L, Adv - Energy Efficient'
+    assert battery.tons == pytest.approx(20.0)
+    assert battery.cost == pytest.approx(11_000_000.0)
+    assert battery.power == pytest.approx(15.0)
 
 
 def test_missile_storage_can_generate_armoured_bulkhead():

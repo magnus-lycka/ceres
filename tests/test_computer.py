@@ -1,3 +1,5 @@
+import pytest
+
 from ceres.base import ShipBase
 from ceres.computer import (
     AutoRepair,
@@ -105,6 +107,13 @@ def test_core_40_hardware():
     assert c.processing == 40
     assert c.jump_control_processing == 40
     assert c.cost == 45_000_000
+
+
+def test_core_40_retro_hardware():
+    c = Core40(fib=True, retro=True)
+    c.bind(DummyOwner(13, 100))
+    assert c.build_item() == 'Core/40/fib, (Retro*)'
+    assert c.cost == pytest.approx(4_218_750.0)
 
 
 def test_included_software_packages():
