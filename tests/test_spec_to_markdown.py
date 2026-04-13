@@ -145,3 +145,13 @@ def test_crew_quantity_rendered_as_role_times_quantity():
     )
     table = my_ship.markdown_table()
     assert '| PILOT × 3 | 18,000 |' in table
+
+
+def test_passenger_table_present_when_passengers_exist():
+    my_ship = _minimal_ship(
+        habitation=HabitationSection(staterooms=Staterooms(count=2)),
+        passenger_vector={'middle': 2},
+    )
+    table = my_ship.markdown_table()
+    assert '| Passengers |' in table
+    assert '| MIDDLE × 2 |' in table

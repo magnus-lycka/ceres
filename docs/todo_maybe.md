@@ -71,11 +71,17 @@ Current status:
 - protection target shown in spec notes
 - treated as a ship-design/spec concern, not as combat simulation logic
 
-## Limit TL
+## Limit TL [done]
 
 Make a note in ARCHITECTURE.md that support is limited to TL16 and lower, and
 stick to that when writing code. For now we cap ship TL to 16 and don't bother
 to implement TL17+ features.
+
+Current status:
+
+- `ARCHITECTURE.md` now states the TL16 cap explicitly
+- `Ship` now rejects `tl > 16`
+- TL17+ features are intentionally out of scope for now
 
 ## Sort out weapons.py [doing]
 

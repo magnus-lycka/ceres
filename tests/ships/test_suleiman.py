@@ -261,7 +261,8 @@ def test_suleiman_spec_structure():
 
     assert spec.expenses[1].label == 'Sales Price New'
     assert spec.expenses[1].amount == 36_940_500
-    assert any(e.label == 'Life Support' and e.amount == 11_000 for e in spec.expenses)
+    assert any(e.label == 'Life Support Facilities' and e.amount == 4_000 for e in spec.expenses)
+    assert any(e.label == 'Life Support People' and e.amount == 7_000 for e in spec.expenses)
     assert any(e.label == 'Fuel' and e.amount == 0 for e in spec.expenses)
     assert any(e.label == 'Crew Salaries' and e.amount == 18_000 for e in spec.expenses)
 
@@ -269,6 +270,7 @@ def test_suleiman_spec_structure():
     assert any(c.role == 'MAINTENANCE' and c.quantity is None and c.salary == 1_000 for c in spec.crew)
     assert any(c.role == 'GUNNER' and c.quantity is None and c.salary == 2_000 for c in spec.crew)
     assert any(c.role == 'PILOT' and c.quantity is None and c.salary == 6_000 for c in spec.crew)
+    assert any(p.kind == 'MIDDLE' and p.quantity == 2 for p in spec.passengers)
 
 
 def test_suleiman_markdown_output():

@@ -49,6 +49,12 @@ class CrewRow:
 
 
 @dataclass
+class PassengerRow:
+    kind: str
+    quantity: int
+
+
+@dataclass
 class ShipSpec:
     ship_class: str | None = None
     ship_type: str | None = None
@@ -57,6 +63,7 @@ class ShipSpec:
     _sections: dict[SpecSection, list[SpecRow]] = field(default_factory=dict)
     expenses: list[ExpenseRow] = field(default_factory=list)
     crew: list[CrewRow] = field(default_factory=list)
+    passengers: list[PassengerRow] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         for section in SpecSection:

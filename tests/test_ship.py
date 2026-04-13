@@ -39,6 +39,15 @@ def test_ship_needs_tech_level():
         ship.Ship.model_validate(dict(hull=hull.Hull(configuration=hull.sphere), displacement=100))
 
 
+def test_ship_rejects_tl_above_16():
+    with pytest.raises(ValueError, match='TL16 and lower'):
+        ship.Ship(
+            tl=17,
+            displacement=100,
+            hull=hull.Hull(configuration=hull.sphere),
+        )
+
+
 def test_ship_initial_bulky():
     my_ship = ship.Ship(
         tl=15,

@@ -4,7 +4,6 @@ from ceres import hull, ship
 from ceres.bridge import Bridge, CommandSection
 from ceres.computer import Computer5, ComputerSection
 from ceres.drives import DriveSection, FusionPlantTL8, FusionPlantTL12, JumpDrive2, MDrive1, MDrive2, PowerSection
-from ceres.expense import expense_rows, fuel_cost, life_support_cost, maintenance_cost, mortgage_cost, production_cost
 from ceres.habitation import HabitationSection, Staterooms
 from ceres.storage import FuelProcessor, FuelSection, JumpFuel, OperationFuel
 
@@ -30,27 +29,47 @@ def build_small_jump_ship() -> ship.Ship:
 def test_production_cost_matches_ship_property():
     my_ship = build_small_jump_ship()
 
-    assert production_cost(my_ship) == pytest.approx(my_ship.production_cost)
+    assert my_ship.expenses.production_cost == pytest.approx(my_ship.production_cost)
 
 
 def test_operating_expense_components_match_ship_helpers():
     my_ship = build_small_jump_ship()
 
-    assert mortgage_cost(my_ship) == pytest.approx(my_ship._mortgage_cost())
-    assert maintenance_cost(my_ship) == pytest.approx(my_ship._maintenance_cost())
-    assert life_support_cost(my_ship) == pytest.approx(my_ship._life_support_cost())
-    assert fuel_cost(my_ship) == pytest.approx(my_ship._fuel_cost())
+    assert my_ship.expenses.mortgage == pytest.approx(my_ship.expenses.mortgage)
+    assert my_ship.expenses.maintenance == pytest.approx(my_ship.expenses.maintenance)
+    assert my_ship.expenses.life_support == pytest.approx(
+        my_ship.expenses.life_support_facilities + my_ship.expenses.life_support_people
+    )
+    assert my_ship.expenses.fuel == pytest.approx(my_ship.expenses.fuel)
+
+
+def test_ship_expenses_object_exposes_rows_and_total():
+    my_ship = build_small_jump_ship()
+
+    assert [row.label for row in my_ship.expenses.rows] == [
+        'Production Cost',
+        'Sales Price New',
+        'Mortgage',
+        'Maintenance',
+        'Life Support Facilities',
+        'Life Support People',
+        'Fuel',
+        'Crew Salaries',
+        'Total Expenses',
+    ]
+    assert my_ship.expenses.total == pytest.approx(my_ship.expenses.rows[-1].amount)
 
 
 def test_expense_rows_include_expected_labels():
     my_ship = build_small_jump_ship()
 
-    assert [row.label for row in expense_rows(my_ship)] == [
+    assert [row.label for row in my_ship.expenses.rows] == [
         'Production Cost',
         'Sales Price New',
         'Mortgage',
         'Maintenance',
-        'Life Support',
+        'Life Support Facilities',
+        'Life Support People',
         'Fuel',
         'Crew Salaries',
         'Total Expenses',
@@ -69,7 +88,7 @@ def test_operation_fuel_contributes_monthly_unrefined_cost():
         computer=ComputerSection(hardware=Computer5()),
         habitation=HabitationSection(staterooms=Staterooms(count=1)),
     )
-    assert fuel_cost(my_ship) == pytest.approx(80.0)
+    assert my_ship.expenses.fuel == pytest.approx(80.0)
 
 
 def test_operation_fuel_cost_is_zero_with_scoops_and_no_jump_drive():
@@ -84,7 +103,7 @@ def test_operation_fuel_cost_is_zero_with_scoops_and_no_jump_drive():
         computer=ComputerSection(hardware=Computer5()),
         habitation=HabitationSection(staterooms=Staterooms(count=1)),
     )
-    assert fuel_cost(my_ship) == pytest.approx(0.0)
+    assert my_ship.expenses.fuel == pytest.approx(0.0)
 
 
 def test_jump_and_operation_fuel_cost_is_zero_with_scoops_and_processor():
@@ -93,7 +112,7 @@ def test_jump_and_operation_fuel_cost_is_zero_with_scoops_and_processor():
     assert my_ship.fuel is not None
     assert my_ship.fuel.fuel_scoops is not None
     assert my_ship.fuel.fuel_processor is not None
-    assert fuel_cost(my_ship) == pytest.approx(0.0)
+    assert my_ship.expenses.fuel == pytest.approx(0.0)
 
 
 def test_jump_drive_still_requires_refined_fuel_without_processor():
@@ -115,4 +134,4 @@ def test_jump_drive_still_requires_refined_fuel_without_processor():
     assert my_ship.fuel is not None
     assert my_ship.fuel.fuel_scoops is not None
     assert my_ship.fuel.fuel_processor is None
-    assert fuel_cost(my_ship) == pytest.approx(20_200.0)
+    assert my_ship.expenses.fuel == pytest.approx(20_200.0)

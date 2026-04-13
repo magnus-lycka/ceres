@@ -19,20 +19,13 @@ from .drives import (
     PowerSection,
 )
 from .expense import (
-    expense_rows,
-    fuel_cost,
-    life_support_cost,
-    maintenance_cost,
-    mortgage_cost,
-    production_cost,
-    sales_price_new,
-    total_expenses,
+    ShipExpenses,
 )
 from .habitation import HabitationSection
 from .hull import ArmouredBulkhead, Hull, Streamlined
 from .parts import ShipPart
 from .sensors import SensorsSection
-from .spec import ShipSpec, SpecRow, SpecSection
+from .spec import PassengerRow, ShipSpec, SpecRow, SpecSection
 from .storage import CargoSection, FuelScoops, FuelSection
 from .systems import SystemsSection
 from .weapons import WeaponsSection
@@ -139,29 +132,18 @@ class Ship(ShipBase):
 
     @property
     def production_cost(self) -> float:
-        return production_cost(self)
+        return self.expenses.production_cost
 
     @property
     def sales_price_new(self) -> float:
-        return sales_price_new(self)
+        return self.expenses.sales_price_new
+
+    @property
+    def expenses(self) -> ShipExpenses:
+        return ShipExpenses(self)
 
     def _crew_salary_cost(self) -> float:
         return crew_salary_cost(self)
-
-    def _mortgage_cost(self) -> float:
-        return mortgage_cost(self)
-
-    def _maintenance_cost(self) -> float:
-        return maintenance_cost(self)
-
-    def _life_support_cost(self) -> float:
-        return life_support_cost(self)
-
-    def _fuel_cost(self) -> float:
-        return fuel_cost(self)
-
-    def _total_expenses(self) -> float:
-        return total_expenses(self)
 
     @property
     def crew_roles(self) -> list[CrewRole]:
@@ -316,8 +298,13 @@ class Ship(ShipBase):
         for note in self.notes:
             spec.rows_for_section(SpecSection.CARGO)[-1].notes.append(note)
 
-        spec.expenses = expense_rows(self)
+        spec.expenses = self.expenses.rows
         spec.crew = spec_crew_rows(self)
+        if self.habitation is not None:
+            passenger_vector = self.habitation.passenger_vector(self)
+            spec.passengers = [
+                PassengerRow(kind=kind.upper(), quantity=count) for kind, count in passenger_vector.items() if count > 0
+            ]
         return spec
 
     def markdown_table(self) -> str:
@@ -390,9 +377,16 @@ class Ship(ShipBase):
                 role_text = c.role if c.quantity is None else f'{c.role} × {c.quantity}'
                 lines.append(f'| {role_text} | {round(c.salary):,} |')
 
+        if spec.passengers:
+            lines.extend(['', '| Passengers |', '| ------------ |'])
+            for p in spec.passengers:
+                lines.append(f'| {p.kind} × {p.quantity} |')
+
         return '\n'.join(lines)
 
     def model_post_init(self, __context: Any) -> None:
+        if self.tl > 16:
+            raise ValueError(f'Ceres currently supports TL16 and lower, got TL{self.tl}')
         if self.hull.configuration.streamlined == Streamlined.YES:
             if self.fuel is None:
                 object.__setattr__(self, 'fuel', FuelSection(fuel_scoops=FuelScoops(free=True)))

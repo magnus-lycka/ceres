@@ -36,6 +36,9 @@ technology variant rather than just a minimum availability threshold.
 `FusionPlant` is the primary example: it always uses its own fixed TL, not the
 ship's.
 
+Ceres currently supports ship TL16 and lower. We cap `ship.tl` at 16 and do
+not attempt to model TL17+ features for now.
+
 ### Notes and validation
 
 Errors, warnings, and informational messages are stored as `Note` objects on

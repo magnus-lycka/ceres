@@ -4,7 +4,6 @@ from ceres.computer import Computer5, ComputerSection
 from ceres.crafts import AirRaft, CarriedCraft, CraftSection, InternalDockingSpace
 from ceres.crew import CrewRole, required_crew_roles
 from ceres.drives import DriveSection, FusionPlantTL12, JumpDrive1, MDrive1, MDrive2, PowerSection
-from ceres.expense import life_support_cost
 from ceres.habitation import HabitationSection, LowBerths, Staterooms
 from ceres.sensors import SensorsSection, SensorStations
 from ceres.weapons import Barbette, Bay, Turret, WeaponsSection
@@ -270,7 +269,7 @@ def test_default_middle_passengers_use_only_unused_staterooms():
         crew_vector={'PILOT': 7},
     )
 
-    assert life_support_cost(my_ship) == 29_000
+    assert my_ship.expenses.life_support == 29_000
 
 
 def test_high_passage_uses_one_stateroom_each():
@@ -283,7 +282,7 @@ def test_high_passage_uses_one_stateroom_each():
         passenger_vector={'high': 2, 'middle': 2},
     )
 
-    assert life_support_cost(my_ship) == 10_000
+    assert my_ship.expenses.life_support == 10_000
 
 
 def test_low_passage_uses_low_berths():
@@ -296,4 +295,4 @@ def test_low_passage_uses_low_berths():
         passenger_vector={'low': 3},
     )
 
-    assert life_support_cost(my_ship) == 5_300
+    assert my_ship.expenses.life_support == 5_300

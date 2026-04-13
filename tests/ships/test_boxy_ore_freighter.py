@@ -71,4 +71,4 @@ def test_boxy_ore_freighter_tl9_mdrive_is_valid():
 
 def test_boxy_ore_freighter_operation_fuel_costs_80_per_month():
     freighter = build_boxy_ore_freighter()
-    assert freighter._fuel_cost() == pytest.approx(80.0)
+    assert freighter.expenses.fuel == pytest.approx(80.0)
