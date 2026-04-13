@@ -28,8 +28,16 @@ class Staterooms(ShipPart):
         return self.count * self.occupants_per_stateroom
 
     @property
+    def fixed_life_support_cost(self) -> float:
+        return self.count * self.life_support_per_stateroom
+
+    @property
+    def variable_life_support_cost(self) -> float:
+        return self.occupancy * self.life_support_per_occupant
+
+    @property
     def life_support_cost(self) -> float:
-        return self.count * self.life_support_per_stateroom + self.occupancy * self.life_support_per_occupant
+        return self.fixed_life_support_cost + self.variable_life_support_cost
 
 
 class LowBerths(ShipPart):
@@ -67,12 +75,22 @@ class AdvancedEntertainmentSystem(ShipPart):
 
 class CabinSpace(ShipPart):
     tons: float
+    tons_per_passenger: ClassVar[float] = 1.5
+    life_support_per_ton: ClassVar[float] = 250.0
 
     def build_item(self) -> str | None:
         return 'Cabin Space'
 
     def compute_cost(self) -> float:
         return self.tons * 50_000.0
+
+    @property
+    def passenger_capacity(self) -> int:
+        return math.floor(self.tons / self.tons_per_passenger)
+
+    @property
+    def fixed_life_support_cost(self) -> float:
+        return self.tons * self.life_support_per_ton
 
 
 class HabitationSection(CeresModel):
@@ -105,9 +123,12 @@ class HabitationSection(CeresModel):
         if high_passage > non_crew_staterooms:
             self.error(f'High passage exceeds available non-crew staterooms: {high_passage} > {non_crew_staterooms}')
 
-        available_middle_beds = max(0, non_crew_staterooms - high_passage) * 2
-        if middle_passage > available_middle_beds:
-            self.error(f'Middle passage exceeds available non-crew beds: {middle_passage} > {available_middle_beds}')
+        cabin_capacity = 0 if self.cabin_space is None else self.cabin_space.passenger_capacity
+        available_middle_capacity = max(0, non_crew_staterooms - high_passage) * 2 + cabin_capacity
+        if middle_passage > available_middle_capacity:
+            self.error(
+                f'Middle passage exceeds available non-crew beds: {middle_passage} > {available_middle_capacity}'
+            )
 
         low_berth_count = 0 if self.low_berths is None else self.low_berths.count
         if low_passage > low_berth_count:
@@ -136,33 +157,33 @@ class HabitationSection(CeresModel):
 
         stateroom_count = 0 if self.staterooms is None else self.staterooms.count
         low_berth_count = 0 if self.low_berths is None else self.low_berths.count
+        cabin_capacity = 0 if self.cabin_space is None else self.cabin_space.passenger_capacity
 
         crew_staterooms = math.ceil(self.crew_count(ship) / 2)
         remaining_staterooms = max(0, stateroom_count - crew_staterooms)
 
         return {
-            'middle': remaining_staterooms * 2,
+            'middle': remaining_staterooms * 2 + cabin_capacity,
             'low': low_berth_count,
         }
 
-    def life_support_cost(self, ship) -> float:
-        crew_count = self.crew_count(ship)
-        passenger_vector = self.passenger_vector(ship)
+    def fixed_life_support_cost(self, ship) -> float:
+        stateroom_life_support = 0.0 if self.staterooms is None else self.staterooms.fixed_life_support_cost
+        cabin_life_support = 0.0 if self.cabin_space is None else self.cabin_space.fixed_life_support_cost
+        return stateroom_life_support + cabin_life_support
 
+    def variable_life_support_cost(self, ship) -> float:
+        passenger_vector = self.passenger_vector(ship)
         high_passage = passenger_vector.get('high', 0)
         middle_passage = passenger_vector.get('middle', 0)
         low_passage = passenger_vector.get('low', 0)
+        return float((self.crew_count(ship) + high_passage + middle_passage + low_passage) * 1_000)
 
-        stateroom_count = 0 if self.staterooms is None else self.staterooms.count
-
-        return float(
-            stateroom_count * 1_000
-            + low_passage * 100
-            + crew_count * 1_000
-            + high_passage * 1_000
-            + middle_passage * 1_000
-            + low_passage * 1_000
-        )
+    def life_support_cost(self, ship) -> float:
+        passenger_vector = self.passenger_vector(ship)
+        low_passage = passenger_vector.get('low', 0)
+        low_berth_life_support = low_passage * 100
+        return self.fixed_life_support_cost(ship) + low_berth_life_support + self.variable_life_support_cost(ship)
 
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
         if self.staterooms is not None:

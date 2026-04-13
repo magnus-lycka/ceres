@@ -70,6 +70,18 @@ def test_cabin_space_cost():
     assert cabin.cost == 750_000.0
 
 
+def test_cabin_space_passenger_capacity():
+    cabin = CabinSpace(tons=15.0)
+    cabin.bind(DummyOwner(12, 100))
+    assert cabin.passenger_capacity == 10
+
+
+def test_cabin_space_fixed_life_support_cost():
+    cabin = CabinSpace(tons=15.0)
+    cabin.bind(DummyOwner(12, 100))
+    assert cabin.fixed_life_support_cost == 3_750.0
+
+
 def test_habitation_default_passenger_vector_uses_unused_staterooms_and_low_berths():
     my_ship = ship.Ship(
         tl=12,
@@ -83,6 +95,22 @@ def test_habitation_default_passenger_vector_uses_unused_staterooms_and_low_bert
     assert my_ship.habitation.default_passenger_vector(my_ship) == {
         'middle': 12,
         'low': 4,
+    }
+
+
+def test_habitation_default_middle_passengers_include_cabin_space_capacity():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=Staterooms(count=4), cabin_space=CabinSpace(tons=15.0)),
+        crew_vector={'PILOT': 2},
+    )
+
+    assert my_ship.habitation is not None
+    assert my_ship.habitation.default_passenger_vector(my_ship) == {
+        'middle': 16,
+        'low': 0,
     }
 
 
@@ -101,6 +129,22 @@ def test_habitation_explicit_passenger_vector_overrides_default():
 
     assert my_ship.habitation is not None
     assert my_ship.habitation.passenger_vector(my_ship) == {'high': 1}
+
+
+def test_habitation_life_support_separates_fixed_and_variable_costs():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=Staterooms(count=4), cabin_space=CabinSpace(tons=15.0)),
+        crew_vector={'PILOT': 16},
+        passenger_vector={},
+    )
+
+    assert my_ship.habitation is not None
+    assert my_ship.habitation.fixed_life_support_cost(my_ship) == 7_750.0
+    assert my_ship.habitation.variable_life_support_cost(my_ship) == 16_000.0
+    assert my_ship.habitation.life_support_cost(my_ship) == 23_750.0
 
 
 def test_explicit_middle_passengers_must_fit_in_remaining_non_crew_beds():
