@@ -324,19 +324,24 @@ class Ship(ShipBase):
             heading_bits.append(f'Hull {spec.hull_points:.0f}')
         heading = f'## {" | ".join(heading_bits)}'
 
+        def fmt_amount(value: float | None, *, absolute: bool = False) -> str:
+            if value is None:
+                return ''
+            display_value = abs(value) if absolute else value
+            if abs(display_value) < 0.005:
+                return ''
+            return f'{display_value:.2f}'
+
         def fmt_row(row: SpecRow) -> list[str]:
             nonlocal last_section
             item_text = row.item if row.quantity is None else f'{row.item} × {row.quantity}'
-            tons_text = '' if row.tons is None or row.tons == 0 else f'{row.tons:.2f}'
+            tons_text = fmt_amount(row.tons)
             if row.emphasize_tons and tons_text:
                 tons_text = f'**{tons_text}**'
-            if row.power is None or row.power == 0:
-                power_text = ''
-            else:
-                power_text = f'{abs(row.power):.2f}'
+            power_text = fmt_amount(row.power, absolute=True)
             if row.emphasize_power and power_text:
                 power_text = f'**{power_text}**'
-            cost_text = '' if row.cost is None or row.cost == 0 else f'{row.cost / 1000:.2f}'
+            cost_text = fmt_amount(None if row.cost is None else row.cost / 1000)
             section_text = '' if row.section == last_section else row.section.value
             last_section = row.section
             lines = [f'| {section_text} | {item_text} | {tons_text} | {power_text} | {cost_text} |']
@@ -411,7 +416,7 @@ class Ship(ShipBase):
         if self.weapons is not None:
             self.weapons.validate_mounting(self)
         cargo_tons = CargoSection.cargo_tons_for_ship(self)
-        if cargo_tons < 0:
+        if cargo_tons < -0.005:
             self.error(f'Hull overloaded by {-cargo_tons:.2f} tons')
         if self.command is not None and self.command.bridge is not None and not self.hull.airlocks:
             self.error('No airlock installed')

@@ -67,6 +67,34 @@ class JumpFuel(ShipPart):
         return 0.0
 
 
+class ReactionFuel(ShipPart):
+    minutes: int
+
+    def build_item(self) -> str | None:
+        unit = 'minute' if self.minutes == 1 else 'minutes'
+        return f'{self.minutes} {unit} of operation'
+
+    @property
+    def _reaction_drive(self):
+        drives = getattr(self.owner, 'drives', None)
+        return None if drives is None else drives.reaction_drive
+
+    def _fuel_rate_per_hour(self) -> float:
+        reaction_drive = self._reaction_drive
+        if reaction_drive is None:
+            self.error('Ship must have a ReactionDrive to compute ReactionFuel')
+            return 0.0
+        if reaction_drive.rating == 0:
+            return 0.25
+        return self.owner.displacement * 0.025 * reaction_drive.rating
+
+    def compute_tons(self) -> float:
+        return self._fuel_rate_per_hour() * (self.minutes / 60)
+
+    def compute_cost(self) -> float:
+        return 0.0
+
+
 class FuelProcessor(ShipPart):
     tons: float
 
@@ -83,12 +111,13 @@ class FuelProcessor(ShipPart):
 class FuelSection(CeresModel):
     jump_fuel: JumpFuel | None = None
     operation_fuel: OperationFuel | None = None
+    reaction_fuel: ReactionFuel | None = None
     fuel_scoops: FuelScoops | None = None
     fuel_processor: FuelProcessor | None = None
 
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = []
-        for part in (self.jump_fuel, self.operation_fuel, self.fuel_scoops, self.fuel_processor):
+        for part in (self.jump_fuel, self.operation_fuel, self.reaction_fuel, self.fuel_scoops, self.fuel_processor):
             if part is not None:
                 parts.append(part)
         return parts
@@ -100,12 +129,17 @@ class FuelSection(CeresModel):
         if self.operation_fuel is not None:
             unit = 'week' if self.operation_fuel.weeks == 1 else 'weeks'
             parts.append(f'{self.operation_fuel.weeks} {unit} of operation')
+        if self.reaction_fuel is not None:
+            unit = 'minute' if self.reaction_fuel.minutes == 1 else 'minutes'
+            parts.append(f'{self.reaction_fuel.minutes} {unit} of operation')
         if parts:
             total_fuel_tons = 0.0
             if self.jump_fuel is not None:
                 total_fuel_tons += self.jump_fuel.tons
             if self.operation_fuel is not None:
                 total_fuel_tons += self.operation_fuel.tons
+            if self.reaction_fuel is not None:
+                total_fuel_tons += self.reaction_fuel.tons
             spec.add_row(
                 SpecRow(
                     section=SpecSection.FUEL,
@@ -190,11 +224,15 @@ class CargoSection(CeresModel):
                     )
             self._add_stores_notes(ship, spec)
             return
+        cargo_tons = self.cargo_tons(ship)
+        cargo_item = 'Cargo Hold'
+        if abs(cargo_tons) < 0.005:
+            cargo_item = 'Cargo (0.00 tons)'
         spec.add_row(
             SpecRow(
                 section=SpecSection.CARGO,
-                item='Cargo Hold',
-                tons=self.cargo_tons(ship) or None,
+                item=cargo_item,
+                tons=cargo_tons or None,
             )
         )
         self._add_stores_notes(ship, spec)

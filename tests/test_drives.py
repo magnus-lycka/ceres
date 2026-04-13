@@ -20,8 +20,9 @@ from ceres.drives import (
     MDrive6,
     MDrive7,
     PowerSection,
+    ReactionDrive,
 )
-from ceres.storage import FuelSection, OperationFuel
+from ceres.storage import FuelSection, OperationFuel, ReactionFuel
 
 
 class DummyOwner(ShipBase):
@@ -86,8 +87,8 @@ def test_budget_increased_size_mdrive_values():
 
 
 def test_drive_section_all_parts():
-    drives = DriveSection(m_drive=MDrive6(), jump_drive=JumpDrive2())
-    assert drives._all_parts() == [drives.m_drive, drives.jump_drive]
+    drives = DriveSection(m_drive=MDrive6(), reaction_drive=ReactionDrive(rating=3), jump_drive=JumpDrive2())
+    assert drives._all_parts() == [drives.m_drive, drives.reaction_drive, drives.jump_drive]
 
 
 def test_power_section_all_parts():
@@ -257,3 +258,33 @@ def test_operation_fuel_requires_plant():
     assert ('error', 'Ship must have a FusionPlant to compute OperationFuel') in [
         (note.category.value, note.message) for note in my_ship.fuel.operation_fuel.notes
     ]
+
+
+def test_reaction_drive_tons_cost_and_power():
+    d = ReactionDrive(rating=16)
+    d.bind(DummyOwner(12, 6))
+    assert d.minimum_tl == 12
+    assert d.tons == pytest.approx(1.92)
+    assert d.cost == pytest.approx(384_000)
+    assert d.power == 0.0
+
+
+def test_reaction_drive_tl_too_low():
+    d = ReactionDrive(rating=16)
+    d.bind(DummyOwner(11, 6))
+    assert ('error', 'Requires TL12, ship is TL11') in [
+        (note.category.value, note.message) for note in d.notes
+    ]
+
+
+def test_reaction_fuel_minutes_of_operation():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=6,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        drives=DriveSection(reaction_drive=ReactionDrive(rating=16)),
+        fuel=FuelSection(reaction_fuel=ReactionFuel(minutes=52)),
+    )
+    assert my_ship.fuel is not None
+    assert my_ship.fuel.reaction_fuel is not None
+    assert my_ship.fuel.reaction_fuel.tons == pytest.approx(2.08)

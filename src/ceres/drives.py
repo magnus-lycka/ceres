@@ -7,6 +7,56 @@ from .computer import JumpControl, SoftwarePackage
 from .parts import CustomisableShipPart, CustomisationGrade, IncreasedSize, ShipPart, SizeReduction
 from .spec import ShipSpec, SpecSection
 
+REACTION_DRIVE_SPECS: dict[int, dict[str, float | int]] = {
+    0: {'tons_percent': 0.01, 'minimum_tl': 7},
+    1: {'tons_percent': 0.02, 'minimum_tl': 7},
+    2: {'tons_percent': 0.04, 'minimum_tl': 7},
+    3: {'tons_percent': 0.06, 'minimum_tl': 7},
+    4: {'tons_percent': 0.08, 'minimum_tl': 8},
+    5: {'tons_percent': 0.10, 'minimum_tl': 8},
+    6: {'tons_percent': 0.12, 'minimum_tl': 8},
+    7: {'tons_percent': 0.14, 'minimum_tl': 9},
+    8: {'tons_percent': 0.16, 'minimum_tl': 9},
+    9: {'tons_percent': 0.18, 'minimum_tl': 9},
+    10: {'tons_percent': 0.20, 'minimum_tl': 10},
+    11: {'tons_percent': 0.22, 'minimum_tl': 10},
+    12: {'tons_percent': 0.24, 'minimum_tl': 10},
+    13: {'tons_percent': 0.26, 'minimum_tl': 11},
+    14: {'tons_percent': 0.28, 'minimum_tl': 11},
+    15: {'tons_percent': 0.30, 'minimum_tl': 11},
+    16: {'tons_percent': 0.32, 'minimum_tl': 12},
+}
+
+
+class ReactionDrive(ShipPart):
+    rating: int
+
+    @property
+    def minimum_tl(self) -> int:
+        return int(REACTION_DRIVE_SPECS[self.rating]['minimum_tl'])
+
+    def build_item(self) -> str | None:
+        return f'R-Drive Thrust {self.rating}'
+
+    def bulkhead_label(self) -> str:
+        return 'R-Drive'
+
+    def compute_tons(self) -> float:
+        tons_percent = float(REACTION_DRIVE_SPECS[self.rating]['tons_percent'])
+        return self.owner.displacement * tons_percent
+
+    def compute_cost(self) -> float:
+        return self.compute_tons() * 200_000.0
+
+    def compute_power(self) -> float:
+        return 0.0
+
+    def validate_tl(self) -> None:
+        if self.rating not in REACTION_DRIVE_SPECS:
+            self.error(f'Unsupported reaction drive rating {self.rating}')
+            return
+        super().validate_tl()
+
 
 class MDrive(CustomisableShipPart):
     rating: int
@@ -219,10 +269,11 @@ ShipJumpDrive = Annotated[
 
 class DriveSection(ShipPart):
     m_drive: ShipMDrive | None = None
+    reaction_drive: ReactionDrive | None = None
     jump_drive: ShipJumpDrive | None = None
 
     def _all_parts(self) -> list[ShipPart]:
-        return [part for part in [self.m_drive, self.jump_drive] if part is not None]
+        return [part for part in [self.m_drive, self.reaction_drive, self.jump_drive] if part is not None]
 
     def validate_jump_control(self, software_packages: dict[type[SoftwarePackage], SoftwarePackage]) -> None:
         if self.jump_drive is None:
@@ -237,6 +288,8 @@ class DriveSection(ShipPart):
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
         if self.jump_drive is not None:
             spec.add_row(ship._spec_row_for_part(SpecSection.JUMP, self.jump_drive))
+        if self.reaction_drive is not None:
+            spec.add_row(ship._spec_row_for_part(SpecSection.PROPULSION, self.reaction_drive))
         if self.m_drive is not None:
             spec.add_row(ship._spec_row_for_part(SpecSection.PROPULSION, self.m_drive))
 
