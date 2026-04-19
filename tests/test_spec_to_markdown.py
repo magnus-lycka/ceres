@@ -7,12 +7,12 @@ that Ship.build_spec() computes correct values.
 
 from typing import Any
 
-from ceres import hull, ship
-from ceres.bridge import Bridge, CommandSection
-from ceres.computer import Computer5, ComputerSection
-from ceres.drives import DriveSection, FusionPlantTL12, MDrive1, PowerSection
-from ceres.habitation import HabitationSection, Staterooms
-from ceres.systems import ProbeDrones, SystemsSection
+from tycho import hull, ship
+from tycho.bridge import Bridge, CommandSection
+from tycho.computer import Computer5, ComputerSection
+from tycho.drives import DriveSection, FusionPlantTL12, MDrive1, PowerSection
+from tycho.habitation import HabitationSection, Staterooms
+from tycho.systems import ProbeDrones, SystemsSection
 
 
 def _minimal_ship(**kwargs) -> ship.Ship:
@@ -76,7 +76,7 @@ def test_info_note_rendered_with_bullet():
 
 
 def test_warning_note_rendered_with_italic_prefix():
-    from ceres.systems import Airlock
+    from tycho.systems import Airlock
 
     my_ship = ship.Ship(
         tl=12,

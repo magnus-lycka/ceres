@@ -1,14 +1,14 @@
 import pytest
 
-from ceres import armour, hull, ship
-from ceres.bridge import Bridge, CommandSection
-from ceres.computer import AutoRepair1, Computer35, ComputerSection, Evade2, FireControl2
-from ceres.drives import DriveSection, FusionPlantTL12, MDrive9, PowerSection
-from ceres.habitation import HabitationSection, Staterooms
-from ceres.sensors import CountermeasuresSuite, ImprovedSensors, SensorsSection
-from ceres.storage import CargoSection, FuelProcessor, FuelScoops, FuelSection, OperationFuel
-from ceres.systems import Airlock, CommonArea, MedicalBay, RepairDrones, SystemsSection
-from ceres.weapons import MissileStorage, MountWeapon, Turret, WeaponsSection
+from tycho import armour, hull, ship
+from tycho.bridge import Bridge, CommandSection
+from tycho.computer import AutoRepair1, Computer35, ComputerSection, Evade2, FireControl2
+from tycho.drives import DriveSection, FusionPlantTL12, MDrive9, PowerSection
+from tycho.habitation import HabitationSection, Staterooms
+from tycho.sensors import CountermeasuresSuite, ImprovedSensors, SensorsSection
+from tycho.storage import CargoSection, FuelProcessor, FuelScoops, FuelSection, OperationFuel
+from tycho.systems import Airlock, CommonArea, MedicalBay, RepairDrones, SystemsSection
+from tycho.weapons import MissileStorage, MountWeapon, Turret, WeaponsSection
 
 from ._markdown_output import write_markdown_output
 

@@ -146,9 +146,7 @@ class HabitationSection(CeresModel):
 
     def passenger_vector(self, ship) -> dict[str, int]:
         if ship.passenger_vector is not None:
-            if isinstance(ship.passenger_vector, dict):
-                return {str(kind).lower(): int(count) for kind, count in ship.passenger_vector.items()}
-            return {str(kind).lower(): int(count) for kind, count in ship.passenger_vector}
+            return {str(kind).lower(): int(count) for kind, count in ship.passenger_vector.items()}
         return self.default_passenger_vector(ship)
 
     def default_passenger_vector(self, ship) -> dict[str, int]:

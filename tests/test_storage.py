@@ -1,10 +1,10 @@
 import pytest
 
-from ceres import hull, ship
-from ceres.base import ShipBase
-from ceres.drives import FusionPlantTL12, PowerSection
-from ceres.spec import SpecSection
-from ceres.storage import CargoCrane, CargoHold, CargoSection, FuelSection, OperationFuel
+from tycho import hull, ship
+from tycho.base import ShipBase
+from tycho.drives import FusionPlantTL12, PowerSection
+from tycho.spec import SpecSection
+from tycho.storage import CargoCrane, CargoHold, CargoSection, FuelSection, OperationFuel
 
 
 class DummyOwner(ShipBase):

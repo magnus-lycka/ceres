@@ -16,6 +16,28 @@ class Workshop(ShipPart):
         return 900_000.0
 
 
+class Laboratory(ShipPart):
+    def build_item(self) -> str | None:
+        return 'Laboratory'
+
+    def compute_tons(self) -> float:
+        return 4.0
+
+    def compute_cost(self) -> float:
+        return 1_000_000.0
+
+
+class BriefingRoom(ShipPart):
+    def build_item(self) -> str | None:
+        return 'Briefing Room'
+
+    def compute_tons(self) -> float:
+        return 4.0
+
+    def compute_cost(self) -> float:
+        return 500_000.0
+
+
 class CrewArmory(ShipPart):
     capacity: int
 
@@ -67,6 +89,22 @@ class MedicalBay(ShipPart):
 
     def compute_power(self) -> float:
         return 1.0
+
+
+class MedicalBays(ShipPart):
+    count: int
+
+    def build_item(self) -> str | None:
+        return 'Medical Bays'
+
+    def compute_tons(self) -> float:
+        return self.count * 4.0
+
+    def compute_cost(self) -> float:
+        return self.count * 2_000_000.0
+
+    def compute_power(self) -> float:
+        return float(self.count)
 
 
 class Biosphere(ShipPart):
@@ -173,6 +211,9 @@ class SystemsSection(CeresModel):
     crew_armory: CrewArmory | None = None
     biosphere: Biosphere | None = None
     medical_bay: MedicalBay | None = None
+    medical_bays: MedicalBays | None = None
+    laboratory: Laboratory | None = None
+    briefing_room: BriefingRoom | None = None
     probe_drones: ProbeDrones | None = None
     repair_drones: RepairDrones | None = None
     training_facility: TrainingFacility | None = None
@@ -185,6 +226,9 @@ class SystemsSection(CeresModel):
             self.biosphere,
             self.workshop,
             self.medical_bay,
+            self.medical_bays,
+            self.laboratory,
+            self.briefing_room,
             self.probe_drones,
             self.repair_drones,
             self.training_facility,

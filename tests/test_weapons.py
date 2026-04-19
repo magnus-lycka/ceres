@@ -1,8 +1,8 @@
 import pytest
 
-from ceres import hull, ship
-from ceres.base import ShipBase
-from ceres.weapons import (
+from tycho import hull, ship
+from tycho.base import ShipBase
+from tycho.weapons import (
     Barbette,
     Bay,
     FixedMount,

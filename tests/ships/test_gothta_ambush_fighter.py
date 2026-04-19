@@ -1,0 +1,129 @@
+import pytest
+
+from tycho import hull, ship
+from tycho.bridge import Bridge, CommandSection
+from tycho.computer import Computer5, ComputerSection, FireControl1
+from tycho.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection, ReactionDrive
+from tycho.habitation import CabinSpace, HabitationSection
+from tycho.sensors import MilitarySensors, SensorsSection
+from tycho.storage import FuelScoops, FuelSection, OperationFuel, ReactionFuel
+from tycho.systems import Aerofins
+from tycho.weapons import FixedMount, MountWeapon, WeaponsSection
+
+from ._markdown_output import write_markdown_output
+
+
+def build_gothta_ambush_fighter() -> ship.Ship:
+    return ship.Ship(
+        ship_class='Gothta',
+        ship_type='Ambush Fighter',
+        military=True,
+        tl=12,
+        displacement=20,
+        design_type=ship.ShipDesignType.CUSTOM,
+        hull=hull.Hull(
+            configuration=hull.streamlined_hull,
+            pressure_hull=True,
+            airlocks=[],
+            aerofins=Aerofins(),
+        ),
+        drives=DriveSection(
+            m_drive=MDrive6(),
+            reaction_drive=ReactionDrive(rating=4, high_burn_thruster=True),
+        ),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=30)),
+        fuel=FuelSection(
+            operation_fuel=OperationFuel(weeks=2),
+            reaction_fuel=ReactionFuel(minutes=60),
+            fuel_scoops=FuelScoops(free=True),
+        ),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer5(), software=[FireControl1()]),
+        sensors=SensorsSection(primary=MilitarySensors()),
+        weapons=WeaponsSection(
+            fixed_mounts=[FixedMount(weapons=[MountWeapon(weapon='pulse_laser')])],
+        ),
+        habitation=HabitationSection(cabin_space=CabinSpace(tons=1.5)),
+    )
+
+
+def test_gothta_ambush_fighter_matches_current_subset():
+    fighter = build_gothta_ambush_fighter()
+
+    assert fighter.hull_cost == pytest.approx(12_000_000)
+    assert fighter.hull_points == 8
+    assert fighter.hull.pressure_hull_tons(fighter.displacement) == pytest.approx(5.0)
+
+    assert fighter.drives is not None
+    assert fighter.drives.m_drive is not None
+    assert fighter.drives.m_drive.tons == pytest.approx(1.2)
+    assert fighter.drives.m_drive.cost == pytest.approx(2_400_000)
+    assert fighter.drives.reaction_drive is not None
+    assert fighter.drives.reaction_drive.tons == pytest.approx(1.6)
+    assert fighter.drives.reaction_drive.cost == pytest.approx(320_000)
+    assert fighter.drives.reaction_drive.build_item() == 'High-Burn Thruster, Thrust 4'
+
+    assert fighter.power is not None
+    assert fighter.power.fusion_plant is not None
+    assert fighter.power.fusion_plant.tons == pytest.approx(2.0)
+    assert fighter.power.fusion_plant.cost == pytest.approx(2_000_000)
+
+    assert fighter.fuel is not None
+    assert fighter.fuel.operation_fuel is not None
+    assert fighter.fuel.operation_fuel.tons == pytest.approx(0.1)
+    assert fighter.fuel.reaction_fuel is not None
+    assert fighter.fuel.reaction_fuel.tons == pytest.approx(2.0)
+
+    assert fighter.command is not None
+    assert fighter.command.bridge is not None
+    assert fighter.command.bridge.tons == pytest.approx(3.0)
+    assert fighter.command.bridge.cost == pytest.approx(500_000)
+
+    assert fighter.computer is not None
+    assert fighter.computer.hardware is not None
+    assert fighter.computer.hardware.cost == pytest.approx(30_000)
+
+    assert fighter.sensors.primary.tons == pytest.approx(2.0)
+    assert fighter.sensors.primary.cost == pytest.approx(4_100_000)
+
+    assert fighter.weapons is not None
+    assert fighter.weapons.fixed_mounts[0].cost == pytest.approx(1_100_000)
+    assert fighter.weapons.fixed_mounts[0].power == pytest.approx(3.0)
+
+    assert fighter.habitation is not None
+    assert fighter.habitation.cabin_space is not None
+    assert fighter.habitation.cabin_space.tons == pytest.approx(1.5)
+    assert fighter.habitation.cabin_space.cost == pytest.approx(75_000)
+
+    assert fighter.available_power == pytest.approx(30.0)
+    assert fighter.basic_hull_power_load == pytest.approx(4.0)
+    assert fighter.maneuver_power_load == pytest.approx(12.0)
+    assert fighter.sensor_power_load == pytest.approx(2.0)
+    assert fighter.weapon_power_load == pytest.approx(3.0)
+    assert fighter.total_power_load == pytest.approx(21.0)
+    assert fighter.production_cost == pytest.approx(24_625_000)
+    assert fighter.sales_price_new == pytest.approx(24_625_000)
+    assert fighter.expenses.maintenance == pytest.approx(2052.0)
+    assert [(role.role, role.count, role.monthly_salary) for role in fighter.crew_roles] == [
+        ('PILOT', 1, 6_000),
+    ]
+
+
+def test_gothta_ambush_fighter_markdown_output():
+    fighter = build_gothta_ambush_fighter()
+    table = fighter.markdown_table()
+    write_markdown_output('test_gothta_ambush_fighter', table)
+
+    assert '## *Gothta* Ambush Fighter | TL12 | Hull 8' in table
+    assert '| Hull | Streamlined Hull, Pressure Hull | **20.00** |  | 12000.00 |' in table
+    assert '|  | Armour: 4 |  |  |  |' in table
+    assert '|  | Aerofins | 1.00 |  | 100.00 |' in table
+    assert '| Propulsion | High-Burn Thruster, Thrust 4 | 1.60 |  | 320.00 |' in table
+    assert '|  | M-Drive 6 | 1.20 | 12.00 | 2400.00 |' in table
+    assert '| Power | Fusion (TL 12) | 2.00 | **30.00** | 2000.00 |' in table
+    assert '| Fuel | 2 weeks of operation, 1 hour Thruster | 2.10 |  |  |' in table
+    assert '| Command | Bridge | 3.00 |  | 500.00 |' in table
+    assert '| Sensors | Military Grade | 2.00 | 2.00 | 4100.00 |' in table
+    assert '| Weapons | Pulse Laser |  | 3.00 | 1100.00 |' in table
+    assert '| Habitation | Cabin Space | 1.50 |  | 75.00 |' in table
+    assert '| Cargo | Cargo Hold | 0.60 |  |  |' in table

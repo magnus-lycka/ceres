@@ -1,7 +1,7 @@
 import pytest
 
-from ceres.base import Note, NoteCategory
-from ceres.spec import CrewRow, ExpenseRow, ShipSpec, SpecRow, SpecSection
+from tycho.base import Note, NoteCategory
+from tycho.spec import CrewRow, ExpenseRow, ShipSpec, SpecRow, SpecSection
 
 
 def build_spec() -> ShipSpec:

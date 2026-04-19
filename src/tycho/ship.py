@@ -27,7 +27,7 @@ from .parts import ShipPart
 from .sensors import SensorsSection
 from .spec import PassengerRow, ShipSpec, SpecRow, SpecSection
 from .storage import CargoSection, FuelScoops, FuelSection
-from .systems import SystemsSection
+from .systems import Airlock, SystemsSection
 from .weapons import WeaponsSection
 
 __all__ = ['CrewRole', 'Ship', 'ShipDesignType']
@@ -51,8 +51,8 @@ class Ship(ShipBase):
     ship_class: str | None = None
     ship_type: str | None = None
     military: bool = False
-    crew_vector: dict[str, int] | list[tuple[str, int]] | None = None
-    passenger_vector: dict[str, int] | list[tuple[str, int]] | None = None
+    crew_vector: dict[str, int] | None = None
+    passenger_vector: dict[str, int] | None = None
     design_type: ShipDesignType = ShipDesignType.CUSTOM
     hull: Hull
     drives: DriveSection | None = None
@@ -73,7 +73,7 @@ class Ship(ShipBase):
 
     @property
     def hull_cost(self) -> float:
-        return float(self.hull.configuration.cost(self.displacement))
+        return float(self.hull.total_cost(self.displacement))
 
     @property
     def hull_points(self) -> float:
@@ -191,6 +191,7 @@ class Ship(ShipBase):
 
     def remaining_usable_tonnage(self) -> float:
         remaining = self.displacement * self.hull.configuration.usage_factor
+        remaining -= self.hull.pressure_hull_tons(self.displacement)
         for part in self._all_parts():
             remaining -= part.tons
         cargo_holds = [] if self.cargo is None else self.cargo.cargo_holds
@@ -392,6 +393,8 @@ class Ship(ShipBase):
     def model_post_init(self, __context: Any) -> None:
         if self.tl > 16:
             raise ValueError(f'Ceres currently supports TL16 and lower, got TL{self.tl}')
+        if self.hull.airlocks is None and self.displacement >= 100:
+            object.__setattr__(self, 'hull', self.hull.model_copy(update={'airlocks': [Airlock()]}))
         if self.hull.configuration.streamlined == Streamlined.YES:
             if self.fuel is None:
                 object.__setattr__(self, 'fuel', FuelSection(fuel_scoops=FuelScoops(free=True)))
@@ -418,7 +421,7 @@ class Ship(ShipBase):
         cargo_tons = CargoSection.cargo_tons_for_ship(self)
         if cargo_tons < -0.005:
             self.error(f'Hull overloaded by {-cargo_tons:.2f} tons')
-        if self.command is not None and self.command.bridge is not None and not self.hull.airlocks:
+        if self.command is not None and self.command.bridge is not None and not (self.hull.airlocks or []):
             self.error('No airlock installed')
         for message in crew_vector_warnings(self):
             self.warning(message)

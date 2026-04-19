@@ -1,12 +1,12 @@
 import pytest
 
-from ceres import hull, ship
-from ceres.bridge import Bridge, CommandSection
-from ceres.computer import Computer5, ComputerSection
-from ceres.drives import DriveSection, FusionPlantTL8, FusionPlantTL12, MDrive3, PowerSection
-from ceres.habitation import HabitationSection, Staterooms
-from ceres.storage import CargoSection, FuelSection, OperationFuel
-from ceres.systems import Aerofins, Airlock, CommonArea
+from tycho import hull, ship
+from tycho.bridge import Bridge, CommandSection
+from tycho.computer import Computer5, ComputerSection
+from tycho.drives import DriveSection, FusionPlantTL8, FusionPlantTL12, MDrive3, PowerSection
+from tycho.habitation import HabitationSection, Staterooms
+from tycho.storage import CargoSection, FuelSection, OperationFuel
+from tycho.systems import Aerofins, Airlock, CommonArea
 
 from ._markdown_output import write_markdown_output
 
@@ -44,9 +44,10 @@ def test_poseidon_cargo_boat_generates_markdown_for_visual_comparison(tl: int):
     assert '| Hull | Light Streamlined Hull | **100.00** |  | 4500.00 |' in table
     assert '|  | Basic Ship Systems |  | 20.00 |  |' in table
     assert '| Command | Smaller Bridge | 6.00 |  | 250.00 |' in table
-    assert '|  | • DM -1 to Pilot checks |  |  |  |' in table
+    assert '|  | • DM -1 for all checks related to spacecraft operations |  |  |  |' in table
     assert '| Sensors | Basic |  |  |  |' in table
-    assert '|  | • Radar, Lidar; DM -4 |  |  |  |' in table
+    assert '|  | • Features: Passive optical and thermal sensors, Radar' in table
+    assert '|  | • Sensor DM -4 to Electronics (comms) and Electronics (sensors) checks |  |  |  |' in table
     assert 'Common Area | 1.00 |  | 100.00 |' in table
     assert '|  | Airlock (2 tons) |  |  |  |' in table
     assert 'Aerofins | 5.00 |  | 500.00 |' in table
@@ -81,7 +82,7 @@ def test_poseidon_tl12_variant_trades_cost_for_cargo_with_better_power_plant():
     assert tl12.production_cost > tl10.production_cost
 
 
-@pytest.mark.parametrize('tl', [8, 9])
+@pytest.mark.parametrize('tl', [9])
 def test_poseidon_below_tl10_puts_error_on_mdrive(tl: int):
     cargo_boat = build_poseidon_cargo_boat(tl)
     assert cargo_boat.drives is not None

@@ -3,9 +3,16 @@ from typing import Annotated, ClassVar, Literal
 
 from pydantic import Field
 
+from .base import Note, NoteCategory
 from .computer import JumpControl, SoftwarePackage
-from .parts import CustomisableShipPart, CustomisationGrade, IncreasedSize, ShipPart, SizeReduction
+from .parts import CustomisableShipPart, Customisation, CustomisationGrade, IncreasedSize, ShipPart, SizeReduction
 from .spec import ShipSpec, SpecSection
+
+LimitedRange = Customisation(
+    name='Limited Range',
+    disadvantage=1,
+    info_notes=('This manoeuvre drive only functions within the 100-diameter limit',),
+)
 
 REACTION_DRIVE_SPECS: dict[int, dict[str, float | int]] = {
     0: {'tons_percent': 0.01, 'minimum_tl': 7},
@@ -30,12 +37,15 @@ REACTION_DRIVE_SPECS: dict[int, dict[str, float | int]] = {
 
 class ReactionDrive(ShipPart):
     rating: int
+    high_burn_thruster: bool = False
 
     @property
     def minimum_tl(self) -> int:
         return int(REACTION_DRIVE_SPECS[self.rating]['minimum_tl'])
 
     def build_item(self) -> str | None:
+        if self.high_burn_thruster:
+            return f'High-Burn Thruster, Thrust {self.rating}'
         return f'R-Drive Thrust {self.rating}'
 
     def bulkhead_label(self) -> str:
@@ -50,6 +60,11 @@ class ReactionDrive(ShipPart):
 
     def compute_power(self) -> float:
         return 0.0
+
+    def build_notes(self) -> list:
+        if not self.high_burn_thruster:
+            return []
+        return [Note(category=NoteCategory.INFO, message='No inertial compensation above manoeuvre-drive thrust')]
 
     def validate_tl(self) -> None:
         if self.rating not in REACTION_DRIVE_SPECS:

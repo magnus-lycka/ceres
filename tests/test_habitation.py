@@ -1,11 +1,11 @@
 import pytest
 
-from ceres import hull, ship
-from ceres.base import ShipBase
-from ceres.bridge import Bridge, CommandSection
-from ceres.computer import Computer5, ComputerSection
-from ceres.drives import DriveSection, FusionPlantTL12, JumpDrive1, PowerSection
-from ceres.habitation import AdvancedEntertainmentSystem, CabinSpace, HabitationSection, LowBerths, Staterooms
+from tycho import hull, ship
+from tycho.base import ShipBase
+from tycho.bridge import Bridge, CommandSection
+from tycho.computer import Computer5, ComputerSection
+from tycho.drives import DriveSection, FusionPlantTL12, JumpDrive1, PowerSection
+from tycho.habitation import AdvancedEntertainmentSystem, CabinSpace, HabitationSection, LowBerths, Staterooms
 
 
 class DummyOwner(ShipBase):

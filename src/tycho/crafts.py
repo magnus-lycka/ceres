@@ -1,5 +1,7 @@
 import math
 
+from pydantic import Field
+
 from .base import CeresModel
 from .parts import ShipPart
 from .spec import ShipSpec, SpecRow, SpecSection
@@ -24,6 +26,14 @@ class AirRaft(CarriedCraft):
         return 'Air/Raft'
 
 
+class SlowPinnace(CarriedCraft):
+    shipping_size: int = 40
+    cost: float = 6_630_000.0
+
+    def build_item(self) -> str | None:
+        return 'Slow Pinnace'
+
+
 class InternalDockingSpace(ShipPart):
     craft: CarriedCraft
 
@@ -39,22 +49,23 @@ class InternalDockingSpace(ShipPart):
 
 class CraftSection(CeresModel):
     docking_space: InternalDockingSpace | None = None
+    auxiliary_docking_spaces: list[InternalDockingSpace] = Field(default_factory=list)
 
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = []
         if self.docking_space is not None:
             parts.append(self.docking_space)
+        parts.extend(self.auxiliary_docking_spaces)
         return parts
 
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
-        if self.docking_space is None:
-            return
-        spec.add_row(ship._spec_row_for_part(SpecSection.CRAFT, self.docking_space))
-        craft = self.docking_space.craft
-        spec.add_row(
-            SpecRow(
-                section=SpecSection.CRAFT,
-                item=craft.build_item() or craft.__class__.__name__,
-                cost=craft.cost,
+        for docking_space in self._all_parts():
+            spec.add_row(ship._spec_row_for_part(SpecSection.CRAFT, docking_space))
+            craft = docking_space.craft
+            spec.add_row(
+                SpecRow(
+                    section=SpecSection.CRAFT,
+                    item=craft.build_item() or craft.__class__.__name__,
+                    cost=craft.cost,
+                )
             )
-        )

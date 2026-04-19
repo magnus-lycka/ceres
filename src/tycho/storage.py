@@ -71,6 +71,12 @@ class ReactionFuel(ShipPart):
     minutes: int
 
     def build_item(self) -> str | None:
+        reaction_drive = self._reaction_drive if self._owner is not None else None
+        if reaction_drive is not None and reaction_drive.high_burn_thruster:
+            if self.minutes % 60 == 0:
+                hours = self.minutes // 60
+                unit = 'hour' if hours == 1 else 'hours'
+                return f'{hours} {unit} Thruster'
         unit = 'minute' if self.minutes == 1 else 'minutes'
         return f'{self.minutes} {unit} of operation'
 
@@ -130,8 +136,9 @@ class FuelSection(CeresModel):
             unit = 'week' if self.operation_fuel.weeks == 1 else 'weeks'
             parts.append(f'{self.operation_fuel.weeks} {unit} of operation')
         if self.reaction_fuel is not None:
-            unit = 'minute' if self.reaction_fuel.minutes == 1 else 'minutes'
-            parts.append(f'{self.reaction_fuel.minutes} {unit} of operation')
+            item = self.reaction_fuel.build_item()
+            if item is not None:
+                parts.append(item)
         if parts:
             total_fuel_tons = 0.0
             if self.jump_fuel is not None:

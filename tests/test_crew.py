@@ -1,12 +1,15 @@
-from ceres import hull, ship
-from ceres.bridge import Bridge, CommandSection
-from ceres.computer import Computer5, ComputerSection
-from ceres.crafts import AirRaft, CarriedCraft, CraftSection, InternalDockingSpace
-from ceres.crew import CrewRole, required_crew_roles
-from ceres.drives import DriveSection, FusionPlantTL12, JumpDrive1, MDrive1, MDrive2, PowerSection
-from ceres.habitation import HabitationSection, LowBerths, Staterooms
-from ceres.sensors import SensorsSection, SensorStations
-from ceres.weapons import Barbette, Bay, Turret, WeaponsSection
+from pydantic import ValidationError
+import pytest
+
+from tycho import hull, ship
+from tycho.bridge import Bridge, CommandSection
+from tycho.computer import Computer5, ComputerSection
+from tycho.crafts import AirRaft, CarriedCraft, CraftSection, InternalDockingSpace
+from tycho.crew import CrewRole, required_crew_roles
+from tycho.drives import DriveSection, FusionPlantTL12, JumpDrive1, MDrive1, MDrive2, PowerSection
+from tycho.habitation import HabitationSection, LowBerths, Staterooms
+from tycho.sensors import SensorsSection, SensorStations
+from tycho.weapons import Barbette, Bay, Turret, WeaponsSection
 
 
 def test_crew_role_total_salary():
@@ -246,18 +249,14 @@ def test_understaffed_explicit_crew_vector_emits_warning():
     ]
 
 
-def test_crew_vector_accepts_list_form():
-    my_ship = ship.Ship(
-        tl=12,
-        displacement=100,
-        hull=hull.Hull(configuration=hull.streamlined_hull),
-        crew_vector=[('PILOT', 2), ('ENGINEER', 1)],
-    )
-
-    assert [(role.role, role.count) for role in my_ship.crew_roles] == [
-        ('PILOT', 2),
-        ('ENGINEER', 1),
-    ]
+def test_crew_vector_rejects_list_form():
+    with pytest.raises(ValidationError):
+        ship.Ship(
+            tl=12,
+            displacement=100,
+            hull=hull.Hull(configuration=hull.streamlined_hull),
+            crew_vector=[('PILOT', 2), ('ENGINEER', 1)],
+        )
 
 
 def test_default_middle_passengers_use_only_unused_staterooms():

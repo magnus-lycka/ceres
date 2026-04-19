@@ -1,7 +1,7 @@
-from ceres import hull, ship
-from ceres.base import ShipBase
-from ceres.storage import FuelScoops, FuelSection
-from ceres.systems import (
+from tycho import hull, ship
+from tycho.base import ShipBase
+from tycho.storage import FuelScoops, FuelSection
+from tycho.systems import (
     Airlock,
     BasicAutodoc,
     Biosphere,

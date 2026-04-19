@@ -9,16 +9,16 @@ A likely use for this is to handd it to an AI and build rules complient Travelle
 ships for conversing with the AI.
 
 ```python
-from ceres import armour, hull, ship
-from ceres.bridge import Bridge, CommandSection
-from ceres.computer import Computer5, ComputerSection, JumpControl2
-from ceres.crafts import AirRaft, CraftSection, InternalDockingSpace
-from ceres.drives import DriveSection, FusionPlantTL12, JumpDrive2, MDrive2, PowerSection
-from ceres.habitation import HabitationSection, Staterooms
-from ceres.sensors import MilitarySensors, SensorsSection
-from ceres.storage import FuelProcessor, FuelSection, JumpFuel, OperationFuel
-from ceres.systems import Airlock, ProbeDrones, SystemsSection, Workshop
-from ceres.weapons import MountWeapon, Turret, WeaponsSection
+from tycho import armour, hull, ship
+from tycho.bridge import Bridge, CommandSection
+from tycho.computer import Computer5, ComputerSection, JumpControl2
+from tycho.crafts import AirRaft, CraftSection, InternalDockingSpace
+from tycho.drives import DriveSection, FusionPlantTL12, JumpDrive2, MDrive2, PowerSection
+from tycho.habitation import HabitationSection, Staterooms
+from tycho.sensors import MilitarySensors, SensorsSection
+from tycho.storage import FuelProcessor, FuelSection, JumpFuel, OperationFuel
+from tycho.systems import Airlock, ProbeDrones, SystemsSection, Workshop
+from tycho.weapons import MountWeapon, Turret, WeaponsSection
 
 scout = ship.Ship(
     ship_class='Suleiman',
@@ -83,7 +83,7 @@ holds your copies of the relevant PDFs for this purpose.
 ## Development
 
 ```bash
-uv run pytest --cov=ceres --cov-report=term-missing   # tests + coverage
+uv run pytest --cov=tycho --cov-report=term-missing   # tests + coverage
 uvx ruff check --fix                                   # lint + auto-fix
 uvx ruff format                                        # format
 uvx ty check                                           # type check

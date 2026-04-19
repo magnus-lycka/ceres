@@ -41,9 +41,7 @@ class CrewRole(CeresModel):
 def _normalize_vector(vector) -> dict[str, int]:
     if vector is None:
         return {}
-    if isinstance(vector, dict):
-        return {str(role): int(count) for role, count in vector.items()}
-    return {str(role): int(count) for role, count in vector}
+    return {str(role): int(count) for role, count in vector.items()}
 
 
 def _crew_reduction_multiplier(displacement: int) -> float:
@@ -78,17 +76,15 @@ def _drives_and_power_tonnage(ship) -> float:
 
 
 def _contained_small_craft_tonnage(ship) -> float:
-    if ship.craft is None or ship.craft.docking_space is None:
+    if ship.craft is None:
         return 0.0
-    return float(ship.craft.docking_space.craft.shipping_size)
+    return float(sum(docking_space.craft.shipping_size for docking_space in ship.craft._all_parts()))
 
 
 def _carried_small_craft_count(ship) -> int:
     if ship.craft is None:
         return 0
-    if ship.craft.docking_space is None:
-        return 0
-    return 1 if ship.craft.docking_space.craft.requires_pilot else 0
+    return sum(1 for docking_space in ship.craft._all_parts() if docking_space.craft.requires_pilot)
 
 
 def _commercial_gunner_count(ship) -> int:

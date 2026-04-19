@@ -91,14 +91,8 @@ class Customisation(CeresModel):
 
 SizeReduction = Customisation(name='Size Reduction', advantage=1, tons_delta_percent=-0.10)
 IncreasedSize = Customisation(name='Increased Size', disadvantage=1, tons_delta_percent=0.25)
-Budget = Customisation(name='Budget', disadvantage=1, cost_multiplier=0.75)
 EnergyEfficient = Customisation(name='Energy Efficient', advantage=1, power_multiplier=0.75)
 EnergyInefficient = Customisation(name='Energy Inefficient', disadvantage=1, power_multiplier=1.25)
-LimitedRange = Customisation(
-    name='Limited Range',
-    disadvantage=1,
-    info_notes=('Reduced range; gameplay effect not modelled by Ceres',),
-)
 LongRange = Customisation(
     name='Long Range',
     advantage=2,

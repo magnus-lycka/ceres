@@ -87,6 +87,24 @@ The installed-part graph is now section-based rather than mostly flat:
 - `systems`
 - `cargo`
 
+### Carried craft and external loads
+
+Internally carried craft use dedicated ship volume. For `Internal Docking Space`
+or `Full Hangar`, the mothership pays the tonnage and cost of the docking /
+hangar facility, while the carried craft itself contributes only its own cost
+to the spec. The carried craft's own fuel, cargo, and other internal resources
+are not added separately to the mothership spec.
+
+Externally carried craft or cargo are different. For systems such as docking
+clamps, tow cables, cargo nets, external cargo mounts, jump nets, jump shuttles
+and similar arrangements, the attached load must be treated as extra effective
+displacement when assessing drives and other displacement-sensitive performance.
+This is not yet modelled in code.
+
+When we add these external-load systems, we will likely want some form of
+parameterized spec output, so a design can state performance at one or more
+extra carried displacements, such as “Thrust X / Jump Y while carrying Z dTons”.
+
 ### Armour
 
 `Armour` extends `ShipPart` with derived cost and tonnage. Tonnage scales with
@@ -154,3 +172,15 @@ in the following intentional ways:
   that our cargo figure will be slightly higher than Anderson's.
 - **Battle Load** — Anderson shows power figures for both normal and battle
   load. We only model normal load and do not plan to add battle load.
+- **Cost Reduction X*10% on ship components** — Anderson exports sometimes show
+  labels such as `Cost Reduction 3` or `Cost Reduction 3*` on drives. We do
+  not currently have rule text supporting a generic ship-component
+  `Cost Reduction` customisation in High Guard. This is distinct from
+  `Budget`, which *is* defined in the Prototype/Advanced table and requires a
+  Disadvantage. Until we find explicit ship-design rules for Anderson's
+  `X*10% cost reduction`, Ceres does not model it.
+- **CSC retrotech and ship components** — Central Supply Catalogue has explicit
+  retrotech rules for computers and electronics. We have not found rule text
+  saying those retrotech rules also apply generically to starship components,
+  so Ceres does not extend CSC retrotech pricing or TL logic to ships by
+  default.

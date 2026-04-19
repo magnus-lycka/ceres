@@ -1,7 +1,7 @@
 import pytest
 
-from ceres.base import ShipBase
-from ceres.computer import (
+from tycho.base import ShipBase
+from tycho.computer import (
     AutoRepair,
     AutoRepair1,
     AutoRepair2,

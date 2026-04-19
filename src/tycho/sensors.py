@@ -2,12 +2,68 @@ from typing import Annotated, Any, Literal, cast
 
 from pydantic import Field
 
-from .base import CeresModel, Note, NoteCategory
+from .base import CeresModel, Note, NoteCategory, ShipBase
 from .parts import ShipPart
 from .spec import ShipSpec, SpecSection
 
 
-class BasicSensors(ShipPart):
+def _sensor_feature(sensor: str, *, effective_tl: int) -> str:
+    if sensor in ('Radar', 'Lidar'):
+        if effective_tl >= 10:
+            return f'{sensor} (ELPI)'
+        if effective_tl >= 9:
+            return f'{sensor} (LPI)'
+        return sensor
+    if sensor == 'Densitometer':
+        if effective_tl >= 15:
+            return 'Densitometer (ELPI)'
+        if effective_tl >= 13:
+            return 'Densitometer (LPI)'
+        return 'Densitometer'
+    if sensor == 'Neural Activity Sensor':
+        return 'Neural Activity Sensor (passive only)'
+    return sensor
+
+
+def _sensor_package_notes(
+    *,
+    suite: tuple[str, ...],
+    dm: str,
+    package_capabilities: tuple[str, ...] = (),
+    effective_tl: int,
+) -> list[Note]:
+    features = ['Passive optical and thermal sensors']
+    features.extend(_sensor_feature(sensor, effective_tl=effective_tl) for sensor in suite)
+    features.extend(package_capabilities)
+    notes = [
+        Note(category=NoteCategory.INFO, message=f'Features: {", ".join(features)}'),
+        Note(
+            category=NoteCategory.INFO,
+            message=f'Sensor DM {dm} to Electronics (comms) and Electronics (sensors) checks',
+        ),
+    ]
+    return notes
+
+
+def _note_tl(part: ShipPart) -> int:
+    owner = getattr(part, '_owner', None)
+    if owner is None:
+        return part.minimum_tl
+    return part.effective_tl
+
+
+class SensorPackage(ShipPart):
+    def bind(self, owner: ShipBase) -> None:
+        super().bind(owner)
+        retained_notes = [note for note in self.notes if note.category in (NoteCategory.WARNING, NoteCategory.ERROR)]
+        object.__setattr__(self, 'notes', [])
+        if message := self.build_item():
+            self.item(message)
+        self.notes.extend(self.build_notes())
+        self.notes.extend(retained_notes)
+
+
+class BasicSensors(SensorPackage):
     description: Literal['Basic'] = 'Basic'
     minimum_tl = 8
 
@@ -15,7 +71,7 @@ class BasicSensors(ShipPart):
         return self.description
 
     def build_notes(self) -> list[Note]:
-        return [Note(category=NoteCategory.INFO, message='Radar, Lidar; DM -4')]
+        return _sensor_package_notes(suite=('Radar', 'Lidar'), dm='-4', effective_tl=_note_tl(self))
 
     def compute_tons(self) -> float:
         return 0.0
@@ -27,7 +83,7 @@ class BasicSensors(ShipPart):
         return 0.0
 
 
-class CivilianSensors(ShipPart):
+class CivilianSensors(SensorPackage):
     description: Literal['Civilian Grade'] = 'Civilian Grade'
     minimum_tl = 9
 
@@ -35,7 +91,7 @@ class CivilianSensors(ShipPart):
         return self.description
 
     def build_notes(self) -> list[Note]:
-        return [Note(category=NoteCategory.INFO, message='Radar, Lidar; DM -2')]
+        return _sensor_package_notes(suite=('Radar', 'Lidar'), dm='-2', effective_tl=_note_tl(self))
 
     def compute_tons(self) -> float:
         return 1.0
@@ -47,7 +103,7 @@ class CivilianSensors(ShipPart):
         return 1.0
 
 
-class MilitarySensors(ShipPart):
+class MilitarySensors(SensorPackage):
     description: Literal['Military Grade'] = 'Military Grade'
     minimum_tl = 10
 
@@ -55,7 +111,12 @@ class MilitarySensors(ShipPart):
         return self.description
 
     def build_notes(self) -> list[Note]:
-        return [Note(category=NoteCategory.INFO, message='Jammers, Radar, Lidar; DM +0')]
+        return _sensor_package_notes(
+            suite=('Radar', 'Lidar'),
+            dm='+0',
+            package_capabilities=('Jammers', 'Emissions Control (EMCON)'),
+            effective_tl=_note_tl(self),
+        )
 
     def compute_tons(self) -> float:
         return 2.0
@@ -67,7 +128,7 @@ class MilitarySensors(ShipPart):
         return 2.0
 
 
-class ImprovedSensors(ShipPart):
+class ImprovedSensors(SensorPackage):
     description: Literal['Improved'] = 'Improved'
     minimum_tl = 12
 
@@ -75,7 +136,12 @@ class ImprovedSensors(ShipPart):
         return self.description
 
     def build_notes(self) -> list[Note]:
-        return [Note(category=NoteCategory.INFO, message='Radar, Lidar, EMS, Densitometer; DM +1')]
+        return _sensor_package_notes(
+            suite=('Radar', 'Lidar', 'Densitometer'),
+            dm='+1',
+            package_capabilities=('Jammers', 'Emissions Control (EMCON)'),
+            effective_tl=_note_tl(self),
+        )
 
     def compute_tons(self) -> float:
         return 3.0
@@ -87,6 +153,31 @@ class ImprovedSensors(ShipPart):
         return 3.0
 
 
+class AdvancedSensors(SensorPackage):
+    description: Literal['Advanced'] = 'Advanced'
+    minimum_tl = 15
+
+    def build_item(self) -> str | None:
+        return self.description
+
+    def build_notes(self) -> list[Note]:
+        return _sensor_package_notes(
+            suite=('Radar', 'Lidar', 'Densitometer', 'Neural Activity Sensor'),
+            dm='+2',
+            package_capabilities=('Jammers', 'Extreme Emissions Control'),
+            effective_tl=_note_tl(self),
+        )
+
+    def compute_tons(self) -> float:
+        return 5.0
+
+    def compute_cost(self) -> float:
+        return 5_300_000.0
+
+    def compute_power(self) -> float:
+        return 6.0
+
+
 class CountermeasuresSuite(ShipPart):
     description: Literal['Countermeasures Suite'] = 'Countermeasures Suite'
     minimum_tl = 11
@@ -94,8 +185,37 @@ class CountermeasuresSuite(ShipPart):
     def build_item(self) -> str | None:
         return self.description
 
+    def build_notes(self) -> list[Note]:
+        return [Note(category=NoteCategory.INFO, message='DM +4 to all jamming and electronic warfare attempts')]
+
     def compute_tons(self) -> float:
         return 2.0
+
+    def compute_cost(self) -> float:
+        return 4_000_000.0
+
+    def compute_power(self) -> float:
+        return 1.0
+
+
+class LifeScannerAnalysisSuite(ShipPart):
+    description: Literal['Life Scanner Analysis Suite'] = 'Life Scanner Analysis Suite'
+    minimum_tl = 14
+
+    def build_item(self) -> str | None:
+        return self.description
+
+    def build_notes(self) -> list[Note]:
+        return [
+            Note(category=NoteCategory.INFO, message='Advanced ship-mounted life scanner'),
+            Note(
+                category=NoteCategory.INFO,
+                message='Requires Electronics (sensors) to interpret; improves biological analysis',
+            ),
+        ]
+
+    def compute_tons(self) -> float:
+        return 1.0
 
     def compute_cost(self) -> float:
         return 4_000_000.0
@@ -188,13 +308,14 @@ class RapidDeploymentExtendedArrays(ExtendedArrays):
 
 
 ShipSensors = Annotated[
-    BasicSensors | CivilianSensors | MilitarySensors | ImprovedSensors,
+    BasicSensors | CivilianSensors | MilitarySensors | ImprovedSensors | AdvancedSensors,
     Field(discriminator='description'),
 ]
 
 
 class SensorsSection(CeresModel):
     primary: ShipSensors = Field(default_factory=BasicSensors)
+    life_scanner_analysis_suite: LifeScannerAnalysisSuite | None = None
     countermeasures: CountermeasuresSuite | None = None
     signal_processing: EnhancedSignalProcessing | None = None
     extended_arrays: ExtendedArrays | RapidDeploymentExtendedArrays | None = None
@@ -202,6 +323,8 @@ class SensorsSection(CeresModel):
 
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = [self.primary]
+        if self.life_scanner_analysis_suite is not None:
+            parts.append(self.life_scanner_analysis_suite)
         if self.countermeasures is not None:
             parts.append(self.countermeasures)
         if self.signal_processing is not None:

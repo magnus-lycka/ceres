@@ -37,7 +37,12 @@ class Bridge(ShipPart):
 
     def build_notes(self) -> list[Note]:
         if self.small:
-            return [Note(category=NoteCategory.INFO, message='DM -1 to Pilot checks')]
+            return [
+                Note(
+                    category=NoteCategory.INFO,
+                    message='DM -1 for all checks related to spacecraft operations',
+                )
+            ]
         return []
 
     def compute_tons(self) -> float:

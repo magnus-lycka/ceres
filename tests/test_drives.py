@@ -1,8 +1,8 @@
 import pytest
 
-from ceres import hull, ship
-from ceres.base import ShipBase
-from ceres.drives import (
+from tycho import hull, ship
+from tycho.base import ShipBase
+from tycho.drives import (
     DriveSection,
     EmergencyPowerSystem,
     FusionPlantTL8,
@@ -17,12 +17,13 @@ from ceres.drives import (
     JumpDrive7,
     JumpDrive8,
     JumpDrive9,
+    LimitedRange,
     MDrive6,
     MDrive7,
     PowerSection,
     ReactionDrive,
 )
-from ceres.storage import FuelSection, OperationFuel, ReactionFuel
+from tycho.storage import FuelSection, OperationFuel, ReactionFuel
 
 
 class DummyOwner(ShipBase):
@@ -84,6 +85,12 @@ def test_budget_increased_size_mdrive_values():
     assert d.build_item() == 'M-Drive 7, Budget-Increased Size'
     assert float(d.tons) == pytest.approx(35.0)
     assert float(d.cost) == pytest.approx(42_000_000.0)
+
+
+def test_limited_range_is_drive_specific_customisation():
+    assert [(note.category.value, note.message) for note in LimitedRange.build_notes()] == [
+        ('info', 'This manoeuvre drive only functions within the 100-diameter limit'),
+    ]
 
 
 def test_drive_section_all_parts():

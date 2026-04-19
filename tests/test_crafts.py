@@ -1,5 +1,5 @@
-from ceres.base import ShipBase
-from ceres.crafts import AirRaft, CraftSection, InternalDockingSpace
+from tycho.base import ShipBase
+from tycho.crafts import AirRaft, CraftSection, InternalDockingSpace
 
 
 class DummyOwner(ShipBase):

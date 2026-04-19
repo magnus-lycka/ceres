@@ -1,5 +1,10 @@
 # List of potential things to do
 
+## Naming
+
+Should self.owner be self.ship instead?
+
+
 ## Software Singleton [done]
 
 Note that Software Packages are Singletons
@@ -171,6 +176,12 @@ Maybe it's better to combine jump and propulsion to a drives section?
 
 Handle R-drives in additioin to M-drives and J-drives
 
+Note:
+
+- when we later add external carry systems such as docking clamps, tow cables, cargo nets, external cargo mounts, jump nets, jump shuttles, modular cutter handling or similar, they should not be treated like internal docking space
+- external loads should affect effective displacement for drive-performance calculations
+- this likely wants parameterized specs, e.g. performance at `+X dTons`
+
 ## Handle non-fusion power plants
 
 Support Chemical and Fission drives.
@@ -186,3 +197,15 @@ bridge, can be used by any ship of more than 5,000
 tons and adds an additional MCr30 to the cost of the
 bridge. The command bridge grants DM+1 to all Tactics
 (naval) checks made within it.
+
+## Military Hull
+
+By increasing the cost of a hull by +25%, a ship may install armour up to double its standard rating. For example, a non-military hull made of bonded superdense has a maximum armour value equal to the Tech Level of the ship, as described in the Hull Armour table on page 13. However, a ship with a military hull may add up to double that value in armour. Military hulls can only be applied to capital ships (greater than 5,000 tons) and can stack with the reinforced hull option.
+
+## Non-Gravity Hull
+
+Basic hulls include artificial gravity, using grav plates to ensure a normal gravitational environment for the comfort and convenience of the crew. Hulls can be built cheaper without artificial grav plating, using specific configurations that allow the hull to constantly spin in order to generate gravity if desired. Non-gravity hulls reduce hull cost by 50% but are limited to a maximum size of 500,000 tons due to structural limitations. Base Power Requirements for non-gravity hulls are half that of other hull types. See Power Requirements on page 17 for more information.
+
+*To use this and still get artificial gravity the ship must be able to spin. It could be a torus, a cylinder or something like a capsule connected to a counterweight with a wire (of course it could be two capsules acting as counterweights to each other, but you might have heavy stuff, like power plant, where you don't need full gravity). Either way, the spin radius must be big enough to make this more good than bad. One can of course settle for less than 1G gravity, but there are several well known issues. Both torus and capsule with counterweight would -- I think be dispersed structure. A cyliner, wgich could be a standard structure, would have to be huge, and either a lot of wasted space or most areas wouls have much less gravity. With rotation, there are several issues, which all get worse with less radius (which also means faster rotation): Things fall in tangential direction, not at all same as perceived down. Coriolis effects are stronger. Rapid spin makes people dizzy etc. All of this will place a lower bound on reasonable radius. Of course, working in Zero-G with penaltiess is an option.*
+
+

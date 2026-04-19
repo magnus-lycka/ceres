@@ -1,8 +1,9 @@
 import pytest
 
-from ceres import hull, ship
-from ceres.base import ShipBase
-from ceres.sensors import (
+from tycho import hull, ship
+from tycho.base import ShipBase
+from tycho.sensors import (
+    AdvancedSensors,
     BasicSensors,
     CivilianSensors,
     EnhancedSignalProcessing,
@@ -33,7 +34,8 @@ def test_basic_sensors_notes_describe_suite_and_dm():
     s.bind(DummyOwner(12, 100))
     assert [(note.category.value, note.message) for note in s.notes] == [
         ('item', 'Basic'),
-        ('info', 'Radar, Lidar; DM -4'),
+        ('info', 'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI)'),
+        ('info', 'Sensor DM -4 to Electronics (comms) and Electronics (sensors) checks'),
     ]
 
 
@@ -63,7 +65,8 @@ def test_civilian_grade_notes_describe_suite_and_dm():
     s.bind(DummyOwner(12, 6))
     assert [(note.category.value, note.message) for note in s.notes] == [
         ('item', 'Civilian Grade'),
-        ('info', 'Radar, Lidar; DM -2'),
+        ('info', 'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI)'),
+        ('info', 'Sensor DM -2 to Electronics (comms) and Electronics (sensors) checks'),
     ]
 
 
@@ -72,7 +75,69 @@ def test_military_grade_notes_describe_suite_and_dm():
     s.bind(DummyOwner(12, 100))
     assert [(note.category.value, note.message) for note in s.notes] == [
         ('item', 'Military Grade'),
-        ('info', 'Jammers, Radar, Lidar; DM +0'),
+        (
+            'info',
+            'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI), '
+            'Jammers, Emissions Control (EMCON)',
+        ),
+        ('info', 'Sensor DM +0 to Electronics (comms) and Electronics (sensors) checks'),
+    ]
+
+
+def test_improved_sensors_at_tl13_include_expected_features():
+    s = ImprovedSensors()
+    s.bind(DummyOwner(13, 100))
+    assert [(note.category.value, note.message) for note in s.notes] == [
+        ('item', 'Improved'),
+        (
+            'info',
+            'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI), '
+            'Densitometer (LPI), Jammers, Emissions Control (EMCON)',
+        ),
+        ('info', 'Sensor DM +1 to Electronics (comms) and Electronics (sensors) checks'),
+    ]
+
+
+def test_basic_sensors_at_tl8_have_no_lpi_or_elpi():
+    s = BasicSensors()
+    s.bind(DummyOwner(8, 100))
+    assert ('info', 'Features: Passive optical and thermal sensors, Radar, Lidar') in [
+        (note.category.value, note.message) for note in s.notes
+    ]
+
+
+def test_improved_sensors_at_tl12_do_not_yet_upgrade_densitometer_to_lpi():
+    s = ImprovedSensors()
+    s.bind(DummyOwner(12, 100))
+    assert (
+        'info',
+        'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI), '
+        'Densitometer, Jammers, Emissions Control (EMCON)',
+    ) in [(note.category.value, note.message) for note in s.notes]
+
+
+def test_improved_sensors_at_tl15_upgrade_densitometer_to_elpi():
+    s = ImprovedSensors()
+    s.bind(DummyOwner(15, 100))
+    assert (
+        'info',
+        'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI), '
+        'Densitometer (ELPI), Jammers, Emissions Control (EMCON)',
+    ) in [(note.category.value, note.message) for note in s.notes]
+
+
+def test_advanced_sensors_include_neural_activity_sensor_and_extreme_emissions_control():
+    s = AdvancedSensors()
+    s.bind(DummyOwner(15, 100))
+    assert [(note.category.value, note.message) for note in s.notes] == [
+        ('item', 'Advanced'),
+        (
+            'info',
+            'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI), '
+            'Densitometer (ELPI), Neural Activity Sensor (passive only), Jammers, '
+            'Extreme Emissions Control',
+        ),
+        ('info', 'Sensor DM +2 to Electronics (comms) and Electronics (sensors) checks'),
     ]
 
 
@@ -122,6 +187,29 @@ def test_enhanced_signal_processing_values():
     assert s.cost == 8_000_000
     assert s.power == 2
     assert ('info', 'DM +4 to all sensor-related checks') in [
+        (note.category.value, note.message) for note in s.notes
+    ]
+
+
+def test_countermeasures_suite_notes_explain_bonus():
+    from tycho.sensors import CountermeasuresSuite
+
+    s = CountermeasuresSuite()
+    s.bind(DummyOwner(13, 400))
+    assert ('info', 'DM +4 to all jamming and electronic warfare attempts') in [
+        (note.category.value, note.message) for note in s.notes
+    ]
+
+
+def test_life_scanner_analysis_suite_notes_explain_capability():
+    from tycho.sensors import LifeScannerAnalysisSuite
+
+    s = LifeScannerAnalysisSuite()
+    s.bind(DummyOwner(14, 400))
+    assert ('info', 'Advanced ship-mounted life scanner') in [
+        (note.category.value, note.message) for note in s.notes
+    ]
+    assert ('info', 'Requires Electronics (sensors) to interpret; improves biological analysis') in [
         (note.category.value, note.message) for note in s.notes
     ]
 

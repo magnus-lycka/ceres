@@ -206,8 +206,9 @@ class Hull(CeresModel):
     configuration: HullConfiguration
     armour: HullArmour | None = None
     stealth: HullStealth | None = None
+    pressure_hull: bool = False
     armoured_bulkheads: list[ArmouredBulkhead] = Field(default_factory=list)
-    airlocks: list[Airlock] = Field(default_factory=list)
+    airlocks: list[Airlock] | None = None
     aerofins: Aerofins | None = None
     heat_shielding: bool = False
     radiation_shielding: bool = False
@@ -218,8 +219,22 @@ class Hull(CeresModel):
             return 0.0
         return displacement * 25_000.0
 
+    def pressure_hull_tons(self, displacement: float) -> float:
+        if not self.pressure_hull:
+            return 0.0
+        return displacement * 0.25
+
+    def total_cost(self, displacement: float) -> float:
+        base_cost = self.configuration.cost(displacement)
+        if self.pressure_hull:
+            return base_cost * 10
+        return base_cost
+
     def build_item(self) -> str | None:
-        return self.configuration.build_item()
+        item = self.configuration.build_item()
+        if item is not None and self.pressure_hull:
+            return f'{item}, Pressure Hull'
+        return item
 
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = []
@@ -228,7 +243,8 @@ class Hull(CeresModel):
         if (s := self.stealth) is not None:
             parts.append(s)
         parts.extend(self.armoured_bulkheads)
-        parts.extend(self.airlocks)
+        if self.airlocks is not None:
+            parts.extend(self.airlocks)
         if (af := self.aerofins) is not None:
             parts.append(af)
         return parts
@@ -253,6 +269,13 @@ class Hull(CeresModel):
         )
         if self.armour is not None:
             spec.add_row(ship._spec_row_for_part(SpecSection.HULL, self.armour))
+        elif self.pressure_hull:
+            spec.add_row(
+                SpecRow(
+                    section=SpecSection.HULL,
+                    item='Armour: 4',
+                )
+            )
         if self.stealth is not None:
             spec.add_row(ship._spec_row_for_part(SpecSection.HULL, self.stealth))
         if self.radiation_shielding:
@@ -287,6 +310,6 @@ class Hull(CeresModel):
             )
         for row in ship._grouped_spec_rows(
             SpecSection.HULL,
-            [*self.airlocks, *([self.aerofins] if self.aerofins is not None else [])],
+            [*(self.airlocks or []), *([self.aerofins] if self.aerofins is not None else [])],
         ):
             spec.add_row(row)

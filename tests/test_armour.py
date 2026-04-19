@@ -1,5 +1,5 @@
-from ceres import armour
-from ceres.base import NoteCategory, ShipBase
+from tycho import armour
+from tycho.base import NoteCategory, ShipBase
 
 
 class DummyOwner(ShipBase):

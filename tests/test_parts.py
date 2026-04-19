@@ -1,8 +1,8 @@
 from typing import ClassVar
 
-from ceres import parts
-from ceres.base import ShipBase
-from ceres.hull import ArmouredBulkhead
+from tycho import parts
+from tycho.base import ShipBase
+from tycho.hull import ArmouredBulkhead
 
 
 class DummyShip(ShipBase):
@@ -22,7 +22,6 @@ class CustomPart(parts.CustomisableShipPart):
     possible_customisations: ClassVar[tuple[parts.Customisation, ...]] = (
         parts.EnergyEfficient,
         parts.SizeReduction,
-        parts.Budget,
         parts.IncreasedSize,
     )
 
@@ -103,6 +102,17 @@ def test_customisable_part_exposes_shared_multipliers():
     assert part.customisation_cost_multiplier == 1.5
     assert part.customisation_tons_multiplier == 0.8
     assert part.customisation_power_multiplier == 0.75
+
+
+def test_budget_grade_uses_grade_discount_not_budget_customisation():
+    part = CustomPart(
+        customisation_grade=parts.CustomisationGrade.BUDGET,
+        customisations=(parts.IncreasedSize,),
+    )
+    assert part.total_advantages == 0
+    assert part.total_disadvantages == 1
+    assert part.customisation_cost_multiplier == 0.75
+    assert part.customisation_tons_multiplier == 1.25
 
 
 def test_customisable_part_notes_and_fuel_multiplier_are_aggregated():
