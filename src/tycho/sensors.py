@@ -64,7 +64,7 @@ class SensorPackage(ShipPart):
 
 
 class BasicSensors(SensorPackage):
-    description: Literal['Basic'] = 'Basic'
+    description: Literal['Basic Sensors'] = 'Basic Sensors'
     minimum_tl = 8
 
     def build_item(self) -> str | None:
@@ -84,7 +84,7 @@ class BasicSensors(SensorPackage):
 
 
 class CivilianSensors(SensorPackage):
-    description: Literal['Civilian Grade'] = 'Civilian Grade'
+    description: Literal['Civilian Grade Sensors'] = 'Civilian Grade Sensors'
     minimum_tl = 9
 
     def build_item(self) -> str | None:
@@ -104,7 +104,7 @@ class CivilianSensors(SensorPackage):
 
 
 class MilitarySensors(SensorPackage):
-    description: Literal['Military Grade'] = 'Military Grade'
+    description: Literal['Military Grade Sensors'] = 'Military Grade Sensors'
     minimum_tl = 10
 
     def build_item(self) -> str | None:
@@ -154,7 +154,7 @@ class ImprovedSensors(SensorPackage):
 
 
 class AdvancedSensors(SensorPackage):
-    description: Literal['Advanced'] = 'Advanced'
+    description: Literal['Advanced Sensors'] = 'Advanced Sensors'
     minimum_tl = 15
 
     def build_item(self) -> str | None:

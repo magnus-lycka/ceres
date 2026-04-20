@@ -13,6 +13,7 @@ def test_cockpit_tons():
     c = Cockpit()
     c.bind(DummyOwner(12, 6))
     assert float(c.tons) == 1.5
+    assert c.build_item() == 'Cockpit'
 
 
 def test_cockpit_cost():
@@ -25,6 +26,7 @@ def test_cockpit_holographic_cost():
     c = Cockpit(holographic=True)
     c.bind(DummyOwner(12, 6))
     assert float(c.cost) == 12_500
+    assert c.build_item() == 'Holographic Cockpit'
 
 
 def test_cockpit_power_zero():
@@ -51,6 +53,7 @@ def test_bridge_100_tons_standard_size_and_cost():
     assert b.tons == 10.0
     assert b.cost == 500_000
     assert b.operations_dm == 0
+    assert b.build_item() == 'Standard Bridge'
 
 
 def test_bridge_100_tons_small_bridge_uses_previous_size_band():
@@ -59,6 +62,7 @@ def test_bridge_100_tons_small_bridge_uses_previous_size_band():
     assert b.tons == 6.0
     assert b.cost == 250_000
     assert b.operations_dm == -1
+    assert b.build_item() == 'Smaller Bridge'
 
 
 def test_small_bridges():
@@ -92,7 +96,13 @@ def test_bridge_holographic_cost():
 def test_bridge_holographic_build_item():
     b = Bridge(holographic=True)
     b.bind(DummyOwner(12, 200))
-    assert b.build_item() == 'Bridge (Holographic)'
+    assert b.build_item() == 'Holographic Controls'
+
+
+def test_bridge_holographic_build_item():
+    b = Bridge(holographic=True, small=True)
+    b.bind(DummyOwner(12, 200))
+    assert b.build_item() == 'Smaller Holographic Controls'
 
 
 def test_normal_bridges():

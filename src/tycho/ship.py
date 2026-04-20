@@ -304,9 +304,13 @@ class Ship(ShipBase):
             self.systems.add_spec_rows(self, spec)
         CargoSection.add_spec_rows_for_ship(self, spec)
 
-        # Ship-level notes (e.g. hull overloaded) appended to the last row
-        for note in self.notes:
-            spec.rows_for_section(SpecSection.CARGO)[-1].notes.append(note)
+        ship_level_notes = self._display_notes(self)
+        spec.crew_notes = [
+            note
+            for note in ship_level_notes
+            if note.category is NoteCategory.WARNING and 'below recommended count:' in note.message
+        ]
+        spec.ship_notes = [note for note in ship_level_notes if note not in spec.crew_notes]
 
         spec.expenses = self.expenses.rows
         spec.crew = spec_crew_rows(self)

@@ -61,6 +61,8 @@ class ShipSpec:
     tl: int | None = None
     hull_points: float | None = None
     _sections: dict[SpecSection, list[SpecRow]] = field(default_factory=dict)
+    ship_notes: list[Note] = field(default_factory=list)
+    crew_notes: list[Note] = field(default_factory=list)
     expenses: list[ExpenseRow] = field(default_factory=list)
     crew: list[CrewRow] = field(default_factory=list)
     passengers: list[PassengerRow] = field(default_factory=list)

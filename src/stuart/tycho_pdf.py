@@ -63,9 +63,9 @@ def _render_notes(notes: list[Note]) -> str:
             continue
         msg = _esc(note.message)
         if note.category is NoteCategory.WARNING:
-            parts.append(f'#text(fill: rgb("#e07800"), style: "italic")[{msg}]')
+            parts.append(f'#text(fill: rgb("#e07800"), style: "italic")[Warning: {msg}]')
         elif note.category is NoteCategory.ERROR:
-            parts.append(f'#text(fill: rgb("#cc2036"), weight: "bold")[{msg}]')
+            parts.append(f'#text(fill: rgb("#cc2036"), weight: "bold")[Error: {msg}]')
         else:
             parts.append(f'- {msg}')
     if not parts:
@@ -137,6 +137,31 @@ def _crew_rows(spec: ShipSpec) -> str:
     return '\n'.join(lines)
 
 
+def _crew_notes_block(spec: ShipSpec) -> str:
+    if not spec.crew_notes:
+        return ''
+    return '#v(2mm)\n' + _render_notes(spec.crew_notes).removeprefix('#linebreak()')
+
+
+def _crew_panel(spec: ShipSpec) -> str:
+    return f"""
+[
+  #block(breakable: false, stroke: 0.6pt + ink, inset: 0pt)[
+    #table(
+      columns: (1fr, auto, auto),
+      stroke: (x, y) => if y == 0 {{ (bottom: 0.6pt + ink) }} else {{ (bottom: 0.3pt + rgb("#b0a090")) }},
+      table.header(
+        table.cell(colspan: 3, align: center)[#text(fill: ink, weight: "bold")[CREW]],
+        [*Role*], table.cell(align: right)[*Salary*], table.cell(align: right)[*Total*],
+      ),
+{_crew_rows(spec)}
+    )
+  ]
+{_crew_notes_block(spec)}
+]
+""".strip()
+
+
 def _power_rows(spec: ShipSpec) -> str:
     sums: dict[str, float] = {}
     produces: set[str] = set()
@@ -173,6 +198,12 @@ def _costs_rows(spec: ShipSpec) -> str:
     return '\n'.join(
         f'    [{_esc(e.label)}], table.cell(align: right)[{_esc(_fmt_cr(e.amount))}],' for e in spec.expenses
     )
+
+
+def _ship_notes_block(spec: ShipSpec) -> str:
+    if not spec.ship_notes:
+        return ''
+    return '#v(3mm)\n' + _render_notes(spec.ship_notes).removeprefix('#linebreak()')
 
 
 # ---------------------------------------------------------------------------
@@ -229,6 +260,7 @@ def _build_typst_source(spec: ShipSpec, *, page_size: str) -> str:
 {_spec_table_rows(spec)}
   )
 ]
+{_ship_notes_block(spec)}
 
 #v(4mm)
 
@@ -237,17 +269,7 @@ def _build_typst_source(spec: ShipSpec, *, page_size: str) -> str:
   columns: (1fr, 1fr),
   gutter: 8mm,
 
-  block(breakable: false, stroke: 0.6pt + ink, inset: 0pt)[
-    #table(
-      columns: (1fr, auto, auto),
-      stroke: (x, y) => if y == 0 {{ (bottom: 0.6pt + ink) }} else {{ (bottom: 0.3pt + rgb("#b0a090")) }},
-      table.header(
-        table.cell(colspan: 3, align: center)[#text(fill: ink, weight: "bold")[CREW]],
-        [*Role*], table.cell(align: right)[*Salary*], table.cell(align: right)[*Total*],
-      ),
-{_crew_rows(spec)}
-    )
-  ],
+  {_crew_panel(spec)},
 
   block(breakable: false, stroke: 0.6pt + ink, inset: 0pt)[
     #table(

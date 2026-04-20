@@ -130,7 +130,7 @@ def test_source_renders_warning_notes_as_orange_italic():
                   notes=[Note(category=NoteCategory.WARNING, message='Check this')])
     spec.add_row(row)
     src = _build_typst_source(spec, page_size='a4')
-    assert 'Check this' in src
+    assert 'Warning: Check this' in src
     assert 'style: "italic"' in src
     assert 'e07800' in src
 
@@ -143,9 +143,37 @@ def test_source_renders_error_notes_as_red_bold():
                   notes=[Note(category=NoteCategory.ERROR, message='Fix this')])
     spec.add_row(row)
     src = _build_typst_source(spec, page_size='a4')
-    assert 'Fix this' in src
+    assert 'Error: Fix this' in src
     assert 'weight: "bold"' in src
     assert 'cc2036' in src
+
+
+def test_source_renders_ship_level_notes_below_main_table():
+    from tycho.base import Note, NoteCategory
+
+    spec = ShipSpec(ship_class='Test')
+    spec.ship_notes = [
+        Note(category=NoteCategory.ERROR, message='No airlock installed'),
+        Note(category=NoteCategory.WARNING, message='Crew below recommended count'),
+    ]
+
+    src = _build_typst_source(spec, page_size='a4')
+    assert 'Error: No airlock installed' in src
+    assert 'Warning: Crew below recommended count' in src
+
+
+def test_source_renders_crew_notes_with_crew_table():
+    from tycho.base import Note, NoteCategory
+
+    spec = ShipSpec(ship_class='Test')
+    spec.crew = []
+    spec.crew_notes = [
+        Note(category=NoteCategory.WARNING, message='GUNNER below recommended count: 0 < 1'),
+    ]
+
+    src = _build_typst_source(spec, page_size='a4')
+    assert 'CREW' in src
+    assert 'Warning: GUNNER below recommended count: 0 < 1' in src
 
 
 def test_source_contains_dragon_bulkhead_notes():

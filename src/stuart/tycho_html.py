@@ -23,7 +23,7 @@ def render_ship_spec_html(spec: ShipSpec, *, theme: StuartTheme = 'light') -> st
         '<div class="ship-grid">'
         f'{_render_main_table(spec)}'
         '<aside class="ship-sidebar">'
-        f'{_render_crew_card(spec.crew)}'
+        f'{_render_crew_card(spec.crew, spec.crew_notes)}'
         f'{_render_power_card(spec.rows)}'
         f'{_render_costs_card(spec.expenses)}'
         '</aside>'
@@ -69,8 +69,16 @@ def _render_main_table(spec: ShipSpec) -> str:
         '<thead><tr><th>Section</th><th>Item</th><th class="num">Tons</th><th class="num">Cost (MCr)</th></tr></thead>'
         f'<tbody>{rows_html}</tbody>'
         '</table>'
+        f'{_render_ship_notes(spec)}'
         '</section>'
     )
+
+
+def _render_ship_notes(spec: ShipSpec) -> str:
+    if not spec.ship_notes:
+        return ''
+    note_items = ''.join(_render_note_item(note.message, note.category) for note in spec.ship_notes)
+    return f'<ul class="item-notes ship-notes">{note_items}</ul>'
 
 
 def _section_rowspans(rows: list[SpecRow]) -> dict[int, int]:
@@ -129,11 +137,15 @@ def _render_note_item(message: str, category: NoteCategory) -> str:
     return f'<li class="note-{category.value}">{rendered}</li>'
 
 
-def _render_crew_card(crew: list[CrewRow]) -> str:
+def _render_crew_card(crew: list[CrewRow], crew_notes) -> str:
     rows = ''.join(f'<li>{escape(c.role if c.quantity is None else f"{c.role} × {c.quantity}")}</li>' for c in crew)
     if not rows:
         rows = '<li>Uncrewed</li>'
-    return _render_card('Crew', f'<ul class="simple-list">{rows}</ul>')
+    notes_html = ''
+    if crew_notes:
+        note_items = ''.join(_render_note_item(note.message, note.category) for note in crew_notes)
+        notes_html = f'<ul class="item-notes ship-notes">{note_items}</ul>'
+    return f'{_render_card("Crew", f'<ul class="simple-list">{rows}</ul>')}{notes_html}'
 
 
 def _render_power_card(rows: list[SpecRow]) -> str:

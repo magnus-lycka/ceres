@@ -167,7 +167,7 @@ def test_beowulf_spec_structure():
     assert spec.hull_points == 80
 
     assert spec.row('Streamlined Hull').section == 'Hull'
-    assert spec.row('Bridge').section == 'Command'
+    assert spec.row('Standard Bridge').section == 'Command'
     assert spec.row('Jump 1').section == 'Jump'
     assert spec.row('M-Drive 1').section == 'Propulsion'
     assert spec.row('Fusion (TL 12)').section == 'Power'
@@ -189,5 +189,4 @@ def test_beowulf_spec_structure():
     assert spec.expenses[0].label == 'Production Cost'
     assert spec.expenses[0].amount == pytest.approx(51_380_000)
     assert spec.expenses[1].amount == pytest.approx(46_242_000)
-
 

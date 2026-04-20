@@ -28,9 +28,13 @@ class Bridge(ShipPart):
     holographic: bool = False
 
     def build_item(self) -> str | None:
-        smaller = 'Smaller ' if self.small else ''
-        holo = ' (Holographic)' if self.holographic else ''
-        return f'{smaller}Bridge{holo}'
+        if self.holographic:
+            if self.small:
+                return 'Smaller Holographic Controls'
+            return 'Holographic Controls'
+        if self.small:
+            return 'Smaller Bridge'
+        return 'Standard Bridge'
 
     def bulkhead_label(self) -> str:
         return 'Bridge'

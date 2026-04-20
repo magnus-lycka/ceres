@@ -33,7 +33,7 @@ def test_basic_sensors_notes_describe_suite_and_dm():
     s = BasicSensors()
     s.bind(DummyOwner(12, 100))
     assert [(note.category.value, note.message) for note in s.notes] == [
-        ('item', 'Basic'),
+        ('item', 'Basic Sensors'),
         ('info', 'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI)'),
         ('info', 'DM -4 to Electronics (comms) and Electronics (sensors) checks'),
     ]
@@ -64,7 +64,7 @@ def test_civilian_grade_notes_describe_suite_and_dm():
     s = CivilianSensors()
     s.bind(DummyOwner(12, 6))
     assert [(note.category.value, note.message) for note in s.notes] == [
-        ('item', 'Civilian Grade'),
+        ('item', 'Civilian Grade Sensors'),
         ('info', 'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI)'),
         ('info', 'DM -2 to Electronics (comms) and Electronics (sensors) checks'),
     ]
@@ -74,7 +74,7 @@ def test_military_grade_notes_describe_suite_and_dm():
     s = MilitarySensors()
     s.bind(DummyOwner(12, 100))
     assert [(note.category.value, note.message) for note in s.notes] == [
-        ('item', 'Military Grade'),
+        ('item', 'Military Grade Sensors'),
         (
             'info',
             'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI), '
@@ -130,7 +130,7 @@ def test_advanced_sensors_include_neural_activity_sensor_and_extreme_emissions_c
     s = AdvancedSensors()
     s.bind(DummyOwner(15, 100))
     assert [(note.category.value, note.message) for note in s.notes] == [
-        ('item', 'Advanced'),
+        ('item', 'Advanced Sensors'),
         (
             'info',
             'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI), '

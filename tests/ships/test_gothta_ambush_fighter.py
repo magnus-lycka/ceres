@@ -1,4 +1,5 @@
 import pytest
+from stuart.tycho_pdf import _build_typst_source
 
 from tycho import hull, ship
 from tycho.bridge import Bridge, CommandSection
@@ -108,3 +109,15 @@ def test_gothta_ambush_fighter_matches_current_subset():
     ]
 
 
+def test_gothta_pdf_places_ship_error_below_main_table():
+    fighter = build_gothta_ambush_fighter()
+    src = _build_typst_source(fighter.build_spec(), page_size='a4')
+    assert 'Error: No airlock installed' in src
+    assert 'Cargo' in src
+    assert src.index('Cargo') < src.index('Error: No airlock installed')
+
+
+def test_gothta_has_no_crew_notes():
+    fighter = build_gothta_ambush_fighter()
+    spec = fighter.build_spec()
+    assert spec.crew_notes == []

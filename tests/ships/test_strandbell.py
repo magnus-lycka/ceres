@@ -211,7 +211,7 @@ def test_strandbell_spec_structure():
     assert spec.row('M-Drive 9').section == 'Propulsion'
     assert spec.row('Fusion (TL 12)').section == 'Power'
     assert spec.row('Fuel Scoops').section == 'Fuel'
-    assert spec.row('Bridge').section == 'Command'
+    assert spec.row('Standard Bridge').section == 'Command'
     assert spec.row('Computer/35').section == 'Computer'
     assert spec.row('Auto-Repair/1').section == 'Computer'
     assert spec.row('Fire Control/2').section == 'Computer'
@@ -243,5 +243,4 @@ def test_strandbell_uses_military_crew_rules():
         ('MEDIC', 1, 4_000),
         ('OFFICER', 1, 5_000),
     ]
-
 

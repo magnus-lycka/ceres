@@ -229,7 +229,7 @@ def test_suleiman_spec_structure():
     assert mdrive.section == 'Propulsion'
     assert mdrive.power == -20.0
 
-    sensors = spec.row('Military Grade')
+    sensors = spec.row('Military Grade Sensors')
     assert sensors.section == 'Sensors'
     assert any('Jammers' in n.message for n in sensors.notes)
 
@@ -285,7 +285,7 @@ def test_suleiman_stuart_html_output():
     assert '<header class="sidebar-card-title">Power</header>' in html
     assert '<header class="sidebar-card-title">Costs</header>' in html
     assert '<th class="num">Cost (MCr)</th>' in html
-    assert '<td>Military Grade</td>' in html
+    assert '<td>Military Grade Sensors</td>' in html
     assert '<td class="item-cell">J-2, 12 weeks of operation</td>' in html
     assert '<td>Fusion (TL 12)</td><td class="num power-positive">60.00</td>' in html
     assert '<td>Basic Ship Systems</td><td class="num">20.00</td>' in html
@@ -363,5 +363,4 @@ def test_higher_jump_control_replaces_lower_one():
     assert ('warning', 'Redundant Jump Control/2 added') in [
         (note.category.value, note.message) for note in jump_control.notes
     ]
-
 
