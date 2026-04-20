@@ -88,7 +88,7 @@ def test_improved_sensors_at_tl13_include_expected_features():
     s = ImprovedSensors()
     s.bind(DummyOwner(13, 100))
     assert [(note.category.value, note.message) for note in s.notes] == [
-        ('item', 'Improved'),
+        ('item', 'Improved Sensors'),
         (
             'info',
             'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI), '

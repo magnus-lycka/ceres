@@ -254,7 +254,7 @@ def test_dragon_markdown_output():
     assert '|  | Armoured Bulkheads | 21.00 |  | 4200.00 |' in table
     assert '|  | • Critical hit severity reduced by 1 if >1 |  |  |  |' in table
     bulkhead_note = (
-        '|  | • M-Drive, Power Plant, Operation Fuel, Bridge, Improved, Countermeasures Suite, '
+        '|  | • M-Drive, Power Plant, Operation Fuel, Bridge, Improved Sensors, Countermeasures Suite, '
         'Enhanced Signal Processing, Extended Arrays, Sensor Stations × 2, Particle Barbette × 2, '
         'Small Missile Bay, '
         'Adv - Size Reduction × 3, Point Defense Battery: Type II-L, Missile Storage (480) |  |  |  |'

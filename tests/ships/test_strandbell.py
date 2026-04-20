@@ -217,7 +217,7 @@ def test_strandbell_spec_structure():
     assert spec.row('Auto-Repair/1').section == 'Computer'
     assert spec.row('Fire Control/2').section == 'Computer'
     assert spec.row('Evade/2').section == 'Computer'
-    assert spec.row('Improved').section == 'Sensors'
+    assert spec.row('Improved Sensors').section == 'Sensors'
     assert spec.row('Countermeasures Suite').section == 'Sensors'
     assert spec.row('Triple Turret', section='Weapons').section == 'Weapons'
     assert spec.row('Missile Storage (240)').section == 'Weapons'

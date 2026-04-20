@@ -1,4 +1,5 @@
 import pytest
+from stuart import render_ship_html
 
 from tycho import armour, hull, ship
 from tycho.bridge import Bridge, CommandSection
@@ -28,7 +29,7 @@ from tycho.systems import (
 )
 from tycho.weapons import Barbette, Bay, MissileStorage, PointDefenseBattery, WeaponsSection
 
-from ._markdown_output import write_markdown_output
+from ._markdown_output import write_html_output, write_markdown_output
 
 
 def build_alt_dragon() -> ship.Ship:
@@ -173,3 +174,22 @@ def test_alt_dragon_markdown_output():
     assert '|  | Cabin Space | 15.00 |  | 750.00 |' in table
     assert '| Cargo | Cargo Hold | 6.39 |  |  |' in table
     assert '|  | **ERROR:**' not in table
+
+
+def test_alt_dragon_stuart_html_output():
+    dragon = build_alt_dragon()
+    html = render_ship_html(dragon)
+    write_html_output('test_alt_dragon', html)
+
+    assert '<title>Dragon</title>' in html
+    assert '<p class="banner-meta">System Defense Boat, Alternate | TL13 | Hull 176</p>' in html
+    assert '<header class="sidebar-card-title">Crew</header>' in html
+    assert '<header class="sidebar-card-title">Power</header>' in html
+    assert '<header class="sidebar-card-title">Costs</header>' in html
+    assert 'Radiation Shielding: Reduce Rads by 1,000' in html
+    assert 'Small Missile Bay, Adv - Size Reduction × 3' in html
+    assert 'Life Support Facilities' in html
+    assert 'Armoured Bulkheads<ul class="item-notes">' in html
+    assert 'Critical hit severity reduced by 1 if &gt;1' in html
+    assert 'Improved Sensors' in html
+    assert '<p class="eyebrow">' not in html

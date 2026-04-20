@@ -129,7 +129,7 @@ class MilitarySensors(SensorPackage):
 
 
 class ImprovedSensors(SensorPackage):
-    description: Literal['Improved'] = 'Improved'
+    description: Literal['Improved Sensors'] = 'Improved Sensors'
     minimum_tl = 12
 
     def build_item(self) -> str | None:

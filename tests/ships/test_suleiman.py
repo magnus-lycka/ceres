@@ -1,4 +1,5 @@
 import pytest
+from stuart import render_ship_html
 
 from tycho import armour, hull, ship
 from tycho.bridge import Bridge, CommandSection
@@ -11,7 +12,7 @@ from tycho.storage import CargoSection, FuelProcessor, FuelSection, JumpFuel, Op
 from tycho.systems import Airlock, ProbeDrones, SystemsSection, Workshop
 from tycho.weapons import Turret, WeaponsSection
 
-from ._markdown_output import write_markdown_output
+from ._markdown_output import write_html_output, write_markdown_output
 
 
 def build_suleiman() -> ship.Ship:
@@ -277,6 +278,27 @@ def test_suleiman_markdown_output():
     suleiman = build_suleiman()
     table = suleiman.markdown_table()
     write_markdown_output('test_suleiman', table)
+
+
+def test_suleiman_stuart_html_output():
+    suleiman = build_suleiman()
+    html = render_ship_html(suleiman)
+    write_html_output('test_suleiman', html)
+
+    assert '<title>Suleiman</title>' in html
+    assert '<p class="banner-meta">Scout/Courier | TL12 | Hull 40</p>' in html
+    assert '<header class="sidebar-card-title">Crew</header>' in html
+    assert '<header class="sidebar-card-title">Power</header>' in html
+    assert '<header class="sidebar-card-title">Costs</header>' in html
+    assert '<th class="num">Cost (MCr)</th>' in html
+    assert '<td>Military Grade</td>' in html
+    assert '<td class="item-cell">J-2, 12 weeks of operation</td>' in html
+    assert '<td>Fusion (TL 12)</td><td class="num power-positive">60.00</td>' in html
+    assert '<td>Basic Ship Systems</td><td class="num">20.00</td>' in html
+    assert 'MIDDLE × 2' not in html
+    assert 'Life Support People' in html
+    assert 'Scout/Courier | TL12 | Hull 40' in html
+    assert '<p class="eyebrow">' not in html
 
 
 def test_markdown_table_renders_inline_warning_on_jump_drive_row():

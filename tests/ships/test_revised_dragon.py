@@ -187,7 +187,7 @@ def test_revised_dragon_markdown_output():
     table = dragon.markdown_table()
     write_markdown_output('test_revised_dragon', table)
     bulkhead_note = (
-        '|  | • M-Drive, Power Plant, Operation Fuel, Bridge, Improved, Countermeasures Suite, '
+        '|  | • M-Drive, Power Plant, Operation Fuel, Bridge, Improved Sensors, Countermeasures Suite, '
         'Enhanced Signal Processing, Extended Arrays, Sensor Stations × 2, '
         'Particle Barbette, VAdv - Very High Yield × 2, Small Missile Bay, Adv - Size Reduction × 3, '
         'Point Defense Battery: Type II-L, Adv - Energy Efficient, Missile Storage (408) |  |  |  |'
