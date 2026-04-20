@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+from stuart import copy_static_assets
+
 OUTPUT_DIR = Path(__file__).parent / 'generated_output'
 MARKDOWN_OUTPUT_DIR = OUTPUT_DIR / 'md'
 HTML_OUTPUT_DIR = OUTPUT_DIR / 'html'
@@ -17,6 +19,7 @@ def write_markdown_output(test_name: str, content: str) -> Path:
 
 def write_html_output(test_name: str, content: str) -> Path:
     HTML_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    copy_static_assets(HTML_OUTPUT_DIR)
     output_path = HTML_OUTPUT_DIR / f'{test_name}.html'
     output_path.write_text(content, encoding='utf-8')
     return output_path

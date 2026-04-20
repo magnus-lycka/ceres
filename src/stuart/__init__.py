@@ -5,7 +5,14 @@ Unlike `tycho`, this package is intentionally not specific to ship-design
 models. It should be able to render other structured outputs later on.
 """
 
-from .html import ExpanseHtmlPage, StuartTheme, render_expanse_html_page
+from .html import ExpanseHtmlPage, StuartTheme, copy_static_assets, render_expanse_html_page
 from .tycho_html import render_ship_html, render_ship_spec_html
 
-__all__ = ['ExpanseHtmlPage', 'StuartTheme', 'render_expanse_html_page', 'render_ship_html', 'render_ship_spec_html']
+__all__ = [
+    'ExpanseHtmlPage',
+    'StuartTheme',
+    'copy_static_assets',
+    'render_expanse_html_page',
+    'render_ship_html',
+    'render_ship_spec_html',
+]

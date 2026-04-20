@@ -1,14 +1,47 @@
+import base64
 from dataclasses import dataclass
 from pathlib import Path
+import random
+import shutil
 from typing import Literal
 
 StuartTheme = Literal['light', 'dark']
 
 _STATIC_DIR = Path(__file__).resolve().parents[2] / 'src' / 'static'
+_LIGHT_BG_FILENAME = 'TCom_ScratchedAluminium_header.jpg'
 
 
-def _light_workbench_bg_url() -> str:
-    return (_STATIC_DIR / 'bg_ship_spec_light.jpg').as_uri()
+def _star_field_data_uri(width: int = 1400, height: int = 900, seed: int = 42) -> str:
+    rng = random.Random(seed)  # nosec B311 — decorative star placement, not cryptographic
+    stars = []
+    _faint_colours = ['white', 'white', 'white', 'white', '#cce0ff', '#cce0ff', '#ffe8a0', '#aac8ff']
+    _bright_colours = ['white', 'white', '#aad4ff', '#6699ff', '#ffd966', '#ffcc44', '#cce0ff', '#fff5cc']
+    # ~350 faint background stars
+    for _ in range(350):
+        x, y = rng.uniform(0, width), rng.uniform(0, height)
+        r = rng.choice([0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 1.5])
+        op = rng.uniform(0.2, 0.7)
+        colour = rng.choice(_faint_colours)
+        stars.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{r}" fill="{colour}" opacity="{op:.2f}"/>')
+    # ~55 brighter prominent stars
+    for _ in range(55):
+        x, y = rng.uniform(0, width), rng.uniform(0, height)
+        r = rng.choice([1.0, 1.5, 1.5, 2.0, 2.5])
+        op = rng.uniform(0.7, 1.0)
+        colour = rng.choice(_bright_colours)
+        stars.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{r}" fill="{colour}" opacity="{op:.2f}"/>')
+    svg = f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}">{"".join(stars)}</svg>'
+    encoded = base64.b64encode(svg.encode()).decode()
+    return f'data:image/svg+xml;base64,{encoded}'
+
+
+_DARK_STAR_FIELD_URI = _star_field_data_uri()
+
+
+def copy_static_assets(dest: Path) -> None:
+    """Copy static assets alongside HTML output so background images resolve."""
+    dest.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(_STATIC_DIR / _LIGHT_BG_FILENAME, dest / _LIGHT_BG_FILENAME)
 
 
 @dataclass(frozen=True)
@@ -47,8 +80,8 @@ def render_expanse_html_page(page: ExpanseHtmlPage) -> str:
         --line: rgba(39, 34, 19, 0.48);
         --shadow: rgba(25, 22, 14, 0.08);
         --panel-accent-bg: transparent;
-        --page-bg: #633920;
-        --page-bg-image: url("{_light_workbench_bg_url()}");
+        --page-bg: #8a8a8a; /* aluminium grey — rust was: #633920 */
+        --page-bg-image: url("{_LIGHT_BG_FILENAME}"); /* aluminium — rust was: url("bg_ship_spec_light.jpg") */
         --shell-bg: #fffdf7;
         --banner-ink: var(--ink);
         --banner-border: var(--line);
@@ -73,8 +106,8 @@ def render_expanse_html_page(page: ExpanseHtmlPage) -> str:
         --line: rgba(143, 143, 148, 0.34);
         --shadow: rgba(0, 0, 0, 0.44);
         --panel-accent-bg: linear-gradient(180deg, rgba(255, 48, 72, 0.12), rgba(255, 48, 72, 0.04));
-        --page-bg: #050505;
-        --page-bg-image: none;
+        --page-bg: #06060e;
+        --page-bg-image: url("{_DARK_STAR_FIELD_URI}");
         --shell-bg: #101012;
         --banner-ink: var(--ink);
         --banner-border: var(--line);
@@ -82,6 +115,10 @@ def render_expanse_html_page(page: ExpanseHtmlPage) -> str:
         --switch-bg-hover: rgba(255, 48, 72, 0.12);
         --switch-border: rgba(232, 232, 228, 0.3);
         --switch-ink: var(--ink);
+        background-size: 1400px 900px;
+        background-position: center top;
+        background-repeat: repeat;
+        background-attachment: fixed;
       }}
 
       * {{
@@ -95,8 +132,8 @@ def render_expanse_html_page(page: ExpanseHtmlPage) -> str:
         background-color: var(--page-bg);
         background-image: var(--page-bg-image);
         background-position: center top;
-        background-repeat: repeat;
-        background-size: 960px auto;
+        background-repeat: no-repeat;
+        background-size: cover;
         background-attachment: fixed;
       }}
 
