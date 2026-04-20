@@ -27,8 +27,6 @@ from tycho.systems import (
 )
 from tycho.weapons import Barbette, Bay, MissileStorage, PointDefenseBattery, WeaponsSection
 
-from ._markdown_output import write_markdown_output
-
 
 def build_revised_dragon() -> ship.Ship:
     """
@@ -51,7 +49,7 @@ def build_revised_dragon() -> ship.Ship:
         design_type=ship.ShipDesignType.STANDARD,
         hull=hull.Hull(
             configuration=hull.streamlined_hull.model_copy(
-                update={'description': 'Streamlined-Needle Hull', 'reinforced': True},
+                update={'reinforced': True},
             ),
             stealth=ImprovedStealth(),
             radiation_shielding=True,
@@ -150,7 +148,7 @@ def test_revised_dragon_modeled_subset_matches_current_model():
 
     assert dragon.weapons is not None
     assert len(dragon.weapons.barbettes) == 2
-    assert dragon.weapons.barbettes[0].build_item() == 'Particle Barbette, VAdv - Very High Yield'
+    assert dragon.weapons.barbettes[0].build_item() == 'Particle Barbette'
     assert dragon.weapons.missile_storage is not None
     assert dragon.weapons.missile_storage.tons == pytest.approx(34.0)
     assert dragon.weapons.missile_storage.cost == pytest.approx(0.0)
@@ -182,29 +180,3 @@ def test_revised_dragon_power_and_crew_for_current_subset():
     ]
 
 
-def test_revised_dragon_markdown_output():
-    dragon = build_revised_dragon()
-    table = dragon.markdown_table()
-    write_markdown_output('test_revised_dragon', table)
-    bulkhead_note = (
-        '|  | • M-Drive, Power Plant, Operation Fuel, Bridge, Improved Sensors, Countermeasures Suite, '
-        'Enhanced Signal Processing, Extended Arrays, Sensor Stations × 2, '
-        'Particle Barbette, VAdv - Very High Yield × 2, Small Missile Bay, Adv - Size Reduction × 3, '
-        'Point Defense Battery: Type II-L, Adv - Energy Efficient, Missile Storage (408) |  |  |  |'
-    )
-
-    assert '## *Dragon* System Defense Boat, Revised | TL13 | Hull 176' in table
-    assert '|  | Radiation Shielding: Reduce Rads by 1,000 |  |  | 10000.00 |' in table
-    assert '|  | Armoured Bulkheads | 22.52 |  | 4504.67 |' in table
-    assert bulkhead_note in table
-    assert '| Propulsion | M-Drive 7, Budget-Increased Size | 35.00 | 280.00 | 42000.00 |' in table
-    assert '| Power | Fusion (TL 12), Budget-Increased Size | 40.17 | **482.00** | 24100.00 |' in table
-    assert '| Fuel | 16 weeks of operation | 16.07 |  |  |' in table
-    assert '|  | Sensor Stations × 2 | 2.00 |  | 1000.00 |' in table
-    assert '|  | Extended Arrays | 6.00 | 9.00 | 8600.00 |' in table
-    assert '| Weapons | Particle Barbette, VAdv - Very High Yield × 2 | 10.00 | 30.00 | 20000.00 |' in table
-    assert '|  | Point Defense Battery: Type II-L, Adv - Energy Efficient | 20.00 | 15.00 | 11000.00 |' in table
-    assert '|  | Missile Storage (408) | 34.00 |  |  |' in table
-    assert '| Cargo | Cargo Hold | 5.24 |  |  |' in table
-    assert '|  | • 4.00 tons needed per 100 days of stores and spares |  |  |  |' in table
-    assert 'Cargo is below recommended 100-day stores capacity' not in table

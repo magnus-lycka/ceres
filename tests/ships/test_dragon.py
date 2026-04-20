@@ -28,8 +28,6 @@ from tycho.systems import (
 )
 from tycho.weapons import Barbette, Bay, MissileStorage, PointDefenseBattery, WeaponsSection
 
-from ._markdown_output import write_markdown_output
-
 
 def build_dragon() -> ship.Ship:
     """
@@ -48,7 +46,7 @@ def build_dragon() -> ship.Ship:
         design_type=ship.ShipDesignType.STANDARD,
         hull=hull.Hull(
             configuration=hull.streamlined_hull.model_copy(
-                update={'description': 'Streamlined-Needle Hull', 'reinforced': True},
+                update={'reinforced': True},
             ),
             stealth=ImprovedStealth(),
             radiation_shielding=True,
@@ -187,7 +185,7 @@ def test_dragon_modeled_subset_matches_current_model():
     assert dragon.weapons.barbettes[0].build_item() == 'Particle Barbette'
     assert dragon.weapons.barbettes[0].tons == pytest.approx(5.0)
     assert len(dragon.weapons.bays) == 1
-    assert dragon.weapons.bays[0].build_item() == 'Small Missile Bay, Adv - Size Reduction × 3'
+    assert dragon.weapons.bays[0].build_item() == 'Small Missile Bay'
     assert dragon.weapons.bays[0].tons == pytest.approx(35.0)
     assert dragon.weapons.bays[0].cost == pytest.approx(18_000_000)
     assert len(dragon.weapons.point_defense_batteries) == 1
@@ -242,38 +240,8 @@ def test_dragon_power_and_crew_for_current_subset():
     ]
 
 
-def test_dragon_markdown_output():
+def test_armoured_bulkhead_protected_parts_have_individual_notes():
     dragon = build_dragon()
-    table = dragon.markdown_table()
-    write_markdown_output('test_dragon', table)
-
-    assert '## *Dragon* System Defense Boat | TL13 | Hull 176' in table
-    assert '| Hull | Streamlined-Needle Hull | **400.00** |  | 36000.00 |' in table
-    assert '|  | Improved Stealth |  |  | 40000.00 |' in table
-    assert '|  | Radiation Shielding: Reduce Rads by 1,000 |  |  | 10000.00 |' in table
-    assert '|  | Armoured Bulkheads | 21.00 |  | 4200.00 |' in table
-    assert '|  | • Critical hit severity reduced by 1 if >1 |  |  |  |' in table
-    bulkhead_note = (
-        '|  | • M-Drive, Power Plant, Operation Fuel, Bridge, Improved Sensors, Countermeasures Suite, '
-        'Enhanced Signal Processing, Extended Arrays, Sensor Stations × 2, Particle Barbette × 2, '
-        'Small Missile Bay, '
-        'Adv - Size Reduction × 3, Point Defense Battery: Type II-L, Missile Storage (480) |  |  |  |'
-    )
-    assert bulkhead_note in table
-    assert '| Propulsion | M-Drive 7 | 28.00 | 280.00 | 56000.00 |' in table
-    assert '| Power | Fusion (TL 12) | 30.00 | **450.00** | 30000.00 |' in table
-    assert '| Fuel | 16 weeks of operation | 12.00 |  |  |' in table
-    assert '| Computer | Computer/25/fib |  |  | 15000.00 |' in table
-    assert '|  | Backup Computer/20/fib |  |  | 7500.00 |' in table
-    assert '|  | Enhanced Signal Processing | 2.00 | 2.00 | 8000.00 |' in table
-    assert '|  | Extended Arrays | 6.00 | 9.00 | 8600.00 |' in table
-    assert '|  | Sensor Stations × 2 | 2.00 |  | 1000.00 |' in table
-    assert '| Weapons | Particle Barbette × 2 | 10.00 | 30.00 | 16000.00 |' in table
-    assert '|  | Small Missile Bay, Adv - Size Reduction × 3 | 35.00 | 5.00 | 18000.00 |' in table
-    assert '|  | Point Defense Battery: Type II-L | 20.00 | 20.00 | 10000.00 |' in table
-    assert '| Systems | Crew Armory: Supports 25 Crew | 1.00 |  | 250.00 |' in table
-    assert '|  | Biosphere | 4.00 | 4.00 | 800.00 |' in table
-    assert '|  | Training Facility: 2-person capacity | 4.00 |  | 800.00 |' in table
-    assert '|  | Missile Storage (480) | 40.00 |  |  |' in table
-    assert '| Cargo | Cargo Hold | 18.00 |  |  |' in table
-    assert '|  | • 4.00 tons needed per 100 days of stores and spares |  |  |  |' in table
+    assert dragon.drives is not None
+    all_notes = [(n.category.value, n.message) for n in dragon.drives.m_drive.notes]
+    assert ('info', 'Armoured bulkhead, see Hull section.') in all_notes

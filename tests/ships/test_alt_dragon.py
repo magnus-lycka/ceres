@@ -29,7 +29,7 @@ from tycho.systems import (
 )
 from tycho.weapons import Barbette, Bay, MissileStorage, PointDefenseBattery, WeaponsSection
 
-from ._markdown_output import write_html_output, write_markdown_output
+from ._output import write_html_output
 
 
 def build_alt_dragon() -> ship.Ship:
@@ -58,7 +58,7 @@ def build_alt_dragon() -> ship.Ship:
         design_type=ship.ShipDesignType.STANDARD,
         hull=hull.Hull(
             configuration=hull.streamlined_hull.model_copy(
-                update={'description': 'Streamlined-Needle Hull', 'reinforced': True},
+                update={'reinforced': True},
             ),
             stealth=ImprovedStealth(),
             radiation_shielding=True,
@@ -148,32 +148,10 @@ def test_alt_dragon_modeled_subset_tracks_current_model():
     assert dragon.total_power_load == pytest.approx(436.0)
 
 
-def test_alt_dragon_markdown_output():
+def test_alt_dragon_has_no_errors():
     dragon = build_alt_dragon()
-    table = dragon.markdown_table()
-    write_markdown_output('test_alt_dragon', table)
-
-    assert '## *Dragon* System Defense Boat, Alternate | TL13 | Hull 176' in table
-    assert '|  | Radiation Shielding: Reduce Rads by 1,000 |  |  | 10000.00 |' in table
-    assert '| Power | Fusion (TL 12), Adv - Size Reduction | 26.16 | **436.00** | 31973.33 |' in table
-    assert '|  | Emergency Power System | 2.62 |  | 3197.33 |' in table
-    assert '|  | Fuel Processor (20 tons/day) | 1.00 | 1.00 | 50.00 |' in table
-    assert '| Computer | Core/40/fib, (Retro*) |  |  | 4218.75 |' in table
-    assert '|  | Armoured Bulkheads | 21.36 |  | 4272.48 |' in table
-    assert (
-        '|  | • M-Drive, Power Plant, Operation Fuel, Bridge, Particle Barbette, Adv - Size Reduction × 2, '
-        'Small Missile Bay, Adv - Size Reduction × 3, '
-        'Point Defense Battery: Type II-L, '
-        'Adv - Size Reduction, Missile Storage (720) |  |  |  |'
-    ) in table
-    assert '| Weapons | Particle Barbette, Adv - Size Reduction × 2 | 9.00 | 30.00 | 17600.00 |' in table
-    assert '|  | Small Missile Bay, Adv - Size Reduction × 3 | 35.00 | 5.00 | 18000.00 |' in table
-    assert '|  | Point Defense Battery: Type II-L, Adv - Size Reduction | 18.00 | 20.00 | 11000.00 |' in table
-    assert '|  | Missile Storage (720) | 60.00 |  |  |' in table
-    assert '| Habitation | Staterooms × 4 | 16.00 |  | 2000.00 |' in table
-    assert '|  | Cabin Space | 15.00 |  | 750.00 |' in table
-    assert '| Cargo | Cargo Hold | 6.39 |  |  |' in table
-    assert '|  | **ERROR:**' not in table
+    all_notes = [(n.category.value, n.message) for n in dragon.notes]
+    assert not any(cat == 'error' for cat, _ in all_notes)
 
 
 def test_alt_dragon_stuart_html_output():
@@ -187,9 +165,10 @@ def test_alt_dragon_stuart_html_output():
     assert '<header class="sidebar-card-title">Power</header>' in html
     assert '<header class="sidebar-card-title">Costs</header>' in html
     assert 'Radiation Shielding: Reduce Rads by 1,000' in html
-    assert 'Small Missile Bay, Adv - Size Reduction × 3' in html
+    assert 'Small Missile Bay' in html
+    assert 'Advanced - Size Reduction × 3' in html
     assert 'Life Support Facilities' in html
     assert 'Armoured Bulkheads<ul class="item-notes">' in html
-    assert 'Critical hit severity reduced by 1 if &gt;1' in html
+    assert 'Critical hit severity reduced by 1 if critical hit severity &gt;1' in html
     assert 'Improved Sensors' in html
     assert '<p class="eyebrow">' not in html

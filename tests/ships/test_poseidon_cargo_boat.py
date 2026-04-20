@@ -8,7 +8,6 @@ from tycho.habitation import HabitationSection, Staterooms
 from tycho.storage import CargoSection, FuelSection, OperationFuel
 from tycho.systems import Aerofins, Airlock, CommonArea
 
-from ._markdown_output import write_markdown_output
 
 POSEIDON_TLS = [9, 10, 12]
 POSEIDON_HULL = hull.streamlined_hull.model_copy(
@@ -33,27 +32,6 @@ def build_poseidon_cargo_boat(tl: int) -> ship.Ship:
         habitation=HabitationSection(staterooms=Staterooms(count=1), common_area=CommonArea(tons=1.0)),
     )
 
-
-@pytest.mark.parametrize('tl', POSEIDON_TLS)
-def test_poseidon_cargo_boat_generates_markdown_for_visual_comparison(tl: int):
-    cargo_boat = build_poseidon_cargo_boat(tl)
-    table = cargo_boat.markdown_table()
-    write_markdown_output(f'test_poseidon_100t_tl{tl}', table)
-
-    assert f'## *Poseidon* Cargo Boat | TL{tl} | Hull 36' in table
-    assert '| Hull | Light Streamlined Hull | **100.00** |  | 4500.00 |' in table
-    assert '|  | Basic Ship Systems |  | 20.00 |  |' in table
-    assert '| Command | Smaller Bridge | 6.00 |  | 250.00 |' in table
-    assert '|  | • DM -1 for all checks related to spacecraft operations |  |  |  |' in table
-    assert '| Sensors | Basic |  |  |  |' in table
-    assert '|  | • Features: Passive optical and thermal sensors, Radar' in table
-    assert '|  | • Sensor DM -4 to Electronics (comms) and Electronics (sensors) checks |  |  |  |' in table
-    assert 'Common Area | 1.00 |  | 100.00 |' in table
-    assert '|  | Airlock (2 tons) |  |  |  |' in table
-    assert 'Aerofins | 5.00 |  | 500.00 |' in table
-    assert '|  | • DM +2 to Pilot checks in atmosphere |  |  |  |' in table
-    if tl < 10:
-        assert f'|  | **ERROR:** Requires TL10, ship is TL{tl} |  |  |  |' in table
 
 
 @pytest.mark.parametrize('tl', [10, 12])
@@ -114,22 +92,6 @@ def test_ship_with_bridge_and_no_airlock_adds_error():
     ]
 
 
-def test_markdown_table_renders_inline_error_on_missing_airlock():
-    my_ship = ship.Ship(
-        tl=12,
-        displacement=99,
-        ship_class='Poseidon',
-        ship_type='Cargo Boat',
-        hull=hull.Hull(configuration=POSEIDON_HULL),
-        command=CommandSection(bridge=Bridge(small=True)),
-        computer=ComputerSection(hardware=Computer5()),
-        habitation=HabitationSection(staterooms=Staterooms(count=1)),
-    )
-    table = my_ship.markdown_table()
-    write_markdown_output('test_poseidon_missing_airlock', table)
-    assert '|  | **ERROR:** No airlock installed |  |  |  |' in table
-
-
 def test_ship_with_staterooms_and_no_common_area_adds_warning():
     my_ship = ship.Ship(
         tl=12,
@@ -143,19 +105,3 @@ def test_ship_with_staterooms_and_no_common_area_adds_warning():
     assert ('warning', 'Recommended common area is 1.00 tons') in [
         (note.category.value, note.message) for note in my_ship.habitation.notes
     ]
-
-
-def test_markdown_table_renders_inline_warning_on_missing_common_area():
-    my_ship = ship.Ship(
-        tl=12,
-        displacement=99,
-        ship_class='Poseidon',
-        ship_type='Cargo Boat',
-        hull=hull.Hull(configuration=POSEIDON_HULL, airlocks=[Airlock()]),
-        command=CommandSection(bridge=Bridge(small=True)),
-        computer=ComputerSection(hardware=Computer5()),
-        habitation=HabitationSection(staterooms=Staterooms(count=1)),
-    )
-    table = my_ship.markdown_table()
-    write_markdown_output('test_poseidon_missing_common_area', table)
-    assert '|  | *WARNING:* Recommended common area is 1.00 tons |  |  |  |' in table

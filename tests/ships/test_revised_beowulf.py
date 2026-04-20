@@ -9,7 +9,6 @@ from tycho.sensors import CivilianSensors, SensorsSection
 from tycho.storage import CargoCrane, CargoHold, CargoSection, FuelProcessor, FuelSection, JumpFuel, OperationFuel
 from tycho.systems import Airlock, CommonArea, MedicalBay, SystemsSection, Workshop
 
-from ._markdown_output import write_markdown_output
 
 
 def build_revised_beowulf() -> ship.Ship:
@@ -113,21 +112,3 @@ def test_revised_beowulf_matches_current_modeled_subset():
     assert beowulf.expenses.maintenance == pytest.approx(3734.0)
 
 
-def test_revised_beowulf_markdown_output():
-    beowulf = build_revised_beowulf()
-    table = beowulf.markdown_table()
-    write_markdown_output('test_revised_beowulf', table)
-
-    assert '## *Beowulf* Free Trader, Revised | TL12 | Hull 72' in table
-    assert '| Hull | Light Streamlined Hull | **200.00** |  | 9000.00 |' in table
-    assert '| Jump | Jump 1 | 10.00 | 20.00 | 15000.00 |' in table
-    assert '| Propulsion | M-Drive 1 | 2.00 | 20.00 | 4000.00 |' in table
-    assert '| Power | Fusion (TL 12), Budget-Increased Size | 5.42 | **65.00** | 3250.00 |' in table
-    assert '| Fuel | J-1, 4 weeks of operation | 20.55 |  |  |' in table
-    assert '| Command | Bridge (Holographic) | 10.00 |  | 1250.00 |' in table
-    assert '| Habitation | Staterooms × 10 | 40.00 |  | 5000.00 |' in table
-    assert '|  | Low Berths × 20 | 10.00 | 2.00 | 1000.00 |' in table
-    assert '|  | Adequate Advanced Entertainment System |  |  | 1.25 |' in table
-    assert '| Systems | Workshop | 6.00 |  | 900.00 |' in table
-    assert '|  | Medical Bay | 4.00 | 1.00 | 2000.00 |' in table
-    assert '| Cargo | Cargo Hold | 64.50 |  |  |' in table

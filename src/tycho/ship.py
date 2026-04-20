@@ -236,28 +236,37 @@ class Ship(ShipBase):
         )
 
     def _grouped_spec_rows(self, section: SpecSection, parts: list[ShipPart]) -> list[SpecRow]:
-        groups: list[tuple[str, list[ShipPart]]] = []
+        groups: list[tuple[str, str, list[ShipPart]]] = []  # (group_key, display_item, parts)
         for part in parts:
-            item = self._item_text(part, getattr(part, 'description', part.__class__.__name__))
-            if groups and groups[-1][0] == item:
-                groups[-1][1].append(part)
+            display_item = self._item_text(part, getattr(part, 'description', part.__class__.__name__))
+            key = part.group_key if hasattr(part, 'group_key') else display_item
+            if groups and groups[-1][0] == key:
+                groups[-1][2].append(part)
             else:
-                groups.append((item, [part]))
+                groups.append((key, display_item, [part]))
 
         rows: list[SpecRow] = []
-        for item, group in groups:
+        for _key, display_item, group in groups:
             total_tons = sum(part.tons for part in group) or None
             total_cost = sum(part.cost for part in group) or None
             total_power = sum(part.power for part in group)
+            seen: set[tuple] = set()
+            notes = []
+            for part in group:
+                for note in self._display_notes(part):
+                    k = (note.category, note.message)
+                    if k not in seen:
+                        seen.add(k)
+                        notes.append(note)
             rows.append(
                 SpecRow(
                     section=section,
-                    item=item,
+                    item=display_item,
                     quantity=len(group) if len(group) > 1 else None,
                     tons=total_tons,
                     power=(-total_power) if total_power else None,
                     cost=total_cost,
-                    notes=[note for part in group for note in self._display_notes(part)],
+                    notes=notes,
                 )
             )
         return rows
@@ -308,89 +317,8 @@ class Ship(ShipBase):
             ]
         return spec
 
-    def markdown_table(self) -> str:
-        spec = self.build_spec()
-        last_section: str | None = None
-
-        heading_bits: list[str] = []
-        if spec.ship_class is not None and spec.ship_type is not None:
-            heading_bits.append(f'*{spec.ship_class}* {spec.ship_type}')
-        elif spec.ship_class is not None:
-            heading_bits.append(f'*{spec.ship_class}*')
-        elif spec.ship_type is not None:
-            heading_bits.append(spec.ship_type)
-        if spec.tl is not None:
-            heading_bits.append(f'TL{spec.tl}')
-        if spec.hull_points is not None:
-            heading_bits.append(f'Hull {spec.hull_points:.0f}')
-        heading = f'## {" | ".join(heading_bits)}'
-
-        def fmt_amount(value: float | None, *, absolute: bool = False) -> str:
-            if value is None:
-                return ''
-            display_value = abs(value) if absolute else value
-            if abs(display_value) < 0.005:
-                return ''
-            return f'{display_value:.2f}'
-
-        def fmt_row(row: SpecRow) -> list[str]:
-            nonlocal last_section
-            item_text = row.item if row.quantity is None else f'{row.item} × {row.quantity}'
-            tons_text = fmt_amount(row.tons)
-            if row.emphasize_tons and tons_text:
-                tons_text = f'**{tons_text}**'
-            power_text = fmt_amount(row.power, absolute=True)
-            if row.emphasize_power and power_text:
-                power_text = f'**{power_text}**'
-            cost_text = fmt_amount(None if row.cost is None else row.cost / 1000)
-            section_text = '' if row.section == last_section else row.section.value
-            last_section = row.section
-            lines = [f'| {section_text} | {item_text} | {tons_text} | {power_text} | {cost_text} |']
-            for note in row.notes:
-                if note.category is NoteCategory.INFO:
-                    msg = f'• {note.message}'
-                elif note.category is NoteCategory.ERROR:
-                    msg = f'**ERROR:** {note.message}'
-                elif note.category is NoteCategory.WARNING:
-                    msg = f'*WARNING:* {note.message}'
-                else:
-                    msg = note.message
-                lines.append(f'|  | {msg} |  |  |  |')
-            return lines
-
-        lines = [
-            heading,
-            '',
-            '| Section | Item | Tons | Power | Cost (kCr) |',
-            '| ------- | --------------- | ---: | ---: | ---: |',
-        ]
-        for row in spec.rows:
-            lines.extend(fmt_row(row))
-
-        lines.extend(
-            [
-                '',
-                '| Cost | Amount |',
-                '| ------------ | ---: |',
-            ]
-        )
-        for exp in spec.expenses:
-            lines.append(f'| {exp.label} | {round(exp.amount):,} |')
-
-        if spec.crew:
-            lines.extend(['', '| Crew | Salary |', '| ------------ | ---: |'])
-            for c in spec.crew:
-                role_text = c.role if c.quantity is None else f'{c.role} × {c.quantity}'
-                lines.append(f'| {role_text} | {round(c.salary):,} |')
-
-        if spec.passengers:
-            lines.extend(['', '| Passengers |', '| ------------ |'])
-            for p in spec.passengers:
-                lines.append(f'| {p.kind} × {p.quantity} |')
-
-        return '\n'.join(lines)
-
     def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
         if self.tl > 16:
             raise ValueError(f'Ceres currently supports TL16 and lower, got TL{self.tl}')
         if self.hull.airlocks is None and self.displacement >= 100:

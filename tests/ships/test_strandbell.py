@@ -10,7 +10,6 @@ from tycho.storage import CargoSection, FuelProcessor, FuelScoops, FuelSection, 
 from tycho.systems import Airlock, CommonArea, MedicalBay, RepairDrones, SystemsSection
 from tycho.weapons import MissileStorage, MountWeapon, Turret, WeaponsSection
 
-from ._markdown_output import write_markdown_output
 
 STRANDBELL_HULL = hull.standard_hull.model_copy(
     update={'reinforced': True, 'description': 'Standard Reinforced Hull'},
@@ -246,7 +245,3 @@ def test_strandbell_uses_military_crew_rules():
     ]
 
 
-def test_strandbell_markdown_output():
-    sdb = build_strandbell()
-    table = sdb.markdown_table()
-    write_markdown_output('test_strandbell', table)

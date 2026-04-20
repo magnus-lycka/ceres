@@ -9,7 +9,6 @@ from tycho.sensors import BasicSensors, SensorsSection
 from tycho.storage import CargoSection, FuelSection, OperationFuel
 from tycho.systems import Airlock, CommonArea, SystemsSection, Workshop
 
-from ._markdown_output import write_markdown_output
 
 BOXY_HULL = hull.close_structure.model_copy(
     update={'light': True, 'description': 'Light Close Structure Hull'},
@@ -34,25 +33,6 @@ def build_boxy_ore_freighter() -> ship.Ship:
         systems=SystemsSection(workshop=Workshop()),
     )
 
-
-def test_boxy_ore_freighter_generates_markdown_for_visual_comparison():
-    freighter = build_boxy_ore_freighter()
-    table = freighter.markdown_table()
-    write_markdown_output('test_boxy_ore_freighter', table)
-
-    assert '## *Boxy* Ore Freighter | TL9 | Hull 72' in table
-    assert '| Hull | Light Close Structure Hull | **200.00** |  | 6000.00 |' in table
-    assert '|  | Basic Ship Systems |  | 40.00 |  |' in table
-    assert '| Propulsion | M-Drive 1 | 2.00 | 20.00 | 4000.00 |' in table
-    assert '| Power | Fusion (TL 8) | 8.00 | **80.00** | 4000.00 |' in table
-    assert '| Fuel | 12 weeks of operation | 2.40 |  |  |' in table
-    assert '| Command | Smaller Bridge | 6.00 |  | 500.00 |' in table
-    assert '| Sensors | Basic |  |  |  |' in table
-    assert '| Habitation | Stateroom | 4.00 |  | 500.00 |' in table
-    assert '|  | Common Area | 1.00 |  | 100.00 |' in table
-    assert '| Systems | Workshop | 6.00 |  | 900.00 |' in table
-    assert '| Cargo | Cargo Hold | 170.60 |  |  |' in table
-    assert '| Fuel | 80 |' in table
 
 
 def test_boxy_ore_freighter_has_large_default_cargo_hold():

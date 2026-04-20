@@ -11,7 +11,6 @@ from tycho.storage import FuelProcessor, FuelScoops, FuelSection, JumpFuel, Oper
 from tycho.systems import BriefingRoom, CommonArea, Laboratory, MedicalBays, SystemsSection
 from tycho.weapons import Turret, WeaponsSection
 
-from ._markdown_output import write_markdown_output
 
 
 def build_florence_medical_scout() -> ship.Ship:
@@ -143,35 +142,4 @@ def test_florence_medical_scout_matches_current_subset():
     assert scout.production_cost == pytest.approx(164_880_000)
     assert scout.sales_price_new == pytest.approx(164_880_000)
     assert scout.expenses.maintenance == pytest.approx(13_740.0)
-
-
-def test_florence_medical_scout_markdown_output():
-    scout = build_florence_medical_scout()
-    table = scout.markdown_table()
-    write_markdown_output('test_florence_medical_scout', table)
-
-    assert '## *Florence* Medical Scout | TL14 | Hull 160' in table
-    assert '| Hull | Standard Hull | **400.00** |  | 20000.00 |' in table
-    assert '| Propulsion | M-Drive 2 | 8.00 | 80.00 | 16000.00 |' in table
-    assert '| Jump | Jump 3 | 35.00 | 120.00 | 52500.00 |' in table
-    assert '| Power | Fusion (TL 12) | 20.00 | **300.00** | 20000.00 |' in table
-    assert '| Fuel | J-3, 12 weeks of operation | 126.00 |  |  |' in table
-    assert '|  | Fuel Scoops |  |  | 1000.00 |' in table
-    assert '|  | Fuel Processor (60 tons/day) | 3.00 | 3.00 | 150.00 |' in table
-    assert '| Computer | Computer/15 |  |  | 2000.00 |' in table
-    assert '|  | Jump Control/3 |  |  | 300.00 |' in table
-    assert '| Sensors | Military Grade | 2.00 | 2.00 | 4100.00 |' in table
-    assert '|  | Life Scanner Analysis Suite | 1.00 | 1.00 | 4000.00 |' in table
-    assert '| Weapons | Double Turret | 1.00 | 1.00 | 500.00 |' in table
-    assert '| Craft | Internal Docking Space: Slow Pinnace | 44.00 |  | 11000.00 |' in table
-    assert '|  | Slow Pinnace |  |  | 6630.00 |' in table
-    assert table.count('Internal Docking Space: Air/Raft') == 2
-    assert table.count('|  | Air/Raft |  |  | 250.00 |') == 2
-    assert '| Systems | Medical Bays | 24.00 | 6.00 | 12000.00 |' in table
-    assert '|  | Laboratory | 4.00 |  | 1000.00 |' in table
-    assert '|  | Briefing Room | 4.00 |  | 500.00 |' in table
-    assert '| Habitation | Staterooms × 8 | 32.00 |  | 4000.00 |' in table
-    assert '|  | Low Berths × 20 | 10.00 | 2.00 | 1000.00 |' in table
-    assert '|  | Common Area | 32.00 |  | 3200.00 |' in table
-    assert 'stores and spares' not in table
-    assert 'No airlock installed' not in table
+    assert ('error', 'No airlock installed') not in [(n.category.value, n.message) for n in scout.notes]

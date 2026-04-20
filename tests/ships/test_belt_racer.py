@@ -11,7 +11,6 @@ from tycho.drives import (
 )
 from tycho.storage import CargoSection, FuelSection, ReactionFuel
 
-from ._markdown_output import write_markdown_output
 
 BELT_RACER_HULL = hull.close_structure.model_copy(
     update={'light': True, 'description': 'Light Close Structure Hull'},
@@ -76,18 +75,6 @@ def test_belt_racer_matches_current_r_drive_subset():
     ]
 
 
-def test_belt_racer_markdown_output():
+def test_belt_racer_has_no_errors():
     racer = build_belt_racer()
-    table = racer.markdown_table()
-    write_markdown_output('test_belt_racer', table)
-
-    assert '## *Vargr Belt Racer* Racer | TL12 | Hull 2' in table
-    assert '| Hull | Light Close Structure Hull | **6.00** |  | 180.00 |' in table
-    assert '| Propulsion | R-Drive Thrust 16 | 1.92 |  | 384.00 |' in table
-    assert '| Power | Fusion (TL 8) | 0.50 | **5.00** | 250.00 |' in table
-    assert '| Fuel | 52 minutes of operation | 2.08 |  |  |' in table
-    assert '| Command | Cockpit | 1.50 |  | 10.00 |' in table
-    assert '| Computer | Computer/5 |  |  | 30.00 |' in table
-    assert '| Cargo | Cargo (0.00 tons) |  |  |  |' in table
-    assert '-0.00' not in table
-    assert 'Hull overloaded by 0.00 tons' not in table
+    assert not any(n.category.value == 'error' for n in racer.notes)

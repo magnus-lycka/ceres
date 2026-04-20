@@ -9,7 +9,6 @@ from tycho.sensors import CivilianSensors, SensorsSection
 from tycho.storage import CargoCrane, CargoHold, CargoSection, FuelProcessor, FuelSection, JumpFuel, OperationFuel
 from tycho.systems import Airlock, CommonArea
 
-from ._markdown_output import write_markdown_output
 
 
 def build_beowulf() -> ship.Ship:
@@ -192,7 +191,3 @@ def test_beowulf_spec_structure():
     assert spec.expenses[1].amount == pytest.approx(46_242_000)
 
 
-def test_beowulf_markdown_output():
-    beowulf = build_beowulf()
-    table = beowulf.markdown_table()
-    write_markdown_output('test_beowulf', table)

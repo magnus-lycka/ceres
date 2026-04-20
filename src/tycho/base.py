@@ -41,6 +41,7 @@ class CeresModel(BaseModel):
         self.notes.append(Note(category=NoteCategory.WARNING, message=message))
 
     def model_post_init(self, __context) -> None:
+        self.notes.clear()
         if message := self.build_item():
             self.item(message)
         self.notes.extend(self.build_notes())

@@ -10,7 +10,6 @@ from tycho.storage import FuelScoops, FuelSection, OperationFuel, ReactionFuel
 from tycho.systems import Aerofins
 from tycho.weapons import FixedMount, MountWeapon, WeaponsSection
 
-from ._markdown_output import write_markdown_output
 
 
 def build_gothta_ambush_fighter() -> ship.Ship:
@@ -109,21 +108,3 @@ def test_gothta_ambush_fighter_matches_current_subset():
     ]
 
 
-def test_gothta_ambush_fighter_markdown_output():
-    fighter = build_gothta_ambush_fighter()
-    table = fighter.markdown_table()
-    write_markdown_output('test_gothta_ambush_fighter', table)
-
-    assert '## *Gothta* Ambush Fighter | TL12 | Hull 8' in table
-    assert '| Hull | Streamlined Hull, Pressure Hull | **20.00** |  | 12000.00 |' in table
-    assert '|  | Armour: 4 |  |  |  |' in table
-    assert '|  | Aerofins | 1.00 |  | 100.00 |' in table
-    assert '| Propulsion | High-Burn Thruster, Thrust 4 | 1.60 |  | 320.00 |' in table
-    assert '|  | M-Drive 6 | 1.20 | 12.00 | 2400.00 |' in table
-    assert '| Power | Fusion (TL 12) | 2.00 | **30.00** | 2000.00 |' in table
-    assert '| Fuel | 2 weeks of operation, 1 hour Thruster | 2.10 |  |  |' in table
-    assert '| Command | Bridge | 3.00 |  | 500.00 |' in table
-    assert '| Sensors | Military Grade | 2.00 | 2.00 | 4100.00 |' in table
-    assert '| Weapons | Pulse Laser |  | 3.00 | 1100.00 |' in table
-    assert '| Habitation | Cabin Space | 1.50 |  | 75.00 |' in table
-    assert '| Cargo | Cargo Hold | 0.60 |  |  |' in table

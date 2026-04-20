@@ -52,7 +52,7 @@ def test_armoured_bulkhead_values():
     assert bulkhead.tons == 3.0
     assert bulkhead.cost == 600_000
     assert ('item', 'Armoured Bulkhead for M-Drive') in [(note.category.value, note.message) for note in bulkhead.notes]
-    assert ('info', 'Critical hit severity reduced by 1 if >1') in [
+    assert ('info', 'Critical hit severity reduced by 1 if critical hit severity >1') in [
         (note.category.value, note.message) for note in bulkhead.notes
     ]
     assert ('warning', 'Prefer armoured_bulkhead=True on the protected ShipPart over manual ArmouredBulkhead') in [

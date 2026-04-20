@@ -15,6 +15,10 @@ class CustomisationGrade(StrEnum):
     HIGH_TECHNOLOGY = 'HIGH_TECHNOLOGY'
 
     @property
+    def display_name(self) -> str:
+        return self.value.replace('_', ' ').title()
+
+    @property
     def required_advantages(self) -> int:
         return {
             CustomisationGrade.EARLY_PROTOTYPE: 0,
@@ -116,6 +120,18 @@ class ShipPart(CeresModel):
     _armoured_bulkhead_part: ShipPart | None = PrivateAttr(default=None)
     model_config = {'frozen': True}
 
+    def build_notes(self) -> list[Note]:
+        if self.armoured_bulkhead:
+            return [Note(category=NoteCategory.INFO, message='Armoured bulkhead, see Hull section.')]
+        return []
+
+    @property
+    def group_key(self) -> str:
+        for note in self.notes:
+            if note.category is NoteCategory.ITEM:
+                return note.message
+        return self.__class__.__name__
+
     def compute_cost(self) -> float:
         return self.cost
 
@@ -200,6 +216,15 @@ class CustomisableShipPart(ShipPart):
     def model_post_init(self, __context: Any) -> None:
         super().model_post_init(__context)
         self.validate_customisations()
+
+    @property
+    def group_key(self) -> str:
+        base = super().group_key
+        if not self.customisations:
+            return base
+        grade = self.customisation_grade.value if self.customisation_grade else ''
+        suffix = '~'.join([grade, *[c.name for c in self.customisations]])
+        return f'{base}|{suffix}'
 
     @property
     def allowed_customisation_names(self) -> set[str]:

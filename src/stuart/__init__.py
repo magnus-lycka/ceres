@@ -7,6 +7,7 @@ models. It should be able to render other structured outputs later on.
 
 from .html import ExpanseHtmlPage, StuartTheme, copy_static_assets, render_expanse_html_page
 from .tycho_html import render_ship_html, render_ship_spec_html
+from .tycho_pdf import render_ship_pdf, render_ship_spec_pdf, render_ship_spec_typst, render_ship_typst
 
 __all__ = [
     'ExpanseHtmlPage',
@@ -15,4 +16,8 @@ __all__ = [
     'render_expanse_html_page',
     'render_ship_html',
     'render_ship_spec_html',
+    'render_ship_pdf',
+    'render_ship_spec_pdf',
+    'render_ship_spec_typst',
+    'render_ship_typst',
 ]

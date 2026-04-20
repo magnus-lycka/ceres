@@ -91,10 +91,15 @@ class MDrive(CustomisableShipPart):
         super().model_post_init(__context)
 
     def build_item(self) -> str | None:
-        item = f'M-Drive {self.rating}'
+        return f'M-Drive {self.rating}'
+
+    def build_notes(self) -> list:
+        notes = [*super().build_notes()]
         if self.budget and self.increased_size:
-            item += ', Budget-Increased Size'
-        return item
+            from .base import Note, NoteCategory
+
+            notes.append(Note(category=NoteCategory.INFO, message='Budget - Increased Size'))
+        return notes
 
     def bulkhead_label(self) -> str:
         return 'M-Drive'
@@ -336,12 +341,17 @@ class _FusionPlant(CustomisableShipPart):
         super().model_post_init(__context)
 
     def build_item(self) -> str | None:
-        item = f'Fusion (TL {self.minimum_tl})'
+        return f'Fusion (TL {self.minimum_tl})'
+
+    def build_notes(self) -> list:
+        from .base import Note, NoteCategory
+
+        notes = [*super().build_notes()]
         if self.budget and self.increased_size:
-            item += ', Budget-Increased Size'
+            notes.append(Note(category=NoteCategory.INFO, message='Budget - Increased Size'))
         elif self.size_reduction:
-            item += ', Adv - Size Reduction'
-        return item
+            notes.append(Note(category=NoteCategory.INFO, message='Advanced - Size Reduction'))
+        return notes
 
     def bulkhead_label(self) -> str:
         return 'Power Plant'

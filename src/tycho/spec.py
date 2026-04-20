@@ -44,7 +44,7 @@ class ExpenseRow:
 @dataclass
 class CrewRow:
     role: str
-    salary: int
+    salary: int  # for one
     quantity: int | None = None
 
 

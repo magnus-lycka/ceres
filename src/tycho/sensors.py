@@ -39,7 +39,7 @@ def _sensor_package_notes(
         Note(category=NoteCategory.INFO, message=f'Features: {", ".join(features)}'),
         Note(
             category=NoteCategory.INFO,
-            message=f'Sensor DM {dm} to Electronics (comms) and Electronics (sensors) checks',
+            message=f'DM {dm} to Electronics (comms) and Electronics (sensors) checks',
         ),
     ]
     return notes
@@ -114,7 +114,7 @@ class MilitarySensors(SensorPackage):
         return _sensor_package_notes(
             suite=('Radar', 'Lidar'),
             dm='+0',
-            package_capabilities=('Jammers', 'Emissions Control (EMCON)'),
+            package_capabilities=('Jammers', 'EMCON'),
             effective_tl=_note_tl(self),
         )
 
@@ -139,7 +139,7 @@ class ImprovedSensors(SensorPackage):
         return _sensor_package_notes(
             suite=('Radar', 'Lidar', 'Densitometer'),
             dm='+1',
-            package_capabilities=('Jammers', 'Emissions Control (EMCON)'),
+            package_capabilities=('Jammers', 'EMCON'),
             effective_tl=_note_tl(self),
         )
 

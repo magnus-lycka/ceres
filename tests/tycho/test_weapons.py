@@ -116,6 +116,46 @@ def test_fixed_firmpoint_can_carry_multiple_weapons_on_larger_ship():
     assert float(fp.power) == 5
 
 
+def test_mount_weapon_build_item_is_base_name_only():
+    w = MountWeapon(weapon='pulse_laser', very_high_yield=True, energy_efficient=True)
+    assert w.build_item() == 'Pulse Laser'
+
+
+def test_mount_weapon_no_upgrades_has_no_customisation_note():
+    w = MountWeapon(weapon='pulse_laser')
+    assert w.customisation_note() is None
+
+
+def test_mount_weapon_high_technology_customisation_note():
+    w = MountWeapon(weapon='pulse_laser', very_high_yield=True, energy_efficient=True)
+    note = w.customisation_note()
+    assert note is not None
+    assert note.category.value == 'info'
+    assert note.message == 'High Technology: Very High Yield, Energy Efficient'
+
+
+def test_mount_weapon_advanced_customisation_note():
+    w = MountWeapon(weapon='pulse_laser', energy_efficient=True)
+    note = w.customisation_note()
+    assert note is not None
+    assert note.message == 'Advanced: Energy Efficient'
+
+
+def test_mount_weapon_very_advanced_customisation_note():
+    w = MountWeapon(weapon='pulse_laser', very_high_yield=True)
+    note = w.customisation_note()
+    assert note is not None
+    assert note.message == 'Very Advanced: Very High Yield'
+
+
+def test_fixed_mount_single_weapon_notes_include_customisation_note():
+    fp = FixedMount(weapons=[MountWeapon(weapon='pulse_laser', very_high_yield=True, energy_efficient=True)])
+    assert [(note.category.value, note.message) for note in fp.notes] == [
+        ('item', 'Pulse Laser'),
+        ('info', 'High Technology: Very High Yield, Energy Efficient'),
+    ]
+
+
 def test_fixed_firmpoint_with_multiple_weapons_reports_fixed_mount_item():
     fp = FixedMount(weapons=[MountWeapon(weapon='pulse_laser'), MountWeapon(weapon='pulse_laser')])
     assert [(note.category.value, note.message) for note in fp.notes] == [
@@ -144,7 +184,7 @@ def test_particle_barbette_values():
 def test_particle_barbette_very_high_yield_values():
     barbette = Barbette(weapon='particle', very_high_yield=True)
     barbette.bind(DummyOwner(13, 400))
-    assert barbette.build_item() == 'Particle Barbette, VAdv - Very High Yield'
+    assert barbette.build_item() == 'Particle Barbette'
     assert barbette.tons == pytest.approx(5.0)
     assert barbette.cost == pytest.approx(10_000_000)
     assert barbette.power == pytest.approx(15.0)
@@ -162,7 +202,7 @@ def test_small_missile_bay_values():
 def test_small_missile_bay_size_reduction_values():
     bay = Bay(size='small', weapon='missile', size_reduction=True)
     bay.bind(DummyOwner(13, 1_000))
-    assert bay.build_item() == 'Small Missile Bay, Adv - Size Reduction'
+    assert bay.build_item() == 'Small Missile Bay'
     assert bay.tons == pytest.approx(45.0)
     assert bay.cost == pytest.approx(13_200_000)
 
@@ -170,7 +210,7 @@ def test_small_missile_bay_size_reduction_values():
 def test_small_missile_bay_three_size_reduction_steps_values():
     bay = Bay(size='small', weapon='missile', size_reduction=3)
     bay.bind(DummyOwner(13, 1_000))
-    assert bay.build_item() == 'Small Missile Bay, Adv - Size Reduction × 3'
+    assert bay.build_item() == 'Small Missile Bay'
     assert bay.tons == pytest.approx(35.0)
     assert bay.cost == pytest.approx(18_000_000)
 
@@ -204,7 +244,7 @@ def test_type_ii_laser_point_defense_battery_item_values():
 def test_type_ii_laser_point_defense_battery_energy_efficient_values():
     battery = PointDefenseBattery(kind='laser', rating=2, energy_efficient=True)
     battery.bind(DummyOwner(13, 1_000))
-    assert battery.build_item() == 'Point Defense Battery: Type II-L, Adv - Energy Efficient'
+    assert battery.build_item() == 'Point Defense Battery: Type II-L'
     assert battery.tons == pytest.approx(20.0)
     assert battery.cost == pytest.approx(11_000_000.0)
     assert battery.power == pytest.approx(15.0)
@@ -377,3 +417,71 @@ def test_bays_count_against_hardpoint_capacity():
         note.message == 'Exceeds available hardpoints: 5 mounts installed, capacity is 2'
         for note in my_ship.weapons.bays[0].notes
     )
+
+
+# ---------------------------------------------------------------------------
+# Customisation labels as notes
+# ---------------------------------------------------------------------------
+
+def test_barbette_with_very_high_yield_item_is_base_name_only():
+    barbette = Barbette(weapon='particle', very_high_yield=True)
+    barbette.bind(DummyOwner(13, 400))
+    assert barbette.build_item() == 'Particle Barbette'
+
+
+def test_barbette_with_very_high_yield_has_customisation_note():
+    barbette = Barbette(weapon='particle', very_high_yield=True)
+    barbette.bind(DummyOwner(13, 400))
+    info_notes = [n.message for n in barbette.notes if n.category.value == 'info']
+    assert 'Very Advanced - Very High Yield' in info_notes
+
+
+def test_bay_with_size_reduction_item_is_base_name_only():
+    bay = Bay(size='small', weapon='missile', size_reduction=3)
+    bay.bind(DummyOwner(13, 1_000))
+    assert bay.build_item() == 'Small Missile Bay'
+
+
+def test_bay_with_size_reduction_has_customisation_note():
+    bay = Bay(size='small', weapon='missile', size_reduction=3)
+    bay.bind(DummyOwner(13, 1_000))
+    info_notes = [n.message for n in bay.notes if n.category.value == 'info']
+    assert 'Advanced - Size Reduction × 3' in info_notes
+
+
+def test_battery_with_energy_efficient_item_is_base_name_only():
+    battery = PointDefenseBattery(kind='laser', rating=2, energy_efficient=True)
+    battery.bind(DummyOwner(13, 1_000))
+    assert battery.build_item() == 'Point Defense Battery: Type II-L'
+
+
+def test_battery_with_energy_efficient_has_customisation_note():
+    battery = PointDefenseBattery(kind='laser', rating=2, energy_efficient=True)
+    battery.bind(DummyOwner(13, 1_000))
+    info_notes = [n.message for n in battery.notes if n.category.value == 'info']
+    assert 'Advanced - Energy Efficient' in info_notes
+
+
+def test_grouped_parts_with_same_note_show_note_once(tmp_path):
+    from tycho import hull, ship
+    from tycho.bridge import Bridge, CommandSection
+    from tycho.computer import Computer5, ComputerSection
+    my_ship = ship.Ship(
+        tl=13,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer5()),
+        weapons=WeaponsSection(
+            barbettes=[
+                Barbette(weapon='particle', armoured_bulkhead=True),
+                Barbette(weapon='particle', armoured_bulkhead=True),
+            ],
+        ),
+    )
+    spec = my_ship.build_spec()
+    barbette_rows = [r for r in spec.rows if 'Barbette' in r.item]
+    assert barbette_rows
+    row = barbette_rows[0]
+    ab_notes = [n for n in row.notes if 'Armoured bulkhead' in n.message]
+    assert len(ab_notes) == 1, 'Duplicate armoured-bulkhead note should be deduplicated'

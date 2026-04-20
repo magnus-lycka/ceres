@@ -8,8 +8,6 @@ from tycho.sensors import CivilianSensors, SensorsSection
 from tycho.storage import FuelSection, OperationFuel
 from tycho.weapons import FixedMount, MountWeapon, WeaponsSection
 
-from ._markdown_output import write_markdown_output
-
 
 def build_ultralight_fighter() -> ship.Ship:
     return ship.Ship(
@@ -106,17 +104,9 @@ def test_ultralight_fighter_part_values():
     ]
 
 
-def test_ultralight_fighter_markdown_table():
+def test_ultralight_fighter_pulse_laser_has_customisation_note():
     fighter = build_ultralight_fighter()
-    table = fighter.markdown_table()
-    write_markdown_output('test_ultralight_fighter', table)
-
-    assert '## *Botfly* Ultralight Fighter | TL12 | Hull 2' in table
-    assert '| Hull | Light Streamlined Hull | **6.00** |  | 270.00 |' in table
-    assert '|  | Basic Ship Systems |  | 1.00 |  |' in table
-    assert '|  | Crystaliron, Armour: 6 | 2.16 |  | 432.00 |' in table
-    assert '| Propulsion | M-Drive 6 | 0.36 | 4.00 | 720.00 |' in table
-    assert '| Power | Fusion (TL 12) | 0.53 | **8.00** | 533.33 |' in table
-    assert '| Sensors | Civilian Grade | 1.00 | 1.00 | 3000.00 |' in table
-    assert '| Fuel | 1 week of operation | 0.02 |  |  |' in table
-    assert '|  | Manoeuvre/0 |  |  |  |' in table
+    assert fighter.weapons is not None
+    mount = fighter.weapons.fixed_mounts[0]
+    note_messages = [n.message for n in mount.notes if n.category.value == 'info']
+    assert 'High Technology: Very High Yield, Energy Efficient' in note_messages

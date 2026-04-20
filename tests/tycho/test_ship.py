@@ -9,7 +9,6 @@ from tycho.sensors import CivilianSensors, SensorsSection
 from tycho.storage import CargoCrane, CargoHold, CargoSection
 from tycho.systems import Airlock, ProbeDrones, SystemsSection, Workshop
 from tycho.weapons import FixedMount, MountWeapon, WeaponsSection
-from tests.ships._markdown_output import write_markdown_output
 
 
 def test_ship_initial():
@@ -263,7 +262,7 @@ def test_ship_with_negative_cargo_adds_local_note():
     ]
 
 
-def test_markdown_table_renders_inline_error_on_cargo_row():
+def test_hull_overloaded_puts_error_on_ship():
     my_ship = ship.Ship(
         tl=12,
         displacement=6,
@@ -271,9 +270,9 @@ def test_markdown_table_renders_inline_error_on_cargo_row():
         sensors=SensorsSection(primary=CivilianSensors()),
         systems=SystemsSection(workshop=Workshop()),
     )
-    table = my_ship.markdown_table()
-    write_markdown_output('test_negative_cargo', table)
-    assert '|  | **ERROR:** Hull overloaded by 1.00 tons |  |  |  |' in table
+    assert ('error', 'Hull overloaded by 1.00 tons') in [
+        (n.category.value, n.message) for n in my_ship.notes
+    ]
 
 
 def test_ship_roundtrips_airlocks_in_parts_list():

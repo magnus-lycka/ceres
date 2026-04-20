@@ -20,6 +20,30 @@ Parts are created as plain frozen models. `Ship.model_post_init()` then calls
 requirements, and recalculates derived values. Ship-dependent logic lives in
 `compute_*` methods and is only callable after binding.
 
+### JSON roundtripping
+
+A complete ship design must serialize to JSON and deserialize back to a
+functionally identical ship — same structure, same types, same field values.
+This is a core feature: designs are stored, transferred between systems, and
+loaded as templates. Serialized ships are also used for rendering (HTML, PDF)
+without re-running Python-side business logic.
+
+`tests/tycho/test_serialization.py` is the explicit guardian of this contract.
+As the codebase evolves, that file must be kept current: any new field or
+polymorphic type that matters to a ship's identity must have a roundtrip test.
+
+The markdown rendering path is being phased out in favour of the HTML and PDF
+transforms, which means JSON becomes the primary regression artefact. Future
+feature tests should verify correctness through JSON comparison wherever
+possible, integrating roundtrip verification into the feature test rather than
+treating it as a separate concern.
+
+Polymorphic fields use Pydantic discriminated unions so the correct concrete
+type is resolved during deserialization. `armour` and `stealth` on `Hull` use
+`description` as the discriminator. Any new polymorphic field must follow the
+same pattern — add a `Literal` discriminator field to each subclass and annotate
+the union with `Field(discriminator=...)`.
+
 ### Derived data in model JSON
 
 Derived values (`cost`, `power`, `tons`) are included in JSON so a serialized

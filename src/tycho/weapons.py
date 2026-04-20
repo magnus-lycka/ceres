@@ -20,23 +20,24 @@ def _size_reduction_steps(value: bool | int) -> int:
     return 1 if value is True else int(value)
 
 
-def _weapon_item(
-    base_item: str,
+def _weapon_customisation_note(
     *,
     size_reduction: int = 0,
     energy_efficient: bool = False,
     very_high_yield: bool = False,
-) -> str:
-    parts = [base_item]
+) -> Note | None:
+    parts = []
     if size_reduction == 1:
-        parts.append('Adv - Size Reduction')
+        parts.append('Advanced - Size Reduction')
     elif size_reduction > 1:
-        parts.append(f'Adv - Size Reduction × {size_reduction}')
+        parts.append(f'Advanced - Size Reduction × {size_reduction}')
     if energy_efficient:
-        parts.append('Adv - Energy Efficient')
+        parts.append('Advanced - Energy Efficient')
     if very_high_yield:
-        parts.append('VAdv - Very High Yield')
-    return ', '.join(parts)
+        parts.append('Very Advanced - Very High Yield')
+    if not parts:
+        return None
+    return Note(category=NoteCategory.INFO, message=', '.join(parts))
 
 
 def _modified_weapon_tons(base_tons: float, *, size_reduction: int = 0) -> float:
@@ -55,7 +56,13 @@ def _modified_weapon_cost(
 def _mounted_weapon_notes(weapons: Sequence[MountWeapon], *, empty_message: str) -> list[Note]:
     if not weapons:
         return [Note(category=NoteCategory.INFO, message=empty_message)]
-    return [Note(category=NoteCategory.INFO, message=w.build_item() or w.__class__.__name__) for w in weapons]
+    notes = []
+    for w in weapons:
+        notes.append(Note(category=NoteCategory.INFO, message=w.build_item() or w.__class__.__name__))
+        cust = w.customisation_note()
+        if cust:
+            notes.append(cust)
+    return notes
 
 
 def _mounted_weapon_cost(weapons: Sequence[MountWeapon]) -> float:
@@ -90,12 +97,23 @@ class MountWeapon(CeresModel):
         return float(MOUNT_WEAPON_SPECS[self.weapon]['power'])
 
     def build_item(self) -> str | None:
-        parts = [str(MOUNT_WEAPON_SPECS[self.weapon]['item'])]
-        if self.weapon == 'pulse_laser' and self.very_high_yield:
+        return str(MOUNT_WEAPON_SPECS[self.weapon]['item'])
+
+    def customisation_note(self) -> Note | None:
+        if self.weapon != 'pulse_laser':
+            return None
+        parts = []
+        if self.very_high_yield:
             parts.append('Very High Yield')
-        if self.weapon == 'pulse_laser' and self.energy_efficient:
+        if self.energy_efficient:
             parts.append('Energy Efficient')
-        return ', '.join(parts)
+        if not parts:
+            return None
+        advantages = (2 if self.very_high_yield else 0) + (1 if self.energy_efficient else 0)
+        grade = grade_for_advantages(advantages)
+        if grade is None:
+            return None
+        return Note(category=NoteCategory.INFO, message=f'{grade.display_name}: {", ".join(parts)}')
 
     @property
     def cost_modifier(self) -> float:
@@ -137,9 +155,11 @@ class FixedMount(ShipPart):
         return 'Fixed Mount'
 
     def build_notes(self) -> list[Note]:
+        notes = super().build_notes()
         if len(self.weapons) == 1:
-            return []
-        return _mounted_weapon_notes(self.weapons, empty_message='No weapons in mount')
+            cust = self.weapons[0].customisation_note()
+            return [*notes, cust] if cust else notes
+        return [*notes, *_mounted_weapon_notes(self.weapons, empty_message='No weapons in mount')]
 
     def compute_tons(self) -> float:
         return 0.0
@@ -260,11 +280,12 @@ class Barbette(CustomisableShipPart):
         super().model_post_init(__context)
 
     def build_item(self) -> str | None:
-        return _weapon_item(
-            str(BARBETTE_SPECS[self.weapon]['item']),
-            size_reduction=self.size_reduction,
-            very_high_yield=self.very_high_yield,
-        )
+        return str(BARBETTE_SPECS[self.weapon]['item'])
+
+    def build_notes(self) -> list[Note]:
+        notes = super().build_notes()
+        note = _weapon_customisation_note(size_reduction=self.size_reduction, very_high_yield=self.very_high_yield)
+        return [*notes, note] if note else notes
 
     @property
     def minimum_tl(self) -> int:  # type: ignore[override]
@@ -390,10 +411,12 @@ class Bay(CustomisableShipPart):
         super().model_post_init(__context)
 
     def build_item(self) -> str | None:
-        return _weapon_item(
-            str(BAY_WEAPON_SPECS[self.weapon][self.size]['item']),
-            size_reduction=self.size_reduction,
-        )
+        return str(BAY_WEAPON_SPECS[self.weapon][self.size]['item'])
+
+    def build_notes(self) -> list[Note]:
+        notes = super().build_notes()
+        note = _weapon_customisation_note(size_reduction=self.size_reduction)
+        return [*notes, note] if note else notes
 
     @property
     def minimum_tl(self) -> int:  # type: ignore[override]
@@ -457,15 +480,12 @@ class PointDefenseBattery(CustomisableShipPart):
         super().model_post_init(__context)
 
     def build_item(self) -> str | None:
-        return _weapon_item(
-            str(POINT_DEFENSE_SPECS[self.kind][self.rating]['item']),
-            size_reduction=self.size_reduction,
-            energy_efficient=self.energy_efficient,
-        )
+        return str(POINT_DEFENSE_SPECS[self.kind][self.rating]['item'])
 
     def build_notes(self) -> list[Note]:
+        notes = [*super().build_notes()]
         intercept_dice = self.rating * 2
-        notes = [Note(category=NoteCategory.INFO, message=f'Intercept +{intercept_dice}D')]
+        notes.append(Note(category=NoteCategory.INFO, message=f'Intercept +{intercept_dice}D'))
         if self.kind == 'gauss':
             notes.append(
                 Note(
@@ -473,6 +493,11 @@ class PointDefenseBattery(CustomisableShipPart):
                     message='Requires ammunition storage to reload after 12 rounds',
                 )
             )
+        cust_note = _weapon_customisation_note(  # noqa: E501
+            size_reduction=self.size_reduction, energy_efficient=self.energy_efficient
+        )
+        if cust_note:
+            notes.append(cust_note)
         return notes
 
     @property

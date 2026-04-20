@@ -4,6 +4,9 @@ import json
 
 import pytest
 
+from tests.ships.test_dragon import build_dragon
+from tests.ships.test_revised_beowulf import build_revised_beowulf
+from tests.ships.test_revised_dragon import build_revised_dragon
 from tycho import armour, hull
 from tycho.bridge import Cockpit, CommandSection
 from tycho.computer import Computer5, Computer20, Computer25, ComputerSection
@@ -273,3 +276,54 @@ def test_roundtrip_new_systems():
     assert loaded.systems.biosphere.tons == pytest.approx(4.0)
     assert loaded.systems.training_facility is not None
     assert loaded.systems.training_facility.trainees == 2
+
+
+# ---------------------------------------------------------------------------
+# Idempotency: roundtripping twice produces identical JSON
+# ---------------------------------------------------------------------------
+
+
+def _roundtrip_json(s: Ship) -> str:
+    return Ship.model_validate_json(s.model_dump_json()).model_dump_json()
+
+
+def test_roundtrip_is_idempotent_ultralight():
+    j1 = _roundtrip_json(ultralight)
+    j2 = _roundtrip_json(Ship.model_validate_json(j1))
+    assert json.loads(j1) == json.loads(j2)
+
+
+def test_roundtrip_is_idempotent_dragon():
+    ship = build_dragon()
+    j1 = _roundtrip_json(ship)
+    j2 = _roundtrip_json(Ship.model_validate_json(j1))
+    assert json.loads(j1) == json.loads(j2)
+
+
+def test_roundtrip_is_idempotent_revised_dragon():
+    ship = build_revised_dragon()
+    j1 = _roundtrip_json(ship)
+    j2 = _roundtrip_json(Ship.model_validate_json(j1))
+    assert json.loads(j1) == json.loads(j2)
+
+
+def test_roundtrip_is_idempotent_revised_beowulf():
+    ship = build_revised_beowulf()
+    j1 = _roundtrip_json(ship)
+    j2 = _roundtrip_json(Ship.model_validate_json(j1))
+    assert json.loads(j1) == json.loads(j2)
+
+
+def test_roundtrip_dragon_production_cost():
+    ship = build_dragon()
+    loaded = _roundtrip(ship)
+    assert loaded.production_cost == pytest.approx(ship.production_cost)
+
+
+def test_roundtrip_dragon_part_notes_not_duplicated():
+    ship = build_dragon()
+    loaded = _roundtrip(ship)
+    assert loaded.power is not None and ship.power is not None
+    assert len(loaded.power.fusion_plant.notes) == len(ship.power.fusion_plant.notes)
+    assert loaded.drives is not None and ship.drives is not None
+    assert len(loaded.drives.m_drive.notes) == len(ship.drives.m_drive.notes)

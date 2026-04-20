@@ -289,7 +289,7 @@ def spec_crew_rows(ship) -> list[SpecCrewRow]:
             SpecCrewRow(
                 role=role.role,
                 quantity=role.count if role.count > 1 else None,
-                salary=role.total_salary,
+                salary=role.monthly_salary,
             )
         )
     return rows

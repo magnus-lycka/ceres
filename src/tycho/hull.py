@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from enum import Enum
 from typing import Annotated, ClassVar, Literal
 
@@ -185,7 +184,9 @@ class ArmouredBulkhead(ShipPart):
         return 'Armoured Bulkhead'
 
     def build_notes(self) -> list[Note]:
-        notes = [Note(category=NoteCategory.INFO, message='Critical hit severity reduced by 1 if >1')]
+        notes = [
+            Note(category=NoteCategory.INFO, message='Critical hit severity reduced by 1 if critical hit severity >1')
+        ]  # noqa: E501
         if not self.from_ship_part:
             notes.append(
                 Note(
@@ -289,16 +290,11 @@ class Hull(CeresModel):
             )
         bulkheads = ship.armoured_bulkhead_parts()
         if bulkheads:
-            protected_items = [bulkhead.protected_item for bulkhead in bulkheads if bulkhead.protected_item]
             notes = [
-                Note(category=NoteCategory.INFO, message='Critical hit severity reduced by 1 if >1'),
+                Note(
+                    category=NoteCategory.INFO, message='Critical hit severity reduced by 1 if critical hit severity >1'
+                ),  # noqa: E501
             ]
-            if protected_items:
-                grouped_items: OrderedDict[str, int] = OrderedDict()
-                for item in protected_items:
-                    grouped_items[item] = grouped_items.get(item, 0) + 1
-                grouped_labels = [f'{item} × {count}' if count > 1 else item for item, count in grouped_items.items()]
-                notes.append(Note(category=NoteCategory.INFO, message=', '.join(grouped_labels)))
             spec.add_row(
                 SpecRow(
                     section=SpecSection.HULL,

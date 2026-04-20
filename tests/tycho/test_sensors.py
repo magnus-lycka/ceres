@@ -35,7 +35,7 @@ def test_basic_sensors_notes_describe_suite_and_dm():
     assert [(note.category.value, note.message) for note in s.notes] == [
         ('item', 'Basic'),
         ('info', 'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI)'),
-        ('info', 'Sensor DM -4 to Electronics (comms) and Electronics (sensors) checks'),
+        ('info', 'DM -4 to Electronics (comms) and Electronics (sensors) checks'),
     ]
 
 
@@ -66,7 +66,7 @@ def test_civilian_grade_notes_describe_suite_and_dm():
     assert [(note.category.value, note.message) for note in s.notes] == [
         ('item', 'Civilian Grade'),
         ('info', 'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI)'),
-        ('info', 'Sensor DM -2 to Electronics (comms) and Electronics (sensors) checks'),
+        ('info', 'DM -2 to Electronics (comms) and Electronics (sensors) checks'),
     ]
 
 
@@ -78,9 +78,9 @@ def test_military_grade_notes_describe_suite_and_dm():
         (
             'info',
             'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI), '
-            'Jammers, Emissions Control (EMCON)',
+            'Jammers, EMCON',
         ),
-        ('info', 'Sensor DM +0 to Electronics (comms) and Electronics (sensors) checks'),
+        ('info', 'DM +0 to Electronics (comms) and Electronics (sensors) checks'),
     ]
 
 
@@ -92,9 +92,9 @@ def test_improved_sensors_at_tl13_include_expected_features():
         (
             'info',
             'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI), '
-            'Densitometer (LPI), Jammers, Emissions Control (EMCON)',
+            'Densitometer (LPI), Jammers, EMCON',
         ),
-        ('info', 'Sensor DM +1 to Electronics (comms) and Electronics (sensors) checks'),
+        ('info', 'DM +1 to Electronics (comms) and Electronics (sensors) checks'),
     ]
 
 
@@ -112,7 +112,7 @@ def test_improved_sensors_at_tl12_do_not_yet_upgrade_densitometer_to_lpi():
     assert (
         'info',
         'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI), '
-        'Densitometer, Jammers, Emissions Control (EMCON)',
+        'Densitometer, Jammers, EMCON',
     ) in [(note.category.value, note.message) for note in s.notes]
 
 
@@ -122,7 +122,7 @@ def test_improved_sensors_at_tl15_upgrade_densitometer_to_elpi():
     assert (
         'info',
         'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI), '
-        'Densitometer (ELPI), Jammers, Emissions Control (EMCON)',
+        'Densitometer (ELPI), Jammers, EMCON',
     ) in [(note.category.value, note.message) for note in s.notes]
 
 
@@ -137,7 +137,7 @@ def test_advanced_sensors_include_neural_activity_sensor_and_extreme_emissions_c
             'Densitometer (ELPI), Neural Activity Sensor (passive only), Jammers, '
             'Extreme Emissions Control',
         ),
-        ('info', 'Sensor DM +2 to Electronics (comms) and Electronics (sensors) checks'),
+        ('info', 'DM +2 to Electronics (comms) and Electronics (sensors) checks'),
     ]
 
 

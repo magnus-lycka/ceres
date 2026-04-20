@@ -12,7 +12,7 @@ from tycho.storage import CargoSection, FuelProcessor, FuelSection, JumpFuel, Op
 from tycho.systems import Airlock, ProbeDrones, SystemsSection, Workshop
 from tycho.weapons import Turret, WeaponsSection
 
-from ._markdown_output import write_html_output, write_markdown_output
+from ._output import write_html_output
 
 
 def build_suleiman() -> ship.Ship:
@@ -274,12 +274,6 @@ def test_suleiman_spec_structure():
     assert any(p.kind == 'MIDDLE' and p.quantity == 2 for p in spec.passengers)
 
 
-def test_suleiman_markdown_output():
-    suleiman = build_suleiman()
-    table = suleiman.markdown_table()
-    write_markdown_output('test_suleiman', table)
-
-
 def test_suleiman_stuart_html_output():
     suleiman = build_suleiman()
     html = render_ship_html(suleiman)
@@ -299,19 +293,6 @@ def test_suleiman_stuart_html_output():
     assert 'Life Support People' in html
     assert 'Scout/Courier | TL12 | Hull 40' in html
     assert '<p class="eyebrow">' not in html
-
-
-def test_markdown_table_renders_inline_warning_on_jump_drive_row():
-    my_ship = ship.Ship(
-        tl=12,
-        displacement=100,
-        hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(jump_drive=JumpDrive2()),
-        computer=ComputerSection(hardware=Computer5(bis=True)),
-    )
-    table = my_ship.markdown_table()
-    write_markdown_output('test_suleiman_missing_jump_control', table)
-    assert '|  | *WARNING:* No Jump Control software |  |  |  |' in table
 
 
 def test_jump_drive_with_lower_jump_control_warns_on_drive():
@@ -384,26 +365,3 @@ def test_higher_jump_control_replaces_lower_one():
     ]
 
 
-def test_markdown_table_renders_inline_warning_on_high_jump_control_row():
-    my_ship = ship.Ship(
-        tl=12,
-        displacement=100,
-        hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(jump_drive=JumpDrive2()),
-        computer=ComputerSection(hardware=Computer10(bis=True), software=[JumpControl3()]),
-    )
-    table = my_ship.markdown_table()
-    write_markdown_output('test_suleiman_high_jump_control', table)
-    assert '|  | *WARNING:* Limited to Jump 2 by drive capacity |  |  |  |' in table
-
-
-def test_markdown_table_renders_inline_warning_on_missing_jump_drive_row():
-    my_ship = ship.Ship(
-        tl=12,
-        displacement=100,
-        hull=hull.Hull(configuration=hull.streamlined_hull),
-        computer=ComputerSection(hardware=Computer5(bis=True), software=[JumpControl2()]),
-    )
-    table = my_ship.markdown_table()
-    write_markdown_output('test_suleiman_missing_jump_drive', table)
-    assert '|  | *WARNING:* No jump drive installed |  |  |  |' in table

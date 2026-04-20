@@ -82,7 +82,7 @@ def test_mdrive_power():
 def test_budget_increased_size_mdrive_values():
     d = MDrive7(budget=True, increased_size=True)
     d.bind(DummyOwner(13, 400))
-    assert d.build_item() == 'M-Drive 7, Budget-Increased Size'
+    assert d.build_item() == 'M-Drive 7'
     assert float(d.tons) == pytest.approx(35.0)
     assert float(d.cost) == pytest.approx(42_000_000.0)
 
@@ -182,7 +182,7 @@ def test_fusion_plant_tl15_variant():
 def test_budget_increased_size_fusion_plant_values():
     p = FusionPlantTL12(output=482, budget=True, increased_size=True)
     p.bind(DummyOwner(13, 400))
-    assert p.build_item() == 'Fusion (TL 12), Budget-Increased Size'
+    assert p.build_item() == 'Fusion (TL 12)'
     assert float(p.tons) == pytest.approx(40.1666666667)
     assert float(p.cost) == pytest.approx(24_100_000.0)
 
@@ -190,7 +190,7 @@ def test_budget_increased_size_fusion_plant_values():
 def test_size_reduced_fusion_plant_values():
     p = FusionPlantTL12(output=436, size_reduction=True)
     p.bind(DummyOwner(13, 400))
-    assert p.build_item() == 'Fusion (TL 12), Adv - Size Reduction'
+    assert p.build_item() == 'Fusion (TL 12)'
     assert float(p.tons) == pytest.approx(26.16)
     assert float(p.cost) == pytest.approx(31_973_333.3333)
 
@@ -295,3 +295,31 @@ def test_reaction_fuel_minutes_of_operation():
     assert my_ship.fuel is not None
     assert my_ship.fuel.reaction_fuel is not None
     assert my_ship.fuel.reaction_fuel.tons == pytest.approx(2.08)
+
+
+def test_size_reduced_fusion_plant_item_is_base_name_only():
+    p = FusionPlantTL12(output=436, size_reduction=True)
+    p.bind(DummyOwner(13, 400))
+    assert p.build_item() == 'Fusion (TL 12)'
+
+
+def test_size_reduced_fusion_plant_has_customisation_note():
+    p = FusionPlantTL12(output=436, size_reduction=True)
+    p.bind(DummyOwner(13, 400))
+    info_notes = [n.message for n in p.notes if n.category.value == 'info']
+    assert 'Advanced - Size Reduction' in info_notes
+
+
+def test_budget_increased_size_mdrive_item_is_base_name_only():
+    from tycho.drives import MDrive1
+    p = MDrive1(budget=True, increased_size=True)
+    p.bind(DummyOwner(12, 100))
+    assert p.build_item() == 'M-Drive 1'
+
+
+def test_budget_increased_size_mdrive_has_customisation_note():
+    from tycho.drives import MDrive1
+    p = MDrive1(budget=True, increased_size=True)
+    p.bind(DummyOwner(12, 100))
+    info_notes = [n.message for n in p.notes if n.category.value == 'info']
+    assert 'Budget - Increased Size' in info_notes
