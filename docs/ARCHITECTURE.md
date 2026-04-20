@@ -208,3 +208,10 @@ in the following intentional ways:
   saying those retrotech rules also apply generically to starship components,
   so Ceres does not extend CSC retrotech pricing or TL logic to ships by
   default.
+- **Retro starship computers** — We do not support retro starship computers
+  today. A `Computer/25` or `Core/40` is not treated as the same piece of
+  hardware regardless of TL, and we do not apply CSC-style retrotech discounts
+  to ship computers. If we later add explicit support for retro starship
+  computers, they must behave like lower-TL ship computers for software and
+  capability purposes, not merely receive a price reduction while retaining the
+  full behaviour of a computer built at the ship's TL.

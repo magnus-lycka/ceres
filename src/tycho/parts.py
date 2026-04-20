@@ -266,12 +266,12 @@ class ShipPart(CeresModel):
 
     @property
     def effective_tl(self) -> int:
-        return self.ship_tl
+        return self.minimum_tl
 
     def validate_tl(self) -> None:
-        if self.ship_tl < self.minimum_tl:
+        if self.ship_tl < self.effective_tl:
             self.error(
-                f'Requires TL{self.minimum_tl}, ship is TL{self.ship_tl}',
+                f'Requires TL{self.effective_tl}, ship is TL{self.ship_tl}',
             )
 
     def bulkhead_label(self) -> str:
@@ -304,6 +304,10 @@ class CustomisableShipPart(ShipPart):
     allowed_modifications: ClassVar[frozenset[str]] = frozenset()
 
     @property
+    def effective_tl(self) -> int:
+        return self.minimum_tl + (0 if self.customisation is None else self.customisation.tl_delta)
+
+    @property
     def group_key(self) -> str:
         base = super().group_key
         if self.customisation is None:
@@ -323,3 +327,8 @@ class CustomisableShipPart(ShipPart):
                 if mod.name not in self.allowed_modifications:
                     self.error(f'Modification not allowed for {self.__class__.__name__}: {mod.name}')
         super().bind(ship)
+        if self.customisation is not None and self.customisation.tl_delta < 0 and self.ship_tl > self.effective_tl:
+            self.warning(
+                f'{self.customisation._display_name} not required: '
+                f'ship TL{self.ship_tl} exceeds required TL{self.effective_tl}'
+            )

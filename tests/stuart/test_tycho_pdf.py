@@ -226,7 +226,7 @@ def test_source_shows_uncrewed_for_no_crew():
 def test_esc_escapes_typst_markup_characters():
     from stuart.tycho_pdf import _esc
 
-    assert _esc('Retro*') == 'Retro\\*'
+    assert _esc('foo*bar') == 'foo\\*bar'
     assert _esc('item_name') == 'item\\_name'
     assert _esc('[foo]') == '\\[foo\\]'
     assert _esc('#label') == '\\#label'

@@ -53,6 +53,14 @@ def _note_tl(part: ShipPart) -> int:
 
 
 class SensorPackage(ShipPart):
+    @property
+    def effective_tl(self) -> int:
+        return self.ship_tl
+
+    def validate_tl(self) -> None:
+        if self.ship_tl < self.minimum_tl:
+            self.error(f'Requires TL{self.minimum_tl}, ship is TL{self.ship_tl}')
+
     def bind(self, owner: ShipBase) -> None:
         super().bind(owner)
         retained_notes = [note for note in self.notes if note.category in (NoteCategory.WARNING, NoteCategory.ERROR)]

@@ -1,5 +1,7 @@
 from typing import ClassVar
 
+import pytest
+
 from tycho import parts
 from tycho.base import ShipBase
 from tycho.hull import ArmouredBulkhead
@@ -26,6 +28,10 @@ class CustomPart(parts.CustomisableShipPart):
     })
 
 
+class Tl12CustomPart(CustomPart):
+    minimum_tl: ClassVar[int] = 12
+
+
 def test_base_part():
     part = FixedPart.model_validate({'cost': 1, 'power': 3.14, 'tons': 4.44})
     owner = DummyShip()
@@ -33,7 +39,7 @@ def test_base_part():
     assert part.cost == 1
     assert part.minimum_tl == 9
     assert part.ship_tl == 14
-    assert part.effective_tl == 14
+    assert part.effective_tl == 9
     assert part.power == 3.14
     assert part.tons == 4.44
     assert part.compute_cost() == 1
@@ -94,3 +100,48 @@ def test_customisable_part_without_customisation_behaves_like_ship_part():
     assert part.cost == 1
     assert part.power == 2
     assert part.tons == 3
+
+
+def test_customisable_part_without_customisation_uses_minimum_tl():
+    part = Tl12CustomPart()
+    part.bind(DummyShip(tl=11))
+    assert [('error', 'Requires TL12, ship is TL11')] == [
+        (note.category.value, note.message) for note in part.notes
+    ]
+
+
+@pytest.mark.parametrize(
+    ('customisation', 'ship_tl', 'expected'),
+    [
+        (parts.EarlyPrototype(parts.IncreasedSize, parts.IncreasedSize), 9, 'Requires TL10, ship is TL9'),
+        (parts.Prototype(parts.IncreasedSize), 10, 'Requires TL11, ship is TL10'),
+        (parts.Budget(parts.IncreasedSize), 11, 'Requires TL12, ship is TL11'),
+        (parts.Advanced(parts.SizeReduction), 12, 'Requires TL13, ship is TL12'),
+        (parts.VeryAdvanced(parts.SizeReduction, parts.SizeReduction), 13, 'Requires TL14, ship is TL13'),
+        (
+            parts.HighTechnology(parts.SizeReduction, parts.SizeReduction, parts.SizeReduction),
+            14,
+            'Requires TL15, ship is TL14',
+        ),
+    ],
+)
+def test_customisable_part_applies_customisation_tl_delta(customisation, ship_tl, expected):
+    part = Tl12CustomPart(customisation=customisation)
+    part.bind(DummyShip(tl=ship_tl))
+    assert ('error', expected) in [(note.category.value, note.message) for note in part.notes]
+
+
+def test_prototype_warns_when_ship_tl_is_high_enough_without_it():
+    part = Tl12CustomPart(customisation=parts.Prototype(parts.IncreasedSize))
+    part.bind(DummyShip(tl=12))
+    assert ('warning', 'Prototype not required: ship TL12 exceeds required TL11') in [
+        (note.category.value, note.message) for note in part.notes
+    ]
+
+
+def test_early_prototype_warns_when_prototype_would_suffice():
+    part = Tl12CustomPart(customisation=parts.EarlyPrototype(parts.IncreasedSize, parts.IncreasedSize))
+    part.bind(DummyShip(tl=11))
+    assert ('warning', 'Early Prototype not required: ship TL11 exceeds required TL10') in [
+        (note.category.value, note.message) for note in part.notes
+    ]

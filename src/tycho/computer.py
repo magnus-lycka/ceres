@@ -242,7 +242,6 @@ class Computer(ShipPart):
     base_cost: ClassVar[float]
     bis: bool = False
     fib: bool = False
-    retro: bool = False
 
     def build_item(self) -> str | None:
         item = self.description
@@ -250,13 +249,15 @@ class Computer(ShipPart):
             item += '/bis'
         if self.fib:
             item += '/fib'
-        if self.retro:
-            item += ', (Retro*)'
         return item
 
     @property
     def effective_tl(self):
         return self.ship_tl
+
+    def validate_tl(self) -> None:
+        if self.ship_tl < self.minimum_tl:
+            self.error(f'Requires TL{self.minimum_tl}, ship is TL{self.ship_tl}')
 
     @property
     def jump_control_processing(self) -> int:
@@ -288,10 +289,7 @@ class Computer(ShipPart):
             multiplier += 0.5
         if self.fib:
             multiplier += 0.5
-        cost = self.base_cost * multiplier
-        if self.retro:
-            cost *= 0.5 ** max(self.ship_tl - self.minimum_tl, 0)
-        return cost
+        return self.base_cost * multiplier
 
 
 class Computer5(Computer):

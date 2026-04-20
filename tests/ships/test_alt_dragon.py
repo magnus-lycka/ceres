@@ -78,8 +78,8 @@ def build_alt_dragon() -> ship.Ship:
         ),
         command=CommandSection(bridge=Bridge(holographic=True, armoured_bulkhead=True)),
         computer=ComputerSection(
-            hardware=Core40(fib=True, retro=True),
-            backup_hardware=Computer20(fib=True, retro=True),
+            hardware=Core40(fib=True),
+            backup_hardware=Computer20(fib=True),
             software=[AutoRepair1(), FireControl2(), Evade1()],
         ),
         sensors=SensorsSection(
@@ -143,14 +143,14 @@ def test_alt_dragon_modeled_subset_tracks_current_model():
 
     assert dragon.computer is not None
     assert dragon.computer.hardware is not None
-    assert dragon.computer.hardware.build_item() == 'Core/40/fib, (Retro*)'
-    assert dragon.computer.hardware.cost == pytest.approx(4_218_750.0)
+    assert dragon.computer.hardware.build_item() == 'Core/40/fib'
+    assert dragon.computer.hardware.cost == pytest.approx(67_500_000.0)
 
     assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(6.3916)
     assert dragon.notes == []
 
-    assert dragon.production_cost == pytest.approx(293_063_146.6667)
-    assert dragon.sales_price_new == pytest.approx(263_756_832.0)
+    assert dragon.production_cost == pytest.approx(360_094_396.6667)
+    assert dragon.sales_price_new == pytest.approx(324_084_957.0)
     assert dragon.available_power == pytest.approx(436.0)
     assert dragon.sensor_power_load == pytest.approx(15.0)
     assert dragon.total_power_load == pytest.approx(436.0)

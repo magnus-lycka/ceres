@@ -109,11 +109,11 @@ def test_core_40_hardware():
     assert c.cost == 45_000_000
 
 
-def test_core_40_retro_hardware():
-    c = Core40(fib=True, retro=True)
+def test_core_40_fib_hardware():
+    c = Core40(fib=True)
     c.bind(DummyOwner(13, 100))
-    assert c.build_item() == 'Core/40/fib, (Retro*)'
-    assert c.cost == pytest.approx(4_218_750.0)
+    assert c.build_item() == 'Core/40/fib'
+    assert c.cost == pytest.approx(67_500_000.0)
 
 
 def test_included_software_packages():
