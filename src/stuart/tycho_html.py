@@ -58,7 +58,11 @@ def _render_banner_side(spec: ShipSpec) -> str | None:
 def _render_main_table(spec: ShipSpec) -> str:
     main_rows = [row for row in spec.rows if not (row.power is not None and row.tons is None and row.cost is None)]
     section_rowspans = _section_rowspans(main_rows)
-    rows_html = ''.join(_render_main_row(row, section_rowspans.get(index)) for index, row in enumerate(main_rows))
+    last_section_index = max(section_rowspans) if section_rowspans else -1
+    rows_html = ''.join(
+        _render_main_row(row, section_rowspans.get(index), index == last_section_index)
+        for index, row in enumerate(main_rows)
+    )
     return (
         '<section class="main-panel">'
         '<table class="spec-table">'
@@ -82,7 +86,7 @@ def _section_rowspans(rows: list[SpecRow]) -> dict[int, int]:
     return rowspans
 
 
-def _render_main_row(row: SpecRow, section_rowspan: int | None) -> str:
+def _render_main_row(row: SpecRow, section_rowspan: int | None, is_last_section: bool = False) -> str:
     item = _render_item_cell(row)
     tons = _format_number(row.tons)
     cost = _format_mcr(row.cost)
@@ -91,8 +95,9 @@ def _render_main_row(row: SpecRow, section_rowspan: int | None) -> str:
 
     section_cell = ''
     if section_rowspan is not None:
+        cls = 'section-cell last-section-cell' if is_last_section else 'section-cell'
         section_cell = (
-            f'<th scope="rowgroup" class="section-cell" rowspan="{section_rowspan}">{escape(row.section.value)}</th>'
+            f'<th scope="rowgroup" class="{cls}" rowspan="{section_rowspan}">{escape(row.section.value)}</th>'
         )
 
     return (
@@ -265,7 +270,7 @@ _TYCHO_SPEC_CSS = """
   border-bottom: 0;
 }
 
-.main-panel .spec-table tbody tr:last-child .section-cell {
+.main-panel .spec-table .last-section-cell {
   border-bottom: 0;
 }
 
