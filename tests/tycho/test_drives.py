@@ -23,6 +23,7 @@ from tycho.drives import (
     PowerSection,
     ReactionDrive,
 )
+from tycho.parts import Advanced, Budget, IncreasedSize, SizeReduction
 from tycho.storage import FuelSection, OperationFuel, ReactionFuel
 
 
@@ -80,7 +81,7 @@ def test_mdrive_power():
 
 
 def test_budget_increased_size_mdrive_values():
-    d = MDrive7(budget=True, increased_size=True)
+    d = MDrive7(customisation=Budget(IncreasedSize))
     d.bind(DummyOwner(13, 400))
     assert d.build_item() == 'M-Drive 7'
     assert float(d.tons) == pytest.approx(35.0)
@@ -180,7 +181,7 @@ def test_fusion_plant_tl15_variant():
 
 
 def test_budget_increased_size_fusion_plant_values():
-    p = FusionPlantTL12(output=482, budget=True, increased_size=True)
+    p = FusionPlantTL12(output=482, customisation=Budget(IncreasedSize))
     p.bind(DummyOwner(13, 400))
     assert p.build_item() == 'Fusion (TL 12)'
     assert float(p.tons) == pytest.approx(40.1666666667)
@@ -188,7 +189,7 @@ def test_budget_increased_size_fusion_plant_values():
 
 
 def test_size_reduced_fusion_plant_values():
-    p = FusionPlantTL12(output=436, size_reduction=True)
+    p = FusionPlantTL12(output=436, customisation=Advanced(SizeReduction))
     p.bind(DummyOwner(13, 400))
     assert p.build_item() == 'Fusion (TL 12)'
     assert float(p.tons) == pytest.approx(26.16)
@@ -201,9 +202,9 @@ def test_emergency_power_system_values():
         displacement=400,
         hull=hull.Hull(configuration=hull.standard_hull),
         power=PowerSection(
-            fusion_plant=FusionPlantTL12(output=436, size_reduction=True),
+            fusion_plant=FusionPlantTL12(output=436, customisation=Advanced(SizeReduction)),
             emergency_power_system=EmergencyPowerSystem.from_fusion_plant(
-                FusionPlantTL12(output=436, size_reduction=True)
+                FusionPlantTL12(output=436, customisation=Advanced(SizeReduction))
             ),
         ),
     )
@@ -298,28 +299,28 @@ def test_reaction_fuel_minutes_of_operation():
 
 
 def test_size_reduced_fusion_plant_item_is_base_name_only():
-    p = FusionPlantTL12(output=436, size_reduction=True)
+    p = FusionPlantTL12(output=436, customisation=Advanced(SizeReduction))
     p.bind(DummyOwner(13, 400))
     assert p.build_item() == 'Fusion (TL 12)'
 
 
 def test_size_reduced_fusion_plant_has_customisation_note():
-    p = FusionPlantTL12(output=436, size_reduction=True)
+    p = FusionPlantTL12(output=436, customisation=Advanced(SizeReduction))
     p.bind(DummyOwner(13, 400))
     info_notes = [n.message for n in p.notes if n.category.value == 'info']
-    assert 'Advanced - Size Reduction' in info_notes
+    assert 'Advanced: Size Reduction' in info_notes
 
 
 def test_budget_increased_size_mdrive_item_is_base_name_only():
     from tycho.drives import MDrive1
-    p = MDrive1(budget=True, increased_size=True)
+    p = MDrive1(customisation=Budget(IncreasedSize))
     p.bind(DummyOwner(12, 100))
     assert p.build_item() == 'M-Drive 1'
 
 
 def test_budget_increased_size_mdrive_has_customisation_note():
     from tycho.drives import MDrive1
-    p = MDrive1(budget=True, increased_size=True)
+    p = MDrive1(customisation=Budget(IncreasedSize))
     p.bind(DummyOwner(12, 100))
     info_notes = [n.message for n in p.notes if n.category.value == 'info']
-    assert 'Budget - Increased Size' in info_notes
+    assert 'Budget: Increased Size' in info_notes

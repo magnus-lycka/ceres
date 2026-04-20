@@ -5,6 +5,7 @@ from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer5, ComputerSection, JumpControl1
 from tycho.drives import DriveSection, FusionPlantTL12, JumpDrive1, MDrive1, PowerSection
 from tycho.habitation import AdvancedEntertainmentSystem, HabitationSection, LowBerths, Staterooms
+from tycho.parts import Budget, IncreasedSize
 from tycho.sensors import CivilianSensors, SensorsSection
 from tycho.storage import CargoCrane, CargoHold, CargoSection, FuelProcessor, FuelSection, JumpFuel, OperationFuel
 from tycho.systems import Airlock, CommonArea, MedicalBay, SystemsSection, Workshop
@@ -36,7 +37,7 @@ def build_revised_beowulf() -> ship.Ship:
             airlocks=[Airlock(), Airlock()],
         ),
         drives=DriveSection(m_drive=MDrive1(), jump_drive=JumpDrive1()),
-        power=PowerSection(fusion_plant=FusionPlantTL12(output=65, budget=True, increased_size=True)),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=65, customisation=Budget(IncreasedSize))),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=1),
             operation_fuel=OperationFuel(weeks=4),
@@ -110,5 +111,4 @@ def test_revised_beowulf_matches_current_modeled_subset():
     assert beowulf.production_cost == pytest.approx(49_781_250)
     assert beowulf.sales_price_new == pytest.approx(44_803_125)
     assert beowulf.expenses.maintenance == pytest.approx(3734.0)
-
 

@@ -19,11 +19,11 @@ class HighTlPart(parts.ShipPart):
 
 
 class CustomPart(parts.CustomisableShipPart):
-    possible_customisations: ClassVar[tuple[parts.Customisation, ...]] = (
-        parts.EnergyEfficient,
-        parts.SizeReduction,
-        parts.IncreasedSize,
-    )
+    allowed_modifications: ClassVar[frozenset[str]] = frozenset({
+        parts.EnergyEfficient.name,
+        parts.SizeReduction.name,
+        parts.IncreasedSize.name,
+    })
 
 
 def test_base_part():
@@ -67,72 +67,30 @@ def test_part_can_generate_armoured_bulkhead_from_own_values():
     assert bulkhead.protected_item == 'FixedPart'
 
 
-def test_customisable_part_validates_grade_against_customisations():
-    part = CustomPart(
-        customisation_grade=parts.CustomisationGrade.HIGH_TECHNOLOGY,
-        customisations=(parts.EnergyEfficient, parts.SizeReduction),
-    )
-    expected = (
-        'error',
-        'Customisations do not match HIGH_TECHNOLOGY: expected 3 advantage(s) and 0 disadvantage(s), got 2 and 0',
-    )
-    assert expected in [
+def test_customisable_part_build_notes_appends_customisation_note():
+    part = CustomPart(customisation=parts.HighTechnology(parts.EnergyEfficient, parts.SizeReduction, parts.SizeReduction))
+    assert ('info', 'High Technology: Energy Efficient, Size Reduction × 2') in [
         (note.category.value, note.message) for note in part.notes
     ]
 
 
-def test_customisable_part_rejects_disallowed_customisation():
-    part = CustomPart(
-        customisation_grade=parts.CustomisationGrade.ADVANCED,
-        customisations=(parts.LongRange,),
-    )
-    assert ('error', 'Customisation not allowed for CustomPart: Long Range') in [
+def test_customisable_part_group_key_differs_for_different_customisations():
+    part_a = CustomPart(customisation=parts.Advanced(parts.SizeReduction))
+    part_b = CustomPart(customisation=parts.Budget(parts.IncreasedSize))
+    assert part_a.group_key != part_b.group_key
+
+
+def test_customisable_part_rejects_disallowed_customisation_on_bind():
+    part = CustomPart(customisation=parts.Advanced(parts.OrbitalRange))
+    part.bind(DummyShip())
+    assert ('error', 'Modification not allowed for CustomPart: Orbital Range') in [
         (note.category.value, note.message) for note in part.notes
     ]
 
 
-def test_customisable_part_exposes_shared_multipliers():
-    part = CustomPart(
-        customisation_grade=parts.CustomisationGrade.HIGH_TECHNOLOGY,
-        customisations=(parts.EnergyEfficient, parts.SizeReduction, parts.SizeReduction),
-    )
-    assert part.total_advantages == 3
-    assert part.total_disadvantages == 0
-    assert part.customisation_tl_delta == 3
-    assert part.customisation_cost_multiplier == 1.5
-    assert part.customisation_tons_multiplier == 0.8
-    assert part.customisation_power_multiplier == 0.75
-
-
-def test_budget_grade_uses_grade_discount_not_budget_customisation():
-    part = CustomPart(
-        customisation_grade=parts.CustomisationGrade.BUDGET,
-        customisations=(parts.IncreasedSize,),
-    )
-    assert part.total_advantages == 0
-    assert part.total_disadvantages == 1
-    assert part.customisation_cost_multiplier == 0.75
-    assert part.customisation_tons_multiplier == 1.25
-
-
-def test_customisable_part_notes_and_fuel_multiplier_are_aggregated():
-    part = CustomPart(
-        customisation_grade=parts.CustomisationGrade.ADVANCED,
-        customisations=(parts.OrbitalRange,),
-    )
-    assert part.customisation_fuel_multiplier == 1.0
-    assert [(note.category.value, note.message) for note in part.customisation_notes] == [
-        ('info', 'Operational range increased to orbital distances'),
-    ]
-
-
-def test_customisable_part_requires_grade_when_customisations_present():
-    part = CustomPart(customisations=(parts.SizeReduction,))
-    assert ('error', 'Customisations require a customisation grade') in [
-        (note.category.value, note.message) for note in part.notes
-    ]
-
-
-def test_grade_helpers_return_none_for_unknown_counts():
-    assert parts.grade_for_advantages(4) is None
-    assert parts.grade_for_disadvantages(3) is None
+def test_customisable_part_without_customisation_behaves_like_ship_part():
+    part = CustomPart.model_validate({'cost': 1, 'power': 2, 'tons': 3})
+    part.bind(DummyShip())
+    assert part.cost == 1
+    assert part.power == 2
+    assert part.tons == 3

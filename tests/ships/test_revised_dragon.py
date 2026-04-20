@@ -6,6 +6,7 @@ from tycho.computer import AutoRepair1, Computer20, Computer25, ComputerSection,
 from tycho.drives import DriveSection, FusionPlantTL12, MDrive7, PowerSection
 from tycho.habitation import AdvancedEntertainmentSystem, HabitationSection, Staterooms
 from tycho.hull import ImprovedStealth
+from tycho.parts import Advanced, Budget, EnergyEfficient, HighTechnology, IncreasedSize, SizeReduction, VeryAdvanced, VeryHighYield
 from tycho.sensors import (
     CountermeasuresSuite,
     EnhancedSignalProcessing,
@@ -56,12 +57,11 @@ def build_revised_dragon() -> ship.Ship:
             armour=armour.CrystalironArmour(protection=13),
             airlocks=[Airlock(), Airlock(), Airlock(), Airlock()],
         ),
-        drives=DriveSection(m_drive=MDrive7(budget=True, increased_size=True, armoured_bulkhead=True)),
+        drives=DriveSection(m_drive=MDrive7(customisation=Budget(IncreasedSize), armoured_bulkhead=True)),
         power=PowerSection(
             fusion_plant=FusionPlantTL12(
                 output=482,
-                budget=True,
-                increased_size=True,
+                customisation=Budget(IncreasedSize),
                 armoured_bulkhead=True,
             )
         ),
@@ -81,12 +81,19 @@ def build_revised_dragon() -> ship.Ship:
         ),
         weapons=WeaponsSection(
             barbettes=[
-                Barbette(weapon='particle', very_high_yield=True, armoured_bulkhead=True),
-                Barbette(weapon='particle', very_high_yield=True, armoured_bulkhead=True),
+                Barbette(weapon='particle', customisation=VeryAdvanced(VeryHighYield), armoured_bulkhead=True),
+                Barbette(weapon='particle', customisation=VeryAdvanced(VeryHighYield), armoured_bulkhead=True),
             ],
-            bays=[Bay(size='small', weapon='missile', size_reduction=3, armoured_bulkhead=True)],
+            bays=[
+                Bay(
+                    size='small',
+                    weapon='missile',
+                    customisation=HighTechnology(SizeReduction, SizeReduction, SizeReduction),
+                    armoured_bulkhead=True,
+                )
+            ],
             point_defense_batteries=[
-                PointDefenseBattery(kind='laser', rating=2, energy_efficient=True, armoured_bulkhead=True)
+                PointDefenseBattery(kind='laser', rating=2, customisation=Advanced(EnergyEfficient), armoured_bulkhead=True)
             ],
             missile_storage=MissileStorage(count=408, armoured_bulkhead=True),
         ),
@@ -178,5 +185,4 @@ def test_revised_dragon_power_and_crew_for_current_subset():
         ('MEDIC', 1, 4_000),
         ('OFFICER', 1, 5_000),
     ]
-
 

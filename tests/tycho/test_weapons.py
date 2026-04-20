@@ -2,6 +2,7 @@ import pytest
 
 from tycho import hull, ship
 from tycho.base import ShipBase
+from tycho.parts import Advanced, EnergyEfficient, HighTechnology, SizeReduction, VeryAdvanced, VeryHighYield
 from tycho.weapons import (
     Barbette,
     Bay,
@@ -39,19 +40,19 @@ def test_pulse_laser_no_upgrades_cost_modifier():
 
 def test_pulse_laser_energy_efficient_cost_modifier():
     # Advanced: 1 advantage, +10% cost
-    w = MountWeapon(weapon='pulse_laser', energy_efficient=True)
+    w = MountWeapon(weapon='pulse_laser', customisation=Advanced(EnergyEfficient))
     assert w.cost_modifier == pytest.approx(1.10)
 
 
 def test_pulse_laser_very_high_yield_cost_modifier():
     # Very Advanced: 2 advantages, +25% cost
-    w = MountWeapon(weapon='pulse_laser', very_high_yield=True)
+    w = MountWeapon(weapon='pulse_laser', customisation=VeryAdvanced(VeryHighYield))
     assert w.cost_modifier == pytest.approx(1.25)
 
 
 def test_pulse_laser_high_technology_cost_modifier():
     # High Technology: 3 advantages (very_high_yield=2 + energy_efficient=1), +50% cost
-    w = MountWeapon(weapon='pulse_laser', very_high_yield=True, energy_efficient=True)
+    w = MountWeapon(weapon='pulse_laser', customisation=HighTechnology(VeryHighYield, EnergyEfficient))
     assert w.cost_modifier == pytest.approx(1.50)
 
 
@@ -66,7 +67,7 @@ def test_fixed_firmpoint_base_cost():
 
 
 def test_fixed_firmpoint_high_technology_cost():
-    fp = FixedMount(weapons=[MountWeapon(weapon='pulse_laser', very_high_yield=True, energy_efficient=True)])
+    fp = FixedMount(weapons=[MountWeapon(weapon='pulse_laser', customisation=HighTechnology(VeryHighYield, EnergyEfficient))])
     fp.bind(DummyOwner(12, 6))
     # mount 100,000 + weapon 1,000,000 * 1.5 = 1,600,000
     assert float(fp.cost) == pytest.approx(1_600_000)
@@ -87,7 +88,7 @@ def test_fixed_firmpoint_base_power():
 
 def test_fixed_firmpoint_energy_efficient_power():
     # Firmpoint -25% * energy_efficient -25%: floor(4 * 0.75 * 0.75) = floor(2.25) = 2
-    fp = FixedMount(weapons=[MountWeapon(weapon='pulse_laser', very_high_yield=True, energy_efficient=True)])
+    fp = FixedMount(weapons=[MountWeapon(weapon='pulse_laser', customisation=HighTechnology(VeryHighYield, EnergyEfficient))])
     fp.bind(DummyOwner(12, 6))
     assert float(fp.power) == 2
 
@@ -108,7 +109,7 @@ def test_fixed_firmpoint_can_carry_multiple_weapons_on_larger_ship():
     fp = FixedMount(
         weapons=[
             MountWeapon(weapon='pulse_laser'),
-            MountWeapon(weapon='pulse_laser', energy_efficient=True),
+            MountWeapon(weapon='pulse_laser', customisation=Advanced(EnergyEfficient)),
         ]
     )
     fp.bind(DummyOwner(12, 100))
@@ -117,7 +118,7 @@ def test_fixed_firmpoint_can_carry_multiple_weapons_on_larger_ship():
 
 
 def test_mount_weapon_build_item_is_base_name_only():
-    w = MountWeapon(weapon='pulse_laser', very_high_yield=True, energy_efficient=True)
+    w = MountWeapon(weapon='pulse_laser', customisation=HighTechnology(VeryHighYield, EnergyEfficient))
     assert w.build_item() == 'Pulse Laser'
 
 
@@ -127,7 +128,7 @@ def test_mount_weapon_no_upgrades_has_no_customisation_note():
 
 
 def test_mount_weapon_high_technology_customisation_note():
-    w = MountWeapon(weapon='pulse_laser', very_high_yield=True, energy_efficient=True)
+    w = MountWeapon(weapon='pulse_laser', customisation=HighTechnology(VeryHighYield, EnergyEfficient))
     note = w.customisation_note()
     assert note is not None
     assert note.category.value == 'info'
@@ -135,21 +136,21 @@ def test_mount_weapon_high_technology_customisation_note():
 
 
 def test_mount_weapon_advanced_customisation_note():
-    w = MountWeapon(weapon='pulse_laser', energy_efficient=True)
+    w = MountWeapon(weapon='pulse_laser', customisation=Advanced(EnergyEfficient))
     note = w.customisation_note()
     assert note is not None
     assert note.message == 'Advanced: Energy Efficient'
 
 
 def test_mount_weapon_very_advanced_customisation_note():
-    w = MountWeapon(weapon='pulse_laser', very_high_yield=True)
+    w = MountWeapon(weapon='pulse_laser', customisation=VeryAdvanced(VeryHighYield))
     note = w.customisation_note()
     assert note is not None
     assert note.message == 'Very Advanced: Very High Yield'
 
 
 def test_fixed_mount_single_weapon_notes_include_customisation_note():
-    fp = FixedMount(weapons=[MountWeapon(weapon='pulse_laser', very_high_yield=True, energy_efficient=True)])
+    fp = FixedMount(weapons=[MountWeapon(weapon='pulse_laser', customisation=HighTechnology(VeryHighYield, EnergyEfficient))])
     assert [(note.category.value, note.message) for note in fp.notes] == [
         ('item', 'Pulse Laser'),
         ('info', 'High Technology: Very High Yield, Energy Efficient'),
@@ -182,7 +183,7 @@ def test_particle_barbette_values():
 
 
 def test_particle_barbette_very_high_yield_values():
-    barbette = Barbette(weapon='particle', very_high_yield=True)
+    barbette = Barbette(weapon='particle', customisation=VeryAdvanced(VeryHighYield))
     barbette.bind(DummyOwner(13, 400))
     assert barbette.build_item() == 'Particle Barbette'
     assert barbette.tons == pytest.approx(5.0)
@@ -200,7 +201,7 @@ def test_small_missile_bay_values():
 
 
 def test_small_missile_bay_size_reduction_values():
-    bay = Bay(size='small', weapon='missile', size_reduction=True)
+    bay = Bay(size='small', weapon='missile', customisation=Advanced(SizeReduction))
     bay.bind(DummyOwner(13, 1_000))
     assert bay.build_item() == 'Small Missile Bay'
     assert bay.tons == pytest.approx(45.0)
@@ -208,7 +209,7 @@ def test_small_missile_bay_size_reduction_values():
 
 
 def test_small_missile_bay_three_size_reduction_steps_values():
-    bay = Bay(size='small', weapon='missile', size_reduction=3)
+    bay = Bay(size='small', weapon='missile', customisation=HighTechnology(SizeReduction, SizeReduction, SizeReduction))
     bay.bind(DummyOwner(13, 1_000))
     assert bay.build_item() == 'Small Missile Bay'
     assert bay.tons == pytest.approx(35.0)
@@ -242,7 +243,7 @@ def test_type_ii_laser_point_defense_battery_item_values():
 
 
 def test_type_ii_laser_point_defense_battery_energy_efficient_values():
-    battery = PointDefenseBattery(kind='laser', rating=2, energy_efficient=True)
+    battery = PointDefenseBattery(kind='laser', rating=2, customisation=Advanced(EnergyEfficient))
     battery.bind(DummyOwner(13, 1_000))
     assert battery.build_item() == 'Point Defense Battery: Type II-L'
     assert battery.tons == pytest.approx(20.0)
@@ -278,7 +279,7 @@ def test_point_defense_battery_cannot_be_mounted_on_small_craft():
 def test_double_turret_cost_and_power_include_weapons():
     turret = Turret(
         size='double',
-        weapons=[MountWeapon(weapon='pulse_laser'), MountWeapon(weapon='pulse_laser', energy_efficient=True)]
+        weapons=[MountWeapon(weapon='pulse_laser'), MountWeapon(weapon='pulse_laser', customisation=Advanced(EnergyEfficient))]
     )
     turret.bind(DummyOwner(12, 100))
     assert turret.cost == pytest.approx(500_000 + 1_000_000 + 1_100_000)
@@ -424,42 +425,42 @@ def test_bays_count_against_hardpoint_capacity():
 # ---------------------------------------------------------------------------
 
 def test_barbette_with_very_high_yield_item_is_base_name_only():
-    barbette = Barbette(weapon='particle', very_high_yield=True)
+    barbette = Barbette(weapon='particle', customisation=VeryAdvanced(VeryHighYield))
     barbette.bind(DummyOwner(13, 400))
     assert barbette.build_item() == 'Particle Barbette'
 
 
 def test_barbette_with_very_high_yield_has_customisation_note():
-    barbette = Barbette(weapon='particle', very_high_yield=True)
+    barbette = Barbette(weapon='particle', customisation=VeryAdvanced(VeryHighYield))
     barbette.bind(DummyOwner(13, 400))
     info_notes = [n.message for n in barbette.notes if n.category.value == 'info']
-    assert 'Very Advanced - Very High Yield' in info_notes
+    assert 'Very Advanced: Very High Yield' in info_notes
 
 
 def test_bay_with_size_reduction_item_is_base_name_only():
-    bay = Bay(size='small', weapon='missile', size_reduction=3)
+    bay = Bay(size='small', weapon='missile', customisation=HighTechnology(SizeReduction, SizeReduction, SizeReduction))
     bay.bind(DummyOwner(13, 1_000))
     assert bay.build_item() == 'Small Missile Bay'
 
 
 def test_bay_with_size_reduction_has_customisation_note():
-    bay = Bay(size='small', weapon='missile', size_reduction=3)
+    bay = Bay(size='small', weapon='missile', customisation=HighTechnology(SizeReduction, SizeReduction, SizeReduction))
     bay.bind(DummyOwner(13, 1_000))
     info_notes = [n.message for n in bay.notes if n.category.value == 'info']
-    assert 'Advanced - Size Reduction × 3' in info_notes
+    assert 'High Technology: Size Reduction × 3' in info_notes
 
 
 def test_battery_with_energy_efficient_item_is_base_name_only():
-    battery = PointDefenseBattery(kind='laser', rating=2, energy_efficient=True)
+    battery = PointDefenseBattery(kind='laser', rating=2, customisation=Advanced(EnergyEfficient))
     battery.bind(DummyOwner(13, 1_000))
     assert battery.build_item() == 'Point Defense Battery: Type II-L'
 
 
 def test_battery_with_energy_efficient_has_customisation_note():
-    battery = PointDefenseBattery(kind='laser', rating=2, energy_efficient=True)
+    battery = PointDefenseBattery(kind='laser', rating=2, customisation=Advanced(EnergyEfficient))
     battery.bind(DummyOwner(13, 1_000))
     info_notes = [n.message for n in battery.notes if n.category.value == 'info']
-    assert 'Advanced - Energy Efficient' in info_notes
+    assert 'Advanced: Energy Efficient' in info_notes
 
 
 def test_grouped_parts_with_same_note_show_note_once(tmp_path):

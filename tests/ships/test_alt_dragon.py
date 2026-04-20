@@ -7,6 +7,7 @@ from tycho.computer import AutoRepair1, Computer20, ComputerSection, Core40, Eva
 from tycho.drives import DriveSection, EmergencyPowerSystem, FusionPlantTL12, MDrive7, PowerSection
 from tycho.habitation import AdvancedEntertainmentSystem, CabinSpace, HabitationSection, Staterooms
 from tycho.hull import ImprovedStealth
+from tycho.parts import Advanced, Budget, HighTechnology, IncreasedSize, SizeReduction
 from tycho.sensors import (
     CountermeasuresSuite,
     EnhancedSignalProcessing,
@@ -47,7 +48,7 @@ def build_alt_dragon() -> ship.Ship:
     - advanced entertainment system
     """
 
-    fusion_plant = FusionPlantTL12(output=436, size_reduction=True, armoured_bulkhead=True)
+    fusion_plant = FusionPlantTL12(output=436, customisation=Advanced(SizeReduction), armoured_bulkhead=True)
 
     return ship.Ship(
         ship_class='Dragon',
@@ -66,7 +67,7 @@ def build_alt_dragon() -> ship.Ship:
             armoured_bulkheads=[],
             airlocks=[Airlock(), Airlock(), Airlock(), Airlock()],
         ),
-        drives=DriveSection(m_drive=MDrive7(budget=True, increased_size=True, armoured_bulkhead=True)),
+        drives=DriveSection(m_drive=MDrive7(customisation=Budget(IncreasedSize), armoured_bulkhead=True)),
         power=PowerSection(
             fusion_plant=fusion_plant,
             emergency_power_system=EmergencyPowerSystem.from_fusion_plant(fusion_plant),
@@ -89,12 +90,19 @@ def build_alt_dragon() -> ship.Ship:
         ),
         weapons=WeaponsSection(
             barbettes=[
-                Barbette(weapon='particle', size_reduction=True, armoured_bulkhead=True),
-                Barbette(weapon='particle', size_reduction=True, armoured_bulkhead=True),
+                Barbette(weapon='particle', customisation=Advanced(SizeReduction), armoured_bulkhead=True),
+                Barbette(weapon='particle', customisation=Advanced(SizeReduction), armoured_bulkhead=True),
             ],
-            bays=[Bay(size='small', weapon='missile', size_reduction=3, armoured_bulkhead=True)],
+            bays=[
+                Bay(
+                    size='small',
+                    weapon='missile',
+                    customisation=HighTechnology(SizeReduction, SizeReduction, SizeReduction),
+                    armoured_bulkhead=True,
+                )
+            ],
             point_defense_batteries=[
-                PointDefenseBattery(kind='laser', rating=2, size_reduction=True, armoured_bulkhead=True)
+                PointDefenseBattery(kind='laser', rating=2, customisation=Advanced(SizeReduction), armoured_bulkhead=True)
             ],
             missile_storage=MissileStorage(count=720, armoured_bulkhead=True),
         ),
@@ -166,7 +174,7 @@ def test_alt_dragon_stuart_html_output():
     assert '<header class="sidebar-card-title">Costs</header>' in html
     assert 'Radiation Shielding: Reduce Rads by 1,000' in html
     assert 'Small Missile Bay' in html
-    assert 'Advanced - Size Reduction × 3' in html
+    assert 'High Technology: Size Reduction × 3' in html
     assert 'Life Support Facilities' in html
     assert 'Armoured Bulkheads<ul class="item-notes">' in html
     assert 'Critical hit severity reduced by 1 if critical hit severity &gt;1' in html

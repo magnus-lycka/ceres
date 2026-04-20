@@ -6,6 +6,7 @@ from tycho.computer import AutoRepair1, Computer20, Computer25, ComputerSection,
 from tycho.drives import DriveSection, FusionPlantTL12, MDrive7, PowerSection
 from tycho.habitation import HabitationSection, Staterooms
 from tycho.hull import ImprovedStealth
+from tycho.parts import HighTechnology, SizeReduction
 from tycho.sensors import (
     CountermeasuresSuite,
     EnhancedSignalProcessing,
@@ -74,7 +75,14 @@ def build_dragon() -> ship.Ship:
                 Barbette(weapon='particle', armoured_bulkhead=True),
                 Barbette(weapon='particle', armoured_bulkhead=True),
             ],
-            bays=[Bay(size='small', weapon='missile', size_reduction=3, armoured_bulkhead=True)],
+            bays=[
+                Bay(
+                    size='small',
+                    weapon='missile',
+                    customisation=HighTechnology(SizeReduction, SizeReduction, SizeReduction),
+                    armoured_bulkhead=True,
+                )
+            ],
             point_defense_batteries=[PointDefenseBattery(kind='laser', rating=2, armoured_bulkhead=True)],
             missile_storage=MissileStorage(count=480, armoured_bulkhead=True),
         ),

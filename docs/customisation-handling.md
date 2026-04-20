@@ -1,20 +1,3 @@
-====================================================== FAILURES =======================================================
-_______________________________________ test_render_ship_pdf_delegates_to_spec ________________________________________
-
-suleiman_spec = ShipSpec(ship_class='Suleiman', ship_type='Scout/Courier', tl=12, hull_points=40.0, _sections={<SpecSection.HULL: 'Hul...ntity=None), CrewRow(role='GUNNER', salary=2000, quantity=None)], passengers=[PassengerRow(kind='MIDDLE', quantity=2)])
-
-    def test_render_ship_pdf_delegates_to_spec(suleiman_spec):
-        pdf_from_ship = render_ship_pdf(build_suleiman())
-        pdf_from_spec = render_ship_spec_pdf(suleiman_spec)
->       assert pdf_from_ship == pdf_from_spec
-E       AssertionError: assert b'%PDF-1.7\n%...n84595\n%%EOF' == b'%PDF-1.7\n%...n84595\n%%EOF'
-E         
-E         At index 83239 diff: b'3' != b'4'
-E         Use -v to get more diff
-
-tests/stuart/test_tycho_pdf.py:33: AssertionError
-=================================================== tests coverage ====================================================
-__________________________________ coverage: platform darwin, python 3.14.0-final-0 ___________________________________
 # Plan: Customisation handling
 
 ## Problem
@@ -44,6 +27,34 @@ This produces several concrete bugs and design problems:
 
 Root cause: customisation flows backwards — properties → grade — instead of
 grade → validated properties.
+
+## Current status
+
+The migration has now moved past the halfway state that originally motivated
+this document.
+
+Implemented:
+
+- `Modification` is the renamed old property object type
+- the new `Customisation` grade hierarchy is in place
+- `CustomisableShipPart` accepts `customisation: CustomisationUnion | None`
+- `MDrive` and `_FusionPlant` now read customisation directly
+- `Barbette`, `Bay`, and `PointDefenseBattery` now read customisation directly
+- `MountWeapon` now has `customisation` too, rather than its own boolean flags
+- tests and ship builders now declare grade first, then modifications
+
+This means the bad backwards pattern is gone from current construction code.
+We no longer accept or test for things like:
+
+- `Bay(size_reduction=3)`
+- `MDrive7(budget=True, increased_size=True)`
+- `MountWeapon(very_high_yield=True, energy_efficient=True)`
+
+Those have been replaced with the intended declarative form:
+
+- `Bay(customisation=HighTechnology(SizeReduction, SizeReduction, SizeReduction))`
+- `MDrive7(customisation=Budget(IncreasedSize))`
+- `MountWeapon(customisation=HighTechnology(VeryHighYield, EnergyEfficient))`
 
 ---
 
@@ -229,20 +240,15 @@ This replaces `_weapon_customisation_note()` and all inline note-building in
 
 ## Migration steps (TDD order)
 
-Each step: write failing tests → implement → all tests green → next step.
-The serialization tests in `tests/tycho/test_serialization.py` must remain green
-throughout — new customised parts must get roundtrip tests added there before or
-alongside their feature tests.
+This section started as a forward plan.  It now functions mostly as a record of
+the migration order and a checklist for cleanup.  Steps 1–6 are complete; Step
+7 remains.
 
-### Step 1 — Rename `Customisation` → `Modification`
+### Step 1 — Rename `Customisation` → `Modification` [done]
 
-- Rename the class in `parts.py`; update all imports in `drives.py`, `weapons.py`,
-  `sensors.py`, and test files that import `Customisation`.
-- `LimitedRange` in `drives.py`: update `Customisation(...)` → `Modification(...)`.
-  Instance name unchanged.
-- No behaviour changes; all tests stay green.
+Completed.
 
-### Step 2 — Define `Customisation` hierarchy in `parts.py`
+### Step 2 — Define `Customisation` hierarchy in `parts.py` [done]
 
 Write tests first (`tests/tycho/test_customisation.py` or similar):
 
@@ -258,11 +264,9 @@ Write tests first (`tests/tycho/test_customisation.py` or similar):
 - A `Customisation` instance roundtrips through `model_dump_json` /
   `model_validate_json` and resolves the same concrete subclass.
 
-Implement the six subclasses and shared validation.  `CustomisationGrade` keeps
-its enum values but loses its property methods (removed incrementally as parts
-migrate).
+Completed.
 
-### Step 3 — Simplify `CustomisableShipPart`
+### Step 3 — Simplify `CustomisableShipPart` [done]
 
 Write tests using a minimal concrete subclass:
 
@@ -271,53 +275,34 @@ Write tests using a minimal concrete subclass:
 - `group_key` differs between parts with different customisations.
 - `bind()` emits an error when a modification is not in `allowed_modifications`.
 
-Implement the thin interface.  The existing `customisation_grade`,
-`customisations` tuple, multiplier methods, and `validate_customisations` are
-removed.  This intentionally breaks `MDrive`, `_FusionPlant`, `Barbette`, `Bay`,
-`PointDefenseBattery` — resolved in the next steps.
+Completed. `CustomisableShipPart` now exposes the thin interface described
+above.  The old backwards construction API is gone from the tests and current
+part construction code.
 
-### Step 4 — Migrate `MDrive` and `_FusionPlant`
+### Step 4 — Migrate `MDrive` and `_FusionPlant` [done]
 
 Write failing tests using the new API first.  Then:
 
-- Remove `budget`, `increased_size`, `size_reduction` from both.
-- Remove grade/customisation derivation from `model_post_init`.
-- Update `compute_tons` / `compute_cost` to read from `self.customisation`
-  (falling back to `1.0` when `None`).
-- `build_notes()` drops hand-written note; the base class emits it automatically.
-- Set `allowed_modifications` class vars.
-- Update `test_drives.py` and all ship test files.
-- Add roundtrip tests to `test_serialization.py` covering a ship with a
-  customised drive and power plant.
+Completed.
 
-### Step 5 — Migrate `Barbette`, `Bay`, `PointDefenseBattery`
+### Step 5 — Migrate `Barbette`, `Bay`, `PointDefenseBattery` [done]
 
 Same pattern as Step 4.
 
-- Remove individual customisation fields.
-- Set `allowed_modifications` class vars.
-- Delete `_weapon_customisation_note()`.
-- Update `test_weapons.py` and all ship tests.
-- Add roundtrip tests for customised barbettes, bays, and PDB.
+Completed.
 
-### Step 6 — Migrate `MountWeapon`
+### Step 6 — Migrate `MountWeapon` [done]
 
-- Remove `very_high_yield`, `energy_efficient`.
-- Add `customisation: CustomisationUnion | None = None` and `allowed_modifications`.
-- Remove `customisation_note()` method.
-- Update `_mounted_weapon_notes()` and `FixedMount.build_notes()` to read
-  `weapon.customisation.note_text` instead.
-- Update `test_ultralight_fighter.py`, `test_weapons.py`, and
-  `test_serialization.py`.
+Completed.
 
-### Step 7 — Remove `CustomisationGrade` property methods; keep enum values
+### Step 7 — Remove `CustomisationGrade` property methods; keep enum values [done]
 
-Once no code reads `CustomisationGrade.ADVANCED.base_cost_multiplier` etc.,
-delete those property methods.  The enum values (`ADVANCED`, `BUDGET`, …) are
-kept permanently — they are the discriminator keys in JSON.
+Done.  The old `CustomisationGrade` property helpers are removed.  The enum
+values (`ADVANCED`, `BUDGET`, …) remain permanently as the discriminator keys in
+JSON.
 
-Remove `grade_for_advantages` and `grade_for_disadvantages` helpers if nothing
-uses them.
+The old `grade_for_advantages` and `grade_for_disadvantages` helpers are also
+gone.
 
 ---
 
@@ -325,7 +310,7 @@ uses them.
 
 | File | Change |
 |------|--------|
-| `src/tycho/parts.py` | Rename `Customisation`→`Modification`; add new `Customisation` hierarchy; simplify `CustomisableShipPart`; strip `CustomisationGrade` property methods in Step 7 |
+| `src/tycho/parts.py` | Rename `Customisation`→`Modification`; add new `Customisation` hierarchy; simplify `CustomisableShipPart`; strip old `CustomisationGrade` property methods |
 | `src/tycho/drives.py` | Remove per-field customisation in `MDrive`, `_FusionPlant` |
 | `src/tycho/weapons.py` | Remove per-field customisation in `Barbette`, `Bay`, `PDB`, `MountWeapon`; delete `_weapon_customisation_note` |
 | `src/tycho/sensors.py` | Import rename only |

@@ -7,50 +7,17 @@ from pydantic import AliasChoices, Field
 from .base import CeresModel, Note, NoteCategory
 from .parts import (
     CustomisableShipPart,
+    CustomisationUnion,
     EnergyEfficient,
     ShipPart,
     SizeReduction,
     VeryHighYield,
-    grade_for_advantages,
 )
 from .spec import ShipSpec, SpecSection
 
 
 def _size_reduction_steps(value: bool | int) -> int:
     return 1 if value is True else int(value)
-
-
-def _weapon_customisation_note(
-    *,
-    size_reduction: int = 0,
-    energy_efficient: bool = False,
-    very_high_yield: bool = False,
-) -> Note | None:
-    parts = []
-    if size_reduction == 1:
-        parts.append('Advanced - Size Reduction')
-    elif size_reduction > 1:
-        parts.append(f'Advanced - Size Reduction × {size_reduction}')
-    if energy_efficient:
-        parts.append('Advanced - Energy Efficient')
-    if very_high_yield:
-        parts.append('Very Advanced - Very High Yield')
-    if not parts:
-        return None
-    return Note(category=NoteCategory.INFO, message=', '.join(parts))
-
-
-def _modified_weapon_tons(base_tons: float, *, size_reduction: int = 0) -> float:
-    return base_tons * (1 - 0.1 * size_reduction)
-
-
-def _modified_weapon_cost(
-    base_cost: float,
-    *,
-    size_reduction: int = 0,
-) -> float:
-    grade = grade_for_advantages(size_reduction)
-    return base_cost if grade is None else base_cost * grade.base_cost_multiplier
 
 
 def _mounted_weapon_notes(weapons: Sequence[MountWeapon], *, empty_message: str) -> list[Note]:
@@ -85,8 +52,21 @@ MOUNT_WEAPON_SPECS: dict[MountWeaponType, dict[str, float | str]] = {
 class MountWeapon(CeresModel):
     model_config = {'frozen': True}
     weapon: MountWeaponType
-    very_high_yield: bool = False  # 2 advantages
-    energy_efficient: bool = False  # 1 advantage
+    customisation: CustomisationUnion | None = None
+    allowed_modifications: ClassVar[frozenset[str]] = frozenset(
+        {
+            EnergyEfficient.name,
+            VeryHighYield.name,
+        }
+    )
+
+    def model_post_init(self, __context) -> None:
+        super().model_post_init(__context)
+        if self.customisation is not None:
+            for mod in self.customisation.modifications:
+                if mod.name not in self.allowed_modifications:
+                    self.error(f'Modification not allowed for MountWeapon: {mod.name}')
+            self.notes.extend(self.customisation.notes)
 
     @property
     def base_cost(self) -> float:
@@ -100,38 +80,13 @@ class MountWeapon(CeresModel):
         return str(MOUNT_WEAPON_SPECS[self.weapon]['item'])
 
     def customisation_note(self) -> Note | None:
-        if self.weapon != 'pulse_laser':
+        if self.customisation is None:
             return None
-        parts = []
-        if self.very_high_yield:
-            parts.append('Very High Yield')
-        if self.energy_efficient:
-            parts.append('Energy Efficient')
-        if not parts:
-            return None
-        advantages = (2 if self.very_high_yield else 0) + (1 if self.energy_efficient else 0)
-        grade = grade_for_advantages(advantages)
-        if grade is None:
-            return None
-        return Note(category=NoteCategory.INFO, message=f'{grade.display_name}: {", ".join(parts)}')
+        return Note(category=NoteCategory.INFO, message=self.customisation.note_text)
 
     @property
     def cost_modifier(self) -> float:
-        if self.weapon != 'pulse_laser':
-            return 1.0
-        advantages = 0
-        if self.very_high_yield:
-            advantages += 2
-        if self.energy_efficient:
-            advantages += 1
-        # Prototype/Advanced table
-        if advantages >= 3:
-            return 1.50  # High Technology
-        if advantages == 2:
-            return 1.25  # Very Advanced
-        if advantages == 1:
-            return 1.10  # Advanced
-        return 1.0
+        return 1.0 if self.customisation is None else self.customisation.cost_multiplier
 
     @property
     def weapon_cost(self) -> float:
@@ -139,9 +94,8 @@ class MountWeapon(CeresModel):
 
     @property
     def weapon_power(self) -> float:
-        if self.weapon == 'pulse_laser' and self.energy_efficient:
-            return self.base_power * 0.75
-        return self.base_power
+        multiplier = 1.0 if self.customisation is None else self.customisation.power_multiplier
+        return self.base_power * multiplier
 
 
 class FixedMount(ShipPart):
@@ -261,36 +215,21 @@ BARBETTE_SPECS: dict[BarbetteWeapon, dict[str, float | int | str]] = {
 
 
 class Barbette(CustomisableShipPart):
-    possible_customisations: ClassVar[tuple] = (SizeReduction, VeryHighYield)
+    allowed_modifications: ClassVar[frozenset[str]] = frozenset(
+        {
+            SizeReduction.name,
+            VeryHighYield.name,
+        }
+    )
     weapon: BarbetteWeapon
-    size_reduction: int = 0
-    very_high_yield: bool = False
-
-    def model_post_init(self, __context) -> None:
-        object.__setattr__(self, 'size_reduction', _size_reduction_steps(self.size_reduction))
-        customisations = tuple(
-            [*([SizeReduction] * self.size_reduction), *([VeryHighYield] if self.very_high_yield else [])]
-        )
-        object.__setattr__(self, 'customisations', customisations)
-        object.__setattr__(
-            self,
-            'customisation_grade',
-            grade_for_advantages(self.size_reduction + (2 if self.very_high_yield else 0)),
-        )
-        super().model_post_init(__context)
 
     def build_item(self) -> str | None:
         return str(BARBETTE_SPECS[self.weapon]['item'])
 
-    def build_notes(self) -> list[Note]:
-        notes = super().build_notes()
-        note = _weapon_customisation_note(size_reduction=self.size_reduction, very_high_yield=self.very_high_yield)
-        return [*notes, note] if note else notes
-
     @property
     def minimum_tl(self) -> int:  # type: ignore[override]
         tl = int(BARBETTE_SPECS[self.weapon]['minimum_tl'])
-        return tl + self.customisation_tl_delta
+        return tl + (0 if self.customisation is None else self.customisation.tl_delta)
 
     @property
     def hardpoints_required(self) -> int:
@@ -305,13 +244,16 @@ class Barbette(CustomisableShipPart):
         return 2
 
     def compute_tons(self) -> float:
-        return 5.0 * self.customisation_tons_multiplier
+        multiplier = 1.0 if self.customisation is None else self.customisation.tons_multiplier
+        return 5.0 * multiplier
 
     def compute_cost(self) -> float:
-        return float(BARBETTE_SPECS[self.weapon]['cost']) * self.customisation_cost_multiplier
+        multiplier = 1.0 if self.customisation is None else self.customisation.cost_multiplier
+        return float(BARBETTE_SPECS[self.weapon]['cost']) * multiplier
 
     def compute_power(self) -> float:
-        return float(BARBETTE_SPECS[self.weapon]['power'])
+        multiplier = 1.0 if self.customisation is None else self.customisation.power_multiplier
+        return float(BARBETTE_SPECS[self.weapon]['power']) * multiplier
 
 
 BaySize = Literal['small', 'medium', 'large']
@@ -398,30 +340,17 @@ BAY_WEAPON_SPECS: dict[BayWeapon, dict[BaySize, dict[str, float | int | str]]] =
 
 
 class Bay(CustomisableShipPart):
-    possible_customisations: ClassVar[tuple] = (SizeReduction,)
+    allowed_modifications: ClassVar[frozenset[str]] = frozenset({SizeReduction.name})
     size: BaySize
     weapon: BayWeapon
-    size_reduction: int = 0
-
-    def model_post_init(self, __context) -> None:
-        object.__setattr__(self, 'size_reduction', _size_reduction_steps(self.size_reduction))
-        customisations = tuple([SizeReduction] * self.size_reduction)
-        object.__setattr__(self, 'customisations', customisations)
-        object.__setattr__(self, 'customisation_grade', grade_for_advantages(self.size_reduction))
-        super().model_post_init(__context)
 
     def build_item(self) -> str | None:
         return str(BAY_WEAPON_SPECS[self.weapon][self.size]['item'])
 
-    def build_notes(self) -> list[Note]:
-        notes = super().build_notes()
-        note = _weapon_customisation_note(size_reduction=self.size_reduction)
-        return [*notes, note] if note else notes
-
     @property
     def minimum_tl(self) -> int:  # type: ignore[override]
         tl = int(BAY_WEAPON_SPECS[self.weapon][self.size]['minimum_tl'])
-        return tl + self.customisation_tl_delta
+        return tl + (0 if self.customisation is None else self.customisation.tl_delta)
 
     @property
     def hardpoints_required(self) -> int:
@@ -436,13 +365,16 @@ class Bay(CustomisableShipPart):
         return BAY_SIZE_SPECS[self.size]['crew']
 
     def compute_tons(self) -> float:
-        return float(BAY_SIZE_SPECS[self.size]['tons']) * self.customisation_tons_multiplier
+        multiplier = 1.0 if self.customisation is None else self.customisation.tons_multiplier
+        return float(BAY_SIZE_SPECS[self.size]['tons']) * multiplier
 
     def compute_cost(self) -> float:
-        return float(BAY_WEAPON_SPECS[self.weapon][self.size]['cost']) * self.customisation_cost_multiplier
+        multiplier = 1.0 if self.customisation is None else self.customisation.cost_multiplier
+        return float(BAY_WEAPON_SPECS[self.weapon][self.size]['cost']) * multiplier
 
     def compute_power(self) -> float:
-        return float(BAY_WEAPON_SPECS[self.weapon][self.size]['power'])
+        multiplier = 1.0 if self.customisation is None else self.customisation.power_multiplier
+        return float(BAY_WEAPON_SPECS[self.weapon][self.size]['power']) * multiplier
 
 
 POINT_DEFENSE_SPECS: dict[PointDefenseKind, dict[PointDefenseRating, dict[str, float | int | str]]] = {
@@ -460,24 +392,14 @@ POINT_DEFENSE_SPECS: dict[PointDefenseKind, dict[PointDefenseRating, dict[str, f
 
 
 class PointDefenseBattery(CustomisableShipPart):
-    possible_customisations: ClassVar[tuple] = (SizeReduction, EnergyEfficient)
+    allowed_modifications: ClassVar[frozenset[str]] = frozenset(
+        {
+            SizeReduction.name,
+            EnergyEfficient.name,
+        }
+    )
     kind: PointDefenseKind
     rating: PointDefenseRating
-    size_reduction: int = 0
-    energy_efficient: bool = False
-
-    def model_post_init(self, __context) -> None:
-        object.__setattr__(self, 'size_reduction', _size_reduction_steps(self.size_reduction))
-        customisations = tuple(
-            [*([SizeReduction] * self.size_reduction), *([EnergyEfficient] if self.energy_efficient else [])]
-        )
-        object.__setattr__(self, 'customisations', customisations)
-        object.__setattr__(
-            self,
-            'customisation_grade',
-            grade_for_advantages(self.size_reduction + (1 if self.energy_efficient else 0)),
-        )
-        super().model_post_init(__context)
 
     def build_item(self) -> str | None:
         return str(POINT_DEFENSE_SPECS[self.kind][self.rating]['item'])
@@ -493,31 +415,29 @@ class PointDefenseBattery(CustomisableShipPart):
                     message='Requires ammunition storage to reload after 12 rounds',
                 )
             )
-        cust_note = _weapon_customisation_note(  # noqa: E501
-            size_reduction=self.size_reduction, energy_efficient=self.energy_efficient
-        )
-        if cust_note:
-            notes.append(cust_note)
         return notes
 
     @property
     def minimum_tl(self) -> int:  # type: ignore[override]
         tl = int(POINT_DEFENSE_SPECS[self.kind][self.rating]['minimum_tl'])
-        return tl + self.customisation_tl_delta
+        return tl + (0 if self.customisation is None else self.customisation.tl_delta)
 
     @property
     def hardpoints_required(self) -> int:
         return 1
 
     def compute_tons(self) -> float:
-        return float(POINT_DEFENSE_SPECS[self.kind][self.rating]['tons']) * self.customisation_tons_multiplier
+        multiplier = 1.0 if self.customisation is None else self.customisation.tons_multiplier
+        return float(POINT_DEFENSE_SPECS[self.kind][self.rating]['tons']) * multiplier
 
     def compute_cost(self) -> float:
-        return float(POINT_DEFENSE_SPECS[self.kind][self.rating]['cost']) * self.customisation_cost_multiplier
+        multiplier = 1.0 if self.customisation is None else self.customisation.cost_multiplier
+        return float(POINT_DEFENSE_SPECS[self.kind][self.rating]['cost']) * multiplier
 
     def compute_power(self) -> float:
         power = float(POINT_DEFENSE_SPECS[self.kind][self.rating]['power'])
-        return power * self.customisation_power_multiplier
+        multiplier = 1.0 if self.customisation is None else self.customisation.power_multiplier
+        return power * multiplier
 
 
 class WeaponsSection(CeresModel):

@@ -5,10 +5,19 @@ from pydantic import Field
 
 from .base import Note, NoteCategory
 from .computer import JumpControl, SoftwarePackage
-from .parts import CustomisableShipPart, Customisation, CustomisationGrade, IncreasedSize, ShipPart, SizeReduction
+from .parts import (
+    CustomisableShipPart,
+    EnergyEfficient,
+    EnergyInefficient,
+    IncreasedSize,
+    Modification,
+    OrbitalRange,
+    ShipPart,
+    SizeReduction,
+)
 from .spec import ShipSpec, SpecSection
 
-LimitedRange = Customisation(
+LimitedRange = Modification(
     name='Limited Range',
     disadvantage=1,
     info_notes=('This manoeuvre drive only functions within the 100-diameter limit',),
@@ -77,29 +86,19 @@ class MDrive(CustomisableShipPart):
     rating: int
     minimum_tl: ClassVar[int]
     tons_percent: ClassVar[float]
-    possible_customisations: ClassVar[tuple] = (IncreasedSize,)
-    budget: bool = False
-    increased_size: bool = False
-
-    def model_post_init(self, __context) -> None:
-        customisations = []
-        if self.increased_size:
-            customisations.append(IncreasedSize)
-        object.__setattr__(self, 'customisations', tuple(customisations))
-        grade = CustomisationGrade.BUDGET if self.budget else None
-        object.__setattr__(self, 'customisation_grade', grade)
-        super().model_post_init(__context)
+    allowed_modifications: ClassVar[frozenset[str]] = frozenset(
+        {
+            EnergyEfficient.name,
+            EnergyInefficient.name,
+            IncreasedSize.name,
+            LimitedRange.name,
+            OrbitalRange.name,
+            SizeReduction.name,
+        }
+    )
 
     def build_item(self) -> str | None:
         return f'M-Drive {self.rating}'
-
-    def build_notes(self) -> list:
-        notes = [*super().build_notes()]
-        if self.budget and self.increased_size:
-            from .base import Note, NoteCategory
-
-            notes.append(Note(category=NoteCategory.INFO, message='Budget - Increased Size'))
-        return notes
 
     def bulkhead_label(self) -> str:
         return 'M-Drive'
@@ -107,15 +106,27 @@ class MDrive(CustomisableShipPart):
     def _base_tons(self) -> float:
         return self.ship.displacement * self.tons_percent
 
+    @property
+    def effective_tl(self) -> int:
+        return self.minimum_tl + (0 if self.customisation is None else self.customisation.tl_delta)
+
+    def validate_tl(self) -> None:
+        if self.ship_tl < self.effective_tl:
+            self.error(f'Requires TL{self.effective_tl}, ship is TL{self.ship_tl}')
+
     def compute_tons(self) -> float:
-        return self._base_tons() * self.customisation_tons_multiplier
+        multiplier = 1.0 if self.customisation is None else self.customisation.tons_multiplier
+        return self._base_tons() * multiplier
 
     def compute_cost(self) -> float:
         cost = self._base_tons() * 2_000_000
-        return cost * self.customisation_cost_multiplier
+        multiplier = 1.0 if self.customisation is None else self.customisation.cost_multiplier
+        return cost * multiplier
 
     def compute_power(self) -> float:
-        return float(math.ceil(0.1 * self.ship.displacement * self.rating))
+        power = float(math.ceil(0.1 * self.ship.displacement * self.rating))
+        multiplier = 1.0 if self.customisation is None else self.customisation.power_multiplier
+        return power * multiplier
 
 
 class MDrive0(MDrive):
@@ -318,40 +329,17 @@ class _FusionPlant(CustomisableShipPart):
     minimum_tl: ClassVar[int]
     power_per_ton: ClassVar[int]
     cost_per_ton: ClassVar[int]
-    possible_customisations: ClassVar[tuple] = (IncreasedSize, SizeReduction)
+    allowed_modifications: ClassVar[frozenset[str]] = frozenset(
+        {
+            IncreasedSize.name,
+            SizeReduction.name,
+            EnergyInefficient.name,
+        }
+    )
     output: int
-    budget: bool = False
-    increased_size: bool = False
-    size_reduction: bool = False
-
-    def model_post_init(self, __context) -> None:
-        customisations = []
-        if self.increased_size:
-            customisations.append(IncreasedSize)
-        if self.size_reduction:
-            customisations.append(SizeReduction)
-        object.__setattr__(self, 'customisations', tuple(customisations))
-        if self.budget:
-            grade = CustomisationGrade.BUDGET
-        elif self.size_reduction:
-            grade = CustomisationGrade.ADVANCED
-        else:
-            grade = None
-        object.__setattr__(self, 'customisation_grade', grade)
-        super().model_post_init(__context)
 
     def build_item(self) -> str | None:
         return f'Fusion (TL {self.minimum_tl})'
-
-    def build_notes(self) -> list:
-        from .base import Note, NoteCategory
-
-        notes = [*super().build_notes()]
-        if self.budget and self.increased_size:
-            notes.append(Note(category=NoteCategory.INFO, message='Budget - Increased Size'))
-        elif self.size_reduction:
-            notes.append(Note(category=NoteCategory.INFO, message='Advanced - Size Reduction'))
-        return notes
 
     def bulkhead_label(self) -> str:
         return 'Power Plant'
@@ -362,15 +350,21 @@ class _FusionPlant(CustomisableShipPart):
 
     @property
     def effective_tl(self):
-        return self.minimum_tl + self.customisation_tl_delta
+        return self.minimum_tl + (0 if self.customisation is None else self.customisation.tl_delta)
+
+    def validate_tl(self) -> None:
+        if self.ship_tl < self.effective_tl:
+            self.error(f'Requires TL{self.effective_tl}, ship is TL{self.ship_tl}')
 
     def compute_tons(self) -> float:
         tons = self.output / self.power_per_ton
-        return tons * self.customisation_tons_multiplier
+        multiplier = 1.0 if self.customisation is None else self.customisation.tons_multiplier
+        return tons * multiplier
 
     def compute_cost(self) -> float:
         cost = (self.output / self.power_per_ton) * self.cost_per_ton
-        return cost * self.customisation_cost_multiplier
+        multiplier = 1.0 if self.customisation is None else self.customisation.cost_multiplier
+        return cost * multiplier
 
 
 class FusionPlantTL8(_FusionPlant):

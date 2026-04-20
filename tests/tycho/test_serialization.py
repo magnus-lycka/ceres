@@ -13,6 +13,7 @@ from tycho.computer import Computer5, Computer20, Computer25, ComputerSection
 from tycho.crafts import AirRaft, CraftSection, InternalDockingSpace
 from tycho.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection
 from tycho.hull import BasicStealth, Hull
+from tycho.parts import EnergyEfficient, HighTechnology, VeryHighYield
 from tycho.sensors import BasicSensors, CivilianSensors, SensorsSection
 from tycho.ship import Ship
 from tycho.storage import CargoSection, FuelSection, OperationFuel
@@ -40,7 +41,14 @@ ultralight = Ship(
     craft=CraftSection(docking_space=InternalDockingSpace(craft=AirRaft())),
     weapons=WeaponsSection(
         fixed_mounts=[
-            FixedMount(weapons=[MountWeapon(weapon='pulse_laser', very_high_yield=True, energy_efficient=True)])
+            FixedMount(
+                weapons=[
+                    MountWeapon(
+                        weapon='pulse_laser',
+                        customisation=HighTechnology(VeryHighYield, EnergyEfficient),
+                    )
+                ]
+            )
         ],
     ),
 )
@@ -94,8 +102,11 @@ def test_dump_weapon_in_fixed_mounts():
     data = json.loads(ultralight.model_dump_json())
     fp = data['weapons']['fixed_mounts'][0]
     assert fp['weapons'][0]['weapon'] == 'pulse_laser'
-    assert fp['weapons'][0]['very_high_yield'] is True
-    assert fp['weapons'][0]['energy_efficient'] is True
+    assert fp['weapons'][0]['customisation']['grade'] == 'HIGH_TECHNOLOGY'
+    assert [m['name'] for m in fp['weapons'][0]['customisation']['modifications']] == [
+        'Very High Yield',
+        'Energy Efficient',
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -226,8 +237,7 @@ def test_roundtrip_weapon_attributes():
     orig_fp = ultralight.weapons.fixed_mounts[0]
     rt_fp = loaded.weapons.fixed_mounts[0]
     assert rt_fp.weapons[0].weapon == orig_fp.weapons[0].weapon
-    assert rt_fp.weapons[0].very_high_yield == orig_fp.weapons[0].very_high_yield
-    assert rt_fp.weapons[0].energy_efficient == orig_fp.weapons[0].energy_efficient
+    assert rt_fp.weapons[0].customisation == orig_fp.weapons[0].customisation
 
 
 def test_roundtrip_cargo():

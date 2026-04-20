@@ -5,6 +5,7 @@ from tycho import armour, hull, ship
 from tycho.bridge import Cockpit, CommandSection
 from tycho.crafts import AirRaft, CraftSection, InternalDockingSpace
 from tycho.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection
+from tycho.parts import EnergyEfficient, HighTechnology, VeryHighYield
 from tycho.sensors import CivilianSensors, SensorsSection
 from tycho.storage import CargoCrane, CargoHold, CargoSection
 from tycho.systems import Airlock, ProbeDrones, SystemsSection, Workshop
@@ -219,7 +220,14 @@ def test_ship_total_power_load_includes_basic_and_active_systems():
         sensors=SensorsSection(primary=CivilianSensors()),
         weapons=WeaponsSection(
             fixed_mounts=[
-                FixedMount(weapons=[MountWeapon(weapon='pulse_laser', very_high_yield=True, energy_efficient=True)])
+                FixedMount(
+                    weapons=[
+                        MountWeapon(
+                            weapon='pulse_laser',
+                            customisation=HighTechnology(VeryHighYield, EnergyEfficient),
+                        )
+                    ]
+                )
             ],
         ),
     )

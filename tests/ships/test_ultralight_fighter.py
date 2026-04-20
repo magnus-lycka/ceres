@@ -4,6 +4,7 @@ from tycho import armour, hull, ship
 from tycho.bridge import Cockpit, CommandSection
 from tycho.computer import Computer5, ComputerSection
 from tycho.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection
+from tycho.parts import EnergyEfficient, HighTechnology, VeryHighYield
 from tycho.sensors import CivilianSensors, SensorsSection
 from tycho.storage import FuelSection, OperationFuel
 from tycho.weapons import FixedMount, MountWeapon, WeaponsSection
@@ -32,7 +33,14 @@ def build_ultralight_fighter() -> ship.Ship:
         sensors=SensorsSection(primary=CivilianSensors()),
         weapons=WeaponsSection(
             fixed_mounts=[
-                FixedMount(weapons=[MountWeapon(weapon='pulse_laser', very_high_yield=True, energy_efficient=True)]),
+                FixedMount(
+                    weapons=[
+                        MountWeapon(
+                            weapon='pulse_laser',
+                            customisation=HighTechnology(VeryHighYield, EnergyEfficient),
+                        )
+                    ]
+                ),
             ],
         ),
     )
