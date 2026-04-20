@@ -37,7 +37,7 @@ class OperationFuel(ShipPart):
         return math.ceil(total * 100 - 1e-9) / 100
 
     def _raw_tons(self) -> float:
-        power = getattr(self.owner, 'power', None)
+        power = getattr(self.ship, 'power', None)
         plant = None if power is None else power.fusion_plant
         if plant is None:
             self.error('Ship must have a FusionPlant to compute OperationFuel')
@@ -61,7 +61,7 @@ class JumpFuel(ShipPart):
         return f'Jump {self.parsecs}'
 
     def compute_tons(self) -> float:
-        return self.owner.displacement * 0.1 * self.parsecs
+        return self.ship.displacement * 0.1 * self.parsecs
 
     def compute_cost(self) -> float:
         return 0.0
@@ -71,7 +71,7 @@ class ReactionFuel(ShipPart):
     minutes: int
 
     def build_item(self) -> str | None:
-        reaction_drive = self._reaction_drive if self._owner is not None else None
+        reaction_drive = self._reaction_drive if self._ship is not None else None
         if reaction_drive is not None and reaction_drive.high_burn_thruster:
             if self.minutes % 60 == 0:
                 hours = self.minutes // 60
@@ -82,7 +82,7 @@ class ReactionFuel(ShipPart):
 
     @property
     def _reaction_drive(self):
-        drives = getattr(self.owner, 'drives', None)
+        drives = getattr(self.ship, 'drives', None)
         return None if drives is None else drives.reaction_drive
 
     def _fuel_rate_per_hour(self) -> float:
@@ -92,7 +92,7 @@ class ReactionFuel(ShipPart):
             return 0.0
         if reaction_drive.rating == 0:
             return 0.25
-        return self.owner.displacement * 0.025 * reaction_drive.rating
+        return self.ship.displacement * 0.025 * reaction_drive.rating
 
     def compute_tons(self) -> float:
         return self._fuel_rate_per_hour() * (self.minutes / 60)

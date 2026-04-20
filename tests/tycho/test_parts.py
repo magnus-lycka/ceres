@@ -47,10 +47,10 @@ def test_part_rejects_ship_below_minimum_tl():
     assert [('error', 'Requires TL15, ship is TL14')] == [(note.category.value, note.message) for note in part.notes]
 
 
-def test_part_owner_raises_before_bind():
+def test_part_ship_raises_before_bind():
     part = FixedPart.model_validate({})
     try:
-        _ = part.owner
+        _ = part.ship
     except RuntimeError as exc:
         assert str(exc) == 'FixedPart not bound to a Ship'
     else:

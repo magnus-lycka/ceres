@@ -128,10 +128,10 @@ class Stealth(ShipPart):
     sensors_dm: ClassVar[int] = 0
 
     def compute_cost(self):
-        return self.owner.displacement * self.cost_per_ton
+        return self.ship.displacement * self.cost_per_ton
 
     def compute_tons(self):
-        return self.owner.displacement * self.tonnage
+        return self.ship.displacement * self.tonnage
 
 
 class BasicStealth(Stealth):

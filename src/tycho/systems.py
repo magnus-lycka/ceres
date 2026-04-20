@@ -127,8 +127,8 @@ class Airlock(ShipPart):
         return f'Airlock ({self.size:g} tons)'
 
     def am_i_for_free(self) -> bool:
-        free_airlocks = self.owner.displacement // 100
-        siblings = self.owner.parts_of_type(Airlock)
+        free_airlocks = self.ship.displacement // 100
+        siblings = self.ship.parts_of_type(Airlock)
         try:
             index = siblings.index(self)
         except ValueError:
@@ -158,7 +158,7 @@ class Aerofins(ShipPart):
         return [Note(category=NoteCategory.INFO, message='DM +2 to Pilot checks in atmosphere')]
 
     def compute_tons(self) -> float:
-        return self.owner.displacement * 0.05
+        return self.ship.displacement * 0.05
 
     def compute_cost(self) -> float:
         return self.compute_tons() * 100_000.0
@@ -188,7 +188,7 @@ class RepairDrones(ShipPart):
         return 'Repair Drones'
 
     def compute_tons(self) -> float:
-        return self.owner.displacement / 100
+        return self.ship.displacement / 100
 
     def compute_cost(self) -> float:
         return self.compute_tons() * 200_000.0

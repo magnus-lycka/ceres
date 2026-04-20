@@ -22,12 +22,12 @@ class Armour(ShipPart):
         Returns None and adds an error note if the TL is invalid.
         """
         if self.tl:
-            if self.owner.tl < self.tl:
-                self.error(f'Ship TL{self.owner.tl} is below armour TL{self.tl}')
+            if self.ship.tl < self.tl:
+                self.error(f'Ship TL{self.ship.tl} is below armour TL{self.tl}')
                 return None
             tl = self.tl
         else:
-            tl = self.owner.tl
+            tl = self.ship.tl
         if tl < self._min_tl:
             self.error(f'{self.description} requires TL{self._min_tl}')
             return None
@@ -43,7 +43,7 @@ class Armour(ShipPart):
         return self.compute_tons() * self._cost_per_ton
 
     def compute_tons(self) -> float:
-        displacement = self.owner.displacement
+        displacement = self.ship.displacement
         if displacement < 5:
             self.error('Displacement must be at least 5 tons for armour.')
             return 0.0
@@ -55,7 +55,7 @@ class Armour(ShipPart):
             size_factor = 2
         else:
             size_factor = 1
-        armour_volume_modifier = self.owner.armour_volume_modifier
+        armour_volume_modifier = self.ship.armour_volume_modifier
         return displacement * self._tonnage_consumed * self.protection * size_factor * armour_volume_modifier
 
 

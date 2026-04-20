@@ -46,7 +46,7 @@ class Bridge(ShipPart):
         return []
 
     def compute_tons(self) -> float:
-        displacement = self.owner.displacement
+        displacement = self.ship.displacement
         if displacement <= 200_000:
             weight_limits = [50, 99, 200, 1000, 2000, 100_000]
             ix = bisect_left(weight_limits, displacement)
@@ -61,7 +61,7 @@ class Bridge(ShipPart):
 
     def compute_cost(self) -> float:
         factor = 0.5 if self.small else 1
-        cost = float(((self.owner.displacement - 1) // 100 + 1) * 500_000)
+        cost = float(((self.ship.displacement - 1) // 100 + 1) * 500_000)
         if self.holographic:
             cost *= 1.25
         return cost * factor

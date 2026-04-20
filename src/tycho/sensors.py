@@ -46,7 +46,7 @@ def _sensor_package_notes(
 
 
 def _note_tl(part: ShipPart) -> int:
-    owner = getattr(part, '_owner', None)
+    owner = getattr(part, '_ship', None)
     if owner is None:
         return part.minimum_tl
     return part.effective_tl
@@ -279,7 +279,7 @@ class ExtendedArrays(ShipPart):
 
     @property
     def _primary_suite(self) -> ShipPart:
-        return cast(Any, self.owner).sensors.primary
+        return cast(Any, self.ship).sensors.primary
 
     def compute_tons(self) -> float:
         return self._primary_suite.tons * 2

@@ -53,7 +53,7 @@ class ReactionDrive(ShipPart):
 
     def compute_tons(self) -> float:
         tons_percent = float(REACTION_DRIVE_SPECS[self.rating]['tons_percent'])
-        return self.owner.displacement * tons_percent
+        return self.ship.displacement * tons_percent
 
     def compute_cost(self) -> float:
         return self.compute_tons() * 200_000.0
@@ -100,7 +100,7 @@ class MDrive(CustomisableShipPart):
         return 'M-Drive'
 
     def _base_tons(self) -> float:
-        return self.owner.displacement * self.tons_percent
+        return self.ship.displacement * self.tons_percent
 
     def compute_tons(self) -> float:
         return self._base_tons() * self.customisation_tons_multiplier
@@ -110,7 +110,7 @@ class MDrive(CustomisableShipPart):
         return cost * self.customisation_cost_multiplier
 
     def compute_power(self) -> float:
-        return float(math.ceil(0.1 * self.owner.displacement * self.rating))
+        return float(math.ceil(0.1 * self.ship.displacement * self.rating))
 
 
 class MDrive0(MDrive):
@@ -197,13 +197,13 @@ class JumpDrive(ShipPart):
         return 'Jump Drive'
 
     def compute_tons(self) -> float:
-        return self.owner.displacement * self.tons_percent + 5
+        return self.ship.displacement * self.tons_percent + 5
 
     def compute_cost(self) -> float:
         return self.compute_tons() * 1_500_000
 
     def compute_power(self) -> float:
-        return float(math.ceil(0.1 * self.owner.displacement * self.rating))
+        return float(math.ceil(0.1 * self.ship.displacement * self.rating))
 
 
 class JumpDrive1(JumpDrive):
@@ -394,7 +394,7 @@ class EmergencyPowerSystem(ShipPart):
 
     @property
     def source_plant(self) -> _FusionPlant:
-        power_section = getattr(self.owner, 'power', None)
+        power_section = getattr(self.ship, 'power', None)
         plant = None if power_section is None else power_section.fusion_plant
         if plant is None:
             raise RuntimeError('EmergencyPowerSystem requires a fusion plant')

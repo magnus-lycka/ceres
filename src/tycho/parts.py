@@ -112,7 +112,7 @@ class ShipPart(CeresModel):
     tons: float = 0.0
     armoured_bulkhead: bool = False
     minimum_tl: ClassVar[int] = 0
-    _owner: ShipBase | None = PrivateAttr(default=None)
+    _ship: ShipBase | None = PrivateAttr(default=None)
     _armoured_bulkhead_part: ShipPart | None = PrivateAttr(default=None)
     model_config = {'frozen': True}
 
@@ -141,21 +141,21 @@ class ShipPart(CeresModel):
     def model_post_init(self, __context: Any) -> None:
         super().model_post_init(__context)
 
-    def bind(self, owner: ShipBase) -> None:
-        self._owner = owner
+    def bind(self, ship: ShipBase) -> None:
+        self._ship = ship
         self.validate_tl()
         self.refresh_derived_values()
-        self._refresh_armoured_bulkhead(owner)
+        self._refresh_armoured_bulkhead(ship)
 
     @property
-    def owner(self) -> ShipBase:
-        if self._owner is None:
+    def ship(self) -> ShipBase:
+        if self._ship is None:
             raise RuntimeError(f'{self.__class__.__name__} not bound to a Ship')
-        return self._owner
+        return self._ship
 
     @property
     def ship_tl(self) -> int:
-        return self.owner.tl
+        return self.ship.tl
 
     @property
     def effective_tl(self) -> int:
@@ -173,7 +173,7 @@ class ShipPart(CeresModel):
     def bulkhead_protected_tonnage(self) -> float:
         return self.tons
 
-    def _refresh_armoured_bulkhead(self, owner: ShipBase) -> None:
+    def _refresh_armoured_bulkhead(self, ship: ShipBase) -> None:
         if not self.armoured_bulkhead:
             self._armoured_bulkhead_part = None
             return
@@ -184,7 +184,7 @@ class ShipPart(CeresModel):
             protected_item=self.bulkhead_label(),
             from_ship_part=True,
         )
-        bulkhead.bind(owner)
+        bulkhead.bind(ship)
         self._armoured_bulkhead_part = bulkhead
 
     @property
