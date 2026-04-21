@@ -483,13 +483,13 @@ def test_battery_with_energy_efficient_has_customisation_note():
 def test_grouped_parts_with_same_note_show_note_once(tmp_path):
     from tycho import hull, ship
     from tycho.bridge import Bridge, CommandSection
-    from tycho.computer import Computer5, ComputerSection
+    from tycho.computer import Computer, ComputerSection
     my_ship = ship.Ship(
         tl=13,
         displacement=400,
         hull=hull.Hull(configuration=hull.standard_hull),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer5()),
+        computer=ComputerSection(hardware=Computer(5)),
         weapons=WeaponsSection(
             barbettes=[
                 Barbette(weapon='particle', armoured_bulkhead=True),

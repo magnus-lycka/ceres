@@ -2,7 +2,7 @@ import pytest
 
 from tycho import hull, ship
 from tycho.bridge import Bridge, CommandSection
-from tycho.computer import Computer15, ComputerSection, JumpControl3
+from tycho.computer import Computer, ComputerSection, JumpControl
 from tycho.crafts import AirRaft, CraftSection, InternalDockingSpace, SlowPinnace
 from tycho.drives import DriveSection, FusionPlantTL12, JumpDrive3, MDrive2, PowerSection
 from tycho.habitation import HabitationSection, LowBerths, Staterooms
@@ -40,7 +40,7 @@ def build_florence_medical_scout() -> ship.Ship:
             fuel_processor=FuelProcessor(tons=3),
         ),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer15(), software=[JumpControl3()]),
+        computer=ComputerSection(hardware=Computer(15), software=[JumpControl(3)]),
         sensors=SensorsSection(primary=MilitarySensors(), life_scanner_analysis_suite=LifeScannerAnalysisSuite()),
         weapons=WeaponsSection(turrets=[Turret(size='double')]),
         craft=CraftSection(

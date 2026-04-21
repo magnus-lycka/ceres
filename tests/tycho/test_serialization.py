@@ -9,7 +9,7 @@ from tests.ships.test_revised_beowulf import build_revised_beowulf
 from tests.ships.test_revised_dragon import build_revised_dragon
 from tycho import armour, hull
 from tycho.bridge import Cockpit, CommandSection
-from tycho.computer import Computer5, Computer20, Computer25, ComputerSection
+from tycho.computer import Computer, ComputerSection
 from tycho.crafts import AirRaft, CraftSection, InternalDockingSpace
 from tycho.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection
 from tycho.hull import BasicStealth, Hull
@@ -36,7 +36,7 @@ ultralight = Ship(
     power=PowerSection(fusion_plant=FusionPlantTL12(output=8)),
     fuel=FuelSection(operation_fuel=OperationFuel(weeks=1)),
     command=CommandSection(cockpit=Cockpit(holographic=True)),
-    computer=ComputerSection(hardware=Computer5()),
+    computer=ComputerSection(hardware=Computer(5)),
     sensors=SensorsSection(primary=CivilianSensors()),
     craft=CraftSection(docking_space=InternalDockingSpace(craft=AirRaft())),
     weapons=WeaponsSection(
@@ -211,12 +211,13 @@ def test_roundtrip_backup_computer():
         tl=13,
         displacement=100,
         hull=Hull(configuration=hull.standard_hull),
-        computer=ComputerSection(hardware=Computer25(), backup_hardware=Computer20(fib=True)),
+        computer=ComputerSection(hardware=Computer(25), backup_hardware=Computer(20, fib=True)),
     )
     loaded = _roundtrip(ship_with_backup)
     assert loaded.computer is not None
     assert loaded.computer.backup_hardware is not None
-    assert isinstance(loaded.computer.backup_hardware, Computer20)
+    assert isinstance(loaded.computer.backup_hardware, Computer)
+    assert loaded.computer.backup_hardware.score == 20
     assert loaded.computer.backup_hardware.fib is True
 
 

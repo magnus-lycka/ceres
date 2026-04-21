@@ -2,7 +2,7 @@ import pytest
 
 from tycho import hull, ship
 from tycho.bridge import Cockpit, CommandSection
-from tycho.computer import Computer5, ComputerSection
+from tycho.computer import Computer, ComputerSection
 from tycho.drives import (
     DriveSection,
     FusionPlantTL8,
@@ -28,7 +28,7 @@ def build_belt_racer() -> ship.Ship:
         power=PowerSection(fusion_plant=FusionPlantTL8(output=5)),
         fuel=FuelSection(reaction_fuel=ReactionFuel(minutes=52)),
         command=CommandSection(cockpit=Cockpit()),
-        computer=ComputerSection(hardware=Computer5()),
+        computer=ComputerSection(hardware=Computer(5)),
     )
 
 

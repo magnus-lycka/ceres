@@ -2,7 +2,7 @@ import pytest
 
 from tycho import armour, hull, ship
 from tycho.bridge import Cockpit, CommandSection
-from tycho.computer import Computer5, ComputerSection
+from tycho.computer import Computer, ComputerSection
 from tycho.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection
 from tycho.parts import EnergyEfficient, HighTechnology
 from tycho.sensors import CivilianSensors, SensorsSection
@@ -29,7 +29,7 @@ def build_ultralight_fighter() -> ship.Ship:
         power=PowerSection(fusion_plant=FusionPlantTL12(output=8)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=1)),
         command=CommandSection(cockpit=Cockpit(holographic=True)),
-        computer=ComputerSection(hardware=Computer5()),
+        computer=ComputerSection(hardware=Computer(5)),
         sensors=SensorsSection(primary=CivilianSensors()),
         weapons=WeaponsSection(
             fixed_mounts=[

@@ -2,7 +2,7 @@ import pytest
 
 from tycho import armour, hull, ship
 from tycho.bridge import Bridge, CommandSection
-from tycho.computer import Computer5, ComputerSection, JumpControl1
+from tycho.computer import Computer, ComputerSection, JumpControl
 from tycho.drives import DriveSection, FusionPlantTL12, JumpDrive1, MDrive1, PowerSection
 from tycho.habitation import HabitationSection, LowBerths, Staterooms
 from tycho.sensors import CivilianSensors, SensorsSection
@@ -31,7 +31,7 @@ def build_beowulf() -> ship.Ship:
             fuel_processor=FuelProcessor(tons=1),
         ),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer5(), software=[JumpControl1()]),
+        computer=ComputerSection(hardware=Computer(5), software=[JumpControl(1)]),
         sensors=SensorsSection(primary=CivilianSensors()),
         habitation=HabitationSection(
             staterooms=Staterooms(count=10),
@@ -189,4 +189,3 @@ def test_beowulf_spec_structure():
     assert spec.expenses[0].label == 'Production Cost'
     assert spec.expenses[0].amount == pytest.approx(51_380_000)
     assert spec.expenses[1].amount == pytest.approx(46_242_000)
-

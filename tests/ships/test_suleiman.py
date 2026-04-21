@@ -3,7 +3,7 @@ from stuart import render_ship_html
 
 from tycho import armour, hull, ship
 from tycho.bridge import Bridge, CommandSection
-from tycho.computer import Computer5, Computer10, ComputerSection, JumpControl, JumpControl1, JumpControl2, JumpControl3
+from tycho.computer import Computer, ComputerSection, JumpControl
 from tycho.crafts import AirRaft, CraftSection, InternalDockingSpace
 from tycho.drives import DriveSection, FusionPlantTL12, JumpDrive2, MDrive2, PowerSection
 from tycho.habitation import HabitationSection, Staterooms
@@ -35,7 +35,7 @@ def build_suleiman() -> ship.Ship:
             fuel_processor=FuelProcessor(tons=2),
         ),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer5(bis=True), software=[JumpControl2()]),
+        computer=ComputerSection(hardware=Computer(5, bis=True), software=[JumpControl(2)]),
         sensors=SensorsSection(primary=MilitarySensors()),
         weapons=WeaponsSection(turrets=[Turret(size='double')]),
         craft=CraftSection(docking_space=InternalDockingSpace(craft=AirRaft())),
@@ -185,7 +185,7 @@ def test_jump_drive_2_without_jump_control_2_adds_local_note():
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         drives=DriveSection(jump_drive=JumpDrive2()),
-        computer=ComputerSection(hardware=Computer5(bis=True)),
+        computer=ComputerSection(hardware=Computer(5, bis=True)),
     )
     assert my_ship.drives is not None
     assert my_ship.drives.jump_drive is not None
@@ -301,7 +301,7 @@ def test_jump_drive_with_lower_jump_control_warns_on_drive():
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         drives=DriveSection(jump_drive=JumpDrive2()),
-        computer=ComputerSection(hardware=Computer5(bis=True), software=[JumpControl1()]),
+        computer=ComputerSection(hardware=Computer(5, bis=True), software=[JumpControl(1)]),
     )
     assert my_ship.drives is not None
     assert my_ship.drives.jump_drive is not None
@@ -316,7 +316,7 @@ def test_jump_control_without_jump_drive_warns_on_software():
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        computer=ComputerSection(hardware=Computer5(bis=True), software=[JumpControl2()]),
+        computer=ComputerSection(hardware=Computer(5, bis=True), software=[JumpControl(2)]),
     )
     assert my_ship.computer is not None
     explicit_jump_control = my_ship.computer.software_packages[JumpControl]
@@ -332,7 +332,7 @@ def test_jump_control_with_higher_rating_than_drive_warns_on_software():
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         drives=DriveSection(jump_drive=JumpDrive2()),
-        computer=ComputerSection(hardware=Computer10(bis=True), software=[JumpControl3()]),
+        computer=ComputerSection(hardware=Computer(10, bis=True), software=[JumpControl(3)]),
     )
     assert my_ship.computer is not None
     explicit_jump_control = my_ship.computer.software_packages[JumpControl]
@@ -348,7 +348,7 @@ def test_higher_jump_control_replaces_lower_one():
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         drives=DriveSection(jump_drive=JumpDrive2()),
-        computer=ComputerSection(hardware=Computer10(bis=True), software=[JumpControl2(), JumpControl3()]),
+        computer=ComputerSection(hardware=Computer(10, bis=True), software=[JumpControl(2), JumpControl(3)]),
     )
 
     assert my_ship.computer is not None
@@ -363,4 +363,3 @@ def test_higher_jump_control_replaces_lower_one():
     assert ('warning', 'Redundant Jump Control/2 added') in [
         (note.category.value, note.message) for note in jump_control.notes
     ]
-

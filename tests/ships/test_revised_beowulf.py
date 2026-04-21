@@ -2,7 +2,7 @@ import pytest
 
 from tycho import armour, hull, ship
 from tycho.bridge import Bridge, CommandSection
-from tycho.computer import Computer5, ComputerSection, JumpControl1
+from tycho.computer import Computer, ComputerSection, JumpControl
 from tycho.drives import DriveSection, FusionPlantTL12, JumpDrive1, MDrive1, PowerSection
 from tycho.habitation import AdvancedEntertainmentSystem, HabitationSection, LowBerths, Staterooms
 from tycho.parts import Budget, IncreasedSize
@@ -44,7 +44,7 @@ def build_revised_beowulf() -> ship.Ship:
             fuel_processor=FuelProcessor(tons=1),
         ),
         command=CommandSection(bridge=Bridge(holographic=True)),
-        computer=ComputerSection(hardware=Computer5(), software=[JumpControl1()]),
+        computer=ComputerSection(hardware=Computer(5), software=[JumpControl(1)]),
         sensors=SensorsSection(primary=CivilianSensors()),
         systems=SystemsSection(medical_bay=MedicalBay(), workshop=Workshop()),
         habitation=HabitationSection(
@@ -111,4 +111,3 @@ def test_revised_beowulf_matches_current_modeled_subset():
     assert beowulf.production_cost == pytest.approx(49_781_250)
     assert beowulf.sales_price_new == pytest.approx(44_803_125)
     assert beowulf.expenses.maintenance == pytest.approx(3734.0)
-

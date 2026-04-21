@@ -3,7 +3,7 @@ from stuart.tycho_pdf import _build_typst_source
 
 from tycho import hull, ship
 from tycho.bridge import Bridge, CommandSection
-from tycho.computer import Computer5, ComputerSection, FireControl1
+from tycho.computer import Computer, ComputerSection, FireControl
 from tycho.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection, ReactionDrive
 from tycho.habitation import CabinSpace, HabitationSection
 from tycho.sensors import MilitarySensors, SensorsSection
@@ -38,7 +38,7 @@ def build_gothta_ambush_fighter() -> ship.Ship:
             fuel_scoops=FuelScoops(free=True),
         ),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer5(), software=[FireControl1()]),
+        computer=ComputerSection(hardware=Computer(5), software=[FireControl(1)]),
         sensors=SensorsSection(primary=MilitarySensors()),
         weapons=WeaponsSection(
             fixed_mounts=[FixedMount(weapons=[MountWeapon(weapon='pulse_laser')])],

@@ -3,7 +3,7 @@ import pytest
 from tycho import hull, ship
 from tycho.armour import BondedSuperdenseArmour
 from tycho.bridge import Bridge, CommandSection
-from tycho.computer import Computer30, ComputerSection, FireControl1, JumpControl2
+from tycho.computer import Computer, ComputerSection, FireControl, JumpControl
 from tycho.drives import DecreasedFuel, DriveSection, FusionPlantTL12, JumpDrive2, MDrive6, PowerSection
 from tycho.habitation import HabitationSection, Staterooms
 from tycho.parts import EnergyEfficient, HighTechnology, SizeReduction, VeryAdvanced
@@ -58,8 +58,8 @@ def build_ambush_hunter_killer_corvette() -> ship.Ship:
         ),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(
-            hardware=Computer30(),
-            software=[JumpControl2(), FireControl1()],
+            hardware=Computer(30),
+            software=[JumpControl(2), FireControl(1)],
         ),
         sensors=SensorsSection(
             primary=ImprovedSensors(),

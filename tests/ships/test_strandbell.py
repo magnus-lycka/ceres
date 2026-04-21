@@ -2,7 +2,7 @@ import pytest
 
 from tycho import armour, hull, ship
 from tycho.bridge import Bridge, CommandSection
-from tycho.computer import AutoRepair1, Computer35, ComputerSection, Evade2, FireControl2
+from tycho.computer import AutoRepair, Computer, ComputerSection, Evade, FireControl
 from tycho.drives import DriveSection, FusionPlantTL12, MDrive9, PowerSection
 from tycho.habitation import HabitationSection, Staterooms
 from tycho.sensors import CountermeasuresSuite, ImprovedSensors, SensorsSection
@@ -37,7 +37,7 @@ def build_strandbell() -> ship.Ship:
             fuel_scoops=FuelScoops(),
         ),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer35(), software=[AutoRepair1(), FireControl2(), Evade2()]),
+        computer=ComputerSection(hardware=Computer(35), software=[AutoRepair(1), FireControl(2), Evade(2)]),
         sensors=SensorsSection(primary=ImprovedSensors(), countermeasures=CountermeasuresSuite()),
         weapons=WeaponsSection(
             turrets=[
@@ -243,4 +243,3 @@ def test_strandbell_uses_military_crew_rules():
         ('MEDIC', 1, 4_000),
         ('OFFICER', 1, 5_000),
     ]
-

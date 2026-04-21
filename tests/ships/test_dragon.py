@@ -2,7 +2,7 @@ import pytest
 
 from tycho import armour, hull, ship
 from tycho.bridge import Bridge, CommandSection
-from tycho.computer import AutoRepair1, Computer20, Computer25, ComputerSection, Evade1, FireControl2
+from tycho.computer import AutoRepair, Computer, ComputerSection, Evade, FireControl
 from tycho.drives import DriveSection, FusionPlantTL12, MDrive7, PowerSection
 from tycho.habitation import HabitationSection, Staterooms
 from tycho.hull import ImprovedStealth
@@ -59,9 +59,9 @@ def build_dragon() -> ship.Ship:
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=16, armoured_bulkhead=True)),
         command=CommandSection(bridge=Bridge(holographic=True, armoured_bulkhead=True)),
         computer=ComputerSection(
-            hardware=Computer25(fib=True),
-            backup_hardware=Computer20(fib=True),
-            software=[AutoRepair1(), FireControl2(), Evade1()],
+            hardware=Computer(25, fib=True),
+            backup_hardware=Computer(20, fib=True),
+            software=[AutoRepair(1), FireControl(2), Evade(1)],
         ),
         sensors=SensorsSection(
             primary=ImprovedSensors(armoured_bulkhead=True),

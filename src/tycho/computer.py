@@ -1,6 +1,6 @@
 from typing import Annotated, ClassVar, Literal
 
-from pydantic import Field, PrivateAttr
+from pydantic import Field, PrivateAttr, field_validator
 
 from .base import CeresModel
 from .parts import ShipPart
@@ -8,19 +8,16 @@ from .spec import ShipSpec, SpecRow, SpecSection
 
 
 class SoftwarePackage(CeresModel):
-    description: str
-    minimum_tl: ClassVar[int]
-    bandwidth: ClassVar[int]
-    base_cost: ClassVar[float]
+    package: str
     model_config = {'frozen': True}
 
     @property
-    def cost(self) -> float:
-        return self.base_cost
+    def description(self) -> str:
+        raise NotImplementedError
 
     @property
-    def name(self) -> str:
-        return self.description
+    def cost(self) -> float:
+        return 0.0
 
     @property
     def tons(self) -> float:
@@ -38,210 +35,164 @@ class SoftwarePackage(CeresModel):
         return 0
 
 
-class Library(SoftwarePackage):
-    description: Literal['Library'] = 'Library'
-    minimum_tl = 8
-    bandwidth = 0
-    base_cost = 0.0
-
-
-class Manoeuvre(SoftwarePackage):
-    description: Literal['Manoeuvre/0'] = 'Manoeuvre/0'
-    minimum_tl = 8
-    bandwidth = 0
-    base_cost = 0.0
-
-
-class Intellect(SoftwarePackage):
-    description: Literal['Intellect'] = 'Intellect'
-    minimum_tl = 11
-    bandwidth = 0
-    base_cost = 0.0
-
-
-class JumpControl(SoftwarePackage):
-    rating: int
-
-    @property
-    def singleton_type(self) -> type[SoftwarePackage]:
-        return JumpControl
-
-    @property
-    def singleton_rank(self) -> int:
-        return self.rating
-
-
-class JumpControl1(JumpControl):
-    description: Literal['Jump Control/1'] = 'Jump Control/1'
-    minimum_tl = 9
-    bandwidth = 5
-    base_cost = 100_000.0
-    rating: Literal[1] = 1
-
-
-class JumpControl2(JumpControl):
-    description: Literal['Jump Control/2'] = 'Jump Control/2'
-    minimum_tl = 11
-    bandwidth = 10
-    base_cost = 200_000.0
-    rating: Literal[2] = 2
-
-
-class JumpControl3(JumpControl):
-    description: Literal['Jump Control/3'] = 'Jump Control/3'
-    minimum_tl = 12
-    bandwidth = 15
-    base_cost = 300_000.0
-    rating: Literal[3] = 3
-
-
-class JumpControl4(JumpControl):
-    description: Literal['Jump Control/4'] = 'Jump Control/4'
-    minimum_tl = 13
-    bandwidth = 20
-    base_cost = 400_000.0
-    rating: Literal[4] = 4
-
-
-class JumpControl5(JumpControl):
-    description: Literal['Jump Control/5'] = 'Jump Control/5'
-    minimum_tl = 14
-    bandwidth = 25
-    base_cost = 500_000.0
-    rating: Literal[5] = 5
-
-
-class JumpControl6(JumpControl):
-    description: Literal['Jump Control/6'] = 'Jump Control/6'
-    minimum_tl = 15
-    bandwidth = 30
-    base_cost = 600_000.0
-    rating: Literal[6] = 6
-
-
-class AutoRepair(SoftwarePackage):
-    rating: int
-
-    @property
-    def singleton_type(self) -> type[SoftwarePackage]:
-        return AutoRepair
-
-    @property
-    def singleton_rank(self) -> int:
-        return self.rating
-
-
-class AutoRepair1(AutoRepair):
-    description: Literal['Auto-Repair/1'] = 'Auto-Repair/1'
-    minimum_tl = 11
-    bandwidth = 10
-    base_cost = 5_000_000.0
-    rating: Literal[1] = 1
-
-
-class AutoRepair2(AutoRepair):
-    description: Literal['Auto-Repair/2'] = 'Auto-Repair/2'
-    minimum_tl = 12
-    bandwidth = 20
-    base_cost = 10_000_000.0
-    rating: Literal[2] = 2
-
-
-class FireControl(SoftwarePackage):
-    rating: int
-
-    @property
-    def singleton_type(self) -> type[SoftwarePackage]:
-        return FireControl
-
-    @property
-    def singleton_rank(self) -> int:
-        return self.rating
-
-
-class FireControl1(FireControl):
-    description: Literal['Fire Control/1'] = 'Fire Control/1'
-    minimum_tl = 9
-    bandwidth = 5
-    base_cost = 2_000_000.0
-    rating: Literal[1] = 1
-
-
-class FireControl2(FireControl):
-    description: Literal['Fire Control/2'] = 'Fire Control/2'
-    minimum_tl = 11
-    bandwidth = 10
-    base_cost = 4_000_000.0
-    rating: Literal[2] = 2
-
-
-class FireControl3(FireControl):
-    description: Literal['Fire Control/3'] = 'Fire Control/3'
-    minimum_tl = 12
-    bandwidth = 15
-    base_cost = 6_000_000.0
-    rating: Literal[3] = 3
-
-
-class FireControl4(FireControl):
-    description: Literal['Fire Control/4'] = 'Fire Control/4'
-    minimum_tl = 13
-    bandwidth = 20
-    base_cost = 8_000_000.0
-    rating: Literal[4] = 4
-
-
-class FireControl5(FireControl):
-    description: Literal['Fire Control/5'] = 'Fire Control/5'
-    minimum_tl = 14
-    bandwidth = 25
-    base_cost = 10_000_000.0
-    rating: Literal[5] = 5
-
-
-class Evade(SoftwarePackage):
-    rating: int
-
-    @property
-    def singleton_type(self) -> type[SoftwarePackage]:
-        return Evade
-
-    @property
-    def singleton_rank(self) -> int:
-        return self.rating
-
-
-class Evade1(Evade):
-    description: Literal['Evade/1'] = 'Evade/1'
-    minimum_tl = 9
-    bandwidth = 5
-    base_cost = 1_000_000.0
-    rating: Literal[1] = 1
-
-
-class Evade2(Evade):
-    description: Literal['Evade/2'] = 'Evade/2'
-    minimum_tl = 11
-    bandwidth = 10
-    base_cost = 2_000_000.0
-    rating: Literal[2] = 2
-
-
-class Evade3(Evade):
-    description: Literal['Evade/3'] = 'Evade/3'
-    minimum_tl = 12
-    bandwidth = 15
-    base_cost = 3_000_000.0
-    rating: Literal[3] = 3
-
-
-class Computer(ShipPart):
-    description: str
+class FixedSoftwarePackage(SoftwarePackage):
+    label: ClassVar[str]
     minimum_tl: ClassVar[int]
-    processing: ClassVar[int]
+    bandwidth: ClassVar[int]
     base_cost: ClassVar[float]
+
+    @property
+    def description(self) -> str:
+        return self.label
+
+    @property
+    def cost(self) -> float:
+        return self.base_cost
+
+
+class Library(FixedSoftwarePackage):
+    package: Literal['library'] = 'library'
+    label = 'Library'
+    minimum_tl = 8
+    bandwidth = 0
+    base_cost = 0.0
+
+
+class Manoeuvre(FixedSoftwarePackage):
+    package: Literal['manoeuvre'] = 'manoeuvre'
+    label = 'Manoeuvre/0'
+    minimum_tl = 8
+    bandwidth = 0
+    base_cost = 0.0
+
+
+class Intellect(FixedSoftwarePackage):
+    package: Literal['intellect'] = 'intellect'
+    label = 'Intellect'
+    minimum_tl = 11
+    bandwidth = 0
+    base_cost = 0.0
+
+
+class RatedSoftwarePackage(SoftwarePackage):
+    rating: int
+    label: ClassVar[str]
+    _specs: ClassVar[dict[int, dict[str, int | float]]]
+
+    def __init__(self, rating: int | None = None, /, **data):
+        if rating is not None and 'rating' not in data:
+            data['rating'] = rating
+        super().__init__(**data)
+
+    @field_validator('rating')
+    @classmethod
+    def validate_rating(cls, value: int) -> int:
+        if value not in cls._specs:
+            allowed = ', '.join(str(v) for v in sorted(cls._specs))
+            raise ValueError(f'Unsupported {cls.__name__} rating {value}; expected one of: {allowed}')
+        return value
+
+    @property
+    def bandwidth(self) -> int:
+        return int(self._specs[self.rating]['bandwidth'])
+
+    @property
+    def minimum_tl(self) -> int:
+        return int(self._specs[self.rating]['minimum_tl'])
+
+    @property
+    def cost(self) -> float:
+        return float(self._specs[self.rating]['cost'])
+
+    @property
+    def description(self) -> str:
+        return f'{self.label}/{self.rating}'
+
+    @property
+    def singleton_rank(self) -> int:
+        return self.rating
+
+
+class JumpControl(RatedSoftwarePackage):
+    package: Literal['jump_control'] = 'jump_control'
+    label = 'Jump Control'
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        1: dict(bandwidth=5, minimum_tl=9, cost=100_000.0),
+        2: dict(bandwidth=10, minimum_tl=11, cost=200_000.0),
+        3: dict(bandwidth=15, minimum_tl=12, cost=300_000.0),
+        4: dict(bandwidth=20, minimum_tl=13, cost=400_000.0),
+        5: dict(bandwidth=25, minimum_tl=14, cost=500_000.0),
+        6: dict(bandwidth=30, minimum_tl=15, cost=600_000.0),
+    }
+
+
+class AutoRepair(RatedSoftwarePackage):
+    package: Literal['auto_repair'] = 'auto_repair'
+    label = 'Auto-Repair'
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        1: dict(bandwidth=10, minimum_tl=11, cost=5_000_000.0),
+        2: dict(bandwidth=20, minimum_tl=12, cost=10_000_000.0),
+    }
+
+
+class FireControl(RatedSoftwarePackage):
+    package: Literal['fire_control'] = 'fire_control'
+    label = 'Fire Control'
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        1: dict(bandwidth=5, minimum_tl=9, cost=2_000_000.0),
+        2: dict(bandwidth=10, minimum_tl=11, cost=4_000_000.0),
+        3: dict(bandwidth=15, minimum_tl=12, cost=6_000_000.0),
+        4: dict(bandwidth=20, minimum_tl=13, cost=8_000_000.0),
+        5: dict(bandwidth=25, minimum_tl=14, cost=10_000_000.0),
+    }
+
+
+class Evade(RatedSoftwarePackage):
+    package: Literal['evade'] = 'evade'
+    label = 'Evade'
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        1: dict(bandwidth=5, minimum_tl=9, cost=1_000_000.0),
+        2: dict(bandwidth=10, minimum_tl=11, cost=2_000_000.0),
+        3: dict(bandwidth=15, minimum_tl=12, cost=3_000_000.0),
+    }
+
+
+class ComputerBase(ShipPart):
+    kind: str
+    score: int
     bis: bool = False
     fib: bool = False
+    _label: ClassVar[str]
+    _specs: ClassVar[dict[int, dict[str, int | float]]]
+
+    def __init__(self, score: int | None = None, /, **data):
+        if score is not None and 'score' not in data:
+            data['score'] = score
+        super().__init__(**data)
+
+    @field_validator('score')
+    @classmethod
+    def validate_score(cls, value: int) -> int:
+        if value not in cls._specs:
+            allowed = ', '.join(str(v) for v in sorted(cls._specs))
+            raise ValueError(f'Unsupported {cls.__name__} score {value}; expected one of: {allowed}')
+        return value
+
+    @property
+    def description(self) -> str:
+        return f'{self._label}/{self.score}'
+
+    @property
+    def minimum_tl(self) -> int:
+        return int(self._specs[self.score]['minimum_tl'])
+
+    @property
+    def processing(self) -> int:
+        return self.score
+
+    @property
+    def base_cost(self) -> float:
+        return float(self._specs[self.score]['cost'])
 
     def build_item(self) -> str | None:
         item = self.description
@@ -292,147 +243,42 @@ class Computer(ShipPart):
         return self.base_cost * multiplier
 
 
-class Computer5(Computer):
-    description: Literal['Computer/5'] = 'Computer/5'
-    minimum_tl = 7
-    processing = 5
-    base_cost = 30_000.0
+class Computer(ComputerBase):
+    kind: Literal['computer'] = 'computer'
+    _label = 'Computer'
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        5: dict(minimum_tl=7, cost=30_000.0),
+        10: dict(minimum_tl=9, cost=160_000.0),
+        15: dict(minimum_tl=11, cost=2_000_000.0),
+        20: dict(minimum_tl=12, cost=5_000_000.0),
+        25: dict(minimum_tl=13, cost=10_000_000.0),
+        30: dict(minimum_tl=14, cost=20_000_000.0),
+        35: dict(minimum_tl=15, cost=30_000_000.0),
+    }
 
 
-class Computer10(Computer):
-    description: Literal['Computer/10'] = 'Computer/10'
-    minimum_tl = 9
-    processing = 10
-    base_cost = 160_000.0
-
-
-class Computer15(Computer):
-    description: Literal['Computer/15'] = 'Computer/15'
-    minimum_tl = 11
-    processing = 15
-    base_cost = 2_000_000.0
-
-
-class Computer20(Computer):
-    description: Literal['Computer/20'] = 'Computer/20'
-    minimum_tl = 12
-    processing = 20
-    base_cost = 5_000_000.0
-
-
-class Computer25(Computer):
-    description: Literal['Computer/25'] = 'Computer/25'
-    minimum_tl = 13
-    processing = 25
-    base_cost = 10_000_000.0
-
-
-class Computer30(Computer):
-    description: Literal['Computer/30'] = 'Computer/30'
-    minimum_tl = 14
-    processing = 30
-    base_cost = 20_000_000.0
-
-
-class Computer35(Computer):
-    description: Literal['Computer/35'] = 'Computer/35'
-    minimum_tl = 15
-    processing = 35
-    base_cost = 30_000_000.0
-
-
-class Core(Computer):
-    pass
-
-
-class Core40(Core):
-    description: Literal['Core/40'] = 'Core/40'
-    minimum_tl = 9
-    processing = 40
-    base_cost = 45_000_000.0
-
-
-class Core50(Core):
-    description: Literal['Core/50'] = 'Core/50'
-    minimum_tl = 10
-    processing = 50
-    base_cost = 60_000_000.0
-
-
-class Core60(Core):
-    description: Literal['Core/60'] = 'Core/60'
-    minimum_tl = 11
-    processing = 60
-    base_cost = 75_000_000.0
-
-
-class Core70(Core):
-    description: Literal['Core/70'] = 'Core/70'
-    minimum_tl = 12
-    processing = 70
-    base_cost = 80_000_000.0
-
-
-class Core80(Core):
-    description: Literal['Core/80'] = 'Core/80'
-    minimum_tl = 13
-    processing = 80
-    base_cost = 95_000_000.0
-
-
-class Core90(Core):
-    description: Literal['Core/90'] = 'Core/90'
-    minimum_tl = 14
-    processing = 90
-    base_cost = 120_000_000.0
-
-
-class Core100(Core):
-    description: Literal['Core/100'] = 'Core/100'
-    minimum_tl = 15
-    processing = 100
-    base_cost = 130_000_000.0
+class Core(ComputerBase):
+    kind: Literal['core'] = 'core'
+    _label = 'Core'
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        40: dict(minimum_tl=9, cost=45_000_000.0),
+        50: dict(minimum_tl=10, cost=60_000_000.0),
+        60: dict(minimum_tl=11, cost=75_000_000.0),
+        70: dict(minimum_tl=12, cost=80_000_000.0),
+        80: dict(minimum_tl=13, cost=95_000_000.0),
+        90: dict(minimum_tl=14, cost=120_000_000.0),
+        100: dict(minimum_tl=15, cost=130_000_000.0),
+    }
 
 
 ShipComputer = Annotated[
-    Computer5
-    | Computer10
-    | Computer15
-    | Computer20
-    | Computer25
-    | Computer30
-    | Computer35
-    | Core40
-    | Core50
-    | Core60
-    | Core70
-    | Core80
-    | Core90
-    | Core100,
-    Field(discriminator='description'),
+    Computer | Core,
+    Field(discriminator='kind'),
 ]
 
 ShipSoftware = Annotated[
-    Library
-    | Manoeuvre
-    | Intellect
-    | JumpControl1
-    | JumpControl2
-    | JumpControl3
-    | JumpControl4
-    | JumpControl5
-    | JumpControl6
-    | AutoRepair1
-    | AutoRepair2
-    | FireControl1
-    | FireControl2
-    | FireControl3
-    | FireControl4
-    | FireControl5
-    | Evade1
-    | Evade2
-    | Evade3,
-    Field(discriminator='description'),
+    Library | Manoeuvre | Intellect | JumpControl | AutoRepair | FireControl | Evade,
+    Field(discriminator='package'),
 ]
 
 

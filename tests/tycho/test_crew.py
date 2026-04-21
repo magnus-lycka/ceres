@@ -3,7 +3,7 @@ import pytest
 
 from tycho import hull, ship
 from tycho.bridge import Bridge, CommandSection
-from tycho.computer import Computer5, ComputerSection
+from tycho.computer import Computer, ComputerSection
 from tycho.crafts import AirRaft, CarriedCraft, CraftSection, InternalDockingSpace
 from tycho.crew import CrewRole, required_crew_roles
 from tycho.drives import DriveSection, FusionPlantTL12, JumpDrive1, MDrive1, MDrive2, PowerSection
@@ -37,7 +37,7 @@ def test_required_crew_roles_for_small_jump_ship():
         drives=DriveSection(jump_drive=JumpDrive1()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=10)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer5()),
+        computer=ComputerSection(hardware=Computer(5)),
     )
 
     assert [(role.role, role.count, role.monthly_salary) for role in required_crew_roles(my_ship)] == [
@@ -56,7 +56,7 @@ def test_gunner_added_for_each_turret_on_commercial_ship():
         drives=DriveSection(m_drive=MDrive2(), jump_drive=JumpDrive1()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer5()),
+        computer=ComputerSection(hardware=Computer(5)),
         weapons=WeaponsSection(turrets=[Turret(size='double')]),
     )
 
@@ -77,7 +77,7 @@ def test_large_ship_reduces_engineering_and_other_scaling_roles():
         drives=DriveSection(m_drive=MDrive1(), jump_drive=JumpDrive1()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=490)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer5()),
+        computer=ComputerSection(hardware=Computer(5)),
     )
 
     assert [(role.role, role.count) for role in required_crew_roles(my_ship)] == [
@@ -100,7 +100,7 @@ def test_military_ship_uses_military_pilot_and_gunner_rules():
         drives=DriveSection(m_drive=MDrive2()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer5()),
+        computer=ComputerSection(hardware=Computer(5)),
         weapons=WeaponsSection(turrets=[Turret(size='double'), Turret(size='double')]),
     )
 
@@ -127,7 +127,7 @@ def test_commercial_ship_gets_extra_pilot_for_carried_small_craft():
         drives=DriveSection(m_drive=MDrive2(), jump_drive=JumpDrive1()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer5()),
+        computer=ComputerSection(hardware=Computer(5)),
         craft=CraftSection(docking_space=InternalDockingSpace(craft=ShipBoat())),
     )
 
@@ -142,7 +142,7 @@ def test_air_raft_does_not_add_extra_pilot():
         drives=DriveSection(m_drive=MDrive2(), jump_drive=JumpDrive1()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer5()),
+        computer=ComputerSection(hardware=Computer(5)),
         craft=CraftSection(docking_space=InternalDockingSpace(craft=AirRaft())),
     )
 
@@ -158,7 +158,7 @@ def test_military_small_non_jump_craft_still_uses_single_pilot():
         drives=DriveSection(m_drive=MDrive2()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=8)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer5()),
+        computer=ComputerSection(hardware=Computer(5)),
     )
 
     assert [(role.role, role.count) for role in required_crew_roles(my_ship)] == [
@@ -174,7 +174,7 @@ def test_commercial_ship_gets_gunner_for_barbette():
         drives=DriveSection(m_drive=MDrive2()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer5()),
+        computer=ComputerSection(hardware=Computer(5)),
         weapons=WeaponsSection(barbettes=[Barbette(weapon='pulse_laser')]),
     )
 
@@ -190,7 +190,7 @@ def test_military_ship_gets_gunners_for_bays():
         drives=DriveSection(m_drive=MDrive2()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=100)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer5()),
+        computer=ComputerSection(hardware=Computer(5)),
         weapons=WeaponsSection(
             bays=[Bay(size='small', weapon='missile'), Bay(size='medium', weapon='missile')],
         ),
@@ -219,7 +219,7 @@ def test_explicit_crew_vector_overrides_rule_based_crew():
         drives=DriveSection(jump_drive=JumpDrive1()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=10)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer5()),
+        computer=ComputerSection(hardware=Computer(5)),
         crew_vector={'PILOT': 1, 'ENGINEER': 1},
     )
 
@@ -237,7 +237,7 @@ def test_understaffed_explicit_crew_vector_emits_warning():
         drives=DriveSection(jump_drive=JumpDrive1()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=10)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer5()),
+        computer=ComputerSection(hardware=Computer(5)),
         crew_vector={'PILOT': 1, 'ENGINEER': 1},
     )
 
