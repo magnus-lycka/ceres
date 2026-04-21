@@ -6,7 +6,7 @@ from tycho.computer import AutoRepair1, Computer20, Computer25, ComputerSection,
 from tycho.drives import DriveSection, FusionPlantTL12, MDrive7, PowerSection
 from tycho.habitation import AdvancedEntertainmentSystem, HabitationSection, Staterooms
 from tycho.hull import ImprovedStealth
-from tycho.parts import Advanced, Budget, EnergyEfficient, HighTechnology, IncreasedSize, SizeReduction, VeryAdvanced, VeryHighYield
+from tycho.parts import Advanced, Budget, EnergyEfficient, HighTechnology, IncreasedSize, SizeReduction, VeryAdvanced
 from tycho.sensors import (
     CountermeasuresSuite,
     EnhancedSignalProcessing,
@@ -26,7 +26,7 @@ from tycho.systems import (
     TrainingFacility,
     Workshop,
 )
-from tycho.weapons import Barbette, Bay, MissileStorage, PointDefenseBattery, WeaponsSection
+from tycho.weapons import Barbette, Bay, MissileStorage, PointDefenseBattery, VeryHighYield, WeaponsSection
 
 
 def build_revised_dragon() -> ship.Ship:
@@ -185,4 +185,3 @@ def test_revised_dragon_power_and_crew_for_current_subset():
         ('MEDIC', 1, 4_000),
         ('OFFICER', 1, 5_000),
     ]
-

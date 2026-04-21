@@ -5,11 +5,11 @@ from tycho import armour, hull, ship
 from tycho.bridge import Cockpit, CommandSection
 from tycho.crafts import AirRaft, CraftSection, InternalDockingSpace
 from tycho.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection
-from tycho.parts import EnergyEfficient, HighTechnology, VeryHighYield
+from tycho.parts import EnergyEfficient, HighTechnology
 from tycho.sensors import CivilianSensors, SensorsSection
 from tycho.storage import CargoCrane, CargoHold, CargoSection
 from tycho.systems import Airlock, ProbeDrones, SystemsSection, Workshop
-from tycho.weapons import FixedMount, MountWeapon, WeaponsSection
+from tycho.weapons import FixedMount, MountWeapon, VeryHighYield, WeaponsSection
 
 
 def test_ship_initial():

@@ -13,12 +13,12 @@ from tycho.computer import Computer5, Computer20, Computer25, ComputerSection
 from tycho.crafts import AirRaft, CraftSection, InternalDockingSpace
 from tycho.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection
 from tycho.hull import BasicStealth, Hull
-from tycho.parts import EnergyEfficient, HighTechnology, VeryHighYield
+from tycho.parts import EnergyEfficient, HighTechnology
 from tycho.sensors import BasicSensors, CivilianSensors, SensorsSection
 from tycho.ship import Ship
 from tycho.storage import CargoSection, FuelSection, OperationFuel
 from tycho.systems import Airlock, Biosphere, CrewArmory, SystemsSection, TrainingFacility
-from tycho.weapons import FixedMount, MountWeapon, WeaponsSection
+from tycho.weapons import FixedMount, MountWeapon, VeryHighYield, WeaponsSection
 
 # Minimal ship for structural tests
 bare = Ship(tl=12, displacement=6, hull=Hull(configuration=hull.standard_hull))

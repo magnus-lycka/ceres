@@ -9,11 +9,19 @@ from .parts import (
     CustomisableShipPart,
     CustomisationUnion,
     EnergyEfficient,
+    Modification,
     ShipPart,
     SizeReduction,
-    VeryHighYield,
 )
 from .spec import ShipSpec, SpecSection
+
+LongRange = Modification(
+    name='Long Range',
+    advantage=2,
+    info_notes=('Range increased by one band, to a maximum of Very Long',),
+)
+
+VeryHighYield = Modification(name='Very High Yield', advantage=2)
 
 
 def _size_reduction_steps(value: bool | int) -> int:
@@ -42,20 +50,20 @@ def _mounted_weapon_power(weapons: Sequence[MountWeapon]) -> float:
 
 MountWeaponType = Literal['pulse_laser', 'beam_laser', 'missile_rack']
 
-MOUNT_WEAPON_SPECS: dict[MountWeaponType, dict[str, float | str]] = {
-    'pulse_laser': {'item': 'Pulse Laser', 'cost': 1_000_000, 'power': 4},
-    'beam_laser': {'item': 'Beam Laser', 'cost': 500_000, 'power': 4},
-    'missile_rack': {'item': 'Missile Rack', 'cost': 750_000, 'power': 0},
-}
-
 
 class MountWeapon(CeresModel):
     model_config = {'frozen': True}
+    _specs: ClassVar[dict[MountWeaponType, dict[str, float | str]]] = dict(
+        pulse_laser=dict(item='Pulse Laser', cost=1_000_000, power=4),
+        beam_laser=dict(item='Beam Laser', cost=500_000, power=4),
+        missile_rack=dict(item='Missile Rack', cost=750_000, power=0),
+    )
     weapon: MountWeaponType
     customisation: CustomisationUnion | None = None
     allowed_modifications: ClassVar[frozenset[str]] = frozenset(
         {
             EnergyEfficient.name,
+            LongRange.name,
             VeryHighYield.name,
         }
     )
@@ -70,14 +78,14 @@ class MountWeapon(CeresModel):
 
     @property
     def base_cost(self) -> float:
-        return float(MOUNT_WEAPON_SPECS[self.weapon]['cost'])
+        return float(self._specs[self.weapon]['cost'])
 
     @property
     def base_power(self) -> float:
-        return float(MOUNT_WEAPON_SPECS[self.weapon]['power'])
+        return float(self._specs[self.weapon]['power'])
 
     def build_item(self) -> str | None:
-        return str(MOUNT_WEAPON_SPECS[self.weapon]['item'])
+        return str(self._specs[self.weapon]['item'])
 
     def customisation_note(self) -> Note | None:
         if self.customisation is None:
@@ -130,34 +138,33 @@ class FixedMount(ShipPart):
 
 TurretSize = Literal['single', 'double', 'triple']
 
-TURRET_SPECS: dict[TurretSize, dict[str, float | int | str]] = {
-    'single': {'item': 'Single Turret', 'minimum_tl': 7, 'mount_cost': 200_000, 'capacity': 1},
-    'double': {'item': 'Double Turret', 'minimum_tl': 8, 'mount_cost': 500_000, 'capacity': 2},
-    'triple': {'item': 'Triple Turret', 'minimum_tl': 9, 'mount_cost': 1_000_000, 'capacity': 3},
-}
-
 
 class Turret(ShipPart):
+    _specs: ClassVar[dict[TurretSize, dict[str, float | int | str]]] = dict(
+        single=dict(item='Single Turret', minimum_tl=7, mount_cost=200_000, capacity=1),
+        double=dict(item='Double Turret', minimum_tl=8, mount_cost=500_000, capacity=2),
+        triple=dict(item='Triple Turret', minimum_tl=9, mount_cost=1_000_000, capacity=3),
+    )
     size: TurretSize
     weapons: list[MountWeapon] = Field(default_factory=list)
 
     def build_item(self) -> str | None:
-        return str(TURRET_SPECS[self.size]['item'])
+        return str(self._specs[self.size]['item'])
 
     def build_notes(self) -> list[Note]:
         return _mounted_weapon_notes(self.weapons, empty_message='No weapons in turret')
 
     @property
     def minimum_tl(self) -> int:  # type: ignore[override]
-        return int(TURRET_SPECS[self.size]['minimum_tl'])
+        return int(self._specs[self.size]['minimum_tl'])
 
     @property
     def capacity(self) -> int:
-        return int(TURRET_SPECS[self.size]['capacity'])
+        return int(self._specs[self.size]['capacity'])
 
     @property
     def mount_cost(self) -> float:
-        return float(TURRET_SPECS[self.size]['mount_cost'])
+        return float(self._specs[self.size]['mount_cost'])
 
     def model_post_init(self, __context) -> None:
         super().model_post_init(__context)
@@ -201,20 +208,19 @@ BarbetteWeapon = Literal[
     'torpedo',
 ]
 
-BARBETTE_SPECS: dict[BarbetteWeapon, dict[str, float | int | str]] = {
-    'beam_laser': {'item': 'Beam Laser Barbette', 'minimum_tl': 10, 'power': 12, 'cost': 3_000_000},
-    'fusion': {'item': 'Fusion Barbette', 'minimum_tl': 12, 'power': 20, 'cost': 4_000_000},
-    'ion_cannon': {'item': 'Ion Cannon', 'minimum_tl': 12, 'power': 10, 'cost': 6_000_000},
-    'missile': {'item': 'Missile Barbette', 'minimum_tl': 7, 'power': 0, 'cost': 4_000_000},
-    'particle': {'item': 'Particle Barbette', 'minimum_tl': 11, 'power': 15, 'cost': 8_000_000},
-    'plasma': {'item': 'Plasma Barbette', 'minimum_tl': 11, 'power': 12, 'cost': 5_000_000},
-    'pulse_laser': {'item': 'Pulse Laser Barbette', 'minimum_tl': 9, 'power': 12, 'cost': 6_000_000},
-    'railgun': {'item': 'Railgun Barbette', 'minimum_tl': 10, 'power': 5, 'cost': 2_000_000},
-    'torpedo': {'item': 'Torpedo', 'minimum_tl': 7, 'power': 2, 'cost': 3_000_000},
-}
-
 
 class Barbette(CustomisableShipPart):
+    _specs: ClassVar[dict[BarbetteWeapon, dict[str, float | int | str]]] = dict(
+        beam_laser=dict(item='Beam Laser Barbette', minimum_tl=10, power=12, cost=3_000_000),
+        fusion=dict(item='Fusion Barbette', minimum_tl=12, power=20, cost=4_000_000),
+        ion_cannon=dict(item='Ion Cannon', minimum_tl=12, power=10, cost=6_000_000),
+        missile=dict(item='Missile Barbette', minimum_tl=7, power=0, cost=4_000_000),
+        particle=dict(item='Particle Barbette', minimum_tl=11, power=15, cost=8_000_000),
+        plasma=dict(item='Plasma Barbette', minimum_tl=11, power=12, cost=5_000_000),
+        pulse_laser=dict(item='Pulse Laser Barbette', minimum_tl=9, power=12, cost=6_000_000),
+        railgun=dict(item='Railgun Barbette', minimum_tl=10, power=5, cost=2_000_000),
+        torpedo=dict(item='Torpedo', minimum_tl=7, power=2, cost=3_000_000),
+    )
     allowed_modifications: ClassVar[frozenset[str]] = frozenset(
         {
             SizeReduction.name,
@@ -224,11 +230,11 @@ class Barbette(CustomisableShipPart):
     weapon: BarbetteWeapon
 
     def build_item(self) -> str | None:
-        return str(BARBETTE_SPECS[self.weapon]['item'])
+        return str(self._specs[self.weapon]['item'])
 
     @property
     def minimum_tl(self) -> int:  # type: ignore[override]
-        tl = int(BARBETTE_SPECS[self.weapon]['minimum_tl'])
+        tl = int(self._specs[self.weapon]['minimum_tl'])
         return tl + (0 if self.customisation is None else self.customisation.tl_delta)
 
     @property
@@ -249,11 +255,11 @@ class Barbette(CustomisableShipPart):
 
     def compute_cost(self) -> float:
         multiplier = 1.0 if self.customisation is None else self.customisation.cost_multiplier
-        return float(BARBETTE_SPECS[self.weapon]['cost']) * multiplier
+        return float(self._specs[self.weapon]['cost']) * multiplier
 
     def compute_power(self) -> float:
         multiplier = 1.0 if self.customisation is None else self.customisation.power_multiplier
-        return float(BARBETTE_SPECS[self.weapon]['power']) * multiplier
+        return float(self._specs[self.weapon]['power']) * multiplier
 
 
 BaySize = Literal['small', 'medium', 'large']
@@ -274,87 +280,85 @@ BayWeapon = Literal[
 PointDefenseKind = Literal['laser', 'gauss']
 PointDefenseRating = Literal[1, 2, 3]
 
-BAY_SIZE_SPECS: dict[BaySize, dict[str, int]] = {
-    'small': {'tons': 50, 'hardpoints': 1, 'crew': 1},
-    'medium': {'tons': 100, 'hardpoints': 1, 'crew': 2},
-    'large': {'tons': 500, 'hardpoints': 5, 'crew': 4},
-}
-
-BAY_WEAPON_SPECS: dict[BayWeapon, dict[BaySize, dict[str, float | int | str]]] = {
-    'fusion_gun': {
-        'small': {'item': 'Small Fusion Gun Bay', 'minimum_tl': 12, 'power': 50, 'cost': 8_000_000},
-        'medium': {'item': 'Medium Fusion Gun Bay', 'minimum_tl': 12, 'power': 80, 'cost': 14_000_000},
-        'large': {'item': 'Large Fusion Gun Bay', 'minimum_tl': 12, 'power': 100, 'cost': 25_000_000},
-    },
-    'ion_cannon': {
-        'small': {'item': 'Small Ion Cannon Bay', 'minimum_tl': 12, 'power': 20, 'cost': 15_000_000},
-        'medium': {'item': 'Medium Ion Cannon Bay', 'minimum_tl': 12, 'power': 30, 'cost': 25_000_000},
-        'large': {'item': 'Large Ion Cannon Bay', 'minimum_tl': 12, 'power': 40, 'cost': 40_000_000},
-    },
-    'mass_driver': {
-        'small': {'item': 'Small Mass Driver Bay', 'minimum_tl': 8, 'power': 15, 'cost': 40_000_000},
-        'medium': {'item': 'Medium Mass Driver Bay', 'minimum_tl': 8, 'power': 25, 'cost': 60_000_000},
-        'large': {'item': 'Large Mass Driver Bay', 'minimum_tl': 8, 'power': 35, 'cost': 80_000_000},
-    },
-    'meson_gun': {
-        'small': {'item': 'Small Meson Gun Bay', 'minimum_tl': 11, 'power': 20, 'cost': 50_000_000},
-        'medium': {'item': 'Medium Meson Gun Bay', 'minimum_tl': 12, 'power': 30, 'cost': 60_000_000},
-        'large': {'item': 'Large Meson Gun Bay', 'minimum_tl': 13, 'power': 120, 'cost': 250_000_000},
-    },
-    'missile': {
-        'small': {'item': 'Small Missile Bay', 'minimum_tl': 7, 'power': 5, 'cost': 12_000_000},
-        'medium': {'item': 'Medium Missile Bay', 'minimum_tl': 7, 'power': 10, 'cost': 20_000_000},
-        'large': {'item': 'Large Missile Bay', 'minimum_tl': 7, 'power': 20, 'cost': 25_000_000},
-    },
-    'orbital_strike_mass_driver': {
-        'small': {'item': 'Small Orbital Strike Mass Driver Bay', 'minimum_tl': 10, 'power': 35, 'cost': 25_000_000},
-        'medium': {'item': 'Medium Orbital Strike Mass Driver Bay', 'minimum_tl': 10, 'power': 50, 'cost': 35_000_000},
-        'large': {'item': 'Large Orbital Strike Mass Driver Bay', 'minimum_tl': 10, 'power': 75, 'cost': 50_000_000},
-    },
-    'orbital_strike_missile': {
-        'small': {'item': 'Small Orbital Strike Missile Bay', 'minimum_tl': 10, 'power': 5, 'cost': 16_000_000},
-        'medium': {'item': 'Medium Orbital Strike Missile Bay', 'minimum_tl': 10, 'power': 15, 'cost': 20_000_000},
-        'large': {'item': 'Large Orbital Strike Missile Bay', 'minimum_tl': 10, 'power': 25, 'cost': 24_000_000},
-    },
-    'particle_beam': {
-        'small': {'item': 'Small Particle Beam Bay', 'minimum_tl': 11, 'power': 30, 'cost': 20_000_000},
-        'medium': {'item': 'Medium Particle Beam Bay', 'minimum_tl': 12, 'power': 50, 'cost': 40_000_000},
-        'large': {'item': 'Large Particle Beam Bay', 'minimum_tl': 13, 'power': 80, 'cost': 60_000_000},
-    },
-    'railgun': {
-        'small': {'item': 'Small Railgun Bay', 'minimum_tl': 10, 'power': 10, 'cost': 30_000_000},
-        'medium': {'item': 'Medium Railgun Bay', 'minimum_tl': 10, 'power': 15, 'cost': 50_000_000},
-        'large': {'item': 'Large Railgun Bay', 'minimum_tl': 10, 'power': 25, 'cost': 70_000_000},
-    },
-    'repulsor': {
-        'small': {'item': 'Small Repulsor Bay', 'minimum_tl': 15, 'power': 50, 'cost': 30_000_000},
-        'medium': {'item': 'Medium Repulsor Bay', 'minimum_tl': 14, 'power': 100, 'cost': 60_000_000},
-        'large': {'item': 'Large Repulsor Bay', 'minimum_tl': 13, 'power': 200, 'cost': 90_000_000},
-    },
-    'torpedo': {
-        'small': {'item': 'Small Torpedo Bay', 'minimum_tl': 7, 'power': 2, 'cost': 3_000_000},
-        'medium': {'item': 'Medium Torpedo Bay', 'minimum_tl': 7, 'power': 5, 'cost': 6_000_000},
-        'large': {'item': 'Large Torpedo Bay', 'minimum_tl': 7, 'power': 10, 'cost': 10_000_000},
-    },
-}
-
 
 class Bay(CustomisableShipPart):
+    _size_specs: ClassVar[dict[BaySize, dict[str, int]]] = dict(
+        small=dict(tons=50, hardpoints=1, crew=1),
+        medium=dict(tons=100, hardpoints=1, crew=2),
+        large=dict(tons=500, hardpoints=5, crew=4),
+    )
+    _weapon_specs: ClassVar[dict[BayWeapon, dict[BaySize, dict[str, float | int | str]]]] = dict(
+        fusion_gun=dict(
+            small=dict(item='Small Fusion Gun Bay', minimum_tl=12, power=50, cost=8_000_000),
+            medium=dict(item='Medium Fusion Gun Bay', minimum_tl=12, power=80, cost=14_000_000),
+            large=dict(item='Large Fusion Gun Bay', minimum_tl=12, power=100, cost=25_000_000),
+        ),
+        ion_cannon=dict(
+            small=dict(item='Small Ion Cannon Bay', minimum_tl=12, power=20, cost=15_000_000),
+            medium=dict(item='Medium Ion Cannon Bay', minimum_tl=12, power=30, cost=25_000_000),
+            large=dict(item='Large Ion Cannon Bay', minimum_tl=12, power=40, cost=40_000_000),
+        ),
+        mass_driver=dict(
+            small=dict(item='Small Mass Driver Bay', minimum_tl=8, power=15, cost=40_000_000),
+            medium=dict(item='Medium Mass Driver Bay', minimum_tl=8, power=25, cost=60_000_000),
+            large=dict(item='Large Mass Driver Bay', minimum_tl=8, power=35, cost=80_000_000),
+        ),
+        meson_gun=dict(
+            small=dict(item='Small Meson Gun Bay', minimum_tl=11, power=20, cost=50_000_000),
+            medium=dict(item='Medium Meson Gun Bay', minimum_tl=12, power=30, cost=60_000_000),
+            large=dict(item='Large Meson Gun Bay', minimum_tl=13, power=120, cost=250_000_000),
+        ),
+        missile=dict(
+            small=dict(item='Small Missile Bay', minimum_tl=7, power=5, cost=12_000_000),
+            medium=dict(item='Medium Missile Bay', minimum_tl=7, power=10, cost=20_000_000),
+            large=dict(item='Large Missile Bay', minimum_tl=7, power=20, cost=25_000_000),
+        ),
+        orbital_strike_mass_driver=dict(
+            small=dict(item='Small Orbital Strike Mass Driver Bay', minimum_tl=10, power=35, cost=25_000_000),
+            medium=dict(item='Medium Orbital Strike Mass Driver Bay', minimum_tl=10, power=50, cost=35_000_000),
+            large=dict(item='Large Orbital Strike Mass Driver Bay', minimum_tl=10, power=75, cost=50_000_000),
+        ),
+        orbital_strike_missile=dict(
+            small=dict(item='Small Orbital Strike Missile Bay', minimum_tl=10, power=5, cost=16_000_000),
+            medium=dict(item='Medium Orbital Strike Missile Bay', minimum_tl=10, power=15, cost=20_000_000),
+            large=dict(item='Large Orbital Strike Missile Bay', minimum_tl=10, power=25, cost=24_000_000),
+        ),
+        particle_beam=dict(
+            small=dict(item='Small Particle Beam Bay', minimum_tl=11, power=30, cost=20_000_000),
+            medium=dict(item='Medium Particle Beam Bay', minimum_tl=12, power=50, cost=40_000_000),
+            large=dict(item='Large Particle Beam Bay', minimum_tl=13, power=80, cost=60_000_000),
+        ),
+        railgun=dict(
+            small=dict(item='Small Railgun Bay', minimum_tl=10, power=10, cost=30_000_000),
+            medium=dict(item='Medium Railgun Bay', minimum_tl=10, power=15, cost=50_000_000),
+            large=dict(item='Large Railgun Bay', minimum_tl=10, power=25, cost=70_000_000),
+        ),
+        repulsor=dict(
+            small=dict(item='Small Repulsor Bay', minimum_tl=15, power=50, cost=30_000_000),
+            medium=dict(item='Medium Repulsor Bay', minimum_tl=14, power=100, cost=60_000_000),
+            large=dict(item='Large Repulsor Bay', minimum_tl=13, power=200, cost=90_000_000),
+        ),
+        torpedo=dict(
+            small=dict(item='Small Torpedo Bay', minimum_tl=7, power=2, cost=3_000_000),
+            medium=dict(item='Medium Torpedo Bay', minimum_tl=7, power=5, cost=6_000_000),
+            large=dict(item='Large Torpedo Bay', minimum_tl=7, power=10, cost=10_000_000),
+        ),
+    )
     allowed_modifications: ClassVar[frozenset[str]] = frozenset({SizeReduction.name})
     size: BaySize
     weapon: BayWeapon
 
     def build_item(self) -> str | None:
-        return str(BAY_WEAPON_SPECS[self.weapon][self.size]['item'])
+        return str(self._weapon_specs[self.weapon][self.size]['item'])
 
     @property
     def minimum_tl(self) -> int:  # type: ignore[override]
-        tl = int(BAY_WEAPON_SPECS[self.weapon][self.size]['minimum_tl'])
+        tl = int(self._weapon_specs[self.weapon][self.size]['minimum_tl'])
         return tl + (0 if self.customisation is None else self.customisation.tl_delta)
 
     @property
     def hardpoints_required(self) -> int:
-        return BAY_SIZE_SPECS[self.size]['hardpoints']
+        return self._size_specs[self.size]['hardpoints']
 
     @property
     def crew_required_commercial(self) -> int:
@@ -362,36 +366,34 @@ class Bay(CustomisableShipPart):
 
     @property
     def crew_required_military(self) -> int:
-        return BAY_SIZE_SPECS[self.size]['crew']
+        return self._size_specs[self.size]['crew']
 
     def compute_tons(self) -> float:
         multiplier = 1.0 if self.customisation is None else self.customisation.tons_multiplier
-        return float(BAY_SIZE_SPECS[self.size]['tons']) * multiplier
+        return float(self._size_specs[self.size]['tons']) * multiplier
 
     def compute_cost(self) -> float:
         multiplier = 1.0 if self.customisation is None else self.customisation.cost_multiplier
-        return float(BAY_WEAPON_SPECS[self.weapon][self.size]['cost']) * multiplier
+        return float(self._weapon_specs[self.weapon][self.size]['cost']) * multiplier
 
     def compute_power(self) -> float:
         multiplier = 1.0 if self.customisation is None else self.customisation.power_multiplier
-        return float(BAY_WEAPON_SPECS[self.weapon][self.size]['power']) * multiplier
-
-
-POINT_DEFENSE_SPECS: dict[PointDefenseKind, dict[PointDefenseRating, dict[str, float | int | str]]] = {
-    'laser': {
-        1: {'item': 'Point Defense Battery: Type I-L', 'minimum_tl': 10, 'power': 10, 'tons': 20, 'cost': 5_000_000},
-        2: {'item': 'Point Defense Battery: Type II-L', 'minimum_tl': 12, 'power': 20, 'tons': 20, 'cost': 10_000_000},
-        3: {'item': 'Point Defense Battery: Type III-L', 'minimum_tl': 14, 'power': 30, 'tons': 20, 'cost': 20_000_000},
-    },
-    'gauss': {
-        1: {'item': 'Point Defense Battery: Type I-G', 'minimum_tl': 10, 'power': 5, 'tons': 20, 'cost': 3_000_000},
-        2: {'item': 'Point Defense Battery: Type II-G', 'minimum_tl': 12, 'power': 15, 'tons': 20, 'cost': 6_000_000},
-        3: {'item': 'Point Defense Battery: Type III-G', 'minimum_tl': 14, 'power': 25, 'tons': 20, 'cost': 10_000_000},
-    },
-}
+        return float(self._weapon_specs[self.weapon][self.size]['power']) * multiplier
 
 
 class PointDefenseBattery(CustomisableShipPart):
+    _specs: ClassVar[dict[PointDefenseKind, dict[PointDefenseRating, dict[str, float | int | str]]]] = dict(
+        laser={
+            1: dict(item='Point Defense Battery: Type I-L', minimum_tl=10, power=10, tons=20, cost=5_000_000),
+            2: dict(item='Point Defense Battery: Type II-L', minimum_tl=12, power=20, tons=20, cost=10_000_000),
+            3: dict(item='Point Defense Battery: Type III-L', minimum_tl=14, power=30, tons=20, cost=20_000_000),
+        },
+        gauss={
+            1: dict(item='Point Defense Battery: Type I-G', minimum_tl=10, power=5, tons=20, cost=3_000_000),
+            2: dict(item='Point Defense Battery: Type II-G', minimum_tl=12, power=15, tons=20, cost=6_000_000),
+            3: dict(item='Point Defense Battery: Type III-G', minimum_tl=14, power=25, tons=20, cost=10_000_000),
+        },
+    )
     allowed_modifications: ClassVar[frozenset[str]] = frozenset(
         {
             SizeReduction.name,
@@ -402,7 +404,7 @@ class PointDefenseBattery(CustomisableShipPart):
     rating: PointDefenseRating
 
     def build_item(self) -> str | None:
-        return str(POINT_DEFENSE_SPECS[self.kind][self.rating]['item'])
+        return str(self._specs[self.kind][self.rating]['item'])
 
     def build_notes(self) -> list[Note]:
         notes = [*super().build_notes()]
@@ -419,7 +421,7 @@ class PointDefenseBattery(CustomisableShipPart):
 
     @property
     def minimum_tl(self) -> int:  # type: ignore[override]
-        tl = int(POINT_DEFENSE_SPECS[self.kind][self.rating]['minimum_tl'])
+        tl = int(self._specs[self.kind][self.rating]['minimum_tl'])
         return tl + (0 if self.customisation is None else self.customisation.tl_delta)
 
     @property
@@ -428,14 +430,14 @@ class PointDefenseBattery(CustomisableShipPart):
 
     def compute_tons(self) -> float:
         multiplier = 1.0 if self.customisation is None else self.customisation.tons_multiplier
-        return float(POINT_DEFENSE_SPECS[self.kind][self.rating]['tons']) * multiplier
+        return float(self._specs[self.kind][self.rating]['tons']) * multiplier
 
     def compute_cost(self) -> float:
         multiplier = 1.0 if self.customisation is None else self.customisation.cost_multiplier
-        return float(POINT_DEFENSE_SPECS[self.kind][self.rating]['cost']) * multiplier
+        return float(self._specs[self.kind][self.rating]['cost']) * multiplier
 
     def compute_power(self) -> float:
-        power = float(POINT_DEFENSE_SPECS[self.kind][self.rating]['power'])
+        power = float(self._specs[self.kind][self.rating]['power'])
         multiplier = 1.0 if self.customisation is None else self.customisation.power_multiplier
         return power * multiplier
 

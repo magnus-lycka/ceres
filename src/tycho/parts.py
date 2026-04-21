@@ -38,17 +38,6 @@ SizeReduction = Modification(name='Size Reduction', advantage=1, tons_delta_perc
 IncreasedSize = Modification(name='Increased Size', disadvantage=1, tons_delta_percent=0.25)
 EnergyEfficient = Modification(name='Energy Efficient', advantage=1, power_multiplier=0.75)
 EnergyInefficient = Modification(name='Energy Inefficient', disadvantage=1, power_multiplier=1.25)
-LongRange = Modification(
-    name='Long Range',
-    advantage=2,
-    info_notes=('Range increased by one band, to a maximum of Very Long',),
-)
-OrbitalRange = Modification(
-    name='Orbital Range',
-    advantage=1,
-    info_notes=('Operational range increased to orbital distances',),
-)
-VeryHighYield = Modification(name='Very High Yield', advantage=2)
 
 
 # ---------------------------------------------------------------------------

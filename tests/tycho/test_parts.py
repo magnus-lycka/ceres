@@ -4,6 +4,7 @@ import pytest
 
 from tycho import parts
 from tycho.base import ShipBase
+from tycho.drives import OrbitalRange
 from tycho.hull import ArmouredBulkhead
 
 
@@ -87,7 +88,7 @@ def test_customisable_part_group_key_differs_for_different_customisations():
 
 
 def test_customisable_part_rejects_disallowed_customisation_on_bind():
-    part = CustomPart(customisation=parts.Advanced(parts.OrbitalRange))
+    part = CustomPart(customisation=parts.Advanced(OrbitalRange))
     part.bind(DummyShip())
     assert ('error', 'Modification not allowed for CustomPart: Orbital Range') in [
         (note.category.value, note.message) for note in part.notes

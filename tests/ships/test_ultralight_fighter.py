@@ -4,10 +4,10 @@ from tycho import armour, hull, ship
 from tycho.bridge import Cockpit, CommandSection
 from tycho.computer import Computer5, ComputerSection
 from tycho.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection
-from tycho.parts import EnergyEfficient, HighTechnology, VeryHighYield
+from tycho.parts import EnergyEfficient, HighTechnology
 from tycho.sensors import CivilianSensors, SensorsSection
 from tycho.storage import FuelSection, OperationFuel
-from tycho.weapons import FixedMount, MountWeapon, WeaponsSection
+from tycho.weapons import FixedMount, MountWeapon, VeryHighYield, WeaponsSection
 
 
 def build_ultralight_fighter() -> ship.Ship:

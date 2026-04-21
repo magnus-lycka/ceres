@@ -14,8 +14,8 @@ from tycho.parts import (
     Prototype,
     SizeReduction,
     VeryAdvanced,
-    VeryHighYield,
 )
+from tycho.weapons import VeryHighYield
 
 
 # ---------------------------------------------------------------------------

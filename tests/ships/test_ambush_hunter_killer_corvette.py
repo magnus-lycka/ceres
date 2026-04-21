@@ -16,7 +16,7 @@ from tycho.sensors import (
 )
 from tycho.storage import FuelProcessor, FuelSection, JumpFuel, OperationFuel
 from tycho.systems import Airlock, BriefingRoom, CommonArea, CrewArmory, MedicalBay, RepairDrones, SystemsSection
-from tycho.weapons import Bay, MountWeapon, Turret, WeaponsSection
+from tycho.weapons import Bay, LongRange, MountWeapon, Turret, WeaponsSection
 
 
 def build_ambush_hunter_killer_corvette() -> ship.Ship:
@@ -26,7 +26,6 @@ def build_ambush_hunter_killer_corvette() -> ship.Ship:
     Not yet modeled from the reference:
     - reinforced hull as its own separate cost row
     - the specific medium-bay/high-yield export combination
-    - long-range pulse-laser turret customisation
     - the full advanced EW / anti-hijack / advanced fire-control software stack
     - high staterooms
     - the exact reference crew panel
@@ -87,7 +86,7 @@ def build_ambush_hunter_killer_corvette() -> ship.Ship:
                 Turret(
                     size='triple',
                     weapons=[
-                        MountWeapon(weapon='pulse_laser'),
+                        MountWeapon(weapon='pulse_laser', customisation=VeryAdvanced(LongRange)),
                         MountWeapon(weapon='pulse_laser'),
                         MountWeapon(weapon='pulse_laser'),
                     ],
@@ -95,7 +94,7 @@ def build_ambush_hunter_killer_corvette() -> ship.Ship:
                 Turret(
                     size='triple',
                     weapons=[
-                        MountWeapon(weapon='pulse_laser'),
+                        MountWeapon(weapon='pulse_laser', customisation=VeryAdvanced(LongRange)),
                         MountWeapon(weapon='pulse_laser'),
                         MountWeapon(weapon='pulse_laser'),
                     ],
@@ -173,7 +172,7 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
     assert corvette.weapons.bays[0].tons == pytest.approx(70.0)
     assert corvette.weapons.bays[0].cost == pytest.approx(60_000_000.0)
     assert corvette.weapons.turrets[0].tons == pytest.approx(1.0)
-    assert corvette.weapons.turrets[0].cost == pytest.approx(4_000_000.0)
+    assert corvette.weapons.turrets[0].cost == pytest.approx(4_250_000.0)
 
     bulkheads = corvette.armoured_bulkhead_parts()
     assert len(bulkheads) == 3
@@ -211,9 +210,9 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
     assert corvette.total_power_load == pytest.approx(427.5)
 
     assert corvette.remaining_usable_tonnage() == pytest.approx(-47.1066666667)
-    assert corvette.production_cost == pytest.approx(394_712_500.0)
-    assert corvette.sales_price_new == pytest.approx(394_712_500.0)
-    assert corvette.expenses.maintenance == pytest.approx(32_893.0)
+    assert corvette.production_cost == pytest.approx(395_212_500.0)
+    assert corvette.sales_price_new == pytest.approx(395_212_500.0)
+    assert corvette.expenses.maintenance == pytest.approx(32_934.0)
 
     assert [(role.role, role.count) for role in corvette.crew_roles] == [
         ('CAPTAIN', 1),

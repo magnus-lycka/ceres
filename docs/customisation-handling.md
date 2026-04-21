@@ -87,11 +87,12 @@ is not customisable.
 ### `Modification` — rename of current `Customisation`
 
 The existing `Customisation` instances (`SizeReduction`, `IncreasedSize`,
-`EnergyEfficient`, `VeryHighYield`, `LimitedRange`, …) are frozen Pydantic models
-describing one property.  Each carries `.advantage` and `.disadvantage` point
-values — most contribute 1 point, but some contribute 2 (`VeryHighYield.advantage
-= 2`, `OrbitalRange.disadvantage = 2`, `Accurate.advantage = 2`).  They also
-carry cost/ton/power multipliers and optional info notes.
+`EnergyEfficient`, and domain-specific ones such as `VeryHighYield` or
+`LimitedRange`) are frozen Pydantic models describing one property. Each
+carries `.advantage` and `.disadvantage` point values — most contribute 1
+point, but some contribute 2 (`VeryHighYield.advantage = 2`,
+`OrbitalRange.disadvantage = 2`, `Accurate.advantage = 2`). They also carry
+cost/ton/power multipliers and optional info notes.
 
 Rename the class `Modification` and update all import sites.  Instance names and
 behaviour are unchanged.

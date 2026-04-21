@@ -11,7 +11,6 @@ from .parts import (
     EnergyInefficient,
     IncreasedSize,
     Modification,
-    OrbitalRange,
     ShipPart,
     SizeReduction,
 )
@@ -23,40 +22,45 @@ LimitedRange = Modification(
     info_notes=('This manoeuvre drive only functions within the 100-diameter limit',),
 )
 
+OrbitalRange = Modification(
+    name='Orbital Range',
+    disadvantage=2,
+    info_notes=('Operational range increased to orbital distances',),
+)
+
 DecreasedFuel = Modification(
     name='Decreased Fuel',
     advantage=1,
     fuel_delta_percent=-0.05,
 )
 
-REACTION_DRIVE_SPECS: dict[int, dict[str, float | int]] = {
-    0: {'tons_percent': 0.01, 'minimum_tl': 7},
-    1: {'tons_percent': 0.02, 'minimum_tl': 7},
-    2: {'tons_percent': 0.04, 'minimum_tl': 7},
-    3: {'tons_percent': 0.06, 'minimum_tl': 7},
-    4: {'tons_percent': 0.08, 'minimum_tl': 8},
-    5: {'tons_percent': 0.10, 'minimum_tl': 8},
-    6: {'tons_percent': 0.12, 'minimum_tl': 8},
-    7: {'tons_percent': 0.14, 'minimum_tl': 9},
-    8: {'tons_percent': 0.16, 'minimum_tl': 9},
-    9: {'tons_percent': 0.18, 'minimum_tl': 9},
-    10: {'tons_percent': 0.20, 'minimum_tl': 10},
-    11: {'tons_percent': 0.22, 'minimum_tl': 10},
-    12: {'tons_percent': 0.24, 'minimum_tl': 10},
-    13: {'tons_percent': 0.26, 'minimum_tl': 11},
-    14: {'tons_percent': 0.28, 'minimum_tl': 11},
-    15: {'tons_percent': 0.30, 'minimum_tl': 11},
-    16: {'tons_percent': 0.32, 'minimum_tl': 12},
-}
-
 
 class ReactionDrive(ShipPart):
+    _specs: ClassVar[dict[int, dict[str, float | int]]] = {
+        0: dict(tons_percent=0.01, minimum_tl=7),
+        1: dict(tons_percent=0.02, minimum_tl=7),
+        2: dict(tons_percent=0.04, minimum_tl=7),
+        3: dict(tons_percent=0.06, minimum_tl=7),
+        4: dict(tons_percent=0.08, minimum_tl=8),
+        5: dict(tons_percent=0.10, minimum_tl=8),
+        6: dict(tons_percent=0.12, minimum_tl=8),
+        7: dict(tons_percent=0.14, minimum_tl=9),
+        8: dict(tons_percent=0.16, minimum_tl=9),
+        9: dict(tons_percent=0.18, minimum_tl=9),
+        10: dict(tons_percent=0.20, minimum_tl=10),
+        11: dict(tons_percent=0.22, minimum_tl=10),
+        12: dict(tons_percent=0.24, minimum_tl=10),
+        13: dict(tons_percent=0.26, minimum_tl=11),
+        14: dict(tons_percent=0.28, minimum_tl=11),
+        15: dict(tons_percent=0.30, minimum_tl=11),
+        16: dict(tons_percent=0.32, minimum_tl=12),
+    }
     rating: int
     high_burn_thruster: bool = False
 
     @property
     def minimum_tl(self) -> int:
-        return int(REACTION_DRIVE_SPECS[self.rating]['minimum_tl'])
+        return int(self._specs[self.rating]['minimum_tl'])
 
     def build_item(self) -> str | None:
         if self.high_burn_thruster:
@@ -67,7 +71,7 @@ class ReactionDrive(ShipPart):
         return 'R-Drive'
 
     def compute_tons(self) -> float:
-        tons_percent = float(REACTION_DRIVE_SPECS[self.rating]['tons_percent'])
+        tons_percent = float(self._specs[self.rating]['tons_percent'])
         return self.ship.displacement * tons_percent
 
     def compute_cost(self) -> float:
@@ -82,7 +86,7 @@ class ReactionDrive(ShipPart):
         return [Note(category=NoteCategory.INFO, message='No inertial compensation above manoeuvre-drive thrust')]
 
     def validate_tl(self) -> None:
-        if self.rating not in REACTION_DRIVE_SPECS:
+        if self.rating not in self._specs:
             self.error(f'Unsupported reaction drive rating {self.rating}')
             return
         super().validate_tl()

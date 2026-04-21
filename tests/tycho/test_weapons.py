@@ -2,15 +2,17 @@ import pytest
 
 from tycho import hull, ship
 from tycho.base import ShipBase
-from tycho.parts import Advanced, EnergyEfficient, HighTechnology, SizeReduction, VeryAdvanced, VeryHighYield
+from tycho.parts import Advanced, EnergyEfficient, HighTechnology, SizeReduction, VeryAdvanced
 from tycho.weapons import (
     Barbette,
     Bay,
     FixedMount,
+    LongRange,
     MissileStorage,
     MountWeapon,
     PointDefenseBattery,
     Turret,
+    VeryHighYield,
     WeaponsSection,
 )
 
@@ -147,6 +149,21 @@ def test_mount_weapon_very_advanced_customisation_note():
     note = w.customisation_note()
     assert note is not None
     assert note.message == 'Very Advanced: Very High Yield'
+
+
+def test_mount_weapon_long_range_customisation_note():
+    w = MountWeapon(weapon='pulse_laser', customisation=VeryAdvanced(LongRange))
+    note = w.customisation_note()
+    assert note is not None
+    assert note.message == 'Very Advanced: Long Range'
+
+
+def test_mount_weapon_long_range_is_allowed():
+    w = MountWeapon(weapon='pulse_laser', customisation=VeryAdvanced(LongRange))
+    assert ('error', 'Modification not allowed for MountWeapon: Long Range') not in [
+        (note.category.value, note.message) for note in w.notes
+    ]
+    assert w.cost_modifier == pytest.approx(1.25)
 
 
 def test_fixed_mount_single_weapon_notes_include_customisation_note():
