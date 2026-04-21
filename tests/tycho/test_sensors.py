@@ -34,7 +34,7 @@ def test_basic_sensors_notes_describe_suite_and_dm():
     s.bind(DummyOwner(12, 100))
     assert [(note.category.value, note.message) for note in s.notes] == [
         ('item', 'Basic Sensors'),
-        ('info', 'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI)'),
+        ('info', 'Features: Passive optical and thermal sensors, Radar, Lidar'),
         ('info', 'DM -4 to Electronics (comms) and Electronics (sensors) checks'),
     ]
 
@@ -65,7 +65,7 @@ def test_civilian_grade_notes_describe_suite_and_dm():
     s.bind(DummyOwner(12, 6))
     assert [(note.category.value, note.message) for note in s.notes] == [
         ('item', 'Civilian Grade Sensors'),
-        ('info', 'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI)'),
+        ('info', 'Features: Passive optical and thermal sensors, Radar, Lidar'),
         ('info', 'DM -2 to Electronics (comms) and Electronics (sensors) checks'),
     ]
 
@@ -77,7 +77,7 @@ def test_military_grade_notes_describe_suite_and_dm():
         ('item', 'Military Grade Sensors'),
         (
             'info',
-            'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI), '
+            'Features: Passive optical and thermal sensors, Radar, Lidar, '
             'Jammers, EMCON',
         ),
         ('info', 'DM +0 to Electronics (comms) and Electronics (sensors) checks'),
@@ -91,8 +91,8 @@ def test_improved_sensors_at_tl13_include_expected_features():
         ('item', 'Improved Sensors'),
         (
             'info',
-            'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI), '
-            'Densitometer (LPI), Jammers, EMCON',
+            'Features: Passive optical and thermal sensors, Radar, Lidar, '
+            'Densitometer, Jammers, EMCON',
         ),
         ('info', 'DM +1 to Electronics (comms) and Electronics (sensors) checks'),
     ]
@@ -106,23 +106,13 @@ def test_basic_sensors_at_tl8_have_no_lpi_or_elpi():
     ]
 
 
-def test_improved_sensors_at_tl12_do_not_yet_upgrade_densitometer_to_lpi():
+def test_improved_sensors_at_tl12_do_not_upgrade_densitometer_by_default():
     s = ImprovedSensors()
     s.bind(DummyOwner(12, 100))
     assert (
         'info',
-        'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI), '
+        'Features: Passive optical and thermal sensors, Radar, Lidar, '
         'Densitometer, Jammers, EMCON',
-    ) in [(note.category.value, note.message) for note in s.notes]
-
-
-def test_improved_sensors_at_tl15_upgrade_densitometer_to_elpi():
-    s = ImprovedSensors()
-    s.bind(DummyOwner(15, 100))
-    assert (
-        'info',
-        'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI), '
-        'Densitometer (ELPI), Jammers, EMCON',
     ) in [(note.category.value, note.message) for note in s.notes]
 
 
@@ -133,11 +123,93 @@ def test_advanced_sensors_include_neural_activity_sensor_and_extreme_emissions_c
         ('item', 'Advanced Sensors'),
         (
             'info',
-            'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI), '
-            'Densitometer (ELPI), Neural Activity Sensor (passive only), Jammers, '
+            'Features: Passive optical and thermal sensors, Radar, Lidar, '
+            'Densitometer, Neural Activity Sensor (passive only), Jammers, '
             'Extreme Emissions Control',
         ),
         ('info', 'DM +2 to Electronics (comms) and Electronics (sensors) checks'),
+    ]
+
+
+def test_basic_sensors_lpi_double_cost_and_note():
+    s = BasicSensors(low_intercept='LPI')
+    s.bind(DummyOwner(9, 100))
+    assert s.cost == 0
+    assert ('info', 'Features: Passive optical and thermal sensors, Radar (LPI), Lidar (LPI)') in [
+        (note.category.value, note.message) for note in s.notes
+    ]
+    assert ('info', 'DM -1 to detect the ship by sensor emissions while using low-intercept mode') in [
+        (note.category.value, note.message) for note in s.notes
+    ]
+
+
+def test_civilian_sensors_lpi_double_cost():
+    s = CivilianSensors(low_intercept='LPI')
+    s.bind(DummyOwner(12, 100))
+    assert s.cost == 6_000_000
+
+
+def test_civilian_sensors_elpi_double_cost_and_note():
+    s = CivilianSensors(low_intercept='ELPI')
+    s.bind(DummyOwner(10, 100))
+    assert s.cost == 6_000_000
+    assert ('info', 'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI)') in [
+        (note.category.value, note.message) for note in s.notes
+    ]
+    assert ('info', 'DM -3 to detect the ship by sensor emissions while using low-intercept mode') in [
+        (note.category.value, note.message) for note in s.notes
+    ]
+
+
+def test_basic_sensors_lpi_tl_too_low():
+    s = BasicSensors(low_intercept='LPI')
+    s.bind(DummyOwner(8, 100))
+    assert ('error', 'LPI requires TL9 for installed radar/lidar') in [
+        (note.category.value, note.message) for note in s.notes
+    ]
+
+
+def test_basic_sensors_elpi_tl_too_low():
+    s = BasicSensors(low_intercept='ELPI')
+    s.bind(DummyOwner(9, 100))
+    assert ('error', 'ELPI requires TL10 for installed radar/lidar') in [
+        (note.category.value, note.message) for note in s.notes
+    ]
+
+
+def test_improved_sensors_lpi_upgrade_radar_lidar_and_densitometer_when_available():
+    s = ImprovedSensors(low_intercept='LPI')
+    s.bind(DummyOwner(13, 100))
+    assert (
+        'info',
+        'Features: Passive optical and thermal sensors, Radar (LPI), Lidar (LPI), '
+        'Densitometer (LPI), Jammers, EMCON',
+    ) in [(note.category.value, note.message) for note in s.notes]
+
+
+def test_improved_sensors_elpi_omits_densitometer_when_unavailable():
+    s = ImprovedSensors(low_intercept='ELPI')
+    s.bind(DummyOwner(13, 100))
+    assert (
+        'info',
+        'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI), '
+        'Jammers, EMCON',
+    ) in [(note.category.value, note.message) for note in s.notes]
+    assert ('info', 'Densitometer is unavailable in ELPI mode at TL13') in [
+        (note.category.value, note.message) for note in s.notes
+    ]
+
+
+def test_advanced_sensors_elpi_includes_densitometer_but_not_neural_activity_sensor():
+    s = AdvancedSensors(low_intercept='ELPI')
+    s.bind(DummyOwner(15, 100))
+    assert (
+        'info',
+        'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI), '
+        'Densitometer (ELPI), Jammers, Extreme Emissions Control',
+    ) in [(note.category.value, note.message) for note in s.notes]
+    assert ('info', 'Neural Activity Sensor is unavailable in ELPI mode') in [
+        (note.category.value, note.message) for note in s.notes
     ]
 
 

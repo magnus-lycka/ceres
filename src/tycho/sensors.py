@@ -6,23 +6,33 @@ from .base import CeresModel, Note, NoteCategory, ShipBase
 from .parts import ShipPart
 from .spec import ShipSpec, SpecSection
 
+LowInterceptMode = Literal['NONE', 'LPI', 'ELPI']
 
-def _sensor_feature(sensor: str, *, effective_tl: int) -> str:
+
+def _intercept_available(sensor: str, mode: LowInterceptMode, *, tl: int) -> bool:
+    if mode == 'NONE':
+        return True
     if sensor in ('Radar', 'Lidar'):
-        if effective_tl >= 10:
-            return f'{sensor} (ELPI)'
-        if effective_tl >= 9:
-            return f'{sensor} (LPI)'
-        return sensor
+        return tl >= (9 if mode == 'LPI' else 10)
     if sensor == 'Densitometer':
-        if effective_tl >= 15:
-            return 'Densitometer (ELPI)'
-        if effective_tl >= 13:
-            return 'Densitometer (LPI)'
-        return 'Densitometer'
+        return tl >= (13 if mode == 'LPI' else 15)
     if sensor == 'Neural Activity Sensor':
-        return 'Neural Activity Sensor (passive only)'
-    return sensor
+        return False
+    return False
+
+
+def _sensor_feature(sensor: str, *, low_intercept: LowInterceptMode, tl: int) -> str | None:
+    if sensor == 'Neural Activity Sensor':
+        if low_intercept == 'NONE':
+            return 'Neural Activity Sensor (passive only)'
+        return None
+    if low_intercept == 'NONE':
+        return sensor
+    if _intercept_available(sensor, low_intercept, tl=tl):
+        return f'{sensor} ({low_intercept})'
+    if sensor in ('Radar', 'Lidar'):
+        return sensor
+    return None
 
 
 def _sensor_package_notes(
@@ -31,9 +41,17 @@ def _sensor_package_notes(
     dm: str,
     package_capabilities: tuple[str, ...] = (),
     effective_tl: int,
+    low_intercept: LowInterceptMode,
 ) -> list[Note]:
     features = ['Passive optical and thermal sensors']
-    features.extend(_sensor_feature(sensor, effective_tl=effective_tl) for sensor in suite)
+    unavailable: list[str] = []
+    for sensor in suite:
+        feature = _sensor_feature(sensor, low_intercept=low_intercept, tl=effective_tl)
+        if feature is not None:
+            features.append(feature)
+            continue
+        if low_intercept != 'NONE':
+            unavailable.append(sensor)
     features.extend(package_capabilities)
     notes = [
         Note(category=NoteCategory.INFO, message=f'Features: {", ".join(features)}'),
@@ -42,6 +60,26 @@ def _sensor_package_notes(
             message=f'DM {dm} to Electronics (comms) and Electronics (sensors) checks',
         ),
     ]
+    if low_intercept == 'LPI':
+        notes.append(
+            Note(
+                category=NoteCategory.INFO,
+                message='DM -1 to detect the ship by sensor emissions while using low-intercept mode',
+            )
+        )
+    if low_intercept == 'ELPI':
+        notes.append(
+            Note(
+                category=NoteCategory.INFO,
+                message='DM -3 to detect the ship by sensor emissions while using low-intercept mode',
+            )
+        )
+    for sensor in unavailable:
+        if sensor == 'Neural Activity Sensor':
+            message = f'{sensor} is unavailable in {low_intercept} mode'
+        else:
+            message = f'{sensor} is unavailable in {low_intercept} mode at TL{effective_tl}'
+        notes.append(Note(category=NoteCategory.INFO, message=message))
     return notes
 
 
@@ -53,6 +91,8 @@ def _note_tl(part: ShipPart) -> int:
 
 
 class SensorPackage(ShipPart):
+    low_intercept: LowInterceptMode = 'NONE'
+
     @property
     def effective_tl(self) -> int:
         return self.ship_tl
@@ -60,6 +100,10 @@ class SensorPackage(ShipPart):
     def validate_tl(self) -> None:
         if self.ship_tl < self.minimum_tl:
             self.error(f'Requires TL{self.minimum_tl}, ship is TL{self.ship_tl}')
+        if self.low_intercept == 'LPI' and self.ship_tl < 9:
+            self.error('LPI requires TL9 for installed radar/lidar')
+        if self.low_intercept == 'ELPI' and self.ship_tl < 10:
+            self.error('ELPI requires TL10 for installed radar/lidar')
 
     def bind(self, owner: ShipBase) -> None:
         super().bind(owner)
@@ -79,7 +123,12 @@ class BasicSensors(SensorPackage):
         return self.description
 
     def build_notes(self) -> list[Note]:
-        return _sensor_package_notes(suite=('Radar', 'Lidar'), dm='-4', effective_tl=_note_tl(self))
+        return _sensor_package_notes(
+            suite=('Radar', 'Lidar'),
+            dm='-4',
+            effective_tl=_note_tl(self),
+            low_intercept=self.low_intercept,
+        )
 
     def compute_tons(self) -> float:
         return 0.0
@@ -99,13 +148,18 @@ class CivilianSensors(SensorPackage):
         return self.description
 
     def build_notes(self) -> list[Note]:
-        return _sensor_package_notes(suite=('Radar', 'Lidar'), dm='-2', effective_tl=_note_tl(self))
+        return _sensor_package_notes(
+            suite=('Radar', 'Lidar'),
+            dm='-2',
+            effective_tl=_note_tl(self),
+            low_intercept=self.low_intercept,
+        )
 
     def compute_tons(self) -> float:
         return 1.0
 
     def compute_cost(self) -> float:
-        return 3_000_000.0
+        return 6_000_000.0 if self.low_intercept != 'NONE' else 3_000_000.0
 
     def compute_power(self) -> float:
         return 1.0
@@ -124,13 +178,14 @@ class MilitarySensors(SensorPackage):
             dm='+0',
             package_capabilities=('Jammers', 'EMCON'),
             effective_tl=_note_tl(self),
+            low_intercept=self.low_intercept,
         )
 
     def compute_tons(self) -> float:
         return 2.0
 
     def compute_cost(self) -> float:
-        return 4_100_000.0
+        return 8_200_000.0 if self.low_intercept != 'NONE' else 4_100_000.0
 
     def compute_power(self) -> float:
         return 2.0
@@ -149,13 +204,14 @@ class ImprovedSensors(SensorPackage):
             dm='+1',
             package_capabilities=('Jammers', 'EMCON'),
             effective_tl=_note_tl(self),
+            low_intercept=self.low_intercept,
         )
 
     def compute_tons(self) -> float:
         return 3.0
 
     def compute_cost(self) -> float:
-        return 4_300_000.0
+        return 8_600_000.0 if self.low_intercept != 'NONE' else 4_300_000.0
 
     def compute_power(self) -> float:
         return 3.0
@@ -174,13 +230,14 @@ class AdvancedSensors(SensorPackage):
             dm='+2',
             package_capabilities=('Jammers', 'Extreme Emissions Control'),
             effective_tl=_note_tl(self),
+            low_intercept=self.low_intercept,
         )
 
     def compute_tons(self) -> float:
         return 5.0
 
     def compute_cost(self) -> float:
-        return 5_300_000.0
+        return 10_600_000.0 if self.low_intercept != 'NONE' else 5_300_000.0
 
     def compute_power(self) -> float:
         return 6.0

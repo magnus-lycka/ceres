@@ -117,9 +117,8 @@ JTAS #4 also reinforces that:
   not the same thing as invisibility
 - `Low-Probability-of-Intercept (LPI)` and
   `Extremely Low-Probability-of-Intercept (ELPI)` reduce the probability that
-  active sensor emissions reveal the ship, and Ceres treats them as included
-  functionality when the installed sensor type and its effective TL are high
-  enough
+  active sensor emissions reveal the ship, but they are explicit sensor
+  modifications rather than automatic benefits of higher TL
 
 These are not the same thing as hull stealth, though they overlap in effect.
 
@@ -216,7 +215,7 @@ as:
 - sensor/comms DM
 - jammers / EMCON capability
 - densitometer or neural activity sensor presence
-- LPI / ELPI availability, where relevant
+- LPI / ELPI upgrades, where relevant
 
 The renderer can then decide whether those notes appear as:
 
@@ -233,9 +232,10 @@ The renderer can then decide whether those notes appear as:
   sensor suites, and `Extreme Emissions Control` as built into the Advanced
   suite.
 - `Low-Probability-of-Intercept (LPI)` and
-  `Extremely Low-Probability-of-Intercept (ELPI)` are treated as functionality
-  that comes with a sensor type when its effective TL is high enough. They are
-  not tracked in Ceres as separate purchased add-ons.
+  `Extremely Low-Probability-of-Intercept (ELPI)` are treated as optional
+  purchased upgrades that double the sensor suite cost. Availability depends on
+  the installed sensor types and TL, and some advanced sensors may be
+  unavailable while using low-intercept mode.
 - Sensor-screen effects belong with sandcaster ammunition, not as a generic
   "electronic warfare" abstraction in the sensor suite.
 
