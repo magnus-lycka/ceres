@@ -232,4 +232,6 @@ But maybe markers like this are best done by allowing arbitrary free tags on shi
 # Blurbs, pics and plans.
 
 We want to be able to attach random, somewhat formatted text to be attached to ship
-designs. I 
+designs. We'd use markdown for that.
+
+Eventually we'll also want to provide illustrations and floor plans/drwaings.

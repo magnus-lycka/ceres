@@ -1,5 +1,7 @@
 import math
-from typing import ClassVar
+from typing import ClassVar, Literal
+
+from pydantic import field_validator
 
 from .base import CeresModel
 from .crew import effective_crew_roles
@@ -9,13 +11,61 @@ from .systems import CommonArea
 
 
 class Staterooms(ShipPart):
-    tons_per_stateroom: ClassVar[float] = 4.0
-    cost_per_stateroom: ClassVar[float] = 500_000.0
-    life_support_per_stateroom: ClassVar[float] = 1_000.0
-    occupants_per_stateroom: ClassVar[int] = 2
-    life_support_per_occupant: ClassVar[float] = 1_000.0
-
+    kind: Literal['standard', 'high'] = 'standard'
     count: int
+    _specs: ClassVar[dict[str, dict[str, float | int]]] = {
+        'standard': dict(
+            tons_per_stateroom=4.0,
+            cost_per_stateroom=500_000.0,
+            life_support_per_stateroom=1_000.0,
+            occupants_per_stateroom=2,
+            life_support_per_occupant=1_000.0,
+        ),
+        'high': dict(
+            tons_per_stateroom=6.0,
+            cost_per_stateroom=800_000.0,
+            life_support_per_stateroom=1_000.0,
+            occupants_per_stateroom=2,
+            life_support_per_occupant=1_000.0,
+        ),
+    }
+
+    def __init__(self, count: int | None = None, /, **data):
+        if count is not None and 'count' not in data:
+            data['count'] = count
+        super().__init__(**data)
+
+    @field_validator('kind')
+    @classmethod
+    def validate_kind(cls, value: str) -> str:
+        if value not in cls._specs:
+            allowed = ', '.join(sorted(cls._specs))
+            raise ValueError(f'Unsupported Staterooms kind {value!r}; expected one of: {allowed}')
+        return value
+
+    @property
+    def tons_per_stateroom(self) -> float:
+        return float(self._specs[self.kind]['tons_per_stateroom'])
+
+    @property
+    def cost_per_stateroom(self) -> float:
+        return float(self._specs[self.kind]['cost_per_stateroom'])
+
+    @property
+    def life_support_per_stateroom(self) -> float:
+        return float(self._specs[self.kind]['life_support_per_stateroom'])
+
+    @property
+    def occupants_per_stateroom(self) -> int:
+        return int(self._specs[self.kind]['occupants_per_stateroom'])
+
+    @property
+    def life_support_per_occupant(self) -> float:
+        return float(self._specs[self.kind]['life_support_per_occupant'])
+
+    @property
+    def label(self) -> str:
+        return 'Stateroom' if self.kind == 'standard' else 'High Stateroom'
 
     def compute_tons(self) -> float:
         return self.count * self.tons_per_stateroom
@@ -46,6 +96,11 @@ class LowBerths(ShipPart):
 
     count: int
 
+    def __init__(self, count: int | None = None, /, **data):
+        if count is not None and 'count' not in data:
+            data['count'] = count
+        super().__init__(**data)
+
     def compute_tons(self) -> float:
         return self.count * self.tons_per_berth
 
@@ -57,26 +112,42 @@ class LowBerths(ShipPart):
 
 
 class AdvancedEntertainmentSystem(ShipPart):
-    quality: str
+    minimum_tl: ClassVar[int] = 5
+    minimum_cost: ClassVar[float] = 100.0
+    maximum_cost: ClassVar[float] = 10_000.0
+    cost: float
+
+    def __init__(self, cost: float | None = None, /, **data):
+        if cost is not None and 'cost' not in data:
+            data['cost'] = cost
+        super().__init__(**data)
+
+    @field_validator('cost')
+    @classmethod
+    def validate_cost(cls, value: float) -> float:
+        if not (cls.minimum_cost <= value <= cls.maximum_cost):
+            raise ValueError(
+                f'Advanced Entertainment System cost must be between '
+                f'{cls.minimum_cost:.0f} and {cls.maximum_cost:.0f} credits'
+            )
+        return value
 
     def build_item(self) -> str | None:
-        return f'{self.quality.capitalize()} Advanced Entertainment System'
+        return 'Advanced Entertainment System'
 
     def compute_tons(self) -> float:
         return 0.0
-
-    def compute_cost(self) -> float:
-        quality_costs = {
-            'cheap': 500.0,
-            'adequate': 1_250.0,
-        }
-        return quality_costs[self.quality]
 
 
 class CabinSpace(ShipPart):
     tons: float
     tons_per_passenger: ClassVar[float] = 1.5
     life_support_per_ton: ClassVar[float] = 250.0
+
+    def __init__(self, tons: float | None = None, /, **data):
+        if tons is not None and 'tons' not in data:
+            data['tons'] = tons
+        super().__init__(**data)
 
     def build_item(self) -> str | None:
         return 'Cabin Space'
@@ -185,11 +256,12 @@ class HabitationSection(CeresModel):
 
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
         if self.staterooms is not None:
+            item = self.staterooms.label
             spec.add_row(
                 ship._spec_row_for_part(
                     SpecSection.HABITATION,
                     self.staterooms,
-                    item='Staterooms' if self.staterooms.count > 1 else 'Stateroom',
+                    item=f'{item}s' if self.staterooms.count > 1 else item,
                 )
             )
             spec.rows_for_section(SpecSection.HABITATION)[-1].quantity = (

@@ -14,72 +14,90 @@ class DummyOwner(ShipBase):
 
 
 def test_staterooms_tons():
-    s = Staterooms(count=4)
+    s = Staterooms(4)
     s.bind(DummyOwner(12, 100))
     assert s.tons == pytest.approx(16.0)
 
 
 def test_staterooms_cost():
-    s = Staterooms(count=4)
+    s = Staterooms(4)
     s.bind(DummyOwner(12, 100))
     assert s.cost == 2_000_000
 
 
 def test_staterooms_power_zero():
-    s = Staterooms(count=4)
+    s = Staterooms(4)
     s.bind(DummyOwner(12, 100))
     assert s.power == 0
 
 
 def test_staterooms_life_support_uses_full_occupancy_formula():
-    s = Staterooms(count=4)
+    s = Staterooms(4)
     s.bind(DummyOwner(12, 100))
     assert s.occupancy == 8
     assert s.life_support_cost == 12_000
 
 
 def test_low_berths_tons():
-    lb = LowBerths(count=20)
+    lb = LowBerths(20)
     lb.bind(DummyOwner(12, 200))
     assert lb.tons == pytest.approx(10.0)
 
 
 def test_low_berths_cost():
-    lb = LowBerths(count=20)
+    lb = LowBerths(20)
     lb.bind(DummyOwner(12, 200))
     assert lb.cost == 1_000_000
 
 
 def test_low_berths_power():
-    assert LowBerths(count=20).compute_power() == 2  # ceil(20/10)
-    assert LowBerths(count=1).compute_power() == 1   # ceil(1/10)
-    assert LowBerths(count=10).compute_power() == 1
-    assert LowBerths(count=11).compute_power() == 2
+    assert LowBerths(20).compute_power() == 2  # ceil(20/10)
+    assert LowBerths(1).compute_power() == 1   # ceil(1/10)
+    assert LowBerths(10).compute_power() == 1
+    assert LowBerths(11).compute_power() == 2
 
 
-def test_cheap_advanced_entertainment_system_cost():
-    system = AdvancedEntertainmentSystem(quality='cheap')
+def test_advanced_entertainment_system_cost():
+    system = AdvancedEntertainmentSystem(500)
     system.bind(DummyOwner(12, 100))
     assert system.tons == 0
     assert system.cost == 500.0
 
 
+def test_advanced_entertainment_system_requires_cost_in_allowed_range():
+    with pytest.raises(ValueError, match='between 100 and 10000 credits'):
+        AdvancedEntertainmentSystem(99)
+
+
 def test_cabin_space_cost():
-    cabin = CabinSpace(tons=15.0)
+    cabin = CabinSpace(15.0)
     cabin.bind(DummyOwner(12, 100))
     assert cabin.cost == 750_000.0
 
 
 def test_cabin_space_passenger_capacity():
-    cabin = CabinSpace(tons=15.0)
+    cabin = CabinSpace(15.0)
     cabin.bind(DummyOwner(12, 100))
     assert cabin.passenger_capacity == 10
 
 
 def test_cabin_space_fixed_life_support_cost():
-    cabin = CabinSpace(tons=15.0)
+    cabin = CabinSpace(15.0)
     cabin.bind(DummyOwner(12, 100))
     assert cabin.fixed_life_support_cost == 3_750.0
+
+
+def test_high_stateroom_values():
+    s = Staterooms(1, kind='high')
+    s.bind(DummyOwner(12, 100))
+    assert s.label == 'High Stateroom'
+    assert s.tons == pytest.approx(6.0)
+    assert s.cost == pytest.approx(800_000.0)
+
+
+def test_staterooms_reject_unknown_kind():
+    with pytest.raises(ValueError, match="Input should be 'standard' or 'high'"):
+        Staterooms(1, kind='luxury')
 
 
 def test_habitation_default_passenger_vector_uses_unused_staterooms_and_low_berths():

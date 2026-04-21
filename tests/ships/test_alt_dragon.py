@@ -118,7 +118,7 @@ def build_alt_dragon() -> ship.Ship:
             staterooms=Staterooms(count=4),
             cabin_space=CabinSpace(tons=15.0),
             common_area=CommonArea(tons=10.0),
-            entertainment=AdvancedEntertainmentSystem(quality='adequate'),
+            entertainment=AdvancedEntertainmentSystem(1_250),
         ),
     )
 

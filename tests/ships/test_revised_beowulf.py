@@ -51,7 +51,7 @@ def build_revised_beowulf() -> ship.Ship:
             staterooms=Staterooms(count=10),
             low_berths=LowBerths(count=20),
             common_area=CommonArea(tons=10.0),
-            entertainment=AdvancedEntertainmentSystem(quality='adequate'),
+            entertainment=AdvancedEntertainmentSystem(1_250),
         ),
         cargo=CargoSection(cargo_holds=[CargoHold(tons=67.5, crane=CargoCrane())]),
     )

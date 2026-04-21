@@ -107,7 +107,7 @@ def build_revised_dragon() -> ship.Ship:
         habitation=HabitationSection(
             staterooms=Staterooms(count=10),
             common_area=CommonArea(tons=10.0),
-            entertainment=AdvancedEntertainmentSystem(quality='cheap'),
+            entertainment=AdvancedEntertainmentSystem(500),
         ),
     )
 
