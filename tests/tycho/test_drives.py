@@ -3,6 +3,7 @@ import pytest
 from tycho import hull, ship
 from tycho.base import ShipBase
 from tycho.drives import (
+    DecreasedFuel,
     DriveSection,
     EmergencyPowerSystem,
     FusionPlantTL8,
@@ -23,8 +24,8 @@ from tycho.drives import (
     PowerSection,
     ReactionDrive,
 )
-from tycho.parts import Advanced, Budget, IncreasedSize, SizeReduction
-from tycho.storage import FuelSection, OperationFuel, ReactionFuel
+from tycho.parts import Advanced, Budget, IncreasedSize, SizeReduction, VeryAdvanced
+from tycho.storage import FuelSection, JumpFuel, OperationFuel, ReactionFuel
 
 
 class DummyOwner(ShipBase):
@@ -54,6 +55,28 @@ def test_jump_drive_tons_cost_tl(cls, rating, tl, pct):
     assert d.rating == rating
     assert float(d.tons) == pytest.approx(expected_tons)
     assert float(d.cost) == pytest.approx(expected_tons * 1_500_000)
+
+
+def test_jump_drive_with_decreased_fuel_x2_changes_cost_and_required_tl():
+    d = JumpDrive2(customisation=VeryAdvanced(DecreasedFuel, DecreasedFuel))
+    d.bind(DummyOwner(15, 450))
+    assert d.effective_tl == 13
+    assert float(d.tons) == pytest.approx(27.5)
+    assert float(d.cost) == pytest.approx(51_562_500.0)
+    assert float(d.power) == pytest.approx(90.0)
+
+
+def test_jump_fuel_respects_decreased_fuel_additively():
+    my_ship = ship.Ship(
+        tl=15,
+        displacement=450,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        drives=DriveSection(jump_drive=JumpDrive2(customisation=VeryAdvanced(DecreasedFuel, DecreasedFuel))),
+        fuel=FuelSection(jump_fuel=JumpFuel(parsecs=2)),
+    )
+    assert my_ship.fuel is not None
+    assert my_ship.fuel.jump_fuel is not None
+    assert my_ship.fuel.jump_fuel.tons == pytest.approx(81.0)
 
 
 # --- MDrive ---

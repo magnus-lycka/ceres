@@ -23,6 +23,12 @@ LimitedRange = Modification(
     info_notes=('This manoeuvre drive only functions within the 100-diameter limit',),
 )
 
+DecreasedFuel = Modification(
+    name='Decreased Fuel',
+    advantage=1,
+    fuel_delta_percent=-0.05,
+)
+
 REACTION_DRIVE_SPECS: dict[int, dict[str, float | int]] = {
     0: {'tons_percent': 0.01, 'minimum_tl': 7},
     1: {'tons_percent': 0.02, 'minimum_tl': 7},
@@ -201,10 +207,17 @@ class MDrive11(MDrive):
     tons_percent = 0.11
 
 
-class JumpDrive(ShipPart):
+class JumpDrive(CustomisableShipPart):
     rating: int
     minimum_tl: ClassVar[int]
     tons_percent: ClassVar[float]
+    allowed_modifications: ClassVar[frozenset[str]] = frozenset(
+        {
+            DecreasedFuel.name,
+            EnergyEfficient.name,
+            SizeReduction.name,
+        }
+    )
 
     def build_item(self) -> str | None:
         return f'Jump {self.rating}'
@@ -212,14 +225,28 @@ class JumpDrive(ShipPart):
     def bulkhead_label(self) -> str:
         return 'Jump Drive'
 
+    @property
+    def effective_tl(self) -> int:
+        return self.minimum_tl + (0 if self.customisation is None else self.customisation.tl_delta)
+
+    def validate_tl(self) -> None:
+        if self.ship_tl < self.effective_tl:
+            self.error(f'Requires TL{self.effective_tl}, ship is TL{self.ship_tl}')
+
     def compute_tons(self) -> float:
-        return self.ship.displacement * self.tons_percent + 5
+        base_tons = self.ship.displacement * self.tons_percent + 5
+        multiplier = 1.0 if self.customisation is None else self.customisation.tons_multiplier
+        return base_tons * multiplier
 
     def compute_cost(self) -> float:
-        return self.compute_tons() * 1_500_000
+        base_cost = (self.ship.displacement * self.tons_percent + 5) * 1_500_000
+        multiplier = 1.0 if self.customisation is None else self.customisation.cost_multiplier
+        return base_cost * multiplier
 
     def compute_power(self) -> float:
-        return float(math.ceil(0.1 * self.ship.displacement * self.rating))
+        base_power = float(math.ceil(0.1 * self.ship.displacement * self.rating))
+        multiplier = 1.0 if self.customisation is None else self.customisation.power_multiplier
+        return base_power * multiplier
 
 
 class JumpDrive1(JumpDrive):

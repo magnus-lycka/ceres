@@ -97,7 +97,7 @@ def test_military_cargo_note_shows_maximum_stores_for_100_days():
         hull=hull.Hull(configuration=hull.standard_hull),
     )
     cargo_row = my_ship.build_spec().rows_for_section(SpecSection.CARGO)[-1]
-    assert ('info', '2.00 tons needed per 100 days of stores and spares') in [
+    assert ('info', '2 tons needed per 100 days of stores and spares') in [
         (note.category.value, note.message) for note in cargo_row.notes
     ]
 
@@ -111,6 +111,6 @@ def test_military_cargo_warning_if_below_recommended_stores_capacity():
         cargo=CargoSection(cargo_holds=[CargoHold(tons=1.0)]),
     )
     cargo_row = my_ship.build_spec().rows_for_section(SpecSection.CARGO)[-1]
-    assert ('warning', 'Cargo is below recommended 100-day stores capacity of 2.00 tons') in [
+    assert ('warning', 'Cargo is below recommended 100-day stores capacity of 2 tons') in [
         (note.category.value, note.message) for note in cargo_row.notes
     ]

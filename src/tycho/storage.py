@@ -60,8 +60,17 @@ class JumpFuel(ShipPart):
     def build_item(self) -> str | None:
         return f'Jump {self.parsecs}'
 
+    @property
+    def _jump_drive(self):
+        drives = getattr(self.ship, 'drives', None)
+        return None if drives is None else drives.jump_drive
+
     def compute_tons(self) -> float:
-        return self.ship.displacement * 0.1 * self.parsecs
+        multiplier = 1.0
+        jump_drive = self._jump_drive
+        if jump_drive is not None and getattr(jump_drive, 'customisation', None) is not None:
+            multiplier = jump_drive.customisation.fuel_multiplier
+        return self.ship.displacement * 0.1 * self.parsecs * multiplier
 
     def compute_cost(self) -> float:
         return 0.0
@@ -197,6 +206,10 @@ class CargoHold(CeresModel):
 
 
 class CargoSection(CeresModel):
+    @staticmethod
+    def _format_stores_tons(tons: float) -> str:
+        return f'{tons:.1f}'.rstrip('0').rstrip('.')
+
     cargo_holds: list[CargoHold] = Field(default_factory=list)
 
     @staticmethod
@@ -249,17 +262,18 @@ class CargoSection(CeresModel):
         if maximum_stores_tons is None:
             return
         cargo_row = spec.rows_for_section(SpecSection.CARGO)[-1]
+        formatted_tons = self._format_stores_tons(maximum_stores_tons)
         cargo_row.notes.append(
             Note(
                 category=NoteCategory.INFO,
-                message=f'{maximum_stores_tons:.2f} tons needed per 100 days of stores and spares',
+                message=f'{formatted_tons} tons needed per 100 days of stores and spares',
             )
         )
         if self.cargo_tons(ship) < maximum_stores_tons:
             cargo_row.notes.append(
                 Note(
                     category=NoteCategory.WARNING,
-                    message=f'Cargo is below recommended 100-day stores capacity of {maximum_stores_tons:.2f} tons',
+                    message=f'Cargo is below recommended 100-day stores capacity of {formatted_tons} tons',
                 )
             )
 

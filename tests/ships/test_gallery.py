@@ -3,6 +3,7 @@ from stuart import render_ship_html, render_ship_pdf, render_ship_typst
 
 from ._output import write_html_output, write_pdf_output, write_typst_output
 from .test_alt_dragon import build_alt_dragon
+from .test_ambush_hunter_killer_corvette import build_ambush_hunter_killer_corvette
 from .test_belt_racer import build_belt_racer
 from .test_beowulf import build_beowulf
 from .test_boxy_ore_freighter import build_boxy_ore_freighter
@@ -21,6 +22,7 @@ from .test_ultralight_fighter import build_ultralight_fighter
     ('name', 'builder'),
     [
         ('test_alt_dragon', build_alt_dragon),
+        ('test_ambush_hunter_killer_corvette', build_ambush_hunter_killer_corvette),
         ('test_belt_racer', build_belt_racer),
         ('test_beowulf', build_beowulf),
         ('test_boxy_ore_freighter', build_boxy_ore_freighter),
@@ -53,6 +55,7 @@ def test_ship_gallery_html_output(name: str, builder) -> None:
     ('name', 'builder'),
     [
         ('test_alt_dragon', build_alt_dragon),
+        ('test_ambush_hunter_killer_corvette', build_ambush_hunter_killer_corvette),
         ('test_belt_racer', build_belt_racer),
         ('test_beowulf', build_beowulf),
         ('test_boxy_ore_freighter', build_boxy_ore_freighter),
@@ -82,6 +85,7 @@ def test_ship_gallery_pdf_output(name: str, builder) -> None:
     ('name', 'builder'),
     [
         ('test_alt_dragon', build_alt_dragon),
+        ('test_ambush_hunter_killer_corvette', build_ambush_hunter_killer_corvette),
         ('test_belt_racer', build_belt_racer),
         ('test_beowulf', build_beowulf),
         ('test_boxy_ore_freighter', build_boxy_ore_freighter),

@@ -22,7 +22,7 @@ class Modification(CeresModel):
     cost_multiplier: float = 1.0
     tons_delta_percent: float = 0.0
     power_multiplier: float = 1.0
-    fuel_multiplier: float = 1.0
+    fuel_delta_percent: float = 0.0
     tl_delta: int = 0
     info_notes: tuple[str, ...] = ()
     model_config = {'frozen': True}
@@ -116,10 +116,7 @@ class Customisation(CeresModel):
 
     @property
     def fuel_multiplier(self) -> float:
-        result = 1.0
-        for m in self.modifications:
-            result *= m.fuel_multiplier
-        return result
+        return 1.0 + sum(m.fuel_delta_percent for m in self.modifications)
 
     @property
     def tl_delta(self) -> int:
