@@ -3,7 +3,7 @@ import pytest
 from tycho import armour, hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import AutoRepair, Computer, ComputerSection, Evade, FireControl
-from tycho.drives import DriveSection, FusionPlantTL12, MDrive9, PowerSection
+from tycho.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
 from tycho.habitation import HabitationSection, Staterooms
 from tycho.sensors import CountermeasuresSuite, ImprovedSensors, SensorsSection
 from tycho.storage import CargoSection, FuelProcessor, FuelScoops, FuelSection, OperationFuel
@@ -29,7 +29,7 @@ def build_strandbell() -> ship.Ship:
             armour=armour.CrystalironArmour(protection=13),
             airlocks=[Airlock(), Airlock()],
         ),
-        drives=DriveSection(m_drive=MDrive9()),
+        drives=DriveSection(m_drive=MDrive(9)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=240)),
         fuel=FuelSection(
             operation_fuel=OperationFuel(weeks=12),

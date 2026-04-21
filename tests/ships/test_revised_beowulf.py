@@ -3,7 +3,7 @@ import pytest
 from tycho import armour, hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection, JumpControl
-from tycho.drives import DriveSection, FusionPlantTL12, JumpDrive1, MDrive1, PowerSection
+from tycho.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
 from tycho.habitation import AdvancedEntertainmentSystem, HabitationSection, LowBerths, Staterooms
 from tycho.parts import Budget, IncreasedSize
 from tycho.sensors import CivilianSensors, SensorsSection
@@ -36,7 +36,7 @@ def build_revised_beowulf() -> ship.Ship:
             armour=armour.CrystalironArmour(protection=2),
             airlocks=[Airlock(), Airlock()],
         ),
-        drives=DriveSection(m_drive=MDrive1(), jump_drive=JumpDrive1()),
+        drives=DriveSection(m_drive=MDrive(1), j_drive=JDrive(1)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=65, customisation=Budget(IncreasedSize))),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=1),
@@ -68,9 +68,9 @@ def test_revised_beowulf_matches_current_modeled_subset():
     assert beowulf.drives.m_drive.tons == pytest.approx(2.0)
     assert beowulf.drives.m_drive.cost == pytest.approx(4_000_000)
 
-    assert beowulf.drives.jump_drive is not None
-    assert beowulf.drives.jump_drive.tons == pytest.approx(10.0)
-    assert beowulf.drives.jump_drive.cost == pytest.approx(15_000_000)
+    assert beowulf.drives.j_drive is not None
+    assert beowulf.drives.j_drive.tons == pytest.approx(10.0)
+    assert beowulf.drives.j_drive.cost == pytest.approx(15_000_000)
 
     assert beowulf.power is not None
     assert beowulf.power.fusion_plant is not None

@@ -63,7 +63,7 @@ class JumpFuel(ShipPart):
     @property
     def _jump_drive(self):
         drives = getattr(self.ship, 'drives', None)
-        return None if drives is None else drives.jump_drive
+        return None if drives is None else drives.j_drive
 
     def compute_tons(self) -> float:
         multiplier = 1.0
@@ -92,16 +92,16 @@ class ReactionFuel(ShipPart):
     @property
     def _reaction_drive(self):
         drives = getattr(self.ship, 'drives', None)
-        return None if drives is None else drives.reaction_drive
+        return None if drives is None else drives.r_drive
 
     def _fuel_rate_per_hour(self) -> float:
         reaction_drive = self._reaction_drive
         if reaction_drive is None:
-            self.error('Ship must have a ReactionDrive to compute ReactionFuel')
+            self.error('Ship must have an RDrive to compute ReactionFuel')
             return 0.0
-        if reaction_drive.rating == 0:
+        if reaction_drive.level == 0:
             return 0.25
-        return self.ship.displacement * 0.025 * reaction_drive.rating
+        return self.ship.displacement * 0.025 * reaction_drive.level
 
     def compute_tons(self) -> float:
         return self._fuel_rate_per_hour() * (self.minutes / 60)

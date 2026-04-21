@@ -4,7 +4,7 @@ from stuart.tycho_pdf import _build_typst_source
 from tycho import hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection, FireControl
-from tycho.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection, ReactionDrive
+from tycho.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection, RDrive
 from tycho.habitation import CabinSpace, HabitationSection
 from tycho.sensors import MilitarySensors, SensorsSection
 from tycho.storage import FuelScoops, FuelSection, OperationFuel, ReactionFuel
@@ -28,8 +28,8 @@ def build_gothta_ambush_fighter() -> ship.Ship:
             aerofins=Aerofins(),
         ),
         drives=DriveSection(
-            m_drive=MDrive6(),
-            reaction_drive=ReactionDrive(rating=4, high_burn_thruster=True),
+            m_drive=MDrive(6),
+            r_drive=RDrive(4, high_burn_thruster=True),
         ),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=30)),
         fuel=FuelSection(
@@ -58,10 +58,10 @@ def test_gothta_ambush_fighter_matches_current_subset():
     assert fighter.drives.m_drive is not None
     assert fighter.drives.m_drive.tons == pytest.approx(1.2)
     assert fighter.drives.m_drive.cost == pytest.approx(2_400_000)
-    assert fighter.drives.reaction_drive is not None
-    assert fighter.drives.reaction_drive.tons == pytest.approx(1.6)
-    assert fighter.drives.reaction_drive.cost == pytest.approx(320_000)
-    assert fighter.drives.reaction_drive.build_item() == 'High-Burn Thruster, Thrust 4'
+    assert fighter.drives.r_drive is not None
+    assert fighter.drives.r_drive.tons == pytest.approx(1.6)
+    assert fighter.drives.r_drive.cost == pytest.approx(320_000)
+    assert fighter.drives.r_drive.build_item() == 'High-Burn Thruster, Thrust 4'
 
     assert fighter.power is not None
     assert fighter.power.fusion_plant is not None

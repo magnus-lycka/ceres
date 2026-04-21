@@ -5,7 +5,7 @@ from tycho import armour, hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection, JumpControl
 from tycho.crafts import AirRaft, CraftSection, InternalDockingSpace
-from tycho.drives import DriveSection, FusionPlantTL12, JumpDrive2, MDrive2, PowerSection
+from tycho.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
 from tycho.habitation import HabitationSection, Staterooms
 from tycho.sensors import MilitarySensors, SensorsSection
 from tycho.storage import CargoSection, FuelProcessor, FuelSection, JumpFuel, OperationFuel
@@ -27,7 +27,7 @@ def build_suleiman() -> ship.Ship:
             armour=armour.CrystalironArmour(tl=12, protection=4),
             airlocks=[Airlock()],
         ),
-        drives=DriveSection(m_drive=MDrive2(), jump_drive=JumpDrive2()),
+        drives=DriveSection(m_drive=MDrive(2), j_drive=JDrive(2)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=60)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=2),
@@ -50,7 +50,7 @@ def test_suleiman_matches_first_modeled_reference_slice():
     armour_part = suleiman.hull.armour
     assert suleiman.drives is not None
     m_drive = suleiman.drives.m_drive
-    jump_drive = suleiman.drives.jump_drive
+    jump_drive = suleiman.drives.j_drive
     assert suleiman.power is not None
     fusion_plant = suleiman.power.fusion_plant
     assert suleiman.fuel is not None
@@ -79,13 +79,13 @@ def test_suleiman_matches_first_modeled_reference_slice():
     assert armour_part.cost == 1_200_000
 
     assert m_drive is not None
-    assert m_drive.rating == 2
+    assert m_drive.level == 2
     assert m_drive.tons == pytest.approx(2.0)
     assert m_drive.cost == 4_000_000
     assert m_drive.power == 20
 
     assert jump_drive is not None
-    assert jump_drive.rating == 2
+    assert jump_drive.level == 2
     assert jump_drive.tons == pytest.approx(10.0)
     assert jump_drive.cost == 15_000_000
     assert jump_drive.power == 20
@@ -184,12 +184,12 @@ def test_jump_drive_2_without_jump_control_2_adds_local_note():
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(jump_drive=JumpDrive2()),
+        drives=DriveSection(j_drive=JDrive(2)),
         computer=ComputerSection(hardware=Computer(5, bis=True)),
     )
     assert my_ship.drives is not None
-    assert my_ship.drives.jump_drive is not None
-    assert [(note.category.value, note.message) for note in my_ship.drives.jump_drive.notes] == [
+    assert my_ship.drives.j_drive is not None
+    assert [(note.category.value, note.message) for note in my_ship.drives.j_drive.notes] == [
         ('item', 'Jump 2'),
         ('warning', 'No Jump Control software'),
     ]
@@ -300,12 +300,12 @@ def test_jump_drive_with_lower_jump_control_warns_on_drive():
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(jump_drive=JumpDrive2()),
+        drives=DriveSection(j_drive=JDrive(2)),
         computer=ComputerSection(hardware=Computer(5, bis=True), software=[JumpControl(1)]),
     )
     assert my_ship.drives is not None
-    assert my_ship.drives.jump_drive is not None
-    assert [(note.category.value, note.message) for note in my_ship.drives.jump_drive.notes] == [
+    assert my_ship.drives.j_drive is not None
+    assert [(note.category.value, note.message) for note in my_ship.drives.j_drive.notes] == [
         ('item', 'Jump 2'),
         ('warning', 'Limited to Jump 1 by control software'),
     ]
@@ -331,7 +331,7 @@ def test_jump_control_with_higher_rating_than_drive_warns_on_software():
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(jump_drive=JumpDrive2()),
+        drives=DriveSection(j_drive=JDrive(2)),
         computer=ComputerSection(hardware=Computer(10, bis=True), software=[JumpControl(3)]),
     )
     assert my_ship.computer is not None
@@ -347,7 +347,7 @@ def test_higher_jump_control_replaces_lower_one():
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(jump_drive=JumpDrive2()),
+        drives=DriveSection(j_drive=JDrive(2)),
         computer=ComputerSection(hardware=Computer(10, bis=True), software=[JumpControl(2), JumpControl(3)]),
     )
 

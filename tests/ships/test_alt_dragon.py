@@ -4,7 +4,7 @@ from stuart import render_ship_html
 from tycho import armour, hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import AutoRepair, Computer, ComputerSection, Core, Evade, FireControl
-from tycho.drives import DriveSection, EmergencyPowerSystem, FusionPlantTL12, MDrive7, PowerSection
+from tycho.drives import DriveSection, EmergencyPowerSystem, FusionPlantTL12, MDrive, PowerSection
 from tycho.habitation import AdvancedEntertainmentSystem, CabinSpace, HabitationSection, Staterooms
 from tycho.hull import ImprovedStealth
 from tycho.parts import Advanced, Budget, HighTechnology, IncreasedSize, SizeReduction
@@ -67,7 +67,7 @@ def build_alt_dragon() -> ship.Ship:
             armoured_bulkheads=[],
             airlocks=[Airlock(), Airlock(), Airlock(), Airlock()],
         ),
-        drives=DriveSection(m_drive=MDrive7(customisation=Budget(IncreasedSize), armoured_bulkhead=True)),
+        drives=DriveSection(m_drive=MDrive(7, customisation=Budget(IncreasedSize), armoured_bulkhead=True)),
         power=PowerSection(
             fusion_plant=fusion_plant,
             emergency_power_system=EmergencyPowerSystem.from_fusion_plant(fusion_plant),

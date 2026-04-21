@@ -4,7 +4,7 @@ from tycho import hull, ship
 from tycho.base import ShipBase
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection
-from tycho.drives import DriveSection, FusionPlantTL12, JumpDrive1, PowerSection
+from tycho.drives import DriveSection, FusionPlantTL12, JDrive, PowerSection
 from tycho.habitation import AdvancedEntertainmentSystem, CabinSpace, HabitationSection, LowBerths, Staterooms
 
 
@@ -119,7 +119,7 @@ def test_habitation_explicit_passenger_vector_overrides_default():
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(jump_drive=JumpDrive1()),
+        drives=DriveSection(j_drive=JDrive(1)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=10)),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer(5)),

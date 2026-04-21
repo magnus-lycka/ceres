@@ -334,11 +334,11 @@ class ComputerSection(CeresModel):
         jump_control = self.software_packages.get(JumpControl)
         if not isinstance(jump_control, JumpControl):
             return
-        if drives is None or drives.jump_drive is None:
+        if drives is None or drives.j_drive is None:
             jump_control.warning('No jump drive installed')
             return
-        if jump_control.rating > drives.jump_drive.rating:
-            jump_control.warning(f'Limited to Jump {drives.jump_drive.rating} by drive capacity')
+        if jump_control.rating > drives.j_drive.level:
+            jump_control.warning(f'Limited to Jump {drives.j_drive.level} by drive capacity')
 
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = []

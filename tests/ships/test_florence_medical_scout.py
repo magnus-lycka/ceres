@@ -4,7 +4,7 @@ from tycho import hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection, JumpControl
 from tycho.crafts import AirRaft, CraftSection, InternalDockingSpace, SlowPinnace
-from tycho.drives import DriveSection, FusionPlantTL12, JumpDrive3, MDrive2, PowerSection
+from tycho.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
 from tycho.habitation import HabitationSection, LowBerths, Staterooms
 from tycho.sensors import LifeScannerAnalysisSuite, MilitarySensors, SensorsSection
 from tycho.storage import FuelProcessor, FuelScoops, FuelSection, JumpFuel, OperationFuel
@@ -31,7 +31,7 @@ def build_florence_medical_scout() -> ship.Ship:
         },
         passenger_vector={},
         hull=hull.Hull(configuration=hull.standard_hull),
-        drives=DriveSection(m_drive=MDrive2(), jump_drive=JumpDrive3()),
+        drives=DriveSection(m_drive=MDrive(2), j_drive=JDrive(3)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=300)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=3),
@@ -73,9 +73,9 @@ def test_florence_medical_scout_matches_current_subset():
     assert scout.drives.m_drive is not None
     assert scout.drives.m_drive.tons == pytest.approx(8.0)
     assert scout.drives.m_drive.cost == pytest.approx(16_000_000)
-    assert scout.drives.jump_drive is not None
-    assert scout.drives.jump_drive.tons == pytest.approx(35.0)
-    assert scout.drives.jump_drive.cost == pytest.approx(52_500_000)
+    assert scout.drives.j_drive is not None
+    assert scout.drives.j_drive.tons == pytest.approx(35.0)
+    assert scout.drives.j_drive.cost == pytest.approx(52_500_000)
 
     assert scout.power is not None
     assert scout.power.fusion_plant is not None

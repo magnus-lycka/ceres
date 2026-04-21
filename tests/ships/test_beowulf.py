@@ -3,7 +3,7 @@ import pytest
 from tycho import armour, hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection, JumpControl
-from tycho.drives import DriveSection, FusionPlantTL12, JumpDrive1, MDrive1, PowerSection
+from tycho.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
 from tycho.habitation import HabitationSection, LowBerths, Staterooms
 from tycho.sensors import CivilianSensors, SensorsSection
 from tycho.storage import CargoCrane, CargoHold, CargoSection, FuelProcessor, FuelSection, JumpFuel, OperationFuel
@@ -23,7 +23,7 @@ def build_beowulf() -> ship.Ship:
             armour=armour.CrystalironArmour(protection=2),
             airlocks=[Airlock(), Airlock()],
         ),
-        drives=DriveSection(m_drive=MDrive1(), jump_drive=JumpDrive1()),
+        drives=DriveSection(m_drive=MDrive(1), j_drive=JDrive(1)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=75)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=1),
@@ -64,10 +64,10 @@ def test_beowulf_drives():
     assert beowulf.drives.m_drive.cost == 4_000_000
     assert beowulf.drives.m_drive.power == 20
 
-    assert beowulf.drives.jump_drive is not None
-    assert beowulf.drives.jump_drive.tons == pytest.approx(10.0)
-    assert beowulf.drives.jump_drive.cost == 15_000_000
-    assert beowulf.drives.jump_drive.power == 20
+    assert beowulf.drives.j_drive is not None
+    assert beowulf.drives.j_drive.tons == pytest.approx(10.0)
+    assert beowulf.drives.j_drive.cost == 15_000_000
+    assert beowulf.drives.j_drive.power == 20
 
 
 def test_beowulf_fusion_plant():

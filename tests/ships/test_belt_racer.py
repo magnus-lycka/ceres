@@ -7,7 +7,7 @@ from tycho.drives import (
     DriveSection,
     FusionPlantTL8,
     PowerSection,
-    ReactionDrive,
+    RDrive,
 )
 from tycho.storage import CargoSection, FuelSection, ReactionFuel
 
@@ -24,7 +24,7 @@ def build_belt_racer() -> ship.Ship:
         tl=12,
         displacement=6,
         hull=hull.Hull(configuration=BELT_RACER_HULL),
-        drives=DriveSection(reaction_drive=ReactionDrive(rating=16)),
+        drives=DriveSection(r_drive=RDrive(16)),
         power=PowerSection(fusion_plant=FusionPlantTL8(output=5)),
         fuel=FuelSection(reaction_fuel=ReactionFuel(minutes=52)),
         command=CommandSection(cockpit=Cockpit()),
@@ -37,9 +37,9 @@ def test_belt_racer_matches_current_r_drive_subset():
 
     assert racer.hull_cost == pytest.approx(180_000)
     assert racer.drives is not None
-    assert racer.drives.reaction_drive is not None
-    assert racer.drives.reaction_drive.tons == pytest.approx(1.92)
-    assert racer.drives.reaction_drive.cost == pytest.approx(384_000)
+    assert racer.drives.r_drive is not None
+    assert racer.drives.r_drive.tons == pytest.approx(1.92)
+    assert racer.drives.r_drive.cost == pytest.approx(384_000)
 
     assert racer.power is not None
     assert racer.power.fusion_plant is not None

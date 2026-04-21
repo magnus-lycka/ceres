@@ -3,7 +3,7 @@ import pytest
 from tycho import hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection
-from tycho.drives import DriveSection, FusionPlantTL8, FusionPlantTL12, JumpDrive2, MDrive1, MDrive2, PowerSection
+from tycho.drives import DriveSection, FusionPlantTL8, FusionPlantTL12, JDrive, MDrive, PowerSection
 from tycho.habitation import HabitationSection, Staterooms
 from tycho.storage import FuelProcessor, FuelSection, JumpFuel, OperationFuel
 
@@ -13,7 +13,7 @@ def build_small_jump_ship() -> ship.Ship:
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(m_drive=MDrive2(), jump_drive=JumpDrive2()),
+        drives=DriveSection(m_drive=MDrive(2), j_drive=JDrive(2)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=60)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=2),
@@ -81,7 +81,7 @@ def test_operation_fuel_contributes_monthly_unrefined_cost():
         tl=9,
         displacement=200,
         hull=hull.Hull(configuration=hull.close_structure.model_copy(update={'light': True})),
-        drives=DriveSection(m_drive=MDrive1()),
+        drives=DriveSection(m_drive=MDrive(1)),
         power=PowerSection(fusion_plant=FusionPlantTL8(output=80)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=12)),
         command=CommandSection(bridge=Bridge(small=True)),
@@ -96,7 +96,7 @@ def test_operation_fuel_cost_is_zero_with_scoops_and_no_jump_drive():
         tl=13,
         displacement=400,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(m_drive=MDrive1()),
+        drives=DriveSection(m_drive=MDrive(1)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=80)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=16)),
         command=CommandSection(bridge=Bridge()),
@@ -120,7 +120,7 @@ def test_jump_drive_still_requires_refined_fuel_without_processor():
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(m_drive=MDrive2(), jump_drive=JumpDrive2()),
+        drives=DriveSection(m_drive=MDrive(2), j_drive=JDrive(2)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=60)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=2),

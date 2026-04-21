@@ -3,7 +3,7 @@ import pytest
 from tycho import armour, hull, ship
 from tycho.bridge import Cockpit, CommandSection
 from tycho.computer import Computer, ComputerSection
-from tycho.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection
+from tycho.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
 from tycho.parts import EnergyEfficient, HighTechnology
 from tycho.sensors import CivilianSensors, SensorsSection
 from tycho.storage import FuelSection, OperationFuel
@@ -25,7 +25,7 @@ def build_ultralight_fighter() -> ship.Ship:
             armour=armour.CrystalironArmour(tl=12, protection=6),
             stealth=hull.BasicStealth(),
         ),
-        drives=DriveSection(m_drive=MDrive6()),
+        drives=DriveSection(m_drive=MDrive(6)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=8)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=1)),
         command=CommandSection(cockpit=Cockpit(holographic=True)),

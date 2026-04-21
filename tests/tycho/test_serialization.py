@@ -11,7 +11,7 @@ from tycho import armour, hull
 from tycho.bridge import Cockpit, CommandSection
 from tycho.computer import Computer, ComputerSection
 from tycho.crafts import AirRaft, CraftSection, InternalDockingSpace
-from tycho.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection
+from tycho.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
 from tycho.hull import BasicStealth, Hull
 from tycho.parts import EnergyEfficient, HighTechnology
 from tycho.sensors import BasicSensors, CivilianSensors, SensorsSection
@@ -32,7 +32,7 @@ ultralight = Ship(
         armour=armour.CrystalironArmour(tl=12, protection=6),
         stealth=BasicStealth(),
     ),
-    drives=DriveSection(m_drive=MDrive6()),
+    drives=DriveSection(m_drive=MDrive(6)),
     power=PowerSection(fusion_plant=FusionPlantTL12(output=8)),
     fuel=FuelSection(operation_fuel=OperationFuel(weeks=1)),
     command=CommandSection(cockpit=Cockpit(holographic=True)),
@@ -161,7 +161,7 @@ def test_roundtrip_m_drive_attributes():
     assert loaded.drives.m_drive is not None
     assert ultralight.drives.m_drive is not None
     assert type(loaded.drives.m_drive) is type(ultralight.drives.m_drive)
-    assert loaded.drives.m_drive.rating == ultralight.drives.m_drive.rating
+    assert loaded.drives.m_drive.level == ultralight.drives.m_drive.level
 
 
 def test_roundtrip_recomputes_derived_part_values():

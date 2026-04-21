@@ -3,7 +3,7 @@ import pytest
 from tycho import armour, hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import AutoRepair, Computer, ComputerSection, Evade, FireControl
-from tycho.drives import DriveSection, FusionPlantTL12, MDrive7, PowerSection
+from tycho.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
 from tycho.habitation import AdvancedEntertainmentSystem, HabitationSection, Staterooms
 from tycho.hull import ImprovedStealth
 from tycho.parts import Advanced, Budget, EnergyEfficient, HighTechnology, IncreasedSize, SizeReduction, VeryAdvanced
@@ -57,7 +57,7 @@ def build_revised_dragon() -> ship.Ship:
             armour=armour.CrystalironArmour(protection=13),
             airlocks=[Airlock(), Airlock(), Airlock(), Airlock()],
         ),
-        drives=DriveSection(m_drive=MDrive7(customisation=Budget(IncreasedSize), armoured_bulkhead=True)),
+        drives=DriveSection(m_drive=MDrive(7, customisation=Budget(IncreasedSize), armoured_bulkhead=True)),
         power=PowerSection(
             fusion_plant=FusionPlantTL12(
                 output=482,

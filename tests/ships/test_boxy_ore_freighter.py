@@ -3,7 +3,7 @@ import pytest
 from tycho import hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection
-from tycho.drives import DriveSection, FusionPlantTL8, MDrive1, PowerSection
+from tycho.drives import DriveSection, FusionPlantTL8, MDrive, PowerSection
 from tycho.habitation import HabitationSection, Staterooms
 from tycho.sensors import BasicSensors, SensorsSection
 from tycho.storage import CargoSection, FuelSection, OperationFuel
@@ -23,7 +23,7 @@ def build_boxy_ore_freighter() -> ship.Ship:
         displacement=200,
         design_type=ship.ShipDesignType.STANDARD,
         hull=hull.Hull(configuration=BOXY_HULL, airlocks=[Airlock()]),
-        drives=DriveSection(m_drive=MDrive1()),
+        drives=DriveSection(m_drive=MDrive(1)),
         power=PowerSection(fusion_plant=FusionPlantTL8(output=80)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=12)),
         command=CommandSection(bridge=Bridge(small=True)),

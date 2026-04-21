@@ -4,7 +4,7 @@ from tycho import hull, ship
 from tycho.armour import BondedSuperdenseArmour
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection, FireControl, JumpControl
-from tycho.drives import DecreasedFuel, DriveSection, FusionPlantTL12, JumpDrive2, MDrive6, PowerSection
+from tycho.drives import DecreasedFuel, DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
 from tycho.habitation import HabitationSection, Staterooms
 from tycho.parts import EnergyEfficient, HighTechnology, SizeReduction, VeryAdvanced
 from tycho.sensors import (
@@ -47,8 +47,8 @@ def build_ambush_hunter_killer_corvette() -> ship.Ship:
             airlocks=[Airlock(), Airlock()],
         ),
         drives=DriveSection(
-            m_drive=MDrive6(customisation=VeryAdvanced(SizeReduction, EnergyEfficient)),
-            jump_drive=JumpDrive2(customisation=VeryAdvanced(DecreasedFuel, DecreasedFuel)),
+            m_drive=MDrive(6, customisation=VeryAdvanced(SizeReduction, EnergyEfficient)),
+            j_drive=JDrive(2, customisation=VeryAdvanced(DecreasedFuel, DecreasedFuel)),
         ),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=500, armoured_bulkhead=True)),
         fuel=FuelSection(
@@ -124,9 +124,9 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
     assert corvette.drives.m_drive is not None
     assert corvette.drives.m_drive.tons == pytest.approx(24.3)
     assert corvette.drives.m_drive.cost == pytest.approx(67_500_000)
-    assert corvette.drives.jump_drive is not None
-    assert corvette.drives.jump_drive.tons == pytest.approx(27.5)
-    assert corvette.drives.jump_drive.cost == pytest.approx(51_562_500.0)
+    assert corvette.drives.j_drive is not None
+    assert corvette.drives.j_drive.tons == pytest.approx(27.5)
+    assert corvette.drives.j_drive.cost == pytest.approx(51_562_500.0)
 
     assert corvette.power is not None
     assert corvette.power.fusion_plant is not None

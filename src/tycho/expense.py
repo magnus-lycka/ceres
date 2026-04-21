@@ -65,7 +65,7 @@ class ShipExpenses:
         if self.ship.fuel is None:
             return 0.0
 
-        has_jump_drive = self.ship.drives is not None and self.ship.drives.jump_drive is not None
+        has_jump_drive = self.ship.drives is not None and self.ship.drives.j_drive is not None
         has_fuel_scoops = self.ship.fuel.fuel_scoops is not None
         has_fuel_processor = self.ship.fuel.fuel_processor is not None
 

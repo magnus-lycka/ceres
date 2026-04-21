@@ -68,8 +68,8 @@ def _drives_and_power_tonnage(ship) -> float:
     if ship.drives is not None:
         if ship.drives.m_drive is not None:
             tons += ship.drives.m_drive.tons
-        if ship.drives.jump_drive is not None:
-            tons += ship.drives.jump_drive.tons
+        if ship.drives.j_drive is not None:
+            tons += ship.drives.j_drive.tons
     if ship.power is not None and ship.power.fusion_plant is not None:
         tons += ship.power.fusion_plant.tons
     return tons
@@ -115,7 +115,7 @@ def _sensor_operator_count(ship, *, military: bool) -> int:
 
 
 def _commercial_roles(ship) -> list[CrewRole]:
-    if ship.displacement <= 100 and (ship.drives is None or ship.drives.jump_drive is None):
+    if ship.displacement <= 100 and (ship.drives is None or ship.drives.j_drive is None):
         return [CrewRole(role='PILOT', count=1, monthly_salary=PILOT_SALARY)]
 
     roles: list[CrewRole] = [
@@ -126,7 +126,7 @@ def _commercial_roles(ship) -> list[CrewRole]:
         )
     ]
 
-    if ship.drives is not None and ship.drives.jump_drive is not None:
+    if ship.drives is not None and ship.drives.j_drive is not None:
         roles.append(CrewRole(role='ASTROGATOR', count=1, monthly_salary=ASTROGATOR_SALARY))
 
     engineer_count = math.ceil(_drives_and_power_tonnage(ship) / 35) if _drives_and_power_tonnage(ship) > 0 else 0
@@ -180,7 +180,7 @@ def _commercial_roles(ship) -> list[CrewRole]:
 
 
 def _military_roles(ship) -> list[CrewRole]:
-    if ship.displacement <= 100 and (ship.drives is None or ship.drives.jump_drive is None):
+    if ship.displacement <= 100 and (ship.drives is None or ship.drives.j_drive is None):
         return [CrewRole(role='PILOT', count=1, monthly_salary=PILOT_SALARY)]
 
     roles: list[CrewRole] = [CrewRole(role='CAPTAIN', count=1, monthly_salary=10_000)]
@@ -192,7 +192,7 @@ def _military_roles(ship) -> list[CrewRole]:
         )
     )
 
-    if ship.drives is not None and ship.drives.jump_drive is not None:
+    if ship.drives is not None and ship.drives.j_drive is not None:
         roles.append(CrewRole(role='ASTROGATOR', count=1, monthly_salary=ASTROGATOR_SALARY))
 
     engineer_count = math.ceil(_drives_and_power_tonnage(ship) / 35) if _drives_and_power_tonnage(ship) > 0 else 0

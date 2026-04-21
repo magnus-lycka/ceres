@@ -105,9 +105,9 @@ class Ship(ShipBase):
 
     @property
     def jump_power_load(self) -> float:
-        if self.drives is None or self.drives.jump_drive is None:
+        if self.drives is None or self.drives.j_drive is None:
             return 0.0
-        return self.drives.jump_drive.power
+        return self.drives.j_drive.power
 
     @property
     def fuel_power_load(self) -> float:
@@ -124,7 +124,7 @@ class Ship(ShipBase):
     @property
     def total_power_load(self) -> float:
         m_drive = None if self.drives is None else self.drives.m_drive
-        jump_drive = None if self.drives is None else self.drives.jump_drive
+        jump_drive = None if self.drives is None else self.drives.j_drive
         non_drive_power_load = sum(
             part.power for part in self._all_parts() if part is not m_drive and part is not jump_drive
         )

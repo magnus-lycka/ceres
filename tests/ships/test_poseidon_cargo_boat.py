@@ -3,7 +3,7 @@ import pytest
 from tycho import hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection
-from tycho.drives import DriveSection, FusionPlantTL8, FusionPlantTL12, MDrive3, PowerSection
+from tycho.drives import DriveSection, FusionPlantTL8, FusionPlantTL12, MDrive, PowerSection
 from tycho.habitation import HabitationSection, Staterooms
 from tycho.storage import CargoSection, FuelSection, OperationFuel
 from tycho.systems import Aerofins, Airlock, CommonArea
@@ -24,7 +24,7 @@ def build_poseidon_cargo_boat(tl: int) -> ship.Ship:
         displacement=100,
         design_type=ship.ShipDesignType.STANDARD,
         hull=hull.Hull(configuration=POSEIDON_HULL, airlocks=[Airlock()], aerofins=Aerofins()),
-        drives=DriveSection(m_drive=MDrive3()),
+        drives=DriveSection(m_drive=MDrive(3)),
         power=PowerSection(fusion_plant=fusion_plant),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=16)),
         command=CommandSection(bridge=Bridge(small=True)),

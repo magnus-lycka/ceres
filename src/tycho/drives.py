@@ -1,7 +1,5 @@
 import math
-from typing import Annotated, ClassVar, Literal
-
-from pydantic import Field
+from typing import ClassVar, Literal
 
 from .base import Note, NoteCategory
 from .computer import JumpControl, SoftwarePackage
@@ -35,7 +33,7 @@ DecreasedFuel = Modification(
 )
 
 
-class ReactionDrive(ShipPart):
+class RDrive(ShipPart):
     _specs: ClassVar[dict[int, dict[str, float | int]]] = {
         0: dict(tons_percent=0.01, minimum_tl=7),
         1: dict(tons_percent=0.02, minimum_tl=7),
@@ -55,23 +53,28 @@ class ReactionDrive(ShipPart):
         15: dict(tons_percent=0.30, minimum_tl=11),
         16: dict(tons_percent=0.32, minimum_tl=12),
     }
-    rating: int
+    level: int
     high_burn_thruster: bool = False
+
+    def __init__(self, level: int | None = None, /, **data):
+        if level is not None and 'level' not in data:
+            data['level'] = level
+        super().__init__(**data)
 
     @property
     def minimum_tl(self) -> int:
-        return int(self._specs[self.rating]['minimum_tl'])
+        return int(self._specs[self.level]['minimum_tl'])
 
     def build_item(self) -> str | None:
         if self.high_burn_thruster:
-            return f'High-Burn Thruster, Thrust {self.rating}'
-        return f'R-Drive Thrust {self.rating}'
+            return f'High-Burn Thruster, Thrust {self.level}'
+        return f'R-Drive Thrust {self.level}'
 
     def bulkhead_label(self) -> str:
         return 'R-Drive'
 
     def compute_tons(self) -> float:
-        tons_percent = float(self._specs[self.rating]['tons_percent'])
+        tons_percent = float(self._specs[self.level]['tons_percent'])
         return self.ship.displacement * tons_percent
 
     def compute_cost(self) -> float:
@@ -86,16 +89,28 @@ class ReactionDrive(ShipPart):
         return [Note(category=NoteCategory.INFO, message='No inertial compensation above manoeuvre-drive thrust')]
 
     def validate_tl(self) -> None:
-        if self.rating not in self._specs:
-            self.error(f'Unsupported reaction drive rating {self.rating}')
+        if self.level not in self._specs:
+            self.error(f'Unsupported reaction drive level {self.level}')
             return
         super().validate_tl()
 
 
 class MDrive(CustomisableShipPart):
-    rating: int
-    minimum_tl: ClassVar[int]
-    tons_percent: ClassVar[float]
+    level: int
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        0: dict(minimum_tl=9, tons_percent=0.005),
+        1: dict(minimum_tl=9, tons_percent=0.01),
+        2: dict(minimum_tl=10, tons_percent=0.02),
+        3: dict(minimum_tl=10, tons_percent=0.03),
+        4: dict(minimum_tl=11, tons_percent=0.04),
+        5: dict(minimum_tl=11, tons_percent=0.05),
+        6: dict(minimum_tl=12, tons_percent=0.06),
+        7: dict(minimum_tl=13, tons_percent=0.07),
+        8: dict(minimum_tl=14, tons_percent=0.08),
+        9: dict(minimum_tl=15, tons_percent=0.09),
+        10: dict(minimum_tl=16, tons_percent=0.10),
+        11: dict(minimum_tl=17, tons_percent=0.11),
+    }
     allowed_modifications: ClassVar[frozenset[str]] = frozenset(
         {
             EnergyEfficient.name,
@@ -107,20 +122,33 @@ class MDrive(CustomisableShipPart):
         }
     )
 
+    def __init__(self, level: int | None = None, /, **data):
+        if level is not None and 'level' not in data:
+            data['level'] = level
+        super().__init__(**data)
+
+    @property
+    def minimum_tl(self) -> int:
+        return int(self._specs[self.level]['minimum_tl'])
+
     def build_item(self) -> str | None:
-        return f'M-Drive {self.rating}'
+        return f'M-Drive {self.level}'
 
     def bulkhead_label(self) -> str:
         return 'M-Drive'
 
     def _base_tons(self) -> float:
-        return self.ship.displacement * self.tons_percent
+        tons_percent = float(self._specs[self.level]['tons_percent'])
+        return self.ship.displacement * tons_percent
 
     @property
     def effective_tl(self) -> int:
         return self.minimum_tl + (0 if self.customisation is None else self.customisation.tl_delta)
 
     def validate_tl(self) -> None:
+        if self.level not in self._specs:
+            self.error(f'Unsupported M-Drive level {self.level}')
+            return
         if self.ship_tl < self.effective_tl:
             self.error(f'Requires TL{self.effective_tl}, ship is TL{self.ship_tl}')
 
@@ -134,87 +162,24 @@ class MDrive(CustomisableShipPart):
         return cost * multiplier
 
     def compute_power(self) -> float:
-        power = float(math.ceil(0.1 * self.ship.displacement * self.rating))
+        power = float(math.ceil(0.1 * self.ship.displacement * self.level))
         multiplier = 1.0 if self.customisation is None else self.customisation.power_multiplier
         return power * multiplier
 
 
-class MDrive0(MDrive):
-    rating: Literal[0] = 0
-    minimum_tl = 9
-    tons_percent = 0.005
-
-
-class MDrive1(MDrive):
-    rating: Literal[1] = 1
-    minimum_tl = 9
-    tons_percent = 0.01
-
-
-class MDrive2(MDrive):
-    rating: Literal[2] = 2
-    minimum_tl = 10
-    tons_percent = 0.02
-
-
-class MDrive3(MDrive):
-    rating: Literal[3] = 3
-    minimum_tl = 10
-    tons_percent = 0.03
-
-
-class MDrive4(MDrive):
-    rating: Literal[4] = 4
-    minimum_tl = 11
-    tons_percent = 0.04
-
-
-class MDrive5(MDrive):
-    rating: Literal[5] = 5
-    minimum_tl = 11
-    tons_percent = 0.05
-
-
-class MDrive6(MDrive):
-    rating: Literal[6] = 6
-    minimum_tl = 12
-    tons_percent = 0.06
-
-
-class MDrive7(MDrive):
-    rating: Literal[7] = 7
-    minimum_tl = 13
-    tons_percent = 0.07
-
-
-class MDrive8(MDrive):
-    rating: Literal[8] = 8
-    minimum_tl = 14
-    tons_percent = 0.08
-
-
-class MDrive9(MDrive):
-    rating: Literal[9] = 9
-    minimum_tl = 15
-    tons_percent = 0.09
-
-
-class MDrive10(MDrive):
-    rating: Literal[10] = 10
-    minimum_tl = 16
-    tons_percent = 0.10
-
-
-class MDrive11(MDrive):
-    rating: Literal[11] = 11
-    minimum_tl = 17
-    tons_percent = 0.11
-
-
-class JumpDrive(CustomisableShipPart):
-    rating: int
-    minimum_tl: ClassVar[int]
-    tons_percent: ClassVar[float]
+class JDrive(CustomisableShipPart):
+    level: int
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        1: dict(minimum_tl=9, tons_percent=0.025),
+        2: dict(minimum_tl=11, tons_percent=0.05),
+        3: dict(minimum_tl=12, tons_percent=0.075),
+        4: dict(minimum_tl=13, tons_percent=0.10),
+        5: dict(minimum_tl=14, tons_percent=0.125),
+        6: dict(minimum_tl=15, tons_percent=0.15),
+        7: dict(minimum_tl=16, tons_percent=0.175),
+        8: dict(minimum_tl=17, tons_percent=0.20),
+        9: dict(minimum_tl=18, tons_percent=0.225),
+    }
     allowed_modifications: ClassVar[frozenset[str]] = frozenset(
         {
             DecreasedFuel.name,
@@ -223,135 +188,77 @@ class JumpDrive(CustomisableShipPart):
         }
     )
 
+    def __init__(self, level: int | None = None, /, **data):
+        if level is not None and 'level' not in data:
+            data['level'] = level
+        super().__init__(**data)
+
+    @property
+    def minimum_tl(self) -> int:
+        return int(self._specs[self.level]['minimum_tl'])
+
     def build_item(self) -> str | None:
-        return f'Jump {self.rating}'
+        return f'Jump {self.level}'
 
     def bulkhead_label(self) -> str:
         return 'Jump Drive'
+
+    @property
+    def parsecs(self) -> int:
+        return self.level
 
     @property
     def effective_tl(self) -> int:
         return self.minimum_tl + (0 if self.customisation is None else self.customisation.tl_delta)
 
     def validate_tl(self) -> None:
+        if self.level not in self._specs:
+            self.error(f'Unsupported J-Drive level {self.level}')
+            return
         if self.ship_tl < self.effective_tl:
             self.error(f'Requires TL{self.effective_tl}, ship is TL{self.ship_tl}')
 
     def compute_tons(self) -> float:
-        base_tons = self.ship.displacement * self.tons_percent + 5
+        tons_percent = float(self._specs[self.level]['tons_percent'])
+        base_tons = self.ship.displacement * tons_percent + 5
         multiplier = 1.0 if self.customisation is None else self.customisation.tons_multiplier
         return base_tons * multiplier
 
     def compute_cost(self) -> float:
-        base_cost = (self.ship.displacement * self.tons_percent + 5) * 1_500_000
+        tons_percent = float(self._specs[self.level]['tons_percent'])
+        base_cost = (self.ship.displacement * tons_percent + 5) * 1_500_000
         multiplier = 1.0 if self.customisation is None else self.customisation.cost_multiplier
         return base_cost * multiplier
 
     def compute_power(self) -> float:
-        base_power = float(math.ceil(0.1 * self.ship.displacement * self.rating))
+        base_power = float(math.ceil(0.1 * self.ship.displacement * self.level))
         multiplier = 1.0 if self.customisation is None else self.customisation.power_multiplier
         return base_power * multiplier
 
 
-class JumpDrive1(JumpDrive):
-    rating: Literal[1] = 1
-    minimum_tl = 9
-    tons_percent = 0.025
-
-
-class JumpDrive2(JumpDrive):
-    rating: Literal[2] = 2
-    minimum_tl = 11
-    tons_percent = 0.05
-
-
-class JumpDrive3(JumpDrive):
-    rating: Literal[3] = 3
-    minimum_tl = 12
-    tons_percent = 0.075
-
-
-class JumpDrive4(JumpDrive):
-    rating: Literal[4] = 4
-    minimum_tl = 13
-    tons_percent = 0.10
-
-
-class JumpDrive5(JumpDrive):
-    rating: Literal[5] = 5
-    minimum_tl = 14
-    tons_percent = 0.125
-
-
-class JumpDrive6(JumpDrive):
-    rating: Literal[6] = 6
-    minimum_tl = 15
-    tons_percent = 0.15
-
-
-class JumpDrive7(JumpDrive):
-    rating: Literal[7] = 7
-    minimum_tl = 16
-    tons_percent = 0.175
-
-
-class JumpDrive8(JumpDrive):
-    rating: Literal[8] = 8
-    minimum_tl = 17
-    tons_percent = 0.20
-
-
-class JumpDrive9(JumpDrive):
-    rating: Literal[9] = 9
-    minimum_tl = 18
-    tons_percent = 0.225
-
-
-ShipMDrive = Annotated[
-    MDrive0
-    | MDrive1
-    | MDrive2
-    | MDrive3
-    | MDrive4
-    | MDrive5
-    | MDrive6
-    | MDrive7
-    | MDrive8
-    | MDrive9
-    | MDrive10
-    | MDrive11,
-    Field(discriminator='rating'),
-]
-
-ShipJumpDrive = Annotated[
-    JumpDrive1 | JumpDrive2 | JumpDrive3 | JumpDrive4 | JumpDrive5 | JumpDrive6 | JumpDrive7 | JumpDrive8 | JumpDrive9,
-    Field(discriminator='rating'),
-]
-
-
 class DriveSection(ShipPart):
-    m_drive: ShipMDrive | None = None
-    reaction_drive: ReactionDrive | None = None
-    jump_drive: ShipJumpDrive | None = None
+    m_drive: MDrive | None = None
+    r_drive: RDrive | None = None
+    j_drive: JDrive | None = None
 
     def _all_parts(self) -> list[ShipPart]:
-        return [part for part in [self.m_drive, self.reaction_drive, self.jump_drive] if part is not None]
+        return [part for part in [self.m_drive, self.r_drive, self.j_drive] if part is not None]
 
     def validate_jump_control(self, software_packages: dict[type[SoftwarePackage], SoftwarePackage]) -> None:
-        if self.jump_drive is None:
+        if self.j_drive is None:
             return
         jump_control = software_packages.get(JumpControl)
         if not isinstance(jump_control, JumpControl):
-            self.jump_drive.warning('No Jump Control software')
+            self.j_drive.warning('No Jump Control software')
             return
-        if jump_control.rating < self.jump_drive.rating:
-            self.jump_drive.warning(f'Limited to Jump {jump_control.rating} by control software')
+        if jump_control.rating < self.j_drive.level:
+            self.j_drive.warning(f'Limited to Jump {jump_control.rating} by control software')
 
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
-        if self.jump_drive is not None:
-            spec.add_row(ship._spec_row_for_part(SpecSection.JUMP, self.jump_drive))
-        if self.reaction_drive is not None:
-            spec.add_row(ship._spec_row_for_part(SpecSection.PROPULSION, self.reaction_drive))
+        if self.j_drive is not None:
+            spec.add_row(ship._spec_row_for_part(SpecSection.JUMP, self.j_drive))
+        if self.r_drive is not None:
+            spec.add_row(ship._spec_row_for_part(SpecSection.PROPULSION, self.r_drive))
         if self.m_drive is not None:
             spec.add_row(ship._spec_row_for_part(SpecSection.PROPULSION, self.m_drive))
 

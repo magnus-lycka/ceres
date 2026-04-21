@@ -4,7 +4,7 @@ import pytest
 from tycho import armour, hull, ship
 from tycho.bridge import Cockpit, CommandSection
 from tycho.crafts import AirRaft, CraftSection, InternalDockingSpace
-from tycho.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection
+from tycho.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
 from tycho.parts import EnergyEfficient, HighTechnology
 from tycho.sensors import CivilianSensors, SensorsSection
 from tycho.storage import CargoCrane, CargoHold, CargoSection
@@ -215,7 +215,7 @@ def test_ship_total_power_load_includes_basic_and_active_systems():
         tl=12,
         displacement=6,
         hull=hull.Hull(configuration=hull.standard_hull),
-        drives=DriveSection(m_drive=MDrive6()),
+        drives=DriveSection(m_drive=MDrive(6)),
         command=CommandSection(cockpit=Cockpit()),
         sensors=SensorsSection(primary=CivilianSensors()),
         weapons=WeaponsSection(

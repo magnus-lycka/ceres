@@ -9,20 +9,11 @@ from tycho.drives import (
     FusionPlantTL8,
     FusionPlantTL12,
     FusionPlantTL15,
-    JumpDrive1,
-    JumpDrive2,
-    JumpDrive3,
-    JumpDrive4,
-    JumpDrive5,
-    JumpDrive6,
-    JumpDrive7,
-    JumpDrive8,
-    JumpDrive9,
+    JDrive,
     LimitedRange,
-    MDrive6,
-    MDrive7,
+    MDrive,
     PowerSection,
-    ReactionDrive,
+    RDrive,
 )
 from tycho.parts import Advanced, Budget, IncreasedSize, SizeReduction, VeryAdvanced
 from tycho.storage import FuelSection, JumpFuel, OperationFuel, ReactionFuel
@@ -33,32 +24,32 @@ class DummyOwner(ShipBase):
         super().__init__(tl=tl, displacement=displacement)
 
 
-# --- JumpDrive ---
+# --- JDrive ---
 
 
-@pytest.mark.parametrize('cls, rating, tl, pct', [
-    (JumpDrive1, 1, 9, 0.025),
-    (JumpDrive2, 2, 11, 0.05),
-    (JumpDrive3, 3, 12, 0.075),
-    (JumpDrive4, 4, 13, 0.10),
-    (JumpDrive5, 5, 14, 0.125),
-    (JumpDrive6, 6, 15, 0.15),
-    (JumpDrive7, 7, 16, 0.175),
-    (JumpDrive8, 8, 17, 0.20),
-    (JumpDrive9, 9, 18, 0.225),
+@pytest.mark.parametrize('level, tl, pct', [
+    (1, 9, 0.025),
+    (2, 11, 0.05),
+    (3, 12, 0.075),
+    (4, 13, 0.10),
+    (5, 14, 0.125),
+    (6, 15, 0.15),
+    (7, 16, 0.175),
+    (8, 17, 0.20),
+    (9, 18, 0.225),
 ])
-def test_jump_drive_tons_cost_tl(cls, rating, tl, pct):
-    d = cls()
+def test_jdrive_tons_cost_tl(level, tl, pct):
+    d = JDrive(level)
     d.bind(DummyOwner(tl, 200))
     expected_tons = 200 * pct + 5
     assert d.minimum_tl == tl
-    assert d.rating == rating
+    assert d.level == level
     assert float(d.tons) == pytest.approx(expected_tons)
     assert float(d.cost) == pytest.approx(expected_tons * 1_500_000)
 
 
-def test_jump_drive_with_decreased_fuel_x2_changes_cost_and_required_tl():
-    d = JumpDrive2(customisation=VeryAdvanced(DecreasedFuel, DecreasedFuel))
+def test_jdrive_with_decreased_fuel_x2_changes_cost_and_required_tl():
+    d = JDrive(2, customisation=VeryAdvanced(DecreasedFuel, DecreasedFuel))
     d.bind(DummyOwner(15, 450))
     assert d.effective_tl == 13
     assert float(d.tons) == pytest.approx(27.5)
@@ -71,7 +62,7 @@ def test_jump_fuel_respects_decreased_fuel_additively():
         tl=15,
         displacement=450,
         hull=hull.Hull(configuration=hull.standard_hull),
-        drives=DriveSection(jump_drive=JumpDrive2(customisation=VeryAdvanced(DecreasedFuel, DecreasedFuel))),
+        drives=DriveSection(j_drive=JDrive(2, customisation=VeryAdvanced(DecreasedFuel, DecreasedFuel))),
         fuel=FuelSection(jump_fuel=JumpFuel(parsecs=2)),
     )
     assert my_ship.fuel is not None
@@ -83,7 +74,7 @@ def test_jump_fuel_respects_decreased_fuel_additively():
 
 
 def test_mdrive_standard_tons():
-    d = MDrive6()
+    d = MDrive(6)
     d.bind(DummyOwner(12, 6))
     assert d.minimum_tl == 12
     assert d.ship_tl == 12
@@ -92,19 +83,19 @@ def test_mdrive_standard_tons():
 
 
 def test_mdrive_standard_cost():
-    d = MDrive6()
+    d = MDrive(6)
     d.bind(DummyOwner(12, 6))
     assert float(d.cost) == pytest.approx(720_000)
 
 
 def test_mdrive_power():
-    d = MDrive6()
+    d = MDrive(6)
     d.bind(DummyOwner(12, 6))
     assert d.power == 4  # ceil(0.1 * 6 * 6) = ceil(3.6) = 4
 
 
 def test_budget_increased_size_mdrive_values():
-    d = MDrive7(customisation=Budget(IncreasedSize))
+    d = MDrive(7, customisation=Budget(IncreasedSize))
     d.bind(DummyOwner(13, 400))
     assert d.build_item() == 'M-Drive 7'
     assert float(d.tons) == pytest.approx(35.0)
@@ -118,8 +109,8 @@ def test_limited_range_is_drive_specific_customisation():
 
 
 def test_drive_section_all_parts():
-    drives = DriveSection(m_drive=MDrive6(), reaction_drive=ReactionDrive(rating=3), jump_drive=JumpDrive2())
-    assert drives._all_parts() == [drives.m_drive, drives.reaction_drive, drives.jump_drive]
+    drives = DriveSection(m_drive=MDrive(6), r_drive=RDrive(3), j_drive=JDrive(2))
+    assert drives._all_parts() == [drives.m_drive, drives.r_drive, drives.j_drive]
 
 
 def test_power_section_all_parts():
@@ -129,7 +120,7 @@ def test_power_section_all_parts():
 
 
 def test_mdrive_tl_too_low():
-    d = MDrive6()
+    d = MDrive(6)
     d.bind(DummyOwner(11, 6))
     assert ('error', 'Requires TL12, ship is TL11') in [
         (note.category.value, note.message) for note in d.notes
@@ -137,13 +128,13 @@ def test_mdrive_tl_too_low():
 
 
 def test_mdrive_recomputes_cost_from_input():
-    d = MDrive6.model_validate({'cost': 999})
+    d = MDrive.model_validate({'level': 6, 'cost': 999})
     d.bind(DummyOwner(12, 6))
     assert d.cost == pytest.approx(720_000)
 
 
 def test_mdrive_recomputes_tons_from_input():
-    d = MDrive6.model_validate({'tons': 999})
+    d = MDrive.model_validate({'level': 6, 'tons': 999})
     d.bind(DummyOwner(12, 6))
     assert d.tons == pytest.approx(0.36)
 
@@ -291,8 +282,8 @@ def test_operation_fuel_requires_plant():
     ]
 
 
-def test_reaction_drive_tons_cost_and_power():
-    d = ReactionDrive(rating=16)
+def test_rdrive_tons_cost_and_power():
+    d = RDrive(16)
     d.bind(DummyOwner(12, 6))
     assert d.minimum_tl == 12
     assert d.tons == pytest.approx(1.92)
@@ -300,8 +291,8 @@ def test_reaction_drive_tons_cost_and_power():
     assert d.power == 0.0
 
 
-def test_reaction_drive_tl_too_low():
-    d = ReactionDrive(rating=16)
+def test_rdrive_tl_too_low():
+    d = RDrive(16)
     d.bind(DummyOwner(11, 6))
     assert ('error', 'Requires TL12, ship is TL11') in [
         (note.category.value, note.message) for note in d.notes
@@ -313,7 +304,7 @@ def test_reaction_fuel_minutes_of_operation():
         tl=12,
         displacement=6,
         hull=hull.Hull(configuration=hull.standard_hull),
-        drives=DriveSection(reaction_drive=ReactionDrive(rating=16)),
+        drives=DriveSection(r_drive=RDrive(16)),
         fuel=FuelSection(reaction_fuel=ReactionFuel(minutes=52)),
     )
     assert my_ship.fuel is not None
@@ -335,15 +326,13 @@ def test_size_reduced_fusion_plant_has_customisation_note():
 
 
 def test_budget_increased_size_mdrive_item_is_base_name_only():
-    from tycho.drives import MDrive1
-    p = MDrive1(customisation=Budget(IncreasedSize))
+    p = MDrive(1, customisation=Budget(IncreasedSize))
     p.bind(DummyOwner(12, 100))
     assert p.build_item() == 'M-Drive 1'
 
 
 def test_budget_increased_size_mdrive_has_customisation_note():
-    from tycho.drives import MDrive1
-    p = MDrive1(customisation=Budget(IncreasedSize))
+    p = MDrive(1, customisation=Budget(IncreasedSize))
     p.bind(DummyOwner(12, 100))
     info_notes = [n.message for n in p.notes if n.category.value == 'info']
     assert 'Budget: Increased Size' in info_notes
