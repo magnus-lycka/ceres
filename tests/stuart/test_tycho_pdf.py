@@ -22,11 +22,13 @@ def fighter_spec():
 # Public API smoke tests
 # ---------------------------------------------------------------------------
 
+@pytest.mark.slow
 def test_render_ship_spec_pdf_returns_pdf_bytes(suleiman_spec):
     pdf = render_ship_spec_pdf(suleiman_spec)
     assert pdf[:4] == b'%PDF'
 
 
+@pytest.mark.slow
 def test_render_ship_pdf_returns_pdf_bytes():
     pdf = render_ship_pdf(build_suleiman())
     assert pdf[:4] == b'%PDF'
@@ -195,6 +197,15 @@ def test_source_uses_guard_column_for_sections(suleiman_spec):
 def test_source_has_rowspan_for_multi_row_sections(suleiman_spec):
     src = _build_typst_source(suleiman_spec, page_size='a4')
     assert 'rowspan:' in src
+
+
+def test_source_uses_uniform_internal_table_rules(suleiman_spec):
+    src = _build_typst_source(suleiman_spec, page_size='a4')
+    assert '#let table-border = 0.6pt + ink' in src
+    assert '#let table-rule = 0.3pt + rgb("#b0a090")' in src
+    assert '#set table(stroke: table-rule)' in src
+    assert 'stroke: (_x, _y) => (right: table-rule, bottom: table-rule),' in src
+    assert 'if y == 0' not in src
 
 
 def test_power_only_rows_excluded_from_main_table(suleiman_spec):

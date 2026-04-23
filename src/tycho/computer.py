@@ -147,6 +147,26 @@ class FireControl(RatedSoftwarePackage):
     }
 
 
+class AdvancedFireControl(RatedSoftwarePackage):
+    package: Literal['advanced_fire_control'] = 'advanced_fire_control'
+    label = 'Advanced Fire Control'
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        1: dict(bandwidth=15, minimum_tl=10, cost=12_000_000.0),
+        2: dict(bandwidth=25, minimum_tl=12, cost=15_000_000.0),
+        3: dict(bandwidth=30, minimum_tl=14, cost=18_000_000.0),
+    }
+
+
+class AntiHijack(RatedSoftwarePackage):
+    package: Literal['anti_hijack'] = 'anti_hijack'
+    label = 'Anti-Hijack'
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        1: dict(bandwidth=2, minimum_tl=11, cost=6_000_000.0),
+        2: dict(bandwidth=10, minimum_tl=12, cost=8_000_000.0),
+        3: dict(bandwidth=15, minimum_tl=13, cost=10_000_000.0),
+    }
+
+
 class Evade(RatedSoftwarePackage):
     package: Literal['evade'] = 'evade'
     label = 'Evade'
@@ -154,6 +174,34 @@ class Evade(RatedSoftwarePackage):
         1: dict(bandwidth=5, minimum_tl=9, cost=1_000_000.0),
         2: dict(bandwidth=10, minimum_tl=11, cost=2_000_000.0),
         3: dict(bandwidth=15, minimum_tl=12, cost=3_000_000.0),
+    }
+
+
+class BroadSpectrumEW(FixedSoftwarePackage):
+    package: Literal['broad_spectrum_ew'] = 'broad_spectrum_ew'
+    label = 'Broad Spectrum EW'
+    minimum_tl = 13
+    bandwidth = 12
+    base_cost = 14_000_000.0
+
+
+class ElectronicWarfare(RatedSoftwarePackage):
+    package: Literal['electronic_warfare'] = 'electronic_warfare'
+    label = 'Electronic Warfare'
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        1: dict(bandwidth=10, minimum_tl=10, cost=15_000_000.0),
+        2: dict(bandwidth=15, minimum_tl=13, cost=18_000_000.0),
+        3: dict(bandwidth=20, minimum_tl=15, cost=24_000_000.0),
+    }
+
+
+class VirtualGunner(RatedSoftwarePackage):
+    package: Literal['virtual_gunner'] = 'virtual_gunner'
+    label = 'Virtual Gunner'
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        0: dict(bandwidth=5, minimum_tl=9, cost=1_000_000.0),
+        1: dict(bandwidth=10, minimum_tl=12, cost=5_000_000.0),
+        2: dict(bandwidth=15, minimum_tl=15, cost=10_000_000.0),
     }
 
 
@@ -277,7 +325,18 @@ ShipComputer = Annotated[
 ]
 
 ShipSoftware = Annotated[
-    Library | Manoeuvre | Intellect | JumpControl | AutoRepair | FireControl | Evade,
+    Library
+    | Manoeuvre
+    | Intellect
+    | JumpControl
+    | AutoRepair
+    | FireControl
+    | AdvancedFireControl
+    | AntiHijack
+    | Evade
+    | BroadSpectrumEW
+    | ElectronicWarfare
+    | VirtualGunner,
     Field(discriminator='package'),
 ]
 

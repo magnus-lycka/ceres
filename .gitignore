@@ -14,6 +14,7 @@ refs/
 
 # Coverage
 .coverage
+.pytest-profiles/
 
 # Generated markdown from ship regression tests
 tests/ships/generated_md/

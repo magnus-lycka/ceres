@@ -28,6 +28,7 @@ from .sensors import SensorsSection
 from .spec import PassengerRow, ShipSpec, SpecRow, SpecSection
 from .storage import CargoSection, FuelScoops, FuelSection
 from .systems import Airlock, SystemsSection
+from .text import optional_count
 from .weapons import WeaponsSection
 
 __all__ = ['CrewRole', 'Ship', 'ShipDesignType']
@@ -262,7 +263,7 @@ class Ship(ShipBase):
                 SpecRow(
                     section=section,
                     item=display_item,
-                    quantity=len(group) if len(group) > 1 else None,
+                    quantity=optional_count(len(group)),
                     tons=total_tons,
                     power=(-total_power) if total_power else None,
                     cost=total_cost,

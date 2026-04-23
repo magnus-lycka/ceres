@@ -162,6 +162,7 @@ def test_alt_dragon_has_no_errors():
     assert not any(cat == 'error' for cat, _ in all_notes)
 
 
+@pytest.mark.generated_output
 def test_alt_dragon_stuart_html_output():
     dragon = build_alt_dragon()
     html = render_ship_html(dragon)
@@ -173,7 +174,9 @@ def test_alt_dragon_stuart_html_output():
     assert '<header class="sidebar-card-title">Power</header>' in html
     assert '<header class="sidebar-card-title">Costs</header>' in html
     assert 'Radiation Shielding: Reduce Rads by 1,000' in html
-    assert 'Small Missile Bay' in html
+    assert 'Small Bay (12 missiles per salvo)' in html
+    assert 'Weapon: Missile' in html
+    assert 'Magazine: 144 missiles (12 full salvos)' in html
     assert 'High Technology: Size Reduction × 3' in html
     assert 'Life Support Facilities' in html
     assert 'Armoured Bulkheads<ul class="item-notes">' in html

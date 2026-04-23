@@ -274,6 +274,7 @@ def test_suleiman_spec_structure():
     assert any(p.kind == 'MIDDLE' and p.quantity == 2 for p in spec.passengers)
 
 
+@pytest.mark.generated_output
 def test_suleiman_stuart_html_output():
     suleiman = build_suleiman()
     html = render_ship_html(suleiman)

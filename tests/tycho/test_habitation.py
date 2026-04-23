@@ -95,6 +95,21 @@ def test_high_stateroom_values():
     assert s.cost == pytest.approx(800_000.0)
 
 
+def test_habitation_section_supports_standard_and_high_staterooms():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(
+            staterooms=Staterooms(4),
+            high_staterooms=Staterooms(1, kind='high'),
+        ),
+    )
+
+    assert my_ship.habitation is not None
+    assert my_ship.habitation.fixed_life_support_cost(my_ship) == pytest.approx(5_000.0)
+
+
 def test_staterooms_reject_unknown_kind():
     with pytest.raises(ValueError, match="Input should be 'standard' or 'high'"):
         Staterooms(1, kind='luxury')

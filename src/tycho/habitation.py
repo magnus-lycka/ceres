@@ -8,6 +8,7 @@ from .crew import effective_crew_roles
 from .parts import ShipPart
 from .spec import ShipSpec, SpecSection
 from .systems import CommonArea
+from .text import optional_count
 
 
 class Staterooms(ShipPart):
@@ -166,15 +167,25 @@ class CabinSpace(ShipPart):
 
 class HabitationSection(CeresModel):
     staterooms: Staterooms | None = None
+    high_staterooms: Staterooms | None = None
     cabin_space: CabinSpace | None = None
     low_berths: LowBerths | None = None
     common_area: CommonArea | None = None
     entertainment: AdvancedEntertainmentSystem | None = None
 
+    def _stateroom_groups(self) -> list[Staterooms]:
+        groups: list[Staterooms] = []
+        if self.staterooms is not None:
+            groups.append(self.staterooms)
+        if self.high_staterooms is not None:
+            groups.append(self.high_staterooms)
+        return groups
+
     def validate_common_area(self) -> None:
-        if self.staterooms is None:
+        stateroom_groups = self._stateroom_groups()
+        if not stateroom_groups:
             return
-        recommended_common_area = self.staterooms.tons / 4
+        recommended_common_area = sum(group.tons for group in stateroom_groups) / 4
         actual_common_area = 0.0 if self.common_area is None else self.common_area.tons
         if actual_common_area < recommended_common_area:
             self.warning(f'Recommended common area is {recommended_common_area:.2f} tons')
@@ -188,7 +199,7 @@ class HabitationSection(CeresModel):
         middle_passage = passenger_vector.get('middle', 0)
         low_passage = passenger_vector.get('low', 0)
 
-        stateroom_count = 0 if self.staterooms is None else self.staterooms.count
+        stateroom_count = sum(group.count for group in self._stateroom_groups())
         crew_staterooms = math.ceil(self.crew_count(ship) / 2)
         non_crew_staterooms = max(0, stateroom_count - crew_staterooms)
         if high_passage > non_crew_staterooms:
@@ -207,7 +218,13 @@ class HabitationSection(CeresModel):
 
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = []
-        for part in (self.staterooms, self.cabin_space, self.low_berths, self.common_area, self.entertainment):
+        for part in (
+            *self._stateroom_groups(),
+            self.cabin_space,
+            self.low_berths,
+            self.common_area,
+            self.entertainment,
+        ):
             if part is not None:
                 parts.append(part)
         return parts
@@ -224,7 +241,7 @@ class HabitationSection(CeresModel):
         if ship.military:
             return {}
 
-        stateroom_count = 0 if self.staterooms is None else self.staterooms.count
+        stateroom_count = sum(group.count for group in self._stateroom_groups())
         low_berth_count = 0 if self.low_berths is None else self.low_berths.count
         cabin_capacity = 0 if self.cabin_space is None else self.cabin_space.passenger_capacity
 
@@ -237,7 +254,7 @@ class HabitationSection(CeresModel):
         }
 
     def fixed_life_support_cost(self, ship) -> float:
-        stateroom_life_support = 0.0 if self.staterooms is None else self.staterooms.fixed_life_support_cost
+        stateroom_life_support = sum(group.fixed_life_support_cost for group in self._stateroom_groups())
         cabin_life_support = 0.0 if self.cabin_space is None else self.cabin_space.fixed_life_support_cost
         return stateroom_life_support + cabin_life_support
 
@@ -255,18 +272,16 @@ class HabitationSection(CeresModel):
         return self.fixed_life_support_cost(ship) + low_berth_life_support + self.variable_life_support_cost(ship)
 
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
-        if self.staterooms is not None:
-            item = self.staterooms.label
+        for staterooms in self._stateroom_groups():
+            item = staterooms.label
             spec.add_row(
                 ship._spec_row_for_part(
                     SpecSection.HABITATION,
-                    self.staterooms,
-                    item=f'{item}s' if self.staterooms.count > 1 else item,
+                    staterooms,
+                    item=f'{item}s' if staterooms.count > 1 else item,
                 )
             )
-            spec.rows_for_section(SpecSection.HABITATION)[-1].quantity = (
-                self.staterooms.count if self.staterooms.count > 1 else None
-            )
+            spec.rows_for_section(SpecSection.HABITATION)[-1].quantity = optional_count(staterooms.count)
         if self.low_berths is not None:
             spec.add_row(
                 ship._spec_row_for_part(
@@ -275,9 +290,7 @@ class HabitationSection(CeresModel):
                     item='Low Berths' if self.low_berths.count > 1 else 'Low Berth',
                 )
             )
-            spec.rows_for_section(SpecSection.HABITATION)[-1].quantity = (
-                self.low_berths.count if self.low_berths.count > 1 else None
-            )
+            spec.rows_for_section(SpecSection.HABITATION)[-1].quantity = optional_count(self.low_berths.count)
         habitation_parts = [
             part for part in [self.cabin_space, self.common_area, self.entertainment] if part is not None
         ]

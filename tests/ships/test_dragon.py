@@ -190,14 +190,14 @@ def test_dragon_modeled_subset_matches_current_model():
 
     assert dragon.weapons is not None
     assert len(dragon.weapons.barbettes) == 2
-    assert dragon.weapons.barbettes[0].build_item() == 'Particle Barbette'
+    assert dragon.weapons.barbettes[0].build_item() == 'Barbette (Damage × 3 after armour)'
     assert dragon.weapons.barbettes[0].tons == pytest.approx(5.0)
     assert len(dragon.weapons.bays) == 1
-    assert dragon.weapons.bays[0].build_item() == 'Small Missile Bay'
+    assert dragon.weapons.bays[0].build_item() == 'Small Bay (12 missiles per salvo)'
     assert dragon.weapons.bays[0].tons == pytest.approx(35.0)
     assert dragon.weapons.bays[0].cost == pytest.approx(18_000_000)
     assert len(dragon.weapons.point_defense_batteries) == 1
-    assert dragon.weapons.point_defense_batteries[0].build_item() == 'Point Defense Battery: Type II-L'
+    assert dragon.weapons.point_defense_batteries[0].build_item() == 'Point Defence Laser Battery Type II'
     assert dragon.weapons.point_defense_batteries[0].tons == pytest.approx(20.0)
     assert dragon.weapons.point_defense_batteries[0].cost == pytest.approx(10_000_000)
     assert dragon.weapons.missile_storage is not None

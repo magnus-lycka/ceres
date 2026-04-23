@@ -5,6 +5,7 @@ from pydantic import Field
 from .base import CeresModel, Note, NoteCategory, ShipBase
 from .parts import ShipPart
 from .spec import ShipSpec, SpecSection
+from .text import format_counted_label, optional_count
 
 LowInterceptMode = Literal['NONE', 'LPI', 'ELPI']
 
@@ -298,9 +299,7 @@ class SensorStations(ShipPart):
         return 'Sensor Stations'
 
     def bulkhead_label(self) -> str:
-        if self.count == 1:
-            return 'Sensor Station'
-        return f'Sensor Stations × {self.count}'
+        return format_counted_label('Sensor Stations', self.count)
 
     def compute_tons(self) -> float:
         return float(self.count)
@@ -404,6 +403,4 @@ class SensorsSection(CeresModel):
         for sensor_part in self._all_parts():
             spec.add_row(ship._spec_row_for_part(SpecSection.SENSORS, sensor_part))
             if isinstance(sensor_part, SensorStations):
-                spec.rows_for_section(SpecSection.SENSORS)[-1].quantity = (
-                    sensor_part.count if sensor_part.count > 1 else None
-                )
+                spec.rows_for_section(SpecSection.SENSORS)[-1].quantity = optional_count(sensor_part.count)

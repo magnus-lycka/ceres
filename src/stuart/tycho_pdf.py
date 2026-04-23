@@ -2,11 +2,10 @@ from itertools import groupby
 import os
 import tempfile
 
-import typst
-
 from tycho.base import Note, NoteCategory
 from tycho.ship import Ship
 from tycho.spec import ShipSpec, SpecRow
+from tycho.text import format_counted_label
 
 __all__ = ['render_ship_pdf', 'render_ship_spec_pdf', 'render_ship_spec_typst', 'render_ship_typst']
 
@@ -24,6 +23,8 @@ def render_ship_spec_typst(spec: ShipSpec, *, page_size: str = 'a4') -> str:
 
 
 def render_ship_spec_pdf(spec: ShipSpec, *, page_size: str = 'a4') -> bytes:
+    import typst
+
     source = _build_typst_source(spec, page_size=page_size)
     with tempfile.NamedTemporaryFile(suffix='.typ', mode='w', delete=False, encoding='utf-8') as f:
         f.write(source)
@@ -102,7 +103,7 @@ def _spec_table_rows(spec: ShipSpec) -> str:
         guard = f'table.cell(rowspan: {n}, breakable: false)[]' if n > 1 else 'table.cell(breakable: false)[]'
         for i, row in enumerate(rows):
             sec = _esc(section.value) if i == 0 else ''
-            item = _esc(row.item if row.quantity is None else f'{row.item} \u00d7 {row.quantity}')
+            item = _esc(format_counted_label(row.item, row.quantity))
             tons = _fmt_tons(row.tons)
             mcr = _fmt_cr_col(row.cost)
             bold_tons = f'*{tons}*' if row.emphasize_tons and tons else tons
@@ -130,7 +131,7 @@ def _crew_rows(spec: ShipSpec) -> str:
         return '    table.cell(colspan: 3)[Uncrewed],'
     lines = []
     for c in spec.crew:
-        role = _esc(c.role if c.quantity is None else f'{c.role} \u00d7 {c.quantity}')
+        role = _esc(format_counted_label(c.role, c.quantity))
         qty = c.quantity if c.quantity is not None else 1
         total = c.salary * qty
         lines.append(f'    [{role}], table.cell(align: right)[{c.salary:,}], table.cell(align: right)[{total:,}],')
@@ -146,10 +147,10 @@ def _crew_notes_block(spec: ShipSpec) -> str:
 def _crew_panel(spec: ShipSpec) -> str:
     return f"""
 [
-  #block(breakable: false, stroke: 0.6pt + ink, inset: 0pt)[
+  #block(breakable: false, stroke: table-border, inset: 0pt)[
     #table(
       columns: (1fr, auto, auto),
-      stroke: (x, y) => if y == 0 {{ (bottom: 0.6pt + ink) }} else {{ (bottom: 0.3pt + rgb("#b0a090")) }},
+      stroke: (_x, _y) => (bottom: table-rule),
       table.header(
         table.cell(colspan: 3, align: center)[#text(fill: ink, weight: "bold")[CREW]],
         [*Role*], table.cell(align: right)[*Salary*], table.cell(align: right)[*Total*],
@@ -235,10 +236,13 @@ def _build_typst_source(spec: ShipSpec, *, page_size: str) -> str:
     return f"""
 #set page(paper: "{page_size}", margin: (x: 15mm, top: 12mm, bottom: 12mm))
 #set text(font: ("Arial Narrow", "Helvetica Neue Condensed", "Helvetica"), size: 10pt)
-#set table(stroke: (x, y) => if y == 0 {{ 0.6pt + rgb("#0d0d0d") }} else {{ 0.3pt + rgb("#b0a090") }})
 
 #let accent = rgb("#cc2036")
-#let ink    = rgb("#0d0d0d")
+#let ink = rgb("#0d0d0d")
+#let table-border = 0.6pt + ink
+#let table-rule = 0.3pt + rgb("#b0a090")
+
+#set table(stroke: table-rule)
 
 #grid(
   columns: (1fr, auto),
@@ -250,10 +254,11 @@ def _build_typst_source(spec: ShipSpec, *, page_size: str) -> str:
 
 // ── Main spec table (full width) ──────────────────────────────────────────
 // 0pt guard column keeps each section together across page breaks
-#block(stroke: 0.6pt + ink, inset: 0pt)[
+#block(stroke: table-border, inset: 0pt)[
   #table(
     columns: (0pt, 24mm, 1fr, 28mm, 32mm),
     fill: none,
+    stroke: (_x, _y) => (right: table-rule, bottom: table-rule),
     table.header(
       [], [*Section*], [*Item*], table.cell(align: right)[*Tons*], table.cell(align: right)[*Price (Cr)*],
     ),
@@ -271,10 +276,10 @@ def _build_typst_source(spec: ShipSpec, *, page_size: str) -> str:
 
   {_crew_panel(spec)},
 
-  block(breakable: false, stroke: 0.6pt + ink, inset: 0pt)[
+  block(breakable: false, stroke: table-border, inset: 0pt)[
     #table(
       columns: (1fr, auto),
-      stroke: (x, y) => if y == 0 {{ (bottom: 0.6pt + ink) }} else {{ (bottom: 0.3pt + rgb("#b0a090")) }},
+      stroke: (_x, _y) => (bottom: table-rule),
       table.header(
         table.cell(colspan: 2, align: center)[#text(fill: ink, weight: "bold")[POWER]],
       ),
@@ -286,10 +291,10 @@ def _build_typst_source(spec: ShipSpec, *, page_size: str) -> str:
 #v(4mm)
 
 // ── Costs (full width) ────────────────────────────────────────────────────
-#block(breakable: false, stroke: 0.6pt + ink, inset: 0pt)[
+#block(breakable: false, stroke: table-border, inset: 0pt)[
   #table(
     columns: (1fr, auto),
-    stroke: (x, y) => if y == 0 {{ (bottom: 0.6pt + ink) }} else {{ (bottom: 0.3pt + rgb("#b0a090")) }},
+    stroke: (_x, _y) => (bottom: table-rule),
     table.header(
       table.cell(colspan: 2, align: center)[#text(fill: ink, weight: "bold")[COSTS (Cr)]],
     ),

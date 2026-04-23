@@ -2,6 +2,7 @@ import math
 
 from .base import CeresModel
 from .spec import CrewRow as SpecCrewRow
+from .text import optional_count
 
 PILOT_SALARY = 6_000
 ASTROGATOR_SALARY = 5_000
@@ -288,7 +289,7 @@ def spec_crew_rows(ship) -> list[SpecCrewRow]:
         rows.append(
             SpecCrewRow(
                 role=role.role,
-                quantity=role.count if role.count > 1 else None,
+                quantity=optional_count(role.count),
                 salary=role.monthly_salary,
             )
         )

@@ -4,6 +4,7 @@ from typing import Annotated, Any, ClassVar, Literal
 from pydantic import Field, PrivateAttr, TypeAdapter
 
 from .base import CeresModel, Note, NoteCategory, ShipBase
+from .text import collapse_repeated_labels
 
 
 class CustomisationGrade(StrEnum):
@@ -78,10 +79,7 @@ class Customisation(CeresModel):
 
     @property
     def note_text(self) -> str:
-        counts: dict[str, int] = {}
-        for m in self.modifications:
-            counts[m.name] = counts.get(m.name, 0) + 1
-        parts = [f'{name} × {n}' if n > 1 else name for name, n in counts.items()]
+        parts = collapse_repeated_labels(m.name for m in self.modifications)
         return f'{self._display_name}: {", ".join(parts)}'
 
     @property

@@ -3,6 +3,7 @@ from html import escape
 from tycho.base import NoteCategory
 from tycho.ship import Ship
 from tycho.spec import CrewRow, ExpenseRow, ShipSpec, SpecRow
+from tycho.text import format_counted_label
 
 from .html import ExpanseHtmlPage, StuartTheme, render_expanse_html_page
 
@@ -117,7 +118,7 @@ def _render_main_row(row: SpecRow, section_rowspan: int | None, is_last_section:
 
 
 def _render_item_cell(row: SpecRow) -> str:
-    item = escape(row.item if row.quantity is None else f'{row.item} × {row.quantity}')
+    item = escape(format_counted_label(row.item, row.quantity))
     if not row.notes:
         return item
 
@@ -138,7 +139,7 @@ def _render_note_item(message: str, category: NoteCategory) -> str:
 
 
 def _render_crew_card(crew: list[CrewRow], crew_notes) -> str:
-    rows = ''.join(f'<li>{escape(c.role if c.quantity is None else f"{c.role} × {c.quantity}")}</li>' for c in crew)
+    rows = ''.join(f'<li>{escape(format_counted_label(c.role, c.quantity))}</li>' for c in crew)
     if not rows:
         rows = '<li>Uncrewed</li>'
     notes_html = ''
@@ -154,7 +155,7 @@ def _render_power_card(rows: list[SpecRow]) -> str:
     power_rows = [*emphasized_rows, *other_rows]
     rendered_rows = ''.join(
         '<tr>'
-        f'<td>{escape(row.item if row.quantity is None else f"{row.item} × {row.quantity}")}</td>'
+        f'<td>{escape(format_counted_label(row.item, row.quantity))}</td>'
         f'<td class="num{" power-positive" if row.emphasize_power else ""}">{_format_number(abs(row.power))}</td>'
         '</tr>'
         for row in power_rows

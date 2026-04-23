@@ -155,7 +155,7 @@ def test_revised_dragon_modeled_subset_matches_current_model():
 
     assert dragon.weapons is not None
     assert len(dragon.weapons.barbettes) == 2
-    assert dragon.weapons.barbettes[0].build_item() == 'Particle Barbette'
+    assert dragon.weapons.barbettes[0].build_item() == 'Barbette (Damage × 3 after armour)'
     assert dragon.weapons.missile_storage is not None
     assert dragon.weapons.missile_storage.tons == pytest.approx(34.0)
     assert dragon.weapons.missile_storage.cost == pytest.approx(0.0)

@@ -17,6 +17,8 @@ from .test_strandbell import build_strandbell
 from .test_suleiman import build_suleiman
 from .test_ultralight_fighter import build_ultralight_fighter
 
+pytestmark = pytest.mark.generated_output
+
 
 @pytest.mark.parametrize(
     ('name', 'builder'),

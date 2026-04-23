@@ -1,8 +1,10 @@
+from math import ceil
 from typing import ClassVar
 
 from .base import CeresModel, Note, NoteCategory
 from .parts import ShipPart
 from .spec import ShipSpec, SpecSection
+from .text import optional_count
 
 
 class Workshop(ShipPart):
@@ -127,11 +129,10 @@ class Airlock(ShipPart):
         return f'Airlock ({self.size:g} tons)'
 
     def am_i_for_free(self) -> bool:
-        free_airlocks = self.ship.displacement // 100
+        free_airlocks = ceil(self.ship.displacement / 100)
         siblings = self.ship.parts_of_type(Airlock)
-        try:
-            index = siblings.index(self)
-        except ValueError:
+        index = next((i for i, sibling in enumerate(siblings) if sibling is self), -1)
+        if index < 0:
             return False
         return index < free_airlocks
 
@@ -241,6 +242,4 @@ class SystemsSection(CeresModel):
         for system_part in self._all_parts():
             spec.add_row(ship._spec_row_for_part(SpecSection.SYSTEMS, system_part))
             if isinstance(system_part, ProbeDrones):
-                spec.rows_for_section(SpecSection.SYSTEMS)[-1].quantity = (
-                    system_part.count if system_part.count > 1 else None
-                )
+                spec.rows_for_section(SpecSection.SYSTEMS)[-1].quantity = optional_count(system_part.count)

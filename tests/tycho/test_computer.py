@@ -2,16 +2,21 @@ import pytest
 
 from tycho.base import ShipBase
 from tycho.computer import (
+    AdvancedFireControl,
+    AntiHijack,
     AutoRepair,
+    BroadSpectrumEW,
     Computer,
     ComputerSection,
     Core,
+    ElectronicWarfare,
     Evade,
     FireControl,
     Intellect,
     JumpControl,
     Library,
     Manoeuvre,
+    VirtualGunner,
 )
 
 
@@ -126,6 +131,47 @@ def test_jump_control_2_data():
     assert p.rating == 2
 
 
+def test_advanced_fire_control_1_data():
+    p = AdvancedFireControl(1)
+    assert p.description == 'Advanced Fire Control/1'
+    assert p.minimum_tl == 10
+    assert p.bandwidth == 15
+    assert p.cost == 12_000_000
+    assert p.rating == 1
+
+
+def test_anti_hijack_1_data():
+    p = AntiHijack(1)
+    assert p.description == 'Anti-Hijack/1'
+    assert p.minimum_tl == 11
+    assert p.bandwidth == 2
+    assert p.cost == 6_000_000
+
+
+def test_broad_spectrum_ew_data():
+    p = BroadSpectrumEW()
+    assert p.description == 'Broad Spectrum EW'
+    assert p.minimum_tl == 13
+    assert p.bandwidth == 12
+    assert p.cost == 14_000_000
+
+
+def test_electronic_warfare_1_data():
+    p = ElectronicWarfare(1)
+    assert p.description == 'Electronic Warfare/1'
+    assert p.minimum_tl == 10
+    assert p.bandwidth == 10
+    assert p.cost == 15_000_000
+
+
+def test_virtual_gunner_1_data():
+    p = VirtualGunner(1)
+    assert p.description == 'Virtual Gunner/1'
+    assert p.minimum_tl == 12
+    assert p.bandwidth == 10
+    assert p.cost == 5_000_000
+
+
 def test_jump_control_rejects_invalid_rating():
     with pytest.raises(ValueError, match='Unsupported JumpControl rating 7'):
         JumpControl(7)
@@ -192,6 +238,33 @@ def test_software_singleton_lookup_uses_family_types():
     assert section.software_packages[FireControl].rating == 2
     assert isinstance(section.software_packages[AutoRepair], AutoRepair)
     assert section.software_packages[AutoRepair].rating == 2
+
+
+def test_software_singleton_lookup_uses_new_software_families():
+    hardware = Computer(35)
+    hardware.bind(DummyOwner(15, 100))
+    section = ComputerSection(
+        hardware=hardware,
+        software=[
+            AdvancedFireControl(1),
+            AdvancedFireControl(2),
+            AntiHijack(1),
+            AntiHijack(2),
+            ElectronicWarfare(1),
+            ElectronicWarfare(2),
+            VirtualGunner(0),
+            VirtualGunner(1),
+        ],
+    )
+
+    assert isinstance(section.software_packages[AdvancedFireControl], AdvancedFireControl)
+    assert section.software_packages[AdvancedFireControl].rating == 2
+    assert isinstance(section.software_packages[AntiHijack], AntiHijack)
+    assert section.software_packages[AntiHijack].rating == 2
+    assert isinstance(section.software_packages[ElectronicWarfare], ElectronicWarfare)
+    assert section.software_packages[ElectronicWarfare].rating == 2
+    assert isinstance(section.software_packages[VirtualGunner], VirtualGunner)
+    assert section.software_packages[VirtualGunner].rating == 1
 
 
 def test_validate_software_warns_when_ship_has_no_hardware():

@@ -17,6 +17,7 @@ def test_render_ship_spec_html_uses_high_guard_like_split_layout():
     assert 'Costs</header>' in html
     assert 'Basic Ship Systems' in html
     assert 'Jump 2' in html
+    assert 'Staterooms × 4' in html
     assert html.index('Fusion (TL 12)') < html.index('Basic Ship Systems')
     assert 'class="num power-positive">60.00</td>' in html
     assert '<td>Basic Ship Systems</td><td class="num">20.00</td>' in html

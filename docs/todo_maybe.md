@@ -235,3 +235,30 @@ We want to be able to attach random, somewhat formatted text to be attached to s
 designs. We'd use markdown for that.
 
 Eventually we'll also want to provide illustrations and floor plans/drwaings.
+
+# x vs ×
+
+Fixed.
+
+Counted labels now go through shared helpers in `tycho.text`, so the display form is consistently `×`
+instead of `x`, and repeated labels are collapsed in one place instead of being reimplemented separately.
+
+# Verify that we don't collapse things unless they are identical
+
+If we for instance hace two triple turrets with all pulse lasers
+we basically want to see
+
+Triple Turret x 2
+ - Weapon: Pulse Laser x 3
+
+But on the other hand, if we have this:
+
+Triple Turret
+ - Weapon: Pulse Laser x 3
+Triple Turret
+ - Weapon: Missile x 2
+ - Weapon: Sandcaster
+
+ Then we can't compact it any more than we did.
+ We can't make a Triple Turret x 2, since they are different.
+ 

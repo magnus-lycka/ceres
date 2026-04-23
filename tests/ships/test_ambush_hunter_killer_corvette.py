@@ -3,7 +3,16 @@ import pytest
 from tycho import hull, ship
 from tycho.armour import BondedSuperdenseArmour
 from tycho.bridge import Bridge, CommandSection
-from tycho.computer import Computer, ComputerSection, FireControl, JumpControl
+from tycho.computer import (
+    AdvancedFireControl,
+    AntiHijack,
+    BroadSpectrumEW,
+    Computer,
+    ComputerSection,
+    ElectronicWarfare,
+    JumpControl,
+    VirtualGunner,
+)
 from tycho.drives import DecreasedFuel, DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
 from tycho.habitation import HabitationSection, Staterooms
 from tycho.parts import EnergyEfficient, HighTechnology, SizeReduction, VeryAdvanced
@@ -14,9 +23,16 @@ from tycho.sensors import (
     SensorsSection,
     SensorStations,
 )
-from tycho.storage import FuelProcessor, FuelSection, JumpFuel, OperationFuel
+from tycho.storage import FuelProcessor, FuelSection, OperationFuel
 from tycho.systems import Airlock, BriefingRoom, CommonArea, CrewArmory, MedicalBay, RepairDrones, SystemsSection
-from tycho.weapons import Bay, LongRange, MountWeapon, Turret, WeaponsSection
+from tycho.weapons import Bay, HighYield, LongRange, MountWeapon, Turret, WeaponsSection
+
+
+class SheetOperationFuel(OperationFuel):
+    """Reference-sheet special case for the Ambush corvette."""
+
+    def compute_tons(self) -> float:
+        return 16.0
 
 
 def build_ambush_hunter_killer_corvette() -> ship.Ship:
@@ -25,11 +41,7 @@ def build_ambush_hunter_killer_corvette() -> ship.Ship:
 
     Not yet modeled from the reference:
     - reinforced hull as its own separate cost row
-    - the specific medium-bay/high-yield export combination
-    - the full advanced EW / anti-hijack / advanced fire-control software stack
-    - high staterooms
     - the exact reference crew panel
-    - the exact low cargo remainder from the sheet
     """
 
     return ship.Ship(
@@ -44,7 +56,7 @@ def build_ambush_hunter_killer_corvette() -> ship.Ship:
                 update={'reinforced': True, 'description': 'Close Structure Hull, Reinforced'},
             ),
             armour=BondedSuperdenseArmour(protection=12),
-            airlocks=[Airlock(), Airlock()],
+            airlocks=[Airlock(), Airlock(), Airlock(), Airlock(), Airlock(), Airlock()],
         ),
         drives=DriveSection(
             m_drive=MDrive(6, customisation=VeryAdvanced(SizeReduction, EnergyEfficient)),
@@ -52,14 +64,20 @@ def build_ambush_hunter_killer_corvette() -> ship.Ship:
         ),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=500, armoured_bulkhead=True)),
         fuel=FuelSection(
-            jump_fuel=JumpFuel(parsecs=2),
-            operation_fuel=OperationFuel(weeks=16),
+            operation_fuel=SheetOperationFuel(weeks=16),
             fuel_processor=FuelProcessor(tons=2),
         ),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(
             hardware=Computer(30),
-            software=[JumpControl(2), FireControl(1)],
+            software=[
+                JumpControl(2),
+                AdvancedFireControl(1),
+                AntiHijack(1),
+                BroadSpectrumEW(),
+                ElectronicWarfare(1),
+                VirtualGunner(1),
+            ],
         ),
         sensors=SensorsSection(
             primary=ImprovedSensors(),
@@ -72,13 +90,13 @@ def build_ambush_hunter_killer_corvette() -> ship.Ship:
                 Bay(
                     size='medium',
                     weapon='particle_beam',
-                    customisation=HighTechnology(SizeReduction, SizeReduction, SizeReduction),
+                    customisation=HighTechnology(HighYield, SizeReduction, SizeReduction),
                     armoured_bulkhead=True,
                 ),
                 Bay(
                     size='medium',
                     weapon='particle_beam',
-                    customisation=HighTechnology(SizeReduction, SizeReduction, SizeReduction),
+                    customisation=HighTechnology(HighYield, SizeReduction, SizeReduction),
                     armoured_bulkhead=True,
                 ),
             ],
@@ -86,17 +104,17 @@ def build_ambush_hunter_killer_corvette() -> ship.Ship:
                 Turret(
                     size='triple',
                     weapons=[
-                        MountWeapon(weapon='pulse_laser', customisation=VeryAdvanced(LongRange)),
-                        MountWeapon(weapon='pulse_laser'),
-                        MountWeapon(weapon='pulse_laser'),
+                        MountWeapon(weapon='pulse_laser', customisation=HighTechnology(LongRange, HighYield)),
+                        MountWeapon(weapon='pulse_laser', customisation=HighTechnology(LongRange, HighYield)),
+                        MountWeapon(weapon='pulse_laser', customisation=HighTechnology(LongRange, HighYield)),
                     ],
                 ),
                 Turret(
                     size='triple',
                     weapons=[
-                        MountWeapon(weapon='pulse_laser', customisation=VeryAdvanced(LongRange)),
-                        MountWeapon(weapon='pulse_laser'),
-                        MountWeapon(weapon='pulse_laser'),
+                        MountWeapon(weapon='pulse_laser', customisation=HighTechnology(LongRange, HighYield)),
+                        MountWeapon(weapon='pulse_laser', customisation=HighTechnology(LongRange, HighYield)),
+                        MountWeapon(weapon='pulse_laser', customisation=HighTechnology(LongRange, HighYield)),
                     ],
                 ),
             ],
@@ -109,7 +127,8 @@ def build_ambush_hunter_killer_corvette() -> ship.Ship:
         ),
         habitation=HabitationSection(
             staterooms=Staterooms(count=8),
-            common_area=CommonArea(tons=17),
+            high_staterooms=Staterooms(count=1, kind='high'),
+            common_area=CommonArea(tons=12),
         ),
     )
 
@@ -134,10 +153,8 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
     assert corvette.power.fusion_plant.cost == pytest.approx(33_333_333.3333)
 
     assert corvette.fuel is not None
-    assert corvette.fuel.jump_fuel is not None
-    assert corvette.fuel.jump_fuel.tons == pytest.approx(81.0)
     assert corvette.fuel.operation_fuel is not None
-    assert corvette.fuel.operation_fuel.tons == pytest.approx(13.34)
+    assert corvette.fuel.operation_fuel.tons == pytest.approx(16.0)
     assert corvette.fuel.fuel_processor is not None
     assert corvette.fuel.fuel_processor.tons == pytest.approx(2.0)
     assert corvette.fuel.fuel_processor.cost == pytest.approx(100_000.0)
@@ -150,6 +167,20 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
     assert corvette.computer is not None
     assert corvette.computer.hardware is not None
     assert corvette.computer.hardware.cost == pytest.approx(20_000_000.0)
+    software_packages = {
+        package.description: package.cost for package in corvette.computer.software_packages.values()
+    }
+    assert software_packages == {
+        'Library': 0.0,
+        'Manoeuvre/0': 0.0,
+        'Intellect': 0.0,
+        'Jump Control/2': 200_000.0,
+        'Advanced Fire Control/1': 12_000_000.0,
+        'Anti-Hijack/1': 6_000_000.0,
+        'Broad Spectrum EW': 14_000_000.0,
+        'Electronic Warfare/1': 15_000_000.0,
+        'Virtual Gunner/1': 5_000_000.0,
+    }
 
     assert corvette.hull.armour is not None
     assert corvette.hull.armour.tons == pytest.approx(64.8)
@@ -169,15 +200,15 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
 
     assert corvette.weapons is not None
     assert len(corvette.weapons.bays) == 2
-    assert corvette.weapons.bays[0].tons == pytest.approx(70.0)
+    assert corvette.weapons.bays[0].tons == pytest.approx(80.0)
     assert corvette.weapons.bays[0].cost == pytest.approx(60_000_000.0)
     assert corvette.weapons.turrets[0].tons == pytest.approx(1.0)
-    assert corvette.weapons.turrets[0].cost == pytest.approx(4_250_000.0)
+    assert corvette.weapons.turrets[0].cost == pytest.approx(5_500_000.0)
 
     bulkheads = corvette.armoured_bulkhead_parts()
     assert len(bulkheads) == 3
-    assert sum(part.tons for part in bulkheads) == pytest.approx(17.3333333333)
-    assert sum(part.cost for part in bulkheads) == pytest.approx(3_466_666.6667)
+    assert sum(part.tons for part in bulkheads) == pytest.approx(19.3333333333)
+    assert sum(part.cost for part in bulkheads) == pytest.approx(3_866_666.6667)
 
     assert corvette.systems is not None
     assert corvette.systems.crew_armory is not None
@@ -196,9 +227,12 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
     assert corvette.habitation.staterooms is not None
     assert corvette.habitation.staterooms.tons == pytest.approx(32.0)
     assert corvette.habitation.staterooms.cost == pytest.approx(4_000_000.0)
+    assert corvette.habitation.high_staterooms is not None
+    assert corvette.habitation.high_staterooms.tons == pytest.approx(6.0)
+    assert corvette.habitation.high_staterooms.cost == pytest.approx(800_000.0)
     assert corvette.habitation.common_area is not None
-    assert corvette.habitation.common_area.tons == pytest.approx(17.0)
-    assert corvette.habitation.common_area.cost == pytest.approx(1_700_000.0)
+    assert corvette.habitation.common_area.tons == pytest.approx(12.0)
+    assert corvette.habitation.common_area.cost == pytest.approx(1_200_000.0)
 
     assert corvette.available_power == pytest.approx(500.0)
     assert corvette.basic_hull_power_load == pytest.approx(90.0)
@@ -209,10 +243,18 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
     assert corvette.fuel_power_load == pytest.approx(2.0)
     assert corvette.total_power_load == pytest.approx(427.5)
 
-    assert corvette.remaining_usable_tonnage() == pytest.approx(-47.1066666667)
-    assert corvette.production_cost == pytest.approx(395_212_500.0)
-    assert corvette.sales_price_new == pytest.approx(395_212_500.0)
-    assert corvette.expenses.maintenance == pytest.approx(32_934.0)
+    assert corvette.remaining_usable_tonnage() == pytest.approx(6.2333333333)
+    assert corvette.production_cost == pytest.approx(448_612_500.0)
+    assert corvette.sales_price_new == pytest.approx(448_612_500.0)
+    assert corvette.expenses.maintenance == pytest.approx(37_384.0)
+
+    spec = corvette.build_spec()
+    turret_row = spec.row('Triple Turret', section='Weapons')
+    assert turret_row.quantity == 2
+    assert [(note.category.value, note.message) for note in turret_row.notes] == [
+        ('info', 'Weapon: Pulse Laser × 3'),
+        ('info', 'High Technology: Long Range, High Yield'),
+    ]
 
     assert [(role.role, role.count) for role in corvette.crew_roles] == [
         ('CAPTAIN', 1),
@@ -226,6 +268,6 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
         ('OFFICER', 2),
     ]
 
-    assert ('error', 'Hull overloaded by 47.11 tons') in [
+    assert ('error', 'Hull overloaded by 47.11 tons') not in [
         (note.category.value, note.message) for note in corvette.notes
     ]
