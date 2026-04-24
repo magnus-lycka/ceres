@@ -38,14 +38,7 @@ def build_alt_dragon() -> ship.Ship:
     Modeled subset of refs/alt_dragon.txt.
 
     Not yet modeled from the reference:
-    - budget-increased-size M-drive
-    - reduced-size fusion plant
-    - emergency power system
-    - retro computers
-    - rapid deployment extended arrays
-    - basic autodoc
-    - cabin-space / mixed stateroom accommodation layout
-    - advanced entertainment system
+    - exact crew-rule interpretation from the reference export
     """
 
     fusion_plant = FusionPlantTL12(output=436, customisation=Advanced(SizeReduction), armoured_bulkhead=True)
@@ -120,6 +113,16 @@ def build_alt_dragon() -> ship.Ship:
             common_area=CommonArea(tons=10.0),
             entertainment=AdvancedEntertainmentSystem(1_250),
         ),
+        crew_vector={
+            'CAPTAIN': 1,
+            'PILOT': 3,
+            'ENGINEER': 2,
+            'MAINTENANCE': 1,
+            'MEDIC': 1,
+            'GUNNER': 5,
+            'SENSOR OPERATOR': 3,
+            'OFFICER': 1,
+        },
     )
 
 
@@ -147,7 +150,12 @@ def test_alt_dragon_modeled_subset_tracks_current_model():
     assert dragon.computer.hardware.cost == pytest.approx(67_500_000.0)
 
     assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(6.3916)
-    assert dragon.notes == []
+    assert ('info', 'MAINTENANCE above recommended count: 1 > 0') in [
+        (note.category.value, note.message) for note in dragon.notes
+    ]
+    assert ('info', 'MEDIC above recommended count: 1 > 0') in [
+        (note.category.value, note.message) for note in dragon.notes
+    ]
 
     assert dragon.production_cost == pytest.approx(360_094_396.6667)
     assert dragon.sales_price_new == pytest.approx(324_084_957.0)

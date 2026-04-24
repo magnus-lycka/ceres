@@ -9,16 +9,20 @@ Purpose:
 Source handling for this test case:
 - supported: light streamlined hull, armour, drives, budget/increased-size
   fusion plant, habitation, workshop, medical bay, cargo hold, crew manifest,
-  planned passenger manifest, production cost, discounted purchase price, crew
-  salaries
+  planned passenger manifest, entertainment cost, production cost,
+  discounted purchase price, crew salaries
 - ignored for test-case modelling:
   - battle-load figures (`TCS-002`)
   - income / profit rows (`TCS-003`)
 - still excluded from the modeled reference case:
-  - cost-reduction labels on drives
+  - cost-reduction labels on drives, for which we have found no support in our
+    current documented rules sources
   - advanced low berth pricing/details
   - the source life-support total is Cr1000 higher than the current core-rule
     formula for the same manifest
+- deliberate interpretation:
+  - Ceres warns that the installed medical bay calls for a medic, even though
+    the source export lists only four crew
 - model interpretation rather than dedicated installed rows:
   - passenger luggage / baggage storage (`RI-002`)
   - stores and spares (`RI-001`)
@@ -76,7 +80,7 @@ def build_revised_beowulf() -> ship.Ship:
             staterooms=Staterooms(count=10),
             low_berths=LowBerths(count=20),
             common_area=CommonArea(tons=10.0),
-            entertainment=AdvancedEntertainmentSystem(1_250),
+            entertainment=AdvancedEntertainmentSystem(5_000),
         ),
         cargo=CargoSection(cargo_holds=[CargoHold(tons=67.5, crane=CargoCrane())]),
         crew_vector={'PILOT': 1, 'ASTROGATOR': 1, 'ENGINEER': 1, 'STEWARD': 1},
@@ -123,7 +127,7 @@ def test_revised_beowulf_matches_current_modeled_subset():
     assert beowulf.habitation.low_berths.tons == pytest.approx(10.0)
     assert beowulf.habitation.low_berths.cost == pytest.approx(1_000_000)
     assert beowulf.habitation.entertainment is not None
-    assert beowulf.habitation.entertainment.cost == pytest.approx(1_250.0)
+    assert beowulf.habitation.entertainment.cost == pytest.approx(5_000.0)
 
     assert beowulf.available_power == pytest.approx(65.0)
     assert beowulf.basic_hull_power_load == pytest.approx(40.0)
@@ -138,8 +142,8 @@ def test_revised_beowulf_matches_current_modeled_subset():
     # Those are treated via RI-002 and RI-001 rather than as dedicated design
     # components in this reference case.
     assert CargoSection.cargo_tons_for_ship(beowulf) == pytest.approx(64.5)
-    assert beowulf.production_cost == pytest.approx(49_781_250)
-    assert beowulf.sales_price_new == pytest.approx(44_803_125)
+    assert beowulf.production_cost == pytest.approx(49_785_000.0)
+    assert beowulf.sales_price_new == pytest.approx(44_806_500.0)
     assert beowulf.expenses.maintenance == pytest.approx(3734.0)
     assert beowulf.expenses.life_support == pytest.approx(30_000.0)
     assert beowulf.expenses.crew_salaries == pytest.approx(17_000.0)

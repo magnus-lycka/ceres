@@ -34,11 +34,7 @@ def build_revised_dragon() -> ship.Ship:
     Modeled subset of refs/revised_dragon.txt.
 
     Not yet modeled from the reference:
-    - budget-increased-size M-drive
-    - very high yield on particle barbettes
-    - energy-efficient point defense battery
-    - advanced entertainment system
-    - exact crew interpretation from the reference export
+    - exact crew-rule interpretation from the reference export
     """
 
     return ship.Ship(
@@ -109,6 +105,16 @@ def build_revised_dragon() -> ship.Ship:
             common_area=CommonArea(tons=10.0),
             entertainment=AdvancedEntertainmentSystem(500),
         ),
+        crew_vector={
+            'CAPTAIN': 1,
+            'PILOT': 3,
+            'ENGINEER': 3,
+            'MAINTENANCE': 1,
+            'MEDIC': 1,
+            'GUNNER': 5,
+            'SENSOR OPERATOR': 3,
+            'OFFICER': 2,
+        },
     )
 
 
@@ -179,8 +185,15 @@ def test_revised_dragon_power_and_crew_for_current_subset():
         ('CAPTAIN', 1, 10_000),
         ('PILOT', 3, 6_000),
         ('ENGINEER', 3, 4_000),
+        ('MAINTENANCE', 1, 1_000),
+        ('MEDIC', 1, 4_000),
         ('GUNNER', 5, 2_000),
         ('SENSOR OPERATOR', 3, 4_000),
-        ('MEDIC', 1, 4_000),
-        ('OFFICER', 1, 5_000),
+        ('OFFICER', 2, 5_000),
+    ]
+    assert ('info', 'MAINTENANCE above recommended count: 1 > 0') in [
+        (note.category.value, note.message) for note in dragon.notes
+    ]
+    assert ('info', 'OFFICER above recommended count: 2 > 1') in [
+        (note.category.value, note.message) for note in dragon.notes
     ]

@@ -20,24 +20,24 @@ remaining differences and whether they look like:
 | Dragon | Available power | 450 | 450 | Matches |
 | Dragon | Total power load | 435 | 435 | Matches |
 | Dragon | Fuel | 0.00 | 0.00 | Matches |
-| Dragon | Life support | 22,000 | 27,000 | Ref looks inconsistent |
-| Dragon | Crew salaries | 75,000 | 68,000 | Ref has 2 extra crew |
+| Dragon | Life support | 22,000 | 29,000 | Ref looks inconsistent |
+| Dragon | Crew salaries | 75,000 | 75,000 | Matches source crew |
 | Revised Dragon | Cargo incl. stores | 5.24 | 5.24 | Matches |
 | Revised Dragon | Design cost | 292.855 MCr | 292.855 MCr | Matches |
 | Revised Dragon | Sales price | 263.570 MCr | 263.570 MCr | Matches |
 | Revised Dragon | Available power | 482 | 482 | Matches |
 | Revised Dragon | Total power load | 426 | 426 | Matches |
 | Revised Dragon | Fuel | 0.00 | 0.00 | Matches |
-| Revised Dragon | Life support | 30,000 | 28,000 | Ref looks inconsistent |
-| Revised Dragon | Crew salaries | 77,000 | 72,000 | Ref has 1 extra officer |
+| Revised Dragon | Life support | 30,000 | 29,000 | Ref looks inconsistent |
+| Revised Dragon | Crew salaries | 77,000 | 77,000 | Matches source crew |
 | Alt Dragon | Cargo incl. stores | 6.30 | 6.39 | Off by 0.09 |
 | Alt Dragon | Design cost | 293.083 MCr | 293.063 MCr | Off by 0.020 MCr |
 | Alt Dragon | Sales price | 263.775 MCr | 263.757 MCr | Off by 0.018 MCr |
 | Alt Dragon | Available power | 436 | 436 | Matches |
 | Alt Dragon | Total power load | 436 | 436 | Matches |
 | Alt Dragon | Fuel | 0.00 | 0.00 | Matches |
-| Alt Dragon | Life support | 7,750 | 23,750 | Ref looks inconsistent |
-| Alt Dragon | Crew salaries | 68,000 | 64,000 | Ref has 1 extra medic |
+| Alt Dragon | Life support | 7,750 | 24,750 | Ref looks inconsistent |
+| Alt Dragon | Crew salaries | 68,000 | 68,000 | Matches source crew |
 
 Reference cargo above is adjusted as `cargo + stores/spares`, because the
 reference exports show those as two separate lines:
@@ -48,57 +48,51 @@ reference exports show those as two separate lines:
 
 ## Dragon
 
-Everything physical and economic now matches exactly except crew and life
-support.
+Everything physical and economic now matches exactly except life support.
 
-Reference crew differs from Ceres by:
+Crew salary now matches exactly because the source crew manifest is carried into
+the test case verbatim.
 
-- `+1 ASTROGATOR`
-- `+1 GUNNER`
+Ceres now emits warnings for the crew-rule deviations in the source:
 
-That explains the full crew-salary difference:
-
-- reference `75,000`
-- Ceres `68,000`
+- `ASTROGATOR above recommended count: 1 > 0`
+- `GUNNER above recommended count: 6 > 5`
+- `MAINTENANCE above recommended count: 1 > 0`
 
 With the current split, Ceres is clearer about the life-support mismatch:
 
 - `Facilities = 10,000`
-- `People = 17,000`
-- total `27,000`
+- `People = 19,000`
+- total `29,000`
 
 The reference says `22,000`, which does not fit either:
 
-- Ceres crew count (`17`)
-- or the reference crew count (`19`)
+- the reference crew count (`19`)
 
 So the remaining life-support difference for standard Dragon looks like a
 reference inconsistency, not a missing Ceres rule.
 
 ## Revised Dragon
 
-Everything physical and economic now matches exactly except crew and life
-support.
+Everything physical and economic now matches exactly except life support.
 
-Reference crew differs from Ceres by:
+Crew salary now matches exactly because the source crew manifest is carried into
+the test case verbatim.
 
-- `+1 OFFICER`
+Ceres now emits warnings for the crew-rule deviations in the source:
 
-That explains the full crew-salary difference:
-
-- reference `77,000`
-- Ceres `72,000`
+- `MAINTENANCE above recommended count: 1 > 0`
+- `OFFICER above recommended count: 2 > 1`
 
 With the current split, Ceres gives:
 
 - `Facilities = 10,000`
-- `People = 18,000`
-- total `28,000`
+- `People = 19,000`
+- total `29,000`
 
 The reference says `30,000`. That does not follow from either:
 
-- Ceres crew count (`18`)
-- or the reference crew count (`19`)
+- the reference crew count (`19`)
 
 So revised Dragon also looks like a case where the reference life-support line
 is using a different or inconsistent estimate.
@@ -113,21 +107,20 @@ Remaining small physical/economic diffs:
 - production cost: `293,083,146.67` vs `293,063,146.67`
 - sales price: `263,774,832.00` vs `263,756,832.00`
 
-Crew differs from Ceres by:
+Crew salary now matches exactly because the source crew manifest is carried into
+the test case verbatim.
 
-- `+1 MEDIC`
+Ceres now emits warnings for the crew-rule deviations in the source:
 
-That explains the crew-salary gap:
-
-- reference `68,000`
-- Ceres `64,000`
+- `MAINTENANCE above recommended count: 1 > 0`
+- `MEDIC above recommended count: 1 > 0`
 
 Life support is now much more obviously inconsistent in the reference. Ceres
 computes:
 
 - `Facilities = 7,750`
-- `People = 16,000`
-- total `23,750`
+- `People = 17,000`
+- total `24,750`
 
 The reference says only `7,750`, which matches the facilities part alone and
 appears to omit people entirely.

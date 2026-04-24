@@ -17,6 +17,13 @@ Source handling for this test case:
 - normalized when mapping into Ceres:
   - source armored-bulkhead rows are represented as protected parts plus
     separate Hull bulkhead entries (`TCS-001`)
+- deliberate interpretation:
+  - the source crew manifest is preserved verbatim via explicit `crew_vector`
+  - Ceres surfaces crew-rule mismatches as warnings instead of silently
+    normalizing the crew
+  - point-defence batteries do not require dedicated gunners
+- source inconsistency:
+  - the source life-support total does not fit the source crew count
 - model interpretation rather than dedicated installed rows:
   - stores and spares (`RI-001`)
 """
@@ -121,6 +128,17 @@ def build_dragon() -> ship.Ship:
             staterooms=Staterooms(count=10),
             common_area=CommonArea(tons=10.0),
         ),
+        crew_vector={
+            'CAPTAIN': 1,
+            'PILOT': 3,
+            'ASTROGATOR': 1,
+            'ENGINEER': 2,
+            'MAINTENANCE': 1,
+            'MEDIC': 1,
+            'GUNNER': 6,
+            'SENSOR OPERATOR': 3,
+            'OFFICER': 1,
+        },
     )
 
 
@@ -264,11 +282,24 @@ def test_dragon_power_and_crew_for_current_subset():
     assert [(role.role, role.count, role.monthly_salary) for role in dragon.crew_roles] == [
         ('CAPTAIN', 1, 10_000),
         ('PILOT', 3, 6_000),
+        ('ASTROGATOR', 1, 5_000),
         ('ENGINEER', 2, 4_000),
-        ('GUNNER', 5, 2_000),
-        ('SENSOR OPERATOR', 3, 4_000),
+        ('MAINTENANCE', 1, 1_000),
         ('MEDIC', 1, 4_000),
+        ('GUNNER', 6, 2_000),
+        ('SENSOR OPERATOR', 3, 4_000),
         ('OFFICER', 1, 5_000),
+    ]
+    assert dragon.expenses.life_support == pytest.approx(29_000.0)
+    assert dragon.expenses.crew_salaries == pytest.approx(75_000.0)
+    assert ('info', 'ASTROGATOR above recommended count: 1 > 0') in [
+        (note.category.value, note.message) for note in dragon.notes
+    ]
+    assert ('info', 'MAINTENANCE above recommended count: 1 > 0') in [
+        (note.category.value, note.message) for note in dragon.notes
+    ]
+    assert ('info', 'GUNNER above recommended count: 6 > 5') in [
+        (note.category.value, note.message) for note in dragon.notes
     ]
 
 

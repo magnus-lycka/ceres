@@ -178,6 +178,24 @@ def test_source_renders_crew_notes_with_crew_table():
     assert 'Warning: GUNNER below recommended count: 0 < 1' in src
 
 
+def test_source_escapes_multiple_info_crew_notes_to_avoid_nested_list_indentation():
+    from tycho.base import Note, NoteCategory
+
+    spec = ShipSpec(ship_class='Test')
+    spec.crew = []
+    spec.crew_notes = [
+        Note(category=NoteCategory.INFO, message='ASTROGATOR above recommended count: 1 > 0'),
+        Note(category=NoteCategory.INFO, message='GUNNER above recommended count: 6 > 5'),
+        Note(category=NoteCategory.INFO, message='MAINTENANCE above recommended count: 1 > 0'),
+    ]
+
+    src = _build_typst_source(spec, page_size='a4')
+    assert 'CREW' in src
+    assert '\\- ASTROGATOR above recommended count: 1 > 0' in src
+    assert '\\- GUNNER above recommended count: 6 > 5' in src
+    assert '\\- MAINTENANCE above recommended count: 1 > 0' in src
+
+
 def test_source_contains_dragon_bulkhead_notes():
     spec = build_dragon().build_spec()
     bulkhead_rows = [r for r in spec.rows if 'Bulkhead' in r.item]

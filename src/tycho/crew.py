@@ -1,6 +1,6 @@
 import math
 
-from .base import CeresModel
+from .base import CeresModel, Note, NoteCategory
 from .spec import CrewRow as SpecCrewRow
 from .text import optional_count
 
@@ -328,20 +328,34 @@ def effective_crew_roles(ship) -> list[CrewRole]:
     return roles
 
 
-def crew_vector_warnings(ship) -> list[str]:
+def crew_vector_warnings(ship) -> list[Note]:
     if ship.crew_vector is None:
         return []
 
-    warnings: list[str] = []
+    notes: list[Note] = []
     provided = _normalize_vector(ship.crew_vector)
     required: dict[str, int] = {}
     for role in required_crew_roles(ship):
         required[role.role] = required.get(role.role, 0) + role.count
-    for role, required_count in required.items():
+    all_roles = sorted(set(required) | set(provided))
+    for role in all_roles:
+        required_count = required.get(role, 0)
         provided_count = provided.get(role, 0)
         if provided_count < required_count:
-            warnings.append(f'{role} below recommended count: {provided_count} < {required_count}')
-    return warnings
+            notes.append(
+                Note(
+                    category=NoteCategory.WARNING,
+                    message=f'{role} below recommended count: {provided_count} < {required_count}',
+                )
+            )
+        elif provided_count > required_count:
+            notes.append(
+                Note(
+                    category=NoteCategory.INFO,
+                    message=f'{role} above recommended count: {provided_count} > {required_count}',
+                )
+            )
+    return notes
 
 
 def crew_salary_cost(ship) -> float:

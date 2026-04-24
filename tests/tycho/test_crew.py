@@ -248,6 +248,37 @@ def test_understaffed_explicit_crew_vector_emits_warning():
     ]
 
 
+def test_overstaffed_explicit_crew_vector_emits_warning():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer(5)),
+        crew_vector={'PILOT': 2},
+    )
+
+    assert ('info', 'PILOT above recommended count: 2 > 1') in [
+        (note.category.value, note.message) for note in my_ship.notes
+    ]
+
+
+def test_overstaffed_explicit_crew_vector_warning_is_exposed_in_spec_crew_notes():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer(5)),
+        crew_vector={'PILOT': 2},
+    )
+
+    spec = my_ship.build_spec()
+    assert ('info', 'PILOT above recommended count: 2 > 1') in [
+        (note.category.value, note.message) for note in spec.crew_notes
+    ]
+
+
 def test_small_commercial_ship_does_not_require_separate_maintenance_crew():
     my_ship = ship.Ship(
         tl=12,

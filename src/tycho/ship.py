@@ -309,7 +309,7 @@ class Ship(ShipBase):
         spec.crew_notes = [
             note
             for note in ship_level_notes
-            if note.category is NoteCategory.WARNING and 'below recommended count:' in note.message
+            if note.category in {NoteCategory.INFO, NoteCategory.WARNING} and 'recommended count:' in note.message
         ]
         spec.ship_notes = [note for note in ship_level_notes if note not in spec.crew_notes]
 
@@ -356,5 +356,8 @@ class Ship(ShipBase):
             self.error(f'Hull overloaded by {-cargo_tons:.2f} tons')
         if self.command is not None and self.command.bridge is not None and not (self.hull.airlocks or []):
             self.error('No airlock installed')
-        for message in crew_vector_warnings(self):
-            self.warning(message)
+        for note in crew_vector_warnings(self):
+            if note.category is NoteCategory.INFO:
+                self.info(note.message)
+            elif note.category is NoteCategory.WARNING:
+                self.warning(note.message)
