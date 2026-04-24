@@ -5,4 +5,4 @@ uvx ruff format src
 uvx ruff check --fix src
 uv run deptry .
 uvx bandit -r src
-uv run pytest --cov --all-tests
+uv run pytest --cov --all-tests --cov-report=term-missing

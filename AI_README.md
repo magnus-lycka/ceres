@@ -33,26 +33,34 @@ that result. Only then adjust the code. Never change the model merely to
 ## Ways of Working
 
 - **TDD** - Write tests first, then implement. Tests live in `tests/`.
-- **pytest** - `uv run pytest` (with `pytest-cov` for coverage)
+- **pytest**
+  - `uv run pytest` for the quick default suite
+  - `uv run pytest --with-slow` to include slow tests
+  - `uv run pytest --with-generated-output` to include artifact-generating tests
+  - `uv run pytest --all-tests` to run everything
+  - `uv run pytest --cov --cov-report=term-missing` for coverage
 - **ruff** - `uvx ruff check` and `uvx ruff format` (fix lint and formatting)
 - **ty** - `uvx ty check` (type checking)
 
-All four must pass before considering work complete.
+The usual full local gate is `./pre-commit.sh`, which also runs `deptry` and
+`bandit`.
 
 ## Examples
 
-The `examples/` directory contains ship definitions matching ships from the
-reference PDFs. These serve as integration targets for rule interpretation —
-as subsystems are implemented, differences against the reference stat blocks
-should be explained by rules, omissions, or explicit project decisions.
-Expected values are documented as comments in each example file, but they are
-not to be copied blindly into the code without understanding why the rules
-lead there.
+The main source-derived reference cases live in `tests/ships/`, not in a
+separate examples package. These serve as integration targets for rule
+interpretation: as subsystems are implemented, differences against reference
+stat blocks should be explained by rules, omissions, or explicit project
+decisions. Expected values are documented in the test files and related docs,
+but they are not to be copied blindly into the code without understanding why
+the rules lead there.
 
 ## Commands
 
 ```bash
-uv run pytest --cov=ceres --cov-report=term-missing   # tests + coverage
+uv run pytest                                         # quick suite
+uv run pytest --all-tests                            # full suite
+uv run pytest --cov --cov-report=term-missing        # tests + coverage
 uvx ruff check --fix                                   # lint and auto-fix
 uvx ruff format                                        # format code
 uvx ty check                                           # type check

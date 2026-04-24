@@ -134,8 +134,6 @@ Structural status:
 
 Remaining ideas:
 
-- understaffing warning if explicitly stated crew is too small
-- steward / passenger rules
 - decide whether ship role inference should remain explicit (`military=True`) or become partly automatic
 - model how automation can change crew needs.
 

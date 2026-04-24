@@ -25,7 +25,7 @@ taxonomy; the remaining problem is that `Ship` itself is still too flat.
 
 ## Proposed structure
 
-Each section becomes a frozen Pydantic sub-object that groups its parts, owns
+Each section becomes a Pydantic sub-object that groups its parts, owns
 its `_all_parts()` method, and mirrors the matching Python module.
 
 | `Ship` field      | Class               | Module         | Contains                                               |
@@ -74,7 +74,7 @@ Working interpretation:
 
 ## Design rules
 
-- Every section class is a frozen Pydantic model (same as `Hull` today).
+- Every section class is a Pydantic model.
 - Every section class has `_all_parts() -> list[ShipPart]` returning parts in spec-display order.
 - Sections that may be absent are `Optional` and default to `None`.
 - Section classes live in the module matching their content.

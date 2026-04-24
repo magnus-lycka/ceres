@@ -25,9 +25,9 @@ for a different target.
 
 **Decision**: use Typst (`typst-py` on PyPI) as the PDF engine.
 
-Typst was evaluated against ReportLab via working proof-of-concept examples
-(`examples/pdf_typst_dragon.py` and `examples/pdf_reportlab_dragon.py`). Typst
-produces visibly better typography and its layout DSL is well-suited to tabular
+Typst was evaluated through working proof-of-concept examples
+(`examples/pdf_typst.py` and `examples/pdf_typst_dragon.py`). Typst produces
+visibly better typography and its layout DSL is well-suited to tabular
 document layout. Page-break control maps cleanly onto Typst primitives:
 
 - **Section grouping** (break between sections, never within): 0pt guard column

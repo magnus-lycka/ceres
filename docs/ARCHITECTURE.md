@@ -2,10 +2,11 @@
 
 ## Core patterns
 
-### Pydantic frozen models
+### Pydantic models
 
-All models use Pydantic `BaseModel` with `frozen = True`. Objects are immutable
-after construction.
+The core models are ordinary Pydantic `BaseModel` subclasses. In practice we
+still treat them as design declarations plus derived values, but they are not
+globally frozen.
 
 ### Parts use plain numeric values
 
@@ -15,7 +16,7 @@ and `compute_tons()`. The base implementation simply returns the stored values.
 
 ### Two-phase construction: creation then binding
 
-Parts are created as plain frozen models. `Ship.model_post_init()` then calls
+Parts are created as plain Pydantic models. `Ship.model_post_init()` then calls
 `part.bind(ship)` on every installed part, which sets the owner, validates TL
 requirements, and recalculates derived values. Ship-dependent logic lives in
 `compute_*` methods and is only callable after binding.
@@ -92,9 +93,9 @@ the correct concrete type.
 
 `Ship` owns the full installed-part graph and aggregates ship-level values such
 as power budget (available, load by category), production cost, sales price,
-cargo, crew roles, and operating expenses. `markdown_table()` renders the
-complete stat sheet as a Markdown table. These remain ship-level concerns rather
-than cached part data.
+cargo, crew roles, and operating expenses. `build_spec()` produces the
+structured `ShipSpec` used by the HTML/PDF/Typst renderers and JSON regression
+artifacts. These remain ship-level concerns rather than cached part data.
 
 The installed-part graph is now section-based rather than mostly flat:
 
@@ -171,6 +172,10 @@ Crew logic now lives in `crew.py`. `Ship` still exposes `crew_roles`, but
 delegates the actual role calculation there so crew rules can grow without
 `Ship` becoming the source of truth.
 
+`Ship.crew` is now a dedicated sub-object. It holds explicit crew input
+(`vector`) and crew-specific notes, so crew-related messages do not have to be
+stored at ship level and filtered back into the crew table later.
+
 Crew rows in the spec represent rule-indicated positions / functions, not
 necessarily unique individuals. A single sophont (or sometimes robot) may
 fulfill more than one of these positions in practice.
@@ -191,25 +196,7 @@ recorded separately in [TEST_CASE_SHIPS.md](/Users/magnuslycka/work/ceres/docs/T
 We follow the latest versions of Mongoose Traveller 2nd Edition Core Rules and
 High Guard. Where the two books conflict, **High Guard takes precedence**.
 
-We have studied Mark F. Anderson's ship design tool output and deviate from it
-in the following intentional ways:
-
-- **Cost Reduction X*10% on ship components** — Anderson exports sometimes show
-  labels such as `Cost Reduction 3` or `Cost Reduction 3*` on drives. We do
-  not currently have rule text supporting a generic ship-component
-  `Cost Reduction` customisation in High Guard. This is distinct from
-  `Budget`, which *is* defined in the Prototype/Advanced table and requires a
-  Disadvantage. Until we find explicit ship-design rules for Anderson's
-  `X*10% cost reduction`, Ceres does not model it.
-- **CSC retrotech and ship components** — Central Supply Catalogue has explicit
-  retrotech rules for computers and electronics. We have not found rule text
-  saying those retrotech rules also apply generically to starship components,
-  so Ceres does not extend CSC retrotech pricing or TL logic to ships by
-  default.
-- **Retro starship computers** — We do not support retro starship computers
-  today. A `Computer/25` or `Core/40` is not treated as the same piece of
-  hardware regardless of TL, and we do not apply CSC-style retrotech discounts
-  to ship computers. If we later add explicit support for retro starship
-  computers, they must behave like lower-TL ship computers for software and
-  capability purposes, not merely receive a price reduction while retaining the
-  full behaviour of a computer built at the ship's TL.
+We have studied Mark F. Anderson's ship design tool output and other external
+sources, but cross-cutting decisions such as unsupported drive cost reduction
+labels and unsupported retro starship computer pricing should now be recorded
+in `RULE_INTERPRETATIONS.md` rather than duplicated here.

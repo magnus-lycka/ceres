@@ -5,20 +5,21 @@
 rules. A ship is an ordinary Python object: instantiate `Ship`, pass it part
 objects and parameters, and get back a validated design.
 
-A likely use for this is to handd it to an AI and build rules complient Traveller
-ships for conversing with the AI.
+A likely use for this is to hand it to an AI and build rules-compliant
+Traveller ships for conversation, tooling, or export.
 
 ```python
+from stuart import render_ship_html
 from tycho import armour, hull, ship
 from tycho.bridge import Bridge, CommandSection
-from tycho.computer import Computer5, ComputerSection, JumpControl2
+from tycho.computer import Computer, ComputerSection, JumpControl
 from tycho.crafts import AirRaft, CraftSection, InternalDockingSpace
-from tycho.drives import DriveSection, FusionPlantTL12, JumpDrive2, MDrive2, PowerSection
+from tycho.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
 from tycho.habitation import HabitationSection, Staterooms
 from tycho.sensors import MilitarySensors, SensorsSection
 from tycho.storage import FuelProcessor, FuelSection, JumpFuel, OperationFuel
 from tycho.systems import Airlock, ProbeDrones, SystemsSection, Workshop
-from tycho.weapons import MountWeapon, Turret, WeaponsSection
+from tycho.weapons import Turret, WeaponsSection
 
 scout = ship.Ship(
     ship_class='Suleiman',
@@ -29,9 +30,9 @@ scout = ship.Ship(
     hull=hull.Hull(
         configuration=hull.streamlined_hull,
         armour=armour.CrystalironArmour(tl=12, protection=4),
-        airlocks=[Airlock()],
+            airlocks=[Airlock()],
     ),
-    drives=DriveSection(m_drive=MDrive2(), jump_drive=JumpDrive2()),
+    drives=DriveSection(m_drive=MDrive(2), j_drive=JDrive(2)),
     power=PowerSection(fusion_plant=FusionPlantTL12(output=60)),
     fuel=FuelSection(
         jump_fuel=JumpFuel(parsecs=2),
@@ -39,32 +40,28 @@ scout = ship.Ship(
         fuel_processor=FuelProcessor(tons=2),
     ),
     command=CommandSection(bridge=Bridge()),
-    computer=ComputerSection(hardware=Computer5(bis=True), software=[JumpControl2()]),
+    computer=ComputerSection(hardware=Computer(5, bis=True), software=[JumpControl(2)]),
     sensors=SensorsSection(primary=MilitarySensors()),
-    weapons=WeaponsSection(
-        turrets=[
-            Turret(
-                size='double',
-                weapons=[
-                    MountWeapon(weapon='beam_laser'),
-                    MountWeapon(weapon='beam_laser'),
-                ],
-            )
-        ],
-    ),
+    weapons=WeaponsSection(turrets=[Turret(size='double')]),
     craft=CraftSection(docking_space=InternalDockingSpace(craft=AirRaft())),
     habitation=HabitationSection(staterooms=Staterooms(count=4)),
     systems=SystemsSection(probe_drones=ProbeDrones(count=10), workshop=Workshop()),
 )
 
-print(scout.markdown_table())
+spec = scout.build_spec()
+html = render_ship_html(scout)
+
+print(spec.row('M-Drive 2').tons)
+print(html[:120])
+print(scout.model_dump_json(indent=2)[:240])
 ```
 
 ## What you get
 
-- **Stat sheet** — `ship.markdown_table()` produces a Markdown table matching
-  official High Guard stat-block layout (tonnage, power budget, cost in kCr,
-  operating expenses, crew salaries).
+- **Structured spec** — `ship.build_spec()` produces a `ShipSpec` with sectioned
+  rows, crew, passengers, expenses, and notes.
+- **Renderers** — Stuart can render ships to HTML, Typst, and PDF from the same
+  `ShipSpec`/`Ship` data.
 - **Legality checks** — errors and warnings are embedded as notes on the parts
   that triggered them (negative cargo, missing airlock, TL mismatches, jump
   control/drive mismatches, undersized common area, etc.).
@@ -83,13 +80,19 @@ holds your copies of the relevant PDFs for this purpose.
 ## Development
 
 ```bash
-uv run pytest --cov=tycho --cov-report=term-missing   # tests + coverage
+uv run pytest                                          # quick suite
+uv run pytest --all-tests                             # include slow + generated-output tests
+uv run pytest --cov --cov-report=term-missing         # tests + coverage
 uvx ruff check --fix                                   # lint + auto-fix
 uvx ruff format                                        # format
 uvx ty check                                           # type check
 ```
 
-All four must pass before a change is considered complete.
+Default `pytest` skips slow tests and generated-output artifact tests. Use
+`--with-slow`, `--with-generated-output`, or `--all-tests` when you want the
+full suite.
+
+The usual full gate for local work is `./pre-commit.sh`.
 
 See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for patterns and technical decisions,
 and [AI_README.md](AI_README.md) for contributor guidance (including AI
