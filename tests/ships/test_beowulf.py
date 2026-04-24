@@ -26,6 +26,7 @@ import pytest
 from tycho import armour, hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection, JumpControl
+from tycho.crew import Astrogator, Engineer, Pilot, ShipCrew, Steward
 from tycho.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
 from tycho.habitation import HabitationSection, LowBerths, Staterooms
 from tycho.sensors import CivilianSensors, SensorsSection
@@ -63,7 +64,7 @@ def build_beowulf() -> ship.Ship:
             common_area=CommonArea(tons=10.0),
         ),
         cargo=CargoSection(cargo_holds=[CargoHold(crane=CargoCrane())]),
-        crew={'vector': {'PILOT': 1, 'ASTROGATOR': 1, 'ENGINEER': 1, 'STEWARD': 1}},
+        crew=ShipCrew(roles=[Pilot(), Astrogator(), Engineer(), Steward()]),
         passenger_vector={'middle': 16},
     )
 
@@ -191,7 +192,7 @@ def test_beowulf_production_cost():
 def test_beowulf_crew_and_life_support_match_reference_manifest():
     beowulf = build_beowulf()
 
-    assert [(role.role, role.count, role.monthly_salary) for role in beowulf.crew_roles] == [
+    assert [(role.role, quantity, role.monthly_salary) for role, quantity in beowulf.crew.grouped_roles] == [
         ('PILOT', 1, 6_000),
         ('ASTROGATOR', 1, 5_000),
         ('ENGINEER', 1, 4_000),

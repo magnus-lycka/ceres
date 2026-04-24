@@ -33,6 +33,7 @@ import pytest
 from tycho import armour, hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection, JumpControl
+from tycho.crew import Astrogator, Engineer, Pilot, ShipCrew, Steward
 from tycho.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
 from tycho.habitation import AdvancedEntertainmentSystem, HabitationSection, LowBerths, Staterooms
 from tycho.parts import Budget, IncreasedSize
@@ -83,7 +84,7 @@ def build_revised_beowulf() -> ship.Ship:
             entertainment=AdvancedEntertainmentSystem(5_000),
         ),
         cargo=CargoSection(cargo_holds=[CargoHold(tons=67.5, crane=CargoCrane())]),
-        crew={'vector': {'PILOT': 1, 'ASTROGATOR': 1, 'ENGINEER': 1, 'STEWARD': 1}},
+        crew=ShipCrew(roles=[Pilot(), Astrogator(), Engineer(), Steward()]),
         passenger_vector={'middle': 16},
     )
 
@@ -148,7 +149,7 @@ def test_revised_beowulf_matches_current_modeled_subset():
     assert beowulf.expenses.life_support == pytest.approx(30_000.0)
     assert beowulf.expenses.crew_salaries == pytest.approx(17_000.0)
     assert beowulf.expenses.fuel == pytest.approx(4_055.0)
-    assert [(role.role, role.count, role.monthly_salary) for role in beowulf.crew_roles] == [
+    assert [(role.role, quantity, role.monthly_salary) for role, quantity in beowulf.crew.grouped_roles] == [
         ('PILOT', 1, 6_000),
         ('ASTROGATOR', 1, 5_000),
         ('ENGINEER', 1, 4_000),

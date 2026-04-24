@@ -78,8 +78,8 @@ def _render_main_table(spec: ShipSpec) -> str:
 def _render_ship_notes(spec: ShipSpec) -> str:
     if not spec.ship_notes:
         return ''
-    note_items = ''.join(_render_note_item(note.message, note.category) for note in spec.ship_notes)
-    return f'<ul class="item-notes ship-notes">{note_items}</ul>'
+    note_items = ''.join(_render_note_line(note.message, note.category) for note in spec.ship_notes)
+    return f'<div class="note-block ship-notes">{note_items}</div>'
 
 
 def _section_rowspans(rows: list[SpecRow]) -> dict[int, int]:
@@ -138,14 +138,26 @@ def _render_note_item(message: str, category: NoteCategory) -> str:
     return f'<li class="note-{category.value}">{rendered}</li>'
 
 
+def _render_note_line(message: str, category: NoteCategory) -> str:
+    if category is NoteCategory.INFO:
+        rendered = escape(message)
+    elif category is NoteCategory.WARNING:
+        rendered = f'<strong>Warning:</strong> {escape(message)}'
+    elif category is NoteCategory.ERROR:
+        rendered = f'<strong>Error:</strong> {escape(message)}'
+    else:
+        rendered = escape(message)
+    return f'<div class="note-line note-{category.value}">{rendered}</div>'
+
+
 def _render_crew_card(crew: list[CrewRow], crew_notes) -> str:
     rows = ''.join(f'<li>{escape(format_counted_label(c.role, c.quantity))}</li>' for c in crew)
     if not rows:
         rows = '<li>Uncrewed</li>'
     notes_html = ''
     if crew_notes:
-        note_items = ''.join(_render_note_item(note.message, note.category) for note in crew_notes)
-        notes_html = f'<ul class="item-notes ship-notes">{note_items}</ul>'
+        note_items = ''.join(_render_note_line(note.message, note.category) for note in crew_notes)
+        notes_html = f'<div class="note-block ship-notes">{note_items}</div>'
     return f'{_render_card("Crew", f'<ul class="simple-list">{rows}</ul>')}{notes_html}'
 
 
@@ -324,18 +336,34 @@ _TYCHO_SPEC_CSS = """
   color: var(--ink);
 }
 
-.item-notes .note-info {
+.item-notes .note-info,
+.note-block .note-info {
   color: var(--ink);
+  font-style: italic;
 }
 
-.item-notes .note-warning {
+.item-notes .note-warning,
+.note-block .note-warning {
   color: var(--warning);
   font-style: italic;
 }
 
-.item-notes .note-error {
+.item-notes .note-error,
+.note-block .note-error {
   color: var(--error);
   font-weight: 700;
+}
+
+.note-block {
+  margin: 8px 0 0;
+  display: grid;
+  gap: 4px;
+  font-size: 0.94rem;
+  color: var(--ink);
+}
+
+.note-line {
+  line-height: 1.2;
 }
 
 .ship-sidebar {

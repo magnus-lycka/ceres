@@ -118,7 +118,7 @@ def test_dump_weapon_in_fixed_mounts():
 def test_dump_ship_crew_contains_vector_and_notes():
     source_ship = build_dragon()
     data = json.loads(source_ship.model_dump_json())
-    assert data['crew']['vector']['ASTROGATOR'] == 1
+    assert any(role['role'] == 'ASTROGATOR' and role['level'] == 1 for role in data['crew']['roles'])
     assert any(note['message'] == 'ASTROGATOR above recommended count: 1 > 0' for note in data['crew']['notes'])
 
 

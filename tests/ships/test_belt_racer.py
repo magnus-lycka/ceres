@@ -91,7 +91,7 @@ def test_belt_racer_matches_current_r_drive_subset():
     assert racer.sales_price_new == pytest.approx(854_000)
     assert racer.expenses.maintenance == pytest.approx(71.0)
     assert racer.notes == []
-    assert [(role.role, role.count, role.monthly_salary) for role in racer.crew_roles] == [
+    assert [(role.role, quantity, role.monthly_salary) for role, quantity in racer.crew.grouped_roles] == [
         ('PILOT', 1, 6_000),
     ]
 

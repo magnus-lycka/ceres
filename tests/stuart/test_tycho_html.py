@@ -1,4 +1,6 @@
 from stuart import render_ship_spec_html
+from tycho.base import Note, NoteCategory
+from tycho.spec import ShipSpec
 
 from tests.ships.test_suleiman import build_suleiman
 
@@ -35,3 +37,18 @@ def test_render_ship_spec_html_supports_dark_theme():
     assert '<body class="theme-dark">' in html
     assert 'data-theme-toggle' in html
     assert 'aria-label="Switch theme"' in html
+
+
+def test_render_ship_spec_html_renders_crew_notes_as_plain_note_block():
+    spec = ShipSpec(ship_class='Test')
+    spec.crew_notes = [
+        Note(category=NoteCategory.INFO, message='CAPTAIN above recommended count: 1 > 0'),
+        Note(category=NoteCategory.WARNING, message='GUNNER below recommended count: 0 < 1'),
+    ]
+
+    html = render_ship_spec_html(spec)
+
+    assert '<div class="note-block ship-notes">' in html
+    assert '<div class="note-line note-info">CAPTAIN above recommended count: 1 &gt; 0</div>' in html
+    assert '<div class="note-line note-warning"><strong>Warning:</strong> GUNNER below recommended count: 0 &lt; 1</div>' in html
+    assert '<ul class="item-notes ship-notes">' not in html

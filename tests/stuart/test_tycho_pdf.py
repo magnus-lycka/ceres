@@ -191,9 +191,11 @@ def test_source_escapes_multiple_info_crew_notes_to_avoid_nested_list_indentatio
 
     src = _build_typst_source(spec, page_size='a4')
     assert 'CREW' in src
-    assert '\\- ASTROGATOR above recommended count: 1 > 0' in src
-    assert '\\- GUNNER above recommended count: 6 > 5' in src
-    assert '\\- MAINTENANCE above recommended count: 1 > 0' in src
+    assert 'ASTROGATOR above recommended count: 1 > 0' in src
+    assert 'GUNNER above recommended count: 6 > 5' in src
+    assert 'MAINTENANCE above recommended count: 1 > 0' in src
+    assert '\\-' not in src
+    assert 'style: "italic"' in src
 
 
 def test_source_contains_dragon_bulkhead_notes():

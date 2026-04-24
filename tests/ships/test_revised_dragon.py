@@ -19,7 +19,7 @@ Source handling for this test case:
   - source armored-bulkhead rows are represented as protected parts plus
     separate Hull bulkhead entries (`TCS-001`)
 - deliberate interpretation:
-  - the source crew manifest is preserved verbatim as explicit `ship.crew.vector` data
+  - the source crew manifest is preserved verbatim as explicit `ship.crew.roles` data
   - Ceres surfaces crew-rule mismatches as info/warning notes instead of
     silently normalizing the crew
   - point-defence batteries do not require dedicated gunners
@@ -34,6 +34,17 @@ import pytest
 from tycho import armour, hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import AutoRepair, Computer, ComputerSection, Evade, FireControl
+from tycho.crew import (
+    Captain,
+    Engineer,
+    Gunner,
+    Maintenance,
+    Medic,
+    Officer,
+    Pilot,
+    SensorOperator,
+    ShipCrew,
+)
 from tycho.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
 from tycho.habitation import AdvancedEntertainmentSystem, HabitationSection, Staterooms
 from tycho.hull import ImprovedStealth
@@ -131,18 +142,18 @@ def build_revised_dragon() -> ship.Ship:
             common_area=CommonArea(tons=10.0),
             entertainment=AdvancedEntertainmentSystem(500),
         ),
-        crew={
-            'vector': {
-                'CAPTAIN': 1,
-                'PILOT': 3,
-                'ENGINEER': 3,
-                'MAINTENANCE': 1,
-                'MEDIC': 1,
-                'GUNNER': 5,
-                'SENSOR OPERATOR': 3,
-                'OFFICER': 2,
-            }
-        },
+        crew=ShipCrew(
+            roles=[
+                Captain(),
+                *[Pilot()] * 3,
+                *[Engineer()] * 3,
+                Maintenance(),
+                Medic(),
+                *[Gunner()] * 5,
+                *[SensorOperator()] * 3,
+                *[Officer()] * 2,
+            ]
+        ),
     )
 
 
@@ -209,7 +220,7 @@ def test_revised_dragon_power_and_crew_for_current_subset():
     assert dragon.weapon_power_load == pytest.approx(50.0)
     assert dragon.total_power_load == pytest.approx(426.0)
 
-    assert [(role.role, role.count, role.monthly_salary) for role in dragon.crew_roles] == [
+    assert [(role.role, quantity, role.monthly_salary) for role, quantity in dragon.crew.grouped_roles] == [
         ('CAPTAIN', 1, 10_000),
         ('PILOT', 3, 6_000),
         ('ENGINEER', 3, 4_000),

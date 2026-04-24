@@ -4,6 +4,7 @@ from tycho import hull, ship
 from tycho.base import ShipBase
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection
+from tycho.crew import Pilot, ShipCrew
 from tycho.drives import DriveSection, FusionPlantTL12, JDrive, PowerSection
 from tycho.habitation import AdvancedEntertainmentSystem, CabinSpace, HabitationSection, LowBerths, Staterooms
 
@@ -121,7 +122,7 @@ def test_habitation_default_passenger_vector_uses_unused_staterooms_and_low_bert
         displacement=200,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         habitation=HabitationSection(staterooms=Staterooms(count=10), low_berths=LowBerths(count=4)),
-        crew={'vector': {'PILOT': 7}},
+        crew=ShipCrew(roles=[Pilot()] * 7),
     )
 
     assert my_ship.habitation is not None
@@ -137,7 +138,7 @@ def test_habitation_default_middle_passengers_include_cabin_space_capacity():
         displacement=200,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         habitation=HabitationSection(staterooms=Staterooms(count=4), cabin_space=CabinSpace(tons=15.0)),
-        crew={'vector': {'PILOT': 2}},
+        crew=ShipCrew(roles=[Pilot()] * 2),
     )
 
     assert my_ship.habitation is not None
@@ -170,7 +171,7 @@ def test_habitation_life_support_separates_fixed_and_variable_costs():
         displacement=200,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         habitation=HabitationSection(staterooms=Staterooms(count=4), cabin_space=CabinSpace(tons=15.0)),
-        crew={'vector': {'PILOT': 16}},
+        crew=ShipCrew(roles=[Pilot()] * 16),
         passenger_vector={},
     )
 
@@ -186,7 +187,7 @@ def test_explicit_middle_passengers_must_fit_in_remaining_non_crew_beds():
         displacement=200,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         habitation=HabitationSection(staterooms=Staterooms(count=10)),
-        crew={'vector': {'PILOT': 7}},
+        crew=ShipCrew(roles=[Pilot()] * 7),
         passenger_vector={'middle': 13},
     )
 
@@ -201,7 +202,7 @@ def test_explicit_low_passengers_must_fit_in_low_berths():
         displacement=200,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         habitation=HabitationSection(staterooms=Staterooms(count=1), low_berths=LowBerths(count=4)),
-        crew={'vector': {'PILOT': 1}},
+        crew=ShipCrew(roles=[Pilot()]),
         passenger_vector={'low': 5},
     )
 
@@ -216,7 +217,7 @@ def test_high_and_middle_passengers_can_exactly_fill_remaining_non_crew_stateroo
         displacement=200,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         habitation=HabitationSection(staterooms=Staterooms(count=8)),
-        crew={'vector': {'PILOT': 4}},
+        crew=ShipCrew(roles=[Pilot()] * 4),
         passenger_vector={'high': 4, 'middle': 4},
     )
 
@@ -234,7 +235,7 @@ def test_one_more_high_passenger_than_capacity_errors():
         displacement=200,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         habitation=HabitationSection(staterooms=Staterooms(count=8)),
-        crew={'vector': {'PILOT': 4}},
+        crew=ShipCrew(roles=[Pilot()] * 4),
         passenger_vector={'high': 7, 'middle': 0},
     )
 
@@ -249,7 +250,7 @@ def test_one_more_middle_passenger_than_capacity_errors():
         displacement=200,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         habitation=HabitationSection(staterooms=Staterooms(count=8)),
-        crew={'vector': {'PILOT': 4}},
+        crew=ShipCrew(roles=[Pilot()] * 4),
         passenger_vector={'high': 4, 'middle': 5},
     )
 
@@ -264,7 +265,7 @@ def test_three_crew_three_middle_three_high_fit_in_seven_staterooms():
         displacement=200,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         habitation=HabitationSection(staterooms=Staterooms(count=7)),
-        crew={'vector': {'PILOT': 3}},
+        crew=ShipCrew(roles=[Pilot()] * 3),
         passenger_vector={'high': 3, 'middle': 3},
     )
 
@@ -282,7 +283,7 @@ def test_one_more_crew_still_fits_in_seven_stateroom_case():
         displacement=200,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         habitation=HabitationSection(staterooms=Staterooms(count=7)),
-        crew={'vector': {'PILOT': 4}},
+        crew=ShipCrew(roles=[Pilot()] * 4),
         passenger_vector={'high': 3, 'middle': 3},
     )
 
@@ -300,7 +301,7 @@ def test_one_more_middle_still_fits_in_seven_stateroom_case():
         displacement=200,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         habitation=HabitationSection(staterooms=Staterooms(count=7)),
-        crew={'vector': {'PILOT': 3}},
+        crew=ShipCrew(roles=[Pilot()] * 3),
         passenger_vector={'high': 3, 'middle': 4},
     )
 
@@ -318,7 +319,7 @@ def test_one_more_high_does_not_fit_even_with_spare_beds():
         displacement=200,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         habitation=HabitationSection(staterooms=Staterooms(count=7)),
-        crew={'vector': {'PILOT': 3}},
+        crew=ShipCrew(roles=[Pilot()] * 3),
         passenger_vector={'high': 4, 'middle': 3},
     )
 

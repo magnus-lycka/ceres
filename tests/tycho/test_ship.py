@@ -252,7 +252,9 @@ def test_small_craft_uses_single_pilot_crew_model():
         hull=hull.Hull(configuration=hull.standard_hull),
         command=CommandSection(cockpit=Cockpit()),
     )
-    assert [(role.role, role.count, role.monthly_salary) for role in my_ship.crew_roles] == [('PILOT', 1, 6_000)]
+    assert [(role.role, quantity, role.monthly_salary) for role, quantity in my_ship.crew.grouped_roles] == [
+        ('PILOT', 1, 6_000)
+    ]
 
 
 def test_ship_with_negative_cargo_adds_local_note():

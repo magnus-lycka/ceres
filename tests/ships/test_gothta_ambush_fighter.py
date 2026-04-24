@@ -104,7 +104,7 @@ def test_gothta_ambush_fighter_matches_current_subset():
     assert fighter.production_cost == pytest.approx(24_625_000)
     assert fighter.sales_price_new == pytest.approx(24_625_000)
     assert fighter.expenses.maintenance == pytest.approx(2052.0)
-    assert [(role.role, role.count, role.monthly_salary) for role in fighter.crew_roles] == [
+    assert [(role.role, quantity, role.monthly_salary) for role, quantity in fighter.crew.grouped_roles] == [
         ('PILOT', 1, 6_000),
     ]
 

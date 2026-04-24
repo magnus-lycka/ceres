@@ -186,7 +186,7 @@ def test_suleiman_matches_first_modeled_reference_slice():
 
     assert CargoSection.cargo_tons_for_ship(suleiman) == pytest.approx(12.8)
 
-    assert [(role.role, role.count, role.monthly_salary) for role in suleiman.crew_roles] == [
+    assert [(role.role, quantity, role.monthly_salary) for role, quantity in suleiman.crew.grouped_roles] == [
         ('PILOT', 1, 6_000),
         ('ASTROGATOR', 1, 5_000),
         ('ENGINEER', 1, 4_000),

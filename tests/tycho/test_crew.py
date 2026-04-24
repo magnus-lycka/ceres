@@ -5,36 +5,50 @@ from tycho import hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection
 from tycho.crafts import AirRaft, CarriedCraft, CraftSection, InternalDockingSpace
-from tycho.crew import CrewRole, required_crew_roles
+from tycho.crew import (
+    Astrogator,
+    Engineer,
+    Pilot,
+    ShipCrew,
+    Steward,
+)
 from tycho.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
 from tycho.habitation import HabitationSection, LowBerths, Staterooms
 from tycho.sensors import SensorsSection, SensorStations
 from tycho.weapons import Barbette, Bay, Turret, WeaponsSection
 
 
+def grouped_role_counts(roles):
+    return [(role.role, quantity) for role, quantity in roles.grouped_roles]
+
+
+def grouped_role_salaries(roles):
+    return [(role.role, quantity, role.monthly_salary) for role, quantity in roles.grouped_roles]
+
+
 def test_crew_role_total_salary():
-    role = CrewRole(role='ENGINEER', count=2, monthly_salary=4_000)
-    assert role.total_salary == 8_000
+    role = Engineer()
+    assert role.total_salary == 4_000
 
 
 def test_crew_role_display_role_includes_skill_level_when_above_one():
-    role = CrewRole(role='STEWARD', count=1, monthly_salary=4_000, skill_level=3)
-    assert role.display_role == 'STEWARD (Skill 3)'
+    role = Steward(level=3)
+    assert role.display_role == 'STEWARD-3'
 
 
-def test_required_crew_roles_for_small_non_jump_ship():
+def test_required_crew_for_small_non_jump_ship():
     my_ship = ship.Ship(
         tl=12,
         displacement=6,
         hull=hull.Hull(configuration=hull.standard_hull),
     )
 
-    assert [(role.role, role.count, role.monthly_salary) for role in required_crew_roles(my_ship)] == [
+    assert grouped_role_salaries(my_ship.crew) == [
         ('PILOT', 1, 6_000),
     ]
 
 
-def test_required_crew_roles_for_small_jump_ship():
+def test_required_crew_for_small_jump_ship():
     my_ship = ship.Ship(
         tl=12,
         displacement=100,
@@ -45,7 +59,7 @@ def test_required_crew_roles_for_small_jump_ship():
         computer=ComputerSection(hardware=Computer(5)),
     )
 
-    assert [(role.role, role.count, role.monthly_salary) for role in required_crew_roles(my_ship)] == [
+    assert grouped_role_salaries(my_ship.crew) == [
         ('PILOT', 1, 6_000),
         ('ASTROGATOR', 1, 5_000),
         ('ENGINEER', 1, 4_000),
@@ -64,7 +78,7 @@ def test_gunner_added_for_each_turret_on_commercial_ship():
         weapons=WeaponsSection(turrets=[Turret(size='double')]),
     )
 
-    assert [(role.role, role.count) for role in required_crew_roles(my_ship)] == [
+    assert grouped_role_counts(my_ship.crew) == [
         ('PILOT', 1),
         ('ASTROGATOR', 1),
         ('ENGINEER', 1),
@@ -83,7 +97,7 @@ def test_large_ship_reduces_engineering_and_other_scaling_roles():
         computer=ComputerSection(hardware=Computer(5)),
     )
 
-    assert [(role.role, role.count) for role in required_crew_roles(my_ship)] == [
+    assert grouped_role_counts(my_ship.crew) == [
         ('PILOT', 1),
         ('ASTROGATOR', 1),
         ('ENGINEER', 9),
@@ -107,7 +121,7 @@ def test_military_ship_uses_military_pilot_and_gunner_rules():
         weapons=WeaponsSection(turrets=[Turret(size='double'), Turret(size='double')]),
     )
 
-    assert [(role.role, role.count) for role in required_crew_roles(my_ship)] == [
+    assert grouped_role_counts(my_ship.crew) == [
         ('CAPTAIN', 1),
         ('PILOT', 3),
         ('ENGINEER', 1),
@@ -133,7 +147,7 @@ def test_commercial_ship_gets_extra_pilot_for_carried_small_craft():
         craft=CraftSection(docking_space=InternalDockingSpace(craft=ShipBoat())),
     )
 
-    assert ('PILOT', 2) in [(role.role, role.count) for role in required_crew_roles(my_ship)]
+    assert ('PILOT', 2) in grouped_role_counts(my_ship.crew)
 
 
 def test_air_raft_does_not_add_extra_pilot():
@@ -148,7 +162,7 @@ def test_air_raft_does_not_add_extra_pilot():
         craft=CraftSection(docking_space=InternalDockingSpace(craft=AirRaft())),
     )
 
-    assert ('PILOT', 1) in [(role.role, role.count) for role in required_crew_roles(my_ship)]
+    assert ('PILOT', 1) in grouped_role_counts(my_ship.crew)
 
 
 def test_military_small_non_jump_craft_still_uses_single_pilot():
@@ -163,7 +177,7 @@ def test_military_small_non_jump_craft_still_uses_single_pilot():
         computer=ComputerSection(hardware=Computer(5)),
     )
 
-    assert [(role.role, role.count) for role in required_crew_roles(my_ship)] == [
+    assert grouped_role_counts(my_ship.crew) == [
         ('PILOT', 1),
     ]
 
@@ -180,7 +194,7 @@ def test_commercial_ship_gets_gunner_for_barbette():
         weapons=WeaponsSection(barbettes=[Barbette(weapon='pulse_laser')]),
     )
 
-    assert ('GUNNER', 1) in [(role.role, role.count) for role in required_crew_roles(my_ship)]
+    assert ('GUNNER', 1) in grouped_role_counts(my_ship.crew)
 
 
 def test_military_ship_gets_gunners_for_bays():
@@ -198,7 +212,7 @@ def test_military_ship_gets_gunners_for_bays():
         ),
     )
 
-    assert ('GUNNER', 3) in [(role.role, role.count) for role in required_crew_roles(my_ship)]
+    assert ('GUNNER', 3) in grouped_role_counts(my_ship.crew)
 
 
 def test_sensor_stations_drive_sensor_operator_count():
@@ -210,7 +224,7 @@ def test_sensor_stations_drive_sensor_operator_count():
         sensors=SensorsSection(sensor_stations=SensorStations(count=2)),
     )
 
-    assert ('SENSOR OPERATOR', 3) in [(role.role, role.count) for role in required_crew_roles(my_ship)]
+    assert ('SENSOR OPERATOR', 3) in grouped_role_counts(my_ship.crew)
 
 
 def test_explicit_crew_input_overrides_rule_based_crew():
@@ -222,10 +236,10 @@ def test_explicit_crew_input_overrides_rule_based_crew():
         power=PowerSection(fusion_plant=FusionPlantTL12(output=10)),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer(5)),
-        crew={'vector': {'PILOT': 1, 'ENGINEER': 1}},
+        crew=ShipCrew(roles=[Pilot(), Engineer()]),
     )
 
-    assert [(role.role, role.count) for role in my_ship.crew_roles] == [
+    assert grouped_role_counts(my_ship.crew) == [
         ('PILOT', 1),
         ('ENGINEER', 1),
     ]
@@ -240,7 +254,7 @@ def test_understaffed_explicit_crew_input_emits_warning():
         power=PowerSection(fusion_plant=FusionPlantTL12(output=10)),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer(5)),
-        crew={'vector': {'PILOT': 1, 'ENGINEER': 1}},
+        crew=ShipCrew(roles=[Pilot(), Engineer()]),
     )
 
     assert ('warning', 'ASTROGATOR below recommended count: 0 < 1') in [
@@ -255,7 +269,7 @@ def test_overstaffed_explicit_crew_input_emits_warning():
         hull=hull.Hull(configuration=hull.streamlined_hull),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer(5)),
-        crew={'vector': {'PILOT': 2}},
+        crew=ShipCrew(roles=[Pilot(), Pilot()]),
     )
 
     assert ('info', 'PILOT above recommended count: 2 > 1') in [
@@ -270,7 +284,7 @@ def test_overstaffed_explicit_crew_input_warning_is_exposed_in_spec_crew_notes()
         hull=hull.Hull(configuration=hull.streamlined_hull),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer(5)),
-        crew={'vector': {'PILOT': 2}},
+        crew=ShipCrew(roles=[Pilot(), Pilot()]),
     )
 
     spec = my_ship.build_spec()
@@ -286,7 +300,7 @@ def test_explicit_crew_notes_are_not_stored_on_ship_level():
         hull=hull.Hull(configuration=hull.streamlined_hull),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer(5)),
-        crew={'vector': {'PILOT': 2}},
+        crew=ShipCrew(roles=[Pilot(), Pilot()]),
     )
 
     assert my_ship.notes == []
@@ -306,7 +320,7 @@ def test_small_commercial_ship_does_not_require_separate_maintenance_crew():
         computer=ComputerSection(hardware=Computer(5)),
     )
 
-    assert ('MAINTENANCE', 1) not in [(role.role, role.count) for role in required_crew_roles(my_ship)]
+    assert ('MAINTENANCE', 1) not in grouped_role_counts(my_ship.crew)
 
 
 def test_steward_added_for_middle_passenger_manifest():
@@ -322,7 +336,7 @@ def test_steward_added_for_middle_passenger_manifest():
         passenger_vector={'middle': 16},
     )
 
-    assert ('STEWARD', 1) in [(role.role, role.count) for role in required_crew_roles(my_ship)]
+    assert ('STEWARD', 1) in grouped_role_counts(my_ship.crew)
 
 
 def test_steward_requirement_uses_skill_levels_for_large_middle_passenger_manifest():
@@ -338,9 +352,9 @@ def test_steward_requirement_uses_skill_levels_for_large_middle_passenger_manife
         passenger_vector={'middle': 250},
     )
 
-    steward_roles = [role for role in required_crew_roles(my_ship) if role.role == 'STEWARD']
-    assert [(role.count, role.skill_level, role.monthly_salary) for role in steward_roles] == [
-        (1, 3, 4_000),
+    steward_roles = [role for role in my_ship.crew.recommended_roles if role.role == 'STEWARD']
+    assert [(role.level, role.monthly_salary) for role in steward_roles] == [
+        (3, 4_000),
     ]
 
 
@@ -357,10 +371,10 @@ def test_steward_requirement_caps_single_person_skill_at_three():
         passenger_vector={'middle': 350},
     )
 
-    steward_roles = [role for role in required_crew_roles(my_ship) if role.role == 'STEWARD']
-    assert [(role.count, role.skill_level, role.monthly_salary) for role in steward_roles] == [
-        (1, 3, 4_000),
-        (1, 1, 2_000),
+    steward_roles = [role for role in my_ship.crew.recommended_roles if role.role == 'STEWARD']
+    assert [(role.level, role.monthly_salary) for role in steward_roles] == [
+        (3, 4_000),
+        (1, 2_000),
     ]
 
 
@@ -374,7 +388,7 @@ def test_explicit_crew_input_warns_when_steward_missing_for_passenger_manifest()
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer(5)),
         habitation=HabitationSection(staterooms=Staterooms(count=10)),
-        crew={'vector': {'PILOT': 1, 'ASTROGATOR': 1, 'ENGINEER': 1}},
+        crew=ShipCrew(roles=[Pilot(), Astrogator(), Engineer()]),
         passenger_vector={'middle': 16},
     )
 
@@ -389,7 +403,7 @@ def test_crew_input_rejects_list_form():
             tl=12,
             displacement=100,
             hull=hull.Hull(configuration=hull.streamlined_hull),
-            crew={'vector': [('PILOT', 2), ('ENGINEER', 1)]},
+            crew={'roles': [('PILOT', 2), ('ENGINEER', 1)]},
         )
 
 
@@ -399,7 +413,7 @@ def test_default_middle_passengers_use_only_unused_staterooms():
         displacement=200,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         habitation=HabitationSection(staterooms=Staterooms(count=10)),
-        crew={'vector': {'PILOT': 7}},
+        crew=ShipCrew(roles=[Pilot()] * 7),
     )
 
     assert my_ship.expenses.life_support == 29_000
@@ -411,7 +425,7 @@ def test_high_passage_uses_one_stateroom_each():
         displacement=200,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         habitation=HabitationSection(staterooms=Staterooms(count=4)),
-        crew={'vector': {'PILOT': 2}},
+        crew=ShipCrew(roles=[Pilot(), Pilot()]),
         passenger_vector={'high': 2, 'middle': 2},
     )
 
@@ -424,7 +438,7 @@ def test_low_passage_uses_low_berths():
         displacement=200,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         habitation=HabitationSection(staterooms=Staterooms(count=1), low_berths=LowBerths(count=4)),
-        crew={'vector': {'PILOT': 1}},
+        crew=ShipCrew(roles=[Pilot()]),
         passenger_vector={'low': 3},
     )
 

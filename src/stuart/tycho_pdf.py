@@ -68,9 +68,7 @@ def _render_notes(notes: list[Note]) -> str:
         elif note.category is NoteCategory.ERROR:
             parts.append(f'#text(fill: rgb("#cc2036"), weight: "bold")[Error: {msg}]')
         else:
-            # Escape the hyphen so each note renders as plain text on its own line,
-            # instead of Typst treating only the first one as a list item.
-            parts.append(f'\\- {msg}')
+            parts.append(f'#text(style: "italic")[{msg}]')
     if not parts:
         return ''
     return '#linebreak()' + '#linebreak()'.join(parts)

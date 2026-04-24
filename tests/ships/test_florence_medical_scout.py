@@ -3,6 +3,7 @@ import pytest
 from tycho import hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection, JumpControl
+from tycho.crew import Astrogator, Captain, Engineer, Maintenance, Medic, Pilot, ShipCrew
 from tycho.crafts import AirRaft, CraftSection, InternalDockingSpace, SlowPinnace
 from tycho.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
 from tycho.habitation import HabitationSection, LowBerths, Staterooms
@@ -21,16 +22,16 @@ def build_florence_medical_scout() -> ship.Ship:
         tl=14,
         displacement=400,
         design_type=ship.ShipDesignType.CUSTOM,
-        crew={
-            'vector': {
-                'CAPTAIN': 1,
-                'PILOT': 2,
-                'ASTROGATOR': 1,
-                'ENGINEER': 2,
-                'MAINTENANCE': 1,
-                'MEDIC': 6,
-            }
-        },
+        crew=ShipCrew(
+            roles=[
+                Captain(),
+                *[Pilot()] * 2,
+                Astrogator(),
+                *[Engineer()] * 2,
+                Maintenance(),
+                *[Medic()] * 6,
+            ]
+        ),
         passenger_vector={},
         hull=hull.Hull(configuration=hull.standard_hull),
         drives=DriveSection(m_drive=MDrive(2), j_drive=JDrive(3)),

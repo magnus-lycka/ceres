@@ -19,7 +19,7 @@ Source handling for this test case:
   - source armored-bulkhead rows are represented as protected parts plus
     separate Hull bulkhead entries (`TCS-001`)
 - deliberate interpretation:
-  - the source crew manifest is preserved verbatim as explicit `ship.crew.vector` data
+  - the source crew manifest is preserved verbatim as explicit `ship.crew.roles` data
   - Ceres surfaces crew-rule mismatches as info/warning notes instead of
     silently normalizing the crew
   - point-defence batteries do not require dedicated gunners
@@ -40,6 +40,17 @@ from stuart import render_ship_html
 from tycho import armour, hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import AutoRepair, Computer, ComputerSection, Core, Evade, FireControl
+from tycho.crew import (
+    Captain,
+    Engineer,
+    Gunner,
+    Maintenance,
+    Medic,
+    Officer,
+    Pilot,
+    SensorOperator,
+    ShipCrew,
+)
 from tycho.drives import DriveSection, EmergencyPowerSystem, FusionPlantTL12, MDrive, PowerSection
 from tycho.habitation import AdvancedEntertainmentSystem, CabinSpace, HabitationSection, Staterooms
 from tycho.hull import ImprovedStealth
@@ -144,18 +155,18 @@ def build_alt_dragon() -> ship.Ship:
             common_area=CommonArea(tons=10.0),
             entertainment=AdvancedEntertainmentSystem(1_250),
         ),
-        crew={
-            'vector': {
-                'CAPTAIN': 1,
-                'PILOT': 3,
-                'ENGINEER': 2,
-                'MAINTENANCE': 1,
-                'MEDIC': 1,
-                'GUNNER': 5,
-                'SENSOR OPERATOR': 3,
-                'OFFICER': 1,
-            }
-        },
+        crew=ShipCrew(
+            roles=[
+                Captain(),
+                *[Pilot()] * 3,
+                *[Engineer()] * 2,
+                Maintenance(),
+                Medic(),
+                *[Gunner()] * 5,
+                *[SensorOperator()] * 3,
+                Officer(),
+            ]
+        ),
     )
 
 

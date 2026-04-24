@@ -4,7 +4,6 @@ from typing import ClassVar, Literal
 from pydantic import field_validator
 
 from .base import CeresModel
-from .crew import effective_crew_roles
 from .parts import ShipPart
 from .spec import ShipSpec, SpecSection
 from .systems import CommonArea
@@ -230,7 +229,7 @@ class HabitationSection(CeresModel):
         return parts
 
     def crew_count(self, ship) -> int:
-        return sum(role.count for role in effective_crew_roles(ship))
+        return ship.crew.count
 
     def passenger_vector(self, ship) -> dict[str, int]:
         if ship.passenger_vector is not None:

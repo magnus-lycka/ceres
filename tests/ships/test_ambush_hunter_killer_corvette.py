@@ -256,7 +256,7 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
         ('info', 'High Technology: Long Range, High Yield'),
     ]
 
-    assert [(role.role, role.count) for role in corvette.crew_roles] == [
+    assert [(role.role, quantity) for role, quantity in corvette.crew.grouped_roles] == [
         ('CAPTAIN', 1),
         ('PILOT', 3),
         ('ASTROGATOR', 1),

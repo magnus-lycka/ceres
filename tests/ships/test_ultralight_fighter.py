@@ -107,7 +107,7 @@ def test_ultralight_fighter_part_values():
     assert fighter.weapon_power_load == 2
     assert fighter.total_power_load == pytest.approx(8.0)
 
-    assert [(role.role, role.count, role.monthly_salary) for role in fighter.crew_roles] == [
+    assert [(role.role, quantity, role.monthly_salary) for role, quantity in fighter.crew.grouped_roles] == [
         ('PILOT', 1, 6_000),
     ]
 

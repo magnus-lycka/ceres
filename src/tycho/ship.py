@@ -9,10 +9,6 @@ from .crafts import CraftSection
 from .crew import (
     CrewRole,
     ShipCrew,
-    crew_salary_cost,
-    crew_warnings,
-    effective_crew_roles,
-    spec_crew_rows,
 )
 from .drives import (
     DriveSection,
@@ -147,11 +143,7 @@ class Ship(ShipBase):
         return ShipExpenses(self)
 
     def _crew_salary_cost(self) -> float:
-        return crew_salary_cost(self)
-
-    @property
-    def crew_roles(self) -> list[CrewRole]:
-        return effective_crew_roles(self)
+        return self.crew.total_salary
 
     def _base_parts(self) -> list[ShipPart]:
         parts = list(self.hull._all_parts())
@@ -314,7 +306,7 @@ class Ship(ShipBase):
         spec.ship_notes = self._display_notes(self)
 
         spec.expenses = self.expenses.rows
-        spec.crew = spec_crew_rows(self)
+        spec.crew = self.crew.spec_rows()
         if self.habitation is not None:
             passenger_vector = self.habitation.passenger_vector(self)
             spec.passengers = [
@@ -333,6 +325,7 @@ class Ship(ShipBase):
                 object.__setattr__(self, 'fuel', FuelSection(fuel_scoops=FuelScoops(free=True)))
             elif self.fuel.fuel_scoops is None or not self.fuel.fuel_scoops.free:
                 object.__setattr__(self, 'fuel', self.fuel.model_copy(update={'fuel_scoops': FuelScoops(free=True)}))
+        self.crew.bind(self)
         for part in self._base_parts():
             part.bind(self)
         if self.habitation is not None:
@@ -356,4 +349,4 @@ class Ship(ShipBase):
             self.error(f'Hull overloaded by {-cargo_tons:.2f} tons')
         if self.command is not None and self.command.bridge is not None and not (self.hull.airlocks or []):
             self.error('No airlock installed')
-        self.crew.notes = crew_warnings(self)
+        self.crew.refresh_notes()
