@@ -180,6 +180,11 @@ Automation and equipment can impact crew needs, e.g. with Starhip Automation
 
 ## Rules interpretations
 
+Cross-cutting rule decisions, intentional deviations, and interpretation notes
+should now be recorded in [RULE_INTERPRETATIONS.md](/Users/magnuslycka/work/ceres/docs/RULE_INTERPRETATIONS.md).
+Keep this section focused on high-level policy and only repeat details here
+when they are needed to understand the architecture.
+
 We follow the latest versions of Mongoose Traveller 2nd Edition Core Rules and
 High Guard. Where the two books conflict, **High Guard takes precedence**.
 
