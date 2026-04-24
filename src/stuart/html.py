@@ -12,7 +12,8 @@ _LIGHT_BG_FILENAME = 'TCom_ScratchedAluminium_header.jpg'
 
 
 def _star_field_data_uri(width: int = 1400, height: int = 900, seed: int = 42) -> str:
-    rng = random.Random(seed)  # nosec B311 — decorative star placement, not cryptographic
+    # Decorative star placement only; not used for cryptographic randomness.
+    rng = random.Random(seed)  # nosec B311
     stars = []
     _faint_colours = ['white', 'white', 'white', 'white', '#cce0ff', '#cce0ff', '#ffe8a0', '#aac8ff']
     _bright_colours = ['white', 'white', '#aad4ff', '#6699ff', '#ffd966', '#ffcc44', '#cce0ff', '#fff5cc']
