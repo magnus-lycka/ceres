@@ -12,7 +12,8 @@ See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for patterns and technical choices.
 
 ## Rules Reference
 
-Use the `refs/` directory (gitignored) for your copy of
+Use the `refs/` directory (gitignored) for relevant parts of
+Traveller rules converted to text/markdown, such as your copy of
 Mongoose Traveller PDFs (High Guard 2022, etc.).
 Read relevant pages when implementing or verifying a subsystem.
 
@@ -21,6 +22,9 @@ If Ceres differs from a published ship sheet or external design tool, first
 determine which explicit rule, table, or stated interpretation would produce
 that result. Only then adjust the code. Never change the model merely to
 "match the facit" without understanding the rule path that leads there.
+
+See [RULE_INTERPRETATIONS.md](docs/RULE_INTERPRETATIONS.md) and
+[TEST_CASE_SHIPS.md](docs/TEST_CASE_SHIPS.md)
 
 ## Python Style
 

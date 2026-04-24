@@ -3,6 +3,7 @@ name = "tycho"
 version = "0.1.0"
 description = "Ship Design for Mongoose Traveller 2nd edition"
 readme = "README.md"
+license = { file = "LICENSE" }
 requires-python = ">=3.14"
 classifiers = [
     "Development Status :: 3 - Alpha",
