@@ -33,10 +33,17 @@ class CrewRole(CeresModel):
     role: str
     count: int
     monthly_salary: int
+    skill_level: int = 1
 
     @property
     def total_salary(self) -> int:
         return self.count * self.monthly_salary
+
+    @property
+    def display_role(self) -> str:
+        if self.skill_level <= 1:
+            return self.role
+        return f'{self.role} (Skill {self.skill_level})'
 
 
 def _normalize_vector(vector) -> dict[str, int]:
@@ -88,6 +95,12 @@ def _carried_small_craft_count(ship) -> int:
     return sum(1 for docking_space in ship.craft._all_parts() if docking_space.craft.requires_pilot)
 
 
+def _explicit_passenger_vector(ship) -> dict[str, int]:
+    if ship.passenger_vector is None:
+        return {}
+    return {str(kind).lower(): int(count) for kind, count in ship.passenger_vector.items()}
+
+
 def _commercial_gunner_count(ship) -> int:
     if ship.weapons is None:
         return 0
@@ -115,6 +128,58 @@ def _sensor_operator_count(ship, *, military: bool) -> int:
     return max(tonnage_based_count, station_based_count)
 
 
+def _commercial_maintenance_count(ship) -> int:
+    tonnage = ship.displacement + _contained_small_craft_tonnage(ship)
+    if tonnage < 1_000:
+        return 0
+    return math.ceil(tonnage / 1_000)
+
+
+def _military_maintenance_count(ship) -> int:
+    tonnage = ship.displacement + _contained_small_craft_tonnage(ship)
+    if tonnage < 500:
+        return 0
+    return math.ceil(tonnage / 500)
+
+
+def _salary_for_skill_level(base_salary: int, skill_level: int) -> int:
+    return int(base_salary * (1 + 0.5 * (skill_level - 1)))
+
+
+def _steward_required_level(ship) -> int:
+    passenger_vector = _explicit_passenger_vector(ship)
+    high_passage = passenger_vector.get('high', 0)
+    middle_passage = passenger_vector.get('middle', 0)
+    if high_passage == 0 and middle_passage == 0:
+        return 0
+    return math.ceil((middle_passage + 10 * high_passage) / 100)
+
+
+def _steward_roles(ship) -> list[CrewRole]:
+    required_level = _steward_required_level(ship)
+    if required_level == 0:
+        return []
+
+    counts_by_skill: dict[int, int] = {}
+    remaining = required_level
+    while remaining > 0:
+        skill_level = min(3, remaining)
+        counts_by_skill[skill_level] = counts_by_skill.get(skill_level, 0) + 1
+        remaining -= skill_level
+
+    roles: list[CrewRole] = []
+    for skill_level in sorted(counts_by_skill, reverse=True):
+        roles.append(
+            CrewRole(
+                role='STEWARD',
+                count=counts_by_skill[skill_level],
+                monthly_salary=_salary_for_skill_level(STEWARD_SALARY, skill_level),
+                skill_level=skill_level,
+            )
+        )
+    return roles
+
+
 def _commercial_roles(ship) -> list[CrewRole]:
     if ship.displacement <= 100 and (ship.drives is None or ship.drives.j_drive is None):
         return [CrewRole(role='PILOT', count=1, monthly_salary=PILOT_SALARY)]
@@ -135,10 +200,7 @@ def _commercial_roles(ship) -> list[CrewRole]:
     if engineer_count:
         roles.append(CrewRole(role='ENGINEER', count=engineer_count, monthly_salary=ENGINEER_SALARY))
 
-    maintenance_count = _apply_large_ship_reduction(
-        ship,
-        math.ceil((ship.displacement + _contained_small_craft_tonnage(ship)) / 1_000),
-    )
+    maintenance_count = _apply_large_ship_reduction(ship, _commercial_maintenance_count(ship))
     if maintenance_count:
         roles.append(CrewRole(role='MAINTENANCE', count=maintenance_count, monthly_salary=MAINTENANCE_SALARY))
 
@@ -146,6 +208,8 @@ def _commercial_roles(ship) -> list[CrewRole]:
     gunner_count = _apply_large_ship_reduction(ship, gunner_count)
     if gunner_count:
         roles.append(CrewRole(role='GUNNER', count=gunner_count, monthly_salary=GUNNER_SALARY))
+
+    roles.extend(_steward_roles(ship))
 
     administrator_count = _apply_large_ship_reduction(ship, ship.displacement // 2_000)
     if administrator_count:
@@ -201,10 +265,7 @@ def _military_roles(ship) -> list[CrewRole]:
     if engineer_count:
         roles.append(CrewRole(role='ENGINEER', count=engineer_count, monthly_salary=ENGINEER_SALARY))
 
-    maintenance_count = _apply_large_ship_reduction(
-        ship,
-        math.ceil((ship.displacement + _contained_small_craft_tonnage(ship)) / 500),
-    )
+    maintenance_count = _apply_large_ship_reduction(ship, _military_maintenance_count(ship))
     if maintenance_count:
         roles.append(CrewRole(role='MAINTENANCE', count=maintenance_count, monthly_salary=MAINTENANCE_SALARY))
 
@@ -212,6 +273,8 @@ def _military_roles(ship) -> list[CrewRole]:
     gunner_count = _apply_large_ship_reduction(ship, gunner_count)
     if gunner_count:
         roles.append(CrewRole(role='GUNNER', count=gunner_count, monthly_salary=GUNNER_SALARY))
+
+    roles.extend(_steward_roles(ship))
 
     administrator_count = _apply_large_ship_reduction(ship, ship.displacement // 1_000)
     if administrator_count:
@@ -271,7 +334,9 @@ def crew_vector_warnings(ship) -> list[str]:
 
     warnings: list[str] = []
     provided = _normalize_vector(ship.crew_vector)
-    required = {role.role: role.count for role in required_crew_roles(ship)}
+    required: dict[str, int] = {}
+    for role in required_crew_roles(ship):
+        required[role.role] = required.get(role.role, 0) + role.count
     for role, required_count in required.items():
         provided_count = provided.get(role, 0)
         if provided_count < required_count:
@@ -288,7 +353,7 @@ def spec_crew_rows(ship) -> list[SpecCrewRow]:
     for role in effective_crew_roles(ship):
         rows.append(
             SpecCrewRow(
-                role=role.role,
+                role=role.display_role,
                 quantity=optional_count(role.count),
                 salary=role.monthly_salary,
             )

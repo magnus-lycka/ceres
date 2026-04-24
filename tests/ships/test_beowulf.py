@@ -1,3 +1,26 @@
+"""Reference ship case based on refs/Beowulf.md.
+
+Purpose:
+- provide a compact source-derived commercial baseline ship
+- exercise standard TL12 Streamlined/J-1/M-1/Fusion-75 design rules
+- keep one explicit example of how we map Anderson-style export rows into Ceres
+
+Source handling for this test case:
+- supported: hull, armour, drives, power plant, fuel, bridge, computer,
+  sensors, common area, staterooms, low berths, cargo crane, cargo hold,
+  crew manifest, planned passenger manifest, production cost, discounted
+  purchase price, crew salaries
+- ignored for test-case modelling:
+  - battle-load figures (`TCS-002`)
+  - income / profit rows (`TCS-003`)
+- still excluded from the modeled reference case:
+  - the source life-support total is Cr1000 higher than the current core-rule
+    formula for the same manifest
+- model interpretation rather than dedicated installed rows:
+  - stores and spares (`RI-001`)
+  - passenger luggage / baggage storage (`RI-002`)
+"""
+
 import pytest
 
 from tycho import armour, hull, ship
@@ -12,6 +35,7 @@ from tycho.systems import Airlock, CommonArea
 
 
 def build_beowulf() -> ship.Ship:
+    """Build the Beowulf reference case from refs/Beowulf.md."""
     return ship.Ship(
         ship_class='Beowulf',
         ship_type='Type A Free Trader',
@@ -39,6 +63,8 @@ def build_beowulf() -> ship.Ship:
             common_area=CommonArea(tons=10.0),
         ),
         cargo=CargoSection(cargo_holds=[CargoHold(crane=CargoCrane())]),
+        crew_vector={'PILOT': 1, 'ASTROGATOR': 1, 'ENGINEER': 1, 'STEWARD': 1},
+        passenger_vector={'middle': 16},
     )
 
 
@@ -135,8 +161,13 @@ def test_beowulf_airlocks_free():
 
 
 def test_beowulf_cargo():
-    # Anderson shows 80.0t cargo + 0.80 luggage + 0.70 stores = 81.50t.
-    # We don't model luggage or stores, so we get ~81.50t total.
+    # Source rows:
+    # - Cargo Bay: 80.00
+    # - Passenger Luggage Storage Area: 0.80 (RI-002)
+    # - Supplies / Stores and Spares: 0.70 (RI-001)
+    #
+    # Ceres does not install luggage or stores/spares as separate design rows in
+    # this case, but the resulting usable cargo capacity still lands at 81.5.
     beowulf = build_beowulf()
     assert CargoSection.cargo_tons_for_ship(beowulf) == pytest.approx(81.5, abs=0.01)
 
@@ -155,6 +186,21 @@ def test_beowulf_production_cost():
     beowulf = build_beowulf()
     assert beowulf.production_cost == pytest.approx(51_380_000)
     assert beowulf.sales_price_new == pytest.approx(46_242_000)
+
+
+def test_beowulf_crew_and_life_support_match_reference_manifest():
+    beowulf = build_beowulf()
+
+    assert [(role.role, role.count, role.monthly_salary) for role in beowulf.crew_roles] == [
+        ('PILOT', 1, 6_000),
+        ('ASTROGATOR', 1, 5_000),
+        ('ENGINEER', 1, 4_000),
+        ('STEWARD', 1, 2_000),
+    ]
+    assert beowulf.expenses.life_support == pytest.approx(30_000.0)
+    assert beowulf.expenses.crew_salaries == pytest.approx(17_000.0)
+    assert beowulf.expenses.fuel == pytest.approx(4_050.0)
+    assert not beowulf.notes
 
 
 def test_beowulf_spec_structure():
@@ -189,3 +235,9 @@ def test_beowulf_spec_structure():
     assert spec.expenses[0].label == 'Production Cost'
     assert spec.expenses[0].amount == pytest.approx(51_380_000)
     assert spec.expenses[1].amount == pytest.approx(46_242_000)
+    assert [(crew.role, crew.quantity, crew.salary) for crew in spec.crew] == [
+        ('PILOT', None, 6_000),
+        ('ASTROGATOR', None, 5_000),
+        ('ENGINEER', None, 4_000),
+        ('STEWARD', None, 2_000),
+    ]

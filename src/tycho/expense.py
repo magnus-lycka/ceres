@@ -70,15 +70,14 @@ class ShipExpenses:
         has_fuel_processor = self.ship.fuel.fuel_processor is not None
 
         cost = 0.0
+        jump_fuel_rate = 100.0 if has_fuel_processor else 500.0
         if self.ship.fuel.jump_fuel is not None:
-            if not (has_fuel_scoops and has_fuel_processor):
-                cost += self.ship.fuel.jump_fuel.tons * 2 * 500
+            cost += self.ship.fuel.jump_fuel.tons * 2 * jump_fuel_rate
 
         if self.ship.fuel.operation_fuel is not None:
             monthly_tons = self.ship.fuel.operation_fuel.tons * (4 / self.ship.fuel.operation_fuel.weeks)
             if has_jump_drive:
-                if not (has_fuel_scoops and has_fuel_processor):
-                    cost += monthly_tons * 500
+                cost += monthly_tons * jump_fuel_rate
             elif not has_fuel_scoops:
                 cost += monthly_tons * 100
 

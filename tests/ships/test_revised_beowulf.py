@@ -1,3 +1,29 @@
+"""Reference ship case based on refs/RevisedBowulf.md.
+
+Purpose:
+- exercise a lighter revised Beowulf variant against the same baseline rules as
+  the standard Beowulf
+- preserve one explicit example of a source case that includes export-specific
+  rows and assumptions beyond the current Ceres model
+
+Source handling for this test case:
+- supported: light streamlined hull, armour, drives, budget/increased-size
+  fusion plant, habitation, workshop, medical bay, cargo hold, crew manifest,
+  planned passenger manifest, production cost, discounted purchase price, crew
+  salaries
+- ignored for test-case modelling:
+  - battle-load figures (`TCS-002`)
+  - income / profit rows (`TCS-003`)
+- still excluded from the modeled reference case:
+  - cost-reduction labels on drives
+  - advanced low berth pricing/details
+  - the source life-support total is Cr1000 higher than the current core-rule
+    formula for the same manifest
+- model interpretation rather than dedicated installed rows:
+  - passenger luggage / baggage storage (`RI-002`)
+  - stores and spares (`RI-001`)
+"""
+
 import pytest
 
 from tycho import armour, hull, ship
@@ -14,12 +40,11 @@ from tycho.systems import Airlock, CommonArea, MedicalBay, SystemsSection, Works
 
 def build_revised_beowulf() -> ship.Ship:
     """
-    Modeled subset of refs/RevisedBowulf.md.
+    Build the Revised Beowulf reference case from refs/RevisedBowulf.md.
 
-    Not yet modeled from the reference:
+    Excluded from this reference mapping:
     - cost reduction on M-drive and jump drive
     - advanced low berth pricing/details
-    - passenger luggage storage / supplies rows from the export
     - the reference expense assumptions for life support and purchased fuel
     """
 
@@ -54,6 +79,8 @@ def build_revised_beowulf() -> ship.Ship:
             entertainment=AdvancedEntertainmentSystem(1_250),
         ),
         cargo=CargoSection(cargo_holds=[CargoHold(tons=67.5, crane=CargoCrane())]),
+        crew_vector={'PILOT': 1, 'ASTROGATOR': 1, 'ENGINEER': 1, 'STEWARD': 1},
+        passenger_vector={'middle': 16},
     )
 
 
@@ -107,7 +134,22 @@ def test_revised_beowulf_matches_current_modeled_subset():
     assert beowulf.fuel_power_load == pytest.approx(1.0)
     assert beowulf.total_power_load == pytest.approx(65.0)
 
+    # Source export also includes passenger luggage/storage and supplies rows.
+    # Those are treated via RI-002 and RI-001 rather than as dedicated design
+    # components in this reference case.
     assert CargoSection.cargo_tons_for_ship(beowulf) == pytest.approx(64.5)
     assert beowulf.production_cost == pytest.approx(49_781_250)
     assert beowulf.sales_price_new == pytest.approx(44_803_125)
     assert beowulf.expenses.maintenance == pytest.approx(3734.0)
+    assert beowulf.expenses.life_support == pytest.approx(30_000.0)
+    assert beowulf.expenses.crew_salaries == pytest.approx(17_000.0)
+    assert beowulf.expenses.fuel == pytest.approx(4_055.0)
+    assert [(role.role, role.count, role.monthly_salary) for role in beowulf.crew_roles] == [
+        ('PILOT', 1, 6_000),
+        ('ASTROGATOR', 1, 5_000),
+        ('ENGINEER', 1, 4_000),
+        ('STEWARD', 1, 2_000),
+    ]
+    assert ('warning', 'MEDIC below recommended count: 0 < 1') in [
+        (note.category.value, note.message) for note in beowulf.notes
+    ]

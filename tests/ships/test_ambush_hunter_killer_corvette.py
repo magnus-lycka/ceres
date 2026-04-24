@@ -261,7 +261,6 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
         ('PILOT', 3),
         ('ASTROGATOR', 1),
         ('ENGINEER', 3),
-        ('MAINTENANCE', 1),
         ('GUNNER', 8),
         ('SENSOR OPERATOR', 3),
         ('MEDIC', 1),

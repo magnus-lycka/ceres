@@ -237,7 +237,6 @@ def test_strandbell_uses_military_crew_rules():
         ('CAPTAIN', 1, 10_000),
         ('PILOT', 3, 6_000),
         ('ENGINEER', 1, 4_000),
-        ('MAINTENANCE', 1, 1_000),
         ('GUNNER', 4, 2_000),
         ('SENSOR OPERATOR', 3, 4_000),
         ('MEDIC', 1, 4_000),

@@ -1,3 +1,26 @@
+"""Reference ship case based on refs/dragon.txt.
+
+Purpose:
+- preserve a source-derived military baseline for the Dragon line
+- exercise reinforced streamlined TL13 SDB modelling with bulkheads, sensors,
+  bays, barbettes, point defence, and military crew rules
+- keep one explicit example of source-to-model normalization where the source
+  export groups some protected items and bulkheads differently from Ceres
+
+Source handling for this test case:
+- supported: hull, stealth, radiation shielding, armour, drives, power, fuel,
+  bridge, computer, sensors, weapons, systems, common area, production cost,
+  discounted purchase price
+- ignored for test-case modelling:
+  - battle-load figures (`TCS-002`)
+  - income / profit rows (`TCS-003`)
+- normalized when mapping into Ceres:
+  - source armored-bulkhead rows are represented as protected parts plus
+    separate Hull bulkhead entries (`TCS-001`)
+- model interpretation rather than dedicated installed rows:
+  - stores and spares (`RI-001`)
+"""
+
 import pytest
 
 from tycho import armour, hull, ship
@@ -32,9 +55,9 @@ from tycho.weapons import Barbette, Bay, MissileStorage, PointDefenseBattery, We
 
 def build_dragon() -> ship.Ship:
     """
-    Modeled subset of refs/dragon.txt.
+    Build the Dragon reference case from refs/dragon.txt.
 
-    Not yet modeled from the reference:
+    Source aspects intentionally not carried over verbatim:
     - exact bay count/formatting from source export
     """
 
@@ -221,6 +244,8 @@ def test_dragon_modeled_subset_matches_current_model():
     assert dragon.habitation.common_area is not None
     assert dragon.habitation.common_area.tons == pytest.approx(10.0)
 
+    # The source export includes a stores/spares row in cargo. Ceres treats that
+    # as guidance (RI-001) rather than as a separately installed design item.
     assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(18.00)
     assert dragon.production_cost == pytest.approx(308_250_000)
     assert dragon.sales_price_new == pytest.approx(277_425_000)
@@ -240,7 +265,6 @@ def test_dragon_power_and_crew_for_current_subset():
         ('CAPTAIN', 1, 10_000),
         ('PILOT', 3, 6_000),
         ('ENGINEER', 2, 4_000),
-        ('MAINTENANCE', 1, 1_000),
         ('GUNNER', 5, 2_000),
         ('SENSOR OPERATOR', 3, 4_000),
         ('MEDIC', 1, 4_000),

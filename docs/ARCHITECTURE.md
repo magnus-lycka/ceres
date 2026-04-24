@@ -185,22 +185,15 @@ should now be recorded in [RULE_INTERPRETATIONS.md](/Users/magnuslycka/work/cere
 Keep this section focused on high-level policy and only repeat details here
 when they are needed to understand the architecture.
 
+Source-to-test-case normalization rules for external ship designs should be
+recorded separately in [TEST_CASE_SHIPS.md](/Users/magnuslycka/work/ceres/docs/TEST_CASE_SHIPS.md).
+
 We follow the latest versions of Mongoose Traveller 2nd Edition Core Rules and
 High Guard. Where the two books conflict, **High Guard takes precedence**.
 
 We have studied Mark F. Anderson's ship design tool output and deviate from it
 in the following intentional ways:
 
-- **Stores & Spares** — not modelled. HG only specifies this for capital ships,
-  and the tonnage is considered to fit within existing spaces rather than
-  reducing cargo capacity.
-- **Passenger Storage Capacity** — not modelled as a separate line item. For
-  Middle Passage or worse, luggage fits within the stateroom allocation. For
-  High Passage, cargo simply decreases by 1 dTon per passenger, but this is
-  tracked operationally rather than reserved in the design. The net effect is
-  that our cargo figure will be slightly higher than Anderson's.
-- **Battle Load** — Anderson shows power figures for both normal and battle
-  load. We only model normal load and do not plan to add battle load.
 - **Cost Reduction X*10% on ship components** — Anderson exports sometimes show
   labels such as `Cost Reduction 3` or `Cost Reduction 3*` on drives. We do
   not currently have rule text supporting a generic ship-component

@@ -17,6 +17,11 @@ def test_crew_role_total_salary():
     assert role.total_salary == 8_000
 
 
+def test_crew_role_display_role_includes_skill_level_when_above_one():
+    role = CrewRole(role='STEWARD', count=1, monthly_salary=4_000, skill_level=3)
+    assert role.display_role == 'STEWARD (Skill 3)'
+
+
 def test_required_crew_roles_for_small_non_jump_ship():
     my_ship = ship.Ship(
         tl=12,
@@ -44,7 +49,6 @@ def test_required_crew_roles_for_small_jump_ship():
         ('PILOT', 1, 6_000),
         ('ASTROGATOR', 1, 5_000),
         ('ENGINEER', 1, 4_000),
-        ('MAINTENANCE', 1, 1_000),
     ]
 
 
@@ -64,7 +68,6 @@ def test_gunner_added_for_each_turret_on_commercial_ship():
         ('PILOT', 1),
         ('ASTROGATOR', 1),
         ('ENGINEER', 1),
-        ('MAINTENANCE', 1),
         ('GUNNER', 1),
     ]
 
@@ -108,7 +111,6 @@ def test_military_ship_uses_military_pilot_and_gunner_rules():
         ('CAPTAIN', 1),
         ('PILOT', 3),
         ('ENGINEER', 1),
-        ('MAINTENANCE', 1),
         ('GUNNER', 4),
         ('SENSOR OPERATOR', 3),
         ('OFFICER', 1),
@@ -244,7 +246,92 @@ def test_understaffed_explicit_crew_vector_emits_warning():
     assert ('warning', 'ASTROGATOR below recommended count: 0 < 1') in [
         (note.category.value, note.message) for note in my_ship.notes
     ]
-    assert ('warning', 'MAINTENANCE below recommended count: 0 < 1') in [
+
+
+def test_small_commercial_ship_does_not_require_separate_maintenance_crew():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        drives=DriveSection(m_drive=MDrive(1), j_drive=JDrive(1)),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer(5)),
+    )
+
+    assert ('MAINTENANCE', 1) not in [(role.role, role.count) for role in required_crew_roles(my_ship)]
+
+
+def test_steward_added_for_middle_passenger_manifest():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        drives=DriveSection(m_drive=MDrive(1), j_drive=JDrive(1)),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer(5)),
+        habitation=HabitationSection(staterooms=Staterooms(count=10)),
+        passenger_vector={'middle': 16},
+    )
+
+    assert ('STEWARD', 1) in [(role.role, role.count) for role in required_crew_roles(my_ship)]
+
+
+def test_steward_requirement_uses_skill_levels_for_large_middle_passenger_manifest():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        drives=DriveSection(m_drive=MDrive(1), j_drive=JDrive(1)),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=40)),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer(5)),
+        habitation=HabitationSection(staterooms=Staterooms(count=130)),
+        passenger_vector={'middle': 250},
+    )
+
+    steward_roles = [role for role in required_crew_roles(my_ship) if role.role == 'STEWARD']
+    assert [(role.count, role.skill_level, role.monthly_salary) for role in steward_roles] == [
+        (1, 3, 4_000),
+    ]
+
+
+def test_steward_requirement_caps_single_person_skill_at_three():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        drives=DriveSection(m_drive=MDrive(1), j_drive=JDrive(1)),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=40)),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer(5)),
+        habitation=HabitationSection(staterooms=Staterooms(count=210)),
+        passenger_vector={'middle': 350},
+    )
+
+    steward_roles = [role for role in required_crew_roles(my_ship) if role.role == 'STEWARD']
+    assert [(role.count, role.skill_level, role.monthly_salary) for role in steward_roles] == [
+        (1, 3, 4_000),
+        (1, 1, 2_000),
+    ]
+
+
+def test_explicit_crew_vector_warns_when_steward_missing_for_passenger_manifest():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        drives=DriveSection(m_drive=MDrive(1), j_drive=JDrive(1)),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer(5)),
+        habitation=HabitationSection(staterooms=Staterooms(count=10)),
+        crew_vector={'PILOT': 1, 'ASTROGATOR': 1, 'ENGINEER': 1},
+        passenger_vector={'middle': 16},
+    )
+
+    assert ('warning', 'STEWARD below recommended count: 0 < 1') in [
         (note.category.value, note.message) for note in my_ship.notes
     ]
 

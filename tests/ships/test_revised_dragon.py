@@ -179,7 +179,6 @@ def test_revised_dragon_power_and_crew_for_current_subset():
         ('CAPTAIN', 1, 10_000),
         ('PILOT', 3, 6_000),
         ('ENGINEER', 3, 4_000),
-        ('MAINTENANCE', 1, 1_000),
         ('GUNNER', 5, 2_000),
         ('SENSOR OPERATOR', 3, 4_000),
         ('MEDIC', 1, 4_000),

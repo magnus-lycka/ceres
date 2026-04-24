@@ -161,7 +161,6 @@ def test_suleiman_matches_first_modeled_reference_slice():
         ('PILOT', 1, 6_000),
         ('ASTROGATOR', 1, 5_000),
         ('ENGINEER', 1, 4_000),
-        ('MAINTENANCE', 1, 1_000),
         ('GUNNER', 1, 2_000),
     ]
 
@@ -263,15 +262,14 @@ def test_suleiman_spec_structure():
     assert spec.expenses[1].label == 'Sales Price New'
     assert spec.expenses[1].amount == 36_940_500
     assert any(e.label == 'Life Support Facilities' and e.amount == 4_000 for e in spec.expenses)
-    assert any(e.label == 'Life Support People' and e.amount == 7_000 for e in spec.expenses)
-    assert any(e.label == 'Fuel' and e.amount == 0 for e in spec.expenses)
-    assert any(e.label == 'Crew Salaries' and e.amount == 18_000 for e in spec.expenses)
+    assert any(e.label == 'Life Support People' and e.amount == 8_000 for e in spec.expenses)
+    assert any(e.label == 'Fuel' and e.amount == 4_040 for e in spec.expenses)
+    assert any(e.label == 'Crew Salaries' and e.amount == 17_000 for e in spec.expenses)
 
     assert any(c.role == 'ENGINEER' and c.quantity is None and c.salary == 4_000 for c in spec.crew)
-    assert any(c.role == 'MAINTENANCE' and c.quantity is None and c.salary == 1_000 for c in spec.crew)
     assert any(c.role == 'GUNNER' and c.quantity is None and c.salary == 2_000 for c in spec.crew)
     assert any(c.role == 'PILOT' and c.quantity is None and c.salary == 6_000 for c in spec.crew)
-    assert any(p.kind == 'MIDDLE' and p.quantity == 2 for p in spec.passengers)
+    assert any(p.kind == 'MIDDLE' and p.quantity == 4 for p in spec.passengers)
 
 
 @pytest.mark.generated_output

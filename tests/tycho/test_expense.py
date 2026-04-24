@@ -106,13 +106,13 @@ def test_operation_fuel_cost_is_zero_with_scoops_and_no_jump_drive():
     assert my_ship.expenses.fuel == pytest.approx(0.0)
 
 
-def test_jump_and_operation_fuel_cost_is_zero_with_scoops_and_processor():
+def test_jump_and_operation_fuel_use_unrefined_price_with_processor():
     my_ship = build_small_jump_ship()
 
     assert my_ship.fuel is not None
     assert my_ship.fuel.fuel_scoops is not None
     assert my_ship.fuel.fuel_processor is not None
-    assert my_ship.expenses.fuel == pytest.approx(0.0)
+    assert my_ship.expenses.fuel == pytest.approx(4_040.0)
 
 
 def test_jump_drive_still_requires_refined_fuel_without_processor():
