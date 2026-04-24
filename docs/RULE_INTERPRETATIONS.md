@@ -88,3 +88,21 @@ raw headcount:
 
 When more than 3 total steward levels are needed, Ceres splits the requirement
 across multiple stewards rather than assuming a single higher-skill recruit.
+
+### RI-005 Retro Computer Pricing Is Not Currently Modelled
+
+Ceres does not currently model the retrofitted computer pricing shown for some
+ship computers in *Central Supply Catalogue* source material and derivative
+exports.
+
+In practice, this means:
+
+- computer hardware in Ceres is priced from the normal computer model
+- source rows marked as retrofitted, such as `Retro*`, are not given special
+  discounted pricing
+- when a reference ship depends on retro computer pricing, that difference
+  should be documented explicitly in the relevant test case rather than hidden
+  or silently normalized away
+
+This is a current modeling limitation, not a statement that such source
+material is invalid.

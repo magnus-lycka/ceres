@@ -67,6 +67,12 @@ def test_dump_bare_ship_contains_tl_and_displacement():
     data = json.loads(bare.model_dump_json())
     assert data['tl'] == 12
     assert data['displacement'] == 6
+    assert 'crew' in data
+
+
+def test_dump_omits_empty_hull_armoured_bulkheads():
+    data = json.loads(bare.model_dump_json())
+    assert 'armoured_bulkheads' not in data['hull']
 
 
 def test_dump_armour_in_hull():
@@ -107,6 +113,13 @@ def test_dump_weapon_in_fixed_mounts():
         'Very High Yield',
         'Energy Efficient',
     ]
+
+
+def test_dump_ship_crew_contains_vector_and_notes():
+    source_ship = build_dragon()
+    data = json.loads(source_ship.model_dump_json())
+    assert data['crew']['vector']['ASTROGATOR'] == 1
+    assert any(note['message'] == 'ASTROGATOR above recommended count: 1 > 0' for note in data['crew']['notes'])
 
 
 # ---------------------------------------------------------------------------

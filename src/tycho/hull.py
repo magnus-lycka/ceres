@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Annotated, ClassVar, Literal
 
-from pydantic import Field
+from pydantic import Field, model_serializer
 
 from .armour import (
     BondedSuperdenseArmour,
@@ -249,6 +249,13 @@ class Hull(CeresModel):
         if (af := self.aerofins) is not None:
             parts.append(af)
         return parts
+
+    @model_serializer(mode='wrap')
+    def _serialize_without_empty_armoured_bulkheads(self, handler):
+        data = handler(self)
+        if data.get('armoured_bulkheads') == []:
+            data.pop('armoured_bulkheads', None)
+        return data
 
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
         spec.add_row(

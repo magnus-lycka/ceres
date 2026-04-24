@@ -46,6 +46,10 @@ class CrewRole(CeresModel):
         return f'{self.role} (Skill {self.skill_level})'
 
 
+class ShipCrew(CeresModel):
+    vector: dict[str, int] | None = None
+
+
 def _normalize_vector(vector) -> dict[str, int]:
     if vector is None:
         return {}
@@ -316,10 +320,10 @@ def required_crew_roles(ship) -> list[CrewRole]:
 
 
 def effective_crew_roles(ship) -> list[CrewRole]:
-    if ship.crew_vector is None:
+    if ship.crew.vector is None:
         return required_crew_roles(ship)
 
-    crew_vector = _normalize_vector(ship.crew_vector)
+    crew_vector = _normalize_vector(ship.crew.vector)
     roles: list[CrewRole] = []
     for role, count in crew_vector.items():
         if role not in SALARY_BY_ROLE:
@@ -329,11 +333,11 @@ def effective_crew_roles(ship) -> list[CrewRole]:
 
 
 def crew_vector_warnings(ship) -> list[Note]:
-    if ship.crew_vector is None:
+    if ship.crew.vector is None:
         return []
 
     notes: list[Note] = []
-    provided = _normalize_vector(ship.crew_vector)
+    provided = _normalize_vector(ship.crew.vector)
     required: dict[str, int] = {}
     for role in required_crew_roles(ship):
         required[role.role] = required.get(role.role, 0) + role.count

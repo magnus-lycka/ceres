@@ -19,12 +19,12 @@ Source handling for this test case:
   - source armored-bulkhead rows are represented as protected parts plus
     separate Hull bulkhead entries (`TCS-001`)
 - deliberate interpretation:
-  - the source crew manifest is preserved verbatim via explicit `crew_vector`
+  - the source crew manifest is preserved verbatim as explicit crew data
   - Ceres surfaces crew-rule mismatches as info/warning notes instead of
     silently normalizing the crew
   - point-defence batteries do not require dedicated gunners
 - still excluded from the modeled reference case:
-  - the source's `Retro*` computer pricing is not modeled in Ceres, so
+  - retro computer pricing from CSC-style `Retro*` source rows (`RI-005`), so
     computer cost, production cost, and sales price remain substantially
     higher than the reference export
 - source inconsistency:
@@ -66,7 +66,7 @@ from tycho.systems import (
 )
 from tycho.weapons import Barbette, Bay, MissileStorage, PointDefenseBattery, WeaponsSection
 
-from ._output import write_html_output
+from ._output import write_html_output, write_json_output
 
 
 def build_alt_dragon() -> ship.Ship:
@@ -182,10 +182,10 @@ def test_alt_dragon_modeled_subset_tracks_current_model():
 
     assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(6.3916)
     assert ('info', 'MAINTENANCE above recommended count: 1 > 0') in [
-        (note.category.value, note.message) for note in dragon.notes
+        (note.category.value, note.message) for note in dragon.crew.notes
     ]
     assert ('info', 'MEDIC above recommended count: 1 > 0') in [
-        (note.category.value, note.message) for note in dragon.notes
+        (note.category.value, note.message) for note in dragon.crew.notes
     ]
 
     assert dragon.production_cost == pytest.approx(360_094_396.6667)
@@ -206,6 +206,7 @@ def test_alt_dragon_stuart_html_output():
     dragon = build_alt_dragon()
     html = render_ship_html(dragon)
     write_html_output('test_alt_dragon', html)
+    write_json_output('test_alt_dragon', dragon)
 
     assert '<title>Dragon</title>' in html
     assert '<p class="banner-meta">System Defense Boat, Alternate | TL13 | Hull 176</p>' in html

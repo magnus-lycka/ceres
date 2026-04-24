@@ -155,5 +155,5 @@ def test_revised_beowulf_matches_current_modeled_subset():
         ('STEWARD', 1, 2_000),
     ]
     assert ('warning', 'MEDIC below recommended count: 0 < 1') in [
-        (note.category.value, note.message) for note in beowulf.notes
+        (note.category.value, note.message) for note in beowulf.crew.notes
     ]

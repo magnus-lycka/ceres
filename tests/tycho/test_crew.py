@@ -244,7 +244,7 @@ def test_understaffed_explicit_crew_vector_emits_warning():
     )
 
     assert ('warning', 'ASTROGATOR below recommended count: 0 < 1') in [
-        (note.category.value, note.message) for note in my_ship.notes
+        (note.category.value, note.message) for note in my_ship.crew.notes
     ]
 
 
@@ -259,7 +259,7 @@ def test_overstaffed_explicit_crew_vector_emits_warning():
     )
 
     assert ('info', 'PILOT above recommended count: 2 > 1') in [
-        (note.category.value, note.message) for note in my_ship.notes
+        (note.category.value, note.message) for note in my_ship.crew.notes
     ]
 
 
@@ -276,6 +276,22 @@ def test_overstaffed_explicit_crew_vector_warning_is_exposed_in_spec_crew_notes(
     spec = my_ship.build_spec()
     assert ('info', 'PILOT above recommended count: 2 > 1') in [
         (note.category.value, note.message) for note in spec.crew_notes
+    ]
+
+
+def test_explicit_crew_vector_notes_are_not_stored_on_ship_level():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer(5)),
+        crew_vector={'PILOT': 2},
+    )
+
+    assert my_ship.notes == []
+    assert ('info', 'PILOT above recommended count: 2 > 1') in [
+        (note.category.value, note.message) for note in my_ship.crew.notes
     ]
 
 
@@ -363,7 +379,7 @@ def test_explicit_crew_vector_warns_when_steward_missing_for_passenger_manifest(
     )
 
     assert ('warning', 'STEWARD below recommended count: 0 < 1') in [
-        (note.category.value, note.message) for note in my_ship.notes
+        (note.category.value, note.message) for note in my_ship.crew.notes
     ]
 
 

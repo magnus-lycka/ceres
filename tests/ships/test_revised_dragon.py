@@ -19,7 +19,7 @@ Source handling for this test case:
   - source armored-bulkhead rows are represented as protected parts plus
     separate Hull bulkhead entries (`TCS-001`)
 - deliberate interpretation:
-  - the source crew manifest is preserved verbatim via explicit `crew_vector`
+  - the source crew manifest is preserved verbatim as explicit crew data
   - Ceres surfaces crew-rule mismatches as info/warning notes instead of
     silently normalizing the crew
   - point-defence batteries do not require dedicated gunners
@@ -218,8 +218,8 @@ def test_revised_dragon_power_and_crew_for_current_subset():
         ('OFFICER', 2, 5_000),
     ]
     assert ('info', 'MAINTENANCE above recommended count: 1 > 0') in [
-        (note.category.value, note.message) for note in dragon.notes
+        (note.category.value, note.message) for note in dragon.crew.notes
     ]
     assert ('info', 'OFFICER above recommended count: 2 > 1') in [
-        (note.category.value, note.message) for note in dragon.notes
+        (note.category.value, note.message) for note in dragon.crew.notes
     ]

@@ -18,12 +18,17 @@ from tycho.weapons import (
     Turret,
     VeryHighYield,
     WeaponsSection,
+    _size_reduction_steps,
 )
 
 
 class DummyOwner(ShipBase):
     def __init__(self, tl, displacement):
         super().__init__(tl=tl, displacement=displacement)
+
+
+def test_size_reduction_steps_true_counts_as_one():
+    assert _size_reduction_steps(True) == 1
 
 
 # --- MountWeapon ---
@@ -192,6 +197,13 @@ def test_mount_weapon_high_yield_not_applicable_for_missile_rack():
     ]
 
 
+def test_mount_weapon_rejects_disallowed_modification():
+    w = MountWeapon(weapon='pulse_laser', customisation=Advanced(SizeReduction))
+    assert ('error', 'Modification not allowed for MountWeapon: Size Reduction') in [
+        (note.category.value, note.message) for note in w.notes
+    ]
+
+
 def test_fixed_mount_single_weapon_notes_include_customisation_note():
     fp = FixedMount(weapons=[MountWeapon(weapon='pulse_laser', customisation=HighTechnology(VeryHighYield, EnergyEfficient))])
     assert [(note.category.value, note.message) for note in fp.notes] == [
@@ -263,6 +275,14 @@ def test_particle_barbette_values():
     assert barbette.build_item() == 'Barbette (Damage × 3 after armour)'
     assert barbette.tons == pytest.approx(5.0)
     assert barbette.cost == pytest.approx(8_000_000)
+
+
+def test_torpedo_barbette_has_no_damage_multiple_in_item():
+    barbette = Barbette(weapon='torpedo')
+    barbette.bind(DummyOwner(12, 400))
+    assert barbette.build_item() == 'Barbette'
+    assert barbette.crew_required_commercial == 1
+    assert barbette.crew_required_military == 2
 
 
 def test_particle_barbette_very_high_yield_values():
@@ -405,6 +425,20 @@ def test_double_turret_cost_and_power_include_weapons():
     assert turret.power == pytest.approx(1 + 4 + 3)
 
 
+def test_double_turret_errors_if_it_mounts_too_many_weapons():
+    turret = Turret(
+        size='double',
+        weapons=[
+            MountWeapon(weapon='pulse_laser'),
+            MountWeapon(weapon='pulse_laser'),
+            MountWeapon(weapon='pulse_laser'),
+        ],
+    )
+    assert ('error', 'Turret can mount at most 2 weapons') in [
+        (note.category.value, note.message) for note in turret.notes
+    ]
+
+
 def test_single_turret_is_allowed_on_small_craft():
     my_ship = ship.Ship(
         tl=12,
@@ -524,6 +558,13 @@ def test_weapon_mounts_cannot_exceed_firmpoints():
     )
 
 
+def test_small_craft_mount_capacity_boundaries():
+    assert WeaponsSection.mount_capacity(DummyOwner(12, 34)) == 1
+    assert WeaponsSection.mount_capacity(DummyOwner(12, 35)) == 2
+    assert WeaponsSection.mount_capacity(DummyOwner(12, 70)) == 2
+    assert WeaponsSection.mount_capacity(DummyOwner(12, 71)) == 3
+
+
 def test_bays_count_against_hardpoint_capacity():
     my_ship = ship.Ship(
         tl=12,
@@ -617,6 +658,7 @@ def test_large_torpedo_bay_has_salvo_summary_note():
     info_notes = [n.message for n in bay.notes if n.category.value == 'info']
     assert 'Weapon: Torpedo' in info_notes
     assert 'Magazine: 360 torpedoes (12 full salvos)' in info_notes
+    assert bay.crew_required_commercial == 0
 
 
 def test_battery_with_energy_efficient_item_is_base_name_only():
@@ -630,6 +672,14 @@ def test_battery_with_energy_efficient_has_customisation_note():
     battery.bind(DummyOwner(13, 1_000))
     info_notes = [n.message for n in battery.notes if n.category.value == 'info']
     assert 'Advanced: Energy Efficient' in info_notes
+
+
+def test_gauss_point_defense_battery_notes_include_ammunition_requirement():
+    battery = PointDefenseBattery(kind='gauss', rating=3)
+    battery.bind(DummyOwner(13, 1_000))
+    info_notes = [n.message for n in battery.notes if n.category.value == 'info']
+    assert 'Intercept +6D' in info_notes
+    assert 'Requires ammunition storage to reload after 12 rounds' in info_notes
 
 
 def test_grouped_parts_with_same_note_show_note_once(tmp_path):
@@ -655,3 +705,18 @@ def test_grouped_parts_with_same_note_show_note_once(tmp_path):
     row = barbette_rows[0]
     ab_notes = [n for n in row.notes if 'Armoured bulkhead' in n.message]
     assert len(ab_notes) == 1, 'Duplicate armoured-bulkhead note should be deduplicated'
+
+
+def test_point_defense_battery_appears_in_weapon_spec_rows():
+    my_ship = ship.Ship(
+        tl=13,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer(5)),
+        weapons=WeaponsSection(point_defense_batteries=[PointDefenseBattery(kind='laser', rating=2)]),
+    )
+    spec = my_ship.build_spec()
+    row = spec.row('Point Defence Laser Battery Type II', section='Weapons')
+    assert row.tons == pytest.approx(20.0)
+    assert row.cost == pytest.approx(10_000_000.0)

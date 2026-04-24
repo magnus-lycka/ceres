@@ -1,7 +1,7 @@
 from enum import StrEnum
 from typing import Any
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from .base import NoteCategory, ShipBase
 from .bridge import CommandSection
@@ -9,6 +9,7 @@ from .computer import ComputerSection, SoftwarePackage
 from .crafts import CraftSection
 from .crew import (
     CrewRole,
+    ShipCrew,
     crew_salary_cost,
     crew_vector_warnings,
     effective_crew_roles,
@@ -52,7 +53,7 @@ class Ship(ShipBase):
     ship_class: str | None = None
     ship_type: str | None = None
     military: bool = False
-    crew_vector: dict[str, int] | None = None
+    crew: ShipCrew = Field(default_factory=ShipCrew)
     passenger_vector: dict[str, int] | None = None
     design_type: ShipDesignType = ShipDesignType.CUSTOM
     hull: Hull
@@ -67,6 +68,23 @@ class Ship(ShipBase):
     habitation: HabitationSection | None = None
     systems: SystemsSection | None = None
     weapons: WeaponsSection | None = None
+
+    @model_validator(mode='before')
+    @classmethod
+    def _migrate_legacy_crew_vector(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        if 'crew_vector' not in data:
+            return data
+
+        migrated = dict(data)
+        legacy_vector = migrated.pop('crew_vector')
+        crew_data = migrated.get('crew')
+        if crew_data is None:
+            migrated['crew'] = {'vector': legacy_vector}
+        elif isinstance(crew_data, dict) and 'vector' not in crew_data:
+            migrated['crew'] = {**crew_data, 'vector': legacy_vector}
+        return migrated
 
     @property
     def armour_volume_modifier(self) -> float:
@@ -305,13 +323,10 @@ class Ship(ShipBase):
             self.systems.add_spec_rows(self, spec)
         CargoSection.add_spec_rows_for_ship(self, spec)
 
-        ship_level_notes = self._display_notes(self)
         spec.crew_notes = [
-            note
-            for note in ship_level_notes
-            if note.category in {NoteCategory.INFO, NoteCategory.WARNING} and 'recommended count:' in note.message
+            note for note in self.crew.notes if note.category in {NoteCategory.INFO, NoteCategory.WARNING}
         ]
-        spec.ship_notes = [note for note in ship_level_notes if note not in spec.crew_notes]
+        spec.ship_notes = self._display_notes(self)
 
         spec.expenses = self.expenses.rows
         spec.crew = spec_crew_rows(self)
@@ -356,8 +371,4 @@ class Ship(ShipBase):
             self.error(f'Hull overloaded by {-cargo_tons:.2f} tons')
         if self.command is not None and self.command.bridge is not None and not (self.hull.airlocks or []):
             self.error('No airlock installed')
-        for note in crew_vector_warnings(self):
-            if note.category is NoteCategory.INFO:
-                self.info(note.message)
-            elif note.category is NoteCategory.WARNING:
-                self.warning(note.message)
+        self.crew.notes = crew_vector_warnings(self)

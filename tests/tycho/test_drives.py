@@ -286,9 +286,19 @@ def test_rdrive_tons_cost_and_power():
     d = RDrive(16)
     d.bind(DummyOwner(12, 6))
     assert d.minimum_tl == 12
+    assert d.bulkhead_label() == 'R-Drive'
     assert d.tons == pytest.approx(1.92)
     assert d.cost == pytest.approx(384_000)
     assert d.power == 0.0
+
+
+def test_rdrive_unsupported_level_errors():
+    d = RDrive(99)
+    with pytest.raises(KeyError):
+        d.bind(DummyOwner(12, 6))
+    assert ('error', 'Unsupported reaction drive level 99') in [
+        (note.category.value, note.message) for note in d.notes
+    ]
 
 
 def test_rdrive_tl_too_low():
@@ -336,3 +346,63 @@ def test_budget_increased_size_mdrive_has_customisation_note():
     p.bind(DummyOwner(12, 100))
     info_notes = [n.message for n in p.notes if n.category.value == 'info']
     assert 'Budget: Increased Size' in info_notes
+
+
+def test_mdrive_unsupported_level_errors():
+    d = MDrive(99)
+    with pytest.raises(KeyError):
+        d.bind(DummyOwner(15, 100))
+    assert ('error', 'Unsupported M-Drive level 99') in [
+        (note.category.value, note.message) for note in d.notes
+    ]
+
+
+def test_jdrive_build_item_parsecs_and_bulkhead_label():
+    d = JDrive(2)
+    d.bind(DummyOwner(11, 200))
+    assert d.build_item() == 'Jump 2'
+    assert d.parsecs == 2
+    assert d.bulkhead_label() == 'Jump Drive'
+
+
+def test_jdrive_unsupported_level_errors():
+    d = JDrive(99)
+    with pytest.raises(KeyError):
+        d.bind(DummyOwner(18, 200))
+    assert ('error', 'Unsupported J-Drive level 99') in [
+        (note.category.value, note.message) for note in d.notes
+    ]
+
+
+def test_jdrive_tl_too_low():
+    d = JDrive(2)
+    d.bind(DummyOwner(10, 200))
+    assert ('error', 'Requires TL11, ship is TL10') in [
+        (note.category.value, note.message) for note in d.notes
+    ]
+
+
+def test_emergency_power_system_requires_fusion_plant():
+    with pytest.raises(RuntimeError, match='EmergencyPowerSystem requires a fusion plant'):
+        ship.Ship(
+            tl=13,
+            displacement=400,
+            hull=hull.Hull(configuration=hull.standard_hull),
+            power=PowerSection(emergency_power_system=EmergencyPowerSystem()),
+        )
+
+
+def test_power_section_adds_emergency_power_system_spec_row():
+    my_ship = ship.Ship(
+        tl=13,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        power=PowerSection(
+            fusion_plant=FusionPlantTL12(output=436, customisation=Advanced(SizeReduction)),
+            emergency_power_system=EmergencyPowerSystem(),
+        ),
+    )
+    spec = my_ship.build_spec()
+    row = spec.row('Emergency Power System', section='Power')
+    assert row.tons == pytest.approx(2.616)
+    assert row.cost == pytest.approx(3_197_333.3333)

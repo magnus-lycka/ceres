@@ -40,7 +40,7 @@ from tycho.storage import CargoSection, FuelProcessor, FuelSection, JumpFuel, Op
 from tycho.systems import Airlock, ProbeDrones, SystemsSection, Workshop
 from tycho.weapons import Turret, WeaponsSection
 
-from ._output import write_html_output
+from ._output import write_html_output, write_json_output
 
 
 def build_suleiman() -> ship.Ship:
@@ -306,6 +306,7 @@ def test_suleiman_stuart_html_output():
     suleiman = build_suleiman()
     html = render_ship_html(suleiman)
     write_html_output('test_suleiman', html)
+    write_json_output('test_suleiman', suleiman)
 
     assert '<title>Suleiman</title>' in html
     assert '<p class="banner-meta">Scout/Courier | TL12 | Hull 40</p>' in html

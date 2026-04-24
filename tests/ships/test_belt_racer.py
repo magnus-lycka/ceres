@@ -1,3 +1,23 @@
+"""Reference ship case based on refs/belt_racer.
+
+Purpose:
+- provide a minimal reaction-drive racing craft reference case
+- exercise close-structure light hulls, reaction fuel, cockpit command, and
+  cockpit-style zero life-support costs
+- keep one compact source-derived example that is currently in near-complete
+  agreement with the reference sheet
+
+Source handling for this test case:
+- supported: hull, reaction drive, power plant, reaction fuel, cockpit,
+  computer, basic sensors, software, maintenance cost, purchase cost, and
+  single-pilot crew
+- source limitation:
+  - the source sheet does not provide a settled class name beyond `Vargr Belt
+    Racer, class name ???`, so the test uses `Vargr Belt Racer` as the ship
+    class
+- no known deliberate deviations remain in the currently modeled slice
+"""
+
 import pytest
 
 from tycho import hull, ship
@@ -18,6 +38,7 @@ BELT_RACER_HULL = hull.close_structure.model_copy(
 
 
 def build_belt_racer() -> ship.Ship:
+    """Build the Belt Racer reference case from refs/belt_racer."""
     return ship.Ship(
         ship_class='Vargr Belt Racer',
         ship_type='Racer',
