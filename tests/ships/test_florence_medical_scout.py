@@ -21,13 +21,15 @@ def build_florence_medical_scout() -> ship.Ship:
         tl=14,
         displacement=400,
         design_type=ship.ShipDesignType.CUSTOM,
-        crew_vector={
-            'CAPTAIN': 1,
-            'PILOT': 2,
-            'ASTROGATOR': 1,
-            'ENGINEER': 2,
-            'MAINTENANCE': 1,
-            'MEDIC': 6,
+        crew={
+            'vector': {
+                'CAPTAIN': 1,
+                'PILOT': 2,
+                'ASTROGATOR': 1,
+                'ENGINEER': 2,
+                'MAINTENANCE': 1,
+                'MEDIC': 6,
+            }
         },
         passenger_vector={},
         hull=hull.Hull(configuration=hull.standard_hull),

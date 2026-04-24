@@ -213,7 +213,7 @@ def test_sensor_stations_drive_sensor_operator_count():
     assert ('SENSOR OPERATOR', 3) in [(role.role, role.count) for role in required_crew_roles(my_ship)]
 
 
-def test_explicit_crew_vector_overrides_rule_based_crew():
+def test_explicit_crew_input_overrides_rule_based_crew():
     my_ship = ship.Ship(
         tl=12,
         displacement=100,
@@ -222,7 +222,7 @@ def test_explicit_crew_vector_overrides_rule_based_crew():
         power=PowerSection(fusion_plant=FusionPlantTL12(output=10)),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer(5)),
-        crew_vector={'PILOT': 1, 'ENGINEER': 1},
+        crew={'vector': {'PILOT': 1, 'ENGINEER': 1}},
     )
 
     assert [(role.role, role.count) for role in my_ship.crew_roles] == [
@@ -231,7 +231,7 @@ def test_explicit_crew_vector_overrides_rule_based_crew():
     ]
 
 
-def test_understaffed_explicit_crew_vector_emits_warning():
+def test_understaffed_explicit_crew_input_emits_warning():
     my_ship = ship.Ship(
         tl=12,
         displacement=100,
@@ -240,7 +240,7 @@ def test_understaffed_explicit_crew_vector_emits_warning():
         power=PowerSection(fusion_plant=FusionPlantTL12(output=10)),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer(5)),
-        crew_vector={'PILOT': 1, 'ENGINEER': 1},
+        crew={'vector': {'PILOT': 1, 'ENGINEER': 1}},
     )
 
     assert ('warning', 'ASTROGATOR below recommended count: 0 < 1') in [
@@ -248,14 +248,14 @@ def test_understaffed_explicit_crew_vector_emits_warning():
     ]
 
 
-def test_overstaffed_explicit_crew_vector_emits_warning():
+def test_overstaffed_explicit_crew_input_emits_warning():
     my_ship = ship.Ship(
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer(5)),
-        crew_vector={'PILOT': 2},
+        crew={'vector': {'PILOT': 2}},
     )
 
     assert ('info', 'PILOT above recommended count: 2 > 1') in [
@@ -263,14 +263,14 @@ def test_overstaffed_explicit_crew_vector_emits_warning():
     ]
 
 
-def test_overstaffed_explicit_crew_vector_warning_is_exposed_in_spec_crew_notes():
+def test_overstaffed_explicit_crew_input_warning_is_exposed_in_spec_crew_notes():
     my_ship = ship.Ship(
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer(5)),
-        crew_vector={'PILOT': 2},
+        crew={'vector': {'PILOT': 2}},
     )
 
     spec = my_ship.build_spec()
@@ -279,14 +279,14 @@ def test_overstaffed_explicit_crew_vector_warning_is_exposed_in_spec_crew_notes(
     ]
 
 
-def test_explicit_crew_vector_notes_are_not_stored_on_ship_level():
+def test_explicit_crew_notes_are_not_stored_on_ship_level():
     my_ship = ship.Ship(
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer(5)),
-        crew_vector={'PILOT': 2},
+        crew={'vector': {'PILOT': 2}},
     )
 
     assert my_ship.notes == []
@@ -364,7 +364,7 @@ def test_steward_requirement_caps_single_person_skill_at_three():
     ]
 
 
-def test_explicit_crew_vector_warns_when_steward_missing_for_passenger_manifest():
+def test_explicit_crew_input_warns_when_steward_missing_for_passenger_manifest():
     my_ship = ship.Ship(
         tl=12,
         displacement=200,
@@ -374,7 +374,7 @@ def test_explicit_crew_vector_warns_when_steward_missing_for_passenger_manifest(
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer(5)),
         habitation=HabitationSection(staterooms=Staterooms(count=10)),
-        crew_vector={'PILOT': 1, 'ASTROGATOR': 1, 'ENGINEER': 1},
+        crew={'vector': {'PILOT': 1, 'ASTROGATOR': 1, 'ENGINEER': 1}},
         passenger_vector={'middle': 16},
     )
 
@@ -383,13 +383,13 @@ def test_explicit_crew_vector_warns_when_steward_missing_for_passenger_manifest(
     ]
 
 
-def test_crew_vector_rejects_list_form():
+def test_crew_input_rejects_list_form():
     with pytest.raises(ValidationError):
         ship.Ship(
             tl=12,
             displacement=100,
             hull=hull.Hull(configuration=hull.streamlined_hull),
-            crew_vector=[('PILOT', 2), ('ENGINEER', 1)],
+            crew={'vector': [('PILOT', 2), ('ENGINEER', 1)]},
         )
 
 
@@ -399,7 +399,7 @@ def test_default_middle_passengers_use_only_unused_staterooms():
         displacement=200,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         habitation=HabitationSection(staterooms=Staterooms(count=10)),
-        crew_vector={'PILOT': 7},
+        crew={'vector': {'PILOT': 7}},
     )
 
     assert my_ship.expenses.life_support == 29_000
@@ -411,7 +411,7 @@ def test_high_passage_uses_one_stateroom_each():
         displacement=200,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         habitation=HabitationSection(staterooms=Staterooms(count=4)),
-        crew_vector={'PILOT': 2},
+        crew={'vector': {'PILOT': 2}},
         passenger_vector={'high': 2, 'middle': 2},
     )
 
@@ -424,7 +424,7 @@ def test_low_passage_uses_low_berths():
         displacement=200,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         habitation=HabitationSection(staterooms=Staterooms(count=1), low_berths=LowBerths(count=4)),
-        crew_vector={'PILOT': 1},
+        crew={'vector': {'PILOT': 1}},
         passenger_vector={'low': 3},
     )
 

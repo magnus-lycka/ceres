@@ -83,7 +83,7 @@ def build_revised_beowulf() -> ship.Ship:
             entertainment=AdvancedEntertainmentSystem(5_000),
         ),
         cargo=CargoSection(cargo_holds=[CargoHold(tons=67.5, crane=CargoCrane())]),
-        crew_vector={'PILOT': 1, 'ASTROGATOR': 1, 'ENGINEER': 1, 'STEWARD': 1},
+        crew={'vector': {'PILOT': 1, 'ASTROGATOR': 1, 'ENGINEER': 1, 'STEWARD': 1}},
         passenger_vector={'middle': 16},
     )
 

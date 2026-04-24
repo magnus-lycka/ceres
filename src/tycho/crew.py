@@ -323,16 +323,16 @@ def effective_crew_roles(ship) -> list[CrewRole]:
     if ship.crew.vector is None:
         return required_crew_roles(ship)
 
-    crew_vector = _normalize_vector(ship.crew.vector)
+    provided_crew = _normalize_vector(ship.crew.vector)
     roles: list[CrewRole] = []
-    for role, count in crew_vector.items():
+    for role, count in provided_crew.items():
         if role not in SALARY_BY_ROLE:
             raise ValueError(f'Unknown crew role: {role}')
         roles.append(CrewRole(role=role, count=count, monthly_salary=SALARY_BY_ROLE[role]))
     return roles
 
 
-def crew_vector_warnings(ship) -> list[Note]:
+def crew_warnings(ship) -> list[Note]:
     if ship.crew.vector is None:
         return []
 

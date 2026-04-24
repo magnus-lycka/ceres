@@ -1,7 +1,6 @@
 from enum import StrEnum
-from typing import Any
 
-from pydantic import Field, model_validator
+from pydantic import Field
 
 from .base import NoteCategory, ShipBase
 from .bridge import CommandSection
@@ -11,7 +10,7 @@ from .crew import (
     CrewRole,
     ShipCrew,
     crew_salary_cost,
-    crew_vector_warnings,
+    crew_warnings,
     effective_crew_roles,
     spec_crew_rows,
 )
@@ -53,6 +52,9 @@ class Ship(ShipBase):
     ship_class: str | None = None
     ship_type: str | None = None
     military: bool = False
+    # Crew is a first-class sub-object so crew-specific notes and explicit input
+    # live with the crew model instead of being stored on the ship and filtered
+    # back into the crew table later.
     crew: ShipCrew = Field(default_factory=ShipCrew)
     passenger_vector: dict[str, int] | None = None
     design_type: ShipDesignType = ShipDesignType.CUSTOM
@@ -68,23 +70,6 @@ class Ship(ShipBase):
     habitation: HabitationSection | None = None
     systems: SystemsSection | None = None
     weapons: WeaponsSection | None = None
-
-    @model_validator(mode='before')
-    @classmethod
-    def _migrate_legacy_crew_vector(cls, data: Any) -> Any:
-        if not isinstance(data, dict):
-            return data
-        if 'crew_vector' not in data:
-            return data
-
-        migrated = dict(data)
-        legacy_vector = migrated.pop('crew_vector')
-        crew_data = migrated.get('crew')
-        if crew_data is None:
-            migrated['crew'] = {'vector': legacy_vector}
-        elif isinstance(crew_data, dict) and 'vector' not in crew_data:
-            migrated['crew'] = {**crew_data, 'vector': legacy_vector}
-        return migrated
 
     @property
     def armour_volume_modifier(self) -> float:
@@ -337,7 +322,7 @@ class Ship(ShipBase):
             ]
         return spec
 
-    def model_post_init(self, __context: Any) -> None:
+    def model_post_init(self, __context: object) -> None:
         super().model_post_init(__context)
         if self.tl > 16:
             raise ValueError(f'Ceres currently supports TL16 and lower, got TL{self.tl}')
@@ -371,4 +356,4 @@ class Ship(ShipBase):
             self.error(f'Hull overloaded by {-cargo_tons:.2f} tons')
         if self.command is not None and self.command.bridge is not None and not (self.hull.airlocks or []):
             self.error('No airlock installed')
-        self.crew.notes = crew_vector_warnings(self)
+        self.crew.notes = crew_warnings(self)

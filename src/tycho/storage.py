@@ -124,6 +124,9 @@ class FuelProcessor(ShipPart):
 
 
 class FuelSection(CeresModel):
+    # Fuel and cargo live in the same module on purpose: future rules are likely
+    # to blur the line between them via fuel bladders, combined containers, and
+    # other storage-like arrangements.
     jump_fuel: JumpFuel | None = None
     operation_fuel: OperationFuel | None = None
     reaction_fuel: ReactionFuel | None = None

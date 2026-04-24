@@ -63,7 +63,7 @@ def build_beowulf() -> ship.Ship:
             common_area=CommonArea(tons=10.0),
         ),
         cargo=CargoSection(cargo_holds=[CargoHold(crane=CargoCrane())]),
-        crew_vector={'PILOT': 1, 'ASTROGATOR': 1, 'ENGINEER': 1, 'STEWARD': 1},
+        crew={'vector': {'PILOT': 1, 'ASTROGATOR': 1, 'ENGINEER': 1, 'STEWARD': 1}},
         passenger_vector={'middle': 16},
     )
 

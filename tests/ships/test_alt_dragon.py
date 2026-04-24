@@ -19,7 +19,7 @@ Source handling for this test case:
   - source armored-bulkhead rows are represented as protected parts plus
     separate Hull bulkhead entries (`TCS-001`)
 - deliberate interpretation:
-  - the source crew manifest is preserved verbatim as explicit crew data
+  - the source crew manifest is preserved verbatim as explicit `ship.crew.vector` data
   - Ceres surfaces crew-rule mismatches as info/warning notes instead of
     silently normalizing the crew
   - point-defence batteries do not require dedicated gunners
@@ -144,15 +144,17 @@ def build_alt_dragon() -> ship.Ship:
             common_area=CommonArea(tons=10.0),
             entertainment=AdvancedEntertainmentSystem(1_250),
         ),
-        crew_vector={
-            'CAPTAIN': 1,
-            'PILOT': 3,
-            'ENGINEER': 2,
-            'MAINTENANCE': 1,
-            'MEDIC': 1,
-            'GUNNER': 5,
-            'SENSOR OPERATOR': 3,
-            'OFFICER': 1,
+        crew={
+            'vector': {
+                'CAPTAIN': 1,
+                'PILOT': 3,
+                'ENGINEER': 2,
+                'MAINTENANCE': 1,
+                'MEDIC': 1,
+                'GUNNER': 5,
+                'SENSOR OPERATOR': 3,
+                'OFFICER': 1,
+            }
         },
     )
 
