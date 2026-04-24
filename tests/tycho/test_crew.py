@@ -8,6 +8,8 @@ from tycho.crafts import AirRaft, CarriedCraft, CraftSection, InternalDockingSpa
 from tycho.crew import (
     Astrogator,
     Engineer,
+    GeneralCrew,
+    Marine,
     Pilot,
     ShipCrew,
     Steward,
@@ -29,6 +31,18 @@ def grouped_role_salaries(roles):
 def test_crew_role_total_salary():
     role = Engineer()
     assert role.total_salary == 4_000
+
+
+def test_general_crew_base_salary():
+    role = GeneralCrew()
+    assert role.monthly_salary == 1_000
+    assert role.display_role == 'GENERAL CREW'
+
+
+def test_marine_base_salary():
+    role = Marine()
+    assert role.monthly_salary == 1_000
+    assert role.display_role == 'MARINE'
 
 
 def test_crew_role_display_role_includes_skill_level_when_above_one():

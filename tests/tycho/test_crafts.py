@@ -1,5 +1,6 @@
+from tycho import hull, ship
 from tycho.base import ShipBase
-from tycho.crafts import AirRaft, CraftSection, InternalDockingSpace
+from tycho.crafts import AirRaft, CraftSection, FreeGenericCraft, InternalDockingSpace
 
 
 class DummyOwner(ShipBase):
@@ -26,3 +27,15 @@ def test_craft_section_all_parts():
 
     assert len(section._all_parts()) == 1
     assert isinstance(section._all_parts()[0], InternalDockingSpace)
+
+
+def test_empty_docking_space_renders_without_invented_craft_row():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=1_000,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        craft=CraftSection(docking_space=InternalDockingSpace(craft=FreeGenericCraft(docking_space=70))),
+    )
+    spec = my_ship.build_spec()
+
+    assert [row.item for row in spec.rows_for_section('Craft')] == ['Docking Space (70 tons)']

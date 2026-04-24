@@ -5,13 +5,17 @@ from tycho.systems import (
     Airlock,
     BasicAutodoc,
     Biosphere,
+    CommercialZone,
     CommonArea,
     CrewArmory,
     MedicalBay,
     ProbeDrones,
     RepairDrones,
+    SwimmingPool,
     SystemsSection,
+    Theatre,
     TrainingFacility,
+    WetBar,
     Workshop,
 )
 
@@ -52,6 +56,34 @@ def test_common_area_power_zero():
     c = CommonArea(tons=1.0)
     c.bind(DummyOwner(12, 100))
     assert c.power == 0
+
+
+def test_commercial_zone_values():
+    z = CommercialZone(tons=240.0)
+    z.bind(DummyOwner(12, 5_000))
+    assert z.cost == 48_000_000.0
+    assert z.power == 1.0
+
+
+def test_swimming_pool_values():
+    p = SwimmingPool(tons=60.0)
+    p.bind(DummyOwner(12, 5_000))
+    assert p.cost == 1_200_000.0
+    assert p.power == 0.0
+
+
+def test_theatre_values():
+    t = Theatre(tons=100.0)
+    t.bind(DummyOwner(12, 5_000))
+    assert t.cost == 10_000_000.0
+    assert t.power == 0.0
+
+
+def test_wet_bar_values():
+    b = WetBar()
+    b.bind(DummyOwner(12, 5_000))
+    assert b.tons == 0.0
+    assert b.cost == 2_000.0
 
 
 def test_crew_armory_values():
@@ -200,6 +232,7 @@ def test_systems_section_all_parts():
     systems = SystemsSection(
         crew_armory=CrewArmory(capacity=25),
         biosphere=Biosphere(tons=4.0),
+        commercial_zone=CommercialZone(tons=240.0),
         workshop=Workshop(),
         medical_bay=MedicalBay(),
         probe_drones=ProbeDrones(count=10),
@@ -209,6 +242,7 @@ def test_systems_section_all_parts():
     assert [type(part) for part in systems._all_parts()] == [
         CrewArmory,
         Biosphere,
+        CommercialZone,
         Workshop,
         MedicalBay,
         ProbeDrones,

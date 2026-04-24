@@ -59,6 +59,16 @@ class Maintenance(CrewRole):
     base_salary = 1_000
 
 
+class GeneralCrew(CrewRole):
+    role: Literal['GENERAL CREW'] = 'GENERAL CREW'
+    base_salary = 1_000
+
+
+class Marine(CrewRole):
+    role: Literal['MARINE'] = 'MARINE'
+    base_salary = 1_000
+
+
 class Gunner(CrewRole):
     role: Literal['GUNNER'] = 'GUNNER'
     base_salary = 2_000
@@ -95,6 +105,8 @@ type AnyCrewRole = Annotated[
     | Astrogator
     | Engineer
     | Maintenance
+    | GeneralCrew
+    | Marine
     | Gunner
     | Steward
     | Administrator

@@ -10,6 +10,7 @@ from .test_boxy_ore_freighter import build_boxy_ore_freighter
 from .test_dragon import build_dragon
 from .test_florence_medical_scout import build_florence_medical_scout
 from .test_gothta_ambush_fighter import build_gothta_ambush_fighter
+from .test_king_kay_luxury_liner import build_king_kay
 from .test_poseidon_cargo_boat import build_poseidon_cargo_boat
 from .test_revised_beowulf import build_revised_beowulf
 from .test_revised_dragon import build_revised_dragon
@@ -31,6 +32,7 @@ pytestmark = pytest.mark.generated_output
         ('test_dragon', build_dragon),
         ('test_florence_medical_scout', build_florence_medical_scout),
         ('test_gothta_ambush_fighter', build_gothta_ambush_fighter),
+        ('test_king_kay_luxury_liner', build_king_kay),
         ('test_poseidon_100t_tl9', lambda: build_poseidon_cargo_boat(9)),
         ('test_poseidon_100t_tl10', lambda: build_poseidon_cargo_boat(10)),
         ('test_poseidon_100t_tl12', lambda: build_poseidon_cargo_boat(12)),
@@ -64,6 +66,7 @@ def test_ship_gallery_html_output(name: str, builder) -> None:
         ('test_dragon', build_dragon),
         ('test_florence_medical_scout', build_florence_medical_scout),
         ('test_gothta_ambush_fighter', build_gothta_ambush_fighter),
+        ('test_king_kay_luxury_liner', build_king_kay),
         ('test_poseidon_100t_tl9', lambda: build_poseidon_cargo_boat(9)),
         ('test_poseidon_100t_tl10', lambda: build_poseidon_cargo_boat(10)),
         ('test_poseidon_100t_tl12', lambda: build_poseidon_cargo_boat(12)),
@@ -94,6 +97,7 @@ def test_ship_gallery_pdf_output(name: str, builder) -> None:
         ('test_dragon', build_dragon),
         ('test_florence_medical_scout', build_florence_medical_scout),
         ('test_gothta_ambush_fighter', build_gothta_ambush_fighter),
+        ('test_king_kay_luxury_liner', build_king_kay),
         ('test_poseidon_100t_tl9', lambda: build_poseidon_cargo_boat(9)),
         ('test_poseidon_100t_tl10', lambda: build_poseidon_cargo_boat(10)),
         ('test_poseidon_100t_tl12', lambda: build_poseidon_cargo_boat(12)),
@@ -125,6 +129,7 @@ def test_ship_gallery_typst_output(name: str, builder) -> None:
         ('test_dragon', build_dragon),
         ('test_florence_medical_scout', build_florence_medical_scout),
         ('test_gothta_ambush_fighter', build_gothta_ambush_fighter),
+        ('test_king_kay_luxury_liner', build_king_kay),
         ('test_poseidon_100t_tl9', lambda: build_poseidon_cargo_boat(9)),
         ('test_poseidon_100t_tl10', lambda: build_poseidon_cargo_boat(10)),
         ('test_poseidon_100t_tl12', lambda: build_poseidon_cargo_boat(12)),

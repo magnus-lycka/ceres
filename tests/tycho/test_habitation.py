@@ -96,6 +96,15 @@ def test_high_stateroom_values():
     assert s.cost == pytest.approx(800_000.0)
 
 
+def test_luxury_stateroom_values():
+    s = Staterooms(1, kind='luxury')
+    s.bind(DummyOwner(12, 100))
+    assert s.label == 'Luxury Stateroom'
+    assert s.tons == pytest.approx(10.0)
+    assert s.cost == pytest.approx(1_500_000.0)
+    assert s.life_support_cost == pytest.approx(5_000.0)
+
+
 def test_habitation_section_supports_standard_and_high_staterooms():
     my_ship = ship.Ship(
         tl=12,
@@ -112,8 +121,8 @@ def test_habitation_section_supports_standard_and_high_staterooms():
 
 
 def test_staterooms_reject_unknown_kind():
-    with pytest.raises(ValueError, match="Input should be 'standard' or 'high'"):
-        Staterooms(1, kind='luxury')
+    with pytest.raises(ValueError, match='Input should be'):
+        Staterooms(1, kind='penthouse')
 
 
 def test_habitation_default_passenger_vector_uses_unused_staterooms_and_low_berths():

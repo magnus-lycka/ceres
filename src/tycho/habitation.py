@@ -1,17 +1,17 @@
 import math
 from typing import ClassVar, Literal
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 
 from .base import CeresModel
 from .parts import ShipPart
 from .spec import ShipSpec, SpecSection
-from .systems import CommonArea
+from .systems import CommonArea, SwimmingPool, Theatre, WetBar
 from .text import optional_count
 
 
 class Staterooms(ShipPart):
-    kind: Literal['standard', 'high'] = 'standard'
+    kind: Literal['standard', 'high', 'luxury'] = 'standard'
     count: int
     _specs: ClassVar[dict[str, dict[str, float | int]]] = {
         'standard': dict(
@@ -25,6 +25,13 @@ class Staterooms(ShipPart):
             tons_per_stateroom=6.0,
             cost_per_stateroom=800_000.0,
             life_support_per_stateroom=1_000.0,
+            occupants_per_stateroom=2,
+            life_support_per_occupant=1_000.0,
+        ),
+        'luxury': dict(
+            tons_per_stateroom=10.0,
+            cost_per_stateroom=1_500_000.0,
+            life_support_per_stateroom=3_000.0,
             occupants_per_stateroom=2,
             life_support_per_occupant=1_000.0,
         ),
@@ -65,7 +72,11 @@ class Staterooms(ShipPart):
 
     @property
     def label(self) -> str:
-        return 'Stateroom' if self.kind == 'standard' else 'High Stateroom'
+        return {
+            'standard': 'Stateroom',
+            'high': 'High Stateroom',
+            'luxury': 'Luxury Stateroom',
+        }[self.kind]
 
     def compute_tons(self) -> float:
         return self.count * self.tons_per_stateroom
@@ -167,10 +178,14 @@ class CabinSpace(ShipPart):
 class HabitationSection(CeresModel):
     staterooms: Staterooms | None = None
     high_staterooms: Staterooms | None = None
+    luxury_staterooms: Staterooms | None = None
     cabin_space: CabinSpace | None = None
     low_berths: LowBerths | None = None
     common_area: CommonArea | None = None
     entertainment: AdvancedEntertainmentSystem | None = None
+    swimming_pool: SwimmingPool | None = None
+    theatres: list[Theatre] = Field(default_factory=list)
+    wet_bar: WetBar | None = None
 
     def _stateroom_groups(self) -> list[Staterooms]:
         groups: list[Staterooms] = []
@@ -178,6 +193,8 @@ class HabitationSection(CeresModel):
             groups.append(self.staterooms)
         if self.high_staterooms is not None:
             groups.append(self.high_staterooms)
+        if self.luxury_staterooms is not None:
+            groups.append(self.luxury_staterooms)
         return groups
 
     def validate_common_area(self) -> None:
@@ -223,6 +240,9 @@ class HabitationSection(CeresModel):
             self.low_berths,
             self.common_area,
             self.entertainment,
+            self.swimming_pool,
+            *self.theatres,
+            self.wet_bar,
         ):
             if part is not None:
                 parts.append(part)
@@ -291,7 +311,16 @@ class HabitationSection(CeresModel):
             )
             spec.rows_for_section(SpecSection.HABITATION)[-1].quantity = optional_count(self.low_berths.count)
         habitation_parts = [
-            part for part in [self.cabin_space, self.common_area, self.entertainment] if part is not None
+            part
+            for part in [
+                self.cabin_space,
+                self.common_area,
+                self.entertainment,
+                self.swimming_pool,
+                *self.theatres,
+                self.wet_bar,
+            ]
+            if part is not None
         ]
         for habitation_part in habitation_parts:
             spec.add_row(ship._spec_row_for_part(SpecSection.HABITATION, habitation_part))

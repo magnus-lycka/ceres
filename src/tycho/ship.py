@@ -1,4 +1,5 @@
 from enum import StrEnum
+from math import ceil
 
 from pydantic import Field
 
@@ -319,7 +320,12 @@ class Ship(ShipBase):
         if self.tl > 16:
             raise ValueError(f'Ceres currently supports TL16 and lower, got TL{self.tl}')
         if self.hull.airlocks is None and self.displacement >= 100:
-            object.__setattr__(self, 'hull', self.hull.model_copy(update={'airlocks': [Airlock()]}))
+            minimum_airlocks = ceil(self.displacement / 500)
+            object.__setattr__(
+                self,
+                'hull',
+                self.hull.model_copy(update={'airlocks': [Airlock() for _ in range(minimum_airlocks)]}),
+            )
         if self.hull.configuration.streamlined == Streamlined.YES:
             if self.fuel is None:
                 object.__setattr__(self, 'fuel', FuelSection(fuel_scoops=FuelScoops(free=True)))

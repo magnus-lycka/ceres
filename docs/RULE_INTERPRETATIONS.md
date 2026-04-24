@@ -106,3 +106,20 @@ In practice, this means:
 
 This is a current modeling limitation, not a statement that such source
 material is invalid.
+
+### RI-006 Marines On Liners Can Represent Shipboard Security Staff
+
+When a commercial passenger ship or liner source lists `Marines` in its crew
+manifest, Ceres does not interpret that alone as proof that the vessel should
+be modelled as a military craft.
+
+The working interpretation is that such `Marines` can represent embarked
+security personnel: guards, police, response teams, or similar shipboard
+security staff attached to a commercial operation.
+
+This affects how source-derived test cases should be read:
+
+- explicit `Marine` roles may appear on commercial ships
+- their presence does not, by itself, imply military crew rules or military
+  ship classification
+- where relevant, the source test case should document that interpretation

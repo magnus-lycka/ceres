@@ -63,6 +63,53 @@ class CommonArea(ShipPart):
         return self.tons * 100_000.0
 
 
+class CommercialZone(ShipPart):
+    tons: float
+
+    def build_item(self) -> str | None:
+        return 'Commercial Zone'
+
+    def compute_cost(self) -> float:
+        return self.tons * 200_000.0
+
+    def compute_power(self) -> float:
+        return float(max(1, int(self.tons // 200)))
+
+
+class SwimmingPool(ShipPart):
+    tons: float
+
+    def build_item(self) -> str | None:
+        return 'Swimming Pool'
+
+    def compute_cost(self) -> float:
+        return self.tons * 20_000.0
+
+
+class Theatre(ShipPart):
+    tons: float
+    advanced: bool = False
+
+    def build_item(self) -> str | None:
+        return 'Theatre'
+
+    def compute_cost(self) -> float:
+        if self.advanced:
+            return self.tons * 200_000.0
+        return self.tons * 100_000.0
+
+
+class WetBar(ShipPart):
+    def build_item(self) -> str | None:
+        return 'Wet Bar'
+
+    def compute_tons(self) -> float:
+        return 0.0
+
+    def compute_cost(self) -> float:
+        return 2_000.0
+
+
 class BasicAutodoc(CeresModel):
     def build_item(self) -> str | None:
         return 'Basic Autodoc'
@@ -211,6 +258,7 @@ class TrainingFacility(ShipPart):
 class SystemsSection(CeresModel):
     crew_armory: CrewArmory | None = None
     biosphere: Biosphere | None = None
+    commercial_zone: CommercialZone | None = None
     medical_bay: MedicalBay | None = None
     medical_bays: MedicalBays | None = None
     laboratory: Laboratory | None = None
@@ -225,6 +273,7 @@ class SystemsSection(CeresModel):
         for part in (
             self.crew_armory,
             self.biosphere,
+            self.commercial_zone,
             self.workshop,
             self.medical_bay,
             self.medical_bays,
