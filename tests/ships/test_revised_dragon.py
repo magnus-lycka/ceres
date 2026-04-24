@@ -1,3 +1,34 @@
+"""Reference ship case based on refs/revised_dragon.txt.
+
+Purpose:
+- preserve a source-derived revised military Dragon variant
+- exercise customisations beyond the baseline Dragon, including budget drives,
+  very-high-yield barbettes, energy-efficient point defence, and modest
+  habitation upgrades
+- keep one explicit case where the source crew manifest is preserved verbatim
+  and any role mismatches are surfaced as notes
+
+Source handling for this test case:
+- supported: hull, stealth, radiation shielding, armour, drives, power, fuel,
+  bridge, computer, sensors, weapons, systems, habitation, production cost,
+  discounted purchase price
+- ignored for test-case modelling:
+  - battle-load figures (`TCS-002`)
+  - income / profit rows (`TCS-003`)
+- normalized when mapping into Ceres:
+  - source armored-bulkhead rows are represented as protected parts plus
+    separate Hull bulkhead entries (`TCS-001`)
+- deliberate interpretation:
+  - the source crew manifest is preserved verbatim via explicit `crew_vector`
+  - Ceres surfaces crew-rule mismatches as info/warning notes instead of
+    silently normalizing the crew
+  - point-defence batteries do not require dedicated gunners
+- source inconsistency:
+  - the source life-support total does not fit the source crew count
+- model interpretation rather than dedicated installed rows:
+  - stores and spares (`RI-001`)
+"""
+
 import pytest
 
 from tycho import armour, hull, ship
@@ -30,12 +61,7 @@ from tycho.weapons import Barbette, Bay, MissileStorage, PointDefenseBattery, Ve
 
 
 def build_revised_dragon() -> ship.Ship:
-    """
-    Modeled subset of refs/revised_dragon.txt.
-
-    Not yet modeled from the reference:
-    - exact crew-rule interpretation from the reference export
-    """
+    """Build the revised Dragon reference case from refs/revised_dragon.txt."""
 
     return ship.Ship(
         ship_class='Dragon',

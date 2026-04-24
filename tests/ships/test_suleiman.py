@@ -1,3 +1,31 @@
+"""Reference ship case based on refs/Suleiman.md.
+
+Purpose:
+- provide a compact source-derived scout/courier baseline
+- exercise standard TL12 Streamlined/J-2/M-2/Fusion-60 design rules
+- keep one explicit case where we follow Ceres for derived crew and fuel
+  expenses rather than an internally inconsistent source export
+
+Source handling for this test case:
+- supported: hull, armour, drives, power plant, fuel tankage, bridge,
+  computer, sensors, turret, docking space, air/raft, probe drones,
+  workshop, staterooms, cargo, production cost, discounted purchase price
+- ignored for test-case modelling:
+  - battle-load figures (`TCS-002`)
+  - income / profit rows (`TCS-003`)
+- deliberate interpretation:
+  - crew follows Ceres rules rather than the source crew row, because the
+    source lists three crew while also fitting a double turret that requires
+    a gunner
+  - fuel expense follows the current Ceres operating-cost model, including
+    purchased operation fuel, rather than the source's jump-fuel-only total
+- source inconsistency:
+  - the source life-support total fits four crew plus four middle passengers
+    even though the source crew row lists only three crew
+- model interpretation rather than dedicated installed rows:
+  - stores and spares (`RI-001`)
+"""
+
 import pytest
 from stuart import render_ship_html
 
@@ -16,6 +44,7 @@ from ._output import write_html_output
 
 
 def build_suleiman() -> ship.Ship:
+    """Build the Suleiman reference case from refs/Suleiman.md."""
     return ship.Ship(
         ship_class='Suleiman',
         ship_type='Scout/Courier',

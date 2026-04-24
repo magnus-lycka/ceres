@@ -1,3 +1,39 @@
+"""Reference ship case based on refs/alt_dragon.txt.
+
+Purpose:
+- preserve a source-derived alternate military Dragon variant
+- exercise additional optional systems such as emergency power, rapid
+  deployment arrays, biosphere support, autodoc, cabin space, and upgraded
+  computing
+- keep one explicit case where the source crew manifest is preserved verbatim
+  while the remaining economic mismatches are called out rather than hidden
+
+Source handling for this test case:
+- supported: hull, stealth, radiation shielding, armour, drives, power,
+  emergency power, fuel, bridge, most systems, habitation layout, crew
+  manifest, fuel expense, and major power figures
+- ignored for test-case modelling:
+  - battle-load figures (`TCS-002`)
+  - income / profit rows (`TCS-003`)
+- normalized when mapping into Ceres:
+  - source armored-bulkhead rows are represented as protected parts plus
+    separate Hull bulkhead entries (`TCS-001`)
+- deliberate interpretation:
+  - the source crew manifest is preserved verbatim via explicit `crew_vector`
+  - Ceres surfaces crew-rule mismatches as info/warning notes instead of
+    silently normalizing the crew
+  - point-defence batteries do not require dedicated gunners
+- still excluded from the modeled reference case:
+  - the source's `Retro*` computer pricing is not modeled in Ceres, so
+    computer cost, production cost, and sales price remain substantially
+    higher than the reference export
+- source inconsistency:
+  - the source life-support total matches facilities alone and appears to omit
+    life support for people entirely
+- model interpretation rather than dedicated installed rows:
+  - stores and spares (`RI-001`)
+"""
+
 import pytest
 from stuart import render_ship_html
 
@@ -34,12 +70,7 @@ from ._output import write_html_output
 
 
 def build_alt_dragon() -> ship.Ship:
-    """
-    Modeled subset of refs/alt_dragon.txt.
-
-    Not yet modeled from the reference:
-    - exact crew-rule interpretation from the reference export
-    """
+    """Build the alternate Dragon reference case from refs/alt_dragon.txt."""
 
     fusion_plant = FusionPlantTL12(output=436, customisation=Advanced(SizeReduction), armoured_bulkhead=True)
 
