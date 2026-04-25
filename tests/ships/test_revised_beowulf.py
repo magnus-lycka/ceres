@@ -35,7 +35,7 @@ from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection, JumpControl
 from tycho.crew import Astrogator, Engineer, Pilot, ShipCrew, Steward
 from tycho.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
-from tycho.habitation import AdvancedEntertainmentSystem, HabitationSection, LowBerths, Staterooms
+from tycho.habitation import AdvancedEntertainmentSystem, HabitationSection, LowBerth, Stateroom
 from tycho.parts import Budget, IncreasedSize
 from tycho.sensors import CivilianSensors, SensorsSection
 from tycho.storage import CargoCrane, CargoHold, CargoSection, FuelProcessor, FuelSection, JumpFuel, OperationFuel
@@ -78,10 +78,10 @@ def build_revised_beowulf() -> ship.Ship:
         sensors=SensorsSection(primary=CivilianSensors()),
         systems=SystemsSection(medical_bay=MedicalBay(), workshop=Workshop()),
         habitation=HabitationSection(
-            staterooms=Staterooms(count=10),
-            low_berths=LowBerths(count=20),
+            staterooms=[Stateroom()] * 10,
+            low_berths=[LowBerth()] * 20,
             common_area=CommonArea(tons=10.0),
-            entertainment=AdvancedEntertainmentSystem(5_000),
+            entertainment=AdvancedEntertainmentSystem(cost=5_000),
         ),
         cargo=CargoSection(cargo_holds=[CargoHold(tons=67.5, crane=CargoCrane())]),
         crew=ShipCrew(roles=[Pilot(), Astrogator(), Engineer(), Steward()]),
@@ -125,8 +125,8 @@ def test_revised_beowulf_matches_current_modeled_subset():
 
     assert beowulf.habitation is not None
     assert beowulf.habitation.low_berths is not None
-    assert beowulf.habitation.low_berths.tons == pytest.approx(10.0)
-    assert beowulf.habitation.low_berths.cost == pytest.approx(1_000_000)
+    assert sum(berth.tons for berth in beowulf.habitation.low_berths) == pytest.approx(10.0)
+    assert sum(berth.cost for berth in beowulf.habitation.low_berths) == pytest.approx(1_000_000)
     assert beowulf.habitation.entertainment is not None
     assert beowulf.habitation.entertainment.cost == pytest.approx(5_000.0)
 

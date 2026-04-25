@@ -46,7 +46,7 @@ from tycho.crew import (
     ShipCrew,
 )
 from tycho.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
-from tycho.habitation import AdvancedEntertainmentSystem, HabitationSection, Staterooms
+from tycho.habitation import AdvancedEntertainmentSystem, HabitationSection, Stateroom
 from tycho.hull import ImprovedStealth
 from tycho.parts import Advanced, Budget, EnergyEfficient, HighTechnology, IncreasedSize, SizeReduction, VeryAdvanced
 from tycho.sensors import (
@@ -138,9 +138,9 @@ def build_revised_dragon() -> ship.Ship:
             workshop=Workshop(),
         ),
         habitation=HabitationSection(
-            staterooms=Staterooms(count=10),
+            staterooms=[Stateroom()] * 10,
             common_area=CommonArea(tons=10.0),
-            entertainment=AdvancedEntertainmentSystem(500),
+            entertainment=AdvancedEntertainmentSystem(cost=500),
         ),
         crew=ShipCrew(
             roles=[

@@ -4,7 +4,7 @@ from tycho import hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection
 from tycho.drives import DriveSection, FusionPlantTL8, FusionPlantTL12, MDrive, PowerSection
-from tycho.habitation import HabitationSection, Staterooms
+from tycho.habitation import HabitationSection, Stateroom
 from tycho.storage import CargoSection, FuelSection, OperationFuel
 from tycho.systems import Aerofins, Airlock, CommonArea
 
@@ -29,7 +29,7 @@ def build_poseidon_cargo_boat(tl: int) -> ship.Ship:
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=16)),
         command=CommandSection(bridge=Bridge(small=True)),
         computer=ComputerSection(hardware=Computer(5)),
-        habitation=HabitationSection(staterooms=Staterooms(count=1), common_area=CommonArea(tons=1.0)),
+        habitation=HabitationSection(staterooms=[Stateroom()], common_area=CommonArea(tons=1.0)),
     )
 
 
@@ -83,7 +83,7 @@ def test_ship_with_bridge_and_no_airlock_adds_error():
         hull=hull.Hull(configuration=POSEIDON_HULL),
         command=CommandSection(bridge=Bridge(small=True)),
         computer=ComputerSection(hardware=Computer(5)),
-        habitation=HabitationSection(staterooms=Staterooms(count=1)),
+        habitation=HabitationSection(staterooms=[Stateroom()]),
     )
     assert ('error', 'No airlock installed') in [(note.category.value, note.message) for note in my_ship.notes]
     assert my_ship.habitation is not None
@@ -99,7 +99,7 @@ def test_ship_with_staterooms_and_no_common_area_adds_warning():
         hull=hull.Hull(configuration=POSEIDON_HULL, airlocks=[Airlock()]),
         command=CommandSection(bridge=Bridge(small=True)),
         computer=ComputerSection(hardware=Computer(5)),
-        habitation=HabitationSection(staterooms=Staterooms(count=1)),
+        habitation=HabitationSection(staterooms=[Stateroom()]),
     )
     assert my_ship.habitation is not None
     assert ('warning', 'Recommended common area is 1.00 tons') in [

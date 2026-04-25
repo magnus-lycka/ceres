@@ -353,6 +353,10 @@ class Ship(ShipBase):
         cargo_tons = CargoSection.cargo_tons_for_ship(self)
         if cargo_tons < -0.005:
             self.error(f'Hull overloaded by {-cargo_tons:.2f} tons')
+        minimum_airlocks = ceil(self.displacement / 500) if self.displacement >= 100 else 0
+        installed_airlocks = len(self.hull.airlocks or [])
+        if minimum_airlocks and installed_airlocks < minimum_airlocks:
+            self.warning(f'Installed airlocks below minimum recommendation: {installed_airlocks} < {minimum_airlocks}')
         if self.command is not None and self.command.bridge is not None and not (self.hull.airlocks or []):
             self.error('No airlock installed')
         self.crew.refresh_notes()

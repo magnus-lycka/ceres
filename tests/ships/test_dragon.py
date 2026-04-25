@@ -46,7 +46,7 @@ from tycho.crew import (
     ShipCrew,
 )
 from tycho.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
-from tycho.habitation import HabitationSection, Staterooms
+from tycho.habitation import HabitationSection, Stateroom
 from tycho.hull import ImprovedStealth
 from tycho.parts import HighTechnology, SizeReduction
 from tycho.sensors import (
@@ -137,7 +137,7 @@ def build_dragon() -> ship.Ship:
             workshop=Workshop(),
         ),
         habitation=HabitationSection(
-            staterooms=Staterooms(count=10),
+            staterooms=[Stateroom()] * 10,
             common_area=CommonArea(tons=10.0),
         ),
         crew=ShipCrew(
@@ -272,7 +272,7 @@ def test_dragon_modeled_subset_matches_current_model():
 
     assert dragon.habitation is not None
     assert dragon.habitation.staterooms is not None
-    assert dragon.habitation.staterooms.tons == pytest.approx(40.0)
+    assert sum(room.tons for room in dragon.habitation.staterooms) == pytest.approx(40.0)
     assert dragon.habitation.common_area is not None
     assert dragon.habitation.common_area.tons == pytest.approx(10.0)
 

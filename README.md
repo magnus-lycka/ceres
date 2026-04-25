@@ -15,7 +15,7 @@ from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection, JumpControl
 from tycho.crafts import AirRaft, CraftSection, InternalDockingSpace
 from tycho.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
-from tycho.habitation import HabitationSection, Staterooms
+from tycho.habitation import HabitationSection, Stateroom
 from tycho.sensors import MilitarySensors, SensorsSection
 from tycho.storage import FuelProcessor, FuelSection, JumpFuel, OperationFuel
 from tycho.systems import Airlock, ProbeDrones, SystemsSection, Workshop
@@ -44,7 +44,7 @@ scout = ship.Ship(
     sensors=SensorsSection(primary=MilitarySensors()),
     weapons=WeaponsSection(turrets=[Turret(size='double')]),
     craft=CraftSection(docking_space=InternalDockingSpace(craft=AirRaft())),
-    habitation=HabitationSection(staterooms=Staterooms(count=4)),
+    habitation=HabitationSection(staterooms=[Stateroom()] * 4),
     systems=SystemsSection(probe_drones=ProbeDrones(count=10), workshop=Workshop()),
 )
 

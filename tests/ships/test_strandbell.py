@@ -4,7 +4,7 @@ from tycho import armour, hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import AutoRepair, Computer, ComputerSection, Evade, FireControl
 from tycho.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
-from tycho.habitation import HabitationSection, Staterooms
+from tycho.habitation import HabitationSection, Stateroom
 from tycho.sensors import CountermeasuresSuite, ImprovedSensors, SensorsSection
 from tycho.storage import CargoSection, FuelProcessor, FuelScoops, FuelSection, OperationFuel
 from tycho.systems import Airlock, CommonArea, MedicalBay, RepairDrones, SystemsSection
@@ -61,7 +61,7 @@ def build_strandbell() -> ship.Ship:
             missile_storage=MissileStorage(count=240),
         ),
         systems=SystemsSection(repair_drones=RepairDrones(), medical_bay=MedicalBay()),
-        habitation=HabitationSection(staterooms=Staterooms(count=15), common_area=CommonArea(tons=4.0)),
+        habitation=HabitationSection(staterooms=[Stateroom()] * 15, common_area=CommonArea(tons=4.0)),
     )
 
 
@@ -155,8 +155,8 @@ def test_strandbell_systems():
     assert sdb.systems.medical_bay is not None
     assert sdb.habitation is not None
     assert sdb.habitation.staterooms is not None
-    assert sdb.habitation.staterooms.count == 15
-    assert sdb.habitation.staterooms.tons == pytest.approx(60.0)
+    assert len(sdb.habitation.staterooms) == 15
+    assert sum(room.tons for room in sdb.habitation.staterooms) == pytest.approx(60.0)
     assert sdb.habitation.common_area is not None
     assert sdb.habitation.common_area.tons == pytest.approx(4.0)
 

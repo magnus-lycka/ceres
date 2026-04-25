@@ -76,9 +76,7 @@ class CommercialZone(ShipPart):
         return float(max(1, int(self.tons // 200)))
 
 
-class SwimmingPool(ShipPart):
-    tons: float
-
+class SwimmingPool(CommonArea):
     def build_item(self) -> str | None:
         return 'Swimming Pool'
 
@@ -86,8 +84,7 @@ class SwimmingPool(ShipPart):
         return self.tons * 20_000.0
 
 
-class Theatre(ShipPart):
-    tons: float
+class Theatre(CommonArea):
     advanced: bool = False
 
     def build_item(self) -> str | None:

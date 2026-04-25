@@ -1,3 +1,5 @@
+import pytest
+
 from tycho import hull, ship
 from tycho.base import ShipBase
 from tycho.storage import FuelScoops, FuelSection
@@ -226,6 +228,60 @@ def test_airlock_is_free_on_99_ton_ship():
     airlock = my_ship.hull.airlocks[0]
     assert airlock.tons == 0.0
     assert airlock.cost == 0.0
+
+
+def test_ship_without_explicit_airlocks_gets_minimum_two_on_1000_tons():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=1_000,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+    )
+
+    assert len(my_ship.hull.airlocks or []) == 2
+    assert all(airlock.tons == 0.0 for airlock in my_ship.hull.airlocks or [])
+    assert ('warning', 'Installed airlocks below minimum recommendation: 1 < 2') not in [
+        (note.category.value, note.message) for note in my_ship.notes
+    ]
+
+
+def test_ship_with_one_airlock_on_1000_tons_gets_warning_for_too_few_airlocks():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=1_000,
+        hull=hull.Hull(configuration=hull.streamlined_hull, airlocks=[Airlock()]),
+    )
+
+    assert len(my_ship.hull.airlocks or []) == 1
+    assert ('warning', 'Installed airlocks below minimum recommendation: 1 < 2') in [
+        (note.category.value, note.message) for note in my_ship.notes
+    ]
+
+
+def test_first_ten_airlocks_are_free_on_1000_ton_ship():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=1_000,
+        hull=hull.Hull(configuration=hull.streamlined_hull, airlocks=[Airlock() for _ in range(10)]),
+    )
+
+    assert len(my_ship.hull.airlocks or []) == 10
+    assert all(airlock.tons == 0.0 for airlock in my_ship.hull.airlocks or [])
+    assert all(airlock.cost == 0.0 for airlock in my_ship.hull.airlocks or [])
+
+
+def test_eleventh_airlock_costs_tonnage_and_money_on_1000_ton_ship():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=1_000,
+        hull=hull.Hull(configuration=hull.streamlined_hull, airlocks=[Airlock() for _ in range(11)]),
+    )
+
+    assert len(my_ship.hull.airlocks or []) == 11
+    assert all(airlock.tons == 0.0 for airlock in (my_ship.hull.airlocks or [])[:10])
+    assert all(airlock.cost == 0.0 for airlock in (my_ship.hull.airlocks or [])[:10])
+    eleventh = (my_ship.hull.airlocks or [])[10]
+    assert eleventh.tons == pytest.approx(2.0)
+    assert eleventh.cost == pytest.approx(200_000.0)
 
 
 def test_systems_section_all_parts():

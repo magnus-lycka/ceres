@@ -10,7 +10,7 @@ The purpose is to separate:
 - what remains open
 
 This is important because habitation is currently modelled in a way that grew
-incrementally around `Staterooms(count=...)`, `LowBerths(count=...)`, and
+incrementally around `StateroomGroup(count=...)`, `LowBerthGroup(count=...)`, and
 `CabinSpace(tons=...)`. That is no longer a good fit for the full range of
 accommodation types found in Core and High Guard.
 
@@ -223,8 +223,8 @@ rules.
 
 The current style:
 
-- `staterooms=Staterooms(count=4)`
-- `low_berths=LowBerths(count=20)`
+- `staterooms=StateroomGroup(count=4)`
+- `low_berths=LowBerthGroup(count=20)`
 
 works for a narrow subset but does not scale well when we need:
 
@@ -235,7 +235,7 @@ works for a narrow subset but does not scale well when we need:
 - seat-only transport
 - prison or hospital layouts
 
-`Staterooms(count=...)` also mixes two concepts:
+`StateroomGroup(count=...)` also mixes two concepts:
 
 - one accommodation unit
 - a collection of many such units
@@ -479,7 +479,7 @@ Suggested cases:
 
 The safest path appears to be:
 
-1. Stop growing the current `Staterooms(count=...)`-style pattern.
+1. Stop growing the current `StateroomGroup(count=...)`-style pattern.
 2. Introduce a more generic habitation / accommodation collection model.
 3. Represent actual accommodation types as individual classes or installable
    units, not as one-off counts glued to section fields.

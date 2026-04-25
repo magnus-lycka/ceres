@@ -52,7 +52,7 @@ from tycho.crew import (
     Steward,
 )
 from tycho.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
-from tycho.habitation import HabitationSection, LowBerths, Staterooms
+from tycho.habitation import HabitationSection, HighStateroom, LowBerth, LuxuryStateroom, Stateroom
 from tycho.sensors import CivilianSensors, SensorsSection
 from tycho.storage import FuelSection, JumpFuel, OperationFuel
 from tycho.systems import CommercialZone, CommonArea, MedicalBay, SwimmingPool, SystemsSection, Theatre, WetBar
@@ -92,14 +92,12 @@ def build_king_kay() -> ship.Ship:
             commercial_zone=CommercialZone(tons=240),
         ),
         habitation=HabitationSection(
-            staterooms=Staterooms(80),
-            high_staterooms=Staterooms(192, kind='high'),
-            luxury_staterooms=Staterooms(8, kind='luxury'),
+            staterooms=[Stateroom()] * 80 + [HighStateroom()] * 192 + [LuxuryStateroom()] * 8,
             common_area=CommonArea(tons=388),
             swimming_pool=SwimmingPool(tons=60),
             theatres=[Theatre(tons=100), Theatre(tons=100), Theatre(tons=100)],
             wet_bar=WetBar(),
-            low_berths=LowBerths(18),
+            low_berths=[LowBerth()] * 18,
         ),
         crew=ShipCrew(
             roles=[
@@ -197,15 +195,16 @@ def test_king_kay_matches_supported_reference_slice():
     assert liner.systems.commercial_zone.power == pytest.approx(1.0)
 
     assert liner.habitation is not None
-    assert liner.habitation.luxury_staterooms is not None
-    assert liner.habitation.luxury_staterooms.tons == pytest.approx(80.0)
-    assert liner.habitation.luxury_staterooms.cost == pytest.approx(12_000_000.0)
-    assert liner.habitation.high_staterooms is not None
-    assert liner.habitation.high_staterooms.tons == pytest.approx(1_152.0)
-    assert liner.habitation.high_staterooms.cost == pytest.approx(153_600_000.0)
     assert liner.habitation.staterooms is not None
-    assert liner.habitation.staterooms.tons == pytest.approx(320.0)
-    assert liner.habitation.staterooms.cost == pytest.approx(40_000_000.0)
+    standard_rooms = [room for room in liner.habitation.staterooms if type(room) is Stateroom]
+    high_rooms = [room for room in liner.habitation.staterooms if isinstance(room, HighStateroom)]
+    luxury_rooms = [room for room in liner.habitation.staterooms if isinstance(room, LuxuryStateroom)]
+    assert sum(room.tons for room in standard_rooms) == pytest.approx(320.0)
+    assert sum(room.cost for room in standard_rooms) == pytest.approx(40_000_000.0)
+    assert sum(room.tons for room in high_rooms) == pytest.approx(1_152.0)
+    assert sum(room.cost for room in high_rooms) == pytest.approx(153_600_000.0)
+    assert sum(room.tons for room in luxury_rooms) == pytest.approx(80.0)
+    assert sum(room.cost for room in luxury_rooms) == pytest.approx(12_000_000.0)
     assert liner.habitation.common_area is not None
     assert liner.habitation.common_area.tons == pytest.approx(388.0)
     assert liner.habitation.common_area.cost == pytest.approx(38_800_000.0)
@@ -219,9 +218,9 @@ def test_king_kay_matches_supported_reference_slice():
     assert liner.habitation.wet_bar is not None
     assert liner.habitation.wet_bar.cost == pytest.approx(2_000.0)
     assert liner.habitation.low_berths is not None
-    assert liner.habitation.low_berths.tons == pytest.approx(9.0)
-    assert liner.habitation.low_berths.cost == pytest.approx(900_000.0)
-    assert liner.habitation.low_berths.power == pytest.approx(2.0)
+    assert sum(berth.tons for berth in liner.habitation.low_berths) == pytest.approx(9.0)
+    assert sum(berth.cost for berth in liner.habitation.low_berths) == pytest.approx(900_000.0)
+    assert sum(berth.power for berth in liner.habitation.low_berths) == pytest.approx(2.0)
 
     assert [(role.role, quantity, role.monthly_salary) for role, quantity in liner.crew.grouped_roles] == [
         ('CAPTAIN', 1, 10_000),

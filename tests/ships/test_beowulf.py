@@ -28,7 +28,7 @@ from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection, JumpControl
 from tycho.crew import Astrogator, Engineer, Pilot, ShipCrew, Steward
 from tycho.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
-from tycho.habitation import HabitationSection, LowBerths, Staterooms
+from tycho.habitation import HabitationSection, LowBerth, Stateroom
 from tycho.sensors import CivilianSensors, SensorsSection
 from tycho.storage import CargoCrane, CargoHold, CargoSection, FuelProcessor, FuelSection, JumpFuel, OperationFuel
 from tycho.systems import Airlock, CommonArea
@@ -59,8 +59,8 @@ def build_beowulf() -> ship.Ship:
         computer=ComputerSection(hardware=Computer(5), software=[JumpControl(1)]),
         sensors=SensorsSection(primary=CivilianSensors()),
         habitation=HabitationSection(
-            staterooms=Staterooms(count=10),
-            low_berths=LowBerths(count=20),
+            staterooms=[Stateroom()] * 10,
+            low_berths=[LowBerth()] * 20,
             common_area=CommonArea(tons=10.0),
         ),
         cargo=CargoSection(cargo_holds=[CargoHold(crane=CargoCrane())]),
@@ -132,15 +132,15 @@ def test_beowulf_staterooms():
     beowulf = build_beowulf()
     assert beowulf.habitation is not None
     assert beowulf.habitation.staterooms is not None
-    assert beowulf.habitation.staterooms.count == 10
-    assert beowulf.habitation.staterooms.tons == pytest.approx(40.0)
-    assert beowulf.habitation.staterooms.cost == 5_000_000
+    assert len(beowulf.habitation.staterooms) == 10
+    assert sum(room.tons for room in beowulf.habitation.staterooms) == pytest.approx(40.0)
+    assert sum(room.cost for room in beowulf.habitation.staterooms) == 5_000_000
 
     assert beowulf.habitation.low_berths is not None
-    assert beowulf.habitation.low_berths.count == 20
-    assert beowulf.habitation.low_berths.tons == pytest.approx(10.0)
-    assert beowulf.habitation.low_berths.cost == 1_000_000
-    assert beowulf.habitation.low_berths.power == 2
+    assert len(beowulf.habitation.low_berths) == 20
+    assert sum(berth.tons for berth in beowulf.habitation.low_berths) == pytest.approx(10.0)
+    assert sum(berth.cost for berth in beowulf.habitation.low_berths) == 1_000_000
+    assert sum(berth.power for berth in beowulf.habitation.low_berths) == 2
 
 
 def test_beowulf_systems():

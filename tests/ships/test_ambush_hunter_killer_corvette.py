@@ -14,7 +14,7 @@ from tycho.computer import (
     VirtualGunner,
 )
 from tycho.drives import DecreasedFuel, DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
-from tycho.habitation import HabitationSection, Staterooms
+from tycho.habitation import HabitationSection, HighStateroom, Stateroom
 from tycho.parts import EnergyEfficient, HighTechnology, SizeReduction, VeryAdvanced
 from tycho.sensors import (
     CountermeasuresSuite,
@@ -126,8 +126,7 @@ def build_ambush_hunter_killer_corvette() -> ship.Ship:
             medical_bay=MedicalBay(),
         ),
         habitation=HabitationSection(
-            staterooms=Staterooms(count=8),
-            high_staterooms=Staterooms(count=1, kind='high'),
+            staterooms=[Stateroom()] * 8 + [HighStateroom()],
             common_area=CommonArea(tons=12),
         ),
     )
@@ -225,11 +224,12 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
 
     assert corvette.habitation is not None
     assert corvette.habitation.staterooms is not None
-    assert corvette.habitation.staterooms.tons == pytest.approx(32.0)
-    assert corvette.habitation.staterooms.cost == pytest.approx(4_000_000.0)
-    assert corvette.habitation.high_staterooms is not None
-    assert corvette.habitation.high_staterooms.tons == pytest.approx(6.0)
-    assert corvette.habitation.high_staterooms.cost == pytest.approx(800_000.0)
+    standard_rooms = [room for room in corvette.habitation.staterooms if type(room) is Stateroom]
+    high_rooms = [room for room in corvette.habitation.staterooms if isinstance(room, HighStateroom)]
+    assert sum(room.tons for room in standard_rooms) == pytest.approx(32.0)
+    assert sum(room.cost for room in standard_rooms) == pytest.approx(4_000_000.0)
+    assert sum(room.tons for room in high_rooms) == pytest.approx(6.0)
+    assert sum(room.cost for room in high_rooms) == pytest.approx(800_000.0)
     assert corvette.habitation.common_area is not None
     assert corvette.habitation.common_area.tons == pytest.approx(12.0)
     assert corvette.habitation.common_area.cost == pytest.approx(1_200_000.0)

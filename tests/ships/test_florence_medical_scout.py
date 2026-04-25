@@ -6,7 +6,7 @@ from tycho.computer import Computer, ComputerSection, JumpControl
 from tycho.crew import Astrogator, Captain, Engineer, Maintenance, Medic, Pilot, ShipCrew
 from tycho.crafts import AirRaft, CraftSection, InternalDockingSpace, SlowPinnace
 from tycho.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
-from tycho.habitation import HabitationSection, LowBerths, Staterooms
+from tycho.habitation import HabitationSection, LowBerth, Stateroom
 from tycho.sensors import LifeScannerAnalysisSuite, MilitarySensors, SensorsSection
 from tycho.storage import FuelProcessor, FuelScoops, FuelSection, JumpFuel, OperationFuel
 from tycho.systems import BriefingRoom, CommonArea, Laboratory, MedicalBays, SystemsSection
@@ -59,8 +59,8 @@ def build_florence_medical_scout() -> ship.Ship:
             briefing_room=BriefingRoom(),
         ),
         habitation=HabitationSection(
-            staterooms=Staterooms(count=8),
-            low_berths=LowBerths(count=20),
+            staterooms=[Stateroom()] * 8,
+            low_berths=[LowBerth()] * 20,
             common_area=CommonArea(tons=32),
         ),
     )
@@ -126,10 +126,10 @@ def test_florence_medical_scout_matches_current_subset():
 
     assert scout.habitation is not None
     assert scout.habitation.staterooms is not None
-    assert scout.habitation.staterooms.tons == pytest.approx(32.0)
+    assert sum(room.tons for room in scout.habitation.staterooms) == pytest.approx(32.0)
     assert scout.habitation.low_berths is not None
-    assert scout.habitation.low_berths.tons == pytest.approx(10.0)
-    assert scout.habitation.low_berths.power == pytest.approx(2.0)
+    assert sum(berth.tons for berth in scout.habitation.low_berths) == pytest.approx(10.0)
+    assert sum(berth.power for berth in scout.habitation.low_berths) == pytest.approx(2.0)
     assert scout.habitation.common_area is not None
     assert scout.habitation.common_area.tons == pytest.approx(32.0)
 

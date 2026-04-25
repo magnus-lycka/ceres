@@ -15,7 +15,7 @@ from tycho.crew import (
     Steward,
 )
 from tycho.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
-from tycho.habitation import HabitationSection, LowBerths, Staterooms
+from tycho.habitation import HabitationSection, LowBerth, Stateroom
 from tycho.sensors import SensorsSection, SensorStations
 from tycho.weapons import Barbette, Bay, Turret, WeaponsSection
 
@@ -346,7 +346,7 @@ def test_steward_added_for_middle_passenger_manifest():
         power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer(5)),
-        habitation=HabitationSection(staterooms=Staterooms(count=10)),
+        habitation=HabitationSection(staterooms=[Stateroom()] * 10),
         passenger_vector={'middle': 16},
     )
 
@@ -362,7 +362,7 @@ def test_steward_requirement_uses_skill_levels_for_large_middle_passenger_manife
         power=PowerSection(fusion_plant=FusionPlantTL12(output=40)),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer(5)),
-        habitation=HabitationSection(staterooms=Staterooms(count=130)),
+        habitation=HabitationSection(staterooms=[Stateroom()] * 130),
         passenger_vector={'middle': 250},
     )
 
@@ -381,7 +381,7 @@ def test_steward_requirement_caps_single_person_skill_at_three():
         power=PowerSection(fusion_plant=FusionPlantTL12(output=40)),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer(5)),
-        habitation=HabitationSection(staterooms=Staterooms(count=210)),
+        habitation=HabitationSection(staterooms=[Stateroom()] * 210),
         passenger_vector={'middle': 350},
     )
 
@@ -401,7 +401,7 @@ def test_explicit_crew_input_warns_when_steward_missing_for_passenger_manifest()
         power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer(5)),
-        habitation=HabitationSection(staterooms=Staterooms(count=10)),
+        habitation=HabitationSection(staterooms=[Stateroom()] * 10),
         crew=ShipCrew(roles=[Pilot(), Astrogator(), Engineer()]),
         passenger_vector={'middle': 16},
     )
@@ -426,7 +426,7 @@ def test_default_middle_passengers_use_only_unused_staterooms():
         tl=12,
         displacement=200,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        habitation=HabitationSection(staterooms=Staterooms(count=10)),
+        habitation=HabitationSection(staterooms=[Stateroom()] * 10),
         crew=ShipCrew(roles=[Pilot()] * 7),
     )
 
@@ -438,7 +438,7 @@ def test_high_passage_uses_one_stateroom_each():
         tl=12,
         displacement=200,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        habitation=HabitationSection(staterooms=Staterooms(count=4)),
+        habitation=HabitationSection(staterooms=[Stateroom()] * 4),
         crew=ShipCrew(roles=[Pilot(), Pilot()]),
         passenger_vector={'high': 2, 'middle': 2},
     )
@@ -451,7 +451,7 @@ def test_low_passage_uses_low_berths():
         tl=12,
         displacement=200,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        habitation=HabitationSection(staterooms=Staterooms(count=1), low_berths=LowBerths(count=4)),
+        habitation=HabitationSection(staterooms=[Stateroom()], low_berths=[LowBerth()] * 4),
         crew=ShipCrew(roles=[Pilot()]),
         passenger_vector={'low': 3},
     )

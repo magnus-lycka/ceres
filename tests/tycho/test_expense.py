@@ -4,7 +4,7 @@ from tycho import hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection
 from tycho.drives import DriveSection, FusionPlantTL8, FusionPlantTL12, JDrive, MDrive, PowerSection
-from tycho.habitation import HabitationSection, Staterooms
+from tycho.habitation import HabitationSection, Stateroom
 from tycho.storage import FuelProcessor, FuelSection, JumpFuel, OperationFuel
 
 
@@ -22,7 +22,7 @@ def build_small_jump_ship() -> ship.Ship:
         ),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer(5, bis=True)),
-        habitation=HabitationSection(staterooms=Staterooms(count=4)),
+        habitation=HabitationSection(staterooms=[Stateroom()] * 4),
     )
 
 
@@ -86,7 +86,7 @@ def test_operation_fuel_contributes_monthly_unrefined_cost():
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=12)),
         command=CommandSection(bridge=Bridge(small=True)),
         computer=ComputerSection(hardware=Computer(5)),
-        habitation=HabitationSection(staterooms=Staterooms(count=1)),
+        habitation=HabitationSection(staterooms=[Stateroom()]),
     )
     assert my_ship.expenses.fuel == pytest.approx(80.0)
 
@@ -101,7 +101,7 @@ def test_operation_fuel_cost_is_zero_with_scoops_and_no_jump_drive():
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=16)),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer(5)),
-        habitation=HabitationSection(staterooms=Staterooms(count=1)),
+        habitation=HabitationSection(staterooms=[Stateroom()]),
     )
     assert my_ship.expenses.fuel == pytest.approx(0.0)
 
@@ -128,7 +128,7 @@ def test_jump_drive_still_requires_refined_fuel_without_processor():
         ),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer(5, bis=True)),
-        habitation=HabitationSection(staterooms=Staterooms(count=4)),
+        habitation=HabitationSection(staterooms=[Stateroom()] * 4),
     )
 
     assert my_ship.fuel is not None

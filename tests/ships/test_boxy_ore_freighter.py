@@ -4,7 +4,7 @@ from tycho import hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection
 from tycho.drives import DriveSection, FusionPlantTL8, MDrive, PowerSection
-from tycho.habitation import HabitationSection, Staterooms
+from tycho.habitation import HabitationSection, Stateroom
 from tycho.sensors import BasicSensors, SensorsSection
 from tycho.storage import CargoSection, FuelSection, OperationFuel
 from tycho.systems import Airlock, CommonArea, SystemsSection, Workshop
@@ -29,7 +29,7 @@ def build_boxy_ore_freighter() -> ship.Ship:
         command=CommandSection(bridge=Bridge(small=True)),
         computer=ComputerSection(hardware=Computer(5)),
         sensors=SensorsSection(primary=BasicSensors()),
-        habitation=HabitationSection(staterooms=Staterooms(count=1), common_area=CommonArea(tons=1.0)),
+        habitation=HabitationSection(staterooms=[Stateroom()], common_area=CommonArea(tons=1.0)),
         systems=SystemsSection(workshop=Workshop()),
     )
 

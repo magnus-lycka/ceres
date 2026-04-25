@@ -34,7 +34,7 @@ from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection, JumpControl
 from tycho.crafts import AirRaft, CraftSection, InternalDockingSpace
 from tycho.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
-from tycho.habitation import HabitationSection, Staterooms
+from tycho.habitation import HabitationSection, Stateroom
 from tycho.sensors import MilitarySensors, SensorsSection
 from tycho.storage import CargoSection, FuelProcessor, FuelSection, JumpFuel, OperationFuel
 from tycho.systems import Airlock, ProbeDrones, SystemsSection, Workshop
@@ -68,7 +68,7 @@ def build_suleiman() -> ship.Ship:
         sensors=SensorsSection(primary=MilitarySensors()),
         weapons=WeaponsSection(turrets=[Turret(size='double')]),
         craft=CraftSection(docking_space=InternalDockingSpace(craft=AirRaft())),
-        habitation=HabitationSection(staterooms=Staterooms(count=4)),
+        habitation=HabitationSection(staterooms=[Stateroom()] * 4),
         systems=SystemsSection(probe_drones=ProbeDrones(count=10), workshop=Workshop()),
     )
 
@@ -165,9 +165,9 @@ def test_suleiman_matches_first_modeled_reference_slice():
     assert docking_space.power == 0
 
     assert staterooms is not None
-    assert staterooms.count == 4
-    assert staterooms.tons == pytest.approx(16.0)
-    assert staterooms.cost == 2_000_000
+    assert len(staterooms) == 4
+    assert sum(room.tons for room in staterooms) == pytest.approx(16.0)
+    assert sum(room.cost for room in staterooms) == 2_000_000
 
     assert len(airlocks) == 1
     assert airlocks[0].tons == pytest.approx(0.0)

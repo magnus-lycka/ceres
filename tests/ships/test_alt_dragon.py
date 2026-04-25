@@ -52,7 +52,7 @@ from tycho.crew import (
     ShipCrew,
 )
 from tycho.drives import DriveSection, EmergencyPowerSystem, FusionPlantTL12, MDrive, PowerSection
-from tycho.habitation import AdvancedEntertainmentSystem, CabinSpace, HabitationSection, Staterooms
+from tycho.habitation import AdvancedEntertainmentSystem, CabinSpace, HabitationSection, Stateroom
 from tycho.hull import ImprovedStealth
 from tycho.parts import Advanced, Budget, HighTechnology, IncreasedSize, SizeReduction
 from tycho.sensors import (
@@ -150,10 +150,10 @@ def build_alt_dragon() -> ship.Ship:
             workshop=Workshop(),
         ),
         habitation=HabitationSection(
-            staterooms=Staterooms(count=4),
+            staterooms=[Stateroom()] * 4,
             cabin_space=CabinSpace(tons=15.0),
             common_area=CommonArea(tons=10.0),
-            entertainment=AdvancedEntertainmentSystem(1_250),
+            entertainment=AdvancedEntertainmentSystem(cost=1_250),
         ),
         crew=ShipCrew(
             roles=[
