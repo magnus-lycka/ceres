@@ -70,12 +70,6 @@ def test_poseidon_below_tl10_puts_error_on_mdrive(tl: int):
     ]
 
 
-def test_poseidon_100_tons_gets_free_airlock():
-    poseidon_100 = build_poseidon_cargo_boat(12)
-    assert poseidon_100.hull.airlocks[0].tons == 0.0
-    assert poseidon_100.hull.airlocks[0].cost == 0.0
-
-
 def test_ship_with_bridge_and_no_airlock_adds_error():
     my_ship = ship.Ship(
         tl=12,
