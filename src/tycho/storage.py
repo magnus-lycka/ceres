@@ -208,12 +208,47 @@ class CargoHold(CeresModel):
         return self.total_tons(owner) - self.crane_tons(owner)
 
 
+class CargoAirlock(ShipPart):
+    size: float = 2.0
+
+    def build_item(self) -> str | None:
+        return f'Cargo Airlock ({self.size:g} tons)'
+
+    def compute_tons(self) -> float:
+        return max(self.size, 2.0)
+
+    def compute_cost(self) -> float:
+        return self.compute_tons() * 100_000.0
+
+
+class FuelCargoContainer(ShipPart):
+    capacity: float
+
+    def build_item(self) -> str | None:
+        return f'Fuel/Cargo Container ({self.capacity:g} tons)'
+
+    @property
+    def cargo_capacity(self) -> float:
+        return self.capacity
+
+    def compute_tons(self) -> float:
+        return math.ceil(self.capacity * 1.05)
+
+    def compute_cost(self) -> float:
+        return self.capacity * 5_000.0
+
+
 class CargoSection(CeresModel):
     @staticmethod
     def _format_stores_tons(tons: float) -> str:
         return f'{tons:.1f}'.rstrip('0').rstrip('.')
 
     cargo_holds: list[CargoHold] = Field(default_factory=list)
+    cargo_airlocks: list[CargoAirlock] = Field(default_factory=list)
+    fuel_cargo_containers: list[FuelCargoContainer] = Field(default_factory=list)
+
+    def _all_parts(self) -> list[ShipPart]:
+        return [*self.cargo_airlocks, *self.fuel_cargo_containers]
 
     @staticmethod
     def maximum_stores_tons(ship) -> float | None:
@@ -222,11 +257,14 @@ class CargoSection(CeresModel):
         return ship.displacement / 100
 
     def cargo_tons(self, ship) -> float:
+        container_capacity = sum(container.cargo_capacity for container in self.fuel_cargo_containers)
         if self.cargo_holds:
-            return sum(cargo_hold.usable_tons(ship) for cargo_hold in self.cargo_holds)
-        return ship.remaining_usable_tonnage()
+            return sum(cargo_hold.usable_tons(ship) for cargo_hold in self.cargo_holds) + container_capacity
+        return ship.remaining_usable_tonnage() + container_capacity
 
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
+        for cargo_part in self._all_parts():
+            spec.add_row(ship._spec_row_for_part(SpecSection.CARGO, cargo_part))
         if self.cargo_holds:
             for cargo_hold in self.cargo_holds:
                 spec.add_row(
@@ -245,6 +283,9 @@ class CargoSection(CeresModel):
                             cost=cargo_hold.crane_cost(ship) or None,
                         )
                     )
+            self._add_stores_notes(ship, spec)
+            return
+        if self._all_parts():
             self._add_stores_notes(ship, spec)
             return
         cargo_tons = self.cargo_tons(ship)

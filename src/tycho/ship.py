@@ -165,6 +165,8 @@ class Ship(ShipBase):
             parts.extend(self.craft._all_parts())
         if self.systems is not None:
             parts.extend(self.systems._all_parts())
+        if self.cargo is not None:
+            parts.extend(self.cargo._all_parts())
         if self.weapons is not None:
             parts.extend(self.weapons._all_parts())
         return parts

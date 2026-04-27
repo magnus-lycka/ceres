@@ -4,7 +4,15 @@ from tycho import hull, ship
 from tycho.base import ShipBase
 from tycho.drives import FusionPlantTL12, PowerSection
 from tycho.spec import SpecSection
-from tycho.storage import CargoCrane, CargoHold, CargoSection, FuelSection, OperationFuel
+from tycho.storage import (
+    CargoAirlock,
+    CargoCrane,
+    CargoHold,
+    CargoSection,
+    FuelCargoContainer,
+    FuelSection,
+    OperationFuel,
+)
 
 
 class DummyOwner(ShipBase):
@@ -41,6 +49,33 @@ def test_cargo_hold_usable_tons_subtracts_crane():
     assert hold.total_tons(owner) == pytest.approx(150)
     assert hold.crane_tons(owner) == pytest.approx(3.0)
     assert hold.usable_tons(owner) == pytest.approx(147.0)
+
+
+def test_cargo_airlock_has_fixed_tons_and_cost():
+    airlock = CargoAirlock()
+    owner = DummyOwner(12, 200)
+    airlock.bind(owner)
+    assert airlock.tons == pytest.approx(2.0)
+    assert airlock.cost == pytest.approx(200_000.0)
+
+
+def test_fuel_cargo_container_rounds_up_tons_from_capacity():
+    container = FuelCargoContainer(capacity=30)
+    owner = DummyOwner(12, 200)
+    container.bind(owner)
+    assert container.tons == pytest.approx(32.0)
+    assert container.cost == pytest.approx(150_000.0)
+    assert container.cargo_capacity == pytest.approx(30.0)
+
+
+def test_fuel_cargo_container_adds_cargo_capacity_without_cargo_hold():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        cargo=CargoSection(fuel_cargo_containers=[FuelCargoContainer(capacity=30)]),
+    )
+    assert CargoSection.cargo_tons_for_ship(my_ship) == pytest.approx(198.0)
 
 
 def _make_ship_with_plant():

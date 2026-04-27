@@ -8,6 +8,7 @@ from .test_belt_racer import build_belt_racer
 from .test_beowulf import build_beowulf
 from .test_boxy_ore_freighter import build_boxy_ore_freighter
 from .test_dragon import build_dragon
+from .test_dolphin_extended_scout_courier import build_dolphin_extended_scout_courier
 from .test_florence_medical_scout import build_florence_medical_scout
 from .test_gothta_ambush_fighter import build_gothta_ambush_fighter
 from .test_king_kay_luxury_liner import build_king_kay
@@ -29,6 +30,7 @@ pytestmark = pytest.mark.generated_output
         ('test_belt_racer', build_belt_racer),
         ('test_beowulf', build_beowulf),
         ('test_boxy_ore_freighter', build_boxy_ore_freighter),
+        ('test_dolphin_extended_scout_courier', build_dolphin_extended_scout_courier),
         ('test_dragon', build_dragon),
         ('test_florence_medical_scout', build_florence_medical_scout),
         ('test_gothta_ambush_fighter', build_gothta_ambush_fighter),
@@ -63,6 +65,7 @@ def test_ship_gallery_html_output(name: str, builder) -> None:
         ('test_belt_racer', build_belt_racer),
         ('test_beowulf', build_beowulf),
         ('test_boxy_ore_freighter', build_boxy_ore_freighter),
+        ('test_dolphin_extended_scout_courier', build_dolphin_extended_scout_courier),
         ('test_dragon', build_dragon),
         ('test_florence_medical_scout', build_florence_medical_scout),
         ('test_gothta_ambush_fighter', build_gothta_ambush_fighter),
@@ -94,6 +97,7 @@ def test_ship_gallery_pdf_output(name: str, builder) -> None:
         ('test_belt_racer', build_belt_racer),
         ('test_beowulf', build_beowulf),
         ('test_boxy_ore_freighter', build_boxy_ore_freighter),
+        ('test_dolphin_extended_scout_courier', build_dolphin_extended_scout_courier),
         ('test_dragon', build_dragon),
         ('test_florence_medical_scout', build_florence_medical_scout),
         ('test_gothta_ambush_fighter', build_gothta_ambush_fighter),
@@ -126,6 +130,7 @@ def test_ship_gallery_typst_output(name: str, builder) -> None:
         ('test_belt_racer', build_belt_racer),
         ('test_beowulf', build_beowulf),
         ('test_boxy_ore_freighter', build_boxy_ore_freighter),
+        ('test_dolphin_extended_scout_courier', build_dolphin_extended_scout_courier),
         ('test_dragon', build_dragon),
         ('test_florence_medical_scout', build_florence_medical_scout),
         ('test_gothta_ambush_fighter', build_gothta_ambush_fighter),
