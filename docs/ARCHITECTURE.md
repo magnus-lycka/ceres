@@ -14,6 +14,19 @@ globally frozen.
 Parts that derive their values override `compute_cost()`, `compute_power()`,
 and `compute_tons()`. The base implementation simply returns the stored values.
 
+`tons` in Traveller ship design means **displacement tons** (`dTons`), not
+metric mass. One displacement ton is a volume measure: the volume occupied by
+one metric ton of liquid hydrogen, conventionally about 14 cubic metres. In
+other words, Tycho's tonnage model is volumetric. A part's `tons` field answers
+"how much ship displacement / internal volume does this consume or represent?",
+not "how many kilograms does it weigh?".
+
+As a house rule for cargo realism, we also assume that one displacement ton of
+cargo space normally yields about one metric ton of practical net payload. This
+is not a geometric truth about every possible cargo, but it keeps Traveller's
+trade assumptions in a usable range and avoids treating `dTons` of cargo as if
+they were magically much denser than the hydrogen-reference volume.
+
 ### Two-phase construction: creation then binding
 
 Parts are created as plain Pydantic models. `Ship.model_post_init()` then calls
@@ -54,12 +67,35 @@ is a snapshot of current state, not the authoritative source.
 
 ### Tech level model
 
-`ship.tl` is the ship TL. `part.minimum_tl` is the minimum TL required.
-`part.effective_tl` is what the part uses for calculations — it defaults to
-the ship TL, but subclasses may override this when a part represents a specific
-technology variant rather than just a minimum availability threshold.
-`FusionPlant` is the primary example: it always uses its own fixed TL, not the
-ship's.
+The intended conceptual model is:
+
+- `ship.tl`: the ship's TL
+- `part.tl`: the part's own technology level / variant TL
+
+In the common case, `part.tl` is also the required ship TL for installing that
+part. However, those are still different ideas and should not be conflated in
+the design.
+
+Customisation grades such as `Early Prototype`, `Prototype`, `Budget`,
+`Advanced`, `Very Advanced`, and `High Technology` do **not** change what part
+the thing is. A TL12 fusion plant remains a TL12 fusion plant. A TL10 beam
+laser remains a TL10 beam laser. Customisation instead changes how the part may
+be used and with what consequences: altered ship-TL requirement, cost, tonnage,
+power, fuel use, notes, and similar effects.
+
+Some subsystems may also care about `ship.tl` separately from `part.tl`. The
+most obvious example is sensors, where the installed sensor package has its own
+TL floor but some capabilities or notes may still depend on the ship's TL.
+
+The current code still uses names such as `minimum_tl` and `effective_tl` in
+places, and that implementation vocabulary does not yet cleanly match the
+conceptual model above. When refactoring TL-sensitive code, prefer explicit
+ideas such as:
+
+- part TL / variant TL
+- ship TL
+- required ship TL after customisation
+- capability rules affected by ship TL
 
 Ceres currently supports ship TL16 and lower. We cap `ship.tl` at 16 and do
 not attempt to model TL17+ features for now.
@@ -120,15 +156,49 @@ hangar facility, while the carried craft itself contributes only its own cost
 to the spec. The carried craft's own fuel, cargo, and other internal resources
 are not added separately to the mothership spec.
 
+For internal carriage, the facility's displacement already includes the carried
+craft in volumetric terms. A `Full Hangar (95 tons)` has the same total
+displacement whether it currently contains a `Passenger Shuttle` or stands
+empty, because the shuttle fits inside that reserved internal volume. Likewise,
+an `Air/Raft` occupying a `Docking Space (5 tons)` does not add another 4
+displacement tons on top of the docking-space row; the craft fits within that
+allocated internal space.
+
 Externally carried craft or cargo are different. For systems such as docking
 clamps, tow cables, cargo nets, external cargo mounts, jump nets, jump shuttles
 and similar arrangements, the attached load must be treated as extra effective
 displacement when assessing drives and other displacement-sensitive performance.
 This is not yet modelled in code.
 
+Docking clamps are therefore different from hangars or internal docking spaces:
+the clamp itself has its own displacement, but a craft attached to it during
+flight remains an additional external load whose displacement must still be
+handled by the carrying ship.
+
+When we later model crew effects from carried craft, a single
+`engineering_tonnage` figure on the carried-craft data is likely sufficient for
+Tycho's purposes. That value should be understood as the total drives-plus-power
+engineering burden relevant to engineer staffing, not as a narrower physical
+"drive mass" figure.
+
 When we add these external-load systems, we will likely want some form of
 parameterized spec output, so a design can state performance at one or more
 extra carried displacements, such as “Thrust X / Jump Y while carrying Z dTons”.
+
+Just as important, "relevant displacement" is not always the same for every
+calculation. A design may have:
+
+- a structural / design displacement used for hull, internal space budgeting,
+  most maintenance, and the ship's own crew rules
+- an effective in-flight displacement used for thrust, jump, fuel use, and
+  other performance calculations while carrying external loads or certain
+  detachable modules
+
+This distinction matters for examples such as modular cutters, detachable
+modules, docking clamps, jump shuttles, drop tanks, and jump nets. A ship can
+be one size as a design object and another size for a specific flight profile.
+Tycho should therefore avoid assuming that a single displacement value is
+always correct for every rule.
 
 ### Armour
 
@@ -168,12 +238,8 @@ Cross-checks between `JumpDrive` and `Jump Control` are initiated from
 
 ### Crew
 
-Crew logic now lives in `crew.py`. `Ship` still exposes `crew_roles`, but
-delegates the actual role calculation there so crew rules can grow without
-`Ship` becoming the source of truth.
-
 `Ship.crew` is now a dedicated sub-object. It holds explicit crew input
-(`vector`) and crew-specific notes, so crew-related messages do not have to be
+(`roles`) and crew-specific notes, so crew-related messages do not have to be
 stored at ship level and filtered back into the crew table later.
 
 Crew rows in the spec represent rule-indicated positions / functions, not

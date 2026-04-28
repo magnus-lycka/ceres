@@ -7,6 +7,8 @@ from tycho.ship import Ship
 from tycho.spec import ShipSpec, SpecRow
 from tycho.text import format_counted_label
 
+from .tycho_view import collapsed_main_rows
+
 __all__ = ['render_ship_pdf', 'render_ship_spec_pdf', 'render_ship_spec_typst', 'render_ship_typst']
 
 
@@ -92,7 +94,7 @@ def _fmt_expense(label: str, amount: float) -> str:
 
 
 def _main_rows(spec: ShipSpec) -> list[SpecRow]:
-    return [r for r in spec.rows if not (r.power is not None and r.tons is None and r.cost is None)]
+    return collapsed_main_rows(spec)
 
 
 def _spec_table_rows(spec: ShipSpec) -> str:

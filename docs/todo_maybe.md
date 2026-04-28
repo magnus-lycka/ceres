@@ -182,6 +182,38 @@ For now:
 - do not infer new scientist roles until we have decided on a rule-backed
   interpretation
 
+## Modulars and effective displacement
+
+We need an explicit policy for cases where the same ship has one displacement
+as a design object but a different effective displacement in some operating
+profiles.
+
+Examples to sort out:
+
+- modular cutters with and without installed modules
+- large modular warships whose published thrust / jump assume a larger loaded
+  displacement than the stripped hull line item
+- docking clamps and other external carried craft
+- jump shuttles, jump nets, and drop tanks
+
+Current concern:
+
+- some published designs clearly distinguish between the ship's own built
+  displacement and the larger displacement that drives must handle in a
+  particular carried / loaded state
+- other calculations such as maintenance, much of crew analysis, and structural
+  build cost may still want the ship's own design displacement rather than the
+  loaded one
+
+Rule for future work:
+
+- do not flatten all such cases into one single `displacement` concept
+- be prepared to distinguish between at least:
+  - design / structural displacement
+  - effective in-flight displacement for performance
+- support parameterized outputs where needed, e.g. `Thrust X / Jump Y while
+  carrying Z dTons`
+
 ### Large ships crew reduction
 
 For ships of more than 5,000 tons, the

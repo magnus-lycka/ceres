@@ -24,7 +24,6 @@ Source handling for this test case:
   - additional fuel tankage
   - the advanced / long-range / mail-array sensor suite
   - all weapon rows
-  - passenger shuttles
   - chart room
   - grappling arm
   - meteoric assault / support systems
@@ -33,8 +32,8 @@ Source handling for this test case:
   - gaming space
 - deliberate interpretation:
   - source crew is carried over explicitly; `Passenger Shuttle Pilots x10` are
-    represented as ten additional `PILOT` roles even though the passenger
-    shuttles themselves are not yet modeled here
+    represented as ten additional `PILOT` roles tied to the ten modeled
+    passenger shuttles
 """
 
 import pytest
@@ -42,7 +41,7 @@ import pytest
 from tycho import hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection
-from tycho.crafts import CraftSection, FreeGenericCraft, FullHangar
+from tycho.crafts import CraftSection, FreeGenericCraft, FullHangar, PassengerShuttle
 from tycho.crew import (
     Administrator,
     Engineer,
@@ -109,7 +108,12 @@ def build_small_scout_base() -> ship.Ship:
         command=CommandSection(bridge=Bridge(small=True)),
         computer=ComputerSection(hardware=Computer(20)),
         sensors=SensorsSection(primary=BasicSensors()),
-        craft=CraftSection(full_hangars=[FullHangar(craft=FreeGenericCraft(docking_space=95))] * 11),
+        craft=CraftSection(
+            full_hangars=[
+                *[FullHangar(craft=PassengerShuttle())] * 10,
+                FullHangar(craft=FreeGenericCraft(docking_space=95)),
+            ]
+        ),
         systems=SystemsSection(
             armoury=Armoury(),
             briefing_room=BriefingRoom(),
@@ -181,6 +185,7 @@ def test_small_scout_base_matches_supported_slice():
     assert len(base.craft.full_hangars) == 11
     assert sum(hangar.tons for hangar in base.craft.full_hangars) == pytest.approx(2_090.0)
     assert sum(hangar.cost for hangar in base.craft.full_hangars) == pytest.approx(418_000_000.0)
+    assert sum(hangar.craft.cost for hangar in base.craft.full_hangars) == pytest.approx(143_050_000.0)
 
     assert base.systems is not None
     assert base.systems.armoury is not None
@@ -259,7 +264,9 @@ def test_small_scout_base_spec_structure():
     assert spec.row('Fuel Processor (100 tons/day)').section == 'Fuel'
     assert spec.row('Smaller Bridge').section == 'Command'
     assert spec.row('Computer/20').section == 'Computer'
-    assert len(spec.rows_matching('Full Hangar (95 tons)')) == 11
+    assert len(spec.rows_matching('Full Hangar: Passenger Shuttle')) == 10
+    assert len(spec.rows_matching('Full Hangar (95 tons)')) == 1
+    assert len(spec.rows_matching('Passenger Shuttle')) == 10
     assert spec.row('Armoury').section == 'Systems'
     assert spec.row('Briefing Room').section == 'Systems'
     assert spec.row('Library', section='Systems').section == 'Systems'

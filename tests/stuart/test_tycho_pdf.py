@@ -3,6 +3,7 @@ import pytest
 from stuart import render_ship_pdf, render_ship_spec_pdf, render_ship_spec_typst, render_ship_typst
 from stuart.tycho_pdf import _build_typst_source
 from tests.ships.test_dragon import build_dragon
+from tests.ships.test_small_scout_base import build_small_scout_base
 from tests.ships.test_suleiman import build_suleiman
 from tests.ships.test_ultralight_fighter import build_ultralight_fighter
 from tycho.spec import ShipSpec
@@ -77,6 +78,12 @@ def test_source_contains_item_names(suleiman_spec):
     assert 'Jump 2' in src
     assert 'Fuel Processor' in src
     assert 'Staterooms' in src
+
+
+def test_source_collapses_identical_rows_for_display():
+    src = _build_typst_source(build_small_scout_base().build_spec(), page_size='a4')
+    assert 'Full Hangar: Passenger Shuttle × 10' in src
+    assert 'Passenger Shuttle × 10' in src
 
 
 def test_source_contains_formatted_ton_value(suleiman_spec):

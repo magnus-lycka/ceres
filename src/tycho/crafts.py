@@ -35,6 +35,14 @@ class SlowPinnace(CarriedCraft):
         return 'Slow Pinnace'
 
 
+class PassengerShuttle(CarriedCraft):
+    shipping_size: int = 95
+    cost: float = 14_305_000.0
+
+    def build_item(self) -> str | None:
+        return 'Passenger Shuttle'
+
+
 class FreeGenericCraft(CarriedCraft):
     cost: float = 0.0
     requires_pilot: bool = False
@@ -113,6 +121,7 @@ class CraftSection(CeresModel):
         return parts
 
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
+        craft_rows: list[SpecRow] = []
         for part in self._all_parts():
             spec.add_row(ship._spec_row_for_part(SpecSection.CRAFT, part))
             if isinstance(part, DockingClamp):
@@ -120,10 +129,12 @@ class CraftSection(CeresModel):
             craft = part.craft
             if not craft.render_in_spec:
                 continue
-            spec.add_row(
+            craft_rows.append(
                 SpecRow(
                     section=SpecSection.CRAFT,
                     item=craft.build_item() or craft.__class__.__name__,
                     cost=craft.cost,
                 )
             )
+        for row in craft_rows:
+            spec.add_row(row)

@@ -2,7 +2,7 @@ import pytest
 
 from tycho import hull, ship
 from tycho.base import ShipBase
-from tycho.crafts import AirRaft, CraftSection, DockingClamp, FreeGenericCraft, FullHangar, InternalDockingSpace
+from tycho.crafts import AirRaft, CraftSection, DockingClamp, FreeGenericCraft, FullHangar, InternalDockingSpace, PassengerShuttle
 
 
 class DummyOwner(ShipBase):
@@ -57,3 +57,10 @@ def test_full_hangar_with_free_generic_craft_values():
     assert hangar.tons == pytest.approx(190.0)
     assert hangar.cost == pytest.approx(38_000_000.0)
     assert hangar.build_item() == 'Full Hangar (95 tons)'
+
+
+def test_passenger_shuttle_values():
+    shuttle = PassengerShuttle()
+    assert shuttle.shipping_size == 95
+    assert shuttle.cost == 14_305_000.0
+    assert shuttle.build_item() == 'Passenger Shuttle'

@@ -3,6 +3,7 @@ from tycho.base import Note, NoteCategory
 from tycho.spec import ShipSpec
 
 from tests.ships.test_suleiman import build_suleiman
+from tests.ships.test_small_scout_base import build_small_scout_base
 
 
 def test_render_ship_spec_html_uses_high_guard_like_split_layout():
@@ -52,3 +53,10 @@ def test_render_ship_spec_html_renders_crew_notes_as_plain_note_block():
     assert '<div class="note-line note-info">CAPTAIN above recommended count: 1 &gt; 0</div>' in html
     assert '<div class="note-line note-warning"><strong>Warning:</strong> GUNNER below recommended count: 0 &lt; 1</div>' in html
     assert '<ul class="item-notes ship-notes">' not in html
+
+
+def test_render_ship_spec_html_collapses_identical_rows_for_display():
+    html = render_ship_spec_html(build_small_scout_base().build_spec())
+
+    assert 'Full Hangar: Passenger Shuttle × 10' in html
+    assert 'Passenger Shuttle × 10' in html

@@ -6,6 +6,7 @@ from tycho.spec import CrewRow, ExpenseRow, ShipSpec, SpecRow
 from tycho.text import format_counted_label
 
 from .html import ExpanseHtmlPage, StuartTheme, render_expanse_html_page
+from .tycho_view import collapsed_main_rows
 
 __all__ = ['render_ship_html', 'render_ship_spec_html']
 
@@ -57,7 +58,7 @@ def _render_banner_side(spec: ShipSpec) -> str | None:
 
 
 def _render_main_table(spec: ShipSpec) -> str:
-    main_rows = [row for row in spec.rows if not (row.power is not None and row.tons is None and row.cost is None)]
+    main_rows = collapsed_main_rows(spec)
     section_rowspans = _section_rowspans(main_rows)
     last_section_index = max(section_rowspans) if section_rowspans else -1
     rows_html = ''.join(
