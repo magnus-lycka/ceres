@@ -257,7 +257,7 @@ def test_king_kay_spec_contains_supported_liner_rows():
     assert spec.row('Civilian Grade Sensors').section == 'Sensors'
     assert spec.row('Commercial Zone').section == 'Systems'
     assert spec.row('Swimming Pool').section == 'Habitation'
-    assert len(spec.rows_matching('Theatre')) == 3
+    assert spec.row('Theatre').quantity == 3
     assert spec.row('Wet Bar').section == 'Habitation'
     assert len(spec.rows_matching('Docking Space (70 tons)')) == 2
     assert spec.row('Docking Space (252 tons)').section == 'Craft'

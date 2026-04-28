@@ -1,6 +1,8 @@
+import pytest
+
 from tycho import hull, ship
 from tycho.base import ShipBase
-from tycho.crafts import AirRaft, CraftSection, DockingClamp, FreeGenericCraft, InternalDockingSpace
+from tycho.crafts import AirRaft, CraftSection, DockingClamp, FreeGenericCraft, FullHangar, InternalDockingSpace
 
 
 class DummyOwner(ShipBase):
@@ -47,3 +49,11 @@ def test_docking_clamp_type_ii_values():
     assert clamp.tons == 5.0
     assert clamp.cost == 1_000_000.0
     assert clamp.build_item() == 'Docking Clamp, Type II'
+
+
+def test_full_hangar_with_free_generic_craft_values():
+    hangar = FullHangar(craft=FreeGenericCraft(docking_space=95))
+    hangar.bind(DummyOwner(12, 10_000))
+    assert hangar.tons == pytest.approx(190.0)
+    assert hangar.cost == pytest.approx(38_000_000.0)
+    assert hangar.build_item() == 'Full Hangar (95 tons)'

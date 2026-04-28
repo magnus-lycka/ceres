@@ -162,7 +162,10 @@ class MDrive(CustomisableShipPart):
         return cost * multiplier
 
     def compute_power(self) -> float:
-        power = float(math.ceil(0.1 * self.ship.displacement * self.level))
+        if self.level == 0:
+            power = float(math.ceil(0.1 * self.ship.displacement * 0.25))
+        else:
+            power = float(math.ceil(0.1 * self.ship.displacement * self.level))
         multiplier = 1.0 if self.customisation is None else self.customisation.power_multiplier
         return power * multiplier
 

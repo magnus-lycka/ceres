@@ -94,6 +94,14 @@ def test_mdrive_power():
     assert d.power == 4  # ceil(0.1 * 6 * 6) = ceil(3.6) = 4
 
 
+def test_mdrive_thrust_zero_uses_station_power_rule():
+    d = MDrive(0)
+    d.bind(DummyOwner(12, 10_000))
+    assert d.tons == pytest.approx(50.0)
+    assert d.cost == pytest.approx(100_000_000.0)
+    assert d.power == pytest.approx(250.0)
+
+
 def test_budget_increased_size_mdrive_values():
     d = MDrive(7, customisation=Budget(IncreasedSize))
     d.bind(DummyOwner(13, 400))

@@ -258,12 +258,13 @@ def test_beagle_laboratory_ship_spec_structure():
     assert spec.row('Jump Control/2').section == 'Computer'
     assert spec.row('Improved Sensors').section == 'Sensors'
     assert spec.row('Sensor Station').section == 'Sensors'
-    assert spec.row('Double Turret').quantity == 2
+    assert len(spec.rows_matching('Double Turret')) == 2
     assert spec.row('Missile Storage (12)').section == 'Weapons'
     assert spec.row('Sandcaster Canister Storage (20)').section == 'Weapons'
     assert spec.row('Docking Clamp, Type II').section == 'Craft'
     assert spec.row('Docking Clamp, Type I').section == 'Craft'
     assert spec.row('Internal Docking Space: Air/Raft').section == 'Craft'
+    assert spec.row('Air/Raft').section == 'Craft'
     assert spec.row('Advanced Probe Drones').quantity == 10
     assert spec.row('Laboratory').quantity == 10
     assert spec.row('Biosphere').section == 'Systems'

@@ -84,24 +84,40 @@ class InternalDockingSpace(ShipPart):
         return self.compute_tons() * 250_000.0
 
 
+class FullHangar(ShipPart):
+    craft: CarriedCraft
+
+    def build_item(self) -> str | None:
+        if not self.craft.render_in_spec:
+            return f'Full Hangar ({self.craft.shipping_size:g} tons)'
+        return f'Full Hangar: {self.craft.build_item()}'
+
+    def compute_tons(self) -> float:
+        return float(math.ceil(self.craft.shipping_size * 2.0))
+
+    def compute_cost(self) -> float:
+        return self.compute_tons() * 200_000.0
+
+
 class CraftSection(CeresModel):
+    full_hangars: list[FullHangar] = Field(default_factory=list)
     docking_clamps: list[DockingClamp] = Field(default_factory=list)
     docking_space: InternalDockingSpace | None = None
     auxiliary_docking_spaces: list[InternalDockingSpace] = Field(default_factory=list)
 
     def _all_parts(self) -> list[ShipPart]:
-        parts: list[ShipPart] = [*self.docking_clamps]
+        parts: list[ShipPart] = [*self.full_hangars, *self.docking_clamps]
         if self.docking_space is not None:
             parts.append(self.docking_space)
         parts.extend(self.auxiliary_docking_spaces)
         return parts
 
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
-        for docking_space in self._all_parts():
-            spec.add_row(ship._spec_row_for_part(SpecSection.CRAFT, docking_space))
-            if isinstance(docking_space, DockingClamp):
+        for part in self._all_parts():
+            spec.add_row(ship._spec_row_for_part(SpecSection.CRAFT, part))
+            if isinstance(part, DockingClamp):
                 continue
-            craft = docking_space.craft
+            craft = part.craft
             if not craft.render_in_spec:
                 continue
             spec.add_row(

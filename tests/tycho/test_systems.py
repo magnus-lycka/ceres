@@ -6,6 +6,7 @@ from tycho.storage import FuelScoops, FuelSection
 from tycho.systems import (
     AdvancedProbeDrones,
     Airlock,
+    Armoury,
     BasicAutodoc,
     Biosphere,
     CommercialZone,
@@ -14,6 +15,7 @@ from tycho.systems import (
     Laboratory,
     LibraryFacility,
     MedicalBay,
+    MiningDrones,
     ProbeDrones,
     RepairDrones,
     HotTub,
@@ -107,6 +109,13 @@ def test_crew_armory_values():
     assert a.cost == 250_000
 
 
+def test_armoury_values():
+    a = Armoury()
+    a.bind(DummyOwner(12, 10_000))
+    assert a.tons == 1.0
+    assert a.cost == 250_000.0
+
+
 def test_biosphere_values():
     b = Biosphere(tons=4.0)
     b.bind(DummyOwner(12, 100))
@@ -137,6 +146,13 @@ def test_probe_drones_power_zero():
     p = ProbeDrones(count=10)
     p.bind(DummyOwner(12, 100))
     assert p.power == 0
+
+
+def test_mining_drones_values():
+    drones = MiningDrones(count=10)
+    drones.bind(DummyOwner(12, 10_000))
+    assert drones.tons == pytest.approx(20.0)
+    assert drones.cost == pytest.approx(2_000_000.0)
 
 
 def test_advanced_probe_drones_values():

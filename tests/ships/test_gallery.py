@@ -19,6 +19,7 @@ from .test_pinnace_with_20_ton_fuel_capacity import build_pinnace_with_20_ton_fu
 from .test_revised_beowulf import build_revised_beowulf
 from .test_revised_dragon import build_revised_dragon
 from .test_serrano_laboratory_station import build_serrano_laboratory_station
+from .test_small_scout_base import build_small_scout_base
 from .test_strandbell import build_strandbell
 from .test_suleiman import build_suleiman
 from .test_ultralight_fighter import build_ultralight_fighter
@@ -48,6 +49,7 @@ pytestmark = pytest.mark.generated_output
         ('test_revised_beowulf', build_revised_beowulf),
         ('test_revised_dragon', build_revised_dragon),
         ('test_serrano_laboratory_station', build_serrano_laboratory_station),
+        ('test_small_scout_base', build_small_scout_base),
         ('test_strandbell', build_strandbell),
         ('test_suleiman', build_suleiman),
         ('test_ultralight_fighter', build_ultralight_fighter),
@@ -87,6 +89,7 @@ def test_ship_gallery_html_output(name: str, builder) -> None:
         ('test_revised_beowulf', build_revised_beowulf),
         ('test_revised_dragon', build_revised_dragon),
         ('test_serrano_laboratory_station', build_serrano_laboratory_station),
+        ('test_small_scout_base', build_small_scout_base),
         ('test_strandbell', build_strandbell),
         ('test_suleiman', build_suleiman),
         ('test_ultralight_fighter', build_ultralight_fighter),
@@ -123,6 +126,7 @@ def test_ship_gallery_pdf_output(name: str, builder) -> None:
         ('test_revised_beowulf', build_revised_beowulf),
         ('test_revised_dragon', build_revised_dragon),
         ('test_serrano_laboratory_station', build_serrano_laboratory_station),
+        ('test_small_scout_base', build_small_scout_base),
         ('test_strandbell', build_strandbell),
         ('test_suleiman', build_suleiman),
         ('test_ultralight_fighter', build_ultralight_fighter),
@@ -160,6 +164,7 @@ def test_ship_gallery_typst_output(name: str, builder) -> None:
         ('test_revised_beowulf', build_revised_beowulf),
         ('test_revised_dragon', build_revised_dragon),
         ('test_serrano_laboratory_station', build_serrano_laboratory_station),
+        ('test_small_scout_base', build_small_scout_base),
         ('test_strandbell', build_strandbell),
         ('test_suleiman', build_suleiman),
         ('test_ultralight_fighter', build_ultralight_fighter),

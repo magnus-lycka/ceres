@@ -88,6 +88,17 @@ class LowBerth(ShipPart):
         return 1.0 if index % 10 == 0 else 0.0
 
 
+class Brig(ShipPart):
+    def build_item(self) -> str | None:
+        return 'Brig'
+
+    def compute_tons(self) -> float:
+        return 4.0
+
+    def compute_cost(self) -> float:
+        return 250_000.0
+
+
 class AdvancedEntertainmentSystem(ShipPart):
     minimum_tl: ClassVar[int] = 5
     minimum_cost: ClassVar[float] = 100.0
@@ -142,6 +153,7 @@ class CabinSpace(ShipPart):
 class HabitationSection(CeresModel):
     staterooms: list[StateroomUnion] = Field(default_factory=list)
     low_berths: list[LowBerth] = Field(default_factory=list)
+    brig: Brig | None = None
     cabin_space: CabinSpace | None = None
     common_area: CommonArea | None = None
     entertainment: AdvancedEntertainmentSystem | None = None
@@ -199,6 +211,7 @@ class HabitationSection(CeresModel):
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = [*self.staterooms, *self.low_berths]
         for part in (
+            self.brig,
             self.cabin_space,
             self.common_area,
             self.entertainment,
@@ -298,6 +311,7 @@ class HabitationSection(CeresModel):
                 part
                 for part in [
                     self.cabin_space,
+                    self.brig,
                     self.common_area,
                     self.entertainment,
                     self.swimming_pool,

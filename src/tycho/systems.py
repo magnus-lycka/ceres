@@ -67,6 +67,17 @@ class CrewArmory(ShipPart):
         return self.compute_tons() * 250_000.0
 
 
+class Armoury(ShipPart):
+    def build_item(self) -> str | None:
+        return 'Armoury'
+
+    def compute_tons(self) -> float:
+        return 1.0
+
+    def compute_cost(self) -> float:
+        return 250_000.0
+
+
 class CommonArea(ShipPart):
     tons: float
 
@@ -281,6 +292,21 @@ class RepairDrones(ShipPart):
         return self.compute_tons() * 200_000.0
 
 
+class MiningDrones(ShipPart):
+    count: int
+
+    def build_item(self) -> str | None:
+        if self.count == 1:
+            return 'Mining Drone'
+        return 'Mining Drones'
+
+    def compute_tons(self) -> float:
+        return self.count * 2.0
+
+    def compute_cost(self) -> float:
+        return self.count * 200_000.0
+
+
 class TrainingFacility(ShipPart):
     trainees: int
 
@@ -295,6 +321,7 @@ class TrainingFacility(ShipPart):
 
 
 class SystemsSection(CeresModel):
+    armoury: Armoury | None = None
     crew_armory: CrewArmory | None = None
     biosphere: Biosphere | None = None
     commercial_zone: CommercialZone | None = None
@@ -303,6 +330,7 @@ class SystemsSection(CeresModel):
     laboratories: list[Laboratory] = Field(default_factory=list)
     library: LibraryFacility | None = None
     briefing_room: BriefingRoom | None = None
+    mining_drones: MiningDrones | None = None
     probe_drones: ProbeDrones | AdvancedProbeDrones | None = None
     repair_drones: RepairDrones | None = None
     training_facility: TrainingFacility | None = None
@@ -311,6 +339,7 @@ class SystemsSection(CeresModel):
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = []
         for part in (
+            self.armoury,
             self.crew_armory,
             self.biosphere,
             self.commercial_zone,
@@ -320,6 +349,7 @@ class SystemsSection(CeresModel):
             *self.laboratories,
             self.library,
             self.briefing_room,
+            self.mining_drones,
             self.probe_drones,
             self.repair_drones,
             self.training_facility,
@@ -330,6 +360,7 @@ class SystemsSection(CeresModel):
 
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
         for system_part in (
+            self.armoury,
             self.crew_armory,
             self.biosphere,
             self.commercial_zone,
@@ -344,6 +375,7 @@ class SystemsSection(CeresModel):
         for system_part in (
             self.library,
             self.briefing_room,
+            self.mining_drones,
             self.probe_drones,
             self.repair_drones,
             self.training_facility,
@@ -351,5 +383,5 @@ class SystemsSection(CeresModel):
             if system_part is None:
                 continue
             spec.add_row(ship._spec_row_for_part(SpecSection.SYSTEMS, system_part))
-            if isinstance(system_part, ProbeDrones):
+            if isinstance(system_part, (ProbeDrones, MiningDrones)):
                 spec.rows_for_section(SpecSection.SYSTEMS)[-1].quantity = optional_count(system_part.count)
