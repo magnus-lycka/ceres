@@ -141,6 +141,47 @@ Remaining ideas:
 
 Break out expense code to its own module expense.py
 
+## Google Sheet fuel mismatch
+
+We need to understand why some Google Sheet / export-based reference ships can
+disagree with Tycho on fuel tonnage or fuel-related expenses even when the rest
+of the design matches closely.
+
+Current concern:
+
+- `Almeida-class Laboratory Station` lists `8 Weeks of Operation` as `2 tons`
+  while Tycho's normal `OperationFuel` rule gives `1.6 tons` for the same
+  power plant.
+
+Rule for future work:
+
+- do not add ship-specific code just to force a match when we do not yet
+  understand the source of the discrepancy
+- instead, document the mismatch in the reference test and sort out whether the
+  sheet is rounding, using a different rule basis, or whether Tycho is missing
+  a real rule distinction
+
+## Scientists on lab ships / stations
+
+We need an explicit policy for how to model scientists on laboratory ships and
+stations.
+
+Current uncertainty:
+
+- a laboratory-heavy design like `Almeida-class Laboratory Station` strongly
+  suggests that `scientist`-type personnel should somehow relate to
+  `Laboratory`, `Stateroom`, and available working space
+- the sheet-style crew manifests may also imply supporting personnel such as
+  lab assistants, technicians, or additional administrators
+- current Tycho crew rules do not yet decide whether these should be treated as
+  required crew, optional mission staff, passengers, or something in between
+
+For now:
+
+- keep carrying explicit source crew when provided
+- do not infer new scientist roles until we have decided on a rule-backed
+  interpretation
+
 ### Large ships crew reduction
 
 For ships of more than 5,000 tons, the

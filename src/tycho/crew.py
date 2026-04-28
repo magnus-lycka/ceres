@@ -339,13 +339,15 @@ def _drives_and_power_tonnage(ship) -> float:
 def _contained_small_craft_tonnage(ship) -> float:
     if ship.craft is None:
         return 0.0
-    return float(sum(docking_space.craft.shipping_size for docking_space in ship.craft._all_parts()))
+    return float(
+        sum(part.craft.shipping_size for part in ship.craft._all_parts() if getattr(part, 'craft', None) is not None)
+    )
 
 
 def _carried_small_craft_count(ship) -> int:
     if ship.craft is None:
         return 0
-    return sum(1 for docking_space in ship.craft._all_parts() if docking_space.craft.requires_pilot)
+    return sum(1 for part in ship.craft._all_parts() if getattr(part, 'craft', None) is not None and part.craft.requires_pilot)
 
 
 def _explicit_passenger_vector(ship) -> dict[str, int]:

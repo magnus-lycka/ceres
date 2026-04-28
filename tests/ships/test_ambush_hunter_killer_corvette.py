@@ -243,10 +243,10 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
     assert corvette.fuel_power_load == pytest.approx(2.0)
     assert corvette.total_power_load == pytest.approx(427.5)
 
-    assert corvette.remaining_usable_tonnage() == pytest.approx(6.2333333333)
-    assert corvette.production_cost == pytest.approx(448_612_500.0)
-    assert corvette.sales_price_new == pytest.approx(448_612_500.0)
-    assert corvette.expenses.maintenance == pytest.approx(37_384.0)
+    assert corvette.remaining_usable_tonnage() == pytest.approx(4.2333333333)
+    assert corvette.production_cost == pytest.approx(448_812_500.0)
+    assert corvette.sales_price_new == pytest.approx(448_812_500.0)
+    assert corvette.expenses.maintenance == pytest.approx(37_401.0)
 
     spec = corvette.build_spec()
     turret_row = spec.row('Triple Turret', section='Weapons')

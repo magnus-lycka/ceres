@@ -49,6 +49,26 @@ class FreeGenericCraft(CarriedCraft):
         return f'Docking Space ({self.shipping_size:g} tons)'
 
 
+class DockingClamp(ShipPart):
+    _specs = {
+        'I': dict(tons=1.0, cost=500_000.0),
+        'II': dict(tons=5.0, cost=1_000_000.0),
+        'III': dict(tons=10.0, cost=2_000_000.0),
+        'IV': dict(tons=20.0, cost=4_000_000.0),
+        'V': dict(tons=50.0, cost=8_000_000.0),
+    }
+    kind: str
+
+    def build_item(self) -> str | None:
+        return f'Docking Clamp, Type {self.kind}'
+
+    def compute_tons(self) -> float:
+        return float(self._specs[self.kind]['tons'])
+
+    def compute_cost(self) -> float:
+        return float(self._specs[self.kind]['cost'])
+
+
 class InternalDockingSpace(ShipPart):
     craft: CarriedCraft
 
@@ -65,11 +85,12 @@ class InternalDockingSpace(ShipPart):
 
 
 class CraftSection(CeresModel):
+    docking_clamps: list[DockingClamp] = Field(default_factory=list)
     docking_space: InternalDockingSpace | None = None
     auxiliary_docking_spaces: list[InternalDockingSpace] = Field(default_factory=list)
 
     def _all_parts(self) -> list[ShipPart]:
-        parts: list[ShipPart] = []
+        parts: list[ShipPart] = [*self.docking_clamps]
         if self.docking_space is not None:
             parts.append(self.docking_space)
         parts.extend(self.auxiliary_docking_spaces)
@@ -78,6 +99,8 @@ class CraftSection(CeresModel):
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
         for docking_space in self._all_parts():
             spec.add_row(ship._spec_row_for_part(SpecSection.CRAFT, docking_space))
+            if isinstance(docking_space, DockingClamp):
+                continue
             craft = docking_space.craft
             if not craft.render_in_spec:
                 continue

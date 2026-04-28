@@ -1,5 +1,6 @@
-from math import ceil
 from typing import ClassVar
+
+from pydantic import Field
 
 from .base import CeresModel, Note, NoteCategory
 from .parts import ShipPart
@@ -27,6 +28,19 @@ class Laboratory(ShipPart):
 
     def compute_cost(self) -> float:
         return 1_000_000.0
+
+
+class LibraryFacility(ShipPart):
+    minimum_tl: ClassVar[int] = 8
+
+    def build_item(self) -> str | None:
+        return 'Library'
+
+    def compute_tons(self) -> float:
+        return 4.0
+
+    def compute_cost(self) -> float:
+        return 4_000_000.0
 
 
 class BriefingRoom(ShipPart):
@@ -107,6 +121,21 @@ class WetBar(ShipPart):
         return 2_000.0
 
 
+class HotTub(CommonArea):
+    tons: float = 0.0
+    users: int = 1
+
+    def build_item(self) -> str | None:
+        label = 'User' if self.users == 1 else 'Users'
+        return f'Hot Tub ({self.users} {label})'
+
+    def compute_tons(self) -> float:
+        return self.users * 0.25
+
+    def compute_cost(self) -> float:
+        return self.compute_tons() * 12_000.0
+
+
 class BasicAutodoc(CeresModel):
     def build_item(self) -> str | None:
         return 'Basic Autodoc'
@@ -173,7 +202,9 @@ class Airlock(ShipPart):
         return f'Airlock ({self.size:g} tons)'
 
     def am_i_for_free(self) -> bool:
-        free_airlocks = ceil(self.ship.displacement / 100)
+        if self.ship.displacement < 100:
+            return False
+        free_airlocks = self.ship.displacement // 100
         siblings = self.ship.parts_of_type(Airlock)
         index = next((i for i, sibling in enumerate(siblings) if sibling is self), -1)
         if index < 0:
@@ -210,6 +241,7 @@ class Aerofins(ShipPart):
 
 
 class ProbeDrones(ShipPart):
+    minimum_tl: ClassVar[int] = 9
     drones_per_ton: ClassVar[int] = 5
     cost_per_ton: ClassVar[float] = 500_000.0
     count: int
@@ -224,6 +256,16 @@ class ProbeDrones(ShipPart):
 
     def compute_cost(self) -> float:
         return (self.count / self.drones_per_ton) * self.cost_per_ton
+
+
+class AdvancedProbeDrones(ProbeDrones):
+    minimum_tl: ClassVar[int] = 12
+    cost_per_ton: ClassVar[float] = 800_000.0
+
+    def build_item(self) -> str | None:
+        if self.count == 1:
+            return 'Advanced Probe Drone'
+        return 'Advanced Probe Drones'
 
 
 class RepairDrones(ShipPart):
@@ -258,9 +300,10 @@ class SystemsSection(CeresModel):
     commercial_zone: CommercialZone | None = None
     medical_bay: MedicalBay | None = None
     medical_bays: MedicalBays | None = None
-    laboratory: Laboratory | None = None
+    laboratories: list[Laboratory] = Field(default_factory=list)
+    library: LibraryFacility | None = None
     briefing_room: BriefingRoom | None = None
-    probe_drones: ProbeDrones | None = None
+    probe_drones: ProbeDrones | AdvancedProbeDrones | None = None
     repair_drones: RepairDrones | None = None
     training_facility: TrainingFacility | None = None
     workshop: Workshop | None = None
@@ -274,7 +317,8 @@ class SystemsSection(CeresModel):
             self.workshop,
             self.medical_bay,
             self.medical_bays,
-            self.laboratory,
+            *self.laboratories,
+            self.library,
             self.briefing_room,
             self.probe_drones,
             self.repair_drones,
@@ -285,7 +329,27 @@ class SystemsSection(CeresModel):
         return parts
 
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
-        for system_part in self._all_parts():
+        for system_part in (
+            self.crew_armory,
+            self.biosphere,
+            self.commercial_zone,
+            self.workshop,
+            self.medical_bay,
+            self.medical_bays,
+        ):
+            if system_part is not None:
+                spec.add_row(ship._spec_row_for_part(SpecSection.SYSTEMS, system_part))
+        for row in ship._grouped_spec_rows(SpecSection.SYSTEMS, self.laboratories):
+            spec.add_row(row)
+        for system_part in (
+            self.library,
+            self.briefing_room,
+            self.probe_drones,
+            self.repair_drones,
+            self.training_facility,
+        ):
+            if system_part is None:
+                continue
             spec.add_row(ship._spec_row_for_part(SpecSection.SYSTEMS, system_part))
             if isinstance(system_part, ProbeDrones):
                 spec.rows_for_section(SpecSection.SYSTEMS)[-1].quantity = optional_count(system_part.count)

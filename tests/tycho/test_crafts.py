@@ -1,6 +1,6 @@
 from tycho import hull, ship
 from tycho.base import ShipBase
-from tycho.crafts import AirRaft, CraftSection, FreeGenericCraft, InternalDockingSpace
+from tycho.crafts import AirRaft, CraftSection, DockingClamp, FreeGenericCraft, InternalDockingSpace
 
 
 class DummyOwner(ShipBase):
@@ -39,3 +39,11 @@ def test_empty_docking_space_renders_without_invented_craft_row():
     spec = my_ship.build_spec()
 
     assert [row.item for row in spec.rows_for_section('Craft')] == ['Docking Space (70 tons)']
+
+
+def test_docking_clamp_type_ii_values():
+    clamp = DockingClamp(kind='II')
+    clamp.bind(DummyOwner(12, 400))
+    assert clamp.tons == 5.0
+    assert clamp.cost == 1_000_000.0
+    assert clamp.build_item() == 'Docking Clamp, Type II'

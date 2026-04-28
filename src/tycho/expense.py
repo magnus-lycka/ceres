@@ -9,8 +9,10 @@ class ShipExpenses:
     def production_cost(self) -> float:
         craft_cost = 0.0
         if self.ship.craft is not None:
-            for docking_space in self.ship.craft._all_parts():
-                craft_cost += docking_space.craft.cost
+            for part in self.ship.craft._all_parts():
+                craft = getattr(part, 'craft', None)
+                if craft is not None:
+                    craft_cost += craft.cost
         cargo_holds = [] if self.ship.cargo is None else self.ship.cargo.cargo_holds
         cargo_hold_cost = sum(cargo_hold.crane_cost(self.ship) for cargo_hold in cargo_holds)
         software_cost = 0.0

@@ -15,6 +15,7 @@ from tycho.weapons import (
     MissileStorage,
     MountWeapon,
     PointDefenseBattery,
+    SandcasterCanisterStorage,
     Turret,
     VeryHighYield,
     WeaponsSection,
@@ -42,6 +43,13 @@ def test_pulse_laser_base_cost():
 def test_pulse_laser_base_power():
     w = MountWeapon(weapon='pulse_laser')
     assert w.base_power == 4
+
+
+def test_sandcaster_base_values():
+    w = MountWeapon(weapon='sandcaster')
+    assert w.base_cost == 250_000
+    assert w.base_power == 0
+    assert w.build_item() == 'Sandcaster'
 
 
 def test_pulse_laser_no_upgrades_cost_modifier():
@@ -114,6 +122,14 @@ def test_fixed_firmpoint_recomputes_tons_from_input():
     fp = FixedMount.model_validate({'weapons': [{'weapon': 'pulse_laser'}], 'tons': 999})
     fp.bind(DummyOwner(12, 6))
     assert fp.tons == 0
+
+
+def test_sandcaster_canister_storage_values():
+    storage = SandcasterCanisterStorage(count=20)
+    storage.bind(DummyOwner(12, 400))
+    assert storage.tons == pytest.approx(1.0)
+    assert storage.cost == 0.0
+    assert storage.build_item() == 'Sandcaster Canister Storage (20)'
 
 
 def test_fixed_firmpoint_can_carry_multiple_weapons_on_larger_ship():

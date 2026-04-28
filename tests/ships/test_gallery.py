@@ -2,10 +2,12 @@ import pytest
 from stuart import render_ship_html, render_ship_pdf, render_ship_typst
 
 from ._output import write_html_output, write_json_output, write_pdf_output, write_typst_output
+from .test_almeida_laboratory_station import build_almeida_laboratory_station
 from .test_alt_dragon import build_alt_dragon
 from .test_ambush_hunter_killer_corvette import build_ambush_hunter_killer_corvette
 from .test_belt_racer import build_belt_racer
 from .test_beowulf import build_beowulf
+from .test_beagle_laboratory_ship import build_beagle_laboratory_ship
 from .test_boxy_ore_freighter import build_boxy_ore_freighter
 from .test_dragon import build_dragon
 from .test_dolphin_extended_scout_courier import build_dolphin_extended_scout_courier
@@ -13,8 +15,10 @@ from .test_florence_medical_scout import build_florence_medical_scout
 from .test_gothta_ambush_fighter import build_gothta_ambush_fighter
 from .test_king_kay_luxury_liner import build_king_kay
 from .test_poseidon_cargo_boat import build_poseidon_cargo_boat
+from .test_pinnace_with_20_ton_fuel_capacity import build_pinnace_with_20_ton_fuel_capacity
 from .test_revised_beowulf import build_revised_beowulf
 from .test_revised_dragon import build_revised_dragon
+from .test_serrano_laboratory_station import build_serrano_laboratory_station
 from .test_strandbell import build_strandbell
 from .test_suleiman import build_suleiman
 from .test_ultralight_fighter import build_ultralight_fighter
@@ -26,20 +30,24 @@ pytestmark = pytest.mark.generated_output
     ('name', 'builder'),
     [
         ('test_alt_dragon', build_alt_dragon),
+        ('test_almeida_laboratory_station', build_almeida_laboratory_station),
         ('test_ambush_hunter_killer_corvette', build_ambush_hunter_killer_corvette),
         ('test_belt_racer', build_belt_racer),
         ('test_beowulf', build_beowulf),
+        ('test_beagle_laboratory_ship', build_beagle_laboratory_ship),
         ('test_boxy_ore_freighter', build_boxy_ore_freighter),
         ('test_dolphin_extended_scout_courier', build_dolphin_extended_scout_courier),
         ('test_dragon', build_dragon),
         ('test_florence_medical_scout', build_florence_medical_scout),
         ('test_gothta_ambush_fighter', build_gothta_ambush_fighter),
         ('test_king_kay_luxury_liner', build_king_kay),
+        ('test_pinnace_with_20_ton_fuel_capacity', build_pinnace_with_20_ton_fuel_capacity),
         ('test_poseidon_100t_tl9', lambda: build_poseidon_cargo_boat(9)),
         ('test_poseidon_100t_tl10', lambda: build_poseidon_cargo_boat(10)),
         ('test_poseidon_100t_tl12', lambda: build_poseidon_cargo_boat(12)),
         ('test_revised_beowulf', build_revised_beowulf),
         ('test_revised_dragon', build_revised_dragon),
+        ('test_serrano_laboratory_station', build_serrano_laboratory_station),
         ('test_strandbell', build_strandbell),
         ('test_suleiman', build_suleiman),
         ('test_ultralight_fighter', build_ultralight_fighter),
@@ -61,20 +69,24 @@ def test_ship_gallery_html_output(name: str, builder) -> None:
     ('name', 'builder'),
     [
         ('test_alt_dragon', build_alt_dragon),
+        ('test_almeida_laboratory_station', build_almeida_laboratory_station),
         ('test_ambush_hunter_killer_corvette', build_ambush_hunter_killer_corvette),
         ('test_belt_racer', build_belt_racer),
         ('test_beowulf', build_beowulf),
+        ('test_beagle_laboratory_ship', build_beagle_laboratory_ship),
         ('test_boxy_ore_freighter', build_boxy_ore_freighter),
         ('test_dolphin_extended_scout_courier', build_dolphin_extended_scout_courier),
         ('test_dragon', build_dragon),
         ('test_florence_medical_scout', build_florence_medical_scout),
         ('test_gothta_ambush_fighter', build_gothta_ambush_fighter),
         ('test_king_kay_luxury_liner', build_king_kay),
+        ('test_pinnace_with_20_ton_fuel_capacity', build_pinnace_with_20_ton_fuel_capacity),
         ('test_poseidon_100t_tl9', lambda: build_poseidon_cargo_boat(9)),
         ('test_poseidon_100t_tl10', lambda: build_poseidon_cargo_boat(10)),
         ('test_poseidon_100t_tl12', lambda: build_poseidon_cargo_boat(12)),
         ('test_revised_beowulf', build_revised_beowulf),
         ('test_revised_dragon', build_revised_dragon),
+        ('test_serrano_laboratory_station', build_serrano_laboratory_station),
         ('test_strandbell', build_strandbell),
         ('test_suleiman', build_suleiman),
         ('test_ultralight_fighter', build_ultralight_fighter),
@@ -93,20 +105,24 @@ def test_ship_gallery_pdf_output(name: str, builder) -> None:
     ('name', 'builder'),
     [
         ('test_alt_dragon', build_alt_dragon),
+        ('test_almeida_laboratory_station', build_almeida_laboratory_station),
         ('test_ambush_hunter_killer_corvette', build_ambush_hunter_killer_corvette),
         ('test_belt_racer', build_belt_racer),
         ('test_beowulf', build_beowulf),
+        ('test_beagle_laboratory_ship', build_beagle_laboratory_ship),
         ('test_boxy_ore_freighter', build_boxy_ore_freighter),
         ('test_dolphin_extended_scout_courier', build_dolphin_extended_scout_courier),
         ('test_dragon', build_dragon),
         ('test_florence_medical_scout', build_florence_medical_scout),
         ('test_gothta_ambush_fighter', build_gothta_ambush_fighter),
         ('test_king_kay_luxury_liner', build_king_kay),
+        ('test_pinnace_with_20_ton_fuel_capacity', build_pinnace_with_20_ton_fuel_capacity),
         ('test_poseidon_100t_tl9', lambda: build_poseidon_cargo_boat(9)),
         ('test_poseidon_100t_tl10', lambda: build_poseidon_cargo_boat(10)),
         ('test_poseidon_100t_tl12', lambda: build_poseidon_cargo_boat(12)),
         ('test_revised_beowulf', build_revised_beowulf),
         ('test_revised_dragon', build_revised_dragon),
+        ('test_serrano_laboratory_station', build_serrano_laboratory_station),
         ('test_strandbell', build_strandbell),
         ('test_suleiman', build_suleiman),
         ('test_ultralight_fighter', build_ultralight_fighter),
@@ -126,20 +142,24 @@ def test_ship_gallery_typst_output(name: str, builder) -> None:
     ('name', 'builder'),
     [
         ('test_alt_dragon', build_alt_dragon),
+        ('test_almeida_laboratory_station', build_almeida_laboratory_station),
         ('test_ambush_hunter_killer_corvette', build_ambush_hunter_killer_corvette),
         ('test_belt_racer', build_belt_racer),
         ('test_beowulf', build_beowulf),
+        ('test_beagle_laboratory_ship', build_beagle_laboratory_ship),
         ('test_boxy_ore_freighter', build_boxy_ore_freighter),
         ('test_dolphin_extended_scout_courier', build_dolphin_extended_scout_courier),
         ('test_dragon', build_dragon),
         ('test_florence_medical_scout', build_florence_medical_scout),
         ('test_gothta_ambush_fighter', build_gothta_ambush_fighter),
         ('test_king_kay_luxury_liner', build_king_kay),
+        ('test_pinnace_with_20_ton_fuel_capacity', build_pinnace_with_20_ton_fuel_capacity),
         ('test_poseidon_100t_tl9', lambda: build_poseidon_cargo_boat(9)),
         ('test_poseidon_100t_tl10', lambda: build_poseidon_cargo_boat(10)),
         ('test_poseidon_100t_tl12', lambda: build_poseidon_cargo_boat(12)),
         ('test_revised_beowulf', build_revised_beowulf),
         ('test_revised_dragon', build_revised_dragon),
+        ('test_serrano_laboratory_station', build_serrano_laboratory_station),
         ('test_strandbell', build_strandbell),
         ('test_suleiman', build_suleiman),
         ('test_ultralight_fighter', build_ultralight_fighter),

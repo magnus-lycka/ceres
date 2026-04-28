@@ -97,7 +97,7 @@ def _mounted_weapon_power(weapons: Sequence[MountWeapon]) -> float:
     return sum(w.weapon_power for w in weapons)
 
 
-MountWeaponType = Literal['pulse_laser', 'beam_laser', 'missile_rack']
+MountWeaponType = Literal['pulse_laser', 'beam_laser', 'missile_rack', 'sandcaster']
 
 
 class MountWeapon(CeresModel):
@@ -106,6 +106,7 @@ class MountWeapon(CeresModel):
         pulse_laser=dict(item='Pulse Laser', cost=1_000_000, power=4),
         beam_laser=dict(item='Beam Laser', cost=500_000, power=4),
         missile_rack=dict(item='Missile Rack', cost=750_000, power=0),
+        sandcaster=dict(item='Sandcaster', cost=250_000, power=0),
     )
     weapon: MountWeaponType
     customisation: CustomisationUnion | None = None
@@ -254,6 +255,21 @@ class MissileStorage(ShipPart):
 
     def compute_tons(self) -> float:
         return self.count / 12
+
+    def compute_cost(self) -> float:
+        return 0.0
+
+
+class SandcasterCanisterStorage(ShipPart):
+    """Magazine for sand canisters: 20 canisters per ton, no cost."""
+
+    count: int
+
+    def build_item(self) -> str | None:
+        return f'Sandcaster Canister Storage ({self.count})'
+
+    def compute_tons(self) -> float:
+        return self.count / 20
 
     def compute_cost(self) -> float:
         return 0.0
@@ -598,6 +614,7 @@ class WeaponsSection(CeresModel):
     bays: list[Bay] = Field(default_factory=list)
     point_defense_batteries: list[PointDefenseBattery] = Field(default_factory=list)
     missile_storage: MissileStorage | None = None
+    sandcaster_canister_storage: SandcasterCanisterStorage | None = None
 
     @staticmethod
     def is_small_craft(ship) -> bool:
@@ -668,6 +685,8 @@ class WeaponsSection(CeresModel):
         ]
         if self.missile_storage is not None:
             parts.append(self.missile_storage)
+        if self.sandcaster_canister_storage is not None:
+            parts.append(self.sandcaster_canister_storage)
         return parts
 
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
@@ -683,3 +702,5 @@ class WeaponsSection(CeresModel):
             spec.add_row(row)
         if self.missile_storage is not None:
             spec.add_row(ship._spec_row_for_part(SpecSection.WEAPONS, self.missile_storage))
+        if self.sandcaster_canister_storage is not None:
+            spec.add_row(ship._spec_row_for_part(SpecSection.WEAPONS, self.sandcaster_canister_storage))

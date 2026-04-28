@@ -4,15 +4,19 @@ from tycho import hull, ship
 from tycho.base import ShipBase
 from tycho.storage import FuelScoops, FuelSection
 from tycho.systems import (
+    AdvancedProbeDrones,
     Airlock,
     BasicAutodoc,
     Biosphere,
     CommercialZone,
     CommonArea,
     CrewArmory,
+    Laboratory,
+    LibraryFacility,
     MedicalBay,
     ProbeDrones,
     RepairDrones,
+    HotTub,
     SwimmingPool,
     SystemsSection,
     Theatre,
@@ -88,6 +92,14 @@ def test_wet_bar_values():
     assert b.cost == 2_000.0
 
 
+def test_hot_tub_values():
+    tub = HotTub(users=1)
+    tub.bind(DummyOwner(12, 400))
+    assert tub.tons == 0.25
+    assert tub.cost == 3_000.0
+    assert tub.build_item() == 'Hot Tub (1 User)'
+
+
 def test_crew_armory_values():
     a = CrewArmory(capacity=25)
     a.bind(DummyOwner(12, 100))
@@ -125,6 +137,29 @@ def test_probe_drones_power_zero():
     p = ProbeDrones(count=10)
     p.bind(DummyOwner(12, 100))
     assert p.power == 0
+
+
+def test_advanced_probe_drones_values():
+    p = AdvancedProbeDrones(count=20)
+    p.bind(DummyOwner(15, 400))
+    assert p.tons == 4.0
+    assert p.cost == 3_200_000.0
+    assert p.build_item() == 'Advanced Probe Drones'
+
+
+def test_laboratory_values():
+    lab = Laboratory()
+    lab.bind(DummyOwner(12, 100))
+    assert lab.tons == 4.0
+    assert lab.cost == 1_000_000.0
+
+
+def test_library_facility_values():
+    library = LibraryFacility()
+    library.bind(DummyOwner(12, 100))
+    assert library.tons == 4.0
+    assert library.cost == 4_000_000.0
+    assert library.build_item() == 'Library'
 
 
 def test_medical_bay_tons():
@@ -226,8 +261,19 @@ def test_airlock_is_free_on_99_ton_ship():
         hull=hull.Hull(configuration=hull.streamlined_hull, airlocks=[Airlock()]),
     )
     airlock = my_ship.hull.airlocks[0]
-    assert airlock.tons == 0.0
-    assert airlock.cost == 0.0
+    assert airlock.tons == 2.0
+    assert airlock.cost == 200_000.0
+
+
+def test_airlock_is_not_free_on_40_ton_small_craft():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=40,
+        hull=hull.Hull(configuration=hull.streamlined_hull, airlocks=[Airlock()]),
+    )
+    airlock = my_ship.hull.airlocks[0]
+    assert airlock.tons == 2.0
+    assert airlock.cost == 200_000.0
 
 
 def test_ship_without_explicit_airlocks_gets_minimum_two_on_1000_tons():

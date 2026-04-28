@@ -55,7 +55,7 @@ def build_florence_medical_scout() -> ship.Ship:
         ),
         systems=SystemsSection(
             medical_bays=MedicalBays(count=6),
-            laboratory=Laboratory(),
+            laboratories=[Laboratory()],
             briefing_room=BriefingRoom(),
         ),
         habitation=HabitationSection(
@@ -121,7 +121,7 @@ def test_florence_medical_scout_matches_current_subset():
     assert scout.systems.medical_bays.tons == pytest.approx(24.0)
     assert scout.systems.medical_bays.cost == pytest.approx(12_000_000)
     assert scout.systems.medical_bays.power == pytest.approx(6.0)
-    assert scout.systems.laboratory is not None
+    assert len(scout.systems.laboratories) == 1
     assert scout.systems.briefing_room is not None
 
     assert scout.habitation is not None

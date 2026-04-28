@@ -6,7 +6,7 @@ from pydantic import Field, TypeAdapter
 from .base import CeresModel
 from .parts import ShipPart
 from .spec import ShipSpec, SpecRow, SpecSection
-from .systems import CommonArea, SwimmingPool, Theatre, WetBar
+from .systems import CommonArea, HotTub, SwimmingPool, Theatre, WetBar
 
 
 class Stateroom(ShipPart):
@@ -146,6 +146,7 @@ class HabitationSection(CeresModel):
     common_area: CommonArea | None = None
     entertainment: AdvancedEntertainmentSystem | None = None
     swimming_pool: SwimmingPool | None = None
+    hot_tubs: list[HotTub] = Field(default_factory=list)
     theatres: list[Theatre] = Field(default_factory=list)
     wet_bar: WetBar | None = None
 
@@ -202,6 +203,7 @@ class HabitationSection(CeresModel):
             self.common_area,
             self.entertainment,
             self.swimming_pool,
+            *self.hot_tubs,
             *self.theatres,
             self.wet_bar,
         ):
@@ -289,21 +291,25 @@ class HabitationSection(CeresModel):
         )
 
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
-        for group in self._group_consecutive([*self.staterooms, *self.low_berths]):
+        habitation_parts = [
+            *self.staterooms,
+            *self.low_berths,
+            *[
+                part
+                for part in [
+                    self.cabin_space,
+                    self.common_area,
+                    self.entertainment,
+                    self.swimming_pool,
+                    *self.hot_tubs,
+                    *self.theatres,
+                    self.wet_bar,
+                ]
+                if part is not None
+            ],
+        ]
+        for group in self._group_consecutive(habitation_parts):
             spec.add_row(self._spec_row_for_group(ship, SpecSection.HABITATION, group))
-        for habitation_part in [
-            part
-            for part in [
-                self.cabin_space,
-                self.common_area,
-                self.entertainment,
-                self.swimming_pool,
-                *self.theatres,
-                self.wet_bar,
-            ]
-            if part is not None
-        ]:
-            spec.add_row(ship._spec_row_for_part(SpecSection.HABITATION, habitation_part))
         habitation_rows = spec.rows_for_section(SpecSection.HABITATION)
         if habitation_rows:
             habitation_rows[-1].notes.extend(ship._display_notes(self))
