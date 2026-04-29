@@ -164,7 +164,7 @@ class MountWeapon(CeresModel):
 
 class FixedMount(ShipPart):
     mount_cost: ClassVar[int] = 100_000
-    minimum_tl = 9
+    _tl = 9
     weapons: list[MountWeapon] = Field(default_factory=list)
 
     def build_item(self) -> str | None:
@@ -197,9 +197,9 @@ TurretSize = Literal['single', 'double', 'triple']
 
 class Turret(ShipPart):
     _specs: ClassVar[dict[TurretSize, dict[str, float | int | str]]] = dict(
-        single=dict(item='Single Turret', minimum_tl=7, mount_cost=200_000, capacity=1),
-        double=dict(item='Double Turret', minimum_tl=8, mount_cost=500_000, capacity=2),
-        triple=dict(item='Triple Turret', minimum_tl=9, mount_cost=1_000_000, capacity=3),
+        single=dict(item='Single Turret', tl=7, mount_cost=200_000, capacity=1),
+        double=dict(item='Double Turret', tl=8, mount_cost=500_000, capacity=2),
+        triple=dict(item='Triple Turret', tl=9, mount_cost=1_000_000, capacity=3),
     )
     size: TurretSize
     weapons: list[MountWeapon] = Field(default_factory=list)
@@ -219,8 +219,8 @@ class Turret(ShipPart):
         return self.build_notes()
 
     @property
-    def minimum_tl(self) -> int:  # type: ignore[override]
-        return int(self._specs[self.size]['minimum_tl'])
+    def tl(self) -> int:  # type: ignore[override]
+        return int(self._specs[self.size]['tl'])
 
     @property
     def capacity(self) -> int:
@@ -290,15 +290,15 @@ BarbetteWeapon = Literal[
 
 class Barbette(CustomisableShipPart):
     _specs: ClassVar[dict[BarbetteWeapon, dict[str, float | int | str]]] = dict(
-        beam_laser=dict(item='Beam Laser Barbette', minimum_tl=10, power=12, cost=3_000_000),
-        fusion=dict(item='Fusion Barbette', minimum_tl=12, power=20, cost=4_000_000),
-        ion_cannon=dict(item='Ion Cannon', minimum_tl=12, power=10, cost=6_000_000),
-        missile=dict(item='Missile Barbette', minimum_tl=7, power=0, cost=4_000_000),
-        particle=dict(item='Particle Barbette', minimum_tl=11, power=15, cost=8_000_000),
-        plasma=dict(item='Plasma Barbette', minimum_tl=11, power=12, cost=5_000_000),
-        pulse_laser=dict(item='Pulse Laser Barbette', minimum_tl=9, power=12, cost=6_000_000),
-        railgun=dict(item='Railgun Barbette', minimum_tl=10, power=5, cost=2_000_000),
-        torpedo=dict(item='Torpedo', minimum_tl=7, power=2, cost=3_000_000),
+        beam_laser=dict(item='Beam Laser Barbette', tl=10, power=12, cost=3_000_000),
+        fusion=dict(item='Fusion Barbette', tl=12, power=20, cost=4_000_000),
+        ion_cannon=dict(item='Ion Cannon', tl=12, power=10, cost=6_000_000),
+        missile=dict(item='Missile Barbette', tl=7, power=0, cost=4_000_000),
+        particle=dict(item='Particle Barbette', tl=11, power=15, cost=8_000_000),
+        plasma=dict(item='Plasma Barbette', tl=11, power=12, cost=5_000_000),
+        pulse_laser=dict(item='Pulse Laser Barbette', tl=9, power=12, cost=6_000_000),
+        railgun=dict(item='Railgun Barbette', tl=10, power=5, cost=2_000_000),
+        torpedo=dict(item='Torpedo', tl=7, power=2, cost=3_000_000),
     )
     allowed_modifications: ClassVar[frozenset[str]] = frozenset(
         {
@@ -344,8 +344,8 @@ class Barbette(CustomisableShipPart):
         return item.removesuffix(' Barbette')
 
     @property
-    def minimum_tl(self) -> int:  # type: ignore[override]
-        return int(self._specs[self.weapon]['minimum_tl'])
+    def tl(self) -> int:  # type: ignore[override]
+        return int(self._specs[self.weapon]['tl'])
 
     @property
     def hardpoints_required(self) -> int:
@@ -399,59 +399,59 @@ class Bay(CustomisableShipPart):
     )
     _weapon_specs: ClassVar[dict[BayWeapon, dict[BaySize, dict[str, float | int | str]]]] = dict(
         fusion_gun=dict(
-            small=dict(item='Small Fusion Gun Bay', minimum_tl=12, power=50, cost=8_000_000),
-            medium=dict(item='Medium Fusion Gun Bay', minimum_tl=12, power=80, cost=14_000_000),
-            large=dict(item='Large Fusion Gun Bay', minimum_tl=12, power=100, cost=25_000_000),
+            small=dict(item='Small Fusion Gun Bay', tl=12, power=50, cost=8_000_000),
+            medium=dict(item='Medium Fusion Gun Bay', tl=12, power=80, cost=14_000_000),
+            large=dict(item='Large Fusion Gun Bay', tl=12, power=100, cost=25_000_000),
         ),
         ion_cannon=dict(
-            small=dict(item='Small Ion Cannon Bay', minimum_tl=12, power=20, cost=15_000_000),
-            medium=dict(item='Medium Ion Cannon Bay', minimum_tl=12, power=30, cost=25_000_000),
-            large=dict(item='Large Ion Cannon Bay', minimum_tl=12, power=40, cost=40_000_000),
+            small=dict(item='Small Ion Cannon Bay', tl=12, power=20, cost=15_000_000),
+            medium=dict(item='Medium Ion Cannon Bay', tl=12, power=30, cost=25_000_000),
+            large=dict(item='Large Ion Cannon Bay', tl=12, power=40, cost=40_000_000),
         ),
         mass_driver=dict(
-            small=dict(item='Small Mass Driver Bay', minimum_tl=8, power=15, cost=40_000_000),
-            medium=dict(item='Medium Mass Driver Bay', minimum_tl=8, power=25, cost=60_000_000),
-            large=dict(item='Large Mass Driver Bay', minimum_tl=8, power=35, cost=80_000_000),
+            small=dict(item='Small Mass Driver Bay', tl=8, power=15, cost=40_000_000),
+            medium=dict(item='Medium Mass Driver Bay', tl=8, power=25, cost=60_000_000),
+            large=dict(item='Large Mass Driver Bay', tl=8, power=35, cost=80_000_000),
         ),
         meson_gun=dict(
-            small=dict(item='Small Meson Gun Bay', minimum_tl=11, power=20, cost=50_000_000),
-            medium=dict(item='Medium Meson Gun Bay', minimum_tl=12, power=30, cost=60_000_000),
-            large=dict(item='Large Meson Gun Bay', minimum_tl=13, power=120, cost=250_000_000),
+            small=dict(item='Small Meson Gun Bay', tl=11, power=20, cost=50_000_000),
+            medium=dict(item='Medium Meson Gun Bay', tl=12, power=30, cost=60_000_000),
+            large=dict(item='Large Meson Gun Bay', tl=13, power=120, cost=250_000_000),
         ),
         missile=dict(
-            small=dict(item='Small Missile Bay', minimum_tl=7, power=5, cost=12_000_000),
-            medium=dict(item='Medium Missile Bay', minimum_tl=7, power=10, cost=20_000_000),
-            large=dict(item='Large Missile Bay', minimum_tl=7, power=20, cost=25_000_000),
+            small=dict(item='Small Missile Bay', tl=7, power=5, cost=12_000_000),
+            medium=dict(item='Medium Missile Bay', tl=7, power=10, cost=20_000_000),
+            large=dict(item='Large Missile Bay', tl=7, power=20, cost=25_000_000),
         ),
         orbital_strike_mass_driver=dict(
-            small=dict(item='Small Orbital Strike Mass Driver Bay', minimum_tl=10, power=35, cost=25_000_000),
-            medium=dict(item='Medium Orbital Strike Mass Driver Bay', minimum_tl=10, power=50, cost=35_000_000),
-            large=dict(item='Large Orbital Strike Mass Driver Bay', minimum_tl=10, power=75, cost=50_000_000),
+            small=dict(item='Small Orbital Strike Mass Driver Bay', tl=10, power=35, cost=25_000_000),
+            medium=dict(item='Medium Orbital Strike Mass Driver Bay', tl=10, power=50, cost=35_000_000),
+            large=dict(item='Large Orbital Strike Mass Driver Bay', tl=10, power=75, cost=50_000_000),
         ),
         orbital_strike_missile=dict(
-            small=dict(item='Small Orbital Strike Missile Bay', minimum_tl=10, power=5, cost=16_000_000),
-            medium=dict(item='Medium Orbital Strike Missile Bay', minimum_tl=10, power=15, cost=20_000_000),
-            large=dict(item='Large Orbital Strike Missile Bay', minimum_tl=10, power=25, cost=24_000_000),
+            small=dict(item='Small Orbital Strike Missile Bay', tl=10, power=5, cost=16_000_000),
+            medium=dict(item='Medium Orbital Strike Missile Bay', tl=10, power=15, cost=20_000_000),
+            large=dict(item='Large Orbital Strike Missile Bay', tl=10, power=25, cost=24_000_000),
         ),
         particle_beam=dict(
-            small=dict(item='Small Particle Beam Bay', minimum_tl=11, power=30, cost=20_000_000),
-            medium=dict(item='Medium Particle Beam Bay', minimum_tl=12, power=50, cost=40_000_000),
-            large=dict(item='Large Particle Beam Bay', minimum_tl=13, power=80, cost=60_000_000),
+            small=dict(item='Small Particle Beam Bay', tl=11, power=30, cost=20_000_000),
+            medium=dict(item='Medium Particle Beam Bay', tl=12, power=50, cost=40_000_000),
+            large=dict(item='Large Particle Beam Bay', tl=13, power=80, cost=60_000_000),
         ),
         railgun=dict(
-            small=dict(item='Small Railgun Bay', minimum_tl=10, power=10, cost=30_000_000),
-            medium=dict(item='Medium Railgun Bay', minimum_tl=10, power=15, cost=50_000_000),
-            large=dict(item='Large Railgun Bay', minimum_tl=10, power=25, cost=70_000_000),
+            small=dict(item='Small Railgun Bay', tl=10, power=10, cost=30_000_000),
+            medium=dict(item='Medium Railgun Bay', tl=10, power=15, cost=50_000_000),
+            large=dict(item='Large Railgun Bay', tl=10, power=25, cost=70_000_000),
         ),
         repulsor=dict(
-            small=dict(item='Small Repulsor Bay', minimum_tl=15, power=50, cost=30_000_000),
-            medium=dict(item='Medium Repulsor Bay', minimum_tl=14, power=100, cost=60_000_000),
-            large=dict(item='Large Repulsor Bay', minimum_tl=13, power=200, cost=90_000_000),
+            small=dict(item='Small Repulsor Bay', tl=15, power=50, cost=30_000_000),
+            medium=dict(item='Medium Repulsor Bay', tl=14, power=100, cost=60_000_000),
+            large=dict(item='Large Repulsor Bay', tl=13, power=200, cost=90_000_000),
         ),
         torpedo=dict(
-            small=dict(item='Small Torpedo Bay', minimum_tl=7, power=2, cost=3_000_000),
-            medium=dict(item='Medium Torpedo Bay', minimum_tl=7, power=5, cost=6_000_000),
-            large=dict(item='Large Torpedo Bay', minimum_tl=7, power=10, cost=10_000_000),
+            small=dict(item='Small Torpedo Bay', tl=7, power=2, cost=3_000_000),
+            medium=dict(item='Medium Torpedo Bay', tl=7, power=5, cost=6_000_000),
+            large=dict(item='Large Torpedo Bay', tl=7, power=10, cost=10_000_000),
         ),
     )
     allowed_modifications: ClassVar[frozenset[str]] = frozenset(
@@ -516,8 +516,8 @@ class Bay(CustomisableShipPart):
         return notes
 
     @property
-    def minimum_tl(self) -> int:  # type: ignore[override]
-        return int(self._weapon_specs[self.weapon][self.size]['minimum_tl'])
+    def tl(self) -> int:  # type: ignore[override]
+        return int(self._weapon_specs[self.weapon][self.size]['tl'])
 
     @property
     def hardpoints_required(self) -> int:
@@ -547,14 +547,14 @@ class Bay(CustomisableShipPart):
 class PointDefenseBattery(CustomisableShipPart):
     _specs: ClassVar[dict[PointDefenseKind, dict[PointDefenseRating, dict[str, float | int | str]]]] = dict(
         laser={
-            1: dict(item='Point Defence Laser Battery Type I', minimum_tl=10, power=10, tons=20, cost=5_000_000),
-            2: dict(item='Point Defence Laser Battery Type II', minimum_tl=12, power=20, tons=20, cost=10_000_000),
-            3: dict(item='Point Defence Laser Battery Type III', minimum_tl=14, power=30, tons=20, cost=20_000_000),
+            1: dict(item='Point Defence Laser Battery Type I', tl=10, power=10, tons=20, cost=5_000_000),
+            2: dict(item='Point Defence Laser Battery Type II', tl=12, power=20, tons=20, cost=10_000_000),
+            3: dict(item='Point Defence Laser Battery Type III', tl=14, power=30, tons=20, cost=20_000_000),
         },
         gauss={
-            1: dict(item='Point Defence Gauss Battery Type I', minimum_tl=10, power=5, tons=20, cost=3_000_000),
-            2: dict(item='Point Defence Gauss Battery Type II', minimum_tl=12, power=15, tons=20, cost=6_000_000),
-            3: dict(item='Point Defence Gauss Battery Type III', minimum_tl=14, power=25, tons=20, cost=10_000_000),
+            1: dict(item='Point Defence Gauss Battery Type I', tl=10, power=5, tons=20, cost=3_000_000),
+            2: dict(item='Point Defence Gauss Battery Type II', tl=12, power=15, tons=20, cost=6_000_000),
+            3: dict(item='Point Defence Gauss Battery Type III', tl=14, power=25, tons=20, cost=10_000_000),
         },
     )
     allowed_modifications: ClassVar[frozenset[str]] = frozenset(
@@ -583,8 +583,8 @@ class PointDefenseBattery(CustomisableShipPart):
         return notes
 
     @property
-    def minimum_tl(self) -> int:  # type: ignore[override]
-        return int(self._specs[self.kind][self.rating]['minimum_tl'])
+    def tl(self) -> int:  # type: ignore[override]
+        return int(self._specs[self.kind][self.rating]['tl'])
 
     @property
     def hardpoints_required(self) -> int:

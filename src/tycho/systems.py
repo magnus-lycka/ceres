@@ -31,7 +31,7 @@ class Laboratory(ShipPart):
 
 
 class LibraryFacility(ShipPart):
-    minimum_tl: ClassVar[int] = 8
+    _tl: ClassVar[int] = 8
 
     def build_item(self) -> str | None:
         return 'Library'
@@ -252,7 +252,7 @@ class Aerofins(ShipPart):
 
 
 class ProbeDrones(ShipPart):
-    minimum_tl: ClassVar[int] = 9
+    _tl: ClassVar[int] = 9
     drones_per_ton: ClassVar[int] = 5
     cost_per_ton: ClassVar[float] = 500_000.0
     count: int
@@ -270,7 +270,7 @@ class ProbeDrones(ShipPart):
 
 
 class AdvancedProbeDrones(ProbeDrones):
-    minimum_tl: ClassVar[int] = 12
+    _tl: ClassVar[int] = 12
     cost_per_ton: ClassVar[float] = 800_000.0
 
     def build_item(self) -> str | None:

@@ -42,7 +42,7 @@ def test_jdrive_tons_cost_tl(level, tl, pct):
     d = JDrive(level)
     d.bind(DummyOwner(tl, 200))
     expected_tons = 200 * pct + 5
-    assert d.minimum_tl == tl
+    assert d.tl == tl
     assert d.level == level
     assert float(d.tons) == pytest.approx(expected_tons)
     assert float(d.cost) == pytest.approx(expected_tons * 1_500_000)
@@ -51,7 +51,7 @@ def test_jdrive_tons_cost_tl(level, tl, pct):
 def test_jdrive_with_decreased_fuel_x2_changes_cost_and_required_tl():
     d = JDrive(2, customisation=VeryAdvanced(DecreasedFuel, DecreasedFuel))
     d.bind(DummyOwner(15, 450))
-    assert d.effective_tl == 13
+    assert d.tl == 11
     assert float(d.tons) == pytest.approx(27.5)
     assert float(d.cost) == pytest.approx(51_562_500.0)
     assert float(d.power) == pytest.approx(90.0)
@@ -76,9 +76,8 @@ def test_jump_fuel_respects_decreased_fuel_additively():
 def test_mdrive_standard_tons():
     d = MDrive(6)
     d.bind(DummyOwner(12, 6))
-    assert d.minimum_tl == 12
+    assert d.tl == 12
     assert d.ship_tl == 12
-    assert d.effective_tl == 12
     assert float(d.tons) == pytest.approx(0.36)
 
 
@@ -153,9 +152,8 @@ def test_mdrive_recomputes_tons_from_input():
 def test_fusion_plant_base_tons():
     p = FusionPlantTL12(output=8)
     p.bind(DummyOwner(12, 6))
-    assert p.minimum_tl == 12
+    assert p.tl == 12
     assert p.ship_tl == 12
-    assert p.effective_tl == 12
     assert float(p.tons) == pytest.approx(8 / 15)
 
 
@@ -187,8 +185,7 @@ def test_fusion_plant_recomputes_tons_from_input():
 def test_fusion_plant_tl8_variant():
     p = FusionPlantTL8(output=8)
     p.bind(DummyOwner(12, 6))
-    assert p.minimum_tl == 8
-    assert p.effective_tl == 8
+    assert p.tl == 8
     assert float(p.tons) == pytest.approx(0.8)
     assert float(p.cost) == pytest.approx(400_000)
 
@@ -196,8 +193,7 @@ def test_fusion_plant_tl8_variant():
 def test_fusion_plant_tl15_variant():
     p = FusionPlantTL15(output=8)
     p.bind(DummyOwner(15, 6))
-    assert p.minimum_tl == 15
-    assert p.effective_tl == 15
+    assert p.tl == 15
     assert float(p.tons) == pytest.approx(0.4)
     assert float(p.cost) == pytest.approx(800_000)
 
@@ -237,7 +233,7 @@ def test_emergency_power_system_values():
     assert eps.cost == pytest.approx(3_197_333.3333)
 
 
-def test_fusion_plant_rejects_ship_below_minimum_tl():
+def test_fusion_plant_rejects_ship_below_tl():
     plant = FusionPlantTL12(output=8)
     plant.bind(DummyOwner(11, 6))
     assert ('error', 'Requires TL12, ship is TL11') in [
@@ -259,10 +255,9 @@ def _make_ship_with_plant():
 
 
 def test_operation_fuel_1_week_tons():
-    # 10% of plant tons / 4 weeks, ceil to 2 decimal places
-    # plant tons = 8/15 ≈ 0.5333, monthly = 0.0533, weekly = 0.01333, ceil_2dp = 0.02
+    # Small craft round operation fuel up to tenths of a dTon.
     _, fuel = _make_ship_with_plant()
-    assert float(fuel.tons) == pytest.approx(0.02)
+    assert float(fuel.tons) == pytest.approx(0.1)
 
 
 def test_operation_fuel_cost_zero():
@@ -293,7 +288,7 @@ def test_operation_fuel_requires_plant():
 def test_rdrive_tons_cost_and_power():
     d = RDrive(16)
     d.bind(DummyOwner(12, 6))
-    assert d.minimum_tl == 12
+    assert d.tl == 12
     assert d.bulkhead_label() == 'R-Drive'
     assert d.tons == pytest.approx(1.92)
     assert d.cost == pytest.approx(384_000)

@@ -130,7 +130,7 @@ def test_suleiman_matches_first_modeled_reference_slice():
 
     assert operation_fuel is not None
     assert operation_fuel.weeks == 12
-    assert operation_fuel.tons == pytest.approx(1.2)
+    assert operation_fuel.tons == pytest.approx(2.0)
 
     assert fuel_processor is not None
     assert fuel_processor.tons == pytest.approx(2.0)
@@ -184,7 +184,7 @@ def test_suleiman_matches_first_modeled_reference_slice():
     assert workshop.cost == 900_000
     assert workshop.power == 0
 
-    assert CargoSection.cargo_tons_for_ship(suleiman) == pytest.approx(12.8)
+    assert CargoSection.cargo_tons_for_ship(suleiman) == pytest.approx(12.0)
 
     assert [(role.role, quantity, role.monthly_salary) for role, quantity in suleiman.crew.grouped_roles] == [
         ('PILOT', 1, 6_000),
@@ -265,9 +265,9 @@ def test_suleiman_spec_structure():
     assert airlock.section == 'Hull'
     assert airlock.tons is None
 
-    fuel_tank = spec.row('J-2, 12 weeks of operation', section='Fuel')
+    fuel_tank = spec.row('J-2, 20 weeks of operation', section='Fuel')
     assert fuel_tank.section == 'Fuel'
-    assert fuel_tank.tons == pytest.approx(21.2)
+    assert fuel_tank.tons == pytest.approx(22.0)
 
     fuel_scoops = spec.row('Fuel Scoops')
     assert fuel_scoops.section == 'Fuel'
@@ -292,7 +292,7 @@ def test_suleiman_spec_structure():
     assert spec.expenses[1].amount == 36_940_500
     assert any(e.label == 'Life Support Facilities' and e.amount == 4_000 for e in spec.expenses)
     assert any(e.label == 'Life Support People' and e.amount == 8_000 for e in spec.expenses)
-    assert any(e.label == 'Fuel' and e.amount == 4_040 for e in spec.expenses)
+    assert any(e.label == 'Fuel' and e.amount == pytest.approx(4_066.6666666667) for e in spec.expenses)
     assert any(e.label == 'Crew Salaries' and e.amount == 17_000 for e in spec.expenses)
 
     assert any(c.role == 'ENGINEER' and c.quantity is None and c.salary == 4_000 for c in spec.crew)
@@ -315,7 +315,7 @@ def test_suleiman_stuart_html_output():
     assert '<header class="sidebar-card-title">Costs</header>' in html
     assert '<th class="num">Cost (MCr)</th>' in html
     assert '<td>Military Grade Sensors</td>' in html
-    assert '<td class="item-cell">J-2, 12 weeks of operation</td>' in html
+    assert '<td class="item-cell">J-2, 20 weeks of operation</td>' in html
     assert '<td>Fusion (TL 12)</td><td class="num power-positive">60.00</td>' in html
     assert '<td>Basic Ship Systems</td><td class="num">20.00</td>' in html
     assert 'MIDDLE × 2' not in html

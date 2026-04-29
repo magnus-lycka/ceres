@@ -196,7 +196,7 @@ def test_revised_dragon_modeled_subset_matches_current_model():
 
     assert dragon.fuel is not None
     assert dragon.fuel.operation_fuel is not None
-    assert dragon.fuel.operation_fuel.tons == pytest.approx(16.07)
+    assert dragon.fuel.operation_fuel.tons == pytest.approx(17.0)
 
     assert dragon.weapons is not None
     assert len(dragon.weapons.barbettes) == 2
@@ -205,7 +205,7 @@ def test_revised_dragon_modeled_subset_matches_current_model():
     assert dragon.weapons.missile_storage.tons == pytest.approx(34.0)
     assert dragon.weapons.missile_storage.cost == pytest.approx(0.0)
 
-    assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(5.24)
+    assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(4.31)
     assert dragon.production_cost == pytest.approx(292_855_166.6667)
     assert dragon.sales_price_new == pytest.approx(263_569_650.0)
 

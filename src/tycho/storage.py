@@ -27,14 +27,22 @@ class OperationFuel(ShipPart):
     weeks: int
 
     def build_item(self) -> str | None:
-        return f'Operation {self.weeks} weeks'
+        return f'Operation {self.actual_weeks} weeks'
+
+    def bind(self, ship) -> None:
+        super().bind(ship)
+        self.item(self.build_item() or f'Operation {self.weeks} weeks')
 
     def bulkhead_label(self) -> str:
         return 'Operation Fuel'
 
     def compute_tons(self) -> float:
         total = self._raw_tons()
-        return math.ceil(total * 100 - 1e-9) / 100
+        if self.ship.displacement < 100:
+            increment = 0.1
+        else:
+            increment = 1.0
+        return math.ceil(total / increment - 1e-9) * increment
 
     def _raw_tons(self) -> float:
         power = getattr(self.ship, 'power', None)
@@ -43,9 +51,21 @@ class OperationFuel(ShipPart):
             self.error('Ship must have a FusionPlant to compute OperationFuel')
             return 0.0
         pp_tons = plant.tons
-        monthly = 0.10 * pp_tons
-        weekly = monthly / 4
-        return weekly * self.weeks
+        return 0.10 * pp_tons * self.weeks / 4
+
+    @property
+    def actual_weeks(self) -> int:
+        if self._ship is None:
+            return self.weeks
+        power = getattr(self.ship, 'power', None)
+        plant = None if power is None else power.fusion_plant
+        if plant is None:
+            return self.weeks
+        four_week_baseline = 0.10 * plant.tons
+        if four_week_baseline <= 0:
+            return self.weeks
+        full_periods = math.floor((self.tons / four_week_baseline) + 1e-9)
+        return max(self.weeks, 4 * full_periods)
 
     def bulkhead_protected_tonnage(self) -> float:
         return self._raw_tons()
@@ -145,8 +165,8 @@ class FuelSection(CeresModel):
         if self.jump_fuel is not None:
             parts.append(f'J-{self.jump_fuel.parsecs}')
         if self.operation_fuel is not None:
-            unit = 'week' if self.operation_fuel.weeks == 1 else 'weeks'
-            parts.append(f'{self.operation_fuel.weeks} {unit} of operation')
+            unit = 'week' if self.operation_fuel.actual_weeks == 1 else 'weeks'
+            parts.append(f'{self.operation_fuel.actual_weeks} {unit} of operation')
         if self.reaction_fuel is not None:
             item = self.reaction_fuel.build_item()
             if item is not None:

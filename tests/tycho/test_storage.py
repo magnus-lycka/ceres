@@ -94,7 +94,7 @@ def _make_ship_with_plant():
 def test_operation_fuel_1_week_tons():
     _, fuel = _make_ship_with_plant()
     assert fuel is not None
-    assert float(fuel.tons) == pytest.approx(0.02)
+    assert float(fuel.tons) == pytest.approx(0.1)
 
 
 def test_operation_fuel_cost_zero():

@@ -42,9 +42,8 @@ def test_basic_sensors_notes_describe_suite_and_dm():
 def test_civilian_grade_tons():
     s = CivilianSensors()
     s.bind(DummyOwner(12, 6))
-    assert s.minimum_tl == 9
+    assert s.tl == 9
     assert s.ship_tl == 12
-    assert s.effective_tl == 12
     assert float(s.tons) == 1.0
 
 

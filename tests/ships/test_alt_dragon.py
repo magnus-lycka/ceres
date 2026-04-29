@@ -183,7 +183,7 @@ def test_alt_dragon_modeled_subset_tracks_current_model():
 
     assert dragon.fuel is not None
     assert dragon.fuel.operation_fuel is not None
-    assert dragon.fuel.operation_fuel.tons == pytest.approx(10.47)
+    assert dragon.fuel.operation_fuel.tons == pytest.approx(11.0)
     assert dragon.fuel.fuel_processor is not None
     assert dragon.fuel.fuel_processor.build_item() == 'Fuel Processor (20 tons/day)'
     assert dragon.fuel.fuel_processor.tons == pytest.approx(1.0)
@@ -193,7 +193,7 @@ def test_alt_dragon_modeled_subset_tracks_current_model():
     assert dragon.computer.hardware.build_item() == 'Core/40/fib'
     assert dragon.computer.hardware.cost == pytest.approx(67_500_000.0)
 
-    assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(6.3916)
+    assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(5.8616)
     assert ('info', 'MAINTENANCE above recommended count: 1 > 0') in [
         (note.category.value, note.message) for note in dragon.crew.notes
     ]

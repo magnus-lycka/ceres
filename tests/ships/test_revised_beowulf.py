@@ -20,6 +20,8 @@ Source handling for this test case:
   - advanced low berth pricing/details
   - the source life-support total is Cr1000 higher than the current core-rule
     formula for the same manifest
+  - the source fuel-expense total is slightly lower than Tycho now that
+    operation fuel follows the book rule of a 1-ton minimum four-week baseline
 - deliberate interpretation:
   - Ceres warns that the installed medical bay calls for a medic, even though
     the source export lists only four crew
@@ -113,7 +115,7 @@ def test_revised_beowulf_matches_current_modeled_subset():
     assert beowulf.fuel.jump_fuel is not None
     assert beowulf.fuel.jump_fuel.tons == pytest.approx(20.0)
     assert beowulf.fuel.operation_fuel is not None
-    assert beowulf.fuel.operation_fuel.tons == pytest.approx(0.55)
+    assert beowulf.fuel.operation_fuel.tons == pytest.approx(1.0)
     assert beowulf.fuel.fuel_processor is not None
     assert beowulf.fuel.fuel_processor.tons == pytest.approx(1.0)
     assert beowulf.fuel.fuel_processor.cost == pytest.approx(50_000)
@@ -148,7 +150,7 @@ def test_revised_beowulf_matches_current_modeled_subset():
     assert beowulf.expenses.maintenance == pytest.approx(3734.0)
     assert beowulf.expenses.life_support == pytest.approx(30_000.0)
     assert beowulf.expenses.crew_salaries == pytest.approx(17_000.0)
-    assert beowulf.expenses.fuel == pytest.approx(4_055.0)
+    assert beowulf.expenses.fuel == pytest.approx(4_100.0)
     assert [(role.role, quantity, role.monthly_salary) for role, quantity in beowulf.crew.grouped_roles] == [
         ('PILOT', 1, 6_000),
         ('ASTROGATOR', 1, 5_000),

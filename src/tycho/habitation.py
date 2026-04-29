@@ -100,7 +100,7 @@ class Brig(ShipPart):
 
 
 class AdvancedEntertainmentSystem(ShipPart):
-    minimum_tl: ClassVar[int] = 5
+    _tl: ClassVar[int] = 5
     minimum_cost: ClassVar[float] = 100.0
     maximum_cost: ClassVar[float] = 10_000.0
     cost: float

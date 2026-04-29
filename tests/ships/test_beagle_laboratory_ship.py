@@ -13,10 +13,8 @@ Source handling for this test case:
   air/raft, advanced probe drones, biosphere, laboratories, physical library,
   medical bay, workshop, standard staterooms, common area, hot tubs, wet bar,
   low berths, cargo airlock, fuel/cargo container, and explicit crew
-- source mismatch retained:
-  - the sheet lists `J-2, 8 Weeks of Operation` as 84 tons total fuel
-  - Tycho follows the normal rules, which yield 80 tons jump fuel plus 2.4
-    tons operation fuel for a total of 82.4 tons before other cargo choices
+- supported: the sheet's `J-2, 8 Weeks of Operation` fuel total now matches the
+  core-rule calculation of 80 tons jump fuel plus 4 tons operation fuel
 - still excluded from the modeled reference case:
   - software packages `Mentor/1`, `Planetology/1`, and `Research Assist/1`
   - carried craft rows for `Pinnace` and `ATV`
@@ -142,7 +140,7 @@ def test_beagle_laboratory_ship_matches_supported_slice():
     assert ship_.fuel.jump_fuel is not None
     assert ship_.fuel.jump_fuel.tons == pytest.approx(80.0)
     assert ship_.fuel.operation_fuel is not None
-    assert ship_.fuel.operation_fuel.tons == pytest.approx(2.4)
+    assert ship_.fuel.operation_fuel.tons == pytest.approx(3.0)
     assert ship_.fuel.fuel_processor is not None
     assert ship_.fuel.fuel_processor.tons == pytest.approx(2.0)
     assert ship_.fuel.fuel_processor.cost == pytest.approx(100_000.0)

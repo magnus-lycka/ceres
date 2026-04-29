@@ -103,7 +103,7 @@ def test_strandbell_fuel():
     sdb = build_strandbell()
     assert sdb.fuel is not None
     assert sdb.fuel.operation_fuel is not None
-    assert sdb.fuel.operation_fuel.tons == pytest.approx(4.8)
+    assert sdb.fuel.operation_fuel.tons == pytest.approx(5.0)
     assert sdb.fuel.fuel_processor is not None
     assert sdb.fuel.fuel_processor.tons == pytest.approx(1.0)
     assert sdb.fuel.fuel_processor.cost == 50_000
@@ -175,7 +175,7 @@ def test_strandbell_cargo():
     # We still do not model stores for Strandbell, and we no longer model a
     # pseudo-armored M-drive, so cargo lands higher.
     sdb = build_strandbell()
-    assert CargoSection.cargo_tons_for_ship(sdb) == pytest.approx(20.7, abs=0.01)
+    assert CargoSection.cargo_tons_for_ship(sdb) == pytest.approx(20.5, abs=0.01)
 
 
 def test_strandbell_cost():

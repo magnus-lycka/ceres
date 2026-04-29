@@ -27,14 +27,6 @@ from tycho.storage import FuelProcessor, FuelSection, OperationFuel
 from tycho.systems import Airlock, BriefingRoom, CommonArea, CrewArmory, MedicalBay, RepairDrones, SystemsSection
 from tycho.weapons import Bay, HighYield, LongRange, MountWeapon, Turret, WeaponsSection
 
-
-class SheetOperationFuel(OperationFuel):
-    """Reference-sheet special case for the Ambush corvette."""
-
-    def compute_tons(self) -> float:
-        return 16.0
-
-
 def build_ambush_hunter_killer_corvette() -> ship.Ship:
     """
     Modeled subset of the Ambush-class Hunter-Killer Corvette reference.
@@ -64,7 +56,7 @@ def build_ambush_hunter_killer_corvette() -> ship.Ship:
         ),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=500, armoured_bulkhead=True)),
         fuel=FuelSection(
-            operation_fuel=SheetOperationFuel(weeks=16),
+            operation_fuel=OperationFuel(weeks=16),
             fuel_processor=FuelProcessor(tons=2),
         ),
         command=CommandSection(bridge=Bridge()),
@@ -153,7 +145,7 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
 
     assert corvette.fuel is not None
     assert corvette.fuel.operation_fuel is not None
-    assert corvette.fuel.operation_fuel.tons == pytest.approx(16.0)
+    assert corvette.fuel.operation_fuel.tons == pytest.approx(14.0)
     assert corvette.fuel.fuel_processor is not None
     assert corvette.fuel.fuel_processor.tons == pytest.approx(2.0)
     assert corvette.fuel.fuel_processor.cost == pytest.approx(100_000.0)
@@ -243,7 +235,7 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
     assert corvette.fuel_power_load == pytest.approx(2.0)
     assert corvette.total_power_load == pytest.approx(427.5)
 
-    assert corvette.remaining_usable_tonnage() == pytest.approx(4.2333333333)
+    assert corvette.remaining_usable_tonnage() == pytest.approx(6.2333333333)
     assert corvette.production_cost == pytest.approx(448_812_500.0)
     assert corvette.sales_price_new == pytest.approx(448_812_500.0)
     assert corvette.expenses.maintenance == pytest.approx(37_401.0)
@@ -267,6 +259,7 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
         ('OFFICER', 2),
     ]
 
-    assert ('error', 'Hull overloaded by 47.11 tons') not in [
-        (note.category.value, note.message) for note in corvette.notes
-    ]
+    assert not any(
+        note.category.value == 'error' and note.message.startswith('Hull overloaded by ')
+        for note in corvette.notes
+    )

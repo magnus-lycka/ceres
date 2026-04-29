@@ -41,13 +41,13 @@ def _sensor_package_notes(
     suite: tuple[str, ...],
     dm: str,
     package_capabilities: tuple[str, ...] = (),
-    effective_tl: int,
+    capability_tl: int,
     low_intercept: LowInterceptMode,
 ) -> list[Note]:
     features = ['Passive optical and thermal sensors']
     unavailable: list[str] = []
     for sensor in suite:
-        feature = _sensor_feature(sensor, low_intercept=low_intercept, tl=effective_tl)
+        feature = _sensor_feature(sensor, low_intercept=low_intercept, tl=capability_tl)
         if feature is not None:
             features.append(feature)
             continue
@@ -79,28 +79,24 @@ def _sensor_package_notes(
         if sensor == 'Neural Activity Sensor':
             message = f'{sensor} is unavailable in {low_intercept} mode'
         else:
-            message = f'{sensor} is unavailable in {low_intercept} mode at TL{effective_tl}'
+            message = f'{sensor} is unavailable in {low_intercept} mode at TL{capability_tl}'
         notes.append(Note(category=NoteCategory.INFO, message=message))
     return notes
 
 
-def _note_tl(part: ShipPart) -> int:
+def _capability_tl(part: ShipPart) -> int:
     owner = getattr(part, '_ship', None)
     if owner is None:
-        return part.minimum_tl
-    return part.effective_tl
+        return part.tl
+    return part.ship_tl
 
 
 class SensorPackage(ShipPart):
     low_intercept: LowInterceptMode = 'NONE'
 
-    @property
-    def effective_tl(self) -> int:
-        return self.ship_tl
-
-    def validate_tl(self) -> None:
-        if self.ship_tl < self.minimum_tl:
-            self.error(f'Requires TL{self.minimum_tl}, ship is TL{self.ship_tl}')
+    def check_ship_tl(self) -> None:
+        if self.ship_tl < self.tl:
+            self.error(f'Requires TL{self.tl}, ship is TL{self.ship_tl}')
         if self.low_intercept == 'LPI' and self.ship_tl < 9:
             self.error('LPI requires TL9 for installed radar/lidar')
         if self.low_intercept == 'ELPI' and self.ship_tl < 10:
@@ -118,7 +114,7 @@ class SensorPackage(ShipPart):
 
 class BasicSensors(SensorPackage):
     description: Literal['Basic Sensors'] = 'Basic Sensors'
-    minimum_tl = 8
+    _tl = 8
 
     def build_item(self) -> str | None:
         return self.description
@@ -127,7 +123,7 @@ class BasicSensors(SensorPackage):
         return _sensor_package_notes(
             suite=('Radar', 'Lidar'),
             dm='-4',
-            effective_tl=_note_tl(self),
+            capability_tl=_capability_tl(self),
             low_intercept=self.low_intercept,
         )
 
@@ -143,7 +139,7 @@ class BasicSensors(SensorPackage):
 
 class CivilianSensors(SensorPackage):
     description: Literal['Civilian Grade Sensors'] = 'Civilian Grade Sensors'
-    minimum_tl = 9
+    _tl = 9
 
     def build_item(self) -> str | None:
         return self.description
@@ -152,7 +148,7 @@ class CivilianSensors(SensorPackage):
         return _sensor_package_notes(
             suite=('Radar', 'Lidar'),
             dm='-2',
-            effective_tl=_note_tl(self),
+            capability_tl=_capability_tl(self),
             low_intercept=self.low_intercept,
         )
 
@@ -168,7 +164,7 @@ class CivilianSensors(SensorPackage):
 
 class MilitarySensors(SensorPackage):
     description: Literal['Military Grade Sensors'] = 'Military Grade Sensors'
-    minimum_tl = 10
+    _tl = 10
 
     def build_item(self) -> str | None:
         return self.description
@@ -178,7 +174,7 @@ class MilitarySensors(SensorPackage):
             suite=('Radar', 'Lidar'),
             dm='+0',
             package_capabilities=('Jammers', 'EMCON'),
-            effective_tl=_note_tl(self),
+            capability_tl=_capability_tl(self),
             low_intercept=self.low_intercept,
         )
 
@@ -194,7 +190,7 @@ class MilitarySensors(SensorPackage):
 
 class ImprovedSensors(SensorPackage):
     description: Literal['Improved Sensors'] = 'Improved Sensors'
-    minimum_tl = 12
+    _tl = 12
 
     def build_item(self) -> str | None:
         return self.description
@@ -204,7 +200,7 @@ class ImprovedSensors(SensorPackage):
             suite=('Radar', 'Lidar', 'Densitometer'),
             dm='+1',
             package_capabilities=('Jammers', 'EMCON'),
-            effective_tl=_note_tl(self),
+            capability_tl=_capability_tl(self),
             low_intercept=self.low_intercept,
         )
 
@@ -220,7 +216,7 @@ class ImprovedSensors(SensorPackage):
 
 class AdvancedSensors(SensorPackage):
     description: Literal['Advanced Sensors'] = 'Advanced Sensors'
-    minimum_tl = 15
+    _tl = 15
 
     def build_item(self) -> str | None:
         return self.description
@@ -230,7 +226,7 @@ class AdvancedSensors(SensorPackage):
             suite=('Radar', 'Lidar', 'Densitometer', 'Neural Activity Sensor'),
             dm='+2',
             package_capabilities=('Jammers', 'Extreme Emissions Control'),
-            effective_tl=_note_tl(self),
+            capability_tl=_capability_tl(self),
             low_intercept=self.low_intercept,
         )
 
@@ -246,7 +242,7 @@ class AdvancedSensors(SensorPackage):
 
 class CountermeasuresSuite(ShipPart):
     description: Literal['Countermeasures Suite'] = 'Countermeasures Suite'
-    minimum_tl = 11
+    _tl = 11
 
     def build_item(self) -> str | None:
         return self.description
@@ -266,7 +262,7 @@ class CountermeasuresSuite(ShipPart):
 
 class LifeScannerAnalysisSuite(ShipPart):
     description: Literal['Life Scanner Analysis Suite'] = 'Life Scanner Analysis Suite'
-    minimum_tl = 14
+    _tl = 14
 
     def build_item(self) -> str | None:
         return self.description
@@ -310,7 +306,7 @@ class SensorStations(ShipPart):
 
 class EnhancedSignalProcessing(ShipPart):
     description: Literal['Enhanced Signal Processing'] = 'Enhanced Signal Processing'
-    minimum_tl = 13
+    _tl = 13
 
     def build_item(self) -> str | None:
         return self.description
@@ -330,7 +326,7 @@ class EnhancedSignalProcessing(ShipPart):
 
 class ExtendedArrays(ShipPart):
     description: Literal['Extended Arrays'] = 'Extended Arrays'
-    minimum_tl = 11
+    _tl = 11
 
     def build_item(self) -> str | None:
         return self.description

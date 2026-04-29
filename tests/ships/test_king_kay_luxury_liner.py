@@ -152,7 +152,7 @@ def test_king_kay_matches_supported_reference_slice():
     assert liner.fuel.jump_fuel is not None
     assert liner.fuel.jump_fuel.tons == pytest.approx(1_000.0)
     assert liner.fuel.operation_fuel is not None
-    assert liner.fuel.operation_fuel.tons == pytest.approx(26.8)
+    assert liner.fuel.operation_fuel.tons == pytest.approx(27.0)
 
     assert liner.command is not None
     assert liner.command.bridge is not None

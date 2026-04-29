@@ -37,7 +37,7 @@ class SoftwarePackage(CeresModel):
 
 class FixedSoftwarePackage(SoftwarePackage):
     label: ClassVar[str]
-    minimum_tl: ClassVar[int]
+    tl: ClassVar[int]
     bandwidth: ClassVar[int]
     base_cost: ClassVar[float]
 
@@ -53,7 +53,7 @@ class FixedSoftwarePackage(SoftwarePackage):
 class Library(FixedSoftwarePackage):
     package: Literal['library'] = 'library'
     label = 'Library'
-    minimum_tl = 8
+    tl = 8
     bandwidth = 0
     base_cost = 0.0
 
@@ -61,7 +61,7 @@ class Library(FixedSoftwarePackage):
 class Manoeuvre(FixedSoftwarePackage):
     package: Literal['manoeuvre'] = 'manoeuvre'
     label = 'Manoeuvre/0'
-    minimum_tl = 8
+    tl = 8
     bandwidth = 0
     base_cost = 0.0
 
@@ -69,7 +69,7 @@ class Manoeuvre(FixedSoftwarePackage):
 class Intellect(FixedSoftwarePackage):
     package: Literal['intellect'] = 'intellect'
     label = 'Intellect'
-    minimum_tl = 11
+    tl = 11
     bandwidth = 0
     base_cost = 0.0
 
@@ -97,8 +97,8 @@ class RatedSoftwarePackage(SoftwarePackage):
         return int(self._specs[self.rating]['bandwidth'])
 
     @property
-    def minimum_tl(self) -> int:
-        return int(self._specs[self.rating]['minimum_tl'])
+    def tl(self) -> int:
+        return int(self._specs[self.rating]['tl'])
 
     @property
     def cost(self) -> float:
@@ -117,12 +117,12 @@ class JumpControl(RatedSoftwarePackage):
     package: Literal['jump_control'] = 'jump_control'
     label = 'Jump Control'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
-        1: dict(bandwidth=5, minimum_tl=9, cost=100_000.0),
-        2: dict(bandwidth=10, minimum_tl=11, cost=200_000.0),
-        3: dict(bandwidth=15, minimum_tl=12, cost=300_000.0),
-        4: dict(bandwidth=20, minimum_tl=13, cost=400_000.0),
-        5: dict(bandwidth=25, minimum_tl=14, cost=500_000.0),
-        6: dict(bandwidth=30, minimum_tl=15, cost=600_000.0),
+        1: dict(bandwidth=5, tl=9, cost=100_000.0),
+        2: dict(bandwidth=10, tl=11, cost=200_000.0),
+        3: dict(bandwidth=15, tl=12, cost=300_000.0),
+        4: dict(bandwidth=20, tl=13, cost=400_000.0),
+        5: dict(bandwidth=25, tl=14, cost=500_000.0),
+        6: dict(bandwidth=30, tl=15, cost=600_000.0),
     }
 
 
@@ -130,8 +130,8 @@ class AutoRepair(RatedSoftwarePackage):
     package: Literal['auto_repair'] = 'auto_repair'
     label = 'Auto-Repair'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
-        1: dict(bandwidth=10, minimum_tl=11, cost=5_000_000.0),
-        2: dict(bandwidth=20, minimum_tl=12, cost=10_000_000.0),
+        1: dict(bandwidth=10, tl=11, cost=5_000_000.0),
+        2: dict(bandwidth=20, tl=12, cost=10_000_000.0),
     }
 
 
@@ -139,11 +139,11 @@ class FireControl(RatedSoftwarePackage):
     package: Literal['fire_control'] = 'fire_control'
     label = 'Fire Control'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
-        1: dict(bandwidth=5, minimum_tl=9, cost=2_000_000.0),
-        2: dict(bandwidth=10, minimum_tl=11, cost=4_000_000.0),
-        3: dict(bandwidth=15, minimum_tl=12, cost=6_000_000.0),
-        4: dict(bandwidth=20, minimum_tl=13, cost=8_000_000.0),
-        5: dict(bandwidth=25, minimum_tl=14, cost=10_000_000.0),
+        1: dict(bandwidth=5, tl=9, cost=2_000_000.0),
+        2: dict(bandwidth=10, tl=11, cost=4_000_000.0),
+        3: dict(bandwidth=15, tl=12, cost=6_000_000.0),
+        4: dict(bandwidth=20, tl=13, cost=8_000_000.0),
+        5: dict(bandwidth=25, tl=14, cost=10_000_000.0),
     }
 
 
@@ -151,9 +151,9 @@ class AdvancedFireControl(RatedSoftwarePackage):
     package: Literal['advanced_fire_control'] = 'advanced_fire_control'
     label = 'Advanced Fire Control'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
-        1: dict(bandwidth=15, minimum_tl=10, cost=12_000_000.0),
-        2: dict(bandwidth=25, minimum_tl=12, cost=15_000_000.0),
-        3: dict(bandwidth=30, minimum_tl=14, cost=18_000_000.0),
+        1: dict(bandwidth=15, tl=10, cost=12_000_000.0),
+        2: dict(bandwidth=25, tl=12, cost=15_000_000.0),
+        3: dict(bandwidth=30, tl=14, cost=18_000_000.0),
     }
 
 
@@ -161,9 +161,9 @@ class AntiHijack(RatedSoftwarePackage):
     package: Literal['anti_hijack'] = 'anti_hijack'
     label = 'Anti-Hijack'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
-        1: dict(bandwidth=2, minimum_tl=11, cost=6_000_000.0),
-        2: dict(bandwidth=10, minimum_tl=12, cost=8_000_000.0),
-        3: dict(bandwidth=15, minimum_tl=13, cost=10_000_000.0),
+        1: dict(bandwidth=2, tl=11, cost=6_000_000.0),
+        2: dict(bandwidth=10, tl=12, cost=8_000_000.0),
+        3: dict(bandwidth=15, tl=13, cost=10_000_000.0),
     }
 
 
@@ -171,16 +171,16 @@ class Evade(RatedSoftwarePackage):
     package: Literal['evade'] = 'evade'
     label = 'Evade'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
-        1: dict(bandwidth=5, minimum_tl=9, cost=1_000_000.0),
-        2: dict(bandwidth=10, minimum_tl=11, cost=2_000_000.0),
-        3: dict(bandwidth=15, minimum_tl=12, cost=3_000_000.0),
+        1: dict(bandwidth=5, tl=9, cost=1_000_000.0),
+        2: dict(bandwidth=10, tl=11, cost=2_000_000.0),
+        3: dict(bandwidth=15, tl=12, cost=3_000_000.0),
     }
 
 
 class BroadSpectrumEW(FixedSoftwarePackage):
     package: Literal['broad_spectrum_ew'] = 'broad_spectrum_ew'
     label = 'Broad Spectrum EW'
-    minimum_tl = 13
+    tl = 13
     bandwidth = 12
     base_cost = 14_000_000.0
 
@@ -189,9 +189,9 @@ class ElectronicWarfare(RatedSoftwarePackage):
     package: Literal['electronic_warfare'] = 'electronic_warfare'
     label = 'Electronic Warfare'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
-        1: dict(bandwidth=10, minimum_tl=10, cost=15_000_000.0),
-        2: dict(bandwidth=15, minimum_tl=13, cost=18_000_000.0),
-        3: dict(bandwidth=20, minimum_tl=15, cost=24_000_000.0),
+        1: dict(bandwidth=10, tl=10, cost=15_000_000.0),
+        2: dict(bandwidth=15, tl=13, cost=18_000_000.0),
+        3: dict(bandwidth=20, tl=15, cost=24_000_000.0),
     }
 
 
@@ -199,9 +199,9 @@ class VirtualGunner(RatedSoftwarePackage):
     package: Literal['virtual_gunner'] = 'virtual_gunner'
     label = 'Virtual Gunner'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
-        0: dict(bandwidth=5, minimum_tl=9, cost=1_000_000.0),
-        1: dict(bandwidth=10, minimum_tl=12, cost=5_000_000.0),
-        2: dict(bandwidth=15, minimum_tl=15, cost=10_000_000.0),
+        0: dict(bandwidth=5, tl=9, cost=1_000_000.0),
+        1: dict(bandwidth=10, tl=12, cost=5_000_000.0),
+        2: dict(bandwidth=15, tl=15, cost=10_000_000.0),
     }
 
 
@@ -231,8 +231,8 @@ class ComputerBase(ShipPart):
         return f'{self._label}/{self.score}'
 
     @property
-    def minimum_tl(self) -> int:
-        return int(self._specs[self.score]['minimum_tl'])
+    def tl(self) -> int:
+        return int(self._specs[self.score]['tl'])
 
     @property
     def processing(self) -> int:
@@ -250,13 +250,9 @@ class ComputerBase(ShipPart):
             item += '/fib'
         return item
 
-    @property
-    def effective_tl(self):
-        return self.ship_tl
-
-    def validate_tl(self) -> None:
-        if self.ship_tl < self.minimum_tl:
-            self.error(f'Requires TL{self.minimum_tl}, ship is TL{self.ship_tl}')
+    def check_ship_tl(self) -> None:
+        if self.ship_tl < self.tl:
+            self.error(f'Requires TL{self.tl}, ship is TL{self.ship_tl}')
 
     @property
     def jump_control_processing(self) -> int:
@@ -266,12 +262,12 @@ class ComputerBase(ShipPart):
     @property
     def included_software(self) -> list[SoftwarePackage]:
         packages: list[SoftwarePackage] = [Library(), Manoeuvre()]
-        if self.ship_tl >= Intellect.minimum_tl:
+        if self.ship_tl >= Intellect.tl:
             packages.append(Intellect())
         return packages
 
     def can_run(self, package: SoftwarePackage) -> bool:
-        if self.ship_tl < package.minimum_tl:
+        if self.ship_tl < package.tl:
             return False
         if isinstance(package, JumpControl):
             if isinstance(self, Core):
@@ -295,13 +291,13 @@ class Computer(ComputerBase):
     kind: Literal['computer'] = 'computer'
     _label = 'Computer'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
-        5: dict(minimum_tl=7, cost=30_000.0),
-        10: dict(minimum_tl=9, cost=160_000.0),
-        15: dict(minimum_tl=11, cost=2_000_000.0),
-        20: dict(minimum_tl=12, cost=5_000_000.0),
-        25: dict(minimum_tl=13, cost=10_000_000.0),
-        30: dict(minimum_tl=14, cost=20_000_000.0),
-        35: dict(minimum_tl=15, cost=30_000_000.0),
+        5: dict(tl=7, cost=30_000.0),
+        10: dict(tl=9, cost=160_000.0),
+        15: dict(tl=11, cost=2_000_000.0),
+        20: dict(tl=12, cost=5_000_000.0),
+        25: dict(tl=13, cost=10_000_000.0),
+        30: dict(tl=14, cost=20_000_000.0),
+        35: dict(tl=15, cost=30_000_000.0),
     }
 
 
@@ -309,13 +305,13 @@ class Core(ComputerBase):
     kind: Literal['core'] = 'core'
     _label = 'Core'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
-        40: dict(minimum_tl=9, cost=45_000_000.0),
-        50: dict(minimum_tl=10, cost=60_000_000.0),
-        60: dict(minimum_tl=11, cost=75_000_000.0),
-        70: dict(minimum_tl=12, cost=80_000_000.0),
-        80: dict(minimum_tl=13, cost=95_000_000.0),
-        90: dict(minimum_tl=14, cost=120_000_000.0),
-        100: dict(minimum_tl=15, cost=130_000_000.0),
+        40: dict(tl=9, cost=45_000_000.0),
+        50: dict(tl=10, cost=60_000_000.0),
+        60: dict(tl=11, cost=75_000_000.0),
+        70: dict(tl=12, cost=80_000_000.0),
+        80: dict(tl=13, cost=95_000_000.0),
+        90: dict(tl=14, cost=120_000_000.0),
+        100: dict(tl=15, cost=130_000_000.0),
     }
 
 
@@ -384,8 +380,8 @@ class ComputerSection(CeresModel):
         if self.backup_hardware is not None and self.hardware.processing <= self.backup_hardware.processing:
             self.backup_hardware.error('Backup computer must have lower Processing than primary computer')
         for package in self.software_packages.values():
-            if ship_tl < package.minimum_tl:
-                package.error(f'{package.description} requires TL{package.minimum_tl}')
+            if ship_tl < package.tl:
+                package.error(f'{package.description} requires TL{package.tl}')
             if not self.hardware.can_run(package):
                 package.error(f'{self.hardware.description} cannot run {package.description}')
 

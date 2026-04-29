@@ -9,10 +9,6 @@ Source handling for this test case:
   bridge, computer, included software, basic sensors, explicit airlock, cabin
   space, fuel/cargo container, production cost, discounted purchase price, and
   maintenance cost
-- source mismatch retained:
-  - the sheet lists `4 Weeks of Operation` as 1 ton
-  - Tycho follows the normal operation-fuel rule for this plant, which yields
-    0.2 tons
 - deliberate interpretation:
   - the airlock is modeled as an explicitly purchased airlock on a small craft;
     it is not treated as a free included airlock

@@ -109,6 +109,14 @@ class Customisation(CeresModel):
     def tl_delta(self) -> int:
         return self._tl_delta + sum(m.tl_delta for m in self.modifications)
 
+    def check_ship_tl(self, part: CustomisableShipPart) -> None:
+        available_tl = part.tl + self.tl_delta
+        if part.ship_tl < available_tl:
+            part.error(f'Requires TL{available_tl}, ship is TL{part.ship_tl}')
+            return
+        if self.tl_delta < 0 and part.ship_tl > available_tl:
+            part.warning(f'{self._display_name} not required: ship TL{part.ship_tl} exceeds required TL{available_tl}')
+
 
 class EarlyPrototype(Customisation):
     grade: Literal[CustomisationGrade.EARLY_PROTOTYPE] = CustomisationGrade.EARLY_PROTOTYPE
@@ -190,7 +198,7 @@ class ShipPart(CeresModel):
     power: float = 0.0
     tons: float = 0.0
     armoured_bulkhead: bool = False
-    minimum_tl: ClassVar[int] = 0
+    _tl: ClassVar[int] = 0
     _ship: ShipBase | None = PrivateAttr(default=None)
     _armoured_bulkhead_part: ShipPart | None = PrivateAttr(default=None)
     model_config = {'frozen': True}
@@ -234,7 +242,7 @@ class ShipPart(CeresModel):
 
     def bind(self, ship: ShipBase) -> None:
         self._ship = ship
-        self.validate_tl()
+        self.check_ship_tl()
         self.refresh_derived_values()
         self._refresh_armoured_bulkhead(ship)
 
@@ -249,13 +257,13 @@ class ShipPart(CeresModel):
         return self.ship.tl
 
     @property
-    def effective_tl(self) -> int:
-        return self.minimum_tl
+    def tl(self) -> int:
+        return self._tl
 
-    def validate_tl(self) -> None:
-        if self.ship_tl < self.effective_tl:
+    def check_ship_tl(self) -> None:
+        if self.ship_tl < self.tl:
             self.error(
-                f'Requires TL{self.effective_tl}, ship is TL{self.ship_tl}',
+                f'Requires TL{self.tl}, ship is TL{self.ship_tl}',
             )
 
     def bulkhead_label(self) -> str:
@@ -288,10 +296,6 @@ class CustomisableShipPart(ShipPart):
     allowed_modifications: ClassVar[frozenset[str]] = frozenset()
 
     @property
-    def effective_tl(self) -> int:
-        return self.minimum_tl + (0 if self.customisation is None else self.customisation.tl_delta)
-
-    @property
     def group_key(self) -> str:
         base = super().group_key
         if self.customisation is None:
@@ -311,8 +315,9 @@ class CustomisableShipPart(ShipPart):
                 if mod.name not in self.allowed_modifications:
                     self.error(f'Modification not allowed for {self.__class__.__name__}: {mod.name}')
         super().bind(ship)
-        if self.customisation is not None and self.customisation.tl_delta < 0 and self.ship_tl > self.effective_tl:
-            self.warning(
-                f'{self.customisation._display_name} not required: '
-                f'ship TL{self.ship_tl} exceeds required TL{self.effective_tl}'
-            )
+
+    def check_ship_tl(self) -> None:
+        if self.customisation is None:
+            super().check_ship_tl()
+            return
+        self.customisation.check_ship_tl(self)

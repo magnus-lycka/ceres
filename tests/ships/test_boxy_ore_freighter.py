@@ -37,7 +37,7 @@ def build_boxy_ore_freighter() -> ship.Ship:
 
 def test_boxy_ore_freighter_has_large_default_cargo_hold():
     freighter = build_boxy_ore_freighter()
-    assert CargoSection.cargo_tons_for_ship(freighter) == pytest.approx(170.6)
+    assert CargoSection.cargo_tons_for_ship(freighter) == pytest.approx(170.0)
 
 
 def test_boxy_ore_freighter_tl9_mdrive_is_valid():
@@ -51,4 +51,4 @@ def test_boxy_ore_freighter_tl9_mdrive_is_valid():
 
 def test_boxy_ore_freighter_operation_fuel_costs_80_per_month():
     freighter = build_boxy_ore_freighter()
-    assert freighter.expenses.fuel == pytest.approx(80.0)
+    assert freighter.expenses.fuel == pytest.approx(100.0)

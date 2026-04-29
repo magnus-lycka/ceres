@@ -27,6 +27,32 @@ is not a geometric truth about every possible cargo, but it keeps Traveller's
 trade assumptions in a usable range and avoids treating `dTons` of cargo as if
 they were magically much denser than the hydrogen-reference volume.
 
+### Operation fuel and endurance
+
+`OperationFuel.weeks` is treated as the **minimum requested endurance** in
+ordinary weeks. Tycho then computes the minimum tankage needed to satisfy that
+request and may end up giving the design more endurance than originally asked
+for once tankage is rounded up.
+
+For operation-fuel tankage, Tycho currently uses this policy:
+
+- ships under `100 dTons`: round fuel tankage up to `0.1 dTon`
+- ships of `100 dTons` or more: round fuel tankage up to whole `dTons`
+
+This is our interpretation of the Small Craft Catalogue wording that "it makes
+sense for small craft to be able to use less than a ton of fuel for their tiny
+power plants", rather than a direct restatement of the simpler Core / High
+Guard minimum-one-ton wording. The intent is to keep small craft from being
+forced into absurdly large fuel tanks while still preserving clean tank
+increments.
+
+The stored `tons` value is therefore the actual allocated tankage, while the
+rendered item text uses `actual_weeks`, not the originally requested `weeks`.
+If rounding up gives enough fuel for additional full four-week periods, Tycho
+reports the longer endurance. For example, a design that requested four weeks
+may display eight or twenty weeks if the rounded tankage really supports that
+much endurance.
+
 ### Two-phase construction: creation then binding
 
 Parts are created as plain Pydantic models. `Ship.model_post_init()` then calls
@@ -87,15 +113,10 @@ Some subsystems may also care about `ship.tl` separately from `part.tl`. The
 most obvious example is sensors, where the installed sensor package has its own
 TL floor but some capabilities or notes may still depend on the ship's TL.
 
-The current code still uses names such as `minimum_tl` and `effective_tl` in
-places, and that implementation vocabulary does not yet cleanly match the
-conceptual model above. When refactoring TL-sensitive code, prefer explicit
-ideas such as:
-
-- part TL / variant TL
-- ship TL
-- required ship TL after customisation
-- capability rules affected by ship TL
+In the code, ordinary parts should expose `part.tl` and check themselves
+against `self.ship.tl`. Customisable parts keep the same `part.tl` and let the
+chosen customisation decide whether that part may be used on the current ship
+TL and whether any warnings should be attached.
 
 Ceres currently supports ship TL16 and lower. We cap `ship.tl` at 16 and do
 not attempt to model TL17+ features for now.

@@ -77,7 +77,7 @@ def test_ultralight_fighter_part_values():
 
     assert fighter.fuel is not None
     assert fighter.fuel.operation_fuel is not None
-    assert float(fighter.fuel.operation_fuel.tons) == pytest.approx(0.02)
+    assert float(fighter.fuel.operation_fuel.tons) == pytest.approx(0.1)
 
     assert fighter.command is not None
     assert fighter.command.cockpit is not None

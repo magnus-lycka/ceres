@@ -16,9 +16,6 @@ Source handling for this test case:
   - the sheet lists `HULL: 3,200`
   - Tycho follows the current light-hull and dispersed-structure modifiers,
     which yield 3,240 hull points
-  - the sheet lists `12 Weeks of Operation` as 51 tons
-  - Tycho follows the normal operation-fuel rule for this plant, which yields
-    50 tons
 - still excluded from the modeled reference case:
   - improved solar panels
   - additional fuel tankage

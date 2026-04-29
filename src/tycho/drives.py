@@ -35,23 +35,23 @@ DecreasedFuel = Modification(
 
 class RDrive(ShipPart):
     _specs: ClassVar[dict[int, dict[str, float | int]]] = {
-        0: dict(tons_percent=0.01, minimum_tl=7),
-        1: dict(tons_percent=0.02, minimum_tl=7),
-        2: dict(tons_percent=0.04, minimum_tl=7),
-        3: dict(tons_percent=0.06, minimum_tl=7),
-        4: dict(tons_percent=0.08, minimum_tl=8),
-        5: dict(tons_percent=0.10, minimum_tl=8),
-        6: dict(tons_percent=0.12, minimum_tl=8),
-        7: dict(tons_percent=0.14, minimum_tl=9),
-        8: dict(tons_percent=0.16, minimum_tl=9),
-        9: dict(tons_percent=0.18, minimum_tl=9),
-        10: dict(tons_percent=0.20, minimum_tl=10),
-        11: dict(tons_percent=0.22, minimum_tl=10),
-        12: dict(tons_percent=0.24, minimum_tl=10),
-        13: dict(tons_percent=0.26, minimum_tl=11),
-        14: dict(tons_percent=0.28, minimum_tl=11),
-        15: dict(tons_percent=0.30, minimum_tl=11),
-        16: dict(tons_percent=0.32, minimum_tl=12),
+        0: dict(tons_percent=0.01, tl=7),
+        1: dict(tons_percent=0.02, tl=7),
+        2: dict(tons_percent=0.04, tl=7),
+        3: dict(tons_percent=0.06, tl=7),
+        4: dict(tons_percent=0.08, tl=8),
+        5: dict(tons_percent=0.10, tl=8),
+        6: dict(tons_percent=0.12, tl=8),
+        7: dict(tons_percent=0.14, tl=9),
+        8: dict(tons_percent=0.16, tl=9),
+        9: dict(tons_percent=0.18, tl=9),
+        10: dict(tons_percent=0.20, tl=10),
+        11: dict(tons_percent=0.22, tl=10),
+        12: dict(tons_percent=0.24, tl=10),
+        13: dict(tons_percent=0.26, tl=11),
+        14: dict(tons_percent=0.28, tl=11),
+        15: dict(tons_percent=0.30, tl=11),
+        16: dict(tons_percent=0.32, tl=12),
     }
     level: int
     high_burn_thruster: bool = False
@@ -62,8 +62,8 @@ class RDrive(ShipPart):
         super().__init__(**data)
 
     @property
-    def minimum_tl(self) -> int:
-        return int(self._specs[self.level]['minimum_tl'])
+    def tl(self) -> int:
+        return int(self._specs[self.level]['tl'])
 
     def build_item(self) -> str | None:
         if self.high_burn_thruster:
@@ -88,28 +88,28 @@ class RDrive(ShipPart):
             return []
         return [Note(category=NoteCategory.INFO, message='No inertial compensation above manoeuvre-drive thrust')]
 
-    def validate_tl(self) -> None:
+    def check_ship_tl(self) -> None:
         if self.level not in self._specs:
             self.error(f'Unsupported reaction drive level {self.level}')
             return
-        super().validate_tl()
+        super().check_ship_tl()
 
 
 class MDrive(CustomisableShipPart):
     level: int
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
-        0: dict(minimum_tl=9, tons_percent=0.005),
-        1: dict(minimum_tl=9, tons_percent=0.01),
-        2: dict(minimum_tl=10, tons_percent=0.02),
-        3: dict(minimum_tl=10, tons_percent=0.03),
-        4: dict(minimum_tl=11, tons_percent=0.04),
-        5: dict(minimum_tl=11, tons_percent=0.05),
-        6: dict(minimum_tl=12, tons_percent=0.06),
-        7: dict(minimum_tl=13, tons_percent=0.07),
-        8: dict(minimum_tl=14, tons_percent=0.08),
-        9: dict(minimum_tl=15, tons_percent=0.09),
-        10: dict(minimum_tl=16, tons_percent=0.10),
-        11: dict(minimum_tl=17, tons_percent=0.11),
+        0: dict(tl=9, tons_percent=0.005),
+        1: dict(tl=9, tons_percent=0.01),
+        2: dict(tl=10, tons_percent=0.02),
+        3: dict(tl=10, tons_percent=0.03),
+        4: dict(tl=11, tons_percent=0.04),
+        5: dict(tl=11, tons_percent=0.05),
+        6: dict(tl=12, tons_percent=0.06),
+        7: dict(tl=13, tons_percent=0.07),
+        8: dict(tl=14, tons_percent=0.08),
+        9: dict(tl=15, tons_percent=0.09),
+        10: dict(tl=16, tons_percent=0.10),
+        11: dict(tl=17, tons_percent=0.11),
     }
     allowed_modifications: ClassVar[frozenset[str]] = frozenset(
         {
@@ -128,8 +128,8 @@ class MDrive(CustomisableShipPart):
         super().__init__(**data)
 
     @property
-    def minimum_tl(self) -> int:
-        return int(self._specs[self.level]['minimum_tl'])
+    def tl(self) -> int:
+        return int(self._specs[self.level]['tl'])
 
     def build_item(self) -> str | None:
         return f'M-Drive {self.level}'
@@ -141,16 +141,11 @@ class MDrive(CustomisableShipPart):
         tons_percent = float(self._specs[self.level]['tons_percent'])
         return self.ship.displacement * tons_percent
 
-    @property
-    def effective_tl(self) -> int:
-        return self.minimum_tl + (0 if self.customisation is None else self.customisation.tl_delta)
-
-    def validate_tl(self) -> None:
+    def check_ship_tl(self) -> None:
         if self.level not in self._specs:
             self.error(f'Unsupported M-Drive level {self.level}')
             return
-        if self.ship_tl < self.effective_tl:
-            self.error(f'Requires TL{self.effective_tl}, ship is TL{self.ship_tl}')
+        super().check_ship_tl()
 
     def compute_tons(self) -> float:
         multiplier = 1.0 if self.customisation is None else self.customisation.tons_multiplier
@@ -173,15 +168,15 @@ class MDrive(CustomisableShipPart):
 class JDrive(CustomisableShipPart):
     level: int
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
-        1: dict(minimum_tl=9, tons_percent=0.025),
-        2: dict(minimum_tl=11, tons_percent=0.05),
-        3: dict(minimum_tl=12, tons_percent=0.075),
-        4: dict(minimum_tl=13, tons_percent=0.10),
-        5: dict(minimum_tl=14, tons_percent=0.125),
-        6: dict(minimum_tl=15, tons_percent=0.15),
-        7: dict(minimum_tl=16, tons_percent=0.175),
-        8: dict(minimum_tl=17, tons_percent=0.20),
-        9: dict(minimum_tl=18, tons_percent=0.225),
+        1: dict(tl=9, tons_percent=0.025),
+        2: dict(tl=11, tons_percent=0.05),
+        3: dict(tl=12, tons_percent=0.075),
+        4: dict(tl=13, tons_percent=0.10),
+        5: dict(tl=14, tons_percent=0.125),
+        6: dict(tl=15, tons_percent=0.15),
+        7: dict(tl=16, tons_percent=0.175),
+        8: dict(tl=17, tons_percent=0.20),
+        9: dict(tl=18, tons_percent=0.225),
     }
     allowed_modifications: ClassVar[frozenset[str]] = frozenset(
         {
@@ -197,8 +192,8 @@ class JDrive(CustomisableShipPart):
         super().__init__(**data)
 
     @property
-    def minimum_tl(self) -> int:
-        return int(self._specs[self.level]['minimum_tl'])
+    def tl(self) -> int:
+        return int(self._specs[self.level]['tl'])
 
     def build_item(self) -> str | None:
         return f'Jump {self.level}'
@@ -210,16 +205,11 @@ class JDrive(CustomisableShipPart):
     def parsecs(self) -> int:
         return self.level
 
-    @property
-    def effective_tl(self) -> int:
-        return self.minimum_tl + (0 if self.customisation is None else self.customisation.tl_delta)
-
-    def validate_tl(self) -> None:
+    def check_ship_tl(self) -> None:
         if self.level not in self._specs:
             self.error(f'Unsupported J-Drive level {self.level}')
             return
-        if self.ship_tl < self.effective_tl:
-            self.error(f'Requires TL{self.effective_tl}, ship is TL{self.ship_tl}')
+        super().check_ship_tl()
 
     def compute_tons(self) -> float:
         tons_percent = float(self._specs[self.level]['tons_percent'])
@@ -267,7 +257,7 @@ class DriveSection(ShipPart):
 
 
 class _FusionPlant(CustomisableShipPart):
-    minimum_tl: ClassVar[int]
+    _tl: ClassVar[int]
     power_per_ton: ClassVar[int]
     cost_per_ton: ClassVar[int]
     allowed_modifications: ClassVar[frozenset[str]] = frozenset(
@@ -280,22 +270,14 @@ class _FusionPlant(CustomisableShipPart):
     output: int
 
     def build_item(self) -> str | None:
-        return f'Fusion (TL {self.minimum_tl})'
+        return f'Fusion (TL {self.tl})'
 
     def bulkhead_label(self) -> str:
         return 'Power Plant'
 
     @property
     def fusion_tl(self) -> int:
-        return self.minimum_tl
-
-    @property
-    def effective_tl(self):
-        return self.minimum_tl + (0 if self.customisation is None else self.customisation.tl_delta)
-
-    def validate_tl(self) -> None:
-        if self.ship_tl < self.effective_tl:
-            self.error(f'Requires TL{self.effective_tl}, ship is TL{self.ship_tl}')
+        return self.tl
 
     def compute_tons(self) -> float:
         tons = self.output / self.power_per_ton
@@ -310,21 +292,21 @@ class _FusionPlant(CustomisableShipPart):
 
 class FusionPlantTL8(_FusionPlant):
     plant_type: Literal['fusion_tl8'] = 'fusion_tl8'
-    minimum_tl = 8
+    _tl = 8
     power_per_ton = 10
     cost_per_ton = 500_000
 
 
 class FusionPlantTL12(_FusionPlant):
     plant_type: Literal['fusion_tl12'] = 'fusion_tl12'
-    minimum_tl = 12
+    _tl = 12
     power_per_ton = 15
     cost_per_ton = 1_000_000
 
 
 class FusionPlantTL15(_FusionPlant):
     plant_type: Literal['fusion_tl15'] = 'fusion_tl15'
-    minimum_tl = 15
+    _tl = 15
     power_per_ton = 20
     cost_per_ton = 2_000_000
 

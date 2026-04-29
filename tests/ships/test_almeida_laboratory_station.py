@@ -9,11 +9,8 @@ Source handling for this test case:
 - supported: hull, manoeuvre drive, power plant, bridge, computer, included
   software, advanced sensors, docking space, air/raft, advanced probe drones,
   laboratories, physical library, standard staterooms, common area, cargo
-  space, production cost, discounted purchase price, and maintenance cost
-- source mismatch retained:
-  - the sheet lists `8 Weeks of Operation` as 2 tons
-  - Tycho follows the normal operation-fuel rule for this plant, which yields
-    1.6 tons
+  space, production cost, discounted purchase price, maintenance cost, and
+  operation fuel
 - deliberate interpretation:
   - explicit crew is carried over from the source sheet and allowed to exceed
     Tycho's recommended minimum crew, producing informational notes rather than
@@ -95,7 +92,7 @@ def test_almeida_laboratory_station_matches_reference_sheet():
 
     assert station.fuel is not None
     assert station.fuel.operation_fuel is not None
-    assert station.fuel.operation_fuel.tons == pytest.approx(1.6)
+    assert station.fuel.operation_fuel.tons == pytest.approx(2.0)
 
     assert station.command is not None
     assert station.command.bridge is not None

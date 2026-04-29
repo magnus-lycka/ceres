@@ -143,15 +143,9 @@ Break out expense code to its own module expense.py
 
 ## Google Sheet fuel mismatch
 
-We need to understand why some Google Sheet / export-based reference ships can
-disagree with Tycho on fuel tonnage or fuel-related expenses even when the rest
-of the design matches closely.
-
-Current concern:
-
-- `Almeida-class Laboratory Station` lists `8 Weeks of Operation` as `2 tons`
-  while Tycho's normal `OperationFuel` rule gives `1.6 tons` for the same
-  power plant.
+We should keep an eye out for any remaining Google Sheet / export-based fuel
+discrepancies after the `OperationFuel` fix to follow the book rule of a
+rounded-up, minimum-1-ton four-week baseline.
 
 Rule for future work:
 

@@ -16,6 +16,8 @@ Source handling for this test case:
 - still excluded from the modeled reference case:
   - the source life-support total is Cr1000 higher than the current core-rule
     formula for the same manifest
+  - the source fuel-expense total is Cr50 lower than Tycho now that operation
+    fuel follows the book rule of a 1-ton minimum four-week baseline
 - model interpretation rather than dedicated installed rows:
   - stores and spares (`RI-001`)
   - passenger luggage / baggage storage (`RI-002`)
@@ -113,7 +115,7 @@ def test_beowulf_fuel():
     assert beowulf.fuel.jump_fuel is not None
     assert beowulf.fuel.jump_fuel.tons == pytest.approx(20.0)
     assert beowulf.fuel.operation_fuel is not None
-    assert beowulf.fuel.operation_fuel.tons == pytest.approx(0.50)
+    assert beowulf.fuel.operation_fuel.tons == pytest.approx(1.0)
     assert beowulf.fuel.fuel_processor is not None
     assert beowulf.fuel.fuel_processor.tons == pytest.approx(1.0)
     assert beowulf.fuel.fuel_processor.cost == 50_000
@@ -170,7 +172,7 @@ def test_beowulf_cargo():
     # Ceres does not install luggage or stores/spares as separate design rows in
     # this case, but the resulting usable cargo capacity still lands at 81.5.
     beowulf = build_beowulf()
-    assert CargoSection.cargo_tons_for_ship(beowulf) == pytest.approx(81.5, abs=0.01)
+    assert CargoSection.cargo_tons_for_ship(beowulf) == pytest.approx(81.0, abs=0.01)
 
 
 def test_beowulf_power():
@@ -200,7 +202,7 @@ def test_beowulf_crew_and_life_support_match_reference_manifest():
     ]
     assert beowulf.expenses.life_support == pytest.approx(30_000.0)
     assert beowulf.expenses.crew_salaries == pytest.approx(17_000.0)
-    assert beowulf.expenses.fuel == pytest.approx(4_050.0)
+    assert beowulf.expenses.fuel == pytest.approx(4_100.0)
     assert not beowulf.notes
 
 
@@ -218,7 +220,7 @@ def test_beowulf_spec_structure():
     assert spec.row('Jump 1').section == 'Jump'
     assert spec.row('M-Drive 1').section == 'Propulsion'
     assert spec.row('Fusion (TL 12)').section == 'Power'
-    assert spec.row('J-1, 4 weeks of operation').section == 'Fuel'
+    assert spec.row('J-1, 8 weeks of operation').section == 'Fuel'
     assert spec.row('Fuel Scoops').section == 'Fuel'
     airlock_row = spec.row('Airlock (2 tons)', section='Hull')
     assert airlock_row.section == 'Hull'

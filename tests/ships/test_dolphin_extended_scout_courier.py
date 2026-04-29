@@ -13,9 +13,10 @@ Source handling for this test case:
 - deliberate interpretation:
   - the source only lists a cargo airlock; Tycho also auto-installs one free
     standard airlock as the minimum recommended ship airlock
-- source-specific normalization:
-  - operation-fuel tonnage follows the supplied sheet's 4-ton figure rather
-    than Tycho's normal formula for a 16-week operation load
+- source mismatch retained:
+  - the source lists `16 weeks of operation` as 4 tons
+  - Tycho rounds the required 1.4 tons up to 2 tons for a 150 dTon ship,
+    which in turn gives 20 weeks of endurance
 - source rounding:
   - the sheet's maintenance line rounds up by Cr1 relative to Tycho's current
     monthly maintenance calculation on the same production cost
@@ -31,24 +32,9 @@ from tycho.crew import Astrogator, Engineer, Gunner, Medic, Pilot, ShipCrew
 from tycho.drives import DriveSection, FusionPlantTL15, JDrive, MDrive, PowerSection
 from tycho.habitation import HabitationSection, LowBerth, Stateroom
 from tycho.sensors import MilitarySensors, SensorsSection
-from tycho.storage import (
-    CargoAirlock,
-    CargoSection,
-    FuelCargoContainer,
-    FuelProcessor,
-    FuelSection,
-    JumpFuel,
-    OperationFuel,
-)
+from tycho.storage import CargoAirlock, CargoSection, FuelCargoContainer, FuelProcessor, FuelSection, JumpFuel, OperationFuel
 from tycho.systems import CommonArea, MedicalBay, ProbeDrones, SystemsSection, Workshop
 from tycho.weapons import MountWeapon, Turret, WeaponsSection
-
-
-class SheetOperationFuel(OperationFuel):
-    """Reference-sheet special case for the Dolphin scout courier."""
-
-    def compute_tons(self) -> float:
-        return 4.0
 
 
 def build_dolphin_extended_scout_courier() -> ship.Ship:
@@ -66,7 +52,7 @@ def build_dolphin_extended_scout_courier() -> ship.Ship:
         power=PowerSection(fusion_plant=FusionPlantTL15(output=70)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=2),
-            operation_fuel=SheetOperationFuel(weeks=16),
+            operation_fuel=OperationFuel(weeks=16),
             fuel_processor=FuelProcessor(tons=2),
         ),
         command=CommandSection(bridge=Bridge()),
@@ -135,7 +121,7 @@ def test_dolphin_extended_scout_courier_matches_reference_sheet():
     assert dolphin.fuel.jump_fuel is not None
     assert dolphin.fuel.jump_fuel.tons == pytest.approx(30.0)
     assert dolphin.fuel.operation_fuel is not None
-    assert dolphin.fuel.operation_fuel.tons == pytest.approx(4.0)
+    assert dolphin.fuel.operation_fuel.tons == pytest.approx(2.0)
     assert dolphin.fuel.fuel_scoops is not None
     assert dolphin.fuel.fuel_scoops.cost == pytest.approx(0.0)
     assert dolphin.fuel.fuel_processor is not None
@@ -201,7 +187,7 @@ def test_dolphin_extended_scout_courier_matches_reference_sheet():
     assert len(dolphin.cargo.fuel_cargo_containers) == 1
     assert dolphin.cargo.fuel_cargo_containers[0].tons == pytest.approx(32.0)
     assert dolphin.cargo.fuel_cargo_containers[0].cost == pytest.approx(150_000.0)
-    assert CargoSection.cargo_tons_for_ship(dolphin) == pytest.approx(30.0)
+    assert CargoSection.cargo_tons_for_ship(dolphin) == pytest.approx(32.0)
 
     assert len(dolphin.hull.airlocks or []) == 1
     assert dolphin.hull.airlocks[0].tons == pytest.approx(0.0)
@@ -242,7 +228,7 @@ def test_dolphin_extended_scout_courier_spec_structure():
     assert spec.row('M-Drive 2').section == 'Propulsion'
     assert spec.row('Jump 2').section == 'Jump'
     assert spec.row('Fusion (TL 15)').section == 'Power'
-    assert spec.row('J-2, 16 weeks of operation').section == 'Fuel'
+    assert spec.row('J-2, 20 weeks of operation').section == 'Fuel'
     assert spec.row('Fuel Scoops').section == 'Fuel'
     assert spec.row('Fuel Processor (40 tons/day)').section == 'Fuel'
     assert spec.row('Computer/10').section == 'Computer'

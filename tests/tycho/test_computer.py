@@ -28,9 +28,8 @@ class DummyOwner(ShipBase):
 def test_computer_5_cost():
     c = Computer(5)
     c.bind(DummyOwner(12, 6))
-    assert c.minimum_tl == 7
+    assert c.tl == 7
     assert c.ship_tl == 12
-    assert c.effective_tl == 12
     assert c.processing == 5
     assert c.jump_control_processing == 5
     assert float(c.cost) == 30_000
@@ -102,7 +101,7 @@ def test_computer_bis_and_fib_double_cost():
 def test_core_40_hardware():
     c = Core(40)
     c.bind(DummyOwner(12, 100))
-    assert c.minimum_tl == 9
+    assert c.tl == 9
     assert c.processing == 40
     assert c.jump_control_processing == 40
     assert c.cost == 45_000_000
@@ -125,7 +124,7 @@ def test_included_software_packages():
 def test_jump_control_2_data():
     p = JumpControl(2)
     assert p.description == 'Jump Control/2'
-    assert p.minimum_tl == 11
+    assert p.tl == 11
     assert p.bandwidth == 10
     assert p.cost == 200_000
     assert p.rating == 2
@@ -134,7 +133,7 @@ def test_jump_control_2_data():
 def test_advanced_fire_control_1_data():
     p = AdvancedFireControl(1)
     assert p.description == 'Advanced Fire Control/1'
-    assert p.minimum_tl == 10
+    assert p.tl == 10
     assert p.bandwidth == 15
     assert p.cost == 12_000_000
     assert p.rating == 1
@@ -143,7 +142,7 @@ def test_advanced_fire_control_1_data():
 def test_anti_hijack_1_data():
     p = AntiHijack(1)
     assert p.description == 'Anti-Hijack/1'
-    assert p.minimum_tl == 11
+    assert p.tl == 11
     assert p.bandwidth == 2
     assert p.cost == 6_000_000
 
@@ -151,7 +150,7 @@ def test_anti_hijack_1_data():
 def test_broad_spectrum_ew_data():
     p = BroadSpectrumEW()
     assert p.description == 'Broad Spectrum EW'
-    assert p.minimum_tl == 13
+    assert p.tl == 13
     assert p.bandwidth == 12
     assert p.cost == 14_000_000
 
@@ -159,7 +158,7 @@ def test_broad_spectrum_ew_data():
 def test_electronic_warfare_1_data():
     p = ElectronicWarfare(1)
     assert p.description == 'Electronic Warfare/1'
-    assert p.minimum_tl == 10
+    assert p.tl == 10
     assert p.bandwidth == 10
     assert p.cost == 15_000_000
 
@@ -167,7 +166,7 @@ def test_electronic_warfare_1_data():
 def test_virtual_gunner_1_data():
     p = VirtualGunner(1)
     assert p.description == 'Virtual Gunner/1'
-    assert p.minimum_tl == 12
+    assert p.tl == 12
     assert p.bandwidth == 10
     assert p.cost == 5_000_000
 

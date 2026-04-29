@@ -8,13 +8,8 @@ Source handling for this test case:
 - supported: hull, manoeuvre drive, power plant, bridge, computer, included
   software, military sensors, docking space, air/raft, advanced probe drones,
   laboratories, physical library, standard staterooms, common area, cargo
-  space, production cost, discounted purchase price, and maintenance cost
-- source mismatch retained:
-  - the sheet lists `8 Weeks of Operation` as 2 tons
-  - Tycho follows the normal operation-fuel rule for this plant, which yields
-    0.8 tons
-  - because of that, Tycho also ends up with 2.2 tons of residual cargo space
-    rather than the sheet's 1 ton
+  space, production cost, discounted purchase price, maintenance cost, and
+  operation fuel
 - deliberate interpretation:
   - explicit crew is carried over from the source sheet and allowed to exceed
     Tycho's recommended minimum crew, producing informational notes rather than
@@ -96,7 +91,7 @@ def test_serrano_laboratory_station_matches_reference_sheet():
 
     assert station.fuel is not None
     assert station.fuel.operation_fuel is not None
-    assert station.fuel.operation_fuel.tons == pytest.approx(0.8)
+    assert station.fuel.operation_fuel.tons == pytest.approx(1.0)
 
     assert station.command is not None
     assert station.command.bridge is not None
@@ -142,8 +137,8 @@ def test_serrano_laboratory_station_matches_reference_sheet():
 
     assert station.cargo is not None
     assert len(station.cargo.cargo_holds) == 1
-    assert station.cargo.cargo_holds[0].usable_tons(station) == pytest.approx(2.2)
-    assert CargoSection.cargo_tons_for_ship(station) == pytest.approx(2.2)
+    assert station.cargo.cargo_holds[0].usable_tons(station) == pytest.approx(2.0)
+    assert CargoSection.cargo_tons_for_ship(station) == pytest.approx(2.0)
 
     assert station.available_power == pytest.approx(60.0)
     assert station.basic_hull_power_load == pytest.approx(40.0)
@@ -199,4 +194,4 @@ def test_serrano_laboratory_station_spec_structure():
     assert spec.row('Staterooms').section == 'Habitation'
     assert spec.row('Staterooms').quantity == 15
     assert spec.row('Common Area').section == 'Habitation'
-    assert spec.row('Cargo Hold').tons == pytest.approx(2.2)
+    assert spec.row('Cargo Hold').tons == pytest.approx(2.0)

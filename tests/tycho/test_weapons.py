@@ -356,8 +356,7 @@ def test_medium_missile_bay_high_yield_not_applicable():
 def test_high_technology_medium_particle_beam_bay_requires_tl15_not_tl18():
     bay = Bay(size='medium', weapon='particle_beam', customisation=HighTechnology(SizeReduction, SizeReduction, SizeReduction))
     bay.bind(DummyOwner(15, 450))
-    assert bay.minimum_tl == 12
-    assert bay.effective_tl == 15
+    assert bay.tl == 12
     assert ('error', 'Requires TL18, ship is TL15') not in [
         (note.category.value, note.message) for note in bay.notes
     ]

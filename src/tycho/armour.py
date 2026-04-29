@@ -1,5 +1,7 @@
 from typing import ClassVar, Literal
 
+from pydantic import AliasChoices, Field
+
 from .base import ShipBase
 from .parts import ShipPart
 
@@ -7,25 +9,26 @@ from .parts import ShipPart
 class Armour(ShipPart):
     description: str
     protection: int
-    tl: int | None = None
+    part_tl: int | None = Field(default=None, alias='tl', validation_alias=AliasChoices('part_tl', 'tl'))
     _min_tl: ClassVar[int] = 0
     _cost_per_ton: ClassVar[int] = 0
     _tonnage_consumed: ClassVar[int] = 0
+    model_config = {'frozen': True, 'populate_by_name': True, 'serialize_by_alias': True}
 
     def bind(self, owner: ShipBase) -> None:
         super().bind(owner)
         self.check_protection_limit()
 
-    def _effective_tl(self) -> int | None:
-        """Resolve the TL to use for protection-limit checks.
+    def _selected_tl(self) -> int | None:
+        """Resolve the armour TL to use for protection-limit checks.
 
         Returns None and adds an error note if the TL is invalid.
         """
-        if self.tl:
-            if self.ship.tl < self.tl:
-                self.error(f'Ship TL{self.ship.tl} is below armour TL{self.tl}')
+        if self.part_tl:
+            if self.ship.tl < self.part_tl:
+                self.error(f'Ship TL{self.ship.tl} is below armour TL{self.part_tl}')
                 return None
-            tl = self.tl
+            tl = self.part_tl
         else:
             tl = self.ship.tl
         if tl < self._min_tl:
@@ -66,7 +69,7 @@ class TitaniumSteelArmour(Armour):
     _min_tl = 7
 
     def check_protection_limit(self) -> None:
-        tl = self._effective_tl()
+        tl = self._selected_tl()
         if tl is None:
             return
         if self.protection > tl:
@@ -82,7 +85,7 @@ class CrystalironArmour(Armour):
     _min_tl = 10
 
     def check_protection_limit(self) -> None:
-        tl = self._effective_tl()
+        tl = self._selected_tl()
         if tl is None:
             return
         if self.protection > tl:
@@ -98,7 +101,7 @@ class BondedSuperdenseArmour(Armour):
     _min_tl = 14
 
     def check_protection_limit(self) -> None:
-        tl = self._effective_tl()
+        tl = self._selected_tl()
         if tl is None:
             return
         if self.protection > tl:
@@ -112,7 +115,7 @@ class MolecularBondedArmour(Armour):
     _min_tl = 16
 
     def check_protection_limit(self) -> None:
-        tl = self._effective_tl()
+        tl = self._selected_tl()
         if tl is None:
             return
         if self.protection > tl + 4:

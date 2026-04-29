@@ -88,7 +88,7 @@ def test_operation_fuel_contributes_monthly_unrefined_cost():
         computer=ComputerSection(hardware=Computer(5)),
         habitation=HabitationSection(staterooms=[Stateroom()]),
     )
-    assert my_ship.expenses.fuel == pytest.approx(80.0)
+    assert my_ship.expenses.fuel == pytest.approx(100.0)
 
 
 def test_operation_fuel_cost_is_zero_with_scoops_and_no_jump_drive():
@@ -112,7 +112,7 @@ def test_jump_and_operation_fuel_use_unrefined_price_with_processor():
     assert my_ship.fuel is not None
     assert my_ship.fuel.fuel_scoops is not None
     assert my_ship.fuel.fuel_processor is not None
-    assert my_ship.expenses.fuel == pytest.approx(4_040.0)
+    assert my_ship.expenses.fuel == pytest.approx(4_066.6666666667)
 
 
 def test_jump_drive_still_requires_refined_fuel_without_processor():
@@ -134,4 +134,4 @@ def test_jump_drive_still_requires_refined_fuel_without_processor():
     assert my_ship.fuel is not None
     assert my_ship.fuel.fuel_scoops is not None
     assert my_ship.fuel.fuel_processor is None
-    assert my_ship.expenses.fuel == pytest.approx(20_200.0)
+    assert my_ship.expenses.fuel == pytest.approx(20_333.3333333333)
