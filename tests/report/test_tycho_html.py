@@ -1,4 +1,4 @@
-from stuart import render_ship_spec_html
+from ceres.report import render_ship_spec_html
 from tests.ships.test_small_scout_base import build_small_scout_base
 from tests.ships.test_suleiman import build_suleiman
 from tycho import hull, ship

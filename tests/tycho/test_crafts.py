@@ -1,6 +1,6 @@
 import pytest
 
-from stuart.tycho_view import collapsed_main_rows
+from ceres.report.tycho_view import collapsed_main_rows
 from tycho import hull, ship
 from tycho.base import ShipBase
 from tycho.crafts import (

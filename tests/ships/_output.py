@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from stuart import copy_static_assets
+from ceres.report import copy_static_assets
 from tycho.ship import Ship
 
 OUTPUT_DIR = Path(__file__).parent / 'generated_output'

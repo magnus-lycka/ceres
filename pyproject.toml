@@ -35,13 +35,13 @@ quote-style = "single"
 select = ["E", "F", "I", "UP", "RUF005"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["tycho", "stuart"]
+known-first-party = ["ceres", "tycho"]
 force-sort-within-sections = true
 combine-as-imports = true
 
 [tool.deptry]
 exclude = ["tests", ".venv"]
-known_first_party = ["tycho", "stuart"]
+known_first_party = ["ceres", "tycho"]
 
 [tool.coverage.run]
-source_pkgs = ["tycho", "stuart"]
+source_pkgs = ["ceres", "tycho"]

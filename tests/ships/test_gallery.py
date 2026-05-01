@@ -1,5 +1,5 @@
 import pytest
-from stuart import render_ship_html, render_ship_pdf, render_ship_typst
+from ceres.report import render_ship_html, render_ship_pdf, render_ship_typst
 
 from ._output import write_html_output, write_json_output, write_pdf_output, write_typst_output
 from .test_almeida_laboratory_station import build_almeida_laboratory_station

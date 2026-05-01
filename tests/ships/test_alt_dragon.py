@@ -35,7 +35,7 @@ Source handling for this test case:
 """
 
 import pytest
-from stuart import render_ship_html
+from ceres.report import render_ship_html
 
 from tycho import armour, hull, ship
 from tycho.bridge import Bridge, CommandSection
@@ -217,7 +217,7 @@ def test_alt_dragon_has_no_errors():
 
 
 @pytest.mark.generated_output
-def test_alt_dragon_stuart_html_output():
+def test_alt_dragon_report_html_output():
     dragon = build_alt_dragon()
     html = render_ship_html(dragon)
     write_html_output('test_alt_dragon', html)

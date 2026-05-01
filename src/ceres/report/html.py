@@ -7,7 +7,7 @@ from typing import Literal
 
 StuartTheme = Literal['light', 'dark']
 
-_STATIC_DIR = Path(__file__).resolve().parents[2] / 'src' / 'static'
+_STATIC_DIR = Path(__file__).resolve().parents[2] / 'static'
 _LIGHT_BG_FILENAME = 'TCom_ScratchedAluminium_header.jpg'
 
 

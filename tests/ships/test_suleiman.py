@@ -27,7 +27,7 @@ Source handling for this test case:
 """
 
 import pytest
-from stuart import render_ship_html
+from ceres.report import render_ship_html
 
 from tycho import armour, hull, ship
 from tycho.bridge import Bridge, CommandSection
@@ -302,7 +302,7 @@ def test_suleiman_spec_structure():
 
 
 @pytest.mark.generated_output
-def test_suleiman_stuart_html_output():
+def test_suleiman_report_html_output():
     suleiman = build_suleiman()
     html = render_ship_html(suleiman)
     write_html_output('test_suleiman', html)

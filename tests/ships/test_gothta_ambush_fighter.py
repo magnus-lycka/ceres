@@ -1,5 +1,5 @@
 import pytest
-from stuart.tycho_pdf import _build_typst_source
+from ceres.report.tycho_pdf import _build_typst_source
 
 from tycho import hull, ship
 from tycho.bridge import Bridge, CommandSection
