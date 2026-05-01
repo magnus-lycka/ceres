@@ -1,8 +1,8 @@
 from typing import ClassVar, Literal
 
-from pydantic import field_validator, model_validator
+from pydantic import field_validator
 
-from ceres.make.ship.base import CeresModel, Note, NoteCategory
+from ceres.shared import CeresModel, Note, NoteCategory
 
 
 class SoftwarePackage(CeresModel):
@@ -100,15 +100,46 @@ class IntelligentInterface(FixedSoftwarePackage):
     _cost = 100.0
 
 
+class Security(RatedSoftwarePackage):
+    package: Literal['security'] = 'security'
+    _label = 'Security'
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        0: {'bandwidth': 0, 'tl': 8, 'cost': 0.0},
+        1: {'bandwidth': 1, 'tl': 10, 'cost': 200.0},
+        2: {'bandwidth': 2, 'tl': 11, 'cost': 1_000.0},
+        3: {'bandwidth': 3, 'tl': 12, 'cost': 20_000.0},
+    }
+
+
+class Agent(RatedSoftwarePackage):
+    package: Literal['agent'] = 'agent'
+    _label = 'Agent'
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        0: {'bandwidth': 0, 'tl': 11, 'cost': 500.0},
+        1: {'bandwidth': 1, 'tl': 12, 'cost': 2_000.0},
+        2: {'bandwidth': 2, 'tl': 13, 'cost': 100_000.0},
+        3: {'bandwidth': 3, 'tl': 14, 'cost': 250_000.0},
+    }
+
+
 class Intellect(RatedSoftwarePackage):
     package: Literal['intellect'] = 'intellect'
     _label = 'Intellect'
-    # Note that Intellect/0 it High Guard Intellect, 1-3 i CSC
+    # Intellect/0 is the HG ship intellect (free, included); 1–3 are CSC packages
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         0: {'bandwidth': 0, 'tl': 11, 'cost': 0.0},
         1: {'bandwidth': 1, 'tl': 12, 'cost': 2_000.0},
         2: {'bandwidth': 2, 'tl': 13, 'cost': 50_000.0},
         3: {'bandwidth': 3, 'tl': 14, 'cost': 200_000.0},
+    }
+
+
+class Translator(RatedSoftwarePackage):
+    package: Literal['translator'] = 'translator'
+    _label = 'Translator'
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        0: {'bandwidth': 0, 'tl': 9, 'cost': 50.0},
+        1: {'bandwidth': 1, 'tl': 10, 'cost': 500.0},
     }
 
 
@@ -133,6 +164,12 @@ class Expert(SoftwarePackage):
         'Engineer (Power)': {'tl': 9, 'cost': 200.0},
         'Explosives': {'tl': 8, 'cost': 100.0},
         'Gambler': {'tl': 10, 'cost': 500.0},
+        'Language Galanglic': {'tl': 9, 'cost': 200.0},
+        'Language Gvegh': {'tl': 9, 'cost': 200.0},
+        'Language Oynprith': {'tl': 9, 'cost': 200.0},
+        'Language Trokh': {'tl': 9, 'cost': 200.0},
+        'Language Vilani': {'tl': 9, 'cost': 200.0},
+        'Language Zdetl': {'tl': 9, 'cost': 200.0},
         'Mechanic': {'tl': 8, 'cost': 100.0},
         'Medic': {'tl': 9, 'cost': 200.0},
         'Navigation': {'tl': 8, 'cost': 100.0},
@@ -180,8 +217,9 @@ class Expert(SoftwarePackage):
         'Space Sciences (Planetology)': {'tl': 9, 'cost': 200.0},
         'Steward': {'tl': 8, 'cost': 100.0},
         'Survival': {'tl': 10, 'cost': 200.0},
+        'Tactics (Military)': {'tl': 8, 'cost': 100.0},
+        'Tactics (Naval)': {'tl': 8, 'cost': 100.0},
     }
-    BROAD_SKILL_ROOTS: ClassVar[set[str]] = {'Art', 'Profession', 'Science'}
     FALLBACK_TL: ClassVar[int] = 11
     FALLBACK_COST: ClassVar[float] = 1_000.0
 
@@ -205,12 +243,6 @@ class Expert(SoftwarePackage):
             raise ValueError('Expert skill cannot be blank')
         return skill
 
-    @model_validator(mode='after')
-    def validate_known_shape(self):
-        if self.skill in type(self).BROAD_SKILL_ROOTS:
-            raise ValueError(f'{self.skill} is a broad skill; use a specialised form')
-        return self
-
     @property
     def description(self) -> str:
         return f'Expert ({self._resolved_skill_name})/{self.rating}'
@@ -232,7 +264,8 @@ class Expert(SoftwarePackage):
             return []
         return [
             Note(
-                category=NoteCategory.WARNING, message=f'Unfamiliar Expert skill {self.skill} uses CSC fallback values'
+                category=NoteCategory.WARNING,
+                message=f'Unfamiliar Expert skill {self.skill} uses CSC fallback values',
             )
         ]
 
@@ -244,3 +277,110 @@ class Expert(SoftwarePackage):
     @property
     def _resolved_skill_name(self) -> str:
         return self.skill
+
+
+class ComputerBase(CeresModel):
+    processing: int
+    model_config = {'frozen': True}
+    _specs: ClassVar[dict[int, dict[str, int | float]]]
+
+    def __init__(self, processing: int | None = None, /, **data):
+        if processing is not None and 'processing' not in data:
+            data['processing'] = processing
+        super().__init__(**data)
+
+    @field_validator('processing')
+    @classmethod
+    def validate_processing(cls, value: int) -> int:
+        if value not in cls._specs:
+            allowed = ', '.join(str(v) for v in sorted(cls._specs))
+            raise ValueError(f'Unsupported {cls.__name__} processing {value}; expected one of: {allowed}')
+        return value
+
+    @property
+    def tl(self) -> int:
+        return int(self._specs[self.processing]['tl'])
+
+    @property
+    def mass_kg(self) -> float:
+        return float(self._specs[self.processing]['mass_kg'])
+
+    @property
+    def cost(self) -> float:
+        return float(self._specs[self.processing]['cost'])
+
+    def can_run(self, *packages: SoftwarePackage) -> bool:
+        return sum(p.bandwidth for p in packages) <= self.processing
+
+
+class PortableComputer(ComputerBase):
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        0: {'tl': 7, 'mass_kg': 5.0, 'cost': 500.0},
+        1: {'tl': 8, 'mass_kg': 2.0, 'cost': 250.0},
+        2: {'tl': 10, 'mass_kg': 0.5, 'cost': 500.0},
+        3: {'tl': 12, 'mass_kg': 0.5, 'cost': 1_000.0},
+        4: {'tl': 13, 'mass_kg': 0.5, 'cost': 1_500.0},
+        5: {'tl': 14, 'mass_kg': 0.5, 'cost': 5_000.0},
+    }
+
+
+class Tablet(ComputerBase):
+    """Portable computer at TL+1: 0.25 kg, cost×0.5."""
+
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        0: {'tl': 8, 'mass_kg': 0.25, 'cost': 250.0},
+        1: {'tl': 9, 'mass_kg': 0.25, 'cost': 125.0},
+        2: {'tl': 11, 'mass_kg': 0.25, 'cost': 250.0},
+        3: {'tl': 13, 'mass_kg': 0.25, 'cost': 500.0},
+        4: {'tl': 14, 'mass_kg': 0.25, 'cost': 750.0},
+        5: {'tl': 15, 'mass_kg': 0.25, 'cost': 2_500.0},
+    }
+
+
+class MobileComm(ComputerBase):
+    """Portable computer at TL+2: negligible mass, cost×0.25."""
+
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        0: {'tl': 9, 'mass_kg': 0.0, 'cost': 125.0},
+        1: {'tl': 10, 'mass_kg': 0.0, 'cost': 62.5},
+        2: {'tl': 12, 'mass_kg': 0.0, 'cost': 125.0},
+        3: {'tl': 14, 'mass_kg': 0.0, 'cost': 250.0},
+        4: {'tl': 15, 'mass_kg': 0.0, 'cost': 375.0},
+        5: {'tl': 16, 'mass_kg': 0.0, 'cost': 1_250.0},
+    }
+
+
+class ComputerChip(ComputerBase):
+    """Portable computer at TL+3: negligible mass, cost×0.125."""
+
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        0: {'tl': 10, 'mass_kg': 0.0, 'cost': 62.5},
+        1: {'tl': 11, 'mass_kg': 0.0, 'cost': 31.25},
+        2: {'tl': 13, 'mass_kg': 0.0, 'cost': 62.5},
+        3: {'tl': 15, 'mass_kg': 0.0, 'cost': 125.0},
+        4: {'tl': 16, 'mass_kg': 0.0, 'cost': 187.5},
+        5: {'tl': 17, 'mass_kg': 0.0, 'cost': 625.0},
+    }
+
+
+class MicroscopicChip(ComputerBase):
+    """Portable computer at TL+4: negligible mass, cost×0.0625."""
+
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        0: {'tl': 11, 'mass_kg': 0.0, 'cost': 31.25},
+        1: {'tl': 12, 'mass_kg': 0.0, 'cost': 15.625},
+        2: {'tl': 14, 'mass_kg': 0.0, 'cost': 31.25},
+        3: {'tl': 16, 'mass_kg': 0.0, 'cost': 62.5},
+        4: {'tl': 17, 'mass_kg': 0.0, 'cost': 93.75},
+        5: {'tl': 18, 'mass_kg': 0.0, 'cost': 312.5},
+    }
+
+
+class MidSizedComputer(ComputerBase):
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        0: {'tl': 6, 'mass_kg': 500.0, 'cost': 500_000.0},
+        1: {'tl': 7, 'mass_kg': 50.0, 'cost': 50_000.0},
+        2: {'tl': 8, 'mass_kg': 10.0, 'cost': 10_000.0},
+        3: {'tl': 9, 'mass_kg': 5.0, 'cost': 10_000.0},
+        4: {'tl': 10, 'mass_kg': 5.0, 'cost': 10_000.0},
+    }
