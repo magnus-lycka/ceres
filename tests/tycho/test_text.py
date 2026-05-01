@@ -1,4 +1,4 @@
-from tycho.text import collapse_repeated_labels, format_counted_label, optional_count
+from ceres.build.ship.text import collapse_repeated_labels, format_counted_label, optional_count
 
 
 def test_format_counted_label_uses_multiplication_sign_for_plural_counts():

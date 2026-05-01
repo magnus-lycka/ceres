@@ -1,7 +1,7 @@
 import pytest
 
-from tycho.base import ShipBase
-from tycho.computer import (
+from ceres.build.ship.base import ShipBase
+from ceres.build.ship.computer import (
     AdvancedFireControl,
     AntiHijack,
     AutoRepair,

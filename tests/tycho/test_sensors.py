@@ -1,8 +1,8 @@
 import pytest
 
-from tycho import hull, ship
-from tycho.base import ShipBase
-from tycho.sensors import (
+from ceres.build.ship import hull, ship
+from ceres.build.ship.base import ShipBase
+from ceres.build.ship.sensors import (
     AdvancedSensors,
     BasicSensors,
     CivilianSensors,
@@ -263,7 +263,7 @@ def test_enhanced_signal_processing_values():
 
 
 def test_countermeasures_suite_notes_explain_bonus():
-    from tycho.sensors import CountermeasuresSuite
+    from ceres.build.ship.sensors import CountermeasuresSuite
 
     s = CountermeasuresSuite()
     s.bind(DummyOwner(13, 400))
@@ -273,7 +273,7 @@ def test_countermeasures_suite_notes_explain_bonus():
 
 
 def test_life_scanner_analysis_suite_notes_explain_capability():
-    from tycho.sensors import LifeScannerAnalysisSuite
+    from ceres.build.ship.sensors import LifeScannerAnalysisSuite
 
     s = LifeScannerAnalysisSuite()
     s.bind(DummyOwner(14, 400))

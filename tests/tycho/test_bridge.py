@@ -1,7 +1,7 @@
 import pytest
 
-from tycho.base import ShipBase
-from tycho.bridge import Bridge, Cockpit, CommandSection
+from ceres.build.ship.base import ShipBase
+from ceres.build.ship.bridge import Bridge, Cockpit, CommandSection
 
 
 class DummyOwner(ShipBase):

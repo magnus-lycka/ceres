@@ -1,8 +1,8 @@
 import pytest
 
-from tycho import hull, ship
-from tycho.base import ShipBase
-from tycho.drives import (
+from ceres.build.ship import hull, ship
+from ceres.build.ship.base import ShipBase
+from ceres.build.ship.drives import (
     DecreasedFuel,
     DriveSection,
     EmergencyPowerSystem,
@@ -15,8 +15,8 @@ from tycho.drives import (
     PowerSection,
     RDrive,
 )
-from tycho.parts import Advanced, Budget, IncreasedSize, SizeReduction, VeryAdvanced
-from tycho.storage import FuelSection, JumpFuel, OperationFuel, ReactionFuel
+from ceres.build.ship.parts import Advanced, Budget, IncreasedSize, SizeReduction, VeryAdvanced
+from ceres.build.ship.storage import FuelSection, JumpFuel, OperationFuel, ReactionFuel
 
 
 class DummyOwner(ShipBase):

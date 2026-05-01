@@ -1,9 +1,9 @@
 import pytest
 
-from tycho import hull, ship
-from tycho.base import ShipBase
-from tycho.storage import FuelScoops, FuelSection
-from tycho.systems import (
+from ceres.build.ship import hull, ship
+from ceres.build.ship.base import ShipBase
+from ceres.build.ship.storage import FuelScoops, FuelSection
+from ceres.build.ship.systems import (
     AdvancedProbeDrones,
     Airlock,
     Armoury,

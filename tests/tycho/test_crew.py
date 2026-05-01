@@ -1,11 +1,11 @@
 from pydantic import ValidationError
 import pytest
 
-from tycho import hull, ship
-from tycho.bridge import Bridge, CommandSection
-from tycho.computer import Computer, ComputerSection
-from tycho.crafts import CraftSection, InternalDockingSpace, SpaceCraft, Vehicle
-from tycho.crew import (
+from ceres.build.ship import hull, ship
+from ceres.build.ship.bridge import Bridge, CommandSection
+from ceres.build.ship.computer import Computer, ComputerSection
+from ceres.build.ship.crafts import CraftSection, InternalDockingSpace, SpaceCraft, Vehicle
+from ceres.build.ship.crew import (
     Astrogator,
     Engineer,
     GeneralCrew,
@@ -14,11 +14,11 @@ from tycho.crew import (
     ShipCrew,
     Steward,
 )
-from tycho.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
-from tycho.habitation import HabitationSection, LowBerth, Stateroom
-from tycho.sensors import SensorsSection, SensorStations
-from tycho.systems import MedicalBay, SystemsSection
-from tycho.weapons import Barbette, Bay, Turret, WeaponsSection
+from ceres.build.ship.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
+from ceres.build.ship.habitation import HabitationSection, LowBerth, Stateroom
+from ceres.build.ship.sensors import SensorsSection, SensorStations
+from ceres.build.ship.systems import MedicalBay, SystemsSection
+from ceres.build.ship.weapons import Barbette, Bay, Turret, WeaponsSection
 
 
 def grouped_role_counts(roles):

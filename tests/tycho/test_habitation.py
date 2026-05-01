@@ -1,12 +1,12 @@
 import pytest
 
-from tycho import hull, ship
-from tycho.base import ShipBase
-from tycho.bridge import Bridge, CommandSection
-from tycho.computer import Computer, ComputerSection
-from tycho.crew import Pilot, ShipCrew
-from tycho.drives import DriveSection, FusionPlantTL12, JDrive, PowerSection
-from tycho.habitation import (
+from ceres.build.ship import hull, ship
+from ceres.build.ship.base import ShipBase
+from ceres.build.ship.bridge import Bridge, CommandSection
+from ceres.build.ship.computer import Computer, ComputerSection
+from ceres.build.ship.crew import Pilot, ShipCrew
+from ceres.build.ship.drives import DriveSection, FusionPlantTL12, JDrive, PowerSection
+from ceres.build.ship.habitation import (
     AdvancedEntertainmentSystem,
     CabinSpace,
     HabitationSection,
@@ -15,7 +15,7 @@ from tycho.habitation import (
     Stateroom,
     LuxuryStateroom,
 )
-from tycho.systems import CommonArea, SwimmingPool
+from ceres.build.ship.systems import CommonArea, SwimmingPool
 
 
 class DummyOwner(ShipBase):

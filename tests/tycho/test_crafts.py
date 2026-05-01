@@ -1,9 +1,9 @@
 import pytest
 
 from ceres.report.tycho_view import collapsed_main_rows
-from tycho import hull, ship
-from tycho.base import ShipBase
-from tycho.crafts import (
+from ceres.build.ship import hull, ship
+from ceres.build.ship.base import ShipBase
+from ceres.build.ship.crafts import (
     CraftSection,
     DockingClamp,
     EmptyOccupant,

@@ -1,10 +1,10 @@
 import pytest
 
-from tycho import hull, ship
-from tycho.base import ShipBase
-from tycho.drives import DriveSection, FusionPlantTL12, JDrive, PowerSection
-from tycho.spec import SpecSection
-from tycho.storage import (
+from ceres.build.ship import hull, ship
+from ceres.build.ship.base import ShipBase
+from ceres.build.ship.drives import DriveSection, FusionPlantTL12, JDrive, PowerSection
+from ceres.build.ship.spec import SpecSection
+from ceres.build.ship.storage import (
     CargoAirlock,
     CargoCrane,
     CargoHold,

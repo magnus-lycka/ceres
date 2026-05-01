@@ -1,11 +1,11 @@
 import pytest
 
-from tycho import hull, ship
-from tycho.bridge import Bridge, CommandSection
-from tycho.computer import Computer, ComputerSection
-from tycho.drives import DriveSection, FusionPlantTL8, FusionPlantTL12, JDrive, MDrive, PowerSection
-from tycho.habitation import HabitationSection, Stateroom
-from tycho.storage import FuelProcessor, FuelSection, JumpFuel, OperationFuel
+from ceres.build.ship import hull, ship
+from ceres.build.ship.bridge import Bridge, CommandSection
+from ceres.build.ship.computer import Computer, ComputerSection
+from ceres.build.ship.drives import DriveSection, FusionPlantTL8, FusionPlantTL12, JDrive, MDrive, PowerSection
+from ceres.build.ship.habitation import HabitationSection, Stateroom
+from ceres.build.ship.storage import FuelProcessor, FuelSection, JumpFuel, OperationFuel
 
 
 def build_small_jump_ship() -> ship.Ship:

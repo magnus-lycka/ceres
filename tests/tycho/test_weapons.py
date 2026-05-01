@@ -1,12 +1,12 @@
 import pytest
 
-from tycho import hull, ship
-from tycho.base import ShipBase
-from tycho.bridge import Bridge, CommandSection
-from tycho.computer import Computer, ComputerSection
-from tycho.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
-from tycho.parts import Advanced, EnergyEfficient, HighTechnology, SizeReduction, VeryAdvanced
-from tycho.weapons import (
+from ceres.build.ship import hull, ship
+from ceres.build.ship.base import ShipBase
+from ceres.build.ship.bridge import Bridge, CommandSection
+from ceres.build.ship.computer import Computer, ComputerSection
+from ceres.build.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
+from ceres.build.ship.parts import Advanced, EnergyEfficient, HighTechnology, SizeReduction, VeryAdvanced
+from ceres.build.ship.weapons import (
     Barbette,
     Bay,
     FixedMount,
@@ -713,9 +713,9 @@ def test_gauss_point_defense_battery_notes_include_ammunition_requirement():
 
 
 def test_grouped_parts_with_same_note_show_note_once(tmp_path):
-    from tycho import hull, ship
-    from tycho.bridge import Bridge, CommandSection
-    from tycho.computer import Computer, ComputerSection
+    from ceres.build.ship import hull, ship
+    from ceres.build.ship.bridge import Bridge, CommandSection
+    from ceres.build.ship.computer import Computer, ComputerSection
     my_ship = ship.Ship(
         tl=13,
         displacement=400,

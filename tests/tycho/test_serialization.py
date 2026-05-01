@@ -7,18 +7,18 @@ import pytest
 from tests.ships.test_dragon import build_dragon
 from tests.ships.test_revised_beowulf import build_revised_beowulf
 from tests.ships.test_revised_dragon import build_revised_dragon
-from tycho import armour, hull
-from tycho.bridge import Cockpit, CommandSection
-from tycho.computer import Computer, ComputerSection
-from tycho.crafts import CraftSection, InternalDockingSpace, Vehicle
-from tycho.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
-from tycho.hull import BasicStealth, Hull
-from tycho.parts import EnergyEfficient, HighTechnology
-from tycho.sensors import BasicSensors, CivilianSensors, SensorsSection
-from tycho.ship import Ship
-from tycho.storage import CargoSection, FuelSection, OperationFuel
-from tycho.systems import Airlock, Armoury, Biosphere, SystemsSection, TrainingFacility
-from tycho.weapons import FixedMount, MountWeapon, VeryHighYield, WeaponsSection
+from ceres.build.ship import armour, hull
+from ceres.build.ship.bridge import Cockpit, CommandSection
+from ceres.build.ship.computer import Computer, ComputerSection
+from ceres.build.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
+from ceres.build.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
+from ceres.build.ship.hull import BasicStealth, Hull
+from ceres.build.ship.parts import EnergyEfficient, HighTechnology
+from ceres.build.ship.sensors import BasicSensors, CivilianSensors, SensorsSection
+from ceres.build.ship.ship import Ship
+from ceres.build.ship.storage import CargoSection, FuelSection, OperationFuel
+from ceres.build.ship.systems import Airlock, Armoury, Biosphere, SystemsSection, TrainingFacility
+from ceres.build.ship.weapons import FixedMount, MountWeapon, VeryHighYield, WeaponsSection
 
 # Minimal ship for structural tests
 bare = Ship(tl=12, displacement=6, hull=Hull(configuration=hull.standard_hull))

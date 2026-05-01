@@ -1,4 +1,4 @@
-from tycho.base import CeresModel, NoteCategory, ShipBase
+from ceres.build.ship.base import CeresModel, NoteCategory, ShipBase
 
 
 class ExampleModel(CeresModel):

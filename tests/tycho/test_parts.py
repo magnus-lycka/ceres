@@ -2,10 +2,10 @@ from typing import ClassVar
 
 import pytest
 
-from tycho import parts
-from tycho.base import ShipBase
-from tycho.drives import OrbitalRange
-from tycho.hull import ArmouredBulkhead
+from ceres.build.ship import parts
+from ceres.build.ship.base import ShipBase
+from ceres.build.ship.drives import OrbitalRange
+from ceres.build.ship.hull import ArmouredBulkhead
 
 
 class DummyShip(ShipBase):

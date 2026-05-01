@@ -1,16 +1,16 @@
 from pydantic import ValidationError
 import pytest
 
-from tycho import armour, hull, ship
-from tycho.bridge import Bridge, Cockpit, CommandSection
-from tycho.crew import GeneralCrew, Marine, ShipCrew
-from tycho.crafts import CraftSection, InternalDockingSpace, Vehicle
-from tycho.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
-from tycho.parts import EnergyEfficient, HighTechnology
-from tycho.sensors import CivilianSensors, SensorsSection
-from tycho.storage import CargoCrane, CargoHold, CargoSection, FuelCargoContainer
-from tycho.systems import Airlock, Armoury, ProbeDrones, SystemsSection, Workshop
-from tycho.weapons import FixedMount, MountWeapon, VeryHighYield, WeaponsSection
+from ceres.build.ship import armour, hull, ship
+from ceres.build.ship.bridge import Bridge, Cockpit, CommandSection
+from ceres.build.ship.crew import GeneralCrew, Marine, ShipCrew
+from ceres.build.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
+from ceres.build.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
+from ceres.build.ship.parts import EnergyEfficient, HighTechnology
+from ceres.build.ship.sensors import CivilianSensors, SensorsSection
+from ceres.build.ship.storage import CargoCrane, CargoHold, CargoSection, FuelCargoContainer
+from ceres.build.ship.systems import Airlock, Armoury, ProbeDrones, SystemsSection, Workshop
+from ceres.build.ship.weapons import FixedMount, MountWeapon, VeryHighYield, WeaponsSection
 
 
 def test_ship_initial():

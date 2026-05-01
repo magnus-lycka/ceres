@@ -1,5 +1,5 @@
-from tycho import hull
-from tycho.base import ShipBase
+from ceres.build.ship import hull
+from ceres.build.ship.base import ShipBase
 
 
 class DummyOwner(ShipBase):
