@@ -1,12 +1,12 @@
 """Reporting and rendering utilities for Ceres models."""
 
-from .html import ExpanseHtmlPage, StuartTheme, copy_static_assets, render_expanse_html_page
+from .html import ExpanseHtmlPage, ReportTheme, copy_static_assets, render_expanse_html_page
 from .tycho_html import render_ship_html, render_ship_spec_html
 from .tycho_pdf import render_ship_pdf, render_ship_spec_pdf, render_ship_spec_typst, render_ship_typst
 
 __all__ = [
     'ExpanseHtmlPage',
-    'StuartTheme',
+    'ReportTheme',
     'copy_static_assets',
     'render_expanse_html_page',
     'render_ship_html',

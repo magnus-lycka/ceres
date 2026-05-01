@@ -5,17 +5,17 @@ from tycho.ship import Ship
 from tycho.spec import CrewRow, ExpenseRow, ShipSpec, SpecRow
 from tycho.text import format_counted_label
 
-from .html import ExpanseHtmlPage, StuartTheme, render_expanse_html_page
+from .html import ExpanseHtmlPage, ReportTheme, render_expanse_html_page
 from .tycho_view import collapsed_main_rows
 
 __all__ = ['render_ship_html', 'render_ship_spec_html']
 
 
-def render_ship_html(ship: Ship, *, theme: StuartTheme = 'light') -> str:
+def render_ship_html(ship: Ship, *, theme: ReportTheme = 'light') -> str:
     return render_ship_spec_html(ship.build_spec(), theme=theme)
 
 
-def render_ship_spec_html(spec: ShipSpec, *, theme: StuartTheme = 'light') -> str:
+def render_ship_spec_html(spec: ShipSpec, *, theme: ReportTheme = 'light') -> str:
     title = spec.ship_class or spec.ship_type or 'Unnamed'
     if spec.ship_class is not None and spec.ship_type is not None:
         title = spec.ship_class

@@ -5,7 +5,7 @@ import random
 import shutil
 from typing import Literal
 
-StuartTheme = Literal['light', 'dark']
+ReportTheme = Literal['light', 'dark']
 
 _STATIC_DIR = Path(__file__).resolve().parents[2] / 'static'
 _LIGHT_BG_FILENAME = 'TCom_ScratchedAluminium_header.jpg'
@@ -52,7 +52,7 @@ class ExpanseHtmlPage:
     eyebrow: str | None = None
     extra_head_html: str | None = None
     banner_side_html: str | None = None
-    theme: StuartTheme = 'light'
+    theme: ReportTheme = 'light'
 
 
 def render_expanse_html_page(page: ExpanseHtmlPage) -> str:
