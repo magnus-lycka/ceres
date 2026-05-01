@@ -1,14 +1,14 @@
 import pytest
 
-from tycho import armour, hull, ship
-from tycho.bridge import Bridge, CommandSection
-from tycho.computer import AutoRepair, Computer, ComputerSection, Evade, FireControl
-from tycho.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
-from tycho.habitation import HabitationSection, Stateroom
-from tycho.sensors import CountermeasuresSuite, ImprovedSensors, SensorsSection
-from tycho.storage import CargoSection, FuelProcessor, FuelScoops, FuelSection, OperationFuel
-from tycho.systems import Airlock, CommonArea, MedicalBay, RepairDrones, SystemsSection
-from tycho.weapons import MissileStorage, MountWeapon, Turret, WeaponsSection
+from ceres.build.ship import armour, hull, ship
+from ceres.build.ship.bridge import Bridge, CommandSection
+from ceres.build.ship.computer import AutoRepair, Computer, ComputerSection, Evade, FireControl
+from ceres.build.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
+from ceres.build.ship.habitation import HabitationSection, Stateroom
+from ceres.build.ship.sensors import CountermeasuresSuite, ImprovedSensors, SensorsSection
+from ceres.build.ship.storage import CargoSection, FuelProcessor, FuelScoops, FuelSection, OperationFuel
+from ceres.build.ship.systems import Airlock, CommonArea, MedicalBay, RepairDrones, SystemsSection
+from ceres.build.ship.weapons import MissileStorage, MountWeapon, Turret, WeaponsSection
 
 
 STRANDBELL_HULL = hull.standard_hull.model_copy(

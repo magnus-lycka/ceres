@@ -1,13 +1,13 @@
 import pytest
 
-from tycho import hull, ship
-from tycho.bridge import Bridge, CommandSection
-from tycho.computer import Computer, ComputerSection
-from tycho.drives import DriveSection, FusionPlantTL8, MDrive, PowerSection
-from tycho.habitation import HabitationSection, Stateroom
-from tycho.sensors import BasicSensors, SensorsSection
-from tycho.storage import CargoSection, FuelSection, OperationFuel
-from tycho.systems import Airlock, CommonArea, SystemsSection, Workshop
+from ceres.build.ship import hull, ship
+from ceres.build.ship.bridge import Bridge, CommandSection
+from ceres.build.ship.computer import Computer, ComputerSection
+from ceres.build.ship.drives import DriveSection, FusionPlantTL8, MDrive, PowerSection
+from ceres.build.ship.habitation import HabitationSection, Stateroom
+from ceres.build.ship.sensors import BasicSensors, SensorsSection
+from ceres.build.ship.storage import CargoSection, FuelSection, OperationFuel
+from ceres.build.ship.systems import Airlock, CommonArea, SystemsSection, Workshop
 
 
 BOXY_HULL = hull.close_structure.model_copy(

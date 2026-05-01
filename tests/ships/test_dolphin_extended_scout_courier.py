@@ -24,17 +24,17 @@ Source handling for this test case:
 
 import pytest
 
-from tycho import armour, hull, ship
-from tycho.bridge import Bridge, CommandSection
-from tycho.computer import Computer, ComputerSection, JumpControl
-from tycho.crafts import CraftSection, InternalDockingSpace, Vehicle
-from tycho.crew import Astrogator, Engineer, Gunner, Medic, Pilot, ShipCrew
-from tycho.drives import DriveSection, FusionPlantTL15, JDrive, MDrive, PowerSection
-from tycho.habitation import HabitationSection, LowBerth, Stateroom
-from tycho.sensors import MilitarySensors, SensorsSection
-from tycho.storage import CargoAirlock, CargoSection, FuelCargoContainer, FuelProcessor, FuelSection, JumpFuel, OperationFuel
-from tycho.systems import CommonArea, MedicalBay, ProbeDrones, SystemsSection, Workshop
-from tycho.weapons import MountWeapon, Turret, WeaponsSection
+from ceres.build.ship import armour, hull, ship
+from ceres.build.ship.bridge import Bridge, CommandSection
+from ceres.build.ship.computer import Computer, ComputerSection, JumpControl
+from ceres.build.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
+from ceres.build.ship.crew import Astrogator, Engineer, Gunner, Medic, Pilot, ShipCrew
+from ceres.build.ship.drives import DriveSection, FusionPlantTL15, JDrive, MDrive, PowerSection
+from ceres.build.ship.habitation import HabitationSection, LowBerth, Stateroom
+from ceres.build.ship.sensors import MilitarySensors, SensorsSection
+from ceres.build.ship.storage import CargoAirlock, CargoSection, FuelCargoContainer, FuelProcessor, FuelSection, JumpFuel, OperationFuel
+from ceres.build.ship.systems import CommonArea, MedicalBay, ProbeDrones, SystemsSection, Workshop
+from ceres.build.ship.weapons import MountWeapon, Turret, WeaponsSection
 
 
 def build_dolphin_extended_scout_courier() -> ship.Ship:

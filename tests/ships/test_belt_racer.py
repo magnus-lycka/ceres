@@ -20,16 +20,16 @@ Source handling for this test case:
 
 import pytest
 
-from tycho import hull, ship
-from tycho.bridge import Cockpit, CommandSection
-from tycho.computer import Computer, ComputerSection
-from tycho.drives import (
+from ceres.build.ship import hull, ship
+from ceres.build.ship.bridge import Cockpit, CommandSection
+from ceres.build.ship.computer import Computer, ComputerSection
+from ceres.build.ship.drives import (
     DriveSection,
     FusionPlantTL8,
     PowerSection,
     RDrive,
 )
-from tycho.storage import CargoSection, FuelSection, ReactionFuel
+from ceres.build.ship.storage import CargoSection, FuelSection, ReactionFuel
 
 
 BELT_RACER_HULL = hull.close_structure.model_copy(

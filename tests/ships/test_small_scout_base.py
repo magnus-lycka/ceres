@@ -37,11 +37,11 @@ Source handling for this test case:
 
 import pytest
 
-from tycho import hull, ship
-from tycho.bridge import Bridge, CommandSection
-from tycho.computer import Computer, ComputerSection
-from tycho.crafts import CraftSection, FullHangar, InternalDockingSpace, SpaceCraft, Vehicle
-from tycho.crew import (
+from ceres.build.ship import hull, ship
+from ceres.build.ship.bridge import Bridge, CommandSection
+from ceres.build.ship.computer import Computer, ComputerSection
+from ceres.build.ship.crafts import CraftSection, FullHangar, InternalDockingSpace, SpaceCraft, Vehicle
+from ceres.build.ship.crew import (
     Administrator,
     Engineer,
     GeneralCrew,
@@ -53,11 +53,11 @@ from tycho.crew import (
     SensorOperator,
     ShipCrew,
 )
-from tycho.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
-from tycho.habitation import AdvancedEntertainmentSystem, Brig, HabitationSection, Stateroom
-from tycho.sensors import BasicSensors, SensorsSection
-from tycho.storage import FuelProcessor, FuelSection, OperationFuel
-from tycho.systems import (
+from ceres.build.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
+from ceres.build.ship.habitation import AdvancedEntertainmentSystem, Brig, HabitationSection, Stateroom
+from ceres.build.ship.sensors import BasicSensors, SensorsSection
+from ceres.build.ship.storage import FuelProcessor, FuelSection, OperationFuel
+from ceres.build.ship.systems import (
     Airlock,
     Armoury,
     BriefingRoom,
@@ -72,7 +72,7 @@ from tycho.systems import (
     Theatre,
     TrainingFacility,
 )
-from tycho.weapons import MountWeapon, Turret, WeaponsSection
+from ceres.build.ship.weapons import MountWeapon, Turret, WeaponsSection
 
 
 def build_small_scout_base() -> ship.Ship:

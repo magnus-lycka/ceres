@@ -30,10 +30,10 @@ Source handling for this test case:
 
 import pytest
 
-from tycho import armour, hull, ship
-from tycho.bridge import Bridge, CommandSection
-from tycho.computer import AutoRepair, Computer, ComputerSection, Evade, FireControl
-from tycho.crew import (
+from ceres.build.ship import armour, hull, ship
+from ceres.build.ship.bridge import Bridge, CommandSection
+from ceres.build.ship.computer import AutoRepair, Computer, ComputerSection, Evade, FireControl
+from ceres.build.ship.crew import (
     Astrogator,
     Captain,
     Engineer,
@@ -45,11 +45,11 @@ from tycho.crew import (
     SensorOperator,
     ShipCrew,
 )
-from tycho.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
-from tycho.habitation import HabitationSection, Stateroom
-from tycho.hull import ImprovedStealth
-from tycho.parts import HighTechnology, SizeReduction
-from tycho.sensors import (
+from ceres.build.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
+from ceres.build.ship.habitation import HabitationSection, Stateroom
+from ceres.build.ship.hull import ImprovedStealth
+from ceres.build.ship.parts import HighTechnology, SizeReduction
+from ceres.build.ship.sensors import (
     CountermeasuresSuite,
     EnhancedSignalProcessing,
     ExtendedArrays,
@@ -57,8 +57,8 @@ from tycho.sensors import (
     SensorsSection,
     SensorStations,
 )
-from tycho.storage import CargoSection, FuelSection, OperationFuel
-from tycho.systems import (
+from ceres.build.ship.storage import CargoSection, FuelSection, OperationFuel
+from ceres.build.ship.systems import (
     Airlock,
     Armoury,
     Biosphere,
@@ -69,7 +69,7 @@ from tycho.systems import (
     TrainingFacility,
     Workshop,
 )
-from tycho.weapons import Barbette, Bay, MissileStorage, PointDefenseBattery, WeaponsSection
+from ceres.build.ship.weapons import Barbette, Bay, MissileStorage, PointDefenseBattery, WeaponsSection
 
 
 def build_dragon() -> ship.Ship:

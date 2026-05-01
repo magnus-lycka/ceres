@@ -1,9 +1,9 @@
 import pytest
 
-from tycho import hull, ship
-from tycho.armour import BondedSuperdenseArmour
-from tycho.bridge import Bridge, CommandSection
-from tycho.computer import (
+from ceres.build.ship import hull, ship
+from ceres.build.ship.armour import BondedSuperdenseArmour
+from ceres.build.ship.bridge import Bridge, CommandSection
+from ceres.build.ship.computer import (
     AdvancedFireControl,
     AntiHijack,
     BroadSpectrumEW,
@@ -13,19 +13,19 @@ from tycho.computer import (
     JumpControl,
     VirtualGunner,
 )
-from tycho.drives import DecreasedFuel, DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
-from tycho.habitation import HabitationSection, HighStateroom, Stateroom
-from tycho.parts import EnergyEfficient, HighTechnology, SizeReduction, VeryAdvanced
-from tycho.sensors import (
+from ceres.build.ship.drives import DecreasedFuel, DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
+from ceres.build.ship.habitation import HabitationSection, HighStateroom, Stateroom
+from ceres.build.ship.parts import EnergyEfficient, HighTechnology, SizeReduction, VeryAdvanced
+from ceres.build.ship.sensors import (
     CountermeasuresSuite,
     EnhancedSignalProcessing,
     ImprovedSensors,
     SensorsSection,
     SensorStations,
 )
-from tycho.storage import FuelProcessor, FuelSection, OperationFuel
-from tycho.systems import Airlock, Armoury, BriefingRoom, CommonArea, MedicalBay, RepairDrones, SystemsSection
-from tycho.weapons import Bay, HighYield, LongRange, MountWeapon, Turret, WeaponsSection
+from ceres.build.ship.storage import FuelProcessor, FuelSection, OperationFuel
+from ceres.build.ship.systems import Airlock, Armoury, BriefingRoom, CommonArea, MedicalBay, RepairDrones, SystemsSection
+from ceres.build.ship.weapons import Bay, HighYield, LongRange, MountWeapon, Turret, WeaponsSection
 
 def build_ambush_hunter_killer_corvette() -> ship.Ship:
     """

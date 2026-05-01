@@ -1,9 +1,9 @@
 from html import escape
 
-from tycho.base import NoteCategory
-from tycho.ship import Ship
-from tycho.spec import CrewRow, ExpenseRow, ShipSpec, SpecRow
-from tycho.text import format_counted_label
+from ceres.build.ship.base import NoteCategory
+from ceres.build.ship.ship import Ship
+from ceres.build.ship.spec import CrewRow, ExpenseRow, ShipSpec, SpecRow
+from ceres.build.ship.text import format_counted_label
 
 from .html import ExpanseHtmlPage, ReportTheme, render_expanse_html_page
 from .tycho_view import collapsed_main_rows

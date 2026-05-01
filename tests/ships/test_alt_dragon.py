@@ -37,10 +37,10 @@ Source handling for this test case:
 import pytest
 from ceres.report import render_ship_html
 
-from tycho import armour, hull, ship
-from tycho.bridge import Bridge, CommandSection
-from tycho.computer import AutoRepair, Computer, ComputerSection, Core, Evade, FireControl
-from tycho.crew import (
+from ceres.build.ship import armour, hull, ship
+from ceres.build.ship.bridge import Bridge, CommandSection
+from ceres.build.ship.computer import AutoRepair, Computer, ComputerSection, Core, Evade, FireControl
+from ceres.build.ship.crew import (
     Captain,
     Engineer,
     Gunner,
@@ -51,19 +51,19 @@ from tycho.crew import (
     SensorOperator,
     ShipCrew,
 )
-from tycho.drives import DriveSection, EmergencyPowerSystem, FusionPlantTL12, MDrive, PowerSection
-from tycho.habitation import AdvancedEntertainmentSystem, CabinSpace, HabitationSection, Stateroom
-from tycho.hull import ImprovedStealth
-from tycho.parts import Advanced, Budget, HighTechnology, IncreasedSize, SizeReduction
-from tycho.sensors import (
+from ceres.build.ship.drives import DriveSection, EmergencyPowerSystem, FusionPlantTL12, MDrive, PowerSection
+from ceres.build.ship.habitation import AdvancedEntertainmentSystem, CabinSpace, HabitationSection, Stateroom
+from ceres.build.ship.hull import ImprovedStealth
+from ceres.build.ship.parts import Advanced, Budget, HighTechnology, IncreasedSize, SizeReduction
+from ceres.build.ship.sensors import (
     CountermeasuresSuite,
     EnhancedSignalProcessing,
     ImprovedSensors,
     RapidDeploymentExtendedArrays,
     SensorsSection,
 )
-from tycho.storage import CargoSection, FuelProcessor, FuelSection, OperationFuel
-from tycho.systems import (
+from ceres.build.ship.storage import CargoSection, FuelProcessor, FuelSection, OperationFuel
+from ceres.build.ship.systems import (
     Airlock,
     Armoury,
     BasicAutodoc,
@@ -75,7 +75,7 @@ from tycho.systems import (
     TrainingFacility,
     Workshop,
 )
-from tycho.weapons import Barbette, Bay, MissileStorage, PointDefenseBattery, WeaponsSection
+from ceres.build.ship.weapons import Barbette, Bay, MissileStorage, PointDefenseBattery, WeaponsSection
 
 from ._output import write_html_output, write_json_output
 

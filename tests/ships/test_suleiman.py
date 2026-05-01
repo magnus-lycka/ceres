@@ -29,16 +29,16 @@ Source handling for this test case:
 import pytest
 from ceres.report import render_ship_html
 
-from tycho import armour, hull, ship
-from tycho.bridge import Bridge, CommandSection
-from tycho.computer import Computer, ComputerSection, JumpControl
-from tycho.crafts import CraftSection, InternalDockingSpace, Vehicle
-from tycho.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
-from tycho.habitation import HabitationSection, Stateroom
-from tycho.sensors import MilitarySensors, SensorsSection
-from tycho.storage import CargoSection, FuelProcessor, FuelSection, JumpFuel, OperationFuel
-from tycho.systems import Airlock, ProbeDrones, SystemsSection, Workshop
-from tycho.weapons import Turret, WeaponsSection
+from ceres.build.ship import armour, hull, ship
+from ceres.build.ship.bridge import Bridge, CommandSection
+from ceres.build.ship.computer import Computer, ComputerSection, JumpControl
+from ceres.build.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
+from ceres.build.ship.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
+from ceres.build.ship.habitation import HabitationSection, Stateroom
+from ceres.build.ship.sensors import MilitarySensors, SensorsSection
+from ceres.build.ship.storage import CargoSection, FuelProcessor, FuelSection, JumpFuel, OperationFuel
+from ceres.build.ship.systems import Airlock, ProbeDrones, SystemsSection, Workshop
+from ceres.build.ship.weapons import Turret, WeaponsSection
 
 from ._output import write_html_output, write_json_output
 

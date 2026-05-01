@@ -16,15 +16,15 @@ Source handling for this test case:
 
 import pytest
 
-from tycho import hull, ship
-from tycho.bridge import Bridge, CommandSection
-from tycho.computer import Computer, ComputerSection
-from tycho.crew import Pilot, ShipCrew
-from tycho.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
-from tycho.habitation import CabinSpace, HabitationSection
-from tycho.sensors import BasicSensors, SensorsSection
-from tycho.storage import CargoSection, FuelCargoContainer, FuelSection, OperationFuel
-from tycho.systems import Airlock, SystemsSection
+from ceres.build.ship import hull, ship
+from ceres.build.ship.bridge import Bridge, CommandSection
+from ceres.build.ship.computer import Computer, ComputerSection
+from ceres.build.ship.crew import Pilot, ShipCrew
+from ceres.build.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
+from ceres.build.ship.habitation import CabinSpace, HabitationSection
+from ceres.build.ship.sensors import BasicSensors, SensorsSection
+from ceres.build.ship.storage import CargoSection, FuelCargoContainer, FuelSection, OperationFuel
+from ceres.build.ship.systems import Airlock, SystemsSection
 
 
 def build_pinnace_with_20_ton_fuel_capacity() -> ship.Ship:

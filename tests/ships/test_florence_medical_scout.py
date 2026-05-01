@@ -1,16 +1,16 @@
 import pytest
 
-from tycho import hull, ship
-from tycho.bridge import Bridge, CommandSection
-from tycho.computer import Computer, ComputerSection, JumpControl
-from tycho.crew import Astrogator, Captain, Engineer, Maintenance, Medic, Pilot, ShipCrew
-from tycho.crafts import CraftSection, InternalDockingSpace, SpaceCraft, Vehicle
-from tycho.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
-from tycho.habitation import HabitationSection, LowBerth, Stateroom
-from tycho.sensors import LifeScannerAnalysisSuite, MilitarySensors, SensorsSection
-from tycho.storage import FuelProcessor, FuelScoops, FuelSection, JumpFuel, OperationFuel
-from tycho.systems import BriefingRoom, CommonArea, Laboratory, MedicalBay, SystemsSection
-from tycho.weapons import Turret, WeaponsSection
+from ceres.build.ship import hull, ship
+from ceres.build.ship.bridge import Bridge, CommandSection
+from ceres.build.ship.computer import Computer, ComputerSection, JumpControl
+from ceres.build.ship.crew import Astrogator, Captain, Engineer, Maintenance, Medic, Pilot, ShipCrew
+from ceres.build.ship.crafts import CraftSection, InternalDockingSpace, SpaceCraft, Vehicle
+from ceres.build.ship.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
+from ceres.build.ship.habitation import HabitationSection, LowBerth, Stateroom
+from ceres.build.ship.sensors import LifeScannerAnalysisSuite, MilitarySensors, SensorsSection
+from ceres.build.ship.storage import FuelProcessor, FuelScoops, FuelSection, JumpFuel, OperationFuel
+from ceres.build.ship.systems import BriefingRoom, CommonArea, Laboratory, MedicalBay, SystemsSection
+from ceres.build.ship.weapons import Turret, WeaponsSection
 
 
 

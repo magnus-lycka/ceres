@@ -19,16 +19,16 @@ Source handling for this test case:
 
 import pytest
 
-from tycho import hull, ship
-from tycho.bridge import Bridge, CommandSection
-from tycho.computer import Computer, ComputerSection
-from tycho.crafts import CraftSection, InternalDockingSpace, Vehicle
-from tycho.crew import Administrator, Engineer, Maintenance, Officer, Pilot, ShipCrew, Steward
-from tycho.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
-from tycho.habitation import HabitationSection, Stateroom
-from tycho.sensors import AdvancedSensors, SensorsSection
-from tycho.storage import CargoHold, CargoSection, FuelSection, OperationFuel
-from tycho.systems import AdvancedProbeDrones, CommonArea, Laboratory, LibraryFacility, SystemsSection
+from ceres.build.ship import hull, ship
+from ceres.build.ship.bridge import Bridge, CommandSection
+from ceres.build.ship.computer import Computer, ComputerSection
+from ceres.build.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
+from ceres.build.ship.crew import Administrator, Engineer, Maintenance, Officer, Pilot, ShipCrew, Steward
+from ceres.build.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
+from ceres.build.ship.habitation import HabitationSection, Stateroom
+from ceres.build.ship.sensors import AdvancedSensors, SensorsSection
+from ceres.build.ship.storage import CargoHold, CargoSection, FuelSection, OperationFuel
+from ceres.build.ship.systems import AdvancedProbeDrones, CommonArea, Laboratory, LibraryFacility, SystemsSection
 
 
 def build_almeida_laboratory_station() -> ship.Ship:

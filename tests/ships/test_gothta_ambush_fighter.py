@@ -1,15 +1,15 @@
 import pytest
 from ceres.report.tycho_pdf import _build_typst_source
 
-from tycho import hull, ship
-from tycho.bridge import Bridge, CommandSection
-from tycho.computer import Computer, ComputerSection, FireControl
-from tycho.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection, RDrive
-from tycho.habitation import CabinSpace, HabitationSection
-from tycho.sensors import MilitarySensors, SensorsSection
-from tycho.storage import FuelScoops, FuelSection, OperationFuel, ReactionFuel
-from tycho.systems import Aerofins
-from tycho.weapons import FixedMount, MountWeapon, WeaponsSection
+from ceres.build.ship import hull, ship
+from ceres.build.ship.bridge import Bridge, CommandSection
+from ceres.build.ship.computer import Computer, ComputerSection, FireControl
+from ceres.build.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection, RDrive
+from ceres.build.ship.habitation import CabinSpace, HabitationSection
+from ceres.build.ship.sensors import MilitarySensors, SensorsSection
+from ceres.build.ship.storage import FuelScoops, FuelSection, OperationFuel, ReactionFuel
+from ceres.build.ship.systems import Aerofins
+from ceres.build.ship.weapons import FixedMount, MountWeapon, WeaponsSection
 
 
 

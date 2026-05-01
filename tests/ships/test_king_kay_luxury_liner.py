@@ -33,11 +33,11 @@ Source handling for this test case:
 
 import pytest
 
-from tycho import hull, ship
-from tycho.bridge import Bridge, CommandSection
-from tycho.computer import Computer, ComputerSection, Intellect, JumpControl, Library, Manoeuvre
-from tycho.crafts import CraftSection, EmptyOccupant, InternalDockingSpace
-from tycho.crew import (
+from ceres.build.ship import hull, ship
+from ceres.build.ship.bridge import Bridge, CommandSection
+from ceres.build.ship.computer import Computer, ComputerSection, Intellect, JumpControl, Library, Manoeuvre
+from ceres.build.ship.crafts import CraftSection, EmptyOccupant, InternalDockingSpace
+from ceres.build.ship.crew import (
     Administrator,
     Astrogator,
     Captain,
@@ -51,11 +51,11 @@ from tycho.crew import (
     ShipCrew,
     Steward,
 )
-from tycho.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
-from tycho.habitation import HabitationSection, HighStateroom, LowBerth, LuxuryStateroom, Stateroom
-from tycho.sensors import CivilianSensors, SensorsSection
-from tycho.storage import FuelSection, JumpFuel, OperationFuel
-from tycho.systems import CommercialZone, CommonArea, MedicalBay, SwimmingPool, SystemsSection, Theatre, WetBar
+from ceres.build.ship.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
+from ceres.build.ship.habitation import HabitationSection, HighStateroom, LowBerth, LuxuryStateroom, Stateroom
+from ceres.build.ship.sensors import CivilianSensors, SensorsSection
+from ceres.build.ship.storage import FuelSection, JumpFuel, OperationFuel
+from ceres.build.ship.systems import CommercialZone, CommonArea, MedicalBay, SwimmingPool, SystemsSection, Theatre, WetBar
 
 
 def build_king_kay() -> ship.Ship:
