@@ -14,7 +14,7 @@ are two different products with different goals:
   problems here.
 
 These concerns should not be mixed. The PDF renderer reads `ShipSpec` directly
-and builds its layout from scratch, the same way `tycho_html.py` does — just
+and builds its layout from scratch, the same way `ship_html.py` does — just
 for a different target.
 
 ---
@@ -71,7 +71,7 @@ points) appears on page 1 only.
 ## Proposed API
 
 ```python
-# tycho_pdf.py (new module in stuart/)
+# ship_pdf.py (new module in the report package)
 def render_ship_pdf(ship: Ship, *, page_size: str = 'a4') -> bytes: ...
 def render_ship_spec_pdf(spec: ShipSpec, *, page_size: str = 'a4') -> bytes: ...
 ```
@@ -79,7 +79,7 @@ def render_ship_spec_pdf(spec: ShipSpec, *, page_size: str = 'a4') -> bytes: ...
 `page_size` is passed through to Typst's `#set page(paper: ...)` directive.
 Typst uses lowercase names (`"a4"`, `"us-letter"`).
 
-`tycho_html.py` is not touched. The two renderers are siblings, not a hierarchy.
+`ship_html.py` is not touched. The two renderers are siblings, not a hierarchy.
 
 ---
 

@@ -1,5 +1,5 @@
 import pytest
-from ceres.report.tycho_pdf import _build_typst_source
+from ceres.report.ship_pdf import _build_typst_source
 
 from ceres.make.ship import hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection

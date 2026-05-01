@@ -9,17 +9,17 @@ A likely use for this is to hand it to an AI and build rules-compliant
 Traveller ships for conversation, tooling, or export.
 
 ```python
-from stuart import render_ship_html
-from tycho import armour, hull, ship
-from tycho.bridge import Bridge, CommandSection
-from tycho.computer import Computer, ComputerSection, JumpControl
-from tycho.crafts import AirRaft, CraftSection, InternalDockingSpace
-from tycho.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
-from tycho.habitation import HabitationSection, Stateroom
-from tycho.sensors import MilitarySensors, SensorsSection
-from tycho.storage import FuelProcessor, FuelSection, JumpFuel, OperationFuel
-from tycho.systems import Airlock, ProbeDrones, SystemsSection, Workshop
-from tycho.weapons import Turret, WeaponsSection
+from ceres.make.ship import armour, hull, ship
+from ceres.make.ship.bridge import Bridge, CommandSection
+from ceres.make.ship.computer import Computer, ComputerSection, JumpControl
+from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
+from ceres.make.ship.habitation import HabitationSection, Stateroom
+from ceres.make.ship.sensors import MilitarySensors, SensorsSection
+from ceres.make.ship.storage import FuelProcessor, FuelSection, JumpFuel, OperationFuel
+from ceres.make.ship.systems import Airlock, ProbeDrones, SystemsSection, Workshop
+from ceres.make.ship.weapons import Turret, WeaponsSection
+from ceres.report import render_ship_html
 
 scout = ship.Ship(
     ship_class='Suleiman',
@@ -43,9 +43,9 @@ scout = ship.Ship(
     computer=ComputerSection(hardware=Computer(5, bis=True), software=[JumpControl(2)]),
     sensors=SensorsSection(primary=MilitarySensors()),
     weapons=WeaponsSection(turrets=[Turret(size='double')]),
-    craft=CraftSection(docking_space=InternalDockingSpace(craft=AirRaft())),
+    craft=CraftSection(internal_housing=[InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft'))]),
     habitation=HabitationSection(staterooms=[Stateroom()] * 4),
-    systems=SystemsSection(probe_drones=ProbeDrones(count=10), workshop=Workshop()),
+    systems=SystemsSection(internal_systems=[Workshop()], drones=[ProbeDrones(count=10)]),
 )
 
 spec = scout.build_spec()
@@ -60,7 +60,7 @@ print(scout.model_dump_json(indent=2)[:240])
 
 - **Structured spec** — `ship.build_spec()` produces a `ShipSpec` with sectioned
   rows, crew, passengers, expenses, and notes.
-- **Renderers** — Stuart can render ships to HTML, Typst, and PDF from the same
+- **Renderers** — Ceres can render ships to HTML, Typst, and PDF from the same
   `ShipSpec`/`Ship` data.
 - **Legality checks** — errors and warnings are embedded as notes on the parts
   that triggered them (negative cargo, missing airlock, TL mismatches, jump

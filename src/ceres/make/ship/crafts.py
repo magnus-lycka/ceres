@@ -77,7 +77,7 @@ class SpaceCraft(CarriedOccupant):
     engineering_tonnage: float = 0.0
     crew: int = 0
 
-    # Today a carried spacecraft is lightweight metadata. If Tycho later needs
+    # Today a carried spacecraft is lightweight metadata. If Ceres later needs
     # fully modeled scout ships or other subcraft, this class is the natural
     # place to evolve toward a wrapped Ship/JSON representation.
     @property

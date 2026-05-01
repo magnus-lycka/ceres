@@ -251,7 +251,7 @@ Completed.
 
 ### Step 2 — Define `Customisation` hierarchy in `parts.py` [done]
 
-Write tests first (`tests/tycho/test_customisation.py` or similar):
+Write tests first (`tests/make/ship/test_customisation.py` or similar):
 
 - `Advanced(SizeReduction)` is valid; `.note_text` → `'Advanced: Size Reduction'`.
 - `HighTechnology(SizeReduction, SizeReduction, SizeReduction)` is valid;
@@ -311,14 +311,14 @@ gone.
 
 | File | Change |
 |------|--------|
-| `src/tycho/parts.py` | Rename `Customisation`→`Modification`; add new `Customisation` hierarchy; simplify `CustomisableShipPart`; strip old `CustomisationGrade` property methods |
-| `src/tycho/drives.py` | Remove per-field customisation in `MDrive`, `_FusionPlant` |
-| `src/tycho/weapons.py` | Remove per-field customisation in `Barbette`, `Bay`, `PDB`, `MountWeapon`; delete `_weapon_customisation_note` |
-| `src/tycho/sensors.py` | Import rename only |
-| `tests/tycho/test_customisation.py` | New file: unit tests for `Customisation` hierarchy |
-| `tests/tycho/test_drives.py` | New construction API; note text assertions |
-| `tests/tycho/test_weapons.py` | New construction API; note text assertions |
-| `tests/tycho/test_serialization.py` | Roundtrip tests for each customised part type |
+| `src/ceres/make/ship/parts.py` | Rename `Customisation`→`Modification`; add new `Customisation` hierarchy; simplify `CustomisableShipPart`; strip old `CustomisationGrade` property methods |
+| `src/ceres/make/ship/drives.py` | Remove per-field customisation in `MDrive`, `_FusionPlant` |
+| `src/ceres/make/ship/weapons.py` | Remove per-field customisation in `Barbette`, `Bay`, `PDB`, `MountWeapon`; delete `_weapon_customisation_note` |
+| `src/ceres/make/ship/sensors.py` | Import rename only |
+| `tests/make/ship/test_customisation.py` | New file: unit tests for `Customisation` hierarchy |
+| `tests/make/ship/test_drives.py` | New construction API; note text assertions |
+| `tests/make/ship/test_weapons.py` | New construction API; note text assertions |
+| `tests/make/ship/test_serialization.py` | Roundtrip tests for each customised part type |
 | `tests/ships/test_dragon.py` | New construction API; note format `Grade: Mod` |
 | `tests/ships/test_revised_dragon.py` | Same |
 | `tests/ships/test_alt_dragon.py` | Same |

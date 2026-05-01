@@ -7,7 +7,7 @@ from ceres.make.ship.ship import Ship
 from ceres.make.ship.spec import ShipSpec, SpecRow
 from ceres.make.ship.text import format_counted_label
 
-from .tycho_view import collapsed_main_rows
+from .ship_view import collapsed_main_rows
 
 __all__ = ['render_ship_pdf', 'render_ship_spec_pdf', 'render_ship_spec_typst', 'render_ship_typst']
 

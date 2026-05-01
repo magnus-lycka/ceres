@@ -13,7 +13,7 @@ Source handling for this test case:
   operation fuel
 - deliberate interpretation:
   - explicit crew is carried over from the source sheet and allowed to exceed
-    Tycho's recommended minimum crew, producing informational notes rather than
+    Ceres' recommended minimum crew, producing informational notes rather than
     changing the manifest
 """
 

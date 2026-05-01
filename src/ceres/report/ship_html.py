@@ -6,7 +6,7 @@ from ceres.make.ship.spec import CrewRow, ExpenseRow, ShipSpec, SpecRow
 from ceres.make.ship.text import format_counted_label
 
 from .html import ExpanseHtmlPage, ReportTheme, render_expanse_html_page
-from .tycho_view import collapsed_main_rows
+from .ship_view import collapsed_main_rows
 
 __all__ = ['render_ship_html', 'render_ship_spec_html']
 

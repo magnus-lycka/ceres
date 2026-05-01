@@ -4,7 +4,7 @@ Purpose:
 - provide a large source-derived commercial liner reference slice
 - exercise close-structure hulls, large TL12 jump/fusion hardware, holographic
   bridge controls, luxury/high/standard accommodation, and large docking spaces
-- keep one explicit example of a source sheet that exceeds current Tycho
+- keep one explicit example of a source sheet that exceeds current Ceres
   support in several non-trivial areas
 
 Source handling for this test case:
@@ -15,11 +15,11 @@ Source handling for this test case:
 - deliberate source normalization:
   - the CSV lists bundled computer software rows such as `Library`,
     `Manoeuvre`, and `Intellect` explicitly
-  - Tycho treats those as included software provided by the primary computer,
+  - Ceres treats those as included software provided by the primary computer,
     so only the separately costed `Jump Control/2` is added explicitly in this
     reference case
 - current model limitation:
-  - Tycho models empty docking spaces through a placeholder occupant object,
+  - Ceres models empty docking spaces through a placeholder occupant object,
     but suppresses any separate carried-craft row in the spec
 - deliberate interpretation:
   - source-listed `Marines` on this liner are treated as shipboard security

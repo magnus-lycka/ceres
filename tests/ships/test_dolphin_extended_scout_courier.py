@@ -11,14 +11,14 @@ Source handling for this test case:
   workshop, standard staterooms, common area, low berths, cargo airlock,
   fuel/cargo container, production cost, discounted purchase price
 - deliberate interpretation:
-  - the source only lists a cargo airlock; Tycho also auto-installs one free
+  - the source only lists a cargo airlock; Ceres also auto-installs one free
     standard airlock as the minimum recommended ship airlock
 - source mismatch retained:
   - the source lists `16 weeks of operation` as 4 tons
-  - Tycho rounds the required 1.4 tons up to 2 tons for a 150 dTon ship,
+  - Ceres rounds the required 1.4 tons up to 2 tons for a 150 dTon ship,
     which in turn gives 20 weeks of endurance
 - source rounding:
-  - the sheet's maintenance line rounds up by Cr1 relative to Tycho's current
+  - the sheet's maintenance line rounds up by Cr1 relative to Ceres' current
     monthly maintenance calculation on the same production cost
 """
 

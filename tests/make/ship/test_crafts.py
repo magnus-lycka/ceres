@@ -1,6 +1,6 @@
 import pytest
 
-from ceres.report.tycho_view import collapsed_main_rows
+from ceres.report.ship_view import collapsed_main_rows
 from ceres.make.ship import hull, ship
 from ceres.make.ship.base import ShipBase
 from ceres.make.ship.crafts import (

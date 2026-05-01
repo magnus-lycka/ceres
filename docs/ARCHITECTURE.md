@@ -17,7 +17,7 @@ and `compute_tons()`. The base implementation simply returns the stored values.
 `tons` in Traveller ship design means **displacement tons** (`dTons`), not
 metric mass. One displacement ton is a volume measure: the volume occupied by
 one metric ton of liquid hydrogen, conventionally about 14 cubic metres. In
-other words, Tycho's tonnage model is volumetric. A part's `tons` field answers
+other words, Ceres' tonnage model is volumetric. A part's `tons` field answers
 "how much ship displacement / internal volume does this consume or represent?",
 not "how many kilograms does it weigh?".
 
@@ -49,7 +49,7 @@ This is a core feature: designs are stored, transferred between systems, and
 loaded as templates. Serialized ships are also used for rendering (HTML, PDF)
 without re-running Python-side business logic.
 
-`tests/tycho/test_serialization.py` is the explicit guardian of this contract.
+`tests/make/ship/test_serialization.py` is the explicit guardian of this contract.
 As the codebase evolves, that file must be kept current: any new field or
 polymorphic type that matters to a ship's identity must have a roundtrip test.
 
@@ -152,7 +152,7 @@ The installed-part graph is now section-based rather than mostly flat:
 
 ### Collections vs parts
 
-Tycho should model a **thing** as a thing, and a **collection of things** as a
+Ceres should model a **thing** as a thing, and a **collection of things** as a
 collection. We should avoid hybrid models where one object tries to be both a
 particular installed thing and a counted bag of such things at the same time.
 
@@ -200,7 +200,7 @@ handled by the carrying ship.
 
 When we later model crew effects from carried craft, a single
 `engineering_tonnage` figure on the carried-craft data is likely sufficient for
-Tycho's purposes. That value should be understood as the total drives-plus-power
+Ceres' purposes. That value should be understood as the total drives-plus-power
 engineering burden relevant to engineer staffing, not as a narrower physical
 "drive mass" figure.
 
@@ -220,7 +220,7 @@ calculation. A design may have:
 This distinction matters for examples such as modular cutters, detachable
 modules, docking clamps, jump shuttles, drop tanks, and jump nets. A ship can
 be one size as a design object and another size for a specific flight profile.
-Tycho should therefore avoid assuming that a single displacement value is
+Ceres should therefore avoid assuming that a single displacement value is
 always correct for every rule.
 
 ### Armour

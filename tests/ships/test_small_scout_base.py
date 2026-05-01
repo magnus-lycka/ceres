@@ -15,7 +15,7 @@ Source handling for this test case:
   swimming pool, theatre, and explicit crew
 - source mismatch retained:
   - the sheet lists `HULL: 3,200`
-  - Tycho follows the current light-hull and dispersed-structure modifiers,
+  - Ceres follows the current light-hull and dispersed-structure modifiers,
     which yield 3,240 hull points
 - still excluded from the modeled reference case:
   - improved solar panels
@@ -28,10 +28,10 @@ Source handling for this test case:
   - workshops x10
   - gaming space
 - deliberate interpretation:
-  - this Tycho variant models additional carried craft beyond the sheet:
+  - this Ceres variant models additional carried craft beyond the sheet:
     `Ship's Boat x2` in full hangars and `G/Carrier x3` in internal docking
     spaces, so the explicit pilot count is raised accordingly
-  - this Tycho variant also raises source `Gunners x4` to `Gunners x5` so the
+  - this Ceres variant also raises source `Gunners x4` to `Gunners x5` so the
     explicit crew covers all five modeled turrets
 """
 

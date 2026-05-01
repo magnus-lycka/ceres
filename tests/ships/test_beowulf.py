@@ -16,7 +16,7 @@ Source handling for this test case:
 - still excluded from the modeled reference case:
   - the source life-support total is Cr1000 higher than the current core-rule
     formula for the same manifest
-  - the source fuel-expense total is Cr50 lower than Tycho now that operation
+  - the source fuel-expense total is Cr50 lower than Ceres now that operation
     fuel follows the book rule of a 1-ton minimum four-week baseline
 - model interpretation rather than dedicated installed rows:
   - stores and spares (`RI-001`)

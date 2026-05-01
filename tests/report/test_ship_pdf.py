@@ -1,7 +1,7 @@
 import pytest
 
 from ceres.report import render_ship_pdf, render_ship_spec_pdf, render_ship_spec_typst, render_ship_typst
-from ceres.report.tycho_pdf import _build_typst_source
+from ceres.report.ship_pdf import _build_typst_source
 from tests.ships.test_dragon import build_dragon
 from tests.ships.test_small_scout_base import build_small_scout_base
 from tests.ships.test_suleiman import build_suleiman
@@ -99,12 +99,12 @@ def test_source_contains_formatted_cr_value(suleiman_spec):
 
 
 def test_fmt_cr_col_formats_nine_billion():
-    from ceres.report.tycho_pdf import _fmt_cr_col
+    from ceres.report.ship_pdf import _fmt_cr_col
     assert _fmt_cr_col(9_000_000_000) == '9,000,000,000'
 
 
 def test_fmt_tons_formats_nine_million():
-    from ceres.report.tycho_pdf import _fmt_tons
+    from ceres.report.ship_pdf import _fmt_tons
     assert _fmt_tons(9_000_000) == '9,000,000.00'
 
 
@@ -124,7 +124,7 @@ def test_source_contains_info_notes(suleiman_spec):
 
 def test_info_notes_use_default_text_size():
     from ceres.make.ship.base import Note, NoteCategory
-    from ceres.report.tycho_pdf import _render_notes
+    from ceres.report.ship_pdf import _render_notes
     notes = [Note(category=NoteCategory.INFO, message='Some info')]
     rendered = _render_notes(notes)
     assert '8pt' not in rendered
@@ -236,7 +236,7 @@ def test_source_uses_uniform_internal_table_rules(suleiman_spec):
 
 
 def test_power_only_rows_excluded_from_main_table(suleiman_spec):
-    from ceres.report.tycho_pdf import _main_rows
+    from ceres.report.ship_pdf import _main_rows
     power_only = [r for r in suleiman_spec.rows if r.power is not None and r.tons is None and r.cost is None]
     assert power_only, 'precondition: Suleiman has power-only rows'
     main = _main_rows(suleiman_spec)
@@ -262,7 +262,7 @@ def test_source_shows_uncrewed_for_no_crew():
 
 
 def test_esc_escapes_typst_markup_characters():
-    from ceres.report.tycho_pdf import _esc
+    from ceres.report.ship_pdf import _esc
 
     assert _esc('foo*bar') == 'foo\\*bar'
     assert _esc('item_name') == 'item\\_name'
@@ -312,7 +312,7 @@ def test_source_bolds_power_producing_sections(suleiman_spec):
 
 
 def test_source_power_producers_before_consumers(suleiman_spec):
-    from ceres.report.tycho_pdf import _power_rows
+    from ceres.report.ship_pdf import _power_rows
     rows_src = _power_rows(suleiman_spec)
     producing_sections = {r.section.value for r in suleiman_spec.rows if r.power is not None and r.emphasize_power}
     first_producer = min(rows_src.index(f'*{s}*') for s in producing_sections if f'*{s}*' in rows_src)

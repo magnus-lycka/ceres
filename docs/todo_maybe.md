@@ -152,7 +152,7 @@ Rule for future work:
 - do not add ship-specific code just to force a match when we do not yet
   understand the source of the discrepancy
 - instead, document the mismatch in the reference test and sort out whether the
-  sheet is rounding, using a different rule basis, or whether Tycho is missing
+  sheet is rounding, using a different rule basis, or whether Ceres is missing
   a real rule distinction
 
 ## Scientists on lab ships / stations
@@ -167,7 +167,7 @@ Current uncertainty:
   `Laboratory`, `Stateroom`, and available working space
 - the sheet-style crew manifests may also imply supporting personnel such as
   lab assistants, technicians, or additional administrators
-- current Tycho crew rules do not yet decide whether these should be treated as
+- current Ceres crew rules do not yet decide whether these should be treated as
   required crew, optional mission staff, passengers, or something in between
 
 For now:
@@ -305,7 +305,7 @@ Eventually we'll also want to provide illustrations and floor plans/drwaings.
 
 Fixed.
 
-Counted labels now go through shared helpers in `tycho.text`, so the display form is consistently `×`
+Counted labels now go through shared helpers in `ceres.make.ship.text`, so the display form is consistently `×`
 instead of `x`, and repeated labels are collapsed in one place instead of being reimplemented separately.
 
 # Verify that we don't collapse things unless they are identical

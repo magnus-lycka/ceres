@@ -1,5 +1,5 @@
 [project]
-name = "tycho"
+name = "ceres"
 version = "0.1.0"
 description = "Ship Design for Mongoose Traveller 2nd edition"
 readme = "README.md"
@@ -35,13 +35,13 @@ quote-style = "single"
 select = ["E", "F", "I", "UP", "RUF005"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["ceres", "tycho"]
+known-first-party = ["ceres"]
 force-sort-within-sections = true
 combine-as-imports = true
 
 [tool.deptry]
 exclude = ["tests", ".venv"]
-known_first_party = ["ceres", "tycho"]
+known_first_party = ["ceres"]
 
 [tool.coverage.run]
-source_pkgs = ["ceres", "tycho"]
+source_pkgs = ["ceres"]

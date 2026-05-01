@@ -20,7 +20,7 @@ Source handling for this test case:
   - advanced low berth pricing/details
   - the source life-support total is Cr1000 higher than the current core-rule
     formula for the same manifest
-  - the source fuel-expense total is slightly lower than Tycho now that
+  - the source fuel-expense total is slightly lower than Ceres now that
     operation fuel follows the book rule of a 1-ton minimum four-week baseline
 - deliberate interpretation:
   - Ceres warns that the installed medical bay calls for a medic, even though
