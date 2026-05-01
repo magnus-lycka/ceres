@@ -10,7 +10,6 @@ from ceres.make.ship.storage import CargoSection, FuelProcessor, FuelScoops, Fue
 from ceres.make.ship.systems import Airlock, CommonArea, MedicalBay, RepairDrones, SystemsSection
 from ceres.make.ship.weapons import MissileStorage, MountWeapon, Turret, WeaponsSection
 
-
 STRANDBELL_HULL = hull.standard_hull.model_copy(
     update={'reinforced': True, 'description': 'Standard Reinforced Hull'},
 )
@@ -47,7 +46,7 @@ def build_strandbell() -> ship.Ship:
                         MountWeapon(weapon='beam_laser'),
                         MountWeapon(weapon='beam_laser'),
                         MountWeapon(weapon='beam_laser'),
-                    ]
+                    ],
                 ),
                 Turret(
                     size='triple',
@@ -55,7 +54,7 @@ def build_strandbell() -> ship.Ship:
                         MountWeapon(weapon='missile_rack'),
                         MountWeapon(weapon='missile_rack'),
                         MountWeapon(weapon='missile_rack'),
-                    ]
+                    ],
                 ),
             ],
             missile_storage=MissileStorage(count=240),

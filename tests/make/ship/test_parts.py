@@ -22,11 +22,13 @@ class HighTlPart(parts.ShipPart):
 
 
 class CustomPart(parts.CustomisableShipPart):
-    allowed_modifications: ClassVar[frozenset[str]] = frozenset({
-        parts.EnergyEfficient.name,
-        parts.SizeReduction.name,
-        parts.IncreasedSize.name,
-    })
+    allowed_modifications: ClassVar[frozenset[str]] = frozenset(
+        {
+            parts.EnergyEfficient.name,
+            parts.SizeReduction.name,
+            parts.IncreasedSize.name,
+        }
+    )
 
 
 class Tl12CustomPart(CustomPart):
@@ -74,7 +76,9 @@ def test_part_can_generate_armoured_bulkhead_from_own_values():
 
 
 def test_customisable_part_build_notes_appends_customisation_note():
-    part = CustomPart(customisation=parts.HighTechnology(parts.EnergyEfficient, parts.SizeReduction, parts.SizeReduction))
+    part = CustomPart(
+        customisation=parts.HighTechnology(parts.EnergyEfficient, parts.SizeReduction, parts.SizeReduction)
+    )
     assert ('info', 'High Technology: Energy Efficient, Size Reduction × 2') in [
         (note.category.value, note.message) for note in part.notes
     ]
@@ -105,9 +109,7 @@ def test_customisable_part_without_customisation_behaves_like_ship_part():
 def test_customisable_part_without_customisation_uses_part_tl():
     part = Tl12CustomPart()
     part.bind(DummyShip(tl=11))
-    assert [('error', 'Requires TL12, ship is TL11')] == [
-        (note.category.value, note.message) for note in part.notes
-    ]
+    assert [('error', 'Requires TL12, ship is TL11')] == [(note.category.value, note.message) for note in part.notes]
 
 
 @pytest.mark.parametrize(

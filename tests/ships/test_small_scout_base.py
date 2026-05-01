@@ -131,7 +131,14 @@ def build_small_scout_base() -> ship.Ship:
             ]
         ),
         systems=SystemsSection(
-            internal_systems=[Armoury(), BriefingRoom(), LibraryFacility(), MedicalBay(), MedicalBay(), TrainingFacility(trainees=4)],
+            internal_systems=[
+                Armoury(),
+                BriefingRoom(),
+                LibraryFacility(),
+                MedicalBay(),
+                MedicalBay(),
+                TrainingFacility(trainees=4),
+            ],
             drones=[MiningDrones(count=10), ProbeDrones(count=100), RepairDrones()],
         ),
         habitation=HabitationSection(
@@ -263,9 +270,7 @@ def test_small_scout_base_matches_supported_slice():
         ('PILOT', 13),
         ('MEDIC', 2),
         ('OFFICER', 14),
-    ] == [
-        (role.role, quantity) for role, quantity in base.crew.grouped_roles
-    ]
+    ] == [(role.role, quantity) for role, quantity in base.crew.grouped_roles]
 
     notes = [(note.category.value, note.message) for note in base.crew.notes]
     assert ('warning', 'ENGINEER below recommended count: 5 < 6') not in notes

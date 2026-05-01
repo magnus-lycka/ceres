@@ -1,7 +1,5 @@
 """Tests for the Customisation grade hierarchy (Step 2)."""
 
-import json
-
 import pytest
 
 from ceres.make.ship.parts import (
@@ -16,7 +14,6 @@ from ceres.make.ship.parts import (
     VeryAdvanced,
 )
 from ceres.make.ship.weapons import VeryHighYield
-
 
 # ---------------------------------------------------------------------------
 # Valid constructions and note_text
@@ -38,7 +35,9 @@ def test_high_technology_three_size_reductions_is_valid():
 
 
 def test_high_technology_three_size_reductions_note_text():
-    assert HighTechnology(SizeReduction, SizeReduction, SizeReduction).note_text == 'High Technology: Size Reduction × 3'
+    assert (
+        HighTechnology(SizeReduction, SizeReduction, SizeReduction).note_text == 'High Technology: Size Reduction × 3'
+    )
 
 
 def test_high_technology_very_high_yield_and_energy_efficient_is_valid():
@@ -48,7 +47,9 @@ def test_high_technology_very_high_yield_and_energy_efficient_is_valid():
 
 
 def test_high_technology_very_high_yield_and_energy_efficient_note_text():
-    assert HighTechnology(VeryHighYield, EnergyEfficient).note_text == 'High Technology: Very High Yield, Energy Efficient'
+    assert (
+        HighTechnology(VeryHighYield, EnergyEfficient).note_text == 'High Technology: Very High Yield, Energy Efficient'
+    )
 
 
 def test_very_advanced_very_high_yield_is_valid():
@@ -107,14 +108,17 @@ def test_very_advanced_three_points_has_error():
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize(('grade_cls', 'cost_mult', 'tons_mult', 'tl_delta'), [
-    (EarlyPrototype, 11.0, 2.0, -2),
-    (Prototype,       6.0, 1.0, -1),
-    (Budget,          0.75, 1.0, 0),
-    (Advanced,        1.10, 1.0, 1),
-    (VeryAdvanced,    1.25, 1.0, 2),
-    (HighTechnology,  1.50, 1.0, 3),
-])
+@pytest.mark.parametrize(
+    ('grade_cls', 'cost_mult', 'tons_mult', 'tl_delta'),
+    [
+        (EarlyPrototype, 11.0, 2.0, -2),
+        (Prototype, 6.0, 1.0, -1),
+        (Budget, 0.75, 1.0, 0),
+        (Advanced, 1.10, 1.0, 1),
+        (VeryAdvanced, 1.25, 1.0, 2),
+        (HighTechnology, 1.50, 1.0, 3),
+    ],
+)
 def test_grade_multipliers(grade_cls, cost_mult, tons_mult, tl_delta):
     assert grade_cls._cost_multiplier == pytest.approx(cost_mult)
     assert grade_cls._tons_multiplier == pytest.approx(tons_mult)
@@ -128,6 +132,7 @@ def test_grade_multipliers(grade_cls, cost_mult, tons_mult, tl_delta):
 
 def test_roundtrip_advanced():
     from ceres.make.ship.parts import Customisation
+
     original = Advanced(SizeReduction)
     restored = Customisation.model_validate_json(original.model_dump_json())
     assert type(restored) is Advanced
@@ -136,6 +141,7 @@ def test_roundtrip_advanced():
 
 def test_roundtrip_high_technology():
     from ceres.make.ship.parts import Customisation
+
     original = HighTechnology(VeryHighYield, EnergyEfficient)
     restored = Customisation.model_validate_json(original.model_dump_json())
     assert type(restored) is HighTechnology
@@ -144,6 +150,7 @@ def test_roundtrip_high_technology():
 
 def test_roundtrip_budget():
     from ceres.make.ship.parts import Customisation
+
     original = Budget(IncreasedSize)
     restored = Customisation.model_validate_json(original.model_dump_json())
     assert type(restored) is Budget

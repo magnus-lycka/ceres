@@ -3,8 +3,8 @@ import pytest
 
 from ceres.make.ship import armour, hull, ship
 from ceres.make.ship.bridge import Bridge, Cockpit, CommandSection
-from ceres.make.ship.crew import GeneralCrew, Marine, ShipCrew
 from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
+from ceres.make.ship.crew import GeneralCrew, Marine, ShipCrew
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
 from ceres.make.ship.parts import EnergyEfficient, HighTechnology
 from ceres.make.ship.sensors import CivilianSensors, SensorsSection
@@ -316,9 +316,7 @@ def test_hull_overloaded_puts_error_on_ship():
         sensors=SensorsSection(primary=CivilianSensors()),
         systems=SystemsSection(internal_systems=[Workshop()]),
     )
-    assert ('error', 'Hull overloaded by 1.00 tons') in [
-        (n.category.value, n.message) for n in my_ship.notes
-    ]
+    assert ('error', 'Hull overloaded by 1.00 tons') in [(n.category.value, n.message) for n in my_ship.notes]
 
 
 def test_fuel_cargo_container_does_not_hide_hull_overload():
@@ -330,9 +328,7 @@ def test_fuel_cargo_container_does_not_hide_hull_overload():
         cargo=CargoSection(fuel_cargo_containers=[FuelCargoContainer(capacity=30)]),
     )
 
-    assert ('error', 'Hull overloaded by 52.00 tons') in [
-        (n.category.value, n.message) for n in my_ship.notes
-    ]
+    assert ('error', 'Hull overloaded by 52.00 tons') in [(n.category.value, n.message) for n in my_ship.notes]
 
 
 def test_ship_roundtrips_airlocks_in_parts_list():

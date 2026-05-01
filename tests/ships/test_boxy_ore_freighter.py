@@ -9,7 +9,6 @@ from ceres.make.ship.sensors import BasicSensors, SensorsSection
 from ceres.make.ship.storage import CargoSection, FuelSection, OperationFuel
 from ceres.make.ship.systems import Airlock, CommonArea, SystemsSection, Workshop
 
-
 BOXY_HULL = hull.close_structure.model_copy(
     update={'light': True, 'description': 'Light Close Structure Hull'},
 )
@@ -32,7 +31,6 @@ def build_boxy_ore_freighter() -> ship.Ship:
         habitation=HabitationSection(staterooms=[Stateroom()], common_area=CommonArea(tons=1.0)),
         systems=SystemsSection(internal_systems=[Workshop()]),
     )
-
 
 
 def test_boxy_ore_freighter_has_large_default_cargo_hold():

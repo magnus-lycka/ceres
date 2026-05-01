@@ -86,7 +86,9 @@ def test_fixed_firmpoint_base_cost():
 
 
 def test_fixed_firmpoint_high_technology_cost():
-    fp = FixedMount(weapons=[MountWeapon(weapon='pulse_laser', customisation=HighTechnology(VeryHighYield, EnergyEfficient))])
+    fp = FixedMount(
+        weapons=[MountWeapon(weapon='pulse_laser', customisation=HighTechnology(VeryHighYield, EnergyEfficient))]
+    )
     fp.bind(DummyOwner(12, 6))
     # mount 100,000 + weapon 1,000,000 * 1.5 = 1,600,000
     assert float(fp.cost) == pytest.approx(1_600_000)
@@ -107,7 +109,9 @@ def test_fixed_firmpoint_base_power():
 
 def test_fixed_firmpoint_energy_efficient_power():
     # Firmpoint -25% * energy_efficient -25%: floor(4 * 0.75 * 0.75) = floor(2.25) = 2
-    fp = FixedMount(weapons=[MountWeapon(weapon='pulse_laser', customisation=HighTechnology(VeryHighYield, EnergyEfficient))])
+    fp = FixedMount(
+        weapons=[MountWeapon(weapon='pulse_laser', customisation=HighTechnology(VeryHighYield, EnergyEfficient))]
+    )
     fp.bind(DummyOwner(12, 6))
     assert float(fp.power) == 2
 
@@ -221,7 +225,9 @@ def test_mount_weapon_rejects_disallowed_modification():
 
 
 def test_fixed_mount_single_weapon_notes_include_customisation_note():
-    fp = FixedMount(weapons=[MountWeapon(weapon='pulse_laser', customisation=HighTechnology(VeryHighYield, EnergyEfficient))])
+    fp = FixedMount(
+        weapons=[MountWeapon(weapon='pulse_laser', customisation=HighTechnology(VeryHighYield, EnergyEfficient))]
+    )
     assert [(note.category.value, note.message) for note in fp.notes] == [
         ('item', 'Pulse Laser'),
         ('info', 'High Technology: Very High Yield, Energy Efficient'),
@@ -336,7 +342,9 @@ def test_small_missile_bay_three_size_reduction_steps_values():
 
 
 def test_medium_particle_beam_bay_high_yield_and_two_size_reductions_values():
-    bay = Bay(size='medium', weapon='particle_beam', customisation=HighTechnology(HighYield, SizeReduction, SizeReduction))
+    bay = Bay(
+        size='medium', weapon='particle_beam', customisation=HighTechnology(HighYield, SizeReduction, SizeReduction)
+    )
     bay.bind(DummyOwner(15, 1_000))
     assert bay.tons == pytest.approx(80.0)
     assert bay.cost == pytest.approx(60_000_000.0)
@@ -354,20 +362,20 @@ def test_medium_missile_bay_high_yield_not_applicable():
 
 
 def test_high_technology_medium_particle_beam_bay_requires_tl15_not_tl18():
-    bay = Bay(size='medium', weapon='particle_beam', customisation=HighTechnology(SizeReduction, SizeReduction, SizeReduction))
+    bay = Bay(
+        size='medium', weapon='particle_beam', customisation=HighTechnology(SizeReduction, SizeReduction, SizeReduction)
+    )
     bay.bind(DummyOwner(15, 450))
     assert bay.tl == 12
-    assert ('error', 'Requires TL18, ship is TL15') not in [
-        (note.category.value, note.message) for note in bay.notes
-    ]
+    assert ('error', 'Requires TL18, ship is TL15') not in [(note.category.value, note.message) for note in bay.notes]
 
 
 def test_high_technology_medium_particle_beam_bay_errors_at_tl14():
-    bay = Bay(size='medium', weapon='particle_beam', customisation=HighTechnology(SizeReduction, SizeReduction, SizeReduction))
+    bay = Bay(
+        size='medium', weapon='particle_beam', customisation=HighTechnology(SizeReduction, SizeReduction, SizeReduction)
+    )
     bay.bind(DummyOwner(14, 450))
-    assert ('error', 'Requires TL15, ship is TL14') in [
-        (note.category.value, note.message) for note in bay.notes
-    ]
+    assert ('error', 'Requires TL15, ship is TL14') in [(note.category.value, note.message) for note in bay.notes]
 
 
 def test_large_torpedo_bay_uses_five_hardpoints():
@@ -433,7 +441,10 @@ def test_point_defense_battery_cannot_be_mounted_on_small_craft():
 def test_double_turret_cost_and_power_include_weapons():
     turret = Turret(
         size='double',
-        weapons=[MountWeapon(weapon='pulse_laser'), MountWeapon(weapon='pulse_laser', customisation=Advanced(EnergyEfficient))]
+        weapons=[
+            MountWeapon(weapon='pulse_laser'),
+            MountWeapon(weapon='pulse_laser', customisation=Advanced(EnergyEfficient)),
+        ],
     )
     turret.bind(DummyOwner(12, 100))
     assert turret.cost == pytest.approx(500_000 + 1_000_000 + 1_100_000)
@@ -511,8 +522,7 @@ def test_bay_cannot_be_mounted_on_small_craft():
 
     assert my_ship.weapons is not None
     assert any(
-        note.message == 'Bays cannot be mounted on small craft firmpoints'
-        for note in my_ship.weapons.bays[0].notes
+        note.message == 'Bays cannot be mounted on small craft firmpoints' for note in my_ship.weapons.bays[0].notes
     )
 
 
@@ -613,6 +623,7 @@ def test_bays_count_against_hardpoint_capacity():
 # ---------------------------------------------------------------------------
 # Customisation labels as notes
 # ---------------------------------------------------------------------------
+
 
 def test_barbette_with_very_high_yield_item_is_base_name_only():
     barbette = Barbette(weapon='particle', customisation=VeryAdvanced(VeryHighYield))
@@ -716,6 +727,7 @@ def test_grouped_parts_with_same_note_show_note_once(tmp_path):
     from ceres.make.ship import hull, ship
     from ceres.make.ship.bridge import Bridge, CommandSection
     from ceres.make.ship.computer import Computer, ComputerSection
+
     my_ship = ship.Ship(
         tl=13,
         displacement=400,

@@ -48,7 +48,15 @@ from ceres.make.ship.crew import (
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
 from ceres.make.ship.habitation import AdvancedEntertainmentSystem, HabitationSection, Stateroom
 from ceres.make.ship.hull import ImprovedStealth
-from ceres.make.ship.parts import Advanced, Budget, EnergyEfficient, HighTechnology, IncreasedSize, SizeReduction, VeryAdvanced
+from ceres.make.ship.parts import (
+    Advanced,
+    Budget,
+    EnergyEfficient,
+    HighTechnology,
+    IncreasedSize,
+    SizeReduction,
+    VeryAdvanced,
+)
 from ceres.make.ship.sensors import (
     CountermeasuresSuite,
     EnhancedSignalProcessing,
@@ -126,7 +134,9 @@ def build_revised_dragon() -> ship.Ship:
                 )
             ],
             point_defense_batteries=[
-                PointDefenseBattery(kind='laser', rating=2, customisation=Advanced(EnergyEfficient), armoured_bulkhead=True)
+                PointDefenseBattery(
+                    kind='laser', rating=2, customisation=Advanced(EnergyEfficient), armoured_bulkhead=True
+                )
             ],
             missile_storage=MissileStorage(count=408, armoured_bulkhead=True),
         ),

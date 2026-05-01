@@ -42,10 +42,29 @@ from ceres.make.ship.crew import (
 )
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
 from ceres.make.ship.habitation import HabitationSection, HotTub, LowBerth, Stateroom
-from ceres.make.ship.sensors import ImprovedSensors, SensorStations, SensorsSection
-from ceres.make.ship.storage import CargoAirlock, CargoSection, FuelCargoContainer, FuelProcessor, FuelSection, JumpFuel, OperationFuel
-from ceres.make.ship.systems import AdvancedProbeDrones, Airlock, Biosphere, CommonArea, Laboratory, LibraryFacility, MedicalBay, SystemsSection, WetBar, Workshop
-from ceres.make.ship.weapons import MissileStorage, MountWeapon, SandcasterCanisterStorage, Turret, WeaponsSection
+from ceres.make.ship.sensors import ImprovedSensors, SensorsSection, SensorStations
+from ceres.make.ship.storage import (
+    CargoAirlock,
+    CargoSection,
+    FuelCargoContainer,
+    FuelProcessor,
+    FuelSection,
+    JumpFuel,
+    OperationFuel,
+)
+from ceres.make.ship.systems import (
+    AdvancedProbeDrones,
+    Airlock,
+    Biosphere,
+    CommonArea,
+    Laboratory,
+    LibraryFacility,
+    MedicalBay,
+    SystemsSection,
+    WetBar,
+    Workshop,
+)
+from ceres.make.ship.weapons import MountWeapon, Turret, WeaponsSection
 
 
 def build_beagle_laboratory_ship() -> ship.Ship:
@@ -286,8 +305,7 @@ def test_beagle_laboratory_ship_spec_structure():
     assert spec.row('Jump 2 (470t)').section == 'Jump'
     assert spec.row('Fusion (TL 12), Power 195').section == 'Power'
     assert ('warning', 'Capacity 12.00 less than max use') in [
-        (note.category.value, note.message)
-        for note in spec.row('Fusion (TL 12), Power 195', section='Power').notes
+        (note.category.value, note.message) for note in spec.row('Fusion (TL 12), Power 195', section='Power').notes
     ]
     assert spec.row('J-2 (470t), 8 weeks of operation').tons == pytest.approx(97.0)
     assert spec.row('Fuel Processor (40 tons/day)').section == 'Fuel'

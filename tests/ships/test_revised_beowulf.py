@@ -40,9 +40,16 @@ from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive, MDrive
 from ceres.make.ship.habitation import AdvancedEntertainmentSystem, HabitationSection, LowBerth, Stateroom
 from ceres.make.ship.parts import Budget, IncreasedSize
 from ceres.make.ship.sensors import CivilianSensors, SensorsSection
-from ceres.make.ship.storage import CargoCrane, CargoHold, CargoSection, FuelProcessor, FuelSection, JumpFuel, OperationFuel
+from ceres.make.ship.storage import (
+    CargoCrane,
+    CargoHold,
+    CargoSection,
+    FuelProcessor,
+    FuelSection,
+    JumpFuel,
+    OperationFuel,
+)
 from ceres.make.ship.systems import Airlock, CommonArea, MedicalBay, SystemsSection, Workshop
-
 
 
 def build_revised_beowulf() -> ship.Ship:

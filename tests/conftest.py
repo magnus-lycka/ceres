@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import cProfile
 import io
-import pstats
 from pathlib import Path
+import pstats
 
 import pytest
 

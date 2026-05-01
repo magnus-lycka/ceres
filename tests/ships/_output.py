@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from ceres.report import copy_static_assets
 from ceres.make.ship.ship import Ship
+from ceres.report import copy_static_assets
 
 OUTPUT_DIR = Path(__file__).parent / 'generated_output'
 HTML_OUTPUT_DIR = OUTPUT_DIR / 'html'

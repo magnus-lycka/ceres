@@ -27,17 +27,20 @@ class DummyOwner(ShipBase):
 # --- JDrive ---
 
 
-@pytest.mark.parametrize('level, tl, pct', [
-    (1, 9, 0.025),
-    (2, 11, 0.05),
-    (3, 12, 0.075),
-    (4, 13, 0.10),
-    (5, 14, 0.125),
-    (6, 15, 0.15),
-    (7, 16, 0.175),
-    (8, 17, 0.20),
-    (9, 18, 0.225),
-])
+@pytest.mark.parametrize(
+    'level, tl, pct',
+    [
+        (1, 9, 0.025),
+        (2, 11, 0.05),
+        (3, 12, 0.075),
+        (4, 13, 0.10),
+        (5, 14, 0.125),
+        (6, 15, 0.15),
+        (7, 16, 0.175),
+        (8, 17, 0.20),
+        (9, 18, 0.225),
+    ],
+)
 def test_jdrive_tons_cost_tl(level, tl, pct):
     d = JDrive(level)
     d.bind(DummyOwner(tl, 200))
@@ -143,13 +146,10 @@ def test_power_section_all_parts():
     assert power._all_parts() == [power.fusion_plant]
 
 
-
 def test_mdrive_tl_too_low():
     d = MDrive(6)
     d.bind(DummyOwner(11, 6))
-    assert ('error', 'Requires TL12, ship is TL11') in [
-        (note.category.value, note.message) for note in d.notes
-    ]
+    assert ('error', 'Requires TL12, ship is TL11') in [(note.category.value, note.message) for note in d.notes]
 
 
 def test_mdrive_recomputes_cost_from_input():
@@ -191,7 +191,6 @@ def test_fusion_plant_power_zero():
     p = FusionPlantTL12(output=8)
     p.bind(DummyOwner(12, 6))
     assert p.power == 0
-
 
 
 def test_fusion_plant_recomputes_tons_from_input():
@@ -254,9 +253,7 @@ def test_emergency_power_system_values():
 def test_fusion_plant_rejects_ship_below_tl():
     plant = FusionPlantTL12(output=8)
     plant.bind(DummyOwner(11, 6))
-    assert ('error', 'Requires TL12, ship is TL11') in [
-        (note.category.value, note.message) for note in plant.notes
-    ]
+    assert ('error', 'Requires TL12, ship is TL11') in [(note.category.value, note.message) for note in plant.notes]
 
 
 def _make_ship_with_plant():
@@ -317,17 +314,13 @@ def test_rdrive_unsupported_level_errors():
     d = RDrive(99)
     with pytest.raises(KeyError):
         d.bind(DummyOwner(12, 6))
-    assert ('error', 'Unsupported reaction drive level 99') in [
-        (note.category.value, note.message) for note in d.notes
-    ]
+    assert ('error', 'Unsupported reaction drive level 99') in [(note.category.value, note.message) for note in d.notes]
 
 
 def test_rdrive_tl_too_low():
     d = RDrive(16)
     d.bind(DummyOwner(11, 6))
-    assert ('error', 'Requires TL12, ship is TL11') in [
-        (note.category.value, note.message) for note in d.notes
-    ]
+    assert ('error', 'Requires TL12, ship is TL11') in [(note.category.value, note.message) for note in d.notes]
 
 
 def test_reaction_fuel_minutes_of_operation():
@@ -373,9 +366,7 @@ def test_mdrive_unsupported_level_errors():
     d = MDrive(99)
     with pytest.raises(KeyError):
         d.bind(DummyOwner(15, 100))
-    assert ('error', 'Unsupported M-Drive level 99') in [
-        (note.category.value, note.message) for note in d.notes
-    ]
+    assert ('error', 'Unsupported M-Drive level 99') in [(note.category.value, note.message) for note in d.notes]
 
 
 def test_jdrive_build_item_parsecs_and_bulkhead_label():
@@ -390,17 +381,13 @@ def test_jdrive_unsupported_level_errors():
     d = JDrive(99)
     with pytest.raises(KeyError):
         d.bind(DummyOwner(18, 200))
-    assert ('error', 'Unsupported J-Drive level 99') in [
-        (note.category.value, note.message) for note in d.notes
-    ]
+    assert ('error', 'Unsupported J-Drive level 99') in [(note.category.value, note.message) for note in d.notes]
 
 
 def test_jdrive_tl_too_low():
     d = JDrive(2)
     d.bind(DummyOwner(10, 200))
-    assert ('error', 'Requires TL11, ship is TL10') in [
-        (note.category.value, note.message) for note in d.notes
-    ]
+    assert ('error', 'Requires TL11, ship is TL10') in [(note.category.value, note.message) for note in d.notes]
 
 
 def test_emergency_power_system_requires_fusion_plant():

@@ -32,9 +32,16 @@ from ceres.make.ship.crew import Astrogator, Engineer, Pilot, ShipCrew, Steward
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
 from ceres.make.ship.habitation import HabitationSection, LowBerth, Stateroom
 from ceres.make.ship.sensors import CivilianSensors, SensorsSection
-from ceres.make.ship.storage import CargoCrane, CargoHold, CargoSection, FuelProcessor, FuelSection, JumpFuel, OperationFuel
+from ceres.make.ship.storage import (
+    CargoCrane,
+    CargoHold,
+    CargoSection,
+    FuelProcessor,
+    FuelSection,
+    JumpFuel,
+    OperationFuel,
+)
 from ceres.make.ship.systems import Airlock, CommonArea
-
 
 
 def build_beowulf() -> ship.Ship:

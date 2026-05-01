@@ -99,7 +99,7 @@ def test_bridge_holographic_build_item():
     assert b.build_item() == 'Holographic Controls'
 
 
-def test_bridge_holographic_build_item():
+def test_bridge_small_holographic_build_item():
     b = Bridge(holographic=True, small=True)
     b.bind(DummyOwner(12, 200))
     assert b.build_item() == 'Smaller Holographic Controls'

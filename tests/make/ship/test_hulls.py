@@ -59,6 +59,7 @@ def test_armoured_bulkhead_values():
         (note.category.value, note.message) for note in bulkhead.notes
     ]
 
+
 def test_radiation_shielding_cost():
     ship_hull = hull.Hull(configuration=hull.standard_hull, radiation_shielding=True)
     assert ship_hull.radiation_shielding_cost(400) == 10_000_000

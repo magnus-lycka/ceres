@@ -76,8 +76,7 @@ def test_military_grade_notes_describe_suite_and_dm():
         ('item', 'Military Grade Sensors'),
         (
             'info',
-            'Features: Passive optical and thermal sensors, Radar, Lidar, '
-            'Jammers, EMCON',
+            'Features: Passive optical and thermal sensors, Radar, Lidar, Jammers, EMCON',
         ),
         ('info', 'DM +0 to Electronics (comms) and Electronics (sensors) checks'),
     ]
@@ -90,8 +89,7 @@ def test_improved_sensors_at_tl13_include_expected_features():
         ('item', 'Improved Sensors'),
         (
             'info',
-            'Features: Passive optical and thermal sensors, Radar, Lidar, '
-            'Densitometer, Jammers, EMCON',
+            'Features: Passive optical and thermal sensors, Radar, Lidar, Densitometer, Jammers, EMCON',
         ),
         ('info', 'DM +1 to Electronics (comms) and Electronics (sensors) checks'),
     ]
@@ -110,8 +108,7 @@ def test_improved_sensors_at_tl12_do_not_upgrade_densitometer_by_default():
     s.bind(DummyOwner(12, 100))
     assert (
         'info',
-        'Features: Passive optical and thermal sensors, Radar, Lidar, '
-        'Densitometer, Jammers, EMCON',
+        'Features: Passive optical and thermal sensors, Radar, Lidar, Densitometer, Jammers, EMCON',
     ) in [(note.category.value, note.message) for note in s.notes]
 
 
@@ -181,8 +178,7 @@ def test_improved_sensors_lpi_upgrade_radar_lidar_and_densitometer_when_availabl
     s.bind(DummyOwner(13, 100))
     assert (
         'info',
-        'Features: Passive optical and thermal sensors, Radar (LPI), Lidar (LPI), '
-        'Densitometer (LPI), Jammers, EMCON',
+        'Features: Passive optical and thermal sensors, Radar (LPI), Lidar (LPI), Densitometer (LPI), Jammers, EMCON',
     ) in [(note.category.value, note.message) for note in s.notes]
 
 
@@ -191,8 +187,7 @@ def test_improved_sensors_elpi_omits_densitometer_when_unavailable():
     s.bind(DummyOwner(13, 100))
     assert (
         'info',
-        'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI), '
-        'Jammers, EMCON',
+        'Features: Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI), Jammers, EMCON',
     ) in [(note.category.value, note.message) for note in s.notes]
     assert ('info', 'Densitometer is unavailable in ELPI mode at TL13') in [
         (note.category.value, note.message) for note in s.notes
@@ -227,9 +222,7 @@ def test_civilian_grade_recomputes_cost_from_input():
 def test_civilian_grade_tl_too_low():
     s = CivilianSensors()
     s.bind(DummyOwner(8, 100))
-    assert ('error', 'Requires TL9, ship is TL8') in [
-        (note.category.value, note.message) for note in s.notes
-    ]
+    assert ('error', 'Requires TL9, ship is TL8') in [(note.category.value, note.message) for note in s.notes]
 
 
 def test_sensor_stations_scale_with_count():
@@ -257,9 +250,7 @@ def test_enhanced_signal_processing_values():
     assert s.tons == 2
     assert s.cost == 8_000_000
     assert s.power == 2
-    assert ('info', 'DM +4 to all sensor-related checks') in [
-        (note.category.value, note.message) for note in s.notes
-    ]
+    assert ('info', 'DM +4 to all sensor-related checks') in [(note.category.value, note.message) for note in s.notes]
 
 
 def test_countermeasures_suite_notes_explain_bonus():
@@ -277,9 +268,7 @@ def test_life_scanner_analysis_suite_notes_explain_capability():
 
     s = LifeScannerAnalysisSuite()
     s.bind(DummyOwner(14, 400))
-    assert ('info', 'Advanced ship-mounted life scanner') in [
-        (note.category.value, note.message) for note in s.notes
-    ]
+    assert ('info', 'Advanced ship-mounted life scanner') in [(note.category.value, note.message) for note in s.notes]
     assert ('info', 'Requires Electronics (sensors) to interpret; improves biological analysis') in [
         (note.category.value, note.message) for note in s.notes
     ]

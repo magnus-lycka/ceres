@@ -27,7 +27,6 @@ Source handling for this test case:
 """
 
 import pytest
-from ceres.report import render_ship_html
 
 from ceres.make.ship import armour, hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
@@ -39,6 +38,7 @@ from ceres.make.ship.sensors import MilitarySensors, SensorsSection
 from ceres.make.ship.storage import CargoSection, FuelProcessor, FuelSection, JumpFuel, OperationFuel
 from ceres.make.ship.systems import Airlock, ProbeDrones, SystemsSection, Workshop
 from ceres.make.ship.weapons import Turret, WeaponsSection
+from ceres.report import render_ship_html
 
 from ._output import write_html_output, write_json_output
 

@@ -1,12 +1,12 @@
 import pytest
 
-from ceres.report import render_ship_pdf, render_ship_spec_pdf, render_ship_spec_typst, render_ship_typst
+from ceres.make.ship.spec import ShipSpec
+from ceres.report import render_ship_pdf, render_ship_spec_pdf
 from ceres.report.ship_pdf import _build_typst_source
 from tests.ships.test_dragon import build_dragon
 from tests.ships.test_small_scout_base import build_small_scout_base
 from tests.ships.test_suleiman import build_suleiman
 from tests.ships.test_ultralight_fighter import build_ultralight_fighter
-from ceres.make.ship.spec import ShipSpec
 
 
 @pytest.fixture
@@ -23,6 +23,7 @@ def fighter_spec():
 # Public API smoke tests
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.slow
 def test_render_ship_spec_pdf_returns_pdf_bytes(suleiman_spec):
     pdf = render_ship_spec_pdf(suleiman_spec)
@@ -36,15 +37,16 @@ def test_render_ship_pdf_returns_pdf_bytes():
 
 
 def test_render_ship_spec_pdf_page_size_passed_through(suleiman_spec):
-    src_a4     = _build_typst_source(suleiman_spec, page_size='a4')
+    src_a4 = _build_typst_source(suleiman_spec, page_size='a4')
     src_letter = _build_typst_source(suleiman_spec, page_size='us-letter')
-    assert 'paper: "a4"'        in src_a4
+    assert 'paper: "a4"' in src_a4
     assert 'paper: "us-letter"' in src_letter
 
 
 # ---------------------------------------------------------------------------
 # Banner and metadata
 # ---------------------------------------------------------------------------
+
 
 def test_source_contains_ship_class_uppercased(suleiman_spec):
     src = _build_typst_source(suleiman_spec, page_size='a4')
@@ -64,6 +66,7 @@ def test_source_contains_tech_level(suleiman_spec):
 # ---------------------------------------------------------------------------
 # Main spec table
 # ---------------------------------------------------------------------------
+
 
 def test_source_contains_section_names(suleiman_spec):
     src = _build_typst_source(suleiman_spec, page_size='a4')
@@ -100,17 +103,20 @@ def test_source_contains_formatted_cr_value(suleiman_spec):
 
 def test_fmt_cr_col_formats_nine_billion():
     from ceres.report.ship_pdf import _fmt_cr_col
+
     assert _fmt_cr_col(9_000_000_000) == '9,000,000,000'
 
 
 def test_fmt_tons_formats_nine_million():
     from ceres.report.ship_pdf import _fmt_tons
+
     assert _fmt_tons(9_000_000) == '9,000,000.00'
 
 
 # ---------------------------------------------------------------------------
 # Notes (info / warning / error)
 # ---------------------------------------------------------------------------
+
 
 def test_source_contains_info_notes(suleiman_spec):
     info_rows = [r for r in suleiman_spec.rows if any(n.category.value == 'info' for n in r.notes)]
@@ -125,6 +131,7 @@ def test_source_contains_info_notes(suleiman_spec):
 def test_info_notes_use_default_text_size():
     from ceres.make.ship.base import Note, NoteCategory
     from ceres.report.ship_pdf import _render_notes
+
     notes = [Note(category=NoteCategory.INFO, message='Some info')]
     rendered = _render_notes(notes)
     assert '8pt' not in rendered
@@ -133,10 +140,16 @@ def test_info_notes_use_default_text_size():
 
 def test_source_renders_warning_notes_as_orange_italic():
     from ceres.make.ship.base import Note, NoteCategory
+
     spec = ShipSpec(ship_class='Test')
     from ceres.make.ship.spec import SpecRow, SpecSection
-    row = SpecRow(section=SpecSection.HULL, item='Widget', tons=1.0,
-                  notes=[Note(category=NoteCategory.WARNING, message='Check this')])
+
+    row = SpecRow(
+        section=SpecSection.HULL,
+        item='Widget',
+        tons=1.0,
+        notes=[Note(category=NoteCategory.WARNING, message='Check this')],
+    )
     spec.add_row(row)
     src = _build_typst_source(spec, page_size='a4')
     assert 'Warning: Check this' in src
@@ -146,10 +159,13 @@ def test_source_renders_warning_notes_as_orange_italic():
 
 def test_source_renders_error_notes_as_red_bold():
     from ceres.make.ship.base import Note, NoteCategory
+
     spec = ShipSpec(ship_class='Test')
     from ceres.make.ship.spec import SpecRow, SpecSection
-    row = SpecRow(section=SpecSection.HULL, item='Widget', tons=1.0,
-                  notes=[Note(category=NoteCategory.ERROR, message='Fix this')])
+
+    row = SpecRow(
+        section=SpecSection.HULL, item='Widget', tons=1.0, notes=[Note(category=NoteCategory.ERROR, message='Fix this')]
+    )
     spec.add_row(row)
     src = _build_typst_source(spec, page_size='a4')
     assert 'Error: Fix this' in src
@@ -237,6 +253,7 @@ def test_source_uses_uniform_internal_table_rules(suleiman_spec):
 
 def test_power_only_rows_excluded_from_main_table(suleiman_spec):
     from ceres.report.ship_pdf import _main_rows
+
     power_only = [r for r in suleiman_spec.rows if r.power is not None and r.tons is None and r.cost is None]
     assert power_only, 'precondition: Suleiman has power-only rows'
     main = _main_rows(suleiman_spec)
@@ -247,6 +264,7 @@ def test_power_only_rows_excluded_from_main_table(suleiman_spec):
 # ---------------------------------------------------------------------------
 # Crew card
 # ---------------------------------------------------------------------------
+
 
 def test_source_contains_crew_roles(suleiman_spec):
     src = _build_typst_source(suleiman_spec, page_size='a4')
@@ -275,12 +293,12 @@ def test_esc_escapes_typst_markup_characters():
 # Power card
 # ---------------------------------------------------------------------------
 
+
 def test_source_contains_power_section_sums(suleiman_spec):
     src = _build_typst_source(suleiman_spec, page_size='a4')
     assert 'POWER' in src
     sections_with_power = {
-        r.section.value for r in suleiman_spec.rows
-        if r.power is not None and r.item != 'Basic Ship Systems'
+        r.section.value for r in suleiman_spec.rows if r.power is not None and r.item != 'Basic Ship Systems'
     }
     for section in sections_with_power:
         assert section in src
@@ -295,6 +313,7 @@ def test_source_power_sums_by_section(suleiman_spec):
     src = _build_typst_source(suleiman_spec, page_size='a4')
     # Hull section: Basic Ship Systems consumes 20W — verify sum appears, not individual items
     from collections import defaultdict
+
     sums: dict = defaultdict(float)
     for r in suleiman_spec.rows:
         if r.power is not None:
@@ -313,6 +332,7 @@ def test_source_bolds_power_producing_sections(suleiman_spec):
 
 def test_source_power_producers_before_consumers(suleiman_spec):
     from ceres.report.ship_pdf import _power_rows
+
     rows_src = _power_rows(suleiman_spec)
     producing_sections = {r.section.value for r in suleiman_spec.rows if r.power is not None and r.emphasize_power}
     first_producer = min(rows_src.index(f'*{s}*') for s in producing_sections if f'*{s}*' in rows_src)
@@ -322,6 +342,7 @@ def test_source_power_producers_before_consumers(suleiman_spec):
 # ---------------------------------------------------------------------------
 # Costs card
 # ---------------------------------------------------------------------------
+
 
 def test_source_contains_cost_labels(suleiman_spec):
     src = _build_typst_source(suleiman_spec, page_size='a4')
@@ -340,6 +361,7 @@ def test_source_formats_costs_with_thousands_no_unit(suleiman_spec):
 # ---------------------------------------------------------------------------
 # Sidebar cards are kept together
 # ---------------------------------------------------------------------------
+
 
 def test_source_wraps_sidebar_cards_in_non_breakable_blocks(suleiman_spec):
     src = _build_typst_source(suleiman_spec, page_size='a4')

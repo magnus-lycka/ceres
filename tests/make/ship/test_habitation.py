@@ -12,8 +12,8 @@ from ceres.make.ship.habitation import (
     HabitationSection,
     HighStateroom,
     LowBerth,
-    Stateroom,
     LuxuryStateroom,
+    Stateroom,
 )
 from ceres.make.ship.systems import CommonArea, SwimmingPool
 
@@ -293,9 +293,7 @@ def test_high_and_middle_passengers_can_exactly_fill_remaining_non_crew_stateroo
 
     assert my_ship.habitation is not None
     assert [
-        (note.category.value, note.message)
-        for note in my_ship.habitation.notes
-        if note.category.value == 'error'
+        (note.category.value, note.message) for note in my_ship.habitation.notes if note.category.value == 'error'
     ] == []
 
 
@@ -341,9 +339,7 @@ def test_three_crew_three_middle_three_high_fit_in_seven_staterooms():
 
     assert my_ship.habitation is not None
     assert [
-        (note.category.value, note.message)
-        for note in my_ship.habitation.notes
-        if note.category.value == 'error'
+        (note.category.value, note.message) for note in my_ship.habitation.notes if note.category.value == 'error'
     ] == []
 
 
@@ -359,9 +355,7 @@ def test_one_more_crew_still_fits_in_seven_stateroom_case():
 
     assert my_ship.habitation is not None
     assert [
-        (note.category.value, note.message)
-        for note in my_ship.habitation.notes
-        if note.category.value == 'error'
+        (note.category.value, note.message) for note in my_ship.habitation.notes if note.category.value == 'error'
     ] == []
 
 
@@ -377,9 +371,7 @@ def test_one_more_middle_still_fits_in_seven_stateroom_case():
 
     assert my_ship.habitation is not None
     assert [
-        (note.category.value, note.message)
-        for note in my_ship.habitation.notes
-        if note.category.value == 'error'
+        (note.category.value, note.message) for note in my_ship.habitation.notes if note.category.value == 'error'
     ] == []
 
 

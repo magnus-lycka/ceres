@@ -1,5 +1,4 @@
 import pytest
-from ceres.report.ship_pdf import _build_typst_source
 
 from ceres.make.ship import hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
@@ -10,7 +9,7 @@ from ceres.make.ship.sensors import MilitarySensors, SensorsSection
 from ceres.make.ship.storage import FuelScoops, FuelSection, OperationFuel, ReactionFuel
 from ceres.make.ship.systems import Aerofins
 from ceres.make.ship.weapons import FixedMount, MountWeapon, WeaponsSection
-
+from ceres.report.ship_pdf import _build_typst_source
 
 
 def build_gothta_ambush_fighter() -> ship.Ship:

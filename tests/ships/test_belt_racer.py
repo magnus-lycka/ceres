@@ -31,7 +31,6 @@ from ceres.make.ship.drives import (
 )
 from ceres.make.ship.storage import CargoSection, FuelSection, ReactionFuel
 
-
 BELT_RACER_HULL = hull.close_structure.model_copy(
     update={'light': True, 'description': 'Light Close Structure Hull'},
 )

@@ -1,21 +1,22 @@
 import pytest
+
 from ceres.report import render_ship_html, render_ship_pdf, render_ship_typst
 
 from ._output import write_html_output, write_json_output, write_pdf_output, write_typst_output
 from .test_almeida_laboratory_station import build_almeida_laboratory_station
 from .test_alt_dragon import build_alt_dragon
 from .test_ambush_hunter_killer_corvette import build_ambush_hunter_killer_corvette
+from .test_beagle_laboratory_ship import build_beagle_laboratory_ship
 from .test_belt_racer import build_belt_racer
 from .test_beowulf import build_beowulf
-from .test_beagle_laboratory_ship import build_beagle_laboratory_ship
 from .test_boxy_ore_freighter import build_boxy_ore_freighter
-from .test_dragon import build_dragon
 from .test_dolphin_extended_scout_courier import build_dolphin_extended_scout_courier
+from .test_dragon import build_dragon
 from .test_florence_medical_scout import build_florence_medical_scout
 from .test_gothta_ambush_fighter import build_gothta_ambush_fighter
 from .test_king_kay_luxury_liner import build_king_kay
-from .test_poseidon_cargo_boat import build_poseidon_cargo_boat
 from .test_pinnace_with_20_ton_fuel_capacity import build_pinnace_with_20_ton_fuel_capacity
+from .test_poseidon_cargo_boat import build_poseidon_cargo_boat
 from .test_revised_beowulf import build_revised_beowulf
 from .test_revised_dragon import build_revised_dragon
 from .test_serrano_laboratory_station import build_serrano_laboratory_station

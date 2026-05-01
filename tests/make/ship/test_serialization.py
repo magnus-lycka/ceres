@@ -4,9 +4,6 @@ import json
 
 import pytest
 
-from tests.ships.test_dragon import build_dragon
-from tests.ships.test_revised_beowulf import build_revised_beowulf
-from tests.ships.test_revised_dragon import build_revised_dragon
 from ceres.make.ship import armour, hull
 from ceres.make.ship.bridge import Cockpit, CommandSection
 from ceres.make.ship.computer import Computer, ComputerSection
@@ -19,6 +16,9 @@ from ceres.make.ship.ship import Ship
 from ceres.make.ship.storage import CargoSection, FuelSection, OperationFuel
 from ceres.make.ship.systems import Airlock, Armoury, Biosphere, SystemsSection, TrainingFacility
 from ceres.make.ship.weapons import FixedMount, MountWeapon, VeryHighYield, WeaponsSection
+from tests.ships.test_dragon import build_dragon
+from tests.ships.test_revised_beowulf import build_revised_beowulf
+from tests.ships.test_revised_dragon import build_revised_dragon
 
 # Minimal ship for structural tests
 bare = Ship(tl=12, displacement=6, hull=Hull(configuration=hull.standard_hull))

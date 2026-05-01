@@ -35,7 +35,6 @@ Source handling for this test case:
 """
 
 import pytest
-from ceres.report import render_ship_html
 
 from ceres.make.ship import armour, hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
@@ -76,6 +75,7 @@ from ceres.make.ship.systems import (
     Workshop,
 )
 from ceres.make.ship.weapons import Barbette, Bay, MissileStorage, PointDefenseBattery, WeaponsSection
+from ceres.report import render_ship_html
 
 from ._output import write_html_output, write_json_output
 
@@ -137,7 +137,9 @@ def build_alt_dragon() -> ship.Ship:
                 )
             ],
             point_defense_batteries=[
-                PointDefenseBattery(kind='laser', rating=2, customisation=Advanced(SizeReduction), armoured_bulkhead=True)
+                PointDefenseBattery(
+                    kind='laser', rating=2, customisation=Advanced(SizeReduction), armoured_bulkhead=True
+                )
             ],
             missile_storage=MissileStorage(count=720, armoured_bulkhead=True),
         ),

@@ -27,6 +27,7 @@ from ceres.make.ship.storage import FuelProcessor, FuelSection, OperationFuel
 from ceres.make.ship.systems import Airlock, Armoury, BriefingRoom, CommonArea, MedicalBay, RepairDrones, SystemsSection
 from ceres.make.ship.weapons import Bay, HighYield, LongRange, MountWeapon, Turret, WeaponsSection
 
+
 def build_ambush_hunter_killer_corvette() -> ship.Ship:
     """
     Modeled subset of the Ambush-class Hunter-Killer Corvette reference.
@@ -156,9 +157,7 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
     assert corvette.computer is not None
     assert corvette.computer.hardware is not None
     assert corvette.computer.hardware.cost == pytest.approx(20_000_000.0)
-    software_packages = {
-        package.description: package.cost for package in corvette.computer.software_packages.values()
-    }
+    software_packages = {package.description: package.cost for package in corvette.computer.software_packages.values()}
     assert software_packages == {
         'Library': 0.0,
         'Manoeuvre/0': 0.0,
@@ -258,6 +257,5 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
     ]
 
     assert not any(
-        note.category.value == 'error' and note.message.startswith('Hull overloaded by ')
-        for note in corvette.notes
+        note.category.value == 'error' and note.message.startswith('Hull overloaded by ') for note in corvette.notes
     )

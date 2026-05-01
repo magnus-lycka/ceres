@@ -1,10 +1,10 @@
-from ceres.report import render_ship_spec_html
-from tests.ships.test_small_scout_base import build_small_scout_base
-from tests.ships.test_suleiman import build_suleiman
 from ceres.make.ship import hull, ship
 from ceres.make.ship.base import Note, NoteCategory
 from ceres.make.ship.crafts import CraftSection, FullHangar, InternalDockingSpace, SpaceCraft, Vehicle
 from ceres.make.ship.spec import ShipSpec
+from ceres.report import render_ship_spec_html
+from tests.ships.test_small_scout_base import build_small_scout_base
+from tests.ships.test_suleiman import build_suleiman
 
 
 def test_render_ship_spec_html_uses_high_guard_like_split_layout():
@@ -53,8 +53,7 @@ def test_render_ship_spec_html_renders_crew_notes_as_plain_note_block():
     assert '<div class="note-block ship-notes">' in html
     assert '<div class="note-line note-info">CAPTAIN above recommended count: 1 &gt; 0</div>' in html
     assert (
-        '<div class="note-line note-warning"><strong>Warning:</strong> '
-        'GUNNER below recommended count: 0 &lt; 1</div>'
+        '<div class="note-line note-warning"><strong>Warning:</strong> GUNNER below recommended count: 0 &lt; 1</div>'
     ) in html
     assert '<ul class="item-notes ship-notes">' not in html
 
@@ -82,5 +81,5 @@ def test_render_ship_spec_html_keeps_craft_after_their_housing_rows():
     html = render_ship_spec_html(craft_ship.build_spec())
 
     assert html.index('Full Hangar: Passenger Shuttle × 10') < html.index('Passenger Shuttle × 10')
-    assert html.index("Full Hangar: Ship&#x27;s Boat × 2") < html.index("Ship&#x27;s Boat × 2")
+    assert html.index('Full Hangar: Ship&#x27;s Boat × 2') < html.index('Ship&#x27;s Boat × 2')
     assert html.index('Internal Docking Space: G/Carrier × 3') < html.index('G/Carrier × 3')

@@ -8,7 +8,6 @@ from ceres.make.ship.habitation import HabitationSection, Stateroom
 from ceres.make.ship.storage import CargoSection, FuelSection, OperationFuel
 from ceres.make.ship.systems import Aerofins, Airlock, CommonArea
 
-
 POSEIDON_TLS = [9, 10, 12]
 POSEIDON_HULL = hull.streamlined_hull.model_copy(
     update={'light': True, 'description': 'Light Streamlined Hull'},
@@ -31,7 +30,6 @@ def build_poseidon_cargo_boat(tl: int) -> ship.Ship:
         computer=ComputerSection(hardware=Computer(5)),
         habitation=HabitationSection(staterooms=[Stateroom()], common_area=CommonArea(tons=1.0)),
     )
-
 
 
 @pytest.mark.parametrize('tl', [10, 12])

@@ -32,7 +32,15 @@ from ceres.make.ship.crew import Astrogator, Engineer, Gunner, Medic, Pilot, Shi
 from ceres.make.ship.drives import DriveSection, FusionPlantTL15, JDrive, MDrive, PowerSection
 from ceres.make.ship.habitation import HabitationSection, LowBerth, Stateroom
 from ceres.make.ship.sensors import MilitarySensors, SensorsSection
-from ceres.make.ship.storage import CargoAirlock, CargoSection, FuelCargoContainer, FuelProcessor, FuelSection, JumpFuel, OperationFuel
+from ceres.make.ship.storage import (
+    CargoAirlock,
+    CargoSection,
+    FuelCargoContainer,
+    FuelProcessor,
+    FuelSection,
+    JumpFuel,
+    OperationFuel,
+)
 from ceres.make.ship.systems import CommonArea, MedicalBay, ProbeDrones, SystemsSection, Workshop
 from ceres.make.ship.weapons import MountWeapon, Turret, WeaponsSection
 
@@ -229,8 +237,7 @@ def test_dolphin_extended_scout_courier_spec_structure():
     assert spec.row('M-Drive 2').section == 'Propulsion'
     assert spec.row('Jump 2').section == 'Jump'
     assert ('warning', 'Capacity 9.00 less than max use') in [
-        (note.category.value, note.message)
-        for note in spec.row('Fusion (TL 15), Power 70', section='Power').notes
+        (note.category.value, note.message) for note in spec.row('Fusion (TL 15), Power 70', section='Power').notes
     ]
     assert spec.row('Fusion (TL 15), Power 70').section == 'Power'
     assert spec.row('J-2, 20 weeks of operation').section == 'Fuel'

@@ -8,9 +8,9 @@ from ceres.make.ship.computer import (
     BattleNetwork,
     BattleSystem,
     BroadSpectrumEW,
-    ConsciousIntelligence,
     Computer,
     ComputerSection,
+    ConsciousIntelligence,
     Core,
     ElectronicWarfare,
     Evade,
@@ -74,9 +74,7 @@ def test_computer_power_zero():
 def test_computer_5_min_tl():
     c = Computer(5)
     c.bind(DummyOwner(6, 100))
-    assert ('error', 'Requires TL7, ship is TL6') in [
-        (note.category.value, note.message) for note in c.notes
-    ]
+    assert ('error', 'Requires TL7, ship is TL6') in [(note.category.value, note.message) for note in c.notes]
 
 
 def test_computer_recomputes_cost_from_input():
