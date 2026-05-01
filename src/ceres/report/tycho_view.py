@@ -1,7 +1,7 @@
 from dataclasses import replace
 
-from ceres.build.ship.base import Note
-from ceres.build.ship.spec import ShipSpec, SpecRow
+from ceres.make.ship.base import Note
+from ceres.make.ship.spec import ShipSpec, SpecRow
 
 
 def collapsed_main_rows(spec: ShipSpec) -> list[SpecRow]:

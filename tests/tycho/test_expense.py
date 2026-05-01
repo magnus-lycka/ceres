@@ -1,11 +1,11 @@
 import pytest
 
-from ceres.build.ship import hull, ship
-from ceres.build.ship.bridge import Bridge, CommandSection
-from ceres.build.ship.computer import Computer, ComputerSection
-from ceres.build.ship.drives import DriveSection, FusionPlantTL8, FusionPlantTL12, JDrive, MDrive, PowerSection
-from ceres.build.ship.habitation import HabitationSection, Stateroom
-from ceres.build.ship.storage import FuelProcessor, FuelSection, JumpFuel, OperationFuel
+from ceres.make.ship import hull, ship
+from ceres.make.ship.bridge import Bridge, CommandSection
+from ceres.make.ship.computer import Computer, ComputerSection
+from ceres.make.ship.drives import DriveSection, FusionPlantTL8, FusionPlantTL12, JDrive, MDrive, PowerSection
+from ceres.make.ship.habitation import HabitationSection, Stateroom
+from ceres.make.ship.storage import FuelProcessor, FuelSection, JumpFuel, OperationFuel
 
 
 def build_small_jump_ship() -> ship.Ship:

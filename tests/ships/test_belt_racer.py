@@ -20,16 +20,16 @@ Source handling for this test case:
 
 import pytest
 
-from ceres.build.ship import hull, ship
-from ceres.build.ship.bridge import Cockpit, CommandSection
-from ceres.build.ship.computer import Computer, ComputerSection
-from ceres.build.ship.drives import (
+from ceres.make.ship import hull, ship
+from ceres.make.ship.bridge import Cockpit, CommandSection
+from ceres.make.ship.computer import Computer, ComputerSection
+from ceres.make.ship.drives import (
     DriveSection,
     FusionPlantTL8,
     PowerSection,
     RDrive,
 )
-from ceres.build.ship.storage import CargoSection, FuelSection, ReactionFuel
+from ceres.make.ship.storage import CargoSection, FuelSection, ReactionFuel
 
 
 BELT_RACER_HULL = hull.close_structure.model_copy(

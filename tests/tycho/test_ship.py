@@ -1,16 +1,16 @@
 from pydantic import ValidationError
 import pytest
 
-from ceres.build.ship import armour, hull, ship
-from ceres.build.ship.bridge import Bridge, Cockpit, CommandSection
-from ceres.build.ship.crew import GeneralCrew, Marine, ShipCrew
-from ceres.build.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
-from ceres.build.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
-from ceres.build.ship.parts import EnergyEfficient, HighTechnology
-from ceres.build.ship.sensors import CivilianSensors, SensorsSection
-from ceres.build.ship.storage import CargoCrane, CargoHold, CargoSection, FuelCargoContainer
-from ceres.build.ship.systems import Airlock, Armoury, ProbeDrones, SystemsSection, Workshop
-from ceres.build.ship.weapons import FixedMount, MountWeapon, VeryHighYield, WeaponsSection
+from ceres.make.ship import armour, hull, ship
+from ceres.make.ship.bridge import Bridge, Cockpit, CommandSection
+from ceres.make.ship.crew import GeneralCrew, Marine, ShipCrew
+from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
+from ceres.make.ship.parts import EnergyEfficient, HighTechnology
+from ceres.make.ship.sensors import CivilianSensors, SensorsSection
+from ceres.make.ship.storage import CargoCrane, CargoHold, CargoSection, FuelCargoContainer
+from ceres.make.ship.systems import Airlock, Armoury, ProbeDrones, SystemsSection, Workshop
+from ceres.make.ship.weapons import FixedMount, MountWeapon, VeryHighYield, WeaponsSection
 
 
 def test_ship_initial():

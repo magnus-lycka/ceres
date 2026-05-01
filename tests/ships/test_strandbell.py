@@ -1,14 +1,14 @@
 import pytest
 
-from ceres.build.ship import armour, hull, ship
-from ceres.build.ship.bridge import Bridge, CommandSection
-from ceres.build.ship.computer import AutoRepair, Computer, ComputerSection, Evade, FireControl
-from ceres.build.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
-from ceres.build.ship.habitation import HabitationSection, Stateroom
-from ceres.build.ship.sensors import CountermeasuresSuite, ImprovedSensors, SensorsSection
-from ceres.build.ship.storage import CargoSection, FuelProcessor, FuelScoops, FuelSection, OperationFuel
-from ceres.build.ship.systems import Airlock, CommonArea, MedicalBay, RepairDrones, SystemsSection
-from ceres.build.ship.weapons import MissileStorage, MountWeapon, Turret, WeaponsSection
+from ceres.make.ship import armour, hull, ship
+from ceres.make.ship.bridge import Bridge, CommandSection
+from ceres.make.ship.computer import AutoRepair, Computer, ComputerSection, Evade, FireControl
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
+from ceres.make.ship.habitation import HabitationSection, Stateroom
+from ceres.make.ship.sensors import CountermeasuresSuite, ImprovedSensors, SensorsSection
+from ceres.make.ship.storage import CargoSection, FuelProcessor, FuelScoops, FuelSection, OperationFuel
+from ceres.make.ship.systems import Airlock, CommonArea, MedicalBay, RepairDrones, SystemsSection
+from ceres.make.ship.weapons import MissileStorage, MountWeapon, Turret, WeaponsSection
 
 
 STRANDBELL_HULL = hull.standard_hull.model_copy(

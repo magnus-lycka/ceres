@@ -33,11 +33,11 @@ Source handling for this test case:
 
 import pytest
 
-from ceres.build.ship import hull, ship
-from ceres.build.ship.bridge import Bridge, CommandSection
-from ceres.build.ship.computer import Computer, ComputerSection, Intellect, JumpControl, Library, Manoeuvre
-from ceres.build.ship.crafts import CraftSection, EmptyOccupant, InternalDockingSpace
-from ceres.build.ship.crew import (
+from ceres.make.ship import hull, ship
+from ceres.make.ship.bridge import Bridge, CommandSection
+from ceres.make.ship.computer import Computer, ComputerSection, Intellect, JumpControl, Library, Manoeuvre
+from ceres.make.ship.crafts import CraftSection, EmptyOccupant, InternalDockingSpace
+from ceres.make.ship.crew import (
     Administrator,
     Astrogator,
     Captain,
@@ -51,11 +51,11 @@ from ceres.build.ship.crew import (
     ShipCrew,
     Steward,
 )
-from ceres.build.ship.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
-from ceres.build.ship.habitation import HabitationSection, HighStateroom, LowBerth, LuxuryStateroom, Stateroom
-from ceres.build.ship.sensors import CivilianSensors, SensorsSection
-from ceres.build.ship.storage import FuelSection, JumpFuel, OperationFuel
-from ceres.build.ship.systems import CommercialZone, CommonArea, MedicalBay, SwimmingPool, SystemsSection, Theatre, WetBar
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
+from ceres.make.ship.habitation import HabitationSection, HighStateroom, LowBerth, LuxuryStateroom, Stateroom
+from ceres.make.ship.sensors import CivilianSensors, SensorsSection
+from ceres.make.ship.storage import FuelSection, JumpFuel, OperationFuel
+from ceres.make.ship.systems import CommercialZone, CommonArea, MedicalBay, SwimmingPool, SystemsSection, Theatre, WetBar
 
 
 def build_king_kay() -> ship.Ship:

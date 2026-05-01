@@ -16,15 +16,15 @@ Source handling for this test case:
 
 import pytest
 
-from ceres.build.ship import hull, ship
-from ceres.build.ship.bridge import Bridge, CommandSection
-from ceres.build.ship.computer import Computer, ComputerSection
-from ceres.build.ship.crew import Pilot, ShipCrew
-from ceres.build.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
-from ceres.build.ship.habitation import CabinSpace, HabitationSection
-from ceres.build.ship.sensors import BasicSensors, SensorsSection
-from ceres.build.ship.storage import CargoSection, FuelCargoContainer, FuelSection, OperationFuel
-from ceres.build.ship.systems import Airlock, SystemsSection
+from ceres.make.ship import hull, ship
+from ceres.make.ship.bridge import Bridge, CommandSection
+from ceres.make.ship.computer import Computer, ComputerSection
+from ceres.make.ship.crew import Pilot, ShipCrew
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
+from ceres.make.ship.habitation import CabinSpace, HabitationSection
+from ceres.make.ship.sensors import BasicSensors, SensorsSection
+from ceres.make.ship.storage import CargoSection, FuelCargoContainer, FuelSection, OperationFuel
+from ceres.make.ship.systems import Airlock, SystemsSection
 
 
 def build_pinnace_with_20_ton_fuel_capacity() -> ship.Ship:

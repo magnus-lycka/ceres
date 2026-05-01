@@ -6,7 +6,7 @@ from tests.ships.test_dragon import build_dragon
 from tests.ships.test_small_scout_base import build_small_scout_base
 from tests.ships.test_suleiman import build_suleiman
 from tests.ships.test_ultralight_fighter import build_ultralight_fighter
-from ceres.build.ship.spec import ShipSpec
+from ceres.make.ship.spec import ShipSpec
 
 
 @pytest.fixture
@@ -123,7 +123,7 @@ def test_source_contains_info_notes(suleiman_spec):
 
 
 def test_info_notes_use_default_text_size():
-    from ceres.build.ship.base import Note, NoteCategory
+    from ceres.make.ship.base import Note, NoteCategory
     from ceres.report.tycho_pdf import _render_notes
     notes = [Note(category=NoteCategory.INFO, message='Some info')]
     rendered = _render_notes(notes)
@@ -132,9 +132,9 @@ def test_info_notes_use_default_text_size():
 
 
 def test_source_renders_warning_notes_as_orange_italic():
-    from ceres.build.ship.base import Note, NoteCategory
+    from ceres.make.ship.base import Note, NoteCategory
     spec = ShipSpec(ship_class='Test')
-    from ceres.build.ship.spec import SpecRow, SpecSection
+    from ceres.make.ship.spec import SpecRow, SpecSection
     row = SpecRow(section=SpecSection.HULL, item='Widget', tons=1.0,
                   notes=[Note(category=NoteCategory.WARNING, message='Check this')])
     spec.add_row(row)
@@ -145,9 +145,9 @@ def test_source_renders_warning_notes_as_orange_italic():
 
 
 def test_source_renders_error_notes_as_red_bold():
-    from ceres.build.ship.base import Note, NoteCategory
+    from ceres.make.ship.base import Note, NoteCategory
     spec = ShipSpec(ship_class='Test')
-    from ceres.build.ship.spec import SpecRow, SpecSection
+    from ceres.make.ship.spec import SpecRow, SpecSection
     row = SpecRow(section=SpecSection.HULL, item='Widget', tons=1.0,
                   notes=[Note(category=NoteCategory.ERROR, message='Fix this')])
     spec.add_row(row)
@@ -158,7 +158,7 @@ def test_source_renders_error_notes_as_red_bold():
 
 
 def test_source_renders_ship_level_notes_below_main_table():
-    from ceres.build.ship.base import Note, NoteCategory
+    from ceres.make.ship.base import Note, NoteCategory
 
     spec = ShipSpec(ship_class='Test')
     spec.ship_notes = [
@@ -172,7 +172,7 @@ def test_source_renders_ship_level_notes_below_main_table():
 
 
 def test_source_renders_crew_notes_with_crew_table():
-    from ceres.build.ship.base import Note, NoteCategory
+    from ceres.make.ship.base import Note, NoteCategory
 
     spec = ShipSpec(ship_class='Test')
     spec.crew = []
@@ -186,7 +186,7 @@ def test_source_renders_crew_notes_with_crew_table():
 
 
 def test_source_escapes_multiple_info_crew_notes_to_avoid_nested_list_indentation():
-    from ceres.build.ship.base import Note, NoteCategory
+    from ceres.make.ship.base import Note, NoteCategory
 
     spec = ShipSpec(ship_class='Test')
     spec.crew = []

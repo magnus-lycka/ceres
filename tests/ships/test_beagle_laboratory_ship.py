@@ -24,11 +24,11 @@ Source handling for this test case:
 
 import pytest
 
-from ceres.build.ship import hull, ship
-from ceres.build.ship.bridge import Bridge, CommandSection
-from ceres.build.ship.computer import Computer, ComputerSection, JumpControl
-from ceres.build.ship.crafts import CraftSection, DockingClamp, InternalDockingSpace, SpaceCraft, Vehicle
-from ceres.build.ship.crew import (
+from ceres.make.ship import hull, ship
+from ceres.make.ship.bridge import Bridge, CommandSection
+from ceres.make.ship.computer import Computer, ComputerSection, JumpControl
+from ceres.make.ship.crafts import CraftSection, DockingClamp, InternalDockingSpace, SpaceCraft, Vehicle
+from ceres.make.ship.crew import (
     Astrogator,
     Engineer,
     Gunner,
@@ -40,12 +40,12 @@ from ceres.build.ship.crew import (
     ShipCrew,
     Steward,
 )
-from ceres.build.ship.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
-from ceres.build.ship.habitation import HabitationSection, HotTub, LowBerth, Stateroom
-from ceres.build.ship.sensors import ImprovedSensors, SensorStations, SensorsSection
-from ceres.build.ship.storage import CargoAirlock, CargoSection, FuelCargoContainer, FuelProcessor, FuelSection, JumpFuel, OperationFuel
-from ceres.build.ship.systems import AdvancedProbeDrones, Airlock, Biosphere, CommonArea, Laboratory, LibraryFacility, MedicalBay, SystemsSection, WetBar, Workshop
-from ceres.build.ship.weapons import MissileStorage, MountWeapon, SandcasterCanisterStorage, Turret, WeaponsSection
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
+from ceres.make.ship.habitation import HabitationSection, HotTub, LowBerth, Stateroom
+from ceres.make.ship.sensors import ImprovedSensors, SensorStations, SensorsSection
+from ceres.make.ship.storage import CargoAirlock, CargoSection, FuelCargoContainer, FuelProcessor, FuelSection, JumpFuel, OperationFuel
+from ceres.make.ship.systems import AdvancedProbeDrones, Airlock, Biosphere, CommonArea, Laboratory, LibraryFacility, MedicalBay, SystemsSection, WetBar, Workshop
+from ceres.make.ship.weapons import MissileStorage, MountWeapon, SandcasterCanisterStorage, Turret, WeaponsSection
 
 
 def build_beagle_laboratory_ship() -> ship.Ship:

@@ -37,10 +37,10 @@ Source handling for this test case:
 import pytest
 from ceres.report import render_ship_html
 
-from ceres.build.ship import armour, hull, ship
-from ceres.build.ship.bridge import Bridge, CommandSection
-from ceres.build.ship.computer import AutoRepair, Computer, ComputerSection, Core, Evade, FireControl
-from ceres.build.ship.crew import (
+from ceres.make.ship import armour, hull, ship
+from ceres.make.ship.bridge import Bridge, CommandSection
+from ceres.make.ship.computer import AutoRepair, Computer, ComputerSection, Core, Evade, FireControl
+from ceres.make.ship.crew import (
     Captain,
     Engineer,
     Gunner,
@@ -51,19 +51,19 @@ from ceres.build.ship.crew import (
     SensorOperator,
     ShipCrew,
 )
-from ceres.build.ship.drives import DriveSection, EmergencyPowerSystem, FusionPlantTL12, MDrive, PowerSection
-from ceres.build.ship.habitation import AdvancedEntertainmentSystem, CabinSpace, HabitationSection, Stateroom
-from ceres.build.ship.hull import ImprovedStealth
-from ceres.build.ship.parts import Advanced, Budget, HighTechnology, IncreasedSize, SizeReduction
-from ceres.build.ship.sensors import (
+from ceres.make.ship.drives import DriveSection, EmergencyPowerSystem, FusionPlantTL12, MDrive, PowerSection
+from ceres.make.ship.habitation import AdvancedEntertainmentSystem, CabinSpace, HabitationSection, Stateroom
+from ceres.make.ship.hull import ImprovedStealth
+from ceres.make.ship.parts import Advanced, Budget, HighTechnology, IncreasedSize, SizeReduction
+from ceres.make.ship.sensors import (
     CountermeasuresSuite,
     EnhancedSignalProcessing,
     ImprovedSensors,
     RapidDeploymentExtendedArrays,
     SensorsSection,
 )
-from ceres.build.ship.storage import CargoSection, FuelProcessor, FuelSection, OperationFuel
-from ceres.build.ship.systems import (
+from ceres.make.ship.storage import CargoSection, FuelProcessor, FuelSection, OperationFuel
+from ceres.make.ship.systems import (
     Airlock,
     Armoury,
     BasicAutodoc,
@@ -75,7 +75,7 @@ from ceres.build.ship.systems import (
     TrainingFacility,
     Workshop,
 )
-from ceres.build.ship.weapons import Barbette, Bay, MissileStorage, PointDefenseBattery, WeaponsSection
+from ceres.make.ship.weapons import Barbette, Bay, MissileStorage, PointDefenseBattery, WeaponsSection
 
 from ._output import write_html_output, write_json_output
 

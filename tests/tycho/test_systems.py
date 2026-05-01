@@ -1,9 +1,9 @@
 import pytest
 
-from ceres.build.ship import hull, ship
-from ceres.build.ship.base import ShipBase
-from ceres.build.ship.storage import FuelScoops, FuelSection
-from ceres.build.ship.systems import (
+from ceres.make.ship import hull, ship
+from ceres.make.ship.base import ShipBase
+from ceres.make.ship.storage import FuelScoops, FuelSection
+from ceres.make.ship.systems import (
     AdvancedProbeDrones,
     Airlock,
     Armoury,

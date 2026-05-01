@@ -19,16 +19,16 @@ Source handling for this test case:
 
 import pytest
 
-from ceres.build.ship import hull, ship
-from ceres.build.ship.bridge import Bridge, CommandSection
-from ceres.build.ship.computer import Computer, ComputerSection
-from ceres.build.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
-from ceres.build.ship.crew import Administrator, Engineer, Maintenance, Officer, Pilot, ShipCrew, Steward
-from ceres.build.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
-from ceres.build.ship.habitation import HabitationSection, Stateroom
-from ceres.build.ship.sensors import AdvancedSensors, SensorsSection
-from ceres.build.ship.storage import CargoHold, CargoSection, FuelSection, OperationFuel
-from ceres.build.ship.systems import AdvancedProbeDrones, CommonArea, Laboratory, LibraryFacility, SystemsSection
+from ceres.make.ship import hull, ship
+from ceres.make.ship.bridge import Bridge, CommandSection
+from ceres.make.ship.computer import Computer, ComputerSection
+from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
+from ceres.make.ship.crew import Administrator, Engineer, Maintenance, Officer, Pilot, ShipCrew, Steward
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
+from ceres.make.ship.habitation import HabitationSection, Stateroom
+from ceres.make.ship.sensors import AdvancedSensors, SensorsSection
+from ceres.make.ship.storage import CargoHold, CargoSection, FuelSection, OperationFuel
+from ceres.make.ship.systems import AdvancedProbeDrones, CommonArea, Laboratory, LibraryFacility, SystemsSection
 
 
 def build_almeida_laboratory_station() -> ship.Ship:

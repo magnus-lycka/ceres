@@ -1,8 +1,8 @@
 import pytest
 
-from ceres.build.ship import hull, ship
-from ceres.build.ship.base import ShipBase
-from ceres.build.ship.drives import (
+from ceres.make.ship import hull, ship
+from ceres.make.ship.base import ShipBase
+from ceres.make.ship.drives import (
     DecreasedFuel,
     DriveSection,
     EmergencyPowerSystem,
@@ -15,8 +15,8 @@ from ceres.build.ship.drives import (
     PowerSection,
     RDrive,
 )
-from ceres.build.ship.parts import Advanced, Budget, IncreasedSize, SizeReduction, VeryAdvanced
-from ceres.build.ship.storage import FuelSection, JumpFuel, OperationFuel, ReactionFuel
+from ceres.make.ship.parts import Advanced, Budget, IncreasedSize, SizeReduction, VeryAdvanced
+from ceres.make.ship.storage import FuelSection, JumpFuel, OperationFuel, ReactionFuel
 
 
 class DummyOwner(ShipBase):

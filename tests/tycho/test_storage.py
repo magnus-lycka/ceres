@@ -1,10 +1,10 @@
 import pytest
 
-from ceres.build.ship import hull, ship
-from ceres.build.ship.base import ShipBase
-from ceres.build.ship.drives import DriveSection, FusionPlantTL12, JDrive, PowerSection
-from ceres.build.ship.spec import SpecSection
-from ceres.build.ship.storage import (
+from ceres.make.ship import hull, ship
+from ceres.make.ship.base import ShipBase
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive, PowerSection
+from ceres.make.ship.spec import SpecSection
+from ceres.make.ship.storage import (
     CargoAirlock,
     CargoCrane,
     CargoHold,

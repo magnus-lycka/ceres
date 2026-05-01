@@ -1,10 +1,10 @@
 from ceres.report import render_ship_spec_html
 from tests.ships.test_small_scout_base import build_small_scout_base
 from tests.ships.test_suleiman import build_suleiman
-from ceres.build.ship import hull, ship
-from ceres.build.ship.base import Note, NoteCategory
-from ceres.build.ship.crafts import CraftSection, FullHangar, InternalDockingSpace, SpaceCraft, Vehicle
-from ceres.build.ship.spec import ShipSpec
+from ceres.make.ship import hull, ship
+from ceres.make.ship.base import Note, NoteCategory
+from ceres.make.ship.crafts import CraftSection, FullHangar, InternalDockingSpace, SpaceCraft, Vehicle
+from ceres.make.ship.spec import ShipSpec
 
 
 def test_render_ship_spec_html_uses_high_guard_like_split_layout():

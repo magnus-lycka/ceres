@@ -37,11 +37,11 @@ Source handling for this test case:
 
 import pytest
 
-from ceres.build.ship import hull, ship
-from ceres.build.ship.bridge import Bridge, CommandSection
-from ceres.build.ship.computer import Computer, ComputerSection
-from ceres.build.ship.crafts import CraftSection, FullHangar, InternalDockingSpace, SpaceCraft, Vehicle
-from ceres.build.ship.crew import (
+from ceres.make.ship import hull, ship
+from ceres.make.ship.bridge import Bridge, CommandSection
+from ceres.make.ship.computer import Computer, ComputerSection
+from ceres.make.ship.crafts import CraftSection, FullHangar, InternalDockingSpace, SpaceCraft, Vehicle
+from ceres.make.ship.crew import (
     Administrator,
     Engineer,
     GeneralCrew,
@@ -53,11 +53,11 @@ from ceres.build.ship.crew import (
     SensorOperator,
     ShipCrew,
 )
-from ceres.build.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
-from ceres.build.ship.habitation import AdvancedEntertainmentSystem, Brig, HabitationSection, Stateroom
-from ceres.build.ship.sensors import BasicSensors, SensorsSection
-from ceres.build.ship.storage import FuelProcessor, FuelSection, OperationFuel
-from ceres.build.ship.systems import (
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
+from ceres.make.ship.habitation import AdvancedEntertainmentSystem, Brig, HabitationSection, Stateroom
+from ceres.make.ship.sensors import BasicSensors, SensorsSection
+from ceres.make.ship.storage import FuelProcessor, FuelSection, OperationFuel
+from ceres.make.ship.systems import (
     Airlock,
     Armoury,
     BriefingRoom,
@@ -72,7 +72,7 @@ from ceres.build.ship.systems import (
     Theatre,
     TrainingFacility,
 )
-from ceres.build.ship.weapons import MountWeapon, Turret, WeaponsSection
+from ceres.make.ship.weapons import MountWeapon, Turret, WeaponsSection
 
 
 def build_small_scout_base() -> ship.Ship:

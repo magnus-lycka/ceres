@@ -1,11 +1,11 @@
 from pydantic import ValidationError
 import pytest
 
-from ceres.build.ship import hull, ship
-from ceres.build.ship.bridge import Bridge, CommandSection
-from ceres.build.ship.computer import Computer, ComputerSection
-from ceres.build.ship.crafts import CraftSection, InternalDockingSpace, SpaceCraft, Vehicle
-from ceres.build.ship.crew import (
+from ceres.make.ship import hull, ship
+from ceres.make.ship.bridge import Bridge, CommandSection
+from ceres.make.ship.computer import Computer, ComputerSection
+from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, SpaceCraft, Vehicle
+from ceres.make.ship.crew import (
     Astrogator,
     Engineer,
     GeneralCrew,
@@ -14,11 +14,11 @@ from ceres.build.ship.crew import (
     ShipCrew,
     Steward,
 )
-from ceres.build.ship.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
-from ceres.build.ship.habitation import HabitationSection, LowBerth, Stateroom
-from ceres.build.ship.sensors import SensorsSection, SensorStations
-from ceres.build.ship.systems import MedicalBay, SystemsSection
-from ceres.build.ship.weapons import Barbette, Bay, Turret, WeaponsSection
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
+from ceres.make.ship.habitation import HabitationSection, LowBerth, Stateroom
+from ceres.make.ship.sensors import SensorsSection, SensorStations
+from ceres.make.ship.systems import MedicalBay, SystemsSection
+from ceres.make.ship.weapons import Barbette, Bay, Turret, WeaponsSection
 
 
 def grouped_role_counts(roles):

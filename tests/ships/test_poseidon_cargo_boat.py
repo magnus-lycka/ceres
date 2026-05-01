@@ -1,12 +1,12 @@
 import pytest
 
-from ceres.build.ship import hull, ship
-from ceres.build.ship.bridge import Bridge, CommandSection
-from ceres.build.ship.computer import Computer, ComputerSection
-from ceres.build.ship.drives import DriveSection, FusionPlantTL8, FusionPlantTL12, MDrive, PowerSection
-from ceres.build.ship.habitation import HabitationSection, Stateroom
-from ceres.build.ship.storage import CargoSection, FuelSection, OperationFuel
-from ceres.build.ship.systems import Aerofins, Airlock, CommonArea
+from ceres.make.ship import hull, ship
+from ceres.make.ship.bridge import Bridge, CommandSection
+from ceres.make.ship.computer import Computer, ComputerSection
+from ceres.make.ship.drives import DriveSection, FusionPlantTL8, FusionPlantTL12, MDrive, PowerSection
+from ceres.make.ship.habitation import HabitationSection, Stateroom
+from ceres.make.ship.storage import CargoSection, FuelSection, OperationFuel
+from ceres.make.ship.systems import Aerofins, Airlock, CommonArea
 
 
 POSEIDON_TLS = [9, 10, 12]

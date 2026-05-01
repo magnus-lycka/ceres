@@ -2,10 +2,10 @@ from itertools import groupby
 import os
 import tempfile
 
-from ceres.build.ship.base import Note, NoteCategory
-from ceres.build.ship.ship import Ship
-from ceres.build.ship.spec import ShipSpec, SpecRow
-from ceres.build.ship.text import format_counted_label
+from ceres.make.ship.base import Note, NoteCategory
+from ceres.make.ship.ship import Ship
+from ceres.make.ship.spec import ShipSpec, SpecRow
+from ceres.make.ship.text import format_counted_label
 
 from .tycho_view import collapsed_main_rows
 

@@ -1,13 +1,13 @@
 import pytest
 
-from ceres.build.ship import armour, hull, ship
-from ceres.build.ship.bridge import Cockpit, CommandSection
-from ceres.build.ship.computer import Computer, ComputerSection
-from ceres.build.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
-from ceres.build.ship.parts import EnergyEfficient, HighTechnology
-from ceres.build.ship.sensors import CivilianSensors, SensorsSection
-from ceres.build.ship.storage import FuelSection, OperationFuel
-from ceres.build.ship.weapons import FixedMount, MountWeapon, VeryHighYield, WeaponsSection
+from ceres.make.ship import armour, hull, ship
+from ceres.make.ship.bridge import Cockpit, CommandSection
+from ceres.make.ship.computer import Computer, ComputerSection
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
+from ceres.make.ship.parts import EnergyEfficient, HighTechnology
+from ceres.make.ship.sensors import CivilianSensors, SensorsSection
+from ceres.make.ship.storage import FuelSection, OperationFuel
+from ceres.make.ship.weapons import FixedMount, MountWeapon, VeryHighYield, WeaponsSection
 
 
 def build_ultralight_fighter() -> ship.Ship:

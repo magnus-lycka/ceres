@@ -1,5 +1,5 @@
-from ceres.build.ship import armour
-from ceres.build.ship.base import NoteCategory, ShipBase
+from ceres.make.ship import armour
+from ceres.make.ship.base import NoteCategory, ShipBase
 
 
 class DummyOwner(ShipBase):

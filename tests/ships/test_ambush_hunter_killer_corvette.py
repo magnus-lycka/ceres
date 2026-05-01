@@ -1,9 +1,9 @@
 import pytest
 
-from ceres.build.ship import hull, ship
-from ceres.build.ship.armour import BondedSuperdenseArmour
-from ceres.build.ship.bridge import Bridge, CommandSection
-from ceres.build.ship.computer import (
+from ceres.make.ship import hull, ship
+from ceres.make.ship.armour import BondedSuperdenseArmour
+from ceres.make.ship.bridge import Bridge, CommandSection
+from ceres.make.ship.computer import (
     AdvancedFireControl,
     AntiHijack,
     BroadSpectrumEW,
@@ -13,19 +13,19 @@ from ceres.build.ship.computer import (
     JumpControl,
     VirtualGunner,
 )
-from ceres.build.ship.drives import DecreasedFuel, DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
-from ceres.build.ship.habitation import HabitationSection, HighStateroom, Stateroom
-from ceres.build.ship.parts import EnergyEfficient, HighTechnology, SizeReduction, VeryAdvanced
-from ceres.build.ship.sensors import (
+from ceres.make.ship.drives import DecreasedFuel, DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
+from ceres.make.ship.habitation import HabitationSection, HighStateroom, Stateroom
+from ceres.make.ship.parts import EnergyEfficient, HighTechnology, SizeReduction, VeryAdvanced
+from ceres.make.ship.sensors import (
     CountermeasuresSuite,
     EnhancedSignalProcessing,
     ImprovedSensors,
     SensorsSection,
     SensorStations,
 )
-from ceres.build.ship.storage import FuelProcessor, FuelSection, OperationFuel
-from ceres.build.ship.systems import Airlock, Armoury, BriefingRoom, CommonArea, MedicalBay, RepairDrones, SystemsSection
-from ceres.build.ship.weapons import Bay, HighYield, LongRange, MountWeapon, Turret, WeaponsSection
+from ceres.make.ship.storage import FuelProcessor, FuelSection, OperationFuel
+from ceres.make.ship.systems import Airlock, Armoury, BriefingRoom, CommonArea, MedicalBay, RepairDrones, SystemsSection
+from ceres.make.ship.weapons import Bay, HighYield, LongRange, MountWeapon, Turret, WeaponsSection
 
 def build_ambush_hunter_killer_corvette() -> ship.Ship:
     """

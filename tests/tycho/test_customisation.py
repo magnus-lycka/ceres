@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from ceres.build.ship.parts import (
+from ceres.make.ship.parts import (
     Advanced,
     Budget,
     EarlyPrototype,
@@ -15,7 +15,7 @@ from ceres.build.ship.parts import (
     SizeReduction,
     VeryAdvanced,
 )
-from ceres.build.ship.weapons import VeryHighYield
+from ceres.make.ship.weapons import VeryHighYield
 
 
 # ---------------------------------------------------------------------------
@@ -127,7 +127,7 @@ def test_grade_multipliers(grade_cls, cost_mult, tons_mult, tl_delta):
 
 
 def test_roundtrip_advanced():
-    from ceres.build.ship.parts import Customisation
+    from ceres.make.ship.parts import Customisation
     original = Advanced(SizeReduction)
     restored = Customisation.model_validate_json(original.model_dump_json())
     assert type(restored) is Advanced
@@ -135,7 +135,7 @@ def test_roundtrip_advanced():
 
 
 def test_roundtrip_high_technology():
-    from ceres.build.ship.parts import Customisation
+    from ceres.make.ship.parts import Customisation
     original = HighTechnology(VeryHighYield, EnergyEfficient)
     restored = Customisation.model_validate_json(original.model_dump_json())
     assert type(restored) is HighTechnology
@@ -143,7 +143,7 @@ def test_roundtrip_high_technology():
 
 
 def test_roundtrip_budget():
-    from ceres.build.ship.parts import Customisation
+    from ceres.make.ship.parts import Customisation
     original = Budget(IncreasedSize)
     restored = Customisation.model_validate_json(original.model_dump_json())
     assert type(restored) is Budget

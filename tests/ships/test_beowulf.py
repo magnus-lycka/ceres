@@ -25,15 +25,15 @@ Source handling for this test case:
 
 import pytest
 
-from ceres.build.ship import armour, hull, ship
-from ceres.build.ship.bridge import Bridge, CommandSection
-from ceres.build.ship.computer import Computer, ComputerSection, JumpControl
-from ceres.build.ship.crew import Astrogator, Engineer, Pilot, ShipCrew, Steward
-from ceres.build.ship.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
-from ceres.build.ship.habitation import HabitationSection, LowBerth, Stateroom
-from ceres.build.ship.sensors import CivilianSensors, SensorsSection
-from ceres.build.ship.storage import CargoCrane, CargoHold, CargoSection, FuelProcessor, FuelSection, JumpFuel, OperationFuel
-from ceres.build.ship.systems import Airlock, CommonArea
+from ceres.make.ship import armour, hull, ship
+from ceres.make.ship.bridge import Bridge, CommandSection
+from ceres.make.ship.computer import Computer, ComputerSection, JumpControl
+from ceres.make.ship.crew import Astrogator, Engineer, Pilot, ShipCrew, Steward
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
+from ceres.make.ship.habitation import HabitationSection, LowBerth, Stateroom
+from ceres.make.ship.sensors import CivilianSensors, SensorsSection
+from ceres.make.ship.storage import CargoCrane, CargoHold, CargoSection, FuelProcessor, FuelSection, JumpFuel, OperationFuel
+from ceres.make.ship.systems import Airlock, CommonArea
 
 
 
