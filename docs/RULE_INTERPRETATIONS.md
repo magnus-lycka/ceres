@@ -145,3 +145,31 @@ The consequences are:
 - the rendered spec text uses the actual endurance that tankage supports
 - if rounding up yields additional full four-week periods, Ceres reports the
   longer endurance rather than hiding it
+
+### RI-008 HG 2016 Software Packages Are Not Modelled
+
+Several software titles from *High Guard* (2016) — the first MgT2 edition —
+were removed or replaced in *High Guard* (2022) and have no equivalent in the
+current Ceres computer model:
+
+| HG 2016 title      | Role                                         |
+|--------------------|----------------------------------------------|
+| `Mentor/N`         | DM+ on training and education-related checks |
+| `Planetology/N`    | Assisted scientific analysis of planet data  |
+| `Research Assist/N`| General research and EDU-based checks        |
+
+None of these appear in the current *Core Rulebook*, *High Guard* (2022), or
+*Central Supply Catalogue* software tables. They should not be modelled as
+supported packages.
+
+**Where a source ship uses them**, document the exclusion in the test case
+and omit the packages. The nearest current-rules equivalent is an `Expert`
+program targeting the relevant skill — for example:
+
+- `Planetology/1` → `Expert (Science/Planetology)/1`
+- `Research Assist/1` → `Expert` with a relevant Science speciality
+- `Mentor/1` → `Expert` with a relevant teaching or Education skill
+
+These substitutions should be applied when — and not before — Ceres models
+explicit software packages from the *Central Supply Catalogue* via
+`ceres.gear.computer`.

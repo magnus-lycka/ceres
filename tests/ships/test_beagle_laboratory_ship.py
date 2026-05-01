@@ -16,7 +16,7 @@ Source handling for this test case:
   - the clamp-borne `Pinnace` is treated as maintained and transported
     external displacement, so drive and jump-fuel sizing use `455t`
 - still excluded from the modeled reference case:
-  - software packages `Mentor/1`, `Planetology/1`, and `Research Assist/1`
+  - software packages `Mentor/1`, `Planetology/1`, and `Research Assist/1` (`RI-008`)
   - source crew is carried over explicitly; `Pinnace Pilot` is treated as an
     additional `Pilot`, and `Sensop` as `SENSOR OPERATOR`
   - `Ship's Mechanic` is treated as the `MAINTENANCE` crew role
