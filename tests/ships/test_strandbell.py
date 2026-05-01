@@ -60,7 +60,7 @@ def build_strandbell() -> ship.Ship:
             ],
             missile_storage=MissileStorage(count=240),
         ),
-        systems=SystemsSection(repair_drones=RepairDrones(), medical_bay=MedicalBay()),
+        systems=SystemsSection(internal_systems=[MedicalBay()], drones=[RepairDrones()]),
         habitation=HabitationSection(staterooms=[Stateroom()] * 15, common_area=CommonArea(tons=4.0)),
     )
 
@@ -146,9 +146,9 @@ def test_strandbell_missile_storage():
 def test_strandbell_systems():
     sdb = build_strandbell()
     assert sdb.systems is not None
-    assert sdb.systems.repair_drones is not None
-    assert sdb.systems.repair_drones.tons == pytest.approx(2.0)
-    assert sdb.systems.repair_drones.cost == 400_000
+    assert len(sdb.systems.drones) == 1
+    assert sdb.systems.drones[0].tons == pytest.approx(2.0)
+    assert sdb.systems.drones[0].cost == 400_000
     assert len(sdb.hull.airlocks) == 2
     assert sdb.hull.airlocks[0].tons == 0.0  # 2 free for 200t
     assert sdb.hull.airlocks[1].tons == 0.0
@@ -209,7 +209,7 @@ def test_strandbell_spec_structure():
     assert spec.row('Standard Reinforced Hull').section == 'Hull'
     assert spec.row('Crystaliron, Armour: 13').section == 'Hull'
     assert spec.row('M-Drive 9').section == 'Propulsion'
-    assert spec.row('Fusion (TL 12)').section == 'Power'
+    assert spec.row('Fusion (TL 12), Power 240').section == 'Power'
     assert spec.row('Fuel Scoops').section == 'Fuel'
     assert spec.row('Standard Bridge').section == 'Command'
     assert spec.row('Computer/35').section == 'Computer'

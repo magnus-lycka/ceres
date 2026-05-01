@@ -24,7 +24,7 @@ from tycho.sensors import (
     SensorStations,
 )
 from tycho.storage import FuelProcessor, FuelSection, OperationFuel
-from tycho.systems import Airlock, BriefingRoom, CommonArea, CrewArmory, MedicalBay, RepairDrones, SystemsSection
+from tycho.systems import Airlock, Armoury, BriefingRoom, CommonArea, MedicalBay, RepairDrones, SystemsSection
 from tycho.weapons import Bay, HighYield, LongRange, MountWeapon, Turret, WeaponsSection
 
 def build_ambush_hunter_killer_corvette() -> ship.Ship:
@@ -112,10 +112,8 @@ def build_ambush_hunter_killer_corvette() -> ship.Ship:
             ],
         ),
         systems=SystemsSection(
-            crew_armory=CrewArmory(capacity=25),
-            repair_drones=RepairDrones(),
-            briefing_room=BriefingRoom(),
-            medical_bay=MedicalBay(),
+            drones=[RepairDrones()],
+            internal_systems=[Armoury(), BriefingRoom(), MedicalBay()],
         ),
         habitation=HabitationSection(
             staterooms=[Stateroom()] * 8 + [HighStateroom()],
@@ -202,12 +200,12 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
     assert sum(part.cost for part in bulkheads) == pytest.approx(3_866_666.6667)
 
     assert corvette.systems is not None
-    assert corvette.systems.crew_armory is not None
-    assert corvette.systems.crew_armory.tons == pytest.approx(1.0)
-    assert corvette.systems.crew_armory.cost == pytest.approx(250_000.0)
-    assert corvette.systems.repair_drones is not None
-    assert corvette.systems.repair_drones.tons == pytest.approx(4.5)
-    assert corvette.systems.repair_drones.cost == pytest.approx(900_000.0)
+    assert len(corvette.systems.armouries) == 1
+    assert corvette.systems.armouries[0].tons == pytest.approx(1.0)
+    assert corvette.systems.armouries[0].cost == pytest.approx(250_000.0)
+    assert len(corvette.systems.drones) == 1
+    assert corvette.systems.drones[0].tons == pytest.approx(4.5)
+    assert corvette.systems.drones[0].cost == pytest.approx(900_000.0)
     assert corvette.systems.briefing_room is not None
     assert corvette.systems.medical_bay is not None
     assert corvette.systems.medical_bay.tons == pytest.approx(4.0)

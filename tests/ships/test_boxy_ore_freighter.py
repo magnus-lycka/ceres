@@ -30,7 +30,7 @@ def build_boxy_ore_freighter() -> ship.Ship:
         computer=ComputerSection(hardware=Computer(5)),
         sensors=SensorsSection(primary=BasicSensors()),
         habitation=HabitationSection(staterooms=[Stateroom()], common_area=CommonArea(tons=1.0)),
-        systems=SystemsSection(workshop=Workshop()),
+        systems=SystemsSection(internal_systems=[Workshop()]),
     )
 
 

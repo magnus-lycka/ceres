@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 from .base import CeresModel, Note, NoteCategory
 from .spec import CrewRow as SpecCrewRow
+from .systems import MedicalBay
 from .text import optional_count
 
 
@@ -258,8 +259,7 @@ class ShipCrew(CeresModel):
         roles.extend([SensorOperator() for _ in range(sensor_operator_count)])
 
         medic_count = len(roles) // 120
-        medical_bay = None if ship.systems is None else ship.systems.medical_bay
-        if medical_bay is not None and medical_bay.autodoc is None:
+        if _requires_medic_from_medical_facility(ship):
             medic_count = max(medic_count, 1)
         roles.extend([Medic() for _ in range(medic_count)])
 
@@ -295,8 +295,7 @@ class ShipCrew(CeresModel):
         roles.extend([SensorOperator() for _ in range(sensor_operator_count)])
 
         medic_count = len(roles) // 120
-        medical_bay = None if ship.systems is None else ship.systems.medical_bay
-        if medical_bay is not None and medical_bay.autodoc is None:
+        if _requires_medic_from_medical_facility(ship):
             medic_count = max(medic_count, 1)
         roles.extend([Medic() for _ in range(medic_count)])
 
@@ -333,6 +332,12 @@ def _drives_and_power_tonnage(ship) -> float:
             tons += ship.drives.j_drive.tons
     if ship.power is not None and ship.power.fusion_plant is not None:
         tons += ship.power.fusion_plant.tons
+    if ship.craft is not None:
+        tons += sum(
+            getattr(part.craft, 'engineering_tonnage', 0.0)
+            for part in ship.craft._all_parts()
+            if getattr(part, 'craft', None) is not None
+        )
     return tons
 
 
@@ -386,14 +391,14 @@ def _sensor_operator_count(ship, *, military: bool) -> int:
 
 
 def _commercial_maintenance_count(ship) -> int:
-    tonnage = ship.displacement + _contained_small_craft_tonnage(ship)
+    tonnage = ship.displacement + ship.maintained_external_displacement + _contained_small_craft_tonnage(ship)
     if tonnage < 1_000:
         return 0
     return math.ceil(tonnage / 1_000)
 
 
 def _military_maintenance_count(ship) -> int:
-    tonnage = ship.displacement + _contained_small_craft_tonnage(ship)
+    tonnage = ship.displacement + ship.maintained_external_displacement + _contained_small_craft_tonnage(ship)
     if tonnage < 500:
         return 0
     return math.ceil(tonnage / 500)
@@ -406,3 +411,9 @@ def _steward_required_level(ship) -> int:
     if high_passage == 0 and middle_passage == 0:
         return 0
     return math.ceil((middle_passage + 10 * high_passage) / 100)
+
+
+def _requires_medic_from_medical_facility(ship) -> bool:
+    if ship.systems is None:
+        return False
+    return any(bay.autodoc is None for bay in ship.systems.internal_systems_of_type(MedicalBay))

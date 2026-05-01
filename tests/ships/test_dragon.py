@@ -60,9 +60,9 @@ from tycho.sensors import (
 from tycho.storage import CargoSection, FuelSection, OperationFuel
 from tycho.systems import (
     Airlock,
+    Armoury,
     Biosphere,
     CommonArea,
-    CrewArmory,
     MedicalBay,
     RepairDrones,
     SystemsSection,
@@ -129,12 +129,14 @@ def build_dragon() -> ship.Ship:
             missile_storage=MissileStorage(count=480, armoured_bulkhead=True),
         ),
         systems=SystemsSection(
-            crew_armory=CrewArmory(capacity=25),
-            biosphere=Biosphere(tons=4.0),
-            repair_drones=RepairDrones(),
-            medical_bay=MedicalBay(),
-            training_facility=TrainingFacility(trainees=2),
-            workshop=Workshop(),
+            internal_systems=[
+                Armoury(),
+                Biosphere(tons=4.0),
+                MedicalBay(),
+                TrainingFacility(trainees=2),
+                Workshop(),
+            ],
+            drones=[RepairDrones()],
         ),
         habitation=HabitationSection(
             staterooms=[Stateroom()] * 10,
@@ -260,12 +262,12 @@ def test_dragon_modeled_subset_matches_current_model():
     assert dragon.weapons.missile_storage.cost == pytest.approx(0.0)
 
     assert dragon.systems is not None
-    assert dragon.systems.crew_armory is not None
-    assert dragon.systems.crew_armory.tons == pytest.approx(1.0)
+    assert len(dragon.systems.armouries) == 1
+    assert dragon.systems.armouries[0].tons == pytest.approx(1.0)
     assert dragon.systems.biosphere is not None
     assert dragon.systems.biosphere.tons == pytest.approx(4.0)
-    assert dragon.systems.repair_drones is not None
-    assert dragon.systems.repair_drones.tons == pytest.approx(4.0)
+    assert len(dragon.systems.drones) == 1
+    assert dragon.systems.drones[0].tons == pytest.approx(4.0)
     assert dragon.systems.medical_bay is not None
     assert dragon.systems.training_facility is not None
     assert dragon.systems.workshop is not None

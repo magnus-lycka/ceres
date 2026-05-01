@@ -8,10 +8,11 @@ Purpose:
 Source handling for this test case:
 - supported: light dispersed-structure hull, thrust-0 manoeuvre drive, TL12
   fusion plant, operation fuel, fuel processors, small bridge, computer and
-  included software, full hangars, explicit airlocks, armoury, briefing room,
-  physical library, medical bay, mining drones, probe drones, repair drones,
-  training facility, standard staterooms, brig, common area, advanced
-  entertainment system, swimming pool, theatre, and explicit crew
+  included software, quad turrets with beam lasers and missile racks, full
+  hangars, explicit airlocks, armoury, briefing room, physical library,
+  medical bay, mining drones, probe drones, repair drones, training facility,
+  standard staterooms, brig, common area, advanced entertainment system,
+  swimming pool, theatre, and explicit crew
 - source mismatch retained:
   - the sheet lists `HULL: 3,200`
   - Tycho follows the current light-hull and dispersed-structure modifiers,
@@ -20,7 +21,6 @@ Source handling for this test case:
   - improved solar panels
   - additional fuel tankage
   - the advanced / long-range / mail-array sensor suite
-  - all weapon rows
   - chart room
   - grappling arm
   - meteoric assault / support systems
@@ -28,9 +28,11 @@ Source handling for this test case:
   - workshops x10
   - gaming space
 - deliberate interpretation:
-  - source crew is carried over explicitly; `Passenger Shuttle Pilots x10` are
-    represented as ten additional `PILOT` roles tied to the ten modeled
-    passenger shuttles
+  - this Tycho variant models additional carried craft beyond the sheet:
+    `Ship's Boat x2` in full hangars and `G/Carrier x3` in internal docking
+    spaces, so the explicit pilot count is raised accordingly
+  - this Tycho variant also raises source `Gunners x4` to `Gunners x5` so the
+    explicit crew covers all five modeled turrets
 """
 
 import pytest
@@ -38,7 +40,7 @@ import pytest
 from tycho import hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection
-from tycho.crafts import CraftSection, FreeGenericCraft, FullHangar, PassengerShuttle
+from tycho.crafts import CraftSection, FullHangar, InternalDockingSpace, SpaceCraft, Vehicle
 from tycho.crew import (
     Administrator,
     Engineer,
@@ -70,6 +72,7 @@ from tycho.systems import (
     Theatre,
     TrainingFacility,
 )
+from tycho.weapons import MountWeapon, Turret, WeaponsSection
 
 
 def build_small_scout_base() -> ship.Ship:
@@ -84,18 +87,18 @@ def build_small_scout_base() -> ship.Ship:
         passenger_vector={},
         crew=ShipCrew(
             roles=[
-                *[Engineer()] * 5,
+                *[Engineer()] * 6,
                 *[GeneralCrew()] * 250,
                 *[Maintenance()] * 9,
-                *[Gunner()] * 4,
+                *[Gunner()] * 5,
                 *[Administrator()] * 4,
                 SensorOperator(),
-                *[Pilot()] * 10,
+                *[Pilot()] * 13,
                 *[Medic()] * 2,
                 *[Officer()] * 14,
             ]
         ),
-        hull=hull.Hull(configuration=light_dispersed, airlocks=[Airlock() for _ in range(10)]),
+        hull=hull.Hull(configuration=light_dispersed, airlocks=[Airlock() for _ in range(24)]),
         drives=DriveSection(m_drive=MDrive(0)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=2_500)),
         fuel=FuelSection(
@@ -105,21 +108,31 @@ def build_small_scout_base() -> ship.Ship:
         command=CommandSection(bridge=Bridge(small=True)),
         computer=ComputerSection(hardware=Computer(20)),
         sensors=SensorsSection(primary=BasicSensors()),
+        weapons=WeaponsSection(
+            turrets=[
+                *[
+                    Turret(
+                        size='quad',
+                        weapons=[MountWeapon(weapon='beam_laser')] * 4,
+                    )
+                ]
+                * 4,
+                Turret(
+                    size='quad',
+                    weapons=[MountWeapon(weapon='missile_rack')] * 4,
+                ),
+            ]
+        ),
         craft=CraftSection(
-            full_hangars=[
-                *[FullHangar(craft=PassengerShuttle())] * 10,
-                FullHangar(craft=FreeGenericCraft(docking_space=95)),
+            internal_housing=[
+                *[FullHangar(craft=SpaceCraft.from_catalog('Passenger Shuttle'))] * 10,
+                *[FullHangar(craft=SpaceCraft.from_catalog("Ship's Boat"))] * 2,
+                *[InternalDockingSpace(craft=Vehicle.from_catalog('G/Carrier'))] * 3,
             ]
         ),
         systems=SystemsSection(
-            armoury=Armoury(),
-            briefing_room=BriefingRoom(),
-            library=LibraryFacility(),
-            medical_bay=MedicalBay(),
-            mining_drones=MiningDrones(count=10),
-            probe_drones=ProbeDrones(count=100),
-            repair_drones=RepairDrones(),
-            training_facility=TrainingFacility(trainees=1),
+            internal_systems=[Armoury(), BriefingRoom(), LibraryFacility(), MedicalBay(), MedicalBay(), TrainingFacility(trainees=4)],
+            drones=[MiningDrones(count=10), ProbeDrones(count=100), RepairDrones()],
         ),
         habitation=HabitationSection(
             staterooms=[Stateroom()] * 1_250,
@@ -138,9 +151,9 @@ def test_small_scout_base_matches_supported_slice():
     assert base.hull_cost == pytest.approx(187_500_000.0)
     assert base.hull_points == pytest.approx(3_240.0)
     assert base.hull.airlocks is not None
-    assert len(base.hull.airlocks) == 10
+    assert len(base.hull.airlocks) == 24
     assert all(airlock.tons == 0.0 for airlock in base.hull.airlocks)
-    assert ('warning', 'Installed airlocks below minimum recommendation: 10 < 20') in [
+    assert ('warning', 'Installed airlocks below minimum recommendation: 24 < 20') not in [
         (note.category.value, note.message) for note in base.notes
     ]
 
@@ -178,37 +191,41 @@ def test_small_scout_base_matches_supported_slice():
         ('Intellect', 0.0),
     ]
 
+    assert base.weapons is not None
+    assert len(base.weapons.turrets) == 5
+    assert sum(turret.tons for turret in base.weapons.turrets) == pytest.approx(5.0)
+    assert sum(turret.cost for turret in base.weapons.turrets) == pytest.approx(21_000_000.0)
+    assert sum(turret.power for turret in base.weapons.turrets) == pytest.approx(74.0)
+
     assert base.craft is not None
-    assert len(base.craft.full_hangars) == 11
-    assert sum(hangar.tons for hangar in base.craft.full_hangars) == pytest.approx(2_090.0)
-    assert sum(hangar.cost for hangar in base.craft.full_hangars) == pytest.approx(418_000_000.0)
-    assert sum(hangar.craft.cost for hangar in base.craft.full_hangars) == pytest.approx(143_050_000.0)
+    assert len(base.craft.internal_housing) == 15
+    assert sum(housing.tons for housing in base.craft.internal_housing) == pytest.approx(2_071.0)
+    assert sum(housing.cost for housing in base.craft.internal_housing) == pytest.approx(416_750_000.0)
+    assert sum(housing.craft.cost for housing in base.craft.internal_housing) == pytest.approx(192_950_000.0)
 
     assert base.systems is not None
-    assert base.systems.armoury is not None
-    assert base.systems.armoury.tons == pytest.approx(1.0)
-    assert base.systems.armoury.cost == pytest.approx(250_000.0)
+    assert len(base.systems.armouries) == 1
+    assert base.systems.armouries[0].tons == pytest.approx(1.0)
+    assert base.systems.armouries[0].cost == pytest.approx(250_000.0)
     assert base.systems.briefing_room is not None
     assert base.systems.briefing_room.tons == pytest.approx(4.0)
     assert base.systems.briefing_room.cost == pytest.approx(500_000.0)
     assert base.systems.library is not None
     assert base.systems.library.tons == pytest.approx(4.0)
     assert base.systems.library.cost == pytest.approx(4_000_000.0)
-    assert base.systems.medical_bay is not None
-    assert base.systems.medical_bay.tons == pytest.approx(4.0)
-    assert base.systems.medical_bay.cost == pytest.approx(2_000_000.0)
-    assert base.systems.mining_drones is not None
-    assert base.systems.mining_drones.tons == pytest.approx(20.0)
-    assert base.systems.mining_drones.cost == pytest.approx(2_000_000.0)
-    assert base.systems.probe_drones is not None
-    assert base.systems.probe_drones.tons == pytest.approx(20.0)
-    assert base.systems.probe_drones.cost == pytest.approx(10_000_000.0)
-    assert base.systems.repair_drones is not None
-    assert base.systems.repair_drones.tons == pytest.approx(100.0)
-    assert base.systems.repair_drones.cost == pytest.approx(20_000_000.0)
+    assert len(base.systems.medical_bays) == 2
+    assert sum(bay.tons for bay in base.systems.medical_bays) == pytest.approx(8.0)
+    assert sum(bay.cost for bay in base.systems.medical_bays) == pytest.approx(4_000_000.0)
+    assert len(base.systems.drones) == 3
+    assert base.systems.drones[0].tons == pytest.approx(20.0)
+    assert base.systems.drones[0].cost == pytest.approx(2_000_000.0)
+    assert base.systems.drones[1].tons == pytest.approx(20.0)
+    assert base.systems.drones[1].cost == pytest.approx(10_000_000.0)
+    assert base.systems.drones[2].tons == pytest.approx(100.0)
+    assert base.systems.drones[2].cost == pytest.approx(20_000_000.0)
     assert base.systems.training_facility is not None
-    assert base.systems.training_facility.tons == pytest.approx(2.0)
-    assert base.systems.training_facility.cost == pytest.approx(400_000.0)
+    assert base.systems.training_facility.tons == pytest.approx(8.0)
+    assert base.systems.training_facility.cost == pytest.approx(1_600_000.0)
 
     assert base.habitation is not None
     assert len(base.habitation.staterooms) == 1_250
@@ -232,22 +249,29 @@ def test_small_scout_base_matches_supported_slice():
     assert base.basic_hull_power_load == pytest.approx(2_000.0)
     assert base.maneuver_power_load == pytest.approx(250.0)
     assert base.sensor_power_load == pytest.approx(0.0)
+    assert base.weapon_power_load == pytest.approx(74.0)
     assert base.fuel_power_load == pytest.approx(5.0)
-    assert base.total_power_load == pytest.approx(2_256.0)
+    assert base.total_power_load == pytest.approx(2_331.0)
 
     assert [
-        ('ENGINEER', 5),
+        ('ENGINEER', 6),
         ('GENERAL CREW', 250),
         ('MAINTENANCE', 9),
-        ('GUNNER', 4),
+        ('GUNNER', 5),
         ('ADMINISTRATOR', 4),
         ('SENSOR OPERATOR', 1),
-        ('PILOT', 10),
+        ('PILOT', 13),
         ('MEDIC', 2),
         ('OFFICER', 14),
     ] == [
         (role.role, quantity) for role, quantity in base.crew.grouped_roles
     ]
+
+    notes = [(note.category.value, note.message) for note in base.crew.notes]
+    assert ('warning', 'ENGINEER below recommended count: 5 < 6') not in notes
+    assert ('warning', 'GUNNER below recommended count: 4 < 5') not in notes
+    assert ('info', 'MEDIC above recommended count: 2 > 0') not in notes
+    assert ('warning', 'PILOT below recommended count: 12 < 13') not in notes
 
 
 def test_small_scout_base_spec_structure():
@@ -255,23 +279,39 @@ def test_small_scout_base_spec_structure():
     spec = base.build_spec()
 
     assert spec.row('Light Dispersed Structure Hull').section == 'Hull'
-    assert spec.row('Airlock (2 tons)', section='Hull').quantity == 10
+    assert spec.row('Airlock (2 tons)', section='Hull').quantity == 24
     assert spec.row('M-Drive 0').section == 'Propulsion'
     assert spec.row('12 weeks of operation').section == 'Fuel'
     assert spec.row('Fuel Processor (100 tons/day)').section == 'Fuel'
     assert spec.row('Smaller Bridge').section == 'Command'
     assert spec.row('Computer/20').section == 'Computer'
+    beam_turret_rows = spec.rows_matching('Quad Turret')
+    assert len(beam_turret_rows) == 2
+    assert beam_turret_rows[0].quantity == 4
+    assert beam_turret_rows[0].cost == pytest.approx(16_000_000.0)
+    assert [(note.category.value, note.message) for note in beam_turret_rows[0].notes] == [
+        ('info', 'Weapon: Beam Laser × 4'),
+    ]
+    assert beam_turret_rows[1].quantity is None
+    assert beam_turret_rows[1].cost == pytest.approx(5_000_000.0)
+    assert [(note.category.value, note.message) for note in beam_turret_rows[1].notes] == [
+        ('info', 'Weapon: Missile Rack × 4'),
+    ]
     assert len(spec.rows_matching('Full Hangar: Passenger Shuttle')) == 10
-    assert len(spec.rows_matching('Full Hangar (95 tons)')) == 1
     assert len(spec.rows_matching('Passenger Shuttle')) == 10
+    assert len(spec.rows_matching("Full Hangar: Ship's Boat")) == 2
+    assert len(spec.rows_matching("Ship's Boat")) == 2
+    assert len(spec.rows_matching('Internal Docking Space: G/Carrier')) == 3
+    assert len(spec.rows_matching('G/Carrier')) == 3
     assert spec.row('Armoury').section == 'Systems'
     assert spec.row('Briefing Room').section == 'Systems'
     assert spec.row('Library', section='Systems').section == 'Systems'
     assert spec.row('Medical Bay').section == 'Systems'
+    assert spec.row('Medical Bay').quantity == 2
     assert spec.row('Mining Drones').quantity == 10
     assert spec.row('Probe Drones').quantity == 100
     assert spec.row('Repair Drones').section == 'Systems'
-    assert spec.row('Training Facility: 1-person capacity').section == 'Systems'
+    assert spec.row('Training Facility: 4-person capacity').section == 'Systems'
     assert spec.row('Staterooms').quantity == 1_250
     assert spec.row('Brig').section == 'Habitation'
     assert spec.row('Common Area').section == 'Habitation'

@@ -5,7 +5,10 @@ from tycho.computer import (
     AdvancedFireControl,
     AntiHijack,
     AutoRepair,
+    BattleNetwork,
+    BattleSystem,
     BroadSpectrumEW,
+    ConsciousIntelligence,
     Computer,
     ComputerSection,
     Core,
@@ -14,8 +17,12 @@ from tycho.computer import (
     FireControl,
     Intellect,
     JumpControl,
+    LaunchSolution,
     Library,
     Manoeuvre,
+    PointDefence,
+    ScreenOptimiser,
+    VirtualCrew,
     VirtualGunner,
 )
 
@@ -155,6 +162,30 @@ def test_broad_spectrum_ew_data():
     assert p.cost == 14_000_000
 
 
+def test_battle_network_2_data():
+    p = BattleNetwork(2)
+    assert p.description == 'Battle Network/2'
+    assert p.tl == 14
+    assert p.bandwidth == 10
+    assert p.cost == 10_000_000
+
+
+def test_battle_system_3_data():
+    p = BattleSystem(3)
+    assert p.description == 'Battle System/3'
+    assert p.tl == 15
+    assert p.bandwidth == 15
+    assert p.cost == 36_000_000
+
+
+def test_conscious_intelligence_1_data():
+    p = ConsciousIntelligence(1)
+    assert p.description == 'Conscious Intelligence/1'
+    assert p.tl == 16
+    assert p.bandwidth == 40
+    assert p.cost == 25_000_000
+
+
 def test_electronic_warfare_1_data():
     p = ElectronicWarfare(1)
     assert p.description == 'Electronic Warfare/1'
@@ -163,12 +194,52 @@ def test_electronic_warfare_1_data():
     assert p.cost == 15_000_000
 
 
+def test_launch_solution_3_data():
+    p = LaunchSolution(3)
+    assert p.description == 'Launch Solution/3'
+    assert p.tl == 12
+    assert p.bandwidth == 15
+    assert p.cost == 16_000_000
+
+
+def test_point_defence_2_data():
+    p = PointDefence(2)
+    assert p.description == 'Point Defence/2'
+    assert p.tl == 12
+    assert p.bandwidth == 15
+    assert p.cost == 12_000_000
+
+
+def test_screen_optimiser_data():
+    p = ScreenOptimiser()
+    assert p.description == 'Screen Optimiser'
+    assert p.tl == 10
+    assert p.bandwidth == 10
+    assert p.cost == 5_000_000
+
+
+def test_virtual_crew_2_data():
+    p = VirtualCrew(2)
+    assert p.description == 'Virtual Crew/2'
+    assert p.tl == 15
+    assert p.bandwidth == 15
+    assert p.cost == 10_000_000
+
+
 def test_virtual_gunner_1_data():
     p = VirtualGunner(1)
     assert p.description == 'Virtual Gunner/1'
     assert p.tl == 12
     assert p.bandwidth == 10
     assert p.cost == 5_000_000
+
+
+def test_evade_3_matches_core_values():
+    p = Evade(3)
+    assert p.description == 'Evade/3'
+    assert p.tl == 13
+    assert p.bandwidth == 25
+    assert p.cost == 3_000_000
 
 
 def test_jump_control_rejects_invalid_rating():

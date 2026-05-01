@@ -244,6 +244,8 @@ class ShipPart(CeresModel):
         self._ship = ship
         self.check_ship_tl()
         self.refresh_derived_values()
+        if message := self.build_item():
+            self.item(message)
         self._refresh_armoured_bulkhead(ship)
 
     @property

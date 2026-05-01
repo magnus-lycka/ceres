@@ -440,6 +440,21 @@ def test_double_turret_cost_and_power_include_weapons():
     assert turret.power == pytest.approx(1 + 4 + 3)
 
 
+def test_quad_turret_cost_and_power_include_weapons():
+    turret = Turret(
+        size='quad',
+        weapons=[
+            MountWeapon(weapon='beam_laser'),
+            MountWeapon(weapon='beam_laser'),
+            MountWeapon(weapon='beam_laser'),
+            MountWeapon(weapon='beam_laser'),
+        ],
+    )
+    turret.bind(DummyOwner(12, 100))
+    assert turret.cost == pytest.approx(2_000_000 + 4 * 500_000)
+    assert turret.power == pytest.approx(2 + 4 * 4)
+
+
 def test_double_turret_errors_if_it_mounts_too_many_weapons():
     turret = Turret(
         size='double',

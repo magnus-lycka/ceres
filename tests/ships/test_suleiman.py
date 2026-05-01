@@ -32,7 +32,7 @@ from stuart import render_ship_html
 from tycho import armour, hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection, JumpControl
-from tycho.crafts import AirRaft, CraftSection, InternalDockingSpace
+from tycho.crafts import CraftSection, InternalDockingSpace, Vehicle
 from tycho.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
 from tycho.habitation import HabitationSection, Stateroom
 from tycho.sensors import MilitarySensors, SensorsSection
@@ -67,9 +67,9 @@ def build_suleiman() -> ship.Ship:
         computer=ComputerSection(hardware=Computer(5, bis=True), software=[JumpControl(2)]),
         sensors=SensorsSection(primary=MilitarySensors()),
         weapons=WeaponsSection(turrets=[Turret(size='double')]),
-        craft=CraftSection(docking_space=InternalDockingSpace(craft=AirRaft())),
+        craft=CraftSection(internal_housing=[InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft'))]),
         habitation=HabitationSection(staterooms=[Stateroom()] * 4),
-        systems=SystemsSection(probe_drones=ProbeDrones(count=10), workshop=Workshop()),
+        systems=SystemsSection(internal_systems=[Workshop()], drones=[ProbeDrones(count=10)]),
     )
 
 
@@ -90,12 +90,12 @@ def test_suleiman_matches_first_modeled_reference_slice():
     bridge = suleiman.command.bridge
     sensors = suleiman.sensors.primary
     assert suleiman.craft is not None
-    docking_space = suleiman.craft.docking_space
+    docking_space = suleiman.craft.internal_housing[0]
     assert suleiman.habitation is not None
     staterooms = suleiman.habitation.staterooms
     airlocks = suleiman.hull.airlocks
     assert suleiman.systems is not None
-    probe_drones = suleiman.systems.probe_drones
+    probe_drones = suleiman.systems.drones[0]
     workshop = suleiman.systems.workshop
 
     assert suleiman.tl == 12
@@ -247,7 +247,7 @@ def test_suleiman_spec_structure():
     assert armour.tons == pytest.approx(6.0)
     assert armour.cost == 1_200_000
 
-    fusion = spec.row('Fusion (TL 12)')
+    fusion = spec.row('Fusion (TL 12), Power 60')
     assert fusion.section == 'Power'
     assert fusion.tons == pytest.approx(4.0)
     assert fusion.power == 60.0
@@ -316,7 +316,7 @@ def test_suleiman_stuart_html_output():
     assert '<th class="num">Cost (MCr)</th>' in html
     assert '<td>Military Grade Sensors</td>' in html
     assert '<td class="item-cell">J-2, 20 weeks of operation</td>' in html
-    assert '<td>Fusion (TL 12)</td><td class="num power-positive">60.00</td>' in html
+    assert '<td>Fusion (TL 12), Power 60</td><td class="num power-positive">60.00</td>' in html
     assert '<td>Basic Ship Systems</td><td class="num">20.00</td>' in html
     assert 'MIDDLE × 2' not in html
     assert 'Life Support People' in html

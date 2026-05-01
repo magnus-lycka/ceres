@@ -24,7 +24,7 @@ from .parts import ShipPart
 from .sensors import SensorsSection
 from .spec import PassengerRow, ShipSpec, SpecRow, SpecSection
 from .storage import CargoSection, FuelScoops, FuelSection
-from .systems import Airlock, SystemsSection
+from .systems import Airlock, Armoury, SystemsSection
 from .text import optional_count
 from .weapons import WeaponsSection
 
@@ -190,6 +190,7 @@ class Ship(ShipBase):
 
     def remaining_usable_tonnage(self) -> float:
         remaining = self.displacement * self.hull.configuration.usage_factor
+        remaining -= self.maintained_external_displacement
         remaining -= self.hull.pressure_hull_tons(self.displacement)
         for part in self._all_parts():
             remaining -= part.tons
@@ -352,13 +353,33 @@ class Ship(ShipBase):
             self.drives.validate_jump_control(software_packages)
         if self.weapons is not None:
             self.weapons.validate_mounting(self)
-        cargo_tons = CargoSection.cargo_tons_for_ship(self)
-        if cargo_tons < -0.005:
-            self.error(f'Hull overloaded by {-cargo_tons:.2f} tons')
+        residual_tonnage = self.remaining_usable_tonnage()
+        if residual_tonnage < -0.005:
+            self.error(f'Hull overloaded by {-residual_tonnage:.2f} tons')
+        power_shortfall = self.total_power_load - self.available_power
+        if power_shortfall > 0.005:
+            message = f'Capacity {power_shortfall:.2f} less than max use'
+            if self.power is not None and self.power.fusion_plant is not None:
+                self.power.fusion_plant.warning(message)
+            else:
+                self.warning(message)
         minimum_airlocks = ceil(self.displacement / 500) if self.displacement >= 100 else 0
         installed_airlocks = len(self.hull.airlocks or [])
         if minimum_airlocks and installed_airlocks < minimum_airlocks:
             self.warning(f'Installed airlocks below minimum recommendation: {installed_airlocks} < {minimum_airlocks}')
         if self.command is not None and self.command.bridge is not None and not (self.hull.airlocks or []):
             self.error('No airlock installed')
+        recommended_armouries = _recommended_armouries(self)
+        installed_armouries = 0 if self.systems is None else len(self.systems.internal_systems_of_type(Armoury))
+        if self.military and installed_armouries < recommended_armouries:
+            self.warning(f'Installed armouries below recommendation: {installed_armouries} < {recommended_armouries}')
         self.crew.refresh_notes()
+
+
+def _recommended_armouries(ship: Ship) -> int:
+    if not ship.military:
+        return 0
+    marine_count = sum(1 for role in ship.crew.effective_roles if role.role == 'MARINE')
+    non_marine_count = ship.crew.count - marine_count
+    required = (non_marine_count / 25) + (marine_count / 5)
+    return int(required + 0.5)

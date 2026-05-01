@@ -36,7 +36,7 @@ import pytest
 from tycho import hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection, Intellect, JumpControl, Library, Manoeuvre
-from tycho.crafts import CraftSection, FreeGenericCraft, InternalDockingSpace
+from tycho.crafts import CraftSection, EmptyOccupant, InternalDockingSpace
 from tycho.crew import (
     Administrator,
     Astrogator,
@@ -81,15 +81,14 @@ def build_king_kay() -> ship.Ship:
         ),
         sensors=SensorsSection(primary=CivilianSensors()),
         craft=CraftSection(
-            auxiliary_docking_spaces=[
-                InternalDockingSpace(craft=FreeGenericCraft(docking_space=70)),
-                InternalDockingSpace(craft=FreeGenericCraft(docking_space=70)),
-                InternalDockingSpace(craft=FreeGenericCraft(docking_space=252)),
+            internal_housing=[
+                InternalDockingSpace(craft=EmptyOccupant(docking_space=70)),
+                InternalDockingSpace(craft=EmptyOccupant(docking_space=70)),
+                InternalDockingSpace(craft=EmptyOccupant(docking_space=252)),
             ]
         ),
         systems=SystemsSection(
-            medical_bay=MedicalBay(),
-            commercial_zone=CommercialZone(tons=240),
+            internal_systems=[MedicalBay(), CommercialZone(tons=240)],
         ),
         habitation=HabitationSection(
             staterooms=[Stateroom()] * 80 + [HighStateroom()] * 192 + [LuxuryStateroom()] * 8,

@@ -171,9 +171,28 @@ class Evade(RatedSoftwarePackage):
     package: Literal['evade'] = 'evade'
     label = 'Evade'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
-        1: dict(bandwidth=5, tl=9, cost=1_000_000.0),
-        2: dict(bandwidth=10, tl=11, cost=2_000_000.0),
-        3: dict(bandwidth=15, tl=12, cost=3_000_000.0),
+        1: dict(bandwidth=10, tl=9, cost=1_000_000.0),
+        2: dict(bandwidth=15, tl=11, cost=2_000_000.0),
+        3: dict(bandwidth=25, tl=13, cost=3_000_000.0),
+    }
+
+
+class BattleNetwork(RatedSoftwarePackage):
+    package: Literal['battle_network'] = 'battle_network'
+    label = 'Battle Network'
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        1: dict(bandwidth=5, tl=12, cost=5_000_000.0),
+        2: dict(bandwidth=10, tl=14, cost=10_000_000.0),
+    }
+
+
+class BattleSystem(RatedSoftwarePackage):
+    package: Literal['battle_system'] = 'battle_system'
+    label = 'Battle System'
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        1: dict(bandwidth=5, tl=9, cost=18_000_000.0),
+        2: dict(bandwidth=10, tl=12, cost=24_000_000.0),
+        3: dict(bandwidth=15, tl=15, cost=36_000_000.0),
     }
 
 
@@ -185,6 +204,16 @@ class BroadSpectrumEW(FixedSoftwarePackage):
     base_cost = 14_000_000.0
 
 
+class ConsciousIntelligence(RatedSoftwarePackage):
+    package: Literal['conscious_intelligence'] = 'conscious_intelligence'
+    label = 'Conscious Intelligence'
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        1: dict(bandwidth=40, tl=16, cost=25_000_000.0),
+        2: dict(bandwidth=25, tl=17, cost=20_000_000.0),
+        3: dict(bandwidth=10, tl=18, cost=15_000_000.0),
+    }
+
+
 class ElectronicWarfare(RatedSoftwarePackage):
     package: Literal['electronic_warfare'] = 'electronic_warfare'
     label = 'Electronic Warfare'
@@ -192,6 +221,43 @@ class ElectronicWarfare(RatedSoftwarePackage):
         1: dict(bandwidth=10, tl=10, cost=15_000_000.0),
         2: dict(bandwidth=15, tl=13, cost=18_000_000.0),
         3: dict(bandwidth=20, tl=15, cost=24_000_000.0),
+    }
+
+
+class LaunchSolution(RatedSoftwarePackage):
+    package: Literal['launch_solution'] = 'launch_solution'
+    label = 'Launch Solution'
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        1: dict(bandwidth=5, tl=8, cost=10_000_000.0),
+        2: dict(bandwidth=10, tl=10, cost=12_000_000.0),
+        3: dict(bandwidth=15, tl=12, cost=16_000_000.0),
+    }
+
+
+class PointDefence(RatedSoftwarePackage):
+    package: Literal['point_defence'] = 'point_defence'
+    label = 'Point Defence'
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        1: dict(bandwidth=12, tl=9, cost=8_000_000.0),
+        2: dict(bandwidth=15, tl=12, cost=12_000_000.0),
+    }
+
+
+class ScreenOptimiser(FixedSoftwarePackage):
+    package: Literal['screen_optimiser'] = 'screen_optimiser'
+    label = 'Screen Optimiser'
+    tl = 10
+    bandwidth = 10
+    base_cost = 5_000_000.0
+
+
+class VirtualCrew(RatedSoftwarePackage):
+    package: Literal['virtual_crew'] = 'virtual_crew'
+    label = 'Virtual Crew'
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        0: dict(bandwidth=5, tl=10, cost=1_000_000.0),
+        1: dict(bandwidth=10, tl=13, cost=5_000_000.0),
+        2: dict(bandwidth=15, tl=15, cost=10_000_000.0),
     }
 
 
@@ -330,8 +396,15 @@ ShipSoftware = Annotated[
     | AdvancedFireControl
     | AntiHijack
     | Evade
+    | BattleNetwork
+    | BattleSystem
     | BroadSpectrumEW
+    | ConsciousIntelligence
     | ElectronicWarfare
+    | LaunchSolution
+    | PointDefence
+    | ScreenOptimiser
+    | VirtualCrew
     | VirtualGunner,
     Field(discriminator='package'),
 ]

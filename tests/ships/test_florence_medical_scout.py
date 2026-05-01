@@ -4,12 +4,12 @@ from tycho import hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection, JumpControl
 from tycho.crew import Astrogator, Captain, Engineer, Maintenance, Medic, Pilot, ShipCrew
-from tycho.crafts import AirRaft, CraftSection, InternalDockingSpace, SlowPinnace
+from tycho.crafts import CraftSection, InternalDockingSpace, SpaceCraft, Vehicle
 from tycho.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
 from tycho.habitation import HabitationSection, LowBerth, Stateroom
 from tycho.sensors import LifeScannerAnalysisSuite, MilitarySensors, SensorsSection
 from tycho.storage import FuelProcessor, FuelScoops, FuelSection, JumpFuel, OperationFuel
-from tycho.systems import BriefingRoom, CommonArea, Laboratory, MedicalBays, SystemsSection
+from tycho.systems import BriefingRoom, CommonArea, Laboratory, MedicalBay, SystemsSection
 from tycho.weapons import Turret, WeaponsSection
 
 
@@ -47,17 +47,13 @@ def build_florence_medical_scout() -> ship.Ship:
         sensors=SensorsSection(primary=MilitarySensors(), life_scanner_analysis_suite=LifeScannerAnalysisSuite()),
         weapons=WeaponsSection(turrets=[Turret(size='double')]),
         craft=CraftSection(
-            docking_space=InternalDockingSpace(craft=SlowPinnace()),
-            auxiliary_docking_spaces=[
-                InternalDockingSpace(craft=AirRaft()),
-                InternalDockingSpace(craft=AirRaft()),
+            internal_housing=[
+                InternalDockingSpace(craft=SpaceCraft.from_catalog('Slow Pinnace')),
+                InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft')),
+                InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft')),
             ],
         ),
-        systems=SystemsSection(
-            medical_bays=MedicalBays(count=6),
-            laboratories=[Laboratory()],
-            briefing_room=BriefingRoom(),
-        ),
+        systems=SystemsSection(internal_systems=[*[MedicalBay() for _ in range(6)], Laboratory(), BriefingRoom()]),
         habitation=HabitationSection(
             staterooms=[Stateroom()] * 8,
             low_berths=[LowBerth()] * 20,
@@ -117,10 +113,10 @@ def test_florence_medical_scout_matches_current_subset():
     assert scout.craft._all_parts()[2].tons == pytest.approx(5.0)
 
     assert scout.systems is not None
-    assert scout.systems.medical_bays is not None
-    assert scout.systems.medical_bays.tons == pytest.approx(24.0)
-    assert scout.systems.medical_bays.cost == pytest.approx(12_000_000)
-    assert scout.systems.medical_bays.power == pytest.approx(6.0)
+    assert len(scout.systems.medical_bays) == 6
+    assert sum(bay.tons for bay in scout.systems.medical_bays) == pytest.approx(24.0)
+    assert sum(bay.cost for bay in scout.systems.medical_bays) == pytest.approx(12_000_000)
+    assert sum(bay.power for bay in scout.systems.medical_bays) == pytest.approx(6.0)
     assert len(scout.systems.laboratories) == 1
     assert scout.systems.briefing_room is not None
 

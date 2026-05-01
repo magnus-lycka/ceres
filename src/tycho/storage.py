@@ -78,7 +78,9 @@ class JumpFuel(ShipPart):
     parsecs: int
 
     def build_item(self) -> str | None:
-        return f'Jump {self.parsecs}'
+        if self._ship is not None and self.ship.transported_external_displacement > 0:
+            return f'J-{self.parsecs} ({self.ship.performance_displacement:g}t)'
+        return f'J-{self.parsecs}'
 
     @property
     def _jump_drive(self):
@@ -90,7 +92,7 @@ class JumpFuel(ShipPart):
         jump_drive = self._jump_drive
         if jump_drive is not None and getattr(jump_drive, 'customisation', None) is not None:
             multiplier = jump_drive.customisation.fuel_multiplier
-        return self.ship.displacement * 0.1 * self.parsecs * multiplier
+        return self.ship.performance_displacement * 0.1 * self.parsecs * multiplier
 
     def compute_cost(self) -> float:
         return 0.0
@@ -121,7 +123,7 @@ class ReactionFuel(ShipPart):
             return 0.0
         if reaction_drive.level == 0:
             return 0.25
-        return self.ship.displacement * 0.025 * reaction_drive.level
+        return self.ship.performance_displacement * 0.025 * reaction_drive.level
 
     def compute_tons(self) -> float:
         return self._fuel_rate_per_hour() * (self.minutes / 60)
@@ -163,7 +165,7 @@ class FuelSection(CeresModel):
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
         parts: list[str] = []
         if self.jump_fuel is not None:
-            parts.append(f'J-{self.jump_fuel.parsecs}')
+            parts.append(self.jump_fuel.build_item() or f'J-{self.jump_fuel.parsecs}')
         if self.operation_fuel is not None:
             unit = 'week' if self.operation_fuel.actual_weeks == 1 else 'weeks'
             parts.append(f'{self.operation_fuel.actual_weeks} {unit} of operation')
@@ -282,6 +284,19 @@ class CargoSection(CeresModel):
             return sum(cargo_hold.usable_tons(ship) for cargo_hold in self.cargo_holds) + container_capacity
         return ship.remaining_usable_tonnage() + container_capacity
 
+    @staticmethod
+    def residual_cargo_space(ship) -> float:
+        return ship.remaining_usable_tonnage()
+
+    def _add_residual_cargo_space_row(self, ship, spec: ShipSpec) -> None:
+        spec.add_row(
+            SpecRow(
+                section=SpecSection.CARGO,
+                item='Cargo Space',
+                tons=self.residual_cargo_space(ship),
+            )
+        )
+
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
         for cargo_part in self._all_parts():
             spec.add_row(ship._spec_row_for_part(SpecSection.CARGO, cargo_part))
@@ -303,9 +318,11 @@ class CargoSection(CeresModel):
                             cost=cargo_hold.crane_cost(ship) or None,
                         )
                     )
+            self._add_residual_cargo_space_row(ship, spec)
             self._add_stores_notes(ship, spec)
             return
         if self._all_parts():
+            self._add_residual_cargo_space_row(ship, spec)
             self._add_stores_notes(ship, spec)
             return
         cargo_tons = self.cargo_tons(ship)

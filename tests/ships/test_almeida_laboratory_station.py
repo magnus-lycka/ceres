@@ -22,7 +22,7 @@ import pytest
 from tycho import hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection
-from tycho.crafts import AirRaft, CraftSection, InternalDockingSpace
+from tycho.crafts import CraftSection, InternalDockingSpace, Vehicle
 from tycho.crew import Administrator, Engineer, Maintenance, Officer, Pilot, ShipCrew, Steward
 from tycho.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
 from tycho.habitation import HabitationSection, Stateroom
@@ -46,11 +46,10 @@ def build_almeida_laboratory_station() -> ship.Ship:
         command=CommandSection(bridge=Bridge(small=True)),
         computer=ComputerSection(hardware=Computer(10)),
         sensors=SensorsSection(primary=AdvancedSensors()),
-        craft=CraftSection(docking_space=InternalDockingSpace(craft=AirRaft())),
+        craft=CraftSection(internal_housing=[InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft'))]),
         systems=SystemsSection(
-            probe_drones=AdvancedProbeDrones(count=20),
-            laboratories=[Laboratory()] * 50,
-            library=LibraryFacility(),
+            drones=[AdvancedProbeDrones(count=20)],
+            internal_systems=[*[Laboratory()] * 50, LibraryFacility()],
         ),
         habitation=HabitationSection(
             staterooms=[Stateroom()] * 29,
@@ -113,15 +112,15 @@ def test_almeida_laboratory_station_matches_reference_sheet():
     assert station.sensors.primary.power == pytest.approx(6.0)
 
     assert station.craft is not None
-    assert station.craft.docking_space is not None
-    assert station.craft.docking_space.tons == pytest.approx(5.0)
-    assert station.craft.docking_space.cost == pytest.approx(1_250_000.0)
-    assert station.craft.docking_space.craft.cost == pytest.approx(250_000.0)
+    assert len(station.craft.internal_housing) == 1
+    assert station.craft.internal_housing[0].tons == pytest.approx(5.0)
+    assert station.craft.internal_housing[0].cost == pytest.approx(1_250_000.0)
+    assert station.craft.internal_housing[0].craft.cost == pytest.approx(250_000.0)
 
     assert station.systems is not None
-    assert station.systems.probe_drones is not None
-    assert station.systems.probe_drones.tons == pytest.approx(4.0)
-    assert station.systems.probe_drones.cost == pytest.approx(3_200_000.0)
+    assert len(station.systems.drones) == 1
+    assert station.systems.drones[0].tons == pytest.approx(4.0)
+    assert station.systems.drones[0].cost == pytest.approx(3_200_000.0)
     assert len(station.systems.laboratories) == 50
     assert sum(lab.tons for lab in station.systems.laboratories) == pytest.approx(200.0)
     assert sum(lab.cost for lab in station.systems.laboratories) == pytest.approx(50_000_000.0)
@@ -180,7 +179,7 @@ def test_almeida_laboratory_station_spec_structure():
 
     assert spec.row('Dispersed Structure Hull').section == 'Hull'
     assert spec.row('M-Drive 1').section == 'Propulsion'
-    assert spec.row('Fusion (TL 12)').section == 'Power'
+    assert spec.row('Fusion (TL 12), Power 120').section == 'Power'
     assert spec.row('8 weeks of operation').section == 'Fuel'
     assert spec.row('Smaller Bridge').section == 'Command'
     assert spec.row('Computer/10').section == 'Computer'

@@ -29,29 +29,10 @@ they were magically much denser than the hydrogen-reference volume.
 
 ### Operation fuel and endurance
 
-`OperationFuel.weeks` is treated as the **minimum requested endurance** in
-ordinary weeks. Tycho then computes the minimum tankage needed to satisfy that
-request and may end up giving the design more endurance than originally asked
-for once tankage is rounded up.
-
-For operation-fuel tankage, Tycho currently uses this policy:
-
-- ships under `100 dTons`: round fuel tankage up to `0.1 dTon`
-- ships of `100 dTons` or more: round fuel tankage up to whole `dTons`
-
-This is our interpretation of the Small Craft Catalogue wording that "it makes
-sense for small craft to be able to use less than a ton of fuel for their tiny
-power plants", rather than a direct restatement of the simpler Core / High
-Guard minimum-one-ton wording. The intent is to keep small craft from being
-forced into absurdly large fuel tanks while still preserving clean tank
-increments.
-
-The stored `tons` value is therefore the actual allocated tankage, while the
-rendered item text uses `actual_weeks`, not the originally requested `weeks`.
-If rounding up gives enough fuel for additional full four-week periods, Tycho
-reports the longer endurance. For example, a design that requested four weeks
-may display eight or twenty weeks if the rounded tankage really supports that
-much endurance.
+The detailed policy for `OperationFuel` belongs in
+`RULE_INTERPRETATIONS.md`. In short, `weeks` is treated as a minimum requested
+endurance, and the design may end up displaying a longer actual endurance once
+tankage has been rounded according to the current rules interpretation.
 
 ### Two-phase construction: creation then binding
 
@@ -168,6 +149,27 @@ The installed-part graph is now section-based rather than mostly flat:
 - `habitation`
 - `systems`
 - `cargo`
+
+### Collections vs parts
+
+Tycho should model a **thing** as a thing, and a **collection of things** as a
+collection. We should avoid hybrid models where one object tries to be both a
+particular installed thing and a counted bag of such things at the same time.
+
+In practice, that means we prefer:
+
+- `list[Stateroom]` rather than a synthetic `Staterooms(count=...)`
+- `ShipCrew.roles: list[CrewRole]` rather than a role object with `count=...`
+- `list[Turret]`, `list[Vehicle]`, `list[SpaceCraft]`, and similar lists of
+  concrete objects rather than "one turret / one craft / one vehicle with
+  `count=X`"
+
+Grouping and `× N` presentation belong in the spec / rendering layer, not in
+the domain model.
+
+There are still a few legacy exceptions where the codebase uses `count` for a
+repeated facility or magazine. Those should be treated as pragmatic carryovers,
+not as the preferred modelling pattern for new code.
 
 ### Carried craft and external loads
 

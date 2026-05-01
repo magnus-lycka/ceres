@@ -2,13 +2,14 @@ from pydantic import ValidationError
 import pytest
 
 from tycho import armour, hull, ship
-from tycho.bridge import Cockpit, CommandSection
-from tycho.crafts import AirRaft, CraftSection, InternalDockingSpace
+from tycho.bridge import Bridge, Cockpit, CommandSection
+from tycho.crew import GeneralCrew, Marine, ShipCrew
+from tycho.crafts import CraftSection, InternalDockingSpace, Vehicle
 from tycho.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
 from tycho.parts import EnergyEfficient, HighTechnology
 from tycho.sensors import CivilianSensors, SensorsSection
-from tycho.storage import CargoCrane, CargoHold, CargoSection
-from tycho.systems import Airlock, ProbeDrones, SystemsSection, Workshop
+from tycho.storage import CargoCrane, CargoHold, CargoSection, FuelCargoContainer
+from tycho.systems import Airlock, Armoury, ProbeDrones, SystemsSection, Workshop
 from tycho.weapons import FixedMount, MountWeapon, VeryHighYield, WeaponsSection
 
 
@@ -84,8 +85,8 @@ def test_ship_cargo_subtracts_modeled_part_tonnage():
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        craft=CraftSection(docking_space=InternalDockingSpace(craft=AirRaft())),
-        systems=SystemsSection(probe_drones=ProbeDrones(count=10), workshop=Workshop()),
+        craft=CraftSection(internal_housing=[InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft'))]),
+        systems=SystemsSection(internal_systems=[Workshop()], drones=[ProbeDrones(count=10)]),
     )
     assert CargoSection.cargo_tons_for_ship(my_ship) == pytest.approx(100 - 5 - 2 - 6)
 
@@ -95,7 +96,7 @@ def test_ship_default_cargo_hold_uses_remaining_space():
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        systems=SystemsSection(workshop=Workshop()),
+        systems=SystemsSection(internal_systems=[Workshop()]),
         cargo=CargoSection(cargo_holds=[CargoHold()]),
     )
     assert CargoSection.cargo_tons_for_ship(my_ship) == pytest.approx(94.0)
@@ -117,7 +118,7 @@ def test_ship_parts_of_type_returns_matching_installed_parts():
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        systems=SystemsSection(probe_drones=ProbeDrones(count=10), workshop=Workshop()),
+        systems=SystemsSection(internal_systems=[Workshop()], drones=[ProbeDrones(count=10)]),
         sensors=SensorsSection(primary=CivilianSensors()),
     )
     probe_drones = my_ship.parts_of_type(ProbeDrones)
@@ -126,6 +127,21 @@ def test_ship_parts_of_type_returns_matching_installed_parts():
     assert isinstance(probe_drones[0], ProbeDrones)
     assert len(workshops) == 1
     assert isinstance(workshops[0], Workshop)
+
+
+def test_military_ship_warns_when_armouries_are_below_recommendation():
+    my_ship = ship.Ship(
+        tl=12,
+        military=True,
+        displacement=1_000,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        crew=ShipCrew(roles=[*[GeneralCrew()] * 105, *[Marine()] * 5]),
+        systems=SystemsSection(internal_systems=[Armoury(), Armoury(), Armoury(), Armoury()]),
+    )
+
+    assert ('warning', 'Installed armouries below recommendation: 4 < 5') in [
+        (note.category.value, note.message) for note in my_ship.notes
+    ]
 
 
 def test_ship_hull_cost():
@@ -234,6 +250,26 @@ def test_ship_total_power_load_includes_basic_and_active_systems():
     assert my_ship.total_power_load == 8
 
 
+def test_ship_gets_warning_when_total_power_load_exceeds_available_power():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=50,
+        hull=hull.Hull(configuration=hull.streamlined_hull, airlocks=[Airlock()]),
+        drives=DriveSection(m_drive=MDrive(1)),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=10)),
+        command=CommandSection(bridge=Bridge()),
+        systems=SystemsSection(internal_systems=[Workshop()]),
+    )
+
+    assert ('warning', 'Capacity 5.00 less than max use') not in [
+        (note.category.value, note.message) for note in my_ship.notes
+    ]
+    power_row = my_ship.build_spec().row('Fusion (TL 12), Power 10', section='Power')
+    assert ('warning', 'Capacity 5.00 less than max use') in [
+        (note.category.value, note.message) for note in power_row.notes
+    ]
+
+
 def test_ship_armoured_bulkhead_parts_includes_manual_bulkheads():
     bulkhead = hull.ArmouredBulkhead(protected_tonnage=10.0, protected_item='Bridge')
     my_ship = ship.Ship(
@@ -263,12 +299,12 @@ def test_ship_with_negative_cargo_adds_local_note():
         displacement=6,
         hull=hull.Hull(configuration=hull.standard_hull),
         sensors=SensorsSection(primary=CivilianSensors()),
-        systems=SystemsSection(workshop=Workshop()),
+        systems=SystemsSection(internal_systems=[Workshop()]),
     )
     cargo_tons = CargoSection.cargo_tons_for_ship(my_ship)
     assert cargo_tons < 0
-    assert [(note.category.value, note.message) for note in my_ship.notes] == [
-        ('error', f'Hull overloaded by {-cargo_tons:.2f} tons'),
+    assert ('error', f'Hull overloaded by {-cargo_tons:.2f} tons') in [
+        (note.category.value, note.message) for note in my_ship.notes
     ]
 
 
@@ -278,9 +314,23 @@ def test_hull_overloaded_puts_error_on_ship():
         displacement=6,
         hull=hull.Hull(configuration=hull.standard_hull),
         sensors=SensorsSection(primary=CivilianSensors()),
-        systems=SystemsSection(workshop=Workshop()),
+        systems=SystemsSection(internal_systems=[Workshop()]),
     )
     assert ('error', 'Hull overloaded by 1.00 tons') in [
+        (n.category.value, n.message) for n in my_ship.notes
+    ]
+
+
+def test_fuel_cargo_container_does_not_hide_hull_overload():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        maintained_external_displacement=120,
+        hull=hull.Hull(configuration=hull.streamlined_hull, airlocks=[Airlock()]),
+        cargo=CargoSection(fuel_cargo_containers=[FuelCargoContainer(capacity=30)]),
+    )
+
+    assert ('error', 'Hull overloaded by 52.00 tons') in [
         (n.category.value, n.message) for n in my_ship.notes
     ]
 

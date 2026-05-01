@@ -10,14 +10,14 @@ from tests.ships.test_revised_dragon import build_revised_dragon
 from tycho import armour, hull
 from tycho.bridge import Cockpit, CommandSection
 from tycho.computer import Computer, ComputerSection
-from tycho.crafts import AirRaft, CraftSection, InternalDockingSpace
+from tycho.crafts import CraftSection, InternalDockingSpace, Vehicle
 from tycho.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
 from tycho.hull import BasicStealth, Hull
 from tycho.parts import EnergyEfficient, HighTechnology
 from tycho.sensors import BasicSensors, CivilianSensors, SensorsSection
 from tycho.ship import Ship
 from tycho.storage import CargoSection, FuelSection, OperationFuel
-from tycho.systems import Airlock, Biosphere, CrewArmory, SystemsSection, TrainingFacility
+from tycho.systems import Airlock, Armoury, Biosphere, SystemsSection, TrainingFacility
 from tycho.weapons import FixedMount, MountWeapon, VeryHighYield, WeaponsSection
 
 # Minimal ship for structural tests
@@ -38,7 +38,7 @@ ultralight = Ship(
     command=CommandSection(cockpit=Cockpit(holographic=True)),
     computer=ComputerSection(hardware=Computer(5)),
     sensors=SensorsSection(primary=CivilianSensors()),
-    craft=CraftSection(docking_space=InternalDockingSpace(craft=AirRaft())),
+    craft=CraftSection(internal_housing=[InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft'))]),
     weapons=WeaponsSection(
         fixed_mounts=[
             FixedMount(
@@ -287,15 +287,13 @@ def test_roundtrip_new_systems():
         displacement=100,
         hull=Hull(configuration=hull.standard_hull),
         systems=SystemsSection(
-            crew_armory=CrewArmory(capacity=25),
-            biosphere=Biosphere(tons=4.0),
-            training_facility=TrainingFacility(trainees=2),
+            internal_systems=[Armoury(), Biosphere(tons=4.0), TrainingFacility(trainees=2)],
         ),
     )
     loaded = _roundtrip(ship_with_systems)
     assert loaded.systems is not None
-    assert loaded.systems.crew_armory is not None
-    assert loaded.systems.crew_armory.capacity == 25
+    assert len(loaded.systems.armouries) == 1
+    assert loaded.systems.armouries[0].tons == pytest.approx(1.0)
     assert loaded.systems.biosphere is not None
     assert loaded.systems.biosphere.tons == pytest.approx(4.0)
     assert loaded.systems.training_facility is not None

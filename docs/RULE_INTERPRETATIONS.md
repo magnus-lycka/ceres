@@ -123,3 +123,25 @@ This affects how source-derived test cases should be read:
 - their presence does not, by itself, imply military crew rules or military
   ship classification
 - where relevant, the source test case should document that interpretation
+
+### RI-007 Small Craft Operation Fuel Uses Rounded Tankage And Actual Endurance
+
+Ceres treats `OperationFuel.weeks` as the minimum requested endurance, not
+necessarily the exact endurance that will appear in the final design.
+
+For operation-fuel tankage, Ceres uses this policy:
+
+- ships under `100 dTons`: round fuel tankage up to `0.1 dTon`
+- ships of `100 dTons` or more: round fuel tankage up to whole `dTons`
+
+This is our interpretation of the *Small Craft Catalogue* wording that "it
+makes sense for small craft to be able to use less than a ton of fuel for
+their tiny power plants", rather than a direct restatement of the simpler Core
+/ High Guard minimum-one-ton wording.
+
+The consequences are:
+
+- `OperationFuel.tons` is the actual allocated tankage
+- the rendered spec text uses the actual endurance that tankage supports
+- if rounding up yields additional full four-week periods, Ceres reports the
+  longer endurance rather than hiding it

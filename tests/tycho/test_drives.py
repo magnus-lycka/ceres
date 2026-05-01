@@ -20,8 +20,8 @@ from tycho.storage import FuelSection, JumpFuel, OperationFuel, ReactionFuel
 
 
 class DummyOwner(ShipBase):
-    def __init__(self, tl, displacement):
-        super().__init__(tl=tl, displacement=displacement)
+    def __init__(self, tl, displacement, **kwargs):
+        super().__init__(tl=tl, displacement=displacement, **kwargs)
 
 
 # --- JDrive ---
@@ -70,6 +70,15 @@ def test_jump_fuel_respects_decreased_fuel_additively():
     assert my_ship.fuel.jump_fuel.tons == pytest.approx(81.0)
 
 
+def test_jump_drive_uses_performance_displacement_when_transporting_external_load():
+    d = JDrive(2)
+    d.bind(DummyOwner(12, 400, maintained_external_displacement=40))
+    assert d.build_item() == 'Jump 2 (440t)'
+    assert float(d.tons) == pytest.approx(27.0)
+    assert float(d.cost) == pytest.approx(40_500_000.0)
+    assert float(d.power) == pytest.approx(88.0)
+
+
 # --- MDrive ---
 
 
@@ -79,6 +88,15 @@ def test_mdrive_standard_tons():
     assert d.tl == 12
     assert d.ship_tl == 12
     assert float(d.tons) == pytest.approx(0.36)
+
+
+def test_mdrive_uses_performance_displacement_when_transporting_external_load():
+    d = MDrive(2)
+    d.bind(DummyOwner(12, 400, maintained_external_displacement=40))
+    assert d.build_item() == 'M-Drive 2 (440t)'
+    assert float(d.tons) == pytest.approx(8.8)
+    assert float(d.cost) == pytest.approx(17_600_000.0)
+    assert float(d.power) == pytest.approx(88.0)
 
 
 def test_mdrive_standard_cost():
@@ -201,7 +219,7 @@ def test_fusion_plant_tl15_variant():
 def test_budget_increased_size_fusion_plant_values():
     p = FusionPlantTL12(output=482, customisation=Budget(IncreasedSize))
     p.bind(DummyOwner(13, 400))
-    assert p.build_item() == 'Fusion (TL 12)'
+    assert p.build_item() == 'Fusion (TL 12), Power 482'
     assert float(p.tons) == pytest.approx(40.1666666667)
     assert float(p.cost) == pytest.approx(24_100_000.0)
 
@@ -209,7 +227,7 @@ def test_budget_increased_size_fusion_plant_values():
 def test_size_reduced_fusion_plant_values():
     p = FusionPlantTL12(output=436, customisation=Advanced(SizeReduction))
     p.bind(DummyOwner(13, 400))
-    assert p.build_item() == 'Fusion (TL 12)'
+    assert p.build_item() == 'Fusion (TL 12), Power 436'
     assert float(p.tons) == pytest.approx(26.16)
     assert float(p.cost) == pytest.approx(31_973_333.3333)
 
@@ -325,10 +343,10 @@ def test_reaction_fuel_minutes_of_operation():
     assert my_ship.fuel.reaction_fuel.tons == pytest.approx(2.08)
 
 
-def test_size_reduced_fusion_plant_item_is_base_name_only():
+def test_size_reduced_fusion_plant_item_includes_output_but_not_customisation_label():
     p = FusionPlantTL12(output=436, customisation=Advanced(SizeReduction))
     p.bind(DummyOwner(13, 400))
-    assert p.build_item() == 'Fusion (TL 12)'
+    assert p.build_item() == 'Fusion (TL 12), Power 436'
 
 
 def test_size_reduced_fusion_plant_has_customisation_note():

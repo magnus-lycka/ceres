@@ -2,7 +2,7 @@ import pytest
 
 from tycho import hull, ship
 from tycho.base import ShipBase
-from tycho.drives import FusionPlantTL12, PowerSection
+from tycho.drives import DriveSection, FusionPlantTL12, JDrive, PowerSection
 from tycho.spec import SpecSection
 from tycho.storage import (
     CargoAirlock,
@@ -11,13 +11,14 @@ from tycho.storage import (
     CargoSection,
     FuelCargoContainer,
     FuelSection,
+    JumpFuel,
     OperationFuel,
 )
 
 
 class DummyOwner(ShipBase):
-    def __init__(self, tl, displacement):
-        super().__init__(tl=tl, displacement=displacement)
+    def __init__(self, tl, displacement, **kwargs):
+        super().__init__(tl=tl, displacement=displacement, **kwargs)
 
     def remaining_usable_tonnage(self) -> float:
         return float(self.displacement)
@@ -124,6 +125,20 @@ def test_operation_fuel_requires_plant():
     ]
 
 
+def test_jump_fuel_uses_performance_displacement_for_external_transport_load():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=400,
+        maintained_external_displacement=40,
+        hull=hull.Hull(configuration=hull.dispersed_structure),
+        drives=DriveSection(j_drive=JDrive(2)),
+        fuel=FuelSection(jump_fuel=JumpFuel(parsecs=2)),
+    )
+    assert my_ship.fuel is not None
+    assert my_ship.fuel.jump_fuel is not None
+    assert my_ship.fuel.jump_fuel.tons == pytest.approx(88.0)
+
+
 def test_military_cargo_note_shows_maximum_stores_for_100_days():
     my_ship = ship.Ship(
         tl=12,
@@ -148,4 +163,23 @@ def test_military_cargo_warning_if_below_recommended_stores_capacity():
     cargo_row = my_ship.build_spec().rows_for_section(SpecSection.CARGO)[-1]
     assert ('warning', 'Cargo is below recommended 100-day stores capacity of 2 tons') in [
         (note.category.value, note.message) for note in cargo_row.notes
+    ]
+
+
+def test_spec_always_shows_residual_cargo_space_even_with_explicit_cargo_parts():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        cargo=CargoSection(
+            cargo_airlocks=[CargoAirlock()],
+            fuel_cargo_containers=[FuelCargoContainer(capacity=30)],
+        ),
+    )
+
+    cargo_rows = my_ship.build_spec().rows_for_section(SpecSection.CARGO)
+    assert [(row.item, row.tons) for row in cargo_rows] == [
+        ('Cargo Airlock (2 tons)', 2.0),
+        ('Fuel/Cargo Container (30 tons)', 32),
+        ('Cargo Space', pytest.approx(166.0)),
     ]

@@ -192,14 +192,15 @@ class FixedMount(ShipPart):
         return float(math.floor(power))
 
 
-TurretSize = Literal['single', 'double', 'triple']
+TurretSize = Literal['single', 'double', 'triple', 'quad']
 
 
 class Turret(ShipPart):
     _specs: ClassVar[dict[TurretSize, dict[str, float | int | str]]] = dict(
-        single=dict(item='Single Turret', tl=7, mount_cost=200_000, capacity=1),
-        double=dict(item='Double Turret', tl=8, mount_cost=500_000, capacity=2),
-        triple=dict(item='Triple Turret', tl=9, mount_cost=1_000_000, capacity=3),
+        single=dict(item='Single Turret', tl=7, mount_cost=200_000, mount_power=1, capacity=1),
+        double=dict(item='Double Turret', tl=8, mount_cost=500_000, mount_power=1, capacity=2),
+        triple=dict(item='Triple Turret', tl=9, mount_cost=1_000_000, mount_power=1, capacity=3),
+        quad=dict(item='Quad Turret', tl=10, mount_cost=2_000_000, mount_power=2, capacity=4),
     )
     size: TurretSize
     weapons: list[MountWeapon] = Field(default_factory=list)
@@ -230,6 +231,10 @@ class Turret(ShipPart):
     def mount_cost(self) -> float:
         return float(self._specs[self.size]['mount_cost'])
 
+    @property
+    def mount_power(self) -> float:
+        return float(self._specs[self.size]['mount_power'])
+
     def model_post_init(self, __context) -> None:
         super().model_post_init(__context)
         if len(self.weapons) > self.capacity:
@@ -242,7 +247,7 @@ class Turret(ShipPart):
         return self.mount_cost + _mounted_weapon_cost(self.weapons)
 
     def compute_power(self) -> float:
-        return 1.0 + _mounted_weapon_power(self.weapons)
+        return self.mount_power + _mounted_weapon_power(self.weapons)
 
 
 class MissileStorage(ShipPart):

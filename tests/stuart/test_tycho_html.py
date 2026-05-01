@@ -1,9 +1,10 @@
 from stuart import render_ship_spec_html
-from tycho.base import Note, NoteCategory
-from tycho.spec import ShipSpec
-
-from tests.ships.test_suleiman import build_suleiman
 from tests.ships.test_small_scout_base import build_small_scout_base
+from tests.ships.test_suleiman import build_suleiman
+from tycho import hull, ship
+from tycho.base import Note, NoteCategory
+from tycho.crafts import CraftSection, FullHangar, InternalDockingSpace, SpaceCraft, Vehicle
+from tycho.spec import ShipSpec
 
 
 def test_render_ship_spec_html_uses_high_guard_like_split_layout():
@@ -21,7 +22,7 @@ def test_render_ship_spec_html_uses_high_guard_like_split_layout():
     assert 'Basic Ship Systems' in html
     assert 'Jump 2' in html
     assert 'Staterooms × 4' in html
-    assert html.index('Fusion (TL 12)') < html.index('Basic Ship Systems')
+    assert html.index('Fusion (TL 12), Power 60') < html.index('Basic Ship Systems')
     assert 'class="num power-positive">60.00</td>' in html
     assert '<td>Basic Ship Systems</td><td class="num">20.00</td>' in html
     assert 'scope="rowgroup" class="section-cell" rowspan="' in html
@@ -51,7 +52,10 @@ def test_render_ship_spec_html_renders_crew_notes_as_plain_note_block():
 
     assert '<div class="note-block ship-notes">' in html
     assert '<div class="note-line note-info">CAPTAIN above recommended count: 1 &gt; 0</div>' in html
-    assert '<div class="note-line note-warning"><strong>Warning:</strong> GUNNER below recommended count: 0 &lt; 1</div>' in html
+    assert (
+        '<div class="note-line note-warning"><strong>Warning:</strong> '
+        'GUNNER below recommended count: 0 &lt; 1</div>'
+    ) in html
     assert '<ul class="item-notes ship-notes">' not in html
 
 
@@ -60,3 +64,23 @@ def test_render_ship_spec_html_collapses_identical_rows_for_display():
 
     assert 'Full Hangar: Passenger Shuttle × 10' in html
     assert 'Passenger Shuttle × 10' in html
+
+
+def test_render_ship_spec_html_keeps_craft_after_their_housing_rows():
+    craft_ship = ship.Ship(
+        tl=12,
+        displacement=10_000,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        craft=CraftSection(
+            internal_housing=[
+                *[FullHangar(craft=SpaceCraft.from_catalog('Passenger Shuttle'))] * 10,
+                *[FullHangar(craft=SpaceCraft.from_catalog("Ship's Boat"))] * 2,
+                *[InternalDockingSpace(craft=Vehicle.from_catalog('G/Carrier'))] * 3,
+            ],
+        ),
+    )
+    html = render_ship_spec_html(craft_ship.build_spec())
+
+    assert html.index('Full Hangar: Passenger Shuttle × 10') < html.index('Passenger Shuttle × 10')
+    assert html.index("Full Hangar: Ship&#x27;s Boat × 2") < html.index("Ship&#x27;s Boat × 2")
+    assert html.index('Internal Docking Space: G/Carrier × 3') < html.index('G/Carrier × 3')

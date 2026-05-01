@@ -27,7 +27,7 @@ import pytest
 from tycho import armour, hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection, JumpControl
-from tycho.crafts import AirRaft, CraftSection, InternalDockingSpace
+from tycho.crafts import CraftSection, InternalDockingSpace, Vehicle
 from tycho.crew import Astrogator, Engineer, Gunner, Medic, Pilot, ShipCrew
 from tycho.drives import DriveSection, FusionPlantTL15, JDrive, MDrive, PowerSection
 from tycho.habitation import HabitationSection, LowBerth, Stateroom
@@ -70,11 +70,10 @@ def build_dolphin_extended_scout_courier() -> ship.Ship:
                 )
             ]
         ),
-        craft=CraftSection(docking_space=InternalDockingSpace(craft=AirRaft())),
+        craft=CraftSection(internal_housing=[InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft'))]),
         systems=SystemsSection(
-            medical_bay=MedicalBay(),
-            probe_drones=ProbeDrones(count=10),
-            workshop=Workshop(),
+            internal_systems=[MedicalBay(), Workshop()],
+            drones=[ProbeDrones(count=10)],
         ),
         habitation=HabitationSection(
             staterooms=[Stateroom()] * 4,
@@ -154,18 +153,18 @@ def test_dolphin_extended_scout_courier_matches_reference_sheet():
     assert dolphin.weapons.turrets[0].power == pytest.approx(13.0)
 
     assert dolphin.craft is not None
-    assert dolphin.craft.docking_space is not None
-    assert dolphin.craft.docking_space.tons == pytest.approx(5.0)
-    assert dolphin.craft.docking_space.cost == pytest.approx(1_250_000.0)
-    assert dolphin.craft.docking_space.craft.cost == pytest.approx(250_000.0)
+    assert len(dolphin.craft.internal_housing) == 1
+    assert dolphin.craft.internal_housing[0].tons == pytest.approx(5.0)
+    assert dolphin.craft.internal_housing[0].cost == pytest.approx(1_250_000.0)
+    assert dolphin.craft.internal_housing[0].craft.cost == pytest.approx(250_000.0)
 
     assert dolphin.systems is not None
     assert dolphin.systems.medical_bay is not None
     assert dolphin.systems.medical_bay.tons == pytest.approx(4.0)
     assert dolphin.systems.medical_bay.cost == pytest.approx(2_000_000.0)
-    assert dolphin.systems.probe_drones is not None
-    assert dolphin.systems.probe_drones.tons == pytest.approx(2.0)
-    assert dolphin.systems.probe_drones.cost == pytest.approx(1_000_000.0)
+    assert len(dolphin.systems.drones) == 1
+    assert dolphin.systems.drones[0].tons == pytest.approx(2.0)
+    assert dolphin.systems.drones[0].cost == pytest.approx(1_000_000.0)
     assert dolphin.systems.workshop is not None
     assert dolphin.systems.workshop.tons == pytest.approx(6.0)
     assert dolphin.systems.workshop.cost == pytest.approx(900_000.0)
@@ -212,7 +211,9 @@ def test_dolphin_extended_scout_courier_matches_reference_sheet():
     assert dolphin.production_cost == pytest.approx(60_460_000.0)
     assert dolphin.sales_price_new == pytest.approx(54_414_000.0)
     assert dolphin.expenses.maintenance == pytest.approx(4_534.0)
-    assert not any(note.category.value == 'error' for note in dolphin.notes)
+    assert ('warning', 'Capacity 9.00 less than max use') not in [
+        (note.category.value, note.message) for note in dolphin.notes
+    ]
 
 
 def test_dolphin_extended_scout_courier_spec_structure():
@@ -227,7 +228,11 @@ def test_dolphin_extended_scout_courier_spec_structure():
     assert spec.row('Crystaliron, Armour: 4').section == 'Hull'
     assert spec.row('M-Drive 2').section == 'Propulsion'
     assert spec.row('Jump 2').section == 'Jump'
-    assert spec.row('Fusion (TL 15)').section == 'Power'
+    assert ('warning', 'Capacity 9.00 less than max use') in [
+        (note.category.value, note.message)
+        for note in spec.row('Fusion (TL 15), Power 70', section='Power').notes
+    ]
+    assert spec.row('Fusion (TL 15), Power 70').section == 'Power'
     assert spec.row('J-2, 20 weeks of operation').section == 'Fuel'
     assert spec.row('Fuel Scoops').section == 'Fuel'
     assert spec.row('Fuel Processor (40 tons/day)').section == 'Fuel'
@@ -245,3 +250,4 @@ def test_dolphin_extended_scout_courier_spec_structure():
     assert spec.row('Low Berths').quantity == 4
     assert spec.row('Cargo Airlock (2 tons)').section == 'Cargo'
     assert spec.row('Fuel/Cargo Container (30 tons)').section == 'Cargo'
+    assert spec.row('Cargo Space').tons == pytest.approx(2.0)

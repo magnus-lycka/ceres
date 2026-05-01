@@ -75,7 +75,7 @@ class RDrive(ShipPart):
 
     def compute_tons(self) -> float:
         tons_percent = float(self._specs[self.level]['tons_percent'])
-        return self.ship.displacement * tons_percent
+        return self.ship.performance_displacement * tons_percent
 
     def compute_cost(self) -> float:
         return self.compute_tons() * 200_000.0
@@ -132,6 +132,8 @@ class MDrive(CustomisableShipPart):
         return int(self._specs[self.level]['tl'])
 
     def build_item(self) -> str | None:
+        if self._ship is not None and self.ship.transported_external_displacement > 0:
+            return f'M-Drive {self.level} ({self.ship.performance_displacement:g}t)'
         return f'M-Drive {self.level}'
 
     def bulkhead_label(self) -> str:
@@ -139,7 +141,7 @@ class MDrive(CustomisableShipPart):
 
     def _base_tons(self) -> float:
         tons_percent = float(self._specs[self.level]['tons_percent'])
-        return self.ship.displacement * tons_percent
+        return self.ship.performance_displacement * tons_percent
 
     def check_ship_tl(self) -> None:
         if self.level not in self._specs:
@@ -158,9 +160,9 @@ class MDrive(CustomisableShipPart):
 
     def compute_power(self) -> float:
         if self.level == 0:
-            power = float(math.ceil(0.1 * self.ship.displacement * 0.25))
+            power = float(math.ceil(0.1 * self.ship.performance_displacement * 0.25))
         else:
-            power = float(math.ceil(0.1 * self.ship.displacement * self.level))
+            power = float(math.ceil(0.1 * self.ship.performance_displacement * self.level))
         multiplier = 1.0 if self.customisation is None else self.customisation.power_multiplier
         return power * multiplier
 
@@ -196,6 +198,8 @@ class JDrive(CustomisableShipPart):
         return int(self._specs[self.level]['tl'])
 
     def build_item(self) -> str | None:
+        if self._ship is not None and self.ship.transported_external_displacement > 0:
+            return f'Jump {self.level} ({self.ship.performance_displacement:g}t)'
         return f'Jump {self.level}'
 
     def bulkhead_label(self) -> str:
@@ -213,18 +217,18 @@ class JDrive(CustomisableShipPart):
 
     def compute_tons(self) -> float:
         tons_percent = float(self._specs[self.level]['tons_percent'])
-        base_tons = self.ship.displacement * tons_percent + 5
+        base_tons = self.ship.performance_displacement * tons_percent + 5
         multiplier = 1.0 if self.customisation is None else self.customisation.tons_multiplier
         return base_tons * multiplier
 
     def compute_cost(self) -> float:
         tons_percent = float(self._specs[self.level]['tons_percent'])
-        base_cost = (self.ship.displacement * tons_percent + 5) * 1_500_000
+        base_cost = (self.ship.performance_displacement * tons_percent + 5) * 1_500_000
         multiplier = 1.0 if self.customisation is None else self.customisation.cost_multiplier
         return base_cost * multiplier
 
     def compute_power(self) -> float:
-        base_power = float(math.ceil(0.1 * self.ship.displacement * self.level))
+        base_power = float(math.ceil(0.1 * self.ship.performance_displacement * self.level))
         multiplier = 1.0 if self.customisation is None else self.customisation.power_multiplier
         return base_power * multiplier
 
@@ -270,7 +274,7 @@ class _FusionPlant(CustomisableShipPart):
     output: int
 
     def build_item(self) -> str | None:
-        return f'Fusion (TL {self.tl})'
+        return f'Fusion (TL {self.tl}), Power {self.output}'
 
     def bulkhead_label(self) -> str:
         return 'Power Plant'

@@ -129,7 +129,7 @@ def test_pinnace_with_20_ton_fuel_capacity_spec_structure():
     assert spec.row('Streamlined Hull').section == 'Hull'
     assert spec.row('Airlock (2 tons)').section == 'Hull'
     assert spec.row('M-Drive 5').section == 'Propulsion'
-    assert spec.row('Fusion (TL 12)').section == 'Power'
+    assert spec.row('Fusion (TL 12), Power 30').section == 'Power'
     assert spec.row('4 weeks of operation').section == 'Fuel'
     assert spec.row('Fuel Scoops').section == 'Fuel'
     assert spec.row('Standard Bridge').section == 'Command'

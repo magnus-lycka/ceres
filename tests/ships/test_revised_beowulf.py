@@ -78,7 +78,7 @@ def build_revised_beowulf() -> ship.Ship:
         command=CommandSection(bridge=Bridge(holographic=True)),
         computer=ComputerSection(hardware=Computer(5), software=[JumpControl(1)]),
         sensors=SensorsSection(primary=CivilianSensors()),
-        systems=SystemsSection(medical_bay=MedicalBay(), workshop=Workshop()),
+        systems=SystemsSection(internal_systems=[MedicalBay(), Workshop()]),
         habitation=HabitationSection(
             staterooms=[Stateroom()] * 10,
             low_berths=[LowBerth()] * 20,

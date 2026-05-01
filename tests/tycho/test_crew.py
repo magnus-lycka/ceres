@@ -4,7 +4,7 @@ import pytest
 from tycho import hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection
-from tycho.crafts import AirRaft, CarriedCraft, CraftSection, InternalDockingSpace
+from tycho.crafts import CraftSection, InternalDockingSpace, SpaceCraft, Vehicle
 from tycho.crew import (
     Astrogator,
     Engineer,
@@ -17,6 +17,7 @@ from tycho.crew import (
 from tycho.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
 from tycho.habitation import HabitationSection, LowBerth, Stateroom
 from tycho.sensors import SensorsSection, SensorStations
+from tycho.systems import MedicalBay, SystemsSection
 from tycho.weapons import Barbette, Bay, Turret, WeaponsSection
 
 
@@ -146,9 +147,14 @@ def test_military_ship_uses_military_pilot_and_gunner_rules():
 
 
 def test_commercial_ship_gets_extra_pilot_for_carried_small_craft():
-    class ShipBoat(CarriedCraft):
-        shipping_size: int = 10
-        cost: float = 1_000_000.0
+    owned_pinnace = SpaceCraft(
+        kind='Owned Pinnace',
+        tl=12,
+        shipping_size=40,
+        cost=0.0,
+        engineering_tonnage=4.0,
+        crew=1,
+    )
 
     my_ship = ship.Ship(
         tl=12,
@@ -158,7 +164,7 @@ def test_commercial_ship_gets_extra_pilot_for_carried_small_craft():
         power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer(5)),
-        craft=CraftSection(docking_space=InternalDockingSpace(craft=ShipBoat())),
+        craft=CraftSection(internal_housing=[InternalDockingSpace(craft=owned_pinnace)]),
     )
 
     assert ('PILOT', 2) in grouped_role_counts(my_ship.crew)
@@ -173,10 +179,35 @@ def test_air_raft_does_not_add_extra_pilot():
         power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer(5)),
-        craft=CraftSection(docking_space=InternalDockingSpace(craft=AirRaft())),
+        craft=CraftSection(internal_housing=[InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft'))]),
     )
 
     assert ('PILOT', 1) in grouped_role_counts(my_ship.crew)
+
+
+def test_carried_craft_engineering_tonnage_contributes_to_engineers():
+    baseline_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        drives=DriveSection(m_drive=MDrive(2), j_drive=JDrive(1)),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=300)),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer(5)),
+    )
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        drives=DriveSection(m_drive=MDrive(2), j_drive=JDrive(1)),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=300)),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer(5)),
+        craft=CraftSection(internal_housing=[InternalDockingSpace(craft=SpaceCraft.from_catalog("Ship's Boat"))]),
+    )
+
+    assert ('ENGINEER', 1) in grouped_role_counts(baseline_ship.crew)
+    assert ('ENGINEER', 2) in grouped_role_counts(my_ship.crew)
 
 
 def test_military_small_non_jump_craft_still_uses_single_pilot():
@@ -239,6 +270,21 @@ def test_sensor_stations_drive_sensor_operator_count():
     )
 
     assert ('SENSOR OPERATOR', 3) in grouped_role_counts(my_ship.crew)
+
+
+def test_medical_bays_require_at_least_one_medic():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        drives=DriveSection(m_drive=MDrive(2), j_drive=JDrive(1)),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer(5)),
+        systems=SystemsSection(internal_systems=[MedicalBay(), MedicalBay()]),
+    )
+
+    assert ('MEDIC', 1) in grouped_role_counts(my_ship.crew)
 
 
 def test_explicit_crew_input_overrides_rule_based_crew():
@@ -317,7 +363,9 @@ def test_explicit_crew_notes_are_not_stored_on_ship_level():
         crew=ShipCrew(roles=[Pilot(), Pilot()]),
     )
 
-    assert my_ship.notes == []
+    assert ('info', 'PILOT above recommended count: 2 > 1') not in [
+        (note.category.value, note.message) for note in my_ship.notes
+    ]
     assert ('info', 'PILOT above recommended count: 2 > 1') in [
         (note.category.value, note.message) for note in my_ship.crew.notes
     ]
@@ -335,6 +383,21 @@ def test_small_commercial_ship_does_not_require_separate_maintenance_crew():
     )
 
     assert ('MAINTENANCE', 1) not in grouped_role_counts(my_ship.crew)
+
+
+def test_maintained_external_displacement_counts_toward_maintenance_need():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=980,
+        maintained_external_displacement=30,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        drives=DriveSection(m_drive=MDrive(1), j_drive=JDrive(1)),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer(5)),
+    )
+
+    assert ('MAINTENANCE', 2) in grouped_role_counts(my_ship.crew)
 
 
 def test_steward_added_for_middle_passenger_manifest():

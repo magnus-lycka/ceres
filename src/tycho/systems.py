@@ -1,4 +1,4 @@
-from typing import ClassVar
+from typing import Annotated, ClassVar, Literal
 
 from pydantic import Field
 
@@ -9,6 +9,8 @@ from .text import optional_count
 
 
 class Workshop(ShipPart):
+    system_type: Literal['WORKSHOP'] = 'WORKSHOP'
+
     def build_item(self) -> str | None:
         return 'Workshop'
 
@@ -20,6 +22,8 @@ class Workshop(ShipPart):
 
 
 class Laboratory(ShipPart):
+    system_type: Literal['LABORATORY'] = 'LABORATORY'
+
     def build_item(self) -> str | None:
         return 'Laboratory'
 
@@ -31,6 +35,7 @@ class Laboratory(ShipPart):
 
 
 class LibraryFacility(ShipPart):
+    system_type: Literal['LIBRARY'] = 'LIBRARY'
     _tl: ClassVar[int] = 8
 
     def build_item(self) -> str | None:
@@ -44,6 +49,8 @@ class LibraryFacility(ShipPart):
 
 
 class BriefingRoom(ShipPart):
+    system_type: Literal['BRIEFING_ROOM'] = 'BRIEFING_ROOM'
+
     def build_item(self) -> str | None:
         return 'Briefing Room'
 
@@ -54,20 +61,9 @@ class BriefingRoom(ShipPart):
         return 500_000.0
 
 
-class CrewArmory(ShipPart):
-    capacity: int
-
-    def build_item(self) -> str | None:
-        return f'Crew Armory: Supports {self.capacity} Crew'
-
-    def compute_tons(self) -> float:
-        return self.capacity / 25
-
-    def compute_cost(self) -> float:
-        return self.compute_tons() * 250_000.0
-
-
 class Armoury(ShipPart):
+    system_type: Literal['ARMOURY'] = 'ARMOURY'
+
     def build_item(self) -> str | None:
         return 'Armoury'
 
@@ -89,6 +85,7 @@ class CommonArea(ShipPart):
 
 
 class CommercialZone(ShipPart):
+    system_type: Literal['COMMERCIAL_ZONE'] = 'COMMERCIAL_ZONE'
     tons: float
 
     def build_item(self) -> str | None:
@@ -157,6 +154,7 @@ class BasicAutodoc(CeresModel):
 
 
 class MedicalBay(ShipPart):
+    system_type: Literal['MEDICAL_BAY'] = 'MEDICAL_BAY'
     autodoc: BasicAutodoc | None = None
 
     def build_item(self) -> str | None:
@@ -177,23 +175,8 @@ class MedicalBay(ShipPart):
         return 1.0
 
 
-class MedicalBays(ShipPart):
-    count: int
-
-    def build_item(self) -> str | None:
-        return 'Medical Bays'
-
-    def compute_tons(self) -> float:
-        return self.count * 4.0
-
-    def compute_cost(self) -> float:
-        return self.count * 2_000_000.0
-
-    def compute_power(self) -> float:
-        return float(self.count)
-
-
 class Biosphere(ShipPart):
+    system_type: Literal['BIOSPHERE'] = 'BIOSPHERE'
     tons: float
 
     def build_item(self) -> str | None:
@@ -252,6 +235,7 @@ class Aerofins(ShipPart):
 
 
 class ProbeDrones(ShipPart):
+    drone_type: Literal['PROBE_DRONES'] = 'PROBE_DRONES'
     _tl: ClassVar[int] = 9
     drones_per_ton: ClassVar[int] = 5
     cost_per_ton: ClassVar[float] = 500_000.0
@@ -270,6 +254,7 @@ class ProbeDrones(ShipPart):
 
 
 class AdvancedProbeDrones(ProbeDrones):
+    drone_type: Literal['ADVANCED_PROBE_DRONES'] = 'ADVANCED_PROBE_DRONES'
     _tl: ClassVar[int] = 12
     cost_per_ton: ClassVar[float] = 800_000.0
 
@@ -282,6 +267,8 @@ class AdvancedProbeDrones(ProbeDrones):
 class RepairDrones(ShipPart):
     """Repair drones: 1 ton per 100 tons of displacement, Cr200,000 per ton."""
 
+    drone_type: Literal['REPAIR_DRONES'] = 'REPAIR_DRONES'
+
     def build_item(self) -> str | None:
         return 'Repair Drones'
 
@@ -293,6 +280,7 @@ class RepairDrones(ShipPart):
 
 
 class MiningDrones(ShipPart):
+    drone_type: Literal['MINING_DRONES'] = 'MINING_DRONES'
     count: int
 
     def build_item(self) -> str | None:
@@ -308,6 +296,7 @@ class MiningDrones(ShipPart):
 
 
 class TrainingFacility(ShipPart):
+    system_type: Literal['TRAINING_FACILITY'] = 'TRAINING_FACILITY'
     trainees: int
 
     def build_item(self) -> str | None:
@@ -320,68 +309,83 @@ class TrainingFacility(ShipPart):
         return self.compute_tons() * 200_000.0
 
 
+type AnyDroneSystem = Annotated[
+    ProbeDrones | AdvancedProbeDrones | RepairDrones | MiningDrones,
+    Field(discriminator='drone_type'),
+]
+
+type AnyInternalSystem = Annotated[
+    Armoury
+    | Biosphere
+    | CommercialZone
+    | MedicalBay
+    | Laboratory
+    | LibraryFacility
+    | BriefingRoom
+    | TrainingFacility
+    | Workshop,
+    Field(discriminator='system_type'),
+]
+
+
 class SystemsSection(CeresModel):
-    armoury: Armoury | None = None
-    crew_armory: CrewArmory | None = None
-    biosphere: Biosphere | None = None
-    commercial_zone: CommercialZone | None = None
-    medical_bay: MedicalBay | None = None
-    medical_bays: MedicalBays | None = None
-    laboratories: list[Laboratory] = Field(default_factory=list)
-    library: LibraryFacility | None = None
-    briefing_room: BriefingRoom | None = None
-    mining_drones: MiningDrones | None = None
-    probe_drones: ProbeDrones | AdvancedProbeDrones | None = None
-    repair_drones: RepairDrones | None = None
-    training_facility: TrainingFacility | None = None
-    workshop: Workshop | None = None
+    internal_systems: list[AnyInternalSystem] = Field(default_factory=list)
+    drones: list[AnyDroneSystem] = Field(default_factory=list)
+
+    def internal_systems_of_type(self, system_cls: type) -> list[ShipPart]:
+        return [system for system in self.internal_systems if isinstance(system, system_cls)]
+
+    def first_internal_system_of_type(self, system_cls: type) -> ShipPart | None:
+        matches = self.internal_systems_of_type(system_cls)
+        return None if not matches else matches[0]
+
+    @property
+    def armouries(self) -> list[Armoury]:
+        return self.internal_systems_of_type(Armoury)  # type: ignore[return-value]
+
+    @property
+    def biosphere(self) -> Biosphere | None:
+        return self.first_internal_system_of_type(Biosphere)  # type: ignore[return-value]
+
+    @property
+    def commercial_zone(self) -> CommercialZone | None:
+        return self.first_internal_system_of_type(CommercialZone)  # type: ignore[return-value]
+
+    @property
+    def medical_bay(self) -> MedicalBay | None:
+        return self.first_internal_system_of_type(MedicalBay)  # type: ignore[return-value]
+
+    @property
+    def medical_bays(self) -> list[MedicalBay]:
+        return self.internal_systems_of_type(MedicalBay)  # type: ignore[return-value]
+
+    @property
+    def laboratories(self) -> list[Laboratory]:
+        return self.internal_systems_of_type(Laboratory)  # type: ignore[return-value]
+
+    @property
+    def library(self) -> LibraryFacility | None:
+        return self.first_internal_system_of_type(LibraryFacility)  # type: ignore[return-value]
+
+    @property
+    def briefing_room(self) -> BriefingRoom | None:
+        return self.first_internal_system_of_type(BriefingRoom)  # type: ignore[return-value]
+
+    @property
+    def training_facility(self) -> TrainingFacility | None:
+        return self.first_internal_system_of_type(TrainingFacility)  # type: ignore[return-value]
+
+    @property
+    def workshop(self) -> Workshop | None:
+        return self.first_internal_system_of_type(Workshop)  # type: ignore[return-value]
 
     def _all_parts(self) -> list[ShipPart]:
-        parts: list[ShipPart] = []
-        for part in (
-            self.armoury,
-            self.crew_armory,
-            self.biosphere,
-            self.commercial_zone,
-            self.workshop,
-            self.medical_bay,
-            self.medical_bays,
-            *self.laboratories,
-            self.library,
-            self.briefing_room,
-            self.mining_drones,
-            self.probe_drones,
-            self.repair_drones,
-            self.training_facility,
-        ):
-            if part is not None:
-                parts.append(part)
-        return parts
+        return [*self.internal_systems, *self.drones]
 
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
-        for system_part in (
-            self.armoury,
-            self.crew_armory,
-            self.biosphere,
-            self.commercial_zone,
-            self.workshop,
-            self.medical_bay,
-            self.medical_bays,
-        ):
-            if system_part is not None:
-                spec.add_row(ship._spec_row_for_part(SpecSection.SYSTEMS, system_part))
-        for row in ship._grouped_spec_rows(SpecSection.SYSTEMS, self.laboratories):
+        for row in ship._grouped_spec_rows(SpecSection.SYSTEMS, self.internal_systems):
             spec.add_row(row)
-        for system_part in (
-            self.library,
-            self.briefing_room,
-            self.mining_drones,
-            self.probe_drones,
-            self.repair_drones,
-            self.training_facility,
-        ):
-            if system_part is None:
-                continue
-            spec.add_row(ship._spec_row_for_part(SpecSection.SYSTEMS, system_part))
-            if isinstance(system_part, (ProbeDrones, MiningDrones)):
-                spec.rows_for_section(SpecSection.SYSTEMS)[-1].quantity = optional_count(system_part.count)
+        for drone in self.drones:
+            spec.add_row(ship._spec_row_for_part(SpecSection.SYSTEMS, drone))
+            if isinstance(drone, ProbeDrones | MiningDrones):
+                spec.rows_for_section(SpecSection.SYSTEMS)[-1].quantity = optional_count(drone.count)

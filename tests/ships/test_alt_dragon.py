@@ -65,10 +65,10 @@ from tycho.sensors import (
 from tycho.storage import CargoSection, FuelProcessor, FuelSection, OperationFuel
 from tycho.systems import (
     Airlock,
+    Armoury,
     BasicAutodoc,
     Biosphere,
     CommonArea,
-    CrewArmory,
     MedicalBay,
     RepairDrones,
     SystemsSection,
@@ -142,12 +142,14 @@ def build_alt_dragon() -> ship.Ship:
             missile_storage=MissileStorage(count=720, armoured_bulkhead=True),
         ),
         systems=SystemsSection(
-            crew_armory=CrewArmory(capacity=25),
-            biosphere=Biosphere(tons=4.0),
-            repair_drones=RepairDrones(),
-            medical_bay=MedicalBay(autodoc=BasicAutodoc()),
-            training_facility=TrainingFacility(trainees=2),
-            workshop=Workshop(),
+            internal_systems=[
+                Armoury(),
+                Biosphere(tons=4.0),
+                MedicalBay(autodoc=BasicAutodoc()),
+                TrainingFacility(trainees=2),
+                Workshop(),
+            ],
+            drones=[RepairDrones()],
         ),
         habitation=HabitationSection(
             staterooms=[Stateroom()] * 4,

@@ -219,7 +219,7 @@ def test_beowulf_spec_structure():
     assert spec.row('Standard Bridge').section == 'Command'
     assert spec.row('Jump 1').section == 'Jump'
     assert spec.row('M-Drive 1').section == 'Propulsion'
-    assert spec.row('Fusion (TL 12)').section == 'Power'
+    assert spec.row('Fusion (TL 12), Power 75').section == 'Power'
     assert spec.row('J-1, 8 weeks of operation').section == 'Fuel'
     assert spec.row('Fuel Scoops').section == 'Fuel'
     airlock_row = spec.row('Airlock (2 tons)', section='Hull')

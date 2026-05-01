@@ -11,7 +11,6 @@ from tycho.systems import (
     Biosphere,
     CommercialZone,
     CommonArea,
-    CrewArmory,
     Laboratory,
     LibraryFacility,
     MedicalBay,
@@ -100,13 +99,6 @@ def test_hot_tub_values():
     assert tub.tons == 0.25
     assert tub.cost == 3_000.0
     assert tub.build_item() == 'Hot Tub (1 User)'
-
-
-def test_crew_armory_values():
-    a = CrewArmory(capacity=25)
-    a.bind(DummyOwner(12, 100))
-    assert a.tons == 1.0
-    assert a.cost == 250_000
 
 
 def test_armoury_values():
@@ -348,22 +340,23 @@ def test_eleventh_airlock_costs_tonnage_and_money_on_1000_ton_ship():
 
 def test_systems_section_all_parts():
     systems = SystemsSection(
-        crew_armory=CrewArmory(capacity=25),
-        biosphere=Biosphere(tons=4.0),
-        commercial_zone=CommercialZone(tons=240.0),
-        workshop=Workshop(),
-        medical_bay=MedicalBay(),
-        probe_drones=ProbeDrones(count=10),
-        repair_drones=RepairDrones(),
-        training_facility=TrainingFacility(trainees=2),
+        internal_systems=[
+            Armoury(),
+            Biosphere(tons=4.0),
+            CommercialZone(tons=240.0),
+            Workshop(),
+            MedicalBay(),
+            TrainingFacility(trainees=2),
+        ],
+        drones=[ProbeDrones(count=10), RepairDrones()],
     )
     assert [type(part) for part in systems._all_parts()] == [
-        CrewArmory,
+        Armoury,
         Biosphere,
         CommercialZone,
         Workshop,
         MedicalBay,
+        TrainingFacility,
         ProbeDrones,
         RepairDrones,
-        TrainingFacility,
     ]

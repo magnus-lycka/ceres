@@ -8,20 +8,18 @@ Purpose:
 Source handling for this test case:
 - supported: hull, drives, power plant, jump fuel, operation fuel, fuel
   processor, bridge, computer, included software, jump control, improved
-  sensors, sensor station, beam-laser and missile-rack/sandcaster turrets,
-  missile and sandcaster ammunition storage, docking clamps, docking space,
+  sensors, sensor station, beam-laser turrets, docking clamps, docking space,
   air/raft, advanced probe drones, biosphere, laboratories, physical library,
   medical bay, workshop, standard staterooms, common area, hot tubs, wet bar,
   low berths, cargo airlock, fuel/cargo container, and explicit crew
-- supported: the sheet's `J-2, 8 Weeks of Operation` fuel total now matches the
-  core-rule calculation of 80 tons jump fuel plus 4 tons operation fuel
+- deliberate interpretation:
+  - the clamp-borne `Pinnace` is treated as maintained and transported
+    external displacement, so drive and jump-fuel sizing use `455t`
 - still excluded from the modeled reference case:
   - software packages `Mentor/1`, `Planetology/1`, and `Research Assist/1`
-  - carried craft rows for `Pinnace` and `ATV`
-  - `Ship's Mechanic`
-- deliberate interpretation:
   - source crew is carried over explicitly; `Pinnace Pilot` is treated as an
     additional `Pilot`, and `Sensop` as `SENSOR OPERATOR`
+  - `Ship's Mechanic` is treated as the `MAINTENANCE` crew role
 """
 
 import pytest
@@ -29,11 +27,12 @@ import pytest
 from tycho import hull, ship
 from tycho.bridge import Bridge, CommandSection
 from tycho.computer import Computer, ComputerSection, JumpControl
-from tycho.crafts import AirRaft, CraftSection, DockingClamp, InternalDockingSpace
+from tycho.crafts import CraftSection, DockingClamp, InternalDockingSpace, SpaceCraft, Vehicle
 from tycho.crew import (
     Astrogator,
     Engineer,
     Gunner,
+    Maintenance,
     Medic,
     Officer,
     Pilot,
@@ -45,7 +44,7 @@ from tycho.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSec
 from tycho.habitation import HabitationSection, HotTub, LowBerth, Stateroom
 from tycho.sensors import ImprovedSensors, SensorStations, SensorsSection
 from tycho.storage import CargoAirlock, CargoSection, FuelCargoContainer, FuelProcessor, FuelSection, JumpFuel, OperationFuel
-from tycho.systems import AdvancedProbeDrones, Biosphere, CommonArea, Laboratory, LibraryFacility, MedicalBay, SystemsSection, WetBar, Workshop
+from tycho.systems import AdvancedProbeDrones, Airlock, Biosphere, CommonArea, Laboratory, LibraryFacility, MedicalBay, SystemsSection, WetBar, Workshop
 from tycho.weapons import MissileStorage, MountWeapon, SandcasterCanisterStorage, Turret, WeaponsSection
 
 
@@ -53,13 +52,17 @@ def build_beagle_laboratory_ship() -> ship.Ship:
     return ship.Ship(
         ship_class='Beagle-class',
         ship_type='Laboratory Ship',
-        tl=12,
-        displacement=400,
+        tl=15,
+        displacement=430,
+        maintained_external_displacement=40,
         design_type=ship.ShipDesignType.STANDARD,
         passenger_vector={},
-        hull=hull.Hull(configuration=hull.dispersed_structure),
+        hull=hull.Hull(
+            configuration=hull.dispersed_structure,
+            airlocks=[Airlock() for _ in range(4)],
+        ),
         drives=DriveSection(m_drive=MDrive(2), j_drive=JDrive(2)),
-        power=PowerSection(fusion_plant=FusionPlantTL12(output=180)),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=195)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=2),
             operation_fuel=OperationFuel(weeks=8),
@@ -71,22 +74,25 @@ def build_beagle_laboratory_ship() -> ship.Ship:
         weapons=WeaponsSection(
             turrets=[
                 Turret(size='double', weapons=[MountWeapon(weapon='beam_laser'), MountWeapon(weapon='beam_laser')]),
-                Turret(size='double', weapons=[MountWeapon(weapon='missile_rack'), MountWeapon(weapon='sandcaster')]),
+                Turret(size='double', weapons=[MountWeapon(weapon='beam_laser'), MountWeapon(weapon='beam_laser')]),
             ],
-            missile_storage=MissileStorage(count=12),
-            sandcaster_canister_storage=SandcasterCanisterStorage(count=20),
         ),
         craft=CraftSection(
-            docking_clamps=[DockingClamp(kind='II'), DockingClamp(kind='I')],
-            docking_space=InternalDockingSpace(craft=AirRaft()),
+            docking_clamps=[
+                DockingClamp(kind='II', craft=SpaceCraft.from_catalog('Pinnace')),
+                DockingClamp(kind='I', craft=Vehicle.from_catalog('ATV')),
+            ],
+            internal_housing=[InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft'))],
         ),
         systems=SystemsSection(
-            probe_drones=AdvancedProbeDrones(count=10),
-            biosphere=Biosphere(tons=2.0),
-            laboratories=[Laboratory()] * 10,
-            library=LibraryFacility(),
-            medical_bay=MedicalBay(),
-            workshop=Workshop(),
+            drones=[AdvancedProbeDrones(count=10)],
+            internal_systems=[
+                Biosphere(tons=2.0),
+                *[Laboratory()] * 10,
+                LibraryFacility(),
+                MedicalBay(),
+                Workshop(),
+            ],
         ),
         habitation=HabitationSection(
             staterooms=[Stateroom()] * 10,
@@ -97,7 +103,7 @@ def build_beagle_laboratory_ship() -> ship.Ship:
         ),
         cargo=CargoSection(
             cargo_airlocks=[CargoAirlock()],
-            fuel_cargo_containers=[FuelCargoContainer(capacity=80)],
+            fuel_cargo_containers=[FuelCargoContainer(capacity=94)],
         ),
         crew=ShipCrew(
             roles=[
@@ -105,6 +111,7 @@ def build_beagle_laboratory_ship() -> ship.Ship:
                 Astrogator(),
                 Engineer(),
                 *[Gunner()] * 2,
+                Maintenance(),
                 Steward(),
                 SensorOperator(),
                 Medic(),
@@ -117,28 +124,36 @@ def build_beagle_laboratory_ship() -> ship.Ship:
 def test_beagle_laboratory_ship_matches_supported_slice():
     ship_ = build_beagle_laboratory_ship()
 
-    assert ship_.hull_cost == pytest.approx(10_000_000.0)
-    assert ship_.hull_points == pytest.approx(144.0)
+    assert ship_.hull_cost == pytest.approx(10_750_000.0)
+    assert ship_.hull_points == pytest.approx(154.0)
 
     assert ship_.drives is not None
     assert ship_.drives.m_drive is not None
-    assert ship_.drives.m_drive.tons == pytest.approx(8.0)
-    assert ship_.drives.m_drive.cost == pytest.approx(16_000_000.0)
-    assert ship_.drives.m_drive.power == pytest.approx(80.0)
+    assert ship_.drives.m_drive.tons == pytest.approx(9.4)
+    assert ship_.drives.m_drive.cost == pytest.approx(18_800_000.0)
+    assert ship_.drives.m_drive.power == pytest.approx(94.0)
     assert ship_.drives.j_drive is not None
-    assert ship_.drives.j_drive.tons == pytest.approx(25.0)
-    assert ship_.drives.j_drive.cost == pytest.approx(37_500_000.0)
-    assert ship_.drives.j_drive.power == pytest.approx(80.0)
+    assert ship_.drives.j_drive.tons == pytest.approx(28.5)
+    assert ship_.drives.j_drive.cost == pytest.approx(42_750_000.0)
+    assert ship_.drives.j_drive.power == pytest.approx(94.0)
 
     assert ship_.power is not None
     assert ship_.power.fusion_plant is not None
-    assert ship_.power.fusion_plant.tons == pytest.approx(12.0)
-    assert ship_.power.fusion_plant.cost == pytest.approx(12_000_000.0)
-    assert ship_.available_power == pytest.approx(180.0)
+    assert ship_.power.fusion_plant.tons == pytest.approx(13.0)
+    assert ship_.power.fusion_plant.cost == pytest.approx(13_000_000.0)
+    assert ship_.available_power == pytest.approx(195.0)
+    assert ship_.total_power_load == pytest.approx(207.0)
+    assert ship_.remaining_usable_tonnage() == pytest.approx(0.1)
+    assert ('error', 'Hull overloaded by 1.90 tons') not in [
+        (note.category.value, note.message) for note in ship_.notes
+    ]
+    assert ('warning', 'Capacity 12.00 less than max use') not in [
+        (note.category.value, note.message) for note in ship_.notes
+    ]
 
     assert ship_.fuel is not None
     assert ship_.fuel.jump_fuel is not None
-    assert ship_.fuel.jump_fuel.tons == pytest.approx(80.0)
+    assert ship_.fuel.jump_fuel.tons == pytest.approx(94.0)
     assert ship_.fuel.operation_fuel is not None
     assert ship_.fuel.operation_fuel.tons == pytest.approx(3.0)
     assert ship_.fuel.fuel_processor is not None
@@ -148,7 +163,7 @@ def test_beagle_laboratory_ship_matches_supported_slice():
     assert ship_.command is not None
     assert ship_.command.bridge is not None
     assert ship_.command.bridge.tons == pytest.approx(10.0)
-    assert ship_.command.bridge.cost == pytest.approx(1_250_000.0)
+    assert ship_.command.bridge.cost == pytest.approx(1_562_500.0)
 
     assert ship_.computer is not None
     assert ship_.computer.hardware is not None
@@ -171,10 +186,10 @@ def test_beagle_laboratory_ship_matches_supported_slice():
     assert len(ship_.weapons.turrets) == 2
     assert ship_.weapons.turrets[0].cost == pytest.approx(1_500_000.0)
     assert ship_.weapons.turrets[1].cost == pytest.approx(1_500_000.0)
-    assert ship_.weapons.missile_storage is not None
-    assert ship_.weapons.missile_storage.tons == pytest.approx(1.0)
-    assert ship_.weapons.sandcaster_canister_storage is not None
-    assert ship_.weapons.sandcaster_canister_storage.tons == pytest.approx(1.0)
+    assert ship_.weapons.turrets[0].power == pytest.approx(9.0)
+    assert ship_.weapons.turrets[1].power == pytest.approx(9.0)
+    assert ship_.weapons.missile_storage is None
+    assert ship_.weapons.sandcaster_canister_storage is None
 
     assert ship_.craft is not None
     assert [part.build_item() for part in ship_.craft._all_parts()] == [
@@ -184,11 +199,15 @@ def test_beagle_laboratory_ship_matches_supported_slice():
     ]
     assert [part.tons for part in ship_.craft._all_parts()] == pytest.approx([5.0, 1.0, 5.0])
     assert [part.cost for part in ship_.craft._all_parts()] == pytest.approx([1_000_000.0, 500_000.0, 1_250_000.0])
+    assert ship_.craft.docking_clamps[0].craft is not None
+    assert ship_.craft.docking_clamps[0].craft.cost == pytest.approx(9_680_000.0)
+    assert ship_.craft.docking_clamps[1].craft is not None
+    assert ship_.craft.docking_clamps[1].craft.cost == pytest.approx(155_000.0)
 
     assert ship_.systems is not None
-    assert ship_.systems.probe_drones is not None
-    assert ship_.systems.probe_drones.tons == pytest.approx(2.0)
-    assert ship_.systems.probe_drones.cost == pytest.approx(1_600_000.0)
+    assert len(ship_.systems.drones) == 1
+    assert ship_.systems.drones[0].tons == pytest.approx(2.0)
+    assert ship_.systems.drones[0].cost == pytest.approx(1_600_000.0)
     assert ship_.systems.biosphere is not None
     assert ship_.systems.biosphere.tons == pytest.approx(2.0)
     assert ship_.systems.biosphere.cost == pytest.approx(400_000.0)
@@ -226,18 +245,34 @@ def test_beagle_laboratory_ship_matches_supported_slice():
     assert ship_.cargo.cargo_airlocks[0].tons == pytest.approx(2.0)
     assert ship_.cargo.cargo_airlocks[0].cost == pytest.approx(200_000.0)
     assert len(ship_.cargo.fuel_cargo_containers) == 1
-    assert ship_.cargo.fuel_cargo_containers[0].tons == pytest.approx(84.0)
-    assert ship_.cargo.fuel_cargo_containers[0].cost == pytest.approx(400_000.0)
+    assert ship_.cargo.fuel_cargo_containers[0].tons == pytest.approx(99.0)
+    assert ship_.cargo.fuel_cargo_containers[0].cost == pytest.approx(470_000.0)
 
     assert [(role.role, quantity) for role, quantity in ship_.crew.grouped_roles] == [
         ('PILOT', 2),
         ('ASTROGATOR', 1),
         ('ENGINEER', 1),
         ('GUNNER', 2),
+        ('MAINTENANCE', 1),
         ('STEWARD', 1),
         ('SENSOR OPERATOR', 1),
         ('MEDIC', 1),
         ('OFFICER', 10),
+    ]
+    assert ('warning', 'ENGINEER below recommended count: 1 < 2') in [
+        (note.category.value, note.message) for note in ship_.crew.notes
+    ]
+    assert ('info', 'MAINTENANCE above recommended count: 1 > 0') in [
+        (note.category.value, note.message) for note in ship_.crew.notes
+    ]
+    assert ('warning', 'SENSOR OPERATOR below recommended count: 1 < 2') in [
+        (note.category.value, note.message) for note in ship_.crew.notes
+    ]
+    assert ('info', 'OFFICER above recommended count: 10 > 0') in [
+        (note.category.value, note.message) for note in ship_.crew.notes
+    ]
+    assert ('info', 'STEWARD above recommended count: 1 > 0') in [
+        (note.category.value, note.message) for note in ship_.crew.notes
     ]
 
 
@@ -246,21 +281,30 @@ def test_beagle_laboratory_ship_spec_structure():
     spec = ship_.build_spec()
 
     assert spec.row('Dispersed Structure Hull').section == 'Hull'
-    assert spec.row('M-Drive 2').section == 'Propulsion'
-    assert spec.row('Jump 2').section == 'Jump'
-    assert spec.row('Fusion (TL 12)').section == 'Power'
-    assert spec.row('J-2, 8 weeks of operation').section == 'Fuel'
+    assert spec.row('Airlock (2 tons)').quantity == 4
+    assert spec.row('M-Drive 2 (470t)').section == 'Propulsion'
+    assert spec.row('Jump 2 (470t)').section == 'Jump'
+    assert spec.row('Fusion (TL 12), Power 195').section == 'Power'
+    assert ('warning', 'Capacity 12.00 less than max use') in [
+        (note.category.value, note.message)
+        for note in spec.row('Fusion (TL 12), Power 195', section='Power').notes
+    ]
+    assert spec.row('J-2 (470t), 8 weeks of operation').tons == pytest.approx(97.0)
     assert spec.row('Fuel Processor (40 tons/day)').section == 'Fuel'
     assert spec.row('Smaller Holographic Controls').section == 'Command'
     assert spec.row('Computer/10').section == 'Computer'
     assert spec.row('Jump Control/2').section == 'Computer'
     assert spec.row('Improved Sensors').section == 'Sensors'
     assert spec.row('Sensor Station').section == 'Sensors'
-    assert len(spec.rows_matching('Double Turret')) == 2
-    assert spec.row('Missile Storage (12)').section == 'Weapons'
-    assert spec.row('Sandcaster Canister Storage (20)').section == 'Weapons'
+    assert spec.row('Double Turret').quantity == 2
+    with pytest.raises(KeyError):
+        spec.row('Missile Storage (12)')
+    with pytest.raises(KeyError):
+        spec.row('Sandcaster Canister Storage (20)')
     assert spec.row('Docking Clamp, Type II').section == 'Craft'
+    assert spec.row('Pinnace').section == 'Craft'
     assert spec.row('Docking Clamp, Type I').section == 'Craft'
+    assert spec.row('ATV').section == 'Craft'
     assert spec.row('Internal Docking Space: Air/Raft').section == 'Craft'
     assert spec.row('Air/Raft').section == 'Craft'
     assert spec.row('Advanced Probe Drones').quantity == 10
@@ -272,4 +316,5 @@ def test_beagle_laboratory_ship_spec_structure():
     assert spec.row('Wet Bar').section == 'Habitation'
     assert spec.row('Low Berths').quantity == 6
     assert spec.row('Cargo Airlock (2 tons)').section == 'Cargo'
-    assert spec.row('Fuel/Cargo Container (80 tons)').section == 'Cargo'
+    assert spec.row('Fuel/Cargo Container (94 tons)').section == 'Cargo'
+    assert spec.row('Cargo Space').tons == pytest.approx(0.1)

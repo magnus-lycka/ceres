@@ -60,8 +60,8 @@ from tycho.sensors import (
 from tycho.storage import CargoSection, FuelSection, OperationFuel
 from tycho.systems import (
     Airlock,
+    Armoury,
     CommonArea,
-    CrewArmory,
     MedicalBay,
     RepairDrones,
     SystemsSection,
@@ -131,11 +131,8 @@ def build_revised_dragon() -> ship.Ship:
             missile_storage=MissileStorage(count=408, armoured_bulkhead=True),
         ),
         systems=SystemsSection(
-            crew_armory=CrewArmory(capacity=25),
-            repair_drones=RepairDrones(),
-            medical_bay=MedicalBay(),
-            training_facility=TrainingFacility(trainees=2),
-            workshop=Workshop(),
+            internal_systems=[Armoury(), MedicalBay(), TrainingFacility(trainees=2), Workshop()],
+            drones=[RepairDrones()],
         ),
         habitation=HabitationSection(
             staterooms=[Stateroom()] * 10,
