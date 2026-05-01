@@ -40,8 +40,11 @@ force-sort-within-sections = true
 combine-as-imports = true
 
 [tool.deptry]
-exclude = ["tests", ".venv"]
+exclude = ["tests", ".venv", "graphify-corpus"]
 known_first_party = ["ceres"]
 
 [tool.coverage.run]
 source_pkgs = ["ceres"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

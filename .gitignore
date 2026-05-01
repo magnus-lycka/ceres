@@ -19,3 +19,7 @@ refs/
 # Generated markdown from ship regression tests
 tests/ships/generated_md/
 .DS_Store
+
+# Graphify checkar vi inte in
+graphify-corpus/
+graphify-out/
