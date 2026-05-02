@@ -23,3 +23,6 @@ tests/ships/generated_md/
 # Graphify checkar vi inte in
 graphify-corpus/
 graphify-out/
+
+# Don't commit claude settings
+.claude
