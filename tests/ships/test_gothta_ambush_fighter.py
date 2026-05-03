@@ -5,11 +5,11 @@ from ceres.make.ship.bridge import Bridge, CommandSection
 from ceres.make.ship.computer import Computer, ComputerSection, FireControl
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection, RDrive
 from ceres.make.ship.habitation import CabinSpace, HabitationSection
+from ceres.make.ship.report import render_ship_spec_typst as _build_typst_source
 from ceres.make.ship.sensors import MilitarySensors, SensorsSection
 from ceres.make.ship.storage import FuelScoops, FuelSection, OperationFuel, ReactionFuel
 from ceres.make.ship.systems import Aerofins
 from ceres.make.ship.weapons import FixedMount, MountWeapon, WeaponsSection
-from ceres.report.ship_pdf import _build_typst_source
 
 
 def build_gothta_ambush_fighter() -> ship.Ship:
@@ -111,9 +111,9 @@ def test_gothta_ambush_fighter_matches_current_subset():
 def test_gothta_pdf_places_ship_error_below_main_table():
     fighter = build_gothta_ambush_fighter()
     src = _build_typst_source(fighter.build_spec(), page_size='a4')
-    assert 'Error: No airlock installed' in src
+    assert 'No airlock installed' in src
     assert 'Cargo' in src
-    assert src.index('Cargo') < src.index('Error: No airlock installed')
+    assert src.index('Cargo') < src.index('No airlock installed')
 
 
 def test_gothta_has_no_crew_notes():

@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title>
+<style>
+:root {
+  --paper: #fffdf5;
+  --paper-strong: #f7f1dc;
+  --surface: rgba(255,255,250,0.997);
+  --ink: #0d0d0d;
+  --ink-soft: #353126;
+  --accent: #cc2036;
+  --warning: #ff7a00;
+  --error: #ff1f1f;
+  --frame: #1a1a1a;
+  --line: rgba(39,34,19,0.48);
+  --shadow: rgba(25,22,14,0.08);
+  --page-bg: #8a8a8a;
+  --shell-bg: #fffdf7;
+  --banner-ink: var(--ink);
+  --switch-bg: transparent;
+  --switch-bg-hover: rgba(204,32,54,0.1);
+  --switch-border: rgba(18,18,18,0.5);
+  --switch-ink: var(--ink);
+}
+body.theme-dark {
+  --paper: #090909;
+  --paper-strong: #111112;
+  --surface: rgba(20,20,21,0.94);
+  --ink: #f2f2ee;
+  --ink-soft: #cfcac0;
+  --accent: #ff3048;
+  --warning: #ffbf00;
+  --error: #ff3030;
+  --frame: #6d6d70;
+  --line: rgba(143,143,148,0.34);
+  --shadow: rgba(0,0,0,0.44);
+  --page-bg: #06060e;
+  --shell-bg: #101012;
+  --banner-ink: var(--ink);
+  --switch-bg: transparent;
+  --switch-bg-hover: rgba(255,48,72,0.12);
+  --switch-border: rgba(232,232,228,0.3);
+  --switch-ink: var(--ink);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: "Avenir Next Condensed","DIN Condensed","Arial Narrow",sans-serif;
+  color: var(--ink);
+  background-color: var(--page-bg);
+}
+.page { min-height: 100vh; padding: 24px; }
+.shell {
+  max-width: 1100px;
+  margin: 0 auto;
+  background: var(--shell-bg);
+  border: 1px solid var(--frame);
+  box-shadow: 0 10px 24px var(--shadow);
+  overflow: hidden;
+}
+.banner { padding: 10px 16px; background: transparent; color: var(--banner-ink); }
+.banner-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.banner-main { min-width: 0; flex: 1 1 auto; }
+.banner-side { flex: 0 0 auto; display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+h1 {
+  margin: 0;
+  font-size: clamp(1.4rem,3.2vw,2.4rem);
+  line-height: 1;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.banner-meta {
+  margin: 0;
+  padding: 8px 14px;
+  border: 1px solid var(--accent);
+  color: var(--ink);
+  font-size: 1.1rem;
+  font-weight: 700;
+  white-space: nowrap;
+  text-align: right;
+}
+.theme-switch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid var(--switch-border);
+  background: var(--switch-bg);
+  color: var(--switch-ink);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 999px;
+}
+.theme-switch:hover { background: var(--switch-bg-hover); border-color: var(--accent); }
+.content { padding: 16px 18px 20px; }
+.ship-sheet { display: grid; gap: 18px; }
+.ship-grid {
+  display: grid;
+  grid-template-columns: minmax(0,2.6fr) minmax(260px,1fr);
+  gap: 22px;
+  align-items: start;
+}
+.main-panel {
+  min-width: 0;
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--accent);
+}
+.spec-table, .mini-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--accent);
+}
+.spec-table th, .spec-table td, .mini-table th, .mini-table td {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  vertical-align: top;
+}
+.spec-table thead th, .mini-table thead th {
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 1.1rem;
+  letter-spacing: 0.03em;
+}
+.main-panel .spec-table { border: 0; background: transparent; }
+.main-panel .spec-table th, .main-panel .spec-table td { border-left: 0; border-right: 0; }
+.main-panel .spec-table thead th { border-top: 0; }
+.main-panel .spec-table tbody tr:last-child td { border-bottom: 0; }
+.main-panel .spec-table .last-section-cell { border-bottom: 0; }
+.spec-table thead th:first-child, .spec-table .section-cell { width: 19%; }
+.spec-table thead th:nth-child(2) { width: 53%; }
+.spec-table .num, .mini-table .num { text-align: right; white-space: nowrap; }
+.power-positive { font-weight: 700; }
+.section-cell { text-align: left; font-weight: 700; }
+.item-cell { line-height: 1.2; }
+.item-notes {
+  margin: 8px 0 0 18px;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  font-size: 0.94rem;
+  color: var(--ink);
+}
+.item-notes .note-info, .note-block .note-info { color: var(--ink); font-style: italic; }
+.item-notes .note-warning, .note-block .note-warning { color: var(--warning); font-style: italic; }
+.item-notes .note-error, .note-block .note-error { color: var(--error); font-weight: 700; }
+.note-block { margin: 8px 0 0; display: grid; gap: 4px; font-size: 0.94rem; color: var(--ink); }
+.note-line { line-height: 1.2; }
+.ship-sidebar { display: grid; gap: 18px; }
+.sidebar-card { border: 1px solid var(--accent); background: var(--surface); }
+.sidebar-card-title {
+  padding: 9px 14px 8px;
+  background: transparent;
+  color: var(--accent);
+  border-bottom: 1px solid var(--accent);
+  font-size: 1.35rem;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: center;
+  font-weight: 800;
+}
+.sidebar-card-body { padding: 10px; }
+.sidebar-card .mini-table { border: 0; background: transparent; }
+.sidebar-card .mini-table th, .sidebar-card .mini-table td { border-left: 0; border-right: 0; }
+.sidebar-card .mini-table thead th { border-top: 0; }
+.sidebar-card .mini-table tbody tr:last-child td { border-bottom: 0; }
+.simple-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  text-align: center;
+  font-size: 1.2rem;
+  color: var(--ink);
+}
+@media (max-width: 960px) { .ship-grid { grid-template-columns: 1fr; } }
+@media (max-width: 720px) { .page { padding: 10px; } .content { padding: 12px 10px 16px; } }
+@media print {
+  body { background: white !important; }
+  .page { min-height: auto; padding: 0; }
+  .shell { max-width: none; border: 0; box-shadow: none; }
+  .theme-switch { display: none; }
+}
+</style>
+</head>
+<body class="theme-{{ theme | default('light') }}">
+<main class="page">
+<section class="shell">
+<header class="banner">
+  <div class="banner-row">
+    <div class="banner-main">
+      <h1>{{ title }}</h1>
+    </div>
+    <div class="banner-side">
+      {% if meta_parts %}
+      <p class="banner-meta">{{ meta_parts | join(' | ') }}</p>
+      {% endif %}
+      <button class="theme-switch" type="button" data-theme-toggle aria-label="Switch theme" title="Switch theme">◐</button>
+    </div>
+  </div>
+</header>
+<section class="content">
+<div class="ship-sheet">
+<div class="ship-grid">
+
+<!-- Main spec table -->
+<section class="main-panel">
+<table class="spec-table">
+<thead><tr><th>Section</th><th>Item</th><th class="num">Tons</th><th class="num">Cost (MCr)</th></tr></thead>
+<tbody>
+{% for section in sections %}
+{% set is_last_section = loop.last %}
+{% for row in section.rows %}
+<tr>
+  {% if loop.first %}
+  <th scope="rowgroup" class="section-cell{% if is_last_section %} last-section-cell{% endif %}" rowspan="{{ section.rows | length }}">{{ section.label }}</th>
+  {% endif %}
+  <td class="item-cell">{{ row.item }}{% if row.notes %}<ul class="item-notes">{% for note in row.notes %}<li class="note-{{ note.category }}">{% if note.category == 'warning' %}<strong>Warning:</strong> {% endif %}{% if note.category == 'error' %}<strong>Error:</strong> {% endif %}{{ note.message }}</li>{% endfor %}</ul>{% endif %}</td>
+  <td class="num">{% if row.emphasize_tons %}<strong>{{ row.tons }}</strong>{% else %}{{ row.tons }}{% endif %}</td>
+  <td class="num">{{ row.cost }}</td>
+</tr>
+{% endfor %}
+{% endfor %}
+</tbody>
+</table>
+{% if ship_notes %}
+<div class="note-block ship-notes">
+{% for note in ship_notes %}
+<div class="note-line note-{{ note.category }}">{% if note.category == 'warning' %}<strong>Warning:</strong> {% endif %}{% if note.category == 'error' %}<strong>Error:</strong> {% endif %}{{ note.message }}</div>
+{% endfor %}
+</div>
+{% endif %}
+</section>
+
+<!-- Sidebar -->
+<aside class="ship-sidebar">
+<section class="sidebar-card">
+  <header class="sidebar-card-title">Crew</header>
+  <div class="sidebar-card-body">
+    {% if crew %}
+    <ul class="simple-list">{% for c in crew %}<li>{{ c.role }}</li>{% endfor %}</ul>
+    {% else %}
+    <ul class="simple-list"><li>Uncrewed</li></ul>
+    {% endif %}
+  </div>
+</section>
+{% if crew_notes %}
+<div class="note-block ship-notes">
+{% for note in crew_notes %}
+<div class="note-line note-{{ note.category }}">{% if note.category == 'warning' %}<strong>Warning:</strong> {% endif %}{% if note.category == 'error' %}<strong>Error:</strong> {% endif %}{{ note.message }}</div>
+{% endfor %}
+</div>
+{% endif %}
+<section class="sidebar-card">
+  <header class="sidebar-card-title">Power</header>
+  <div class="sidebar-card-body">
+    <table class="mini-table">
+      <thead><tr><th>Item</th><th class="num">Power</th></tr></thead>
+      <tbody>
+        {% for p in power %}
+        <tr><td>{{ p.label }}</td><td class="num{% if p.emphasize %} power-positive{% endif %}">{{ p.value }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+<section class="sidebar-card">
+  <header class="sidebar-card-title">Costs</header>
+  <div class="sidebar-card-body">
+    <table class="mini-table">
+      <thead><tr><th>Item</th><th class="num">Amount</th></tr></thead>
+      <tbody>
+        {% for e in expenses %}
+        <tr><td>{{ e.label }}</td><td class="num">{{ e.amount }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+</aside>
+
+</div><!-- ship-grid -->
+</div><!-- ship-sheet -->
+</section><!-- content -->
+</section><!-- shell -->
+</main>
+<script>
+const body = document.body;
+const themeToggle = document.querySelector('[data-theme-toggle]');
+function setTheme(theme) {
+  body.classList.remove('theme-light','theme-dark');
+  body.classList.add('theme-' + theme);
+  const next = theme === 'dark' ? 'light' : 'dark';
+  if (themeToggle) {
+    themeToggle.setAttribute('aria-label','Switch to ' + next + ' theme');
+    themeToggle.setAttribute('title','Switch to ' + next + ' theme');
+  }
+}
+if (themeToggle) {
+  setTheme(body.classList.contains('theme-dark') ? 'dark' : 'light');
+  themeToggle.addEventListener('click', () => {
+    setTheme(body.classList.contains('theme-dark') ? 'light' : 'dark');
+  });
+}
+</script>
+</body>
+</html>

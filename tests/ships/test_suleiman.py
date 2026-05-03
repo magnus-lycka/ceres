@@ -314,9 +314,9 @@ def test_suleiman_report_html_output():
     assert '<header class="sidebar-card-title">Power</header>' in html
     assert '<header class="sidebar-card-title">Costs</header>' in html
     assert '<th class="num">Cost (MCr)</th>' in html
-    assert '<td>Military Grade Sensors</td>' in html
+    assert '<td class="item-cell">Military Grade Sensors' in html
     assert '<td class="item-cell">J-2, 20 weeks of operation</td>' in html
-    assert '<td>Fusion (TL 12), Power 60</td><td class="num power-positive">60.00</td>' in html
+    assert '<td>Power</td><td class="num power-positive">60.00</td>' in html
     assert '<td>Basic Ship Systems</td><td class="num">20.00</td>' in html
     assert 'MIDDLE × 2' not in html
     assert 'Life Support People' in html

@@ -81,5 +81,5 @@ def test_render_ship_spec_html_keeps_craft_after_their_housing_rows():
     html = render_ship_spec_html(craft_ship.build_spec())
 
     assert html.index('Full Hangar: Passenger Shuttle × 10') < html.index('Passenger Shuttle × 10')
-    assert html.index('Full Hangar: Ship&#x27;s Boat × 2') < html.index('Ship&#x27;s Boat × 2')
+    assert html.index('Full Hangar: Ship&#39;s Boat × 2') < html.index('Ship&#39;s Boat × 2')
     assert html.index('Internal Docking Space: G/Carrier × 3') < html.index('G/Carrier × 3')
