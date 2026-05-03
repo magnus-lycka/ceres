@@ -236,7 +236,7 @@ def test_alt_dragon_report_html_output():
     assert 'Magazine: 144 missiles (12 full salvos)' in html
     assert 'High Technology: Size Reduction × 3' in html
     assert 'Life Support Facilities' in html
-    assert 'Armoured Bulkheads<ul class="item-notes">' in html
+    assert 'Armoured Bulkheads<div class="admonition' in html
     assert 'Critical hit severity reduced by 1 if critical hit severity &gt;1' in html
     assert 'Improved Sensors' in html
     assert '<p class="eyebrow">' not in html

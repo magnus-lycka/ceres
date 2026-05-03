@@ -1,3 +1,4 @@
+{% macro render_notes(notes) %}{% for cat in ['error','warning','info'] %}{% set cn = notes | selectattr('category','equalto',cat) | list %}{% if cn %}<div class="admonition admonition-{{ cat }}"><div class="admonition-title">{{ cat | capitalize }}</div><div class="admonition-body">{% for n in cn %}{{ n.message }}{% if not loop.last %}<br>{% endif %}{% endfor %}</div></div>{% endif %}{% endfor %}{% endmacro %}
 <!doctype html>
 <html lang="en">
 <head>
@@ -144,19 +145,14 @@ h1 {
 .power-positive { font-weight: 700; }
 .section-cell { text-align: left; font-weight: 700; }
 .item-cell { line-height: 1.2; }
-.item-notes {
-  margin: 8px 0 0 18px;
-  padding: 0;
-  display: grid;
-  gap: 4px;
-  font-size: 0.94rem;
-  color: var(--ink);
-}
-.item-notes .note-info, .note-block .note-info { color: var(--ink); font-style: italic; }
-.item-notes .note-warning, .note-block .note-warning { color: var(--warning); font-style: italic; }
-.item-notes .note-error, .note-block .note-error { color: var(--error); font-weight: 700; }
-.note-block { margin: 8px 0 0; display: grid; gap: 4px; font-size: 0.94rem; color: var(--ink); }
-.note-line { line-height: 1.2; }
+.admonition { border-left: 3px solid; padding: 3px 8px; margin: 4px 0 0; border-radius: 0 2px 2px 0; font-size: 0.88rem; line-height: 1.3; }
+.admonition-info    { border-color: #4a90d9; background: rgba(74,144,217,0.08); }
+.admonition-warning { border-color: var(--warning); background: rgba(255,122,0,0.08); }
+.admonition-error   { border-color: var(--error); background: rgba(255,31,31,0.08); }
+.admonition-title { font-weight: 700; font-size: 0.78em; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1px; }
+.admonition-info .admonition-title    { color: #4a90d9; }
+.admonition-warning .admonition-title { color: var(--warning); }
+.admonition-error .admonition-title   { color: var(--error); }
 .ship-sidebar { display: grid; gap: 18px; }
 .sidebar-card { border: 1px solid var(--accent); background: var(--surface); }
 .sidebar-card-title {
@@ -228,7 +224,7 @@ h1 {
   {% if loop.first %}
   <th scope="rowgroup" class="section-cell{% if is_last_section %} last-section-cell{% endif %}" rowspan="{{ section.rows | length }}">{{ section.label }}</th>
   {% endif %}
-  <td class="item-cell">{{ row.item }}{% if row.notes %}<ul class="item-notes">{% for note in row.notes %}<li class="note-{{ note.category }}">{% if note.category == 'warning' %}<strong>Warning:</strong> {% endif %}{% if note.category == 'error' %}<strong>Error:</strong> {% endif %}{{ note.message }}</li>{% endfor %}</ul>{% endif %}</td>
+  <td class="item-cell">{{ row.item }}{% if row.notes %}{{ render_notes(row.notes) }}{% endif %}</td>
   <td class="num">{% if row.emphasize_tons %}<strong>{{ row.tons }}</strong>{% else %}{{ row.tons }}{% endif %}</td>
   <td class="num">{{ row.cost }}</td>
 </tr>
@@ -236,13 +232,7 @@ h1 {
 {% endfor %}
 </tbody>
 </table>
-{% if ship_notes %}
-<div class="note-block ship-notes">
-{% for note in ship_notes %}
-<div class="note-line note-{{ note.category }}">{% if note.category == 'warning' %}<strong>Warning:</strong> {% endif %}{% if note.category == 'error' %}<strong>Error:</strong> {% endif %}{{ note.message }}</div>
-{% endfor %}
-</div>
-{% endif %}
+{% if ship_notes %}{{ render_notes(ship_notes) }}{% endif %}
 </section>
 
 <!-- Sidebar -->
@@ -257,13 +247,7 @@ h1 {
     {% endif %}
   </div>
 </section>
-{% if crew_notes %}
-<div class="note-block ship-notes">
-{% for note in crew_notes %}
-<div class="note-line note-{{ note.category }}">{% if note.category == 'warning' %}<strong>Warning:</strong> {% endif %}{% if note.category == 'error' %}<strong>Error:</strong> {% endif %}{{ note.message }}</div>
-{% endfor %}
-</div>
-{% endif %}
+{% if crew_notes %}{{ render_notes(crew_notes) }}{% endif %}
 <section class="sidebar-card">
   <header class="sidebar-card-title">Power</header>
   <div class="sidebar-card-body">

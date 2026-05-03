@@ -26,7 +26,7 @@ def test_render_ship_spec_html_uses_high_guard_like_split_layout():
     assert 'class="num power-positive">60.00</td>' in html
     assert '<td>Basic Ship Systems</td><td class="num">20.00</td>' in html
     assert 'scope="rowgroup" class="section-cell" rowspan="' in html
-    assert '<ul class="item-notes">' in html
+    assert 'class="admonition' in html
     assert 'Features: Passive optical and thermal sensors' in html
     assert 'data-theme-toggle' in html
     assert '<body class="theme-light">' in html
@@ -41,7 +41,7 @@ def test_render_ship_spec_html_supports_dark_theme():
     assert 'aria-label="Switch theme"' in html
 
 
-def test_render_ship_spec_html_renders_crew_notes_as_plain_note_block():
+def test_render_ship_spec_html_renders_crew_notes_as_grouped_admonitions():
     spec = ShipSpec(ship_class='Test')
     spec.crew_notes = [
         Note(category=NoteCategory.INFO, message='CAPTAIN above recommended count: 1 > 0'),
@@ -50,12 +50,12 @@ def test_render_ship_spec_html_renders_crew_notes_as_plain_note_block():
 
     html = render_ship_spec_html(spec)
 
-    assert '<div class="note-block ship-notes">' in html
-    assert '<div class="note-line note-info">CAPTAIN above recommended count: 1 &gt; 0</div>' in html
-    assert (
-        '<div class="note-line note-warning"><strong>Warning:</strong> GUNNER below recommended count: 0 &lt; 1</div>'
-    ) in html
-    assert '<ul class="item-notes ship-notes">' not in html
+    assert 'class="admonition admonition-info"' in html
+    assert 'CAPTAIN above recommended count: 1 &gt; 0' in html
+    assert 'class="admonition admonition-warning"' in html
+    assert 'GUNNER below recommended count: 0 &lt; 1' in html
+    # warning appears before info (error → warning → info sort order)
+    assert html.index('class="admonition admonition-warning"') < html.index('class="admonition admonition-info"')
 
 
 def test_render_ship_spec_html_collapses_identical_rows_for_display():
