@@ -1,7 +1,9 @@
 from enum import StrEnum
 from typing import Annotated, Any, ClassVar, Literal
 
-from pydantic import Field, PrivateAttr, TypeAdapter
+from pydantic import Field, PrivateAttr, TypeAdapter, model_validator
+
+from ceres.shared import CeresPart
 
 from .base import CeresModel, Note, NoteCategory, ShipBase
 from .text import collapse_repeated_labels
@@ -188,30 +190,28 @@ def _customisation_model_validate_json(cls, data, **kwargs):
 Customisation.model_validate_json = classmethod(_customisation_model_validate_json)
 
 
-class ShipPart(CeresModel):
-    cost: float = 0.0
-    power: float = 0.0
+class ShipPartMixin:
+    """Pure-Python mixin for parts installable in a ship.
+
+    Adds ship-specific field annotations (picked up by Pydantic when combined
+    with a CeresPart base) and all the behaviour needed to participate in ship
+    assembly: binding, TL checks, tonnage/cost/power recomputation, and armoured
+    bulkhead book-keeping.
+
+    Concrete classes must define ``_ship`` and ``_armoured_bulkhead_part`` as
+    ``PrivateAttr`` fields so Pydantic stores them correctly.
+    """
+
     tons: float = 0.0
+    power: float = 0.0
     armoured_bulkhead: bool = False
-    _tl: ClassVar[int] = 0
-    _ship: ShipBase | None = PrivateAttr(default=None)
-    _armoured_bulkhead_part: ShipPart | None = PrivateAttr(default=None)
-    model_config = {'frozen': True}
 
-    def build_notes(self) -> list[Note]:
-        if self.armoured_bulkhead:
-            return [Note(category=NoteCategory.INFO, message='Armoured bulkhead, see Hull section.')]
-        return []
-
-    @property
-    def group_key(self) -> str:
-        for note in self.notes:
-            if note.category is NoteCategory.ITEM:
-                return note.message
-        return self.__class__.__name__
+    # ------------------------------------------------------------------
+    # Default compute methods — subclasses override to provide derived values
+    # ------------------------------------------------------------------
 
     def compute_cost(self) -> float:
-        return self.cost
+        return self.cost  # type: ignore[attr-defined]
 
     def compute_power(self) -> float:
         return self.power
@@ -221,7 +221,7 @@ class ShipPart(CeresModel):
 
     def _refresh_field(self, field_name: str, compute_method_name: str) -> None:
         compute_method = getattr(type(self), compute_method_name)
-        base_method = getattr(ShipPart, compute_method_name)
+        base_method = getattr(ShipPartMixin, compute_method_name)
         if compute_method is base_method:
             return
         value = getattr(self, compute_method_name)()
@@ -232,46 +232,45 @@ class ShipPart(CeresModel):
         self._refresh_field('power', 'compute_power')
         self._refresh_field('tons', 'compute_tons')
 
-    def model_post_init(self, __context: Any) -> None:
-        super().model_post_init(__context)
+    # ------------------------------------------------------------------
+    # Ship binding
+    # ------------------------------------------------------------------
 
     def bind(self, ship: ShipBase) -> None:
-        self._ship = ship
+        self._ship = ship  # type: ignore[attr-defined]
         self.check_ship_tl()
         self.refresh_derived_values()
-        if message := self.build_item():
-            self.item(message)
+        if message := self.build_item():  # type: ignore[attr-defined]
+            self.item(message)  # type: ignore[attr-defined]
         self._refresh_armoured_bulkhead(ship)
 
     @property
     def ship(self) -> ShipBase:
-        if self._ship is None:
+        if self._ship is None:  # type: ignore[attr-defined]
             raise RuntimeError(f'{self.__class__.__name__} not bound to a Ship')
-        return self._ship
+        return self._ship  # type: ignore[attr-defined]
 
     @property
     def ship_tl(self) -> int:
         return self.ship.tl
 
-    @property
-    def tl(self) -> int:
-        return self._tl
-
     def check_ship_tl(self) -> None:
-        if self.ship_tl < self.tl:
-            self.error(
-                f'Requires TL{self.tl}, ship is TL{self.ship_tl}',
-            )
+        if self.ship_tl < self.tl:  # type: ignore[attr-defined]
+            self.error(f'Requires TL{self.tl}, ship is TL{self.ship_tl}')  # type: ignore[attr-defined]
+
+    # ------------------------------------------------------------------
+    # Armoured bulkhead support
+    # ------------------------------------------------------------------
 
     def bulkhead_label(self) -> str:
-        return self.build_item() or self.__class__.__name__
+        return self.build_item() or self.__class__.__name__  # type: ignore[attr-defined]
 
     def bulkhead_protected_tonnage(self) -> float:
         return self.tons
 
     def _refresh_armoured_bulkhead(self, ship: ShipBase) -> None:
         if not self.armoured_bulkhead:
-            self._armoured_bulkhead_part = None
+            self._armoured_bulkhead_part = None  # type: ignore[attr-defined]
             return
         from .hull import ArmouredBulkhead
 
@@ -281,11 +280,45 @@ class ShipPart(CeresModel):
             from_ship_part=True,
         )
         bulkhead.bind(ship)
-        self._armoured_bulkhead_part = bulkhead
+        self._armoured_bulkhead_part = bulkhead  # type: ignore[attr-defined]
 
     @property
     def armoured_bulkhead_part(self) -> ShipPart | None:
-        return self._armoured_bulkhead_part
+        return self._armoured_bulkhead_part  # type: ignore[attr-defined]
+
+    # ------------------------------------------------------------------
+    # Grouping (used by spec table rendering)
+    # ------------------------------------------------------------------
+
+    @property
+    def group_key(self) -> str:
+        for note in self.notes:  # type: ignore[attr-defined]
+            if note.category is NoteCategory.ITEM:
+                return note.message
+        return self.__class__.__name__
+
+
+class ShipPart(CeresPart, ShipPartMixin):
+    _tl: ClassVar[int] = 0
+    _ship: ShipBase | None = PrivateAttr(default=None)
+    _armoured_bulkhead_part: ShipPart | None = PrivateAttr(default=None)
+
+    @model_validator(mode='before')
+    @classmethod
+    def _fill_tl_from_class_var(cls, data: Any) -> Any:
+        if isinstance(data, dict) and 'tl' not in data:
+            tl = getattr(cls, '_tl', 0)
+            if tl:
+                data = {**data, 'tl': tl}
+        return data
+
+    def build_notes(self) -> list[Note]:
+        if self.armoured_bulkhead:
+            return [Note(category=NoteCategory.INFO, message='Armoured bulkhead, see Hull section.')]
+        return []
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
 
 
 class CustomisableShipPart(ShipPart):

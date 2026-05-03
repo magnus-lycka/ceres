@@ -1,8 +1,8 @@
 from collections.abc import Sequence
 import math
-from typing import ClassVar, Literal
+from typing import Any, ClassVar, Literal
 
-from pydantic import AliasChoices, Field
+from pydantic import AliasChoices, Field, model_validator
 
 from .base import CeresModel, Note, NoteCategory
 from .parts import (
@@ -219,9 +219,14 @@ class Turret(ShipPart):
     def _display_notes_for_grouping(self) -> list[Note]:
         return self.build_notes()
 
-    @property
-    def tl(self) -> int:  # type: ignore[override]
-        return int(self._specs[self.size]['tl'])
+    @model_validator(mode='before')
+    @classmethod
+    def _fill_tl(cls, data: Any) -> Any:
+        if isinstance(data, dict) and 'tl' not in data:
+            size = data.get('size')
+            if size is not None and size in cls._specs:
+                data = {**data, 'tl': int(cls._specs[size]['tl'])}
+        return data
 
     @property
     def capacity(self) -> int:
@@ -343,14 +348,19 @@ class Barbette(CustomisableShipPart):
     def group_key(self) -> str:
         return f'{super().group_key}|weapon={self.weapon}'
 
+    @model_validator(mode='before')
+    @classmethod
+    def _fill_tl(cls, data: Any) -> Any:
+        if isinstance(data, dict) and 'tl' not in data:
+            weapon = data.get('weapon')
+            if weapon is not None and weapon in cls._specs:
+                data = {**data, 'tl': int(cls._specs[weapon]['tl'])}
+        return data
+
     @property
     def _weapon_specs_label(self) -> str:
         item = str(self._specs[self.weapon]['item'])
         return item.removesuffix(' Barbette')
-
-    @property
-    def tl(self) -> int:  # type: ignore[override]
-        return int(self._specs[self.weapon]['tl'])
 
     @property
     def hardpoints_required(self) -> int:
@@ -510,6 +520,20 @@ class Bay(CustomisableShipPart):
     def group_key(self) -> str:
         return f'{super().group_key}|weapon={self.weapon}'
 
+    @model_validator(mode='before')
+    @classmethod
+    def _fill_tl(cls, data: Any) -> Any:
+        if isinstance(data, dict) and 'tl' not in data:
+            weapon = data.get('weapon')
+            size = data.get('size')
+            if weapon is not None and size is not None:
+                weapon_specs = cls._weapon_specs.get(weapon)
+                if weapon_specs is not None:
+                    size_specs = weapon_specs.get(size)
+                    if size_specs is not None:
+                        data = {**data, 'tl': int(size_specs['tl'])}
+        return data
+
     def build_notes(self) -> list[Note]:
         notes = [*ShipPart.build_notes(self)]
         notes.append(Note(category=NoteCategory.INFO, message=f'Weapon: {self._weapon_labels[self.weapon]}'))
@@ -519,10 +543,6 @@ class Bay(CustomisableShipPart):
         if self.customisation is not None:
             notes.append(Note(category=NoteCategory.INFO, message=self.customisation.note_text))
         return notes
-
-    @property
-    def tl(self) -> int:  # type: ignore[override]
-        return int(self._weapon_specs[self.weapon][self.size]['tl'])
 
     @property
     def hardpoints_required(self) -> int:
@@ -574,6 +594,20 @@ class PointDefenseBattery(CustomisableShipPart):
     def build_item(self) -> str | None:
         return str(self._specs[self.kind][self.rating]['item'])
 
+    @model_validator(mode='before')
+    @classmethod
+    def _fill_tl(cls, data: Any) -> Any:
+        if isinstance(data, dict) and 'tl' not in data:
+            kind = data.get('kind')
+            rating = data.get('rating')
+            if kind is not None and rating is not None:
+                kind_specs = cls._specs.get(kind)
+                if kind_specs is not None:
+                    rating_specs = kind_specs.get(rating)
+                    if rating_specs is not None:
+                        data = {**data, 'tl': int(rating_specs['tl'])}
+        return data
+
     def build_notes(self) -> list[Note]:
         notes = [*super().build_notes()]
         intercept_dice = self.rating * 2
@@ -586,10 +620,6 @@ class PointDefenseBattery(CustomisableShipPart):
                 )
             )
         return notes
-
-    @property
-    def tl(self) -> int:  # type: ignore[override]
-        return int(self._specs[self.kind][self.rating]['tl'])
 
     @property
     def hardpoints_required(self) -> int:

@@ -75,8 +75,6 @@ class Armoury(ShipPart):
 
 
 class CommonArea(ShipPart):
-    tons: float
-
     def build_item(self) -> str | None:
         return 'Common Area'
 
@@ -86,7 +84,6 @@ class CommonArea(ShipPart):
 
 class CommercialZone(ShipPart):
     system_type: Literal['COMMERCIAL_ZONE'] = 'COMMERCIAL_ZONE'
-    tons: float
 
     def build_item(self) -> str | None:
         return 'Commercial Zone'
@@ -130,7 +127,6 @@ class WetBar(ShipPart):
 
 
 class HotTub(CommonArea):
-    tons: float = 0.0
     users: int = 1
 
     def build_item(self) -> str | None:
@@ -177,7 +173,6 @@ class MedicalBay(ShipPart):
 
 class Biosphere(ShipPart):
     system_type: Literal['BIOSPHERE'] = 'BIOSPHERE'
-    tons: float
 
     def build_item(self) -> str | None:
         return 'Biosphere'

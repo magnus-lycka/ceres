@@ -126,7 +126,6 @@ class AdvancedEntertainmentSystem(ShipPart):
 
 
 class CabinSpace(ShipPart):
-    tons: float
     tons_per_passenger: ClassVar[float] = 1.5
     life_support_per_ton: ClassVar[float] = 250.0
 

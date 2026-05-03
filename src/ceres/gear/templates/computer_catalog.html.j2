@@ -1,0 +1,47 @@
+{% extends "base.html.j2" %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block title_heading %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+.catalog { max-width: 900px; margin: 0 auto; }
+{% endblock %}
+
+{% block content %}
+<div class="catalog">
+  {% for section in sections %}
+  <section class="catalog-section">
+    <h2>{{ section.heading }}</h2>
+    <table class="catalog-table">
+      <thead>
+        <tr>
+          {% for header in section.headers %}
+          <th {% if not loop.first %}style="text-align:right"{% endif %}>{{ header }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in section.rows %}
+        <tr>
+          {% for cell in row.cells %}
+          <td {% if not loop.first %}style="text-align:right"{% endif %}>{{ cell }}</td>
+          {% endfor %}
+        </tr>
+        {% for note in row.notes %}
+        <tr class="note-subrow">
+          <td colspan="{{ section.headers | length }}"
+              class="note-{{ note.category }}"
+              style="text-align:left;padding-left:1.2rem;font-size:0.8rem;border-bottom:none">
+            {% if note.category == 'warning' %}<strong>Warning:</strong> {% endif %}
+            {% if note.category == 'error' %}<strong>Error:</strong> {% endif %}
+            {{ note.message }}
+          </td>
+        </tr>
+        {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}

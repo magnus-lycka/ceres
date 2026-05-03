@@ -45,3 +45,25 @@ class CeresModel(BaseModel):
         if message := self.build_item():
             self.item(message)
         self.notes.extend(self.build_notes())
+
+
+class CeresPart(CeresModel):
+    """Base class for all parts — gear items, ship parts, etc.
+
+    Carries the two universal part properties: technology level and unit cost.
+    Context-specific properties (tons, power …) live in pure-Python mixins so
+    that a single part class can appear in multiple assembly contexts without
+    inheriting a second domain-model chain.
+    """
+
+    tl: int = 0
+    cost: float = 0.0
+    model_config = {'frozen': True}
+
+
+class Equipment(CeresModel):
+    parts: list[CeresPart] = Field(default_factory=list)
+    tl: int = 0
+    cost: float = 0.0
+    mass_kg: float = 0.0
+    model_config = {'frozen': True}

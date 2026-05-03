@@ -1,5 +1,7 @@
 import math
-from typing import ClassVar, Literal
+from typing import Any, ClassVar, Literal
+
+from pydantic import model_validator
 
 from .base import Note, NoteCategory
 from .computer import JumpControl, SoftwarePackage
@@ -61,9 +63,14 @@ class RDrive(ShipPart):
             data['level'] = level
         super().__init__(**data)
 
-    @property
-    def tl(self) -> int:
-        return int(self._specs[self.level]['tl'])
+    @model_validator(mode='before')
+    @classmethod
+    def _fill_tl(cls, data: Any) -> Any:
+        if isinstance(data, dict) and 'tl' not in data:
+            level = data.get('level')
+            if level is not None and level in cls._specs:
+                data = {**data, 'tl': int(cls._specs[level]['tl'])}
+        return data
 
     def build_item(self) -> str | None:
         if self.high_burn_thruster:
@@ -127,9 +134,14 @@ class MDrive(CustomisableShipPart):
             data['level'] = level
         super().__init__(**data)
 
-    @property
-    def tl(self) -> int:
-        return int(self._specs[self.level]['tl'])
+    @model_validator(mode='before')
+    @classmethod
+    def _fill_tl(cls, data: Any) -> Any:
+        if isinstance(data, dict) and 'tl' not in data:
+            level = data.get('level')
+            if level is not None and level in cls._specs:
+                data = {**data, 'tl': int(cls._specs[level]['tl'])}
+        return data
 
     def build_item(self) -> str | None:
         if self._ship is not None and self.ship.transported_external_displacement > 0:
@@ -193,9 +205,14 @@ class JDrive(CustomisableShipPart):
             data['level'] = level
         super().__init__(**data)
 
-    @property
-    def tl(self) -> int:
-        return int(self._specs[self.level]['tl'])
+    @model_validator(mode='before')
+    @classmethod
+    def _fill_tl(cls, data: Any) -> Any:
+        if isinstance(data, dict) and 'tl' not in data:
+            level = data.get('level')
+            if level is not None and level in cls._specs:
+                data = {**data, 'tl': int(cls._specs[level]['tl'])}
+        return data
 
     def build_item(self) -> str | None:
         if self._ship is not None and self.ship.transported_external_displacement > 0:

@@ -1,6 +1,6 @@
-from typing import Annotated, ClassVar, Literal
+from typing import Annotated, Any, ClassVar, Literal
 
-from pydantic import Field, PrivateAttr, field_validator
+from pydantic import Field, PrivateAttr, field_validator, model_validator
 
 from .base import CeresModel
 from .parts import ShipPart
@@ -284,6 +284,15 @@ class ComputerBase(ShipPart):
             data['score'] = score
         super().__init__(**data)
 
+    @model_validator(mode='before')
+    @classmethod
+    def _fill_tl(cls, data: Any) -> Any:
+        if isinstance(data, dict) and 'tl' not in data:
+            score = data.get('score')
+            if score is not None and score in cls._specs:
+                data = {**data, 'tl': int(cls._specs[score]['tl'])}
+        return data
+
     @field_validator('score')
     @classmethod
     def validate_score(cls, value: int) -> int:
@@ -295,10 +304,6 @@ class ComputerBase(ShipPart):
     @property
     def description(self) -> str:
         return f'{self._label}/{self.score}'
-
-    @property
-    def tl(self) -> int:
-        return int(self._specs[self.score]['tl'])
 
     @property
     def processing(self) -> int:

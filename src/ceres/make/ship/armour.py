@@ -1,6 +1,6 @@
-from typing import ClassVar, Literal
+from typing import Any, ClassVar, Literal
 
-from pydantic import AliasChoices, Field
+from pydantic import AliasChoices, Field, model_validator
 
 from .base import ShipBase
 from .parts import ShipPart
@@ -9,11 +9,21 @@ from .parts import ShipPart
 class Armour(ShipPart):
     description: str
     protection: int
+    # Override CeresPart.tl: excluded from JSON so part_tl's alias='tl' owns the JSON key.
+    tl: int = Field(default=0, exclude=True)
     part_tl: int | None = Field(default=None, alias='tl', validation_alias=AliasChoices('part_tl', 'tl'))
     _min_tl: ClassVar[int] = 0
     _cost_per_ton: ClassVar[int] = 0
     _tonnage_consumed: ClassVar[int] = 0
     model_config = {'frozen': True, 'populate_by_name': True, 'serialize_by_alias': True}
+
+    @model_validator(mode='before')
+    @classmethod
+    def _fill_tl_from_class_var(cls, data: Any) -> Any:
+        # Strip tl=null so the int field falls back to its default (0) on roundtrip.
+        if isinstance(data, dict) and 'tl' in data and data['tl'] is None:
+            data = {k: v for k, v in data.items() if k != 'tl'}
+        return data
 
     def bind(self, owner: ShipBase) -> None:
         super().bind(owner)

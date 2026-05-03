@@ -1,319 +1,141 @@
+"""
+Only Computer Hardware Parts and Equipment in this file.
+All software in software.py
+
+TODO: Portable Computer Options not yet implemented:
+  - Camera (TL8+, built-in still/video camera)
+  - Comms (TL8+, short-range comm unit, no extra cost)
+  - Data Display/Recorder (TL13, heads-up display, Cr500)
+  - Data Wafer (TL8+, stores Bandwidth 0 or 1 programs, Cr5)
+  - Physical User Interface (keyboard/screen at TL7, voice at TL8, holographic at TL12)
+
+TODO: Specialised Computers not yet implemented:
+  - Intelligent Interface variant: TL8, cost x5 of standard computer
+  - Intellect variant: TL9, cost x10 of standard computer
+"""
+
 from typing import ClassVar, Literal
 
-from pydantic import field_validator
+from pydantic import Field
 
-from ceres.shared import CeresModel, Note, NoteCategory
-
-
-class SoftwarePackage(CeresModel):
-    package: str
-    model_config = {'frozen': True}
-
-    @property
-    def description(self) -> str:
-        raise NotImplementedError
-
-    @property
-    def bandwidth(self) -> int:
-        raise NotImplementedError
-
-    @property
-    def tl(self) -> int:
-        raise NotImplementedError
-
-    @property
-    def cost(self) -> float:
-        raise NotImplementedError
+from ceres.gear.software import Expert, SoftwarePackage
+from ceres.shared import CeresPart, Equipment, Note, NoteCategory
 
 
-class FixedSoftwarePackage(SoftwarePackage):
-    label: ClassVar[str]
-    _bandwidth: ClassVar[int]
-    _tl: ClassVar[int]
-    _cost: ClassVar[float]
-
-    @property
-    def description(self) -> str:
-        return self.label
-
-    @property
-    def bandwidth(self) -> int:
-        return self._bandwidth
-
-    @property
-    def tl(self) -> int:
-        return self._tl
-
-    @property
-    def cost(self) -> float:
-        return self._cost
-
-
-class RatedSoftwarePackage(SoftwarePackage):
-    rating: int
-    _label: ClassVar[str]
-    _specs: ClassVar[dict[int, dict[str, int | float]]]
-
-    def __init__(self, rating: int | None = None, /, **data):
-        if rating is not None and 'rating' not in data:
-            data['rating'] = rating
-        super().__init__(**data)
-
-    @field_validator('rating')
-    @classmethod
-    def validate_rating(cls, value: int) -> int:
-        if value not in cls._specs:
-            allowed = ', '.join(str(v) for v in sorted(cls._specs))
-            raise ValueError(f'Unsupported {cls.__name__} rating {value}; expected one of: {allowed}')
-        return value
-
-    @property
-    def description(self) -> str:
-        return f'{self._label}/{self.rating}'
-
-    @property
-    def bandwidth(self) -> int:
-        return int(self._specs[self.rating]['bandwidth'])
-
-    @property
-    def tl(self) -> int:
-        return int(self._specs[self.rating]['tl'])
-
-    @property
-    def cost(self) -> float:
-        return float(self._specs[self.rating]['cost'])
-
-
-class Interface(FixedSoftwarePackage):
-    package: Literal['interface'] = 'interface'
-    label = 'Interface'
-    _bandwidth = 0
-    _tl = 7
-    _cost = 0.0
-
-
-class IntelligentInterface(FixedSoftwarePackage):
-    package: Literal['intelligent_interface'] = 'intelligent_interface'
-    label = 'Intelligent Interface'
-    _bandwidth = 1
-    _tl = 11
-    _cost = 100.0
-
-
-class Security(RatedSoftwarePackage):
-    package: Literal['security'] = 'security'
-    _label = 'Security'
-    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
-        0: {'bandwidth': 0, 'tl': 8, 'cost': 0.0},
-        1: {'bandwidth': 1, 'tl': 10, 'cost': 200.0},
-        2: {'bandwidth': 2, 'tl': 11, 'cost': 1_000.0},
-        3: {'bandwidth': 3, 'tl': 12, 'cost': 20_000.0},
-    }
-
-
-class Agent(RatedSoftwarePackage):
-    package: Literal['agent'] = 'agent'
-    _label = 'Agent'
-    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
-        0: {'bandwidth': 0, 'tl': 11, 'cost': 500.0},
-        1: {'bandwidth': 1, 'tl': 12, 'cost': 2_000.0},
-        2: {'bandwidth': 2, 'tl': 13, 'cost': 100_000.0},
-        3: {'bandwidth': 3, 'tl': 14, 'cost': 250_000.0},
-    }
-
-
-class Intellect(RatedSoftwarePackage):
-    package: Literal['intellect'] = 'intellect'
-    _label = 'Intellect'
-    # Intellect/0 is the HG ship intellect (free, included); 1–3 are CSC packages
-    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
-        0: {'bandwidth': 0, 'tl': 11, 'cost': 0.0},
-        1: {'bandwidth': 1, 'tl': 12, 'cost': 2_000.0},
-        2: {'bandwidth': 2, 'tl': 13, 'cost': 50_000.0},
-        3: {'bandwidth': 3, 'tl': 14, 'cost': 200_000.0},
-    }
-
-
-class Translator(RatedSoftwarePackage):
-    package: Literal['translator'] = 'translator'
-    _label = 'Translator'
-    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
-        0: {'bandwidth': 0, 'tl': 9, 'cost': 50.0},
-        1: {'bandwidth': 1, 'tl': 10, 'cost': 500.0},
-    }
-
-
-class Expert(SoftwarePackage):
-    package: Literal['expert'] = 'expert'
-    rating: int
-    skill: str
-
-    KNOWN_SKILLS: ClassVar[dict[str, dict[str, int | float]]] = {
-        'Admin': {'tl': 8, 'cost': 100.0},
-        'Advocate': {'tl': 10, 'cost': 500.0},
-        'Animals (Veterinary)': {'tl': 9, 'cost': 200.0},
-        'Astrogation': {'tl': 12, 'cost': 500.0},
-        'Broker': {'tl': 10, 'cost': 200.0},
-        'Electronics (Computers)': {'tl': 8, 'cost': 100.0},
-        'Electronics (Comms)': {'tl': 8, 'cost': 100.0},
-        'Electronics (Remote Ops)': {'tl': 8, 'cost': 100.0},
-        'Electronics (Sensors)': {'tl': 8, 'cost': 100.0},
-        'Engineer (J-Drive)': {'tl': 9, 'cost': 200.0},
-        'Engineer (Life Support)': {'tl': 9, 'cost': 200.0},
-        'Engineer (M-Drive)': {'tl': 9, 'cost': 200.0},
-        'Engineer (Power)': {'tl': 9, 'cost': 200.0},
-        'Explosives': {'tl': 8, 'cost': 100.0},
-        'Gambler': {'tl': 10, 'cost': 500.0},
-        'Language Galanglic': {'tl': 9, 'cost': 200.0},
-        'Language Gvegh': {'tl': 9, 'cost': 200.0},
-        'Language Oynprith': {'tl': 9, 'cost': 200.0},
-        'Language Trokh': {'tl': 9, 'cost': 200.0},
-        'Language Vilani': {'tl': 9, 'cost': 200.0},
-        'Language Zdetl': {'tl': 9, 'cost': 200.0},
-        'Mechanic': {'tl': 8, 'cost': 100.0},
-        'Medic': {'tl': 9, 'cost': 200.0},
-        'Navigation': {'tl': 8, 'cost': 100.0},
-        'Colonist Profession (Farming)': {'tl': 9, 'cost': 200.0},
-        'Colonist Profession (Ranching)': {'tl': 9, 'cost': 200.0},
-        'Freeloader Profession (Scrounging)': {'tl': 9, 'cost': 200.0},
-        'Freeloader Profession (Security)': {'tl': 9, 'cost': 200.0},
-        'Hostile Environment Profession (Contaminant)': {'tl': 9, 'cost': 200.0},
-        'Hostile Environment Profession (High-G)': {'tl': 9, 'cost': 200.0},
-        'Hostile Environment Profession (Low-G)': {'tl': 9, 'cost': 200.0},
-        'Hostile Environment Profession (Underwater)': {'tl': 9, 'cost': 200.0},
-        'Spacer Profession (Belter)': {'tl': 9, 'cost': 200.0},
-        'Spacer Profession (Crewmember)': {'tl': 9, 'cost': 200.0},
-        'Sport Profession (Atmosphere Surfing)': {'tl': 9, 'cost': 200.0},
-        'Sport Profession (Golf)': {'tl': 9, 'cost': 200.0},
-        'Sport Profession (Motorsports)': {'tl': 9, 'cost': 200.0},
-        'Sport Profession (Racquet Sports)': {'tl': 9, 'cost': 200.0},
-        'Sport Profession (Team Ball Sports)': {'tl': 9, 'cost': 200.0},
-        'Sport Profession (Track & Field)': {'tl': 9, 'cost': 200.0},
-        'Worker Profession (Armourer)': {'tl': 9, 'cost': 200.0},
-        'Worker Profession (Biologicals)': {'tl': 9, 'cost': 200.0},
-        'Worker Profession (Civil Engineering)': {'tl': 9, 'cost': 200.0},
-        'Worker Profession (Construction)': {'tl': 9, 'cost': 200.0},
-        'Worker Profession (Hydroponics)': {'tl': 9, 'cost': 200.0},
-        'Worker Profession (Metalworking)': {'tl': 9, 'cost': 200.0},
-        'Worker Profession (Polymers)': {'tl': 9, 'cost': 200.0},
-        'Life Sciences (Biology)': {'tl': 9, 'cost': 200.0},
-        'Life Sciences (Genetics)': {'tl': 9, 'cost': 200.0},
-        'Life Sciences (Psionicology)': {'tl': 9, 'cost': 200.0},
-        'Life Sciences (Xenology)': {'tl': 9, 'cost': 200.0},
-        'Physical Sciences (Chemistry)': {'tl': 9, 'cost': 200.0},
-        'Physical Sciences (Physics)': {'tl': 9, 'cost': 200.0},
-        'Physical Sciences (Jumpspace Physics)': {'tl': 9, 'cost': 200.0},
-        'Robotic Sciences (Cybernetics)': {'tl': 9, 'cost': 200.0},
-        'Robotic Sciences (Robotics)': {'tl': 9, 'cost': 200.0},
-        'Social Sciences (Archaeology)': {'tl': 9, 'cost': 200.0},
-        'Social Sciences (Economics)': {'tl': 9, 'cost': 200.0},
-        'Social Sciences (History)': {'tl': 9, 'cost': 200.0},
-        'Social Sciences (Linguistics)': {'tl': 9, 'cost': 200.0},
-        'Social Sciences (Philosophy)': {'tl': 9, 'cost': 200.0},
-        'Social Sciences (Psychology)': {'tl': 9, 'cost': 200.0},
-        'Social Sciences (Sophontology)': {'tl': 9, 'cost': 200.0},
-        'Space Sciences (Astronomy)': {'tl': 9, 'cost': 200.0},
-        'Space Sciences (Cosmology)': {'tl': 9, 'cost': 200.0},
-        'Space Sciences (Planetology)': {'tl': 9, 'cost': 200.0},
-        'Steward': {'tl': 8, 'cost': 100.0},
-        'Survival': {'tl': 10, 'cost': 200.0},
-        'Tactics (Military)': {'tl': 8, 'cost': 100.0},
-        'Tactics (Naval)': {'tl': 8, 'cost': 100.0},
-    }
-    FALLBACK_TL: ClassVar[int] = 11
-    FALLBACK_COST: ClassVar[float] = 1_000.0
-
-    def __init__(self, rating: int | None = None, /, *, skill: str, **data):
-        if rating is not None and 'rating' not in data:
-            data['rating'] = rating
-        super().__init__(skill=skill, **data)
-
-    @field_validator('rating')
-    @classmethod
-    def validate_rating(cls, value: int) -> int:
-        if value not in {1, 2, 3}:
-            raise ValueError('Unsupported Expert rating; expected one of: 1, 2, 3')
-        return value
-
-    @field_validator('skill')
-    @classmethod
-    def validate_skill(cls, value: str) -> str:
-        skill = ' '.join(value.strip().split())
-        if not skill:
-            raise ValueError('Expert skill cannot be blank')
-        return skill
-
-    @property
-    def description(self) -> str:
-        return f'Expert ({self._resolved_skill_name})/{self.rating}'
-
-    @property
-    def bandwidth(self) -> int:
-        return self.rating
-
-    @property
-    def tl(self) -> int:
-        return int(self._resolved_spec['tl']) + self.rating - 1
-
-    @property
-    def cost(self) -> float:
-        return float(self._resolved_spec['cost']) * (10 ** (self.rating - 1))
-
-    def build_notes(self) -> list[Note]:
-        if self.skill in type(self).KNOWN_SKILLS:
-            return []
-        return [
-            Note(
-                category=NoteCategory.WARNING,
-                message=f'Unfamiliar Expert skill {self.skill} uses CSC fallback values',
-            )
-        ]
-
-    @property
-    def _resolved_spec(self) -> dict[str, int | float]:
-        cls = type(self)
-        return cls.KNOWN_SKILLS.get(self.skill, {'tl': cls.FALLBACK_TL, 'cost': cls.FALLBACK_COST})
-
-    @property
-    def _resolved_skill_name(self) -> str:
-        return self.skill
-
-
-class ComputerBase(CeresModel):
+class ComputerPart(CeresPart):
     processing: int
-    model_config = {'frozen': True}
-    _specs: ClassVar[dict[int, dict[str, int | float]]]
-
-    def __init__(self, processing: int | None = None, /, **data):
-        if processing is not None and 'processing' not in data:
-            data['processing'] = processing
-        super().__init__(**data)
-
-    @field_validator('processing')
-    @classmethod
-    def validate_processing(cls, value: int) -> int:
-        if value not in cls._specs:
-            allowed = ', '.join(str(v) for v in sorted(cls._specs))
-            raise ValueError(f'Unsupported {cls.__name__} processing {value}; expected one of: {allowed}')
-        return value
-
-    @property
-    def tl(self) -> int:
-        return int(self._specs[self.processing]['tl'])
-
-    @property
-    def mass_kg(self) -> float:
-        return float(self._specs[self.processing]['mass_kg'])
-
-    @property
-    def cost(self) -> float:
-        return float(self._specs[self.processing]['cost'])
 
     def can_run(self, *packages: SoftwarePackage) -> bool:
         return sum(p.bandwidth for p in packages) <= self.processing
 
 
-class PortableComputer(ComputerBase):
+class ComputerEquipment(Equipment):
+    parts: list[ComputerPart] = Field(default_factory=list)
+    _specs: ClassVar[dict[int, dict[str, int | float]]]
+
+    def __init__(self, processing: int | None = None, /, **data):
+        if processing is not None and 'parts' not in data:
+            specs = type(self)._specs
+            if processing not in specs:
+                allowed = ', '.join(str(v) for v in sorted(specs))
+                raise ValueError(
+                    f'Unsupported {type(self).__name__} processing {processing}; expected one of: {allowed}'
+                )
+            spec = specs[processing]
+            part = ComputerPart(processing=processing, tl=int(spec['tl']), cost=float(spec['cost']))
+            data.setdefault('parts', [part])
+            data.setdefault('tl', part.tl)
+            data.setdefault('cost', part.cost)
+            data.setdefault('mass_kg', float(spec['mass_kg']))
+        super().__init__(**data)
+
+    def can_run(self, *packages: SoftwarePackage) -> bool:
+        return self.parts[0].can_run(*packages)
+
+    def build_item(self) -> str | None:
+        if not self.parts:
+            return None
+        return f'{self._label}/{self.parts[0].processing}'
+
+    @property
+    def _label(self) -> str:
+        return type(self).__name__
+
+
+# ---------------------------------------------------------------------------
+# Computer Terminal / Interface Device (CSC p.66)
+# Computer/0 only; can only run Interface software.
+# ---------------------------------------------------------------------------
+
+
+class ComputerTerminal(ComputerEquipment):
+    @property
+    def _label(self) -> str:
+        return 'Computer Terminal'
+
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        0: {'tl': 6, 'mass_kg': 2.0, 'cost': 200.0},
+    }
+
+
+class InterfaceDevice(ComputerEquipment):
+    @property
+    def _label(self) -> str:
+        return 'Interface Device'
+
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        0: {'tl': 8, 'mass_kg': 0.0, 'cost': 100.0},
+    }
+
+
+# ---------------------------------------------------------------------------
+# Mainframe Computer (CSC p.66)
+# ---------------------------------------------------------------------------
+
+
+class MainframeComputer(ComputerEquipment):
+    @property
+    def _label(self) -> str:
+        return 'Mainframe Computer'
+
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        0: {'tl': 5, 'mass_kg': 5_000.0, 'cost': 2_000_000.0},
+        1: {'tl': 6, 'mass_kg': 4_000.0, 'cost': 4_000_000.0},
+        2: {'tl': 7, 'mass_kg': 1_000.0, 'cost': 5_000_000.0},
+    }
+
+
+# ---------------------------------------------------------------------------
+# Mid-Sized Computer (CSC p.67)
+# ---------------------------------------------------------------------------
+
+
+class MidSizedComputer(ComputerEquipment):
+    @property
+    def _label(self) -> str:
+        return 'Mid-Sized Computer'
+
+    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
+        0: {'tl': 6, 'mass_kg': 500.0, 'cost': 500_000.0},
+        1: {'tl': 7, 'mass_kg': 50.0, 'cost': 50_000.0},
+        2: {'tl': 8, 'mass_kg': 10.0, 'cost': 10_000.0},
+        3: {'tl': 9, 'mass_kg': 5.0, 'cost': 10_000.0},
+        4: {'tl': 10, 'mass_kg': 5.0, 'cost': 10_000.0},
+    }
+
+
+# ---------------------------------------------------------------------------
+# Portable Computer and size variants (CSC p.67)
+# Mobile Comm is NOT a computer size variant — it is a telecommunications
+# device and belongs in gear/communication.py (CommunicationEquipment).
+# ---------------------------------------------------------------------------
+
+
+class PortableComputer(ComputerEquipment):
+    @property
+    def _label(self) -> str:
+        return 'Portable Computer'
+
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         0: {'tl': 7, 'mass_kg': 5.0, 'cost': 500.0},
         1: {'tl': 8, 'mass_kg': 2.0, 'cost': 250.0},
@@ -324,8 +146,10 @@ class PortableComputer(ComputerBase):
     }
 
 
-class Tablet(ComputerBase):
-    """Portable computer at TL+1: 0.25 kg, cost×0.5."""
+class Tablet(ComputerEquipment):
+    @property
+    def _label(self) -> str:
+        return 'Tablet'
 
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         0: {'tl': 8, 'mass_kg': 0.25, 'cost': 250.0},
@@ -337,21 +161,10 @@ class Tablet(ComputerBase):
     }
 
 
-class MobileComm(ComputerBase):
-    """Portable computer at TL+2: negligible mass, cost×0.25."""
-
-    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
-        0: {'tl': 9, 'mass_kg': 0.0, 'cost': 125.0},
-        1: {'tl': 10, 'mass_kg': 0.0, 'cost': 62.5},
-        2: {'tl': 12, 'mass_kg': 0.0, 'cost': 125.0},
-        3: {'tl': 14, 'mass_kg': 0.0, 'cost': 250.0},
-        4: {'tl': 15, 'mass_kg': 0.0, 'cost': 375.0},
-        5: {'tl': 16, 'mass_kg': 0.0, 'cost': 1_250.0},
-    }
-
-
-class ComputerChip(ComputerBase):
-    """Portable computer at TL+3: negligible mass, cost×0.125."""
+class ComputerChip(ComputerEquipment):
+    @property
+    def _label(self) -> str:
+        return 'Computer Chip'
 
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         0: {'tl': 10, 'mass_kg': 0.0, 'cost': 62.5},
@@ -359,28 +172,116 @@ class ComputerChip(ComputerBase):
         2: {'tl': 13, 'mass_kg': 0.0, 'cost': 62.5},
         3: {'tl': 15, 'mass_kg': 0.0, 'cost': 125.0},
         4: {'tl': 16, 'mass_kg': 0.0, 'cost': 187.5},
-        5: {'tl': 17, 'mass_kg': 0.0, 'cost': 625.0},
     }
 
 
-class MicroscopicChip(ComputerBase):
-    """Portable computer at TL+4: negligible mass, cost×0.0625."""
+class MicroscopicChip(ComputerEquipment):
+    @property
+    def _label(self) -> str:
+        return 'Microscopic Chip'
 
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         0: {'tl': 11, 'mass_kg': 0.0, 'cost': 31.25},
         1: {'tl': 12, 'mass_kg': 0.0, 'cost': 15.625},
         2: {'tl': 14, 'mass_kg': 0.0, 'cost': 31.25},
         3: {'tl': 16, 'mass_kg': 0.0, 'cost': 62.5},
-        4: {'tl': 17, 'mass_kg': 0.0, 'cost': 93.75},
-        5: {'tl': 18, 'mass_kg': 0.0, 'cost': 312.5},
     }
 
 
-class MidSizedComputer(ComputerBase):
-    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
-        0: {'tl': 6, 'mass_kg': 500.0, 'cost': 500_000.0},
-        1: {'tl': 7, 'mass_kg': 50.0, 'cost': 50_000.0},
-        2: {'tl': 8, 'mass_kg': 10.0, 'cost': 10_000.0},
-        3: {'tl': 9, 'mass_kg': 5.0, 'cost': 10_000.0},
-        4: {'tl': 10, 'mass_kg': 5.0, 'cost': 10_000.0},
-    }
+# ---------------------------------------------------------------------------
+# Specialised Computer (CSC p.67)
+#
+# A portable computer hardwired for a single Expert skill package.
+# All bandwidth is available for the Expert skill; cannot be reprogrammed.
+#
+# Cost = portable_computer_cost × variant_multiplier + expert_package_cost
+# TL   = portable computer TL for that processing level
+#
+# Intelligent Interface variant (x5): requires at least skill 0 → DM+1
+# Intellect variant (x10): allows unskilled use as if having skill Expert-1
+# ---------------------------------------------------------------------------
+
+_VARIANT_MULTIPLIER: dict[str, int] = {
+    'intelligent_interface': 5,
+    'intellect': 10,
+}
+
+_VARIANT_FULL_NAME: dict[str, str] = {
+    'intelligent_interface': 'Intelligent Interface',
+    'intellect': 'Intellect',
+}
+
+_EXPERT_DIFFICULTY: dict[int, str] = {
+    1: 'Average (8+)',
+    2: 'Difficult (10+)',
+    3: 'Very Difficult (12+)',
+}
+
+
+class SpecialisedComputer(Equipment):
+    parts: list[ComputerPart] = Field(default_factory=list)
+    expert: Expert
+    variant: Literal['intelligent_interface', 'intellect']
+
+    _BASE_SPECS: ClassVar[dict[int, dict[str, int | float]]] = PortableComputer._specs
+    _FORM_LABEL: ClassVar[str] = 'Portable Computer'
+
+    def __init__(self, processing: int | None = None, /, *, expert: Expert, variant: str, **data):
+        if processing is not None and 'parts' not in data:
+            base_specs = type(self)._BASE_SPECS
+            if processing not in base_specs:
+                allowed = ', '.join(str(v) for v in sorted(base_specs))
+                raise ValueError(
+                    f'Unsupported {type(self).__name__} processing {processing}; expected one of: {allowed}'
+                )
+            spec = base_specs[processing]
+            part = ComputerPart(processing=processing, tl=int(spec['tl']), cost=float(spec['cost']))
+            multiplier = _VARIANT_MULTIPLIER[variant]
+            total_cost = float(spec['cost']) * multiplier + expert.cost
+            data.setdefault('parts', [part])
+            data.setdefault('tl', max(part.tl, expert.tl))
+            data.setdefault('cost', total_cost)
+            data.setdefault('mass_kg', float(spec['mass_kg']))
+        super().__init__(expert=expert, variant=variant, **data)
+
+    def can_run(self, *packages: SoftwarePackage) -> bool:
+        return self.parts[0].can_run(*packages)
+
+    def build_item(self) -> str | None:
+        if not self.parts:
+            return None
+        p = self.parts[0].processing
+        variant_name = _VARIANT_FULL_NAME.get(self.variant, self.variant)
+        return f'Specialised {type(self)._FORM_LABEL} {self.expert.skill}/{p} {variant_name}'
+
+    def build_notes(self) -> list[Note]:
+        if not self.parts:
+            return []
+        part = self.parts[0]
+        if not part.can_run(self.expert):
+            return [
+                Note(
+                    category=NoteCategory.ERROR,
+                    message=(
+                        f'Processing {part.processing} insufficient for '
+                        f'Expert {self.expert.skill}/{self.expert.rating} '
+                        f'(requires bandwidth {self.expert.bandwidth})'
+                    ),
+                )
+            ]
+        difficulty = _EXPERT_DIFFICULTY.get(self.expert.rating, f'rating {self.expert.rating}')
+        skill = self.expert.skill
+        notes = [Note(category=NoteCategory.INFO, message=f'DM+1 on {skill}, up to {difficulty}')]
+        if self.variant == 'intellect':
+            notes.append(
+                Note(
+                    category=NoteCategory.INFO,
+                    message=f'{skill}-{self.expert.rating - 1} for unskilled, up to {difficulty}',
+                )
+            )
+        return notes
+
+
+class SpecialisedTablet(SpecialisedComputer):
+    _BASE_SPECS: ClassVar[dict[int, dict[str, int | float]]] = Tablet._specs
+    _FORM_LABEL: ClassVar[str] = 'Tablet'

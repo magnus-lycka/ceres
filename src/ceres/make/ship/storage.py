@@ -133,8 +133,6 @@ class ReactionFuel(ShipPart):
 
 
 class FuelProcessor(ShipPart):
-    tons: float
-
     def build_item(self) -> str | None:
         return f'Fuel Processor ({self.tons * 20:g} tons/day)'
 
