@@ -272,6 +272,56 @@ fulfill more than one of these positions in practice.
 Automation and equipment can impact crew needs, e.g. with Starhip Automation
 (Traveller Companion.)
 
+### Reporting and rendering
+
+`ceres.report` is a template execution engine with three public functions:
+
+```python
+render_html(template_path: Path, context: dict) -> str
+render_typst_source(template_path: Path, data: dict) -> str
+render_pdf(template_path: Path, data: dict, *, page_size: str = 'a4') -> bytes
+```
+
+The engine has **no domain imports** — it may not import from `ceres.gear.*` or
+`ceres.make.*`. This keeps the dependency direction clean: domain code calls the
+engine, never the reverse.
+
+Each domain that needs output owns:
+
+- **A context builder** — a Python function that converts domain objects into a
+  plain `dict` of strings, numbers, lists, and dicts. This is the boundary
+  between domain logic and presentation.
+- **Template files** — Jinja2 `.html.j2` for HTML, Typst `.typ` for PDF. These
+  live alongside the domain code, not inside `ceres.report`.
+
+Current rendering entry points:
+
+- **Ships**: `ceres.make.ship.report` — builds context from `ShipSpec` and
+  renders via `ceres.report.render`. Templates live in
+  `ceres/make/ship/templates/`.
+- **Gear catalog**: `ceres.gear.catalog` — builds context from computer
+  equipment objects and renders via `ceres.report.render`. Templates live in
+  `ceres/gear/templates/`.
+
+`ceres.report` also re-exports the ship render functions as a convenience API
+(via thin shims) so callers can do `from ceres.report import render_ship_pdf`.
+
+#### HTML rendering (Jinja2)
+
+`render_html` creates a Jinja2 environment with `autoescape=True` and
+`StrictUndefined`. The template search path includes both the caller's directory
+and `ceres/report/templates/` so templates can import from a shared base.
+Custom filters `fmt_cost` and `fmt_mass` are registered on the environment.
+
+#### PDF rendering (Typst)
+
+`render_pdf` / `render_typst_source` serialize the context dict to a Typst
+data preamble (`#let report_data = (...)`), prepend it to the template source,
+write the combined file to a temp directory, and compile it with
+`typst.compile()`. The Typst package `@preview/gentle-clues` is used for
+error/warning/info admonition boxes, grouped by severity (error → warning →
+info) within each call site.
+
 ## Rules interpretations
 
 Cross-cutting rule decisions, intentional deviations, and interpretation notes

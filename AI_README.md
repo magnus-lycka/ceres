@@ -10,6 +10,32 @@ objects and parameters. The goals are:
 
 See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for patterns and technical choices.
 
+## Output formats
+
+Ships can be rendered to HTML or PDF from a `Ship` or `ShipSpec`:
+
+```python
+from ceres.report import render_ship_html, render_ship_pdf
+
+html = render_ship_html(ship)          # Jinja2 → HTML string
+pdf  = render_ship_pdf(ship)           # Typst → bytes
+
+# From a pre-built spec:
+from ceres.report import render_ship_spec_html, render_ship_spec_pdf
+html = render_ship_spec_html(spec, theme='dark')
+pdf  = render_ship_spec_pdf(spec, page_size='us-letter')
+```
+
+The gear catalog has its own entry points in `ceres.gear.catalog`:
+
+```python
+from ceres.gear.catalog import render_computer_catalog_html, render_computer_catalog_pdf
+```
+
+`ceres.report` is a template engine — it has no domain knowledge. Domain
+packages own their Jinja2/Typst templates and context builders. See
+[docs/plan-pdf-output.md](docs/plan-pdf-output.md) for design decisions.
+
 ## Rules Reference
 
 Use the `refs/` directory (gitignored) for relevant parts of

@@ -1,8 +1,8 @@
 """Computer equipment catalog — builds report context and renders HTML/PDF."""
 
 from pathlib import Path
+from typing import Literal
 
-from ceres.report.html import ReportTheme
 from ceres.report.render import render_html, render_pdf, render_typst_source
 from ceres.shared import NoteCategory
 
@@ -20,6 +20,8 @@ from .computer import (
     Tablet,
 )
 from .software import Expert
+
+ReportTheme = Literal['light', 'dark']
 
 __all__ = ['render_computer_catalog_html', 'render_computer_catalog_pdf', 'render_computer_catalog_typst']
 

@@ -1,90 +1,47 @@
-# Plan: PDF output from Stuart
+# Decision record: report rendering architecture
 
-## Design principle
+> This file records the key decisions made when building the report engine.
+> The current design is described in full in [ARCHITECTURE.md](ARCHITECTURE.md)
+> under "Reporting and rendering".
 
-The HTML and PDF renderers are independent pipelines that share the same data
-source (`ShipSpec`). They are not the same layout adapted for two media — they
-are two different products with different goals:
+## What was built
 
-- **HTML**: interactive, responsive, works on a phone screen. Compact display
-  with pop-ups, progressive disclosure, responsive layout. Solve screen problems
-  here.
-- **PDF**: static, fixed paper size (A4 or Letter), designed for print and
-  annotation. Fixed typography, room for added text and diagrams. Solve paper
-  problems here.
+`ceres.report` is a template execution engine. It has no domain knowledge —
+domain packages own their templates and context builders and call the engine.
+The engine provides `render_html`, `render_typst_source`, and `render_pdf`.
 
-These concerns should not be mixed. The PDF renderer reads `ShipSpec` directly
-and builds its layout from scratch, the same way `ship_html.py` does — just
-for a different target.
+The scope grew from "add ship PDF output" to a general-purpose rendering
+toolkit covering ship HTML, ship PDF, and the gear catalog.
 
----
-
-## Decisions
-
-### 1. PDF library: Typst
+## PDF library: Typst
 
 **Decision**: use Typst (`typst-py` on PyPI) as the PDF engine.
 
-Typst was evaluated through working proof-of-concept examples
-(`examples/pdf_typst.py` and `examples/pdf_typst_dragon.py`). Typst produces
-visibly better typography and its layout DSL is well-suited to tabular
-document layout. Page-break control maps cleanly onto Typst primitives:
+Typst was evaluated through working proof-of-concept examples. It produces
+visibly better typography than ReportLab and its layout DSL maps cleanly onto
+tabular document layout. Key primitives used:
 
-- **Section grouping** (break between sections, never within): 0pt guard column
-  with `table.cell(rowspan: N, breakable: false)[]` per section group.
-- **Sidebar cards** (keep each card whole, move to next page if needed):
-  `block(breakable: false)[#table(...)]`.
+- `table.cell(rowspan: N, breakable: false)[]` — 0pt guard column keeps
+  sections together across page breaks.
+- `block(breakable: false)[...]` — keeps sidebar cards whole.
 
-ReportLab stays entirely in Python and handles pagination via `KeepTogether` +
-`BaseDocTemplate` + `Frame` objects, but the API is verbose and has non-obvious
-sharp edges (e.g. the outer-Table pagination trap). The output quality difference
-is the deciding factor.
+ReportLab handles pagination via `KeepTogether` + `BaseDocTemplate` + `Frame`
+objects, but the API is verbose and has non-obvious sharp edges. The output
+quality difference was the deciding factor.
 
 The main risk of Typst is that the Python side generates a Typst source string,
-so escaping bugs and template errors surface as Typst compiler errors rather than
-Python tracebacks. This is manageable as long as the Python data-building layer
-is kept clean and the Typst template stays simple.
+so escaping bugs and template errors surface as Typst compiler errors rather
+than Python tracebacks. This is managed by keeping the Python data-building
+layer clean and the Typst template straightforward.
 
-`typst-py` calls `typst.compile(path)` — it takes a file path, not a source
-string. The implementation must write to a temporary file, compile, then delete
-it.
+## HTML and PDF are independent pipelines
 
-### 2. Page format
+HTML and PDF are not the same layout adapted for two media. They are two
+different products:
 
-Default to A4. Letter support can be added later as a parameter; the layout
-geometry is the only thing that changes.
+- **HTML**: interactive, responsive, works on a phone screen. Progressive
+  disclosure, responsive layout.
+- **PDF**: static, fixed paper size (A4 or Letter), designed for print.
+  Fixed typography.
 
-### 3. Dependency model
-
-`typst` should be an optional extras group (`[pdf]`) so HTML-only users do not
-pull in the Typst binary. The extras group is named `pdf`.
-
-### 4. PDF layout
-
-Two-column layout: main spec table on the left (~126mm), sidebar cards on the
-right (~46mm), 8mm gutter. Sections flow continuously and never break
-mid-section. Sidebar cards are kept whole. Banner (ship class, type, TL, hull
-points) appears on page 1 only.
-
----
-
-## Proposed API
-
-```python
-# ship_pdf.py (new module in the report package)
-def render_ship_pdf(ship: Ship, *, page_size: str = 'a4') -> bytes: ...
-def render_ship_spec_pdf(spec: ShipSpec, *, page_size: str = 'a4') -> bytes: ...
-```
-
-`page_size` is passed through to Typst's `#set page(paper: ...)` directive.
-Typst uses lowercase names (`"a4"`, `"us-letter"`).
-
-`ship_html.py` is not touched. The two renderers are siblings, not a hierarchy.
-
----
-
-## HTML renderer: no changes needed for PDF
-
-The HTML renderer should continue to evolve on its own terms — responsive
-layout, phone-friendly display, interactive elements. None of that work should
-be deferred or shaped by PDF requirements.
+Both consume the same `ShipSpec` context dict but render it independently.
