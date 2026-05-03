@@ -28,7 +28,7 @@ def build_strandbell() -> ship.Ship:
             armour=armour.CrystalironArmour(protection=13),
             airlocks=[Airlock(), Airlock()],
         ),
-        drives=DriveSection(m_drive=MDrive(9)),
+        drives=DriveSection(m_drive=MDrive(level=9)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=240)),
         fuel=FuelSection(
             operation_fuel=OperationFuel(weeks=12),
@@ -36,7 +36,9 @@ def build_strandbell() -> ship.Ship:
             fuel_scoops=FuelScoops(),
         ),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(35), software=[AutoRepair(1), FireControl(2), Evade(2)]),
+        computer=ComputerSection(
+            hardware=Computer(score=35), software=[AutoRepair(rating=1), FireControl(rating=2), Evade(rating=2)]
+        ),
         sensors=SensorsSection(primary=ImprovedSensors(), countermeasures=CountermeasuresSuite()),
         weapons=WeaponsSection(
             turrets=[

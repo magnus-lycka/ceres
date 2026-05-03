@@ -85,25 +85,25 @@ def _sensor_package_notes(
 
 
 def _capability_tl(part: ShipPart) -> int:
-    owner = getattr(part, '_ship', None)
+    owner = getattr(part, '_assembly', None)
     if owner is None:
         return part.tl
-    return part.ship_tl
+    return part.assembly_tl
 
 
 class SensorPackage(ShipPart):
     low_intercept: LowInterceptMode = 'NONE'
 
-    def check_ship_tl(self) -> None:
-        if self.ship_tl < self.tl:
-            self.error(f'Requires TL{self.tl}, ship is TL{self.ship_tl}')
-        if self.low_intercept == 'LPI' and self.ship_tl < 9:
+    def check_tl(self) -> None:
+        if self.assembly_tl < self.tl:
+            self.error(f'Requires TL{self.tl}, ship is TL{self.assembly_tl}')
+        if self.low_intercept == 'LPI' and self.assembly_tl < 9:
             self.error('LPI requires TL9 for installed radar/lidar')
-        if self.low_intercept == 'ELPI' and self.ship_tl < 10:
+        if self.low_intercept == 'ELPI' and self.assembly_tl < 10:
             self.error('ELPI requires TL10 for installed radar/lidar')
 
-    def bind(self, owner: ShipBase) -> None:
-        super().bind(owner)
+    def bind(self, assembly: ShipBase) -> None:
+        super().bind(assembly)
         retained_notes = [note for note in self.notes if note.category in (NoteCategory.WARNING, NoteCategory.ERROR)]
         object.__setattr__(self, 'notes', [])
         if message := self.build_item():
@@ -339,7 +339,7 @@ class ExtendedArrays(ShipPart):
 
     @property
     def _primary_suite(self) -> ShipPart:
-        return cast(Any, self.ship).sensors.primary
+        return cast(Any, self.assembly).sensors.primary
 
     def compute_tons(self) -> float:
         return self._primary_suite.tons * 2

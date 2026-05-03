@@ -131,7 +131,7 @@ def test_jump_fuel_uses_performance_displacement_for_external_transport_load():
         displacement=400,
         maintained_external_displacement=40,
         hull=hull.Hull(configuration=hull.dispersed_structure),
-        drives=DriveSection(j_drive=JDrive(2)),
+        drives=DriveSection(j_drive=JDrive(level=2)),
         fuel=FuelSection(jump_fuel=JumpFuel(parsecs=2)),
     )
     assert my_ship.fuel is not None

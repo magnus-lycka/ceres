@@ -21,59 +21,61 @@ from ceres.make.ship.weapons import VeryHighYield
 
 
 def test_advanced_size_reduction_is_valid():
-    c = Advanced(SizeReduction)
+    c = Advanced(modifications=[SizeReduction])
     assert not any(n.category.value == 'error' for n in c.notes)
 
 
 def test_advanced_note_text():
-    assert Advanced(SizeReduction).note_text == 'Advanced: Size Reduction'
+    assert Advanced(modifications=[SizeReduction]).note_text == 'Advanced: Size Reduction'
 
 
 def test_high_technology_three_size_reductions_is_valid():
-    c = HighTechnology(SizeReduction, SizeReduction, SizeReduction)
+    c = HighTechnology(modifications=[SizeReduction, SizeReduction, SizeReduction])
     assert not any(n.category.value == 'error' for n in c.notes)
 
 
 def test_high_technology_three_size_reductions_note_text():
     assert (
-        HighTechnology(SizeReduction, SizeReduction, SizeReduction).note_text == 'High Technology: Size Reduction × 3'
+        HighTechnology(modifications=[SizeReduction, SizeReduction, SizeReduction]).note_text
+        == 'High Technology: Size Reduction × 3'
     )
 
 
 def test_high_technology_very_high_yield_and_energy_efficient_is_valid():
     # VeryHighYield.advantage=2, EnergyEfficient.advantage=1 → 3 total
-    c = HighTechnology(VeryHighYield, EnergyEfficient)
+    c = HighTechnology(modifications=[VeryHighYield, EnergyEfficient])
     assert not any(n.category.value == 'error' for n in c.notes)
 
 
 def test_high_technology_very_high_yield_and_energy_efficient_note_text():
     assert (
-        HighTechnology(VeryHighYield, EnergyEfficient).note_text == 'High Technology: Very High Yield, Energy Efficient'
+        HighTechnology(modifications=[VeryHighYield, EnergyEfficient]).note_text
+        == 'High Technology: Very High Yield, Energy Efficient'
     )
 
 
 def test_very_advanced_very_high_yield_is_valid():
     # VeryHighYield.advantage=2 → 2 total
-    c = VeryAdvanced(VeryHighYield)
+    c = VeryAdvanced(modifications=[VeryHighYield])
     assert not any(n.category.value == 'error' for n in c.notes)
 
 
 def test_budget_increased_size_is_valid():
-    c = Budget(IncreasedSize)
+    c = Budget(modifications=[IncreasedSize])
     assert not any(n.category.value == 'error' for n in c.notes)
 
 
 def test_budget_note_text():
-    assert Budget(IncreasedSize).note_text == 'Budget: Increased Size'
+    assert Budget(modifications=[IncreasedSize]).note_text == 'Budget: Increased Size'
 
 
 def test_prototype_increased_size_is_valid():
-    c = Prototype(IncreasedSize)
+    c = Prototype(modifications=[IncreasedSize])
     assert not any(n.category.value == 'error' for n in c.notes)
 
 
 def test_early_prototype_two_increased_size_is_valid():
-    c = EarlyPrototype(IncreasedSize, IncreasedSize)
+    c = EarlyPrototype(modifications=[IncreasedSize, IncreasedSize])
     assert not any(n.category.value == 'error' for n in c.notes)
 
 
@@ -83,23 +85,23 @@ def test_early_prototype_two_increased_size_is_valid():
 
 
 def test_advanced_two_size_reductions_has_error():
-    c = Advanced(SizeReduction, SizeReduction)
+    c = Advanced(modifications=[SizeReduction, SizeReduction])
     assert any(n.category.value == 'error' for n in c.notes)
 
 
 def test_budget_size_reduction_has_error():
     # Budget requires 0 advantages, 1 disadvantage — SizeReduction is an advantage
-    c = Budget(SizeReduction)
+    c = Budget(modifications=[SizeReduction])
     assert any(n.category.value == 'error' for n in c.notes)
 
 
 def test_high_technology_two_points_has_error():
-    c = HighTechnology(VeryHighYield)  # only 2 points, need 3
+    c = HighTechnology(modifications=[VeryHighYield])  # only 2 points, need 3
     assert any(n.category.value == 'error' for n in c.notes)
 
 
 def test_very_advanced_three_points_has_error():
-    c = VeryAdvanced(SizeReduction, SizeReduction, SizeReduction)  # 3 points, need 2
+    c = VeryAdvanced(modifications=[SizeReduction, SizeReduction, SizeReduction])  # 3 points, need 2
     assert any(n.category.value == 'error' for n in c.notes)
 
 
@@ -133,7 +135,7 @@ def test_grade_multipliers(grade_cls, cost_mult, tons_mult, tl_delta):
 def test_roundtrip_advanced():
     from ceres.make.ship.parts import Customisation
 
-    original = Advanced(SizeReduction)
+    original = Advanced(modifications=[SizeReduction])
     restored = Customisation.model_validate_json(original.model_dump_json())
     assert type(restored) is Advanced
     assert restored.note_text == original.note_text
@@ -142,7 +144,7 @@ def test_roundtrip_advanced():
 def test_roundtrip_high_technology():
     from ceres.make.ship.parts import Customisation
 
-    original = HighTechnology(VeryHighYield, EnergyEfficient)
+    original = HighTechnology(modifications=[VeryHighYield, EnergyEfficient])
     restored = Customisation.model_validate_json(original.model_dump_json())
     assert type(restored) is HighTechnology
     assert restored.note_text == original.note_text
@@ -151,6 +153,6 @@ def test_roundtrip_high_technology():
 def test_roundtrip_budget():
     from ceres.make.ship.parts import Customisation
 
-    original = Budget(IncreasedSize)
+    original = Budget(modifications=[IncreasedSize])
     restored = Customisation.model_validate_json(original.model_dump_json())
     assert type(restored) is Budget

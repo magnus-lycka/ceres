@@ -32,11 +32,11 @@ ultralight = Ship(
         armour=armour.CrystalironArmour(tl=12, protection=6),
         stealth=BasicStealth(),
     ),
-    drives=DriveSection(m_drive=MDrive(6)),
+    drives=DriveSection(m_drive=MDrive(level=6)),
     power=PowerSection(fusion_plant=FusionPlantTL12(output=8)),
     fuel=FuelSection(operation_fuel=OperationFuel(weeks=1)),
     command=CommandSection(cockpit=Cockpit(holographic=True)),
-    computer=ComputerSection(hardware=Computer(5)),
+    computer=ComputerSection(hardware=Computer(score=5)),
     sensors=SensorsSection(primary=CivilianSensors()),
     craft=CraftSection(internal_housing=[InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft'))]),
     weapons=WeaponsSection(
@@ -45,7 +45,7 @@ ultralight = Ship(
                 weapons=[
                     MountWeapon(
                         weapon='pulse_laser',
-                        customisation=HighTechnology(VeryHighYield, EnergyEfficient),
+                        customisation=HighTechnology(modifications=[VeryHighYield, EnergyEfficient]),
                     )
                 ]
             )
@@ -224,7 +224,7 @@ def test_roundtrip_backup_computer():
         tl=13,
         displacement=100,
         hull=Hull(configuration=hull.standard_hull),
-        computer=ComputerSection(hardware=Computer(25), backup_hardware=Computer(20, fib=True)),
+        computer=ComputerSection(hardware=Computer(score=25), backup_hardware=Computer(score=20, fib=True)),
     )
     loaded = _roundtrip(ship_with_backup)
     assert loaded.computer is not None
@@ -346,6 +346,8 @@ def test_roundtrip_dragon_part_notes_not_duplicated():
     ship = build_dragon()
     loaded = _roundtrip(ship)
     assert loaded.power is not None and ship.power is not None
+    assert loaded.power.fusion_plant is not None and ship.power.fusion_plant is not None
     assert len(loaded.power.fusion_plant.notes) == len(ship.power.fusion_plant.notes)
     assert loaded.drives is not None and ship.drives is not None
+    assert loaded.drives.m_drive is not None and ship.drives.m_drive is not None
     assert len(loaded.drives.m_drive.notes) == len(ship.drives.m_drive.notes)

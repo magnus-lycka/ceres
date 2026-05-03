@@ -80,7 +80,7 @@ def build_beagle_laboratory_ship() -> ship.Ship:
             configuration=hull.dispersed_structure,
             airlocks=[Airlock() for _ in range(4)],
         ),
-        drives=DriveSection(m_drive=MDrive(2), j_drive=JDrive(2)),
+        drives=DriveSection(m_drive=MDrive(level=2), j_drive=JDrive(level=2)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=195)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=2),
@@ -88,7 +88,7 @@ def build_beagle_laboratory_ship() -> ship.Ship:
             fuel_processor=FuelProcessor(tons=2),
         ),
         command=CommandSection(bridge=Bridge(small=True, holographic=True)),
-        computer=ComputerSection(hardware=Computer(10), software=[JumpControl(2)]),
+        computer=ComputerSection(hardware=Computer(score=10), software=[JumpControl(rating=2)]),
         sensors=SensorsSection(primary=ImprovedSensors(), sensor_stations=SensorStations(count=1)),
         weapons=WeaponsSection(
             turrets=[

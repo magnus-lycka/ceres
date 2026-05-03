@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 import math
 from typing import Annotated, ClassVar, Literal
 
@@ -78,7 +79,7 @@ class LowBerth(ShipPart):
         return self.cost_per_berth
 
     def compute_power(self) -> float:
-        habitation = getattr(self.ship, 'habitation', None)
+        habitation = getattr(self.assembly, 'habitation', None)
         if habitation is None:
             return 0.0
         siblings = habitation.low_berths
@@ -128,11 +129,6 @@ class AdvancedEntertainmentSystem(ShipPart):
 class CabinSpace(ShipPart):
     tons_per_passenger: ClassVar[float] = 1.5
     life_support_per_ton: ClassVar[float] = 250.0
-
-    def __init__(self, tons: float | None = None, /, **data):
-        if tons is not None and 'tons' not in data:
-            data['tons'] = tons
-        super().__init__(**data)
 
     def build_item(self) -> str | None:
         return 'Cabin Space'
@@ -262,7 +258,7 @@ class HabitationSection(CeresModel):
         low_berth_life_support = low_passage * 100
         return self.fixed_life_support_cost(ship) + low_berth_life_support + self.variable_life_support_cost(ship)
 
-    def _group_consecutive(self, parts: list[ShipPart]) -> list[list[ShipPart]]:
+    def _group_consecutive(self, parts: Sequence[ShipPart]) -> list[list[ShipPart]]:
         groups: list[list[ShipPart]] = []
         keys: list[str] = []
         for part in parts:

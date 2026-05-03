@@ -33,7 +33,7 @@ def build_florence_medical_scout() -> ship.Ship:
         ),
         passenger_vector={},
         hull=hull.Hull(configuration=hull.standard_hull),
-        drives=DriveSection(m_drive=MDrive(2), j_drive=JDrive(3)),
+        drives=DriveSection(m_drive=MDrive(level=2), j_drive=JDrive(level=3)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=300)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=3),
@@ -42,7 +42,7 @@ def build_florence_medical_scout() -> ship.Ship:
             fuel_processor=FuelProcessor(tons=3),
         ),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(15), software=[JumpControl(3)]),
+        computer=ComputerSection(hardware=Computer(score=15), software=[JumpControl(rating=3)]),
         sensors=SensorsSection(primary=MilitarySensors(), life_scanner_analysis_suite=LifeScannerAnalysisSuite()),
         weapons=WeaponsSection(turrets=[Turret(size='double')]),
         craft=CraftSection(

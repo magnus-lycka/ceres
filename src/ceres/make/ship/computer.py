@@ -16,6 +16,14 @@ class SoftwarePackage(CeresModel):
         raise NotImplementedError
 
     @property
+    def tl(self) -> int:
+        raise NotImplementedError
+
+    @property
+    def bandwidth(self) -> int:
+        raise NotImplementedError
+
+    @property
     def cost(self) -> float:
         return 0.0
 
@@ -78,11 +86,6 @@ class RatedSoftwarePackage(SoftwarePackage):
     rating: int
     label: ClassVar[str]
     _specs: ClassVar[dict[int, dict[str, int | float]]]
-
-    def __init__(self, rating: int | None = None, /, **data):
-        if rating is not None and 'rating' not in data:
-            data['rating'] = rating
-        super().__init__(**data)
 
     @field_validator('rating')
     @classmethod
@@ -279,11 +282,6 @@ class ComputerBase(ShipPart):
     _label: ClassVar[str]
     _specs: ClassVar[dict[int, dict[str, int | float]]]
 
-    def __init__(self, score: int | None = None, /, **data):
-        if score is not None and 'score' not in data:
-            data['score'] = score
-        super().__init__(**data)
-
     @model_validator(mode='before')
     @classmethod
     def _fill_tl(cls, data: Any) -> Any:
@@ -321,9 +319,9 @@ class ComputerBase(ShipPart):
             item += '/fib'
         return item
 
-    def check_ship_tl(self) -> None:
-        if self.ship_tl < self.tl:
-            self.error(f'Requires TL{self.tl}, ship is TL{self.ship_tl}')
+    def check_tl(self) -> None:
+        if self.assembly_tl < self.tl:
+            self.error(f'Requires TL{self.tl}, ship is TL{self.assembly_tl}')
 
     @property
     def jump_control_processing(self) -> int:
@@ -333,12 +331,12 @@ class ComputerBase(ShipPart):
     @property
     def included_software(self) -> list[SoftwarePackage]:
         packages: list[SoftwarePackage] = [Library(), Manoeuvre()]
-        if self.ship_tl >= Intellect.tl:
+        if self.assembly_tl >= Intellect.tl:
             packages.append(Intellect())
         return packages
 
     def can_run(self, package: SoftwarePackage) -> bool:
-        if self.ship_tl < package.tl:
+        if self.assembly_tl < package.tl:
             return False
         if isinstance(package, JumpControl):
             if isinstance(self, Core):
@@ -450,7 +448,7 @@ class ComputerSection(CeresModel):
                 package.warning(message)
         object.__setattr__(self, '_software_packages', selected)
 
-    def validate_software(self, ship_tl: int) -> None:
+    def validate_software(self, assembly_tl: int) -> None:
         if self.hardware is None:
             for package in self.software_packages.values():
                 package.warning('Ship software requires a computer')
@@ -458,7 +456,7 @@ class ComputerSection(CeresModel):
         if self.backup_hardware is not None and self.hardware.processing <= self.backup_hardware.processing:
             self.backup_hardware.error('Backup computer must have lower Processing than primary computer')
         for package in self.software_packages.values():
-            if ship_tl < package.tl:
+            if assembly_tl < package.tl:
                 package.error(f'{package.description} requires TL{package.tl}')
             if not self.hardware.can_run(package):
                 package.error(f'{self.hardware.description} cannot run {package.description}')

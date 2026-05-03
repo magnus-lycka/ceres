@@ -25,11 +25,11 @@ def build_ultralight_fighter() -> ship.Ship:
             armour=armour.CrystalironArmour(tl=12, protection=6),
             stealth=hull.BasicStealth(),
         ),
-        drives=DriveSection(m_drive=MDrive(6)),
+        drives=DriveSection(m_drive=MDrive(level=6)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=8)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=1)),
         command=CommandSection(cockpit=Cockpit(holographic=True)),
-        computer=ComputerSection(hardware=Computer(5)),
+        computer=ComputerSection(hardware=Computer(score=5)),
         sensors=SensorsSection(primary=CivilianSensors()),
         weapons=WeaponsSection(
             fixed_mounts=[
@@ -37,7 +37,7 @@ def build_ultralight_fighter() -> ship.Ship:
                     weapons=[
                         MountWeapon(
                             weapon='pulse_laser',
-                            customisation=HighTechnology(VeryHighYield, EnergyEfficient),
+                            customisation=HighTechnology(modifications=[VeryHighYield, EnergyEfficient]),
                         )
                     ]
                 ),

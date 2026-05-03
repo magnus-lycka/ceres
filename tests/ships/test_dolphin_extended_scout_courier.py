@@ -56,7 +56,7 @@ def build_dolphin_extended_scout_courier() -> ship.Ship:
             configuration=hull.streamlined_hull,
             armour=armour.CrystalironArmour(tl=15, protection=4),
         ),
-        drives=DriveSection(m_drive=MDrive(2), j_drive=JDrive(2)),
+        drives=DriveSection(m_drive=MDrive(level=2), j_drive=JDrive(level=2)),
         power=PowerSection(fusion_plant=FusionPlantTL15(output=70)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=2),
@@ -64,7 +64,7 @@ def build_dolphin_extended_scout_courier() -> ship.Ship:
             fuel_processor=FuelProcessor(tons=2),
         ),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(10), software=[JumpControl(2)]),
+        computer=ComputerSection(hardware=Computer(score=10), software=[JumpControl(rating=2)]),
         sensors=SensorsSection(primary=MilitarySensors()),
         weapons=WeaponsSection(
             turrets=[

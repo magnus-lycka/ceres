@@ -58,11 +58,6 @@ class RDrive(ShipPart):
     level: int
     high_burn_thruster: bool = False
 
-    def __init__(self, level: int | None = None, /, **data):
-        if level is not None and 'level' not in data:
-            data['level'] = level
-        super().__init__(**data)
-
     @model_validator(mode='before')
     @classmethod
     def _fill_tl(cls, data: Any) -> Any:
@@ -82,7 +77,7 @@ class RDrive(ShipPart):
 
     def compute_tons(self) -> float:
         tons_percent = float(self._specs[self.level]['tons_percent'])
-        return self.ship.performance_displacement * tons_percent
+        return self.assembly.performance_displacement * tons_percent
 
     def compute_cost(self) -> float:
         return self.compute_tons() * 200_000.0
@@ -95,11 +90,11 @@ class RDrive(ShipPart):
             return []
         return [Note(category=NoteCategory.INFO, message='No inertial compensation above manoeuvre-drive thrust')]
 
-    def check_ship_tl(self) -> None:
+    def check_tl(self) -> None:
         if self.level not in self._specs:
             self.error(f'Unsupported reaction drive level {self.level}')
             return
-        super().check_ship_tl()
+        super().check_tl()
 
 
 class MDrive(CustomisableShipPart):
@@ -129,11 +124,6 @@ class MDrive(CustomisableShipPart):
         }
     )
 
-    def __init__(self, level: int | None = None, /, **data):
-        if level is not None and 'level' not in data:
-            data['level'] = level
-        super().__init__(**data)
-
     @model_validator(mode='before')
     @classmethod
     def _fill_tl(cls, data: Any) -> Any:
@@ -144,8 +134,8 @@ class MDrive(CustomisableShipPart):
         return data
 
     def build_item(self) -> str | None:
-        if self._ship is not None and self.ship.transported_external_displacement > 0:
-            return f'M-Drive {self.level} ({self.ship.performance_displacement:g}t)'
+        if self._assembly is not None and self.assembly.transported_external_displacement > 0:
+            return f'M-Drive {self.level} ({self.assembly.performance_displacement:g}t)'
         return f'M-Drive {self.level}'
 
     def bulkhead_label(self) -> str:
@@ -153,13 +143,13 @@ class MDrive(CustomisableShipPart):
 
     def _base_tons(self) -> float:
         tons_percent = float(self._specs[self.level]['tons_percent'])
-        return self.ship.performance_displacement * tons_percent
+        return self.assembly.performance_displacement * tons_percent
 
-    def check_ship_tl(self) -> None:
+    def check_tl(self) -> None:
         if self.level not in self._specs:
             self.error(f'Unsupported M-Drive level {self.level}')
             return
-        super().check_ship_tl()
+        super().check_tl()
 
     def compute_tons(self) -> float:
         multiplier = 1.0 if self.customisation is None else self.customisation.tons_multiplier
@@ -172,9 +162,9 @@ class MDrive(CustomisableShipPart):
 
     def compute_power(self) -> float:
         if self.level == 0:
-            power = float(math.ceil(0.1 * self.ship.performance_displacement * 0.25))
+            power = float(math.ceil(0.1 * self.assembly.performance_displacement * 0.25))
         else:
-            power = float(math.ceil(0.1 * self.ship.performance_displacement * self.level))
+            power = float(math.ceil(0.1 * self.assembly.performance_displacement * self.level))
         multiplier = 1.0 if self.customisation is None else self.customisation.power_multiplier
         return power * multiplier
 
@@ -200,11 +190,6 @@ class JDrive(CustomisableShipPart):
         }
     )
 
-    def __init__(self, level: int | None = None, /, **data):
-        if level is not None and 'level' not in data:
-            data['level'] = level
-        super().__init__(**data)
-
     @model_validator(mode='before')
     @classmethod
     def _fill_tl(cls, data: Any) -> Any:
@@ -215,8 +200,8 @@ class JDrive(CustomisableShipPart):
         return data
 
     def build_item(self) -> str | None:
-        if self._ship is not None and self.ship.transported_external_displacement > 0:
-            return f'Jump {self.level} ({self.ship.performance_displacement:g}t)'
+        if self._assembly is not None and self.assembly.transported_external_displacement > 0:
+            return f'Jump {self.level} ({self.assembly.performance_displacement:g}t)'
         return f'Jump {self.level}'
 
     def bulkhead_label(self) -> str:
@@ -226,26 +211,26 @@ class JDrive(CustomisableShipPart):
     def parsecs(self) -> int:
         return self.level
 
-    def check_ship_tl(self) -> None:
+    def check_tl(self) -> None:
         if self.level not in self._specs:
             self.error(f'Unsupported J-Drive level {self.level}')
             return
-        super().check_ship_tl()
+        super().check_tl()
 
     def compute_tons(self) -> float:
         tons_percent = float(self._specs[self.level]['tons_percent'])
-        base_tons = self.ship.performance_displacement * tons_percent + 5
+        base_tons = self.assembly.performance_displacement * tons_percent + 5
         multiplier = 1.0 if self.customisation is None else self.customisation.tons_multiplier
         return base_tons * multiplier
 
     def compute_cost(self) -> float:
         tons_percent = float(self._specs[self.level]['tons_percent'])
-        base_cost = (self.ship.performance_displacement * tons_percent + 5) * 1_500_000
+        base_cost = (self.assembly.performance_displacement * tons_percent + 5) * 1_500_000
         multiplier = 1.0 if self.customisation is None else self.customisation.cost_multiplier
         return base_cost * multiplier
 
     def compute_power(self) -> float:
-        base_power = float(math.ceil(0.1 * self.ship.performance_displacement * self.level))
+        base_power = float(math.ceil(0.1 * self.assembly.performance_displacement * self.level))
         multiplier = 1.0 if self.customisation is None else self.customisation.power_multiplier
         return base_power * multiplier
 
@@ -342,7 +327,7 @@ class EmergencyPowerSystem(ShipPart):
 
     @property
     def source_plant(self) -> _FusionPlant:
-        power_section = getattr(self.ship, 'power', None)
+        power_section = getattr(self.assembly, 'power', None)
         plant = None if power_section is None else power_section.fusion_plant
         if plant is None:
             raise RuntimeError('EmergencyPowerSystem requires a fusion plant')

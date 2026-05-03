@@ -52,8 +52,8 @@ def build_ambush_hunter_killer_corvette() -> ship.Ship:
             airlocks=[Airlock(), Airlock(), Airlock(), Airlock(), Airlock(), Airlock()],
         ),
         drives=DriveSection(
-            m_drive=MDrive(6, customisation=VeryAdvanced(SizeReduction, EnergyEfficient)),
-            j_drive=JDrive(2, customisation=VeryAdvanced(DecreasedFuel, DecreasedFuel)),
+            m_drive=MDrive(level=6, customisation=VeryAdvanced(modifications=[SizeReduction, EnergyEfficient])),
+            j_drive=JDrive(level=2, customisation=VeryAdvanced(modifications=[DecreasedFuel, DecreasedFuel])),
         ),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=500, armoured_bulkhead=True)),
         fuel=FuelSection(
@@ -62,14 +62,14 @@ def build_ambush_hunter_killer_corvette() -> ship.Ship:
         ),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(
-            hardware=Computer(30),
+            hardware=Computer(score=30),
             software=[
-                JumpControl(2),
-                AdvancedFireControl(1),
-                AntiHijack(1),
+                JumpControl(rating=2),
+                AdvancedFireControl(rating=1),
+                AntiHijack(rating=1),
                 BroadSpectrumEW(),
-                ElectronicWarfare(1),
-                VirtualGunner(1),
+                ElectronicWarfare(rating=1),
+                VirtualGunner(rating=1),
             ],
         ),
         sensors=SensorsSection(
@@ -83,13 +83,13 @@ def build_ambush_hunter_killer_corvette() -> ship.Ship:
                 Bay(
                     size='medium',
                     weapon='particle_beam',
-                    customisation=HighTechnology(HighYield, SizeReduction, SizeReduction),
+                    customisation=HighTechnology(modifications=[HighYield, SizeReduction, SizeReduction]),
                     armoured_bulkhead=True,
                 ),
                 Bay(
                     size='medium',
                     weapon='particle_beam',
-                    customisation=HighTechnology(HighYield, SizeReduction, SizeReduction),
+                    customisation=HighTechnology(modifications=[HighYield, SizeReduction, SizeReduction]),
                     armoured_bulkhead=True,
                 ),
             ],
@@ -97,17 +97,29 @@ def build_ambush_hunter_killer_corvette() -> ship.Ship:
                 Turret(
                     size='triple',
                     weapons=[
-                        MountWeapon(weapon='pulse_laser', customisation=HighTechnology(LongRange, HighYield)),
-                        MountWeapon(weapon='pulse_laser', customisation=HighTechnology(LongRange, HighYield)),
-                        MountWeapon(weapon='pulse_laser', customisation=HighTechnology(LongRange, HighYield)),
+                        MountWeapon(
+                            weapon='pulse_laser', customisation=HighTechnology(modifications=[LongRange, HighYield])
+                        ),
+                        MountWeapon(
+                            weapon='pulse_laser', customisation=HighTechnology(modifications=[LongRange, HighYield])
+                        ),
+                        MountWeapon(
+                            weapon='pulse_laser', customisation=HighTechnology(modifications=[LongRange, HighYield])
+                        ),
                     ],
                 ),
                 Turret(
                     size='triple',
                     weapons=[
-                        MountWeapon(weapon='pulse_laser', customisation=HighTechnology(LongRange, HighYield)),
-                        MountWeapon(weapon='pulse_laser', customisation=HighTechnology(LongRange, HighYield)),
-                        MountWeapon(weapon='pulse_laser', customisation=HighTechnology(LongRange, HighYield)),
+                        MountWeapon(
+                            weapon='pulse_laser', customisation=HighTechnology(modifications=[LongRange, HighYield])
+                        ),
+                        MountWeapon(
+                            weapon='pulse_laser', customisation=HighTechnology(modifications=[LongRange, HighYield])
+                        ),
+                        MountWeapon(
+                            weapon='pulse_laser', customisation=HighTechnology(modifications=[LongRange, HighYield])
+                        ),
                     ],
                 ),
             ],

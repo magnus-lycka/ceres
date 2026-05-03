@@ -127,10 +127,10 @@ class Stealth(ShipPart):
     sensors_dm: ClassVar[int] = 0
 
     def compute_cost(self):
-        return self.ship.displacement * self.cost_per_ton
+        return self.assembly.displacement * self.cost_per_ton
 
     def compute_tons(self):
-        return self.ship.displacement * self.tonnage
+        return self.assembly.displacement * self.tonnage
 
 
 class BasicStealth(Stealth):
@@ -209,7 +209,7 @@ class Hull(CeresModel):
     stealth: HullStealth | None = None
     pressure_hull: bool = False
     armoured_bulkheads: list[ArmouredBulkhead] = Field(default_factory=list)
-    airlocks: list[Airlock] | None = None
+    airlocks: list[Airlock] = Field(default_factory=list)
     aerofins: Aerofins | None = None
     heat_shielding: bool = False
     radiation_shielding: bool = False
@@ -244,8 +244,7 @@ class Hull(CeresModel):
         if (s := self.stealth) is not None:
             parts.append(s)
         parts.extend(self.armoured_bulkheads)
-        if self.airlocks is not None:
-            parts.extend(self.airlocks)
+        parts.extend(self.airlocks)
         if (af := self.aerofins) is not None:
             parts.append(af)
         return parts
@@ -313,6 +312,6 @@ class Hull(CeresModel):
             )
         for row in ship._grouped_spec_rows(
             SpecSection.HULL,
-            [*(self.airlocks or []), *([self.aerofins] if self.aerofins is not None else [])],
+            [*self.airlocks, *([self.aerofins] if self.aerofins is not None else [])],
         ):
             spec.add_row(row)

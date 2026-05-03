@@ -39,14 +39,14 @@ _COMPUTER_TYPES: list[type[ComputerEquipment]] = [
 ]
 
 _SPECIALISED_EXAMPLES: list[SpecialisedComputer] = [
-    SpecialisedComputer(1, expert=Expert(1, skill='Admin'), variant='intelligent_interface'),
-    SpecialisedComputer(2, expert=Expert(2, skill='Astrogation'), variant='intelligent_interface'),
-    SpecialisedComputer(1, expert=Expert(1, skill='Medic'), variant='intelligent_interface'),
-    SpecialisedTablet(1, expert=Expert(1, skill='Steward'), variant='intelligent_interface'),
-    SpecialisedTablet(2, expert=Expert(2, skill='Medic'), variant='intelligent_interface'),
-    SpecialisedComputer(3, expert=Expert(3, skill='Broker'), variant='intellect'),
-    SpecialisedComputer(2, expert=Expert(2, skill='Engineer (M-Drive)'), variant='intellect'),
-    SpecialisedTablet(2, expert=Expert(2, skill='Broker'), variant='intellect'),
+    SpecialisedComputer(processing=1, expert=Expert(rating=1, skill='Admin'), variant='intelligent_interface'),
+    SpecialisedComputer(processing=2, expert=Expert(rating=2, skill='Astrogation'), variant='intelligent_interface'),
+    SpecialisedComputer(processing=1, expert=Expert(rating=1, skill='Medic'), variant='intelligent_interface'),
+    SpecialisedTablet(processing=1, expert=Expert(rating=1, skill='Steward'), variant='intelligent_interface'),
+    SpecialisedTablet(processing=2, expert=Expert(rating=2, skill='Medic'), variant='intelligent_interface'),
+    SpecialisedComputer(processing=3, expert=Expert(rating=3, skill='Broker'), variant='intellect'),
+    SpecialisedComputer(processing=2, expert=Expert(rating=2, skill='Engineer (M-Drive)'), variant='intellect'),
+    SpecialisedTablet(processing=2, expert=Expert(rating=2, skill='Broker'), variant='intellect'),
 ]
 
 
@@ -71,7 +71,7 @@ def _notes_for_display(item) -> list[dict]:
 def _standard_section(cls: type[ComputerEquipment]) -> dict:
     rows = []
     for p in sorted(cls._specs):
-        item = cls(p)
+        item = cls(processing=p)
         rows.append(
             {
                 'cells': [str(p), str(item.tl), _fmt_mass(item.mass_kg), _fmt_cost(item.cost)],
@@ -79,7 +79,7 @@ def _standard_section(cls: type[ComputerEquipment]) -> dict:
             }
         )
     return {
-        'heading': cls(min(cls._specs))._label,
+        'heading': cls(processing=min(cls._specs))._label,
         'headers': ['Processing', 'TL', 'Mass (kg)', 'Cost'],
         'alignments': ['left', 'right', 'right', 'right'],
         'rows': rows,

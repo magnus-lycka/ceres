@@ -75,7 +75,7 @@ def build_king_kay() -> ship.Ship:
         displacement=5_000,
         design_type=ship.ShipDesignType.CUSTOM,
         hull=hull.Hull(configuration=hull.close_structure),
-        drives=DriveSection(m_drive=MDrive(1), j_drive=JDrive(2)),
+        drives=DriveSection(m_drive=MDrive(level=1), j_drive=JDrive(level=2)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=2_010)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=2),
@@ -83,9 +83,9 @@ def build_king_kay() -> ship.Ship:
         ),
         command=CommandSection(bridge=Bridge(holographic=True)),
         computer=ComputerSection(
-            hardware=Computer(10),
-            backup_hardware=Computer(5, bis=True),
-            software=[JumpControl(2)],
+            hardware=Computer(score=10),
+            backup_hardware=Computer(score=5, bis=True),
+            software=[JumpControl(rating=2)],
         ),
         sensors=SensorsSection(primary=CivilianSensors()),
         craft=CraftSection(

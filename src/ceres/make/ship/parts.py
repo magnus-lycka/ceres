@@ -47,7 +47,7 @@ class Customisation(CeresModel):
     """Declared customisation grade with its modifications."""
 
     grade: CustomisationGrade
-    modifications: tuple[Modification, ...]
+    modifications: list[Modification]
     model_config = {'frozen': True}
 
     _cost_multiplier: ClassVar[float]
@@ -56,11 +56,6 @@ class Customisation(CeresModel):
     _display_name: ClassVar[str]
     _required_advantages: ClassVar[int]
     _required_disadvantages: ClassVar[int]
-
-    def __init__(self, *modifications: Modification, **kwargs):
-        if modifications:
-            kwargs['modifications'] = modifications
-        super().__init__(**kwargs)
 
     def model_post_init(self, __context) -> None:
         self.notes.clear()
@@ -106,13 +101,15 @@ class Customisation(CeresModel):
     def tl_delta(self) -> int:
         return self._tl_delta + sum(m.tl_delta for m in self.modifications)
 
-    def check_ship_tl(self, part: CustomisableShipPart) -> None:
+    def check_tl(self, part: CustomisableShipPart) -> None:
         available_tl = part.tl + self.tl_delta
-        if part.ship_tl < available_tl:
-            part.error(f'Requires TL{available_tl}, ship is TL{part.ship_tl}')
+        if part.assembly_tl < available_tl:
+            part.error(f'Requires TL{available_tl}, ship is TL{part.assembly_tl}')
             return
-        if self.tl_delta < 0 and part.ship_tl > available_tl:
-            part.warning(f'{self._display_name} not required: ship TL{part.ship_tl} exceeds required TL{available_tl}')
+        if self.tl_delta < 0 and part.assembly_tl > available_tl:
+            part.warning(
+                f'{self._display_name} not required: ship TL{part.assembly_tl} exceeds required TL{available_tl}'
+            )
 
 
 class EarlyPrototype(Customisation):
@@ -187,7 +184,7 @@ def _customisation_model_validate_json(cls, data, **kwargs):
     return _customisation_adapter.validate_json(data, **kwargs)
 
 
-Customisation.model_validate_json = classmethod(_customisation_model_validate_json)
+Customisation.model_validate_json = classmethod(_customisation_model_validate_json)  # type: ignore
 
 
 class ShipPartMixin:
@@ -198,8 +195,13 @@ class ShipPartMixin:
     assembly: binding, TL checks, tonnage/cost/power recomputation, and armoured
     bulkhead book-keeping.
 
-    Concrete classes must define ``_ship`` and ``_armoured_bulkhead_part`` as
-    ``PrivateAttr`` fields so Pydantic stores them correctly.
+    Concrete classes must declare the following as explicit Pydantic fields so
+    that both Pydantic and static type checkers see them correctly:
+
+    - ``_assembly`` and ``_armoured_bulkhead_part`` as ``PrivateAttr`` fields
+    - ``tons``, ``power``, and ``armoured_bulkhead`` as ordinary fields with the
+      same defaults as defined here (the mixin annotations are invisible to Pydantic
+      because the mixin is a plain Python class, not a ``BaseModel``)
     """
 
     tons: float = 0.0
@@ -211,7 +213,7 @@ class ShipPartMixin:
     # ------------------------------------------------------------------
 
     def compute_cost(self) -> float:
-        return self.cost  # type: ignore[attr-defined]
+        return self.cost  # type: ignore
 
     def compute_power(self) -> float:
         return self.power
@@ -236,41 +238,41 @@ class ShipPartMixin:
     # Ship binding
     # ------------------------------------------------------------------
 
-    def bind(self, ship: ShipBase) -> None:
-        self._ship = ship  # type: ignore[attr-defined]
-        self.check_ship_tl()
+    def bind(self, assembly: ShipBase) -> None:
+        self._assembly = assembly
+        self.check_tl()
         self.refresh_derived_values()
-        if message := self.build_item():  # type: ignore[attr-defined]
-            self.item(message)  # type: ignore[attr-defined]
-        self._refresh_armoured_bulkhead(ship)
+        if message := self.build_item():  # type: ignore
+            self.item(message)  # type: ignore
+        self._refresh_armoured_bulkhead(assembly)
 
     @property
-    def ship(self) -> ShipBase:
-        if self._ship is None:  # type: ignore[attr-defined]
-            raise RuntimeError(f'{self.__class__.__name__} not bound to a Ship')
-        return self._ship  # type: ignore[attr-defined]
+    def assembly(self) -> ShipBase:
+        if self._assembly is None:
+            raise RuntimeError(f'{self.__class__.__name__} not bound to an Assembly')
+        return self._assembly
 
     @property
-    def ship_tl(self) -> int:
-        return self.ship.tl
+    def assembly_tl(self) -> int:
+        return self.assembly.tl
 
-    def check_ship_tl(self) -> None:
-        if self.ship_tl < self.tl:  # type: ignore[attr-defined]
-            self.error(f'Requires TL{self.tl}, ship is TL{self.ship_tl}')  # type: ignore[attr-defined]
+    def check_tl(self) -> None:
+        if self.assembly_tl < self.tl:  # type: ignore
+            self.error(f'Requires TL{self.tl}, ship is TL{self.assembly_tl}')  # type: ignore
 
     # ------------------------------------------------------------------
     # Armoured bulkhead support
     # ------------------------------------------------------------------
 
     def bulkhead_label(self) -> str:
-        return self.build_item() or self.__class__.__name__  # type: ignore[attr-defined]
+        return self.build_item() or self.__class__.__name__  # type: ignore
 
     def bulkhead_protected_tonnage(self) -> float:
         return self.tons
 
-    def _refresh_armoured_bulkhead(self, ship: ShipBase) -> None:
+    def _refresh_armoured_bulkhead(self, assembly: ShipBase) -> None:
         if not self.armoured_bulkhead:
-            self._armoured_bulkhead_part = None  # type: ignore[attr-defined]
+            self._armoured_bulkhead_part = None
             return
         from .hull import ArmouredBulkhead
 
@@ -279,12 +281,12 @@ class ShipPartMixin:
             protected_item=self.bulkhead_label(),
             from_ship_part=True,
         )
-        bulkhead.bind(ship)
-        self._armoured_bulkhead_part = bulkhead  # type: ignore[attr-defined]
+        bulkhead.bind(assembly)
+        self._armoured_bulkhead_part = bulkhead
 
     @property
     def armoured_bulkhead_part(self) -> ShipPart | None:
-        return self._armoured_bulkhead_part  # type: ignore[attr-defined]
+        return self._armoured_bulkhead_part
 
     # ------------------------------------------------------------------
     # Grouping (used by spec table rendering)
@@ -292,7 +294,7 @@ class ShipPartMixin:
 
     @property
     def group_key(self) -> str:
-        for note in self.notes:  # type: ignore[attr-defined]
+        for note in self.notes:  # type: ignore
             if note.category is NoteCategory.ITEM:
                 return note.message
         return self.__class__.__name__
@@ -300,8 +302,11 @@ class ShipPartMixin:
 
 class ShipPart(CeresPart, ShipPartMixin):
     _tl: ClassVar[int] = 0
-    _ship: ShipBase | None = PrivateAttr(default=None)
+    _assembly: ShipBase | None = PrivateAttr(default=None)
     _armoured_bulkhead_part: ShipPart | None = PrivateAttr(default=None)
+    tons: float = 0.0
+    power: float = 0.0
+    armoured_bulkhead: bool = False
 
     @model_validator(mode='before')
     @classmethod
@@ -339,15 +344,15 @@ class CustomisableShipPart(ShipPart):
             notes.append(Note(category=NoteCategory.INFO, message=self.customisation.note_text))
         return notes
 
-    def bind(self, ship: ShipBase) -> None:
+    def bind(self, assembly: ShipBase) -> None:
         if self.customisation is not None:
             for mod in self.customisation.modifications:
                 if mod.name not in self.allowed_modifications:
                     self.error(f'Modification not allowed for {self.__class__.__name__}: {mod.name}')
-        super().bind(ship)
+        super().bind(assembly)
 
-    def check_ship_tl(self) -> None:
+    def check_tl(self) -> None:
         if self.customisation is None:
-            super().check_ship_tl()
+            super().check_tl()
             return
-        self.customisation.check_ship_tl(self)
+        self.customisation.check_tl(self)

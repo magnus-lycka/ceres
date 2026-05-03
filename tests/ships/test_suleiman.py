@@ -56,7 +56,7 @@ def build_suleiman() -> ship.Ship:
             armour=armour.CrystalironArmour(tl=12, protection=4),
             airlocks=[Airlock()],
         ),
-        drives=DriveSection(m_drive=MDrive(2), j_drive=JDrive(2)),
+        drives=DriveSection(m_drive=MDrive(level=2), j_drive=JDrive(level=2)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=60)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=2),
@@ -64,7 +64,7 @@ def build_suleiman() -> ship.Ship:
             fuel_processor=FuelProcessor(tons=2),
         ),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(5, bis=True), software=[JumpControl(2)]),
+        computer=ComputerSection(hardware=Computer(score=5, bis=True), software=[JumpControl(rating=2)]),
         sensors=SensorsSection(primary=MilitarySensors()),
         weapons=WeaponsSection(turrets=[Turret(size='double')]),
         craft=CraftSection(internal_housing=[InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft'))]),
@@ -174,6 +174,7 @@ def test_suleiman_matches_first_modeled_reference_slice():
     assert airlocks[0].cost == 0.0
 
     assert probe_drones is not None
+    assert isinstance(probe_drones, ProbeDrones)
     assert probe_drones.count == 10
     assert probe_drones.tons == pytest.approx(2.0)
     assert probe_drones.cost == 1_000_000
@@ -212,8 +213,8 @@ def test_jump_drive_2_without_jump_control_2_adds_local_note():
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(j_drive=JDrive(2)),
-        computer=ComputerSection(hardware=Computer(5, bis=True)),
+        drives=DriveSection(j_drive=JDrive(level=2)),
+        computer=ComputerSection(hardware=Computer(score=5, bis=True)),
     )
     assert my_ship.drives is not None
     assert my_ship.drives.j_drive is not None
@@ -329,8 +330,8 @@ def test_jump_drive_with_lower_jump_control_warns_on_drive():
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(j_drive=JDrive(2)),
-        computer=ComputerSection(hardware=Computer(5, bis=True), software=[JumpControl(1)]),
+        drives=DriveSection(j_drive=JDrive(level=2)),
+        computer=ComputerSection(hardware=Computer(score=5, bis=True), software=[JumpControl(rating=1)]),
     )
     assert my_ship.drives is not None
     assert my_ship.drives.j_drive is not None
@@ -345,7 +346,7 @@ def test_jump_control_without_jump_drive_warns_on_software():
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        computer=ComputerSection(hardware=Computer(5, bis=True), software=[JumpControl(2)]),
+        computer=ComputerSection(hardware=Computer(score=5, bis=True), software=[JumpControl(rating=2)]),
     )
     assert my_ship.computer is not None
     explicit_jump_control = my_ship.computer.software_packages[JumpControl]
@@ -360,8 +361,8 @@ def test_jump_control_with_higher_rating_than_drive_warns_on_software():
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(j_drive=JDrive(2)),
-        computer=ComputerSection(hardware=Computer(10, bis=True), software=[JumpControl(3)]),
+        drives=DriveSection(j_drive=JDrive(level=2)),
+        computer=ComputerSection(hardware=Computer(score=10, bis=True), software=[JumpControl(rating=3)]),
     )
     assert my_ship.computer is not None
     explicit_jump_control = my_ship.computer.software_packages[JumpControl]
@@ -376,8 +377,10 @@ def test_higher_jump_control_replaces_lower_one():
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(j_drive=JDrive(2)),
-        computer=ComputerSection(hardware=Computer(10, bis=True), software=[JumpControl(2), JumpControl(3)]),
+        drives=DriveSection(j_drive=JDrive(level=2)),
+        computer=ComputerSection(
+            hardware=Computer(score=10, bis=True), software=[JumpControl(rating=2), JumpControl(rating=3)]
+        ),
     )
 
     assert my_ship.computer is not None

@@ -1,4 +1,4 @@
-from typing import Annotated, ClassVar, Literal
+from typing import Annotated, ClassVar, Literal, TypeVar
 
 from pydantic import Field
 
@@ -6,6 +6,8 @@ from .base import CeresModel, Note, NoteCategory
 from .parts import ShipPart
 from .spec import ShipSpec, SpecSection
 from .text import optional_count
+
+_T = TypeVar('_T', bound=ShipPart)
 
 
 class Workshop(ShipPart):
@@ -191,10 +193,10 @@ class Airlock(ShipPart):
         return f'Airlock ({self.size:g} tons)'
 
     def am_i_for_free(self) -> bool:
-        if self.ship.displacement < 100:
+        if self.assembly.displacement < 100:
             return False
-        free_airlocks = self.ship.displacement // 100
-        siblings = self.ship.parts_of_type(Airlock)
+        free_airlocks = self.assembly.displacement // 100
+        siblings = self.assembly.parts_of_type(Airlock)
         index = next((i for i, sibling in enumerate(siblings) if sibling is self), -1)
         if index < 0:
             return False
@@ -223,7 +225,7 @@ class Aerofins(ShipPart):
         return [Note(category=NoteCategory.INFO, message='DM +2 to Pilot checks in atmosphere')]
 
     def compute_tons(self) -> float:
-        return self.ship.displacement * 0.05
+        return self.assembly.displacement * 0.05
 
     def compute_cost(self) -> float:
         return self.compute_tons() * 100_000.0
@@ -268,7 +270,7 @@ class RepairDrones(ShipPart):
         return 'Repair Drones'
 
     def compute_tons(self) -> float:
-        return self.ship.displacement / 100
+        return self.assembly.displacement / 100
 
     def compute_cost(self) -> float:
         return self.compute_tons() * 200_000.0
@@ -327,52 +329,52 @@ class SystemsSection(CeresModel):
     internal_systems: list[AnyInternalSystem] = Field(default_factory=list)
     drones: list[AnyDroneSystem] = Field(default_factory=list)
 
-    def internal_systems_of_type(self, system_cls: type) -> list[ShipPart]:
+    def internal_systems_of_type(self, system_cls: type[_T]) -> list[_T]:
         return [system for system in self.internal_systems if isinstance(system, system_cls)]
 
-    def first_internal_system_of_type(self, system_cls: type) -> ShipPart | None:
+    def first_internal_system_of_type(self, system_cls: type[_T]) -> _T | None:
         matches = self.internal_systems_of_type(system_cls)
         return None if not matches else matches[0]
 
     @property
     def armouries(self) -> list[Armoury]:
-        return self.internal_systems_of_type(Armoury)  # type: ignore[return-value]
+        return self.internal_systems_of_type(Armoury)
 
     @property
     def biosphere(self) -> Biosphere | None:
-        return self.first_internal_system_of_type(Biosphere)  # type: ignore[return-value]
+        return self.first_internal_system_of_type(Biosphere)
 
     @property
     def commercial_zone(self) -> CommercialZone | None:
-        return self.first_internal_system_of_type(CommercialZone)  # type: ignore[return-value]
+        return self.first_internal_system_of_type(CommercialZone)
 
     @property
     def medical_bay(self) -> MedicalBay | None:
-        return self.first_internal_system_of_type(MedicalBay)  # type: ignore[return-value]
+        return self.first_internal_system_of_type(MedicalBay)
 
     @property
     def medical_bays(self) -> list[MedicalBay]:
-        return self.internal_systems_of_type(MedicalBay)  # type: ignore[return-value]
+        return self.internal_systems_of_type(MedicalBay)
 
     @property
     def laboratories(self) -> list[Laboratory]:
-        return self.internal_systems_of_type(Laboratory)  # type: ignore[return-value]
+        return self.internal_systems_of_type(Laboratory)
 
     @property
     def library(self) -> LibraryFacility | None:
-        return self.first_internal_system_of_type(LibraryFacility)  # type: ignore[return-value]
+        return self.first_internal_system_of_type(LibraryFacility)
 
     @property
     def briefing_room(self) -> BriefingRoom | None:
-        return self.first_internal_system_of_type(BriefingRoom)  # type: ignore[return-value]
+        return self.first_internal_system_of_type(BriefingRoom)
 
     @property
     def training_facility(self) -> TrainingFacility | None:
-        return self.first_internal_system_of_type(TrainingFacility)  # type: ignore[return-value]
+        return self.first_internal_system_of_type(TrainingFacility)
 
     @property
     def workshop(self) -> Workshop | None:
-        return self.first_internal_system_of_type(Workshop)  # type: ignore[return-value]
+        return self.first_internal_system_of_type(Workshop)
 
     def _all_parts(self) -> list[ShipPart]:
         return [*self.internal_systems, *self.drones]

@@ -39,11 +39,11 @@ def build_serrano_laboratory_station() -> ship.Ship:
         design_type=ship.ShipDesignType.STANDARD,
         passenger_vector={},
         hull=hull.Hull(configuration=hull.dispersed_structure),
-        drives=DriveSection(m_drive=MDrive(1)),
+        drives=DriveSection(m_drive=MDrive(level=1)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=60)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=8)),
         command=CommandSection(bridge=Bridge(small=True)),
-        computer=ComputerSection(hardware=Computer(10)),
+        computer=ComputerSection(hardware=Computer(score=10)),
         sensors=SensorsSection(primary=MilitarySensors()),
         craft=CraftSection(internal_housing=[InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft'))]),
         systems=SystemsSection(

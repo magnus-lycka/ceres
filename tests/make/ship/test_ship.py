@@ -55,7 +55,7 @@ def test_ship_rejects_passenger_vector_list_form():
             tl=12,
             displacement=100,
             hull=hull.Hull(configuration=hull.sphere),
-            passenger_vector=[('middle', 2)],
+            passenger_vector=[('middle', 2)],  # type: ignore
         )
 
 
@@ -231,7 +231,7 @@ def test_ship_total_power_load_includes_basic_and_active_systems():
         tl=12,
         displacement=6,
         hull=hull.Hull(configuration=hull.standard_hull),
-        drives=DriveSection(m_drive=MDrive(6)),
+        drives=DriveSection(m_drive=MDrive(level=6)),
         command=CommandSection(cockpit=Cockpit()),
         sensors=SensorsSection(primary=CivilianSensors()),
         weapons=WeaponsSection(
@@ -240,7 +240,7 @@ def test_ship_total_power_load_includes_basic_and_active_systems():
                     weapons=[
                         MountWeapon(
                             weapon='pulse_laser',
-                            customisation=HighTechnology(VeryHighYield, EnergyEfficient),
+                            customisation=HighTechnology(modifications=[VeryHighYield, EnergyEfficient]),
                         )
                     ]
                 )
@@ -255,7 +255,7 @@ def test_ship_gets_warning_when_total_power_load_exceeds_available_power():
         tl=12,
         displacement=50,
         hull=hull.Hull(configuration=hull.streamlined_hull, airlocks=[Airlock()]),
-        drives=DriveSection(m_drive=MDrive(1)),
+        drives=DriveSection(m_drive=MDrive(level=1)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=10)),
         command=CommandSection(bridge=Bridge()),
         systems=SystemsSection(internal_systems=[Workshop()]),

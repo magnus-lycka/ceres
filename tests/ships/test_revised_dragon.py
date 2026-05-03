@@ -98,20 +98,22 @@ def build_revised_dragon() -> ship.Ship:
             armour=armour.CrystalironArmour(protection=13),
             airlocks=[Airlock(), Airlock(), Airlock(), Airlock()],
         ),
-        drives=DriveSection(m_drive=MDrive(7, customisation=Budget(IncreasedSize), armoured_bulkhead=True)),
+        drives=DriveSection(
+            m_drive=MDrive(level=7, customisation=Budget(modifications=[IncreasedSize]), armoured_bulkhead=True)
+        ),
         power=PowerSection(
             fusion_plant=FusionPlantTL12(
                 output=482,
-                customisation=Budget(IncreasedSize),
+                customisation=Budget(modifications=[IncreasedSize]),
                 armoured_bulkhead=True,
             )
         ),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=16, armoured_bulkhead=True)),
         command=CommandSection(bridge=Bridge(holographic=True, armoured_bulkhead=True)),
         computer=ComputerSection(
-            hardware=Computer(25, fib=True),
-            backup_hardware=Computer(20, fib=True),
-            software=[AutoRepair(1), FireControl(2), Evade(1)],
+            hardware=Computer(score=25, fib=True),
+            backup_hardware=Computer(score=20, fib=True),
+            software=[AutoRepair(rating=1), FireControl(rating=2), Evade(rating=1)],
         ),
         sensors=SensorsSection(
             primary=ImprovedSensors(armoured_bulkhead=True),
@@ -122,20 +124,27 @@ def build_revised_dragon() -> ship.Ship:
         ),
         weapons=WeaponsSection(
             barbettes=[
-                Barbette(weapon='particle', customisation=VeryAdvanced(VeryHighYield), armoured_bulkhead=True),
-                Barbette(weapon='particle', customisation=VeryAdvanced(VeryHighYield), armoured_bulkhead=True),
+                Barbette(
+                    weapon='particle', customisation=VeryAdvanced(modifications=[VeryHighYield]), armoured_bulkhead=True
+                ),
+                Barbette(
+                    weapon='particle', customisation=VeryAdvanced(modifications=[VeryHighYield]), armoured_bulkhead=True
+                ),
             ],
             bays=[
                 Bay(
                     size='small',
                     weapon='missile',
-                    customisation=HighTechnology(SizeReduction, SizeReduction, SizeReduction),
+                    customisation=HighTechnology(modifications=[SizeReduction, SizeReduction, SizeReduction]),
                     armoured_bulkhead=True,
                 )
             ],
             point_defense_batteries=[
                 PointDefenseBattery(
-                    kind='laser', rating=2, customisation=Advanced(EnergyEfficient), armoured_bulkhead=True
+                    kind='laser',
+                    rating=2,
+                    customisation=Advanced(modifications=[EnergyEfficient]),
+                    armoured_bulkhead=True,
                 )
             ],
             missile_storage=MissileStorage(count=408, armoured_bulkhead=True),

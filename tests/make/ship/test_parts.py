@@ -41,7 +41,7 @@ def test_base_part():
     part.bind(owner)
     assert part.cost == 1
     assert part.tl == 9
-    assert part.ship_tl == 14
+    assert part.assembly_tl == 14
     assert part.power == 3.14
     assert part.tons == 4.44
     assert part.compute_cost() == 1
@@ -55,12 +55,12 @@ def test_part_rejects_ship_below_tl():
     assert [('error', 'Requires TL15, ship is TL14')] == [(note.category.value, note.message) for note in part.notes]
 
 
-def test_part_ship_raises_before_bind():
+def test_part_assembly_raises_before_bind():
     part = FixedPart.model_validate({})
     try:
-        _ = part.ship
+        _ = part.assembly
     except RuntimeError as exc:
-        assert str(exc) == 'FixedPart not bound to a Ship'
+        assert str(exc) == 'FixedPart not bound to an Assembly'
     else:
         raise AssertionError('Expected RuntimeError')
 
@@ -77,7 +77,9 @@ def test_part_can_generate_armoured_bulkhead_from_own_values():
 
 def test_customisable_part_build_notes_appends_customisation_note():
     part = CustomPart(
-        customisation=parts.HighTechnology(parts.EnergyEfficient, parts.SizeReduction, parts.SizeReduction)
+        customisation=parts.HighTechnology(
+            modifications=[parts.EnergyEfficient, parts.SizeReduction, parts.SizeReduction]
+        )
     )
     assert ('info', 'High Technology: Energy Efficient, Size Reduction × 2') in [
         (note.category.value, note.message) for note in part.notes
@@ -85,13 +87,13 @@ def test_customisable_part_build_notes_appends_customisation_note():
 
 
 def test_customisable_part_group_key_differs_for_different_customisations():
-    part_a = CustomPart(customisation=parts.Advanced(parts.SizeReduction))
-    part_b = CustomPart(customisation=parts.Budget(parts.IncreasedSize))
+    part_a = CustomPart(customisation=parts.Advanced(modifications=[parts.SizeReduction]))
+    part_b = CustomPart(customisation=parts.Budget(modifications=[parts.IncreasedSize]))
     assert part_a.group_key != part_b.group_key
 
 
 def test_customisable_part_rejects_disallowed_customisation_on_bind():
-    part = CustomPart(customisation=parts.Advanced(OrbitalRange))
+    part = CustomPart(customisation=parts.Advanced(modifications=[OrbitalRange]))
     part.bind(DummyShip())
     assert ('error', 'Modification not allowed for CustomPart: Orbital Range') in [
         (note.category.value, note.message) for note in part.notes
@@ -115,13 +117,21 @@ def test_customisable_part_without_customisation_uses_part_tl():
 @pytest.mark.parametrize(
     ('customisation', 'ship_tl', 'expected'),
     [
-        (parts.EarlyPrototype(parts.IncreasedSize, parts.IncreasedSize), 9, 'Requires TL10, ship is TL9'),
-        (parts.Prototype(parts.IncreasedSize), 10, 'Requires TL11, ship is TL10'),
-        (parts.Budget(parts.IncreasedSize), 11, 'Requires TL12, ship is TL11'),
-        (parts.Advanced(parts.SizeReduction), 12, 'Requires TL13, ship is TL12'),
-        (parts.VeryAdvanced(parts.SizeReduction, parts.SizeReduction), 13, 'Requires TL14, ship is TL13'),
         (
-            parts.HighTechnology(parts.SizeReduction, parts.SizeReduction, parts.SizeReduction),
+            parts.EarlyPrototype(modifications=[parts.IncreasedSize, parts.IncreasedSize]),
+            9,
+            'Requires TL10, ship is TL9',
+        ),
+        (parts.Prototype(modifications=[parts.IncreasedSize]), 10, 'Requires TL11, ship is TL10'),
+        (parts.Budget(modifications=[parts.IncreasedSize]), 11, 'Requires TL12, ship is TL11'),
+        (parts.Advanced(modifications=[parts.SizeReduction]), 12, 'Requires TL13, ship is TL12'),
+        (
+            parts.VeryAdvanced(modifications=[parts.SizeReduction, parts.SizeReduction]),
+            13,
+            'Requires TL14, ship is TL13',
+        ),
+        (
+            parts.HighTechnology(modifications=[parts.SizeReduction, parts.SizeReduction, parts.SizeReduction]),
             14,
             'Requires TL15, ship is TL14',
         ),
@@ -134,7 +144,7 @@ def test_customisable_part_applies_customisation_tl_delta(customisation, ship_tl
 
 
 def test_prototype_warns_when_ship_tl_is_high_enough_without_it():
-    part = Tl12CustomPart(customisation=parts.Prototype(parts.IncreasedSize))
+    part = Tl12CustomPart(customisation=parts.Prototype(modifications=[parts.IncreasedSize]))
     part.bind(DummyShip(tl=12))
     assert ('warning', 'Prototype not required: ship TL12 exceeds required TL11') in [
         (note.category.value, note.message) for note in part.notes
@@ -142,7 +152,7 @@ def test_prototype_warns_when_ship_tl_is_high_enough_without_it():
 
 
 def test_early_prototype_warns_when_prototype_would_suffice():
-    part = Tl12CustomPart(customisation=parts.EarlyPrototype(parts.IncreasedSize, parts.IncreasedSize))
+    part = Tl12CustomPart(customisation=parts.EarlyPrototype(modifications=[parts.IncreasedSize, parts.IncreasedSize]))
     part.bind(DummyShip(tl=11))
     assert ('warning', 'Early Prototype not required: ship TL11 exceeds required TL10') in [
         (note.category.value, note.message) for note in part.notes

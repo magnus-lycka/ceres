@@ -119,19 +119,19 @@ def test_advanced_entertainment_system_requires_cost_in_allowed_range():
 
 
 def test_cabin_space_cost():
-    cabin = CabinSpace(15.0)
+    cabin = CabinSpace(tons=15.0)
     cabin.bind(DummyOwner(12, 100))
     assert cabin.cost == 750_000.0
 
 
 def test_cabin_space_passenger_capacity():
-    cabin = CabinSpace(15.0)
+    cabin = CabinSpace(tons=15.0)
     cabin.bind(DummyOwner(12, 100))
     assert cabin.passenger_capacity == 10
 
 
 def test_cabin_space_fixed_life_support_cost():
-    cabin = CabinSpace(15.0)
+    cabin = CabinSpace(tons=15.0)
     cabin.bind(DummyOwner(12, 100))
     assert cabin.fixed_life_support_cost == 3_750.0
 
@@ -204,10 +204,10 @@ def test_habitation_explicit_passenger_vector_overrides_default():
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(j_drive=JDrive(1)),
+        drives=DriveSection(j_drive=JDrive(level=1)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=10)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(5)),
+        computer=ComputerSection(hardware=Computer(score=5)),
         habitation=HabitationSection(staterooms=[Stateroom()] * 4),
         passenger_vector={'high': 1},
     )
@@ -261,6 +261,7 @@ def test_explicit_middle_passengers_must_fit_in_remaining_non_crew_beds():
         passenger_vector={'middle': 13},
     )
 
+    assert my_ship.habitation is not None
     assert ('error', 'Middle passage exceeds available non-crew beds: 13 > 12') in [
         (note.category.value, note.message) for note in my_ship.habitation.notes
     ]
@@ -276,6 +277,7 @@ def test_explicit_low_passengers_must_fit_in_low_berths():
         passenger_vector={'low': 5},
     )
 
+    assert my_ship.habitation is not None
     assert ('error', 'Low passage exceeds available low berths: 5 > 4') in [
         (note.category.value, note.message) for note in my_ship.habitation.notes
     ]
@@ -307,6 +309,7 @@ def test_one_more_high_passenger_than_capacity_errors():
         passenger_vector={'high': 7, 'middle': 0},
     )
 
+    assert my_ship.habitation is not None
     assert ('error', 'High passage exceeds available non-crew staterooms: 7 > 6') in [
         (note.category.value, note.message) for note in my_ship.habitation.notes
     ]
@@ -322,6 +325,7 @@ def test_one_more_middle_passenger_than_capacity_errors():
         passenger_vector={'high': 4, 'middle': 5},
     )
 
+    assert my_ship.habitation is not None
     assert ('error', 'Middle passage exceeds available non-crew beds: 5 > 4') in [
         (note.category.value, note.message) for note in my_ship.habitation.notes
     ]
@@ -385,6 +389,7 @@ def test_one_more_high_does_not_fit_even_with_spare_beds():
         passenger_vector={'high': 4, 'middle': 3},
     )
 
+    assert my_ship.habitation is not None
     assert ('error', 'Middle passage exceeds available non-crew beds: 3 > 2') in [
         (note.category.value, note.message) for note in my_ship.habitation.notes
     ]

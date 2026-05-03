@@ -95,8 +95,8 @@ def pytest_sessionstart(session: pytest.Session) -> None:
     profiler = cProfile.Profile()
     profiler.enable()
 
-    config._session_profiler = profiler
-    config._session_profile_dir = output_dir
+    config._session_profiler = profiler  # type: ignore
+    config._session_profile_dir = output_dir  # type: ignore
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
@@ -107,7 +107,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
 
     profiler.disable()
 
-    output_dir: Path = config._session_profile_dir
+    output_dir: Path = config._session_profile_dir  # type: ignore
     stats_path = output_dir / 'session.pstats'
     report_path = output_dir / 'session.txt'
     sort_key = config.getoption('--profile-sort')
@@ -122,9 +122,9 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     stats.print_stats(limit)
     report_path.write_text(report_buffer.getvalue(), encoding='utf-8')
 
-    config._session_profile_stats_path = stats_path
-    config._session_profile_report_path = report_path
-    config._session_profile_report = report_buffer.getvalue()
+    config._session_profile_stats_path = stats_path  # type: ignore
+    config._session_profile_report_path = report_path  # type: ignore
+    config._session_profile_report = report_buffer.getvalue()  # type: ignore
 
 
 def pytest_terminal_summary(
@@ -136,8 +136,8 @@ def pytest_terminal_summary(
     if report is None:
         return
 
-    stats_path: Path = config._session_profile_stats_path
-    report_path: Path = config._session_profile_report_path
+    stats_path: Path = config._session_profile_stats_path  # type: ignore
+    report_path: Path = config._session_profile_report_path  # type: ignore
     sort_key = config.getoption('--profile-sort')
     limit = config.getoption('--profile-limit')
 

@@ -57,7 +57,7 @@ def build_beowulf() -> ship.Ship:
             armour=armour.CrystalironArmour(protection=2),
             airlocks=[Airlock(), Airlock()],
         ),
-        drives=DriveSection(m_drive=MDrive(1), j_drive=JDrive(1)),
+        drives=DriveSection(m_drive=MDrive(level=1), j_drive=JDrive(level=1)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=75)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=1),
@@ -65,7 +65,7 @@ def build_beowulf() -> ship.Ship:
             fuel_processor=FuelProcessor(tons=1),
         ),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(5), software=[JumpControl(1)]),
+        computer=ComputerSection(hardware=Computer(score=5), software=[JumpControl(rating=1)]),
         sensors=SensorsSection(primary=CivilianSensors()),
         habitation=HabitationSection(
             staterooms=[Stateroom()] * 10,

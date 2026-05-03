@@ -25,8 +25,8 @@ class Armour(ShipPart):
             data = {k: v for k, v in data.items() if k != 'tl'}
         return data
 
-    def bind(self, owner: ShipBase) -> None:
-        super().bind(owner)
+    def bind(self, assembly: ShipBase) -> None:
+        super().bind(assembly)
         self.check_protection_limit()
 
     def _selected_tl(self) -> int | None:
@@ -35,12 +35,12 @@ class Armour(ShipPart):
         Returns None and adds an error note if the TL is invalid.
         """
         if self.part_tl:
-            if self.ship.tl < self.part_tl:
-                self.error(f'Ship TL{self.ship.tl} is below armour TL{self.part_tl}')
+            if self.assembly.tl < self.part_tl:
+                self.error(f'Ship TL{self.assembly.tl} is below armour TL{self.part_tl}')
                 return None
             tl = self.part_tl
         else:
-            tl = self.ship.tl
+            tl = self.assembly.tl
         if tl < self._min_tl:
             self.error(f'{self.description} requires TL{self._min_tl}')
             return None
@@ -56,7 +56,7 @@ class Armour(ShipPart):
         return self.compute_tons() * self._cost_per_ton
 
     def compute_tons(self) -> float:
-        displacement = self.ship.displacement
+        displacement = self.assembly.displacement
         if displacement < 5:
             self.error('Displacement must be at least 5 tons for armour.')
             return 0.0
@@ -68,7 +68,7 @@ class Armour(ShipPart):
             size_factor = 2
         else:
             size_factor = 1
-        armour_volume_modifier = self.ship.armour_volume_modifier
+        armour_volume_modifier = self.assembly.armour_volume_modifier
         return displacement * self._tonnage_consumed * self.protection * size_factor * armour_volume_modifier
 
 

@@ -96,14 +96,14 @@ def build_dragon() -> ship.Ship:
             armour=armour.CrystalironArmour(protection=13),
             airlocks=[Airlock(), Airlock(), Airlock(), Airlock()],
         ),
-        drives=DriveSection(m_drive=MDrive(7, armoured_bulkhead=True)),
+        drives=DriveSection(m_drive=MDrive(level=7, armoured_bulkhead=True)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=450, armoured_bulkhead=True)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=16, armoured_bulkhead=True)),
         command=CommandSection(bridge=Bridge(holographic=True, armoured_bulkhead=True)),
         computer=ComputerSection(
-            hardware=Computer(25, fib=True),
-            backup_hardware=Computer(20, fib=True),
-            software=[AutoRepair(1), FireControl(2), Evade(1)],
+            hardware=Computer(score=25, fib=True),
+            backup_hardware=Computer(score=20, fib=True),
+            software=[AutoRepair(rating=1), FireControl(rating=2), Evade(rating=1)],
         ),
         sensors=SensorsSection(
             primary=ImprovedSensors(armoured_bulkhead=True),
@@ -121,7 +121,7 @@ def build_dragon() -> ship.Ship:
                 Bay(
                     size='small',
                     weapon='missile',
-                    customisation=HighTechnology(SizeReduction, SizeReduction, SizeReduction),
+                    customisation=HighTechnology(modifications=[SizeReduction, SizeReduction, SizeReduction]),
                     armoured_bulkhead=True,
                 )
             ],
@@ -321,6 +321,6 @@ def test_dragon_power_and_crew_for_current_subset():
 
 def test_armoured_bulkhead_protected_parts_have_individual_notes():
     dragon = build_dragon()
-    assert dragon.drives is not None
+    assert dragon.drives is not None and dragon.drives.m_drive is not None
     all_notes = [(n.category.value, n.message) for n in dragon.drives.m_drive.notes]
     assert ('info', 'Armoured bulkhead, see Hull section.') in all_notes

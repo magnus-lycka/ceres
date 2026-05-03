@@ -55,11 +55,6 @@ class RatedSoftwarePackage(SoftwarePackage):
     _label: ClassVar[str]
     _specs: ClassVar[dict[int, dict[str, int | float]]]
 
-    def __init__(self, rating: int | None = None, /, **data):
-        if rating is not None and 'rating' not in data:
-            data['rating'] = rating
-        super().__init__(**data)
-
     @field_validator('rating')
     @classmethod
     def validate_rating(cls, value: int) -> int:
@@ -223,11 +218,6 @@ class Expert(SoftwarePackage):
     }
     FALLBACK_TL: ClassVar[int] = 11
     FALLBACK_COST: ClassVar[float] = 1_000.0
-
-    def __init__(self, rating: int | None = None, /, *, skill: str, **data):
-        if rating is not None and 'rating' not in data:
-            data['rating'] = rating
-        super().__init__(skill=skill, **data)
 
     @field_validator('skill')
     @classmethod

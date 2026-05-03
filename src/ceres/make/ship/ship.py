@@ -322,7 +322,7 @@ class Ship(ShipBase):
         super().model_post_init(__context)
         if self.tl > 16:
             raise ValueError(f'Ceres currently supports TL16 and lower, got TL{self.tl}')
-        if self.hull.airlocks is None and self.displacement >= 100:
+        if not self.hull.airlocks and self.displacement >= 100:
             minimum_airlocks = ceil(self.displacement / 500)
             object.__setattr__(
                 self,
@@ -364,10 +364,10 @@ class Ship(ShipBase):
             else:
                 self.warning(message)
         minimum_airlocks = ceil(self.displacement / 500) if self.displacement >= 100 else 0
-        installed_airlocks = len(self.hull.airlocks or [])
+        installed_airlocks = len(self.hull.airlocks)
         if minimum_airlocks and installed_airlocks < minimum_airlocks:
             self.warning(f'Installed airlocks below minimum recommendation: {installed_airlocks} < {minimum_airlocks}')
-        if self.command is not None and self.command.bridge is not None and not (self.hull.airlocks or []):
+        if self.command is not None and self.command.bridge is not None and not self.hull.airlocks:
             self.error('No airlock installed')
         recommended_armouries = _recommended_armouries(self)
         installed_armouries = 0 if self.systems is None else len(self.systems.internal_systems_of_type(Armoury))

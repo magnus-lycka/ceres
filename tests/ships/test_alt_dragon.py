@@ -83,7 +83,9 @@ from ._output import write_html_output, write_json_output
 def build_alt_dragon() -> ship.Ship:
     """Build the alternate Dragon reference case from refs/alt_dragon.txt."""
 
-    fusion_plant = FusionPlantTL12(output=436, customisation=Advanced(SizeReduction), armoured_bulkhead=True)
+    fusion_plant = FusionPlantTL12(
+        output=436, customisation=Advanced(modifications=[SizeReduction]), armoured_bulkhead=True
+    )
 
     return ship.Ship(
         ship_class='Dragon',
@@ -102,7 +104,9 @@ def build_alt_dragon() -> ship.Ship:
             armoured_bulkheads=[],
             airlocks=[Airlock(), Airlock(), Airlock(), Airlock()],
         ),
-        drives=DriveSection(m_drive=MDrive(7, customisation=Budget(IncreasedSize), armoured_bulkhead=True)),
+        drives=DriveSection(
+            m_drive=MDrive(level=7, customisation=Budget(modifications=[IncreasedSize]), armoured_bulkhead=True)
+        ),
         power=PowerSection(
             fusion_plant=fusion_plant,
             emergency_power_system=EmergencyPowerSystem.from_fusion_plant(fusion_plant),
@@ -113,9 +117,9 @@ def build_alt_dragon() -> ship.Ship:
         ),
         command=CommandSection(bridge=Bridge(holographic=True, armoured_bulkhead=True)),
         computer=ComputerSection(
-            hardware=Core(40, fib=True),
-            backup_hardware=Computer(20, fib=True),
-            software=[AutoRepair(1), FireControl(2), Evade(1)],
+            hardware=Core(score=40, fib=True),
+            backup_hardware=Computer(score=20, fib=True),
+            software=[AutoRepair(rating=1), FireControl(rating=2), Evade(rating=1)],
         ),
         sensors=SensorsSection(
             primary=ImprovedSensors(),
@@ -125,20 +129,27 @@ def build_alt_dragon() -> ship.Ship:
         ),
         weapons=WeaponsSection(
             barbettes=[
-                Barbette(weapon='particle', customisation=Advanced(SizeReduction), armoured_bulkhead=True),
-                Barbette(weapon='particle', customisation=Advanced(SizeReduction), armoured_bulkhead=True),
+                Barbette(
+                    weapon='particle', customisation=Advanced(modifications=[SizeReduction]), armoured_bulkhead=True
+                ),
+                Barbette(
+                    weapon='particle', customisation=Advanced(modifications=[SizeReduction]), armoured_bulkhead=True
+                ),
             ],
             bays=[
                 Bay(
                     size='small',
                     weapon='missile',
-                    customisation=HighTechnology(SizeReduction, SizeReduction, SizeReduction),
+                    customisation=HighTechnology(modifications=[SizeReduction, SizeReduction, SizeReduction]),
                     armoured_bulkhead=True,
                 )
             ],
             point_defense_batteries=[
                 PointDefenseBattery(
-                    kind='laser', rating=2, customisation=Advanced(SizeReduction), armoured_bulkhead=True
+                    kind='laser',
+                    rating=2,
+                    customisation=Advanced(modifications=[SizeReduction]),
+                    armoured_bulkhead=True,
                 )
             ],
             missile_storage=MissileStorage(count=720, armoured_bulkhead=True),

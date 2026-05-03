@@ -14,9 +14,9 @@ TODO: Specialised Computers not yet implemented:
   - Intellect variant: TL9, cost x10 of standard computer
 """
 
-from typing import ClassVar, Literal
+from typing import Any, ClassVar, Literal
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from ceres.gear.software import Expert, SoftwarePackage
 from ceres.shared import CeresPart, Equipment, Note, NoteCategory
@@ -30,25 +30,30 @@ class ComputerPart(CeresPart):
 
 
 class ComputerEquipment(Equipment):
+    processing: int | None = Field(default=None, exclude=True)
     parts: list[ComputerPart] = Field(default_factory=list)
     _label: ClassVar[str]
     _specs: ClassVar[dict[int, dict[str, int | float]]]
 
-    def __init__(self, processing: int | None = None, /, **data):
-        if processing is not None and 'parts' not in data:
-            specs = type(self)._specs
-            if processing not in specs:
-                allowed = ', '.join(str(v) for v in sorted(specs))
-                raise ValueError(
-                    f'Unsupported {type(self).__name__} processing {processing}; expected one of: {allowed}'
-                )
-            spec = specs[processing]
-            part = ComputerPart(processing=processing, tl=int(spec['tl']), cost=float(spec['cost']))
-            data.setdefault('parts', [part])
-            data.setdefault('tl', part.tl)
-            data.setdefault('cost', part.cost)
-            data.setdefault('mass_kg', float(spec['mass_kg']))
-        super().__init__(**data)
+    @model_validator(mode='before')
+    @classmethod
+    def _resolve_processing(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        processing = data.get('processing')
+        if processing is None or 'parts' in data:
+            return data
+        specs = cls._specs
+        if processing not in specs:
+            allowed = ', '.join(str(v) for v in sorted(specs))
+            raise ValueError(f'Unsupported {cls.__name__} processing {processing}; expected one of: {allowed}')
+        spec = specs[processing]
+        part = ComputerPart(processing=processing, tl=int(spec['tl']), cost=float(spec['cost']))
+        data.setdefault('parts', [part])
+        data.setdefault('tl', part.tl)
+        data.setdefault('cost', part.cost)
+        data.setdefault('mass_kg', float(spec['mass_kg']))
+        return data
 
     def can_run(self, *packages: SoftwarePackage) -> bool:
         return self.parts[0].can_run(*packages)
@@ -190,6 +195,7 @@ _EXPERT_DIFFICULTY: dict[int, str] = {
 
 
 class SpecialisedComputer(Equipment):
+    processing: int | None = Field(default=None, exclude=True)
     parts: list[ComputerPart] = Field(default_factory=list)
     expert: Expert
     variant: Literal['intelligent_interface', 'intellect']
@@ -198,21 +204,29 @@ class SpecialisedComputer(Equipment):
     _BASE_SPECS: ClassVar[dict[int, dict[str, int | float]]] = PortableComputer._specs
     _FORM_LABEL: ClassVar[str] = 'Portable Computer'
 
-    def __init__(self, processing: int | None = None, /, *, expert: Expert, variant: str, **data):
-        if processing is not None and 'parts' not in data:
-            base_specs = type(self)._BASE_SPECS
-            if processing not in base_specs:
-                data.setdefault('invalid_processing', processing)
-            else:
-                spec = base_specs[processing]
-                part = ComputerPart(processing=processing, tl=int(spec['tl']), cost=float(spec['cost']))
-                multiplier = _VARIANT_MULTIPLIER[variant]
-                total_cost = float(spec['cost']) * multiplier + expert.cost
-                data.setdefault('parts', [part])
-                data.setdefault('tl', max(part.tl, expert.tl))
-                data.setdefault('cost', total_cost)
-                data.setdefault('mass_kg', float(spec['mass_kg']))
-        super().__init__(expert=expert, variant=variant, **data)
+    @model_validator(mode='before')
+    @classmethod
+    def _resolve_processing(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        processing = data.get('processing')
+        if processing is None or 'parts' in data:
+            return data
+        base_specs = cls._BASE_SPECS
+        if processing not in base_specs:
+            data.setdefault('invalid_processing', processing)
+            return data
+        spec = base_specs[processing]
+        part = ComputerPart(processing=processing, tl=int(spec['tl']), cost=float(spec['cost']))
+        multiplier = _VARIANT_MULTIPLIER[data['variant']]
+        raw_expert = data['expert']
+        expert = raw_expert if isinstance(raw_expert, Expert) else Expert.model_validate(raw_expert)
+        total_cost = float(spec['cost']) * multiplier + expert.cost
+        data.setdefault('parts', [part])
+        data.setdefault('tl', max(part.tl, expert.tl))
+        data.setdefault('cost', total_cost)
+        data.setdefault('mass_kg', float(spec['mass_kg']))
+        return data
 
     def can_run(self, *packages: SoftwarePackage) -> bool:
         return self.parts[0].can_run(*packages)

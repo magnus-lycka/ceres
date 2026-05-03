@@ -75,15 +75,17 @@ def build_revised_beowulf() -> ship.Ship:
             armour=armour.CrystalironArmour(protection=2),
             airlocks=[Airlock(), Airlock()],
         ),
-        drives=DriveSection(m_drive=MDrive(1), j_drive=JDrive(1)),
-        power=PowerSection(fusion_plant=FusionPlantTL12(output=65, customisation=Budget(IncreasedSize))),
+        drives=DriveSection(m_drive=MDrive(level=1), j_drive=JDrive(level=1)),
+        power=PowerSection(
+            fusion_plant=FusionPlantTL12(output=65, customisation=Budget(modifications=[IncreasedSize]))
+        ),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=1),
             operation_fuel=OperationFuel(weeks=4),
             fuel_processor=FuelProcessor(tons=1),
         ),
         command=CommandSection(bridge=Bridge(holographic=True)),
-        computer=ComputerSection(hardware=Computer(5), software=[JumpControl(1)]),
+        computer=ComputerSection(hardware=Computer(score=5), software=[JumpControl(rating=1)]),
         sensors=SensorsSection(primary=CivilianSensors()),
         systems=SystemsSection(internal_systems=[MedicalBay(), Workshop()]),
         habitation=HabitationSection(

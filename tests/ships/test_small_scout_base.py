@@ -99,14 +99,14 @@ def build_small_scout_base() -> ship.Ship:
             ]
         ),
         hull=hull.Hull(configuration=light_dispersed, airlocks=[Airlock() for _ in range(24)]),
-        drives=DriveSection(m_drive=MDrive(0)),
+        drives=DriveSection(m_drive=MDrive(level=0)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=2_500)),
         fuel=FuelSection(
             operation_fuel=OperationFuel(weeks=12),
             fuel_processor=FuelProcessor(tons=5),
         ),
         command=CommandSection(bridge=Bridge(small=True)),
-        computer=ComputerSection(hardware=Computer(20)),
+        computer=ComputerSection(hardware=Computer(score=20)),
         sensors=SensorsSection(primary=BasicSensors()),
         weapons=WeaponsSection(
             turrets=[

@@ -13,7 +13,7 @@ def build_small_jump_ship() -> ship.Ship:
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(m_drive=MDrive(2), j_drive=JDrive(2)),
+        drives=DriveSection(m_drive=MDrive(level=2), j_drive=JDrive(level=2)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=60)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=2),
@@ -21,7 +21,7 @@ def build_small_jump_ship() -> ship.Ship:
             fuel_processor=FuelProcessor(tons=2),
         ),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(5, bis=True)),
+        computer=ComputerSection(hardware=Computer(score=5, bis=True)),
         habitation=HabitationSection(staterooms=[Stateroom()] * 4),
     )
 
@@ -81,11 +81,11 @@ def test_operation_fuel_contributes_monthly_unrefined_cost():
         tl=9,
         displacement=200,
         hull=hull.Hull(configuration=hull.close_structure.model_copy(update={'light': True})),
-        drives=DriveSection(m_drive=MDrive(1)),
+        drives=DriveSection(m_drive=MDrive(level=1)),
         power=PowerSection(fusion_plant=FusionPlantTL8(output=80)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=12)),
         command=CommandSection(bridge=Bridge(small=True)),
-        computer=ComputerSection(hardware=Computer(5)),
+        computer=ComputerSection(hardware=Computer(score=5)),
         habitation=HabitationSection(staterooms=[Stateroom()]),
     )
     assert my_ship.expenses.fuel == pytest.approx(100.0)
@@ -96,11 +96,11 @@ def test_operation_fuel_cost_is_zero_with_scoops_and_no_jump_drive():
         tl=13,
         displacement=400,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(m_drive=MDrive(1)),
+        drives=DriveSection(m_drive=MDrive(level=1)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=80)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=16)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(5)),
+        computer=ComputerSection(hardware=Computer(score=5)),
         habitation=HabitationSection(staterooms=[Stateroom()]),
     )
     assert my_ship.expenses.fuel == pytest.approx(0.0)
@@ -120,14 +120,14 @@ def test_jump_drive_still_requires_refined_fuel_without_processor():
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(m_drive=MDrive(2), j_drive=JDrive(2)),
+        drives=DriveSection(m_drive=MDrive(level=2), j_drive=JDrive(level=2)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=60)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=2),
             operation_fuel=OperationFuel(weeks=12),
         ),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(5, bis=True)),
+        computer=ComputerSection(hardware=Computer(score=5, bis=True)),
         habitation=HabitationSection(staterooms=[Stateroom()] * 4),
     )
 

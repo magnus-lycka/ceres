@@ -42,7 +42,7 @@ class DummyOwner(ShipBase):
     ],
 )
 def test_jdrive_tons_cost_tl(level, tl, pct):
-    d = JDrive(level)
+    d = JDrive(level=level)
     d.bind(DummyOwner(tl, 200))
     expected_tons = 200 * pct + 5
     assert d.tl == tl
@@ -52,7 +52,7 @@ def test_jdrive_tons_cost_tl(level, tl, pct):
 
 
 def test_jdrive_with_decreased_fuel_x2_changes_cost_and_required_tl():
-    d = JDrive(2, customisation=VeryAdvanced(DecreasedFuel, DecreasedFuel))
+    d = JDrive(level=2, customisation=VeryAdvanced(modifications=[DecreasedFuel, DecreasedFuel]))
     d.bind(DummyOwner(15, 450))
     assert d.tl == 11
     assert float(d.tons) == pytest.approx(27.5)
@@ -65,7 +65,9 @@ def test_jump_fuel_respects_decreased_fuel_additively():
         tl=15,
         displacement=450,
         hull=hull.Hull(configuration=hull.standard_hull),
-        drives=DriveSection(j_drive=JDrive(2, customisation=VeryAdvanced(DecreasedFuel, DecreasedFuel))),
+        drives=DriveSection(
+            j_drive=JDrive(level=2, customisation=VeryAdvanced(modifications=[DecreasedFuel, DecreasedFuel]))
+        ),
         fuel=FuelSection(jump_fuel=JumpFuel(parsecs=2)),
     )
     assert my_ship.fuel is not None
@@ -74,7 +76,7 @@ def test_jump_fuel_respects_decreased_fuel_additively():
 
 
 def test_jump_drive_uses_performance_displacement_when_transporting_external_load():
-    d = JDrive(2)
+    d = JDrive(level=2)
     d.bind(DummyOwner(12, 400, maintained_external_displacement=40))
     assert d.build_item() == 'Jump 2 (440t)'
     assert float(d.tons) == pytest.approx(27.0)
@@ -86,15 +88,15 @@ def test_jump_drive_uses_performance_displacement_when_transporting_external_loa
 
 
 def test_mdrive_standard_tons():
-    d = MDrive(6)
+    d = MDrive(level=6)
     d.bind(DummyOwner(12, 6))
     assert d.tl == 12
-    assert d.ship_tl == 12
+    assert d.assembly_tl == 12
     assert float(d.tons) == pytest.approx(0.36)
 
 
 def test_mdrive_uses_performance_displacement_when_transporting_external_load():
-    d = MDrive(2)
+    d = MDrive(level=2)
     d.bind(DummyOwner(12, 400, maintained_external_displacement=40))
     assert d.build_item() == 'M-Drive 2 (440t)'
     assert float(d.tons) == pytest.approx(8.8)
@@ -103,19 +105,19 @@ def test_mdrive_uses_performance_displacement_when_transporting_external_load():
 
 
 def test_mdrive_standard_cost():
-    d = MDrive(6)
+    d = MDrive(level=6)
     d.bind(DummyOwner(12, 6))
     assert float(d.cost) == pytest.approx(720_000)
 
 
 def test_mdrive_power():
-    d = MDrive(6)
+    d = MDrive(level=6)
     d.bind(DummyOwner(12, 6))
     assert d.power == 4  # ceil(0.1 * 6 * 6) = ceil(3.6) = 4
 
 
 def test_mdrive_thrust_zero_uses_station_power_rule():
-    d = MDrive(0)
+    d = MDrive(level=0)
     d.bind(DummyOwner(12, 10_000))
     assert d.tons == pytest.approx(50.0)
     assert d.cost == pytest.approx(100_000_000.0)
@@ -123,7 +125,7 @@ def test_mdrive_thrust_zero_uses_station_power_rule():
 
 
 def test_budget_increased_size_mdrive_values():
-    d = MDrive(7, customisation=Budget(IncreasedSize))
+    d = MDrive(level=7, customisation=Budget(modifications=[IncreasedSize]))
     d.bind(DummyOwner(13, 400))
     assert d.build_item() == 'M-Drive 7'
     assert float(d.tons) == pytest.approx(35.0)
@@ -137,7 +139,7 @@ def test_limited_range_is_drive_specific_customisation():
 
 
 def test_drive_section_all_parts():
-    drives = DriveSection(m_drive=MDrive(6), r_drive=RDrive(3), j_drive=JDrive(2))
+    drives = DriveSection(m_drive=MDrive(level=6), r_drive=RDrive(level=3), j_drive=JDrive(level=2))
     assert drives._all_parts() == [drives.m_drive, drives.r_drive, drives.j_drive]
 
 
@@ -147,7 +149,7 @@ def test_power_section_all_parts():
 
 
 def test_mdrive_tl_too_low():
-    d = MDrive(6)
+    d = MDrive(level=6)
     d.bind(DummyOwner(11, 6))
     assert ('error', 'Requires TL12, ship is TL11') in [(note.category.value, note.message) for note in d.notes]
 
@@ -171,7 +173,7 @@ def test_fusion_plant_base_tons():
     p = FusionPlantTL12(output=8)
     p.bind(DummyOwner(12, 6))
     assert p.tl == 12
-    assert p.ship_tl == 12
+    assert p.assembly_tl == 12
     assert float(p.tons) == pytest.approx(8 / 15)
 
 
@@ -216,7 +218,7 @@ def test_fusion_plant_tl15_variant():
 
 
 def test_budget_increased_size_fusion_plant_values():
-    p = FusionPlantTL12(output=482, customisation=Budget(IncreasedSize))
+    p = FusionPlantTL12(output=482, customisation=Budget(modifications=[IncreasedSize]))
     p.bind(DummyOwner(13, 400))
     assert p.build_item() == 'Fusion (TL 12), Power 482'
     assert float(p.tons) == pytest.approx(40.1666666667)
@@ -224,7 +226,7 @@ def test_budget_increased_size_fusion_plant_values():
 
 
 def test_size_reduced_fusion_plant_values():
-    p = FusionPlantTL12(output=436, customisation=Advanced(SizeReduction))
+    p = FusionPlantTL12(output=436, customisation=Advanced(modifications=[SizeReduction]))
     p.bind(DummyOwner(13, 400))
     assert p.build_item() == 'Fusion (TL 12), Power 436'
     assert float(p.tons) == pytest.approx(26.16)
@@ -237,9 +239,9 @@ def test_emergency_power_system_values():
         displacement=400,
         hull=hull.Hull(configuration=hull.standard_hull),
         power=PowerSection(
-            fusion_plant=FusionPlantTL12(output=436, customisation=Advanced(SizeReduction)),
+            fusion_plant=FusionPlantTL12(output=436, customisation=Advanced(modifications=[SizeReduction])),
             emergency_power_system=EmergencyPowerSystem.from_fusion_plant(
-                FusionPlantTL12(output=436, customisation=Advanced(SizeReduction))
+                FusionPlantTL12(output=436, customisation=Advanced(modifications=[SizeReduction]))
             ),
         ),
     )
@@ -301,7 +303,7 @@ def test_operation_fuel_requires_plant():
 
 
 def test_rdrive_tons_cost_and_power():
-    d = RDrive(16)
+    d = RDrive(level=16)
     d.bind(DummyOwner(12, 6))
     assert d.tl == 12
     assert d.bulkhead_label() == 'R-Drive'
@@ -311,14 +313,14 @@ def test_rdrive_tons_cost_and_power():
 
 
 def test_rdrive_unsupported_level_errors():
-    d = RDrive(99)
+    d = RDrive(level=99)
     with pytest.raises(KeyError):
         d.bind(DummyOwner(12, 6))
     assert ('error', 'Unsupported reaction drive level 99') in [(note.category.value, note.message) for note in d.notes]
 
 
 def test_rdrive_tl_too_low():
-    d = RDrive(16)
+    d = RDrive(level=16)
     d.bind(DummyOwner(11, 6))
     assert ('error', 'Requires TL12, ship is TL11') in [(note.category.value, note.message) for note in d.notes]
 
@@ -328,7 +330,7 @@ def test_reaction_fuel_minutes_of_operation():
         tl=12,
         displacement=6,
         hull=hull.Hull(configuration=hull.standard_hull),
-        drives=DriveSection(r_drive=RDrive(16)),
+        drives=DriveSection(r_drive=RDrive(level=16)),
         fuel=FuelSection(reaction_fuel=ReactionFuel(minutes=52)),
     )
     assert my_ship.fuel is not None
@@ -337,40 +339,40 @@ def test_reaction_fuel_minutes_of_operation():
 
 
 def test_size_reduced_fusion_plant_item_includes_output_but_not_customisation_label():
-    p = FusionPlantTL12(output=436, customisation=Advanced(SizeReduction))
+    p = FusionPlantTL12(output=436, customisation=Advanced(modifications=[SizeReduction]))
     p.bind(DummyOwner(13, 400))
     assert p.build_item() == 'Fusion (TL 12), Power 436'
 
 
 def test_size_reduced_fusion_plant_has_customisation_note():
-    p = FusionPlantTL12(output=436, customisation=Advanced(SizeReduction))
+    p = FusionPlantTL12(output=436, customisation=Advanced(modifications=[SizeReduction]))
     p.bind(DummyOwner(13, 400))
     info_notes = [n.message for n in p.notes if n.category.value == 'info']
     assert 'Advanced: Size Reduction' in info_notes
 
 
 def test_budget_increased_size_mdrive_item_is_base_name_only():
-    p = MDrive(1, customisation=Budget(IncreasedSize))
+    p = MDrive(level=1, customisation=Budget(modifications=[IncreasedSize]))
     p.bind(DummyOwner(12, 100))
     assert p.build_item() == 'M-Drive 1'
 
 
 def test_budget_increased_size_mdrive_has_customisation_note():
-    p = MDrive(1, customisation=Budget(IncreasedSize))
+    p = MDrive(level=1, customisation=Budget(modifications=[IncreasedSize]))
     p.bind(DummyOwner(12, 100))
     info_notes = [n.message for n in p.notes if n.category.value == 'info']
     assert 'Budget: Increased Size' in info_notes
 
 
 def test_mdrive_unsupported_level_errors():
-    d = MDrive(99)
+    d = MDrive(level=99)
     with pytest.raises(KeyError):
         d.bind(DummyOwner(15, 100))
     assert ('error', 'Unsupported M-Drive level 99') in [(note.category.value, note.message) for note in d.notes]
 
 
 def test_jdrive_build_item_parsecs_and_bulkhead_label():
-    d = JDrive(2)
+    d = JDrive(level=2)
     d.bind(DummyOwner(11, 200))
     assert d.build_item() == 'Jump 2'
     assert d.parsecs == 2
@@ -378,14 +380,14 @@ def test_jdrive_build_item_parsecs_and_bulkhead_label():
 
 
 def test_jdrive_unsupported_level_errors():
-    d = JDrive(99)
+    d = JDrive(level=99)
     with pytest.raises(KeyError):
         d.bind(DummyOwner(18, 200))
     assert ('error', 'Unsupported J-Drive level 99') in [(note.category.value, note.message) for note in d.notes]
 
 
 def test_jdrive_tl_too_low():
-    d = JDrive(2)
+    d = JDrive(level=2)
     d.bind(DummyOwner(10, 200))
     assert ('error', 'Requires TL11, ship is TL10') in [(note.category.value, note.message) for note in d.notes]
 
@@ -406,7 +408,7 @@ def test_power_section_adds_emergency_power_system_spec_row():
         displacement=400,
         hull=hull.Hull(configuration=hull.standard_hull),
         power=PowerSection(
-            fusion_plant=FusionPlantTL12(output=436, customisation=Advanced(SizeReduction)),
+            fusion_plant=FusionPlantTL12(output=436, customisation=Advanced(modifications=[SizeReduction])),
             emergency_power_system=EmergencyPowerSystem(),
         ),
     )

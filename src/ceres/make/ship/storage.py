@@ -29,8 +29,8 @@ class OperationFuel(ShipPart):
     def build_item(self) -> str | None:
         return f'Operation {self.actual_weeks} weeks'
 
-    def bind(self, ship) -> None:
-        super().bind(ship)
+    def bind(self, assembly) -> None:
+        super().bind(assembly)
         self.item(self.build_item() or f'Operation {self.weeks} weeks')
 
     def bulkhead_label(self) -> str:
@@ -38,14 +38,14 @@ class OperationFuel(ShipPart):
 
     def compute_tons(self) -> float:
         total = self._raw_tons()
-        if self.ship.displacement < 100:
+        if self.assembly.displacement < 100:
             increment = 0.1
         else:
             increment = 1.0
         return math.ceil(total / increment - 1e-9) * increment
 
     def _raw_tons(self) -> float:
-        power = getattr(self.ship, 'power', None)
+        power = getattr(self.assembly, 'power', None)
         plant = None if power is None else power.fusion_plant
         if plant is None:
             self.error('Ship must have a FusionPlant to compute OperationFuel')
@@ -55,9 +55,9 @@ class OperationFuel(ShipPart):
 
     @property
     def actual_weeks(self) -> int:
-        if self._ship is None:
+        if self._assembly is None:
             return self.weeks
-        power = getattr(self.ship, 'power', None)
+        power = getattr(self.assembly, 'power', None)
         plant = None if power is None else power.fusion_plant
         if plant is None:
             return self.weeks
@@ -78,13 +78,13 @@ class JumpFuel(ShipPart):
     parsecs: int
 
     def build_item(self) -> str | None:
-        if self._ship is not None and self.ship.transported_external_displacement > 0:
-            return f'J-{self.parsecs} ({self.ship.performance_displacement:g}t)'
+        if self._assembly is not None and self.assembly.transported_external_displacement > 0:
+            return f'J-{self.parsecs} ({self.assembly.performance_displacement:g}t)'
         return f'J-{self.parsecs}'
 
     @property
     def _jump_drive(self):
-        drives = getattr(self.ship, 'drives', None)
+        drives = getattr(self.assembly, 'drives', None)
         return None if drives is None else drives.j_drive
 
     def compute_tons(self) -> float:
@@ -92,7 +92,7 @@ class JumpFuel(ShipPart):
         jump_drive = self._jump_drive
         if jump_drive is not None and getattr(jump_drive, 'customisation', None) is not None:
             multiplier = jump_drive.customisation.fuel_multiplier
-        return self.ship.performance_displacement * 0.1 * self.parsecs * multiplier
+        return self.assembly.performance_displacement * 0.1 * self.parsecs * multiplier
 
     def compute_cost(self) -> float:
         return 0.0
@@ -102,7 +102,7 @@ class ReactionFuel(ShipPart):
     minutes: int
 
     def build_item(self) -> str | None:
-        reaction_drive = self._reaction_drive if self._ship is not None else None
+        reaction_drive = self._reaction_drive if self._assembly is not None else None
         if reaction_drive is not None and reaction_drive.high_burn_thruster:
             if self.minutes % 60 == 0:
                 hours = self.minutes // 60
@@ -113,7 +113,7 @@ class ReactionFuel(ShipPart):
 
     @property
     def _reaction_drive(self):
-        drives = getattr(self.ship, 'drives', None)
+        drives = getattr(self.assembly, 'drives', None)
         return None if drives is None else drives.r_drive
 
     def _fuel_rate_per_hour(self) -> float:
@@ -123,7 +123,7 @@ class ReactionFuel(ShipPart):
             return 0.0
         if reaction_drive.level == 0:
             return 0.25
-        return self.ship.performance_displacement * 0.025 * reaction_drive.level
+        return self.assembly.performance_displacement * 0.025 * reaction_drive.level
 
     def compute_tons(self) -> float:
         return self._fuel_rate_per_hour() * (self.minutes / 60)
