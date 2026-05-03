@@ -31,6 +31,7 @@ class ComputerPart(CeresPart):
 
 class ComputerEquipment(Equipment):
     parts: list[ComputerPart] = Field(default_factory=list)
+    _label: ClassVar[str]
     _specs: ClassVar[dict[int, dict[str, int | float]]]
 
     def __init__(self, processing: int | None = None, /, **data):
@@ -53,13 +54,7 @@ class ComputerEquipment(Equipment):
         return self.parts[0].can_run(*packages)
 
     def build_item(self) -> str | None:
-        if not self.parts:
-            return None
         return f'{self._label}/{self.parts[0].processing}'
-
-    @property
-    def _label(self) -> str:
-        return type(self).__name__
 
 
 # ---------------------------------------------------------------------------
@@ -69,20 +64,14 @@ class ComputerEquipment(Equipment):
 
 
 class ComputerTerminal(ComputerEquipment):
-    @property
-    def _label(self) -> str:
-        return 'Computer Terminal'
-
+    _label = 'Computer Terminal'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         0: {'tl': 6, 'mass_kg': 2.0, 'cost': 200.0},
     }
 
 
 class InterfaceDevice(ComputerEquipment):
-    @property
-    def _label(self) -> str:
-        return 'Interface Device'
-
+    _label = 'Interface Device'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         0: {'tl': 8, 'mass_kg': 0.0, 'cost': 100.0},
     }
@@ -94,10 +83,7 @@ class InterfaceDevice(ComputerEquipment):
 
 
 class MainframeComputer(ComputerEquipment):
-    @property
-    def _label(self) -> str:
-        return 'Mainframe Computer'
-
+    _label = 'Mainframe Computer'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         0: {'tl': 5, 'mass_kg': 5_000.0, 'cost': 2_000_000.0},
         1: {'tl': 6, 'mass_kg': 4_000.0, 'cost': 4_000_000.0},
@@ -111,10 +97,7 @@ class MainframeComputer(ComputerEquipment):
 
 
 class MidSizedComputer(ComputerEquipment):
-    @property
-    def _label(self) -> str:
-        return 'Mid-Sized Computer'
-
+    _label = 'Mid-Sized Computer'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         0: {'tl': 6, 'mass_kg': 500.0, 'cost': 500_000.0},
         1: {'tl': 7, 'mass_kg': 50.0, 'cost': 50_000.0},
@@ -132,10 +115,7 @@ class MidSizedComputer(ComputerEquipment):
 
 
 class PortableComputer(ComputerEquipment):
-    @property
-    def _label(self) -> str:
-        return 'Portable Computer'
-
+    _label = 'Portable Computer'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         0: {'tl': 7, 'mass_kg': 5.0, 'cost': 500.0},
         1: {'tl': 8, 'mass_kg': 2.0, 'cost': 250.0},
@@ -147,10 +127,7 @@ class PortableComputer(ComputerEquipment):
 
 
 class Tablet(ComputerEquipment):
-    @property
-    def _label(self) -> str:
-        return 'Tablet'
-
+    _label = 'Tablet'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         0: {'tl': 8, 'mass_kg': 0.25, 'cost': 250.0},
         1: {'tl': 9, 'mass_kg': 0.25, 'cost': 125.0},
@@ -162,10 +139,7 @@ class Tablet(ComputerEquipment):
 
 
 class ComputerChip(ComputerEquipment):
-    @property
-    def _label(self) -> str:
-        return 'Computer Chip'
-
+    _label = 'Computer Chip'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         0: {'tl': 10, 'mass_kg': 0.0, 'cost': 62.5},
         1: {'tl': 11, 'mass_kg': 0.0, 'cost': 31.25},
@@ -176,10 +150,7 @@ class ComputerChip(ComputerEquipment):
 
 
 class MicroscopicChip(ComputerEquipment):
-    @property
-    def _label(self) -> str:
-        return 'Microscopic Chip'
-
+    _label = 'Microscopic Chip'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         0: {'tl': 11, 'mass_kg': 0.0, 'cost': 31.25},
         1: {'tl': 12, 'mass_kg': 0.0, 'cost': 15.625},
@@ -222,6 +193,7 @@ class SpecialisedComputer(Equipment):
     parts: list[ComputerPart] = Field(default_factory=list)
     expert: Expert
     variant: Literal['intelligent_interface', 'intellect']
+    invalid_processing: int | None = None
 
     _BASE_SPECS: ClassVar[dict[int, dict[str, int | float]]] = PortableComputer._specs
     _FORM_LABEL: ClassVar[str] = 'Portable Computer'
@@ -230,33 +202,40 @@ class SpecialisedComputer(Equipment):
         if processing is not None and 'parts' not in data:
             base_specs = type(self)._BASE_SPECS
             if processing not in base_specs:
-                allowed = ', '.join(str(v) for v in sorted(base_specs))
-                raise ValueError(
-                    f'Unsupported {type(self).__name__} processing {processing}; expected one of: {allowed}'
-                )
-            spec = base_specs[processing]
-            part = ComputerPart(processing=processing, tl=int(spec['tl']), cost=float(spec['cost']))
-            multiplier = _VARIANT_MULTIPLIER[variant]
-            total_cost = float(spec['cost']) * multiplier + expert.cost
-            data.setdefault('parts', [part])
-            data.setdefault('tl', max(part.tl, expert.tl))
-            data.setdefault('cost', total_cost)
-            data.setdefault('mass_kg', float(spec['mass_kg']))
+                data.setdefault('invalid_processing', processing)
+            else:
+                spec = base_specs[processing]
+                part = ComputerPart(processing=processing, tl=int(spec['tl']), cost=float(spec['cost']))
+                multiplier = _VARIANT_MULTIPLIER[variant]
+                total_cost = float(spec['cost']) * multiplier + expert.cost
+                data.setdefault('parts', [part])
+                data.setdefault('tl', max(part.tl, expert.tl))
+                data.setdefault('cost', total_cost)
+                data.setdefault('mass_kg', float(spec['mass_kg']))
         super().__init__(expert=expert, variant=variant, **data)
 
     def can_run(self, *packages: SoftwarePackage) -> bool:
         return self.parts[0].can_run(*packages)
 
     def build_item(self) -> str | None:
-        if not self.parts:
+        if self.invalid_processing is not None:
             return None
         p = self.parts[0].processing
         variant_name = _VARIANT_FULL_NAME.get(self.variant, self.variant)
         return f'Specialised {type(self)._FORM_LABEL} {self.expert.skill}/{p} {variant_name}'
 
     def build_notes(self) -> list[Note]:
-        if not self.parts:
-            return []
+        if self.invalid_processing is not None:
+            allowed = ', '.join(str(v) for v in sorted(type(self)._BASE_SPECS))
+            return [
+                Note(
+                    category=NoteCategory.ERROR,
+                    message=(
+                        f'Unsupported {type(self).__name__} processing {self.invalid_processing}; '
+                        f'expected one of: {allowed}'
+                    ),
+                )
+            ]
         part = self.parts[0]
         if not part.can_run(self.expert):
             return [

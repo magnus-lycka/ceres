@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from typing import ClassVar, Literal
 
 from pydantic import field_validator
@@ -5,25 +6,25 @@ from pydantic import field_validator
 from ceres.shared import CeresModel, Note, NoteCategory
 
 
-class SoftwarePackage(CeresModel):
+class SoftwarePackage(CeresModel, ABC):
     package: str
     model_config = {'frozen': True}
 
     @property
-    def description(self) -> str:
-        raise NotImplementedError
+    @abstractmethod
+    def description(self) -> str: ...
 
     @property
-    def bandwidth(self) -> int:
-        raise NotImplementedError
+    @abstractmethod
+    def bandwidth(self) -> int: ...
 
     @property
-    def tl(self) -> int:
-        raise NotImplementedError
+    @abstractmethod
+    def tl(self) -> int: ...
 
     @property
-    def cost(self) -> float:
-        raise NotImplementedError
+    @abstractmethod
+    def cost(self) -> float: ...
 
 
 class FixedSoftwarePackage(SoftwarePackage):
@@ -228,20 +229,10 @@ class Expert(SoftwarePackage):
             data['rating'] = rating
         super().__init__(skill=skill, **data)
 
-    @field_validator('rating')
-    @classmethod
-    def validate_rating(cls, value: int) -> int:
-        if value not in {1, 2, 3}:
-            raise ValueError('Unsupported Expert rating; expected one of: 1, 2, 3')
-        return value
-
     @field_validator('skill')
     @classmethod
     def validate_skill(cls, value: str) -> str:
-        skill = ' '.join(value.strip().split())
-        if not skill:
-            raise ValueError('Expert skill cannot be blank')
-        return skill
+        return ' '.join(value.strip().split())
 
     @property
     def description(self) -> str:
@@ -260,14 +251,24 @@ class Expert(SoftwarePackage):
         return float(self._resolved_spec['cost']) * (10 ** (self.rating - 1))
 
     def build_notes(self) -> list[Note]:
-        if self.skill in type(self).KNOWN_SKILLS:
-            return []
-        return [
-            Note(
-                category=NoteCategory.WARNING,
-                message=f'Unfamiliar Expert skill {self.skill} uses CSC fallback values',
+        notes = []
+        if self.rating not in {1, 2, 3}:
+            notes.append(
+                Note(
+                    category=NoteCategory.ERROR,
+                    message=f'Invalid Expert rating {self.rating}; expected one of: 1, 2, 3',
+                )
             )
-        ]
+        if not self.skill:
+            notes.append(Note(category=NoteCategory.ERROR, message='Expert skill cannot be blank'))
+        elif self.skill not in type(self).KNOWN_SKILLS:
+            notes.append(
+                Note(
+                    category=NoteCategory.WARNING,
+                    message=f'Unfamiliar Expert skill {self.skill} uses CSC fallback values',
+                )
+            )
+        return notes
 
     @property
     def _resolved_spec(self) -> dict[str, int | float]:
