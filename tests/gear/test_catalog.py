@@ -1,5 +1,4 @@
-from ceres.report.gear_html import render_computer_catalog_html
-from ceres.report.gear_pdf import render_computer_catalog_pdf, render_computer_catalog_typst
+from ceres.gear.catalog import render_computer_catalog_html, render_computer_catalog_pdf, render_computer_catalog_typst
 from tests.gear._output import write_html_output, write_pdf_output, write_typst_output
 
 

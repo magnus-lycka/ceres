@@ -11,7 +11,7 @@ from ceres.make.ship.crafts import (
     SpaceCraft,
     Vehicle,
 )
-from ceres.report.ship_view import collapsed_main_rows
+from ceres.make.ship.view import collapsed_main_rows
 
 
 class DummyOwner(ShipBase):

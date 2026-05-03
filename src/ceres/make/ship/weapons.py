@@ -2,7 +2,7 @@ from collections.abc import Sequence
 import math
 from typing import Any, ClassVar, Literal
 
-from pydantic import AliasChoices, Field, model_validator
+from pydantic import Field, model_validator
 
 from .base import CeresModel, Note, NoteCategory
 from .parts import (
@@ -641,10 +641,7 @@ class PointDefenseBattery(CustomisableShipPart):
 
 class WeaponsSection(CeresModel):
     turrets: list[Turret] = Field(default_factory=list)
-    fixed_mounts: list[FixedMount] = Field(
-        default_factory=list,
-        validation_alias=AliasChoices('fixed_mounts', 'fixed_firmpoints'),
-    )
+    fixed_mounts: list[FixedMount] = Field(default_factory=list)
     barbettes: list[Barbette] = Field(default_factory=list)
     bays: list[Bay] = Field(default_factory=list)
     point_defense_batteries: list[PointDefenseBattery] = Field(default_factory=list)
