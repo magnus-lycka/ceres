@@ -1,23 +1,19 @@
 // base.typ — shared design tokens and helpers for ceres reports.
 // Import in domain templates: #import "base.typ": accent, render-notes, ...
 
-#let accent = rgb("#cc2036")
-#let ink-soft = rgb("#666666")
-#let warning-color = rgb("#e07800")
-#let error-color = rgb("#cc2036")
+#import "@preview/gentle-clues:1.2.0": info as gc-info, warning as gc-warning, error as gc-error
 
-// Render a list of note dicts [{category: str, message: str}] as inline content.
+#let accent = rgb("#cc2036")
+
+// One admonition per category, sorted error → warning → info.
 #let render-notes(notes) = {
-  for note in notes {
-    let msg = note.at("message")
-    let cat = note.at("category")
-    if cat == "info" {
-      text(size: 8pt, fill: ink-soft, style: "italic")[#msg]
-    } else if cat == "warning" {
-      text(size: 8pt, fill: warning-color, style: "italic")[Warning: #msg]
-    } else if cat == "error" {
-      text(size: 8pt, fill: error-color, weight: "bold")[Error: #msg]
+  for cat in ("error", "warning", "info") {
+    let msgs = notes.filter(n => n.at("category") == cat).map(n => n.at("message"))
+    if msgs.len() > 0 {
+      let body = msgs.map(m => [#m]).join(linebreak())
+      if cat == "error"        { gc-error[#body] }
+      else if cat == "warning" { gc-warning[#body] }
+      else                     { gc-info[#body] }
     }
-    linebreak()
   }
 }

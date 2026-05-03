@@ -122,12 +122,12 @@ def test_source_contains_info_notes(suleiman_spec):
                 assert note.message in src
 
 
-def test_info_notes_use_default_text_size(suleiman_spec):
+def test_info_notes_use_gentle_clues_info_box(suleiman_spec):
     src = render_ship_spec_typst(suleiman_spec)
-    assert 'style: "italic"' in src
+    assert 'gc-info(' in src
 
 
-def test_source_renders_warning_notes_as_orange_italic():
+def test_source_renders_warning_notes_via_gentle_clues():
     from ceres.make.ship.base import Note, NoteCategory
     from ceres.make.ship.spec import SpecRow, SpecSection
 
@@ -141,11 +141,10 @@ def test_source_renders_warning_notes_as_orange_italic():
     spec.add_row(row)
     src = render_ship_spec_typst(spec)
     assert 'Check this' in src
-    assert 'style: "italic"' in src
-    assert 'e07800' in src
+    assert 'gc-warning(' in src
 
 
-def test_source_renders_error_notes_as_red_bold():
+def test_source_renders_error_notes_via_gentle_clues():
     from ceres.make.ship.base import Note, NoteCategory
     from ceres.make.ship.spec import SpecRow, SpecSection
 
@@ -156,8 +155,7 @@ def test_source_renders_error_notes_as_red_bold():
     spec.add_row(row)
     src = render_ship_spec_typst(spec)
     assert 'Fix this' in src
-    assert 'weight: "bold"' in src
-    assert 'cc2036' in src
+    assert 'gc-error(' in src
 
 
 def test_source_renders_ship_level_notes_below_main_table():
@@ -188,7 +186,7 @@ def test_source_renders_crew_notes_with_crew_table():
     assert 'GUNNER below recommended count: 0 < 1' in src
 
 
-def test_source_escapes_multiple_info_crew_notes_to_avoid_nested_list_indentation():
+def test_source_renders_multiple_info_crew_notes_via_gentle_clues():
     from ceres.make.ship.base import Note, NoteCategory
 
     spec = ShipSpec(ship_class='Test')
@@ -204,8 +202,7 @@ def test_source_escapes_multiple_info_crew_notes_to_avoid_nested_list_indentatio
     assert 'ASTROGATOR above recommended count: 1 > 0' in src
     assert 'GUNNER above recommended count: 6 > 5' in src
     assert 'MAINTENANCE above recommended count: 1 > 0' in src
-    assert '\\-' not in src
-    assert 'style: "italic"' in src
+    assert 'gc-info(' in src
 
 
 def test_source_contains_dragon_bulkhead_notes():

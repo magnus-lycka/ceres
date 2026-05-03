@@ -1,6 +1,8 @@
 // ship_spec.typ — Ship specification sheet.
 // Data injected by Python as: #let report_data = (...)
 
+#import "@preview/gentle-clues:1.2.0": info as gc-info, warning as gc-warning, error as gc-error
+
 #let accent = rgb("#cc2036")
 #let ink = rgb("#0d0d0d")
 #let table-border = 0.6pt + ink
@@ -10,39 +12,27 @@
 #set text(font: ("Arial Narrow", "Helvetica Neue Condensed", "Helvetica"), size: 10pt)
 #set table(stroke: table-rule)
 
-// Render notes inline (after item text). No size override — inherits table cell size.
-#let render-ship-notes(notes) = {
-  for note in notes {
-    let msg = note.at("message")
-    let cat = note.at("category")
-    linebreak()
-    if cat == "warning" {
-      text(fill: rgb("#e07800"), style: "italic")[Warning: #msg]
-    } else if cat == "error" {
-      text(fill: rgb("#cc2036"), weight: "bold")[Error: #msg]
-    } else {
-      text(style: "italic")[#msg]
+// One admonition per category, sorted error → warning → info.
+#let render-grouped(notes, headless: false) = {
+  for cat in ("error", "warning", "info") {
+    let msgs = notes.filter(n => n.at("category") == cat).map(n => n.at("message"))
+    if msgs.len() > 0 {
+      let body = msgs.map(m => [#m]).join(linebreak())
+      if cat == "error"   { gc-error(headless: headless)[#body] }
+      else if cat == "warning" { gc-warning(headless: headless)[#body] }
+      else { gc-info(headless: headless)[#body] }
     }
   }
 }
 
-// Render a standalone notes block (no leading linebreak).
-#let render-notes-block(notes) = {
-  let first = true
-  for note in notes {
-    let msg = note.at("message")
-    let cat = note.at("category")
-    if not first { linebreak() }
-    first = false
-    if cat == "warning" {
-      text(fill: rgb("#e07800"), style: "italic")[Warning: #msg]
-    } else if cat == "error" {
-      text(fill: rgb("#cc2036"), weight: "bold")[Error: #msg]
-    } else {
-      text(style: "italic")[#msg]
-    }
-  }
+// Render notes inline (after item text), inside table cells.
+#let render-ship-notes(notes) = {
+  if notes.len() > 0 { linebreak() }
+  render-grouped(notes, headless: true)
 }
+
+// Render a standalone notes block.
+#let render-notes-block(notes) = render-grouped(notes)
 
 // ── Header ────────────────────────────────────────────────────────────────
 #let meta-parts = report_data.meta_parts
