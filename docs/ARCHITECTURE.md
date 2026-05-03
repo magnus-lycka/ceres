@@ -332,8 +332,11 @@ when they are needed to understand the architecture.
 Source-to-test-case normalization rules for external ship designs should be
 recorded separately in [TEST_CASE_SHIPS.md](/Users/magnuslycka/work/ceres/docs/TEST_CASE_SHIPS.md).
 
-We follow the latest versions of Mongoose Traveller 2nd Edition Core Rules and
-High Guard. Where the two books conflict, **High Guard takes precedence**.
+Ceres targets **Mongoose Traveller 2nd Edition (MgT2)**, specifically the
+*Core Rulebook* and *High Guard* (2022 update). Where the two books conflict,
+**High Guard takes precedence**. Material from earlier MgT2 printings that
+was removed or replaced in 2022 is out of scope; see RI-008 in
+`RULE_INTERPRETATIONS.md`.
 
 We have studied Mark F. Anderson's ship design tool output and other external
 sources, but cross-cutting decisions such as unsupported drive cost reduction

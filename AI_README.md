@@ -1,8 +1,9 @@
-# Ceres - Ship Design for Mongoose Traveller 2nd Edition
+# Ceres — Mongoose Traveller 2nd Edition in Python
 
-Build Traveller starships according to Mongoose High Guard 2022 rules.
-A starship is built as a Python object: instantiate a `Ship`, pass it parts
-objects and parameters. The goals are:
+Ceres builds Mongoose Traveller 2nd Edition things in Python, such as
+starships (using the High Guard 2022 rules). A ship is an ordinary Python
+object: instantiate `Ship`, pass it part objects and parameters, and get back
+a validated design. Goals include:
 
 - A ship description similar to official stat blocks
 - Legality checks (tonnage, budget, TL consistency, required components)

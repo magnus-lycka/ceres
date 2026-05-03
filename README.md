@@ -1,8 +1,9 @@
 # ceres
 
-**Ceres** builds Mongoose Traveller 2nd Edition starships in Python, using the
+**Ceres** builds Mongoose Traveller 2nd Edition things in Python, such as
+starships (using the
 [High Guard 2022](https://www.mongoosepublishing.com/products/high-guard-update-2022)
-rules. A ship is an ordinary Python object: instantiate `Ship`, pass it part
+rules). A ship is an ordinary Python object: instantiate `Ship`, pass it part
 objects and parameters, and get back a validated design.
 
 A likely use for this is to hand it to an AI and build rules-compliant

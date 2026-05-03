@@ -1,5 +1,21 @@
 # Rule Interpretations
 
+Ceres targets **Mongoose Traveller 2nd Edition (MgT2)**. The specific editions
+in scope are:
+
+| Book | Edition |
+| ---- | ------- |
+| *Core Rulebook* | 2022 (2026 revision) |
+| *High Guard* | 2022 (2026 revision) |
+| *Central Supply Catalogue* | 2023 (2024 revision) |
+| *Traveller Companion* | 2024 |
+
+Where the *Core Rulebook* and *High Guard* conflict, High Guard takes
+precedence.
+
+Material from earlier MgT2 printings (notably *High Guard* 2016) that was
+removed or replaced in later editions is treated as out of scope. See RI-008.
+
 This document records deliberate rule interpretations, exclusions, and
 normalizations used in Ceres.
 
@@ -146,30 +162,36 @@ The consequences are:
 - if rounding up yields additional full four-week periods, Ceres reports the
   longer endurance rather than hiding it
 
-### RI-008 HG 2016 Software Packages Are Not Modelled
+### RI-008 Pre-2022 Rules Items Without Current-Edition Equivalents Are Not Modelled
 
-Several software titles from *High Guard* (2016) — the first MgT2 edition —
-were removed or replaced in *High Guard* (2022) and have no equivalent in the
-current Ceres computer model:
+Ceres follows *High Guard* (2022) as its rules baseline. Items — equipment,
+software packages, ship options — that appeared in earlier MgT2 printings but
+were removed or replaced in 2022 and have no equivalent in the current rules
+set are simply not modelled.
 
-| HG 2016 title      | Role                                         |
-|--------------------|----------------------------------------------|
-| `Mentor/N`         | DM+ on training and education-related checks |
-| `Planetology/N`    | Assisted scientific analysis of planet data  |
-| `Research Assist/N`| General research and EDU-based checks        |
+This is not a statement that those items were invalid. It is a scope decision:
+we do not add code or model entries for things that no longer exist in the
+edition we target.
 
-None of these appear in the current *Core Rulebook*, *High Guard* (2022), or
-*Central Supply Catalogue* software tables. They should not be modelled as
-supported packages.
+**Where a source ship uses such items**, document the exclusion or substitution
+in the relevant TCS entry and omit or remap accordingly. For ship-specific
+mappings, see `TEST_CASE_SHIPS.md`.
 
-**Where a source ship uses them**, document the exclusion in the test case
-and omit the packages. The nearest current-rules equivalent is an `Expert`
-program targeting the relevant skill — for example:
+### RI-009 Broad Skills From The Traveller Companion Are Treated As Distinct Skills
 
-- `Planetology/1` → `Expert (Science/Planetology)/1`
-- `Research Assist/1` → `Expert` with a relevant Science speciality
-- `Mentor/1` → `Expert` with a relevant teaching or Education skill
+The *Traveller Companion* (2024) introduced **broad skills**: what earlier
+editions called specialities of a single `Science` skill are now fully
+independent skills — `Space Sciences`, `Life Sciences`, `Physical Sciences`,
+`Social Sciences`, `Robotic Sciences` — each with their own specialities. The same applies to `Art` and `Profession`.
 
-These substitutions should be applied when — and not before — Ceres models
-explicit software packages from the *Central Supply Catalogue* via
-`ceres.gear.computer`.
+Ceres follows this model. `Space Sciences (Planetology)` is a distinct skill,
+with `Space Sciences (Planetology)`  as a speciality.
+The old single `Science` skill with a `(Planetology)` speciality is not modelled.
+
+This is analogous with the Language skill family. Each Language skill,
+Language Galanglic, Language Zdatl etc are entirely separate skills.
+
+In practice this affects `Expert` software packages: the skill string passed
+to `Expert(N, skill='Space Sciences (Planetology)')` names a broad skill, not
+a flat speciality. The software table in `ceres.gear.software` lists broad
+science skills (and their specialities) as top-level entries accordingly.

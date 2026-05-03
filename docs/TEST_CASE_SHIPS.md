@@ -49,3 +49,15 @@ similar operational/business figures.
 
 These are not part of the current Ceres ship-design model and should not be
 encoded as test-case expectations for a reference ship.
+
+### TCS-004 Beagle Laboratory Ship: HG 2016 Software Packages
+
+The Beagle source lists `Mentor/1`, `Planetology/1`, and `Research Assist/1`.
+These are *High Guard* (2016) titles removed in the 2022 edition (see RI-008).
+
+Mapping applied in the Ceres test case:
+
+- `Planetology/1` → `Expert (Space Sciences (Planetology))/1` — closest
+  current-rules equivalent
+- `Research Assist/1` → skipped — no current-rules equivalent
+- `Mentor/1` → skipped — no current-rules equivalent
