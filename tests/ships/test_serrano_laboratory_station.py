@@ -43,7 +43,7 @@ def build_serrano_laboratory_station() -> ship.Ship:
         power=PowerSection(fusion_plant=FusionPlantTL12(output=60)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=8)),
         command=CommandSection(bridge=Bridge(small=True)),
-        computer=ComputerSection(hardware=Computer(score=10)),
+        computer=ComputerSection(hardware=Computer(processing=10)),
         sensors=SensorsSection(primary=MilitarySensors()),
         craft=CraftSection(internal_housing=[InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft'))]),
         systems=SystemsSection(

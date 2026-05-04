@@ -64,7 +64,7 @@ def build_dolphin_extended_scout_courier() -> ship.Ship:
             fuel_processor=FuelProcessor(tons=2),
         ),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=10), software=[JumpControl(rating=2)]),
+        computer=ComputerSection(hardware=Computer(processing=10), software=[JumpControl(rating=2)]),
         sensors=SensorsSection(primary=MilitarySensors()),
         weapons=WeaponsSection(
             turrets=[

@@ -65,7 +65,7 @@ def build_beowulf() -> ship.Ship:
             fuel_processor=FuelProcessor(tons=1),
         ),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5), software=[JumpControl(rating=1)]),
+        computer=ComputerSection(hardware=Computer(processing=5), software=[JumpControl(rating=1)]),
         sensors=SensorsSection(primary=CivilianSensors()),
         habitation=HabitationSection(
             staterooms=[Stateroom()] * 10,

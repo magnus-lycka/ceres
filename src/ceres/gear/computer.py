@@ -18,15 +18,16 @@ from typing import Any, ClassVar, Literal
 
 from pydantic import Field, model_validator
 
-from ceres.gear.software import Expert, SoftwarePackage
+from ceres.gear.software import Expert
 from ceres.shared import CeresPart, Equipment, Note, NoteCategory
 
 
 class ComputerPart(CeresPart):
     processing: int
 
-    def can_run(self, *packages: SoftwarePackage) -> bool:
-        return sum(p.bandwidth for p in packages) <= self.processing
+    @property
+    def description(self) -> str:
+        return f'Computer/{self.processing}'
 
 
 class ComputerEquipment(Equipment):
@@ -54,9 +55,6 @@ class ComputerEquipment(Equipment):
         data.setdefault('cost', part.cost)
         data.setdefault('mass_kg', float(spec['mass_kg']))
         return data
-
-    def can_run(self, *packages: SoftwarePackage) -> bool:
-        return self.parts[0].can_run(*packages)
 
     def build_item(self) -> str | None:
         return f'{self._label}/{self.parts[0].processing}'
@@ -228,9 +226,6 @@ class SpecialisedComputer(Equipment):
         data.setdefault('mass_kg', float(spec['mass_kg']))
         return data
 
-    def can_run(self, *packages: SoftwarePackage) -> bool:
-        return self.parts[0].can_run(*packages)
-
     def build_item(self) -> str | None:
         if self.invalid_processing is not None:
             return None
@@ -251,7 +246,7 @@ class SpecialisedComputer(Equipment):
                 )
             ]
         part = self.parts[0]
-        if not part.can_run(self.expert):
+        if part.processing < self.expert.bandwidth:
             return [
                 Note(
                     category=NoteCategory.ERROR,

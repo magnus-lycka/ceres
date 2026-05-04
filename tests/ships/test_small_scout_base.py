@@ -106,7 +106,7 @@ def build_small_scout_base() -> ship.Ship:
             fuel_processor=FuelProcessor(tons=5),
         ),
         command=CommandSection(bridge=Bridge(small=True)),
-        computer=ComputerSection(hardware=Computer(score=20)),
+        computer=ComputerSection(hardware=Computer(processing=20)),
         sensors=SensorsSection(primary=BasicSensors()),
         weapons=WeaponsSection(
             turrets=[

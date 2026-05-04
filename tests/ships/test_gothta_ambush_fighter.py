@@ -37,7 +37,7 @@ def build_gothta_ambush_fighter() -> ship.Ship:
             fuel_scoops=FuelScoops(free=True),
         ),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5), software=[FireControl(rating=1)]),
+        computer=ComputerSection(hardware=Computer(processing=5), software=[FireControl(rating=1)]),
         sensors=SensorsSection(primary=MilitarySensors()),
         weapons=WeaponsSection(
             fixed_mounts=[FixedMount(weapons=[MountWeapon(weapon='pulse_laser')])],

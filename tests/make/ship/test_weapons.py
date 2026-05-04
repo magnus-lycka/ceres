@@ -280,7 +280,7 @@ def test_reused_weapon_and_turret_references_render_like_distinct_identical_obje
         drives=DriveSection(m_drive=MDrive(level=1)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=50)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=20)),
+        computer=ComputerSection(hardware=Computer(processing=20)),
         weapons=WeaponsSection(turrets=[turret, turret]),
     )
 
@@ -763,7 +763,7 @@ def test_grouped_parts_with_same_note_show_note_once(tmp_path):
         displacement=400,
         hull=hull.Hull(configuration=hull.standard_hull),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
         weapons=WeaponsSection(
             barbettes=[
                 Barbette(weapon='particle', armoured_bulkhead=True),
@@ -785,7 +785,7 @@ def test_point_defense_battery_appears_in_weapon_spec_rows():
         displacement=400,
         hull=hull.Hull(configuration=hull.standard_hull),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
         weapons=WeaponsSection(point_defense_batteries=[PointDefenseBattery(kind='laser', rating=2)]),
     )
     spec = my_ship.build_spec()

@@ -1,9 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import ClassVar, Literal
+from typing import TYPE_CHECKING, Annotated, ClassVar, Literal
 
-from pydantic import field_validator
+from pydantic import Field, PrivateAttr, field_validator
 
 from ceres.shared import CeresModel, Note, NoteCategory
+
+if TYPE_CHECKING:
+    from ceres.gear.computer import ComputerPart
 
 
 class SoftwarePackage(CeresModel, ABC):
@@ -25,6 +28,13 @@ class SoftwarePackage(CeresModel, ABC):
     @property
     @abstractmethod
     def cost(self) -> float: ...
+
+    def build_item(self) -> str | None:
+        return self.description
+
+    def validate_on_computer(self, computer: ComputerPart) -> None:
+        if computer.assembly.tl < self.tl:
+            self.error(f'{self.description} requires TL{self.tl}')
 
 
 class FixedSoftwarePackage(SoftwarePackage):
@@ -49,11 +59,17 @@ class FixedSoftwarePackage(SoftwarePackage):
     def cost(self) -> float:
         return self._cost
 
+    def validate_on_computer(self, computer: ComputerPart) -> None:
+        super().validate_on_computer(computer)
+        if computer.processing < self.bandwidth:
+            self.error(f'{computer.description} cannot run {self.description}')
+
 
 class RatedSoftwarePackage(SoftwarePackage):
     rating: int
     _label: ClassVar[str]
     _specs: ClassVar[dict[int, dict[str, int | float]]]
+    _effective_rating: int | None = PrivateAttr(default=None)
 
     @field_validator('rating')
     @classmethod
@@ -78,6 +94,17 @@ class RatedSoftwarePackage(SoftwarePackage):
     @property
     def cost(self) -> float:
         return float(self._specs[self.rating]['cost'])
+
+    @property
+    def effective_rating(self) -> int | None:
+        return self._effective_rating
+
+    def validate_on_computer(self, computer: ComputerPart) -> None:
+        super().validate_on_computer(computer)
+        if computer.processing < self.bandwidth:
+            self.error(f'{computer.description} cannot run {self.description}')
+            return
+        self._effective_rating = self.rating
 
 
 class Interface(FixedSoftwarePackage):
@@ -121,13 +148,19 @@ class Agent(RatedSoftwarePackage):
 class Intellect(RatedSoftwarePackage):
     package: Literal['intellect'] = 'intellect'
     _label = 'Intellect'
-    # Intellect/0 is the HG ship intellect (free, included); 1–3 are CSC packages
+    # rating=0 is the HG ship-included intellect (free, no bandwidth cost); 1–3 are CSC packages
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         0: {'bandwidth': 0, 'tl': 11, 'cost': 0.0},
         1: {'bandwidth': 1, 'tl': 12, 'cost': 2_000.0},
         2: {'bandwidth': 2, 'tl': 13, 'cost': 50_000.0},
         3: {'bandwidth': 3, 'tl': 14, 'cost': 200_000.0},
     }
+
+    @property
+    def description(self) -> str:
+        if self.rating == 0:
+            return self._label
+        return f'{self._label}/{self.rating}'
 
 
 class Translator(RatedSoftwarePackage):
@@ -268,3 +301,9 @@ class Expert(SoftwarePackage):
     @property
     def _resolved_skill_name(self) -> str:
         return self.skill
+
+
+type AnySoftware = Annotated[
+    Agent | Expert | Intellect | IntelligentInterface | Interface | Security | Translator,
+    Field(discriminator='package'),
+]

@@ -42,7 +42,7 @@ def build_florence_medical_scout() -> ship.Ship:
             fuel_processor=FuelProcessor(tons=3),
         ),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=15), software=[JumpControl(rating=3)]),
+        computer=ComputerSection(hardware=Computer(processing=15), software=[JumpControl(rating=3)]),
         sensors=SensorsSection(primary=MilitarySensors(), life_scanner_analysis_suite=LifeScannerAnalysisSuite()),
         weapons=WeaponsSection(turrets=[Turret(size='double')]),
         craft=CraftSection(

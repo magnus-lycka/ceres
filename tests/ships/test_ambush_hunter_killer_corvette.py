@@ -62,7 +62,7 @@ def build_ambush_hunter_killer_corvette() -> ship.Ship:
         ),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(
-            hardware=Computer(score=30),
+            hardware=Computer(processing=30),
             software=[
                 JumpControl(rating=2),
                 AdvancedFireControl(rating=1),

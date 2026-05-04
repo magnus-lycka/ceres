@@ -1,7 +1,7 @@
-from ceres.shared import CeresModel, CeresPart, Note, NoteCategory
+from ceres.shared import Assembly, CeresModel, CeresPart, Note, NoteCategory
 
 
-class ShipBase(CeresModel):
+class ShipBase(Assembly):
     """Minimal ship interface that ShipPart subclasses depend on."""
 
     tl: int
@@ -28,4 +28,4 @@ class ShipBase(CeresModel):
         return 0.0
 
 
-__all__ = ['CeresPart', 'CeresModel', 'Note', 'NoteCategory', 'ShipBase']
+__all__ = ['Assembly', 'CeresPart', 'CeresModel', 'Note', 'NoteCategory', 'ShipBase']

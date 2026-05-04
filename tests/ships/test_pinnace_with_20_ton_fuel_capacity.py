@@ -41,7 +41,7 @@ def build_pinnace_with_20_ton_fuel_capacity() -> ship.Ship:
         power=PowerSection(fusion_plant=FusionPlantTL12(output=30)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=4)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
         sensors=SensorsSection(primary=BasicSensors()),
         systems=SystemsSection(),
         habitation=HabitationSection(cabin_space=CabinSpace(tons=9)),

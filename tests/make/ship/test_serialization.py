@@ -36,7 +36,7 @@ ultralight = Ship(
     power=PowerSection(fusion_plant=FusionPlantTL12(output=8)),
     fuel=FuelSection(operation_fuel=OperationFuel(weeks=1)),
     command=CommandSection(cockpit=Cockpit(holographic=True)),
-    computer=ComputerSection(hardware=Computer(score=5)),
+    computer=ComputerSection(hardware=Computer(processing=5)),
     sensors=SensorsSection(primary=CivilianSensors()),
     craft=CraftSection(internal_housing=[InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft'))]),
     weapons=WeaponsSection(
@@ -224,13 +224,13 @@ def test_roundtrip_backup_computer():
         tl=13,
         displacement=100,
         hull=Hull(configuration=hull.standard_hull),
-        computer=ComputerSection(hardware=Computer(score=25), backup_hardware=Computer(score=20, fib=True)),
+        computer=ComputerSection(hardware=Computer(processing=25), backup_hardware=Computer(processing=20, fib=True)),
     )
     loaded = _roundtrip(ship_with_backup)
     assert loaded.computer is not None
     assert loaded.computer.backup_hardware is not None
     assert isinstance(loaded.computer.backup_hardware, Computer)
-    assert loaded.computer.backup_hardware.score == 20
+    assert loaded.computer.backup_hardware.processing == 20
     assert loaded.computer.backup_hardware.fib is True
 
 

@@ -12,7 +12,7 @@ from ceres.gear.computer import (
     SpecialisedTablet,
     Tablet,
 )
-from ceres.gear.software import Expert, Interface, Security, Translator
+from ceres.gear.software import Expert
 
 
 def test_portable_computer_zero_matches_csc_values():
@@ -51,21 +51,6 @@ def test_mid_sized_computer_four_matches_csc_values():
 def test_mid_sized_computer_rejects_invalid_processing():
     with pytest.raises(ValueError, match='Unsupported MidSizedComputer processing 5'):
         MidSizedComputer(processing=5)
-
-
-def test_computer_can_run_within_processing():
-    pc = PortableComputer(processing=3)
-    assert pc.can_run(Security(rating=2), Translator(rating=1))
-
-
-def test_computer_cannot_run_exceeding_processing():
-    pc = PortableComputer(processing=2)
-    assert not pc.can_run(Security(rating=2), Translator(rating=1))
-
-
-def test_computer_can_run_bandwidth_zero_packages_always_fit():
-    pc = PortableComputer(processing=0)
-    assert pc.can_run(Interface(), Security(rating=0))
 
 
 def test_tablet_matches_csc_values():
@@ -212,11 +197,6 @@ def test_specialised_tablet_roundtrip():
     assert sc2.cost == sc.cost
     assert sc2.expert.skill == 'Broker'
     assert sc2.parts[0].processing == 2
-
-
-def test_size_variants_can_run_like_base():
-    assert Tablet(processing=3).can_run(Security(rating=2), Translator(rating=1))
-    assert not Tablet(processing=2).can_run(Security(rating=2), Translator(rating=1))
 
 
 def test_portable_computer_is_equipment():

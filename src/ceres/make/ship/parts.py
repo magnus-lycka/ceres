@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from enum import StrEnum
 from typing import Annotated, Any, ClassVar, Literal
 
@@ -187,26 +188,22 @@ def _customisation_model_validate_json(cls, data, **kwargs):
 Customisation.model_validate_json = classmethod(_customisation_model_validate_json)  # type: ignore
 
 
-class ShipPartMixin:
-    """Pure-Python mixin for parts installable in a ship.
+class ShipPartMixin(ABC):
+    """Pure-Python ABC mixin for parts installable in a ship.
 
-    Adds ship-specific field annotations (picked up by Pydantic when combined
-    with a CeresPart base) and all the behaviour needed to participate in ship
-    assembly: binding, TL checks, tonnage/cost/power recomputation, and armoured
-    bulkhead book-keeping.
+    Declares the contract that concrete ship-part classes must satisfy:
+    ``assembly``, ``tons``, ``power``, and ``armoured_bulkhead``.
 
-    Concrete classes must declare the following as explicit Pydantic fields so
-    that both Pydantic and static type checkers see them correctly:
-
-    - ``_assembly`` and ``_armoured_bulkhead_part`` as ``PrivateAttr`` fields
-    - ``tons``, ``power``, and ``armoured_bulkhead`` as ordinary fields with the
-      same defaults as defined here (the mixin annotations are invisible to Pydantic
-      because the mixin is a plain Python class, not a ``BaseModel``)
+    Pydantic cannot see annotations on a plain mixin, so concrete classes must
+    redeclare ``tons``, ``power``, and ``armoured_bulkhead`` as explicit Pydantic
+    fields (and ``_armoured_bulkhead_part`` as a ``PrivateAttr``). The abstract
+    declarations here make the requirement explicit and eliminate the "shadows an
+    attribute" Pydantic warnings that plain class-variable defaults would trigger.
     """
 
-    tons: float = 0.0
-    power: float = 0.0
-    armoured_bulkhead: bool = False
+    tons: float
+    power: float
+    armoured_bulkhead: bool
 
     # ------------------------------------------------------------------
     # Default compute methods — subclasses override to provide derived values
@@ -247,10 +244,8 @@ class ShipPartMixin:
         self._refresh_armoured_bulkhead(assembly)
 
     @property
-    def assembly(self) -> ShipBase:
-        if self._assembly is None:
-            raise RuntimeError(f'{self.__class__.__name__} not bound to an Assembly')
-        return self._assembly
+    @abstractmethod
+    def assembly(self) -> ShipBase: ...
 
     @property
     def assembly_tl(self) -> int:
@@ -302,11 +297,19 @@ class ShipPartMixin:
 
 class ShipPart(CeresPart, ShipPartMixin):
     _tl: ClassVar[int] = 0
-    _assembly: ShipBase | None = PrivateAttr(default=None)
     _armoured_bulkhead_part: ShipPart | None = PrivateAttr(default=None)
     tons: float = 0.0
     power: float = 0.0
     armoured_bulkhead: bool = False
+
+    @property
+    def assembly(self) -> ShipBase:
+        a = self._assembly
+        if a is None:
+            raise RuntimeError(f'{type(self).__name__} not bound to an Assembly')
+        if not isinstance(a, ShipBase):
+            raise RuntimeError(f'{type(self).__name__} bound to unexpected assembly type {type(a).__name__}')
+        return a
 
     @model_validator(mode='before')
     @classmethod

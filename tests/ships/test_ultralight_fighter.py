@@ -29,7 +29,7 @@ def build_ultralight_fighter() -> ship.Ship:
         power=PowerSection(fusion_plant=FusionPlantTL12(output=8)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=1)),
         command=CommandSection(cockpit=Cockpit(holographic=True)),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
         sensors=SensorsSection(primary=CivilianSensors()),
         weapons=WeaponsSection(
             fixed_mounts=[

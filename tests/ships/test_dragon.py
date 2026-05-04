@@ -101,8 +101,8 @@ def build_dragon() -> ship.Ship:
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=16, armoured_bulkhead=True)),
         command=CommandSection(bridge=Bridge(holographic=True, armoured_bulkhead=True)),
         computer=ComputerSection(
-            hardware=Computer(score=25, fib=True),
-            backup_hardware=Computer(score=20, fib=True),
+            hardware=Computer(processing=25, fib=True),
+            backup_hardware=Computer(processing=20, fib=True),
             software=[AutoRepair(rating=1), FireControl(rating=2), Evade(rating=1)],
         ),
         sensors=SensorsSection(

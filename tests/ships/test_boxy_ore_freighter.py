@@ -26,7 +26,7 @@ def build_boxy_ore_freighter() -> ship.Ship:
         power=PowerSection(fusion_plant=FusionPlantTL8(output=80)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=12)),
         command=CommandSection(bridge=Bridge(small=True)),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
         sensors=SensorsSection(primary=BasicSensors()),
         habitation=HabitationSection(staterooms=[Stateroom()], common_area=CommonArea(tons=1.0)),
         systems=SystemsSection(internal_systems=[Workshop()]),

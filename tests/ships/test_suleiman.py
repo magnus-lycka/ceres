@@ -64,7 +64,7 @@ def build_suleiman() -> ship.Ship:
             fuel_processor=FuelProcessor(tons=2),
         ),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5, bis=True), software=[JumpControl(rating=2)]),
+        computer=ComputerSection(hardware=Computer(processing=5, bis=True), software=[JumpControl(rating=2)]),
         sensors=SensorsSection(primary=MilitarySensors()),
         weapons=WeaponsSection(turrets=[Turret(size='double')]),
         craft=CraftSection(internal_housing=[InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft'))]),
@@ -214,7 +214,7 @@ def test_jump_drive_2_without_jump_control_2_adds_local_note():
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         drives=DriveSection(j_drive=JDrive(level=2)),
-        computer=ComputerSection(hardware=Computer(score=5, bis=True)),
+        computer=ComputerSection(hardware=Computer(processing=5, bis=True)),
     )
     assert my_ship.drives is not None
     assert my_ship.drives.j_drive is not None
@@ -331,7 +331,7 @@ def test_jump_drive_with_lower_jump_control_warns_on_drive():
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         drives=DriveSection(j_drive=JDrive(level=2)),
-        computer=ComputerSection(hardware=Computer(score=5, bis=True), software=[JumpControl(rating=1)]),
+        computer=ComputerSection(hardware=Computer(processing=5, bis=True), software=[JumpControl(rating=1)]),
     )
     assert my_ship.drives is not None
     assert my_ship.drives.j_drive is not None
@@ -346,7 +346,7 @@ def test_jump_control_without_jump_drive_warns_on_software():
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        computer=ComputerSection(hardware=Computer(score=5, bis=True), software=[JumpControl(rating=2)]),
+        computer=ComputerSection(hardware=Computer(processing=5, bis=True), software=[JumpControl(rating=2)]),
     )
     assert my_ship.computer is not None
     explicit_jump_control = my_ship.computer.software_packages[JumpControl]
@@ -362,7 +362,7 @@ def test_jump_control_with_higher_rating_than_drive_warns_on_software():
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         drives=DriveSection(j_drive=JDrive(level=2)),
-        computer=ComputerSection(hardware=Computer(score=10, bis=True), software=[JumpControl(rating=3)]),
+        computer=ComputerSection(hardware=Computer(processing=10, bis=True), software=[JumpControl(rating=3)]),
     )
     assert my_ship.computer is not None
     explicit_jump_control = my_ship.computer.software_packages[JumpControl]
@@ -379,7 +379,7 @@ def test_higher_jump_control_replaces_lower_one():
         hull=hull.Hull(configuration=hull.streamlined_hull),
         drives=DriveSection(j_drive=JDrive(level=2)),
         computer=ComputerSection(
-            hardware=Computer(score=10, bis=True), software=[JumpControl(rating=2), JumpControl(rating=3)]
+            hardware=Computer(processing=10, bis=True), software=[JumpControl(rating=2), JumpControl(rating=3)]
         ),
     )
 
@@ -395,3 +395,49 @@ def test_higher_jump_control_replaces_lower_one():
     assert ('warning', 'Redundant Jump Control/2 added') in [
         (note.category.value, note.message) for note in jump_control.notes
     ]
+
+
+def test_jump_control_degrades_when_computer_too_small():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        drives=DriveSection(j_drive=JDrive(level=2)),
+        computer=ComputerSection(hardware=Computer(processing=5), software=[JumpControl(rating=2)]),
+    )
+    assert my_ship.computer is not None
+    jc = my_ship.computer.software_packages[JumpControl]
+    assert isinstance(jc, JumpControl)
+    assert jc.effective_rating == 1
+    assert ('warning', 'Computer/5 can only run Jump Control/1 (degraded from 2)') in [
+        (note.category.value, note.message) for note in jc.notes
+    ]
+
+
+def test_degraded_jump_control_warns_drive():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        drives=DriveSection(j_drive=JDrive(level=2)),
+        computer=ComputerSection(hardware=Computer(processing=5), software=[JumpControl(rating=2)]),
+    )
+    assert my_ship.drives is not None
+    assert my_ship.drives.j_drive is not None
+    assert ('warning', 'Limited to Jump 1 by control software') in [
+        (note.category.value, note.message) for note in my_ship.drives.j_drive.notes
+    ]
+
+
+def test_jump_control_blocked_by_tl_leaves_effective_rating_none():
+    my_ship = ship.Ship(
+        tl=8,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        computer=ComputerSection(hardware=Computer(processing=5), software=[JumpControl(rating=1)]),
+    )
+    assert my_ship.computer is not None
+    jc = my_ship.computer.software_packages[JumpControl]
+    assert isinstance(jc, JumpControl)
+    assert jc.effective_rating is None
+    assert any(note.category.value == 'error' for note in jc.notes)

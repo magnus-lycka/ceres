@@ -342,7 +342,7 @@ class Ship(ShipBase):
             self.habitation.validate_passenger_capacity(self)
         if self.computer is not None:
             self.computer.refresh_software_packages()
-            self.computer.validate_software(self.tl)
+            self.computer.validate_software()
             self.computer.validate_jump_drive(self.drives)
         if self.drives is not None:
             software_packages: dict[type[SoftwarePackage], SoftwarePackage]

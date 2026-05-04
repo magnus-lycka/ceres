@@ -83,8 +83,8 @@ def build_king_kay() -> ship.Ship:
         ),
         command=CommandSection(bridge=Bridge(holographic=True)),
         computer=ComputerSection(
-            hardware=Computer(score=10),
-            backup_hardware=Computer(score=5, bis=True),
+            hardware=Computer(processing=10),
+            backup_hardware=Computer(processing=5, bis=True),
             software=[JumpControl(rating=2)],
         ),
         sensors=SensorsSection(primary=CivilianSensors()),

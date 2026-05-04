@@ -37,7 +37,7 @@ def build_strandbell() -> ship.Ship:
         ),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(
-            hardware=Computer(score=35), software=[AutoRepair(rating=1), FireControl(rating=2), Evade(rating=2)]
+            hardware=Computer(processing=35), software=[AutoRepair(rating=1), FireControl(rating=2), Evade(rating=2)]
         ),
         sensors=SensorsSection(primary=ImprovedSensors(), countermeasures=CountermeasuresSuite()),
         weapons=WeaponsSection(

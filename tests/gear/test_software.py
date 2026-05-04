@@ -29,7 +29,7 @@ def test_intelligent_interface_matches_csc_values():
 
 def test_intellect_zero_represents_included_ship_intellect():
     package = Intellect(rating=0)
-    assert package.description == 'Intellect/0'
+    assert package.description == 'Intellect'
     assert package.bandwidth == 0
     assert package.tl == 11
     assert package.cost == 0.0

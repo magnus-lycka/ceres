@@ -71,7 +71,7 @@ def test_required_crew_for_small_jump_ship():
         drives=DriveSection(j_drive=JDrive(level=1)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=10)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
     )
 
     assert grouped_role_salaries(my_ship.crew) == [
@@ -89,7 +89,7 @@ def test_gunner_added_for_each_turret_on_commercial_ship():
         drives=DriveSection(m_drive=MDrive(level=2), j_drive=JDrive(level=1)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
         weapons=WeaponsSection(turrets=[Turret(size='double')]),
     )
 
@@ -109,7 +109,7 @@ def test_large_ship_reduces_engineering_and_other_scaling_roles():
         drives=DriveSection(m_drive=MDrive(level=1), j_drive=JDrive(level=1)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=490)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
     )
 
     assert grouped_role_counts(my_ship.crew) == [
@@ -132,7 +132,7 @@ def test_military_ship_uses_military_pilot_and_gunner_rules():
         drives=DriveSection(m_drive=MDrive(level=2)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
         weapons=WeaponsSection(turrets=[Turret(size='double'), Turret(size='double')]),
     )
 
@@ -163,7 +163,7 @@ def test_commercial_ship_gets_extra_pilot_for_carried_small_craft():
         drives=DriveSection(m_drive=MDrive(level=2), j_drive=JDrive(level=1)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
         craft=CraftSection(internal_housing=[InternalDockingSpace(craft=owned_pinnace)]),
     )
 
@@ -178,7 +178,7 @@ def test_air_raft_does_not_add_extra_pilot():
         drives=DriveSection(m_drive=MDrive(level=2), j_drive=JDrive(level=1)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
         craft=CraftSection(internal_housing=[InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft'))]),
     )
 
@@ -193,7 +193,7 @@ def test_carried_craft_engineering_tonnage_contributes_to_engineers():
         drives=DriveSection(m_drive=MDrive(level=2), j_drive=JDrive(level=1)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=300)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
     )
     my_ship = ship.Ship(
         tl=12,
@@ -202,7 +202,7 @@ def test_carried_craft_engineering_tonnage_contributes_to_engineers():
         drives=DriveSection(m_drive=MDrive(level=2), j_drive=JDrive(level=1)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=300)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
         craft=CraftSection(internal_housing=[InternalDockingSpace(craft=SpaceCraft.from_catalog("Ship's Boat"))]),
     )
 
@@ -219,7 +219,7 @@ def test_military_small_non_jump_craft_still_uses_single_pilot():
         drives=DriveSection(m_drive=MDrive(level=2)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=8)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
     )
 
     assert grouped_role_counts(my_ship.crew) == [
@@ -235,7 +235,7 @@ def test_commercial_ship_gets_gunner_for_barbette():
         drives=DriveSection(m_drive=MDrive(level=2)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
         weapons=WeaponsSection(barbettes=[Barbette(weapon='pulse_laser')]),
     )
 
@@ -251,7 +251,7 @@ def test_military_ship_gets_gunners_for_bays():
         drives=DriveSection(m_drive=MDrive(level=2)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=100)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
         weapons=WeaponsSection(
             bays=[Bay(size='small', weapon='missile'), Bay(size='medium', weapon='missile')],
         ),
@@ -280,7 +280,7 @@ def test_medical_bays_require_at_least_one_medic():
         drives=DriveSection(m_drive=MDrive(level=2), j_drive=JDrive(level=1)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
         systems=SystemsSection(internal_systems=[MedicalBay(), MedicalBay()]),
     )
 
@@ -295,7 +295,7 @@ def test_explicit_crew_input_overrides_rule_based_crew():
         drives=DriveSection(j_drive=JDrive(level=1)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=10)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
         crew=ShipCrew(roles=[Pilot(), Engineer()]),
     )
 
@@ -313,7 +313,7 @@ def test_understaffed_explicit_crew_input_emits_warning():
         drives=DriveSection(j_drive=JDrive(level=1)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=10)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
         crew=ShipCrew(roles=[Pilot(), Engineer()]),
     )
 
@@ -328,7 +328,7 @@ def test_overstaffed_explicit_crew_input_emits_warning():
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
         crew=ShipCrew(roles=[Pilot(), Pilot()]),
     )
 
@@ -343,7 +343,7 @@ def test_overstaffed_explicit_crew_input_warning_is_exposed_in_spec_crew_notes()
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
         crew=ShipCrew(roles=[Pilot(), Pilot()]),
     )
 
@@ -359,7 +359,7 @@ def test_explicit_crew_notes_are_not_stored_on_ship_level():
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
         crew=ShipCrew(roles=[Pilot(), Pilot()]),
     )
 
@@ -379,7 +379,7 @@ def test_small_commercial_ship_does_not_require_separate_maintenance_crew():
         drives=DriveSection(m_drive=MDrive(level=1), j_drive=JDrive(level=1)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
     )
 
     assert ('MAINTENANCE', 1) not in grouped_role_counts(my_ship.crew)
@@ -394,7 +394,7 @@ def test_maintained_external_displacement_counts_toward_maintenance_need():
         drives=DriveSection(m_drive=MDrive(level=1), j_drive=JDrive(level=1)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
     )
 
     assert ('MAINTENANCE', 2) in grouped_role_counts(my_ship.crew)
@@ -408,7 +408,7 @@ def test_steward_added_for_middle_passenger_manifest():
         drives=DriveSection(m_drive=MDrive(level=1), j_drive=JDrive(level=1)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
         habitation=HabitationSection(staterooms=[Stateroom()] * 10),
         passenger_vector={'middle': 16},
     )
@@ -424,7 +424,7 @@ def test_steward_requirement_uses_skill_levels_for_large_middle_passenger_manife
         drives=DriveSection(m_drive=MDrive(level=1), j_drive=JDrive(level=1)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=40)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
         habitation=HabitationSection(staterooms=[Stateroom()] * 130),
         passenger_vector={'middle': 250},
     )
@@ -443,7 +443,7 @@ def test_steward_requirement_caps_single_person_skill_at_three():
         drives=DriveSection(m_drive=MDrive(level=1), j_drive=JDrive(level=1)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=40)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
         habitation=HabitationSection(staterooms=[Stateroom()] * 210),
         passenger_vector={'middle': 350},
     )
@@ -463,7 +463,7 @@ def test_explicit_crew_input_warns_when_steward_missing_for_passenger_manifest()
         drives=DriveSection(m_drive=MDrive(level=1), j_drive=JDrive(level=1)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
         habitation=HabitationSection(staterooms=[Stateroom()] * 10),
         crew=ShipCrew(roles=[Pilot(), Astrogator(), Engineer()]),
         passenger_vector={'middle': 16},

@@ -16,7 +16,8 @@ Source handling for this test case:
   - the clamp-borne `Pinnace` is treated as maintained and transported
     external displacement, so drive and jump-fuel sizing use `455t`
 - still excluded from the modeled reference case:
-  - software packages `Mentor/1`, `Planetology/1`, and `Research Assist/1` (`TCS-004`)
+  - software packages `Mentor/1` and `Research Assist/1` (`TCS-004`)
+  - `Planetology/1` is modeled as `Expert(rating=1, skill='Space Sciences (Planetology)')`
   - source crew is carried over explicitly; `Pinnace Pilot` is treated as an
     additional `Pilot`, and `Sensop` as `SENSOR OPERATOR`
   - `Ship's Mechanic` is treated as the `MAINTENANCE` crew role
@@ -24,6 +25,7 @@ Source handling for this test case:
 
 import pytest
 
+from ceres.gear.software import Expert
 from ceres.make.ship import hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
 from ceres.make.ship.computer import Computer, ComputerSection, JumpControl
@@ -88,7 +90,10 @@ def build_beagle_laboratory_ship() -> ship.Ship:
             fuel_processor=FuelProcessor(tons=2),
         ),
         command=CommandSection(bridge=Bridge(small=True, holographic=True)),
-        computer=ComputerSection(hardware=Computer(score=10), software=[JumpControl(rating=2)]),
+        computer=ComputerSection(
+            hardware=Computer(processing=10),
+            software=[JumpControl(rating=2), Expert(rating=3, skill='Space Sciences (Planetology)')],
+        ),
         sensors=SensorsSection(primary=ImprovedSensors(), sensor_stations=SensorStations(count=1)),
         weapons=WeaponsSection(
             turrets=[
@@ -192,6 +197,7 @@ def test_beagle_laboratory_ship_matches_supported_slice():
         ('Manoeuvre/0', 0.0),
         ('Intellect', 0.0),
         ('Jump Control/2', 200_000.0),
+        ('Expert (Space Sciences (Planetology))/3', 20_000.0),
     ]
 
     assert ship_.sensors.primary.tons == pytest.approx(3.0)
@@ -336,3 +342,16 @@ def test_beagle_laboratory_ship_spec_structure():
     assert spec.row('Cargo Airlock (2 tons)').section == 'Cargo'
     assert spec.row('Fuel/Cargo Container (94 tons)').section == 'Cargo'
     assert spec.row('Cargo Space').tons == pytest.approx(0.1)
+
+
+def test_beagle_expert_software_roundtrip():
+    ship_ = build_beagle_laboratory_ship()
+    loaded = ship.Ship.model_validate_json(ship_.model_dump_json())
+    assert loaded.computer is not None
+    packages = loaded.computer.software_packages
+    expert = next((p for p in packages.values() if isinstance(p, Expert)), None)
+    assert expert is not None
+    assert expert.rating == 3
+    assert expert.skill == 'Space Sciences (Planetology)'
+    assert expert.description == 'Expert (Space Sciences (Planetology))/3'
+    assert expert.cost == pytest.approx(20_000.0)

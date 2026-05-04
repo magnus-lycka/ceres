@@ -33,7 +33,7 @@ class DummyOwner(ShipBase):
 
 
 def test_computer_5_cost():
-    c = Computer(score=5)
+    c = Computer(processing=5)
     c.bind(DummyOwner(12, 6))
     assert c.tl == 7
     assert c.assembly_tl == 12
@@ -43,48 +43,48 @@ def test_computer_5_cost():
 
 
 def test_computer_10_cost():
-    c = Computer(score=10)
+    c = Computer(processing=10)
     c.bind(DummyOwner(12, 6))
     assert float(c.cost) == 160_000
 
 
 def test_computer_15_cost():
-    c = Computer(score=15)
+    c = Computer(processing=15)
     c.bind(DummyOwner(12, 6))
     assert float(c.cost) == 2_000_000
 
 
-def test_computer_rejects_invalid_score():
-    with pytest.raises(ValueError, match='Unsupported Computer score 23'):
-        Computer(score=23)
+def test_computer_rejects_invalid_processing():
+    with pytest.raises(ValueError, match='Unsupported Computer processing 23'):
+        Computer(processing=23)
 
 
 def test_computer_tons_zero():
-    c = Computer(score=5)
+    c = Computer(processing=5)
     c.bind(DummyOwner(12, 6))
     assert float(c.tons) == 0
 
 
 def test_computer_power_zero():
-    c = Computer(score=5)
+    c = Computer(processing=5)
     c.bind(DummyOwner(12, 6))
     assert c.power == 0
 
 
 def test_computer_5_min_tl():
-    c = Computer(score=5)
+    c = Computer(processing=5)
     c.bind(DummyOwner(6, 100))
     assert ('error', 'Requires TL7, ship is TL6') in [(note.category.value, note.message) for note in c.notes]
 
 
 def test_computer_recomputes_cost_from_input():
-    c = Computer.model_validate({'kind': 'computer', 'score': 5, 'cost': 999})
+    c = Computer.model_validate({'kind': 'computer', 'processing': 5, 'cost': 999})
     c.bind(DummyOwner(12, 6))
     assert c.cost == 30_000
 
 
 def test_computer_bis_increases_cost_and_jump_control_processing():
-    c = Computer(score=5, bis=True)
+    c = Computer(processing=5, bis=True)
     c.bind(DummyOwner(12, 6))
     assert c.processing == 5
     assert c.jump_control_processing == 10
@@ -92,19 +92,19 @@ def test_computer_bis_increases_cost_and_jump_control_processing():
 
 
 def test_computer_fib_increases_cost():
-    c = Computer(score=5, fib=True)
+    c = Computer(processing=5, fib=True)
     c.bind(DummyOwner(12, 6))
     assert c.cost == 45_000
 
 
 def test_computer_bis_and_fib_double_cost():
-    c = Computer(score=5, bis=True, fib=True)
+    c = Computer(processing=5, bis=True, fib=True)
     c.bind(DummyOwner(12, 6))
     assert c.cost == 60_000
 
 
 def test_core_40_hardware():
-    c = Core(score=40)
+    c = Core(processing=40)
     c.bind(DummyOwner(12, 100))
     assert c.tl == 9
     assert c.processing == 40
@@ -113,14 +113,14 @@ def test_core_40_hardware():
 
 
 def test_core_40_fib_hardware():
-    c = Core(score=40, fib=True)
+    c = Core(processing=40, fib=True)
     c.bind(DummyOwner(13, 100))
     assert c.build_item() == 'Core/40/fib'
     assert c.cost == pytest.approx(67_500_000.0)
 
 
 def test_included_software_packages():
-    c = Computer(score=5)
+    c = Computer(processing=5)
     c.bind(DummyOwner(12, 100))
     assert [type(package) for package in c.included_software] == [Library, Manoeuvre, Intellect]
     assert [package.cost for package in c.included_software] == [0.0, 0.0, 0.0]
@@ -245,20 +245,26 @@ def test_jump_control_rejects_invalid_rating():
         JumpControl(rating=7)
 
 
-def test_computer_5_cannot_run_jump_control_2():
-    c = Computer(score=5)
+def test_jump_control_2_degrades_on_computer_5():
+    jc = JumpControl(rating=2)
+    c = Computer(processing=5)
     c.bind(DummyOwner(12, 100))
-    assert not c.can_run(JumpControl(rating=2))
+    jc.validate_on_computer(c)
+    assert jc.effective_rating == 1
+    assert any('degraded' in note.message for note in jc.notes)
 
 
-def test_computer_5_bis_can_run_jump_control_2():
-    c = Computer(score=5, bis=True)
+def test_jump_control_2_runs_at_full_rating_on_computer_5_bis():
+    jc = JumpControl(rating=2)
+    c = Computer(processing=5, bis=True)
     c.bind(DummyOwner(12, 100))
-    assert c.can_run(JumpControl(rating=2))
+    jc.validate_on_computer(c)
+    assert jc.effective_rating == 2
+    assert not any(note.category.value == 'warning' for note in jc.notes)
 
 
 def test_software_packages_keep_highest_singleton_rank():
-    hardware = Computer(score=5, bis=True)
+    hardware = Computer(processing=5, bis=True)
     hardware.bind(DummyOwner(12, 100))
     section = ComputerSection(hardware=hardware, software=[JumpControl(rating=2), JumpControl(rating=3)])
 
@@ -274,7 +280,7 @@ def test_software_packages_keep_highest_singleton_rank():
 
 
 def test_software_packages_warn_about_redundant_lower_singleton():
-    hardware = Computer(score=5, bis=True)
+    hardware = Computer(processing=5, bis=True)
     hardware.bind(DummyOwner(12, 100))
     section = ComputerSection(hardware=hardware, software=[JumpControl(rating=2), JumpControl(rating=3)])
 
@@ -286,7 +292,7 @@ def test_software_packages_warn_about_redundant_lower_singleton():
 
 
 def test_software_singleton_lookup_uses_family_types():
-    hardware = Computer(score=10)
+    hardware = Computer(processing=10)
     hardware.bind(DummyOwner(12, 100))
     section = ComputerSection(
         hardware=hardware,
@@ -309,7 +315,7 @@ def test_software_singleton_lookup_uses_family_types():
 
 
 def test_software_singleton_lookup_uses_new_software_families():
-    hardware = Computer(score=35)
+    hardware = Computer(processing=35)
     hardware.bind(DummyOwner(15, 100))
     section = ComputerSection(
         hardware=hardware,
@@ -338,7 +344,7 @@ def test_software_singleton_lookup_uses_new_software_families():
 def test_validate_software_warns_when_ship_has_no_hardware():
     section = ComputerSection(software=[JumpControl(rating=1)])
 
-    section.validate_software(assembly_tl=12)
+    section.validate_software()
 
     jump_control = section.software_packages[JumpControl]
     assert ('warning', 'Ship software requires a computer') in [
@@ -347,11 +353,11 @@ def test_validate_software_warns_when_ship_has_no_hardware():
 
 
 def test_validate_software_adds_tl_error():
-    hardware = Computer(score=5, bis=True)
+    hardware = Computer(processing=5, bis=True)
     hardware.bind(DummyOwner(10, 100))
     section = ComputerSection(hardware=hardware, software=[JumpControl(rating=2)])
 
-    section.validate_software(assembly_tl=10)
+    section.validate_software()
 
     jump_control = section.software_packages[JumpControl]
     assert ('error', 'Jump Control/2 requires TL11') in [
@@ -359,14 +365,16 @@ def test_validate_software_adds_tl_error():
     ]
 
 
-def test_validate_software_adds_cannot_run_error():
-    hardware = Computer(score=5)
+def test_jump_control_degrades_when_processing_insufficient():
+    hardware = Computer(processing=5)
     hardware.bind(DummyOwner(12, 100))
     section = ComputerSection(hardware=hardware, software=[JumpControl(rating=2)])
 
-    section.validate_software(assembly_tl=12)
+    section.validate_software()
 
     jump_control = section.software_packages[JumpControl]
-    assert ('error', 'Computer/5 cannot run Jump Control/2') in [
+    assert isinstance(jump_control, JumpControl)
+    assert jump_control.effective_rating == 1
+    assert ('warning', 'Computer/5 can only run Jump Control/1 (degraded from 2)') in [
         (note.category.value, note.message) for note in jump_control.notes
     ]

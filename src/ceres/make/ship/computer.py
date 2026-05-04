@@ -2,123 +2,39 @@ from typing import Annotated, Any, ClassVar, Literal
 
 from pydantic import Field, PrivateAttr, field_validator, model_validator
 
-from .base import CeresModel
-from .parts import ShipPart
+from ceres.gear.computer import ComputerPart
+from ceres.gear.software import (
+    AnySoftware,
+    FixedSoftwarePackage,
+    Intellect,
+    RatedSoftwarePackage,
+    SoftwarePackage,
+)
+
+from .base import CeresModel, Note, NoteCategory
+from .parts import ShipPart, ShipPartMixin
 from .spec import ShipSpec, SpecRow, SpecSection
-
-
-class SoftwarePackage(CeresModel):
-    package: str
-    model_config = {'frozen': True}
-
-    @property
-    def description(self) -> str:
-        raise NotImplementedError
-
-    @property
-    def tl(self) -> int:
-        raise NotImplementedError
-
-    @property
-    def bandwidth(self) -> int:
-        raise NotImplementedError
-
-    @property
-    def cost(self) -> float:
-        return 0.0
-
-    @property
-    def tons(self) -> float:
-        return 0.0
-
-    def build_item(self) -> str | None:
-        return self.description
-
-    @property
-    def singleton_type(self) -> type[SoftwarePackage]:
-        return type(self)
-
-    @property
-    def singleton_rank(self) -> int:
-        return 0
-
-
-class FixedSoftwarePackage(SoftwarePackage):
-    label: ClassVar[str]
-    tl: ClassVar[int]
-    bandwidth: ClassVar[int]
-    base_cost: ClassVar[float]
-
-    @property
-    def description(self) -> str:
-        return self.label
-
-    @property
-    def cost(self) -> float:
-        return self.base_cost
 
 
 class Library(FixedSoftwarePackage):
     package: Literal['library'] = 'library'
     label = 'Library'
-    tl = 8
-    bandwidth = 0
-    base_cost = 0.0
+    _tl = 8
+    _bandwidth = 0
+    _cost = 0.0
 
 
 class Manoeuvre(FixedSoftwarePackage):
     package: Literal['manoeuvre'] = 'manoeuvre'
     label = 'Manoeuvre/0'
-    tl = 8
-    bandwidth = 0
-    base_cost = 0.0
-
-
-class Intellect(FixedSoftwarePackage):
-    package: Literal['intellect'] = 'intellect'
-    label = 'Intellect'
-    tl = 11
-    bandwidth = 0
-    base_cost = 0.0
-
-
-class RatedSoftwarePackage(SoftwarePackage):
-    rating: int
-    label: ClassVar[str]
-    _specs: ClassVar[dict[int, dict[str, int | float]]]
-
-    @field_validator('rating')
-    @classmethod
-    def validate_rating(cls, value: int) -> int:
-        if value not in cls._specs:
-            allowed = ', '.join(str(v) for v in sorted(cls._specs))
-            raise ValueError(f'Unsupported {cls.__name__} rating {value}; expected one of: {allowed}')
-        return value
-
-    @property
-    def bandwidth(self) -> int:
-        return int(self._specs[self.rating]['bandwidth'])
-
-    @property
-    def tl(self) -> int:
-        return int(self._specs[self.rating]['tl'])
-
-    @property
-    def cost(self) -> float:
-        return float(self._specs[self.rating]['cost'])
-
-    @property
-    def description(self) -> str:
-        return f'{self.label}/{self.rating}'
-
-    @property
-    def singleton_rank(self) -> int:
-        return self.rating
+    _tl = 8
+    _bandwidth = 0
+    _cost = 0.0
 
 
 class JumpControl(RatedSoftwarePackage):
     package: Literal['jump_control'] = 'jump_control'
-    label = 'Jump Control'
+    _label = 'Jump Control'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         1: dict(bandwidth=5, tl=9, cost=100_000.0),
         2: dict(bandwidth=10, tl=11, cost=200_000.0),
@@ -128,10 +44,26 @@ class JumpControl(RatedSoftwarePackage):
         6: dict(bandwidth=30, tl=15, cost=600_000.0),
     }
 
+    def validate_on_computer(self, computer: ComputerPart) -> None:
+        if computer.assembly.tl < self.tl:
+            self.error(f'{self.description} requires TL{self.tl}')
+            return
+        if isinstance(computer, Core):
+            self._effective_rating = self.rating
+            return
+        jcp = computer.jump_control_processing if isinstance(computer, ComputerBase) else computer.processing
+        for r in range(self.rating, 0, -1):
+            if jcp >= int(self._specs[r]['bandwidth']):
+                if r < self.rating:
+                    self.warning(f'{computer.description} can only run Jump Control/{r} (degraded from {self.rating})')
+                self._effective_rating = r
+                return
+        self.error(f'{computer.description} cannot run {self.description}')
+
 
 class AutoRepair(RatedSoftwarePackage):
     package: Literal['auto_repair'] = 'auto_repair'
-    label = 'Auto-Repair'
+    _label = 'Auto-Repair'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         1: dict(bandwidth=10, tl=11, cost=5_000_000.0),
         2: dict(bandwidth=20, tl=12, cost=10_000_000.0),
@@ -140,7 +72,7 @@ class AutoRepair(RatedSoftwarePackage):
 
 class FireControl(RatedSoftwarePackage):
     package: Literal['fire_control'] = 'fire_control'
-    label = 'Fire Control'
+    _label = 'Fire Control'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         1: dict(bandwidth=5, tl=9, cost=2_000_000.0),
         2: dict(bandwidth=10, tl=11, cost=4_000_000.0),
@@ -152,7 +84,7 @@ class FireControl(RatedSoftwarePackage):
 
 class AdvancedFireControl(RatedSoftwarePackage):
     package: Literal['advanced_fire_control'] = 'advanced_fire_control'
-    label = 'Advanced Fire Control'
+    _label = 'Advanced Fire Control'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         1: dict(bandwidth=15, tl=10, cost=12_000_000.0),
         2: dict(bandwidth=25, tl=12, cost=15_000_000.0),
@@ -162,7 +94,7 @@ class AdvancedFireControl(RatedSoftwarePackage):
 
 class AntiHijack(RatedSoftwarePackage):
     package: Literal['anti_hijack'] = 'anti_hijack'
-    label = 'Anti-Hijack'
+    _label = 'Anti-Hijack'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         1: dict(bandwidth=2, tl=11, cost=6_000_000.0),
         2: dict(bandwidth=10, tl=12, cost=8_000_000.0),
@@ -172,7 +104,7 @@ class AntiHijack(RatedSoftwarePackage):
 
 class Evade(RatedSoftwarePackage):
     package: Literal['evade'] = 'evade'
-    label = 'Evade'
+    _label = 'Evade'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         1: dict(bandwidth=10, tl=9, cost=1_000_000.0),
         2: dict(bandwidth=15, tl=11, cost=2_000_000.0),
@@ -182,7 +114,7 @@ class Evade(RatedSoftwarePackage):
 
 class BattleNetwork(RatedSoftwarePackage):
     package: Literal['battle_network'] = 'battle_network'
-    label = 'Battle Network'
+    _label = 'Battle Network'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         1: dict(bandwidth=5, tl=12, cost=5_000_000.0),
         2: dict(bandwidth=10, tl=14, cost=10_000_000.0),
@@ -191,7 +123,7 @@ class BattleNetwork(RatedSoftwarePackage):
 
 class BattleSystem(RatedSoftwarePackage):
     package: Literal['battle_system'] = 'battle_system'
-    label = 'Battle System'
+    _label = 'Battle System'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         1: dict(bandwidth=5, tl=9, cost=18_000_000.0),
         2: dict(bandwidth=10, tl=12, cost=24_000_000.0),
@@ -202,14 +134,14 @@ class BattleSystem(RatedSoftwarePackage):
 class BroadSpectrumEW(FixedSoftwarePackage):
     package: Literal['broad_spectrum_ew'] = 'broad_spectrum_ew'
     label = 'Broad Spectrum EW'
-    tl = 13
-    bandwidth = 12
-    base_cost = 14_000_000.0
+    _tl = 13
+    _bandwidth = 12
+    _cost = 14_000_000.0
 
 
 class ConsciousIntelligence(RatedSoftwarePackage):
     package: Literal['conscious_intelligence'] = 'conscious_intelligence'
-    label = 'Conscious Intelligence'
+    _label = 'Conscious Intelligence'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         1: dict(bandwidth=40, tl=16, cost=25_000_000.0),
         2: dict(bandwidth=25, tl=17, cost=20_000_000.0),
@@ -219,7 +151,7 @@ class ConsciousIntelligence(RatedSoftwarePackage):
 
 class ElectronicWarfare(RatedSoftwarePackage):
     package: Literal['electronic_warfare'] = 'electronic_warfare'
-    label = 'Electronic Warfare'
+    _label = 'Electronic Warfare'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         1: dict(bandwidth=10, tl=10, cost=15_000_000.0),
         2: dict(bandwidth=15, tl=13, cost=18_000_000.0),
@@ -229,7 +161,7 @@ class ElectronicWarfare(RatedSoftwarePackage):
 
 class LaunchSolution(RatedSoftwarePackage):
     package: Literal['launch_solution'] = 'launch_solution'
-    label = 'Launch Solution'
+    _label = 'Launch Solution'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         1: dict(bandwidth=5, tl=8, cost=10_000_000.0),
         2: dict(bandwidth=10, tl=10, cost=12_000_000.0),
@@ -239,7 +171,7 @@ class LaunchSolution(RatedSoftwarePackage):
 
 class PointDefence(RatedSoftwarePackage):
     package: Literal['point_defence'] = 'point_defence'
-    label = 'Point Defence'
+    _label = 'Point Defence'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         1: dict(bandwidth=12, tl=9, cost=8_000_000.0),
         2: dict(bandwidth=15, tl=12, cost=12_000_000.0),
@@ -249,14 +181,14 @@ class PointDefence(RatedSoftwarePackage):
 class ScreenOptimiser(FixedSoftwarePackage):
     package: Literal['screen_optimiser'] = 'screen_optimiser'
     label = 'Screen Optimiser'
-    tl = 10
-    bandwidth = 10
-    base_cost = 5_000_000.0
+    _tl = 10
+    _bandwidth = 10
+    _cost = 5_000_000.0
 
 
 class VirtualCrew(RatedSoftwarePackage):
     package: Literal['virtual_crew'] = 'virtual_crew'
-    label = 'Virtual Crew'
+    _label = 'Virtual Crew'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         0: dict(bandwidth=5, tl=10, cost=1_000_000.0),
         1: dict(bandwidth=10, tl=13, cost=5_000_000.0),
@@ -266,7 +198,7 @@ class VirtualCrew(RatedSoftwarePackage):
 
 class VirtualGunner(RatedSoftwarePackage):
     package: Literal['virtual_gunner'] = 'virtual_gunner'
-    label = 'Virtual Gunner'
+    _label = 'Virtual Gunner'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         0: dict(bandwidth=5, tl=9, cost=1_000_000.0),
         1: dict(bandwidth=10, tl=12, cost=5_000_000.0),
@@ -274,42 +206,46 @@ class VirtualGunner(RatedSoftwarePackage):
     }
 
 
-class ComputerBase(ShipPart):
+class ComputerBase(ComputerPart, ShipPartMixin):
     kind: str
-    score: int
     bis: bool = False
     fib: bool = False
     _label: ClassVar[str]
     _specs: ClassVar[dict[int, dict[str, int | float]]]
+    _armoured_bulkhead_part: ShipPart | None = PrivateAttr(default=None)
+    tons: float = 0.0
+    power: float = 0.0
+    armoured_bulkhead: bool = False
 
     @model_validator(mode='before')
     @classmethod
     def _fill_tl(cls, data: Any) -> Any:
         if isinstance(data, dict) and 'tl' not in data:
-            score = data.get('score')
-            if score is not None and score in cls._specs:
-                data = {**data, 'tl': int(cls._specs[score]['tl'])}
+            processing = data.get('processing')
+            if processing is not None and processing in cls._specs:
+                data = {**data, 'tl': int(cls._specs[processing]['tl'])}
         return data
 
-    @field_validator('score')
+    @field_validator('processing')
     @classmethod
-    def validate_score(cls, value: int) -> int:
+    def validate_processing(cls, value: int) -> int:
         if value not in cls._specs:
             allowed = ', '.join(str(v) for v in sorted(cls._specs))
-            raise ValueError(f'Unsupported {cls.__name__} score {value}; expected one of: {allowed}')
+            raise ValueError(f'Unsupported {cls.__name__} processing {value}; expected one of: {allowed}')
         return value
 
     @property
     def description(self) -> str:
-        return f'{self._label}/{self.score}'
-
-    @property
-    def processing(self) -> int:
-        return self.score
+        return f'{self._label}/{self.processing}'
 
     @property
     def base_cost(self) -> float:
-        return float(self._specs[self.score]['cost'])
+        return float(self._specs[self.processing]['cost'])
+
+    def build_notes(self) -> list[Note]:
+        if self.armoured_bulkhead:
+            return [Note(category=NoteCategory.INFO, message='Armoured bulkhead, see Hull section.')]
+        return []
 
     def build_item(self) -> str | None:
         item = self.description
@@ -331,18 +267,9 @@ class ComputerBase(ShipPart):
     @property
     def included_software(self) -> list[SoftwarePackage]:
         packages: list[SoftwarePackage] = [Library(), Manoeuvre()]
-        if self.assembly_tl >= Intellect.tl:
-            packages.append(Intellect())
+        if self.assembly_tl >= 11:  # Intellect minimum TL
+            packages.append(Intellect(rating=0))
         return packages
-
-    def can_run(self, package: SoftwarePackage) -> bool:
-        if self.assembly_tl < package.tl:
-            return False
-        if isinstance(package, JumpControl):
-            if isinstance(self, Core):
-                return True
-            return self.jump_control_processing >= package.bandwidth
-        return self.processing >= package.bandwidth
 
     def compute_tons(self) -> float:
         return 0.0
@@ -390,9 +317,10 @@ ShipComputer = Annotated[
 ]
 
 ShipSoftware = Annotated[
-    Library
+    AnySoftware
+    # Ship software (HG)
+    | Library
     | Manoeuvre
-    | Intellect
     | JumpControl
     | AutoRepair
     | FireControl
@@ -433,12 +361,12 @@ class ComputerSection(CeresModel):
         selected: dict[type[SoftwarePackage], SoftwarePackage] = {}
         redundant: dict[type[SoftwarePackage], list[str]] = {}
         for package in packages:
-            key = package.singleton_type
+            key = type(package)
             current = selected.get(key)
             if current is None:
                 selected[key] = package
                 continue
-            if package.singleton_rank > current.singleton_rank:
+            if getattr(package, 'rating', 0) > getattr(current, 'rating', 0):
                 redundant.setdefault(key, []).append(f'Redundant {current.description} added')
                 selected[key] = package
                 continue
@@ -448,7 +376,7 @@ class ComputerSection(CeresModel):
                 package.warning(message)
         object.__setattr__(self, '_software_packages', selected)
 
-    def validate_software(self, assembly_tl: int) -> None:
+    def validate_software(self) -> None:
         if self.hardware is None:
             for package in self.software_packages.values():
                 package.warning('Ship software requires a computer')
@@ -456,27 +384,27 @@ class ComputerSection(CeresModel):
         if self.backup_hardware is not None and self.hardware.processing <= self.backup_hardware.processing:
             self.backup_hardware.error('Backup computer must have lower Processing than primary computer')
         for package in self.software_packages.values():
-            if assembly_tl < package.tl:
-                package.error(f'{package.description} requires TL{package.tl}')
-            if not self.hardware.can_run(package):
-                package.error(f'{self.hardware.description} cannot run {package.description}')
+            package.validate_on_computer(self.hardware)
 
     def validate_jump_drive(self, drives) -> None:
         jump_control = self.software_packages.get(JumpControl)
         if not isinstance(jump_control, JumpControl):
             return
+        effective = jump_control.effective_rating
+        if effective is None:
+            return
         if drives is None or drives.j_drive is None:
             jump_control.warning('No jump drive installed')
             return
-        if jump_control.rating > drives.j_drive.level:
+        if effective > drives.j_drive.level:
             jump_control.warning(f'Limited to Jump {drives.j_drive.level} by drive capacity')
 
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = []
         if self.hardware is not None:
-            parts.append(self.hardware)
+            parts.append(self.hardware)  # ty: ignore[invalid-argument-type]
         if self.backup_hardware is not None:
-            parts.append(self.backup_hardware)
+            parts.append(self.backup_hardware)  # ty: ignore[invalid-argument-type]
         return parts
 
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:

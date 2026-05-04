@@ -250,8 +250,11 @@ class DriveSection(ShipPart):
         if not isinstance(jump_control, JumpControl):
             self.j_drive.warning('No Jump Control software')
             return
-        if jump_control.rating < self.j_drive.level:
-            self.j_drive.warning(f'Limited to Jump {jump_control.rating} by control software')
+        effective = jump_control.effective_rating
+        if effective is None:
+            return
+        if effective < self.j_drive.level:
+            self.j_drive.warning(f'Limited to Jump {effective} by control software')
 
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
         if self.j_drive is not None:

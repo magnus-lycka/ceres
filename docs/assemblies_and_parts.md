@@ -53,7 +53,7 @@ class VehiclePart(CeresPart, VehiclePartMixin):
 Generic reusable parts define what the item is, independent of where it is used:
 
 ```
-class ComputerBase(CeresPart):
+class ComputerPart(CeresPart):
     performance: int
     software: list[Software] = Field(default_factory=list)
 ```
@@ -61,21 +61,21 @@ class ComputerBase(CeresPart):
 Concrete context-specific parts combine the generic part with the appropriate context mixin:
 
 ```
-class ShipComputer(ComputerBase, ShipPartMixin):
+class ShipComputer(ComputerPart, ShipPartMixin):
     pass
 
 
-class RobotComputer(ComputerBase, RobotPartMixin):
+class RobotComputer(ComputerPart, RobotPartMixin):
     pass
 
 
-class VehicleComputer(ComputerBase, VehiclePartMixin):
+class VehicleComputer(ComputerPart, VehiclePartMixin):
     pass
 ```
 
 ## Interpretation
 
-ComputerBase defines computer semantics: performance, software handling, cost, tech level, and other context-independent rules.
+ComputerPart defines computer semantics: performance, software handling, cost, tech level, and other context-independent rules.
 
 ShipPartMixin defines the properties required when something is used as a ship part: tonnage, bulkheads, and other ship-installation attributes.
 
@@ -83,7 +83,7 @@ ShipComputer therefore means:
 
 A computer, interpreted as a ship part.
 
-It is not necessary for ShipComputer to inherit from ShipPart. It is sufficient that it inherits from ComputerBase and ShipPartMixin.
+It is not necessary for ShipComputer to inherit from ShipPart. It is sufficient that it inherits from ComputerPart and ShipPartMixin.
 
 ## Constraints
 
@@ -94,18 +94,18 @@ One real superclass chain, any number of pure context/capability mixins.
 Allowed:
 
 ```
-class ShipComputer(ComputerBase, ShipPartMixin):
+class ShipComputer(ComputerPart, ShipPartMixin):
     pass
 ```
 
 Forbidden:
 
 ```
-class ShipComputer(ComputerBase, ShipPart):
+class ShipComputer(ComputerPart, ShipPart):
     pass
 ```
 
-because both ComputerBase and ShipPart are domain model classes rooted in CeresPart.
+because both ComputerPart and ShipPart are domain model classes rooted in CeresPart.
 
 Mixins must be non-overlapping. Two mixins used on the same class must not define the same field name unless the conflict is intentional and documented.
 

@@ -207,7 +207,7 @@ def test_habitation_explicit_passenger_vector_overrides_default():
         drives=DriveSection(j_drive=JDrive(level=1)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=10)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(score=5)),
+        computer=ComputerSection(hardware=Computer(processing=5)),
         habitation=HabitationSection(staterooms=[Stateroom()] * 4),
         passenger_vector={'high': 1},
     )

@@ -1,6 +1,6 @@
 from enum import StrEnum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PrivateAttr
 
 
 class NoteCategory(StrEnum):
@@ -47,6 +47,12 @@ class CeresModel(BaseModel):
         self.notes.extend(self.build_notes())
 
 
+class Assembly(CeresModel):
+    """Base for any context a part can be installed into (ship, equipment container, etc.)."""
+
+    tl: int = 0
+
+
 class CeresPart(CeresModel):
     """Base class for all parts — gear items, ship parts, etc.
 
@@ -56,14 +62,20 @@ class CeresPart(CeresModel):
     inheriting a second domain-model chain.
     """
 
+    _assembly: Assembly | None = PrivateAttr(default=None)
     tl: int = 0
     cost: float = 0.0
     model_config = {'frozen': True}
 
+    @property
+    def assembly(self) -> Assembly:
+        if self._assembly is None:
+            raise RuntimeError(f'{type(self).__name__} not bound to an Assembly')
+        return self._assembly
 
-class Equipment(CeresModel):
+
+class Equipment(Assembly):
     parts: list[CeresPart] = Field(default_factory=list)
-    tl: int = 0
     cost: float = 0.0
     mass_kg: float = 0.0
     model_config = {'frozen': True}
