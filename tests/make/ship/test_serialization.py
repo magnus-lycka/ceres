@@ -29,7 +29,7 @@ ultralight = Ship(
     displacement=6,
     hull=Hull(
         configuration=hull.streamlined_hull,
-        armour=armour.CrystalironArmour(tl=12, protection=6),
+        armour=armour.CrystalironArmour(protection=6),
         stealth=BasicStealth(),
     ),
     drives=DriveSection(m_drive=MDrive(level=6)),
@@ -79,7 +79,7 @@ def test_dump_armour_in_hull():
     data = json.loads(ultralight.model_dump_json())
     assert data['hull']['armour']['description'] == 'Crystaliron'
     assert data['hull']['armour']['protection'] == 6
-    assert data['hull']['armour']['tl'] == 12
+    assert 'tl' not in data['hull']['armour']
 
 
 def test_dump_no_armour_is_null():

@@ -54,7 +54,7 @@ def build_dolphin_extended_scout_courier() -> ship.Ship:
         design_type=ship.ShipDesignType.STANDARD,
         hull=hull.Hull(
             configuration=hull.streamlined_hull,
-            armour=armour.CrystalironArmour(tl=15, protection=4),
+            armour=armour.CrystalironArmour(protection=4),
         ),
         drives=DriveSection(m_drive=MDrive(level=2), j_drive=JDrive(level=2)),
         power=PowerSection(fusion_plant=FusionPlantTL15(output=70)),

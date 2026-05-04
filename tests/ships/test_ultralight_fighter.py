@@ -22,7 +22,7 @@ def build_ultralight_fighter() -> ship.Ship:
             configuration=hull.streamlined_hull.model_copy(
                 update={'light': True, 'description': 'Light Streamlined Hull'},
             ),
-            armour=armour.CrystalironArmour(tl=12, protection=6),
+            armour=armour.CrystalironArmour(protection=6),
             stealth=hull.BasicStealth(),
         ),
         drives=DriveSection(m_drive=MDrive(level=6)),

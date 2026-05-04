@@ -53,7 +53,7 @@ def build_suleiman() -> ship.Ship:
         design_type=ship.ShipDesignType.STANDARD,
         hull=hull.Hull(
             configuration=hull.streamlined_hull,
-            armour=armour.CrystalironArmour(tl=12, protection=4),
+            armour=armour.CrystalironArmour(protection=4),
             airlocks=[Airlock()],
         ),
         drives=DriveSection(m_drive=MDrive(level=2), j_drive=JDrive(level=2)),
