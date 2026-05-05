@@ -35,7 +35,10 @@ import pytest
 
 from ceres.make.ship import hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
-from ceres.make.ship.computer import Computer, ComputerSection, JumpControl
+from ceres.make.ship.computer import (
+    Computer,
+    ComputerSection,
+)
 from ceres.make.ship.crafts import CraftSection, EmptyOccupant, InternalDockingSpace
 from ceres.make.ship.crew import (
     Administrator,
@@ -54,6 +57,7 @@ from ceres.make.ship.crew import (
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
 from ceres.make.ship.habitation import HabitationSection, HighStateroom, LowBerth, LuxuryStateroom, Stateroom
 from ceres.make.ship.sensors import CivilianSensors, SensorsSection
+from ceres.make.ship.software import JumpControl
 from ceres.make.ship.storage import FuelSection, JumpFuel, OperationFuel
 from ceres.make.ship.systems import (
     CommercialZone,

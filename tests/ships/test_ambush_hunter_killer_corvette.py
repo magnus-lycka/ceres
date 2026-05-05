@@ -4,14 +4,8 @@ from ceres.make.ship import hull, ship
 from ceres.make.ship.armour import BondedSuperdenseArmour
 from ceres.make.ship.bridge import Bridge, CommandSection
 from ceres.make.ship.computer import (
-    AdvancedFireControl,
-    AntiHijack,
-    BroadSpectrumEW,
     Computer,
     ComputerSection,
-    ElectronicWarfare,
-    JumpControl,
-    VirtualGunner,
 )
 from ceres.make.ship.drives import DecreasedFuel, DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
 from ceres.make.ship.habitation import HabitationSection, HighStateroom, Stateroom
@@ -22,6 +16,14 @@ from ceres.make.ship.sensors import (
     ImprovedSensors,
     SensorsSection,
     SensorStations,
+)
+from ceres.make.ship.software import (
+    AdvancedFireControl,
+    AntiHijack,
+    BroadSpectrumEW,
+    ElectronicWarfare,
+    JumpControl,
+    VirtualGunner,
 )
 from ceres.make.ship.storage import FuelProcessor, FuelSection, OperationFuel
 from ceres.make.ship.systems import Airlock, Armoury, BriefingRoom, CommonArea, MedicalBay, RepairDrones, SystemsSection

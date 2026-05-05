@@ -3,8 +3,9 @@ from typing import Any, ClassVar, Literal
 
 from pydantic import model_validator
 
+from ceres.gear.software import SoftwarePackage
+
 from .base import Note, NoteCategory
-from .computer import JumpControl, SoftwarePackage
 from .parts import (
     CustomisableShipPart,
     EnergyEfficient,
@@ -14,6 +15,7 @@ from .parts import (
     ShipPart,
     SizeReduction,
 )
+from .software import JumpControl
 from .spec import ShipSpec, SpecSection
 
 LimitedRange = Modification(

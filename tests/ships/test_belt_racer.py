@@ -22,7 +22,10 @@ import pytest
 
 from ceres.make.ship import hull, ship
 from ceres.make.ship.bridge import Cockpit, CommandSection
-from ceres.make.ship.computer import Computer, ComputerSection
+from ceres.make.ship.computer import (
+    Computer,
+    ComputerSection,
+)
 from ceres.make.ship.drives import (
     DriveSection,
     FusionPlantTL8,

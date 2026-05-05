@@ -2,7 +2,10 @@ import pytest
 
 from ceres.make.ship import armour, hull, ship
 from ceres.make.ship.bridge import Cockpit, CommandSection
-from ceres.make.ship.computer import Computer, ComputerSection
+from ceres.make.ship.computer import (
+    Computer,
+    ComputerSection,
+)
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
 from ceres.make.ship.parts import EnergyEfficient, HighTechnology
 from ceres.make.ship.sensors import CivilianSensors, SensorsSection

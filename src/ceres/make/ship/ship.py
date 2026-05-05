@@ -3,9 +3,11 @@ from math import ceil
 
 from pydantic import Field
 
+from ceres.gear.software import SoftwarePackage
+
 from .base import NoteCategory, ShipBase
 from .bridge import CommandSection
-from .computer import ComputerSection, SoftwarePackage
+from .computer import ComputerSection
 from .crafts import CraftSection
 from .crew import (
     CrewRole,

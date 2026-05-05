@@ -26,12 +26,16 @@ import pytest
 
 from ceres.make.ship import armour, hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
-from ceres.make.ship.computer import Computer, ComputerSection, JumpControl
+from ceres.make.ship.computer import (
+    Computer,
+    ComputerSection,
+)
 from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
 from ceres.make.ship.crew import Astrogator, Engineer, Gunner, Medic, Pilot, ShipCrew
 from ceres.make.ship.drives import DriveSection, FusionPlantTL15, JDrive, MDrive, PowerSection
 from ceres.make.ship.habitation import HabitationSection, LowBerth, Stateroom
 from ceres.make.ship.sensors import MilitarySensors, SensorsSection
+from ceres.make.ship.software import JumpControl
 from ceres.make.ship.storage import (
     CargoAirlock,
     CargoSection,

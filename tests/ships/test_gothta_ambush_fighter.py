@@ -2,11 +2,15 @@ import pytest
 
 from ceres.make.ship import hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
-from ceres.make.ship.computer import Computer, ComputerSection, FireControl
+from ceres.make.ship.computer import (
+    Computer,
+    ComputerSection,
+)
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection, RDrive
 from ceres.make.ship.habitation import CabinSpace, HabitationSection
 from ceres.make.ship.report import render_ship_spec_typst as _build_typst_source
 from ceres.make.ship.sensors import MilitarySensors, SensorsSection
+from ceres.make.ship.software import FireControl
 from ceres.make.ship.storage import FuelScoops, FuelSection, OperationFuel, ReactionFuel
 from ceres.make.ship.systems import Aerofins
 from ceres.make.ship.weapons import FixedMount, MountWeapon, WeaponsSection

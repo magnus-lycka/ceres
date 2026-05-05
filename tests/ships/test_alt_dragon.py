@@ -38,7 +38,11 @@ import pytest
 
 from ceres.make.ship import armour, hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
-from ceres.make.ship.computer import AutoRepair, Computer, ComputerSection, Core, Evade, FireControl
+from ceres.make.ship.computer import (
+    Computer,
+    ComputerSection,
+    Core,
+)
 from ceres.make.ship.crew import (
     Captain,
     Engineer,
@@ -60,6 +64,11 @@ from ceres.make.ship.sensors import (
     ImprovedSensors,
     RapidDeploymentExtendedArrays,
     SensorsSection,
+)
+from ceres.make.ship.software import (
+    AutoRepair,
+    Evade,
+    FireControl,
 )
 from ceres.make.ship.storage import CargoSection, FuelProcessor, FuelSection, OperationFuel
 from ceres.make.ship.systems import (
