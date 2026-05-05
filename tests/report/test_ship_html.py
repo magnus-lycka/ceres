@@ -27,7 +27,7 @@ def test_render_ship_spec_html_uses_high_guard_like_split_layout():
     assert '<td>Basic Ship Systems</td><td class="num">20.00</td>' in html
     assert 'scope="rowgroup" class="section-cell" rowspan="' in html
     assert 'class="admonition' in html
-    assert 'Features: Passive optical and thermal sensors' in html
+    assert 'Passive optical and thermal sensors' in html
     assert 'data-theme-toggle' in html
     assert '<body class="theme-light">' in html
 

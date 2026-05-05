@@ -60,8 +60,8 @@ def _mounted_weapon_notes(weapons: Sequence[MountWeapon], *, empty_message: str)
     for item, customisation in order:
         notes.append(
             Note(
-                category=NoteCategory.INFO,
-                message=f'Weapon: {format_counted_label(item, groups[(item, customisation)])}',
+                category=NoteCategory.CONTENT,
+                message=f'{format_counted_label(item, groups[(item, customisation)])}',
             )
         )
         if customisation is not None:
@@ -335,7 +335,7 @@ class _Barbette(CustomisableShipPart):
     )
 
     def build_item(self) -> str | None:
-        item = 'Barbette'
+        item = f'{self.weapon_label} Barbette'
         damage_text = _damage_multiple_text(self.damage_multiplier)
         if damage_text is None:
             return item
@@ -343,7 +343,6 @@ class _Barbette(CustomisableShipPart):
 
     def build_notes(self) -> list[Note]:
         notes = [*ShipPart.build_notes(self)]
-        notes.append(Note(category=NoteCategory.INFO, message=f'Weapon: {self.weapon_label}'))
         if self.customisation is not None:
             notes.append(Note(category=NoteCategory.INFO, message=self.customisation.note_text))
         return notes
@@ -527,7 +526,7 @@ class _Bay(CustomisableShipPart):
                     self.error(f'{mod.name} is not applicable for {self.build_item()}')
 
     def build_item(self) -> str | None:
-        item = f'{self.size.title()} Bay'
+        item = f'{self.size.title()} {self.weapon_label} Bay'
         if self.salvo_text is not None:
             item = f'{item} ({self.salvo_text})'
         else:
@@ -542,7 +541,6 @@ class _Bay(CustomisableShipPart):
 
     def build_notes(self) -> list[Note]:
         notes = [*ShipPart.build_notes(self)]
-        notes.append(Note(category=NoteCategory.INFO, message=f'Weapon: {self.weapon_label}'))
         if self.magazine_summary is not None:
             notes.append(Note(category=NoteCategory.INFO, message=self.magazine_summary))
         if self.customisation is not None:

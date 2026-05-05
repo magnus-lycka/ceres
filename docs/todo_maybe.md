@@ -103,9 +103,9 @@ Current status:
 
 - hardpoint / firmpoint capacity checks implemented
 - small craft restriction to single turrets implemented
-- turret API simplified to `Turret(size='single'|'double'|'triple', weapons=[...])`
-- `FixedMount` and `Turret` now share the same `MountWeapon(...)` weapon model
-- `Barbette`, `Bay`, `PointDefenseBattery`, and `MissileStorage` are modeled
+- turret API split into concrete classes such as `SingleTurret`, `DoubleTurret`, and `TripleTurret`
+- `FixedMount` and turrets now share concrete mount weapon classes such as `PulseLaser` and `MissileRack`
+- `Barbette`, `Bay`, `PointDefenseBattery`, and `MissileStorage` are modeled with concrete weapon-installation classes
 - size-reduction weapon modifiers are modeled for barbettes, bays, and point defense batteries
 - fixed mounts can carry multiple weapons in the model, with small-craft restrictions enforced
 

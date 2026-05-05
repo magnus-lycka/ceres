@@ -246,7 +246,7 @@ def test_fixed_firmpoint_with_multiple_weapons_reports_fixed_mount_item():
     fp = FixedMount(weapons=[PulseLaser(), PulseLaser()])
     assert [(note.category.value, note.message) for note in fp.notes] == [
         ('item', 'Fixed Mount'),
-        ('info', 'Weapon: Pulse Laser × 2'),
+        ('content', 'Pulse Laser × 2'),
     ]
 
 
@@ -260,7 +260,7 @@ def test_triple_turret_groups_identical_customised_weapons_in_notes():
     )
     assert [(note.category.value, note.message) for note in turret.notes] == [
         ('item', 'Triple Turret'),
-        ('info', 'Weapon: Pulse Laser × 3'),
+        ('content', 'Pulse Laser × 3'),
         ('info', 'High Technology: Long Range, High Yield'),
     ]
 
@@ -285,7 +285,7 @@ def test_reused_weapon_and_turret_references_render_like_distinct_identical_obje
     assert turret_row.tons == pytest.approx(2.0)
     assert turret_row.cost == pytest.approx(11_000_000.0)
     assert [(note.category.value, note.message) for note in turret_row.notes] == [
-        ('info', 'Weapon: Pulse Laser × 3'),
+        ('content', 'Pulse Laser × 3'),
         ('info', 'High Technology: Long Range, High Yield'),
     ]
 
@@ -301,7 +301,7 @@ def test_pulse_laser_barbette_values():
 def test_particle_barbette_values():
     barbette = ParticleBarbette()
     barbette.bind(DummyOwner(13, 400))
-    assert barbette.build_item() == 'Barbette (Damage × 3 after armour)'
+    assert barbette.build_item() == 'Particle Barbette (Damage × 3 after armour)'
     assert barbette.tons == pytest.approx(5.0)
     assert barbette.cost == pytest.approx(8_000_000)
 
@@ -309,7 +309,7 @@ def test_particle_barbette_values():
 def test_torpedo_barbette_has_no_damage_multiple_in_item():
     barbette = TorpedoBarbette()
     barbette.bind(DummyOwner(12, 400))
-    assert barbette.build_item() == 'Barbette'
+    assert barbette.build_item() == 'Torpedo Barbette'
     assert barbette.crew_required_commercial == 1
     assert barbette.crew_required_military == 2
 
@@ -317,7 +317,7 @@ def test_torpedo_barbette_has_no_damage_multiple_in_item():
 def test_particle_barbette_very_high_yield_values():
     barbette = ParticleBarbette(customisation=VeryAdvanced(modifications=[VeryHighYield]))
     barbette.bind(DummyOwner(13, 400))
-    assert barbette.build_item() == 'Barbette (Damage × 3 after armour)'
+    assert barbette.build_item() == 'Particle Barbette (Damage × 3 after armour)'
     assert barbette.tons == pytest.approx(5.0)
     assert barbette.cost == pytest.approx(10_000_000)
     assert barbette.power == pytest.approx(15.0)
@@ -335,7 +335,7 @@ def test_small_missile_bay_values():
 def test_small_missile_bay_size_reduction_values():
     bay = SmallMissileBay(customisation=Advanced(modifications=[SizeReduction]))
     bay.bind(DummyOwner(13, 1_000))
-    assert bay.build_item() == 'Small Bay (12 missiles per salvo)'
+    assert bay.build_item() == 'Small Missile Bay (12 missiles per salvo)'
     assert bay.tons == pytest.approx(45.0)
     assert bay.cost == pytest.approx(13_200_000)
 
@@ -345,7 +345,7 @@ def test_small_missile_bay_three_size_reduction_steps_values():
         customisation=HighTechnology(modifications=[SizeReduction, SizeReduction, SizeReduction]),
     )
     bay.bind(DummyOwner(13, 1_000))
-    assert bay.build_item() == 'Small Bay (12 missiles per salvo)'
+    assert bay.build_item() == 'Small Missile Bay (12 missiles per salvo)'
     assert bay.tons == pytest.approx(35.0)
     assert bay.cost == pytest.approx(18_000_000)
 
@@ -365,7 +365,7 @@ def test_medium_particle_beam_bay_high_yield_and_two_size_reductions_values():
 def test_medium_missile_bay_high_yield_not_applicable():
     bay = MediumMissileBay(customisation=Advanced(modifications=[HighYield]))
     bay.bind(DummyOwner(10, 1_000))
-    assert ('error', 'High Yield is not applicable for Medium Bay (24 missiles per salvo)') in [
+    assert ('error', 'High Yield is not applicable for Medium Missile Bay (24 missiles per salvo)') in [
         (note.category.value, note.message) for note in bay.notes
     ]
 
@@ -634,14 +634,13 @@ def test_bays_count_against_hardpoint_capacity():
 def test_barbette_with_very_high_yield_item_is_base_name_only():
     barbette = ParticleBarbette(customisation=VeryAdvanced(modifications=[VeryHighYield]))
     barbette.bind(DummyOwner(13, 400))
-    assert barbette.build_item() == 'Barbette (Damage × 3 after armour)'
+    assert barbette.build_item() == 'Particle Barbette (Damage × 3 after armour)'
 
 
 def test_barbette_with_very_high_yield_has_customisation_note():
     barbette = ParticleBarbette(customisation=VeryAdvanced(modifications=[VeryHighYield]))
     barbette.bind(DummyOwner(13, 400))
     info_notes = [n.message for n in barbette.notes if n.category.value == 'info']
-    assert 'Weapon: Particle' in info_notes
     assert 'Very Advanced: Very High Yield' in info_notes
     assert 'Damage × 3 after armour' not in info_notes
 
@@ -651,7 +650,7 @@ def test_bay_with_size_reduction_item_is_base_name_only():
         customisation=HighTechnology(modifications=[SizeReduction, SizeReduction, SizeReduction]),
     )
     bay.bind(DummyOwner(13, 1_000))
-    assert bay.build_item() == 'Small Bay (12 missiles per salvo)'
+    assert bay.build_item() == 'Small Missile Bay (12 missiles per salvo)'
 
 
 def test_bay_with_size_reduction_has_customisation_note():
@@ -660,7 +659,6 @@ def test_bay_with_size_reduction_has_customisation_note():
     )
     bay.bind(DummyOwner(13, 1_000))
     info_notes = [n.message for n in bay.notes if n.category.value == 'info']
-    assert 'Weapon: Missile' in info_notes
     assert 'Magazine: 144 missiles (12 full salvos)' in info_notes
     assert 'High Technology: Size Reduction × 3' in info_notes
     assert 'Damage × 10 after armour' not in info_notes
@@ -669,45 +667,34 @@ def test_bay_with_size_reduction_has_customisation_note():
 def test_small_energy_bay_has_damage_multiple_note():
     bay = SmallFusionGunBay()
     bay.bind(DummyOwner(12, 1_000))
-    assert bay.build_item() == 'Small Bay (Damage × 10 after armour)'
-    info_notes = [n.message for n in bay.notes if n.category.value == 'info']
-    assert 'Weapon: Fusion Gun' in info_notes
-    assert 'Damage × 10 after armour' not in info_notes
+    assert bay.build_item() == 'Small Fusion Gun Bay (Damage × 10 after armour)'
 
 
 def test_medium_energy_bay_has_damage_multiple_note():
     bay = MediumParticleBeamBay()
     bay.bind(DummyOwner(12, 1_000))
-    assert bay.build_item() == 'Medium Bay (Damage × 20 after armour)'
-    info_notes = [n.message for n in bay.notes if n.category.value == 'info']
-    assert 'Weapon: Particle Beam' in info_notes
-    assert 'Damage × 20 after armour' not in info_notes
+    assert bay.build_item() == 'Medium Particle Beam Bay (Damage × 20 after armour)'
 
 
 def test_large_energy_bay_has_damage_multiple_note():
     bay = LargeMesonGunBay()
     bay.bind(DummyOwner(13, 1_000))
-    assert bay.build_item() == 'Large Bay (Damage × 100 after armour)'
-    info_notes = [n.message for n in bay.notes if n.category.value == 'info']
-    assert 'Weapon: Meson Gun' in info_notes
-    assert 'Damage × 100 after armour' not in info_notes
+    assert bay.build_item() == 'Large Meson Gun Bay (Damage × 100 after armour)'
 
 
 def test_medium_missile_bay_has_salvo_summary_note():
     bay = MediumMissileBay()
     bay.bind(DummyOwner(12, 1_000))
-    assert bay.build_item() == 'Medium Bay (24 missiles per salvo)'
+    assert bay.build_item() == 'Medium Missile Bay (24 missiles per salvo)'
     info_notes = [n.message for n in bay.notes if n.category.value == 'info']
-    assert 'Weapon: Missile' in info_notes
     assert 'Magazine: 288 missiles (12 full salvos)' in info_notes
 
 
 def test_large_torpedo_bay_has_salvo_summary_note():
     bay = LargeTorpedoBay()
     bay.bind(DummyOwner(12, 1_000))
-    assert bay.build_item() == 'Large Bay (30 torpedoes per salvo)'
+    assert bay.build_item() == 'Large Torpedo Bay (30 torpedoes per salvo)'
     info_notes = [n.message for n in bay.notes if n.category.value == 'info']
-    assert 'Weapon: Torpedo' in info_notes
     assert 'Magazine: 360 torpedoes (12 full salvos)' in info_notes
     assert bay.crew_required_commercial == 0
 

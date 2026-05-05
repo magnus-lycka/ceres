@@ -248,7 +248,7 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
     turret_row = spec.row('Triple Turret', section='Weapons')
     assert turret_row.quantity == 2
     assert [(note.category.value, note.message) for note in turret_row.notes] == [
-        ('info', 'Weapon: Pulse Laser × 3'),
+        ('content', 'Pulse Laser × 3'),
         ('info', 'High Technology: Long Range, High Yield'),
     ]
 

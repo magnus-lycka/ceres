@@ -55,7 +55,7 @@ def _sensor_package_notes(
             unavailable.append(sensor)
     features.extend(package_capabilities)
     notes = [
-        Note(category=NoteCategory.INFO, message=f'Features: {", ".join(features)}'),
+        Note(category=NoteCategory.CONTENT, message=', '.join(features)),
         Note(
             category=NoteCategory.INFO,
             message=f'DM {dm} to Electronics (comms) and Electronics (sensors) checks',
@@ -269,7 +269,7 @@ class LifeScannerAnalysisSuite(ShipPart):
 
     def build_notes(self) -> list[Note]:
         return [
-            Note(category=NoteCategory.INFO, message='Advanced ship-mounted life scanner'),
+            Note(category=NoteCategory.CONTENT, message='Advanced ship-mounted life scanner'),
             Note(
                 category=NoteCategory.INFO,
                 message='Requires Electronics (sensors) to interpret; improves biological analysis',

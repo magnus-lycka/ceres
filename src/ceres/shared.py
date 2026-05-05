@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field, PrivateAttr
 
 class NoteCategory(StrEnum):
     ITEM = 'item'
+    CONTENT = 'content'
     INFO = 'info'
     WARNING = 'warning'
     ERROR = 'error'
@@ -33,6 +34,9 @@ class CeresModel(BaseModel):
 
     def info(self, message: str) -> None:
         self.notes.append(Note(category=NoteCategory.INFO, message=message))
+
+    def content(self, message: str) -> None:
+        self.notes.append(Note(category=NoteCategory.CONTENT, message=message))
 
     def error(self, message: str) -> None:
         self.notes.append(Note(category=NoteCategory.ERROR, message=message))

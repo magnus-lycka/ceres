@@ -12,14 +12,15 @@ Traveller ships for conversation, tooling, or export.
 ```python
 from ceres.make.ship import armour, hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
-from ceres.make.ship.computer import Computer, ComputerSection, JumpControl
+from ceres.make.ship.computer import Computer5, ComputerSection
 from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
-from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive2, MDrive2, PowerSection
 from ceres.make.ship.habitation import HabitationSection, Stateroom
 from ceres.make.ship.sensors import MilitarySensors, SensorsSection
+from ceres.make.ship.software import JumpControl
 from ceres.make.ship.storage import FuelProcessor, FuelSection, JumpFuel, OperationFuel
 from ceres.make.ship.systems import Airlock, ProbeDrones, SystemsSection, Workshop
-from ceres.make.ship.weapons import Turret, WeaponsSection
+from ceres.make.ship.weapons import DoubleTurret, WeaponsSection
 from ceres.report import render_ship_html
 
 scout = ship.Ship(
@@ -30,10 +31,10 @@ scout = ship.Ship(
     design_type=ship.ShipDesignType.STANDARD,
     hull=hull.Hull(
         configuration=hull.streamlined_hull,
-        armour=armour.CrystalironArmour(tl=12, protection=4),
-            airlocks=[Airlock()],
+        armour=armour.CrystalironArmour(protection=4),
+        airlocks=[Airlock()],
     ),
-    drives=DriveSection(m_drive=MDrive(2), j_drive=JDrive(2)),
+    drives=DriveSection(m_drive=MDrive2(), j_drive=JDrive2()),
     power=PowerSection(fusion_plant=FusionPlantTL12(output=60)),
     fuel=FuelSection(
         jump_fuel=JumpFuel(parsecs=2),
@@ -41,9 +42,9 @@ scout = ship.Ship(
         fuel_processor=FuelProcessor(tons=2),
     ),
     command=CommandSection(bridge=Bridge()),
-    computer=ComputerSection(hardware=Computer(5, bis=True), software=[JumpControl(2)]),
+    computer=ComputerSection(hardware=Computer5(bis=True), software=[JumpControl(rating=2)]),
     sensors=SensorsSection(primary=MilitarySensors()),
-    weapons=WeaponsSection(turrets=[Turret(size='double')]),
+    weapons=WeaponsSection(turrets=[DoubleTurret()]),
     craft=CraftSection(internal_housing=[InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft'))]),
     habitation=HabitationSection(staterooms=[Stateroom()] * 4),
     systems=SystemsSection(internal_systems=[Workshop()], drones=[ProbeDrones(count=10)]),

@@ -1,4 +1,18 @@
-# Plan: Remove `_tl` ClassVar / `_fill_tl_from_class_var` from CeresPart subclasses
+# Completed Plan: Remove `_tl` ClassVar / `_fill_tl_from_class_var` from CeresPart subclasses
+
+Status: completed and archived.
+
+This plan is retained as historical context. The active work is done:
+
+- `ShipPart._tl` and `_fill_tl_from_class_var` have been removed.
+- Fixed-TL ship parts now use ordinary `tl: int = N` field defaults.
+- Runtime-parameter ship parts whose TL used to come from lookup tables have been split into
+  concrete subclasses and discriminated unions, including drives, ship computers, weapon
+  installations, and mount weapons.
+- Software packages still use `_tl` internally, but they are not `CeresPart`/`ShipPart` classes and
+  were deliberately outside this plan's scope.
+
+---
 
 ## Context
 
@@ -51,8 +65,9 @@ will make the model shape much easier to see. A few points should be corrected b
 - For `RDrive`, consider whether per-level subclasses are worth the larger API churn. Unlike
   customisable drives, `RDrive` has only one extra boolean option and no discriminated sibling
   pattern today. Splitting it is consistent, but it is a lot of surface area for a simpler part.
-- Weapon mounts are a separate follow-up. `Turret`, `Barbette`, `Bay`, and `PointDefenseBattery`
-  now use concrete subclasses with literal discriminators instead of validator-filled TL values.
+- Weapon installations are a separate follow-up. `Turret`, `Barbette`, `Bay`,
+  `PointDefenseBattery`, and mount weapons such as `PulseLaser` now use concrete subclasses with
+  literal discriminators instead of validator-filled TL/spec-table values.
 
 Suggested implementation order:
 

@@ -293,12 +293,12 @@ def test_small_scout_base_spec_structure():
     assert beam_turret_rows[0].quantity == 4
     assert beam_turret_rows[0].cost == pytest.approx(16_000_000.0)
     assert [(note.category.value, note.message) for note in beam_turret_rows[0].notes] == [
-        ('info', 'Weapon: Beam Laser × 4'),
+        ('content', 'Beam Laser × 4'),
     ]
     assert beam_turret_rows[1].quantity is None
     assert beam_turret_rows[1].cost == pytest.approx(5_000_000.0)
     assert [(note.category.value, note.message) for note in beam_turret_rows[1].notes] == [
-        ('info', 'Weapon: Missile Rack × 4'),
+        ('content', 'Missile Rack × 4'),
     ]
     assert len(spec.rows_matching('Full Hangar: Passenger Shuttle')) == 10
     assert len(spec.rows_matching('Passenger Shuttle')) == 10

@@ -1,7 +1,7 @@
 // ship_spec.typ — Ship specification sheet.
 // Data injected by Python as: #let report_data = (...)
 
-#import "@preview/gentle-clues:1.2.0": info as gc-info, warning as gc-warning, error as gc-error
+#import "@preview/gentle-clues:1.2.0": abstract as gc-abstract, info as gc-info, warning as gc-warning, error as gc-error
 
 #let accent = rgb("#cc2036")
 #let ink = rgb("#0d0d0d")
@@ -12,23 +12,30 @@
 #set text(font: ("Arial Narrow", "Helvetica Neue Condensed", "Helvetica"), size: 10pt)
 #set table(stroke: table-rule)
 
-// One admonition per category, sorted error → warning → info.
+// One admonition per category, sorted error → warning → content → info.
 #let render-grouped(notes, headless: false) = {
-  for cat in ("error", "warning", "info") {
+  for cat in ("error", "warning", "content", "info") {
     let msgs = notes.filter(n => n.at("category") == cat).map(n => n.at("message"))
     if msgs.len() > 0 {
       let body = msgs.map(m => [#m]).join(linebreak())
       if cat == "error"   { gc-error(headless: headless)[#body] }
       else if cat == "warning" { gc-warning(headless: headless)[#body] }
+      else if cat == "content" { gc-abstract(headless: headless)[#body] }
       else { gc-info(headless: headless)[#body] }
     }
   }
 }
 
+#let render-tight-grouped(notes, headless: false) = text(size: 8.5pt)[
+  #set block(spacing: 3pt)
+  #show block: set block(inset: (x: 2pt, y: -5pt))
+  #render-grouped(notes, headless: headless)
+]
+
 // Render notes inline (after item text), inside table cells.
 #let render-ship-notes(notes) = {
   if notes.len() > 0 { linebreak() }
-  render-grouped(notes, headless: true)
+  render-tight-grouped(notes, headless: true)
 }
 
 // Render a standalone notes block.

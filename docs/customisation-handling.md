@@ -6,7 +6,7 @@ Customisation grades (Budget, Advanced, Very Advanced, High Technology, …) are
 modelled as `CustomisationGrade` enum values and the machinery to apply them
 lives in `CustomisableShipPart`.  However, the parts that actually use
 customisation — `MDrive`, `_FusionPlant`, `Barbette`, `Bay`,
-`PointDefenseBattery`, and `MountWeapon` — all bypass that machinery by
+`PointDefenseBattery`, and mount weapons — all bypass that machinery by
 accepting individual boolean/int fields (`budget`, `increased_size`,
 `size_reduction`, `very_high_yield`, `energy_efficient`) and computing grade and
 modification list in `model_post_init`.
@@ -22,8 +22,8 @@ This produces several concrete bugs and design problems:
   should be declared as an input.
 - Each part assembles its own customisation notes through ad-hoc functions
   (`_weapon_customisation_note`, inline `build_notes` logic) with no shared format.
-- `MountWeapon` is not a `ShipPart` and has its own parallel mechanism with no
-  shared validation.
+- Mount weapons are not `ShipPart`s and had their own parallel mechanism with
+  no shared validation.
 
 Root cause: customisation flows backwards — properties → grade — instead of
 grade → validated properties.
@@ -40,7 +40,8 @@ Implemented:
 - `CustomisableShipPart` accepts `customisation: CustomisationUnion | None`
 - `MDrive` and `_FusionPlant` now read customisation directly
 - `Barbette`, `Bay`, and `PointDefenseBattery` now read customisation directly
-- `MountWeapon` now has `customisation` too, rather than its own boolean flags
+- mount weapons such as `PulseLaser` now have `customisation` too, rather than
+  their own boolean flags
 - tests and ship builders now declare grade first, then modifications
 
 This means the bad backwards pattern is gone from current construction code.
@@ -48,13 +49,13 @@ We no longer accept or test for things like:
 
 - `Bay(size_reduction=3)`
 - `MDrive7(budget=True, increased_size=True)`
-- `MountWeapon(very_high_yield=True, energy_efficient=True)`
+- `MountWeapon(weapon='pulse_laser', very_high_yield=True, energy_efficient=True)`
 
 Those have been replaced with the intended declarative form:
 
-- `Bay(customisation=HighTechnology(SizeReduction, SizeReduction, SizeReduction))`
-- `MDrive7(customisation=Budget(IncreasedSize))`
-- `MountWeapon(customisation=HighTechnology(VeryHighYield, EnergyEfficient))`
+- `SmallMissileBay(customisation=HighTechnology(modifications=[SizeReduction, SizeReduction, SizeReduction]))`
+- `MDrive7(customisation=Budget(modifications=[IncreasedSize]))`
+- `PulseLaser(customisation=HighTechnology(modifications=[VeryHighYield, EnergyEfficient]))`
 
 ---
 
@@ -184,9 +185,10 @@ that support customisation.  After the migration its only responsibilities are:
 All existing multiplier-computation methods and `validate_customisations` are
 deleted; that logic now lives in `Customisation` itself.
 
-`MountWeapon` is a `CeresModel`, not a `ShipPart`.  It receives the same
-`customisation` field and `allowed_modifications` directly, without inheriting
-from `CustomisableShipPart`.
+Mount weapons such as `PulseLaser`, `BeamLaser`, `MissileRack`, and
+`Sandcaster` are `CeresModel` instances, not `ShipPart`s.  They receive the
+same `customisation` field and `allowed_modifications` directly, without
+inheriting from `CustomisableShipPart`.
 
 ### API before / after
 
@@ -200,27 +202,27 @@ PointDefenseBattery(kind='laser', rating=2, energy_efficient=True)
 MountWeapon(weapon='pulse_laser', very_high_yield=True, energy_efficient=True)
 
 # after
-Bay(size='small', weapon='missile', armoured_bulkhead=True,
-    customisation=HighTechnology(SizeReduction, SizeReduction, SizeReduction))
+SmallMissileBay(armoured_bulkhead=True,
+    customisation=HighTechnology(modifications=[SizeReduction, SizeReduction, SizeReduction]))
 MDrive7(armoured_bulkhead=True,
-    customisation=Budget(IncreasedSize))
+    customisation=Budget(modifications=[IncreasedSize]))
 FusionPlantTL12(output=482,
-    customisation=Budget(IncreasedSize))
-Barbette(weapon='particle',
-    customisation=VeryAdvanced(VeryHighYield))
-PointDefenseBattery(kind='laser', rating=2,
-    customisation=Advanced(EnergyEfficient))
-MountWeapon(weapon='pulse_laser',
-    customisation=HighTechnology(VeryHighYield, EnergyEfficient))
+    customisation=Budget(modifications=[IncreasedSize]))
+ParticleBarbette(
+    customisation=VeryAdvanced(modifications=[VeryHighYield]))
+LaserPointDefenseBattery2(
+    customisation=Advanced(modifications=[EnergyEfficient]))
+PulseLaser(
+    customisation=HighTechnology(modifications=[VeryHighYield, EnergyEfficient]))
 ```
 
 A triple turret can have three independently-customised weapons:
 
 ```python
-Turret(size='triple', weapons=[
-    MountWeapon(weapon='pulse_laser', customisation=Advanced(EnergyEfficient)),
-    MountWeapon(weapon='beam_laser'),
-    MountWeapon(weapon='sandcaster', customisation=Budget(IncreasedSize)),
+TripleTurret(weapons=[
+    PulseLaser(customisation=Advanced(modifications=[EnergyEfficient])),
+    BeamLaser(),
+    Sandcaster(customisation=Budget(modifications=[IncreasedSize])),
 ])
 ```
 
@@ -292,7 +294,7 @@ Same pattern as Step 4.
 
 Completed.
 
-### Step 6 — Migrate `MountWeapon` [done]
+### Step 6 — Migrate mount weapons [done]
 
 Completed.
 
@@ -313,7 +315,7 @@ gone.
 |------|--------|
 | `src/ceres/make/ship/parts.py` | Rename `Customisation`→`Modification`; add new `Customisation` hierarchy; simplify `CustomisableShipPart`; strip old `CustomisationGrade` property methods |
 | `src/ceres/make/ship/drives.py` | Remove per-field customisation in `MDrive`, `_FusionPlant` |
-| `src/ceres/make/ship/weapons.py` | Remove per-field customisation in `Barbette`, `Bay`, `PDB`, `MountWeapon`; delete `_weapon_customisation_note` |
+| `src/ceres/make/ship/weapons.py` | Remove per-field customisation in `Barbette`, `Bay`, `PDB`, and mount weapons; delete `_weapon_customisation_note` |
 | `src/ceres/make/ship/sensors.py` | Import rename only |
 | `tests/make/ship/test_customisation.py` | New file: unit tests for `Customisation` hierarchy |
 | `tests/make/ship/test_drives.py` | New construction API; note text assertions |
