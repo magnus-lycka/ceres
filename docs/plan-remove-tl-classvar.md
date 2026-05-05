@@ -19,8 +19,45 @@ field default (`tl: int = N`), with no `_tl` ClassVar and no `_fill_tl_from_clas
 Parts whose TL depends on a runtime parameter (drive level) must first be split into per-level or
 per-TL subclasses so TL can become a class-level constant.
 
+Scope is deliberately limited to `CeresPart` subclasses. Other model hierarchies may have `_tl`
+class vars for their own purposes, but they are not part of this cleanup unless they inherit from
+`CeresPart`.
+
 `Assembly.tl` (e.g. `Ship.tl`) remains a plain instance field — a ship is an instance, not a
 subclass.
+
+## Review comments
+
+Overall direction looks good: replacing the pre-validation injection with ordinary field defaults
+will make the model shape much easier to see. A few points should be corrected before implementation:
+
+- Ship software has been split out after this plan was written, but `SoftwarePackage` is not a
+  `CeresPart`/`ShipPart`. Leave `src/ceres/make/ship/software.py` and `src/ceres/gear/software.py`
+  out of this refactor even though they still use `_tl` internally.
+- `src/ceres/make/ship/weapons.py` has at least one fixed `_tl` user (`FixedMount`). If the goal is
+  to delete `ShipPart._tl`, this file must be included in Part 1.
+- Part 2 changes `MDrive`, `JDrive`, and `RDrive` from constructible classes into type aliases.
+  That means calls like `MDrive.model_validate(...)` and `MDrive(level=2)` stop working. The tests
+  already contain direct constructor and direct `model_validate` calls, so either the plan should
+  update those to `MDrive2(...)` / `TypeAdapter(MDrive).validate_python(...)`, or keep a factory API
+  for backwards compatibility.
+- The discriminated drive union can deliberately drop support for old serialized data. Existing
+  payloads with only `{"level": 2}` will no longer validate; tests and fixtures should be updated to
+  the new discriminator-based shape.
+- With per-level drive subclasses, invalid-level tests change shape. `MDrive(level=99)` currently
+  creates an object with a domain note; the new API will usually fail during Pydantic validation or
+  attribute construction. The plan should call out this behavioral change and update tests
+  intentionally.
+- For `RDrive`, consider whether per-level subclasses are worth the larger API churn. Unlike
+  customisable drives, `RDrive` has only one extra boolean option and no discriminated sibling
+  pattern today. Splitting it is consistent, but it is a lot of surface area for a simpler part.
+
+Suggested implementation order:
+
+1. First land the fixed-`_tl` cleanup across `ShipPart` subclasses, including `weapons.py`, while
+   leaving dynamic `_fill_tl` validators in place.
+2. Then do the drive split with explicit test and fixture updates for the new discriminator-based
+   payload shape.
 
 ---
 
@@ -29,6 +66,9 @@ subclass.
 These currently use `_tl: ClassVar[int] = N`. Change each to `tl: int = N` as a plain field
 default. Remove the `_tl` line. The `_fill_tl_from_class_var` validator in `ShipPart` must be
 deleted; it becomes dead code once all `_tl` usages are gone.
+
+Only apply this to `CeresPart` subclasses. Do not chase `_tl` usages in non-part classes such as
+software packages.
 
 ### Files and classes
 
@@ -63,16 +103,9 @@ Replace `_tl` with `tl: int = N` on the affected classes.
 **`src/ceres/make/ship/habitation.py`**
 Replace `_tl` with `tl: int = N`.
 
-**`src/ceres/make/ship/computer.py`** — `Library`, `Manoeuvre` (ship software), and any ship
-computer parts with `_tl`. Replace with field defaults.
-
 **`src/ceres/make/ship/parts.py`**
 - Delete `_tl: ClassVar[int] = 0` from `ShipPart`
 - Delete `_fill_tl_from_class_var` model_validator from `ShipPart` entirely
-
-**`src/ceres/gear/software.py`**
-`FixedSoftwarePackage` subclasses use `_tl`. Replace with field defaults. (Note: software `tl` is
-read by `validate_on_computer` via `self.tl` — field default works identically.)
 
 ---
 
@@ -212,6 +245,4 @@ all instantiation sites from `MDrive(level=N)` / `JDrive(level=N)` / `RDrive(lev
 | `src/ceres/make/ship/sensors.py` | `_tl` → `tl: int = N` on all sensor subclasses |
 | `src/ceres/make/ship/systems.py` | `_tl` → `tl: int = N` |
 | `src/ceres/make/ship/habitation.py` | `_tl` → `tl: int = N` |
-| `src/ceres/make/ship/computer.py` | `_tl` → `tl: int = N` on Library, Manoeuvre, ship computer parts |
-| `src/ceres/gear/software.py` | `_tl` → `tl: int = N` on FixedSoftwarePackage subclasses |
 | `tests/ships/*.py` | Update drive instantiation to new API (`MDrive(level=2)` → `MDrive2()`) |

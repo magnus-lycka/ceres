@@ -164,7 +164,7 @@ class MountWeapon(CeresModel):
 
 class FixedMount(ShipPart):
     mount_cost: ClassVar[int] = 100_000
-    _tl = 9
+    tl: int = 9
     weapons: list[MountWeapon] = Field(default_factory=list)
 
     def build_item(self) -> str | None:

@@ -6,7 +6,7 @@ from ceres.make.ship.computer import (
     Computer,
     ComputerSection,
 )
-from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection, RDrive
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection, RDrive4
 from ceres.make.ship.habitation import CabinSpace, HabitationSection
 from ceres.make.ship.report import render_ship_spec_typst as _build_typst_source
 from ceres.make.ship.sensors import MilitarySensors, SensorsSection
@@ -31,8 +31,8 @@ def build_gothta_ambush_fighter() -> ship.Ship:
             aerofins=Aerofins(),
         ),
         drives=DriveSection(
-            m_drive=MDrive(level=6),
-            r_drive=RDrive(level=4, high_burn_thruster=True),
+            m_drive=MDrive6(),
+            r_drive=RDrive4(high_burn_thruster=True),
         ),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=30)),
         fuel=FuelSection(

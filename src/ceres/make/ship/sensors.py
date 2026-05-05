@@ -114,7 +114,7 @@ class SensorPackage(ShipPart):
 
 class BasicSensors(SensorPackage):
     description: Literal['Basic Sensors'] = 'Basic Sensors'
-    _tl = 8
+    tl: int = 8
 
     def build_item(self) -> str | None:
         return self.description
@@ -139,7 +139,7 @@ class BasicSensors(SensorPackage):
 
 class CivilianSensors(SensorPackage):
     description: Literal['Civilian Grade Sensors'] = 'Civilian Grade Sensors'
-    _tl = 9
+    tl: int = 9
 
     def build_item(self) -> str | None:
         return self.description
@@ -164,7 +164,7 @@ class CivilianSensors(SensorPackage):
 
 class MilitarySensors(SensorPackage):
     description: Literal['Military Grade Sensors'] = 'Military Grade Sensors'
-    _tl = 10
+    tl: int = 10
 
     def build_item(self) -> str | None:
         return self.description
@@ -190,7 +190,7 @@ class MilitarySensors(SensorPackage):
 
 class ImprovedSensors(SensorPackage):
     description: Literal['Improved Sensors'] = 'Improved Sensors'
-    _tl = 12
+    tl: int = 12
 
     def build_item(self) -> str | None:
         return self.description
@@ -216,7 +216,7 @@ class ImprovedSensors(SensorPackage):
 
 class AdvancedSensors(SensorPackage):
     description: Literal['Advanced Sensors'] = 'Advanced Sensors'
-    _tl = 15
+    tl: int = 15
 
     def build_item(self) -> str | None:
         return self.description
@@ -242,7 +242,7 @@ class AdvancedSensors(SensorPackage):
 
 class CountermeasuresSuite(ShipPart):
     description: Literal['Countermeasures Suite'] = 'Countermeasures Suite'
-    _tl = 11
+    tl: int = 11
 
     def build_item(self) -> str | None:
         return self.description
@@ -262,7 +262,7 @@ class CountermeasuresSuite(ShipPart):
 
 class LifeScannerAnalysisSuite(ShipPart):
     description: Literal['Life Scanner Analysis Suite'] = 'Life Scanner Analysis Suite'
-    _tl = 14
+    tl: int = 14
 
     def build_item(self) -> str | None:
         return self.description
@@ -306,7 +306,7 @@ class SensorStations(ShipPart):
 
 class EnhancedSignalProcessing(ShipPart):
     description: Literal['Enhanced Signal Processing'] = 'Enhanced Signal Processing'
-    _tl = 13
+    tl: int = 13
 
     def build_item(self) -> str | None:
         return self.description
@@ -326,7 +326,7 @@ class EnhancedSignalProcessing(ShipPart):
 
 class ExtendedArrays(ShipPart):
     description: Literal['Extended Arrays'] = 'Extended Arrays'
-    _tl = 11
+    tl: int = 11
 
     def build_item(self) -> str | None:
         return self.description

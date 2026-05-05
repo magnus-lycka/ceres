@@ -5,7 +5,7 @@ from ceres.make.ship import armour, hull, ship
 from ceres.make.ship.bridge import Bridge, Cockpit, CommandSection
 from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
 from ceres.make.ship.crew import GeneralCrew, Marine, ShipCrew
-from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive1, MDrive6, PowerSection
 from ceres.make.ship.parts import EnergyEfficient, HighTechnology
 from ceres.make.ship.sensors import CivilianSensors, SensorsSection
 from ceres.make.ship.storage import CargoCrane, CargoHold, CargoSection, FuelCargoContainer
@@ -231,7 +231,7 @@ def test_ship_total_power_load_includes_basic_and_active_systems():
         tl=12,
         displacement=6,
         hull=hull.Hull(configuration=hull.standard_hull),
-        drives=DriveSection(m_drive=MDrive(level=6)),
+        drives=DriveSection(m_drive=MDrive6()),
         command=CommandSection(cockpit=Cockpit()),
         sensors=SensorsSection(primary=CivilianSensors()),
         weapons=WeaponsSection(
@@ -255,7 +255,7 @@ def test_ship_gets_warning_when_total_power_load_exceeds_available_power():
         tl=12,
         displacement=50,
         hull=hull.Hull(configuration=hull.streamlined_hull, airlocks=[Airlock()]),
-        drives=DriveSection(m_drive=MDrive(level=1)),
+        drives=DriveSection(m_drive=MDrive1()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=10)),
         command=CommandSection(bridge=Bridge()),
         systems=SystemsSection(internal_systems=[Workshop()]),

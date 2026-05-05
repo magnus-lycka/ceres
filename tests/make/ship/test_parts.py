@@ -14,11 +14,11 @@ class DummyShip(ShipBase):
 
 
 class FixedPart(parts.ShipPart):
-    _tl: ClassVar[int] = 9
+    tl: int = 9
 
 
 class HighTlPart(parts.ShipPart):
-    _tl: ClassVar[int] = 15
+    tl: int = 15
 
 
 class CustomPart(parts.CustomisableShipPart):
@@ -32,7 +32,7 @@ class CustomPart(parts.CustomisableShipPart):
 
 
 class Tl12CustomPart(CustomPart):
-    _tl: ClassVar[int] = 12
+    tl: int = 12
 
 
 def test_base_part():

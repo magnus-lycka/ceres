@@ -2,7 +2,7 @@ import pytest
 
 from ceres.make.ship import hull, ship
 from ceres.make.ship.base import ShipBase
-from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive, PowerSection
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive2, PowerSection
 from ceres.make.ship.spec import SpecSection
 from ceres.make.ship.storage import (
     CargoAirlock,
@@ -131,7 +131,7 @@ def test_jump_fuel_uses_performance_displacement_for_external_transport_load():
         displacement=400,
         maintained_external_displacement=40,
         hull=hull.Hull(configuration=hull.dispersed_structure),
-        drives=DriveSection(j_drive=JDrive(level=2)),
+        drives=DriveSection(j_drive=JDrive2()),
         fuel=FuelSection(jump_fuel=JumpFuel(parsecs=2)),
     )
     assert my_ship.fuel is not None

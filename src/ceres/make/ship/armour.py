@@ -9,7 +9,6 @@ from .parts import ShipPart
 class Armour(ShipPart):
     description: str
     protection: int
-    tl: int = Field(default=0, exclude=True)
 
     _cost_per_ton: ClassVar[int] = 0
     _tonnage_consumed: ClassVar[int] = 0
@@ -46,7 +45,7 @@ class Armour(ShipPart):
 
 class TitaniumSteelArmour(Armour):
     description: Literal['Titanium Steel'] = 'Titanium Steel'
-    _tl: ClassVar[int] = 7
+    tl: int = Field(default=7, exclude=True)
     _cost_per_ton = 50_000
     _tonnage_consumed = 0.025
 
@@ -60,7 +59,7 @@ class TitaniumSteelArmour(Armour):
 
 class CrystalironArmour(Armour):
     description: Literal['Crystaliron'] = 'Crystaliron'
-    _tl: ClassVar[int] = 10
+    tl: int = Field(default=10, exclude=True)
     _cost_per_ton = 200_000
     _tonnage_consumed = 0.0125
 
@@ -74,7 +73,7 @@ class CrystalironArmour(Armour):
 
 class BondedSuperdenseArmour(Armour):
     description: Literal['Bonded Superdense'] = 'Bonded Superdense'
-    _tl: ClassVar[int] = 14
+    tl: int = Field(default=14, exclude=True)
     _cost_per_ton = 500_000
     _tonnage_consumed = 0.008
 
@@ -86,7 +85,7 @@ class BondedSuperdenseArmour(Armour):
 
 class MolecularBondedArmour(Armour):
     description: Literal['Molecular Bonded'] = 'Molecular Bonded'
-    _tl: ClassVar[int] = 16
+    tl: int = Field(default=16, exclude=True)
     _cost_per_ton = 1_500_000
     _tonnage_consumed = 0.005
 

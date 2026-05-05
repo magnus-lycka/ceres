@@ -1,3 +1,4 @@
+from pydantic import TypeAdapter
 import pytest
 
 from ceres.make.ship import hull, ship
@@ -10,10 +11,26 @@ from ceres.make.ship.drives import (
     FusionPlantTL12,
     FusionPlantTL15,
     JDrive,
+    JDrive1,
+    JDrive2,
+    JDrive3,
+    JDrive4,
+    JDrive5,
+    JDrive6,
+    JDrive7,
+    JDrive8,
+    JDrive9,
     LimitedRange,
     MDrive,
+    MDrive0,
+    MDrive1,
+    MDrive2,
+    MDrive6,
+    MDrive7,
     PowerSection,
     RDrive,
+    RDrive3,
+    RDrive16,
 )
 from ceres.make.ship.parts import Advanced, Budget, IncreasedSize, SizeReduction, VeryAdvanced
 from ceres.make.ship.storage import FuelSection, JumpFuel, OperationFuel, ReactionFuel
@@ -28,21 +45,21 @@ class DummyOwner(ShipBase):
 
 
 @pytest.mark.parametrize(
-    'level, tl, pct',
+    'drive_cls, level, tl, pct',
     [
-        (1, 9, 0.025),
-        (2, 11, 0.05),
-        (3, 12, 0.075),
-        (4, 13, 0.10),
-        (5, 14, 0.125),
-        (6, 15, 0.15),
-        (7, 16, 0.175),
-        (8, 17, 0.20),
-        (9, 18, 0.225),
+        (JDrive1, 1, 9, 0.025),
+        (JDrive2, 2, 11, 0.05),
+        (JDrive3, 3, 12, 0.075),
+        (JDrive4, 4, 13, 0.10),
+        (JDrive5, 5, 14, 0.125),
+        (JDrive6, 6, 15, 0.15),
+        (JDrive7, 7, 16, 0.175),
+        (JDrive8, 8, 17, 0.20),
+        (JDrive9, 9, 18, 0.225),
     ],
 )
-def test_jdrive_tons_cost_tl(level, tl, pct):
-    d = JDrive(level=level)
+def test_jdrive_tons_cost_tl(drive_cls, level, tl, pct):
+    d = drive_cls()
     d.bind(DummyOwner(tl, 200))
     expected_tons = 200 * pct + 5
     assert d.tl == tl
@@ -52,7 +69,7 @@ def test_jdrive_tons_cost_tl(level, tl, pct):
 
 
 def test_jdrive_with_decreased_fuel_x2_changes_cost_and_required_tl():
-    d = JDrive(level=2, customisation=VeryAdvanced(modifications=[DecreasedFuel, DecreasedFuel]))
+    d = JDrive2(customisation=VeryAdvanced(modifications=[DecreasedFuel, DecreasedFuel]))
     d.bind(DummyOwner(15, 450))
     assert d.tl == 11
     assert float(d.tons) == pytest.approx(27.5)
@@ -65,9 +82,7 @@ def test_jump_fuel_respects_decreased_fuel_additively():
         tl=15,
         displacement=450,
         hull=hull.Hull(configuration=hull.standard_hull),
-        drives=DriveSection(
-            j_drive=JDrive(level=2, customisation=VeryAdvanced(modifications=[DecreasedFuel, DecreasedFuel]))
-        ),
+        drives=DriveSection(j_drive=JDrive2(customisation=VeryAdvanced(modifications=[DecreasedFuel, DecreasedFuel]))),
         fuel=FuelSection(jump_fuel=JumpFuel(parsecs=2)),
     )
     assert my_ship.fuel is not None
@@ -76,7 +91,7 @@ def test_jump_fuel_respects_decreased_fuel_additively():
 
 
 def test_jump_drive_uses_performance_displacement_when_transporting_external_load():
-    d = JDrive(level=2)
+    d = JDrive2()
     d.bind(DummyOwner(12, 400, maintained_external_displacement=40))
     assert d.build_item() == 'Jump 2 (440t)'
     assert float(d.tons) == pytest.approx(27.0)
@@ -88,7 +103,7 @@ def test_jump_drive_uses_performance_displacement_when_transporting_external_loa
 
 
 def test_mdrive_standard_tons():
-    d = MDrive(level=6)
+    d = MDrive6()
     d.bind(DummyOwner(12, 6))
     assert d.tl == 12
     assert d.assembly_tl == 12
@@ -96,7 +111,7 @@ def test_mdrive_standard_tons():
 
 
 def test_mdrive_uses_performance_displacement_when_transporting_external_load():
-    d = MDrive(level=2)
+    d = MDrive2()
     d.bind(DummyOwner(12, 400, maintained_external_displacement=40))
     assert d.build_item() == 'M-Drive 2 (440t)'
     assert float(d.tons) == pytest.approx(8.8)
@@ -105,19 +120,19 @@ def test_mdrive_uses_performance_displacement_when_transporting_external_load():
 
 
 def test_mdrive_standard_cost():
-    d = MDrive(level=6)
+    d = MDrive6()
     d.bind(DummyOwner(12, 6))
     assert float(d.cost) == pytest.approx(720_000)
 
 
 def test_mdrive_power():
-    d = MDrive(level=6)
+    d = MDrive6()
     d.bind(DummyOwner(12, 6))
     assert d.power == 4  # ceil(0.1 * 6 * 6) = ceil(3.6) = 4
 
 
 def test_mdrive_thrust_zero_uses_station_power_rule():
-    d = MDrive(level=0)
+    d = MDrive0()
     d.bind(DummyOwner(12, 10_000))
     assert d.tons == pytest.approx(50.0)
     assert d.cost == pytest.approx(100_000_000.0)
@@ -125,7 +140,7 @@ def test_mdrive_thrust_zero_uses_station_power_rule():
 
 
 def test_budget_increased_size_mdrive_values():
-    d = MDrive(level=7, customisation=Budget(modifications=[IncreasedSize]))
+    d = MDrive7(customisation=Budget(modifications=[IncreasedSize]))
     d.bind(DummyOwner(13, 400))
     assert d.build_item() == 'M-Drive 7'
     assert float(d.tons) == pytest.approx(35.0)
@@ -139,7 +154,7 @@ def test_limited_range_is_drive_specific_customisation():
 
 
 def test_drive_section_all_parts():
-    drives = DriveSection(m_drive=MDrive(level=6), r_drive=RDrive(level=3), j_drive=JDrive(level=2))
+    drives = DriveSection(m_drive=MDrive6(), r_drive=RDrive3(), j_drive=JDrive2())
     assert drives._all_parts() == [drives.m_drive, drives.r_drive, drives.j_drive]
 
 
@@ -149,19 +164,19 @@ def test_power_section_all_parts():
 
 
 def test_mdrive_tl_too_low():
-    d = MDrive(level=6)
+    d = MDrive6()
     d.bind(DummyOwner(11, 6))
     assert ('error', 'Requires TL12, ship is TL11') in [(note.category.value, note.message) for note in d.notes]
 
 
 def test_mdrive_recomputes_cost_from_input():
-    d = MDrive.model_validate({'level': 6, 'cost': 999})
+    d = MDrive6.model_validate({'cost': 999})
     d.bind(DummyOwner(12, 6))
     assert d.cost == pytest.approx(720_000)
 
 
 def test_mdrive_recomputes_tons_from_input():
-    d = MDrive.model_validate({'level': 6, 'tons': 999})
+    d = MDrive6.model_validate({'tons': 999})
     d.bind(DummyOwner(12, 6))
     assert d.tons == pytest.approx(0.36)
 
@@ -303,7 +318,7 @@ def test_operation_fuel_requires_plant():
 
 
 def test_rdrive_tons_cost_and_power():
-    d = RDrive(level=16)
+    d = RDrive16()
     d.bind(DummyOwner(12, 6))
     assert d.tl == 12
     assert d.bulkhead_label() == 'R-Drive'
@@ -313,14 +328,12 @@ def test_rdrive_tons_cost_and_power():
 
 
 def test_rdrive_unsupported_level_errors():
-    d = RDrive(level=99)
-    with pytest.raises(KeyError):
-        d.bind(DummyOwner(12, 6))
-    assert ('error', 'Unsupported reaction drive level 99') in [(note.category.value, note.message) for note in d.notes]
+    with pytest.raises(ValueError, match='rdrive_99'):
+        TypeAdapter(RDrive).validate_python({'drive_type': 'rdrive_99'})
 
 
 def test_rdrive_tl_too_low():
-    d = RDrive(level=16)
+    d = RDrive16()
     d.bind(DummyOwner(11, 6))
     assert ('error', 'Requires TL12, ship is TL11') in [(note.category.value, note.message) for note in d.notes]
 
@@ -330,7 +343,7 @@ def test_reaction_fuel_minutes_of_operation():
         tl=12,
         displacement=6,
         hull=hull.Hull(configuration=hull.standard_hull),
-        drives=DriveSection(r_drive=RDrive(level=16)),
+        drives=DriveSection(r_drive=RDrive16()),
         fuel=FuelSection(reaction_fuel=ReactionFuel(minutes=52)),
     )
     assert my_ship.fuel is not None
@@ -352,27 +365,25 @@ def test_size_reduced_fusion_plant_has_customisation_note():
 
 
 def test_budget_increased_size_mdrive_item_is_base_name_only():
-    p = MDrive(level=1, customisation=Budget(modifications=[IncreasedSize]))
+    p = MDrive1(customisation=Budget(modifications=[IncreasedSize]))
     p.bind(DummyOwner(12, 100))
     assert p.build_item() == 'M-Drive 1'
 
 
 def test_budget_increased_size_mdrive_has_customisation_note():
-    p = MDrive(level=1, customisation=Budget(modifications=[IncreasedSize]))
+    p = MDrive1(customisation=Budget(modifications=[IncreasedSize]))
     p.bind(DummyOwner(12, 100))
     info_notes = [n.message for n in p.notes if n.category.value == 'info']
     assert 'Budget: Increased Size' in info_notes
 
 
 def test_mdrive_unsupported_level_errors():
-    d = MDrive(level=99)
-    with pytest.raises(KeyError):
-        d.bind(DummyOwner(15, 100))
-    assert ('error', 'Unsupported M-Drive level 99') in [(note.category.value, note.message) for note in d.notes]
+    with pytest.raises(ValueError, match='mdrive_99'):
+        TypeAdapter(MDrive).validate_python({'drive_type': 'mdrive_99'})
 
 
 def test_jdrive_build_item_parsecs_and_bulkhead_label():
-    d = JDrive(level=2)
+    d = JDrive2()
     d.bind(DummyOwner(11, 200))
     assert d.build_item() == 'Jump 2'
     assert d.parsecs == 2
@@ -380,14 +391,12 @@ def test_jdrive_build_item_parsecs_and_bulkhead_label():
 
 
 def test_jdrive_unsupported_level_errors():
-    d = JDrive(level=99)
-    with pytest.raises(KeyError):
-        d.bind(DummyOwner(18, 200))
-    assert ('error', 'Unsupported J-Drive level 99') in [(note.category.value, note.message) for note in d.notes]
+    with pytest.raises(ValueError, match='jdrive_99'):
+        TypeAdapter(JDrive).validate_python({'drive_type': 'jdrive_99'})
 
 
 def test_jdrive_tl_too_low():
-    d = JDrive(level=2)
+    d = JDrive2()
     d.bind(DummyOwner(10, 200))
     assert ('error', 'Requires TL11, ship is TL10') in [(note.category.value, note.message) for note in d.notes]
 

@@ -7,7 +7,7 @@ from ceres.make.ship.computer import (
     Computer,
     ComputerSection,
 )
-from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive1, PowerSection
 from ceres.make.ship.parts import Advanced, EnergyEfficient, HighTechnology, SizeReduction, VeryAdvanced
 from ceres.make.ship.weapons import (
     Barbette,
@@ -280,7 +280,7 @@ def test_reused_weapon_and_turret_references_render_like_distinct_identical_obje
         tl=15,
         displacement=200,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(m_drive=MDrive(level=1)),
+        drives=DriveSection(m_drive=MDrive1()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=50)),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer(processing=20)),

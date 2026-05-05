@@ -7,7 +7,14 @@ from ceres.make.ship.computer import (
     Computer,
     ComputerSection,
 )
-from ceres.make.ship.drives import DecreasedFuel, DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
+from ceres.make.ship.drives import (
+    DecreasedFuel,
+    DriveSection,
+    FusionPlantTL12,
+    JDrive2,
+    MDrive6,
+    PowerSection,
+)
 from ceres.make.ship.habitation import HabitationSection, HighStateroom, Stateroom
 from ceres.make.ship.parts import EnergyEfficient, HighTechnology, SizeReduction, VeryAdvanced
 from ceres.make.ship.sensors import (
@@ -54,8 +61,8 @@ def build_ambush_hunter_killer_corvette() -> ship.Ship:
             airlocks=[Airlock(), Airlock(), Airlock(), Airlock(), Airlock(), Airlock()],
         ),
         drives=DriveSection(
-            m_drive=MDrive(level=6, customisation=VeryAdvanced(modifications=[SizeReduction, EnergyEfficient])),
-            j_drive=JDrive(level=2, customisation=VeryAdvanced(modifications=[DecreasedFuel, DecreasedFuel])),
+            m_drive=MDrive6(customisation=VeryAdvanced(modifications=[SizeReduction, EnergyEfficient])),
+            j_drive=JDrive2(customisation=VeryAdvanced(modifications=[DecreasedFuel, DecreasedFuel])),
         ),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=500, armoured_bulkhead=True)),
         fuel=FuelSection(

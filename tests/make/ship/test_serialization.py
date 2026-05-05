@@ -11,7 +11,7 @@ from ceres.make.ship.computer import (
     ComputerSection,
 )
 from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
-from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection
 from ceres.make.ship.hull import BasicStealth, Hull
 from ceres.make.ship.parts import EnergyEfficient, HighTechnology
 from ceres.make.ship.sensors import BasicSensors, CivilianSensors, SensorsSection
@@ -35,7 +35,7 @@ ultralight = Ship(
         armour=armour.CrystalironArmour(protection=6),
         stealth=BasicStealth(),
     ),
-    drives=DriveSection(m_drive=MDrive(level=6)),
+    drives=DriveSection(m_drive=MDrive6()),
     power=PowerSection(fusion_plant=FusionPlantTL12(output=8)),
     fuel=FuelSection(operation_fuel=OperationFuel(weeks=1)),
     command=CommandSection(cockpit=Cockpit(holographic=True)),

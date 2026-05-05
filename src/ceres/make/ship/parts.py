@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from enum import StrEnum
 from typing import Annotated, Any, ClassVar, Literal
 
-from pydantic import Field, PrivateAttr, TypeAdapter, model_validator
+from pydantic import Field, PrivateAttr, TypeAdapter
 
 from ceres.shared import CeresPart
 
@@ -296,7 +296,6 @@ class ShipPartMixin(ABC):
 
 
 class ShipPart(CeresPart, ShipPartMixin):
-    _tl: ClassVar[int] = 0
     _armoured_bulkhead_part: ShipPart | None = PrivateAttr(default=None)
     tons: float = 0.0
     power: float = 0.0
@@ -310,15 +309,6 @@ class ShipPart(CeresPart, ShipPartMixin):
         if not isinstance(a, ShipBase):
             raise RuntimeError(f'{type(self).__name__} bound to unexpected assembly type {type(a).__name__}')
         return a
-
-    @model_validator(mode='before')
-    @classmethod
-    def _fill_tl_from_class_var(cls, data: Any) -> Any:
-        if isinstance(data, dict) and 'tl' not in data:
-            tl = getattr(cls, '_tl', 0)
-            if tl:
-                data = {**data, 'tl': tl}
-        return data
 
     def build_notes(self) -> list[Note]:
         if self.armoured_bulkhead:

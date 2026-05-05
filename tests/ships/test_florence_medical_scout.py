@@ -8,7 +8,7 @@ from ceres.make.ship.computer import (
 )
 from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, SpaceCraft, Vehicle
 from ceres.make.ship.crew import Astrogator, Captain, Engineer, Maintenance, Medic, Pilot, ShipCrew
-from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive3, MDrive2, PowerSection
 from ceres.make.ship.habitation import HabitationSection, LowBerth, Stateroom
 from ceres.make.ship.sensors import LifeScannerAnalysisSuite, MilitarySensors, SensorsSection
 from ceres.make.ship.software import JumpControl
@@ -37,7 +37,7 @@ def build_florence_medical_scout() -> ship.Ship:
         ),
         passenger_vector={},
         hull=hull.Hull(configuration=hull.standard_hull),
-        drives=DriveSection(m_drive=MDrive(level=2), j_drive=JDrive(level=3)),
+        drives=DriveSection(m_drive=MDrive2(), j_drive=JDrive3()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=300)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=3),

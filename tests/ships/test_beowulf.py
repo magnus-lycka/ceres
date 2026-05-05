@@ -32,7 +32,7 @@ from ceres.make.ship.computer import (
     ComputerSection,
 )
 from ceres.make.ship.crew import Astrogator, Engineer, Pilot, ShipCrew, Steward
-from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive1, MDrive1, PowerSection
 from ceres.make.ship.habitation import HabitationSection, LowBerth, Stateroom
 from ceres.make.ship.sensors import CivilianSensors, SensorsSection
 from ceres.make.ship.software import JumpControl
@@ -61,7 +61,7 @@ def build_beowulf() -> ship.Ship:
             armour=armour.CrystalironArmour(protection=2),
             airlocks=[Airlock(), Airlock()],
         ),
-        drives=DriveSection(m_drive=MDrive(level=1), j_drive=JDrive(level=1)),
+        drives=DriveSection(m_drive=MDrive1(), j_drive=JDrive1()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=75)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=1),

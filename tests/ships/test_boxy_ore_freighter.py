@@ -6,7 +6,7 @@ from ceres.make.ship.computer import (
     Computer,
     ComputerSection,
 )
-from ceres.make.ship.drives import DriveSection, FusionPlantTL8, MDrive, PowerSection
+from ceres.make.ship.drives import DriveSection, FusionPlantTL8, MDrive1, PowerSection
 from ceres.make.ship.habitation import HabitationSection, Stateroom
 from ceres.make.ship.sensors import BasicSensors, SensorsSection
 from ceres.make.ship.storage import CargoSection, FuelSection, OperationFuel
@@ -25,7 +25,7 @@ def build_boxy_ore_freighter() -> ship.Ship:
         displacement=200,
         design_type=ship.ShipDesignType.STANDARD,
         hull=hull.Hull(configuration=BOXY_HULL, airlocks=[Airlock()]),
-        drives=DriveSection(m_drive=MDrive(level=1)),
+        drives=DriveSection(m_drive=MDrive1()),
         power=PowerSection(fusion_plant=FusionPlantTL8(output=80)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=12)),
         command=CommandSection(bridge=Bridge(small=True)),

@@ -48,7 +48,7 @@ from ceres.make.ship.crew import (
     SensorOperator,
     ShipCrew,
 )
-from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive7, PowerSection
 from ceres.make.ship.habitation import AdvancedEntertainmentSystem, HabitationSection, Stateroom
 from ceres.make.ship.hull import ImprovedStealth
 from ceres.make.ship.parts import (
@@ -107,7 +107,7 @@ def build_revised_dragon() -> ship.Ship:
             airlocks=[Airlock(), Airlock(), Airlock(), Airlock()],
         ),
         drives=DriveSection(
-            m_drive=MDrive(level=7, customisation=Budget(modifications=[IncreasedSize]), armoured_bulkhead=True)
+            m_drive=MDrive7(customisation=Budget(modifications=[IncreasedSize]), armoured_bulkhead=True)
         ),
         power=PowerSection(
             fusion_plant=FusionPlantTL12(

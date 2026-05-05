@@ -32,7 +32,7 @@ from ceres.make.ship.computer import (
 )
 from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
 from ceres.make.ship.crew import Astrogator, Engineer, Gunner, Medic, Pilot, ShipCrew
-from ceres.make.ship.drives import DriveSection, FusionPlantTL15, JDrive, MDrive, PowerSection
+from ceres.make.ship.drives import DriveSection, FusionPlantTL15, JDrive2, MDrive2, PowerSection
 from ceres.make.ship.habitation import HabitationSection, LowBerth, Stateroom
 from ceres.make.ship.sensors import MilitarySensors, SensorsSection
 from ceres.make.ship.software import JumpControl
@@ -60,7 +60,7 @@ def build_dolphin_extended_scout_courier() -> ship.Ship:
             configuration=hull.streamlined_hull,
             armour=armour.CrystalironArmour(protection=4),
         ),
-        drives=DriveSection(m_drive=MDrive(level=2), j_drive=JDrive(level=2)),
+        drives=DriveSection(m_drive=MDrive2(), j_drive=JDrive2()),
         power=PowerSection(fusion_plant=FusionPlantTL15(output=70)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=2),

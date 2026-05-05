@@ -23,7 +23,7 @@ from ceres.make.ship.computer import (
     ComputerSection,
 )
 from ceres.make.ship.crew import Pilot, ShipCrew
-from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive5, PowerSection
 from ceres.make.ship.habitation import CabinSpace, HabitationSection
 from ceres.make.ship.sensors import BasicSensors, SensorsSection
 from ceres.make.ship.storage import CargoSection, FuelCargoContainer, FuelSection, OperationFuel
@@ -40,7 +40,7 @@ def build_pinnace_with_20_ton_fuel_capacity() -> ship.Ship:
         passenger_vector={},
         crew=ShipCrew(roles=[Pilot()]),
         hull=hull.Hull(configuration=hull.streamlined_hull, airlocks=[Airlock()]),
-        drives=DriveSection(m_drive=MDrive(level=5)),
+        drives=DriveSection(m_drive=MDrive5()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=30)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=4)),
         command=CommandSection(bridge=Bridge()),

@@ -8,7 +8,7 @@ from ceres.make.ship.computer import (
     ComputerSection,
 )
 from ceres.make.ship.crew import Pilot, ShipCrew
-from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive, PowerSection
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive1, PowerSection
 from ceres.make.ship.habitation import (
     AdvancedEntertainmentSystem,
     CabinSpace,
@@ -207,7 +207,7 @@ def test_habitation_explicit_passenger_vector_overrides_default():
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(j_drive=JDrive(level=1)),
+        drives=DriveSection(j_drive=JDrive1()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=10)),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer(processing=5)),

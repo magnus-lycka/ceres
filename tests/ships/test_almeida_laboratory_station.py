@@ -27,7 +27,7 @@ from ceres.make.ship.computer import (
 )
 from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
 from ceres.make.ship.crew import Administrator, Engineer, Maintenance, Officer, Pilot, ShipCrew, Steward
-from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive1, PowerSection
 from ceres.make.ship.habitation import HabitationSection, Stateroom
 from ceres.make.ship.sensors import AdvancedSensors, SensorsSection
 from ceres.make.ship.storage import CargoHold, CargoSection, FuelSection, OperationFuel
@@ -43,7 +43,7 @@ def build_almeida_laboratory_station() -> ship.Ship:
         design_type=ship.ShipDesignType.STANDARD,
         passenger_vector={},
         hull=hull.Hull(configuration=hull.dispersed_structure),
-        drives=DriveSection(m_drive=MDrive(level=1)),
+        drives=DriveSection(m_drive=MDrive1()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=120)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=8)),
         command=CommandSection(bridge=Bridge(small=True)),

@@ -54,7 +54,7 @@ from ceres.make.ship.crew import (
     ShipCrew,
     Steward,
 )
-from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive2, MDrive1, PowerSection
 from ceres.make.ship.habitation import HabitationSection, HighStateroom, LowBerth, LuxuryStateroom, Stateroom
 from ceres.make.ship.sensors import CivilianSensors, SensorsSection
 from ceres.make.ship.software import JumpControl
@@ -79,7 +79,7 @@ def build_king_kay() -> ship.Ship:
         displacement=5_000,
         design_type=ship.ShipDesignType.CUSTOM,
         hull=hull.Hull(configuration=hull.close_structure),
-        drives=DriveSection(m_drive=MDrive(level=1), j_drive=JDrive(level=2)),
+        drives=DriveSection(m_drive=MDrive1(), j_drive=JDrive2()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=2_010)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=2),

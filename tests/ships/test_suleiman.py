@@ -35,7 +35,7 @@ from ceres.make.ship.computer import (
     ComputerSection,
 )
 from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
-from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive2, MDrive2, PowerSection
 from ceres.make.ship.habitation import HabitationSection, Stateroom
 from ceres.make.ship.sensors import MilitarySensors, SensorsSection
 from ceres.make.ship.software import JumpControl
@@ -60,7 +60,7 @@ def build_suleiman() -> ship.Ship:
             armour=armour.CrystalironArmour(protection=4),
             airlocks=[Airlock()],
         ),
-        drives=DriveSection(m_drive=MDrive(level=2), j_drive=JDrive(level=2)),
+        drives=DriveSection(m_drive=MDrive2(), j_drive=JDrive2()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=60)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=2),
@@ -217,7 +217,7 @@ def test_jump_drive_2_without_jump_control_2_adds_local_note():
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(j_drive=JDrive(level=2)),
+        drives=DriveSection(j_drive=JDrive2()),
         computer=ComputerSection(hardware=Computer(processing=5, bis=True)),
     )
     assert my_ship.drives is not None
@@ -334,7 +334,7 @@ def test_jump_drive_with_lower_jump_control_warns_on_drive():
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(j_drive=JDrive(level=2)),
+        drives=DriveSection(j_drive=JDrive2()),
         computer=ComputerSection(hardware=Computer(processing=5, bis=True), software=[JumpControl(rating=1)]),
     )
     assert my_ship.drives is not None
@@ -365,7 +365,7 @@ def test_jump_control_with_higher_rating_than_drive_warns_on_software():
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(j_drive=JDrive(level=2)),
+        drives=DriveSection(j_drive=JDrive2()),
         computer=ComputerSection(hardware=Computer(processing=10, bis=True), software=[JumpControl(rating=3)]),
     )
     assert my_ship.computer is not None
@@ -381,7 +381,7 @@ def test_higher_jump_control_replaces_lower_one():
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(j_drive=JDrive(level=2)),
+        drives=DriveSection(j_drive=JDrive2()),
         computer=ComputerSection(
             hardware=Computer(processing=10, bis=True), software=[JumpControl(rating=2), JumpControl(rating=3)]
         ),
@@ -406,7 +406,7 @@ def test_jump_control_degrades_when_computer_too_small():
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(j_drive=JDrive(level=2)),
+        drives=DriveSection(j_drive=JDrive2()),
         computer=ComputerSection(hardware=Computer(processing=5), software=[JumpControl(rating=2)]),
     )
     assert my_ship.computer is not None
@@ -423,7 +423,7 @@ def test_degraded_jump_control_warns_drive():
         tl=12,
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(j_drive=JDrive(level=2)),
+        drives=DriveSection(j_drive=JDrive2()),
         computer=ComputerSection(hardware=Computer(processing=5), software=[JumpControl(rating=2)]),
     )
     assert my_ship.drives is not None

@@ -6,7 +6,13 @@ from ceres.make.ship.computer import (
     Computer,
     ComputerSection,
 )
-from ceres.make.ship.drives import DriveSection, FusionPlantTL8, FusionPlantTL12, MDrive, PowerSection
+from ceres.make.ship.drives import (
+    DriveSection,
+    FusionPlantTL8,
+    FusionPlantTL12,
+    MDrive3,
+    PowerSection,
+)
 from ceres.make.ship.habitation import HabitationSection, Stateroom
 from ceres.make.ship.storage import CargoSection, FuelSection, OperationFuel
 from ceres.make.ship.systems import Aerofins, Airlock, CommonArea
@@ -26,7 +32,7 @@ def build_poseidon_cargo_boat(tl: int) -> ship.Ship:
         displacement=100,
         design_type=ship.ShipDesignType.STANDARD,
         hull=hull.Hull(configuration=POSEIDON_HULL, airlocks=[Airlock()], aerofins=Aerofins()),
-        drives=DriveSection(m_drive=MDrive(level=3)),
+        drives=DriveSection(m_drive=MDrive3()),
         power=PowerSection(fusion_plant=fusion_plant),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=16)),
         command=CommandSection(bridge=Bridge(small=True)),

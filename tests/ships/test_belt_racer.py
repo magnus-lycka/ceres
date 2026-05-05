@@ -30,7 +30,7 @@ from ceres.make.ship.drives import (
     DriveSection,
     FusionPlantTL8,
     PowerSection,
-    RDrive,
+    RDrive16,
 )
 from ceres.make.ship.storage import CargoSection, FuelSection, ReactionFuel
 
@@ -47,7 +47,7 @@ def build_belt_racer() -> ship.Ship:
         tl=12,
         displacement=6,
         hull=hull.Hull(configuration=BELT_RACER_HULL),
-        drives=DriveSection(r_drive=RDrive(level=16)),
+        drives=DriveSection(r_drive=RDrive16()),
         power=PowerSection(fusion_plant=FusionPlantTL8(output=5)),
         fuel=FuelSection(reaction_fuel=ReactionFuel(minutes=52)),
         command=CommandSection(cockpit=Cockpit()),

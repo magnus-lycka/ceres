@@ -48,7 +48,7 @@ from ceres.make.ship.crew import (
     SensorOperator,
     ShipCrew,
 )
-from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive7, PowerSection
 from ceres.make.ship.habitation import HabitationSection, Stateroom
 from ceres.make.ship.hull import ImprovedStealth
 from ceres.make.ship.parts import HighTechnology, SizeReduction
@@ -104,7 +104,7 @@ def build_dragon() -> ship.Ship:
             armour=armour.CrystalironArmour(protection=13),
             airlocks=[Airlock(), Airlock(), Airlock(), Airlock()],
         ),
-        drives=DriveSection(m_drive=MDrive(level=7, armoured_bulkhead=True)),
+        drives=DriveSection(m_drive=MDrive7(armoured_bulkhead=True)),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=450, armoured_bulkhead=True)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=16, armoured_bulkhead=True)),
         command=CommandSection(bridge=Bridge(holographic=True, armoured_bulkhead=True)),

@@ -1,7 +1,7 @@
 import math
-from typing import Any, ClassVar, Literal
+from typing import Annotated, ClassVar, Literal
 
-from pydantic import model_validator
+from pydantic import Field
 
 from ceres.gear.software import SoftwarePackage
 
@@ -37,37 +37,15 @@ DecreasedFuel = Modification(
 )
 
 
-class RDrive(ShipPart):
-    _specs: ClassVar[dict[int, dict[str, float | int]]] = {
-        0: dict(tons_percent=0.01, tl=7),
-        1: dict(tons_percent=0.02, tl=7),
-        2: dict(tons_percent=0.04, tl=7),
-        3: dict(tons_percent=0.06, tl=7),
-        4: dict(tons_percent=0.08, tl=8),
-        5: dict(tons_percent=0.10, tl=8),
-        6: dict(tons_percent=0.12, tl=8),
-        7: dict(tons_percent=0.14, tl=9),
-        8: dict(tons_percent=0.16, tl=9),
-        9: dict(tons_percent=0.18, tl=9),
-        10: dict(tons_percent=0.20, tl=10),
-        11: dict(tons_percent=0.22, tl=10),
-        12: dict(tons_percent=0.24, tl=10),
-        13: dict(tons_percent=0.26, tl=11),
-        14: dict(tons_percent=0.28, tl=11),
-        15: dict(tons_percent=0.30, tl=11),
-        16: dict(tons_percent=0.32, tl=12),
-    }
-    level: int
+class _RDrive(ShipPart):
+    drive_type: str
+    _level: ClassVar[int]
+    _tons_percent: ClassVar[float]
     high_burn_thruster: bool = False
 
-    @model_validator(mode='before')
-    @classmethod
-    def _fill_tl(cls, data: Any) -> Any:
-        if isinstance(data, dict) and 'tl' not in data:
-            level = data.get('level')
-            if level is not None and level in cls._specs:
-                data = {**data, 'tl': int(cls._specs[level]['tl'])}
-        return data
+    @property
+    def level(self) -> int:
+        return self._level
 
     def build_item(self) -> str | None:
         if self.high_burn_thruster:
@@ -78,8 +56,7 @@ class RDrive(ShipPart):
         return 'R-Drive'
 
     def compute_tons(self) -> float:
-        tons_percent = float(self._specs[self.level]['tons_percent'])
-        return self.assembly.performance_displacement * tons_percent
+        return self.assembly.performance_displacement * self._tons_percent
 
     def compute_cost(self) -> float:
         return self.compute_tons() * 200_000.0
@@ -92,29 +69,152 @@ class RDrive(ShipPart):
             return []
         return [Note(category=NoteCategory.INFO, message='No inertial compensation above manoeuvre-drive thrust')]
 
-    def check_tl(self) -> None:
-        if self.level not in self._specs:
-            self.error(f'Unsupported reaction drive level {self.level}')
-            return
-        super().check_tl()
+
+class RDrive0(_RDrive):
+    drive_type: Literal['rdrive_0'] = 'rdrive_0'
+    tl: int = 7
+    _level: ClassVar[int] = 0
+    _tons_percent: ClassVar[float] = 0.01
 
 
-class MDrive(CustomisableShipPart):
-    level: int
-    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
-        0: dict(tl=9, tons_percent=0.005),
-        1: dict(tl=9, tons_percent=0.01),
-        2: dict(tl=10, tons_percent=0.02),
-        3: dict(tl=10, tons_percent=0.03),
-        4: dict(tl=11, tons_percent=0.04),
-        5: dict(tl=11, tons_percent=0.05),
-        6: dict(tl=12, tons_percent=0.06),
-        7: dict(tl=13, tons_percent=0.07),
-        8: dict(tl=14, tons_percent=0.08),
-        9: dict(tl=15, tons_percent=0.09),
-        10: dict(tl=16, tons_percent=0.10),
-        11: dict(tl=17, tons_percent=0.11),
-    }
+class RDrive1(_RDrive):
+    drive_type: Literal['rdrive_1'] = 'rdrive_1'
+    tl: int = 7
+    _level: ClassVar[int] = 1
+    _tons_percent: ClassVar[float] = 0.02
+
+
+class RDrive2(_RDrive):
+    drive_type: Literal['rdrive_2'] = 'rdrive_2'
+    tl: int = 7
+    _level: ClassVar[int] = 2
+    _tons_percent: ClassVar[float] = 0.04
+
+
+class RDrive3(_RDrive):
+    drive_type: Literal['rdrive_3'] = 'rdrive_3'
+    tl: int = 7
+    _level: ClassVar[int] = 3
+    _tons_percent: ClassVar[float] = 0.06
+
+
+class RDrive4(_RDrive):
+    drive_type: Literal['rdrive_4'] = 'rdrive_4'
+    tl: int = 8
+    _level: ClassVar[int] = 4
+    _tons_percent: ClassVar[float] = 0.08
+
+
+class RDrive5(_RDrive):
+    drive_type: Literal['rdrive_5'] = 'rdrive_5'
+    tl: int = 8
+    _level: ClassVar[int] = 5
+    _tons_percent: ClassVar[float] = 0.10
+
+
+class RDrive6(_RDrive):
+    drive_type: Literal['rdrive_6'] = 'rdrive_6'
+    tl: int = 8
+    _level: ClassVar[int] = 6
+    _tons_percent: ClassVar[float] = 0.12
+
+
+class RDrive7(_RDrive):
+    drive_type: Literal['rdrive_7'] = 'rdrive_7'
+    tl: int = 9
+    _level: ClassVar[int] = 7
+    _tons_percent: ClassVar[float] = 0.14
+
+
+class RDrive8(_RDrive):
+    drive_type: Literal['rdrive_8'] = 'rdrive_8'
+    tl: int = 9
+    _level: ClassVar[int] = 8
+    _tons_percent: ClassVar[float] = 0.16
+
+
+class RDrive9(_RDrive):
+    drive_type: Literal['rdrive_9'] = 'rdrive_9'
+    tl: int = 9
+    _level: ClassVar[int] = 9
+    _tons_percent: ClassVar[float] = 0.18
+
+
+class RDrive10(_RDrive):
+    drive_type: Literal['rdrive_10'] = 'rdrive_10'
+    tl: int = 10
+    _level: ClassVar[int] = 10
+    _tons_percent: ClassVar[float] = 0.20
+
+
+class RDrive11(_RDrive):
+    drive_type: Literal['rdrive_11'] = 'rdrive_11'
+    tl: int = 10
+    _level: ClassVar[int] = 11
+    _tons_percent: ClassVar[float] = 0.22
+
+
+class RDrive12(_RDrive):
+    drive_type: Literal['rdrive_12'] = 'rdrive_12'
+    tl: int = 10
+    _level: ClassVar[int] = 12
+    _tons_percent: ClassVar[float] = 0.24
+
+
+class RDrive13(_RDrive):
+    drive_type: Literal['rdrive_13'] = 'rdrive_13'
+    tl: int = 11
+    _level: ClassVar[int] = 13
+    _tons_percent: ClassVar[float] = 0.26
+
+
+class RDrive14(_RDrive):
+    drive_type: Literal['rdrive_14'] = 'rdrive_14'
+    tl: int = 11
+    _level: ClassVar[int] = 14
+    _tons_percent: ClassVar[float] = 0.28
+
+
+class RDrive15(_RDrive):
+    drive_type: Literal['rdrive_15'] = 'rdrive_15'
+    tl: int = 11
+    _level: ClassVar[int] = 15
+    _tons_percent: ClassVar[float] = 0.30
+
+
+class RDrive16(_RDrive):
+    drive_type: Literal['rdrive_16'] = 'rdrive_16'
+    tl: int = 12
+    _level: ClassVar[int] = 16
+    _tons_percent: ClassVar[float] = 0.32
+
+
+type RDrive = Annotated[
+    RDrive0
+    | RDrive1
+    | RDrive2
+    | RDrive3
+    | RDrive4
+    | RDrive5
+    | RDrive6
+    | RDrive7
+    | RDrive8
+    | RDrive9
+    | RDrive10
+    | RDrive11
+    | RDrive12
+    | RDrive13
+    | RDrive14
+    | RDrive15
+    | RDrive16,
+    Field(discriminator='drive_type'),
+]
+
+
+class _MDrive(CustomisableShipPart):
+    drive_type: str
+    _level: ClassVar[int]
+    _tons_percent: ClassVar[float]
     allowed_modifications: ClassVar[frozenset[str]] = frozenset(
         {
             EnergyEfficient.name,
@@ -126,14 +226,9 @@ class MDrive(CustomisableShipPart):
         }
     )
 
-    @model_validator(mode='before')
-    @classmethod
-    def _fill_tl(cls, data: Any) -> Any:
-        if isinstance(data, dict) and 'tl' not in data:
-            level = data.get('level')
-            if level is not None and level in cls._specs:
-                data = {**data, 'tl': int(cls._specs[level]['tl'])}
-        return data
+    @property
+    def level(self) -> int:
+        return self._level
 
     def build_item(self) -> str | None:
         if self._assembly is not None and self.assembly.transported_external_displacement > 0:
@@ -144,14 +239,7 @@ class MDrive(CustomisableShipPart):
         return 'M-Drive'
 
     def _base_tons(self) -> float:
-        tons_percent = float(self._specs[self.level]['tons_percent'])
-        return self.assembly.performance_displacement * tons_percent
-
-    def check_tl(self) -> None:
-        if self.level not in self._specs:
-            self.error(f'Unsupported M-Drive level {self.level}')
-            return
-        super().check_tl()
+        return self.assembly.performance_displacement * self._tons_percent
 
     def compute_tons(self) -> float:
         multiplier = 1.0 if self.customisation is None else self.customisation.tons_multiplier
@@ -171,19 +259,111 @@ class MDrive(CustomisableShipPart):
         return power * multiplier
 
 
-class JDrive(CustomisableShipPart):
-    level: int
-    _specs: ClassVar[dict[int, dict[str, int | float]]] = {
-        1: dict(tl=9, tons_percent=0.025),
-        2: dict(tl=11, tons_percent=0.05),
-        3: dict(tl=12, tons_percent=0.075),
-        4: dict(tl=13, tons_percent=0.10),
-        5: dict(tl=14, tons_percent=0.125),
-        6: dict(tl=15, tons_percent=0.15),
-        7: dict(tl=16, tons_percent=0.175),
-        8: dict(tl=17, tons_percent=0.20),
-        9: dict(tl=18, tons_percent=0.225),
-    }
+class MDrive0(_MDrive):
+    drive_type: Literal['mdrive_0'] = 'mdrive_0'
+    tl: int = 9
+    _level: ClassVar[int] = 0
+    _tons_percent: ClassVar[float] = 0.005
+
+
+class MDrive1(_MDrive):
+    drive_type: Literal['mdrive_1'] = 'mdrive_1'
+    tl: int = 9
+    _level: ClassVar[int] = 1
+    _tons_percent: ClassVar[float] = 0.01
+
+
+class MDrive2(_MDrive):
+    drive_type: Literal['mdrive_2'] = 'mdrive_2'
+    tl: int = 10
+    _level: ClassVar[int] = 2
+    _tons_percent: ClassVar[float] = 0.02
+
+
+class MDrive3(_MDrive):
+    drive_type: Literal['mdrive_3'] = 'mdrive_3'
+    tl: int = 10
+    _level: ClassVar[int] = 3
+    _tons_percent: ClassVar[float] = 0.03
+
+
+class MDrive4(_MDrive):
+    drive_type: Literal['mdrive_4'] = 'mdrive_4'
+    tl: int = 11
+    _level: ClassVar[int] = 4
+    _tons_percent: ClassVar[float] = 0.04
+
+
+class MDrive5(_MDrive):
+    drive_type: Literal['mdrive_5'] = 'mdrive_5'
+    tl: int = 11
+    _level: ClassVar[int] = 5
+    _tons_percent: ClassVar[float] = 0.05
+
+
+class MDrive6(_MDrive):
+    drive_type: Literal['mdrive_6'] = 'mdrive_6'
+    tl: int = 12
+    _level: ClassVar[int] = 6
+    _tons_percent: ClassVar[float] = 0.06
+
+
+class MDrive7(_MDrive):
+    drive_type: Literal['mdrive_7'] = 'mdrive_7'
+    tl: int = 13
+    _level: ClassVar[int] = 7
+    _tons_percent: ClassVar[float] = 0.07
+
+
+class MDrive8(_MDrive):
+    drive_type: Literal['mdrive_8'] = 'mdrive_8'
+    tl: int = 14
+    _level: ClassVar[int] = 8
+    _tons_percent: ClassVar[float] = 0.08
+
+
+class MDrive9(_MDrive):
+    drive_type: Literal['mdrive_9'] = 'mdrive_9'
+    tl: int = 15
+    _level: ClassVar[int] = 9
+    _tons_percent: ClassVar[float] = 0.09
+
+
+class MDrive10(_MDrive):
+    drive_type: Literal['mdrive_10'] = 'mdrive_10'
+    tl: int = 16
+    _level: ClassVar[int] = 10
+    _tons_percent: ClassVar[float] = 0.10
+
+
+class MDrive11(_MDrive):
+    drive_type: Literal['mdrive_11'] = 'mdrive_11'
+    tl: int = 17
+    _level: ClassVar[int] = 11
+    _tons_percent: ClassVar[float] = 0.11
+
+
+type MDrive = Annotated[
+    MDrive0
+    | MDrive1
+    | MDrive2
+    | MDrive3
+    | MDrive4
+    | MDrive5
+    | MDrive6
+    | MDrive7
+    | MDrive8
+    | MDrive9
+    | MDrive10
+    | MDrive11,
+    Field(discriminator='drive_type'),
+]
+
+
+class _JDrive(CustomisableShipPart):
+    drive_type: str
+    _level: ClassVar[int]
+    _tons_percent: ClassVar[float]
     allowed_modifications: ClassVar[frozenset[str]] = frozenset(
         {
             DecreasedFuel.name,
@@ -192,14 +372,9 @@ class JDrive(CustomisableShipPart):
         }
     )
 
-    @model_validator(mode='before')
-    @classmethod
-    def _fill_tl(cls, data: Any) -> Any:
-        if isinstance(data, dict) and 'tl' not in data:
-            level = data.get('level')
-            if level is not None and level in cls._specs:
-                data = {**data, 'tl': int(cls._specs[level]['tl'])}
-        return data
+    @property
+    def level(self) -> int:
+        return self._level
 
     def build_item(self) -> str | None:
         if self._assembly is not None and self.assembly.transported_external_displacement > 0:
@@ -213,21 +388,13 @@ class JDrive(CustomisableShipPart):
     def parsecs(self) -> int:
         return self.level
 
-    def check_tl(self) -> None:
-        if self.level not in self._specs:
-            self.error(f'Unsupported J-Drive level {self.level}')
-            return
-        super().check_tl()
-
     def compute_tons(self) -> float:
-        tons_percent = float(self._specs[self.level]['tons_percent'])
-        base_tons = self.assembly.performance_displacement * tons_percent + 5
+        base_tons = self.assembly.performance_displacement * self._tons_percent + 5
         multiplier = 1.0 if self.customisation is None else self.customisation.tons_multiplier
         return base_tons * multiplier
 
     def compute_cost(self) -> float:
-        tons_percent = float(self._specs[self.level]['tons_percent'])
-        base_cost = (self.assembly.performance_displacement * tons_percent + 5) * 1_500_000
+        base_cost = (self.assembly.performance_displacement * self._tons_percent + 5) * 1_500_000
         multiplier = 1.0 if self.customisation is None else self.customisation.cost_multiplier
         return base_cost * multiplier
 
@@ -235,6 +402,75 @@ class JDrive(CustomisableShipPart):
         base_power = float(math.ceil(0.1 * self.assembly.performance_displacement * self.level))
         multiplier = 1.0 if self.customisation is None else self.customisation.power_multiplier
         return base_power * multiplier
+
+
+class JDrive1(_JDrive):
+    drive_type: Literal['jdrive_1'] = 'jdrive_1'
+    tl: int = 9
+    _level: ClassVar[int] = 1
+    _tons_percent: ClassVar[float] = 0.025
+
+
+class JDrive2(_JDrive):
+    drive_type: Literal['jdrive_2'] = 'jdrive_2'
+    tl: int = 11
+    _level: ClassVar[int] = 2
+    _tons_percent: ClassVar[float] = 0.05
+
+
+class JDrive3(_JDrive):
+    drive_type: Literal['jdrive_3'] = 'jdrive_3'
+    tl: int = 12
+    _level: ClassVar[int] = 3
+    _tons_percent: ClassVar[float] = 0.075
+
+
+class JDrive4(_JDrive):
+    drive_type: Literal['jdrive_4'] = 'jdrive_4'
+    tl: int = 13
+    _level: ClassVar[int] = 4
+    _tons_percent: ClassVar[float] = 0.10
+
+
+class JDrive5(_JDrive):
+    drive_type: Literal['jdrive_5'] = 'jdrive_5'
+    tl: int = 14
+    _level: ClassVar[int] = 5
+    _tons_percent: ClassVar[float] = 0.125
+
+
+class JDrive6(_JDrive):
+    drive_type: Literal['jdrive_6'] = 'jdrive_6'
+    tl: int = 15
+    _level: ClassVar[int] = 6
+    _tons_percent: ClassVar[float] = 0.15
+
+
+class JDrive7(_JDrive):
+    drive_type: Literal['jdrive_7'] = 'jdrive_7'
+    tl: int = 16
+    _level: ClassVar[int] = 7
+    _tons_percent: ClassVar[float] = 0.175
+
+
+class JDrive8(_JDrive):
+    drive_type: Literal['jdrive_8'] = 'jdrive_8'
+    tl: int = 17
+    _level: ClassVar[int] = 8
+    _tons_percent: ClassVar[float] = 0.20
+
+
+class JDrive9(_JDrive):
+    drive_type: Literal['jdrive_9'] = 'jdrive_9'
+    tl: int = 18
+    _level: ClassVar[int] = 9
+    _tons_percent: ClassVar[float] = 0.225
+
+
+type JDrive = Annotated[
+    JDrive1 | JDrive2 | JDrive3 | JDrive4 | JDrive5 | JDrive6 | JDrive7 | JDrive8 | JDrive9,
+    Field(discriminator='drive_type'),
+]
 
 
 class DriveSection(ShipPart):
@@ -268,7 +504,6 @@ class DriveSection(ShipPart):
 
 
 class _FusionPlant(CustomisableShipPart):
-    _tl: ClassVar[int]
     power_per_ton: ClassVar[int]
     cost_per_ton: ClassVar[int]
     allowed_modifications: ClassVar[frozenset[str]] = frozenset(
@@ -303,21 +538,21 @@ class _FusionPlant(CustomisableShipPart):
 
 class FusionPlantTL8(_FusionPlant):
     plant_type: Literal['fusion_tl8'] = 'fusion_tl8'
-    _tl = 8
+    tl: int = 8
     power_per_ton = 10
     cost_per_ton = 500_000
 
 
 class FusionPlantTL12(_FusionPlant):
     plant_type: Literal['fusion_tl12'] = 'fusion_tl12'
-    _tl = 12
+    tl: int = 12
     power_per_ton = 15
     cost_per_ton = 1_000_000
 
 
 class FusionPlantTL15(_FusionPlant):
     plant_type: Literal['fusion_tl15'] = 'fusion_tl15'
-    _tl = 15
+    tl: int = 15
     power_per_ton = 20
     cost_per_ton = 2_000_000
 

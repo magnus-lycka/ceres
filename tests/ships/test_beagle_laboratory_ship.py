@@ -45,7 +45,7 @@ from ceres.make.ship.crew import (
     ShipCrew,
     Steward,
 )
-from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive, MDrive, PowerSection
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive2, MDrive2, PowerSection
 from ceres.make.ship.habitation import HabitationSection, HotTub, LowBerth, Stateroom
 from ceres.make.ship.sensors import ImprovedSensors, SensorsSection, SensorStations
 from ceres.make.ship.software import JumpControl
@@ -86,7 +86,7 @@ def build_beagle_laboratory_ship() -> ship.Ship:
             configuration=hull.dispersed_structure,
             airlocks=[Airlock() for _ in range(4)],
         ),
-        drives=DriveSection(m_drive=MDrive(level=2), j_drive=JDrive(level=2)),
+        drives=DriveSection(m_drive=MDrive2(), j_drive=JDrive2()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=195)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=2),

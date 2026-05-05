@@ -120,7 +120,6 @@ buffered_planetoid = HullConfiguration(
 
 
 class Stealth(ShipPart):
-    _tl: ClassVar[int] = 0
     description: str
     cost_per_ton: ClassVar[int] = 0
     tonnage: ClassVar[float] = 0
@@ -135,7 +134,7 @@ class Stealth(ShipPart):
 
 class BasicStealth(Stealth):
     description: Literal['Basic Stealth'] = 'Basic Stealth'
-    _tl = 7
+    tl: int = 7
     cost_per_ton = 40_000
     sensors_dm = -2
     tonnage = 0.02
@@ -143,21 +142,21 @@ class BasicStealth(Stealth):
 
 class ImprovedStealth(Stealth):
     description: Literal['Improved Stealth'] = 'Improved Stealth'
-    _tl = 10
+    tl: int = 10
     cost_per_ton = 100_000
     sensors_dm = -2
 
 
 class EnhancedStealth(Stealth):
     description: Literal['Enhanced Stealth'] = 'Enhanced Stealth'
-    _tl = 12
+    tl: int = 12
     cost_per_ton = 500_000
     sensors_dm = -4
 
 
 class AdvancedStealth(Stealth):
     description: Literal['Advanced Stealth'] = 'Advanced Stealth'
-    _tl = 14
+    tl: int = 14
     cost_per_ton = 1_000_000
     sensors_dm = -6
 

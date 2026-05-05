@@ -56,7 +56,7 @@ from ceres.make.ship.crew import (
     SensorOperator,
     ShipCrew,
 )
-from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive, PowerSection
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive0, PowerSection
 from ceres.make.ship.habitation import AdvancedEntertainmentSystem, Brig, HabitationSection, Stateroom
 from ceres.make.ship.sensors import BasicSensors, SensorsSection
 from ceres.make.ship.storage import FuelProcessor, FuelSection, OperationFuel
@@ -102,7 +102,7 @@ def build_small_scout_base() -> ship.Ship:
             ]
         ),
         hull=hull.Hull(configuration=light_dispersed, airlocks=[Airlock() for _ in range(24)]),
-        drives=DriveSection(m_drive=MDrive(level=0)),
+        drives=DriveSection(m_drive=MDrive0()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=2_500)),
         fuel=FuelSection(
             operation_fuel=OperationFuel(weeks=12),

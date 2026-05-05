@@ -38,7 +38,7 @@ class Laboratory(ShipPart):
 
 class LibraryFacility(ShipPart):
     system_type: Literal['LIBRARY'] = 'LIBRARY'
-    _tl: ClassVar[int] = 8
+    tl: int = 8
 
     def build_item(self) -> str | None:
         return 'Library'
@@ -233,7 +233,7 @@ class Aerofins(ShipPart):
 
 class ProbeDrones(ShipPart):
     drone_type: Literal['PROBE_DRONES'] = 'PROBE_DRONES'
-    _tl: ClassVar[int] = 9
+    tl: int = 9
     drones_per_ton: ClassVar[int] = 5
     cost_per_ton: ClassVar[float] = 500_000.0
     count: int
@@ -252,7 +252,7 @@ class ProbeDrones(ShipPart):
 
 class AdvancedProbeDrones(ProbeDrones):
     drone_type: Literal['ADVANCED_PROBE_DRONES'] = 'ADVANCED_PROBE_DRONES'
-    _tl: ClassVar[int] = 12
+    tl: int = 12
     cost_per_ton: ClassVar[float] = 800_000.0
 
     def build_item(self) -> str | None:
