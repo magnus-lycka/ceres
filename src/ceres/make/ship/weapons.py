@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 import math
-from typing import Any, ClassVar, Literal
+from typing import Annotated, Any, ClassVar, Literal
 
 from pydantic import Field, model_validator
 
@@ -195,18 +195,16 @@ class FixedMount(ShipPart):
 TurretSize = Literal['single', 'double', 'triple', 'quad']
 
 
-class Turret(ShipPart):
-    _specs: ClassVar[dict[TurretSize, dict[str, float | int | str]]] = dict(
-        single=dict(item='Single Turret', tl=7, mount_cost=200_000, mount_power=1, capacity=1),
-        double=dict(item='Double Turret', tl=8, mount_cost=500_000, mount_power=1, capacity=2),
-        triple=dict(item='Triple Turret', tl=9, mount_cost=1_000_000, mount_power=1, capacity=3),
-        quad=dict(item='Quad Turret', tl=10, mount_cost=2_000_000, mount_power=2, capacity=4),
-    )
-    size: TurretSize
+class _Turret(ShipPart):
+    turret_type: str
+    size: ClassVar[TurretSize]
+    mount_cost: ClassVar[float]
+    mount_power: ClassVar[float]
+    capacity: ClassVar[int]
     weapons: list[MountWeapon] = Field(default_factory=list)
 
     def build_item(self) -> str | None:
-        return str(self._specs[self.size]['item'])
+        return f'{self.size.title()} Turret'
 
     def build_notes(self) -> list[Note]:
         return _mounted_weapon_notes(self.weapons, empty_message='No weapons in turret')
@@ -218,27 +216,6 @@ class Turret(ShipPart):
 
     def _display_notes_for_grouping(self) -> list[Note]:
         return self.build_notes()
-
-    @model_validator(mode='before')
-    @classmethod
-    def _fill_tl(cls, data: Any) -> Any:
-        if isinstance(data, dict) and 'tl' not in data:
-            size = data.get('size')
-            if size is not None and size in cls._specs:
-                data = {**data, 'tl': int(cls._specs[size]['tl'])}
-        return data
-
-    @property
-    def capacity(self) -> int:
-        return int(self._specs[self.size]['capacity'])
-
-    @property
-    def mount_cost(self) -> float:
-        return float(self._specs[self.size]['mount_cost'])
-
-    @property
-    def mount_power(self) -> float:
-        return float(self._specs[self.size]['mount_power'])
 
     def model_post_init(self, __context) -> None:
         super().model_post_init(__context)
@@ -253,6 +230,48 @@ class Turret(ShipPart):
 
     def compute_power(self) -> float:
         return self.mount_power + _mounted_weapon_power(self.weapons)
+
+
+class SingleTurret(_Turret):
+    turret_type: Literal['single_turret'] = 'single_turret'
+    size: ClassVar[TurretSize] = 'single'
+    tl: int = 7
+    mount_cost: ClassVar[float] = 200_000.0
+    mount_power: ClassVar[float] = 1.0
+    capacity: ClassVar[int] = 1
+
+
+class DoubleTurret(_Turret):
+    turret_type: Literal['double_turret'] = 'double_turret'
+    size: ClassVar[TurretSize] = 'double'
+    tl: int = 8
+    mount_cost: ClassVar[float] = 500_000.0
+    mount_power: ClassVar[float] = 1.0
+    capacity: ClassVar[int] = 2
+
+
+class TripleTurret(_Turret):
+    turret_type: Literal['triple_turret'] = 'triple_turret'
+    size: ClassVar[TurretSize] = 'triple'
+    tl: int = 9
+    mount_cost: ClassVar[float] = 1_000_000.0
+    mount_power: ClassVar[float] = 1.0
+    capacity: ClassVar[int] = 3
+
+
+class QuadTurret(_Turret):
+    turret_type: Literal['quad_turret'] = 'quad_turret'
+    size: ClassVar[TurretSize] = 'quad'
+    tl: int = 10
+    mount_cost: ClassVar[float] = 2_000_000.0
+    mount_power: ClassVar[float] = 2.0
+    capacity: ClassVar[int] = 4
+
+
+type Turret = Annotated[
+    SingleTurret | DoubleTurret | TripleTurret | QuadTurret,
+    Field(discriminator='turret_type'),
+]
 
 
 class MissileStorage(ShipPart):
@@ -298,18 +317,13 @@ BarbetteWeapon = Literal[
 ]
 
 
-class Barbette(CustomisableShipPart):
-    _specs: ClassVar[dict[BarbetteWeapon, dict[str, float | int | str]]] = dict(
-        beam_laser=dict(item='Beam Laser Barbette', tl=10, power=12, cost=3_000_000),
-        fusion=dict(item='Fusion Barbette', tl=12, power=20, cost=4_000_000),
-        ion_cannon=dict(item='Ion Cannon', tl=12, power=10, cost=6_000_000),
-        missile=dict(item='Missile Barbette', tl=7, power=0, cost=4_000_000),
-        particle=dict(item='Particle Barbette', tl=11, power=15, cost=8_000_000),
-        plasma=dict(item='Plasma Barbette', tl=11, power=12, cost=5_000_000),
-        pulse_laser=dict(item='Pulse Laser Barbette', tl=9, power=12, cost=6_000_000),
-        railgun=dict(item='Railgun Barbette', tl=10, power=5, cost=2_000_000),
-        torpedo=dict(item='Torpedo', tl=7, power=2, cost=3_000_000),
-    )
+class _Barbette(CustomisableShipPart):
+    barbette_type: str
+    weapon: ClassVar[BarbetteWeapon]
+    weapon_label: ClassVar[str]
+    damage_multiplier: ClassVar[int | None]
+    base_cost: ClassVar[float]
+    base_power: ClassVar[float]
     allowed_modifications: ClassVar[frozenset[str]] = frozenset(
         {
             SizeReduction.name,
@@ -317,22 +331,10 @@ class Barbette(CustomisableShipPart):
             VeryHighYield.name,
         }
     )
-    _damage_multiplier: ClassVar[dict[BarbetteWeapon, int | None]] = {
-        'beam_laser': 3,
-        'fusion': 3,
-        'ion_cannon': 3,
-        'missile': None,
-        'particle': 3,
-        'plasma': 3,
-        'pulse_laser': 3,
-        'railgun': 3,
-        'torpedo': None,
-    }
-    weapon: BarbetteWeapon
 
     def build_item(self) -> str | None:
         item = 'Barbette'
-        damage_text = _damage_multiple_text(self._damage_multiplier[self.weapon])
+        damage_text = _damage_multiple_text(self.damage_multiplier)
         if damage_text is None:
             return item
         return f'{item} ({damage_text})'
@@ -348,19 +350,9 @@ class Barbette(CustomisableShipPart):
     def group_key(self) -> str:
         return f'{super().group_key}|weapon={self.weapon}'
 
-    @model_validator(mode='before')
-    @classmethod
-    def _fill_tl(cls, data: Any) -> Any:
-        if isinstance(data, dict) and 'tl' not in data:
-            weapon = data.get('weapon')
-            if weapon is not None and weapon in cls._specs:
-                data = {**data, 'tl': int(cls._specs[weapon]['tl'])}
-        return data
-
     @property
     def _weapon_specs_label(self) -> str:
-        item = str(self._specs[self.weapon]['item'])
-        return item.removesuffix(' Barbette')
+        return self.weapon_label
 
     @property
     def hardpoints_required(self) -> int:
@@ -380,11 +372,115 @@ class Barbette(CustomisableShipPart):
 
     def compute_cost(self) -> float:
         multiplier = 1.0 if self.customisation is None else self.customisation.cost_multiplier
-        return float(self._specs[self.weapon]['cost']) * multiplier
+        return self.base_cost * multiplier
 
     def compute_power(self) -> float:
         multiplier = 1.0 if self.customisation is None else self.customisation.power_multiplier
-        return float(self._specs[self.weapon]['power']) * multiplier
+        return self.base_power * multiplier
+
+
+class BeamLaserBarbette(_Barbette):
+    barbette_type: Literal['beam_laser_barbette'] = 'beam_laser_barbette'
+    weapon: ClassVar[BarbetteWeapon] = 'beam_laser'
+    weapon_label = 'Beam Laser'
+    damage_multiplier = 3
+    tl: int = 10
+    base_power = 12.0
+    base_cost = 3_000_000.0
+
+
+class FusionBarbette(_Barbette):
+    barbette_type: Literal['fusion_barbette'] = 'fusion_barbette'
+    weapon: ClassVar[BarbetteWeapon] = 'fusion'
+    weapon_label = 'Fusion'
+    damage_multiplier = 3
+    tl: int = 12
+    base_power = 20.0
+    base_cost = 4_000_000.0
+
+
+class IonCannonBarbette(_Barbette):
+    barbette_type: Literal['ion_cannon_barbette'] = 'ion_cannon_barbette'
+    weapon: ClassVar[BarbetteWeapon] = 'ion_cannon'
+    weapon_label = 'Ion Cannon'
+    damage_multiplier = 3
+    tl: int = 12
+    base_power = 10.0
+    base_cost = 6_000_000.0
+
+
+class MissileBarbette(_Barbette):
+    barbette_type: Literal['missile_barbette'] = 'missile_barbette'
+    weapon: ClassVar[BarbetteWeapon] = 'missile'
+    weapon_label = 'Missile'
+    damage_multiplier = None
+    tl: int = 7
+    base_power = 0.0
+    base_cost = 4_000_000.0
+
+
+class ParticleBarbette(_Barbette):
+    barbette_type: Literal['particle_barbette'] = 'particle_barbette'
+    weapon: ClassVar[BarbetteWeapon] = 'particle'
+    weapon_label = 'Particle'
+    damage_multiplier = 3
+    tl: int = 11
+    base_power = 15.0
+    base_cost = 8_000_000.0
+
+
+class PlasmaBarbette(_Barbette):
+    barbette_type: Literal['plasma_barbette'] = 'plasma_barbette'
+    weapon: ClassVar[BarbetteWeapon] = 'plasma'
+    weapon_label = 'Plasma'
+    damage_multiplier = 3
+    tl: int = 11
+    base_power = 12.0
+    base_cost = 5_000_000.0
+
+
+class PulseLaserBarbette(_Barbette):
+    barbette_type: Literal['pulse_laser_barbette'] = 'pulse_laser_barbette'
+    weapon: ClassVar[BarbetteWeapon] = 'pulse_laser'
+    weapon_label = 'Pulse Laser'
+    damage_multiplier = 3
+    tl: int = 9
+    base_power = 12.0
+    base_cost = 6_000_000.0
+
+
+class RailgunBarbette(_Barbette):
+    barbette_type: Literal['railgun_barbette'] = 'railgun_barbette'
+    weapon: ClassVar[BarbetteWeapon] = 'railgun'
+    weapon_label = 'Railgun'
+    damage_multiplier = 3
+    tl: int = 10
+    base_power = 5.0
+    base_cost = 2_000_000.0
+
+
+class TorpedoBarbette(_Barbette):
+    barbette_type: Literal['torpedo_barbette'] = 'torpedo_barbette'
+    weapon: ClassVar[BarbetteWeapon] = 'torpedo'
+    weapon_label = 'Torpedo'
+    damage_multiplier = None
+    tl: int = 7
+    base_power = 2.0
+    base_cost = 3_000_000.0
+
+
+type Barbette = Annotated[
+    BeamLaserBarbette
+    | FusionBarbette
+    | IonCannonBarbette
+    | MissileBarbette
+    | ParticleBarbette
+    | PlasmaBarbette
+    | PulseLaserBarbette
+    | RailgunBarbette
+    | TorpedoBarbette,
+    Field(discriminator='barbette_type'),
+]
 
 
 BaySize = Literal['small', 'medium', 'large']
@@ -569,44 +665,23 @@ class Bay(CustomisableShipPart):
         return float(self._weapon_specs[self.weapon][self.size]['power']) * multiplier
 
 
-class PointDefenseBattery(CustomisableShipPart):
-    _specs: ClassVar[dict[PointDefenseKind, dict[PointDefenseRating, dict[str, float | int | str]]]] = dict(
-        laser={
-            1: dict(item='Point Defence Laser Battery Type I', tl=10, power=10, tons=20, cost=5_000_000),
-            2: dict(item='Point Defence Laser Battery Type II', tl=12, power=20, tons=20, cost=10_000_000),
-            3: dict(item='Point Defence Laser Battery Type III', tl=14, power=30, tons=20, cost=20_000_000),
-        },
-        gauss={
-            1: dict(item='Point Defence Gauss Battery Type I', tl=10, power=5, tons=20, cost=3_000_000),
-            2: dict(item='Point Defence Gauss Battery Type II', tl=12, power=15, tons=20, cost=6_000_000),
-            3: dict(item='Point Defence Gauss Battery Type III', tl=14, power=25, tons=20, cost=10_000_000),
-        },
-    )
+class _PointDefenseBattery(CustomisableShipPart):
+    battery_type: str
+    kind: ClassVar[PointDefenseKind]
+    rating: ClassVar[PointDefenseRating]
+    item_label: ClassVar[str]
+    base_tons: ClassVar[float]
+    base_cost: ClassVar[float]
+    base_power: ClassVar[float]
     allowed_modifications: ClassVar[frozenset[str]] = frozenset(
         {
             SizeReduction.name,
             EnergyEfficient.name,
         }
     )
-    kind: PointDefenseKind
-    rating: PointDefenseRating
 
     def build_item(self) -> str | None:
-        return str(self._specs[self.kind][self.rating]['item'])
-
-    @model_validator(mode='before')
-    @classmethod
-    def _fill_tl(cls, data: Any) -> Any:
-        if isinstance(data, dict) and 'tl' not in data:
-            kind = data.get('kind')
-            rating = data.get('rating')
-            if kind is not None and rating is not None:
-                kind_specs = cls._specs.get(kind)
-                if kind_specs is not None:
-                    rating_specs = kind_specs.get(rating)
-                    if rating_specs is not None:
-                        data = {**data, 'tl': int(rating_specs['tl'])}
-        return data
+        return self.item_label
 
     def build_notes(self) -> list[Note]:
         notes = [*super().build_notes()]
@@ -627,16 +702,92 @@ class PointDefenseBattery(CustomisableShipPart):
 
     def compute_tons(self) -> float:
         multiplier = 1.0 if self.customisation is None else self.customisation.tons_multiplier
-        return float(self._specs[self.kind][self.rating]['tons']) * multiplier
+        return self.base_tons * multiplier
 
     def compute_cost(self) -> float:
         multiplier = 1.0 if self.customisation is None else self.customisation.cost_multiplier
-        return float(self._specs[self.kind][self.rating]['cost']) * multiplier
+        return self.base_cost * multiplier
 
     def compute_power(self) -> float:
-        power = float(self._specs[self.kind][self.rating]['power'])
         multiplier = 1.0 if self.customisation is None else self.customisation.power_multiplier
-        return power * multiplier
+        return self.base_power * multiplier
+
+
+class LaserPointDefenseBattery1(_PointDefenseBattery):
+    battery_type: Literal['laser_point_defense_1'] = 'laser_point_defense_1'
+    kind: ClassVar[PointDefenseKind] = 'laser'
+    rating: ClassVar[PointDefenseRating] = 1
+    item_label = 'Point Defence Laser Battery Type I'
+    tl: int = 10
+    base_tons = 20.0
+    base_power = 10.0
+    base_cost = 5_000_000.0
+
+
+class LaserPointDefenseBattery2(_PointDefenseBattery):
+    battery_type: Literal['laser_point_defense_2'] = 'laser_point_defense_2'
+    kind: ClassVar[PointDefenseKind] = 'laser'
+    rating: ClassVar[PointDefenseRating] = 2
+    item_label = 'Point Defence Laser Battery Type II'
+    tl: int = 12
+    base_tons = 20.0
+    base_power = 20.0
+    base_cost = 10_000_000.0
+
+
+class LaserPointDefenseBattery3(_PointDefenseBattery):
+    battery_type: Literal['laser_point_defense_3'] = 'laser_point_defense_3'
+    kind: ClassVar[PointDefenseKind] = 'laser'
+    rating: ClassVar[PointDefenseRating] = 3
+    item_label = 'Point Defence Laser Battery Type III'
+    tl: int = 14
+    base_tons = 20.0
+    base_power = 30.0
+    base_cost = 20_000_000.0
+
+
+class GaussPointDefenseBattery1(_PointDefenseBattery):
+    battery_type: Literal['gauss_point_defense_1'] = 'gauss_point_defense_1'
+    kind: ClassVar[PointDefenseKind] = 'gauss'
+    rating: ClassVar[PointDefenseRating] = 1
+    item_label = 'Point Defence Gauss Battery Type I'
+    tl: int = 10
+    base_tons = 20.0
+    base_power = 5.0
+    base_cost = 3_000_000.0
+
+
+class GaussPointDefenseBattery2(_PointDefenseBattery):
+    battery_type: Literal['gauss_point_defense_2'] = 'gauss_point_defense_2'
+    kind: ClassVar[PointDefenseKind] = 'gauss'
+    rating: ClassVar[PointDefenseRating] = 2
+    item_label = 'Point Defence Gauss Battery Type II'
+    tl: int = 12
+    base_tons = 20.0
+    base_power = 15.0
+    base_cost = 6_000_000.0
+
+
+class GaussPointDefenseBattery3(_PointDefenseBattery):
+    battery_type: Literal['gauss_point_defense_3'] = 'gauss_point_defense_3'
+    kind: ClassVar[PointDefenseKind] = 'gauss'
+    rating: ClassVar[PointDefenseRating] = 3
+    item_label = 'Point Defence Gauss Battery Type III'
+    tl: int = 14
+    base_tons = 20.0
+    base_power = 25.0
+    base_cost = 10_000_000.0
+
+
+type PointDefenseBattery = Annotated[
+    LaserPointDefenseBattery1
+    | LaserPointDefenseBattery2
+    | LaserPointDefenseBattery3
+    | GaussPointDefenseBattery1
+    | GaussPointDefenseBattery2
+    | GaussPointDefenseBattery3,
+    Field(discriminator='battery_type'),
+]
 
 
 class WeaponsSection(CeresModel):

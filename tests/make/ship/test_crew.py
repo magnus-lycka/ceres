@@ -25,7 +25,7 @@ from ceres.make.ship.drives import (
 from ceres.make.ship.habitation import HabitationSection, LowBerth, Stateroom
 from ceres.make.ship.sensors import SensorsSection, SensorStations
 from ceres.make.ship.systems import MedicalBay, SystemsSection
-from ceres.make.ship.weapons import Barbette, Bay, Turret, WeaponsSection
+from ceres.make.ship.weapons import Bay, DoubleTurret, PulseLaserBarbette, WeaponsSection
 
 
 def grouped_role_counts(roles):
@@ -97,7 +97,7 @@ def test_gunner_added_for_each_turret_on_commercial_ship():
         power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer5()),
-        weapons=WeaponsSection(turrets=[Turret(size='double')]),
+        weapons=WeaponsSection(turrets=[DoubleTurret()]),
     )
 
     assert grouped_role_counts(my_ship.crew) == [
@@ -140,7 +140,7 @@ def test_military_ship_uses_military_pilot_and_gunner_rules():
         power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer5()),
-        weapons=WeaponsSection(turrets=[Turret(size='double'), Turret(size='double')]),
+        weapons=WeaponsSection(turrets=[DoubleTurret(), DoubleTurret()]),
     )
 
     assert grouped_role_counts(my_ship.crew) == [
@@ -243,7 +243,7 @@ def test_commercial_ship_gets_gunner_for_barbette():
         power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer5()),
-        weapons=WeaponsSection(barbettes=[Barbette(weapon='pulse_laser')]),
+        weapons=WeaponsSection(barbettes=[PulseLaserBarbette()]),
     )
 
     assert ('GUNNER', 1) in grouped_role_counts(my_ship.crew)

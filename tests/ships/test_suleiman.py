@@ -38,7 +38,7 @@ from ceres.make.ship.sensors import MilitarySensors, SensorsSection
 from ceres.make.ship.software import JumpControl
 from ceres.make.ship.storage import CargoSection, FuelProcessor, FuelSection, JumpFuel, OperationFuel
 from ceres.make.ship.systems import Airlock, ProbeDrones, SystemsSection, Workshop
-from ceres.make.ship.weapons import Turret, WeaponsSection
+from ceres.make.ship.weapons import DoubleTurret, WeaponsSection
 from ceres.report import render_ship_html
 
 from ._output import write_html_output, write_json_output
@@ -67,7 +67,7 @@ def build_suleiman() -> ship.Ship:
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer5(bis=True), software=[JumpControl(rating=2)]),
         sensors=SensorsSection(primary=MilitarySensors()),
-        weapons=WeaponsSection(turrets=[Turret(size='double')]),
+        weapons=WeaponsSection(turrets=[DoubleTurret()]),
         craft=CraftSection(internal_housing=[InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft'))]),
         habitation=HabitationSection(staterooms=[Stateroom()] * 4),
         systems=SystemsSection(internal_systems=[Workshop()], drones=[ProbeDrones(count=10)]),

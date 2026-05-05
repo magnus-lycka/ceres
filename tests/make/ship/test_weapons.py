@@ -7,16 +7,22 @@ from ceres.make.ship.computer import Computer5, Computer20, ComputerSection
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive1, PowerSection
 from ceres.make.ship.parts import Advanced, EnergyEfficient, HighTechnology, SizeReduction, VeryAdvanced
 from ceres.make.ship.weapons import (
-    Barbette,
     Bay,
+    DoubleTurret,
     FixedMount,
+    GaussPointDefenseBattery3,
     HighYield,
+    LaserPointDefenseBattery2,
     LongRange,
     MissileStorage,
     MountWeapon,
-    PointDefenseBattery,
+    ParticleBarbette,
+    PulseLaserBarbette,
+    QuadTurret,
     SandcasterCanisterStorage,
-    Turret,
+    SingleTurret,
+    TorpedoBarbette,
+    TripleTurret,
     VeryHighYield,
     WeaponsSection,
     _size_reduction_steps,
@@ -255,8 +261,7 @@ def test_fixed_firmpoint_with_multiple_weapons_reports_fixed_mount_item():
 
 
 def test_triple_turret_groups_identical_customised_weapons_in_notes():
-    turret = Turret(
-        size='triple',
+    turret = TripleTurret(
         weapons=[
             MountWeapon(weapon='pulse_laser', customisation=HighTechnology(modifications=[LongRange, HighYield])),
             MountWeapon(weapon='pulse_laser', customisation=HighTechnology(modifications=[LongRange, HighYield])),
@@ -272,7 +277,7 @@ def test_triple_turret_groups_identical_customised_weapons_in_notes():
 
 def test_reused_weapon_and_turret_references_render_like_distinct_identical_objects():
     laser = MountWeapon(weapon='pulse_laser', customisation=HighTechnology(modifications=[LongRange, HighYield]))
-    turret = Turret(size='triple', weapons=[laser, laser, laser])
+    turret = TripleTurret(weapons=[laser, laser, laser])
     my_ship = ship.Ship(
         tl=15,
         displacement=200,
@@ -296,7 +301,7 @@ def test_reused_weapon_and_turret_references_render_like_distinct_identical_obje
 
 
 def test_pulse_laser_barbette_values():
-    barbette = Barbette(weapon='pulse_laser')
+    barbette = PulseLaserBarbette()
     barbette.bind(DummyOwner(12, 200))
     assert barbette.tons == 5.0
     assert barbette.cost == 6_000_000
@@ -304,7 +309,7 @@ def test_pulse_laser_barbette_values():
 
 
 def test_particle_barbette_values():
-    barbette = Barbette(weapon='particle')
+    barbette = ParticleBarbette()
     barbette.bind(DummyOwner(13, 400))
     assert barbette.build_item() == 'Barbette (Damage × 3 after armour)'
     assert barbette.tons == pytest.approx(5.0)
@@ -312,7 +317,7 @@ def test_particle_barbette_values():
 
 
 def test_torpedo_barbette_has_no_damage_multiple_in_item():
-    barbette = Barbette(weapon='torpedo')
+    barbette = TorpedoBarbette()
     barbette.bind(DummyOwner(12, 400))
     assert barbette.build_item() == 'Barbette'
     assert barbette.crew_required_commercial == 1
@@ -320,7 +325,7 @@ def test_torpedo_barbette_has_no_damage_multiple_in_item():
 
 
 def test_particle_barbette_very_high_yield_values():
-    barbette = Barbette(weapon='particle', customisation=VeryAdvanced(modifications=[VeryHighYield]))
+    barbette = ParticleBarbette(customisation=VeryAdvanced(modifications=[VeryHighYield]))
     barbette.bind(DummyOwner(13, 400))
     assert barbette.build_item() == 'Barbette (Damage × 3 after armour)'
     assert barbette.tons == pytest.approx(5.0)
@@ -410,7 +415,7 @@ def test_large_torpedo_bay_uses_five_hardpoints():
 
 
 def test_type_ii_laser_point_defense_battery_values():
-    battery = PointDefenseBattery(kind='laser', rating=2)
+    battery = LaserPointDefenseBattery2()
     battery.bind(DummyOwner(12, 1_000))
     assert battery.tons == 20.0
     assert battery.cost == 10_000_000
@@ -419,7 +424,7 @@ def test_type_ii_laser_point_defense_battery_values():
 
 
 def test_type_ii_laser_point_defense_battery_item_values():
-    battery = PointDefenseBattery(kind='laser', rating=2)
+    battery = LaserPointDefenseBattery2()
     battery.bind(DummyOwner(12, 1_000))
     assert battery.build_item() == 'Point Defence Laser Battery Type II'
     assert battery.tons == pytest.approx(20.0)
@@ -427,7 +432,7 @@ def test_type_ii_laser_point_defense_battery_item_values():
 
 
 def test_type_ii_laser_point_defense_battery_energy_efficient_values():
-    battery = PointDefenseBattery(kind='laser', rating=2, customisation=Advanced(modifications=[EnergyEfficient]))
+    battery = LaserPointDefenseBattery2(customisation=Advanced(modifications=[EnergyEfficient]))
     battery.bind(DummyOwner(13, 1_000))
     assert battery.build_item() == 'Point Defence Laser Battery Type II'
     assert battery.tons == pytest.approx(20.0)
@@ -450,7 +455,7 @@ def test_point_defense_battery_cannot_be_mounted_on_small_craft():
         tl=12,
         displacement=99,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        weapons=WeaponsSection(point_defense_batteries=[PointDefenseBattery(kind='laser', rating=2)]),
+        weapons=WeaponsSection(point_defense_batteries=[LaserPointDefenseBattery2()]),
     )
 
     assert my_ship.weapons is not None
@@ -461,8 +466,7 @@ def test_point_defense_battery_cannot_be_mounted_on_small_craft():
 
 
 def test_double_turret_cost_and_power_include_weapons():
-    turret = Turret(
-        size='double',
+    turret = DoubleTurret(
         weapons=[
             MountWeapon(weapon='pulse_laser'),
             MountWeapon(weapon='pulse_laser', customisation=Advanced(modifications=[EnergyEfficient])),
@@ -474,8 +478,7 @@ def test_double_turret_cost_and_power_include_weapons():
 
 
 def test_quad_turret_cost_and_power_include_weapons():
-    turret = Turret(
-        size='quad',
+    turret = QuadTurret(
         weapons=[
             MountWeapon(weapon='beam_laser'),
             MountWeapon(weapon='beam_laser'),
@@ -489,8 +492,7 @@ def test_quad_turret_cost_and_power_include_weapons():
 
 
 def test_double_turret_errors_if_it_mounts_too_many_weapons():
-    turret = Turret(
-        size='double',
+    turret = DoubleTurret(
         weapons=[
             MountWeapon(weapon='pulse_laser'),
             MountWeapon(weapon='pulse_laser'),
@@ -507,7 +509,7 @@ def test_single_turret_is_allowed_on_small_craft():
         tl=12,
         displacement=99,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        weapons=WeaponsSection(turrets=[Turret(size='single')]),
+        weapons=WeaponsSection(turrets=[SingleTurret()]),
     )
 
     assert my_ship.weapons is not None
@@ -553,7 +555,7 @@ def test_small_craft_cannot_mount_double_turret():
         tl=12,
         displacement=99,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        weapons=WeaponsSection(turrets=[Turret(size='double')]),
+        weapons=WeaponsSection(turrets=[DoubleTurret()]),
     )
 
     assert my_ship.weapons is not None
@@ -569,7 +571,7 @@ def test_small_craft_cannot_mount_triple_turret():
         tl=12,
         displacement=99,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        weapons=WeaponsSection(turrets=[Turret(size='triple')]),
+        weapons=WeaponsSection(turrets=[TripleTurret()]),
     )
 
     assert my_ship.weapons is not None
@@ -586,7 +588,7 @@ def test_weapon_mounts_cannot_exceed_hardpoints():
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         weapons=WeaponsSection(
-            turrets=[Turret(size='double')],
+            turrets=[DoubleTurret()],
             fixed_mounts=[FixedMount(weapons=[MountWeapon(weapon='pulse_laser')])],
         ),
     )
@@ -648,13 +650,13 @@ def test_bays_count_against_hardpoint_capacity():
 
 
 def test_barbette_with_very_high_yield_item_is_base_name_only():
-    barbette = Barbette(weapon='particle', customisation=VeryAdvanced(modifications=[VeryHighYield]))
+    barbette = ParticleBarbette(customisation=VeryAdvanced(modifications=[VeryHighYield]))
     barbette.bind(DummyOwner(13, 400))
     assert barbette.build_item() == 'Barbette (Damage × 3 after armour)'
 
 
 def test_barbette_with_very_high_yield_has_customisation_note():
-    barbette = Barbette(weapon='particle', customisation=VeryAdvanced(modifications=[VeryHighYield]))
+    barbette = ParticleBarbette(customisation=VeryAdvanced(modifications=[VeryHighYield]))
     barbette.bind(DummyOwner(13, 400))
     info_notes = [n.message for n in barbette.notes if n.category.value == 'info']
     assert 'Weapon: Particle' in info_notes
@@ -733,20 +735,20 @@ def test_large_torpedo_bay_has_salvo_summary_note():
 
 
 def test_battery_with_energy_efficient_item_is_base_name_only():
-    battery = PointDefenseBattery(kind='laser', rating=2, customisation=Advanced(modifications=[EnergyEfficient]))
+    battery = LaserPointDefenseBattery2(customisation=Advanced(modifications=[EnergyEfficient]))
     battery.bind(DummyOwner(13, 1_000))
     assert battery.build_item() == 'Point Defence Laser Battery Type II'
 
 
 def test_battery_with_energy_efficient_has_customisation_note():
-    battery = PointDefenseBattery(kind='laser', rating=2, customisation=Advanced(modifications=[EnergyEfficient]))
+    battery = LaserPointDefenseBattery2(customisation=Advanced(modifications=[EnergyEfficient]))
     battery.bind(DummyOwner(13, 1_000))
     info_notes = [n.message for n in battery.notes if n.category.value == 'info']
     assert 'Advanced: Energy Efficient' in info_notes
 
 
 def test_gauss_point_defense_battery_notes_include_ammunition_requirement():
-    battery = PointDefenseBattery(kind='gauss', rating=3)
+    battery = GaussPointDefenseBattery3()
     battery.bind(DummyOwner(13, 1_000))
     info_notes = [n.message for n in battery.notes if n.category.value == 'info']
     assert 'Intercept +6D' in info_notes
@@ -766,8 +768,8 @@ def test_grouped_parts_with_same_note_show_note_once(tmp_path):
         computer=ComputerSection(hardware=Computer5()),
         weapons=WeaponsSection(
             barbettes=[
-                Barbette(weapon='particle', armoured_bulkhead=True),
-                Barbette(weapon='particle', armoured_bulkhead=True),
+                ParticleBarbette(armoured_bulkhead=True),
+                ParticleBarbette(armoured_bulkhead=True),
             ],
         ),
     )
@@ -786,7 +788,7 @@ def test_point_defense_battery_appears_in_weapon_spec_rows():
         hull=hull.Hull(configuration=hull.standard_hull),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer5()),
-        weapons=WeaponsSection(point_defense_batteries=[PointDefenseBattery(kind='laser', rating=2)]),
+        weapons=WeaponsSection(point_defense_batteries=[LaserPointDefenseBattery2()]),
     )
     spec = my_ship.build_spec()
     row = spec.row('Point Defence Laser Battery Type II', section='Weapons')

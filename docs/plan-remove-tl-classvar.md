@@ -51,6 +51,9 @@ will make the model shape much easier to see. A few points should be corrected b
 - For `RDrive`, consider whether per-level subclasses are worth the larger API churn. Unlike
   customisable drives, `RDrive` has only one extra boolean option and no discriminated sibling
   pattern today. Splitting it is consistent, but it is a lot of surface area for a simpler part.
+- Weapon mounts are a separate follow-up. `Turret`, `Barbette`, and `PointDefenseBattery` now use
+  concrete subclasses with literal discriminators instead of validator-filled TL values. `Bay`
+  remains the larger table-shaped case and still needs its own design pass.
 
 Suggested implementation order:
 

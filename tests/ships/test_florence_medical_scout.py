@@ -11,7 +11,7 @@ from ceres.make.ship.sensors import LifeScannerAnalysisSuite, MilitarySensors, S
 from ceres.make.ship.software import JumpControl
 from ceres.make.ship.storage import FuelProcessor, FuelScoops, FuelSection, JumpFuel, OperationFuel
 from ceres.make.ship.systems import BriefingRoom, CommonArea, Laboratory, MedicalBay, SystemsSection
-from ceres.make.ship.weapons import Turret, WeaponsSection
+from ceres.make.ship.weapons import DoubleTurret, WeaponsSection
 
 
 def build_florence_medical_scout() -> ship.Ship:
@@ -45,7 +45,7 @@ def build_florence_medical_scout() -> ship.Ship:
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer15(), software=[JumpControl(rating=3)]),
         sensors=SensorsSection(primary=MilitarySensors(), life_scanner_analysis_suite=LifeScannerAnalysisSuite()),
-        weapons=WeaponsSection(turrets=[Turret(size='double')]),
+        weapons=WeaponsSection(turrets=[DoubleTurret()]),
         craft=CraftSection(
             internal_housing=[
                 InternalDockingSpace(craft=SpaceCraft.from_catalog('Slow Pinnace')),

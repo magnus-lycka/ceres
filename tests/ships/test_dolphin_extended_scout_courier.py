@@ -43,7 +43,7 @@ from ceres.make.ship.storage import (
     OperationFuel,
 )
 from ceres.make.ship.systems import CommonArea, MedicalBay, ProbeDrones, SystemsSection, Workshop
-from ceres.make.ship.weapons import MountWeapon, Turret, WeaponsSection
+from ceres.make.ship.weapons import MountWeapon, TripleTurret, WeaponsSection
 
 
 def build_dolphin_extended_scout_courier() -> ship.Ship:
@@ -69,8 +69,7 @@ def build_dolphin_extended_scout_courier() -> ship.Ship:
         sensors=SensorsSection(primary=MilitarySensors()),
         weapons=WeaponsSection(
             turrets=[
-                Turret(
-                    size='triple',
+                TripleTurret(
                     weapons=[
                         MountWeapon(weapon='pulse_laser'),
                         MountWeapon(weapon='pulse_laser'),

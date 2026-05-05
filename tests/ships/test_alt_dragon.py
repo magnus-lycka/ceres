@@ -85,7 +85,13 @@ from ceres.make.ship.systems import (
     TrainingFacility,
     Workshop,
 )
-from ceres.make.ship.weapons import Barbette, Bay, MissileStorage, PointDefenseBattery, WeaponsSection
+from ceres.make.ship.weapons import (
+    Bay,
+    LaserPointDefenseBattery2,
+    MissileStorage,
+    ParticleBarbette,
+    WeaponsSection,
+)
 from ceres.report import render_ship_html
 
 from ._output import write_html_output, write_json_output
@@ -140,12 +146,8 @@ def build_alt_dragon() -> ship.Ship:
         ),
         weapons=WeaponsSection(
             barbettes=[
-                Barbette(
-                    weapon='particle', customisation=Advanced(modifications=[SizeReduction]), armoured_bulkhead=True
-                ),
-                Barbette(
-                    weapon='particle', customisation=Advanced(modifications=[SizeReduction]), armoured_bulkhead=True
-                ),
+                ParticleBarbette(customisation=Advanced(modifications=[SizeReduction]), armoured_bulkhead=True),
+                ParticleBarbette(customisation=Advanced(modifications=[SizeReduction]), armoured_bulkhead=True),
             ],
             bays=[
                 Bay(
@@ -156,12 +158,7 @@ def build_alt_dragon() -> ship.Ship:
                 )
             ],
             point_defense_batteries=[
-                PointDefenseBattery(
-                    kind='laser',
-                    rating=2,
-                    customisation=Advanced(modifications=[SizeReduction]),
-                    armoured_bulkhead=True,
-                )
+                LaserPointDefenseBattery2(customisation=Advanced(modifications=[SizeReduction]), armoured_bulkhead=True)
             ],
             missile_storage=MissileStorage(count=720, armoured_bulkhead=True),
         ),

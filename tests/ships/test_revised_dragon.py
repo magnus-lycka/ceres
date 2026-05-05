@@ -81,7 +81,14 @@ from ceres.make.ship.systems import (
     TrainingFacility,
     Workshop,
 )
-from ceres.make.ship.weapons import Barbette, Bay, MissileStorage, PointDefenseBattery, VeryHighYield, WeaponsSection
+from ceres.make.ship.weapons import (
+    Bay,
+    LaserPointDefenseBattery2,
+    MissileStorage,
+    ParticleBarbette,
+    VeryHighYield,
+    WeaponsSection,
+)
 
 
 def build_revised_dragon() -> ship.Ship:
@@ -129,12 +136,8 @@ def build_revised_dragon() -> ship.Ship:
         ),
         weapons=WeaponsSection(
             barbettes=[
-                Barbette(
-                    weapon='particle', customisation=VeryAdvanced(modifications=[VeryHighYield]), armoured_bulkhead=True
-                ),
-                Barbette(
-                    weapon='particle', customisation=VeryAdvanced(modifications=[VeryHighYield]), armoured_bulkhead=True
-                ),
+                ParticleBarbette(customisation=VeryAdvanced(modifications=[VeryHighYield]), armoured_bulkhead=True),
+                ParticleBarbette(customisation=VeryAdvanced(modifications=[VeryHighYield]), armoured_bulkhead=True),
             ],
             bays=[
                 Bay(
@@ -145,9 +148,7 @@ def build_revised_dragon() -> ship.Ship:
                 )
             ],
             point_defense_batteries=[
-                PointDefenseBattery(
-                    kind='laser',
-                    rating=2,
+                LaserPointDefenseBattery2(
                     customisation=Advanced(modifications=[EnergyEfficient]),
                     armoured_bulkhead=True,
                 )
