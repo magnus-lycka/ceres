@@ -7,13 +7,16 @@ from ceres.make.ship.computer import Computer5, Computer20, ComputerSection
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive1, PowerSection
 from ceres.make.ship.parts import Advanced, EnergyEfficient, HighTechnology, SizeReduction, VeryAdvanced
 from ceres.make.ship.weapons import (
-    Bay,
     DoubleTurret,
     FixedMount,
     GaussPointDefenseBattery3,
     HighYield,
+    LargeMesonGunBay,
+    LargeTorpedoBay,
     LaserPointDefenseBattery2,
     LongRange,
+    MediumMissileBay,
+    MediumParticleBeamBay,
     MissileStorage,
     MountWeapon,
     ParticleBarbette,
@@ -21,6 +24,8 @@ from ceres.make.ship.weapons import (
     QuadTurret,
     SandcasterCanisterStorage,
     SingleTurret,
+    SmallFusionGunBay,
+    SmallMissileBay,
     TorpedoBarbette,
     TripleTurret,
     VeryHighYield,
@@ -334,7 +339,7 @@ def test_particle_barbette_very_high_yield_values():
 
 
 def test_small_missile_bay_values():
-    bay = Bay(size='small', weapon='missile')
+    bay = SmallMissileBay()
     bay.bind(DummyOwner(12, 1_000))
     assert bay.tons == 50.0
     assert bay.cost == 12_000_000
@@ -343,7 +348,7 @@ def test_small_missile_bay_values():
 
 
 def test_small_missile_bay_size_reduction_values():
-    bay = Bay(size='small', weapon='missile', customisation=Advanced(modifications=[SizeReduction]))
+    bay = SmallMissileBay(customisation=Advanced(modifications=[SizeReduction]))
     bay.bind(DummyOwner(13, 1_000))
     assert bay.build_item() == 'Small Bay (12 missiles per salvo)'
     assert bay.tons == pytest.approx(45.0)
@@ -351,9 +356,7 @@ def test_small_missile_bay_size_reduction_values():
 
 
 def test_small_missile_bay_three_size_reduction_steps_values():
-    bay = Bay(
-        size='small',
-        weapon='missile',
+    bay = SmallMissileBay(
         customisation=HighTechnology(modifications=[SizeReduction, SizeReduction, SizeReduction]),
     )
     bay.bind(DummyOwner(13, 1_000))
@@ -363,9 +366,7 @@ def test_small_missile_bay_three_size_reduction_steps_values():
 
 
 def test_medium_particle_beam_bay_high_yield_and_two_size_reductions_values():
-    bay = Bay(
-        size='medium',
-        weapon='particle_beam',
+    bay = MediumParticleBeamBay(
         customisation=HighTechnology(modifications=[HighYield, SizeReduction, SizeReduction]),
     )
     bay.bind(DummyOwner(15, 1_000))
@@ -377,7 +378,7 @@ def test_medium_particle_beam_bay_high_yield_and_two_size_reductions_values():
 
 
 def test_medium_missile_bay_high_yield_not_applicable():
-    bay = Bay(size='medium', weapon='missile', customisation=Advanced(modifications=[HighYield]))
+    bay = MediumMissileBay(customisation=Advanced(modifications=[HighYield]))
     bay.bind(DummyOwner(10, 1_000))
     assert ('error', 'High Yield is not applicable for Medium Bay (24 missiles per salvo)') in [
         (note.category.value, note.message) for note in bay.notes
@@ -385,9 +386,7 @@ def test_medium_missile_bay_high_yield_not_applicable():
 
 
 def test_high_technology_medium_particle_beam_bay_requires_tl15_not_tl18():
-    bay = Bay(
-        size='medium',
-        weapon='particle_beam',
+    bay = MediumParticleBeamBay(
         customisation=HighTechnology(modifications=[SizeReduction, SizeReduction, SizeReduction]),
     )
     bay.bind(DummyOwner(15, 450))
@@ -396,9 +395,7 @@ def test_high_technology_medium_particle_beam_bay_requires_tl15_not_tl18():
 
 
 def test_high_technology_medium_particle_beam_bay_errors_at_tl14():
-    bay = Bay(
-        size='medium',
-        weapon='particle_beam',
+    bay = MediumParticleBeamBay(
         customisation=HighTechnology(modifications=[SizeReduction, SizeReduction, SizeReduction]),
     )
     bay.bind(DummyOwner(14, 450))
@@ -406,7 +403,7 @@ def test_high_technology_medium_particle_beam_bay_errors_at_tl14():
 
 
 def test_large_torpedo_bay_uses_five_hardpoints():
-    bay = Bay(size='large', weapon='torpedo')
+    bay = LargeTorpedoBay()
     bay.bind(DummyOwner(12, 10_000))
     assert bay.tons == 500.0
     assert bay.cost == 10_000_000
@@ -541,7 +538,7 @@ def test_bay_cannot_be_mounted_on_small_craft():
         tl=12,
         displacement=99,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        weapons=WeaponsSection(bays=[Bay(size='small', weapon='missile')]),
+        weapons=WeaponsSection(bays=[SmallMissileBay()]),
     )
 
     assert my_ship.weapons is not None
@@ -634,7 +631,7 @@ def test_bays_count_against_hardpoint_capacity():
         tl=12,
         displacement=200,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        weapons=WeaponsSection(bays=[Bay(size='large', weapon='torpedo')]),
+        weapons=WeaponsSection(bays=[LargeTorpedoBay()]),
     )
 
     assert my_ship.weapons is not None
@@ -665,9 +662,7 @@ def test_barbette_with_very_high_yield_has_customisation_note():
 
 
 def test_bay_with_size_reduction_item_is_base_name_only():
-    bay = Bay(
-        size='small',
-        weapon='missile',
+    bay = SmallMissileBay(
         customisation=HighTechnology(modifications=[SizeReduction, SizeReduction, SizeReduction]),
     )
     bay.bind(DummyOwner(13, 1_000))
@@ -675,9 +670,7 @@ def test_bay_with_size_reduction_item_is_base_name_only():
 
 
 def test_bay_with_size_reduction_has_customisation_note():
-    bay = Bay(
-        size='small',
-        weapon='missile',
+    bay = SmallMissileBay(
         customisation=HighTechnology(modifications=[SizeReduction, SizeReduction, SizeReduction]),
     )
     bay.bind(DummyOwner(13, 1_000))
@@ -689,7 +682,7 @@ def test_bay_with_size_reduction_has_customisation_note():
 
 
 def test_small_energy_bay_has_damage_multiple_note():
-    bay = Bay(size='small', weapon='fusion_gun')
+    bay = SmallFusionGunBay()
     bay.bind(DummyOwner(12, 1_000))
     assert bay.build_item() == 'Small Bay (Damage × 10 after armour)'
     info_notes = [n.message for n in bay.notes if n.category.value == 'info']
@@ -698,7 +691,7 @@ def test_small_energy_bay_has_damage_multiple_note():
 
 
 def test_medium_energy_bay_has_damage_multiple_note():
-    bay = Bay(size='medium', weapon='particle_beam')
+    bay = MediumParticleBeamBay()
     bay.bind(DummyOwner(12, 1_000))
     assert bay.build_item() == 'Medium Bay (Damage × 20 after armour)'
     info_notes = [n.message for n in bay.notes if n.category.value == 'info']
@@ -707,7 +700,7 @@ def test_medium_energy_bay_has_damage_multiple_note():
 
 
 def test_large_energy_bay_has_damage_multiple_note():
-    bay = Bay(size='large', weapon='meson_gun')
+    bay = LargeMesonGunBay()
     bay.bind(DummyOwner(13, 1_000))
     assert bay.build_item() == 'Large Bay (Damage × 100 after armour)'
     info_notes = [n.message for n in bay.notes if n.category.value == 'info']
@@ -716,7 +709,7 @@ def test_large_energy_bay_has_damage_multiple_note():
 
 
 def test_medium_missile_bay_has_salvo_summary_note():
-    bay = Bay(size='medium', weapon='missile')
+    bay = MediumMissileBay()
     bay.bind(DummyOwner(12, 1_000))
     assert bay.build_item() == 'Medium Bay (24 missiles per salvo)'
     info_notes = [n.message for n in bay.notes if n.category.value == 'info']
@@ -725,7 +718,7 @@ def test_medium_missile_bay_has_salvo_summary_note():
 
 
 def test_large_torpedo_bay_has_salvo_summary_note():
-    bay = Bay(size='large', weapon='torpedo')
+    bay = LargeTorpedoBay()
     bay.bind(DummyOwner(12, 1_000))
     assert bay.build_item() == 'Large Bay (30 torpedoes per salvo)'
     info_notes = [n.message for n in bay.notes if n.category.value == 'info']

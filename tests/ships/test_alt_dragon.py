@@ -86,10 +86,10 @@ from ceres.make.ship.systems import (
     Workshop,
 )
 from ceres.make.ship.weapons import (
-    Bay,
     LaserPointDefenseBattery2,
     MissileStorage,
     ParticleBarbette,
+    SmallMissileBay,
     WeaponsSection,
 )
 from ceres.report import render_ship_html
@@ -150,9 +150,7 @@ def build_alt_dragon() -> ship.Ship:
                 ParticleBarbette(customisation=Advanced(modifications=[SizeReduction]), armoured_bulkhead=True),
             ],
             bays=[
-                Bay(
-                    size='small',
-                    weapon='missile',
+                SmallMissileBay(
                     customisation=HighTechnology(modifications=[SizeReduction, SizeReduction, SizeReduction]),
                     armoured_bulkhead=True,
                 )

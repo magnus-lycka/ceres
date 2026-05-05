@@ -1,8 +1,8 @@
 from collections.abc import Sequence
 import math
-from typing import Annotated, Any, ClassVar, Literal
+from typing import Annotated, ClassVar, Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field
 
 from .base import CeresModel, Note, NoteCategory
 from .parts import (
@@ -341,18 +341,14 @@ class _Barbette(CustomisableShipPart):
 
     def build_notes(self) -> list[Note]:
         notes = [*ShipPart.build_notes(self)]
-        notes.append(Note(category=NoteCategory.INFO, message=f'Weapon: {self._weapon_specs_label}'))
+        notes.append(Note(category=NoteCategory.INFO, message=f'Weapon: {self.weapon_label}'))
         if self.customisation is not None:
             notes.append(Note(category=NoteCategory.INFO, message=self.customisation.note_text))
         return notes
 
     @property
     def group_key(self) -> str:
-        return f'{super().group_key}|weapon={self.weapon}'
-
-    @property
-    def _weapon_specs_label(self) -> str:
-        return self.weapon_label
+        return f'{super().group_key}|{type(self).__name__}'
 
     @property
     def hardpoints_required(self) -> int:
@@ -367,16 +363,13 @@ class _Barbette(CustomisableShipPart):
         return 2
 
     def compute_tons(self) -> float:
-        multiplier = 1.0 if self.customisation is None else self.customisation.tons_multiplier
-        return 5.0 * multiplier
+        return 5.0 * self.tons_multiplier
 
     def compute_cost(self) -> float:
-        multiplier = 1.0 if self.customisation is None else self.customisation.cost_multiplier
-        return self.base_cost * multiplier
+        return self.base_cost * self.cost_multiplier
 
     def compute_power(self) -> float:
-        multiplier = 1.0 if self.customisation is None else self.customisation.power_multiplier
-        return self.base_power * multiplier
+        return self.base_power * self.power_multiplier
 
 
 class BeamLaserBarbette(_Barbette):
@@ -502,95 +495,23 @@ PointDefenseKind = Literal['laser', 'gauss']
 PointDefenseRating = Literal[1, 2, 3]
 
 
-class Bay(CustomisableShipPart):
-    _size_specs: ClassVar[dict[BaySize, dict[str, int]]] = dict(
-        small=dict(tons=50, hardpoints=1, crew=1),
-        medium=dict(tons=100, hardpoints=1, crew=2),
-        large=dict(tons=500, hardpoints=5, crew=4),
-    )
-    _weapon_specs: ClassVar[dict[BayWeapon, dict[BaySize, dict[str, float | int | str]]]] = dict(
-        fusion_gun=dict(
-            small=dict(item='Small Fusion Gun Bay', tl=12, power=50, cost=8_000_000),
-            medium=dict(item='Medium Fusion Gun Bay', tl=12, power=80, cost=14_000_000),
-            large=dict(item='Large Fusion Gun Bay', tl=12, power=100, cost=25_000_000),
-        ),
-        ion_cannon=dict(
-            small=dict(item='Small Ion Cannon Bay', tl=12, power=20, cost=15_000_000),
-            medium=dict(item='Medium Ion Cannon Bay', tl=12, power=30, cost=25_000_000),
-            large=dict(item='Large Ion Cannon Bay', tl=12, power=40, cost=40_000_000),
-        ),
-        mass_driver=dict(
-            small=dict(item='Small Mass Driver Bay', tl=8, power=15, cost=40_000_000),
-            medium=dict(item='Medium Mass Driver Bay', tl=8, power=25, cost=60_000_000),
-            large=dict(item='Large Mass Driver Bay', tl=8, power=35, cost=80_000_000),
-        ),
-        meson_gun=dict(
-            small=dict(item='Small Meson Gun Bay', tl=11, power=20, cost=50_000_000),
-            medium=dict(item='Medium Meson Gun Bay', tl=12, power=30, cost=60_000_000),
-            large=dict(item='Large Meson Gun Bay', tl=13, power=120, cost=250_000_000),
-        ),
-        missile=dict(
-            small=dict(item='Small Missile Bay', tl=7, power=5, cost=12_000_000),
-            medium=dict(item='Medium Missile Bay', tl=7, power=10, cost=20_000_000),
-            large=dict(item='Large Missile Bay', tl=7, power=20, cost=25_000_000),
-        ),
-        orbital_strike_mass_driver=dict(
-            small=dict(item='Small Orbital Strike Mass Driver Bay', tl=10, power=35, cost=25_000_000),
-            medium=dict(item='Medium Orbital Strike Mass Driver Bay', tl=10, power=50, cost=35_000_000),
-            large=dict(item='Large Orbital Strike Mass Driver Bay', tl=10, power=75, cost=50_000_000),
-        ),
-        orbital_strike_missile=dict(
-            small=dict(item='Small Orbital Strike Missile Bay', tl=10, power=5, cost=16_000_000),
-            medium=dict(item='Medium Orbital Strike Missile Bay', tl=10, power=15, cost=20_000_000),
-            large=dict(item='Large Orbital Strike Missile Bay', tl=10, power=25, cost=24_000_000),
-        ),
-        particle_beam=dict(
-            small=dict(item='Small Particle Beam Bay', tl=11, power=30, cost=20_000_000),
-            medium=dict(item='Medium Particle Beam Bay', tl=12, power=50, cost=40_000_000),
-            large=dict(item='Large Particle Beam Bay', tl=13, power=80, cost=60_000_000),
-        ),
-        railgun=dict(
-            small=dict(item='Small Railgun Bay', tl=10, power=10, cost=30_000_000),
-            medium=dict(item='Medium Railgun Bay', tl=10, power=15, cost=50_000_000),
-            large=dict(item='Large Railgun Bay', tl=10, power=25, cost=70_000_000),
-        ),
-        repulsor=dict(
-            small=dict(item='Small Repulsor Bay', tl=15, power=50, cost=30_000_000),
-            medium=dict(item='Medium Repulsor Bay', tl=14, power=100, cost=60_000_000),
-            large=dict(item='Large Repulsor Bay', tl=13, power=200, cost=90_000_000),
-        ),
-        torpedo=dict(
-            small=dict(item='Small Torpedo Bay', tl=7, power=2, cost=3_000_000),
-            medium=dict(item='Medium Torpedo Bay', tl=7, power=5, cost=6_000_000),
-            large=dict(item='Large Torpedo Bay', tl=7, power=10, cost=10_000_000),
-        ),
-    )
+class _Bay(CustomisableShipPart):
+    bay_type: str
+    size: ClassVar[BaySize]
+    weapon: ClassVar[BayWeapon]
+    weapon_label: ClassVar[str]
+    base_tons: ClassVar[float]
+    base_cost: ClassVar[float]
+    base_power: ClassVar[float]
+    hardpoints: ClassVar[int]
+    crew: ClassVar[int]
+    damage_multiplier: ClassVar[int]
     allowed_modifications: ClassVar[frozenset[str]] = frozenset(
         {
             SizeReduction.name,
             HighYield.name,
         }
     )
-    _damage_multiplier: ClassVar[dict[BaySize, int]] = {
-        'small': 10,
-        'medium': 20,
-        'large': 100,
-    }
-    _weapon_labels: ClassVar[dict[BayWeapon, str]] = {
-        'fusion_gun': 'Fusion Gun',
-        'ion_cannon': 'Ion Cannon',
-        'mass_driver': 'Mass Driver',
-        'meson_gun': 'Meson Gun',
-        'missile': 'Missile',
-        'orbital_strike_mass_driver': 'Orbital Strike Mass Driver',
-        'orbital_strike_missile': 'Orbital Strike Missile',
-        'particle_beam': 'Particle Beam',
-        'railgun': 'Railgun',
-        'repulsor': 'Repulsor',
-        'torpedo': 'Torpedo',
-    }
-    size: BaySize
-    weapon: BayWeapon
 
     def model_post_init(self, __context) -> None:
         super().model_post_init(__context)
@@ -607,32 +528,18 @@ class Bay(CustomisableShipPart):
         if salvo_text is not None:
             item = f'{item} ({salvo_text})'
         elif self.weapon not in {'missile', 'torpedo', 'orbital_strike_missile'}:
-            damage_text = _damage_multiple_text(self._damage_multiplier[self.size])
+            damage_text = _damage_multiple_text(self.damage_multiplier)
             if damage_text is not None:
                 item = f'{item} ({damage_text})'
         return item
 
     @property
     def group_key(self) -> str:
-        return f'{super().group_key}|weapon={self.weapon}'
-
-    @model_validator(mode='before')
-    @classmethod
-    def _fill_tl(cls, data: Any) -> Any:
-        if isinstance(data, dict) and 'tl' not in data:
-            weapon = data.get('weapon')
-            size = data.get('size')
-            if weapon is not None and size is not None:
-                weapon_specs = cls._weapon_specs.get(weapon)
-                if weapon_specs is not None:
-                    size_specs = weapon_specs.get(size)
-                    if size_specs is not None:
-                        data = {**data, 'tl': int(size_specs['tl'])}
-        return data
+        return f'{super().group_key}|{type(self).__name__}'
 
     def build_notes(self) -> list[Note]:
         notes = [*ShipPart.build_notes(self)]
-        notes.append(Note(category=NoteCategory.INFO, message=f'Weapon: {self._weapon_labels[self.weapon]}'))
+        notes.append(Note(category=NoteCategory.INFO, message=f'Weapon: {self.weapon_label}'))
         magazine_summary = _bay_magazine_summary(self.weapon, self.size)
         if magazine_summary is not None:
             notes.append(Note(category=NoteCategory.INFO, message=magazine_summary))
@@ -642,7 +549,7 @@ class Bay(CustomisableShipPart):
 
     @property
     def hardpoints_required(self) -> int:
-        return self._size_specs[self.size]['hardpoints']
+        return self.hardpoints
 
     @property
     def crew_required_commercial(self) -> int:
@@ -650,19 +557,375 @@ class Bay(CustomisableShipPart):
 
     @property
     def crew_required_military(self) -> int:
-        return self._size_specs[self.size]['crew']
+        return self.crew
 
     def compute_tons(self) -> float:
-        multiplier = 1.0 if self.customisation is None else self.customisation.tons_multiplier
-        return float(self._size_specs[self.size]['tons']) * multiplier
+        return self.base_tons * self.tons_multiplier
 
     def compute_cost(self) -> float:
-        multiplier = 1.0 if self.customisation is None else self.customisation.cost_multiplier
-        return float(self._weapon_specs[self.weapon][self.size]['cost']) * multiplier
+        return self.base_cost * self.cost_multiplier
 
     def compute_power(self) -> float:
-        multiplier = 1.0 if self.customisation is None else self.customisation.power_multiplier
-        return float(self._weapon_specs[self.weapon][self.size]['power']) * multiplier
+        return self.base_power * self.power_multiplier
+
+
+class _SmallBay(_Bay):
+    size: ClassVar[BaySize] = 'small'
+    base_tons: ClassVar[float] = 50.0
+    hardpoints: ClassVar[int] = 1
+    crew: ClassVar[int] = 1
+    damage_multiplier: ClassVar[int] = 10
+
+
+class _MediumBay(_Bay):
+    size: ClassVar[BaySize] = 'medium'
+    base_tons: ClassVar[float] = 100.0
+    hardpoints: ClassVar[int] = 1
+    crew: ClassVar[int] = 2
+    damage_multiplier: ClassVar[int] = 20
+
+
+class _LargeBay(_Bay):
+    size: ClassVar[BaySize] = 'large'
+    base_tons: ClassVar[float] = 500.0
+    hardpoints: ClassVar[int] = 5
+    crew: ClassVar[int] = 4
+    damage_multiplier: ClassVar[int] = 100
+
+
+class SmallFusionGunBay(_SmallBay):
+    bay_type: Literal['small_fusion_gun_bay'] = 'small_fusion_gun_bay'
+    weapon: ClassVar[BayWeapon] = 'fusion_gun'
+    weapon_label = 'Fusion Gun'
+    tl: int = 12
+    base_power = 50.0
+    base_cost = 8_000_000.0
+
+
+class MediumFusionGunBay(_MediumBay):
+    bay_type: Literal['medium_fusion_gun_bay'] = 'medium_fusion_gun_bay'
+    weapon: ClassVar[BayWeapon] = 'fusion_gun'
+    weapon_label = 'Fusion Gun'
+    tl: int = 12
+    base_power = 80.0
+    base_cost = 14_000_000.0
+
+
+class LargeFusionGunBay(_LargeBay):
+    bay_type: Literal['large_fusion_gun_bay'] = 'large_fusion_gun_bay'
+    weapon: ClassVar[BayWeapon] = 'fusion_gun'
+    weapon_label = 'Fusion Gun'
+    tl: int = 12
+    base_power = 100.0
+    base_cost = 25_000_000.0
+
+
+class SmallIonCannonBay(_SmallBay):
+    bay_type: Literal['small_ion_cannon_bay'] = 'small_ion_cannon_bay'
+    weapon: ClassVar[BayWeapon] = 'ion_cannon'
+    weapon_label = 'Ion Cannon'
+    tl: int = 12
+    base_power = 20.0
+    base_cost = 15_000_000.0
+
+
+class MediumIonCannonBay(_MediumBay):
+    bay_type: Literal['medium_ion_cannon_bay'] = 'medium_ion_cannon_bay'
+    weapon: ClassVar[BayWeapon] = 'ion_cannon'
+    weapon_label = 'Ion Cannon'
+    tl: int = 12
+    base_power = 30.0
+    base_cost = 25_000_000.0
+
+
+class LargeIonCannonBay(_LargeBay):
+    bay_type: Literal['large_ion_cannon_bay'] = 'large_ion_cannon_bay'
+    weapon: ClassVar[BayWeapon] = 'ion_cannon'
+    weapon_label = 'Ion Cannon'
+    tl: int = 12
+    base_power = 40.0
+    base_cost = 40_000_000.0
+
+
+class SmallMassDriverBay(_SmallBay):
+    bay_type: Literal['small_mass_driver_bay'] = 'small_mass_driver_bay'
+    weapon: ClassVar[BayWeapon] = 'mass_driver'
+    weapon_label = 'Mass Driver'
+    tl: int = 8
+    base_power = 15.0
+    base_cost = 40_000_000.0
+
+
+class MediumMassDriverBay(_MediumBay):
+    bay_type: Literal['medium_mass_driver_bay'] = 'medium_mass_driver_bay'
+    weapon: ClassVar[BayWeapon] = 'mass_driver'
+    weapon_label = 'Mass Driver'
+    tl: int = 8
+    base_power = 25.0
+    base_cost = 60_000_000.0
+
+
+class LargeMassDriverBay(_LargeBay):
+    bay_type: Literal['large_mass_driver_bay'] = 'large_mass_driver_bay'
+    weapon: ClassVar[BayWeapon] = 'mass_driver'
+    weapon_label = 'Mass Driver'
+    tl: int = 8
+    base_power = 35.0
+    base_cost = 80_000_000.0
+
+
+class SmallMesonGunBay(_SmallBay):
+    bay_type: Literal['small_meson_gun_bay'] = 'small_meson_gun_bay'
+    weapon: ClassVar[BayWeapon] = 'meson_gun'
+    weapon_label = 'Meson Gun'
+    tl: int = 11
+    base_power = 20.0
+    base_cost = 50_000_000.0
+
+
+class MediumMesonGunBay(_MediumBay):
+    bay_type: Literal['medium_meson_gun_bay'] = 'medium_meson_gun_bay'
+    weapon: ClassVar[BayWeapon] = 'meson_gun'
+    weapon_label = 'Meson Gun'
+    tl: int = 12
+    base_power = 30.0
+    base_cost = 60_000_000.0
+
+
+class LargeMesonGunBay(_LargeBay):
+    bay_type: Literal['large_meson_gun_bay'] = 'large_meson_gun_bay'
+    weapon: ClassVar[BayWeapon] = 'meson_gun'
+    weapon_label = 'Meson Gun'
+    tl: int = 13
+    base_power = 120.0
+    base_cost = 250_000_000.0
+
+
+class SmallMissileBay(_SmallBay):
+    bay_type: Literal['small_missile_bay'] = 'small_missile_bay'
+    weapon: ClassVar[BayWeapon] = 'missile'
+    weapon_label = 'Missile'
+    tl: int = 7
+    base_power = 5.0
+    base_cost = 12_000_000.0
+
+
+class MediumMissileBay(_MediumBay):
+    bay_type: Literal['medium_missile_bay'] = 'medium_missile_bay'
+    weapon: ClassVar[BayWeapon] = 'missile'
+    weapon_label = 'Missile'
+    tl: int = 7
+    base_power = 10.0
+    base_cost = 20_000_000.0
+
+
+class LargeMissileBay(_LargeBay):
+    bay_type: Literal['large_missile_bay'] = 'large_missile_bay'
+    weapon: ClassVar[BayWeapon] = 'missile'
+    weapon_label = 'Missile'
+    tl: int = 7
+    base_power = 20.0
+    base_cost = 25_000_000.0
+
+
+class SmallOrbitalStrikeMassDriverBay(_SmallBay):
+    bay_type: Literal['small_orbital_strike_mass_driver_bay'] = 'small_orbital_strike_mass_driver_bay'
+    weapon: ClassVar[BayWeapon] = 'orbital_strike_mass_driver'
+    weapon_label = 'Orbital Strike Mass Driver'
+    tl: int = 10
+    base_power = 35.0
+    base_cost = 25_000_000.0
+
+
+class MediumOrbitalStrikeMassDriverBay(_MediumBay):
+    bay_type: Literal['medium_orbital_strike_mass_driver_bay'] = 'medium_orbital_strike_mass_driver_bay'
+    weapon: ClassVar[BayWeapon] = 'orbital_strike_mass_driver'
+    weapon_label = 'Orbital Strike Mass Driver'
+    tl: int = 10
+    base_power = 50.0
+    base_cost = 35_000_000.0
+
+
+class LargeOrbitalStrikeMassDriverBay(_LargeBay):
+    bay_type: Literal['large_orbital_strike_mass_driver_bay'] = 'large_orbital_strike_mass_driver_bay'
+    weapon: ClassVar[BayWeapon] = 'orbital_strike_mass_driver'
+    weapon_label = 'Orbital Strike Mass Driver'
+    tl: int = 10
+    base_power = 75.0
+    base_cost = 50_000_000.0
+
+
+class SmallOrbitalStrikeMissileBay(_SmallBay):
+    bay_type: Literal['small_orbital_strike_missile_bay'] = 'small_orbital_strike_missile_bay'
+    weapon: ClassVar[BayWeapon] = 'orbital_strike_missile'
+    weapon_label = 'Orbital Strike Missile'
+    tl: int = 10
+    base_power = 5.0
+    base_cost = 16_000_000.0
+
+
+class MediumOrbitalStrikeMissileBay(_MediumBay):
+    bay_type: Literal['medium_orbital_strike_missile_bay'] = 'medium_orbital_strike_missile_bay'
+    weapon: ClassVar[BayWeapon] = 'orbital_strike_missile'
+    weapon_label = 'Orbital Strike Missile'
+    tl: int = 10
+    base_power = 15.0
+    base_cost = 20_000_000.0
+
+
+class LargeOrbitalStrikeMissileBay(_LargeBay):
+    bay_type: Literal['large_orbital_strike_missile_bay'] = 'large_orbital_strike_missile_bay'
+    weapon: ClassVar[BayWeapon] = 'orbital_strike_missile'
+    weapon_label = 'Orbital Strike Missile'
+    tl: int = 10
+    base_power = 25.0
+    base_cost = 24_000_000.0
+
+
+class SmallParticleBeamBay(_SmallBay):
+    bay_type: Literal['small_particle_beam_bay'] = 'small_particle_beam_bay'
+    weapon: ClassVar[BayWeapon] = 'particle_beam'
+    weapon_label = 'Particle Beam'
+    tl: int = 11
+    base_power = 30.0
+    base_cost = 20_000_000.0
+
+
+class MediumParticleBeamBay(_MediumBay):
+    bay_type: Literal['medium_particle_beam_bay'] = 'medium_particle_beam_bay'
+    weapon: ClassVar[BayWeapon] = 'particle_beam'
+    weapon_label = 'Particle Beam'
+    tl: int = 12
+    base_power = 50.0
+    base_cost = 40_000_000.0
+
+
+class LargeParticleBeamBay(_LargeBay):
+    bay_type: Literal['large_particle_beam_bay'] = 'large_particle_beam_bay'
+    weapon: ClassVar[BayWeapon] = 'particle_beam'
+    weapon_label = 'Particle Beam'
+    tl: int = 13
+    base_power = 80.0
+    base_cost = 60_000_000.0
+
+
+class SmallRailgunBay(_SmallBay):
+    bay_type: Literal['small_railgun_bay'] = 'small_railgun_bay'
+    weapon: ClassVar[BayWeapon] = 'railgun'
+    weapon_label = 'Railgun'
+    tl: int = 10
+    base_power = 10.0
+    base_cost = 30_000_000.0
+
+
+class MediumRailgunBay(_MediumBay):
+    bay_type: Literal['medium_railgun_bay'] = 'medium_railgun_bay'
+    weapon: ClassVar[BayWeapon] = 'railgun'
+    weapon_label = 'Railgun'
+    tl: int = 10
+    base_power = 15.0
+    base_cost = 50_000_000.0
+
+
+class LargeRailgunBay(_LargeBay):
+    bay_type: Literal['large_railgun_bay'] = 'large_railgun_bay'
+    weapon: ClassVar[BayWeapon] = 'railgun'
+    weapon_label = 'Railgun'
+    tl: int = 10
+    base_power = 25.0
+    base_cost = 70_000_000.0
+
+
+class SmallRepulsorBay(_SmallBay):
+    bay_type: Literal['small_repulsor_bay'] = 'small_repulsor_bay'
+    weapon: ClassVar[BayWeapon] = 'repulsor'
+    weapon_label = 'Repulsor'
+    tl: int = 15
+    base_power = 50.0
+    base_cost = 30_000_000.0
+
+
+class MediumRepulsorBay(_MediumBay):
+    bay_type: Literal['medium_repulsor_bay'] = 'medium_repulsor_bay'
+    weapon: ClassVar[BayWeapon] = 'repulsor'
+    weapon_label = 'Repulsor'
+    tl: int = 14
+    base_power = 100.0
+    base_cost = 60_000_000.0
+
+
+class LargeRepulsorBay(_LargeBay):
+    bay_type: Literal['large_repulsor_bay'] = 'large_repulsor_bay'
+    weapon: ClassVar[BayWeapon] = 'repulsor'
+    weapon_label = 'Repulsor'
+    tl: int = 13
+    base_power = 200.0
+    base_cost = 90_000_000.0
+
+
+class SmallTorpedoBay(_SmallBay):
+    bay_type: Literal['small_torpedo_bay'] = 'small_torpedo_bay'
+    weapon: ClassVar[BayWeapon] = 'torpedo'
+    weapon_label = 'Torpedo'
+    tl: int = 7
+    base_power = 2.0
+    base_cost = 3_000_000.0
+
+
+class MediumTorpedoBay(_MediumBay):
+    bay_type: Literal['medium_torpedo_bay'] = 'medium_torpedo_bay'
+    weapon: ClassVar[BayWeapon] = 'torpedo'
+    weapon_label = 'Torpedo'
+    tl: int = 7
+    base_power = 5.0
+    base_cost = 6_000_000.0
+
+
+class LargeTorpedoBay(_LargeBay):
+    bay_type: Literal['large_torpedo_bay'] = 'large_torpedo_bay'
+    weapon: ClassVar[BayWeapon] = 'torpedo'
+    weapon_label = 'Torpedo'
+    tl: int = 7
+    base_power = 10.0
+    base_cost = 10_000_000.0
+
+
+type Bay = Annotated[
+    SmallFusionGunBay
+    | MediumFusionGunBay
+    | LargeFusionGunBay
+    | SmallIonCannonBay
+    | MediumIonCannonBay
+    | LargeIonCannonBay
+    | SmallMassDriverBay
+    | MediumMassDriverBay
+    | LargeMassDriverBay
+    | SmallMesonGunBay
+    | MediumMesonGunBay
+    | LargeMesonGunBay
+    | SmallMissileBay
+    | MediumMissileBay
+    | LargeMissileBay
+    | SmallOrbitalStrikeMassDriverBay
+    | MediumOrbitalStrikeMassDriverBay
+    | LargeOrbitalStrikeMassDriverBay
+    | SmallOrbitalStrikeMissileBay
+    | MediumOrbitalStrikeMissileBay
+    | LargeOrbitalStrikeMissileBay
+    | SmallParticleBeamBay
+    | MediumParticleBeamBay
+    | LargeParticleBeamBay
+    | SmallRailgunBay
+    | MediumRailgunBay
+    | LargeRailgunBay
+    | SmallRepulsorBay
+    | MediumRepulsorBay
+    | LargeRepulsorBay
+    | SmallTorpedoBay
+    | MediumTorpedoBay
+    | LargeTorpedoBay,
+    Field(discriminator='bay_type'),
+]
 
 
 class _PointDefenseBattery(CustomisableShipPart):
@@ -701,16 +964,13 @@ class _PointDefenseBattery(CustomisableShipPart):
         return 1
 
     def compute_tons(self) -> float:
-        multiplier = 1.0 if self.customisation is None else self.customisation.tons_multiplier
-        return self.base_tons * multiplier
+        return self.base_tons * self.tons_multiplier
 
     def compute_cost(self) -> float:
-        multiplier = 1.0 if self.customisation is None else self.customisation.cost_multiplier
-        return self.base_cost * multiplier
+        return self.base_cost * self.cost_multiplier
 
     def compute_power(self) -> float:
-        multiplier = 1.0 if self.customisation is None else self.customisation.power_multiplier
-        return self.base_power * multiplier
+        return self.base_power * self.power_multiplier
 
 
 class LaserPointDefenseBattery1(_PointDefenseBattery):

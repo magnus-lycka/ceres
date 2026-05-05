@@ -32,9 +32,9 @@ from ceres.make.ship.software import (
 from ceres.make.ship.storage import FuelProcessor, FuelSection, OperationFuel
 from ceres.make.ship.systems import Airlock, Armoury, BriefingRoom, CommonArea, MedicalBay, RepairDrones, SystemsSection
 from ceres.make.ship.weapons import (
-    Bay,
     HighYield,
     LongRange,
+    MediumParticleBeamBay,
     MountWeapon,
     TripleTurret,
     WeaponsSection,
@@ -93,15 +93,11 @@ def build_ambush_hunter_killer_corvette() -> ship.Ship:
         ),
         weapons=WeaponsSection(
             bays=[
-                Bay(
-                    size='medium',
-                    weapon='particle_beam',
+                MediumParticleBeamBay(
                     customisation=HighTechnology(modifications=[HighYield, SizeReduction, SizeReduction]),
                     armoured_bulkhead=True,
                 ),
-                Bay(
-                    size='medium',
-                    weapon='particle_beam',
+                MediumParticleBeamBay(
                     customisation=HighTechnology(modifications=[HighYield, SizeReduction, SizeReduction]),
                     armoured_bulkhead=True,
                 ),

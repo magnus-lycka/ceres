@@ -331,6 +331,24 @@ class CustomisableShipPart(ShipPart):
         mods = ','.join(m.name for m in self.customisation.modifications)
         return f'{base}|{self.customisation.grade}~{mods}'
 
+    @property
+    def tons_multiplier(self) -> float:
+        if self.customisation is None:
+            return 1.0
+        return self.customisation.tons_multiplier
+
+    @property
+    def cost_multiplier(self) -> float:
+        if self.customisation is None:
+            return 1.0
+        return self.customisation.cost_multiplier
+
+    @property
+    def power_multiplier(self) -> float:
+        if self.customisation is None:
+            return 1.0
+        return self.customisation.power_multiplier
+
     def build_notes(self) -> list[Note]:
         notes = super().build_notes()
         if self.customisation is not None:
