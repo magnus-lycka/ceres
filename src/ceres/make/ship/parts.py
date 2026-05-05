@@ -6,7 +6,7 @@ from pydantic import Field, PrivateAttr, TypeAdapter
 
 from ceres.shared import CeresPart
 
-from .base import CeresModel, Note, NoteCategory, ShipBase
+from .base import CeresModel, NoteList, ShipBase, _Note
 from .text import collapse_repeated_labels
 
 
@@ -34,8 +34,11 @@ class Modification(CeresModel):
     def build_item(self) -> str | None:
         return self.name
 
-    def build_notes(self) -> list[Note]:
-        return [Note(category=NoteCategory.INFO, message=message) for message in self.info_notes]
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        for message in self.info_notes:
+            notes.info(message)
+        return notes
 
 
 SizeReduction = Modification(name='Size Reduction', advantage=1, tons_delta_percent=-0.10)
@@ -289,10 +292,7 @@ class ShipPartMixin(ABC):
 
     @property
     def group_key(self) -> str:
-        for note in self.notes:  # type: ignore
-            if note.category is NoteCategory.ITEM:
-                return note.message
-        return self.__class__.__name__
+        return NoteList(getattr(self, 'notes', [])).item_message or self.__class__.__name__
 
 
 class ShipPart(CeresPart, ShipPartMixin):
@@ -310,9 +310,11 @@ class ShipPart(CeresPart, ShipPartMixin):
             raise RuntimeError(f'{type(self).__name__} bound to unexpected assembly type {type(a).__name__}')
         return a
 
-    def build_notes(self) -> list[Note]:
+    def build_notes(self) -> list[_Note]:
         if self.armoured_bulkhead:
-            return [Note(category=NoteCategory.INFO, message='Armoured bulkhead, see Hull section.')]
+            notes = NoteList()
+            notes.info('Armoured bulkhead, see Hull section.')
+            return notes
         return []
 
     def model_post_init(self, __context: Any) -> None:
@@ -349,10 +351,10 @@ class CustomisableShipPart(ShipPart):
             return 1.0
         return self.customisation.power_multiplier
 
-    def build_notes(self) -> list[Note]:
-        notes = super().build_notes()
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList(super().build_notes())
         if self.customisation is not None:
-            notes.append(Note(category=NoteCategory.INFO, message=self.customisation.note_text))
+            notes.info(self.customisation.note_text)
         return notes
 
     def bind(self, assembly: ShipBase) -> None:

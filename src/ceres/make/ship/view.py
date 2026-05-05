@@ -1,6 +1,6 @@
 from dataclasses import replace
 
-from .base import Note
+from .base import _Note
 from .spec import ShipSpec, SpecRow
 
 
@@ -92,5 +92,5 @@ def _sum_or_none(left: float | None, right: float | None) -> float | None:
     return (left or 0.0) + (right or 0.0)
 
 
-def _copy_notes(notes: list[Note]) -> list[Note]:
+def _copy_notes(notes: list[_Note]) -> list[_Note]:
     return list(notes)

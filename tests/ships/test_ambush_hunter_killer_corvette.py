@@ -2,6 +2,7 @@ import pytest
 
 from ceres.make.ship import hull, ship
 from ceres.make.ship.armour import BondedSuperdenseArmour
+from ceres.make.ship.base import NoteList
 from ceres.make.ship.bridge import Bridge, CommandSection
 from ceres.make.ship.computer import Computer30, ComputerSection
 from ceres.make.ship.drives import (
@@ -247,10 +248,9 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
     spec = corvette.build_spec()
     turret_row = spec.row('Triple Turret', section='Weapons')
     assert turret_row.quantity == 2
-    assert [(note.category.value, note.message) for note in turret_row.notes] == [
-        ('content', 'Pulse Laser × 3'),
-        ('info', 'High Technology: Long Range, High Yield'),
-    ]
+    notes = NoteList(turret_row.notes)
+    assert notes.contents == ['Pulse Laser × 3']
+    assert notes.infos == ['High Technology: Long Range, High Yield']
 
     assert [(role.role, quantity) for role, quantity in corvette.crew.grouped_roles] == [
         ('CAPTAIN', 1),
@@ -263,6 +263,4 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
         ('OFFICER', 2),
     ]
 
-    assert not any(
-        note.category.value == 'error' and note.message.startswith('Hull overloaded by ') for note in corvette.notes
-    )
+    assert not any(message.startswith('Hull overloaded by ') for message in NoteList(corvette.notes).errors)

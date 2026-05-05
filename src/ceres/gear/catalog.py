@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Literal
 
 from ceres.report.render import render_html, render_pdf, render_typst_source
-from ceres.shared import NoteCategory
+from ceres.shared import NoteList
 
 from .computer import (
     ComputerChip,
@@ -61,11 +61,7 @@ def _fmt_mass(mass: float) -> str:
 
 
 def _notes_for_display(item) -> list[dict]:
-    return [
-        {'category': n.category.value, 'message': n.message}
-        for n in getattr(item, 'notes', [])
-        if n.category is not NoteCategory.ITEM
-    ]
+    return NoteList(getattr(item, 'notes', [])).detail_entries
 
 
 def _standard_section(cls: type[ComputerEquipment]) -> dict:

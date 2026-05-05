@@ -19,7 +19,7 @@ from typing import Any, ClassVar, Literal
 from pydantic import Field, model_validator
 
 from ceres.gear.software import Expert
-from ceres.shared import CeresPart, Equipment, Note, NoteCategory
+from ceres.shared import CeresPart, Equipment, NoteList, _Note
 
 
 class ComputerPart(CeresPart):
@@ -233,40 +233,29 @@ class SpecialisedComputer(Equipment):
         variant_name = _VARIANT_FULL_NAME.get(self.variant, self.variant)
         return f'Specialised {type(self)._FORM_LABEL} {self.expert.skill}/{p} {variant_name}'
 
-    def build_notes(self) -> list[Note]:
+    def build_notes(self) -> list[_Note]:
         if self.invalid_processing is not None:
             allowed = ', '.join(str(v) for v in sorted(type(self)._BASE_SPECS))
-            return [
-                Note(
-                    category=NoteCategory.ERROR,
-                    message=(
-                        f'Unsupported {type(self).__name__} processing {self.invalid_processing}; '
-                        f'expected one of: {allowed}'
-                    ),
-                )
-            ]
+            notes = NoteList()
+            notes.error(
+                f'Unsupported {type(self).__name__} processing {self.invalid_processing}; expected one of: {allowed}'
+            )
+            return notes
         part = self.parts[0]
         if part.processing < self.expert.bandwidth:
-            return [
-                Note(
-                    category=NoteCategory.ERROR,
-                    message=(
-                        f'Processing {part.processing} insufficient for '
-                        f'Expert {self.expert.skill}/{self.expert.rating} '
-                        f'(requires bandwidth {self.expert.bandwidth})'
-                    ),
-                )
-            ]
+            notes = NoteList()
+            notes.error(
+                f'Processing {part.processing} insufficient for '
+                f'Expert {self.expert.skill}/{self.expert.rating} '
+                f'(requires bandwidth {self.expert.bandwidth})'
+            )
+            return notes
         difficulty = _EXPERT_DIFFICULTY.get(self.expert.rating, f'rating {self.expert.rating}')
         skill = self.expert.skill
-        notes = [Note(category=NoteCategory.INFO, message=f'DM+1 on {skill}, up to {difficulty}')]
+        notes = NoteList()
+        notes.info(f'DM+1 on {skill}, up to {difficulty}')
         if self.variant == 'intellect':
-            notes.append(
-                Note(
-                    category=NoteCategory.INFO,
-                    message=f'{skill}-{self.expert.rating - 1} for unskilled, up to {difficulty}',
-                )
-            )
+            notes.info(f'{skill}-{self.expert.rating - 1} for unskilled, up to {difficulty}')
         return notes
 
 

@@ -37,6 +37,7 @@ Source handling for this test case:
 import pytest
 
 from ceres.make.ship import armour, hull, ship
+from ceres.make.ship.base import NoteList
 from ceres.make.ship.bridge import Bridge, CommandSection
 from ceres.make.ship.computer import Computer20, ComputerSection, Core40
 from ceres.make.ship.crew import (
@@ -215,12 +216,9 @@ def test_alt_dragon_modeled_subset_tracks_current_model():
     assert dragon.computer.hardware.cost == pytest.approx(67_500_000.0)
 
     assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(5.8616)
-    assert ('info', 'MAINTENANCE above recommended count: 1 > 0') in [
-        (note.category.value, note.message) for note in dragon.crew.notes
-    ]
-    assert ('info', 'MEDIC above recommended count: 1 > 0') in [
-        (note.category.value, note.message) for note in dragon.crew.notes
-    ]
+    crew_infos = NoteList(dragon.crew.notes).infos
+    assert 'MAINTENANCE above recommended count: 1 > 0' in crew_infos
+    assert 'MEDIC above recommended count: 1 > 0' in crew_infos
 
     assert dragon.production_cost == pytest.approx(360_094_396.6667)
     assert dragon.sales_price_new == pytest.approx(324_084_957.0)
@@ -231,8 +229,7 @@ def test_alt_dragon_modeled_subset_tracks_current_model():
 
 def test_alt_dragon_has_no_errors():
     dragon = build_alt_dragon()
-    all_notes = [(n.category.value, n.message) for n in dragon.notes]
-    assert not any(cat == 'error' for cat, _ in all_notes)
+    assert not NoteList(dragon.notes).errors
 
 
 @pytest.mark.generated_output

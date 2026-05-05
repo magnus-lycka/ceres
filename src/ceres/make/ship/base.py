@@ -1,4 +1,4 @@
-from ceres.shared import Assembly, CeresModel, CeresPart, Note, NoteCategory
+from ceres.shared import Assembly, CeresModel, CeresPart, NoteList, _Note, _NoteCategory
 
 
 class ShipBase(Assembly):
@@ -28,4 +28,4 @@ class ShipBase(Assembly):
         return 0.0
 
 
-__all__ = ['Assembly', 'CeresPart', 'CeresModel', 'Note', 'NoteCategory', 'ShipBase']
+__all__ = ['Assembly', 'CeresPart', 'CeresModel', 'NoteList', 'ShipBase', '_Note', '_NoteCategory']

@@ -4,7 +4,7 @@ from typing import Annotated, ClassVar, Literal
 
 from pydantic import Field
 
-from .base import CeresModel, Note, NoteCategory
+from .base import CeresModel, NoteList, _Note
 from .parts import (
     CustomisableShipPart,
     CustomisationUnion,
@@ -41,9 +41,11 @@ def _mounted_weapon_label(weapon: MountWeapon) -> str:
     return weapon.build_item() or weapon.__class__.__name__
 
 
-def _mounted_weapon_notes(weapons: Sequence[MountWeapon], *, empty_message: str) -> list[Note]:
+def _mounted_weapon_notes(weapons: Sequence[MountWeapon], *, empty_message: str) -> list[_Note]:
     if not weapons:
-        return [Note(category=NoteCategory.INFO, message=empty_message)]
+        notes = NoteList()
+        notes.info(empty_message)
+        return notes
     groups: dict[tuple[str, str | None], int] = {}
     order: list[tuple[str, str | None]] = []
     for weapon in weapons:
@@ -56,16 +58,11 @@ def _mounted_weapon_notes(weapons: Sequence[MountWeapon], *, empty_message: str)
             groups[key] = 0
         groups[key] += 1
 
-    notes: list[Note] = []
+    notes = NoteList()
     for item, customisation in order:
-        notes.append(
-            Note(
-                category=NoteCategory.CONTENT,
-                message=f'{format_counted_label(item, groups[(item, customisation)])}',
-            )
-        )
+        notes.content(format_counted_label(item, groups[(item, customisation)]))
         if customisation is not None:
-            notes.append(Note(category=NoteCategory.INFO, message=customisation))
+            notes.info(customisation)
     return notes
 
 
@@ -110,10 +107,12 @@ class _MountWeapon(CeresModel):
     def build_item(self) -> str | None:
         return self.item_label
 
-    def customisation_note(self) -> Note | None:
+    def customisation_note(self) -> _Note | None:
         if self.customisation is None:
             return None
-        return Note(category=NoteCategory.INFO, message=self.customisation.note_text)
+        notes = NoteList()
+        notes.info(self.customisation.note_text)
+        return notes[0]
 
     @property
     def cost_modifier(self) -> float:
@@ -174,7 +173,7 @@ class FixedMount(ShipPart):
             return self.weapons[0].build_item()
         return 'Fixed Mount'
 
-    def build_notes(self) -> list[Note]:
+    def build_notes(self) -> list[_Note]:
         notes = super().build_notes()
         if len(self.weapons) == 1:
             cust = self.weapons[0].customisation_note()
@@ -208,7 +207,7 @@ class _Turret(ShipPart):
     def build_item(self) -> str | None:
         return f'{self.size.title()} Turret'
 
-    def build_notes(self) -> list[Note]:
+    def build_notes(self) -> list[_Note]:
         return _mounted_weapon_notes(self.weapons, empty_message='No weapons in turret')
 
     @property
@@ -216,7 +215,7 @@ class _Turret(ShipPart):
         note_messages = tuple(note.message for note in self._display_notes_for_grouping())
         return repr((self.build_item(), note_messages))
 
-    def _display_notes_for_grouping(self) -> list[Note]:
+    def _display_notes_for_grouping(self) -> list[_Note]:
         return self.build_notes()
 
     def model_post_init(self, __context) -> None:
@@ -341,10 +340,10 @@ class _Barbette(CustomisableShipPart):
             return item
         return f'{item} ({damage_text})'
 
-    def build_notes(self) -> list[Note]:
-        notes = [*ShipPart.build_notes(self)]
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList(ShipPart.build_notes(self))
         if self.customisation is not None:
-            notes.append(Note(category=NoteCategory.INFO, message=self.customisation.note_text))
+            notes.info(self.customisation.note_text)
         return notes
 
     @property
@@ -539,12 +538,12 @@ class _Bay(CustomisableShipPart):
     def group_key(self) -> str:
         return f'{super().group_key}|{type(self).__name__}'
 
-    def build_notes(self) -> list[Note]:
-        notes = [*ShipPart.build_notes(self)]
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList(ShipPart.build_notes(self))
         if self.magazine_summary is not None:
-            notes.append(Note(category=NoteCategory.INFO, message=self.magazine_summary))
+            notes.info(self.magazine_summary)
         if self.customisation is not None:
-            notes.append(Note(category=NoteCategory.INFO, message=self.customisation.note_text))
+            notes.info(self.customisation.note_text)
         return notes
 
     @property
@@ -964,17 +963,12 @@ class _PointDefenseBattery(CustomisableShipPart):
     def build_item(self) -> str | None:
         return self.item_label
 
-    def build_notes(self) -> list[Note]:
-        notes = [*super().build_notes()]
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList(super().build_notes())
         intercept_dice = self.rating * 2
-        notes.append(Note(category=NoteCategory.INFO, message=f'Intercept +{intercept_dice}D'))
+        notes.info(f'Intercept +{intercept_dice}D')
         if self.kind == 'gauss':
-            notes.append(
-                Note(
-                    category=NoteCategory.INFO,
-                    message='Requires ammunition storage to reload after 12 rounds',
-                )
-            )
+            notes.info('Requires ammunition storage to reload after 12 rounds')
         return notes
 
     @property

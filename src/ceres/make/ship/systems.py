@@ -2,7 +2,7 @@ from typing import Annotated, ClassVar, Literal, TypeVar
 
 from pydantic import Field
 
-from .base import CeresModel, Note, NoteCategory
+from .base import CeresModel, NoteList, _Note
 from .parts import ShipPart
 from .spec import ShipSpec, SpecSection
 from .text import optional_count
@@ -221,8 +221,10 @@ class Aerofins(ShipPart):
     def build_item(self) -> str | None:
         return 'Aerofins'
 
-    def build_notes(self) -> list[Note]:
-        return [Note(category=NoteCategory.INFO, message='DM +2 to Pilot checks in atmosphere')]
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('DM +2 to Pilot checks in atmosphere')
+        return notes
 
     def compute_tons(self) -> float:
         return self.assembly.displacement * 0.05

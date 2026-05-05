@@ -2,7 +2,7 @@ import math
 
 from pydantic import Field
 
-from .base import CeresModel, Note, NoteCategory
+from .base import CeresModel, _Note
 from .parts import ShipPart
 from .spec import ShipSpec, SpecRow, SpecSection
 
@@ -13,7 +13,7 @@ class FuelScoops(ShipPart):
     def build_item(self) -> str | None:
         return 'Fuel Scoops'
 
-    def build_notes(self) -> list[Note]:
+    def build_notes(self) -> list[_Note]:
         return []
 
     def compute_tons(self) -> float:
@@ -342,19 +342,9 @@ class CargoSection(CeresModel):
             return
         cargo_row = spec.rows_for_section(SpecSection.CARGO)[-1]
         formatted_tons = self._format_stores_tons(maximum_stores_tons)
-        cargo_row.notes.append(
-            Note(
-                category=NoteCategory.INFO,
-                message=f'{formatted_tons} tons needed per 100 days of stores and spares',
-            )
-        )
+        cargo_row.notes.info(f'{formatted_tons} tons needed per 100 days of stores and spares')
         if self.cargo_tons(ship) < maximum_stores_tons:
-            cargo_row.notes.append(
-                Note(
-                    category=NoteCategory.WARNING,
-                    message=f'Cargo is below recommended 100-day stores capacity of {formatted_tons} tons',
-                )
-            )
+            cargo_row.notes.warning(f'Cargo is below recommended 100-day stores capacity of {formatted_tons} tons')
 
     @classmethod
     def cargo_tons_for_ship(cls, ship) -> float:

@@ -4,7 +4,7 @@ from itertools import groupby
 from pathlib import Path
 from typing import Literal
 
-from ceres.make.ship.base import Note, NoteCategory
+from ceres.make.ship.base import NoteList, _Note
 from ceres.make.ship.ship import Ship
 from ceres.make.ship.spec import CrewRow, ExpenseRow, ShipSpec, SpecRow
 from ceres.make.ship.text import format_counted_label
@@ -157,8 +157,8 @@ def _build_expenses(expenses: list[ExpenseRow]) -> list[dict]:
     return result
 
 
-def _notes_for_display(notes: list[Note]) -> list[dict]:
-    return [{'category': n.category.value, 'message': n.message} for n in notes if n.category is not NoteCategory.ITEM]
+def _notes_for_display(notes: list[_Note]) -> list[dict]:
+    return NoteList(notes).detail_entries
 
 
 def _fmt_tons(v: float | None) -> str:

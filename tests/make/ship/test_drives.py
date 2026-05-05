@@ -2,7 +2,7 @@ from pydantic import TypeAdapter
 import pytest
 
 from ceres.make.ship import hull, ship
-from ceres.make.ship.base import ShipBase
+from ceres.make.ship.base import NoteList, ShipBase
 from ceres.make.ship.drives import (
     DecreasedFuel,
     DriveSection,
@@ -148,8 +148,8 @@ def test_budget_increased_size_mdrive_values():
 
 
 def test_limited_range_is_drive_specific_customisation():
-    assert [(note.category.value, note.message) for note in LimitedRange.build_notes()] == [
-        ('info', 'This manoeuvre drive only functions within the 100-diameter limit'),
+    assert NoteList(LimitedRange.build_notes()).infos == [
+        'This manoeuvre drive only functions within the 100-diameter limit'
     ]
 
 
@@ -166,7 +166,7 @@ def test_power_section_all_parts():
 def test_mdrive_tl_too_low():
     d = MDrive6()
     d.bind(DummyOwner(11, 6))
-    assert ('error', 'Requires TL12, ship is TL11') in [(note.category.value, note.message) for note in d.notes]
+    assert 'Requires TL12, ship is TL11' in NoteList(d.notes).errors
 
 
 def test_mdrive_recomputes_cost_from_input():
@@ -270,7 +270,7 @@ def test_emergency_power_system_values():
 def test_fusion_plant_rejects_ship_below_tl():
     plant = FusionPlantTL12(output=8)
     plant.bind(DummyOwner(11, 6))
-    assert ('error', 'Requires TL12, ship is TL11') in [(note.category.value, note.message) for note in plant.notes]
+    assert 'Requires TL12, ship is TL11' in NoteList(plant.notes).errors
 
 
 def _make_ship_with_plant():
@@ -312,9 +312,7 @@ def test_operation_fuel_requires_plant():
     assert my_ship.fuel is not None
     assert my_ship.fuel.operation_fuel is not None
     assert my_ship.fuel.operation_fuel.tons == 0.0
-    assert ('error', 'Ship must have a FusionPlant to compute OperationFuel') in [
-        (note.category.value, note.message) for note in my_ship.fuel.operation_fuel.notes
-    ]
+    assert 'Ship must have a FusionPlant to compute OperationFuel' in NoteList(my_ship.fuel.operation_fuel.notes).errors
 
 
 def test_rdrive_tons_cost_and_power():
@@ -335,7 +333,7 @@ def test_rdrive_unsupported_level_errors():
 def test_rdrive_tl_too_low():
     d = RDrive16()
     d.bind(DummyOwner(11, 6))
-    assert ('error', 'Requires TL12, ship is TL11') in [(note.category.value, note.message) for note in d.notes]
+    assert 'Requires TL12, ship is TL11' in NoteList(d.notes).errors
 
 
 def test_reaction_fuel_minutes_of_operation():
@@ -360,7 +358,7 @@ def test_size_reduced_fusion_plant_item_includes_output_but_not_customisation_la
 def test_size_reduced_fusion_plant_has_customisation_note():
     p = FusionPlantTL12(output=436, customisation=Advanced(modifications=[SizeReduction]))
     p.bind(DummyOwner(13, 400))
-    info_notes = [n.message for n in p.notes if n.category.value == 'info']
+    info_notes = NoteList(p.notes).infos
     assert 'Advanced: Size Reduction' in info_notes
 
 
@@ -373,7 +371,7 @@ def test_budget_increased_size_mdrive_item_is_base_name_only():
 def test_budget_increased_size_mdrive_has_customisation_note():
     p = MDrive1(customisation=Budget(modifications=[IncreasedSize]))
     p.bind(DummyOwner(12, 100))
-    info_notes = [n.message for n in p.notes if n.category.value == 'info']
+    info_notes = NoteList(p.notes).infos
     assert 'Budget: Increased Size' in info_notes
 
 
@@ -398,7 +396,7 @@ def test_jdrive_unsupported_level_errors():
 def test_jdrive_tl_too_low():
     d = JDrive2()
     d.bind(DummyOwner(10, 200))
-    assert ('error', 'Requires TL11, ship is TL10') in [(note.category.value, note.message) for note in d.notes]
+    assert 'Requires TL11, ship is TL10' in NoteList(d.notes).errors
 
 
 def test_emergency_power_system_requires_fusion_plant():

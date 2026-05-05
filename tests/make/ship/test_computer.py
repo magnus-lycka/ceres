@@ -2,7 +2,7 @@ from pydantic import TypeAdapter
 import pytest
 
 from ceres.gear.software import Intellect
-from ceres.make.ship.base import ShipBase
+from ceres.make.ship.base import NoteList, ShipBase
 from ceres.make.ship.computer import (
     Computer,
     Computer5,
@@ -61,7 +61,7 @@ def test_computer_power_zero():
 def test_computer_5_min_tl():
     c = Computer5()
     c.bind(DummyOwner(6, 100))
-    assert ('error', 'Requires TL7, ship is TL6') in [(note.category.value, note.message) for note in c.notes]
+    assert 'Requires TL7, ship is TL6' in NoteList(c.notes).errors
 
 
 def test_computer_recomputes_cost_from_input():

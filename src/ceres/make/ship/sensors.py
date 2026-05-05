@@ -2,7 +2,7 @@ from typing import Annotated, Any, Literal, cast
 
 from pydantic import Field
 
-from .base import CeresModel, Note, NoteCategory, ShipBase
+from .base import CeresModel, NoteList, ShipBase, _Note
 from .parts import ShipPart
 from .spec import ShipSpec, SpecSection
 from .text import format_counted_label, optional_count
@@ -43,7 +43,7 @@ def _sensor_package_notes(
     package_capabilities: tuple[str, ...] = (),
     capability_tl: int,
     low_intercept: LowInterceptMode,
-) -> list[Note]:
+) -> list[_Note]:
     features = ['Passive optical and thermal sensors']
     unavailable: list[str] = []
     for sensor in suite:
@@ -54,33 +54,19 @@ def _sensor_package_notes(
         if low_intercept != 'NONE':
             unavailable.append(sensor)
     features.extend(package_capabilities)
-    notes = [
-        Note(category=NoteCategory.CONTENT, message=', '.join(features)),
-        Note(
-            category=NoteCategory.INFO,
-            message=f'DM {dm} to Electronics (comms) and Electronics (sensors) checks',
-        ),
-    ]
+    notes = NoteList()
+    notes.content(', '.join(features))
+    notes.info(f'DM {dm} to Electronics (comms) and Electronics (sensors) checks')
     if low_intercept == 'LPI':
-        notes.append(
-            Note(
-                category=NoteCategory.INFO,
-                message='DM -1 to detect the ship by sensor emissions while using low-intercept mode',
-            )
-        )
+        notes.info('DM -1 to detect the ship by sensor emissions while using low-intercept mode')
     if low_intercept == 'ELPI':
-        notes.append(
-            Note(
-                category=NoteCategory.INFO,
-                message='DM -3 to detect the ship by sensor emissions while using low-intercept mode',
-            )
-        )
+        notes.info('DM -3 to detect the ship by sensor emissions while using low-intercept mode')
     for sensor in unavailable:
         if sensor == 'Neural Activity Sensor':
             message = f'{sensor} is unavailable in {low_intercept} mode'
         else:
             message = f'{sensor} is unavailable in {low_intercept} mode at TL{capability_tl}'
-        notes.append(Note(category=NoteCategory.INFO, message=message))
+        notes.info(message)
     return notes
 
 
@@ -104,8 +90,8 @@ class SensorPackage(ShipPart):
 
     def bind(self, assembly: ShipBase) -> None:
         super().bind(assembly)
-        retained_notes = [note for note in self.notes if note.category in (NoteCategory.WARNING, NoteCategory.ERROR)]
-        object.__setattr__(self, 'notes', [])
+        retained_notes = NoteList(self.notes).problems
+        object.__setattr__(self, 'notes', NoteList())
         if message := self.build_item():
             self.item(message)
         self.notes.extend(self.build_notes())
@@ -119,7 +105,7 @@ class BasicSensors(SensorPackage):
     def build_item(self) -> str | None:
         return self.description
 
-    def build_notes(self) -> list[Note]:
+    def build_notes(self) -> list[_Note]:
         return _sensor_package_notes(
             suite=('Radar', 'Lidar'),
             dm='-4',
@@ -144,7 +130,7 @@ class CivilianSensors(SensorPackage):
     def build_item(self) -> str | None:
         return self.description
 
-    def build_notes(self) -> list[Note]:
+    def build_notes(self) -> list[_Note]:
         return _sensor_package_notes(
             suite=('Radar', 'Lidar'),
             dm='-2',
@@ -169,7 +155,7 @@ class MilitarySensors(SensorPackage):
     def build_item(self) -> str | None:
         return self.description
 
-    def build_notes(self) -> list[Note]:
+    def build_notes(self) -> list[_Note]:
         return _sensor_package_notes(
             suite=('Radar', 'Lidar'),
             dm='+0',
@@ -195,7 +181,7 @@ class ImprovedSensors(SensorPackage):
     def build_item(self) -> str | None:
         return self.description
 
-    def build_notes(self) -> list[Note]:
+    def build_notes(self) -> list[_Note]:
         return _sensor_package_notes(
             suite=('Radar', 'Lidar', 'Densitometer'),
             dm='+1',
@@ -221,7 +207,7 @@ class AdvancedSensors(SensorPackage):
     def build_item(self) -> str | None:
         return self.description
 
-    def build_notes(self) -> list[Note]:
+    def build_notes(self) -> list[_Note]:
         return _sensor_package_notes(
             suite=('Radar', 'Lidar', 'Densitometer', 'Neural Activity Sensor'),
             dm='+2',
@@ -247,8 +233,10 @@ class CountermeasuresSuite(ShipPart):
     def build_item(self) -> str | None:
         return self.description
 
-    def build_notes(self) -> list[Note]:
-        return [Note(category=NoteCategory.INFO, message='DM +4 to all jamming and electronic warfare attempts')]
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('DM +4 to all jamming and electronic warfare attempts')
+        return notes
 
     def compute_tons(self) -> float:
         return 2.0
@@ -267,14 +255,11 @@ class LifeScannerAnalysisSuite(ShipPart):
     def build_item(self) -> str | None:
         return self.description
 
-    def build_notes(self) -> list[Note]:
-        return [
-            Note(category=NoteCategory.CONTENT, message='Advanced ship-mounted life scanner'),
-            Note(
-                category=NoteCategory.INFO,
-                message='Requires Electronics (sensors) to interpret; improves biological analysis',
-            ),
-        ]
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.content('Advanced ship-mounted life scanner')
+        notes.info('Requires Electronics (sensors) to interpret; improves biological analysis')
+        return notes
 
     def compute_tons(self) -> float:
         return 1.0
@@ -311,8 +296,10 @@ class EnhancedSignalProcessing(ShipPart):
     def build_item(self) -> str | None:
         return self.description
 
-    def build_notes(self) -> list[Note]:
-        return [Note(category=NoteCategory.INFO, message='DM +4 to all sensor-related checks')]
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('DM +4 to all sensor-related checks')
+        return notes
 
     def compute_tons(self) -> float:
         return 2.0
@@ -331,11 +318,11 @@ class ExtendedArrays(ShipPart):
     def build_item(self) -> str | None:
         return self.description
 
-    def build_notes(self) -> list[Note]:
-        return [
-            Note(category=NoteCategory.INFO, message='Cannot expend Thrust or jump while in use'),
-            Note(category=NoteCategory.INFO, message='DM +2 to detect ship while in use'),
-        ]
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('Cannot expend Thrust or jump while in use')
+        notes.info('DM +2 to detect ship while in use')
+        return notes
 
     @property
     def _primary_suite(self) -> ShipPart:
@@ -357,11 +344,11 @@ class RapidDeploymentExtendedArrays(ExtendedArrays):
     def build_item(self) -> str | None:
         return self.description
 
-    def build_notes(self) -> list[Note]:
-        return [
-            Note(category=NoteCategory.INFO, message='Can expend Thrust or jump in the same round'),
-            Note(category=NoteCategory.INFO, message='DM +2 to detect ship while in use'),
-        ]
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('Can expend Thrust or jump in the same round')
+        notes.info('DM +2 to detect ship while in use')
+        return notes
 
     def compute_cost(self) -> float:
         return self._primary_suite.cost * 4

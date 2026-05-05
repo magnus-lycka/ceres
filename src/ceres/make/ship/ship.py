@@ -5,7 +5,7 @@ from pydantic import Field
 
 from ceres.gear.software import SoftwarePackage
 
-from .base import NoteCategory, ShipBase
+from .base import NoteList, ShipBase
 from .bridge import CommandSection
 from .computer import ComputerSection
 from .crafts import CraftSection
@@ -206,13 +206,10 @@ class Ship(ShipBase):
         return [part for part in self._all_parts() if isinstance(part, part_cls)]
 
     def _item_text(self, obj, fallback: str) -> str:
-        for note in obj.notes:
-            if note.category is NoteCategory.ITEM:
-                return note.message
-        return fallback
+        return NoteList(obj.notes).item_message or fallback
 
-    def _display_notes(self, obj) -> list:
-        return [note for note in obj.notes if note.category is not NoteCategory.ITEM]
+    def _display_notes(self, obj) -> NoteList:
+        return NoteList(obj.notes).details
 
     def _spec_row_for_part(
         self,
@@ -253,7 +250,7 @@ class Ship(ShipBase):
             total_cost = sum(part.cost for part in group) or None
             total_power = sum(part.power for part in group)
             seen: set[tuple] = set()
-            notes = []
+            notes = NoteList()
             for part in group:
                 for note in self._display_notes(part):
                     k = (note.category, note.message)
@@ -306,9 +303,7 @@ class Ship(ShipBase):
             self.systems.add_spec_rows(self, spec)
         CargoSection.add_spec_rows_for_ship(self, spec)
 
-        spec.crew_notes = [
-            note for note in self.crew.notes if note.category in {NoteCategory.INFO, NoteCategory.WARNING}
-        ]
+        spec.crew_notes = NoteList(self.crew.notes).advisories
         spec.ship_notes = self._display_notes(self)
 
         spec.expenses = self.expenses.rows

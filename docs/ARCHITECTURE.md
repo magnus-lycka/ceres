@@ -319,8 +319,8 @@ Custom filters `fmt_cost` and `fmt_mass` are registered on the environment.
 data preamble (`#let report_data = (...)`), prepend it to the template source,
 write the combined file to a temp directory, and compile it with
 `typst.compile()`. The Typst package `@preview/gentle-clues` is used for
-error/warning/info admonition boxes, grouped by severity (error → warning →
-info) within each call site.
+error/warning/content/info admonition boxes, grouped by severity and role
+(error → warning → content → info) within each call site.
 
 ## Rules interpretations
 

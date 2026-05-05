@@ -9,7 +9,7 @@ from .armour import (
     MolecularBondedArmour,
     TitaniumSteelArmour,
 )
-from .base import CeresModel, Note, NoteCategory
+from .base import CeresModel, NoteList, _Note
 from .parts import ShipPart
 from .spec import ShipSpec, SpecRow, SpecSection
 from .systems import Aerofins, Airlock
@@ -182,17 +182,11 @@ class ArmouredBulkhead(ShipPart):
             return f'Armoured Bulkhead for {self.protected_item}'
         return 'Armoured Bulkhead'
 
-    def build_notes(self) -> list[Note]:
-        notes = [
-            Note(category=NoteCategory.INFO, message='Critical hit severity reduced by 1 if critical hit severity >1')
-        ]
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('Critical hit severity reduced by 1 if critical hit severity >1')
         if not self.from_ship_part:
-            notes.append(
-                Note(
-                    category=NoteCategory.WARNING,
-                    message='Prefer armoured_bulkhead=True on the protected ShipPart over manual ArmouredBulkhead',
-                )
-            )
+            notes.warning('Prefer armoured_bulkhead=True on the protected ShipPart over manual ArmouredBulkhead')
         return notes
 
     def compute_tons(self) -> float:
@@ -295,11 +289,8 @@ class Hull(CeresModel):
             )
         bulkheads = ship.armoured_bulkhead_parts()
         if bulkheads:
-            notes = [
-                Note(
-                    category=NoteCategory.INFO, message='Critical hit severity reduced by 1 if critical hit severity >1'
-                ),
-            ]
+            notes = NoteList()
+            notes.info('Critical hit severity reduced by 1 if critical hit severity >1')
             spec.add_row(
                 SpecRow(
                     section=SpecSection.HULL,

@@ -1,6 +1,6 @@
 import pytest
 
-from ceres.make.ship.base import Note, NoteCategory
+from ceres.make.ship.base import NoteList
 from ceres.make.ship.spec import CrewRow, ExpenseRow, ShipSpec, SpecRow, SpecSection
 
 
@@ -8,14 +8,14 @@ def build_spec() -> ShipSpec:
     spec = ShipSpec(ship_class='Test', ship_type='Demo', tl=12, hull_points=40)
     spec.add_row(SpecRow(section=SpecSection.FUEL, item='Jump 2', tons=20.0))
     spec.add_row(SpecRow(section=SpecSection.JUMP, item='Jump 2', power=20.0))
+    notes = NoteList()
+    notes.info('Library included')
+    notes.warning('Limited by software')
     spec.add_row(
         SpecRow(
             section=SpecSection.COMPUTER,
             item='Computer/5',
-            notes=[
-                Note(category=NoteCategory.INFO, message='Library included'),
-                Note(category=NoteCategory.WARNING, message='Limited by software'),
-            ],
+            notes=notes,
         )
     )
     spec.expenses = [ExpenseRow(label='Production Cost', amount=1_000_000)]
@@ -24,21 +24,20 @@ def build_spec() -> ShipSpec:
 
 
 def test_spec_row_notes_only_contain_display_notes():
+    notes = NoteList()
+    notes.info('Library included')
+    notes.warning('Limited by software')
+    notes.error('Broken')
     row = SpecRow(
         section=SpecSection.COMPUTER,
         item='Computer/5',
-        notes=[
-            Note(category=NoteCategory.INFO, message='Library included'),
-            Note(category=NoteCategory.WARNING, message='Limited by software'),
-            Note(category=NoteCategory.ERROR, message='Broken'),
-        ],
+        notes=notes,
     )
 
-    assert [(note.category.value, note.message) for note in row.notes] == [
-        ('info', 'Library included'),
-        ('warning', 'Limited by software'),
-        ('error', 'Broken'),
-    ]
+    row_notes = NoteList(row.notes)
+    assert row_notes.infos == ['Library included']
+    assert row_notes.warnings == ['Limited by software']
+    assert row_notes.errors == ['Broken']
 
 
 def test_ship_spec_rows_for_section_returns_matching_rows():

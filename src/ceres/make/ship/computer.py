@@ -5,7 +5,7 @@ from pydantic import Field, PrivateAttr
 from ceres.gear.computer import ComputerPart
 from ceres.gear.software import Intellect, SoftwarePackage
 
-from .base import CeresModel, Note, NoteCategory
+from .base import CeresModel, NoteList, _Note
 from .parts import ShipPart, ShipPartMixin
 from .software import JumpControl, Library, Manoeuvre, ShipSoftware
 from .spec import ShipSpec, SpecRow, SpecSection
@@ -30,9 +30,11 @@ class ComputerBase(ComputerPart, ShipPartMixin):
     def base_cost(self) -> float:
         return self._base_cost
 
-    def build_notes(self) -> list[Note]:
+    def build_notes(self) -> list[_Note]:
         if self.armoured_bulkhead:
-            return [Note(category=NoteCategory.INFO, message='Armoured bulkhead, see Hull section.')]
+            notes = NoteList()
+            notes.info('Armoured bulkhead, see Hull section.')
+            return notes
         return []
 
     def build_item(self) -> str | None:

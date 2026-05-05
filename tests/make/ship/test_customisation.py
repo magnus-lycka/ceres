@@ -2,6 +2,7 @@
 
 import pytest
 
+from ceres.make.ship.base import NoteList
 from ceres.make.ship.parts import (
     Advanced,
     Budget,
@@ -22,7 +23,7 @@ from ceres.make.ship.weapons import VeryHighYield
 
 def test_advanced_size_reduction_is_valid():
     c = Advanced(modifications=[SizeReduction])
-    assert not any(n.category.value == 'error' for n in c.notes)
+    assert not NoteList(c.notes).errors
 
 
 def test_advanced_note_text():
@@ -31,7 +32,7 @@ def test_advanced_note_text():
 
 def test_high_technology_three_size_reductions_is_valid():
     c = HighTechnology(modifications=[SizeReduction, SizeReduction, SizeReduction])
-    assert not any(n.category.value == 'error' for n in c.notes)
+    assert not NoteList(c.notes).errors
 
 
 def test_high_technology_three_size_reductions_note_text():
@@ -44,7 +45,7 @@ def test_high_technology_three_size_reductions_note_text():
 def test_high_technology_very_high_yield_and_energy_efficient_is_valid():
     # VeryHighYield.advantage=2, EnergyEfficient.advantage=1 → 3 total
     c = HighTechnology(modifications=[VeryHighYield, EnergyEfficient])
-    assert not any(n.category.value == 'error' for n in c.notes)
+    assert not NoteList(c.notes).errors
 
 
 def test_high_technology_very_high_yield_and_energy_efficient_note_text():
@@ -57,12 +58,12 @@ def test_high_technology_very_high_yield_and_energy_efficient_note_text():
 def test_very_advanced_very_high_yield_is_valid():
     # VeryHighYield.advantage=2 → 2 total
     c = VeryAdvanced(modifications=[VeryHighYield])
-    assert not any(n.category.value == 'error' for n in c.notes)
+    assert not NoteList(c.notes).errors
 
 
 def test_budget_increased_size_is_valid():
     c = Budget(modifications=[IncreasedSize])
-    assert not any(n.category.value == 'error' for n in c.notes)
+    assert not NoteList(c.notes).errors
 
 
 def test_budget_note_text():
@@ -71,12 +72,12 @@ def test_budget_note_text():
 
 def test_prototype_increased_size_is_valid():
     c = Prototype(modifications=[IncreasedSize])
-    assert not any(n.category.value == 'error' for n in c.notes)
+    assert not NoteList(c.notes).errors
 
 
 def test_early_prototype_two_increased_size_is_valid():
     c = EarlyPrototype(modifications=[IncreasedSize, IncreasedSize])
-    assert not any(n.category.value == 'error' for n in c.notes)
+    assert not NoteList(c.notes).errors
 
 
 # ---------------------------------------------------------------------------
@@ -86,23 +87,23 @@ def test_early_prototype_two_increased_size_is_valid():
 
 def test_advanced_two_size_reductions_has_error():
     c = Advanced(modifications=[SizeReduction, SizeReduction])
-    assert any(n.category.value == 'error' for n in c.notes)
+    assert NoteList(c.notes).errors
 
 
 def test_budget_size_reduction_has_error():
     # Budget requires 0 advantages, 1 disadvantage — SizeReduction is an advantage
     c = Budget(modifications=[SizeReduction])
-    assert any(n.category.value == 'error' for n in c.notes)
+    assert NoteList(c.notes).errors
 
 
 def test_high_technology_two_points_has_error():
     c = HighTechnology(modifications=[VeryHighYield])  # only 2 points, need 3
-    assert any(n.category.value == 'error' for n in c.notes)
+    assert NoteList(c.notes).errors
 
 
 def test_very_advanced_three_points_has_error():
     c = VeryAdvanced(modifications=[SizeReduction, SizeReduction, SizeReduction])  # 3 points, need 2
-    assert any(n.category.value == 'error' for n in c.notes)
+    assert NoteList(c.notes).errors
 
 
 # ---------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 import pytest
 
-from ceres.make.ship.base import ShipBase
+from ceres.make.ship.base import NoteList, ShipBase
 from ceres.make.ship.computer import (
     Computer5,
     Computer10,
@@ -167,7 +167,7 @@ def test_jump_control_2_runs_at_full_rating_on_computer_5_bis():
     c.bind(DummyOwner(12, 100))
     jc.validate_on_computer(c)
     assert jc.effective_rating == 2
-    assert not any(note.category.value == 'warning' for note in jc.notes)
+    assert not NoteList(jc.notes).warnings
 
 
 def test_software_packages_keep_highest_singleton_rank():
@@ -192,10 +192,9 @@ def test_software_packages_warn_about_redundant_lower_singleton():
     section = ComputerSection(hardware=hardware, software=[JumpControl(rating=2), JumpControl(rating=3)])
 
     jump_control = section.software_packages[JumpControl]
-    assert [(note.category.value, note.message) for note in jump_control.notes] == [
-        ('item', 'Jump Control/3'),
-        ('warning', 'Redundant Jump Control/2 added'),
-    ]
+    notes = NoteList(jump_control.notes)
+    assert notes.items == ['Jump Control/3']
+    assert notes.warnings == ['Redundant Jump Control/2 added']
 
 
 def test_software_singleton_lookup_uses_family_types():
@@ -254,9 +253,7 @@ def test_validate_software_warns_when_ship_has_no_hardware():
     section.validate_software()
 
     jump_control = section.software_packages[JumpControl]
-    assert ('warning', 'Ship software requires a computer') in [
-        (note.category.value, note.message) for note in jump_control.notes
-    ]
+    assert 'Ship software requires a computer' in NoteList(jump_control.notes).warnings
 
 
 def test_validate_software_adds_tl_error():
@@ -267,9 +264,7 @@ def test_validate_software_adds_tl_error():
     section.validate_software()
 
     jump_control = section.software_packages[JumpControl]
-    assert ('error', 'Jump Control/2 requires TL11') in [
-        (note.category.value, note.message) for note in jump_control.notes
-    ]
+    assert 'Jump Control/2 requires TL11' in NoteList(jump_control.notes).errors
 
 
 def test_jump_control_degrades_when_processing_insufficient():
@@ -282,9 +277,7 @@ def test_jump_control_degrades_when_processing_insufficient():
     jump_control = section.software_packages[JumpControl]
     assert isinstance(jump_control, JumpControl)
     assert jump_control.effective_rating == 1
-    assert ('warning', 'Computer/5 can only run Jump Control/1 (degraded from 2)') in [
-        (note.category.value, note.message) for note in jump_control.notes
-    ]
+    assert 'Computer/5 can only run Jump Control/1 (degraded from 2)' in NoteList(jump_control.notes).warnings
 
 
 def test_jump_control_runs_at_full_on_core():
@@ -293,4 +286,4 @@ def test_jump_control_runs_at_full_on_core():
     c.bind(DummyOwner(15, 100))
     jc.validate_on_computer(c)
     assert jc.effective_rating == 6
-    assert not any(note.category.value == 'warning' for note in jc.notes)
+    assert not NoteList(jc.notes).warnings

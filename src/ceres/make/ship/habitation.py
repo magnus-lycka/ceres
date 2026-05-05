@@ -4,7 +4,7 @@ from typing import Annotated, ClassVar, Literal
 
 from pydantic import Field, TypeAdapter
 
-from .base import CeresModel
+from .base import CeresModel, NoteList
 from .parts import ShipPart
 from .spec import ShipSpec, SpecRow, SpecSection
 from .systems import CommonArea, HotTub, SwimmingPool, Theatre, WetBar
@@ -281,7 +281,7 @@ class HabitationSection(CeresModel):
         total_cost = sum(part.cost for part in group) or None
         total_power = sum(part.power for part in group)
         seen: set[tuple] = set()
-        notes = []
+        notes = NoteList()
         for part in group:
             for note in ship._display_notes(part):
                 key = (note.category, note.message)

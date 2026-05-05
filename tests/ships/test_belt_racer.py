@@ -21,6 +21,7 @@ Source handling for this test case:
 import pytest
 
 from ceres.make.ship import hull, ship
+from ceres.make.ship.base import NoteList
 from ceres.make.ship.bridge import Cockpit, CommandSection
 from ceres.make.ship.computer import Computer5, ComputerSection
 from ceres.make.ship.drives import (
@@ -97,4 +98,4 @@ def test_belt_racer_matches_current_r_drive_subset():
 
 def test_belt_racer_has_no_errors():
     racer = build_belt_racer()
-    assert not any(n.category.value == 'error' for n in racer.notes)
+    assert not NoteList(racer.notes).errors

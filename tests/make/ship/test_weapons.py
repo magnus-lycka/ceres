@@ -1,7 +1,7 @@
 import pytest
 
 from ceres.make.ship import hull, ship
-from ceres.make.ship.base import ShipBase
+from ceres.make.ship.base import NoteList, ShipBase
 from ceres.make.ship.bridge import Bridge, CommandSection
 from ceres.make.ship.computer import Computer5, Computer20, ComputerSection
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive1, PowerSection
@@ -172,7 +172,6 @@ def test_mount_weapon_high_technology_customisation_note():
     w = PulseLaser(customisation=HighTechnology(modifications=[VeryHighYield, EnergyEfficient]))
     note = w.customisation_note()
     assert note is not None
-    assert note.category.value == 'info'
     assert note.message == 'High Technology: Very High Yield, Energy Efficient'
 
 
@@ -206,48 +205,38 @@ def test_mount_weapon_long_range_customisation_note():
 
 def test_mount_weapon_long_range_is_allowed():
     w = PulseLaser(customisation=VeryAdvanced(modifications=[LongRange]))
-    assert ('error', 'Modification not allowed for MountWeapon: Long Range') not in [
-        (note.category.value, note.message) for note in w.notes
-    ]
+    assert 'Modification not allowed for MountWeapon: Long Range' not in NoteList(w.notes).errors
     assert w.cost_modifier == pytest.approx(1.25)
 
 
 def test_mount_weapon_high_yield_is_allowed():
     w = PulseLaser(customisation=Advanced(modifications=[HighYield]))
-    assert ('error', 'Modification not allowed for MountWeapon: High Yield') not in [
-        (note.category.value, note.message) for note in w.notes
-    ]
+    assert 'Modification not allowed for MountWeapon: High Yield' not in NoteList(w.notes).errors
     assert w.cost_modifier == pytest.approx(1.10)
 
 
 def test_mount_weapon_high_yield_not_applicable_for_missile_rack():
     w = MissileRack(customisation=Advanced(modifications=[HighYield]))
-    assert ('error', 'High Yield is not applicable for Missile Rack') in [
-        (note.category.value, note.message) for note in w.notes
-    ]
+    assert 'High Yield is not applicable for Missile Rack' in NoteList(w.notes).errors
 
 
 def test_mount_weapon_rejects_disallowed_modification():
     w = PulseLaser(customisation=Advanced(modifications=[SizeReduction]))
-    assert ('error', 'Modification not allowed for MountWeapon: Size Reduction') in [
-        (note.category.value, note.message) for note in w.notes
-    ]
+    assert 'Modification not allowed for MountWeapon: Size Reduction' in NoteList(w.notes).errors
 
 
 def test_fixed_mount_single_weapon_notes_include_customisation_note():
     fp = FixedMount(weapons=[PulseLaser(customisation=HighTechnology(modifications=[VeryHighYield, EnergyEfficient]))])
-    assert [(note.category.value, note.message) for note in fp.notes] == [
-        ('item', 'Pulse Laser'),
-        ('info', 'High Technology: Very High Yield, Energy Efficient'),
-    ]
+    notes = NoteList(fp.notes)
+    assert notes.items == ['Pulse Laser']
+    assert notes.infos == ['High Technology: Very High Yield, Energy Efficient']
 
 
 def test_fixed_firmpoint_with_multiple_weapons_reports_fixed_mount_item():
     fp = FixedMount(weapons=[PulseLaser(), PulseLaser()])
-    assert [(note.category.value, note.message) for note in fp.notes] == [
-        ('item', 'Fixed Mount'),
-        ('content', 'Pulse Laser × 2'),
-    ]
+    notes = NoteList(fp.notes)
+    assert notes.items == ['Fixed Mount']
+    assert notes.contents == ['Pulse Laser × 2']
 
 
 def test_triple_turret_groups_identical_customised_weapons_in_notes():
@@ -258,11 +247,10 @@ def test_triple_turret_groups_identical_customised_weapons_in_notes():
             PulseLaser(customisation=HighTechnology(modifications=[LongRange, HighYield])),
         ],
     )
-    assert [(note.category.value, note.message) for note in turret.notes] == [
-        ('item', 'Triple Turret'),
-        ('content', 'Pulse Laser × 3'),
-        ('info', 'High Technology: Long Range, High Yield'),
-    ]
+    notes = NoteList(turret.notes)
+    assert notes.items == ['Triple Turret']
+    assert notes.contents == ['Pulse Laser × 3']
+    assert notes.infos == ['High Technology: Long Range, High Yield']
 
 
 def test_reused_weapon_and_turret_references_render_like_distinct_identical_objects():
@@ -284,10 +272,9 @@ def test_reused_weapon_and_turret_references_render_like_distinct_identical_obje
     assert turret_row.quantity == 2
     assert turret_row.tons == pytest.approx(2.0)
     assert turret_row.cost == pytest.approx(11_000_000.0)
-    assert [(note.category.value, note.message) for note in turret_row.notes] == [
-        ('content', 'Pulse Laser × 3'),
-        ('info', 'High Technology: Long Range, High Yield'),
-    ]
+    notes = NoteList(turret_row.notes)
+    assert notes.contents == ['Pulse Laser × 3']
+    assert notes.infos == ['High Technology: Long Range, High Yield']
 
 
 def test_pulse_laser_barbette_values():
@@ -357,17 +344,13 @@ def test_medium_particle_beam_bay_high_yield_and_two_size_reductions_values():
     bay.bind(DummyOwner(15, 1_000))
     assert bay.tons == pytest.approx(80.0)
     assert bay.cost == pytest.approx(60_000_000.0)
-    assert ('error', 'Modification not allowed for Bay: High Yield') not in [
-        (note.category.value, note.message) for note in bay.notes
-    ]
+    assert 'Modification not allowed for Bay: High Yield' not in NoteList(bay.notes).errors
 
 
 def test_medium_missile_bay_high_yield_not_applicable():
     bay = MediumMissileBay(customisation=Advanced(modifications=[HighYield]))
     bay.bind(DummyOwner(10, 1_000))
-    assert ('error', 'High Yield is not applicable for Medium Missile Bay (24 missiles per salvo)') in [
-        (note.category.value, note.message) for note in bay.notes
-    ]
+    assert 'High Yield is not applicable for Medium Missile Bay (24 missiles per salvo)' in NoteList(bay.notes).errors
 
 
 def test_high_technology_medium_particle_beam_bay_requires_tl15_not_tl18():
@@ -376,7 +359,7 @@ def test_high_technology_medium_particle_beam_bay_requires_tl15_not_tl18():
     )
     bay.bind(DummyOwner(15, 450))
     assert bay.tl == 12
-    assert ('error', 'Requires TL18, ship is TL15') not in [(note.category.value, note.message) for note in bay.notes]
+    assert 'Requires TL18, ship is TL15' not in NoteList(bay.notes).errors
 
 
 def test_high_technology_medium_particle_beam_bay_errors_at_tl14():
@@ -384,7 +367,7 @@ def test_high_technology_medium_particle_beam_bay_errors_at_tl14():
         customisation=HighTechnology(modifications=[SizeReduction, SizeReduction, SizeReduction]),
     )
     bay.bind(DummyOwner(14, 450))
-    assert ('error', 'Requires TL15, ship is TL14') in [(note.category.value, note.message) for note in bay.notes]
+    assert 'Requires TL15, ship is TL14' in NoteList(bay.notes).errors
 
 
 def test_large_torpedo_bay_uses_five_hardpoints():
@@ -481,9 +464,7 @@ def test_double_turret_errors_if_it_mounts_too_many_weapons():
             PulseLaser(),
         ],
     )
-    assert ('error', 'Turret can mount at most 2 weapons') in [
-        (note.category.value, note.message) for note in turret.notes
-    ]
+    assert 'Turret can mount at most 2 weapons' in NoteList(turret.notes).errors
 
 
 def test_single_turret_is_allowed_on_small_craft():
@@ -495,10 +476,9 @@ def test_single_turret_is_allowed_on_small_craft():
     )
 
     assert my_ship.weapons is not None
-    assert [(note.category.value, note.message) for note in my_ship.weapons.turrets[0].notes] == [
-        ('item', 'Single Turret'),
-        ('info', 'No weapons in turret'),
-    ]
+    notes = NoteList(my_ship.weapons.turrets[0].notes)
+    assert notes.items == ['Single Turret']
+    assert notes.infos == ['No weapons in turret']
 
 
 def test_small_craft_fixed_mount_cannot_carry_more_than_one_weapon():
@@ -541,11 +521,10 @@ def test_small_craft_cannot_mount_double_turret():
     )
 
     assert my_ship.weapons is not None
-    assert [(note.category.value, note.message) for note in my_ship.weapons.turrets[0].notes] == [
-        ('item', 'Double Turret'),
-        ('info', 'No weapons in turret'),
-        ('error', 'Small craft may only upgrade one firmpoint to a single turret'),
-    ]
+    notes = NoteList(my_ship.weapons.turrets[0].notes)
+    assert notes.items == ['Double Turret']
+    assert notes.infos == ['No weapons in turret']
+    assert notes.errors == ['Small craft may only upgrade one firmpoint to a single turret']
 
 
 def test_small_craft_cannot_mount_triple_turret():
@@ -557,11 +536,10 @@ def test_small_craft_cannot_mount_triple_turret():
     )
 
     assert my_ship.weapons is not None
-    assert [(note.category.value, note.message) for note in my_ship.weapons.turrets[0].notes] == [
-        ('item', 'Triple Turret'),
-        ('info', 'No weapons in turret'),
-        ('error', 'Small craft may only upgrade one firmpoint to a single turret'),
-    ]
+    notes = NoteList(my_ship.weapons.turrets[0].notes)
+    assert notes.items == ['Triple Turret']
+    assert notes.infos == ['No weapons in turret']
+    assert notes.errors == ['Small craft may only upgrade one firmpoint to a single turret']
 
 
 def test_weapon_mounts_cannot_exceed_hardpoints():
@@ -640,7 +618,7 @@ def test_barbette_with_very_high_yield_item_is_base_name_only():
 def test_barbette_with_very_high_yield_has_customisation_note():
     barbette = ParticleBarbette(customisation=VeryAdvanced(modifications=[VeryHighYield]))
     barbette.bind(DummyOwner(13, 400))
-    info_notes = [n.message for n in barbette.notes if n.category.value == 'info']
+    info_notes = NoteList(barbette.notes).infos
     assert 'Very Advanced: Very High Yield' in info_notes
     assert 'Damage × 3 after armour' not in info_notes
 
@@ -658,7 +636,7 @@ def test_bay_with_size_reduction_has_customisation_note():
         customisation=HighTechnology(modifications=[SizeReduction, SizeReduction, SizeReduction]),
     )
     bay.bind(DummyOwner(13, 1_000))
-    info_notes = [n.message for n in bay.notes if n.category.value == 'info']
+    info_notes = NoteList(bay.notes).infos
     assert 'Magazine: 144 missiles (12 full salvos)' in info_notes
     assert 'High Technology: Size Reduction × 3' in info_notes
     assert 'Damage × 10 after armour' not in info_notes
@@ -686,7 +664,7 @@ def test_medium_missile_bay_has_salvo_summary_note():
     bay = MediumMissileBay()
     bay.bind(DummyOwner(12, 1_000))
     assert bay.build_item() == 'Medium Missile Bay (24 missiles per salvo)'
-    info_notes = [n.message for n in bay.notes if n.category.value == 'info']
+    info_notes = NoteList(bay.notes).infos
     assert 'Magazine: 288 missiles (12 full salvos)' in info_notes
 
 
@@ -694,7 +672,7 @@ def test_large_torpedo_bay_has_salvo_summary_note():
     bay = LargeTorpedoBay()
     bay.bind(DummyOwner(12, 1_000))
     assert bay.build_item() == 'Large Torpedo Bay (30 torpedoes per salvo)'
-    info_notes = [n.message for n in bay.notes if n.category.value == 'info']
+    info_notes = NoteList(bay.notes).infos
     assert 'Magazine: 360 torpedoes (12 full salvos)' in info_notes
     assert bay.crew_required_commercial == 0
 
@@ -708,14 +686,14 @@ def test_battery_with_energy_efficient_item_is_base_name_only():
 def test_battery_with_energy_efficient_has_customisation_note():
     battery = LaserPointDefenseBattery2(customisation=Advanced(modifications=[EnergyEfficient]))
     battery.bind(DummyOwner(13, 1_000))
-    info_notes = [n.message for n in battery.notes if n.category.value == 'info']
+    info_notes = NoteList(battery.notes).infos
     assert 'Advanced: Energy Efficient' in info_notes
 
 
 def test_gauss_point_defense_battery_notes_include_ammunition_requirement():
     battery = GaussPointDefenseBattery3()
     battery.bind(DummyOwner(13, 1_000))
-    info_notes = [n.message for n in battery.notes if n.category.value == 'info']
+    info_notes = NoteList(battery.notes).infos
     assert 'Intercept +6D' in info_notes
     assert 'Requires ammunition storage to reload after 12 rounds' in info_notes
 

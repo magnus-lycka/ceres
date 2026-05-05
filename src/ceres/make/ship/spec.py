@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from enum import StrEnum
 
-from .base import Note
+from .base import NoteList
 
 
 # Update the sections to merge jump and propulsion into drive.
@@ -32,7 +32,10 @@ class SpecRow:
     cost: float | None = None
     emphasize_tons: bool = False
     emphasize_power: bool = False
-    notes: list[Note] = field(default_factory=list)
+    notes: NoteList = field(default_factory=NoteList)
+
+    def __post_init__(self) -> None:
+        self.notes = NoteList(self.notes)
 
 
 @dataclass
@@ -61,13 +64,15 @@ class ShipSpec:
     tl: int | None = None
     hull_points: float | None = None
     _sections: dict[SpecSection, list[SpecRow]] = field(default_factory=dict)
-    ship_notes: list[Note] = field(default_factory=list)
-    crew_notes: list[Note] = field(default_factory=list)
+    ship_notes: NoteList = field(default_factory=NoteList)
+    crew_notes: NoteList = field(default_factory=NoteList)
     expenses: list[ExpenseRow] = field(default_factory=list)
     crew: list[CrewRow] = field(default_factory=list)
     passengers: list[PassengerRow] = field(default_factory=list)
 
     def __post_init__(self) -> None:
+        self.ship_notes = NoteList(self.ship_notes)
+        self.crew_notes = NoteList(self.crew_notes)
         for section in SpecSection:
             self._sections.setdefault(section, [])
 

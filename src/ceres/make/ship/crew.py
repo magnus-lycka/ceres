@@ -3,7 +3,7 @@ from typing import Annotated, ClassVar, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
-from .base import CeresModel, Note, NoteCategory
+from .base import CeresModel, NoteList, _Note
 from .spec import CrewRow as SpecCrewRow
 from .systems import MedicalBay
 from .text import optional_count
@@ -181,11 +181,11 @@ class ShipCrew(CeresModel):
             )
         return rows
 
-    def comparison_notes(self) -> list[Note]:
+    def comparison_notes(self) -> list[_Note]:
         if not self.roles:
             return []
 
-        notes: list[Note] = []
+        notes = NoteList()
         provided: dict[str, int] = {}
         for role in self.roles:
             provided[role.role] = provided.get(role.role, 0) + 1
@@ -197,19 +197,9 @@ class ShipCrew(CeresModel):
             required_count = required.get(role, 0)
             provided_count = provided.get(role, 0)
             if provided_count < required_count:
-                notes.append(
-                    Note(
-                        category=NoteCategory.WARNING,
-                        message=f'{role} below recommended count: {provided_count} < {required_count}',
-                    )
-                )
+                notes.warning(f'{role} below recommended count: {provided_count} < {required_count}')
             elif provided_count > required_count:
-                notes.append(
-                    Note(
-                        category=NoteCategory.INFO,
-                        message=f'{role} above recommended count: {provided_count} > {required_count}',
-                    )
-                )
+                notes.info(f'{role} above recommended count: {provided_count} > {required_count}')
         return notes
 
     def refresh_notes(self) -> None:

@@ -1,6 +1,6 @@
 from bisect import bisect_left
 
-from .base import CeresModel, Note, NoteCategory
+from .base import CeresModel, NoteList, _Note
 from .parts import ShipPart
 from .spec import ShipSpec, SpecSection
 
@@ -39,14 +39,11 @@ class Bridge(ShipPart):
     def bulkhead_label(self) -> str:
         return 'Bridge'
 
-    def build_notes(self) -> list[Note]:
+    def build_notes(self) -> list[_Note]:
         if self.small:
-            return [
-                Note(
-                    category=NoteCategory.INFO,
-                    message='DM -1 for all checks related to spacecraft operations',
-                )
-            ]
+            notes = NoteList()
+            notes.info('DM -1 for all checks related to spacecraft operations')
+            return notes
         return []
 
     def compute_tons(self) -> float:

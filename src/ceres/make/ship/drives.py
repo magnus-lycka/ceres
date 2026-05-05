@@ -5,7 +5,7 @@ from pydantic import Field
 
 from ceres.gear.software import SoftwarePackage
 
-from .base import Note, NoteCategory
+from .base import NoteList
 from .parts import (
     CustomisableShipPart,
     EnergyEfficient,
@@ -63,7 +63,9 @@ class _RDrive(ShipPart):
     def build_notes(self) -> list:
         if not self.high_burn_thruster:
             return []
-        return [Note(category=NoteCategory.INFO, message='No inertial compensation above manoeuvre-drive thrust')]
+        notes = NoteList()
+        notes.info('No inertial compensation above manoeuvre-drive thrust')
+        return notes
 
 
 class RDrive0(_RDrive):

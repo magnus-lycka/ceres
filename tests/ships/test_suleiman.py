@@ -29,6 +29,7 @@ Source handling for this test case:
 import pytest
 
 from ceres.make.ship import armour, hull, ship
+from ceres.make.ship.base import NoteList
 from ceres.make.ship.bridge import Bridge, CommandSection
 from ceres.make.ship.computer import Computer5, Computer10, ComputerSection
 from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
@@ -219,10 +220,9 @@ def test_jump_drive_2_without_jump_control_2_adds_local_note():
     )
     assert my_ship.drives is not None
     assert my_ship.drives.j_drive is not None
-    assert [(note.category.value, note.message) for note in my_ship.drives.j_drive.notes] == [
-        ('item', 'Jump 2'),
-        ('warning', 'No Jump Control software'),
-    ]
+    notes = NoteList(my_ship.drives.j_drive.notes)
+    assert notes.items == ['Jump 2']
+    assert notes.warnings == ['No Jump Control software']
 
 
 def test_suleiman_spec_structure():
@@ -336,10 +336,9 @@ def test_jump_drive_with_lower_jump_control_warns_on_drive():
     )
     assert my_ship.drives is not None
     assert my_ship.drives.j_drive is not None
-    assert [(note.category.value, note.message) for note in my_ship.drives.j_drive.notes] == [
-        ('item', 'Jump 2'),
-        ('warning', 'Limited to Jump 1 by control software'),
-    ]
+    notes = NoteList(my_ship.drives.j_drive.notes)
+    assert notes.items == ['Jump 2']
+    assert notes.warnings == ['Limited to Jump 1 by control software']
 
 
 def test_jump_control_without_jump_drive_warns_on_software():
@@ -351,10 +350,9 @@ def test_jump_control_without_jump_drive_warns_on_software():
     )
     assert my_ship.computer is not None
     explicit_jump_control = my_ship.computer.software_packages[JumpControl]
-    assert [(note.category.value, note.message) for note in explicit_jump_control.notes] == [
-        ('item', 'Jump Control/2'),
-        ('warning', 'No jump drive installed'),
-    ]
+    notes = NoteList(explicit_jump_control.notes)
+    assert notes.items == ['Jump Control/2']
+    assert notes.warnings == ['No jump drive installed']
 
 
 def test_jump_control_with_higher_rating_than_drive_warns_on_software():
@@ -367,10 +365,9 @@ def test_jump_control_with_higher_rating_than_drive_warns_on_software():
     )
     assert my_ship.computer is not None
     explicit_jump_control = my_ship.computer.software_packages[JumpControl]
-    assert [(note.category.value, note.message) for note in explicit_jump_control.notes] == [
-        ('item', 'Jump Control/3'),
-        ('warning', 'Limited to Jump 2 by drive capacity'),
-    ]
+    notes = NoteList(explicit_jump_control.notes)
+    assert notes.items == ['Jump Control/3']
+    assert notes.warnings == ['Limited to Jump 2 by drive capacity']
 
 
 def test_higher_jump_control_replaces_lower_one():
@@ -393,9 +390,7 @@ def test_higher_jump_control_replaces_lower_one():
     ]
 
     jump_control = my_ship.computer.software_packages[JumpControl]
-    assert ('warning', 'Redundant Jump Control/2 added') in [
-        (note.category.value, note.message) for note in jump_control.notes
-    ]
+    assert 'Redundant Jump Control/2 added' in NoteList(jump_control.notes).warnings
 
 
 def test_jump_control_degrades_when_computer_too_small():
@@ -410,9 +405,7 @@ def test_jump_control_degrades_when_computer_too_small():
     jc = my_ship.computer.software_packages[JumpControl]
     assert isinstance(jc, JumpControl)
     assert jc.effective_rating == 1
-    assert ('warning', 'Computer/5 can only run Jump Control/1 (degraded from 2)') in [
-        (note.category.value, note.message) for note in jc.notes
-    ]
+    assert 'Computer/5 can only run Jump Control/1 (degraded from 2)' in NoteList(jc.notes).warnings
 
 
 def test_degraded_jump_control_warns_drive():
@@ -425,9 +418,7 @@ def test_degraded_jump_control_warns_drive():
     )
     assert my_ship.drives is not None
     assert my_ship.drives.j_drive is not None
-    assert ('warning', 'Limited to Jump 1 by control software') in [
-        (note.category.value, note.message) for note in my_ship.drives.j_drive.notes
-    ]
+    assert 'Limited to Jump 1 by control software' in NoteList(my_ship.drives.j_drive.notes).warnings
 
 
 def test_jump_control_blocked_by_tl_leaves_effective_rating_none():
@@ -441,4 +432,4 @@ def test_jump_control_blocked_by_tl_leaves_effective_rating_none():
     jc = my_ship.computer.software_packages[JumpControl]
     assert isinstance(jc, JumpControl)
     assert jc.effective_rating is None
-    assert any(note.category.value == 'error' for note in jc.notes)
+    assert NoteList(jc.notes).errors

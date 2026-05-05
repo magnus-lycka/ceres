@@ -34,6 +34,7 @@ Source handling for this test case:
 import pytest
 
 from ceres.make.ship import hull, ship
+from ceres.make.ship.base import NoteList
 from ceres.make.ship.bridge import Bridge, CommandSection
 from ceres.make.ship.computer import Computer5, Computer10, ComputerSection
 from ceres.make.ship.crafts import CraftSection, EmptyOccupant, InternalDockingSpace
@@ -247,7 +248,7 @@ def test_king_kay_matches_supported_reference_slice():
 
     assert liner.basic_hull_power_load == pytest.approx(1_000.0)
     assert liner.total_power_load == pytest.approx(2_005.0)
-    assert not any(note.category.value == 'error' for note in liner.notes)
+    assert not NoteList(liner.notes).errors
 
 
 def test_king_kay_spec_contains_supported_liner_rows():

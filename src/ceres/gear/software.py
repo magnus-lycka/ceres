@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Annotated, ClassVar, Literal
 
 from pydantic import Field, PrivateAttr, field_validator
 
-from ceres.shared import CeresModel, Note, NoteCategory
+from ceres.shared import CeresModel, NoteList, _Note
 
 if TYPE_CHECKING:
     from ceres.gear.computer import ComputerPart
@@ -273,24 +273,14 @@ class Expert(SoftwarePackage):
     def cost(self) -> float:
         return float(self._resolved_spec['cost']) * (10 ** (self.rating - 1))
 
-    def build_notes(self) -> list[Note]:
-        notes = []
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
         if self.rating not in {1, 2, 3}:
-            notes.append(
-                Note(
-                    category=NoteCategory.ERROR,
-                    message=f'Invalid Expert rating {self.rating}; expected one of: 1, 2, 3',
-                )
-            )
+            notes.error(f'Invalid Expert rating {self.rating}; expected one of: 1, 2, 3')
         if not self.skill:
-            notes.append(Note(category=NoteCategory.ERROR, message='Expert skill cannot be blank'))
+            notes.error('Expert skill cannot be blank')
         elif self.skill not in type(self).KNOWN_SKILLS:
-            notes.append(
-                Note(
-                    category=NoteCategory.WARNING,
-                    message=f'Unfamiliar Expert skill {self.skill} uses CSC fallback values',
-                )
-            )
+            notes.warning(f'Unfamiliar Expert skill {self.skill} uses CSC fallback values')
         return notes
 
     @property

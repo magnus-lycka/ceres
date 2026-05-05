@@ -1,5 +1,5 @@
 from ceres.make.ship import hull, ship
-from ceres.make.ship.base import Note, NoteCategory
+from ceres.make.ship.base import NoteList
 from ceres.make.ship.crafts import CraftSection, FullHangar, InternalDockingSpace, SpaceCraft, Vehicle
 from ceres.make.ship.spec import ShipSpec
 from ceres.report import render_ship_spec_html
@@ -43,10 +43,9 @@ def test_render_ship_spec_html_supports_dark_theme():
 
 def test_render_ship_spec_html_renders_crew_notes_as_grouped_admonitions():
     spec = ShipSpec(ship_class='Test')
-    spec.crew_notes = [
-        Note(category=NoteCategory.INFO, message='CAPTAIN above recommended count: 1 > 0'),
-        Note(category=NoteCategory.WARNING, message='GUNNER below recommended count: 0 < 1'),
-    ]
+    spec.crew_notes = NoteList()
+    spec.crew_notes.info('CAPTAIN above recommended count: 1 > 0')
+    spec.crew_notes.warning('GUNNER below recommended count: 0 < 1')
 
     html = render_ship_spec_html(spec)
 

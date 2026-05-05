@@ -128,15 +128,17 @@ def test_info_notes_use_gentle_clues_info_box(suleiman_spec):
 
 
 def test_source_renders_warning_notes_via_gentle_clues():
-    from ceres.make.ship.base import Note, NoteCategory
+    from ceres.make.ship.base import NoteList
     from ceres.make.ship.spec import SpecRow, SpecSection
 
     spec = ShipSpec(ship_class='Test')
+    notes = NoteList()
+    notes.warning('Check this')
     row = SpecRow(
         section=SpecSection.HULL,
         item='Widget',
         tons=1.0,
-        notes=[Note(category=NoteCategory.WARNING, message='Check this')],
+        notes=notes,
     )
     spec.add_row(row)
     src = render_ship_spec_typst(spec)
@@ -145,13 +147,13 @@ def test_source_renders_warning_notes_via_gentle_clues():
 
 
 def test_source_renders_error_notes_via_gentle_clues():
-    from ceres.make.ship.base import Note, NoteCategory
+    from ceres.make.ship.base import NoteList
     from ceres.make.ship.spec import SpecRow, SpecSection
 
     spec = ShipSpec(ship_class='Test')
-    row = SpecRow(
-        section=SpecSection.HULL, item='Widget', tons=1.0, notes=[Note(category=NoteCategory.ERROR, message='Fix this')]
-    )
+    notes = NoteList()
+    notes.error('Fix this')
+    row = SpecRow(section=SpecSection.HULL, item='Widget', tons=1.0, notes=notes)
     spec.add_row(row)
     src = render_ship_spec_typst(spec)
     assert 'Fix this' in src
@@ -159,13 +161,12 @@ def test_source_renders_error_notes_via_gentle_clues():
 
 
 def test_source_renders_ship_level_notes_below_main_table():
-    from ceres.make.ship.base import Note, NoteCategory
+    from ceres.make.ship.base import NoteList
 
     spec = ShipSpec(ship_class='Test')
-    spec.ship_notes = [
-        Note(category=NoteCategory.ERROR, message='No airlock installed'),
-        Note(category=NoteCategory.WARNING, message='Crew below recommended count'),
-    ]
+    spec.ship_notes = NoteList()
+    spec.ship_notes.error('No airlock installed')
+    spec.ship_notes.warning('Crew below recommended count')
 
     src = render_ship_spec_typst(spec)
     assert 'No airlock installed' in src
@@ -173,13 +174,12 @@ def test_source_renders_ship_level_notes_below_main_table():
 
 
 def test_source_renders_crew_notes_with_crew_table():
-    from ceres.make.ship.base import Note, NoteCategory
+    from ceres.make.ship.base import NoteList
 
     spec = ShipSpec(ship_class='Test')
     spec.crew = []
-    spec.crew_notes = [
-        Note(category=NoteCategory.WARNING, message='GUNNER below recommended count: 0 < 1'),
-    ]
+    spec.crew_notes = NoteList()
+    spec.crew_notes.warning('GUNNER below recommended count: 0 < 1')
 
     src = render_ship_spec_typst(spec)
     assert 'CREW' in src
@@ -187,15 +187,14 @@ def test_source_renders_crew_notes_with_crew_table():
 
 
 def test_source_renders_multiple_info_crew_notes_via_gentle_clues():
-    from ceres.make.ship.base import Note, NoteCategory
+    from ceres.make.ship.base import NoteList
 
     spec = ShipSpec(ship_class='Test')
     spec.crew = []
-    spec.crew_notes = [
-        Note(category=NoteCategory.INFO, message='ASTROGATOR above recommended count: 1 > 0'),
-        Note(category=NoteCategory.INFO, message='GUNNER above recommended count: 6 > 5'),
-        Note(category=NoteCategory.INFO, message='MAINTENANCE above recommended count: 1 > 0'),
-    ]
+    spec.crew_notes = NoteList()
+    spec.crew_notes.info('ASTROGATOR above recommended count: 1 > 0')
+    spec.crew_notes.info('GUNNER above recommended count: 6 > 5')
+    spec.crew_notes.info('MAINTENANCE above recommended count: 1 > 0')
 
     src = render_ship_spec_typst(spec)
     assert 'CREW' in src
