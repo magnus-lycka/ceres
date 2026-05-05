@@ -39,13 +39,9 @@ DecreasedFuel = Modification(
 
 class _RDrive(ShipPart):
     drive_type: str
-    _level: ClassVar[int]
+    level: ClassVar[int]
     _tons_percent: ClassVar[float]
     high_burn_thruster: bool = False
-
-    @property
-    def level(self) -> int:
-        return self._level
 
     def build_item(self) -> str | None:
         if self.high_burn_thruster:
@@ -73,119 +69,119 @@ class _RDrive(ShipPart):
 class RDrive0(_RDrive):
     drive_type: Literal['rdrive_0'] = 'rdrive_0'
     tl: int = 7
-    _level: ClassVar[int] = 0
+    level: ClassVar[int] = 0
     _tons_percent: ClassVar[float] = 0.01
 
 
 class RDrive1(_RDrive):
     drive_type: Literal['rdrive_1'] = 'rdrive_1'
     tl: int = 7
-    _level: ClassVar[int] = 1
+    level: ClassVar[int] = 1
     _tons_percent: ClassVar[float] = 0.02
 
 
 class RDrive2(_RDrive):
     drive_type: Literal['rdrive_2'] = 'rdrive_2'
     tl: int = 7
-    _level: ClassVar[int] = 2
+    level: ClassVar[int] = 2
     _tons_percent: ClassVar[float] = 0.04
 
 
 class RDrive3(_RDrive):
     drive_type: Literal['rdrive_3'] = 'rdrive_3'
     tl: int = 7
-    _level: ClassVar[int] = 3
+    level: ClassVar[int] = 3
     _tons_percent: ClassVar[float] = 0.06
 
 
 class RDrive4(_RDrive):
     drive_type: Literal['rdrive_4'] = 'rdrive_4'
     tl: int = 8
-    _level: ClassVar[int] = 4
+    level: ClassVar[int] = 4
     _tons_percent: ClassVar[float] = 0.08
 
 
 class RDrive5(_RDrive):
     drive_type: Literal['rdrive_5'] = 'rdrive_5'
     tl: int = 8
-    _level: ClassVar[int] = 5
+    level: ClassVar[int] = 5
     _tons_percent: ClassVar[float] = 0.10
 
 
 class RDrive6(_RDrive):
     drive_type: Literal['rdrive_6'] = 'rdrive_6'
     tl: int = 8
-    _level: ClassVar[int] = 6
+    level: ClassVar[int] = 6
     _tons_percent: ClassVar[float] = 0.12
 
 
 class RDrive7(_RDrive):
     drive_type: Literal['rdrive_7'] = 'rdrive_7'
     tl: int = 9
-    _level: ClassVar[int] = 7
+    level: ClassVar[int] = 7
     _tons_percent: ClassVar[float] = 0.14
 
 
 class RDrive8(_RDrive):
     drive_type: Literal['rdrive_8'] = 'rdrive_8'
     tl: int = 9
-    _level: ClassVar[int] = 8
+    level: ClassVar[int] = 8
     _tons_percent: ClassVar[float] = 0.16
 
 
 class RDrive9(_RDrive):
     drive_type: Literal['rdrive_9'] = 'rdrive_9'
     tl: int = 9
-    _level: ClassVar[int] = 9
+    level: ClassVar[int] = 9
     _tons_percent: ClassVar[float] = 0.18
 
 
 class RDrive10(_RDrive):
     drive_type: Literal['rdrive_10'] = 'rdrive_10'
     tl: int = 10
-    _level: ClassVar[int] = 10
+    level: ClassVar[int] = 10
     _tons_percent: ClassVar[float] = 0.20
 
 
 class RDrive11(_RDrive):
     drive_type: Literal['rdrive_11'] = 'rdrive_11'
     tl: int = 10
-    _level: ClassVar[int] = 11
+    level: ClassVar[int] = 11
     _tons_percent: ClassVar[float] = 0.22
 
 
 class RDrive12(_RDrive):
     drive_type: Literal['rdrive_12'] = 'rdrive_12'
     tl: int = 10
-    _level: ClassVar[int] = 12
+    level: ClassVar[int] = 12
     _tons_percent: ClassVar[float] = 0.24
 
 
 class RDrive13(_RDrive):
     drive_type: Literal['rdrive_13'] = 'rdrive_13'
     tl: int = 11
-    _level: ClassVar[int] = 13
+    level: ClassVar[int] = 13
     _tons_percent: ClassVar[float] = 0.26
 
 
 class RDrive14(_RDrive):
     drive_type: Literal['rdrive_14'] = 'rdrive_14'
     tl: int = 11
-    _level: ClassVar[int] = 14
+    level: ClassVar[int] = 14
     _tons_percent: ClassVar[float] = 0.28
 
 
 class RDrive15(_RDrive):
     drive_type: Literal['rdrive_15'] = 'rdrive_15'
     tl: int = 11
-    _level: ClassVar[int] = 15
+    level: ClassVar[int] = 15
     _tons_percent: ClassVar[float] = 0.30
 
 
 class RDrive16(_RDrive):
     drive_type: Literal['rdrive_16'] = 'rdrive_16'
     tl: int = 12
-    _level: ClassVar[int] = 16
+    level: ClassVar[int] = 16
     _tons_percent: ClassVar[float] = 0.32
 
 
@@ -213,7 +209,7 @@ type RDrive = Annotated[
 
 class _MDrive(CustomisableShipPart):
     drive_type: str
-    _level: ClassVar[int]
+    level: ClassVar[int]
     _tons_percent: ClassVar[float]
     allowed_modifications: ClassVar[frozenset[str]] = frozenset(
         {
@@ -225,10 +221,6 @@ class _MDrive(CustomisableShipPart):
             SizeReduction.name,
         }
     )
-
-    @property
-    def level(self) -> int:
-        return self._level
 
     def build_item(self) -> str | None:
         if self._assembly is not None and self.assembly.transported_external_displacement > 0:
@@ -262,84 +254,84 @@ class _MDrive(CustomisableShipPart):
 class MDrive0(_MDrive):
     drive_type: Literal['mdrive_0'] = 'mdrive_0'
     tl: int = 9
-    _level: ClassVar[int] = 0
+    level: ClassVar[int] = 0
     _tons_percent: ClassVar[float] = 0.005
 
 
 class MDrive1(_MDrive):
     drive_type: Literal['mdrive_1'] = 'mdrive_1'
     tl: int = 9
-    _level: ClassVar[int] = 1
+    level: ClassVar[int] = 1
     _tons_percent: ClassVar[float] = 0.01
 
 
 class MDrive2(_MDrive):
     drive_type: Literal['mdrive_2'] = 'mdrive_2'
     tl: int = 10
-    _level: ClassVar[int] = 2
+    level: ClassVar[int] = 2
     _tons_percent: ClassVar[float] = 0.02
 
 
 class MDrive3(_MDrive):
     drive_type: Literal['mdrive_3'] = 'mdrive_3'
     tl: int = 10
-    _level: ClassVar[int] = 3
+    level: ClassVar[int] = 3
     _tons_percent: ClassVar[float] = 0.03
 
 
 class MDrive4(_MDrive):
     drive_type: Literal['mdrive_4'] = 'mdrive_4'
     tl: int = 11
-    _level: ClassVar[int] = 4
+    level: ClassVar[int] = 4
     _tons_percent: ClassVar[float] = 0.04
 
 
 class MDrive5(_MDrive):
     drive_type: Literal['mdrive_5'] = 'mdrive_5'
     tl: int = 11
-    _level: ClassVar[int] = 5
+    level: ClassVar[int] = 5
     _tons_percent: ClassVar[float] = 0.05
 
 
 class MDrive6(_MDrive):
     drive_type: Literal['mdrive_6'] = 'mdrive_6'
     tl: int = 12
-    _level: ClassVar[int] = 6
+    level: ClassVar[int] = 6
     _tons_percent: ClassVar[float] = 0.06
 
 
 class MDrive7(_MDrive):
     drive_type: Literal['mdrive_7'] = 'mdrive_7'
     tl: int = 13
-    _level: ClassVar[int] = 7
+    level: ClassVar[int] = 7
     _tons_percent: ClassVar[float] = 0.07
 
 
 class MDrive8(_MDrive):
     drive_type: Literal['mdrive_8'] = 'mdrive_8'
     tl: int = 14
-    _level: ClassVar[int] = 8
+    level: ClassVar[int] = 8
     _tons_percent: ClassVar[float] = 0.08
 
 
 class MDrive9(_MDrive):
     drive_type: Literal['mdrive_9'] = 'mdrive_9'
     tl: int = 15
-    _level: ClassVar[int] = 9
+    level: ClassVar[int] = 9
     _tons_percent: ClassVar[float] = 0.09
 
 
 class MDrive10(_MDrive):
     drive_type: Literal['mdrive_10'] = 'mdrive_10'
     tl: int = 16
-    _level: ClassVar[int] = 10
+    level: ClassVar[int] = 10
     _tons_percent: ClassVar[float] = 0.10
 
 
 class MDrive11(_MDrive):
     drive_type: Literal['mdrive_11'] = 'mdrive_11'
     tl: int = 17
-    _level: ClassVar[int] = 11
+    level: ClassVar[int] = 11
     _tons_percent: ClassVar[float] = 0.11
 
 
@@ -362,7 +354,7 @@ type MDrive = Annotated[
 
 class _JDrive(CustomisableShipPart):
     drive_type: str
-    _level: ClassVar[int]
+    level: ClassVar[int]
     _tons_percent: ClassVar[float]
     allowed_modifications: ClassVar[frozenset[str]] = frozenset(
         {
@@ -371,10 +363,6 @@ class _JDrive(CustomisableShipPart):
             SizeReduction.name,
         }
     )
-
-    @property
-    def level(self) -> int:
-        return self._level
 
     def build_item(self) -> str | None:
         if self._assembly is not None and self.assembly.transported_external_displacement > 0:
@@ -407,63 +395,63 @@ class _JDrive(CustomisableShipPart):
 class JDrive1(_JDrive):
     drive_type: Literal['jdrive_1'] = 'jdrive_1'
     tl: int = 9
-    _level: ClassVar[int] = 1
+    level: ClassVar[int] = 1
     _tons_percent: ClassVar[float] = 0.025
 
 
 class JDrive2(_JDrive):
     drive_type: Literal['jdrive_2'] = 'jdrive_2'
     tl: int = 11
-    _level: ClassVar[int] = 2
+    level: ClassVar[int] = 2
     _tons_percent: ClassVar[float] = 0.05
 
 
 class JDrive3(_JDrive):
     drive_type: Literal['jdrive_3'] = 'jdrive_3'
     tl: int = 12
-    _level: ClassVar[int] = 3
+    level: ClassVar[int] = 3
     _tons_percent: ClassVar[float] = 0.075
 
 
 class JDrive4(_JDrive):
     drive_type: Literal['jdrive_4'] = 'jdrive_4'
     tl: int = 13
-    _level: ClassVar[int] = 4
+    level: ClassVar[int] = 4
     _tons_percent: ClassVar[float] = 0.10
 
 
 class JDrive5(_JDrive):
     drive_type: Literal['jdrive_5'] = 'jdrive_5'
     tl: int = 14
-    _level: ClassVar[int] = 5
+    level: ClassVar[int] = 5
     _tons_percent: ClassVar[float] = 0.125
 
 
 class JDrive6(_JDrive):
     drive_type: Literal['jdrive_6'] = 'jdrive_6'
     tl: int = 15
-    _level: ClassVar[int] = 6
+    level: ClassVar[int] = 6
     _tons_percent: ClassVar[float] = 0.15
 
 
 class JDrive7(_JDrive):
     drive_type: Literal['jdrive_7'] = 'jdrive_7'
     tl: int = 16
-    _level: ClassVar[int] = 7
+    level: ClassVar[int] = 7
     _tons_percent: ClassVar[float] = 0.175
 
 
 class JDrive8(_JDrive):
     drive_type: Literal['jdrive_8'] = 'jdrive_8'
     tl: int = 17
-    _level: ClassVar[int] = 8
+    level: ClassVar[int] = 8
     _tons_percent: ClassVar[float] = 0.20
 
 
 class JDrive9(_JDrive):
     drive_type: Literal['jdrive_9'] = 'jdrive_9'
     tl: int = 18
-    _level: ClassVar[int] = 9
+    level: ClassVar[int] = 9
     _tons_percent: ClassVar[float] = 0.225
 
 
