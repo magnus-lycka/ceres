@@ -67,7 +67,7 @@ from ceres.make.ship.systems import (
     WetBar,
     Workshop,
 )
-from ceres.make.ship.weapons import DoubleTurret, MountWeapon, WeaponsSection
+from ceres.make.ship.weapons import BeamLaser, DoubleTurret, WeaponsSection
 
 
 def build_beagle_laboratory_ship() -> ship.Ship:
@@ -98,8 +98,8 @@ def build_beagle_laboratory_ship() -> ship.Ship:
         sensors=SensorsSection(primary=ImprovedSensors(), sensor_stations=SensorStations(count=1)),
         weapons=WeaponsSection(
             turrets=[
-                DoubleTurret(weapons=[MountWeapon(weapon='beam_laser'), MountWeapon(weapon='beam_laser')]),
-                DoubleTurret(weapons=[MountWeapon(weapon='beam_laser'), MountWeapon(weapon='beam_laser')]),
+                DoubleTurret(weapons=[BeamLaser(), BeamLaser()]),
+                DoubleTurret(weapons=[BeamLaser(), BeamLaser()]),
             ],
         ),
         craft=CraftSection(

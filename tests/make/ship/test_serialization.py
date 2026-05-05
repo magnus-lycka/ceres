@@ -15,7 +15,7 @@ from ceres.make.ship.sensors import BasicSensors, CivilianSensors, SensorsSectio
 from ceres.make.ship.ship import Ship
 from ceres.make.ship.storage import CargoSection, FuelSection, OperationFuel
 from ceres.make.ship.systems import Airlock, Armoury, Biosphere, SystemsSection, TrainingFacility
-from ceres.make.ship.weapons import FixedMount, MountWeapon, VeryHighYield, WeaponsSection
+from ceres.make.ship.weapons import FixedMount, PulseLaser, VeryHighYield, WeaponsSection
 from tests.ships.test_dragon import build_dragon
 from tests.ships.test_revised_beowulf import build_revised_beowulf
 from tests.ships.test_revised_dragon import build_revised_dragon
@@ -43,8 +43,7 @@ ultralight = Ship(
         fixed_mounts=[
             FixedMount(
                 weapons=[
-                    MountWeapon(
-                        weapon='pulse_laser',
+                    PulseLaser(
                         customisation=HighTechnology(modifications=[VeryHighYield, EnergyEfficient]),
                     )
                 ]
@@ -107,7 +106,7 @@ def test_dump_m_drive_present():
 def test_dump_weapon_in_fixed_mounts():
     data = json.loads(ultralight.model_dump_json())
     fp = data['weapons']['fixed_mounts'][0]
-    assert fp['weapons'][0]['weapon'] == 'pulse_laser'
+    assert fp['weapons'][0]['weapon_type'] == 'pulse_laser'
     assert fp['weapons'][0]['customisation']['grade'] == 'HIGH_TECHNOLOGY'
     assert [m['name'] for m in fp['weapons'][0]['customisation']['modifications']] == [
         'Very High Yield',
@@ -250,7 +249,7 @@ def test_roundtrip_weapon_attributes():
     assert loaded.weapons is not None
     orig_fp = ultralight.weapons.fixed_mounts[0]
     rt_fp = loaded.weapons.fixed_mounts[0]
-    assert rt_fp.weapons[0].weapon == orig_fp.weapons[0].weapon
+    assert rt_fp.weapons[0].weapon_type == orig_fp.weapons[0].weapon_type
     assert rt_fp.weapons[0].customisation == orig_fp.weapons[0].customisation
 
 

@@ -7,7 +7,7 @@ from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive6, Power
 from ceres.make.ship.parts import EnergyEfficient, HighTechnology
 from ceres.make.ship.sensors import CivilianSensors, SensorsSection
 from ceres.make.ship.storage import FuelSection, OperationFuel
-from ceres.make.ship.weapons import FixedMount, MountWeapon, VeryHighYield, WeaponsSection
+from ceres.make.ship.weapons import FixedMount, PulseLaser, VeryHighYield, WeaponsSection
 
 
 def build_ultralight_fighter() -> ship.Ship:
@@ -35,8 +35,7 @@ def build_ultralight_fighter() -> ship.Ship:
             fixed_mounts=[
                 FixedMount(
                     weapons=[
-                        MountWeapon(
-                            weapon='pulse_laser',
+                        PulseLaser(
                             customisation=HighTechnology(modifications=[VeryHighYield, EnergyEfficient]),
                         )
                     ]

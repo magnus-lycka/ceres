@@ -35,7 +35,7 @@ from ceres.make.ship.weapons import (
     HighYield,
     LongRange,
     MediumParticleBeamBay,
-    MountWeapon,
+    PulseLaser,
     TripleTurret,
     WeaponsSection,
 )
@@ -105,28 +105,16 @@ def build_ambush_hunter_killer_corvette() -> ship.Ship:
             turrets=[
                 TripleTurret(
                     weapons=[
-                        MountWeapon(
-                            weapon='pulse_laser', customisation=HighTechnology(modifications=[LongRange, HighYield])
-                        ),
-                        MountWeapon(
-                            weapon='pulse_laser', customisation=HighTechnology(modifications=[LongRange, HighYield])
-                        ),
-                        MountWeapon(
-                            weapon='pulse_laser', customisation=HighTechnology(modifications=[LongRange, HighYield])
-                        ),
+                        PulseLaser(customisation=HighTechnology(modifications=[LongRange, HighYield])),
+                        PulseLaser(customisation=HighTechnology(modifications=[LongRange, HighYield])),
+                        PulseLaser(customisation=HighTechnology(modifications=[LongRange, HighYield])),
                     ],
                 ),
                 TripleTurret(
                     weapons=[
-                        MountWeapon(
-                            weapon='pulse_laser', customisation=HighTechnology(modifications=[LongRange, HighYield])
-                        ),
-                        MountWeapon(
-                            weapon='pulse_laser', customisation=HighTechnology(modifications=[LongRange, HighYield])
-                        ),
-                        MountWeapon(
-                            weapon='pulse_laser', customisation=HighTechnology(modifications=[LongRange, HighYield])
-                        ),
+                        PulseLaser(customisation=HighTechnology(modifications=[LongRange, HighYield])),
+                        PulseLaser(customisation=HighTechnology(modifications=[LongRange, HighYield])),
+                        PulseLaser(customisation=HighTechnology(modifications=[LongRange, HighYield])),
                     ],
                 ),
             ],

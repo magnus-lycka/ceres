@@ -10,7 +10,7 @@ from ceres.make.ship.parts import EnergyEfficient, HighTechnology
 from ceres.make.ship.sensors import CivilianSensors, SensorsSection
 from ceres.make.ship.storage import CargoCrane, CargoHold, CargoSection, FuelCargoContainer
 from ceres.make.ship.systems import Airlock, Armoury, ProbeDrones, SystemsSection, Workshop
-from ceres.make.ship.weapons import FixedMount, MountWeapon, VeryHighYield, WeaponsSection
+from ceres.make.ship.weapons import FixedMount, PulseLaser, VeryHighYield, WeaponsSection
 
 
 def test_ship_initial():
@@ -238,8 +238,7 @@ def test_ship_total_power_load_includes_basic_and_active_systems():
             fixed_mounts=[
                 FixedMount(
                     weapons=[
-                        MountWeapon(
-                            weapon='pulse_laser',
+                        PulseLaser(
                             customisation=HighTechnology(modifications=[VeryHighYield, EnergyEfficient]),
                         )
                     ]

@@ -43,7 +43,7 @@ from ceres.make.ship.storage import (
     OperationFuel,
 )
 from ceres.make.ship.systems import CommonArea, MedicalBay, ProbeDrones, SystemsSection, Workshop
-from ceres.make.ship.weapons import MountWeapon, TripleTurret, WeaponsSection
+from ceres.make.ship.weapons import PulseLaser, TripleTurret, WeaponsSection
 
 
 def build_dolphin_extended_scout_courier() -> ship.Ship:
@@ -71,9 +71,9 @@ def build_dolphin_extended_scout_courier() -> ship.Ship:
             turrets=[
                 TripleTurret(
                     weapons=[
-                        MountWeapon(weapon='pulse_laser'),
-                        MountWeapon(weapon='pulse_laser'),
-                        MountWeapon(weapon='pulse_laser'),
+                        PulseLaser(),
+                        PulseLaser(),
+                        PulseLaser(),
                     ],
                 )
             ]

@@ -37,26 +37,6 @@ def _damage_multiple_text(multiplier: int | None) -> str | None:
     return f'Damage × {multiplier} after armour'
 
 
-def _bay_salvo_text(weapon: BayWeapon, size: BaySize) -> str | None:
-    if weapon in {'missile', 'orbital_strike_missile'}:
-        per_salvo = {'small': 12, 'medium': 24, 'large': 120}[size]
-        return f'{per_salvo} missiles per salvo'
-    if weapon == 'torpedo':
-        per_salvo = {'small': 3, 'medium': 6, 'large': 30}[size]
-        return f'{per_salvo} torpedoes per salvo'
-    return None
-
-
-def _bay_magazine_summary(weapon: BayWeapon, size: BaySize) -> str | None:
-    if weapon in {'missile', 'orbital_strike_missile'}:
-        magazine = {'small': 144, 'medium': 288, 'large': 1_440}[size]
-        return f'Magazine: {magazine:,} missiles (12 full salvos)'
-    if weapon == 'torpedo':
-        magazine = {'small': 36, 'medium': 72, 'large': 360}[size]
-        return f'Magazine: {magazine:,} torpedoes (12 full salvos)'
-    return None
-
-
 def _mounted_weapon_label(weapon: MountWeapon) -> str:
     return weapon.build_item() or weapon.__class__.__name__
 
@@ -97,18 +77,13 @@ def _mounted_weapon_power(weapons: Sequence[MountWeapon]) -> float:
     return sum(w.weapon_power for w in weapons)
 
 
-MountWeaponType = Literal['pulse_laser', 'beam_laser', 'missile_rack', 'sandcaster']
-
-
-class MountWeapon(CeresModel):
+class _MountWeapon(CeresModel):
     model_config = {'frozen': True}
-    _specs: ClassVar[dict[MountWeaponType, dict[str, float | str]]] = dict(
-        pulse_laser=dict(item='Pulse Laser', cost=1_000_000, power=4),
-        beam_laser=dict(item='Beam Laser', cost=500_000, power=4),
-        missile_rack=dict(item='Missile Rack', cost=750_000, power=0),
-        sandcaster=dict(item='Sandcaster', cost=250_000, power=0),
-    )
-    weapon: MountWeaponType
+    weapon_type: str
+    item_label: ClassVar[str]
+    base_cost: ClassVar[float]
+    base_power: ClassVar[float]
+    high_yield_allowed: ClassVar[bool] = True
     customisation: CustomisationUnion | None = None
     allowed_modifications: ClassVar[frozenset[str]] = frozenset(
         {
@@ -127,21 +102,13 @@ class MountWeapon(CeresModel):
                     self.error(f'Modification not allowed for MountWeapon: {mod.name}')
             self.notes.extend(self.customisation.notes)
 
-            if self.weapon in {'missile_rack'}:
+            if not self.high_yield_allowed:
                 for mod in self.customisation.modifications:
                     if mod.name in {HighYield.name, VeryHighYield.name}:
                         self.error(f'{mod.name} is not applicable for {self.build_item()}')
 
-    @property
-    def base_cost(self) -> float:
-        return float(self._specs[self.weapon]['cost'])
-
-    @property
-    def base_power(self) -> float:
-        return float(self._specs[self.weapon]['power'])
-
     def build_item(self) -> str | None:
-        return str(self._specs[self.weapon]['item'])
+        return self.item_label
 
     def customisation_note(self) -> Note | None:
         if self.customisation is None:
@@ -160,6 +127,41 @@ class MountWeapon(CeresModel):
     def weapon_power(self) -> float:
         multiplier = 1.0 if self.customisation is None else self.customisation.power_multiplier
         return self.base_power * multiplier
+
+
+class PulseLaser(_MountWeapon):
+    weapon_type: Literal['pulse_laser'] = 'pulse_laser'
+    item_label = 'Pulse Laser'
+    base_cost = 1_000_000.0
+    base_power = 4.0
+
+
+class BeamLaser(_MountWeapon):
+    weapon_type: Literal['beam_laser'] = 'beam_laser'
+    item_label = 'Beam Laser'
+    base_cost = 500_000.0
+    base_power = 4.0
+
+
+class MissileRack(_MountWeapon):
+    weapon_type: Literal['missile_rack'] = 'missile_rack'
+    item_label = 'Missile Rack'
+    base_cost = 750_000.0
+    base_power = 0.0
+    high_yield_allowed = False
+
+
+class Sandcaster(_MountWeapon):
+    weapon_type: Literal['sandcaster'] = 'sandcaster'
+    item_label = 'Sandcaster'
+    base_cost = 250_000.0
+    base_power = 0.0
+
+
+type MountWeapon = Annotated[
+    PulseLaser | BeamLaser | MissileRack | Sandcaster,
+    Field(discriminator='weapon_type'),
+]
 
 
 class FixedMount(ShipPart):
@@ -505,7 +507,9 @@ class _Bay(CustomisableShipPart):
     base_power: ClassVar[float]
     hardpoints: ClassVar[int]
     crew: ClassVar[int]
-    damage_multiplier: ClassVar[int]
+    damage_multiplier: ClassVar[int | None]
+    salvo_text: ClassVar[str | None] = None
+    magazine_summary: ClassVar[str | None] = None
     allowed_modifications: ClassVar[frozenset[str]] = frozenset(
         {
             SizeReduction.name,
@@ -524,10 +528,9 @@ class _Bay(CustomisableShipPart):
 
     def build_item(self) -> str | None:
         item = f'{self.size.title()} Bay'
-        salvo_text = _bay_salvo_text(self.weapon, self.size)
-        if salvo_text is not None:
-            item = f'{item} ({salvo_text})'
-        elif self.weapon not in {'missile', 'torpedo', 'orbital_strike_missile'}:
+        if self.salvo_text is not None:
+            item = f'{item} ({self.salvo_text})'
+        else:
             damage_text = _damage_multiple_text(self.damage_multiplier)
             if damage_text is not None:
                 item = f'{item} ({damage_text})'
@@ -540,9 +543,8 @@ class _Bay(CustomisableShipPart):
     def build_notes(self) -> list[Note]:
         notes = [*ShipPart.build_notes(self)]
         notes.append(Note(category=NoteCategory.INFO, message=f'Weapon: {self.weapon_label}'))
-        magazine_summary = _bay_magazine_summary(self.weapon, self.size)
-        if magazine_summary is not None:
-            notes.append(Note(category=NoteCategory.INFO, message=magazine_summary))
+        if self.magazine_summary is not None:
+            notes.append(Note(category=NoteCategory.INFO, message=self.magazine_summary))
         if self.customisation is not None:
             notes.append(Note(category=NoteCategory.INFO, message=self.customisation.note_text))
         return notes
@@ -574,7 +576,7 @@ class _SmallBay(_Bay):
     base_tons: ClassVar[float] = 50.0
     hardpoints: ClassVar[int] = 1
     crew: ClassVar[int] = 1
-    damage_multiplier: ClassVar[int] = 10
+    damage_multiplier: ClassVar[int | None] = 10
 
 
 class _MediumBay(_Bay):
@@ -582,7 +584,7 @@ class _MediumBay(_Bay):
     base_tons: ClassVar[float] = 100.0
     hardpoints: ClassVar[int] = 1
     crew: ClassVar[int] = 2
-    damage_multiplier: ClassVar[int] = 20
+    damage_multiplier: ClassVar[int | None] = 20
 
 
 class _LargeBay(_Bay):
@@ -590,7 +592,7 @@ class _LargeBay(_Bay):
     base_tons: ClassVar[float] = 500.0
     hardpoints: ClassVar[int] = 5
     crew: ClassVar[int] = 4
-    damage_multiplier: ClassVar[int] = 100
+    damage_multiplier: ClassVar[int | None] = 100
 
 
 class SmallFusionGunBay(_SmallBay):
@@ -705,6 +707,8 @@ class SmallMissileBay(_SmallBay):
     bay_type: Literal['small_missile_bay'] = 'small_missile_bay'
     weapon: ClassVar[BayWeapon] = 'missile'
     weapon_label = 'Missile'
+    salvo_text = '12 missiles per salvo'
+    magazine_summary = 'Magazine: 144 missiles (12 full salvos)'
     tl: int = 7
     base_power = 5.0
     base_cost = 12_000_000.0
@@ -714,6 +718,8 @@ class MediumMissileBay(_MediumBay):
     bay_type: Literal['medium_missile_bay'] = 'medium_missile_bay'
     weapon: ClassVar[BayWeapon] = 'missile'
     weapon_label = 'Missile'
+    salvo_text = '24 missiles per salvo'
+    magazine_summary = 'Magazine: 288 missiles (12 full salvos)'
     tl: int = 7
     base_power = 10.0
     base_cost = 20_000_000.0
@@ -723,6 +729,8 @@ class LargeMissileBay(_LargeBay):
     bay_type: Literal['large_missile_bay'] = 'large_missile_bay'
     weapon: ClassVar[BayWeapon] = 'missile'
     weapon_label = 'Missile'
+    salvo_text = '120 missiles per salvo'
+    magazine_summary = 'Magazine: 1,440 missiles (12 full salvos)'
     tl: int = 7
     base_power = 20.0
     base_cost = 25_000_000.0
@@ -759,6 +767,8 @@ class SmallOrbitalStrikeMissileBay(_SmallBay):
     bay_type: Literal['small_orbital_strike_missile_bay'] = 'small_orbital_strike_missile_bay'
     weapon: ClassVar[BayWeapon] = 'orbital_strike_missile'
     weapon_label = 'Orbital Strike Missile'
+    salvo_text = '12 missiles per salvo'
+    magazine_summary = 'Magazine: 144 missiles (12 full salvos)'
     tl: int = 10
     base_power = 5.0
     base_cost = 16_000_000.0
@@ -768,6 +778,8 @@ class MediumOrbitalStrikeMissileBay(_MediumBay):
     bay_type: Literal['medium_orbital_strike_missile_bay'] = 'medium_orbital_strike_missile_bay'
     weapon: ClassVar[BayWeapon] = 'orbital_strike_missile'
     weapon_label = 'Orbital Strike Missile'
+    salvo_text = '24 missiles per salvo'
+    magazine_summary = 'Magazine: 288 missiles (12 full salvos)'
     tl: int = 10
     base_power = 15.0
     base_cost = 20_000_000.0
@@ -777,6 +789,8 @@ class LargeOrbitalStrikeMissileBay(_LargeBay):
     bay_type: Literal['large_orbital_strike_missile_bay'] = 'large_orbital_strike_missile_bay'
     weapon: ClassVar[BayWeapon] = 'orbital_strike_missile'
     weapon_label = 'Orbital Strike Missile'
+    salvo_text = '120 missiles per salvo'
+    magazine_summary = 'Magazine: 1,440 missiles (12 full salvos)'
     tl: int = 10
     base_power = 25.0
     base_cost = 24_000_000.0
@@ -867,6 +881,8 @@ class SmallTorpedoBay(_SmallBay):
     bay_type: Literal['small_torpedo_bay'] = 'small_torpedo_bay'
     weapon: ClassVar[BayWeapon] = 'torpedo'
     weapon_label = 'Torpedo'
+    salvo_text = '3 torpedoes per salvo'
+    magazine_summary = 'Magazine: 36 torpedoes (12 full salvos)'
     tl: int = 7
     base_power = 2.0
     base_cost = 3_000_000.0
@@ -876,6 +892,8 @@ class MediumTorpedoBay(_MediumBay):
     bay_type: Literal['medium_torpedo_bay'] = 'medium_torpedo_bay'
     weapon: ClassVar[BayWeapon] = 'torpedo'
     weapon_label = 'Torpedo'
+    salvo_text = '6 torpedoes per salvo'
+    magazine_summary = 'Magazine: 72 torpedoes (12 full salvos)'
     tl: int = 7
     base_power = 5.0
     base_cost = 6_000_000.0
@@ -885,6 +903,8 @@ class LargeTorpedoBay(_LargeBay):
     bay_type: Literal['large_torpedo_bay'] = 'large_torpedo_bay'
     weapon: ClassVar[BayWeapon] = 'torpedo'
     weapon_label = 'Torpedo'
+    salvo_text = '30 torpedoes per salvo'
+    magazine_summary = 'Magazine: 360 torpedoes (12 full salvos)'
     tl: int = 7
     base_power = 10.0
     base_cost = 10_000_000.0

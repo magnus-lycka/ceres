@@ -72,7 +72,7 @@ from ceres.make.ship.systems import (
     Theatre,
     TrainingFacility,
 )
-from ceres.make.ship.weapons import MountWeapon, QuadTurret, WeaponsSection
+from ceres.make.ship.weapons import BeamLaser, MissileRack, QuadTurret, WeaponsSection
 
 
 def build_small_scout_base() -> ship.Ship:
@@ -112,12 +112,12 @@ def build_small_scout_base() -> ship.Ship:
             turrets=[
                 *[
                     QuadTurret(
-                        weapons=[MountWeapon(weapon='beam_laser')] * 4,
+                        weapons=[BeamLaser()] * 4,
                     )
                 ]
                 * 4,
                 QuadTurret(
-                    weapons=[MountWeapon(weapon='missile_rack')] * 4,
+                    weapons=[MissileRack()] * 4,
                 ),
             ]
         ),

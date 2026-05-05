@@ -10,7 +10,7 @@ from ceres.make.ship.sensors import MilitarySensors, SensorsSection
 from ceres.make.ship.software import FireControl
 from ceres.make.ship.storage import FuelScoops, FuelSection, OperationFuel, ReactionFuel
 from ceres.make.ship.systems import Aerofins
-from ceres.make.ship.weapons import FixedMount, MountWeapon, WeaponsSection
+from ceres.make.ship.weapons import FixedMount, PulseLaser, WeaponsSection
 
 
 def build_gothta_ambush_fighter() -> ship.Ship:
@@ -41,7 +41,7 @@ def build_gothta_ambush_fighter() -> ship.Ship:
         computer=ComputerSection(hardware=Computer5(), software=[FireControl(rating=1)]),
         sensors=SensorsSection(primary=MilitarySensors()),
         weapons=WeaponsSection(
-            fixed_mounts=[FixedMount(weapons=[MountWeapon(weapon='pulse_laser')])],
+            fixed_mounts=[FixedMount(weapons=[PulseLaser()])],
         ),
         habitation=HabitationSection(cabin_space=CabinSpace(tons=1.5)),
     )

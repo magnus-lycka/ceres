@@ -7,6 +7,7 @@ from ceres.make.ship.computer import Computer5, Computer20, ComputerSection
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive1, PowerSection
 from ceres.make.ship.parts import Advanced, EnergyEfficient, HighTechnology, SizeReduction, VeryAdvanced
 from ceres.make.ship.weapons import (
+    BeamLaser,
     DoubleTurret,
     FixedMount,
     GaussPointDefenseBattery3,
@@ -17,11 +18,13 @@ from ceres.make.ship.weapons import (
     LongRange,
     MediumMissileBay,
     MediumParticleBeamBay,
+    MissileRack,
     MissileStorage,
-    MountWeapon,
     ParticleBarbette,
+    PulseLaser,
     PulseLaserBarbette,
     QuadTurret,
+    Sandcaster,
     SandcasterCanisterStorage,
     SingleTurret,
     SmallFusionGunBay,
@@ -47,42 +50,42 @@ def test_size_reduction_steps_true_counts_as_one():
 
 
 def test_pulse_laser_base_cost():
-    w = MountWeapon(weapon='pulse_laser')
+    w = PulseLaser()
     assert w.base_cost == 1_000_000
 
 
 def test_pulse_laser_base_power():
-    w = MountWeapon(weapon='pulse_laser')
+    w = PulseLaser()
     assert w.base_power == 4
 
 
 def test_sandcaster_base_values():
-    w = MountWeapon(weapon='sandcaster')
+    w = Sandcaster()
     assert w.base_cost == 250_000
     assert w.base_power == 0
     assert w.build_item() == 'Sandcaster'
 
 
 def test_pulse_laser_no_upgrades_cost_modifier():
-    w = MountWeapon(weapon='pulse_laser')
+    w = PulseLaser()
     assert w.cost_modifier == pytest.approx(1.0)
 
 
 def test_pulse_laser_energy_efficient_cost_modifier():
     # Advanced: 1 advantage, +10% cost
-    w = MountWeapon(weapon='pulse_laser', customisation=Advanced(modifications=[EnergyEfficient]))
+    w = PulseLaser(customisation=Advanced(modifications=[EnergyEfficient]))
     assert w.cost_modifier == pytest.approx(1.10)
 
 
 def test_pulse_laser_very_high_yield_cost_modifier():
     # Very Advanced: 2 advantages, +25% cost
-    w = MountWeapon(weapon='pulse_laser', customisation=VeryAdvanced(modifications=[VeryHighYield]))
+    w = PulseLaser(customisation=VeryAdvanced(modifications=[VeryHighYield]))
     assert w.cost_modifier == pytest.approx(1.25)
 
 
 def test_pulse_laser_high_technology_cost_modifier():
     # High Technology: 3 advantages (very_high_yield=2 + energy_efficient=1), +50% cost
-    w = MountWeapon(weapon='pulse_laser', customisation=HighTechnology(modifications=[VeryHighYield, EnergyEfficient]))
+    w = PulseLaser(customisation=HighTechnology(modifications=[VeryHighYield, EnergyEfficient]))
     assert w.cost_modifier == pytest.approx(1.50)
 
 
@@ -90,59 +93,47 @@ def test_pulse_laser_high_technology_cost_modifier():
 
 
 def test_fixed_firmpoint_base_cost():
-    fp = FixedMount(weapons=[MountWeapon(weapon='pulse_laser')])
+    fp = FixedMount(weapons=[PulseLaser()])
     fp.bind(DummyOwner(12, 6))
     # mount MCr0.1 + weapon MCr1 * 1.0 = 1,100,000
     assert float(fp.cost) == pytest.approx(1_100_000)
 
 
 def test_fixed_firmpoint_high_technology_cost():
-    fp = FixedMount(
-        weapons=[
-            MountWeapon(
-                weapon='pulse_laser', customisation=HighTechnology(modifications=[VeryHighYield, EnergyEfficient])
-            )
-        ]
-    )
+    fp = FixedMount(weapons=[PulseLaser(customisation=HighTechnology(modifications=[VeryHighYield, EnergyEfficient]))])
     fp.bind(DummyOwner(12, 6))
     # mount 100,000 + weapon 1,000,000 * 1.5 = 1,600,000
     assert float(fp.cost) == pytest.approx(1_600_000)
 
 
 def test_fixed_firmpoint_tons_zero():
-    fp = FixedMount(weapons=[MountWeapon(weapon='pulse_laser')])
+    fp = FixedMount(weapons=[PulseLaser()])
     fp.bind(DummyOwner(12, 6))
     assert float(fp.tons) == 0
 
 
 def test_fixed_firmpoint_base_power():
     # Firmpoint reduces by 25%: floor(4 * 0.75) = 3
-    fp = FixedMount(weapons=[MountWeapon(weapon='pulse_laser')])
+    fp = FixedMount(weapons=[PulseLaser()])
     fp.bind(DummyOwner(12, 6))
     assert float(fp.power) == 3
 
 
 def test_fixed_firmpoint_energy_efficient_power():
     # Firmpoint -25% * energy_efficient -25%: floor(4 * 0.75 * 0.75) = floor(2.25) = 2
-    fp = FixedMount(
-        weapons=[
-            MountWeapon(
-                weapon='pulse_laser', customisation=HighTechnology(modifications=[VeryHighYield, EnergyEfficient])
-            )
-        ]
-    )
+    fp = FixedMount(weapons=[PulseLaser(customisation=HighTechnology(modifications=[VeryHighYield, EnergyEfficient]))])
     fp.bind(DummyOwner(12, 6))
     assert float(fp.power) == 2
 
 
 def test_fixed_firmpoint_recomputes_cost_from_input():
-    fp = FixedMount.model_validate({'weapons': [{'weapon': 'pulse_laser'}], 'cost': 999})
+    fp = FixedMount.model_validate({'weapons': [{'weapon_type': 'pulse_laser'}], 'cost': 999})
     fp.bind(DummyOwner(12, 6))
     assert fp.cost == pytest.approx(1_100_000)
 
 
 def test_fixed_firmpoint_recomputes_tons_from_input():
-    fp = FixedMount.model_validate({'weapons': [{'weapon': 'pulse_laser'}], 'tons': 999})
+    fp = FixedMount.model_validate({'weapons': [{'weapon_type': 'pulse_laser'}], 'tons': 999})
     fp.bind(DummyOwner(12, 6))
     assert fp.tons == 0
 
@@ -158,8 +149,8 @@ def test_sandcaster_canister_storage_values():
 def test_fixed_firmpoint_can_carry_multiple_weapons_on_larger_ship():
     fp = FixedMount(
         weapons=[
-            MountWeapon(weapon='pulse_laser'),
-            MountWeapon(weapon='pulse_laser', customisation=Advanced(modifications=[EnergyEfficient])),
+            PulseLaser(),
+            PulseLaser(customisation=Advanced(modifications=[EnergyEfficient])),
         ]
     )
     fp.bind(DummyOwner(12, 100))
@@ -168,17 +159,17 @@ def test_fixed_firmpoint_can_carry_multiple_weapons_on_larger_ship():
 
 
 def test_mount_weapon_build_item_is_base_name_only():
-    w = MountWeapon(weapon='pulse_laser', customisation=HighTechnology(modifications=[VeryHighYield, EnergyEfficient]))
+    w = PulseLaser(customisation=HighTechnology(modifications=[VeryHighYield, EnergyEfficient]))
     assert w.build_item() == 'Pulse Laser'
 
 
 def test_mount_weapon_no_upgrades_has_no_customisation_note():
-    w = MountWeapon(weapon='pulse_laser')
+    w = PulseLaser()
     assert w.customisation_note() is None
 
 
 def test_mount_weapon_high_technology_customisation_note():
-    w = MountWeapon(weapon='pulse_laser', customisation=HighTechnology(modifications=[VeryHighYield, EnergyEfficient]))
+    w = PulseLaser(customisation=HighTechnology(modifications=[VeryHighYield, EnergyEfficient]))
     note = w.customisation_note()
     assert note is not None
     assert note.category.value == 'info'
@@ -186,35 +177,35 @@ def test_mount_weapon_high_technology_customisation_note():
 
 
 def test_mount_weapon_advanced_customisation_note():
-    w = MountWeapon(weapon='pulse_laser', customisation=Advanced(modifications=[EnergyEfficient]))
+    w = PulseLaser(customisation=Advanced(modifications=[EnergyEfficient]))
     note = w.customisation_note()
     assert note is not None
     assert note.message == 'Advanced: Energy Efficient'
 
 
 def test_mount_weapon_very_advanced_customisation_note():
-    w = MountWeapon(weapon='pulse_laser', customisation=VeryAdvanced(modifications=[VeryHighYield]))
+    w = PulseLaser(customisation=VeryAdvanced(modifications=[VeryHighYield]))
     note = w.customisation_note()
     assert note is not None
     assert note.message == 'Very Advanced: Very High Yield'
 
 
 def test_mount_weapon_advanced_high_yield_customisation_note():
-    w = MountWeapon(weapon='pulse_laser', customisation=Advanced(modifications=[HighYield]))
+    w = PulseLaser(customisation=Advanced(modifications=[HighYield]))
     note = w.customisation_note()
     assert note is not None
     assert note.message == 'Advanced: High Yield'
 
 
 def test_mount_weapon_long_range_customisation_note():
-    w = MountWeapon(weapon='pulse_laser', customisation=VeryAdvanced(modifications=[LongRange]))
+    w = PulseLaser(customisation=VeryAdvanced(modifications=[LongRange]))
     note = w.customisation_note()
     assert note is not None
     assert note.message == 'Very Advanced: Long Range'
 
 
 def test_mount_weapon_long_range_is_allowed():
-    w = MountWeapon(weapon='pulse_laser', customisation=VeryAdvanced(modifications=[LongRange]))
+    w = PulseLaser(customisation=VeryAdvanced(modifications=[LongRange]))
     assert ('error', 'Modification not allowed for MountWeapon: Long Range') not in [
         (note.category.value, note.message) for note in w.notes
     ]
@@ -222,7 +213,7 @@ def test_mount_weapon_long_range_is_allowed():
 
 
 def test_mount_weapon_high_yield_is_allowed():
-    w = MountWeapon(weapon='pulse_laser', customisation=Advanced(modifications=[HighYield]))
+    w = PulseLaser(customisation=Advanced(modifications=[HighYield]))
     assert ('error', 'Modification not allowed for MountWeapon: High Yield') not in [
         (note.category.value, note.message) for note in w.notes
     ]
@@ -230,27 +221,21 @@ def test_mount_weapon_high_yield_is_allowed():
 
 
 def test_mount_weapon_high_yield_not_applicable_for_missile_rack():
-    w = MountWeapon(weapon='missile_rack', customisation=Advanced(modifications=[HighYield]))
+    w = MissileRack(customisation=Advanced(modifications=[HighYield]))
     assert ('error', 'High Yield is not applicable for Missile Rack') in [
         (note.category.value, note.message) for note in w.notes
     ]
 
 
 def test_mount_weapon_rejects_disallowed_modification():
-    w = MountWeapon(weapon='pulse_laser', customisation=Advanced(modifications=[SizeReduction]))
+    w = PulseLaser(customisation=Advanced(modifications=[SizeReduction]))
     assert ('error', 'Modification not allowed for MountWeapon: Size Reduction') in [
         (note.category.value, note.message) for note in w.notes
     ]
 
 
 def test_fixed_mount_single_weapon_notes_include_customisation_note():
-    fp = FixedMount(
-        weapons=[
-            MountWeapon(
-                weapon='pulse_laser', customisation=HighTechnology(modifications=[VeryHighYield, EnergyEfficient])
-            )
-        ]
-    )
+    fp = FixedMount(weapons=[PulseLaser(customisation=HighTechnology(modifications=[VeryHighYield, EnergyEfficient]))])
     assert [(note.category.value, note.message) for note in fp.notes] == [
         ('item', 'Pulse Laser'),
         ('info', 'High Technology: Very High Yield, Energy Efficient'),
@@ -258,7 +243,7 @@ def test_fixed_mount_single_weapon_notes_include_customisation_note():
 
 
 def test_fixed_firmpoint_with_multiple_weapons_reports_fixed_mount_item():
-    fp = FixedMount(weapons=[MountWeapon(weapon='pulse_laser'), MountWeapon(weapon='pulse_laser')])
+    fp = FixedMount(weapons=[PulseLaser(), PulseLaser()])
     assert [(note.category.value, note.message) for note in fp.notes] == [
         ('item', 'Fixed Mount'),
         ('info', 'Weapon: Pulse Laser × 2'),
@@ -268,9 +253,9 @@ def test_fixed_firmpoint_with_multiple_weapons_reports_fixed_mount_item():
 def test_triple_turret_groups_identical_customised_weapons_in_notes():
     turret = TripleTurret(
         weapons=[
-            MountWeapon(weapon='pulse_laser', customisation=HighTechnology(modifications=[LongRange, HighYield])),
-            MountWeapon(weapon='pulse_laser', customisation=HighTechnology(modifications=[LongRange, HighYield])),
-            MountWeapon(weapon='pulse_laser', customisation=HighTechnology(modifications=[LongRange, HighYield])),
+            PulseLaser(customisation=HighTechnology(modifications=[LongRange, HighYield])),
+            PulseLaser(customisation=HighTechnology(modifications=[LongRange, HighYield])),
+            PulseLaser(customisation=HighTechnology(modifications=[LongRange, HighYield])),
         ],
     )
     assert [(note.category.value, note.message) for note in turret.notes] == [
@@ -281,7 +266,7 @@ def test_triple_turret_groups_identical_customised_weapons_in_notes():
 
 
 def test_reused_weapon_and_turret_references_render_like_distinct_identical_objects():
-    laser = MountWeapon(weapon='pulse_laser', customisation=HighTechnology(modifications=[LongRange, HighYield]))
+    laser = PulseLaser(customisation=HighTechnology(modifications=[LongRange, HighYield]))
     turret = TripleTurret(weapons=[laser, laser, laser])
     my_ship = ship.Ship(
         tl=15,
@@ -465,8 +450,8 @@ def test_point_defense_battery_cannot_be_mounted_on_small_craft():
 def test_double_turret_cost_and_power_include_weapons():
     turret = DoubleTurret(
         weapons=[
-            MountWeapon(weapon='pulse_laser'),
-            MountWeapon(weapon='pulse_laser', customisation=Advanced(modifications=[EnergyEfficient])),
+            PulseLaser(),
+            PulseLaser(customisation=Advanced(modifications=[EnergyEfficient])),
         ],
     )
     turret.bind(DummyOwner(12, 100))
@@ -477,10 +462,10 @@ def test_double_turret_cost_and_power_include_weapons():
 def test_quad_turret_cost_and_power_include_weapons():
     turret = QuadTurret(
         weapons=[
-            MountWeapon(weapon='beam_laser'),
-            MountWeapon(weapon='beam_laser'),
-            MountWeapon(weapon='beam_laser'),
-            MountWeapon(weapon='beam_laser'),
+            BeamLaser(),
+            BeamLaser(),
+            BeamLaser(),
+            BeamLaser(),
         ],
     )
     turret.bind(DummyOwner(12, 100))
@@ -491,9 +476,9 @@ def test_quad_turret_cost_and_power_include_weapons():
 def test_double_turret_errors_if_it_mounts_too_many_weapons():
     turret = DoubleTurret(
         weapons=[
-            MountWeapon(weapon='pulse_laser'),
-            MountWeapon(weapon='pulse_laser'),
-            MountWeapon(weapon='pulse_laser'),
+            PulseLaser(),
+            PulseLaser(),
+            PulseLaser(),
         ],
     )
     assert ('error', 'Turret can mount at most 2 weapons') in [
@@ -522,7 +507,7 @@ def test_small_craft_fixed_mount_cannot_carry_more_than_one_weapon():
         displacement=99,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         weapons=WeaponsSection(
-            fixed_mounts=[FixedMount(weapons=[MountWeapon(weapon='pulse_laser'), MountWeapon(weapon='pulse_laser')])],
+            fixed_mounts=[FixedMount(weapons=[PulseLaser(), PulseLaser()])],
         ),
     )
 
@@ -586,7 +571,7 @@ def test_weapon_mounts_cannot_exceed_hardpoints():
         hull=hull.Hull(configuration=hull.streamlined_hull),
         weapons=WeaponsSection(
             turrets=[DoubleTurret()],
-            fixed_mounts=[FixedMount(weapons=[MountWeapon(weapon='pulse_laser')])],
+            fixed_mounts=[FixedMount(weapons=[PulseLaser()])],
         ),
     )
 
@@ -605,8 +590,8 @@ def test_weapon_mounts_cannot_exceed_firmpoints():
         hull=hull.Hull(configuration=hull.streamlined_hull),
         weapons=WeaponsSection(
             fixed_mounts=[
-                FixedMount(weapons=[MountWeapon(weapon='pulse_laser')]),
-                FixedMount(weapons=[MountWeapon(weapon='pulse_laser')]),
+                FixedMount(weapons=[PulseLaser()]),
+                FixedMount(weapons=[PulseLaser()]),
             ],
         ),
     )
