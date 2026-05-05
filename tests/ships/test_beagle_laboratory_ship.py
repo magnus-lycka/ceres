@@ -17,7 +17,7 @@ Source handling for this test case:
     external displacement, so drive and jump-fuel sizing use `455t`
 - still excluded from the modeled reference case:
   - software packages `Mentor/1` and `Research Assist/1` (`TCS-004`)
-  - `Planetology/1` is modeled as `Expert(rating=1, skill='Space Sciences (Planetology)')`
+  - `Planetology/1` is modeled as `Expert(rating=1, skill='Space Science (Planetology)')`
   - source crew is carried over explicitly; `Pinnace Pilot` is treated as an
     additional `Pilot`, and `Sensop` as `SENSOR OPERATOR`
   - `Ship's Mechanic` is treated as the `MAINTENANCE` crew role
@@ -93,7 +93,7 @@ def build_beagle_laboratory_ship() -> ship.Ship:
         command=CommandSection(bridge=Bridge(small=True, holographic=True)),
         computer=ComputerSection(
             hardware=Computer10(),
-            software=[JumpControl(rating=2), Expert(rating=3, skill='Space Sciences (Planetology)')],
+            software=[JumpControl(rating=2), Expert(rating=3, skill='Space Science (Planetology)')],
         ),
         sensors=SensorsSection(primary=ImprovedSensors(), sensor_stations=SensorStations(count=1)),
         weapons=WeaponsSection(
@@ -198,7 +198,7 @@ def test_beagle_laboratory_ship_matches_supported_slice():
         ('Manoeuvre/0', 0.0),
         ('Intellect', 0.0),
         ('Jump Control/2', 200_000.0),
-        ('Expert (Space Sciences (Planetology))/3', 20_000.0),
+        ('Expert (Space Science (Planetology))/3', 20_000.0),
     ]
 
     assert ship_.sensors.primary.tons == pytest.approx(3.0)
@@ -353,6 +353,6 @@ def test_beagle_expert_software_roundtrip():
     expert = next((p for p in packages.values() if isinstance(p, Expert)), None)
     assert expert is not None
     assert expert.rating == 3
-    assert expert.skill == 'Space Sciences (Planetology)'
-    assert expert.description == 'Expert (Space Sciences (Planetology))/3'
+    assert expert.skill == 'Space Science (Planetology)'
+    assert expert.description == 'Expert (Space Science (Planetology))/3'
     assert expert.cost == pytest.approx(20_000.0)

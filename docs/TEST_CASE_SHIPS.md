@@ -57,7 +57,7 @@ These are *High Guard* (2016) titles removed in the 2022 edition (see RI-008).
 
 Mapping applied in the Ceres test case:
 
-- `Planetology/1` → `Expert (Space Sciences (Planetology))/1` — closest
+- `Planetology/1` → `Expert (Space Science (Planetology))/1` — closest
   current-rules equivalent
 - `Research Assist/1` → skipped — no current-rules equivalent
 - `Mentor/1` → skipped — no current-rules equivalent

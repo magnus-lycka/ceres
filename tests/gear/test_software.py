@@ -44,8 +44,8 @@ def test_intellect_three_matches_csc_values():
 
 
 def test_expert_broad_science_planetology_matches_skill_table():
-    package = Expert(rating=1, skill='Space Sciences (Planetology)')
-    assert package.description == 'Expert (Space Sciences (Planetology))/1'
+    package = Expert(rating=1, skill='Space Science (Planetology)')
+    assert package.description == 'Expert (Space Science (Planetology))/1'
     assert package.bandwidth == 1
     assert package.tl == 9
     assert package.cost == 200.0
@@ -60,8 +60,8 @@ def test_expert_higher_rating_increases_tl_and_cost_from_base_skill():
 
 
 def test_expert_supports_all_companion_science_subskills():
-    package = Expert(rating=2, skill='Physical Sciences (Jumpspace Physics)')
-    assert package.description == 'Expert (Physical Sciences (Jumpspace Physics))/2'
+    package = Expert(rating=2, skill='Physical Science (Jumpspace Physics)')
+    assert package.description == 'Expert (Physical Science (Jumpspace Physics))/2'
     assert package.bandwidth == 2
     assert package.tl == 10
     assert package.cost == 2_000.0

@@ -181,17 +181,17 @@ mappings, see `TEST_CASE_SHIPS.md`.
 
 The *Traveller Companion* (2024) introduced **broad skills**: what earlier
 editions called specialities of a single `Science` skill are now fully
-independent skills — `Space Sciences`, `Life Sciences`, `Physical Sciences`,
-`Social Sciences`, `Robotic Sciences` — each with their own specialities. The same applies to `Art` and `Profession`.
+independent skills — `Space Science`, `Life Science`, `Physical Science`,
+`Social Science`, `Robotic Science` — each with their own specialities. The same applies to `Art` and `Profession`.
 
-Ceres follows this model. `Space Sciences (Planetology)` is a distinct skill,
-with `Space Sciences (Planetology)`  as a speciality.
+Ceres follows this model. `Space Science` is a distinct skill,
+with `Space Science (Planetology)`  as a speciality.
 The old single `Science` skill with a `(Planetology)` speciality is not modelled.
 
 This is analogous with the Language skill family. Each Language skill,
 Language Galanglic, Language Zdatl etc are entirely separate skills.
 
 In practice this affects `Expert` software packages: the skill string passed
-to `Expert(N, skill='Space Sciences (Planetology)')` names a broad skill, not
+to `Expert(N, skill='Space Science (Planetology)')` names a broad skill, not
 a flat speciality. The software table in `ceres.gear.software` lists broad
 science skills (and their specialities) as top-level entries accordingly.
