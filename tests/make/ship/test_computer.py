@@ -24,7 +24,8 @@ def test_computer_5_cost():
     assert c.tl == 7
     assert c.assembly_tl == 12
     assert c.processing == 5
-    assert c.jump_control_processing == 5
+    assert c.can_run_jump_control(5)
+    assert not c.can_run_jump_control(10)
     assert float(c.cost) == 30_000
 
 
@@ -69,11 +70,12 @@ def test_computer_recomputes_cost_from_input():
     assert c.cost == 30_000
 
 
-def test_computer_bis_increases_cost_and_jump_control_processing():
+def test_computer_bis_increases_cost_and_jump_control_capacity():
     c = Computer5(bis=True)
     c.bind(DummyOwner(12, 6))
     assert c.processing == 5
-    assert c.jump_control_processing == 10
+    assert c.can_run_jump_control(10)
+    assert not c.can_run_jump_control(15)
     assert c.cost == 45_000
 
 
@@ -94,7 +96,7 @@ def test_core_40_hardware():
     c.bind(DummyOwner(12, 100))
     assert c.tl == 9
     assert c.processing == 40
-    assert c.jump_control_processing == 40
+    assert c.can_run_jump_control(100)
     assert c.cost == 45_000_000
 
 

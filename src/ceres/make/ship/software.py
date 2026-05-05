@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Annotated, ClassVar, Literal
+from typing import TYPE_CHECKING, Annotated, ClassVar, Literal, cast
 
 from pydantic import Field
 
@@ -6,6 +6,7 @@ from ceres.gear.software import AnySoftware, FixedSoftwarePackage, RatedSoftware
 
 if TYPE_CHECKING:
     from ceres.gear.computer import ComputerPart
+    from ceres.make.ship.computer import ComputerBase
 
 
 class Library(FixedSoftwarePackage):
@@ -37,17 +38,12 @@ class JumpControl(RatedSoftwarePackage):
     }
 
     def validate_on_computer(self, computer: ComputerPart) -> None:
-        from .computer import ComputerBase, _Core  # local import to avoid circular dependency
-
         if computer.assembly.tl < self.tl:
             self.error(f'{self.description} requires TL{self.tl}')
             return
-        if isinstance(computer, _Core):
-            self._effective_rating = self.rating
-            return
-        jcp = computer.jump_control_processing if isinstance(computer, ComputerBase) else computer.processing
+        ship_computer = cast('ComputerBase', computer)
         for r in range(self.rating, 0, -1):
-            if jcp >= int(self._specs[r]['bandwidth']):
+            if ship_computer.can_run_jump_control(int(self._specs[r]['bandwidth'])):
                 if r < self.rating:
                     self.warning(f'{computer.description} can only run Jump Control/{r} (degraded from {self.rating})')
                 self._effective_rating = r

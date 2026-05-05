@@ -47,10 +47,9 @@ class ComputerBase(ComputerPart, ShipPartMixin):
         if self.assembly_tl < self.tl:
             self.error(f'Requires TL{self.tl}, ship is TL{self.assembly_tl}')
 
-    @property
-    def jump_control_processing(self) -> int:
+    def can_run_jump_control(self, required_processing: int) -> bool:
         bonus = 5 if self.bis else 0
-        return self.processing + bonus
+        return self.processing + bonus >= required_processing
 
     @property
     def included_software(self) -> list[SoftwarePackage]:
@@ -132,6 +131,9 @@ type Computer = Annotated[
 
 class _Core(ComputerBase):
     _label = 'Core'
+
+    def can_run_jump_control(self, required_processing: int) -> bool:
+        return True
 
 
 class Core40(_Core):
