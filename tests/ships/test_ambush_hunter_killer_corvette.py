@@ -3,10 +3,7 @@ import pytest
 from ceres.make.ship import hull, ship
 from ceres.make.ship.armour import BondedSuperdenseArmour
 from ceres.make.ship.bridge import Bridge, CommandSection
-from ceres.make.ship.computer import (
-    Computer,
-    ComputerSection,
-)
+from ceres.make.ship.computer import Computer30, ComputerSection
 from ceres.make.ship.drives import (
     DecreasedFuel,
     DriveSection,
@@ -71,7 +68,7 @@ def build_ambush_hunter_killer_corvette() -> ship.Ship:
         ),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(
-            hardware=Computer(processing=30),
+            hardware=Computer30(),
             software=[
                 JumpControl(rating=2),
                 AdvancedFireControl(rating=1),

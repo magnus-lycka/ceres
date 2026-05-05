@@ -18,10 +18,7 @@ import pytest
 
 from ceres.make.ship import hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
-from ceres.make.ship.computer import (
-    Computer,
-    ComputerSection,
-)
+from ceres.make.ship.computer import Computer5, ComputerSection
 from ceres.make.ship.crew import Pilot, ShipCrew
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive5, PowerSection
 from ceres.make.ship.habitation import CabinSpace, HabitationSection
@@ -44,7 +41,7 @@ def build_pinnace_with_20_ton_fuel_capacity() -> ship.Ship:
         power=PowerSection(fusion_plant=FusionPlantTL12(output=30)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=4)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(processing=5)),
+        computer=ComputerSection(hardware=Computer5()),
         sensors=SensorsSection(primary=BasicSensors()),
         systems=SystemsSection(),
         habitation=HabitationSection(cabin_space=CabinSpace(tons=9)),

@@ -2,10 +2,7 @@ import pytest
 
 from ceres.make.ship import hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
-from ceres.make.ship.computer import (
-    Computer,
-    ComputerSection,
-)
+from ceres.make.ship.computer import Computer5, ComputerSection
 from ceres.make.ship.drives import DriveSection, FusionPlantTL8, MDrive1, PowerSection
 from ceres.make.ship.habitation import HabitationSection, Stateroom
 from ceres.make.ship.sensors import BasicSensors, SensorsSection
@@ -29,7 +26,7 @@ def build_boxy_ore_freighter() -> ship.Ship:
         power=PowerSection(fusion_plant=FusionPlantTL8(output=80)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=12)),
         command=CommandSection(bridge=Bridge(small=True)),
-        computer=ComputerSection(hardware=Computer(processing=5)),
+        computer=ComputerSection(hardware=Computer5()),
         sensors=SensorsSection(primary=BasicSensors()),
         habitation=HabitationSection(staterooms=[Stateroom()], common_area=CommonArea(tons=1.0)),
         systems=SystemsSection(internal_systems=[Workshop()]),

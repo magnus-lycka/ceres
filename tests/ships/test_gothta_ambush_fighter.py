@@ -2,10 +2,7 @@ import pytest
 
 from ceres.make.ship import hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
-from ceres.make.ship.computer import (
-    Computer,
-    ComputerSection,
-)
+from ceres.make.ship.computer import Computer5, ComputerSection
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection, RDrive4
 from ceres.make.ship.habitation import CabinSpace, HabitationSection
 from ceres.make.ship.report import render_ship_spec_typst as _build_typst_source
@@ -41,7 +38,7 @@ def build_gothta_ambush_fighter() -> ship.Ship:
             fuel_scoops=FuelScoops(free=True),
         ),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(processing=5), software=[FireControl(rating=1)]),
+        computer=ComputerSection(hardware=Computer5(), software=[FireControl(rating=1)]),
         sensors=SensorsSection(primary=MilitarySensors()),
         weapons=WeaponsSection(
             fixed_mounts=[FixedMount(weapons=[MountWeapon(weapon='pulse_laser')])],

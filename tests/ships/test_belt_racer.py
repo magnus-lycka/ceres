@@ -22,10 +22,7 @@ import pytest
 
 from ceres.make.ship import hull, ship
 from ceres.make.ship.bridge import Cockpit, CommandSection
-from ceres.make.ship.computer import (
-    Computer,
-    ComputerSection,
-)
+from ceres.make.ship.computer import Computer5, ComputerSection
 from ceres.make.ship.drives import (
     DriveSection,
     FusionPlantTL8,
@@ -51,7 +48,7 @@ def build_belt_racer() -> ship.Ship:
         power=PowerSection(fusion_plant=FusionPlantTL8(output=5)),
         fuel=FuelSection(reaction_fuel=ReactionFuel(minutes=52)),
         command=CommandSection(cockpit=Cockpit()),
-        computer=ComputerSection(hardware=Computer(processing=5)),
+        computer=ComputerSection(hardware=Computer5()),
     )
 
 

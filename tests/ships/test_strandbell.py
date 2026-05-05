@@ -2,10 +2,7 @@ import pytest
 
 from ceres.make.ship import armour, hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
-from ceres.make.ship.computer import (
-    Computer,
-    ComputerSection,
-)
+from ceres.make.ship.computer import Computer35, ComputerSection
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive9, PowerSection
 from ceres.make.ship.habitation import HabitationSection, Stateroom
 from ceres.make.ship.sensors import CountermeasuresSuite, ImprovedSensors, SensorsSection
@@ -45,7 +42,7 @@ def build_strandbell() -> ship.Ship:
         ),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(
-            hardware=Computer(processing=35), software=[AutoRepair(rating=1), FireControl(rating=2), Evade(rating=2)]
+            hardware=Computer35(), software=[AutoRepair(rating=1), FireControl(rating=2), Evade(rating=2)]
         ),
         sensors=SensorsSection(primary=ImprovedSensors(), countermeasures=CountermeasuresSuite()),
         weapons=WeaponsSection(

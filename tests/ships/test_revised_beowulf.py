@@ -34,10 +34,7 @@ import pytest
 
 from ceres.make.ship import armour, hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
-from ceres.make.ship.computer import (
-    Computer,
-    ComputerSection,
-)
+from ceres.make.ship.computer import Computer5, ComputerSection
 from ceres.make.ship.crew import Astrogator, Engineer, Pilot, ShipCrew, Steward
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive1, MDrive1, PowerSection
 from ceres.make.ship.habitation import AdvancedEntertainmentSystem, HabitationSection, LowBerth, Stateroom
@@ -89,7 +86,7 @@ def build_revised_beowulf() -> ship.Ship:
             fuel_processor=FuelProcessor(tons=1),
         ),
         command=CommandSection(bridge=Bridge(holographic=True)),
-        computer=ComputerSection(hardware=Computer(processing=5), software=[JumpControl(rating=1)]),
+        computer=ComputerSection(hardware=Computer5(), software=[JumpControl(rating=1)]),
         sensors=SensorsSection(primary=CivilianSensors()),
         systems=SystemsSection(internal_systems=[MedicalBay(), Workshop()]),
         habitation=HabitationSection(

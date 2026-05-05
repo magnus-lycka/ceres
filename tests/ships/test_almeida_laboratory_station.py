@@ -21,10 +21,7 @@ import pytest
 
 from ceres.make.ship import hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
-from ceres.make.ship.computer import (
-    Computer,
-    ComputerSection,
-)
+from ceres.make.ship.computer import Computer10, ComputerSection
 from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
 from ceres.make.ship.crew import Administrator, Engineer, Maintenance, Officer, Pilot, ShipCrew, Steward
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive1, PowerSection
@@ -47,7 +44,7 @@ def build_almeida_laboratory_station() -> ship.Ship:
         power=PowerSection(fusion_plant=FusionPlantTL12(output=120)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=8)),
         command=CommandSection(bridge=Bridge(small=True)),
-        computer=ComputerSection(hardware=Computer(processing=10)),
+        computer=ComputerSection(hardware=Computer10()),
         sensors=SensorsSection(primary=AdvancedSensors()),
         craft=CraftSection(internal_housing=[InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft'))]),
         systems=SystemsSection(

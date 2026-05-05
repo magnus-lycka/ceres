@@ -2,10 +2,7 @@ import pytest
 
 from ceres.make.ship import hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
-from ceres.make.ship.computer import (
-    Computer,
-    ComputerSection,
-)
+from ceres.make.ship.computer import Computer15, ComputerSection
 from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, SpaceCraft, Vehicle
 from ceres.make.ship.crew import Astrogator, Captain, Engineer, Maintenance, Medic, Pilot, ShipCrew
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive3, MDrive2, PowerSection
@@ -46,7 +43,7 @@ def build_florence_medical_scout() -> ship.Ship:
             fuel_processor=FuelProcessor(tons=3),
         ),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(processing=15), software=[JumpControl(rating=3)]),
+        computer=ComputerSection(hardware=Computer15(), software=[JumpControl(rating=3)]),
         sensors=SensorsSection(primary=MilitarySensors(), life_scanner_analysis_suite=LifeScannerAnalysisSuite()),
         weapons=WeaponsSection(turrets=[Turret(size='double')]),
         craft=CraftSection(

@@ -2,10 +2,7 @@ import pytest
 
 from ceres.make.ship import hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
-from ceres.make.ship.computer import (
-    Computer,
-    ComputerSection,
-)
+from ceres.make.ship.computer import Computer5, ComputerSection
 from ceres.make.ship.drives import (
     DriveSection,
     FusionPlantTL8,
@@ -36,7 +33,7 @@ def build_poseidon_cargo_boat(tl: int) -> ship.Ship:
         power=PowerSection(fusion_plant=fusion_plant),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=16)),
         command=CommandSection(bridge=Bridge(small=True)),
-        computer=ComputerSection(hardware=Computer(processing=5)),
+        computer=ComputerSection(hardware=Computer5()),
         habitation=HabitationSection(staterooms=[Stateroom()], common_area=CommonArea(tons=1.0)),
     )
 
@@ -83,7 +80,7 @@ def test_ship_with_bridge_and_no_airlock_adds_error():
         displacement=99,
         hull=hull.Hull(configuration=POSEIDON_HULL),
         command=CommandSection(bridge=Bridge(small=True)),
-        computer=ComputerSection(hardware=Computer(processing=5)),
+        computer=ComputerSection(hardware=Computer5()),
         habitation=HabitationSection(staterooms=[Stateroom()]),
     )
     assert ('error', 'No airlock installed') in [(note.category.value, note.message) for note in my_ship.notes]
@@ -99,7 +96,7 @@ def test_ship_with_staterooms_and_no_common_area_adds_warning():
         displacement=99,
         hull=hull.Hull(configuration=POSEIDON_HULL, airlocks=[Airlock()]),
         command=CommandSection(bridge=Bridge(small=True)),
-        computer=ComputerSection(hardware=Computer(processing=5)),
+        computer=ComputerSection(hardware=Computer5()),
         habitation=HabitationSection(staterooms=[Stateroom()]),
     )
     assert my_ship.habitation is not None

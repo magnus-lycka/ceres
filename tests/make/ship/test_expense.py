@@ -2,10 +2,7 @@ import pytest
 
 from ceres.make.ship import hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
-from ceres.make.ship.computer import (
-    Computer,
-    ComputerSection,
-)
+from ceres.make.ship.computer import Computer5, ComputerSection
 from ceres.make.ship.drives import (
     DriveSection,
     FusionPlantTL8,
@@ -32,7 +29,7 @@ def build_small_jump_ship() -> ship.Ship:
             fuel_processor=FuelProcessor(tons=2),
         ),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(processing=5, bis=True)),
+        computer=ComputerSection(hardware=Computer5(bis=True)),
         habitation=HabitationSection(staterooms=[Stateroom()] * 4),
     )
 
@@ -96,7 +93,7 @@ def test_operation_fuel_contributes_monthly_unrefined_cost():
         power=PowerSection(fusion_plant=FusionPlantTL8(output=80)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=12)),
         command=CommandSection(bridge=Bridge(small=True)),
-        computer=ComputerSection(hardware=Computer(processing=5)),
+        computer=ComputerSection(hardware=Computer5()),
         habitation=HabitationSection(staterooms=[Stateroom()]),
     )
     assert my_ship.expenses.fuel == pytest.approx(100.0)
@@ -111,7 +108,7 @@ def test_operation_fuel_cost_is_zero_with_scoops_and_no_jump_drive():
         power=PowerSection(fusion_plant=FusionPlantTL12(output=80)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=16)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(processing=5)),
+        computer=ComputerSection(hardware=Computer5()),
         habitation=HabitationSection(staterooms=[Stateroom()]),
     )
     assert my_ship.expenses.fuel == pytest.approx(0.0)
@@ -138,7 +135,7 @@ def test_jump_drive_still_requires_refined_fuel_without_processor():
             operation_fuel=OperationFuel(weeks=12),
         ),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(processing=5, bis=True)),
+        computer=ComputerSection(hardware=Computer5(bis=True)),
         habitation=HabitationSection(staterooms=[Stateroom()] * 4),
     )
 

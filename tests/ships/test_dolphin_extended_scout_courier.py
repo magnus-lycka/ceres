@@ -26,10 +26,7 @@ import pytest
 
 from ceres.make.ship import armour, hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
-from ceres.make.ship.computer import (
-    Computer,
-    ComputerSection,
-)
+from ceres.make.ship.computer import Computer10, ComputerSection
 from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
 from ceres.make.ship.crew import Astrogator, Engineer, Gunner, Medic, Pilot, ShipCrew
 from ceres.make.ship.drives import DriveSection, FusionPlantTL15, JDrive2, MDrive2, PowerSection
@@ -68,7 +65,7 @@ def build_dolphin_extended_scout_courier() -> ship.Ship:
             fuel_processor=FuelProcessor(tons=2),
         ),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(processing=10), software=[JumpControl(rating=2)]),
+        computer=ComputerSection(hardware=Computer10(), software=[JumpControl(rating=2)]),
         sensors=SensorsSection(primary=MilitarySensors()),
         weapons=WeaponsSection(
             turrets=[

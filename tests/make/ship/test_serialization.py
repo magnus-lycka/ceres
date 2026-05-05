@@ -6,10 +6,7 @@ import pytest
 
 from ceres.make.ship import armour, hull
 from ceres.make.ship.bridge import Cockpit, CommandSection
-from ceres.make.ship.computer import (
-    Computer,
-    ComputerSection,
-)
+from ceres.make.ship.computer import Computer5, Computer20, Computer25, ComputerSection, _Computer
 from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection
 from ceres.make.ship.hull import BasicStealth, Hull
@@ -39,7 +36,7 @@ ultralight = Ship(
     power=PowerSection(fusion_plant=FusionPlantTL12(output=8)),
     fuel=FuelSection(operation_fuel=OperationFuel(weeks=1)),
     command=CommandSection(cockpit=Cockpit(holographic=True)),
-    computer=ComputerSection(hardware=Computer(processing=5)),
+    computer=ComputerSection(hardware=Computer5()),
     sensors=SensorsSection(primary=CivilianSensors()),
     craft=CraftSection(internal_housing=[InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft'))]),
     weapons=WeaponsSection(
@@ -227,12 +224,12 @@ def test_roundtrip_backup_computer():
         tl=13,
         displacement=100,
         hull=Hull(configuration=hull.standard_hull),
-        computer=ComputerSection(hardware=Computer(processing=25), backup_hardware=Computer(processing=20, fib=True)),
+        computer=ComputerSection(hardware=Computer25(), backup_hardware=Computer20(fib=True)),
     )
     loaded = _roundtrip(ship_with_backup)
     assert loaded.computer is not None
     assert loaded.computer.backup_hardware is not None
-    assert isinstance(loaded.computer.backup_hardware, Computer)
+    assert isinstance(loaded.computer.backup_hardware, _Computer)
     assert loaded.computer.backup_hardware.processing == 20
     assert loaded.computer.backup_hardware.fib is True
 

@@ -37,12 +37,12 @@ class JumpControl(RatedSoftwarePackage):
     }
 
     def validate_on_computer(self, computer: ComputerPart) -> None:
-        from .computer import ComputerBase, Core  # local import to avoid circular dependency
+        from .computer import ComputerBase, _Core  # local import to avoid circular dependency
 
         if computer.assembly.tl < self.tl:
             self.error(f'{self.description} requires TL{self.tl}')
             return
-        if isinstance(computer, Core):
+        if isinstance(computer, _Core):
             self._effective_rating = self.rating
             return
         jcp = computer.jump_control_processing if isinstance(computer, ComputerBase) else computer.processing

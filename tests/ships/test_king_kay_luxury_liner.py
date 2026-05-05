@@ -35,10 +35,7 @@ import pytest
 
 from ceres.make.ship import hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
-from ceres.make.ship.computer import (
-    Computer,
-    ComputerSection,
-)
+from ceres.make.ship.computer import Computer5, Computer10, ComputerSection
 from ceres.make.ship.crafts import CraftSection, EmptyOccupant, InternalDockingSpace
 from ceres.make.ship.crew import (
     Administrator,
@@ -87,8 +84,8 @@ def build_king_kay() -> ship.Ship:
         ),
         command=CommandSection(bridge=Bridge(holographic=True)),
         computer=ComputerSection(
-            hardware=Computer(processing=10),
-            backup_hardware=Computer(processing=5, bis=True),
+            hardware=Computer10(),
+            backup_hardware=Computer5(bis=True),
             software=[JumpControl(rating=2)],
         ),
         sensors=SensorsSection(primary=CivilianSensors()),

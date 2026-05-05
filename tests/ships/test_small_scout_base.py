@@ -39,10 +39,7 @@ import pytest
 
 from ceres.make.ship import hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
-from ceres.make.ship.computer import (
-    Computer,
-    ComputerSection,
-)
+from ceres.make.ship.computer import Computer20, ComputerSection
 from ceres.make.ship.crafts import CraftSection, FullHangar, InternalDockingSpace, SpaceCraft, Vehicle
 from ceres.make.ship.crew import (
     Administrator,
@@ -109,7 +106,7 @@ def build_small_scout_base() -> ship.Ship:
             fuel_processor=FuelProcessor(tons=5),
         ),
         command=CommandSection(bridge=Bridge(small=True)),
-        computer=ComputerSection(hardware=Computer(processing=20)),
+        computer=ComputerSection(hardware=Computer20()),
         sensors=SensorsSection(primary=BasicSensors()),
         weapons=WeaponsSection(
             turrets=[

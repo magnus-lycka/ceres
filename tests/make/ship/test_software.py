@@ -2,9 +2,11 @@ import pytest
 
 from ceres.make.ship.base import ShipBase
 from ceres.make.ship.computer import (
-    Computer,
+    Computer5,
+    Computer10,
+    Computer35,
     ComputerSection,
-    Core,
+    Core40,
 )
 from ceres.make.ship.software import (
     AdvancedFireControl,
@@ -152,7 +154,7 @@ def test_jump_control_rejects_invalid_rating():
 
 def test_jump_control_2_degrades_on_computer_5():
     jc = JumpControl(rating=2)
-    c = Computer(processing=5)
+    c = Computer5()
     c.bind(DummyOwner(12, 100))
     jc.validate_on_computer(c)
     assert jc.effective_rating == 1
@@ -161,7 +163,7 @@ def test_jump_control_2_degrades_on_computer_5():
 
 def test_jump_control_2_runs_at_full_rating_on_computer_5_bis():
     jc = JumpControl(rating=2)
-    c = Computer(processing=5, bis=True)
+    c = Computer5(bis=True)
     c.bind(DummyOwner(12, 100))
     jc.validate_on_computer(c)
     assert jc.effective_rating == 2
@@ -169,7 +171,7 @@ def test_jump_control_2_runs_at_full_rating_on_computer_5_bis():
 
 
 def test_software_packages_keep_highest_singleton_rank():
-    hardware = Computer(processing=5, bis=True)
+    hardware = Computer5(bis=True)
     hardware.bind(DummyOwner(12, 100))
     section = ComputerSection(hardware=hardware, software=[JumpControl(rating=2), JumpControl(rating=3)])
 
@@ -185,7 +187,7 @@ def test_software_packages_keep_highest_singleton_rank():
 
 
 def test_software_packages_warn_about_redundant_lower_singleton():
-    hardware = Computer(processing=5, bis=True)
+    hardware = Computer5(bis=True)
     hardware.bind(DummyOwner(12, 100))
     section = ComputerSection(hardware=hardware, software=[JumpControl(rating=2), JumpControl(rating=3)])
 
@@ -197,7 +199,7 @@ def test_software_packages_warn_about_redundant_lower_singleton():
 
 
 def test_software_singleton_lookup_uses_family_types():
-    hardware = Computer(processing=10)
+    hardware = Computer10()
     hardware.bind(DummyOwner(12, 100))
     section = ComputerSection(
         hardware=hardware,
@@ -220,7 +222,7 @@ def test_software_singleton_lookup_uses_family_types():
 
 
 def test_software_singleton_lookup_uses_new_software_families():
-    hardware = Computer(processing=35)
+    hardware = Computer35()
     hardware.bind(DummyOwner(15, 100))
     section = ComputerSection(
         hardware=hardware,
@@ -258,7 +260,7 @@ def test_validate_software_warns_when_ship_has_no_hardware():
 
 
 def test_validate_software_adds_tl_error():
-    hardware = Computer(processing=5, bis=True)
+    hardware = Computer5(bis=True)
     hardware.bind(DummyOwner(10, 100))
     section = ComputerSection(hardware=hardware, software=[JumpControl(rating=2)])
 
@@ -271,7 +273,7 @@ def test_validate_software_adds_tl_error():
 
 
 def test_jump_control_degrades_when_processing_insufficient():
-    hardware = Computer(processing=5)
+    hardware = Computer5()
     hardware.bind(DummyOwner(12, 100))
     section = ComputerSection(hardware=hardware, software=[JumpControl(rating=2)])
 
@@ -287,7 +289,7 @@ def test_jump_control_degrades_when_processing_insufficient():
 
 def test_jump_control_runs_at_full_on_core():
     jc = JumpControl(rating=6)
-    c = Core(processing=40)
+    c = Core40()
     c.bind(DummyOwner(15, 100))
     jc.validate_on_computer(c)
     assert jc.effective_rating == 6

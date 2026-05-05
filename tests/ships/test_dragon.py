@@ -32,10 +32,7 @@ import pytest
 
 from ceres.make.ship import armour, hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
-from ceres.make.ship.computer import (
-    Computer,
-    ComputerSection,
-)
+from ceres.make.ship.computer import Computer20, Computer25, ComputerSection
 from ceres.make.ship.crew import (
     Astrogator,
     Captain,
@@ -109,8 +106,8 @@ def build_dragon() -> ship.Ship:
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=16, armoured_bulkhead=True)),
         command=CommandSection(bridge=Bridge(holographic=True, armoured_bulkhead=True)),
         computer=ComputerSection(
-            hardware=Computer(processing=25, fib=True),
-            backup_hardware=Computer(processing=20, fib=True),
+            hardware=Computer25(fib=True),
+            backup_hardware=Computer20(fib=True),
             software=[AutoRepair(rating=1), FireControl(rating=2), Evade(rating=1)],
         ),
         sensors=SensorsSection(

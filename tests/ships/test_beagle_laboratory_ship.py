@@ -28,10 +28,7 @@ import pytest
 from ceres.gear.software import Expert
 from ceres.make.ship import hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
-from ceres.make.ship.computer import (
-    Computer,
-    ComputerSection,
-)
+from ceres.make.ship.computer import Computer10, ComputerSection
 from ceres.make.ship.crafts import CraftSection, DockingClamp, InternalDockingSpace, SpaceCraft, Vehicle
 from ceres.make.ship.crew import (
     Astrogator,
@@ -95,7 +92,7 @@ def build_beagle_laboratory_ship() -> ship.Ship:
         ),
         command=CommandSection(bridge=Bridge(small=True, holographic=True)),
         computer=ComputerSection(
-            hardware=Computer(processing=10),
+            hardware=Computer10(),
             software=[JumpControl(rating=2), Expert(rating=3, skill='Space Sciences (Planetology)')],
         ),
         sensors=SensorsSection(primary=ImprovedSensors(), sensor_stations=SensorStations(count=1)),

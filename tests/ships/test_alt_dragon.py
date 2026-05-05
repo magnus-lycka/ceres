@@ -38,11 +38,7 @@ import pytest
 
 from ceres.make.ship import armour, hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
-from ceres.make.ship.computer import (
-    Computer,
-    ComputerSection,
-    Core,
-)
+from ceres.make.ship.computer import Computer20, ComputerSection, Core40
 from ceres.make.ship.crew import (
     Captain,
     Engineer,
@@ -132,8 +128,8 @@ def build_alt_dragon() -> ship.Ship:
         ),
         command=CommandSection(bridge=Bridge(holographic=True, armoured_bulkhead=True)),
         computer=ComputerSection(
-            hardware=Core(processing=40, fib=True),
-            backup_hardware=Computer(processing=20, fib=True),
+            hardware=Core40(fib=True),
+            backup_hardware=Computer20(fib=True),
             software=[AutoRepair(rating=1), FireControl(rating=2), Evade(rating=1)],
         ),
         sensors=SensorsSection(

@@ -3,10 +3,7 @@ import pytest
 from ceres.make.ship import hull, ship
 from ceres.make.ship.base import ShipBase
 from ceres.make.ship.bridge import Bridge, CommandSection
-from ceres.make.ship.computer import (
-    Computer,
-    ComputerSection,
-)
+from ceres.make.ship.computer import Computer5, Computer20, ComputerSection
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive1, PowerSection
 from ceres.make.ship.parts import Advanced, EnergyEfficient, HighTechnology, SizeReduction, VeryAdvanced
 from ceres.make.ship.weapons import (
@@ -283,7 +280,7 @@ def test_reused_weapon_and_turret_references_render_like_distinct_identical_obje
         drives=DriveSection(m_drive=MDrive1()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=50)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(processing=20)),
+        computer=ComputerSection(hardware=Computer20()),
         weapons=WeaponsSection(turrets=[turret, turret]),
     )
 
@@ -759,14 +756,14 @@ def test_gauss_point_defense_battery_notes_include_ammunition_requirement():
 def test_grouped_parts_with_same_note_show_note_once(tmp_path):
     from ceres.make.ship import hull, ship
     from ceres.make.ship.bridge import Bridge, CommandSection
-    from ceres.make.ship.computer import Computer, ComputerSection
+    from ceres.make.ship.computer import ComputerSection
 
     my_ship = ship.Ship(
         tl=13,
         displacement=400,
         hull=hull.Hull(configuration=hull.standard_hull),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(processing=5)),
+        computer=ComputerSection(hardware=Computer5()),
         weapons=WeaponsSection(
             barbettes=[
                 Barbette(weapon='particle', armoured_bulkhead=True),
@@ -788,7 +785,7 @@ def test_point_defense_battery_appears_in_weapon_spec_rows():
         displacement=400,
         hull=hull.Hull(configuration=hull.standard_hull),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(processing=5)),
+        computer=ComputerSection(hardware=Computer5()),
         weapons=WeaponsSection(point_defense_batteries=[PointDefenseBattery(kind='laser', rating=2)]),
     )
     spec = my_ship.build_spec()

@@ -3,10 +3,7 @@ import pytest
 from ceres.make.ship import hull, ship
 from ceres.make.ship.base import ShipBase
 from ceres.make.ship.bridge import Bridge, CommandSection
-from ceres.make.ship.computer import (
-    Computer,
-    ComputerSection,
-)
+from ceres.make.ship.computer import Computer5, ComputerSection
 from ceres.make.ship.crew import Pilot, ShipCrew
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive1, PowerSection
 from ceres.make.ship.habitation import (
@@ -210,7 +207,7 @@ def test_habitation_explicit_passenger_vector_overrides_default():
         drives=DriveSection(j_drive=JDrive1()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=10)),
         command=CommandSection(bridge=Bridge()),
-        computer=ComputerSection(hardware=Computer(processing=5)),
+        computer=ComputerSection(hardware=Computer5()),
         habitation=HabitationSection(staterooms=[Stateroom()] * 4),
         passenger_vector={'high': 1},
     )
