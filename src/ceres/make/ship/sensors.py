@@ -90,7 +90,8 @@ class SensorPackage(ShipPart):
 
     def bind(self, assembly: ShipBase) -> None:
         super().bind(assembly)
-        retained_notes = NoteList(self.notes).problems
+        retained_notes = self.notes.problems
+        # Sensor notes depend on assembly TL, so frozen ship-part notes are rebuilt after binding.
         object.__setattr__(self, 'notes', NoteList())
         if message := self.build_item():
             self.item(message)

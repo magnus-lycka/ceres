@@ -169,12 +169,8 @@ def test_beagle_laboratory_ship_matches_supported_slice():
     assert ship_.available_power == pytest.approx(195.0)
     assert ship_.total_power_load == pytest.approx(207.0)
     assert ship_.remaining_usable_tonnage() == pytest.approx(0.1)
-    assert ('error', 'Hull overloaded by 1.90 tons') not in [
-        (note.category.value, note.message) for note in ship_.notes
-    ]
-    assert ('warning', 'Capacity 12.00 less than max use') not in [
-        (note.category.value, note.message) for note in ship_.notes
-    ]
+    assert 'Hull overloaded by 1.90 tons' not in ship_.notes.errors
+    assert 'Capacity 12.00 less than max use' not in ship_.notes.warnings
 
     assert ship_.fuel is not None
     assert ship_.fuel.jump_fuel is not None
@@ -193,7 +189,7 @@ def test_beagle_laboratory_ship_matches_supported_slice():
     assert ship_.computer is not None
     assert ship_.computer.hardware is not None
     assert ship_.computer.hardware.cost == pytest.approx(160_000.0)
-    assert [(package.description, package.cost) for package in ship_.computer.software_packages.values()] == [
+    assert [(package.description, package.cost) for package in ship_.computer.software_packages] == [
         ('Library', 0.0),
         ('Manoeuvre/0', 0.0),
         ('Intellect', 0.0),
@@ -285,21 +281,12 @@ def test_beagle_laboratory_ship_matches_supported_slice():
         ('MEDIC', 1),
         ('OFFICER', 10),
     ]
-    assert ('warning', 'ENGINEER below recommended count: 1 < 2') in [
-        (note.category.value, note.message) for note in ship_.crew.notes
-    ]
-    assert ('info', 'MAINTENANCE above recommended count: 1 > 0') in [
-        (note.category.value, note.message) for note in ship_.crew.notes
-    ]
-    assert ('warning', 'SENSOR OPERATOR below recommended count: 1 < 2') in [
-        (note.category.value, note.message) for note in ship_.crew.notes
-    ]
-    assert ('info', 'OFFICER above recommended count: 10 > 0') in [
-        (note.category.value, note.message) for note in ship_.crew.notes
-    ]
-    assert ('info', 'STEWARD above recommended count: 1 > 0') in [
-        (note.category.value, note.message) for note in ship_.crew.notes
-    ]
+    crew_notes = ship_.crew.notes
+    assert 'ENGINEER below recommended count: 1 < 2' in crew_notes.warnings
+    assert 'MAINTENANCE above recommended count: 1 > 0' in crew_notes.infos
+    assert 'SENSOR OPERATOR below recommended count: 1 < 2' in crew_notes.warnings
+    assert 'OFFICER above recommended count: 10 > 0' in crew_notes.infos
+    assert 'STEWARD above recommended count: 1 > 0' in crew_notes.infos
 
 
 def test_beagle_laboratory_ship_spec_structure():
@@ -311,9 +298,7 @@ def test_beagle_laboratory_ship_spec_structure():
     assert spec.row('M-Drive 2 (470t)').section == 'Propulsion'
     assert spec.row('Jump 2 (470t)').section == 'Jump'
     assert spec.row('Fusion (TL 12), Power 195').section == 'Power'
-    assert ('warning', 'Capacity 12.00 less than max use') in [
-        (note.category.value, note.message) for note in spec.row('Fusion (TL 12), Power 195', section='Power').notes
-    ]
+    assert 'Capacity 12.00 less than max use' in spec.row('Fusion (TL 12), Power 195', section='Power').notes.warnings
     assert spec.row('J-2 (470t), 8 weeks of operation').tons == pytest.approx(97.0)
     assert spec.row('Fuel Processor (40 tons/day)').section == 'Fuel'
     assert spec.row('Smaller Holographic Controls').section == 'Command'
@@ -350,7 +335,7 @@ def test_beagle_expert_software_roundtrip():
     loaded = ship.Ship.model_validate_json(ship_.model_dump_json())
     assert loaded.computer is not None
     packages = loaded.computer.software_packages
-    expert = next((p for p in packages.values() if isinstance(p, Expert)), None)
+    expert = next((p for p in packages if isinstance(p, Expert)), None)
     assert expert is not None
     assert expert.rating == 3
     assert expert.skill == 'Space Science (Planetology)'

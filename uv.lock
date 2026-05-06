@@ -23,6 +23,7 @@ source = { editable = "." }
 dependencies = [
     { name = "jinja2" },
     { name = "pydantic" },
+    { name = "pydantic-core" },
     { name = "typst" },
 ]
 
@@ -37,6 +38,7 @@ dev = [
 requires-dist = [
     { name = "jinja2", specifier = ">=3.1" },
     { name = "pydantic", specifier = ">=2.12.5" },
+    { name = "pydantic-core", specifier = ">=2.41.5" },
     { name = "typst", specifier = ">=0.14.8" },
 ]
 

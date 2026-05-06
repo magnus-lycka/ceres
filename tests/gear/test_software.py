@@ -97,9 +97,7 @@ def test_expert_unknown_skill_uses_csc_fallback_and_warns():
     assert package.bandwidth == 1
     assert package.tl == 11
     assert package.cost == 1_000.0
-    assert ('warning', 'Unfamiliar Expert skill Cementology uses CSC fallback values') in [
-        (note.category.value, note.message) for note in package.notes
-    ]
+    assert 'Unfamiliar Expert skill Cementology uses CSC fallback values' in package.notes.warnings
 
 
 def test_expert_tactics_any_falls_back_like_unknown_skill():
@@ -109,9 +107,7 @@ def test_expert_tactics_any_falls_back_like_unknown_skill():
     assert tactics_any.bandwidth == cementology.bandwidth
     assert tactics_any.tl == cementology.tl
     assert tactics_any.cost == cementology.cost
-    assert ('warning', 'Unfamiliar Expert skill Tactics (Any) uses CSC fallback values') in [
-        (note.category.value, note.message) for note in tactics_any.notes
-    ]
+    assert 'Unfamiliar Expert skill Tactics (Any) uses CSC fallback values' in tactics_any.notes.warnings
 
 
 def test_expert_language_vilani_uses_known_lookup():

@@ -143,7 +143,7 @@ def test_dolphin_extended_scout_courier_matches_reference_sheet():
     assert dolphin.computer is not None
     assert dolphin.computer.hardware is not None
     assert dolphin.computer.hardware.cost == pytest.approx(160_000.0)
-    assert [(package.description, package.cost) for package in dolphin.computer.software_packages.values()] == [
+    assert [(package.description, package.cost) for package in dolphin.computer.software_packages] == [
         ('Library', 0.0),
         ('Manoeuvre/0', 0.0),
         ('Intellect', 0.0),
@@ -219,9 +219,7 @@ def test_dolphin_extended_scout_courier_matches_reference_sheet():
     assert dolphin.production_cost == pytest.approx(60_460_000.0)
     assert dolphin.sales_price_new == pytest.approx(54_414_000.0)
     assert dolphin.expenses.maintenance == pytest.approx(4_534.0)
-    assert ('warning', 'Capacity 9.00 less than max use') not in [
-        (note.category.value, note.message) for note in dolphin.notes
-    ]
+    assert 'Capacity 9.00 less than max use' not in dolphin.notes.warnings
 
 
 def test_dolphin_extended_scout_courier_spec_structure():
@@ -236,9 +234,7 @@ def test_dolphin_extended_scout_courier_spec_structure():
     assert spec.row('Crystaliron, Armour: 4').section == 'Hull'
     assert spec.row('M-Drive 2').section == 'Propulsion'
     assert spec.row('Jump 2').section == 'Jump'
-    assert ('warning', 'Capacity 9.00 less than max use') in [
-        (note.category.value, note.message) for note in spec.row('Fusion (TL 15), Power 70', section='Power').notes
-    ]
+    assert 'Capacity 9.00 less than max use' in spec.row('Fusion (TL 15), Power 70', section='Power').notes.warnings
     assert spec.row('Fusion (TL 15), Power 70').section == 'Power'
     assert spec.row('J-2, 20 weeks of operation').section == 'Fuel'
     assert spec.row('Fuel Scoops').section == 'Fuel'

@@ -1,4 +1,4 @@
-from typing import Annotated, ClassVar, Literal
+from typing import Annotated, ClassVar, Literal, cast
 
 from pydantic import Field, PrivateAttr
 
@@ -213,53 +213,23 @@ ShipComputer = Annotated[
 
 
 class ComputerSection(CeresModel):
-    hardware: ShipComputer | None = None
+    hardware: ShipComputer
     backup_hardware: ShipComputer | None = None
     software: list[ShipSoftware] = Field(default_factory=list)
-    _software_packages: dict[type[SoftwarePackage], SoftwarePackage] = PrivateAttr(default_factory=dict)
 
     @property
-    def software_packages(self) -> dict[type[SoftwarePackage], SoftwarePackage]:
-        if not self._software_packages:
-            self.refresh_software_packages()
-        return self._software_packages
-
-    def refresh_software_packages(self) -> None:
-        packages: list[SoftwarePackage] = []
-        if self.hardware is not None:
-            packages.extend(package.model_copy(deep=True) for package in self.hardware.included_software)
-        packages.extend(package.model_copy(deep=True) for package in self.software)
-        selected: dict[type[SoftwarePackage], SoftwarePackage] = {}
-        redundant: dict[type[SoftwarePackage], list[str]] = {}
-        for package in packages:
-            key = type(package)
-            current = selected.get(key)
-            if current is None:
-                selected[key] = package
-                continue
-            if getattr(package, 'rating', 0) > getattr(current, 'rating', 0):
-                redundant.setdefault(key, []).append(f'Redundant {current.description} added')
-                selected[key] = package
-                continue
-            redundant.setdefault(key, []).append(f'Redundant {package.description} added')
-        for key, package in selected.items():
-            for message in redundant.get(key, []):
-                package.warning(message)
-        object.__setattr__(self, '_software_packages', selected)
+    def software_packages(self) -> list[SoftwarePackage]:
+        return [*self.hardware.included_software, *self.software]
 
     def validate_software(self) -> None:
-        if self.hardware is None:
-            for package in self.software_packages.values():
-                package.warning('Ship software requires a computer')
-            return
         if self.backup_hardware is not None and self.hardware.processing <= self.backup_hardware.processing:
             self.backup_hardware.error('Backup computer must have lower Processing than primary computer')
-        for package in self.software_packages.values():
+        for package in self.software:
             package.validate_on_computer(self.hardware)
 
     def validate_jump_drive(self, drives) -> None:
-        jump_control = self.software_packages.get(JumpControl)
-        if not isinstance(jump_control, JumpControl):
+        jump_control = next((package for package in self.software_packages if isinstance(package, JumpControl)), None)
+        if jump_control is None:
             return
         effective = jump_control.effective_rating
         if effective is None:
@@ -271,16 +241,13 @@ class ComputerSection(CeresModel):
             jump_control.warning(f'Limited to Jump {drives.j_drive.level} by drive capacity')
 
     def _all_parts(self) -> list[ShipPart]:
-        parts: list[ShipPart] = []
-        if self.hardware is not None:
-            parts.append(self.hardware)  # ty: ignore[invalid-argument-type]
+        parts: list[ShipPart] = [cast(ShipPart, self.hardware)]
         if self.backup_hardware is not None:
-            parts.append(self.backup_hardware)  # ty: ignore[invalid-argument-type]
+            parts.append(cast(ShipPart, self.backup_hardware))
         return parts
 
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
-        if self.hardware is not None:
-            spec.add_row(ship._spec_row_for_part(SpecSection.COMPUTER, self.hardware))
+        spec.add_row(ship._spec_row_for_part(SpecSection.COMPUTER, self.hardware))
         if self.backup_hardware is not None:
             spec.add_row(
                 ship._spec_row_for_part(
@@ -289,7 +256,7 @@ class ComputerSection(CeresModel):
                     item=f'Backup {ship._item_text(self.backup_hardware, self.backup_hardware.description)}',
                 )
             )
-        for package in self.software_packages.values():
+        for package in self.software_packages:
             spec.add_row(
                 SpecRow(
                     section=SpecSection.COMPUTER,

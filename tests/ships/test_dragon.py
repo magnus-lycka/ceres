@@ -31,7 +31,6 @@ Source handling for this test case:
 import pytest
 
 from ceres.make.ship import armour, hull, ship
-from ceres.make.ship.base import NoteList
 from ceres.make.ship.bridge import Bridge, CommandSection
 from ceres.make.ship.computer import Computer20, Computer25, ComputerSection
 from ceres.make.ship.crew import (
@@ -318,7 +317,7 @@ def test_dragon_power_and_crew_for_current_subset():
     ]
     assert dragon.expenses.life_support == pytest.approx(29_000.0)
     assert dragon.expenses.crew_salaries == pytest.approx(75_000.0)
-    crew_infos = NoteList(dragon.crew.notes).infos
+    crew_infos = dragon.crew.notes.infos
     assert 'ASTROGATOR above recommended count: 1 > 0' in crew_infos
     assert 'MAINTENANCE above recommended count: 1 > 0' in crew_infos
     assert 'GUNNER above recommended count: 6 > 5' in crew_infos
@@ -327,4 +326,4 @@ def test_dragon_power_and_crew_for_current_subset():
 def test_armoured_bulkhead_protected_parts_have_individual_notes():
     dragon = build_dragon()
     assert dragon.drives is not None and dragon.drives.m_drive is not None
-    assert 'Armoured bulkhead, see Hull section.' in NoteList(dragon.drives.m_drive.notes).infos
+    assert 'Armoured bulkhead, see Hull section.' in dragon.drives.m_drive.notes.infos

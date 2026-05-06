@@ -38,7 +38,6 @@ Source handling for this test case:
 import pytest
 
 from ceres.make.ship import hull, ship
-from ceres.make.ship.base import NoteList
 from ceres.make.ship.bridge import Bridge, CommandSection
 from ceres.make.ship.computer import Computer20, ComputerSection
 from ceres.make.ship.crafts import CraftSection, FullHangar, InternalDockingSpace, SpaceCraft, Vehicle
@@ -159,7 +158,7 @@ def test_small_scout_base_matches_supported_slice():
     assert base.hull.airlocks is not None
     assert len(base.hull.airlocks) == 24
     assert all(airlock.tons == 0.0 for airlock in base.hull.airlocks)
-    assert 'Installed airlocks below minimum recommendation: 24 < 20' not in NoteList(base.notes).warnings
+    assert 'Installed airlocks below minimum recommendation: 24 < 20' not in base.notes.warnings
 
     assert base.drives is not None
     assert base.drives.m_drive is not None
@@ -189,7 +188,7 @@ def test_small_scout_base_matches_supported_slice():
     assert base.computer is not None
     assert base.computer.hardware is not None
     assert base.computer.hardware.cost == pytest.approx(5_000_000.0)
-    assert [(package.description, package.cost) for package in base.computer.software_packages.values()] == [
+    assert [(package.description, package.cost) for package in base.computer.software_packages] == [
         ('Library', 0.0),
         ('Manoeuvre/0', 0.0),
         ('Intellect', 0.0),
@@ -269,7 +268,7 @@ def test_small_scout_base_matches_supported_slice():
         ('OFFICER', 14),
     ] == [(role.role, quantity) for role, quantity in base.crew.grouped_roles]
 
-    notes = NoteList(base.crew.notes)
+    notes = base.crew.notes
     assert 'ENGINEER below recommended count: 5 < 6' not in notes.warnings
     assert 'GUNNER below recommended count: 4 < 5' not in notes.warnings
     assert 'MEDIC above recommended count: 2 > 0' not in notes.infos
@@ -291,10 +290,10 @@ def test_small_scout_base_spec_structure():
     assert len(beam_turret_rows) == 2
     assert beam_turret_rows[0].quantity == 4
     assert beam_turret_rows[0].cost == pytest.approx(16_000_000.0)
-    assert NoteList(beam_turret_rows[0].notes).contents == ['Beam Laser × 4']
+    assert beam_turret_rows[0].notes.contents == ['Beam Laser × 4']
     assert beam_turret_rows[1].quantity is None
     assert beam_turret_rows[1].cost == pytest.approx(5_000_000.0)
-    assert NoteList(beam_turret_rows[1].notes).contents == ['Missile Rack × 4']
+    assert beam_turret_rows[1].notes.contents == ['Missile Rack × 4']
     assert len(spec.rows_matching('Full Hangar: Passenger Shuttle')) == 10
     assert len(spec.rows_matching('Passenger Shuttle')) == 10
     assert len(spec.rows_matching("Full Hangar: Ship's Boat")) == 2

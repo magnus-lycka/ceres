@@ -2,7 +2,7 @@ from collections.abc import Sequence
 import math
 from typing import Annotated, ClassVar, Literal
 
-from pydantic import Field, TypeAdapter
+from pydantic import Field, TypeAdapter, field_validator
 
 from .base import CeresModel, NoteList
 from .parts import ShipPart
@@ -106,6 +106,7 @@ class AdvancedEntertainmentSystem(ShipPart):
     maximum_cost: ClassVar[float] = 10_000.0
     cost: float
 
+    @field_validator('cost')
     @classmethod
     def validate_cost(cls, value: float) -> float:
         if not (cls.minimum_cost <= value <= cls.maximum_cost):
@@ -120,10 +121,6 @@ class AdvancedEntertainmentSystem(ShipPart):
 
     def compute_tons(self) -> float:
         return 0.0
-
-    def model_post_init(self, __context) -> None:
-        object.__setattr__(self, 'cost', self.validate_cost(self.cost))
-        super().model_post_init(__context)
 
 
 class CabinSpace(ShipPart):
@@ -159,8 +156,8 @@ class HabitationSection(CeresModel):
 
     def model_post_init(self, __context) -> None:
         super().model_post_init(__context)
-        object.__setattr__(self, 'staterooms', [room.model_copy() for room in self.staterooms])
-        object.__setattr__(self, 'low_berths', [berth.model_copy() for berth in self.low_berths])
+        self.staterooms = [room.model_copy() for room in self.staterooms]
+        self.low_berths = [berth.model_copy() for berth in self.low_berths]
 
     def stateroom_count(self) -> int:
         return len(self.staterooms)

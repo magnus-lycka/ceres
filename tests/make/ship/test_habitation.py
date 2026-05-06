@@ -246,9 +246,7 @@ def test_common_area_requirement_counts_common_area_facilities_toward_total():
 
     assert my_ship.habitation is not None
     assert my_ship.habitation.provided_common_area_tons() == pytest.approx(4.0)
-    assert ('warning', 'Recommended common area is 4.00 tons') not in [
-        (note.category.value, note.message) for note in my_ship.habitation.notes
-    ]
+    assert 'Recommended common area is 4.00 tons' not in my_ship.habitation.notes.warnings
 
 
 def test_explicit_middle_passengers_must_fit_in_remaining_non_crew_beds():
@@ -262,9 +260,7 @@ def test_explicit_middle_passengers_must_fit_in_remaining_non_crew_beds():
     )
 
     assert my_ship.habitation is not None
-    assert ('error', 'Middle passage exceeds available non-crew beds: 13 > 12') in [
-        (note.category.value, note.message) for note in my_ship.habitation.notes
-    ]
+    assert 'Middle passage exceeds available non-crew beds: 13 > 12' in my_ship.habitation.notes.errors
 
 
 def test_explicit_low_passengers_must_fit_in_low_berths():
@@ -278,9 +274,7 @@ def test_explicit_low_passengers_must_fit_in_low_berths():
     )
 
     assert my_ship.habitation is not None
-    assert ('error', 'Low passage exceeds available low berths: 5 > 4') in [
-        (note.category.value, note.message) for note in my_ship.habitation.notes
-    ]
+    assert 'Low passage exceeds available low berths: 5 > 4' in my_ship.habitation.notes.errors
 
 
 def test_high_and_middle_passengers_can_exactly_fill_remaining_non_crew_staterooms():
@@ -294,9 +288,7 @@ def test_high_and_middle_passengers_can_exactly_fill_remaining_non_crew_stateroo
     )
 
     assert my_ship.habitation is not None
-    assert [
-        (note.category.value, note.message) for note in my_ship.habitation.notes if note.category.value == 'error'
-    ] == []
+    assert my_ship.habitation.notes.errors == []
 
 
 def test_one_more_high_passenger_than_capacity_errors():
@@ -310,9 +302,7 @@ def test_one_more_high_passenger_than_capacity_errors():
     )
 
     assert my_ship.habitation is not None
-    assert ('error', 'High passage exceeds available non-crew staterooms: 7 > 6') in [
-        (note.category.value, note.message) for note in my_ship.habitation.notes
-    ]
+    assert 'High passage exceeds available non-crew staterooms: 7 > 6' in my_ship.habitation.notes.errors
 
 
 def test_one_more_middle_passenger_than_capacity_errors():
@@ -326,9 +316,7 @@ def test_one_more_middle_passenger_than_capacity_errors():
     )
 
     assert my_ship.habitation is not None
-    assert ('error', 'Middle passage exceeds available non-crew beds: 5 > 4') in [
-        (note.category.value, note.message) for note in my_ship.habitation.notes
-    ]
+    assert 'Middle passage exceeds available non-crew beds: 5 > 4' in my_ship.habitation.notes.errors
 
 
 def test_three_crew_three_middle_three_high_fit_in_seven_staterooms():
@@ -342,9 +330,7 @@ def test_three_crew_three_middle_three_high_fit_in_seven_staterooms():
     )
 
     assert my_ship.habitation is not None
-    assert [
-        (note.category.value, note.message) for note in my_ship.habitation.notes if note.category.value == 'error'
-    ] == []
+    assert my_ship.habitation.notes.errors == []
 
 
 def test_one_more_crew_still_fits_in_seven_stateroom_case():
@@ -358,9 +344,7 @@ def test_one_more_crew_still_fits_in_seven_stateroom_case():
     )
 
     assert my_ship.habitation is not None
-    assert [
-        (note.category.value, note.message) for note in my_ship.habitation.notes if note.category.value == 'error'
-    ] == []
+    assert my_ship.habitation.notes.errors == []
 
 
 def test_one_more_middle_still_fits_in_seven_stateroom_case():
@@ -374,9 +358,7 @@ def test_one_more_middle_still_fits_in_seven_stateroom_case():
     )
 
     assert my_ship.habitation is not None
-    assert [
-        (note.category.value, note.message) for note in my_ship.habitation.notes if note.category.value == 'error'
-    ] == []
+    assert my_ship.habitation.notes.errors == []
 
 
 def test_one_more_high_does_not_fit_even_with_spare_beds():
@@ -390,6 +372,4 @@ def test_one_more_high_does_not_fit_even_with_spare_beds():
     )
 
     assert my_ship.habitation is not None
-    assert ('error', 'Middle passage exceeds available non-crew beds: 3 > 2') in [
-        (note.category.value, note.message) for note in my_ship.habitation.notes
-    ]
+    assert 'Middle passage exceeds available non-crew beds: 3 > 2' in my_ship.habitation.notes.errors

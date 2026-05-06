@@ -113,13 +113,12 @@ def test_fmt_tons_formats_nine_million():
 
 
 def test_source_contains_info_notes(suleiman_spec):
-    info_rows = [r for r in suleiman_spec.rows if any(n.category.value == 'info' for n in r.notes)]
+    info_rows = [r for r in suleiman_spec.rows if r.notes.infos]
     assert info_rows, 'precondition: Suleiman has info notes'
     src = render_ship_spec_typst(suleiman_spec)
     for row in info_rows:
-        for note in row.notes:
-            if note.category.value == 'info':
-                assert note.message in src
+        for message in row.notes.infos:
+            assert message in src
 
 
 def test_info_notes_use_gentle_clues_info_box(suleiman_spec):
@@ -210,9 +209,8 @@ def test_source_contains_dragon_bulkhead_notes():
     assert bulkhead_rows, 'precondition: Dragon has armoured bulkhead row'
     src = render_ship_spec_typst(spec)
     for row in bulkhead_rows:
-        for note in row.notes:
-            if note.category.value != 'item':
-                assert note.message[:20] in src
+        for note in row.notes.details:
+            assert note.message[:20] in src
 
 
 def test_source_uses_guard_column_for_sections(suleiman_spec):

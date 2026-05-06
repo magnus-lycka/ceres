@@ -2,7 +2,6 @@ import pytest
 
 from ceres.make.ship import hull, ship
 from ceres.make.ship.armour import BondedSuperdenseArmour
-from ceres.make.ship.base import NoteList
 from ceres.make.ship.bridge import Bridge, CommandSection
 from ceres.make.ship.computer import Computer30, ComputerSection
 from ceres.make.ship.drives import (
@@ -165,7 +164,7 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
     assert corvette.computer is not None
     assert corvette.computer.hardware is not None
     assert corvette.computer.hardware.cost == pytest.approx(20_000_000.0)
-    software_packages = {package.description: package.cost for package in corvette.computer.software_packages.values()}
+    software_packages = {package.description: package.cost for package in corvette.computer.software_packages}
     assert software_packages == {
         'Library': 0.0,
         'Manoeuvre/0': 0.0,
@@ -248,7 +247,7 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
     spec = corvette.build_spec()
     turret_row = spec.row('Triple Turret', section='Weapons')
     assert turret_row.quantity == 2
-    notes = NoteList(turret_row.notes)
+    notes = turret_row.notes
     assert notes.contents == ['Pulse Laser × 3']
     assert notes.infos == ['High Technology: Long Range, High Yield']
 
@@ -263,4 +262,4 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
         ('OFFICER', 2),
     ]
 
-    assert not any(message.startswith('Hull overloaded by ') for message in NoteList(corvette.notes).errors)
+    assert not any(message.startswith('Hull overloaded by ') for message in corvette.notes.errors)

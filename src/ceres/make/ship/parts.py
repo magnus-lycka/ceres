@@ -115,6 +115,12 @@ class Customisation(CeresModel):
                 f'{self._display_name} not required: ship TL{part.assembly_tl} exceeds required TL{available_tl}'
             )
 
+    @classmethod
+    def model_validate_json(cls, json_data: str | bytes | bytearray, **kwargs: Any):
+        if cls is Customisation:
+            return _customisation_adapter.validate_json(json_data, **kwargs)
+        return super().model_validate_json(json_data, **kwargs)
+
 
 class EarlyPrototype(Customisation):
     grade: Literal[CustomisationGrade.EARLY_PROTOTYPE] = CustomisationGrade.EARLY_PROTOTYPE
@@ -184,13 +190,6 @@ CustomisationUnion = Annotated[
 _customisation_adapter: TypeAdapter[CustomisationUnion] = TypeAdapter(CustomisationUnion)
 
 
-def _customisation_model_validate_json(cls, data, **kwargs):
-    return _customisation_adapter.validate_json(data, **kwargs)
-
-
-Customisation.model_validate_json = classmethod(_customisation_model_validate_json)  # type: ignore
-
-
 class ShipPartMixin(ABC):
     """Pure-Python ABC mixin for parts installable in a ship.
 
@@ -207,13 +206,17 @@ class ShipPartMixin(ABC):
     tons: float
     power: float
     armoured_bulkhead: bool
+    cost: float
+    tl: int
+    notes: NoteList
+    _armoured_bulkhead_part: ShipPart | None
 
     # ------------------------------------------------------------------
     # Default compute methods — subclasses override to provide derived values
     # ------------------------------------------------------------------
 
     def compute_cost(self) -> float:
-        return self.cost  # type: ignore
+        return self.cost
 
     def compute_power(self) -> float:
         return self.power
@@ -227,6 +230,7 @@ class ShipPartMixin(ABC):
         if compute_method is base_method:
             return
         value = getattr(self, compute_method_name)()
+        # Ship parts are frozen, but assembly-dependent values are finalized when the part is bound.
         object.__setattr__(self, field_name, value)
 
     def refresh_derived_values(self) -> None:
@@ -242,28 +246,37 @@ class ShipPartMixin(ABC):
         self._assembly = assembly
         self.check_tl()
         self.refresh_derived_values()
-        if message := self.build_item():  # type: ignore
-            self.item(message)  # type: ignore
+        if message := self.build_item():
+            self.item(message)
         self._refresh_armoured_bulkhead(assembly)
 
     @property
     @abstractmethod
     def assembly(self) -> ShipBase: ...
 
+    @abstractmethod
+    def build_item(self) -> str | None: ...
+
+    @abstractmethod
+    def item(self, message: str) -> None: ...
+
+    @abstractmethod
+    def error(self, message: str) -> None: ...
+
     @property
     def assembly_tl(self) -> int:
         return self.assembly.tl
 
     def check_tl(self) -> None:
-        if self.assembly_tl < self.tl:  # type: ignore
-            self.error(f'Requires TL{self.tl}, ship is TL{self.assembly_tl}')  # type: ignore
+        if self.assembly_tl < self.tl:
+            self.error(f'Requires TL{self.tl}, ship is TL{self.assembly_tl}')
 
     # ------------------------------------------------------------------
     # Armoured bulkhead support
     # ------------------------------------------------------------------
 
     def bulkhead_label(self) -> str:
-        return self.build_item() or self.__class__.__name__  # type: ignore
+        return self.build_item() or self.__class__.__name__
 
     def bulkhead_protected_tonnage(self) -> float:
         return self.tons
@@ -292,7 +305,7 @@ class ShipPartMixin(ABC):
 
     @property
     def group_key(self) -> str:
-        return NoteList(getattr(self, 'notes', [])).item_message or self.__class__.__name__
+        return self.notes.item_message or self.__class__.__name__
 
 
 class ShipPart(CeresPart, ShipPartMixin):

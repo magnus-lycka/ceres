@@ -206,10 +206,10 @@ class Ship(ShipBase):
         return [part for part in self._all_parts() if isinstance(part, part_cls)]
 
     def _item_text(self, obj, fallback: str) -> str:
-        return NoteList(obj.notes).item_message or fallback
+        return obj.notes.item_message or fallback
 
     def _display_notes(self, obj) -> NoteList:
-        return NoteList(obj.notes).details
+        return obj.notes.details
 
     def _spec_row_for_part(
         self,
@@ -303,7 +303,7 @@ class Ship(ShipBase):
             self.systems.add_spec_rows(self, spec)
         CargoSection.add_spec_rows_for_ship(self, spec)
 
-        spec.crew_notes = NoteList(self.crew.notes).advisories
+        spec.crew_notes = self.crew.notes.advisories
         spec.ship_notes = self._display_notes(self)
 
         spec.expenses = self.expenses.rows
@@ -319,6 +319,7 @@ class Ship(ShipBase):
         super().model_post_init(__context)
         if self.tl > 16:
             raise ValueError(f'Ceres currently supports TL16 and lower, got TL{self.tl}')
+        # These defaults must be inserted before binding parts; normal assignment would revalidate nested frozen parts.
         if not self.hull.airlocks and self.displacement >= 100:
             minimum_airlocks = ceil(self.displacement / 500)
             object.__setattr__(
@@ -338,13 +339,12 @@ class Ship(ShipBase):
             self.habitation.validate_common_area()
             self.habitation.validate_passenger_capacity(self)
         if self.computer is not None:
-            self.computer.refresh_software_packages()
             self.computer.validate_software()
             self.computer.validate_jump_drive(self.drives)
         if self.drives is not None:
-            software_packages: dict[type[SoftwarePackage], SoftwarePackage]
+            software_packages: list[SoftwarePackage]
             if self.computer is None:
-                software_packages = {}
+                software_packages = []
             else:
                 software_packages = self.computer.software_packages
             self.drives.validate_jump_control(software_packages)

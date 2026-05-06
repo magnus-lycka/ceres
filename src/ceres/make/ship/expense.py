@@ -17,7 +17,7 @@ class ShipExpenses:
         cargo_hold_cost = sum(cargo_hold.crane_cost(self.ship) for cargo_hold in cargo_holds)
         software_cost = 0.0
         if self.ship.computer is not None:
-            software_cost = sum(package.cost for package in self.ship.computer.software_packages.values())
+            software_cost = sum(package.cost for package in self.ship.computer.software_packages)
         return (
             self.ship.hull_cost
             + self.ship.hull.radiation_shielding_cost(self.ship.displacement)

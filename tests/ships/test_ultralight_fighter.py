@@ -1,7 +1,6 @@
 import pytest
 
 from ceres.make.ship import armour, hull, ship
-from ceres.make.ship.base import NoteList
 from ceres.make.ship.bridge import Cockpit, CommandSection
 from ceres.make.ship.computer import Computer5, ComputerSection
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection
@@ -116,5 +115,5 @@ def test_ultralight_fighter_pulse_laser_has_customisation_note():
     fighter = build_ultralight_fighter()
     assert fighter.weapons is not None
     mount = fighter.weapons.fixed_mounts[0]
-    note_messages = NoteList(mount.notes).infos
+    note_messages = mount.notes.infos
     assert 'High Technology: Very High Yield, Energy Efficient' in note_messages

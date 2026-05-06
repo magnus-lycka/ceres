@@ -1,7 +1,7 @@
 import pytest
 
 from ceres.make.ship import hull, ship
-from ceres.make.ship.base import NoteList, ShipBase
+from ceres.make.ship.base import ShipBase
 from ceres.make.ship.sensors import (
     AdvancedSensors,
     BasicSensors,
@@ -32,7 +32,7 @@ def test_basic_sensors_have_zero_tons_cost_and_power():
 def test_basic_sensors_notes_describe_suite_and_dm():
     s = BasicSensors()
     s.bind(DummyOwner(12, 100))
-    notes = NoteList(s.notes)
+    notes = s.notes
     assert notes.items == ['Basic Sensors']
     assert notes.contents == ['Passive optical and thermal sensors, Radar, Lidar']
     assert notes.infos == ['DM -4 to Electronics (comms) and Electronics (sensors) checks']
@@ -61,7 +61,7 @@ def test_civilian_grade_power():
 def test_civilian_grade_notes_describe_suite_and_dm():
     s = CivilianSensors()
     s.bind(DummyOwner(12, 6))
-    notes = NoteList(s.notes)
+    notes = s.notes
     assert notes.items == ['Civilian Grade Sensors']
     assert notes.contents == ['Passive optical and thermal sensors, Radar, Lidar']
     assert notes.infos == ['DM -2 to Electronics (comms) and Electronics (sensors) checks']
@@ -70,7 +70,7 @@ def test_civilian_grade_notes_describe_suite_and_dm():
 def test_military_grade_notes_describe_suite_and_dm():
     s = MilitarySensors()
     s.bind(DummyOwner(12, 100))
-    notes = NoteList(s.notes)
+    notes = s.notes
     assert notes.items == ['Military Grade Sensors']
     assert notes.contents == ['Passive optical and thermal sensors, Radar, Lidar, Jammers, EMCON']
     assert notes.infos == ['DM +0 to Electronics (comms) and Electronics (sensors) checks']
@@ -79,7 +79,7 @@ def test_military_grade_notes_describe_suite_and_dm():
 def test_improved_sensors_at_tl13_include_expected_features():
     s = ImprovedSensors()
     s.bind(DummyOwner(13, 100))
-    notes = NoteList(s.notes)
+    notes = s.notes
     assert notes.items == ['Improved Sensors']
     assert notes.contents == ['Passive optical and thermal sensors, Radar, Lidar, Densitometer, Jammers, EMCON']
     assert notes.infos == ['DM +1 to Electronics (comms) and Electronics (sensors) checks']
@@ -88,21 +88,19 @@ def test_improved_sensors_at_tl13_include_expected_features():
 def test_basic_sensors_at_tl8_have_no_lpi_or_elpi():
     s = BasicSensors()
     s.bind(DummyOwner(8, 100))
-    assert 'Passive optical and thermal sensors, Radar, Lidar' in NoteList(s.notes).contents
+    assert 'Passive optical and thermal sensors, Radar, Lidar' in s.notes.contents
 
 
 def test_improved_sensors_at_tl12_do_not_upgrade_densitometer_by_default():
     s = ImprovedSensors()
     s.bind(DummyOwner(12, 100))
-    assert (
-        'Passive optical and thermal sensors, Radar, Lidar, Densitometer, Jammers, EMCON' in NoteList(s.notes).contents
-    )
+    assert 'Passive optical and thermal sensors, Radar, Lidar, Densitometer, Jammers, EMCON' in s.notes.contents
 
 
 def test_advanced_sensors_include_neural_activity_sensor_and_extreme_emissions_control():
     s = AdvancedSensors()
     s.bind(DummyOwner(15, 100))
-    notes = NoteList(s.notes)
+    notes = s.notes
     assert notes.items == ['Advanced Sensors']
     assert notes.contents == [
         'Passive optical and thermal sensors, Radar, Lidar, '
@@ -116,7 +114,7 @@ def test_basic_sensors_lpi_double_cost_and_note():
     s = BasicSensors(low_intercept='LPI')
     s.bind(DummyOwner(9, 100))
     assert s.cost == 0
-    notes = NoteList(s.notes)
+    notes = s.notes
     assert 'Passive optical and thermal sensors, Radar (LPI), Lidar (LPI)' in notes.contents
     assert 'DM -1 to detect the ship by sensor emissions while using low-intercept mode' in notes.infos
 
@@ -131,7 +129,7 @@ def test_civilian_sensors_elpi_double_cost_and_note():
     s = CivilianSensors(low_intercept='ELPI')
     s.bind(DummyOwner(10, 100))
     assert s.cost == 6_000_000
-    notes = NoteList(s.notes)
+    notes = s.notes
     assert 'Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI)' in notes.contents
     assert 'DM -3 to detect the ship by sensor emissions while using low-intercept mode' in notes.infos
 
@@ -139,13 +137,13 @@ def test_civilian_sensors_elpi_double_cost_and_note():
 def test_basic_sensors_lpi_tl_too_low():
     s = BasicSensors(low_intercept='LPI')
     s.bind(DummyOwner(8, 100))
-    assert 'LPI requires TL9 for installed radar/lidar' in NoteList(s.notes).errors
+    assert 'LPI requires TL9 for installed radar/lidar' in s.notes.errors
 
 
 def test_basic_sensors_elpi_tl_too_low():
     s = BasicSensors(low_intercept='ELPI')
     s.bind(DummyOwner(9, 100))
-    assert 'ELPI requires TL10 for installed radar/lidar' in NoteList(s.notes).errors
+    assert 'ELPI requires TL10 for installed radar/lidar' in s.notes.errors
 
 
 def test_improved_sensors_lpi_upgrade_radar_lidar_and_densitometer_when_available():
@@ -153,17 +151,15 @@ def test_improved_sensors_lpi_upgrade_radar_lidar_and_densitometer_when_availabl
     s.bind(DummyOwner(13, 100))
     assert (
         'Passive optical and thermal sensors, Radar (LPI), Lidar (LPI), Densitometer (LPI), Jammers, EMCON'
-        in NoteList(s.notes).contents
+        in s.notes.contents
     )
 
 
 def test_improved_sensors_elpi_omits_densitometer_when_unavailable():
     s = ImprovedSensors(low_intercept='ELPI')
     s.bind(DummyOwner(13, 100))
-    assert (
-        'Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI), Jammers, EMCON' in NoteList(s.notes).contents
-    )
-    assert 'Densitometer is unavailable in ELPI mode at TL13' in NoteList(s.notes).infos
+    assert 'Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI), Jammers, EMCON' in s.notes.contents
+    assert 'Densitometer is unavailable in ELPI mode at TL13' in s.notes.infos
 
 
 def test_advanced_sensors_elpi_includes_densitometer_but_not_neural_activity_sensor():
@@ -172,8 +168,8 @@ def test_advanced_sensors_elpi_includes_densitometer_but_not_neural_activity_sen
     assert (
         'Passive optical and thermal sensors, Radar (ELPI), Lidar (ELPI), '
         'Densitometer (ELPI), Jammers, Extreme Emissions Control'
-    ) in NoteList(s.notes).contents
-    assert 'Neural Activity Sensor is unavailable in ELPI mode' in NoteList(s.notes).infos
+    ) in s.notes.contents
+    assert 'Neural Activity Sensor is unavailable in ELPI mode' in s.notes.infos
 
 
 def test_civilian_grade_recomputes_tons_from_input():
@@ -191,7 +187,7 @@ def test_civilian_grade_recomputes_cost_from_input():
 def test_civilian_grade_tl_too_low():
     s = CivilianSensors()
     s.bind(DummyOwner(8, 100))
-    assert 'Requires TL9, ship is TL8' in NoteList(s.notes).errors
+    assert 'Requires TL9, ship is TL8' in s.notes.errors
 
 
 def test_sensor_stations_scale_with_count():
@@ -219,7 +215,7 @@ def test_enhanced_signal_processing_values():
     assert s.tons == 2
     assert s.cost == 8_000_000
     assert s.power == 2
-    assert 'DM +4 to all sensor-related checks' in NoteList(s.notes).infos
+    assert 'DM +4 to all sensor-related checks' in s.notes.infos
 
 
 def test_countermeasures_suite_notes_explain_bonus():
@@ -227,7 +223,7 @@ def test_countermeasures_suite_notes_explain_bonus():
 
     s = CountermeasuresSuite()
     s.bind(DummyOwner(13, 400))
-    assert 'DM +4 to all jamming and electronic warfare attempts' in NoteList(s.notes).infos
+    assert 'DM +4 to all jamming and electronic warfare attempts' in s.notes.infos
 
 
 def test_life_scanner_analysis_suite_notes_explain_capability():
@@ -235,7 +231,7 @@ def test_life_scanner_analysis_suite_notes_explain_capability():
 
     s = LifeScannerAnalysisSuite()
     s.bind(DummyOwner(14, 400))
-    notes = NoteList(s.notes)
+    notes = s.notes
     assert 'Advanced ship-mounted life scanner' in notes.contents
     assert 'Requires Electronics (sensors) to interpret; improves biological analysis' in notes.infos
 

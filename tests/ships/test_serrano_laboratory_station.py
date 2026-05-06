@@ -100,7 +100,7 @@ def test_serrano_laboratory_station_matches_reference_sheet():
     assert station.computer is not None
     assert station.computer.hardware is not None
     assert station.computer.hardware.cost == pytest.approx(160_000.0)
-    assert [(package.description, package.cost) for package in station.computer.software_packages.values()] == [
+    assert [(package.description, package.cost) for package in station.computer.software_packages] == [
         ('Library', 0.0),
         ('Manoeuvre/0', 0.0),
         ('Intellect', 0.0),
@@ -158,18 +158,11 @@ def test_serrano_laboratory_station_matches_reference_sheet():
         ('OFFICER', 1, 5_000),
     ]
 
-    assert ('info', 'ADMINISTRATOR above recommended count: 24 > 0') in [
-        (note.category.value, note.message) for note in station.crew.notes
-    ]
-    assert ('info', 'MAINTENANCE above recommended count: 1 > 0') in [
-        (note.category.value, note.message) for note in station.crew.notes
-    ]
-    assert ('info', 'OFFICER above recommended count: 1 > 0') in [
-        (note.category.value, note.message) for note in station.crew.notes
-    ]
-    assert ('info', 'STEWARD above recommended count: 1 > 0') in [
-        (note.category.value, note.message) for note in station.crew.notes
-    ]
+    crew_infos = station.crew.notes.infos
+    assert 'ADMINISTRATOR above recommended count: 24 > 0' in crew_infos
+    assert 'MAINTENANCE above recommended count: 1 > 0' in crew_infos
+    assert 'OFFICER above recommended count: 1 > 0' in crew_infos
+    assert 'STEWARD above recommended count: 1 > 0' in crew_infos
 
 
 def test_serrano_laboratory_station_spec_structure():

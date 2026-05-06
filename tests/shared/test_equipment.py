@@ -23,7 +23,7 @@ def test_equipment_with_explicit_fields():
 def test_equipment_is_frozen():
     e = Equipment()
     with pytest.raises(Exception):
-        e.tl = 5  # type: ignore[misc]
+        setattr(e, 'tl', 5)
 
 
 def test_equipment_serialises_and_roundtrips():

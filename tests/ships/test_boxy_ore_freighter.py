@@ -42,9 +42,7 @@ def test_boxy_ore_freighter_tl9_mdrive_is_valid():
     freighter = build_boxy_ore_freighter()
     assert freighter.drives is not None
     assert freighter.drives.m_drive is not None
-    assert ('error', 'Requires TL10, ship is TL8') not in [
-        (note.category.value, note.message) for note in freighter.drives.m_drive.notes
-    ]
+    assert 'Requires TL10, ship is TL8' not in freighter.drives.m_drive.notes.errors
 
 
 def test_boxy_ore_freighter_operation_fuel_costs_80_per_month():

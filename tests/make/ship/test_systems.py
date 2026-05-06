@@ -293,9 +293,7 @@ def test_ship_without_explicit_airlocks_gets_minimum_two_on_1000_tons():
 
     assert len(my_ship.hull.airlocks or []) == 2
     assert all(airlock.tons == 0.0 for airlock in my_ship.hull.airlocks or [])
-    assert ('warning', 'Installed airlocks below minimum recommendation: 1 < 2') not in [
-        (note.category.value, note.message) for note in my_ship.notes
-    ]
+    assert 'Installed airlocks below minimum recommendation: 1 < 2' not in my_ship.notes.warnings
 
 
 def test_ship_with_one_airlock_on_1000_tons_gets_warning_for_too_few_airlocks():
@@ -306,9 +304,7 @@ def test_ship_with_one_airlock_on_1000_tons_gets_warning_for_too_few_airlocks():
     )
 
     assert len(my_ship.hull.airlocks or []) == 1
-    assert ('warning', 'Installed airlocks below minimum recommendation: 1 < 2') in [
-        (note.category.value, note.message) for note in my_ship.notes
-    ]
+    assert 'Installed airlocks below minimum recommendation: 1 < 2' in my_ship.notes.warnings
 
 
 def test_first_ten_airlocks_are_free_on_1000_ton_ship():

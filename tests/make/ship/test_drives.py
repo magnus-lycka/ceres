@@ -166,7 +166,7 @@ def test_power_section_all_parts():
 def test_mdrive_tl_too_low():
     d = MDrive6()
     d.bind(DummyOwner(11, 6))
-    assert 'Requires TL12, ship is TL11' in NoteList(d.notes).errors
+    assert 'Requires TL12, ship is TL11' in d.notes.errors
 
 
 def test_mdrive_recomputes_cost_from_input():
@@ -270,7 +270,7 @@ def test_emergency_power_system_values():
 def test_fusion_plant_rejects_ship_below_tl():
     plant = FusionPlantTL12(output=8)
     plant.bind(DummyOwner(11, 6))
-    assert 'Requires TL12, ship is TL11' in NoteList(plant.notes).errors
+    assert 'Requires TL12, ship is TL11' in plant.notes.errors
 
 
 def _make_ship_with_plant():
@@ -312,7 +312,7 @@ def test_operation_fuel_requires_plant():
     assert my_ship.fuel is not None
     assert my_ship.fuel.operation_fuel is not None
     assert my_ship.fuel.operation_fuel.tons == 0.0
-    assert 'Ship must have a FusionPlant to compute OperationFuel' in NoteList(my_ship.fuel.operation_fuel.notes).errors
+    assert 'Ship must have a FusionPlant to compute OperationFuel' in my_ship.fuel.operation_fuel.notes.errors
 
 
 def test_rdrive_tons_cost_and_power():
@@ -333,7 +333,7 @@ def test_rdrive_unsupported_level_errors():
 def test_rdrive_tl_too_low():
     d = RDrive16()
     d.bind(DummyOwner(11, 6))
-    assert 'Requires TL12, ship is TL11' in NoteList(d.notes).errors
+    assert 'Requires TL12, ship is TL11' in d.notes.errors
 
 
 def test_reaction_fuel_minutes_of_operation():
@@ -358,7 +358,7 @@ def test_size_reduced_fusion_plant_item_includes_output_but_not_customisation_la
 def test_size_reduced_fusion_plant_has_customisation_note():
     p = FusionPlantTL12(output=436, customisation=Advanced(modifications=[SizeReduction]))
     p.bind(DummyOwner(13, 400))
-    info_notes = NoteList(p.notes).infos
+    info_notes = p.notes.infos
     assert 'Advanced: Size Reduction' in info_notes
 
 
@@ -371,7 +371,7 @@ def test_budget_increased_size_mdrive_item_is_base_name_only():
 def test_budget_increased_size_mdrive_has_customisation_note():
     p = MDrive1(customisation=Budget(modifications=[IncreasedSize]))
     p.bind(DummyOwner(12, 100))
-    info_notes = NoteList(p.notes).infos
+    info_notes = p.notes.infos
     assert 'Budget: Increased Size' in info_notes
 
 
@@ -396,7 +396,7 @@ def test_jdrive_unsupported_level_errors():
 def test_jdrive_tl_too_low():
     d = JDrive2()
     d.bind(DummyOwner(10, 200))
-    assert 'Requires TL11, ship is TL10' in NoteList(d.notes).errors
+    assert 'Requires TL11, ship is TL10' in d.notes.errors
 
 
 def test_emergency_power_system_requires_fusion_plant():

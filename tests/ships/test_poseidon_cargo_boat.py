@@ -1,7 +1,6 @@
 import pytest
 
 from ceres.make.ship import hull, ship
-from ceres.make.ship.base import NoteList
 from ceres.make.ship.bridge import Bridge, CommandSection
 from ceres.make.ship.computer import Computer5, ComputerSection
 from ceres.make.ship.drives import (
@@ -70,9 +69,7 @@ def test_poseidon_below_tl10_puts_error_on_mdrive(tl: int):
     cargo_boat = build_poseidon_cargo_boat(tl)
     assert cargo_boat.drives is not None
     assert cargo_boat.drives.m_drive is not None
-    assert ('error', f'Requires TL10, ship is TL{tl}') in [
-        (note.category.value, note.message) for note in cargo_boat.drives.m_drive.notes
-    ]
+    assert f'Requires TL10, ship is TL{tl}' in cargo_boat.drives.m_drive.notes.errors
 
 
 def test_ship_with_bridge_and_no_airlock_adds_error():
@@ -84,11 +81,9 @@ def test_ship_with_bridge_and_no_airlock_adds_error():
         computer=ComputerSection(hardware=Computer5()),
         habitation=HabitationSection(staterooms=[Stateroom()]),
     )
-    assert 'No airlock installed' in NoteList(my_ship.notes).errors
+    assert 'No airlock installed' in my_ship.notes.errors
     assert my_ship.habitation is not None
-    assert ('warning', 'Recommended common area is 1.00 tons') in [
-        (note.category.value, note.message) for note in my_ship.habitation.notes
-    ]
+    assert 'Recommended common area is 1.00 tons' in my_ship.habitation.notes.warnings
 
 
 def test_ship_with_staterooms_and_no_common_area_adds_warning():
@@ -101,6 +96,4 @@ def test_ship_with_staterooms_and_no_common_area_adds_warning():
         habitation=HabitationSection(staterooms=[Stateroom()]),
     )
     assert my_ship.habitation is not None
-    assert ('warning', 'Recommended common area is 1.00 tons') in [
-        (note.category.value, note.message) for note in my_ship.habitation.notes
-    ]
+    assert 'Recommended common area is 1.00 tons' in my_ship.habitation.notes.warnings

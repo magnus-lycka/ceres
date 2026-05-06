@@ -1,6 +1,6 @@
 import pytest
 
-from ceres.make.ship.base import NoteList, ShipBase
+from ceres.make.ship.base import ShipBase
 from ceres.make.ship.computer import (
     Computer5,
     Computer10,
@@ -167,37 +167,37 @@ def test_jump_control_2_runs_at_full_rating_on_computer_5_bis():
     c.bind(DummyOwner(12, 100))
     jc.validate_on_computer(c)
     assert jc.effective_rating == 2
-    assert not NoteList(jc.notes).warnings
+    assert not jc.notes.warnings
 
 
-def test_software_packages_keep_highest_singleton_rank():
+def test_software_packages_keep_installed_duplicates():
     hardware = Computer5(bis=True)
     hardware.bind(DummyOwner(12, 100))
     section = ComputerSection(hardware=hardware, software=[JumpControl(rating=2), JumpControl(rating=3)])
 
-    assert [package.description for package in section.software_packages.values()] == [
+    assert [package.description for package in section.software_packages] == [
         'Library',
         'Manoeuvre/0',
         'Intellect',
+        'Jump Control/2',
         'Jump Control/3',
     ]
 
-    assert isinstance(section.software_packages[JumpControl], JumpControl)
-    assert section.software_packages[JumpControl].bandwidth == 15
+    jump_controls = [package for package in section.software_packages if isinstance(package, JumpControl)]
+    assert [package.bandwidth for package in jump_controls] == [10, 15]
 
 
-def test_software_packages_warn_about_redundant_lower_singleton():
+def test_software_packages_do_not_warn_about_redundant_lower_singleton():
     hardware = Computer5(bis=True)
     hardware.bind(DummyOwner(12, 100))
     section = ComputerSection(hardware=hardware, software=[JumpControl(rating=2), JumpControl(rating=3)])
 
-    jump_control = section.software_packages[JumpControl]
-    notes = NoteList(jump_control.notes)
-    assert notes.items == ['Jump Control/3']
-    assert notes.warnings == ['Redundant Jump Control/2 added']
+    jump_controls = [package for package in section.software_packages if isinstance(package, JumpControl)]
+    assert [package.notes.items for package in jump_controls] == [['Jump Control/2'], ['Jump Control/3']]
+    assert [package.notes.warnings for package in jump_controls] == [[], []]
 
 
-def test_software_singleton_lookup_uses_family_types():
+def test_software_packages_keep_repeated_family_types():
     hardware = Computer10()
     hardware.bind(DummyOwner(12, 100))
     section = ComputerSection(
@@ -212,15 +212,15 @@ def test_software_singleton_lookup_uses_family_types():
         ],
     )
 
-    evade = section.software_packages[Evade]
-    assert isinstance(evade, Evade) and evade.rating == 2
-    fire_control = section.software_packages[FireControl]
-    assert isinstance(fire_control, FireControl) and fire_control.rating == 2
-    auto_repair = section.software_packages[AutoRepair]
-    assert isinstance(auto_repair, AutoRepair) and auto_repair.rating == 2
+    evades = [package for package in section.software_packages if isinstance(package, Evade)]
+    assert [package.rating for package in evades] == [1, 2]
+    fire_controls = [package for package in section.software_packages if isinstance(package, FireControl)]
+    assert [package.rating for package in fire_controls] == [1, 2]
+    auto_repairs = [package for package in section.software_packages if isinstance(package, AutoRepair)]
+    assert [package.rating for package in auto_repairs] == [1, 2]
 
 
-def test_software_singleton_lookup_uses_new_software_families():
+def test_software_packages_keep_repeated_new_software_families():
     hardware = Computer35()
     hardware.bind(DummyOwner(15, 100))
     section = ComputerSection(
@@ -237,23 +237,14 @@ def test_software_singleton_lookup_uses_new_software_families():
         ],
     )
 
-    afc = section.software_packages[AdvancedFireControl]
-    assert isinstance(afc, AdvancedFireControl) and afc.rating == 2
-    anti_hijack = section.software_packages[AntiHijack]
-    assert isinstance(anti_hijack, AntiHijack) and anti_hijack.rating == 2
-    ew = section.software_packages[ElectronicWarfare]
-    assert isinstance(ew, ElectronicWarfare) and ew.rating == 2
-    vg = section.software_packages[VirtualGunner]
-    assert isinstance(vg, VirtualGunner) and vg.rating == 1
-
-
-def test_validate_software_warns_when_ship_has_no_hardware():
-    section = ComputerSection(software=[JumpControl(rating=1)])
-
-    section.validate_software()
-
-    jump_control = section.software_packages[JumpControl]
-    assert 'Ship software requires a computer' in NoteList(jump_control.notes).warnings
+    afcs = [package for package in section.software_packages if isinstance(package, AdvancedFireControl)]
+    assert [package.rating for package in afcs] == [1, 2]
+    anti_hijacks = [package for package in section.software_packages if isinstance(package, AntiHijack)]
+    assert [package.rating for package in anti_hijacks] == [1, 2]
+    ews = [package for package in section.software_packages if isinstance(package, ElectronicWarfare)]
+    assert [package.rating for package in ews] == [1, 2]
+    virtual_gunners = [package for package in section.software_packages if isinstance(package, VirtualGunner)]
+    assert [package.rating for package in virtual_gunners] == [0, 1]
 
 
 def test_validate_software_adds_tl_error():
@@ -263,8 +254,8 @@ def test_validate_software_adds_tl_error():
 
     section.validate_software()
 
-    jump_control = section.software_packages[JumpControl]
-    assert 'Jump Control/2 requires TL11' in NoteList(jump_control.notes).errors
+    jump_control = next(package for package in section.software_packages if isinstance(package, JumpControl))
+    assert 'Jump Control/2 requires TL11' in jump_control.notes.errors
 
 
 def test_jump_control_degrades_when_processing_insufficient():
@@ -274,10 +265,10 @@ def test_jump_control_degrades_when_processing_insufficient():
 
     section.validate_software()
 
-    jump_control = section.software_packages[JumpControl]
+    jump_control = next(package for package in section.software_packages if isinstance(package, JumpControl))
     assert isinstance(jump_control, JumpControl)
     assert jump_control.effective_rating == 1
-    assert 'Computer/5 can only run Jump Control/1 (degraded from 2)' in NoteList(jump_control.notes).warnings
+    assert 'Computer/5 can only run Jump Control/1 (degraded from 2)' in jump_control.notes.warnings
 
 
 def test_jump_control_runs_at_full_on_core():
@@ -286,4 +277,4 @@ def test_jump_control_runs_at_full_on_core():
     c.bind(DummyOwner(15, 100))
     jc.validate_on_computer(c)
     assert jc.effective_rating == 6
-    assert not NoteList(jc.notes).warnings
+    assert not jc.notes.warnings

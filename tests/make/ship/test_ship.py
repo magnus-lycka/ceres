@@ -2,7 +2,6 @@ from pydantic import ValidationError
 import pytest
 
 from ceres.make.ship import armour, hull, ship
-from ceres.make.ship.base import NoteList
 from ceres.make.ship.bridge import Bridge, Cockpit, CommandSection
 from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
 from ceres.make.ship.crew import GeneralCrew, Marine, ShipCrew
@@ -52,11 +51,13 @@ def test_ship_rejects_tl_above_16():
 
 def test_ship_rejects_passenger_vector_list_form():
     with pytest.raises(ValidationError):
-        ship.Ship(
-            tl=12,
-            displacement=100,
-            hull=hull.Hull(configuration=hull.sphere),
-            passenger_vector=[('middle', 2)],  # type: ignore
+        ship.Ship.model_validate(
+            {
+                'tl': 12,
+                'displacement': 100,
+                'hull': hull.Hull(configuration=hull.sphere),
+                'passenger_vector': [('middle', 2)],
+            }
         )
 
 
@@ -140,9 +141,7 @@ def test_military_ship_warns_when_armouries_are_below_recommendation():
         systems=SystemsSection(internal_systems=[Armoury(), Armoury(), Armoury(), Armoury()]),
     )
 
-    assert ('warning', 'Installed armouries below recommendation: 4 < 5') in [
-        (note.category.value, note.message) for note in my_ship.notes
-    ]
+    assert 'Installed armouries below recommendation: 4 < 5' in my_ship.notes.warnings
 
 
 def test_ship_hull_cost():
@@ -261,13 +260,9 @@ def test_ship_gets_warning_when_total_power_load_exceeds_available_power():
         systems=SystemsSection(internal_systems=[Workshop()]),
     )
 
-    assert ('warning', 'Capacity 5.00 less than max use') not in [
-        (note.category.value, note.message) for note in my_ship.notes
-    ]
+    assert 'Capacity 5.00 less than max use' not in my_ship.notes.warnings
     power_row = my_ship.build_spec().row('Fusion (TL 12), Power 10', section='Power')
-    assert ('warning', 'Capacity 5.00 less than max use') in [
-        (note.category.value, note.message) for note in power_row.notes
-    ]
+    assert 'Capacity 5.00 less than max use' in power_row.notes.warnings
 
 
 def test_ship_armoured_bulkhead_parts_includes_manual_bulkheads():
@@ -303,9 +298,7 @@ def test_ship_with_negative_cargo_adds_local_note():
     )
     cargo_tons = CargoSection.cargo_tons_for_ship(my_ship)
     assert cargo_tons < 0
-    assert ('error', f'Hull overloaded by {-cargo_tons:.2f} tons') in [
-        (note.category.value, note.message) for note in my_ship.notes
-    ]
+    assert f'Hull overloaded by {-cargo_tons:.2f} tons' in my_ship.notes.errors
 
 
 def test_hull_overloaded_puts_error_on_ship():
@@ -316,7 +309,7 @@ def test_hull_overloaded_puts_error_on_ship():
         sensors=SensorsSection(primary=CivilianSensors()),
         systems=SystemsSection(internal_systems=[Workshop()]),
     )
-    assert 'Hull overloaded by 1.00 tons' in NoteList(my_ship.notes).errors
+    assert 'Hull overloaded by 1.00 tons' in my_ship.notes.errors
 
 
 def test_fuel_cargo_container_does_not_hide_hull_overload():
@@ -328,7 +321,7 @@ def test_fuel_cargo_container_does_not_hide_hull_overload():
         cargo=CargoSection(fuel_cargo_containers=[FuelCargoContainer(capacity=30)]),
     )
 
-    assert 'Hull overloaded by 52.00 tons' in NoteList(my_ship.notes).errors
+    assert 'Hull overloaded by 52.00 tons' in my_ship.notes.errors
 
 
 def test_ship_roundtrips_airlocks_in_parts_list():

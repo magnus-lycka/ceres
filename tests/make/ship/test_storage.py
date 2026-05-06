@@ -120,9 +120,7 @@ def test_operation_fuel_requires_plant():
     assert my_ship.fuel is not None
     assert my_ship.fuel.operation_fuel is not None
     assert my_ship.fuel.operation_fuel.tons == 0.0
-    assert ('error', 'Ship must have a FusionPlant to compute OperationFuel') in [
-        (note.category.value, note.message) for note in my_ship.fuel.operation_fuel.notes
-    ]
+    assert 'Ship must have a FusionPlant to compute OperationFuel' in my_ship.fuel.operation_fuel.notes.errors
 
 
 def test_jump_fuel_uses_performance_displacement_for_external_transport_load():
@@ -147,9 +145,7 @@ def test_military_cargo_note_shows_maximum_stores_for_100_days():
         hull=hull.Hull(configuration=hull.standard_hull),
     )
     cargo_row = my_ship.build_spec().rows_for_section(SpecSection.CARGO)[-1]
-    assert ('info', '2 tons needed per 100 days of stores and spares') in [
-        (note.category.value, note.message) for note in cargo_row.notes
-    ]
+    assert '2 tons needed per 100 days of stores and spares' in cargo_row.notes.infos
 
 
 def test_military_cargo_warning_if_below_recommended_stores_capacity():
@@ -161,9 +157,7 @@ def test_military_cargo_warning_if_below_recommended_stores_capacity():
         cargo=CargoSection(cargo_holds=[CargoHold(tons=1.0)]),
     )
     cargo_row = my_ship.build_spec().rows_for_section(SpecSection.CARGO)[-1]
-    assert ('warning', 'Cargo is below recommended 100-day stores capacity of 2 tons') in [
-        (note.category.value, note.message) for note in cargo_row.notes
-    ]
+    assert 'Cargo is below recommended 100-day stores capacity of 2 tons' in cargo_row.notes.warnings
 
 
 def test_spec_always_shows_residual_cargo_space_even_with_explicit_cargo_parts():

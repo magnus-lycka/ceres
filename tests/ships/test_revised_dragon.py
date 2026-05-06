@@ -250,9 +250,6 @@ def test_revised_dragon_power_and_crew_for_current_subset():
         ('SENSOR OPERATOR', 3, 4_000),
         ('OFFICER', 2, 5_000),
     ]
-    assert ('info', 'MAINTENANCE above recommended count: 1 > 0') in [
-        (note.category.value, note.message) for note in dragon.crew.notes
-    ]
-    assert ('info', 'OFFICER above recommended count: 2 > 1') in [
-        (note.category.value, note.message) for note in dragon.crew.notes
-    ]
+    crew_infos = dragon.crew.notes.infos
+    assert 'MAINTENANCE above recommended count: 1 > 0' in crew_infos
+    assert 'OFFICER above recommended count: 2 > 1' in crew_infos

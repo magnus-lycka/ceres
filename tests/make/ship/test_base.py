@@ -20,7 +20,7 @@ class ExampleModelWithNotes(CeresModel):
 def test_model_post_init_adds_item_note_from_build_item():
     model = ExampleModel()
 
-    assert NoteList(model.notes).items == ['Example Item']
+    assert model.notes.items == ['Example Item']
 
 
 def test_item_replaces_existing_first_item_note():
@@ -28,7 +28,7 @@ def test_item_replaces_existing_first_item_note():
 
     model.item('Replacement Item')
 
-    assert NoteList(model.notes).items == ['Replacement Item']
+    assert model.notes.items == ['Replacement Item']
 
 
 def test_info_warning_and_error_append_notes():
@@ -41,7 +41,7 @@ def test_info_warning_and_error_append_notes():
     model.warning('Warning message')
     model.error('Error message')
 
-    notes = NoteList(model.notes)
+    notes = model.notes
     assert notes.contents == ['Content message']
     assert notes.infos == ['Info message']
     assert notes.warnings == ['Warning message']

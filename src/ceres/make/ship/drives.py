@@ -471,11 +471,11 @@ class DriveSection(ShipPart):
     def _all_parts(self) -> list[ShipPart]:
         return [part for part in [self.m_drive, self.r_drive, self.j_drive] if part is not None]
 
-    def validate_jump_control(self, software_packages: dict[type[SoftwarePackage], SoftwarePackage]) -> None:
+    def validate_jump_control(self, software_packages: list[SoftwarePackage]) -> None:
         if self.j_drive is None:
             return
-        jump_control = software_packages.get(JumpControl)
-        if not isinstance(jump_control, JumpControl):
+        jump_control = next((package for package in software_packages if isinstance(package, JumpControl)), None)
+        if jump_control is None:
             self.j_drive.warning('No Jump Control software')
             return
         effective = jump_control.effective_rating

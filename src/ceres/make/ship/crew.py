@@ -3,7 +3,7 @@ from typing import Annotated, ClassVar, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
-from .base import CeresModel, NoteList, _Note
+from .base import CeresModel, NoteList
 from .spec import CrewRow as SpecCrewRow
 from .systems import MedicalBay
 from .text import optional_count
@@ -181,9 +181,9 @@ class ShipCrew(CeresModel):
             )
         return rows
 
-    def comparison_notes(self) -> list[_Note]:
+    def comparison_notes(self) -> NoteList:
         if not self.roles:
-            return []
+            return NoteList()
 
         notes = NoteList()
         provided: dict[str, int] = {}

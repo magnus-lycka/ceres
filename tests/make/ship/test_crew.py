@@ -324,9 +324,7 @@ def test_understaffed_explicit_crew_input_emits_warning():
         crew=ShipCrew(roles=[Pilot(), Engineer()]),
     )
 
-    assert ('warning', 'ASTROGATOR below recommended count: 0 < 1') in [
-        (note.category.value, note.message) for note in my_ship.crew.notes
-    ]
+    assert 'ASTROGATOR below recommended count: 0 < 1' in my_ship.crew.notes.warnings
 
 
 def test_overstaffed_explicit_crew_input_emits_warning():
@@ -339,9 +337,7 @@ def test_overstaffed_explicit_crew_input_emits_warning():
         crew=ShipCrew(roles=[Pilot(), Pilot()]),
     )
 
-    assert ('info', 'PILOT above recommended count: 2 > 1') in [
-        (note.category.value, note.message) for note in my_ship.crew.notes
-    ]
+    assert 'PILOT above recommended count: 2 > 1' in my_ship.crew.notes.infos
 
 
 def test_overstaffed_explicit_crew_input_warning_is_exposed_in_spec_crew_notes():
@@ -355,9 +351,7 @@ def test_overstaffed_explicit_crew_input_warning_is_exposed_in_spec_crew_notes()
     )
 
     spec = my_ship.build_spec()
-    assert ('info', 'PILOT above recommended count: 2 > 1') in [
-        (note.category.value, note.message) for note in spec.crew_notes
-    ]
+    assert 'PILOT above recommended count: 2 > 1' in spec.crew_notes.infos
 
 
 def test_explicit_crew_notes_are_not_stored_on_ship_level():
@@ -370,12 +364,8 @@ def test_explicit_crew_notes_are_not_stored_on_ship_level():
         crew=ShipCrew(roles=[Pilot(), Pilot()]),
     )
 
-    assert ('info', 'PILOT above recommended count: 2 > 1') not in [
-        (note.category.value, note.message) for note in my_ship.notes
-    ]
-    assert ('info', 'PILOT above recommended count: 2 > 1') in [
-        (note.category.value, note.message) for note in my_ship.crew.notes
-    ]
+    assert 'PILOT above recommended count: 2 > 1' not in my_ship.notes.infos
+    assert 'PILOT above recommended count: 2 > 1' in my_ship.crew.notes.infos
 
 
 def test_small_commercial_ship_does_not_require_separate_maintenance_crew():
@@ -476,18 +466,18 @@ def test_explicit_crew_input_warns_when_steward_missing_for_passenger_manifest()
         passenger_vector={'middle': 16},
     )
 
-    assert ('warning', 'STEWARD below recommended count: 0 < 1') in [
-        (note.category.value, note.message) for note in my_ship.crew.notes
-    ]
+    assert 'STEWARD below recommended count: 0 < 1' in my_ship.crew.notes.warnings
 
 
 def test_crew_input_rejects_list_form():
     with pytest.raises(ValidationError):
-        ship.Ship(
-            tl=12,
-            displacement=100,
-            hull=hull.Hull(configuration=hull.streamlined_hull),
-            crew={'roles': [('PILOT', 2), ('ENGINEER', 1)]},  # type: ignore
+        ship.Ship.model_validate(
+            {
+                'tl': 12,
+                'displacement': 100,
+                'hull': hull.Hull(configuration=hull.streamlined_hull),
+                'crew': {'roles': [('PILOT', 2), ('ENGINEER', 1)]},
+            }
         )
 
 

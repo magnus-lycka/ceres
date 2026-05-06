@@ -1,7 +1,6 @@
 import pytest
 
 from ceres.make.ship import hull, ship
-from ceres.make.ship.base import NoteList
 from ceres.make.ship.bridge import Bridge, CommandSection
 from ceres.make.ship.computer import Computer15, ComputerSection
 from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, SpaceCraft, Vehicle
@@ -68,7 +67,7 @@ def test_florence_medical_scout_matches_current_subset():
 
     assert scout.hull_cost == pytest.approx(20_000_000)
     assert scout.hull_points == 160
-    assert 'No airlock installed' not in NoteList(scout.notes).errors
+    assert 'No airlock installed' not in scout.notes.errors
     assert scout.drives is not None
     assert scout.drives.m_drive is not None
     assert scout.drives.m_drive.tons == pytest.approx(8.0)
@@ -142,4 +141,4 @@ def test_florence_medical_scout_matches_current_subset():
     assert scout.production_cost == pytest.approx(164_880_000)
     assert scout.sales_price_new == pytest.approx(164_880_000)
     assert scout.expenses.maintenance == pytest.approx(13_740.0)
-    assert 'No airlock installed' not in NoteList(scout.notes).errors
+    assert 'No airlock installed' not in scout.notes.errors

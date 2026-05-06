@@ -34,7 +34,7 @@ def test_spec_row_notes_only_contain_display_notes():
         notes=notes,
     )
 
-    row_notes = NoteList(row.notes)
+    row_notes = row.notes
     assert row_notes.infos == ['Library included']
     assert row_notes.warnings == ['Limited by software']
     assert row_notes.errors == ['Broken']

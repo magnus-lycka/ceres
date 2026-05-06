@@ -154,9 +154,11 @@ def test_freeform_carried_spacecraft_roundtrips_with_metadata():
     loaded = ship.Ship.model_validate_json(my_ship.model_dump_json())
     assert loaded.craft is not None
     assert len(loaded.craft.internal_housing) == 1
-    assert loaded.craft.internal_housing[0].craft.kind == 'Owned Pinnace'
-    assert loaded.craft.internal_housing[0].craft.cost == 0.0
-    assert loaded.craft.internal_housing[0].craft.engineering_tonnage == pytest.approx(4.0)  # type: ignore
+    carried_craft = loaded.craft.internal_housing[0].craft
+    assert isinstance(carried_craft, SpaceCraft)
+    assert carried_craft.kind == 'Owned Pinnace'
+    assert carried_craft.cost == 0.0
+    assert carried_craft.engineering_tonnage == pytest.approx(4.0)
 
 
 def test_craft_rows_stay_next_to_their_housing_rows():

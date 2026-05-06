@@ -2,6 +2,7 @@ from enum import StrEnum
 from typing import Self
 
 from pydantic import BaseModel, Field, PrivateAttr
+from pydantic_core import core_schema
 
 
 class _NoteCategory(StrEnum):
@@ -59,6 +60,11 @@ def _append_note(notes: list[_Note], category: _NoteCategory, message: str) -> N
 
 
 class NoteList(list[_Note]):
+    @classmethod
+    def __get_pydantic_core_schema__(cls, _source_type, handler):
+        list_schema = handler.generate_schema(list[_Note])
+        return core_schema.no_info_after_validator_function(cls, list_schema)
+
     def _with_categories(self, *categories: _NoteCategory) -> Self:
         return type(self)(note for note in self if note.category in categories)
 
@@ -130,7 +136,7 @@ class NoteList(list[_Note]):
 
 
 class CeresModel(BaseModel):
-    notes: list[_Note] = Field(default_factory=NoteList)
+    notes: NoteList = Field(default_factory=NoteList)
 
     def build_item(self) -> str | None:
         return None

@@ -1,11 +1,24 @@
 from __future__ import annotations
 
 import cProfile
+from dataclasses import dataclass
 import io
 from pathlib import Path
 import pstats
 
 import pytest
+
+
+@dataclass
+class SessionProfile:
+    profiler: cProfile.Profile
+    output_dir: Path
+    stats_path: Path | None = None
+    report_path: Path | None = None
+    report: str | None = None
+
+
+session_profile_key = pytest.StashKey[SessionProfile]()
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -95,19 +108,19 @@ def pytest_sessionstart(session: pytest.Session) -> None:
     profiler = cProfile.Profile()
     profiler.enable()
 
-    config._session_profiler = profiler  # type: ignore
-    config._session_profile_dir = output_dir  # type: ignore
+    config.stash[session_profile_key] = SessionProfile(profiler=profiler, output_dir=output_dir)
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     config = session.config
-    profiler: cProfile.Profile | None = getattr(config, '_session_profiler', None)
-    if profiler is None:
+    profile = config.stash.get(session_profile_key, None)
+    if profile is None:
         return
 
+    profiler = profile.profiler
     profiler.disable()
 
-    output_dir: Path = config._session_profile_dir  # type: ignore
+    output_dir = profile.output_dir
     stats_path = output_dir / 'session.pstats'
     report_path = output_dir / 'session.txt'
     sort_key = config.getoption('--profile-sort')
@@ -122,9 +135,9 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     stats.print_stats(limit)
     report_path.write_text(report_buffer.getvalue(), encoding='utf-8')
 
-    config._session_profile_stats_path = stats_path  # type: ignore
-    config._session_profile_report_path = report_path  # type: ignore
-    config._session_profile_report = report_buffer.getvalue()  # type: ignore
+    profile.stats_path = stats_path
+    profile.report_path = report_path
+    profile.report = report_buffer.getvalue()
 
 
 def pytest_terminal_summary(
@@ -132,17 +145,15 @@ def pytest_terminal_summary(
     exitstatus: int,
     config: pytest.Config,
 ) -> None:
-    report = getattr(config, '_session_profile_report', None)
-    if report is None:
+    profile = config.stash.get(session_profile_key, None)
+    if profile is None or profile.report is None or profile.stats_path is None or profile.report_path is None:
         return
 
-    stats_path: Path = config._session_profile_stats_path  # type: ignore
-    report_path: Path = config._session_profile_report_path  # type: ignore
     sort_key = config.getoption('--profile-sort')
     limit = config.getoption('--profile-limit')
 
     terminalreporter.write_sep('-', f'cProfile top {limit} by {sort_key}')
-    for line in report.rstrip().splitlines():
+    for line in profile.report.rstrip().splitlines():
         terminalreporter.write_line(line)
-    terminalreporter.write_line(f'raw stats: {stats_path}')
-    terminalreporter.write_line(f'text report: {report_path}')
+    terminalreporter.write_line(f'raw stats: {profile.stats_path}')
+    terminalreporter.write_line(f'text report: {profile.report_path}')

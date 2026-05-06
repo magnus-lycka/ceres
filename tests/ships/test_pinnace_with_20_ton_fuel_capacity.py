@@ -83,7 +83,7 @@ def test_pinnace_with_20_ton_fuel_capacity_matches_reference_sheet():
     assert pinnace.computer is not None
     assert pinnace.computer.hardware is not None
     assert pinnace.computer.hardware.cost == pytest.approx(30_000.0)
-    assert [(package.description, package.cost) for package in pinnace.computer.software_packages.values()] == [
+    assert [(package.description, package.cost) for package in pinnace.computer.software_packages] == [
         ('Library', 0.0),
         ('Manoeuvre/0', 0.0),
         ('Intellect', 0.0),

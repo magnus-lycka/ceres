@@ -192,7 +192,7 @@ def test_strandbell_cost():
 def test_strandbell_software():
     sdb = build_strandbell()
     assert sdb.computer is not None
-    packages = [(p.description, p.cost) for p in sdb.computer.software_packages.values()]
+    packages = [(p.description, p.cost) for p in sdb.computer.software_packages]
     assert ('Library', 0.0) in packages
     assert ('Manoeuvre/0', 0.0) in packages
     assert ('Intellect', 0.0) in packages

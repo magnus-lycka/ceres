@@ -1,5 +1,5 @@
 from ceres.make.ship import armour
-from ceres.make.ship.base import NoteList, ShipBase
+from ceres.make.ship.base import ShipBase
 
 
 class DummyOwner(ShipBase):
@@ -13,7 +13,7 @@ class DummyOwner(ShipBase):
 
 
 def error_messages(part) -> list[str]:
-    return NoteList(part.notes).errors
+    return part.notes.errors
 
 
 def test_armour_recomputes_cost_from_input():
