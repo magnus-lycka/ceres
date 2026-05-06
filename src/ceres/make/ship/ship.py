@@ -319,19 +319,14 @@ class Ship(ShipBase):
         super().model_post_init(__context)
         if self.tl > 16:
             raise ValueError(f'Ceres currently supports TL16 and lower, got TL{self.tl}')
-        # These defaults must be inserted before binding parts; normal assignment would revalidate nested frozen parts.
         if not self.hull.airlocks and self.displacement >= 100:
             minimum_airlocks = ceil(self.displacement / 500)
-            object.__setattr__(
-                self,
-                'hull',
-                self.hull.model_copy(update={'airlocks': [Airlock() for _ in range(minimum_airlocks)]}),
-            )
+            self.hull = self.hull.model_copy(update={'airlocks': [Airlock() for _ in range(minimum_airlocks)]})
         if self.hull.configuration.streamlined == Streamlined.YES:
             if self.fuel is None:
-                object.__setattr__(self, 'fuel', FuelSection(fuel_scoops=FuelScoops(free=True)))
+                self.fuel = FuelSection(fuel_scoops=FuelScoops(free=True))
             elif self.fuel.fuel_scoops is None or not self.fuel.fuel_scoops.free:
-                object.__setattr__(self, 'fuel', self.fuel.model_copy(update={'fuel_scoops': FuelScoops(free=True)}))
+                self.fuel = self.fuel.model_copy(update={'fuel_scoops': FuelScoops(free=True)})
         self.crew.bind(self)
         for part in self._base_parts():
             part.bind(self)
