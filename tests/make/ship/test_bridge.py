@@ -47,6 +47,19 @@ def test_cockpit_recomputes_cost_from_input():
     assert c.cost == 10_000
 
 
+def test_cockpit_values_are_computed_properties_not_serialized_fields():
+    c = Cockpit.model_validate({'tons': 999, 'cost': 999, 'power': 999})
+    c.bind(DummyOwner(12, 6))
+    dump = c.model_dump()
+
+    assert c.tons == pytest.approx(1.5)
+    assert c.cost == pytest.approx(10_000.0)
+    assert c.power == pytest.approx(0.0)
+    assert 'tons' not in dump
+    assert 'cost' not in dump
+    assert 'power' not in dump
+
+
 def test_bridge_100_tons_standard_size_and_cost():
     b = Bridge()
     b.bind(DummyOwner(12, 100))
@@ -54,6 +67,19 @@ def test_bridge_100_tons_standard_size_and_cost():
     assert b.cost == 500_000
     assert b.operations_dm == 0
     assert b.build_item() == 'Standard Bridge'
+
+
+def test_bridge_values_are_computed_properties_not_serialized_fields():
+    b = Bridge.model_validate({'tons': 999, 'cost': 999, 'power': 999})
+    b.bind(DummyOwner(12, 100))
+    dump = b.model_dump()
+
+    assert b.tons == pytest.approx(10.0)
+    assert b.cost == pytest.approx(500_000.0)
+    assert b.power == pytest.approx(0.0)
+    assert 'tons' not in dump
+    assert 'cost' not in dump
+    assert 'power' not in dump
 
 
 def test_bridge_100_tons_small_bridge_uses_previous_size_band():

@@ -25,6 +25,8 @@ In progress. The first numeric slice has started:
   `OperationFuel`, `JumpFuel`, `ReactionFuel`, and `FuelProcessor`.
 - A seventh habitation slice now handles `AdvancedEntertainmentSystem` and
   `CabinSpace` with explicit design fields plus computed companion values.
+- An eighth command slice now computes `Cockpit` and `Bridge` values through
+  properties.
 - Stale numeric inputs for computed values are ignored. Computed-only values are
   not serialized as stored fields; explicit design `tons` remains serialized as
   `tons`.
@@ -328,3 +330,15 @@ The next completed slice is the remaining habitation parts:
 remains serialized as `cost`, while tonnage and power are computed as zero.
 `CabinSpace` uses the explicit-tonnage pattern: design `tons` remains serialized
 as `tons`, while cost and power are computed from that value.
+
+## Eighth Candidate Slice
+
+The next completed slice is command parts:
+
+- `Cockpit`
+- `Bridge`
+
+`Cockpit` computes fixed tonnage, optional holographic cost, and zero power from
+its design flags. `Bridge` computes context-dependent tonnage and cost from the
+bound ship displacement plus `small`/`holographic` flags. Both are computed-only
+numeric parts and no longer serialize `tons`, `cost`, or `power`.
