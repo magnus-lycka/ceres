@@ -59,6 +59,34 @@ def test_armoured_bulkhead_values():
     )
 
 
+def test_armoured_bulkhead_values_are_computed_properties_not_serialized_fields():
+    bulkhead = hull.ArmouredBulkhead.model_validate(
+        {'protected_tonnage': 30.0, 'protected_item': 'M-Drive', 'tons': 999, 'cost': 999, 'power': 999}
+    )
+    bulkhead.bind(DummyOwner(12, 100))
+    dump = bulkhead.model_dump()
+
+    assert bulkhead.tons == 3.0
+    assert bulkhead.cost == 600_000
+    assert bulkhead.power == 0.0
+    assert 'tons' not in dump
+    assert 'cost' not in dump
+    assert 'power' not in dump
+
+
+def test_stealth_values_are_computed_properties_not_serialized_fields():
+    stealth = hull.BasicStealth.model_validate({'tons': 999, 'cost': 999, 'power': 999})
+    stealth.bind(DummyOwner(12, 100))
+    dump = stealth.model_dump()
+
+    assert stealth.tons == 2.0
+    assert stealth.cost == 4_000_000
+    assert stealth.power == 0.0
+    assert 'tons' not in dump
+    assert 'cost' not in dump
+    assert 'power' not in dump
+
+
 def test_radiation_shielding_cost():
     ship_hull = hull.Hull(configuration=hull.standard_hull, radiation_shielding=True)
     assert ship_hull.radiation_shielding_cost(400) == 10_000_000

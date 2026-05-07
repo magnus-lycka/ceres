@@ -31,6 +31,8 @@ In progress. The first numeric slice has started:
   properties.
 - A tenth craft slice now computes craft housing values through properties.
 - An eleventh armour slice now computes hull armour values through properties.
+- A twelfth hull slice now computes stealth and armoured bulkhead values through
+  properties.
 - Stale numeric inputs for computed values are ignored. Computed-only values are
   not serialized as stored fields; explicit design `tons` remains serialized as
   `tons`.
@@ -386,3 +388,15 @@ ship displacement, material tonnage factor, protection rating, size factor, and
 hull armour volume modifier. Cost and zero power are properties as well.
 Material armour parts no longer serialize `tons`, `cost`, or `power`; their
 design state is material type and protection.
+
+## Twelfth Candidate Slice
+
+The next completed slice is remaining hull parts:
+
+- `BasicStealth`, `ImprovedStealth`, `EnhancedStealth`, and `AdvancedStealth`
+- `ArmouredBulkhead`
+
+The shared `Stealth` base now computes context-dependent tonnage and cost from
+the bound ship displacement plus stealth class factors, with zero power.
+`ArmouredBulkhead` computes tonnage and cost from protected tonnage, also with
+zero power. These parts no longer serialize `tons`, `cost`, or `power`.

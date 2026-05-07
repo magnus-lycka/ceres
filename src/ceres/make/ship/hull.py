@@ -121,15 +121,24 @@ buffered_planetoid = HullConfiguration(
 
 class Stealth(ShipPart):
     description: str
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
     cost_per_ton: ClassVar[int] = 0
     tonnage: ClassVar[float] = 0
     sensors_dm: ClassVar[int] = 0
 
-    def compute_cost(self):
+    @property
+    def cost(self) -> float:
         return self.assembly.displacement * self.cost_per_ton
 
-    def compute_tons(self):
+    @property
+    def tons(self) -> float:
         return self.assembly.displacement * self.tonnage
+
+    @property
+    def power(self) -> float:
+        return 0.0
 
 
 class BasicStealth(Stealth):
@@ -173,6 +182,9 @@ HullStealth = Annotated[
 
 
 class ArmouredBulkhead(ShipPart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
     protected_tonnage: float
     protected_item: str | None = None
     from_ship_part: bool = False
@@ -189,11 +201,17 @@ class ArmouredBulkhead(ShipPart):
             notes.warning('Prefer armoured_bulkhead=True on the protected ShipPart over manual ArmouredBulkhead')
         return notes
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return self.protected_tonnage * 0.1
 
-    def compute_cost(self) -> float:
-        return self.compute_tons() * 200_000.0
+    @property
+    def cost(self) -> float:
+        return self.tons * 200_000.0
+
+    @property
+    def power(self) -> float:
+        return 0.0
 
 
 class Hull(CeresModel):

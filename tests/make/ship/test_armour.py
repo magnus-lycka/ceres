@@ -29,9 +29,7 @@ def test_armour_recomputes_tons_from_input():
 
 
 def test_armour_values_are_computed_properties_not_serialized_fields():
-    my_armour = armour.TitaniumSteelArmour.model_validate(
-        {'protection': 2, 'tons': 500, 'cost': 5, 'power': 9}
-    )
+    my_armour = armour.TitaniumSteelArmour.model_validate({'protection': 2, 'tons': 500, 'cost': 5, 'power': 9})
     my_armour.bind(DummyOwner(7, 100))
     dump = my_armour.model_dump()
 
