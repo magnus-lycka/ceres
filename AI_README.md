@@ -50,6 +50,15 @@ determine which explicit rule, table, or stated interpretation would produce
 that result. Only then adjust the code. Never change the model merely to
 "match the facit" without understanding the rule path that leads there.
 
+When writing tests that verify Traveller rules, derive the expected assertions
+from the Traveller rules and from [RULE_INTERPRETATIONS.md](docs/RULE_INTERPRETATIONS.md),
+not from the current implementation. Tests must not inspect the production code
+and then encode whatever it already does. Likewise, when changing production
+code to make tests pass, base the implementation on an honest reading of the
+rules and recorded interpretations. Do not tweak formulas, constants, or edge
+cases merely to turn the suite green; if the rule path is unclear, document the
+interpretation before encoding it.
+
 See [RULE_INTERPRETATIONS.md](docs/RULE_INTERPRETATIONS.md) and
 [TEST_CASE_SHIPS.md](docs/TEST_CASE_SHIPS.md)
 

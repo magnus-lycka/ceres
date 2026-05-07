@@ -516,4 +516,4 @@ def test_low_passage_uses_low_berths():
         passenger_vector={'low': 3},
     )
 
-    assert my_ship.expenses.life_support == 5_300
+    assert my_ship.expenses.life_support == 2_300

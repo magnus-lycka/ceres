@@ -47,20 +47,19 @@ class ShipExpenses:
     def life_support_facilities(self) -> float:
         if self.ship.command is not None and self.ship.command.cockpit is not None:
             return 0.0
-        if self.ship.habitation is None:
+        habitation = self.ship.habitation
+        if habitation is None:
             return 0.0
-        return self.ship.habitation.fixed_life_support_cost(self.ship)
+        return habitation.life_support_facilities_cost(self.ship)
 
     @property
     def life_support_people(self) -> float:
         if self.ship.command is not None and self.ship.command.cockpit is not None:
             return 0.0
-        if self.ship.habitation is None:
+        habitation = self.ship.habitation
+        if habitation is None:
             return 0.0
-        passenger_vector = self.ship.habitation.passenger_vector(self.ship)
-        low_passage = passenger_vector.get('low', 0)
-        low_berth_life_support = low_passage * 100
-        return low_berth_life_support + self.ship.habitation.variable_life_support_cost(self.ship)
+        return habitation.life_support_people_cost(self.ship)
 
     @property
     def fuel(self) -> float:

@@ -57,7 +57,6 @@ def test_staterooms_default_to_double_occupancy():
     s.bind(DummyOwner(12, 100))
     assert s.occupancy == 2
     assert s.fixed_life_support_cost == 1_000
-    assert s.variable_life_support_cost == 2_000
 
 
 def test_staterooms_support_single_occupancy():
@@ -65,7 +64,6 @@ def test_staterooms_support_single_occupancy():
     s.bind(DummyOwner(12, 100))
     assert s.occupancy == 1
     assert s.fixed_life_support_cost == 1_000
-    assert s.variable_life_support_cost == 1_000
 
 
 def test_staterooms_reject_unsupported_occupancy():
@@ -81,7 +79,6 @@ def test_multiple_staterooms_add_linearly():
     assert sum(room.cost for room in rooms) == 2_000_000
     assert sum(room.occupancy for room in rooms) == 8
     assert sum(room.fixed_life_support_cost for room in rooms) == 4_000
-    assert sum(room.variable_life_support_cost for room in rooms) == 8_000
 
 
 def test_low_berths_tons():
@@ -218,7 +215,6 @@ def test_high_stateroom_values():
     assert s.tons == pytest.approx(6.0)
     assert s.cost == pytest.approx(800_000.0)
     assert s.fixed_life_support_cost == pytest.approx(2_000.0)
-    assert s.variable_life_support_cost == pytest.approx(1_000.0)
 
 
 def test_luxury_stateroom_values():
@@ -229,7 +225,6 @@ def test_luxury_stateroom_values():
     assert s.tons == pytest.approx(10.0)
     assert s.cost == pytest.approx(1_500_000.0)
     assert s.fixed_life_support_cost == pytest.approx(4_000.0)
-    assert s.variable_life_support_cost == pytest.approx(1_000.0)
 
 
 def test_habitation_section_supports_standard_and_high_staterooms():
@@ -243,7 +238,7 @@ def test_habitation_section_supports_standard_and_high_staterooms():
     )
 
     assert my_ship.habitation is not None
-    assert my_ship.habitation.fixed_life_support_cost(my_ship) == pytest.approx(6_000.0)
+    assert my_ship.habitation.life_support_facilities_cost(my_ship) == pytest.approx(6_000.0)
 
 
 def test_habitation_default_passenger_vector_uses_unused_staterooms_and_low_berths():
@@ -295,7 +290,7 @@ def test_habitation_explicit_passenger_vector_overrides_default():
     assert my_ship.habitation.passenger_vector(my_ship) == {'high': 1}
 
 
-def test_habitation_life_support_separates_fixed_and_variable_costs():
+def test_expenses_life_support_separates_facilities_and_people_costs():
     my_ship = ship.Ship(
         tl=12,
         displacement=200,
@@ -306,8 +301,10 @@ def test_habitation_life_support_separates_fixed_and_variable_costs():
     )
 
     assert my_ship.habitation is not None
-    assert my_ship.habitation.fixed_life_support_cost(my_ship) == 7_750.0
-    assert my_ship.habitation.variable_life_support_cost(my_ship) == 16_000.0
+    assert my_ship.habitation.life_support_facilities_cost(my_ship) == 7_750.0
+    assert my_ship.habitation.life_support_people_cost(my_ship) == 16_000.0
+    assert my_ship.expenses.life_support_facilities == 7_750.0
+    assert my_ship.expenses.life_support_people == 16_000.0
 
 
 def test_common_area_requirement_counts_common_area_facilities_toward_total():

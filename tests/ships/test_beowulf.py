@@ -15,7 +15,10 @@ Source handling for this test case:
   - income / profit rows (`TCS-003`)
 - still excluded from the modeled reference case:
   - the source life-support total is Cr1000 higher than the current core-rule
-    formula for the same manifest
+    formula for the same manifest: Ceres computes Cr10000 facilities plus
+    Cr20000 for four crew and 16 middle passengers. The source also lists 20
+    low-passage berths, but no planned low passengers; if all were occupied,
+    the rules would add Cr2000, not Cr1000.
   - the source fuel-expense total is Cr50 lower than Ceres now that operation
     fuel follows the book rule of a 1-ton minimum four-week baseline
 - model interpretation rather than dedicated installed rows:
@@ -208,6 +211,8 @@ def test_beowulf_crew_and_life_support_match_reference_manifest():
         ('ENGINEER', 1, 4_000),
         ('STEWARD', 1, 2_000),
     ]
+    assert beowulf.expenses.life_support_facilities == pytest.approx(10_000.0)
+    assert beowulf.expenses.life_support_people == pytest.approx(20_000.0)
     assert beowulf.expenses.life_support == pytest.approx(30_000.0)
     assert beowulf.expenses.crew_salaries == pytest.approx(17_000.0)
     assert beowulf.expenses.fuel == pytest.approx(4_100.0)
