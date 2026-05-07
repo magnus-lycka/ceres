@@ -13,6 +13,8 @@ In progress. The first numeric slice has started:
   through properties for `Workshop`, `Laboratory`, `LibraryFacility`,
   `BriefingRoom`, `Armoury`, `WetBar`, `MedicalBay`, `ProbeDrones`,
   `AdvancedProbeDrones`, `MiningDrones`, and `TrainingFacility`.
+- A third systems slice now computes assembly-context values through properties
+  for `Airlock`, `Aerofins`, and `RepairDrones`.
 - Stale numeric inputs for those parts are ignored, and those computed values
   are not serialized as stored fields.
 
@@ -240,6 +242,23 @@ they can follow the same subclass-level property pattern as the habitation
 slice. They also share a small `_ZeroPowerSystemPart` base for converted systems
 whose power draw is always zero.
 
+## Third Candidate Slice
+
+The next completed slice is context-dependent systems:
+
+- `Airlock`
+- `Aerofins`
+- `RepairDrones`
+
+These parts depend on the bound ship, but they still avoid explicit design
+fields named `tons`, `cost`, or `power`. That makes them a good bridge between
+fixed/count-based systems and the later explicit-tonnage migration.
+
+`Airlock` keeps its current behaviour where free airlocks are computed from the
+bound ship's displacement and installed airlock order. Because `tons` and
+`cost` are now properties, free-vs-paid status is no longer copied into stored
+fields during bind.
+
 Deferred from this slice:
 
 - `CommonArea`, `SwimmingPool`, `Theatre`, `CommercialZone`, and `Biosphere`
@@ -248,5 +267,3 @@ Deferred from this slice:
 - `HotTub` inherits from `CommonArea`; converting it before its parent causes
   the remaining refresh machinery to call inherited `compute_cost()` and try to
   write into the property.
-- `Airlock`, `Aerofins`, and `RepairDrones` depend on assembly context and
-  should be handled in a context-dependent systems pass.

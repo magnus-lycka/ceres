@@ -5,6 +5,7 @@ from ceres.make.ship.base import ShipBase
 from ceres.make.ship.storage import FuelScoops, FuelSection
 from ceres.make.ship.systems import (
     AdvancedProbeDrones,
+    Aerofins,
     Airlock,
     Armoury,
     BasicAutodoc,
@@ -47,8 +48,11 @@ class DummyOwner(ShipBase):
         (WetBar(), 0.0, 2_000.0, 0.0),
         (MedicalBay(), 4.0, 2_000_000.0, 1.0),
         (MedicalBay(autodoc=BasicAutodoc()), 4.0, 2_100_000.0, 1.0),
+        (Airlock(size=3.0), 3.0, 300_000.0, 0.0),
+        (Aerofins(), 20.0, 2_000_000.0, 0.0),
         (ProbeDrones(count=10), 2.0, 1_000_000.0, 0.0),
         (AdvancedProbeDrones(count=10), 2.0, 1_600_000.0, 0.0),
+        (RepairDrones(), 4.0, 800_000.0, 0.0),
         (MiningDrones(count=10), 20.0, 2_000_000.0, 0.0),
         (TrainingFacility(trainees=2), 4.0, 800_000.0, 0.0),
     ],
@@ -75,8 +79,11 @@ def test_converted_system_values_are_computed_properties_not_serialized_fields(
         (Armoury, {}, 1.0, 250_000.0, 0.0),
         (WetBar, {}, 0.0, 2_000.0, 0.0),
         (MedicalBay, {}, 4.0, 2_000_000.0, 1.0),
+        (Airlock, {'size': 3.0}, 3.0, 300_000.0, 0.0),
+        (Aerofins, {}, 20.0, 2_000_000.0, 0.0),
         (ProbeDrones, {'count': 10}, 2.0, 1_000_000.0, 0.0),
         (AdvancedProbeDrones, {'count': 10}, 2.0, 1_600_000.0, 0.0),
+        (RepairDrones, {}, 4.0, 800_000.0, 0.0),
         (MiningDrones, {'count': 10}, 20.0, 2_000_000.0, 0.0),
         (TrainingFacility, {'trainees': 2}, 4.0, 800_000.0, 0.0),
     ],
@@ -316,6 +323,9 @@ def test_airlock_is_free_on_100_ton_ship():
     airlock = my_ship.hull.airlocks[0]
     assert airlock.tons == 0.0
     assert airlock.cost == 0.0
+    assert 'tons' not in airlock.model_dump()
+    assert 'cost' not in airlock.model_dump()
+    assert 'power' not in airlock.model_dump()
 
 
 def test_airlock_is_free_on_99_ton_ship():

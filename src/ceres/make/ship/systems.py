@@ -225,7 +225,9 @@ class Biosphere(ShipPart):
         return self.tons
 
 
-class Airlock(ShipPart):
+class Airlock(_ZeroPowerSystemPart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
     size: float = 2.0
 
     def build_item(self) -> str | None:
@@ -241,18 +243,23 @@ class Airlock(ShipPart):
             return False
         return index < free_airlocks
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         if self.am_i_for_free():
             return 0.0
         return max(self.size, 2.0)
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         if self.am_i_for_free():
             return 0.0
-        return self.compute_tons() * 100_000.0
+        return self.tons * 100_000.0
 
 
-class Aerofins(ShipPart):
+class Aerofins(_ZeroPowerSystemPart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+
     @property
     def atmospheric_pilot_dm(self) -> int:
         return 2
@@ -265,11 +272,13 @@ class Aerofins(ShipPart):
         notes.info('DM +2 to Pilot checks in atmosphere')
         return notes
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return self.assembly.displacement * 0.05
 
-    def compute_cost(self) -> float:
-        return self.compute_tons() * 100_000.0
+    @property
+    def cost(self) -> float:
+        return self.tons * 100_000.0
 
 
 class ProbeDrones(_ZeroPowerSystemPart):
@@ -306,19 +315,23 @@ class AdvancedProbeDrones(ProbeDrones):
         return 'Advanced Probe Drones'
 
 
-class RepairDrones(ShipPart):
+class RepairDrones(_ZeroPowerSystemPart):
     """Repair drones: 1 ton per 100 tons of displacement, Cr200,000 per ton."""
 
     drone_type: Literal['REPAIR_DRONES'] = 'REPAIR_DRONES'
+    tons: ClassVar[float]
+    cost: ClassVar[float]
 
     def build_item(self) -> str | None:
         return 'Repair Drones'
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return self.assembly.displacement / 100
 
-    def compute_cost(self) -> float:
-        return self.compute_tons() * 200_000.0
+    @property
+    def cost(self) -> float:
+        return self.tons * 200_000.0
 
 
 class MiningDrones(_ZeroPowerSystemPart):
