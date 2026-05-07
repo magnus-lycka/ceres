@@ -611,6 +611,10 @@ class PowerSection(ShipPart):
     fusion_plant: FusionPlantTL8 | FusionPlantTL12 | FusionPlantTL15 | None = None
     emergency_power_system: EmergencyPowerSystem | None = None
 
+    def validate_emergency_power_system(self) -> None:
+        if self.emergency_power_system is not None and self.fusion_plant is None:
+            raise RuntimeError('EmergencyPowerSystem requires a fusion plant')
+
     def _all_parts(self) -> list[ShipPart]:
         return [part for part in [self.fusion_plant, self.emergency_power_system] if part is not None]
 

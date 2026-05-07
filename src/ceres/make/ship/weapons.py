@@ -76,6 +76,7 @@ def _mounted_weapon_power(weapons: Sequence[MountWeapon]) -> float:
 
 
 class _MountWeapon(CeresModel):
+    notes: ClassVar[NoteList]
     model_config = {'frozen': True}
     weapon_type: str
     item_label: ClassVar[str]
@@ -92,18 +93,22 @@ class _MountWeapon(CeresModel):
         }
     )
 
-    def model_post_init(self, __context) -> None:
-        super().model_post_init(__context)
+    @property
+    def notes(self) -> NoteList:
+        notes = NoteList()
+        if message := self.build_item():
+            notes.item(message)
         if self.customisation is not None:
             for mod in self.customisation.modifications:
                 if mod.name not in self.allowed_modifications:
-                    self.error(f'Modification not allowed for MountWeapon: {mod.name}')
-            self.notes.extend(self.customisation.notes)
+                    notes.error(f'Modification not allowed for MountWeapon: {mod.name}')
+            notes.extend(self.customisation.notes)
 
             if not self.high_yield_allowed:
                 for mod in self.customisation.modifications:
                     if mod.name in {HighYield.name, VeryHighYield.name}:
-                        self.error(f'{mod.name} is not applicable for {self.build_item()}')
+                        notes.error(f'{mod.name} is not applicable for {self.build_item()}')
+        return notes
 
     def build_item(self) -> str | None:
         return self.item_label

@@ -1,5 +1,5 @@
 from enum import StrEnum
-from typing import Self
+from typing import ClassVar, Self
 
 from pydantic import BaseModel, Field, PrivateAttr
 from pydantic_core import core_schema
@@ -136,7 +136,8 @@ class NoteList(list[_Note]):
 
 
 class CeresModel(BaseModel):
-    notes: NoteList = Field(default_factory=NoteList)
+    notes: ClassVar[NoteList]
+    _notes: NoteList = PrivateAttr(default_factory=NoteList)
 
     def build_item(self) -> str | None:
         return None
@@ -144,26 +145,36 @@ class CeresModel(BaseModel):
     def build_notes(self) -> list[_Note]:
         return []
 
+    @property
+    def notes(self) -> NoteList:
+        notes = NoteList()
+        if message := self.build_item():
+            notes.item(message)
+        notes.extend(self.build_notes())
+        for note in self._notes:
+            if note.category is _NoteCategory.ITEM:
+                notes.item(note.message)
+            else:
+                notes.append(note)
+        return notes
+
     def item(self, message: str) -> None:
-        _set_item_note(self.notes, message)
+        _set_item_note(self._notes, message)
 
     def info(self, message: str) -> None:
-        _append_note(self.notes, _NoteCategory.INFO, message)
+        _append_note(self._notes, _NoteCategory.INFO, message)
 
     def content(self, message: str) -> None:
-        _append_note(self.notes, _NoteCategory.CONTENT, message)
+        _append_note(self._notes, _NoteCategory.CONTENT, message)
 
     def error(self, message: str) -> None:
-        _append_note(self.notes, _NoteCategory.ERROR, message)
+        _append_note(self._notes, _NoteCategory.ERROR, message)
 
     def warning(self, message: str) -> None:
-        _append_note(self.notes, _NoteCategory.WARNING, message)
+        _append_note(self._notes, _NoteCategory.WARNING, message)
 
     def model_post_init(self, __context) -> None:
-        self.notes.clear()
-        if message := self.build_item():
-            self.item(message)
-        self.notes.extend(self.build_notes())
+        return None
 
 
 class Assembly(CeresModel):

@@ -50,6 +50,7 @@ EnergyInefficient = Modification(name='Energy Inefficient', disadvantage=1, powe
 class Customisation(CeresModel):
     """Declared customisation grade with its modifications."""
 
+    notes: ClassVar[NoteList]
     grade: CustomisationGrade
     modifications: list[Modification]
     model_config = {'frozen': True}
@@ -61,17 +62,19 @@ class Customisation(CeresModel):
     _required_advantages: ClassVar[int]
     _required_disadvantages: ClassVar[int]
 
-    def model_post_init(self, __context) -> None:
-        self.notes.clear()
+    @property
+    def notes(self) -> NoteList:
+        notes = NoteList()
         total_adv = sum(m.advantage for m in self.modifications)
         total_dis = sum(m.disadvantage for m in self.modifications)
         if total_adv != self._required_advantages or total_dis != self._required_disadvantages:
-            self.error(
+            notes.error(
                 f'{self.__class__.__name__} requires '
                 f'{self._required_advantages} advantage point(s) and '
                 f'{self._required_disadvantages} disadvantage point(s), '
                 f'got {total_adv} and {total_dis}'
             )
+        return notes
 
     @property
     def note_text(self) -> str:

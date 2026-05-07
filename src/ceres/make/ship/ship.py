@@ -72,6 +72,31 @@ class Ship(ShipBase):
     systems: SystemsSection | None = None
     weapons: WeaponsSection | None = None
 
+    def build_notes(self) -> list:
+        notes = NoteList()
+        residual_tonnage = self.remaining_usable_tonnage()
+        if residual_tonnage < -0.005:
+            notes.error(f'Hull overloaded by {-residual_tonnage:.2f} tons')
+
+        power_shortfall = self.total_power_load - self.available_power
+        if power_shortfall > 0.005 and (self.power is None or self.power.fusion_plant is None):
+            notes.warning(f'Capacity {power_shortfall:.2f} less than max use')
+
+        minimum_airlocks = ceil(self.displacement / 500) if self.displacement >= 100 else 0
+        installed_airlocks = len(self.hull.airlocks)
+        if minimum_airlocks and installed_airlocks < minimum_airlocks:
+            notes.warning(f'Installed airlocks below minimum recommendation: {installed_airlocks} < {minimum_airlocks}')
+
+        if self.command is not None and self.command.bridge is not None and not self.hull.airlocks:
+            notes.error('No airlock installed')
+
+        recommended_armouries = _recommended_armouries(self)
+        installed_armouries = 0 if self.systems is None else len(self.systems.internal_systems_of_type(Armoury))
+        if self.military and installed_armouries < recommended_armouries:
+            notes.warning(f'Installed armouries below recommendation: {installed_armouries} < {recommended_armouries}')
+
+        return notes
+
     @property
     def armour_volume_modifier(self) -> float:
         return self.hull.configuration.armour_volume_modifier
@@ -345,28 +370,14 @@ class Ship(ShipBase):
             else:
                 software_packages = self.computer.software_packages
             self.drives.validate_jump_control(software_packages)
+        if self.power is not None:
+            self.power.validate_emergency_power_system()
         if self.weapons is not None:
             self.weapons.validate_mounting(self)
-        residual_tonnage = self.remaining_usable_tonnage()
-        if residual_tonnage < -0.005:
-            self.error(f'Hull overloaded by {-residual_tonnage:.2f} tons')
         power_shortfall = self.total_power_load - self.available_power
-        if power_shortfall > 0.005:
+        if power_shortfall > 0.005 and self.power is not None and self.power.fusion_plant is not None:
             message = f'Capacity {power_shortfall:.2f} less than max use'
-            if self.power is not None and self.power.fusion_plant is not None:
-                self.power.fusion_plant.warning(message)
-            else:
-                self.warning(message)
-        minimum_airlocks = ceil(self.displacement / 500) if self.displacement >= 100 else 0
-        installed_airlocks = len(self.hull.airlocks)
-        if minimum_airlocks and installed_airlocks < minimum_airlocks:
-            self.warning(f'Installed airlocks below minimum recommendation: {installed_airlocks} < {minimum_airlocks}')
-        if self.command is not None and self.command.bridge is not None and not self.hull.airlocks:
-            self.error('No airlock installed')
-        recommended_armouries = _recommended_armouries(self)
-        installed_armouries = 0 if self.systems is None else len(self.systems.internal_systems_of_type(Armoury))
-        if self.military and installed_armouries < recommended_armouries:
-            self.warning(f'Installed armouries below recommendation: {installed_armouries} < {recommended_armouries}')
+            self.power.fusion_plant.warning(message)
 
 
 def _recommended_armouries(ship: Ship) -> int:
