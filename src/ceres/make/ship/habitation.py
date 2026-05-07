@@ -2,7 +2,7 @@ from collections.abc import Sequence
 import math
 from typing import Annotated, ClassVar, Literal
 
-from pydantic import Field, TypeAdapter, field_validator, model_validator
+from pydantic import ConfigDict, Field, TypeAdapter, field_validator, model_validator
 
 from .base import CeresModel, NoteList
 from .parts import ShipPart
@@ -81,6 +81,26 @@ StateroomUnion = Annotated[Stateroom | HighStateroom | LuxuryStateroom, Field(di
 _stateroom_adapter: TypeAdapter[StateroomUnion] = TypeAdapter(StateroomUnion)
 
 
+class _ExplicitCostHabitationPart(ShipPart):
+    cost: ClassVar[float]
+    base_cost: float = Field(0.0, alias='cost')
+    model_config = ConfigDict(frozen=True, populate_by_name=True, serialize_by_alias=True)
+
+    @property
+    def cost(self) -> float:
+        return self.base_cost
+
+
+class _ExplicitTonsHabitationPart(ShipPart):
+    tons: ClassVar[float]
+    base_tons: float = Field(0.0, alias='tons')
+    model_config = ConfigDict(frozen=True, populate_by_name=True, serialize_by_alias=True)
+
+    @property
+    def tons(self) -> float:
+        return self.base_tons
+
+
 class LowBerth(ShipPart):
     label: ClassVar[str] = 'Low Berth'
     plural_label: ClassVar[str] = 'Low Berths'
@@ -136,13 +156,14 @@ class Brig(ShipPart):
         return 0.0
 
 
-class AdvancedEntertainmentSystem(ShipPart):
+class AdvancedEntertainmentSystem(_ExplicitCostHabitationPart):
     tl: int = 5
+    tons: ClassVar[float]
+    power: ClassVar[float]
     minimum_cost: ClassVar[float] = 100.0
     maximum_cost: ClassVar[float] = 10_000.0
-    cost: float
 
-    @field_validator('cost')
+    @field_validator('base_cost')
     @classmethod
     def validate_cost(cls, value: float) -> float:
         if not (cls.minimum_cost <= value <= cls.maximum_cost):
@@ -155,19 +176,31 @@ class AdvancedEntertainmentSystem(ShipPart):
     def build_item(self) -> str | None:
         return 'Advanced Entertainment System'
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
+        return 0.0
+
+    @property
+    def power(self) -> float:
         return 0.0
 
 
-class CabinSpace(ShipPart):
+class CabinSpace(_ExplicitTonsHabitationPart):
+    cost: ClassVar[float]
+    power: ClassVar[float]
     tons_per_passenger: ClassVar[float] = 1.5
     life_support_per_ton: ClassVar[float] = 250.0
 
     def build_item(self) -> str | None:
         return 'Cabin Space'
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return self.tons * 50_000.0
+
+    @property
+    def power(self) -> float:
+        return 0.0
 
     @property
     def passenger_capacity(self) -> int:

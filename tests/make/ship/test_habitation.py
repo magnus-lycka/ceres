@@ -154,6 +154,20 @@ def test_advanced_entertainment_system_cost():
     system.bind(DummyOwner(12, 100))
     assert system.tons == 0
     assert system.cost == 500.0
+    assert system.power == 0.0
+
+
+def test_advanced_entertainment_system_values_are_property_backed_design_fields():
+    system = AdvancedEntertainmentSystem.model_validate({'cost': 500, 'tons': 99, 'power': 99})
+    system.bind(DummyOwner(12, 100))
+    dump = system.model_dump()
+
+    assert system.tons == pytest.approx(0.0)
+    assert system.cost == pytest.approx(500.0)
+    assert system.power == pytest.approx(0.0)
+    assert dump['cost'] == pytest.approx(500.0)
+    assert 'tons' not in dump
+    assert 'power' not in dump
 
 
 def test_advanced_entertainment_system_requires_cost_in_allowed_range():
@@ -165,6 +179,20 @@ def test_cabin_space_cost():
     cabin = CabinSpace(tons=15.0)
     cabin.bind(DummyOwner(12, 100))
     assert cabin.cost == 750_000.0
+    assert cabin.power == 0.0
+
+
+def test_cabin_space_values_are_property_backed_design_fields():
+    cabin = CabinSpace.model_validate({'tons': 15.0, 'cost': 99, 'power': 99})
+    cabin.bind(DummyOwner(12, 100))
+    dump = cabin.model_dump()
+
+    assert cabin.tons == pytest.approx(15.0)
+    assert cabin.cost == pytest.approx(750_000.0)
+    assert cabin.power == pytest.approx(0.0)
+    assert dump['tons'] == pytest.approx(15.0)
+    assert 'cost' not in dump
+    assert 'power' not in dump
 
 
 def test_cabin_space_passenger_capacity():

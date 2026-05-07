@@ -23,6 +23,8 @@ In progress. The first numeric slice has started:
   properties for `FuelScoops`, `CargoAirlock`, and `FuelCargoContainer`.
 - A sixth storage slice now computes fuel values through properties for
   `OperationFuel`, `JumpFuel`, `ReactionFuel`, and `FuelProcessor`.
+- A seventh habitation slice now handles `AdvancedEntertainmentSystem` and
+  `CabinSpace` with explicit design fields plus computed companion values.
 - Stale numeric inputs for computed values are ignored. Computed-only values are
   not serialized as stored fields; explicit design `tons` remains serialized as
   `tons`.
@@ -314,3 +316,15 @@ serialized as `tons`, while cost and power are computed from that value.
 The existing note behaviour for missing plants/drives is intentionally left in
 place for now, even though notes are still lifecycle-dependent. Notes remain a
 follow-up concern after numeric values are moved to properties.
+
+## Seventh Candidate Slice
+
+The next completed slice is the remaining habitation parts:
+
+- `AdvancedEntertainmentSystem`
+- `CabinSpace`
+
+`AdvancedEntertainmentSystem` uses the explicit-cost pattern: design `cost`
+remains serialized as `cost`, while tonnage and power are computed as zero.
+`CabinSpace` uses the explicit-tonnage pattern: design `tons` remains serialized
+as `tons`, while cost and power are computed from that value.
