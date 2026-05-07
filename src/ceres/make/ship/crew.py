@@ -4,6 +4,7 @@ from typing import Annotated, ClassVar, Literal
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 from .base import CeresModel, NoteList
+from .occupants import HighPassage, MiddlePassage
 from .spec import CrewRow as SpecCrewRow
 from .systems import MedicalBay
 from .text import optional_count
@@ -119,7 +120,7 @@ type AnyCrewRole = Annotated[
 
 
 class ShipCrew(CeresModel):
-    roles: list[AnyCrewRole] = Field(default_factory=list)
+    roles: list[AnyCrewRole] | None = None
     _ship = PrivateAttr(default=None)
 
     @property
@@ -143,7 +144,7 @@ class ShipCrew(CeresModel):
 
     @property
     def effective_roles(self) -> list[CrewRole]:
-        if self.roles:
+        if self.roles is not None:
             return list(self.roles)
         return self.recommended_roles
 
@@ -182,7 +183,7 @@ class ShipCrew(CeresModel):
         return rows
 
     def comparison_notes(self) -> NoteList:
-        if not self.roles:
+        if self.roles is None:
             return NoteList()
 
         notes = NoteList()
@@ -347,10 +348,13 @@ def _carried_small_craft_count(ship) -> int:
     )
 
 
-def _explicit_passenger_vector(ship) -> dict[str, int]:
-    if ship.passenger_vector is None:
-        return {}
-    return {str(kind).lower(): int(count) for kind, count in ship.passenger_vector.items()}
+def _explicit_passenger_counts(ship) -> dict[str, int]:
+    if ship.occupants is not None:
+        return {
+            'high': sum(isinstance(occupant, HighPassage) for occupant in ship.occupants),
+            'middle': sum(isinstance(occupant, MiddlePassage) for occupant in ship.occupants),
+        }
+    return {}
 
 
 def _commercial_gunner_count(ship) -> int:
@@ -395,9 +399,9 @@ def _military_maintenance_count(ship) -> int:
 
 
 def _steward_required_level(ship) -> int:
-    passenger_vector = _explicit_passenger_vector(ship)
-    high_passage = passenger_vector.get('high', 0)
-    middle_passage = passenger_vector.get('middle', 0)
+    passenger_counts = _explicit_passenger_counts(ship)
+    high_passage = passenger_counts.get('high', 0)
+    middle_passage = passenger_counts.get('middle', 0)
     if high_passage == 0 and middle_passage == 0:
         return 0
     return math.ceil((middle_passage + 10 * high_passage) / 100)

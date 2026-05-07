@@ -32,7 +32,7 @@ def build_florence_medical_scout() -> ship.Ship:
                 *[Medic()] * 6,
             ]
         ),
-        passenger_vector={},
+        occupants=[],
         hull=hull.Hull(configuration=hull.standard_hull),
         drives=DriveSection(m_drive=MDrive2(), j_drive=JDrive3()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=300)),

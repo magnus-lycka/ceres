@@ -23,6 +23,7 @@ from ceres.make.ship.drives import (
     PowerSection,
 )
 from ceres.make.ship.habitation import HabitationSection, LowBerth, Stateroom
+from ceres.make.ship.occupants import BasicPassage, HighPassage, LowPassage, MiddlePassage
 from ceres.make.ship.sensors import SensorsSection, SensorStations
 from ceres.make.ship.systems import MedicalBay, SystemsSection
 from ceres.make.ship.weapons import DoubleTurret, MediumMissileBay, PulseLaserBarbette, SmallMissileBay, WeaponsSection
@@ -34,6 +35,15 @@ def grouped_role_counts(roles):
 
 def grouped_role_salaries(roles):
     return [(role.role, quantity, role.monthly_salary) for role, quantity in roles.grouped_roles]
+
+
+def passengers(*, high=0, middle=0, basic=0, low=0):
+    return (
+        [HighPassage() for _ in range(high)]
+        + [MiddlePassage() for _ in range(middle)]
+        + [BasicPassage() for _ in range(basic)]
+        + [LowPassage() for _ in range(low)]
+    )
 
 
 def test_crew_role_total_salary():
@@ -407,10 +417,41 @@ def test_steward_added_for_middle_passenger_manifest():
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer5()),
         habitation=HabitationSection(staterooms=[Stateroom()] * 10),
-        passenger_vector={'middle': 16},
+        occupants=passengers(middle=16),
     )
 
     assert ('STEWARD', 1) in grouped_role_counts(my_ship.crew)
+
+
+def test_basic_passengers_do_not_create_steward_requirement():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        drives=DriveSection(m_drive=MDrive1(), j_drive=JDrive1()),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer5()),
+        habitation=HabitationSection(staterooms=[Stateroom()] * 2),
+        occupants=passengers(basic=300),
+    )
+
+    assert all(role.role != 'STEWARD' for role in my_ship.crew.recommended_roles)
+
+
+def test_explicit_crewless_passenger_spacecraft_has_no_recommended_steward():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=40,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=[Stateroom()] * 2),
+        crew=ShipCrew(roles=[]),
+        occupants=passengers(middle=4),
+    )
+
+    assert my_ship.crew.count == 0
+    assert all(role.role != 'STEWARD' for role in my_ship.crew.effective_roles)
+    assert my_ship.crew.total_salary == 0
 
 
 def test_steward_requirement_uses_skill_levels_for_large_middle_passenger_manifest():
@@ -423,7 +464,7 @@ def test_steward_requirement_uses_skill_levels_for_large_middle_passenger_manife
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer5()),
         habitation=HabitationSection(staterooms=[Stateroom()] * 130),
-        passenger_vector={'middle': 250},
+        occupants=passengers(middle=250),
     )
 
     steward_roles = [role for role in my_ship.crew.recommended_roles if role.role == 'STEWARD']
@@ -442,7 +483,7 @@ def test_steward_requirement_caps_single_person_skill_at_three():
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer5()),
         habitation=HabitationSection(staterooms=[Stateroom()] * 210),
-        passenger_vector={'middle': 350},
+        occupants=passengers(middle=350),
     )
 
     steward_roles = [role for role in my_ship.crew.recommended_roles if role.role == 'STEWARD']
@@ -463,7 +504,7 @@ def test_explicit_crew_input_warns_when_steward_missing_for_passenger_manifest()
         computer=ComputerSection(hardware=Computer5()),
         habitation=HabitationSection(staterooms=[Stateroom()] * 10),
         crew=ShipCrew(roles=[Pilot(), Astrogator(), Engineer()]),
-        passenger_vector={'middle': 16},
+        occupants=passengers(middle=16),
     )
 
     assert 'STEWARD below recommended count: 0 < 1' in my_ship.crew.notes.warnings
@@ -500,7 +541,7 @@ def test_high_passage_uses_one_stateroom_each():
         hull=hull.Hull(configuration=hull.streamlined_hull),
         habitation=HabitationSection(staterooms=[Stateroom()] * 4),
         crew=ShipCrew(roles=[Pilot(), Pilot()]),
-        passenger_vector={'high': 2, 'middle': 2},
+        occupants=passengers(high=2, middle=2),
     )
 
     assert my_ship.expenses.life_support == 10_000
@@ -513,7 +554,7 @@ def test_low_passage_uses_low_berths():
         hull=hull.Hull(configuration=hull.streamlined_hull),
         habitation=HabitationSection(staterooms=[Stateroom()], low_berths=[LowBerth()] * 4),
         crew=ShipCrew(roles=[Pilot()]),
-        passenger_vector={'low': 3},
+        occupants=passengers(low=3),
     )
 
     assert my_ship.expenses.life_support == 2_300

@@ -34,7 +34,7 @@ def build_pinnace_with_20_ton_fuel_capacity() -> ship.Ship:
         tl=12,
         displacement=40,
         design_type=ship.ShipDesignType.STANDARD,
-        passenger_vector={},
+        occupants=[],
         crew=ShipCrew(roles=[Pilot()]),
         hull=hull.Hull(configuration=hull.streamlined_hull, airlocks=[Airlock()]),
         drives=DriveSection(m_drive=MDrive5()),

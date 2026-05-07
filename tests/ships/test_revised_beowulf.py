@@ -41,6 +41,7 @@ from ceres.make.ship.computer import Computer5, ComputerSection
 from ceres.make.ship.crew import Astrogator, Engineer, Pilot, ShipCrew, Steward
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive1, MDrive1, PowerSection
 from ceres.make.ship.habitation import AdvancedEntertainmentSystem, HabitationSection, LowBerth, Stateroom
+from ceres.make.ship.occupants import MiddlePassage
 from ceres.make.ship.parts import Budget, IncreasedSize
 from ceres.make.ship.sensors import CivilianSensors, SensorsSection
 from ceres.make.ship.software import JumpControl
@@ -100,7 +101,7 @@ def build_revised_beowulf() -> ship.Ship:
         ),
         cargo=CargoSection(cargo_holds=[CargoHold(tons=67.5, crane=CargoCrane())]),
         crew=ShipCrew(roles=[Pilot(), Astrogator(), Engineer(), Steward()]),
-        passenger_vector={'middle': 16},
+        occupants=[MiddlePassage()] * 16,
     )
 
 

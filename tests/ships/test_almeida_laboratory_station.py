@@ -38,7 +38,7 @@ def build_almeida_laboratory_station() -> ship.Ship:
         tl=15,
         displacement=400,
         design_type=ship.ShipDesignType.STANDARD,
-        passenger_vector={},
+        occupants=[],
         hull=hull.Hull(configuration=hull.dispersed_structure),
         drives=DriveSection(m_drive=MDrive1()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=120)),

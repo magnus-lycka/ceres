@@ -5,6 +5,16 @@ from typing import Annotated, ClassVar, Literal
 from pydantic import ConfigDict, Field, TypeAdapter, field_validator, model_validator
 
 from .base import CeresModel, NoteList
+from .occupants import (
+    BasicPassage,
+    Crew,
+    HighPassage,
+    LowPassage,
+    MiddlePassage,
+    Residence,
+    ResidenceAllocator,
+    ResidenceDemand,
+)
 from .parts import ShipPart
 from .spec import ShipSpec, SpecRow, SpecSection
 from .systems import CommonArea, HotTub, SwimmingPool, Theatre, WetBar
@@ -35,6 +45,17 @@ class Stateroom(ShipPart):
     @property
     def fixed_life_support_cost(self) -> float:
         return self.fixed_life_support_per_room
+
+    @property
+    def provides(self) -> list[tuple[ResidenceDemand, int]]:
+        provisions = [
+            (ResidenceDemand.CREW_STATEROOM, 1),
+            (ResidenceDemand.PASSENGER_STATEROOM, 1),
+            (ResidenceDemand.CREW_STATEROOM_BED, self.occupancy),
+            (ResidenceDemand.ANY_CREW_BED, self.occupancy),
+            (ResidenceDemand.PASSENGER_STATEROOM_BED, self.occupancy),
+        ]
+        return provisions
 
     @property
     def tons(self) -> float:
@@ -104,6 +125,10 @@ class LowBerth(ShipPart):
 
     def build_item(self) -> str | None:
         return self.label
+
+    @property
+    def provides(self) -> list[tuple[ResidenceDemand, int]]:
+        return [(ResidenceDemand.LOW_BERTH, 1)]
 
     @property
     def tons(self) -> float:
@@ -202,6 +227,10 @@ class CabinSpace(_ExplicitTonsHabitationPart):
     def fixed_life_support_cost(self) -> float:
         return self.tons * self.life_support_per_ton
 
+    @property
+    def provides(self) -> list[tuple[ResidenceDemand, int]]:
+        return [(ResidenceDemand.PASSENGER_STATEROOM_BED, self.passenger_capacity)]
+
 
 class HabitationSection(CeresModel):
     staterooms: list[StateroomUnion] = Field(default_factory=list)
@@ -238,28 +267,39 @@ class HabitationSection(CeresModel):
         return sum(part.tons for part in self._all_parts() if isinstance(part, CommonArea))
 
     def validate_passenger_capacity(self, ship) -> None:
-        if ship.passenger_vector is None:
+        if ship.occupants is None:
             return
 
-        passenger_vector = self.passenger_vector(ship)
-        high_passage = passenger_vector.get('high', 0)
-        middle_passage = passenger_vector.get('middle', 0)
-        low_passage = passenger_vector.get('low', 0)
+        occupants = self.occupants(ship)
+        high_passage = self.occupant_count(occupants, HighPassage)
+        middle_passage = self.occupant_count(occupants, MiddlePassage)
+        low_passage = self.occupant_count(occupants, LowPassage)
 
-        crew_staterooms = math.ceil(self.crew_count(ship) / 2)
-        non_crew_staterooms = max(0, self.stateroom_count() - crew_staterooms)
-        if high_passage > non_crew_staterooms:
-            self.error(f'High passage exceeds available non-crew staterooms: {high_passage} > {non_crew_staterooms}')
+        allocator = ResidenceAllocator(self._residences())
+        residence_occupants = [Crew() for _ in range(self.crew_count(ship))] + occupants
+        _, rejected = allocator.provide_reject(residence_occupants)
 
-        cabin_capacity = 0 if self.cabin_space is None else self.cabin_space.passenger_capacity
-        available_middle_capacity = max(0, non_crew_staterooms - high_passage) * 2 + cabin_capacity
-        if middle_passage > available_middle_capacity:
+        rejected_high = sum(isinstance(occupant, HighPassage) for occupant in rejected)
+        if rejected_high:
             self.error(
-                f'Middle passage exceeds available non-crew beds: {middle_passage} > {available_middle_capacity}'
+                f'High passage exceeds available non-crew staterooms: {high_passage} > {high_passage - rejected_high}'
             )
 
-        if low_passage > self.low_berth_count():
-            self.error(f'Low passage exceeds available low berths: {low_passage} > {self.low_berth_count()}')
+        rejected_middle = sum(isinstance(occupant, MiddlePassage) for occupant in rejected)
+        if rejected_middle:
+            self.error(
+                f'Middle passage exceeds available non-crew beds: {middle_passage} > {middle_passage - rejected_middle}'
+            )
+
+        rejected_low = sum(isinstance(occupant, LowPassage) for occupant in rejected)
+        if rejected_low:
+            self.error(f'Low passage exceeds available low berths: {low_passage} > {low_passage - rejected_low}')
+
+    def _residences(self) -> list[Residence]:
+        residences: list[Residence] = [*self.staterooms, *self.low_berths]
+        if self.cabin_space is not None:
+            residences.append(self.cabin_space)
+        return residences
 
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = [*self.staterooms, *self.low_berths]
@@ -280,23 +320,31 @@ class HabitationSection(CeresModel):
     def crew_count(self, ship) -> int:
         return ship.crew.count
 
-    def passenger_vector(self, ship) -> dict[str, int]:
-        if ship.passenger_vector is not None:
-            return {str(kind).lower(): int(count) for kind, count in ship.passenger_vector.items()}
-        return self.default_passenger_vector(ship)
+    def occupants(self, ship) -> list:
+        if ship.occupants is not None:
+            return list(ship.occupants)
+        return self.default_passengers(ship)
 
-    def default_passenger_vector(self, ship) -> dict[str, int]:
+    def occupant_count(self, occupants: Sequence, occupant_type: type) -> int:
+        return sum(isinstance(occupant, occupant_type) for occupant in occupants)
+
+    def passenger_counts(self, ship) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        for occupant in self.occupants(ship):
+            counts[occupant.kind] = counts.get(occupant.kind, 0) + 1
+        return counts
+
+    def default_passengers(self, ship) -> list:
         if ship.military:
-            return {}
+            return []
 
         crew_staterooms = math.ceil(self.crew_count(ship) / 2)
         remaining_staterooms = max(0, self.stateroom_count() - crew_staterooms)
         cabin_capacity = 0 if self.cabin_space is None else self.cabin_space.passenger_capacity
 
-        return {
-            'middle': remaining_staterooms * 2 + cabin_capacity,
-            'low': self.low_berth_count(),
-        }
+        return [MiddlePassage() for _ in range(remaining_staterooms * 2 + cabin_capacity)] + [
+            LowPassage() for _ in range(self.low_berth_count())
+        ]
 
     def life_support_facilities_cost(self, ship) -> float:
         stateroom_life_support = sum(room.fixed_life_support_cost for room in self.staterooms)
@@ -304,12 +352,13 @@ class HabitationSection(CeresModel):
         return stateroom_life_support + cabin_life_support
 
     def life_support_people_cost(self, ship) -> float:
-        passenger_vector = self.passenger_vector(ship)
-        high_passage = passenger_vector.get('high', 0)
-        middle_passage = passenger_vector.get('middle', 0)
-        low_passage = passenger_vector.get('low', 0)
+        passengers = self.occupants(ship)
+        high_passage = self.occupant_count(passengers, HighPassage)
+        middle_passage = self.occupant_count(passengers, MiddlePassage)
+        basic_passage = self.occupant_count(passengers, BasicPassage)
+        low_passage = self.occupant_count(passengers, LowPassage)
         low_berth_life_support = low_passage * 100
-        people_life_support = (self.crew_count(ship) + high_passage + middle_passage) * 1_000
+        people_life_support = (self.crew_count(ship) + high_passage + middle_passage + basic_passage) * 1_000
         return float(low_berth_life_support + people_life_support)
 
     def _group_consecutive(self, parts: Sequence[ShipPart]) -> list[list[ShipPart]]:

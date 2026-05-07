@@ -84,7 +84,7 @@ def build_small_scout_base() -> ship.Ship:
         tl=12,
         displacement=10_000,
         design_type=ship.ShipDesignType.STANDARD,
-        passenger_vector={},
+        occupants=[],
         crew=ShipCrew(
             roles=[
                 *[Engineer()] * 6,

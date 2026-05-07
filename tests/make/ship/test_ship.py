@@ -6,6 +6,7 @@ from ceres.make.ship.bridge import Bridge, Cockpit, CommandSection
 from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
 from ceres.make.ship.crew import GeneralCrew, Marine, ShipCrew
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive1, MDrive6, PowerSection
+from ceres.make.ship.occupants import HighPassage, MiddlePassage
 from ceres.make.ship.parts import EnergyEfficient, HighTechnology
 from ceres.make.ship.sensors import CivilianSensors, SensorsSection
 from ceres.make.ship.storage import CargoCrane, CargoHold, CargoSection, FuelCargoContainer
@@ -49,16 +50,18 @@ def test_ship_rejects_tl_above_16():
         )
 
 
-def test_ship_rejects_passenger_vector_list_form():
-    with pytest.raises(ValidationError):
-        ship.Ship.model_validate(
-            {
-                'tl': 12,
-                'displacement': 100,
-                'hull': hull.Hull(configuration=hull.sphere),
-                'passenger_vector': [('middle', 2)],
-            }
-        )
+def test_ship_accepts_typed_occupants_from_json_shape():
+    my_ship = ship.Ship.model_validate(
+        {
+            'tl': 12,
+            'displacement': 100,
+            'hull': hull.Hull(configuration=hull.sphere),
+            'occupants': [{'kind': 'high'}, {'kind': 'middle'}, {'kind': 'middle'}],
+        }
+    )
+
+    assert isinstance(my_ship.occupants, list)
+    assert [type(occupant) for occupant in my_ship.occupants] == [HighPassage, MiddlePassage, MiddlePassage]
 
 
 def test_ship_initial_bulky():

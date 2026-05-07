@@ -78,7 +78,7 @@ def build_beagle_laboratory_ship() -> ship.Ship:
         displacement=430,
         maintained_external_displacement=40,
         design_type=ship.ShipDesignType.STANDARD,
-        passenger_vector={},
+        occupants=[],
         hull=hull.Hull(
             configuration=hull.dispersed_structure,
             airlocks=[Airlock() for _ in range(4)],

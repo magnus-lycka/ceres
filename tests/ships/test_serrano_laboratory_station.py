@@ -37,7 +37,7 @@ def build_serrano_laboratory_station() -> ship.Ship:
         tl=12,
         displacement=200,
         design_type=ship.ShipDesignType.STANDARD,
-        passenger_vector={},
+        occupants=[],
         hull=hull.Hull(configuration=hull.dispersed_structure),
         drives=DriveSection(m_drive=MDrive1()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=60)),

@@ -22,6 +22,7 @@ from .expense import (
 )
 from .habitation import HabitationSection
 from .hull import ArmouredBulkhead, Hull, Streamlined
+from .occupants import ShipOccupant
 from .parts import ShipPart
 from .sensors import SensorsSection
 from .spec import PassengerRow, ShipSpec, SpecRow, SpecSection
@@ -55,7 +56,7 @@ class Ship(ShipBase):
     # live with the crew model instead of being stored on the ship and filtered
     # back into the crew table later.
     crew: ShipCrew = Field(default_factory=ShipCrew)
-    passenger_vector: dict[str, int] | None = None
+    occupants: list[ShipOccupant] | None = None
     design_type: ShipDesignType = ShipDesignType.CUSTOM
     hull: Hull
     drives: DriveSection | None = None
@@ -309,9 +310,9 @@ class Ship(ShipBase):
         spec.expenses = self.expenses.rows
         spec.crew = self.crew.spec_rows()
         if self.habitation is not None:
-            passenger_vector = self.habitation.passenger_vector(self)
+            passenger_counts = self.habitation.passenger_counts(self)
             spec.passengers = [
-                PassengerRow(kind=kind.upper(), quantity=count) for kind, count in passenger_vector.items() if count > 0
+                PassengerRow(kind=kind.upper(), quantity=count) for kind, count in passenger_counts.items() if count > 0
             ]
         return spec
 
