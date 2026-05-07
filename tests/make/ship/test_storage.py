@@ -2,7 +2,7 @@ import pytest
 
 from ceres.make.ship import hull, ship
 from ceres.make.ship.base import ShipBase
-from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive2, PowerSection
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive2, PowerSection, RDrive16
 from ceres.make.ship.spec import SpecSection
 from ceres.make.ship.storage import (
     CargoAirlock,
@@ -10,10 +10,12 @@ from ceres.make.ship.storage import (
     CargoHold,
     CargoSection,
     FuelCargoContainer,
+    FuelProcessor,
     FuelScoops,
     FuelSection,
     JumpFuel,
     OperationFuel,
+    ReactionFuel,
 )
 
 
@@ -66,6 +68,19 @@ def test_converted_storage_values_ignore_stale_numeric_inputs(
     assert part.tons == pytest.approx(expected_tons)
     assert part.cost == pytest.approx(expected_cost)
     assert part.power == pytest.approx(expected_power)
+
+
+def test_fuel_processor_values_are_property_backed_design_fields():
+    processor = FuelProcessor.model_validate({'tons': 2.0, 'cost': 99, 'power': 99})
+    processor.bind(DummyOwner(12, 200))
+    dump = processor.model_dump()
+
+    assert processor.tons == pytest.approx(2.0)
+    assert processor.cost == pytest.approx(100_000.0)
+    assert processor.power == pytest.approx(2.0)
+    assert dump['tons'] == pytest.approx(2.0)
+    assert 'cost' not in dump
+    assert 'power' not in dump
 
 
 def test_cargo_crane_tons_up_to_150():
@@ -154,6 +169,35 @@ def test_operation_fuel_power_zero():
     assert fuel.power == 0
 
 
+def test_operation_fuel_values_are_computed_properties_not_serialized_fields():
+    _, fuel = _make_ship_with_plant()
+    assert fuel is not None
+    dump = fuel.model_dump()
+
+    assert fuel.tons == pytest.approx(0.1)
+    assert fuel.cost == pytest.approx(0.0)
+    assert fuel.power == pytest.approx(0.0)
+    assert 'tons' not in dump
+    assert 'cost' not in dump
+    assert 'power' not in dump
+
+
+def test_operation_fuel_ignores_stale_numeric_inputs():
+    fuel = OperationFuel.model_validate({'weeks': 1, 'tons': 99, 'cost': 99, 'power': 99})
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=6,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=8)),
+        fuel=FuelSection(operation_fuel=fuel),
+    )
+    assert my_ship.fuel is not None
+    assert my_ship.fuel.operation_fuel is not None
+    assert my_ship.fuel.operation_fuel.tons == pytest.approx(0.1)
+    assert my_ship.fuel.operation_fuel.cost == pytest.approx(0.0)
+    assert my_ship.fuel.operation_fuel.power == pytest.approx(0.0)
+
+
 def test_operation_fuel_requires_plant():
     my_ship = ship.Ship(
         tl=12,
@@ -179,6 +223,49 @@ def test_jump_fuel_uses_performance_displacement_for_external_transport_load():
     assert my_ship.fuel is not None
     assert my_ship.fuel.jump_fuel is not None
     assert my_ship.fuel.jump_fuel.tons == pytest.approx(88.0)
+
+
+def test_jump_fuel_values_are_computed_properties_not_serialized_fields():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=400,
+        maintained_external_displacement=40,
+        hull=hull.Hull(configuration=hull.dispersed_structure),
+        drives=DriveSection(j_drive=JDrive2()),
+        fuel=FuelSection(jump_fuel=JumpFuel.model_validate({'parsecs': 2, 'tons': 99, 'cost': 99, 'power': 99})),
+    )
+    assert my_ship.fuel is not None
+    assert my_ship.fuel.jump_fuel is not None
+    dump = my_ship.fuel.jump_fuel.model_dump()
+
+    assert my_ship.fuel.jump_fuel.tons == pytest.approx(88.0)
+    assert my_ship.fuel.jump_fuel.cost == pytest.approx(0.0)
+    assert my_ship.fuel.jump_fuel.power == pytest.approx(0.0)
+    assert 'tons' not in dump
+    assert 'cost' not in dump
+    assert 'power' not in dump
+
+
+def test_reaction_fuel_values_are_computed_properties_not_serialized_fields():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        drives=DriveSection(r_drive=RDrive16()),
+        fuel=FuelSection(
+            reaction_fuel=ReactionFuel.model_validate({'minutes': 60, 'tons': 99, 'cost': 99, 'power': 99})
+        ),
+    )
+    assert my_ship.fuel is not None
+    assert my_ship.fuel.reaction_fuel is not None
+    dump = my_ship.fuel.reaction_fuel.model_dump()
+
+    assert my_ship.fuel.reaction_fuel.tons == pytest.approx(80.0)
+    assert my_ship.fuel.reaction_fuel.cost == pytest.approx(0.0)
+    assert my_ship.fuel.reaction_fuel.power == pytest.approx(0.0)
+    assert 'tons' not in dump
+    assert 'cost' not in dump
+    assert 'power' not in dump
 
 
 def test_military_cargo_note_shows_maximum_stores_for_100_days():

@@ -1,7 +1,7 @@
 import math
 from typing import ClassVar
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from .base import CeresModel, _Note
 from .parts import ShipPart
@@ -14,6 +14,16 @@ class _ZeroPowerStoragePart(ShipPart):
     @property
     def power(self) -> float:
         return 0.0
+
+
+class _ExplicitTonsStoragePart(ShipPart):
+    tons: ClassVar[float]
+    base_tons: float = Field(0.0, alias='tons')
+    model_config = ConfigDict(frozen=True, populate_by_name=True, serialize_by_alias=True)
+
+    @property
+    def tons(self) -> float:
+        return self.base_tons
 
 
 class FuelScoops(_ZeroPowerStoragePart):
@@ -36,7 +46,9 @@ class FuelScoops(_ZeroPowerStoragePart):
         return 0.0 if self.free else 1_000_000.0
 
 
-class OperationFuel(ShipPart):
+class OperationFuel(_ZeroPowerStoragePart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
     weeks: int
 
     def build_item(self) -> str | None:
@@ -49,7 +61,8 @@ class OperationFuel(ShipPart):
     def bulkhead_label(self) -> str:
         return 'Operation Fuel'
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         total = self._raw_tons()
         if self.assembly.displacement < 100:
             increment = 0.1
@@ -83,11 +96,14 @@ class OperationFuel(ShipPart):
     def bulkhead_protected_tonnage(self) -> float:
         return self._raw_tons()
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return 0.0
 
 
-class JumpFuel(ShipPart):
+class JumpFuel(_ZeroPowerStoragePart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
     parsecs: int
 
     def build_item(self) -> str | None:
@@ -100,18 +116,22 @@ class JumpFuel(ShipPart):
         drives = getattr(self.assembly, 'drives', None)
         return None if drives is None else drives.j_drive
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         multiplier = 1.0
         jump_drive = self._jump_drive
         if jump_drive is not None and getattr(jump_drive, 'customisation', None) is not None:
             multiplier = jump_drive.customisation.fuel_multiplier
         return self.assembly.performance_displacement * 0.1 * self.parsecs * multiplier
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return 0.0
 
 
-class ReactionFuel(ShipPart):
+class ReactionFuel(_ZeroPowerStoragePart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
     minutes: int
 
     def build_item(self) -> str | None:
@@ -138,21 +158,28 @@ class ReactionFuel(ShipPart):
             return 0.25
         return self.assembly.performance_displacement * 0.025 * reaction_drive.level
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return self._fuel_rate_per_hour() * (self.minutes / 60)
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return 0.0
 
 
-class FuelProcessor(ShipPart):
+class FuelProcessor(_ExplicitTonsStoragePart):
+    cost: ClassVar[float]
+    power: ClassVar[float]
+
     def build_item(self) -> str | None:
         return f'Fuel Processor ({self.tons * 20:g} tons/day)'
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return self.tons * 50_000
 
-    def compute_power(self) -> float:
+    @property
+    def power(self) -> float:
         return self.tons
 
 

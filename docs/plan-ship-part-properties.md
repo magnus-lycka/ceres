@@ -21,6 +21,8 @@ In progress. The first numeric slice has started:
   computes all three numeric values from `users`.
 - A fifth storage slice now computes `tons`, `cost`, and `power` through
   properties for `FuelScoops`, `CargoAirlock`, and `FuelCargoContainer`.
+- A sixth storage slice now computes fuel values through properties for
+  `OperationFuel`, `JumpFuel`, `ReactionFuel`, and `FuelProcessor`.
 - Stale numeric inputs for computed values are ignored. Computed-only values are
   not serialized as stored fields; explicit design `tons` remains serialized as
   `tons`.
@@ -294,3 +296,21 @@ zero tonnage and free-vs-paid cost from its `free` flag. `CargoAirlock` computes
 tonnage and cost from `size`. `FuelCargoContainer` computes installed tonnage
 and cost from `capacity` while keeping `capacity` as the serialized design
 input.
+
+## Sixth Candidate Slice
+
+The next completed slice is the remaining fuel storage parts:
+
+- `OperationFuel`
+- `JumpFuel`
+- `ReactionFuel`
+- `FuelProcessor`
+
+`OperationFuel`, `JumpFuel`, and `ReactionFuel` are computed-only fuel entries:
+their tonnage depends on the bound ship context, while cost and power are zero.
+`FuelProcessor` uses the explicit-tonnage pattern: design `tons` remains
+serialized as `tons`, while cost and power are computed from that value.
+
+The existing note behaviour for missing plants/drives is intentionally left in
+place for now, even though notes are still lifecycle-dependent. Notes remain a
+follow-up concern after numeric values are moved to properties.
