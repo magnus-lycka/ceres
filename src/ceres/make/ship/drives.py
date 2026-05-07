@@ -38,6 +38,9 @@ DecreasedFuel = Modification(
 
 
 class _RDrive(ShipPart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
     drive_type: str
     level: ClassVar[int]
     _tons_percent: ClassVar[float]
@@ -51,13 +54,16 @@ class _RDrive(ShipPart):
     def bulkhead_label(self) -> str:
         return 'R-Drive'
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return self.assembly.performance_displacement * self._tons_percent
 
-    def compute_cost(self) -> float:
-        return self.compute_tons() * 200_000.0
+    @property
+    def cost(self) -> float:
+        return self.tons * 200_000.0
 
-    def compute_power(self) -> float:
+    @property
+    def power(self) -> float:
         return 0.0
 
     def build_notes(self) -> list:
@@ -210,6 +216,9 @@ type RDrive = Annotated[
 
 
 class _MDrive(CustomisableShipPart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
     drive_type: str
     level: ClassVar[int]
     _tons_percent: ClassVar[float]
@@ -235,16 +244,19 @@ class _MDrive(CustomisableShipPart):
     def _base_tons(self) -> float:
         return self.assembly.performance_displacement * self._tons_percent
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         multiplier = 1.0 if self.customisation is None else self.customisation.tons_multiplier
         return self._base_tons() * multiplier
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         cost = self._base_tons() * 2_000_000
         multiplier = 1.0 if self.customisation is None else self.customisation.cost_multiplier
         return cost * multiplier
 
-    def compute_power(self) -> float:
+    @property
+    def power(self) -> float:
         if self.level == 0:
             power = float(math.ceil(0.1 * self.assembly.performance_displacement * 0.25))
         else:
@@ -355,6 +367,9 @@ type MDrive = Annotated[
 
 
 class _JDrive(CustomisableShipPart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
     drive_type: str
     level: ClassVar[int]
     _tons_percent: ClassVar[float]
@@ -378,17 +393,20 @@ class _JDrive(CustomisableShipPart):
     def parsecs(self) -> int:
         return self.level
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         base_tons = self.assembly.performance_displacement * self._tons_percent + 5
         multiplier = 1.0 if self.customisation is None else self.customisation.tons_multiplier
         return base_tons * multiplier
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         base_cost = (self.assembly.performance_displacement * self._tons_percent + 5) * 1_500_000
         multiplier = 1.0 if self.customisation is None else self.customisation.cost_multiplier
         return base_cost * multiplier
 
-    def compute_power(self) -> float:
+    @property
+    def power(self) -> float:
         base_power = float(math.ceil(0.1 * self.assembly.performance_displacement * self.level))
         multiplier = 1.0 if self.customisation is None else self.customisation.power_multiplier
         return base_power * multiplier
@@ -494,6 +512,9 @@ class DriveSection(ShipPart):
 
 
 class _FusionPlant(CustomisableShipPart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
     power_per_ton: ClassVar[int]
     cost_per_ton: ClassVar[int]
     allowed_modifications: ClassVar[frozenset[str]] = frozenset(
@@ -515,15 +536,21 @@ class _FusionPlant(CustomisableShipPart):
     def fusion_tl(self) -> int:
         return self.tl
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         tons = self.output / self.power_per_ton
         multiplier = 1.0 if self.customisation is None else self.customisation.tons_multiplier
         return tons * multiplier
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         cost = (self.output / self.power_per_ton) * self.cost_per_ton
         multiplier = 1.0 if self.customisation is None else self.customisation.cost_multiplier
         return cost * multiplier
+
+    @property
+    def power(self) -> float:
+        return 0.0
 
 
 class FusionPlantTL8(_FusionPlant):
@@ -548,6 +575,10 @@ class FusionPlantTL15(_FusionPlant):
 
 
 class EmergencyPowerSystem(ShipPart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+
     @classmethod
     def from_fusion_plant(cls, plant: _FusionPlant) -> EmergencyPowerSystem:
         return cls()
@@ -563,11 +594,17 @@ class EmergencyPowerSystem(ShipPart):
             raise RuntimeError('EmergencyPowerSystem requires a fusion plant')
         return plant
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return self.source_plant.tons * 0.1
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return self.source_plant.cost * 0.1
+
+    @property
+    def power(self) -> float:
+        return 0.0
 
 
 class PowerSection(ShipPart):

@@ -77,6 +77,18 @@ def test_jdrive_with_decreased_fuel_x2_changes_cost_and_required_tl():
     assert float(d.power) == pytest.approx(90.0)
 
 
+def test_jdrive_values_are_computed_properties_not_serialized_fields():
+    d = JDrive2.model_validate({'tons': 999, 'cost': 999, 'power': 999})
+    d.bind(DummyOwner(12, 200))
+    assert d.tons == pytest.approx(15.0)
+    assert d.cost == pytest.approx(22_500_000.0)
+    assert d.power == pytest.approx(40.0)
+    dump = d.model_dump()
+    assert 'tons' not in dump
+    assert 'cost' not in dump
+    assert 'power' not in dump
+
+
 def test_jump_fuel_respects_decreased_fuel_additively():
     my_ship = ship.Ship(
         tl=15,
@@ -181,6 +193,18 @@ def test_mdrive_recomputes_tons_from_input():
     assert d.tons == pytest.approx(0.36)
 
 
+def test_mdrive_values_are_computed_properties_not_serialized_fields():
+    d = MDrive6.model_validate({'tons': 999, 'cost': 999, 'power': 999})
+    d.bind(DummyOwner(12, 6))
+    assert d.tons == pytest.approx(0.36)
+    assert d.cost == pytest.approx(720_000)
+    assert d.power == pytest.approx(4.0)
+    dump = d.model_dump()
+    assert 'tons' not in dump
+    assert 'cost' not in dump
+    assert 'power' not in dump
+
+
 # --- FusionPlant ---
 
 
@@ -214,6 +238,19 @@ def test_fusion_plant_recomputes_tons_from_input():
     p = FusionPlantTL12.model_validate({'output': 8, 'tons': 999})
     p.bind(DummyOwner(12, 6))
     assert p.tons == pytest.approx(8 / 15)
+
+
+def test_fusion_plant_values_are_computed_properties_not_serialized_fields():
+    p = FusionPlantTL12.model_validate({'output': 8, 'tons': 999, 'cost': 999, 'power': 999})
+    p.bind(DummyOwner(12, 6))
+    assert p.tons == pytest.approx(8 / 15)
+    assert p.cost == pytest.approx(8 / 15 * 1_000_000)
+    assert p.power == pytest.approx(0.0)
+    dump = p.model_dump()
+    assert dump['output'] == 8
+    assert 'tons' not in dump
+    assert 'cost' not in dump
+    assert 'power' not in dump
 
 
 def test_fusion_plant_tl8_variant():
@@ -265,6 +302,28 @@ def test_emergency_power_system_values():
     assert eps is not None
     assert eps.tons == pytest.approx(2.616)
     assert eps.cost == pytest.approx(3_197_333.3333)
+
+
+def test_emergency_power_system_values_are_computed_properties_not_serialized_fields():
+    my_ship = ship.Ship(
+        tl=13,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        power=PowerSection(
+            fusion_plant=FusionPlantTL12(output=436, customisation=Advanced(modifications=[SizeReduction])),
+            emergency_power_system=EmergencyPowerSystem.model_validate({'tons': 999, 'cost': 999, 'power': 999}),
+        ),
+    )
+    assert my_ship.power is not None
+    eps = my_ship.power.emergency_power_system
+    assert eps is not None
+    assert eps.tons == pytest.approx(2.616)
+    assert eps.cost == pytest.approx(3_197_333.3333)
+    assert eps.power == pytest.approx(0.0)
+    dump = eps.model_dump()
+    assert 'tons' not in dump
+    assert 'cost' not in dump
+    assert 'power' not in dump
 
 
 def test_fusion_plant_rejects_ship_below_tl():
@@ -323,6 +382,18 @@ def test_rdrive_tons_cost_and_power():
     assert d.tons == pytest.approx(1.92)
     assert d.cost == pytest.approx(384_000)
     assert d.power == 0.0
+
+
+def test_rdrive_values_are_computed_properties_not_serialized_fields():
+    d = RDrive16.model_validate({'tons': 999, 'cost': 999, 'power': 999})
+    d.bind(DummyOwner(12, 6))
+    assert d.tons == pytest.approx(1.92)
+    assert d.cost == pytest.approx(384_000)
+    assert d.power == pytest.approx(0.0)
+    dump = d.model_dump()
+    assert 'tons' not in dump
+    assert 'cost' not in dump
+    assert 'power' not in dump
 
 
 def test_rdrive_unsupported_level_errors():

@@ -98,9 +98,10 @@ def test_dump_no_stealth_is_null():
 
 def test_dump_m_drive_present():
     data = json.loads(ultralight.model_dump_json())
-    assert data['drives']['m_drive']['cost'] == 720_000
-    assert data['drives']['m_drive']['power'] == 4
-    assert data['drives']['m_drive']['tons'] == pytest.approx(0.36)
+    assert data['drives']['m_drive']['drive_type'] == 'mdrive_6'
+    assert 'cost' not in data['drives']['m_drive']
+    assert 'power' not in data['drives']['m_drive']
+    assert 'tons' not in data['drives']['m_drive']
 
 
 def test_dump_weapon_in_fixed_mounts():

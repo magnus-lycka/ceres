@@ -35,6 +35,8 @@ In progress. The first numeric slice has started:
   properties.
 - A thirteenth sensors slice now computes sensor package and add-on values
   through properties.
+- A fourteenth drives slice now computes reaction drives, manoeuvre drives,
+  jump drives, fusion plants, and emergency power systems through properties.
 - Stale numeric inputs for computed values are ignored. Computed-only values are
   not serialized as stored fields; explicit design `tons` remains serialized as
   `tons`.
@@ -420,3 +422,19 @@ and compute low-intercept cost multipliers as properties. Sensor add-ons compute
 fixed, count-derived, or primary-suite-derived values through properties. These
 parts no longer serialize `tons`, `cost`, or `power`; notes still keep their
 existing bind-time rebuild behaviour for assembly-TL-dependent descriptions.
+
+## Fourteenth Candidate Slice
+
+The next completed slice is drives and power plants:
+
+- reaction drives from `RDrive0` through `RDrive16`
+- manoeuvre drives from `MDrive0` through `MDrive11`
+- jump drives from `JDrive1` through `JDrive9`
+- `FusionPlantTL8`, `FusionPlantTL12`, and `FusionPlantTL15`
+- `EmergencyPowerSystem`
+
+Drive and power values now compute from the bound ship displacement, performance
+displacement, drive level, plant output, and installed customisation. These
+parts no longer serialize `tons`, `cost`, or `power`; their serialized state is
+the selected drive/plant type plus design options such as customisation,
+high-burn thruster, and fusion output.
