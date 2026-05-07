@@ -50,6 +50,7 @@ class DummyOwner(ShipBase):
         (MedicalBay(autodoc=BasicAutodoc()), 4.0, 2_100_000.0, 1.0),
         (Airlock(size=3.0), 3.0, 300_000.0, 0.0),
         (Aerofins(), 20.0, 2_000_000.0, 0.0),
+        (HotTub(users=2), 0.5, 6_000.0, 0.0),
         (ProbeDrones(count=10), 2.0, 1_000_000.0, 0.0),
         (AdvancedProbeDrones(count=10), 2.0, 1_600_000.0, 0.0),
         (RepairDrones(), 4.0, 800_000.0, 0.0),
@@ -81,6 +82,7 @@ def test_converted_system_values_are_computed_properties_not_serialized_fields(
         (MedicalBay, {}, 4.0, 2_000_000.0, 1.0),
         (Airlock, {'size': 3.0}, 3.0, 300_000.0, 0.0),
         (Aerofins, {}, 20.0, 2_000_000.0, 0.0),
+        (HotTub, {'users': 2}, 0.5, 6_000.0, 0.0),
         (ProbeDrones, {'count': 10}, 2.0, 1_000_000.0, 0.0),
         (AdvancedProbeDrones, {'count': 10}, 2.0, 1_600_000.0, 0.0),
         (RepairDrones, {}, 4.0, 800_000.0, 0.0),
@@ -96,6 +98,32 @@ def test_converted_system_values_ignore_stale_numeric_inputs(
     assert part.tons == pytest.approx(expected_tons)
     assert part.cost == pytest.approx(expected_cost)
     assert part.power == pytest.approx(expected_power)
+
+
+@pytest.mark.parametrize(
+    ('part_cls', 'data', 'expected_tons', 'expected_cost', 'expected_power'),
+    [
+        (CommonArea, {'tons': 2.0}, 2.0, 200_000.0, 0.0),
+        (SwimmingPool, {'tons': 2.0}, 2.0, 40_000.0, 0.0),
+        (Theatre, {'tons': 2.0}, 2.0, 200_000.0, 0.0),
+        (Theatre, {'tons': 2.0, 'advanced': True}, 2.0, 400_000.0, 0.0),
+        (CommercialZone, {'tons': 240.0}, 240.0, 48_000_000.0, 1.0),
+        (Biosphere, {'tons': 4.0}, 4.0, 800_000.0, 4.0),
+    ],
+)
+def test_explicit_tonnage_system_values_are_property_backed_design_fields(
+    part_cls, data, expected_tons, expected_cost, expected_power
+):
+    part = part_cls.model_validate({'cost': 99, 'power': 99, **data})
+    part.bind(DummyOwner(15, 400))
+    dump = part.model_dump()
+
+    assert part.tons == pytest.approx(expected_tons)
+    assert part.cost == pytest.approx(expected_cost)
+    assert part.power == pytest.approx(expected_power)
+    assert dump['tons'] == pytest.approx(expected_tons)
+    assert 'cost' not in dump
+    assert 'power' not in dump
 
 
 def test_workshop_tons():

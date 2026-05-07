@@ -1,6 +1,6 @@
 from typing import Annotated, ClassVar, Literal, TypeVar
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from .base import CeresModel, NoteList, _Note
 from .parts import ShipPart
@@ -16,6 +16,16 @@ class _ZeroPowerSystemPart(ShipPart):
     @property
     def power(self) -> float:
         return 0.0
+
+
+class _ExplicitTonsSystemPart(ShipPart):
+    tons: ClassVar[float]
+    base_tons: float = Field(0.0, alias='tons')
+    model_config = ConfigDict(frozen=True, populate_by_name=True, serialize_by_alias=True)
+
+    @property
+    def tons(self) -> float:
+        return self.base_tons
 
 
 class Workshop(_ZeroPowerSystemPart):
@@ -104,24 +114,36 @@ class Armoury(_ZeroPowerSystemPart):
         return 250_000.0
 
 
-class CommonArea(ShipPart):
+class CommonArea(_ExplicitTonsSystemPart):
+    cost: ClassVar[float]
+    power: ClassVar[float]
+
     def build_item(self) -> str | None:
         return 'Common Area'
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return self.tons * 100_000.0
 
+    @property
+    def power(self) -> float:
+        return 0.0
 
-class CommercialZone(ShipPart):
+
+class CommercialZone(_ExplicitTonsSystemPart):
     system_type: Literal['COMMERCIAL_ZONE'] = 'COMMERCIAL_ZONE'
+    cost: ClassVar[float]
+    power: ClassVar[float]
 
     def build_item(self) -> str | None:
         return 'Commercial Zone'
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return self.tons * 200_000.0
 
-    def compute_power(self) -> float:
+    @property
+    def power(self) -> float:
         return float(max(1, int(self.tons // 200)))
 
 
@@ -129,7 +151,8 @@ class SwimmingPool(CommonArea):
     def build_item(self) -> str | None:
         return 'Swimming Pool'
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return self.tons * 20_000.0
 
 
@@ -139,7 +162,8 @@ class Theatre(CommonArea):
     def build_item(self) -> str | None:
         return 'Theatre'
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         if self.advanced:
             return self.tons * 200_000.0
         return self.tons * 100_000.0
@@ -162,17 +186,27 @@ class WetBar(_ZeroPowerSystemPart):
 
 
 class HotTub(CommonArea):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+    base_tons: float = Field(0.0, alias='tons', exclude=True)
     users: int = 1
 
     def build_item(self) -> str | None:
         label = 'User' if self.users == 1 else 'Users'
         return f'Hot Tub ({self.users} {label})'
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return self.users * 0.25
 
-    def compute_cost(self) -> float:
-        return self.compute_tons() * 12_000.0
+    @property
+    def cost(self) -> float:
+        return self.tons * 12_000.0
+
+    @property
+    def power(self) -> float:
+        return 0.0
 
 
 class BasicAutodoc(CeresModel):
@@ -212,16 +246,20 @@ class MedicalBay(ShipPart):
         return 1.0
 
 
-class Biosphere(ShipPart):
+class Biosphere(_ExplicitTonsSystemPart):
     system_type: Literal['BIOSPHERE'] = 'BIOSPHERE'
+    cost: ClassVar[float]
+    power: ClassVar[float]
 
     def build_item(self) -> str | None:
         return 'Biosphere'
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return self.tons * 200_000.0
 
-    def compute_power(self) -> float:
+    @property
+    def power(self) -> float:
         return self.tons
 
 

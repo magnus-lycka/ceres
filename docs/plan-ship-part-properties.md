@@ -15,8 +15,13 @@ In progress. The first numeric slice has started:
   `AdvancedProbeDrones`, `MiningDrones`, and `TrainingFacility`.
 - A third systems slice now computes assembly-context values through properties
   for `Airlock`, `Aerofins`, and `RepairDrones`.
-- Stale numeric inputs for those parts are ignored, and those computed values
-  are not serialized as stored fields.
+- A fourth systems slice now handles explicit-tonnage systems with a serialized
+  design `tons` field and computed `cost`/`power` properties for `CommonArea`,
+  `SwimmingPool`, `Theatre`, `CommercialZone`, and `Biosphere`; `HotTub` now
+  computes all three numeric values from `users`.
+- Stale numeric inputs for computed values are ignored. Computed-only values are
+  not serialized as stored fields; explicit design `tons` remains serialized as
+  `tons`.
 
 The shared `ShipPart` refresh machinery still exists for the rest of the ship
 part hierarchy. Remove it only after enough part families have been converted.
@@ -259,11 +264,17 @@ bound ship's displacement and installed airlock order. Because `tons` and
 `cost` are now properties, free-vs-paid status is no longer copied into stored
 fields during bind.
 
-Deferred from this slice:
+## Fourth Candidate Slice
+
+The next completed slice is explicit-tonnage systems:
 
 - `CommonArea`, `SwimmingPool`, `Theatre`, `CommercialZone`, and `Biosphere`
-  keep explicit `tons` input fields and need an internal/base field naming
-  decision.
-- `HotTub` inherits from `CommonArea`; converting it before its parent causes
-  the remaining refresh machinery to call inherited `compute_cost()` and try to
-  write into the property.
+  now store the design tonnage in an internal `base_tons` field that validates
+  and serializes as `tons`.
+- `HotTub` now removes that inherited `base_tons` field and computes `tons`,
+  `cost`, and `power` from `users`.
+
+This confirms the naming pattern for parts where `tons` is a real design input
+rather than a purely derived value: keep `part.tons` as the public property, use
+an internal field for the design value, and serialize that field through the
+external `tons` name.
