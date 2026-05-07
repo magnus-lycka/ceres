@@ -2,7 +2,7 @@ from pydantic import TypeAdapter
 import pytest
 
 from ceres.make.ship import hull, ship
-from ceres.make.ship.base import NoteList, ShipBase
+from ceres.make.ship.base import ShipBase
 from ceres.make.ship.drives import (
     DecreasedFuel,
     DriveSection,
@@ -34,6 +34,7 @@ from ceres.make.ship.drives import (
 )
 from ceres.make.ship.parts import Advanced, Budget, IncreasedSize, SizeReduction, VeryAdvanced
 from ceres.make.ship.storage import FuelSection, JumpFuel, OperationFuel, ReactionFuel
+from ceres.shared import NoteList
 
 
 class DummyOwner(ShipBase):

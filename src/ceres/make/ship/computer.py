@@ -4,8 +4,8 @@ from pydantic import Field, PrivateAttr
 
 from ceres.gear.computer import ComputerPart
 from ceres.gear.software import Intellect, SoftwarePackage
+from ceres.shared import CeresModel, NoteList, _Note
 
-from .base import CeresModel, NoteList, _Note
 from .parts import ShipPart, ShipPartMixin
 from .software import JumpControl, Library, Manoeuvre, ShipSoftware
 from .spec import ShipSpec, SpecRow, SpecSection

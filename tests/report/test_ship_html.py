@@ -1,8 +1,8 @@
 from ceres.make.ship import hull, ship
-from ceres.make.ship.base import NoteList
 from ceres.make.ship.crafts import CraftSection, FullHangar, InternalDockingSpace, SpaceCraft, Vehicle
 from ceres.make.ship.spec import ShipSpec
 from ceres.report import render_ship_spec_html
+from ceres.shared import NoteList
 from tests.ships.test_small_scout_base import build_small_scout_base
 from tests.ships.test_suleiman import build_suleiman
 

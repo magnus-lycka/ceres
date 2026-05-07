@@ -4,8 +4,9 @@ from math import ceil
 from pydantic import Field
 
 from ceres.gear.software import SoftwarePackage
+from ceres.shared import NoteList
 
-from .base import NoteList, ShipBase
+from .base import ShipBase
 from .bridge import CommandSection
 from .computer import ComputerSection
 from .crafts import CraftSection

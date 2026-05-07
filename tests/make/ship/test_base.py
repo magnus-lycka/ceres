@@ -1,4 +1,5 @@
-from ceres.make.ship.base import CeresModel, NoteList, ShipBase
+from ceres.make.ship.base import ShipBase
+from ceres.shared import CeresModel, NoteList
 
 
 class ExampleModel(CeresModel):

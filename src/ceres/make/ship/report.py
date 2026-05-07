@@ -4,11 +4,11 @@ from itertools import groupby
 from pathlib import Path
 from typing import Literal
 
-from ceres.make.ship.base import NoteList, _Note
 from ceres.make.ship.ship import Ship
 from ceres.make.ship.spec import CrewRow, ExpenseRow, ShipSpec, SpecRow
 from ceres.make.ship.text import format_counted_label
 from ceres.make.ship.view import collapsed_main_rows
+from ceres.shared import NoteList, _Note
 
 ReportTheme = Literal['light', 'dark']
 

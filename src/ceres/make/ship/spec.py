@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from enum import StrEnum
 
-from .base import NoteList
+from ceres.shared import NoteList
 
 
 # Update the sections to merge jump and propulsion into drive.

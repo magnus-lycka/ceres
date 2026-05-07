@@ -2,7 +2,8 @@ from typing import Annotated, ClassVar, Literal, TypeVar
 
 from pydantic import ConfigDict, Field
 
-from .base import CeresModel, NoteList, _Note
+from ceres.shared import CeresModel, NoteList, _Note
+
 from .parts import ShipPart
 from .spec import ShipSpec, SpecSection
 from .text import optional_count

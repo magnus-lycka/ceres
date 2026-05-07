@@ -4,7 +4,8 @@ from typing import Annotated, ClassVar, Literal
 
 from pydantic import ConfigDict, Field, TypeAdapter, field_validator, model_validator
 
-from .base import CeresModel, NoteList
+from ceres.shared import CeresModel, NoteList
+
 from .occupants import (
     BasicPassage,
     Crew,

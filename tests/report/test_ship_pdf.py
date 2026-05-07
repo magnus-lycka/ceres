@@ -127,8 +127,8 @@ def test_info_notes_use_gentle_clues_info_box(suleiman_spec):
 
 
 def test_source_renders_warning_notes_via_gentle_clues():
-    from ceres.make.ship.base import NoteList
     from ceres.make.ship.spec import SpecRow, SpecSection
+    from ceres.shared import NoteList
 
     spec = ShipSpec(ship_class='Test')
     notes = NoteList()
@@ -146,8 +146,8 @@ def test_source_renders_warning_notes_via_gentle_clues():
 
 
 def test_source_renders_error_notes_via_gentle_clues():
-    from ceres.make.ship.base import NoteList
     from ceres.make.ship.spec import SpecRow, SpecSection
+    from ceres.shared import NoteList
 
     spec = ShipSpec(ship_class='Test')
     notes = NoteList()
@@ -160,7 +160,7 @@ def test_source_renders_error_notes_via_gentle_clues():
 
 
 def test_source_renders_ship_level_notes_below_main_table():
-    from ceres.make.ship.base import NoteList
+    from ceres.shared import NoteList
 
     spec = ShipSpec(ship_class='Test')
     spec.ship_notes = NoteList()
@@ -173,7 +173,7 @@ def test_source_renders_ship_level_notes_below_main_table():
 
 
 def test_source_renders_crew_notes_with_crew_table():
-    from ceres.make.ship.base import NoteList
+    from ceres.shared import NoteList
 
     spec = ShipSpec(ship_class='Test')
     spec.crew = []
@@ -186,7 +186,7 @@ def test_source_renders_crew_notes_with_crew_table():
 
 
 def test_source_renders_multiple_info_crew_notes_via_gentle_clues():
-    from ceres.make.ship.base import NoteList
+    from ceres.shared import NoteList
 
     spec = ShipSpec(ship_class='Test')
     spec.crew = []

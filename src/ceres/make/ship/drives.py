@@ -4,8 +4,8 @@ from typing import Annotated, ClassVar, Literal
 from pydantic import Field
 
 from ceres.gear.software import SoftwarePackage
+from ceres.shared import NoteList
 
-from .base import NoteList
 from .parts import (
     CustomisableShipPart,
     EnergyEfficient,

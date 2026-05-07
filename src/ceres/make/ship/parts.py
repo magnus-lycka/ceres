@@ -4,9 +4,9 @@ from typing import Annotated, Any, ClassVar, Literal
 
 from pydantic import Field, PrivateAttr, TypeAdapter
 
-from ceres.shared import CeresPart
+from ceres.shared import CeresModel, CeresPart, NoteList, _Note
 
-from .base import CeresModel, NoteList, ShipBase, _Note
+from .base import ShipBase
 from .text import collapse_repeated_labels
 
 

@@ -1,7 +1,8 @@
 from bisect import bisect_left
 from typing import ClassVar
 
-from .base import CeresModel, NoteList, _Note
+from ceres.shared import CeresModel, NoteList, _Note
+
 from .parts import ShipPart
 from .spec import ShipSpec, SpecSection
 

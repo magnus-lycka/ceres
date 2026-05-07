@@ -1,6 +1,7 @@
 from dataclasses import replace
 
-from .base import _Note
+from ceres.shared import _Note
+
 from .spec import ShipSpec, SpecRow
 
 

@@ -2,7 +2,9 @@ from typing import Annotated, Any, ClassVar, Literal, cast
 
 from pydantic import Field
 
-from .base import CeresModel, NoteList, ShipBase, _Note
+from ceres.shared import CeresModel, NoteList, _Note
+
+from .base import ShipBase
 from .parts import ShipPart
 from .spec import ShipSpec, SpecSection
 from .text import format_counted_label, optional_count

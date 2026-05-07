@@ -4,7 +4,8 @@ from typing import Annotated, ClassVar, Literal
 
 from pydantic import Field
 
-from .base import CeresModel, NoteList, _Note
+from ceres.shared import CeresModel, NoteList, _Note
+
 from .parts import (
     CustomisableShipPart,
     CustomisationUnion,

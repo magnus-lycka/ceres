@@ -3,7 +3,8 @@ from typing import Annotated, ClassVar, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
-from .base import CeresModel, NoteList
+from ceres.shared import CeresModel, NoteList
+
 from .occupants import HighPassage, MiddlePassage
 from .spec import CrewRow as SpecCrewRow
 from .systems import MedicalBay

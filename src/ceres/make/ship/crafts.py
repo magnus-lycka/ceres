@@ -3,7 +3,8 @@ from typing import Annotated, ClassVar, Literal
 
 from pydantic import Field
 
-from .base import CeresModel
+from ceres.shared import CeresModel
+
 from .parts import ShipPart
 from .spec import ShipSpec, SpecRow, SpecSection
 

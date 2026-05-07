@@ -1,7 +1,7 @@
 import pytest
 
-from ceres.make.ship.base import NoteList
 from ceres.make.ship.spec import CrewRow, ExpenseRow, ShipSpec, SpecRow, SpecSection
+from ceres.shared import NoteList
 
 
 def build_spec() -> ShipSpec:

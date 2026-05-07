@@ -3,13 +3,14 @@ from typing import Annotated, ClassVar, Literal
 
 from pydantic import Field, model_serializer
 
+from ceres.shared import CeresModel, NoteList, _Note
+
 from .armour import (
     BondedSuperdenseArmour,
     CrystalironArmour,
     MolecularBondedArmour,
     TitaniumSteelArmour,
 )
-from .base import CeresModel, NoteList, _Note
 from .parts import ShipPart
 from .spec import ShipSpec, SpecRow, SpecSection
 from .systems import Aerofins, Airlock
