@@ -28,6 +28,21 @@ def test_armour_recomputes_tons_from_input():
     assert my_armour.tons == 100 * 2 * 0.025
 
 
+def test_armour_values_are_computed_properties_not_serialized_fields():
+    my_armour = armour.TitaniumSteelArmour.model_validate(
+        {'protection': 2, 'tons': 500, 'cost': 5, 'power': 9}
+    )
+    my_armour.bind(DummyOwner(7, 100))
+    dump = my_armour.model_dump()
+
+    assert my_armour.tons == 100 * 2 * 0.025
+    assert my_armour.cost == 50_000 * my_armour.tons
+    assert my_armour.power == 0.0
+    assert 'tons' not in dump
+    assert 'cost' not in dump
+    assert 'power' not in dump
+
+
 def test_titanium_steel_armour_too_low_tl_adds_error_note():
     a = armour.TitaniumSteelArmour(protection=2)
     a.bind(DummyOwner(6, 99))

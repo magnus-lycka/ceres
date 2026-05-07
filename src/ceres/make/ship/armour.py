@@ -9,6 +9,9 @@ from .parts import ShipPart
 class Armour(ShipPart):
     description: str
     protection: int
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
 
     _cost_per_ton: ClassVar[int] = 0
     _tonnage_consumed: ClassVar[int] = 0
@@ -23,10 +26,12 @@ class Armour(ShipPart):
     def build_item(self) -> str | None:
         return f'{self.description}, Armour: {self.protection}'
 
-    def compute_cost(self) -> float:
-        return self.compute_tons() * self._cost_per_ton
+    @property
+    def cost(self) -> float:
+        return self.tons * self._cost_per_ton
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         displacement = self.assembly.displacement
         if displacement < 5:
             self.error('Displacement must be at least 5 tons for armour.')
@@ -41,6 +46,10 @@ class Armour(ShipPart):
             size_factor = 1
         armour_volume_modifier = self.assembly.armour_volume_modifier
         return displacement * self._tonnage_consumed * self.protection * size_factor * armour_volume_modifier
+
+    @property
+    def power(self) -> float:
+        return 0.0
 
 
 class TitaniumSteelArmour(Armour):

@@ -30,6 +30,7 @@ In progress. The first numeric slice has started:
 - A ninth computer slice now computes ship computer hardware values through
   properties.
 - A tenth craft slice now computes craft housing values through properties.
+- An eleventh armour slice now computes hull armour values through properties.
 - Stale numeric inputs for computed values are ignored. Computed-only values are
   not serialized as stored fields; explicit design `tons` remains serialized as
   `tons`.
@@ -370,3 +371,18 @@ These parts compute their installed tonnage and cost from the clamp kind or
 carried craft metadata. They draw zero power and no longer serialize `tons`,
 `cost`, or `power`; the serialized design state is the clamp/housing type plus
 the carried occupant metadata.
+
+## Eleventh Candidate Slice
+
+The next completed slice is hull armour:
+
+- `TitaniumSteelArmour`
+- `CrystalironArmour`
+- `BondedSuperdenseArmour`
+- `MolecularBondedArmour`
+
+The shared `Armour` base now computes context-dependent tonnage from the bound
+ship displacement, material tonnage factor, protection rating, size factor, and
+hull armour volume modifier. Cost and zero power are properties as well.
+Material armour parts no longer serialize `tons`, `cost`, or `power`; their
+design state is material type and protection.
