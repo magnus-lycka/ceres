@@ -1,4 +1,5 @@
 import math
+from typing import ClassVar
 
 from pydantic import Field
 
@@ -7,7 +8,17 @@ from .parts import ShipPart
 from .spec import ShipSpec, SpecRow, SpecSection
 
 
-class FuelScoops(ShipPart):
+class _ZeroPowerStoragePart(ShipPart):
+    power: ClassVar[float]
+
+    @property
+    def power(self) -> float:
+        return 0.0
+
+
+class FuelScoops(_ZeroPowerStoragePart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
     free: bool = False
 
     def build_item(self) -> str | None:
@@ -16,10 +27,12 @@ class FuelScoops(ShipPart):
     def build_notes(self) -> list[_Note]:
         return []
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return 0.0
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return 0.0 if self.free else 1_000_000.0
 
 
@@ -228,20 +241,26 @@ class CargoHold(CeresModel):
         return self.total_tons(owner) - self.crane_tons(owner)
 
 
-class CargoAirlock(ShipPart):
+class CargoAirlock(_ZeroPowerStoragePart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
     size: float = 2.0
 
     def build_item(self) -> str | None:
         return f'Cargo Airlock ({self.size:g} tons)'
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return max(self.size, 2.0)
 
-    def compute_cost(self) -> float:
-        return self.compute_tons() * 100_000.0
+    @property
+    def cost(self) -> float:
+        return self.tons * 100_000.0
 
 
-class FuelCargoContainer(ShipPart):
+class FuelCargoContainer(_ZeroPowerStoragePart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
     capacity: float
 
     def build_item(self) -> str | None:
@@ -251,10 +270,12 @@ class FuelCargoContainer(ShipPart):
     def cargo_capacity(self) -> float:
         return self.capacity
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return math.ceil(self.capacity * 1.05)
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return self.capacity * 5_000.0
 
 

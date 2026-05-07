@@ -2,7 +2,7 @@ from collections.abc import Sequence
 import math
 from typing import Annotated, ClassVar, Literal
 
-from pydantic import Field, TypeAdapter, field_validator
+from pydantic import Field, TypeAdapter, field_validator, model_validator
 
 from .base import CeresModel, NoteList
 from .parts import ShipPart
@@ -17,11 +17,17 @@ class Stateroom(ShipPart):
     tons: ClassVar[float]
     cost: ClassVar[float]
     power: ClassVar[float]
-    occupancy: ClassVar[int] = 2
+    occupancy: int = 2
     tons_per_room: ClassVar[float] = 4.0
     cost_per_room: ClassVar[float] = 500_000.0
     fixed_life_support_per_room: ClassVar[float] = 1_000.0
     variable_life_support_per_occupant: ClassVar[float] = 1_000.0
+
+    @model_validator(mode='after')
+    def validate_occupancy(self):
+        if self.occupancy not in {1, 2}:
+            raise ValueError(f'{self.label} occupancy must be 1 or 2')
+        return self
 
     def build_item(self) -> str | None:
         return self.label
@@ -55,17 +61,20 @@ class HighStateroom(Stateroom):
     kind: Literal['high'] = 'high'
     label: ClassVar[str] = 'High Stateroom'
     plural_label: ClassVar[str] = 'High Staterooms'
+    occupancy: int = 1
     tons_per_room: ClassVar[float] = 6.0
     cost_per_room: ClassVar[float] = 800_000.0
+    fixed_life_support_per_room: ClassVar[float] = 2_000.0
 
 
 class LuxuryStateroom(Stateroom):
     kind: Literal['luxury'] = 'luxury'
     label: ClassVar[str] = 'Luxury Stateroom'
     plural_label: ClassVar[str] = 'Luxury Staterooms'
+    occupancy: int = 1
     tons_per_room: ClassVar[float] = 10.0
     cost_per_room: ClassVar[float] = 1_500_000.0
-    fixed_life_support_per_room: ClassVar[float] = 3_000.0
+    fixed_life_support_per_room: ClassVar[float] = 4_000.0
 
 
 StateroomUnion = Annotated[Stateroom | HighStateroom | LuxuryStateroom, Field(discriminator='kind')]

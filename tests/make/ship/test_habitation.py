@@ -52,11 +52,23 @@ def test_stateroom_values_are_computed_properties_not_serialized_fields():
     assert 'power' not in s.model_dump()
 
 
-def test_staterooms_life_support_uses_full_occupancy_formula():
+def test_staterooms_default_to_double_occupancy():
     s = Stateroom()
     s.bind(DummyOwner(12, 100))
     assert s.occupancy == 2
     assert s.life_support_cost == 3_000
+
+
+def test_staterooms_support_single_occupancy():
+    s = Stateroom(occupancy=1)
+    s.bind(DummyOwner(12, 100))
+    assert s.occupancy == 1
+    assert s.life_support_cost == 2_000
+
+
+def test_staterooms_reject_unsupported_occupancy():
+    with pytest.raises(ValueError, match='Stateroom occupancy must be 1 or 2'):
+        Stateroom(occupancy=3)
 
 
 def test_multiple_staterooms_add_linearly():
@@ -171,16 +183,23 @@ def test_high_stateroom_values():
     s = HighStateroom()
     s.bind(DummyOwner(12, 100))
     assert s.label == 'High Stateroom'
+    assert s.occupancy == 1
     assert s.tons == pytest.approx(6.0)
     assert s.cost == pytest.approx(800_000.0)
+    assert s.fixed_life_support_cost == pytest.approx(2_000.0)
+    assert s.variable_life_support_cost == pytest.approx(1_000.0)
+    assert s.life_support_cost == pytest.approx(3_000.0)
 
 
 def test_luxury_stateroom_values():
     s = LuxuryStateroom()
     s.bind(DummyOwner(12, 100))
     assert s.label == 'Luxury Stateroom'
+    assert s.occupancy == 1
     assert s.tons == pytest.approx(10.0)
     assert s.cost == pytest.approx(1_500_000.0)
+    assert s.fixed_life_support_cost == pytest.approx(4_000.0)
+    assert s.variable_life_support_cost == pytest.approx(1_000.0)
     assert s.life_support_cost == pytest.approx(5_000.0)
 
 
@@ -195,7 +214,7 @@ def test_habitation_section_supports_standard_and_high_staterooms():
     )
 
     assert my_ship.habitation is not None
-    assert my_ship.habitation.fixed_life_support_cost(my_ship) == pytest.approx(5_000.0)
+    assert my_ship.habitation.fixed_life_support_cost(my_ship) == pytest.approx(6_000.0)
 
 
 def test_habitation_default_passenger_vector_uses_unused_staterooms_and_low_berths():

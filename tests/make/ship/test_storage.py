@@ -10,6 +10,7 @@ from ceres.make.ship.storage import (
     CargoHold,
     CargoSection,
     FuelCargoContainer,
+    FuelScoops,
     FuelSection,
     JumpFuel,
     OperationFuel,
@@ -22,6 +23,49 @@ class DummyOwner(ShipBase):
 
     def remaining_usable_tonnage(self) -> float:
         return float(self.displacement)
+
+
+@pytest.mark.parametrize(
+    ('part', 'expected_tons', 'expected_cost', 'expected_power'),
+    [
+        (FuelScoops(), 0.0, 1_000_000.0, 0.0),
+        (FuelScoops(free=True), 0.0, 0.0, 0.0),
+        (CargoAirlock(size=3.0), 3.0, 300_000.0, 0.0),
+        (FuelCargoContainer(capacity=30.0), 32.0, 150_000.0, 0.0),
+    ],
+)
+def test_converted_storage_values_are_computed_properties_not_serialized_fields(
+    part, expected_tons, expected_cost, expected_power
+):
+    part.bind(DummyOwner(12, 200))
+    dump = part.model_dump()
+
+    assert part.tons == pytest.approx(expected_tons)
+    assert part.cost == pytest.approx(expected_cost)
+    assert part.power == pytest.approx(expected_power)
+    assert 'tons' not in dump
+    assert 'cost' not in dump
+    assert 'power' not in dump
+
+
+@pytest.mark.parametrize(
+    ('part_cls', 'data', 'expected_tons', 'expected_cost', 'expected_power'),
+    [
+        (FuelScoops, {}, 0.0, 1_000_000.0, 0.0),
+        (FuelScoops, {'free': True}, 0.0, 0.0, 0.0),
+        (CargoAirlock, {'size': 3.0}, 3.0, 300_000.0, 0.0),
+        (FuelCargoContainer, {'capacity': 30.0}, 32.0, 150_000.0, 0.0),
+    ],
+)
+def test_converted_storage_values_ignore_stale_numeric_inputs(
+    part_cls, data, expected_tons, expected_cost, expected_power
+):
+    part = part_cls.model_validate({'tons': 99, 'cost': 99, 'power': 99, **data})
+    part.bind(DummyOwner(12, 200))
+
+    assert part.tons == pytest.approx(expected_tons)
+    assert part.cost == pytest.approx(expected_cost)
+    assert part.power == pytest.approx(expected_power)
 
 
 def test_cargo_crane_tons_up_to_150():

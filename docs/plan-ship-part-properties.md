@@ -19,6 +19,8 @@ In progress. The first numeric slice has started:
   design `tons` field and computed `cost`/`power` properties for `CommonArea`,
   `SwimmingPool`, `Theatre`, `CommercialZone`, and `Biosphere`; `HotTub` now
   computes all three numeric values from `users`.
+- A fifth storage slice now computes `tons`, `cost`, and `power` through
+  properties for `FuelScoops`, `CargoAirlock`, and `FuelCargoContainer`.
 - Stale numeric inputs for computed values are ignored. Computed-only values are
   not serialized as stored fields; explicit design `tons` remains serialized as
   `tons`.
@@ -278,3 +280,17 @@ This confirms the naming pattern for parts where `tons` is a real design input
 rather than a purely derived value: keep `part.tons` as the public property, use
 an internal field for the design value, and serialize that field through the
 external `tons` name.
+
+## Fifth Candidate Slice
+
+The next completed slice is storage parts with definition-derived values:
+
+- `FuelScoops`
+- `CargoAirlock`
+- `FuelCargoContainer`
+
+These parts do not use a serialized design `tons` field. `FuelScoops` computes
+zero tonnage and free-vs-paid cost from its `free` flag. `CargoAirlock` computes
+tonnage and cost from `size`. `FuelCargoContainer` computes installed tonnage
+and cost from `capacity` while keeping `capacity` as the serialized design
+input.

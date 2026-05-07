@@ -31,6 +31,11 @@ From Core and High Guard:
 This means a stateroom is not merely "some amount of generic floor space". It
 is a standardised accommodation unit.
 
+In Ceres, standard stateroom `occupancy` is therefore a per-room design choice.
+The default is `2`, matching the most common ship-design usage; use
+`occupancy=1` when a design explicitly reserves a stateroom for single
+occupancy.
+
 ### High and luxury staterooms
 
 High Guard habitation options and Core both define these as separate
