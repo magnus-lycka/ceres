@@ -327,3 +327,30 @@ Triple Turret
  Then we can't compact it any more than we did.
  We can't make a Triple Turret x 2, since they are different.
  
+# Split big files
+
+     632 src/ceres/make/ship/drives.py
+
+Separate into drives and powerplants
+
+    1215 src/ceres/make/ship/weapons.py
+
+Split up the big weapons file
+
+# Add other types of drives
+
+Add the lower TL power plants, fission, chemichal?
+Are there things like batteries as well than should go here?
+Solar panels and stuff?
+
+# Get rid of silly singular properties
+
+class SystemsSection(CeresModel):
+...
+
+    def first_internal_system_of_type(self, system_cls: type[_T]) -> _T | None:
+        matches = self.internal_systems_of_type(system_cls)
+        return None if not matches else matches[0]
+
+This is just silly! Remove properties like SystemsSection.medical_bay since there can be >1.
+
