@@ -173,9 +173,11 @@ In practice, that means we prefer:
 Grouping and `× N` presentation belong in the spec / rendering layer, not in
 the domain model.
 
-There are still a few legacy exceptions where the codebase uses `count` for a
-repeated facility or magazine. Those should be treated as pragmatic carryovers,
-not as the preferred modelling pattern for new code.
+Some facilities and magazines still have a `count` field where the rules define
+a single installed facility that contains a number of identical sub-items. That
+is different from making one object stand in for many independently installed
+parts, and it should not be copied as a pattern for new repeated ship parts or
+occupants.
 
 ### Carried craft and external loads
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-In progress. The first numeric slice has started:
+Numeric ship-part properties are complete:
 
 - `Stateroom`, `HighStateroom`, and `LuxuryStateroom` now compute `tons`,
   `cost`, and `power` through properties instead of cached Pydantic fields.
@@ -47,7 +47,9 @@ In progress. The first numeric slice has started:
   `tons`.
 
 All ship-part numeric values are now either explicit design fields on simple
-parts or properties on converted part families.
+parts or properties on converted part families. The remaining follow-up area is
+notes: note production still uses the existing reporting surface and has not
+yet been converted into fully query-like derived output.
 
 ## Motivation
 
@@ -174,9 +176,9 @@ notes for the part when called. Notes should be derived from the current part
 and assembly state, not preserved as a historical append log from earlier
 program execution.
 
-Do not solve notes in the first numeric slice. For now, keep notes as the
-reporting surface. But the intended direction is to make note production
-query-like in the same way as `tons`, `cost`, and `power`.
+Notes were deliberately left out of the numeric-property conversion. For now,
+keep notes as the reporting surface. But the intended direction is to make note
+production query-like in the same way as `tons`, `cost`, and `power`.
 
 The longer-term functional shape would be:
 
