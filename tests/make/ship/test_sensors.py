@@ -6,9 +6,11 @@ from ceres.make.ship.sensors import (
     AdvancedSensors,
     BasicSensors,
     CivilianSensors,
+    CountermeasuresSuite,
     EnhancedSignalProcessing,
     ExtendedArrays,
     ImprovedSensors,
+    LifeScannerAnalysisSuite,
     MilitarySensors,
     RapidDeploymentExtendedArrays,
     SensorsSection,
@@ -184,6 +186,35 @@ def test_civilian_grade_recomputes_cost_from_input():
     assert s.cost == 3_000_000
 
 
+@pytest.mark.parametrize(
+    ('part', 'expected_tons', 'expected_cost', 'expected_power'),
+    [
+        (BasicSensors(), 0.0, 0.0, 0.0),
+        (CivilianSensors(), 1.0, 3_000_000.0, 1.0),
+        (CivilianSensors(low_intercept='LPI'), 1.0, 6_000_000.0, 1.0),
+        (MilitarySensors(), 2.0, 4_100_000.0, 2.0),
+        (ImprovedSensors(), 3.0, 4_300_000.0, 3.0),
+        (AdvancedSensors(), 5.0, 5_300_000.0, 6.0),
+        (CountermeasuresSuite(), 2.0, 4_000_000.0, 1.0),
+        (LifeScannerAnalysisSuite(), 1.0, 4_000_000.0, 1.0),
+        (EnhancedSignalProcessing(), 2.0, 8_000_000.0, 2.0),
+        (SensorStations(count=2), 2.0, 1_000_000.0, 0.0),
+    ],
+)
+def test_sensor_values_are_computed_properties_not_serialized_fields(
+    part, expected_tons, expected_cost, expected_power
+):
+    part.bind(DummyOwner(15, 400))
+    dump = part.model_dump()
+
+    assert part.tons == pytest.approx(expected_tons)
+    assert part.cost == pytest.approx(expected_cost)
+    assert part.power == pytest.approx(expected_power)
+    assert 'tons' not in dump
+    assert 'cost' not in dump
+    assert 'power' not in dump
+
+
 def test_civilian_grade_tl_too_low():
     s = CivilianSensors()
     s.bind(DummyOwner(8, 100))
@@ -249,6 +280,26 @@ def test_extended_arrays_add_twice_primary_sensor_values():
     assert s.tons == 6
     assert s.cost == 8_600_000
     assert s.power == 9
+
+
+def test_extended_arrays_values_are_computed_properties_not_serialized_fields():
+    s = ExtendedArrays.model_validate({'tons': 999, 'cost': 999, 'power': 999})
+    owner = ship.Ship(
+        tl=13,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        sensors=SensorsSection(primary=ImprovedSensors()),
+    )
+    owner.sensors.primary.bind(owner)
+    s.bind(owner)
+    dump = s.model_dump()
+
+    assert s.tons == pytest.approx(6.0)
+    assert s.cost == pytest.approx(8_600_000.0)
+    assert s.power == pytest.approx(9.0)
+    assert 'tons' not in dump
+    assert 'cost' not in dump
+    assert 'power' not in dump
 
 
 def test_rapid_deployment_extended_arrays_values():

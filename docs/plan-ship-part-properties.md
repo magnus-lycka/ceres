@@ -33,6 +33,8 @@ In progress. The first numeric slice has started:
 - An eleventh armour slice now computes hull armour values through properties.
 - A twelfth hull slice now computes stealth and armoured bulkhead values through
   properties.
+- A thirteenth sensors slice now computes sensor package and add-on values
+  through properties.
 - Stale numeric inputs for computed values are ignored. Computed-only values are
   not serialized as stored fields; explicit design `tons` remains serialized as
   `tons`.
@@ -400,3 +402,21 @@ The shared `Stealth` base now computes context-dependent tonnage and cost from
 the bound ship displacement plus stealth class factors, with zero power.
 `ArmouredBulkhead` computes tonnage and cost from protected tonnage, also with
 zero power. These parts no longer serialize `tons`, `cost`, or `power`.
+
+## Thirteenth Candidate Slice
+
+The next completed slice is sensors:
+
+- primary packages from `BasicSensors` through `AdvancedSensors`
+- `CountermeasuresSuite`
+- `LifeScannerAnalysisSuite`
+- `SensorStations`
+- `EnhancedSignalProcessing`
+- `ExtendedArrays`
+- `RapidDeploymentExtendedArrays`
+
+Primary sensor packages now share class-level base tonnage/cost/power values
+and compute low-intercept cost multipliers as properties. Sensor add-ons compute
+fixed, count-derived, or primary-suite-derived values through properties. These
+parts no longer serialize `tons`, `cost`, or `power`; notes still keep their
+existing bind-time rebuild behaviour for assembly-TL-dependent descriptions.

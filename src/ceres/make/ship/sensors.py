@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Literal, cast
+from typing import Annotated, Any, ClassVar, Literal, cast
 
 from pydantic import Field
 
@@ -78,6 +78,12 @@ def _capability_tl(part: ShipPart) -> int:
 
 
 class SensorPackage(ShipPart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+    base_tons: ClassVar[float] = 0.0
+    base_cost: ClassVar[float] = 0.0
+    base_power: ClassVar[float] = 0.0
     low_intercept: LowInterceptMode = 'NONE'
 
     def check_tl(self) -> None:
@@ -98,6 +104,18 @@ class SensorPackage(ShipPart):
         self.notes.extend(self.build_notes())
         self.notes.extend(retained_notes)
 
+    @property
+    def tons(self) -> float:
+        return self.base_tons
+
+    @property
+    def cost(self) -> float:
+        return self.base_cost * (2 if self.low_intercept != 'NONE' else 1)
+
+    @property
+    def power(self) -> float:
+        return self.base_power
+
 
 class BasicSensors(SensorPackage):
     description: Literal['Basic Sensors'] = 'Basic Sensors'
@@ -114,19 +132,13 @@ class BasicSensors(SensorPackage):
             low_intercept=self.low_intercept,
         )
 
-    def compute_tons(self) -> float:
-        return 0.0
-
-    def compute_cost(self) -> float:
-        return 0.0
-
-    def compute_power(self) -> float:
-        return 0.0
-
 
 class CivilianSensors(SensorPackage):
     description: Literal['Civilian Grade Sensors'] = 'Civilian Grade Sensors'
     tl: int = 9
+    base_tons: ClassVar[float] = 1.0
+    base_cost: ClassVar[float] = 3_000_000.0
+    base_power: ClassVar[float] = 1.0
 
     def build_item(self) -> str | None:
         return self.description
@@ -139,19 +151,13 @@ class CivilianSensors(SensorPackage):
             low_intercept=self.low_intercept,
         )
 
-    def compute_tons(self) -> float:
-        return 1.0
-
-    def compute_cost(self) -> float:
-        return 6_000_000.0 if self.low_intercept != 'NONE' else 3_000_000.0
-
-    def compute_power(self) -> float:
-        return 1.0
-
 
 class MilitarySensors(SensorPackage):
     description: Literal['Military Grade Sensors'] = 'Military Grade Sensors'
     tl: int = 10
+    base_tons: ClassVar[float] = 2.0
+    base_cost: ClassVar[float] = 4_100_000.0
+    base_power: ClassVar[float] = 2.0
 
     def build_item(self) -> str | None:
         return self.description
@@ -165,19 +171,13 @@ class MilitarySensors(SensorPackage):
             low_intercept=self.low_intercept,
         )
 
-    def compute_tons(self) -> float:
-        return 2.0
-
-    def compute_cost(self) -> float:
-        return 8_200_000.0 if self.low_intercept != 'NONE' else 4_100_000.0
-
-    def compute_power(self) -> float:
-        return 2.0
-
 
 class ImprovedSensors(SensorPackage):
     description: Literal['Improved Sensors'] = 'Improved Sensors'
     tl: int = 12
+    base_tons: ClassVar[float] = 3.0
+    base_cost: ClassVar[float] = 4_300_000.0
+    base_power: ClassVar[float] = 3.0
 
     def build_item(self) -> str | None:
         return self.description
@@ -191,19 +191,13 @@ class ImprovedSensors(SensorPackage):
             low_intercept=self.low_intercept,
         )
 
-    def compute_tons(self) -> float:
-        return 3.0
-
-    def compute_cost(self) -> float:
-        return 8_600_000.0 if self.low_intercept != 'NONE' else 4_300_000.0
-
-    def compute_power(self) -> float:
-        return 3.0
-
 
 class AdvancedSensors(SensorPackage):
     description: Literal['Advanced Sensors'] = 'Advanced Sensors'
     tl: int = 15
+    base_tons: ClassVar[float] = 5.0
+    base_cost: ClassVar[float] = 5_300_000.0
+    base_power: ClassVar[float] = 6.0
 
     def build_item(self) -> str | None:
         return self.description
@@ -217,19 +211,13 @@ class AdvancedSensors(SensorPackage):
             low_intercept=self.low_intercept,
         )
 
-    def compute_tons(self) -> float:
-        return 5.0
-
-    def compute_cost(self) -> float:
-        return 10_600_000.0 if self.low_intercept != 'NONE' else 5_300_000.0
-
-    def compute_power(self) -> float:
-        return 6.0
-
 
 class CountermeasuresSuite(ShipPart):
     description: Literal['Countermeasures Suite'] = 'Countermeasures Suite'
     tl: int = 11
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
 
     def build_item(self) -> str | None:
         return self.description
@@ -239,19 +227,25 @@ class CountermeasuresSuite(ShipPart):
         notes.info('DM +4 to all jamming and electronic warfare attempts')
         return notes
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return 2.0
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return 4_000_000.0
 
-    def compute_power(self) -> float:
+    @property
+    def power(self) -> float:
         return 1.0
 
 
 class LifeScannerAnalysisSuite(ShipPart):
     description: Literal['Life Scanner Analysis Suite'] = 'Life Scanner Analysis Suite'
     tl: int = 14
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
 
     def build_item(self) -> str | None:
         return self.description
@@ -262,17 +256,23 @@ class LifeScannerAnalysisSuite(ShipPart):
         notes.info('Requires Electronics (sensors) to interpret; improves biological analysis')
         return notes
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return 1.0
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return 4_000_000.0
 
-    def compute_power(self) -> float:
+    @property
+    def power(self) -> float:
         return 1.0
 
 
 class SensorStations(ShipPart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
     count: int
 
     def build_item(self) -> str | None:
@@ -283,16 +283,25 @@ class SensorStations(ShipPart):
     def bulkhead_label(self) -> str:
         return format_counted_label('Sensor Stations', self.count)
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return float(self.count)
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return self.count * 500_000.0
+
+    @property
+    def power(self) -> float:
+        return 0.0
 
 
 class EnhancedSignalProcessing(ShipPart):
     description: Literal['Enhanced Signal Processing'] = 'Enhanced Signal Processing'
     tl: int = 13
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
 
     def build_item(self) -> str | None:
         return self.description
@@ -302,19 +311,25 @@ class EnhancedSignalProcessing(ShipPart):
         notes.info('DM +4 to all sensor-related checks')
         return notes
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return 2.0
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return 8_000_000.0
 
-    def compute_power(self) -> float:
+    @property
+    def power(self) -> float:
         return 2.0
 
 
 class ExtendedArrays(ShipPart):
     description: Literal['Extended Arrays'] = 'Extended Arrays'
     tl: int = 11
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
 
     def build_item(self) -> str | None:
         return self.description
@@ -329,13 +344,16 @@ class ExtendedArrays(ShipPart):
     def _primary_suite(self) -> ShipPart:
         return cast(Any, self.assembly).sensors.primary
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return self._primary_suite.tons * 2
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return self._primary_suite.cost * 2
 
-    def compute_power(self) -> float:
+    @property
+    def power(self) -> float:
         return self._primary_suite.power * 3
 
 
@@ -351,7 +369,8 @@ class RapidDeploymentExtendedArrays(ExtendedArrays):
         notes.info('DM +2 to detect ship while in use')
         return notes
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return self._primary_suite.cost * 4
 
 
