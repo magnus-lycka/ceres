@@ -91,9 +91,9 @@ staff rather than listed as a separate crew position.
 Steward staffing is treated as an operational requirement driven by the planned
 passenger manifest, not by theoretical maximum berth capacity.
 
-In practice, this means Ceres only derives steward requirements from an
-explicit `passenger_vector`, rather than assuming that every available middle
-berth or low berth is occupied for crew-planning purposes.
+In practice, this means Ceres only derives steward requirements from explicitly
+modelled occupants, rather than assuming that every available middle berth or
+low berth is occupied for crew-planning purposes.
 
 The steward requirement is interpreted as required `Steward` skill levels, not
 raw headcount:
