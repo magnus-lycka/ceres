@@ -41,10 +41,6 @@ class Stateroom(ShipPart):
         return self.occupancy * self.variable_life_support_per_occupant
 
     @property
-    def life_support_cost(self) -> float:
-        return self.fixed_life_support_cost + self.variable_life_support_cost
-
-    @property
     def tons(self) -> float:
         return self.tons_per_room
 
@@ -317,12 +313,6 @@ class HabitationSection(CeresModel):
         middle_passage = passenger_vector.get('middle', 0)
         low_passage = passenger_vector.get('low', 0)
         return float((self.crew_count(ship) + high_passage + middle_passage + low_passage) * 1_000)
-
-    def life_support_cost(self, ship) -> float:
-        passenger_vector = self.passenger_vector(ship)
-        low_passage = passenger_vector.get('low', 0)
-        low_berth_life_support = low_passage * 100
-        return self.fixed_life_support_cost(ship) + low_berth_life_support + self.variable_life_support_cost(ship)
 
     def _group_consecutive(self, parts: Sequence[ShipPart]) -> list[list[ShipPart]]:
         groups: list[list[ShipPart]] = []

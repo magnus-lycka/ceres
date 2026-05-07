@@ -39,12 +39,15 @@ In progress. The first numeric slice has started:
   jump drives, fusion plants, and emergency power systems through properties.
 - A fifteenth weapons slice now computes weapon mounts, storage, barbettes,
   bays, and point defense batteries through properties.
+- The shared `ShipPart` refresh machinery has been removed; binding now supplies
+  assembly context and note/bulkhead setup without mutating cached numeric
+  fields.
 - Stale numeric inputs for computed values are ignored. Computed-only values are
   not serialized as stored fields; explicit design `tons` remains serialized as
   `tons`.
 
-The shared `ShipPart` refresh machinery still exists for the rest of the ship
-part hierarchy. Remove it only after enough part families have been converted.
+All ship-part numeric values are now either explicit design fields on simple
+parts or properties on converted part families.
 
 ## Motivation
 
@@ -457,3 +460,15 @@ mount data, base weapon data, and installed customisation. These parts no longer
 serialize `tons`, `cost`, or `power`; their serialized state is the selected
 weapon/mount type plus design options such as mounted weapons, count, and
 customisation.
+
+## Base Cleanup Slice
+
+The shared numeric refresh lifecycle is now removed from `ShipPartMixin`:
+
+- `compute_tons()`, `compute_cost()`, and `compute_power()` are gone
+- `_refresh_field()` and `refresh_derived_values()` are gone
+- `bind()` no longer writes computed numeric values back onto frozen parts
+
+Simple `ShipPart` instances can still carry explicit numeric fields. Converted
+families expose `tons`, `cost`, and `power` as properties, so ship aggregation
+continues to use the same public API without depending on bind-time mutation.

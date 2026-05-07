@@ -212,40 +212,12 @@ class ShipPartMixin(ABC):
     _armoured_bulkhead_part: ShipPart | None
 
     # ------------------------------------------------------------------
-    # Default compute methods — subclasses override to provide derived values
-    # ------------------------------------------------------------------
-
-    def compute_cost(self) -> float:
-        return self.cost
-
-    def compute_power(self) -> float:
-        return self.power
-
-    def compute_tons(self) -> float:
-        return self.tons
-
-    def _refresh_field(self, field_name: str, compute_method_name: str) -> None:
-        compute_method = getattr(type(self), compute_method_name)
-        base_method = getattr(ShipPartMixin, compute_method_name)
-        if compute_method is base_method:
-            return
-        value = getattr(self, compute_method_name)()
-        # Ship parts are frozen, but assembly-dependent values are finalized when the part is bound.
-        object.__setattr__(self, field_name, value)
-
-    def refresh_derived_values(self) -> None:
-        self._refresh_field('cost', 'compute_cost')
-        self._refresh_field('power', 'compute_power')
-        self._refresh_field('tons', 'compute_tons')
-
-    # ------------------------------------------------------------------
     # Ship binding
     # ------------------------------------------------------------------
 
     def bind(self, assembly: ShipBase) -> None:
         self._assembly = assembly
         self.check_tl()
-        self.refresh_derived_values()
         if message := self.build_item():
             self.item(message)
         self._refresh_armoured_bulkhead(assembly)

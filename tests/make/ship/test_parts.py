@@ -44,9 +44,6 @@ def test_base_part():
     assert part.assembly_tl == 14
     assert part.power == 3.14
     assert part.tons == 4.44
-    assert part.compute_cost() == 1
-    assert part.compute_power() == 3.14
-    assert part.compute_tons() == 4.44
 
 
 def test_part_rejects_ship_below_tl():

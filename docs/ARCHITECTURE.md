@@ -8,11 +8,13 @@ The core models are ordinary Pydantic `BaseModel` subclasses. In practice we
 still treat them as design declarations plus derived values, but they are not
 globally frozen.
 
-### Parts use plain numeric values
+### Parts expose numeric values
 
-`ShipPart` stores `cost`, `power`, and `tons` as ordinary `float` fields.
-Parts that derive their values override `compute_cost()`, `compute_power()`,
-and `compute_tons()`. The base implementation simply returns the stored values.
+`ShipPart` exposes `cost`, `power`, and `tons` as the public numeric API.
+Simple ad hoc parts can still store those as ordinary `float` fields, while
+domain part families generally expose them as properties computed from design
+state and the bound ship context. Binding must not copy derived values back onto
+frozen parts as cached fields.
 
 `tons` in Traveller ship design means **displacement tons** (`dTons`), not
 metric mass. One displacement ton is a volume measure: the volume occupied by
@@ -38,8 +40,10 @@ tankage has been rounded according to the current rules interpretation.
 
 Parts are created as plain Pydantic models. `Ship.model_post_init()` then calls
 `part.bind(ship)` on every installed part, which sets the owner, validates TL
-requirements, and recalculates derived values. Ship-dependent logic lives in
-`compute_*` methods and is only callable after binding.
+requirements, records the part label notes, and prepares any armoured-bulkhead
+companion part. Ship-dependent numeric logic lives in `cost`, `power`, and
+`tons` properties and is only reliable after binding when it needs assembly
+context.
 
 ### JSON roundtripping
 
@@ -67,10 +71,12 @@ the union with `Field(discriminator=...)`.
 
 ### Derived data in model JSON
 
-Derived values (`cost`, `power`, `tons`) are included in JSON so a serialized
-model can be used directly for rendering. On deserialization, derived values
-are recalculated by the model and override whatever the JSON contained — JSON
-is a snapshot of current state, not the authoritative source.
+Derived values (`cost`, `power`, `tons`) are generally excluded from JSON for
+computed part families. JSON represents the design inputs, not cached output
+from a previous bind. On deserialization, stale numeric values for computed-only
+parts are ignored and the public properties recompute from the design and bound
+ship context. Explicit design tonnage or cost still serializes through the
+public input name where that number is actually part of the design.
 
 ### Tech level model
 
