@@ -121,8 +121,15 @@ type AnyCrewRole = Annotated[
 
 
 class ShipCrew(CeresModel):
+    notes: ClassVar[NoteList]
     roles: list[AnyCrewRole] | None = None
     _ship = PrivateAttr(default=None)
+
+    @property
+    def notes(self) -> NoteList:
+        if self._ship is None:
+            return NoteList()
+        return self.comparison_notes()
 
     @property
     def count(self) -> int:
@@ -203,9 +210,6 @@ class ShipCrew(CeresModel):
             elif provided_count > required_count:
                 notes.info(f'{role} above recommended count: {provided_count} > {required_count}')
         return notes
-
-    def refresh_notes(self) -> None:
-        self.notes = self.comparison_notes()
 
     def _steward_roles(self, ship) -> list[CrewRole]:
         required_level = _steward_required_level(ship)

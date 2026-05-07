@@ -367,7 +367,6 @@ class Ship(ShipBase):
         installed_armouries = 0 if self.systems is None else len(self.systems.internal_systems_of_type(Armoury))
         if self.military and installed_armouries < recommended_armouries:
             self.warning(f'Installed armouries below recommendation: {installed_armouries} < {recommended_armouries}')
-        self.crew.refresh_notes()
 
 
 def _recommended_armouries(ship: Ship) -> int:

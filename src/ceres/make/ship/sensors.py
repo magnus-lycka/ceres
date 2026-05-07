@@ -4,7 +4,6 @@ from pydantic import Field
 
 from ceres.shared import CeresModel, NoteList, _Note
 
-from .base import ShipBase
 from .parts import ShipPart
 from .spec import ShipSpec, SpecSection
 from .text import format_counted_label, optional_count
@@ -80,6 +79,7 @@ def _capability_tl(part: ShipPart) -> int:
 
 
 class SensorPackage(ShipPart):
+    notes: ClassVar[NoteList]
     tons: ClassVar[float]
     cost: ClassVar[float]
     power: ClassVar[float]
@@ -88,23 +88,30 @@ class SensorPackage(ShipPart):
     base_power: ClassVar[float] = 0.0
     low_intercept: LowInterceptMode = 'NONE'
 
-    def check_tl(self) -> None:
-        if self.assembly_tl < self.tl:
-            self.error(f'Requires TL{self.tl}, ship is TL{self.assembly_tl}')
-        if self.low_intercept == 'LPI' and self.assembly_tl < 9:
-            self.error('LPI requires TL9 for installed radar/lidar')
-        if self.low_intercept == 'ELPI' and self.assembly_tl < 10:
-            self.error('ELPI requires TL10 for installed radar/lidar')
-
-    def bind(self, assembly: ShipBase) -> None:
-        super().bind(assembly)
-        retained_notes = self.notes.problems
-        # Sensor notes depend on assembly TL, so frozen ship-part notes are rebuilt after binding.
-        object.__setattr__(self, 'notes', NoteList())
+    @property
+    def notes(self) -> NoteList:
+        notes = NoteList()
         if message := self.build_item():
-            self.item(message)
-        self.notes.extend(self.build_notes())
-        self.notes.extend(retained_notes)
+            notes.item(message)
+        notes.extend(self.build_notes())
+        notes.extend(self._tl_notes())
+        return notes
+
+    def check_tl(self) -> None:
+        return None
+
+    def _tl_notes(self) -> NoteList:
+        notes = NoteList()
+        owner = getattr(self, '_assembly', None)
+        if owner is None:
+            return notes
+        if self.assembly_tl < self.tl:
+            notes.error(f'Requires TL{self.tl}, ship is TL{self.assembly_tl}')
+        if self.low_intercept == 'LPI' and self.assembly_tl < 9:
+            notes.error('LPI requires TL9 for installed radar/lidar')
+        if self.low_intercept == 'ELPI' and self.assembly_tl < 10:
+            notes.error('ELPI requires TL10 for installed radar/lidar')
+        return notes
 
     @property
     def tons(self) -> float:
