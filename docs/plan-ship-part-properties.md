@@ -27,6 +27,8 @@ In progress. The first numeric slice has started:
   `CabinSpace` with explicit design fields plus computed companion values.
 - An eighth command slice now computes `Cockpit` and `Bridge` values through
   properties.
+- A ninth computer slice now computes ship computer hardware values through
+  properties.
 - Stale numeric inputs for computed values are ignored. Computed-only values are
   not serialized as stored fields; explicit design `tons` remains serialized as
   `tons`.
@@ -342,3 +344,15 @@ The next completed slice is command parts:
 its design flags. `Bridge` computes context-dependent tonnage and cost from the
 bound ship displacement plus `small`/`holographic` flags. Both are computed-only
 numeric parts and no longer serialize `tons`, `cost`, or `power`.
+
+## Ninth Candidate Slice
+
+The next completed slice is ship computer hardware:
+
+- `Computer5` through `Computer35`
+- `Core40` through `Core100`
+
+The shared `ComputerBase` now computes zero tonnage, zero power, and cost from
+the hardware base cost plus `bis`/`fib` flags. These hardware parts no longer
+serialize `tons`, `cost`, or `power`; their design state is the discriminated
+hardware kind plus options.

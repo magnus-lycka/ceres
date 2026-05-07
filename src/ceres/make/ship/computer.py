@@ -18,8 +18,9 @@ class ComputerBase(ComputerPart, ShipPartMixin):
     _label: ClassVar[str]
     _base_cost: ClassVar[float]
     _armoured_bulkhead_part: ShipPart | None = PrivateAttr(default=None)
-    tons: float = 0.0
-    power: float = 0.0
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
     armoured_bulkhead: bool = False
 
     @property
@@ -60,16 +61,22 @@ class ComputerBase(ComputerPart, ShipPartMixin):
             packages.append(Intellect(rating=0))
         return packages
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return 0.0
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         multiplier = 1.0
         if self.bis:
             multiplier += 0.5
         if self.fib:
             multiplier += 0.5
         return self.base_cost * multiplier
+
+    @property
+    def power(self) -> float:
+        return 0.0
 
 
 class _Computer(ComputerBase):

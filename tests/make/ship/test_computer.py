@@ -70,6 +70,19 @@ def test_computer_recomputes_cost_from_input():
     assert c.cost == 30_000
 
 
+def test_computer_values_are_computed_properties_not_serialized_fields():
+    c = TypeAdapter(Computer).validate_python({'kind': 'computer_5', 'tons': 999, 'cost': 999, 'power': 999})
+    c.bind(DummyOwner(12, 6))
+    dump = c.model_dump()
+
+    assert c.tons == pytest.approx(0.0)
+    assert c.cost == pytest.approx(30_000.0)
+    assert c.power == pytest.approx(0.0)
+    assert 'tons' not in dump
+    assert 'cost' not in dump
+    assert 'power' not in dump
+
+
 def test_computer_bis_increases_cost_and_jump_control_capacity():
     c = Computer5(bis=True)
     c.bind(DummyOwner(12, 6))
@@ -105,6 +118,19 @@ def test_core_40_fib_hardware():
     c.bind(DummyOwner(13, 100))
     assert c.build_item() == 'Core/40/fib'
     assert c.cost == pytest.approx(67_500_000.0)
+
+
+def test_core_values_are_computed_properties_not_serialized_fields():
+    c = Core40.model_validate({'tons': 999, 'cost': 999, 'power': 999})
+    c.bind(DummyOwner(12, 100))
+    dump = c.model_dump()
+
+    assert c.tons == pytest.approx(0.0)
+    assert c.cost == pytest.approx(45_000_000.0)
+    assert c.power == pytest.approx(0.0)
+    assert 'tons' not in dump
+    assert 'cost' not in dump
+    assert 'power' not in dump
 
 
 def test_included_software_packages():
