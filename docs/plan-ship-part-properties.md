@@ -29,6 +29,7 @@ In progress. The first numeric slice has started:
   properties.
 - A ninth computer slice now computes ship computer hardware values through
   properties.
+- A tenth craft slice now computes craft housing values through properties.
 - Stale numeric inputs for computed values are ignored. Computed-only values are
   not serialized as stored fields; explicit design `tons` remains serialized as
   `tons`.
@@ -356,3 +357,16 @@ The shared `ComputerBase` now computes zero tonnage, zero power, and cost from
 the hardware base cost plus `bis`/`fib` flags. These hardware parts no longer
 serialize `tons`, `cost`, or `power`; their design state is the discriminated
 hardware kind plus options.
+
+## Tenth Candidate Slice
+
+The next completed slice is craft housing:
+
+- `DockingClamp`
+- `InternalDockingSpace`
+- `FullHangar`
+
+These parts compute their installed tonnage and cost from the clamp kind or
+carried craft metadata. They draw zero power and no longer serialize `tons`,
+`cost`, or `power`; the serialized design state is the clamp/housing type plus
+the carried occupant metadata.

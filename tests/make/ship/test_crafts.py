@@ -38,6 +38,42 @@ def test_internal_docking_space_for_air_raft():
     assert d.power == 0
 
 
+@pytest.mark.parametrize(
+    ('part', 'expected_tons', 'expected_cost'),
+    [
+        (DockingClamp(kind='II'), 5.0, 1_000_000.0),
+        (InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft')), 5.0, 1_250_000.0),
+        (FullHangar(craft=EmptyOccupant(docking_space=95)), 190.0, 38_000_000.0),
+    ],
+)
+def test_craft_housing_values_are_computed_properties_not_serialized_fields(part, expected_tons, expected_cost):
+    part.bind(DummyOwner(12, 1_000))
+    dump = part.model_dump()
+
+    assert part.tons == pytest.approx(expected_tons)
+    assert part.cost == pytest.approx(expected_cost)
+    assert part.power == pytest.approx(0.0)
+    assert 'tons' not in dump
+    assert 'cost' not in dump
+    assert 'power' not in dump
+
+
+def test_craft_housing_values_ignore_stale_numeric_inputs():
+    part = InternalDockingSpace.model_validate(
+        {
+            'craft': {'occupant_type': 'VEHICLE', 'kind': 'Air/Raft', 'shipping_size': 4, 'cost': 250_000.0},
+            'tons': 999,
+            'cost': 999,
+            'power': 999,
+        }
+    )
+    part.bind(DummyOwner(12, 100))
+
+    assert part.tons == pytest.approx(5.0)
+    assert part.cost == pytest.approx(1_250_000.0)
+    assert part.power == pytest.approx(0.0)
+
+
 def test_craft_section_all_parts():
     section = CraftSection(internal_housing=[InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft'))])
 

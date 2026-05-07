@@ -1,5 +1,5 @@
 import math
-from typing import Annotated, Literal
+from typing import Annotated, ClassVar, Literal
 
 from pydantic import Field
 
@@ -119,7 +119,17 @@ type AnyCarriedOccupant = Annotated[
 ]
 
 
-class DockingClamp(ShipPart):
+class _ZeroPowerCraftPart(ShipPart):
+    power: ClassVar[float]
+
+    @property
+    def power(self) -> float:
+        return 0.0
+
+
+class DockingClamp(_ZeroPowerCraftPart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
     _specs = {
         'I': dict(tons=1.0, cost=500_000.0),
         'II': dict(tons=5.0, cost=1_000_000.0),
@@ -133,15 +143,19 @@ class DockingClamp(ShipPart):
     def build_item(self) -> str | None:
         return f'Docking Clamp, Type {self.kind}'
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return float(self._specs[self.kind]['tons'])
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return float(self._specs[self.kind]['cost'])
 
 
-class InternalDockingSpace(ShipPart):
+class InternalDockingSpace(_ZeroPowerCraftPart):
     housing_type: Literal['DOCKING_SPACE'] = 'DOCKING_SPACE'
+    tons: ClassVar[float]
+    cost: ClassVar[float]
     craft: AnyCarriedOccupant
 
     def build_item(self) -> str | None:
@@ -149,15 +163,19 @@ class InternalDockingSpace(ShipPart):
             return self.craft.build_item()
         return f'Internal Docking Space: {self.craft.build_item()}'
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return float(math.ceil(self.craft.shipping_size * 1.1))
 
-    def compute_cost(self) -> float:
-        return self.compute_tons() * 250_000.0
+    @property
+    def cost(self) -> float:
+        return self.tons * 250_000.0
 
 
-class FullHangar(ShipPart):
+class FullHangar(_ZeroPowerCraftPart):
     housing_type: Literal['FULL_HANGAR'] = 'FULL_HANGAR'
+    tons: ClassVar[float]
+    cost: ClassVar[float]
     craft: AnyCarriedOccupant
 
     def build_item(self) -> str | None:
@@ -165,11 +183,13 @@ class FullHangar(ShipPart):
             return f'Full Hangar ({self.craft.shipping_size:g} tons)'
         return f'Full Hangar: {self.craft.build_item()}'
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return float(math.ceil(self.craft.shipping_size * 2.0))
 
-    def compute_cost(self) -> float:
-        return self.compute_tons() * 200_000.0
+    @property
+    def cost(self) -> float:
+        return self.tons * 200_000.0
 
 
 type InternalCraftHousing = Annotated[
