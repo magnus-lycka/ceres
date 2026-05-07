@@ -278,6 +278,42 @@ fulfill more than one of these positions in practice.
 Automation and equipment can impact crew needs, e.g. with Starhip Automation
 (Traveller Companion.)
 
+`ShipCrew()` means Ceres should derive the recommended crew from the ship
+rules. `ShipCrew(roles=[])` is an explicit design statement that no crew are
+modelled. Ceres should not silently turn an explicit empty crew list into a
+pilot, steward, or other crew member for salary or accommodation purposes.
+
+### Occupants
+
+Ship occupants are sophonts on the ship who are not cargo. Occupant is not a
+synonym for passenger. It is the broader domain concept used when asking what
+living, working, travelling, or frozen bodies need from the ship.
+
+Occupants are typically crew or passengers:
+
+- Crew are the people doing ship work, whether they are pilots, engineers,
+  stewards, bartenders, hair stylists, or anyone else whose role is part of
+  running or serving the ship.
+- Passengers are people being transported or hosted rather than working as crew.
+  Owners and guests count as passengers in practice unless they are explicitly
+  also crew.
+- Troops may technically be neither crew nor normal passengers when they are
+  simply being transported. They usually live like troops, for example in
+  barracks, so they should not be treated as ordinary passenger stateroom
+  demand.
+- Low passage and frozen watch are passenger and crew-adjacent cases
+  respectively, but for accommodation and operations they are frozen bodies.
+  They cost Cr100 per maintenance period to keep alive. They do not eat, bother
+  stewards, create normal mess, or perform crew tasks while frozen. A frozen
+  watch member is therefore not crew in any practical operational sense until
+  thawed.
+
+`occupants.py` models this distinction. Occupants declare residence demand, and
+rooms declare what they provide. This is why the residence allocator knows not
+to casually mix crew and passengers in the same cabin and can prefer, for
+example, single-occupancy staterooms for high passage before consuming
+double-occupancy passenger capacity.
+
 ### Reporting and rendering
 
 `ceres.report` is a template execution engine with three public functions:
