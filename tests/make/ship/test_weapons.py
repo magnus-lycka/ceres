@@ -138,6 +138,20 @@ def test_fixed_firmpoint_recomputes_tons_from_input():
     assert fp.tons == 0
 
 
+def test_fixed_mount_values_are_computed_properties_not_serialized_fields():
+    fp = FixedMount.model_validate(
+        {'weapons': [{'weapon_type': 'pulse_laser'}], 'tons': 999, 'cost': 999, 'power': 999}
+    )
+    fp.bind(DummyOwner(12, 6))
+    assert fp.tons == pytest.approx(0.0)
+    assert fp.cost == pytest.approx(1_100_000)
+    assert fp.power == pytest.approx(3.0)
+    dump = fp.model_dump()
+    assert 'tons' not in dump
+    assert 'cost' not in dump
+    assert 'power' not in dump
+
+
 def test_sandcaster_canister_storage_values():
     storage = SandcasterCanisterStorage(count=20)
     storage.bind(DummyOwner(12, 400))
@@ -310,6 +324,18 @@ def test_particle_barbette_very_high_yield_values():
     assert barbette.power == pytest.approx(15.0)
 
 
+def test_barbette_values_are_computed_properties_not_serialized_fields():
+    barbette = ParticleBarbette.model_validate({'tons': 999, 'cost': 999, 'power': 999})
+    barbette.bind(DummyOwner(13, 400))
+    assert barbette.tons == pytest.approx(5.0)
+    assert barbette.cost == pytest.approx(8_000_000)
+    assert barbette.power == pytest.approx(15.0)
+    dump = barbette.model_dump()
+    assert 'tons' not in dump
+    assert 'cost' not in dump
+    assert 'power' not in dump
+
+
 def test_small_missile_bay_values():
     bay = SmallMissileBay()
     bay.bind(DummyOwner(12, 1_000))
@@ -403,6 +429,47 @@ def test_type_ii_laser_point_defense_battery_energy_efficient_values():
     assert battery.tons == pytest.approx(20.0)
     assert battery.cost == pytest.approx(11_000_000.0)
     assert battery.power == pytest.approx(15.0)
+
+
+@pytest.mark.parametrize(
+    'part, expected_tons, expected_cost, expected_power',
+    [
+        (MissileStorage.model_validate({'count': 24, 'tons': 999, 'cost': 999, 'power': 999}), 2.0, 0.0, 0.0),
+        (
+            SandcasterCanisterStorage.model_validate({'count': 20, 'tons': 999, 'cost': 999, 'power': 999}),
+            1.0,
+            0.0,
+            0.0,
+        ),
+        (DoubleTurret.model_validate({'tons': 999, 'cost': 999, 'power': 999}), 1.0, 500_000.0, 1.0),
+        (
+            SmallMissileBay.model_validate({'tons': 999, 'cost': 999, 'power': 999}),
+            50.0,
+            12_000_000.0,
+            5.0,
+        ),
+        (
+            LaserPointDefenseBattery2.model_validate({'tons': 999, 'cost': 999, 'power': 999}),
+            20.0,
+            10_000_000.0,
+            20.0,
+        ),
+    ],
+)
+def test_weapon_part_values_are_computed_properties_not_serialized_fields(
+    part,
+    expected_tons,
+    expected_cost,
+    expected_power,
+):
+    part.bind(DummyOwner(13, 1_000))
+    assert part.tons == pytest.approx(expected_tons)
+    assert part.cost == pytest.approx(expected_cost)
+    assert part.power == pytest.approx(expected_power)
+    dump = part.model_dump()
+    assert 'tons' not in dump
+    assert 'cost' not in dump
+    assert 'power' not in dump
 
 
 def test_missile_storage_can_generate_armoured_bulkhead():

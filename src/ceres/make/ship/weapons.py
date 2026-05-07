@@ -164,6 +164,9 @@ type MountWeapon = Annotated[
 
 
 class FixedMount(ShipPart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
     mount_cost: ClassVar[int] = 100_000
     tl: int = 9
     weapons: list[MountWeapon] = Field(default_factory=list)
@@ -180,13 +183,16 @@ class FixedMount(ShipPart):
             return [*notes, cust] if cust else notes
         return [*notes, *_mounted_weapon_notes(self.weapons, empty_message='No weapons in mount')]
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return 0.0
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return self.mount_cost + _mounted_weapon_cost(self.weapons)
 
-    def compute_power(self) -> float:
+    @property
+    def power(self) -> float:
         power = _mounted_weapon_power(self.weapons)
         # Firmpoint reduces power by 25%; apply combined then floor
         power *= 0.75
@@ -197,6 +203,9 @@ TurretSize = Literal['single', 'double', 'triple', 'quad']
 
 
 class _Turret(ShipPart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
     turret_type: str
     size: ClassVar[TurretSize]
     mount_cost: ClassVar[float]
@@ -223,13 +232,16 @@ class _Turret(ShipPart):
         if len(self.weapons) > self.capacity:
             self.error(f'Turret can mount at most {self.capacity} weapon{"s" if self.capacity != 1 else ""}')
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return 1.0
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return self.mount_cost + _mounted_weapon_cost(self.weapons)
 
-    def compute_power(self) -> float:
+    @property
+    def power(self) -> float:
         return self.mount_power + _mounted_weapon_power(self.weapons)
 
 
@@ -278,30 +290,48 @@ type Turret = Annotated[
 class MissileStorage(ShipPart):
     """Magazine for missiles: 12 missiles per ton, no cost."""
 
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
     count: int
 
     def build_item(self) -> str | None:
         return f'Missile Storage ({self.count})'
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return self.count / 12
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
+        return 0.0
+
+    @property
+    def power(self) -> float:
         return 0.0
 
 
 class SandcasterCanisterStorage(ShipPart):
     """Magazine for sand canisters: 20 canisters per ton, no cost."""
 
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
     count: int
 
     def build_item(self) -> str | None:
         return f'Sandcaster Canister Storage ({self.count})'
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return self.count / 20
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
+        return 0.0
+
+    @property
+    def power(self) -> float:
         return 0.0
 
 
@@ -319,6 +349,9 @@ BarbetteWeapon = Literal[
 
 
 class _Barbette(CustomisableShipPart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
     barbette_type: str
     weapon: ClassVar[BarbetteWeapon]
     weapon_label: ClassVar[str]
@@ -362,13 +395,16 @@ class _Barbette(CustomisableShipPart):
     def crew_required_military(self) -> int:
         return 2
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return 5.0 * self.tons_multiplier
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return self.base_cost * self.cost_multiplier
 
-    def compute_power(self) -> float:
+    @property
+    def power(self) -> float:
         return self.base_power * self.power_multiplier
 
 
@@ -496,6 +532,9 @@ PointDefenseRating = Literal[1, 2, 3]
 
 
 class _Bay(CustomisableShipPart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
     bay_type: str
     size: ClassVar[BaySize]
     weapon: ClassVar[BayWeapon]
@@ -558,13 +597,16 @@ class _Bay(CustomisableShipPart):
     def crew_required_military(self) -> int:
         return self.crew
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return self.base_tons * self.tons_multiplier
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return self.base_cost * self.cost_multiplier
 
-    def compute_power(self) -> float:
+    @property
+    def power(self) -> float:
         return self.base_power * self.power_multiplier
 
 
@@ -946,6 +988,9 @@ type Bay = Annotated[
 
 
 class _PointDefenseBattery(CustomisableShipPart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
     battery_type: str
     kind: ClassVar[PointDefenseKind]
     rating: ClassVar[PointDefenseRating]
@@ -975,13 +1020,16 @@ class _PointDefenseBattery(CustomisableShipPart):
     def hardpoints_required(self) -> int:
         return 1
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return self.base_tons * self.tons_multiplier
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return self.base_cost * self.cost_multiplier
 
-    def compute_power(self) -> float:
+    @property
+    def power(self) -> float:
         return self.base_power * self.power_multiplier
 
 

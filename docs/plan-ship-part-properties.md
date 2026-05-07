@@ -37,6 +37,8 @@ In progress. The first numeric slice has started:
   through properties.
 - A fourteenth drives slice now computes reaction drives, manoeuvre drives,
   jump drives, fusion plants, and emergency power systems through properties.
+- A fifteenth weapons slice now computes weapon mounts, storage, barbettes,
+  bays, and point defense batteries through properties.
 - Stale numeric inputs for computed values are ignored. Computed-only values are
   not serialized as stored fields; explicit design `tons` remains serialized as
   `tons`.
@@ -438,3 +440,20 @@ displacement, drive level, plant output, and installed customisation. These
 parts no longer serialize `tons`, `cost`, or `power`; their serialized state is
 the selected drive/plant type plus design options such as customisation,
 high-burn thruster, and fusion output.
+
+## Fifteenth Candidate Slice
+
+The next completed slice is weapons:
+
+- `FixedMount`
+- turrets from `SingleTurret` through `QuadTurret`
+- `MissileStorage` and `SandcasterCanisterStorage`
+- barbettes from `BeamLaserBarbette` through `TorpedoBarbette`
+- bay weapons from small through large variants
+- point defense batteries from type I through type III laser and gauss variants
+
+Weapon values now compute from mounted weapon lists, ammunition counts, base
+mount data, base weapon data, and installed customisation. These parts no longer
+serialize `tons`, `cost`, or `power`; their serialized state is the selected
+weapon/mount type plus design options such as mounted weapons, count, and
+customisation.
