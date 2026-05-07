@@ -2,7 +2,18 @@
 
 ## Status
 
-Draft plan. This describes a desired architecture cleanup, not current code.
+In progress. The first numeric slice has started:
+
+- `Stateroom`, `HighStateroom`, and `LuxuryStateroom` now compute `tons`,
+  `cost`, and `power` through properties instead of cached Pydantic fields.
+- `LowBerth` now computes `tons`, `cost`, and context-dependent `power` through
+  properties.
+- `Brig` now computes `tons`, `cost`, and `power` through properties.
+- Stale numeric inputs for those parts are ignored, and those computed values
+  are not serialized as stored fields.
+
+The shared `ShipPart` refresh machinery still exists for the rest of the ship
+part hierarchy. Remove it only after enough part families have been converted.
 
 ## Motivation
 
@@ -198,3 +209,8 @@ They cover fixed values and one context-dependent power calculation
 
 Use that slice to settle naming, JSON behaviour, and test style before touching
 drives, power plants, sensors, or weapons.
+
+Current implementation note: this slice keeps the public names (`tons`, `cost`,
+and `power`) as properties by declaring those names as `ClassVar` attributes on
+the converted subclasses. That removes the inherited Pydantic fields for those
+specific subclasses without forcing a base-class migration yet.

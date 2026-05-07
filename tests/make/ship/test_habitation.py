@@ -8,6 +8,7 @@ from ceres.make.ship.crew import Pilot, ShipCrew
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive1, PowerSection
 from ceres.make.ship.habitation import (
     AdvancedEntertainmentSystem,
+    Brig,
     CabinSpace,
     HabitationSection,
     HighStateroom,
@@ -39,6 +40,16 @@ def test_staterooms_power_zero():
     s = Stateroom()
     s.bind(DummyOwner(12, 100))
     assert s.power == 0
+
+
+def test_stateroom_values_are_computed_properties_not_serialized_fields():
+    s = Stateroom.model_validate({'tons': 99, 'cost': 99, 'power': 99})
+    assert s.tons == pytest.approx(4.0)
+    assert s.cost == pytest.approx(500_000.0)
+    assert s.power == pytest.approx(0.0)
+    assert 'tons' not in s.model_dump()
+    assert 'cost' not in s.model_dump()
+    assert 'power' not in s.model_dump()
 
 
 def test_staterooms_life_support_uses_full_occupancy_formula():
@@ -104,6 +115,26 @@ def test_low_berths_power():
     assert sum(berth.power for berth in ship_10.habitation.low_berths) == 1
     assert ship_11.habitation is not None
     assert sum(berth.power for berth in ship_11.habitation.low_berths) == 2
+
+
+def test_low_berth_values_are_computed_properties_not_serialized_fields():
+    berth = LowBerth.model_validate({'tons': 99, 'cost': 99, 'power': 99})
+    assert berth.tons == pytest.approx(0.5)
+    assert berth.cost == pytest.approx(50_000.0)
+    assert berth.power == pytest.approx(0.0)
+    assert 'tons' not in berth.model_dump()
+    assert 'cost' not in berth.model_dump()
+    assert 'power' not in berth.model_dump()
+
+
+def test_brig_values_are_computed_properties_not_serialized_fields():
+    brig = Brig.model_validate({'tons': 99, 'cost': 99, 'power': 99})
+    assert brig.tons == pytest.approx(4.0)
+    assert brig.cost == pytest.approx(250_000.0)
+    assert brig.power == pytest.approx(0.0)
+    assert 'tons' not in brig.model_dump()
+    assert 'cost' not in brig.model_dump()
+    assert 'power' not in brig.model_dump()
 
 
 def test_advanced_entertainment_system_cost():

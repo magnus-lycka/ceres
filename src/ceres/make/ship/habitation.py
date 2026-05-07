@@ -14,6 +14,9 @@ class Stateroom(ShipPart):
     kind: Literal['standard'] = 'standard'
     label: ClassVar[str] = 'Stateroom'
     plural_label: ClassVar[str] = 'Staterooms'
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
     occupancy: ClassVar[int] = 2
     tons_per_room: ClassVar[float] = 4.0
     cost_per_room: ClassVar[float] = 500_000.0
@@ -35,11 +38,17 @@ class Stateroom(ShipPart):
     def life_support_cost(self) -> float:
         return self.fixed_life_support_cost + self.variable_life_support_cost
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return self.tons_per_room
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return self.cost_per_room
+
+    @property
+    def power(self) -> float:
+        return 0.0
 
 
 class HighStateroom(Stateroom):
@@ -66,19 +75,27 @@ _stateroom_adapter: TypeAdapter[StateroomUnion] = TypeAdapter(StateroomUnion)
 class LowBerth(ShipPart):
     label: ClassVar[str] = 'Low Berth'
     plural_label: ClassVar[str] = 'Low Berths'
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
     tons_per_berth: ClassVar[float] = 0.5
     cost_per_berth: ClassVar[float] = 50_000.0
 
     def build_item(self) -> str | None:
         return self.label
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return self.tons_per_berth
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return self.cost_per_berth
 
-    def compute_power(self) -> float:
+    @property
+    def power(self) -> float:
+        if self._assembly is None:
+            return 0.0
         habitation = getattr(self.assembly, 'habitation', None)
         if habitation is None:
             return 0.0
@@ -90,14 +107,24 @@ class LowBerth(ShipPart):
 
 
 class Brig(ShipPart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+
     def build_item(self) -> str | None:
         return 'Brig'
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return 4.0
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return 250_000.0
+
+    @property
+    def power(self) -> float:
+        return 0.0
 
 
 class AdvancedEntertainmentSystem(ShipPart):
