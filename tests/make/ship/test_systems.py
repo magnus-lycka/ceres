@@ -9,6 +9,7 @@ from ceres.make.ship.systems import (
     Armoury,
     BasicAutodoc,
     Biosphere,
+    BriefingRoom,
     CommercialZone,
     CommonArea,
     HotTub,
@@ -33,6 +34,61 @@ class DummyOwner(ShipBase):
 
     def remaining_usable_tonnage(self) -> float:
         return float(self.displacement)
+
+
+@pytest.mark.parametrize(
+    ('part', 'expected_tons', 'expected_cost', 'expected_power'),
+    [
+        (Workshop(), 6.0, 900_000.0, 0.0),
+        (Laboratory(), 4.0, 1_000_000.0, 0.0),
+        (LibraryFacility(), 4.0, 4_000_000.0, 0.0),
+        (BriefingRoom(), 4.0, 500_000.0, 0.0),
+        (Armoury(), 1.0, 250_000.0, 0.0),
+        (WetBar(), 0.0, 2_000.0, 0.0),
+        (MedicalBay(), 4.0, 2_000_000.0, 1.0),
+        (MedicalBay(autodoc=BasicAutodoc()), 4.0, 2_100_000.0, 1.0),
+        (ProbeDrones(count=10), 2.0, 1_000_000.0, 0.0),
+        (AdvancedProbeDrones(count=10), 2.0, 1_600_000.0, 0.0),
+        (MiningDrones(count=10), 20.0, 2_000_000.0, 0.0),
+        (TrainingFacility(trainees=2), 4.0, 800_000.0, 0.0),
+    ],
+)
+def test_converted_system_values_are_computed_properties_not_serialized_fields(
+    part, expected_tons, expected_cost, expected_power
+):
+    part.bind(DummyOwner(15, 400))
+    assert part.tons == pytest.approx(expected_tons)
+    assert part.cost == pytest.approx(expected_cost)
+    assert part.power == pytest.approx(expected_power)
+    assert 'tons' not in part.model_dump()
+    assert 'cost' not in part.model_dump()
+    assert 'power' not in part.model_dump()
+
+
+@pytest.mark.parametrize(
+    ('part_cls', 'data', 'expected_tons', 'expected_cost', 'expected_power'),
+    [
+        (Workshop, {}, 6.0, 900_000.0, 0.0),
+        (Laboratory, {}, 4.0, 1_000_000.0, 0.0),
+        (LibraryFacility, {}, 4.0, 4_000_000.0, 0.0),
+        (BriefingRoom, {}, 4.0, 500_000.0, 0.0),
+        (Armoury, {}, 1.0, 250_000.0, 0.0),
+        (WetBar, {}, 0.0, 2_000.0, 0.0),
+        (MedicalBay, {}, 4.0, 2_000_000.0, 1.0),
+        (ProbeDrones, {'count': 10}, 2.0, 1_000_000.0, 0.0),
+        (AdvancedProbeDrones, {'count': 10}, 2.0, 1_600_000.0, 0.0),
+        (MiningDrones, {'count': 10}, 20.0, 2_000_000.0, 0.0),
+        (TrainingFacility, {'trainees': 2}, 4.0, 800_000.0, 0.0),
+    ],
+)
+def test_converted_system_values_ignore_stale_numeric_inputs(
+    part_cls, data, expected_tons, expected_cost, expected_power
+):
+    part = part_cls.model_validate({'tons': 99, 'cost': 99, 'power': 99, **data})
+    part.bind(DummyOwner(15, 400))
+    assert part.tons == pytest.approx(expected_tons)
+    assert part.cost == pytest.approx(expected_cost)
+    assert part.power == pytest.approx(expected_power)
 
 
 def test_workshop_tons():

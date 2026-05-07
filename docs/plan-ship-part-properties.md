@@ -9,6 +9,10 @@ In progress. The first numeric slice has started:
 - `LowBerth` now computes `tons`, `cost`, and context-dependent `power` through
   properties.
 - `Brig` now computes `tons`, `cost`, and `power` through properties.
+- A second low-risk systems slice now computes `tons`, `cost`, and `power`
+  through properties for `Workshop`, `Laboratory`, `LibraryFacility`,
+  `BriefingRoom`, `Armoury`, `WetBar`, `MedicalBay`, `ProbeDrones`,
+  `AdvancedProbeDrones`, `MiningDrones`, and `TrainingFacility`.
 - Stale numeric inputs for those parts are ignored, and those computed values
   are not serialized as stored fields.
 
@@ -214,3 +218,35 @@ Current implementation note: this slice keeps the public names (`tons`, `cost`,
 and `power`) as properties by declaring those names as `ClassVar` attributes on
 the converted subclasses. That removes the inherited Pydantic fields for those
 specific subclasses without forcing a base-class migration yet.
+
+## Second Candidate Slice
+
+The next completed slice is fixed and count-based systems:
+
+- `Workshop`
+- `Laboratory`
+- `LibraryFacility`
+- `BriefingRoom`
+- `Armoury`
+- `WetBar`
+- `MedicalBay`
+- `ProbeDrones`
+- `AdvancedProbeDrones`
+- `MiningDrones`
+- `TrainingFacility`
+
+These parts avoid explicit design fields named `tons`, `cost`, or `power`, so
+they can follow the same subclass-level property pattern as the habitation
+slice. They also share a small `_ZeroPowerSystemPart` base for converted systems
+whose power draw is always zero.
+
+Deferred from this slice:
+
+- `CommonArea`, `SwimmingPool`, `Theatre`, `CommercialZone`, and `Biosphere`
+  keep explicit `tons` input fields and need an internal/base field naming
+  decision.
+- `HotTub` inherits from `CommonArea`; converting it before its parent causes
+  the remaining refresh machinery to call inherited `compute_cost()` and try to
+  write into the property.
+- `Airlock`, `Aerofins`, and `RepairDrones` depend on assembly context and
+  should be handled in a context-dependent systems pass.

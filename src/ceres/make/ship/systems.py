@@ -10,69 +10,97 @@ from .text import optional_count
 _T = TypeVar('_T', bound=ShipPart)
 
 
-class Workshop(ShipPart):
+class _ZeroPowerSystemPart(ShipPart):
+    power: ClassVar[float]
+
+    @property
+    def power(self) -> float:
+        return 0.0
+
+
+class Workshop(_ZeroPowerSystemPart):
     system_type: Literal['WORKSHOP'] = 'WORKSHOP'
+    tons: ClassVar[float]
+    cost: ClassVar[float]
 
     def build_item(self) -> str | None:
         return 'Workshop'
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return 6.0
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return 900_000.0
 
 
-class Laboratory(ShipPart):
+class Laboratory(_ZeroPowerSystemPart):
     system_type: Literal['LABORATORY'] = 'LABORATORY'
+    tons: ClassVar[float]
+    cost: ClassVar[float]
 
     def build_item(self) -> str | None:
         return 'Laboratory'
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return 4.0
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return 1_000_000.0
 
 
-class LibraryFacility(ShipPart):
+class LibraryFacility(_ZeroPowerSystemPart):
     system_type: Literal['LIBRARY'] = 'LIBRARY'
     tl: int = 8
+    tons: ClassVar[float]
+    cost: ClassVar[float]
 
     def build_item(self) -> str | None:
         return 'Library'
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return 4.0
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return 4_000_000.0
 
 
-class BriefingRoom(ShipPart):
+class BriefingRoom(_ZeroPowerSystemPart):
     system_type: Literal['BRIEFING_ROOM'] = 'BRIEFING_ROOM'
+    tons: ClassVar[float]
+    cost: ClassVar[float]
 
     def build_item(self) -> str | None:
         return 'Briefing Room'
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return 4.0
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return 500_000.0
 
 
-class Armoury(ShipPart):
+class Armoury(_ZeroPowerSystemPart):
     system_type: Literal['ARMOURY'] = 'ARMOURY'
+    tons: ClassVar[float]
+    cost: ClassVar[float]
 
     def build_item(self) -> str | None:
         return 'Armoury'
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return 1.0
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return 250_000.0
 
 
@@ -117,14 +145,19 @@ class Theatre(CommonArea):
         return self.tons * 100_000.0
 
 
-class WetBar(ShipPart):
+class WetBar(_ZeroPowerSystemPart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+
     def build_item(self) -> str | None:
         return 'Wet Bar'
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return 0.0
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return 2_000.0
 
 
@@ -153,6 +186,9 @@ class BasicAutodoc(CeresModel):
 
 class MedicalBay(ShipPart):
     system_type: Literal['MEDICAL_BAY'] = 'MEDICAL_BAY'
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
     autodoc: BasicAutodoc | None = None
 
     def build_item(self) -> str | None:
@@ -160,16 +196,19 @@ class MedicalBay(ShipPart):
             return 'Medical Bay, Basic Autodoc'
         return 'Medical Bay'
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return 4.0
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         cost = 2_000_000.0
         if self.autodoc is not None:
             cost += self.autodoc.cost
         return cost
 
-    def compute_power(self) -> float:
+    @property
+    def power(self) -> float:
         return 1.0
 
 
@@ -233,9 +272,11 @@ class Aerofins(ShipPart):
         return self.compute_tons() * 100_000.0
 
 
-class ProbeDrones(ShipPart):
+class ProbeDrones(_ZeroPowerSystemPart):
     drone_type: Literal['PROBE_DRONES'] = 'PROBE_DRONES'
     tl: int = 9
+    tons: ClassVar[float]
+    cost: ClassVar[float]
     drones_per_ton: ClassVar[int] = 5
     cost_per_ton: ClassVar[float] = 500_000.0
     count: int
@@ -245,10 +286,12 @@ class ProbeDrones(ShipPart):
             return 'Probe Drone'
         return 'Probe Drones'
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return self.count / self.drones_per_ton
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return (self.count / self.drones_per_ton) * self.cost_per_ton
 
 
@@ -278,8 +321,10 @@ class RepairDrones(ShipPart):
         return self.compute_tons() * 200_000.0
 
 
-class MiningDrones(ShipPart):
+class MiningDrones(_ZeroPowerSystemPart):
     drone_type: Literal['MINING_DRONES'] = 'MINING_DRONES'
+    tons: ClassVar[float]
+    cost: ClassVar[float]
     count: int
 
     def build_item(self) -> str | None:
@@ -287,25 +332,31 @@ class MiningDrones(ShipPart):
             return 'Mining Drone'
         return 'Mining Drones'
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return self.count * 2.0
 
-    def compute_cost(self) -> float:
+    @property
+    def cost(self) -> float:
         return self.count * 200_000.0
 
 
-class TrainingFacility(ShipPart):
+class TrainingFacility(_ZeroPowerSystemPart):
     system_type: Literal['TRAINING_FACILITY'] = 'TRAINING_FACILITY'
+    tons: ClassVar[float]
+    cost: ClassVar[float]
     trainees: int
 
     def build_item(self) -> str | None:
         return f'Training Facility: {self.trainees}-person capacity'
 
-    def compute_tons(self) -> float:
+    @property
+    def tons(self) -> float:
         return self.trainees * 2.0
 
-    def compute_cost(self) -> float:
-        return self.compute_tons() * 200_000.0
+    @property
+    def cost(self) -> float:
+        return self.tons * 200_000.0
 
 
 type AnyDroneSystem = Annotated[
