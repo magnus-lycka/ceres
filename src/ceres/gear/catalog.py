@@ -57,7 +57,7 @@ def _fmt_cost(cost: float) -> str:
 
 
 def _fmt_mass(mass: float) -> str:
-    return f'{mass:g}' if mass > 0 else '—'
+    return f'{round(mass, 3):g}' if mass > 0 else '—'
 
 
 def _notes_for_display(item) -> list[dict]:
@@ -76,6 +76,48 @@ def _standard_section(cls: type[ComputerEquipment]) -> dict:
         )
     return {
         'heading': cls(processing=min(cls._specs))._label,
+        'headers': ['Processing', 'TL', 'Mass (kg)', 'Cost'],
+        'alignments': ['left', 'right', 'right', 'right'],
+        'rows': rows,
+    }
+
+
+def _retro_section(cls: type[ComputerEquipment]) -> dict:
+    rows = []
+    for tl in range(7, 17):
+        for p in sorted(cls._specs):
+            item = cls(processing=p)
+            if item.tl < tl:
+                item = cls(processing=p, tl=tl)
+                rows.append(
+                    {
+                        'cells': [str(p), str(tl), _fmt_mass(item.mass_kg), _fmt_cost(item.cost)],
+                        'notes': _notes_for_display(item),
+                    }
+                )
+    return {
+        'heading': 'Retrotech ' + cls(processing=min(cls._specs))._label,
+        'headers': ['Processing', 'TL', 'Mass (kg)', 'Cost'],
+        'alignments': ['left', 'right', 'right', 'right'],
+        'rows': rows,
+    }
+
+
+def _proto_section(cls: type[ComputerEquipment]) -> dict:
+    rows = []
+    for tl in range(4, 15):
+        for p in sorted(cls._specs):
+            item = cls(processing=p)
+            if item.tl > tl and item.tl < tl + 3:
+                item = cls(processing=p, tl=tl)
+                rows.append(
+                    {
+                        'cells': [str(p), str(tl), _fmt_mass(item.mass_kg), _fmt_cost(item.cost)],
+                        'notes': _notes_for_display(item),
+                    }
+                )
+    return {
+        'heading': 'Prototech ' + cls(processing=min(cls._specs))._label,
         'headers': ['Processing', 'TL', 'Mass (kg)', 'Cost'],
         'alignments': ['left', 'right', 'right', 'right'],
         'rows': rows,
@@ -102,6 +144,8 @@ def _specialised_section() -> dict:
 
 def _build_context(*, theme: ReportTheme = 'light', page_size: str = 'a4') -> dict:
     sections = [_standard_section(cls) for cls in _COMPUTER_TYPES]
+    sections.extend(_retro_section(cls) for cls in _COMPUTER_TYPES)
+    sections.extend(_proto_section(cls) for cls in _COMPUTER_TYPES)
     sections.append(_specialised_section())
     return {
         'title': 'Computer Equipment',

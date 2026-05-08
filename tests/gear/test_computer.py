@@ -22,11 +22,37 @@ def test_portable_computer_zero_matches_csc_values():
     assert pc.cost == 500.0
 
 
+def test_portable_retro_computer_zero_matches_csc_values():
+    pc = PortableComputer(processing=0, tl=9)
+    assert pc.tl == 9
+    assert pc.mass_kg == 1.25
+    assert pc.cost == 125.0
+
+
 def test_portable_computer_three_matches_csc_values():
     pc = PortableComputer(processing=3)
     assert pc.tl == 12
     assert pc.mass_kg == 0.5
     assert pc.cost == 1_000.0
+
+
+def test_portable_proto_1_computer_three_matches_csc_values():
+    pc = PortableComputer(processing=3, tl=11)
+    assert pc.tl == 11
+    assert pc.mass_kg == 5.0
+    assert pc.cost == 10_000.0
+
+
+def test_portable_proto_2_computer_three_matches_csc_values():
+    pc = PortableComputer(processing=3, tl=10)
+    assert pc.tl == 10
+    assert pc.mass_kg == 50.0
+    assert pc.cost == 100_000.0
+
+
+def test_portable_proto_3_computer_fails():
+    with pytest.raises(ValueError, match='Proto tech not available for 3 TLs'):
+        PortableComputer(processing=3, tl=9)
 
 
 def test_portable_computer_rejects_invalid_processing():

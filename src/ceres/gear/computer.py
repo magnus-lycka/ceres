@@ -49,11 +49,37 @@ class ComputerEquipment(Equipment):
             allowed = ', '.join(str(v) for v in sorted(specs))
             raise ValueError(f'Unsupported {cls.__name__} processing {processing}; expected one of: {allowed}')
         spec = specs[processing]
-        part = ComputerPart(processing=processing, tl=int(spec['tl']), cost=float(spec['cost']))
+        given_tl = data.get('tl')
+        if given_tl and given_tl > spec['tl']:
+            return cls.retro_spec(processing, data, spec, int(given_tl - spec['tl']))
+        if given_tl and given_tl < spec['tl']:
+            return cls.proto_spec(processing, data, spec, int(spec['tl'] - given_tl))
+        part = ComputerPart(processing=processing, tl=int(spec['tl']))
         data.setdefault('parts', [part])
-        data.setdefault('tl', part.tl)
-        data.setdefault('cost', part.cost)
+        data.setdefault('tl', int(spec['tl']))
+        data.setdefault('cost', float(spec['cost']))
         data.setdefault('mass_kg', float(spec['mass_kg']))
+        return data
+
+    @staticmethod
+    def retro_spec(processing: int, data: dict, spec: dict, levels: int):
+        factor = min(2**levels, 1_000)  # Don't be silly
+        part = ComputerPart(processing=processing, tl=int(spec['tl']))
+        data.setdefault('parts', [part])
+        data.setdefault('tl', int(spec['tl']))
+        data.setdefault('cost', float(spec['cost']) / factor)
+        data.setdefault('mass_kg', float(spec['mass_kg']) / factor)
+        return data
+
+    def proto_spec(processing: int, data: dict, spec: dict, levels: int):
+        if levels > 2:
+            raise ValueError(f'Proto tech not available for {levels} TLs')
+        factor = 10**levels
+        part = ComputerPart(processing=processing, tl=int(spec['tl']))
+        data.setdefault('parts', [part])
+        data.setdefault('tl', int(spec['tl']))
+        data.setdefault('cost', float(spec['cost']) * factor)
+        data.setdefault('mass_kg', float(spec['mass_kg']) * factor)
         return data
 
     def build_item(self) -> str | None:
