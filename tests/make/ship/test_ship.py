@@ -316,15 +316,15 @@ def test_hull_overloaded_puts_error_on_ship():
 
 
 def test_fuel_cargo_container_does_not_hide_hull_overload():
+    # capacity=142: ceil(142 * 1.05) = 150 → remaining = 100 - 2(airlock) - 150 = -52
     my_ship = ship.Ship(
         tl=12,
         displacement=100,
-        maintained_external_displacement=120,
         hull=hull.Hull(configuration=hull.streamlined_hull, airlocks=[Airlock()]),
-        cargo=CargoSection(fuel_cargo_containers=[FuelCargoContainer(capacity=30)]),
+        cargo=CargoSection(fuel_cargo_containers=[FuelCargoContainer(capacity=142)]),
     )
 
-    assert 'Hull overloaded by 52.00 tons' in my_ship.notes.errors
+    assert 'Hull overloaded by 50.00 tons' in my_ship.notes.errors
 
 
 def test_ship_roundtrips_airlocks_in_parts_list():

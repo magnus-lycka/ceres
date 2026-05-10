@@ -2,6 +2,7 @@ import pytest
 
 from ceres.make.ship import hull, ship
 from ceres.make.ship.base import ShipBase
+from ceres.make.ship.crafts import CraftSection, DockingClamp, SpaceCraft
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive2, PowerSection, RDrive16
 from ceres.make.ship.spec import SpecSection
 from ceres.make.ship.storage import (
@@ -215,10 +216,10 @@ def test_jump_fuel_uses_performance_displacement_for_external_transport_load():
     my_ship = ship.Ship(
         tl=12,
         displacement=400,
-        maintained_external_displacement=40,
         hull=hull.Hull(configuration=hull.dispersed_structure),
         drives=DriveSection(j_drive=JDrive2()),
         fuel=FuelSection(jump_fuel=JumpFuel(parsecs=2)),
+        craft=CraftSection(docking_clamps=[DockingClamp(craft=SpaceCraft.from_catalog('Pinnace'), transported=True)]),
     )
     assert my_ship.fuel is not None
     assert my_ship.fuel.jump_fuel is not None
@@ -229,10 +230,10 @@ def test_jump_fuel_values_are_computed_properties_not_serialized_fields():
     my_ship = ship.Ship(
         tl=12,
         displacement=400,
-        maintained_external_displacement=40,
         hull=hull.Hull(configuration=hull.dispersed_structure),
         drives=DriveSection(j_drive=JDrive2()),
         fuel=FuelSection(jump_fuel=JumpFuel.model_validate({'parsecs': 2, 'tons': 99, 'cost': 99, 'power': 99})),
+        craft=CraftSection(docking_clamps=[DockingClamp(craft=SpaceCraft.from_catalog('Pinnace'), transported=True)]),
     )
     assert my_ship.fuel is not None
     assert my_ship.fuel.jump_fuel is not None

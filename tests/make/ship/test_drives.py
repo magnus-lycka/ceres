@@ -3,6 +3,7 @@ import pytest
 
 from ceres.make.ship import hull, ship
 from ceres.make.ship.base import ShipBase
+from ceres.make.ship.crafts import CraftSection, DockingClamp, SpaceCraft
 from ceres.make.ship.drives import (
     DecreasedFuel,
     DriveSection,
@@ -104,12 +105,19 @@ def test_jump_fuel_respects_decreased_fuel_additively():
 
 
 def test_jump_drive_uses_performance_displacement_when_transporting_external_load():
-    d = JDrive2()
-    d.bind(DummyOwner(12, 400, maintained_external_displacement=40))
-    assert d.build_item() == 'Jump 2 (440t)'
-    assert float(d.tons) == pytest.approx(27.0)
-    assert float(d.cost) == pytest.approx(40_500_000.0)
-    assert float(d.power) == pytest.approx(88.0)
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.dispersed_structure),
+        drives=DriveSection(j_drive=JDrive2()),
+        craft=CraftSection(docking_clamps=[DockingClamp(craft=SpaceCraft.from_catalog('Pinnace'), transported=True)]),
+    )
+    assert my_ship.drives is not None
+    assert my_ship.drives.j_drive is not None
+    assert my_ship.drives.j_drive.build_item() == 'Jump 2 (440t)'
+    assert float(my_ship.drives.j_drive.tons) == pytest.approx(27.0)
+    assert float(my_ship.drives.j_drive.cost) == pytest.approx(40_500_000.0)
+    assert float(my_ship.drives.j_drive.power) == pytest.approx(88.0)
 
 
 # --- MDrive ---
@@ -124,12 +132,19 @@ def test_mdrive_standard_tons():
 
 
 def test_mdrive_uses_performance_displacement_when_transporting_external_load():
-    d = MDrive2()
-    d.bind(DummyOwner(12, 400, maintained_external_displacement=40))
-    assert d.build_item() == 'M-Drive 2 (440t)'
-    assert float(d.tons) == pytest.approx(8.8)
-    assert float(d.cost) == pytest.approx(17_600_000.0)
-    assert float(d.power) == pytest.approx(88.0)
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.dispersed_structure),
+        drives=DriveSection(m_drive=MDrive2()),
+        craft=CraftSection(docking_clamps=[DockingClamp(craft=SpaceCraft.from_catalog('Pinnace'), transported=True)]),
+    )
+    assert my_ship.drives is not None
+    assert my_ship.drives.m_drive is not None
+    assert my_ship.drives.m_drive.build_item() == 'M-Drive 2 (440t)'
+    assert float(my_ship.drives.m_drive.tons) == pytest.approx(8.8)
+    assert float(my_ship.drives.m_drive.cost) == pytest.approx(17_600_000.0)
+    assert float(my_ship.drives.m_drive.power) == pytest.approx(88.0)
 
 
 def test_mdrive_standard_cost():

@@ -102,7 +102,7 @@ def test_docking_clamp_type_ii_values():
 
 
 def test_docking_clamp_can_carry_spacecraft_without_changing_clamp_values():
-    clamp = DockingClamp(kind='II', craft=SpaceCraft.from_catalog('Pinnace'))
+    clamp = DockingClamp(craft=SpaceCraft.from_catalog('Pinnace'))
     clamp.bind(DummyOwner(12, 400))
     assert clamp.tons == 5.0
     assert clamp.cost == 1_000_000.0
@@ -242,8 +242,8 @@ def test_docking_clamp_craft_row_renders_after_clamp_row():
         hull=hull.Hull(configuration=hull.standard_hull),
         craft=CraftSection(
             docking_clamps=[
-                DockingClamp(kind='II', craft=SpaceCraft.from_catalog('Pinnace')),
-                DockingClamp(kind='I', craft=Vehicle.from_catalog('ATV')),
+                DockingClamp(craft=SpaceCraft.from_catalog('Pinnace')),
+                DockingClamp(craft=Vehicle.from_catalog('ATV')),
             ]
         ),
     )

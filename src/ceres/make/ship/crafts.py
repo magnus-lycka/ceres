@@ -1,5 +1,5 @@
 import math
-from typing import Annotated, ClassVar, Literal
+from typing import Annotated, ClassVar, Literal, TypedDict
 
 from pydantic import Field
 
@@ -120,37 +120,78 @@ type AnyCarriedOccupant = Annotated[
 ]
 
 
+class _ClampSpec(TypedDict):
+    tons: float
+    cost: float
+    max_tons: int | None
+
+
+_CLAMP_SPECS: dict[str, _ClampSpec] = {
+    'I': {'tons': 1.0, 'cost': 500_000.0, 'max_tons': 30},
+    'II': {'tons': 5.0, 'cost': 1_000_000.0, 'max_tons': 99},
+    'III': {'tons': 10.0, 'cost': 2_000_000.0, 'max_tons': 300},
+    'IV': {'tons': 20.0, 'cost': 4_000_000.0, 'max_tons': 2_000},
+    'V': {'tons': 50.0, 'cost': 8_000_000.0, 'max_tons': None},
+}
+
+
+def _kind_for_shipping_size(shipping_size: int) -> str:
+    for kind, spec in _CLAMP_SPECS.items():
+        if spec['max_tons'] is None or shipping_size <= spec['max_tons']:
+            return kind
+    return 'V'
+
+
 class _ZeroPowerCraftPart(ShipPart):
     power: ClassVar[float]
+    maintained: bool = True
 
     @property
     def power(self) -> float:
+        return 0.0
+
+    @property
+    def performance_displacement_contribution(self) -> float:
         return 0.0
 
 
 class DockingClamp(_ZeroPowerCraftPart):
     tons: ClassVar[float]
     cost: ClassVar[float]
-    _specs = {
-        'I': dict(tons=1.0, cost=500_000.0),
-        'II': dict(tons=5.0, cost=1_000_000.0),
-        'III': dict(tons=10.0, cost=2_000_000.0),
-        'IV': dict(tons=20.0, cost=4_000_000.0),
-        'V': dict(tons=50.0, cost=8_000_000.0),
-    }
-    kind: str
+    kind: str | None = None
     craft: AnyCarriedOccupant | None = None
+    transported: bool = False
+
+    def model_post_init(self, __context: object) -> None:
+        super().model_post_init(__context)
+        if self.kind is None and self.craft is None:
+            raise ValueError('DockingClamp requires either kind or craft')
+        if self.kind is not None and self.craft is not None:
+            raise ValueError('DockingClamp: kind must not be specified when craft is provided')
+
+    def _resolved_kind(self) -> str:
+        if self.kind is not None:
+            return self.kind
+        if self.craft is None:
+            raise ValueError('DockingClamp has neither kind nor craft')
+        return _kind_for_shipping_size(self.craft.shipping_size)
 
     def build_item(self) -> str | None:
-        return f'Docking Clamp, Type {self.kind}'
+        return f'Docking Clamp, Type {self._resolved_kind()}'
 
     @property
     def tons(self) -> float:
-        return float(self._specs[self.kind]['tons'])
+        return float(_CLAMP_SPECS[self._resolved_kind()]['tons'])
 
     @property
     def cost(self) -> float:
-        return float(self._specs[self.kind]['cost'])
+        return float(_CLAMP_SPECS[self._resolved_kind()]['cost'])
+
+    @property
+    def performance_displacement_contribution(self) -> float:
+        if self.transported and self.craft is not None:
+            return float(self.craft.shipping_size)
+        return 0.0
 
 
 class InternalDockingSpace(_ZeroPowerCraftPart):
@@ -172,6 +213,10 @@ class InternalDockingSpace(_ZeroPowerCraftPart):
     def cost(self) -> float:
         return self.tons * 250_000.0
 
+    @property
+    def performance_displacement_contribution(self) -> float:
+        return 0.0
+
 
 class FullHangar(_ZeroPowerCraftPart):
     housing_type: Literal['FULL_HANGAR'] = 'FULL_HANGAR'
@@ -191,6 +236,10 @@ class FullHangar(_ZeroPowerCraftPart):
     @property
     def cost(self) -> float:
         return self.tons * 200_000.0
+
+    @property
+    def performance_displacement_contribution(self) -> float:
+        return 0.0
 
 
 type InternalCraftHousing = Annotated[

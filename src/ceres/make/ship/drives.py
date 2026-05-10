@@ -234,7 +234,7 @@ class _MDrive(CustomisableShipPart):
     )
 
     def build_item(self) -> str | None:
-        if self._assembly is not None and self.assembly.transported_external_displacement > 0:
+        if self._assembly is not None and self.assembly.performance_displacement > self.assembly.displacement:
             return f'M-Drive {self.level} ({self.assembly.performance_displacement:g}t)'
         return f'M-Drive {self.level}'
 
@@ -382,7 +382,7 @@ class _JDrive(CustomisableShipPart):
     )
 
     def build_item(self) -> str | None:
-        if self._assembly is not None and self.assembly.transported_external_displacement > 0:
+        if self._assembly is not None and self.assembly.performance_displacement > self.assembly.displacement:
             return f'Jump {self.level} ({self.assembly.performance_displacement:g}t)'
         return f'Jump {self.level}'
 

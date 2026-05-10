@@ -332,16 +332,20 @@ def _drives_and_power_tonnage(ship) -> float:
         tons += sum(
             getattr(part.craft, 'engineering_tonnage', 0.0)
             for part in ship.craft._all_parts()
-            if getattr(part, 'craft', None) is not None
+            if getattr(part, 'craft', None) is not None and getattr(part, 'maintained', True)
         )
     return tons
 
 
-def _contained_small_craft_tonnage(ship) -> float:
+def _maintained_small_craft_tonnage(ship) -> float:
     if ship.craft is None:
         return 0.0
     return float(
-        sum(part.craft.shipping_size for part in ship.craft._all_parts() if getattr(part, 'craft', None) is not None)
+        sum(
+            part.craft.shipping_size
+            for part in ship.craft._all_parts()
+            if getattr(part, 'craft', None) is not None and getattr(part, 'maintained', True)
+        )
     )
 
 
@@ -349,7 +353,9 @@ def _carried_small_craft_count(ship) -> int:
     if ship.craft is None:
         return 0
     return sum(
-        1 for part in ship.craft._all_parts() if getattr(part, 'craft', None) is not None and part.craft.requires_pilot
+        1
+        for part in ship.craft._all_parts()
+        if getattr(part, 'craft', None) is not None and part.craft.requires_pilot and getattr(part, 'maintained', True)
     )
 
 
@@ -390,14 +396,14 @@ def _sensor_operator_count(ship, *, military: bool) -> int:
 
 
 def _commercial_maintenance_count(ship) -> int:
-    tonnage = ship.displacement + ship.maintained_external_displacement + _contained_small_craft_tonnage(ship)
+    tonnage = ship.displacement + _maintained_small_craft_tonnage(ship)
     if tonnage < 1_000:
         return 0
     return math.ceil(tonnage / 1_000)
 
 
 def _military_maintenance_count(ship) -> int:
-    tonnage = ship.displacement + ship.maintained_external_displacement + _contained_small_craft_tonnage(ship)
+    tonnage = ship.displacement + _maintained_small_craft_tonnage(ship)
     if tonnage < 500:
         return 0
     return math.ceil(tonnage / 500)

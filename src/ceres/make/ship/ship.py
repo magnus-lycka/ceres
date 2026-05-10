@@ -217,9 +217,15 @@ class Ship(ShipBase):
         parts.extend(self.armoured_bulkhead_parts())
         return parts
 
+    @property
+    def performance_displacement(self) -> float:
+        base = float(self.displacement)
+        if self.craft is not None:
+            base += sum(c.performance_displacement_contribution for c in self.craft.docking_clamps)
+        return base
+
     def remaining_usable_tonnage(self) -> float:
         remaining = self.displacement * self.hull.configuration.usage_factor
-        remaining -= self.maintained_external_displacement
         remaining -= self.hull.pressure_hull_tons(self.displacement)
         for part in self._all_parts():
             remaining -= part.tons

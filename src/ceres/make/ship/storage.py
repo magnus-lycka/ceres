@@ -108,7 +108,7 @@ class JumpFuel(_ZeroPowerStoragePart):
     parsecs: int
 
     def build_item(self) -> str | None:
-        if self._assembly is not None and self.assembly.transported_external_displacement > 0:
+        if self._assembly is not None and self.assembly.performance_displacement > self.assembly.displacement:
             return f'J-{self.parsecs} ({self.assembly.performance_displacement:g}t)'
         return f'J-{self.parsecs}'
 

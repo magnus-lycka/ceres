@@ -6,16 +6,10 @@ class ShipBase(Assembly):
 
     tl: int
     displacement: int
-    maintained_external_displacement: float = 0.0
-    unmaintained_external_displacement: float = 0.0
-
-    @property
-    def transported_external_displacement(self) -> float:
-        return self.maintained_external_displacement + self.unmaintained_external_displacement
 
     @property
     def performance_displacement(self) -> float:
-        return self.displacement + self.transported_external_displacement
+        return float(self.displacement)
 
     @property
     def armour_volume_modifier(self) -> float:

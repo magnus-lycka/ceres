@@ -4,7 +4,7 @@ import pytest
 from ceres.make.ship import hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
 from ceres.make.ship.computer import Computer5, ComputerSection
-from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, SpaceCraft, Vehicle
+from ceres.make.ship.crafts import CraftSection, DockingClamp, InternalDockingSpace, SpaceCraft, Vehicle
 from ceres.make.ship.crew import (
     Astrogator,
     Engineer,
@@ -392,16 +392,20 @@ def test_small_commercial_ship_does_not_require_separate_maintenance_crew():
     assert ('MAINTENANCE', 1) not in grouped_role_counts(my_ship.crew)
 
 
-def test_maintained_external_displacement_counts_toward_maintenance_need():
+def test_maintained_craft_tonnage_counts_toward_maintenance_need():
     my_ship = ship.Ship(
         tl=12,
         displacement=980,
-        maintained_external_displacement=30,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         drives=DriveSection(m_drive=MDrive1(), j_drive=JDrive1()),
         power=PowerSection(fusion_plant=FusionPlantTL12(output=20)),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer5()),
+        craft=CraftSection(
+            docking_clamps=[
+                DockingClamp(craft=SpaceCraft.from_catalog("Ship's Boat"), transported=True, maintained=True)
+            ]
+        ),
     )
 
     assert ('MAINTENANCE', 2) in grouped_role_counts(my_ship.crew)

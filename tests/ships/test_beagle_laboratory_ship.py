@@ -75,16 +75,15 @@ def build_beagle_laboratory_ship() -> ship.Ship:
         ship_class='Beagle-class',
         ship_type='Laboratory Ship',
         tl=15,
-        displacement=430,
-        maintained_external_displacement=40,
+        displacement=360,
         design_type=ship.ShipDesignType.STANDARD,
         occupants=[],
         hull=hull.Hull(
             configuration=hull.dispersed_structure,
-            airlocks=[Airlock() for _ in range(4)],
+            airlocks=[Airlock() for _ in range(3)],
         ),
         drives=DriveSection(m_drive=MDrive2(), j_drive=JDrive2()),
-        power=PowerSection(fusion_plant=FusionPlantTL12(output=195)),
+        power=PowerSection(fusion_plant=FusionPlantTL12(output=180)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=2),
             operation_fuel=OperationFuel(weeks=8),
@@ -104,8 +103,8 @@ def build_beagle_laboratory_ship() -> ship.Ship:
         ),
         craft=CraftSection(
             docking_clamps=[
-                DockingClamp(kind='II', craft=SpaceCraft.from_catalog('Pinnace')),
-                DockingClamp(kind='I', craft=Vehicle.from_catalog('ATV')),
+                DockingClamp(craft=SpaceCraft.from_catalog('Pinnace'), transported=True, maintained=True),
+                DockingClamp(craft=Vehicle.from_catalog('ATV'), transported=False, maintained=False),
             ],
             internal_housing=[InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft'))],
         ),
@@ -127,8 +126,8 @@ def build_beagle_laboratory_ship() -> ship.Ship:
             low_berths=[LowBerth()] * 6,
         ),
         cargo=CargoSection(
-            cargo_airlocks=[CargoAirlock()],
-            fuel_cargo_containers=[FuelCargoContainer(capacity=94)],
+            cargo_airlocks=[CargoAirlock(size=4.0)],
+            fuel_cargo_containers=[FuelCargoContainer(capacity=80)],
         ),
         crew=ShipCrew(
             roles=[
@@ -149,32 +148,31 @@ def build_beagle_laboratory_ship() -> ship.Ship:
 def test_beagle_laboratory_ship_matches_supported_slice():
     ship_ = build_beagle_laboratory_ship()
 
-    assert ship_.hull_cost == pytest.approx(10_750_000.0)
-    assert ship_.hull_points == pytest.approx(154.0)
+    assert ship_.hull_cost == pytest.approx(9_000_000.0)
+    assert ship_.hull_points == pytest.approx(129.0)
 
     assert ship_.drives is not None
     assert ship_.drives.m_drive is not None
-    assert ship_.drives.m_drive.tons == pytest.approx(9.4)
-    assert ship_.drives.m_drive.cost == pytest.approx(18_800_000.0)
-    assert ship_.drives.m_drive.power == pytest.approx(94.0)
+    assert ship_.drives.m_drive.tons == pytest.approx(8.0)
+    assert ship_.drives.m_drive.cost == pytest.approx(16_000_000.0)
+    assert ship_.drives.m_drive.power == pytest.approx(80.0)
     assert ship_.drives.j_drive is not None
-    assert ship_.drives.j_drive.tons == pytest.approx(28.5)
-    assert ship_.drives.j_drive.cost == pytest.approx(42_750_000.0)
-    assert ship_.drives.j_drive.power == pytest.approx(94.0)
+    assert ship_.drives.j_drive.tons == pytest.approx(25.0)
+    assert ship_.drives.j_drive.cost == pytest.approx(37_500_000.0)
+    assert ship_.drives.j_drive.power == pytest.approx(80.0)
 
     assert ship_.power is not None
     assert ship_.power.fusion_plant is not None
-    assert ship_.power.fusion_plant.tons == pytest.approx(13.0)
-    assert ship_.power.fusion_plant.cost == pytest.approx(13_000_000.0)
-    assert ship_.available_power == pytest.approx(195.0)
-    assert ship_.total_power_load == pytest.approx(207.0)
-    assert ship_.remaining_usable_tonnage() == pytest.approx(0.1)
-    assert 'Hull overloaded by 1.90 tons' not in ship_.notes.errors
+    assert ship_.power.fusion_plant.tons == pytest.approx(12.0)
+    assert ship_.power.fusion_plant.cost == pytest.approx(12_000_000.0)
+    assert ship_.available_power == pytest.approx(180.0)
+    assert ship_.total_power_load == pytest.approx(179.0)
+    assert ship_.remaining_usable_tonnage() == pytest.approx(3.0)
     assert 'Capacity 12.00 less than max use' not in ship_.notes.warnings
 
     assert ship_.fuel is not None
     assert ship_.fuel.jump_fuel is not None
-    assert ship_.fuel.jump_fuel.tons == pytest.approx(94.0)
+    assert ship_.fuel.jump_fuel.tons == pytest.approx(80.0)
     assert ship_.fuel.operation_fuel is not None
     assert ship_.fuel.operation_fuel.tons == pytest.approx(3.0)
     assert ship_.fuel.fuel_processor is not None
@@ -184,7 +182,7 @@ def test_beagle_laboratory_ship_matches_supported_slice():
     assert ship_.command is not None
     assert ship_.command.bridge is not None
     assert ship_.command.bridge.tons == pytest.approx(10.0)
-    assert ship_.command.bridge.cost == pytest.approx(1_562_500.0)
+    assert ship_.command.bridge.cost == pytest.approx(1_250_000.0)
 
     assert ship_.computer is not None
     assert ship_.computer.hardware is not None
@@ -264,11 +262,11 @@ def test_beagle_laboratory_ship_matches_supported_slice():
 
     assert ship_.cargo is not None
     assert len(ship_.cargo.cargo_airlocks) == 1
-    assert ship_.cargo.cargo_airlocks[0].tons == pytest.approx(2.0)
-    assert ship_.cargo.cargo_airlocks[0].cost == pytest.approx(200_000.0)
+    assert ship_.cargo.cargo_airlocks[0].tons == pytest.approx(4.0)
+    assert ship_.cargo.cargo_airlocks[0].cost == pytest.approx(400_000.0)
     assert len(ship_.cargo.fuel_cargo_containers) == 1
-    assert ship_.cargo.fuel_cargo_containers[0].tons == pytest.approx(99.0)
-    assert ship_.cargo.fuel_cargo_containers[0].cost == pytest.approx(470_000.0)
+    assert ship_.cargo.fuel_cargo_containers[0].tons == pytest.approx(84.0)
+    assert ship_.cargo.fuel_cargo_containers[0].cost == pytest.approx(400_000.0)
 
     assert [(role.role, quantity) for role, quantity in ship_.crew.grouped_roles] == [
         ('PILOT', 2),
@@ -288,18 +286,23 @@ def test_beagle_laboratory_ship_matches_supported_slice():
     assert 'OFFICER above recommended count: 10 > 0' in crew_notes.infos
     assert 'STEWARD above recommended count: 1 > 0' in crew_notes.infos
 
+    # Source total MCr 123.909 / purchase MCr 111.518 (Mentor/1 and Research Assist/1 excluded).
+    # Remaining gap: source uses 400t hull (MCr 10 vs our MCr 9, also 4 vs 3 free airlocks),
+    # includes Ship's Mechanic (MCr 0.05), and omits Expert software we include (MCr 0.02).
+    assert ship_.production_cost == pytest.approx(122_879_000.0)
+    assert ship_.sales_price_new == pytest.approx(110_591_100.0)
+
 
 def test_beagle_laboratory_ship_spec_structure():
     ship_ = build_beagle_laboratory_ship()
     spec = ship_.build_spec()
 
     assert spec.row('Dispersed Structure Hull').section == 'Hull'
-    assert spec.row('Airlock (2 tons)').quantity == 4
-    assert spec.row('M-Drive 2 (470t)').section == 'Propulsion'
-    assert spec.row('Jump 2 (470t)').section == 'Jump'
-    assert spec.row('Fusion (TL 12), Power 195').section == 'Power'
-    assert 'Capacity 12.00 less than max use' in spec.row('Fusion (TL 12), Power 195', section='Power').notes.warnings
-    assert spec.row('J-2 (470t), 8 weeks of operation').tons == pytest.approx(97.0)
+    assert spec.row('Airlock (2 tons)').quantity == 3
+    assert spec.row('M-Drive 2 (400t)').section == 'Propulsion'
+    assert spec.row('Jump 2 (400t)').section == 'Jump'
+    assert spec.row('Fusion (TL 12), Power 180').section == 'Power'
+    assert spec.row('J-2 (400t), 8 weeks of operation').tons == pytest.approx(83.0)
     assert spec.row('Fuel Processor (40 tons/day)').section == 'Fuel'
     assert spec.row('Smaller Holographic Controls').section == 'Command'
     assert spec.row('Computer/10').section == 'Computer'
@@ -325,9 +328,9 @@ def test_beagle_laboratory_ship_spec_structure():
     assert spec.row('Hot Tub (1 User)').quantity == 4
     assert spec.row('Wet Bar').section == 'Habitation'
     assert spec.row('Low Berths').quantity == 6
-    assert spec.row('Cargo Airlock (2 tons)').section == 'Cargo'
-    assert spec.row('Fuel/Cargo Container (94 tons)').section == 'Cargo'
-    assert spec.row('Cargo Space').tons == pytest.approx(0.1)
+    assert spec.row('Cargo Airlock (4 tons)').section == 'Cargo'
+    assert spec.row('Fuel/Cargo Container (80 tons)').section == 'Cargo'
+    assert spec.row('Cargo Space').tons == pytest.approx(3.0)
 
 
 def test_beagle_expert_software_roundtrip():

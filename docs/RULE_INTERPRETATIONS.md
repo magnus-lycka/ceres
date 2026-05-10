@@ -195,3 +195,41 @@ In practice this affects `Expert` software packages: the skill string passed
 to `Expert(N, skill='Space Science (Planetology)')` names a broad skill, not
 a flat speciality. The software table in `ceres.gear.software` lists broad
 science skills (and their specialities) as top-level entries accordingly.
+
+### RI-010 Carried Craft — Displacement, Performance Sizing, and Crew
+
+**Ship displacement**: A ship's displacement is its own internal hull volume
+only. Craft on docking clamps are external to the hull and are not counted.
+The cost of the hull, and cost of armour etc should not rise because something
+is sometimes placed outside the hull.
+
+**Drive and jump-fuel sizing**: High Guard states that when a craft occupies a
+docking clamp, drives and jump fuel must be sized for the combined tonnage of
+both vessels. This applies only to craft actually transported with the ship
+during transit. Craft internally housed within the hull (full hangar, internal
+docking space) are already within the hull volume and do not add to this figure.
+A clamp that merely holds a craft at berth without transporting it likewise does
+not affect drive sizing.
+
+**Clamp type**: The docking clamp type (I–V) is determined by the craft's
+shipping tonnage, not chosen independently.
+
+**Clamp hardware tonnage**: The clamp fitting itself (Type I: 1 t, Type II: 5 t,
+Type III: 10 t, Type IV: 20 t, Type V: 50 t) counts against hull capacity as an
+internal fitting.
+
+**Crew**: The crew rules distinguish craft the ship's crew is responsible for
+from craft merely being transported (e.g. a jump shuttle being ferried, or an
+empty clamp). Only craft under the host ship's care contribute to crew counts:
+
+| Crew role | What counts |
+| --- | --- |
+| Pilot | +1 per carried spacecraft that requires its own pilot |
+| Engineer | The craft's drive and power-plant tonnage adds to the total used to derive engineer count |
+| Maintenance | The craft's tonnage adds to the total used to derive maintenance count |
+
+**Reference note**: Google Sheet stat blocks sometimes embed the external
+craft tonnage inside the clamp entry (e.g. showing 45 dTon for a Type II clamp
+carrying a 40 dTon Pinnace). The rules are equally satisfied by treating the
+hull as 360 dTon and sizing drives for 400 dTon combined; both produce the same
+drive sizes and fuel requirements.
