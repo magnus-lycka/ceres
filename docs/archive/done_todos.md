@@ -101,3 +101,26 @@ Maybe it's better to combine jump and propulsion to a drives section?
 
 Counted labels now go through shared helpers in `ceres.make.ship.text`, so the display form is consistently `×`
 instead of `x`, and repeated labels are collapsed in one place instead of being reimplemented separately.
+
+## Large ship crew reduction cap
+
+For displacement-based roles the crew reduction for large ships should not
+result in more crew than the next bracket above would require.
+
+Implemented by restructuring the bracket data into `_LARGE_SHIP_BRACKETS` and
+adding `_next_crew_reduction_multiplier`. `_apply_large_ship_reduction` now
+applies `min(result, ceil(count × next_multiplier))` for any ship in the
+reduction zone, preventing a ship just below a bracket boundary from needing
+more crew than one just above it. The cap is not applied to ships ≤ 5,000 dTons
+(outside the large-ship reduction zone).
+
+## Medic passenger count
+
+The commercial medic rule is "1 per 120 crew **and** passengers." Previously
+only crew count was used.
+
+Added `_habitation_population` which sums stateroom `.occupancy`, low berth
+count, and `cabin_space.passenger_capacity`. Both `_commercial_roles` and
+`_military_roles` now use this as the population denominator when habitation is
+present (covering crew and passengers sharing the same accommodation), falling
+back to `len(roles)` for ships with no habitation such as small craft.

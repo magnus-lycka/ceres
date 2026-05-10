@@ -1,5 +1,9 @@
 # List of potential things to do
 
+Update todo items in this document as progress is made.
+When todo items are done, please move them
+to docs/archive/done_todos.md
+
 ## Sort out weapons.py [doing]
 
 All ships have hardpoint in proportion to displacement, except smallcraft which have firmpoints.
@@ -42,7 +46,8 @@ Structural status:
 - `crew.py` now exists and `Ship` delegates there
 - commercial rules implemented
 - military rules implemented
-- large ship crew reduction implemented
+- large ship crew reduction implemented, including bracket-boundary cap
+- medic count uses habitation capacity (stateroom beds + low berths + cabin space) as population proxy
 - remaining work is further rule expansion and validation, not structure
 
 Remaining ideas:
@@ -77,23 +82,6 @@ Remaining work:
   craft, astrogator, etc.)
 - surface any task DM in spec notes
 
-## Medic passenger count [todo]
-
-The commercial medic rule is "1 per 120 crew **and** passengers." Ceres
-currently uses only crew count (`len(roles) // 120`); passengers are not
-included.
-
-Fix requires knowing how many passengers are aboard. Options to explore:
-
-- count explicitly modelled `HighPassage` / `MiddlePassage` occupants (already
-  done for stewards) — but this only works when occupants are declared
-- alternatively, infer passenger capacity from installed berths (staterooms,
-  low berths) — simpler but counts capacity rather than actual occupants
-
-Decide on an approach consistent with RI-004 (stewards follow explicit
-occupants, not theoretical berth capacity), then wire passenger count into
-the medic calculation.
-
 ## Screens in gunner count [todo]
 
 The High Guard crew table requires gunners for screens:
@@ -111,17 +99,6 @@ The military crew table requires 1 gunner per 100 tons of spinal mount
 weaponry. Spinal mounts are not yet modelled. Once implemented, add a
 `_spinal_mount_tonnage` helper and include `ceil(spinal_tons / 100)` in
 `_military_gunner_count`.
-
-## Large ship crew reduction cap [todo]
-
-For displacement-based roles (maintenance and sensor operators), the crew
-reduction for large ships should not result in more crew than the next bracket
-above would require. In other words, apply
-`min(count(displacement), count(next_bracket_limit))` to prevent a ship just
-over a boundary from needing more crew than a ship well into the next bracket.
-
-The basic large-ship multiplier is implemented in `_apply_large_ship_reduction`;
-this cap is the missing piece.
 
 ## Google Sheet fuel mismatch
 

@@ -22,7 +22,7 @@ from ceres.make.ship.drives import (
     MDrive2,
     PowerSection,
 )
-from ceres.make.ship.habitation import HabitationSection, LowBerth, Stateroom
+from ceres.make.ship.habitation import CabinSpace, HabitationSection, LowBerth, Stateroom
 from ceres.make.ship.occupants import BasicPassage, HighPassage, LowPassage, MiddlePassage
 from ceres.make.ship.sensors import SensorsSection, SensorStations
 from ceres.make.ship.systems import MedicalBay, SystemsSection
@@ -133,7 +133,7 @@ def test_large_ship_reduces_engineering_and_other_scaling_roles():
         ('PILOT', 1),
         ('ASTROGATOR', 1),
         ('ENGINEER', 9),
-        ('MAINTENANCE', 8),
+        ('MAINTENANCE', 7),
         ('ADMINISTRATOR', 4),
         ('SENSOR OPERATOR', 1),
         ('OFFICER', 1),
@@ -562,3 +562,61 @@ def test_low_passage_uses_low_berths():
     )
 
     assert my_ship.expenses.life_support == 2_300
+
+
+def test_large_ship_reduction_cap_at_bracket_boundary():
+    # At 19,999 dTons the bracket multiplier is ×0.75.
+    # Without the cap: ceil(10 × 0.75) = 8 gunners.
+    # The next bracket (≥20,000 dTons, ×0.67) gives ceil(10 × 0.67) = 7,
+    # so the result is capped to 7 to prevent a ship just below the boundary
+    # from needing more gunners than one just above it.
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=19_999,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer5()),
+        weapons=WeaponsSection(turrets=[DoubleTurret()] * 10),
+    )
+    assert ('GUNNER', 7) in grouped_role_counts(my_ship.crew)
+
+
+def test_medic_count_uses_stateroom_capacity():
+    # 60 staterooms × 2 occupancy = 120 beds → 120 // 120 = 1 medic.
+    # Without the passenger fix the small crew count alone (< 120) gives 0.
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=1_000,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        habitation=HabitationSection(staterooms=[Stateroom()] * 60),
+    )
+    assert ('MEDIC', 1) in grouped_role_counts(my_ship.crew)
+
+
+def test_medic_count_includes_low_berths():
+    # 55 staterooms × 2 = 110 beds + 10 low berths = 120 → 1 medic.
+    # Without low berths 110 < 120 → 0 medics.
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=1_000,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        habitation=HabitationSection(
+            staterooms=[Stateroom()] * 55,
+            low_berths=[LowBerth()] * 10,
+        ),
+    )
+    assert ('MEDIC', 1) in grouped_role_counts(my_ship.crew)
+
+
+def test_medic_count_includes_cabin_space():
+    # 55 staterooms × 2 = 110 beds + cabin (15t / 1.5 t/passenger = 10) = 120 → 1 medic.
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=1_000,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        habitation=HabitationSection(
+            staterooms=[Stateroom()] * 55,
+            cabin_space=CabinSpace(tons=15.0),
+        ),
+    )
+    assert ('MEDIC', 1) in grouped_role_counts(my_ship.crew)

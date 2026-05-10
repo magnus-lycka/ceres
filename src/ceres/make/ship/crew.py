@@ -254,7 +254,8 @@ class ShipCrew(CeresModel):
         sensor_operator_count = _apply_large_ship_reduction(ship, _sensor_operator_count(ship, military=False))
         roles.extend([SensorOperator() for _ in range(sensor_operator_count)])
 
-        medic_count = len(roles) // 120
+        population = _habitation_population(ship) or len(roles)
+        medic_count = population // 120
         if _requires_medic_from_medical_facility(ship):
             medic_count = max(medic_count, 1)
         roles.extend([Medic() for _ in range(medic_count)])
@@ -290,7 +291,8 @@ class ShipCrew(CeresModel):
         sensor_operator_count = _apply_large_ship_reduction(ship, _sensor_operator_count(ship, military=True))
         roles.extend([SensorOperator() for _ in range(sensor_operator_count)])
 
-        medic_count = len(roles) // 120
+        population = _habitation_population(ship) or len(roles)
+        medic_count = population // 120
         if _requires_medic_from_medical_facility(ship):
             medic_count = max(medic_count, 1)
         roles.extend([Medic() for _ in range(medic_count)])
@@ -300,23 +302,37 @@ class ShipCrew(CeresModel):
         return roles
 
 
+_LARGE_SHIP_BRACKETS: list[tuple[int, float]] = [
+    (100_000, 0.33),
+    (50_000, 0.5),
+    (20_000, 0.67),
+    (5_001, 0.75),
+]
+
+
 def _crew_reduction_multiplier(displacement: int) -> float:
-    if displacement >= 100_000:
-        return 0.33
-    if displacement >= 50_000:
-        return 0.5
-    if displacement >= 20_000:
-        return 0.67
-    if displacement > 5_000:
-        return 0.75
+    for threshold, multiplier in _LARGE_SHIP_BRACKETS:
+        if displacement >= threshold:
+            return multiplier
     return 1.0
+
+
+def _next_crew_reduction_multiplier(displacement: int) -> float | None:
+    for i, (threshold, _) in enumerate(_LARGE_SHIP_BRACKETS):
+        if displacement >= threshold:
+            return _LARGE_SHIP_BRACKETS[i - 1][1] if i > 0 else None
+    return None
 
 
 def _apply_large_ship_reduction(ship, count: int) -> int:
     if count == 0:
         return 0
     multiplier = _crew_reduction_multiplier(ship.displacement)
-    return math.ceil(count * multiplier)
+    result = math.ceil(count * multiplier)
+    next_multiplier = _next_crew_reduction_multiplier(ship.displacement)
+    if next_multiplier is not None:
+        result = min(result, math.ceil(count * next_multiplier))
+    return result
 
 
 def _drives_and_power_tonnage(ship) -> float:
@@ -416,6 +432,15 @@ def _steward_required_level(ship) -> int:
     if high_passage == 0 and middle_passage == 0:
         return 0
     return math.ceil((middle_passage + 10 * high_passage) / 100)
+
+
+def _habitation_population(ship) -> int:
+    if ship.habitation is None:
+        return 0
+    stateroom_beds = sum(room.occupancy for room in ship.habitation.staterooms)
+    low_berths = len(ship.habitation.low_berths)
+    cabin = ship.habitation.cabin_space.passenger_capacity if ship.habitation.cabin_space else 0
+    return stateroom_beds + low_berths + cabin
 
 
 def _requires_medic_from_medical_facility(ship) -> bool:
