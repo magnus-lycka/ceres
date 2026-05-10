@@ -1,92 +1,5 @@
 # List of potential things to do
 
-## Naming [done]
-
-Renamed `self.owner` → `self.ship` and `_owner` → `_ship` throughout `parts.py` and all subclasses.
-
-## Software Singleton [done]
-
-Note that Software Packages are Singletons
-
-If user e.g. lists JumpContrl/2 and then JumpControl/3,
-they have (and pay for) JumpControl/3, and a warning that
-redundant JumpControl/2 was added. Note the included
-JumpControl SW in Core models. I assume that if your main
-is a Core, and your spare is a (non Core) computer, it
-can still run the Core supplied SW within the capacity of
-its rating.
-
-## Quantities [done]
-
-If we have 10 staterooms, it should say Staterooms ✕ 10.
-The same is probably true for many other items. If it's
-just one, it can just say Stateroom.
-
-Current status:
-
-- done for Staterooms
-- done for Low Berths
-- done for Probe Drones
-- done for grouped spec rows such as Airlocks
-- done for crew table rows
-
-## Decentralize build_spec [done]
-
-Move substantial parts of Ship.build_spec() out to the
-sections that own the rows, such as storage, computer,
-habitation and systems.
-
-Current status:
-
-- done for hull
-- done for drives / power
-- done for storage (fuel + cargo)
-- done for command
-- done for computer
-- done for sensors
-- done for habitation
-- done for systems
-- done for weapons
-- done for craft
-
-Note:
-
-- expense / crew summary now live in `expense.py` and `crew.py`
-- a couple of generic row-grouping helpers still remain in `Ship`, but the section-level decentralization itself is complete
-
-## Implement armoured bulkhead [done]
-
-Armoured bulkheads protect specific areas and
-systems, such as the jump drive or fuel tanks, making
-them much more resilient to damage.
-Adding armoured bulkheads consumes an amount of
-space equal to 10% of the tonnage of the protected
-item. During space combat, the Severity of any critical
-hit to the protected space is reduced by -1 (to a
-minimum of Severity 1).
-
-Option Cost
-Armoured Bulkhead MCr0.2 per ton
-
-Current status:
-
-- `ArmouredBulkhead` implemented in `hull.py`
-- cost and tonnage modeled
-- protection target shown in spec notes
-- treated as a ship-design/spec concern, not as combat simulation logic
-
-## Limit TL [done]
-
-Make a note in ARCHITECTURE.md that support is limited to TL16 and lower, and
-stick to that when writing code. For now we cap ship TL to 16 and don't bother
-to implement TL17+ features.
-
-Current status:
-
-- `ARCHITECTURE.md` now states the TL16 cap explicitly
-- `Ship` now rejects `tl > 16`
-- TL17+ features are intentionally out of scope for now
-
 ## Sort out weapons.py [doing]
 
 All ships have hardpoint in proportion to displacement, except smallcraft which have firmpoints.
@@ -135,11 +48,80 @@ Structural status:
 Remaining ideas:
 
 - decide whether ship role inference should remain explicit (`military=True`) or become partly automatic
-- model how automation can change crew needs.
 
-## Expense module [done]
+Automation crew effects have been split into a separate item below.
 
-Break out expense code to its own module expense.py
+## Automation [todo]
+
+Model ship automation levels and their effect on crew requirements.
+
+Reference: `refs/companion/54_starship_automation.md`
+
+The Traveller Companion defines six automation tiers — from Crew-Intensive
+(−40% hull/drive cost, +100% crew) through High Automation (+100% cost, −40%
+crew) — each with a cost modifier, a crew-requirement multiplier, and a task
+DM. Standard Automation is the current implicit default.
+
+The cost side affects hull plus drives/power-plant totals. The crew side applies
+a percentage multiplier to the normal crew complement. Some roles are exempt
+from reduction (e.g. a ship needing one astrogator still needs one astrogator
+regardless of automation level). Task DMs apply to all shipboard checks.
+
+Remaining work:
+
+- add an `automation` field to `Ship` (or a hull/drives option) with the six
+  tiers
+- apply the cost modifier to hull and drive/plant costs
+- apply the crew-requirement multiplier to reducible roles
+- clarify which roles are immune to the reduction (pilot count for carried
+  craft, astrogator, etc.)
+- surface any task DM in spec notes
+
+## Medic passenger count [todo]
+
+The commercial medic rule is "1 per 120 crew **and** passengers." Ceres
+currently uses only crew count (`len(roles) // 120`); passengers are not
+included.
+
+Fix requires knowing how many passengers are aboard. Options to explore:
+
+- count explicitly modelled `HighPassage` / `MiddlePassage` occupants (already
+  done for stewards) — but this only works when occupants are declared
+- alternatively, infer passenger capacity from installed berths (staterooms,
+  low berths) — simpler but counts capacity rather than actual occupants
+
+Decide on an approach consistent with RI-004 (stewards follow explicit
+occupants, not theoretical berth capacity), then wire passenger count into
+the medic calculation.
+
+## Screens in gunner count [todo]
+
+The High Guard crew table requires gunners for screens:
+
+- commercial: 1 gunner per screen
+- military: 2 gunners per screen
+
+Screens are not yet modelled as a weapon-system component, so they cannot
+be counted. Once screens are implemented in `weapons.py`, wire their count
+into `_commercial_gunner_count` and `_military_gunner_count`.
+
+## Spinal mounts in military gunner count [todo]
+
+The military crew table requires 1 gunner per 100 tons of spinal mount
+weaponry. Spinal mounts are not yet modelled. Once implemented, add a
+`_spinal_mount_tonnage` helper and include `ceil(spinal_tons / 100)` in
+`_military_gunner_count`.
+
+## Large ship crew reduction cap [todo]
+
+For displacement-based roles (maintenance and sensor operators), the crew
+reduction for large ships should not result in more crew than the next bracket
+above would require. In other words, apply
+`min(count(displacement), count(next_bracket_limit))` to prevent a ship just
+over a boundary from needing more crew than a ship well into the next bracket.
+
+The basic large-ship multiplier is implemented in `_apply_large_ship_reduction`;
+this cap is the missing piece.
 
 ## Google Sheet fuel mismatch
 
@@ -208,33 +190,6 @@ Rule for future work:
 - support parameterized outputs where needed, e.g. `Thrust X / Jump Y while
   carrying Z dTons`
 
-### Large ships crew reduction
-
-For ships of more than 5,000 tons, the
-Referee can reduce the required crew by multiplying
-the crew complement by the Crew Reduction Multipler
-in the Crew Reduction table.
-
-Crew reductions can only be applied to the following
-roles: engineer, maintenance, gunner, administrators
-and sensor operators. Calculate officers and medics
-after reducing the other roles.
-
-Crew Reduction
-Ship Size Crew Reduction Multiplier
-5,001–19,999 75%
-20,000–49,999 67%
-50,000–99,999 50%
-100,000+ 33%
-
-For the displacement based roles, maintenance &
-sensor operators, make sure you don't need more than
-a larger ship, i.e. min(crew_need(displacement), crew_need(next limit))
-
-## Combine propulsion and jump sections [done]
-
-Maybe it's better to combine jump and propulsion to a drives section?
-
 ## Reaction drives
 
 Handle R-drives in additioin to M-drives and J-drives
@@ -271,7 +226,7 @@ Basic hulls include artificial gravity, using grav plates to ensure a normal gra
 
 *To use this and still get artificial gravity the ship must be able to spin. It could be a torus, a cylinder or something like a capsule connected to a counterweight with a wire (of course it could be two capsules acting as counterweights to each other, but you might have heavy stuff, like power plant, where you don't need full gravity). Either way, the spin radius must be big enough to make this more good than bad. One can of course settle for less than 1G gravity, but there are several well known issues. Both torus and capsule with counterweight would -- I think be dispersed structure. A cyliner, wgich could be a standard structure, would have to be huge, and either a lot of wasted space or most areas wouls have much less gravity. With rotation, there are several issues, which all get worse with less radius (which also means faster rotation): Things fall in tangential direction, not at all same as perceived down. Coriolis effects are stronger. Rapid spin makes people dizzy etc. All of this will place a lower bound on reasonable radius. Of course, working in Zero-G with penaltiess is an option.*
 
-# Culture property etc
+## Culture property etc
 
 Ships are buit differently for different audiences.
 This is partly the biology of different species, but also a matter of
@@ -279,9 +234,9 @@ culture and various practical things, e.g. human stock living in very
 different worlds, from aquatic to free space to High G etc.
 
 The sophont names in https://travellermap.com/t5ss/sophonts could be useful,
-and https://travellermap.com/t5ss/sophonts as well as 'other', 'independent' etc. 
+and https://travellermap.com/t5ss/sophonts as well as 'other', 'independent' etc.
 
-# Other distinctions
+## Other distinctions
 
 We already have military boolean. The Adventure class ships split them in:
 Exploration, Merchant, Passenger, Working, Military, Travellers Be Like... (catch-all),
@@ -294,21 +249,14 @@ THere are obviously e.g. Bwap and Florian ships too.
 
 But maybe markers like this are best done by allowing arbitrary free tags on ships?
 
-# Blurbs, pics and plans.
+## Blurbs, pics and plans
 
 We want to be able to attach random, somewhat formatted text to be attached to ship
 designs. We'd use markdown for that.
 
 Eventually we'll also want to provide illustrations and floor plans/drwaings.
 
-# x vs ×
-
-Fixed.
-
-Counted labels now go through shared helpers in `ceres.make.ship.text`, so the display form is consistently `×`
-instead of `x`, and repeated labels are collapsed in one place instead of being reimplemented separately.
-
-# Verify that we don't collapse things unless they are identical
+## Verify that we don't collapse things unless they are identical
 
 If we for instance hace two triple turrets with all pulse lasers
 we basically want to see
@@ -326,8 +274,8 @@ Triple Turret
 
  Then we can't compact it any more than we did.
  We can't make a Triple Turret x 2, since they are different.
- 
-# Split big files
+
+## Split big files
 
      632 src/ceres/make/ship/drives.py
 
@@ -337,13 +285,13 @@ Separate into drives and powerplants
 
 Split up the big weapons file
 
-# Add other types of drives
+## Add other types of drives
 
 Add the lower TL power plants, fission, chemichal?
 Are there things like batteries as well than should go here?
 Solar panels and stuff?
 
-# Get rid of silly singular properties
+## Get rid of silly singular properties
 
 class SystemsSection(CeresModel):
 ...
@@ -353,4 +301,3 @@ class SystemsSection(CeresModel):
         return None if not matches else matches[0]
 
 This is just silly! Remove properties like SystemsSection.medical_bay since there can be >1.
-

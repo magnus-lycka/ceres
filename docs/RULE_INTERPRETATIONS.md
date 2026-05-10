@@ -233,3 +233,25 @@ craft tonnage inside the clamp entry (e.g. showing 45 dTon for a Type II clamp
 carrying a 40 dTon Pinnace). The rules are equally satisfied by treating the
 hull as 360 dTon and sizing drives for 400 dTon combined; both produce the same
 drive sizes and fuel requirements.
+
+### RI-011 Administrators And Commercial Sensor Operators Use Floor Division
+
+The crew table states "1 per 2,000 tons" for administrators and "1 per 7,500
+tons" for commercial sensor operators. The general rule says "whenever a crew
+calculation results in a fraction, always round up," which would yield at least
+1 of each role for any ship.
+
+Ceres uses floor division for both roles (`displacement // 2_000` and
+`displacement // 7_500`), so these roles are absent on ships below those
+tonnage thresholds.
+
+The rationale is that "1 per N tons" expresses a workload rate, not a minimum
+staffing requirement. A ship of 1,000 tons does not carry half an administrator;
+it carries none, because the role is not warranted at that scale. The explicit
+"per full" qualifier on officers ("1 per full 20 crew") confirms the intended
+reading for rate-based crew assignments. The general round-up rule is interpreted
+as applying within a calculation once the rate has produced a non-zero quotient,
+not as mandating at least one of every listed role on every ship.
+
+This is consistent with RI-003 (maintenance thresholds) and with the prose
+context for small ships, where a single multi-skilled pilot covers many duties.
