@@ -8,19 +8,17 @@ Purpose:
 Source handling for this test case:
 - supported: hull, drives, power plant, jump fuel, operation fuel, fuel
   processor, bridge, computer, included software, jump control, improved
-  sensors, sensor station, beam-laser turrets, docking clamps, docking space,
+  sensors, sensor station, turrets, docking clamps, docking space,
   air/raft, advanced probe drones, biosphere, laboratories, physical library,
   medical bay, workshop, standard staterooms, common area, hot tubs, wet bar,
-  low berths, cargo airlock, fuel/cargo container, and explicit crew
+  low berths, cargo airlock, and fuel/cargo container
+- crew is rules-derived (`ShipCrew()`) rather than copied from the source
 - deliberate interpretation:
   - the clamp-borne `Pinnace` is treated as maintained and transported
     external displacement, so drive and jump-fuel sizing use `455t`
 - still excluded from the modeled reference case:
   - software packages `Mentor/1` and `Research Assist/1` (`TCS-004`)
-  - `Planetology/1` is modeled as `Expert(rating=1, skill='Space Science (Planetology)')`
-  - source crew is carried over explicitly; `Pinnace Pilot` is treated as an
-    additional `Pilot`, and `Sensop` as `SENSOR OPERATOR`
-  - `Ship's Mechanic` is treated as the `MAINTENANCE` crew role
+  - `Planetology/1` is modeled as `Expert(rating=3, skill='Space Science (Planetology)')`
 """
 
 import pytest
@@ -30,18 +28,7 @@ from ceres.make.ship import hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
 from ceres.make.ship.computer import Computer10, ComputerSection
 from ceres.make.ship.crafts import CraftSection, DockingClamp, InternalDockingSpace, SpaceCraft, Vehicle
-from ceres.make.ship.crew import (
-    Astrogator,
-    Engineer,
-    Gunner,
-    Maintenance,
-    Medic,
-    Officer,
-    Pilot,
-    SensorOperator,
-    ShipCrew,
-    Steward,
-)
+from ceres.make.ship.crew import ShipCrew
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive2, MDrive2, PowerSection
 from ceres.make.ship.habitation import HabitationSection, HotTub, LowBerth, Stateroom
 from ceres.make.ship.sensors import ImprovedSensors, SensorsSection, SensorStations
@@ -67,7 +54,15 @@ from ceres.make.ship.systems import (
     WetBar,
     Workshop,
 )
-from ceres.make.ship.weapons import BeamLaser, DoubleTurret, WeaponsSection
+from ceres.make.ship.weapons import (
+    BeamLaser,
+    DoubleTurret,
+    MissileRack,
+    MissileStorage,
+    Sandcaster,
+    SandcasterCanisterStorage,
+    WeaponsSection,
+)
 
 
 def build_beagle_laboratory_ship() -> ship.Ship:
@@ -98,8 +93,10 @@ def build_beagle_laboratory_ship() -> ship.Ship:
         weapons=WeaponsSection(
             turrets=[
                 DoubleTurret(weapons=[BeamLaser(), BeamLaser()]),
-                DoubleTurret(weapons=[BeamLaser(), BeamLaser()]),
+                DoubleTurret(weapons=[MissileRack(), Sandcaster()]),
             ],
+            missile_storage=MissileStorage(count=12),
+            sandcaster_canister_storage=SandcasterCanisterStorage(count=20),
         ),
         craft=CraftSection(
             docking_clamps=[
@@ -129,19 +126,7 @@ def build_beagle_laboratory_ship() -> ship.Ship:
             cargo_airlocks=[CargoAirlock(size=4.0)],
             fuel_cargo_containers=[FuelCargoContainer(capacity=80)],
         ),
-        crew=ShipCrew(
-            roles=[
-                *[Pilot()] * 2,
-                Astrogator(),
-                Engineer(),
-                *[Gunner()] * 2,
-                Maintenance(),
-                Steward(),
-                SensorOperator(),
-                Medic(),
-                *[Officer()] * 10,
-            ]
-        ),
+        crew=ShipCrew(),
     )
 
 
@@ -166,8 +151,8 @@ def test_beagle_laboratory_ship_matches_supported_slice():
     assert ship_.power.fusion_plant.tons == pytest.approx(12.0)
     assert ship_.power.fusion_plant.cost == pytest.approx(12_000_000.0)
     assert ship_.available_power == pytest.approx(180.0)
-    assert ship_.total_power_load == pytest.approx(179.0)
-    assert ship_.remaining_usable_tonnage() == pytest.approx(3.0)
+    assert ship_.total_power_load == pytest.approx(171.0)
+    assert ship_.remaining_usable_tonnage() == pytest.approx(1.0)
     assert 'Capacity 12.00 less than max use' not in ship_.notes.warnings
 
     assert ship_.fuel is not None
@@ -207,9 +192,13 @@ def test_beagle_laboratory_ship_matches_supported_slice():
     assert ship_.weapons.turrets[0].cost == pytest.approx(1_500_000.0)
     assert ship_.weapons.turrets[1].cost == pytest.approx(1_500_000.0)
     assert ship_.weapons.turrets[0].power == pytest.approx(9.0)
-    assert ship_.weapons.turrets[1].power == pytest.approx(9.0)
-    assert ship_.weapons.missile_storage is None
-    assert ship_.weapons.sandcaster_canister_storage is None
+    assert ship_.weapons.turrets[1].power == pytest.approx(1.0)
+    assert ship_.weapons.missile_storage is not None
+    assert ship_.weapons.missile_storage.tons == pytest.approx(1.0)
+    assert ship_.weapons.missile_storage.cost == pytest.approx(0.0)
+    assert ship_.weapons.sandcaster_canister_storage is not None
+    assert ship_.weapons.sandcaster_canister_storage.tons == pytest.approx(1.0)
+    assert ship_.weapons.sandcaster_canister_storage.cost == pytest.approx(0.0)
 
     assert ship_.craft is not None
     assert [part.build_item() for part in ship_.craft._all_parts()] == [
@@ -271,20 +260,12 @@ def test_beagle_laboratory_ship_matches_supported_slice():
     assert [(role.role, quantity) for role, quantity in ship_.crew.grouped_roles] == [
         ('PILOT', 2),
         ('ASTROGATOR', 1),
-        ('ENGINEER', 1),
+        ('ENGINEER', 2),
         ('GUNNER', 2),
-        ('MAINTENANCE', 1),
-        ('STEWARD', 1),
-        ('SENSOR OPERATOR', 1),
+        ('SENSOR OPERATOR', 2),
         ('MEDIC', 1),
-        ('OFFICER', 10),
     ]
-    crew_notes = ship_.crew.notes
-    assert 'ENGINEER below recommended count: 1 < 2' in crew_notes.warnings
-    assert 'MAINTENANCE above recommended count: 1 > 0' in crew_notes.infos
-    assert 'SENSOR OPERATOR below recommended count: 1 < 2' in crew_notes.warnings
-    assert 'OFFICER above recommended count: 10 > 0' in crew_notes.infos
-    assert 'STEWARD above recommended count: 1 > 0' in crew_notes.infos
+    assert ship_.crew.notes.warnings == []
 
     # Source total MCr 123.909 / purchase MCr 111.518 (Mentor/1 and Research Assist/1 excluded).
     # Remaining gap: source uses 400t hull (MCr 10 vs our MCr 9, also 4 vs 3 free airlocks),
@@ -309,11 +290,9 @@ def test_beagle_laboratory_ship_spec_structure():
     assert spec.row('Jump Control/2').section == 'Computer'
     assert spec.row('Improved Sensors').section == 'Sensors'
     assert spec.row('Sensor Station').section == 'Sensors'
-    assert spec.row('Double Turret').quantity == 2
-    with pytest.raises(KeyError):
-        spec.row('Missile Storage (12)')
-    with pytest.raises(KeyError):
-        spec.row('Sandcaster Canister Storage (20)')
+    assert len(spec.rows_matching('Double Turret')) == 2
+    assert spec.row('Missile Storage (12)').section == 'Weapons'
+    assert spec.row('Sandcaster Canister Storage (20)').section == 'Weapons'
     assert spec.row('Docking Clamp, Type II').section == 'Craft'
     assert spec.row('Pinnace').section == 'Craft'
     assert spec.row('Docking Clamp, Type I').section == 'Craft'
@@ -330,7 +309,7 @@ def test_beagle_laboratory_ship_spec_structure():
     assert spec.row('Low Berths').quantity == 6
     assert spec.row('Cargo Airlock (4 tons)').section == 'Cargo'
     assert spec.row('Fuel/Cargo Container (80 tons)').section == 'Cargo'
-    assert spec.row('Cargo Space').tons == pytest.approx(3.0)
+    assert spec.row('Cargo Space').tons == pytest.approx(1.0)
 
 
 def test_beagle_expert_software_roundtrip():
