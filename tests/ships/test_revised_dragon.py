@@ -114,7 +114,7 @@ def build_revised_dragon() -> ship.Ship:
             m_drive=MDrive7(customisation=Budget(modifications=[IncreasedSize]), armoured_bulkhead=True)
         ),
         power=PowerSection(
-            fusion_plant=FusionPlantTL12(
+            plant=FusionPlantTL12(
                 output=482,
                 customisation=Budget(modifications=[IncreasedSize]),
                 armoured_bulkhead=True,
@@ -210,9 +210,9 @@ def test_revised_dragon_modeled_subset_matches_current_model():
     assert dragon.drives.m_drive.cost == pytest.approx(42_000_000.0)
 
     assert dragon.power is not None
-    assert dragon.power.fusion_plant is not None
-    assert dragon.power.fusion_plant.tons == pytest.approx(40.1666666667)
-    assert dragon.power.fusion_plant.cost == pytest.approx(24_100_000.0)
+    assert dragon.power.plant is not None
+    assert dragon.power.plant.tons == pytest.approx(40.1666666667)
+    assert dragon.power.plant.cost == pytest.approx(24_100_000.0)
 
     assert dragon.fuel is not None
     assert dragon.fuel.operation_fuel is not None

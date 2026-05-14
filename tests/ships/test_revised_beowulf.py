@@ -81,9 +81,7 @@ def build_revised_beowulf() -> ship.Ship:
             airlocks=[Airlock(), Airlock()],
         ),
         drives=DriveSection(m_drive=MDrive1(), j_drive=JDrive1()),
-        power=PowerSection(
-            fusion_plant=FusionPlantTL12(output=65, customisation=Budget(modifications=[IncreasedSize]))
-        ),
+        power=PowerSection(plant=FusionPlantTL12(output=65, customisation=Budget(modifications=[IncreasedSize]))),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=1),
             operation_fuel=OperationFuel(weeks=4),
@@ -121,9 +119,9 @@ def test_revised_beowulf_matches_current_modeled_subset():
     assert beowulf.drives.j_drive.cost == pytest.approx(15_000_000)
 
     assert beowulf.power is not None
-    assert beowulf.power.fusion_plant is not None
-    assert beowulf.power.fusion_plant.tons == pytest.approx(5.4166666667)
-    assert beowulf.power.fusion_plant.cost == pytest.approx(3_250_000)
+    assert beowulf.power.plant is not None
+    assert beowulf.power.plant.tons == pytest.approx(5.4166666667)
+    assert beowulf.power.plant.cost == pytest.approx(3_250_000)
 
     assert beowulf.fuel is not None
     assert beowulf.fuel.jump_fuel is not None

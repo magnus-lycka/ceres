@@ -23,7 +23,7 @@ def build_boxy_ore_freighter() -> ship.Ship:
         design_type=ship.ShipDesignType.STANDARD,
         hull=hull.Hull(configuration=BOXY_HULL, airlocks=[Airlock()]),
         drives=DriveSection(m_drive=MDrive1()),
-        power=PowerSection(fusion_plant=FusionPlantTL8(output=80)),
+        power=PowerSection(plant=FusionPlantTL8(output=80)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=12)),
         command=CommandSection(bridge=Bridge(small=True)),
         computer=ComputerSection(hardware=Computer5()),

@@ -40,7 +40,7 @@ def build_serrano_laboratory_station() -> ship.Ship:
         occupants=[],
         hull=hull.Hull(configuration=hull.dispersed_structure),
         drives=DriveSection(m_drive=MDrive1()),
-        power=PowerSection(fusion_plant=FusionPlantTL12(output=60)),
+        power=PowerSection(plant=FusionPlantTL12(output=60)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=8)),
         command=CommandSection(bridge=Bridge(small=True)),
         computer=ComputerSection(hardware=Computer10()),
@@ -83,9 +83,9 @@ def test_serrano_laboratory_station_matches_reference_sheet():
     assert station.drives.m_drive.power == pytest.approx(20.0)
 
     assert station.power is not None
-    assert station.power.fusion_plant is not None
-    assert station.power.fusion_plant.tons == pytest.approx(4.0)
-    assert station.power.fusion_plant.cost == pytest.approx(4_000_000.0)
+    assert station.power.plant is not None
+    assert station.power.plant.tons == pytest.approx(4.0)
+    assert station.power.plant.cost == pytest.approx(4_000_000.0)
     assert station.available_power == pytest.approx(60.0)
 
     assert station.fuel is not None

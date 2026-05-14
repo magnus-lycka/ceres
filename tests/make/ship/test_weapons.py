@@ -275,7 +275,7 @@ def test_reused_weapon_and_turret_references_render_like_distinct_identical_obje
         displacement=200,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         drives=DriveSection(m_drive=MDrive1()),
-        power=PowerSection(fusion_plant=FusionPlantTL12(output=50)),
+        power=PowerSection(plant=FusionPlantTL12(output=50)),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer20()),
         weapons=WeaponsSection(turrets=[turret, turret]),

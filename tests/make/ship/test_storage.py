@@ -145,7 +145,7 @@ def _make_ship_with_plant():
         tl=12,
         displacement=6,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        power=PowerSection(fusion_plant=FusionPlantTL12(output=8)),
+        power=PowerSection(plant=FusionPlantTL12(output=8)),
         fuel=FuelSection(operation_fuel=fuel),
     )
     assert s.fuel is not None
@@ -189,7 +189,7 @@ def test_operation_fuel_ignores_stale_numeric_inputs():
         tl=12,
         displacement=6,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        power=PowerSection(fusion_plant=FusionPlantTL12(output=8)),
+        power=PowerSection(plant=FusionPlantTL12(output=8)),
         fuel=FuelSection(operation_fuel=fuel),
     )
     assert my_ship.fuel is not None
@@ -209,7 +209,7 @@ def test_operation_fuel_requires_plant():
     assert my_ship.fuel is not None
     assert my_ship.fuel.operation_fuel is not None
     assert my_ship.fuel.operation_fuel.tons == 0.0
-    assert 'Ship must have a FusionPlant to compute OperationFuel' in my_ship.fuel.operation_fuel.notes.errors
+    assert 'Ship must have a power plant to compute OperationFuel' in my_ship.fuel.operation_fuel.notes.errors
 
 
 def test_jump_fuel_uses_performance_displacement_for_external_transport_load():

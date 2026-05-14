@@ -204,7 +204,7 @@ def test_ship_available_power_with_plant_uses_output():
         tl=12,
         displacement=6,
         hull=hull.Hull(configuration=hull.standard_hull),
-        power=PowerSection(fusion_plant=FusionPlantTL12(output=8)),
+        power=PowerSection(plant=FusionPlantTL12(output=8)),
     )
     assert my_ship.available_power == 8
 
@@ -258,7 +258,7 @@ def test_ship_gets_warning_when_total_power_load_exceeds_available_power():
         displacement=50,
         hull=hull.Hull(configuration=hull.streamlined_hull, airlocks=[Airlock()]),
         drives=DriveSection(m_drive=MDrive1()),
-        power=PowerSection(fusion_plant=FusionPlantTL12(output=10)),
+        power=PowerSection(plant=FusionPlantTL12(output=10)),
         command=CommandSection(bridge=Bridge()),
         systems=SystemsSection(internal_systems=[Workshop()]),
     )

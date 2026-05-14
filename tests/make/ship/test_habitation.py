@@ -283,7 +283,7 @@ def test_habitation_explicit_occupants_override_default_passengers():
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         drives=DriveSection(j_drive=JDrive1()),
-        power=PowerSection(fusion_plant=FusionPlantTL12(output=10)),
+        power=PowerSection(plant=FusionPlantTL12(output=10)),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer5()),
         habitation=HabitationSection(staterooms=[Stateroom()] * 4),

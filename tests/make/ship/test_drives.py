@@ -187,8 +187,8 @@ def test_drive_section_all_parts():
 
 
 def test_power_section_all_parts():
-    power = PowerSection(fusion_plant=FusionPlantTL12(output=8))
-    assert power._all_parts() == [power.fusion_plant]
+    power = PowerSection(plant=FusionPlantTL12(output=8))
+    assert power._all_parts() == [power.plant]
 
 
 def test_mdrive_tl_too_low():
@@ -307,7 +307,7 @@ def test_emergency_power_system_values():
         displacement=400,
         hull=hull.Hull(configuration=hull.standard_hull),
         power=PowerSection(
-            fusion_plant=FusionPlantTL12(output=436, customisation=Advanced(modifications=[SizeReduction])),
+            plant=FusionPlantTL12(output=436, customisation=Advanced(modifications=[SizeReduction])),
             emergency_power_system=EmergencyPowerSystem.from_fusion_plant(
                 FusionPlantTL12(output=436, customisation=Advanced(modifications=[SizeReduction]))
             ),
@@ -326,7 +326,7 @@ def test_emergency_power_system_values_are_computed_properties_not_serialized_fi
         displacement=400,
         hull=hull.Hull(configuration=hull.standard_hull),
         power=PowerSection(
-            fusion_plant=FusionPlantTL12(output=436, customisation=Advanced(modifications=[SizeReduction])),
+            plant=FusionPlantTL12(output=436, customisation=Advanced(modifications=[SizeReduction])),
             emergency_power_system=EmergencyPowerSystem.model_validate({'tons': 999, 'cost': 999, 'power': 999}),
         ),
     )
@@ -354,7 +354,7 @@ def _make_ship_with_plant():
         tl=12,
         displacement=6,
         hull=hull.Hull(configuration=hull.streamlined_hull),
-        power=PowerSection(fusion_plant=FusionPlantTL12(output=8)),
+        power=PowerSection(plant=FusionPlantTL12(output=8)),
         fuel=FuelSection(operation_fuel=fuel),
     )
     assert s.fuel is not None
@@ -387,7 +387,7 @@ def test_operation_fuel_requires_plant():
     assert my_ship.fuel is not None
     assert my_ship.fuel.operation_fuel is not None
     assert my_ship.fuel.operation_fuel.tons == 0.0
-    assert 'Ship must have a FusionPlant to compute OperationFuel' in my_ship.fuel.operation_fuel.notes.errors
+    assert 'Ship must have a power plant to compute OperationFuel' in my_ship.fuel.operation_fuel.notes.errors
 
 
 def test_rdrive_tons_cost_and_power():
@@ -487,7 +487,7 @@ def test_jdrive_tl_too_low():
 
 
 def test_emergency_power_system_requires_fusion_plant():
-    with pytest.raises(RuntimeError, match='EmergencyPowerSystem requires a fusion plant'):
+    with pytest.raises(RuntimeError, match='EmergencyPowerSystem requires a power plant'):
         ship.Ship(
             tl=13,
             displacement=400,
@@ -502,7 +502,7 @@ def test_power_section_adds_emergency_power_system_spec_row():
         displacement=400,
         hull=hull.Hull(configuration=hull.standard_hull),
         power=PowerSection(
-            fusion_plant=FusionPlantTL12(output=436, customisation=Advanced(modifications=[SizeReduction])),
+            plant=FusionPlantTL12(output=436, customisation=Advanced(modifications=[SizeReduction])),
             emergency_power_system=EmergencyPowerSystem(),
         ),
     )

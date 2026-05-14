@@ -100,7 +100,7 @@ def build_small_scout_base() -> ship.Ship:
         ),
         hull=hull.Hull(configuration=light_dispersed, airlocks=[Airlock() for _ in range(24)]),
         drives=DriveSection(m_drive=MDrive0()),
-        power=PowerSection(fusion_plant=FusionPlantTL12(output=2_500)),
+        power=PowerSection(plant=FusionPlantTL12(output=2_500)),
         fuel=FuelSection(
             operation_fuel=OperationFuel(weeks=12),
             fuel_processor=FuelProcessor(tons=5),
@@ -167,9 +167,9 @@ def test_small_scout_base_matches_supported_slice():
     assert base.drives.m_drive.power == pytest.approx(250.0)
 
     assert base.power is not None
-    assert base.power.fusion_plant is not None
-    assert base.power.fusion_plant.tons == pytest.approx(166.6666666667)
-    assert base.power.fusion_plant.cost == pytest.approx(166_666_666.6667)
+    assert base.power.plant is not None
+    assert base.power.plant.tons == pytest.approx(166.6666666667)
+    assert base.power.plant.cost == pytest.approx(166_666_666.6667)
     assert base.available_power == pytest.approx(2_500.0)
 
     assert base.fuel is not None

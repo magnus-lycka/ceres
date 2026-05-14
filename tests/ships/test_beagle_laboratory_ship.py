@@ -78,7 +78,7 @@ def build_beagle_laboratory_ship() -> ship.Ship:
             airlocks=[Airlock() for _ in range(3)],
         ),
         drives=DriveSection(m_drive=MDrive2(), j_drive=JDrive2()),
-        power=PowerSection(fusion_plant=FusionPlantTL12(output=180)),
+        power=PowerSection(plant=FusionPlantTL12(output=180)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=2),
             operation_fuel=OperationFuel(weeks=8),
@@ -147,9 +147,9 @@ def test_beagle_laboratory_ship_matches_supported_slice():
     assert ship_.drives.j_drive.power == pytest.approx(80.0)
 
     assert ship_.power is not None
-    assert ship_.power.fusion_plant is not None
-    assert ship_.power.fusion_plant.tons == pytest.approx(12.0)
-    assert ship_.power.fusion_plant.cost == pytest.approx(12_000_000.0)
+    assert ship_.power.plant is not None
+    assert ship_.power.plant.tons == pytest.approx(12.0)
+    assert ship_.power.plant.cost == pytest.approx(12_000_000.0)
     assert ship_.available_power == pytest.approx(180.0)
     assert ship_.total_power_load == pytest.approx(171.0)
     assert ship_.remaining_usable_tonnage() == pytest.approx(1.0)

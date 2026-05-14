@@ -268,6 +268,130 @@ Add the lower TL power plants, fission, chemichal?
 Are there things like batteries as well than should go here?
 Solar panels and stuff?
 
+## Solar Energy Systems
+
+Implement solar panels and solar coatings as an alternative/supplemental power source.
+
+Reference: `refs/hg/25_solar_energy_systems.md`
+
+Four tiers (Basic TL6 through Advanced TL12) for both solar coating and solar panels.
+Rules include:
+
+- Solar coating only works on standard/sphere configurations; reduced 50% on close-structure/dispersed;
+  not available on streamlined (atmospheric stress).
+- Solar panels are deployed (cannot accelerate while deployed), measured in tons = units.
+- Coatings increase hull repair cost ×2.
+
+## Fuel Refinery
+
+Implement the on-board fuel refinery as a ship component.
+
+Reference: `refs/hg/28_fuel_refinery.md`
+
+Three TL tiers (7, 10, 13) with different output rates, power draw, crew requirements, and MCr/ton costs.
+A fuel refinery allows processing of unrefined fuel into refined fuel. Also adds an operator crew role.
+
+## Screens
+
+Implement screens (Meson Screen, Nuclear Damper, Black Globe Generator) as ship components.
+
+Reference: `refs/hg/22_screens.md`
+
+Currently screens are referenced in two crew-count todos but do not exist as ship parts.
+Once added to `weapons.py` or a dedicated `screens.py`, wire them into:
+
+- hardpoint/firmpoint allocation (screens occupy turret hardpoints)
+- power accounting
+- `_commercial_gunner_count` / `_military_gunner_count` (see existing todos)
+
+Black Globe Generator is TL15+, not commercially available — needs a legality note.
+
+## Hull modifications (Reinforced, Light, Armoured Bulkhead, Pressure Hull)
+
+Implement the specialised hull modification options.
+
+References: `refs/hg/05_specialised_hull_types.md` and `refs/hg/23_spacecraft_options.md`
+
+Missing hull type modifiers:
+
+- **Reinforced Hull** — +50% hull cost, +10% hull points
+- **Light Hull** — −25% hull cost, −10% hull points
+
+(Military Hull already tracked separately above.)
+
+Spacecraft structural options not yet modelled:
+
+- **Armoured Bulkhead** — 10% of protected item's tonnage, MCr0.2/ton, reduces critical-hit
+  severity by −1 for the protected area
+- **Pressure Hull** — 25% of total tonnage, ×10 hull cost, intrinsic Armour +4, allows very
+  deep gas-giant and ocean operations
+
+## Spinning hull configurations (Double Hull, Hamster Cage)
+
+Reference: `refs/hg/05_specialised_hull_types.md`
+
+Allows artificial gravity through rotation instead of grav plates (relates to Non-Gravity Hull).
+Both require dedicated spin machinery (0.1 tons per ton of spun section) and increase hull cost
+per percent of spun hull. Hamster cage requires ring radius ≥15m.
+
+Probably out of scope until Non-Gravity Hull and the spin-radius calculation have a clear policy.
+
+## Portable Computer Options and Specialised Computer Variants
+
+Tracked as code TODOs in `src/ceres/gear/computer.py` but not yet implemented.
+
+Portable options: Camera, Comms, Data Display/Recorder, Data Wafer, Physical User Interface (all TL8+
+or TL13).
+
+Specialised variants:
+
+- Intelligent Interface (TL8, ×5 cost of standard computer)
+- Intellect (TL9, ×10 cost of standard computer)
+
+## Additional sensor suites
+
+Reference: `refs/hg/26_drones.md` (sensors section, pages 54–63)
+
+Several sensor modules listed in HG are not yet modelled:
+
+- Countermeasures Suite
+- Deep Penetration Scanners
+- Distributed Array / Extended Array / Extension Net
+- Life Scanner
+- Mail Distribution Array
+- Mineral Detection Suite
+- Rapid-Deployment Extended Arrays
+- Shallow Penetration Suite
+- Signal Processing System
+
+## External attachment systems
+
+Reference: `refs/hg/26_drones.md` (external systems section)
+
+Only `DockingClamp` is currently in `crafts.py`. Still missing:
+
+- Breaching Tube
+- Forced Linkage Apparatus
+- Grappling Arm
+- Holographic Hull
+- Tow Cable
+
+External loads from grappling/tow should feed into effective displacement for drive performance
+(related to the Modulars and effective displacement item above).
+
+## Space stations as a build target
+
+Reference: `refs/hg/27_space_stations.md`
+
+Space stations use almost the same design sequence as ships but with a few differences:
+
+- No streamlined config; most use dispersed structure.
+- Manoeuvre drive with Thrust 0 (orbital correction) is 0.5% of hull tonnage at MCr2/ton.
+- Power and crew rules differ slightly.
+- Can include mineral refineries, manufacturing plants, and other industrial facilities.
+
+Decide whether `Ship` should be extended or whether a separate `Station` class is warranted.
+
 ## Get rid of silly singular properties
 
 class SystemsSection(CeresModel):

@@ -33,7 +33,7 @@ ultralight = Ship(
         stealth=BasicStealth(),
     ),
     drives=DriveSection(m_drive=MDrive6()),
-    power=PowerSection(fusion_plant=FusionPlantTL12(output=8)),
+    power=PowerSection(plant=FusionPlantTL12(output=8)),
     fuel=FuelSection(operation_fuel=OperationFuel(weeks=1)),
     command=CommandSection(cockpit=Cockpit(holographic=True)),
     computer=ComputerSection(hardware=Computer5()),
@@ -195,10 +195,10 @@ def test_roundtrip_fusion_plant_attributes():
     loaded = _roundtrip(ultralight)
     assert loaded.power is not None
     assert ultralight.power is not None
-    assert loaded.power.fusion_plant is not None
-    assert ultralight.power.fusion_plant is not None
-    assert loaded.power.fusion_plant.fusion_tl == ultralight.power.fusion_plant.fusion_tl
-    assert loaded.power.fusion_plant.output == ultralight.power.fusion_plant.output
+    assert loaded.power.plant is not None
+    assert ultralight.power.plant is not None
+    assert loaded.power.plant.tl == ultralight.power.plant.tl
+    assert loaded.power.plant.output == ultralight.power.plant.output
 
 
 def test_roundtrip_cockpit():
@@ -347,8 +347,8 @@ def test_roundtrip_dragon_part_notes_not_duplicated():
     ship = build_dragon()
     loaded = _roundtrip(ship)
     assert loaded.power is not None and ship.power is not None
-    assert loaded.power.fusion_plant is not None and ship.power.fusion_plant is not None
-    assert len(loaded.power.fusion_plant.notes) == len(ship.power.fusion_plant.notes)
+    assert loaded.power.plant is not None and ship.power.plant is not None
+    assert len(loaded.power.plant.notes) == len(ship.power.plant.notes)
     assert loaded.drives is not None and ship.drives is not None
     assert loaded.drives.m_drive is not None and ship.drives.m_drive is not None
     assert len(loaded.drives.m_drive.notes) == len(ship.drives.m_drive.notes)

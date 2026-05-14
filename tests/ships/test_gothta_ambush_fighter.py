@@ -31,7 +31,7 @@ def build_gothta_ambush_fighter() -> ship.Ship:
             m_drive=MDrive6(),
             r_drive=RDrive4(high_burn_thruster=True),
         ),
-        power=PowerSection(fusion_plant=FusionPlantTL12(output=30)),
+        power=PowerSection(plant=FusionPlantTL12(output=30)),
         fuel=FuelSection(
             operation_fuel=OperationFuel(weeks=2),
             reaction_fuel=ReactionFuel(minutes=60),
@@ -64,9 +64,9 @@ def test_gothta_ambush_fighter_matches_current_subset():
     assert fighter.drives.r_drive.build_item() == 'High-Burn Thruster, Thrust 4'
 
     assert fighter.power is not None
-    assert fighter.power.fusion_plant is not None
-    assert fighter.power.fusion_plant.tons == pytest.approx(2.0)
-    assert fighter.power.fusion_plant.cost == pytest.approx(2_000_000)
+    assert fighter.power.plant is not None
+    assert fighter.power.plant.tons == pytest.approx(2.0)
+    assert fighter.power.plant.cost == pytest.approx(2_000_000)
 
     assert fighter.fuel is not None
     assert fighter.fuel.operation_fuel is not None

@@ -68,7 +68,7 @@ def build_ambush_hunter_killer_corvette() -> ship.Ship:
             m_drive=MDrive6(customisation=VeryAdvanced(modifications=[SizeReduction, EnergyEfficient])),
             j_drive=JDrive2(customisation=VeryAdvanced(modifications=[DecreasedFuel, DecreasedFuel])),
         ),
-        power=PowerSection(fusion_plant=FusionPlantTL12(output=500, armoured_bulkhead=True)),
+        power=PowerSection(plant=FusionPlantTL12(output=500, armoured_bulkhead=True)),
         fuel=FuelSection(
             operation_fuel=OperationFuel(weeks=16),
             fuel_processor=FuelProcessor(tons=2),
@@ -145,9 +145,9 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
     assert corvette.drives.j_drive.cost == pytest.approx(51_562_500.0)
 
     assert corvette.power is not None
-    assert corvette.power.fusion_plant is not None
-    assert corvette.power.fusion_plant.tons == pytest.approx(33.3333333333)
-    assert corvette.power.fusion_plant.cost == pytest.approx(33_333_333.3333)
+    assert corvette.power.plant is not None
+    assert corvette.power.plant.tons == pytest.approx(33.3333333333)
+    assert corvette.power.plant.cost == pytest.approx(33_333_333.3333)
 
     assert corvette.fuel is not None
     assert corvette.fuel.operation_fuel is not None

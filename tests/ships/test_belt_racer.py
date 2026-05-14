@@ -45,7 +45,7 @@ def build_belt_racer() -> ship.Ship:
         displacement=6,
         hull=hull.Hull(configuration=BELT_RACER_HULL),
         drives=DriveSection(r_drive=RDrive16()),
-        power=PowerSection(fusion_plant=FusionPlantTL8(output=5)),
+        power=PowerSection(plant=FusionPlantTL8(output=5)),
         fuel=FuelSection(reaction_fuel=ReactionFuel(minutes=52)),
         command=CommandSection(cockpit=Cockpit()),
         computer=ComputerSection(hardware=Computer5()),
@@ -62,9 +62,9 @@ def test_belt_racer_matches_current_r_drive_subset():
     assert racer.drives.r_drive.cost == pytest.approx(384_000)
 
     assert racer.power is not None
-    assert racer.power.fusion_plant is not None
-    assert racer.power.fusion_plant.tons == pytest.approx(0.5)
-    assert racer.power.fusion_plant.cost == pytest.approx(250_000)
+    assert racer.power.plant is not None
+    assert racer.power.plant.tons == pytest.approx(0.5)
+    assert racer.power.plant.cost == pytest.approx(250_000)
 
     assert racer.fuel is not None
     assert racer.fuel.reaction_fuel is not None

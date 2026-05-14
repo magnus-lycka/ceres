@@ -30,7 +30,7 @@ def build_poseidon_cargo_boat(tl: int) -> ship.Ship:
         design_type=ship.ShipDesignType.STANDARD,
         hull=hull.Hull(configuration=POSEIDON_HULL, airlocks=[Airlock()], aerofins=Aerofins()),
         drives=DriveSection(m_drive=MDrive3()),
-        power=PowerSection(fusion_plant=fusion_plant),
+        power=PowerSection(plant=fusion_plant),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=16)),
         command=CommandSection(bridge=Bridge(small=True)),
         computer=ComputerSection(hardware=Computer5()),
@@ -56,10 +56,10 @@ def test_poseidon_tl12_variant_trades_cost_for_cargo_with_better_power_plant():
 
     assert tl10.power is not None
     assert tl12.power is not None
-    assert tl10.power.fusion_plant is not None
-    assert tl12.power.fusion_plant is not None
-    assert isinstance(tl10.power.fusion_plant, FusionPlantTL8)
-    assert isinstance(tl12.power.fusion_plant, FusionPlantTL12)
+    assert tl10.power.plant is not None
+    assert tl12.power.plant is not None
+    assert isinstance(tl10.power.plant, FusionPlantTL8)
+    assert isinstance(tl12.power.plant, FusionPlantTL12)
     assert CargoSection.cargo_tons_for_ship(tl12) > CargoSection.cargo_tons_for_ship(tl10)
     assert tl12.production_cost > tl10.production_cost
 

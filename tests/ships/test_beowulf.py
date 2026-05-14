@@ -63,7 +63,7 @@ def build_beowulf() -> ship.Ship:
             airlocks=[Airlock(), Airlock()],
         ),
         drives=DriveSection(m_drive=MDrive1(), j_drive=JDrive1()),
-        power=PowerSection(fusion_plant=FusionPlantTL12(output=75)),
+        power=PowerSection(plant=FusionPlantTL12(output=75)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=1),
             operation_fuel=OperationFuel(weeks=4),
@@ -114,7 +114,7 @@ def test_beowulf_drives():
 def test_beowulf_fusion_plant():
     beowulf = build_beowulf()
     assert beowulf.power is not None
-    fp = beowulf.power.fusion_plant
+    fp = beowulf.power.plant
     assert fp is not None
     assert fp.output == 75
     assert fp.tons == pytest.approx(5.0)

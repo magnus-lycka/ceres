@@ -342,8 +342,8 @@ def _drives_and_power_tonnage(ship) -> float:
             tons += ship.drives.m_drive.tons
         if ship.drives.j_drive is not None:
             tons += ship.drives.j_drive.tons
-    if ship.power is not None and ship.power.fusion_plant is not None:
-        tons += ship.power.fusion_plant.tons
+    if ship.power is not None and ship.power.plant is not None:
+        tons += ship.power.plant.tons
     if ship.craft is not None:
         tons += sum(
             getattr(part.craft, 'engineering_tonnage', 0.0)

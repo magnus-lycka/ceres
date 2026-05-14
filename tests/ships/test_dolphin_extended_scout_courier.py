@@ -58,7 +58,7 @@ def build_dolphin_extended_scout_courier() -> ship.Ship:
             armour=armour.CrystalironArmour(protection=4),
         ),
         drives=DriveSection(m_drive=MDrive2(), j_drive=JDrive2()),
-        power=PowerSection(fusion_plant=FusionPlantTL15(output=70)),
+        power=PowerSection(plant=FusionPlantTL15(output=70)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=2),
             operation_fuel=OperationFuel(weeks=16),
@@ -119,9 +119,9 @@ def test_dolphin_extended_scout_courier_matches_reference_sheet():
     assert dolphin.drives.j_drive.power == pytest.approx(30.0)
 
     assert dolphin.power is not None
-    assert dolphin.power.fusion_plant is not None
-    assert dolphin.power.fusion_plant.tons == pytest.approx(3.5)
-    assert dolphin.power.fusion_plant.cost == pytest.approx(7_000_000.0)
+    assert dolphin.power.plant is not None
+    assert dolphin.power.plant.tons == pytest.approx(3.5)
+    assert dolphin.power.plant.cost == pytest.approx(7_000_000.0)
     assert dolphin.available_power == pytest.approx(70.0)
 
     assert dolphin.fuel is not None

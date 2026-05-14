@@ -38,7 +38,7 @@ def build_pinnace_with_20_ton_fuel_capacity() -> ship.Ship:
         crew=ShipCrew(roles=[Pilot()]),
         hull=hull.Hull(configuration=hull.streamlined_hull, airlocks=[Airlock()]),
         drives=DriveSection(m_drive=MDrive5()),
-        power=PowerSection(fusion_plant=FusionPlantTL12(output=30)),
+        power=PowerSection(plant=FusionPlantTL12(output=30)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=4)),
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer5()),
@@ -64,9 +64,9 @@ def test_pinnace_with_20_ton_fuel_capacity_matches_reference_sheet():
     assert pinnace.drives.m_drive.power == pytest.approx(20.0)
 
     assert pinnace.power is not None
-    assert pinnace.power.fusion_plant is not None
-    assert pinnace.power.fusion_plant.tons == pytest.approx(2.0)
-    assert pinnace.power.fusion_plant.cost == pytest.approx(2_000_000.0)
+    assert pinnace.power.plant is not None
+    assert pinnace.power.plant.tons == pytest.approx(2.0)
+    assert pinnace.power.plant.cost == pytest.approx(2_000_000.0)
     assert pinnace.available_power == pytest.approx(30.0)
 
     assert pinnace.fuel is not None

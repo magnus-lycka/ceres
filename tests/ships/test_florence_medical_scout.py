@@ -35,7 +35,7 @@ def build_florence_medical_scout() -> ship.Ship:
         occupants=[],
         hull=hull.Hull(configuration=hull.standard_hull),
         drives=DriveSection(m_drive=MDrive2(), j_drive=JDrive3()),
-        power=PowerSection(fusion_plant=FusionPlantTL12(output=300)),
+        power=PowerSection(plant=FusionPlantTL12(output=300)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=3),
             operation_fuel=OperationFuel(weeks=12),
@@ -77,9 +77,9 @@ def test_florence_medical_scout_matches_current_subset():
     assert scout.drives.j_drive.cost == pytest.approx(52_500_000)
 
     assert scout.power is not None
-    assert scout.power.fusion_plant is not None
-    assert scout.power.fusion_plant.tons == pytest.approx(20.0)
-    assert scout.power.fusion_plant.cost == pytest.approx(20_000_000)
+    assert scout.power.plant is not None
+    assert scout.power.plant.tons == pytest.approx(20.0)
+    assert scout.power.plant.cost == pytest.approx(20_000_000)
 
     assert scout.fuel is not None
     assert scout.fuel.jump_fuel is not None

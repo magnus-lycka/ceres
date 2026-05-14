@@ -79,7 +79,7 @@ class Ship(ShipBase):
             notes.error(f'Hull overloaded by {-residual_tonnage:.2f} tons')
 
         power_shortfall = self.total_power_load - self.available_power
-        if power_shortfall > 0.005 and (self.power is None or self.power.fusion_plant is None):
+        if power_shortfall > 0.005 and (self.power is None or self.power.plant is None):
             notes.warning(f'Capacity {power_shortfall:.2f} less than max use')
 
         minimum_airlocks = ceil(self.displacement / 500) if self.displacement >= 100 else 0
@@ -111,9 +111,9 @@ class Ship(ShipBase):
 
     @property
     def available_power(self) -> float:
-        if self.power is None or self.power.fusion_plant is None:
+        if self.power is None or self.power.plant is None:
             return 0.0
-        return float(self.power.fusion_plant.output)
+        return float(self.power.plant.output)
 
     @property
     def basic_hull_power_load(self) -> float:
@@ -381,9 +381,9 @@ class Ship(ShipBase):
         if self.weapons is not None:
             self.weapons.validate_mounting(self)
         power_shortfall = self.total_power_load - self.available_power
-        if power_shortfall > 0.005 and self.power is not None and self.power.fusion_plant is not None:
+        if power_shortfall > 0.005 and self.power is not None and self.power.plant is not None:
             message = f'Capacity {power_shortfall:.2f} less than max use'
-            self.power.fusion_plant.warning(message)
+            self.power.plant.warning(message)
 
 
 def _recommended_armouries(ship: Ship) -> int:

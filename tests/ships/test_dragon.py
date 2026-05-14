@@ -108,7 +108,7 @@ def build_dragon() -> ship.Ship:
             airlocks=[Airlock(), Airlock(), Airlock(), Airlock()],
         ),
         drives=DriveSection(m_drive=MDrive7(armoured_bulkhead=True)),
-        power=PowerSection(fusion_plant=FusionPlantTL12(output=450, armoured_bulkhead=True)),
+        power=PowerSection(plant=FusionPlantTL12(output=450, armoured_bulkhead=True)),
         fuel=FuelSection(operation_fuel=OperationFuel(weeks=16, armoured_bulkhead=True)),
         command=CommandSection(bridge=Bridge(holographic=True, armoured_bulkhead=True)),
         computer=ComputerSection(
@@ -215,9 +215,9 @@ def test_dragon_modeled_subset_matches_current_model():
     assert dragon.drives.m_drive.power == pytest.approx(280.0)
 
     assert dragon.power is not None
-    assert dragon.power.fusion_plant is not None
-    assert dragon.power.fusion_plant.tons == pytest.approx(30.0)
-    assert dragon.power.fusion_plant.cost == pytest.approx(30_000_000)
+    assert dragon.power.plant is not None
+    assert dragon.power.plant.tons == pytest.approx(30.0)
+    assert dragon.power.plant.cost == pytest.approx(30_000_000)
 
     assert dragon.fuel is not None
     assert dragon.fuel.operation_fuel is not None

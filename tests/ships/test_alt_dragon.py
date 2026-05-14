@@ -127,7 +127,7 @@ def build_alt_dragon() -> ship.Ship:
             m_drive=MDrive7(customisation=Budget(modifications=[IncreasedSize]), armoured_bulkhead=True)
         ),
         power=PowerSection(
-            fusion_plant=fusion_plant,
+            plant=fusion_plant,
             emergency_power_system=EmergencyPowerSystem.from_fusion_plant(fusion_plant),
         ),
         fuel=FuelSection(
@@ -197,9 +197,9 @@ def test_alt_dragon_modeled_subset_tracks_current_model():
     dragon = build_alt_dragon()
 
     assert dragon.power is not None
-    assert dragon.power.fusion_plant is not None
-    assert dragon.power.fusion_plant.tons == pytest.approx(26.16)
-    assert dragon.power.fusion_plant.cost == pytest.approx(31_973_333.3333)
+    assert dragon.power.plant is not None
+    assert dragon.power.plant.tons == pytest.approx(26.16)
+    assert dragon.power.plant.cost == pytest.approx(31_973_333.3333)
     assert dragon.power.emergency_power_system is not None
     assert dragon.power.emergency_power_system.tons == pytest.approx(2.616)
     assert dragon.power.emergency_power_system.cost == pytest.approx(3_197_333.3333)

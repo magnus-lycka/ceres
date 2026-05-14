@@ -34,7 +34,7 @@ def build_strandbell() -> ship.Ship:
             airlocks=[Airlock(), Airlock()],
         ),
         drives=DriveSection(m_drive=MDrive9()),
-        power=PowerSection(fusion_plant=FusionPlantTL12(output=240)),
+        power=PowerSection(plant=FusionPlantTL12(output=240)),
         fuel=FuelSection(
             operation_fuel=OperationFuel(weeks=12),
             fuel_processor=FuelProcessor(tons=1),
@@ -96,7 +96,7 @@ def test_strandbell_armored_m_drive():
 def test_strandbell_fusion_plant():
     sdb = build_strandbell()
     assert sdb.power is not None
-    fp = sdb.power.fusion_plant
+    fp = sdb.power.plant
     assert fp is not None
     assert fp.output == 240
     assert fp.tons == pytest.approx(16.0)

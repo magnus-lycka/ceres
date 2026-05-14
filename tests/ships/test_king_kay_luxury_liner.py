@@ -77,7 +77,7 @@ def build_king_kay() -> ship.Ship:
         design_type=ship.ShipDesignType.CUSTOM,
         hull=hull.Hull(configuration=hull.close_structure),
         drives=DriveSection(m_drive=MDrive1(), j_drive=JDrive2()),
-        power=PowerSection(fusion_plant=FusionPlantTL12(output=2_010)),
+        power=PowerSection(plant=FusionPlantTL12(output=2_010)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=2),
             operation_fuel=OperationFuel(weeks=8),
@@ -151,9 +151,9 @@ def test_king_kay_matches_supported_reference_slice():
     assert liner.drives.j_drive.power == pytest.approx(1_000.0)
 
     assert liner.power is not None
-    assert liner.power.fusion_plant is not None
-    assert liner.power.fusion_plant.tons == pytest.approx(134.0)
-    assert liner.power.fusion_plant.cost == pytest.approx(134_000_000.0)
+    assert liner.power.plant is not None
+    assert liner.power.plant.tons == pytest.approx(134.0)
+    assert liner.power.plant.cost == pytest.approx(134_000_000.0)
     assert liner.available_power == pytest.approx(2_010.0)
 
     assert liner.fuel is not None

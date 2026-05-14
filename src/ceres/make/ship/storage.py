@@ -73,26 +73,25 @@ class OperationFuel(_ZeroPowerStoragePart):
 
     def _raw_tons(self) -> float:
         power = getattr(self.assembly, 'power', None)
-        plant = None if power is None else power.fusion_plant
+        plant = None if power is None else power.plant
         if plant is None:
-            self.error('Ship must have a FusionPlant to compute OperationFuel')
+            self.error('Ship must have a power plant to compute OperationFuel')
             return 0.0
-        pp_tons = plant.tons
-        return 0.10 * pp_tons * self.weeks / 4
+        return plant.fuel_for_weeks(self.weeks)
 
     @property
     def actual_weeks(self) -> int:
         if self._assembly is None:
             return self.weeks
         power = getattr(self.assembly, 'power', None)
-        plant = None if power is None else power.fusion_plant
+        plant = None if power is None else power.plant
         if plant is None:
             return self.weeks
-        four_week_baseline = 0.10 * plant.tons
-        if four_week_baseline <= 0:
+        period_baseline = plant.fuel_for_weeks(plant.fuel_period_weeks)
+        if period_baseline <= 0:
             return self.weeks
-        full_periods = math.floor((self.tons / four_week_baseline) + 1e-9)
-        return max(self.weeks, 4 * full_periods)
+        full_periods = math.floor((self.tons / period_baseline) + 1e-9)
+        return max(self.weeks, plant.fuel_period_weeks * full_periods)
 
     def bulkhead_protected_tonnage(self) -> float:
         return self._raw_tons()

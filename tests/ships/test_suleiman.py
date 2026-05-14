@@ -58,7 +58,7 @@ def build_suleiman() -> ship.Ship:
             airlocks=[Airlock()],
         ),
         drives=DriveSection(m_drive=MDrive2(), j_drive=JDrive2()),
-        power=PowerSection(fusion_plant=FusionPlantTL12(output=60)),
+        power=PowerSection(plant=FusionPlantTL12(output=60)),
         fuel=FuelSection(
             jump_fuel=JumpFuel(parsecs=2),
             operation_fuel=OperationFuel(weeks=12),
@@ -82,7 +82,7 @@ def test_suleiman_matches_first_modeled_reference_slice():
     m_drive = suleiman.drives.m_drive
     jump_drive = suleiman.drives.j_drive
     assert suleiman.power is not None
-    fusion_plant = suleiman.power.fusion_plant
+    fusion_plant = suleiman.power.plant
     assert suleiman.fuel is not None
     jump_fuel = suleiman.fuel.jump_fuel
     operation_fuel = suleiman.fuel.operation_fuel
