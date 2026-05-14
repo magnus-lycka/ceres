@@ -11,10 +11,10 @@
     let msgs = notes.filter(n => n.at("category") == cat).map(n => n.at("message"))
     if msgs.len() > 0 {
       let body = msgs.map(m => [#m]).join(linebreak())
-      if cat == "error"        { gc-error[#body] }
-      else if cat == "warning" { gc-warning[#body] }
-      else if cat == "content" { gc-abstract[#body] }
-      else                     { gc-info[#body] }
+      if cat == "error"        { gc-error(headless: true)[#body] }
+      else if cat == "warning" { gc-warning(headless: true)[#body] }
+      else if cat == "content" { gc-abstract(headless: true)[#body] }
+      else                     { gc-info(headless: true)[#body] }
     }
   }
 }

@@ -144,8 +144,8 @@ def _specialised_section() -> dict:
 
 def _build_context(*, theme: ReportTheme = 'light', page_size: str = 'a4') -> dict:
     sections = [_standard_section(cls) for cls in _COMPUTER_TYPES]
-    sections.extend(_retro_section(cls) for cls in _COMPUTER_TYPES)
-    sections.extend(_proto_section(cls) for cls in _COMPUTER_TYPES)
+    sections.extend(_retro_section(cls) for cls in _COMPUTER_TYPES if cls._allow_retro)
+    sections.extend(_proto_section(cls) for cls in _COMPUTER_TYPES if cls._allow_proto)
     sections.append(_specialised_section())
     return {
         'title': 'Computer Equipment',

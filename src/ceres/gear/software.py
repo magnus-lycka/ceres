@@ -35,6 +35,11 @@ class SoftwarePackage(CeresModel, ABC):
     def validate_on_computer(self, computer: ComputerPart) -> None:
         if computer.assembly.tl < self.tl:
             self.error(f'{self.description} requires TL{self.tl}')
+            return
+        if computer.retro_levels > 0:
+            effective_tl = computer.assembly.tl - computer.retro_levels
+            if self.tl > effective_tl:
+                self.warning(f'{self.description} requires TL{self.tl}, but computer effective TL is {effective_tl}')
 
 
 class FixedSoftwarePackage(SoftwarePackage):

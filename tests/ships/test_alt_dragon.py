@@ -23,10 +23,12 @@ Source handling for this test case:
   - Ceres surfaces crew-rule mismatches as info/warning notes instead of
     silently normalizing the crew
   - point-defence batteries do not require dedicated gunners
-- still excluded from the modeled reference case:
-  - retro computer pricing from CSC-style `Retro*` source rows (`RI-005`), so
-    computer cost, production cost, and sales price remain substantially
-    higher than the reference export
+- retro computer pricing from CSC-style `Retro*` source rows (`RI-005`) is now modelled:
+  - Core/40/fib uses retro_levels=2 (TL13 ship, effective TL 11 covers installed software): cost ÷4
+  - Computer/20/fib uses retro_levels=1 (TL13 ship, 1 above TL12 standard): cost ÷2
+  - retro_levels=2 (not 4) is chosen because effective TL 11 is the minimum needed to run
+    AutoRepair/1 and FireControl/2 (both TL11) without software-TL warnings; retro_levels=4
+    would drop the effective TL to 9, invalidating all TL10+ software on a military ship
 - source inconsistency:
   - the source life-support total matches facilities alone and appears to omit
     life support for people entirely
@@ -134,8 +136,8 @@ def build_alt_dragon() -> ship.Ship:
         ),
         command=CommandSection(bridge=Bridge(holographic=True, armoured_bulkhead=True)),
         computer=ComputerSection(
-            hardware=Core40(fib=True),
-            backup_hardware=Computer20(fib=True),
+            hardware=Core40(fib=True, retro_levels=2),
+            backup_hardware=Computer20(fib=True, retro_levels=1),
             software=[AutoRepair(rating=1), FireControl(rating=2), Evade(rating=1)],
         ),
         sensors=SensorsSection(
@@ -212,15 +214,15 @@ def test_alt_dragon_modeled_subset_tracks_current_model():
     assert dragon.computer is not None
     assert dragon.computer.hardware is not None
     assert dragon.computer.hardware.build_item() == 'Core/40/fib'
-    assert dragon.computer.hardware.cost == pytest.approx(67_500_000.0)
+    assert dragon.computer.hardware.cost == pytest.approx(16_875_000.0)  # retro-2: ÷4
 
     assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(5.8616)
     crew_infos = dragon.crew.notes.infos
     assert 'MAINTENANCE above recommended count: 1 > 0' in crew_infos
     assert 'MEDIC above recommended count: 1 > 0' in crew_infos
 
-    assert dragon.production_cost == pytest.approx(360_094_396.6667)
-    assert dragon.sales_price_new == pytest.approx(324_084_957.0)
+    assert dragon.production_cost == pytest.approx(305_719_396.6667)
+    assert dragon.sales_price_new == pytest.approx(275_147_457.0)
     assert dragon.available_power == pytest.approx(436.0)
     assert dragon.sensor_power_load == pytest.approx(15.0)
     assert dragon.total_power_load == pytest.approx(436.0)

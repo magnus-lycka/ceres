@@ -41,6 +41,10 @@ class JumpControl(RatedSoftwarePackage):
         if computer.assembly.tl < self.tl:
             self.error(f'{self.description} requires TL{self.tl}')
             return
+        if computer.retro_levels > 0:
+            effective_tl = computer.assembly.tl - computer.retro_levels
+            if self.tl > effective_tl:
+                self.warning(f'{self.description} requires TL{self.tl}, but computer effective TL is {effective_tl}')
         ship_computer = cast('ComputerBase', computer)
         for r in range(self.rating, 0, -1):
             if ship_computer.can_run_jump_control(int(self._specs[r]['bandwidth'])):

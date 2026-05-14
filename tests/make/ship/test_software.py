@@ -4,6 +4,7 @@ from ceres.make.ship.base import ShipBase
 from ceres.make.ship.computer import (
     Computer5,
     Computer10,
+    Computer15,
     Computer35,
     ComputerSection,
     Core40,
@@ -277,4 +278,48 @@ def test_jump_control_runs_at_full_on_core():
     c.bind(DummyOwner(15, 100))
     jc.validate_on_computer(c)
     assert jc.effective_rating == 6
+
+
+def test_retro_computer_software_tl_cap_is_not_error():
+    # Software validation uses ship TL for hard errors; effective TL only triggers a warning.
+    # Computer10 (TL9) retro_levels=2 in TL11 ship: ship TL=11 ≥ JC/2 TL11 → no error.
+    hardware = Computer10(retro_levels=2)
+    hardware.bind(DummyOwner(11, 100))
+    section = ComputerSection(hardware=hardware, software=[JumpControl(rating=2)])
+    section.validate_software()
+    jc = next(p for p in section.software_packages if isinstance(p, JumpControl))
+    assert not jc.notes.errors
+
+
+def test_retro_computer_software_warns_when_exceeds_effective_tl():
+    # Computer10 (TL9) retro_levels=2 in TL13 ship: effective TL=11. JC/2 requires TL11 → at boundary, no warning.
+    # JC/3 requires TL12 > effective TL11 → warning.
+    hardware = Computer10(retro_levels=2)
+    hardware.bind(DummyOwner(13, 100))
+    section = ComputerSection(hardware=hardware, software=[JumpControl(rating=3)])
+    section.validate_software()
+    jc = next(p for p in section.software_packages if isinstance(p, JumpControl))
+    assert not jc.notes.errors
+    assert any('effective TL' in w for w in jc.notes.warnings)
+
+
+def test_retro_computer_software_no_warning_at_effective_tl_boundary():
+    # Computer10 (TL9) retro_levels=2 in TL13 ship: effective TL=11. JC/2 requires TL11 → no warning.
+    hardware = Computer10(retro_levels=2)
+    hardware.bind(DummyOwner(13, 100))
+    section = ComputerSection(hardware=hardware, software=[JumpControl(rating=2)])
+    section.validate_software()
+    jc = next(p for p in section.software_packages if isinstance(p, JumpControl))
+    assert not jc.notes.errors
+    assert not jc.notes.warnings
+
+
+def test_non_retro_computer_software_validates_against_ship_tl():
+    # Computer15 (TL11) in TL11 ship, JumpControl/2 requires TL11 → passes.
+    hardware = Computer15(bis=True)
+    hardware.bind(DummyOwner(11, 100))
+    section = ComputerSection(hardware=hardware, software=[JumpControl(rating=2)])
+    section.validate_software()
+    jc = next(p for p in section.software_packages if isinstance(p, JumpControl))
+    assert not jc.notes.errors
     assert not jc.notes.warnings

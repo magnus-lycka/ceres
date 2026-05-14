@@ -105,23 +105,29 @@ raw headcount:
 When more than 3 total steward levels are needed, Ceres splits the requirement
 across multiple stewards rather than assuming a single higher-skill recruit.
 
-### RI-005 Retro Computer Pricing Is Not Currently Modelled
+### RI-005 Retro- And Proto-Tech Pricing For Ship Computers
 
-Ceres does not currently model the retrofitted computer pricing shown for some
-ship computers in *Central Supply Catalogue* source material and derivative
-exports.
+Ceres models retro- and proto-tech pricing for ship Computer and Core hardware
+via a `retro_levels` or `proto_levels` field on each computer object.
 
-In practice, this means:
+**Retro-tech** (`retro_levels=N`, N ≥ 1): The computer is built at a lower
+cost by using technology that has become routine N TL levels above the
+computer's standard introduction TL. Cost is divided by 2ᴺ. The ship must be
+at TL `computer.tl + N` or higher to apply this discount; if not, a TL error
+is raised.
 
-- computer hardware in Ceres is priced from the normal computer model
-- source rows marked as retrofitted, such as `Retro*`, are not given special
-  discounted pricing
-- when a reference ship depends on retro computer pricing, that difference
-  should be documented explicitly in the relevant test case rather than hidden
-  or silently normalized away
+**Proto-tech** (`proto_levels=N`, N ∈ {1, 2}): The computer is built before
+its standard introduction TL, at 10ᴺ times cost. The effective minimum ship TL
+is reduced by N levels accordingly.
 
-This is a current modeling limitation, not a statement that such source
-material is invalid.
+**Software TL cap (retro only)**: A retro-tech computer can only run software
+whose required TL does not exceed `ship.tl − retro_levels`. Installing a
+Computer/10 at retro-2 in a TL11 ship yields an effective software TL of 9.
+Software that requires TL10 or higher will raise a TL error against that
+computer, even though the ship is TL11. See RI-012 for the rationale.
+
+When a reference ship uses retro-computer pricing (`Retro*` rows in source
+exports), document the `retro_levels` value in the relevant test case.
 
 ### RI-006 Marines On Liners Can Represent Shipboard Security Staff
 
@@ -255,3 +261,29 @@ not as mandating at least one of every listed role on every ship.
 
 This is consistent with RI-003 (maintenance thresholds) and with the prose
 context for small ships, where a single multi-skilled pilot covers many duties.
+
+### RI-012 Retro-Tech Ship Computers Cap The Effective Software TL
+
+A retro-tech computer (`retro_levels=N`) is not simply a cheaper version of
+the same hardware. It is hardware built to an older standard — one that was
+current N TL levels ago. Such hardware cannot take advantage of software
+advances that appeared after that older standard was current.
+
+The working interpretation is:
+
+- a ship at TL X installing a computer at retro level N operates that computer
+  at effective TL `X − N`
+- software whose required TL exceeds `X − N` cannot run on that computer, even
+  though the ship itself is at TL X
+- the ship still needs to be at TL `computer.standard_tl + N` to apply the
+  retro discount (you need the higher TL to recognise that the older design is
+  now routine)
+
+**Example**: A TL14 ship installing a Computer/20 (standard TL12) at
+`retro_levels=2` saves 75% on the hardware (÷4 cost), but the computer
+operates at effective TL 12. Software requiring TL13 or TL14 cannot be loaded
+onto that computer.
+
+This is a capability trade-off, not just a pricing footnote. A ship designer
+who wants TL14 software must use a standard or proto-tech computer — retro
+pricing comes at the cost of software reach.

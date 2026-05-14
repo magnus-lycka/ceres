@@ -22,11 +22,9 @@ def test_portable_computer_zero_matches_csc_values():
     assert pc.cost == 500.0
 
 
-def test_portable_retro_computer_zero_matches_csc_values():
-    pc = PortableComputer(processing=0, tl=9)
-    assert pc.tl == 9
-    assert pc.mass_kg == 1.25
-    assert pc.cost == 125.0
+def test_portable_retro_computer_is_not_supported():
+    with pytest.raises(ValueError, match='Retro-tech not supported for PortableComputer'):
+        PortableComputer(processing=0, tl=9)
 
 
 def test_portable_computer_three_matches_csc_values():
@@ -89,6 +87,36 @@ def test_tablet_matches_csc_values():
 def test_tablet_rejects_invalid_processing():
     with pytest.raises(ValueError, match='Unsupported Tablet processing 6'):
         Tablet(processing=6)
+
+
+def test_tablet_rejects_retro_tech():
+    with pytest.raises(ValueError, match='Retro-tech not supported for Tablet'):
+        Tablet(processing=1, tl=11)
+
+
+def test_tablet_rejects_proto_tech():
+    with pytest.raises(ValueError, match='Proto-tech not supported for Tablet'):
+        Tablet(processing=1, tl=8)
+
+
+def test_computer_chip_rejects_retro_tech():
+    with pytest.raises(ValueError, match='Retro-tech not supported for ComputerChip'):
+        ComputerChip(processing=1, tl=13)
+
+
+def test_computer_chip_rejects_proto_tech():
+    with pytest.raises(ValueError, match='Proto-tech not supported for ComputerChip'):
+        ComputerChip(processing=1, tl=10)
+
+
+def test_microscopic_chip_rejects_retro_tech():
+    with pytest.raises(ValueError, match='Retro-tech not supported for MicroscopicChip'):
+        MicroscopicChip(processing=1, tl=14)
+
+
+def test_microscopic_chip_rejects_proto_tech():
+    with pytest.raises(ValueError, match='Proto-tech not supported for MicroscopicChip'):
+        MicroscopicChip(processing=1, tl=11)
 
 
 def test_computer_terminal_matches_csc_values():

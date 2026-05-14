@@ -24,6 +24,7 @@ from ceres.shared import CeresPart, Equipment, NoteList, _Note
 
 class ComputerPart(CeresPart):
     processing: int
+    retro_levels: int = 0
 
     @property
     def description(self) -> str:
@@ -35,6 +36,8 @@ class ComputerEquipment(Equipment):
     parts: list[ComputerPart] = Field(default_factory=list)
     _label: ClassVar[str]
     _specs: ClassVar[dict[int, dict[str, int | float]]]
+    _allow_retro: ClassVar[bool] = True
+    _allow_proto: ClassVar[bool] = True
 
     @model_validator(mode='before')
     @classmethod
@@ -51,8 +54,12 @@ class ComputerEquipment(Equipment):
         spec = specs[processing]
         given_tl = data.get('tl')
         if given_tl and given_tl > spec['tl']:
+            if not cls._allow_retro:
+                raise ValueError(f'Retro-tech not supported for {cls.__name__}')
             return cls.retro_spec(processing, data, spec, int(given_tl - spec['tl']))
         if given_tl and given_tl < spec['tl']:
+            if not cls._allow_proto:
+                raise ValueError(f'Proto-tech not supported for {cls.__name__}')
             return cls.proto_spec(processing, data, spec, int(spec['tl'] - given_tl))
         part = ComputerPart(processing=processing, tl=int(spec['tl']))
         data.setdefault('parts', [part])
@@ -145,6 +152,7 @@ class MidSizedComputer(ComputerEquipment):
 
 class PortableComputer(ComputerEquipment):
     _label = 'Portable Computer'
+    _allow_retro: ClassVar[bool] = False
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         0: {'tl': 7, 'mass_kg': 5.0, 'cost': 500.0},
         1: {'tl': 8, 'mass_kg': 2.0, 'cost': 250.0},
@@ -157,6 +165,8 @@ class PortableComputer(ComputerEquipment):
 
 class Tablet(ComputerEquipment):
     _label = 'Tablet'
+    _allow_retro: ClassVar[bool] = False
+    _allow_proto: ClassVar[bool] = False
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         0: {'tl': 8, 'mass_kg': 0.25, 'cost': 250.0},
         1: {'tl': 9, 'mass_kg': 0.25, 'cost': 125.0},
@@ -169,6 +179,8 @@ class Tablet(ComputerEquipment):
 
 class ComputerChip(ComputerEquipment):
     _label = 'Computer Chip'
+    _allow_retro: ClassVar[bool] = False
+    _allow_proto: ClassVar[bool] = False
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         0: {'tl': 10, 'mass_kg': 0.0, 'cost': 62.5},
         1: {'tl': 11, 'mass_kg': 0.0, 'cost': 31.25},
@@ -180,6 +192,8 @@ class ComputerChip(ComputerEquipment):
 
 class MicroscopicChip(ComputerEquipment):
     _label = 'Microscopic Chip'
+    _allow_retro: ClassVar[bool] = False
+    _allow_proto: ClassVar[bool] = False
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         0: {'tl': 11, 'mass_kg': 0.0, 'cost': 31.25},
         1: {'tl': 12, 'mass_kg': 0.0, 'cost': 15.625},

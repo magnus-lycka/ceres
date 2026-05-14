@@ -1,6 +1,6 @@
 from typing import Annotated, ClassVar, Literal, cast
 
-from pydantic import Field, PrivateAttr
+from pydantic import Field, PrivateAttr, model_validator
 
 from ceres.gear.computer import ComputerPart
 from ceres.gear.software import Intellect, SoftwarePackage
@@ -15,6 +15,8 @@ class ComputerBase(ComputerPart, ShipPartMixin):
     kind: str
     bis: bool = False
     fib: bool = False
+    retro_levels: int = 0
+    proto_levels: int = 0
     _label: ClassVar[str]
     _base_cost: ClassVar[float]
     _armoured_bulkhead_part: ShipPart | None = PrivateAttr(default=None)
@@ -23,20 +25,43 @@ class ComputerBase(ComputerPart, ShipPartMixin):
     power: ClassVar[float]
     armoured_bulkhead: bool = False
 
+    @model_validator(mode='after')
+    def _validate_retro_proto(self) -> ComputerBase:
+        if self.retro_levels > 0 and self.proto_levels > 0:
+            raise ValueError('Cannot have both retro_levels and proto_levels')
+        if self.proto_levels > 2:
+            raise ValueError(f'Proto tech not available for {self.proto_levels} TLs')
+        return self
+
     @property
     def description(self) -> str:
         return f'{self._label}/{self.processing}'
 
     @property
     def base_cost(self) -> float:
+        if self.retro_levels > 0:
+            factor = min(2**self.retro_levels, 1_000)
+            return self._base_cost / factor
+        if self.proto_levels > 0:
+            return self._base_cost * 10**self.proto_levels
         return self._base_cost
 
+    @property
+    def effective_tl(self) -> int:
+        return self.tl - self.proto_levels
+
     def build_notes(self) -> list[_Note]:
+        notes = NoteList()
         if self.armoured_bulkhead:
-            notes = NoteList()
             notes.info('Armoured bulkhead, see Hull section.')
-            return notes
-        return []
+        if self.proto_levels >= 1:
+            notes.warning(f'Skill DM -{self.proto_levels}')
+        if self.proto_levels == 1:
+            notes.warning('1+ Quirk')
+        elif self.proto_levels == 2:
+            notes.warning('Unreliable')
+            notes.warning('2+ Quirks')
+        return notes
 
     def build_item(self) -> str | None:
         item = self.description
@@ -47,8 +72,14 @@ class ComputerBase(ComputerPart, ShipPartMixin):
         return item
 
     def check_tl(self) -> None:
-        if self.assembly_tl < self.tl:
-            self.error(f'Requires TL{self.tl}, ship is TL{self.assembly_tl}')
+        if self.assembly_tl < self.effective_tl:
+            self.error(f'Requires TL{self.effective_tl}, ship is TL{self.assembly_tl}')
+        if self.retro_levels > 0 and self.assembly_tl < self.tl + self.retro_levels:
+            self.error(
+                f'Retro/{self.retro_levels} requires ship TL{self.tl + self.retro_levels}, ship is TL{self.assembly_tl}'
+            )
+        if self.retro_levels > 0:
+            self.info(f'Software limited to TL{self.assembly_tl - self.retro_levels} or lower')
 
     def can_run_jump_control(self, required_processing: int) -> bool:
         bonus = 5 if self.bis else 0
@@ -63,6 +94,10 @@ class ComputerBase(ComputerPart, ShipPartMixin):
 
     @property
     def tons(self) -> float:
+        if self.proto_levels == 2:
+            return 1.0
+        if self.proto_levels == 1:
+            return 0.1
         return 0.0
 
     @property
