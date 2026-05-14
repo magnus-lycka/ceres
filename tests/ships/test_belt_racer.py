@@ -15,8 +15,12 @@ Source handling for this test case:
   - the source sheet does not provide a settled class name beyond `Vargr Belt
     Racer, class name ???`, so the test uses `Vargr Belt Racer` as the ship
     class
-- no known deliberate deviations remain in the currently modeled slice
+- deliberate deviations:
+  - power_basic: Tycho stat block shows 1; Ceres gives 2 per RI-013
+    (ceil(6 * 0.2) = 2; Tycho appears to use floor)
 """
+
+from types import SimpleNamespace
 
 import pytest
 
@@ -30,6 +34,31 @@ from ceres.make.ship.drives import (
     RDrive16,
 )
 from ceres.make.ship.storage import CargoSection, FuelSection, ReactionFuel
+
+_expected = SimpleNamespace(
+    tl=12,
+    displacement=6,
+    hull_cost_mcr=0.18,
+    r_drive_tons=1.92,
+    r_drive_cost_mcr=0.384,
+    plant_tons=0.5,
+    plant_cost_mcr=0.25,
+    fuel_label='52 minutes of operation',
+    fuel_tons=2.08,
+    cockpit_tons=1.5,
+    cockpit_cost_mcr=0.01,
+    computer_cost_mcr=0.03,
+    available_power=5.0,
+    power_basic=1,  # Tycho stat block
+    power_sensors=0,
+    total_power=1,  # Tycho stat block
+    cargo_tons=0.0,
+    production_cost_mcr=0.854,
+    maintenance_cr=71,
+)
+# Tycho tool uses floor; ceil(6 * 0.2) = 2 per RI-013
+_expected.power_basic = 2
+_expected.total_power = 2
 
 BELT_RACER_HULL = hull.close_structure.model_copy(
     update={'light': True, 'description': 'Light Close Structure Hull'},
@@ -55,40 +84,40 @@ def build_belt_racer() -> ship.Ship:
 def test_belt_racer_matches_current_r_drive_subset():
     racer = build_belt_racer()
 
-    assert racer.hull_cost == pytest.approx(180_000)
+    assert racer.hull_cost == pytest.approx(_expected.hull_cost_mcr * 1_000_000)
     assert racer.drives is not None
     assert racer.drives.r_drive is not None
-    assert racer.drives.r_drive.tons == pytest.approx(1.92)
-    assert racer.drives.r_drive.cost == pytest.approx(384_000)
+    assert racer.drives.r_drive.tons == pytest.approx(_expected.r_drive_tons)
+    assert racer.drives.r_drive.cost == pytest.approx(_expected.r_drive_cost_mcr * 1_000_000)
 
     assert racer.power is not None
     assert racer.power.plant is not None
-    assert racer.power.plant.tons == pytest.approx(0.5)
-    assert racer.power.plant.cost == pytest.approx(250_000)
+    assert racer.power.plant.tons == pytest.approx(_expected.plant_tons)
+    assert racer.power.plant.cost == pytest.approx(_expected.plant_cost_mcr * 1_000_000)
 
     assert racer.fuel is not None
     assert racer.fuel.reaction_fuel is not None
-    assert racer.fuel.reaction_fuel.build_item() == '52 minutes of operation'
-    assert racer.fuel.reaction_fuel.tons == pytest.approx(2.08)
+    assert racer.fuel.reaction_fuel.build_item() == _expected.fuel_label
+    assert racer.fuel.reaction_fuel.tons == pytest.approx(_expected.fuel_tons)
 
     assert racer.command is not None
     assert racer.command.cockpit is not None
-    assert racer.command.cockpit.tons == pytest.approx(1.5)
-    assert racer.command.cockpit.cost == pytest.approx(10_000)
+    assert racer.command.cockpit.tons == pytest.approx(_expected.cockpit_tons)
+    assert racer.command.cockpit.cost == pytest.approx(_expected.cockpit_cost_mcr * 1_000_000)
 
     assert racer.computer is not None
     assert racer.computer.hardware is not None
-    assert racer.computer.hardware.cost == pytest.approx(30_000)
+    assert racer.computer.hardware.cost == pytest.approx(_expected.computer_cost_mcr * 1_000_000)
 
-    assert racer.available_power == pytest.approx(5.0)
-    assert racer.basic_hull_power_load == pytest.approx(1.0)
+    assert racer.available_power == pytest.approx(_expected.available_power)
+    assert racer.basic_hull_power_load == _expected.power_basic
     assert racer.maneuver_power_load == pytest.approx(0.0)
-    assert racer.sensor_power_load == pytest.approx(0.0)
-    assert racer.total_power_load == pytest.approx(1.0)
-    assert CargoSection.cargo_tons_for_ship(racer) == pytest.approx(0.0)
-    assert racer.production_cost == pytest.approx(854_000)
-    assert racer.sales_price_new == pytest.approx(854_000)
-    assert racer.expenses.maintenance == pytest.approx(71.0)
+    assert racer.sensor_power_load == pytest.approx(_expected.power_sensors)
+    assert racer.total_power_load == pytest.approx(_expected.total_power)
+    assert CargoSection.cargo_tons_for_ship(racer) == pytest.approx(_expected.cargo_tons)
+    assert racer.production_cost == pytest.approx(_expected.production_cost_mcr * 1_000_000)
+    assert racer.sales_price_new == pytest.approx(_expected.production_cost_mcr * 1_000_000)
+    assert racer.expenses.maintenance == pytest.approx(_expected.maintenance_cr)
     assert racer.notes == []
     assert [(role.role, quantity, role.monthly_salary) for role, quantity in racer.crew.grouped_roles] == [
         ('PILOT', 1, 6_000),

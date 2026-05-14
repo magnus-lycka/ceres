@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import pytest
 
 from ceres.make.ship import armour, hull, ship
@@ -8,6 +10,21 @@ from ceres.make.ship.parts import EnergyEfficient, HighTechnology
 from ceres.make.ship.sensors import CivilianSensors, SensorsSection
 from ceres.make.ship.storage import FuelSection, OperationFuel
 from ceres.make.ship.weapons import FixedMount, PulseLaser, VeryHighYield, WeaponsSection
+
+_expected = SimpleNamespace(
+    tl=12,
+    displacement=6,
+    hull_cost=270_000,
+    available_power=8,
+    power_basic=1,  # Tycho normal-load stat block
+    power_maneuver=4,
+    power_sensors=1,
+    power_weapons=2,
+    total_power=8,  # Tycho normal-load stat block
+)
+# Tycho tool uses floor; ceil(6 * 0.2) = 2 per RI-013
+_expected.power_basic = 2
+_expected.total_power = 9
 
 
 def build_ultralight_fighter() -> ship.Ship:
@@ -98,13 +115,13 @@ def test_ultralight_fighter_part_values():
     assert int(weapon_mount.cost) == 1_600_000
     assert int(weapon_mount.power) == 2
 
-    assert fighter.hull_cost == 270_000
-    assert fighter.available_power == 8
-    assert fighter.basic_hull_power_load == pytest.approx(1.0)
-    assert fighter.maneuver_power_load == 4
-    assert fighter.sensor_power_load == 1
-    assert fighter.weapon_power_load == 2
-    assert fighter.total_power_load == pytest.approx(8.0)
+    assert fighter.hull_cost == _expected.hull_cost
+    assert fighter.available_power == _expected.available_power
+    assert fighter.basic_hull_power_load == pytest.approx(_expected.power_basic)
+    assert fighter.maneuver_power_load == _expected.power_maneuver
+    assert fighter.sensor_power_load == _expected.power_sensors
+    assert fighter.weapon_power_load == _expected.power_weapons
+    assert fighter.total_power_load == pytest.approx(_expected.total_power)
 
     assert [(role.role, quantity, role.monthly_salary) for role, quantity in fighter.crew.grouped_roles] == [
         ('PILOT', 1, 6_000),

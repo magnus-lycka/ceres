@@ -411,6 +411,60 @@ class TrainingFacility(_ZeroPowerSystemPart):
         return self.tons * 200_000.0
 
 
+class TowCable(_ZeroPowerSystemPart):
+    system_type: Literal['TOW_CABLE'] = 'TOW_CABLE'
+    tl: int = 7
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+
+    def build_item(self) -> str | None:
+        return 'Tow Cable'
+
+    @property
+    def tons(self) -> float:
+        return self.assembly.displacement * 0.01
+
+    @property
+    def cost(self) -> float:
+        return self.assembly.displacement * 0.01 * 5_000
+
+
+class GrapplingArm(_ZeroPowerSystemPart):
+    system_type: Literal['GRAPPLING_ARM'] = 'GRAPPLING_ARM'
+    tl: int = 9
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+
+    def build_item(self) -> str | None:
+        return 'Grappling Arm'
+
+    @property
+    def tons(self) -> float:
+        return 2.0
+
+    @property
+    def cost(self) -> float:
+        return 1_000_000.0
+
+
+class AccelerationSeat(_ZeroPowerSystemPart):
+    system_type: Literal['ACCELERATION_SEAT'] = 'ACCELERATION_SEAT'
+    tl: int = 1
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+
+    def build_item(self) -> str | None:
+        return 'Acceleration Seat'
+
+    @property
+    def tons(self) -> float:
+        return 0.5
+
+    @property
+    def cost(self) -> float:
+        return 30_000.0
+
+
 type AnyDroneSystem = Annotated[
     ProbeDrones | AdvancedProbeDrones | RepairDrones | MiningDrones,
     Field(discriminator='drone_type'),
@@ -425,7 +479,10 @@ type AnyInternalSystem = Annotated[
     | LibraryFacility
     | BriefingRoom
     | TrainingFacility
-    | Workshop,
+    | Workshop
+    | TowCable
+    | GrapplingArm
+    | AccelerationSeat,
     Field(discriminator='system_type'),
 ]
 

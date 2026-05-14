@@ -372,9 +372,9 @@ Only `DockingClamp` is currently in `crafts.py`. Still missing:
 
 - Breaching Tube
 - Forced Linkage Apparatus
-- Grappling Arm
 - Holographic Hull
-- Tow Cable
+
+Implemented: `GrapplingArm`, `TowCable` (in `systems.py`).
 
 External loads from grappling/tow should feed into effective displacement for drive performance
 (related to the Modulars and effective displacement item above).
@@ -391,6 +391,28 @@ Space stations use almost the same design sequence as ships but with a few diffe
 - Can include mineral refineries, manufacturing plants, and other industrial facilities.
 
 Decide whether `Ship` should be extended or whether a separate `Station` class is warranted.
+
+## Make ShipPart generic over assembly type
+
+Currently `ShipPart.assembly` returns `ShipBase`, which only declares `tl` and
+`displacement`. Parts that need to access `hull`, `drives`, `power`, etc. work
+around this with `getattr(self.assembly, 'field', None)` — which silences the
+type checker but defeats its guarantees: if a part is accidentally bound to the
+wrong assembly type, the error is silent.
+
+The proper fix is to make `ShipPart` generic over the assembly type, e.g.
+`ShipPart[TAssembly: ShipBase]`, so that a part can declare exactly what it
+needs:
+
+    class Automation(ShipPart[Ship]):
+        def _basis(self) -> float:
+            return self.assembly.hull ...   # ty now knows assembly is Ship
+
+Parts that genuinely work with any `ShipBase` stay as `ShipPart[ShipBase]`.
+This is a non-trivial refactor because Pydantic generics interact with
+discriminated unions, but it would let us replace all the defensive `getattr`
+calls in `automation.py`, `storage.py`, `habitation.py`, and `power.py` with
+direct attribute access.
 
 ## Get rid of silly singular properties
 

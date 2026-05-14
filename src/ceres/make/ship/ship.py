@@ -6,6 +6,7 @@ from pydantic import Field
 from ceres.gear.software import SoftwarePackage
 from ceres.shared import NoteList
 
+from .automation import AnyAutomation, StandardAutomation
 from .base import ShipBase
 from .bridge import CommandSection
 from .computer import ComputerSection
@@ -67,6 +68,7 @@ class Ship(ShipBase):
     computer: ComputerSection | None = None
     sensors: SensorsSection = Field(default_factory=SensorsSection)
     craft: CraftSection | None = None
+    automation: AnyAutomation = Field(default_factory=StandardAutomation)
     cargo: CargoSection | None = None
     habitation: HabitationSection | None = None
     systems: SystemsSection | None = None
@@ -117,11 +119,10 @@ class Ship(ShipBase):
 
     @property
     def basic_hull_power_load(self) -> float:
-        if self.command is not None and self.command.bridge is not None:
-            return self.displacement * 0.2
+        base = self.displacement * 0.2
         if self.hull.configuration.non_gravity:
-            return 0.5
-        return 1.0
+            base *= 0.5
+        return float(ceil(base))
 
     @property
     def maneuver_power_load(self) -> float:
@@ -183,6 +184,7 @@ class Ship(ShipBase):
             parts.extend(self.power._all_parts())
         if self.fuel is not None:
             parts.extend(self.fuel._all_parts())
+        parts.append(self.automation)
         if self.command is not None:
             parts.extend(self.command._all_parts())
         if self.computer is not None:
@@ -318,6 +320,7 @@ class Ship(ShipBase):
             self.power.add_spec_rows(self, spec)
         if self.fuel is not None:
             self.fuel.add_spec_rows(self, spec)
+        self.automation.add_spec_rows(self, spec)
         if self.command is not None:
             self.command.add_spec_rows(self, spec)
         if self.computer is not None:

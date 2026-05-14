@@ -21,6 +21,7 @@ class CrewRole(BaseModel):
     role: str
     level: int = Field(default=1, ge=1)
     base_salary: ClassVar[int]
+    adjustable_size: ClassVar[bool] = False
 
     @property
     def monthly_salary(self) -> int:
@@ -36,70 +37,201 @@ class CrewRole(BaseModel):
             return self.role
         return f'{self.role}-{self.level}'
 
+    @classmethod
+    def need_for_ship(cls, ship, crew_count: int = 0) -> int:
+        return 0
+
+    @classmethod
+    def make_instances(cls, count: int, ship) -> list[CrewRole]:
+        return [cls() for _ in range(count)]  # ty: ignore[missing-argument]
+
 
 class Captain(CrewRole):
     role: Literal['CAPTAIN'] = 'CAPTAIN'
     base_salary = 10_000
+
+    @classmethod
+    def need_for_ship(cls, ship, crew_count: int = 0) -> int:
+        if _is_simple_craft(ship):
+            return 0
+        return 0 if not ship.military else 1
 
 
 class Pilot(CrewRole):
     role: Literal['PILOT'] = 'PILOT'
     base_salary = 6_000
 
+    @classmethod
+    def need_for_ship(cls, ship, crew_count: int = 0) -> int:
+        if _is_simple_craft(ship):
+            return 1
+        if ship.military:
+            return 3 + _carried_small_craft_count(ship)
+        return 1 + _carried_small_craft_count(ship)
+
 
 class Astrogator(CrewRole):
     role: Literal['ASTROGATOR'] = 'ASTROGATOR'
     base_salary = 5_000
 
+    @classmethod
+    def need_for_ship(cls, ship, crew_count: int = 0) -> int:
+        if _is_simple_craft(ship):
+            return 0
+        if ship.drives is not None and ship.drives.j_drive is not None:
+            return 1
+        return 0
+
 
 class Engineer(CrewRole):
     role: Literal['ENGINEER'] = 'ENGINEER'
     base_salary = 4_000
+    adjustable_size: ClassVar[bool] = True
+
+    @classmethod
+    def need_for_ship(cls, ship, crew_count: int = 0) -> int:
+        if _is_simple_craft(ship):
+            return 0
+        engineering_tonnage = _drives_and_power_tonnage(ship)
+        return math.ceil(engineering_tonnage / 35) if engineering_tonnage > 0 else 0
 
 
 class Maintenance(CrewRole):
     role: Literal['MAINTENANCE'] = 'MAINTENANCE'
     base_salary = 1_000
+    adjustable_size: ClassVar[bool] = True
+
+    @classmethod
+    def need_for_ship(cls, ship, crew_count: int = 0) -> int:
+        if _is_simple_craft(ship):
+            return 0
+        if ship.military:
+            return _military_maintenance_count(ship)
+        return _commercial_maintenance_count(ship)
 
 
 class GeneralCrew(CrewRole):
     role: Literal['GENERAL CREW'] = 'GENERAL CREW'
     base_salary = 1_000
 
+    @classmethod
+    def need_for_ship(cls, ship, crew_count: int = 0) -> int:
+        return 0
+
 
 class Marine(CrewRole):
     role: Literal['MARINE'] = 'MARINE'
     base_salary = 1_000
 
+    @classmethod
+    def need_for_ship(cls, ship, crew_count: int = 0) -> int:
+        return 0
+
 
 class Gunner(CrewRole):
     role: Literal['GUNNER'] = 'GUNNER'
     base_salary = 2_000
+    adjustable_size: ClassVar[bool] = True
+
+    @classmethod
+    def need_for_ship(cls, ship, crew_count: int = 0) -> int:
+        if _is_simple_craft(ship):
+            return 0
+        if ship.military:
+            return _military_gunner_count(ship)
+        return _commercial_gunner_count(ship)
 
 
 class Steward(CrewRole):
     role: Literal['STEWARD'] = 'STEWARD'
     base_salary = 2_000
 
+    @classmethod
+    def need_for_ship(cls, ship, crew_count: int = 0) -> int:
+        if _is_simple_craft(ship):
+            return 0
+        required_level = _steward_required_level(ship)
+        if required_level == 0:
+            return 0
+        # Count how many steward instances are needed (each covers up to 3 levels)
+        count = 0
+        remaining = required_level
+        while remaining > 0:
+            remaining -= min(3, remaining)
+            count += 1
+        return count
+
+    @classmethod
+    def make_instances(cls, count: int, ship) -> list[CrewRole]:
+        required_level = _steward_required_level(ship)
+        if required_level == 0 or count == 0:
+            return []
+
+        counts_by_level: dict[int, int] = {}
+        remaining = required_level
+        while remaining > 0:
+            level = min(3, remaining)
+            counts_by_level[level] = counts_by_level.get(level, 0) + 1
+            remaining -= level
+
+        roles: list[CrewRole] = []
+        for level in sorted(counts_by_level, reverse=True):
+            roles.extend([Steward(level=level) for _ in range(counts_by_level[level])])
+        return roles
+
 
 class Administrator(CrewRole):
     role: Literal['ADMINISTRATOR'] = 'ADMINISTRATOR'
     base_salary = 1_500
+    adjustable_size: ClassVar[bool] = True
+
+    @classmethod
+    def need_for_ship(cls, ship, crew_count: int = 0) -> int:
+        if _is_simple_craft(ship):
+            return 0
+        if ship.military:
+            return ship.displacement // 1_000
+        return ship.displacement // 2_000
 
 
 class SensorOperator(CrewRole):
     role: Literal['SENSOR OPERATOR'] = 'SENSOR OPERATOR'
     base_salary = 4_000
+    adjustable_size: ClassVar[bool] = True
+
+    @classmethod
+    def need_for_ship(cls, ship, crew_count: int = 0) -> int:
+        if _is_simple_craft(ship):
+            return 0
+        return _sensor_operator_count(ship, military=ship.military)
 
 
 class Medic(CrewRole):
     role: Literal['MEDIC'] = 'MEDIC'
     base_salary = 4_000
 
+    @classmethod
+    def need_for_ship(cls, ship, crew_count: int = 0) -> int:
+        if _is_simple_craft(ship):
+            return 0
+        population = _habitation_population(ship) or crew_count
+        medic_count = population // 120
+        if _requires_medic_from_medical_facility(ship):
+            medic_count = max(medic_count, 1)
+        return medic_count
+
 
 class Officer(CrewRole):
     role: Literal['OFFICER'] = 'OFFICER'
     base_salary = 5_000
+
+    @classmethod
+    def need_for_ship(cls, ship, crew_count: int = 0) -> int:
+        if _is_simple_craft(ship):
+            return 0
+        if ship.military:
+            return crew_count // 10
+        return crew_count // 20
 
 
 type AnyCrewRole = Annotated[
@@ -117,6 +249,21 @@ type AnyCrewRole = Annotated[
     | Medic
     | Officer,
     Field(discriminator='role'),
+]
+
+
+_ALL_ROLE_CLASSES: list[type[CrewRole]] = [
+    Captain,
+    Pilot,
+    Astrogator,
+    Engineer,
+    Maintenance,
+    Gunner,
+    Steward,
+    Administrator,
+    SensorOperator,
+    Medic,
+    Officer,
 ]
 
 
@@ -146,9 +293,14 @@ class ShipCrew(CeresModel):
     @property
     def recommended_roles(self) -> list[CrewRole]:
         ship = self._bound_ship()
-        if ship.military:
-            return self._military_roles(ship)
-        return self._commercial_roles(ship)
+        automation_factor = ship.automation.crew_factor
+
+        roles: list[CrewRole] = []
+        for role_cls in _ALL_ROLE_CLASSES:
+            base = role_cls.need_for_ship(ship, len(roles))
+            count = _apply_crew_reductions(ship, base, automation_factor) if role_cls.adjustable_size else base
+            roles.extend(role_cls.make_instances(count, ship))
+        return roles
 
     @property
     def effective_roles(self) -> list[CrewRole]:
@@ -211,96 +363,6 @@ class ShipCrew(CeresModel):
                 notes.info(f'{role} above recommended count: {provided_count} > {required_count}')
         return notes
 
-    def _steward_roles(self, ship) -> list[CrewRole]:
-        required_level = _steward_required_level(ship)
-        if required_level == 0:
-            return []
-
-        counts_by_level: dict[int, int] = {}
-        remaining = required_level
-        while remaining > 0:
-            level = min(3, remaining)
-            counts_by_level[level] = counts_by_level.get(level, 0) + 1
-            remaining -= level
-
-        roles: list[CrewRole] = []
-        for level in sorted(counts_by_level, reverse=True):
-            roles.extend([Steward(level=level) for _ in range(counts_by_level[level])])
-        return roles
-
-    def _commercial_roles(self, ship) -> list[CrewRole]:
-        if ship.displacement <= 100 and (ship.drives is None or ship.drives.j_drive is None):
-            return [Pilot()]
-
-        roles: list[CrewRole] = [Pilot() for _ in range(1 + _carried_small_craft_count(ship))]
-
-        if ship.drives is not None and ship.drives.j_drive is not None:
-            roles.append(Astrogator())
-
-        engineering_tonnage = _drives_and_power_tonnage(ship)
-        engineer_count = math.ceil(engineering_tonnage / 35) if engineering_tonnage > 0 else 0
-        roles.extend([Engineer() for _ in range(_apply_large_ship_reduction(ship, engineer_count))])
-        roles.extend(
-            [Maintenance() for _ in range(_apply_large_ship_reduction(ship, _commercial_maintenance_count(ship)))]
-        )
-
-        gunner_count = _apply_large_ship_reduction(ship, _commercial_gunner_count(ship))
-        roles.extend([Gunner() for _ in range(gunner_count)])
-        roles.extend(self._steward_roles(ship))
-
-        administrator_count = _apply_large_ship_reduction(ship, ship.displacement // 2_000)
-        roles.extend([Administrator() for _ in range(administrator_count)])
-
-        sensor_operator_count = _apply_large_ship_reduction(ship, _sensor_operator_count(ship, military=False))
-        roles.extend([SensorOperator() for _ in range(sensor_operator_count)])
-
-        population = _habitation_population(ship) or len(roles)
-        medic_count = population // 120
-        if _requires_medic_from_medical_facility(ship):
-            medic_count = max(medic_count, 1)
-        roles.extend([Medic() for _ in range(medic_count)])
-
-        officer_count = len(roles) // 20
-        roles.extend([Officer() for _ in range(officer_count)])
-        return roles
-
-    def _military_roles(self, ship) -> list[CrewRole]:
-        if ship.displacement <= 100 and (ship.drives is None or ship.drives.j_drive is None):
-            return [Pilot()]
-
-        roles: list[CrewRole] = [Captain()]
-        roles.extend([Pilot() for _ in range(3 + _carried_small_craft_count(ship))])
-
-        if ship.drives is not None and ship.drives.j_drive is not None:
-            roles.append(Astrogator())
-
-        engineering_tonnage = _drives_and_power_tonnage(ship)
-        engineer_count = math.ceil(engineering_tonnage / 35) if engineering_tonnage > 0 else 0
-        roles.extend([Engineer() for _ in range(_apply_large_ship_reduction(ship, engineer_count))])
-        roles.extend(
-            [Maintenance() for _ in range(_apply_large_ship_reduction(ship, _military_maintenance_count(ship)))]
-        )
-
-        gunner_count = _apply_large_ship_reduction(ship, _military_gunner_count(ship))
-        roles.extend([Gunner() for _ in range(gunner_count)])
-        roles.extend(self._steward_roles(ship))
-
-        administrator_count = _apply_large_ship_reduction(ship, ship.displacement // 1_000)
-        roles.extend([Administrator() for _ in range(administrator_count)])
-
-        sensor_operator_count = _apply_large_ship_reduction(ship, _sensor_operator_count(ship, military=True))
-        roles.extend([SensorOperator() for _ in range(sensor_operator_count)])
-
-        population = _habitation_population(ship) or len(roles)
-        medic_count = population // 120
-        if _requires_medic_from_medical_facility(ship):
-            medic_count = max(medic_count, 1)
-        roles.extend([Medic() for _ in range(medic_count)])
-
-        officer_count = len(roles) // 10
-        roles.extend([Officer() for _ in range(officer_count)])
-        return roles
-
 
 _LARGE_SHIP_BRACKETS: list[tuple[int, float]] = [
     (100_000, 0.33),
@@ -324,15 +386,23 @@ def _next_crew_reduction_multiplier(displacement: int) -> float | None:
     return None
 
 
-def _apply_large_ship_reduction(ship, count: int) -> int:
+def _apply_crew_reductions(ship, count: int, automation_factor: float) -> int:
     if count == 0:
         return 0
-    multiplier = _crew_reduction_multiplier(ship.displacement)
-    result = math.ceil(count * multiplier)
+    large_multiplier = _crew_reduction_multiplier(ship.displacement)
+    result = math.ceil(count * large_multiplier * automation_factor)
     next_multiplier = _next_crew_reduction_multiplier(ship.displacement)
     if next_multiplier is not None:
-        result = min(result, math.ceil(count * next_multiplier))
+        result = min(result, math.ceil(count * next_multiplier * automation_factor))
     return result
+
+
+def _apply_large_ship_reduction(ship, count: int) -> int:
+    return _apply_crew_reductions(ship, count, 1.0)
+
+
+def _is_simple_craft(ship) -> bool:
+    return ship.displacement <= 100 and (ship.drives is None or ship.drives.j_drive is None)
 
 
 def _drives_and_power_tonnage(ship) -> float:

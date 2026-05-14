@@ -21,6 +21,7 @@ class ShipExpenses:
         return (
             self.ship.hull_cost
             + self.ship.hull.radiation_shielding_cost(self.ship.displacement)
+            + self.ship.hull.heat_shielding_cost(self.ship.displacement)
             + sum(part.cost for part in self.ship._all_parts())
             + software_cost
             + craft_cost

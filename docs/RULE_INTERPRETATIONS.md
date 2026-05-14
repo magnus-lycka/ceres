@@ -287,3 +287,28 @@ onto that computer.
 This is a capability trade-off, not just a pricing footnote. A ship designer
 who wants TL14 software must use a standard or proto-tech computer — retro
 pricing comes at the cost of software reach.
+
+### RI-013 Basic Ship Systems Power Is Rounded Up To The Nearest Integer
+
+*High Guard* states that basic ship systems power equals 20% of total hull
+tonnage (10% for non-gravity hulls). No rounding rule is given in the text.
+
+The *Small Craft Catalogue* stat blocks consistently display integer power
+values, and its 6-ton designs (e.g. Freight Handler Pod, Civilian Hopper)
+show Basic Ship Systems = 2, which equals ceil(6 × 0.2) = ceil(1.2) = 2.
+
+Ceres therefore applies ceiling rounding:
+
+    basic_ship_systems_power = ceil(displacement × 0.2)
+
+For non-gravity hulls, the 50% reduction is applied before rounding:
+
+    basic_ship_systems_power = ceil(displacement × 0.2 × 0.5)
+
+**Note on third-party tools**: The Tycho tool export for the Belt Racer
+(6-ton light hull) shows Basic Ship Systems = 1. Since the official Small
+Craft Catalogue sources consistently show 2 for a standard 6-ton hull, and
+Tycho may use floor rather than ceil, the Belt Racer stat block deviation
+is treated as a Tycho tool difference, not evidence of a light-hull modifier.
+The rules text on light hulls (refs/hg/05_specialised_hull_types.md) states
+only cost and hull-point effects — no power modifier.

@@ -215,7 +215,7 @@ def test_ship_basic_hull_power_load_for_non_gravity_hull_is_half():
         displacement=6,
         hull=hull.Hull(configuration=hull.standard_hull.model_copy(update={'non_gravity': True})),
     )
-    assert my_ship.basic_hull_power_load == 0.5
+    assert my_ship.basic_hull_power_load == 1
 
 
 def test_ship_jump_fuel_and_weapon_power_accessors_handle_missing_sections():
@@ -249,7 +249,7 @@ def test_ship_total_power_load_includes_basic_and_active_systems():
             ],
         ),
     )
-    assert my_ship.total_power_load == 8
+    assert my_ship.total_power_load == pytest.approx(9.0)
 
 
 def test_ship_gets_warning_when_total_power_load_exceeds_available_power():

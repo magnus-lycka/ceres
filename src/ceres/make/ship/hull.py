@@ -63,6 +63,21 @@ class HullConfiguration(CeresModel):
     def cost(self, ton):
         return 50000 * ton * self.effective_hull_cost_modifier
 
+    def automation_basis_cost(self, ton: float) -> float:
+        """Hull cost contribution for automation — includes config/reinforced/light/military but NOT non-gravity.
+
+        Non-gravity is an economic discount on hull structure, not a technology choice, so it is
+        excluded from the automation basis per the Traveller Companion rule.
+        """
+        modifier = self.hull_cost_modifier
+        if self.reinforced:
+            modifier *= 1.5
+        if self.light:
+            modifier *= 0.75
+        if self.military:
+            modifier *= 1.25
+        return 50000 * ton * modifier
+
     def points(self, ton):
         return (ton * self.effective_hull_points_modifier) // 2.5
 
@@ -237,6 +252,11 @@ class Hull(CeresModel):
             return 0.0
         return displacement * 0.25
 
+    def heat_shielding_cost(self, displacement: float) -> float:
+        if not self.heat_shielding:
+            return 0.0
+        return displacement * 100_000.0
+
     def total_cost(self, displacement: float) -> float:
         base_cost = self.configuration.cost(displacement)
         if self.pressure_hull:
@@ -297,6 +317,15 @@ class Hull(CeresModel):
             )
         if self.stealth is not None:
             spec.add_row(ship._spec_row_for_part(SpecSection.HULL, self.stealth))
+        if self.heat_shielding:
+            spec.add_row(
+                SpecRow(
+                    section=SpecSection.HULL,
+                    item='Heat Shielding',
+                    tons=None,
+                    cost=self.heat_shielding_cost(ship.displacement) or None,
+                )
+            )
         if self.radiation_shielding:
             spec.add_row(
                 SpecRow(
