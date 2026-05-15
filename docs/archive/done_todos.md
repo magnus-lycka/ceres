@@ -192,3 +192,12 @@ apply before the divisor.
 Non-gravity hulls now report a ship error above the 500,000-ton maximum size.
 
 The remaining spin-layout modelling question stays in `docs/todo_maybe.md`.
+
+## Command Bridge
+
+Command bridges are implemented as a separate `CommandBridge` internal system,
+not as a variant of the ship-control bridge.
+
+They add 40 tons, add MCr30 to bridge cost, require ship displacement greater
+than 5,000 tons, and add a spec note for DM+1 to Tactics (naval) checks made
+within the command bridge.

@@ -4,6 +4,7 @@ from pydantic import ConfigDict, Field
 
 from ceres.shared import CeresModel, NoteList, _Note
 
+from .base import ShipBase
 from .parts import ShipPart
 from .spec import ShipSpec, SpecSection
 from .text import optional_count
@@ -96,6 +97,37 @@ class BriefingRoom(_ZeroPowerSystemPart):
     @property
     def cost(self) -> float:
         return 500_000.0
+
+
+class CommandBridge(_ZeroPowerSystemPart):
+    system_type: Literal['COMMAND_BRIDGE'] = 'COMMAND_BRIDGE'
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+
+    def bind(self, assembly: ShipBase) -> None:
+        super().bind(assembly)
+        if self.assembly.displacement <= 5_000:
+            self.error('Command bridge requires displacement greater than 5000 tons')
+
+    def build_item(self) -> str | None:
+        return 'Command Bridge'
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('DM +1 to Tactics (naval) checks made within the command bridge')
+        return notes
+
+    @property
+    def tons(self) -> float:
+        return 40.0
+
+    @property
+    def cost(self) -> float:
+        return 30_000_000.0
+
+    @property
+    def tactics_naval_dm(self) -> int:
+        return 1
 
 
 class Armoury(_ZeroPowerSystemPart):
@@ -478,6 +510,7 @@ type AnyInternalSystem = Annotated[
     | Laboratory
     | LibraryFacility
     | BriefingRoom
+    | CommandBridge
     | TrainingFacility
     | Workshop
     | TowCable
@@ -521,6 +554,10 @@ class SystemsSection(CeresModel):
     @property
     def briefing_rooms(self) -> list[BriefingRoom]:
         return self.internal_systems_of_type(BriefingRoom)
+
+    @property
+    def command_bridges(self) -> list[CommandBridge]:
+        return self.internal_systems_of_type(CommandBridge)
 
     @property
     def training_facilities(self) -> list[TrainingFacility]:

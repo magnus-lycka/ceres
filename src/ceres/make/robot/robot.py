@@ -149,6 +149,9 @@ class Robot(RobotBase):
         notes = []
         if self.used_slots > self.available_slots:
             notes.append(_Note.error(f'Slot overload: {self.used_slots} used, {self.available_slots} available'))
+        rem = self.brain.remaining_bandwidth
+        if rem is not None and rem < 0:
+            notes.append(_Note.error(f'Bandwidth overload: {-rem} over capacity'))
         return notes
 
     def _build_detail_sections(self) -> list:

@@ -2,6 +2,7 @@ import pytest
 
 from ceres.make.ship import hull, ship
 from ceres.make.ship.base import ShipBase
+from ceres.make.ship.bridge import Bridge, CommandSection
 from ceres.make.ship.storage import FuelScoops, FuelSection
 from ceres.make.ship.systems import (
     AdvancedProbeDrones,
@@ -11,6 +12,7 @@ from ceres.make.ship.systems import (
     BasicAutodoc,
     Biosphere,
     BriefingRoom,
+    CommandBridge,
     CommercialZone,
     CommonArea,
     HotTub,
@@ -44,6 +46,7 @@ class DummyOwner(ShipBase):
         (Laboratory(), 4.0, 1_000_000.0, 0.0),
         (LibraryFacility(), 4.0, 4_000_000.0, 0.0),
         (BriefingRoom(), 4.0, 500_000.0, 0.0),
+        (CommandBridge(), 40.0, 30_000_000.0, 0.0),
         (Armoury(), 1.0, 250_000.0, 0.0),
         (WetBar(), 0.0, 2_000.0, 0.0),
         (MedicalBay(), 4.0, 2_000_000.0, 1.0),
@@ -77,6 +80,7 @@ def test_converted_system_values_are_computed_properties_not_serialized_fields(
         (Laboratory, {}, 4.0, 1_000_000.0, 0.0),
         (LibraryFacility, {}, 4.0, 4_000_000.0, 0.0),
         (BriefingRoom, {}, 4.0, 500_000.0, 0.0),
+        (CommandBridge, {}, 40.0, 30_000_000.0, 0.0),
         (Armoury, {}, 1.0, 250_000.0, 0.0),
         (WetBar, {}, 0.0, 2_000.0, 0.0),
         (MedicalBay, {}, 4.0, 2_000_000.0, 1.0),
@@ -211,6 +215,46 @@ def test_training_facility_values():
     t.bind(DummyOwner(12, 100))
     assert t.tons == 4.0
     assert t.cost == 800_000
+
+
+def test_command_bridge_values_and_notes():
+    command_bridge = CommandBridge()
+    command_bridge.bind(DummyOwner(12, 6_000))
+
+    assert command_bridge.tons == pytest.approx(40.0)
+    assert command_bridge.cost == pytest.approx(30_000_000.0)
+    assert command_bridge.power == pytest.approx(0.0)
+    assert command_bridge.tactics_naval_dm == 1
+    assert command_bridge.build_item() == 'Command Bridge'
+    assert command_bridge.notes.infos == ['DM +1 to Tactics (naval) checks made within the command bridge']
+
+
+def test_command_bridge_requires_more_than_5000_tons():
+    command_bridge = CommandBridge()
+    command_bridge.bind(DummyOwner(12, 5_000))
+
+    assert command_bridge.notes.errors == ['Command bridge requires displacement greater than 5000 tons']
+
+
+def test_command_bridge_is_separate_from_ship_control_bridge_in_spec():
+    # Based on the Valiant light cruiser bridge rows in refs/hg/70_system_defence_boat.md.
+    my_ship = ship.Ship(
+        tl=15,
+        displacement=30_000,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        command=CommandSection(bridge=Bridge(holographic=True)),
+        systems=SystemsSection(internal_systems=[CommandBridge()]),
+    )
+
+    spec = my_ship.build_spec()
+    bridge_row = spec.row('Holographic Controls', section='Command')
+    command_bridge_row = spec.row('Command Bridge', section='Systems')
+
+    assert bridge_row.tons == pytest.approx(60.0)
+    assert bridge_row.cost == pytest.approx(187_500_000.0)
+    assert command_bridge_row.tons == pytest.approx(40.0)
+    assert command_bridge_row.cost == pytest.approx(30_000_000.0)
+    assert command_bridge_row.notes.infos == ['DM +1 to Tactics (naval) checks made within the command bridge']
 
 
 def test_probe_drones_tons():

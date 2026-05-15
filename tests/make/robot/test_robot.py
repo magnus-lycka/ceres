@@ -435,6 +435,23 @@ class TestOptions:
         errors = robot.build_notes()
         assert errors
 
+    def test_bandwidth_overload_produces_note(self):
+        from ceres.make.robot.brain import AdvancedBrain
+        from ceres.make.robot.skills import SkillPackage
+
+        # Advanced TL12 has bandwidth 2; installing 3 × bandwidth-1 packages overloads
+        brain = AdvancedBrain(
+            brain_tl=12,
+            installed_skills=(
+                SkillPackage(name='Recon', level=1, bandwidth=1),
+                SkillPackage(name='Mechanic', level=1, bandwidth=1),
+                SkillPackage(name='Medic', level=1, bandwidth=1),
+            ),
+        )
+        robot = make_robot(brain=brain)
+        notes = robot.build_notes()
+        assert any('Bandwidth overload' in str(n) for n in notes)
+
 
 class TestBuildSpec:
     def test_spec_name(self):

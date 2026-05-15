@@ -176,14 +176,6 @@ Note:
 - external loads should affect effective displacement for drive-performance calculations
 - this likely wants parameterized specs, e.g. performance at `+X dTons`
 
-## COMMAND BRIDGES
-
-A command bridge adds 40 tons to an existing
-bridge, can be used by any ship of more than 5,000
-tons and adds an additional MCr30 to the cost of the
-bridge. The command bridge grants DM+1 to all Tactics
-(naval) checks made within it.
-
 ## Military Hull
 
 By increasing the cost of a hull by +25%, a ship may install armour up to double its standard rating. For example, a non-military hull made of bonded superdense has a maximum armour value equal to the Tech Level of the ship, as described in the Hull Armour table on page 13. However, a ship with a military hull may add up to double that value in armour. Military hulls can only be applied to capital ships (greater than 5,000 tons) and can stack with the reinforced hull option.
