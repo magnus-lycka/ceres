@@ -8,9 +8,10 @@ from ceres.make.ship import armour, hull
 from ceres.make.ship.bridge import Cockpit, CommandSection
 from ceres.make.ship.computer import Computer5, Computer20, Computer25, ComputerSection, _Computer
 from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
-from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive6, PowerSection
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, ImprovedSolarPanels, MDrive6, PowerSection
 from ceres.make.ship.hull import BasicStealth, Hull
 from ceres.make.ship.parts import EnergyEfficient, HighTechnology
+from ceres.make.ship.power import SterlingFissionPlant
 from ceres.make.ship.sensors import BasicSensors, CivilianSensors, SensorsSection
 from ceres.make.ship.ship import Ship
 from ceres.make.ship.storage import CargoSection, FuelSection, OperationFuel
@@ -199,6 +200,26 @@ def test_roundtrip_fusion_plant_attributes():
     assert ultralight.power.plant is not None
     assert loaded.power.plant.tl == ultralight.power.plant.tl
     assert loaded.power.plant.output == ultralight.power.plant.output
+
+
+def test_roundtrip_sterling_fission_and_solar_power():
+    source_ship = Ship(
+        tl=8,
+        displacement=90,
+        hull=Hull(configuration=hull.standard_hull),
+        power=PowerSection(
+            plant=SterlingFissionPlant(output=8),
+            solar=[ImprovedSolarPanels(units=2)],
+        ),
+    )
+    loaded = _roundtrip(source_ship)
+    assert loaded.power is not None
+    assert loaded.power.plant is not None
+    assert isinstance(loaded.power.plant, SterlingFissionPlant)
+    assert loaded.power.plant.output == 8
+    assert len(loaded.power.solar) == 1
+    assert isinstance(loaded.power.solar[0], ImprovedSolarPanels)
+    assert loaded.available_power == pytest.approx(9.0)
 
 
 def test_roundtrip_cockpit():

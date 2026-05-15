@@ -22,7 +22,7 @@ _expected = SimpleNamespace(
     power_weapons=2,
     total_power=8,  # Tycho normal-load stat block
 )
-# Tycho tool uses floor; ceil(6 * 0.2) = 2 per RI-013
+# Tycho tool uses floor; ceil(6 * 0.2) = 2 per RIS-013
 _expected.power_basic = 2
 _expected.total_power = 9
 

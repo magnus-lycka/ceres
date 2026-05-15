@@ -1,0 +1,229 @@
+"""Tests for Robot aggregate properties.
+
+All expected values are derived from Traveller Robot Handbook rules:
+  - Size table:        refs/robot/04_chassis.md
+  - Locomotion table:  refs/robot/05_locomotion.md
+  - Armour table:      refs/robot/07_chassis_options.md (TL band → Base Protection)
+  - Endurance:         refs/robot/07_chassis_options.md (TL modifier table)
+"""
+
+import pytest
+
+
+def make_robot(**kwargs):
+    from ceres.make.robot import Robot, WheelsLocomotion, NoneLocomotion, PrimitiveBrain, AdvancedBrain, RobotSize
+
+    defaults = {
+        'name': 'Test Robot',
+        'tl': 8,
+        'size': RobotSize.SIZE_3,
+        'locomotion': WheelsLocomotion(),
+        'brain': PrimitiveBrain(),
+    }
+    defaults.update(kwargs)
+    return Robot(**defaults)
+
+
+class TestAvailableSlots:
+    """refs/robot/05_locomotion.md: None locomotion adds 25% (rounded up) to available slots."""
+
+    def test_size3_wheels(self):
+        # Size 3 = 4 base slots, Wheels = no bonus
+        robot = make_robot(size=3, locomotion='WHEELS')  # see import below
+
+        from ceres.make.robot import Robot, WheelsLocomotion, PrimitiveBrain, RobotSize
+        robot = Robot(
+            name='X', tl=8, size=RobotSize.SIZE_3,
+            locomotion=WheelsLocomotion(), brain=PrimitiveBrain(),
+        )
+        assert robot.available_slots == 4
+
+    def test_size1_none_locomotion(self):
+        # Size 1 = 1 base slot, None = ceil(1 * 1.25) = 2
+        from ceres.make.robot import Robot, NoneLocomotion, AdvancedBrain, RobotSize
+        robot = Robot(
+            name='X', tl=12, size=RobotSize.SIZE_1,
+            locomotion=NoneLocomotion(), brain=AdvancedBrain(),
+        )
+        assert robot.available_slots == 2
+
+    def test_size4_none_locomotion(self):
+        # Size 4 = 8 base slots, None = ceil(8 * 1.25) = 10
+        from ceres.make.robot import Robot, NoneLocomotion, PrimitiveBrain, RobotSize
+        robot = Robot(
+            name='X', tl=8, size=RobotSize.SIZE_4,
+            locomotion=NoneLocomotion(), brain=PrimitiveBrain(),
+        )
+        assert robot.available_slots == 10
+
+
+class TestBaseHits:
+    """refs/robot/04_chassis.md — Robot Size table."""
+
+    @pytest.mark.parametrize('size_val, expected_hits', [
+        (1, 1), (2, 4), (3, 8), (4, 12), (5, 20), (6, 32), (7, 50), (8, 72),
+    ])
+    def test_base_hits_by_size(self, size_val, expected_hits):
+        from ceres.make.robot import Robot, WheelsLocomotion, PrimitiveBrain, RobotSize
+        robot = Robot(
+            name='X', tl=8, size=RobotSize(size_val),
+            locomotion=WheelsLocomotion(), brain=PrimitiveBrain(),
+        )
+        assert robot.base_hits == expected_hits
+
+
+class TestBaseArmour:
+    """refs/robot/07_chassis_options.md — Robot Armour table (TL band → Base Protection)."""
+
+    @pytest.mark.parametrize('tl, expected_protection', [
+        (6, 2), (7, 2), (8, 2),    # TL 6–8: Base Protection 2
+        (9, 3), (10, 3), (11, 3),  # TL 9–11: Base Protection 3
+        (12, 4), (13, 4), (14, 4), # TL 12–14: Base Protection 4
+        (15, 4), (16, 4), (17, 4), # TL 15–17: Base Protection 4
+        (18, 5),                   # TL 18+: Base Protection 5
+    ])
+    def test_base_armour_by_tl(self, tl, expected_protection):
+        from ceres.make.robot import Robot, WheelsLocomotion, PrimitiveBrain, RobotSize
+        robot = Robot(
+            name='X', tl=tl, size=RobotSize.SIZE_3,
+            locomotion=WheelsLocomotion(), brain=PrimitiveBrain(),
+        )
+        assert robot.base_armour == expected_protection
+
+
+class TestBaseEndurance:
+    """refs/robot/05_locomotion.md base endurance × refs/robot/07_chassis_options.md TL modifier."""
+
+    def test_wheels_tl8_no_tl_bonus(self):
+        # Wheels base endurance 72h, TL8 → multiplier 1.0 → 72h
+        from ceres.make.robot import Robot, WheelsLocomotion, PrimitiveBrain, RobotSize
+        robot = Robot(
+            name='X', tl=8, size=RobotSize.SIZE_3,
+            locomotion=WheelsLocomotion(), brain=PrimitiveBrain(),
+        )
+        assert robot.base_endurance == 72.0
+
+    def test_none_tl12_tl_bonus(self):
+        # None base endurance 216h, TL12 → multiplier 1.5 → 324h
+        from ceres.make.robot import Robot, NoneLocomotion, AdvancedBrain, RobotSize
+        robot = Robot(
+            name='X', tl=12, size=RobotSize.SIZE_1,
+            locomotion=NoneLocomotion(), brain=AdvancedBrain(),
+        )
+        assert robot.base_endurance == 324.0
+
+    def test_none_tl15_tl_bonus(self):
+        # None base endurance 216h, TL15 → multiplier 2.0 → 432h
+        from ceres.make.robot import Robot, NoneLocomotion, PrimitiveBrain, RobotSize
+        robot = Robot(
+            name='X', tl=15, size=RobotSize.SIZE_1,
+            locomotion=NoneLocomotion(), brain=PrimitiveBrain(),
+        )
+        assert robot.base_endurance == 432.0
+
+    def test_grav_tl12(self):
+        # Grav base endurance 24h, TL12 → multiplier 1.5 → 36h
+        from ceres.make.robot import Robot, GravLocomotion, AdvancedBrain, RobotSize
+        robot = Robot(
+            name='X', tl=12, size=RobotSize.SIZE_5,
+            locomotion=GravLocomotion(), brain=AdvancedBrain(),
+        )
+        assert robot.base_endurance == 36.0
+
+
+class TestBaseChassisCoct:
+    """Base Chassis Cost = basic_cost (size) × cost_multiplier (locomotion).
+    refs/robot/04_chassis.md and refs/robot/05_locomotion.md.
+    """
+
+    def test_size3_wheels(self):
+        # Size 3 basic cost Cr400, Wheels multiplier x2 → Cr800
+        from ceres.make.robot import Robot, WheelsLocomotion, PrimitiveBrain, RobotSize
+        robot = Robot(
+            name='X', tl=8, size=RobotSize.SIZE_3,
+            locomotion=WheelsLocomotion(), brain=PrimitiveBrain(),
+        )
+        assert robot.base_chassis_cost == 800.0
+
+    def test_size1_none(self):
+        # Size 1 basic cost Cr100, None multiplier x1 → Cr100
+        from ceres.make.robot import Robot, NoneLocomotion, AdvancedBrain, RobotSize
+        robot = Robot(
+            name='X', tl=12, size=RobotSize.SIZE_1,
+            locomotion=NoneLocomotion(), brain=AdvancedBrain(),
+        )
+        assert robot.base_chassis_cost == 100.0
+
+    def test_size5_grav(self):
+        # Size 5 basic cost Cr1000, Grav multiplier x20 → Cr20000
+        from ceres.make.robot import Robot, GravLocomotion, AdvancedBrain, RobotSize
+        robot = Robot(
+            name='X', tl=12, size=RobotSize.SIZE_5,
+            locomotion=GravLocomotion(), brain=AdvancedBrain(),
+        )
+        assert robot.base_chassis_cost == 20_000.0
+
+
+class TestTraits:
+    """Traits are assembled from armour, size, and locomotion."""
+
+    def test_size3_tl8_wheels_traits(self):
+        # Armour (+2) from TL8, Small (-2) from Size 3, no locomotion traits for Wheels
+        from ceres.make.robot import Robot, WheelsLocomotion, PrimitiveBrain, RobotSize
+        robot = Robot(
+            name='X', tl=8, size=RobotSize.SIZE_3,
+            locomotion=WheelsLocomotion(), brain=PrimitiveBrain(),
+        )
+        trait_strs = [str(t) for t in robot.traits]
+        assert 'Armour (+2)' in trait_strs
+        assert 'Small (-2)' in trait_strs
+        assert not any('Flyer' in s or 'ATV' in s for s in trait_strs)
+
+    def test_size1_tl12_none_traits(self):
+        # Armour (+4) from TL12, Small (-4) from Size 1, None locomotion has no traits
+        from ceres.make.robot import Robot, NoneLocomotion, AdvancedBrain, RobotSize
+        robot = Robot(
+            name='X', tl=12, size=RobotSize.SIZE_1,
+            locomotion=NoneLocomotion(), brain=AdvancedBrain(),
+        )
+        trait_strs = [str(t) for t in robot.traits]
+        assert 'Armour (+4)' in trait_strs
+        assert 'Small (-4)' in trait_strs
+
+    def test_grav_has_flyer_trait(self):
+        from ceres.make.robot import Robot, GravLocomotion, AdvancedBrain, RobotSize
+        robot = Robot(
+            name='X', tl=12, size=RobotSize.SIZE_5,
+            locomotion=GravLocomotion(), brain=AdvancedBrain(),
+        )
+        trait_strs = [str(t) for t in robot.traits]
+        assert any('Flyer' in s for s in trait_strs)
+
+    def test_size5_no_size_trait(self):
+        from ceres.make.robot import Robot, WheelsLocomotion, PrimitiveBrain, RobotSize
+        robot = Robot(
+            name='X', tl=8, size=RobotSize.SIZE_5,
+            locomotion=WheelsLocomotion(), brain=PrimitiveBrain(),
+        )
+        trait_strs = [str(t) for t in robot.traits]
+        assert not any('Small' in s or 'Large' in s for s in trait_strs)
+
+
+class TestLocomotionTlCheck:
+    """A robot whose TL is below the locomotion's required TL should carry an error note."""
+
+    def test_grav_below_tl9_is_error(self):
+        from ceres.make.robot import Robot, GravLocomotion, PrimitiveBrain, RobotSize
+        robot = Robot(
+            name='X', tl=8, size=RobotSize.SIZE_3,
+            locomotion=GravLocomotion(), brain=PrimitiveBrain(),
+        )
+        assert robot.notes.errors
+
+    def test_wheels_at_tl5_no_error(self):
+        from ceres.make.robot import Robot, WheelsLocomotion, PrimitiveBrain, RobotSize
+        robot = Robot(
+            name='X', tl=5, size=RobotSize.SIZE_3,
+            locomotion=WheelsLocomotion(), brain=PrimitiveBrain(),
+        )
+        assert not robot.notes.errors

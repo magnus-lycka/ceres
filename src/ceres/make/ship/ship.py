@@ -113,9 +113,9 @@ class Ship(ShipBase):
 
     @property
     def available_power(self) -> float:
-        if self.power is None or self.power.plant is None:
+        if self.power is None:
             return 0.0
-        return float(self.power.plant.output)
+        return float(self.power.output)
 
     @property
     def basic_hull_power_load(self) -> float:

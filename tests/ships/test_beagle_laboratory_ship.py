@@ -17,7 +17,7 @@ Source handling for this test case:
   - the clamp-borne `Pinnace` is treated as maintained and transported
     external displacement, so drive and jump-fuel sizing use `455t`
 - still excluded from the modeled reference case:
-  - software packages `Mentor/1` and `Research Assist/1` have no HG 2022 equivalent (see RI-008)
+  - software packages `Mentor/1` and `Research Assist/1` have no HG 2022 equivalent (see RIS-008)
   - `Planetology/1` is modeled as `Expert(rating=3, skill='Space Science (Planetology)')`
 """
 

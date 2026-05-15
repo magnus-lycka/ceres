@@ -60,7 +60,7 @@ _expected = SimpleNamespace(
     # Power Plant: Fusion TL12, Power 500
     plant_tons=33.3333333333,
     plant_cost_mcr=33.3333333333,
-    # Fuel — stat block says "16 Weeks of Operation: 16 tons"; Ceres gives 14 (RI-007)
+    # Fuel — stat block says "16 Weeks of Operation: 16 tons"; Ceres gives 14 (RIS-007)
     op_fuel_tons=16,  # stat block
     fuel_processor_tons=2.0,
     fuel_processor_cost_mcr=0.1,
@@ -126,7 +126,7 @@ _expected = SimpleNamespace(
     maintenance_cr=33_683,  # stat block
 )
 # Ceres deviations from stat block (see docstring / known deviations):
-_expected.op_fuel_tons = 14.0  # RI-007: Ceres uses 14t not 16t
+_expected.op_fuel_tons = 14.0  # RIS-007: Ceres uses 14t not 16t
 _expected.common_area_tons = 12.0  # build uses CommonArea(tons=12)
 _expected.common_area_cost_mcr = 1.2  # 12t × 100_000 = 1.2 MCr
 _expected.power_maneuver = 202.5  # EnergyEfficient modifier gives fractional result

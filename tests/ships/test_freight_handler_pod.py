@@ -4,7 +4,7 @@ Source: Small Craft Catalogue (official publication).
 
 Purpose:
 - exercise 6-ton close-structure hull with Fission plant and small-craft systems
-- confirm Basic Ship Systems power = 2 per RI-013 (ceil(6 * 0.2) = 2)
+- confirm Basic Ship Systems power = 2 per RIS-013 (ceil(6 * 0.2) = 2)
 - confirm TowCable and GrapplingArm tonnage and cost
 
 Source handling:
@@ -14,7 +14,7 @@ Source handling:
 - design_type is CUSTOM (no multiplier)
 
 Known deviations from stat block:
-- power_basic: stat block shows 2; Ceres gives 2 per RI-013 (agrees)
+- power_basic: stat block shows 2; Ceres gives 2 per RIS-013 (agrees)
 - cargo: stat block shows 1.5 tons; Ceres remaining_usable_tonnage gives
   1.78 tons (0.28 ton discrepancy). Root cause not identified — possibly
   a standard small-craft overhead in the SCC design tool not modelled by
@@ -49,7 +49,7 @@ _expected = SimpleNamespace(
     grappling_arm_tons=2.0,
     grappling_arm_cost_mcr=1.0,
     available_power=4,
-    power_basic=2,  # stat block; agrees with ceil(6 * 0.2) = 2, RI-013
+    power_basic=2,  # stat block; agrees with ceil(6 * 0.2) = 2, RIS-013
     power_maneuver=1,  # ceil(0.1 * 6 * 1) = 1
     power_sensors=0,
     total_power=3,  # 2 + 1 + 0

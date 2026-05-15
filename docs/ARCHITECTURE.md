@@ -379,7 +379,7 @@ recorded separately in [TEST_CASE_SHIPS.md](/Users/magnuslycka/work/ceres/docs/T
 Ceres targets **Mongoose Traveller 2nd Edition (MgT2)**, specifically the
 *Core Rulebook* and *High Guard* (2022 update). Where the two books conflict,
 **High Guard takes precedence**. Material from earlier MgT2 printings that
-was removed or replaced in 2022 is out of scope; see RI-008 in
+was removed or replaced in 2022 is out of scope; see RIS-008 in
 `RULE_INTERPRETATIONS.md`.
 
 We have studied Mark F. Anderson's ship design tool output and other external

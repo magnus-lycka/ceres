@@ -1,0 +1,128 @@
+import pytest
+
+from ceres.make.robot.locomotion import (
+    AeroplaneLocomotion,
+    AquaticLocomotion,
+    GravLocomotion,
+    HovercraftLocomotion,
+    LocomotionUnion,
+    NoneLocomotion,
+    ThrusterLocomotion,
+    TracksLocomotion,
+    VtolLocomotion,
+    WalkerLocomotion,
+    WheelsAtvLocomotion,
+    WheelsLocomotion,
+)
+
+
+class TestLocomotionTable:
+    """Verify rule data against refs/robot/05_locomotion.md."""
+
+    @pytest.mark.parametrize('loco_cls, tl, agility, endurance, cost_mult', [
+        (NoneLocomotion,      5,  None, 216, 1.0),
+        (WheelsLocomotion,    5,  0,    72,  2.0),
+        (WheelsAtvLocomotion, 5,  0,    72,  3.0),
+        (TracksLocomotion,    5,  -1,   72,  2.0),
+        (GravLocomotion,      9,  1,    24,  20.0),
+        (AeroplaneLocomotion, 5,  1,    12,  12.0),
+        (AquaticLocomotion,   6,  -2,   72,  4.0),
+        (VtolLocomotion,      7,  0,    24,  14.0),
+        (WalkerLocomotion,    8,  0,    72,  10.0),
+        (HovercraftLocomotion,7,  1,    24,  10.0),
+        (ThrusterLocomotion,  7,  1,    2,   20.0),
+    ])
+    def test_locomotion_values(self, loco_cls, tl, agility, endurance, cost_mult):
+        loco = loco_cls()
+        assert loco.required_tl == tl
+        assert loco.agility == agility
+        assert loco.base_endurance == endurance
+        assert loco.cost_multiplier == cost_mult
+
+    def test_none_is_stationary(self):
+        loco = NoneLocomotion()
+        assert loco.base_speed == 0
+        assert loco.is_none_locomotion is True
+
+    def test_wheels_not_none(self):
+        loco = WheelsLocomotion()
+        assert loco.is_none_locomotion is False
+
+    def test_grav_has_flyer_trait(self):
+        loco = GravLocomotion()
+        names = [t.name for t in loco.locomotion_traits]
+        assert 'Flyer' in names
+
+    def test_tracks_has_atv_trait(self):
+        loco = TracksLocomotion()
+        names = [t.name for t in loco.locomotion_traits]
+        assert 'ATV' in names
+
+    def test_wheels_atv_has_atv_trait(self):
+        loco = WheelsAtvLocomotion()
+        names = [t.name for t in loco.locomotion_traits]
+        assert 'ATV' in names
+
+    def test_wheels_no_traits(self):
+        loco = WheelsLocomotion()
+        assert loco.locomotion_traits == ()
+
+
+class TestLocomotionLabels:
+    def test_none_label(self):
+        assert NoneLocomotion().label() == 'None'
+
+    def test_wheels_label(self):
+        assert WheelsLocomotion().label() == 'Wheels'
+
+    def test_grav_label(self):
+        assert GravLocomotion().label() == 'Grav'
+
+    def test_walker_label(self):
+        assert WalkerLocomotion().label() == 'Walker'
+
+
+class TestNoneLocomotionSlotsBonus:
+    def test_size1_bonus(self):
+        loco = NoneLocomotion()
+        assert loco.slots_bonus(base_slots=1) == 1  # ceil(1*1.25)-1 = 1
+
+    def test_size4_bonus(self):
+        loco = NoneLocomotion()
+        assert loco.slots_bonus(base_slots=8) == 2  # ceil(8*1.25)-8 = 2
+
+    def test_wheels_no_bonus(self):
+        loco = WheelsLocomotion()
+        assert loco.slots_bonus(base_slots=16) == 0
+
+
+class TestLocomotionDiscriminatedUnion:
+    """JSON round-trip via the discriminated union."""
+
+    def test_roundtrip_none(self):
+        from pydantic import TypeAdapter
+
+        adapter: TypeAdapter[LocomotionUnion] = TypeAdapter(LocomotionUnion)
+        loco = NoneLocomotion()
+        data = loco.model_dump()
+        restored = adapter.validate_python(data)
+        assert isinstance(restored, NoneLocomotion)
+        assert restored.type == 'NONE'
+
+    def test_roundtrip_wheels(self):
+        from pydantic import TypeAdapter
+
+        adapter: TypeAdapter[LocomotionUnion] = TypeAdapter(LocomotionUnion)
+        loco = WheelsLocomotion()
+        data = loco.model_dump()
+        restored = adapter.validate_python(data)
+        assert isinstance(restored, WheelsLocomotion)
+
+    def test_roundtrip_grav(self):
+        from pydantic import TypeAdapter
+
+        adapter: TypeAdapter[LocomotionUnion] = TypeAdapter(LocomotionUnion)
+        loco = GravLocomotion()
+        json_str = loco.model_dump_json()
+        restored = adapter.validate_json(json_str)
+        assert isinstance(restored, GravLocomotion)

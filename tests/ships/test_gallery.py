@@ -3,7 +3,7 @@ import pytest
 from ceres.report import render_ship_html, render_ship_pdf, render_ship_typst
 
 from ._output import write_html_output, write_json_output, write_pdf_output, write_typst_output
-from .test_100t_non_gravity_rdrive import build_100t_non_gravity_rdrive
+from .test_90t_non_gravity_rdrive import build_90t_non_gravity_rdrive
 from .test_almeida_laboratory_station import build_almeida_laboratory_station
 from .test_alt_dragon import build_alt_dragon
 from .test_ambush_hunter_killer_corvette import build_ambush_hunter_killer_corvette
@@ -40,7 +40,7 @@ pytestmark = pytest.mark.generated_output
         ('test_belt_racer', build_belt_racer),
         ('test_beowulf', build_beowulf),
         ('test_beagle_laboratory_ship', build_beagle_laboratory_ship),
-        ('test_100t_non_gravity_rdrive', build_100t_non_gravity_rdrive),
+        ('test_90t_non_gravity_rdrive', build_90t_non_gravity_rdrive),
         ('test_boxy_ore_freighter', build_boxy_ore_freighter),
         ('test_civilian_hopper', build_civilian_hopper),
         ('test_freight_handler_pod', build_freight_handler_pod),
@@ -83,7 +83,7 @@ def test_ship_gallery_html_output(name: str, builder) -> None:
         ('test_belt_racer', build_belt_racer),
         ('test_beowulf', build_beowulf),
         ('test_beagle_laboratory_ship', build_beagle_laboratory_ship),
-        ('test_100t_non_gravity_rdrive', build_100t_non_gravity_rdrive),
+        ('test_90t_non_gravity_rdrive', build_90t_non_gravity_rdrive),
         ('test_boxy_ore_freighter', build_boxy_ore_freighter),
         ('test_civilian_hopper', build_civilian_hopper),
         ('test_freight_handler_pod', build_freight_handler_pod),
@@ -123,7 +123,7 @@ def test_ship_gallery_pdf_output(name: str, builder) -> None:
         ('test_belt_racer', build_belt_racer),
         ('test_beowulf', build_beowulf),
         ('test_beagle_laboratory_ship', build_beagle_laboratory_ship),
-        ('test_100t_non_gravity_rdrive', build_100t_non_gravity_rdrive),
+        ('test_90t_non_gravity_rdrive', build_90t_non_gravity_rdrive),
         ('test_boxy_ore_freighter', build_boxy_ore_freighter),
         ('test_civilian_hopper', build_civilian_hopper),
         ('test_freight_handler_pod', build_freight_handler_pod),
@@ -164,7 +164,7 @@ def test_ship_gallery_typst_output(name: str, builder) -> None:
         ('test_belt_racer', build_belt_racer),
         ('test_beowulf', build_beowulf),
         ('test_beagle_laboratory_ship', build_beagle_laboratory_ship),
-        ('test_100t_non_gravity_rdrive', build_100t_non_gravity_rdrive),
+        ('test_90t_non_gravity_rdrive', build_90t_non_gravity_rdrive),
         ('test_boxy_ore_freighter', build_boxy_ore_freighter),
         ('test_civilian_hopper', build_civilian_hopper),
         ('test_freight_handler_pod', build_freight_handler_pod),

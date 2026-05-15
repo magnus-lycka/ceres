@@ -23,7 +23,7 @@ Source handling for this test case:
   - the source life-support total fits four crew plus four middle passengers
     even though the source crew row lists only three crew
 - model interpretation rather than dedicated installed rows:
-  - stores and spares (`RI-001`)
+  - stores and spares (`RIS-001`)
 """
 
 from types import SimpleNamespace
@@ -68,7 +68,7 @@ _expected = SimpleNamespace(
     jump_fuel_parsecs=2,
     jump_fuel_tons=20.0,
     op_fuel_weeks=12,
-    op_fuel_tons=1.2,  # ref: 1.20 tons; Ceres gives 2.0 per RI-007
+    op_fuel_tons=1.2,  # ref: 1.20 tons; Ceres gives 2.0 per RIS-007
     fuel_processor_tons=2.0,
     fuel_processor_cost_cr=100_000,
     fuel_processor_power=2,
@@ -107,7 +107,7 @@ _expected = SimpleNamespace(
     sales_price_mcr=36.9405,  # Discount Cost: 36,940,500
 )
 
-# Ceres gives op_fuel_tons=2.0 per RI-007 (rounds up to whole dTon for ≥100t ships), not 1.2 as in ref
+# Ceres gives op_fuel_tons=2.0 per RIS-007 (rounds up to whole dTon for ≥100t ships), not 1.2 as in ref
 _expected.op_fuel_tons = 2.0
 
 

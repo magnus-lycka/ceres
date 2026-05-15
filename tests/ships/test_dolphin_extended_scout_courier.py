@@ -109,7 +109,7 @@ _expected = SimpleNamespace(
     purchase_cost_mcr=54.414,
     maintenance_cr=4535,  # stat block: Cr4535/month
 )
-# Ceres rounds op fuel up to whole dTons: ceil(150 * 0.001 * 16 / 4) = ceil(0.6) = 1 dTon … RI-007
+# Ceres rounds op fuel up to whole dTons: ceil(150 * 0.001 * 16 / 4) = ceil(0.6) = 1 dTon … RIS-007
 # gives 2t for 150-ton ship, equating to ~20 weeks endurance rather than 16
 _expected.op_fuel_tons = 2.0
 # 54414000 / 12000 = 4534.5 → Ceres truncates/rounds differently; off by Cr1

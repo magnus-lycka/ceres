@@ -1,0 +1,87 @@
+from abc import ABC, abstractmethod
+from typing import Any, ClassVar
+
+from pydantic import PrivateAttr
+
+from ceres.shared import CeresPart, NoteList
+
+from .base import RobotBase
+from .chassis import Trait
+
+
+class RobotPartMixin(ABC):
+    """Pure-Python ABC mixin for parts installable in a robot.
+
+    Declares the contract that concrete robot-part classes must satisfy.
+    Pydantic cannot see annotations on a plain mixin, so concrete classes must
+    redeclare ``slots`` and ``cost`` as Pydantic fields (or computed properties
+    using ``ClassVar`` to suppress field inference).
+    """
+
+    slots: int
+    cost: float
+    tl: int
+    notes: NoteList
+
+    def bind(self, assembly: RobotBase) -> None:
+        self._assembly = assembly  # type: ignore[attr-defined]
+        self.check_tl()
+        if message := self.build_item():  # type: ignore[attr-defined]
+            self.item(message)  # type: ignore[attr-defined]
+
+    @property
+    @abstractmethod
+    def assembly(self) -> RobotBase: ...
+
+    @abstractmethod
+    def build_item(self) -> str | None: ...
+
+    @abstractmethod
+    def item(self, message: str) -> None: ...
+
+    @abstractmethod
+    def error(self, message: str) -> None: ...
+
+    @property
+    def assembly_tl(self) -> int:
+        return self.assembly.tl
+
+    def check_tl(self) -> None:
+        if self.assembly_tl < self.tl:
+            self.error(f'Requires TL{self.tl}, robot is TL{self.assembly_tl}')
+
+    @property
+    def robot_traits(self) -> tuple[Trait, ...]:
+        return ()
+
+    @property
+    def skill_grants(self) -> tuple[str, ...]:
+        return ()
+
+    @property
+    def option_label(self) -> str | None:
+        return None
+
+
+class RobotPart(CeresPart, RobotPartMixin):
+    """Concrete base for robot-installable parts."""
+
+    slots: ClassVar[int] = 0
+    cost: float = 0.0
+
+    @property
+    def assembly(self) -> RobotBase:
+        a = self._assembly
+        if a is None:
+            raise RuntimeError(f'{type(self).__name__} not bound to an Assembly')
+        if not isinstance(a, RobotBase):
+            raise RuntimeError(
+                f'{type(self).__name__} bound to unexpected assembly type {type(a).__name__}'
+            )
+        return a
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+
+
+__all__ = ['RobotPartMixin', 'RobotPart']

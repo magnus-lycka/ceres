@@ -25,7 +25,7 @@ Source handling for this test case:
 - source inconsistency:
   - the source life-support total does not fit the source crew count
 - model interpretation rather than dedicated installed rows:
-  - stores and spares (`RI-001`)
+  - stores and spares (`RIS-001`)
 """
 
 from types import SimpleNamespace
@@ -163,7 +163,7 @@ _expected = SimpleNamespace(
     staterooms_total_tons=40.0,
     common_area_tons=10.0,
     # ref shows "1x 13.52 Ton Cargo Bay" + "Stores and Spares 4.48" = 18.00
-    # Ceres treats stores as guidance (RI-001) not a separate install; total
+    # Ceres treats stores as guidance (RIS-001) not a separate install; total
     # remaining tonnage is asserted as 18.00 to match the published total
     cargo_tons=18.0,
     production_cost_mcr=308.25,  # ref: 308,250,000
@@ -372,7 +372,7 @@ def test_dragon_modeled_subset_matches_current_model():
     assert dragon.habitation.common_area.tons == pytest.approx(_expected.common_area_tons)
 
     # The source export includes a stores/spares row in cargo. Ceres treats that
-    # as guidance (RI-001) rather than as a separately installed design item.
+    # as guidance (RIS-001) rather than as a separately installed design item.
     assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(_expected.cargo_tons)
     assert dragon.production_cost == pytest.approx(_expected.production_cost_mcr * 1_000_000)
     assert dragon.sales_price_new == pytest.approx(_expected.sales_price_mcr * 1_000_000)

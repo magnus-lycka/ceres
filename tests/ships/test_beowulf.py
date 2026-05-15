@@ -22,8 +22,8 @@ Source handling for this test case:
   - the source fuel-expense total is Cr50 lower than Ceres now that operation
     fuel follows the book rule of a 1-ton minimum four-week baseline
 - model interpretation rather than dedicated installed rows:
-  - stores and spares (`RI-001`)
-  - passenger luggage / baggage storage (`RI-002`)
+  - stores and spares (`RIS-001`)
+  - passenger luggage / baggage storage (`RIS-002`)
 """
 
 from types import SimpleNamespace
@@ -67,7 +67,7 @@ _expected = SimpleNamespace(
     plant_tons=5.0,
     plant_cost_mcr=5.0,
     jump_fuel_tons=20.0,  # 1 parsec × 200 tons × 0.1
-    op_fuel_tons=0.5,  # ref shows 0.5 tons; Ceres gives 1.0 per RI-007 (1-ton minimum)
+    op_fuel_tons=0.5,  # ref shows 0.5 tons; Ceres gives 1.0 per RIS-007 (1-ton minimum)
     fuel_processor_tons=1.0,
     fuel_processor_cost_cr=50_000,
     bridge_tons=10.0,
@@ -99,9 +99,9 @@ _expected = SimpleNamespace(
     cargo_tons=81.0,  # Cargo Bay 80.0 (ref); Ceres remaining_usable_tonnage gives ~81
 )
 
-# Ceres gives op_fuel_tons=1.0 per RI-007 (1-ton minimum), not 0.5 as in ref
+# Ceres gives op_fuel_tons=1.0 per RIS-007 (1-ton minimum), not 0.5 as in ref
 _expected.op_fuel_tons = 1.0
-# Ceres gives fuel_expense_cr=4100 due to the 1-ton op fuel minimum per RI-007
+# Ceres gives fuel_expense_cr=4100 due to the 1-ton op fuel minimum per RIS-007
 _expected.fuel_expense_cr = 4_100.0
 # Ceres gives life_support=30_000 (4 crew + 16 middle passengers), not 31_000 as in ref
 _expected.life_support_cr = 30_000.0
@@ -238,8 +238,8 @@ def test_beowulf_airlocks_free():
 def test_beowulf_cargo():
     # Source rows:
     # - Cargo Bay: 80.00
-    # - Passenger Luggage Storage Area: 0.80 (RI-002)
-    # - Supplies / Stores and Spares: 0.70 (RI-001)
+    # - Passenger Luggage Storage Area: 0.80 (RIS-002)
+    # - Supplies / Stores and Spares: 0.70 (RIS-001)
     #
     # Ceres does not install luggage or stores/spares as separate design rows in
     # this case, but the resulting usable cargo capacity still lands at 81.5.

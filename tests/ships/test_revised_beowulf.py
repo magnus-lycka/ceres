@@ -29,8 +29,8 @@ Source handling for this test case:
   - Ceres warns that the installed medical bay calls for a medic, even though
     the source export lists only four crew
 - model interpretation rather than dedicated installed rows:
-  - passenger luggage / baggage storage (`RI-002`)
-  - stores and spares (`RI-001`)
+  - passenger luggage / baggage storage (`RIS-002`)
+  - stores and spares (`RIS-001`)
 """
 
 from types import SimpleNamespace
@@ -72,7 +72,7 @@ _expected = SimpleNamespace(
     plant_tons=5.4166666667,  # Budget+IncreasedSize: 5.42 tons (ref)
     plant_cost_mcr=3.25,  # Budget+IncreasedSize: 3,250,000
     jump_fuel_tons=20.0,
-    op_fuel_tons=0.54,  # ref: 0.54 tons; Ceres gives 1.0 per RI-007 (1-ton minimum)
+    op_fuel_tons=0.54,  # ref: 0.54 tons; Ceres gives 1.0 per RIS-007 (1-ton minimum)
     fuel_processor_tons=1.0,
     fuel_processor_cost_cr=50_000,
     bridge_tons=10.0,
@@ -96,7 +96,7 @@ _expected = SimpleNamespace(
     fuel_expense_cr=4_054.17,  # ref: 4,054.17; Ceres gives 4,100 (op fuel 1-ton minimum)
 )
 
-# Ceres gives op_fuel_tons=1.0 per RI-007 (1-ton minimum), not 0.54 as in ref
+# Ceres gives op_fuel_tons=1.0 per RIS-007 (1-ton minimum), not 0.54 as in ref
 _expected.op_fuel_tons = 1.0
 # Ceres does not model cost-reduction drives; m_drive and j_drive use standard pricing
 _expected.m_drive_cost_mcr = 4.0
@@ -108,7 +108,7 @@ _expected.sales_price_mcr = 44_806_500 / 1_000_000
 _expected.maintenance_cr = 3_734.0
 # Ceres gives life_support=30_000 (4 crew + 16 middle pax), not 31_000 as in ref
 _expected.life_support_cr = 30_000.0
-# Ceres gives fuel_expense=4_100 due to 1-ton op fuel minimum per RI-007
+# Ceres gives fuel_expense=4_100 due to 1-ton op fuel minimum per RIS-007
 _expected.fuel_expense_cr = 4_100.0
 
 
@@ -211,7 +211,7 @@ def test_revised_beowulf_matches_current_modeled_subset():
     assert beowulf.total_power_load == pytest.approx(_expected.total_power)
 
     # Source export also includes passenger luggage/storage and supplies rows.
-    # Those are treated via RI-002 and RI-001 rather than as dedicated design
+    # Those are treated via RIS-002 and RIS-001 rather than as dedicated design
     # components in this reference case.
     assert CargoSection.cargo_tons_for_ship(beowulf) == pytest.approx(_expected.cargo_tons)
     assert beowulf.production_cost == pytest.approx(_expected.production_cost_mcr * 1_000_000)

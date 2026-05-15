@@ -24,7 +24,7 @@ Source handling for this test case:
 - deliberate interpretation:
   - source-listed `Marines` on this liner are treated as shipboard security
     staff rather than as proof that the vessel should use military ship rules
-    (`RI-006`)
+    (`RIS-006`)
 - still excluded from the modeled reference case:
   - `Gaming Space`
   - cargo, total cost, purchase cost, maintenance cost, and crew/life-support

@@ -53,6 +53,10 @@ class OperationFuel(_ZeroPowerStoragePart):
     weeks: int
 
     def build_item(self) -> str | None:
+        if self.actual_weeks % 52 == 0:
+            years = self.actual_weeks // 52
+            unit = 'Year' if years == 1 else 'Years'
+            return f'{years} {unit} of Operation'
         return f'Operation {self.actual_weeks} weeks'
 
     def bind(self, assembly) -> None:

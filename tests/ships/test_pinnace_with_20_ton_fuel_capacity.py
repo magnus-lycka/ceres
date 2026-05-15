@@ -39,7 +39,7 @@ _expected = SimpleNamespace(
     plant_tons=2.0,  # Fusion (TL 12), Power 30
     plant_cost_mcr=2.0,
     available_power=30.0,
-    op_fuel_tons=1.0,  # ref: 1 ton; Ceres gives 0.2 per RI-007 (small-craft rounding)
+    op_fuel_tons=1.0,  # ref: 1 ton; Ceres gives 0.2 per RIS-007 (small-craft rounding)
     bridge_tons=3.0,
     bridge_cost_mcr=0.5,
     computer_cost_mcr=0.03,  # Computer/5: 0.03
@@ -54,7 +54,7 @@ _expected = SimpleNamespace(
     fuel_cargo_container_tons=21.0,  # 20t capacity + 1t structure
     fuel_cargo_container_cost_cr=100_000,
     cargo_tons=20.8,  # remaining usable tonnage
-    power_basic=8.0,  # ceil(40 * 0.2) = 8 per RI-013
+    power_basic=8.0,  # ceil(40 * 0.2) = 8 per RIS-013
     power_maneuver=20.0,
     total_power=28.0,  # basic(8) + maneuver(20)
     production_cost_mcr=9.68,  # Total Cost: MCr9.68
@@ -62,7 +62,7 @@ _expected = SimpleNamespace(
     maintenance_cr=726,  # Maintenance Cost: Cr726/month
 )
 
-# Ceres gives op_fuel_tons=0.2 per RI-007 (small craft: round up to 0.1 dTon)
+# Ceres gives op_fuel_tons=0.2 per RIS-007 (small craft: round up to 0.1 dTon)
 _expected.op_fuel_tons = 0.2
 
 

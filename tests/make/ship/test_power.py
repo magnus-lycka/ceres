@@ -2,7 +2,17 @@ import pytest
 
 from ceres.make.ship import hull, ship
 from ceres.make.ship.drives import DriveSection, MDrive1
-from ceres.make.ship.power import ChemicalPlant, FissionPlant, FusionPlantTL8, PowerSection
+from ceres.make.ship.power import (
+    AdvancedSolarCoating,
+    AntimatterPlant,
+    ChemicalPlant,
+    EnhancedSolarCoating,
+    FissionPlant,
+    FusionPlantTL8,
+    ImprovedSolarPanels,
+    PowerSection,
+    SterlingFissionPlant,
+)
 from ceres.make.ship.storage import FuelSection, OperationFuel
 
 # --- FissionPlant ---
@@ -82,6 +92,31 @@ def test_chemical_plant_fuel_much_higher_than_fusion():
     assert chemical.fuel_for_weeks(4) > fusion.fuel_for_weeks(4) * 100
 
 
+# --- Other power plants ---
+
+
+def test_sterling_fission_plant_tons_and_cost():
+    p = SterlingFissionPlant(output=8)
+    assert p.tons == pytest.approx(2.0)
+    assert p.cost == pytest.approx(1_200_000)
+
+
+def test_sterling_fission_plant_has_no_operation_fuel():
+    p = SterlingFissionPlant(output=8)
+    assert p.fuel_for_weeks(52 * 15) == 0.0
+
+
+def test_sterling_fission_plant_build_item():
+    p = SterlingFissionPlant(output=8)
+    assert p.build_item() == 'Sterling Fission (TL 8), Power 8'
+
+
+def test_antimatter_plant_tons_and_cost():
+    p = AntimatterPlant(output=100)
+    assert p.tons == pytest.approx(1.0)
+    assert p.cost == pytest.approx(10_000_000)
+
+
 # --- PowerSection with non-fusion plants ---
 
 
@@ -107,6 +142,52 @@ def test_ship_with_fission_plant():
     )
     assert s.power is not None
     assert s.available_power == 20
+
+
+# --- Solar energy systems ---
+
+
+def test_improved_solar_panels_tons_cost_and_output():
+    panels = ImprovedSolarPanels(units=2)
+    assert panels.tons == pytest.approx(2.0)
+    assert panels.cost == pytest.approx(400_000)
+    assert panels.output == pytest.approx(1.0)
+    assert panels.power == 0.0
+    assert panels.build_item() == 'Solar Panels (Improved), Power 1'
+
+
+def test_solar_coating_has_no_tonnage():
+    coating = EnhancedSolarCoating(units=10)
+    assert coating.tons == 0.0
+    assert coating.cost == pytest.approx(3_000_000)
+    assert coating.output == pytest.approx(1.0)
+
+
+def test_solar_coating_close_structure_halves_output():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.close_structure),
+        power=PowerSection(solar=[AdvancedSolarCoating(units=10)]),
+    )
+    assert my_ship.power is not None
+    coating = my_ship.power.solar[0]
+    assert coating.output == pytest.approx(1.0)
+
+
+def test_power_section_output_sums_plant_and_solar():
+    ps = PowerSection(plant=FissionPlant(output=8), solar=[ImprovedSolarPanels(units=2)])
+    assert ps.output == pytest.approx(9.0)
+
+
+def test_ship_available_power_includes_solar():
+    s = ship.Ship(
+        tl=8,
+        displacement=90,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        power=PowerSection(plant=SterlingFissionPlant(output=8), solar=[ImprovedSolarPanels(units=2)]),
+    )
+    assert s.available_power == pytest.approx(9.0)
 
 
 # --- OperationFuel with non-fusion plant ---
@@ -157,3 +238,17 @@ def test_operation_fuel_actual_weeks_chemical_rounds_to_two_week_periods():
     assert my_ship.fuel is not None
     assert my_ship.fuel.operation_fuel is not None
     assert my_ship.fuel.operation_fuel.actual_weeks == 2
+
+
+def test_operation_fuel_with_sterling_fission_plant_has_no_tonnage():
+    my_ship = ship.Ship(
+        tl=8,
+        displacement=90,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        power=PowerSection(plant=SterlingFissionPlant(output=8)),
+        fuel=FuelSection(operation_fuel=OperationFuel(weeks=52 * 15)),
+    )
+    assert my_ship.fuel is not None
+    assert my_ship.fuel.operation_fuel is not None
+    assert my_ship.fuel.operation_fuel.tons == 0.0
+    assert my_ship.fuel.operation_fuel.build_item() == '15 Years of Operation'

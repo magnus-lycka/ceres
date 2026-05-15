@@ -14,7 +14,7 @@ Where the *Core Rulebook* and *High Guard* conflict, High Guard takes
 precedence.
 
 Material from earlier MgT2 printings (notably *High Guard* 2016) that was
-removed or replaced in later editions is treated as out of scope. See RI-008.
+removed or replaced in later editions is treated as out of scope. See RIS-008.
 
 This document records deliberate rule interpretations, exclusions, and
 normalizations used in Ceres.
@@ -33,7 +33,7 @@ rules material differ from our implementation.
 
 ## Conventions
 
-- Use stable identifiers like `RI-001`.
+- Use stable identifiers like `RIS-001`.
 - Prefer documenting cross-cutting decisions here.
 - Keep ship-specific source notes in the relevant test file unless the decision
   applies more broadly.
@@ -42,7 +42,7 @@ rules material differ from our implementation.
 
 ## Entries
 
-### RI-001 Stores And Spares Are Not Modelled As Reserved Design Tonnage
+### RIS-001 Stores And Spares Are Not Modelled As Reserved Design Tonnage
 
 Ceres does not currently model stores and spares as a separate reserved tonnage
 entry in ship designs.
@@ -52,7 +52,7 @@ is treated as design guidance rather than a hard reduction in cargo capacity.
 This may be surfaced as informational or warning output in the cargo section,
 but it is not installed as a separate ship part.
 
-### RI-002 Passenger Baggage Is Not Modelled As A Separate Design Allocation
+### RIS-002 Passenger Baggage Is Not Modelled As A Separate Design Allocation
 
 Ceres does not model passenger baggage/storage space as a separate line item in
 the ship design.
@@ -70,7 +70,7 @@ This means baggage does not appear as a dedicated installed component in the
 spec. If we later add explicit expected passenger manifests by class, this may
 instead drive informational output, validation, or cargo-availability warnings.
 
-### RI-003 Small Ships Do Not Require Separate Maintenance Crew
+### RIS-003 Small Ships Do Not Require Separate Maintenance Crew
 
 For crew-role calculation, Ceres follows the High Guard prose in
 `refs/HG_CREW_ROLES.md` for separate maintenance staff on smaller ships.
@@ -86,7 +86,7 @@ The working interpretation is:
 On smaller ships, maintenance duties are assumed to be covered by engineering
 staff rather than listed as a separate crew position.
 
-### RI-004 Steward Requirements Depend On Planned Passenger Manifest
+### RIS-004 Steward Requirements Depend On Planned Passenger Manifest
 
 Steward staffing is treated as an operational requirement driven by the planned
 passenger manifest, not by theoretical maximum berth capacity.
@@ -105,7 +105,7 @@ raw headcount:
 When more than 3 total steward levels are needed, Ceres splits the requirement
 across multiple stewards rather than assuming a single higher-skill recruit.
 
-### RI-005 Retro- And Proto-Tech Pricing For Ship Computers
+### RIS-005 Retro- And Proto-Tech Pricing For Ship Computers
 
 Ceres models retro- and proto-tech pricing for ship Computer and Core hardware
 via a `retro_levels` or `proto_levels` field on each computer object.
@@ -124,12 +124,12 @@ is reduced by N levels accordingly.
 whose required TL does not exceed `ship.tl − retro_levels`. Installing a
 Computer/10 at retro-2 in a TL11 ship yields an effective software TL of 9.
 Software that requires TL10 or higher will raise a TL error against that
-computer, even though the ship is TL11. See RI-012 for the rationale.
+computer, even though the ship is TL11. See RIS-012 for the rationale.
 
 When a reference ship uses retro-computer pricing (`Retro*` rows in source
 exports), document the `retro_levels` value in the relevant test case.
 
-### RI-006 Marines On Liners Can Represent Shipboard Security Staff
+### RIS-006 Marines On Liners Can Represent Shipboard Security Staff
 
 When a commercial passenger ship or liner source lists `Marines` in its crew
 manifest, Ceres does not interpret that alone as proof that the vessel should
@@ -146,7 +146,7 @@ This affects how source-derived test cases should be read:
   ship classification
 - where relevant, the source test case should document that interpretation
 
-### RI-007 Small Craft Operation Fuel Uses Rounded Tankage And Actual Endurance
+### RIS-007 Small Craft Operation Fuel Uses Rounded Tankage And Actual Endurance
 
 Ceres treats `OperationFuel.weeks` as the minimum requested endurance, not
 necessarily the exact endurance that will appear in the final design.
@@ -168,7 +168,7 @@ The consequences are:
 - if rounding up yields additional full four-week periods, Ceres reports the
   longer endurance rather than hiding it
 
-### RI-008 Pre-2022 Rules Items Without Current-Edition Equivalents Are Not Modelled
+### RIS-008 Pre-2022 Rules Items Without Current-Edition Equivalents Are Not Modelled
 
 Ceres follows *High Guard* (2022) as its rules baseline. Items — equipment,
 software packages, ship options — that appeared in earlier MgT2 printings but
@@ -183,7 +183,7 @@ edition we target.
 in the relevant TCS entry and omit or remap accordingly. For ship-specific
 mappings, see `TEST_CASE_SHIPS.md`.
 
-### RI-009 Broad Skills From The Traveller Companion Are Treated As Distinct Skills
+### RIS-009 Broad Skills From The Traveller Companion Are Treated As Distinct Skills
 
 The *Traveller Companion* (2024) introduced **broad skills**: what earlier
 editions called specialities of a single `Science` skill are now fully
@@ -202,7 +202,7 @@ to `Expert(N, skill='Space Science (Planetology)')` names a broad skill, not
 a flat speciality. The software table in `ceres.gear.software` lists broad
 science skills (and their specialities) as top-level entries accordingly.
 
-### RI-010 Carried Craft — Displacement, Performance Sizing, and Crew
+### RIS-010 Carried Craft — Displacement, Performance Sizing, and Crew
 
 **Ship displacement**: A ship's displacement is its own internal hull volume
 only. Craft on docking clamps are external to the hull and are not counted.
@@ -240,7 +240,7 @@ carrying a 40 dTon Pinnace). The rules are equally satisfied by treating the
 hull as 360 dTon and sizing drives for 400 dTon combined; both produce the same
 drive sizes and fuel requirements.
 
-### RI-011 Administrators And Commercial Sensor Operators Use Floor Division
+### RIS-011 Administrators And Commercial Sensor Operators Use Floor Division
 
 The crew table states "1 per 2,000 tons" for administrators and "1 per 7,500
 tons" for commercial sensor operators. The general rule says "whenever a crew
@@ -259,10 +259,10 @@ reading for rate-based crew assignments. The general round-up rule is interprete
 as applying within a calculation once the rate has produced a non-zero quotient,
 not as mandating at least one of every listed role on every ship.
 
-This is consistent with RI-003 (maintenance thresholds) and with the prose
+This is consistent with RIS-003 (maintenance thresholds) and with the prose
 context for small ships, where a single multi-skilled pilot covers many duties.
 
-### RI-012 Retro-Tech Ship Computers Cap The Effective Software TL
+### RIS-012 Retro-Tech Ship Computers Cap The Effective Software TL
 
 A retro-tech computer (`retro_levels=N`) is not simply a cheaper version of
 the same hardware. It is hardware built to an older standard — one that was
@@ -288,7 +288,7 @@ This is a capability trade-off, not just a pricing footnote. A ship designer
 who wants TL14 software must use a standard or proto-tech computer — retro
 pricing comes at the cost of software reach.
 
-### RI-013 Basic Ship Systems Power Is Rounded Up To The Nearest Integer
+### RIS-013 Basic Ship Systems Power Is Rounded Up To The Nearest Integer
 
 *High Guard* states that basic ship systems power equals 20% of total hull
 tonnage (10% for non-gravity hulls). No rounding rule is given in the text.

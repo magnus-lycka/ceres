@@ -16,7 +16,7 @@ Source handling for this test case:
     Racer, class name ???`, so the test uses `Vargr Belt Racer` as the ship
     class
 - deliberate deviations:
-  - power_basic: Tycho stat block shows 1; Ceres gives 2 per RI-013
+  - power_basic: Tycho stat block shows 1; Ceres gives 2 per RIS-013
     (ceil(6 * 0.2) = 2; Tycho appears to use floor)
 """
 
@@ -56,7 +56,7 @@ _expected = SimpleNamespace(
     production_cost_mcr=0.854,
     maintenance_cr=71,
 )
-# Tycho tool uses floor; ceil(6 * 0.2) = 2 per RI-013
+# Tycho tool uses floor; ceil(6 * 0.2) = 2 per RIS-013
 _expected.power_basic = 2
 _expected.total_power = 2
 

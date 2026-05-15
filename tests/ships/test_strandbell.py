@@ -25,7 +25,7 @@ Known deviations from the Tycho stat block:
   longer model a pseudo-armored M-drive")
 - m_drive_cost: ref shows MCr36.36 (includes armored bulkhead cost of
   MCr0.32 and MCr0.04 rounding); Ceres gives MCr36.0 for the bare drive
-- op_fuel_tons: ref shows 4.80t for 12 weeks; Ceres gives 5.0t per RI-007
+- op_fuel_tons: ref shows 4.80t for 12 weeks; Ceres gives 5.0t per RIS-007
   (standard rounding)
 - cargo_tons: ref shows 13.8t; Ceres gives 20.5t — the difference comes from
   not modelling the armored M-drive bulkheads and stores/spares
@@ -72,7 +72,7 @@ _expected = SimpleNamespace(
     plant_output=240,
     plant_tons=16.0,
     plant_cost_mcr=16.0,
-    # Fuel: ref shows 4.80t for 12 weeks; Ceres gives 5.0t per RI-007
+    # Fuel: ref shows 4.80t for 12 weeks; Ceres gives 5.0t per RIS-007
     op_fuel_weeks=12,
     op_fuel_tons_ref=4.80,
     op_fuel_tons=5.0,

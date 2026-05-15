@@ -23,7 +23,7 @@ Source handling for this test case:
   - Ceres surfaces crew-rule mismatches as info/warning notes instead of
     silently normalizing the crew
   - point-defence batteries do not require dedicated gunners
-- retro computer pricing from CSC-style `Retro*` source rows (`RI-005`) is now modelled:
+- retro computer pricing from CSC-style `Retro*` source rows (`RIS-005`) is now modelled:
   - Core/40/fib uses retro_levels=2 (TL13 ship, effective TL 11 covers installed software): cost ÷4
   - Computer/20/fib uses retro_levels=1 (TL13 ship, 1 above TL12 standard): cost ÷2
   - retro_levels=2 (not 4) is chosen because effective TL 11 is the minimum needed to run
@@ -33,7 +33,7 @@ Source handling for this test case:
   - the source life-support total matches facilities alone and appears to omit
     life support for people entirely
 - model interpretation rather than dedicated installed rows:
-  - stores and spares (`RI-001`)
+  - stores and spares (`RIS-001`)
 """
 
 from types import SimpleNamespace
@@ -109,16 +109,16 @@ _expected = SimpleNamespace(
     operation_fuel_tons=11.0,  # ref: 16 Weeks of Operation — 10.46 tons; Ceres rounds up to 11.0
     fuel_processor_tons=1.0,  # ref: Fuel Processor 20 Tons Per Day — 1.00 ton
     # ref shows Core/40/fib (Retro*): 4,218,750 — that is ÷16 (retro_levels=4 implied by tool).
-    # Ceres uses retro_levels=2 (÷4) per RI-005 to keep effective TL ≥ 11 for AutoRepair/1 and
+    # Ceres uses retro_levels=2 (÷4) per RIS-005 to keep effective TL ≥ 11 for AutoRepair/1 and
     # FireControl/2; base cost 67,500,000 ÷ 4 = 16,875,000
-    computer_cost_mcr=16.875,  # ref: 4,218,750 (retro×4); Ceres: 16,875,000 (retro×2, RI-005)
+    computer_cost_mcr=16.875,  # ref: 4,218,750 (retro×4); Ceres: 16,875,000 (retro×2, RIS-005)
     # ref: 1x 1.82 Ton Cargo Bay (1.82) + Stores and Spares 4.48 = 6.30 total;
-    # Ceres treats stores as guidance (RI-001); remaining usable tonnage gives 5.8616
-    cargo_tons=5.8616,  # ref: ~6.30; Ceres gives 5.8616 (fuel tons rounding, RI-001)
+    # Ceres treats stores as guidance (RIS-001); remaining usable tonnage gives 5.8616
+    cargo_tons=5.8616,  # ref: ~6.30; Ceres gives 5.8616 (fuel tons rounding, RIS-001)
     # ref: Design Cost 293,083,146.67; Ceres gives higher because computer cost
-    # uses retro_levels=2 instead of retro_levels=4 (RI-005)
-    production_cost_mcr=305.7193966667,  # ref: 293,083,146.67; Ceres: 305,719,396.67 (RI-005)
-    sales_price_mcr=275.1474570,  # ref: 263,774,832.00; Ceres: 275,147,457.00 (RI-005)
+    # uses retro_levels=2 instead of retro_levels=4 (RIS-005)
+    production_cost_mcr=305.7193966667,  # ref: 293,083,146.67; Ceres: 305,719,396.67 (RIS-005)
+    sales_price_mcr=275.1474570,  # ref: 263,774,832.00; Ceres: 275,147,457.00 (RIS-005)
     available_power=436.0,  # ref: Available: 436 PP
     sensor_power_load=15.0,  # ref: Sensors 15 PP
     total_power_load=436.0,  # ref: Maximum Load 436 PP

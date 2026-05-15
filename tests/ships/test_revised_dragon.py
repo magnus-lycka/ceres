@@ -26,7 +26,7 @@ Source handling for this test case:
 - source inconsistency:
   - the source life-support total does not fit the source crew count
 - model interpretation rather than dedicated installed rows:
-  - stores and spares (`RI-001`)
+  - stores and spares (`RIS-001`)
 """
 
 from types import SimpleNamespace
@@ -132,8 +132,8 @@ _expected = SimpleNamespace(
     missile_storage_tons=34.0,
     missile_storage_cost=0.0,
     # ref: "1x 0.76 Ton Cargo Bay" + "Stores and Spares 4.48" = 5.24 total;
-    # Ceres treats stores as guidance (RI-001); remaining usable tonnage gives 4.31
-    cargo_tons=4.31,  # ref: ~5.24; Ceres gives 4.31 (fuel tons rounding + RI-001)
+    # Ceres treats stores as guidance (RIS-001); remaining usable tonnage gives 4.31
+    cargo_tons=4.31,  # ref: ~5.24; Ceres gives 4.31 (fuel tons rounding + RIS-001)
     production_cost_mcr=292.8551666667,  # ref: 292,855,166.67
     sales_price_mcr=263.56965,  # ref: 263,569,650.00
     available_power=482.0,  # ref: Available: 482 PP

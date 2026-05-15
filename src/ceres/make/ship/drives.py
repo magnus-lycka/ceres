@@ -16,14 +16,24 @@ from .parts import (
     SizeReduction,
 )
 from .power import (  # noqa: F401
+    AdvancedSolarCoating,
+    AdvancedSolarPanels,
+    AntimatterPlant,
     AnyPowerPlant,
+    AnySolarPowerSource,
+    BasicSolarPanels,
     ChemicalPlant,
     EmergencyPowerSystem,
+    EnhancedSolarCoating,
+    EnhancedSolarPanels,
     FissionPlant,
     FusionPlantTL8,
     FusionPlantTL12,
     FusionPlantTL15,
+    ImprovedSolarPanels,
     PowerSection,
+    SterlingFissionPlant,
+    StirlingFissionPlant,
 )
 from .software import JumpControl
 from .spec import ShipSpec, SpecSection
