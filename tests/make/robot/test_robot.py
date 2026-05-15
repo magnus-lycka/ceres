@@ -492,7 +492,7 @@ class TestBuildSpec:
     def test_spec_manipulators_row_empty(self):
         from ceres.make.robot.spec import RobotSpecSection
 
-        robot = make_robot()
+        robot = make_robot(manipulators=[])
         rows = robot.build_spec().rows_for_section(RobotSpecSection.MANIPULATORS)
         assert rows[0].value == '—'
 

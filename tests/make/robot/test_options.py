@@ -156,7 +156,7 @@ class TestReconSensor:
 
 
 class TestExternalPower:
-    """refs/robot/29_storage_compartment.md — External Power: 5% of base slots (floor), Cr100/base slot."""
+    """refs/robot/29_storage_compartment.md — External Power: 5% of base slots (ceil), Cr100/base slot."""
 
     def test_tl(self):
         assert ExternalPower().tl == 9
@@ -164,12 +164,12 @@ class TestExternalPower:
     @pytest.mark.parametrize(
         'size, expected_slots',
         [
-            (RobotSize.SIZE_1, 0),  # floor(0.05 * 1)  = 0
-            (RobotSize.SIZE_3, 0),  # floor(0.05 * 4)  = 0
-            (RobotSize.SIZE_5, 0),  # floor(0.05 * 16) = 0
-            (RobotSize.SIZE_6, 1),  # floor(0.05 * 32) = 1
-            (RobotSize.SIZE_7, 3),  # floor(0.05 * 64) = 3
-            (RobotSize.SIZE_8, 6),  # floor(0.05 * 128) = 6
+            (RobotSize.SIZE_1, 1),  # ceil(0.05 * 1)   = 1
+            (RobotSize.SIZE_3, 1),  # ceil(0.05 * 4)   = 1
+            (RobotSize.SIZE_5, 1),  # ceil(0.05 * 16)  = 1
+            (RobotSize.SIZE_6, 2),  # ceil(0.05 * 32)  = 2
+            (RobotSize.SIZE_7, 4),  # ceil(0.05 * 64)  = 4
+            (RobotSize.SIZE_8, 7),  # ceil(0.05 * 128) = 7
         ],
     )
     def test_slots_by_size(self, size, expected_slots):

@@ -79,7 +79,13 @@ class HullConfiguration(CeresModel):
         return 50000 * ton * modifier
 
     def points(self, ton):
-        return (ton * self.effective_hull_points_modifier) // 2.5
+        if ton >= 100_000:
+            divisor = 1.5
+        elif ton >= 25_000:
+            divisor = 2.0
+        else:
+            divisor = 2.5
+        return (ton * self.effective_hull_points_modifier) // divisor
 
     def build_item(self) -> str | None:
         return self.description

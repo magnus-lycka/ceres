@@ -8,7 +8,7 @@ Rule sources:
   refs/robot/31_neural_activity_sensor.md (ReconSensor)
 """
 
-from math import floor
+from math import ceil
 from typing import Any
 
 from .chassis import chassis_entry
@@ -102,7 +102,7 @@ class ReconSensor(RobotPart):
 class ExternalPower(RobotPart):
     """refs/robot/29_storage_compartment.md — External Power.
 
-    Slots = floor(5% × base_slots); Cost = Cr100 × base_slots.
+    Slots = ceil(5% × base_slots); Cost = Cr100 × base_slots.
     Requires binding to compute (both depend on robot size).
     """
 
@@ -113,7 +113,7 @@ class ExternalPower(RobotPart):
         if self._assembly is None:
             return 0
         base = chassis_entry(self.assembly.size).base_slots
-        return floor(0.05 * base)
+        return ceil(0.05 * base)
 
     def bind(self, assembly: RobotBase) -> None:
         super().bind(assembly)

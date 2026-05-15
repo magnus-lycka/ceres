@@ -218,6 +218,30 @@ def test_ship_basic_hull_power_load_for_non_gravity_hull_is_half():
     assert my_ship.basic_hull_power_load == 1
 
 
+def test_ship_notes_error_for_oversized_non_gravity_hull():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=500_001,
+        hull=hull.Hull(configuration=hull.standard_hull.model_copy(update={'non_gravity': True})),
+    )
+
+    assert 'Non-gravity hull exceeds maximum displacement: 500,001 > 500,000 tons' in my_ship.notes.errors
+
+
+def test_pressure_hull_uses_tonnage_and_adds_armour_row():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull, pressure_hull=True),
+    )
+    spec = my_ship.build_spec()
+
+    assert my_ship.remaining_usable_tonnage() == 300
+    assert my_ship.hull_cost == 200_000_000
+    assert spec.row('Standard Hull, Pressure Hull', section='Hull').cost == 200_000_000
+    assert spec.row('Armour: 4', section='Hull').section == 'Hull'
+
+
 def test_ship_jump_fuel_and_weapon_power_accessors_handle_missing_sections():
     my_ship = ship.Ship(
         tl=12,

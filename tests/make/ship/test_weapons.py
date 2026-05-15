@@ -6,6 +6,7 @@ from ceres.make.ship.bridge import Bridge, CommandSection
 from ceres.make.ship.computer import Computer5, Computer20, ComputerSection
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive1, PowerSection
 from ceres.make.ship.parts import Advanced, EnergyEfficient, HighTechnology, SizeReduction, VeryAdvanced
+from ceres.make.ship.view import collapsed_main_rows
 from ceres.make.ship.weapons import (
     BeamLaser,
     DoubleTurret,
@@ -289,6 +290,35 @@ def test_reused_weapon_and_turret_references_render_like_distinct_identical_obje
     notes = turret_row.notes
     assert notes.contents == ['Pulse Laser × 3']
     assert notes.infos == ['High Technology: Long Range, High Yield']
+
+
+def test_different_triple_turrets_do_not_collapse_in_spec_or_report_rows():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=300,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer5()),
+        weapons=WeaponsSection(
+            turrets=[
+                TripleTurret(weapons=[PulseLaser(), PulseLaser(), PulseLaser()]),
+                TripleTurret(weapons=[MissileRack(), MissileRack(), Sandcaster()]),
+            ],
+        ),
+    )
+
+    spec = my_ship.build_spec()
+    weapon_rows = [r for r in spec.rows_for_section('Weapons') if r.item == 'Triple Turret']
+    assert len(weapon_rows) == 2
+    assert [row.quantity for row in weapon_rows] == [None, None]
+    assert [row.notes.contents for row in weapon_rows] == [
+        ['Pulse Laser × 3'],
+        ['Missile Rack × 2', 'Sandcaster'],
+    ]
+
+    report_rows = [r for r in collapsed_main_rows(spec) if r.section == 'Weapons' and r.item == 'Triple Turret']
+    assert len(report_rows) == 2
+    assert [row.quantity for row in report_rows] == [None, None]
 
 
 def test_pulse_laser_barbette_values():

@@ -338,3 +338,22 @@ High-efficiency batteries are stored power, not continuous generation. Ceres
 therefore includes their tonnage, cost, and Power capacity in the Power section,
 but does not add battery capacity to `Ship.available_power`. A combat round or
 scenario layer may choose how much stored power is discharged in that round.
+
+
+## Robot Interpretations
+
+### RIR-001 Manipulator Removal Savings — 20% Cap Not Applied
+
+The rule (*Robot Handbook*, p.25) states: "Removing a manipulator lowers the cost of the robot by Cr100 multiplied by the size of the robot but no more than 20% of the Base Chassis Cost."
+
+A strict reading of "no more than 20% of the Base Chassis Cost" would cap the saving per manipulator at 20% of BCC. For a Size 3 robot with Wheels locomotion (BCC = Cr800), this cap would be Cr160 per manipulator, giving a maximum total saving of Cr320 for removing both.
+
+Ceres instead applies the uncapped formula: Cr100 × robot_size × count, giving Cr600 for a Size 3 robot with 2 manipulators removed. This matches the reference Google Sheet used for the Domestic Servant design (TCR-001). The Cr500 source total is consistent with Ceres's Cr420 only if -Cr600 (not -Cr320) is used for manipulator removal.
+
+The 20% cap clause may be intended only for edge cases (e.g., very small robots) or may apply to manipulator *resizing* savings. This interpretation is unresolved and should be revisited when additional source examples are available.
+
+### RIR-002 Robot Costs Reported Without Editorial Rounding
+
+The Robot Handbook presents final robot costs that are sometimes rounded to one or two significant figures (e.g. Cr500 for a Domestic Servant whose components sum to Cr420). Ceres reports the exact calculated cost from all rule components and does not apply editorial rounding.
+
+Where a source stat block differs from the Ceres-computed total, the source value is recorded in the test file's `_expected` SimpleNamespace and the Ceres value is set as an override immediately after, with a comment documenting the discrepancy.

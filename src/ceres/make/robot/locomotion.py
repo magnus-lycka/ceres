@@ -1,5 +1,5 @@
 from math import ceil
-from typing import Annotated, ClassVar, Literal
+from typing import Annotated, Any, ClassVar, Literal
 
 from pydantic import Field
 
@@ -19,6 +19,13 @@ class _LocomotionBase(CeresModel):
     _locomotion_traits: ClassVar[tuple[Trait, ...]]
     _none_locomotion: ClassVar[bool]
 
+    # refs/robot/08_locomotion_modifications.md — Tactical Speed Reduction
+    speed_reduction: int = Field(default=0, ge=0)
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.speed_reduction > self._base_speed:
+            raise ValueError(f'speed_reduction {self.speed_reduction} exceeds base speed {self._base_speed}')
+
     @property
     def required_tl(self) -> int:
         return self._required_tl
@@ -28,8 +35,8 @@ class _LocomotionBase(CeresModel):
         return self._agility
 
     @property
-    def base_endurance(self) -> int:
-        return self._base_endurance
+    def base_endurance(self) -> float:
+        return self._base_endurance * (1.0 + 0.1 * self.speed_reduction)
 
     @property
     def cost_multiplier(self) -> float:
@@ -38,6 +45,14 @@ class _LocomotionBase(CeresModel):
     @property
     def base_speed(self) -> int:
         return self._base_speed
+
+    @property
+    def effective_speed(self) -> int:
+        return self._base_speed - self.speed_reduction
+
+    @property
+    def speed_cost_fraction(self) -> float:
+        return -0.1 * self.speed_reduction
 
     @property
     def locomotion_traits(self) -> tuple[Trait, ...]:
@@ -51,7 +66,7 @@ class _LocomotionBase(CeresModel):
         raise NotImplementedError
 
     def speed_label(self) -> str:
-        return f'{self.base_speed}m'
+        return f'{self.effective_speed}m'
 
     def slots_bonus(self, base_slots: int) -> int:
         if self._none_locomotion:

@@ -146,6 +146,62 @@ class TestLocomotionDiscriminatedUnion:
         assert isinstance(restored, GravLocomotion)
 
 
+class TestTacticalSpeedReduction:
+    """refs/robot/08_locomotion_modifications.md — Tactical Speed Reduction."""
+
+    def test_default_no_reduction(self):
+        loco = WheelsLocomotion()
+        assert loco.speed_reduction == 0
+        assert loco.effective_speed == 5
+        assert loco.speed_label() == '5m'
+        assert loco.base_endurance == 72.0
+        assert loco.speed_cost_fraction == 0.0
+
+    def test_one_metre_reduction_wheels(self):
+        loco = WheelsLocomotion(speed_reduction=1)
+        assert loco.effective_speed == 4
+        assert loco.speed_label() == '4m'
+
+    def test_endurance_increases_10_percent_per_metre(self):
+        loco = WheelsLocomotion(speed_reduction=1)
+        assert loco.base_endurance == pytest.approx(72 * 1.1)
+
+    def test_two_metre_reduction(self):
+        loco = WheelsLocomotion(speed_reduction=2)
+        assert loco.effective_speed == 3
+        assert loco.base_endurance == pytest.approx(72 * 1.2)
+
+    def test_cost_fraction_per_metre(self):
+        loco = WheelsLocomotion(speed_reduction=1)
+        assert loco.speed_cost_fraction == pytest.approx(-0.1)
+
+    def test_cost_fraction_two_metres(self):
+        loco = WheelsLocomotion(speed_reduction=2)
+        assert loco.speed_cost_fraction == pytest.approx(-0.2)
+
+    def test_reduce_to_zero_speed_is_allowed(self):
+        loco = WheelsLocomotion(speed_reduction=5)
+        assert loco.effective_speed == 0
+        assert loco.speed_label() == '0m'
+
+    def test_cannot_reduce_below_zero_speed(self):
+        with pytest.raises((ValueError, Exception)):
+            WheelsLocomotion(speed_reduction=6)
+
+    def test_none_locomotion_already_zero_cannot_reduce(self):
+        with pytest.raises((ValueError, Exception)):
+            NoneLocomotion(speed_reduction=1)
+
+    def test_roundtrip_preserves_speed_reduction(self):
+        from pydantic import TypeAdapter
+
+        adapter: TypeAdapter[LocomotionUnion] = TypeAdapter(LocomotionUnion)
+        loco = WheelsLocomotion(speed_reduction=1)
+        restored = adapter.validate_json(loco.model_dump_json())
+        assert isinstance(restored, WheelsLocomotion)
+        assert restored.speed_reduction == 1
+
+
 class TestLocomotionBaseGuard:
     def test_base_label_raises(self):
         import pytest

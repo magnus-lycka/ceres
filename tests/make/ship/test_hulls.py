@@ -45,6 +45,21 @@ def test_light_streamlined_hull():
     assert hull_config.points(100) == 36
 
 
+def test_massive_ship_hull_points_use_large_ship_bracing_scale():
+    assert hull.standard_hull.points(24_999) == 9_999
+    assert hull.standard_hull.points(25_000) == 12_500
+    assert hull.standard_hull.points(99_999) == 49_999
+    assert hull.standard_hull.points(100_000) == 66_666
+
+
+def test_massive_ship_hull_points_keep_configuration_modifiers():
+    reinforced = hull.standard_hull.model_copy(update={'reinforced': True})
+    light = hull.standard_hull.model_copy(update={'light': True})
+
+    assert reinforced.points(25_000) == 13_750
+    assert light.points(100_000) == 60_000
+
+
 def test_armoured_bulkhead_values():
     bulkhead = hull.ArmouredBulkhead(protected_tonnage=30.0, protected_item='M-Drive')
     owner = DummyOwner(12, 100)
@@ -90,3 +105,11 @@ def test_stealth_values_are_computed_properties_not_serialized_fields():
 def test_radiation_shielding_cost():
     ship_hull = hull.Hull(configuration=hull.standard_hull, radiation_shielding=True)
     assert ship_hull.radiation_shielding_cost(400) == 10_000_000
+
+
+def test_pressure_hull_values():
+    ship_hull = hull.Hull(configuration=hull.standard_hull, pressure_hull=True)
+
+    assert ship_hull.pressure_hull_tons(400) == 100
+    assert ship_hull.total_cost(400) == 200_000_000
+    assert ship_hull.build_item() == 'Standard Hull, Pressure Hull'

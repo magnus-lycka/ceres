@@ -47,6 +47,10 @@ class RobotPartMixin(ABC):
             self.error(f'Requires TL{self.tl}, robot is TL{self.assembly_tl}')
 
     @property
+    def hits_delta(self) -> int:
+        return 0
+
+    @property
     def robot_traits(self) -> tuple[Trait, ...]:
         return ()
 

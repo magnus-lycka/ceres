@@ -132,3 +132,63 @@ properties such as `medical_bay`, `library`, `briefing_room`, `workshop`, and
 `biosphere`. Repeated internal systems are now accessed through list-returning
 properties such as `medical_bays`, `libraries`, `briefing_rooms`, `workshops`,
 and `biospheres`, or through `internal_systems_of_type(...)`.
+
+## Handle non-fusion power plants
+
+Chemical and fission power plants are implemented in `power.py`, accepted by
+`PowerSection`, covered by unit tests, and represented in operation-fuel tests.
+
+Sterling fission plants are also implemented from the Spinward Extents rules,
+including TL6/TL8/TL12 variants, lifespan, minimum size, no operation-fuel
+tonnage, and warnings for direct jump-drive use.
+
+## Reaction drives
+
+R-drives are implemented alongside M-drives and J-drives, including high-burn
+thruster notes and reference-ship coverage for the 90-ton non-gravity R-drive
+case.
+
+The remaining external-load performance policy has been kept in
+`docs/todo_maybe.md` under "External-load drive performance".
+
+## Initial hull modifications
+
+Reinforced Hull and Light Hull are implemented as `HullConfiguration` options,
+affecting hull cost and Hull points.
+
+Armoured Bulkhead is implemented as a protected-part option plus explicit hull
+component, with cost, tonnage, spec notes, and tests.
+
+Pressure Hull is implemented with 25% tonnage usage, ×10 hull cost, intrinsic
+Armour 4, spec output, and tests.
+
+Any remaining validation rules for incompatible hull combinations remain in
+`docs/todo_maybe.md`.
+
+## Verify that we do not collapse non-identical rows
+
+Spec row grouping and report-row collapse already require matching item labels
+and display notes. Added a regression test covering two different triple
+turrets:
+
+- two identical pulse-laser turrets may collapse to `Triple Turret × 2`
+- a pulse-laser turret and a missile/sandcaster turret remain separate rows
+
+The test covers both raw `ShipSpec` weapon rows and `collapsed_main_rows(...)`
+used by reports.
+
+## Massive ship Hull points
+
+Very large ships now use the High Guard Hull point scaling:
+
+- 25,000-99,999 tons: 1 Hull point per 2 tons
+- 100,000+ tons: 1 Hull point per 1.5 tons
+
+Existing configuration modifiers such as Reinforced Hull and Light Hull still
+apply before the divisor.
+
+## Non-gravity hull maximum size
+
+Non-gravity hulls now report a ship error above the 500,000-ton maximum size.
+
+The remaining spin-layout modelling question stays in `docs/todo_maybe.md`.

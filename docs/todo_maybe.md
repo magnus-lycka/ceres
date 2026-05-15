@@ -167,23 +167,14 @@ Rule for future work:
 - support parameterized outputs where needed, e.g. `Thrust X / Jump Y while
   carrying Z dTons`
 
-## Reaction drives
-
-Handle R-drives in additioin to M-drives and J-drives
+## External-load drive performance
 
 Note:
 
+- R-drives are implemented, including high-burn thruster notes.
 - when we later add external carry systems such as docking clamps, tow cables, cargo nets, external cargo mounts, jump nets, jump shuttles, modular cutter handling or similar, they should not be treated like internal docking space
 - external loads should affect effective displacement for drive-performance calculations
 - this likely wants parameterized specs, e.g. performance at `+X dTons`
-
-## Handle non-fusion power plants
-
-Support Chemical and Fission drives.
-
-## MASSIVE SHIPS
-
-Very large ships require a lot more internal bracing to support their mass under acceleration but this has the effect of increasing their durability under fire. Ships of 25,000–99,999 tons have 1 Hull point for every 2 tons of hull. Ships of 100,000 tons or more have 1 Hull point for every 1.5 tons of hull.
 
 ## COMMAND BRIDGES
 
@@ -200,6 +191,16 @@ By increasing the cost of a hull by +25%, a ship may install armour up to double
 ## Non-Gravity Hull
 
 Basic hulls include artificial gravity, using grav plates to ensure a normal gravitational environment for the comfort and convenience of the crew. Hulls can be built cheaper without artificial grav plating, using specific configurations that allow the hull to constantly spin in order to generate gravity if desired. Non-gravity hulls reduce hull cost by 50% but are limited to a maximum size of 500,000 tons due to structural limitations. Base Power Requirements for non-gravity hulls are half that of other hull types. See Power Requirements on page 17 for more information.
+
+Current status:
+
+- hull cost reduction implemented
+- basic hull power reduction implemented
+- 500,000-ton maximum size reported as a ship error
+
+Remaining work:
+
+- decide how to model spin-capable layouts separately from the generic `non_gravity=True` flag
 
 *To use this and still get artificial gravity the ship must be able to spin. It could be a torus, a cylinder or something like a capsule connected to a counterweight with a wire (of course it could be two capsules acting as counterweights to each other, but you might have heavy stuff, like power plant, where you don't need full gravity). Either way, the spin radius must be big enough to make this more good than bad. One can of course settle for less than 1G gravity, but there are several well known issues. Both torus and capsule with counterweight would -- I think be dispersed structure. A cyliner, wgich could be a standard structure, would have to be huge, and either a lot of wasted space or most areas wouls have much less gravity. With rotation, there are several issues, which all get worse with less radius (which also means faster rotation): Things fall in tangential direction, not at all same as perceived down. Coriolis effects are stronger. Rapid spin makes people dizzy etc. All of this will place a lower bound on reasonable radius. Of course, working in Zero-G with penaltiess is an option.*
 
@@ -233,25 +234,6 @@ designs. We'd use markdown for that.
 
 Eventually we'll also want to provide illustrations and floor plans/drwaings.
 
-## Verify that we don't collapse things unless they are identical
-
-If we for instance hace two triple turrets with all pulse lasers
-we basically want to see
-
-Triple Turret x 2
- - Weapon: Pulse Laser x 3
-
-But on the other hand, if we have this:
-
-Triple Turret
- - Weapon: Pulse Laser x 3
-Triple Turret
- - Weapon: Missile x 2
- - Weapon: Sandcaster
-
- Then we can't compact it any more than we did.
- We can't make a Triple Turret x 2, since they are different.
-
 ## Split big files
 
      632 src/ceres/make/ship/drives.py
@@ -264,13 +246,23 @@ Split up the big weapons file
 
 ## Add other types of drives
 
-Add the lower TL power plants, fission, chemichal?
-Are there things like batteries as well than should go here?
-Solar panels and stuff?
+Keep this as a parking lot for genuinely new drive families, not power systems.
+
+Already implemented elsewhere:
+
+- chemical and fission power plants
+- Sterling fission power plants
+- high-efficiency batteries
+- R-drives
+
+Candidates that still need rule/API work:
+
+- plasma drives (tracked separately below)
+- source-specific drive families from non-HG books
 
 ## Solar Energy Systems
 
-Implement solar panels and solar coatings as an alternative/supplemental power source.
+Settle the source split and complete solar energy support.
 
 Reference: `refs/hg/25_solar_energy_systems.md`
 Related comparison: `docs/solar-energy-systems-comparison.md`
@@ -282,6 +274,9 @@ Rules include:
   not available on streamlined (atmospheric stress).
 - Solar panels are deployed (cannot accelerate while deployed), measured in tons = units.
 - Coatings increase hull repair cost ×2.
+
+Some solar panel/coating support exists in code, but the source identity and
+API still need cleanup before extending it further.
 
 Spinward Extents (`refs/spinext/59_arcturus.md`) adds another solar technology
 family: TL6/TL8/TL12 solar panels, hull coatings, and solar sails with different
@@ -384,25 +379,24 @@ Once added to `weapons.py` or a dedicated `screens.py`, wire them into:
 
 Black Globe Generator is TL15+, not commercially available — needs a legality note.
 
-## Hull modifications (Reinforced, Light, Armoured Bulkhead, Pressure Hull)
+## Hull modifications (remaining validation)
 
-Implement the specialised hull modification options.
+Complete the remaining specialised hull modification work.
 
 References: `refs/hg/05_specialised_hull_types.md` and `refs/hg/23_spacecraft_options.md`
 
-Missing hull type modifiers:
+Already implemented:
 
 - **Reinforced Hull** — +50% hull cost, +10% hull points
 - **Light Hull** — −25% hull cost, −10% hull points
+- **Armoured Bulkhead** — 10% of protected item's tonnage, MCr0.2/ton, with protected-area notes
+- **Pressure Hull** — 25% of total tonnage, ×10 hull cost, intrinsic Armour +4
 
 (Military Hull already tracked separately above.)
 
-Spacecraft structural options not yet modelled:
+Remaining work:
 
-- **Armoured Bulkhead** — 10% of protected item's tonnage, MCr0.2/ton, reduces critical-hit
-  severity by −1 for the protected area
-- **Pressure Hull** — 25% of total tonnage, ×10 hull cost, intrinsic Armour +4, allows very
-  deep gas-giant and ocean operations
+- validate incompatible hull combinations if any source rule requires it
 
 ## Spinning hull configurations (Double Hull, Hamster Cage)
 
