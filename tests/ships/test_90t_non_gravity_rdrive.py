@@ -196,9 +196,5 @@ def test_basic_ship_power_load():
     s = _build()
     assert s.basic_hull_power_load == _expected.power_basic
     assert s.total_power_load == pytest.approx(_expected.total_power)
-
-
-def test_no_unexpected_notes():
-    s = _build()
     assert s.notes.errors == _expected.expected_errors
     assert s.notes.warnings == _expected.expected_warnings

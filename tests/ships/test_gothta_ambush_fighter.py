@@ -149,10 +149,6 @@ def test_gothta_ambush_fighter_matches_current_subset():
     assert crew == _expected.crew
     assert fighter.notes.errors == _expected.expected_errors
     assert fighter.notes.warnings == _expected.expected_warnings
-
-
-def test_gothta_has_no_crew_notes():
-    fighter = build_gothta_ambush_fighter()
     spec = fighter.build_spec()
     assert spec.crew_notes.infos == _expected.expected_crew_infos
     assert spec.crew_notes.warnings == _expected.expected_crew_warnings

@@ -52,7 +52,8 @@ def test_source_contains_robot_name_uppercased(domestic_spec):
 
 def test_source_contains_tech_level(domestic_spec):
     src = render_robot_spec_typst(domestic_spec)
-    assert 'TL 8' in src
+    assert 'tl: 8' in src  # preamble data
+    assert '"TL"' in src  # column header in robot_columns
 
 
 # ---------------------------------------------------------------------------
@@ -87,6 +88,31 @@ def test_source_lab_robot_substituted_suite(lab_spec):
     src = render_robot_spec_typst(lab_spec)
     assert 'Transceiver 500km (improved)' in src
     assert 'Video Screen (improved)' in src
+
+
+# ---------------------------------------------------------------------------
+# Detail sections
+# ---------------------------------------------------------------------------
+
+
+def test_source_contains_detail_section_titles(domestic_spec):
+    src = render_robot_spec_typst(domestic_spec)
+    for title in ('Chassis', 'Brain', 'Default Suite'):
+        assert f'title: "{title}"' in src
+
+
+def test_source_contains_skill_section_for_advanced_brain(lab_spec):
+    src = render_robot_spec_typst(lab_spec)
+    assert '"Skills"' in src
+
+
+def test_detail_section_absent_when_spec_has_no_detail_sections():
+    from ceres.make.robot.spec import RobotSpec, RobotSpecRow, RobotSpecSection
+
+    spec = RobotSpec(name='Test Bot', tl=8)
+    spec.add_row(RobotSpecRow(section=RobotSpecSection.ROBOT, label='Robot', value='Hits 1'))
+    src = render_robot_spec_typst(spec)
+    assert 'detail_sections: ()' in src
 
 
 # ---------------------------------------------------------------------------

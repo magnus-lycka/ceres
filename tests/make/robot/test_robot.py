@@ -449,8 +449,11 @@ class TestBuildSpec:
         robot = make_robot()
         rows = robot.build_spec().rows_for_section(RobotSpecSection.ROBOT)
         assert len(rows) == 1
-        assert 'Hits' in rows[0].value
-        assert 'Wheels' in rows[0].value
+        headers = [h for h, _ in rows[0].columns]
+        values = {h: v for h, v in rows[0].columns}
+        assert 'Hits' in headers
+        assert values['Locomotion'] == 'Wheels'
+        assert values['Size'] == '3'
 
     def test_spec_traits_row(self):
         from ceres.make.robot.spec import RobotSpecSection

@@ -125,9 +125,3 @@ def test_belt_racer_matches_current_r_drive_subset():
     assert racer.notes.errors == _expected.expected_errors
     assert racer.notes.warnings == _expected.expected_warnings
     assert [(role.role, quantity, role.monthly_salary) for role, quantity in racer.crew.grouped_roles] == _expected.crew
-
-
-def test_belt_racer_has_no_errors():
-    racer = build_belt_racer()
-    assert racer.notes.errors == _expected.expected_errors
-    assert racer.notes.warnings == _expected.expected_warnings

@@ -4,7 +4,7 @@ from typing import Any
 from pydantic import Field
 
 from .base import RobotBase
-from .brain import RobotBrainUnion
+from .brain import AdvancedBrain, RobotBrainUnion
 from .chassis import (
     RobotSize,
     Trait,
@@ -71,7 +71,15 @@ class Robot(RobotBase):
     def used_slots(self) -> int:
         brain_slot = self.brain.brain_slots(self.tl, int(self.size))
         option_slots = sum(o.slots for o in self.options if isinstance(o, RobotPartMixin) and o.slots > 0)
-        return brain_slot + option_slots
+        # Chassis modifications (item_message is None) are excluded from the zero-slot quota.
+        # Beyond Default(5) + Size + TL free zero-slot options each cost 1 slot.
+        zero_slot_count = sum(
+            1
+            for o in self.options
+            if isinstance(o, RobotPartMixin) and o.slots == 0 and o.notes.item_message is not None
+        )
+        excess_zero_slots = max(0, zero_slot_count - (int(self.size) + self.tl))
+        return brain_slot + option_slots + excess_zero_slots
 
     @property
     def remaining_slots(self) -> int:
@@ -143,17 +151,98 @@ class Robot(RobotBase):
             notes.append(_Note.error(f'Slot overload: {self.used_slots} used, {self.available_slots} available'))
         return notes
 
+    def _build_detail_sections(self) -> list:
+        from .spec import RobotDetailRow, RobotDetailSection
+
+        sections = []
+
+        cs = RobotDetailSection(title='Chassis')
+        cs.rows.append(
+            RobotDetailRow(
+                name=f'{self.locomotion.label()} chassis',
+                cost=format_credits(self.base_chassis_cost),
+            )
+        )
+        speed_cost = self.base_chassis_cost * self.locomotion.speed_cost_fraction
+        if speed_cost > 0:
+            cs.rows.append(RobotDetailRow(name='Speed modification', cost=format_credits(speed_cost)))
+        removed = max(0, 2 - len(self.manipulators))
+        if removed:
+            discount = 100.0 * int(self.size) * removed
+            cs.rows.append(RobotDetailRow(name=f'Removed manipulator ×{removed}', cost=f'−{format_credits(discount)}'))
+        sections.append(cs)
+
+        bs = RobotDetailSection(title='Brain')
+        slots = self.brain.brain_slots(self.tl, int(self.size))
+        bs.rows.append(
+            RobotDetailRow(
+                name=self.brain.programming_label(),
+                col2=str(slots) if slots else '—',
+                cost=format_credits(self.brain.hardware_cost),
+            )
+        )
+        sections.append(bs)
+
+        if isinstance(self.brain, AdvancedBrain) and self.brain.installed_skills:
+            ss = RobotDetailSection(title='Skills', col2_header='Bandwidth')
+            for pkg in self.brain.installed_skills:
+                ss.rows.append(
+                    RobotDetailRow(
+                        name=f'{pkg.name} {pkg.level}',
+                        col2=str(pkg.bandwidth),
+                        cost=format_credits(pkg.cost),
+                    )
+                )
+            sections.append(ss)
+
+        if self.manipulators:
+            ms = RobotDetailSection(title='Manipulators')
+            for m in self.manipulators:
+                ms.rows.append(RobotDetailRow(name=m))
+            sections.append(ms)
+
+        opts = [o for o in self.options if isinstance(o, RobotPartMixin) and o.notes.item_message]
+        if opts:
+            os_ = RobotDetailSection(title='Options')
+            for o in opts:
+                os_.rows.append(
+                    RobotDetailRow(
+                        name=o.notes.item_message,
+                        col2=str(o.slots) if o.slots > 0 else '—',
+                        cost=format_credits(o.cost) if o.cost > 0 else '—',
+                    )
+                )
+            sections.append(os_)
+
+        if self.default_suite:
+            ds = RobotDetailSection(title='Default Suite')
+            for item in sorted(self.default_suite):
+                item_cost = default_suite_item_cost(item)
+                ds.rows.append(
+                    RobotDetailRow(
+                        name=item,
+                        cost=format_credits(item_cost) if item_cost > 0 else '—',
+                    )
+                )
+            sections.append(ds)
+
+        return sections
+
     def build_spec(self) -> RobotSpec:
         spec = RobotSpec(name=self.name, tl=self.tl, robot_notes=self.notes)
         spec.add_row(
             RobotSpecRow(
                 section=RobotSpecSection.ROBOT,
                 label='Robot',
-                value=(
-                    f'Hits {self.hits}, Locomotion {self.locomotion.label()}, '
-                    f'Speed {self.locomotion.speed_label()}, '
-                    f'TL {self.tl}, Cost {format_credits(self.total_cost)}'
-                ),
+                columns=[
+                    ('Robot', self.name),
+                    ('Size', str(int(self.size))),
+                    ('Hits', str(self.hits)),
+                    ('Locomotion', self.locomotion.label()),
+                    ('Speed', self.locomotion.speed_label()),
+                    ('TL', str(self.tl)),
+                    ('Cost', format_credits(self.total_cost)),
+                ],
             )
         )
         spec.add_row(
@@ -215,6 +304,7 @@ class Robot(RobotBase):
                 value=', '.join(option_labels) if option_labels else '—',
             )
         )
+        spec.detail_sections = self._build_detail_sections()
         return spec
 
 

@@ -73,6 +73,10 @@ class _BrainBase(CeresModel):
         return ()
 
     @property
+    def hardware_cost(self) -> float:
+        return self.brain_cost  # subclasses override when skills are separate
+
+    @property
     def remaining_bandwidth(self) -> int | None:
         return None
 
@@ -174,6 +178,10 @@ class AdvancedBrain(_BrainBase):
     @property
     def brain_cost(self) -> float:
         return self._entry().cost + sum(pkg.cost for pkg in self.installed_skills)
+
+    @property
+    def hardware_cost(self) -> float:
+        return self._entry().cost
 
     @property
     def skill_dm(self) -> int:

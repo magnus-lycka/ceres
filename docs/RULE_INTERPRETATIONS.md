@@ -351,6 +351,14 @@ Ceres instead applies the uncapped formula: Cr100 × robot_size × count, giving
 
 The 20% cap clause may be intended only for edge cases (e.g., very small robots) or may apply to manipulator *resizing* savings. This interpretation is unresolved and should be revisited when additional source examples are available.
 
+### RIR-004 Zero-Slot Option Quota: Default Suite Items Are Not Counted Against Size + TL
+
+`refs/robot/11_zero_slot_options.md`: "In addition to the five Zero-Slot options of the robot's Default Suite, a robot design can incorporate additional Zero-Slot options equal to its size plus its Tech Level. Beyond Default (5) + Size + TL any additional Zero-Slot options require one Slot each."
+
+The five default suite items are free and entirely separate from the Size + TL quota. A robot therefore has up to Size + TL additional zero-slot options at no slot cost. Any further zero-slot options each consume one slot from the robot's available slots pool.
+
+Chassis modifications that happen to occupy no slots (e.g. Decreased Resiliency) are not counted against this quota; only options that appear in the Options row of the stat block are counted.
+
 ### RIR-003 Skill Package Costs And Default Suite Substitution Costs Are Included In Total Cost
 
 **Skill packages** (`refs/robot/35_skill_packages.md`): Standard skill packages installed in Advanced (or higher) brains carry an explicit cost: base cost × 10^level, where base cost comes from the Standard Skill Packages table. These costs are not included in the brain hardware cost and are added separately to the robot's total.

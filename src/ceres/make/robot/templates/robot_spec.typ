@@ -49,7 +49,22 @@
 )
 #v(3mm)
 
-// Spec table
+// Robot stats row (two-row multi-column table)
+#{
+  let rc = report_data.robot_columns
+  if rc.len() > 0 {
+    table(
+      columns: rc.map(c => c.at(2) * 1fr),
+      align: (col, _row) => if col == 0 { left } else { center },
+      inset: (x: 6pt, y: 4pt),
+      ..rc.map(c => table.cell(fill: label-bg)[*#c.at(0)*]),
+      ..rc.map(c => [#c.at(1)]),
+    )
+    v(1mm)
+  }
+}
+
+// Remaining spec rows
 #table(
   columns: (auto, 1fr),
   inset: (x: 6pt, y: 4pt),
@@ -60,6 +75,36 @@
     )
   }
 )
+
+// Detailed component breakdown
+#{
+  let secs = report_data.detail_sections
+  if secs.len() > 0 {
+    v(3mm)
+    table(
+      columns: (1fr, auto, auto),
+      inset: (x: 6pt, y: 4pt),
+      ..{
+        let cells = ()
+        for sec in secs {
+          cells = cells + (
+            table.cell(fill: label-bg)[*#sec.title*],
+            table.cell(fill: label-bg, align: center)[*#sec.col2_header*],
+            table.cell(fill: label-bg, align: right)[*Cost*],
+          )
+          for row in sec.rows {
+            cells = cells + (
+              [#row.name],
+              table.cell(align: center)[#row.col2],
+              table.cell(align: right)[#row.cost],
+            )
+          }
+        }
+        cells
+      }
+    )
+  }
+}
 
 // Robot-level notes
 #{

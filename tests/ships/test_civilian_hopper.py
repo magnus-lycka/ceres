@@ -130,9 +130,5 @@ def test_civilian_hopper_power():
     assert hopper.maneuver_power_load == pytest.approx(_expected.power_maneuver)
     assert hopper.sensor_power_load == pytest.approx(_expected.power_sensors)
     assert hopper.total_power_load == pytest.approx(_expected.total_power)
-
-
-def test_civilian_hopper_has_no_errors():
-    hopper = _build()
     assert hopper.notes.errors == _expected.expected_errors
     assert hopper.notes.warnings == _expected.expected_warnings

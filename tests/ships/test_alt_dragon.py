@@ -254,9 +254,5 @@ def test_alt_dragon_modeled_subset_tracks_current_model():
     assert dragon.available_power == pytest.approx(_expected.available_power)
     assert dragon.sensor_power_load == pytest.approx(_expected.sensor_power_load)
     assert dragon.total_power_load == pytest.approx(_expected.total_power_load)
-
-
-def test_alt_dragon_has_no_errors():
-    dragon = build_alt_dragon()
     assert dragon.notes.errors == _expected.expected_errors
     assert dragon.notes.warnings == _expected.expected_warnings

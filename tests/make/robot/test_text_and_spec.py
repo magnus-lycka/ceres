@@ -22,7 +22,7 @@ class TestFormatCredits:
         assert format_credits(400.0) == 'Cr400'
 
     def test_thousands(self):
-        assert format_credits(12_000.0) == 'Cr12000'
+        assert format_credits(12_000.0) == 'Cr12,000'
 
     def test_millions(self):
         assert format_credits(1_000_000.0) == 'MCr1'

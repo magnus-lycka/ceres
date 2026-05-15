@@ -141,9 +141,5 @@ def test_freight_handler_pod_production_cost():
 def test_freight_handler_pod_maintenance():
     pod = _build()
     assert pod.expenses.maintenance == pytest.approx(_expected.maintenance_cr)
-
-
-def test_freight_handler_pod_has_no_errors():
-    pod = _build()
     assert pod.notes.errors == _expected.expected_errors
     assert pod.notes.warnings == _expected.expected_warnings
