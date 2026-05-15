@@ -17,25 +17,26 @@ from .skills import SkillGrant, SkillPackage, primitive_package_skills
 class _BrainEntry:
     tl: int
     bandwidth: int
+    computer_x: int  # Computer/X rating; determines minimum chassis size for free fit
     cost: float
     base_int: int
     skill_dm: int
 
 
 _PRIMITIVE_TABLE: tuple[_BrainEntry, ...] = (
-    _BrainEntry(tl=7, bandwidth=0, cost=10000.0, base_int=1, skill_dm=-2),
-    _BrainEntry(tl=8, bandwidth=0, cost=100.0, base_int=1, skill_dm=-2),
+    _BrainEntry(tl=7, bandwidth=0, computer_x=0, cost=10000.0, base_int=1, skill_dm=-2),
+    _BrainEntry(tl=8, bandwidth=0, computer_x=0, cost=100.0, base_int=1, skill_dm=-2),
 )
 
 _BASIC_TABLE: tuple[_BrainEntry, ...] = (
-    _BrainEntry(tl=8, bandwidth=1, cost=20000.0, base_int=3, skill_dm=-1),
-    _BrainEntry(tl=10, bandwidth=1, cost=4000.0, base_int=4, skill_dm=-1),
+    _BrainEntry(tl=8, bandwidth=1, computer_x=1, cost=20000.0, base_int=3, skill_dm=-1),
+    _BrainEntry(tl=10, bandwidth=1, computer_x=1, cost=4000.0, base_int=4, skill_dm=-1),
 )
 
 _ADVANCED_TABLE: tuple[_BrainEntry, ...] = (
-    _BrainEntry(tl=10, bandwidth=2, cost=100000.0, base_int=6, skill_dm=0),
-    _BrainEntry(tl=11, bandwidth=2, cost=50000.0, base_int=7, skill_dm=0),
-    _BrainEntry(tl=12, bandwidth=2, cost=10000.0, base_int=8, skill_dm=0),
+    _BrainEntry(tl=10, bandwidth=2, computer_x=2, cost=100000.0, base_int=6, skill_dm=0),
+    _BrainEntry(tl=11, bandwidth=2, computer_x=2, cost=50000.0, base_int=7, skill_dm=0),
+    _BrainEntry(tl=12, bandwidth=2, computer_x=2, cost=10000.0, base_int=8, skill_dm=0),
 )
 
 
@@ -75,6 +76,9 @@ class _BrainBase(CeresModel):
     def remaining_bandwidth(self) -> int | None:
         return None
 
+    def brain_slots(self, robot_tl: int, robot_size: int) -> int:
+        raise NotImplementedError
+
     def programming_label(self) -> str:
         raise NotImplementedError
 
@@ -107,6 +111,10 @@ class PrimitiveBrain(_BrainBase):
     def skill_grants(self) -> tuple[SkillGrant, ...]:
         return primitive_package_skills(self.function)
 
+    def brain_slots(self, robot_tl: int, robot_size: int) -> int:
+        min_free = max(0, self._entry().computer_x - (robot_tl - self.brain_tl))
+        return 1 if robot_size < min_free else 0
+
     def programming_label(self) -> str:
         if self.function and self.function != 'none':
             return f'Primitive ({self.function})'
@@ -136,6 +144,10 @@ class BasicBrain(_BrainBase):
     @property
     def skill_dm(self) -> int:
         return self._entry().skill_dm
+
+    def brain_slots(self, robot_tl: int, robot_size: int) -> int:
+        min_free = max(0, self._entry().computer_x - (robot_tl - self.brain_tl))
+        return 1 if robot_size < min_free else 0
 
     def programming_label(self) -> str:
         if self.function and self.function != 'none':
@@ -179,6 +191,10 @@ class AdvancedBrain(_BrainBase):
     @property
     def remaining_bandwidth(self) -> int | None:
         return self.bandwidth - self.used_bandwidth
+
+    def brain_slots(self, robot_tl: int, robot_size: int) -> int:
+        min_free = max(0, self._entry().computer_x - (robot_tl - self.brain_tl))
+        return 1 if robot_size < min_free else 0
 
     def programming_label(self) -> str:
         return f'Advanced (INT {self.base_int})'

@@ -69,7 +69,9 @@ class Robot(RobotBase):
 
     @property
     def used_slots(self) -> int:
-        return sum(o.slots for o in self.options if isinstance(o, RobotPartMixin) and o.slots > 0)
+        brain_slot = self.brain.brain_slots(self.tl, int(self.size))
+        option_slots = sum(o.slots for o in self.options if isinstance(o, RobotPartMixin) and o.slots > 0)
+        return brain_slot + option_slots
 
     @property
     def remaining_slots(self) -> int:
@@ -202,6 +204,9 @@ class Robot(RobotBase):
                 label = opt.notes.item_message
                 if label:
                     option_labels.append(label)
+        spare = self.remaining_slots
+        if spare > 0:
+            option_labels.append(f'Spare Slots x{spare}')
         option_labels.sort()
         spec.add_row(
             RobotSpecRow(
