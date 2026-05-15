@@ -95,6 +95,7 @@ _expected = SimpleNamespace(
     hull_points=176,  # Streamlined-Needle, Reinforced; ref: "Hull: 176"
     hull_cost_mcr=36.0,  # ref: 36,000,000
     stealth_cost_mcr=40.0,  # ref: 40,000,000
+    radiation_shielding=True,
     armour_tons=78.0,  # ref: Crystaliron 13; 78.00 tons
     armour_cost_mcr=15.6,  # ref: 15,600,000
     # ref row: "M-Drive: 7, Armored 30.80 / 56,560,000" — Ceres splits the
@@ -108,7 +109,9 @@ _expected = SimpleNamespace(
     bridge_tons=20.0,  # ref: Standard Bridge — 20.00 tons
     bridge_cost_mcr=2.5,  # ref: 2,000,000 bridge + 500,000 holographic controls
     computer_cost_mcr=15.0,  # ref: Comp/25/fib — 15,000,000
+    computer_item='Computer/25/fib',
     computer_backup_cost_mcr=7.5,  # ref: B/U Comp/20/fib — 7,500,000
+    computer_backup_item='Computer/20/fib',
     # Sensors — ref groups sensor bulkhead as "Armored Bulkhead 1.30 / 260,000"
     # and sensor stations as "2x Additional Armored Sensor Stations 2.20 / 1,040,000".
     # Ceres splits each sensor component's bulkhead individually (TCS-001).
@@ -138,6 +141,16 @@ _expected = SimpleNamespace(
     # Ceres splits 4.0-ton bulkhead; storage itself 40.0 tons / 0
     missile_storage_tons=40.0,
     missile_storage_cost=0.0,
+    fuel_scoops_cost=0.0,
+    airlock_count=4,
+    airlock_tons=0.0,
+    sensor_stations_item='Sensor Stations',
+    barbette_count=2,
+    barbette_item='Particle Barbette (Damage × 3 after armour)',
+    bay_count=1,
+    bay_item='Small Missile Bay (12 missiles per salvo)',
+    point_defense_count=1,
+    point_defense_item='Point Defence Laser Battery Type II',
     # Armoured bulkhead parts listed in order Ceres yields them (TCS-001):
     # m_drive, plant, fuel, bridge, sensor_primary, sensor_countermeasures,
     # sensor_signal, sensor_stations, sensor_extended_arrays,
@@ -160,6 +173,10 @@ _expected = SimpleNamespace(
         800_000,
     ],
     repair_drones_tons=4.0,
+    armoury_count=1,
+    armoury_tons=1.0,
+    biosphere_tons=4.0,
+    repair_drones_count=1,
     staterooms_total_tons=40.0,
     common_area_tons=10.0,
     # ref shows "1x 13.52 Ton Cargo Bay" + "Stores and Spares 4.48" = 18.00
@@ -178,6 +195,25 @@ _expected = SimpleNamespace(
     # Ceres calculates 29,000 based on stateroom occupancy rules
     life_support=22_000.0,  # ref value; Ceres gives 29,000 (see docstring)
     crew_salaries=75_000.0,  # ref: Crew Salaries 75,000
+    crew=[
+        ('CAPTAIN', 1, 10_000),
+        ('PILOT', 3, 6_000),
+        ('ASTROGATOR', 1, 5_000),
+        ('ENGINEER', 2, 4_000),
+        ('MAINTENANCE', 1, 1_000),
+        ('MEDIC', 1, 4_000),
+        ('GUNNER', 6, 2_000),
+        ('SENSOR OPERATOR', 3, 4_000),
+        ('OFFICER', 1, 5_000),
+    ],
+    expected_errors=[],
+    expected_warnings=[],
+    expected_crew_infos=[
+        'ASTROGATOR above recommended count: 1 > 0',
+        'GUNNER above recommended count: 6 > 5',
+        'MAINTENANCE above recommended count: 1 > 0',
+    ],
+    expected_crew_warnings=[],
 )
 # Ceres calculates life support from stateroom occupancy, giving 29,000
 # (source inconsistency: ref shows 22,000 which does not match crew count)
@@ -278,7 +314,7 @@ def test_dragon_modeled_subset_matches_current_model():
 
     assert dragon.hull.stealth is not None
     assert dragon.hull.stealth.cost == pytest.approx(_expected.stealth_cost_mcr * 1_000_000)
-    assert dragon.hull.radiation_shielding is True
+    assert dragon.hull.radiation_shielding is _expected.radiation_shielding
 
     armour_part = dragon.hull.armour
     assert armour_part is not None
@@ -287,8 +323,8 @@ def test_dragon_modeled_subset_matches_current_model():
     assert [bulkhead.tons for bulkhead in dragon.armoured_bulkhead_parts()] == pytest.approx(_expected.bulkhead_tons)
     assert [bulkhead.cost for bulkhead in dragon.armoured_bulkhead_parts()] == pytest.approx(_expected.bulkhead_costs)
 
-    assert len(dragon.hull.airlocks) == 4
-    assert all(airlock.tons == 0.0 for airlock in dragon.hull.airlocks)
+    assert len(dragon.hull.airlocks) == _expected.airlock_count
+    assert [airlock.tons for airlock in dragon.hull.airlocks] == [_expected.airlock_tons] * _expected.airlock_count
 
     assert dragon.drives is not None
     assert dragon.drives.m_drive is not None
@@ -305,7 +341,7 @@ def test_dragon_modeled_subset_matches_current_model():
     assert dragon.fuel.operation_fuel is not None
     assert dragon.fuel.operation_fuel.tons == pytest.approx(_expected.operation_fuel_tons)
     assert dragon.fuel.fuel_scoops is not None
-    assert dragon.fuel.fuel_scoops.cost == 0.0
+    assert dragon.fuel.fuel_scoops.cost == _expected.fuel_scoops_cost
 
     assert dragon.command is not None
     assert dragon.command.bridge is not None
@@ -315,10 +351,10 @@ def test_dragon_modeled_subset_matches_current_model():
     assert dragon.computer is not None
     assert dragon.computer.hardware is not None
     assert dragon.computer.hardware.cost == pytest.approx(_expected.computer_cost_mcr * 1_000_000)
-    assert dragon.computer.hardware.build_item() == 'Computer/25/fib'
+    assert dragon.computer.hardware.build_item() == _expected.computer_item
     assert dragon.computer.backup_hardware is not None
     assert dragon.computer.backup_hardware.cost == pytest.approx(_expected.computer_backup_cost_mcr * 1_000_000)
-    assert dragon.computer.backup_hardware.build_item() == 'Computer/20/fib'
+    assert dragon.computer.backup_hardware.build_item() == _expected.computer_backup_item
 
     assert dragon.sensors.primary.tons == pytest.approx(_expected.sensors_primary_tons)
     assert dragon.sensors.primary.cost == pytest.approx(_expected.sensors_primary_cost_mcr * 1_000_000)
@@ -334,20 +370,20 @@ def test_dragon_modeled_subset_matches_current_model():
     assert dragon.sensors.extended_arrays.tons == pytest.approx(_expected.sensors_extended_arrays_tons)
     assert dragon.sensors.extended_arrays.cost == pytest.approx(_expected.sensors_extended_arrays_cost_mcr * 1_000_000)
     assert dragon.sensors.sensor_stations is not None
-    assert dragon.sensors.sensor_stations.build_item() == 'Sensor Stations'
+    assert dragon.sensors.sensor_stations.build_item() == _expected.sensor_stations_item
     assert dragon.sensors.sensor_stations.tons == pytest.approx(_expected.sensors_stations_tons)
     assert dragon.sensors.sensor_stations.cost == pytest.approx(_expected.sensors_stations_cost_mcr * 1_000_000)
 
     assert dragon.weapons is not None
-    assert len(dragon.weapons.barbettes) == 2
-    assert dragon.weapons.barbettes[0].build_item() == 'Particle Barbette (Damage × 3 after armour)'
+    assert len(dragon.weapons.barbettes) == _expected.barbette_count
+    assert dragon.weapons.barbettes[0].build_item() == _expected.barbette_item
     assert dragon.weapons.barbettes[0].tons == pytest.approx(_expected.barbette_tons)
-    assert len(dragon.weapons.bays) == 1
-    assert dragon.weapons.bays[0].build_item() == 'Small Missile Bay (12 missiles per salvo)'
+    assert len(dragon.weapons.bays) == _expected.bay_count
+    assert dragon.weapons.bays[0].build_item() == _expected.bay_item
     assert dragon.weapons.bays[0].tons == pytest.approx(_expected.bay_tons)
     assert dragon.weapons.bays[0].cost == pytest.approx(_expected.bay_cost_mcr * 1_000_000)
-    assert len(dragon.weapons.point_defense_batteries) == 1
-    assert dragon.weapons.point_defense_batteries[0].build_item() == 'Point Defence Laser Battery Type II'
+    assert len(dragon.weapons.point_defense_batteries) == _expected.point_defense_count
+    assert dragon.weapons.point_defense_batteries[0].build_item() == _expected.point_defense_item
     assert dragon.weapons.point_defense_batteries[0].tons == pytest.approx(_expected.point_defense_tons)
     assert dragon.weapons.point_defense_batteries[0].cost == pytest.approx(_expected.point_defense_cost_mcr * 1_000_000)
     assert dragon.weapons.missile_storage is not None
@@ -355,11 +391,11 @@ def test_dragon_modeled_subset_matches_current_model():
     assert dragon.weapons.missile_storage.cost == pytest.approx(_expected.missile_storage_cost)
 
     assert dragon.systems is not None
-    assert len(dragon.systems.armouries) == 1
-    assert dragon.systems.armouries[0].tons == pytest.approx(1.0)
+    assert len(dragon.systems.armouries) == _expected.armoury_count
+    assert dragon.systems.armouries[0].tons == pytest.approx(_expected.armoury_tons)
     assert dragon.systems.biospheres[0] is not None
-    assert dragon.systems.biospheres[0].tons == pytest.approx(4.0)
-    assert len(dragon.systems.drones) == 1
+    assert dragon.systems.biospheres[0].tons == pytest.approx(_expected.biosphere_tons)
+    assert len(dragon.systems.drones) == _expected.repair_drones_count
     assert dragon.systems.drones[0].tons == pytest.approx(_expected.repair_drones_tons)
     assert dragon.systems.medical_bays[0] is not None
     assert dragon.systems.training_facilities[0] is not None
@@ -388,26 +424,11 @@ def test_dragon_power_and_crew_for_current_subset():
     assert dragon.weapon_power_load == pytest.approx(_expected.power_weapons)
     assert dragon.total_power_load == pytest.approx(_expected.total_power)
 
-    assert [(role.role, quantity, role.monthly_salary) for role, quantity in dragon.crew.grouped_roles] == [
-        ('CAPTAIN', 1, 10_000),
-        ('PILOT', 3, 6_000),
-        ('ASTROGATOR', 1, 5_000),
-        ('ENGINEER', 2, 4_000),
-        ('MAINTENANCE', 1, 1_000),
-        ('MEDIC', 1, 4_000),
-        ('GUNNER', 6, 2_000),
-        ('SENSOR OPERATOR', 3, 4_000),
-        ('OFFICER', 1, 5_000),
-    ]
+    crew = [(role.role, quantity, role.monthly_salary) for role, quantity in dragon.crew.grouped_roles]
+    assert crew == _expected.crew
     assert dragon.expenses.life_support == pytest.approx(_expected.life_support)
     assert dragon.expenses.crew_salaries == pytest.approx(_expected.crew_salaries)
-    crew_infos = dragon.crew.notes.infos
-    assert 'ASTROGATOR above recommended count: 1 > 0' in crew_infos
-    assert 'MAINTENANCE above recommended count: 1 > 0' in crew_infos
-    assert 'GUNNER above recommended count: 6 > 5' in crew_infos
-
-
-def test_armoured_bulkhead_protected_parts_have_individual_notes():
-    dragon = build_dragon()
-    assert dragon.drives is not None and dragon.drives.m_drive is not None
-    assert 'Armoured bulkhead, see Hull section.' in dragon.drives.m_drive.notes.infos
+    assert dragon.notes.errors == _expected.expected_errors
+    assert dragon.notes.warnings == _expected.expected_warnings
+    assert dragon.crew.notes.infos == _expected.expected_crew_infos
+    assert dragon.crew.notes.warnings == _expected.expected_crew_warnings

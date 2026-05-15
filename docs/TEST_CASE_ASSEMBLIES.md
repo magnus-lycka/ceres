@@ -72,6 +72,13 @@ Avoid extra asserts that only restate assumptions about the current
 implementation. A design test should validate the modeled assembly against
 `_expected`; lower-level behaviour belongs in unit tests under `tests/make`.
 
+Before removing an assertion from a design test because it is really checking
+implementation behaviour rather than source agreement, verify that the same
+behaviour is covered by an appropriate unit test. If it is not covered, add or
+move that check to `tests/make` (or another focused unit-test location) first.
+Design tests are validation fixtures, not the primary safety net for individual
+rules, helpers, rendering details, or component mechanics.
+
 Every design case should also check that no unexpected errors or warnings are
 present. If a source-derived case intentionally has a known warning or error,
 list it in `_expected` and compare the actual notes exactly against that list.

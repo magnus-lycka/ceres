@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import pytest
 
 from ceres.make.ship import hull, ship
@@ -13,13 +15,22 @@ BOXY_HULL = hull.close_structure.model_copy(
     update={'light': True, 'description': 'Light Close Structure Hull'},
 )
 
+_expected = SimpleNamespace(
+    tl=9,
+    displacement=200,
+    cargo_tons=170.0,
+    fuel_expense_cr=100.0,
+    expected_errors=[],
+    expected_warnings=[],
+)
+
 
 def build_boxy_ore_freighter() -> ship.Ship:
     return ship.Ship(
         ship_class='Boxy',
         ship_type='Ore Freighter',
-        tl=9,
-        displacement=200,
+        tl=_expected.tl,
+        displacement=_expected.displacement,
         design_type=ship.ShipDesignType.STANDARD,
         hull=hull.Hull(configuration=BOXY_HULL, airlocks=[Airlock()]),
         drives=DriveSection(m_drive=MDrive1()),
@@ -35,16 +46,17 @@ def build_boxy_ore_freighter() -> ship.Ship:
 
 def test_boxy_ore_freighter_has_large_default_cargo_hold():
     freighter = build_boxy_ore_freighter()
-    assert CargoSection.cargo_tons_for_ship(freighter) == pytest.approx(170.0)
+    assert CargoSection.cargo_tons_for_ship(freighter) == pytest.approx(_expected.cargo_tons)
 
 
 def test_boxy_ore_freighter_tl9_mdrive_is_valid():
     freighter = build_boxy_ore_freighter()
     assert freighter.drives is not None
     assert freighter.drives.m_drive is not None
-    assert 'Requires TL10, ship is TL8' not in freighter.drives.m_drive.notes.errors
+    assert freighter.notes.errors == _expected.expected_errors
+    assert freighter.notes.warnings == _expected.expected_warnings
 
 
 def test_boxy_ore_freighter_operation_fuel_costs_80_per_month():
     freighter = build_boxy_ore_freighter()
-    assert freighter.expenses.fuel == pytest.approx(100.0)
+    assert freighter.expenses.fuel == pytest.approx(_expected.fuel_expense_cr)

@@ -142,6 +142,22 @@ _expected = SimpleNamespace(
     power_sensors=15.0,  # ref: Sensors 15 PP
     power_weapons=50.0,  # ref: Weapons 50 PP
     total_power=426.0,  # ref: Maximum Load 426 PP
+    barbette_count=2,
+    barbette_item='Particle Barbette (Damage × 3 after armour)',
+    crew=[
+        ('CAPTAIN', 1, 10_000),
+        ('PILOT', 3, 6_000),
+        ('ENGINEER', 3, 4_000),
+        ('MAINTENANCE', 1, 1_000),
+        ('MEDIC', 1, 4_000),
+        ('GUNNER', 5, 2_000),
+        ('SENSOR OPERATOR', 3, 4_000),
+        ('OFFICER', 2, 5_000),
+    ],
+    expected_errors=[],
+    expected_warnings=[],
+    expected_crew_infos=['MAINTENANCE above recommended count: 1 > 0', 'OFFICER above recommended count: 2 > 1'],
+    expected_crew_warnings=[],
 )
 
 
@@ -254,8 +270,8 @@ def test_revised_dragon_modeled_subset_matches_current_model():
     assert dragon.fuel.operation_fuel.tons == pytest.approx(_expected.operation_fuel_tons)
 
     assert dragon.weapons is not None
-    assert len(dragon.weapons.barbettes) == 2
-    assert dragon.weapons.barbettes[0].build_item() == 'Particle Barbette (Damage × 3 after armour)'
+    assert len(dragon.weapons.barbettes) == _expected.barbette_count
+    assert dragon.weapons.barbettes[0].build_item() == _expected.barbette_item
     assert dragon.weapons.missile_storage is not None
     assert dragon.weapons.missile_storage.tons == pytest.approx(_expected.missile_storage_tons)
     assert dragon.weapons.missile_storage.cost == pytest.approx(_expected.missile_storage_cost)
@@ -275,16 +291,9 @@ def test_revised_dragon_power_and_crew_for_current_subset():
     assert dragon.weapon_power_load == pytest.approx(_expected.power_weapons)
     assert dragon.total_power_load == pytest.approx(_expected.total_power)
 
-    assert [(role.role, quantity, role.monthly_salary) for role, quantity in dragon.crew.grouped_roles] == [
-        ('CAPTAIN', 1, 10_000),
-        ('PILOT', 3, 6_000),
-        ('ENGINEER', 3, 4_000),
-        ('MAINTENANCE', 1, 1_000),
-        ('MEDIC', 1, 4_000),
-        ('GUNNER', 5, 2_000),
-        ('SENSOR OPERATOR', 3, 4_000),
-        ('OFFICER', 2, 5_000),
-    ]
-    crew_infos = dragon.crew.notes.infos
-    assert 'MAINTENANCE above recommended count: 1 > 0' in crew_infos
-    assert 'OFFICER above recommended count: 2 > 1' in crew_infos
+    crew = [(role.role, quantity, role.monthly_salary) for role, quantity in dragon.crew.grouped_roles]
+    assert crew == _expected.crew
+    assert dragon.notes.errors == _expected.expected_errors
+    assert dragon.notes.warnings == _expected.expected_warnings
+    assert dragon.crew.notes.infos == _expected.expected_crew_infos
+    assert dragon.crew.notes.warnings == _expected.expected_crew_warnings

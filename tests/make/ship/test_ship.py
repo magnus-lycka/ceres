@@ -228,6 +228,17 @@ def test_ship_notes_error_for_oversized_non_gravity_hull():
     assert 'Non-gravity hull exceeds maximum displacement: 500,001 > 500,000 tons' in my_ship.notes.errors
 
 
+def test_ship_with_bridge_and_no_airlock_adds_error():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=99,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        command=CommandSection(bridge=Bridge(small=True)),
+    )
+
+    assert 'No airlock installed' in my_ship.notes.errors
+
+
 def test_pressure_hull_uses_tonnage_and_adds_armour_row():
     my_ship = ship.Ship(
         tl=12,

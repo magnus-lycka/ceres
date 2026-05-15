@@ -40,17 +40,21 @@ _expected = SimpleNamespace(
     plant_cost_mcr=2.0,
     available_power=30.0,
     op_fuel_tons=1.0,  # ref: 1 ton; Ceres gives 0.2 per RIS-007 (small-craft rounding)
+    fuel_scoops_cost=0.0,
     bridge_tons=3.0,
     bridge_cost_mcr=0.5,
     computer_cost_mcr=0.03,  # Computer/5: 0.03
+    software_packages=[('Library', 0.0), ('Manoeuvre/0', 0.0), ('Intellect', 0.0)],
     sensor_tons=0.0,  # Basic sensors: 0 tons
     sensor_cost_cr=0.0,
     sensor_power=0.0,
+    airlock_count=1,
     airlock_tons=2.0,  # explicitly purchased airlock
     airlock_cost_cr=200_000,
     cabin_tons=9.0,  # Cabin Space x6
     cabin_cost_cr=450_000,
     cabin_passenger_capacity=6,
+    fuel_cargo_container_count=1,
     fuel_cargo_container_tons=21.0,  # 20t capacity + 1t structure
     fuel_cargo_container_cost_cr=100_000,
     cargo_tons=20.8,  # remaining usable tonnage
@@ -60,6 +64,21 @@ _expected = SimpleNamespace(
     production_cost_mcr=9.68,  # Total Cost: MCr9.68
     sales_price_mcr=8.712,  # Purchase Cost: MCr8.712
     maintenance_cr=726,  # Maintenance Cost: Cr726/month
+    crew=[('PILOT', 1, 6_000)],
+    spec_rows={
+        'Streamlined Hull': 'Hull',
+        'Airlock (2 tons)': 'Hull',
+        'M-Drive 5': 'Propulsion',
+        'Fusion (TL 12), Power 30': 'Power',
+        '4 weeks of operation': 'Fuel',
+        'Fuel Scoops': 'Fuel',
+        'Standard Bridge': 'Command',
+        'Computer/5': 'Computer',
+        'Cabin Space': 'Habitation',
+        'Fuel/Cargo Container (20 tons)': 'Cargo',
+    },
+    expected_errors=[],
+    expected_warnings=[],
 )
 
 # Ceres gives op_fuel_tons=0.2 per RIS-007 (small craft: round up to 0.1 dTon)
@@ -112,7 +131,7 @@ def test_pinnace_with_20_ton_fuel_capacity_matches_reference_sheet():
     assert pinnace.fuel.operation_fuel is not None
     assert pinnace.fuel.operation_fuel.tons == pytest.approx(_expected.op_fuel_tons)
     assert pinnace.fuel.fuel_scoops is not None
-    assert pinnace.fuel.fuel_scoops.cost == pytest.approx(0.0)
+    assert pinnace.fuel.fuel_scoops.cost == pytest.approx(_expected.fuel_scoops_cost)
 
     assert pinnace.command is not None
     assert pinnace.command.bridge is not None
@@ -122,17 +141,15 @@ def test_pinnace_with_20_ton_fuel_capacity_matches_reference_sheet():
     assert pinnace.computer is not None
     assert pinnace.computer.hardware is not None
     assert pinnace.computer.hardware.cost == pytest.approx(_expected.computer_cost_mcr * 1_000_000)
-    assert [(package.description, package.cost) for package in pinnace.computer.software_packages] == [
-        ('Library', 0.0),
-        ('Manoeuvre/0', 0.0),
-        ('Intellect', 0.0),
-    ]
+    assert [(package.description, package.cost) for package in pinnace.computer.software_packages] == (
+        _expected.software_packages
+    )
 
     assert pinnace.sensors.primary.tons == pytest.approx(_expected.sensor_tons)
     assert pinnace.sensors.primary.cost == pytest.approx(_expected.sensor_cost_cr)
     assert pinnace.sensors.primary.power == pytest.approx(_expected.sensor_power)
 
-    assert len(pinnace.hull.airlocks or []) == 1
+    assert len(pinnace.hull.airlocks or []) == _expected.airlock_count
     assert pinnace.hull.airlocks[0].tons == pytest.approx(_expected.airlock_tons)
     assert pinnace.hull.airlocks[0].cost == pytest.approx(_expected.airlock_cost_cr)
 
@@ -143,7 +160,7 @@ def test_pinnace_with_20_ton_fuel_capacity_matches_reference_sheet():
     assert pinnace.habitation.cabin_space.passenger_capacity == _expected.cabin_passenger_capacity
 
     assert pinnace.cargo is not None
-    assert len(pinnace.cargo.fuel_cargo_containers) == 1
+    assert len(pinnace.cargo.fuel_cargo_containers) == _expected.fuel_cargo_container_count
     assert pinnace.cargo.fuel_cargo_containers[0].tons == pytest.approx(_expected.fuel_cargo_container_tons)
     assert pinnace.cargo.fuel_cargo_containers[0].cost == pytest.approx(_expected.fuel_cargo_container_cost_cr)
     assert CargoSection.cargo_tons_for_ship(pinnace) == pytest.approx(_expected.cargo_tons)
@@ -156,22 +173,15 @@ def test_pinnace_with_20_ton_fuel_capacity_matches_reference_sheet():
     assert pinnace.sales_price_new == pytest.approx(_expected.sales_price_mcr * 1_000_000)
     assert pinnace.expenses.maintenance == pytest.approx(_expected.maintenance_cr)
 
-    assert [(role.role, quantity, role.monthly_salary) for role, quantity in pinnace.crew.grouped_roles] == [
-        ('PILOT', 1, 6_000),
-    ]
+    crew = [(role.role, quantity, role.monthly_salary) for role, quantity in pinnace.crew.grouped_roles]
+    assert crew == _expected.crew
+    assert pinnace.notes.errors == _expected.expected_errors
+    assert pinnace.notes.warnings == _expected.expected_warnings
 
 
 def test_pinnace_with_20_ton_fuel_capacity_spec_structure():
     pinnace = build_pinnace_with_20_ton_fuel_capacity()
     spec = pinnace.build_spec()
 
-    assert spec.row('Streamlined Hull').section == 'Hull'
-    assert spec.row('Airlock (2 tons)').section == 'Hull'
-    assert spec.row('M-Drive 5').section == 'Propulsion'
-    assert spec.row('Fusion (TL 12), Power 30').section == 'Power'
-    assert spec.row('4 weeks of operation').section == 'Fuel'
-    assert spec.row('Fuel Scoops').section == 'Fuel'
-    assert spec.row('Standard Bridge').section == 'Command'
-    assert spec.row('Computer/5').section == 'Computer'
-    assert spec.row('Cabin Space').section == 'Habitation'
-    assert spec.row('Fuel/Cargo Container (20 tons)').section == 'Cargo'
+    for item in _expected.spec_rows:
+        assert spec.row(item).section == _expected.spec_rows[item]

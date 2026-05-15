@@ -384,6 +384,20 @@ def test_basic_passengers_do_not_create_hard_stateroom_requirement():
     assert my_ship.habitation.notes.errors == []
 
 
+def test_staterooms_without_common_area_add_recommendation_warning():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=99,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        command=CommandSection(bridge=Bridge(small=True)),
+        computer=ComputerSection(hardware=Computer5()),
+        habitation=HabitationSection(staterooms=[Stateroom()]),
+    )
+
+    assert my_ship.habitation is not None
+    assert 'Recommended common area is 1.00 tons' in my_ship.habitation.notes.warnings
+
+
 def test_high_and_middle_passengers_can_exactly_fill_remaining_non_crew_staterooms():
     my_ship = ship.Ship(
         tl=12,

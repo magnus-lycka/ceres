@@ -96,9 +96,6 @@ from ceres.make.ship.weapons import (
     SmallMissileBay,
     WeaponsSection,
 )
-from ceres.report import render_ship_html
-
-from ._output import write_html_output, write_json_output
 
 # Values taken from refs/tycho/alt_dragon.txt unless noted.
 _expected = SimpleNamespace(
@@ -108,10 +105,12 @@ _expected = SimpleNamespace(
     emergency_power_cost_mcr=3.1973333333,  # ref: 3,197,333.33
     operation_fuel_tons=11.0,  # ref: 16 Weeks of Operation — 10.46 tons; Ceres rounds up to 11.0
     fuel_processor_tons=1.0,  # ref: Fuel Processor 20 Tons Per Day — 1.00 ton
+    fuel_processor_item='Fuel Processor (20 tons/day)',
     # ref shows Core/40/fib (Retro*): 4,218,750 — that is ÷16 (retro_levels=4 implied by tool).
     # Ceres uses retro_levels=2 (÷4) per RIS-005 to keep effective TL ≥ 11 for AutoRepair/1 and
     # FireControl/2; base cost 67,500,000 ÷ 4 = 16,875,000
     computer_cost_mcr=16.875,  # ref: 4,218,750 (retro×4); Ceres: 16,875,000 (retro×2, RIS-005)
+    computer_item='Core/40/fib',
     # ref: 1x 1.82 Ton Cargo Bay (1.82) + Stores and Spares 4.48 = 6.30 total;
     # Ceres treats stores as guidance (RIS-001); remaining usable tonnage gives 5.8616
     cargo_tons=5.8616,  # ref: ~6.30; Ceres gives 5.8616 (fuel tons rounding, RIS-001)
@@ -122,6 +121,10 @@ _expected = SimpleNamespace(
     available_power=436.0,  # ref: Available: 436 PP
     sensor_power_load=15.0,  # ref: Sensors 15 PP
     total_power_load=436.0,  # ref: Maximum Load 436 PP
+    expected_errors=[],
+    expected_warnings=[],
+    expected_crew_infos=['MAINTENANCE above recommended count: 1 > 0', 'MEDIC above recommended count: 1 > 0'],
+    expected_crew_warnings=[],
 )
 
 
@@ -234,18 +237,17 @@ def test_alt_dragon_modeled_subset_tracks_current_model():
     assert dragon.fuel.operation_fuel is not None
     assert dragon.fuel.operation_fuel.tons == pytest.approx(_expected.operation_fuel_tons)
     assert dragon.fuel.fuel_processor is not None
-    assert dragon.fuel.fuel_processor.build_item() == 'Fuel Processor (20 tons/day)'
+    assert dragon.fuel.fuel_processor.build_item() == _expected.fuel_processor_item
     assert dragon.fuel.fuel_processor.tons == pytest.approx(_expected.fuel_processor_tons)
 
     assert dragon.computer is not None
     assert dragon.computer.hardware is not None
-    assert dragon.computer.hardware.build_item() == 'Core/40/fib'
+    assert dragon.computer.hardware.build_item() == _expected.computer_item
     assert dragon.computer.hardware.cost == pytest.approx(_expected.computer_cost_mcr * 1_000_000)  # retro-2: ÷4
 
     assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(_expected.cargo_tons)
-    crew_infos = dragon.crew.notes.infos
-    assert 'MAINTENANCE above recommended count: 1 > 0' in crew_infos
-    assert 'MEDIC above recommended count: 1 > 0' in crew_infos
+    assert dragon.crew.notes.infos == _expected.expected_crew_infos
+    assert dragon.crew.notes.warnings == _expected.expected_crew_warnings
 
     assert dragon.production_cost == pytest.approx(_expected.production_cost_mcr * 1_000_000)
     assert dragon.sales_price_new == pytest.approx(_expected.sales_price_mcr * 1_000_000)
@@ -256,27 +258,5 @@ def test_alt_dragon_modeled_subset_tracks_current_model():
 
 def test_alt_dragon_has_no_errors():
     dragon = build_alt_dragon()
-    assert not dragon.notes.errors
-
-
-@pytest.mark.generated_output
-def test_alt_dragon_report_html_output():
-    dragon = build_alt_dragon()
-    html = render_ship_html(dragon)
-    write_html_output('test_alt_dragon', html)
-    write_json_output('test_alt_dragon', dragon)
-
-    assert '<title>Dragon</title>' in html
-    assert '<p class="banner-meta">System Defense Boat, Alternate | TL13 | Hull 176</p>' in html
-    assert '<header class="sidebar-card-title">Crew</header>' in html
-    assert '<header class="sidebar-card-title">Power</header>' in html
-    assert '<header class="sidebar-card-title">Costs</header>' in html
-    assert 'Radiation Shielding: Reduce Rads by 1,000' in html
-    assert 'Small Missile Bay (12 missiles per salvo)' in html
-    assert 'Magazine: 144 missiles (12 full salvos)' in html
-    assert 'High Technology: Size Reduction × 3' in html
-    assert 'Life Support Facilities' in html
-    assert 'Armoured Bulkheads<div class="admonition' in html
-    assert 'Critical hit severity reduced by 1 if critical hit severity &gt;1' in html
-    assert 'Improved Sensors' in html
-    assert '<p class="eyebrow">' not in html
+    assert dragon.notes.errors == _expected.expected_errors
+    assert dragon.notes.warnings == _expected.expected_warnings

@@ -70,6 +70,7 @@ _expected = SimpleNamespace(
     op_fuel_tons=0.5,  # ref shows 0.5 tons; Ceres gives 1.0 per RIS-007 (1-ton minimum)
     fuel_processor_tons=1.0,
     fuel_processor_cost_cr=50_000,
+    fuel_scoops_cost=0.0,
     bridge_tons=10.0,
     bridge_cost_mcr=1.0,
     stateroom_count=10,
@@ -80,6 +81,8 @@ _expected = SimpleNamespace(
     low_berth_cost_total_mcr=1.0,
     low_berth_power_total=2,
     common_area_tons=10.0,
+    airlock_count=2,
+    airlock_tons=0.0,
     available_power=75,
     power_basic=40,  # Basic/Hull 40 PP
     power_maneuver=20,
@@ -94,9 +97,39 @@ _expected = SimpleNamespace(
     sales_price_mcr=46.242,  # Discount Cost: 46,242,000
     maintenance_cr=3_854,  # Maintenance Cost: 3,854
     life_support_cr=31_000,  # Life Support: 31,000 (ref)
+    life_support_facilities_cr=10_000.0,
+    life_support_people_cr=20_000.0,
     crew_salaries_cr=17_000,
     fuel_expense_cr=4_050,  # Fuel: 4,050 (ref); Ceres gives 4,100 due to 1-ton op fuel minimum
     cargo_tons=81.0,  # Cargo Bay 80.0 (ref); Ceres remaining_usable_tonnage gives ~81
+    crew=[('PILOT', 1, 6_000), ('ASTROGATOR', 1, 5_000), ('ENGINEER', 1, 4_000), ('STEWARD', 1, 2_000)],
+    spec_ship_class='Beowulf',
+    spec_ship_type='Type A Free Trader',
+    spec_rows={
+        'Streamlined Hull': 'Hull',
+        'Standard Bridge': 'Command',
+        'Jump 1': 'Jump',
+        'M-Drive 1': 'Propulsion',
+        'Fusion (TL 12), Power 75': 'Power',
+        'J-1, 8 weeks of operation': 'Fuel',
+        'Fuel Scoops': 'Fuel',
+        'Common Area': 'Habitation',
+        'Cargo Hold': 'Cargo',
+        'Cargo Crane': 'Cargo',
+    },
+    spec_airlock_quantity=2,
+    spec_airlock_section='Hull',
+    spec_stateroom_section='Habitation',
+    spec_low_berth_section='Habitation',
+    spec_production_cost_label='Production Cost',
+    spec_crew=[
+        ('PILOT', None, 6_000),
+        ('ASTROGATOR', None, 5_000),
+        ('ENGINEER', None, 4_000),
+        ('STEWARD', None, 2_000),
+    ],
+    expected_errors=[],
+    expected_warnings=[],
 )
 
 # Ceres gives op_fuel_tons=1.0 per RIS-007 (1-ton minimum), not 0.5 as in ref
@@ -224,15 +257,13 @@ def test_beowulf_systems():
     assert beowulf.habitation.common_area.tons == pytest.approx(_expected.common_area_tons)
     assert beowulf.fuel is not None
     assert beowulf.fuel.fuel_scoops is not None
-    assert beowulf.fuel.fuel_scoops.cost == 0.0
+    assert beowulf.fuel.fuel_scoops.cost == _expected.fuel_scoops_cost
 
 
 def test_beowulf_airlocks_free():
-    # 200t ship gets 2 free airlocks
     beowulf = build_beowulf()
-    assert len(beowulf.hull.airlocks) == 2
-    assert beowulf.hull.airlocks[0].tons == 0.0
-    assert beowulf.hull.airlocks[1].tons == 0.0
+    assert len(beowulf.hull.airlocks) == _expected.airlock_count
+    assert [airlock.tons for airlock in beowulf.hull.airlocks] == [_expected.airlock_tons] * _expected.airlock_count
 
 
 def test_beowulf_cargo():
@@ -253,7 +284,6 @@ def test_beowulf_power():
     assert beowulf.basic_hull_power_load == pytest.approx(_expected.power_basic)
     assert beowulf.maneuver_power_load == _expected.power_maneuver
     assert beowulf.jump_power_load == _expected.power_jump
-    # non-drive: sensors(1) + fuel_processor(1) + low_berths(2) = 4
     assert beowulf.total_power_load == pytest.approx(_expected.total_power)
 
 
@@ -266,55 +296,38 @@ def test_beowulf_production_cost():
 def test_beowulf_crew_and_life_support_match_reference_manifest():
     beowulf = build_beowulf()
 
-    assert [(role.role, quantity, role.monthly_salary) for role, quantity in beowulf.crew.grouped_roles] == [
-        ('PILOT', 1, 6_000),
-        ('ASTROGATOR', 1, 5_000),
-        ('ENGINEER', 1, 4_000),
-        ('STEWARD', 1, 2_000),
-    ]
-    assert beowulf.expenses.life_support_facilities == pytest.approx(10_000.0)
-    assert beowulf.expenses.life_support_people == pytest.approx(20_000.0)
+    crew = [(role.role, quantity, role.monthly_salary) for role, quantity in beowulf.crew.grouped_roles]
+    assert crew == _expected.crew
+    assert beowulf.expenses.life_support_facilities == pytest.approx(_expected.life_support_facilities_cr)
+    assert beowulf.expenses.life_support_people == pytest.approx(_expected.life_support_people_cr)
     assert beowulf.expenses.life_support == pytest.approx(_expected.life_support_cr)
     assert beowulf.expenses.crew_salaries == pytest.approx(_expected.crew_salaries_cr)
     assert beowulf.expenses.fuel == pytest.approx(_expected.fuel_expense_cr)
-    assert not beowulf.notes
+    assert beowulf.notes.errors == _expected.expected_errors
+    assert beowulf.notes.warnings == _expected.expected_warnings
 
 
 def test_beowulf_spec_structure():
     beowulf = build_beowulf()
     spec = beowulf.build_spec()
 
-    assert spec.ship_class == 'Beowulf'
-    assert spec.ship_type == 'Type A Free Trader'
+    assert spec.ship_class == _expected.spec_ship_class
+    assert spec.ship_type == _expected.spec_ship_type
     assert spec.tl == _expected.tl
     assert spec.hull_points == _expected.hull_points
 
-    assert spec.row('Streamlined Hull').section == 'Hull'
-    assert spec.row('Standard Bridge').section == 'Command'
-    assert spec.row('Jump 1').section == 'Jump'
-    assert spec.row('M-Drive 1').section == 'Propulsion'
-    assert spec.row('Fusion (TL 12), Power 75').section == 'Power'
-    assert spec.row('J-1, 8 weeks of operation').section == 'Fuel'
-    assert spec.row('Fuel Scoops').section == 'Fuel'
+    for item in _expected.spec_rows:
+        assert spec.row(item).section == _expected.spec_rows[item]
     airlock_row = spec.row('Airlock (2 tons)', section='Hull')
-    assert airlock_row.section == 'Hull'
-    assert airlock_row.quantity == 2
+    assert airlock_row.section == _expected.spec_airlock_section
+    assert airlock_row.quantity == _expected.spec_airlock_quantity
     stateroom_row = spec.row('Staterooms', section='Habitation')
-    assert stateroom_row.section == 'Habitation'
+    assert stateroom_row.section == _expected.spec_stateroom_section
     assert stateroom_row.quantity == _expected.stateroom_count
     low_berth_row = spec.row('Low Berths', section='Habitation')
-    assert low_berth_row.section == 'Habitation'
+    assert low_berth_row.section == _expected.spec_low_berth_section
     assert low_berth_row.quantity == _expected.low_berth_count
-    assert spec.row('Common Area').section == 'Habitation'
-    assert spec.row('Cargo Hold').section == 'Cargo'
-    assert spec.row('Cargo Crane').section == 'Cargo'
-
-    assert spec.expenses[0].label == 'Production Cost'
+    assert spec.expenses[0].label == _expected.spec_production_cost_label
     assert spec.expenses[0].amount == pytest.approx(_expected.production_cost_mcr * 1_000_000)
     assert spec.expenses[1].amount == pytest.approx(_expected.sales_price_mcr * 1_000_000)
-    assert [(crew.role, crew.quantity, crew.salary) for crew in spec.crew] == [
-        ('PILOT', None, 6_000),
-        ('ASTROGATOR', None, 5_000),
-        ('ENGINEER', None, 4_000),
-        ('STEWARD', None, 2_000),
-    ]
+    assert [(crew.role, crew.quantity, crew.salary) for crew in spec.crew] == _expected.spec_crew

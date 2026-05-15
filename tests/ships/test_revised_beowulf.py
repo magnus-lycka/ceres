@@ -85,6 +85,7 @@ _expected = SimpleNamespace(
     power_jump=20.0,
     power_maneuver=20.0,
     power_sensors=1.0,
+    power_weapons=0.0,
     power_fuel=1.0,
     total_power=65.0,  # 40+20+20+1+1+2 (low_berths)+1 (medical bay) = 85; ref max load 87
     cargo_tons=64.5,  # ref: 67.50 Ton Cargo Bay (Ceres remainder given other components)
@@ -94,6 +95,13 @@ _expected = SimpleNamespace(
     life_support_cr=31_000,  # ref: 31,000; Ceres gives 30,000 (4 crew + 16 middle pax)
     crew_salaries_cr=17_000,
     fuel_expense_cr=4_054.17,  # ref: 4,054.17; Ceres gives 4,100 (op fuel 1-ton minimum)
+    life_support_facilities_cr=10_000.0,
+    life_support_people_cr=20_000.0,
+    crew=[('PILOT', 1, 6_000), ('ASTROGATOR', 1, 5_000), ('ENGINEER', 1, 4_000), ('STEWARD', 1, 2_000)],
+    expected_errors=[],
+    expected_warnings=[],
+    expected_crew_infos=[],
+    expected_crew_warnings=['MEDIC below recommended count: 0 < 1'],
 )
 
 # Ceres gives op_fuel_tons=1.0 per RIS-007 (1-ton minimum), not 0.54 as in ref
@@ -206,7 +214,7 @@ def test_revised_beowulf_matches_current_modeled_subset():
     assert beowulf.jump_power_load == pytest.approx(_expected.power_jump)
     assert beowulf.maneuver_power_load == pytest.approx(_expected.power_maneuver)
     assert beowulf.sensor_power_load == pytest.approx(_expected.power_sensors)
-    assert beowulf.weapon_power_load == pytest.approx(0.0)
+    assert beowulf.weapon_power_load == pytest.approx(_expected.power_weapons)
     assert beowulf.fuel_power_load == pytest.approx(_expected.power_fuel)
     assert beowulf.total_power_load == pytest.approx(_expected.total_power)
 
@@ -217,15 +225,14 @@ def test_revised_beowulf_matches_current_modeled_subset():
     assert beowulf.production_cost == pytest.approx(_expected.production_cost_mcr * 1_000_000)
     assert beowulf.sales_price_new == pytest.approx(_expected.sales_price_mcr * 1_000_000)
     assert beowulf.expenses.maintenance == pytest.approx(_expected.maintenance_cr)
-    assert beowulf.expenses.life_support_facilities == pytest.approx(10_000.0)
-    assert beowulf.expenses.life_support_people == pytest.approx(20_000.0)
+    assert beowulf.expenses.life_support_facilities == pytest.approx(_expected.life_support_facilities_cr)
+    assert beowulf.expenses.life_support_people == pytest.approx(_expected.life_support_people_cr)
     assert beowulf.expenses.life_support == pytest.approx(_expected.life_support_cr)
     assert beowulf.expenses.crew_salaries == pytest.approx(_expected.crew_salaries_cr)
     assert beowulf.expenses.fuel == pytest.approx(_expected.fuel_expense_cr)
-    assert [(role.role, quantity, role.monthly_salary) for role, quantity in beowulf.crew.grouped_roles] == [
-        ('PILOT', 1, 6_000),
-        ('ASTROGATOR', 1, 5_000),
-        ('ENGINEER', 1, 4_000),
-        ('STEWARD', 1, 2_000),
-    ]
-    assert 'MEDIC below recommended count: 0 < 1' in beowulf.crew.notes.warnings
+    crew = [(role.role, quantity, role.monthly_salary) for role, quantity in beowulf.crew.grouped_roles]
+    assert crew == _expected.crew
+    assert beowulf.notes.errors == _expected.expected_errors
+    assert beowulf.notes.warnings == _expected.expected_warnings
+    assert beowulf.crew.notes.infos == _expected.expected_crew_infos
+    assert beowulf.crew.notes.warnings == _expected.expected_crew_warnings

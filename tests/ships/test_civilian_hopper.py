@@ -45,7 +45,9 @@ _expected = SimpleNamespace(
     cockpit_cost_mcr=0.01,
     computer_cost_mcr=0.03,
     tow_cable_tons=0.06,  # 6 * 0.01
+    tow_cable_count=1,
     tow_cable_cost_mcr=0.0003,  # 6 * 0.01 * 5_000
+    acceleration_seat_count=2,
     acceleration_seat_tons=0.5,
     acceleration_seat_cost_mcr=0.03,  # Cr30_000
     available_power=4,
@@ -53,6 +55,8 @@ _expected = SimpleNamespace(
     power_maneuver=1,  # ceil(0.1 * 6 * 1) = 1
     power_sensors=0,
     total_power=3,  # 2 + 1 + 0
+    expected_errors=[],
+    expected_warnings=[],
 )
 
 
@@ -104,7 +108,7 @@ def test_civilian_hopper_tow_cable():
     hopper = _build()
     assert hopper.systems is not None
     tow_cables = [s for s in hopper.systems.internal_systems if isinstance(s, TowCable)]
-    assert len(tow_cables) == 1
+    assert len(tow_cables) == _expected.tow_cable_count
     assert tow_cables[0].tons == pytest.approx(_expected.tow_cable_tons)
     assert tow_cables[0].cost == pytest.approx(_expected.tow_cable_cost_mcr * 1_000_000)
 
@@ -113,7 +117,7 @@ def test_civilian_hopper_acceleration_seats():
     hopper = _build()
     assert hopper.systems is not None
     seats = [s for s in hopper.systems.internal_systems if isinstance(s, AccelerationSeat)]
-    assert len(seats) == 2
+    assert len(seats) == _expected.acceleration_seat_count
     for seat in seats:
         assert seat.tons == pytest.approx(_expected.acceleration_seat_tons)
         assert seat.cost == pytest.approx(_expected.acceleration_seat_cost_mcr * 1_000_000)
@@ -130,4 +134,5 @@ def test_civilian_hopper_power():
 
 def test_civilian_hopper_has_no_errors():
     hopper = _build()
-    assert not hopper.notes.errors
+    assert hopper.notes.errors == _expected.expected_errors
+    assert hopper.notes.warnings == _expected.expected_warnings

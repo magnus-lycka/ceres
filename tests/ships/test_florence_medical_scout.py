@@ -53,9 +53,11 @@ _expected = SimpleNamespace(
     life_scanner_cost_mcr=4,
     turret_tons=1,  # Double Turret (empty)
     turret_cost_mcr=0.5,
+    craft_count=3,
     pinnace_docking_tons=44,  # Docking Space (40 tons): 40 × 1.1
     airraft_docking_tons=5,  # Docking Space (4 tons): 4 × 1.25
     medical_bay_count=6,
+    laboratory_count=1,
     medical_bay_tons_total=24,  # 6 × 4
     medical_bay_cost_total_mcr=12,  # 6 × MCr2
     medical_bay_power_total=6,  # 6 × 1
@@ -75,6 +77,14 @@ _expected = SimpleNamespace(
     total_power=215,  # basic + max(maneuver, jump) + sensors + fuel_proc + medical + weapons + low_berths
     production_cost_mcr=164.88,
     maintenance_cr=13_740,
+    expected_errors=[],
+    expected_warnings=[],
+    expected_crew_infos=[
+        'CAPTAIN above recommended count: 1 > 0',
+        'MAINTENANCE above recommended count: 1 > 0',
+        'MEDIC above recommended count: 6 > 1',
+    ],
+    expected_crew_warnings=['GUNNER below recommended count: 0 < 1'],
 )
 
 
@@ -171,7 +181,7 @@ def test_florence_medical_scout_matches_current_subset():
     assert scout.weapons.turrets[0].cost == pytest.approx(_expected.turret_cost_mcr * 1_000_000)
 
     assert scout.craft is not None
-    assert len(scout.craft._all_parts()) == 3
+    assert len(scout.craft._all_parts()) == _expected.craft_count
     assert scout.craft._all_parts()[0].tons == pytest.approx(_expected.pinnace_docking_tons)
     assert scout.craft._all_parts()[1].tons == pytest.approx(_expected.airraft_docking_tons)
     assert scout.craft._all_parts()[2].tons == pytest.approx(_expected.airraft_docking_tons)
@@ -183,7 +193,7 @@ def test_florence_medical_scout_matches_current_subset():
         _expected.medical_bay_cost_total_mcr * 1_000_000
     )
     assert sum(bay.power for bay in scout.systems.medical_bays) == pytest.approx(_expected.medical_bay_power_total)
-    assert len(scout.systems.laboratories) == 1
+    assert len(scout.systems.laboratories) == _expected.laboratory_count
     assert scout.systems.briefing_rooms[0] is not None
 
     assert scout.habitation is not None
@@ -207,4 +217,7 @@ def test_florence_medical_scout_matches_current_subset():
     assert scout.production_cost == pytest.approx(_expected.production_cost_mcr * 1_000_000)
     assert scout.sales_price_new == pytest.approx(_expected.production_cost_mcr * 1_000_000)
     assert scout.expenses.maintenance == pytest.approx(_expected.maintenance_cr)
-    assert 'No airlock installed' not in scout.notes.errors
+    assert scout.notes.errors == _expected.expected_errors
+    assert scout.notes.warnings == _expected.expected_warnings
+    assert scout.crew.notes.infos == _expected.expected_crew_infos
+    assert scout.crew.notes.warnings == _expected.expected_crew_warnings

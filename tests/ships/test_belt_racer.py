@@ -50,11 +50,15 @@ _expected = SimpleNamespace(
     computer_cost_mcr=0.03,
     available_power=5.0,
     power_basic=1,  # Tycho stat block
+    power_maneuver=0.0,
     power_sensors=0,
     total_power=1,  # Tycho stat block
     cargo_tons=0.0,
     production_cost_mcr=0.854,
     maintenance_cr=71,
+    crew=[('PILOT', 1, 6_000)],
+    expected_errors=[],
+    expected_warnings=[],
 )
 # Tycho tool uses floor; ceil(6 * 0.2) = 2 per RIS-013
 _expected.power_basic = 2
@@ -111,19 +115,19 @@ def test_belt_racer_matches_current_r_drive_subset():
 
     assert racer.available_power == pytest.approx(_expected.available_power)
     assert racer.basic_hull_power_load == _expected.power_basic
-    assert racer.maneuver_power_load == pytest.approx(0.0)
+    assert racer.maneuver_power_load == pytest.approx(_expected.power_maneuver)
     assert racer.sensor_power_load == pytest.approx(_expected.power_sensors)
     assert racer.total_power_load == pytest.approx(_expected.total_power)
     assert CargoSection.cargo_tons_for_ship(racer) == pytest.approx(_expected.cargo_tons)
     assert racer.production_cost == pytest.approx(_expected.production_cost_mcr * 1_000_000)
     assert racer.sales_price_new == pytest.approx(_expected.production_cost_mcr * 1_000_000)
     assert racer.expenses.maintenance == pytest.approx(_expected.maintenance_cr)
-    assert racer.notes == []
-    assert [(role.role, quantity, role.monthly_salary) for role, quantity in racer.crew.grouped_roles] == [
-        ('PILOT', 1, 6_000),
-    ]
+    assert racer.notes.errors == _expected.expected_errors
+    assert racer.notes.warnings == _expected.expected_warnings
+    assert [(role.role, quantity, role.monthly_salary) for role, quantity in racer.crew.grouped_roles] == _expected.crew
 
 
 def test_belt_racer_has_no_errors():
     racer = build_belt_racer()
-    assert not racer.notes.errors
+    assert racer.notes.errors == _expected.expected_errors
+    assert racer.notes.warnings == _expected.expected_warnings

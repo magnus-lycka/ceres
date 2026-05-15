@@ -69,6 +69,17 @@ _expected = SimpleNamespace(
     bridge_cost_mcr=2.5,
     # Computer/30
     computer_cost_mcr=20.0,
+    software_packages={
+        'Library': 0.0,
+        'Manoeuvre/0': 0.0,
+        'Intellect': 0.0,
+        'Jump Control/2': 200_000.0,
+        'Advanced Fire Control/1': 12_000_000.0,
+        'Anti-Hijack/1': 6_000_000.0,
+        'Broad Spectrum EW': 14_000_000.0,
+        'Electronic Warfare/1': 15_000_000.0,
+        'Virtual Gunner/1': 5_000_000.0,
+    },
     # Sensors
     primary_sensor_tons=3.0,
     primary_sensor_cost_mcr=4.3,
@@ -79,9 +90,13 @@ _expected = SimpleNamespace(
     sensor_stations_tons=2.0,
     sensor_stations_cost_mcr=1.0,
     # Weapons: 2 × Medium Particle Beam Bay (High Yield, Size Reduction x2)
+    bay_count=2,
     bay_tons=80.0,
     bay_cost_mcr=60.0,
     # 2 × Triple Turret (Long Range, High Yield Pulse Lasers)
+    turret_quantity=2,
+    turret_notes_contents=['Pulse Laser × 3'],
+    turret_notes_infos=['High Technology: Long Range, High Yield'],
     turret_tons=1.0,
     turret_cost_mcr=5.5,
     # Armoured bulkheads (Power Plant + 2 Weapon Bays)
@@ -89,8 +104,10 @@ _expected = SimpleNamespace(
     bulkhead_total_tons=19.3333333333,
     bulkhead_total_cost_mcr=3.8666666667,
     # Systems
+    armoury_count=1,
     armoury_tons=1.0,
     armoury_cost_mcr=0.25,
+    repair_drones_count=1,
     repair_drones_tons=4.5,
     repair_drones_cost_mcr=0.9,
     medical_bay_tons=4.0,
@@ -124,6 +141,18 @@ _expected = SimpleNamespace(
     # Maintenance — stat block: 33,683 Cr (based on purchase/discounted price × 0.9 / 12000)
     # Ceres gives 37,401 (based on full production cost / 12000, no discount for CUSTOM)
     maintenance_cr=33_683,  # stat block
+    crew=[
+        ('CAPTAIN', 1),
+        ('PILOT', 3),
+        ('ASTROGATOR', 1),
+        ('ENGINEER', 3),
+        ('GUNNER', 8),
+        ('SENSOR OPERATOR', 3),
+        ('MEDIC', 1),
+        ('OFFICER', 2),
+    ],
+    expected_errors=[],
+    expected_warnings=[],
 )
 # Ceres deviations from stat block (see docstring / known deviations):
 _expected.op_fuel_tons = 14.0  # RIS-007: Ceres uses 14t not 16t
@@ -263,17 +292,7 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
     assert corvette.computer.hardware is not None
     assert corvette.computer.hardware.cost == pytest.approx(_expected.computer_cost_mcr * 1_000_000)
     software_packages = {package.description: package.cost for package in corvette.computer.software_packages}
-    assert software_packages == {
-        'Library': 0.0,
-        'Manoeuvre/0': 0.0,
-        'Intellect': 0.0,
-        'Jump Control/2': 200_000.0,
-        'Advanced Fire Control/1': 12_000_000.0,
-        'Anti-Hijack/1': 6_000_000.0,
-        'Broad Spectrum EW': 14_000_000.0,
-        'Electronic Warfare/1': 15_000_000.0,
-        'Virtual Gunner/1': 5_000_000.0,
-    }
+    assert software_packages == _expected.software_packages
 
     assert corvette.hull.armour is not None
     assert corvette.hull.armour.tons == pytest.approx(_expected.armour_tons)
@@ -292,7 +311,7 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
     assert corvette.sensors.sensor_stations.cost == pytest.approx(_expected.sensor_stations_cost_mcr * 1_000_000)
 
     assert corvette.weapons is not None
-    assert len(corvette.weapons.bays) == 2
+    assert len(corvette.weapons.bays) == _expected.bay_count
     assert corvette.weapons.bays[0].tons == pytest.approx(_expected.bay_tons)
     assert corvette.weapons.bays[0].cost == pytest.approx(_expected.bay_cost_mcr * 1_000_000)
     assert corvette.weapons.turrets[0].tons == pytest.approx(_expected.turret_tons)
@@ -304,10 +323,10 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
     assert sum(part.cost for part in bulkheads) == pytest.approx(_expected.bulkhead_total_cost_mcr * 1_000_000)
 
     assert corvette.systems is not None
-    assert len(corvette.systems.armouries) == 1
+    assert len(corvette.systems.armouries) == _expected.armoury_count
     assert corvette.systems.armouries[0].tons == pytest.approx(_expected.armoury_tons)
     assert corvette.systems.armouries[0].cost == pytest.approx(_expected.armoury_cost_mcr * 1_000_000)
-    assert len(corvette.systems.drones) == 1
+    assert len(corvette.systems.drones) == _expected.repair_drones_count
     assert corvette.systems.drones[0].tons == pytest.approx(_expected.repair_drones_tons)
     assert corvette.systems.drones[0].cost == pytest.approx(_expected.repair_drones_cost_mcr * 1_000_000)
     assert corvette.systems.briefing_rooms[0] is not None
@@ -346,20 +365,12 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
 
     spec = corvette.build_spec()
     turret_row = spec.row('Triple Turret', section='Weapons')
-    assert turret_row.quantity == 2
+    assert turret_row.quantity == _expected.turret_quantity
     notes = turret_row.notes
-    assert notes.contents == ['Pulse Laser × 3']
-    assert notes.infos == ['High Technology: Long Range, High Yield']
+    assert notes.contents == _expected.turret_notes_contents
+    assert notes.infos == _expected.turret_notes_infos
 
-    assert [(role.role, quantity) for role, quantity in corvette.crew.grouped_roles] == [
-        ('CAPTAIN', 1),
-        ('PILOT', 3),
-        ('ASTROGATOR', 1),
-        ('ENGINEER', 3),
-        ('GUNNER', 8),
-        ('SENSOR OPERATOR', 3),
-        ('MEDIC', 1),
-        ('OFFICER', 2),
-    ]
+    assert [(role.role, quantity) for role, quantity in corvette.crew.grouped_roles] == _expected.crew
 
-    assert not any(message.startswith('Hull overloaded by ') for message in corvette.notes.errors)
+    assert corvette.notes.errors == _expected.expected_errors
+    assert corvette.notes.warnings == _expected.expected_warnings

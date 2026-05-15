@@ -50,9 +50,12 @@ _expected = SimpleNamespace(
     sensors_tons=2.0,
     sensors_cost_mcr=4.1,
     sensors_power=2.0,
+    docking_space_count=1,
     docking_space_tons=5.0,
     docking_space_cost_mcr=1.25,
     air_raft_cost_mcr=0.25,
+    probe_drones_count=1,
+    probe_drones_quantity=15,
     probe_drones_tons=3.0,
     probe_drones_cost_mcr=2.4,
     lab_count=24,
@@ -65,6 +68,7 @@ _expected = SimpleNamespace(
     staterooms_total_cost_mcr=7.5,
     common_area_tons=15.0,
     common_area_cost_mcr=1.5,
+    cargo_hold_count=1,
     cargo_tons=1.0,  # ref sheet; Ceres gives 2 — unresolved 1t discrepancy
     power_basic=40.0,
     power_maneuver=20.0,
@@ -81,6 +85,31 @@ _expected = SimpleNamespace(
         ('ADMINISTRATOR', 24, 1_500),
         ('OFFICER', 1, 5_000),
     ],
+    expected_errors=[],
+    expected_warnings=[],
+    expected_crew_infos=[
+        'ADMINISTRATOR above recommended count: 24 > 0',
+        'MAINTENANCE above recommended count: 1 > 0',
+        'OFFICER above recommended count: 1 > 0',
+        'STEWARD above recommended count: 1 > 0',
+    ],
+    expected_crew_warnings=[],
+    spec_rows={
+        'Dispersed Structure Hull': 'Hull',
+        'M-Drive 1': 'Propulsion',
+        'Fusion (TL 12), Power 60': 'Power',
+        '8 weeks of operation': 'Fuel',
+        'Smaller Bridge': 'Command',
+        'Computer/10': 'Computer',
+        'Military Grade Sensors': 'Sensors',
+        'Internal Docking Space: Air/Raft': 'Craft',
+        'Air/Raft': 'Craft',
+        'Advanced Probe Drones': 'Systems',
+        'Laboratory': 'Systems',
+        'Library': 'Systems',
+        'Staterooms': 'Habitation',
+        'Common Area': 'Habitation',
+    },
 )
 # Ceres gives 2 tons cargo; ref sheet shows 1 — unresolved 1t discrepancy
 _expected.cargo_tons = 2.0
@@ -165,13 +194,13 @@ def test_serrano_laboratory_station_matches_reference_sheet():
     assert station.sensors.primary.power == pytest.approx(_expected.sensors_power)
 
     assert station.craft is not None
-    assert len(station.craft.internal_housing) == 1
+    assert len(station.craft.internal_housing) == _expected.docking_space_count
     assert station.craft.internal_housing[0].tons == pytest.approx(_expected.docking_space_tons)
     assert station.craft.internal_housing[0].cost == pytest.approx(_expected.docking_space_cost_mcr * 1_000_000)
     assert station.craft.internal_housing[0].craft.cost == pytest.approx(_expected.air_raft_cost_mcr * 1_000_000)
 
     assert station.systems is not None
-    assert len(station.systems.drones) == 1
+    assert len(station.systems.drones) == _expected.probe_drones_count
     assert station.systems.drones[0].tons == pytest.approx(_expected.probe_drones_tons)
     assert station.systems.drones[0].cost == pytest.approx(_expected.probe_drones_cost_mcr * 1_000_000)
     assert len(station.systems.laboratories) == _expected.lab_count
@@ -193,7 +222,7 @@ def test_serrano_laboratory_station_matches_reference_sheet():
     assert station.habitation.common_area.cost == pytest.approx(_expected.common_area_cost_mcr * 1_000_000)
 
     assert station.cargo is not None
-    assert len(station.cargo.cargo_holds) == 1
+    assert len(station.cargo.cargo_holds) == _expected.cargo_hold_count
     assert station.cargo.cargo_holds[0].usable_tons(station) == pytest.approx(_expected.cargo_tons)
     assert CargoSection.cargo_tons_for_ship(station) == pytest.approx(_expected.cargo_tons)
 
@@ -211,32 +240,19 @@ def test_serrano_laboratory_station_matches_reference_sheet():
         _expected.crew
     )
 
-    crew_infos = station.crew.notes.infos
-    assert 'ADMINISTRATOR above recommended count: 24 > 0' in crew_infos
-    assert 'MAINTENANCE above recommended count: 1 > 0' in crew_infos
-    assert 'OFFICER above recommended count: 1 > 0' in crew_infos
-    assert 'STEWARD above recommended count: 1 > 0' in crew_infos
+    assert station.notes.errors == _expected.expected_errors
+    assert station.notes.warnings == _expected.expected_warnings
+    assert station.crew.notes.infos == _expected.expected_crew_infos
+    assert station.crew.notes.warnings == _expected.expected_crew_warnings
 
 
 def test_serrano_laboratory_station_spec_structure():
     station = build_serrano_laboratory_station()
     spec = station.build_spec()
 
-    assert spec.row('Dispersed Structure Hull').section == 'Hull'
-    assert spec.row('M-Drive 1').section == 'Propulsion'
-    assert spec.row('Fusion (TL 12), Power 60').section == 'Power'
-    assert spec.row('8 weeks of operation').section == 'Fuel'
-    assert spec.row('Smaller Bridge').section == 'Command'
-    assert spec.row('Computer/10').section == 'Computer'
-    assert spec.row('Military Grade Sensors').section == 'Sensors'
-    assert spec.row('Internal Docking Space: Air/Raft').section == 'Craft'
-    assert spec.row('Air/Raft').section == 'Craft'
-    assert spec.row('Advanced Probe Drones').section == 'Systems'
-    assert spec.row('Advanced Probe Drones').quantity == 15
-    assert spec.row('Laboratory').section == 'Systems'
-    assert spec.row('Laboratory').quantity == 24
-    assert spec.row('Library', section='Systems').section == 'Systems'
-    assert spec.row('Staterooms').section == 'Habitation'
-    assert spec.row('Staterooms').quantity == 15
-    assert spec.row('Common Area').section == 'Habitation'
-    assert spec.row('Cargo Hold').tons == pytest.approx(2.0)
+    for item in _expected.spec_rows:
+        assert spec.row(item, section=_expected.spec_rows[item]).section == _expected.spec_rows[item]
+    assert spec.row('Advanced Probe Drones').quantity == _expected.probe_drones_quantity
+    assert spec.row('Laboratory').quantity == _expected.lab_count
+    assert spec.row('Staterooms').quantity == _expected.staterooms_count
+    assert spec.row('Cargo Hold').tons == pytest.approx(_expected.cargo_tons)
