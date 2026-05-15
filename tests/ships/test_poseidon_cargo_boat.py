@@ -29,6 +29,7 @@ _expected = SimpleNamespace(
     tl12_production_cost=15_213_333.333333334,
     expected_errors=[],
     expected_warnings=[],
+    tl9_mdrive_errors=['Requires TL10, ship is TL9'],
 )
 
 
@@ -88,4 +89,4 @@ def test_poseidon_below_tl10_puts_error_on_mdrive(tl: int):
     cargo_boat = build_poseidon_cargo_boat(tl)
     assert cargo_boat.drives is not None
     assert cargo_boat.drives.m_drive is not None
-    assert f'Requires TL10, ship is TL{tl}' in cargo_boat.drives.m_drive.notes.errors
+    assert cargo_boat.drives.m_drive.notes.errors == _expected.tl9_mdrive_errors

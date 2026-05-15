@@ -32,7 +32,7 @@ import pytest
 
 from ceres.make.ship import armour, hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
-from ceres.make.ship.computer import Computer5, Computer10, ComputerSection
+from ceres.make.ship.computer import Computer5, ComputerSection
 from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive2, MDrive2, PowerSection
 from ceres.make.ship.habitation import HabitationSection, Stateroom
@@ -41,11 +41,10 @@ from ceres.make.ship.software import JumpControl
 from ceres.make.ship.storage import CargoSection, FuelProcessor, FuelSection, JumpFuel, OperationFuel
 from ceres.make.ship.systems import Airlock, ProbeDrones, SystemsSection, Workshop
 from ceres.make.ship.weapons import DoubleTurret, WeaponsSection
-from ceres.report import render_ship_html
-
-from ._output import write_html_output, write_json_output
 
 _expected = SimpleNamespace(
+    ship_class='Suleiman',
+    ship_type='Scout/Courier',
     tl=12,
     displacement=100,
     hull_cost_mcr=6.0,  # Streamlined Hull: 6,000,000
@@ -76,6 +75,12 @@ _expected = SimpleNamespace(
     bridge_cost_cr=500_000,
     computer_processing=5,
     computer_cost_cr=45_000,  # Computer/5 bis
+    software_packages=[
+        ('Library', 0.0),
+        ('Manoeuvre/0', 0.0),
+        ('Intellect', 0.0),
+        ('Jump Control/2', 200_000.0),
+    ],
     sensor_tons=2.0,
     sensor_cost_cr=4_100_000,
     sensor_power=2,
@@ -87,6 +92,8 @@ _expected = SimpleNamespace(
     stateroom_tons_total=16.0,
     stateroom_cost_total_cr=2_000_000,
     airlock_count=1,
+    airlock_tons=0.0,
+    airlock_cost=0.0,
     probe_drones_count=10,
     probe_drones_tons=2.0,
     probe_drones_cost_cr=1_000_000,
@@ -105,6 +112,56 @@ _expected = SimpleNamespace(
     total_power=45,  # Ceres total_power_load (excludes jump from running total?)
     production_cost_mcr=41.045,  # Design Cost: 41,045,000
     sales_price_mcr=36.9405,  # Discount Cost: 36,940,500
+    crew=[
+        ('PILOT', 1, 6_000),
+        ('ASTROGATOR', 1, 5_000),
+        ('ENGINEER', 1, 4_000),
+        ('GUNNER', 1, 2_000),
+    ],
+    expected_errors=[],
+    expected_warnings=[],
+    expected_crew_infos=[],
+    expected_crew_warnings=[],
+    spec_rows={
+        'Streamlined Hull': 'Hull',
+        'Basic Ship Systems': 'Hull',
+        'Crystaliron, Armour: 4': 'Hull',
+        'Fusion (TL 12), Power 60': 'Power',
+        'M-Drive 2': 'Propulsion',
+        'Military Grade Sensors': 'Sensors',
+        'Airlock (2 tons)': 'Hull',
+        'J-2, 20 weeks of operation': 'Fuel',
+        'Fuel Scoops': 'Fuel',
+        'Air/Raft': 'Craft',
+        'Jump Control/2': 'Computer',
+        'Staterooms': 'Habitation',
+        'Probe Drones': 'Systems',
+    },
+    sensor_note_messages=[
+        'Passive optical and thermal sensors, Radar, Lidar, Jammers, EMCON',
+        'DM +0 to Electronics (comms) and Electronics (sensors) checks',
+    ],
+    spec_fuel_tank_tons=22.0,
+    spec_air_raft_cost=250_000,
+    spec_jump_control_cost=200_000,
+    spec_expenses=[
+        ('Production Cost', 41_045_000.0),
+        ('Sales Price New', 36_940_500.0),
+        ('Mortgage', 153_918.75),
+        ('Maintenance', 3_078.0),
+        ('Life Support Facilities', 4_000.0),
+        ('Life Support People', 8_000.0),
+        ('Fuel', 4_066.6666666666665),
+        ('Crew Salaries', 17_000.0),
+        ('Total Expenses', 190_063.41666666666),
+    ],
+    spec_crew=[
+        ('PILOT', None, 6_000),
+        ('ASTROGATOR', None, 5_000),
+        ('ENGINEER', None, 4_000),
+        ('GUNNER', None, 2_000),
+    ],
+    spec_passengers=[('MIDDLE', 4)],
 )
 
 # Ceres gives op_fuel_tons=2.0 per RIS-007 (rounds up to whole dTon for ≥100t ships), not 1.2 as in ref
@@ -214,12 +271,9 @@ def test_suleiman_matches_first_modeled_reference_slice():
     assert suleiman.computer.hardware.processing == _expected.computer_processing
     assert suleiman.computer.hardware.can_run_jump_control(10)
     assert suleiman.computer.hardware.cost == _expected.computer_cost_cr
-    assert [(package.description, package.cost) for package in suleiman.computer.software_packages] == [
-        ('Library', 0.0),
-        ('Manoeuvre/0', 0.0),
-        ('Intellect', 0.0),
-        ('Jump Control/2', 200_000),
-    ]
+    assert [(package.description, package.cost) for package in suleiman.computer.software_packages] == (
+        _expected.software_packages
+    )
 
     assert sensors is not None
     assert sensors.tons == pytest.approx(_expected.sensor_tons)
@@ -238,8 +292,8 @@ def test_suleiman_matches_first_modeled_reference_slice():
     assert sum(room.cost for room in staterooms) == _expected.stateroom_cost_total_cr
 
     assert len(airlocks) == _expected.airlock_count
-    assert airlocks[0].tons == pytest.approx(0.0)
-    assert airlocks[0].cost == 0.0
+    assert airlocks[0].tons == pytest.approx(_expected.airlock_tons)
+    assert airlocks[0].cost == _expected.airlock_cost
 
     assert probe_drones is not None
     assert isinstance(probe_drones, ProbeDrones)
@@ -255,12 +309,9 @@ def test_suleiman_matches_first_modeled_reference_slice():
 
     assert CargoSection.cargo_tons_for_ship(suleiman) == pytest.approx(_expected.cargo_tons)
 
-    assert [(role.role, quantity, role.monthly_salary) for role, quantity in suleiman.crew.grouped_roles] == [
-        ('PILOT', 1, 6_000),
-        ('ASTROGATOR', 1, 5_000),
-        ('ENGINEER', 1, 4_000),
-        ('GUNNER', 1, 2_000),
-    ]
+    assert [(role.role, quantity, role.monthly_salary) for role, quantity in suleiman.crew.grouped_roles] == (
+        _expected.crew
+    )
 
     assert suleiman.hull_cost == _expected.hull_cost_mcr * 1_000_000
     assert suleiman.production_cost == _expected.production_cost_mcr * 1_000_000
@@ -274,235 +325,77 @@ def test_suleiman_matches_first_modeled_reference_slice():
     assert suleiman.sensor_power_load == _expected.power_sensors
     assert suleiman.weapon_power_load == _expected.power_weapon
     assert suleiman.total_power_load == _expected.total_power
-
-
-def test_jump_drive_2_without_jump_control_2_adds_local_note():
-    my_ship = ship.Ship(
-        tl=12,
-        displacement=100,
-        hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(j_drive=JDrive2()),
-        computer=ComputerSection(hardware=Computer5(bis=True)),
-    )
-    assert my_ship.drives is not None
-    assert my_ship.drives.j_drive is not None
-    notes = my_ship.drives.j_drive.notes
-    assert notes.items == ['Jump 2']
-    assert notes.warnings == ['No Jump Control software']
+    assert suleiman.notes.errors == _expected.expected_errors
+    assert suleiman.notes.warnings == _expected.expected_warnings
+    assert suleiman.crew.notes.infos == _expected.expected_crew_infos
+    assert suleiman.crew.notes.warnings == _expected.expected_crew_warnings
 
 
 def test_suleiman_spec_structure():
     suleiman = build_suleiman()
     spec = suleiman.build_spec()
 
-    assert spec.ship_class == 'Suleiman'
-    assert spec.ship_type == 'Scout/Courier'
+    assert spec.ship_class == _expected.ship_class
+    assert spec.ship_type == _expected.ship_type
     assert spec.tl == _expected.tl
     assert spec.hull_points == _expected.hull_points
 
     hull_row = spec.row('Streamlined Hull')
-    assert hull_row.section == 'Hull'
+    assert hull_row.section == _expected.spec_rows['Streamlined Hull']
     assert hull_row.tons == _expected.displacement
     assert hull_row.cost == _expected.hull_cost_mcr * 1_000_000
     assert hull_row.emphasize_tons is True
 
     basic = spec.row('Basic Ship Systems')
-    assert basic.section == 'Hull'
+    assert basic.section == _expected.spec_rows['Basic Ship Systems']
     assert basic.power == float(_expected.power_basic)
 
     armour = spec.row('Crystaliron, Armour: 4')
-    assert armour.section == 'Hull'
+    assert armour.section == _expected.spec_rows['Crystaliron, Armour: 4']
     assert armour.tons == pytest.approx(_expected.armour_tons)
     assert armour.cost == _expected.armour_cost_mcr * 1_000_000
 
     fusion = spec.row('Fusion (TL 12), Power 60')
-    assert fusion.section == 'Power'
+    assert fusion.section == _expected.spec_rows['Fusion (TL 12), Power 60']
     assert fusion.tons == pytest.approx(_expected.plant_tons)
     assert fusion.power == float(_expected.plant_output)
     assert fusion.emphasize_power is True
 
     mdrive = spec.row('M-Drive 2')
-    assert mdrive.section == 'Propulsion'
+    assert mdrive.section == _expected.spec_rows['M-Drive 2']
     assert mdrive.power == float(-_expected.m_drive_power)
 
     sensors = spec.row('Military Grade Sensors')
-    assert sensors.section == 'Sensors'
-    assert any('Jammers' in n.message for n in sensors.notes)
+    assert sensors.section == _expected.spec_rows['Military Grade Sensors']
+    assert [note.message for note in sensors.notes] == _expected.sensor_note_messages
 
     airlock = spec.row('Airlock (2 tons)')
-    assert airlock.section == 'Hull'
+    assert airlock.section == _expected.spec_rows['Airlock (2 tons)']
     assert airlock.tons is None
 
     fuel_tank = spec.row('J-2, 20 weeks of operation', section='Fuel')
-    assert fuel_tank.section == 'Fuel'
-    assert fuel_tank.tons == pytest.approx(22.0)
+    assert fuel_tank.section == _expected.spec_rows['J-2, 20 weeks of operation']
+    assert fuel_tank.tons == pytest.approx(_expected.spec_fuel_tank_tons)
 
     fuel_scoops = spec.row('Fuel Scoops')
-    assert fuel_scoops.section == 'Fuel'
+    assert fuel_scoops.section == _expected.spec_rows['Fuel Scoops']
 
     air_raft = spec.row('Air/Raft')
-    assert air_raft.section == 'Craft'
-    assert air_raft.cost == 250_000
+    assert air_raft.section == _expected.spec_rows['Air/Raft']
+    assert air_raft.cost == _expected.spec_air_raft_cost
 
     jc2 = spec.row('Jump Control/2')
-    assert jc2.section == 'Computer'
-    assert jc2.cost == 200_000
+    assert jc2.section == _expected.spec_rows['Jump Control/2']
+    assert jc2.cost == _expected.spec_jump_control_cost
 
     staterooms = spec.row('Staterooms')
-    assert staterooms.section == 'Habitation'
+    assert staterooms.section == _expected.spec_rows['Staterooms']
     assert staterooms.quantity == _expected.stateroom_count
 
     probe_drones = spec.row('Probe Drones')
-    assert probe_drones.section == 'Systems'
+    assert probe_drones.section == _expected.spec_rows['Probe Drones']
     assert probe_drones.quantity == _expected.probe_drones_count
 
-    assert spec.expenses[1].label == 'Sales Price New'
-    assert spec.expenses[1].amount == _expected.sales_price_mcr * 1_000_000
-    assert any(e.label == 'Life Support Facilities' and e.amount == 4_000 for e in spec.expenses)
-    assert any(e.label == 'Life Support People' and e.amount == 8_000 for e in spec.expenses)
-    assert any(e.label == 'Fuel' and e.amount == pytest.approx(4_066.6666666667) for e in spec.expenses)
-    assert any(e.label == 'Crew Salaries' and e.amount == 17_000 for e in spec.expenses)
-
-    assert any(c.role == 'ENGINEER' and c.quantity is None and c.salary == 4_000 for c in spec.crew)
-    assert any(c.role == 'GUNNER' and c.quantity is None and c.salary == 2_000 for c in spec.crew)
-    assert any(c.role == 'PILOT' and c.quantity is None and c.salary == 6_000 for c in spec.crew)
-    assert any(p.kind == 'MIDDLE' and p.quantity == 4 for p in spec.passengers)
-
-
-@pytest.mark.generated_output
-def test_suleiman_report_html_output():
-    suleiman = build_suleiman()
-    html = render_ship_html(suleiman)
-    write_html_output('test_suleiman', html)
-    write_json_output('test_suleiman', suleiman)
-
-    assert '<title>Suleiman</title>' in html
-    assert '<p class="banner-meta">Scout/Courier | TL12 | Hull 40</p>' in html
-    assert '<header class="sidebar-card-title">Crew</header>' in html
-    assert '<header class="sidebar-card-title">Power</header>' in html
-    assert '<header class="sidebar-card-title">Costs</header>' in html
-    assert '<th class="num">Cost (MCr)</th>' in html
-    assert '<td class="item-cell">Military Grade Sensors' in html
-    assert '<td class="item-cell">J-2, 20 weeks of operation</td>' in html
-    assert '<td>Power</td><td class="num power-positive">60.00</td>' in html
-    assert '<td>Basic Ship Systems</td><td class="num">20.00</td>' in html
-    assert 'MIDDLE × 2' not in html
-    assert 'Life Support People' in html
-    assert 'Scout/Courier | TL12 | Hull 40' in html
-    assert '<p class="eyebrow">' not in html
-
-
-def test_jump_drive_with_lower_jump_control_warns_on_drive():
-    my_ship = ship.Ship(
-        tl=12,
-        displacement=100,
-        hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(j_drive=JDrive2()),
-        computer=ComputerSection(hardware=Computer5(bis=True), software=[JumpControl(rating=1)]),
-    )
-    assert my_ship.drives is not None
-    assert my_ship.drives.j_drive is not None
-    notes = my_ship.drives.j_drive.notes
-    assert notes.items == ['Jump 2']
-    assert notes.warnings == ['Limited to Jump 1 by control software']
-
-
-def test_jump_control_without_jump_drive_warns_on_software():
-    my_ship = ship.Ship(
-        tl=12,
-        displacement=100,
-        hull=hull.Hull(configuration=hull.streamlined_hull),
-        computer=ComputerSection(hardware=Computer5(bis=True), software=[JumpControl(rating=2)]),
-    )
-    assert my_ship.computer is not None
-    explicit_jump_control = next(
-        package for package in my_ship.computer.software_packages if isinstance(package, JumpControl)
-    )
-    notes = explicit_jump_control.notes
-    assert notes.items == ['Jump Control/2']
-    assert notes.warnings == ['No jump drive installed']
-
-
-def test_jump_control_with_higher_rating_than_drive_warns_on_software():
-    my_ship = ship.Ship(
-        tl=12,
-        displacement=100,
-        hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(j_drive=JDrive2()),
-        computer=ComputerSection(hardware=Computer10(bis=True), software=[JumpControl(rating=3)]),
-    )
-    assert my_ship.computer is not None
-    explicit_jump_control = next(
-        package for package in my_ship.computer.software_packages if isinstance(package, JumpControl)
-    )
-    notes = explicit_jump_control.notes
-    assert notes.items == ['Jump Control/3']
-    assert notes.warnings == ['Limited to Jump 2 by drive capacity']
-
-
-def test_multiple_jump_control_packages_are_all_kept():
-    my_ship = ship.Ship(
-        tl=12,
-        displacement=100,
-        hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(j_drive=JDrive2()),
-        computer=ComputerSection(
-            hardware=Computer10(bis=True), software=[JumpControl(rating=2), JumpControl(rating=3)]
-        ),
-    )
-
-    assert my_ship.computer is not None
-    assert [package.description for package in my_ship.computer.software_packages] == [
-        'Library',
-        'Manoeuvre/0',
-        'Intellect',
-        'Jump Control/2',
-        'Jump Control/3',
-    ]
-
-    jump_controls = [package for package in my_ship.computer.software_packages if isinstance(package, JumpControl)]
-    assert all(
-        not any(message.startswith('Redundant ') for message in package.notes.warnings) for package in jump_controls
-    )
-
-
-def test_jump_control_degrades_when_computer_too_small():
-    my_ship = ship.Ship(
-        tl=12,
-        displacement=100,
-        hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(j_drive=JDrive2()),
-        computer=ComputerSection(hardware=Computer5(), software=[JumpControl(rating=2)]),
-    )
-    assert my_ship.computer is not None
-    jc = next(package for package in my_ship.computer.software_packages if isinstance(package, JumpControl))
-    assert isinstance(jc, JumpControl)
-    assert jc.effective_rating == 1
-    assert 'Computer/5 can only run Jump Control/1 (degraded from 2)' in jc.notes.warnings
-
-
-def test_degraded_jump_control_warns_drive():
-    my_ship = ship.Ship(
-        tl=12,
-        displacement=100,
-        hull=hull.Hull(configuration=hull.streamlined_hull),
-        drives=DriveSection(j_drive=JDrive2()),
-        computer=ComputerSection(hardware=Computer5(), software=[JumpControl(rating=2)]),
-    )
-    assert my_ship.drives is not None
-    assert my_ship.drives.j_drive is not None
-    assert 'Limited to Jump 1 by control software' in my_ship.drives.j_drive.notes.warnings
-
-
-def test_jump_control_blocked_by_tl_leaves_effective_rating_none():
-    my_ship = ship.Ship(
-        tl=8,
-        displacement=100,
-        hull=hull.Hull(configuration=hull.streamlined_hull),
-        computer=ComputerSection(hardware=Computer5(), software=[JumpControl(rating=1)]),
-    )
-    assert my_ship.computer is not None
-    jc = next(package for package in my_ship.computer.software_packages if isinstance(package, JumpControl))
-    assert isinstance(jc, JumpControl)
-    assert jc.effective_rating is None
-    assert jc.notes.errors
+    assert [(expense.label, expense.amount) for expense in spec.expenses] == _expected.spec_expenses
+    assert [(crew.role, crew.quantity, crew.salary) for crew in spec.crew] == _expected.spec_crew
+    assert [(passenger.kind, passenger.quantity) for passenger in spec.passengers] == _expected.spec_passengers

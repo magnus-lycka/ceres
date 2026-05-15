@@ -69,11 +69,14 @@ from ceres.make.ship.systems import (
 )
 
 _expected = SimpleNamespace(
+    ship_class='King Kay',
+    ship_type='Luxury Liner',
     tl=12,
     displacement=5_000,
     hull_cost_mcr=200.0,  # 5000t Close Structure
     hull_points=2_000.0,
     airlocks_count=10,  # included free airlocks for 5000t hull
+    airlock_tons=0.0,
     m_drive_tons=50.0,
     m_drive_cost_mcr=100.0,
     m_drive_power=500.0,
@@ -137,6 +140,41 @@ _expected = SimpleNamespace(
     crew_salaries_mcr=0.387,
     power_basic=1_000.0,
     total_power=2_005.0,
+    expected_errors=[],
+    expected_warnings=[],
+    expected_crew_infos=[
+        'ADMINISTRATOR above recommended count: 10 > 2',
+        'CAPTAIN above recommended count: 1 > 0',
+        'ENGINEER above recommended count: 16 > 13',
+        'GENERAL CREW above recommended count: 55 > 0',
+        'MARINE above recommended count: 10 > 0',
+        'MEDIC above recommended count: 5 > 3',
+        'OFFICER above recommended count: 11 > 1',
+        'PILOT above recommended count: 3 > 1',
+        'STEWARD above recommended count: 65 > 0',
+    ],
+    expected_crew_warnings=['MAINTENANCE below recommended count: 5 < 6'],
+    spec_rows={
+        'Close Structure Hull': 'Hull',
+        'Holographic Controls': 'Command',
+        'Computer/10': 'Computer',
+        'Backup Computer/5/bis': 'Computer',
+        'Civilian Grade Sensors': 'Sensors',
+        'Commercial Zone': 'Systems',
+        'Swimming Pool': 'Habitation',
+        'Wet Bar': 'Habitation',
+        'Docking Space (252 tons)': 'Craft',
+        'Medical Bay': 'Systems',
+        'Common Area': 'Habitation',
+    },
+    spec_quantities={
+        'Theatre': 3,
+        'Docking Space (70 tons)': 2,
+        'Luxury Staterooms': 8,
+        'High Staterooms': 192,
+        'Staterooms': 80,
+    },
+    excluded_craft_items=['Passenger Tender'],
 )
 
 
@@ -201,8 +239,8 @@ def build_king_kay() -> ship.Ship:
 def test_king_kay_matches_supported_reference_slice():
     liner = build_king_kay()
 
-    assert liner.ship_class == 'King Kay'
-    assert liner.ship_type == 'Luxury Liner'
+    assert liner.ship_class == _expected.ship_class
+    assert liner.ship_type == _expected.ship_type
     assert liner.tl == _expected.tl
     assert liner.displacement == _expected.displacement
 
@@ -210,7 +248,7 @@ def test_king_kay_matches_supported_reference_slice():
     assert liner.hull_points == pytest.approx(_expected.hull_points)
     assert liner.hull.airlocks is not None
     assert len(liner.hull.airlocks) == _expected.airlocks_count
-    assert all(airlock.tons == 0.0 for airlock in liner.hull.airlocks)
+    assert all(airlock.tons == _expected.airlock_tons for airlock in liner.hull.airlocks)
 
     assert liner.drives is not None
     assert liner.drives.m_drive is not None
@@ -247,9 +285,6 @@ def test_king_kay_matches_supported_reference_slice():
     assert liner.computer.backup_hardware.cost == pytest.approx(_expected.backup_computer_cost_mcr * 1_000_000)
     assert [(package.description, package.cost) for package in liner.computer.software_packages] == (
         _expected.software_packages
-    )
-    assert not any(
-        note.message.startswith('Redundant ') for package in liner.computer.software_packages for note in package.notes
     )
 
     assert liner.sensors.primary.tons == pytest.approx(_expected.sensors_tons)
@@ -311,31 +346,29 @@ def test_king_kay_matches_supported_reference_slice():
 
     assert liner.basic_hull_power_load == pytest.approx(_expected.power_basic)
     assert liner.total_power_load == pytest.approx(_expected.total_power)
-    assert not liner.notes.errors
+    assert liner.notes.errors == _expected.expected_errors
+    assert liner.notes.warnings == _expected.expected_warnings
+    assert liner.crew.notes.infos == _expected.expected_crew_infos
+    assert liner.crew.notes.warnings == _expected.expected_crew_warnings
 
 
 def test_king_kay_spec_contains_supported_liner_rows():
     spec = build_king_kay().build_spec()
 
-    assert spec.ship_class == 'King Kay'
-    assert spec.ship_type == 'Luxury Liner'
-    assert spec.tl == 12
-    assert spec.hull_points == pytest.approx(2_000.0)
+    assert spec.ship_class == _expected.ship_class
+    assert spec.ship_type == _expected.ship_type
+    assert spec.tl == _expected.tl
+    assert spec.hull_points == pytest.approx(_expected.hull_points)
 
-    assert spec.row('Close Structure Hull').section == 'Hull'
-    assert spec.row('Holographic Controls').section == 'Command'
-    assert spec.row('Computer/10').section == 'Computer'
-    assert spec.row('Backup Computer/5/bis').section == 'Computer'
-    assert spec.row('Civilian Grade Sensors').section == 'Sensors'
-    assert spec.row('Commercial Zone').section == 'Systems'
-    assert spec.row('Swimming Pool').section == 'Habitation'
-    assert spec.row('Theatre').quantity == 3
-    assert spec.row('Wet Bar').section == 'Habitation'
-    assert len(spec.rows_matching('Docking Space (70 tons)')) == 2
-    assert spec.row('Docking Space (252 tons)').section == 'Craft'
-    assert spec.row('Medical Bay').section == 'Systems'
-    assert spec.row('Luxury Staterooms').quantity == 8
-    assert spec.row('High Staterooms').quantity == 192
-    assert spec.row('Staterooms').quantity == 80
-    assert spec.row('Common Area').section == 'Habitation'
-    assert not any('Passenger Tender' in row.item for row in spec.rows_for_section('Craft'))
+    for item, section in _expected.spec_rows.items():
+        assert spec.row(item, section=section).section == section
+    for item, quantity in _expected.spec_quantities.items():
+        if item == 'Docking Space (70 tons)':
+            assert len(spec.rows_matching(item)) == quantity
+        else:
+            assert spec.row(item).quantity == quantity
+    assert not any(
+        excluded_item in row.item
+        for excluded_item in _expected.excluded_craft_items
+        for row in spec.rows_for_section('Craft')
+    )

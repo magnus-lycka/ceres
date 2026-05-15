@@ -4,9 +4,10 @@ import json
 
 import pytest
 
+from ceres.gear.software import Expert
 from ceres.make.ship import armour, hull
 from ceres.make.ship.bridge import Cockpit, CommandSection
-from ceres.make.ship.computer import Computer5, Computer20, Computer25, ComputerSection, _Computer
+from ceres.make.ship.computer import Computer5, Computer10, Computer20, Computer25, ComputerSection, _Computer
 from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
 from ceres.make.ship.drives import (
     DriveSection,
@@ -250,6 +251,26 @@ def test_roundtrip_computer():
     assert ultralight.computer.hardware is not None
     assert type(loaded.computer.hardware) is type(ultralight.computer.hardware)
     assert loaded.computer.hardware.processing == ultralight.computer.hardware.processing
+
+
+def test_roundtrip_expert_software_package():
+    source_ship = Ship(
+        tl=12,
+        displacement=100,
+        hull=Hull(configuration=hull.standard_hull),
+        computer=ComputerSection(
+            hardware=Computer10(),
+            software=[Expert(rating=3, skill='Space Science (Planetology)')],
+        ),
+    )
+    loaded = _roundtrip(source_ship)
+    assert loaded.computer is not None
+    expert = next((package for package in loaded.computer.software_packages if isinstance(package, Expert)), None)
+    assert expert is not None
+    assert expert.rating == 3
+    assert expert.skill == 'Space Science (Planetology)'
+    assert expert.description == 'Expert (Space Science (Planetology))/3'
+    assert expert.cost == pytest.approx(20_000.0)
 
 
 def test_roundtrip_backup_computer():

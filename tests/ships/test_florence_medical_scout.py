@@ -141,7 +141,6 @@ def test_florence_medical_scout_matches_current_subset():
 
     assert scout.hull_cost == pytest.approx(_expected.hull_cost_mcr * 1_000_000)
     assert scout.hull_points == _expected.hull_points
-    assert 'No airlock installed' not in scout.notes.errors
     assert scout.drives is not None
     assert scout.drives.m_drive is not None
     assert scout.drives.m_drive.tons == pytest.approx(_expected.m_drive_tons)

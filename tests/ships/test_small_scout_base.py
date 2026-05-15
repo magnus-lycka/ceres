@@ -80,6 +80,7 @@ _expected = SimpleNamespace(
     hull_cost_mcr=187.5,  # 10000t Light Dispersed Structure
     hull_points=3_200.0,  # ref sheet; Ceres gives 3240 per light+dispersed modifiers
     airlocks_count=24,  # Ceres variant adds extra airlocks; ref shows x10 (20 tons)
+    airlock_tons=0.0,
     m_drive_tons=50.0,
     m_drive_cost_mcr=100.0,
     m_drive_power=250.0,
@@ -94,6 +95,7 @@ _expected = SimpleNamespace(
     bridge_cost_mcr=25.0,
     computer_cost_mcr=5.0,
     software_packages=[('Library', 0.0), ('Manoeuvre/0', 0.0), ('Intellect', 0.0)],
+    turret_count=5,
     turrets_total_tons=5.0,
     turrets_total_cost_mcr=21.0,
     turrets_total_power=74.0,
@@ -101,6 +103,7 @@ _expected = SimpleNamespace(
     craft_total_tons=2_071.0,
     craft_total_housing_cost_mcr=416.75,
     craft_total_carried_cost_mcr=192.95,
+    armoury_count=1,
     armoury_tons=1.0,
     armoury_cost_mcr=0.25,
     briefing_room_tons=4.0,
@@ -115,6 +118,7 @@ _expected = SimpleNamespace(
     drone_probe_tons=20.0,
     drone_probe_cost_mcr=10.0,
     drone_repair_tons=100.0,
+    drone_count=3,
     drone_repair_cost_mcr=20.0,
     training_facility_tons=8.0,
     training_facility_cost_mcr=1.6,
@@ -128,6 +132,7 @@ _expected = SimpleNamespace(
     entertainment_cost=10_000.0,
     swimming_pool_tons=4.0,
     swimming_pool_cost_mcr=0.08,
+    theatre_count=1,
     theatre_tons=8.0,
     theatre_cost_mcr=0.8,
     power_basic=2_000.0,
@@ -146,6 +151,58 @@ _expected = SimpleNamespace(
         ('PILOT', 13),  # ref shows Passenger Shuttle Pilots x10; Ceres adds 2 Ship's Boat + 1 extra
         ('MEDIC', 2),
         ('OFFICER', 14),
+    ],
+    expected_errors=[],
+    expected_warnings=[],
+    expected_crew_infos=[
+        'GENERAL CREW above recommended count: 250 > 0',
+        'GUNNER above recommended count: 5 > 4',
+        'OFFICER above recommended count: 14 > 2',
+    ],
+    expected_crew_warnings=['MEDIC below recommended count: 2 < 20'],
+    spec_rows={
+        'Light Dispersed Structure Hull': 'Hull',
+        'M-Drive 0': 'Propulsion',
+        '12 weeks of operation': 'Fuel',
+        'Fuel Processor (100 tons/day)': 'Fuel',
+        'Smaller Bridge': 'Command',
+        'Computer/20': 'Computer',
+        'Armoury': 'Systems',
+        'Briefing Room': 'Systems',
+        'Library': 'Systems',
+        'Medical Bay': 'Systems',
+        'Repair Drones': 'Systems',
+        'Training Facility: 4-person capacity': 'Systems',
+        'Brig': 'Habitation',
+        'Common Area': 'Habitation',
+        'Advanced Entertainment System': 'Habitation',
+        'Swimming Pool': 'Habitation',
+        'Theatre': 'Habitation',
+    },
+    spec_quantities={
+        'Airlock (2 tons)': 24,
+        'Full Hangar: Passenger Shuttle': 10,
+        'Passenger Shuttle': 10,
+        "Full Hangar: Ship's Boat": 2,
+        "Ship's Boat": 2,
+        'Internal Docking Space: G/Carrier': 3,
+        'G/Carrier': 3,
+        'Medical Bay': 2,
+        'Mining Drones': 10,
+        'Probe Drones': 100,
+        'Staterooms': 1_250,
+    },
+    spec_matching_count_items={
+        'Full Hangar: Passenger Shuttle',
+        'Passenger Shuttle',
+        "Full Hangar: Ship's Boat",
+        "Ship's Boat",
+        'Internal Docking Space: G/Carrier',
+        'G/Carrier',
+    },
+    quad_turret_rows=[
+        {'quantity': 4, 'cost': 16_000_000.0, 'contents': ['Beam Laser × 4']},
+        {'quantity': None, 'cost': 5_000_000.0, 'contents': ['Missile Rack × 4']},
     ],
 )
 # Ceres light+dispersed modifier gives 3240, not 3200 as on the ref sheet
@@ -234,8 +291,7 @@ def test_small_scout_base_matches_supported_slice():
     assert base.hull_points == pytest.approx(_expected.hull_points)
     assert base.hull.airlocks is not None
     assert len(base.hull.airlocks) == _expected.airlocks_count
-    assert all(airlock.tons == 0.0 for airlock in base.hull.airlocks)
-    assert 'Installed airlocks below minimum recommendation: 24 < 20' not in base.notes.warnings
+    assert all(airlock.tons == _expected.airlock_tons for airlock in base.hull.airlocks)
 
     assert base.drives is not None
     assert base.drives.m_drive is not None
@@ -270,7 +326,7 @@ def test_small_scout_base_matches_supported_slice():
     )
 
     assert base.weapons is not None
-    assert len(base.weapons.turrets) == 5
+    assert len(base.weapons.turrets) == _expected.turret_count
     assert sum(turret.tons for turret in base.weapons.turrets) == pytest.approx(_expected.turrets_total_tons)
     assert sum(turret.cost for turret in base.weapons.turrets) == pytest.approx(
         _expected.turrets_total_cost_mcr * 1_000_000
@@ -288,7 +344,7 @@ def test_small_scout_base_matches_supported_slice():
     )
 
     assert base.systems is not None
-    assert len(base.systems.armouries) == 1
+    assert len(base.systems.armouries) == _expected.armoury_count
     assert base.systems.armouries[0].tons == pytest.approx(_expected.armoury_tons)
     assert base.systems.armouries[0].cost == pytest.approx(_expected.armoury_cost_mcr * 1_000_000)
     assert base.systems.briefing_rooms[0] is not None
@@ -302,7 +358,7 @@ def test_small_scout_base_matches_supported_slice():
     assert sum(bay.cost for bay in base.systems.medical_bays) == pytest.approx(
         _expected.medical_bays_total_cost_mcr * 1_000_000
     )
-    assert len(base.systems.drones) == 3
+    assert len(base.systems.drones) == _expected.drone_count
     assert base.systems.drones[0].tons == pytest.approx(_expected.drone_mining_tons)
     assert base.systems.drones[0].cost == pytest.approx(_expected.drone_mining_cost_mcr * 1_000_000)
     assert base.systems.drones[1].tons == pytest.approx(_expected.drone_probe_tons)
@@ -330,7 +386,7 @@ def test_small_scout_base_matches_supported_slice():
     assert base.habitation.swimming_pool is not None
     assert base.habitation.swimming_pool.tons == pytest.approx(_expected.swimming_pool_tons)
     assert base.habitation.swimming_pool.cost == pytest.approx(_expected.swimming_pool_cost_mcr * 1_000_000)
-    assert len(base.habitation.theatres) == 1
+    assert len(base.habitation.theatres) == _expected.theatre_count
     assert base.habitation.theatres[0].tons == pytest.approx(_expected.theatre_tons)
     assert base.habitation.theatres[0].cost == pytest.approx(_expected.theatre_cost_mcr * 1_000_000)
 
@@ -343,50 +399,29 @@ def test_small_scout_base_matches_supported_slice():
 
     assert _expected.crew == [(role.role, quantity) for role, quantity in base.crew.grouped_roles]
 
-    notes = base.crew.notes
-    assert 'ENGINEER below recommended count: 5 < 6' not in notes.warnings
-    assert 'GUNNER below recommended count: 4 < 5' not in notes.warnings
-    assert 'MEDIC above recommended count: 2 > 0' not in notes.infos
-    assert 'PILOT below recommended count: 12 < 13' not in notes.warnings
+    assert base.notes.errors == _expected.expected_errors
+    assert base.notes.warnings == _expected.expected_warnings
+    assert base.crew.notes.infos == _expected.expected_crew_infos
+    assert base.crew.notes.warnings == _expected.expected_crew_warnings
 
 
 def test_small_scout_base_spec_structure():
     base = build_small_scout_base()
     spec = base.build_spec()
 
-    assert spec.row('Light Dispersed Structure Hull').section == 'Hull'
-    assert spec.row('Airlock (2 tons)', section='Hull').quantity == 24
-    assert spec.row('M-Drive 0').section == 'Propulsion'
-    assert spec.row('12 weeks of operation').section == 'Fuel'
-    assert spec.row('Fuel Processor (100 tons/day)').section == 'Fuel'
-    assert spec.row('Smaller Bridge').section == 'Command'
-    assert spec.row('Computer/20').section == 'Computer'
+    for item, section in _expected.spec_rows.items():
+        assert spec.row(item, section=section).section == section
+    for item, quantity in _expected.spec_quantities.items():
+        if item == 'Airlock (2 tons)':
+            assert spec.row(item, section='Hull').quantity == quantity
+        elif item in _expected.spec_matching_count_items:
+            assert len(spec.rows_matching(item)) == quantity
+        else:
+            assert spec.row(item).quantity == quantity
+
     beam_turret_rows = spec.rows_matching('Quad Turret')
-    assert len(beam_turret_rows) == 2
-    assert beam_turret_rows[0].quantity == 4
-    assert beam_turret_rows[0].cost == pytest.approx(16_000_000.0)
-    assert beam_turret_rows[0].notes.contents == ['Beam Laser × 4']
-    assert beam_turret_rows[1].quantity is None
-    assert beam_turret_rows[1].cost == pytest.approx(5_000_000.0)
-    assert beam_turret_rows[1].notes.contents == ['Missile Rack × 4']
-    assert len(spec.rows_matching('Full Hangar: Passenger Shuttle')) == 10
-    assert len(spec.rows_matching('Passenger Shuttle')) == 10
-    assert len(spec.rows_matching("Full Hangar: Ship's Boat")) == 2
-    assert len(spec.rows_matching("Ship's Boat")) == 2
-    assert len(spec.rows_matching('Internal Docking Space: G/Carrier')) == 3
-    assert len(spec.rows_matching('G/Carrier')) == 3
-    assert spec.row('Armoury').section == 'Systems'
-    assert spec.row('Briefing Room').section == 'Systems'
-    assert spec.row('Library', section='Systems').section == 'Systems'
-    assert spec.row('Medical Bay').section == 'Systems'
-    assert spec.row('Medical Bay').quantity == 2
-    assert spec.row('Mining Drones').quantity == 10
-    assert spec.row('Probe Drones').quantity == 100
-    assert spec.row('Repair Drones').section == 'Systems'
-    assert spec.row('Training Facility: 4-person capacity').section == 'Systems'
-    assert spec.row('Staterooms').quantity == 1_250
-    assert spec.row('Brig').section == 'Habitation'
-    assert spec.row('Common Area').section == 'Habitation'
-    assert spec.row('Advanced Entertainment System').section == 'Habitation'
-    assert spec.row('Swimming Pool').section == 'Habitation'
-    assert spec.row('Theatre').section == 'Habitation'
+    assert len(beam_turret_rows) == len(_expected.quad_turret_rows)
+    for index, row in enumerate(beam_turret_rows):
+        assert row.quantity == _expected.quad_turret_rows[index]['quantity']
+        assert row.cost == pytest.approx(_expected.quad_turret_rows[index]['cost'])
+        assert row.notes.contents == _expected.quad_turret_rows[index]['contents']

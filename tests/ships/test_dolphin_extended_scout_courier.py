@@ -48,6 +48,8 @@ from ceres.make.ship.systems import CommonArea, MedicalBay, ProbeDrones, Systems
 from ceres.make.ship.weapons import PulseLaser, TripleTurret, WeaponsSection
 
 _expected = SimpleNamespace(
+    ship_class='Dolphin Class',
+    ship_type='Extended Scout Courier',
     tl=15,
     displacement=150,
     hull_cost_mcr=9.0,
@@ -71,17 +73,26 @@ _expected = SimpleNamespace(
     bridge_tons=10.0,
     bridge_cost_mcr=1.0,
     computer_cost_mcr=0.16,
+    software_packages=[
+        ('Library', 0.0),
+        ('Manoeuvre/0', 0.0),
+        ('Intellect', 0.0),
+        ('Jump Control/2', 200_000.0),
+    ],
     sensor_tons=2.0,
     sensor_cost_mcr=4.1,
     sensor_power=2.0,
+    turret_count=1,
     turret_tons=1.0,
     turret_cost_mcr=4.0,
     turret_power=13.0,
     docking_space_tons=5.0,  # 4-ton craft → 5 ship tons
+    internal_housing_count=1,
     docking_space_cost_mcr=1.25,
     air_raft_cost_mcr=0.25,
     medical_bay_tons=4.0,
     medical_bay_cost_mcr=2.0,
+    probe_drones_count=1,
     probe_drones_tons=2.0,
     probe_drones_cost_mcr=1.0,
     workshop_tons=6.0,
@@ -96,8 +107,12 @@ _expected = SimpleNamespace(
     cargo_airlock_tons=2.0,
     cargo_airlock_cost_mcr=0.2,
     fuel_cargo_container_tons=32.0,  # 30-ton capacity → 32 ship tons
+    fuel_cargo_container_count=1,
     fuel_cargo_container_cost_mcr=0.15,
     cargo_tons=32.0,
+    airlock_count=1,
+    airlock_tons=0.0,
+    airlock_cost_mcr=0.0,
     power_basic=30.0,
     power_maneuver=30.0,
     power_jump=30.0,
@@ -108,6 +123,45 @@ _expected = SimpleNamespace(
     production_cost_mcr=60.46,
     purchase_cost_mcr=54.414,
     maintenance_cr=4535,  # stat block: Cr4535/month
+    crew=[
+        ('PILOT', 1, 6_000),
+        ('ASTROGATOR', 1, 5_000),
+        ('ENGINEER', 1, 4_000),
+        ('GUNNER', 1, 2_000),
+        ('MEDIC', 1, 4_000),
+    ],
+    expected_errors=[],
+    expected_warnings=[],
+    expected_crew_infos=[],
+    expected_crew_warnings=[],
+    expected_power_row_warnings=['Capacity 9.00 less than max use'],
+    spec_rows={
+        'Streamlined Hull': 'Hull',
+        'Crystaliron, Armour: 4': 'Hull',
+        'M-Drive 2': 'Propulsion',
+        'Jump 2': 'Jump',
+        'Fusion (TL 15), Power 70': 'Power',
+        'J-2, 20 weeks of operation': 'Fuel',
+        'Fuel Scoops': 'Fuel',
+        'Fuel Processor (40 tons/day)': 'Fuel',
+        'Computer/10': 'Computer',
+        'Jump Control/2': 'Computer',
+        'Military Grade Sensors': 'Sensors',
+        'Triple Turret': 'Weapons',
+        'Internal Docking Space: Air/Raft': 'Craft',
+        'Air/Raft': 'Craft',
+        'Medical Bay': 'Systems',
+        'Workshop': 'Systems',
+        'Common Area': 'Habitation',
+        'Cargo Airlock (2 tons)': 'Cargo',
+        'Fuel/Cargo Container (30 tons)': 'Cargo',
+    },
+    spec_quantities={
+        'Probe Drones': 10,
+        'Staterooms': 4,
+        'Low Berths': 4,
+    },
+    spec_tons={'Cargo Space': 2.0},
 )
 # Ceres rounds op fuel up to whole dTons: ceil(150 * 0.001 * 16 / 4) = ceil(0.6) = 1 dTon … RIS-007
 # gives 2t for 150-ton ship, equating to ~20 weeks endurance rather than 16
@@ -213,25 +267,22 @@ def test_dolphin_extended_scout_courier_matches_reference_sheet():
     assert dolphin.computer is not None
     assert dolphin.computer.hardware is not None
     assert dolphin.computer.hardware.cost == pytest.approx(_expected.computer_cost_mcr * 1_000_000)
-    assert [(package.description, package.cost) for package in dolphin.computer.software_packages] == [
-        ('Library', 0.0),
-        ('Manoeuvre/0', 0.0),
-        ('Intellect', 0.0),
-        ('Jump Control/2', 200_000.0),
-    ]
+    assert [(package.description, package.cost) for package in dolphin.computer.software_packages] == (
+        _expected.software_packages
+    )
 
     assert dolphin.sensors.primary.tons == pytest.approx(_expected.sensor_tons)
     assert dolphin.sensors.primary.cost == pytest.approx(_expected.sensor_cost_mcr * 1_000_000)
     assert dolphin.sensors.primary.power == pytest.approx(_expected.sensor_power)
 
     assert dolphin.weapons is not None
-    assert len(dolphin.weapons.turrets) == 1
+    assert len(dolphin.weapons.turrets) == _expected.turret_count
     assert dolphin.weapons.turrets[0].tons == pytest.approx(_expected.turret_tons)
     assert dolphin.weapons.turrets[0].cost == pytest.approx(_expected.turret_cost_mcr * 1_000_000)
     assert dolphin.weapons.turrets[0].power == pytest.approx(_expected.turret_power)
 
     assert dolphin.craft is not None
-    assert len(dolphin.craft.internal_housing) == 1
+    assert len(dolphin.craft.internal_housing) == _expected.internal_housing_count
     assert dolphin.craft.internal_housing[0].tons == pytest.approx(_expected.docking_space_tons)
     assert dolphin.craft.internal_housing[0].cost == pytest.approx(_expected.docking_space_cost_mcr * 1_000_000)
     assert dolphin.craft.internal_housing[0].craft.cost == pytest.approx(_expected.air_raft_cost_mcr * 1_000_000)
@@ -240,7 +291,7 @@ def test_dolphin_extended_scout_courier_matches_reference_sheet():
     assert dolphin.systems.medical_bays[0] is not None
     assert dolphin.systems.medical_bays[0].tons == pytest.approx(_expected.medical_bay_tons)
     assert dolphin.systems.medical_bays[0].cost == pytest.approx(_expected.medical_bay_cost_mcr * 1_000_000)
-    assert len(dolphin.systems.drones) == 1
+    assert len(dolphin.systems.drones) == _expected.probe_drones_count
     assert dolphin.systems.drones[0].tons == pytest.approx(_expected.probe_drones_tons)
     assert dolphin.systems.drones[0].cost == pytest.approx(_expected.probe_drones_cost_mcr * 1_000_000)
     assert dolphin.systems.workshops[0] is not None
@@ -262,27 +313,23 @@ def test_dolphin_extended_scout_courier_matches_reference_sheet():
     assert sum(berth.power for berth in dolphin.habitation.low_berths) == pytest.approx(_expected.low_berths_power)
 
     assert dolphin.cargo is not None
-    assert len(dolphin.cargo.cargo_airlocks) == 1
+    assert len(dolphin.cargo.cargo_airlocks) == _expected.airlock_count
     assert dolphin.cargo.cargo_airlocks[0].tons == pytest.approx(_expected.cargo_airlock_tons)
     assert dolphin.cargo.cargo_airlocks[0].cost == pytest.approx(_expected.cargo_airlock_cost_mcr * 1_000_000)
-    assert len(dolphin.cargo.fuel_cargo_containers) == 1
+    assert len(dolphin.cargo.fuel_cargo_containers) == _expected.fuel_cargo_container_count
     assert dolphin.cargo.fuel_cargo_containers[0].tons == pytest.approx(_expected.fuel_cargo_container_tons)
     assert dolphin.cargo.fuel_cargo_containers[0].cost == pytest.approx(
         _expected.fuel_cargo_container_cost_mcr * 1_000_000
     )
     assert CargoSection.cargo_tons_for_ship(dolphin) == pytest.approx(_expected.cargo_tons)
 
-    assert len(dolphin.hull.airlocks or []) == 1
-    assert dolphin.hull.airlocks[0].tons == pytest.approx(0.0)
-    assert dolphin.hull.airlocks[0].cost == pytest.approx(0.0)
+    assert len(dolphin.hull.airlocks or []) == _expected.airlock_count
+    assert dolphin.hull.airlocks[0].tons == pytest.approx(_expected.airlock_tons)
+    assert dolphin.hull.airlocks[0].cost == pytest.approx(_expected.airlock_cost_mcr * 1_000_000)
 
-    assert [(role.role, quantity, role.monthly_salary) for role, quantity in dolphin.crew.grouped_roles] == [
-        ('PILOT', 1, 6_000),
-        ('ASTROGATOR', 1, 5_000),
-        ('ENGINEER', 1, 4_000),
-        ('GUNNER', 1, 2_000),
-        ('MEDIC', 1, 4_000),
-    ]
+    assert [(role.role, quantity, role.monthly_salary) for role, quantity in dolphin.crew.grouped_roles] == (
+        _expected.crew
+    )
 
     assert dolphin.basic_hull_power_load == pytest.approx(_expected.power_basic)
     assert dolphin.maneuver_power_load == pytest.approx(_expected.power_maneuver)
@@ -295,38 +342,24 @@ def test_dolphin_extended_scout_courier_matches_reference_sheet():
     assert dolphin.production_cost == pytest.approx(_expected.production_cost_mcr * 1_000_000)
     assert dolphin.sales_price_new == pytest.approx(_expected.purchase_cost_mcr * 1_000_000)
     assert dolphin.expenses.maintenance == pytest.approx(_expected.maintenance_cr)
-    assert 'Capacity 9.00 less than max use' not in dolphin.notes.warnings
+    assert dolphin.notes.errors == _expected.expected_errors
+    assert dolphin.notes.warnings == _expected.expected_warnings
+    assert dolphin.crew.notes.infos == _expected.expected_crew_infos
+    assert dolphin.crew.notes.warnings == _expected.expected_crew_warnings
 
 
 def test_dolphin_extended_scout_courier_spec_structure():
     spec = build_dolphin_extended_scout_courier().build_spec()
 
-    assert spec.ship_class == 'Dolphin Class'
-    assert spec.ship_type == 'Extended Scout Courier'
+    assert spec.ship_class == _expected.ship_class
+    assert spec.ship_type == _expected.ship_type
     assert spec.tl == _expected.tl
     assert spec.hull_points == pytest.approx(_expected.hull_points)
 
-    assert spec.row('Streamlined Hull').section == 'Hull'
-    assert spec.row('Crystaliron, Armour: 4').section == 'Hull'
-    assert spec.row('M-Drive 2').section == 'Propulsion'
-    assert spec.row('Jump 2').section == 'Jump'
-    assert 'Capacity 9.00 less than max use' in spec.row('Fusion (TL 15), Power 70', section='Power').notes.warnings
-    assert spec.row('Fusion (TL 15), Power 70').section == 'Power'
-    assert spec.row('J-2, 20 weeks of operation').section == 'Fuel'
-    assert spec.row('Fuel Scoops').section == 'Fuel'
-    assert spec.row('Fuel Processor (40 tons/day)').section == 'Fuel'
-    assert spec.row('Computer/10').section == 'Computer'
-    assert spec.row('Jump Control/2').section == 'Computer'
-    assert spec.row('Military Grade Sensors').section == 'Sensors'
-    assert spec.row('Triple Turret').section == 'Weapons'
-    assert spec.row('Internal Docking Space: Air/Raft').section == 'Craft'
-    assert spec.row('Air/Raft').section == 'Craft'
-    assert spec.row('Medical Bay').section == 'Systems'
-    assert spec.row('Probe Drones').quantity == 10
-    assert spec.row('Workshop').section == 'Systems'
-    assert spec.row('Staterooms').quantity == 4
-    assert spec.row('Common Area').section == 'Habitation'
-    assert spec.row('Low Berths').quantity == 4
-    assert spec.row('Cargo Airlock (2 tons)').section == 'Cargo'
-    assert spec.row('Fuel/Cargo Container (30 tons)').section == 'Cargo'
-    assert spec.row('Cargo Space').tons == pytest.approx(2.0)
+    for item, section in _expected.spec_rows.items():
+        assert spec.row(item, section=section).section == section
+    assert spec.row('Fusion (TL 15), Power 70', section='Power').notes.warnings == _expected.expected_power_row_warnings
+    for item, quantity in _expected.spec_quantities.items():
+        assert spec.row(item).quantity == quantity
+    for item, tons in _expected.spec_tons.items():
+        assert spec.row(item).tons == pytest.approx(tons)

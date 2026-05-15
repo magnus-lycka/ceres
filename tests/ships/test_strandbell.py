@@ -87,6 +87,7 @@ _expected = SimpleNamespace(
     countermeasures_cost_mcr=4.0,
     countermeasures_power=1.0,
     # Turrets — agrees with ref
+    turret_count=2,
     beam_turret_cost_mcr=2.5,
     beam_turret_power=13.0,  # 1 mount + 3 × 4 beam lasers
     missile_turret_cost_mcr=3.25,
@@ -98,7 +99,9 @@ _expected = SimpleNamespace(
     # Systems
     repair_drones_tons=2.0,
     repair_drones_cost_mcr=0.4,
+    repair_drones_count=1,
     airlock_tons=0.0,  # 2 free airlocks for a 200-ton hull
+    airlock_count=2,
     stateroom_count=15,
     staterooms_total_tons=60.0,
     common_area_tons=4.0,
@@ -116,6 +119,52 @@ _expected = SimpleNamespace(
     # stores)
     production_cost_mcr_ref=147.13,
     production_cost_mcr=140.9,
+    software_packages=[
+        ('Library', 0.0),
+        ('Manoeuvre/0', 0.0),
+        ('Intellect', 0.0),
+        ('Auto-Repair/1', 5_000_000.0),
+        ('Fire Control/2', 4_000_000.0),
+        ('Evade/2', 2_000_000.0),
+    ],
+    spec_ship_class='Strandbell',
+    spec_ship_type='System Defense Boat',
+    spec_tl=15,
+    spec_hull_points=88,
+    spec_rows={
+        'Standard Reinforced Hull': 'Hull',
+        'Crystaliron, Armour: 13': 'Hull',
+        'M-Drive 9': 'Propulsion',
+        'Fusion (TL 12), Power 240': 'Power',
+        'Fuel Scoops': 'Fuel',
+        'Standard Bridge': 'Command',
+        'Computer/35': 'Computer',
+        'Auto-Repair/1': 'Computer',
+        'Fire Control/2': 'Computer',
+        'Evade/2': 'Computer',
+        'Improved Sensors': 'Sensors',
+        'Countermeasures Suite': 'Sensors',
+        'Triple Turret': 'Weapons',
+        'Missile Storage (240)': 'Weapons',
+        'Medical Bay': 'Systems',
+        'Repair Drones': 'Systems',
+        'Staterooms': 'Habitation',
+        'Common Area': 'Habitation',
+        'Airlock (2 tons)': 'Hull',
+    },
+    crew=[
+        ('CAPTAIN', 1, 10_000),
+        ('PILOT', 3, 6_000),
+        ('ENGINEER', 1, 4_000),
+        ('GUNNER', 4, 2_000),
+        ('SENSOR OPERATOR', 3, 4_000),
+        ('MEDIC', 1, 4_000),
+        ('OFFICER', 1, 5_000),
+    ],
+    expected_errors=[],
+    expected_warnings=['Installed armouries below recommendation: 0 < 1'],
+    expected_crew_infos=[],
+    expected_crew_warnings=[],
 )
 
 STRANDBELL_HULL = hull.standard_hull.model_copy(
@@ -232,7 +281,7 @@ def test_strandbell_sensors():
 def test_strandbell_turrets():
     sdb = build_strandbell()
     assert sdb.weapons is not None
-    assert len(sdb.weapons.turrets) == 2
+    assert len(sdb.weapons.turrets) == _expected.turret_count
     beam_turret = sdb.weapons.turrets[0]
     missile_turret = sdb.weapons.turrets[1]
     assert beam_turret.cost == pytest.approx(_expected.beam_turret_cost_mcr * 1_000_000)
@@ -253,10 +302,10 @@ def test_strandbell_missile_storage():
 def test_strandbell_systems():
     sdb = build_strandbell()
     assert sdb.systems is not None
-    assert len(sdb.systems.drones) == 1
+    assert len(sdb.systems.drones) == _expected.repair_drones_count
     assert sdb.systems.drones[0].tons == pytest.approx(_expected.repair_drones_tons)
     assert sdb.systems.drones[0].cost == pytest.approx(_expected.repair_drones_cost_mcr * 1_000_000)
-    assert len(sdb.hull.airlocks) == 2
+    assert len(sdb.hull.airlocks) == _expected.airlock_count
     assert sdb.hull.airlocks[0].tons == _expected.airlock_tons  # 2 free for 200t
     assert sdb.hull.airlocks[1].tons == _expected.airlock_tons
     assert sdb.systems.medical_bays[0] is not None
@@ -296,56 +345,33 @@ def test_strandbell_software():
     sdb = build_strandbell()
     assert sdb.computer is not None
     packages = [(p.description, p.cost) for p in sdb.computer.software_packages]
-    assert ('Library', 0.0) in packages
-    assert ('Manoeuvre/0', 0.0) in packages
-    assert ('Intellect', 0.0) in packages
-    assert ('Auto-Repair/1', 5_000_000) in packages
-    assert ('Fire Control/2', 4_000_000) in packages
-    assert ('Evade/2', 2_000_000) in packages
+    assert packages == _expected.software_packages
 
 
 def test_strandbell_spec_structure():
     sdb = build_strandbell()
     spec = sdb.build_spec()
 
-    assert spec.ship_class == 'Strandbell'
-    assert spec.ship_type == 'System Defense Boat'
-    assert spec.tl == 15
-    assert spec.hull_points == 88
+    assert spec.ship_class == _expected.spec_ship_class
+    assert spec.ship_type == _expected.spec_ship_type
+    assert spec.tl == _expected.spec_tl
+    assert spec.hull_points == _expected.spec_hull_points
 
-    assert spec.row('Standard Reinforced Hull').section == 'Hull'
-    assert spec.row('Crystaliron, Armour: 13').section == 'Hull'
-    assert spec.row('M-Drive 9').section == 'Propulsion'
-    assert spec.row('Fusion (TL 12), Power 240').section == 'Power'
-    assert spec.row('Fuel Scoops').section == 'Fuel'
-    assert spec.row('Standard Bridge').section == 'Command'
-    assert spec.row('Computer/35').section == 'Computer'
-    assert spec.row('Auto-Repair/1').section == 'Computer'
-    assert spec.row('Fire Control/2').section == 'Computer'
-    assert spec.row('Evade/2').section == 'Computer'
-    assert spec.row('Improved Sensors').section == 'Sensors'
-    assert spec.row('Countermeasures Suite').section == 'Sensors'
-    assert spec.row('Triple Turret', section='Weapons').section == 'Weapons'
-    assert spec.row('Missile Storage (240)').section == 'Weapons'
-    assert spec.row('Medical Bay').section == 'Systems'
-    assert spec.row('Repair Drones').section == 'Systems'
+    for item, section in _expected.spec_rows.items():
+        assert spec.row(item, section=section).section == section
+
     stateroom_row = spec.row('Staterooms', section='Habitation')
-    assert stateroom_row.section == 'Habitation'
-    assert stateroom_row.quantity == 15
-    assert spec.row('Common Area').section == 'Habitation'
+    assert stateroom_row.section == _expected.spec_rows['Staterooms']
+    assert stateroom_row.quantity == _expected.stateroom_count
     airlock_row = spec.row('Airlock (2 tons)', section='Hull')
-    assert airlock_row.section == 'Hull'
-    assert airlock_row.quantity == 2
+    assert airlock_row.section == _expected.spec_rows['Airlock (2 tons)']
+    assert airlock_row.quantity == _expected.airlock_count
 
 
 def test_strandbell_uses_military_crew_rules():
     sdb = build_strandbell()
-    assert [(role.role, quantity, role.monthly_salary) for role, quantity in sdb.crew.grouped_roles] == [
-        ('CAPTAIN', 1, 10_000),
-        ('PILOT', 3, 6_000),
-        ('ENGINEER', 1, 4_000),
-        ('GUNNER', 4, 2_000),
-        ('SENSOR OPERATOR', 3, 4_000),
-        ('MEDIC', 1, 4_000),
-        ('OFFICER', 1, 5_000),
-    ]
+    assert [(role.role, quantity, role.monthly_salary) for role, quantity in sdb.crew.grouped_roles] == _expected.crew
+    assert sdb.notes.errors == _expected.expected_errors
+    assert sdb.notes.warnings == _expected.expected_warnings
+    assert sdb.crew.notes.infos == _expected.expected_crew_infos
+    assert sdb.crew.notes.warnings == _expected.expected_crew_warnings

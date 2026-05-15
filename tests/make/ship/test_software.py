@@ -1,5 +1,6 @@
 import pytest
 
+from ceres.make.ship import hull, ship
 from ceres.make.ship.base import ShipBase
 from ceres.make.ship.computer import (
     Computer5,
@@ -9,6 +10,7 @@ from ceres.make.ship.computer import (
     ComputerSection,
     Core40,
 )
+from ceres.make.ship.drives import DriveSection, JDrive2
 from ceres.make.ship.software import (
     AdvancedFireControl,
     AntiHijack,
@@ -198,6 +200,78 @@ def test_software_packages_do_not_warn_about_redundant_lower_singleton():
     assert [package.notes.warnings for package in jump_controls] == [[], []]
 
 
+def test_jump_drive_2_without_jump_control_2_adds_local_note():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        drives=DriveSection(j_drive=JDrive2()),
+        computer=ComputerSection(hardware=Computer5(bis=True)),
+    )
+    assert my_ship.drives is not None
+    assert my_ship.drives.j_drive is not None
+    assert my_ship.drives.j_drive.notes.items == ['Jump 2']
+    assert my_ship.drives.j_drive.notes.warnings == ['No Jump Control software']
+
+
+def test_jump_drive_with_lower_jump_control_warns_on_drive():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        drives=DriveSection(j_drive=JDrive2()),
+        computer=ComputerSection(hardware=Computer5(bis=True), software=[JumpControl(rating=1)]),
+    )
+    assert my_ship.drives is not None
+    assert my_ship.drives.j_drive is not None
+    assert my_ship.drives.j_drive.notes.items == ['Jump 2']
+    assert my_ship.drives.j_drive.notes.warnings == ['Limited to Jump 1 by control software']
+
+
+def test_jump_control_without_jump_drive_warns_on_software():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        computer=ComputerSection(hardware=Computer5(bis=True), software=[JumpControl(rating=2)]),
+    )
+    assert my_ship.computer is not None
+    explicit_jump_control = next(
+        package for package in my_ship.computer.software_packages if isinstance(package, JumpControl)
+    )
+    assert explicit_jump_control.notes.items == ['Jump Control/2']
+    assert explicit_jump_control.notes.warnings == ['No jump drive installed']
+
+
+def test_jump_control_with_higher_rating_than_drive_warns_on_software():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        drives=DriveSection(j_drive=JDrive2()),
+        computer=ComputerSection(hardware=Computer10(bis=True), software=[JumpControl(rating=3)]),
+    )
+    assert my_ship.computer is not None
+    explicit_jump_control = next(
+        package for package in my_ship.computer.software_packages if isinstance(package, JumpControl)
+    )
+    assert explicit_jump_control.notes.items == ['Jump Control/3']
+    assert explicit_jump_control.notes.warnings == ['Limited to Jump 2 by drive capacity']
+
+
+def test_degraded_jump_control_warns_drive():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        drives=DriveSection(j_drive=JDrive2()),
+        computer=ComputerSection(hardware=Computer5(), software=[JumpControl(rating=2)]),
+    )
+    assert my_ship.drives is not None
+    assert my_ship.drives.j_drive is not None
+    assert my_ship.drives.j_drive.notes.warnings == ['Limited to Jump 1 by control software']
+
+
 def test_software_packages_keep_repeated_family_types():
     hardware = Computer10()
     hardware.bind(DummyOwner(12, 100))
@@ -257,6 +331,18 @@ def test_validate_software_adds_tl_error():
 
     jump_control = next(package for package in section.software_packages if isinstance(package, JumpControl))
     assert 'Jump Control/2 requires TL11' in jump_control.notes.errors
+
+
+def test_jump_control_blocked_by_tl_leaves_effective_rating_none():
+    hardware = Computer5()
+    hardware.bind(DummyOwner(8, 100))
+    section = ComputerSection(hardware=hardware, software=[JumpControl(rating=1)])
+
+    section.validate_software()
+
+    jump_control = next(package for package in section.software_packages if isinstance(package, JumpControl))
+    assert jump_control.effective_rating is None
+    assert jump_control.notes.errors == ['Jump Control/1 requires TL9']
 
 
 def test_jump_control_degrades_when_processing_insufficient():
