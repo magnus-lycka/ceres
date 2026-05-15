@@ -1,7 +1,7 @@
-"""Robot brain types — stub for Phase 1.
+"""Robot brain types — Phase 1 stub.
 
-Properties (cost, bandwidth, base_int, skill_dm) are added in Phase 2 when
-the full brain table from refs/robot/33_brain.md is implemented.
+Full table lookup (cost, bandwidth, base_int, skill_dm) is added in Phase 2
+when refs/robot/33_brain.md is fully implemented.
 """
 
 from typing import Annotated, Literal
@@ -39,7 +39,8 @@ class AdvancedBrain(_BrainBase):
     brain_tl: int = 12
 
     def programming_label(self) -> str:
-        return f'Advanced (INT 8)'  # placeholder until Phase 2 table lookup
+        # Phase 2 will look up INT from the brain table using brain_tl
+        return 'Advanced (INT ?)'
 
 
 RobotBrainUnion = Annotated[

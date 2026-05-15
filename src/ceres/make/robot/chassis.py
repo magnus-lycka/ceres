@@ -22,7 +22,9 @@ class Trait:
     def __str__(self) -> str:
         if self.value is None:
             return self.name
-        return f'{self.name} ({self.value:+d})' if isinstance(self.value, int) else f'{self.name} ({self.value})'
+        if isinstance(self.value, int):
+            return f'{self.name} ({self.value:+d})'
+        return f'{self.name} ({self.value})'
 
 
 @dataclass(frozen=True)
@@ -61,16 +63,14 @@ _ARMOUR_TL_BANDS: list[tuple[int, int, int]] = [
 
 
 def base_armour(tl: int) -> int:
-    """Base Protection for a robot of the given TL."""
     for tl_min, tl_max, protection in _ARMOUR_TL_BANDS:
         if tl_min <= tl <= tl_max:
             return protection
-    return 2  # below TL6: treated as TL6–8 band
+    return 2  # below TL6: treated as TL6–8
 
 
 # refs/robot/07_chassis_options.md — Endurance Modifier table
 def base_endurance_multiplier(tl: int) -> float:
-    """TL-based multiplier applied to locomotion base endurance."""
     if tl >= 15:
         return 2.0
     if tl >= 12:
@@ -79,7 +79,6 @@ def base_endurance_multiplier(tl: int) -> float:
 
 
 def size_trait(size: RobotSize) -> Trait | None:
-    """Small or Large trait derived from size attack DM, or None for Size 5."""
     dm = chassis_entry(size).attack_dm
     if dm < 0:
         return Trait('Small', dm)
@@ -89,7 +88,6 @@ def size_trait(size: RobotSize) -> Trait | None:
 
 
 def base_available_slots(size: RobotSize, *, none_locomotion: bool) -> int:
-    """Base option slots, including the None-locomotion +25% bonus (refs/robot/05_locomotion.md)."""
     base = chassis_entry(size).base_slots
     if none_locomotion:
         return ceil(base * 1.25)

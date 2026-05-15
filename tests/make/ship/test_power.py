@@ -9,9 +9,13 @@ from ceres.make.ship.power import (
     EnhancedSolarCoating,
     FissionPlant,
     FusionPlantTL8,
+    HighEfficiencyBatteriesTL10,
+    HighEfficiencyBatteriesTL12,
     ImprovedSolarPanels,
     PowerSection,
     SterlingFissionPlant,
+    SterlingFissionPlantTL6,
+    SterlingFissionPlantTL12,
 )
 from ceres.make.ship.storage import FuelSection, OperationFuel
 
@@ -95,8 +99,29 @@ def test_chemical_plant_fuel_much_higher_than_fusion():
 # --- Other power plants ---
 
 
-def test_sterling_fission_plant_tons_and_cost():
+def test_tl8_sterling_fission_plant_tons_cost_and_lifespan():
     p = SterlingFissionPlant(output=8)
+    assert p.tons == pytest.approx(2.0)
+    assert p.cost == pytest.approx(1_200_000)
+    assert p.lifespan_years == 15
+
+
+def test_sterling_fission_plant_tl6_values():
+    p = SterlingFissionPlantTL6(output=6)
+    assert p.tons == pytest.approx(2.0)
+    assert p.cost == pytest.approx(800_000)
+    assert p.lifespan_years == 10
+
+
+def test_sterling_fission_plant_tl12_values():
+    p = SterlingFissionPlantTL12(output=12)
+    assert p.tons == pytest.approx(2.0)
+    assert p.cost == pytest.approx(1_600_000)
+    assert p.lifespan_years == 20
+
+
+def test_sterling_fission_plant_minimum_size():
+    p = SterlingFissionPlant(output=4)
     assert p.tons == pytest.approx(2.0)
     assert p.cost == pytest.approx(1_200_000)
 
@@ -106,9 +131,31 @@ def test_sterling_fission_plant_has_no_operation_fuel():
     assert p.fuel_for_weeks(52 * 15) == 0.0
 
 
+def test_sterling_fission_plant_loses_power_after_lifespan():
+    p = SterlingFissionPlant(output=8)
+    assert p.power_per_ton_at_age(15) == 4
+    assert p.power_per_ton_at_age(17) == 2
+    assert p.output_at_age(17) == pytest.approx(4.0)
+
+
 def test_sterling_fission_plant_build_item():
     p = SterlingFissionPlant(output=8)
     assert p.build_item() == 'Sterling Fission (TL 8), Power 8'
+
+
+def test_sterling_fission_plant_warns_when_jump_drive_installed():
+    from ceres.make.ship.drives import DriveSection, JDrive1
+
+    my_ship = ship.Ship(
+        tl=9,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        drives=DriveSection(j_drive=JDrive1()),
+        power=PowerSection(plant=SterlingFissionPlant(output=20)),
+    )
+    assert my_ship.power is not None
+    assert my_ship.power.plant is not None
+    assert 'Sterling fission power plants cannot directly operate jump drives' in my_ship.power.plant.notes.warnings
 
 
 def test_antimatter_plant_tons_and_cost():
@@ -175,6 +222,30 @@ def test_solar_coating_close_structure_halves_output():
     assert coating.output == pytest.approx(1.0)
 
 
+def test_solar_coating_rejects_streamlined_hulls():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        power=PowerSection(solar=[EnhancedSolarCoating(units=10)]),
+    )
+    assert my_ship.power is not None
+    coating = my_ship.power.solar[0]
+    assert 'Solar coating cannot be applied to streamlined hulls' in coating.notes.errors
+
+
+def test_solar_coating_rejects_more_than_forty_percent_coverage():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        power=PowerSection(solar=[EnhancedSolarCoating(units=41)]),
+    )
+    assert my_ship.power is not None
+    coating = my_ship.power.solar[0]
+    assert 'Solar coating exceeds 40% hull coverage: 41 > 40' in coating.notes.errors
+
+
 def test_power_section_output_sums_plant_and_solar():
     ps = PowerSection(plant=FissionPlant(output=8), solar=[ImprovedSolarPanels(units=2)])
     assert ps.output == pytest.approx(9.0)
@@ -188,6 +259,35 @@ def test_ship_available_power_includes_solar():
         power=PowerSection(plant=SterlingFissionPlant(output=8), solar=[ImprovedSolarPanels(units=2)]),
     )
     assert s.available_power == pytest.approx(9.0)
+
+
+# --- High-efficiency batteries ---
+
+
+def test_tl10_high_efficiency_batteries_tons_cost_and_power():
+    batteries = HighEfficiencyBatteriesTL10(stored_power=40)
+    assert batteries.tons == pytest.approx(1.0)
+    assert batteries.cost == pytest.approx(100_000)
+    assert batteries.power == 0.0
+    assert batteries.build_item() == 'High-Efficiency Batteries (TL 10), Power 40'
+
+
+def test_tl12_high_efficiency_batteries_tons_cost_and_power():
+    batteries = HighEfficiencyBatteriesTL12(stored_power=180)
+    assert batteries.tons == pytest.approx(3.0)
+    assert batteries.cost == pytest.approx(600_000)
+    assert batteries.power == 0.0
+    assert batteries.build_item() == 'High-Efficiency Batteries (TL 12), Power 180'
+
+
+def test_high_efficiency_batteries_do_not_increase_continuous_available_power():
+    s = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        power=PowerSection(plant=FissionPlant(output=8), batteries=[HighEfficiencyBatteriesTL12(stored_power=60)]),
+    )
+    assert s.available_power == pytest.approx(8.0)
 
 
 # --- OperationFuel with non-fusion plant ---

@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Any, ClassVar
 
-from pydantic import PrivateAttr
-
 from ceres.shared import CeresPart, NoteList
 
 from .base import RobotBase
@@ -10,13 +8,7 @@ from .chassis import Trait
 
 
 class RobotPartMixin(ABC):
-    """Pure-Python ABC mixin for parts installable in a robot.
-
-    Declares the contract that concrete robot-part classes must satisfy.
-    Pydantic cannot see annotations on a plain mixin, so concrete classes must
-    redeclare ``slots`` and ``cost`` as Pydantic fields (or computed properties
-    using ``ClassVar`` to suppress field inference).
-    """
+    """Pure-Python ABC mixin for parts installable in a robot."""
 
     slots: int
     cost: float
@@ -58,10 +50,6 @@ class RobotPartMixin(ABC):
     def skill_grants(self) -> tuple[str, ...]:
         return ()
 
-    @property
-    def option_label(self) -> str | None:
-        return None
-
 
 class RobotPart(CeresPart, RobotPartMixin):
     """Concrete base for robot-installable parts."""
@@ -75,9 +63,7 @@ class RobotPart(CeresPart, RobotPartMixin):
         if a is None:
             raise RuntimeError(f'{type(self).__name__} not bound to an Assembly')
         if not isinstance(a, RobotBase):
-            raise RuntimeError(
-                f'{type(self).__name__} bound to unexpected assembly type {type(a).__name__}'
-            )
+            raise RuntimeError(f'{type(self).__name__} bound to unexpected type {type(a).__name__}')
         return a
 
     def model_post_init(self, __context: Any) -> None:

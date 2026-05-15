@@ -110,17 +110,68 @@ class ChemicalPlant(_PowerPlant):
         return 2
 
 
-class SterlingFissionPlant(_PowerPlant):
-    plant_type: Literal['sterling_fission'] = 'sterling_fission'
-    tl: int = 8
-    power_per_ton: ClassVar[int] = 4
-    cost_per_ton: ClassVar[int] = 600_000
+class _SterlingFissionPlant(_PowerPlant):
+    minimum_tons: ClassVar[int] = 2
+    lifespan_years: ClassVar[int]
 
     def build_item(self) -> str | None:
         return f'Sterling Fission (TL {self.tl}), Power {self.output}'
 
+    def _base_tons(self) -> float:
+        return max(self.minimum_tons, self.output / self.power_per_ton)
+
+    @property
+    def tons(self) -> float:
+        multiplier = 1.0 if self.customisation is None else self.customisation.tons_multiplier
+        return self._base_tons() * multiplier
+
+    @property
+    def cost(self) -> float:
+        cost = self._base_tons() * self.cost_per_ton
+        multiplier = 1.0 if self.customisation is None else self.customisation.cost_multiplier
+        return cost * multiplier
+
     def fuel_for_weeks(self, weeks: int) -> float:
         return 0.0
+
+    def power_per_ton_at_age(self, age_years: int) -> float:
+        years_beyond_lifespan = max(0, age_years - self.lifespan_years)
+        return max(0, self.power_per_ton - years_beyond_lifespan)
+
+    def output_at_age(self, age_years: int) -> float:
+        return self.tons * self.power_per_ton_at_age(age_years)
+
+    def build_notes(self) -> list:
+        notes = NoteList()
+        drives = getattr(self.assembly, 'drives', None) if self._assembly is not None else None
+        if drives is not None and drives.j_drive is not None:
+            notes.warning('Sterling fission power plants cannot directly operate jump drives')
+            notes.info('Sterling fission power plants may charge batteries for jump drive use')
+        return notes
+
+
+class SterlingFissionPlantTL6(_SterlingFissionPlant):
+    plant_type: Literal['sterling_fission_tl6'] = 'sterling_fission_tl6'
+    tl: int = 6
+    power_per_ton: ClassVar[int] = 3
+    cost_per_ton: ClassVar[int] = 400_000
+    lifespan_years: ClassVar[int] = 10
+
+
+class SterlingFissionPlant(_SterlingFissionPlant):
+    plant_type: Literal['sterling_fission'] = 'sterling_fission'
+    tl: int = 8
+    power_per_ton: ClassVar[int] = 4
+    cost_per_ton: ClassVar[int] = 600_000
+    lifespan_years: ClassVar[int] = 15
+
+
+class SterlingFissionPlantTL12(_SterlingFissionPlant):
+    plant_type: Literal['sterling_fission_tl12'] = 'sterling_fission_tl12'
+    tl: int = 12
+    power_per_ton: ClassVar[int] = 6
+    cost_per_ton: ClassVar[int] = 800_000
+    lifespan_years: ClassVar[int] = 20
 
 
 class AntimatterPlant(_PowerPlant):
@@ -139,13 +190,12 @@ type AnyPowerPlant = Annotated[
     | FusionPlantTL15
     | FissionPlant
     | ChemicalPlant
+    | SterlingFissionPlantTL6
     | SterlingFissionPlant
+    | SterlingFissionPlantTL12
     | AntimatterPlant,
     Field(discriminator='plant_type'),
 ]
-
-
-StirlingFissionPlant = SterlingFissionPlant
 
 
 class _SolarPowerSource(ShipPart):
@@ -292,6 +342,57 @@ type AnySolarPowerSource = Annotated[
 ]
 
 
+class _HighEfficiencyBatteries(ShipPart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+    battery_type: str
+    tl: int
+    stored_power: int
+    power_per_ton: ClassVar[int]
+    cost_per_ton: ClassVar[int]
+
+    @property
+    def tons(self) -> float:
+        return self.stored_power / self.power_per_ton
+
+    @property
+    def cost(self) -> float:
+        return self.tons * self.cost_per_ton
+
+    @property
+    def power(self) -> float:
+        return 0.0
+
+    def build_item(self) -> str | None:
+        return f'High-Efficiency Batteries (TL {self.tl}), Power {self.stored_power:g}'
+
+    def build_notes(self) -> list:
+        notes = NoteList()
+        notes.info('Batteries store power for later use; they do not generate continuous power')
+        return notes
+
+
+class HighEfficiencyBatteriesTL10(_HighEfficiencyBatteries):
+    battery_type: Literal['high_efficiency_batteries_tl10'] = 'high_efficiency_batteries_tl10'
+    tl: int = 10
+    power_per_ton: ClassVar[int] = 40
+    cost_per_ton: ClassVar[int] = 100_000
+
+
+class HighEfficiencyBatteriesTL12(_HighEfficiencyBatteries):
+    battery_type: Literal['high_efficiency_batteries_tl12'] = 'high_efficiency_batteries_tl12'
+    tl: int = 12
+    power_per_ton: ClassVar[int] = 60
+    cost_per_ton: ClassVar[int] = 200_000
+
+
+type AnyHighEfficiencyBatteries = Annotated[
+    HighEfficiencyBatteriesTL10 | HighEfficiencyBatteriesTL12,
+    Field(discriminator='battery_type'),
+]
+
+
 class EmergencyPowerSystem(ShipPart):
     tons: ClassVar[float]
     cost: ClassVar[float]
@@ -328,6 +429,7 @@ class EmergencyPowerSystem(ShipPart):
 class PowerSection(ShipPart):
     plant: AnyPowerPlant | None = None
     solar: list[AnySolarPowerSource] = Field(default_factory=list)
+    batteries: list[AnyHighEfficiencyBatteries] = Field(default_factory=list)
     emergency_power_system: EmergencyPowerSystem | None = None
 
     def validate_emergency_power_system(self) -> None:
@@ -335,7 +437,9 @@ class PowerSection(ShipPart):
             raise RuntimeError('EmergencyPowerSystem requires a power plant')
 
     def _all_parts(self) -> list[ShipPart]:
-        return [part for part in [self.plant, *self.solar, self.emergency_power_system] if part is not None]
+        return [
+            part for part in [self.plant, *self.solar, *self.batteries, self.emergency_power_system] if part is not None
+        ]
 
     @property
     def output(self) -> float:
@@ -360,6 +464,14 @@ class PowerSection(ShipPart):
                     source,
                     power=source.output,
                     emphasize_power=True,
+                )
+            )
+        for battery in self.batteries:
+            spec.add_row(
+                ship._spec_row_for_part(
+                    SpecSection.POWER,
+                    battery,
+                    power=battery.stored_power,
                 )
             )
         if self.emergency_power_system is not None:

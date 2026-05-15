@@ -19,19 +19,22 @@ from ceres.make.robot.locomotion import (
 class TestLocomotionTable:
     """Verify rule data against refs/robot/05_locomotion.md."""
 
-    @pytest.mark.parametrize('loco_cls, tl, agility, endurance, cost_mult', [
-        (NoneLocomotion,      5,  None, 216, 1.0),
-        (WheelsLocomotion,    5,  0,    72,  2.0),
-        (WheelsAtvLocomotion, 5,  0,    72,  3.0),
-        (TracksLocomotion,    5,  -1,   72,  2.0),
-        (GravLocomotion,      9,  1,    24,  20.0),
-        (AeroplaneLocomotion, 5,  1,    12,  12.0),
-        (AquaticLocomotion,   6,  -2,   72,  4.0),
-        (VtolLocomotion,      7,  0,    24,  14.0),
-        (WalkerLocomotion,    8,  0,    72,  10.0),
-        (HovercraftLocomotion,7,  1,    24,  10.0),
-        (ThrusterLocomotion,  7,  1,    2,   20.0),
-    ])
+    @pytest.mark.parametrize(
+        'loco_cls, tl, agility, endurance, cost_mult',
+        [
+            (NoneLocomotion, 5, None, 216, 1.0),
+            (WheelsLocomotion, 5, 0, 72, 2.0),
+            (WheelsAtvLocomotion, 5, 0, 72, 3.0),
+            (TracksLocomotion, 5, -1, 72, 2.0),
+            (GravLocomotion, 9, 1, 24, 20.0),
+            (AeroplaneLocomotion, 5, 1, 12, 12.0),
+            (AquaticLocomotion, 6, -2, 72, 4.0),
+            (VtolLocomotion, 7, 0, 24, 14.0),
+            (WalkerLocomotion, 8, 0, 72, 10.0),
+            (HovercraftLocomotion, 7, 1, 24, 10.0),
+            (ThrusterLocomotion, 7, 1, 2, 20.0),
+        ],
+    )
     def test_locomotion_values(self, loco_cls, tl, agility, endurance, cost_mult):
         loco = loco_cls()
         assert loco.required_tl == tl
@@ -69,17 +72,32 @@ class TestLocomotionTable:
 
 
 class TestLocomotionLabels:
-    def test_none_label(self):
-        assert NoneLocomotion().label() == 'None'
+    @pytest.mark.parametrize(
+        'loco_cls, expected_label',
+        [
+            (NoneLocomotion, 'None'),
+            (WheelsLocomotion, 'Wheels'),
+            (WheelsAtvLocomotion, 'Wheels, ATV'),
+            (TracksLocomotion, 'Tracks'),
+            (GravLocomotion, 'Grav'),
+            (AeroplaneLocomotion, 'Aeroplane'),
+            (AquaticLocomotion, 'Aquatic'),
+            (VtolLocomotion, 'VTOL'),
+            (WalkerLocomotion, 'Walker'),
+            (HovercraftLocomotion, 'Hovercraft'),
+            (ThrusterLocomotion, 'Thruster'),
+        ],
+    )
+    def test_all_labels(self, loco_cls, expected_label):
+        assert loco_cls().label() == expected_label
 
-    def test_wheels_label(self):
-        assert WheelsLocomotion().label() == 'Wheels'
 
-    def test_grav_label(self):
-        assert GravLocomotion().label() == 'Grav'
+class TestSpeedLabel:
+    def test_none_speed_is_zero(self):
+        assert NoneLocomotion().speed_label() == '0m'
 
-    def test_walker_label(self):
-        assert WalkerLocomotion().label() == 'Walker'
+    def test_wheels_speed_is_five(self):
+        assert WheelsLocomotion().speed_label() == '5m'
 
 
 class TestNoneLocomotionSlotsBonus:
@@ -126,3 +144,13 @@ class TestLocomotionDiscriminatedUnion:
         json_str = loco.model_dump_json()
         restored = adapter.validate_json(json_str)
         assert isinstance(restored, GravLocomotion)
+
+
+class TestLocomotionBaseGuard:
+    def test_base_label_raises(self):
+        import pytest
+
+        from ceres.make.robot.locomotion import _LocomotionBase
+
+        with pytest.raises(NotImplementedError):
+            _LocomotionBase.label(WheelsLocomotion())

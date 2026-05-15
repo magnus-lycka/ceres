@@ -11,7 +11,6 @@ from .chassis import Trait
 class _LocomotionBase(CeresModel):
     model_config = {'frozen': True}
 
-    # Subclasses declare these as ClassVars; properties expose them uniformly.
     _required_tl: ClassVar[int]
     _agility: ClassVar[int | None]
     _base_endurance: ClassVar[int]
@@ -55,7 +54,6 @@ class _LocomotionBase(CeresModel):
         return f'{self.base_speed}m'
 
     def slots_bonus(self, base_slots: int) -> int:
-        """Extra slots granted by this locomotion type (None = +25% rounded up)."""
         if self._none_locomotion:
             return ceil(base_slots * 1.25) - base_slots
         return 0

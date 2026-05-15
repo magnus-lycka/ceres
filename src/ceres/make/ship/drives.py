@@ -19,6 +19,7 @@ from .power import (  # noqa: F401
     AdvancedSolarCoating,
     AdvancedSolarPanels,
     AntimatterPlant,
+    AnyHighEfficiencyBatteries,
     AnyPowerPlant,
     AnySolarPowerSource,
     BasicSolarPanels,
@@ -30,10 +31,13 @@ from .power import (  # noqa: F401
     FusionPlantTL8,
     FusionPlantTL12,
     FusionPlantTL15,
+    HighEfficiencyBatteriesTL10,
+    HighEfficiencyBatteriesTL12,
     ImprovedSolarPanels,
     PowerSection,
     SterlingFissionPlant,
-    StirlingFissionPlant,
+    SterlingFissionPlantTL6,
+    SterlingFissionPlantTL12,
 )
 from .software import JumpControl
 from .spec import ShipSpec, SpecSection

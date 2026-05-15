@@ -8,7 +8,14 @@ from ceres.make.ship import armour, hull
 from ceres.make.ship.bridge import Cockpit, CommandSection
 from ceres.make.ship.computer import Computer5, Computer20, Computer25, ComputerSection, _Computer
 from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
-from ceres.make.ship.drives import DriveSection, FusionPlantTL12, ImprovedSolarPanels, MDrive6, PowerSection
+from ceres.make.ship.drives import (
+    DriveSection,
+    FusionPlantTL12,
+    HighEfficiencyBatteriesTL12,
+    ImprovedSolarPanels,
+    MDrive6,
+    PowerSection,
+)
 from ceres.make.ship.hull import BasicStealth, Hull
 from ceres.make.ship.parts import EnergyEfficient, HighTechnology
 from ceres.make.ship.power import SterlingFissionPlant
@@ -210,6 +217,7 @@ def test_roundtrip_sterling_fission_and_solar_power():
         power=PowerSection(
             plant=SterlingFissionPlant(output=8),
             solar=[ImprovedSolarPanels(units=2)],
+            batteries=[HighEfficiencyBatteriesTL12(stored_power=60)],
         ),
     )
     loaded = _roundtrip(source_ship)
@@ -219,6 +227,9 @@ def test_roundtrip_sterling_fission_and_solar_power():
     assert loaded.power.plant.output == 8
     assert len(loaded.power.solar) == 1
     assert isinstance(loaded.power.solar[0], ImprovedSolarPanels)
+    assert len(loaded.power.batteries) == 1
+    assert isinstance(loaded.power.batteries[0], HighEfficiencyBatteriesTL12)
+    assert loaded.power.batteries[0].stored_power == 60
     assert loaded.available_power == pytest.approx(9.0)
 
 

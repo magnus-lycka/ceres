@@ -312,3 +312,21 @@ Tycho may use floor rather than ceil, the Belt Racer stat block deviation
 is treated as a Tycho tool difference, not evidence of a light-hull modifier.
 The rules text on light hulls (refs/hg/05_specialised_hull_types.md) states
 only cost and hull-point effects — no power modifier.
+
+### RIS-014 Sterling Fission And Stored Battery Power
+
+The Spinward Extents rules define Sterling fission power plants as sealed,
+long-duration fission generators that require no external fuel but must be
+replaced at the end of their lifespan. Ceres models the TL6, TL8, and TL12 rows
+from that table, including the two-ton minimum size and the post-lifespan loss
+of one Power per ton per additional year of use.
+
+The same rules state that Sterling fission power plants cannot directly operate
+jump drives, although they may charge batteries for jump-drive use. Ceres reports
+this as a warning on a Sterling fission plant installed in a ship with a jump
+drive.
+
+High-efficiency batteries are stored power, not continuous generation. Ceres
+therefore includes their tonnage, cost, and Power capacity in the Power section,
+but does not add battery capacity to `Ship.available_power`. A combat round or
+scenario layer may choose how much stored power is discharged in that round.

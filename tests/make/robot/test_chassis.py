@@ -19,16 +19,19 @@ class TestRobotSizeTable:
             assert entry.base_hits > 0
             assert entry.basic_cost > 0
 
-    @pytest.mark.parametrize('size, expected_slots, expected_hits, expected_dm, expected_cost', [
-        (RobotSize.SIZE_1, 1,   1,  -4, 100),
-        (RobotSize.SIZE_2, 2,   4,  -3, 200),
-        (RobotSize.SIZE_3, 4,   8,  -2, 400),
-        (RobotSize.SIZE_4, 8,   12, -1, 800),
-        (RobotSize.SIZE_5, 16,  20,  0, 1000),
-        (RobotSize.SIZE_6, 32,  32,  1, 2000),
-        (RobotSize.SIZE_7, 64,  50,  2, 4000),
-        (RobotSize.SIZE_8, 128, 72,  3, 8000),
-    ])
+    @pytest.mark.parametrize(
+        'size, expected_slots, expected_hits, expected_dm, expected_cost',
+        [
+            (RobotSize.SIZE_1, 1, 1, -4, 100),
+            (RobotSize.SIZE_2, 2, 4, -3, 200),
+            (RobotSize.SIZE_3, 4, 8, -2, 400),
+            (RobotSize.SIZE_4, 8, 12, -1, 800),
+            (RobotSize.SIZE_5, 16, 20, 0, 1000),
+            (RobotSize.SIZE_6, 32, 32, 1, 2000),
+            (RobotSize.SIZE_7, 64, 50, 2, 4000),
+            (RobotSize.SIZE_8, 128, 72, 3, 8000),
+        ],
+    )
     def test_chassis_row_values(self, size, expected_slots, expected_hits, expected_dm, expected_cost):
         entry = chassis_entry(size)
         assert entry.base_slots == expected_slots
@@ -42,13 +45,24 @@ class TestRobotSizeTable:
 
 
 class TestBaseArmour:
-    @pytest.mark.parametrize('tl, expected', [
-        (6,  2), (7,  2), (8,  2),
-        (9,  3), (10, 3), (11, 3),
-        (12, 4), (13, 4), (14, 4),
-        (15, 4), (16, 4), (17, 4),
-        (18, 5),
-    ])
+    @pytest.mark.parametrize(
+        'tl, expected',
+        [
+            (6, 2),
+            (7, 2),
+            (8, 2),
+            (9, 3),
+            (10, 3),
+            (11, 3),
+            (12, 4),
+            (13, 4),
+            (14, 4),
+            (15, 4),
+            (16, 4),
+            (17, 4),
+            (18, 5),
+        ],
+    )
     def test_armour_by_tl(self, tl, expected):
         assert base_armour(tl) == expected
 
@@ -57,6 +71,11 @@ class TestBaseArmour:
 
     def test_basic_lab_control_tl12(self):
         assert base_armour(12) == 4
+
+    def test_below_tl6_treated_as_tl6_band(self):
+        # Rule text does not define a band below TL6; implementation falls back to 2
+        assert base_armour(5) == 2
+        assert base_armour(1) == 2
 
 
 class TestEnduranceMultiplier:
@@ -74,15 +93,18 @@ class TestEnduranceMultiplier:
 
 
 class TestSizeTrait:
-    @pytest.mark.parametrize('size, expected_name, expected_value', [
-        (RobotSize.SIZE_1, 'Small', -4),
-        (RobotSize.SIZE_2, 'Small', -3),
-        (RobotSize.SIZE_3, 'Small', -2),
-        (RobotSize.SIZE_4, 'Small', -1),
-        (RobotSize.SIZE_6, 'Large', 1),
-        (RobotSize.SIZE_7, 'Large', 2),
-        (RobotSize.SIZE_8, 'Large', 3),
-    ])
+    @pytest.mark.parametrize(
+        'size, expected_name, expected_value',
+        [
+            (RobotSize.SIZE_1, 'Small', -4),
+            (RobotSize.SIZE_2, 'Small', -3),
+            (RobotSize.SIZE_3, 'Small', -2),
+            (RobotSize.SIZE_4, 'Small', -1),
+            (RobotSize.SIZE_6, 'Large', 1),
+            (RobotSize.SIZE_7, 'Large', 2),
+            (RobotSize.SIZE_8, 'Large', 3),
+        ],
+    )
     def test_size_trait_values(self, size, expected_name, expected_value):
         trait = size_trait(size)
         assert trait is not None
