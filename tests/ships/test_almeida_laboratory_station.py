@@ -178,9 +178,9 @@ def test_almeida_laboratory_station_matches_reference_sheet():
     assert sum(lab.cost for lab in station.systems.laboratories) == pytest.approx(
         _expected.labs_total_cost_mcr * 1_000_000
     )
-    assert station.systems.library is not None
-    assert station.systems.library.tons == pytest.approx(_expected.library_tons)
-    assert station.systems.library.cost == pytest.approx(_expected.library_cost_mcr * 1_000_000)
+    assert station.systems.libraries[0] is not None
+    assert station.systems.libraries[0].tons == pytest.approx(_expected.library_tons)
+    assert station.systems.libraries[0].cost == pytest.approx(_expected.library_cost_mcr * 1_000_000)
 
     assert station.habitation is not None
     assert sum(room.tons for room in station.habitation.staterooms) == pytest.approx(_expected.staterooms_total_tons)

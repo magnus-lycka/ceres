@@ -184,7 +184,7 @@ def test_florence_medical_scout_matches_current_subset():
     )
     assert sum(bay.power for bay in scout.systems.medical_bays) == pytest.approx(_expected.medical_bay_power_total)
     assert len(scout.systems.laboratories) == 1
-    assert scout.systems.briefing_room is not None
+    assert scout.systems.briefing_rooms[0] is not None
 
     assert scout.habitation is not None
     assert scout.habitation.staterooms is not None

@@ -1,19 +1,23 @@
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar
+from typing import Any
 
 from ceres.shared import CeresPart, NoteList
 
 from .base import RobotBase
 from .chassis import Trait
+from .skills import SkillGrant
 
 
 class RobotPartMixin(ABC):
     """Pure-Python ABC mixin for parts installable in a robot."""
 
-    slots: int
     cost: float
     tl: int
     notes: NoteList
+
+    @property
+    @abstractmethod
+    def slots(self) -> int: ...
 
     def bind(self, assembly: RobotBase) -> None:
         self._assembly = assembly  # type: ignore[attr-defined]
@@ -47,15 +51,18 @@ class RobotPartMixin(ABC):
         return ()
 
     @property
-    def skill_grants(self) -> tuple[str, ...]:
+    def skill_grants(self) -> tuple[SkillGrant, ...]:
         return ()
 
 
 class RobotPart(CeresPart, RobotPartMixin):
     """Concrete base for robot-installable parts."""
 
-    slots: ClassVar[int] = 0
     cost: float = 0.0
+
+    @property
+    def slots(self) -> int:
+        return 0
 
     @property
     def assembly(self) -> RobotBase:

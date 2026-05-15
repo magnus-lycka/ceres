@@ -273,6 +273,7 @@ Solar panels and stuff?
 Implement solar panels and solar coatings as an alternative/supplemental power source.
 
 Reference: `refs/hg/25_solar_energy_systems.md`
+Related comparison: `docs/solar-energy-systems-comparison.md`
 
 Four tiers (Basic TL6 through Advanced TL12) for both solar coating and solar panels.
 Rules include:
@@ -281,6 +282,83 @@ Rules include:
   not available on streamlined (atmospheric stress).
 - Solar panels are deployed (cannot accelerate while deployed), measured in tons = units.
 - Coatings increase hull repair cost ×2.
+
+Spinward Extents (`refs/spinext/59_arcturus.md`) adds another solar technology
+family: TL6/TL8/TL12 solar panels, hull coatings, and solar sails with different
+tables and constraints. Decide whether Ceres should support only High Guard,
+only Spinward Extents, or both as separate variants such as `HGSolarPanel` and
+`SpinExtSolarPanel`. Do not merge them until the API and source identity are
+clear.
+
+Open questions:
+
+- SpinExt solar coating works in increments of 10 tons of displacement covered;
+  decide whether the API should take `covered_tons`, require multiples of 10, or
+  expose another representation.
+- SpinExt solar sails use "Thrust per %" based on the percentage of ship tonnage
+  dedicated to sails; decide rounding, display, and whether sails belong with
+  drives or power/auxiliary systems.
+
+## Primitive Hulls
+
+Implement Spinward Extents primitive hulls.
+
+Reference: `refs/spinext/59_arcturus.md`
+
+Primitive hulls are not the same thing as existing High Guard `non_gravity`
+hulls. They are a separate low-tech spacecraft construction model:
+
+- no artificial gravity, lifter support, advanced environmental controls, or
+  structural support for high-G manoeuvres
+- cannot fit manoeuvre drives or jump drives
+- cannot support reaction thruster acceleration above Thrust 3
+- cost Cr15000/ton and use basic ship systems Power equal to 1% of hull tonnage
+- -50% Hull points
+- may still use Reinforced/Light Hulls, hull configurations, special hulls,
+  armour, and hull options
+- primitive asteroid hulls cost Cr2000/ton and do not suffer reduced Hull
+- TL5 primitive hulls cost double and cannot exceed Thrust 1
+- hulls built at TL6 or lower double life support costs
+
+Implementation notes:
+
+- Keep primitive hulls separate from `non_gravity=True`; the source explicitly
+  distinguishes non-gravity hulls that do not meet primitive limitations.
+- Ship building should report operationally impossible specs as notes/errors.
+  For example, a primitive hull with a jump drive, manoeuvre drive, or too much
+  reaction/plasma thrust should be invalid.
+- Life-support cost doubling probably belongs in habitation/life support cost
+  calculations, not in the hull class alone.
+- Solar distance/hot/cold/boiling/frozen-zone modifiers are operational context;
+  record as notes unless Ceres later gains scenario-state modelling.
+
+## Plasma Drives
+
+Implement Spinward Extents plasma drives.
+
+Reference: `refs/spinext/59_arcturus.md`
+
+Rules summary:
+
+- available at TL8
+- uses standard liquid hydrogen fuel
+- tonnage is 20% of hull tonnage per Thrust
+- cost is MCr0.4 per ton
+- each ton of plasma drive requires 1 Power
+- fuel use is 1% per Thrust per hour
+- does not require or benefit from a gravity field, so it works in deep space
+
+Open questions:
+
+- The source says plasma drives may use primitive and advanced modifications.
+  Decide whether this maps to existing Ceres customisation grades/modifiers or
+  needs a plasma-drive-specific modification set.
+- The listed modifications are Energy Efficient, Fuel Efficient, Size Reduction,
+  Energy Inefficient, Increased Size, and Fuel Inefficient. Their percentages do
+  not exactly match every existing drive customisation, so avoid guessing.
+- Planetary-operation rules are out of scope for ship building, but invalid
+  build specs should still produce notes/errors where the design itself violates
+  construction limits.
 
 ## Fuel Refinery
 
@@ -413,14 +491,3 @@ This is a non-trivial refactor because Pydantic generics interact with
 discriminated unions, but it would let us replace all the defensive `getattr`
 calls in `automation.py`, `storage.py`, `habitation.py`, and `power.py` with
 direct attribute access.
-
-## Get rid of silly singular properties
-
-class SystemsSection(CeresModel):
-...
-
-    def first_internal_system_of_type(self, system_cls: type[_T]) -> _T | None:
-        matches = self.internal_systems_of_type(system_cls)
-        return None if not matches else matches[0]
-
-This is just silly! Remove properties like SystemsSection.medical_bay since there can be >1.

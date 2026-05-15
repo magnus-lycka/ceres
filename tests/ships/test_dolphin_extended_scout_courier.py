@@ -237,15 +237,15 @@ def test_dolphin_extended_scout_courier_matches_reference_sheet():
     assert dolphin.craft.internal_housing[0].craft.cost == pytest.approx(_expected.air_raft_cost_mcr * 1_000_000)
 
     assert dolphin.systems is not None
-    assert dolphin.systems.medical_bay is not None
-    assert dolphin.systems.medical_bay.tons == pytest.approx(_expected.medical_bay_tons)
-    assert dolphin.systems.medical_bay.cost == pytest.approx(_expected.medical_bay_cost_mcr * 1_000_000)
+    assert dolphin.systems.medical_bays[0] is not None
+    assert dolphin.systems.medical_bays[0].tons == pytest.approx(_expected.medical_bay_tons)
+    assert dolphin.systems.medical_bays[0].cost == pytest.approx(_expected.medical_bay_cost_mcr * 1_000_000)
     assert len(dolphin.systems.drones) == 1
     assert dolphin.systems.drones[0].tons == pytest.approx(_expected.probe_drones_tons)
     assert dolphin.systems.drones[0].cost == pytest.approx(_expected.probe_drones_cost_mcr * 1_000_000)
-    assert dolphin.systems.workshop is not None
-    assert dolphin.systems.workshop.tons == pytest.approx(_expected.workshop_tons)
-    assert dolphin.systems.workshop.cost == pytest.approx(_expected.workshop_cost_mcr * 1_000_000)
+    assert dolphin.systems.workshops[0] is not None
+    assert dolphin.systems.workshops[0].tons == pytest.approx(_expected.workshop_tons)
+    assert dolphin.systems.workshops[0].cost == pytest.approx(_expected.workshop_cost_mcr * 1_000_000)
 
     assert dolphin.habitation is not None
     assert sum(room.tons for room in dolphin.habitation.staterooms) == pytest.approx(_expected.staterooms_tons)

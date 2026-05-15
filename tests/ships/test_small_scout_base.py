@@ -291,12 +291,12 @@ def test_small_scout_base_matches_supported_slice():
     assert len(base.systems.armouries) == 1
     assert base.systems.armouries[0].tons == pytest.approx(_expected.armoury_tons)
     assert base.systems.armouries[0].cost == pytest.approx(_expected.armoury_cost_mcr * 1_000_000)
-    assert base.systems.briefing_room is not None
-    assert base.systems.briefing_room.tons == pytest.approx(_expected.briefing_room_tons)
-    assert base.systems.briefing_room.cost == pytest.approx(_expected.briefing_room_cost_mcr * 1_000_000)
-    assert base.systems.library is not None
-    assert base.systems.library.tons == pytest.approx(_expected.library_tons)
-    assert base.systems.library.cost == pytest.approx(_expected.library_cost_mcr * 1_000_000)
+    assert base.systems.briefing_rooms[0] is not None
+    assert base.systems.briefing_rooms[0].tons == pytest.approx(_expected.briefing_room_tons)
+    assert base.systems.briefing_rooms[0].cost == pytest.approx(_expected.briefing_room_cost_mcr * 1_000_000)
+    assert base.systems.libraries[0] is not None
+    assert base.systems.libraries[0].tons == pytest.approx(_expected.library_tons)
+    assert base.systems.libraries[0].cost == pytest.approx(_expected.library_cost_mcr * 1_000_000)
     assert len(base.systems.medical_bays) == _expected.medical_bay_count
     assert sum(bay.tons for bay in base.systems.medical_bays) == pytest.approx(_expected.medical_bays_total_tons)
     assert sum(bay.cost for bay in base.systems.medical_bays) == pytest.approx(
@@ -309,9 +309,9 @@ def test_small_scout_base_matches_supported_slice():
     assert base.systems.drones[1].cost == pytest.approx(_expected.drone_probe_cost_mcr * 1_000_000)
     assert base.systems.drones[2].tons == pytest.approx(_expected.drone_repair_tons)
     assert base.systems.drones[2].cost == pytest.approx(_expected.drone_repair_cost_mcr * 1_000_000)
-    assert base.systems.training_facility is not None
-    assert base.systems.training_facility.tons == pytest.approx(_expected.training_facility_tons)
-    assert base.systems.training_facility.cost == pytest.approx(_expected.training_facility_cost_mcr * 1_000_000)
+    assert base.systems.training_facilities[0] is not None
+    assert base.systems.training_facilities[0].tons == pytest.approx(_expected.training_facility_tons)
+    assert base.systems.training_facilities[0].cost == pytest.approx(_expected.training_facility_cost_mcr * 1_000_000)
 
     assert base.habitation is not None
     assert len(base.habitation.staterooms) == _expected.staterooms_count

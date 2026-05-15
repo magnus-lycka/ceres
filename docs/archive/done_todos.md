@@ -124,3 +124,11 @@ count, and `cabin_space.passenger_capacity`. Both `_commercial_roles` and
 `_military_roles` now use this as the population denominator when habitation is
 present (covering crew and passengers sharing the same accommodation), falling
 back to `len(roles)` for ships with no habitation such as small craft.
+
+## Remove singular SystemsSection accessors
+
+Removed `SystemsSection.first_internal_system_of_type` and singular convenience
+properties such as `medical_bay`, `library`, `briefing_room`, `workshop`, and
+`biosphere`. Repeated internal systems are now accessed through list-returning
+properties such as `medical_bays`, `libraries`, `briefing_rooms`, `workshops`,
+and `biospheres`, or through `internal_systems_of_type(...)`.

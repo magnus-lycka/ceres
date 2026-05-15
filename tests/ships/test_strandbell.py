@@ -259,7 +259,7 @@ def test_strandbell_systems():
     assert len(sdb.hull.airlocks) == 2
     assert sdb.hull.airlocks[0].tons == _expected.airlock_tons  # 2 free for 200t
     assert sdb.hull.airlocks[1].tons == _expected.airlock_tons
-    assert sdb.systems.medical_bay is not None
+    assert sdb.systems.medical_bays[0] is not None
     assert sdb.habitation is not None
     assert sdb.habitation.staterooms is not None
     assert len(sdb.habitation.staterooms) == _expected.stateroom_count

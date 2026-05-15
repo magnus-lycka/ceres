@@ -313,9 +313,9 @@ is treated as a Tycho tool difference, not evidence of a light-hull modifier.
 The rules text on light hulls (refs/hg/05_specialised_hull_types.md) states
 only cost and hull-point effects — no power modifier.
 
-### RIS-014 Sterling Fission And Stored Battery Power
+### RIS-014 Spinward Extents Sterling Fission
 
-The Spinward Extents rules define Sterling fission power plants as sealed,
+`refs/spinext/59_arcturus.md` defines Sterling fission power plants as sealed,
 long-duration fission generators that require no external fuel but must be
 replaced at the end of their lifespan. Ceres models the TL6, TL8, and TL12 rows
 from that table, including the two-ton minimum size and the post-lifespan loss
@@ -325,6 +325,14 @@ The same rules state that Sterling fission power plants cannot directly operate
 jump drives, although they may charge batteries for jump-drive use. Ceres reports
 this as a warning on a Sterling fission plant installed in a ship with a jump
 drive.
+
+This is a ship-building model only. Ceres assumes a newly installed, in-lifespan
+plant unless a design explicitly asks for aged equipment; past-lifespan behaviour
+is exposed as derived helper logic rather than included in normal build totals.
+Once the lifespan is exhausted, the plant is not refuelled or reused: the whole
+sealed package is replaced and the spent unit is radioactive waste.
+
+### RIS-015 Stored Battery Power Is Not Continuous Generation
 
 High-efficiency batteries are stored power, not continuous generation. Ceres
 therefore includes their tonnage, cost, and Power capacity in the Power section,

@@ -1,3 +1,4 @@
+from pydantic import ValidationError
 import pytest
 
 from ceres.make.ship import hull, ship
@@ -11,8 +12,10 @@ from ceres.make.ship.power import (
     FusionPlantTL8,
     HighEfficiencyBatteriesTL10,
     HighEfficiencyBatteriesTL12,
-    ImprovedSolarPanels,
     PowerSection,
+    SolarPanelsTL6,
+    SolarPanelsTL8,
+    SolarPanelsTL12,
     SterlingFissionPlant,
     SterlingFissionPlantTL6,
     SterlingFissionPlantTL12,
@@ -194,13 +197,40 @@ def test_ship_with_fission_plant():
 # --- Solar energy systems ---
 
 
-def test_improved_solar_panels_tons_cost_and_output():
-    panels = ImprovedSolarPanels(units=2)
-    assert panels.tons == pytest.approx(2.0)
-    assert panels.cost == pytest.approx(400_000)
+def test_tl8_solar_panels_tons_cost_and_output():
+    panels = SolarPanelsTL8(tons=0.5)
+    assert panels.tons == pytest.approx(0.5)
+    assert panels.cost == pytest.approx(100_000)
     assert panels.output == pytest.approx(1.0)
     assert panels.power == 0.0
-    assert panels.build_item() == 'Solar Panels (Improved), Power 1'
+    assert panels.build_item() == 'Solar Panels (TL 8), Power 1'
+
+
+def test_solar_panel_table_values():
+    assert SolarPanelsTL6(tons=1).output == pytest.approx(1.0)
+    assert SolarPanelsTL6(tons=1).cost == pytest.approx(100_000)
+    assert SolarPanelsTL8(tons=1).output == pytest.approx(2.0)
+    assert SolarPanelsTL8(tons=1).cost == pytest.approx(200_000)
+    assert SolarPanelsTL12(tons=1).output == pytest.approx(3.0)
+    assert SolarPanelsTL12(tons=1).cost == pytest.approx(400_000)
+
+
+def test_solar_panels_minimum_size():
+    with pytest.raises(ValidationError):
+        SolarPanelsTL8(tons=0.49)
+
+
+def test_solar_panel_notes_capture_deployment_and_use_limits():
+    my_ship = ship.Ship(
+        tl=8,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        power=PowerSection(solar=[SolarPanelsTL8(tons=0.5)]),
+    )
+    assert my_ship.power is not None
+    panels = my_ship.power.solar[0]
+    assert 'Ships cannot jump with solar panels deployed' in panels.notes.infos
+    assert 'Ships cannot manoeuvre above Thrust 1 with solar panels deployed' in panels.notes.infos
 
 
 def test_solar_coating_has_no_tonnage():
@@ -247,7 +277,7 @@ def test_solar_coating_rejects_more_than_forty_percent_coverage():
 
 
 def test_power_section_output_sums_plant_and_solar():
-    ps = PowerSection(plant=FissionPlant(output=8), solar=[ImprovedSolarPanels(units=2)])
+    ps = PowerSection(plant=FissionPlant(output=8), solar=[SolarPanelsTL8(tons=0.5)])
     assert ps.output == pytest.approx(9.0)
 
 
@@ -256,7 +286,7 @@ def test_ship_available_power_includes_solar():
         tl=8,
         displacement=90,
         hull=hull.Hull(configuration=hull.standard_hull),
-        power=PowerSection(plant=SterlingFissionPlant(output=8), solar=[ImprovedSolarPanels(units=2)]),
+        power=PowerSection(plant=SterlingFissionPlant(output=8), solar=[SolarPanelsTL8(tons=0.5)]),
     )
     assert s.available_power == pytest.approx(9.0)
 

@@ -357,13 +357,13 @@ def test_dragon_modeled_subset_matches_current_model():
     assert dragon.systems is not None
     assert len(dragon.systems.armouries) == 1
     assert dragon.systems.armouries[0].tons == pytest.approx(1.0)
-    assert dragon.systems.biosphere is not None
-    assert dragon.systems.biosphere.tons == pytest.approx(4.0)
+    assert dragon.systems.biospheres[0] is not None
+    assert dragon.systems.biospheres[0].tons == pytest.approx(4.0)
     assert len(dragon.systems.drones) == 1
     assert dragon.systems.drones[0].tons == pytest.approx(_expected.repair_drones_tons)
-    assert dragon.systems.medical_bay is not None
-    assert dragon.systems.training_facility is not None
-    assert dragon.systems.workshop is not None
+    assert dragon.systems.medical_bays[0] is not None
+    assert dragon.systems.training_facilities[0] is not None
+    assert dragon.systems.workshops[0] is not None
 
     assert dragon.habitation is not None
     assert dragon.habitation.staterooms is not None

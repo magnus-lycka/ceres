@@ -15,6 +15,7 @@ from .chassis import (
 )
 from .locomotion import LocomotionUnion
 from .parts import RobotPartMixin
+from .skills import SkillGrant
 from .spec import RobotSpec, RobotSpecRow, RobotSpecSection
 from .text import format_credits, format_traits
 
@@ -91,6 +92,18 @@ class Robot(RobotBase):
                 result.extend(opt.robot_traits)
         return result
 
+    @property
+    def skills_display(self) -> str:
+        skills: list[SkillGrant] = list(self.brain.skill_grants)
+        for opt in self.options:
+            if isinstance(opt, RobotPartMixin):
+                skills.extend(opt.skill_grants)
+        parts = [str(s) for s in skills]
+        rem = self.brain.remaining_bandwidth
+        if rem is not None and rem > 0:
+            parts.append(f'+{rem} Bandwidth available')
+        return ', '.join(parts) if parts else '—'
+
     def build_notes(self) -> list:
         from ceres.shared import _Note
 
@@ -110,6 +123,13 @@ class Robot(RobotBase):
                     f'Speed {self.locomotion.speed_label()}, '
                     f'TL {self.tl}, Cost {format_credits(self.base_chassis_cost)}'
                 ),
+            )
+        )
+        spec.add_row(
+            RobotSpecRow(
+                section=RobotSpecSection.SKILLS,
+                label='Skills',
+                value=self.skills_display,
             )
         )
         spec.add_row(

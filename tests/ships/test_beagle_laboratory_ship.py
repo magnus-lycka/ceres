@@ -313,24 +313,24 @@ def test_beagle_laboratory_ship_matches_supported_slice():
     assert len(ship_.systems.drones) == 1
     assert ship_.systems.drones[0].tons == pytest.approx(_expected.probe_drones_tons)
     assert ship_.systems.drones[0].cost == pytest.approx(_expected.probe_drones_cost_mcr * 1_000_000)
-    assert ship_.systems.biosphere is not None
-    assert ship_.systems.biosphere.tons == pytest.approx(_expected.biosphere_tons)
-    assert ship_.systems.biosphere.cost == pytest.approx(_expected.biosphere_cost_mcr * 1_000_000)
-    assert ship_.systems.biosphere.power == pytest.approx(_expected.biosphere_power)
+    assert ship_.systems.biospheres[0] is not None
+    assert ship_.systems.biospheres[0].tons == pytest.approx(_expected.biosphere_tons)
+    assert ship_.systems.biospheres[0].cost == pytest.approx(_expected.biosphere_cost_mcr * 1_000_000)
+    assert ship_.systems.biospheres[0].power == pytest.approx(_expected.biosphere_power)
     assert len(ship_.systems.laboratories) == _expected.lab_count
     assert sum(lab.tons for lab in ship_.systems.laboratories) == pytest.approx(_expected.labs_total_tons)
     assert sum(lab.cost for lab in ship_.systems.laboratories) == pytest.approx(
         _expected.labs_total_cost_mcr * 1_000_000
     )
-    assert ship_.systems.library is not None
-    assert ship_.systems.library.tons == pytest.approx(_expected.library_tons)
-    assert ship_.systems.library.cost == pytest.approx(_expected.library_cost_mcr * 1_000_000)
-    assert ship_.systems.medical_bay is not None
-    assert ship_.systems.medical_bay.tons == pytest.approx(_expected.medical_bay_tons)
-    assert ship_.systems.medical_bay.cost == pytest.approx(_expected.medical_bay_cost_mcr * 1_000_000)
-    assert ship_.systems.workshop is not None
-    assert ship_.systems.workshop.tons == pytest.approx(_expected.workshop_tons)
-    assert ship_.systems.workshop.cost == pytest.approx(_expected.workshop_cost_mcr * 1_000_000)
+    assert ship_.systems.libraries[0] is not None
+    assert ship_.systems.libraries[0].tons == pytest.approx(_expected.library_tons)
+    assert ship_.systems.libraries[0].cost == pytest.approx(_expected.library_cost_mcr * 1_000_000)
+    assert ship_.systems.medical_bays[0] is not None
+    assert ship_.systems.medical_bays[0].tons == pytest.approx(_expected.medical_bay_tons)
+    assert ship_.systems.medical_bays[0].cost == pytest.approx(_expected.medical_bay_cost_mcr * 1_000_000)
+    assert ship_.systems.workshops[0] is not None
+    assert ship_.systems.workshops[0].tons == pytest.approx(_expected.workshop_tons)
+    assert ship_.systems.workshops[0].cost == pytest.approx(_expected.workshop_cost_mcr * 1_000_000)
 
     assert ship_.habitation is not None
     assert sum(room.tons for room in ship_.habitation.staterooms) == pytest.approx(_expected.staterooms_total_tons)

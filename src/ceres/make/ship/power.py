@@ -224,53 +224,60 @@ class _SolarPowerSource(ShipPart):
         return f'{self.output:g}'
 
 
-class _SolarPanels(_SolarPowerSource):
-    tons: ClassVar[float]
+class _SolarPanels(ShipPart):
+    cost: ClassVar[float]
+    power: ClassVar[float]
+    solar_type: str
+    tl: int
+    tons: float = Field(0.5, ge=0.5)
+    power_per_ton: ClassVar[int]
+    cost_per_ton: ClassVar[int]
 
     def build_item(self) -> str | None:
-        return f'Solar Panels ({self.grade}), Power {self._output_label()}'
+        return f'Solar Panels (TL {self.tl}), Power {self.output:g}'
 
     @property
-    def tons(self) -> float:
-        return self.units
+    def cost(self) -> float:
+        return self.tons * self.cost_per_ton
+
+    @property
+    def power(self) -> float:
+        return 0.0
+
+    @property
+    def output(self) -> float:
+        return self.tons * self.power_per_ton
 
     def build_notes(self) -> list:
         notes = NoteList()
-        notes.info('Solar panels provide power only while deployed')
-        notes.info('DM+2 to detect the ship while solar panels are deployed')
+        notes.info('Solar panel Power assumes operation in a star habitable zone')
+        notes.info('Solar panels are useless in interstellar space')
+        notes.info('Solar panels require 1D rounds to deploy or retract')
+        notes.info('Ships cannot jump with solar panels deployed')
+        notes.info('Ships cannot manoeuvre above Thrust 1 with solar panels deployed')
+        notes.info('Solar panels can charge batteries')
         return notes
 
 
-class BasicSolarPanels(_SolarPanels):
-    solar_type: Literal['basic_solar_panels'] = 'basic_solar_panels'
+class SolarPanelsTL6(_SolarPanels):
+    solar_type: Literal['solar_panels_tl6'] = 'solar_panels_tl6'
     tl: int = 6
-    grade: ClassVar[str] = 'Basic'
-    power_per_unit: ClassVar[float] = 0.25
-    cost_per_unit: ClassVar[int] = 100_000
+    power_per_ton: ClassVar[int] = 1
+    cost_per_ton: ClassVar[int] = 100_000
 
 
-class ImprovedSolarPanels(_SolarPanels):
-    solar_type: Literal['improved_solar_panels'] = 'improved_solar_panels'
+class SolarPanelsTL8(_SolarPanels):
+    solar_type: Literal['solar_panels_tl8'] = 'solar_panels_tl8'
     tl: int = 8
-    grade: ClassVar[str] = 'Improved'
-    power_per_unit: ClassVar[float] = 0.5
-    cost_per_unit: ClassVar[int] = 200_000
+    power_per_ton: ClassVar[int] = 2
+    cost_per_ton: ClassVar[int] = 200_000
 
 
-class EnhancedSolarPanels(_SolarPanels):
-    solar_type: Literal['enhanced_solar_panels'] = 'enhanced_solar_panels'
-    tl: int = 10
-    grade: ClassVar[str] = 'Enhanced'
-    power_per_unit: ClassVar[int] = 1
-    cost_per_unit: ClassVar[int] = 300_000
-
-
-class AdvancedSolarPanels(_SolarPanels):
-    solar_type: Literal['advanced_solar_panels'] = 'advanced_solar_panels'
+class SolarPanelsTL12(_SolarPanels):
+    solar_type: Literal['solar_panels_tl12'] = 'solar_panels_tl12'
     tl: int = 12
-    grade: ClassVar[str] = 'Advanced'
-    power_per_unit: ClassVar[int] = 2
-    cost_per_unit: ClassVar[int] = 400_000
+    power_per_ton: ClassVar[int] = 3
+    cost_per_ton: ClassVar[int] = 400_000
 
 
 class _SolarCoating(_SolarPowerSource):
@@ -332,12 +339,7 @@ class AdvancedSolarCoating(_SolarCoating):
 
 
 type AnySolarPowerSource = Annotated[
-    BasicSolarPanels
-    | ImprovedSolarPanels
-    | EnhancedSolarPanels
-    | AdvancedSolarPanels
-    | EnhancedSolarCoating
-    | AdvancedSolarCoating,
+    SolarPanelsTL6 | SolarPanelsTL8 | SolarPanelsTL12 | EnhancedSolarCoating | AdvancedSolarCoating,
     Field(discriminator='solar_type'),
 ]
 

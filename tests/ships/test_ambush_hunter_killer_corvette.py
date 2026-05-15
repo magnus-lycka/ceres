@@ -310,11 +310,11 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
     assert len(corvette.systems.drones) == 1
     assert corvette.systems.drones[0].tons == pytest.approx(_expected.repair_drones_tons)
     assert corvette.systems.drones[0].cost == pytest.approx(_expected.repair_drones_cost_mcr * 1_000_000)
-    assert corvette.systems.briefing_room is not None
-    assert corvette.systems.medical_bay is not None
-    assert corvette.systems.medical_bay.tons == pytest.approx(_expected.medical_bay_tons)
-    assert corvette.systems.medical_bay.cost == pytest.approx(_expected.medical_bay_cost_mcr * 1_000_000)
-    assert corvette.systems.medical_bay.power == pytest.approx(_expected.medical_bay_power)
+    assert corvette.systems.briefing_rooms[0] is not None
+    assert corvette.systems.medical_bays[0] is not None
+    assert corvette.systems.medical_bays[0].tons == pytest.approx(_expected.medical_bay_tons)
+    assert corvette.systems.medical_bays[0].cost == pytest.approx(_expected.medical_bay_cost_mcr * 1_000_000)
+    assert corvette.systems.medical_bays[0].power == pytest.approx(_expected.medical_bay_power)
 
     assert corvette.habitation is not None
     assert corvette.habitation.staterooms is not None

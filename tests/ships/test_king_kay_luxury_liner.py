@@ -263,14 +263,14 @@ def test_king_kay_matches_supported_reference_slice():
     )
 
     assert liner.systems is not None
-    assert liner.systems.medical_bay is not None
-    assert liner.systems.medical_bay.tons == pytest.approx(_expected.medical_bay_tons)
-    assert liner.systems.medical_bay.cost == pytest.approx(_expected.medical_bay_cost_mcr * 1_000_000)
-    assert liner.systems.medical_bay.power == pytest.approx(_expected.medical_bay_power)
-    assert liner.systems.commercial_zone is not None
-    assert liner.systems.commercial_zone.tons == pytest.approx(_expected.commercial_zone_tons)
-    assert liner.systems.commercial_zone.cost == pytest.approx(_expected.commercial_zone_cost_mcr * 1_000_000)
-    assert liner.systems.commercial_zone.power == pytest.approx(_expected.commercial_zone_power)
+    assert liner.systems.medical_bays[0] is not None
+    assert liner.systems.medical_bays[0].tons == pytest.approx(_expected.medical_bay_tons)
+    assert liner.systems.medical_bays[0].cost == pytest.approx(_expected.medical_bay_cost_mcr * 1_000_000)
+    assert liner.systems.medical_bays[0].power == pytest.approx(_expected.medical_bay_power)
+    assert liner.systems.commercial_zones[0] is not None
+    assert liner.systems.commercial_zones[0].tons == pytest.approx(_expected.commercial_zone_tons)
+    assert liner.systems.commercial_zones[0].cost == pytest.approx(_expected.commercial_zone_cost_mcr * 1_000_000)
+    assert liner.systems.commercial_zones[0].power == pytest.approx(_expected.commercial_zone_power)
 
     assert liner.habitation is not None
     assert liner.habitation.staterooms is not None

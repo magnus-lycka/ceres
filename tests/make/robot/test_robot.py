@@ -7,12 +7,13 @@ All expected values are derived from Traveller Robot Handbook rules:
   - Endurance:         refs/robot/07_chassis_options.md (TL modifier table)
 """
 
-from typing import ClassVar, Literal
+from typing import Any, ClassVar, Literal
 
 import pytest
 
 from ceres.make.robot.chassis import Trait
 from ceres.make.robot.parts import RobotPart
+from ceres.make.robot.skills import SkillGrant
 
 
 class _SlottedPart(RobotPart):
@@ -40,10 +41,24 @@ class _TraitPart(RobotPart):
         return None
 
 
+class _SkillPart(RobotPart):
+    """Part that grants Recon 1 — used to test option skill aggregation."""
+
+    type: Literal['SKILL_PART'] = 'SKILL_PART'
+    tl: int = 5
+
+    @property
+    def skill_grants(self) -> tuple[SkillGrant, ...]:
+        return (SkillGrant('Recon', 1),)
+
+    def build_item(self) -> str | None:
+        return None
+
+
 def make_robot(**kwargs):
     from ceres.make.robot import PrimitiveBrain, Robot, RobotSize, WheelsLocomotion
 
-    defaults = {
+    defaults: dict[str, Any] = {
         'name': 'Test Robot',
         'tl': 8,
         'size': RobotSize.SIZE_3,
@@ -487,3 +502,62 @@ class TestBuildSpec:
         robot = make_robot(manipulators=['Basic (STR 7)'])
         rows = robot.build_spec().rows_for_section(RobotSpecSection.MANIPULATORS)
         assert rows[0].value == 'Basic (STR 7)'
+
+    def test_spec_skills_row_present(self):
+        from ceres.make.robot.spec import RobotSpecSection
+
+        robot = make_robot()
+        rows = robot.build_spec().rows_for_section(RobotSpecSection.SKILLS)
+        assert len(rows) == 1
+
+    def test_spec_skills_row_primitive_clean(self):
+        from ceres.make.robot import PrimitiveBrain
+        from ceres.make.robot.spec import RobotSpecSection
+
+        robot = make_robot(brain=PrimitiveBrain(function='clean'))
+        rows = robot.build_spec().rows_for_section(RobotSpecSection.SKILLS)
+        assert 'Profession (domestic cleaner) 2' in rows[0].value
+
+    def test_spec_skills_row_advanced_with_bandwidth(self):
+        from ceres.make.robot import AdvancedBrain
+        from ceres.make.robot.skills import SkillPackage
+        from ceres.make.robot.spec import RobotSpecSection
+
+        brain = AdvancedBrain(
+            brain_tl=12,
+            installed_skills=(SkillPackage(name='Electronics (remote ops)', level=1, bandwidth=1),),
+        )
+        robot = make_robot(brain=brain)
+        rows = robot.build_spec().rows_for_section(RobotSpecSection.SKILLS)
+        value = rows[0].value
+        assert 'Electronics (remote ops) 1' in value
+        assert '+1 Bandwidth available' in value
+
+
+class TestSkillsDisplay:
+    def test_no_brain_skills_no_options(self):
+        robot = make_robot()
+        assert robot.skills_display == '—'
+
+    def test_primitive_clean_shows_skill(self):
+        from ceres.make.robot import PrimitiveBrain
+
+        robot = make_robot(brain=PrimitiveBrain(function='clean'))
+        assert 'Profession (domestic cleaner) 2' in robot.skills_display
+
+    def test_advanced_with_remaining_bandwidth(self):
+        from ceres.make.robot import AdvancedBrain
+        from ceres.make.robot.skills import SkillPackage
+
+        brain = AdvancedBrain(
+            brain_tl=12,
+            installed_skills=(SkillPackage(name='Electronics (remote ops)', level=1, bandwidth=1),),
+        )
+        robot = make_robot(brain=brain)
+        display = robot.skills_display
+        assert 'Electronics (remote ops) 1' in display
+        assert '+1 Bandwidth available' in display
+
+    def test_option_skill_included(self):
+        robot = make_robot(options=[_SkillPart()])
+        assert 'Recon 1' in robot.skills_display

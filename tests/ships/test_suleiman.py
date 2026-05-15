@@ -164,7 +164,7 @@ def test_suleiman_matches_first_modeled_reference_slice():
     airlocks = suleiman.hull.airlocks
     assert suleiman.systems is not None
     probe_drones = suleiman.systems.drones[0]
-    workshop = suleiman.systems.workshop
+    workshop = suleiman.systems.workshops[0]
 
     assert suleiman.tl == _expected.tl
     assert suleiman.displacement == _expected.displacement

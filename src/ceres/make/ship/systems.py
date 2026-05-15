@@ -494,25 +494,17 @@ class SystemsSection(CeresModel):
     def internal_systems_of_type(self, system_cls: type[_T]) -> list[_T]:
         return [system for system in self.internal_systems if isinstance(system, system_cls)]
 
-    def first_internal_system_of_type(self, system_cls: type[_T]) -> _T | None:
-        matches = self.internal_systems_of_type(system_cls)
-        return None if not matches else matches[0]
-
     @property
     def armouries(self) -> list[Armoury]:
         return self.internal_systems_of_type(Armoury)
 
     @property
-    def biosphere(self) -> Biosphere | None:
-        return self.first_internal_system_of_type(Biosphere)
+    def biospheres(self) -> list[Biosphere]:
+        return self.internal_systems_of_type(Biosphere)
 
     @property
-    def commercial_zone(self) -> CommercialZone | None:
-        return self.first_internal_system_of_type(CommercialZone)
-
-    @property
-    def medical_bay(self) -> MedicalBay | None:
-        return self.first_internal_system_of_type(MedicalBay)
+    def commercial_zones(self) -> list[CommercialZone]:
+        return self.internal_systems_of_type(CommercialZone)
 
     @property
     def medical_bays(self) -> list[MedicalBay]:
@@ -523,20 +515,20 @@ class SystemsSection(CeresModel):
         return self.internal_systems_of_type(Laboratory)
 
     @property
-    def library(self) -> LibraryFacility | None:
-        return self.first_internal_system_of_type(LibraryFacility)
+    def libraries(self) -> list[LibraryFacility]:
+        return self.internal_systems_of_type(LibraryFacility)
 
     @property
-    def briefing_room(self) -> BriefingRoom | None:
-        return self.first_internal_system_of_type(BriefingRoom)
+    def briefing_rooms(self) -> list[BriefingRoom]:
+        return self.internal_systems_of_type(BriefingRoom)
 
     @property
-    def training_facility(self) -> TrainingFacility | None:
-        return self.first_internal_system_of_type(TrainingFacility)
+    def training_facilities(self) -> list[TrainingFacility]:
+        return self.internal_systems_of_type(TrainingFacility)
 
     @property
-    def workshop(self) -> Workshop | None:
-        return self.first_internal_system_of_type(Workshop)
+    def workshops(self) -> list[Workshop]:
+        return self.internal_systems_of_type(Workshop)
 
     def _all_parts(self) -> list[ShipPart]:
         return [*self.internal_systems, *self.drones]
