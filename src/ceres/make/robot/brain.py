@@ -161,7 +161,7 @@ class AdvancedBrain(_BrainBase):
 
     @property
     def brain_cost(self) -> float:
-        return self._entry().cost
+        return self._entry().cost + sum(pkg.cost for pkg in self.installed_skills)
 
     @property
     def skill_dm(self) -> int:

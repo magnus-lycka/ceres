@@ -162,6 +162,49 @@ class DecreasedResiliency(RobotPart):
         object.__setattr__(self, 'cost', -(self.hit_reduction * 50.0 * multiplier))
 
 
+# Standard default suite items (included in BCC) and the three free substitutions
+# listed in refs/robot/10_default_suite.md.  Any other item in a default_suite
+# position is a paid upgrade and contributes its cost to the robot total.
+_DEFAULT_SUITE_FREE_ITEMS: frozenset[str] = frozenset(
+    {
+        'Auditory Sensor',
+        'Transceiver 5km (improved)',
+        'Visual Spectrum Sensor',
+        'Voder Speaker',
+        'Wireless Data Link',
+        'Drone Interface',
+        'Transceiver 5km (basic)',
+        'Video Screen (basic)',
+    }
+)
+
+# Zero-slot option costs from refs/robot/14_encryption_module.md (Transceiver,
+# Video Screen tables).  Extend as additional zero-slot options are implemented.
+_ZERO_SLOT_ITEM_COSTS: dict[str, float] = {
+    'Transceiver 5km (basic)': 250.0,
+    'Transceiver 5km (improved)': 100.0,
+    'Transceiver 50km (improved)': 500.0,
+    'Transceiver 50km (enhanced)': 250.0,
+    'Transceiver 50km (advanced)': 100.0,
+    'Transceiver 500km (improved)': 1000.0,
+    'Transceiver 500km (enhanced)': 500.0,
+    'Transceiver 500km (advanced)': 250.0,
+    'Transceiver 5,000km (improved)': 5000.0,
+    'Transceiver 5,000km (enhanced)': 1000.0,
+    'Transceiver 5,000km (advanced)': 500.0,
+    'Video Screen (basic)': 200.0,
+    'Video Screen (improved)': 500.0,
+    'Video Screen (advanced)': 2000.0,
+}
+
+
+def default_suite_item_cost(item_name: str) -> float:
+    """Cost added to robot total for a default suite item that isn't free."""
+    if item_name in _DEFAULT_SUITE_FREE_ITEMS:
+        return 0.0
+    return _ZERO_SLOT_ITEM_COSTS.get(item_name, 0.0)
+
+
 __all__ = [
     'StorageCompartment',
     'DomesticCleaningEquipment',
@@ -169,4 +212,5 @@ __all__ = [
     'ExternalPower',
     'RoboticDroneController',
     'DecreasedResiliency',
+    'default_suite_item_cost',
 ]

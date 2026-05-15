@@ -15,6 +15,7 @@ from .chassis import (
     size_trait,
 )
 from .locomotion import LocomotionUnion
+from .options import default_suite_item_cost
 from .parts import RobotPartMixin
 from .skills import SkillGrant
 from .spec import RobotSpec, RobotSpecRow, RobotSpecSection
@@ -94,6 +95,7 @@ class Robot(RobotBase):
         cost += sum(opt.cost for opt in self.options if isinstance(opt, RobotPartMixin))
         removed = max(0, 2 - len(self.manipulators))
         cost -= 100.0 * int(self.size) * removed
+        cost += sum(default_suite_item_cost(item) for item in self.default_suite)
         return max(cost, chassis_entry(self.size).basic_cost)
 
     @property

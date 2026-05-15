@@ -339,7 +339,6 @@ therefore includes their tonnage, cost, and Power capacity in the Power section,
 but does not add battery capacity to `Ship.available_power`. A combat round or
 scenario layer may choose how much stored power is discharged in that round.
 
-
 ## Robot Interpretations
 
 ### RIR-001 Manipulator Removal Savings — 20% Cap Not Applied
@@ -351,6 +350,14 @@ A strict reading of "no more than 20% of the Base Chassis Cost" would cap the sa
 Ceres instead applies the uncapped formula: Cr100 × robot_size × count, giving Cr600 for a Size 3 robot with 2 manipulators removed. This matches the reference Google Sheet used for the Domestic Servant design (TCR-001). The Cr500 source total is consistent with Ceres's Cr420 only if -Cr600 (not -Cr320) is used for manipulator removal.
 
 The 20% cap clause may be intended only for edge cases (e.g., very small robots) or may apply to manipulator *resizing* savings. This interpretation is unresolved and should be revisited when additional source examples are available.
+
+### RIR-003 Skill Package Costs And Default Suite Substitution Costs Are Included In Total Cost
+
+**Skill packages** (`refs/robot/35_skill_packages.md`): Standard skill packages installed in Advanced (or higher) brains carry an explicit cost: base cost × 10^level, where base cost comes from the Standard Skill Packages table. These costs are not included in the brain hardware cost and are added separately to the robot's total.
+
+**Default suite substitutions** (`refs/robot/10_default_suite.md`): The five standard default suite items are included in the Base Chassis Cost. Only three alternatives substitute at no additional cost: Drone Interface, Transceiver 5km (basic), and Video Screen (basic). Any other zero-slot item installed as a default suite substitution adds its own cost to the robot total.
+
+The *Basic Lab Control Robot* source stat block (Cr12000) omits both the Electronics (remote ops) 1 skill package (Cr1000) and the two non-free default suite substitutions (Transceiver 500km (improved) Cr1000, Video Screen (improved) Cr500). The Ceres-computed total is Cr14500. See the `_expected.cost` override in `tests/robots/test_lab_control_robot_basic.py`.
 
 ### RIR-002 Robot Costs Reported Without Editorial Rounding
 
