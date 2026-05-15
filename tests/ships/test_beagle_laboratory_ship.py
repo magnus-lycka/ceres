@@ -1,4 +1,4 @@
-"""Reference ship case based on refs/BeagleLaboratoryShip.txt.
+"""Reference ship case based on refs/tycho/BeagleLaboratoryShip.txt.
 
 Purpose:
 - provide a laboratory-ship reference case that extends the lab-station cases
@@ -20,6 +20,8 @@ Source handling for this test case:
   - software packages `Mentor/1` and `Research Assist/1` have no HG 2022 equivalent (see RI-008)
   - `Planetology/1` is modeled as `Expert(rating=3, skill='Space Science (Planetology)')`
 """
+
+from types import SimpleNamespace
 
 import pytest
 
@@ -63,6 +65,100 @@ from ceres.make.ship.weapons import (
     SandcasterCanisterStorage,
     WeaponsSection,
 )
+
+_expected = SimpleNamespace(
+    hull_cost_mcr=10.0,  # ref: 400t Dispersed Structure; Ceres uses 360t → MCr9
+    hull_points=129.0,  # Ceres 360t dispersed (ref would be 144 for 400t)
+    m_drive_tons=8.0,
+    m_drive_cost_mcr=16.0,
+    m_drive_power=80.0,
+    j_drive_tons=25.0,
+    j_drive_cost_mcr=37.5,
+    j_drive_power=80.0,
+    plant_tons=12.0,
+    plant_cost_mcr=12.0,
+    available_power=180.0,
+    total_power=171.0,
+    remaining_usable_tonnage=1.0,
+    jump_fuel_tons=80.0,  # ref shows combined 84t (J-2 + 8 weeks); Ceres splits: 80 jump + 3 op
+    operation_fuel_tons=3.0,  # Ceres value; ref groups with jump fuel
+    fuel_processor_tons=2.0,
+    fuel_processor_cost_mcr=0.1,
+    bridge_tons=10.0,
+    bridge_cost_mcr=1.25,
+    computer_cost_mcr=0.16,
+    software_packages=[
+        ('Library', 0.0),
+        ('Manoeuvre/0', 0.0),
+        ('Intellect', 0.0),
+        ('Jump Control/2', 200_000.0),
+        ('Expert (Space Science (Planetology))/3', 20_000.0),
+    ],
+    sensors_tons=3.0,
+    sensors_cost_mcr=4.3,
+    sensors_power=3.0,
+    sensor_station_tons=1.0,
+    sensor_station_cost_mcr=0.5,
+    turret_0_cost_mcr=1.5,
+    turret_1_cost_mcr=1.5,
+    turret_0_power=9.0,
+    turret_1_power=1.0,
+    missile_storage_tons=1.0,
+    missile_storage_cost_mcr=0.0,
+    sandcaster_storage_tons=1.0,
+    sandcaster_storage_cost_mcr=0.0,
+    craft_tons=[5.0, 1.0, 5.0],
+    craft_costs_mcr=[1.0, 0.5, 1.25],
+    pinnace_cost_mcr=9.68,
+    atv_cost_mcr=0.155,
+    probe_drones_tons=2.0,
+    probe_drones_cost_mcr=1.6,
+    biosphere_tons=2.0,
+    biosphere_cost_mcr=0.4,
+    biosphere_power=2.0,
+    lab_count=10,
+    labs_total_tons=40.0,
+    labs_total_cost_mcr=10.0,
+    library_tons=4.0,
+    library_cost_mcr=4.0,
+    medical_bay_tons=4.0,
+    medical_bay_cost_mcr=2.0,
+    workshop_tons=6.0,
+    workshop_cost_mcr=0.9,
+    staterooms_total_tons=40.0,
+    staterooms_total_cost_mcr=5.0,
+    common_area_tons=10.0,
+    common_area_cost_mcr=1.0,
+    hot_tubs_total_tons=1.0,
+    hot_tubs_total_cost=12_000.0,
+    wet_bar_cost=2_000.0,
+    low_berths_total_tons=3.0,
+    low_berths_total_cost=300_000.0,
+    low_berths_total_power=1.0,
+    cargo_airlock_tons=2.0,  # ref; Ceres uses size=4 → 4 tons, MCr0.4
+    cargo_airlock_cost_mcr=0.2,  # ref; Ceres: MCr0.4
+    fuel_cargo_container_tons=84.0,  # ref: 84t (80 capacity + 4 overhead)
+    fuel_cargo_container_cost_mcr=0.4,
+    crew=[
+        ('PILOT', 2),
+        ('ASTROGATOR', 1),
+        ('ENGINEER', 2),
+        ('GUNNER', 2),
+        ('SENSOR OPERATOR', 2),
+        ('MEDIC', 1),
+    ],
+    # ref total MCr128.709 / purchase MCr115.838; Ceres differs due to 360t hull,
+    # excluded Ship's Mechanic, and included Expert software
+    production_cost_mcr=128.709,
+    sales_price_mcr=115.838,
+)
+# Ceres 360t hull (MCr9 vs ref MCr10), no Ship's Mechanic (-MCr0.05), adds Expert (+MCr0.02)
+_expected.hull_cost_mcr = 9.0
+_expected.production_cost_mcr = 122.879
+_expected.sales_price_mcr = 110.5911
+# Ceres cargo airlock size=4 → 4 tons, MCr0.4
+_expected.cargo_airlock_tons = 4.0
+_expected.cargo_airlock_cost_mcr = 0.4
 
 
 def build_beagle_laboratory_ship() -> ship.Ship:
@@ -133,72 +229,70 @@ def build_beagle_laboratory_ship() -> ship.Ship:
 def test_beagle_laboratory_ship_matches_supported_slice():
     ship_ = build_beagle_laboratory_ship()
 
-    assert ship_.hull_cost == pytest.approx(9_000_000.0)
-    assert ship_.hull_points == pytest.approx(129.0)
+    assert ship_.hull_cost == pytest.approx(_expected.hull_cost_mcr * 1_000_000)
+    assert ship_.hull_points == pytest.approx(_expected.hull_points)
 
     assert ship_.drives is not None
     assert ship_.drives.m_drive is not None
-    assert ship_.drives.m_drive.tons == pytest.approx(8.0)
-    assert ship_.drives.m_drive.cost == pytest.approx(16_000_000.0)
-    assert ship_.drives.m_drive.power == pytest.approx(80.0)
+    assert ship_.drives.m_drive.tons == pytest.approx(_expected.m_drive_tons)
+    assert ship_.drives.m_drive.cost == pytest.approx(_expected.m_drive_cost_mcr * 1_000_000)
+    assert ship_.drives.m_drive.power == pytest.approx(_expected.m_drive_power)
     assert ship_.drives.j_drive is not None
-    assert ship_.drives.j_drive.tons == pytest.approx(25.0)
-    assert ship_.drives.j_drive.cost == pytest.approx(37_500_000.0)
-    assert ship_.drives.j_drive.power == pytest.approx(80.0)
+    assert ship_.drives.j_drive.tons == pytest.approx(_expected.j_drive_tons)
+    assert ship_.drives.j_drive.cost == pytest.approx(_expected.j_drive_cost_mcr * 1_000_000)
+    assert ship_.drives.j_drive.power == pytest.approx(_expected.j_drive_power)
 
     assert ship_.power is not None
     assert ship_.power.plant is not None
-    assert ship_.power.plant.tons == pytest.approx(12.0)
-    assert ship_.power.plant.cost == pytest.approx(12_000_000.0)
-    assert ship_.available_power == pytest.approx(180.0)
-    assert ship_.total_power_load == pytest.approx(171.0)
-    assert ship_.remaining_usable_tonnage() == pytest.approx(1.0)
+    assert ship_.power.plant.tons == pytest.approx(_expected.plant_tons)
+    assert ship_.power.plant.cost == pytest.approx(_expected.plant_cost_mcr * 1_000_000)
+    assert ship_.available_power == pytest.approx(_expected.available_power)
+    assert ship_.total_power_load == pytest.approx(_expected.total_power)
+    assert ship_.remaining_usable_tonnage() == pytest.approx(_expected.remaining_usable_tonnage)
     assert 'Capacity 12.00 less than max use' not in ship_.notes.warnings
 
     assert ship_.fuel is not None
     assert ship_.fuel.jump_fuel is not None
-    assert ship_.fuel.jump_fuel.tons == pytest.approx(80.0)
+    assert ship_.fuel.jump_fuel.tons == pytest.approx(_expected.jump_fuel_tons)
     assert ship_.fuel.operation_fuel is not None
-    assert ship_.fuel.operation_fuel.tons == pytest.approx(3.0)
+    assert ship_.fuel.operation_fuel.tons == pytest.approx(_expected.operation_fuel_tons)
     assert ship_.fuel.fuel_processor is not None
-    assert ship_.fuel.fuel_processor.tons == pytest.approx(2.0)
-    assert ship_.fuel.fuel_processor.cost == pytest.approx(100_000.0)
+    assert ship_.fuel.fuel_processor.tons == pytest.approx(_expected.fuel_processor_tons)
+    assert ship_.fuel.fuel_processor.cost == pytest.approx(_expected.fuel_processor_cost_mcr * 1_000_000)
 
     assert ship_.command is not None
     assert ship_.command.bridge is not None
-    assert ship_.command.bridge.tons == pytest.approx(10.0)
-    assert ship_.command.bridge.cost == pytest.approx(1_250_000.0)
+    assert ship_.command.bridge.tons == pytest.approx(_expected.bridge_tons)
+    assert ship_.command.bridge.cost == pytest.approx(_expected.bridge_cost_mcr * 1_000_000)
 
     assert ship_.computer is not None
     assert ship_.computer.hardware is not None
-    assert ship_.computer.hardware.cost == pytest.approx(160_000.0)
-    assert [(package.description, package.cost) for package in ship_.computer.software_packages] == [
-        ('Library', 0.0),
-        ('Manoeuvre/0', 0.0),
-        ('Intellect', 0.0),
-        ('Jump Control/2', 200_000.0),
-        ('Expert (Space Science (Planetology))/3', 20_000.0),
-    ]
+    assert ship_.computer.hardware.cost == pytest.approx(_expected.computer_cost_mcr * 1_000_000)
+    assert [(package.description, package.cost) for package in ship_.computer.software_packages] == (
+        _expected.software_packages
+    )
 
-    assert ship_.sensors.primary.tons == pytest.approx(3.0)
-    assert ship_.sensors.primary.cost == pytest.approx(4_300_000.0)
-    assert ship_.sensors.primary.power == pytest.approx(3.0)
+    assert ship_.sensors.primary.tons == pytest.approx(_expected.sensors_tons)
+    assert ship_.sensors.primary.cost == pytest.approx(_expected.sensors_cost_mcr * 1_000_000)
+    assert ship_.sensors.primary.power == pytest.approx(_expected.sensors_power)
     assert ship_.sensors.sensor_stations is not None
-    assert ship_.sensors.sensor_stations.tons == pytest.approx(1.0)
-    assert ship_.sensors.sensor_stations.cost == pytest.approx(500_000.0)
+    assert ship_.sensors.sensor_stations.tons == pytest.approx(_expected.sensor_station_tons)
+    assert ship_.sensors.sensor_stations.cost == pytest.approx(_expected.sensor_station_cost_mcr * 1_000_000)
 
     assert ship_.weapons is not None
     assert len(ship_.weapons.turrets) == 2
-    assert ship_.weapons.turrets[0].cost == pytest.approx(1_500_000.0)
-    assert ship_.weapons.turrets[1].cost == pytest.approx(1_500_000.0)
-    assert ship_.weapons.turrets[0].power == pytest.approx(9.0)
-    assert ship_.weapons.turrets[1].power == pytest.approx(1.0)
+    assert ship_.weapons.turrets[0].cost == pytest.approx(_expected.turret_0_cost_mcr * 1_000_000)
+    assert ship_.weapons.turrets[1].cost == pytest.approx(_expected.turret_1_cost_mcr * 1_000_000)
+    assert ship_.weapons.turrets[0].power == pytest.approx(_expected.turret_0_power)
+    assert ship_.weapons.turrets[1].power == pytest.approx(_expected.turret_1_power)
     assert ship_.weapons.missile_storage is not None
-    assert ship_.weapons.missile_storage.tons == pytest.approx(1.0)
-    assert ship_.weapons.missile_storage.cost == pytest.approx(0.0)
+    assert ship_.weapons.missile_storage.tons == pytest.approx(_expected.missile_storage_tons)
+    assert ship_.weapons.missile_storage.cost == pytest.approx(_expected.missile_storage_cost_mcr * 1_000_000)
     assert ship_.weapons.sandcaster_canister_storage is not None
-    assert ship_.weapons.sandcaster_canister_storage.tons == pytest.approx(1.0)
-    assert ship_.weapons.sandcaster_canister_storage.cost == pytest.approx(0.0)
+    assert ship_.weapons.sandcaster_canister_storage.tons == pytest.approx(_expected.sandcaster_storage_tons)
+    assert ship_.weapons.sandcaster_canister_storage.cost == pytest.approx(
+        _expected.sandcaster_storage_cost_mcr * 1_000_000
+    )
 
     assert ship_.craft is not None
     assert [part.build_item() for part in ship_.craft._all_parts()] == [
@@ -206,72 +300,70 @@ def test_beagle_laboratory_ship_matches_supported_slice():
         'Docking Clamp, Type I',
         'Internal Docking Space: Air/Raft',
     ]
-    assert [part.tons for part in ship_.craft._all_parts()] == pytest.approx([5.0, 1.0, 5.0])
-    assert [part.cost for part in ship_.craft._all_parts()] == pytest.approx([1_000_000.0, 500_000.0, 1_250_000.0])
+    assert [part.tons for part in ship_.craft._all_parts()] == pytest.approx(_expected.craft_tons)
+    assert [part.cost for part in ship_.craft._all_parts()] == pytest.approx(
+        [c * 1_000_000 for c in _expected.craft_costs_mcr]
+    )
     assert ship_.craft.docking_clamps[0].craft is not None
-    assert ship_.craft.docking_clamps[0].craft.cost == pytest.approx(9_680_000.0)
+    assert ship_.craft.docking_clamps[0].craft.cost == pytest.approx(_expected.pinnace_cost_mcr * 1_000_000)
     assert ship_.craft.docking_clamps[1].craft is not None
-    assert ship_.craft.docking_clamps[1].craft.cost == pytest.approx(155_000.0)
+    assert ship_.craft.docking_clamps[1].craft.cost == pytest.approx(_expected.atv_cost_mcr * 1_000_000)
 
     assert ship_.systems is not None
     assert len(ship_.systems.drones) == 1
-    assert ship_.systems.drones[0].tons == pytest.approx(2.0)
-    assert ship_.systems.drones[0].cost == pytest.approx(1_600_000.0)
+    assert ship_.systems.drones[0].tons == pytest.approx(_expected.probe_drones_tons)
+    assert ship_.systems.drones[0].cost == pytest.approx(_expected.probe_drones_cost_mcr * 1_000_000)
     assert ship_.systems.biosphere is not None
-    assert ship_.systems.biosphere.tons == pytest.approx(2.0)
-    assert ship_.systems.biosphere.cost == pytest.approx(400_000.0)
-    assert ship_.systems.biosphere.power == pytest.approx(2.0)
-    assert len(ship_.systems.laboratories) == 10
-    assert sum(lab.tons for lab in ship_.systems.laboratories) == pytest.approx(40.0)
-    assert sum(lab.cost for lab in ship_.systems.laboratories) == pytest.approx(10_000_000.0)
+    assert ship_.systems.biosphere.tons == pytest.approx(_expected.biosphere_tons)
+    assert ship_.systems.biosphere.cost == pytest.approx(_expected.biosphere_cost_mcr * 1_000_000)
+    assert ship_.systems.biosphere.power == pytest.approx(_expected.biosphere_power)
+    assert len(ship_.systems.laboratories) == _expected.lab_count
+    assert sum(lab.tons for lab in ship_.systems.laboratories) == pytest.approx(_expected.labs_total_tons)
+    assert sum(lab.cost for lab in ship_.systems.laboratories) == pytest.approx(
+        _expected.labs_total_cost_mcr * 1_000_000
+    )
     assert ship_.systems.library is not None
-    assert ship_.systems.library.tons == pytest.approx(4.0)
-    assert ship_.systems.library.cost == pytest.approx(4_000_000.0)
+    assert ship_.systems.library.tons == pytest.approx(_expected.library_tons)
+    assert ship_.systems.library.cost == pytest.approx(_expected.library_cost_mcr * 1_000_000)
     assert ship_.systems.medical_bay is not None
-    assert ship_.systems.medical_bay.tons == pytest.approx(4.0)
-    assert ship_.systems.medical_bay.cost == pytest.approx(2_000_000.0)
+    assert ship_.systems.medical_bay.tons == pytest.approx(_expected.medical_bay_tons)
+    assert ship_.systems.medical_bay.cost == pytest.approx(_expected.medical_bay_cost_mcr * 1_000_000)
     assert ship_.systems.workshop is not None
-    assert ship_.systems.workshop.tons == pytest.approx(6.0)
-    assert ship_.systems.workshop.cost == pytest.approx(900_000.0)
+    assert ship_.systems.workshop.tons == pytest.approx(_expected.workshop_tons)
+    assert ship_.systems.workshop.cost == pytest.approx(_expected.workshop_cost_mcr * 1_000_000)
 
     assert ship_.habitation is not None
-    assert sum(room.tons for room in ship_.habitation.staterooms) == pytest.approx(40.0)
-    assert sum(room.cost for room in ship_.habitation.staterooms) == pytest.approx(5_000_000.0)
+    assert sum(room.tons for room in ship_.habitation.staterooms) == pytest.approx(_expected.staterooms_total_tons)
+    assert sum(room.cost for room in ship_.habitation.staterooms) == pytest.approx(
+        _expected.staterooms_total_cost_mcr * 1_000_000
+    )
     assert ship_.habitation.common_area is not None
-    assert ship_.habitation.common_area.tons == pytest.approx(10.0)
-    assert ship_.habitation.common_area.cost == pytest.approx(1_000_000.0)
+    assert ship_.habitation.common_area.tons == pytest.approx(_expected.common_area_tons)
+    assert ship_.habitation.common_area.cost == pytest.approx(_expected.common_area_cost_mcr * 1_000_000)
     assert len(ship_.habitation.hot_tubs) == 4
-    assert sum(tub.tons for tub in ship_.habitation.hot_tubs) == pytest.approx(1.0)
-    assert sum(tub.cost for tub in ship_.habitation.hot_tubs) == pytest.approx(12_000.0)
+    assert sum(tub.tons for tub in ship_.habitation.hot_tubs) == pytest.approx(_expected.hot_tubs_total_tons)
+    assert sum(tub.cost for tub in ship_.habitation.hot_tubs) == pytest.approx(_expected.hot_tubs_total_cost)
     assert ship_.habitation.wet_bar is not None
-    assert ship_.habitation.wet_bar.cost == pytest.approx(2_000.0)
-    assert sum(berth.tons for berth in ship_.habitation.low_berths) == pytest.approx(3.0)
-    assert sum(berth.cost for berth in ship_.habitation.low_berths) == pytest.approx(300_000.0)
-    assert sum(berth.power for berth in ship_.habitation.low_berths) == pytest.approx(1.0)
+    assert ship_.habitation.wet_bar.cost == pytest.approx(_expected.wet_bar_cost)
+    assert sum(berth.tons for berth in ship_.habitation.low_berths) == pytest.approx(_expected.low_berths_total_tons)
+    assert sum(berth.cost for berth in ship_.habitation.low_berths) == pytest.approx(_expected.low_berths_total_cost)
+    assert sum(berth.power for berth in ship_.habitation.low_berths) == pytest.approx(_expected.low_berths_total_power)
 
     assert ship_.cargo is not None
     assert len(ship_.cargo.cargo_airlocks) == 1
-    assert ship_.cargo.cargo_airlocks[0].tons == pytest.approx(4.0)
-    assert ship_.cargo.cargo_airlocks[0].cost == pytest.approx(400_000.0)
+    assert ship_.cargo.cargo_airlocks[0].tons == pytest.approx(_expected.cargo_airlock_tons)
+    assert ship_.cargo.cargo_airlocks[0].cost == pytest.approx(_expected.cargo_airlock_cost_mcr * 1_000_000)
     assert len(ship_.cargo.fuel_cargo_containers) == 1
-    assert ship_.cargo.fuel_cargo_containers[0].tons == pytest.approx(84.0)
-    assert ship_.cargo.fuel_cargo_containers[0].cost == pytest.approx(400_000.0)
+    assert ship_.cargo.fuel_cargo_containers[0].tons == pytest.approx(_expected.fuel_cargo_container_tons)
+    assert ship_.cargo.fuel_cargo_containers[0].cost == pytest.approx(
+        _expected.fuel_cargo_container_cost_mcr * 1_000_000
+    )
 
-    assert [(role.role, quantity) for role, quantity in ship_.crew.grouped_roles] == [
-        ('PILOT', 2),
-        ('ASTROGATOR', 1),
-        ('ENGINEER', 2),
-        ('GUNNER', 2),
-        ('SENSOR OPERATOR', 2),
-        ('MEDIC', 1),
-    ]
+    assert [(role.role, quantity) for role, quantity in ship_.crew.grouped_roles] == _expected.crew
     assert ship_.crew.notes.warnings == []
 
-    # Source total MCr 123.909 / purchase MCr 111.518 (Mentor/1 and Research Assist/1 excluded).
-    # Remaining gap: source uses 400t hull (MCr 10 vs our MCr 9, also 4 vs 3 free airlocks),
-    # includes Ship's Mechanic (MCr 0.05), and omits Expert software we include (MCr 0.02).
-    assert ship_.production_cost == pytest.approx(122_879_000.0)
-    assert ship_.sales_price_new == pytest.approx(110_591_100.0)
+    assert ship_.production_cost == pytest.approx(_expected.production_cost_mcr * 1_000_000)
+    assert ship_.sales_price_new == pytest.approx(_expected.sales_price_mcr * 1_000_000)
 
 
 def test_beagle_laboratory_ship_spec_structure():

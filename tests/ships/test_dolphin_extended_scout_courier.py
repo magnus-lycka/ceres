@@ -22,6 +22,8 @@ Source handling for this test case:
     monthly maintenance calculation on the same production cost
 """
 
+from types import SimpleNamespace
+
 import pytest
 
 from ceres.make.ship import armour, hull, ship
@@ -44,6 +46,74 @@ from ceres.make.ship.storage import (
 )
 from ceres.make.ship.systems import CommonArea, MedicalBay, ProbeDrones, SystemsSection, Workshop
 from ceres.make.ship.weapons import PulseLaser, TripleTurret, WeaponsSection
+
+_expected = SimpleNamespace(
+    tl=15,
+    displacement=150,
+    hull_cost_mcr=9.0,
+    hull_points=60.0,
+    armour_tons=9.0,
+    armour_cost_mcr=1.8,
+    m_drive_tons=3.0,
+    m_drive_cost_mcr=6.0,
+    m_drive_power=30.0,
+    j_drive_tons=12.5,
+    j_drive_cost_mcr=18.75,
+    j_drive_power=30.0,
+    plant_tons=3.5,
+    plant_cost_mcr=7.0,
+    available_power=70.0,
+    jump_fuel_tons=30.0,
+    op_fuel_tons=4.0,  # stat block: J-2, 16 weeks of operation listed as 34t total (30 + 4)
+    fuel_scoops_cost_mcr=0.0,
+    fuel_processor_tons=2.0,
+    fuel_processor_cost_mcr=0.1,
+    bridge_tons=10.0,
+    bridge_cost_mcr=1.0,
+    computer_cost_mcr=0.16,
+    sensor_tons=2.0,
+    sensor_cost_mcr=4.1,
+    sensor_power=2.0,
+    turret_tons=1.0,
+    turret_cost_mcr=4.0,
+    turret_power=13.0,
+    docking_space_tons=5.0,  # 4-ton craft → 5 ship tons
+    docking_space_cost_mcr=1.25,
+    air_raft_cost_mcr=0.25,
+    medical_bay_tons=4.0,
+    medical_bay_cost_mcr=2.0,
+    probe_drones_tons=2.0,
+    probe_drones_cost_mcr=1.0,
+    workshop_tons=6.0,
+    workshop_cost_mcr=0.9,
+    staterooms_tons=16.0,  # 4 × 4t
+    staterooms_cost_mcr=2.0,  # 4 × 0.5M
+    common_area_tons=4.0,
+    common_area_cost_mcr=0.4,
+    low_berths_tons=2.0,  # 4 × 0.5t
+    low_berths_cost_mcr=0.2,  # 4 × 0.05M
+    low_berths_power=1.0,
+    cargo_airlock_tons=2.0,
+    cargo_airlock_cost_mcr=0.2,
+    fuel_cargo_container_tons=32.0,  # 30-ton capacity → 32 ship tons
+    fuel_cargo_container_cost_mcr=0.15,
+    cargo_tons=32.0,
+    power_basic=30.0,
+    power_maneuver=30.0,
+    power_jump=30.0,
+    power_sensors=2.0,
+    power_weapons=13.0,
+    power_fuel=2.0,
+    total_power=79.0,  # basic+maneuver+sensors+weapons+fuel+medical+low_berths; jump tracked separately
+    production_cost_mcr=60.46,
+    purchase_cost_mcr=54.414,
+    maintenance_cr=4535,  # stat block: Cr4535/month
+)
+# Ceres rounds op fuel up to whole dTons: ceil(150 * 0.001 * 16 / 4) = ceil(0.6) = 1 dTon … RI-007
+# gives 2t for 150-ton ship, equating to ~20 weeks endurance rather than 16
+_expected.op_fuel_tons = 2.0
+# 54414000 / 12000 = 4534.5 → Ceres truncates/rounds differently; off by Cr1
+_expected.maintenance_cr = 4534.0
 
 
 def build_dolphin_extended_scout_courier() -> ship.Ship:
@@ -99,50 +169,50 @@ def build_dolphin_extended_scout_courier() -> ship.Ship:
 def test_dolphin_extended_scout_courier_matches_reference_sheet():
     dolphin = build_dolphin_extended_scout_courier()
 
-    assert dolphin.tl == 15
-    assert dolphin.displacement == 150
-    assert dolphin.hull_cost == pytest.approx(9_000_000.0)
-    assert dolphin.hull_points == pytest.approx(60.0)
+    assert dolphin.tl == _expected.tl
+    assert dolphin.displacement == _expected.displacement
+    assert dolphin.hull_cost == pytest.approx(_expected.hull_cost_mcr * 1_000_000)
+    assert dolphin.hull_points == pytest.approx(_expected.hull_points)
 
     assert dolphin.hull.armour is not None
-    assert dolphin.hull.armour.tons == pytest.approx(9.0)
-    assert dolphin.hull.armour.cost == pytest.approx(1_800_000.0)
+    assert dolphin.hull.armour.tons == pytest.approx(_expected.armour_tons)
+    assert dolphin.hull.armour.cost == pytest.approx(_expected.armour_cost_mcr * 1_000_000)
 
     assert dolphin.drives is not None
     assert dolphin.drives.m_drive is not None
-    assert dolphin.drives.m_drive.tons == pytest.approx(3.0)
-    assert dolphin.drives.m_drive.cost == pytest.approx(6_000_000.0)
-    assert dolphin.drives.m_drive.power == pytest.approx(30.0)
+    assert dolphin.drives.m_drive.tons == pytest.approx(_expected.m_drive_tons)
+    assert dolphin.drives.m_drive.cost == pytest.approx(_expected.m_drive_cost_mcr * 1_000_000)
+    assert dolphin.drives.m_drive.power == pytest.approx(_expected.m_drive_power)
     assert dolphin.drives.j_drive is not None
-    assert dolphin.drives.j_drive.tons == pytest.approx(12.5)
-    assert dolphin.drives.j_drive.cost == pytest.approx(18_750_000.0)
-    assert dolphin.drives.j_drive.power == pytest.approx(30.0)
+    assert dolphin.drives.j_drive.tons == pytest.approx(_expected.j_drive_tons)
+    assert dolphin.drives.j_drive.cost == pytest.approx(_expected.j_drive_cost_mcr * 1_000_000)
+    assert dolphin.drives.j_drive.power == pytest.approx(_expected.j_drive_power)
 
     assert dolphin.power is not None
     assert dolphin.power.plant is not None
-    assert dolphin.power.plant.tons == pytest.approx(3.5)
-    assert dolphin.power.plant.cost == pytest.approx(7_000_000.0)
-    assert dolphin.available_power == pytest.approx(70.0)
+    assert dolphin.power.plant.tons == pytest.approx(_expected.plant_tons)
+    assert dolphin.power.plant.cost == pytest.approx(_expected.plant_cost_mcr * 1_000_000)
+    assert dolphin.available_power == pytest.approx(_expected.available_power)
 
     assert dolphin.fuel is not None
     assert dolphin.fuel.jump_fuel is not None
-    assert dolphin.fuel.jump_fuel.tons == pytest.approx(30.0)
+    assert dolphin.fuel.jump_fuel.tons == pytest.approx(_expected.jump_fuel_tons)
     assert dolphin.fuel.operation_fuel is not None
-    assert dolphin.fuel.operation_fuel.tons == pytest.approx(2.0)
+    assert dolphin.fuel.operation_fuel.tons == pytest.approx(_expected.op_fuel_tons)
     assert dolphin.fuel.fuel_scoops is not None
-    assert dolphin.fuel.fuel_scoops.cost == pytest.approx(0.0)
+    assert dolphin.fuel.fuel_scoops.cost == pytest.approx(_expected.fuel_scoops_cost_mcr * 1_000_000)
     assert dolphin.fuel.fuel_processor is not None
-    assert dolphin.fuel.fuel_processor.tons == pytest.approx(2.0)
-    assert dolphin.fuel.fuel_processor.cost == pytest.approx(100_000.0)
+    assert dolphin.fuel.fuel_processor.tons == pytest.approx(_expected.fuel_processor_tons)
+    assert dolphin.fuel.fuel_processor.cost == pytest.approx(_expected.fuel_processor_cost_mcr * 1_000_000)
 
     assert dolphin.command is not None
     assert dolphin.command.bridge is not None
-    assert dolphin.command.bridge.tons == pytest.approx(10.0)
-    assert dolphin.command.bridge.cost == pytest.approx(1_000_000.0)
+    assert dolphin.command.bridge.tons == pytest.approx(_expected.bridge_tons)
+    assert dolphin.command.bridge.cost == pytest.approx(_expected.bridge_cost_mcr * 1_000_000)
 
     assert dolphin.computer is not None
     assert dolphin.computer.hardware is not None
-    assert dolphin.computer.hardware.cost == pytest.approx(160_000.0)
+    assert dolphin.computer.hardware.cost == pytest.approx(_expected.computer_cost_mcr * 1_000_000)
     assert [(package.description, package.cost) for package in dolphin.computer.software_packages] == [
         ('Library', 0.0),
         ('Manoeuvre/0', 0.0),
@@ -150,51 +220,57 @@ def test_dolphin_extended_scout_courier_matches_reference_sheet():
         ('Jump Control/2', 200_000.0),
     ]
 
-    assert dolphin.sensors.primary.tons == pytest.approx(2.0)
-    assert dolphin.sensors.primary.cost == pytest.approx(4_100_000.0)
-    assert dolphin.sensors.primary.power == pytest.approx(2.0)
+    assert dolphin.sensors.primary.tons == pytest.approx(_expected.sensor_tons)
+    assert dolphin.sensors.primary.cost == pytest.approx(_expected.sensor_cost_mcr * 1_000_000)
+    assert dolphin.sensors.primary.power == pytest.approx(_expected.sensor_power)
 
     assert dolphin.weapons is not None
     assert len(dolphin.weapons.turrets) == 1
-    assert dolphin.weapons.turrets[0].tons == pytest.approx(1.0)
-    assert dolphin.weapons.turrets[0].cost == pytest.approx(4_000_000.0)
-    assert dolphin.weapons.turrets[0].power == pytest.approx(13.0)
+    assert dolphin.weapons.turrets[0].tons == pytest.approx(_expected.turret_tons)
+    assert dolphin.weapons.turrets[0].cost == pytest.approx(_expected.turret_cost_mcr * 1_000_000)
+    assert dolphin.weapons.turrets[0].power == pytest.approx(_expected.turret_power)
 
     assert dolphin.craft is not None
     assert len(dolphin.craft.internal_housing) == 1
-    assert dolphin.craft.internal_housing[0].tons == pytest.approx(5.0)
-    assert dolphin.craft.internal_housing[0].cost == pytest.approx(1_250_000.0)
-    assert dolphin.craft.internal_housing[0].craft.cost == pytest.approx(250_000.0)
+    assert dolphin.craft.internal_housing[0].tons == pytest.approx(_expected.docking_space_tons)
+    assert dolphin.craft.internal_housing[0].cost == pytest.approx(_expected.docking_space_cost_mcr * 1_000_000)
+    assert dolphin.craft.internal_housing[0].craft.cost == pytest.approx(_expected.air_raft_cost_mcr * 1_000_000)
 
     assert dolphin.systems is not None
     assert dolphin.systems.medical_bay is not None
-    assert dolphin.systems.medical_bay.tons == pytest.approx(4.0)
-    assert dolphin.systems.medical_bay.cost == pytest.approx(2_000_000.0)
+    assert dolphin.systems.medical_bay.tons == pytest.approx(_expected.medical_bay_tons)
+    assert dolphin.systems.medical_bay.cost == pytest.approx(_expected.medical_bay_cost_mcr * 1_000_000)
     assert len(dolphin.systems.drones) == 1
-    assert dolphin.systems.drones[0].tons == pytest.approx(2.0)
-    assert dolphin.systems.drones[0].cost == pytest.approx(1_000_000.0)
+    assert dolphin.systems.drones[0].tons == pytest.approx(_expected.probe_drones_tons)
+    assert dolphin.systems.drones[0].cost == pytest.approx(_expected.probe_drones_cost_mcr * 1_000_000)
     assert dolphin.systems.workshop is not None
-    assert dolphin.systems.workshop.tons == pytest.approx(6.0)
-    assert dolphin.systems.workshop.cost == pytest.approx(900_000.0)
+    assert dolphin.systems.workshop.tons == pytest.approx(_expected.workshop_tons)
+    assert dolphin.systems.workshop.cost == pytest.approx(_expected.workshop_cost_mcr * 1_000_000)
 
     assert dolphin.habitation is not None
-    assert sum(room.tons for room in dolphin.habitation.staterooms) == pytest.approx(16.0)
-    assert sum(room.cost for room in dolphin.habitation.staterooms) == pytest.approx(2_000_000.0)
+    assert sum(room.tons for room in dolphin.habitation.staterooms) == pytest.approx(_expected.staterooms_tons)
+    assert sum(room.cost for room in dolphin.habitation.staterooms) == pytest.approx(
+        _expected.staterooms_cost_mcr * 1_000_000
+    )
     assert dolphin.habitation.common_area is not None
-    assert dolphin.habitation.common_area.tons == pytest.approx(4.0)
-    assert dolphin.habitation.common_area.cost == pytest.approx(400_000.0)
-    assert sum(berth.tons for berth in dolphin.habitation.low_berths) == pytest.approx(2.0)
-    assert sum(berth.cost for berth in dolphin.habitation.low_berths) == pytest.approx(200_000.0)
-    assert sum(berth.power for berth in dolphin.habitation.low_berths) == pytest.approx(1.0)
+    assert dolphin.habitation.common_area.tons == pytest.approx(_expected.common_area_tons)
+    assert dolphin.habitation.common_area.cost == pytest.approx(_expected.common_area_cost_mcr * 1_000_000)
+    assert sum(berth.tons for berth in dolphin.habitation.low_berths) == pytest.approx(_expected.low_berths_tons)
+    assert sum(berth.cost for berth in dolphin.habitation.low_berths) == pytest.approx(
+        _expected.low_berths_cost_mcr * 1_000_000
+    )
+    assert sum(berth.power for berth in dolphin.habitation.low_berths) == pytest.approx(_expected.low_berths_power)
 
     assert dolphin.cargo is not None
     assert len(dolphin.cargo.cargo_airlocks) == 1
-    assert dolphin.cargo.cargo_airlocks[0].tons == pytest.approx(2.0)
-    assert dolphin.cargo.cargo_airlocks[0].cost == pytest.approx(200_000.0)
+    assert dolphin.cargo.cargo_airlocks[0].tons == pytest.approx(_expected.cargo_airlock_tons)
+    assert dolphin.cargo.cargo_airlocks[0].cost == pytest.approx(_expected.cargo_airlock_cost_mcr * 1_000_000)
     assert len(dolphin.cargo.fuel_cargo_containers) == 1
-    assert dolphin.cargo.fuel_cargo_containers[0].tons == pytest.approx(32.0)
-    assert dolphin.cargo.fuel_cargo_containers[0].cost == pytest.approx(150_000.0)
-    assert CargoSection.cargo_tons_for_ship(dolphin) == pytest.approx(32.0)
+    assert dolphin.cargo.fuel_cargo_containers[0].tons == pytest.approx(_expected.fuel_cargo_container_tons)
+    assert dolphin.cargo.fuel_cargo_containers[0].cost == pytest.approx(
+        _expected.fuel_cargo_container_cost_mcr * 1_000_000
+    )
+    assert CargoSection.cargo_tons_for_ship(dolphin) == pytest.approx(_expected.cargo_tons)
 
     assert len(dolphin.hull.airlocks or []) == 1
     assert dolphin.hull.airlocks[0].tons == pytest.approx(0.0)
@@ -208,17 +284,17 @@ def test_dolphin_extended_scout_courier_matches_reference_sheet():
         ('MEDIC', 1, 4_000),
     ]
 
-    assert dolphin.basic_hull_power_load == pytest.approx(30.0)
-    assert dolphin.maneuver_power_load == pytest.approx(30.0)
-    assert dolphin.jump_power_load == pytest.approx(30.0)
-    assert dolphin.sensor_power_load == pytest.approx(2.0)
-    assert dolphin.weapon_power_load == pytest.approx(13.0)
-    assert dolphin.fuel_power_load == pytest.approx(2.0)
-    assert dolphin.total_power_load == pytest.approx(79.0)
+    assert dolphin.basic_hull_power_load == pytest.approx(_expected.power_basic)
+    assert dolphin.maneuver_power_load == pytest.approx(_expected.power_maneuver)
+    assert dolphin.jump_power_load == pytest.approx(_expected.power_jump)
+    assert dolphin.sensor_power_load == pytest.approx(_expected.power_sensors)
+    assert dolphin.weapon_power_load == pytest.approx(_expected.power_weapons)
+    assert dolphin.fuel_power_load == pytest.approx(_expected.power_fuel)
+    assert dolphin.total_power_load == pytest.approx(_expected.total_power)
 
-    assert dolphin.production_cost == pytest.approx(60_460_000.0)
-    assert dolphin.sales_price_new == pytest.approx(54_414_000.0)
-    assert dolphin.expenses.maintenance == pytest.approx(4_534.0)
+    assert dolphin.production_cost == pytest.approx(_expected.production_cost_mcr * 1_000_000)
+    assert dolphin.sales_price_new == pytest.approx(_expected.purchase_cost_mcr * 1_000_000)
+    assert dolphin.expenses.maintenance == pytest.approx(_expected.maintenance_cr)
     assert 'Capacity 9.00 less than max use' not in dolphin.notes.warnings
 
 
@@ -227,8 +303,8 @@ def test_dolphin_extended_scout_courier_spec_structure():
 
     assert spec.ship_class == 'Dolphin Class'
     assert spec.ship_type == 'Extended Scout Courier'
-    assert spec.tl == 15
-    assert spec.hull_points == pytest.approx(60.0)
+    assert spec.tl == _expected.tl
+    assert spec.hull_points == pytest.approx(_expected.hull_points)
 
     assert spec.row('Streamlined Hull').section == 'Hull'
     assert spec.row('Crystaliron, Armour: 4').section == 'Hull'

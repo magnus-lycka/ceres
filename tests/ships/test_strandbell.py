@@ -1,3 +1,40 @@
+"""Reference ship case: Strandbell System Defense Boat.
+
+Source: refs/tycho/sdb.md (Tycho design tool output for a 200-ton TL-15 SDB).
+
+Purpose:
+- exercise a 200-ton military standard reinforced hull with Crystaliron armour
+- confirm M-Drive 9, Fusion TL12 power plant, and sensor suite behaviour
+- validate turret costs and power, missile storage, and crew composition
+- serve as a multi-component integration reference for military ships
+
+Source handling:
+- supported: hull, armour, m-drive, fusion plant, operation fuel, fuel
+  processor, fuel scoops, bridge, computer/35, software packages, improved
+  sensors, countermeasures suite, triple turrets (beam + missile), missile
+  storage, repair drones, medical bay, staterooms, common area, airlocks,
+  cargo, and production cost
+- not modelled: armored bulkheads listed separately in the ref for M-Drive
+  (1.60t, MCr0.32), bridge (1.0t, MCr0.2), and sensors (0.5t, MCr0.1); stores
+  and spares (2.0t)
+
+Known deviations from the Tycho stat block:
+- m_drive_tons: ref shows 19.80t for "M-Drive 9, Armored" (includes armored
+  bulkhead tonnage); Ceres models un-armored MDrive9 at 18.0t — the armored
+  bulkhead is a separate component not in the build function (RI: "we no
+  longer model a pseudo-armored M-drive")
+- m_drive_cost: ref shows MCr36.36 (includes armored bulkhead cost of
+  MCr0.32 and MCr0.04 rounding); Ceres gives MCr36.0 for the bare drive
+- op_fuel_tons: ref shows 4.80t for 12 weeks; Ceres gives 5.0t per RI-007
+  (standard rounding)
+- cargo_tons: ref shows 13.8t; Ceres gives 20.5t — the difference comes from
+  not modelling the armored M-drive bulkheads and stores/spares
+- production_cost: ref total is MCr147.13; Ceres gives MCr140.9 — reflects
+  the above omissions (armored bulkheads and stores)
+"""
+
+from types import SimpleNamespace
+
 import pytest
 
 from ceres.make.ship import armour, hull, ship
@@ -14,6 +51,72 @@ from ceres.make.ship.software import (
 from ceres.make.ship.storage import CargoSection, FuelProcessor, FuelScoops, FuelSection, OperationFuel
 from ceres.make.ship.systems import Airlock, CommonArea, MedicalBay, RepairDrones, SystemsSection
 from ceres.make.ship.weapons import BeamLaser, MissileRack, MissileStorage, TripleTurret, WeaponsSection
+
+_expected = SimpleNamespace(
+    # Hull
+    hull_points=88,
+    hull_cost_mcr=15.0,
+    # Armour: Crystaliron 13 — agrees with ref
+    armour_protection=13,
+    armour_tons=32.5,
+    armour_cost_mcr=6.5,
+    # M-Drive: ref shows "M-Drive 9, Armored" at 19.80t, MCr36.36 (includes
+    # armored bulkhead of 1.60t, MCr0.32 + MCr0.04 rounding). Ceres models
+    # the un-armored MDrive9 at 18.0t, MCr36.0.
+    m_drive_tons_ref=19.80,
+    m_drive_cost_mcr_ref=36.36,
+    m_drive_tons=18.0,
+    m_drive_cost_mcr=36.0,
+    m_drive_power=180,
+    # Fusion plant TL12, output 240 — agrees with ref
+    plant_output=240,
+    plant_tons=16.0,
+    plant_cost_mcr=16.0,
+    # Fuel: ref shows 4.80t for 12 weeks; Ceres gives 5.0t per RI-007
+    op_fuel_weeks=12,
+    op_fuel_tons_ref=4.80,
+    op_fuel_tons=5.0,
+    fuel_processor_tons=1.0,
+    fuel_processor_cost_mcr=0.05,
+    fuel_scoops_cost_mcr=1.0,
+    # Sensors — Ceres agrees with ref tonnage and cost
+    sensors_tons=3.0,
+    sensors_cost_mcr=4.3,
+    sensors_power=3.0,
+    countermeasures_tons=2.0,
+    countermeasures_cost_mcr=4.0,
+    countermeasures_power=1.0,
+    # Turrets — agrees with ref
+    beam_turret_cost_mcr=2.5,
+    beam_turret_power=13.0,  # 1 mount + 3 × 4 beam lasers
+    missile_turret_cost_mcr=3.25,
+    missile_turret_power=1.0,  # 1 mount only; missiles draw no power
+    # Missile storage — agrees with ref
+    missile_count=240,
+    missile_storage_tons=20.0,
+    missile_storage_cost=0,
+    # Systems
+    repair_drones_tons=2.0,
+    repair_drones_cost_mcr=0.4,
+    airlock_tons=0.0,  # 2 free airlocks for a 200-ton hull
+    stateroom_count=15,
+    staterooms_total_tons=60.0,
+    common_area_tons=4.0,
+    medical_bay_tons=4.0,
+    # Power — Ceres agrees with ref available and basic/maneuver loads
+    available_power=240,
+    basic_hull_power=40.0,
+    maneuver_power=180.0,
+    total_power=240.0,
+    # Cargo: ref 13.8t; Ceres 20.5t (armored M-drive bulkheads and stores
+    # not modelled)
+    cargo_tons_ref=13.8,
+    cargo_tons=20.5,
+    # Production cost: ref MCr147.13; Ceres MCr140.9 (omitted bulkheads +
+    # stores)
+    production_cost_mcr_ref=147.13,
+    production_cost_mcr=140.9,
+)
 
 STRANDBELL_HULL = hull.standard_hull.model_copy(
     update={'reinforced': True, 'description': 'Standard Reinforced Hull'},
@@ -71,26 +174,26 @@ def build_strandbell() -> ship.Ship:
 
 def test_strandbell_hull():
     sdb = build_strandbell()
-    assert sdb.hull_points == 88
-    assert sdb.hull_cost == 15_000_000
+    assert sdb.hull_points == _expected.hull_points
+    assert sdb.hull_cost == _expected.hull_cost_mcr * 1_000_000
 
 
 def test_strandbell_armour():
     sdb = build_strandbell()
     a = sdb.hull.armour
     assert a is not None
-    assert a.protection == 13
-    assert a.tons == pytest.approx(32.5)
-    assert a.cost == 6_500_000
+    assert a.protection == _expected.armour_protection
+    assert a.tons == pytest.approx(_expected.armour_tons)
+    assert a.cost == pytest.approx(_expected.armour_cost_mcr * 1_000_000)
 
 
 def test_strandbell_armored_m_drive():
     sdb = build_strandbell()
     assert sdb.drives is not None
     assert sdb.drives.m_drive is not None
-    assert sdb.drives.m_drive.tons == pytest.approx(18.0)
-    assert sdb.drives.m_drive.cost == pytest.approx(36_000_000)
-    assert sdb.drives.m_drive.power == pytest.approx(180)
+    assert sdb.drives.m_drive.tons == pytest.approx(_expected.m_drive_tons)
+    assert sdb.drives.m_drive.cost == pytest.approx(_expected.m_drive_cost_mcr * 1_000_000)
+    assert sdb.drives.m_drive.power == pytest.approx(_expected.m_drive_power)
 
 
 def test_strandbell_fusion_plant():
@@ -98,32 +201,32 @@ def test_strandbell_fusion_plant():
     assert sdb.power is not None
     fp = sdb.power.plant
     assert fp is not None
-    assert fp.output == 240
-    assert fp.tons == pytest.approx(16.0)
-    assert fp.cost == 16_000_000
+    assert fp.output == _expected.plant_output
+    assert fp.tons == pytest.approx(_expected.plant_tons)
+    assert fp.cost == pytest.approx(_expected.plant_cost_mcr * 1_000_000)
 
 
 def test_strandbell_fuel():
     sdb = build_strandbell()
     assert sdb.fuel is not None
     assert sdb.fuel.operation_fuel is not None
-    assert sdb.fuel.operation_fuel.tons == pytest.approx(5.0)
+    assert sdb.fuel.operation_fuel.tons == pytest.approx(_expected.op_fuel_tons)
     assert sdb.fuel.fuel_processor is not None
-    assert sdb.fuel.fuel_processor.tons == pytest.approx(1.0)
-    assert sdb.fuel.fuel_processor.cost == 50_000
+    assert sdb.fuel.fuel_processor.tons == pytest.approx(_expected.fuel_processor_tons)
+    assert sdb.fuel.fuel_processor.cost == pytest.approx(_expected.fuel_processor_cost_mcr * 1_000_000)
     assert sdb.fuel.fuel_scoops is not None
-    assert sdb.fuel.fuel_scoops.cost == 1_000_000
+    assert sdb.fuel.fuel_scoops.cost == pytest.approx(_expected.fuel_scoops_cost_mcr * 1_000_000)
 
 
 def test_strandbell_sensors():
     sdb = build_strandbell()
-    assert sdb.sensors.primary.tons == pytest.approx(3.0)
-    assert sdb.sensors.primary.cost == 4_300_000
-    assert sdb.sensors.primary.power == 3.0
+    assert sdb.sensors.primary.tons == pytest.approx(_expected.sensors_tons)
+    assert sdb.sensors.primary.cost == pytest.approx(_expected.sensors_cost_mcr * 1_000_000)
+    assert sdb.sensors.primary.power == pytest.approx(_expected.sensors_power)
     assert sdb.sensors.countermeasures is not None
-    assert sdb.sensors.countermeasures.tons == pytest.approx(2.0)
-    assert sdb.sensors.countermeasures.cost == 4_000_000
-    assert sdb.sensors.countermeasures.power == 1.0
+    assert sdb.sensors.countermeasures.tons == pytest.approx(_expected.countermeasures_tons)
+    assert sdb.sensors.countermeasures.cost == pytest.approx(_expected.countermeasures_cost_mcr * 1_000_000)
+    assert sdb.sensors.countermeasures.power == pytest.approx(_expected.countermeasures_power)
 
 
 def test_strandbell_turrets():
@@ -132,46 +235,46 @@ def test_strandbell_turrets():
     assert len(sdb.weapons.turrets) == 2
     beam_turret = sdb.weapons.turrets[0]
     missile_turret = sdb.weapons.turrets[1]
-    assert beam_turret.cost == pytest.approx(2_500_000)
-    assert beam_turret.power == pytest.approx(13.0)  # 1 mount + 3 × 4 beam
-    assert missile_turret.cost == pytest.approx(3_250_000)
-    assert missile_turret.power == pytest.approx(1.0)  # 1 mount + 3 × 0 missiles
+    assert beam_turret.cost == pytest.approx(_expected.beam_turret_cost_mcr * 1_000_000)
+    assert beam_turret.power == pytest.approx(_expected.beam_turret_power)  # 1 mount + 3 × 4 beam
+    assert missile_turret.cost == pytest.approx(_expected.missile_turret_cost_mcr * 1_000_000)
+    assert missile_turret.power == pytest.approx(_expected.missile_turret_power)  # 1 mount + 3 × 0 missiles
 
 
 def test_strandbell_missile_storage():
     sdb = build_strandbell()
     assert sdb.weapons is not None
     assert sdb.weapons.missile_storage is not None
-    assert sdb.weapons.missile_storage.count == 240
-    assert sdb.weapons.missile_storage.tons == pytest.approx(20.0)
-    assert sdb.weapons.missile_storage.cost == 0
+    assert sdb.weapons.missile_storage.count == _expected.missile_count
+    assert sdb.weapons.missile_storage.tons == pytest.approx(_expected.missile_storage_tons)
+    assert sdb.weapons.missile_storage.cost == _expected.missile_storage_cost
 
 
 def test_strandbell_systems():
     sdb = build_strandbell()
     assert sdb.systems is not None
     assert len(sdb.systems.drones) == 1
-    assert sdb.systems.drones[0].tons == pytest.approx(2.0)
-    assert sdb.systems.drones[0].cost == 400_000
+    assert sdb.systems.drones[0].tons == pytest.approx(_expected.repair_drones_tons)
+    assert sdb.systems.drones[0].cost == pytest.approx(_expected.repair_drones_cost_mcr * 1_000_000)
     assert len(sdb.hull.airlocks) == 2
-    assert sdb.hull.airlocks[0].tons == 0.0  # 2 free for 200t
-    assert sdb.hull.airlocks[1].tons == 0.0
+    assert sdb.hull.airlocks[0].tons == _expected.airlock_tons  # 2 free for 200t
+    assert sdb.hull.airlocks[1].tons == _expected.airlock_tons
     assert sdb.systems.medical_bay is not None
     assert sdb.habitation is not None
     assert sdb.habitation.staterooms is not None
-    assert len(sdb.habitation.staterooms) == 15
-    assert sum(room.tons for room in sdb.habitation.staterooms) == pytest.approx(60.0)
+    assert len(sdb.habitation.staterooms) == _expected.stateroom_count
+    assert sum(room.tons for room in sdb.habitation.staterooms) == pytest.approx(_expected.staterooms_total_tons)
     assert sdb.habitation.common_area is not None
-    assert sdb.habitation.common_area.tons == pytest.approx(4.0)
+    assert sdb.habitation.common_area.tons == pytest.approx(_expected.common_area_tons)
 
 
 def test_strandbell_power():
     sdb = build_strandbell()
-    assert sdb.available_power == 240
-    assert sdb.basic_hull_power_load == pytest.approx(40.0)
-    assert sdb.maneuver_power_load == pytest.approx(180.0)
+    assert sdb.available_power == _expected.available_power
+    assert sdb.basic_hull_power_load == pytest.approx(_expected.basic_hull_power)
+    assert sdb.maneuver_power_load == pytest.approx(_expected.maneuver_power)
     # sensors(3) + countermeasures(1) + beam turret(13) + missile turret(1) + medical(1) + fuel processor(1) = 20
-    assert sdb.total_power_load == pytest.approx(240.0)
+    assert sdb.total_power_load == pytest.approx(_expected.total_power)
 
 
 def test_strandbell_cargo():
@@ -179,14 +282,14 @@ def test_strandbell_cargo():
     # We still do not model stores for Strandbell, and we no longer model a
     # pseudo-armored M-drive, so cargo lands higher.
     sdb = build_strandbell()
-    assert CargoSection.cargo_tons_for_ship(sdb) == pytest.approx(20.5, abs=0.01)
+    assert CargoSection.cargo_tons_for_ship(sdb) == pytest.approx(_expected.cargo_tons, abs=0.01)
 
 
 def test_strandbell_cost():
     # Ref design cost 147.13MCr includes armored bulkheads (0.62MCr) and
     # stores/spares we don't model.
     sdb = build_strandbell()
-    assert sdb.production_cost == pytest.approx(140_900_000)
+    assert sdb.production_cost == pytest.approx(_expected.production_cost_mcr * 1_000_000)
 
 
 def test_strandbell_software():

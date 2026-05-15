@@ -1,4 +1,4 @@
-"""Reference ship case based on refs/alt_dragon.txt.
+"""Reference ship case based on refs/tycho/alt_dragon.txt.
 
 Purpose:
 - preserve a source-derived alternate military Dragon variant
@@ -35,6 +35,8 @@ Source handling for this test case:
 - model interpretation rather than dedicated installed rows:
   - stores and spares (`RI-001`)
 """
+
+from types import SimpleNamespace
 
 import pytest
 
@@ -98,9 +100,33 @@ from ceres.report import render_ship_html
 
 from ._output import write_html_output, write_json_output
 
+# Values taken from refs/tycho/alt_dragon.txt unless noted.
+_expected = SimpleNamespace(
+    plant_tons=26.16,  # ref: Fusion TL 12 Output: 436 Reduced Size — 26.16 tons
+    plant_cost_mcr=31.9733333333,  # ref: 31,973,333.33
+    emergency_power_tons=2.616,  # ref: Emergency Power System — 2.62 tons (Ceres: 2.616)
+    emergency_power_cost_mcr=3.1973333333,  # ref: 3,197,333.33
+    operation_fuel_tons=11.0,  # ref: 16 Weeks of Operation — 10.46 tons; Ceres rounds up to 11.0
+    fuel_processor_tons=1.0,  # ref: Fuel Processor 20 Tons Per Day — 1.00 ton
+    # ref shows Core/40/fib (Retro*): 4,218,750 — that is ÷16 (retro_levels=4 implied by tool).
+    # Ceres uses retro_levels=2 (÷4) per RI-005 to keep effective TL ≥ 11 for AutoRepair/1 and
+    # FireControl/2; base cost 67,500,000 ÷ 4 = 16,875,000
+    computer_cost_mcr=16.875,  # ref: 4,218,750 (retro×4); Ceres: 16,875,000 (retro×2, RI-005)
+    # ref: 1x 1.82 Ton Cargo Bay (1.82) + Stores and Spares 4.48 = 6.30 total;
+    # Ceres treats stores as guidance (RI-001); remaining usable tonnage gives 5.8616
+    cargo_tons=5.8616,  # ref: ~6.30; Ceres gives 5.8616 (fuel tons rounding, RI-001)
+    # ref: Design Cost 293,083,146.67; Ceres gives higher because computer cost
+    # uses retro_levels=2 instead of retro_levels=4 (RI-005)
+    production_cost_mcr=305.7193966667,  # ref: 293,083,146.67; Ceres: 305,719,396.67 (RI-005)
+    sales_price_mcr=275.1474570,  # ref: 263,774,832.00; Ceres: 275,147,457.00 (RI-005)
+    available_power=436.0,  # ref: Available: 436 PP
+    sensor_power_load=15.0,  # ref: Sensors 15 PP
+    total_power_load=436.0,  # ref: Maximum Load 436 PP
+)
+
 
 def build_alt_dragon() -> ship.Ship:
-    """Build the alternate Dragon reference case from refs/alt_dragon.txt."""
+    """Build the alternate Dragon reference case from refs/tycho/alt_dragon.txt."""
 
     fusion_plant = FusionPlantTL12(
         output=436, customisation=Advanced(modifications=[SizeReduction]), armoured_bulkhead=True
@@ -198,34 +224,34 @@ def test_alt_dragon_modeled_subset_tracks_current_model():
 
     assert dragon.power is not None
     assert dragon.power.plant is not None
-    assert dragon.power.plant.tons == pytest.approx(26.16)
-    assert dragon.power.plant.cost == pytest.approx(31_973_333.3333)
+    assert dragon.power.plant.tons == pytest.approx(_expected.plant_tons)
+    assert dragon.power.plant.cost == pytest.approx(_expected.plant_cost_mcr * 1_000_000)
     assert dragon.power.emergency_power_system is not None
-    assert dragon.power.emergency_power_system.tons == pytest.approx(2.616)
-    assert dragon.power.emergency_power_system.cost == pytest.approx(3_197_333.3333)
+    assert dragon.power.emergency_power_system.tons == pytest.approx(_expected.emergency_power_tons)
+    assert dragon.power.emergency_power_system.cost == pytest.approx(_expected.emergency_power_cost_mcr * 1_000_000)
 
     assert dragon.fuel is not None
     assert dragon.fuel.operation_fuel is not None
-    assert dragon.fuel.operation_fuel.tons == pytest.approx(11.0)
+    assert dragon.fuel.operation_fuel.tons == pytest.approx(_expected.operation_fuel_tons)
     assert dragon.fuel.fuel_processor is not None
     assert dragon.fuel.fuel_processor.build_item() == 'Fuel Processor (20 tons/day)'
-    assert dragon.fuel.fuel_processor.tons == pytest.approx(1.0)
+    assert dragon.fuel.fuel_processor.tons == pytest.approx(_expected.fuel_processor_tons)
 
     assert dragon.computer is not None
     assert dragon.computer.hardware is not None
     assert dragon.computer.hardware.build_item() == 'Core/40/fib'
-    assert dragon.computer.hardware.cost == pytest.approx(16_875_000.0)  # retro-2: ÷4
+    assert dragon.computer.hardware.cost == pytest.approx(_expected.computer_cost_mcr * 1_000_000)  # retro-2: ÷4
 
-    assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(5.8616)
+    assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(_expected.cargo_tons)
     crew_infos = dragon.crew.notes.infos
     assert 'MAINTENANCE above recommended count: 1 > 0' in crew_infos
     assert 'MEDIC above recommended count: 1 > 0' in crew_infos
 
-    assert dragon.production_cost == pytest.approx(305_719_396.6667)
-    assert dragon.sales_price_new == pytest.approx(275_147_457.0)
-    assert dragon.available_power == pytest.approx(436.0)
-    assert dragon.sensor_power_load == pytest.approx(15.0)
-    assert dragon.total_power_load == pytest.approx(436.0)
+    assert dragon.production_cost == pytest.approx(_expected.production_cost_mcr * 1_000_000)
+    assert dragon.sales_price_new == pytest.approx(_expected.sales_price_mcr * 1_000_000)
+    assert dragon.available_power == pytest.approx(_expected.available_power)
+    assert dragon.sensor_power_load == pytest.approx(_expected.sensor_power_load)
+    assert dragon.total_power_load == pytest.approx(_expected.total_power_load)
 
 
 def test_alt_dragon_has_no_errors():

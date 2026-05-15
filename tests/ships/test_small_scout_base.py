@@ -1,4 +1,4 @@
-"""Reference ship case based on refs/SmallScoutBase.txt.
+"""Reference ship case based on refs/tycho/SmallScoutBase.txt.
 
 Purpose:
 - provide a large scout-base / space-station reference slice
@@ -34,6 +34,8 @@ Source handling for this test case:
   - this Ceres variant also raises source `Gunners x4` to `Gunners x5` so the
     explicit crew covers all five modeled turrets
 """
+
+from types import SimpleNamespace
 
 import pytest
 
@@ -73,6 +75,81 @@ from ceres.make.ship.systems import (
     TrainingFacility,
 )
 from ceres.make.ship.weapons import BeamLaser, MissileRack, QuadTurret, WeaponsSection
+
+_expected = SimpleNamespace(
+    hull_cost_mcr=187.5,  # 10000t Light Dispersed Structure
+    hull_points=3_200.0,  # ref sheet; Ceres gives 3240 per light+dispersed modifiers
+    airlocks_count=24,  # Ceres variant adds extra airlocks; ref shows x10 (20 tons)
+    m_drive_tons=50.0,
+    m_drive_cost_mcr=100.0,
+    m_drive_power=250.0,
+    plant_tons=166.6666666667,
+    plant_cost_mcr=166.666666667,
+    available_power=2_500.0,
+    operation_fuel_tons=50.0,  # ref shows 51 tons (includes 1t from improved solar panel fuel?)
+    fuel_processor_tons=5.0,
+    fuel_processor_cost_mcr=0.25,
+    fuel_processor_power=5.0,
+    bridge_tons=40.0,
+    bridge_cost_mcr=25.0,
+    computer_cost_mcr=5.0,
+    software_packages=[('Library', 0.0), ('Manoeuvre/0', 0.0), ('Intellect', 0.0)],
+    turrets_total_tons=5.0,
+    turrets_total_cost_mcr=21.0,
+    turrets_total_power=74.0,
+    craft_count=15,  # Ceres variant: 10 Passenger Shuttle + 2 Ship's Boat + 3 G/Carrier
+    craft_total_tons=2_071.0,
+    craft_total_housing_cost_mcr=416.75,
+    craft_total_carried_cost_mcr=192.95,
+    armoury_tons=1.0,
+    armoury_cost_mcr=0.25,
+    briefing_room_tons=4.0,
+    briefing_room_cost_mcr=0.5,
+    library_tons=4.0,
+    library_cost_mcr=4.0,
+    medical_bay_count=2,
+    medical_bays_total_tons=8.0,
+    medical_bays_total_cost_mcr=4.0,
+    drone_mining_tons=20.0,
+    drone_mining_cost_mcr=2.0,
+    drone_probe_tons=20.0,
+    drone_probe_cost_mcr=10.0,
+    drone_repair_tons=100.0,
+    drone_repair_cost_mcr=20.0,
+    training_facility_tons=8.0,
+    training_facility_cost_mcr=1.6,
+    staterooms_count=1_250,
+    staterooms_total_tons=5_000.0,
+    staterooms_total_cost_mcr=625.0,
+    brig_tons=4.0,
+    brig_cost_mcr=0.25,
+    common_area_tons=1_250.0,
+    common_area_cost_mcr=125.0,
+    entertainment_cost=10_000.0,
+    swimming_pool_tons=4.0,
+    swimming_pool_cost_mcr=0.08,
+    theatre_tons=8.0,
+    theatre_cost_mcr=0.8,
+    power_basic=2_000.0,
+    power_maneuver=250.0,
+    power_sensors=0.0,
+    power_weapons=74.0,
+    power_fuel=5.0,
+    total_power=2_331.0,
+    crew=[
+        ('ENGINEER', 6),
+        ('GENERAL CREW', 250),
+        ('MAINTENANCE', 9),
+        ('GUNNER', 5),  # ref shows 4; Ceres raises to 5 to cover all modeled turrets
+        ('ADMINISTRATOR', 4),
+        ('SENSOR OPERATOR', 1),
+        ('PILOT', 13),  # ref shows Passenger Shuttle Pilots x10; Ceres adds 2 Ship's Boat + 1 extra
+        ('MEDIC', 2),
+        ('OFFICER', 14),
+    ],
+)
+# Ceres light+dispersed modifier gives 3240, not 3200 as on the ref sheet
+_expected.hull_points = 3_240.0
 
 
 def build_small_scout_base() -> ship.Ship:
@@ -153,120 +230,118 @@ def build_small_scout_base() -> ship.Ship:
 def test_small_scout_base_matches_supported_slice():
     base = build_small_scout_base()
 
-    assert base.hull_cost == pytest.approx(187_500_000.0)
-    assert base.hull_points == pytest.approx(3_240.0)
+    assert base.hull_cost == pytest.approx(_expected.hull_cost_mcr * 1_000_000)
+    assert base.hull_points == pytest.approx(_expected.hull_points)
     assert base.hull.airlocks is not None
-    assert len(base.hull.airlocks) == 24
+    assert len(base.hull.airlocks) == _expected.airlocks_count
     assert all(airlock.tons == 0.0 for airlock in base.hull.airlocks)
     assert 'Installed airlocks below minimum recommendation: 24 < 20' not in base.notes.warnings
 
     assert base.drives is not None
     assert base.drives.m_drive is not None
-    assert base.drives.m_drive.tons == pytest.approx(50.0)
-    assert base.drives.m_drive.cost == pytest.approx(100_000_000.0)
-    assert base.drives.m_drive.power == pytest.approx(250.0)
+    assert base.drives.m_drive.tons == pytest.approx(_expected.m_drive_tons)
+    assert base.drives.m_drive.cost == pytest.approx(_expected.m_drive_cost_mcr * 1_000_000)
+    assert base.drives.m_drive.power == pytest.approx(_expected.m_drive_power)
 
     assert base.power is not None
     assert base.power.plant is not None
-    assert base.power.plant.tons == pytest.approx(166.6666666667)
-    assert base.power.plant.cost == pytest.approx(166_666_666.6667)
-    assert base.available_power == pytest.approx(2_500.0)
+    assert base.power.plant.tons == pytest.approx(_expected.plant_tons)
+    assert base.power.plant.cost == pytest.approx(_expected.plant_cost_mcr * 1_000_000)
+    assert base.available_power == pytest.approx(_expected.available_power)
 
     assert base.fuel is not None
     assert base.fuel.operation_fuel is not None
-    assert base.fuel.operation_fuel.tons == pytest.approx(50.0)
+    assert base.fuel.operation_fuel.tons == pytest.approx(_expected.operation_fuel_tons)
     assert base.fuel.fuel_processor is not None
-    assert base.fuel.fuel_processor.tons == pytest.approx(5.0)
-    assert base.fuel.fuel_processor.cost == pytest.approx(250_000.0)
-    assert base.fuel.fuel_processor.power == pytest.approx(5.0)
+    assert base.fuel.fuel_processor.tons == pytest.approx(_expected.fuel_processor_tons)
+    assert base.fuel.fuel_processor.cost == pytest.approx(_expected.fuel_processor_cost_mcr * 1_000_000)
+    assert base.fuel.fuel_processor.power == pytest.approx(_expected.fuel_processor_power)
 
     assert base.command is not None
     assert base.command.bridge is not None
-    assert base.command.bridge.tons == pytest.approx(40.0)
-    assert base.command.bridge.cost == pytest.approx(25_000_000.0)
+    assert base.command.bridge.tons == pytest.approx(_expected.bridge_tons)
+    assert base.command.bridge.cost == pytest.approx(_expected.bridge_cost_mcr * 1_000_000)
 
     assert base.computer is not None
     assert base.computer.hardware is not None
-    assert base.computer.hardware.cost == pytest.approx(5_000_000.0)
-    assert [(package.description, package.cost) for package in base.computer.software_packages] == [
-        ('Library', 0.0),
-        ('Manoeuvre/0', 0.0),
-        ('Intellect', 0.0),
-    ]
+    assert base.computer.hardware.cost == pytest.approx(_expected.computer_cost_mcr * 1_000_000)
+    assert [(package.description, package.cost) for package in base.computer.software_packages] == (
+        _expected.software_packages
+    )
 
     assert base.weapons is not None
     assert len(base.weapons.turrets) == 5
-    assert sum(turret.tons for turret in base.weapons.turrets) == pytest.approx(5.0)
-    assert sum(turret.cost for turret in base.weapons.turrets) == pytest.approx(21_000_000.0)
-    assert sum(turret.power for turret in base.weapons.turrets) == pytest.approx(74.0)
+    assert sum(turret.tons for turret in base.weapons.turrets) == pytest.approx(_expected.turrets_total_tons)
+    assert sum(turret.cost for turret in base.weapons.turrets) == pytest.approx(
+        _expected.turrets_total_cost_mcr * 1_000_000
+    )
+    assert sum(turret.power for turret in base.weapons.turrets) == pytest.approx(_expected.turrets_total_power)
 
     assert base.craft is not None
-    assert len(base.craft.internal_housing) == 15
-    assert sum(housing.tons for housing in base.craft.internal_housing) == pytest.approx(2_071.0)
-    assert sum(housing.cost for housing in base.craft.internal_housing) == pytest.approx(416_750_000.0)
-    assert sum(housing.craft.cost for housing in base.craft.internal_housing) == pytest.approx(192_950_000.0)
+    assert len(base.craft.internal_housing) == _expected.craft_count
+    assert sum(housing.tons for housing in base.craft.internal_housing) == pytest.approx(_expected.craft_total_tons)
+    assert sum(housing.cost for housing in base.craft.internal_housing) == pytest.approx(
+        _expected.craft_total_housing_cost_mcr * 1_000_000
+    )
+    assert sum(housing.craft.cost for housing in base.craft.internal_housing) == pytest.approx(
+        _expected.craft_total_carried_cost_mcr * 1_000_000
+    )
 
     assert base.systems is not None
     assert len(base.systems.armouries) == 1
-    assert base.systems.armouries[0].tons == pytest.approx(1.0)
-    assert base.systems.armouries[0].cost == pytest.approx(250_000.0)
+    assert base.systems.armouries[0].tons == pytest.approx(_expected.armoury_tons)
+    assert base.systems.armouries[0].cost == pytest.approx(_expected.armoury_cost_mcr * 1_000_000)
     assert base.systems.briefing_room is not None
-    assert base.systems.briefing_room.tons == pytest.approx(4.0)
-    assert base.systems.briefing_room.cost == pytest.approx(500_000.0)
+    assert base.systems.briefing_room.tons == pytest.approx(_expected.briefing_room_tons)
+    assert base.systems.briefing_room.cost == pytest.approx(_expected.briefing_room_cost_mcr * 1_000_000)
     assert base.systems.library is not None
-    assert base.systems.library.tons == pytest.approx(4.0)
-    assert base.systems.library.cost == pytest.approx(4_000_000.0)
-    assert len(base.systems.medical_bays) == 2
-    assert sum(bay.tons for bay in base.systems.medical_bays) == pytest.approx(8.0)
-    assert sum(bay.cost for bay in base.systems.medical_bays) == pytest.approx(4_000_000.0)
+    assert base.systems.library.tons == pytest.approx(_expected.library_tons)
+    assert base.systems.library.cost == pytest.approx(_expected.library_cost_mcr * 1_000_000)
+    assert len(base.systems.medical_bays) == _expected.medical_bay_count
+    assert sum(bay.tons for bay in base.systems.medical_bays) == pytest.approx(_expected.medical_bays_total_tons)
+    assert sum(bay.cost for bay in base.systems.medical_bays) == pytest.approx(
+        _expected.medical_bays_total_cost_mcr * 1_000_000
+    )
     assert len(base.systems.drones) == 3
-    assert base.systems.drones[0].tons == pytest.approx(20.0)
-    assert base.systems.drones[0].cost == pytest.approx(2_000_000.0)
-    assert base.systems.drones[1].tons == pytest.approx(20.0)
-    assert base.systems.drones[1].cost == pytest.approx(10_000_000.0)
-    assert base.systems.drones[2].tons == pytest.approx(100.0)
-    assert base.systems.drones[2].cost == pytest.approx(20_000_000.0)
+    assert base.systems.drones[0].tons == pytest.approx(_expected.drone_mining_tons)
+    assert base.systems.drones[0].cost == pytest.approx(_expected.drone_mining_cost_mcr * 1_000_000)
+    assert base.systems.drones[1].tons == pytest.approx(_expected.drone_probe_tons)
+    assert base.systems.drones[1].cost == pytest.approx(_expected.drone_probe_cost_mcr * 1_000_000)
+    assert base.systems.drones[2].tons == pytest.approx(_expected.drone_repair_tons)
+    assert base.systems.drones[2].cost == pytest.approx(_expected.drone_repair_cost_mcr * 1_000_000)
     assert base.systems.training_facility is not None
-    assert base.systems.training_facility.tons == pytest.approx(8.0)
-    assert base.systems.training_facility.cost == pytest.approx(1_600_000.0)
+    assert base.systems.training_facility.tons == pytest.approx(_expected.training_facility_tons)
+    assert base.systems.training_facility.cost == pytest.approx(_expected.training_facility_cost_mcr * 1_000_000)
 
     assert base.habitation is not None
-    assert len(base.habitation.staterooms) == 1_250
-    assert sum(room.tons for room in base.habitation.staterooms) == pytest.approx(5_000.0)
-    assert sum(room.cost for room in base.habitation.staterooms) == pytest.approx(625_000_000.0)
+    assert len(base.habitation.staterooms) == _expected.staterooms_count
+    assert sum(room.tons for room in base.habitation.staterooms) == pytest.approx(_expected.staterooms_total_tons)
+    assert sum(room.cost for room in base.habitation.staterooms) == pytest.approx(
+        _expected.staterooms_total_cost_mcr * 1_000_000
+    )
     assert base.habitation.brig is not None
-    assert base.habitation.brig.tons == pytest.approx(4.0)
-    assert base.habitation.brig.cost == pytest.approx(250_000.0)
+    assert base.habitation.brig.tons == pytest.approx(_expected.brig_tons)
+    assert base.habitation.brig.cost == pytest.approx(_expected.brig_cost_mcr * 1_000_000)
     assert base.habitation.common_area is not None
-    assert base.habitation.common_area.tons == pytest.approx(1_250.0)
-    assert base.habitation.common_area.cost == pytest.approx(125_000_000.0)
+    assert base.habitation.common_area.tons == pytest.approx(_expected.common_area_tons)
+    assert base.habitation.common_area.cost == pytest.approx(_expected.common_area_cost_mcr * 1_000_000)
     assert base.habitation.entertainment is not None
-    assert base.habitation.entertainment.cost == pytest.approx(10_000.0)
+    assert base.habitation.entertainment.cost == pytest.approx(_expected.entertainment_cost)
     assert base.habitation.swimming_pool is not None
-    assert base.habitation.swimming_pool.tons == pytest.approx(4.0)
-    assert base.habitation.swimming_pool.cost == pytest.approx(80_000.0)
+    assert base.habitation.swimming_pool.tons == pytest.approx(_expected.swimming_pool_tons)
+    assert base.habitation.swimming_pool.cost == pytest.approx(_expected.swimming_pool_cost_mcr * 1_000_000)
     assert len(base.habitation.theatres) == 1
-    assert base.habitation.theatres[0].tons == pytest.approx(8.0)
-    assert base.habitation.theatres[0].cost == pytest.approx(800_000.0)
+    assert base.habitation.theatres[0].tons == pytest.approx(_expected.theatre_tons)
+    assert base.habitation.theatres[0].cost == pytest.approx(_expected.theatre_cost_mcr * 1_000_000)
 
-    assert base.basic_hull_power_load == pytest.approx(2_000.0)
-    assert base.maneuver_power_load == pytest.approx(250.0)
-    assert base.sensor_power_load == pytest.approx(0.0)
-    assert base.weapon_power_load == pytest.approx(74.0)
-    assert base.fuel_power_load == pytest.approx(5.0)
-    assert base.total_power_load == pytest.approx(2_331.0)
+    assert base.basic_hull_power_load == pytest.approx(_expected.power_basic)
+    assert base.maneuver_power_load == pytest.approx(_expected.power_maneuver)
+    assert base.sensor_power_load == pytest.approx(_expected.power_sensors)
+    assert base.weapon_power_load == pytest.approx(_expected.power_weapons)
+    assert base.fuel_power_load == pytest.approx(_expected.power_fuel)
+    assert base.total_power_load == pytest.approx(_expected.total_power)
 
-    assert [
-        ('ENGINEER', 6),
-        ('GENERAL CREW', 250),
-        ('MAINTENANCE', 9),
-        ('GUNNER', 5),
-        ('ADMINISTRATOR', 4),
-        ('SENSOR OPERATOR', 1),
-        ('PILOT', 13),
-        ('MEDIC', 2),
-        ('OFFICER', 14),
-    ] == [(role.role, quantity) for role, quantity in base.crew.grouped_roles]
+    assert _expected.crew == [(role.role, quantity) for role, quantity in base.crew.grouped_roles]
 
     notes = base.crew.notes
     assert 'ENGINEER below recommended count: 5 < 6' not in notes.warnings

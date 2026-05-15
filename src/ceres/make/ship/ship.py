@@ -82,7 +82,7 @@ class Ship(ShipBase):
 
         power_shortfall = self.total_power_load - self.available_power
         if power_shortfall > 0.005 and (self.power is None or self.power.plant is None):
-            notes.warning(f'Capacity {power_shortfall:.2f} less than max use')
+            notes.warning(f'Power: capacity {power_shortfall:.2f} less than max use')
 
         minimum_airlocks = ceil(self.displacement / 500) if self.displacement >= 100 else 0
         installed_airlocks = len(self.hull.airlocks)

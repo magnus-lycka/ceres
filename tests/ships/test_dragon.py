@@ -1,4 +1,4 @@
-"""Reference ship case based on refs/dragon.txt.
+"""Reference ship case based on refs/tycho/dragon.txt.
 
 Purpose:
 - preserve a source-derived military baseline for the Dragon line
@@ -27,6 +27,8 @@ Source handling for this test case:
 - model interpretation rather than dedicated installed rows:
   - stores and spares (`RI-001`)
 """
+
+from types import SimpleNamespace
 
 import pytest
 
@@ -82,10 +84,109 @@ from ceres.make.ship.weapons import (
     WeaponsSection,
 )
 
+# Values taken from refs/tycho/dragon.txt unless noted.
+# Bulkhead tonnages/costs are derived from Ceres TCS-001 normalization: the
+# source groups protected parts and bulkheads together in a single row, while
+# Ceres records the protected part at its unprotected size and lists the
+# bulkhead separately.
+_expected = SimpleNamespace(
+    tl=13,
+    displacement=400,
+    hull_points=176,  # Streamlined-Needle, Reinforced; ref: "Hull: 176"
+    hull_cost_mcr=36.0,  # ref: 36,000,000
+    stealth_cost_mcr=40.0,  # ref: 40,000,000
+    armour_tons=78.0,  # ref: Crystaliron 13; 78.00 tons
+    armour_cost_mcr=15.6,  # ref: 15,600,000
+    # ref row: "M-Drive: 7, Armored 30.80 / 56,560,000" — Ceres splits the
+    # 2.8 ton armoured bulkhead out; drive itself is 28.0 tons / 56,000,000
+    m_drive_tons=28.0,
+    m_drive_cost_mcr=56.0,
+    m_drive_power=280.0,
+    plant_tons=30.0,  # ref: Fusion TL 12 Output: 450 — 30.00 tons
+    plant_cost_mcr=30.0,  # ref: 30,000,000
+    operation_fuel_tons=12.0,  # ref: 16 Weeks of Operation — 12.00 tons
+    bridge_tons=20.0,  # ref: Standard Bridge — 20.00 tons
+    bridge_cost_mcr=2.5,  # ref: 2,000,000 bridge + 500,000 holographic controls
+    computer_cost_mcr=15.0,  # ref: Comp/25/fib — 15,000,000
+    computer_backup_cost_mcr=7.5,  # ref: B/U Comp/20/fib — 7,500,000
+    # Sensors — ref groups sensor bulkhead as "Armored Bulkhead 1.30 / 260,000"
+    # and sensor stations as "2x Additional Armored Sensor Stations 2.20 / 1,040,000".
+    # Ceres splits each sensor component's bulkhead individually (TCS-001).
+    sensors_primary_tons=3.0,
+    sensors_primary_cost_mcr=4.3,
+    sensors_countermeasures_tons=2.0,
+    sensors_countermeasures_cost_mcr=4.0,
+    sensors_signal_processing_tons=2.0,
+    sensors_signal_processing_cost_mcr=8.0,
+    sensors_extended_arrays_tons=6.0,
+    sensors_extended_arrays_cost_mcr=8.6,
+    sensors_stations_tons=2.0,
+    sensors_stations_cost_mcr=1.0,
+    # Weapons — ref groups armoured barbettes as "2x ... 11.00 / 16,200,000";
+    # Ceres splits bulkheads out so each barbette is 5.0 tons / 8,000,000 MCr
+    # with 0.5-ton / 100,000 Cr bulkhead listed separately.
+    barbette_tons=5.0,
+    # ref: "1x Small Bay: Missile Bay (S), Armored ... 38.50 / 18,700,000" —
+    # Ceres splits 3.5-ton bulkhead; bay itself 35.0 tons / 18,000,000
+    bay_tons=35.0,
+    bay_cost_mcr=18.0,
+    # ref: "1x Point Defense Battery: Type II -L, Armored 22.00 / 10,400,000" —
+    # Ceres splits 2.0-ton bulkhead; battery itself 20.0 tons / 10,000,000
+    point_defense_tons=20.0,
+    point_defense_cost_mcr=10.0,
+    # ref: "Armored Missile Storage (480) 44.00 / 800,000" —
+    # Ceres splits 4.0-ton bulkhead; storage itself 40.0 tons / 0
+    missile_storage_tons=40.0,
+    missile_storage_cost=0.0,
+    # Armoured bulkhead parts listed in order Ceres yields them (TCS-001):
+    # m_drive, plant, fuel, bridge, sensor_primary, sensor_countermeasures,
+    # sensor_signal, sensor_stations, sensor_extended_arrays,
+    # barbette×2, bay, point_defense, missile_storage
+    bulkhead_tons=[2.8, 3.0, 1.2, 2.0, 0.3, 0.2, 0.2, 0.6, 0.2, 0.5, 0.5, 3.5, 2.0, 4.0],
+    bulkhead_costs=[
+        560_000,
+        600_000,
+        240_000,
+        400_000,
+        60_000,
+        40_000,
+        40_000,
+        120_000,
+        40_000,
+        100_000,
+        100_000,
+        700_000,
+        400_000,
+        800_000,
+    ],
+    repair_drones_tons=4.0,
+    staterooms_total_tons=40.0,
+    common_area_tons=10.0,
+    # ref shows "1x 13.52 Ton Cargo Bay" + "Stores and Spares 4.48" = 18.00
+    # Ceres treats stores as guidance (RI-001) not a separate install; total
+    # remaining tonnage is asserted as 18.00 to match the published total
+    cargo_tons=18.0,
+    production_cost_mcr=308.25,  # ref: 308,250,000
+    sales_price_mcr=277.425,  # ref: Discount Cost: 277,425,000
+    available_power=450.0,  # ref: Available: 450 PP
+    power_basic=80.0,  # ref: Basic/Hull 80 PP
+    power_maneuver=280.0,  # ref: Maneuver 280 PP
+    power_sensors=15.0,  # ref: Sensors 15 PP
+    power_weapons=55.0,  # ref: Weapons 55 PP
+    total_power=435.0,  # ref: Maximum Load 435
+    # ref: Life Support 22,000 — source inconsistency noted in docstring;
+    # Ceres calculates 29,000 based on stateroom occupancy rules
+    life_support=22_000.0,  # ref value; Ceres gives 29,000 (see docstring)
+    crew_salaries=75_000.0,  # ref: Crew Salaries 75,000
+)
+# Ceres calculates life support from stateroom occupancy, giving 29,000
+# (source inconsistency: ref shows 22,000 which does not match crew count)
+_expected.life_support = 29_000.0
+
 
 def build_dragon() -> ship.Ship:
     """
-    Build the Dragon reference case from refs/dragon.txt.
+    Build the Dragon reference case from refs/tycho/dragon.txt.
 
     Source aspects intentionally not carried over verbatim:
     - exact bay count/formatting from source export
@@ -170,105 +271,88 @@ def build_dragon() -> ship.Ship:
 def test_dragon_modeled_subset_matches_current_model():
     dragon = build_dragon()
 
-    assert dragon.tl == 13
-    assert dragon.displacement == 400
-    assert dragon.hull_points == 176
-    assert dragon.hull_cost == pytest.approx(36_000_000)
+    assert dragon.tl == _expected.tl
+    assert dragon.displacement == _expected.displacement
+    assert dragon.hull_points == _expected.hull_points
+    assert dragon.hull_cost == pytest.approx(_expected.hull_cost_mcr * 1_000_000)
 
     assert dragon.hull.stealth is not None
-    assert dragon.hull.stealth.cost == pytest.approx(40_000_000)
+    assert dragon.hull.stealth.cost == pytest.approx(_expected.stealth_cost_mcr * 1_000_000)
     assert dragon.hull.radiation_shielding is True
 
     armour_part = dragon.hull.armour
     assert armour_part is not None
-    assert armour_part.tons == pytest.approx(78.0)
-    assert armour_part.cost == pytest.approx(15_600_000)
-    assert [bulkhead.tons for bulkhead in dragon.armoured_bulkhead_parts()] == pytest.approx(
-        [2.8, 3.0, 1.2, 2.0, 0.3, 0.2, 0.2, 0.6, 0.2, 0.5, 0.5, 3.5, 2.0, 4.0]
-    )
-    assert [bulkhead.cost for bulkhead in dragon.armoured_bulkhead_parts()] == pytest.approx(
-        [
-            560_000,
-            600_000,
-            240_000,
-            400_000,
-            60_000,
-            40_000,
-            40_000,
-            120_000,
-            40_000,
-            100_000,
-            100_000,
-            700_000,
-            400_000,
-            800_000,
-        ]
-    )
+    assert armour_part.tons == pytest.approx(_expected.armour_tons)
+    assert armour_part.cost == pytest.approx(_expected.armour_cost_mcr * 1_000_000)
+    assert [bulkhead.tons for bulkhead in dragon.armoured_bulkhead_parts()] == pytest.approx(_expected.bulkhead_tons)
+    assert [bulkhead.cost for bulkhead in dragon.armoured_bulkhead_parts()] == pytest.approx(_expected.bulkhead_costs)
 
     assert len(dragon.hull.airlocks) == 4
     assert all(airlock.tons == 0.0 for airlock in dragon.hull.airlocks)
 
     assert dragon.drives is not None
     assert dragon.drives.m_drive is not None
-    assert dragon.drives.m_drive.tons == pytest.approx(28.0)
-    assert dragon.drives.m_drive.cost == pytest.approx(56_000_000)
-    assert dragon.drives.m_drive.power == pytest.approx(280.0)
+    assert dragon.drives.m_drive.tons == pytest.approx(_expected.m_drive_tons)
+    assert dragon.drives.m_drive.cost == pytest.approx(_expected.m_drive_cost_mcr * 1_000_000)
+    assert dragon.drives.m_drive.power == pytest.approx(_expected.m_drive_power)
 
     assert dragon.power is not None
     assert dragon.power.plant is not None
-    assert dragon.power.plant.tons == pytest.approx(30.0)
-    assert dragon.power.plant.cost == pytest.approx(30_000_000)
+    assert dragon.power.plant.tons == pytest.approx(_expected.plant_tons)
+    assert dragon.power.plant.cost == pytest.approx(_expected.plant_cost_mcr * 1_000_000)
 
     assert dragon.fuel is not None
     assert dragon.fuel.operation_fuel is not None
-    assert dragon.fuel.operation_fuel.tons == pytest.approx(12.0)
+    assert dragon.fuel.operation_fuel.tons == pytest.approx(_expected.operation_fuel_tons)
     assert dragon.fuel.fuel_scoops is not None
     assert dragon.fuel.fuel_scoops.cost == 0.0
 
     assert dragon.command is not None
     assert dragon.command.bridge is not None
-    assert dragon.command.bridge.tons == pytest.approx(20.0)
-    assert dragon.command.bridge.cost == pytest.approx(2_500_000)
+    assert dragon.command.bridge.tons == pytest.approx(_expected.bridge_tons)
+    assert dragon.command.bridge.cost == pytest.approx(_expected.bridge_cost_mcr * 1_000_000)
 
     assert dragon.computer is not None
     assert dragon.computer.hardware is not None
-    assert dragon.computer.hardware.cost == pytest.approx(15_000_000)
+    assert dragon.computer.hardware.cost == pytest.approx(_expected.computer_cost_mcr * 1_000_000)
     assert dragon.computer.hardware.build_item() == 'Computer/25/fib'
     assert dragon.computer.backup_hardware is not None
-    assert dragon.computer.backup_hardware.cost == pytest.approx(7_500_000)
+    assert dragon.computer.backup_hardware.cost == pytest.approx(_expected.computer_backup_cost_mcr * 1_000_000)
     assert dragon.computer.backup_hardware.build_item() == 'Computer/20/fib'
 
-    assert dragon.sensors.primary.tons == pytest.approx(3.0)
-    assert dragon.sensors.primary.cost == pytest.approx(4_300_000)
+    assert dragon.sensors.primary.tons == pytest.approx(_expected.sensors_primary_tons)
+    assert dragon.sensors.primary.cost == pytest.approx(_expected.sensors_primary_cost_mcr * 1_000_000)
     assert dragon.sensors.countermeasures is not None
-    assert dragon.sensors.countermeasures.tons == pytest.approx(2.0)
-    assert dragon.sensors.countermeasures.cost == pytest.approx(4_000_000)
+    assert dragon.sensors.countermeasures.tons == pytest.approx(_expected.sensors_countermeasures_tons)
+    assert dragon.sensors.countermeasures.cost == pytest.approx(_expected.sensors_countermeasures_cost_mcr * 1_000_000)
     assert dragon.sensors.signal_processing is not None
-    assert dragon.sensors.signal_processing.tons == pytest.approx(2.0)
-    assert dragon.sensors.signal_processing.cost == pytest.approx(8_000_000)
+    assert dragon.sensors.signal_processing.tons == pytest.approx(_expected.sensors_signal_processing_tons)
+    assert dragon.sensors.signal_processing.cost == pytest.approx(
+        _expected.sensors_signal_processing_cost_mcr * 1_000_000
+    )
     assert dragon.sensors.extended_arrays is not None
-    assert dragon.sensors.extended_arrays.tons == pytest.approx(6.0)
-    assert dragon.sensors.extended_arrays.cost == pytest.approx(8_600_000)
+    assert dragon.sensors.extended_arrays.tons == pytest.approx(_expected.sensors_extended_arrays_tons)
+    assert dragon.sensors.extended_arrays.cost == pytest.approx(_expected.sensors_extended_arrays_cost_mcr * 1_000_000)
     assert dragon.sensors.sensor_stations is not None
     assert dragon.sensors.sensor_stations.build_item() == 'Sensor Stations'
-    assert dragon.sensors.sensor_stations.tons == pytest.approx(2.0)
-    assert dragon.sensors.sensor_stations.cost == pytest.approx(1_000_000)
+    assert dragon.sensors.sensor_stations.tons == pytest.approx(_expected.sensors_stations_tons)
+    assert dragon.sensors.sensor_stations.cost == pytest.approx(_expected.sensors_stations_cost_mcr * 1_000_000)
 
     assert dragon.weapons is not None
     assert len(dragon.weapons.barbettes) == 2
     assert dragon.weapons.barbettes[0].build_item() == 'Particle Barbette (Damage × 3 after armour)'
-    assert dragon.weapons.barbettes[0].tons == pytest.approx(5.0)
+    assert dragon.weapons.barbettes[0].tons == pytest.approx(_expected.barbette_tons)
     assert len(dragon.weapons.bays) == 1
     assert dragon.weapons.bays[0].build_item() == 'Small Missile Bay (12 missiles per salvo)'
-    assert dragon.weapons.bays[0].tons == pytest.approx(35.0)
-    assert dragon.weapons.bays[0].cost == pytest.approx(18_000_000)
+    assert dragon.weapons.bays[0].tons == pytest.approx(_expected.bay_tons)
+    assert dragon.weapons.bays[0].cost == pytest.approx(_expected.bay_cost_mcr * 1_000_000)
     assert len(dragon.weapons.point_defense_batteries) == 1
     assert dragon.weapons.point_defense_batteries[0].build_item() == 'Point Defence Laser Battery Type II'
-    assert dragon.weapons.point_defense_batteries[0].tons == pytest.approx(20.0)
-    assert dragon.weapons.point_defense_batteries[0].cost == pytest.approx(10_000_000)
+    assert dragon.weapons.point_defense_batteries[0].tons == pytest.approx(_expected.point_defense_tons)
+    assert dragon.weapons.point_defense_batteries[0].cost == pytest.approx(_expected.point_defense_cost_mcr * 1_000_000)
     assert dragon.weapons.missile_storage is not None
-    assert dragon.weapons.missile_storage.tons == pytest.approx(40.0)
-    assert dragon.weapons.missile_storage.cost == pytest.approx(0.0)
+    assert dragon.weapons.missile_storage.tons == pytest.approx(_expected.missile_storage_tons)
+    assert dragon.weapons.missile_storage.cost == pytest.approx(_expected.missile_storage_cost)
 
     assert dragon.systems is not None
     assert len(dragon.systems.armouries) == 1
@@ -276,33 +360,33 @@ def test_dragon_modeled_subset_matches_current_model():
     assert dragon.systems.biosphere is not None
     assert dragon.systems.biosphere.tons == pytest.approx(4.0)
     assert len(dragon.systems.drones) == 1
-    assert dragon.systems.drones[0].tons == pytest.approx(4.0)
+    assert dragon.systems.drones[0].tons == pytest.approx(_expected.repair_drones_tons)
     assert dragon.systems.medical_bay is not None
     assert dragon.systems.training_facility is not None
     assert dragon.systems.workshop is not None
 
     assert dragon.habitation is not None
     assert dragon.habitation.staterooms is not None
-    assert sum(room.tons for room in dragon.habitation.staterooms) == pytest.approx(40.0)
+    assert sum(room.tons for room in dragon.habitation.staterooms) == pytest.approx(_expected.staterooms_total_tons)
     assert dragon.habitation.common_area is not None
-    assert dragon.habitation.common_area.tons == pytest.approx(10.0)
+    assert dragon.habitation.common_area.tons == pytest.approx(_expected.common_area_tons)
 
     # The source export includes a stores/spares row in cargo. Ceres treats that
     # as guidance (RI-001) rather than as a separately installed design item.
-    assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(18.00)
-    assert dragon.production_cost == pytest.approx(308_250_000)
-    assert dragon.sales_price_new == pytest.approx(277_425_000)
+    assert CargoSection.cargo_tons_for_ship(dragon) == pytest.approx(_expected.cargo_tons)
+    assert dragon.production_cost == pytest.approx(_expected.production_cost_mcr * 1_000_000)
+    assert dragon.sales_price_new == pytest.approx(_expected.sales_price_mcr * 1_000_000)
 
 
 def test_dragon_power_and_crew_for_current_subset():
     dragon = build_dragon()
 
-    assert dragon.available_power == pytest.approx(450.0)
-    assert dragon.basic_hull_power_load == pytest.approx(80.0)
-    assert dragon.maneuver_power_load == pytest.approx(280.0)
-    assert dragon.sensor_power_load == pytest.approx(15.0)
-    assert dragon.weapon_power_load == pytest.approx(55.0)
-    assert dragon.total_power_load == pytest.approx(435.0)
+    assert dragon.available_power == pytest.approx(_expected.available_power)
+    assert dragon.basic_hull_power_load == pytest.approx(_expected.power_basic)
+    assert dragon.maneuver_power_load == pytest.approx(_expected.power_maneuver)
+    assert dragon.sensor_power_load == pytest.approx(_expected.power_sensors)
+    assert dragon.weapon_power_load == pytest.approx(_expected.power_weapons)
+    assert dragon.total_power_load == pytest.approx(_expected.total_power)
 
     assert [(role.role, quantity, role.monthly_salary) for role, quantity in dragon.crew.grouped_roles] == [
         ('CAPTAIN', 1, 10_000),
@@ -315,8 +399,8 @@ def test_dragon_power_and_crew_for_current_subset():
         ('SENSOR OPERATOR', 3, 4_000),
         ('OFFICER', 1, 5_000),
     ]
-    assert dragon.expenses.life_support == pytest.approx(29_000.0)
-    assert dragon.expenses.crew_salaries == pytest.approx(75_000.0)
+    assert dragon.expenses.life_support == pytest.approx(_expected.life_support)
+    assert dragon.expenses.crew_salaries == pytest.approx(_expected.crew_salaries)
     crew_infos = dragon.crew.notes.infos
     assert 'ASTROGATOR above recommended count: 1 > 0' in crew_infos
     assert 'MAINTENANCE above recommended count: 1 > 0' in crew_infos

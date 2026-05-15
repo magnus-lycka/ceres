@@ -1,4 +1,4 @@
-"""Reference ship case based on refs/Suleiman.md.
+"""Reference ship case based on refs/tycho/Suleiman.md.
 
 Purpose:
 - provide a compact source-derived scout/courier baseline
@@ -26,6 +26,8 @@ Source handling for this test case:
   - stores and spares (`RI-001`)
 """
 
+from types import SimpleNamespace
+
 import pytest
 
 from ceres.make.ship import armour, hull, ship
@@ -43,9 +45,74 @@ from ceres.report import render_ship_html
 
 from ._output import write_html_output, write_json_output
 
+_expected = SimpleNamespace(
+    tl=12,
+    displacement=100,
+    hull_cost_mcr=6.0,  # Streamlined Hull: 6,000,000
+    hull_points=40,
+    armour_description='Crystaliron',
+    armour_protection=4,
+    armour_tons=6.0,
+    armour_cost_mcr=1.2,  # Crystaliron: 1,200,000
+    m_drive_level=2,
+    m_drive_tons=2.0,
+    m_drive_cost_mcr=4.0,
+    m_drive_power=20,
+    j_drive_level=2,
+    j_drive_tons=10.0,
+    j_drive_cost_mcr=15.0,
+    j_drive_power=20,
+    plant_output=60,
+    plant_tons=4.0,
+    plant_cost_mcr=4.0,
+    jump_fuel_parsecs=2,
+    jump_fuel_tons=20.0,
+    op_fuel_weeks=12,
+    op_fuel_tons=1.2,  # ref: 1.20 tons; Ceres gives 2.0 per RI-007
+    fuel_processor_tons=2.0,
+    fuel_processor_cost_cr=100_000,
+    fuel_processor_power=2,
+    bridge_tons=10.0,
+    bridge_cost_cr=500_000,
+    computer_processing=5,
+    computer_cost_cr=45_000,  # Computer/5 bis
+    sensor_tons=2.0,
+    sensor_cost_cr=4_100_000,
+    sensor_power=2,
+    docking_space_shipping_size=4,
+    docking_space_tons=5.0,
+    docking_space_cost_cr=1_250_000,
+    docking_space_power=0,
+    stateroom_count=4,
+    stateroom_tons_total=16.0,
+    stateroom_cost_total_cr=2_000_000,
+    airlock_count=1,
+    probe_drones_count=10,
+    probe_drones_tons=2.0,
+    probe_drones_cost_cr=1_000_000,
+    probe_drones_power=0,
+    workshop_tons=6.0,
+    workshop_cost_cr=900_000,
+    workshop_power=0,
+    cargo_tons=12.0,
+    available_power=60,
+    power_basic=20,  # Basic/Hull 20 PP
+    power_maneuver=20,
+    power_jump=20,
+    power_fuel=2,
+    power_sensors=2,
+    power_weapon=1,
+    total_power=45,  # Ceres total_power_load (excludes jump from running total?)
+    production_cost_mcr=41.045,  # Design Cost: 41,045,000
+    sales_price_mcr=36.9405,  # Discount Cost: 36,940,500
+)
+
+# Ceres gives op_fuel_tons=2.0 per RI-007 (rounds up to whole dTon for ≥100t ships), not 1.2 as in ref
+_expected.op_fuel_tons = 2.0
+
 
 def build_suleiman() -> ship.Ship:
-    """Build the Suleiman reference case from refs/Suleiman.md."""
+    """Build the Suleiman reference case from refs/tycho/Suleiman.md."""
     return ship.Ship(
         ship_class='Suleiman',
         ship_type='Scout/Courier',
@@ -99,54 +166,54 @@ def test_suleiman_matches_first_modeled_reference_slice():
     probe_drones = suleiman.systems.drones[0]
     workshop = suleiman.systems.workshop
 
-    assert suleiman.tl == 12
-    assert suleiman.displacement == 100
+    assert suleiman.tl == _expected.tl
+    assert suleiman.displacement == _expected.displacement
 
     assert armour_part is not None
-    assert armour_part.description == 'Crystaliron'
-    assert armour_part.protection == 4
-    assert armour_part.tons == pytest.approx(6.0)
-    assert armour_part.cost == 1_200_000
+    assert armour_part.description == _expected.armour_description
+    assert armour_part.protection == _expected.armour_protection
+    assert armour_part.tons == pytest.approx(_expected.armour_tons)
+    assert armour_part.cost == _expected.armour_cost_mcr * 1_000_000
 
     assert m_drive is not None
-    assert m_drive.level == 2
-    assert m_drive.tons == pytest.approx(2.0)
-    assert m_drive.cost == 4_000_000
-    assert m_drive.power == 20
+    assert m_drive.level == _expected.m_drive_level
+    assert m_drive.tons == pytest.approx(_expected.m_drive_tons)
+    assert m_drive.cost == _expected.m_drive_cost_mcr * 1_000_000
+    assert m_drive.power == _expected.m_drive_power
 
     assert jump_drive is not None
-    assert jump_drive.level == 2
-    assert jump_drive.tons == pytest.approx(10.0)
-    assert jump_drive.cost == 15_000_000
-    assert jump_drive.power == 20
+    assert jump_drive.level == _expected.j_drive_level
+    assert jump_drive.tons == pytest.approx(_expected.j_drive_tons)
+    assert jump_drive.cost == _expected.j_drive_cost_mcr * 1_000_000
+    assert jump_drive.power == _expected.j_drive_power
 
     assert fusion_plant is not None
-    assert fusion_plant.output == 60
-    assert fusion_plant.tons == pytest.approx(4.0)
-    assert fusion_plant.cost == 4_000_000
+    assert fusion_plant.output == _expected.plant_output
+    assert fusion_plant.tons == pytest.approx(_expected.plant_tons)
+    assert fusion_plant.cost == _expected.plant_cost_mcr * 1_000_000
 
     assert jump_fuel is not None
-    assert jump_fuel.parsecs == 2
-    assert jump_fuel.tons == pytest.approx(20.0)
+    assert jump_fuel.parsecs == _expected.jump_fuel_parsecs
+    assert jump_fuel.tons == pytest.approx(_expected.jump_fuel_tons)
 
     assert operation_fuel is not None
-    assert operation_fuel.weeks == 12
-    assert operation_fuel.tons == pytest.approx(2.0)
+    assert operation_fuel.weeks == _expected.op_fuel_weeks
+    assert operation_fuel.tons == pytest.approx(_expected.op_fuel_tons)
 
     assert fuel_processor is not None
-    assert fuel_processor.tons == pytest.approx(2.0)
-    assert fuel_processor.cost == 100_000
-    assert fuel_processor.power == 2
+    assert fuel_processor.tons == pytest.approx(_expected.fuel_processor_tons)
+    assert fuel_processor.cost == _expected.fuel_processor_cost_cr
+    assert fuel_processor.power == _expected.fuel_processor_power
 
     assert bridge is not None
-    assert bridge.tons == pytest.approx(10.0)
-    assert bridge.cost == 500_000
+    assert bridge.tons == pytest.approx(_expected.bridge_tons)
+    assert bridge.cost == _expected.bridge_cost_cr
 
     assert suleiman.computer is not None
     assert suleiman.computer.hardware is not None
-    assert suleiman.computer.hardware.processing == 5
+    assert suleiman.computer.hardware.processing == _expected.computer_processing
     assert suleiman.computer.hardware.can_run_jump_control(10)
-    assert suleiman.computer.hardware.cost == 45_000
+    assert suleiman.computer.hardware.cost == _expected.computer_cost_cr
     assert [(package.description, package.cost) for package in suleiman.computer.software_packages] == [
         ('Library', 0.0),
         ('Manoeuvre/0', 0.0),
@@ -155,38 +222,38 @@ def test_suleiman_matches_first_modeled_reference_slice():
     ]
 
     assert sensors is not None
-    assert sensors.tons == pytest.approx(2.0)
-    assert sensors.cost == 4_100_000
-    assert sensors.power == 2
+    assert sensors.tons == pytest.approx(_expected.sensor_tons)
+    assert sensors.cost == _expected.sensor_cost_cr
+    assert sensors.power == _expected.sensor_power
 
     assert docking_space is not None
-    assert docking_space.craft.shipping_size == 4
-    assert docking_space.tons == pytest.approx(5.0)
-    assert docking_space.cost == 1_250_000
-    assert docking_space.power == 0
+    assert docking_space.craft.shipping_size == _expected.docking_space_shipping_size
+    assert docking_space.tons == pytest.approx(_expected.docking_space_tons)
+    assert docking_space.cost == _expected.docking_space_cost_cr
+    assert docking_space.power == _expected.docking_space_power
 
     assert staterooms is not None
-    assert len(staterooms) == 4
-    assert sum(room.tons for room in staterooms) == pytest.approx(16.0)
-    assert sum(room.cost for room in staterooms) == 2_000_000
+    assert len(staterooms) == _expected.stateroom_count
+    assert sum(room.tons for room in staterooms) == pytest.approx(_expected.stateroom_tons_total)
+    assert sum(room.cost for room in staterooms) == _expected.stateroom_cost_total_cr
 
-    assert len(airlocks) == 1
+    assert len(airlocks) == _expected.airlock_count
     assert airlocks[0].tons == pytest.approx(0.0)
     assert airlocks[0].cost == 0.0
 
     assert probe_drones is not None
     assert isinstance(probe_drones, ProbeDrones)
-    assert probe_drones.count == 10
-    assert probe_drones.tons == pytest.approx(2.0)
-    assert probe_drones.cost == 1_000_000
-    assert probe_drones.power == 0
+    assert probe_drones.count == _expected.probe_drones_count
+    assert probe_drones.tons == pytest.approx(_expected.probe_drones_tons)
+    assert probe_drones.cost == _expected.probe_drones_cost_cr
+    assert probe_drones.power == _expected.probe_drones_power
 
     assert workshop is not None
-    assert workshop.tons == pytest.approx(6.0)
-    assert workshop.cost == 900_000
-    assert workshop.power == 0
+    assert workshop.tons == pytest.approx(_expected.workshop_tons)
+    assert workshop.cost == _expected.workshop_cost_cr
+    assert workshop.power == _expected.workshop_power
 
-    assert CargoSection.cargo_tons_for_ship(suleiman) == pytest.approx(12.0)
+    assert CargoSection.cargo_tons_for_ship(suleiman) == pytest.approx(_expected.cargo_tons)
 
     assert [(role.role, quantity, role.monthly_salary) for role, quantity in suleiman.crew.grouped_roles] == [
         ('PILOT', 1, 6_000),
@@ -195,18 +262,18 @@ def test_suleiman_matches_first_modeled_reference_slice():
         ('GUNNER', 1, 2_000),
     ]
 
-    assert suleiman.hull_cost == 6_000_000
-    assert suleiman.production_cost == 41_045_000
-    assert suleiman.sales_price_new == 36_940_500
+    assert suleiman.hull_cost == _expected.hull_cost_mcr * 1_000_000
+    assert suleiman.production_cost == _expected.production_cost_mcr * 1_000_000
+    assert suleiman.sales_price_new == _expected.sales_price_mcr * 1_000_000
 
-    assert suleiman.available_power == 60
-    assert suleiman.basic_hull_power_load == 20
-    assert suleiman.maneuver_power_load == 20
-    assert suleiman.jump_power_load == 20
-    assert suleiman.fuel_power_load == 2
-    assert suleiman.sensor_power_load == 2
-    assert suleiman.weapon_power_load == 1
-    assert suleiman.total_power_load == 45
+    assert suleiman.available_power == _expected.available_power
+    assert suleiman.basic_hull_power_load == _expected.power_basic
+    assert suleiman.maneuver_power_load == _expected.power_maneuver
+    assert suleiman.jump_power_load == _expected.power_jump
+    assert suleiman.fuel_power_load == _expected.power_fuel
+    assert suleiman.sensor_power_load == _expected.power_sensors
+    assert suleiman.weapon_power_load == _expected.power_weapon
+    assert suleiman.total_power_load == _expected.total_power
 
 
 def test_jump_drive_2_without_jump_control_2_adds_local_note():
@@ -230,33 +297,33 @@ def test_suleiman_spec_structure():
 
     assert spec.ship_class == 'Suleiman'
     assert spec.ship_type == 'Scout/Courier'
-    assert spec.tl == 12
-    assert spec.hull_points == 40
+    assert spec.tl == _expected.tl
+    assert spec.hull_points == _expected.hull_points
 
     hull_row = spec.row('Streamlined Hull')
     assert hull_row.section == 'Hull'
-    assert hull_row.tons == 100.0
-    assert hull_row.cost == 6_000_000
+    assert hull_row.tons == _expected.displacement
+    assert hull_row.cost == _expected.hull_cost_mcr * 1_000_000
     assert hull_row.emphasize_tons is True
 
     basic = spec.row('Basic Ship Systems')
     assert basic.section == 'Hull'
-    assert basic.power == 20.0
+    assert basic.power == float(_expected.power_basic)
 
     armour = spec.row('Crystaliron, Armour: 4')
     assert armour.section == 'Hull'
-    assert armour.tons == pytest.approx(6.0)
-    assert armour.cost == 1_200_000
+    assert armour.tons == pytest.approx(_expected.armour_tons)
+    assert armour.cost == _expected.armour_cost_mcr * 1_000_000
 
     fusion = spec.row('Fusion (TL 12), Power 60')
     assert fusion.section == 'Power'
-    assert fusion.tons == pytest.approx(4.0)
-    assert fusion.power == 60.0
+    assert fusion.tons == pytest.approx(_expected.plant_tons)
+    assert fusion.power == float(_expected.plant_output)
     assert fusion.emphasize_power is True
 
     mdrive = spec.row('M-Drive 2')
     assert mdrive.section == 'Propulsion'
-    assert mdrive.power == -20.0
+    assert mdrive.power == float(-_expected.m_drive_power)
 
     sensors = spec.row('Military Grade Sensors')
     assert sensors.section == 'Sensors'
@@ -283,14 +350,14 @@ def test_suleiman_spec_structure():
 
     staterooms = spec.row('Staterooms')
     assert staterooms.section == 'Habitation'
-    assert staterooms.quantity == 4
+    assert staterooms.quantity == _expected.stateroom_count
 
     probe_drones = spec.row('Probe Drones')
     assert probe_drones.section == 'Systems'
-    assert probe_drones.quantity == 10
+    assert probe_drones.quantity == _expected.probe_drones_count
 
     assert spec.expenses[1].label == 'Sales Price New'
-    assert spec.expenses[1].amount == 36_940_500
+    assert spec.expenses[1].amount == _expected.sales_price_mcr * 1_000_000
     assert any(e.label == 'Life Support Facilities' and e.amount == 4_000 for e in spec.expenses)
     assert any(e.label == 'Life Support People' and e.amount == 8_000 for e in spec.expenses)
     assert any(e.label == 'Fuel' and e.amount == pytest.approx(4_066.6666666667) for e in spec.expenses)

@@ -91,6 +91,9 @@ class StandardAutomation(Automation):
     crew_factor: ClassVar[float] = 1.0
     effect_note: ClassVar[str | None] = None
 
+    def add_spec_rows(self, ship, spec: ShipSpec) -> None:
+        pass
+
 
 class EnhancedAutomation(Automation):
     level: Literal['enhanced'] = 'enhanced'

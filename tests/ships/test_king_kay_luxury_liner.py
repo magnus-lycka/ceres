@@ -1,4 +1,4 @@
-"""Reference ship case based on refs/KingKayLuxuryLiner.csv.
+"""Reference ship case based on refs/tycho/KingKayLuxuryLiner.csv.
 
 Purpose:
 - provide a large source-derived commercial liner reference slice
@@ -30,6 +30,8 @@ Source handling for this test case:
   - cargo, total cost, purchase cost, maintenance cost, and crew/life-support
     totals, because the excluded rows above materially affect them
 """
+
+from types import SimpleNamespace
 
 import pytest
 
@@ -64,6 +66,77 @@ from ceres.make.ship.systems import (
     SystemsSection,
     Theatre,
     WetBar,
+)
+
+_expected = SimpleNamespace(
+    tl=12,
+    displacement=5_000,
+    hull_cost_mcr=200.0,  # 5000t Close Structure
+    hull_points=2_000.0,
+    airlocks_count=10,  # included free airlocks for 5000t hull
+    m_drive_tons=50.0,
+    m_drive_cost_mcr=100.0,
+    m_drive_power=500.0,
+    j_drive_tons=255.0,
+    j_drive_cost_mcr=382.5,
+    j_drive_power=1_000.0,
+    plant_tons=134.0,
+    plant_cost_mcr=134.0,
+    available_power=2_010.0,
+    jump_fuel_tons=1_000.0,
+    operation_fuel_tons=27.0,  # ref shows J-2 + 8 weeks combined 1028t; Ceres: 1000 + 27 = 1027 (1t gap)
+    bridge_tons=60.0,
+    bridge_cost_mcr=31.25,
+    computer_cost_mcr=0.16,
+    backup_computer_cost_mcr=0.045,
+    software_packages=[
+        ('Library', 0.0),
+        ('Manoeuvre/0', 0.0),
+        ('Intellect', 0.0),
+        ('Jump Control/2', 200_000.0),
+    ],
+    sensors_tons=1.0,
+    sensors_cost_mcr=3.0,
+    docking_spaces_tons=[77.0, 77.0, 278.0],
+    docking_spaces_costs_mcr=[19.25, 19.25, 69.5],
+    medical_bay_tons=4.0,
+    medical_bay_cost_mcr=2.0,
+    medical_bay_power=1.0,
+    commercial_zone_tons=240.0,
+    commercial_zone_cost_mcr=48.0,
+    commercial_zone_power=1.0,
+    standard_staterooms_tons=320.0,
+    standard_staterooms_cost_mcr=40.0,
+    high_staterooms_tons=1_152.0,
+    high_staterooms_cost_mcr=153.6,
+    luxury_staterooms_tons=80.0,
+    luxury_staterooms_cost_mcr=12.0,
+    common_area_tons=388.0,
+    common_area_cost_mcr=38.8,
+    swimming_pool_tons=60.0,
+    swimming_pool_cost_mcr=1.2,
+    theatres_tons=[100.0, 100.0, 100.0],
+    theatres_costs_mcr=[10.0, 10.0, 10.0],
+    wet_bar_cost=2_000.0,
+    low_berths_total_tons=9.0,
+    low_berths_total_cost_mcr=0.9,
+    low_berths_total_power=2.0,
+    crew=[
+        ('CAPTAIN', 1, 10_000),
+        ('PILOT', 3, 6_000),
+        ('ASTROGATOR', 1, 5_000),
+        ('ENGINEER', 16, 4_000),
+        ('GENERAL CREW', 55, 1_000),
+        ('MAINTENANCE', 5, 1_000),
+        ('STEWARD', 65, 2_000),
+        ('ADMINISTRATOR', 10, 1_500),
+        ('MEDIC', 5, 4_000),
+        ('OFFICER', 11, 5_000),
+        ('MARINE', 10, 1_000),
+    ],
+    crew_salaries_mcr=0.387,
+    power_basic=1_000.0,
+    total_power=2_005.0,
 )
 
 
@@ -130,121 +203,114 @@ def test_king_kay_matches_supported_reference_slice():
 
     assert liner.ship_class == 'King Kay'
     assert liner.ship_type == 'Luxury Liner'
-    assert liner.tl == 12
-    assert liner.displacement == 5_000
+    assert liner.tl == _expected.tl
+    assert liner.displacement == _expected.displacement
 
-    assert liner.hull_cost == pytest.approx(200_000_000.0)
-    assert liner.hull_points == pytest.approx(2_000.0)
+    assert liner.hull_cost == pytest.approx(_expected.hull_cost_mcr * 1_000_000)
+    assert liner.hull_points == pytest.approx(_expected.hull_points)
     assert liner.hull.airlocks is not None
-    assert len(liner.hull.airlocks) == 10
+    assert len(liner.hull.airlocks) == _expected.airlocks_count
     assert all(airlock.tons == 0.0 for airlock in liner.hull.airlocks)
 
     assert liner.drives is not None
     assert liner.drives.m_drive is not None
-    assert liner.drives.m_drive.tons == pytest.approx(50.0)
-    assert liner.drives.m_drive.cost == pytest.approx(100_000_000.0)
-    assert liner.drives.m_drive.power == pytest.approx(500.0)
+    assert liner.drives.m_drive.tons == pytest.approx(_expected.m_drive_tons)
+    assert liner.drives.m_drive.cost == pytest.approx(_expected.m_drive_cost_mcr * 1_000_000)
+    assert liner.drives.m_drive.power == pytest.approx(_expected.m_drive_power)
 
     assert liner.drives.j_drive is not None
-    assert liner.drives.j_drive.tons == pytest.approx(255.0)
-    assert liner.drives.j_drive.cost == pytest.approx(382_500_000.0)
-    assert liner.drives.j_drive.power == pytest.approx(1_000.0)
+    assert liner.drives.j_drive.tons == pytest.approx(_expected.j_drive_tons)
+    assert liner.drives.j_drive.cost == pytest.approx(_expected.j_drive_cost_mcr * 1_000_000)
+    assert liner.drives.j_drive.power == pytest.approx(_expected.j_drive_power)
 
     assert liner.power is not None
     assert liner.power.plant is not None
-    assert liner.power.plant.tons == pytest.approx(134.0)
-    assert liner.power.plant.cost == pytest.approx(134_000_000.0)
-    assert liner.available_power == pytest.approx(2_010.0)
+    assert liner.power.plant.tons == pytest.approx(_expected.plant_tons)
+    assert liner.power.plant.cost == pytest.approx(_expected.plant_cost_mcr * 1_000_000)
+    assert liner.available_power == pytest.approx(_expected.available_power)
 
     assert liner.fuel is not None
     assert liner.fuel.jump_fuel is not None
-    assert liner.fuel.jump_fuel.tons == pytest.approx(1_000.0)
+    assert liner.fuel.jump_fuel.tons == pytest.approx(_expected.jump_fuel_tons)
     assert liner.fuel.operation_fuel is not None
-    assert liner.fuel.operation_fuel.tons == pytest.approx(27.0)
+    assert liner.fuel.operation_fuel.tons == pytest.approx(_expected.operation_fuel_tons)
 
     assert liner.command is not None
     assert liner.command.bridge is not None
-    assert liner.command.bridge.tons == pytest.approx(60.0)
-    assert liner.command.bridge.cost == pytest.approx(31_250_000.0)
+    assert liner.command.bridge.tons == pytest.approx(_expected.bridge_tons)
+    assert liner.command.bridge.cost == pytest.approx(_expected.bridge_cost_mcr * 1_000_000)
 
     assert liner.computer is not None
     assert liner.computer.hardware is not None
-    assert liner.computer.hardware.cost == pytest.approx(160_000.0)
+    assert liner.computer.hardware.cost == pytest.approx(_expected.computer_cost_mcr * 1_000_000)
     assert liner.computer.backup_hardware is not None
-    assert liner.computer.backup_hardware.cost == pytest.approx(45_000.0)
-    assert [(package.description, package.cost) for package in liner.computer.software_packages] == [
-        ('Library', 0.0),
-        ('Manoeuvre/0', 0.0),
-        ('Intellect', 0.0),
-        ('Jump Control/2', 200_000.0),
-    ]
+    assert liner.computer.backup_hardware.cost == pytest.approx(_expected.backup_computer_cost_mcr * 1_000_000)
+    assert [(package.description, package.cost) for package in liner.computer.software_packages] == (
+        _expected.software_packages
+    )
     assert not any(
         note.message.startswith('Redundant ') for package in liner.computer.software_packages for note in package.notes
     )
 
-    assert liner.sensors.primary.tons == pytest.approx(1.0)
-    assert liner.sensors.primary.cost == pytest.approx(3_000_000.0)
+    assert liner.sensors.primary.tons == pytest.approx(_expected.sensors_tons)
+    assert liner.sensors.primary.cost == pytest.approx(_expected.sensors_cost_mcr * 1_000_000)
 
     assert liner.craft is not None
     docking_spaces = liner.craft._all_parts()
-    assert [space.tons for space in docking_spaces] == pytest.approx([77.0, 77.0, 278.0])
-    assert [space.cost for space in docking_spaces] == pytest.approx([19_250_000.0, 19_250_000.0, 69_500_000.0])
+    assert [space.tons for space in docking_spaces] == pytest.approx(_expected.docking_spaces_tons)
+    assert [space.cost for space in docking_spaces] == pytest.approx(
+        [c * 1_000_000 for c in _expected.docking_spaces_costs_mcr]
+    )
 
     assert liner.systems is not None
     assert liner.systems.medical_bay is not None
-    assert liner.systems.medical_bay.tons == pytest.approx(4.0)
-    assert liner.systems.medical_bay.cost == pytest.approx(2_000_000.0)
-    assert liner.systems.medical_bay.power == pytest.approx(1.0)
+    assert liner.systems.medical_bay.tons == pytest.approx(_expected.medical_bay_tons)
+    assert liner.systems.medical_bay.cost == pytest.approx(_expected.medical_bay_cost_mcr * 1_000_000)
+    assert liner.systems.medical_bay.power == pytest.approx(_expected.medical_bay_power)
     assert liner.systems.commercial_zone is not None
-    assert liner.systems.commercial_zone.tons == pytest.approx(240.0)
-    assert liner.systems.commercial_zone.cost == pytest.approx(48_000_000.0)
-    assert liner.systems.commercial_zone.power == pytest.approx(1.0)
+    assert liner.systems.commercial_zone.tons == pytest.approx(_expected.commercial_zone_tons)
+    assert liner.systems.commercial_zone.cost == pytest.approx(_expected.commercial_zone_cost_mcr * 1_000_000)
+    assert liner.systems.commercial_zone.power == pytest.approx(_expected.commercial_zone_power)
 
     assert liner.habitation is not None
     assert liner.habitation.staterooms is not None
     standard_rooms = [room for room in liner.habitation.staterooms if type(room) is Stateroom]
     high_rooms = [room for room in liner.habitation.staterooms if isinstance(room, HighStateroom)]
     luxury_rooms = [room for room in liner.habitation.staterooms if isinstance(room, LuxuryStateroom)]
-    assert sum(room.tons for room in standard_rooms) == pytest.approx(320.0)
-    assert sum(room.cost for room in standard_rooms) == pytest.approx(40_000_000.0)
-    assert sum(room.tons for room in high_rooms) == pytest.approx(1_152.0)
-    assert sum(room.cost for room in high_rooms) == pytest.approx(153_600_000.0)
-    assert sum(room.tons for room in luxury_rooms) == pytest.approx(80.0)
-    assert sum(room.cost for room in luxury_rooms) == pytest.approx(12_000_000.0)
+    assert sum(room.tons for room in standard_rooms) == pytest.approx(_expected.standard_staterooms_tons)
+    assert sum(room.cost for room in standard_rooms) == pytest.approx(
+        _expected.standard_staterooms_cost_mcr * 1_000_000
+    )
+    assert sum(room.tons for room in high_rooms) == pytest.approx(_expected.high_staterooms_tons)
+    assert sum(room.cost for room in high_rooms) == pytest.approx(_expected.high_staterooms_cost_mcr * 1_000_000)
+    assert sum(room.tons for room in luxury_rooms) == pytest.approx(_expected.luxury_staterooms_tons)
+    assert sum(room.cost for room in luxury_rooms) == pytest.approx(_expected.luxury_staterooms_cost_mcr * 1_000_000)
     assert liner.habitation.common_area is not None
-    assert liner.habitation.common_area.tons == pytest.approx(388.0)
-    assert liner.habitation.common_area.cost == pytest.approx(38_800_000.0)
+    assert liner.habitation.common_area.tons == pytest.approx(_expected.common_area_tons)
+    assert liner.habitation.common_area.cost == pytest.approx(_expected.common_area_cost_mcr * 1_000_000)
     assert liner.habitation.swimming_pool is not None
-    assert liner.habitation.swimming_pool.tons == pytest.approx(60.0)
-    assert liner.habitation.swimming_pool.cost == pytest.approx(1_200_000.0)
-    assert [theatre.tons for theatre in liner.habitation.theatres] == pytest.approx([100.0, 100.0, 100.0])
+    assert liner.habitation.swimming_pool.tons == pytest.approx(_expected.swimming_pool_tons)
+    assert liner.habitation.swimming_pool.cost == pytest.approx(_expected.swimming_pool_cost_mcr * 1_000_000)
+    assert [theatre.tons for theatre in liner.habitation.theatres] == pytest.approx(_expected.theatres_tons)
     assert [theatre.cost for theatre in liner.habitation.theatres] == pytest.approx(
-        [10_000_000.0, 10_000_000.0, 10_000_000.0]
+        [c * 1_000_000 for c in _expected.theatres_costs_mcr]
     )
     assert liner.habitation.wet_bar is not None
-    assert liner.habitation.wet_bar.cost == pytest.approx(2_000.0)
+    assert liner.habitation.wet_bar.cost == pytest.approx(_expected.wet_bar_cost)
     assert liner.habitation.low_berths is not None
-    assert sum(berth.tons for berth in liner.habitation.low_berths) == pytest.approx(9.0)
-    assert sum(berth.cost for berth in liner.habitation.low_berths) == pytest.approx(900_000.0)
-    assert sum(berth.power for berth in liner.habitation.low_berths) == pytest.approx(2.0)
+    assert sum(berth.tons for berth in liner.habitation.low_berths) == pytest.approx(_expected.low_berths_total_tons)
+    assert sum(berth.cost for berth in liner.habitation.low_berths) == pytest.approx(
+        _expected.low_berths_total_cost_mcr * 1_000_000
+    )
+    assert sum(berth.power for berth in liner.habitation.low_berths) == pytest.approx(_expected.low_berths_total_power)
 
-    assert [(role.role, quantity, role.monthly_salary) for role, quantity in liner.crew.grouped_roles] == [
-        ('CAPTAIN', 1, 10_000),
-        ('PILOT', 3, 6_000),
-        ('ASTROGATOR', 1, 5_000),
-        ('ENGINEER', 16, 4_000),
-        ('GENERAL CREW', 55, 1_000),
-        ('MAINTENANCE', 5, 1_000),
-        ('STEWARD', 65, 2_000),
-        ('ADMINISTRATOR', 10, 1_500),
-        ('MEDIC', 5, 4_000),
-        ('OFFICER', 11, 5_000),
-        ('MARINE', 10, 1_000),
-    ]
-    assert liner.expenses.crew_salaries == pytest.approx(387_000.0)
+    assert [(role.role, quantity, role.monthly_salary) for role, quantity in liner.crew.grouped_roles] == (
+        _expected.crew
+    )
+    assert liner.expenses.crew_salaries == pytest.approx(_expected.crew_salaries_mcr * 1_000_000)
 
-    assert liner.basic_hull_power_load == pytest.approx(1_000.0)
-    assert liner.total_power_load == pytest.approx(2_005.0)
+    assert liner.basic_hull_power_load == pytest.approx(_expected.power_basic)
+    assert liner.total_power_load == pytest.approx(_expected.total_power)
     assert not liner.notes.errors
 
 
