@@ -154,6 +154,7 @@ class LowBerth(ShipPart):
 
 
 class Brig(ShipPart):
+    plural_label: ClassVar[str] = 'Brigs'
     tons: ClassVar[float]
     cost: ClassVar[float]
     power: ClassVar[float]
@@ -168,6 +169,25 @@ class Brig(ShipPart):
     @property
     def cost(self) -> float:
         return 250_000.0
+
+    @property
+    def power(self) -> float:
+        return 0.0
+
+
+class Barracks(_ExplicitTonsHabitationPart):
+    cost: ClassVar[float]
+    power: ClassVar[float]
+    occupants: str | None = None
+
+    def build_item(self) -> str | None:
+        if self.occupants is None:
+            return 'Barracks'
+        return f'Barracks ({self.occupants})'
+
+    @property
+    def cost(self) -> float:
+        return self.tons * 50_000.0
 
     @property
     def power(self) -> float:
@@ -237,6 +257,8 @@ class HabitationSection(CeresModel):
     staterooms: list[StateroomUnion] = Field(default_factory=list)
     low_berths: list[LowBerth] = Field(default_factory=list)
     brig: Brig | None = None
+    brigs: list[Brig] = Field(default_factory=list)
+    barracks: list[Barracks] = Field(default_factory=list)
     cabin_space: CabinSpace | None = None
     common_area: CommonArea | None = None
     entertainment: AdvancedEntertainmentSystem | None = None
@@ -306,6 +328,8 @@ class HabitationSection(CeresModel):
         parts: list[ShipPart] = [*self.staterooms, *self.low_berths]
         for part in (
             self.brig,
+            *self.brigs,
+            *self.barracks,
             self.cabin_space,
             self.common_area,
             self.entertainment,
@@ -411,6 +435,8 @@ class HabitationSection(CeresModel):
                 for part in [
                     self.cabin_space,
                     self.brig,
+                    *self.brigs,
+                    *self.barracks,
                     self.common_area,
                     self.entertainment,
                     self.swimming_pool,

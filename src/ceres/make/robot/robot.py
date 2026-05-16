@@ -16,13 +16,12 @@ from .chassis import (
     size_trait,
 )
 from .locomotion import LocomotionUnion
+from .manipulators import Manipulator
 from .options import default_suite_item_cost
 from .parts import RobotPartMixin
 from .skills import SkillGrant
 from .spec import RobotSpec, RobotSpecRow, RobotSpecSection
 from .text import format_credits, format_traits
-
-_DEFAULT_MANIPULATORS: tuple[str, ...] = ('Standard', 'Standard')
 
 _DEFAULT_SUITE: tuple[str, ...] = (
     'Auditory Sensor',
@@ -41,13 +40,17 @@ class Robot(RobotBase):
     brain: RobotBrainUnion
     options: list[Any] = Field(default_factory=list)
     default_suite: list[str] = Field(default_factory=lambda: list(_DEFAULT_SUITE))
-    manipulators: list[str] = Field(default_factory=lambda: list(_DEFAULT_MANIPULATORS))
+    manipulators: list[Manipulator] = Field(
+        default_factory=lambda: [Manipulator(), Manipulator()]
+    )
     attacks: list[str] = Field(default_factory=list)
 
     def model_post_init(self, __context: Any) -> None:
         super().model_post_init(__context)
         if self.locomotion.required_tl > self.tl:
             self.error(f'Locomotion requires TL{self.locomotion.required_tl}, robot is TL{self.tl}')
+        for m in self.manipulators:
+            m.bind(self)
         for opt in self.options:
             if isinstance(opt, RobotPartMixin):
                 opt.bind(self)
@@ -60,12 +63,27 @@ class Robot(RobotBase):
         return chassis_entry(self.size).base_slots
 
     @property
+    def _std_manip_slots(self) -> int:
+        base_slots = chassis_entry(self.size).base_slots
+        return max(1, ceil(0.10 * base_slots))
+
+    @property
+    def _manipulator_slot_effect(self) -> int:
+        std_slots = self._std_manip_slots
+        return sum(m.slots for m in self.manipulators) - 2 * std_slots
+
+    @property
+    def _manipulator_cost_effect(self) -> float:
+        std_cost = 100.0 * int(self.size)
+        net = sum(m.cost for m in self.manipulators) - 2 * std_cost
+        return max(net, -0.20 * self.base_chassis_cost)
+
+    @property
     def available_slots(self) -> int:
         base = base_available_slots(self.size, none_locomotion=self.locomotion.is_none_locomotion)
-        removed = max(0, 2 - len(self.manipulators))
-        if removed:
-            base_slots = chassis_entry(self.size).base_slots
-            base += max(1, ceil(0.1 * base_slots)) * removed
+        effect = self._manipulator_slot_effect
+        if effect < 0:
+            base += -effect
         return base
 
     @property
@@ -80,7 +98,8 @@ class Robot(RobotBase):
             if isinstance(o, RobotPartMixin) and o.slots == 0 and o.notes.item_message is not None
         )
         excess_zero_slots = max(0, zero_slot_count - (int(self.size) + self.tl))
-        return brain_slot + option_slots + excess_zero_slots
+        extra_manip_slots = max(0, self._manipulator_slot_effect)
+        return brain_slot + option_slots + excess_zero_slots + extra_manip_slots
 
     @property
     def remaining_slots(self) -> int:
@@ -104,8 +123,7 @@ class Robot(RobotBase):
         cost += self.base_chassis_cost * self.locomotion.speed_cost_fraction
         cost += self.brain.brain_cost
         cost += sum(opt.cost for opt in self.options if isinstance(opt, RobotPartMixin))
-        removed = max(0, 2 - len(self.manipulators))
-        cost -= 100.0 * int(self.size) * removed
+        cost += self._manipulator_cost_effect
         cost += sum(default_suite_item_cost(item) for item in self.default_suite)
         return cost
 
@@ -197,7 +215,7 @@ class Robot(RobotBase):
         return notes
 
     def _build_detail_sections(self) -> list:
-        from .options import AdditionalManipulator, VehicleSpeedModification
+        from .options import VehicleSpeedModification
         from .spec import RobotDetailRow, RobotDetailSection
 
         sections = []

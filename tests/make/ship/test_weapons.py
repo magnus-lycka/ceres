@@ -21,6 +21,7 @@ from ceres.make.ship.weapons import (
     MediumParticleBeamBay,
     MissileRack,
     MissileStorage,
+    ParticleAcceleratorSpinalMount,
     ParticleBarbette,
     PulseLaser,
     PulseLaserBarbette,
@@ -31,6 +32,7 @@ from ceres.make.ship.weapons import (
     SmallFusionGunBay,
     SmallMissileBay,
     TorpedoBarbette,
+    TorpedoStorage,
     TripleTurret,
     VeryHighYield,
     WeaponsSection,
@@ -65,6 +67,46 @@ def test_sandcaster_base_values():
     assert w.base_cost == 250_000
     assert w.base_power == 0
     assert w.build_item() == 'Sandcaster'
+
+
+def test_torpedo_storage_uses_three_torpedoes_per_ton():
+    storage = TorpedoStorage(count=7_200)
+
+    assert storage.build_item() == 'Torpedo Storage (7200)'
+    assert storage.tons == pytest.approx(2_400)
+    assert storage.cost == 0.0
+    assert storage.power == 0.0
+
+
+def test_particle_accelerator_spinal_mount_values_scale_by_base_size_multiple():
+    spinal_mount = ParticleAcceleratorSpinalMount(size_multiple=2)
+    spinal_mount.bind(DummyOwner(11, 50_000))
+
+    assert spinal_mount.build_item() == 'Particle Accelerator Spinal Mount'
+    assert spinal_mount.tons == pytest.approx(7_000.0)
+    assert spinal_mount.cost == pytest.approx(2_000_000_000.0)
+    assert spinal_mount.power == pytest.approx(2_000.0)
+    assert spinal_mount.hardpoints_required == 70
+    assert spinal_mount.crew_required_military == 70
+    assert 'Damage: 16D × 1,000' in spinal_mount.notes.infos
+
+
+def test_particle_accelerator_spinal_mount_appears_in_weapon_spec_rows():
+    my_ship = ship.Ship(
+        tl=11,
+        displacement=50_000,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer5()),
+        weapons=WeaponsSection(spinal_mounts=[ParticleAcceleratorSpinalMount(size_multiple=2)]),
+    )
+
+    spec = my_ship.build_spec()
+
+    row = spec.row('Particle Accelerator Spinal Mount', section='Weapons')
+    assert row.tons == pytest.approx(7_000.0)
+    assert row.cost == pytest.approx(2_000_000_000.0)
+    assert row.power == pytest.approx(-2_000.0)
 
 
 def test_pulse_laser_no_upgrades_cost_modifier():

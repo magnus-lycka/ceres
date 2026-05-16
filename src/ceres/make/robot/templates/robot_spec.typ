@@ -86,13 +86,15 @@
       inset: (x: 6pt, y: 4pt),
       ..{
         let cells = ()
+        let show-column-labels = true
         for sec in secs {
           cells = cells + (
             table.cell(fill: label-bg)[*#sec.title*],
-            table.cell(fill: label-bg, align: center)[*#sec.col2_header*],
-            table.cell(fill: label-bg, align: center)[*#sec.col3_header*],
-            table.cell(fill: label-bg, align: right)[*Cost*],
+            table.cell(fill: label-bg, align: center)[#if show-column-labels { [*#sec.col2_header*] }],
+            table.cell(fill: label-bg, align: center)[#if show-column-labels { [*#sec.col3_header*] }],
+            table.cell(fill: label-bg, align: right)[#if show-column-labels { [*Cost*] }],
           )
+          show-column-labels = false
           for row in sec.rows {
             cells = cells + (
               [#row.name],

@@ -317,6 +317,30 @@ class MissileStorage(ShipPart):
         return 0.0
 
 
+class TorpedoStorage(ShipPart):
+    """Magazine for torpedoes: 3 torpedoes per ton, no cost."""
+
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+    count: int
+
+    def build_item(self) -> str | None:
+        return f'Torpedo Storage ({self.count})'
+
+    @property
+    def tons(self) -> float:
+        return self.count / 3
+
+    @property
+    def cost(self) -> float:
+        return 0.0
+
+    @property
+    def power(self) -> float:
+        return 0.0
+
+
 class SandcasterCanisterStorage(ShipPart):
     """Magazine for sand canisters: 20 canisters per ton, no cost."""
 
@@ -955,6 +979,59 @@ class LargeTorpedoBay(_LargeBay):
     base_cost = 10_000_000.0
 
 
+class ParticleAcceleratorSpinalMount(ShipPart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+    tl: int = 11
+    size_multiple: int = Field(default=1, ge=1)
+    base_tons: ClassVar[float] = 3_500.0
+    base_power: ClassVar[float] = 1_000.0
+    base_cost: ClassVar[float] = 1_000_000_000.0
+    base_damage_dice: ClassVar[int] = 8
+    max_tons: ClassVar[float] = 28_000.0
+
+    def bind(self, assembly) -> None:
+        super().bind(assembly)
+        if self.tons > self.max_tons:
+            self.error(f'Particle Accelerator Spinal Mount exceeds maximum size of {self.max_tons:g} tons')
+        if self.tons > assembly.displacement / 2:
+            self.error('Spinal mount cannot exceed half the ship displacement')
+
+    def build_item(self) -> str | None:
+        return 'Particle Accelerator Spinal Mount'
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList(super().build_notes())
+        notes.info(f'Damage: {self.base_damage_dice * self.size_multiple}D × 1,000')
+        notes.info('Damage is reduced by 3% per point of target armour before applying the damage multiple')
+        return notes
+
+    @property
+    def hardpoints_required(self) -> int:
+        return math.ceil(self.tons / 100)
+
+    @property
+    def crew_required_commercial(self) -> int:
+        return 0
+
+    @property
+    def crew_required_military(self) -> int:
+        return math.ceil(self.tons / 100)
+
+    @property
+    def tons(self) -> float:
+        return self.base_tons * self.size_multiple
+
+    @property
+    def cost(self) -> float:
+        return self.base_cost * self.size_multiple
+
+    @property
+    def power(self) -> float:
+        return self.base_power * self.size_multiple
+
+
 type Bay = Annotated[
     SmallFusionGunBay
     | MediumFusionGunBay
@@ -1120,9 +1197,11 @@ class WeaponsSection(CeresModel):
     turrets: list[Turret] = Field(default_factory=list)
     fixed_mounts: list[FixedMount] = Field(default_factory=list)
     barbettes: list[Barbette] = Field(default_factory=list)
+    spinal_mounts: list[ParticleAcceleratorSpinalMount] = Field(default_factory=list)
     bays: list[Bay] = Field(default_factory=list)
     point_defense_batteries: list[PointDefenseBattery] = Field(default_factory=list)
     missile_storage: MissileStorage | None = None
+    torpedo_storage: TorpedoStorage | None = None
     sandcaster_canister_storage: SandcasterCanisterStorage | None = None
 
     @staticmethod
@@ -1144,6 +1223,7 @@ class WeaponsSection(CeresModel):
             len(self.turrets)
             + len(self.fixed_mounts)
             + sum(barbette.hardpoints_required for barbette in self.barbettes)
+            + sum(spinal_mount.hardpoints_required for spinal_mount in self.spinal_mounts)
             + sum(bay.hardpoints_required for bay in self.bays)
             + sum(battery.hardpoints_required for battery in self.point_defense_batteries)
         )
@@ -1154,6 +1234,7 @@ class WeaponsSection(CeresModel):
                 *self.fixed_mounts,
                 *self.turrets,
                 *self.barbettes,
+                *self.spinal_mounts,
                 *self.bays,
                 *self.point_defense_batteries,
             ][-overflow:]
@@ -1189,11 +1270,14 @@ class WeaponsSection(CeresModel):
             *self.turrets,
             *self.fixed_mounts,
             *self.barbettes,
+            *self.spinal_mounts,
             *self.bays,
             *self.point_defense_batteries,
         ]
         if self.missile_storage is not None:
             parts.append(self.missile_storage)
+        if self.torpedo_storage is not None:
+            parts.append(self.torpedo_storage)
         if self.sandcaster_canister_storage is not None:
             parts.append(self.sandcaster_canister_storage)
         return parts
@@ -1205,11 +1289,15 @@ class WeaponsSection(CeresModel):
             spec.add_row(row)
         for row in ship._grouped_spec_rows(SpecSection.WEAPONS, self.barbettes):
             spec.add_row(row)
+        for row in ship._grouped_spec_rows(SpecSection.WEAPONS, self.spinal_mounts):
+            spec.add_row(row)
         for row in ship._grouped_spec_rows(SpecSection.WEAPONS, self.bays):
             spec.add_row(row)
         for row in ship._grouped_spec_rows(SpecSection.WEAPONS, self.point_defense_batteries):
             spec.add_row(row)
         if self.missile_storage is not None:
             spec.add_row(ship._spec_row_for_part(SpecSection.WEAPONS, self.missile_storage))
+        if self.torpedo_storage is not None:
+            spec.add_row(ship._spec_row_for_part(SpecSection.WEAPONS, self.torpedo_storage))
         if self.sandcaster_canister_storage is not None:
             spec.add_row(ship._spec_row_for_part(SpecSection.WEAPONS, self.sandcaster_canister_storage))

@@ -26,6 +26,7 @@ from ceres.make.ship.systems import (
     SystemsSection,
     Theatre,
     TrainingFacility,
+    UNREPSystem,
     WetBar,
     Workshop,
 )
@@ -113,6 +114,7 @@ def test_converted_system_values_ignore_stale_numeric_inputs(
         (Theatre, {'tons': 2.0, 'advanced': True}, 2.0, 400_000.0, 0.0),
         (CommercialZone, {'tons': 240.0}, 240.0, 48_000_000.0, 1.0),
         (Biosphere, {'tons': 4.0}, 4.0, 800_000.0, 4.0),
+        (UNREPSystem, {'tons': 25.0}, 25.0, 12_500_000.0, 25.0),
     ],
 )
 def test_explicit_tonnage_system_values_are_property_backed_design_fields(
@@ -165,6 +167,14 @@ def test_commercial_zone_values():
     z.bind(DummyOwner(12, 5_000))
     assert z.cost == 48_000_000.0
     assert z.power == 1.0
+
+
+def test_unrep_system_transfer_rate_and_label():
+    unrep = UNREPSystem(tons=25.0)
+    unrep.bind(DummyOwner(12, 50_000))
+
+    assert unrep.transfer_rate == pytest.approx(500.0)
+    assert unrep.build_item() == 'UNREP System (500 tons/hour)'
 
 
 def test_swimming_pool_values():

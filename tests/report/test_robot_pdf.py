@@ -106,6 +106,19 @@ def test_source_contains_skill_section_for_advanced_brain(lab_spec):
     assert '"Skills"' in src
 
 
+def test_detail_table_uses_one_table_and_only_labels_columns_once(domestic_spec):
+    src = render_robot_spec_typst(domestic_spec)
+
+    assert 'let show-column-labels = true' in src
+    assert 'show-column-labels = false' in src
+    assert '[*#sec.title*]' in src
+    assert src.count('[*#sec.col2_header*]') == 1
+    assert src.count('[*#sec.col3_header*]') == 1
+    assert src.count('[*Cost*]') == 1
+    assert 'detail-columns' not in src
+    assert 'colspan: 4' not in src
+
+
 def test_detail_section_absent_when_spec_has_no_detail_sections():
     from ceres.make.robot.spec import RobotSpec, RobotSpecRow, RobotSpecSection
 

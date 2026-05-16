@@ -13,343 +13,318 @@ canonical rules for that item should therefore live in `ceres.gear.comm`, not in
 The robot layer should answer robot-specific questions:
 
 - how many robot slots the installed item uses
-- whether it is part of the robot default suite
-- whether replacing a default-suite item changes cost
+- whether the item is a default suite item (cost included in BCC)
 - how the item is displayed in a robot build
 - whether it grants robot-specific capabilities
 
 The gear layer should answer item-specific questions:
 
-- TL
-- cost
-- mass
-- range
-- options such as encryption, satellite uplink, and integrated computers
-- source rules and catalog/report output
+- TL, cost, mass
+- range, encryption, satellite uplink, computer options
+- source rules and catalogue output
 
 This follows the rule in `docs/assemblies_and_parts.md`: context-independent
 properties belong on the generic part, and context-dependent installation
 properties belong in assembly-specific mixins or wrappers.
 
+## Default Suite As Part of Options
+
+The five default suite items are not a separate field. They are `RobotPart`
+instances in `Robot.options`, exactly like any other installed option:
+
+```python
+options: list[RobotPartMixin] = Field(
+    default_factory=lambda: list(DefaultSuite())
+)
+```
+
+`DefaultSuite()` returns the five standard items:
+
+```python
+[
+    VisualSpectrumSensor(),
+    VoderSpeaker(),
+    AuditorySensor(),
+    WirelessDataLink(),
+    Transceiver(range_km=5, quality='improved'),
+]
+```
+
+Each item produced by `DefaultSuite()` has `cost = 0.0` — its cost is included in
+the base chassis cost per the Robot Handbook rules.
+
+The `default_suite: list[str]` field is removed from `Robot`. The separate
+`_DEFAULT_SUITE_FREE_ITEMS` frozenset, `_ZERO_SLOT_ITEM_COSTS` dict, and
+`default_suite_item_cost()` function are also removed once the migration is
+complete.
+
+### Constructing Builds With Default Suite Items
+
+```python
+# Default build — five standard items included:
+Robot(name='Worker', ...)
+
+# Default suite plus additional options:
+Robot(name='Worker', ..., options=DefaultSuite() + [StorageCompartment(slots_count=4)])
+
+# Remove wireless data link, add drone interface instead:
+Robot(name='Worker', ..., options=DefaultSuite(wireless=False, drone=True) + [...])
+```
+
+### `DefaultSuite` Helper
+
+`DefaultSuite` is a plain helper that returns a list of zero-cost `RobotPart`
+instances. It is not a domain object, a robot part, or a robot field — it only
+exists to make construction convenient.
+
+```python
+def DefaultSuite(
+    see: bool = True,               # Visual Spectrum Sensor
+    speak: bool = True,             # Voder Speaker
+    hear: bool = True,              # Auditory Sensor
+    wireless: bool = True,          # Wireless Data Link
+    improved_transceiver: bool = True,  # Transceiver 5km (improved)
+    drone: bool = False,            # Drone Interface
+    basic_transceiver: bool = False,    # Transceiver 5km (basic)
+    screen: bool = False,           # Video Screen (basic)
+) -> list[RobotPartMixin]:
+    ...
+```
+
+At most 5 of the eight flags may be `True` (validation error otherwise). The
+returned parts all have `cost = 0.0`.
+
+The eight possible items correspond to the substitution options in
+`refs/robot/10_default_suite.md`. None are paid upgrades at the `DefaultSuite`
+level — paying for a better transceiver means adding it outside `DefaultSuite()`:
+
+```python
+options=DefaultSuite(improved_transceiver=False) + [RobotTransceiver(range_km=50)]
+```
+
+### Zero-Slot Quota
+
+The zero-slot quota is `5 + size + TL`. The 5 accounts for the five default suite
+items now living in options. No marker or special casing is needed — the formula
+applies uniformly to every zero-slot item in the options list:
+
+```python
+zero_slot_count = sum(
+    1 for o in self.options
+    if isinstance(o, RobotPartMixin)
+    and o.slots == 0
+    and o.notes.item_message is not None
+)
+excess_zero_slots = max(0, zero_slot_count - (5 + int(self.size) + self.tl))
+```
+
 ## Current State
 
 `ceres.make.robot.options` currently uses string names for several physical
-options and default-suite replacements. The current tables include names such
-as:
+options and default-suite replacements. These strings are paired with
+robot-specific cost tables such as `_ZERO_SLOT_ITEM_COSTS`. String-based
+comparison is the source of fragility in default-suite handling.
 
-- `Transceiver 5km (basic)`
-- `Transceiver 5km (improved)`
-- `Transceiver 50km (enhanced)`
-- `Transceiver 500km (improved)`
-- `Transceiver 5,000km (advanced)`
-- `Video Screen (basic)`
-- `Video Screen (improved)`
-- `Video Screen (advanced)`
+`ceres.gear.comm` exists but currently only contains a few audio bug classes.
+It is the natural home for Central Supply Catalogue communications equipment.
 
-These strings are paired with robot-specific cost tables such as
-`_ZERO_SLOT_ITEM_COSTS`, and default-suite free items are also represented as
-strings. This makes the robot builder responsible for facts that should belong
-to the generic equipment catalogue.
+## Option Class Pattern
 
-`ceres.gear.comm` exists, but currently only contains a few audio bug classes.
-It is the natural home for Central Supply Catalogue communications equipment
-such as transceivers.
+Robot-installed gear uses the `(GearClass, RobotPartMixin)` inheritance pattern,
+consistent with how `ComputerPart` and `ShipComputer` relate:
 
-`ceres.gear.computer` already has a catalogue-style implementation for computer
-equipment. The same style should be used for communication gear, but
-communication devices should not be placed in `gear.computer` merely because
-some of them include computer functionality. They should be catalogued through
-the gear catalogue/reporting machinery, while their domain rules live in
-`gear.comm`.
+```python
+class RobotTransceiver(Transceiver, RobotPartMixin):
+    slots: int = 0
+    is_default_suite: bool = False
+```
+
+The gear class owns TL, cost, range, options (encryption, satellite uplink, etc.).
+The robot mixin adds slot count and robot-specific installation metadata.
+
+For options that have no current CSC equivalent, define them as plain `RobotPart`
+classes in `ceres.make.robot.options`. If a CSC source is found later, the gear
+class can be introduced and the existing class converted to the two-base pattern.
+Do not invent a generic gear class without a confirmed source.
 
 ## Source Mapping
 
-The first implementation pass should identify each robot option that is really
-generic equipment and map it to its source.
+The first implementation pass must map each current string option and default-suite
+item to its source.
 
-Likely Central Supply Catalogue items:
+Confirmed CSC items (implement via `gear.comm`):
 
 - Transceivers: `refs/csc/05_communications.md`
 - Hardware encryption modules: `refs/csc/05_communications.md`
 - Satellite uplinks: `refs/csc/05_communications.md`
-- Computer functionality built into TL10+ transceivers:
-  `refs/csc/05_communications.md` and `ceres.gear.computer`
-- Video screens or data displays: probably CSC computer/interface equipment,
-  but this needs source confirmation before implementation
+- Computer functionality in TL10+ transceivers: same source
 
-Possibly generic gear, pending source confirmation:
+Unknown source — mark as pending, define as `RobotPart` for now:
 
-- Wireless data link
-- Drone interface
-- Tightbeam communicator
-- Laser designator
-- External speaker/voder-style output devices
-- Cameras, visual sensors, auditory sensors, and other sensor packages
+- Video Screen: likely CSC computer/interface equipment; confirm before implementing
+- Wireless Data Link: may be generic comms or robot-specific interface
+- Drone Interface: may be generic comms or robot-specific interface
 
-Possibly robot-specific options:
+Robot Handbook-only options (stay in `ceres.make.robot.options`):
 
-- options whose cost or rules come only from Robot Handbook robot construction
-- options whose physical equipment is abstracted by the robot rules rather than
-  sold as normal gear
-- options where the robot version has special slot, integration, or capability
-  rules that are not equivalent to handheld or carried gear
+- Options whose cost or rules appear only in the Robot Handbook construction tables
+- Options where the robot version has special slot, integration, or capability
+  rules not equivalent to handheld or carried gear
 
-Do not use test examples as rules sources. If a robot test case demonstrates a
-device name but the rule source is not known, treat it as an input gap until the
-source is found.
+Do not use test examples as rule sources. If a robot test case names a device
+but the rule source is not known, treat it as an input gap.
 
-## Proposed Model
+## Communication Gear in `ceres.gear.comm`
 
-### Generic Gear
-
-Add real communications equipment classes to `ceres.gear.comm`.
-
-A first transceiver shape could look conceptually like:
+A first transceiver shape:
 
 ```python
 class Transceiver(Equipment):
-    medium: Literal["radio", "laser", "meson"] = "radio"
+    medium: Literal['radio', 'laser', 'meson'] = 'radio'
     range_km: int
+    quality: str = 'improved'
     encryption: EncryptionModule | None = None
     satellite_uplink: SatelliteUplink | None = None
     integrated_computer: PortableComputer | None = None
 ```
 
-The class should derive TL, cost, and mass from CSC tables. It should not know
-anything about robot slots or default-suite replacement rules.
+TL, cost, and mass derive from CSC tables. The class has no knowledge of robot
+slots or default-suite rules.
 
-If the CSC table is easier to maintain as specific named classes at first, that
-is acceptable, but the public API should still expose the rules in equipment
-terms rather than robot option strings.
-
-### Robot Installation Layer
-
-Robot-installed versions should combine the generic equipment class with
-robot-installation semantics, following the context-mixin rule.
-
-Possible shapes:
-
-```python
-class RobotTransceiver(Transceiver, RobotPartMixin):
-    slots: int = 0
-    replaces_default_suite_item: bool = False
-```
-
-or:
-
-```python
-class RobotInstalledEquipment(RobotPartMixin):
-    equipment: Equipment
-    slots: int
-```
-
-The inheritance approach is closer to the current `ComputerPart`/`ShipComputer`
-pattern. The wrapper approach may be better if many gear items can be installed
-unchanged and robot slots are purely installation metadata. The implementation
-choice should be made after inventorying the robot option list.
-
-In both cases, the robot layer should not duplicate transceiver cost/range/TL
-tables.
-
-### Default Suite
-
-Replace string-based default-suite declarations with typed parts or typed
-descriptors.
-
-Current style:
-
-```python
-"Transceiver 5km (improved)"
-```
-
-Target style:
-
-```python
-RobotTransceiver(range_km=5, quality="improved")
-```
-
-or:
-
-```python
-DefaultSuiteItem(
-    item=RobotTransceiver(range_km=5, quality="improved"),
-    free=True,
-)
-```
-
-Replacement logic should compare typed capabilities, not display strings. For
-example, replacing a default 5km transceiver with a 500km transceiver should be
-recognised as a transceiver replacement because both are transceiver parts, not
-because two strings happen to share a prefix.
-
-During migration, accept the old string names as input aliases so existing
-robot examples can be updated gradually.
-
-## Catalogue Direction
-
-Computer gear currently has a structured catalogue/report path. Communication
-gear should gain the same kind of treatment:
-
-- add or extend gear catalogue support for `gear.comm`
-- list transceiver table entries with TL, range, mass, and cost
-- list options such as encryption and satellite uplink separately
-- expose build item text from the gear object, not from robot option strings
-
-This should be "catalogued like gear computer equipment", not classified as
-computer equipment unless the item actually is a computer. TL10+ transceiver
-computer functionality should reuse `ceres.gear.computer` where practical, but
-the owning device remains a transceiver.
+If the CSC table is more easily maintained as specific named classes initially,
+that is acceptable, but the public API should expose rules in equipment terms.
 
 ## Migration Plan
 
-### Phase 1: Inventory And Source Map
+### Phase 1: Inventory and Source Map
 
-- List every string option in `ceres.make.robot.options`.
-- Mark each one as CSC gear, Robot Handbook-only, or unknown.
-- Add notes for unknown items rather than guessing.
-- Identify which default-suite items are free built-ins and which are paid
-  replacement options.
+- List every string in `_DEFAULT_SUITE_FREE_ITEMS`, `_ZERO_SLOT_ITEM_COSTS`, and
+  `_DEFAULT_SUITE` in `robot.py`.
+- Mark each as CSC gear, Robot Handbook-only, or unknown.
+- Add a note for unknown items rather than guessing.
 
-### Phase 2: Implement Communication Gear
+### Phase 2: Define `RobotPart` Classes for Default Suite Items
 
-- Add CSC transceiver table support to `ceres.gear.comm`.
+- Define typed `RobotPart` classes for all five default suite items and the three
+  alternative substitutions (drone interface, basic transceiver, video screen),
+  with `cost = 0.0` and `is_default_suite = True`.
+- Implement `DefaultSuite()` using these classes.
+- Change `Robot.options` default to `list(DefaultSuite())`.
+- Remove `Robot.default_suite` field.
+- Update `Robot.used_slots` to use the new quota formula.
+- Update `Robot._raw_cost` (default suite cost is now embedded in each part).
+- Update spec and detail rendering: default suite items appear in the Options row
+  from the options list; no separate Default Suite section needed.
+- Keep `_DEFAULT_SUITE_FREE_ITEMS` and `_ZERO_SLOT_ITEM_COSTS` as dead code until
+  all existing tests are migrated; remove them in Phase 5.
+
+### Phase 3: Implement Communication Gear
+
+- Add CSC transceiver classes to `ceres.gear.comm`.
 - Add hardware encryption and satellite uplink options.
 - Add tests in `tests/gear/test_comm.py` for CSC table values.
 - Decide whether TL10+ integrated transceiver computers create actual
-  `PortableComputer` parts or report a derived computer capability first.
+  `PortableComputer` parts or just derived notes.
 
-### Phase 3: Add Gear Catalogue Output
+### Phase 4: Add Gear Catalogue Output
 
-- Extend the gear catalogue/report machinery so communication equipment can be
-  catalogued with the same level of structure as computers.
-- Keep communications in `gear.comm`; avoid moving them into `gear.computer`.
-- Add tests that prove catalogue rows come from gear classes, not robot strings.
+- Extend the gear catalogue machinery so communication equipment can be catalogued
+  with the same structure as computers.
+- Keep communications in `gear.comm`; do not move them into `gear.computer`.
 
-### Phase 4: Add Robot Adapters
+### Phase 5: Add Robot Adapters for Communication Gear
 
-- Add robot-installed communication equipment classes or wrappers.
-- Preserve robot-specific slot handling.
-- Preserve default-suite free-item behaviour.
-- Update robot detail/spec output to render installed gear consistently.
-
-### Phase 5: Migrate Default Suite
-
-- Replace default-suite strings with typed gear-backed robot parts.
-- Keep compatibility aliases for old string input while examples are migrated.
-- Remove duplicated cost tables only after all current examples and tests use
-  gear-backed parts.
+- Replace the typed-but-simple `RobotTransceiver` from Phase 2 with the full
+  `RobotTransceiver(Transceiver, RobotPartMixin)` class backed by CSC gear data.
+- Remove the old string-based tables and helper functions.
+- Update robot detail and spec output to render installed gear consistently.
 
 ### Phase 6: Expand Beyond Communications
 
-- Repeat the same inventory/source-map process for video screens, sensors,
+- Apply the same inventory and source-map process to video screens, sensors,
   speakers, drone interfaces, and other physical robot options.
-- Add new generic gear modules only where they correspond to reusable equipment
-  domains, such as `gear.sensor` or `gear.electronics`.
-- Keep Robot Handbook-only construction abstractions in `make.robot`.
-
-## Test Expectations
-
-Gear tests should validate source table facts directly:
-
-- transceiver TL, range, mass, and cost
-- encryption module TL and cost
-- satellite uplink mass/cost effects
-- integrated computer behaviour once decided
-
-Robot tests should validate robot integration:
-
-- default suite includes the expected installed parts
-- default-suite replacements charge the expected extra cost
-- output text remains stable for existing robot examples
-- serialization round-trips typed robot options
-- unknown string options are rejected or converted through explicit aliases
-
-Robot validation examples should continue to compare produced builds to
-`_expected` values. Unit tests should carry the detailed rule assertions.
-
-## Open Questions
-
-- Which robot options are explicitly CSC equipment, and which are Robot
-  Handbook-only abstractions?
-- Do robot-installed gear items use gear mass directly, ignore mass because the
-  robot rules use slots, or report both?
-- Is `Video Screen` a computer/interface option, a generic electronics item, or
-  a robot-specific construction option?
-- Should `Wireless Data Link` and `Drone Interface` be generic communications
-  gear, robot-specific interfaces, or software/control capabilities?
-- Should TL10+ transceiver computer functionality be represented as an actual
-  nested `PortableComputer`, a lightweight capability object, or just derived
-  notes until software integration needs it?
-- Is `comm.py` the final module name, or should it eventually become
-  `communication.py`? The existing module name is `comm.py`, so new work should
-  use it unless there is a deliberate rename.
+- Add new generic gear modules only where a confirmed CSC source exists.
+- Keep Robot Handbook-only construction options in `make.robot`.
 
 ## Weapons
 
-Weapons installed in robots follow the same gear-backed pattern as communications
-equipment: the weapon itself is CSC gear; the mount and fire control system are
-robot-specific construction options.
+Weapons installed in robots follow the same gear-backed pattern: the weapon itself
+is CSC gear; the mount and fire control system are robot-specific construction
+options.
+
+The weapons section is a separate, blocked initiative. No robot weapon
+implementation is possible before `ceres.gear.weapons` exists.
 
 ### Prerequisite: `ceres.gear.weapons`
 
-No robot weapon plan can be implemented before `ceres.gear.weapons` exists and is
-populated with the relevant weapon tables from the Central Supply Catalogue and the
-Robot Handbook. All facts about damage, range, magazine size, cost, and traits
-belong to the gear layer. The robot layer only handles slot cost and installation
-semantics.
+All facts about damage, range, magazine size, cost, and traits belong to the gear
+layer. The robot layer only handles slot cost and installation semantics.
 
 **Reference**: `refs/robot/32_fire_extinguisher.md` (Weapon Mount, Fire Control
 System tables). CSC weapon tables are not yet converted to refs.
 
 ### Robot-Specific Parts
 
-These parts belong in `ceres.make.robot.options` because their rules are entirely
-robot-specific — they have no CSC equivalent:
+These parts belong in `ceres.make.robot.options` — their rules are entirely
+robot-specific:
 
 - **WeaponMount** (`small`/`medium`/`heavy`/`vehicle`): slot cost and minimum
-  manipulator size per the Robot Handbook table; does not include the weapon cost.
+  manipulator size per the Robot Handbook table; does not include weapon cost.
 - **WeaponMountAutoloader**: doubles mount slots, adds 10 magazines, costs 20 ×
   magazine cost; increases minimum manipulator size by +1.
 - **FireControlSystem** (`basic`/`improved`/`enhanced`/`advanced`): 1 slot,
   Weapon Skill DM +1 to +4; tied to one weapon or linked mount set.
 
-Each weapon requires its own mount. Up to four same-type mounts can be linked;
-linked mounts share one fire control system and add +1 per damage die per extra
-weapon on a hit.
-
-### Stinger (robot-only edge case)
-
-The Stinger (`refs/robot/17_stinger.md`) is a zero-slot melee weapon that is a
-robot construction option, not CSC gear. It inflicts 1 point of damage with AP
-equal to the robot's base armour. Multiple stingers may be installed (each a
-separate zero-slot option); up to four can be clustered in a single attack. It does
-not require `ceres.gear.weapons` to implement, but implementation should wait until
-the attacks row model is established.
-
 ### Attacks Row
 
-The robot spec currently hard-codes `attacks='—'` for all robots that have no
-weapon mounts. A proper attacks row should:
+The robot spec currently hard-codes `attacks='—'`. A proper attacks row should
+collect all installed WeaponMount parts and render damage/traits from the gear
+object. Defer until `ceres.gear.weapons` is in place and at least one armed robot
+example has a known-good expected output.
 
-1. Collect all installed WeaponMount parts.
-2. Retrieve weapon damage/traits from the installed gear object.
-3. Render the attacks string in the same format as the Robot Handbook stat blocks:
-   e.g. `Gauss Rifles ×2 (linked: 4D+4, AP 5, Auto 3, Scope), 880 shots`.
+### Stinger
 
-The attacks model should be deferred until `ceres.gear.weapons` is in place and at
-least one armed robot example has a known-good expected output.
+The Stinger is a zero-slot melee weapon that is a robot construction option, not
+CSC gear. It does not require `ceres.gear.weapons` but should wait until the
+attacks row model is established.
 
-### Non-Goals For Weapons
+## Test Expectations
 
-- Do not invent a `RobotWeapon` class that duplicates CSC weapon tables.
-- Do not add WeaponMount or FireControlSystem until the gear-backed attacks row is
-  designed.
-- Do not model the Stinger before the attacks row model exists.
+Gear tests (`tests/gear/test_comm.py`):
 
-## Non-Goals For The First Pass
+- Transceiver TL, range, mass, and cost from CSC tables.
+- Encryption module TL and cost.
+- Satellite uplink mass/cost effects.
 
-- Do not redesign the whole robot options system before transceivers are proven.
+Robot tests:
+
+- Default `options` equals `DefaultSuite()` content.
+- `DefaultSuite()` validation rejects more than five True flags.
+- Default suite items have `cost = 0.0` and `is_default_suite = True`.
+- Default suite items do not count toward the zero-slot quota.
+- Adding a paid transceiver outside `DefaultSuite()` charges the correct cost.
+- Serialization round-trips typed options.
+- Existing robot examples produce the same total cost and spec output.
+
+## Open Questions
+
+- Which robot options are explicitly CSC equipment and which are Robot
+  Handbook-only abstractions?
+- Is `Video Screen` a computer/interface option, a generic electronics item,
+  or a robot-specific construction option?
+- Should `Wireless Data Link` and `Drone Interface` be generic communications
+  gear, robot-specific interfaces, or software/control capabilities?
+- Should TL10+ transceiver computer functionality be a nested `PortableComputer`,
+  a lightweight capability object, or derived notes until software integration
+  needs it?
+- Do robot-installed gear items report gear mass, ignore mass (robot rules use
+  slots), or report both?
+
+## Non-Goals For the First Pass
+
+- Do not redesign the whole robot options system before the default suite
+  migration is complete.
 - Do not move communications equipment into `gear.computer`.
 - Do not infer missing rules from existing test cases.
-- Do not make every robot option generic gear if its source treats it as a
-  robot-only construction abstraction.
+- Do not implement WeaponMount, FireControlSystem, or Stinger before
+  `ceres.gear.weapons` exists and the attacks row model is designed.

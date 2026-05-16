@@ -30,17 +30,24 @@ Ship computers already follow the desired pattern:
 
 Robot brains are currently separate:
 
-- `ceres.make.robot.brain` has `PrimitiveBrain`, `BasicBrain`, and
-  `AdvancedBrain`.
+- `ceres.make.robot.brain` has `PrimitiveBrain`, `BasicBrain`, `AdvancedBrain`,
+  and `VeryAdvancedBrain`.
 - Brain table rows are stored in private robot-specific tables.
-- `AdvancedBrain.installed_skills` uses robot-specific `SkillPackage`.
-- Skill packages already track `bandwidth` and `cost`, but are not represented
-  as shared `SoftwarePackage` instances.
-- Robot parts have a `RobotPartMixin`, so the context-mixin structure already
-  exists.
+- `AdvancedBrain.installed_skills` and `VeryAdvancedBrain.installed_skills` use
+  robot-specific `SkillPackage`.
+- Skill packages already track `bandwidth` and `cost`, but are not represented as
+  shared `SoftwarePackage` instances.
 
-This means robots currently have "programming" and "skill packages", while
-ships have "software", even though the rules overlap conceptually.
+`ceres.gear.software` already defines a `SoftwarePackage` ABC with `bandwidth`,
+`tl`, `cost`, `description`, and `validate_on_computer`. This is the interface
+that robot skill packages should satisfy.
+
+### Known Bug: VeryAdvancedBrain Bandwidth Validation
+
+`VeryAdvancedBrain._resolve_bandwidth` (`brain.py:322`) returns `data` instead of
+the modified `d`. Bandwidth upgrades therefore have no effect for Very Advanced
+brains. This should be fixed as the first step of Phase 2, or as a standalone fix
+regardless of this plan's timeline.
 
 ## Design Direction
 
@@ -48,8 +55,10 @@ Introduce a robot brain hardware class that combines generic computer semantics
 with robot installation semantics:
 
 ```python
-class RobotBrain(ComputerPart, RobotPartMixin):
-    ...
+class RobotBrainBase(ComputerPart, RobotPartMixin):
+    brain_type: str
+    brain_tl: int
+    installed_software: tuple[RobotSoftware, ...] = ()
 ```
 
 This should not inherit from `RobotPart`, for the same reason `ShipComputer`
@@ -59,7 +68,7 @@ chains rooted in `CeresPart`. The pattern should follow
 
 The robot-specific layer should own:
 
-- brain category: Primitive, Basic, Advanced, and later Very Advanced+
+- brain category: Primitive, Basic, Advanced, Very Advanced
 - robot brain TL table values
 - robot Slots calculation
 - robot INT and skill DM
@@ -75,40 +84,34 @@ The shared computer/software layer should own:
 
 ## Important Distinction
 
-A robot brain is not merely a normal portable computer installed in a robot.
-The Robot Handbook brain table has its own cost, INT, slot, skill DM, and
-capability rules. The shared computer base should provide software-running
-semantics, not erase the robot brain rules.
+A robot brain is not merely a normal portable computer installed in a robot. The
+Robot Handbook brain table has its own cost, INT, slot, skill DM, and capability
+rules. The shared computer base should provide software-running semantics, not
+erase the robot brain rules.
 
-In other words:
+`ComputerPart` is a capability base. `RobotBrainBase` is the robot-specific
+hardware. `SoftwarePackage` is the shared program/package surface.
 
-- `ComputerPart` is a capability base.
-- `RobotBrain` is the robot-specific hardware.
-- `SoftwarePackage` is the shared program/package surface.
+## Note on Deduplication
+
+`AdvancedBrain` and `VeryAdvancedBrain` currently share nearly identical
+implementation. Factoring out a shared base before this refactor is an extra step
+that would itself be replaced when the `ComputerPart` inheritance is introduced.
+Go directly to the full refactor rather than deduplicating the existing classes
+first.
 
 ## Proposed Model
 
 ### 1. Shared Program Interface
 
-Create or formalize a shared protocol/base for runnable software packages in
-`ceres.gear.software`.
+`ceres.gear.software.SoftwarePackage` already exists as an ABC with the right
+properties. Robot skill packages should satisfy this interface.
 
-It should expose at least:
-
-- `description`
-- `tl`
-- `bandwidth`
-- `cost`
-- `notes`
-
-Existing ship software and gear `Expert` packages should either already satisfy
-this or be adjusted to do so.
-
-Robot skill packages should migrate toward this interface.
+Existing ship software (`SoftwarePackage` subclasses) does not change.
 
 ### 2. Robot Brain Hardware
 
-Refactor `_BrainBase` into a computer-like robot part. A possible shape:
+Refactor `_BrainBase` into a `ComputerPart` + `RobotPartMixin` base:
 
 ```python
 class RobotBrainBase(ComputerPart, RobotPartMixin):
@@ -128,18 +131,16 @@ It should keep robot-brain properties:
 - `brain_slots(robot_tl, robot_size)`
 - `programming_label()`
 
-`ComputerPart.processing` can map to the Robot Handbook `Computer/X` value from
-the brain table. This value is already present as `computer_x` in `_BrainEntry`.
-
-`bandwidth` remains the robot-brain bandwidth from the Robot Handbook table.
-Do not assume it is always equal to `processing`.
+`ComputerPart.processing` maps to the Robot Handbook `Computer/X` value from the
+brain table (`_BrainEntry.computer_x`). This value currently drives the slot
+calculation; its role as a general computing power indicator is secondary.
+`bandwidth` remains the robot-brain bandwidth from the Robot Handbook table, which
+is not always equal to `processing`. Both concepts should remain named distinctly
+so they are not confused.
 
 ### 3. Robot Skill Packages As Software
 
-Convert `SkillPackage` into a shared software-compatible class, or add an
-adapter class such as `RobotSkillSoftware`.
-
-The preferred direction is:
+Convert `SkillPackage` into a `SoftwarePackage` subclass:
 
 ```python
 class RobotSkillPackage(SoftwarePackage):
@@ -155,36 +156,42 @@ It should preserve current rules:
 - installed package level is adjusted by brain skill DM when producing
   `SkillGrant`
 
-This allows `AdvancedBrain.installed_skills` to become
+`AdvancedBrain.installed_skills` and `VeryAdvancedBrain.installed_skills` become
 `installed_software`, while `skill_grants` filters/derives skill grants from
 software packages that grant robot skills.
 
-### 4. Included/Implicit Brain Programs
+### 4. Validation in `validate_on_computer`
 
-Primitive and Basic brains use named function packages such as `clean`,
-`alert`, or `servant`. These should be represented carefully.
+`SoftwarePackage.validate_on_computer` takes a `ComputerPart` and currently
+references `computer.assembly.tl` and `computer.retro_levels`. Robot brain
+validation should not reuse this method directly — the context is different (no
+retro levels in the same sense, different TL checks). Add a separate
+`validate_on_brain(brain)` method, or override `validate_on_computer` in
+`RobotSkillPackage` to apply robot-specific rules.
+
+### 5. Included/Implicit Brain Programs
+
+Primitive and Basic brains use named function packages such as `clean`, `alert`,
+or `servant`. These should be represented carefully.
 
 Short-term:
 
 - keep `function` on Primitive/Basic brains
-- keep `primitive_package_skills(function)` as the source of bundled skill
-  grants
-- expose bundled packages through an `included_software` or
-  `included_programs` property if useful
+- keep `primitive_package_skills(function)` as the source of bundled skill grants
+- expose bundled packages through an `included_software` or `included_programs`
+  property if useful
 
 Long-term:
 
-- represent primitive/basic packages as software/package objects too, if the
-  rule tables support a clean mapping
-- avoid forcing all primitive package behavior into generic software if the
-  source treats them as fixed brain programming rather than installable programs
+- represent primitive/basic packages as software/package objects too, if the rule
+  tables support a clean mapping
+- avoid forcing all primitive package behaviour into generic software if the source
+  treats them as fixed brain programming rather than installable programs
 
-### 5. Robot Software Validation
+### 6. Robot Software Validation
 
 Add validation equivalent in spirit to ship `ComputerSection.validate_software`,
-but owned by the robot brain or robot assembly.
-
-Validation should cover:
+but owned by the robot brain or robot assembly. Validation should cover:
 
 - robot TL versus software TL
 - brain bandwidth capacity
@@ -194,64 +201,57 @@ Validation should cover:
 - whether Advanced or higher brains are required for standard skill packages
 - future Avatar/receiver/controller rules that share software across brains
 
-Do not immediately copy ship-specific rules such as Jump Control handling.
-Those should remain ship-specific software rules.
+Do not immediately copy ship-specific rules such as Jump Control handling. Those
+should remain ship-specific software rules.
 
-### 6. Robot Assembly Integration
+### 7. Robot Assembly Integration
 
-`Robot` should continue to expose a single `brain` field, but that brain should
-be a software-running part.
-
-The existing aggregation points can stay conceptually similar:
+`Robot` should continue to expose a single `brain` field. The existing aggregation
+points stay conceptually similar:
 
 - total cost includes `brain.hardware_cost` plus installed software/package cost
 - skill aggregation asks the brain for `skill_grants`
 - detail/spec output lists brain hardware separately from installed packages
 - remaining bandwidth is reported from the brain
 
-The implementation should avoid adding a separate `ComputerSection` to robots
-unless rules later require multiple brain/computer modules. For now, the brain
-is the robot's computer.
+Avoid adding a separate `ComputerSection` to robots unless rules later require
+multiple brain/computer modules.
 
 ## Migration Plan
 
-### Phase 1: Introduce Shared Shape Without Behavior Changes
+### Phase 1: Fix VeryAdvancedBrain Bug
 
-- Add a small protocol/helper in `gear.software` if needed for software-like
-  objects.
-- Add tests proving existing ship software still works unchanged.
-- Add tests proving current robot `SkillPackage` values still match
-  `refs/robot/35_skill_packages.md`.
-- Avoid changing public robot example output in this phase.
+Fix `VeryAdvancedBrain._resolve_bandwidth` to return `{**d, 'bandwidth': base}`
+instead of `data`. Add a test proving bandwidth upgrades work for Very Advanced
+brains. This can be done immediately, independently of the rest of this plan.
 
 ### Phase 2: Make Robot Brains ComputerPart-Based
 
-- Refactor `_BrainBase` into a `ComputerPart` + `RobotPartMixin` compatible
-  base.
+- Refactor `_BrainBase` into a `ComputerPart` + `RobotPartMixin` compatible base.
 - Map `_BrainEntry.computer_x` to `processing`.
-- Preserve current public properties and serialization shape where reasonable:
-  `type`, `brain_tl`, and current fields should still round-trip.
-- Keep existing `PrimitiveBrain`, `BasicBrain`, and `AdvancedBrain` class names.
+- Preserve current public properties and serialization shape where reasonable.
+- Keep existing class names: `PrimitiveBrain`, `BasicBrain`, `AdvancedBrain`,
+  `VeryAdvancedBrain`.
+- Cover both `AdvancedBrain` and `VeryAdvancedBrain` in this phase.
 
 ### Phase 3: Convert Installed Skills To Installed Software
 
-- Introduce `RobotSkillPackage` as a software-compatible package.
-- Migrate `AdvancedBrain.installed_skills` toward
-  `installed_software`/`installed_packages`.
-- Keep a compatibility alias or validator for existing `installed_skills`
-  inputs until tests and examples are updated.
+- Introduce `RobotSkillPackage` as a `SoftwarePackage` subclass.
+- Migrate `installed_skills` toward `installed_software`/`installed_packages`.
+- Keep a compatibility alias for existing `installed_skills` inputs until tests
+  and examples are updated.
 - Update `skill_grants` to derive from installed robot skill software.
 
 ### Phase 4: Shared Software Use
 
 - Allow selected shared `gear.software` packages on robot brains where rules
   support them.
-- Start with `Expert`, because it is already context-independent and appears
-  naturally related to robot skills.
+- Start with `Expert`, because it is already context-independent and naturally
+  related to robot skills.
 - Decide whether `Intellect` is a generic software package, a robot brain
-  capability, or both depending on the source rules.
-- Keep ship-only packages ship-only. For example, `JumpControl` should not
-  become valid robot software merely because it shares the base type.
+  capability, or both, based on the source rules.
+- Keep ship-only packages ship-only. `JumpControl` should not become valid robot
+  software merely because it shares the base type.
 
 ### Phase 5: Reporting And Serialization
 
@@ -267,21 +267,22 @@ is the robot's computer.
 
 Keep tests layered:
 
-- `tests/make/robot/test_brain.py`: robot brain table values, slot behavior,
+- `tests/make/robot/test_brain.py`: robot brain table values, slot behaviour,
   bandwidth, INT, skill DM, and robot-specific validation.
 - `tests/make/robot/test_skills.py`: robot skill package cost, bandwidth, and
   skill grant mapping.
-- `tests/gear/test_software.py`: context-independent software behavior.
-- `tests/make/ship/test_software.py`: ship-only software behavior.
+- `tests/gear/test_software.py`: context-independent software behaviour.
+- `tests/make/ship/test_software.py`: ship-only software behaviour.
 - `tests/robots/*`: source/reference validation only, using `_expected`.
 
 Add focused regression tests for:
 
+- `VeryAdvancedBrain` bandwidth upgrade works correctly (Phase 1)
 - an Advanced brain running a robot skill package
 - bandwidth overrun produces a robot brain note/error
 - an old `installed_skills` input still round-trips during migration
 - a shared `Expert` package can be installed once a policy is chosen
-- ship software behavior does not change
+- ship software behaviour does not change
 
 ## Open Questions
 
@@ -289,17 +290,16 @@ Add focused regression tests for:
   should they be a robot-specific subclass?
 - Which non-skill software packages are valid on robot brains?
 - Is `ComputerPart.processing` the right generic name for the Robot Handbook
-  `Computer/X` column, or should robot brains expose both `processing` and
-  `brain_computer_rating` for clarity?
-- How should Primitive/Basic fixed functions be represented: installed
-  software, included software, or fixed brain programming?
+  `Computer/X` column, or should robot brains expose both `processing` and a
+  separate `brain_computer_rating` for clarity?
+- How should Primitive/Basic fixed functions be represented: installed software,
+  included software, or fixed brain programming?
 - How should brain bandwidth upgrades from `refs/robot/34_retrotech.md` combine
   with the shared software model?
 - How should brain hardening (`/fib`) relate to ship computer `/fib`?
 
 ## Non-Goals For The First Refactor
 
-- Do not implement Very Advanced brains at the same time.
 - Do not implement avatar controller/receiver rules at the same time.
 - Do not change ship computer API unless needed to extract a shared helper.
 - Do not make every ship software package valid for robots by default.

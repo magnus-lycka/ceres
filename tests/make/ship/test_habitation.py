@@ -8,6 +8,7 @@ from ceres.make.ship.crew import Pilot, ShipCrew
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive1, PowerSection
 from ceres.make.ship.habitation import (
     AdvancedEntertainmentSystem,
+    Barracks,
     Brig,
     CabinSpace,
     HabitationSection,
@@ -157,6 +158,31 @@ def test_brig_values_are_computed_properties_not_serialized_fields():
     assert 'tons' not in brig.model_dump()
     assert 'cost' not in brig.model_dump()
     assert 'power' not in brig.model_dump()
+
+
+def test_habitation_section_groups_multiple_brigs():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        habitation=HabitationSection(brigs=[Brig(), Brig(), Brig(), Brig()]),
+    )
+    spec = my_ship.build_spec()
+
+    row = spec.row('Brigs', section='Habitation')
+    assert row.quantity == 4
+    assert row.tons == pytest.approx(16.0)
+    assert row.cost == pytest.approx(1_000_000.0)
+
+
+def test_barracks_use_explicit_tonnage_and_hg_cost_per_ton():
+    barracks = Barracks(tons=300, occupants='150 troops')
+    barracks.bind(DummyOwner(12, 50_000))
+
+    assert barracks.build_item() == 'Barracks (150 troops)'
+    assert barracks.tons == pytest.approx(300.0)
+    assert barracks.cost == pytest.approx(15_000_000.0)
+    assert barracks.power == pytest.approx(0.0)
 
 
 def test_advanced_entertainment_system_cost():

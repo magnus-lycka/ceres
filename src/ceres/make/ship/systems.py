@@ -443,6 +443,27 @@ class TrainingFacility(_ZeroPowerSystemPart):
         return self.tons * 200_000.0
 
 
+class UNREPSystem(_ExplicitTonsSystemPart):
+    system_type: Literal['UNREP_SYSTEM'] = 'UNREP_SYSTEM'
+    cost: ClassVar[float]
+    power: ClassVar[float]
+
+    def build_item(self) -> str | None:
+        return f'UNREP System ({self.transfer_rate:g} tons/hour)'
+
+    @property
+    def transfer_rate(self) -> float:
+        return self.tons * 20
+
+    @property
+    def cost(self) -> float:
+        return self.tons * 500_000.0
+
+    @property
+    def power(self) -> float:
+        return self.tons
+
+
 class TowCable(_ZeroPowerSystemPart):
     system_type: Literal['TOW_CABLE'] = 'TOW_CABLE'
     tl: int = 7
@@ -512,6 +533,7 @@ type AnyInternalSystem = Annotated[
     | BriefingRoom
     | CommandBridge
     | TrainingFacility
+    | UNREPSystem
     | Workshop
     | TowCable
     | GrapplingArm

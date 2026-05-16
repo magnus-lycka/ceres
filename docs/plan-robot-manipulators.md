@@ -1,217 +1,259 @@
-# Plan: Komplett manipulatorregel
+# Plan: Complete Manipulator Rules
 
-**Källa**: `refs/robot/09_manipulators.md` (Robot Handbook sid. 25–28)
+**Source**: `refs/robot/09_manipulators.md` (Robot Handbook pp. 25–28)
 
-## Mål
+## Goal
 
-Implementera det fullständiga manipulatorregelverket från Robot Handbook. Nuläget
-är en naiv `list[str]` med `['Standard', 'Standard']` som inte modellerar STR, DEX,
-storlek eller ombyggnadskostnad. Den fullt implementerade modellen ska kunna
-beräkna korrekt slotåtgång, kostnad och statistik för alla manipulatorkonfigurationer.
+Implement the full Robot Handbook manipulator rules using a single `Manipulator`
+class. The unified class replaces both the current `list[str]` representation of
+standard manipulators and the separate `AdditionalManipulator` option class. The
+result is one consistent API: `Robot(manipulators=[...])`.
 
-## Nuläge
+The complete model must correctly calculate slot usage, cost, and statistics for
+all manipulator configurations: removed, standard, resized, additional, and
+STR/DEX-enhanced manipulators.
 
-`Robot.manipulators: list[str]` håller strängar som `'Standard'`. Enda regeln
-som är implementerad är borttagning av manipulatorer: rabatt `Cr100 × storlek × antal`
-och +slots per borttagen manipulator. Rabatten är inte cappat till max 20 % av BCC.
-Inga STR- eller DEX-värden beräknas. Inga alternativa storlekar stöds. Inget
-ombyggnadssystem finns.
+## Current State
 
-## Regler att implementera
+`Robot.manipulators: list[str]` holds strings such as `'Standard'`. A separate
+`AdditionalManipulator` class in `ceres.make.robot.options` handles extra
+manipulators as a distinct robot option. The two representations are disconnected:
 
-### Standardmanipulatorer
+- Standard manipulators carry no typed attributes.
+- Additional manipulators are a separate `RobotPart` in the options list.
+- Removal discount: `Cr100 × size × removed` with no 20% BCC cap (known bug).
+- No STR or DEX values are computed for any manipulator.
+- No resizing support exists for the standard pair.
 
-Robotens baschassipris inkluderar två manipulatorer av samma storlek som chassit.
-Default STR = 2 × Size − 1. Default DEX = ceil(TL / 2) + 1. Ingen extra
-slots- eller kostnadspåverkan vid standardkonfiguration.
+## Design
 
-### Borttagning
+### `Manipulator` Class
 
-Varje borttagen manipulator frigör `ceil(10 % × base_slots)` slots, minst 1.
-Kostnadsrabatt = `Cr100 × robot_size` per manipulator, max 20 % av BCC totalt
-för alla manipulatorborttagningar. (Den nuvarande implementationen saknar
-20 %-taket.)
-
-### Ytterligare manipulatorer (AdditionalManipulator)
-
-Slots per extra manipulator beror på storleksskillnad mot chassit:
-
-| Skillnad | % av base_slots | Minst |
-|----------|----------------|-------|
-| +2       | 40 %           | 1     |
-| +1       | 20 %           | 1     |
-| ±0       | 10 %           | 1     |
-| −1       | 5 %            | 1     |
-| −2       | 2 %            | 1     |
-| ≤−3      | 1 %            | 1     |
-
-Kostnad = `Cr100 × manipulator_size`. Maximal storlek = robot_size + 2, med
-undantag att Size 8 kan ha Size 10. `AdditionalManipulator` är redan implementerad
-för detta fall men visas för närvarande bara i manipulatorraden; se sektion
-Spec-visning nedan.
-
-### Ombyggnad av basmanipulatorer (ResizedManipulator)
-
-Att byta storlek på en basmanipulator räknas som att ta bort den och lägga till en
-ny av annan storlek:
-
-- Slots att återvinna = slot-kravet för standardstorlek (10 % × base_slots, min 1)
-- Slots att betala = slot-kravet för ny storlek per tabellen ovan, min 1
-- Nettoskillnad: om ny storlek < standard → minst +1 slot till chassit;
-  om ny storlek > standard → minst −1 slot (kräver minst 1 slot extra)
-- Kostnadsskillnad = `Cr100 × (slots_ny − slots_standard)`, max −20 % BCC totalt
-
-### STR-förstärkning
-
-Kostnad = `Cr100 × manipulator_size × (delta_str)²`.
-Max STR = 2 × default_str. Ingen slotåtgång.
-
-### DEX-förstärkning
-
-Kostnad = `Cr200 × manipulator_size × (delta_dex)²`.
-Max DEX = TL + 3. Ingen slotåtgång.
-
-### Walkerben som manipulatorer
-
-Kostnad = `Cr100 × robot_size` per ben som konverteras. Storleken kan inte
-ändras. En robot med alla ben konverterade räknas fortfarande som att ha 2 ben;
-ben utöver de 2 standardmanipulatorerna räknas som ytterligare manipulatorer.
-
-## Föreslagen modell
-
-### `Manipulator`-klass
-
-Ersätter `list[str]` som den primära representationen:
+A single `Manipulator(RobotPart)` replaces all of the above. It lives in a new
+file `ceres.make.robot.manipulators`:
 
 ```python
-class Manipulator(CeresModel):
+class Manipulator(RobotPart):
     model_config = {'frozen': True}
 
-    size: int          # manipulator-storlek (1–10)
-    str_bonus: int = 0 # förstärkning utöver default STR
-    dex_bonus: int = 0 # förstärkning utöver default DEX
-    is_leg: bool = False
+    size: RobotSize | None = None  # None = inherit robot size at bind time
+    str_bonus: int = 0             # STR above default; cost = Cr100 × size × bonus²
+    dex_bonus: int = 0             # DEX above default; cost = Cr200 × size × bonus²
 
-    def default_str(self) -> int:
-        return 2 * self.size - 1
-
-    def default_dex(self, tl: int) -> int:
-        return ceil(tl / 2) + 1
-
-    def effective_str(self) -> int:
-        return self.default_str() + self.str_bonus
-
-    def effective_dex(self, tl: int) -> int:
-        return self.default_dex(tl) + self.dex_bonus
-
-    def stat_label(self, tl: int) -> str:
-        return f'STR {self.effective_str()} DEX {self.effective_dex(tl)}'
+    def resolved_size(self, robot_size: RobotSize) -> RobotSize: ...
+    def default_str(self, robot_size: RobotSize) -> int: ...   # 2 × size − 1
+    def default_dex(self, tl: int) -> int: ...          # ceil(TL / 2) + 1
+    def effective_str(self, robot_size: RobotSize) -> int: ...
+    def effective_dex(self, tl: int) -> int: ...
+    def stat_label(self, robot_size: RobotSize, tl: int) -> str: ...
 ```
 
-`Robot.manipulators` byts från `list[str]` till `list[Manipulator]`. Befintliga
-strängar (`'Standard'`) ersätts med `Manipulator(size=robot_size)`.
+`Manipulator.build_item()` returns `None` (manipulators are shown in the
+Manipulators section, not the Options section).
 
-### Kopplade beräkningar på `Robot`
+`Manipulator.slots` returns `0`; the robot is responsible for all manipulator
+slot math (see below).
 
-`available_slots`-beräkningen måste ta hänsyn till storleksskillnad, inte bara antal:
+### `Robot.manipulators` Field
 
 ```python
-# Slots frigjorda av ej standardkonfiguration:
-for m in removed_or_resized_manipulators:
-    freed = max(1, ceil(0.10 * base_slots))      # slot för standardstorlek
-    added = max(1, ceil(pct(m.size) * base_slots))  # slot för faktisk storlek
-    net_slots += freed - added
+manipulators: list[Manipulator] = Field(
+    default_factory=lambda: [Manipulator(), Manipulator()]
+)
 ```
 
-`total_cost`-beräkningen lägger till STR/DEX-kostnader och hanterar 20 %-taket:
+**Position semantics** determine how each manipulator is priced and slotted:
+
+- **Positions 0 and 1** — the standard slots included in the base chassis cost.
+  A `Manipulator(size=None)` (or `size == robot_size`) here costs nothing extra
+  and uses no additional slots. An absent position (list shorter than 2 entries)
+  triggers a removal bonus.
+- **Position 2 and beyond** — additional manipulators. Each uses slots from the
+  percentage table and costs `Cr100 × resolved_size`.
+
+Concrete examples:
 
 ```python
-removal_discount = sum(Cr100 × robot_size for removed)
-resize_discount  = sum(Cr100 × (std_slots - new_slots) for resized if smaller)
-total_discount   = min(removal_discount + resize_discount, 0.20 × BCC)
+Robot(manipulators=[])
+# No manipulators. Both standard slots removed.
+
+Robot(manipulators=[Manipulator()])
+# One standard manipulator. One standard slot removed.
+
+Robot(manipulators=[Manipulator(), Manipulator()])
+# Default pair. Same as not specifying manipulators at all.
+
+Robot(manipulators=[Manipulator()] * 3)
+# Default pair plus one additional manipulator of robot size.
+
+Robot(manipulators=[Manipulator(size=7), Manipulator(size=5), Manipulator(size=3)])
+# Two resized standard manipulators plus one additional.
 ```
 
-### Spec-visning
+`model_post_init` calls `m.bind(self)` for each manipulator so each instance has
+access to robot context (TL, size) for TL checking and stat calculations.
 
-Manipulatorraden visar `STR`/`DEX`-statistik för varje manipulator. Nuläget
-(default `'Standard'`) visar inget. Målformat:
+`AdditionalManipulator` is removed from `ceres.make.robot.options` once the
+migration is complete.
 
+### Slot and Cost Rules
+
+BCC includes exactly two manipulators of robot size. Net manipulator cost and slot
+effects are computed by comparing the actual list against that baseline:
+
+```text
+std_cost  = Cr100 × robot_size
+std_slots = max(1, ceil(0.10 × base_slots))
+
+net_cost  = sum(m.cost  for m in manipulators) - 2 × std_cost
+net_slots = sum(m.slots for m in manipulators) - 2 × std_slots
 ```
-2x (STR 9 DEX 7)
+
+A negative `net_cost` is a credit (BCC includes more than what is installed);
+that credit is capped at 20% of BCC:
+
+```text
+net_cost = max(net_cost, -0.20 × base_chassis_cost)
 ```
 
-eller om manipulatorer har olika statistik:
+The current implementation omits this cap — a known bug fixed in Phase 1.
 
+Each `Manipulator` exposes `cost` and `slots` reflecting its own size. Both are
+set during `bind()` so the part has access to robot context:
+
+```text
+m.cost  = Cr100 × m.resolved_size
+m.slots = max(1, ceil(pct(Δsize) × base_slots))
 ```
-(STR 12 DEX 7), (STR 12 DEX 7), (STR 5 DEX 12)
+
+where `Δsize = m.resolved_size − robot_size` and `pct` follows the table:
+
+| Δ (manip − robot) | % of base_slots | Minimum |
+|:------------------|:----------------|:--------|
+| +2                | 40%             | 1       |
+| +1                | 20%             | 1       |
+| ±0                | 10%             | 1       |
+| −1                | 5%              | 1       |
+| −2                | 2%              | 1       |
+| ≤−3               | 1%              | 1       |
+
+Maximum manipulator size = `robot_size + 2` (size 8 robots may go to size 10).
+
+### STR/DEX Enhancement
+
+STR enhancement: no slots; cost = `Cr100 × resolved_size × str_bonus²`.
+Maximum `str_bonus ≤ default_str` (so max STR = 2 × default STR).
+
+DEX enhancement: no slots; cost = `Cr200 × resolved_size × dex_bonus²`.
+Maximum `dex_bonus` such that `effective_dex ≤ TL + 3`.
+
+### Display
+
+The Manipulators row shows statistics for each manipulator:
+
+```text
+2× (STR 9 DEX 7)
 ```
 
-`AdditionalManipulator.description` genererar redan rätt format — den egenskapen
-bör återanvändas för `Manipulator` med ombyggd eller förstärkt statistik.
+When manipulators differ:
 
-## Fasindelning
+```text
+(STR 12 DEX 7), (STR 5 DEX 12), (STR 3 DEX 7)
+```
 
-### Fas 1 — `Manipulator`-modell och standardfall
+The format used by the existing `AdditionalManipulator.description` property is
+correct; apply the same format to all `Manipulator` instances. The detail section
+of the spec should show slot and cost deltas per manipulator for non-standard cases.
 
-- Definiera `Manipulator`-klass i `ceres.make.robot.manipulators` (ny fil).
-- Migrera `Robot.manipulators: list[str]` → `list[Manipulator]`.
-- Bevara bakåtkompatibel deserialisering för befintliga tester (de som använder
-  strängen `'Standard'` kan ersättas med `Manipulator(size=robot_size)` under
-  `model_post_init` eller via ett valideringsalias).
-- Uppdatera spec-visning så att standardparet visas som `2x (STR N DEX M)`.
-- Uppdatera `available_slots`- och `total_cost`-beräkningarna för att ta bort
-  20 %-taksbuggen vid borttagning.
-- Tester: verifiera STR/DEX-visning för en Size 5 TL10-robot och att borttagning
-  av båda manipulatorer inte rabatterar mer än 20 % BCC.
+## Walker Leg Integration
 
-### Fas 2 — Ombyggnad och tillägg
+Walker robots may have legs converted to manipulators.
 
-- Implementera `ResizedManipulator` som ett alternativ till standardstorleken vid
-  design (d.v.s. `Manipulator` med `size != robot_size`).
-- Uppdatera slots- och kostnadsberäkningar för storleksavvikelse.
-- Tester: verifiera slot-nettot och kostnaden för StarTek-exemplet
-  (`refs/robot/37_startek.md`) med dess ombyggda Size 3-manipulator.
+### `Leg` Class
 
-### Fas 3 — STR/DEX-förstärkning
+```python
+class Leg(CeresModel):
+    model_config = {'frozen': True}
+```
 
-- Implementera `str_bonus` och `dex_bonus` med kostnadsformler och maxvärden.
-- Tester: verifiera att StarTek-exemplets armförstärkning (STR +3, Cr4500 per arm)
-  ger korrekt kostnad och att maxgränsen respekteras.
+A plain leg: no manipulation capability, no slot effect beyond the locomotive
+cost already included in BCC.
 
-### Fas 4 — Walkerben
+### `WalkerLocomotion.legs` Field
 
-- Implementera `is_leg=True` med kostnad `Cr100 × robot_size` och stödet för
-  att räkna benen som tillkommande manipulatorer.
-- Tester: välj ett exempelrobot med benmanipulatorer (t.ex. `refs/robot/91_hive_queen.md`
-  om den har detta).
+```python
+class WalkerLocomotion(_LocomotionBase):
+    ...
+    legs: list[Leg | Manipulator] = Field(
+        default_factory=lambda: [Leg(), Leg()]
+    )
+```
 
-## Tolkningsfrågor att dokumentera i RULE_INTERPRETATIONS.md
+When a `Manipulator` appears in `legs`:
 
-1. **20 %-taket gäller kombinerat**: Borttagning och nedskalning av basmanipulatorer
-   delar samma tak. Om de är separata tak är det oklart i reglerna.
-2. **Ombyggnadens slot-formel**: "Slots gained" för resizing = slots för
-   standard − slots för ny. Formuleringen är inte helt entydig; tolkning och
-   räkneexempel bör dokumenteras.
-3. **Walker-bens manipulatorräkning**: Reglerna säger "designing an eight-limbed
-   robot with all limbs as manipulators would involve keeping the two original
-   manipulators, adding four manipulators and altering the two default legs to become
-   manipulators". Det antyder att ben-konvertering aldrig räknas som ytterligare
-   manipulatorer utöver de fyra extra + de två standard — men detta bör bekräftas
-   mot ett exempelrobot.
+- Cost: `Cr100 × robot_size` per leg-manipulator.
+- Size: fixed at robot size (leg size cannot be changed).
+- These count as additional manipulators beyond the two standard arm positions.
 
-## Testfall
+The robot's total manipulator list for statistics, display, and cost purposes
+combines `robot.manipulators` with `Manipulator` instances in
+`robot.locomotion.legs` (when `WalkerLocomotion` is used).
 
-- **Steward Droid** (`refs/robot/101_steward_droid.md`): standardmanipulatorer
-  Size 4, STR 7 DEX 7 — enkelt röktest för Fas 1.
-- **StarTek** (`refs/robot/99_startek.md`): ombyggd Size 3-arm (DEX+4) + två
-  förstärkta Size 5-armar (STR+3) — röktest för Fas 2 och 3.
-- **AG300** (`tests/robots/test_ag300.py`): har redan `AdditionalManipulator` —
-  kontrollera att Fas 1-migrering inte bryter befintliga assertions.
+## Migration Plan
 
-## Inte i scope
+### Phase 1 — `Manipulator` Model, Standard Cases, 20% Cap Fix
 
-- Vapenmount på manipulatorer (se `docs/plan-gear-backed-robot-options.md`).
-- Athletics-skicklighetskrav för STR/DEX DM (presentationslogik, inte
-  domänlogik — dokumentera tolkning men implementera inte förrän skicklighetsvisning
-  behöver det).
-- Biologiska manipulatorer (biologiska robotar är ett separat underdomän).
+- Define `Manipulator` in `ceres.make.robot.manipulators` (new file).
+- Migrate `Robot.manipulators: list[str]` to `list[Manipulator]`.
+- Accept `'Standard'` strings during migration via a `model_validator` alias.
+- Implement `_manipulator_slot_effect` and `_manipulator_cost_effect` in `Robot`.
+- Fix the 20% BCC cap bug.
+- Update `Robot.available_slots` and `Robot._raw_cost` to use the new properties.
+- Update the Manipulators spec row and detail section to display `STR N DEX M`.
+- Tests: verify STR/DEX display for a size 5 TL10 robot; verify the 20% cap for
+  full removal; verify existing robots with the AG300 additional manipulator case.
+
+### Phase 2 — Resized Standard Manipulators
+
+- Implement net slot and cost delta for `Manipulator(size != robot_size)` in
+  positions 0–1.
+- Tests: verify StarTek's resized size 3 arm (`refs/robot/99_startek.md`).
+
+### Phase 3 — STR/DEX Enhancement
+
+- Implement `str_bonus` and `dex_bonus` with the quadratic cost formula and max
+  limits.
+- Tests: verify StarTek's arm enhancement (STR +3, expected Cr4500 per arm);
+  verify max limits are enforced.
+
+### Phase 4 — Walker Legs
+
+- Implement `Leg` and update `WalkerLocomotion` with a `legs` field.
+- Add leg-to-manipulator conversion cost to `_manipulator_cost_effect`.
+- Include leg-manipulators in statistics and display.
+- Tests: choose a reference robot with leg manipulators.
+
+## Interpretations to Document in RULE_INTERPRETATIONS.md
+
+1. **20% cap is combined**: removal and downsize credits share a single cap.
+2. **Resizing slot formula**: "slots gained = standard slots − new slots". Document
+   with a worked example since the source phrasing is ambiguous.
+3. **Walker leg counting**: the source says "two original manipulators, adding four
+   manipulators and altering the two default legs." This implies leg-manipulators
+   do not count as the standard arm pair but as additional manipulators.
+
+## Test Cases
+
+- **Steward Droid** (`refs/robot/101_steward_droid.md`): size 4 standard pair,
+  STR 7 DEX 7. Smoke test for Phase 1.
+- **StarTek** (`refs/robot/99_startek.md`): resized size 3 arm (DEX +4) and two
+  size 5 arms (STR +3). Verification for Phases 2 and 3.
+- **AG300** (`tests/robots/test_ag300.py`): has an `AdditionalManipulator` today.
+  Verify Phase 1 migration does not break existing assertions.
+
+## Out of Scope
+
+- Weapon mounts on manipulators (see `docs/plan-gear-backed-robot-options.md`).
+- Athletics skill requirement for STR/DEX DM (display logic, not domain logic;
+  document the interpretation but do not implement until skill display needs it.
+- Biological manipulators (separate subdomain).
