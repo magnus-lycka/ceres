@@ -79,7 +79,10 @@ _PRIMITIVE_SKILLS: dict[str, tuple[SkillGrant, ...]] = {
     'clean': (SkillGrant('Profession (domestic cleaner)', 2),),
     'evade': (SkillGrant('Athletics (dexterity)', 1), SkillGrant('Stealth', 2)),
     'homing': (SkillGrant('Weapon', 1),),
+    'labourer': (SkillGrant('Profession (labourer)', 2),),
+    'locomotion': (SkillGrant('Athletics (dexterity)', 1), SkillGrant('Flyer (grav)', 1)),
     'none': (),
+    'servant': (SkillGrant('Profession (domestic servant)', 2),),
 }
 
 

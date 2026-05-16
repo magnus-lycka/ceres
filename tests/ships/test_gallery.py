@@ -4,6 +4,7 @@ from ceres.report import render_ship_html, render_ship_pdf, render_ship_typst
 
 from ._output import write_html_output, write_json_output, write_pdf_output, write_typst_output
 from .test_90t_non_gravity_rdrive import build_90t_non_gravity_rdrive
+from .test_acrux_heavy_cruiser import build_acrux_heavy_cruiser
 from .test_almeida_laboratory_station import build_almeida_laboratory_station
 from .test_alt_dragon import build_alt_dragon
 from .test_ambush_hunter_killer_corvette import build_ambush_hunter_killer_corvette
@@ -34,6 +35,7 @@ pytestmark = pytest.mark.generated_output
 @pytest.mark.parametrize(
     ('name', 'builder'),
     [
+        ('test_acrux_heavy_cruiser', build_acrux_heavy_cruiser),
         ('test_alt_dragon', build_alt_dragon),
         ('test_almeida_laboratory_station', build_almeida_laboratory_station),
         ('test_ambush_hunter_killer_corvette', build_ambush_hunter_killer_corvette),
@@ -77,6 +79,7 @@ def test_ship_gallery_html_output(name: str, builder) -> None:
 @pytest.mark.parametrize(
     ('name', 'builder'),
     [
+        ('test_acrux_heavy_cruiser', build_acrux_heavy_cruiser),
         ('test_alt_dragon', build_alt_dragon),
         ('test_almeida_laboratory_station', build_almeida_laboratory_station),
         ('test_ambush_hunter_killer_corvette', build_ambush_hunter_killer_corvette),
@@ -117,6 +120,7 @@ def test_ship_gallery_pdf_output(name: str, builder) -> None:
 @pytest.mark.parametrize(
     ('name', 'builder'),
     [
+        ('test_acrux_heavy_cruiser', build_acrux_heavy_cruiser),
         ('test_alt_dragon', build_alt_dragon),
         ('test_almeida_laboratory_station', build_almeida_laboratory_station),
         ('test_ambush_hunter_killer_corvette', build_ambush_hunter_killer_corvette),
@@ -158,6 +162,7 @@ def test_ship_gallery_typst_output(name: str, builder) -> None:
 @pytest.mark.parametrize(
     ('name', 'builder'),
     [
+        ('test_acrux_heavy_cruiser', build_acrux_heavy_cruiser),
         ('test_alt_dragon', build_alt_dragon),
         ('test_almeida_laboratory_station', build_almeida_laboratory_station),
         ('test_ambush_hunter_killer_corvette', build_ambush_hunter_killer_corvette),

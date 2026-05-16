@@ -1,4 +1,4 @@
-from .brain import AdvancedBrain, BasicBrain, PrimitiveBrain, RobotBrainUnion
+from .brain import AdvancedBrain, BasicBrain, PrimitiveBrain, RobotBrainUnion, VeryAdvancedBrain
 from .chassis import RobotSize, Trait
 from .locomotion import (
     AeroplaneLocomotion,
@@ -38,6 +38,7 @@ __all__ = [
     'PrimitiveBrain',
     'BasicBrain',
     'AdvancedBrain',
+    'VeryAdvancedBrain',
     'RobotPart',
     'RobotPartMixin',
     'RobotSpec',

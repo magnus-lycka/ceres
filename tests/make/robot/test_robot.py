@@ -452,6 +452,72 @@ class TestOptions:
         notes = robot.build_notes()
         assert any('Bandwidth overload' in str(n) for n in notes)
 
+    def test_remaining_slots_produces_info_note(self):
+        robot = make_robot()  # default has no slotted options → remaining slots > 0
+        notes = robot.build_notes()
+        assert any('remaining' in str(n).lower() and 'slot' in str(n).lower() for n in notes)
+
+    def test_remaining_bandwidth_produces_info_note(self):
+        from ceres.make.robot.brain import AdvancedBrain
+
+        robot = make_robot(brain=AdvancedBrain(brain_tl=12))  # no installed skills → 2 BW remaining
+        notes = robot.build_notes()
+        assert any('bandwidth remaining' in str(n).lower() for n in notes)
+
+    def test_cost_raised_to_minimum_produces_info_note(self):
+        from ceres.make.robot import NoneLocomotion, RobotSize
+
+        # Size 1 NoneLocomotion, no manipulators: chassis Cr100 + brain Cr100 − discount Cr200 = 0
+        # → raised to Basic Cost minimum Cr100
+        robot = make_robot(size=RobotSize.SIZE_1, locomotion=NoneLocomotion(), manipulators=[])
+        notes = robot.build_notes()
+        assert any('Basic Cost' in str(n) for n in notes)
+
+
+class TestFinalisationDetailSection:
+    def test_finalisation_section_present(self):
+        robot = make_robot()
+        spec = robot.build_spec()
+        titles = [s.title for s in spec.detail_sections]
+        assert 'Finalisation' in titles
+
+    def test_finalisation_has_slots_row(self):
+        robot = make_robot()
+        spec = robot.build_spec()
+        fin = next(s for s in spec.detail_sections if s.title == 'Finalisation')
+        assert any(r.name == 'Slots' for r in fin.rows)
+
+    def test_finalisation_bandwidth_row_present_for_advanced_brain(self):
+        from ceres.make.robot.brain import AdvancedBrain
+
+        robot = make_robot(brain=AdvancedBrain(brain_tl=12))
+        spec = robot.build_spec()
+        fin = next(s for s in spec.detail_sections if s.title == 'Finalisation')
+        assert any(r.name == 'Bandwidth' for r in fin.rows)
+
+    def test_finalisation_bandwidth_row_absent_for_primitive_brain(self):
+        from ceres.make.robot.brain import PrimitiveBrain
+
+        robot = make_robot(brain=PrimitiveBrain())
+        spec = robot.build_spec()
+        fin = next(s for s in spec.detail_sections if s.title == 'Finalisation')
+        assert not any(r.name == 'Bandwidth' for r in fin.rows)
+
+    def test_finalisation_total_row_shows_cost(self):
+        robot = make_robot()
+        spec = robot.build_spec()
+        fin = next(s for s in spec.detail_sections if s.title == 'Finalisation')
+        total_row = next(r for r in fin.rows if r.name == 'Total')
+        assert total_row.cost != '—'
+
+    def test_finalisation_cost_floor_row_shown_when_applied(self):
+        from ceres.make.robot import NoneLocomotion, RobotSize
+
+        robot = make_robot(size=RobotSize.SIZE_1, locomotion=NoneLocomotion(), manipulators=[])
+        spec = robot.build_spec()
+        fin = next(s for s in spec.detail_sections if s.title == 'Finalisation')
+        assert any('Basic Cost' in r.name for r in fin.rows)
+
 
 class TestBuildSpec:
     def test_spec_name(self):

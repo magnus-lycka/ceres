@@ -1,25 +1,26 @@
 # Ceres — Mongoose Traveller 2nd Edition in Python
 
-Ceres builds Mongoose Traveller 2nd Edition things in Python, such as
-starships (using the High Guard 2022 rules). A ship is an ordinary Python
-object: instantiate `Ship`, pass it part objects and parameters, and get back
-a validated design. Goals include:
+Ceres builds Mongoose Traveller 2nd Edition assemblies in Python. Current
+domains include starships, robots, and reusable gear/catalogue items. A design
+is an ordinary Python object: instantiate the relevant model, pass it part
+objects and parameters, and get back a validated design. Goals include:
 
-- A ship description similar to official stat blocks
+- Descriptions similar to official stat blocks or catalogue entries
 - Legality checks (tonnage, budget, TL consistency, required components)
-- A data structure usable by other code (passenger transport, cargo, etc.)
+- Data structures usable by other code, reports, tests, and export tools
 
 See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for patterns and technical choices.
 
 ## Output formats
 
-Ships can be rendered to HTML or PDF from a `Ship` or `ShipSpec`:
+Ships can be rendered to HTML, Typst, or PDF from a `Ship` or `ShipSpec`:
 
 ```python
-from ceres.report import render_ship_html, render_ship_pdf
+from ceres.report import render_ship_html, render_ship_pdf, render_ship_typst
 
-html = render_ship_html(ship)          # Jinja2 → HTML string
-pdf  = render_ship_pdf(ship)           # Typst → bytes
+html = render_ship_html(ship)          # Jinja2 -> HTML string
+typst = render_ship_typst(ship)        # Typst source string
+pdf = render_ship_pdf(ship)            # Typst -> PDF bytes
 
 # From a pre-built spec:
 from ceres.report import render_ship_spec_html, render_ship_spec_pdf
@@ -27,28 +28,40 @@ html = render_ship_spec_html(spec, theme='dark')
 pdf  = render_ship_spec_pdf(spec, page_size='us-letter')
 ```
 
+Robots can be rendered to Typst or PDF from a `Robot` or `RobotSpec`:
+
+```python
+from ceres.report import render_robot_pdf, render_robot_typst
+```
+
 The gear catalog has its own entry points in `ceres.gear.catalog`:
 
 ```python
-from ceres.gear.catalog import render_computer_catalog_html, render_computer_catalog_pdf
+from ceres.gear.catalog import (
+    render_communication_catalog_pdf,
+    render_computer_catalog_html,
+    render_gear_catalog_typst,
+)
 ```
 
-`ceres.report` is a template engine — it has no domain knowledge. Domain
+`ceres.report` is a template engine; it has no domain knowledge. Domain
 packages own their Jinja2/Typst templates and context builders. See
-[docs/plan-pdf-output.md](docs/plan-pdf-output.md) for design decisions.
+[ARCHITECTURE.md](docs/ARCHITECTURE.md) for the current design.
 
 ## Rules Reference
 
-Use the `refs/` directory (gitignored) for relevant parts of
-Traveller rules converted to text/markdown, such as your copy of
-Mongoose Traveller PDFs (High Guard 2022, etc.).
-Read relevant pages when implementing or verifying a subsystem.
+Use the `refs/` directory (gitignored) for relevant Traveller source material
+converted to text/markdown, screenshots, or local PDF excerpts. This directory
+is expected to exist in a working copy, but it must not be committed. Examples
+include `refs/hg`, `refs/csc`, `refs/robot`, `refs/spinext`, and source-derived
+test case notes. Read relevant pages when implementing or verifying a
+subsystem.
 
-Do not treat any reference ship output as an unquestionable facit.
-If Ceres differs from a published ship sheet or external design tool, first
+Do not treat any reference design output as an unquestionable answer key.
+If Ceres differs from a published sheet or external design tool, first
 determine which explicit rule, table, or stated interpretation would produce
 that result. Only then adjust the code. Never change the model merely to
-"match the facit" without understanding the rule path that leads there.
+"match the source" without understanding the rule path that leads there.
 
 When writing tests that verify Traveller rules, derive the expected assertions
 from the Traveller rules and from [RULE_INTERPRETATIONS.md](docs/RULE_INTERPRETATIONS.md),
@@ -60,7 +73,14 @@ cases merely to turn the suite green; if the rule path is unclear, document the
 interpretation before encoding it.
 
 See [RULE_INTERPRETATIONS.md](docs/RULE_INTERPRETATIONS.md) and
-[TEST_CASE_SHIPS.md](docs/TEST_CASE_SHIPS.md)
+[TEST_CASE_ASSEMBLIES.md](docs/TEST_CASE_ASSEMBLIES.md)
+
+Source-derived design tests should assert against an `_expected =
+SimpleNamespace(...)` built from the source material. If Ceres deliberately
+differs because of a rule interpretation, TCS convention, or source error,
+modify `_expected` with a nearby comment explaining why. These tests validate a
+design against source-derived expectations; lower-level behavior belongs in
+unit tests. They should also check that no unexpected errors or warnings appear.
 
 ## Python Style
 
@@ -87,13 +107,18 @@ The usual full local gate is `./pre-commit.sh`, which also runs `deptry` and
 
 ## Examples
 
-The main source-derived reference cases live in `tests/ships/`, not in a
-separate examples package. These serve as integration targets for rule
-interpretation: as subsystems are implemented, differences against reference
-stat blocks should be explained by rules, omissions, or explicit project
-decisions. Expected values are documented in the test files and related docs,
-but they are not to be copied blindly into the code without understanding why
-the rules lead there.
+The main source-derived reference cases live in `tests/ships/` and
+`tests/robots/`, not in a separate examples package. These serve as integration
+targets for rule interpretation: as subsystems are implemented, differences
+against reference stat blocks should be explained by rules, omissions, or
+explicit project decisions. Expected values are documented in the test files
+and related docs, but they are not to be copied blindly into the code without
+understanding why the rules lead there.
+
+Keep documentation in English. Use `docs/RULE_INTERPRETATIONS.md` for general
+rule interpretations, `docs/TEST_CASE_ASSEMBLIES.md` for test-case mapping
+conventions, and topic or `plan-*.md` files in `docs/` for implementation
+plans.
 
 ## Commands
 

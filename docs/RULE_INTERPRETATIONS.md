@@ -181,7 +181,7 @@ edition we target.
 
 **Where a source ship uses such items**, document the exclusion or substitution
 in the relevant TCS entry and omit or remap accordingly. For ship-specific
-mappings, see `TEST_CASE_SHIPS.md`.
+mappings, see `TEST_CASE_ASSEMBLIES.md`.
 
 ### RIS-009 Broad Skills From The Traveller Companion Are Treated As Distinct Skills
 
@@ -369,6 +369,20 @@ The *Basic Lab Control Robot* source stat block (Cr12000) omits both the Electro
 
 ### RIR-002 Robot Costs Reported Without Editorial Rounding
 
-The Robot Handbook presents final robot costs that are sometimes rounded to one or two significant figures (e.g. Cr500 for a Domestic Servant whose components sum to Cr420). Ceres reports the exact calculated cost from all rule components and does not apply editorial rounding.
+The Robot Handbook presents final robot costs that are sometimes rounded to one or two significant figures. Ceres reports the exact calculated cost from all rule components and does not apply editorial rounding.
 
 Where a source stat block differs from the Ceres-computed total, the source value is recorded in the test file's `_expected` SimpleNamespace and the Ceres value is set as an override immediately after, with a comment documenting the discrepancy.
+
+Known discrepancies following this pattern are recorded in the relevant test files. The Basic Lab Control Robot discrepancy is additionally explained in RIR-003. The cause of other discrepancies has not been traced to a specific rule or omission and is left as an open question in the test file comment.
+
+### RIR-005 All Slot Calculations Use Ceiling Rounding
+
+The Robot Handbook states "round up" for every fractional slot result. Ceres applies `math.ceil` in all slot derivations:
+
+- available slots from None locomotion (+25% of base slots)
+- slots freed by removing a manipulator (10% of base slots per manipulator, minimum 1)
+- additional manipulator slot requirement (percentage of base slots, minimum 1)
+- vehicle speed modification slot requirement (25% of base slots)
+- external power slot requirement (5% of base slots)
+
+No slot calculation ever uses floor division or banker's rounding.

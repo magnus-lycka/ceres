@@ -1,13 +1,14 @@
 # ceres
 
-**Ceres** builds Mongoose Traveller 2nd Edition things in Python, such as
-starships (using the
-[High Guard 2022](https://www.mongoosepublishing.com/products/high-guard-update-2022)
-rules). A ship is an ordinary Python object: instantiate `Ship`, pass it part
-objects and parameters, and get back a validated design.
+**Ceres** builds Mongoose Traveller 2nd Edition assemblies in Python: starships,
+robots, and reusable gear/catalogue items. A design is an ordinary Python
+object: instantiate the relevant model, pass it part objects and parameters,
+and get back a validated design.
 
 A likely use for this is to hand it to an AI and build rules-compliant
-Traveller ships for conversation, tooling, or export.
+Traveller designs for conversation, tooling, or export.
+
+## Starship example
 
 ```python
 from ceres.make.ship import armour, hull, ship
@@ -35,17 +36,22 @@ scout = ship.Ship(
         airlocks=[Airlock()],
     ),
     drives=DriveSection(m_drive=MDrive2(), j_drive=JDrive2()),
-    power=PowerSection(fusion_plant=FusionPlantTL12(output=60)),
+    power=PowerSection(plant=FusionPlantTL12(output=60)),
     fuel=FuelSection(
         jump_fuel=JumpFuel(parsecs=2),
         operation_fuel=OperationFuel(weeks=12),
         fuel_processor=FuelProcessor(tons=2),
     ),
     command=CommandSection(bridge=Bridge()),
-    computer=ComputerSection(hardware=Computer5(bis=True), software=[JumpControl(rating=2)]),
+    computer=ComputerSection(
+        hardware=Computer5(bis=True),
+        software=[JumpControl(rating=2)],
+    ),
     sensors=SensorsSection(primary=MilitarySensors()),
     weapons=WeaponsSection(turrets=[DoubleTurret()]),
-    craft=CraftSection(internal_housing=[InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft'))]),
+    craft=CraftSection(
+        internal_housing=[InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft'))],
+    ),
     habitation=HabitationSection(staterooms=[Stateroom()] * 4),
     systems=SystemsSection(internal_systems=[Workshop()], drones=[ProbeDrones(count=10)]),
 )
@@ -58,26 +64,58 @@ print(html[:120])
 print(scout.model_dump_json(indent=2)[:240])
 ```
 
+## Robot example
+
+```python
+from ceres.make.robot import PrimitiveBrain, Robot, RobotSize, WheelsLocomotion
+from ceres.make.robot.options import DomesticCleaningEquipment, ReconSensor
+from ceres.report import render_robot_typst
+
+servant = Robot(
+    name='Domestic Servant',
+    tl=8,
+    size=RobotSize.SIZE_3,
+    locomotion=WheelsLocomotion(speed_reduction=1),
+    brain=PrimitiveBrain(function='clean'),
+    manipulators=[],
+    options=[
+        DomesticCleaningEquipment(size='small'),
+        ReconSensor(quality='improved'),
+    ],
+)
+
+spec = servant.build_spec()
+typst = render_robot_typst(servant)
+
+print(servant.skills_display)
+print(typst[:120])
+print(servant.model_dump_json(indent=2)[:240])
+```
+
 ## What you get
 
-- **Structured spec** — `ship.build_spec()` produces a `ShipSpec` with sectioned
-  rows, crew, passengers, expenses, and notes.
-- **Renderers** — Ceres can render ships to HTML, Typst, and PDF from the same
-  `ShipSpec`/`Ship` data.
+- **Structured specs** — designs build sectioned specs with rows, costs, tons,
+  power, notes, and domain-specific details such as crew or traits.
+- **Renderers** — Ceres can render ships, robots, and gear catalogues from the
+  same structured data.
 - **Legality checks** — errors and warnings are embedded as notes on the parts
-  that triggered them (negative cargo, missing airlock, TL mismatches, jump
-  control/drive mismatches, undersized common area, etc.).
-- **Serialization** — the full ship serializes to/from JSON via Pydantic.
+  that triggered them.
+- **Reusable gear** — catalogue equipment such as computers and communications
+  gear can be rendered on its own and reused by assembly builders.
+- **Serialization** — full designs serialize to/from JSON via Pydantic.
   Derived values (cost, tons, power) are recalculated on load so the JSON is
   always a snapshot of the current model, not an authoritative source.
 
-## AI-assisted ship design
+## AI-assisted design
 
-Because ship construction follows explicit rules from the High Guard rulebook,
-an AI assistant with access to those rules can generate correct `Ship`
-definitions from a plain-text description and produce a fully costed,
-rule-checked stat sheet without manual calculation. The `refs/` directory
-holds your copies of the relevant PDFs for this purpose.
+Because Ceres models follow explicit Traveller rules, an AI assistant with
+access to those rules can generate Python definitions from a plain-text
+description and produce a fully costed, rule-checked stat sheet without manual
+calculation.
+
+The `refs/` directory is intentionally gitignored and is expected to exist in a
+working copy. Use it for local source material converted to markdown, text,
+screenshots, or PDF excerpts. Do not commit copyrighted source material.
 
 ## Development
 

@@ -374,7 +374,7 @@ Keep this section focused on high-level policy and only repeat details here
 when they are needed to understand the architecture.
 
 Source-to-test-case normalization rules for external ship designs should be
-recorded separately in [TEST_CASE_SHIPS.md](/Users/magnuslycka/work/ceres/docs/TEST_CASE_SHIPS.md).
+recorded separately in [TEST_CASE_ASSEMBLIES.md](/Users/magnuslycka/work/ceres/docs/TEST_CASE_ASSEMBLIES.md).
 
 Ceres targets **Mongoose Traveller 2nd Edition (MgT2)**, specifically the
 *Core Rulebook* and *High Guard* (2022 update). Where the two books conflict,

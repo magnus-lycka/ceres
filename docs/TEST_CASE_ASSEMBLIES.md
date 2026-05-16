@@ -92,6 +92,11 @@ module docstring, not in this document.
 
 The following entries apply only to ships.
 
+TCS entries are general conventions for translating ship reference data into
+Ceres test cases. They are not a registry of individual ships. Notes that apply
+only to one reference design, such as source typos, partial modelling scope, or
+why a specific case is skipped, belong in that test file's module docstring.
+
 ### TCS-001 Armoured Bulkhead Normalization
 
 When a source design bundles a protected component together with its armoured

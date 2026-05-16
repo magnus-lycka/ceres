@@ -19,12 +19,15 @@ class _LocomotionBase(CeresModel):
     _locomotion_traits: ClassVar[tuple[Trait, ...]]
     _none_locomotion: ClassVar[bool]
 
-    # refs/robot/08_locomotion_modifications.md — Tactical Speed Reduction
+    # refs/robot/08_locomotion_modifications.md — Tactical Speed Reduction/Enhancement
     speed_reduction: int = Field(default=0, ge=0)
+    speed_increase: int = Field(default=0, ge=0)
 
     def model_post_init(self, __context: Any) -> None:
         if self.speed_reduction > self._base_speed:
             raise ValueError(f'speed_reduction {self.speed_reduction} exceeds base speed {self._base_speed}')
+        if self.speed_increase > 0 and self.speed_reduction > 0:
+            raise ValueError('speed_increase and speed_reduction cannot both be non-zero')
 
     @property
     def required_tl(self) -> int:
@@ -36,7 +39,7 @@ class _LocomotionBase(CeresModel):
 
     @property
     def base_endurance(self) -> float:
-        return self._base_endurance * (1.0 + 0.1 * self.speed_reduction)
+        return self._base_endurance * (1.0 + 0.1 * self.speed_reduction - 0.1 * self.speed_increase)
 
     @property
     def cost_multiplier(self) -> float:
@@ -48,11 +51,11 @@ class _LocomotionBase(CeresModel):
 
     @property
     def effective_speed(self) -> int:
-        return self._base_speed - self.speed_reduction
+        return self._base_speed - self.speed_reduction + self.speed_increase
 
     @property
     def speed_cost_fraction(self) -> float:
-        return -0.1 * self.speed_reduction
+        return 0.1 * self.speed_increase - 0.1 * self.speed_reduction
 
     @property
     def locomotion_traits(self) -> tuple[Trait, ...]:

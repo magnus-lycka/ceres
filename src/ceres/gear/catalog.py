@@ -1,4 +1,4 @@
-"""Computer equipment catalog — builds report context and renders HTML/PDF."""
+"""Gear equipment catalog — builds report context and renders HTML/PDF."""
 
 from pathlib import Path
 from typing import Literal
@@ -6,9 +6,18 @@ from typing import Literal
 from ceres.report.render import render_html, render_pdf, render_typst_source
 from ceres.shared import NoteList
 
+from .comm import (
+    LaserTransceiverEquipment,
+    MesonTransceiverEquipment,
+    RadioTransceiverEquipment,
+    SatelliteUplinkPart,
+    TransceiverEncryptionPart,
+    TransceiverEquipment,
+)
 from .computer import (
     ComputerChip,
     ComputerEquipment,
+    ComputerPart,
     ComputerTerminal,
     InterfaceDevice,
     MainframeComputer,
@@ -23,7 +32,17 @@ from .software import Expert
 
 ReportTheme = Literal['light', 'dark']
 
-__all__ = ['render_computer_catalog_html', 'render_computer_catalog_pdf', 'render_computer_catalog_typst']
+__all__ = [
+    'render_computer_catalog_html',
+    'render_computer_catalog_pdf',
+    'render_computer_catalog_typst',
+    'render_communication_catalog_html',
+    'render_communication_catalog_pdf',
+    'render_communication_catalog_typst',
+    'render_gear_catalog_html',
+    'render_gear_catalog_pdf',
+    'render_gear_catalog_typst',
+]
 
 _TEMPLATES = Path(__file__).parent / 'templates'
 
@@ -58,6 +77,10 @@ def _fmt_cost(cost: float) -> str:
 
 def _fmt_mass(mass: float) -> str:
     return f'{round(mass, 3):g}' if mass > 0 else '—'
+
+
+def _fmt_range(range_km: int) -> str:
+    return f'{range_km:,}km'
 
 
 def _notes_for_display(item) -> list[dict]:
@@ -142,27 +165,165 @@ def _specialised_section() -> dict:
     }
 
 
-def _build_context(*, theme: ReportTheme = 'light', page_size: str = 'a4') -> dict:
+def _transceiver_section(cls: type[TransceiverEquipment], heading: str) -> dict:
+    rows = []
+    specs = sorted(cls._specs, key=lambda key: (key[0], key[1]))
+    for tl, range_km in specs:
+        item = cls(range_km=range_km, tl=tl)
+        computer = next((part.processing for part in item.parts if isinstance(part, ComputerPart)), None)
+        rows.append(
+            {
+                'cells': [
+                    str(tl),
+                    _fmt_range(range_km),
+                    _fmt_mass(item.mass_kg),
+                    _fmt_cost(item.cost),
+                    f'Computer/{computer}' if computer is not None else '—',
+                ],
+                'notes': _notes_for_display(item),
+            }
+        )
+    return {
+        'heading': heading,
+        'headers': ['TL', 'Range', 'Mass (kg)', 'Cost', 'Integral Computer'],
+        'alignments': ['right', 'left', 'right', 'right', 'left'],
+        'rows': rows,
+    }
+
+
+def _radio_transceiver_section() -> dict:
+    return _transceiver_section(RadioTransceiverEquipment, 'Radio Transceiver')
+
+
+def _laser_transceiver_section() -> dict:
+    return _transceiver_section(LaserTransceiverEquipment, 'Laser Transceiver')
+
+
+def _meson_transceiver_section() -> dict:
+    return _transceiver_section(MesonTransceiverEquipment, 'Meson Transceiver')
+
+
+def _transceiver_options_section() -> dict:
+    encryption = TransceiverEncryptionPart()
+    standard_uplink = SatelliteUplinkPart(tl=6, cost=1_000.0, mass_kg=2.0)
+    static_uplink = SatelliteUplinkPart(tl=6, cost=0.0, mass_kg=2.0, static=True)
+    return {
+        'heading': 'Transceiver Options',
+        'headers': ['Option', 'TL', 'Effect/Limitation', 'Mass (kg)', 'Cost'],
+        'alignments': ['left', 'right', 'left', 'right', 'right'],
+        'rows': [
+            {
+                'cells': [
+                    encryption.description,
+                    str(encryption.tl),
+                    'TL specific',
+                    '—',
+                    f'+{_fmt_cost(encryption.cost)}',
+                ],
+                'notes': [],
+            },
+            {
+                'cells': [
+                    standard_uplink.description,
+                    str(standard_uplink.tl),
+                    'x100 range, radio only, minimum 500km transceiver range',
+                    '+100% or 2',
+                    '+50% or Cr1,000',
+                ],
+                'notes': [],
+            },
+            {
+                'cells': [
+                    static_uplink.description,
+                    str(static_uplink.tl),
+                    'x100 range to fixed geostationary targets or satellite constellations',
+                    '+100% or 2',
+                    '+50%',
+                ],
+                'notes': [],
+            },
+        ],
+    }
+
+
+def _communication_sections() -> list[dict]:
+    return [
+        _laser_transceiver_section(),
+        _radio_transceiver_section(),
+        _meson_transceiver_section(),
+        _transceiver_options_section(),
+    ]
+
+
+def _computer_sections() -> list[dict]:
     sections = [_standard_section(cls) for cls in _COMPUTER_TYPES]
     sections.extend(_retro_section(cls) for cls in _COMPUTER_TYPES if cls._allow_retro)
     sections.extend(_proto_section(cls) for cls in _COMPUTER_TYPES if cls._allow_proto)
     sections.append(_specialised_section())
+    return sections
+
+
+def _build_computer_context(*, theme: ReportTheme = 'light', page_size: str = 'a4') -> dict:
     return {
         'title': 'Computer Equipment',
         'eyebrow': 'Central Supply Catalogue',
         'theme': theme,
         'page_size': page_size,
-        'sections': sections,
+        'sections': _computer_sections(),
+    }
+
+
+def _build_gear_context(*, theme: ReportTheme = 'light', page_size: str = 'a4') -> dict:
+    return {
+        'title': 'Gear Equipment',
+        'eyebrow': 'Central Supply Catalogue',
+        'theme': theme,
+        'page_size': page_size,
+        'sections': [*_computer_sections(), *_communication_sections()],
+    }
+
+
+def _build_communication_context(*, theme: ReportTheme = 'light', page_size: str = 'a4') -> dict:
+    return {
+        'title': 'Communication Equipment',
+        'eyebrow': 'Central Supply Catalogue',
+        'theme': theme,
+        'page_size': page_size,
+        'sections': _communication_sections(),
     }
 
 
 def render_computer_catalog_html(*, theme: ReportTheme = 'light') -> str:
-    return render_html(_TEMPLATES / 'computer_catalog.html.j2', _build_context(theme=theme))
+    return render_html(_TEMPLATES / 'computer_catalog.html.j2', _build_computer_context(theme=theme))
 
 
 def render_computer_catalog_typst(*, page_size: str = 'a4') -> str:
-    return render_typst_source(_TEMPLATES / 'computer_catalog.typ', _build_context(page_size=page_size))
+    return render_typst_source(_TEMPLATES / 'computer_catalog.typ', _build_computer_context(page_size=page_size))
 
 
 def render_computer_catalog_pdf(*, page_size: str = 'a4') -> bytes:
-    return render_pdf(_TEMPLATES / 'computer_catalog.typ', _build_context(page_size=page_size))
+    return render_pdf(_TEMPLATES / 'computer_catalog.typ', _build_computer_context(page_size=page_size))
+
+
+def render_communication_catalog_html(*, theme: ReportTheme = 'light') -> str:
+    return render_html(_TEMPLATES / 'computer_catalog.html.j2', _build_communication_context(theme=theme))
+
+
+def render_communication_catalog_typst(*, page_size: str = 'a4') -> str:
+    return render_typst_source(_TEMPLATES / 'computer_catalog.typ', _build_communication_context(page_size=page_size))
+
+
+def render_communication_catalog_pdf(*, page_size: str = 'a4') -> bytes:
+    return render_pdf(_TEMPLATES / 'computer_catalog.typ', _build_communication_context(page_size=page_size))
+
+
+def render_gear_catalog_html(*, theme: ReportTheme = 'light') -> str:
+    return render_html(_TEMPLATES / 'computer_catalog.html.j2', _build_gear_context(theme=theme))
+
+
+def render_gear_catalog_typst(*, page_size: str = 'a4') -> str:
+    return render_typst_source(_TEMPLATES / 'computer_catalog.typ', _build_gear_context(page_size=page_size))
+
+
+def render_gear_catalog_pdf(*, page_size: str = 'a4') -> bytes:
+    return render_pdf(_TEMPLATES / 'computer_catalog.typ', _build_gear_context(page_size=page_size))
