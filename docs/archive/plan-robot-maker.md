@@ -1,7 +1,7 @@
 # Decision record: `ceres.make.robot`
 
-> Ursprunglig plan genomförd. Filen arkiverades 2026-05-16.
-> Öppna utvidgningar lever i egna plandokument, se nedan.
+> Original plan completed. Archived 2026-05-16.
+> Open extensions live in their own plan documents, see below.
 
 ## Vad som byggdes
 

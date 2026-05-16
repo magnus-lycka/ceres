@@ -1,5 +1,7 @@
 # Plan: Complete Manipulator Rules
 
+> All four phases completed. Archived 2026-05-17.
+
 **Source**: `refs/robot/09_manipulators.md` (Robot Handbook pp. 25–28)
 
 ## Goal

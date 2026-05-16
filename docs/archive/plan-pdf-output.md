@@ -1,8 +1,7 @@
 # Decision record: report rendering architecture
 
-> This file records the key decisions made when building the report engine.
-> The current design is described in full in [ARCHITECTURE.md](ARCHITECTURE.md)
-> under "Reporting and rendering".
+> Completed and archived 2026-05-10. The current design is described in full in
+> [ARCHITECTURE.md](ARCHITECTURE.md) under "Reporting and rendering".
 
 ## What was built
 

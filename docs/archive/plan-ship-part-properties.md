@@ -1,5 +1,7 @@
 # Plan: More Functional Ship Parts
 
+> Completed and archived 2026-05-10.
+
 ## Status
 
 Numeric ship-part properties are complete:
