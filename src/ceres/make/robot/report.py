@@ -79,7 +79,8 @@ def _build_context(spec: RobotSpec, *, page_size: str = 'a4') -> dict:
             {
                 'title': sec.title,
                 'col2_header': sec.col2_header,
-                'rows': [{'name': r.name, 'col2': r.col2, 'cost': r.cost} for r in sec.rows],
+                'col3_header': sec.col3_header,
+                'rows': [{'name': r.name, 'col2': r.col2, 'col3': r.col3, 'cost': r.cost} for r in sec.rows],
             }
             for sec in spec.detail_sections
         ],

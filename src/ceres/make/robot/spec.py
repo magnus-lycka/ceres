@@ -28,6 +28,7 @@ class RobotSpecRow:
 class RobotDetailRow:
     name: str
     col2: str = '—'
+    col3: str = '—'
     cost: str = '—'
 
 
@@ -35,6 +36,7 @@ class RobotDetailRow:
 class RobotDetailSection:
     title: str
     col2_header: str = 'Slots'
+    col3_header: str = 'Bandwidth'
     rows: list[RobotDetailRow] = field(default_factory=list)
 
 

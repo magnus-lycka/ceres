@@ -12,6 +12,7 @@ from .chassis import (
     base_available_slots,
     base_endurance_multiplier,
     chassis_entry,
+    size_label,
     size_trait,
 )
 from .locomotion import LocomotionUnion
@@ -187,15 +188,9 @@ class Robot(RobotBase):
         rem_slots = self.remaining_slots
         if rem_slots < 0:
             notes.append(_Note.error(f'Slot overload: {self.used_slots} used, {self.available_slots} available'))
-        elif rem_slots > 0:
-            s = 's' if rem_slots != 1 else ''
-            notes.append(_Note.info(f'{rem_slots} slot{s} remaining'))
         rem_bw = self.brain.remaining_bandwidth
-        if rem_bw is not None:
-            if rem_bw < 0:
-                notes.append(_Note.error(f'Bandwidth overload: {-rem_bw} over capacity'))
-            elif rem_bw > 0:
-                notes.append(_Note.info(f'{rem_bw} bandwidth remaining'))
+        if rem_bw is not None and rem_bw < 0:
+            notes.append(_Note.error(f'Bandwidth overload: {-rem_bw} over capacity'))
         basic = chassis_entry(self.size).basic_cost
         if self._raw_cost < basic:
             notes.append(_Note.info(f'Cost raised to Basic Cost minimum ({format_credits(basic)})'))
@@ -206,14 +201,34 @@ class Robot(RobotBase):
         from .spec import RobotDetailRow, RobotDetailSection
 
         sections = []
+        entry = chassis_entry(self.size)
+        base_slots = entry.base_slots
 
+        # ── Chassis ───────────────────────────────────────────────────────
         cs = RobotDetailSection(title='Chassis')
         cs.rows.append(
             RobotDetailRow(
-                name=f'{self.locomotion.label()} chassis',
-                cost=format_credits(self.base_chassis_cost),
+                name=f'Size {size_label(self.size)}',
+                col2=f'+{base_slots}',
+                cost=format_credits(entry.basic_cost),
             )
         )
+        if self.locomotion.is_none_locomotion:
+            none_bonus = ceil(base_slots * 1.25) - base_slots
+            cs.rows.append(
+                RobotDetailRow(
+                    name='No Locomotion',
+                    col2=f'+{none_bonus}' if none_bonus else '—',
+                )
+            )
+        else:
+            loco_extra = entry.basic_cost * (self.locomotion.cost_multiplier - 1)
+            cs.rows.append(
+                RobotDetailRow(
+                    name=f'{self.locomotion.label()} chassis',
+                    cost=format_credits(loco_extra) if loco_extra > 0 else '—',
+                )
+            )
         speed_cost = self.base_chassis_cost * self.locomotion.speed_cost_fraction
         if speed_cost > 0:
             cs.rows.append(RobotDetailRow(name='Speed modification', cost=format_credits(speed_cost)))
@@ -222,39 +237,71 @@ class Robot(RobotBase):
                 cs.rows.append(
                     RobotDetailRow(
                         name='Vehicle Speed Modification',
-                        col2=str(opt.slots),
+                        col2=f'−{opt.slots}',
                         cost=format_credits(opt.cost),
                     )
                 )
         removed = max(0, 2 - len(self.manipulators))
         if removed:
+            manip_slot_bonus = max(1, ceil(0.1 * base_slots)) * removed
             discount = 100.0 * int(self.size) * removed
-            cs.rows.append(RobotDetailRow(name=f'Removed manipulator ×{removed}', cost=f'−{format_credits(discount)}'))
+            cs.rows.append(
+                RobotDetailRow(
+                    name=f'Removed manipulator ×{removed}',
+                    col2=f'+{manip_slot_bonus}',
+                    cost=f'−{format_credits(discount)}',
+                )
+            )
         sections.append(cs)
 
+        # ── Brain ─────────────────────────────────────────────────────────
         bs = RobotDetailSection(title='Brain')
-        slots = self.brain.brain_slots(self.tl, int(self.size))
-        bs.rows.append(
-            RobotDetailRow(
-                name=self.brain.programming_label(),
-                col2=str(slots) if slots else '—',
-                cost=format_credits(self.brain.hardware_cost),
+        total_brain_slots = self.brain.brain_slots(self.tl, int(self.size))
+        brain_label = self.brain.programming_label()
+        if isinstance(self.brain, (AdvancedBrain, VeryAdvancedBrain)):
+            if self.brain._bw_upgrade_delta > 0:
+                brain_label = brain_label[:-1] + f', Bandwidth {self.brain.bandwidth})'
+            brain_base_cost = self.brain._entry().cost + self.brain._bw_upgrade_cost
+            bs.rows.append(
+                RobotDetailRow(
+                    name=brain_label,
+                    col2=f'−{total_brain_slots}' if total_brain_slots else '—',
+                    col3=f'+{self.brain.bandwidth}',
+                    cost=format_credits(brain_base_cost),
+                )
             )
-        )
+            if self.brain.int_upgrade > 0:
+                bs.rows.append(
+                    RobotDetailRow(
+                        name=f'INT +{self.brain.int_upgrade}',
+                        col3=f'−{self.brain._int_upgrade_bw}',
+                        cost=format_credits(self.brain._int_upgrade_cost),
+                    )
+                )
+        else:
+            bs.rows.append(
+                RobotDetailRow(
+                    name=brain_label,
+                    col2=f'−{total_brain_slots}' if total_brain_slots else '—',
+                    cost=format_credits(self.brain.hardware_cost),
+                )
+            )
         sections.append(bs)
 
+        # ── Installed Skills ──────────────────────────────────────────────
         if isinstance(self.brain, (AdvancedBrain, VeryAdvancedBrain)) and self.brain.installed_skills:
-            ss = RobotDetailSection(title='Skills', col2_header='Bandwidth')
+            ss = RobotDetailSection(title='Skills')
             for pkg in self.brain.installed_skills:
                 ss.rows.append(
                     RobotDetailRow(
                         name=f'{pkg.name} {pkg.level}',
-                        col2=str(pkg.bandwidth),
+                        col3=f'−{pkg.bandwidth}',
                         cost=format_credits(pkg.cost),
                     )
                 )
             sections.append(ss)
 
+        # ── Manipulators ──────────────────────────────────────────────────
         additional_manips = [o for o in self.options if isinstance(o, AdditionalManipulator)]
         if self.manipulators or additional_manips:
             ms = RobotDetailSection(title='Manipulators')
@@ -264,12 +311,13 @@ class Robot(RobotBase):
                 ms.rows.append(
                     RobotDetailRow(
                         name=am.description,
-                        col2=str(am.slots),
+                        col2=f'−{am.slots}',
                         cost=format_credits(am.cost),
                     )
                 )
             sections.append(ms)
 
+        # ── Options ───────────────────────────────────────────────────────
         opts = [o for o in self.options if isinstance(o, RobotPartMixin) and o.notes.item_message]
         if opts:
             os_ = RobotDetailSection(title='Options')
@@ -277,12 +325,13 @@ class Robot(RobotBase):
                 os_.rows.append(
                     RobotDetailRow(
                         name=o.notes.item_message,
-                        col2=str(o.slots) if o.slots > 0 else '—',
+                        col2=f'−{o.slots}' if o.slots > 0 else '—',
                         cost=format_credits(o.cost) if o.cost > 0 else '—',
                     )
                 )
             sections.append(os_)
 
+        # ── Default Suite ─────────────────────────────────────────────────
         if self.default_suite:
             ds = RobotDetailSection(title='Default Suite')
             for item in sorted(self.default_suite):
@@ -295,15 +344,24 @@ class Robot(RobotBase):
                 )
             sections.append(ds)
 
-        fin = RobotDetailSection(title='Finalisation', col2_header='Remaining')
-        fin.rows.append(RobotDetailRow(name='Slots', col2=str(self.remaining_slots), cost='—'))
+        # ── Finalisation ──────────────────────────────────────────────────
+        fin = RobotDetailSection(title='Finalisation')
         rem_bw = self.brain.remaining_bandwidth
-        if rem_bw is not None:
-            fin.rows.append(RobotDetailRow(name='Bandwidth', col2=str(rem_bw), cost='—'))
-        basic = chassis_entry(self.size).basic_cost
-        if self._raw_cost < basic:
-            fin.rows.append(RobotDetailRow(name='Cost raised to Basic Cost', col2='—', cost=format_credits(basic)))
-        fin.rows.append(RobotDetailRow(name='Total', col2='—', cost=format_credits(self.total_cost)))
+        fin.rows.append(
+            RobotDetailRow(
+                name='Remaining',
+                col2=str(self.remaining_slots),
+                col3=str(rem_bw) if rem_bw is not None else '—',
+            )
+        )
+        if self._raw_cost < entry.basic_cost:
+            fin.rows.append(
+                RobotDetailRow(
+                    name='Cost raised to Basic Cost',
+                    cost=format_credits(entry.basic_cost),
+                )
+            )
+        fin.rows.append(RobotDetailRow(name='Total', cost=format_credits(self.total_cost)))
         sections.append(fin)
 
         return sections

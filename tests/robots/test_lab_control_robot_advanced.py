@@ -27,8 +27,8 @@ _expected = SimpleNamespace(
     attacks='—',
     manipulators='—',
     available_slots=7,
-    used_slots=5,
-    remaining_slots=2,
+    used_slots=6,
+    remaining_slots=1,
 )
 # source: Cr160,000; Ceres computes Cr187,700 (BW upgrade Cr5,000 included).
 # 15% discount in source untraced. See RIR-002.

@@ -82,7 +82,7 @@
   if secs.len() > 0 {
     v(3mm)
     table(
-      columns: (1fr, auto, auto),
+      columns: (1fr, auto, auto, auto),
       inset: (x: 6pt, y: 4pt),
       ..{
         let cells = ()
@@ -90,12 +90,14 @@
           cells = cells + (
             table.cell(fill: label-bg)[*#sec.title*],
             table.cell(fill: label-bg, align: center)[*#sec.col2_header*],
+            table.cell(fill: label-bg, align: center)[*#sec.col3_header*],
             table.cell(fill: label-bg, align: right)[*Cost*],
           )
           for row in sec.rows {
             cells = cells + (
               [#row.name],
               table.cell(align: center)[#row.col2],
+              table.cell(align: center)[#row.col3],
               table.cell(align: right)[#row.cost],
             )
           }

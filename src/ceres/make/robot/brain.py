@@ -285,7 +285,8 @@ class AdvancedBrain(_BrainBase):
 
     def brain_slots(self, robot_tl: int, robot_size: int) -> int:
         min_free = max(0, self._entry().computer_x - (robot_tl - self.brain_tl))
-        return 1 if robot_size < min_free else 0
+        base = 1 if robot_size < min_free else 0
+        return base + (1 if self._bw_upgrade_delta > 0 else 0)
 
     def programming_label(self) -> str:
         return f'Advanced (INT {self.base_int})'
@@ -389,7 +390,8 @@ class VeryAdvancedBrain(_BrainBase):
 
     def brain_slots(self, robot_tl: int, robot_size: int) -> int:
         min_free = max(0, self._entry().computer_x - (robot_tl - self.brain_tl))
-        return 1 if robot_size < min_free else 0
+        base = 1 if robot_size < min_free else 0
+        return base + (1 if self._bw_upgrade_delta > 0 else 0)
 
     def programming_label(self) -> str:
         return f'Very Advanced (INT {self.base_int})'

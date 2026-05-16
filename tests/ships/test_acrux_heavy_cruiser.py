@@ -4,16 +4,69 @@ The source image header says `Acrux Heavy Cruiser`, while the class ribbon says
 `Class: Heavy Scout`. The latter is retained here as a source value but treated
 as a likely layout/copy error until a text source confirms otherwise.
 
-This is a future capstone validation case rather than a buildable Ceres ship
-today. It exercises several systems that are not fully modelled yet, including
-spinal particle accelerators, command bridges at capital-ship scale, large
-weapon bay groups with size reduction, point defence batteries, repair drones,
-UNREP systems, and large craft berthing.
+This is a capstone validation case that is intentionally being made buildable
+one subsystem at a time. It exercises several systems that are not fully
+modelled yet, including spinal particle accelerators, command bridges at
+capital-ship scale, barracks, UNREP systems, and large craft berthing.
 """
 
 from types import SimpleNamespace
 
 import pytest
+
+from ceres.make.ship import armour, hull, ship
+from ceres.make.ship.bridge import Bridge, CommandSection
+from ceres.make.ship.computer import ComputerSection, Core50, Core60
+from ceres.make.ship.crafts import CraftSection, EmptyOccupant, FullHangar, InternalDockingSpace
+from ceres.make.ship.drives import DriveSection, FusionPlantTL8, JDrive2, MDrive5, PowerSection
+from ceres.make.ship.habitation import HabitationSection, HighStateroom, LowBerth, Stateroom
+from ceres.make.ship.parts import HighTechnology, SizeReduction, VeryAdvanced
+from ceres.make.ship.sensors import ExtendedArrays, MilitarySensors, SensorsSection
+from ceres.make.ship.software import (
+    AdvancedFireControl,
+    AntiHijack,
+    AutoRepair,
+    BattleSystem,
+    ElectronicWarfare,
+    Evade,
+    LaunchSolution,
+    VirtualCrew,
+)
+from ceres.make.ship.spec import SpecSection
+from ceres.make.ship.storage import (
+    CargoCrane,
+    CargoHold,
+    CargoSection,
+    FuelProcessor,
+    FuelSection,
+    JumpFuel,
+    OperationFuel,
+)
+from ceres.make.ship.systems import (
+    Armoury,
+    BriefingRoom,
+    CommonArea,
+    MedicalBay,
+    RepairDrones,
+    SystemsSection,
+    TrainingFacility,
+    Workshop,
+)
+from ceres.make.ship.weapons import (
+    BeamLaser,
+    LargeMissileBay,
+    LargeTorpedoBay,
+    LaserPointDefenseBattery1,
+    LongRange,
+    MissileStorage,
+    ParticleBarbette,
+    PlasmaBarbette,
+    PulseLaser,
+    Sandcaster,
+    SandcasterCanisterStorage,
+    TripleTurret,
+    WeaponsSection,
+)
 
 _expected = SimpleNamespace(
     source='Spinward Extents',
@@ -124,17 +177,132 @@ _expected = SimpleNamespace(
 
 # Not yet implemented in Ceres.
 _expected.unimplemented_reasons = (
-    'capital-scale Spinward Extents source snapshot only',
     'particle accelerator spinal mount',
-    'weapon bay size reduction groups',
-    'point defence batteries',
-    'large craft docking and full hangar bundle',
-    'large crew/stateroom command model',
+    'medium particle beam bays are TL12 in current Ceres/HG rules while the source ship is TL11',
+    'command bridge source row is not the same part as the Ceres CommandBridge system',
+    'barracks and UNREP systems are not modelled yet',
+    'multiple brig rows are not modelled yet',
 )
+_expected.expected_spec_warnings = [
+    'No Jump Control software',
+    'Recommended common area is 350.50 tons',
+    'Cargo is below recommended 100-day stores capacity of 500 tons',
+]
+
+
+def _source_row(section: str, item: str):
+    return next(row for row in _expected.rows if row.section == section and row.item == item)
+
+
+def _ship_row(spec, section: str, item: str):
+    section_map = {
+        'Armour': SpecSection.HULL,
+        'M-Drive': SpecSection.PROPULSION,
+        'J-Drive': SpecSection.JUMP,
+        'Fuel Tanks': SpecSection.FUEL,
+        'Bridge': SpecSection.COMMAND,
+    }
+    return spec.row(item, section=section_map.get(section, section))
+
+
+def _size_reduction(steps: int):
+    if steps == 2:
+        return VeryAdvanced(modifications=[SizeReduction, SizeReduction])
+    if steps == 3:
+        return HighTechnology(modifications=[SizeReduction, SizeReduction, SizeReduction])
+    raise ValueError(f'Acrux only uses size reduction x2/x3, got x{steps}')
 
 
 def build_acrux_heavy_cruiser():
-    pytest.skip('Acrux-class Heavy Cruiser is a Spinward Extents source snapshot; Ceres build pending.')
+    pulse_long_range = VeryAdvanced(modifications=[LongRange])
+    close_reinforced = hull.close_structure.model_copy(update={'reinforced': True})
+    fusion_plant = FusionPlantTL8(output=52_500, customisation=_size_reduction(3))
+
+    return ship.Ship(
+        ship_class=_expected.ship_class,
+        ship_type=_expected.ship_type,
+        military=True,
+        tl=_expected.tl,
+        displacement=_expected.displacement,
+        design_type=ship.ShipDesignType.CUSTOM,
+        hull=hull.Hull(
+            configuration=close_reinforced,
+            armour=armour.CrystalironArmour(protection=11),
+            radiation_shielding=True,
+        ),
+        drives=DriveSection(m_drive=MDrive5(), j_drive=JDrive2()),
+        power=PowerSection(plant=fusion_plant),
+        fuel=FuelSection(
+            jump_fuel=JumpFuel(parsecs=2),
+            operation_fuel=OperationFuel(weeks=8),
+            fuel_processor=FuelProcessor(tons=250),
+        ),
+        command=CommandSection(bridge=Bridge(holographic=True)),
+        computer=ComputerSection(
+            hardware=Core60(),
+            backup_hardware=Core50(),
+            software=[
+                AutoRepair(rating=1),
+                Evade(rating=2),
+                AdvancedFireControl(rating=1),
+                AntiHijack(rating=1),
+                BattleSystem(rating=1),
+                ElectronicWarfare(rating=1),
+                LaunchSolution(rating=2),
+                VirtualCrew(rating=0),
+            ],
+        ),
+        sensors=SensorsSection(primary=MilitarySensors(), extended_arrays=ExtendedArrays()),
+        weapons=WeaponsSection(
+            bays=[
+                *[LargeMissileBay(customisation=_size_reduction(3)) for _ in range(5)],
+                *[LargeTorpedoBay(customisation=_size_reduction(2)) for _ in range(5)],
+            ],
+            barbettes=[
+                *[ParticleBarbette() for _ in range(50)],
+                *[PlasmaBarbette() for _ in range(40)],
+            ],
+            turrets=[
+                *[
+                    TripleTurret(
+                        weapons=[
+                            PulseLaser(customisation=pulse_long_range),
+                            PulseLaser(customisation=pulse_long_range),
+                            PulseLaser(customisation=pulse_long_range),
+                        ]
+                    )
+                    for _ in range(120)
+                ],
+                *[TripleTurret(weapons=[BeamLaser(), BeamLaser(), BeamLaser()]) for _ in range(90)],
+                *[TripleTurret(weapons=[Sandcaster(), Sandcaster(), Sandcaster()]) for _ in range(60)],
+            ],
+            point_defense_batteries=[LaserPointDefenseBattery1() for _ in range(10)],
+            missile_storage=MissileStorage(count=28_800),
+            sandcaster_canister_storage=SandcasterCanisterStorage(count=4_800),
+        ),
+        craft=CraftSection(
+            internal_housing=[
+                InternalDockingSpace(craft=EmptyOccupant(docking_space=1080)),
+                FullHangar(craft=EmptyOccupant(docking_space=360)),
+            ]
+        ),
+        habitation=HabitationSection(
+            staterooms=[*[Stateroom() for _ in range(337)], *[HighStateroom() for _ in range(9)]],
+            low_berths=[LowBerth() for _ in range(20)],
+            common_area=CommonArea(tons=346),
+        ),
+        systems=SystemsSection(
+            internal_systems=[
+                *[Armoury() for _ in range(50)],
+                *[BriefingRoom() for _ in range(4)],
+                *[MedicalBay() for _ in range(6)],
+                TrainingFacility(trainees=50),
+                *[Workshop() for _ in range(17)],
+            ],
+            drones=[RepairDrones()],
+        ),
+        cargo=CargoSection(cargo_holds=[CargoHold(tons=428.5, crane=CargoCrane())]),
+    )
 
 
 def test_acrux_heavy_cruiser_source_snapshot():
@@ -147,3 +315,104 @@ def test_acrux_heavy_cruiser_source_snapshot():
     assert _expected.hull_points == 30_250
     assert _expected.expected_errors == []
     assert _expected.expected_warnings == []
+
+
+def test_acrux_heavy_cruiser_builds_with_current_supported_parts():
+    acrux = build_acrux_heavy_cruiser()
+
+    assert acrux.ship_class == _expected.ship_class
+    assert acrux.ship_type == _expected.ship_type
+    assert acrux.tl == _expected.tl
+    assert acrux.displacement == _expected.displacement
+
+
+def test_acrux_heavy_cruiser_has_no_unexpected_ship_notes():
+    acrux = build_acrux_heavy_cruiser()
+
+    assert acrux.notes.errors == _expected.expected_errors
+    assert acrux.notes.warnings == _expected.expected_warnings
+
+
+def test_acrux_heavy_cruiser_has_no_unexpected_spec_warnings():
+    spec = build_acrux_heavy_cruiser().build_spec()
+
+    errors = [note.message for row in spec.rows for note in row.notes if note.category == 'error']
+    warnings = [note.message for row in spec.rows for note in row.notes if note.category == 'warning']
+
+    assert errors == _expected.expected_errors
+    assert warnings == _expected.expected_spec_warnings
+
+
+def test_acrux_heavy_cruiser_supported_spec_rows_match_source():
+    spec = build_acrux_heavy_cruiser().build_spec()
+
+    for section, item in [
+        ('Armour', 'Crystaliron, Armour: 11'),
+        ('M-Drive', 'M-Drive 5'),
+        ('J-Drive', 'Jump 2'),
+        ('Fuel Tanks', 'J-2, 8 weeks of operation'),
+        ('Fuel Tanks', 'Fuel Processor (5000 tons/day)'),
+        ('Bridge', 'Holographic Controls'),
+        ('Computer', 'Core/60'),
+        ('Computer', 'Backup Core/50'),
+        ('Systems', 'Repair Drones'),
+        ('Systems', 'Armoury'),
+        ('Systems', 'Briefing Room'),
+        ('Systems', 'Medical Bay'),
+        ('Systems', 'Training Facility: 50-person capacity'),
+        ('Systems', 'Workshop'),
+        ('Craft', 'Docking Space (1080 tons)'),
+        ('Craft', 'Full Hangar (360 tons)'),
+        ('Habitation', 'Common Area'),
+        ('Cargo', 'Cargo Hold'),
+        ('Cargo', 'Cargo Crane'),
+    ]:
+        assert _ship_row(spec, section, item).item == item
+
+
+def test_acrux_heavy_cruiser_key_source_values_that_match_current_ceres():
+    spec = build_acrux_heavy_cruiser().build_spec()
+
+    source_m_drive = _source_row('M-Drive', 'Thrust 5')
+    m_drive_row = _ship_row(spec, 'M-Drive', 'M-Drive 5')
+    assert m_drive_row.tons == pytest.approx(source_m_drive.tons)
+    assert m_drive_row.cost == pytest.approx(source_m_drive.cost_mcr * 1_000_000)
+
+    source_j_drive = _source_row('J-Drive', 'Jump 2')
+    j_drive_row = _ship_row(spec, 'J-Drive', 'Jump 2')
+    assert j_drive_row.tons == pytest.approx(source_j_drive.tons)
+    assert j_drive_row.cost == pytest.approx(source_j_drive.cost_mcr * 1_000_000)
+
+    source_bridge = _source_row('Bridge', 'Holographic Controls')
+    bridge_row = _ship_row(spec, 'Bridge', 'Holographic Controls')
+    assert bridge_row.tons == pytest.approx(source_bridge.tons)
+    assert bridge_row.cost == pytest.approx(source_bridge.cost_mcr * 1_000_000)
+
+    source_fuel_processor = _source_row('Systems', 'Fuel Processor (5,000 tons/day)')
+    fuel_processor_row = _ship_row(spec, 'Fuel Tanks', 'Fuel Processor (5000 tons/day)')
+    assert fuel_processor_row.tons == pytest.approx(source_fuel_processor.tons)
+    assert fuel_processor_row.cost == pytest.approx(source_fuel_processor.cost_mcr * 1_000_000)
+
+
+def test_acrux_heavy_cruiser_supported_weapon_tonnage_matches_source():
+    spec = build_acrux_heavy_cruiser().build_spec()
+
+    source_large_missiles = _source_row('Weapons', 'Large Missile Bays (size reduction x3) x5')
+    large_missiles = _ship_row(spec, 'Weapons', 'Large Missile Bay (120 missiles per salvo)')
+    assert large_missiles.quantity == 5
+    assert large_missiles.tons == pytest.approx(source_large_missiles.tons)
+
+    source_large_torpedoes = _source_row('Weapons', 'Large Torpedo Bays (size reduction x2) x5')
+    large_torpedoes = _ship_row(spec, 'Weapons', 'Large Torpedo Bay (30 torpedoes per salvo)')
+    assert large_torpedoes.quantity == 5
+    assert large_torpedoes.tons == pytest.approx(source_large_torpedoes.tons)
+
+    source_particle_barbettes = _source_row('Weapons', 'Particle Barbettes x50')
+    particle_barbettes = _ship_row(spec, 'Weapons', 'Particle Barbette (Damage × 3 after armour)')
+    assert particle_barbettes.quantity == 50
+    assert particle_barbettes.tons == pytest.approx(source_particle_barbettes.tons)
+
+    source_plasma_barbettes = _source_row('Weapons', 'Plasma Barbettes x40')
+    plasma_barbettes = _ship_row(spec, 'Weapons', 'Plasma Barbette (Damage × 3 after armour)')
+    assert plasma_barbettes.quantity == 40
+    assert plasma_barbettes.tons == pytest.approx(source_plasma_barbettes.tons)
