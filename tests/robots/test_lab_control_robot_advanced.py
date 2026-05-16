@@ -30,9 +30,11 @@ _expected = SimpleNamespace(
     used_slots=6,
     remaining_slots=1,
 )
-# source: Cr160,000; Ceres computes Cr187,700 (BW upgrade Cr5,000 included).
+# source: Cr160,000; Ceres computes Cr188,220 (BW upgrade Cr5,000 included).
 # 15% discount in source untraced. See RIR-002.
-_expected.cost = 187_700
+# SIZE_3 NoneLocomotion (BCC=Cr400): removal credit capped at 20% BCC = −Cr80.
+# Old code used uncapped −Cr600 giving Cr187,700 — that was a bug.
+_expected.cost = 188_220
 
 _DEFAULT_SUITE = [
     'Auditory Sensor',

@@ -9,7 +9,7 @@ from ceres.make.robot.spec import RobotSpecSection
 _expected = SimpleNamespace(
     hits=8,
     locomotion='Grav',
-    speed='—',
+    speed='high',
     tl=10,
     armour=3,
     traits='Armour (+3), Flyer (high), Small (-2)',

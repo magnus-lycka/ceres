@@ -341,23 +341,28 @@ scenario layer may choose how much stored power is discharged in that round.
 
 ## Robot Interpretations
 
-### RIR-001 Manipulator Removal Savings — 20% Cap Not Applied
+### RIR-001 Manipulator Cost Credit — 20% BCC Cap Applied to Combined Net
 
 The rule (*Robot Handbook*, p.25) states: "Removing a manipulator lowers the cost of the robot by Cr100 multiplied by the size of the robot but no more than 20% of the Base Chassis Cost."
 
-A strict reading of "no more than 20% of the Base Chassis Cost" would cap the saving per manipulator at 20% of BCC. For a Size 3 robot with Wheels locomotion (BCC = Cr800), this cap would be Cr160 per manipulator, giving a maximum total saving of Cr320 for removing both.
+Ceres applies a single combined cap across all manipulator credit sources (removal and downsize). The net manipulator cost effect is:
 
-Ceres instead applies the uncapped formula: Cr100 × robot_size × count, giving Cr600 for a Size 3 robot with 2 manipulators removed. This matches the reference Google Sheet used for the Domestic Servant design (TCR-001). The Cr500 source total is consistent with Ceres's Cr420 only if -Cr600 (not -Cr320) is used for manipulator removal.
+    net = sum(m.cost for m in manipulators) − 2 × std_cost
+    net = max(net, −0.20 × BCC)
 
-The 20% cap clause may be intended only for edge cases (e.g., very small robots) or may apply to manipulator *resizing* savings. This interpretation is unresolved and should be revisited when additional source examples are available.
+A negative `net` is a credit. The 20% cap limits the total credit from all manipulator changes combined, not per manipulator. For a Size 3 Wheels robot (BCC = Cr800), the cap is Cr160 regardless of how many manipulators are removed or downsized.
 
-### RIR-004 Zero-Slot Option Quota: Default Suite Items Are Not Counted Against Size + TL
+This interpretation changes the Domestic Servant total from Cr420 (uncapped, former implementation) to Cr860 (capped). The source sheet that informed the original expected cost used an uncapped formula; Ceres now follows the explicit rule text.
 
-`refs/robot/11_zero_slot_options.md`: "In addition to the five Zero-Slot options of the robot's Default Suite, a robot design can incorporate additional Zero-Slot options equal to its size plus its Tech Level. Beyond Default (5) + Size + TL any additional Zero-Slot options require one Slot each."
+The same cap applies to resized standard manipulators: if both are downsized the combined credit is still bounded at 20% of BCC.
 
-The five default suite items are free and entirely separate from the Size + TL quota. A robot therefore has up to Size + TL additional zero-slot options at no slot cost. Any further zero-slot options each consume one slot from the robot's available slots pool.
+### RIR-002 Robot Costs Reported Without Editorial Rounding
 
-Chassis modifications that happen to occupy no slots (e.g. Decreased Resiliency) are not counted against this quota; only options that appear in the Options row of the stat block are counted.
+The Robot Handbook presents final robot costs that are sometimes rounded to one or two significant figures. Ceres reports the exact calculated cost from all rule components and does not apply editorial rounding.
+
+Where a source stat block differs from the Ceres-computed total, the source value is recorded in the test file's `_expected` SimpleNamespace and the Ceres value is set as an override immediately after, with a comment documenting the discrepancy.
+
+Known discrepancies following this pattern are recorded in the relevant test files. The Basic Lab Control Robot discrepancy is additionally explained in RIR-003. The cause of other discrepancies has not been traced to a specific rule or omission and is left as an open question in the test file comment.
 
 ### RIR-003 Skill Package Costs And Default Suite Substitution Costs Are Included In Total Cost
 
@@ -367,13 +372,13 @@ Chassis modifications that happen to occupy no slots (e.g. Decreased Resiliency)
 
 The *Basic Lab Control Robot* source stat block (Cr12000) omits both the Electronics (remote ops) 1 skill package (Cr1000) and the two non-free default suite substitutions (Transceiver 500km (improved) Cr1000, Video Screen (improved) Cr500). The Ceres-computed total is Cr14500. See the `_expected.cost` override in `tests/robots/test_lab_control_robot_basic.py`.
 
-### RIR-002 Robot Costs Reported Without Editorial Rounding
+### RIR-004 Zero-Slot Option Quota: Default Suite Items Are Not Counted Against Size + TL
 
-The Robot Handbook presents final robot costs that are sometimes rounded to one or two significant figures. Ceres reports the exact calculated cost from all rule components and does not apply editorial rounding.
+`refs/robot/11_zero_slot_options.md`: "In addition to the five Zero-Slot options of the robot's Default Suite, a robot design can incorporate additional Zero-Slot options equal to its size plus its Tech Level. Beyond Default (5) + Size + TL any additional Zero-Slot options require one Slot each."
 
-Where a source stat block differs from the Ceres-computed total, the source value is recorded in the test file's `_expected` SimpleNamespace and the Ceres value is set as an override immediately after, with a comment documenting the discrepancy.
+The five default suite items are free and entirely separate from the Size + TL quota. A robot therefore has up to Size + TL additional zero-slot options at no slot cost. Any further zero-slot options each consume one slot from the robot's available slots pool.
 
-Known discrepancies following this pattern are recorded in the relevant test files. The Basic Lab Control Robot discrepancy is additionally explained in RIR-003. The cause of other discrepancies has not been traced to a specific rule or omission and is left as an open question in the test file comment.
+Chassis modifications that happen to occupy no slots (e.g. Decreased Resiliency) are not counted against this quota; only options that appear in the Options row of the stat block are counted.
 
 ### RIR-005 All Slot Calculations Use Ceiling Rounding
 
@@ -386,3 +391,27 @@ The Robot Handbook states "round up" for every fractional slot result. Ceres app
 - external power slot requirement (5% of base slots)
 
 No slot calculation ever uses floor division or banker's rounding.
+
+### RIR-006 Resized Standard Manipulator Slot Formula
+
+The *Robot Handbook* (p.26) describes resizing a standard manipulator as "the equivalent of removing it and adding a different sized manipulator," then refers to the Additional Manipulator Slots table for the slot requirement of the new size.
+
+Ceres computes the net slot effect as:
+
+    new_slots = max(1, ceil(pct(Δsize) × base_slots))
+    std_slots = max(1, ceil(0.10 × base_slots))
+    delta = new_slots − std_slots
+
+A smaller manipulator frees `|delta|` slots (negative delta); a larger one consumes them. This is consistent with the "equivalent of removing and adding" language: you recover the standard slot budget and spend the new one.
+
+Worked example — Size 3 arm on a Size 5 robot (base_slots = 16):
+
+- std_slots = max(1, ceil(0.10 × 16)) = 2
+- Δsize = 3 − 5 = −2 → pct = 2% → new_slots = max(1, ceil(0.02 × 16)) = 1
+- delta = 1 − 2 = −1 → one slot freed
+
+### RIR-007 Walker Leg-Manipulators Are Additional, Not Standard
+
+The *Robot Handbook* (p.27) states: "designing an eight-limbed robot with all limbs as manipulators would involve keeping the two original manipulators, adding four manipulators and altering the two default legs to become manipulators."
+
+This language implies that leg-manipulators are neither of the two standard arm slots. Ceres therefore treats each converted leg as a purely additional manipulator: full slot cost (same-size percentage of base slots) and full cost (Cr100 × robot_size), with no baseline to subtract. The two standard arm positions remain governed by `Robot.manipulators`.

@@ -15,8 +15,8 @@ from .chassis import (
     size_label,
     size_trait,
 )
-from .locomotion import LocomotionUnion
-from .manipulators import Manipulator
+from .locomotion import LocomotionUnion, WalkerLocomotion
+from .manipulators import LegOrManipulator, Manipulator
 from .options import default_suite_item_cost
 from .parts import RobotPartMixin
 from .skills import SkillGrant
@@ -40,9 +40,8 @@ class Robot(RobotBase):
     brain: RobotBrainUnion
     options: list[Any] = Field(default_factory=list)
     default_suite: list[str] = Field(default_factory=lambda: list(_DEFAULT_SUITE))
-    manipulators: list[Manipulator] = Field(
-        default_factory=lambda: [Manipulator(), Manipulator()]
-    )
+    manipulators: list[Manipulator] = Field(default_factory=lambda: [Manipulator(), Manipulator()])
+    legs: list[LegOrManipulator] = Field(default_factory=list)
     attacks: list[str] = Field(default_factory=list)
 
     def model_post_init(self, __context: Any) -> None:
@@ -50,6 +49,8 @@ class Robot(RobotBase):
         if self.locomotion.required_tl > self.tl:
             self.error(f'Locomotion requires TL{self.locomotion.required_tl}, robot is TL{self.tl}')
         for m in self.manipulators:
+            m.bind(self)
+        for m in self._leg_manipulators:
             m.bind(self)
         for opt in self.options:
             if isinstance(opt, RobotPartMixin):
@@ -63,6 +64,12 @@ class Robot(RobotBase):
         return chassis_entry(self.size).base_slots
 
     @property
+    def _leg_manipulators(self) -> list[Manipulator]:
+        if isinstance(self.locomotion, WalkerLocomotion):
+            return [m for m in self.legs if isinstance(m, Manipulator)]
+        return []
+
+    @property
     def _std_manip_slots(self) -> int:
         base_slots = chassis_entry(self.size).base_slots
         return max(1, ceil(0.10 * base_slots))
@@ -70,12 +77,16 @@ class Robot(RobotBase):
     @property
     def _manipulator_slot_effect(self) -> int:
         std_slots = self._std_manip_slots
-        return sum(m.slots for m in self.manipulators) - 2 * std_slots
+        arm_effect = sum(m.slots for m in self.manipulators) - 2 * std_slots
+        leg_effect = sum(m.slots for m in self._leg_manipulators)
+        return arm_effect + leg_effect
 
     @property
     def _manipulator_cost_effect(self) -> float:
         std_cost = 100.0 * int(self.size)
-        net = sum(m.cost for m in self.manipulators) - 2 * std_cost
+        arm_net = sum(m.cost for m in self.manipulators) - 2 * std_cost
+        leg_cost = sum(m.cost for m in self._leg_manipulators)
+        net = arm_net + leg_cost
         return max(net, -0.20 * self.base_chassis_cost)
 
     @property
@@ -173,7 +184,10 @@ class Robot(RobotBase):
         from .options import VehicleSpeedModification
 
         if any(isinstance(o, VehicleSpeedModification) for o in self.options):
-            return '—'
+            for t in self.traits:
+                if t.name == 'Flyer':
+                    return str(t.value)
+            return 'Vehicle speed'
         return self.locomotion.speed_label()
 
     @property
@@ -197,6 +211,24 @@ class Robot(RobotBase):
         rem = self.brain.remaining_bandwidth
         if rem is not None and rem > 0:
             parts.append(f'+{rem} Bandwidth available')
+        return ', '.join(parts) if parts else '—'
+
+    @property
+    def _manipulators_display(self) -> str:
+        def collapse(labels: list[str]) -> list[str]:
+            parts: list[str] = []
+            i = 0
+            while i < len(labels):
+                count = 1
+                while i + count < len(labels) and labels[i + count] == labels[i]:
+                    count += 1
+                parts.append(f'{count}× {labels[i]}' if count > 1 else labels[i])
+                i += count
+            return parts
+
+        arm_labels = [m.stat_label(self.size, self.tl) for m in self.manipulators]
+        leg_labels = [f'Manipulator leg {m.stat_label(self.size, self.tl)}' for m in self._leg_manipulators]
+        parts = collapse(arm_labels) + collapse(leg_labels)
         return ', '.join(parts) if parts else '—'
 
     def build_notes(self) -> list:
@@ -249,7 +281,12 @@ class Robot(RobotBase):
             )
         speed_cost = self.base_chassis_cost * self.locomotion.speed_cost_fraction
         if speed_cost > 0:
-            cs.rows.append(RobotDetailRow(name='Speed modification', cost=format_credits(speed_cost)))
+            cs.rows.append(
+                RobotDetailRow(
+                    name=f'Speed modification (+{self.locomotion.speed_increase})',
+                    cost=format_credits(speed_cost),
+                )
+            )
         for opt in self.options:
             if isinstance(opt, VehicleSpeedModification):
                 cs.rows.append(
@@ -259,17 +296,6 @@ class Robot(RobotBase):
                         cost=format_credits(opt.cost),
                     )
                 )
-        removed = max(0, 2 - len(self.manipulators))
-        if removed:
-            manip_slot_bonus = max(1, ceil(0.1 * base_slots)) * removed
-            discount = 100.0 * int(self.size) * removed
-            cs.rows.append(
-                RobotDetailRow(
-                    name=f'Removed manipulator ×{removed}',
-                    col2=f'+{manip_slot_bonus}',
-                    cost=f'−{format_credits(discount)}',
-                )
-            )
         sections.append(cs)
 
         # ── Brain ─────────────────────────────────────────────────────────
@@ -320,20 +346,48 @@ class Robot(RobotBase):
             sections.append(ss)
 
         # ── Manipulators ──────────────────────────────────────────────────
-        additional_manips = [o for o in self.options if isinstance(o, AdditionalManipulator)]
-        if self.manipulators or additional_manips:
-            ms = RobotDetailSection(title='Manipulators')
-            for m in self.manipulators:
-                ms.rows.append(RobotDetailRow(name=m))
-            for am in additional_manips:
-                ms.rows.append(
-                    RobotDetailRow(
-                        name=am.description,
-                        col2=f'−{am.slots}',
-                        cost=format_credits(am.cost),
-                    )
+        ms = RobotDetailSection(title='Manipulators')
+        std_slots = self._std_manip_slots
+        std_cost = 100.0 * int(self.size)
+        # Credit available for removed/downsized rows (already reflects 20% cap)
+        remaining_credit = -min(0.0, self._manipulator_cost_effect)
+        for i in range(2):
+            if i < len(self.manipulators):
+                m = self.manipulators[i]
+                label = m.stat_label(self.size, self.tl)
+                slot_delta = m.slots - std_slots
+                cost_delta = m.cost - std_cost
+                slot_str = f'−{slot_delta}' if slot_delta > 0 else (f'+{-slot_delta}' if slot_delta < 0 else '—')
+                cost_str = (
+                    format_credits(cost_delta)
+                    if cost_delta > 0
+                    else (f'−{format_credits(-cost_delta)}' if cost_delta < 0 else '—')
                 )
-            sections.append(ms)
+                ms.rows.append(RobotDetailRow(name=label, col2=slot_str, cost=cost_str))
+            else:
+                allocated = min(std_cost, remaining_credit)
+                remaining_credit -= allocated
+                cost_str = f'−{format_credits(allocated)}' if allocated > 0 else '—'
+                ms.rows.append(RobotDetailRow(name='Removed manipulator', col2=f'+{std_slots}', cost=cost_str))
+        for m in self.manipulators[2:]:
+            label = m.stat_label(self.size, self.tl)
+            ms.rows.append(
+                RobotDetailRow(
+                    name=label,
+                    col2=f'−{m.slots}',
+                    cost=format_credits(m.cost),
+                )
+            )
+        for m in self._leg_manipulators:
+            label = f'Manipulator leg {m.stat_label(self.size, self.tl)}'
+            ms.rows.append(
+                RobotDetailRow(
+                    name=label,
+                    col2=f'−{m.slots}',
+                    cost=format_credits(m.cost),
+                )
+            )
+        sections.append(ms)
 
         # ── Options ───────────────────────────────────────────────────────
         opts = [o for o in self.options if isinstance(o, RobotPartMixin) and o.notes.item_message]
@@ -436,17 +490,11 @@ class Robot(RobotBase):
                 value=', '.join(self.attacks) if self.attacks else '—',
             )
         )
-        from .options import AdditionalManipulator
-
-        manip_parts = list(self.manipulators)
-        for opt in self.options:
-            if isinstance(opt, AdditionalManipulator):
-                manip_parts.append(opt.description)
         spec.add_row(
             RobotSpecRow(
                 section=RobotSpecSection.MANIPULATORS,
                 label='Manipulators',
-                value=', '.join(manip_parts) if manip_parts else '—',
+                value=self._manipulators_display,
             )
         )
         option_labels = list(self.default_suite)

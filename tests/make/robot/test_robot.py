@@ -466,10 +466,15 @@ class TestOptions:
 
     def test_cost_raised_to_minimum_produces_info_note(self):
         from ceres.make.robot import NoneLocomotion, RobotSize
+        from ceres.make.robot.options import DecreasedResiliency
 
-        # Size 1 NoneLocomotion, no manipulators: chassis Cr100 + brain Cr100 − discount Cr200 = 0
+        # Size 1 NoneLocomotion + 3-hit reduction: BCC 100 + brain 100 − 150 = 50 < 100 (basic cost)
         # → raised to Basic Cost minimum Cr100
-        robot = make_robot(size=RobotSize.SIZE_1, locomotion=NoneLocomotion(), manipulators=[])
+        robot = make_robot(
+            size=RobotSize.SIZE_1,
+            locomotion=NoneLocomotion(),
+            options=[DecreasedResiliency(hit_reduction=3)],
+        )
         notes = robot.build_notes()
         assert any('Basic Cost' in str(n) for n in notes)
 
@@ -514,8 +519,14 @@ class TestFinalisationDetailSection:
 
     def test_finalisation_cost_floor_row_shown_when_applied(self):
         from ceres.make.robot import NoneLocomotion, RobotSize
+        from ceres.make.robot.options import DecreasedResiliency
 
-        robot = make_robot(size=RobotSize.SIZE_1, locomotion=NoneLocomotion(), manipulators=[])
+        # SIZE_1 NoneLocomotion + 3-hit reduction: raw_cost 50 < basic_cost 100 → floor row shown
+        robot = make_robot(
+            size=RobotSize.SIZE_1,
+            locomotion=NoneLocomotion(),
+            options=[DecreasedResiliency(hit_reduction=3)],
+        )
         spec = robot.build_spec()
         fin = next(s for s in spec.detail_sections if s.title == 'Finalisation')
         assert any('Basic Cost' in r.name for r in fin.rows)
@@ -584,12 +595,14 @@ class TestBuildSpec:
         rows = robot.build_spec().rows_for_section(RobotSpecSection.MANIPULATORS)
         assert rows[0].value == '—'
 
-    def test_spec_manipulators_row_with_item(self):
+    def test_spec_manipulators_row_single_shows_stats(self):
+        from ceres.make.robot.manipulators import Manipulator
         from ceres.make.robot.spec import RobotSpecSection
 
-        robot = make_robot(manipulators=['Basic (STR 7)'])
+        # make_robot default: SIZE_3, TL8 → STR = 2×3−1=5, DEX = ceil(8/2)+1=5
+        robot = make_robot(manipulators=[Manipulator()])
         rows = robot.build_spec().rows_for_section(RobotSpecSection.MANIPULATORS)
-        assert rows[0].value == 'Basic (STR 7)'
+        assert rows[0].value == '(STR 5 DEX 5)'
 
     def test_spec_skills_row_present(self):
         from ceres.make.robot.spec import RobotSpecSection

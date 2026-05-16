@@ -35,8 +35,11 @@ _expected = SimpleNamespace(
         'Wireless Data Link',
     ),
 )
-# source: Cr500 (editorial rounding); Ceres computes 420 from all rule components
-_expected.cost = 420
+# source: Cr500 (editorial rounding).
+# BCC = Cr800 (SIZE_3 × Wheels ×2); removal credit capped at 20% BCC = −Cr160.
+# Ceres: 800 − 80 (speed−1) + 100 (brain) + 200 (options) − 160 (manip cap) = 860.
+# Old code used uncapped Cr100×size×removed = −Cr600, giving 420 — that was a bug.
+_expected.cost = 860
 
 
 def build_domestic_servant() -> Robot:

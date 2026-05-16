@@ -33,8 +33,10 @@ _expected = SimpleNamespace(
     ),
 )
 # source: Cr12000 (editorial simplification, omits skill package Cr1000 and
-# default suite substitution costs Cr1000 + Cr500); Ceres computes from all rule components
-_expected.cost = 14500
+# default suite substitution costs Cr1000 + Cr500); Ceres computes from all rule components.
+# SIZE_1 NoneLocomotion (BCC=Cr100): removal credit capped at 20% BCC = −Cr20.
+# Old code used uncapped −Cr200 giving Cr14,500 — that was a bug.
+_expected.cost = 14_680
 
 _DEFAULT_SUITE = [
     'Auditory Sensor',

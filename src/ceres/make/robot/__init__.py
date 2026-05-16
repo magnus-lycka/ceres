@@ -14,6 +14,7 @@ from .locomotion import (
     WheelsAtvLocomotion,
     WheelsLocomotion,
 )
+from .manipulators import Leg, Manipulator
 from .parts import RobotPart, RobotPartMixin
 from .robot import Robot
 from .spec import RobotSpec, RobotSpecRow, RobotSpecSection
@@ -41,6 +42,8 @@ __all__ = [
     'VeryAdvancedBrain',
     'RobotPart',
     'RobotPartMixin',
+    'Manipulator',
+    'Leg',
     'RobotSpec',
     'RobotSpecRow',
     'RobotSpecSection',

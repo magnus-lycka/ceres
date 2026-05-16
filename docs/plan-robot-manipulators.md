@@ -201,37 +201,39 @@ combines `robot.manipulators` with `Manipulator` instances in
 
 ## Migration Plan
 
-### Phase 1 — `Manipulator` Model, Standard Cases, 20% Cap Fix
+### Phase 1 — `Manipulator` Model, Standard Cases, 20% Cap Fix ✓
 
 - Define `Manipulator` in `ceres.make.robot.manipulators` (new file).
 - Migrate `Robot.manipulators: list[str]` to `list[Manipulator]`.
-- Accept `'Standard'` strings during migration via a `model_validator` alias.
 - Implement `_manipulator_slot_effect` and `_manipulator_cost_effect` in `Robot`.
 - Fix the 20% BCC cap bug.
 - Update `Robot.available_slots` and `Robot._raw_cost` to use the new properties.
 - Update the Manipulators spec row and detail section to display `STR N DEX M`.
+- Remove `AdditionalManipulator` from `ceres.make.robot.options`.
 - Tests: verify STR/DEX display for a size 5 TL10 robot; verify the 20% cap for
   full removal; verify existing robots with the AG300 additional manipulator case.
 
-### Phase 2 — Resized Standard Manipulators
+### Phase 2 — Resized Standard Manipulators ✓
 
 - Implement net slot and cost delta for `Manipulator(size != robot_size)` in
   positions 0–1.
 - Tests: verify StarTek's resized size 3 arm (`refs/robot/99_startek.md`).
 
-### Phase 3 — STR/DEX Enhancement
+### Phase 3 — STR/DEX Enhancement ✓
 
 - Implement `str_bonus` and `dex_bonus` with the quadratic cost formula and max
   limits.
 - Tests: verify StarTek's arm enhancement (STR +3, expected Cr4500 per arm);
   verify max limits are enforced.
 
-### Phase 4 — Walker Legs
+### Phase 4 — Walker Legs ✓
 
-- Implement `Leg` and update `WalkerLocomotion` with a `legs` field.
+- Implement `Leg` and add `Robot.legs: list[Leg | Manipulator]` field.
+  (`WalkerLocomotion` cannot hold the legs field due to circular imports;
+  `legs` lives on `Robot` instead, consistent with how `manipulators` is modelled.)
 - Add leg-to-manipulator conversion cost to `_manipulator_cost_effect`.
 - Include leg-manipulators in statistics and display.
-- Tests: choose a reference robot with leg manipulators.
+- Tests: Gardener Servant (refs/robot/121_hiver.md) — 4 arm + 2 leg manipulators.
 
 ## Interpretations to Document in RULE_INTERPRETATIONS.md
 

@@ -2,9 +2,8 @@
 
 from types import SimpleNamespace
 
-from ceres.make.robot import BasicBrain, Robot, RobotSize, WalkerLocomotion
+from ceres.make.robot import BasicBrain, Manipulator, Robot, RobotSize, WalkerLocomotion
 from ceres.make.robot.options import (
-    AdditionalManipulator,
     AgriculturalEquipment,
     LightIntensifierSensor,
     NavigationSystem,
@@ -53,6 +52,12 @@ def build_ag300() -> Robot:
         size=RobotSize.SIZE_5,
         locomotion=WalkerLocomotion(speed_increase=1),
         brain=BasicBrain(function='labourer'),
+        manipulators=[
+            Manipulator(),
+            Manipulator(),
+            Manipulator(size=RobotSize.SIZE_4),
+            Manipulator(size=RobotSize.SIZE_4),
+        ],
         options=[
             AgriculturalEquipment(size='medium'),
             LightIntensifierSensor(quality='advanced'),
@@ -60,7 +65,6 @@ def build_ag300() -> Robot:
             OlfactorySensor(quality='improved'),
             StorageCompartment(slots_count=8, storage_type='refrigerated'),
             ThermalSensor(),
-            AdditionalManipulator(count=2, manipulator_size=4),
         ],
         default_suite=_DEFAULT_SUITE,
     )
@@ -116,7 +120,8 @@ class TestAG300:
         value = spec.rows_for_section(RobotSpecSection.ATTACKS)[0].value
         assert value == _expected.attacks
 
-    def test_spec_manipulators_includes_additional(self):
+    def test_spec_manipulators_shows_size4_stats(self):
+        # Two SIZE_4 additional manipulators: STR = 2×4−1 = 7
         spec = build_ag300().build_spec()
         value = spec.rows_for_section(RobotSpecSection.MANIPULATORS)[0].value
         assert 'STR 7' in value
@@ -154,3 +159,5 @@ class TestAG300:
         assert restored.size == RobotSize.SIZE_5
         assert isinstance(restored.locomotion, WalkerLocomotion)
         assert isinstance(restored.brain, BasicBrain)
+        assert len(restored.manipulators) == 4
+        assert all(isinstance(m, Manipulator) for m in restored.manipulators)

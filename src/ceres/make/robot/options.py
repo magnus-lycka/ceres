@@ -320,53 +320,6 @@ class VehicleSpeedModification(RobotPart):
         return None  # locomotion modification — not listed in Options row
 
 
-class AdditionalManipulator(RobotPart):
-    """refs/robot/09_manipulators.md — Additional Manipulators.
-
-    count: number of additional manipulators to install.
-    manipulator_size: the size of the additional manipulators.
-    Slot percentage depends on size difference vs robot size.
-    Cost = count × Cr100 × manipulator_size.
-    """
-
-    count: int = 1
-    manipulator_size: int
-
-    @property
-    def slots(self) -> int:
-        if self._assembly is None:
-            return 0
-        robot_size = int(self.assembly.size)
-        diff = robot_size - self.manipulator_size
-        if diff >= 3:
-            pct = 0.01
-        elif diff == 2:
-            pct = 0.02
-        elif diff == 1:
-            pct = 0.05
-        elif diff == 0:
-            pct = 0.10
-        elif diff == -1:
-            pct = 0.20
-        else:
-            pct = 0.40
-        base_slots = chassis_entry(self.assembly.size).base_slots
-        return self.count * max(1, ceil(pct * base_slots))
-
-    @property
-    def description(self) -> str:
-        str_val = 2 * self.manipulator_size - 1
-        dex = ceil(self.assembly.tl / 2) + 1
-        return f'{self.count}x (STR {str_val} DEX {dex})'
-
-    def bind(self, assembly: RobotBase) -> None:
-        super().bind(assembly)
-        object.__setattr__(self, 'cost', float(self.count * 100 * self.manipulator_size))
-
-    def build_item(self) -> str | None:
-        return None  # shown in Manipulators section, not Options
-
-
 _AVATAR_CONTROLLER_TABLE: dict[str, dict[str, int | float]] = {
     'basic': {'tl': 11, 'slots': 2, 'cost': 50000.0},
     'improved': {'tl': 13, 'slots': 1, 'cost': 200000.0},
@@ -497,6 +450,5 @@ __all__ = [
     'OlfactorySensor',
     'ThermalSensor',
     'VehicleSpeedModification',
-    'AdditionalManipulator',
     'default_suite_item_cost',
 ]
