@@ -4,7 +4,7 @@ Brain table values from refs/robot/33_brain.md.
 """
 
 from dataclasses import dataclass
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal, cast
 
 from pydantic import Field, model_validator
 
@@ -201,12 +201,13 @@ class AdvancedBrain(_BrainBase):
     def _resolve_bandwidth(cls, data: object) -> object:
         if not isinstance(data, dict):
             return data
-        brain_tl = data.get('brain_tl', 12)
+        d = cast(dict[str, Any], data)
+        brain_tl = d.get('brain_tl', 12)
         entry = _lookup(_ADVANCED_TABLE, brain_tl)
         base = entry.bandwidth
-        bw = data.get('bandwidth') or 0
+        bw = d.get('bandwidth') or 0
         if bw == 0:
-            return {**data, 'bandwidth': base}
+            return {**d, 'bandwidth': base}
         if bw != base:
             valid = {base + e.delta_bw for e in _ADVANCED_BW_UPGRADES if brain_tl >= e.min_tl}
             if bw not in valid:
@@ -214,7 +215,7 @@ class AdvancedBrain(_BrainBase):
                     f'bandwidth {bw} is not valid for Advanced brain at TL{brain_tl}; '
                     f'valid values: {sorted({base} | valid)}'
                 )
-        return data
+        return d
 
     def _entry(self) -> _BrainEntry:
         return _lookup(_ADVANCED_TABLE, self.brain_tl)
@@ -304,12 +305,13 @@ class VeryAdvancedBrain(_BrainBase):
     def _resolve_bandwidth(cls, data: object) -> object:
         if not isinstance(data, dict):
             return data
-        brain_tl = data.get('brain_tl', 12)
+        d = cast(dict[str, Any], data)
+        brain_tl = d.get('brain_tl', 12)
         entry = _lookup(_VERY_ADVANCED_TABLE, brain_tl)
         base = entry.bandwidth
-        bw = data.get('bandwidth') or 0
+        bw = d.get('bandwidth') or 0
         if bw == 0:
-            return {**data, 'bandwidth': base}
+            return {**d, 'bandwidth': base}
         if bw != base:
             valid = {base + e.delta_bw for e in _VERY_ADVANCED_BW_UPGRADES if brain_tl >= e.min_tl}
             if bw not in valid:
