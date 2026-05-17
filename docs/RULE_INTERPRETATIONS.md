@@ -339,6 +339,33 @@ therefore includes their tonnage, cost, and Power capacity in the Power section,
 but does not add battery capacity to `Ship.available_power`. A combat round or
 scenario layer may choose how much stored power is discharged in that round.
 
+### RIS-016 Armoury Recommendations Apply To Military Ships With Scale
+
+High Guard describes armouries as secure weapons and equipment stores for ships
+carrying large numbers of marines or soldiers. One ton of armoury is required
+for every 25 crew members or five marines.
+
+Ceres treats this as a recommendation for `military=True` ships only. Civilian
+ships and ordinary small craft are assumed to rely on a normal ship's locker
+unless an armoury is explicitly installed by the source design.
+
+For military ships, Ceres derives the recommendation as:
+
+    ceil(non_marine_requirement + marine_count / 5 - epsilon)
+
+where:
+
+    non_marine_requirement = max(0, non_marine_count - 12) / 25
+
+This treats ordinary crew as a rounded-to-nearest 25-person equipment burden
+with a small-ship offset: one- or two-person military craft do not receive a
+foolish armoury warning when a ship's locker is adequate, while ships with a
+meaningful military crew start receiving armoury recommendations around 13
+non-marine crew. Marines contribute immediately because their equipment
+requirement is the specific use case called out by the armoury rule. The small
+epsilon prevents floating-point noise from turning exact boundary cases into an
+extra armoury.
+
 ## Robot Interpretations
 
 ### RIR-001 Manipulator Cost Credit — 20% BCC Cap Applied to Combined Net

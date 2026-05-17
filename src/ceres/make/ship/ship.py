@@ -400,5 +400,6 @@ def _recommended_armouries(ship: Ship) -> int:
         return 0
     marine_count = sum(1 for role in ship.crew.effective_roles if role.role == 'MARINE')
     non_marine_count = ship.crew.count - marine_count
-    required = (non_marine_count / 25) + (marine_count / 5)
-    return int(required + 0.5)
+    non_marine_requirement = max(0, non_marine_count - 12) / 25
+    required = non_marine_requirement + (marine_count / 5)
+    return ceil(required - 0.0001)

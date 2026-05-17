@@ -131,6 +131,56 @@ def test_military_ship_warns_when_armouries_are_below_recommendation():
     assert 'Installed armouries below recommendation: 4 < 5' in my_ship.notes.warnings
 
 
+def test_armoury_recommendation_combines_crew_and_marine_capacity():
+    my_ship = ship.Ship(
+        tl=12,
+        military=True,
+        displacement=1_000,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        crew=ShipCrew(roles=[*[GeneralCrew()] * 20, Marine()]),
+        systems=SystemsSection(internal_systems=[Armoury()]),
+    )
+
+    assert 'Installed armouries below recommendation' not in my_ship.notes.warnings
+
+
+def test_armoury_recommendation_does_not_warn_for_small_military_crew_without_marines():
+    my_ship = ship.Ship(
+        tl=12,
+        military=True,
+        displacement=20,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        crew=ShipCrew(roles=[GeneralCrew()]),
+    )
+
+    assert 'Installed armouries below recommendation' not in my_ship.notes.warnings
+
+
+def test_armoury_recommendation_warns_for_meaningful_military_crew_without_marines():
+    my_ship = ship.Ship(
+        tl=12,
+        military=True,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        crew=ShipCrew(roles=[*[GeneralCrew()] * 13]),
+    )
+
+    assert 'Installed armouries below recommendation: 0 < 1' in my_ship.notes.warnings
+
+
+def test_armoury_recommendation_ceil_ignores_floating_point_noise():
+    my_ship = ship.Ship(
+        tl=12,
+        military=True,
+        displacement=1_000,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        crew=ShipCrew(roles=[*[GeneralCrew()] * 22, *[Marine()] * 3]),
+        systems=SystemsSection(internal_systems=[Armoury()]),
+    )
+
+    assert 'Installed armouries below recommendation' not in my_ship.notes.warnings
+
+
 def test_ship_hull_cost():
     my_ship = ship.Ship(
         tl=12,

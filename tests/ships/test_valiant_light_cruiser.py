@@ -8,6 +8,20 @@ from ceres.make.ship import armour, hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
 from ceres.make.ship.computer import ComputerSection, Core100
 from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, SpaceCraft
+from ceres.make.ship.crew import (
+    Administrator,
+    Astrogator,
+    Captain,
+    Engineer,
+    Gunner,
+    Maintenance,
+    Marine,
+    Medic,
+    Officer,
+    Pilot,
+    SensorOperator,
+    ShipCrew,
+)
 from ceres.make.ship.drives import DecreasedFuel, DriveSection, FusionPlantTL15, JDrive4, MDrive5, PowerSection
 from ceres.make.ship.habitation import HabitationSection, HighStateroom, Stateroom
 from ceres.make.ship.parts import Advanced, HighTechnology, SizeReduction
@@ -70,6 +84,34 @@ _expected = SimpleNamespace(
     running_cost_maintenance_mcr=1.556925,
     purchase_cost_mcr=18_683.1,
     table_total_cost_mcr=20_759.0,
+    ceres_running_cost_maintenance_mcr=1.754967,
+    crew_salaries_mcr=1.207,
+    crew=[
+        ('CAPTAIN', 1, 10_000),
+        ('PILOT', 8, 6_000),  # Source has Pilots x3 plus Small Craft Crew x5
+        ('ASTROGATOR', 1, 5_000),
+        ('ENGINEER', 101, 4_000),
+        ('MAINTENANCE', 40, 1_000),  # Source label: Mechanics x40
+        ('MARINE', 20, 1_000),  # Source label: Marines x20
+        ('MEDIC', 3, 4_000),
+        ('GUNNER', 203, 2_000),
+        ('ADMINISTRATOR', 20, 1_500),
+        ('OFFICER', 40, 5_000),
+        ('SENSOR OPERATOR', 8, 4_000),  # Source label: Sensops x8
+    ],
+    spec_crew=[
+        ('CAPTAIN', None, 10_000),
+        ('PILOT', 8, 6_000),
+        ('ASTROGATOR', None, 5_000),
+        ('ENGINEER', 101, 4_000),
+        ('MAINTENANCE', 40, 1_000),
+        ('MARINE', 20, 1_000),
+        ('MEDIC', 3, 4_000),
+        ('GUNNER', 203, 2_000),
+        ('ADMINISTRATOR', 20, 1_500),
+        ('OFFICER', 40, 5_000),
+        ('SENSOR OPERATOR', 8, 4_000),
+    ],
     rows=(
         SimpleNamespace(section='Hull', item='30,000 tons, Standard', tons=None, cost_mcr=1_500.0),
         SimpleNamespace(section='Hull', item='Reinforced', tons=None, cost_mcr=750.0),
@@ -130,7 +172,19 @@ _expected = SimpleNamespace(
         fuel_processor=50,
     ),
     expected_errors=[],
-    expected_warnings=[],
+    expected_warnings=['Installed armouries below recommendation: 18 < 21'],
+    expected_crew_infos=[
+        'ADMINISTRATOR above recommended count: 20 > 15',
+        'ENGINEER above recommended count: 101 > 76',
+        'MAINTENANCE above recommended count: 40 > 31',
+        'MARINE above recommended count: 20 > 0',
+        'SENSOR OPERATOR above recommended count: 8 > 6',
+    ],
+    expected_crew_warnings=[
+        'GUNNER below recommended count: 203 < 275',
+        'MEDIC below recommended count: 3 < 4',
+        'OFFICER below recommended count: 40 < 41',
+    ],
     unimplemented_reasons=(),
 )
 
@@ -138,7 +192,6 @@ _expected = SimpleNamespace(
 _expected.unimplemented_reasons = (
     'Triple Turrets (beam lasers) cost does not match the current Ceres beam-laser turret model',
     'Source purchase cost, table total, and row total disagree with each other',
-    'Source crew and running cost manifests are recorded in the source but not asserted here yet',
     'Source lists Jump Control/4 at zero cost; Ceres omits it because JC is hardware-integrated in Core computers',
 )
 
@@ -241,9 +294,9 @@ def _decreased_fuel():
 def build_valiant_light_cruiser():
     """Note: High Guard Valiant source snapshot is mostly modelled.
 
-    Still missing for a complete Valiant: source crew/running-cost validation,
-    investigation of the beam laser turret source cost, and a policy for the
-    source's mutually inconsistent purchase/table/row totals.
+    Still missing for a complete Valiant: investigation of the beam laser
+    turret source cost and a policy for the source's mutually inconsistent
+    purchase/table/row totals.
     """
     reinforced_hull = hull.standard_hull.model_copy(update={'reinforced': True})
     modular_cutter = SpaceCraft.from_catalog('Modular Cutter')
@@ -305,6 +358,21 @@ def build_valiant_light_cruiser():
             screens=[NuclearDamper(customisation=_size_reduction(3)) for _ in range(9)],
         ),
         craft=CraftSection(internal_housing=[InternalDockingSpace(craft=modular_cutter) for _ in range(5)]),
+        crew=ShipCrew(
+            roles=[
+                Captain(),
+                *[Pilot() for _ in range(8)],
+                Astrogator(),
+                *[Engineer() for _ in range(101)],
+                *[Maintenance() for _ in range(40)],
+                *[Marine() for _ in range(20)],
+                *[Medic() for _ in range(3)],
+                *[Gunner() for _ in range(203)],
+                *[Administrator() for _ in range(20)],
+                *[Officer() for _ in range(40)],
+                *[SensorOperator() for _ in range(8)],
+            ]
+        ),
         systems=SystemsSection(
             internal_systems=[
                 *[CommandBridge()],
@@ -381,6 +449,24 @@ def test_valiant_basic_power_requirements_match_source(valiant_light_cruiser):
     assert valiant_light_cruiser.screens is not None
     assert sum(screen.power for screen in valiant_light_cruiser.screens.screens) == _expected.power_requirements.screens
     assert valiant_light_cruiser.fuel_power_load == _expected.power_requirements.fuel_processor
+
+
+def test_valiant_crew_matches_source_manifest(valiant_light_cruiser, valiant_spec):
+    crew = [(role.role, quantity, role.monthly_salary) for role, quantity in valiant_light_cruiser.crew.grouped_roles]
+
+    assert crew == _expected.crew
+    assert valiant_light_cruiser.expenses.crew_salaries == pytest.approx(_expected.crew_salaries_mcr * 1_000_000)
+    assert [(crew.role, crew.quantity, crew.salary) for crew in valiant_spec.crew] == _expected.spec_crew
+    assert valiant_light_cruiser.crew.notes.infos == _expected.expected_crew_infos
+    assert valiant_light_cruiser.crew.notes.warnings == _expected.expected_crew_warnings
+    assert valiant_spec.crew_notes.infos == _expected.expected_crew_infos
+    assert valiant_spec.crew_notes.warnings == _expected.expected_crew_warnings
+
+
+def test_valiant_running_costs_match_current_ceres_model(valiant_light_cruiser):
+    assert valiant_light_cruiser.expenses.maintenance == pytest.approx(
+        _expected.ceres_running_cost_maintenance_mcr * 1_000_000
+    )
 
 
 def test_valiant_has_no_unexpected_ship_errors_or_warnings(valiant_light_cruiser, valiant_spec):

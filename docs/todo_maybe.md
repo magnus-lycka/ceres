@@ -420,7 +420,7 @@ Open questions:
 
 ## Fuel System Variants [todo]
 
-Reference: `refs/hg/23_spacecraft_options.md`
+References: `refs/hg/23_spacecraft_options.md`, `refs/hg/25_solar_energy_systems.md`
 
 Several standard fuel tank options from HG Spacecraft Options are not yet modelled:
 
@@ -434,6 +434,9 @@ Several standard fuel tank options from HG Spacecraft Options are not yet modell
   check and prevents streamlining.
 - **Ramscoops**: passive hydrogen collector; 1% of hull + 5 tons (minimum 10 tons), MCr0.25/ton;
   collects 5 tons hydrogen/week/ton ramscoop; no fuel processor needed; prevents streamlining.
+- **Fuel Tank Compartment**: fuel tanks concealed inside cargo or other space. Inflicts DM-4 to
+  sensor checks and DM-6 to Investigate checks to detect. Cr4,000/ton; tonnage deducted from
+  fuel allocation, not from hull tonnage directly.
 
 Remaining work:
 
@@ -738,6 +741,22 @@ vessels and some megacorporate ships.
 Not yet implemented; no existing todo. Implement in `systems.py`. Ship-building capability
 note is relevant; the actual construction simulation is out of scope.
 
+## Optional label on parts [todo]
+
+Published designs often give bespoke names to generic components — a yacht's common area appears
+as "Studio + Trophy Lounge", a scout ship's cabin space as "Owner's Cabin". These are not distinct
+part types; they are named instances of existing parts.
+
+Consider adding an optional `label: str | None = None` field broadly — possibly to all `ShipPart`,
+or even all `CeresPart` — so the spec sheet can render "Studio + Trophy Lounge (Common Area)"
+rather than just "Common Area". The label would be purely cosmetic: no effect on tonnage, cost,
+power, validation, or grouping unless explicitly decided otherwise.
+
+Remaining work:
+
+- decide the right level: `ShipPart`, `CeresPart`, or per-class
+- add the field and thread it through the spec context / Typst template so it renders correctly
+
 ## Common Area Extras: Brewery, Gourmet Kitchen, Zero-G Room [todo]
 
 Reference: `refs/hg/26_drones.md`
@@ -751,6 +770,62 @@ Theatre, and Wet Bar, but are not yet modelled:
 - **Zero-G Room** (any size; Cr50,000 for controls and safe-access portal, no tonnage stated)
 
 Not yet implemented. Implement in `systems.py` alongside the existing common-area parts.
+
+## Carronade [todo]
+
+Reference: `refs/companion/56_starship_weaponry.md`
+
+A short-ranged plasma weapon occupying 4 hardpoints. Two variants:
+
+| Weapon           | TL | Power | Damage | Cost  | Tons | Traits          |
+|------------------|----|-------|--------|-------|------|-----------------|
+| Plasma Carronade | 10 | 35    | 12D    | MCr10 | 4    | Weak            |
+| Fusion Carronade | 12 | 45    | 16D    | MCr12 | 4    | Radiation, Weak |
+
+The **Weak** trait doubles the target's armour score against damage — devastating against
+unarmoured ships, weak against armoured ones. The Carronade consumes 4 hardpoints, which is
+unusual — no existing Ceres mount type spans multiple hardpoints. Decide whether this is modelled
+as a fixed mount occupying 4 hardpoints, or as a special mount class.
+
+## General-Purpose Mass Driver Bay [todo]
+
+Reference: `refs/companion/56_starship_weaponry.md`
+
+A low-powered mass driver primarily used for launching ore or cargo to remote destinations
+(mining ships), secondarily for orbital bombardment or mine/satellite deployment. TL8, 50 tons
+(small bay), 10 Power, 4D damage, MCr4. Suffers DM-4 to attack rolls against manoeuvring
+targets. Additional launch capacity: 2 tons per extra ton, Cr75,000/ton, 3 Power/ton.
+
+Not the same as the High Guard orbital-strike mass driver. Implement as a separate bay class in
+`weapons.py`.
+
+## Torpedo-Interceptor Cluster [todo]
+
+Reference: `refs/companion/56_starship_weaponry.md`
+
+A one-shot point-defence hardpoint fitting (not a turret). A cluster of 4 interceptors occupies
+1 hardpoint, 1 ton, MCr1, 1 Power. Fired at the last instant before missile/torpedo impact;
+each interceptor kills one incoming missile on 6+ or torpedo on 8+ (2D roll). Must be replaced
+dockside after firing.
+
+Not yet modelled. The one-shot nature and per-interceptor kill probability are operational
+effects; the ship-building side is tonnage, cost, power, and hardpoint allocation.
+
+## Hullcutter Bay (TL16) [todo]
+
+Reference: `refs/companion/56_starship_weaponry.md`
+
+A beam of exotic particles that degrades armour as it damages. The **Reductor** trait reduces
+the target's armour by -1 for each damage die rolled (applied before damage). Three sizes:
+
+| Weapon               | TL | Power | Damage | Cost   | Tons |
+|----------------------|----|-------|--------|--------|------|
+| Large Hullcutter Bay | 16 | 100   | 12D    | MCr110 | 500  |
+
+(Small at TL18 and Medium at TL17 are out of scope.)
+
+Not yet modelled. Implement as `LargeHullcutterBay` in `weapons.py`. The Reductor trait is an
+operational combat effect; only tonnage/cost/power need to be modelled for ship building.
 
 ## Pop-Up Mounting [todo]
 
@@ -869,17 +944,19 @@ Two accommodation options from the Spacecraft Options chapter are not yet modell
 
 ## Cargo handling equipment [todo]
 
-Reference: `refs/hg/23_spacecraft_options.md`
+References: `refs/hg/23_spacecraft_options.md`, `refs/hg/25_solar_energy_systems.md`
 
-Three cargo-handling parts from HG Spacecraft Options are absent:
+Four cargo-handling parts are absent:
 
+- **Cargo Crane**: tonnage = 2.5 + 0.5 per 150 tons (or part thereof) of cargo space; MCr1/ton.
+  Appears in Type-A Free Trader and Type-A2 Far Trader. Implement in `systems.py`.
 - **Cargo Scoop** (2 tons, MCr0.5): picks up floating cargo. One ton per round; Pilot check or
   take damage equal to negative Effect.
 - **Cargo Net** (5 tons, MCr1): tow drones extend a retrieval net; ship cannot jump while deployed.
 - **Loading Belt** (1 ton, Cr3,000 at TL7 / Cr10,000 at TL12, 1 Power): offloads cargo; replaces
   10 crewmen (TL7) or 25 (TL12).
 
-All are good candidates for `systems.py` as `_ZeroPower`-style parts.
+All are good candidates for `systems.py` as `_ZeroPower`-style parts (Cargo Crane may need power).
 
 ## External attachment systems
 
@@ -895,6 +972,34 @@ Implemented: `GrapplingArm`, `TowCable` (in `systems.py`).
 
 External loads from grappling/tow should feed into effective displacement for drive performance
 (related to the Modulars and effective displacement item above).
+
+## External Cargo Mount [todo]
+
+Reference: `refs/hg/25_solar_energy_systems.md`
+
+Attaches cargo externally to the ship hull. Cost: Cr1,000/ton of external cargo. Thrust must be
+recalculated including the external cargo tonnage. Not available on streamlined or dispersed-structure
+hulls. Makes the ship effectively unstreamlined while cargo is mounted.
+
+Not yet implemented; no existing todo. Best modelled in `crafts.py` alongside `DockingClamp`, or
+in `systems.py`. External cargo tonnage should feed into the effective-displacement tracking (related
+to the "External-load drive performance" item above).
+
+## Jump Net [todo]
+
+Reference: `refs/hg/25_solar_energy_systems.md`
+
+Allows a ship to carry external cargo through jump. Two variants:
+
+- **Interplanetary Jump Net** (TL8): 1 ton per 100 tons of external cargo; MCr0.1/ton. Allows jump
+  within a system only.
+- **Interstellar Jump Net** (TL10): MCr0.3/ton. Allows full interstellar jump.
+
+Jump net makes the ship unstreamlined. External cargo tonnage must be included in thrust and jump
+fuel calculations.
+
+Not yet implemented; no existing todo. Closely related to "External-load drive performance" and
+"External Cargo Mount". May belong in `crafts.py` or `systems.py`.
 
 ## Space stations as a build target
 
