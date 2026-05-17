@@ -100,12 +100,11 @@ class TestStarTekManipulatorsPhase2:
 
 
 def build_startek() -> Robot:
-    """StarTek with STR/DEX enhancements.
+    """Note: Partial StarTek — omits unavailable options and uses WalkerLocomotion (source: Grav+Walker).
 
-    Two SIZE_5 arms with str_bonus=3 and one SIZE_3 arm with dex_bonus=4.
-    Source: refs/robot/99_startek.md — Manipulators: 2× (STR 12 DEX 8), 1× (STR 5 DEX 12)
-    Omits unavailable options (Medikit, PRIS Sensor, Vacuum/Radiation Protection,
-    Weapon Mount, Starship Engineer Toolkit) and uses WalkerLocomotion (source: Grav+Walker).
+    Omits: Medikit, PRIS Sensor, Vacuum/Radiation Protection, Weapon Mount, Starship Engineer Toolkit.
+    Source: refs/robot/99_startek.md — SIZE_5 TL14, Grav+Walker.
+    Manipulators: 2× (STR 12 DEX 8), 1× (STR 5 DEX 12).
     """
     return Robot(
         name='StarTek',

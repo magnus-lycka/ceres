@@ -17,19 +17,11 @@ from .chassis import (
 )
 from .locomotion import LocomotionUnion, WalkerLocomotion
 from .manipulators import LegOrManipulator, Manipulator
-from .options import default_suite_item_cost
+from .options import default_suite
 from .parts import RobotPartMixin
 from .skills import SkillGrant
 from .spec import RobotSpec, RobotSpecRow, RobotSpecSection
 from .text import format_credits, format_traits
-
-_DEFAULT_SUITE: tuple[str, ...] = (
-    'Auditory Sensor',
-    'Transceiver 5km (improved)',
-    'Visual Spectrum Sensor',
-    'Voder Speaker',
-    'Wireless Data Link',
-)
 
 
 class Robot(RobotBase):
@@ -38,8 +30,7 @@ class Robot(RobotBase):
     size: RobotSize
     locomotion: LocomotionUnion
     brain: RobotBrainUnion
-    options: list[Any] = Field(default_factory=list)
-    default_suite: list[str] = Field(default_factory=lambda: list(_DEFAULT_SUITE))
+    options: list[Any] = Field(default_factory=default_suite)
     manipulators: list[Manipulator] = Field(default_factory=lambda: [Manipulator(), Manipulator()])
     legs: list[LegOrManipulator] = Field(default_factory=list)
     attacks: list[str] = Field(default_factory=list)
@@ -102,13 +93,13 @@ class Robot(RobotBase):
         brain_slot = self.brain.brain_slots(self.tl, int(self.size))
         option_slots = sum(o.slots for o in self.options if isinstance(o, RobotPartMixin) and o.slots > 0)
         # Chassis modifications (item_message is None) are excluded from the zero-slot quota.
-        # Beyond Default(5) + Size + TL free zero-slot options each cost 1 slot.
+        # The 5 default suite items in options are covered by the +5 term in the quota.
         zero_slot_count = sum(
             1
             for o in self.options
             if isinstance(o, RobotPartMixin) and o.slots == 0 and o.notes.item_message is not None
         )
-        excess_zero_slots = max(0, zero_slot_count - (int(self.size) + self.tl))
+        excess_zero_slots = max(0, zero_slot_count - (5 + int(self.size) + self.tl))
         extra_manip_slots = max(0, self._manipulator_slot_effect)
         return brain_slot + option_slots + excess_zero_slots + extra_manip_slots
 
@@ -135,7 +126,6 @@ class Robot(RobotBase):
         cost += self.brain.brain_cost
         cost += sum(opt.cost for opt in self.options if isinstance(opt, RobotPartMixin))
         cost += self._manipulator_cost_effect
-        cost += sum(default_suite_item_cost(item) for item in self.default_suite)
         return cost
 
     @property
@@ -403,19 +393,6 @@ class Robot(RobotBase):
                 )
             sections.append(os_)
 
-        # ── Default Suite ─────────────────────────────────────────────────
-        if self.default_suite:
-            ds = RobotDetailSection(title='Default Suite')
-            for item in sorted(self.default_suite):
-                item_cost = default_suite_item_cost(item)
-                ds.rows.append(
-                    RobotDetailRow(
-                        name=item,
-                        cost=format_credits(item_cost) if item_cost > 0 else '—',
-                    )
-                )
-            sections.append(ds)
-
         # ── Finalisation ──────────────────────────────────────────────────
         fin = RobotDetailSection(title='Finalisation')
         rem_bw = self.brain.remaining_bandwidth
@@ -497,7 +474,7 @@ class Robot(RobotBase):
                 value=self._manipulators_display,
             )
         )
-        option_labels = list(self.default_suite)
+        option_labels = []
         for opt in self.options:
             if isinstance(opt, RobotPartMixin):
                 label = opt.notes.item_message

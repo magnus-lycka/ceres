@@ -24,9 +24,17 @@ from ceres.make.ship.drives import (
 )
 from ceres.make.ship.habitation import CabinSpace, HabitationSection, LowBerth, Stateroom
 from ceres.make.ship.occupants import BasicPassage, HighPassage, LowPassage, MiddlePassage
+from ceres.make.ship.screens import NuclearDamper, ScreensSection
 from ceres.make.ship.sensors import SensorsSection, SensorStations
 from ceres.make.ship.systems import MedicalBay, SystemsSection
-from ceres.make.ship.weapons import DoubleTurret, MediumMissileBay, PulseLaserBarbette, SmallMissileBay, WeaponsSection
+from ceres.make.ship.weapons import (
+    DoubleTurret,
+    MediumMissileBay,
+    ParticleAcceleratorSpinalMount,
+    PulseLaserBarbette,
+    SmallMissileBay,
+    WeaponsSection,
+)
 
 
 def grouped_role_counts(roles):
@@ -275,6 +283,47 @@ def test_military_ship_gets_gunners_for_bays():
     )
 
     assert ('GUNNER', 3) in grouped_role_counts(my_ship.crew)
+
+
+def test_military_ship_gets_gunners_for_spinal_mount_tonnage():
+    my_ship = ship.Ship(
+        tl=12,
+        military=True,
+        displacement=50_000,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        drives=DriveSection(m_drive=MDrive2()),
+        power=PowerSection(plant=FusionPlantTL12(output=2_000)),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer5()),
+        weapons=WeaponsSection(spinal_mounts=[ParticleAcceleratorSpinalMount(size_multiple=2)]),
+    )
+
+    # 70 spinal gunners before the existing large-ship crew reduction and
+    # bracket-boundary cap: ceil(70 × 0.33) = 24.
+    assert ('GUNNER', 24) in grouped_role_counts(my_ship.crew)
+
+
+def test_military_ship_gets_two_gunners_per_screen():
+    my_ship = ship.Ship(
+        tl=15,
+        military=True,
+        displacement=1_000,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        screens=ScreensSection(screens=[NuclearDamper(), NuclearDamper()]),
+    )
+
+    assert ('GUNNER', 4) in grouped_role_counts(my_ship.crew)
+
+
+def test_commercial_ship_gets_one_gunner_per_screen():
+    my_ship = ship.Ship(
+        tl=15,
+        displacement=1_000,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        screens=ScreensSection(screens=[NuclearDamper(), NuclearDamper()]),
+    )
+
+    assert ('GUNNER', 2) in grouped_role_counts(my_ship.crew)
 
 
 def test_sensor_stations_drive_sensor_operator_count():

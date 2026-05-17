@@ -207,7 +207,7 @@ class InternalDockingSpace(_ZeroPowerCraftPart):
 
     @property
     def tons(self) -> float:
-        return float(math.ceil(self.craft.shipping_size * 1.1))
+        return float(math.ceil(self.craft.shipping_size * 1.1 - 1e-9))
 
     @property
     def cost(self) -> float:

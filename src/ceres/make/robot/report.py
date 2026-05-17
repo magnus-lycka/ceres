@@ -33,27 +33,27 @@ def _robot_column_widths(columns: list[tuple[str, str]]) -> list[list]:
     return widths
 
 
-def render_robot_pdf(robot: Robot, *, page_size: str = 'a4') -> bytes:
-    return render_robot_spec_pdf(robot.build_spec(), page_size=page_size)
+def render_robot_pdf(robot: Robot, *, page_size: str = 'a4', note: str | None = None) -> bytes:
+    return render_robot_spec_pdf(robot.build_spec(), page_size=page_size, note=note)
 
 
-def render_robot_spec_pdf(spec: RobotSpec, *, page_size: str = 'a4') -> bytes:
+def render_robot_spec_pdf(spec: RobotSpec, *, page_size: str = 'a4', note: str | None = None) -> bytes:
     from ceres.report.render import render_pdf
 
-    return render_pdf(_TEMPLATES / 'robot_spec.typ', _build_context(spec, page_size=page_size))
+    return render_pdf(_TEMPLATES / 'robot_spec.typ', _build_context(spec, page_size=page_size, note=note))
 
 
-def render_robot_typst(robot: Robot, *, page_size: str = 'a4') -> str:
-    return render_robot_spec_typst(robot.build_spec(), page_size=page_size)
+def render_robot_typst(robot: Robot, *, page_size: str = 'a4', note: str | None = None) -> str:
+    return render_robot_spec_typst(robot.build_spec(), page_size=page_size, note=note)
 
 
-def render_robot_spec_typst(spec: RobotSpec, *, page_size: str = 'a4') -> str:
+def render_robot_spec_typst(spec: RobotSpec, *, page_size: str = 'a4', note: str | None = None) -> str:
     from ceres.report.render import render_typst_source
 
-    return render_typst_source(_TEMPLATES / 'robot_spec.typ', _build_context(spec, page_size=page_size))
+    return render_typst_source(_TEMPLATES / 'robot_spec.typ', _build_context(spec, page_size=page_size, note=note))
 
 
-def _build_context(spec: RobotSpec, *, page_size: str = 'a4') -> dict:
+def _build_context(spec: RobotSpec, *, page_size: str = 'a4', note: str | None = None) -> dict:
     from ceres.make.robot.spec import RobotSpecSection
 
     robot_row = next(
@@ -85,6 +85,7 @@ def _build_context(spec: RobotSpec, *, page_size: str = 'a4') -> dict:
             for sec in spec.detail_sections
         ],
         'robot_notes': _notes_for_display(spec.robot_notes),
+        'note': note,
         'page_size': page_size,
     }
 

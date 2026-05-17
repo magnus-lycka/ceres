@@ -17,8 +17,10 @@ from ceres.make.ship.weapons import (
     LargeTorpedoBay,
     LaserPointDefenseBattery2,
     LongRange,
+    MassDriverSpinalMount,
     MediumMissileBay,
     MediumParticleBeamBay,
+    MesonSpinalMount,
     MissileRack,
     MissileStorage,
     ParticleAcceleratorSpinalMount,
@@ -26,6 +28,7 @@ from ceres.make.ship.weapons import (
     PulseLaser,
     PulseLaserBarbette,
     QuadTurret,
+    RailgunSpinalMount,
     Sandcaster,
     SandcasterCanisterStorage,
     SingleTurret,
@@ -91,6 +94,29 @@ def test_particle_accelerator_spinal_mount_values_scale_by_base_size_multiple():
     assert 'Damage: 16D × 1,000' in spinal_mount.notes.infos
 
 
+@pytest.mark.parametrize(
+    ('spinal_cls', 'tl', 'base_tons', 'base_power', 'base_cost', 'base_damage', 'max_tons'),
+    [
+        (MassDriverSpinalMount, 10, 5_000.0, 250.0, 1_500_000_000.0, 4, 100_000.0),
+        (MesonSpinalMount, 12, 7_500.0, 1_000.0, 2_000_000_000.0, 6, 75_000.0),
+        (ParticleAcceleratorSpinalMount, 11, 3_500.0, 1_000.0, 1_000_000_000.0, 8, 28_000.0),
+        (RailgunSpinalMount, 10, 3_500.0, 500.0, 500_000_000.0, 4, 21_000.0),
+    ],
+)
+def test_spinal_mount_hg_table_values(spinal_cls, tl, base_tons, base_power, base_cost, base_damage, max_tons):
+    spinal_mount = spinal_cls()
+    spinal_mount.bind(DummyOwner(tl, 200_000))
+
+    assert spinal_mount.tl == tl
+    assert spinal_mount.tons == pytest.approx(base_tons)
+    assert spinal_mount.power == pytest.approx(base_power)
+    assert spinal_mount.cost == pytest.approx(base_cost)
+    assert spinal_mount.max_tons == pytest.approx(max_tons)
+    assert spinal_mount.hardpoints_required == pytest.approx(base_tons / 100)
+    assert spinal_mount.crew_required_military == pytest.approx(base_tons / 100)
+    assert f'Damage: {base_damage}D × 1,000' in spinal_mount.notes.infos
+
+
 def test_particle_accelerator_spinal_mount_appears_in_weapon_spec_rows():
     my_ship = ship.Ship(
         tl=11,
@@ -107,6 +133,40 @@ def test_particle_accelerator_spinal_mount_appears_in_weapon_spec_rows():
     assert row.tons == pytest.approx(7_000.0)
     assert row.cost == pytest.approx(2_000_000_000.0)
     assert row.power == pytest.approx(-2_000.0)
+
+
+@pytest.mark.parametrize(
+    ('tl_improvement', 'tons', 'cost'),
+    [
+        (1, 6_750.0, 2_200_000_000.0),
+        (2, 6_375.0, 2_400_000_000.0),
+        (3, 6_000.0, 2_600_000_000.0),
+    ],
+)
+def test_meson_spinal_mount_tl_improvement_values(tl_improvement, tons, cost):
+    spinal_mount = MesonSpinalMount(tl_improvement=tl_improvement)
+    spinal_mount.bind(DummyOwner(12 + tl_improvement, 100_000))
+
+    assert spinal_mount.build_item() == f'Meson Spinal Mount (TL{12 + tl_improvement})'
+    assert spinal_mount.tons == pytest.approx(tons)
+    assert spinal_mount.cost == pytest.approx(cost)
+    assert spinal_mount.power == pytest.approx(1_000.0)
+
+
+def test_spinal_mount_tl_improvement_requires_corresponding_ship_tl():
+    spinal_mount = MesonSpinalMount(tl_improvement=3)
+    spinal_mount.bind(DummyOwner(14, 100_000))
+
+    assert 'Requires TL15, ship is TL14' in spinal_mount.notes.errors
+
+
+def test_spinal_mount_item_label_includes_tl_improvement_but_not_base_size_multiple():
+    spinal_mount = MesonSpinalMount(tl_improvement=3, size_multiple=2)
+    spinal_mount.bind(DummyOwner(15, 100_000))
+
+    assert spinal_mount.build_item() == 'Meson Spinal Mount (TL15)'
+    assert spinal_mount.tons == pytest.approx(12_000.0)
+    assert spinal_mount.cost == pytest.approx(5_200_000_000.0)
 
 
 def test_pulse_laser_no_upgrades_cost_modifier():

@@ -242,6 +242,12 @@ def _size_reduction(steps: int):
 
 
 def build_acrux_heavy_cruiser():
+    """Note: Partial Acrux Heavy Cruiser — source snapshot still has unresolved modelling work.
+
+    The command bridge source row is not the same part as the Ceres High Guard
+    CommandBridge system. Armour tonnage is matched to the Spinward Extents
+    source snapshot, while armour cost is still not traced to an HG rule.
+    """
     pulse_long_range = VeryAdvanced(modifications=[LongRange])
     # The Spinward Extents source rows apply the close-structure hull cost but
     # do not apply the HG close-structure armour volume modifier to armour tons.

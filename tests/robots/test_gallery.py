@@ -1,3 +1,5 @@
+import inspect
+
 import pytest
 
 from ceres.make.robot.report import render_robot_typst
@@ -35,10 +37,15 @@ def test_robot_gallery_json_output(name: str, builder) -> None:
     assert '"tl":' in output_path.read_text(encoding='utf-8')
 
 
+def _builder_note(builder) -> str | None:
+    doc = inspect.cleandoc(builder.__doc__ or '')
+    return doc if doc.startswith('Note:') else None
+
+
 @pytest.mark.parametrize(('name', 'builder'), _ROBOTS)
 def test_robot_gallery_typst_output(name: str, builder) -> None:
     robot = builder()
-    typst_src = render_robot_typst(robot)
+    typst_src = render_robot_typst(robot, note=_builder_note(builder))
     output_path = write_typst_output(name, typst_src)
     assert output_path.exists()
     assert 'report_data' in output_path.read_text(encoding='utf-8')
@@ -48,7 +55,7 @@ def test_robot_gallery_typst_output(name: str, builder) -> None:
 @pytest.mark.parametrize(('name', 'builder'), _ROBOTS)
 def test_robot_gallery_pdf_output(name: str, builder) -> None:
     robot = builder()
-    pdf_bytes = render_robot_pdf(robot)
+    pdf_bytes = render_robot_pdf(robot, note=_builder_note(builder))
     output_path = write_pdf_output(name, pdf_bytes)
     assert output_path.exists()
     assert pdf_bytes[:4] == b'%PDF'

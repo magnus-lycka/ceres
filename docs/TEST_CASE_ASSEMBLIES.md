@@ -135,3 +135,19 @@ similar operational/business figures.
 
 These are not part of the current Ceres ship-design model and should not be
 encoded as test-case expectations for a reference ship.
+
+### TCS-004 Jump Control Software on Core vs. Standard Computers
+
+High Guard states that Core computers include all Jump Control software in their
+price, with the Core's Processing score being *in addition to* whatever JC
+consumes. JC is hardware-integrated, not a purchased software package.
+
+**Core-only ships:** Do not add any `JumpControl` software to the computer
+section. The Core handles jump calculations internally. If a source design lists
+a `Jump Control/N` entry at zero cost in the software table, treat it as a
+display convention and omit it from the Ceres model. Record the omission in
+`_expected.unimplemented_reasons`.
+
+**Ships with a non-Core secondary computer:** If the ship's backup computer
+is a standard `Computer/N` (not a Core), `JumpControl` must appear in the
+ship's software list, or the backup computer can't be used for jumps.

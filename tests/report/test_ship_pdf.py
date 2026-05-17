@@ -43,6 +43,14 @@ def test_render_ship_spec_typst_page_size_passed_through(suleiman_spec):
     assert '"us-letter"' in src_letter
 
 
+def test_render_ship_spec_typst_accepts_builder_note(suleiman_spec):
+    src = render_ship_spec_typst(suleiman_spec, note='Note: Partial ship')
+
+    assert 'Note: Partial ship' in src
+    assert 'report_data.note' in src
+    assert 'gc-abstract' in src
+
+
 # ---------------------------------------------------------------------------
 # Banner and metadata
 # ---------------------------------------------------------------------------

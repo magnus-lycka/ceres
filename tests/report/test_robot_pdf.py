@@ -97,7 +97,7 @@ def test_source_lab_robot_substituted_suite(lab_spec):
 
 def test_source_contains_detail_section_titles(domestic_spec):
     src = render_robot_spec_typst(domestic_spec)
-    for title in ('Chassis', 'Brain', 'Default Suite'):
+    for title in ('Chassis', 'Brain', 'Options'):
         assert f'title: "{title}"' in src
 
 

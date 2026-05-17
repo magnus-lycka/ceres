@@ -26,6 +26,7 @@ from .habitation import HabitationSection
 from .hull import ArmouredBulkhead, Hull, Streamlined
 from .occupants import ShipOccupant
 from .parts import ShipPart
+from .screens import ScreensSection
 from .sensors import SensorsSection
 from .spec import PassengerRow, ShipSpec, SpecRow, SpecSection
 from .storage import CargoSection, FuelScoops, FuelSection
@@ -67,6 +68,7 @@ class Ship(ShipBase):
     command: CommandSection | None = None
     computer: ComputerSection | None = None
     sensors: SensorsSection = Field(default_factory=SensorsSection)
+    screens: ScreensSection | None = None
     craft: CraftSection | None = None
     automation: AnyAutomation = Field(default_factory=StandardAutomation)
     cargo: CargoSection | None = None
@@ -193,6 +195,8 @@ class Ship(ShipBase):
         if self.computer is not None:
             parts.extend(self.computer._all_parts())
         parts.extend(self.sensors._all_parts())
+        if self.screens is not None:
+            parts.extend(self.screens._all_parts())
         if self.habitation is not None:
             parts.extend(self.habitation._all_parts())
         if self.craft is not None:
@@ -332,6 +336,8 @@ class Ship(ShipBase):
 
         if self.weapons is not None:
             self.weapons.add_spec_rows(self, spec)
+        if self.screens is not None:
+            self.screens.add_spec_rows(self, spec)
 
         if self.craft is not None:
             self.craft.add_spec_rows(self, spec)

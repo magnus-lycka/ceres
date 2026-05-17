@@ -1,3 +1,5 @@
+import inspect
+
 import pytest
 
 from ceres.report import render_ship_html, render_ship_pdf, render_ship_typst
@@ -28,8 +30,14 @@ from .test_small_scout_base import build_small_scout_base
 from .test_strandbell import build_strandbell
 from .test_suleiman import build_suleiman
 from .test_ultralight_fighter import build_ultralight_fighter
+from .test_valiant_light_cruiser import build_valiant_light_cruiser
 
 pytestmark = pytest.mark.generated_output
+
+
+def _builder_note(builder) -> str | None:
+    doc = inspect.cleandoc(builder.__doc__ or '')
+    return doc if doc.startswith('Note:') else None
 
 
 @pytest.mark.parametrize(
@@ -62,6 +70,7 @@ pytestmark = pytest.mark.generated_output
         ('test_strandbell', build_strandbell),
         ('test_suleiman', build_suleiman),
         ('test_ultralight_fighter', build_ultralight_fighter),
+        ('test_valiant_light_cruiser', build_valiant_light_cruiser),
     ],
 )
 def test_ship_gallery_html_output(name: str, builder) -> None:
@@ -106,11 +115,12 @@ def test_ship_gallery_html_output(name: str, builder) -> None:
         ('test_strandbell', build_strandbell),
         ('test_suleiman', build_suleiman),
         ('test_ultralight_fighter', build_ultralight_fighter),
+        ('test_valiant_light_cruiser', build_valiant_light_cruiser),
     ],
 )
 def test_ship_gallery_pdf_output(name: str, builder) -> None:
     my_ship = builder()
-    pdf = render_ship_pdf(my_ship)
+    pdf = render_ship_pdf(my_ship, note=_builder_note(builder))
     output_path = write_pdf_output(name, pdf)
 
     assert output_path.exists()
@@ -147,11 +157,12 @@ def test_ship_gallery_pdf_output(name: str, builder) -> None:
         ('test_strandbell', build_strandbell),
         ('test_suleiman', build_suleiman),
         ('test_ultralight_fighter', build_ultralight_fighter),
+        ('test_valiant_light_cruiser', build_valiant_light_cruiser),
     ],
 )
 def test_ship_gallery_typst_output(name: str, builder) -> None:
     my_ship = builder()
-    typst_src = render_ship_typst(my_ship)
+    typst_src = render_ship_typst(my_ship, note=_builder_note(builder))
     output_path = write_typst_output(name, typst_src)
 
     assert output_path.exists()
@@ -189,6 +200,7 @@ def test_ship_gallery_typst_output(name: str, builder) -> None:
         ('test_strandbell', build_strandbell),
         ('test_suleiman', build_suleiman),
         ('test_ultralight_fighter', build_ultralight_fighter),
+        ('test_valiant_light_cruiser', build_valiant_light_cruiser),
     ],
 )
 def test_ship_gallery_json_output(name: str, builder) -> None:

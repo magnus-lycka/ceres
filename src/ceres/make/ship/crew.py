@@ -455,19 +455,22 @@ def _explicit_passenger_counts(ship) -> dict[str, int]:
 
 
 def _commercial_gunner_count(ship) -> int:
-    if ship.weapons is None:
-        return 0
-    return len(ship.weapons.turrets) + len(ship.weapons.barbettes)
+    weapon_gunners = 0 if ship.weapons is None else len(ship.weapons.turrets) + len(ship.weapons.barbettes)
+    screen_gunners = 0 if ship.screens is None else len(ship.screens.screens)
+    return weapon_gunners + screen_gunners
 
 
 def _military_gunner_count(ship) -> int:
-    if ship.weapons is None:
-        return 0
-    return (
-        len(ship.weapons.turrets) * 2
-        + len(ship.weapons.barbettes) * 2
-        + sum(bay.crew_required_military for bay in ship.weapons.bays)
-    )
+    weapon_gunners = 0
+    if ship.weapons is not None:
+        weapon_gunners = (
+            len(ship.weapons.turrets) * 2
+            + len(ship.weapons.barbettes) * 2
+            + sum(spinal_mount.crew_required_military for spinal_mount in ship.weapons.spinal_mounts)
+            + sum(bay.crew_required_military for bay in ship.weapons.bays)
+        )
+    screen_gunners = 0 if ship.screens is None else len(ship.screens.screens) * 2
+    return weapon_gunners + screen_gunners
 
 
 def _sensor_operator_count(ship, *, military: bool) -> int:

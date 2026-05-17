@@ -1,6 +1,8 @@
 """Robot option classes.
 
 Rule sources:
+  refs/robot/10_default_suite.md        (default suite items)
+  refs/robot/14_encryption_module.md    (RobotTransceiver, VideoScreen)
   refs/robot/21_cleaning_options.md     (DomesticCleaningEquipment)
   refs/robot/22_communications_options.md (RoboticDroneController)
   refs/robot/23_satellite_uplink.md     (SwarmController)
@@ -17,8 +19,10 @@ Rule sources:
 from math import ceil
 from typing import Any
 
+from ceres.gear.comm import RadioTransceiverPart
+
 from .chassis import Trait, chassis_entry
-from .parts import RobotBase, RobotPart
+from .parts import RobotBase, RobotPart, RobotPartMixin
 from .skills import SkillGrant
 
 _CLEANING_TABLE: dict[str, dict[str, int | float]] = {
@@ -392,50 +396,189 @@ class DecreasedResiliency(RobotPart):
         object.__setattr__(self, 'cost', -(self.hit_reduction * 50.0 * multiplier))
 
 
-# Standard default suite items (included in BCC) and the three free substitutions
-# listed in refs/robot/10_default_suite.md.  Any other item in a default_suite
-# position is a paid upgrade and contributes its cost to the robot total.
-_DEFAULT_SUITE_FREE_ITEMS: frozenset[str] = frozenset(
-    {
-        'Auditory Sensor',
-        'Transceiver 5km (improved)',
-        'Visual Spectrum Sensor',
-        'Voder Speaker',
-        'Wireless Data Link',
-        'Drone Interface',
-        'Transceiver 5km (basic)',
-        'Video Screen (basic)',
-    }
-)
+# ── Default suite item classes ────────────────────────────────────────────────
+# Each class is zero-cost; cost is included in the base chassis cost (BCC).
+# refs/robot/10_default_suite.md
 
-# Zero-slot option costs from refs/robot/14_encryption_module.md (Transceiver,
-# Video Screen tables).  Extend as additional zero-slot options are implemented.
-_ZERO_SLOT_ITEM_COSTS: dict[str, float] = {
-    'Transceiver 5km (basic)': 250.0,
-    'Transceiver 5km (improved)': 100.0,
-    'Transceiver 50km (improved)': 500.0,
-    'Transceiver 50km (enhanced)': 250.0,
-    'Transceiver 50km (advanced)': 100.0,
-    'Transceiver 500km (improved)': 1000.0,
-    'Transceiver 500km (enhanced)': 500.0,
-    'Transceiver 500km (advanced)': 250.0,
-    'Transceiver 5,000km (improved)': 5000.0,
-    'Transceiver 5,000km (enhanced)': 1000.0,
-    'Transceiver 5,000km (advanced)': 500.0,
-    'Video Screen (basic)': 200.0,
-    'Video Screen (improved)': 500.0,
-    'Video Screen (advanced)': 2000.0,
+
+class VisualSpectrumSensor(RobotPart):
+    """refs/robot/10_default_suite.md — Visual Spectrum Sensor, TL8, zero-slot."""
+
+    tl: int = 8
+
+    def build_item(self) -> str | None:
+        return 'Visual Spectrum Sensor'
+
+
+class VoderSpeaker(RobotPart):
+    """refs/robot/10_default_suite.md — Voder Speaker, TL8, zero-slot."""
+
+    tl: int = 8
+
+    def build_item(self) -> str | None:
+        return 'Voder Speaker'
+
+
+class AuditorySensor(RobotPart):
+    """refs/robot/10_default_suite.md — Auditory Sensor, TL8, zero-slot."""
+
+    tl: int = 8
+
+    def build_item(self) -> str | None:
+        return 'Auditory Sensor'
+
+
+class WirelessDataLink(RobotPart):
+    """refs/robot/10_default_suite.md — Wireless Data Link, TL8, zero-slot."""
+
+    tl: int = 8
+
+    def build_item(self) -> str | None:
+        return 'Wireless Data Link'
+
+
+class DroneInterface(RobotPart):
+    """refs/robot/10_default_suite.md — Drone Interface, TL6, zero-slot.
+
+    Free default-suite substitution; cost source unknown, always Cr0.
+    """
+
+    tl: int = 6
+
+    def build_item(self) -> str | None:
+        return 'Drone Interface'
+
+
+# Robot Handbook zero-slot transceiver table (refs/robot/14_encryption_module.md).
+# These costs are robot-installation specific and differ from CSC handheld prices.
+_ROBOT_TRANSCEIVER_TABLE: dict[tuple[str, int], dict[str, int | float]] = {
+    ('basic', 5): {'tl': 7, 'cost': 250.0},
+    ('improved', 5): {'tl': 8, 'cost': 100.0},
+    ('improved', 50): {'tl': 8, 'cost': 500.0},
+    ('enhanced', 50): {'tl': 10, 'cost': 250.0},
+    ('advanced', 50): {'tl': 13, 'cost': 100.0},
+    ('improved', 500): {'tl': 9, 'cost': 1000.0},
+    ('enhanced', 500): {'tl': 11, 'cost': 500.0},
+    ('advanced', 500): {'tl': 14, 'cost': 250.0},
+    ('improved', 5000): {'tl': 9, 'cost': 5000.0},
+    ('enhanced', 5000): {'tl': 12, 'cost': 1000.0},
+    ('advanced', 5000): {'tl': 15, 'cost': 500.0},
+}
+
+_VIDEO_SCREEN_TABLE: dict[str, dict[str, int | float]] = {
+    'basic': {'tl': 7, 'cost': 200.0},
+    'improved': {'tl': 8, 'cost': 500.0},
+    'advanced': {'tl': 10, 'cost': 2000.0},
 }
 
 
-def default_suite_item_cost(item_name: str) -> float:
-    """Cost added to robot total for a default suite item that isn't free."""
-    if item_name in _DEFAULT_SUITE_FREE_ITEMS:
-        return 0.0
-    return _ZERO_SLOT_ITEM_COSTS.get(item_name, 0.0)
+class VideoScreen(RobotPart):
+    """refs/robot/14_encryption_module.md — Video Screen, zero-slot.
+
+    Quality: basic (TL7, Cr200) / improved (TL8, Cr500) / advanced (TL10, Cr2000).
+    Set is_default_suite=True (via default_suite()) to include at no cost in BCC.
+    """
+
+    quality: str = 'basic'
+    is_default_suite: bool = False
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        entry = _VIDEO_SCREEN_TABLE[self.quality]
+        object.__setattr__(self, 'tl', int(entry['tl']))
+        if not self.is_default_suite:
+            object.__setattr__(self, 'cost', float(entry['cost']))
+
+    def build_item(self) -> str | None:
+        return f'Video Screen ({self.quality})'
+
+
+class RobotTransceiver(RadioTransceiverPart, RobotPartMixin):
+    """Zero-slot radio transceiver for robot installation.
+
+    refs/robot/14_encryption_module.md — Robot Handbook zero-slot table.
+    TL and cost are robot-installation specific (not CSC handheld equipment prices).
+    Set is_default_suite=True (via default_suite()) to include at no cost in BCC.
+    """
+
+    quality: str = 'improved'
+    is_default_suite: bool = False
+
+    @property
+    def slots(self) -> int:
+        return 0
+
+    @property
+    def assembly(self) -> RobotBase:
+        a = self._assembly
+        if a is None:
+            raise RuntimeError(f'{type(self).__name__} not bound to an Assembly')
+        if not isinstance(a, RobotBase):
+            raise RuntimeError(f'{type(self).__name__} bound to unexpected type {type(a).__name__}')
+        return a
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        entry = _ROBOT_TRANSCEIVER_TABLE[(self.quality, self.range_km)]
+        object.__setattr__(self, 'tl', int(entry['tl']))
+        if not self.is_default_suite:
+            object.__setattr__(self, 'cost', float(entry['cost']))
+
+    def build_item(self) -> str | None:
+        return f'Transceiver {self.range_km:,}km ({self.quality})'
+
+
+def default_suite(
+    see: bool = True,
+    speak: bool = True,
+    hear: bool = True,
+    wireless: bool = True,
+    improved_transceiver: bool = True,
+    drone: bool = False,
+    basic_transceiver: bool = False,
+    screen: bool = False,
+) -> list[RobotPartMixin]:
+    """Return the five standard default suite items (all zero-cost, included in BCC).
+
+    refs/robot/10_default_suite.md — substitution rules.
+    At most five of the eight flags may be True; validation error otherwise.
+    Flags: see (Visual Spectrum Sensor), speak (Voder Speaker), hear (Auditory
+    Sensor), wireless (Wireless Data Link), improved_transceiver (Transceiver 5km
+    improved), drone (Drone Interface), basic_transceiver (Transceiver 5km basic),
+    screen (Video Screen basic).
+    """
+    flags = [see, speak, hear, wireless, improved_transceiver, drone, basic_transceiver, screen]
+    if sum(flags) > 5:
+        raise ValueError(f'default_suite allows at most 5 items; got {sum(flags)}')
+    items: list[RobotPartMixin] = []
+    if see:
+        items.append(VisualSpectrumSensor())
+    if speak:
+        items.append(VoderSpeaker())
+    if hear:
+        items.append(AuditorySensor())
+    if wireless:
+        items.append(WirelessDataLink())
+    if improved_transceiver:
+        items.append(RobotTransceiver(range_km=5, quality='improved', is_default_suite=True))
+    if drone:
+        items.append(DroneInterface())
+    if basic_transceiver:
+        items.append(RobotTransceiver(range_km=5, quality='basic', is_default_suite=True))
+    if screen:
+        items.append(VideoScreen(quality='basic', is_default_suite=True))
+    return items
 
 
 __all__ = [
+    'VisualSpectrumSensor',
+    'VoderSpeaker',
+    'AuditorySensor',
+    'WirelessDataLink',
+    'DroneInterface',
+    'VideoScreen',
+    'RobotTransceiver',
+    'default_suite',
     'StorageCompartment',
     'DomesticCleaningEquipment',
     'ReconSensor',
@@ -450,5 +593,4 @@ __all__ = [
     'OlfactorySensor',
     'ThermalSensor',
     'VehicleSpeedModification',
-    'default_suite_item_cost',
 ]

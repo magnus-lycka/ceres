@@ -1,5 +1,23 @@
 # Plan: Robot Brains As Computer-Based Program Runners
 
+**Status: Rejected**
+
+**Reason:** The premise was incorrect. Robot brains do not run standard software packages.
+Expert/1 (Advanced) and Expert/2 (Very Advanced) are built into the brain hardware itself —
+they are not installed separately. Skill packages are the primary programming mechanism,
+and skills are not software. Standard software packages (e.g., Jump Control, Intellect)
+apply only to "Ship's Brains" (specialized robot brains replacing ship computers), which
+are not a current priority.
+
+Phases 1–2 were implemented and then Phase 2 reverted:
+- **Phase 1** (VeryAdvancedBrain bandwidth bug fix): kept — it was a standalone correct fix.
+- **Phase 2** (ComputerPart inheritance on `_BrainBase`): reverted — the coupling serves
+  no purpose without Ship's Brains, and `gear.computer` should not be coupled to robot
+  brains until that use case exists.
+- **Phases 3–5**: never implemented; the direction was wrong before they began.
+
+---
+
 ## Goal
 
 Robot brains should use the same underlying computer/software model as other
@@ -219,70 +237,26 @@ multiple brain/computer modules.
 
 ## Migration Plan
 
-### Phase 1: Fix VeryAdvancedBrain Bug
+### Phase 1: Fix VeryAdvancedBrain Bug ✓ Done
 
-Fix `VeryAdvancedBrain._resolve_bandwidth` to return `{**d, 'bandwidth': base}`
-instead of `data`. Add a test proving bandwidth upgrades work for Very Advanced
-brains. This can be done immediately, independently of the rest of this plan.
+Fixed `VeryAdvancedBrain._resolve_bandwidth` to return `{**d, 'bandwidth': base}`
+instead of `data`.
 
-### Phase 2: Make Robot Brains ComputerPart-Based
+### Phase 2: Make Robot Brains ComputerPart-Based ✗ Reverted
 
-- Refactor `_BrainBase` into a `ComputerPart` + `RobotPartMixin` compatible base.
-- Map `_BrainEntry.computer_x` to `processing`.
-- Preserve current public properties and serialization shape where reasonable.
-- Keep existing class names: `PrimitiveBrain`, `BasicBrain`, `AdvancedBrain`,
-  `VeryAdvancedBrain`.
-- Cover both `AdvancedBrain` and `VeryAdvancedBrain` in this phase.
+Implemented and then reverted. See rejection note at top.
 
-### Phase 3: Convert Installed Skills To Installed Software
+### Phase 3: Convert Installed Skills To Installed Software ✗ Not done
 
-- Introduce `RobotSkillPackage` as a `SoftwarePackage` subclass.
-- Migrate `installed_skills` toward `installed_software`/`installed_packages`.
-- Keep a compatibility alias for existing `installed_skills` inputs until tests
-  and examples are updated.
-- Update `skill_grants` to derive from installed robot skill software.
+Rejected — skills and software are different concepts.
 
-### Phase 4: Shared Software Use
+### Phase 4: Shared Software Use ✗ Not done
 
-- Allow selected shared `gear.software` packages on robot brains where rules
-  support them.
-- Start with `Expert`, because it is already context-independent and naturally
-  related to robot skills.
-- Decide whether `Intellect` is a generic software package, a robot brain
-  capability, or both, based on the source rules.
-- Keep ship-only packages ship-only. `JumpControl` should not become valid robot
-  software merely because it shares the base type.
+Rejected — Expert is built into the brain hardware, not installed software.
 
 ### Phase 5: Reporting And Serialization
 
-- Update robot detail output to distinguish:
-  - brain hardware
-  - included/fixed programming
-  - installed software/skill packages
-  - bandwidth used/remaining
-- Add serialization tests for robot brains with installed software.
-- Confirm old robot reference tests still assert source-derived expected values.
-
-## Test Strategy
-
-Keep tests layered:
-
-- `tests/make/robot/test_brain.py`: robot brain table values, slot behaviour,
-  bandwidth, INT, skill DM, and robot-specific validation.
-- `tests/make/robot/test_skills.py`: robot skill package cost, bandwidth, and
-  skill grant mapping.
-- `tests/gear/test_software.py`: context-independent software behaviour.
-- `tests/make/ship/test_software.py`: ship-only software behaviour.
-- `tests/robots/*`: source/reference validation only, using `_expected`.
-
-Add focused regression tests for:
-
-- `VeryAdvancedBrain` bandwidth upgrade works correctly (Phase 1)
-- an Advanced brain running a robot skill package
-- bandwidth overrun produces a robot brain note/error
-- an old `installed_skills` input still round-trips during migration
-- a shared `Expert` package can be installed once a policy is chosen
-- ship software behaviour does not change
+Partially addressed elsewhere (builder note convention for partial robots).
 
 ## Open Questions
 
@@ -304,14 +278,3 @@ Add focused regression tests for:
 - Do not change ship computer API unless needed to extract a shared helper.
 - Do not make every ship software package valid for robots by default.
 - Do not rewrite all robot examples in one pass.
-
-## Success Criteria
-
-- Robot brains use the same computer/software base concepts as ship computers.
-- Existing robot examples still pass with the same visible expected values.
-- Installed robot skill packages are software-like objects with bandwidth, cost,
-  TL, and notes.
-- Shared software can be enabled per assembly context without duplicating the
-  package model.
-- The implementation follows the one-domain-chain plus pure-mixin rule from
-  `docs/assemblies_and_parts.md`.

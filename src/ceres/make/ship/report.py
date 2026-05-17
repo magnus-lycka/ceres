@@ -34,24 +34,24 @@ def render_ship_spec_html(spec: ShipSpec, *, theme: ReportTheme = 'light') -> st
     return render_html(_TEMPLATES / 'ship_spec.html.j2', _build_context(spec, theme=theme))
 
 
-def render_ship_typst(ship: Ship, *, page_size: str = 'a4') -> str:
-    return render_ship_spec_typst(ship.build_spec(), page_size=page_size)
+def render_ship_typst(ship: Ship, *, page_size: str = 'a4', note: str | None = None) -> str:
+    return render_ship_spec_typst(ship.build_spec(), page_size=page_size, note=note)
 
 
-def render_ship_spec_typst(spec: ShipSpec, *, page_size: str = 'a4') -> str:
+def render_ship_spec_typst(spec: ShipSpec, *, page_size: str = 'a4', note: str | None = None) -> str:
     from ceres.report.render import render_typst_source
 
-    return render_typst_source(_TEMPLATES / 'ship_spec.typ', _build_context(spec, page_size=page_size))
+    return render_typst_source(_TEMPLATES / 'ship_spec.typ', _build_context(spec, page_size=page_size, note=note))
 
 
-def render_ship_pdf(ship: Ship, *, page_size: str = 'a4') -> bytes:
-    return render_ship_spec_pdf(ship.build_spec(), page_size=page_size)
+def render_ship_pdf(ship: Ship, *, page_size: str = 'a4', note: str | None = None) -> bytes:
+    return render_ship_spec_pdf(ship.build_spec(), page_size=page_size, note=note)
 
 
-def render_ship_spec_pdf(spec: ShipSpec, *, page_size: str = 'a4') -> bytes:
+def render_ship_spec_pdf(spec: ShipSpec, *, page_size: str = 'a4', note: str | None = None) -> bytes:
     from ceres.report.render import render_pdf
 
-    return render_pdf(_TEMPLATES / 'ship_spec.typ', _build_context(spec, page_size=page_size))
+    return render_pdf(_TEMPLATES / 'ship_spec.typ', _build_context(spec, page_size=page_size, note=note))
 
 
 # ---------------------------------------------------------------------------
@@ -59,7 +59,9 @@ def render_ship_spec_pdf(spec: ShipSpec, *, page_size: str = 'a4') -> bytes:
 # ---------------------------------------------------------------------------
 
 
-def _build_context(spec: ShipSpec, *, theme: ReportTheme = 'light', page_size: str = 'a4') -> dict:
+def _build_context(
+    spec: ShipSpec, *, theme: ReportTheme = 'light', page_size: str = 'a4', note: str | None = None
+) -> dict:
     meta_parts: list[str] = []
     if spec.ship_type:
         meta_parts.append(spec.ship_type)
@@ -79,6 +81,7 @@ def _build_context(spec: ShipSpec, *, theme: ReportTheme = 'light', page_size: s
         'crew_notes': _notes_for_display(spec.crew_notes),
         'power': _build_power(spec.rows),
         'expenses': _build_expenses(spec.expenses),
+        'note': note,
         'theme': theme,
         'page_size': page_size,
     }

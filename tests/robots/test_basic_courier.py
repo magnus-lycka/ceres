@@ -2,8 +2,13 @@
 
 from types import SimpleNamespace
 
-from ceres.make.robot import BasicBrain, GravLocomotion, Robot, RobotSize
-from ceres.make.robot.options import NavigationSystem, StorageCompartment, VehicleSpeedModification
+from ceres.make.robot import BasicBrain, GravLocomotion, Robot, RobotSize, default_suite
+from ceres.make.robot.options import (
+    NavigationSystem,
+    RobotTransceiver,
+    StorageCompartment,
+    VehicleSpeedModification,
+)
 from ceres.make.robot.spec import RobotSpecSection
 
 _expected = SimpleNamespace(
@@ -40,15 +45,6 @@ _expected = SimpleNamespace(
 # Cause of discrepancy untraced. See RIR-002.
 _expected.cost = 23_900
 
-_DEFAULT_SUITE = [
-    'Auditory Sensor',
-    'Drone Interface',
-    'Transceiver 500km (improved)',
-    'Visual Spectrum Sensor',
-    'Voder Speaker',
-    'Wireless Data Link',
-]
-
 
 def build_basic_courier() -> Robot:
     return Robot(
@@ -58,12 +54,15 @@ def build_basic_courier() -> Robot:
         locomotion=GravLocomotion(),
         brain=BasicBrain(function='locomotion'),
         manipulators=[],
+        # Default suite substitutes drone interface for the standard 5km transceiver.
+        # 500km (improved) transceiver is a paid zero-slot upgrade (Cr1,000).
         options=[
+            *default_suite(improved_transceiver=False, drone=True),
+            RobotTransceiver(range_km=500, quality='improved'),
             VehicleSpeedModification(),
             NavigationSystem(quality='basic'),
             StorageCompartment(slots_count=3, storage_type='hazardous'),
         ],
-        default_suite=_DEFAULT_SUITE,
     )
 
 

@@ -2,9 +2,10 @@
 
 from types import SimpleNamespace
 
-from ceres.make.robot import BasicBrain, Manipulator, Robot, RobotSize, WalkerLocomotion
+from ceres.make.robot import BasicBrain, Manipulator, Robot, RobotSize, WalkerLocomotion, default_suite
 from ceres.make.robot.options import (
     AgriculturalEquipment,
+    DroneInterface,
     LightIntensifierSensor,
     NavigationSystem,
     OlfactorySensor,
@@ -35,15 +36,6 @@ _expected = SimpleNamespace(
 # Cause of discrepancy untraced. See RIR-002.
 _expected.cost = 24_850
 
-_DEFAULT_SUITE = [
-    'Auditory Sensor',
-    'Drone Interface',
-    'Transceiver 5km (improved)',
-    'Visual Spectrum Sensor',
-    'Voder Speaker',
-    'Wireless Data Link',
-]
-
 
 def build_ag300() -> Robot:
     return Robot(
@@ -58,7 +50,11 @@ def build_ag300() -> Robot:
             Manipulator(size=RobotSize.SIZE_4),
             Manipulator(size=RobotSize.SIZE_4),
         ],
+        # Standard default suite + Drone Interface as extra zero-slot item.
+        # Source shows both Wireless Data Link and Drone Interface in options.
         options=[
+            *default_suite(),
+            DroneInterface(),
             AgriculturalEquipment(size='medium'),
             LightIntensifierSensor(quality='advanced'),
             NavigationSystem(quality='basic'),
@@ -66,7 +62,6 @@ def build_ag300() -> Robot:
             StorageCompartment(slots_count=8, storage_type='refrigerated'),
             ThermalSensor(),
         ],
-        default_suite=_DEFAULT_SUITE,
     )
 
 

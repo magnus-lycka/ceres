@@ -13,7 +13,7 @@ from ceres.make.robot.spec import RobotSpecSection
 
 
 def build_gardener_servant() -> Robot:
-    """Partial Gardener Servant — manipulators and locomotion only.
+    """Note: Partial Gardener Servant — manipulators and locomotion only.
 
     Omits options not yet implemented.
     Source: refs/robot/121_hiver.md — Gardener Servant, SIZE_5 TL15 Walker.
@@ -27,7 +27,7 @@ def build_gardener_servant() -> Robot:
         brain=AdvancedBrain(brain_tl=15),
         manipulators=[Manipulator(), Manipulator(), Manipulator(), Manipulator()],
         legs=[Manipulator(), Manipulator()],
-        default_suite=[],
+        options=[],
     )
 
 

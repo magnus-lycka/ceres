@@ -16,6 +16,7 @@ class SpecSection(StrEnum):
     COMPUTER = 'Computer'
     SENSORS = 'Sensors'
     WEAPONS = 'Weapons'
+    SCREENS = 'Screens'
     CRAFT = 'Craft'
     HABITATION = 'Habitation'
     SYSTEMS = 'Systems'

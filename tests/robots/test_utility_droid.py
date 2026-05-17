@@ -2,8 +2,8 @@
 
 from types import SimpleNamespace
 
-from ceres.make.robot import BasicBrain, Robot, RobotSize, WalkerLocomotion
-from ceres.make.robot.options import DecreasedResiliency
+from ceres.make.robot import BasicBrain, Robot, RobotSize, WalkerLocomotion, default_suite
+from ceres.make.robot.options import DecreasedResiliency, DroneInterface
 from ceres.make.robot.spec import RobotSpecSection
 
 _expected = SimpleNamespace(
@@ -41,14 +41,12 @@ def build_utility_droid() -> Robot:
         size=RobotSize.SIZE_5,
         locomotion=WalkerLocomotion(),
         brain=BasicBrain(brain_tl=8, function='servant'),
-        options=[DecreasedResiliency(hit_reduction=2)],
-        default_suite=[
-            'Auditory Sensor',
-            'Drone Interface',
-            'Transceiver 5km (improved)',
-            'Visual Spectrum Sensor',
-            'Voder Speaker',
-            'Wireless Data Link',
+        # Standard default suite + Drone Interface as extra zero-slot item.
+        # Source shows both Wireless Data Link and Drone Interface in options.
+        options=[
+            *default_suite(),
+            DroneInterface(),
+            DecreasedResiliency(hit_reduction=2),
         ],
     )
 

@@ -20,6 +20,7 @@ from ceres.make.ship.drives import (
 from ceres.make.ship.hull import BasicStealth, Hull
 from ceres.make.ship.parts import EnergyEfficient, HighTechnology
 from ceres.make.ship.power import SterlingFissionPlant
+from ceres.make.ship.screens import NuclearDamper, ScreensSection
 from ceres.make.ship.sensors import BasicSensors, CivilianSensors, SensorsSection
 from ceres.make.ship.ship import Ship
 from ceres.make.ship.storage import CargoSection, FuelSection, OperationFuel
@@ -175,6 +176,21 @@ def test_roundtrip_stealth():
 def test_roundtrip_no_stealth():
     loaded = _roundtrip(bare)
     assert loaded.hull.stealth is None
+
+
+def test_roundtrip_screens():
+    original = Ship(
+        tl=15,
+        displacement=1_000,
+        hull=Hull(configuration=hull.standard_hull),
+        screens=ScreensSection(screens=[NuclearDamper()]),
+    )
+
+    loaded = _roundtrip(original)
+
+    assert loaded.screens is not None
+    assert len(loaded.screens.screens) == 1
+    assert isinstance(loaded.screens.screens[0], NuclearDamper)
 
 
 def test_roundtrip_m_drive_attributes():

@@ -15,6 +15,16 @@ from .locomotion import (
     WheelsLocomotion,
 )
 from .manipulators import Leg, Manipulator
+from .options import (
+    AuditorySensor,
+    DroneInterface,
+    RobotTransceiver,
+    VideoScreen,
+    VisualSpectrumSensor,
+    VoderSpeaker,
+    WirelessDataLink,
+    default_suite,
+)
 from .parts import RobotPart, RobotPartMixin
 from .robot import Robot
 from .spec import RobotSpec, RobotSpecRow, RobotSpecSection
@@ -23,6 +33,14 @@ __all__ = [
     'Robot',
     'RobotSize',
     'Trait',
+    'default_suite',
+    'VisualSpectrumSensor',
+    'VoderSpeaker',
+    'AuditorySensor',
+    'WirelessDataLink',
+    'DroneInterface',
+    'VideoScreen',
+    'RobotTransceiver',
     'LocomotionUnion',
     'NoneLocomotion',
     'WheelsLocomotion',

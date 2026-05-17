@@ -38,6 +38,14 @@ def test_internal_docking_space_for_air_raft():
     assert d.power == 0
 
 
+def test_internal_docking_space_does_not_overround_floating_point_edges():
+    d = InternalDockingSpace(craft=SpaceCraft.from_catalog('Modular Cutter'))
+    d.bind(DummyOwner(12, 1_000))
+
+    assert d.tons == 55.0
+    assert d.cost == 13_750_000.0
+
+
 @pytest.mark.parametrize(
     ('part', 'expected_tons', 'expected_cost'),
     [

@@ -82,23 +82,38 @@ Remaining work:
   craft, astrogator, etc.)
 - surface any task DM in spec notes
 
-## Screens in gunner count [todo]
+## Screens follow-up [doing]
 
 The High Guard crew table requires gunners for screens:
 
 - commercial: 1 gunner per screen
 - military: 2 gunners per screen
 
-Screens are not yet modelled as a weapon-system component, so they cannot
-be counted. Once screens are implemented in `weapons.py`, wire their count
-into `_commercial_gunner_count` and `_military_gunner_count`.
+Current status:
 
-## Spinal mounts in military gunner count [todo]
+- Meson screens and nuclear dampers are modelled in `screens.py`.
+- Screen gunners are counted in `_commercial_gunner_count` and `_military_gunner_count`.
 
-The military crew table requires 1 gunner per 100 tons of spinal mount
-weaponry. Spinal mounts are not yet modelled. Once implemented, add a
-`_spinal_mount_tonnage` helper and include `ceil(spinal_tons / 100)` in
-`_military_gunner_count`.
+Remaining work:
+
+- broader source coverage for meson screens and mixed screen installations
+- decide how to model exotic screens such as black globes
+
+## Spinal mount follow-up [doing]
+
+Mass driver, meson, particle accelerator, and railgun spinal mounts are
+modelled from the High Guard spinal mount table. Military gunner count includes
+spinal weaponry at 1 gunner per 100 tons before existing large-ship crew
+reductions. TL improvement rows (`+1`, `+2`, `+3`) are modelled, and the
+High Guard Valiant light cruiser now provides source coverage for a TL15
+Meson spinal mount.
+
+Remaining work:
+
+- decide whether railgun and mass-driver ammunition should be represented as
+  separate storage parts
+- add broader source test coverage for non-meson spinal mount TL improvements
+  and other spinal mount families
 
 ## Google Sheet fuel mismatch
 

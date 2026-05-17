@@ -249,6 +249,34 @@ class CountermeasuresSuite(ShipPart):
         return 1.0
 
 
+class MilitaryCountermeasuresSuite(ShipPart):
+    description: Literal['Military Countermeasures Suite'] = 'Military Countermeasures Suite'
+    tl: int = 15
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+
+    def build_item(self) -> str | None:
+        return self.description
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('DM +6 to all jamming and electronic warfare attempts')
+        return notes
+
+    @property
+    def tons(self) -> float:
+        return 15.0
+
+    @property
+    def cost(self) -> float:
+        return 28_000_000.0
+
+    @property
+    def power(self) -> float:
+        return 2.0
+
+
 class LifeScannerAnalysisSuite(ShipPart):
     description: Literal['Life Scanner Analysis Suite'] = 'Life Scanner Analysis Suite'
     tl: int = 14
@@ -392,7 +420,7 @@ ShipSensors = Annotated[
 class SensorsSection(CeresModel):
     primary: ShipSensors = Field(default_factory=BasicSensors)
     life_scanner_analysis_suite: LifeScannerAnalysisSuite | None = None
-    countermeasures: CountermeasuresSuite | None = None
+    countermeasures: CountermeasuresSuite | MilitaryCountermeasuresSuite | None = None
     signal_processing: EnhancedSignalProcessing | None = None
     extended_arrays: ExtendedArrays | RapidDeploymentExtendedArrays | None = None
     sensor_stations: SensorStations | None = None

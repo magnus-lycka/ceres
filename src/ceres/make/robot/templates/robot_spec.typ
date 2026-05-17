@@ -118,3 +118,12 @@
     render-grouped(notes)
   }
 }
+
+// Builder note (from build function docstring starting with "Note:")
+#{
+  let note = report_data.note
+  if note != none {
+    v(3mm)
+    gc-abstract[#raw(note)]
+  }
+}

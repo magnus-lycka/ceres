@@ -77,6 +77,11 @@ def _lookup(table: tuple[_BrainEntry, ...], tl: int) -> _BrainEntry:
 class _BrainBase(CeresModel):
     model_config = {'frozen': True}
 
+    brain_tl: int = 0  # subclasses override with their default
+
+    def _entry(self) -> _BrainEntry:
+        raise NotImplementedError
+
     @property
     def base_int(self) -> int:
         raise NotImplementedError
@@ -95,7 +100,7 @@ class _BrainBase(CeresModel):
 
     @property
     def hardware_cost(self) -> float:
-        return self.brain_cost  # subclasses override when skills are separate
+        return self.brain_cost
 
     @property
     def remaining_bandwidth(self) -> int | None:
@@ -320,7 +325,7 @@ class VeryAdvancedBrain(_BrainBase):
                     f'bandwidth {bw} is not valid for Very Advanced brain at TL{brain_tl}; '
                     f'valid values: {sorted({base} | valid)}'
                 )
-        return data
+        return d
 
     def _entry(self) -> _BrainEntry:
         return _lookup(_VERY_ADVANCED_TABLE, self.brain_tl)

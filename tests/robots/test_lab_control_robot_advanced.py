@@ -2,12 +2,14 @@
 
 from types import SimpleNamespace
 
-from ceres.make.robot import AdvancedBrain, NoneLocomotion, Robot, RobotSize
+from ceres.make.robot import AdvancedBrain, NoneLocomotion, Robot, RobotSize, default_suite
 from ceres.make.robot.options import (
     AvatarController,
     ExternalPower,
     RoboticDroneController,
+    RobotTransceiver,
     SwarmController,
+    VideoScreen,
 )
 from ceres.make.robot.skills import SkillPackage
 from ceres.make.robot.spec import RobotSpecSection
@@ -36,14 +38,6 @@ _expected = SimpleNamespace(
 # Old code used uncapped −Cr600 giving Cr187,700 — that was a bug.
 _expected.cost = 188_220
 
-_DEFAULT_SUITE = [
-    'Auditory Sensor',
-    'Transceiver 5,000km (enhanced)',
-    'Video Screen (improved)',
-    'Voder Speaker',
-    'Wireless Data Link',
-]
-
 
 def build_advanced_lab_control_robot() -> Robot:
     return Robot(
@@ -60,13 +54,17 @@ def build_advanced_lab_control_robot() -> Robot:
             ),
         ),
         manipulators=[],
+        # Default suite substitutes Visual Spectrum Sensor → Video Screen (improved) (Cr500)
+        # and Transceiver 5km (improved) → Transceiver 5,000km (enhanced) (Cr1,000).
         options=[
+            *default_suite(see=False, improved_transceiver=False),
+            VideoScreen(quality='improved'),
+            RobotTransceiver(range_km=5000, quality='enhanced'),
             ExternalPower(),
             RoboticDroneController(quality='advanced'),
             AvatarController(quality='basic'),
             SwarmController(quality='enhanced'),
         ],
-        default_suite=_DEFAULT_SUITE,
     )
 
 

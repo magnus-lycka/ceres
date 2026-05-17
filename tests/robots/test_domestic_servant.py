@@ -2,7 +2,7 @@
 
 from types import SimpleNamespace
 
-from ceres.make.robot import PrimitiveBrain, Robot, RobotSize, WheelsLocomotion
+from ceres.make.robot import PrimitiveBrain, Robot, RobotSize, WheelsLocomotion, default_suite
 from ceres.make.robot.options import (
     DecreasedResiliency,
     DomesticCleaningEquipment,
@@ -51,6 +51,7 @@ def build_domestic_servant() -> Robot:
         brain=PrimitiveBrain(function='clean'),
         manipulators=[],
         options=[
+            *default_suite(),
             DomesticCleaningEquipment(size='small'),
             ReconSensor(quality='improved'),
             StorageCompartment(slots_count=4),
