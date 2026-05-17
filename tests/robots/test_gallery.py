@@ -10,6 +10,8 @@ from .test_ag300 import build_ag300
 from .test_basic_courier import build_basic_courier
 from .test_domestic_servant import build_domestic_servant
 from .test_gardener_servant import build_gardener_servant
+from .test_gonzales import build_gonzales
+from .test_hudson import build_hudson
 from .test_lab_control_robot_advanced import build_advanced_lab_control_robot
 from .test_lab_control_robot_basic import build_basic_lab_control_robot
 from .test_startek import build_startek
@@ -22,6 +24,8 @@ _ROBOTS = [
     ('test_basic_courier', build_basic_courier),
     ('test_domestic_servant', build_domestic_servant),
     ('test_gardener_servant', build_gardener_servant),
+    ('test_gonzales', build_gonzales),
+    ('test_hudson', build_hudson),
     ('test_lab_control_robot_advanced', build_advanced_lab_control_robot),
     ('test_lab_control_robot_basic', build_basic_lab_control_robot),
     ('test_startek', build_startek),

@@ -148,11 +148,9 @@ class Armoury(_ZeroPowerSystemPart):
 
 
 class CommonArea(_ExplicitTonsSystemPart):
+    description: Literal['Common Area'] = 'Common Area'
     cost: ClassVar[float]
     power: ClassVar[float]
-
-    def build_item(self) -> str | None:
-        return 'Common Area'
 
     @property
     def cost(self) -> float:

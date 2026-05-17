@@ -2,14 +2,18 @@
 
 Rule sources:
   refs/robot/10_default_suite.md        (default suite items)
+  refs/robot/11_zero_slot_options.md    (CamouflageVisual)
+  refs/robot/12_camouflage_audible_concealment.md (CamouflageAudible, CamouflageOlfactory)
   refs/robot/14_encryption_module.md    (RobotTransceiver, VideoScreen)
+  refs/robot/17_stinger.md              (AuditorySensor broad spectrum)
   refs/robot/21_cleaning_options.md     (DomesticCleaningEquipment)
   refs/robot/22_communications_options.md (RoboticDroneController)
   refs/robot/23_satellite_uplink.md     (SwarmController)
   refs/robot/07_chassis_options.md      (DecreasedResiliency)
   refs/robot/08_locomotion_modifications.md (VehicleSpeedModification)
   refs/robot/09_manipulators.md         (AdditionalManipulator)
-  refs/robot/18_geiger_counter.md       (LightIntensifierSensor, OlfactorySensor, ThermalSensor)
+  refs/robot/15_voder_speaker.md        (VoderSpeaker broad spectrum)
+  refs/robot/18_geiger_counter.md       (LightIntensifierSensor, OlfactorySensor, PrisSensor, ThermalSensor)
   refs/robot/29_storage_compartment.md  (StorageCompartment, ExternalPower)
   refs/robot/31_neural_activity_sensor.md (ReconSensor)
   refs/robot/32_navigation_system.md    (NavigationSystem)
@@ -292,6 +296,178 @@ class ThermalSensor(RobotPart):
         return 'Thermal Sensor'
 
 
+class PrisSensor(RobotPart):
+    """refs/robot/18_geiger_counter.md — PRIS Sensor, TL12, zero-slot, Cr2000, IR/UV Vision."""
+
+    tl: int = 12
+
+    @property
+    def robot_traits(self) -> tuple[Trait, ...]:
+        return (Trait('IR/UV Vision'),)
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        object.__setattr__(self, 'cost', 2000.0)
+
+    def build_item(self) -> str | None:
+        return 'PRIS Sensor'
+
+
+# Camouflage tables: (tl, detection_dm, cost_per_base_slot)
+# refs/robot/11_zero_slot_options.md — Visual Concealment
+_CAMOUFLAGE_VISUAL_TABLE: dict[str, tuple[int, int, float]] = {
+    'primitive': (1, -1, 1.0),
+    'basic': (4, -2, 4.0),
+    'improved': (7, -2, 40.0),
+    'enhanced': (11, -3, 100.0),
+    'advanced': (12, -4, 500.0),
+    'superior': (13, -4, 2500.0),
+}
+
+# refs/robot/12_camouflage_audible_concealment.md — Audible Concealment
+_CAMOUFLAGE_AUDIBLE_TABLE: dict[str, tuple[int, int, float]] = {
+    'basic': (5, -1, 5.0),
+    'improved': (8, -2, 10.0),
+    'advanced': (10, -3, 50.0),
+}
+
+# refs/robot/12_camouflage_audible_concealment.md — Olfactory Concealment
+_CAMOUFLAGE_OLFACTORY_TABLE: dict[str, tuple[int, int, float]] = {
+    'basic': (7, -1, 10.0),
+    'improved': (9, -2, 20.0),
+    'advanced': (12, -3, 100.0),
+}
+
+
+class CamouflageVisual(RobotPart):
+    """refs/robot/11_zero_slot_options.md — Camouflage: Visual Concealment.
+
+    Zero-slot. Cost = cost_per_base_slot × base_slots.
+    Detection DM is considered the equivalent of the robot's Stealth skill.
+    """
+
+    quality: str = 'enhanced'
+
+    @property
+    def skill_grants(self) -> tuple[SkillGrant, ...]:
+        _tl, dm, _rate = _CAMOUFLAGE_VISUAL_TABLE[self.quality]
+        return (SkillGrant('Stealth', abs(dm)),)
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        tl, _dm, _rate = _CAMOUFLAGE_VISUAL_TABLE[self.quality]
+        object.__setattr__(self, 'tl', tl)
+
+    def bind(self, assembly: RobotBase) -> None:
+        super().bind(assembly)
+        _tl, _dm, rate = _CAMOUFLAGE_VISUAL_TABLE[self.quality]
+        base_slots = chassis_entry(assembly.size).base_slots
+        object.__setattr__(self, 'cost', float(rate * base_slots))
+
+    def build_item(self) -> str | None:
+        return f'Camouflage: Visual ({self.quality})'
+
+
+class CamouflageAudible(RobotPart):
+    """refs/robot/12_camouflage_audible_concealment.md — Camouflage: Audible Concealment.
+
+    Zero-slot. Cost = cost_per_base_slot × base_slots.
+    Negates Heightened Senses when detecting the concealed robot.
+    """
+
+    quality: str = 'advanced'
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        tl, _dm, _rate = _CAMOUFLAGE_AUDIBLE_TABLE[self.quality]
+        object.__setattr__(self, 'tl', tl)
+
+    def bind(self, assembly: RobotBase) -> None:
+        super().bind(assembly)
+        _tl, _dm, rate = _CAMOUFLAGE_AUDIBLE_TABLE[self.quality]
+        base_slots = chassis_entry(assembly.size).base_slots
+        object.__setattr__(self, 'cost', float(rate * base_slots))
+
+    def build_item(self) -> str | None:
+        return f'Camouflage: Audible ({self.quality})'
+
+
+class CamouflageOlfactory(RobotPart):
+    """refs/robot/12_camouflage_audible_concealment.md — Camouflage: Olfactory Concealment.
+
+    Zero-slot. Cost = cost_per_base_slot × base_slots.
+    Negates Heightened Senses when detecting the concealed robot.
+    """
+
+    quality: str = 'advanced'
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        tl, _dm, _rate = _CAMOUFLAGE_OLFACTORY_TABLE[self.quality]
+        object.__setattr__(self, 'tl', tl)
+
+    def bind(self, assembly: RobotBase) -> None:
+        super().bind(assembly)
+        _tl, _dm, rate = _CAMOUFLAGE_OLFACTORY_TABLE[self.quality]
+        base_slots = chassis_entry(assembly.size).base_slots
+        object.__setattr__(self, 'cost', float(rate * base_slots))
+
+    def build_item(self) -> str | None:
+        return f'Camouflage: Olfactory ({self.quality})'
+
+
+_AUTOCHEF_TABLE: dict[str, dict[str, int | float]] = {
+    'basic': {'tl': 9, 'slots': 3, 'cost': 500.0},
+    'improved': {'tl': 10, 'slots': 3, 'cost': 2000.0},
+    'enhanced': {'tl': 11, 'slots': 3, 'cost': 5000.0},
+    'advanced': {'tl': 12, 'slots': 3, 'cost': 10000.0},
+}
+
+
+class Autochef(RobotPart):
+    """refs/robot/27_autobar.md — Autochef, food preparation system.
+
+    Quality: basic (TL9, Cr500) / improved (TL10, Cr2000) / enhanced (TL11, Cr5000) / advanced (TL12, Cr10000).
+    All variants take 3 Slots. Limits Steward or Profession (chef) skill to the quality level when using
+    the robot's internal autochef; the skill cap is a game-mechanic and is not enforced by this model.
+    """
+
+    quality: str = 'basic'
+
+    @property
+    def slots(self) -> int:
+        return int(_AUTOCHEF_TABLE[self.quality]['slots'])
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        entry = _AUTOCHEF_TABLE[self.quality]
+        object.__setattr__(self, 'tl', int(entry['tl']))
+        object.__setattr__(self, 'cost', float(entry['cost']))
+
+    def build_item(self) -> str | None:
+        return f'Autochef ({self.quality})'
+
+
+class StylistToolkit(RobotPart):
+    """refs/robot/32_fire_extinguisher.md — Stylist Toolkit, TL6, 3 Slots, Cr2000.
+
+    Tools for hair styling, nail care, makeup and similar species-specific beauty tasks.
+    """
+
+    tl: int = 6
+
+    @property
+    def slots(self) -> int:
+        return 3
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        object.__setattr__(self, 'cost', 2000.0)
+
+    def build_item(self) -> str | None:
+        return 'Stylist Toolkit'
+
+
 class VehicleSpeedModification(RobotPart):
     """refs/robot/08_locomotion_modifications.md — Vehicle Speed Movement.
 
@@ -411,20 +587,51 @@ class VisualSpectrumSensor(RobotPart):
 
 
 class VoderSpeaker(RobotPart):
-    """refs/robot/10_default_suite.md — Voder Speaker, TL8, zero-slot."""
+    """refs/robot/15_voder_speaker.md — Voder Speaker.
 
+    Standard: TL8, zero-slot, Cr100 standalone.
+    Broad spectrum: TL10, zero-slot, Cr500.
+    """
+
+    quality: str = 'standard'
     tl: int = 8
 
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        if self.quality == 'broad_spectrum':
+            object.__setattr__(self, 'tl', 10)
+            object.__setattr__(self, 'cost', 500.0)
+
     def build_item(self) -> str | None:
+        if self.quality == 'broad_spectrum':
+            return 'Voder Speaker (broad spectrum)'
         return 'Voder Speaker'
 
 
 class AuditorySensor(RobotPart):
-    """refs/robot/10_default_suite.md — Auditory Sensor, TL8, zero-slot."""
+    """refs/robot/17_stinger.md — Auditory Sensor.
 
+    Standard: TL5/TL8 (default suite context), zero-slot, Cr10 standalone.
+    Broad spectrum: TL8, zero-slot, Cr200, grants Heightened Senses trait.
+    """
+
+    quality: str = 'standard'
     tl: int = 8
 
+    @property
+    def robot_traits(self) -> tuple[Trait, ...]:
+        if self.quality == 'broad_spectrum':
+            return (Trait('Heightened Senses'),)
+        return ()
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        if self.quality == 'broad_spectrum':
+            object.__setattr__(self, 'cost', 200.0)
+
     def build_item(self) -> str | None:
+        if self.quality == 'broad_spectrum':
+            return 'Auditory Sensor (broad spectrum)'
         return 'Auditory Sensor'
 
 
@@ -591,6 +798,12 @@ __all__ = [
     'AgriculturalEquipment',
     'LightIntensifierSensor',
     'OlfactorySensor',
+    'PrisSensor',
     'ThermalSensor',
     'VehicleSpeedModification',
+    'Autochef',
+    'StylistToolkit',
+    'CamouflageVisual',
+    'CamouflageAudible',
+    'CamouflageOlfactory',
 ]

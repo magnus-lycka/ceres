@@ -3,6 +3,7 @@ import pytest
 from ceres.make.ship import hull, ship
 from ceres.make.ship.base import ShipBase
 from ceres.make.ship.bridge import Bridge, CommandSection
+from ceres.make.ship.habitation import HabitationSection
 from ceres.make.ship.storage import FuelScoops, FuelSection
 from ceres.make.ship.systems import (
     AdvancedProbeDrones,
@@ -136,6 +137,26 @@ def test_explicit_tonnage_system_values_are_property_backed_design_fields(
     assert dump['tons'] == pytest.approx(expected_tons)
     assert 'cost' not in dump
     assert 'power' not in dump
+
+
+def test_common_area_can_have_display_label():
+    common_area = CommonArea(tons=8.0, display_label='Trophy Lounge')
+    common_area.bind(DummyOwner(15, 400))
+
+    assert common_area.notes.item_message == 'Trophy Lounge (Common Area)'
+
+
+def test_common_area_display_label_appears_in_ship_spec():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        habitation=HabitationSection(common_area=CommonArea(tons=8.0, display_label='Trophy Lounge')),
+    )
+
+    row = my_ship.build_spec().row('Trophy Lounge (Common Area)')
+
+    assert row.tons == pytest.approx(8.0)
 
 
 def test_workshop_tons():

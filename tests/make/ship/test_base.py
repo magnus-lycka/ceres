@@ -1,5 +1,5 @@
 from ceres.make.ship.base import ShipBase
-from ceres.shared import CeresModel, NoteList
+from ceres.shared import CeresModel, CeresPart, NoteList
 
 
 class ExampleModel(CeresModel):
@@ -16,6 +16,10 @@ class ExampleModelWithNotes(CeresModel):
 
     def build_notes(self):
         return []
+
+
+class DescribedPart(CeresPart):
+    description: str = ''
 
 
 def test_model_post_init_adds_item_note_from_build_item():
@@ -94,3 +98,21 @@ def test_ship_base_default_helpers():
 
     assert ship.armour_volume_modifier == 1.0
     assert ship.remaining_usable_tonnage() == 0.0
+
+
+def test_ceres_part_uses_description_as_default_item():
+    part = DescribedPart(description='Example Part')
+
+    assert part.notes.item_message == 'Example Part'
+
+
+def test_ceres_part_display_label_wraps_description():
+    part = DescribedPart(description='Common Area', display_label='Trophy Lounge')
+
+    assert part.notes.item_message == 'Trophy Lounge (Common Area)'
+
+
+def test_ceres_part_display_label_can_stand_alone():
+    part = CeresPart(display_label='Trophy Lounge')
+
+    assert part.notes.item_message == 'Trophy Lounge'
