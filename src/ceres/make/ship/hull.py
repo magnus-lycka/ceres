@@ -211,7 +211,7 @@ class ArmouredBulkhead(ShipPart):
     protected_item: str | None = None
     from_ship_part: bool = False
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         if self.protected_item is not None:
             return f'Armoured Bulkhead for {self.protected_item}'
         return 'Armoured Bulkhead'

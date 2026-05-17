@@ -1,5 +1,5 @@
 import math
-from typing import ClassVar
+from typing import ClassVar, Literal
 
 from pydantic import ConfigDict, Field
 
@@ -28,12 +28,10 @@ class _ExplicitTonsStoragePart(ShipPart):
 
 
 class FuelScoops(_ZeroPowerStoragePart):
+    description: Literal['Fuel Scoops'] = 'Fuel Scoops'
     tons: ClassVar[float]
     cost: ClassVar[float]
     free: bool = False
-
-    def build_item(self) -> str | None:
-        return 'Fuel Scoops'
 
     def build_notes(self) -> list[_Note]:
         return []
@@ -52,7 +50,7 @@ class OperationFuel(_ZeroPowerStoragePart):
     cost: ClassVar[float]
     weeks: int
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         if self.actual_weeks % 52 == 0:
             years = self.actual_weeks // 52
             unit = 'Year' if years == 1 else 'Years'
@@ -61,7 +59,7 @@ class OperationFuel(_ZeroPowerStoragePart):
 
     def bind(self, assembly) -> None:
         super().bind(assembly)
-        self.item(self.build_item() or f'Operation {self.weeks} weeks')
+        self.item(self.item_description())
 
     def bulkhead_label(self) -> str:
         return 'Operation Fuel'
@@ -110,7 +108,7 @@ class JumpFuel(_ZeroPowerStoragePart):
     cost: ClassVar[float]
     parsecs: int
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         if self._assembly is not None and self.assembly.performance_displacement > self.assembly.displacement:
             return f'J-{self.parsecs} ({self.assembly.performance_displacement:g}t)'
         return f'J-{self.parsecs}'
@@ -138,7 +136,7 @@ class ReactionFuel(_ZeroPowerStoragePart):
     cost: ClassVar[float]
     minutes: int
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         reaction_drive = self._reaction_drive if self._assembly is not None else None
         if reaction_drive is not None and reaction_drive.high_burn_thruster:
             if self.minutes % 60 == 0:
@@ -175,7 +173,7 @@ class FuelProcessor(_ExplicitTonsStoragePart):
     cost: ClassVar[float]
     power: ClassVar[float]
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Fuel Processor ({self.tons * 20:g} tons/day)'
 
     @property
@@ -277,7 +275,7 @@ class CargoAirlock(_ZeroPowerStoragePart):
     cost: ClassVar[float]
     size: float = 2.0
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Cargo Airlock ({self.size:g} tons)'
 
     @property
@@ -294,7 +292,7 @@ class FuelCargoContainer(_ZeroPowerStoragePart):
     cost: ClassVar[float]
     capacity: float
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Fuel/Cargo Container ({self.capacity:g} tons)'
 
     @property

@@ -53,7 +53,7 @@ class _PowerPlant(CustomisableShipPart):
 
 
 class _FusionPlant(_PowerPlant):
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Fusion (TL {self.tl}), Power {self.output}'
 
     @property
@@ -88,7 +88,7 @@ class FissionPlant(_PowerPlant):
     power_per_ton: ClassVar[int] = 8
     cost_per_ton: ClassVar[int] = 400_000
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Fission Plant (TL {self.tl}), Power {self.output}'
 
 
@@ -98,7 +98,7 @@ class ChemicalPlant(_PowerPlant):
     power_per_ton: ClassVar[int] = 5
     cost_per_ton: ClassVar[int] = 250_000
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Chemical Plant (TL {self.tl}), Power {self.output}'
 
     def fuel_for_weeks(self, weeks: int) -> float:
@@ -114,7 +114,7 @@ class _SterlingFissionPlant(_PowerPlant):
     minimum_tons: ClassVar[int] = 2
     lifespan_years: ClassVar[int]
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Sterling Fission (TL {self.tl}), Power {self.output}'
 
     def _base_tons(self) -> float:
@@ -180,7 +180,7 @@ class AntimatterPlant(_PowerPlant):
     power_per_ton: ClassVar[int] = 100
     cost_per_ton: ClassVar[int] = 10_000_000
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Antimatter Plant (TL {self.tl}), Power {self.output}'
 
 
@@ -233,7 +233,7 @@ class _SolarPanels(ShipPart):
     power_per_ton: ClassVar[int]
     cost_per_ton: ClassVar[int]
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Solar Panels (TL {self.tl}), Power {self.output:g}'
 
     @property
@@ -294,7 +294,7 @@ class _SolarCoating(_SolarPowerSource):
             output *= 0.5
         return output
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Solar Coating ({self.grade}), Power {self._output_label()}'
 
     def build_notes(self) -> list:
@@ -366,7 +366,7 @@ class _HighEfficiencyBatteries(ShipPart):
     def power(self) -> float:
         return 0.0
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'High-Efficiency Batteries (TL {self.tl}), Power {self.stored_power:g}'
 
     def build_notes(self) -> list:
@@ -396,6 +396,7 @@ type AnyHighEfficiencyBatteries = Annotated[
 
 
 class EmergencyPowerSystem(ShipPart):
+    description: Literal['Emergency Power System'] = 'Emergency Power System'
     tons: ClassVar[float]
     cost: ClassVar[float]
     power: ClassVar[float]
@@ -403,9 +404,6 @@ class EmergencyPowerSystem(ShipPart):
     @classmethod
     def from_fusion_plant(cls, plant: _FusionPlant) -> EmergencyPowerSystem:
         return cls()
-
-    def build_item(self) -> str | None:
-        return 'Emergency Power System'
 
     @property
     def source_plant(self) -> _PowerPlant:

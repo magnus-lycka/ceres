@@ -25,6 +25,7 @@ from .test_pinnace_with_20_ton_fuel_capacity import build_pinnace_with_20_ton_fu
 from .test_poseidon_cargo_boat import build_poseidon_cargo_boat
 from .test_revised_beowulf import build_revised_beowulf
 from .test_revised_dragon import build_revised_dragon
+from .test_safari_ship import build_safari_ship
 from .test_serrano_laboratory_station import build_serrano_laboratory_station
 from .test_small_scout_base import build_small_scout_base
 from .test_strandbell import build_strandbell
@@ -57,6 +58,7 @@ _SHIPS = [
     ('test_poseidon_100t_tl12', lambda: build_poseidon_cargo_boat(12)),
     ('test_revised_beowulf', build_revised_beowulf),
     ('test_revised_dragon', build_revised_dragon),
+    ('test_safari_ship', build_safari_ship),
     ('test_serrano_laboratory_station', build_serrano_laboratory_station),
     ('test_small_scout_base', build_small_scout_base),
     ('test_strandbell', build_strandbell),

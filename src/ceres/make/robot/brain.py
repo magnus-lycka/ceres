@@ -146,9 +146,10 @@ class PrimitiveBrain(_BrainBase):
         return 1 if robot_size < min_free else 0
 
     def programming_label(self) -> str:
+        int_val = self._entry().base_int
         if self.function and self.function != 'none':
-            return f'Primitive ({self.function})'
-        return 'Primitive'
+            return f'Primitive ({self.function}) (INT {int_val})'
+        return f'Primitive (INT {int_val})'
 
 
 class BasicBrain(_BrainBase):

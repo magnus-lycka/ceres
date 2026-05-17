@@ -69,7 +69,7 @@ class _RDrive(ShipPart):
     _tons_percent: ClassVar[float]
     high_burn_thruster: bool = False
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         if self.high_burn_thruster:
             return f'High-Burn Thruster, Thrust {self.level}'
         return f'R-Drive Thrust {self.level}'
@@ -256,7 +256,7 @@ class _MDrive(CustomisableShipPart):
         }
     )
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         if self._assembly is not None and self.assembly.performance_displacement > self.assembly.displacement:
             return f'M-Drive {self.level} ({self.assembly.performance_displacement:g}t)'
         return f'M-Drive {self.level}'
@@ -404,7 +404,7 @@ class _JDrive(CustomisableShipPart):
         }
     )
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         if self._assembly is not None and self.assembly.performance_displacement > self.assembly.displacement:
             return f'Jump {self.level} ({self.assembly.performance_displacement:g}t)'
         return f'Jump {self.level}'

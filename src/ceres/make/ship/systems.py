@@ -32,11 +32,9 @@ class _ExplicitTonsSystemPart(ShipPart):
 
 class Workshop(_ZeroPowerSystemPart):
     system_type: Literal['WORKSHOP'] = 'WORKSHOP'
+    description: Literal['Workshop'] = 'Workshop'
     tons: ClassVar[float]
     cost: ClassVar[float]
-
-    def build_item(self) -> str | None:
-        return 'Workshop'
 
     @property
     def tons(self) -> float:
@@ -49,11 +47,9 @@ class Workshop(_ZeroPowerSystemPart):
 
 class Laboratory(_ZeroPowerSystemPart):
     system_type: Literal['LABORATORY'] = 'LABORATORY'
+    description: Literal['Laboratory'] = 'Laboratory'
     tons: ClassVar[float]
     cost: ClassVar[float]
-
-    def build_item(self) -> str | None:
-        return 'Laboratory'
 
     @property
     def tons(self) -> float:
@@ -66,12 +62,10 @@ class Laboratory(_ZeroPowerSystemPart):
 
 class LibraryFacility(_ZeroPowerSystemPart):
     system_type: Literal['LIBRARY'] = 'LIBRARY'
+    description: Literal['Library'] = 'Library'
     tl: int = 8
     tons: ClassVar[float]
     cost: ClassVar[float]
-
-    def build_item(self) -> str | None:
-        return 'Library'
 
     @property
     def tons(self) -> float:
@@ -84,11 +78,9 @@ class LibraryFacility(_ZeroPowerSystemPart):
 
 class BriefingRoom(_ZeroPowerSystemPart):
     system_type: Literal['BRIEFING_ROOM'] = 'BRIEFING_ROOM'
+    description: Literal['Briefing Room'] = 'Briefing Room'
     tons: ClassVar[float]
     cost: ClassVar[float]
-
-    def build_item(self) -> str | None:
-        return 'Briefing Room'
 
     @property
     def tons(self) -> float:
@@ -101,6 +93,7 @@ class BriefingRoom(_ZeroPowerSystemPart):
 
 class CommandBridge(_ZeroPowerSystemPart):
     system_type: Literal['COMMAND_BRIDGE'] = 'COMMAND_BRIDGE'
+    description: Literal['Command Bridge'] = 'Command Bridge'
     tons: ClassVar[float]
     cost: ClassVar[float]
 
@@ -108,9 +101,6 @@ class CommandBridge(_ZeroPowerSystemPart):
         super().bind(assembly)
         if self.assembly.displacement <= 5_000:
             self.error('Command bridge requires displacement greater than 5000 tons')
-
-    def build_item(self) -> str | None:
-        return 'Command Bridge'
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList()
@@ -132,11 +122,9 @@ class CommandBridge(_ZeroPowerSystemPart):
 
 class Armoury(_ZeroPowerSystemPart):
     system_type: Literal['ARMOURY'] = 'ARMOURY'
+    description: Literal['Armoury'] = 'Armoury'
     tons: ClassVar[float]
     cost: ClassVar[float]
-
-    def build_item(self) -> str | None:
-        return 'Armoury'
 
     @property
     def tons(self) -> float:
@@ -163,11 +151,9 @@ class CommonArea(_ExplicitTonsSystemPart):
 
 class CommercialZone(_ExplicitTonsSystemPart):
     system_type: Literal['COMMERCIAL_ZONE'] = 'COMMERCIAL_ZONE'
+    description: Literal['Commercial Zone'] = 'Commercial Zone'
     cost: ClassVar[float]
     power: ClassVar[float]
-
-    def build_item(self) -> str | None:
-        return 'Commercial Zone'
 
     @property
     def cost(self) -> float:
@@ -179,8 +165,7 @@ class CommercialZone(_ExplicitTonsSystemPart):
 
 
 class SwimmingPool(CommonArea):
-    def build_item(self) -> str | None:
-        return 'Swimming Pool'
+    description: Literal['Swimming Pool'] = 'Swimming Pool'
 
     @property
     def cost(self) -> float:
@@ -188,10 +173,8 @@ class SwimmingPool(CommonArea):
 
 
 class Theatre(CommonArea):
+    description: Literal['Theatre'] = 'Theatre'
     advanced: bool = False
-
-    def build_item(self) -> str | None:
-        return 'Theatre'
 
     @property
     def cost(self) -> float:
@@ -201,11 +184,9 @@ class Theatre(CommonArea):
 
 
 class WetBar(_ZeroPowerSystemPart):
+    description: Literal['Wet Bar'] = 'Wet Bar'
     tons: ClassVar[float]
     cost: ClassVar[float]
-
-    def build_item(self) -> str | None:
-        return 'Wet Bar'
 
     @property
     def tons(self) -> float:
@@ -223,7 +204,7 @@ class HotTub(CommonArea):
     base_tons: float = Field(0.0, alias='tons', exclude=True)
     users: int = 1
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         label = 'User' if self.users == 1 else 'Users'
         return f'Hot Tub ({self.users} {label})'
 
@@ -256,7 +237,7 @@ class MedicalBay(ShipPart):
     power: ClassVar[float]
     autodoc: BasicAutodoc | None = None
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         if self.autodoc is not None:
             return 'Medical Bay, Basic Autodoc'
         return 'Medical Bay'
@@ -279,11 +260,9 @@ class MedicalBay(ShipPart):
 
 class Biosphere(_ExplicitTonsSystemPart):
     system_type: Literal['BIOSPHERE'] = 'BIOSPHERE'
+    description: Literal['Biosphere'] = 'Biosphere'
     cost: ClassVar[float]
     power: ClassVar[float]
-
-    def build_item(self) -> str | None:
-        return 'Biosphere'
 
     @property
     def cost(self) -> float:
@@ -299,7 +278,7 @@ class Airlock(_ZeroPowerSystemPart):
     cost: ClassVar[float]
     size: float = 2.0
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Airlock ({self.size:g} tons)'
 
     def am_i_for_free(self) -> bool:
@@ -329,15 +308,13 @@ class Airlock(_ZeroPowerSystemPart):
 
 
 class Aerofins(_ZeroPowerSystemPart):
+    description: Literal['Aerofins'] = 'Aerofins'
     tons: ClassVar[float]
     cost: ClassVar[float]
 
     @property
     def atmospheric_pilot_dm(self) -> int:
         return 2
-
-    def build_item(self) -> str | None:
-        return 'Aerofins'
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList()
@@ -362,7 +339,7 @@ class ProbeDrones(_ZeroPowerSystemPart):
     cost_per_ton: ClassVar[float] = 500_000.0
     count: int
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         if self.count == 1:
             return 'Probe Drone'
         return 'Probe Drones'
@@ -381,7 +358,7 @@ class AdvancedProbeDrones(ProbeDrones):
     tl: int = 12
     cost_per_ton: ClassVar[float] = 800_000.0
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         if self.count == 1:
             return 'Advanced Probe Drone'
         return 'Advanced Probe Drones'
@@ -391,11 +368,9 @@ class RepairDrones(_ZeroPowerSystemPart):
     """Repair drones: 1 ton per 100 tons of displacement, Cr200,000 per ton."""
 
     drone_type: Literal['REPAIR_DRONES'] = 'REPAIR_DRONES'
+    description: Literal['Repair Drones'] = 'Repair Drones'
     tons: ClassVar[float]
     cost: ClassVar[float]
-
-    def build_item(self) -> str | None:
-        return 'Repair Drones'
 
     @property
     def tons(self) -> float:
@@ -412,7 +387,7 @@ class MiningDrones(_ZeroPowerSystemPart):
     cost: ClassVar[float]
     count: int
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         if self.count == 1:
             return 'Mining Drone'
         return 'Mining Drones'
@@ -432,7 +407,7 @@ class TrainingFacility(_ZeroPowerSystemPart):
     cost: ClassVar[float]
     trainees: int
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Training Facility: {self.trainees}-person capacity'
 
     @property
@@ -449,7 +424,7 @@ class UNREPSystem(_ExplicitTonsSystemPart):
     cost: ClassVar[float]
     power: ClassVar[float]
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'UNREP System ({self.transfer_rate:g} tons/hour)'
 
     @property
@@ -468,11 +443,9 @@ class UNREPSystem(_ExplicitTonsSystemPart):
 class TowCable(_ZeroPowerSystemPart):
     system_type: Literal['TOW_CABLE'] = 'TOW_CABLE'
     tl: int = 7
+    description: Literal['Tow Cable'] = 'Tow Cable'
     tons: ClassVar[float]
     cost: ClassVar[float]
-
-    def build_item(self) -> str | None:
-        return 'Tow Cable'
 
     @property
     def tons(self) -> float:
@@ -486,11 +459,9 @@ class TowCable(_ZeroPowerSystemPart):
 class GrapplingArm(_ZeroPowerSystemPart):
     system_type: Literal['GRAPPLING_ARM'] = 'GRAPPLING_ARM'
     tl: int = 9
+    description: Literal['Grappling Arm'] = 'Grappling Arm'
     tons: ClassVar[float]
     cost: ClassVar[float]
-
-    def build_item(self) -> str | None:
-        return 'Grappling Arm'
 
     @property
     def tons(self) -> float:
@@ -504,11 +475,9 @@ class GrapplingArm(_ZeroPowerSystemPart):
 class AccelerationSeat(_ZeroPowerSystemPart):
     system_type: Literal['ACCELERATION_SEAT'] = 'ACCELERATION_SEAT'
     tl: int = 1
+    description: Literal['Acceleration Seat'] = 'Acceleration Seat'
     tons: ClassVar[float]
     cost: ClassVar[float]
-
-    def build_item(self) -> str | None:
-        return 'Acceleration Seat'
 
     @property
     def tons(self) -> float:

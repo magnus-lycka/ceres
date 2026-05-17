@@ -71,13 +71,13 @@ class TestAdvancedBrainTable:
 
 class TestProgrammingLabels:
     def test_primitive_no_function(self):
-        assert PrimitiveBrain().programming_label() == 'Primitive'
+        assert PrimitiveBrain().programming_label() == 'Primitive (INT 1)'
 
     def test_primitive_with_function(self):
-        assert PrimitiveBrain(function='clean').programming_label() == 'Primitive (clean)'
+        assert PrimitiveBrain(function='clean').programming_label() == 'Primitive (clean) (INT 1)'
 
     def test_primitive_alert(self):
-        assert PrimitiveBrain(function='alert').programming_label() == 'Primitive (alert)'
+        assert PrimitiveBrain(function='alert').programming_label() == 'Primitive (alert) (INT 1)'
 
     def test_basic_no_function(self):
         assert BasicBrain().programming_label() == 'Basic (INT 4)'

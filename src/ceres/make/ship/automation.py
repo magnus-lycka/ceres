@@ -22,7 +22,7 @@ class Automation(ShipPart):
     crew_factor: ClassVar[float]
     effect_note: ClassVar[str | None]
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return self.label
 
     def _basis(self) -> float:
@@ -60,7 +60,7 @@ class Automation(ShipPart):
         spec.add_row(
             SpecRow(
                 section=SpecSection.HULL,
-                item=self.build_item() or '',
+                item=self.notes.item_message or '',
                 tons=None,
                 cost=cost if cost != 0.0 else None,
                 notes=self.notes,

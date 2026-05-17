@@ -12,7 +12,7 @@ Rule sources:
   refs/robot/07_chassis_options.md      (DecreasedResiliency)
   refs/robot/08_locomotion_modifications.md (VehicleSpeedModification)
   refs/robot/09_manipulators.md         (AdditionalManipulator)
-  refs/robot/15_voder_speaker.md        (VoderSpeaker broad spectrum)
+  refs/robot/15_voder_speaker.md        (GeckoGrippers, VoderSpeaker broad spectrum)
   refs/robot/18_geiger_counter.md       (LightIntensifierSensor, OlfactorySensor, PrisSensor, ThermalSensor)
   refs/robot/29_storage_compartment.md  (StorageCompartment, ExternalPower)
   refs/robot/31_neural_activity_sensor.md (ReconSensor)
@@ -311,6 +311,24 @@ class PrisSensor(RobotPart):
 
     def build_item(self) -> str | None:
         return 'PRIS Sensor'
+
+
+class GeckoGrippers(RobotPart):
+    """refs/robot/15_voder_speaker.md — Gecko Grippers, TL9, zero-slot, Cr500/base_slot.
+
+    Allows climbing vertical surfaces and adhering to walls/ceilings in 0–1.5G environments.
+    Movement is halved while traversing these surfaces.
+    """
+
+    tl: int = 9
+
+    def bind(self, assembly: RobotBase) -> None:
+        super().bind(assembly)
+        base_slots = chassis_entry(assembly.size).base_slots
+        object.__setattr__(self, 'cost', 500.0 * base_slots)
+
+    def build_item(self) -> str | None:
+        return 'Gecko Grippers'
 
 
 # Camouflage tables: (tl, detection_dm, cost_per_base_slot)
@@ -798,6 +816,7 @@ __all__ = [
     'AgriculturalEquipment',
     'LightIntensifierSensor',
     'OlfactorySensor',
+    'GeckoGrippers',
     'PrisSensor',
     'ThermalSensor',
     'VehicleSpeedModification',

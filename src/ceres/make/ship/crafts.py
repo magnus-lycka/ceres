@@ -55,8 +55,11 @@ class CarriedOccupant(CeresModel):
     def requires_pilot(self) -> bool:
         return False
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return self.kind
+
+    def build_item(self) -> str | None:
+        return self.item_description()
 
 
 class Vehicle(CarriedOccupant):
@@ -110,7 +113,7 @@ class EmptyOccupant(CarriedOccupant):
             data['shipping_size'] = docking_space
         super().__init__(**data)
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Docking Space ({self.shipping_size:g} tons)'
 
 
@@ -176,7 +179,7 @@ class DockingClamp(_ZeroPowerCraftPart):
             raise ValueError('DockingClamp has neither kind nor craft')
         return _kind_for_shipping_size(self.craft.shipping_size)
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Docking Clamp, Type {self._resolved_kind()}'
 
     @property
@@ -200,10 +203,10 @@ class InternalDockingSpace(_ZeroPowerCraftPart):
     cost: ClassVar[float]
     craft: AnyCarriedOccupant
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         if not self.craft.render_in_spec:
-            return self.craft.build_item()
-        return f'Internal Docking Space: {self.craft.build_item()}'
+            return self.craft.item_description()
+        return f'Internal Docking Space: {self.craft.item_description()}'
 
     @property
     def tons(self) -> float:
@@ -224,10 +227,10 @@ class FullHangar(_ZeroPowerCraftPart):
     cost: ClassVar[float]
     craft: AnyCarriedOccupant
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         if not self.craft.render_in_spec:
             return f'Full Hangar ({self.craft.shipping_size:g} tons)'
-        return f'Full Hangar: {self.craft.build_item()}'
+        return f'Full Hangar: {self.craft.item_description()}'
 
     @property
     def tons(self) -> float:

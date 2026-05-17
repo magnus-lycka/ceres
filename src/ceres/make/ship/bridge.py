@@ -13,7 +13,7 @@ class Cockpit(ShipPart):
     power: ClassVar[float]
     holographic: bool = False
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         if self.holographic:
             return 'Holographic Cockpit'
         return 'Cockpit'
@@ -41,7 +41,7 @@ class Bridge(ShipPart):
     small: bool = False
     holographic: bool = False
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         if self.holographic:
             if self.small:
                 return 'Smaller Holographic Controls'

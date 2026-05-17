@@ -25,7 +25,7 @@ class _Screen(CustomisableShipPart):
         }
     )
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return self.item_label
 
     @property

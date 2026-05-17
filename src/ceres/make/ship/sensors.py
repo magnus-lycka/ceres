@@ -130,9 +130,6 @@ class BasicSensors(SensorPackage):
     description: Literal['Basic Sensors'] = 'Basic Sensors'
     tl: int = 8
 
-    def build_item(self) -> str | None:
-        return self.description
-
     def build_notes(self) -> list[_Note]:
         return _sensor_package_notes(
             suite=('Radar', 'Lidar'),
@@ -149,9 +146,6 @@ class CivilianSensors(SensorPackage):
     base_cost: ClassVar[float] = 3_000_000.0
     base_power: ClassVar[float] = 1.0
 
-    def build_item(self) -> str | None:
-        return self.description
-
     def build_notes(self) -> list[_Note]:
         return _sensor_package_notes(
             suite=('Radar', 'Lidar'),
@@ -167,9 +161,6 @@ class MilitarySensors(SensorPackage):
     base_tons: ClassVar[float] = 2.0
     base_cost: ClassVar[float] = 4_100_000.0
     base_power: ClassVar[float] = 2.0
-
-    def build_item(self) -> str | None:
-        return self.description
 
     def build_notes(self) -> list[_Note]:
         return _sensor_package_notes(
@@ -188,9 +179,6 @@ class ImprovedSensors(SensorPackage):
     base_cost: ClassVar[float] = 4_300_000.0
     base_power: ClassVar[float] = 3.0
 
-    def build_item(self) -> str | None:
-        return self.description
-
     def build_notes(self) -> list[_Note]:
         return _sensor_package_notes(
             suite=('Radar', 'Lidar', 'Densitometer'),
@@ -208,9 +196,6 @@ class AdvancedSensors(SensorPackage):
     base_cost: ClassVar[float] = 5_300_000.0
     base_power: ClassVar[float] = 6.0
 
-    def build_item(self) -> str | None:
-        return self.description
-
     def build_notes(self) -> list[_Note]:
         return _sensor_package_notes(
             suite=('Radar', 'Lidar', 'Densitometer', 'Neural Activity Sensor'),
@@ -227,9 +212,6 @@ class CountermeasuresSuite(ShipPart):
     tons: ClassVar[float]
     cost: ClassVar[float]
     power: ClassVar[float]
-
-    def build_item(self) -> str | None:
-        return self.description
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList()
@@ -256,9 +238,6 @@ class MilitaryCountermeasuresSuite(ShipPart):
     cost: ClassVar[float]
     power: ClassVar[float]
 
-    def build_item(self) -> str | None:
-        return self.description
-
     def build_notes(self) -> list[_Note]:
         notes = NoteList()
         notes.info('DM +6 to all jamming and electronic warfare attempts')
@@ -283,9 +262,6 @@ class LifeScannerAnalysisSuite(ShipPart):
     tons: ClassVar[float]
     cost: ClassVar[float]
     power: ClassVar[float]
-
-    def build_item(self) -> str | None:
-        return self.description
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList()
@@ -312,7 +288,7 @@ class SensorStations(ShipPart):
     power: ClassVar[float]
     count: int
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         if self.count == 1:
             return 'Sensor Station'
         return 'Sensor Stations'
@@ -340,9 +316,6 @@ class EnhancedSignalProcessing(ShipPart):
     cost: ClassVar[float]
     power: ClassVar[float]
 
-    def build_item(self) -> str | None:
-        return self.description
-
     def build_notes(self) -> list[_Note]:
         notes = NoteList()
         notes.info('DM +4 to all sensor-related checks')
@@ -367,9 +340,6 @@ class ExtendedArrays(ShipPart):
     tons: ClassVar[float]
     cost: ClassVar[float]
     power: ClassVar[float]
-
-    def build_item(self) -> str | None:
-        return self.description
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList()
@@ -396,9 +366,6 @@ class ExtendedArrays(ShipPart):
 
 class RapidDeploymentExtendedArrays(ExtendedArrays):
     description: Literal['Rapid Deployment Extended Arrays'] = 'Rapid Deployment Extended Arrays'
-
-    def build_item(self) -> str | None:
-        return self.description
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList()

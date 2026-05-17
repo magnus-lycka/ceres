@@ -40,7 +40,7 @@ class Stateroom(ShipPart):
             raise ValueError(f'{self.label} occupancy must be 1 or 2')
         return self
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return self.label
 
     @property
@@ -124,7 +124,7 @@ class LowBerth(ShipPart):
     tons_per_berth: ClassVar[float] = 0.5
     cost_per_berth: ClassVar[float] = 50_000.0
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return self.label
 
     @property
@@ -154,13 +154,11 @@ class LowBerth(ShipPart):
 
 
 class Brig(ShipPart):
+    description: Literal['Brig'] = 'Brig'
     plural_label: ClassVar[str] = 'Brigs'
     tons: ClassVar[float]
     cost: ClassVar[float]
     power: ClassVar[float]
-
-    def build_item(self) -> str | None:
-        return 'Brig'
 
     @property
     def tons(self) -> float:
@@ -180,7 +178,7 @@ class Barracks(_ExplicitTonsHabitationPart):
     power: ClassVar[float]
     occupants: str | None = None
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         if self.occupants is None:
             return 'Barracks'
         return f'Barracks ({self.occupants})'
@@ -195,6 +193,7 @@ class Barracks(_ExplicitTonsHabitationPart):
 
 
 class AdvancedEntertainmentSystem(_ExplicitCostHabitationPart):
+    description: Literal['Advanced Entertainment System'] = 'Advanced Entertainment System'
     tl: int = 5
     tons: ClassVar[float]
     power: ClassVar[float]
@@ -211,9 +210,6 @@ class AdvancedEntertainmentSystem(_ExplicitCostHabitationPart):
             )
         return value
 
-    def build_item(self) -> str | None:
-        return 'Advanced Entertainment System'
-
     @property
     def tons(self) -> float:
         return 0.0
@@ -224,13 +220,11 @@ class AdvancedEntertainmentSystem(_ExplicitCostHabitationPart):
 
 
 class CabinSpace(_ExplicitTonsHabitationPart):
+    description: Literal['Cabin Space'] = 'Cabin Space'
     cost: ClassVar[float]
     power: ClassVar[float]
     tons_per_passenger: ClassVar[float] = 1.5
     life_support_per_ton: ClassVar[float] = 250.0
-
-    def build_item(self) -> str | None:
-        return 'Cabin Space'
 
     @property
     def cost(self) -> float:
@@ -261,6 +255,7 @@ class HabitationSection(CeresModel):
     barracks: list[Barracks] = Field(default_factory=list)
     cabin_space: CabinSpace | None = None
     common_area: CommonArea | None = None
+    common_areas: list[CommonArea] = Field(default_factory=list)
     entertainment: AdvancedEntertainmentSystem | None = None
     swimming_pool: SwimmingPool | None = None
     hot_tubs: list[HotTub] = Field(default_factory=list)
@@ -332,6 +327,7 @@ class HabitationSection(CeresModel):
             *self.barracks,
             self.cabin_space,
             self.common_area,
+            *self.common_areas,
             self.entertainment,
             self.swimming_pool,
             *self.hot_tubs,
@@ -438,6 +434,7 @@ class HabitationSection(CeresModel):
                     *self.brigs,
                     *self.barracks,
                     self.common_area,
+                    *self.common_areas,
                     self.entertainment,
                     self.swimming_pool,
                     *self.hot_tubs,

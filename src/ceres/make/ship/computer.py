@@ -63,7 +63,7 @@ class ComputerBase(ComputerPart, ShipPartMixin):
             notes.warning('2+ Quirks')
         return notes
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         item = self.description
         if self.bis:
             item += '/bis'

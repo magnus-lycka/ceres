@@ -564,7 +564,7 @@ class TestBuildSpec:
         robot = make_robot()
         rows = robot.build_spec().rows_for_section(RobotSpecSection.PROGRAMMING)
         assert len(rows) == 1
-        assert rows[0].value == 'Primitive'
+        assert rows[0].value == 'Primitive (INT 1)'
 
     def test_spec_endurance_row(self):
         from ceres.make.robot.spec import RobotSpecSection

@@ -23,7 +23,7 @@ _expected = SimpleNamespace(
     endurance_hours=79,
     armour=2,
     traits='Armour (+2), Small (-2)',
-    programming='Primitive (clean)',
+    programming='Primitive (clean) (INT 1)',
     options=(
         'Auditory Sensor',
         'Domestic Cleaning Equipment (small)',

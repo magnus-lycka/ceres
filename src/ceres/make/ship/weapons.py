@@ -110,8 +110,11 @@ class _MountWeapon(CeresModel):
                         notes.error(f'{mod.name} is not applicable for {self.build_item()}')
         return notes
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return self.item_label
+
+    def build_item(self) -> str | None:
+        return self.item_description()
 
     def customisation_note(self) -> _Note | None:
         if self.customisation is None:
@@ -177,9 +180,9 @@ class FixedMount(ShipPart):
     tl: int = 9
     weapons: list[MountWeapon] = Field(default_factory=list)
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         if len(self.weapons) == 1:
-            return self.weapons[0].build_item()
+            return self.weapons[0].item_description()
         return 'Fixed Mount'
 
     def build_notes(self) -> list[_Note]:
@@ -219,7 +222,7 @@ class _Turret(ShipPart):
     capacity: ClassVar[int]
     weapons: list[MountWeapon] = Field(default_factory=list)
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'{self.size.title()} Turret'
 
     def build_notes(self) -> list[_Note]:
@@ -301,7 +304,7 @@ class MissileStorage(ShipPart):
     power: ClassVar[float]
     count: int
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Missile Storage ({self.count})'
 
     @property
@@ -325,7 +328,7 @@ class TorpedoStorage(ShipPart):
     power: ClassVar[float]
     count: int
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Torpedo Storage ({self.count})'
 
     @property
@@ -349,7 +352,7 @@ class SandcasterCanisterStorage(ShipPart):
     power: ClassVar[float]
     count: int
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Sandcaster Canister Storage ({self.count})'
 
     @property
@@ -396,7 +399,7 @@ class _Barbette(CustomisableShipPart):
         }
     )
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         item = f'{self.weapon_label} Barbette'
         damage_text = _damage_multiple_text(self.damage_multiplier)
         if damage_text is None:
@@ -593,7 +596,7 @@ class _Bay(CustomisableShipPart):
                 if mod.name in {HighYield.name, VeryHighYield.name}:
                     self.error(f'{mod.name} is not applicable for {self.build_item()}')
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         item = f'{self.size.title()} {self.weapon_label} Bay'
         if self.salvo_text is not None:
             item = f'{item} ({self.salvo_text})'
@@ -1010,7 +1013,7 @@ class _SpinalMount(ShipPart):
         if self.assembly_tl < required_tl:
             self.error(f'Requires TL{required_tl}, ship is TL{self.assembly_tl}')
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         if self.tl_improvement:
             return f'{self.item_label} (TL{self.tl + self.tl_improvement})'
         return self.item_label
@@ -1166,7 +1169,7 @@ class _PointDefenseBattery(CustomisableShipPart):
         }
     )
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return self.item_label
 
     def build_notes(self) -> list[_Note]:

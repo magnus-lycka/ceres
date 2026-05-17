@@ -23,7 +23,7 @@ class Armour(ShipPart):
     def check_protection_limit(self) -> None:
         pass
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'{self.description}, Armour: {self.protection}'
 
     @property
