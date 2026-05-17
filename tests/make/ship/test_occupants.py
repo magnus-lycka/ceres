@@ -31,6 +31,10 @@ class RoomTwoBeds:
     ]
 
 
+class LowBerthResidence:
+    provides = [(ResidenceDemand.LOW_BERTH, 1)]
+
+
 def test_high_passage_requirements():
     assert HighPassage.demand == ResidenceDemand.PASSENGER_STATEROOM
 
@@ -120,11 +124,99 @@ def test_allocator_guest_uses_middle_passage_accommodation():
 
 
 def test_allocator_frozen_watch_uses_low_berth():
-    allocator = ResidenceAllocator(residences=[RoomOneBed()])
+    allocator = ResidenceAllocator(residences=[LowBerthResidence()])
     frozen_watch = FrozenWatch()
     provided, rejected = allocator.provide_reject([frozen_watch])
-    assert provided == []
-    assert rejected == [frozen_watch]
+    assert provided == [frozen_watch]
+    assert rejected == []
+
+
+def test_allocator_low_passage_uses_low_berth():
+    allocator = ResidenceAllocator(residences=[LowBerthResidence()])
+    low = LowPassage()
+    provided, rejected = allocator.provide_reject([low])
+    assert provided == [low]
+    assert rejected == []
+
+
+def test_allocator_officer_uses_crew_stateroom_and_blocks_crew_beds():
+    allocator = ResidenceAllocator(residences=[RoomTwoBeds()])
+    officer, crew = Officer(), Crew()
+    provided, rejected = allocator.provide_reject([officer, crew])
+    assert provided == [officer]
+    assert rejected == [crew]
+
+
+def test_allocator_crew_uses_crew_stateroom_beds():
+    allocator = ResidenceAllocator(residences=[RoomTwoBeds()])
+    crew1, crew2 = Crew(), Crew()
+    provided, rejected = allocator.provide_reject([crew1, crew2])
+    assert provided == [crew1, crew2]
+    assert rejected == []
+
+
+def test_allocator_troop_uses_any_crew_bed():
+    allocator = ResidenceAllocator(residences=[RoomTwoBeds()])
+    troop1, troop2 = Troop(), Troop()
+    provided, rejected = allocator.provide_reject([troop1, troop2])
+    assert provided == [troop1, troop2]
+    assert rejected == []
+
+
+def test_allocator_crew_and_troop_share_crew_bed_capacity():
+    allocator = ResidenceAllocator(residences=[RoomTwoBeds()])
+    crew, troop = Crew(), Troop()
+    provided, rejected = allocator.provide_reject([crew, troop])
+    assert provided == [crew, troop]
+    assert rejected == []
+
+
+def test_allocator_passenger_bed_excludes_later_crew_bed_use():
+    allocator = ResidenceAllocator(residences=[RoomTwoBeds()])
+    middle, crew = MiddlePassage(), Crew()
+    provided, rejected = allocator.provide_reject([middle, crew])
+    assert provided == [middle]
+    assert rejected == [crew]
+
+
+def test_allocator_crew_bed_excludes_later_passenger_bed_use():
+    allocator = ResidenceAllocator(residences=[RoomTwoBeds()])
+    troop, middle = Troop(), MiddlePassage()
+    provided, rejected = allocator.provide_reject([troop, middle])
+    assert provided == [troop]
+    assert rejected == [middle]
+
+
+def test_allocator_high_passage_prefers_single_stateroom_before_double_room():
+    allocator = ResidenceAllocator(residences=[RoomTwoBeds(), RoomOneBed()])
+    high, middle = HighPassage(), MiddlePassage()
+    provided, rejected = allocator.provide_reject([high, middle])
+    assert provided == [high, middle]
+    assert rejected == []
+
+
+def test_allocator_officer_prefers_single_stateroom_before_double_room():
+    allocator = ResidenceAllocator(residences=[RoomTwoBeds(), RoomOneBed()])
+    officer, crew = Officer(), Crew()
+    provided, rejected = allocator.provide_reject([officer, crew])
+    assert provided == [officer, crew]
+    assert rejected == []
+
+
+def test_allocator_mixed_crew_and_passenger_demands_keep_existing_priority():
+    allocator = ResidenceAllocator(
+        residences=[RoomOneBed(), RoomTwoBeds(), RoomTwoBeds(), RoomTwoBeds(), RoomTwoBeds(), LowBerthResidence()]
+    )
+    officer = Officer()
+    high = HighPassage()
+    crew1 = Crew()
+    crew2 = Crew()
+    crew3 = Crew()
+    middle = MiddlePassage()
+    low = LowPassage()
+    provided, rejected = allocator.provide_reject([officer, high, crew1, middle, crew2, crew3, low])
+    assert provided == [officer, high, crew1, middle, crew2, crew3, low]
+    assert rejected == []
 
 
 def test_ship_occupants_are_individual_objects():

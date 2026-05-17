@@ -3,7 +3,7 @@ import inspect
 import pytest
 
 from ceres.make.robot.report import render_robot_typst
-from ceres.report import render_robot_pdf
+from ceres.report import render_pdf_source
 
 from ._output import write_json_output, write_pdf_output, write_typst_output
 from .test_ag300 import build_ag300
@@ -51,11 +51,19 @@ def test_robot_gallery_typst_output(name: str, builder) -> None:
     assert 'report_data' in output_path.read_text(encoding='utf-8')
 
 
+def _render_robot_gallery_typst() -> str:
+    return '\n#pagebreak()\n'.join(
+        render_robot_typst(builder(), note=_builder_note(builder)) for _name, builder in _ROBOTS
+    )
+
+
 @pytest.mark.slow
-@pytest.mark.parametrize(('name', 'builder'), _ROBOTS)
-def test_robot_gallery_pdf_output(name: str, builder) -> None:
-    robot = builder()
-    pdf_bytes = render_robot_pdf(robot, note=_builder_note(builder))
-    output_path = write_pdf_output(name, pdf_bytes)
+def test_robot_gallery_pdf_output() -> None:
+    typst_src = _render_robot_gallery_typst()
+    typst_output_path = write_typst_output('robots_gallery', typst_src)
+    pdf_bytes = render_pdf_source(typst_src)
+    output_path = write_pdf_output('robots_gallery', pdf_bytes)
+
+    assert typst_output_path.exists()
     assert output_path.exists()
     assert pdf_bytes[:4] == b'%PDF'

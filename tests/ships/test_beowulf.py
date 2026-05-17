@@ -176,22 +176,29 @@ def build_beowulf() -> ship.Ship:
     )
 
 
-def test_beowulf_hull():
-    beowulf = build_beowulf()
+@pytest.fixture(scope='module')
+def beowulf():
+    return build_beowulf()
+
+
+@pytest.fixture(scope='module')
+def beowulf_spec(beowulf):
+    return beowulf.build_spec()
+
+
+def test_beowulf_hull(beowulf):
     assert beowulf.hull_cost == _expected.hull_cost_mcr * 1_000_000
     assert beowulf.hull_points == _expected.hull_points
 
 
-def test_beowulf_armour():
-    beowulf = build_beowulf()
+def test_beowulf_armour(beowulf):
     a = beowulf.hull.armour
     assert a is not None
     assert a.tons == pytest.approx(_expected.armour_tons)
     assert a.cost == _expected.armour_cost_mcr * 1_000_000
 
 
-def test_beowulf_drives():
-    beowulf = build_beowulf()
+def test_beowulf_drives(beowulf):
     assert beowulf.drives is not None
     assert beowulf.drives.m_drive is not None
     assert beowulf.drives.m_drive.tons == pytest.approx(_expected.m_drive_tons)
@@ -204,8 +211,7 @@ def test_beowulf_drives():
     assert beowulf.drives.j_drive.power == _expected.j_drive_power
 
 
-def test_beowulf_fusion_plant():
-    beowulf = build_beowulf()
+def test_beowulf_fusion_plant(beowulf):
     assert beowulf.power is not None
     fp = beowulf.power.plant
     assert fp is not None
@@ -214,8 +220,7 @@ def test_beowulf_fusion_plant():
     assert fp.cost == _expected.plant_cost_mcr * 1_000_000
 
 
-def test_beowulf_fuel():
-    beowulf = build_beowulf()
+def test_beowulf_fuel(beowulf):
     assert beowulf.fuel is not None
     assert beowulf.fuel.jump_fuel is not None
     assert beowulf.fuel.jump_fuel.tons == pytest.approx(_expected.jump_fuel_tons)
@@ -226,8 +231,7 @@ def test_beowulf_fuel():
     assert beowulf.fuel.fuel_processor.cost == _expected.fuel_processor_cost_cr
 
 
-def test_beowulf_bridge():
-    beowulf = build_beowulf()
+def test_beowulf_bridge(beowulf):
     assert beowulf.command is not None
     b = beowulf.command.bridge
     assert b is not None
@@ -235,8 +239,7 @@ def test_beowulf_bridge():
     assert b.cost == _expected.bridge_cost_mcr * 1_000_000
 
 
-def test_beowulf_staterooms():
-    beowulf = build_beowulf()
+def test_beowulf_staterooms(beowulf):
     assert beowulf.habitation is not None
     assert beowulf.habitation.staterooms is not None
     assert len(beowulf.habitation.staterooms) == _expected.stateroom_count
@@ -250,8 +253,7 @@ def test_beowulf_staterooms():
     assert sum(berth.power for berth in beowulf.habitation.low_berths) == _expected.low_berth_power_total
 
 
-def test_beowulf_systems():
-    beowulf = build_beowulf()
+def test_beowulf_systems(beowulf):
     assert beowulf.habitation is not None
     assert beowulf.habitation.common_area is not None
     assert beowulf.habitation.common_area.tons == pytest.approx(_expected.common_area_tons)
@@ -260,13 +262,12 @@ def test_beowulf_systems():
     assert beowulf.fuel.fuel_scoops.cost == _expected.fuel_scoops_cost
 
 
-def test_beowulf_airlocks_free():
-    beowulf = build_beowulf()
+def test_beowulf_airlocks_free(beowulf):
     assert len(beowulf.hull.airlocks) == _expected.airlock_count
     assert [airlock.tons for airlock in beowulf.hull.airlocks] == [_expected.airlock_tons] * _expected.airlock_count
 
 
-def test_beowulf_cargo():
+def test_beowulf_cargo(beowulf):
     # Source rows:
     # - Cargo Bay: 80.00
     # - Passenger Luggage Storage Area: 0.80 (RIS-002)
@@ -274,12 +275,10 @@ def test_beowulf_cargo():
     #
     # Ceres does not install luggage or stores/spares as separate design rows in
     # this case, but the resulting usable cargo capacity still lands at 81.5.
-    beowulf = build_beowulf()
     assert CargoSection.cargo_tons_for_ship(beowulf) == pytest.approx(_expected.cargo_tons, abs=0.01)
 
 
-def test_beowulf_power():
-    beowulf = build_beowulf()
+def test_beowulf_power(beowulf):
     assert beowulf.available_power == _expected.available_power
     assert beowulf.basic_hull_power_load == pytest.approx(_expected.power_basic)
     assert beowulf.maneuver_power_load == _expected.power_maneuver
@@ -287,15 +286,12 @@ def test_beowulf_power():
     assert beowulf.total_power_load == pytest.approx(_expected.total_power)
 
 
-def test_beowulf_production_cost():
-    beowulf = build_beowulf()
+def test_beowulf_production_cost(beowulf):
     assert beowulf.production_cost == pytest.approx(_expected.production_cost_mcr * 1_000_000)
     assert beowulf.sales_price_new == pytest.approx(_expected.sales_price_mcr * 1_000_000)
 
 
-def test_beowulf_crew_and_life_support_match_reference_manifest():
-    beowulf = build_beowulf()
-
+def test_beowulf_crew_and_life_support_match_reference_manifest(beowulf):
     crew = [(role.role, quantity, role.monthly_salary) for role, quantity in beowulf.crew.grouped_roles]
     assert crew == _expected.crew
     assert beowulf.expenses.life_support_facilities == pytest.approx(_expected.life_support_facilities_cr)
@@ -307,27 +303,24 @@ def test_beowulf_crew_and_life_support_match_reference_manifest():
     assert beowulf.notes.warnings == _expected.expected_warnings
 
 
-def test_beowulf_spec_structure():
-    beowulf = build_beowulf()
-    spec = beowulf.build_spec()
-
-    assert spec.ship_class == _expected.spec_ship_class
-    assert spec.ship_type == _expected.spec_ship_type
-    assert spec.tl == _expected.tl
-    assert spec.hull_points == _expected.hull_points
+def test_beowulf_spec_structure(beowulf_spec):
+    assert beowulf_spec.ship_class == _expected.spec_ship_class
+    assert beowulf_spec.ship_type == _expected.spec_ship_type
+    assert beowulf_spec.tl == _expected.tl
+    assert beowulf_spec.hull_points == _expected.hull_points
 
     for item in _expected.spec_rows:
-        assert spec.row(item).section == _expected.spec_rows[item]
-    airlock_row = spec.row('Airlock (2 tons)', section='Hull')
+        assert beowulf_spec.row(item).section == _expected.spec_rows[item]
+    airlock_row = beowulf_spec.row('Airlock (2 tons)', section='Hull')
     assert airlock_row.section == _expected.spec_airlock_section
     assert airlock_row.quantity == _expected.spec_airlock_quantity
-    stateroom_row = spec.row('Staterooms', section='Habitation')
+    stateroom_row = beowulf_spec.row('Staterooms', section='Habitation')
     assert stateroom_row.section == _expected.spec_stateroom_section
     assert stateroom_row.quantity == _expected.stateroom_count
-    low_berth_row = spec.row('Low Berths', section='Habitation')
+    low_berth_row = beowulf_spec.row('Low Berths', section='Habitation')
     assert low_berth_row.section == _expected.spec_low_berth_section
     assert low_berth_row.quantity == _expected.low_berth_count
-    assert spec.expenses[0].label == _expected.spec_production_cost_label
-    assert spec.expenses[0].amount == pytest.approx(_expected.production_cost_mcr * 1_000_000)
-    assert spec.expenses[1].amount == pytest.approx(_expected.sales_price_mcr * 1_000_000)
-    assert [(crew.role, crew.quantity, crew.salary) for crew in spec.crew] == _expected.spec_crew
+    assert beowulf_spec.expenses[0].label == _expected.spec_production_cost_label
+    assert beowulf_spec.expenses[0].amount == pytest.approx(_expected.production_cost_mcr * 1_000_000)
+    assert beowulf_spec.expenses[1].amount == pytest.approx(_expected.sales_price_mcr * 1_000_000)
+    assert [(crew.role, crew.quantity, crew.salary) for crew in beowulf_spec.crew] == _expected.spec_crew

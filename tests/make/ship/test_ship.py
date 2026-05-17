@@ -118,22 +118,6 @@ def test_ship_explicit_cargo_hold_with_crane_reduces_usable_capacity_and_adds_co
     assert my_ship.production_cost == pytest.approx(10_000_000 + 3_000_000)
 
 
-def test_ship_parts_of_type_returns_matching_installed_parts():
-    my_ship = ship.Ship(
-        tl=12,
-        displacement=100,
-        hull=hull.Hull(configuration=hull.streamlined_hull),
-        systems=SystemsSection(internal_systems=[Workshop()], drones=[ProbeDrones(count=10)]),
-        sensors=SensorsSection(primary=CivilianSensors()),
-    )
-    probe_drones = my_ship.parts_of_type(ProbeDrones)
-    workshops = my_ship.parts_of_type(Workshop)
-    assert len(probe_drones) == 1
-    assert isinstance(probe_drones[0], ProbeDrones)
-    assert len(workshops) == 1
-    assert isinstance(workshops[0], Workshop)
-
-
 def test_military_ship_warns_when_armouries_are_below_recommendation():
     my_ship = ship.Ship(
         tl=12,
@@ -368,4 +352,4 @@ def test_ship_roundtrips_airlocks_in_parts_list():
         displacement=100,
         hull=hull.Hull(configuration=hull.streamlined_hull, airlocks=[Airlock()]),
     )
-    assert len(my_ship.parts_of_type(Airlock)) == 1
+    assert len(my_ship.hull.airlocks) == 1

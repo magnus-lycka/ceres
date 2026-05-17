@@ -93,5 +93,4 @@ def test_ship_base_default_helpers():
     ship = ShipBase(tl=12, displacement=100)
 
     assert ship.armour_volume_modifier == 1.0
-    assert ship.parts_of_type(object) == []
     assert ship.remaining_usable_tonnage() == 0.0

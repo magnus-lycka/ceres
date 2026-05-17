@@ -257,8 +257,20 @@ def build_ambush_hunter_killer_corvette() -> ship.Ship:
     )
 
 
-def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
-    corvette = build_ambush_hunter_killer_corvette()
+@pytest.fixture(scope='module')
+def ambush_hunter_killer_corvette():
+    return build_ambush_hunter_killer_corvette()
+
+
+@pytest.fixture(scope='module')
+def ambush_hunter_killer_corvette_spec(ambush_hunter_killer_corvette):
+    return ambush_hunter_killer_corvette.build_spec()
+
+
+def test_ambush_hunter_killer_corvette_matches_current_modeled_subset(
+    ambush_hunter_killer_corvette, ambush_hunter_killer_corvette_spec
+):
+    corvette = ambush_hunter_killer_corvette
 
     assert corvette.hull_cost == pytest.approx(_expected.hull_cost_mcr * 1_000_000)
     assert corvette.hull_points == _expected.hull_points
@@ -363,8 +375,7 @@ def test_ambush_hunter_killer_corvette_matches_current_modeled_subset():
     assert corvette.sales_price_new == pytest.approx(_expected.sales_price_mcr * 1_000_000)
     assert corvette.expenses.maintenance == pytest.approx(_expected.maintenance_cr)
 
-    spec = corvette.build_spec()
-    turret_row = spec.row('Triple Turret', section='Weapons')
+    turret_row = ambush_hunter_killer_corvette_spec.row('Triple Turret', section='Weapons')
     assert turret_row.quantity == _expected.turret_quantity
     notes = turret_row.notes
     assert notes.contents == _expected.turret_notes_contents

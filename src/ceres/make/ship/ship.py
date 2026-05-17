@@ -244,9 +244,6 @@ class Ship(ShipBase):
                 remaining -= cargo_hold.tons
         return remaining
 
-    def parts_of_type(self, part_cls: type) -> list[ShipPart]:
-        return [part for part in self._all_parts() if isinstance(part, part_cls)]
-
     def _item_text(self, obj, fallback: str) -> str:
         return obj.notes.item_message or fallback
 

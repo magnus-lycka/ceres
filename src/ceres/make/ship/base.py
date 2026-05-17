@@ -1,4 +1,9 @@
+from typing import TYPE_CHECKING
+
 from ceres.shared import Assembly
+
+if TYPE_CHECKING:
+    from .hull import Hull
 
 
 class ShipBase(Assembly):
@@ -6,6 +11,8 @@ class ShipBase(Assembly):
 
     tl: int
     displacement: int
+    if TYPE_CHECKING:
+        hull: Hull | None = None
 
     @property
     def performance_displacement(self) -> float:
@@ -14,9 +21,6 @@ class ShipBase(Assembly):
     @property
     def armour_volume_modifier(self) -> float:
         return 1.0
-
-    def parts_of_type(self, part_cls: type) -> list:
-        return []
 
     def remaining_usable_tonnage(self) -> float:
         return 0.0

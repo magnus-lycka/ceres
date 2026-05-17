@@ -83,8 +83,13 @@ def build_ultralight_fighter() -> ship.Ship:
     )
 
 
-def test_ultralight_fighter_part_values():
-    fighter = build_ultralight_fighter()
+@pytest.fixture(scope='module')
+def ultralight_fighter():
+    return build_ultralight_fighter()
+
+
+def test_ultralight_fighter_part_values(ultralight_fighter):
+    fighter = ultralight_fighter
 
     assert fighter.tl == _expected.tl
     assert fighter.displacement == _expected.displacement
@@ -150,8 +155,7 @@ def test_ultralight_fighter_part_values():
     assert fighter.notes.warnings == _expected.expected_warnings
 
 
-def test_ultralight_fighter_pulse_laser_has_customisation_note():
-    fighter = build_ultralight_fighter()
-    assert fighter.weapons is not None
-    mount = fighter.weapons.fixed_mounts[0]
+def test_ultralight_fighter_pulse_laser_has_customisation_note(ultralight_fighter):
+    assert ultralight_fighter.weapons is not None
+    mount = ultralight_fighter.weapons.fixed_mounts[0]
     assert mount.notes.infos == _expected.weapon_mount_info_notes

@@ -347,6 +347,16 @@ def build_acrux_heavy_cruiser():
     )
 
 
+@pytest.fixture(scope='module')
+def acrux_heavy_cruiser():
+    return build_acrux_heavy_cruiser()
+
+
+@pytest.fixture(scope='module')
+def acrux_spec(acrux_heavy_cruiser):
+    return acrux_heavy_cruiser.build_spec()
+
+
 def test_acrux_heavy_cruiser_source_snapshot():
     assert _expected.source == 'Spinward Extents'
     assert _expected.ship_class == 'Acrux'
@@ -359,35 +369,27 @@ def test_acrux_heavy_cruiser_source_snapshot():
     assert _expected.expected_warnings == []
 
 
-def test_acrux_heavy_cruiser_builds_with_current_supported_parts():
-    acrux = build_acrux_heavy_cruiser()
-
-    assert acrux.ship_class == _expected.ship_class
-    assert acrux.ship_type == _expected.ship_type
-    assert acrux.tl == _expected.tl
-    assert acrux.displacement == _expected.displacement
+def test_acrux_heavy_cruiser_builds_with_current_supported_parts(acrux_heavy_cruiser):
+    assert acrux_heavy_cruiser.ship_class == _expected.ship_class
+    assert acrux_heavy_cruiser.ship_type == _expected.ship_type
+    assert acrux_heavy_cruiser.tl == _expected.tl
+    assert acrux_heavy_cruiser.displacement == _expected.displacement
 
 
-def test_acrux_heavy_cruiser_has_no_unexpected_ship_notes():
-    acrux = build_acrux_heavy_cruiser()
-
-    assert acrux.notes.errors == _expected.expected_current_ship_errors
-    assert acrux.notes.warnings == _expected.expected_warnings
+def test_acrux_heavy_cruiser_has_no_unexpected_ship_notes(acrux_heavy_cruiser):
+    assert acrux_heavy_cruiser.notes.errors == _expected.expected_current_ship_errors
+    assert acrux_heavy_cruiser.notes.warnings == _expected.expected_warnings
 
 
-def test_acrux_heavy_cruiser_has_no_unexpected_spec_warnings():
-    spec = build_acrux_heavy_cruiser().build_spec()
-
-    errors = [note.message for row in spec.rows for note in row.notes if note.category == 'error']
-    warnings = [note.message for row in spec.rows for note in row.notes if note.category == 'warning']
+def test_acrux_heavy_cruiser_has_no_unexpected_spec_warnings(acrux_spec):
+    errors = [note.message for row in acrux_spec.rows for note in row.notes if note.category == 'error']
+    warnings = [note.message for row in acrux_spec.rows for note in row.notes if note.category == 'warning']
 
     assert errors == _expected.expected_spec_errors
     assert warnings == _expected.expected_spec_warnings
 
 
-def test_acrux_heavy_cruiser_supported_spec_rows_match_source():
-    spec = build_acrux_heavy_cruiser().build_spec()
-
+def test_acrux_heavy_cruiser_supported_spec_rows_match_source(acrux_spec):
     for section, item in [
         ('Armour', 'Crystaliron, Armour: 11'),
         ('M-Drive', 'M-Drive 5'),
@@ -418,12 +420,10 @@ def test_acrux_heavy_cruiser_supported_spec_rows_match_source():
         ('Cargo', 'Cargo Hold'),
         ('Cargo', 'Cargo Crane'),
     ]:
-        assert _ship_row(spec, section, item).item == item
+        assert _ship_row(acrux_spec, section, item).item == item
 
 
-def test_acrux_heavy_cruiser_key_source_values_that_match_current_ceres():
-    spec = build_acrux_heavy_cruiser().build_spec()
-
+def test_acrux_heavy_cruiser_key_source_values_that_match_current_ceres(acrux_spec):
     for source_section, source_item, ship_section, ship_item in [
         ('Hull', 'Radiation Shielding', 'Hull', 'Radiation Shielding: Reduce Rads by 1,000'),
         ('M-Drive', 'Thrust 5', 'M-Drive', 'M-Drive 5'),
@@ -457,7 +457,7 @@ def test_acrux_heavy_cruiser_key_source_values_that_match_current_ceres():
         ('Cargo', 'Cargo', 'Cargo', 'Cargo Hold'),
     ]:
         _assert_row_matches_source(
-            spec,
+            acrux_spec,
             source_section=source_section,
             source_item=source_item,
             ship_section=ship_section,
@@ -465,20 +465,20 @@ def test_acrux_heavy_cruiser_key_source_values_that_match_current_ceres():
         )
 
     source_fuel = _source_row('Fuel Tanks', 'J-2, 8 weeks of operation')
-    fuel_row = _ship_row(spec, 'Fuel Tanks', 'J-2, 8 weeks of operation')
+    fuel_row = _ship_row(acrux_spec, 'Fuel Tanks', 'J-2, 8 weeks of operation')
     assert fuel_row.tons == pytest.approx(source_fuel.tons)
 
     # The source armour tonnage is consistent across Spinward Extents examples,
     # but its cost factor is not yet traced to an HG rule.
     source_armour = _source_row('Armour', 'Crystaliron, Armour 11')
-    armour_row = _ship_row(spec, 'Armour', 'Crystaliron, Armour: 11')
+    armour_row = _ship_row(acrux_spec, 'Armour', 'Crystaliron, Armour: 11')
     assert armour_row.tons == pytest.approx(source_armour.tons)
 
     standard_staterooms = _source_sum(
         ('Staterooms', 'Standard x272'),
         ('Staterooms', 'Additional Crew (standard) x65'),
     )
-    stateroom_row = _ship_row(spec, 'Staterooms', 'Staterooms')
+    stateroom_row = _ship_row(acrux_spec, 'Staterooms', 'Staterooms')
     assert stateroom_row.quantity == 337
     assert stateroom_row.tons == pytest.approx(standard_staterooms.tons)
     assert stateroom_row.cost == pytest.approx(standard_staterooms.cost_mcr * 1_000_000)
@@ -487,78 +487,76 @@ def test_acrux_heavy_cruiser_key_source_values_that_match_current_ceres():
         ('Staterooms', 'High x4'),
         ('Staterooms', 'Additional Crew (high) x5'),
     )
-    high_stateroom_row = _ship_row(spec, 'Staterooms', 'High Staterooms')
+    high_stateroom_row = _ship_row(acrux_spec, 'Staterooms', 'High Staterooms')
     assert high_stateroom_row.quantity == 9
     assert high_stateroom_row.tons == pytest.approx(high_staterooms.tons)
     assert high_stateroom_row.cost == pytest.approx(high_staterooms.cost_mcr * 1_000_000)
 
 
-def test_acrux_heavy_cruiser_supported_weapon_tonnage_matches_source():
-    spec = build_acrux_heavy_cruiser().build_spec()
-
+def test_acrux_heavy_cruiser_supported_weapon_tonnage_matches_source(acrux_spec):
     source_spinal_mount = _source_row('Weapons', 'Particle Accelerator Spinal Mount')
-    spinal_mount = _ship_row(spec, 'Weapons', 'Particle Accelerator Spinal Mount')
+    spinal_mount = _ship_row(acrux_spec, 'Weapons', 'Particle Accelerator Spinal Mount')
     assert spinal_mount.tons == pytest.approx(source_spinal_mount.tons)
     assert spinal_mount.cost == pytest.approx(source_spinal_mount.cost_mcr * 1_000_000)
 
     source_large_missiles = _source_row('Weapons', 'Large Missile Bays (size reduction x3) x5')
-    large_missiles = _ship_row(spec, 'Weapons', 'Large Missile Bay (120 missiles per salvo)')
+    large_missiles = _ship_row(acrux_spec, 'Weapons', 'Large Missile Bay (120 missiles per salvo)')
     assert large_missiles.quantity == 5
     assert large_missiles.tons == pytest.approx(source_large_missiles.tons)
 
     source_large_torpedoes = _source_row('Weapons', 'Large Torpedo Bays (size reduction x2) x5')
-    large_torpedoes = _ship_row(spec, 'Weapons', 'Large Torpedo Bay (30 torpedoes per salvo)')
+    large_torpedoes = _ship_row(acrux_spec, 'Weapons', 'Large Torpedo Bay (30 torpedoes per salvo)')
     assert large_torpedoes.quantity == 5
     assert large_torpedoes.tons == pytest.approx(source_large_torpedoes.tons)
 
     source_particle_barbettes = _source_row('Weapons', 'Particle Barbettes x50')
-    particle_barbettes = _ship_row(spec, 'Weapons', 'Particle Barbette (Damage × 3 after armour)')
+    particle_barbettes = _ship_row(acrux_spec, 'Weapons', 'Particle Barbette (Damage × 3 after armour)')
     assert particle_barbettes.quantity == 50
     assert particle_barbettes.tons == pytest.approx(source_particle_barbettes.tons)
 
     source_plasma_barbettes = _source_row('Weapons', 'Plasma Barbettes x40')
-    plasma_barbettes = _ship_row(spec, 'Weapons', 'Plasma Barbette (Damage × 3 after armour)')
+    plasma_barbettes = _ship_row(acrux_spec, 'Weapons', 'Plasma Barbette (Damage × 3 after armour)')
     assert plasma_barbettes.quantity == 40
     assert plasma_barbettes.tons == pytest.approx(source_plasma_barbettes.tons)
 
     source_particle_bays = _source_row('Weapons', 'Medium Particle Beam Bays x10')
-    particle_bays = _ship_row(spec, 'Weapons', 'Medium Particle Beam Bay (Damage × 20 after armour)')
+    particle_bays = _ship_row(acrux_spec, 'Weapons', 'Medium Particle Beam Bay (Damage × 20 after armour)')
     assert particle_bays.quantity == 10
     assert particle_bays.tons == pytest.approx(source_particle_bays.tons)
     assert particle_bays.cost == pytest.approx(source_particle_bays.cost_mcr * 1_000_000)
 
     source_pulse_turrets = _source_row('Weapons', 'Triple Turrets (long range pulse lasers) x120')
-    pulse_turrets = spec.rows_matching('Triple Turret')[0]
+    pulse_turrets = acrux_spec.rows_matching('Triple Turret')[0]
     assert pulse_turrets.quantity == 120
     assert pulse_turrets.tons == pytest.approx(source_pulse_turrets.tons)
     assert pulse_turrets.cost == pytest.approx(source_pulse_turrets.cost_mcr * 1_000_000)
 
     source_beam_turrets = _source_row('Weapons', 'Triple Turrets (beam lasers) x90')
-    beam_turrets = spec.rows_matching('Triple Turret')[1]
+    beam_turrets = acrux_spec.rows_matching('Triple Turret')[1]
     assert beam_turrets.quantity == 90
     assert beam_turrets.tons == pytest.approx(source_beam_turrets.tons)
     assert beam_turrets.cost == pytest.approx(source_beam_turrets.cost_mcr * 1_000_000)
 
     source_sand_turrets = _source_row('Weapons', 'Triple Turrets (sandcasters) x60')
-    sand_turrets = spec.rows_matching('Triple Turret')[2]
+    sand_turrets = acrux_spec.rows_matching('Triple Turret')[2]
     assert sand_turrets.quantity == 60
     assert sand_turrets.tons == pytest.approx(source_sand_turrets.tons)
     assert sand_turrets.cost == pytest.approx(source_sand_turrets.cost_mcr * 1_000_000)
 
     source_point_defence = _source_row('Weapons', 'Point Defence Batteries (type I) x10')
-    point_defence = _ship_row(spec, 'Weapons', 'Point Defence Laser Battery Type I')
+    point_defence = _ship_row(acrux_spec, 'Weapons', 'Point Defence Laser Battery Type I')
     assert point_defence.quantity == 10
     assert point_defence.tons == pytest.approx(source_point_defence.tons)
     assert point_defence.cost == pytest.approx(source_point_defence.cost_mcr * 1_000_000)
 
     source_missile_storage = _source_row('Ammunition', 'Missile Storage (28,800 missiles)')
-    missile_storage = _ship_row(spec, 'Ammunition', 'Missile Storage (28800)')
+    missile_storage = _ship_row(acrux_spec, 'Ammunition', 'Missile Storage (28800)')
     assert missile_storage.tons == pytest.approx(source_missile_storage.tons)
 
     source_torpedo_storage = _source_row('Ammunition', 'Torpedo Storage (7,200 torpedoes)')
-    torpedo_storage = _ship_row(spec, 'Ammunition', 'Torpedo Storage (7200)')
+    torpedo_storage = _ship_row(acrux_spec, 'Ammunition', 'Torpedo Storage (7200)')
     assert torpedo_storage.tons == pytest.approx(source_torpedo_storage.tons)
 
     source_sandcaster_storage = _source_row('Ammunition', 'Sandcaster Storage (4,800 canisters)')
-    sandcaster_storage = _ship_row(spec, 'Ammunition', 'Sandcaster Canister Storage (4800)')
+    sandcaster_storage = _ship_row(acrux_spec, 'Ammunition', 'Sandcaster Canister Storage (4800)')
     assert sandcaster_storage.tons == pytest.approx(source_sandcaster_storage.tons)

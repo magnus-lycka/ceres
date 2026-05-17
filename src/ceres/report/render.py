@@ -14,7 +14,7 @@ from typing import Any
 import jinja2
 from pydantic import BaseModel
 
-__all__ = ['render_html', 'render_pdf', 'render_typst_source']
+__all__ = ['render_html', 'render_pdf', 'render_pdf_source', 'render_typst_source']
 
 _TOOLKIT_TEMPLATES = Path(__file__).parent / 'templates'
 
@@ -78,6 +78,24 @@ def render_pdf(template_path: Path, data: dict[str, Any], *, page_size: str = 'a
     import typst
 
     source = render_typst_source(template_path, data, page_size=page_size)
+    tmp_dir = tempfile.mkdtemp()
+    try:
+        for base_file in _TOOLKIT_TEMPLATES.glob('*.typ'):
+            shutil.copy2(base_file, os.path.join(tmp_dir, base_file.name))
+        typ_path = os.path.join(tmp_dir, 'main.typ')
+        with open(typ_path, 'w', encoding='utf-8') as f:
+            f.write(source)
+        return typst.compile(typ_path)
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+def render_pdf_source(source: str) -> bytes:
+    """Compile a complete Typst source string to PDF bytes."""
+    import shutil
+
+    import typst
+
     tmp_dir = tempfile.mkdtemp()
     try:
         for base_file in _TOOLKIT_TEMPLATES.glob('*.typ'):

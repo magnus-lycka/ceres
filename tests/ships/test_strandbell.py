@@ -221,14 +221,24 @@ def build_strandbell() -> ship.Ship:
     )
 
 
-def test_strandbell_hull():
-    sdb = build_strandbell()
+@pytest.fixture(scope='module')
+def strandbell():
+    return build_strandbell()
+
+
+@pytest.fixture(scope='module')
+def strandbell_spec(strandbell):
+    return strandbell.build_spec()
+
+
+def test_strandbell_hull(strandbell):
+    sdb = strandbell
     assert sdb.hull_points == _expected.hull_points
     assert sdb.hull_cost == _expected.hull_cost_mcr * 1_000_000
 
 
-def test_strandbell_armour():
-    sdb = build_strandbell()
+def test_strandbell_armour(strandbell):
+    sdb = strandbell
     a = sdb.hull.armour
     assert a is not None
     assert a.protection == _expected.armour_protection
@@ -236,8 +246,8 @@ def test_strandbell_armour():
     assert a.cost == pytest.approx(_expected.armour_cost_mcr * 1_000_000)
 
 
-def test_strandbell_armored_m_drive():
-    sdb = build_strandbell()
+def test_strandbell_armored_m_drive(strandbell):
+    sdb = strandbell
     assert sdb.drives is not None
     assert sdb.drives.m_drive is not None
     assert sdb.drives.m_drive.tons == pytest.approx(_expected.m_drive_tons)
@@ -245,8 +255,8 @@ def test_strandbell_armored_m_drive():
     assert sdb.drives.m_drive.power == pytest.approx(_expected.m_drive_power)
 
 
-def test_strandbell_fusion_plant():
-    sdb = build_strandbell()
+def test_strandbell_fusion_plant(strandbell):
+    sdb = strandbell
     assert sdb.power is not None
     fp = sdb.power.plant
     assert fp is not None
@@ -255,8 +265,8 @@ def test_strandbell_fusion_plant():
     assert fp.cost == pytest.approx(_expected.plant_cost_mcr * 1_000_000)
 
 
-def test_strandbell_fuel():
-    sdb = build_strandbell()
+def test_strandbell_fuel(strandbell):
+    sdb = strandbell
     assert sdb.fuel is not None
     assert sdb.fuel.operation_fuel is not None
     assert sdb.fuel.operation_fuel.tons == pytest.approx(_expected.op_fuel_tons)
@@ -267,8 +277,8 @@ def test_strandbell_fuel():
     assert sdb.fuel.fuel_scoops.cost == pytest.approx(_expected.fuel_scoops_cost_mcr * 1_000_000)
 
 
-def test_strandbell_sensors():
-    sdb = build_strandbell()
+def test_strandbell_sensors(strandbell):
+    sdb = strandbell
     assert sdb.sensors.primary.tons == pytest.approx(_expected.sensors_tons)
     assert sdb.sensors.primary.cost == pytest.approx(_expected.sensors_cost_mcr * 1_000_000)
     assert sdb.sensors.primary.power == pytest.approx(_expected.sensors_power)
@@ -278,8 +288,8 @@ def test_strandbell_sensors():
     assert sdb.sensors.countermeasures.power == pytest.approx(_expected.countermeasures_power)
 
 
-def test_strandbell_turrets():
-    sdb = build_strandbell()
+def test_strandbell_turrets(strandbell):
+    sdb = strandbell
     assert sdb.weapons is not None
     assert len(sdb.weapons.turrets) == _expected.turret_count
     beam_turret = sdb.weapons.turrets[0]
@@ -290,8 +300,8 @@ def test_strandbell_turrets():
     assert missile_turret.power == pytest.approx(_expected.missile_turret_power)  # 1 mount + 3 × 0 missiles
 
 
-def test_strandbell_missile_storage():
-    sdb = build_strandbell()
+def test_strandbell_missile_storage(strandbell):
+    sdb = strandbell
     assert sdb.weapons is not None
     assert sdb.weapons.missile_storage is not None
     assert sdb.weapons.missile_storage.count == _expected.missile_count
@@ -299,8 +309,8 @@ def test_strandbell_missile_storage():
     assert sdb.weapons.missile_storage.cost == _expected.missile_storage_cost
 
 
-def test_strandbell_systems():
-    sdb = build_strandbell()
+def test_strandbell_systems(strandbell):
+    sdb = strandbell
     assert sdb.systems is not None
     assert len(sdb.systems.drones) == _expected.repair_drones_count
     assert sdb.systems.drones[0].tons == pytest.approx(_expected.repair_drones_tons)
@@ -317,8 +327,8 @@ def test_strandbell_systems():
     assert sdb.habitation.common_area.tons == pytest.approx(_expected.common_area_tons)
 
 
-def test_strandbell_power():
-    sdb = build_strandbell()
+def test_strandbell_power(strandbell):
+    sdb = strandbell
     assert sdb.available_power == _expected.available_power
     assert sdb.basic_hull_power_load == pytest.approx(_expected.basic_hull_power)
     assert sdb.maneuver_power_load == pytest.approx(_expected.maneuver_power)
@@ -326,50 +336,47 @@ def test_strandbell_power():
     assert sdb.total_power_load == pytest.approx(_expected.total_power)
 
 
-def test_strandbell_cargo():
+def test_strandbell_cargo(strandbell):
     # Ref: 13.8t cargo + 2.0t stores + 3.1t armored bulkheads = 18.9t.
     # We still do not model stores for Strandbell, and we no longer model a
     # pseudo-armored M-drive, so cargo lands higher.
-    sdb = build_strandbell()
+    sdb = strandbell
     assert CargoSection.cargo_tons_for_ship(sdb) == pytest.approx(_expected.cargo_tons, abs=0.01)
 
 
-def test_strandbell_cost():
+def test_strandbell_cost(strandbell):
     # Ref design cost 147.13MCr includes armored bulkheads (0.62MCr) and
     # stores/spares we don't model.
-    sdb = build_strandbell()
+    sdb = strandbell
     assert sdb.production_cost == pytest.approx(_expected.production_cost_mcr * 1_000_000)
 
 
-def test_strandbell_software():
-    sdb = build_strandbell()
+def test_strandbell_software(strandbell):
+    sdb = strandbell
     assert sdb.computer is not None
     packages = [(p.description, p.cost) for p in sdb.computer.software_packages]
     assert packages == _expected.software_packages
 
 
-def test_strandbell_spec_structure():
-    sdb = build_strandbell()
-    spec = sdb.build_spec()
-
-    assert spec.ship_class == _expected.spec_ship_class
-    assert spec.ship_type == _expected.spec_ship_type
-    assert spec.tl == _expected.spec_tl
-    assert spec.hull_points == _expected.spec_hull_points
+def test_strandbell_spec_structure(strandbell_spec):
+    assert strandbell_spec.ship_class == _expected.spec_ship_class
+    assert strandbell_spec.ship_type == _expected.spec_ship_type
+    assert strandbell_spec.tl == _expected.spec_tl
+    assert strandbell_spec.hull_points == _expected.spec_hull_points
 
     for item, section in _expected.spec_rows.items():
-        assert spec.row(item, section=section).section == section
+        assert strandbell_spec.row(item, section=section).section == section
 
-    stateroom_row = spec.row('Staterooms', section='Habitation')
+    stateroom_row = strandbell_spec.row('Staterooms', section='Habitation')
     assert stateroom_row.section == _expected.spec_rows['Staterooms']
     assert stateroom_row.quantity == _expected.stateroom_count
-    airlock_row = spec.row('Airlock (2 tons)', section='Hull')
+    airlock_row = strandbell_spec.row('Airlock (2 tons)', section='Hull')
     assert airlock_row.section == _expected.spec_rows['Airlock (2 tons)']
     assert airlock_row.quantity == _expected.airlock_count
 
 
-def test_strandbell_uses_military_crew_rules():
-    sdb = build_strandbell()
+def test_strandbell_uses_military_crew_rules(strandbell):
+    sdb = strandbell
     assert [(role.role, quantity, role.monthly_salary) for role, quantity in sdb.crew.grouped_roles] == _expected.crew
     assert sdb.notes.errors == _expected.expected_errors
     assert sdb.notes.warnings == _expected.expected_warnings

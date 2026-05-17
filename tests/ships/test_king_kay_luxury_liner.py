@@ -236,8 +236,18 @@ def build_king_kay() -> ship.Ship:
     )
 
 
-def test_king_kay_matches_supported_reference_slice():
-    liner = build_king_kay()
+@pytest.fixture(scope='module')
+def king_kay():
+    return build_king_kay()
+
+
+@pytest.fixture(scope='module')
+def king_kay_spec(king_kay):
+    return king_kay.build_spec()
+
+
+def test_king_kay_matches_supported_reference_slice(king_kay):
+    liner = king_kay
 
     assert liner.ship_class == _expected.ship_class
     assert liner.ship_type == _expected.ship_type
@@ -352,23 +362,21 @@ def test_king_kay_matches_supported_reference_slice():
     assert liner.crew.notes.warnings == _expected.expected_crew_warnings
 
 
-def test_king_kay_spec_contains_supported_liner_rows():
-    spec = build_king_kay().build_spec()
-
-    assert spec.ship_class == _expected.ship_class
-    assert spec.ship_type == _expected.ship_type
-    assert spec.tl == _expected.tl
-    assert spec.hull_points == pytest.approx(_expected.hull_points)
+def test_king_kay_spec_contains_supported_liner_rows(king_kay_spec):
+    assert king_kay_spec.ship_class == _expected.ship_class
+    assert king_kay_spec.ship_type == _expected.ship_type
+    assert king_kay_spec.tl == _expected.tl
+    assert king_kay_spec.hull_points == pytest.approx(_expected.hull_points)
 
     for item, section in _expected.spec_rows.items():
-        assert spec.row(item, section=section).section == section
+        assert king_kay_spec.row(item, section=section).section == section
     for item, quantity in _expected.spec_quantities.items():
         if item == 'Docking Space (70 tons)':
-            assert len(spec.rows_matching(item)) == quantity
+            assert len(king_kay_spec.rows_matching(item)) == quantity
         else:
-            assert spec.row(item).quantity == quantity
+            assert king_kay_spec.row(item).quantity == quantity
     assert not any(
         excluded_item in row.item
         for excluded_item in _expected.excluded_craft_items
-        for row in spec.rows_for_section('Craft')
+        for row in king_kay_spec.rows_for_section('Craft')
     )

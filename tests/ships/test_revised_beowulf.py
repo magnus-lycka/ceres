@@ -166,8 +166,13 @@ def build_revised_beowulf() -> ship.Ship:
     )
 
 
-def test_revised_beowulf_matches_current_modeled_subset():
-    beowulf = build_revised_beowulf()
+@pytest.fixture(scope='module')
+def revised_beowulf():
+    return build_revised_beowulf()
+
+
+def test_revised_beowulf_matches_current_modeled_subset(revised_beowulf):
+    beowulf = revised_beowulf
 
     assert beowulf.hull_cost == pytest.approx(_expected.hull_cost_mcr * 1_000_000)
     assert beowulf.hull_points == _expected.hull_points

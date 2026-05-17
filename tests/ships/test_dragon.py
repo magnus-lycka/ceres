@@ -304,9 +304,12 @@ def build_dragon() -> ship.Ship:
     )
 
 
-def test_dragon_modeled_subset_matches_current_model():
-    dragon = build_dragon()
+@pytest.fixture(scope='module')
+def dragon():
+    return build_dragon()
 
+
+def test_dragon_modeled_subset_matches_current_model(dragon):
     assert dragon.tl == _expected.tl
     assert dragon.displacement == _expected.displacement
     assert dragon.hull_points == _expected.hull_points
@@ -414,9 +417,7 @@ def test_dragon_modeled_subset_matches_current_model():
     assert dragon.sales_price_new == pytest.approx(_expected.sales_price_mcr * 1_000_000)
 
 
-def test_dragon_power_and_crew_for_current_subset():
-    dragon = build_dragon()
-
+def test_dragon_power_and_crew_for_current_subset(dragon):
     assert dragon.available_power == pytest.approx(_expected.available_power)
     assert dragon.basic_hull_power_load == pytest.approx(_expected.power_basic)
     assert dragon.maneuver_power_load == pytest.approx(_expected.power_maneuver)

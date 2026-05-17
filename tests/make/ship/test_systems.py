@@ -40,6 +40,12 @@ class DummyOwner(ShipBase):
         return float(self.displacement)
 
 
+def _dummy_owner_for(part) -> DummyOwner:
+    if isinstance(part, Airlock):
+        return DummyOwner(15, 99)
+    return DummyOwner(15, 400)
+
+
 @pytest.mark.parametrize(
     ('part', 'expected_tons', 'expected_cost', 'expected_power'),
     [
@@ -65,7 +71,7 @@ class DummyOwner(ShipBase):
 def test_converted_system_values_are_computed_properties_not_serialized_fields(
     part, expected_tons, expected_cost, expected_power
 ):
-    part.bind(DummyOwner(15, 400))
+    part.bind(_dummy_owner_for(part))
     assert part.tons == pytest.approx(expected_tons)
     assert part.cost == pytest.approx(expected_cost)
     assert part.power == pytest.approx(expected_power)
@@ -99,7 +105,7 @@ def test_converted_system_values_ignore_stale_numeric_inputs(
     part_cls, data, expected_tons, expected_cost, expected_power
 ):
     part = part_cls.model_validate({'tons': 99, 'cost': 99, 'power': 99, **data})
-    part.bind(DummyOwner(15, 400))
+    part.bind(_dummy_owner_for(part))
     assert part.tons == pytest.approx(expected_tons)
     assert part.cost == pytest.approx(expected_cost)
     assert part.power == pytest.approx(expected_power)

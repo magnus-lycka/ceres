@@ -1,5 +1,7 @@
+from collections import defaultdict
 from collections.abc import Sequence
 from enum import StrEnum
+import heapq
 from typing import Annotated, ClassVar, Literal, Protocol
 
 from pydantic import BaseModel, Field
@@ -87,7 +89,12 @@ class ResidenceAllocator:
     def __init__(self, residences=None):
         if residences is None:
             residences = []
-        self.residences = [_ResidenceState.from_residence(residence) for residence in residences]
+        self.residences = [
+            _ResidenceState.from_residence(sequence, residence) for sequence, residence in enumerate(residences)
+        ]
+        self._by_demand = defaultdict(list)
+        for residence in self.residences:
+            self._index(residence)
 
     def provide_one(self, occupant: Occupant):
         if occupant.demand == ResidenceDemand.ANYTHING:
@@ -96,13 +103,24 @@ class ResidenceAllocator:
         if residence is None:
             return False
         residence.consume(occupant.demand)
+        self._index(residence)
         return True
 
+    def _index(self, residence: _ResidenceState) -> None:
+        for demand in residence.demands:
+            heapq.heappush(
+                self._by_demand[demand],
+                (*residence.preference_score(demand), residence.sequence, residence.version, residence),
+            )
+
     def _best_residence_for(self, demand: ResidenceDemand):
-        candidates = [residence for residence in self.residences if residence.provides(demand)]
-        if not candidates:
-            return None
-        return min(candidates, key=lambda residence: residence.preference_score(demand))
+        candidates = self._by_demand[demand]
+        while candidates:
+            *_, version, residence = candidates[0]
+            if version == residence.version and residence.provides(demand):
+                return residence
+            heapq.heappop(candidates)
+        return None
 
     def provide_reject(self, occupants: Sequence[Occupant]):
         provided = []
@@ -116,12 +134,18 @@ class ResidenceAllocator:
 
 
 class _ResidenceState:
-    def __init__(self, provides: list[tuple[ResidenceDemand, int]]):
+    def __init__(self, sequence: int, provides: list[tuple[ResidenceDemand, int]]):
+        self.sequence = sequence
+        self.version = 0
         self.provides_list = list(provides)
 
     @classmethod
-    def from_residence(cls, residence: Residence):
-        return cls(list(residence.provides))
+    def from_residence(cls, sequence: int, residence: Residence):
+        return cls(sequence, list(residence.provides))
+
+    @property
+    def demands(self) -> tuple[ResidenceDemand, ...]:
+        return tuple(provision for provision, count in self.provides_list if count > 0)
 
     def provides(self, demand: ResidenceDemand) -> bool:
         return any(provision == demand and count > 0 for provision, count in self.provides_list)
@@ -132,6 +156,24 @@ class _ResidenceState:
         return demand_capacity, total_capacity
 
     def consume(self, demand: ResidenceDemand) -> None:
+        self.version += 1
+        compatible_bed_demands = {
+            ResidenceDemand.CREW_STATEROOM_BED: {ResidenceDemand.CREW_STATEROOM_BED, ResidenceDemand.ANY_CREW_BED},
+            ResidenceDemand.ANY_CREW_BED: {ResidenceDemand.CREW_STATEROOM_BED, ResidenceDemand.ANY_CREW_BED},
+            ResidenceDemand.PASSENGER_STATEROOM_BED: {ResidenceDemand.PASSENGER_STATEROOM_BED},
+            ResidenceDemand.LOW_BERTH: {ResidenceDemand.LOW_BERTH},
+        }
+        if demand in compatible_bed_demands:
+            compatible = compatible_bed_demands[demand]
+            updated = []
+            for provision, count in self.provides_list:
+                if provision not in compatible:
+                    continue
+                if count > 1:
+                    updated.append((provision, count - 1))
+            self.provides_list = updated
+            return
+
         for provision, count in self.provides_list:
             if provision != demand:
                 continue

@@ -136,8 +136,13 @@ def build_florence_medical_scout() -> ship.Ship:
     )
 
 
-def test_florence_medical_scout_matches_current_subset():
-    scout = build_florence_medical_scout()
+@pytest.fixture(scope='module')
+def florence_medical_scout():
+    return build_florence_medical_scout()
+
+
+def test_florence_medical_scout_matches_current_subset(florence_medical_scout):
+    scout = florence_medical_scout
 
     assert scout.hull_cost == pytest.approx(_expected.hull_cost_mcr * 1_000_000)
     assert scout.hull_points == _expected.hull_points

@@ -88,8 +88,13 @@ def build_gothta_ambush_fighter() -> ship.Ship:
     )
 
 
-def test_gothta_ambush_fighter_matches_current_subset():
-    fighter = build_gothta_ambush_fighter()
+@pytest.fixture(scope='module')
+def gothta_ambush_fighter():
+    return build_gothta_ambush_fighter()
+
+
+def test_gothta_ambush_fighter_matches_current_subset(gothta_ambush_fighter):
+    fighter = gothta_ambush_fighter
 
     assert fighter.hull_cost == pytest.approx(_expected.hull_cost_mcr * 1_000_000)
     assert fighter.hull_points == _expected.hull_points

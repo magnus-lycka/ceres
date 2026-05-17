@@ -97,7 +97,10 @@ Current status:
 Remaining work:
 
 - broader source coverage for meson screens and mixed screen installations
-- decide how to model exotic screens such as black globes
+- implement **Deflector Screens** (TL10, 5t, MCr5, 10 Power): reduces radiation/particle damage; the lowest-TL screen and most likely to appear in published designs
+- implement **Energy Shields** (TL14, 50t, MCr60, 90 Power): reduces all energy weapon damage
+- implement **Black Globe Generator** (TL15): absorbs all damage into a capacitor bank; legality note needed (not commercially available); already referenced in this section
+- decide how to model capacitor bank, energy bleed, and overload mechanics for Black Globe (these are operational effects; the ship-building side is tonnage/cost/power)
 
 ## Spinal mount follow-up [doing]
 
@@ -156,6 +159,29 @@ We need an explicit policy for cases where the same ship has one displacement
 as a design object but a different effective displacement in some operating
 profiles.
 
+References: `refs/hg/24_modular_hull.md`, `refs/hg/58_modular_cutter.md`,
+`refs/hg/59_cutter_modules.md`, `refs/hg/70_system_defence_boat.md`
+
+### Construction rules (from `24_modular_hull.md`)
+
+The modular hull is a hull feature with explicit construction rules:
+
+- Up to 75% of internal tonnage may be designated as modular (cannot include
+  bridge, power plant, drives, structure, or armour options)
+- Hull cost increases by the modular percentage: a 100-ton hull at MCr2 with
+  30% modular space → hull cost MCr2 × 1.30 = MCr2.6
+- Hardpoints/firmpoints are calculated separately for the main hull and any
+  installed module, but the combined total cannot exceed what a non-modular
+  ship of the same tonnage would have
+- Modules are themselves small ship designs (own hull, systems, etc.) that
+  snap into the reserved space
+
+Confirmed in published designs: the 50-ton Modular Cutter has 30 tons (60%)
+modular → MCr3 × 0.60 = MCr1.8 extra cost ✅. Capital ships in file 70 use
+module bays of 5,800 and 10,400 tons.
+
+### Displacement concern
+
 Examples to sort out:
 
 - modular cutters with and without installed modules
@@ -164,14 +190,10 @@ Examples to sort out:
 - docking clamps and other external carried craft
 - jump shuttles, jump nets, and drop tanks
 
-Current concern:
-
-- some published designs clearly distinguish between the ship's own built
-  displacement and the larger displacement that drives must handle in a
-  particular carried / loaded state
-- other calculations such as maintenance, much of crew analysis, and structural
-  build cost may still want the ship's own design displacement rather than the
-  loaded one
+Some published designs clearly distinguish between the ship's own built
+displacement and the larger displacement that drives must handle in a
+particular carried/loaded state. Other calculations (maintenance, crew
+analysis, structural build cost) may still want the design displacement.
 
 Rule for future work:
 
@@ -191,9 +213,26 @@ Note:
 - external loads should affect effective displacement for drive-performance calculations
 - this likely wants parameterized specs, e.g. performance at `+X dTons`
 
-## Military Hull
+## Military Hull armour cap [todo]
 
-By increasing the cost of a hull by +25%, a ship may install armour up to double its standard rating. For example, a non-military hull made of bonded superdense has a maximum armour value equal to the Tech Level of the ship, as described in the Hull Armour table on page 13. However, a ship with a military hull may add up to double that value in armour. Military hulls can only be applied to capital ships (greater than 5,000 tons) and can stack with the reinforced hull option.
+Military hulls (+25% hull cost) allow up to double the normal maximum armour
+rating. For example, bonded superdense on a non-military hull caps at the ship's
+TL; a military hull doubles that cap. Military hulls are restricted to capital
+ships (>5,000 tons) and stack with reinforced hull.
+
+Reference: `refs/hg/05_specialised_hull_types.md`
+
+Current status:
+
+- +25% cost modifier is implemented in `HullConfiguration.effective_hull_cost_modifier`
+- capital-ship restriction is not validated
+- double armour cap is not enforced in armour validation
+
+Remaining work:
+
+- add a validation error when `military=True` is set on a ship ≤5,000 tons
+- enforce the double-cap rule in armour validation (compare installed protection
+  against 2× the normal TL-derived maximum when `military=True`)
 
 ## Non-Gravity Hull
 
@@ -218,8 +257,8 @@ This is partly the biology of different species, but also a matter of
 culture and various practical things, e.g. human stock living in very
 different worlds, from aquatic to free space to High G etc.
 
-The sophont names in https://travellermap.com/t5ss/sophonts could be useful,
-and https://travellermap.com/t5ss/sophonts as well as 'other', 'independent' etc.
+The sophont names in [travellermap.com/t5ss/sophonts](https://travellermap.com/t5ss/sophonts) could be useful,
+as well as 'other', 'independent' etc.
 
 ## Other distinctions
 
@@ -300,6 +339,11 @@ Open questions:
 - SpinExt solar sails use "Thrust per %" based on the percentage of ship tonnage
   dedicated to sails; decide rounding, display, and whether sails belong with
   drives or power/auxiliary systems.
+- HG solar sail is a drive accessory (5% hull tonnage, MCr0.2/ton, effective Thrust 0,
+  prevents jump while deployed); SpinExt sails are scalable and can double as panels.
+  These must remain distinct classes — see `docs/solar-energy-systems-comparison.md`
+  for the detailed comparison. Placement decision (drives vs power vs auxiliary) is
+  tracked in `docs/plan-source-specific-ship-rules.md`.
 
 ## Primitive Hulls
 
@@ -334,6 +378,18 @@ Implementation notes:
 - Solar distance/hot/cold/boiling/frozen-zone modifiers are operational context;
   record as notes unless Ceres later gains scenario-state modelling.
 
+## Concealed Manoeuvre Drive [todo]
+
+Reference: `refs/hg/23_spacecraft_options.md`
+
+A concealed manoeuvre drive is hidden behind bulkheads for stealth. It adds +25% to the
+m-drive's tonnage and cost, and halves effective Thrust (rounding down). The drive must be
+within 3 metres of the accelerating surface; removing the outer bulkhead does not improve
+performance.
+
+Not currently modelled; no existing todo. Implement as a flag or wrapper on the existing
+`_MDrive` hierarchy, similar to how `high_burn_thruster` is a flag on reaction drives.
+
 ## Plasma Drives
 
 Implement Spinward Extents plasma drives.
@@ -361,6 +417,43 @@ Open questions:
 - Planetary-operation rules are out of scope for ship building, but invalid
   build specs should still produce notes/errors where the design itself violates
   construction limits.
+
+## Fuel System Variants [todo]
+
+Reference: `refs/hg/23_spacecraft_options.md`
+
+Several standard fuel tank options from HG Spacecraft Options are not yet modelled:
+
+- **Collapsible Fuel Tank** (fuel bladder): consumes 1% of its full tonnage when empty, Cr500/ton.
+  Cannot be pumped directly to jump drive; must complete a jump first.
+- **Mountable Tank**: converts cargo space to fuel; Cr1000/ton. Takes 4 weeks to add/remove.
+- **Metal Hydride Storage** (TL9): replaces liquid-H₂ tanks; twice the space, MCr0.2/ton; reduces
+  fuel-leak severity.
+- **Drop Tank**: external fuel tank jettisoned before jump. Mount fitting consumes 0.4% of tank
+  tonnage, MCr0.5/ton; tank itself Cr25000/ton. Imposes DM penalty on Engineer (J-drive) jump
+  check and prevents streamlining.
+- **Ramscoops**: passive hydrogen collector; 1% of hull + 5 tons (minimum 10 tons), MCr0.25/ton;
+  collects 5 tons hydrogen/week/ton ramscoop; no fuel processor needed; prevents streamlining.
+
+Remaining work:
+
+- decide which variants are worth implementing first (mountable tanks and collapsible tanks are
+  likely most common in published designs)
+- implement as `ShipPart` subclasses in `storage.py` or a new `fuel.py` subsection
+
+## Collectors [todo]
+
+Reference: `refs/hg/34_exotic_technology.md`
+
+An alternative to standard jump fuel tanks. A collector array gathers interstellar hydrogen using
+field projectors and stores it for jump use, eliminating dependence on fuel refineries or gas giant
+skimming. TL14.
+
+Tonnage formula: (1% of hull tonnage × jump rating) + 5 tons. Cost: MCr0.5/ton.
+
+Not yet implemented; no existing todo. Implement as a `ShipPart` in `storage.py` or a new section of
+`power.py`; wire into fuel accounting so the ship can jump without dedicated fuel tanks when collectors
+provide sufficient capacity.
 
 ## Fuel Refinery
 
@@ -404,6 +497,97 @@ Already implemented:
 Remaining work:
 
 - validate incompatible hull combinations if any source rule requires it
+- implement `reflec: bool` cost on `Hull`: MCr0.1 per ton of hull, +3 armour protection against
+  lasers; validate that reflec and stealth are not combined on the same hull
+
+## Adjustable Hull [todo]
+
+Reference: `refs/hg/23_spacecraft_options.md`
+
+An adjustable hull changes its outline to mimic any other ship of the same tonnage, hull
+configuration, and options. All weapons on an adjustable hull get pop-up mountings at no extra
+cost.
+
+Two TL tiers:
+
+| TL | Tons        | Cost            |
+|----|-------------|-----------------|
+| 12 | +5% of hull | +10% base hull  |
+| 15 | +1% of hull | +100% base hull |
+
+Not currently modelled. This is a specialist/military option; decide whether it belongs in
+`hull.py` as a flag or as a `HullOption` subpart.
+
+## Detachable Bridge [todo]
+
+Reference: `refs/hg/23_spacecraft_options.md`
+
+A detachable bridge can be ejected in emergencies. It has two weeks of life support and battery
+power, and basic manoeuvring (effective Thrust 0). Adds +50% to bridge cost and +20% to bridge
+tonnage. Minimum sizes by ship displacement:
+
+| Ship Size          | Min Bridge Size |
+|--------------------|-----------------|
+| ≤200 tons          | 15 tons         |
+| 201–1,000 tons     | 30 tons         |
+| 1,001–2,000 tons   | 50 tons         |
+| >2,000 tons        | 80 tons         |
+
+Not currently modelled. Implement as `detachable: bool = False` on `Bridge`.
+
+## Cockpit options (Dual Cockpit, Ejector Seat) [todo]
+
+Reference: `refs/hg/09_step_5_install_bridge.md`
+
+A **dual cockpit** provides space for an additional crew member (sensor operator or gunner).
+It consumes 2.5 tons and costs Cr15,000.
+
+An **ejector seat** can be added to any cockpit at Cr5,000 per seat (no additional tonnage).
+
+Neither option is currently modelled. Cockpits have `holographic: bool` but no dual or ejector-seat fields.
+
+Remaining work:
+
+- add `dual: bool = False` to `Cockpit`; add 2.5 tons and Cr15,000 when set
+- add `ejector_seat: bool = False` to `Cockpit`; add Cr5,000 when set
+
+## Emergency Low Berth [todo]
+
+Reference: `refs/hg/13_step_11_install_staterooms.md`
+
+An emergency low berth holds up to 4 people in dire circumstances. It consumes 1 ton, costs
+MCr1, and requires 1 Power. Regular low berths are already modelled in `habitation.py`; the
+emergency variant is absent.
+
+Remaining work:
+
+- add `EmergencyLowBerth` to `habitation.py` (1t, MCr1, 1 Power, occupant capacity 4)
+- wire it into `HabitationSection` alongside `low_berths`
+- include occupant capacity in crew/passenger capacity calculations
+
+## Breakaway Hulls [todo]
+
+A ship can be designed to separate into two or more independently operating
+sections. Each section must have its own bridge and power plant; drives, weapons,
+and screens are optional per section but combined while docked. The separation
+mechanism consumes 2% of the combined hull tonnage at MCr2/ton. Hull points
+of each section are proportional to the total.
+
+Reference: `refs/hg/05_specialised_hull_types.md`
+
+Current status:
+
+- `breakaway: bool` field exists on `HullConfiguration` but has no effect on
+  cost, tonnage, or validation
+
+Remaining work:
+
+- decide whether breakaway sections are modelled as a single `Ship` with a
+  sub-structure, or as two separate `Ship` objects linked by a relation
+- implement the 2% tonnage + MCr2/ton cost for the separation mechanism
+- validate that each section has at least a bridge and a power plant
+- drive/weapon combining while docked is likely out of scope until a
+  multi-section model exists
 
 ## Spinning hull configurations (Double Hull, Hamster Cage)
 
@@ -414,6 +598,235 @@ Both require dedicated spin machinery (0.1 tons per ton of spun section) and inc
 per percent of spun hull. Hamster cage requires ring radius ≥15m.
 
 Probably out of scope until Non-Gravity Hull and the spin-radius calculation have a clear policy.
+
+## Launch Tube and Recovery Deck [todo]
+
+Reference: `refs/hg/26_drones.md`
+
+**Launch Tube** (TL9): launches up to 10 craft per space-combat round. Consumes tonnage equal to
+10× the size of the largest craft it must launch. MCr0.5/ton, 1 Power/ton. Each craft using it
+still needs its own docking space or full hangar.
+
+**Recovery Deck**: counterpart to launch tube — recovers up to 10 craft per round. Consumes 10×
+the size of the largest craft it must recover. MCr0.5/ton, 1 Power/ton. Open to vacuum; cannot
+function as a full hangar.
+
+Not yet implemented; no existing todo. Good candidates for `crafts.py` alongside `FullHangar`
+and `InternalDockingSpace`.
+
+## Grav Screen [todo]
+
+Reference: `refs/hg/26_drones.md`
+
+Blocks densitometers (returns error codes). Presence of grav screen is itself obvious to sensor
+operators. TL12, 1 ton per 200 tons of hull, MCr1/ton, 2 Power/ton.
+
+Not yet implemented; no existing todo. Implement in `systems.py` as a `ShipPart`.
+
+## Gravity Well Generator [todo]
+
+Reference: `refs/hg/34_exotic_technology.md`
+
+Creates an artificial gravity well that affects nearby vessels (tactical effect). TL16, 100 tons,
+MCr120, 500 Power.
+
+Not yet implemented; no existing todo. Implement in `systems.py`. The ship-building side is
+tonnage/cost/power; combat effects are out of scope.
+
+## Jump Filter [todo]
+
+Reference: `refs/hg/35_jump_filters_and_psionics.md`
+
+Prevents ships from jumping into the equipped vessel's surrounding space by detecting jump drive
+initiation and disrupting emergence. TL14, no tonnage, 5 bandwidth, 1 Power, MCr5.
+
+Not yet implemented; no existing todo. Implement in `computer.py` (software/hardware hybrid) or
+`systems.py`. No tonnage required, so it is unusual — decide whether to model it as a software
+package (like `JumpControl`) or as a zero-ton hardware system.
+
+## Psionic Technology [todo]
+
+Reference: `refs/hg/35_jump_filters_and_psionics.md`
+
+Three ship components enabling psionic operation or defence. None currently implemented:
+
+- **Psion Stateroom** (TL12, 4t, MCr2): enhanced stateroom for psionic crew; includes psionic
+  shielding and amplification equipment. Good candidate for `habitation.py` alongside `HighStateroom`.
+- **Psionic Shielding — Interior** (TL12, 0.25t per shielded room, MCr0.1 per room): blocks
+  telepathic intrusion into a specific room. Implement as an option on staterooms/compartments or
+  as a standalone part in `systems.py`.
+- **Psionic Shielding — Exterior** (TL16): shields the entire ship's hull against psionic detection
+  and intrusion; different tonnage/cost formula. Implement in `systems.py`.
+
+Psionic Capacitor (TL18) is out of scope.
+
+## Vault [todo]
+
+Reference: `refs/hg/26_drones.md`
+
+An armoured chamber designed to survive ship destruction. Contents survive in vacuum for a limited
+time. Provides Armour 1 per ton (max 10) and 1 Hull point per 5 tons. Size range 4–40 tons,
+MCr0.5/ton.
+
+Not yet implemented; no existing todo. Implement in `systems.py`. Note: the Vault's armour
+modifies critical hit severity for its contents, not the ship's overall armour rating; decide how
+to represent this.
+
+## Re-entry Capsule and Re-entry Pod [todo]
+
+Reference: `refs/hg/26_drones.md`
+
+Emergency escape and planetary insertion systems, typically installed per crew member.
+
+**Re-entry Capsule** (1 person): three tiers — basic (TL8, 0.5t, Cr20,000), assault (TL10, 0.5t,
+Cr50,000, Protection +20, DM-2 to detect), high-survivability (TL14, 0.5t, MCr0.1, Protection
++30, DM-4 to detect, DM-2 against attacks).
+
+**Re-entry Pod** (TL9, 2 people, 1t, MCr0.15): has a gliding surface and computer guidance;
+Flyer (wing) can take manual control.
+
+Not yet implemented; no existing todo. Implement in `systems.py`. These appear on published ship
+stat blocks (e.g. military vessels allocate one capsule per crew).
+
+## Stable [todo]
+
+Reference: `refs/hg/26_drones.md`
+
+Housing for animals (and, in some systems, slaves). Includes air scrubbers and waste-collectors
+separate from main life support. A 10-ton stable houses 20 human-sized or 10 cattle-sized
+creatures. Variable size, minimum 10 tons, Cr2,500/ton, life support Cr250/ton.
+
+Not yet implemented; no existing todo. Appears in published agricultural and transport ship
+designs. Implement in `habitation.py` or `systems.py`.
+
+## Concealed Compartment [todo]
+
+Reference: `refs/hg/26_drones.md`
+
+Hidden space shielded against sensors. Up to 5% of ship tonnage. Inflicts DM-2 to Electronics
+(sensors) and DM-4 to Investigate checks. Cr20,000/ton.
+
+Not yet implemented; no existing todo. Appears in published scout and free trader designs.
+Implement in `systems.py`; note that the tonnage is deducted from cargo or other space.
+
+## Booby-Trapped Airlock [todo]
+
+Reference: `refs/hg/26_drones.md`
+
+Lethal defensive equipment fitted to any existing airlock. Four TL tiers (TL6–TL12), no extra
+tonnage.
+
+| TL | Cost   | Damage/Round |
+|----|--------|--------------|
+| 6  | MCr0.1 | 3D           |
+| 8  | MCr0.3 | 5D           |
+| 10 | MCr0.5 | 6D           |
+| 12 | MCr1   | 8D           |
+
+Not yet implemented; no existing todo. Implement as an optional flag or sub-part on `Airlock`
+in `systems.py`. Damage is relevant for ship spec notes; the actual combat mechanic is out of
+scope for ship building.
+
+## Construction Deck [todo]
+
+Reference: `refs/hg/26_drones.md`
+
+A mobile shipyard capable of building and repairing ships whose tonnage is at most half the
+construction deck's own tonnage. MCr0.5/ton, 1 Power/ton. Appears on very large civilian
+vessels and some megacorporate ships.
+
+Not yet implemented; no existing todo. Implement in `systems.py`. Ship-building capability
+note is relevant; the actual construction simulation is out of scope.
+
+## Common Area Extras: Brewery, Gourmet Kitchen, Zero-G Room [todo]
+
+Reference: `refs/hg/26_drones.md`
+
+Three common-area extras that appear alongside the already-implemented Hot Tub, Swimming Pool,
+Theatre, and Wet Bar, but are not yet modelled:
+
+- **Brewery / Distillery** (TL10, 0.5t per 10 litres/week, MCr0.1/ton)
+- **Gourmet Kitchen** (1t per diner, MCr0.2/ton; requires Steward 2, DM+1 when seeking high
+  passengers)
+- **Zero-G Room** (any size; Cr50,000 for controls and safe-access portal, no tonnage stated)
+
+Not yet implemented. Implement in `systems.py` alongside the existing common-area parts.
+
+## Pop-Up Mounting [todo]
+
+Reference: `refs/hg/16_turrets_and_fixed_mounts.md`
+
+A pop-up mounting conceals a turret or fixed mount in a pod or recess. A ship with all weapons
+in pop-up mounts appears unarmed to external sensor scans. TL10, adds +1 ton and MCr1 to any
+turret or fixed mount.
+
+Not yet implemented; no existing todo.
+
+Remaining work:
+
+- add `pop_up: bool = False` to `_Turret` and `FixedMount`; add 1 ton and MCr1 when set
+- wire a note into the weapon description indicating the mount is concealed
+
+## Hardened Systems — General Investigation [todo]
+
+References: `refs/hg/10_step_6_install_computer.md`, `refs/hg/26_drones.md`,
+`refs/hg/17_particle_beam.md`, `refs/hg/43_fleet_evaluation.md`
+
+`Computer` already supports `/fib` (+50% cost, ion immunity). The broader rule from HG is:
+
+> Any system that draws power from the power plant can be Hardened to render it immune to Ion weapons. A Hardened system has its cost increased by +50%.
+
+This implies every powered `ShipPart` could carry a `hardened: bool` flag. The fleet combat trait
+"Hardened" (from `43_fleet_evaluation.md`) requires ≥75% of powered systems to be Hardened.
+
+Before implementing, investigate:
+
+- Which published ship designs include hardened non-computer systems? How common is this in practice?
+- Is this a per-part flag, a hull-level option, or something else?
+- How does the 75%-threshold fleet trait interact with the per-part model?
+- Does radiation shielding's "treats the bridge as if Hardened" need to be modelled separately, or is it purely an operational note?
+
+## Incomplete Customisation Advantages and Disadvantages [todo]
+
+Reference: `refs/hg/29_customising_ships.md`
+
+The customisation framework (EarlyPrototype through HighTechnology grades, `CustomisableShipPart`)
+is in place and used on drives, jump drives, power plants, screens, and weapons. EnergyEfficient,
+SizeReduction, LongRange, HighYield, VeryHighYield are already coded.
+
+The following specific modifications from HG are not yet implemented:
+
+**Weapons:**
+
+- Accurate (DM+1 to attack, 2 Advantages)
+- Easy to Repair (DM+1 repair attempts, 1 Advantage)
+- Intense Focus (AP+2, lasers and particle only, 2 Advantages)
+- Resilient (critical hit Severity -1, 1 Advantage)
+- Inaccurate (DM-1 attacks, 1 Disadvantage)
+
+**Jump Drive:**
+
+- Decreased Fuel (-5% fuel, 1 Advantage)
+- Early Jump (90-diameter limit, 1 Advantage)
+- Stealth Jump (reduced emergence radiation signature, 2 Advantages)
+- Energy Inefficient (+30% Power, 1 Disadvantage)
+- Late Jump (150-diameter limit, 1 Disadvantage)
+
+**Reaction Drive:**
+
+- Fuel Efficient (-20% fuel, 1 Advantage)
+- Fuel Inefficient (+25% fuel, 1 Disadvantage)
+
+**Power Plant:**
+
+- Increased Power (+10% output, 2 Advantages)
+
+**Manoeuvre Drive:**
+
+- Limited Range (within 100-diameter limit only, 2 Disadvantages)
+- Orbital Range (within Short range of a planet only, 2 Disadvantages)
+
+Decide which to prioritise based on occurrence in published ship designs.
 
 ## Portable Computer Options and Specialised Computer Variants
 
@@ -442,6 +855,31 @@ Several sensor modules listed in HG are not yet modelled:
 - Rapid-Deployment Extended Arrays
 - Shallow Penetration Suite
 - Signal Processing System
+
+## Accommodation additions [todo]
+
+Reference: `refs/hg/23_spacecraft_options.md`
+
+Two accommodation options from the Spacecraft Options chapter are not yet modelled:
+
+- **Acceleration Bench**: 4 seats, 1 ton, Cr10,000. `AccelerationSeat` (0.5t, Cr30,000) already
+  exists in `systems.py`; the bench is just a lower-cost 4-seat variant in the same space.
+- **Multi-Environment Space**: adds +5% to the tonnage of the designated area, MCr0.5/ton, and
+  requires 1 Power per ton of environmental equipment. Intended for alien/animal occupants.
+
+## Cargo handling equipment [todo]
+
+Reference: `refs/hg/23_spacecraft_options.md`
+
+Three cargo-handling parts from HG Spacecraft Options are absent:
+
+- **Cargo Scoop** (2 tons, MCr0.5): picks up floating cargo. One ton per round; Pilot check or
+  take damage equal to negative Effect.
+- **Cargo Net** (5 tons, MCr1): tow drones extend a retrieval net; ship cannot jump while deployed.
+- **Loading Belt** (1 ton, Cr3,000 at TL7 / Cr10,000 at TL12, 1 Power): offloads cargo; replaces
+  10 crewmen (TL7) or 25 (TL12).
+
+All are good candidates for `systems.py` as `_ZeroPower`-style parts.
 
 ## External attachment systems
 

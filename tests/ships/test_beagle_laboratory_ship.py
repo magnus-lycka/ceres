@@ -278,8 +278,18 @@ def build_beagle_laboratory_ship() -> ship.Ship:
     )
 
 
-def test_beagle_laboratory_ship_matches_supported_slice():
-    ship_ = build_beagle_laboratory_ship()
+@pytest.fixture(scope='module')
+def beagle_laboratory_ship():
+    return build_beagle_laboratory_ship()
+
+
+@pytest.fixture(scope='module')
+def beagle_laboratory_ship_spec(beagle_laboratory_ship):
+    return beagle_laboratory_ship.build_spec()
+
+
+def test_beagle_laboratory_ship_matches_supported_slice(beagle_laboratory_ship):
+    ship_ = beagle_laboratory_ship
 
     assert ship_.hull_cost == pytest.approx(_expected.hull_cost_mcr * 1_000_000)
     assert ship_.hull_points == pytest.approx(_expected.hull_points)
@@ -416,16 +426,13 @@ def test_beagle_laboratory_ship_matches_supported_slice():
     assert ship_.sales_price_new == pytest.approx(_expected.sales_price_mcr * 1_000_000)
 
 
-def test_beagle_laboratory_ship_spec_structure():
-    ship_ = build_beagle_laboratory_ship()
-    spec = ship_.build_spec()
-
+def test_beagle_laboratory_ship_spec_structure(beagle_laboratory_ship_spec):
     for item, section in _expected.spec_rows.items():
-        assert spec.row(item, section=section).section == section
+        assert beagle_laboratory_ship_spec.row(item, section=section).section == section
     for item, quantity in _expected.spec_quantities.items():
         if item == 'Double Turret':
-            assert len(spec.rows_matching(item)) == quantity
+            assert len(beagle_laboratory_ship_spec.rows_matching(item)) == quantity
         else:
-            assert spec.row(item).quantity == quantity
+            assert beagle_laboratory_ship_spec.row(item).quantity == quantity
     for item, tons in _expected.spec_tons.items():
-        assert spec.row(item).tons == pytest.approx(tons)
+        assert beagle_laboratory_ship_spec.row(item).tons == pytest.approx(tons)

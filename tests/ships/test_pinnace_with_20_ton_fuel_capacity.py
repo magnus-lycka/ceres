@@ -107,8 +107,18 @@ def build_pinnace_with_20_ton_fuel_capacity() -> ship.Ship:
     )
 
 
-def test_pinnace_with_20_ton_fuel_capacity_matches_reference_sheet():
-    pinnace = build_pinnace_with_20_ton_fuel_capacity()
+@pytest.fixture(scope='module')
+def pinnace_with_20_ton_fuel_capacity():
+    return build_pinnace_with_20_ton_fuel_capacity()
+
+
+@pytest.fixture(scope='module')
+def pinnace_with_20_ton_fuel_capacity_spec(pinnace_with_20_ton_fuel_capacity):
+    return pinnace_with_20_ton_fuel_capacity.build_spec()
+
+
+def test_pinnace_with_20_ton_fuel_capacity_matches_reference_sheet(pinnace_with_20_ton_fuel_capacity):
+    pinnace = pinnace_with_20_ton_fuel_capacity
 
     assert pinnace.tl == _expected.tl
     assert pinnace.displacement == _expected.displacement
@@ -179,9 +189,6 @@ def test_pinnace_with_20_ton_fuel_capacity_matches_reference_sheet():
     assert pinnace.notes.warnings == _expected.expected_warnings
 
 
-def test_pinnace_with_20_ton_fuel_capacity_spec_structure():
-    pinnace = build_pinnace_with_20_ton_fuel_capacity()
-    spec = pinnace.build_spec()
-
+def test_pinnace_with_20_ton_fuel_capacity_spec_structure(pinnace_with_20_ton_fuel_capacity_spec):
     for item in _expected.spec_rows:
-        assert spec.row(item).section == _expected.spec_rows[item]
+        assert pinnace_with_20_ton_fuel_capacity_spec.row(item).section == _expected.spec_rows[item]

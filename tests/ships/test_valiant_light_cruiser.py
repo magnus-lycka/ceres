@@ -383,11 +383,8 @@ def test_valiant_basic_power_requirements_match_source(valiant_light_cruiser):
     assert valiant_light_cruiser.fuel_power_load == _expected.power_requirements.fuel_processor
 
 
-def test_valiant_has_no_unexpected_ship_errors_or_warnings():
-    valiant = build_valiant_light_cruiser()
-    spec = valiant.build_spec()
-
-    assert valiant.notes.errors == _expected.expected_errors
-    assert valiant.notes.warnings == _expected.expected_warnings
-    assert spec.ship_notes.errors == _expected.expected_errors
-    assert spec.ship_notes.warnings == _expected.expected_warnings
+def test_valiant_has_no_unexpected_ship_errors_or_warnings(valiant_light_cruiser, valiant_spec):
+    assert valiant_light_cruiser.notes.errors == _expected.expected_errors
+    assert valiant_light_cruiser.notes.warnings == _expected.expected_warnings
+    assert valiant_spec.ship_notes.errors == _expected.expected_errors
+    assert valiant_spec.ship_notes.warnings == _expected.expected_warnings

@@ -28,7 +28,11 @@ Every design test file must be registered in its assembly type's gallery:
 When adding a new design test file:
 
 1. Expose a public `build_<name>()` function (no leading underscore).
-2. Import it in `test_gallery.py` and add it to all parametrized lists.
+2. Import it in `test_gallery.py` and add it to the gallery case list.
+
+Gallery tests may write individual inspection artifacts for cheap formats such
+as HTML, Typst, or JSON. Expensive multi-page formats such as PDF may instead
+be emitted as one combined gallery document per assembly type.
 
 ## Expected-Values Pattern
 
@@ -84,6 +88,29 @@ present. If a source-derived case intentionally has a known warning or error,
 list it in `_expected` and compare the actual notes exactly against that list.
 Do not use negative one-off assertions that check for the absence of one
 particular warning while ignoring the rest.
+
+Source snapshot tests should build the assembly once per test module and reuse
+that instance through fixtures:
+
+```python
+@pytest.fixture(scope='module')
+def beowulf():
+    return build_beowulf()
+
+
+@pytest.fixture(scope='module')
+def beowulf_spec(beowulf):
+    return beowulf.build_spec()
+```
+
+Keep the public `build_<name>()` function for gallery registration and for other
+tests that need to construct the design, but individual validation tests should
+prefer the module-scoped fixtures. This keeps large source snapshots fast and
+reinforces that design tests are read-only comparisons against `_expected`.
+
+Only build a fresh instance inside a test when that test intentionally mutates
+the assembly or verifies construction side effects in isolation. In that case,
+name the reason in the test body or surrounding comment.
 
 Ship-specific source notes and deviation explanations belong in the test file's
 module docstring, not in this document.

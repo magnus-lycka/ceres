@@ -51,9 +51,33 @@ def build_poseidon_cargo_boat(tl: int) -> ship.Ship:
     )
 
 
+@pytest.fixture(scope='module')
+def poseidon_tl9():
+    return build_poseidon_cargo_boat(9)
+
+
+@pytest.fixture(scope='module')
+def poseidon_tl10():
+    return build_poseidon_cargo_boat(10)
+
+
+@pytest.fixture(scope='module')
+def poseidon_tl12():
+    return build_poseidon_cargo_boat(12)
+
+
+@pytest.fixture(scope='module')
+def poseidon_by_tl(poseidon_tl9, poseidon_tl10, poseidon_tl12):
+    return {
+        9: poseidon_tl9,
+        10: poseidon_tl10,
+        12: poseidon_tl12,
+    }
+
+
 @pytest.mark.parametrize('tl', [10, 12])
-def test_poseidon_cargo_boat_small_bridge_is_overcompensated_in_atmosphere(tl: int):
-    cargo_boat = build_poseidon_cargo_boat(tl)
+def test_poseidon_cargo_boat_small_bridge_is_overcompensated_in_atmosphere(poseidon_by_tl, tl: int):
+    cargo_boat = poseidon_by_tl[tl]
 
     assert cargo_boat.command is not None
     assert cargo_boat.command.bridge is not None
@@ -68,25 +92,22 @@ def test_poseidon_cargo_boat_small_bridge_is_overcompensated_in_atmosphere(tl: i
     assert cargo_boat.notes.warnings == _expected.expected_warnings
 
 
-def test_poseidon_tl12_variant_trades_cost_for_cargo_with_better_power_plant():
-    tl10 = build_poseidon_cargo_boat(_expected.tl10)
-    tl12 = build_poseidon_cargo_boat(_expected.tl12)
-
-    assert tl10.power is not None
-    assert tl12.power is not None
-    assert tl10.power.plant is not None
-    assert tl12.power.plant is not None
-    assert isinstance(tl10.power.plant, _expected.tl10_plant_type)
-    assert isinstance(tl12.power.plant, _expected.tl12_plant_type)
-    assert CargoSection.cargo_tons_for_ship(tl10) == pytest.approx(_expected.tl10_cargo_tons)
-    assert CargoSection.cargo_tons_for_ship(tl12) == pytest.approx(_expected.tl12_cargo_tons)
-    assert tl10.production_cost == pytest.approx(_expected.tl10_production_cost)
-    assert tl12.production_cost == pytest.approx(_expected.tl12_production_cost)
+def test_poseidon_tl12_variant_trades_cost_for_cargo_with_better_power_plant(poseidon_tl10, poseidon_tl12):
+    assert poseidon_tl10.power is not None
+    assert poseidon_tl12.power is not None
+    assert poseidon_tl10.power.plant is not None
+    assert poseidon_tl12.power.plant is not None
+    assert isinstance(poseidon_tl10.power.plant, _expected.tl10_plant_type)
+    assert isinstance(poseidon_tl12.power.plant, _expected.tl12_plant_type)
+    assert CargoSection.cargo_tons_for_ship(poseidon_tl10) == pytest.approx(_expected.tl10_cargo_tons)
+    assert CargoSection.cargo_tons_for_ship(poseidon_tl12) == pytest.approx(_expected.tl12_cargo_tons)
+    assert poseidon_tl10.production_cost == pytest.approx(_expected.tl10_production_cost)
+    assert poseidon_tl12.production_cost == pytest.approx(_expected.tl12_production_cost)
 
 
 @pytest.mark.parametrize('tl', [9])
-def test_poseidon_below_tl10_puts_error_on_mdrive(tl: int):
-    cargo_boat = build_poseidon_cargo_boat(tl)
+def test_poseidon_below_tl10_puts_error_on_mdrive(poseidon_by_tl, tl: int):
+    cargo_boat = poseidon_by_tl[tl]
     assert cargo_boat.drives is not None
     assert cargo_boat.drives.m_drive is not None
     assert cargo_boat.drives.m_drive.notes.errors == _expected.tl9_mdrive_errors

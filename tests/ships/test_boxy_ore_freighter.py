@@ -44,19 +44,23 @@ def build_boxy_ore_freighter() -> ship.Ship:
     )
 
 
-def test_boxy_ore_freighter_has_large_default_cargo_hold():
-    freighter = build_boxy_ore_freighter()
+@pytest.fixture(scope='module')
+def boxy_ore_freighter():
+    return build_boxy_ore_freighter()
+
+
+def test_boxy_ore_freighter_has_large_default_cargo_hold(boxy_ore_freighter):
+    freighter = boxy_ore_freighter
     assert CargoSection.cargo_tons_for_ship(freighter) == pytest.approx(_expected.cargo_tons)
 
 
-def test_boxy_ore_freighter_tl9_mdrive_is_valid():
-    freighter = build_boxy_ore_freighter()
+def test_boxy_ore_freighter_tl9_mdrive_is_valid(boxy_ore_freighter):
+    freighter = boxy_ore_freighter
     assert freighter.drives is not None
     assert freighter.drives.m_drive is not None
     assert freighter.notes.errors == _expected.expected_errors
     assert freighter.notes.warnings == _expected.expected_warnings
 
 
-def test_boxy_ore_freighter_operation_fuel_costs_80_per_month():
-    freighter = build_boxy_ore_freighter()
-    assert freighter.expenses.fuel == pytest.approx(_expected.fuel_expense_cr)
+def test_boxy_ore_freighter_operation_fuel_costs_80_per_month(boxy_ore_freighter):
+    assert boxy_ore_freighter.expenses.fuel == pytest.approx(_expected.fuel_expense_cr)

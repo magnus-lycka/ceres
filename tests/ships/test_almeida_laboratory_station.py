@@ -152,8 +152,18 @@ def build_almeida_laboratory_station() -> ship.Ship:
     )
 
 
-def test_almeida_laboratory_station_matches_reference_sheet():
-    station = build_almeida_laboratory_station()
+@pytest.fixture(scope='module')
+def almeida_laboratory_station():
+    return build_almeida_laboratory_station()
+
+
+@pytest.fixture(scope='module')
+def almeida_laboratory_station_spec(almeida_laboratory_station):
+    return almeida_laboratory_station.build_spec()
+
+
+def test_almeida_laboratory_station_matches_reference_sheet(almeida_laboratory_station):
+    station = almeida_laboratory_station
 
     assert station.tl == _expected.tl
     assert station.displacement == _expected.displacement
@@ -245,13 +255,13 @@ def test_almeida_laboratory_station_matches_reference_sheet():
     assert station.crew.notes.warnings == _expected.expected_crew_warnings
 
 
-def test_almeida_laboratory_station_spec_structure():
-    station = build_almeida_laboratory_station()
-    spec = station.build_spec()
-
+def test_almeida_laboratory_station_spec_structure(almeida_laboratory_station_spec):
     for item in _expected.spec_rows:
-        assert spec.row(item, section=_expected.spec_rows[item]).section == _expected.spec_rows[item]
-    assert spec.row('Advanced Probe Drones').quantity == _expected.probe_drones_quantity
-    assert spec.row('Laboratory').quantity == _expected.lab_count
-    assert spec.row('Staterooms').quantity == _expected.staterooms_count
-    assert spec.row('Cargo Hold').tons == pytest.approx(_expected.cargo_tons)
+        assert (
+            almeida_laboratory_station_spec.row(item, section=_expected.spec_rows[item]).section
+            == _expected.spec_rows[item]
+        )
+    assert almeida_laboratory_station_spec.row('Advanced Probe Drones').quantity == _expected.probe_drones_quantity
+    assert almeida_laboratory_station_spec.row('Laboratory').quantity == _expected.lab_count
+    assert almeida_laboratory_station_spec.row('Staterooms').quantity == _expected.staterooms_count
+    assert almeida_laboratory_station_spec.row('Cargo Hold').tons == pytest.approx(_expected.cargo_tons)

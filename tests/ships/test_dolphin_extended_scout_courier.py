@@ -220,8 +220,18 @@ def build_dolphin_extended_scout_courier() -> ship.Ship:
     )
 
 
-def test_dolphin_extended_scout_courier_matches_reference_sheet():
-    dolphin = build_dolphin_extended_scout_courier()
+@pytest.fixture(scope='module')
+def dolphin_extended_scout_courier():
+    return build_dolphin_extended_scout_courier()
+
+
+@pytest.fixture(scope='module')
+def dolphin_extended_scout_courier_spec(dolphin_extended_scout_courier):
+    return dolphin_extended_scout_courier.build_spec()
+
+
+def test_dolphin_extended_scout_courier_matches_reference_sheet(dolphin_extended_scout_courier):
+    dolphin = dolphin_extended_scout_courier
 
     assert dolphin.tl == _expected.tl
     assert dolphin.displacement == _expected.displacement
@@ -348,18 +358,19 @@ def test_dolphin_extended_scout_courier_matches_reference_sheet():
     assert dolphin.crew.notes.warnings == _expected.expected_crew_warnings
 
 
-def test_dolphin_extended_scout_courier_spec_structure():
-    spec = build_dolphin_extended_scout_courier().build_spec()
-
-    assert spec.ship_class == _expected.ship_class
-    assert spec.ship_type == _expected.ship_type
-    assert spec.tl == _expected.tl
-    assert spec.hull_points == pytest.approx(_expected.hull_points)
+def test_dolphin_extended_scout_courier_spec_structure(dolphin_extended_scout_courier_spec):
+    assert dolphin_extended_scout_courier_spec.ship_class == _expected.ship_class
+    assert dolphin_extended_scout_courier_spec.ship_type == _expected.ship_type
+    assert dolphin_extended_scout_courier_spec.tl == _expected.tl
+    assert dolphin_extended_scout_courier_spec.hull_points == pytest.approx(_expected.hull_points)
 
     for item, section in _expected.spec_rows.items():
-        assert spec.row(item, section=section).section == section
-    assert spec.row('Fusion (TL 15), Power 70', section='Power').notes.warnings == _expected.expected_power_row_warnings
+        assert dolphin_extended_scout_courier_spec.row(item, section=section).section == section
+    assert (
+        dolphin_extended_scout_courier_spec.row('Fusion (TL 15), Power 70', section='Power').notes.warnings
+        == _expected.expected_power_row_warnings
+    )
     for item, quantity in _expected.spec_quantities.items():
-        assert spec.row(item).quantity == quantity
+        assert dolphin_extended_scout_courier_spec.row(item).quantity == quantity
     for item, tons in _expected.spec_tons.items():
-        assert spec.row(item).tons == pytest.approx(tons)
+        assert dolphin_extended_scout_courier_spec.row(item).tons == pytest.approx(tons)

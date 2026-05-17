@@ -85,8 +85,13 @@ def build_belt_racer() -> ship.Ship:
     )
 
 
-def test_belt_racer_matches_current_r_drive_subset():
-    racer = build_belt_racer()
+@pytest.fixture(scope='module')
+def belt_racer():
+    return build_belt_racer()
+
+
+def test_belt_racer_matches_current_r_drive_subset(belt_racer):
+    racer = belt_racer
 
     assert racer.hull_cost == pytest.approx(_expected.hull_cost_mcr * 1_000_000)
     assert racer.drives is not None

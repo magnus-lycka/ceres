@@ -222,8 +222,13 @@ def build_alt_dragon() -> ship.Ship:
     )
 
 
-def test_alt_dragon_modeled_subset_tracks_current_model():
-    dragon = build_alt_dragon()
+@pytest.fixture(scope='module')
+def alt_dragon():
+    return build_alt_dragon()
+
+
+def test_alt_dragon_modeled_subset_tracks_current_model(alt_dragon):
+    dragon = alt_dragon
 
     assert dragon.power is not None
     assert dragon.power.plant is not None

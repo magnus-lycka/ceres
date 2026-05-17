@@ -198,8 +198,17 @@ def build_suleiman() -> ship.Ship:
     )
 
 
-def test_suleiman_matches_first_modeled_reference_slice():
-    suleiman = build_suleiman()
+@pytest.fixture(scope='module')
+def suleiman():
+    return build_suleiman()
+
+
+@pytest.fixture(scope='module')
+def suleiman_spec(suleiman):
+    return suleiman.build_spec()
+
+
+def test_suleiman_matches_first_modeled_reference_slice(suleiman):
 
     armour_part = suleiman.hull.armour
     assert suleiman.drives is not None
@@ -331,71 +340,68 @@ def test_suleiman_matches_first_modeled_reference_slice():
     assert suleiman.crew.notes.warnings == _expected.expected_crew_warnings
 
 
-def test_suleiman_spec_structure():
-    suleiman = build_suleiman()
-    spec = suleiman.build_spec()
+def test_suleiman_spec_structure(suleiman_spec):
+    assert suleiman_spec.ship_class == _expected.ship_class
+    assert suleiman_spec.ship_type == _expected.ship_type
+    assert suleiman_spec.tl == _expected.tl
+    assert suleiman_spec.hull_points == _expected.hull_points
 
-    assert spec.ship_class == _expected.ship_class
-    assert spec.ship_type == _expected.ship_type
-    assert spec.tl == _expected.tl
-    assert spec.hull_points == _expected.hull_points
-
-    hull_row = spec.row('Streamlined Hull')
+    hull_row = suleiman_spec.row('Streamlined Hull')
     assert hull_row.section == _expected.spec_rows['Streamlined Hull']
     assert hull_row.tons == _expected.displacement
     assert hull_row.cost == _expected.hull_cost_mcr * 1_000_000
     assert hull_row.emphasize_tons is True
 
-    basic = spec.row('Basic Ship Systems')
+    basic = suleiman_spec.row('Basic Ship Systems')
     assert basic.section == _expected.spec_rows['Basic Ship Systems']
     assert basic.power == float(_expected.power_basic)
 
-    armour = spec.row('Crystaliron, Armour: 4')
+    armour = suleiman_spec.row('Crystaliron, Armour: 4')
     assert armour.section == _expected.spec_rows['Crystaliron, Armour: 4']
     assert armour.tons == pytest.approx(_expected.armour_tons)
     assert armour.cost == _expected.armour_cost_mcr * 1_000_000
 
-    fusion = spec.row('Fusion (TL 12), Power 60')
+    fusion = suleiman_spec.row('Fusion (TL 12), Power 60')
     assert fusion.section == _expected.spec_rows['Fusion (TL 12), Power 60']
     assert fusion.tons == pytest.approx(_expected.plant_tons)
     assert fusion.power == float(_expected.plant_output)
     assert fusion.emphasize_power is True
 
-    mdrive = spec.row('M-Drive 2')
+    mdrive = suleiman_spec.row('M-Drive 2')
     assert mdrive.section == _expected.spec_rows['M-Drive 2']
     assert mdrive.power == float(-_expected.m_drive_power)
 
-    sensors = spec.row('Military Grade Sensors')
+    sensors = suleiman_spec.row('Military Grade Sensors')
     assert sensors.section == _expected.spec_rows['Military Grade Sensors']
     assert [note.message for note in sensors.notes] == _expected.sensor_note_messages
 
-    airlock = spec.row('Airlock (2 tons)')
+    airlock = suleiman_spec.row('Airlock (2 tons)')
     assert airlock.section == _expected.spec_rows['Airlock (2 tons)']
     assert airlock.tons is None
 
-    fuel_tank = spec.row('J-2, 20 weeks of operation', section='Fuel')
+    fuel_tank = suleiman_spec.row('J-2, 20 weeks of operation', section='Fuel')
     assert fuel_tank.section == _expected.spec_rows['J-2, 20 weeks of operation']
     assert fuel_tank.tons == pytest.approx(_expected.spec_fuel_tank_tons)
 
-    fuel_scoops = spec.row('Fuel Scoops')
+    fuel_scoops = suleiman_spec.row('Fuel Scoops')
     assert fuel_scoops.section == _expected.spec_rows['Fuel Scoops']
 
-    air_raft = spec.row('Air/Raft')
+    air_raft = suleiman_spec.row('Air/Raft')
     assert air_raft.section == _expected.spec_rows['Air/Raft']
     assert air_raft.cost == _expected.spec_air_raft_cost
 
-    jc2 = spec.row('Jump Control/2')
+    jc2 = suleiman_spec.row('Jump Control/2')
     assert jc2.section == _expected.spec_rows['Jump Control/2']
     assert jc2.cost == _expected.spec_jump_control_cost
 
-    staterooms = spec.row('Staterooms')
+    staterooms = suleiman_spec.row('Staterooms')
     assert staterooms.section == _expected.spec_rows['Staterooms']
     assert staterooms.quantity == _expected.stateroom_count
 
-    probe_drones = spec.row('Probe Drones')
+    probe_drones = suleiman_spec.row('Probe Drones')
     assert probe_drones.section == _expected.spec_rows['Probe Drones']
     assert probe_drones.quantity == _expected.probe_drones_count
 
-    assert [(expense.label, expense.amount) for expense in spec.expenses] == _expected.spec_expenses
-    assert [(crew.role, crew.quantity, crew.salary) for crew in spec.crew] == _expected.spec_crew
-    assert [(passenger.kind, passenger.quantity) for passenger in spec.passengers] == _expected.spec_passengers
+    assert [(expense.label, expense.amount) for expense in suleiman_spec.expenses] == _expected.spec_expenses
+    assert [(crew.role, crew.quantity, crew.salary) for crew in suleiman_spec.crew] == _expected.spec_crew
+    assert [(passenger.kind, passenger.quantity) for passenger in suleiman_spec.passengers] == _expected.spec_passengers

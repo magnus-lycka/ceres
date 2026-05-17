@@ -284,8 +284,18 @@ def build_small_scout_base() -> ship.Ship:
     )
 
 
-def test_small_scout_base_matches_supported_slice():
-    base = build_small_scout_base()
+@pytest.fixture(scope='module')
+def small_scout_base():
+    return build_small_scout_base()
+
+
+@pytest.fixture(scope='module')
+def small_scout_base_spec(small_scout_base):
+    return small_scout_base.build_spec()
+
+
+def test_small_scout_base_matches_supported_slice(small_scout_base):
+    base = small_scout_base
 
     assert base.hull_cost == pytest.approx(_expected.hull_cost_mcr * 1_000_000)
     assert base.hull_points == pytest.approx(_expected.hull_points)
@@ -405,21 +415,18 @@ def test_small_scout_base_matches_supported_slice():
     assert base.crew.notes.warnings == _expected.expected_crew_warnings
 
 
-def test_small_scout_base_spec_structure():
-    base = build_small_scout_base()
-    spec = base.build_spec()
-
+def test_small_scout_base_spec_structure(small_scout_base_spec):
     for item, section in _expected.spec_rows.items():
-        assert spec.row(item, section=section).section == section
+        assert small_scout_base_spec.row(item, section=section).section == section
     for item, quantity in _expected.spec_quantities.items():
         if item == 'Airlock (2 tons)':
-            assert spec.row(item, section='Hull').quantity == quantity
+            assert small_scout_base_spec.row(item, section='Hull').quantity == quantity
         elif item in _expected.spec_matching_count_items:
-            assert len(spec.rows_matching(item)) == quantity
+            assert len(small_scout_base_spec.rows_matching(item)) == quantity
         else:
-            assert spec.row(item).quantity == quantity
+            assert small_scout_base_spec.row(item).quantity == quantity
 
-    beam_turret_rows = spec.rows_matching('Quad Turret')
+    beam_turret_rows = small_scout_base_spec.rows_matching('Quad Turret')
     assert len(beam_turret_rows) == len(_expected.quad_turret_rows)
     for index, row in enumerate(beam_turret_rows):
         assert row.quantity == _expected.quad_turret_rows[index]['quantity']
