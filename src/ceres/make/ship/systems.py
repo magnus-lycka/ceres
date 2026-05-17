@@ -309,7 +309,8 @@ class Airlock(_ZeroPowerSystemPart):
             return False
         free_airlocks = self.assembly.displacement // 100
         hull = self.assembly.hull
-        assert hull is not None
+        if hull is None:
+            return False
         siblings = hull.airlocks
         index = next((i for i, sibling in enumerate(siblings) if sibling is self), -1)
         if index < 0:
