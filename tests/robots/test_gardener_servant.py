@@ -62,9 +62,9 @@ class TestGardenerServantManipulatorsPhase4:
 
     def test_manipulator_slot_effect(self):
         # SIZE_5 std_slots=2; 4 arm manips: 4×2=8; arm effect=8−4=+4
-        # 2 leg manips: 2×2=+4; total = +8
+        # 2 leg manips: no slot cost (RIR-007); total = +4
         robot = build_gardener_servant()
-        assert robot._manipulator_slot_effect == 8
+        assert robot._manipulator_slot_effect == 4
 
     def test_spec_shows_arm_manipulators(self):
         robot = build_gardener_servant()

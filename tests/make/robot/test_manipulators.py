@@ -434,8 +434,9 @@ class TestWalkerLegManipulators:
         )
         assert robot._manipulator_cost_effect == 1000.0
 
-    def test_slot_effect_includes_leg_manipulators(self):
-        # SIZE_5: arm effect=0, leg manip=+2 → total +2
+    def test_slot_effect_excludes_leg_manipulators(self):
+        # Converted walker legs cost credits only, no slot cost (RIR-007)
+        # SIZE_5: arm effect=0, leg manip costs no slots → total 0
         from ceres.make.robot import WalkerLocomotion
 
         robot = make_robot(
@@ -443,7 +444,7 @@ class TestWalkerLegManipulators:
             locomotion=WalkerLocomotion(),
             legs=[Manipulator()],
         )
-        assert robot._manipulator_slot_effect == 2
+        assert robot._manipulator_slot_effect == 0
 
     def test_legs_ignored_for_non_walker(self):
         # legs on a non-walker robot have no effect

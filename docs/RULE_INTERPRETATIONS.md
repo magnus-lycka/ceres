@@ -410,8 +410,10 @@ Worked example — Size 3 arm on a Size 5 robot (base_slots = 16):
 - Δsize = 3 − 5 = −2 → pct = 2% → new_slots = max(1, ceil(0.02 × 16)) = 1
 - delta = 1 − 2 = −1 → one slot freed
 
-### RIR-007 Walker Leg-Manipulators Are Additional, Not Standard
+### RIR-007 Walker Leg-Manipulators: Cost Only, No Slots
 
-The *Robot Handbook* (p.27) states: "designing an eight-limbed robot with all limbs as manipulators would involve keeping the two original manipulators, adding four manipulators and altering the two default legs to become manipulators."
+The *Robot Handbook* (p.27) states: "A robot designed as a walker may enhance a leg to operate as a manipulator by paying the base manipulator cost of a robot of its Size (Cr100 × Size per modified manipulator). … their size may not be altered."
 
-This language implies that leg-manipulators are neither of the two standard arm slots. Ceres therefore treats each converted leg as a purely additional manipulator: full slot cost (same-size percentage of base slots) and full cost (Cr100 × robot_size), with no baseline to subtract. The two standard arm positions remain governed by `Robot.manipulators`.
+The rule mentions only cost, not slots. The size restriction is the counterpart to that: because the legs are not resized or fully added as extra components, they carry no slot expenditure. Ceres therefore treats converting a walker's default two legs into manipulators as costing Cr100 × robot_size each with no slot effect.
+
+The eight-limbed example (p.27) — "keeping the two original manipulators, adding four manipulators and altering the two default legs" — distinguishes *adding* (slots + cost) from *altering* (cost only). Extra limbs beyond the default two legs, if any, would be modelled as entries in `Robot.manipulators` (full additional-manipulator rules apply). `Robot.legs` covers only the default two converted legs.

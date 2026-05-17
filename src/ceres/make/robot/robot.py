@@ -69,8 +69,7 @@ class Robot(RobotBase):
     def _manipulator_slot_effect(self) -> int:
         std_slots = self._std_manip_slots
         arm_effect = sum(m.slots for m in self.manipulators) - 2 * std_slots
-        leg_effect = sum(m.slots for m in self._leg_manipulators)
-        return arm_effect + leg_effect
+        return arm_effect
 
     @property
     def _manipulator_cost_effect(self) -> float:
@@ -373,7 +372,7 @@ class Robot(RobotBase):
             ms.rows.append(
                 RobotDetailRow(
                     name=label,
-                    col2=f'−{m.slots}',
+                    col2='—',
                     cost=format_credits(m.cost),
                 )
             )
