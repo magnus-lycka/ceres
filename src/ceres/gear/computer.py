@@ -89,7 +89,7 @@ class ComputerEquipment(Equipment):
         data.setdefault('mass_kg', float(spec['mass_kg']) * factor)
         return data
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'{self._label}/{self.parts[0].processing}'
 
 
@@ -266,9 +266,9 @@ class SpecialisedComputer(Equipment):
         data.setdefault('mass_kg', float(spec['mass_kg']))
         return data
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         if self.invalid_processing is not None:
-            return None
+            return ''
         p = self.parts[0].processing
         variant_name = _VARIANT_FULL_NAME.get(self.variant, self.variant)
         return f'Specialised {type(self)._FORM_LABEL} {self.expert.skill}/{p} {variant_name}'

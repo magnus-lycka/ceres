@@ -29,9 +29,6 @@ class TransceiverPart(CeresPart):
     def description(self) -> str:
         return f'{self.medium.title()} Transceiver {_format_range(self.range_km)}'
 
-    def build_item(self) -> str | None:
-        return self.description
-
 
 class RadioTransceiverPart(TransceiverPart):
     medium: Literal['radio'] = 'radio'
@@ -55,9 +52,6 @@ class TransceiverEncryptionPart(CeresPart):
     def description(self) -> str:
         return 'Hardware Encryption Module'
 
-    def build_item(self) -> str | None:
-        return self.description
-
 
 class SatelliteUplinkPart(CeresPart):
     """CSC satellite uplink option for radio transceivers."""
@@ -72,9 +66,6 @@ class SatelliteUplinkPart(CeresPart):
         if self.static:
             return 'Static Satellite Uplink'
         return 'Satellite Uplink'
-
-    def build_item(self) -> str | None:
-        return self.description
 
 
 class TransceiverEquipment(Equipment):
@@ -93,7 +84,7 @@ class TransceiverEquipment(Equipment):
                 return part
         raise RuntimeError(f'{type(self).__name__} has no transceiver part')
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return self.transceiver_part.description
 
     @staticmethod
@@ -329,8 +320,7 @@ class BugWiredAudio(Equipment):
     mass_kg: int = 3
     cost: int = 50
 
-    def build_item(self) -> str | None:
-        return 'Wired Audio Bug'
+    description: Literal['Wired Audio Bug'] = 'Wired Audio Bug'
 
 
 class BugPassiveAudio(Equipment):
@@ -344,8 +334,7 @@ class BugPassiveAudio(Equipment):
     mass_kg: int = 1
     cost: int = 50
 
-    def build_item(self) -> str | None:
-        return 'Recording Audio Bug'
+    description: Literal['Recording Audio Bug'] = 'Recording Audio Bug'
 
 
 class BugPassivePhoto(Equipment):

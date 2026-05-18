@@ -121,6 +121,12 @@ def test_intro_radio_transceiver_matches_csc_values():
     assert transceiver.parts[0].range_km == 5
 
 
+def test_radio_transceiver_display_label_wraps_description():
+    transceiver = RadioTransceiverEquipment(range_km=50, tl=7, display_label='Rescue Beacon')
+
+    assert transceiver.notes.item_message == 'Rescue Beacon (Radio Transceiver 50km)'
+
+
 def test_tl8_radio_transceiver_matches_csc_values():
     transceiver = RadioTransceiverEquipment(range_km=5, tl=8)
 

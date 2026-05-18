@@ -29,7 +29,7 @@ class SoftwarePackage(CeresModel, ABC):
     @abstractmethod
     def cost(self) -> float: ...
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return self.description
 
     def validate_on_computer(self, computer: ComputerPart) -> None:

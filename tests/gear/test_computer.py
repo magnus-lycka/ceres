@@ -265,6 +265,12 @@ def test_portable_computer_processing_lives_in_part():
     assert pc.parts[0].processing == 3
 
 
+def test_portable_computer_display_label_wraps_description():
+    pc = PortableComputer(processing=3, display_label='Captain Terminal')
+
+    assert pc.notes.item_message == 'Captain Terminal (Portable Computer/3)'
+
+
 def test_portable_computer_part_tl_matches_equipment_tl():
     pc = PortableComputer(processing=3)
     assert pc.parts[0].tl == pc.tl
