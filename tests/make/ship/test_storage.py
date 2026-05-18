@@ -112,6 +112,18 @@ def test_cargo_hold_usable_tons_subtracts_crane():
     assert hold.usable_tons(owner) == pytest.approx(147.0)
 
 
+def test_cargo_hold_display_label_appears_in_ship_spec():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        cargo=CargoSection(cargo_holds=[CargoHold(tons=20, display_label='Specimen Hold')]),
+    )
+
+    cargo_row = my_ship.build_spec().row('Specimen Hold (Cargo Hold)', section=SpecSection.CARGO)
+    assert cargo_row.tons == pytest.approx(20.0)
+
+
 def test_cargo_airlock_has_fixed_tons_and_cost():
     airlock = CargoAirlock()
     owner = DummyOwner(12, 200)

@@ -149,7 +149,6 @@ class CeresModel(BaseModel):
             return f'{self.display_label} ({description})'
         return self.display_label or description or None
 
-
     def build_notes(self) -> list[_Note]:
         return []
 

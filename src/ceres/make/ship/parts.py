@@ -230,8 +230,8 @@ class ShipPartMixin(ABC):
     @abstractmethod
     def assembly(self) -> ShipBase: ...
 
-    @abstractmethod
-    def build_item(self) -> str | None: ...
+    def build_item(self) -> str | None:
+        return None
 
     @abstractmethod
     def item(self, message: str) -> None: ...
