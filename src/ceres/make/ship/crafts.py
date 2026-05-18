@@ -58,9 +58,6 @@ class CarriedOccupant(CeresModel):
     def item_description(self) -> str:
         return self.kind
 
-    def build_item(self) -> str | None:
-        return self.item_description()
-
 
 class Vehicle(CarriedOccupant):
     occupant_type: Literal['VEHICLE'] = 'VEHICLE'

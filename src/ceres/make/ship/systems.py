@@ -222,8 +222,7 @@ class HotTub(CommonArea):
 
 
 class BasicAutodoc(CeresModel):
-    def build_item(self) -> str | None:
-        return 'Basic Autodoc'
+    description: Literal['Basic Autodoc'] = 'Basic Autodoc'
 
     @property
     def cost(self) -> float:

@@ -87,9 +87,6 @@ class HullConfiguration(CeresModel):
             divisor = 2.5
         return (ton * self.effective_hull_points_modifier) // divisor
 
-    def build_item(self) -> str | None:
-        return self.description
-
 
 standard_hull = HullConfiguration(description='Standard Hull', streamlined=Streamlined.PARTIAL)
 
@@ -269,11 +266,11 @@ class Hull(CeresModel):
             return base_cost * 10
         return base_cost
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         item = self.configuration.build_item()
         if item is not None and self.pressure_hull:
             return f'{item}, Pressure Hull'
-        return item
+        return item or ''
 
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = []

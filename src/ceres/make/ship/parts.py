@@ -20,6 +20,7 @@ class CustomisationGrade(StrEnum):
 
 
 class Modification(CeresModel):
+    description: str = ''
     name: str
     advantage: int = 0
     disadvantage: int = 0
@@ -31,7 +32,7 @@ class Modification(CeresModel):
     info_notes: tuple[str, ...] = ()
     model_config = {'frozen': True}
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return self.name
 
     def build_notes(self) -> list[_Note]:

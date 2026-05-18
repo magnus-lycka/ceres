@@ -113,9 +113,7 @@ def test_safari_ship_named_common_area_matches_reference_slice(safari_ship):
     assert safari_ship.habitation.common_area is not None
     assert safari_ship.habitation.common_area.tons == pytest.approx(_expected.common_area_tons)
     assert safari_ship.habitation.common_area.cost == pytest.approx(_expected.common_area_cost_mcr * 1_000_000)
-    assert [area.tons for area in safari_ship.habitation.common_areas] == pytest.approx(
-        [_expected.trophy_lounge_tons]
-    )
+    assert [area.tons for area in safari_ship.habitation.common_areas] == pytest.approx([_expected.trophy_lounge_tons])
     assert [area.cost for area in safari_ship.habitation.common_areas] == pytest.approx(
         [_expected.trophy_lounge_cost_mcr * 1_000_000]
     )

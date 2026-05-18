@@ -137,10 +137,18 @@ class NoteList(list[_Note]):
 
 class CeresModel(BaseModel):
     notes: ClassVar[NoteList]
+    display_label: str | None = None
     _notes: NoteList = PrivateAttr(default_factory=NoteList)
 
+    def item_description(self) -> str:
+        return getattr(self, 'description', '')
+
     def build_item(self) -> str | None:
-        return None
+        description = self.item_description()
+        if self.display_label and description:
+            return f'{self.display_label} ({description})'
+        return self.display_label or description or None
+
 
     def build_notes(self) -> list[_Note]:
         return []
@@ -193,19 +201,9 @@ class CeresPart(CeresModel):
     """
 
     _assembly: Assembly | None = PrivateAttr(default=None)
-    display_label: str | None = None
     tl: int = 0
     cost: float = 0.0
     model_config = {'frozen': True}
-
-    def item_description(self) -> str:
-        return getattr(self, 'description', '')
-
-    def build_item(self) -> str | None:
-        description = self.item_description()
-        if self.display_label and description:
-            return f'{self.display_label} ({description})'
-        return self.display_label or description or None
 
     @property
     def assembly(self) -> Assembly:

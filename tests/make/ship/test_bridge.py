@@ -125,6 +125,13 @@ def test_bridge_holographic_build_item():
     assert b.build_item() == 'Holographic Controls'
 
 
+def test_bridge_display_label_wraps_dynamic_description():
+    b = Bridge(holographic=True, display_label='Owner Controls')
+    b.bind(DummyOwner(12, 200))
+
+    assert b.notes.item_message == 'Owner Controls (Holographic Controls)'
+
+
 def test_bridge_small_holographic_build_item():
     b = Bridge(holographic=True, small=True)
     b.bind(DummyOwner(12, 200))

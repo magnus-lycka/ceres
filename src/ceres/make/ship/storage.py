@@ -234,8 +234,7 @@ class FuelSection(CeresModel):
 
 
 class CargoCrane(CeresModel):
-    def build_item(self) -> str | None:
-        return 'Cargo Crane'
+    description: Literal['Cargo Crane'] = 'Cargo Crane'
 
     def tons_for_space(self, cargo_space: float) -> float:
         return 2.5 + 0.5 * math.ceil(cargo_space / 150)
@@ -245,11 +244,9 @@ class CargoCrane(CeresModel):
 
 
 class CargoHold(CeresModel):
+    description: Literal['Cargo Hold'] = 'Cargo Hold'
     tons: float | None = None
     crane: CargoCrane | None = None
-
-    def build_item(self) -> str | None:
-        return 'Cargo Hold'
 
     def total_tons(self, owner) -> float:
         if self.tons is not None:
