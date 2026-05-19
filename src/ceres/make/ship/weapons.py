@@ -15,6 +15,7 @@ from .parts import (
     SizeReduction,
 )
 from .spec import ShipSpec, SpecSection
+from .storage import CargoHold
 from .text import format_counted_label
 
 LongRange = Modification(
@@ -79,7 +80,7 @@ class _MountWeapon(CeresModel):
     notes: ClassVar[NoteList]
     model_config = {'frozen': True}
     weapon_type: str
-    item_label: ClassVar[str]
+    description: ClassVar[str]
     base_cost: ClassVar[float]
     base_power: ClassVar[float]
     high_yield_allowed: ClassVar[bool] = True
@@ -110,12 +111,6 @@ class _MountWeapon(CeresModel):
                         notes.error(f'{mod.name} is not applicable for {self.build_item()}')
         return notes
 
-    def item_description(self) -> str:
-        return self.item_label
-
-    def build_item(self) -> str | None:
-        return self.item_description()
-
     def customisation_note(self) -> _Note | None:
         if self.customisation is None:
             return None
@@ -139,21 +134,21 @@ class _MountWeapon(CeresModel):
 
 class PulseLaser(_MountWeapon):
     weapon_type: Literal['pulse_laser'] = 'pulse_laser'
-    item_label = 'Pulse Laser'
+    description = 'Pulse Laser'
     base_cost = 1_000_000.0
     base_power = 4.0
 
 
 class BeamLaser(_MountWeapon):
     weapon_type: Literal['beam_laser'] = 'beam_laser'
-    item_label = 'Beam Laser'
+    description = 'Beam Laser'
     base_cost = 500_000.0
     base_power = 4.0
 
 
 class MissileRack(_MountWeapon):
     weapon_type: Literal['missile_rack'] = 'missile_rack'
-    item_label = 'Missile Rack'
+    description = 'Missile Rack'
     base_cost = 750_000.0
     base_power = 0.0
     high_yield_allowed = False
@@ -161,7 +156,7 @@ class MissileRack(_MountWeapon):
 
 class Sandcaster(_MountWeapon):
     weapon_type: Literal['sandcaster'] = 'sandcaster'
-    item_label = 'Sandcaster'
+    description = 'Sandcaster'
     base_cost = 250_000.0
     base_power = 0.0
 
@@ -989,7 +984,7 @@ class _SpinalMount(ShipPart):
     spinal_type: str
     size_multiple: int = Field(default=1, ge=1)
     tl_improvement: Literal[0, 1, 2, 3] = 0
-    item_label: ClassVar[str]
+    description: ClassVar[str]
     base_tons: ClassVar[float]
     base_power: ClassVar[float]
     base_cost: ClassVar[float]
@@ -1004,7 +999,7 @@ class _SpinalMount(ShipPart):
     def bind(self, assembly) -> None:
         super().bind(assembly)
         if self.tons > self.max_tons:
-            self.error(f'{self.item_label} exceeds maximum size of {self.max_tons:g} tons')
+            self.error(f'{self.description} exceeds maximum size of {self.max_tons:g} tons')
         if self.tons > assembly.displacement / 2:
             self.error('Spinal mount cannot exceed half the ship displacement')
 
@@ -1015,8 +1010,8 @@ class _SpinalMount(ShipPart):
 
     def item_description(self) -> str:
         if self.tl_improvement:
-            return f'{self.item_label} (TL{self.tl + self.tl_improvement})'
-        return self.item_label
+            return f'{self.description} (TL{self.tl + self.tl_improvement})'
+        return self.description
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList(super().build_notes())
@@ -1054,7 +1049,7 @@ class _SpinalMount(ShipPart):
 
 class MassDriverSpinalMount(_SpinalMount):
     spinal_type: Literal['mass_driver_spinal_mount'] = 'mass_driver_spinal_mount'
-    item_label = 'Mass Driver Spinal Mount'
+    description = 'Mass Driver Spinal Mount'
     tl: int = 10
     base_tons = 5_000.0
     base_power = 250.0
@@ -1064,10 +1059,22 @@ class MassDriverSpinalMount(_SpinalMount):
     traits = ('AP 15', 'Orbital Bombardment')
     extra_info_notes = ('Ammunition is 50 tons and Cr500,000 per attack',)
 
+    @staticmethod
+    def ammunition_cargo(attacks: int = 1) -> CargoHold:
+        if attacks < 1:
+            raise ValueError('Mass driver spinal mount ammunition must cover at least one attack')
+        label = 'Mass Driver Spinal Mount Ammunition'
+        attack_label = 'attack' if attacks == 1 else 'attacks'
+        return CargoHold(
+            tons=50.0 * attacks,
+            cost=500_000.0 * attacks,
+            display_label=f'{label} ({attacks} {attack_label})',
+        )
+
 
 class MesonSpinalMount(_SpinalMount):
     spinal_type: Literal['meson_spinal_mount'] = 'meson_spinal_mount'
-    item_label = 'Meson Spinal Mount'
+    description = 'Meson Spinal Mount'
     tl: int = 12
     base_tons = 7_500.0
     base_power = 1_000.0
@@ -1080,7 +1087,7 @@ class MesonSpinalMount(_SpinalMount):
 
 class ParticleAcceleratorSpinalMount(_SpinalMount):
     spinal_type: Literal['particle_accelerator_spinal_mount'] = 'particle_accelerator_spinal_mount'
-    item_label = 'Particle Accelerator Spinal Mount'
+    description = 'Particle Accelerator Spinal Mount'
     tl: int = 11
     base_tons = 3_500.0
     base_power = 1_000.0
@@ -1093,7 +1100,7 @@ class ParticleAcceleratorSpinalMount(_SpinalMount):
 
 class RailgunSpinalMount(_SpinalMount):
     spinal_type: Literal['railgun_spinal_mount'] = 'railgun_spinal_mount'
-    item_label = 'Railgun Spinal Mount'
+    description = 'Railgun Spinal Mount'
     tl: int = 10
     base_tons = 3_500.0
     base_power = 500.0
@@ -1105,6 +1112,17 @@ class RailgunSpinalMount(_SpinalMount):
         'Damage is reduced by 2% per point of target armour before applying the damage multiple',
         'Includes five rounds; extra railgun rounds are 20 tons and MCr0.2 each',
     )
+
+    @staticmethod
+    def extra_rounds_cargo(rounds: int = 1) -> CargoHold:
+        if rounds < 1:
+            raise ValueError('Railgun spinal mount ammunition must include at least one extra round')
+        round_label = 'round' if rounds == 1 else 'rounds'
+        return CargoHold(
+            tons=20.0 * rounds,
+            cost=200_000.0 * rounds,
+            display_label=f'Railgun Spinal Mount Extra Rounds ({rounds} {round_label})',
+        )
 
 
 type SpinalMount = Annotated[
@@ -1158,7 +1176,7 @@ class _PointDefenseBattery(CustomisableShipPart):
     battery_type: str
     kind: ClassVar[PointDefenseKind]
     rating: ClassVar[PointDefenseRating]
-    item_label: ClassVar[str]
+    description: ClassVar[str]
     base_tons: ClassVar[float]
     base_cost: ClassVar[float]
     base_power: ClassVar[float]
@@ -1168,9 +1186,6 @@ class _PointDefenseBattery(CustomisableShipPart):
             EnergyEfficient.name,
         }
     )
-
-    def item_description(self) -> str:
-        return self.item_label
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList(super().build_notes())
@@ -1201,7 +1216,7 @@ class LaserPointDefenseBattery1(_PointDefenseBattery):
     battery_type: Literal['laser_point_defense_1'] = 'laser_point_defense_1'
     kind: ClassVar[PointDefenseKind] = 'laser'
     rating: ClassVar[PointDefenseRating] = 1
-    item_label = 'Point Defence Laser Battery Type I'
+    description = 'Point Defence Laser Battery Type I'
     tl: int = 10
     base_tons = 20.0
     base_power = 10.0
@@ -1212,7 +1227,7 @@ class LaserPointDefenseBattery2(_PointDefenseBattery):
     battery_type: Literal['laser_point_defense_2'] = 'laser_point_defense_2'
     kind: ClassVar[PointDefenseKind] = 'laser'
     rating: ClassVar[PointDefenseRating] = 2
-    item_label = 'Point Defence Laser Battery Type II'
+    description = 'Point Defence Laser Battery Type II'
     tl: int = 12
     base_tons = 20.0
     base_power = 20.0
@@ -1223,7 +1238,7 @@ class LaserPointDefenseBattery3(_PointDefenseBattery):
     battery_type: Literal['laser_point_defense_3'] = 'laser_point_defense_3'
     kind: ClassVar[PointDefenseKind] = 'laser'
     rating: ClassVar[PointDefenseRating] = 3
-    item_label = 'Point Defence Laser Battery Type III'
+    description = 'Point Defence Laser Battery Type III'
     tl: int = 14
     base_tons = 20.0
     base_power = 30.0
@@ -1234,7 +1249,7 @@ class GaussPointDefenseBattery1(_PointDefenseBattery):
     battery_type: Literal['gauss_point_defense_1'] = 'gauss_point_defense_1'
     kind: ClassVar[PointDefenseKind] = 'gauss'
     rating: ClassVar[PointDefenseRating] = 1
-    item_label = 'Point Defence Gauss Battery Type I'
+    description = 'Point Defence Gauss Battery Type I'
     tl: int = 10
     base_tons = 20.0
     base_power = 5.0
@@ -1245,7 +1260,7 @@ class GaussPointDefenseBattery2(_PointDefenseBattery):
     battery_type: Literal['gauss_point_defense_2'] = 'gauss_point_defense_2'
     kind: ClassVar[PointDefenseKind] = 'gauss'
     rating: ClassVar[PointDefenseRating] = 2
-    item_label = 'Point Defence Gauss Battery Type II'
+    description = 'Point Defence Gauss Battery Type II'
     tl: int = 12
     base_tons = 20.0
     base_power = 15.0
@@ -1256,7 +1271,7 @@ class GaussPointDefenseBattery3(_PointDefenseBattery):
     battery_type: Literal['gauss_point_defense_3'] = 'gauss_point_defense_3'
     kind: ClassVar[PointDefenseKind] = 'gauss'
     rating: ClassVar[PointDefenseRating] = 3
-    item_label = 'Point Defence Gauss Battery Type III'
+    description = 'Point Defence Gauss Battery Type III'
     tl: int = 14
     base_tons = 20.0
     base_power = 25.0

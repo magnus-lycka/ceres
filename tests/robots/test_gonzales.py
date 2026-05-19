@@ -50,7 +50,7 @@ _expected = SimpleNamespace(
     vehicle_endurance_hours=36,
     # source: 288 (36) — 288h requires Efficiency, not yet implemented
     attacks='—',
-    manipulators='2× (STR 5 DEX 9)',
+    manipulators='(STR 5 DEX 9) × 2',
     available_slots=8,
     used_slots=8,
     remaining_slots=0,

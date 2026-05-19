@@ -54,7 +54,7 @@ _expected = SimpleNamespace(
     programming='Basic (recon) (INT 4)',
     endurance_hours=144,  # source: 173h — requires speed_reduction=2 + AgilityEnhancement, not yet implemented
     attacks='—',
-    manipulators='2× (STR 3 DEX 9)',
+    manipulators='(STR 3 DEX 9) × 2',
     available_slots=2,
     used_slots=2,
     remaining_slots=0,

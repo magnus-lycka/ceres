@@ -15,6 +15,7 @@ from .test_hudson import build_hudson
 from .test_hush import build_hush
 from .test_lab_control_robot_advanced import build_advanced_lab_control_robot
 from .test_lab_control_robot_basic import build_basic_lab_control_robot
+from .test_mimer import build_mimer
 from .test_startek import build_startek
 from .test_utility_droid import build_utility_droid
 from .test_wush import build_wush
@@ -31,6 +32,7 @@ _ROBOTS = [
     ('test_hush', build_hush),
     ('test_lab_control_robot_advanced', build_advanced_lab_control_robot),
     ('test_lab_control_robot_basic', build_basic_lab_control_robot),
+    ('test_mimer', build_mimer),
     ('test_startek', build_startek),
     ('test_utility_droid', build_utility_droid),
     ('test_wush', build_wush),

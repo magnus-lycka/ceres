@@ -29,8 +29,8 @@ class RobotPartMixin(ABC):
     @abstractmethod
     def assembly(self) -> RobotBase: ...
 
-    @abstractmethod
-    def build_item(self) -> str | None: ...
+    def build_item(self) -> str | None:
+        return None
 
     @abstractmethod
     def item(self, message: str) -> None: ...
@@ -57,6 +57,10 @@ class RobotPartMixin(ABC):
     @property
     def skill_grants(self) -> tuple[SkillGrant, ...]:
         return ()
+
+    @property
+    def endurance_multiplier(self) -> float:
+        return 1.0
 
 
 class RobotPart(CeresPart, RobotPartMixin):

@@ -4,7 +4,7 @@ from typing import Any
 from pydantic import Field
 
 from .base import RobotBase
-from .brain import AdvancedBrain, RobotBrainUnion, VeryAdvancedBrain
+from .brain import AdvancedBrain, RobotBrainUnion, SelfAwareBrain, VeryAdvancedBrain
 from .chassis import (
     RobotSize,
     Trait,
@@ -22,6 +22,36 @@ from .parts import RobotPartMixin
 from .skills import SkillGrant
 from .spec import RobotSpec, RobotSpecRow, RobotSpecSection
 from .text import format_credits, format_traits
+
+
+def _characteristic_dm(char: int) -> int:
+    if char <= 1:
+        return -2
+    if char <= 5:
+        return -1
+    if char <= 8:
+        return 0
+    if char <= 11:
+        return 1
+    if char <= 14:
+        return 2
+    return 3
+
+
+def _robot_dex(tl: int) -> int:
+    return ceil(tl / 2) + 1
+
+
+def _collapse(labels: list[str]) -> list[str]:
+    parts: list[str] = []
+    i = 0
+    while i < len(labels):
+        count = 1
+        while i + count < len(labels) and labels[i + count] == labels[i]:
+            count += 1
+        parts.append(f'{labels[i]} × {count}' if count > 1 else labels[i])
+        i += count
+    return parts
 
 
 class Robot(RobotBase):
@@ -137,7 +167,11 @@ class Robot(RobotBase):
 
     @property
     def base_endurance(self) -> float:
-        return self.locomotion.base_endurance * base_endurance_multiplier(self.tl)
+        base = self.locomotion.base_endurance * base_endurance_multiplier(self.tl)
+        for opt in self.options:
+            if isinstance(opt, RobotPartMixin):
+                base *= opt.endurance_multiplier
+        return base
 
     @property
     def traits(self) -> list[Trait]:
@@ -158,6 +192,8 @@ class Robot(RobotBase):
         for opt in self.options:
             if isinstance(opt, RobotPartMixin):
                 result.extend(opt.robot_traits)
+        for t in self.brain.brain_traits:
+            result.append(t)
         # Deduplicate preserving first-seen order, then sort case-insensitively
         seen: set[tuple] = set()
         unique: list[Trait] = []
@@ -192,11 +228,16 @@ class Robot(RobotBase):
 
     @property
     def skills_display(self) -> str:
-        skills: list[SkillGrant] = list(self.brain.skill_grants)
+        dex_dm = _characteristic_dm(_robot_dex(self.tl))
+        grants: list[SkillGrant] = list(self.brain.skill_grants_for_robot(dex_dm))
         for opt in self.options:
             if isinstance(opt, RobotPartMixin):
-                skills.extend(opt.skill_grants)
-        parts = [str(s) for s in skills]
+                grants.extend(opt.skill_grants)
+        merged: dict[str, int] = {}
+        for g in grants:
+            if g.name not in merged or g.level > merged[g.name]:
+                merged[g.name] = g.level
+        parts = sorted(f'{name} {level}' for name, level in merged.items())
         rem = self.brain.remaining_bandwidth
         if rem is not None and rem > 0:
             parts.append(f'+{rem} Bandwidth available')
@@ -204,20 +245,9 @@ class Robot(RobotBase):
 
     @property
     def _manipulators_display(self) -> str:
-        def collapse(labels: list[str]) -> list[str]:
-            parts: list[str] = []
-            i = 0
-            while i < len(labels):
-                count = 1
-                while i + count < len(labels) and labels[i + count] == labels[i]:
-                    count += 1
-                parts.append(f'{count}× {labels[i]}' if count > 1 else labels[i])
-                i += count
-            return parts
-
         arm_labels = [m.stat_label(self.size, self.tl) for m in self.manipulators]
         leg_labels = [f'Manipulator leg {m.stat_label(self.size, self.tl)}' for m in self._leg_manipulators]
-        parts = collapse(arm_labels) + collapse(leg_labels)
+        parts = _collapse(arm_labels) + _collapse(leg_labels)
         return ', '.join(parts) if parts else '—'
 
     def build_notes(self) -> list:
@@ -322,7 +352,9 @@ class Robot(RobotBase):
         sections.append(bs)
 
         # ── Installed Skills ──────────────────────────────────────────────
-        if isinstance(self.brain, (AdvancedBrain, VeryAdvancedBrain)) and self.brain.installed_skills:
+        has_software = isinstance(self.brain, SelfAwareBrain) and bool(self.brain.installed_software)
+        has_skills = isinstance(self.brain, (AdvancedBrain, VeryAdvancedBrain, SelfAwareBrain))
+        if has_skills and (self.brain.installed_skills or has_software):
             ss = RobotDetailSection(title='Skills')
             for pkg in self.brain.installed_skills:
                 ss.rows.append(
@@ -332,6 +364,15 @@ class Robot(RobotBase):
                         cost=format_credits(pkg.cost),
                     )
                 )
+            if isinstance(self.brain, SelfAwareBrain):
+                for sw in self.brain.installed_software:
+                    ss.rows.append(
+                        RobotDetailRow(
+                            name=sw.name,
+                            col3=f'−{sw.bandwidth}',
+                            cost=format_credits(sw.cost),
+                        )
+                    )
             sections.append(ss)
 
         # ── Manipulators ──────────────────────────────────────────────────
@@ -481,13 +522,13 @@ class Robot(RobotBase):
                     option_labels.append(label)
         spare = self.remaining_slots
         if spare > 0:
-            option_labels.append(f'Spare Slots x{spare}')
+            option_labels.append(f'Spare Slots ×{spare}')
         option_labels.sort()
         spec.add_row(
             RobotSpecRow(
                 section=RobotSpecSection.OPTIONS,
                 label='Options',
-                value=', '.join(option_labels) if option_labels else '—',
+                value=', '.join(_collapse(option_labels)) if option_labels else '—',
             )
         )
         spec.detail_sections = self._build_detail_sections()

@@ -1,4 +1,12 @@
-from .brain import AdvancedBrain, BasicBrain, PrimitiveBrain, RobotBrainUnion, VeryAdvancedBrain
+from .brain import (
+    AdvancedBrain,
+    BasicBrain,
+    PrimitiveBrain,
+    RobotBrainUnion,
+    SelfAwareBrain,
+    UniversalTranslator,
+    VeryAdvancedBrain,
+)
 from .chassis import RobotSize, Trait
 from .locomotion import (
     AeroplaneLocomotion,
@@ -27,6 +35,7 @@ from .options import (
 )
 from .parts import RobotPart, RobotPartMixin
 from .robot import Robot
+from .skills import BrainSoftware
 from .spec import RobotSpec, RobotSpecRow, RobotSpecSection
 
 __all__ = [
@@ -58,6 +67,9 @@ __all__ = [
     'BasicBrain',
     'AdvancedBrain',
     'VeryAdvancedBrain',
+    'SelfAwareBrain',
+    'UniversalTranslator',
+    'BrainSoftware',
     'RobotPart',
     'RobotPartMixin',
     'Manipulator',

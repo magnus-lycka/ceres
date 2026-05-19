@@ -4,6 +4,23 @@ from dataclasses import dataclass
 
 from ceres.shared import CeresModel
 
+# Skills whose characteristic DM is DEX (not INT).
+# From refs/robot/35_skill_packages.md Standard Skill Packages table.
+_DEX_SKILLS: frozenset[str] = frozenset(
+    {
+        'Animals',
+        'Drive',
+        'Flyer',
+        'Gun Combat',
+        'Gunner',
+        'Heavy Weapons',
+        'Melee',
+        'Pilot',
+        'Seafarer',
+        'Stealth',
+    }
+)
+
 # Base costs (level 0) per refs/robot/35_skill_packages.md Standard Skill Packages table.
 # Cost at level N = base × 10^N.
 _SKILL_BASE_COSTS: dict[str, float] = {
@@ -67,6 +84,15 @@ class SkillPackage(CeresModel):
     level: int
     bandwidth: int
 
+    def grant_name(self) -> str:
+        """Skill name for a grant; replaces speciality with (All) at level 0 (unspecialized)."""
+        if self.level > 0:
+            return self.name
+        i = self.name.find('(')
+        if i == -1:
+            return self.name
+        return self.name[:i] + '(All)'
+
     @property
     def cost(self) -> float:
         base_name = self.name.split('(')[0].strip()
@@ -91,4 +117,19 @@ def primitive_package_skills(function: str) -> tuple[SkillGrant, ...]:
     return _PRIMITIVE_SKILLS.get(function, ())
 
 
-__all__ = ['SkillGrant', 'SkillPackage', 'primitive_package_skills']
+class BrainSoftware(CeresModel):
+    """Non-skill software installed in an Advanced (or higher) brain, consuming bandwidth.
+
+    Used for software packages such as Universal Translator that run on the brain
+    and consume bandwidth but do not grant skills.
+    """
+
+    model_config = {'frozen': True}
+
+    name: str
+    bandwidth: int
+    tl: int = 0
+    cost: float = 0.0
+
+
+__all__ = ['SkillGrant', 'SkillPackage', 'BrainSoftware', 'primitive_package_skills', '_DEX_SKILLS']

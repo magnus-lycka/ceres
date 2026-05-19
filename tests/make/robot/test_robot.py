@@ -23,9 +23,6 @@ class _SlottedPart(RobotPart):
     tl: int = 5
     slots: ClassVar[int] = 2
 
-    def build_item(self) -> str | None:
-        return None
-
 
 class _TraitPart(RobotPart):
     """Part that injects an ATV trait — used to test option trait aggregation."""
@@ -37,9 +34,6 @@ class _TraitPart(RobotPart):
     def robot_traits(self) -> tuple[Trait, ...]:
         return (Trait('ATV'),)
 
-    def build_item(self) -> str | None:
-        return None
-
 
 class _SkillPart(RobotPart):
     """Part that grants Recon 1 — used to test option skill aggregation."""
@@ -50,9 +44,6 @@ class _SkillPart(RobotPart):
     @property
     def skill_grants(self) -> tuple[SkillGrant, ...]:
         return (SkillGrant('Recon', 1),)
-
-    def build_item(self) -> str | None:
-        return None
 
 
 def make_robot(**kwargs):
@@ -662,3 +653,111 @@ class TestSkillsDisplay:
     def test_option_skill_included(self):
         robot = make_robot(options=[_SkillPart()])
         assert 'Recon 1' in robot.skills_display
+
+    def test_brain_skills_alphabetically_sorted(self):
+        from ceres.make.robot import AdvancedBrain
+        from ceres.make.robot.skills import SkillPackage
+
+        brain = AdvancedBrain(
+            brain_tl=12,
+            installed_skills=(
+                SkillPackage(name='Steward', level=1, bandwidth=1),
+                SkillPackage(name='Admin', level=1, bandwidth=0),
+            ),
+        )
+        robot = make_robot(brain=brain)
+        display = robot.skills_display
+        assert display.index('Admin') < display.index('Steward')
+
+    def test_duplicate_skill_name_keeps_highest_level(self):
+        # Brain grants Recon 1; option also grants Recon 0 → only Recon 1 shown
+        from ceres.make.robot import AdvancedBrain
+        from ceres.make.robot.skills import SkillPackage
+
+        brain = AdvancedBrain(
+            brain_tl=12,
+            installed_skills=(SkillPackage(name='Recon', level=1, bandwidth=1),),
+        )
+        robot = make_robot(brain=brain, options=[_SkillPart()])  # _SkillPart grants Recon 1 too
+        display = robot.skills_display
+        # Should appear exactly once, not twice
+        assert display.count('Recon') == 1
+
+    def test_option_higher_than_brain_keeps_option_level(self):
+        # Brain grants Recon 0 (DM=0); option grants Recon 2 → only Recon 2
+        from ceres.make.robot import AdvancedBrain
+        from ceres.make.robot.skills import SkillPackage
+
+        brain = AdvancedBrain(
+            brain_tl=12,
+            installed_skills=(SkillPackage(name='Recon', level=0, bandwidth=0),),
+        )
+
+        class _HighReconPart(_SkillPart):
+            type: Literal['SKILL_PART'] = 'SKILL_PART'
+
+            @property
+            def skill_grants(self) -> tuple[SkillGrant, ...]:
+                return (SkillGrant('Recon', 2),)
+
+        robot = make_robot(brain=brain, options=[_HighReconPart()])
+        display = robot.skills_display
+        assert 'Recon 2' in display
+        assert 'Recon 0' not in display
+
+    def test_bandwidth_available_is_last(self):
+        from ceres.make.robot import AdvancedBrain
+        from ceres.make.robot.skills import SkillPackage
+
+        brain = AdvancedBrain(
+            brain_tl=12,
+            installed_skills=(SkillPackage(name='Zoology', level=1, bandwidth=1),),
+        )
+        robot = make_robot(brain=brain)
+        display = robot.skills_display
+        bw_idx = display.index('+1 Bandwidth available')
+        assert display.index('Zoology') < bw_idx
+        assert display.endswith('+1 Bandwidth available')
+
+    def test_dex_skill_uses_dex_dm_not_int_dm(self):
+        # TL15: DEX=ceil(15/2)+1=9 → DM+1. SelfAwareBrain INT DM=+2.
+        # Flyer (DEX skill) level 0 + DEX DM+1 = Flyer (All) 1, NOT 2.
+        from ceres.make.robot import NoneLocomotion, RobotSize, SelfAwareBrain
+        from ceres.make.robot.skills import SkillPackage
+
+        brain = SelfAwareBrain(
+            installed_skills=(SkillPackage(name='Flyer (Grav)', level=0, bandwidth=0),),
+        )
+        robot = make_robot(tl=15, brain=brain, size=RobotSize.SIZE_1, locomotion=NoneLocomotion())
+        assert 'Flyer (All) 1' in robot.skills_display
+        assert 'Flyer (All) 2' not in robot.skills_display
+
+    def test_int_skill_uses_int_dm_on_self_aware_brain(self):
+        # TL15: SelfAwareBrain INT DM=+2. Admin (INT skill) level 1 + DM+2 = Admin 3.
+        from ceres.make.robot import NoneLocomotion, RobotSize, SelfAwareBrain
+        from ceres.make.robot.skills import SkillPackage
+
+        brain = SelfAwareBrain(
+            installed_skills=(SkillPackage(name='Admin', level=1, bandwidth=1),),
+        )
+        robot = make_robot(tl=15, brain=brain, size=RobotSize.SIZE_1, locomotion=NoneLocomotion())
+        assert 'Admin 3' in robot.skills_display
+
+    def test_dex_dm_and_int_dm_same_at_tl15_advanced_int_upgrade1(self):
+        # TL15: DEX=ceil(15/2)+1=9 → DM+1. AdvancedBrain TL12 INT DM=0+int_upgrade(1)=1.
+        # Both are DM+1 → INT skill and DEX skill both get +1.
+        from ceres.make.robot import AdvancedBrain
+        from ceres.make.robot.skills import SkillPackage
+
+        brain = AdvancedBrain(
+            brain_tl=12,
+            int_upgrade=1,
+            bandwidth=4,
+            installed_skills=(
+                SkillPackage(name='Admin', level=1, bandwidth=1),
+                SkillPackage(name='Flyer (All)', level=0, bandwidth=0),
+            ),
+        )
+        robot = make_robot(tl=15, brain=brain)
+        assert 'Admin 2' in robot.skills_display  # Admin 1 + INT DM+1 = 2
+        assert 'Flyer (All) 1' in robot.skills_display  # Flyer 0 + DEX DM+1 = 1

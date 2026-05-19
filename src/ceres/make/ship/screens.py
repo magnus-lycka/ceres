@@ -13,7 +13,7 @@ class _Screen(CustomisableShipPart):
     cost: ClassVar[float]
     power: ClassVar[float]
     screen_type: str
-    item_label: ClassVar[str]
+    description: ClassVar[str]
     damage_reduction: ClassVar[str]
     base_tons: ClassVar[float]
     base_cost: ClassVar[float]
@@ -24,9 +24,6 @@ class _Screen(CustomisableShipPart):
             SizeReduction.name,
         }
     )
-
-    def item_description(self) -> str:
-        return self.item_label
 
     @property
     def tons(self) -> float:
@@ -46,7 +43,7 @@ class _Screen(CustomisableShipPart):
 
 class MesonScreen(_Screen):
     screen_type: Literal['meson_screen'] = 'meson_screen'
-    item_label = 'Meson Screen'
+    description = 'Meson Screen'
     damage_reduction = '2D × 10'
     tl: int = 13
     base_tons = 10.0
@@ -56,7 +53,7 @@ class MesonScreen(_Screen):
 
 class NuclearDamper(_Screen):
     screen_type: Literal['nuclear_damper'] = 'nuclear_damper'
-    item_label = 'Nuclear Damper'
+    description = 'Nuclear Damper'
     damage_reduction = '2D'
     tl: int = 12
     base_tons = 10.0

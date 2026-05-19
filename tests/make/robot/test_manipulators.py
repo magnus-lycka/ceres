@@ -343,7 +343,7 @@ class TestManipulatorSpecDisplay:
 
         robot = make_robot(size=RobotSize.SIZE_3, tl=8)
         rows = robot.build_spec().rows_for_section(RobotSpecSection.MANIPULATORS)
-        assert rows[0].value.startswith('2×')
+        assert rows[0].value.endswith('× 2')
 
     def test_no_manipulators_shows_dash(self):
         from ceres.make.robot.spec import RobotSpecSection
@@ -382,7 +382,7 @@ class TestManipulatorSpecDisplay:
         )
         rows = robot.build_spec().rows_for_section(RobotSpecSection.MANIPULATORS)
         # SIZE_4 TL12: STR = 2×4−1=7; DEX = ceil(12/2)+1=7
-        assert '2×' in rows[0].value
+        assert '× 2' in rows[0].value
         assert '(STR 7 DEX 7)' in rows[0].value
 
 
@@ -480,7 +480,7 @@ class TestWalkerLegManipulators:
             legs=[Manipulator(), Manipulator()],
         )
         rows = robot.build_spec().rows_for_section(RobotSpecSection.MANIPULATORS)
-        assert '2× Manipulator leg' in rows[0].value
+        assert 'Manipulator leg (STR 5 DEX 5) × 2' in rows[0].value
 
     def test_robot_legs_round_trip(self):
         # Robot with leg manipulators must survive JSON round-trip

@@ -124,6 +124,19 @@ def test_cargo_hold_display_label_appears_in_ship_spec():
     assert cargo_row.tons == pytest.approx(20.0)
 
 
+def test_cargo_hold_cost_appears_in_ship_spec():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        cargo=CargoSection(cargo_holds=[CargoHold(tons=50, cost=500_000, display_label='Ammunition Locker')]),
+    )
+
+    cargo_row = my_ship.build_spec().row('Ammunition Locker (Cargo Hold)', section=SpecSection.CARGO)
+    assert cargo_row.tons == pytest.approx(50.0)
+    assert cargo_row.cost == pytest.approx(500_000.0)
+
+
 def test_cargo_airlock_has_fixed_tons_and_cost():
     airlock = CargoAirlock()
     owner = DummyOwner(12, 200)

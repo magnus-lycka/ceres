@@ -29,9 +29,6 @@ class SoftwarePackage(CeresModel, ABC):
     @abstractmethod
     def cost(self) -> float: ...
 
-    def item_description(self) -> str:
-        return self.description
-
     def validate_on_computer(self, computer: ComputerPart) -> None:
         if computer.assembly.tl < self.tl:
             self.error(f'{self.description} requires TL{self.tl}')

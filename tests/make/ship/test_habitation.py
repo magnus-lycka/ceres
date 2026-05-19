@@ -246,7 +246,7 @@ def test_cabin_space_fixed_life_support_cost():
 def test_high_stateroom_values():
     s = HighStateroom()
     s.bind(DummyOwner(12, 100))
-    assert s.label == 'High Stateroom'
+    assert s.description == 'High Stateroom'
     assert s.occupancy == 1
     assert s.tons == pytest.approx(6.0)
     assert s.cost == pytest.approx(800_000.0)
@@ -256,7 +256,7 @@ def test_high_stateroom_values():
 def test_luxury_stateroom_values():
     s = LuxuryStateroom()
     s.bind(DummyOwner(12, 100))
-    assert s.label == 'Luxury Stateroom'
+    assert s.description == 'Luxury Stateroom'
     assert s.occupancy == 1
     assert s.tons == pytest.approx(10.0)
     assert s.cost == pytest.approx(1_500_000.0)

@@ -70,7 +70,7 @@ class TestGardenerServantManipulatorsPhase4:
         robot = build_gardener_servant()
         rows = robot.build_spec().rows_for_section(RobotSpecSection.MANIPULATORS)
         value = rows[0].value
-        assert '4×' in value
+        assert '× 4' in value
         assert '(STR 9 DEX 9)' in value
 
     def test_spec_shows_leg_manipulators(self):
@@ -78,11 +78,11 @@ class TestGardenerServantManipulatorsPhase4:
         robot = build_gardener_servant()
         rows = robot.build_spec().rows_for_section(RobotSpecSection.MANIPULATORS)
         value = rows[0].value
-        assert '2× Manipulator leg (STR 9 DEX 9)' in value
+        assert 'Manipulator leg (STR 9 DEX 9) × 2' in value
 
     def test_spec_arms_and_legs_both_present(self):
         robot = build_gardener_servant()
         rows = robot.build_spec().rows_for_section(RobotSpecSection.MANIPULATORS)
         value = rows[0].value
-        assert '4× (STR 9 DEX 9)' in value
-        assert '2× Manipulator leg (STR 9 DEX 9)' in value
+        assert '(STR 9 DEX 9) × 4' in value
+        assert 'Manipulator leg (STR 9 DEX 9) × 2' in value

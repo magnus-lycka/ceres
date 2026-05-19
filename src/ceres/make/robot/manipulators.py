@@ -103,9 +103,6 @@ class Manipulator(RobotPart):
         object.__setattr__(self, 'cost', base_cost + str_cost + dex_cost)
         super().bind(assembly)
 
-    def build_item(self) -> str | None:
-        return None
-
 
 LegOrManipulator = Annotated[Leg | Manipulator, Field(discriminator='type')]
 

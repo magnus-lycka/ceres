@@ -160,13 +160,39 @@ def test_spinal_mount_tl_improvement_requires_corresponding_ship_tl():
     assert 'Requires TL15, ship is TL14' in spinal_mount.notes.errors
 
 
-def test_spinal_mount_item_label_includes_tl_improvement_but_not_base_size_multiple():
+def test_spinal_mount_item_includes_tl_improvement_but_not_base_size_multiple():
     spinal_mount = MesonSpinalMount(tl_improvement=3, size_multiple=2)
     spinal_mount.bind(DummyOwner(15, 100_000))
 
     assert spinal_mount.build_item() == 'Meson Spinal Mount (TL15)'
     assert spinal_mount.tons == pytest.approx(12_000.0)
     assert spinal_mount.cost == pytest.approx(5_200_000_000.0)
+
+
+def test_mass_driver_spinal_mount_ammunition_cargo():
+    cargo_hold = MassDriverSpinalMount.ammunition_cargo(attacks=3)
+
+    assert cargo_hold.build_item() == 'Mass Driver Spinal Mount Ammunition (3 attacks) (Cargo Hold)'
+    assert cargo_hold.tons == pytest.approx(150.0)
+    assert cargo_hold.cost == pytest.approx(1_500_000.0)
+
+
+def test_mass_driver_spinal_mount_ammunition_requires_positive_attacks():
+    with pytest.raises(ValueError, match='at least one attack'):
+        MassDriverSpinalMount.ammunition_cargo(attacks=0)
+
+
+def test_railgun_spinal_mount_extra_rounds_cargo():
+    cargo_hold = RailgunSpinalMount.extra_rounds_cargo(rounds=6)
+
+    assert cargo_hold.build_item() == 'Railgun Spinal Mount Extra Rounds (6 rounds) (Cargo Hold)'
+    assert cargo_hold.tons == pytest.approx(120.0)
+    assert cargo_hold.cost == pytest.approx(1_200_000.0)
+
+
+def test_railgun_spinal_mount_extra_rounds_requires_positive_rounds():
+    with pytest.raises(ValueError, match='at least one extra round'):
+        RailgunSpinalMount.extra_rounds_cargo(rounds=0)
 
 
 def test_pulse_laser_no_upgrades_cost_modifier():

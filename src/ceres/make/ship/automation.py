@@ -17,13 +17,10 @@ class Automation(ShipPart):
     power: ClassVar[float]
     level: str
 
-    label: ClassVar[str]
+    description: ClassVar[str]
     cost_percent: ClassVar[float]
     crew_factor: ClassVar[float]
     effect_note: ClassVar[str | None]
-
-    def item_description(self) -> str:
-        return self.label
 
     def _basis(self) -> float:
         """Hull-config + drives + power basis for the automation cost modifier."""
@@ -70,7 +67,7 @@ class Automation(ShipPart):
 
 class CrewIntensiveAutomation(Automation):
     level: Literal['crew_intensive'] = 'crew_intensive'
-    label: ClassVar[str] = 'Crew-Intensive'
+    description: ClassVar[str] = 'Crew-Intensive'
     cost_percent: ClassVar[float] = -0.40
     crew_factor: ClassVar[float] = 2.0
     effect_note: ClassVar[str | None] = 'DM-4 on all shipboard tasks'
@@ -78,7 +75,7 @@ class CrewIntensiveAutomation(Automation):
 
 class LowAutomation(Automation):
     level: Literal['low'] = 'low'
-    label: ClassVar[str] = 'Low Automation'
+    description: ClassVar[str] = 'Low Automation'
     cost_percent: ClassVar[float] = -0.20
     crew_factor: ClassVar[float] = 1.4
     effect_note: ClassVar[str | None] = 'DM-1 on all shipboard tasks after 1 week in space'
@@ -86,7 +83,7 @@ class LowAutomation(Automation):
 
 class StandardAutomation(Automation):
     level: Literal['standard'] = 'standard'
-    label: ClassVar[str] = 'Standard Automation'
+    description: ClassVar[str] = 'Standard Automation'
     cost_percent: ClassVar[float] = 0.0
     crew_factor: ClassVar[float] = 1.0
     effect_note: ClassVar[str | None] = None
@@ -97,7 +94,7 @@ class StandardAutomation(Automation):
 
 class EnhancedAutomation(Automation):
     level: Literal['enhanced'] = 'enhanced'
-    label: ClassVar[str] = 'Enhanced Automation'
+    description: ClassVar[str] = 'Enhanced Automation'
     cost_percent: ClassVar[float] = 0.25
     crew_factor: ClassVar[float] = 0.9
     effect_note: ClassVar[str | None] = None
@@ -105,7 +102,7 @@ class EnhancedAutomation(Automation):
 
 class AdvancedAutomation(Automation):
     level: Literal['advanced'] = 'advanced'
-    label: ClassVar[str] = 'Advanced Automation'
+    description: ClassVar[str] = 'Advanced Automation'
     cost_percent: ClassVar[float] = 0.50
     crew_factor: ClassVar[float] = 0.75
     effect_note: ClassVar[str | None] = 'DM+1 on all shipboard tasks'
@@ -113,7 +110,7 @@ class AdvancedAutomation(Automation):
 
 class HighAutomation(Automation):
     level: Literal['high'] = 'high'
-    label: ClassVar[str] = 'High Automation'
+    description: ClassVar[str] = 'High Automation'
     cost_percent: ClassVar[float] = 1.00
     crew_factor: ClassVar[float] = 0.6
     effect_note: ClassVar[str | None] = 'DM+2 on all shipboard tasks'

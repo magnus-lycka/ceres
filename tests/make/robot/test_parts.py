@@ -22,9 +22,6 @@ class _SamplePart(RobotPart):
     type: Literal['SAMPLE'] = 'SAMPLE'
     tl: int = 5
 
-    def build_item(self) -> str | None:
-        return None
-
 
 class _LabelledPart(RobotPart):
     """Part that returns a label from build_item."""
@@ -32,7 +29,7 @@ class _LabelledPart(RobotPart):
     type: Literal['LABELLED'] = 'LABELLED'
     tl: int = 5
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return 'Sample Option'
 
 

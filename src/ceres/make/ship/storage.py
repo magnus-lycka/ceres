@@ -246,6 +246,7 @@ class CargoCrane(CeresModel):
 class CargoHold(CeresModel):
     description: Literal['Cargo Hold'] = 'Cargo Hold'
     tons: float | None = None
+    cost: float = 0.0
     crane: CargoCrane | None = None
 
     def total_tons(self, owner) -> float:
@@ -352,6 +353,7 @@ class CargoSection(CeresModel):
                         section=SpecSection.CARGO,
                         item=cargo_hold.build_item() or 'Cargo Hold',
                         tons=cargo_hold.usable_tons(ship) or None,
+                        cost=cargo_hold.cost or None,
                     )
                 )
                 if cargo_hold.crane is not None:

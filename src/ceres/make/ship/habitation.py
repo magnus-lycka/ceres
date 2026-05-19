@@ -23,7 +23,7 @@ from .systems import CommonArea, HotTub, SwimmingPool, Theatre, WetBar
 
 class Stateroom(ShipPart):
     kind: Literal['standard'] = 'standard'
-    label: ClassVar[str] = 'Stateroom'
+    description: ClassVar[str] = 'Stateroom'
     plural_label: ClassVar[str] = 'Staterooms'
     tons: ClassVar[float]
     cost: ClassVar[float]
@@ -37,11 +37,8 @@ class Stateroom(ShipPart):
     @model_validator(mode='after')
     def validate_occupancy(self):
         if self.occupancy not in {1, 2}:
-            raise ValueError(f'{self.label} occupancy must be 1 or 2')
+            raise ValueError(f'{self.description} occupancy must be 1 or 2')
         return self
-
-    def item_description(self) -> str:
-        return self.label
 
     @property
     def fixed_life_support_cost(self) -> float:
@@ -73,7 +70,7 @@ class Stateroom(ShipPart):
 
 class HighStateroom(Stateroom):
     kind: Literal['high'] = 'high'
-    label: ClassVar[str] = 'High Stateroom'
+    description: ClassVar[str] = 'High Stateroom'
     plural_label: ClassVar[str] = 'High Staterooms'
     occupancy: int = 1
     tons_per_room: ClassVar[float] = 6.0
@@ -83,7 +80,7 @@ class HighStateroom(Stateroom):
 
 class LuxuryStateroom(Stateroom):
     kind: Literal['luxury'] = 'luxury'
-    label: ClassVar[str] = 'Luxury Stateroom'
+    description: ClassVar[str] = 'Luxury Stateroom'
     plural_label: ClassVar[str] = 'Luxury Staterooms'
     occupancy: int = 1
     tons_per_room: ClassVar[float] = 10.0
@@ -116,16 +113,13 @@ class _ExplicitTonsHabitationPart(ShipPart):
 
 
 class LowBerth(ShipPart):
-    label: ClassVar[str] = 'Low Berth'
+    description: ClassVar[str] = 'Low Berth'
     plural_label: ClassVar[str] = 'Low Berths'
     tons: ClassVar[float]
     cost: ClassVar[float]
     power: ClassVar[float]
     tons_per_berth: ClassVar[float] = 0.5
     cost_per_berth: ClassVar[float] = 50_000.0
-
-    def item_description(self) -> str:
-        return self.label
 
     @property
     def provides(self) -> list[tuple[ResidenceDemand, int]]:

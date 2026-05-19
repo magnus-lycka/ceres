@@ -96,7 +96,7 @@ class TestStarTekManipulatorsPhase2:
         value = rows[0].value
         assert '(STR 9 DEX 8)' in value
         assert '(STR 5 DEX 8)' in value
-        assert '2×' in value  # the two SIZE_5 arms are collapsed
+        assert '× 2' in value  # the two SIZE_5 arms are collapsed
 
 
 def build_startek() -> Robot:
@@ -162,7 +162,7 @@ class TestStarTekManipulatorsPhase3:
         value = rows[0].value
         assert '(STR 12 DEX 8)' in value
         assert '(STR 5 DEX 12)' in value
-        assert '2×' in value  # the two SIZE_5 arms are collapsed
+        assert '× 2' in value  # the two SIZE_5 arms are collapsed
 
     def test_stat_label_size3_arm(self):
         # SIZE_3 arm with dex_bonus=4: (STR 5 DEX 12)

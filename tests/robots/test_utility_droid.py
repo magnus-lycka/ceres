@@ -22,7 +22,7 @@ _expected = SimpleNamespace(
     options=(
         'Auditory Sensor',
         'Drone Interface',
-        'Spare Slots x16',
+        'Spare Slots ×16',
         'Transceiver 5km (improved)',
         'Visual Spectrum Sensor',
         'Voder Speaker',
@@ -106,7 +106,7 @@ class TestUtilityDroid:
     def test_spec_options_row_contains_spare_slots(self):
         spec = build_utility_droid().build_spec()
         value = spec.rows_for_section(RobotSpecSection.OPTIONS)[0].value
-        assert 'Spare Slots x16' in value
+        assert 'Spare Slots ×16' in value
 
     def test_json_roundtrip(self):
         robot = build_utility_droid()

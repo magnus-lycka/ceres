@@ -4,15 +4,17 @@ Rule sources:
   refs/robot/10_default_suite.md        (default suite items)
   refs/robot/11_zero_slot_options.md    (CamouflageVisual)
   refs/robot/12_camouflage_audible_concealment.md (CamouflageAudible, CamouflageOlfactory)
-  refs/robot/14_encryption_module.md    (RobotTransceiver, VideoScreen)
-  refs/robot/17_stinger.md              (AuditorySensor broad spectrum)
+  refs/robot/13_solar_coating.md        (VacuumEnvironmentProtection)
+  refs/robot/14_encryption_module.md    (RobotTransceiver, VideoScreen, EncryptionModule)
+  refs/robot/15_voder_speaker.md        (GeckoGrippers, VoderSpeaker broad spectrum, InjectorNeedle)
+  refs/robot/16_laser_designator.md     (ParasiticLink, SelfMaintenanceEnhancement)
+  refs/robot/17_stinger.md              (AuditorySensor broad spectrum, EnvironmentProcessor)
   refs/robot/21_cleaning_options.md     (DomesticCleaningEquipment)
   refs/robot/22_communications_options.md (RoboticDroneController)
   refs/robot/23_satellite_uplink.md     (SwarmController)
   refs/robot/07_chassis_options.md      (DecreasedResiliency)
   refs/robot/08_locomotion_modifications.md (VehicleSpeedModification)
   refs/robot/09_manipulators.md         (AdditionalManipulator)
-  refs/robot/15_voder_speaker.md        (GeckoGrippers, VoderSpeaker broad spectrum)
   refs/robot/18_geiger_counter.md       (LightIntensifierSensor, OlfactorySensor, PrisSensor, ThermalSensor)
   refs/robot/29_storage_compartment.md  (StorageCompartment, ExternalPower)
   refs/robot/31_neural_activity_sensor.md (ReconSensor)
@@ -73,7 +75,7 @@ class StorageCompartment(RobotPart):
         cost_per_slot = _STORAGE_COST_PER_SLOT.get(self.storage_type, 50.0)
         object.__setattr__(self, 'cost', float(self.slots_count) * cost_per_slot)
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         if self.storage_type == 'standard':
             return f'Storage Compartment ({self.slots_count} Slots)'
         elif self.storage_type == 'hazardous':
@@ -95,7 +97,7 @@ class DomesticCleaningEquipment(RobotPart):
         super().model_post_init(__context)
         object.__setattr__(self, 'cost', float(_CLEANING_TABLE[self.size]['cost']))
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Domestic Cleaning Equipment ({self.size})'
 
 
@@ -122,7 +124,7 @@ class ReconSensor(RobotPart):
         object.__setattr__(self, 'tl', int(entry['tl']))
         object.__setattr__(self, 'cost', float(entry['cost']))
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Recon Sensor ({self.quality})'
 
 
@@ -147,7 +149,7 @@ class ExternalPower(RobotPart):
         base = chassis_entry(assembly.size).base_slots
         object.__setattr__(self, 'cost', float(base) * 100.0)
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return 'External Power'
 
 
@@ -166,7 +168,7 @@ class RoboticDroneController(RobotPart):
         object.__setattr__(self, 'tl', int(entry['tl']))
         object.__setattr__(self, 'cost', float(entry['cost']))
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Robotic Drone Controller ({self.quality})'
 
 
@@ -212,7 +214,7 @@ class NavigationSystem(RobotPart):
         object.__setattr__(self, 'tl', int(entry['tl']))
         object.__setattr__(self, 'cost', float(entry['cost']))
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Navigation System ({self.quality})'
 
 
@@ -231,7 +233,7 @@ class AgriculturalEquipment(RobotPart):
         object.__setattr__(self, 'tl', int(entry['tl']))
         object.__setattr__(self, 'cost', float(entry['cost']))
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Agricultural Equipment ({self.size})'
 
 
@@ -253,7 +255,7 @@ class LightIntensifierSensor(RobotPart):
         object.__setattr__(self, 'tl', tl)
         object.__setattr__(self, 'cost', cost)
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Light Intensifier Sensor ({self.quality})'
 
 
@@ -275,7 +277,7 @@ class OlfactorySensor(RobotPart):
         object.__setattr__(self, 'tl', tl)
         object.__setattr__(self, 'cost', cost)
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Olfactory Sensor ({self.quality})'
 
 
@@ -292,7 +294,7 @@ class ThermalSensor(RobotPart):
         super().model_post_init(__context)
         object.__setattr__(self, 'cost', 500.0)
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return 'Thermal Sensor'
 
 
@@ -309,7 +311,7 @@ class PrisSensor(RobotPart):
         super().model_post_init(__context)
         object.__setattr__(self, 'cost', 2000.0)
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return 'PRIS Sensor'
 
 
@@ -327,7 +329,7 @@ class GeckoGrippers(RobotPart):
         base_slots = chassis_entry(assembly.size).base_slots
         object.__setattr__(self, 'cost', 500.0 * base_slots)
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return 'Gecko Grippers'
 
 
@@ -382,7 +384,7 @@ class CamouflageVisual(RobotPart):
         base_slots = chassis_entry(assembly.size).base_slots
         object.__setattr__(self, 'cost', float(rate * base_slots))
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Camouflage: Visual ({self.quality})'
 
 
@@ -406,7 +408,7 @@ class CamouflageAudible(RobotPart):
         base_slots = chassis_entry(assembly.size).base_slots
         object.__setattr__(self, 'cost', float(rate * base_slots))
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Camouflage: Audible ({self.quality})'
 
 
@@ -430,7 +432,7 @@ class CamouflageOlfactory(RobotPart):
         base_slots = chassis_entry(assembly.size).base_slots
         object.__setattr__(self, 'cost', float(rate * base_slots))
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Camouflage: Olfactory ({self.quality})'
 
 
@@ -462,7 +464,7 @@ class Autochef(RobotPart):
         object.__setattr__(self, 'tl', int(entry['tl']))
         object.__setattr__(self, 'cost', float(entry['cost']))
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Autochef ({self.quality})'
 
 
@@ -482,7 +484,7 @@ class StylistToolkit(RobotPart):
         super().model_post_init(__context)
         object.__setattr__(self, 'cost', 2000.0)
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return 'Stylist Toolkit'
 
 
@@ -513,9 +515,6 @@ class VehicleSpeedModification(RobotPart):
         super().bind(assembly)
         bcc = chassis_entry(assembly.size).basic_cost * assembly.locomotion.cost_multiplier
         object.__setattr__(self, 'cost', bcc)
-
-    def build_item(self) -> str | None:
-        return None  # locomotion modification — not listed in Options row
 
 
 _AVATAR_CONTROLLER_TABLE: dict[str, dict[str, int | float]] = {
@@ -548,7 +547,7 @@ class AvatarController(RobotPart):
         object.__setattr__(self, 'tl', int(entry['tl']))
         object.__setattr__(self, 'cost', float(entry['cost']))
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Avatar Controller ({self.quality})'
 
 
@@ -567,7 +566,7 @@ class SwarmController(RobotPart):
         object.__setattr__(self, 'tl', int(entry['tl']))
         object.__setattr__(self, 'cost', float(entry['cost']))
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Swarm Controller ({self.quality})'
 
 
@@ -600,7 +599,7 @@ class VisualSpectrumSensor(RobotPart):
 
     tl: int = 8
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return 'Visual Spectrum Sensor'
 
 
@@ -620,7 +619,7 @@ class VoderSpeaker(RobotPart):
             object.__setattr__(self, 'tl', 10)
             object.__setattr__(self, 'cost', 500.0)
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         if self.quality == 'broad_spectrum':
             return 'Voder Speaker (broad spectrum)'
         return 'Voder Speaker'
@@ -647,7 +646,7 @@ class AuditorySensor(RobotPart):
         if self.quality == 'broad_spectrum':
             object.__setattr__(self, 'cost', 200.0)
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         if self.quality == 'broad_spectrum':
             return 'Auditory Sensor (broad spectrum)'
         return 'Auditory Sensor'
@@ -658,7 +657,7 @@ class WirelessDataLink(RobotPart):
 
     tl: int = 8
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return 'Wireless Data Link'
 
 
@@ -670,7 +669,7 @@ class DroneInterface(RobotPart):
 
     tl: int = 6
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return 'Drone Interface'
 
 
@@ -714,7 +713,7 @@ class VideoScreen(RobotPart):
         if not self.is_default_suite:
             object.__setattr__(self, 'cost', float(entry['cost']))
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Video Screen ({self.quality})'
 
 
@@ -749,8 +748,113 @@ class RobotTransceiver(RadioTransceiverPart, RobotPartMixin):
         if not self.is_default_suite:
             object.__setattr__(self, 'cost', float(entry['cost']))
 
-    def build_item(self) -> str | None:
+    def item_description(self) -> str:
         return f'Transceiver {self.range_km:,}km ({self.quality})'
+
+
+class EncryptionModule(RobotPart):
+    """refs/robot/14_encryption_module.md — Encryption Module, TL6, zero-slot, Cr4000."""
+
+    tl: int = 6
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        object.__setattr__(self, 'cost', 4000.0)
+
+    def item_description(self) -> str:
+        return 'Encryption Module'
+
+
+class EnvironmentProcessor(RobotPart):
+    """refs/robot/17_stinger.md — Environment Processor, TL10, zero-slot, Cr10000, Heightened Senses, Recon 0."""
+
+    tl: int = 10
+
+    @property
+    def robot_traits(self) -> tuple[Trait, ...]:
+        return (Trait('Heightened Senses'),)
+
+    @property
+    def skill_grants(self) -> tuple[SkillGrant, ...]:
+        return (SkillGrant('Recon', 0),)
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        object.__setattr__(self, 'cost', 10000.0)
+
+    def item_description(self) -> str:
+        return 'Environment Processor'
+
+
+class ParasiticLink(RobotPart):
+    """refs/robot/16_laser_designator.md — Parasitic Link, TL10, zero-slot, Cr10000."""
+
+    tl: int = 10
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        object.__setattr__(self, 'cost', 10000.0)
+
+    def item_description(self) -> str:
+        return 'Parasitic Link'
+
+
+class InjectorNeedle(RobotPart):
+    """refs/robot/15_voder_speaker.md — Injector Needle, TL7, zero-slot, Cr20 each."""
+
+    tl: int = 7
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        object.__setattr__(self, 'cost', 20.0)
+
+    def item_description(self) -> str:
+        return 'Injector Needle'
+
+
+_SELF_MAINTENANCE_TABLE: dict[str, tuple[int, float, float]] = {
+    'basic': (7, 20000.0, 1.0),
+    'improved': (8, 50000.0, 2.0),
+}
+
+
+class SelfMaintenanceEnhancement(RobotPart):
+    """refs/robot/16_laser_designator.md — Self-Maintenance Enhancement, cost per base slot."""
+
+    quality: str = 'improved'
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        tl, _rate, _mult = _SELF_MAINTENANCE_TABLE[self.quality]
+        object.__setattr__(self, 'tl', tl)
+
+    def bind(self, assembly: RobotBase) -> None:
+        super().bind(assembly)
+        _tl, rate, _mult = _SELF_MAINTENANCE_TABLE[self.quality]
+        base_slots = chassis_entry(assembly.size).base_slots
+        object.__setattr__(self, 'cost', rate * base_slots)
+
+    @property
+    def endurance_multiplier(self) -> float:
+        _tl, _rate, mult = _SELF_MAINTENANCE_TABLE[self.quality]
+        return mult
+
+    def item_description(self) -> str:
+        return f'Self-Maintenance Enhancement ({self.quality})'
+
+
+class VacuumEnvironmentProtection(RobotPart):
+    """refs/robot/13_solar_coating.md — Vacuum Environment Protection, TL7, zero-slot, Cr600 per base slot."""
+
+    tl: int = 7
+
+    def bind(self, assembly: RobotBase) -> None:
+        super().bind(assembly)
+        base_slots = chassis_entry(assembly.size).base_slots
+        object.__setattr__(self, 'cost', 600.0 * base_slots)
+
+    def item_description(self) -> str:
+        return 'Vacuum Environment Protection'
 
 
 def default_suite(
@@ -825,4 +929,10 @@ __all__ = [
     'CamouflageVisual',
     'CamouflageAudible',
     'CamouflageOlfactory',
+    'EncryptionModule',
+    'EnvironmentProcessor',
+    'ParasiticLink',
+    'InjectorNeedle',
+    'SelfMaintenanceEnhancement',
+    'VacuumEnvironmentProtection',
 ]
