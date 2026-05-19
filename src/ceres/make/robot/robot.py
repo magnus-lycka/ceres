@@ -42,6 +42,10 @@ def _robot_dex(tl: int) -> int:
     return ceil(tl / 2) + 1
 
 
+def _robot_str(size: int) -> int:
+    return 2 * size - 1
+
+
 def _collapse(labels: list[str]) -> list[str]:
     parts: list[str] = []
     i = 0
@@ -178,7 +182,7 @@ class Robot(RobotBase):
         from .options import VehicleSpeedModification
 
         result: list[Trait] = []
-        armour_val = self.base_armour
+        armour_val = self.base_armour + sum(opt.armour_delta for opt in self.options if isinstance(opt, RobotPartMixin))
         if armour_val:
             result.append(Trait('Armour', f'+{armour_val}'))
         size_t = size_trait(self.size)
@@ -213,7 +217,8 @@ class Robot(RobotBase):
                 if t.name == 'Flyer':
                     return str(t.value)
             return 'Vehicle speed'
-        return self.locomotion.speed_label()
+        speed_bonus = sum(opt.speed_bonus for opt in self.options if isinstance(opt, RobotPartMixin))
+        return f'{self.locomotion.effective_speed + speed_bonus}m'
 
     @property
     def endurance_label(self) -> str:
@@ -228,11 +233,29 @@ class Robot(RobotBase):
 
     @property
     def skills_display(self) -> str:
+        from .brain import BasicBrain, PrimitiveBrain
+        from .options import AgilityEnhancement
+
         dex_dm = _characteristic_dm(_robot_dex(self.tl))
-        grants: list[SkillGrant] = list(self.brain.skill_grants_for_robot(dex_dm))
+        base_str = _robot_str(int(self.size))
+        if self.manipulators:
+            max_manip_str = max(m.effective_str(self.size) for m in self.manipulators)
+            str_for_dm = max(base_str, max_manip_str)
+        else:
+            str_for_dm = base_str
+        str_dm = _characteristic_dm(str_for_dm)
+        grants: list[SkillGrant] = list(self.brain.skill_grants_for_robot(dex_dm, str_dm))
         for opt in self.options:
             if isinstance(opt, RobotPartMixin):
                 grants.extend(opt.skill_grants)
+        # Basic/Primitive (locomotion) grants Vehicle (type) X where X = agility (locomotion base + enhancement).
+        # refs/robot/35_skill_packages.md — Basic (locomotion) skill table.
+        if isinstance(self.brain, (BasicBrain, PrimitiveBrain)) and self.brain.function == 'locomotion':
+            agility_enh = sum(opt.level for opt in self.options if isinstance(opt, AgilityEnhancement))
+            effective_agility = (self.locomotion.agility or 0) + agility_enh
+            vehicle_skill = self.locomotion.vehicle_skill_name
+            if vehicle_skill is not None:
+                grants.append(SkillGrant(vehicle_skill, effective_agility))
         merged: dict[str, int] = {}
         for g in grants:
             if g.name not in merged or g.level > merged[g.name]:
@@ -474,23 +497,9 @@ class Robot(RobotBase):
         )
         spec.add_row(
             RobotSpecRow(
-                section=RobotSpecSection.SKILLS,
-                label='Skills',
-                value=self.skills_display,
-            )
-        )
-        spec.add_row(
-            RobotSpecRow(
                 section=RobotSpecSection.TRAITS,
                 label='Traits',
                 value=format_traits(self.traits),
-            )
-        )
-        spec.add_row(
-            RobotSpecRow(
-                section=RobotSpecSection.PROGRAMMING,
-                label='Programming',
-                value=self.brain.programming_label(),
             )
         )
         spec.add_row(
@@ -529,6 +538,20 @@ class Robot(RobotBase):
                 section=RobotSpecSection.OPTIONS,
                 label='Options',
                 value=', '.join(_collapse(option_labels)) if option_labels else '—',
+            )
+        )
+        spec.add_row(
+            RobotSpecRow(
+                section=RobotSpecSection.PROGRAMMING,
+                label='Programming',
+                value=self.brain.programming_label(),
+            )
+        )
+        spec.add_row(
+            RobotSpecRow(
+                section=RobotSpecSection.SKILLS,
+                label='Skills',
+                value=self.skills_display,
             )
         )
         spec.detail_sections = self._build_detail_sections()

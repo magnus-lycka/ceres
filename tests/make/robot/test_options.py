@@ -15,30 +15,45 @@ from ceres.make.robot import (
     PrimitiveBrain,
     Robot,
     RobotSize,
+    WalkerLocomotion,
     WheelsLocomotion,
 )
 from ceres.make.robot.options import (
+    AgilityEnhancement,
     AgriculturalEquipment,
+    Autobar,
     Autochef,
     AvatarController,
+    BioscanneSensor,
     CamouflageAudible,
     CamouflageOlfactory,
     CamouflageVisual,
     DecreasedResiliency,
+    DensitometerSensor,
     DomesticCleaningEquipment,
+    Efficiency,
     EncryptionModule,
     EnvironmentProcessor,
     ExternalPower,
+    FabricationChamber,
     GeckoGrippers,
+    IncreasedArmour,
     InjectorNeedle,
     LightIntensifierSensor,
+    MedicalChamber,
+    Medikit,
     NavigationSystem,
+    NeuralActivitySensor,
     OlfactorySensor,
     ParasiticLink,
     PrisSensor,
+    RadiationEnvironmentProtection,
     ReconSensor,
     RoboticDroneController,
+    ScientificToolkit,
+    SecondaryLocomotion,
     SelfMaintenanceEnhancement,
+    SolarCoating,
     StorageCompartment,
     StylistToolkit,
     SwarmController,
@@ -1090,3 +1105,534 @@ class TestStorageCompartmentExtended:
         opt = StorageCompartment(slots_count=3, storage_type='refrigerated')
         opt.bind(robot)
         assert opt.notes.item_message == 'Storage Compartment (3 Slots refrigerated)'
+
+
+# ── BioscanneSensor ───────────────────────────────────────────────────────────
+
+
+class TestBioscanneSensor:
+    """refs/robot/30_no_internal_power.md — Bioscanner Sensor, TL15, 2 slots, Cr350000."""
+
+    def test_tl(self):
+        assert BioscanneSensor().tl == 15
+
+    def test_slots(self):
+        assert BioscanneSensor().slots == 2
+
+    def test_cost(self):
+        assert BioscanneSensor().cost == 350000.0
+
+    def test_label(self):
+        opt = BioscanneSensor()
+        opt.bind(_robot(tl=15))
+        assert opt.notes.item_message == 'Bioscanner Sensor'
+
+
+# ── DensitometerSensor ────────────────────────────────────────────────────────
+
+
+class TestDensitometerSensor:
+    """refs/robot/30_no_internal_power.md — Densitometer Sensor, TL14, 3 slots, Cr20000."""
+
+    def test_tl(self):
+        assert DensitometerSensor().tl == 14
+
+    def test_slots(self):
+        assert DensitometerSensor().slots == 3
+
+    def test_cost(self):
+        assert DensitometerSensor().cost == 20000.0
+
+    def test_label(self):
+        opt = DensitometerSensor()
+        opt.bind(_robot(tl=14))
+        assert opt.notes.item_message == 'Densitometer Sensor'
+
+
+# ── NeuralActivitySensor ──────────────────────────────────────────────────────
+
+
+class TestNeuralActivitySensor:
+    """refs/robot/31_neural_activity_sensor.md — Neural Activity Sensor, TL15, 5 slots, Cr35000."""
+
+    def test_tl(self):
+        assert NeuralActivitySensor().tl == 15
+
+    def test_slots(self):
+        assert NeuralActivitySensor().slots == 5
+
+    def test_cost(self):
+        assert NeuralActivitySensor().cost == 35000.0
+
+    def test_label(self):
+        opt = NeuralActivitySensor()
+        opt.bind(_robot(tl=15))
+        assert opt.notes.item_message == 'Neural Activity Sensor'
+
+
+# ── Medikit ───────────────────────────────────────────────────────────────────
+
+
+class TestMediakit:
+    """refs/robot/26_medikit.md — Medikit, 1 slot, quality-based TL and cost."""
+
+    @pytest.mark.parametrize(
+        'quality, expected_tl, expected_cost',
+        [
+            ('basic', 8, 1000.0),
+            ('improved', 10, 1500.0),
+            ('enhanced', 12, 5000.0),
+            ('advanced', 14, 10000.0),
+        ],
+    )
+    def test_table_values(self, quality, expected_tl, expected_cost):
+        opt = Medikit(quality=quality)
+        assert opt.tl == expected_tl
+        assert opt.cost == expected_cost
+
+    def test_slots_always_one(self):
+        for quality in ('basic', 'improved', 'enhanced', 'advanced'):
+            assert Medikit(quality=quality).slots == 1
+
+    def test_label_includes_quality(self):
+        opt = Medikit(quality='advanced')
+        opt.bind(_robot(tl=14))
+        assert opt.notes.item_message == 'Medikit (advanced)'
+
+    def test_label_basic(self):
+        opt = Medikit(quality='basic')
+        opt.bind(_robot(tl=8))
+        assert opt.notes.item_message == 'Medikit (basic)'
+
+
+# ── SolarCoating ──────────────────────────────────────────────────────────────
+
+
+class TestSolarCoating:
+    """refs/robot/13_solar_coating.md — zero-slot, cost = cost_per_base_slot × base_slots."""
+
+    def test_slots_is_zero(self):
+        assert SolarCoating().slots == 0
+
+    @pytest.mark.parametrize(
+        'quality, expected_tl',
+        [
+            ('basic', 6),
+            ('improved', 8),
+            ('enhanced', 10),
+            ('advanced', 12),
+        ],
+    )
+    def test_tl_by_quality(self, quality, expected_tl):
+        assert SolarCoating(quality=quality).tl == expected_tl
+
+    def test_cost_basic_size3(self):
+        # SIZE_3 base_slots=4; basic cost_per_base_slot=500 → 2000
+        opt = SolarCoating(quality='basic')
+        opt.bind(_robot(size=RobotSize.SIZE_3))
+        assert opt.cost == 2000.0
+
+    def test_cost_advanced_size3(self):
+        # SIZE_3 base_slots=4; advanced cost_per_base_slot=500 → 2000
+        opt = SolarCoating(quality='advanced')
+        opt.bind(_robot(size=RobotSize.SIZE_3))
+        assert opt.cost == 2000.0
+
+    def test_cost_improved_size5(self):
+        # SIZE_5 base_slots=16; improved cost_per_base_slot=100 → 1600
+        opt = SolarCoating(quality='improved')
+        opt.bind(_robot(size=RobotSize.SIZE_5, tl=8))
+        assert opt.cost == 1600.0
+
+    def test_label_includes_quality(self):
+        opt = SolarCoating(quality='advanced')
+        opt.bind(_robot(tl=12))
+        assert opt.notes.item_message == 'Solar Coating (advanced)'
+
+
+# ── ScientificToolkit ─────────────────────────────────────────────────────────
+
+
+class TestScientificToolkit:
+    """refs/robot/32_fire_extinguisher.md — Scientific Toolkit, quality-based."""
+
+    @pytest.mark.parametrize(
+        'quality, expected_tl, expected_slots, expected_cost',
+        [
+            ('basic', 5, 4, 2000.0),
+            ('improved', 8, 3, 4000.0),
+            ('enhanced', 11, 3, 6000.0),
+            ('advanced', 14, 3, 8000.0),
+        ],
+    )
+    def test_table_values(self, quality, expected_tl, expected_slots, expected_cost):
+        opt = ScientificToolkit(quality=quality)
+        assert opt.tl == expected_tl
+        assert opt.slots == expected_slots
+        assert opt.cost == expected_cost
+
+    def test_label_without_speciality(self):
+        opt = ScientificToolkit(quality='advanced')
+        opt.bind(_robot(tl=14))
+        assert opt.notes.item_message == 'Scientific Toolkit (advanced)'
+
+    def test_label_with_speciality(self):
+        opt = ScientificToolkit(quality='advanced', speciality='biology')
+        opt.bind(_robot(tl=14))
+        assert opt.notes.item_message == 'Scientific Toolkit (advanced, biology)'
+
+
+# ── FabricationChamber ────────────────────────────────────────────────────────
+
+
+class TestFabricationChamber:
+    """refs/robot/28_fabrication_chamber.md — slots = slots_count, cost = slots × rate."""
+
+    @pytest.mark.parametrize(
+        'quality, expected_tl, expected_rate',
+        [
+            ('basic', 8, 2000.0),
+            ('improved', 10, 10000.0),
+            ('enhanced', 13, 50000.0),
+            ('advanced', 17, 200000.0),
+        ],
+    )
+    def test_tl_by_quality(self, quality, expected_tl, expected_rate):
+        opt = FabricationChamber(quality=quality, slots_count=1)
+        assert opt.tl == expected_tl
+        assert opt.cost == expected_rate
+
+    def test_slots_equals_slots_count(self):
+        assert FabricationChamber(quality='basic', slots_count=10).slots == 10
+
+    def test_cost_scales_with_slots_count(self):
+        # enhanced: Cr50000/slot × 4 = Cr200000
+        opt = FabricationChamber(quality='enhanced', slots_count=4)
+        assert opt.cost == 200000.0
+
+    def test_label(self):
+        opt = FabricationChamber(quality='enhanced', slots_count=64)
+        opt.bind(_robot(tl=13))
+        assert opt.notes.item_message == 'Fabrication Chamber (enhanced, 64 Slots)'
+
+
+# ── MedicalChamber ────────────────────────────────────────────────────────────
+
+
+class TestMedicalChamber:
+    """refs/robot/24_tightbeam_communicator.md — Medical Chamber, slots and cost with sub-options."""
+
+    def test_default_tl(self):
+        assert MedicalChamber().tl == 8
+
+    def test_default_slots(self):
+        assert MedicalChamber(slots_count=32).slots == 32
+
+    def test_default_cost(self):
+        # 32 × Cr200 = Cr6400
+        assert MedicalChamber(slots_count=32).cost == 6400.0
+
+    def test_basic_low_berth_adds_slots(self):
+        # 32 base + 8 low_berth = 40
+        opt = MedicalChamber(slots_count=32, low_berth='basic')
+        assert opt.slots == 40
+
+    def test_improved_low_berth_adds_slots(self):
+        opt = MedicalChamber(slots_count=32, low_berth='improved')
+        assert opt.slots == 40
+
+    def test_reanimation_adds_slots(self):
+        opt = MedicalChamber(slots_count=32, reanimation=True)
+        assert opt.slots == 40
+
+    def test_species_specific_adds_four_slots_each(self):
+        opt = MedicalChamber(slots_count=32, species_specific=2)
+        assert opt.slots == 40
+
+    def test_all_sub_options_stack(self):
+        # 20 + 8(low_berth) + 8(reanimation) + 4(species_specific×1) = 40
+        opt = MedicalChamber(slots_count=20, low_berth='improved', reanimation=True, species_specific=1)
+        assert opt.slots == 40
+
+    def test_tl_raised_by_low_berth_improved(self):
+        assert MedicalChamber(slots_count=32, low_berth='improved').tl == 12
+
+    def test_tl_raised_by_reanimation(self):
+        assert MedicalChamber(slots_count=32, reanimation=True).tl == 14
+
+    def test_tl_raised_by_species_specific(self):
+        assert MedicalChamber(slots_count=32, species_specific=1).tl == 10
+
+    def test_cost_with_low_berth_improved(self):
+        # 20 × Cr200 + Cr20000 = Cr24000
+        opt = MedicalChamber(slots_count=20, low_berth='improved')
+        assert opt.cost == 24000.0
+
+    def test_cost_with_reanimation(self):
+        # 20 × Cr200 + Cr900000 = Cr904000
+        opt = MedicalChamber(slots_count=20, reanimation=True)
+        assert opt.cost == 904000.0
+
+    def test_cost_with_species_specific(self):
+        # 20 × Cr200 + Cr10000 = Cr14000
+        opt = MedicalChamber(slots_count=20, species_specific=1)
+        assert opt.cost == 14000.0
+
+    def test_label_base_only(self):
+        opt = MedicalChamber(slots_count=32)
+        opt.bind(_robot(tl=8))
+        assert opt.notes.item_message == 'Medical Chamber (32 Slots)'
+
+    def test_label_with_improved_low_berth(self):
+        opt = MedicalChamber(slots_count=20, low_berth='improved')
+        opt.bind(_robot(tl=12))
+        assert opt.notes.item_message == 'Medical Chamber (28 Slots, Improved Low Berth)'
+
+    def test_label_all_sub_options(self):
+        opt = MedicalChamber(slots_count=20, low_berth='improved', reanimation=True, species_specific=1)
+        opt.bind(_robot(tl=14))
+        assert opt.notes.item_message == (
+            'Medical Chamber (40 Slots, Improved Low Berth, Reanimation, Species-Specific Add-on)'
+        )
+
+    def test_label_species_specific_plural(self):
+        opt = MedicalChamber(slots_count=20, species_specific=2)
+        opt.bind(_robot(tl=10))
+        assert opt.notes.item_message == 'Medical Chamber (28 Slots, Species-Specific Add-on ×2)'
+
+
+# ──────────────────────────────────────────────────────
+# Autobar
+# ──────────────────────────────────────────────────────
+
+
+class TestAutobar:
+    """refs/robot/27_autobar.md — 2 slots always, TL8-11."""
+
+    def test_slots_basic(self):
+        assert Autobar(quality='basic').slots == 2
+
+    def test_slots_advanced(self):
+        assert Autobar(quality='advanced').slots == 2
+
+    def test_cost_basic(self):
+        assert Autobar(quality='basic').cost == 500.0
+
+    def test_cost_improved(self):
+        assert Autobar(quality='improved').cost == 1000.0
+
+    def test_cost_enhanced(self):
+        assert Autobar(quality='enhanced').cost == 2000.0
+
+    def test_cost_advanced(self):
+        assert Autobar(quality='advanced').cost == 5000.0
+
+    def test_tl_basic(self):
+        assert Autobar(quality='basic').tl == 8
+
+    def test_tl_advanced(self):
+        assert Autobar(quality='advanced').tl == 11
+
+    def test_label(self):
+        opt = Autobar(quality='enhanced')
+        opt.bind(_robot())
+        assert opt.notes.item_message == 'Autobar (enhanced)'
+
+
+# ──────────────────────────────────────────────────────
+# IncreasedArmour
+# ──────────────────────────────────────────────────────
+
+
+class TestIncreasedArmour:
+    """refs/robot/07_chassis_options.md — Robot Armour table."""
+
+    def test_armour_delta(self):
+        assert IncreasedArmour(additional=4).armour_delta == 4
+
+    def test_slots_tl15_size4_plus4(self):
+        # TL15-17: 0.3% slots, max 4/slot. SIZE_4 base=8.
+        # max(ceil(4×0.003×8)=ceil(0.096)=1, ceil(4/4)=1, 1) = 1
+        opt = IncreasedArmour(additional=4)
+        opt.bind(_robot(size=RobotSize.SIZE_4, tl=15))
+        assert opt.slots == 1
+
+    def test_cost_tl15_size4_plus4(self):
+        # 1 slot × Cr2500 = Cr2500
+        opt = IncreasedArmour(additional=4)
+        opt.bind(_robot(size=RobotSize.SIZE_4, tl=15))
+        assert opt.cost == 2500.0
+
+    def test_slots_tl14_size5_plus6(self):
+        # TL12-14: 0.4% slots, max 3/slot. SIZE_5 base=16.
+        # max(ceil(6×0.004×16)=ceil(0.384)=1, ceil(6/3)=2, 1) = 2
+        opt = IncreasedArmour(additional=6)
+        opt.bind(_robot(size=RobotSize.SIZE_5, tl=14))
+        assert opt.slots == 2
+
+    def test_cost_tl14_size5_plus6(self):
+        # 2 slots × Cr1500 = Cr3000
+        opt = IncreasedArmour(additional=6)
+        opt.bind(_robot(size=RobotSize.SIZE_5, tl=14))
+        assert opt.cost == 3000.0
+
+    def test_slots_tl8_size3_plus1(self):
+        # TL6-8: 1% slots, max 1/slot. SIZE_3 base=4.
+        # max(ceil(1×0.01×4)=1, ceil(1/1)=1, 1) = 1
+        opt = IncreasedArmour(additional=1)
+        opt.bind(_robot(size=RobotSize.SIZE_3, tl=8))
+        assert opt.slots == 1
+
+    def test_robot_total_armour_trait(self):
+        # TL15 base=4 + IncreasedArmour(+4) = 8
+        robot = _robot(size=RobotSize.SIZE_4, tl=15, options=[IncreasedArmour(additional=4)])
+        armour_traits = [t for t in robot.traits if t.name == 'Armour']
+        assert len(armour_traits) == 1
+        assert armour_traits[0].value == '+8'
+
+
+# ──────────────────────────────────────────────────────
+# AgilityEnhancement
+# ──────────────────────────────────────────────────────
+
+
+class TestAgilityEnhancement:
+    """refs/robot/08_locomotion_modifications.md — Agility Enhancement."""
+
+    def test_speed_bonus(self):
+        assert AgilityEnhancement(level=2).speed_bonus == 2
+
+    def test_skill_grant(self):
+        grants = AgilityEnhancement(level=2).skill_grants
+        assert len(grants) == 1
+        assert grants[0].name == 'Athletics (dexterity)'
+        assert grants[0].level == 2
+
+    def test_cost_level_1(self):
+        # 100% BCC; SIZE_3 WheelsLocomotion BCC = 400×2 = 800
+        opt = AgilityEnhancement(level=1)
+        opt.bind(_robot(size=RobotSize.SIZE_3))
+        assert opt.cost == 800.0
+
+    def test_cost_level_2(self):
+        # 200% BCC; SIZE_3 WheelsLocomotion BCC = 800
+        opt = AgilityEnhancement(level=2)
+        opt.bind(_robot(size=RobotSize.SIZE_3))
+        assert opt.cost == 1600.0
+
+    def test_cost_level_3(self):
+        # 400% BCC
+        opt = AgilityEnhancement(level=3)
+        opt.bind(_robot(size=RobotSize.SIZE_3))
+        assert opt.cost == 3200.0
+
+    def test_cost_level_4(self):
+        # 800% BCC
+        opt = AgilityEnhancement(level=4)
+        opt.bind(_robot(size=RobotSize.SIZE_3))
+        assert opt.cost == 6400.0
+
+    def test_speed_label_updated(self):
+        # WheelsLocomotion base speed 5m + AgilityEnhancement(+2) = 7m
+        robot = _robot(size=RobotSize.SIZE_3, options=[AgilityEnhancement(level=2)])
+        assert robot.speed_label == '7m'
+
+
+# ──────────────────────────────────────────────────────
+# Efficiency
+# ──────────────────────────────────────────────────────
+
+
+class TestEfficiency:
+    """refs/robot/07_chassis_options.md — Efficiency doubles endurance, costs 50% BCC."""
+
+    def test_endurance_multiplier(self):
+        assert Efficiency().endurance_multiplier == 2.0
+
+    def test_cost_size3_wheels(self):
+        # SIZE_3 WheelsLocomotion BCC = 400×2 = 800; cost = 50% × 800 = 400
+        opt = Efficiency()
+        opt.bind(_robot(size=RobotSize.SIZE_3))
+        assert opt.cost == 400.0
+
+    def test_cost_size5_grav(self):
+        # SIZE_5 GravLocomotion BCC = 1000×20 = 20000; cost = 10000
+        opt = Efficiency()
+        opt.bind(_robot(size=RobotSize.SIZE_5, locomotion=GravLocomotion()))
+        assert opt.cost == 10000.0
+
+    def test_label(self):
+        opt = Efficiency()
+        opt.bind(_robot())
+        assert opt.notes.item_message == 'Efficiency'
+
+    def test_tl(self):
+        assert Efficiency().tl == 7
+
+
+# ──────────────────────────────────────────────────────
+# RadiationEnvironmentProtection
+# ──────────────────────────────────────────────────────
+
+
+class TestRadiationEnvironmentProtection:
+    """refs/robot/20_radiation_environment_protection.md — TL7, 1 slot, Cr600/base_slot."""
+
+    def test_slots(self):
+        assert RadiationEnvironmentProtection().slots == 1
+
+    def test_tl(self):
+        assert RadiationEnvironmentProtection().tl == 7
+
+    def test_cost_size3(self):
+        # SIZE_3 base_slots=4; 4×600=2400
+        opt = RadiationEnvironmentProtection()
+        opt.bind(_robot(size=RobotSize.SIZE_3))
+        assert opt.cost == 2400.0
+
+    def test_cost_size5(self):
+        # SIZE_5 base_slots=16; 16×600=9600
+        opt = RadiationEnvironmentProtection()
+        opt.bind(_robot(size=RobotSize.SIZE_5))
+        assert opt.cost == 9600.0
+
+    def test_label(self):
+        opt = RadiationEnvironmentProtection()
+        opt.bind(_robot())
+        assert opt.notes.item_message == 'Radiation Environment Protection'
+
+
+# ──────────────────────────────────────────────────────
+# SecondaryLocomotion
+# ──────────────────────────────────────────────────────
+
+
+class TestSecondaryLocomotion:
+    """refs/robot/08_locomotion_modifications.md — Secondary Locomotion."""
+
+    def test_slots_size5(self):
+        # SIZE_5 base_slots=16; ceil(0.25×16)=4
+        opt = SecondaryLocomotion(locomotion=WalkerLocomotion())
+        opt.bind(_robot(size=RobotSize.SIZE_5))
+        assert opt.slots == 4
+
+    def test_slots_size4(self):
+        # SIZE_4 base_slots=8; ceil(0.25×8)=2
+        opt = SecondaryLocomotion(locomotion=WalkerLocomotion())
+        opt.bind(_robot(size=RobotSize.SIZE_4))
+        assert opt.slots == 2
+
+    def test_cost_walker_size5(self):
+        # slots=4; Walker multiplier=10; cost=500×4×10=20000
+        opt = SecondaryLocomotion(locomotion=WalkerLocomotion())
+        opt.bind(_robot(size=RobotSize.SIZE_5))
+        assert opt.cost == 20000.0
+
+    def test_robot_traits_from_walker_secondary(self):
+        # Walker locomotion has ATV trait
+        robot = _robot(
+            size=RobotSize.SIZE_5,
+            options=[SecondaryLocomotion(locomotion=WalkerLocomotion())],
+        )
+        trait_names = [t.name for t in robot.traits]
+        assert 'ATV' in trait_names

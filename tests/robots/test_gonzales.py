@@ -2,31 +2,34 @@
 #
 # SIZE_4 TL15: STR = 2×3−1 = 5 (SIZE_3 manipulators), DEX = ceil(15/2)+1 = 9. Source: 2× (STR 5 DEX 9). ✓
 # BasicBrain (locomotion, TL10): INT 4, programming 'Basic (locomotion) (INT 4)'. ✓
-# Endurance: WheelsATV base 72h × TL15 multiplier 2.0 = 144h. Vehicle speed = 144/4 = 36h. ✓
-#   Source: 288h (36h). 288h would require Efficiency (+100% at 50% BCC). Not yet implemented.
-# Armour: TL15 → base +4. Source: Armour (+8) = +4 additional. IncreasedArmour not yet implemented.
-# Speed: WheelsATV base = Slow; +1 band → Medium. VehicleSpeedModification speed band label not yet
-#   implemented for non-Grav; speed_label returns 'Vehicle speed' instead of 'Medium'.
-# Skills: BasicBrain (locomotion) gives Athletics (dex) 1 and Flyer (grav) 1 — wrong drive skill for
-#   wheels. Source: Drive (Wheel) 2 (likely from locomotion brain + AgencyEnhancement). Not corrected.
-# AgencyEnhancement +2 (Athletics dex 2, cost 200% BCC): not yet implemented.
+# Endurance: WheelsATV base 72h × TL15 multiplier 2.0 × 2.0 (Efficiency) = 288h. ✓
+#   Vehicle speed = 288/4 = 72h (rules: factor of 4). Source parenthetical "36h" appears to be
+#   a source error — they listed the pre-Efficiency vehicle figure (144/4 = 36) without updating.
+# Armour: TL15 → base +4. IncreasedArmour(+4) → total +8 = Armour (+8). ✓
+# Speed: VehicleSpeedModification overrides speed_label → 'Vehicle speed' (band labels not implemented
+#   for non-Grav locomotion).
+# Skills: Basic (locomotion) gives Vehicle (type) X = Drive (wheel) 2 (type from WheelsATV, X = agility 0+2).
+#   AgilityEnhancement +2: Athletics (dexterity) 2 (max wins over locomotion's Athletics 1). ✓
+# Source: Drive (Wheel) 2, Athletics (dexterity) 2. ✓
+# Efficiency: cost = 50% BCC = Cr1,200. ✓
 # Stealth 3: from CamouflageVisual (enhanced), DM-3 → effective Stealth 3. ✓
-# Heightened Senses: from AuditorySensor (broad spectrum). Confirmed by Hunter Bug (144_hunter_bug.md). ✓
+# Heightened Senses: from AuditorySensor (broad spectrum). ✓
 # IR/UV Vision: from PrisSensor. ✓
-# Default suite: 5 slots; Gonzales uses PRIS (paid upgrade), broad audio (paid upgrade), broad voder
-#   (paid upgrade), DroneInterface (free), leaving 1 slot unused (no standard 5km transceiver listed).
-# Transceiver 5,000km (advanced): separate paid option at Cr500.
-# Cost discrepancy (partial): Ceres Cr16,000 vs source Cr27,000.
-#   Missing: IncreasedArmour +4 (~Cr2,500), AgencyEnhancement +2 (~Cr4,800). Gap ~Cr3,700 unresolved.
+# IncreasedArmour(+4) at TL15 SIZE_4: slots = max(ceil(4×0.003×8)=1, ceil(4/4)=1, 1) = 1; cost = Cr2,500.
+# Cost: Ceres Cr24,500 vs source Cr27,000. Gap = Cr2,500 unresolved.
+# Slots: IncreasedArmour takes 1 slot → remaining = −1 (slot overload noted). Source shows 0 remaining.
 
 from types import SimpleNamespace
 
 from ceres.make.robot import BasicBrain, Manipulator, Robot, RobotSize, WheelsAtvLocomotion, default_suite
 from ceres.make.robot.options import (
+    AgilityEnhancement,
     AuditorySensor,
     CamouflageAudible,
     CamouflageOlfactory,
     CamouflageVisual,
+    Efficiency,
+    IncreasedArmour,
     NavigationSystem,
     PrisSensor,
     RobotTransceiver,
@@ -40,29 +43,26 @@ from ceres.make.robot.text import format_traits
 _expected = SimpleNamespace(
     hits=12,
     locomotion='Wheels, ATV',
-    speed='Vehicle speed',  # not 'Medium' — speed band label not yet implemented for wheeled VSM
+    speed='Vehicle speed',  # band labels not implemented for non-Grav VSM
     tl=15,
-    base_armour=4,  # not 8 — source Armour (+8), IncreasedArmour not yet implemented
-    traits='Armour (+4), ATV, Heightened Senses, IR/UV Vision, Small (-1)',
-    # source traits: Armour (+8), ATV, Heightened Senses, IR/UV Vision, Small (-1)
+    base_armour=4,  # TL15 base; total = 4+4 = 8 from IncreasedArmour(+4)
+    traits='Armour (+8), ATV, Heightened Senses, IR/UV Vision, Small (-1)',
     programming='Basic (locomotion) (INT 4)',
-    endurance_hours=144,
-    vehicle_endurance_hours=36,
-    # source: 288 (36) — 288h requires Efficiency, not yet implemented
+    endurance_hours=288,
+    vehicle_endurance_hours=72,  # rules: 288/4; source shows 36h (source error — pre-Efficiency figure)
     attacks='—',
     manipulators='(STR 5 DEX 9) × 2',
     available_slots=8,
-    used_slots=8,
-    remaining_slots=0,
+    used_slots=9,  # IncreasedArmour takes 1 slot; source shows 0 remaining
+    remaining_slots=-1,
 )
-# Partial build: source Cr27,000; missing IncreasedArmour (~Cr2,500) and AgencyEnhancement (~Cr4,800).
-_expected.cost = 16_000
+# Ceres Cr24,500 vs source Cr27,000. Gap = Cr2,500 unresolved.
+_expected.cost = 24_500
 
 
 def build_gonzales() -> Robot:
-    """Note: Partial Gonzales — omits IncreasedArmour and AgencyEnhancement.
+    """Note: Partial Gonzales — cost gap Cr2,500 vs source Cr27,000 unresolved.
 
-    Drive (Wheel) skill and Armour (+8) not yet implemented for this build.
     Source: user-supplied stat block — Gonzales, SIZE_4 TL15 Wheels ATV.
     """
     return Robot(
@@ -73,6 +73,9 @@ def build_gonzales() -> Robot:
         brain=BasicBrain(function='locomotion'),
         manipulators=[Manipulator(size=RobotSize.SIZE_3), Manipulator(size=RobotSize.SIZE_3)],
         options=[
+            IncreasedArmour(additional=4),
+            AgilityEnhancement(level=2),
+            Efficiency(),
             PrisSensor(),
             AuditorySensor(quality='broad_spectrum'),
             VoderSpeaker(quality='broad_spectrum'),
@@ -95,11 +98,12 @@ def build_gonzales() -> Robot:
     )
 
 
-class TestGonzalesPartial:
+class TestGonzales:
     def test_hits(self):
         assert build_gonzales().hits == _expected.hits
 
     def test_base_armour(self):
+        # base_armour is TL-derived; total armour (traits) includes IncreasedArmour delta
         assert build_gonzales().base_armour == _expected.base_armour
 
     def test_traits(self):
@@ -184,6 +188,11 @@ class TestGonzalesPartial:
         value = spec.rows_for_section(RobotSpecSection.OPTIONS)[0].value
         assert 'Storage Compartment (4 Slots)' in value
 
+    def test_spec_options_has_efficiency(self):
+        spec = build_gonzales().build_spec()
+        value = spec.rows_for_section(RobotSpecSection.OPTIONS)[0].value
+        assert 'Efficiency' in value
+
     def test_spec_options_has_transceiver_5000km(self):
         spec = build_gonzales().build_spec()
         value = spec.rows_for_section(RobotSpecSection.OPTIONS)[0].value
@@ -208,6 +217,20 @@ class TestGonzalesPartial:
         robot = build_gonzales()
         skills_str = robot.skills_display
         assert 'Stealth 3' in skills_str
+
+    def test_locomotion_gives_drive_wheel_2(self):
+        # Basic (locomotion): Drive (wheel) at agility level = 0 (WheelsATV base) + 2 (AgEnh) = 2
+        robot = build_gonzales()
+        assert 'Drive (wheel) 2' in robot.skills_display
+
+    def test_agility_enhancement_gives_athletics_dexterity_2(self):
+        # AgilityEnhancement(level=2) grant wins over locomotion's Athletics(dex) 1
+        robot = build_gonzales()
+        assert 'Athletics (dexterity) 2' in robot.skills_display
+
+    def test_no_flyer_grav_in_skills(self):
+        robot = build_gonzales()
+        assert 'Flyer (grav)' not in robot.skills_display
 
     def test_manipulator_str_5(self):
         robot = build_gonzales()

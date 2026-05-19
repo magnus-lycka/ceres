@@ -7,9 +7,8 @@
 #   WalkerLocomotion base 5m, TL15 base endurance 72h × 2.0 = 144h.
 #   173h ≈ 72 × 1.2 × 2.0 — matches speed_reduction=2 (+20% endurance) + Agility Enhancement
 #   giving the extra speed back: e.g., speed_reduction=2 (→3m) + AgilityEnhancement+7 (→10m),
-#   but AgilityEnhancement is not yet implemented and Tactical Speed Reduction is incompatible
-#   with Agility Enhancement per rules. Modelled with WalkerLocomotion() (no modification);
-#   speed=5m, endurance=144h in partial build.
+#   but Tactical Speed Reduction is incompatible with Agility Enhancement per rules.
+#   Modelled with WalkerLocomotion() (no modification); speed=5m, endurance=144h in partial build.
 #
 # Armour: TL15 → base +4. Source: Armour (+4). ✓ (No IncreasedArmour here.)
 #
@@ -47,12 +46,12 @@ from ceres.make.robot.text import format_traits
 _expected = SimpleNamespace(
     hits=4,
     locomotion='Walker',
-    speed='5m',  # source: '10m' — Agility Enhancement + speed modification not yet implemented
+    speed='5m',  # source: '10m' — speed_reduction + AgilityEnhancement incompatible per rules
     tl=15,
     base_armour=4,
     traits='Armour (+4), ATV, Heightened Senses, IR/UV Vision, Small (-3)',
     programming='Basic (recon) (INT 4)',
-    endurance_hours=144,  # source: 173h — requires speed_reduction=2 + AgilityEnhancement, not yet implemented
+    endurance_hours=144,  # source: 173h — speed_reduction=2 + AgilityEnhancement incompatible per rules
     attacks='—',
     manipulators='(STR 3 DEX 9) × 2',
     available_slots=2,

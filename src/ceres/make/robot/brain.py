@@ -10,7 +10,15 @@ from pydantic import Field, model_validator
 
 from ceres.shared import CeresModel
 
-from .skills import _DEX_SKILLS, BrainSoftware, SkillGrant, SkillPackage, primitive_package_skills
+from .skills import (
+    _DEX_SKILL_GRANTS,
+    _DEX_SKILLS,
+    _STR_SKILL_GRANTS,
+    BrainSoftware,
+    SkillGrant,
+    SkillPackage,
+    primitive_package_skills,
+)
 
 
 @dataclass(frozen=True)
@@ -98,7 +106,7 @@ class _BrainBase(CeresModel):
     def skill_grants(self) -> tuple[SkillGrant, ...]:
         return ()
 
-    def skill_grants_for_robot(self, dex_dm: int) -> tuple[SkillGrant, ...]:
+    def skill_grants_for_robot(self, dex_dm: int, str_dm: int = 0) -> tuple[SkillGrant, ...]:
         """Skill grants with per-skill characteristic DM: DEX DM for DEX skills, INT DM for others.
 
         Primitive/Basic brains return their fixed skill_grants unchanged.
@@ -293,13 +301,23 @@ class AdvancedBrain(_BrainBase):
         dm = self.skill_dm
         return tuple(SkillGrant(pkg.grant_name(), max(0, pkg.level + dm)) for pkg in self.installed_skills)
 
-    def skill_grants_for_robot(self, dex_dm: int) -> tuple[SkillGrant, ...]:
+    def skill_grants_for_robot(self, dex_dm: int, str_dm: int = 0) -> tuple[SkillGrant, ...]:
         int_dm = self.skill_dm
         result = []
         for pkg in self.installed_skills:
-            grant_name = pkg.grant_name()
-            base = grant_name.split('(')[0].strip()
-            dm = dex_dm if base in _DEX_SKILLS else int_dm
+            pkg_base = pkg.name.split('(')[0].strip()
+            if pkg.name in _STR_SKILL_GRANTS:
+                dm = str_dm
+                grant_name = pkg.name  # preserve specialization (e.g. "Athletics (Strength)")
+            elif pkg.name in _DEX_SKILL_GRANTS:
+                dm = dex_dm
+                grant_name = pkg.name  # preserve specialization (e.g. "Athletics (Dexterity)")
+            elif pkg_base in _DEX_SKILLS:
+                dm = dex_dm
+                grant_name = pkg.grant_name()
+            else:
+                dm = int_dm
+                grant_name = pkg.grant_name()
             result.append(SkillGrant(grant_name, max(0, pkg.level + dm)))
         return tuple(result)
 
@@ -408,13 +426,23 @@ class VeryAdvancedBrain(_BrainBase):
         dm = self.skill_dm
         return tuple(SkillGrant(pkg.grant_name(), max(0, pkg.level + dm)) for pkg in self.installed_skills)
 
-    def skill_grants_for_robot(self, dex_dm: int) -> tuple[SkillGrant, ...]:
+    def skill_grants_for_robot(self, dex_dm: int, str_dm: int = 0) -> tuple[SkillGrant, ...]:
         int_dm = self.skill_dm
         result = []
         for pkg in self.installed_skills:
-            grant_name = pkg.grant_name()
-            base = grant_name.split('(')[0].strip()
-            dm = dex_dm if base in _DEX_SKILLS else int_dm
+            pkg_base = pkg.name.split('(')[0].strip()
+            if pkg.name in _STR_SKILL_GRANTS:
+                dm = str_dm
+                grant_name = pkg.name  # preserve specialization (e.g. "Athletics (Strength)")
+            elif pkg.name in _DEX_SKILL_GRANTS:
+                dm = dex_dm
+                grant_name = pkg.name  # preserve specialization (e.g. "Athletics (Dexterity)")
+            elif pkg_base in _DEX_SKILLS:
+                dm = dex_dm
+                grant_name = pkg.grant_name()
+            else:
+                dm = int_dm
+                grant_name = pkg.grant_name()
             result.append(SkillGrant(grant_name, max(0, pkg.level + dm)))
         return tuple(result)
 
@@ -441,6 +469,7 @@ _SELF_AWARE_TABLE: tuple[_BrainEntry, ...] = (
 )
 
 _SELF_AWARE_BW_UPGRADES: tuple[_BwUpgradeEntry, ...] = (
+    _BwUpgradeEntry(min_tl=15, delta_bw=8, cost=100_000.0),
     _BwUpgradeEntry(min_tl=15, delta_bw=10, cost=500_000.0),
     _BwUpgradeEntry(min_tl=15, delta_bw=15, cost=1_000_000.0),
     _BwUpgradeEntry(min_tl=15, delta_bw=20, cost=2_500_000.0),
@@ -548,13 +577,23 @@ class SelfAwareBrain(_BrainBase):
         dm = self.skill_dm
         return tuple(SkillGrant(pkg.grant_name(), max(0, pkg.level + dm)) for pkg in self.installed_skills)
 
-    def skill_grants_for_robot(self, dex_dm: int) -> tuple[SkillGrant, ...]:
+    def skill_grants_for_robot(self, dex_dm: int, str_dm: int = 0) -> tuple[SkillGrant, ...]:
         int_dm = self.skill_dm
         result = []
         for pkg in self.installed_skills:
-            grant_name = pkg.grant_name()
-            base = grant_name.split('(')[0].strip()
-            dm = dex_dm if base in _DEX_SKILLS else int_dm
+            pkg_base = pkg.name.split('(')[0].strip()
+            if pkg.name in _STR_SKILL_GRANTS:
+                dm = str_dm
+                grant_name = pkg.name  # preserve specialization (e.g. "Athletics (Strength)")
+            elif pkg.name in _DEX_SKILL_GRANTS:
+                dm = dex_dm
+                grant_name = pkg.name  # preserve specialization (e.g. "Athletics (Dexterity)")
+            elif pkg_base in _DEX_SKILLS:
+                dm = dex_dm
+                grant_name = pkg.grant_name()
+            else:
+                dm = int_dm
+                grant_name = pkg.grant_name()
             result.append(SkillGrant(grant_name, max(0, pkg.level + dm)))
         return tuple(result)
 

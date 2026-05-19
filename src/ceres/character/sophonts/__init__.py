@@ -1,0 +1,1 @@
+SOPHONTS = ['Vilani', 'Humaniti']

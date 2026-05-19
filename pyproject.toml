@@ -1,7 +1,7 @@
 [project]
 name = "ceres"
 version = "0.1.0"
-description = "Ship Design for Mongoose Traveller 2nd edition"
+description = "GM aid for Mongoose Traveller 2nd edition"
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.14"
@@ -9,9 +9,12 @@ classifiers = [
     "Development Status :: 3 - Alpha",
 ]
 dependencies = [
+    "fastapi[standard]>=0.125.0",
     "jinja2>=3.1",
+    "platformdirs>=4.5.1",
     "pydantic>=2.12.5",
     "pydantic-core>=2.41.5",
+    "typer>=0.20.0",
     "typst>=0.14.8",
 ]
 [build-system]
@@ -21,6 +24,7 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "deptry>=0.25.1",
+    "httpx>=0.28.0",
     "pytest>=9.0.2",
     "pytest-cov>=7.0.0",
 ]

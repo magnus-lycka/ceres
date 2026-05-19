@@ -21,6 +21,13 @@ _DEX_SKILLS: frozenset[str] = frozenset(
     }
 )
 
+# Skill grant names (full, with speciality) that use DEX DM (overrides base-name table).
+# Athletics (Dexterity) specialization uses DEX even though 'Athletics' is not in _DEX_SKILLS.
+_DEX_SKILL_GRANTS: frozenset[str] = frozenset({'Athletics (Dexterity)'})
+
+# Skill grant names (full, with speciality) that use STR DM instead of INT DM.
+_STR_SKILL_GRANTS: frozenset[str] = frozenset({'Athletics (Strength)'})
+
 # Base costs (level 0) per refs/robot/35_skill_packages.md Standard Skill Packages table.
 # Cost at level N = base × 10^N.
 _SKILL_BASE_COSTS: dict[str, float] = {
@@ -106,7 +113,7 @@ _PRIMITIVE_SKILLS: dict[str, tuple[SkillGrant, ...]] = {
     'evade': (SkillGrant('Athletics (dexterity)', 1), SkillGrant('Stealth', 2)),
     'homing': (SkillGrant('Weapon', 1),),
     'labourer': (SkillGrant('Profession (labourer)', 2),),
-    'locomotion': (SkillGrant('Athletics (dexterity)', 1), SkillGrant('Flyer (grav)', 1)),
+    'locomotion': (SkillGrant('Athletics (dexterity)', 1),),
     'none': (),
     'recon': (SkillGrant('Recon', 2), SkillGrant('Athletics (dexterity)', 1)),
     'servant': (SkillGrant('Profession (domestic servant)', 2),),
@@ -132,4 +139,12 @@ class BrainSoftware(CeresModel):
     cost: float = 0.0
 
 
-__all__ = ['SkillGrant', 'SkillPackage', 'BrainSoftware', 'primitive_package_skills', '_DEX_SKILLS']
+__all__ = [
+    'SkillGrant',
+    'SkillPackage',
+    'BrainSoftware',
+    'primitive_package_skills',
+    '_DEX_SKILLS',
+    '_DEX_SKILL_GRANTS',
+    '_STR_SKILL_GRANTS',
+]

@@ -12,10 +12,12 @@ Rule sources:
   refs/robot/21_cleaning_options.md     (DomesticCleaningEquipment)
   refs/robot/22_communications_options.md (RoboticDroneController)
   refs/robot/23_satellite_uplink.md     (SwarmController)
-  refs/robot/07_chassis_options.md      (DecreasedResiliency)
-  refs/robot/08_locomotion_modifications.md (VehicleSpeedModification)
+  refs/robot/07_chassis_options.md      (DecreasedResiliency, IncreasedArmour, Efficiency)
+  refs/robot/08_locomotion_modifications.md (VehicleSpeedModification, AgilityEnhancement, SecondaryLocomotion)
   refs/robot/09_manipulators.md         (AdditionalManipulator)
   refs/robot/18_geiger_counter.md       (LightIntensifierSensor, OlfactorySensor, PrisSensor, ThermalSensor)
+  refs/robot/20_radiation_environment_protection.md (RadiationEnvironmentProtection)
+  refs/robot/27_autobar.md              (Autobar)
   refs/robot/29_storage_compartment.md  (StorageCompartment, ExternalPower)
   refs/robot/31_neural_activity_sensor.md (ReconSensor)
   refs/robot/32_navigation_system.md    (NavigationSystem)
@@ -28,6 +30,7 @@ from typing import Any
 from ceres.gear.comm import RadioTransceiverPart
 
 from .chassis import Trait, chassis_entry
+from .locomotion import LocomotionUnion
 from .parts import RobotBase, RobotPart, RobotPartMixin
 from .skills import SkillGrant
 
@@ -857,6 +860,496 @@ class VacuumEnvironmentProtection(RobotPart):
         return 'Vacuum Environment Protection'
 
 
+_MEDIKIT_TABLE: dict[str, dict[str, int | float]] = {
+    'basic': {'tl': 8, 'cost': 1000.0},
+    'improved': {'tl': 10, 'cost': 1500.0},
+    'enhanced': {'tl': 12, 'cost': 5000.0},
+    'advanced': {'tl': 14, 'cost': 10000.0},
+}
+
+_SOLAR_COATING_TABLE: dict[str, dict[str, int | float]] = {
+    'basic': {'tl': 6, 'cost_per_base_slot': 500.0},
+    'improved': {'tl': 8, 'cost_per_base_slot': 100.0},
+    'enhanced': {'tl': 10, 'cost_per_base_slot': 200.0},
+    'advanced': {'tl': 12, 'cost_per_base_slot': 500.0},
+}
+
+_SCIENTIFIC_TOOLKIT_TABLE: dict[str, dict[str, int | float]] = {
+    'basic': {'tl': 5, 'slots': 4, 'cost': 2000.0},
+    'improved': {'tl': 8, 'slots': 3, 'cost': 4000.0},
+    'enhanced': {'tl': 11, 'slots': 3, 'cost': 6000.0},
+    'advanced': {'tl': 14, 'slots': 3, 'cost': 8000.0},
+}
+
+_STARSHIP_ENGINEERING_TOOLKIT_TABLE: dict[str, dict[str, int | float]] = {
+    'basic': {'tl': 8, 'slots': 6, 'cost': 1000.0},
+    'improved': {'tl': 10, 'slots': 5, 'cost': 2000.0},
+    'enhanced': {'tl': 12, 'slots': 5, 'cost': 4000.0},
+    'advanced': {'tl': 14, 'slots': 4, 'cost': 10000.0},
+}
+
+_WEAPON_MOUNT_TABLE: dict[str, dict[str, int | float]] = {
+    'small': {'slots': 1, 'cost': 500.0},
+    'medium': {'slots': 2, 'cost': 1000.0},
+    'heavy': {'slots': 10, 'cost': 5000.0},
+    'vehicle': {'slots': 15, 'cost': 10000.0},
+}
+
+_FABRICATION_CHAMBER_TABLE: dict[str, dict[str, int | float]] = {
+    'basic': {'tl': 8, 'cost_per_chamber_slot': 2000.0},
+    'improved': {'tl': 10, 'cost_per_chamber_slot': 10000.0},
+    'enhanced': {'tl': 13, 'cost_per_chamber_slot': 50000.0},
+    'advanced': {'tl': 17, 'cost_per_chamber_slot': 200000.0},
+}
+
+_MEDICAL_CHAMBER_SUB_OPTIONS: dict[str, dict[str, int | float]] = {
+    'cryoberth_basic': {'tl': 10, 'slots': 8, 'cost': 20000.0},
+    'cryoberth_improved': {'tl': 12, 'slots': 8, 'cost': 20000.0},
+    'low_berth_basic': {'tl': 10, 'slots': 8, 'cost': 20000.0},
+    'low_berth_improved': {'tl': 12, 'slots': 8, 'cost': 20000.0},
+    'reanimation': {'tl': 14, 'slots': 8, 'cost': 900000.0},
+    'species_specific': {'tl': 10, 'slots': 4, 'cost': 10000.0},
+}
+
+
+class BioscanneSensor(RobotPart):
+    """refs/robot/30_no_internal_power.md — Bioscanner Sensor, TL15, 2 slots, Cr350000."""
+
+    tl: int = 15
+
+    @property
+    def slots(self) -> int:
+        return 2
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        object.__setattr__(self, 'cost', 350000.0)
+
+    def item_description(self) -> str:
+        return 'Bioscanner Sensor'
+
+
+class DensitometerSensor(RobotPart):
+    """refs/robot/30_no_internal_power.md — Densitometer Sensor, TL14, 3 slots, Cr20000."""
+
+    tl: int = 14
+
+    @property
+    def slots(self) -> int:
+        return 3
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        object.__setattr__(self, 'cost', 20000.0)
+
+    def item_description(self) -> str:
+        return 'Densitometer Sensor'
+
+
+class NeuralActivitySensor(RobotPart):
+    """refs/robot/31_neural_activity_sensor.md — Neural Activity Sensor, TL15, 5 slots, Cr35000."""
+
+    tl: int = 15
+
+    @property
+    def slots(self) -> int:
+        return 5
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        object.__setattr__(self, 'cost', 35000.0)
+
+    def item_description(self) -> str:
+        return 'Neural Activity Sensor'
+
+
+class Medikit(RobotPart):
+    """refs/robot/26_medikit.md — Medikit, 1 slot.
+
+    Quality: basic (TL8, Cr1000) / improved (TL10, Cr1500) / enhanced (TL12, Cr5000) / advanced (TL14, Cr10000).
+    """
+
+    quality: str = 'basic'
+
+    @property
+    def slots(self) -> int:
+        return 1
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        entry = _MEDIKIT_TABLE[self.quality]
+        object.__setattr__(self, 'tl', int(entry['tl']))
+        object.__setattr__(self, 'cost', float(entry['cost']))
+
+    def item_description(self) -> str:
+        return f'Medikit ({self.quality})'
+
+
+class SolarCoating(RobotPart):
+    """refs/robot/13_solar_coating.md — Solar Coating.
+
+    Zero-slot. Cost = cost_per_base_slot × base_slots.
+    Not compatible with reflec or visual camouflage options.
+    """
+
+    quality: str = 'advanced'
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        tl = int(_SOLAR_COATING_TABLE[self.quality]['tl'])
+        object.__setattr__(self, 'tl', tl)
+
+    def bind(self, assembly: RobotBase) -> None:
+        super().bind(assembly)
+        rate = float(_SOLAR_COATING_TABLE[self.quality]['cost_per_base_slot'])
+        base_slots = chassis_entry(assembly.size).base_slots
+        object.__setattr__(self, 'cost', rate * base_slots)
+
+    def item_description(self) -> str:
+        return f'Solar Coating ({self.quality})'
+
+
+class ScientificToolkit(RobotPart):
+    """refs/robot/32_fire_extinguisher.md — Scientific Toolkit.
+
+    Quality: basic (TL5, 4 slots, Cr2000) / improved (TL8, 3 slots, Cr4000) /
+             enhanced (TL11, 3 slots, Cr6000) / advanced (TL14, 3 slots, Cr8000).
+    Speciality must be specified (e.g. 'biology', 'chemistry', 'robotics').
+    """
+
+    quality: str = 'basic'
+    speciality: str = ''
+
+    @property
+    def slots(self) -> int:
+        return int(_SCIENTIFIC_TOOLKIT_TABLE[self.quality]['slots'])
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        entry = _SCIENTIFIC_TOOLKIT_TABLE[self.quality]
+        object.__setattr__(self, 'tl', int(entry['tl']))
+        object.__setattr__(self, 'cost', float(entry['cost']))
+
+    def item_description(self) -> str:
+        if self.speciality:
+            return f'Scientific Toolkit ({self.quality}, {self.speciality})'
+        return f'Scientific Toolkit ({self.quality})'
+
+
+class FabricationChamber(RobotPart):
+    """refs/robot/28_fabrication_chamber.md — Fabrication Chamber.
+
+    Slots = slots_count. Cost = slots_count × cost_per_chamber_slot.
+    Quality: basic (TL8, Cr2000/slot) / improved (TL10, Cr10000/slot) /
+             enhanced (TL13, Cr50000/slot) / advanced (TL17, Cr200000/slot).
+    """
+
+    quality: str = 'basic'
+    slots_count: int = 1
+
+    @property
+    def slots(self) -> int:
+        return self.slots_count
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        entry = _FABRICATION_CHAMBER_TABLE[self.quality]
+        object.__setattr__(self, 'tl', int(entry['tl']))
+        object.__setattr__(self, 'cost', float(entry['cost_per_chamber_slot']) * self.slots_count)
+
+    def item_description(self) -> str:
+        return f'Fabrication Chamber ({self.quality}, {self.slots_count} Slots)'
+
+
+class MedicalChamber(RobotPart):
+    """refs/robot/24_tightbeam_communicator.md — Medical Chamber.
+
+    Base: TL8, Cr200/slot. Sub-options occupy additional slots and raise effective TL.
+    low_berth: None (no berth) | 'basic' (TL10, 8 slots, Cr20000) | 'improved' (TL12, 8 slots, Cr20000)
+    reanimation: TL14, 8 slots, Cr900000
+    species_specific: count of species-specific add-ons (each TL10, 4 slots, Cr10000)
+    """
+
+    slots_count: int = 32
+    low_berth: str | None = None
+    reanimation: bool = False
+    species_specific: int = 0
+
+    @property
+    def slots(self) -> int:
+        total = self.slots_count
+        if self.low_berth:
+            total += 8
+        if self.reanimation:
+            total += 8
+        total += self.species_specific * 4
+        return total
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        eff_tl = 8
+        if self.low_berth == 'basic':
+            eff_tl = max(eff_tl, 10)
+        elif self.low_berth == 'improved':
+            eff_tl = max(eff_tl, 12)
+        if self.reanimation:
+            eff_tl = max(eff_tl, 14)
+        if self.species_specific:
+            eff_tl = max(eff_tl, 10)
+        object.__setattr__(self, 'tl', eff_tl)
+        base_cost = float(self.slots_count) * 200.0
+        option_cost = 0.0
+        if self.low_berth in ('basic', 'improved'):
+            option_cost += 20000.0
+        if self.reanimation:
+            option_cost += 900000.0
+        option_cost += self.species_specific * 10000.0
+        object.__setattr__(self, 'cost', base_cost + option_cost)
+
+    def item_description(self) -> str:
+        parts: list[str] = [f'{self.slots} Slots']
+        if self.low_berth == 'basic':
+            parts.append('Low Berth')
+        elif self.low_berth == 'improved':
+            parts.append('Improved Low Berth')
+        if self.reanimation:
+            parts.append('Reanimation')
+        if self.species_specific == 1:
+            parts.append('Species-Specific Add-on')
+        elif self.species_specific > 1:
+            parts.append(f'Species-Specific Add-on ×{self.species_specific}')
+        return 'Medical Chamber (' + ', '.join(parts) + ')'
+
+
+_AUTOBAR_TABLE: dict[str, dict[str, int | float]] = {
+    'basic': {'tl': 8, 'slots': 2, 'cost': 500.0},
+    'improved': {'tl': 9, 'slots': 2, 'cost': 1000.0},
+    'enhanced': {'tl': 10, 'slots': 2, 'cost': 2000.0},
+    'advanced': {'tl': 11, 'slots': 2, 'cost': 5000.0},
+}
+
+# refs/robot/07_chassis_options.md — Robot Armour table
+# (tl_min, tl_max, slot_pct, max_per_slot, cost_per_slot)
+_INCREASED_ARMOUR_BANDS: list[tuple[int, int, float, int, float]] = [
+    (6, 8, 0.01, 1, 250.0),
+    (9, 11, 0.005, 2, 1000.0),
+    (12, 14, 0.004, 3, 1500.0),
+    (15, 17, 0.003, 4, 2500.0),
+    (18, 999, 0.0025, 5, 5000.0),
+]
+
+# refs/robot/08_locomotion_modifications.md — Agility Enhancement cost table
+# Cost = level_multiplier × Base Chassis Cost (cumulative, not per-level)
+_AGILITY_COST_TABLE: dict[int, float] = {1: 1.0, 2: 2.0, 3: 4.0, 4: 8.0}
+
+
+class Autobar(RobotPart):
+    """refs/robot/27_autobar.md — Autobar beverage dispenser, 2 slots.
+
+    Quality: basic (TL8, Cr500) / improved (TL9, Cr1000) / enhanced (TL10, Cr2000) / advanced (TL11, Cr5000).
+    """
+
+    quality: str = 'basic'
+
+    @property
+    def slots(self) -> int:
+        return 2
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        entry = _AUTOBAR_TABLE[self.quality]
+        object.__setattr__(self, 'tl', int(entry['tl']))
+        object.__setattr__(self, 'cost', float(entry['cost']))
+
+    def item_description(self) -> str:
+        return f'Autobar ({self.quality})'
+
+
+class IncreasedArmour(RobotPart):
+    """refs/robot/07_chassis_options.md — Increased Armour chassis modification.
+
+    Chassis modification: adds armour points, uses slots, costs per slot.
+    Slot and cost determined by robot TL and base slots at bind time.
+    Does not appear in options display (chassis modification).
+    """
+
+    additional: int
+
+    @property
+    def armour_delta(self) -> int:
+        return self.additional
+
+    @property
+    def slots(self) -> int:
+        if self._assembly is None:
+            return 0
+        tl = self.assembly.tl
+        base = chassis_entry(self.assembly.size).base_slots
+        for tl_min, tl_max, slot_pct, max_per_slot, _cost in _INCREASED_ARMOUR_BANDS:
+            if tl_min <= tl <= tl_max:
+                return max(ceil(self.additional * slot_pct * base), ceil(self.additional / max_per_slot), 1)
+        return 1
+
+    def bind(self, assembly: RobotBase) -> None:
+        super().bind(assembly)
+        tl = assembly.tl
+        base = chassis_entry(assembly.size).base_slots
+        for tl_min, tl_max, slot_pct, max_per_slot, cost_per_slot in _INCREASED_ARMOUR_BANDS:
+            if tl_min <= tl <= tl_max:
+                slots_used = max(
+                    ceil(self.additional * slot_pct * base),
+                    ceil(self.additional / max_per_slot),
+                    1,
+                )
+                object.__setattr__(self, 'cost', float(slots_used) * cost_per_slot)
+                break
+
+
+class AgilityEnhancement(RobotPart):
+    """refs/robot/08_locomotion_modifications.md — Agility Enhancement chassis modification.
+
+    Zero-slot. Cost = level_multiplier × BCC (cumulative). Grants Athletics (dexterity) N.
+    Increases tactical speed by +N metres per Minor Action. Cannot be combined with
+    TacticalSpeedReduction or VehicleSpeedModification.
+    """
+
+    level: int
+
+    @property
+    def speed_bonus(self) -> int:
+        return self.level
+
+    @property
+    def skill_grants(self) -> tuple[SkillGrant, ...]:
+        return (SkillGrant('Athletics (dexterity)', self.level),)
+
+    def bind(self, assembly: RobotBase) -> None:
+        super().bind(assembly)
+        bcc = chassis_entry(assembly.size).basic_cost * assembly.locomotion.cost_multiplier
+        object.__setattr__(self, 'cost', _AGILITY_COST_TABLE[self.level] * bcc)
+
+
+class Efficiency(RobotPart):
+    """refs/robot/07_chassis_options.md — Efficiency, TL7+.
+
+    Zero-slot. Cost = 50% of Base Chassis Cost. Doubles endurance.
+    Can be applied once, after TL endurance increase.
+    """
+
+    tl: int = 7
+
+    @property
+    def endurance_multiplier(self) -> float:
+        return 2.0
+
+    def bind(self, assembly: RobotBase) -> None:
+        super().bind(assembly)
+        bcc = chassis_entry(assembly.size).basic_cost * assembly.locomotion.cost_multiplier
+        object.__setattr__(self, 'cost', 0.5 * bcc)
+
+    def item_description(self) -> str:
+        return 'Efficiency'
+
+
+class RadiationEnvironmentProtection(RobotPart):
+    """refs/robot/20_radiation_environment_protection.md — Radiation Environment Protection.
+
+    TL7, 1 slot, Cr600 per base slot (same as VacuumEnvironmentProtection but slotted).
+    """
+
+    tl: int = 7
+
+    @property
+    def slots(self) -> int:
+        return 1
+
+    def bind(self, assembly: RobotBase) -> None:
+        super().bind(assembly)
+        base_slots = chassis_entry(assembly.size).base_slots
+        object.__setattr__(self, 'cost', 600.0 * base_slots)
+
+    def item_description(self) -> str:
+        return 'Radiation Environment Protection'
+
+
+class SecondaryLocomotion(RobotPart):
+    """refs/robot/08_locomotion_modifications.md — Secondary Locomotion.
+
+    Slots = ceil(25% × base_slots). Cost = Cr500 × slots × secondary_locomotion_multiplier.
+    Grants traits from the secondary locomotion type.
+    """
+
+    locomotion: LocomotionUnion
+
+    @property
+    def slots(self) -> int:
+        if self._assembly is None:
+            return 0
+        base = chassis_entry(self.assembly.size).base_slots
+        return ceil(0.25 * base)
+
+    @property
+    def robot_traits(self) -> tuple[Trait, ...]:
+        return self.locomotion.locomotion_traits
+
+    def bind(self, assembly: RobotBase) -> None:
+        super().bind(assembly)
+        if assembly.tl < self.locomotion.required_tl:
+            self.error(f'Secondary locomotion requires TL{self.locomotion.required_tl}, robot is TL{assembly.tl}')
+        base = chassis_entry(assembly.size).base_slots
+        slots_used = ceil(0.25 * base)
+        object.__setattr__(self, 'cost', 500.0 * slots_used * self.locomotion.cost_multiplier)
+
+    def item_description(self) -> str:
+        return f'Secondary Locomotion ({self.locomotion.label()})'
+
+
+class StarshipEngineeringToolkit(RobotPart):
+    """refs/robot/32_fire_extinguisher.md — Starship Engineering Toolkit.
+
+    Quality: basic (TL8, 6 slots, Cr1000) / improved (TL10, 5 slots, Cr2000) /
+             enhanced (TL12, 5 slots, Cr4000) / advanced (TL14, 4 slots, Cr10000).
+    """
+
+    quality: str = 'basic'
+
+    @property
+    def slots(self) -> int:
+        return int(_STARSHIP_ENGINEERING_TOOLKIT_TABLE[self.quality]['slots'])
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        entry = _STARSHIP_ENGINEERING_TOOLKIT_TABLE[self.quality]
+        object.__setattr__(self, 'tl', int(entry['tl']))
+        object.__setattr__(self, 'cost', float(entry['cost']))
+
+    def item_description(self) -> str:
+        return f'Starship Engineer Toolkit ({self.quality})'
+
+
+class WeaponMount(RobotPart):
+    """refs/robot/32_fire_extinguisher.md — Weapon Mount.
+
+    Size: small (1 slot, Cr500) / medium (2 slots, Cr1000) /
+          heavy (10 slots, Cr5000) / vehicle (15 slots, Cr10000).
+    TL5 (no TL column in the rules table; based on design examples).
+    """
+
+    size: str = 'small'
+
+    @property
+    def slots(self) -> int:
+        return int(_WEAPON_MOUNT_TABLE[self.size]['slots'])
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        object.__setattr__(self, 'tl', 5)
+        object.__setattr__(self, 'cost', float(_WEAPON_MOUNT_TABLE[self.size]['cost']))
+
+    def item_description(self) -> str:
+        return f'Weapon Mount ({self.size})'
+
+
 def default_suite(
     see: bool = True,
     speak: bool = True,
@@ -935,4 +1428,20 @@ __all__ = [
     'InjectorNeedle',
     'SelfMaintenanceEnhancement',
     'VacuumEnvironmentProtection',
+    'BioscanneSensor',
+    'DensitometerSensor',
+    'NeuralActivitySensor',
+    'Medikit',
+    'SolarCoating',
+    'ScientificToolkit',
+    'FabricationChamber',
+    'MedicalChamber',
+    'Autobar',
+    'IncreasedArmour',
+    'AgilityEnhancement',
+    'Efficiency',
+    'RadiationEnvironmentProtection',
+    'SecondaryLocomotion',
+    'StarshipEngineeringToolkit',
+    'WeaponMount',
 ]

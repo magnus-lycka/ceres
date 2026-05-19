@@ -16,27 +16,32 @@ from .test_hush import build_hush
 from .test_lab_control_robot_advanced import build_advanced_lab_control_robot
 from .test_lab_control_robot_basic import build_basic_lab_control_robot
 from .test_mimer import build_mimer
-from .test_startek import build_startek
+from .test_rhino import build_rhino
+from .test_startek import build_startek_fuller as build_startek
 from .test_utility_droid import build_utility_droid
 from .test_wush import build_wush
 
 pytestmark = pytest.mark.generated_output
 
-_ROBOTS = [
-    ('test_ag300', build_ag300),
-    ('test_basic_courier', build_basic_courier),
-    ('test_domestic_servant', build_domestic_servant),
-    ('test_gardener_servant', build_gardener_servant),
-    ('test_gonzales', build_gonzales),
-    ('test_hudson', build_hudson),
-    ('test_hush', build_hush),
-    ('test_lab_control_robot_advanced', build_advanced_lab_control_robot),
-    ('test_lab_control_robot_basic', build_basic_lab_control_robot),
-    ('test_mimer', build_mimer),
-    ('test_startek', build_startek),
-    ('test_utility_droid', build_utility_droid),
-    ('test_wush', build_wush),
-]
+_ROBOTS = sorted(
+    [
+        ('test_ag300', build_ag300),
+        ('test_basic_courier', build_basic_courier),
+        ('test_domestic_servant', build_domestic_servant),
+        ('test_gardener_servant', build_gardener_servant),
+        ('test_gonzales', build_gonzales),
+        ('test_hudson', build_hudson),
+        ('test_hush', build_hush),
+        ('test_lab_control_robot_advanced', build_advanced_lab_control_robot),
+        ('test_lab_control_robot_basic', build_basic_lab_control_robot),
+        ('test_mimer', build_mimer),
+        ('test_rhino', build_rhino),
+        ('test_startek', build_startek),
+        ('test_utility_droid', build_utility_droid),
+        ('test_wush', build_wush),
+    ],
+    key=lambda entry: entry[1]().name,
+)
 
 
 @pytest.mark.parametrize(('name', 'builder'), _ROBOTS)

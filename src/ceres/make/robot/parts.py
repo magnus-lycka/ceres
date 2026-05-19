@@ -62,6 +62,14 @@ class RobotPartMixin(ABC):
     def endurance_multiplier(self) -> float:
         return 1.0
 
+    @property
+    def armour_delta(self) -> int:
+        return 0
+
+    @property
+    def speed_bonus(self) -> int:
+        return 0
+
 
 class RobotPart(CeresPart, RobotPartMixin):
     """Concrete base for robot-installable parts."""

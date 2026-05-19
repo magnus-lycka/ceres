@@ -2,14 +2,30 @@
 #
 # Phase 2 (resized standard manipulators): SIZE_3 third arm slot/cost on SIZE_5 robot. ✓
 # Phase 3 (STR/DEX enhancement): str_bonus=3 on SIZE_5 arms, dex_bonus=4 on SIZE_3 arm. ✓
-#
-# Full robot build not attempted here: combined Grav+Walker locomotion not modeled,
-# several options (Medikit, PRIS Sensor, Vacuum/Radiation Protection, Weapon Mount,
-# Starship Engineer Toolkit) not yet implemented.
+# Phase 4 (fuller build): Grav primary + Walker secondary, IncreasedArmour, Efficiency, protection,
+#   Starship Engineer Toolkit (advanced), Weapon Mount (small). ✓
+# Athletics (Strength): pkg level=0 (BW=0) + STR DM+2 (effective STR 12 from str_bonus=3) = 2. ✓
+# Gun Combat: pkg level=0 (no speciality, BW=0) + DEX DM+0 (TL14 DEX=8) = 0. ✓ (source: "Gun Combat 0")
+# Remaining BW: 5 − 1(int upgrade) − 3(Electronics/Engineer/Mechanic lvl1) = 1. ✓
 
-from ceres.make.robot import Manipulator, Robot, RobotSize, WalkerLocomotion
+from types import SimpleNamespace
+
+from ceres.make.robot import GravLocomotion, Manipulator, Robot, RobotSize, WalkerLocomotion, default_suite
 from ceres.make.robot.brain import VeryAdvancedBrain
+from ceres.make.robot.options import (
+    Efficiency,
+    IncreasedArmour,
+    Medikit,
+    PrisSensor,
+    RadiationEnvironmentProtection,
+    SecondaryLocomotion,
+    StarshipEngineeringToolkit,
+    VacuumEnvironmentProtection,
+    WeaponMount,
+)
+from ceres.make.robot.skills import SkillPackage
 from ceres.make.robot.spec import RobotSpecSection
+from ceres.make.robot.text import format_traits
 
 # SIZE_5 TL14: STR = 2×5−1 = 9, DEX = ceil(14/2)+1 = 8
 # SIZE_3 TL14: STR = 2×3−1 = 5, DEX = ceil(14/2)+1 = 8
@@ -168,3 +184,187 @@ class TestStarTekManipulatorsPhase3:
         # SIZE_3 arm with dex_bonus=4: (STR 5 DEX 12)
         m = Manipulator(size=RobotSize.SIZE_3, dex_bonus=4)
         assert m.stat_label(RobotSize.SIZE_5, 14) == '(STR 5 DEX 12)'
+
+
+# ── Phase 4: fuller build ─────────────────────────────────────────────────────
+#
+# GravLocomotion primary + SecondaryLocomotion(WalkerLocomotion) → ATV + Flyer (idle)
+# IncreasedArmour(+6): TL12-14 band, SIZE_5 base_slots=16
+#   slots = max(ceil(6×0.004×16)=ceil(0.384)=1, ceil(6/3)=2, 1) = 2; cost = 2×1500 = Cr3,000
+# Efficiency: cost = 50% × Grav BCC = 0.5×20000 = Cr10,000; endurance ×2
+# Endurance: 24 (grav) × 1.5 (TL14) × 2.0 (efficiency) = 72h ✓
+# Brain: VeryAdvancedBrain TL14 int_upgrade=1 → INT 12, skill_dm = 1+1 = 2, bandwidth 5
+#   remaining BW = 5 − 1(int upgrade) − 3(Electronics/Engineer/Mechanic lvl1) = 1. ✓
+# Traits: Armour(+10), ATV, Flyer (idle), IR/UV Vision. Source ✓
+
+_startek_fuller_expected = SimpleNamespace(
+    hits=20,
+    locomotion='Grav',
+    speed='5m',
+    tl=14,
+    base_armour=4,
+    traits='Armour (+10), ATV, Flyer (idle), IR/UV Vision',
+    programming='Very Advanced (INT 12)',
+    endurance_hours=72,
+    remaining_bandwidth=1,  # 5 − 1(int upgrade) − 3(lvl1 skills) = 1. Source: +1 ✓
+)
+
+
+def build_startek_fuller() -> Robot:
+    """Source: refs/robot/99_startek.md — SIZE_5 TL14, Grav+Walker.
+
+    Athletics (Strength): pkg level=0 (BW=0) + STR DM+2 = 2 (effective STR 12 from str_bonus=3).
+    Gun Combat: pkg level=0 no speciality (BW=0) + DEX DM+0 = 0 (source: 'Gun Combat 0').
+    """
+    return Robot(
+        name='StarTek',
+        tl=14,
+        size=RobotSize.SIZE_5,
+        locomotion=GravLocomotion(),
+        brain=VeryAdvancedBrain(
+            brain_tl=14,
+            int_upgrade=1,
+            installed_skills=(
+                SkillPackage(name='Athletics (Strength)', level=0, bandwidth=0),
+                SkillPackage(name='Electronics (all)', level=1, bandwidth=1),
+                SkillPackage(name='Engineer (all)', level=1, bandwidth=1),
+                SkillPackage(name='Explosives', level=0, bandwidth=0),
+                SkillPackage(name='Gun Combat', level=0, bandwidth=0),
+                SkillPackage(name='Mechanic', level=1, bandwidth=1),
+                SkillPackage(name='Medic', level=0, bandwidth=0),
+            ),
+        ),
+        manipulators=[
+            Manipulator(str_bonus=3),
+            Manipulator(str_bonus=3),
+            Manipulator(size=RobotSize.SIZE_3, dex_bonus=4),
+        ],
+        options=[
+            IncreasedArmour(additional=6),
+            Efficiency(),
+            SecondaryLocomotion(locomotion=WalkerLocomotion()),
+            RadiationEnvironmentProtection(),
+            VacuumEnvironmentProtection(),
+            PrisSensor(),
+            Medikit(quality='enhanced'),
+            StarshipEngineeringToolkit(quality='advanced'),
+            WeaponMount(size='small'),
+            *default_suite(),
+        ],
+    )
+
+
+class TestStarTekFuller:
+    """Phase 4: fuller build — Grav+Walker, armour, protection, toolkit, weapon mount.
+
+    refs/robot/99_startek.md — SIZE_5 TL14.
+    """
+
+    def test_hits(self):
+        assert build_startek_fuller().hits == _startek_fuller_expected.hits
+
+    def test_base_armour(self):
+        assert build_startek_fuller().base_armour == _startek_fuller_expected.base_armour
+
+    def test_traits(self):
+        assert format_traits(build_startek_fuller().traits) == _startek_fuller_expected.traits
+
+    def test_programming(self):
+        assert build_startek_fuller().brain.programming_label() == _startek_fuller_expected.programming
+
+    def test_endurance(self):
+        assert int(build_startek_fuller().base_endurance) == _startek_fuller_expected.endurance_hours
+
+    def test_locomotion_label(self):
+        assert build_startek_fuller().locomotion.label() == _startek_fuller_expected.locomotion
+
+    def test_speed_label(self):
+        assert build_startek_fuller().speed_label == _startek_fuller_expected.speed
+
+    def test_remaining_bandwidth(self):
+        assert build_startek_fuller().brain.remaining_bandwidth == _startek_fuller_expected.remaining_bandwidth
+
+    def test_skills_athletics_strength_2(self):
+        # pkg 0 + STR DM+2 (effective STR 12 from str_bonus=3) = 2
+        assert 'Athletics (Strength) 2' in build_startek_fuller().skills_display
+
+    def test_skills_electronics_all_3(self):
+        assert 'Electronics (all) 3' in build_startek_fuller().skills_display
+
+    def test_skills_engineer_all_3(self):
+        assert 'Engineer (all) 3' in build_startek_fuller().skills_display
+
+    def test_skills_explosives_2(self):
+        # pkg 0 + INT DM+2 = 2
+        assert 'Explosives 2' in build_startek_fuller().skills_display
+
+    def test_skills_mechanic_3(self):
+        assert 'Mechanic 3' in build_startek_fuller().skills_display
+
+    def test_skills_medic_2(self):
+        # pkg 0 + INT DM+2 = 2
+        assert 'Medic 2' in build_startek_fuller().skills_display
+
+    def test_armour_trait_is_10(self):
+        robot = build_startek_fuller()
+        trait_names = [str(t) for t in robot.traits]
+        assert 'Armour (+10)' in trait_names
+
+    def test_atv_from_secondary_walker(self):
+        robot = build_startek_fuller()
+        trait_names = [t.name for t in robot.traits]
+        assert 'ATV' in trait_names
+
+    def test_flyer_idle_from_grav(self):
+        robot = build_startek_fuller()
+        trait_strs = [str(t) for t in robot.traits]
+        assert 'Flyer (idle)' in trait_strs
+
+    def test_pris_sensor_ir_uv_vision(self):
+        robot = build_startek_fuller()
+        trait_names = [t.name for t in robot.traits]
+        assert 'IR/UV Vision' in trait_names
+
+    def test_spec_options_has_vacuum_protection(self):
+        spec = build_startek_fuller().build_spec()
+        value = spec.rows_for_section(RobotSpecSection.OPTIONS)[0].value
+        assert 'Vacuum Environment Protection' in value
+
+    def test_spec_options_has_radiation_protection(self):
+        spec = build_startek_fuller().build_spec()
+        value = spec.rows_for_section(RobotSpecSection.OPTIONS)[0].value
+        assert 'Radiation Environment Protection' in value
+
+    def test_spec_options_has_medikit_enhanced(self):
+        spec = build_startek_fuller().build_spec()
+        value = spec.rows_for_section(RobotSpecSection.OPTIONS)[0].value
+        assert 'Medikit (enhanced)' in value
+
+    def test_spec_options_has_pris_sensor(self):
+        spec = build_startek_fuller().build_spec()
+        value = spec.rows_for_section(RobotSpecSection.OPTIONS)[0].value
+        assert 'PRIS Sensor' in value
+
+    def test_spec_options_has_starship_toolkit(self):
+        spec = build_startek_fuller().build_spec()
+        value = spec.rows_for_section(RobotSpecSection.OPTIONS)[0].value
+        assert 'Starship Engineer Toolkit (advanced)' in value
+
+    def test_spec_options_has_weapon_mount_small(self):
+        spec = build_startek_fuller().build_spec()
+        value = spec.rows_for_section(RobotSpecSection.OPTIONS)[0].value
+        assert 'Weapon Mount (small)' in value
+
+    def test_skills_gun_combat_0(self):
+        # pkg 0 (no speciality) + DEX DM+0 (TL14 DEX=8) = 0. Source: "Gun Combat 0"
+        assert 'Gun Combat 0' in build_startek_fuller().skills_display
+
+    def test_json_roundtrip(self):
+        robot = build_startek_fuller()
+        restored = Robot.model_validate_json(robot.model_dump_json())
+        assert restored.name == 'StarTek'
+        assert restored.tl == _startek_fuller_expected.tl
+        assert isinstance(restored.locomotion, GravLocomotion)
+        assert isinstance(restored.brain, VeryAdvancedBrain)
+        assert restored.brain.int_upgrade == 1
+        assert len(restored.brain.installed_skills) == 7

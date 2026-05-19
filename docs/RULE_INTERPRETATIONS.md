@@ -444,3 +444,23 @@ The *Robot Handbook* (p.27) states: "A robot designed as a walker may enhance a 
 The rule mentions only cost, not slots. The size restriction is the counterpart to that: because the legs are not resized or fully added as extra components, they carry no slot expenditure. Ceres therefore treats converting a walker's default two legs into manipulators as costing Cr100 × robot_size each with no slot effect.
 
 The eight-limbed example (p.27) — "keeping the two original manipulators, adding four manipulators and altering the two default legs" — distinguishes *adding* (slots + cost) from *altering* (cost only). Extra limbs beyond the default two legs, if any, would be modelled as entries in `Robot.manipulators` (full additional-manipulator rules apply). `Robot.legs` covers only the default two converted legs.
+
+### RIR-008 Basic (locomotion) Vehicle Skill: Type From Locomotion, Level From Agility
+
+The *Robot Handbook* (p.69) states that `Basic (locomotion)` grants `Athletics (dexterity) X, Vehicle (type) X` where X equals the robot's agility enhancement modification value, and skill 0 if no agility enhancement is installed.
+
+Ceres interprets "agility enhancement modification value" as the robot's *effective agility*: the locomotion type's base agility plus any `AgilityEnhancement` option level. This matches the published Basic Courier design (GravLocomotion base agility 1, no explicit `AgilityEnhancement` → Flyer (grav) 1, Athletics (dexterity) 1 ✓) and the Gonzales design (WheelsATV base agility 0, `AgilityEnhancement(2)` → Drive (wheel) 2, Athletics (dexterity) 2 ✓).
+
+The vehicle skill type follows the locomotion type:
+
+| Locomotion | Vehicle skill |
+| --- | --- |
+| Wheels / Wheels ATV | Drive (wheel) |
+| Tracks | Drive (tracked) |
+| Grav | Flyer (grav) |
+| Aeroplane | Flyer (wing) |
+| VTOL | Flyer (rotor) |
+| Aquatic | Seafarer (personal) |
+| Hovercraft | Drive (hovercraft) |
+| Thruster | Pilot (small craft) |
+| Walker / None | — (no vehicle skill) |
