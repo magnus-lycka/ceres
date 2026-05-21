@@ -864,7 +864,7 @@ class TestScholarTerm:
         pending = next(p for p in projection.pending_inputs if p.kind == 'skill_choice')
         assert set(pending.options) == {'Admin', 'Advocate', 'Persuade', 'Diplomat'}
 
-    def test_event_11_gains_ally_and_creates_advancement_pending(self):
+    def test_event_11_gains_ally_and_creates_scholar_event_11_pending(self):
         events = [
             *self._setup_with_scholar(),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
@@ -873,7 +873,7 @@ class TestScholarTerm:
         projection = replay(1, events)
 
         assert any(c.kind == 'ally' for c in projection.summary.connections)
-        assert any(p.kind == 'advancement' for p in projection.pending_inputs)
+        assert any(p.kind == 'scholar_event_11' for p in projection.pending_inputs)
 
     def test_mishap_4_grants_skill_choice_before_ejection(self):
         # Scholar mishap 4: skill_choice [Survival, Athletics], character still leaves career
@@ -1250,6 +1250,307 @@ class TestNormalInjury:
         projection = replay(1, events)
 
         assert projection.summary.current_career is None
+
+
+class TestScholarMishap3:
+    """Mishap 3: planetary government interference. Player chooses openly or secretly. Career continues."""
+
+    def _setup(self) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher'),
+            SurviveEvent(id=5, fulfills='4.0', roll=3),  # fail
+        ]
+
+    def test_creates_choice_pending_openly_or_secretly(self):
+        events = [*self._setup(), MishapEvent(id=6, fulfills='5.0', roll=3)]
+        projection = replay(1, events)
+
+        pending = next((p for p in projection.pending_inputs if p.kind == 'scholar_mishap_3'), None)
+        assert pending is not None
+        assert set(pending.options) == {'openly', 'secretly'}
+
+    def test_stays_in_career_before_choice(self):
+        events = [*self._setup(), MishapEvent(id=6, fulfills='5.0', roll=3)]
+        projection = replay(1, events)
+
+        assert projection.summary.current_career == 'Scholar'
+
+    def test_openly_grants_space_science_and_enemy(self):
+        events = [
+            *self._setup(),
+            MishapEvent(id=6, fulfills='5.0', roll=3),
+            SkillChoiceEvent(id=7, fulfills='6.0', skill='openly'),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.skills.get('Space Science', -1) >= 1
+        assert any(c.kind == 'enemy' for c in projection.summary.connections)
+
+    def test_secretly_grants_space_science_and_decreases_soc_by_2(self):
+        events = [
+            *self._setup(),
+            MishapEvent(id=6, fulfills='5.0', roll=3),
+            SkillChoiceEvent(id=7, fulfills='6.0', skill='secretly'),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.skills.get('Space Science', -1) >= 1
+        # SOC was 5 from UCP '7869A5'
+        assert projection.summary.characteristics['SOC'] == 3
+        assert not any(c.kind == 'enemy' for c in projection.summary.connections)
+
+    def test_choice_creates_advancement_pending(self):
+        events = [
+            *self._setup(),
+            MishapEvent(id=6, fulfills='5.0', roll=3),
+            SkillChoiceEvent(id=7, fulfills='6.0', skill='openly'),
+        ]
+        projection = replay(1, events)
+
+        assert any(p.kind == 'advancement' for p in projection.pending_inputs)
+
+
+class TestScholarMishap5:
+    """Mishap 5: work sabotaged. Give up (leave) or start again (stay, lose benefit rolls)."""
+
+    def _setup(self) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher'),
+            SurviveEvent(id=5, fulfills='4.0', roll=3),  # fail
+        ]
+
+    def test_creates_give_up_or_start_again_pending(self):
+        events = [*self._setup(), MishapEvent(id=6, fulfills='5.0', roll=5)]
+        projection = replay(1, events)
+
+        pending = next((p for p in projection.pending_inputs if p.kind == 'scholar_mishap_5'), None)
+        assert pending is not None
+        assert set(pending.options) == {'give_up', 'start_again'}
+
+    def test_give_up_ends_career(self):
+        events = [
+            *self._setup(),
+            MishapEvent(id=6, fulfills='5.0', roll=5),
+            SkillChoiceEvent(id=7, fulfills='6.0', skill='give_up'),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.current_career is None
+
+    def test_give_up_increments_age_by_4(self):
+        events = [
+            *self._setup(),
+            MishapEvent(id=6, fulfills='5.0', roll=5),
+            SkillChoiceEvent(id=7, fulfills='6.0', skill='give_up'),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.age == 22
+
+    def test_start_again_stays_in_career(self):
+        events = [
+            *self._setup(),
+            MishapEvent(id=6, fulfills='5.0', roll=5),
+            SkillChoiceEvent(id=7, fulfills='6.0', skill='start_again'),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.current_career == 'Scholar'
+
+    def test_start_again_creates_advancement_pending(self):
+        events = [
+            *self._setup(),
+            MishapEvent(id=6, fulfills='5.0', roll=5),
+            SkillChoiceEvent(id=7, fulfills='6.0', skill='start_again'),
+        ]
+        projection = replay(1, events)
+
+        assert any(p.kind == 'advancement' for p in projection.pending_inputs)
+
+
+class TestScholarEvent3:
+    """Event 3: research against conscience. Accept (2 Sciences, D3 Enemies) or Decline (nothing)."""
+
+    def _setup(self) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher'),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=3),
+        ]
+
+    def test_creates_accept_decline_pending(self):
+        projection = replay(1, self._setup())
+
+        pending = next((p for p in projection.pending_inputs if p.kind == 'scholar_event_3'), None)
+        assert pending is not None
+        assert set(pending.options) == {'accept', 'decline'}
+
+    def test_decline_creates_advancement_pending(self):
+        events = [*self._setup(), SkillChoiceEvent(id=7, fulfills='6.0', skill='decline')]
+        projection = replay(1, events)
+
+        assert any(p.kind == 'advancement' for p in projection.pending_inputs)
+
+    def test_accept_creates_connections_roll_pending_for_d3_enemies(self):
+        events = [*self._setup(), SkillChoiceEvent(id=7, fulfills='6.0', skill='accept')]
+        projection = replay(1, events)
+
+        conn = next((p for p in projection.pending_inputs if p.kind == 'connections_roll'), None)
+        assert conn is not None
+        assert conn.options == ['1', '2', '3']
+
+    def test_accept_creates_two_science_choice_pendings(self):
+        events = [*self._setup(), SkillChoiceEvent(id=7, fulfills='6.0', skill='accept')]
+        projection = replay(1, events)
+
+        sciences = [p for p in projection.pending_inputs if p.kind == 'scholar_event_3_science']
+        assert len(sciences) == 2
+
+    def test_accept_science_choice_options_contain_sciences(self):
+        events = [*self._setup(), SkillChoiceEvent(id=7, fulfills='6.0', skill='accept')]
+        projection = replay(1, events)
+
+        pending = next(p for p in projection.pending_inputs if p.kind == 'scholar_event_3_science')
+        assert 'Space Science' in pending.options
+        assert 'Life Science' in pending.options
+
+    def test_accept_resolving_science_choices_grants_skills(self):
+        events = [
+            *self._setup(),
+            SkillChoiceEvent(id=7, fulfills='6.0', skill='accept'),
+            SkillChoiceEvent(id=8, fulfills='7.1', skill='Space Science'),
+            SkillChoiceEvent(id=9, fulfills='7.2', skill='Life Science'),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.skills.get('Space Science', -1) >= 1
+        assert projection.summary.skills.get('Life Science', -1) >= 1
+
+    def test_accept_creates_advancement_pending(self):
+        events = [*self._setup(), SkillChoiceEvent(id=7, fulfills='6.0', skill='accept')]
+        projection = replay(1, events)
+
+        assert any(p.kind == 'advancement' for p in projection.pending_inputs)
+
+
+class TestScholarEvent8:
+    """Event 8: opportunity to cheat. Refuse (nothing) or Accept (Deception/Admin 8+)."""
+
+    def _setup(self) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher'),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=8),
+        ]
+
+    def test_creates_accept_refuse_pending(self):
+        projection = replay(1, self._setup())
+
+        pending = next((p for p in projection.pending_inputs if p.kind == 'scholar_event_8'), None)
+        assert pending is not None
+        assert set(pending.options) == {'accept', 'refuse'}
+
+    def test_refuse_creates_advancement_pending(self):
+        events = [*self._setup(), SkillChoiceEvent(id=7, fulfills='6.0', skill='refuse')]
+        projection = replay(1, events)
+
+        assert any(p.kind == 'advancement' for p in projection.pending_inputs)
+
+    def test_accept_creates_skill_roll_pending_with_deception_admin(self):
+        events = [*self._setup(), SkillChoiceEvent(id=7, fulfills='6.0', skill='accept')]
+        projection = replay(1, events)
+
+        pending = next((p for p in projection.pending_inputs if p.kind == 'scholar_event_8_roll'), None)
+        assert pending is not None
+        assert set(pending.options) == {'Deception', 'Admin'}
+
+    def test_accept_success_gains_enemy(self):
+        events = [
+            *self._setup(),
+            SkillChoiceEvent(id=7, fulfills='6.0', skill='accept'),
+            SkillRollEvent(id=8, fulfills='7.0', context='scholar_event_8_roll', skill='Deception', modified_roll=9),
+        ]
+        projection = replay(1, events)
+
+        assert any(c.kind == 'enemy' for c in projection.summary.connections)
+
+    def test_accept_success_creates_skill_choice_pending(self):
+        events = [
+            *self._setup(),
+            SkillChoiceEvent(id=7, fulfills='6.0', skill='accept'),
+            SkillRollEvent(id=8, fulfills='7.0', context='scholar_event_8_roll', skill='Deception', modified_roll=9),
+        ]
+        projection = replay(1, events)
+
+        assert any(p.kind == 'skill_choice' for p in projection.pending_inputs)
+
+    def test_accept_failure_gains_enemy(self):
+        events = [
+            *self._setup(),
+            SkillChoiceEvent(id=7, fulfills='6.0', skill='accept'),
+            SkillRollEvent(id=8, fulfills='7.0', context='scholar_event_8_roll', skill='Deception', modified_roll=5),
+        ]
+        projection = replay(1, events)
+
+        assert any(c.kind == 'enemy' for c in projection.summary.connections)
+
+    def test_accept_failure_creates_advancement_pending(self):
+        events = [
+            *self._setup(),
+            SkillChoiceEvent(id=7, fulfills='6.0', skill='accept'),
+            SkillRollEvent(id=8, fulfills='7.0', context='scholar_event_8_roll', skill='Deception', modified_roll=5),
+        ]
+        projection = replay(1, events)
+
+        assert any(p.kind == 'advancement' for p in projection.pending_inputs)
+
+
+class TestScholarEvent11:
+    """Event 11: brilliant mentor (Ally already handled). Space Science +1 OR DM+4 to advancement."""
+
+    def _setup(self) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher'),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=11),
+        ]
+
+    def test_gains_ally_unconditionally(self):
+        projection = replay(1, self._setup())
+
+        assert any(c.kind == 'ally' for c in projection.summary.connections)
+
+    def test_creates_scholar_event_11_pending(self):
+        projection = replay(1, self._setup())
+
+        pending = next((p for p in projection.pending_inputs if p.kind == 'scholar_event_11'), None)
+        assert pending is not None
+        assert set(pending.options) == {'Space Science', 'advancement_dm_4'}
+
+    def test_choose_space_science_grants_space_science_1(self):
+        events = [*self._setup(), SkillChoiceEvent(id=7, fulfills='6.0', skill='Space Science')]
+        projection = replay(1, events)
+
+        assert projection.summary.skills.get('Space Science', -1) >= 1
+
+    def test_choose_advancement_dm_adds_scheduled_effect(self):
+        events = [*self._setup(), SkillChoiceEvent(id=7, fulfills='6.0', skill='advancement_dm_4')]
+        projection = replay(1, events)
+
+        adv_dm = next((se for se in projection.scheduled_effects if se.trigger == 'advancement'), None)
+        assert adv_dm is not None
+        assert adv_dm.effect.get('amount') == 4
+
+    def test_both_choices_create_advancement_pending(self):
+        for choice in ['Space Science', 'advancement_dm_4']:
+            events = [*self._setup(), SkillChoiceEvent(id=7, fulfills='6.0', skill=choice)]
+            projection = replay(1, events)
+            assert any(p.kind == 'advancement' for p in projection.pending_inputs)
 
 
 class TestSevereInjury:

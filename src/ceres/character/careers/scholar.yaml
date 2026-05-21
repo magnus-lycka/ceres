@@ -82,16 +82,18 @@ mishaps:
       - {type: gain_rival}
   3:
     text: The planetary government interferes with your research for political or religious reasons.
+    stay_in_career: true
     effects:
-      - {type: note, text: "Continue openly: Science +1 and Enemy. Continue secretly: Science +1 and SOC -2. Does not cause you to leave."}
+      - {type: scholar_mishap_3_choice}
   4:
     text: An expedition or voyage goes wrong, leaving you stranded in the wilderness.
     effects:
       - {type: skill_choice, options: [Survival, Athletics], level: 1}
   5:
     text: Your work is sabotaged by unknown parties.
+    stay_in_career: true
     effects:
-      - {type: note, text: "Give up (keep this term's benefit roll, leave career) or start again (lose all benefit rolls, stay in career)."}
+      - {type: scholar_mishap_5_choice}
   6:
     text: A rival researcher blackens your name or steals your research. Gain a Rival but you do not have to leave this career.
     stay_in_career: true
@@ -106,7 +108,7 @@ events:
   3:
     text: You are called upon to perform research that goes against your conscience.
     effects:
-      - {type: note, text: "Accept: extra Benefit roll + 2 Science specialties + D3 Enemies. Decline: nothing."}
+      - {type: scholar_event_3}
   4:
     text: You are assigned to work on a secret project for a patron or organisation.
     effects:
@@ -126,7 +128,7 @@ events:
   8:
     text: You have the opportunity to cheat in some fashion.
     effects:
-      - {type: note, text: "Refuse: nothing. Accept and roll Deception/Admin 8+: DM+2 benefit + skill +1, but Enemy. Fail: Enemy + lose benefit roll."}
+      - {type: scholar_event_8}
   9:
     text: You make a breakthrough in your field.
     effects:
@@ -138,8 +140,8 @@ events:
   11:
     text: You work for an eccentric but brilliant mentor, who becomes an Ally.
     effects:
-      - {type: note, text: "Science +1 or DM+4 to next advancement roll."}
       - {type: gain_ally}
+      - {type: scholar_event_11}
   12:
     text: Your work leads to a considerable breakthrough. You are automatically promoted.
     effects:

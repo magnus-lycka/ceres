@@ -234,6 +234,8 @@ class Ship(ShipBase):
         base = float(self.displacement)
         if self.craft is not None:
             base += sum(c.performance_displacement_contribution for c in self.craft.docking_clamps)
+        if self.cargo is not None:
+            base += self.cargo.performance_displacement_contribution
         return base
 
     def remaining_usable_tonnage(self) -> float:

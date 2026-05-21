@@ -3,7 +3,7 @@ import pytest
 from ceres.make.ship import hull, ship
 from ceres.make.ship.base import ShipBase
 from ceres.make.ship.crafts import CraftSection, DockingClamp, SpaceCraft
-from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive2, PowerSection, RDrive16
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive2, MDrive2, PowerSection, RDrive16
 from ceres.make.ship.spec import SpecSection
 from ceres.make.ship.storage import (
     CargoAirlock,
@@ -12,6 +12,7 @@ from ceres.make.ship.storage import (
     CargoNet,
     CargoScoop,
     CargoSection,
+    ExternalCargoMount,
     FuelCargoContainer,
     FuelProcessor,
     FuelScoops,
@@ -219,6 +220,71 @@ def test_cargo_net_appears_in_ship_spec():
     row = my_ship.build_spec().row('Cargo Net', section=SpecSection.CARGO)
     assert row.tons == pytest.approx(5.0)
     assert row.cost == pytest.approx(1_000_000.0)
+
+
+def test_external_cargo_mount_values_and_notes():
+    mount = ExternalCargoMount(capacity=40)
+
+    assert mount.tons == pytest.approx(0.0)
+    assert mount.cost == pytest.approx(40_000.0)
+    assert mount.power == pytest.approx(0.0)
+    assert mount.performance_displacement_contribution == pytest.approx(40.0)
+    assert mount.notes.infos == ['Ship is effectively unstreamlined while external cargo is mounted']
+
+
+def test_external_cargo_mount_appears_in_ship_spec():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        cargo=CargoSection(external_cargo_mounts=[ExternalCargoMount(capacity=40)]),
+    )
+
+    row = my_ship.build_spec().row('External Cargo Mount (40 tons)', section=SpecSection.CARGO)
+    assert row.cost == pytest.approx(40_000.0)
+
+
+def test_external_cargo_mount_rejects_streamlined_hulls():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        cargo=CargoSection(external_cargo_mounts=[ExternalCargoMount(capacity=40)]),
+    )
+
+    assert my_ship.cargo is not None
+    mount = my_ship.cargo.external_cargo_mounts[0]
+    assert 'External cargo mount cannot be installed on streamlined hulls' in mount.notes.errors
+
+
+def test_external_cargo_mount_rejects_dispersed_structure_hulls():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.dispersed_structure),
+        cargo=CargoSection(external_cargo_mounts=[ExternalCargoMount(capacity=40)]),
+    )
+
+    assert my_ship.cargo is not None
+    mount = my_ship.cargo.external_cargo_mounts[0]
+    assert 'External cargo mount cannot be installed on dispersed structure hulls' in mount.notes.errors
+
+
+def test_external_cargo_mount_contributes_to_performance_displacement():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        drives=DriveSection(m_drive=MDrive2()),
+        cargo=CargoSection(external_cargo_mounts=[ExternalCargoMount(capacity=40)]),
+    )
+
+    assert my_ship.performance_displacement == pytest.approx(440.0)
+    assert my_ship.drives is not None
+    assert my_ship.drives.m_drive is not None
+    assert my_ship.drives.m_drive.build_item() == 'M-Drive 2 (440t)'
+    assert my_ship.drives.m_drive.tons == pytest.approx(8.8)
+    assert my_ship.drives.m_drive.power == pytest.approx(88.0)
 
 
 def test_cargo_hold_display_label_appears_in_ship_spec():

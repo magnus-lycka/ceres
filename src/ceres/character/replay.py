@@ -60,6 +60,9 @@ BACKGROUND_SKILLS: frozenset[str] = frozenset(
 )
 
 
+_SCHOLAR_SCIENCES = sorted(['Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science'])
+
+
 class ReplayError(Exception):
     pass
 
@@ -304,7 +307,11 @@ def _apply_mishap(projection: CharacterProjection, event: MishapEvent) -> None:
                     )
                     pending_idx += 1
             else:
-                _apply_simple_effect(projection, effect, source=mishap.text, source_event_id=event.id)
+                handler = get_effect_handler(career.name, effect.type)
+                if handler:
+                    pending_idx = handler(projection, effect, event.id, pending_idx)
+                else:
+                    _apply_simple_effect(projection, effect, source=mishap.text, source_event_id=event.id)
     stay = event.stay_in_career or (mishap is not None and mishap.stay_in_career)
     if stay:
         projection.pending_inputs.append(_advancement_pending(projection, career, event.id, pending_idx))
@@ -393,7 +400,7 @@ def _apply_skill_choice(
             career = _current_career(projection)
             assignment_name = projection.summary.current_assignment or ''
             projection.pending_inputs.append(_survive_pending(projection, career, assignment_name, event.id))
-    elif fulfilled_kind == 'scout_event_11':
+    elif fulfilled_kind in ('scout_event_11', 'scholar_event_11'):
         if event.skill == 'advancement_dm_4':
             projection.scheduled_effects.append(
                 ScheduledEffect(trigger='advancement', source_event_id=event.id, effect={'type': 'dm', 'amount': 4})
@@ -403,6 +410,64 @@ def _apply_skill_choice(
         if projection.summary.current_career is not None:
             career = _current_career(projection)
             projection.pending_inputs.append(_advancement_pending(projection, career, event.id))
+    elif fulfilled_kind == 'scholar_event_3':
+        if event.skill == 'accept':
+            projection.pending_inputs.append(
+                PendingInput(
+                    id=f'{event.id}.0',
+                    kind='connections_roll',
+                    instruction='Roll D3 for number of Enemies gained',
+                    options=['1', '2', '3'],
+                )
+            )
+            for i, label in enumerate(['first', 'second'], start=1):
+                projection.pending_inputs.append(
+                    PendingInput(
+                        id=f'{event.id}.{i}',
+                        kind='scholar_event_3_science',
+                        instruction=f'Choose {label} Science specialty to gain at level 1',
+                        options=_SCHOLAR_SCIENCES,
+                    )
+                )
+            if projection.summary.current_career is not None:
+                career = _current_career(projection)
+                projection.pending_inputs.append(_advancement_pending(projection, career, event.id, 3))
+        else:
+            if projection.summary.current_career is not None:
+                career = _current_career(projection)
+                projection.pending_inputs.append(_advancement_pending(projection, career, event.id))
+    elif fulfilled_kind == 'scholar_event_3_science':
+        _grant_skill(projection, event.skill, 1)
+        # advancement was created when 'accept' was chosen
+    elif fulfilled_kind == 'scholar_event_8':
+        if event.skill == 'refuse':
+            if projection.summary.current_career is not None:
+                career = _current_career(projection)
+                projection.pending_inputs.append(_advancement_pending(projection, career, event.id))
+        else:
+            projection.pending_inputs.append(
+                PendingInput(
+                    id=f'{event.id}.0',
+                    kind='scholar_event_8_roll',
+                    instruction='Roll Deception 8+ or Admin 8+ to cheat successfully',
+                    options=['Deception', 'Admin'],
+                )
+            )
+    elif fulfilled_kind == 'scholar_mishap_3':
+        _grant_skill(projection, 'Space Science', 1)
+        if event.skill == 'openly':
+            projection.summary.connections.append(Connection(kind='enemy', source='Planetary government interference'))
+        else:
+            soc = projection.summary.characteristics.get('SOC', 0)
+            projection.summary.characteristics['SOC'] = max(0, soc - 2)
+        # advancement was already created by _apply_mishap (stay_in_career=True)
+    elif fulfilled_kind == 'scholar_mishap_5':
+        if event.skill == 'give_up':
+            projection.pending_inputs = [p for p in projection.pending_inputs if p.kind != 'advancement']
+            projection.summary.current_career = None
+            projection.summary.current_assignment = None
+            projection.summary.age += 4
+        # 'start_again': advancement is already there from _apply_mishap, career stays
     else:
         _grant_skill(projection, event.skill, 1)
         if projection.summary.current_career is not None:

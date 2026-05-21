@@ -319,6 +319,45 @@ class CargoNet(_ZeroPowerStoragePart):
         return notes
 
 
+class ExternalCargoMount(_ZeroPowerStoragePart):
+    description: Literal['External Cargo Mount'] = 'External Cargo Mount'
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    capacity: float
+
+    @property
+    def tons(self) -> float:
+        return 0.0
+
+    @property
+    def cost(self) -> float:
+        return self.capacity * 1_000.0
+
+    @property
+    def performance_displacement_contribution(self) -> float:
+        return self.capacity
+
+    def item_description(self) -> str:
+        return f'External Cargo Mount ({self.capacity:g} tons)'
+
+    def bind(self, assembly) -> None:
+        super().bind(assembly)
+        from .hull import Streamlined
+
+        hull = self.assembly.hull
+        if hull is None:
+            return
+        if hull.configuration.streamlined == Streamlined.YES:
+            self.error('External cargo mount cannot be installed on streamlined hulls')
+        if hull.configuration.description == 'Dispersed Structure Hull':
+            self.error('External cargo mount cannot be installed on dispersed structure hulls')
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('Ship is effectively unstreamlined while external cargo is mounted')
+        return notes
+
+
 class CargoHold(CeresModel):
     description: Literal['Cargo Hold'] = 'Cargo Hold'
     tons: float | None = None
@@ -393,6 +432,7 @@ class CargoSection(CeresModel):
     loading_belts: list[LoadingBelt] = Field(default_factory=list)
     cargo_scoops: list[CargoScoop] = Field(default_factory=list)
     cargo_nets: list[CargoNet] = Field(default_factory=list)
+    external_cargo_mounts: list[ExternalCargoMount] = Field(default_factory=list)
 
     def _all_parts(self) -> list[ShipPart]:
         return [
@@ -401,7 +441,12 @@ class CargoSection(CeresModel):
             *self.loading_belts,
             *self.cargo_scoops,
             *self.cargo_nets,
+            *self.external_cargo_mounts,
         ]
+
+    @property
+    def performance_displacement_contribution(self) -> float:
+        return sum(mount.performance_displacement_contribution for mount in self.external_cargo_mounts)
 
     @staticmethod
     def maximum_stores_tons(ship) -> float | None:
