@@ -205,7 +205,8 @@ def test_cli_sets_and_shows_current_ucp(memory_app):
     shown = runner.invoke(memory_app, ['create', 'ucp'])
 
     assert changed.exit_code == 0
-    assert changed.stdout.splitlines() == ['STR 7 DEX 8 END 6 INT 9 EDU 10 SOC 5']
+    assert changed.stdout.splitlines()[0] == 'STR 7 DEX 8 END 6 INT 9 EDU 10 SOC 5'
+    assert 'background_skills' in changed.stdout
     assert shown.exit_code == 0
     assert shown.stdout.splitlines() == ['STR 7 DEX 8 END 6 INT 9 EDU 10 SOC 5']
 
@@ -219,7 +220,8 @@ def test_cli_sets_current_ucp_from_short_form(memory_app):
     listed = runner.invoke(memory_app, ['create', 'list'])
 
     assert changed.exit_code == 0
-    assert changed.stdout.splitlines() == ['STR 7 DEX 7 END 8 INT 8 EDU 11 SOC 4']
+    assert changed.stdout.splitlines()[0] == 'STR 7 DEX 7 END 8 INT 8 EDU 11 SOC 4'
+    assert 'background_skills' in changed.stdout
     assert shown.exit_code == 0
     assert shown.stdout.splitlines() == ['STR 7 DEX 7 END 8 INT 8 EDU 11 SOC 4']
     assert listed.exit_code == 0

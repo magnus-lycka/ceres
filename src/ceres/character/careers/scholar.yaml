@@ -1,0 +1,145 @@
+name: Scholar
+source: Explorer
+
+qualification:
+  characteristic: EDU
+  target: 6
+
+assignments:
+  - name: Field Researcher
+    survival: {characteristic: END, target: 6}
+    advancement: {characteristic: INT, target: 6}
+  - name: Scientist
+    survival: {characteristic: EDU, target: 4}
+    advancement: {characteristic: INT, target: 8}
+  - name: Physician
+    survival: {characteristic: EDU, target: 4}
+    advancement: {characteristic: EDU, target: 8}
+
+skill_tables:
+  personal_development:
+    1: {characteristic: INT}
+    2: {characteristic: EDU}
+    3: {characteristic: SOC}
+    4: {characteristic: DEX}
+    5: {characteristic: END}
+    6: {skill: Language}
+  service_skills:
+    1: {skill: Drive, choices: [Drive, Flyer]}
+    2: {skill: Electronics}
+    3: {skill: Diplomat}
+    4: {skill: Medic}
+    5: {skill: Investigate}
+    6: {skill: Space Science}
+  advanced_education:
+    min_edu: 10
+    1: {skill: Creative Art}
+    2: {skill: Advocate}
+    3: {skill: Electronics}
+    4: {skill: Language}
+    5: {skill: Engineer}
+    6: {skill: Space Science}
+  field researcher:
+    1: {skill: Electronics}
+    2: {skill: Vacc Suit}
+    3: {skill: Navigation}
+    4: {skill: Survival}
+    5: {skill: Investigate}
+    6: {skill: Space Science}
+  scientist:
+    1: {skill: Admin}
+    2: {skill: Engineer}
+    3: {skill: Space Science}
+    4: {skill: Space Science}
+    5: {skill: Electronics}
+    6: {skill: Space Science}
+  physician:
+    1: {skill: Medic}
+    2: {skill: Electronics}
+    3: {skill: Investigate}
+    4: {skill: Medic}
+    5: {skill: Persuade}
+    6: {skill: Space Science}
+
+ranks:
+  0: {}
+  1: {bonus: {skill: Space Science, level: 1}}
+  2: {bonus: {skill: Electronics, level: 1}}
+  3: {bonus: {skill: Investigate, level: 1}}
+  4: {}
+  5: {bonus: {skill: Space Science, level: 2}}
+  6: {}
+
+mishaps:
+  1:
+    text: Severely injured.
+    effects:
+      - {type: injury, severity: severe}
+  2:
+    text: A disaster leaves several injured and others blame you, forcing you to leave your career. Gain a Rival.
+    effects:
+      - {type: injury, severity: from_table}
+      - {type: gain_rival}
+  3:
+    text: The planetary government interferes with your research for political or religious reasons.
+    effects:
+      - {type: note, text: "Continue openly: Science +1 and Enemy. Continue secretly: Science +1 and SOC -2. Does not cause you to leave."}
+  4:
+    text: An expedition or voyage goes wrong, leaving you stranded in the wilderness.
+    effects:
+      - {type: skill_choice, options: [Survival, Athletics], level: 1}
+  5:
+    text: Your work is sabotaged by unknown parties.
+    effects:
+      - {type: note, text: "Give up (keep this term's benefit roll, leave career) or start again (lose all benefit rolls, stay in career)."}
+  6:
+    text: A rival researcher blackens your name or steals your research. Gain a Rival but you do not have to leave this career.
+    effects:
+      - {type: note, text: "Gain a Rival. Does not cause you to leave."}
+
+events:
+  2:
+    text: "Disaster! Roll on the Mishap table but you are not ejected from this career."
+    effects:
+      - {type: roll_mishap, leave: false}
+  3:
+    text: You are called upon to perform research that goes against your conscience.
+    effects:
+      - {type: note, text: "Accept: extra Benefit roll + 2 Science specialties + D3 Enemies. Decline: nothing."}
+  4:
+    text: You are assigned to work on a secret project for a patron or organisation.
+    effects:
+      - {type: skill_choice, options: [Medic, Space Science, Engineer, Electronics, Investigate], level: 1}
+  5:
+    text: You win a prestigious prize for your work.
+    effects:
+      - {type: benefit_dm, amount: 1}
+  6:
+    text: You are given advanced training in a specialist field.
+    effects:
+      - {type: note, text: "Roll EDU 8+ to gain any one skill of your choice at level 1."}
+  7:
+    text: Life Event.
+    effects:
+      - {type: life_event}
+  8:
+    text: You have the opportunity to cheat in some fashion.
+    effects:
+      - {type: note, text: "Refuse: nothing. Accept and roll Deception/Admin 8+: DM+2 benefit + skill +1, but Enemy. Fail: Enemy + lose benefit roll."}
+  9:
+    text: You make a breakthrough in your field.
+    effects:
+      - {type: advancement_dm, amount: 2}
+  10:
+    text: You become entangled in a bureaucratic or legal morass.
+    effects:
+      - {type: skill_choice, options: [Admin, Advocate, Persuade, Diplomat], level: 1}
+  11:
+    text: You work for an eccentric but brilliant mentor, who becomes an Ally.
+    effects:
+      - {type: note, text: "Science +1 or DM+4 to next advancement roll."}
+      - {type: gain_ally}
+  12:
+    text: Your work leads to a considerable breakthrough. You are automatically promoted.
+    effects:
+      - {type: auto_advance}

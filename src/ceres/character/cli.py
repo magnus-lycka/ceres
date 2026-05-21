@@ -1,4 +1,5 @@
 import atexit
+import json
 from pathlib import Path
 from typing import Annotated
 
@@ -7,6 +8,7 @@ import typer
 from ceres import settings
 from ceres.character.characteristics import UCP_STATS
 from ceres.character.projection import CharacterProjection
+from ceres.character.replay import ReplayError
 from ceres.character.skills import SkillInfo, skill_list
 from ceres.character.sophonts import SOPHONTS
 from ceres.character.store import CharacterRow, SqliteCharacterBackend
@@ -62,6 +64,36 @@ def render_skill(skill: SkillInfo) -> str:
     if skill.specialities:
         return f'{skill.type}: {", ".join(skill.specialities)}'
     return skill.type
+
+
+def render_projection_summary(projection: CharacterProjection) -> list[str]:
+    s = projection.summary
+    lines = []
+    if s.name:
+        career_part = ''
+        if s.current_career:
+            career_part = f'  |  {s.current_career}'
+            if s.current_assignment:
+                career_part += f' / {s.current_assignment}'
+            if s.rank is not None:
+                career_part += f'  rank {s.rank}'
+            if s.term_count:
+                career_part += f'  term {s.term_count}'
+        lines.append(f'{s.name}  ({s.species or "?"}){career_part}')
+    if s.characteristics:
+        ucp_str = ''.join(f'{s.characteristics.get(stat, 0):X}' for stat in UCP_STATS)
+        char_str = '  '.join(f'{stat} {s.characteristics.get(stat, 0)}' for stat in UCP_STATS)
+        lines.append(f'UCP  {ucp_str}    {char_str}')
+    if s.skills:
+        skill_str = '  '.join(f'{k} {v}' for k, v in sorted(s.skills.items()))
+        lines.append(f'Skills  {skill_str}')
+    if s.connections:
+        conn_str = '  '.join(f'{c.kind}({c.source or "?"})' for c in s.connections)
+        lines.append(f'Connections  {conn_str}')
+    if s.problems:
+        for prob in s.problems:
+            lines.append(f'Problem  {prob}')
+    return lines
 
 
 def render_pending_inputs(projection: CharacterProjection) -> list[str]:
@@ -216,6 +248,54 @@ def build_app(backend: SqliteCharacterBackend | None = None, current_path: Path 
             typer.echo('No current character creation', err=True)
             raise typer.Exit(1)
         typer.echo(f'Renamed character creation: {character["name"]}')
+
+    @create_app.command('status')
+    def status_command(character_id: Annotated[int | None, typer.Argument()] = None) -> None:
+        if character_id is None:
+            character_id = read_current_id(current_path)
+            if character_id is None:
+                typer.echo('No current character creation', err=True)
+                raise typer.Exit(1)
+        projection = backend.get_projection(character_id)
+        if projection is None:
+            typer.echo(f'Unknown character creation id: {character_id}', err=True)
+            raise typer.Exit(1)
+        for line in render_projection_summary(projection):
+            typer.echo(line)
+        for line in render_pending_inputs(projection):
+            typer.echo(line)
+
+    @create_app.command('event')
+    def event_command(event_json: str) -> None:
+        current_id = read_current_id(current_path)
+        if current_id is None:
+            typer.echo('No current character creation', err=True)
+            raise typer.Exit(1)
+        try:
+            raw = json.loads(event_json)
+        except json.JSONDecodeError as exc:
+            typer.echo(f'Invalid JSON: {exc}', err=True)
+            raise typer.Exit(1) from exc
+        from pydantic import TypeAdapter, ValidationError
+
+        from ceres.character.events import AnyEvent
+        adapter: TypeAdapter[AnyEvent] = TypeAdapter(AnyEvent)
+        try:
+            event = adapter.validate_python(raw)
+        except ValidationError as exc:
+            typer.echo(f'Invalid event: {exc}', err=True)
+            raise typer.Exit(1) from exc
+        try:
+            backend.append_event(current_id, event)
+        except ReplayError as exc:
+            typer.echo(f'Replay error: {exc}', err=True)
+            raise typer.Exit(1) from exc
+        projection = backend.get_projection(current_id)
+        if projection:
+            for line in render_projection_summary(projection):
+                typer.echo(line)
+            for line in render_pending_inputs(projection):
+                typer.echo(line)
 
     return app
 

@@ -1,0 +1,149 @@
+name: Scout
+source: Explorer
+
+qualification:
+  characteristic: INT
+  target: 5
+
+assignments:
+  - name: Courier
+    survival: {characteristic: END, target: 5}
+    advancement: {characteristic: EDU, target: 9}
+  - name: Surveyor
+    survival: {characteristic: END, target: 6}
+    advancement: {characteristic: INT, target: 8}
+  - name: Explorer
+    survival: {characteristic: END, target: 7}
+    advancement: {characteristic: EDU, target: 7}
+
+skill_tables:
+  personal_development:
+    1: {characteristic: STR}
+    2: {characteristic: DEX}
+    3: {characteristic: END}
+    4: {characteristic: INT}
+    5: {characteristic: EDU}
+    6: {skill: Jack-of-All-Trades}
+  service_skills:
+    1: {skill: Pilot}
+    2: {skill: Survival}
+    3: {skill: Mechanic}
+    4: {skill: Astrogation}
+    5: {skill: Vacc Suit}
+    6: {skill: Gun Combat}
+  advanced_education:
+    min_edu: 8
+    1: {skill: Medic}
+    2: {skill: Language}
+    3: {skill: Seafarer}
+    4: {skill: Explosives}
+    5: {skill: Space Science}
+    6: {skill: Jack-of-All-Trades}
+  courier:
+    1: {skill: Electronics}
+    2: {skill: Persuade}
+    3: {skill: Pilot}
+    4: {skill: Engineer}
+    5: {skill: Athletics}
+    6: {skill: Astrogation}
+  surveyor:
+    1: {skill: Electronics}
+    2: {skill: Pilot}
+    3: {skill: Pilot}
+    4: {skill: Space Science}
+    5: {skill: Diplomat}
+    6: {skill: Streetwise}
+  explorer:
+    1: {skill: Electronics}
+    2: {skill: Flyer}
+    3: {skill: Engineer}
+    4: {skill: Navigation}
+    5: {skill: Stealth}
+    6: {skill: Recon}
+
+ranks:
+  0: {}
+  1: {title: Scout, bonus: {skill: Vacc Suit, level: 1}}
+  2: {}
+  3: {title: Senior Scout, bonus: {skill: Pilot, level: 1}}
+  4: {}
+  5: {}
+  6: {}
+
+mishaps:
+  1:
+    text: Severely injured.
+    effects:
+      - {type: injury, severity: severe}
+  2:
+    text: Psychologically damaged by your time in the scouts. Reduce your INT or SOC by 1.
+    effects:
+      - {type: decrease_characteristic_choice, options: [INT, SOC], amount: 1}
+  3:
+    text: Your ship is damaged and you have to hitch-hike your way back across the stars. Gain 1D Contacts and D3 Enemies.
+    effects:
+      - {type: gain_connections_rolled, connection_type: contact, dice: 1d6}
+      - {type: gain_connections_rolled, connection_type: enemy, dice: d3}
+  4:
+    text: You inadvertently cause a conflict between the Imperium and a minor world or species. Gain a Rival and Diplomat 1.
+    effects:
+      - {type: gain_skill, skill: Diplomat, level: 1}
+      - {type: gain_rival}
+  5:
+    text: You have no idea what happened to you — they found your ship drifting on the fringes of friendly space.
+    effects: []
+  6:
+    text: Injured.
+    effects:
+      - {type: injury, severity: normal}
+
+events:
+  2:
+    text: "Disaster! Roll on the Mishap table but you are not ejected from this career."
+    effects:
+      - {type: roll_mishap, leave: false}
+  3:
+    text: |
+      Your ship is ambushed by enemy vessels. Either run and roll Pilot 8+ to escape, or treat with them
+      and roll Persuade 10+ to bargain with them. If you fail the check, then your ship is destroyed and
+      you may not re-enlist in the Scouts at the end of this term. If you succeed, you survive and gain
+      Electronics (sensors) 1. Either way, gain an Enemy.
+    effects:
+      - {type: scout_event_3}
+      - {type: gain_enemy}
+  4:
+    text: You survey an alien world.
+    effects:
+      - {type: skill_choice, options: [Animals, Survival, Recon, Space Science], level: 1}
+  5:
+    text: You perform an exemplary service for the scouts.
+    effects:
+      - {type: benefit_dm, amount: 1}
+  6:
+    text: You spend several years jumping from world to world in your scout ship.
+    effects:
+      - {type: skill_choice, options: [Astrogation, Electronics, Navigation, Pilot, Mechanic], level: 1}
+  7:
+    text: Life Event.
+    effects:
+      - {type: life_event}
+  8:
+    text: When dealing with an alien species, you have an opportunity to gather extra intelligence.
+    effects:
+      - {type: scout_event_8}
+  9:
+    text: Your scout ship is one of the first on the scene to rescue the survivors of a disaster.
+    effects:
+      - {type: scout_event_9}
+  10:
+    text: You spend a great deal of time on the fringes of Charted Space.
+    effects:
+      - {type: scout_event_10}
+  11:
+    text: You serve as the courier for an important message from the Imperium.
+    effects:
+      - {type: skill_choice, options: [Diplomat], level: 1, or_dm: {advancement: 4}}
+  12:
+    text: You discover a world, item or information of worth to the Imperium. You are automatically promoted.
+    effects:
+      - {type: auto_advance}

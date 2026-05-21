@@ -1,5 +1,5 @@
 import math
-from typing import ClassVar, Literal
+from typing import Annotated, ClassVar, Literal
 
 from pydantic import ConfigDict, Field
 
@@ -243,6 +243,42 @@ class CargoCrane(CeresModel):
         return self.tons_for_space(cargo_space) * 1_000_000.0
 
 
+class _LoadingBelt(ShipPart):
+    description: Literal['Loading Belt'] = 'Loading Belt'
+    tons: ClassVar[float]
+    _replaced_loading_crew: ClassVar[int]
+
+    @property
+    def tons(self) -> float:
+        return 1.0
+
+    @property
+    def replaced_loading_crew(self) -> int:
+        return self._replaced_loading_crew
+
+    def item_description(self) -> str:
+        return f'Loading Belt (TL{self.tl})'
+
+
+class LoadingBeltTL7(_LoadingBelt):
+    loading_belt_type: Literal['LOADING_BELT_TL7'] = 'LOADING_BELT_TL7'
+    tl: Literal[7] = 7
+    cost: float = 3_000.0
+    power: float = 0.0
+    _replaced_loading_crew: ClassVar[int] = 10
+
+
+class LoadingBeltTL12(_LoadingBelt):
+    loading_belt_type: Literal['LOADING_BELT_TL12'] = 'LOADING_BELT_TL12'
+    tl: Literal[12] = 12
+    cost: float = 10_000.0
+    power: float = 1.0
+    _replaced_loading_crew: ClassVar[int] = 25
+
+
+type LoadingBelt = Annotated[LoadingBeltTL7 | LoadingBeltTL12, Field(discriminator='loading_belt_type')]
+
+
 class CargoHold(CeresModel):
     description: Literal['Cargo Hold'] = 'Cargo Hold'
     tons: float | None = None
@@ -314,9 +350,10 @@ class CargoSection(CeresModel):
     cargo_holds: list[CargoHold] = Field(default_factory=list)
     cargo_airlocks: list[CargoAirlock] = Field(default_factory=list)
     fuel_cargo_containers: list[FuelCargoContainer] = Field(default_factory=list)
+    loading_belts: list[LoadingBelt] = Field(default_factory=list)
 
     def _all_parts(self) -> list[ShipPart]:
-        return [*self.cargo_airlocks, *self.fuel_cargo_containers]
+        return [*self.cargo_airlocks, *self.fuel_cargo_containers, *self.loading_belts]
 
     @staticmethod
     def maximum_stores_tons(ship) -> float | None:

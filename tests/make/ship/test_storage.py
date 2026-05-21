@@ -15,6 +15,8 @@ from ceres.make.ship.storage import (
     FuelScoops,
     FuelSection,
     JumpFuel,
+    LoadingBeltTL7,
+    LoadingBeltTL12,
     OperationFuel,
     ReactionFuel,
 )
@@ -110,6 +112,61 @@ def test_cargo_hold_usable_tons_subtracts_crane():
     assert hold.total_tons(owner) == pytest.approx(150)
     assert hold.crane_tons(owner) == pytest.approx(3.0)
     assert hold.usable_tons(owner) == pytest.approx(147.0)
+
+
+def test_cargo_crane_appears_in_ship_spec():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        cargo=CargoSection(cargo_holds=[CargoHold(tons=150, crane=CargoCrane())]),
+    )
+
+    crane_row = my_ship.build_spec().row('Cargo Crane', section=SpecSection.CARGO)
+    assert crane_row.tons == pytest.approx(3.0)
+    assert crane_row.cost == pytest.approx(3_000_000.0)
+
+
+@pytest.mark.parametrize(
+    ('belt', 'expected_tl', 'expected_cost', 'expected_power', 'expected_replaced_crew'),
+    [
+        (LoadingBeltTL7(), 7, 3_000.0, 0.0, 10),
+        (LoadingBeltTL12(), 12, 10_000.0, 1.0, 25),
+    ],
+)
+def test_loading_belt_values(belt, expected_tl, expected_cost, expected_power, expected_replaced_crew):
+    assert belt.tl == expected_tl
+    assert belt.tons == pytest.approx(1.0)
+    assert belt.cost == pytest.approx(expected_cost)
+    assert belt.power == pytest.approx(expected_power)
+    assert belt.replaced_loading_crew == expected_replaced_crew
+
+
+def test_loading_belt_appears_in_ship_spec():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        cargo=CargoSection(loading_belts=[LoadingBeltTL12()]),
+    )
+
+    row = my_ship.build_spec().row('Loading Belt (TL12)', section=SpecSection.CARGO)
+    assert row.tons == pytest.approx(1.0)
+    assert row.cost == pytest.approx(10_000.0)
+    assert row.power == pytest.approx(-1.0)
+
+
+def test_loading_belt_requires_matching_ship_tl():
+    my_ship = ship.Ship(
+        tl=9,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        cargo=CargoSection(loading_belts=[LoadingBeltTL12()]),
+    )
+
+    assert my_ship.cargo is not None
+    loading_belt = my_ship.cargo.loading_belts[0]
+    assert 'Requires TL12, ship is TL9' in loading_belt.notes.errors
 
 
 def test_cargo_hold_display_label_appears_in_ship_spec():

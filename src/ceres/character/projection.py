@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -5,6 +7,7 @@ class PendingInput(BaseModel):
     id: str
     kind: str
     instruction: str
+    options: list[str] = Field(default_factory=list)
     blocking: bool = True
 
 
@@ -16,6 +19,11 @@ class ScheduledEffect(BaseModel):
     consume: bool = True
 
 
+class Connection(BaseModel):
+    kind: Literal['contact', 'ally', 'rival', 'enemy']
+    source: str = ''  # how/when this person entered the character's life
+
+
 class CharacterSummary(BaseModel):
     name: str | None = None
     age: int = 18
@@ -23,9 +31,10 @@ class CharacterSummary(BaseModel):
     characteristics: dict[str, int] = Field(default_factory=dict)
     current_career: str | None = None
     current_assignment: str | None = None
-    rank: str | int | None = None
+    rank: int | None = None
     term_count: int = 0
-    skills: list = Field(default_factory=list)
+    skills: dict[str, int] = Field(default_factory=dict)
+    connections: list[Connection] = Field(default_factory=list)
     problems: list[str] = Field(default_factory=list)
 
 
@@ -39,6 +48,7 @@ class CharacterProjection(BaseModel):
 __all__ = [
     'CharacterProjection',
     'CharacterSummary',
+    'Connection',
     'PendingInput',
     'ScheduledEffect',
 ]

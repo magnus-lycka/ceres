@@ -16,6 +16,7 @@ from ceres.make.ship.systems import (
     CommandBridge,
     CommercialZone,
     CommonArea,
+    GravScreen,
     HotTub,
     Laboratory,
     LibraryFacility,
@@ -59,6 +60,7 @@ def _dummy_owner_for(part) -> DummyOwner:
         (WetBar(), 0.0, 2_000.0, 0.0),
         (MedicalBay(), 4.0, 2_000_000.0, 1.0),
         (MedicalBay(autodoc=BasicAutodoc()), 4.0, 2_100_000.0, 1.0),
+        (GravScreen(), 2.0, 2_000_000.0, 4.0),
         (Airlock(size=3.0), 3.0, 300_000.0, 0.0),
         (Aerofins(), 20.0, 2_000_000.0, 0.0),
         (HotTub(users=2), 0.5, 6_000.0, 0.0),
@@ -92,6 +94,7 @@ def test_converted_system_values_are_computed_properties_not_serialized_fields(
         (Armoury, {}, 1.0, 250_000.0, 0.0),
         (WetBar, {}, 0.0, 2_000.0, 0.0),
         (MedicalBay, {}, 4.0, 2_000_000.0, 1.0),
+        (GravScreen, {}, 2.0, 2_000_000.0, 4.0),
         (Airlock, {'size': 3.0}, 3.0, 300_000.0, 0.0),
         (Aerofins, {}, 20.0, 2_000_000.0, 0.0),
         (HotTub, {'users': 2}, 0.5, 6_000.0, 0.0),
@@ -292,6 +295,18 @@ def test_command_bridge_is_separate_from_ship_control_bridge_in_spec():
     assert command_bridge_row.tons == pytest.approx(40.0)
     assert command_bridge_row.cost == pytest.approx(30_000_000.0)
     assert command_bridge_row.notes.infos == ['DM +1 to Tactics (naval) checks made within the command bridge']
+
+
+def test_grav_screen_values_scale_by_displacement():
+    grav_screen = GravScreen()
+    grav_screen.bind(DummyOwner(12, 401))
+
+    assert grav_screen.tons == pytest.approx(3.0)
+    assert grav_screen.cost == pytest.approx(3_000_000.0)
+    assert grav_screen.power == pytest.approx(6.0)
+    assert grav_screen.notes.infos == [
+        'Blocks densitometers; the presence of a grav screen is obvious to sensor operators'
+    ]
 
 
 def test_probe_drones_tons():
@@ -515,6 +530,7 @@ def test_systems_section_all_parts():
             Armoury(),
             Biosphere(tons=4.0),
             CommercialZone(tons=240.0),
+            GravScreen(),
             Workshop(),
             MedicalBay(),
             TrainingFacility(trainees=2),
@@ -525,6 +541,7 @@ def test_systems_section_all_parts():
         Armoury,
         Biosphere,
         CommercialZone,
+        GravScreen,
         Workshop,
         MedicalBay,
         TrainingFacility,

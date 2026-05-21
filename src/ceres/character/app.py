@@ -133,7 +133,7 @@ def build_app(backend: SqliteCharacterBackend | None = None) -> FastAPI:
     def update_ucp(character_id: int, patch: UcpPatch) -> UcpResponse:
         try:
             ucp = backend.patch_ucp(character_id, patch.changes)
-        except ValueError as error:
+        except (ValueError, ReplayError) as error:
             raise HTTPException(status_code=400, detail=str(error)) from error
         if ucp is None:
             raise HTTPException(status_code=404, detail=f'Unknown character creation id: {character_id}')

@@ -61,7 +61,30 @@ class NuclearDamper(_Screen):
     base_power = 20.0
 
 
-type Screen = Annotated[MesonScreen | NuclearDamper, Field(discriminator='screen_type')]
+class DeflectorScreen(_Screen):
+    screen_type: Literal['deflector_screen'] = 'deflector_screen'
+    description = 'Deflector Screen'
+    damage_reduction = 'Radiation and particle damage'
+    tl: int = 10
+    base_tons = 5.0
+    base_cost = 5_000_000.0
+    base_power = 10.0
+
+
+class EnergyShield(_Screen):
+    screen_type: Literal['energy_shield'] = 'energy_shield'
+    description = 'Energy Shield'
+    damage_reduction = 'Energy weapon damage'
+    tl: int = 14
+    base_tons = 50.0
+    base_cost = 60_000_000.0
+    base_power = 90.0
+
+
+type Screen = Annotated[
+    MesonScreen | NuclearDamper | DeflectorScreen | EnergyShield,
+    Field(discriminator='screen_type'),
+]
 
 
 class ScreensSection(CeresModel):

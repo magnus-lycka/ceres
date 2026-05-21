@@ -1,3 +1,4 @@
+from math import ceil
 from typing import Annotated, ClassVar, Literal, TypeVar
 
 from pydantic import ConfigDict, Field
@@ -133,6 +134,32 @@ class Armoury(_ZeroPowerSystemPart):
     @property
     def cost(self) -> float:
         return 250_000.0
+
+
+class GravScreen(ShipPart):
+    system_type: Literal['GRAV_SCREEN'] = 'GRAV_SCREEN'
+    description: Literal['Grav Screen'] = 'Grav Screen'
+    tl: int = 12
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('Blocks densitometers; the presence of a grav screen is obvious to sensor operators')
+        return notes
+
+    @property
+    def tons(self) -> float:
+        return float(ceil(self.assembly.displacement / 200))
+
+    @property
+    def cost(self) -> float:
+        return self.tons * 1_000_000.0
+
+    @property
+    def power(self) -> float:
+        return self.tons * 2.0
 
 
 class CommonArea(_ExplicitTonsSystemPart):
@@ -501,6 +528,7 @@ type AnyInternalSystem = Annotated[
     | LibraryFacility
     | BriefingRoom
     | CommandBridge
+    | GravScreen
     | TrainingFacility
     | UNREPSystem
     | Workshop
