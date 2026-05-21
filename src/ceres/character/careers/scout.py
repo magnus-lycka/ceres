@@ -152,6 +152,26 @@ def _resolve_scout_event_10(projection: CharacterProjection, event: SkillRollEve
         )
 
 
+# ── event 11: imperial courier ───────────────────────────────────────────────
+
+
+def _handle_scout_event_11(
+    projection: CharacterProjection,
+    effect: EventEffect,
+    event_id: int,
+    pending_idx: int,
+) -> int:
+    projection.pending_inputs.append(
+        PendingInput(
+            id=f'{event_id}.{pending_idx}',
+            kind='scout_event_11',
+            instruction='Gain Diplomat 1, or DM+4 to your next advancement roll',
+            options=['Diplomat', 'advancement_dm_4'],
+        )
+    )
+    return pending_idx + 1
+
+
 # ── handler registries ───────────────────────────────────────────────────────
 
 EFFECT_HANDLERS: dict[str, object] = {
@@ -159,6 +179,7 @@ EFFECT_HANDLERS: dict[str, object] = {
     'scout_event_8': _handle_scout_event_8,
     'scout_event_9': _handle_scout_event_9,
     'scout_event_10': _handle_scout_event_10,
+    'scout_event_11': _handle_scout_event_11,
 }
 
 SKILL_ROLL_HANDLERS: dict[str, object] = {

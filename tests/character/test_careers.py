@@ -1048,3 +1048,205 @@ class TestAdvancementDmFromScheduledEffects:
 
         adv_dms = [se for se in projection.scheduled_effects if se.trigger == 'advancement']
         assert len(adv_dms) == 0
+
+
+class TestAgeTracking:
+    """Character age starts at 18 and increases by 4 per completed term."""
+
+    def test_reenlist_false_increments_age_by_4(self):
+        events = [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=7),
+            AdvancementEvent(id=7, fulfills='6.0', roll=5),
+            ReenlistEvent(id=8, fulfills='7.0', reenlist=False),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.age == 22
+
+    def test_reenlist_true_also_increments_age_by_4(self):
+        events = [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=7),
+            AdvancementEvent(id=7, fulfills='6.0', roll=5),
+            ReenlistEvent(id=8, fulfills='7.0', reenlist=True),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.age == 22
+
+    def test_two_terms_adds_8_years(self):
+        events = [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=7),
+            AdvancementEvent(id=7, fulfills='6.0', roll=5),
+            ReenlistEvent(id=8, fulfills='7.0', reenlist=True),
+            SkillTableEvent(id=9, fulfills='8.0', table='service_skills', roll=1),
+            SurviveEvent(id=10, fulfills='9.0', roll=7),
+            TermEventEvent(id=11, fulfills='10.0', roll=7),
+            AdvancementEvent(id=12, fulfills='11.0', roll=5),
+            ReenlistEvent(id=13, fulfills='12.0', reenlist=False),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.age == 26
+
+    def test_mishap_that_ejects_increments_age_by_4(self):
+        events = [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            SurviveEvent(id=5, fulfills='4.0', roll=3),
+            MishapEvent(id=6, fulfills='5.0', roll=5),  # Scout mishap 5: no effects, career ends
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.age == 22
+
+    def test_age_starts_at_18_before_any_career(self):
+        projection = replay(1, _full_setup())
+
+        assert projection.summary.age == 18
+
+
+class TestScholarEvent6:
+    """Scholar event 6: roll EDU 8+ to gain any one skill at level 1."""
+
+    def _setup_to_event_6(self) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher'),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=6),
+        ]
+
+    def test_creates_scholar_event_6_pending(self):
+        projection = replay(1, self._setup_to_event_6())
+
+        assert any(p.kind == 'scholar_event_6' for p in projection.pending_inputs)
+
+    def test_success_creates_skill_choice_pending(self):
+        # EDU=10 (DM+1), need 8+, modified_roll=8 → success
+        events = [
+            *self._setup_to_event_6(),
+            SkillRollEvent(id=7, fulfills='6.0', context='scholar_event_6', skill='EDU', modified_roll=8),
+        ]
+        projection = replay(1, events)
+
+        assert any(p.kind == 'skill_choice' for p in projection.pending_inputs)
+
+    def test_failure_creates_advancement_pending_not_skill_choice(self):
+        # modified_roll=5 < 8 → failure
+        events = [
+            *self._setup_to_event_6(),
+            SkillRollEvent(id=7, fulfills='6.0', context='scholar_event_6', skill='EDU', modified_roll=5),
+        ]
+        projection = replay(1, events)
+
+        assert any(p.kind == 'advancement' for p in projection.pending_inputs)
+        assert not any(p.kind == 'skill_choice' for p in projection.pending_inputs)
+
+    def test_success_skill_choice_grants_skill_at_level_1(self):
+        events = [
+            *self._setup_to_event_6(),
+            SkillRollEvent(id=7, fulfills='6.0', context='scholar_event_6', skill='EDU', modified_roll=8),
+            SkillChoiceEvent(id=8, fulfills='7.0', skill='Navigation'),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.skills.get('Navigation', -1) >= 1
+
+    def test_success_skill_choice_creates_advancement_pending(self):
+        events = [
+            *self._setup_to_event_6(),
+            SkillRollEvent(id=7, fulfills='6.0', context='scholar_event_6', skill='EDU', modified_roll=8),
+            SkillChoiceEvent(id=8, fulfills='7.0', skill='Navigation'),
+        ]
+        projection = replay(1, events)
+
+        assert any(p.kind == 'advancement' for p in projection.pending_inputs)
+
+
+class TestScoutEvent11:
+    """Scout event 11: gain Diplomat 1 OR DM+4 to next advancement roll."""
+
+    def _setup_to_event_11(self) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=11),
+        ]
+
+    def test_creates_scout_event_11_pending_with_two_options(self):
+        projection = replay(1, self._setup_to_event_11())
+
+        pending = next(p for p in projection.pending_inputs if p.kind == 'scout_event_11')
+        assert set(pending.options) == {'Diplomat', 'advancement_dm_4'}
+
+    def test_choose_diplomat_grants_diplomat_1(self):
+        events = [*self._setup_to_event_11(), SkillChoiceEvent(id=7, fulfills='6.0', skill='Diplomat')]
+        projection = replay(1, events)
+
+        assert projection.summary.skills.get('Diplomat', -1) >= 1
+
+    def test_choose_advancement_dm_adds_scheduled_effect(self):
+        events = [*self._setup_to_event_11(), SkillChoiceEvent(id=7, fulfills='6.0', skill='advancement_dm_4')]
+        projection = replay(1, events)
+
+        adv_dm = next((se for se in projection.scheduled_effects if se.trigger == 'advancement'), None)
+        assert adv_dm is not None
+        assert adv_dm.effect.get('amount') == 4
+
+    def test_diplomat_choice_creates_advancement_pending(self):
+        events = [*self._setup_to_event_11(), SkillChoiceEvent(id=7, fulfills='6.0', skill='Diplomat')]
+        projection = replay(1, events)
+
+        assert any(p.kind == 'advancement' for p in projection.pending_inputs)
+
+    def test_advancement_dm_choice_creates_advancement_pending(self):
+        events = [*self._setup_to_event_11(), SkillChoiceEvent(id=7, fulfills='6.0', skill='advancement_dm_4')]
+        projection = replay(1, events)
+
+        assert any(p.kind == 'advancement' for p in projection.pending_inputs)
+
+
+class TestNormalInjury:
+    """Scout mishap 6: Injured — creates characteristic choice for STR/DEX/END."""
+
+    def _setup_through_failed_survive(self) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            SurviveEvent(id=5, fulfills='4.0', roll=3),  # fail
+        ]
+
+    def test_mishap_6_creates_characteristic_choice_pending(self):
+        events = [*self._setup_through_failed_survive(), MishapEvent(id=6, fulfills='5.0', roll=6)]
+        projection = replay(1, events)
+
+        choice_pending = next((p for p in projection.pending_inputs if p.kind == 'characteristic_choice'), None)
+        assert choice_pending is not None
+        assert set(choice_pending.options) == {'STR', 'DEX', 'END'}
+
+    def test_mishap_6_characteristic_choice_decreases_selected_stat(self):
+        events = [
+            *self._setup_through_failed_survive(),
+            MishapEvent(id=6, fulfills='5.0', roll=6),
+            CharacteristicChoiceEvent(id=7, fulfills='6.0', characteristic='STR'),
+        ]
+        projection = replay(1, events)
+
+        # STR was 7 from UCP '7869A5'
+        assert projection.summary.characteristics['STR'] == 6
+
+    def test_mishap_6_still_ends_career(self):
+        events = [*self._setup_through_failed_survive(), MishapEvent(id=6, fulfills='5.0', roll=6)]
+        projection = replay(1, events)
+
+        assert projection.summary.current_career is None

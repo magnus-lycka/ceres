@@ -118,7 +118,7 @@ events:
   6:
     text: You are given advanced training in a specialist field.
     effects:
-      - {type: note, text: "Roll EDU 8+ to gain any one skill of your choice at level 1."}
+      - {type: scholar_event_6}
   7:
     text: Life Event.
     effects:

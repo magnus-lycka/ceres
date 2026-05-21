@@ -142,7 +142,7 @@ events:
   11:
     text: You serve as the courier for an important message from the Imperium.
     effects:
-      - {type: skill_choice, options: [Diplomat], level: 1, or_dm: {advancement: 4}}
+      - {type: scout_event_11}
   12:
     text: You discover a world, item or information of worth to the Imperium. You are automatically promoted.
     effects:

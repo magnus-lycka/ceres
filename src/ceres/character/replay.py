@@ -281,12 +281,26 @@ def _apply_mishap(projection: CharacterProjection, event: MishapEvent) -> None:
                     )
                 )
                 pending_idx += 1
+            elif effect.type == 'injury':
+                severity = getattr(effect, 'severity', 'normal')
+                if severity == 'normal':
+                    projection.pending_inputs.append(
+                        PendingInput(
+                            id=f'{event.id}.{pending_idx}',
+                            kind='characteristic_choice',
+                            instruction='Injured: choose STR, DEX, or END to reduce by 1',
+                            options=['STR', 'DEX', 'END'],
+                        )
+                    )
+                    pending_idx += 1
+                # severe injury: deferred
             else:
                 _apply_simple_effect(projection, effect, source=mishap.text, source_event_id=event.id)
     stay = event.stay_in_career or (mishap is not None and mishap.stay_in_career)
     if stay:
         projection.pending_inputs.append(_advancement_pending(projection, career, event.id, pending_idx))
     else:
+        projection.summary.age += 4
         projection.summary.current_career = None
         projection.summary.current_assignment = None
 
@@ -370,6 +384,16 @@ def _apply_skill_choice(
             career = _current_career(projection)
             assignment_name = projection.summary.current_assignment or ''
             projection.pending_inputs.append(_survive_pending(projection, career, assignment_name, event.id))
+    elif fulfilled_kind == 'scout_event_11':
+        if event.skill == 'advancement_dm_4':
+            projection.scheduled_effects.append(
+                ScheduledEffect(trigger='advancement', source_event_id=event.id, effect={'type': 'dm', 'amount': 4})
+            )
+        else:
+            _grant_skill(projection, event.skill, 1)
+        if projection.summary.current_career is not None:
+            career = _current_career(projection)
+            projection.pending_inputs.append(_advancement_pending(projection, career, event.id))
     else:
         _grant_skill(projection, event.skill, 1)
         if projection.summary.current_career is not None:
@@ -433,6 +457,7 @@ def _apply_advancement(projection: CharacterProjection, event: AdvancementEvent)
 
 
 def _apply_reenlist(projection: CharacterProjection, event: ReenlistEvent) -> None:
+    projection.summary.age += 4
     if event.reenlist:
         career = _current_career(projection)
         projection.summary.term_count += 1
