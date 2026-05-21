@@ -11,13 +11,14 @@ from ceres.make.ship.habitation import (
     Barracks,
     Brig,
     CabinSpace,
+    EmergencyLowBerth,
     HabitationSection,
     HighStateroom,
     LowBerth,
     LuxuryStateroom,
     Stateroom,
 )
-from ceres.make.ship.occupants import BasicPassage, HighPassage, LowPassage, MiddlePassage
+from ceres.make.ship.occupants import BasicPassage, HighPassage, LowPassage, MiddlePassage, ResidenceDemand
 from ceres.make.ship.systems import CommonArea, SwimmingPool
 
 
@@ -148,6 +149,71 @@ def test_low_berth_values_are_computed_properties_not_serialized_fields():
     assert 'tons' not in berth.model_dump()
     assert 'cost' not in berth.model_dump()
     assert 'power' not in berth.model_dump()
+
+
+def test_emergency_low_berth_values():
+    berth = EmergencyLowBerth()
+    berth.bind(DummyOwner(12, 200))
+
+    assert berth.tons == pytest.approx(1.0)
+    assert berth.cost == pytest.approx(1_000_000.0)
+    assert berth.power == pytest.approx(1.0)
+    assert berth.provides == [(ResidenceDemand.LOW_BERTH, 4)]
+
+
+def test_emergency_low_berth_values_are_computed_properties_not_serialized_fields():
+    berth = EmergencyLowBerth.model_validate({'tons': 99, 'cost': 99, 'power': 99})
+
+    assert berth.tons == pytest.approx(1.0)
+    assert berth.cost == pytest.approx(1_000_000.0)
+    assert berth.power == pytest.approx(1.0)
+    assert 'tons' not in berth.model_dump()
+    assert 'cost' not in berth.model_dump()
+    assert 'power' not in berth.model_dump()
+
+
+def test_emergency_low_berths_add_four_low_passage_places_each():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(emergency_low_berths=[EmergencyLowBerth()]),
+        crew=ShipCrew(roles=[]),
+        occupants=passengers(low=4),
+    )
+
+    assert my_ship.habitation is not None
+    assert my_ship.habitation.notes.errors == []
+
+
+def test_emergency_low_berths_count_toward_default_low_passengers():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(low_berths=[LowBerth()] * 2, emergency_low_berths=[EmergencyLowBerth()]),
+        crew=ShipCrew(roles=[]),
+    )
+
+    assert my_ship.habitation is not None
+    assert my_ship.habitation.low_passage_capacity() == 6
+    assert my_ship.habitation.passenger_counts(my_ship) == {'low': 6}
+
+
+def test_habitation_section_groups_emergency_low_berths():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        habitation=HabitationSection(emergency_low_berths=[EmergencyLowBerth(), EmergencyLowBerth()]),
+    )
+    spec = my_ship.build_spec()
+
+    row = spec.row('Emergency Low Berths', section='Habitation')
+    assert row.quantity == 2
+    assert row.tons == pytest.approx(2.0)
+    assert row.cost == pytest.approx(2_000_000.0)
+    assert row.power == pytest.approx(-2.0)
 
 
 def test_brig_values_are_computed_properties_not_serialized_fields():

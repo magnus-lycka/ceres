@@ -25,7 +25,7 @@ There is an older prototype at:
 ```
 
 That project has useful examples of final character data and PDF output, but the
-new Ceres implementation should separate final character state from the creation
+new Ceres implementation separates final character state from the creation
 engine more explicitly.
 
 ## Goals
@@ -75,10 +75,9 @@ must contain enough information to recreate an identical character, no more and
 no less.
 
 The projection is the current derived state: the current character draft, any
-pending input requirements, any scheduled future effects, and any cursor-like
-position the engine needs while replaying. Projection state can be cached for
-performance, but it is disposable. Rebuilding from the event log must produce
-the same result.
+pending input requirements, and any scheduled future effects. Projection state
+can be cached for performance, but it is disposable. Rebuilding from the event
+log must produce the same result.
 
 Every meaningful write path should create an event. Convenience commands such
 as `create ucp 7869A5` are allowed, but they are wrappers around event creation,
@@ -105,16 +104,22 @@ Example entries:
   name: Boss
 
 - id: 2
-  kind: ucp_provided
-  fulfills: 1.0
+  kind: ucp
+  fulfills: "1.0"
   ucp: 7869A5
 
 - id: 18
-  kind: survival_rolled
-  fulfills: 17.0
+  kind: survive
+  fulfills: "17.0"
   dice: [3, 5]
-  applied_effects: [12.0]
+  applied_effects: ["12.0"]
 ```
+
+Event kinds name the step or decision, not the effect (`ucp`, not `ucp_provided`;
+`survive`, not `survival_rolled`). Representative kinds across character creation:
+`character_started`, `ucp`, `homeworld`, `background_skills`, `career`,
+`skill_table`, `skill`, `survive`, `mishap`, `term_event`, `life_event`,
+`commission`, `advancement`, `aging`, and others as needed.
 
 The current creation state is rebuilt by reducing the event log. While replaying
 the log, events can create pending inputs and scheduled effects. Later events
@@ -150,7 +155,7 @@ a rule-state requirement with a machine-readable input shape and a
 human-readable instruction.
 
 Some pending inputs are immediate and blocking. While any active blocking input
-exists, the engine should reject unrelated character events. Examples:
+exists, the engine rejects unrelated character events. Examples:
 
 - Choose a skill table.
 - Choose a specialization for a gained skill.
@@ -159,8 +164,7 @@ exists, the engine should reject unrelated character events. Examples:
 - Choose whether to reenlist or muster out.
 
 Other pending inputs are deferred. They exist in the projection but are not
-available to fulfill until the engine reaches a matching phase or cursor state.
-Examples:
+available to fulfill until the engine reaches a matching phase. Examples:
 
 - Choose a benefit when mustering out.
 - Resolve a contact or enemy choice that the rules postpone.
@@ -169,6 +173,11 @@ Examples:
 Pending inputs are created during event replay. They are removed during replay
 when a later valid event references their deterministic pending id through
 `fulfills`.
+
+The projection does not need a separate cursor field. The first blocking pending
+input's `kind` tells any client what step the character is at. When there are no
+blocking inputs, the engine can advance deterministically until external input is
+needed or creation is complete.
 
 ### Scheduled Effects
 
@@ -190,36 +199,12 @@ scheduled effect. A future choice of benefit is a deferred pending input.
 An illustrative shape:
 
 ```python
-class ScheduledEffect(CeresModel):
-    trigger: Trigger
-    effect: Effect
+class ScheduledEffect(BaseModel):
+    trigger: str
+    effect: dict
     source_event_id: str
-    expires: Expiry | None = None
+    expires: str | None = None
     consume: bool = True
-```
-
-Example YAML-like shape:
-
-```yaml
-type: effect.scheduled
-trigger: next_advancement_roll
-consume: true
-effect:
-  type: roll_modifier
-  value: 1
-  reason: Impressed a superior officer
-```
-
-When the state machine reaches a matching trigger, it applies or offers the
-effect and logs that application:
-
-```yaml
-- type: scheduled_effect.applied
-  trigger: next_advancement_roll
-  source: term.1.event.8
-  effect:
-    type: roll_modifier
-    value: 1
 ```
 
 Some effects are one-shot and consumed. Others remain active while a condition
@@ -249,132 +234,141 @@ Useful early clients:
 
 - scripted tests that append deterministic events
 - a CLI runner that lists current pending inputs and creates events
-- a small FastAPI app whose OpenAPI pages can exercise the same event and
+- a FastAPI app whose OpenAPI pages can exercise the same event and
   projection models
 
-The CLI may be the most ergonomic early manual workbench, while FastAPI/OpenAPI
-is useful for inspecting schemas and making sure the protocol is clean. Both
-should talk to the same session API. Neither should get special authority to
-mutate state outside the event log.
+The CLI and FastAPI app are already working, both sharing the same
+`SqliteCharacterBackend`. Neither gets special authority to mutate state outside
+the event log.
 
-The current projection should include enough context for a simple client
-to be usable:
+The current projection includes enough context for a simple client to be usable:
 
 ```python
-class CharacterProjection(CeresModel):
+class PendingInput(BaseModel):
+    id: str
+    kind: str
+    instruction: str
+    blocking: bool = True
+
+class CharacterProjection(BaseModel):
     character_id: int
-    character_summary: CharacterSummary
-    cursor: StepId
+    summary: CharacterSummary
     pending_inputs: list[PendingInput] = []
     scheduled_effects: list[ScheduledEffect] = []
 ```
 
-This is deliberately not a polished UI design. It is a protocol that lets tests,
-CLI tools, FastAPI, and later richer interfaces validate the same behaviour.
+There is no `cursor` field. The first blocking pending input's `kind` encodes
+the current step. When there are no blocking inputs, creation either advances
+deterministically or is complete.
 
-`CharacterSummary` should be small enough for every simple client to render:
+`CharacterSummary` carries enough for every simple client to render:
 
 ```python
-class CharacterSummary(CeresModel):
-    name: str | None
-    age: int
-    species: str
-    characteristics: dict[str, int]
-    current_career: str | None
-    current_assignment: str | None
-    rank: str | int | None
-    term_count: int
-    skills: list[SkillSummary]
+class CharacterSummary(BaseModel):
+    name: str | None = None
+    age: int = 0
+    species: str = ''
+    characteristics: dict[str, int] = {}
+    current_career: str | None = None
+    current_assignment: str | None = None
+    rank: str | int | None = None
+    term_count: int = 0
+    skills: list[SkillSummary] = []
     problems: list[str] = []
 ```
 
 ## Session Persistence
 
-Session persistence is an early design decision, not an implementation detail to
-defer. The event-based request/response model only works if a character creation
-can survive between calls.
-
-Initial implementation should persist character creation as an event log plus
-small metadata. SQLite is a good early default because it gives us ordinary
-application storage and in-memory tests:
+Character creation is persisted in a single SQLite `characters` table. The event
+log is stored as a JSON column (`events_json`) on the character row. This is
+simple, avoids a separate events table, and still makes the event log the
+authoritative source of truth.
 
 ```text
 characters
-  id
-  sophont
-  player
-  name
-
-character_events
-  id
-  character_id
-  kind
-  fulfills
-  payload_json
+  id            integer primary key
+  sophont       text not null
+  player        text not null
+  name          text not null
+  events_json   text not null default '[]'
 ```
 
-An in-memory cache or projected columns may exist for speed, but they must be
-rebuildable from the stored event log. The event log is the truth; database
-columns such as current UCP are projections or conveniences.
+Reading a character loads the full list of events as Pydantic objects. Writing
+replaces the full JSON column with a new list. The store runs a dry replay before
+persisting any new event, so an invalid event raises `ReplayError` without
+touching the database.
 
-## State Machine
+Projected columns such as UCP are derivable from replaying the event log; the
+event log is the truth.
 
-The state machine should be explicit, but not monolithic.
+## Event Models
 
-Character creation begins before the first career term. The state machine needs
-pre-career phases for characteristic generation, species/background setup,
-homeworld and education skills, and any rules that affect the first career
-choice.
+Events are Pydantic models forming a discriminated union. The store assigns real
+sequential IDs via `model_copy`; the `id` field defaults to `0` to indicate
+"not yet assigned":
 
-High-level phases:
+```python
+class EventBase(BaseModel):
+    id: int = 0  # assigned by store; 0 means unassigned
+    fulfills: str | None = None
 
-```text
-setup.characteristics
-setup.species
-setup.background
-setup.education
-career.choice
-career.qualification
-term.*
-mustering_out.*
-finalize
+class CharacterStartedEvent(EventBase):
+    kind: Literal['character_started'] = 'character_started'
+    sophont: str
+    player: str = 'NPC'
+    name: str
+
+class UcpEvent(EventBase):
+    kind: Literal['ucp'] = 'ucp'
+    ucp: str  # 6 hex digits, one per characteristic in UCP_STATS order
+
+type AnyEvent = Annotated[
+    CharacterStartedEvent | UcpEvent,
+    Field(discriminator='kind'),
+]
 ```
 
-A normal career term after qualification might flow like:
+The `TypeAdapter[AnyEvent]` is used for deserialization. New event kinds are
+added here as character creation expands.
 
-```text
-term.start
-term.skill_or_initial_training
-term.survival
-term.mishap_or_event
-term.event
-term.advancement
-term.rank_rewards
-term.aging_if_needed
-term.reenlist_or_muster
-term.complete
+## Skill Model
+
+`ceres.character.skills` is the canonical skill registry. `SkillInfo` carries
+only `type` (the display name, e.g. `"Space Science"`) and `specialities` (a
+tuple of strings). There is no separate `name` field; `type` is the identifier.
+
+Once the character skill model is solid, `ceres.make.robot.skills`
+(currently string-based SkillGrant/SkillPackage) and gear software Expert
+packages should migrate to reference the canonical character skill classes.
+
+## Testing Strategy
+
+Tests build event logs and assert projections. Rolls and decisions are events,
+not hidden callbacks.
+
+Example:
+
+```python
+from ceres.character.events import CharacterStartedEvent, UcpEvent
+from ceres.character.replay import replay
+
+events = [
+    CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Boss'),
+    UcpEvent(id=2, fulfills='1.0', ucp='7869A5'),
+]
+
+projection = replay(character_id=1, events=events)
 ```
 
-Aging deserves its own step family, not only a placeholder. It involves age
-brackets, characteristic rolls and DMs, possible medical treatment costs, and
-interactions with anagathics.
+Pending identifiers are deterministic. Tests assert:
 
-Mustering out also deserves a distinct phase. It can involve multiple benefit
-rolls, cash versus material choices, career-specific benefit tables, retirement
-pay, pensions, gratuities, and deferred obligations from previous events.
-
-At each step, the engine should:
-
-1. Rebuild or update projection state from the event log.
-2. Add any pending inputs or scheduled effects created by the current event.
-3. Validate any fulfillment reference on the current event.
-4. Remove fulfilled pending inputs from the projection.
-5. Activate deferred pending inputs whose availability now matches.
-6. Apply and consume scheduled effects whose trigger matches.
-7. Advance deterministic state until external input is needed or creation is
-   complete.
-
-This avoids one huge function while still making the lifecycle easy to inspect.
+- final character state
+- important event log entries
+- pending inputs at interaction boundaries
+- scheduled effects are applied once or remain active as intended
+- unusual event handlers emit typed effects rather than silent mutations
+- unrelated events are rejected while blocking pending inputs exist
+- same event log replays to the same projection every time
 
 ## Effects
 
@@ -401,9 +395,8 @@ the result. Useful initial effect types include:
 - `roll_modifier`
 
 `roll_modifier` is one concrete effect type. A `ScheduledEffect` can wrap a
-`roll_modifier` effect for future use, but the two concepts should stay
-separate: scheduling describes when an effect applies; the effect describes what
-happens.
+`roll_modifier` for future use, but the two concepts stay separate: scheduling
+describes when an effect applies; the effect describes what happens.
 
 Some source events are too unusual to model cleanly as simple data. For those,
 rule data should be allowed to name a registered handler:
@@ -432,24 +425,24 @@ silently mutate state.
 
 Career data should be authored to resemble the source material.
 
-Example shape:
+Example shape (first careers are Scout and Scholar from the Explorer edition):
 
 ```yaml
-name: Navy
-source: Core
+name: Scout
+source: Explorer
 
 qualification:
   characteristic: INT
-  target: 6
+  target: 5
 
 assignments:
-  - name: Line/Crew
+  - name: Courier
     survival:
-      characteristic: INT
-      target: 5
+      characteristic: END
+      target: 7
     advancement:
       characteristic: EDU
-      target: 7
+      target: 9
     skill_tables:
       personal_development: [...]
       service_skills: [...]
@@ -457,12 +450,12 @@ assignments:
 
 ranks:
   - rank: 0
-    title: Crewman
-  - rank: 1
-    title: Able Spacehand
+    title: Scout
+  - rank: 3
+    title: Senior Scout
     effects:
       - type: gain_skill
-        skill: Mechanic
+        skill: Pilot
         level: 1
 
 events:
@@ -470,7 +463,7 @@ events:
     text: Disaster!
     effects:
       - type: handler
-        handler: core.navy.disaster
+        handler: core.scout.disaster
 
 mishaps:
   1:
@@ -491,33 +484,20 @@ the same shape.
 
 ### Skills
 
-Skills are mostly data, closer to gear or weapons. They need stable identifiers,
-display names, optional specialties, defaulting rules, and improvement logic.
-They should become the canonical skill model used by characters and eventually
-by robots.
+Skills are mostly data, closer to gear or weapons. They need stable identifiers
+(the `type` field), optional specialties, defaulting rules, and improvement
+logic. They are the canonical skill model used by characters and eventually by
+robots.
 
 ### Characteristics
 
-Characteristics should be registry-driven rather than hard-coded to a fixed
-six-stat model. A default human-like registry can define:
+Characteristics are currently hard-coded as the six-stat human model (`STR`,
+`DEX`, `END`, `INT`, `EDU`, `SOC`) via the `Chars` StrEnum in
+`ceres.character.characteristics`. `UCP_STATS` is a convenience tuple derived
+from that enum.
 
-```yaml
-STR: { label: Strength }
-DEX: { label: Dexterity }
-END: { label: Endurance }
-INT: { label: Intellect }
-EDU: { label: Education }
-SOC: { label: Social Standing }
-```
-
-Some species and Alien modules may replace, reinterpret, or add to the default
-characteristic set. Do not hard-code examples until the relevant Alien module
-rules are available in `refs/`.
-
-Rules should refer to characteristic identifiers. Validation should catch a
-career or rule package that refers to a characteristic unavailable to the active
-species/ruleset, unless that species/ruleset provides an explicit mapping or
-interpretation.
+A registry-driven model is a later concern. Do not hard-code species variants
+until the relevant Alien module rules are available in `refs/`.
 
 ### Species
 
@@ -553,7 +533,6 @@ YAML is easier to read and can look much more like career pages.
 Recommended approach:
 
 - Use YAML for hand-authored rule data.
-- Use `ruamel.yaml` if comment/order preservation becomes important.
 - Validate loaded YAML into Pydantic models.
 - Validate handler references against the registered handler catalogue at load
   time.
@@ -562,86 +541,45 @@ Recommended approach:
 - If normalized machine-readable output is useful, write generated JSON as a
   cache/debug artifact, not as the canonical source.
 
-TOML with `tomlkit` is another option and round-trips comments well, but nested
-career tables, event tables, and skill tables are likely to become less readable
-than YAML.
+## Implementation Status
 
-Character instances can remain YAML if that is convenient for manual editing,
-but creation history should be structured as an event log rather than compressed
-into prose-only term notes.
+### Done
 
-## Testing Strategy
+- **Slice 1** — Core event/projection models + pure `replay()` function.
+  Event kinds: `character_started`, `ucp`. Tests in `tests/character/test_replay.py`.
+- **Slice 2** — Store: JSON column event log, typed event round-trip, dry-replay
+  validation before save.
+- **Slice 3** — FastAPI endpoints: `GET /characters/{id}/projection`,
+  `POST /characters/{id}/events`. Full CRUD for characters including
+  `DELETE /characters/{id}`.
+- **Slice 4** — CLI: `create start` shows pending inputs, `create ucp` posts
+  `UcpEvent`, `create delete` command.
 
-Tests should build event logs and assert projections. Rolls and decisions are
-events, not hidden callbacks.
+### Remaining Work
 
-Example:
+- **Slice 5** — Pre-career setup: `homeworld` and `background_skills` events.
+  UCP → homeworld → background skill pending input sequence. Options depend on
+  homeworld, so the pending input for background skills is deferred until
+  homeworld is known.
 
-```python
-events = [
-    CharacterStarted(sophont="Vilani", player="NPC", name="Boss"),
-    UcpProvided(fulfills="1.0", ucp="7869A5"),
-    BirthLocationProvided(fulfills="1.1", location="TROJ2815"),
-]
+- **Slice 6** — Handler registry + YAML career loader. `@character_rule_handler`
+  decorator, validated YAML → Pydantic career models, handler references
+  validated at load time.
 
-projection = replay(events)
+- **Slice 7** — First careers: Scout and Scholar (Explorer edition). Both with
+  qualification, one assignment each, full normal term path: skill/initial
+  training → survival → event → advancement → rank rewards → reenlist/muster.
+  Career data lives under `src/ceres/character/careers/`.
+
+- **Slices 8+** — Aging, mustering out, mishaps, scheduled effects (next-roll
+  modifiers), additional careers, species variants, PDF report.
+
+### Verification
+
+After each slice:
+
+```bash
+uv run pytest tests/character/
+uvx ruff check src/ceres/character/
+uvx ty check
 ```
-
-Pending identifiers should be deterministic. Human-readable kinds are useful,
-but tests should not depend on ambiguous names such as `term.1.skill_table` when
-multiple careers, repeated terms, or event-specific choices can produce similar
-pending inputs.
-
-Tests should assert:
-
-- final character state
-- important event log entries
-- pending inputs at interaction boundaries
-- scheduled effects are applied once or remain active as intended
-- unusual event handlers emit typed effects rather than silent mutations
-- unrelated events are rejected while blocking pending inputs exist
-
-The first tests should cover a very small career subset and one or two scripted
-terms before expanding into broad source coverage.
-
-## Proposed Implementation Slices
-
-1. Define final character draft models and basic skill/characteristic models.
-2. Define event log entry models.
-3. Define pending input and scheduled effect projection models.
-4. Implement deterministic pending ids from source event id plus local index.
-5. Implement a minimal replay/projection reducer.
-6. Persist event logs in SQLite and treat projected columns as rebuildable.
-7. Add `GET` projection/obligations-style API endpoints.
-8. Add generic event-creation API endpoints.
-9. Make existing CLI convenience commands append events.
-10. Add undo by deleting the last event and rebuilding projection.
-11. Add handler registry and load-time handler validation.
-12. Add pre-career setup events for UCP and birth location.
-13. Add background skill pending inputs.
-14. Add a minimal CLI workbench that uses the same event protocol.
-15. Optionally add or expand FastAPI/OpenAPI endpoints for schema inspection.
-16. Implement one small career with qualification and a normal term path.
-17. Add initial training.
-18. Add mishap and event tables.
-19. Add advancement, rank rewards, and benefit rolls.
-20. Add scheduled effects such as next-roll modifiers.
-21. Add aging steps.
-22. Add mustering-out steps.
-23. Add handler escape hatches for unusual event rules.
-24. Add a non-default species only after relevant Alien module rules are in `refs/`.
-25. Build a simple report from final state plus event log.
-
-## Open Questions
-
-- Should final character YAML include the creation event log, or should event
-  log files live next to character files?
-- Should manually edited final character state be allowed to diverge from the
-  event log?
-- How close should authored career YAML stay to the visual layout of source
-  tables?
-- Should rule data live under `refs/` while incomplete, or under `src/ceres`
-  once it becomes executable rules data?
-- How soon should the character skill model replace or feed robot skill data?
-- Should the first manual workbench be CLI only, or should FastAPI/OpenAPI be
-  added at the same time to validate schemas?

@@ -147,6 +147,31 @@ class LowBerth(ShipPart):
         return 1.0 if index % 10 == 0 else 0.0
 
 
+class EmergencyLowBerth(ShipPart):
+    description: ClassVar[str] = 'Emergency Low Berth'
+    plural_label: ClassVar[str] = 'Emergency Low Berths'
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+    capacity: ClassVar[int] = 4
+
+    @property
+    def provides(self) -> list[tuple[ResidenceDemand, int]]:
+        return [(ResidenceDemand.LOW_BERTH, self.capacity)]
+
+    @property
+    def tons(self) -> float:
+        return 1.0
+
+    @property
+    def cost(self) -> float:
+        return 1_000_000.0
+
+    @property
+    def power(self) -> float:
+        return 1.0
+
+
 class Brig(ShipPart):
     description: Literal['Brig'] = 'Brig'
     plural_label: ClassVar[str] = 'Brigs'
@@ -244,6 +269,7 @@ class CabinSpace(_ExplicitTonsHabitationPart):
 class HabitationSection(CeresModel):
     staterooms: list[StateroomUnion] = Field(default_factory=list)
     low_berths: list[LowBerth] = Field(default_factory=list)
+    emergency_low_berths: list[EmergencyLowBerth] = Field(default_factory=list)
     brig: Brig | None = None
     brigs: list[Brig] = Field(default_factory=list)
     barracks: list[Barracks] = Field(default_factory=list)
@@ -260,12 +286,16 @@ class HabitationSection(CeresModel):
         super().model_post_init(__context)
         self.staterooms = [room.model_copy() for room in self.staterooms]
         self.low_berths = [berth.model_copy() for berth in self.low_berths]
+        self.emergency_low_berths = [berth.model_copy() for berth in self.emergency_low_berths]
 
     def stateroom_count(self) -> int:
         return len(self.staterooms)
 
     def low_berth_count(self) -> int:
         return len(self.low_berths)
+
+    def low_passage_capacity(self) -> int:
+        return len(self.low_berths) + sum(berth.capacity for berth in self.emergency_low_berths)
 
     def validate_common_area(self) -> None:
         if not self.staterooms:
@@ -308,13 +338,13 @@ class HabitationSection(CeresModel):
             self.error(f'Low passage exceeds available low berths: {low_passage} > {low_passage - rejected_low}')
 
     def _residences(self) -> list[Residence]:
-        residences: list[Residence] = [*self.staterooms, *self.low_berths]
+        residences: list[Residence] = [*self.staterooms, *self.low_berths, *self.emergency_low_berths]
         if self.cabin_space is not None:
             residences.append(self.cabin_space)
         return residences
 
     def _all_parts(self) -> list[ShipPart]:
-        parts: list[ShipPart] = [*self.staterooms, *self.low_berths]
+        parts: list[ShipPart] = [*self.staterooms, *self.low_berths, *self.emergency_low_berths]
         for part in (
             self.brig,
             *self.brigs,
@@ -358,7 +388,7 @@ class HabitationSection(CeresModel):
         cabin_capacity = 0 if self.cabin_space is None else self.cabin_space.passenger_capacity
 
         return [MiddlePassage() for _ in range(remaining_staterooms * 2 + cabin_capacity)] + [
-            LowPassage() for _ in range(self.low_berth_count())
+            LowPassage() for _ in range(self.low_passage_capacity())
         ]
 
     def life_support_facilities_cost(self, ship) -> float:
@@ -420,6 +450,7 @@ class HabitationSection(CeresModel):
         habitation_parts = [
             *self.staterooms,
             *self.low_berths,
+            *self.emergency_low_berths,
             *[
                 part
                 for part in [

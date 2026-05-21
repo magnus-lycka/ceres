@@ -511,7 +511,7 @@ def _habitation_population(ship) -> int:
     if ship.habitation is None:
         return 0
     stateroom_beds = sum(room.occupancy for room in ship.habitation.staterooms)
-    low_berths = len(ship.habitation.low_berths)
+    low_berths = ship.habitation.low_passage_capacity()
     cabin = ship.habitation.cabin_space.passenger_capacity if ship.habitation.cabin_space else 0
     return stateroom_beds + low_berths + cabin
 
