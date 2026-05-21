@@ -16,12 +16,13 @@ Rule sources:
   refs/robot/08_locomotion_modifications.md (VehicleSpeedModification, AgilityEnhancement, SecondaryLocomotion)
   refs/robot/09_manipulators.md         (AdditionalManipulator)
   refs/robot/18_geiger_counter.md       (LightIntensifierSensor, OlfactorySensor, PrisSensor, ThermalSensor)
+  refs/robot/19_slot_cost_options.md    (ActiveCamouflage)
   refs/robot/20_radiation_environment_protection.md (RadiationEnvironmentProtection)
   refs/robot/27_autobar.md              (Autobar)
   refs/robot/29_storage_compartment.md  (StorageCompartment, ExternalPower)
   refs/robot/31_neural_activity_sensor.md (ReconSensor)
   refs/robot/32_navigation_system.md    (NavigationSystem)
-  refs/robot/42_avatars.md              (AvatarController)
+  refs/robot/42_avatars.md              (AvatarController, AvatarReceiver)
 """
 
 from math import ceil
@@ -497,6 +498,8 @@ class VehicleSpeedModification(RobotPart):
     Slots = ceil(25% × base_slots). Cost = Base Chassis Cost.
     Replaces the locomotion's Flyer (idle) trait with the vehicle speed band trait.
     Reduces endurance by ×4 when operating at vehicle speed.
+    Cannot be combined with Tactical Speed Enhancement or Tactical Speed Reduction (RIR-009).
+    AgilityEnhancement may coexist but its speed bonus is suppressed; Athletics (dex) still applies.
     """
 
     @property
@@ -508,10 +511,12 @@ class VehicleSpeedModification(RobotPart):
 
     @property
     def robot_traits(self) -> tuple[Trait, ...]:
-        from .locomotion import GravLocomotion
-
-        if self._assembly is not None and isinstance(self.assembly.locomotion, GravLocomotion):
-            return (Trait('Flyer', 'high'),)
+        if self._assembly is None:
+            return ()
+        loco = self.assembly.locomotion
+        band = loco._vehicle_speed_band
+        if band and any(t.name == 'Flyer' for t in loco.locomotion_traits):
+            return (Trait('Flyer', band),)
         return ()
 
     def bind(self, assembly: RobotBase) -> None:
@@ -552,6 +557,55 @@ class AvatarController(RobotPart):
 
     def item_description(self) -> str:
         return f'Avatar Controller ({self.quality})'
+
+
+class AvatarReceiver(RobotPart):
+    """refs/robot/42_avatars.md — Avatar Receiver. TL11, 1 slot, Cr10000 flat.
+
+    Acts as a drone interface. Requires Advanced brain or higher.
+    """
+
+    tl: int = 11
+
+    @property
+    def slots(self) -> int:
+        return 1
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        object.__setattr__(self, 'cost', 10000.0)
+
+    def item_description(self) -> str:
+        return 'Avatar Receiver'
+
+
+class ActiveCamouflage(RobotPart):
+    """refs/robot/19_slot_cost_options.md — Active Camouflage. TL15, 1 slot, Cr10000 per base slot.
+
+    Grants Stealth 4 and the Invisible trait. Only one may be installed.
+    """
+
+    tl: int = 15
+
+    @property
+    def slots(self) -> int:
+        return 1
+
+    @property
+    def skill_grants(self) -> tuple[SkillGrant, ...]:
+        return (SkillGrant('Stealth', 4),)
+
+    @property
+    def robot_traits(self) -> tuple[Trait, ...]:
+        return (Trait('Invisible'),)
+
+    def bind(self, assembly: RobotBase) -> None:
+        super().bind(assembly)
+        base_slots = chassis_entry(assembly.size).base_slots
+        object.__setattr__(self, 'cost', 10000.0 * base_slots)
+
+    def item_description(self) -> str:
+        return 'Active Camouflage'
 
 
 class SwarmController(RobotPart):
@@ -1210,7 +1264,8 @@ class AgilityEnhancement(RobotPart):
 
     Zero-slot. Cost = level_multiplier × BCC (cumulative). Grants Athletics (dexterity) N.
     Increases tactical speed by +N metres per Minor Action. Cannot be combined with
-    TacticalSpeedReduction or VehicleSpeedModification.
+    TacticalSpeedReduction. May coexist with VehicleSpeedModification, but the speed bonus is
+    suppressed when VSM is installed — only Athletics (dexterity) and effective agility apply (RIR-009).
     """
 
     level: int
@@ -1407,6 +1462,8 @@ __all__ = [
     'ExternalPower',
     'RoboticDroneController',
     'AvatarController',
+    'AvatarReceiver',
+    'ActiveCamouflage',
     'SwarmController',
     'DecreasedResiliency',
     'NavigationSystem',

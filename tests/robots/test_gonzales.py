@@ -6,8 +6,7 @@
 #   Vehicle speed = 288/4 = 72h (rules: factor of 4). Source parenthetical "36h" appears to be
 #   a source error — they listed the pre-Efficiency vehicle figure (144/4 = 36) without updating.
 # Armour: TL15 → base +4. IncreasedArmour(+4) → total +8 = Armour (+8). ✓
-# Speed: VehicleSpeedModification overrides speed_label → 'Vehicle speed' (band labels not implemented
-#   for non-Grav locomotion).
+# Speed: VehicleSpeedModification on WheelsATV → speed band 'slow' (WheelsAtvLocomotion._vehicle_speed_band).
 # Skills: Basic (locomotion) gives Vehicle (type) X = Drive (wheel) 2 (type from WheelsATV, X = agility 0+2).
 #   AgilityEnhancement +2: Athletics (dexterity) 2 (max wins over locomotion's Athletics 1). ✓
 # Source: Drive (Wheel) 2, Athletics (dexterity) 2. ✓
@@ -43,7 +42,7 @@ from ceres.make.robot.text import format_traits
 _expected = SimpleNamespace(
     hits=12,
     locomotion='Wheels, ATV',
-    speed='Vehicle speed',  # band labels not implemented for non-Grav VSM
+    speed='slow',  # VSM on Wheels ATV → speed band 'slow'
     tl=15,
     base_armour=4,  # TL15 base; total = 4+4 = 8 from IncreasedArmour(+4)
     traits='Armour (+8), ATV, Heightened Senses, IR/UV Vision, Small (-1)',

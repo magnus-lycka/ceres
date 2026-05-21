@@ -21,6 +21,9 @@ class _LocomotionBase(CeresModel):
     # Skill granted by Basic (locomotion) brain function (Vehicle (type) X).
     # None means no vehicle-class skill (e.g. walker, stationary locomotion).
     _vehicle_skill_name: ClassVar[str | None]
+    # Speed band from Vehicle Speed Locomotion table (refs/robot/08_locomotion_modifications.md).
+    # None for locomotion types not in the table (NoneLocomotion, Aeroplane, Thruster).
+    _vehicle_speed_band: ClassVar[str | None] = None
 
     # refs/robot/08_locomotion_modifications.md — Tactical Speed Reduction/Enhancement
     speed_reduction: int = Field(default=0, ge=0)
@@ -112,6 +115,7 @@ class WheelsLocomotion(_LocomotionBase):
     _locomotion_traits: ClassVar[tuple[Trait, ...]] = ()
     _none_locomotion: ClassVar[bool] = False
     _vehicle_skill_name: ClassVar[str | None] = 'Drive (wheel)'
+    _vehicle_speed_band: ClassVar[str | None] = 'slow'
 
     def label(self) -> str:
         return 'Wheels'
@@ -127,6 +131,7 @@ class WheelsAtvLocomotion(_LocomotionBase):
     _locomotion_traits: ClassVar[tuple[Trait, ...]] = (Trait('ATV'),)
     _none_locomotion: ClassVar[bool] = False
     _vehicle_skill_name: ClassVar[str | None] = 'Drive (wheel)'
+    _vehicle_speed_band: ClassVar[str | None] = 'slow'
 
     def label(self) -> str:
         return 'Wheels, ATV'
@@ -142,6 +147,7 @@ class TracksLocomotion(_LocomotionBase):
     _locomotion_traits: ClassVar[tuple[Trait, ...]] = (Trait('ATV'),)
     _none_locomotion: ClassVar[bool] = False
     _vehicle_skill_name: ClassVar[str | None] = 'Drive (tracked)'
+    _vehicle_speed_band: ClassVar[str | None] = 'very slow'
 
     def label(self) -> str:
         return 'Tracks'
@@ -157,6 +163,7 @@ class GravLocomotion(_LocomotionBase):
     _locomotion_traits: ClassVar[tuple[Trait, ...]] = (Trait('Flyer', 'idle'),)
     _none_locomotion: ClassVar[bool] = False
     _vehicle_skill_name: ClassVar[str | None] = 'Flyer (grav)'
+    _vehicle_speed_band: ClassVar[str | None] = 'high'
 
     def label(self) -> str:
         return 'Grav'
@@ -187,6 +194,7 @@ class AquaticLocomotion(_LocomotionBase):
     _locomotion_traits: ClassVar[tuple[Trait, ...]] = (Trait('Seafarer'),)
     _none_locomotion: ClassVar[bool] = False
     _vehicle_skill_name: ClassVar[str | None] = 'Seafarer (personal)'
+    _vehicle_speed_band: ClassVar[str | None] = 'very slow'
 
     def label(self) -> str:
         return 'Aquatic'
@@ -202,6 +210,7 @@ class VtolLocomotion(_LocomotionBase):
     _locomotion_traits: ClassVar[tuple[Trait, ...]] = (Trait('Flyer', 'idle'),)
     _none_locomotion: ClassVar[bool] = False
     _vehicle_skill_name: ClassVar[str | None] = 'Flyer (rotor)'
+    _vehicle_speed_band: ClassVar[str | None] = 'medium'
 
     def label(self) -> str:
         return 'VTOL'
@@ -217,6 +226,7 @@ class WalkerLocomotion(_LocomotionBase):
     _locomotion_traits: ClassVar[tuple[Trait, ...]] = (Trait('ATV'),)
     _none_locomotion: ClassVar[bool] = False
     _vehicle_skill_name: ClassVar[str | None] = None
+    _vehicle_speed_band: ClassVar[str | None] = 'very slow'
 
     def label(self) -> str:
         return 'Walker'
@@ -232,6 +242,7 @@ class HovercraftLocomotion(_LocomotionBase):
     _locomotion_traits: ClassVar[tuple[Trait, ...]] = (Trait('ACV'),)
     _none_locomotion: ClassVar[bool] = False
     _vehicle_skill_name: ClassVar[str | None] = 'Drive (hovercraft)'
+    _vehicle_speed_band: ClassVar[str | None] = 'medium'
 
     def label(self) -> str:
         return 'Hovercraft'
@@ -247,6 +258,9 @@ class ThrusterLocomotion(_LocomotionBase):
     _locomotion_traits: ClassVar[tuple[Trait, ...]] = ()
     _none_locomotion: ClassVar[bool] = False
     _vehicle_skill_name: ClassVar[str | None] = 'Pilot (small craft)'
+    # _vehicle_speed_band stays None; speed is expressed as thrust (thrust_g field)
+
+    thrust_g: float = 0.1
 
     def label(self) -> str:
         return 'Thruster'

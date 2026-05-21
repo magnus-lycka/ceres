@@ -347,10 +347,43 @@ class TestVeryAdvancedBrainBandwidthUpgrade:
         assert restored.bandwidth == 9
 
 
+class TestVeryAdvancedBrainIntUpgrade:
+    """INT upgrade for VeryAdvancedBrain — refs/robot/34_retrotech.md.
+
+    Cost ×2 when the upgrade brings INT to 12 or above.
+    TL12 base INT 9, TL13 base INT 10, TL14 base INT 11.
+    """
+
+    @pytest.mark.parametrize(
+        'brain_tl, int_upgrade, expected_int, expected_cost',
+        [
+            # TL12 base INT 9: INT 9+1=10, 9+2=11 — below 12, no doubling
+            (12, 1, 10, 10_000.0),  # 10×1000
+            (12, 2, 11, 110_000.0),  # 10×11×1000
+            # TL12 INT 9+3=12 — hits threshold, ×2
+            (12, 3, 12, 2_640_000.0),  # 10×11×12×1000×2
+            # TL13 base INT 10: INT 10+1=11 — below 12, no doubling
+            (13, 1, 11, 11_000.0),  # 11×1000
+            # TL13 INT 10+2=12 — hits threshold, ×2
+            (13, 2, 12, 264_000.0),  # 11×12×1000×2
+            (13, 3, 13, 3_432_000.0),  # 11×12×13×1000×2
+            # TL14 base INT 11: INT 11+1=12 — immediately hits threshold
+            (14, 1, 12, 24_000.0),  # 12×1000×2
+            (14, 2, 13, 312_000.0),  # 12×13×1000×2
+            (14, 3, 14, 4_368_000.0),  # 12×13×14×1000×2
+        ],
+    )
+    def test_int_upgrade_cost(self, brain_tl, int_upgrade, expected_int, expected_cost):
+        brain = VeryAdvancedBrain(brain_tl=brain_tl, int_upgrade=int_upgrade)
+        assert brain.base_int == expected_int
+        assert brain._int_upgrade_cost == expected_cost
+
+
 class TestAdvancedBrainIntUpgrade:
     """INT upgrade — refs/robot/34_retrotech.md.
 
     INT+n costs n(n+1)/2 BW and product(base_int+1 … base_int+n) × Cr1000.
+    Advanced brain max INT = 8+3 = 11 < 12, so the ×2 threshold never applies.
     """
 
     @pytest.mark.parametrize(
@@ -408,8 +441,10 @@ class TestAdvancedBrainIntUpgrade:
 class TestBrainSlots:
     """brain_slots() — slot cost when brain computer rating exceeds robot size.
 
-    Rule: slots = 1 if robot_size < max(0, computer_x - (robot_tl - brain_tl)) else 0.
-    Retrotech discount: higher robot TL reduces the effective computer requirement.
+    Rule: slots = 1 if robot_size < max(0, computer_x - (robot_tl - entry.tl)) else 0.
+    Retrotech discount: each TL after the brain entry's introduction (entry.tl) shrinks
+    the minimum-free size by one. brain_tl is the construction TL used to look up the
+    entry; entry.tl is the entry's own introduction TL (may be lower).
     """
 
     def test_advanced_tl12_in_tl12_size2_is_free(self):
@@ -439,6 +474,11 @@ class TestBrainSlots:
     def test_basic_tl10_in_tl10_size1_is_free(self):
         # computer_x=1, min_free=1; size 1 is not < 1 → free
         assert BasicBrain(brain_tl=10).brain_slots(robot_tl=10, robot_size=1) == 0
+
+    def test_advanced_tl15_in_tl15_size1_is_free(self):
+        # brain_tl=15 → entry.tl=12 (TL12 Advanced entry, computer_x=2)
+        # min_free = max(0, 2-(15-12)) = 0; size 1 is not < 0 → free
+        assert AdvancedBrain(brain_tl=15).brain_slots(robot_tl=15, robot_size=1) == 0
 
 
 class TestBrainBaseGuards:
@@ -749,7 +789,7 @@ class TestSelfAwareBrainSkillsAndBandwidth:
 class TestSelfAwareBrainSlots:
     """brain_slots() for Self-Aware brain — computer_x=10 at TL15.
 
-    Rule: free if robot_size >= max(0, computer_x - (robot_tl - brain_tl)).
+    Rule: free if robot_size >= max(0, computer_x - (robot_tl - entry.tl)).
     A BW upgrade always adds +1 slot.
     """
 

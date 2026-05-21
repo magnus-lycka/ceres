@@ -1,11 +1,13 @@
 import atexit
 from pathlib import Path
+from typing import Annotated
 
 import typer
 
 from ceres import settings
+from ceres.character.skills import SkillInfo, skill_list
 from ceres.character.sophonts import SOPHONTS
-from ceres.character.store import SqliteCharacterBackend
+from ceres.character.store import UCP_STATS, CharacterRow, SqliteCharacterBackend
 
 
 def read_current_id(current_path: Path) -> int | None:
@@ -22,6 +24,44 @@ def write_current_id(current_path: Path, character_id: int) -> None:
     current_path.write_text(f'{character_id}\n')
 
 
+def render_character(character: CharacterRow) -> str:
+    return f'{character["id"]} {character["sophont"]} {character["player"]} {character["name"]}'
+
+
+def render_character_show(character: CharacterRow, ucp: dict[str, int] | None) -> list[str]:
+    lines = [
+        f'Id: {character["id"]}',
+        f'Sophont: {character["sophont"]}',
+        f'Player: {character["player"]}',
+        f'Name: {character["name"]}',
+    ]
+    ucp_short = render_ucp_short(ucp)
+    if ucp_short:
+        lines.append(f'UCP: {ucp_short}')
+        lines.append(f'Characteristics: {render_ucp(ucp or {})}')
+    return lines
+
+
+def render_ucp(ucp: dict[str, int]) -> str:
+    if not ucp:
+        return 'No UCP set'
+    return ' '.join(f'{stat} {ucp[stat]}' for stat in UCP_STATS if stat in ucp)
+
+
+def render_ucp_short(ucp: dict[str, int] | None) -> str:
+    if not ucp:
+        return ''
+    if any(stat not in ucp for stat in UCP_STATS):
+        return ''
+    return ''.join(f'{ucp[stat]:X}' for stat in UCP_STATS)
+
+
+def render_skill(skill: SkillInfo) -> str:
+    if skill.specialities:
+        return f'{skill.name}: {", ".join(skill.specialities)}'
+    return skill.name
+
+
 def build_app(backend: SqliteCharacterBackend | None = None, current_path: Path | None = None) -> typer.Typer:
     if backend is None:
         backend = SqliteCharacterBackend()
@@ -30,14 +70,21 @@ def build_app(backend: SqliteCharacterBackend | None = None, current_path: Path 
         current_path = settings.cache_dir() / 'current-character'
     app = typer.Typer()
     sophonts_app = typer.Typer()
+    skills_app = typer.Typer()
     create_app = typer.Typer()
     app.add_typer(sophonts_app, name='sophonts')
+    app.add_typer(skills_app, name='skills')
     app.add_typer(create_app, name='create')
 
     @sophonts_app.command('list')
     def list_sophonts_command() -> None:
         for sophont in SOPHONTS:
             typer.echo(sophont)
+
+    @skills_app.command('list')
+    def list_skills_command() -> None:
+        for skill in skill_list():
+            typer.echo(render_skill(skill))
 
     @create_app.command('start')
     def start_character_creation(
@@ -60,11 +107,13 @@ def build_app(backend: SqliteCharacterBackend | None = None, current_path: Path 
     @create_app.command('list')
     def list_character_creations() -> None:
         current_id = read_current_id(current_path)
-        typer.echo('*  Id  Sophont   Player  Name')
+        typer.echo('*  Id  Sophont   UCP     Player  Name')
         for character in backend.list_characters():
             marker = '*  ' if character['id'] == current_id else '   '
+            ucp_short = render_ucp_short(backend.get_ucp(character['id']))
             typer.echo(
-                f'{marker}{character["id"]:<3} {character["sophont"]:<9} {character["player"]:<7} {character["name"]}'
+                f'{marker}{character["id"]:<3} {character["sophont"]:<9} {ucp_short:<7} '
+                f'{character["player"]:<7} {character["name"]}'
             )
 
     @create_app.command('current')
@@ -74,7 +123,51 @@ def build_app(backend: SqliteCharacterBackend | None = None, current_path: Path 
         if character is None:
             typer.echo('No current character creation', err=True)
             raise typer.Exit(1)
-        typer.echo(f'{character["id"]} {character["sophont"]} {character["player"]} {character["name"]}')
+        typer.echo(render_character(character))
+
+    @create_app.command('show')
+    def show_character_creation(character_id: Annotated[int | None, typer.Argument()] = None) -> None:
+        if character_id is None:
+            character_id = read_current_id(current_path)
+            if character_id is None:
+                typer.echo('No current character creation', err=True)
+                raise typer.Exit(1)
+        character = backend.get_character(character_id)
+        if character is None:
+            typer.echo(f'Unknown character creation id: {character_id}', err=True)
+            raise typer.Exit(1)
+        for line in render_character_show(character, backend.get_ucp(character_id)):
+            typer.echo(line)
+
+    @create_app.command('ucp')
+    def ucp_command(
+        changes: Annotated[list[str] | None, typer.Argument()] = None,
+        note: str | None = typer.Option(None, '--note'),
+    ) -> None:
+        current_id = read_current_id(current_path)
+        if current_id is None:
+            typer.echo('No current character creation', err=True)
+            raise typer.Exit(1)
+        character = backend.get_character(current_id)
+        if character is None:
+            typer.echo('No current character creation', err=True)
+            raise typer.Exit(1)
+        if not changes:
+            ucp = backend.get_ucp(current_id)
+            if ucp is None:
+                typer.echo('No current character creation', err=True)
+                raise typer.Exit(1)
+            typer.echo(render_ucp(ucp))
+            return
+        try:
+            ucp = backend.patch_ucp(current_id, changes, note=note)
+        except ValueError as error:
+            typer.echo(str(error), err=True)
+            raise typer.Exit(1) from error
+        if ucp is None:
+            typer.echo('No current character creation', err=True)
+            raise typer.Exit(1)
+        typer.echo(render_ucp(ucp))
 
     @create_app.command('use')
     def use_character_creation(character_id: int) -> None:

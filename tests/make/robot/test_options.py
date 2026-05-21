@@ -11,10 +11,15 @@ All rule data from:
 import pytest
 
 from ceres.make.robot import (
+    AquaticLocomotion,
     GravLocomotion,
+    HovercraftLocomotion,
     PrimitiveBrain,
     Robot,
     RobotSize,
+    ThrusterLocomotion,
+    TracksLocomotion,
+    VtolLocomotion,
     WalkerLocomotion,
     WheelsLocomotion,
 )
@@ -1078,6 +1083,131 @@ class TestVehicleSpeedModification:
         robot = _robot(options=[VehicleSpeedModification()])
         opt = robot.options[-1]
         assert opt.build_item() is None
+
+    def test_with_vtol_locomotion_has_flyer_medium_trait(self):
+        # refs/robot/08_locomotion_modifications.md — VTOL → Medium
+        robot = Robot(
+            name='T',
+            tl=10,
+            size=RobotSize.SIZE_3,
+            locomotion=VtolLocomotion(),
+            brain=PrimitiveBrain(),
+            options=[VehicleSpeedModification()],
+        )
+        opt = robot.options[-1]
+        traits = opt.robot_traits
+        assert any(t.name == 'Flyer' and t.value == 'medium' for t in traits)
+
+    def test_wheels_vsm_speed_label_slow(self):
+        # refs/robot/08_locomotion_modifications.md — Wheels → Slow
+        robot = Robot(
+            name='T',
+            tl=8,
+            size=RobotSize.SIZE_3,
+            locomotion=WheelsLocomotion(),
+            brain=PrimitiveBrain(),
+            options=[VehicleSpeedModification()],
+        )
+        assert robot.speed_label == 'slow'
+
+    def test_tracks_vsm_speed_label_very_slow(self):
+        # refs/robot/08_locomotion_modifications.md — Tracks → Very Slow
+        robot = Robot(
+            name='T',
+            tl=8,
+            size=RobotSize.SIZE_3,
+            locomotion=TracksLocomotion(),
+            brain=PrimitiveBrain(),
+            options=[VehicleSpeedModification()],
+        )
+        assert robot.speed_label == 'very slow'
+
+    def test_aquatic_vsm_speed_label_very_slow(self):
+        # refs/robot/08_locomotion_modifications.md — Aquatic → Very Slow
+        robot = Robot(
+            name='T',
+            tl=8,
+            size=RobotSize.SIZE_3,
+            locomotion=AquaticLocomotion(),
+            brain=PrimitiveBrain(),
+            options=[VehicleSpeedModification()],
+        )
+        assert robot.speed_label == 'very slow'
+
+    def test_vtol_vsm_speed_label_medium(self):
+        # refs/robot/08_locomotion_modifications.md — VTOL → Medium
+        robot = Robot(
+            name='T',
+            tl=10,
+            size=RobotSize.SIZE_3,
+            locomotion=VtolLocomotion(),
+            brain=PrimitiveBrain(),
+            options=[VehicleSpeedModification()],
+        )
+        assert robot.speed_label == 'medium'
+
+    def test_walker_vsm_speed_label_very_slow(self):
+        # refs/robot/08_locomotion_modifications.md — Walker → Very Slow
+        robot = Robot(
+            name='T',
+            tl=10,
+            size=RobotSize.SIZE_3,
+            locomotion=WalkerLocomotion(),
+            brain=PrimitiveBrain(),
+            options=[VehicleSpeedModification()],
+        )
+        assert robot.speed_label == 'very slow'
+
+    def test_hovercraft_vsm_speed_label_medium(self):
+        # refs/robot/08_locomotion_modifications.md — Hovercraft → Medium
+        robot = Robot(
+            name='T',
+            tl=10,
+            size=RobotSize.SIZE_3,
+            locomotion=HovercraftLocomotion(),
+            brain=PrimitiveBrain(),
+            options=[VehicleSpeedModification()],
+        )
+        assert robot.speed_label == 'medium'
+
+    def test_thruster_vsm_speed_label_shows_thrust(self):
+        # refs/robot/08_locomotion_modifications.md — Thruster → shows thrust e.g. '0.1G'
+        robot = Robot(
+            name='T',
+            tl=10,
+            size=RobotSize.SIZE_3,
+            locomotion=ThrusterLocomotion(),
+            brain=PrimitiveBrain(),
+            options=[VehicleSpeedModification()],
+        )
+        assert robot.speed_label == '0.1G'
+
+    def test_vtol_vsm_replaces_flyer_idle_with_flyer_medium(self):
+        # refs/robot/08_locomotion_modifications.md — VTOL+VSM: Flyer(medium) not Flyer(idle)
+        robot = Robot(
+            name='T',
+            tl=10,
+            size=RobotSize.SIZE_3,
+            locomotion=VtolLocomotion(),
+            brain=PrimitiveBrain(),
+            options=[VehicleSpeedModification()],
+        )
+        trait_strs = [str(t) for t in robot.traits]
+        assert 'Flyer (medium)' in trait_strs
+        assert 'Flyer (idle)' not in trait_strs
+
+    def test_hovercraft_vsm_no_flyer_trait(self):
+        # Hovercraft has ACV, not Flyer — VSM adds no Flyer trait
+        robot = Robot(
+            name='T',
+            tl=10,
+            size=RobotSize.SIZE_3,
+            locomotion=HovercraftLocomotion(),
+            brain=PrimitiveBrain(),
+            options=[VehicleSpeedModification()],
+        )
+        trait_names = [t.name for t in robot.traits]
+        assert 'Flyer' not in trait_names
 
 
 # ── StorageCompartment extended ───────────────────────────────────────────────

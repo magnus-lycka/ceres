@@ -21,6 +21,24 @@ def test_cli_lists_sophonts():
     assert result.stdout.splitlines() == ['Vilani', 'Humaniti']
 
 
+def test_cli_lists_skills():
+    result = CliRunner().invoke(app, ['skills', 'list'])
+
+    assert result.exit_code == 0
+    lines = result.stdout.splitlines()
+    assert 'Admin' in lines
+    assert 'Animals: Handling, Veterinary, Training' in lines
+    assert 'Art' not in lines
+    assert 'Creative Art: Visual Media, Exotic Media' in lines
+    assert 'Profession' not in lines
+    assert (
+        'Worker Profession: Armourer, Biologicals, Civil Engineering, Construction, Hydroponics, Metalworking, Polymers'
+        in lines
+    )
+    assert 'Science' not in lines
+    assert 'Space Science: Astronomy, Cosmology, Planetology' in lines
+
+
 def test_cli_starts_character_creation_with_vilani_sophont(memory_app):
     result = CliRunner().invoke(memory_app, ['create', 'start', '-s', 'Vilani', 'Boss'])
 
@@ -48,9 +66,9 @@ def test_cli_lists_started_character_creations(memory_app):
     assert second.exit_code == 0
     assert listed.exit_code == 0
     assert listed.stdout.splitlines() == [
-        '*  Id  Sophont   Player  Name',
-        '   1   Vilani    NPC     Boss',
-        '*  2   Humaniti  Anders  Lynn Rashid',
+        '*  Id  Sophont   UCP     Player  Name',
+        '   1   Vilani            NPC     Boss',
+        '*  2   Humaniti          Anders  Lynn Rashid',
     ]
 
 
@@ -75,9 +93,9 @@ def test_cli_tracks_current_character_creation(memory_app):
     assert current_after_use.stdout.splitlines() == ['1 Vilani NPC Boss']
     assert listed_after_use.exit_code == 0
     assert listed_after_use.stdout.splitlines() == [
-        '*  Id  Sophont   Player  Name',
-        '*  1   Vilani    NPC     Boss',
-        '   2   Humaniti  Anders  Lynn Rashid',
+        '*  Id  Sophont   UCP     Player  Name',
+        '*  1   Vilani            NPC     Boss',
+        '   2   Humaniti          Anders  Lynn Rashid',
     ]
 
 
@@ -115,6 +133,143 @@ def test_cli_rejects_unknown_current_character_id(memory_app):
     assert 'Unknown character creation id: 999' in result.output
 
 
+def test_cli_shows_current_character_creation(memory_app):
+    runner = CliRunner()
+
+    runner.invoke(memory_app, ['create', 'start', '-s', 'Vilani', 'Boss'])
+    shown = runner.invoke(memory_app, ['create', 'show'])
+
+    assert shown.exit_code == 0
+    assert shown.stdout.splitlines() == [
+        'Id: 1',
+        'Sophont: Vilani',
+        'Player: NPC',
+        'Name: Boss',
+    ]
+
+
+def test_cli_shows_character_creation_by_id(memory_app):
+    runner = CliRunner()
+
+    runner.invoke(memory_app, ['create', 'start', '-s', 'Vilani', 'Boss'])
+    runner.invoke(memory_app, ['create', 'start', '-s', 'Humaniti', '-p', 'Anders', 'Lynn Rashid'])
+    shown = runner.invoke(memory_app, ['create', 'show', '1'])
+
+    assert shown.exit_code == 0
+    assert shown.stdout.splitlines() == [
+        'Id: 1',
+        'Sophont: Vilani',
+        'Player: NPC',
+        'Name: Boss',
+    ]
+
+
+def test_cli_show_includes_ucp(memory_app):
+    runner = CliRunner()
+
+    runner.invoke(memory_app, ['create', 'start', '-s', 'Vilani', 'Boss'])
+    runner.invoke(memory_app, ['create', 'ucp', '7869A5'])
+    shown = runner.invoke(memory_app, ['create', 'show'])
+
+    assert shown.exit_code == 0
+    assert shown.stdout.splitlines() == [
+        'Id: 1',
+        'Sophont: Vilani',
+        'Player: NPC',
+        'Name: Boss',
+        'UCP: 7869A5',
+        'Characteristics: STR 7 DEX 8 END 6 INT 9 EDU 10 SOC 5',
+    ]
+
+
+def test_cli_rejects_show_without_current_character(memory_app):
+    result = CliRunner().invoke(memory_app, ['create', 'show'])
+
+    assert result.exit_code != 0
+    assert 'No current character creation' in result.output
+
+
+def test_cli_rejects_show_for_unknown_character(memory_app):
+    result = CliRunner().invoke(memory_app, ['create', 'show', '999'])
+
+    assert result.exit_code != 0
+    assert 'Unknown character creation id: 999' in result.output
+
+
+def test_cli_sets_and_shows_current_ucp(memory_app):
+    runner = CliRunner()
+
+    runner.invoke(memory_app, ['create', 'start', '-s', 'Vilani', 'Boss'])
+    changed = runner.invoke(memory_app, ['create', 'ucp', 'STR=7', 'DEX=8', 'END=6', 'INT=9', 'EDU=10', 'SOC=5'])
+    shown = runner.invoke(memory_app, ['create', 'ucp'])
+
+    assert changed.exit_code == 0
+    assert changed.stdout.splitlines() == ['STR 7 DEX 8 END 6 INT 9 EDU 10 SOC 5']
+    assert shown.exit_code == 0
+    assert shown.stdout.splitlines() == ['STR 7 DEX 8 END 6 INT 9 EDU 10 SOC 5']
+
+
+def test_cli_sets_current_ucp_from_short_form(memory_app):
+    runner = CliRunner()
+
+    runner.invoke(memory_app, ['create', 'start', '-s', 'Vilani', 'Boss'])
+    changed = runner.invoke(memory_app, ['create', 'ucp', '7788B4'])
+    shown = runner.invoke(memory_app, ['create', 'ucp'])
+    listed = runner.invoke(memory_app, ['create', 'list'])
+
+    assert changed.exit_code == 0
+    assert changed.stdout.splitlines() == ['STR 7 DEX 7 END 8 INT 8 EDU 11 SOC 4']
+    assert shown.exit_code == 0
+    assert shown.stdout.splitlines() == ['STR 7 DEX 7 END 8 INT 8 EDU 11 SOC 4']
+    assert listed.exit_code == 0
+    assert listed.stdout.splitlines() == [
+        '*  Id  Sophont   UCP     Player  Name',
+        '*  1   Vilani    7788B4  NPC     Boss',
+    ]
+
+
+def test_cli_lists_ucp_short_form(memory_app):
+    runner = CliRunner()
+
+    runner.invoke(memory_app, ['create', 'start', '-s', 'Vilani', 'Boss'])
+    runner.invoke(memory_app, ['create', 'ucp', 'STR=7', 'DEX=8', 'END=6', 'INT=9', 'EDU=10', 'SOC=5'])
+    listed = runner.invoke(memory_app, ['create', 'list'])
+
+    assert listed.exit_code == 0
+    assert listed.stdout.splitlines() == [
+        '*  Id  Sophont   UCP     Player  Name',
+        '*  1   Vilani    7869A5  NPC     Boss',
+    ]
+
+
+def test_cli_patches_current_ucp_with_note_and_adjustments(memory_app):
+    runner = CliRunner()
+
+    runner.invoke(memory_app, ['create', 'start', '-s', 'Vilani', 'Boss'])
+    runner.invoke(memory_app, ['create', 'ucp', 'STR=7', 'DEX=8'])
+    changed = runner.invoke(memory_app, ['create', 'ucp', '--note', 'Aging', 'STR-2', 'DEX-1', 'EDU+1'])
+
+    assert changed.exit_code == 0
+    assert changed.stdout.splitlines() == ['STR 5 DEX 7 EDU 1']
+
+
+def test_cli_rejects_ucp_without_current_character(memory_app):
+    result = CliRunner().invoke(memory_app, ['create', 'ucp'])
+
+    assert result.exit_code != 0
+    assert 'No current character creation' in result.output
+
+
+def test_cli_rejects_invalid_ucp_change(memory_app):
+    runner = CliRunner()
+
+    runner.invoke(memory_app, ['create', 'start', '-s', 'Vilani', 'Boss'])
+    result = runner.invoke(memory_app, ['create', 'ucp', 'FOO=7'])
+
+    assert result.exit_code != 0
+    assert 'Invalid UCP change: FOO=7' in result.output
+
+
 def test_cli_renames_current_character_creation(memory_app):
     runner = CliRunner()
 
@@ -129,8 +284,8 @@ def test_cli_renames_current_character_creation(memory_app):
     assert current.stdout.splitlines() == ['1 Vilani NPC Flavius Rupert']
     assert listed.exit_code == 0
     assert listed.stdout.splitlines() == [
-        '*  Id  Sophont   Player  Name',
-        '*  1   Vilani    NPC     Flavius Rupert',
+        '*  Id  Sophont   UCP     Player  Name',
+        '*  1   Vilani            NPC     Flavius Rupert',
     ]
 
 

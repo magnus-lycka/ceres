@@ -123,14 +123,19 @@ class Robot(RobotBase):
 
     @property
     def used_slots(self) -> int:
+        from .options import AgilityEnhancement, Efficiency
+
         brain_slot = self.brain.brain_slots(self.tl, int(self.size))
         option_slots = sum(o.slots for o in self.options if isinstance(o, RobotPartMixin) and o.slots > 0)
-        # Chassis modifications (item_message is None) are excluded from the zero-slot quota.
+        # Chassis mods (item_message is None, or Efficiency/AgilityEnhancement) excluded from quota.
         # The 5 default suite items in options are covered by the +5 term in the quota.
         zero_slot_count = sum(
             1
             for o in self.options
-            if isinstance(o, RobotPartMixin) and o.slots == 0 and o.notes.item_message is not None
+            if isinstance(o, RobotPartMixin)
+            and o.slots == 0
+            and o.notes.item_message is not None
+            and not isinstance(o, (AgilityEnhancement, Efficiency))
         )
         excess_zero_slots = max(0, zero_slot_count - (5 + int(self.size) + self.tl))
         extra_manip_slots = max(0, self._manipulator_slot_effect)
@@ -210,15 +215,21 @@ class Robot(RobotBase):
 
     @property
     def speed_label(self) -> str:
+        from .locomotion import ThrusterLocomotion
         from .options import VehicleSpeedModification
 
         if any(isinstance(o, VehicleSpeedModification) for o in self.options):
+            if isinstance(self.locomotion, ThrusterLocomotion):
+                return f'{self.locomotion.thrust_g:g}G'
             for t in self.traits:
                 if t.name == 'Flyer':
                     return str(t.value)
+            band = self.locomotion._vehicle_speed_band
+            if band:
+                return band
             return 'Vehicle speed'
         speed_bonus = sum(opt.speed_bonus for opt in self.options if isinstance(opt, RobotPartMixin))
-        return f'{self.locomotion.effective_speed + speed_bonus}m'
+        return f'{self.locomotion.effective_speed + (self.locomotion.agility or 0) + speed_bonus}m'
 
     @property
     def endurance_label(self) -> str:
@@ -289,7 +300,7 @@ class Robot(RobotBase):
         return notes
 
     def _build_detail_sections(self) -> list:
-        from .options import VehicleSpeedModification
+        from .options import AgilityEnhancement, Efficiency, VehicleSpeedModification
         from .spec import RobotDetailRow, RobotDetailSection
 
         sections = []
@@ -335,6 +346,22 @@ class Robot(RobotBase):
                     RobotDetailRow(
                         name='Vehicle Speed Modification',
                         col2=f'−{opt.slots}',
+                        cost=format_credits(opt.cost),
+                    )
+                )
+        for opt in self.options:
+            if isinstance(opt, AgilityEnhancement):
+                cs.rows.append(
+                    RobotDetailRow(
+                        name=f'Agility Enhancement ({opt.level})',
+                        cost=format_credits(opt.cost),
+                    )
+                )
+        for opt in self.options:
+            if isinstance(opt, Efficiency):
+                cs.rows.append(
+                    RobotDetailRow(
+                        name='Efficiency',
                         cost=format_credits(opt.cost),
                     )
                 )
@@ -402,58 +429,72 @@ class Robot(RobotBase):
         ms = RobotDetailSection(title='Manipulators')
         std_slots = self._std_manip_slots
         std_cost = 100.0 * int(self.size)
-        # Credit available for removed/downsized rows (already reflects 20% cap)
         remaining_credit = -min(0.0, self._manipulator_cost_effect)
+        # Build (name, slots_freed, cost_effect) rows; group consecutive identical ones.
+        manip_rows: list[tuple[str, int, float]] = []
         for i in range(2):
             if i < len(self.manipulators):
                 m = self.manipulators[i]
                 label = m.stat_label(self.size, self.tl)
-                slot_delta = m.slots - std_slots
-                cost_delta = m.cost - std_cost
-                slot_str = f'−{slot_delta}' if slot_delta > 0 else (f'+{-slot_delta}' if slot_delta < 0 else '—')
-                cost_str = (
-                    format_credits(cost_delta)
-                    if cost_delta > 0
-                    else (f'−{format_credits(-cost_delta)}' if cost_delta < 0 else '—')
-                )
-                ms.rows.append(RobotDetailRow(name=label, col2=slot_str, cost=cost_str))
+                manip_rows.append((label, std_slots - m.slots, m.cost - std_cost))
             else:
                 allocated = min(std_cost, remaining_credit)
                 remaining_credit -= allocated
-                cost_str = f'−{format_credits(allocated)}' if allocated > 0 else '—'
-                ms.rows.append(RobotDetailRow(name='Removed manipulator', col2=f'+{std_slots}', cost=cost_str))
+                manip_rows.append(('Removed manipulator', std_slots, -allocated))
         for m in self.manipulators[2:]:
-            label = m.stat_label(self.size, self.tl)
-            ms.rows.append(
-                RobotDetailRow(
-                    name=label,
-                    col2=f'−{m.slots}',
-                    cost=format_credits(m.cost),
-                )
-            )
+            manip_rows.append((m.stat_label(self.size, self.tl), -m.slots, m.cost))
         for m in self._leg_manipulators:
             label = f'Manipulator leg {m.stat_label(self.size, self.tl)}'
-            ms.rows.append(
-                RobotDetailRow(
-                    name=label,
-                    col2='—',
-                    cost=format_credits(m.cost),
-                )
+            manip_rows.append((label, 0, m.cost))
+        j = 0
+        while j < len(manip_rows):
+            name, slots_freed, cost_effect = manip_rows[j]
+            count = 1
+            while j + count < len(manip_rows) and manip_rows[j + count] == manip_rows[j]:
+                count += 1
+            grouped_name = f'{name} × {count}' if count > 1 else name
+            total_slots = slots_freed * count
+            total_cost = cost_effect * count
+            slot_str = f'+{total_slots}' if total_slots > 0 else (f'−{-total_slots}' if total_slots < 0 else '—')
+            cost_str = (
+                format_credits(total_cost)
+                if total_cost > 0
+                else (f'−{format_credits(-total_cost)}' if total_cost < 0 else '—')
             )
+            ms.rows.append(RobotDetailRow(name=grouped_name, col2=slot_str, cost=cost_str))
+            j += count
         sections.append(ms)
 
         # ── Options ───────────────────────────────────────────────────────
-        opts = [o for o in self.options if isinstance(o, RobotPartMixin) and o.notes.item_message]
+        opts = [
+            o
+            for o in self.options
+            if isinstance(o, RobotPartMixin)
+            and o.notes.item_message
+            and not isinstance(o, (AgilityEnhancement, Efficiency))
+        ]
         if opts:
             os_ = RobotDetailSection(title='Options')
-            for o in opts:
+            # Group consecutive identical option labels; sum slots and cost within each run.
+            i = 0
+            while i < len(opts):
+                label = opts[i].notes.item_message
+                slots = opts[i].slots
+                cost = opts[i].cost
+                count = 1
+                while i + count < len(opts) and opts[i + count].notes.item_message == label:
+                    slots += opts[i + count].slots
+                    cost += opts[i + count].cost
+                    count += 1
+                name = f'{label} × {count}' if count > 1 else label
                 os_.rows.append(
                     RobotDetailRow(
-                        name=o.notes.item_message,
-                        col2=f'−{o.slots}' if o.slots > 0 else '—',
-                        cost=format_credits(o.cost) if o.cost > 0 else '—',
+                        name=name,
+                        col2=f'−{slots}' if slots > 0 else '—',
+                        cost=format_credits(cost) if cost > 0 else '—',
                     )
                 )
+                i += count
             sections.append(os_)
 
         # ── Finalisation ──────────────────────────────────────────────────
@@ -464,6 +505,28 @@ class Robot(RobotBase):
                 name='Remaining',
                 col2=str(self.remaining_slots),
                 col3=str(rem_bw) if rem_bw is not None else '—',
+            )
+        )
+        # Zero-slot option quota (chassis mods AgilityEnhancement/Efficiency excluded)
+        zero_slot_count = sum(
+            1
+            for o in self.options
+            if isinstance(o, RobotPartMixin)
+            and o.slots == 0
+            and o.notes.item_message is not None
+            and not isinstance(o, (AgilityEnhancement, Efficiency))
+        )
+        zero_slot_quota = 5 + int(self.size) + self.tl
+        zero_bw_str = '—'
+        if isinstance(self.brain, (AdvancedBrain, VeryAdvancedBrain, SelfAwareBrain)):
+            zero_bw_pkgs = sum(1 for pkg in self.brain.installed_skills if pkg.bandwidth == 0)
+            brain_computer_x = self.brain._entry().computer_x
+            zero_bw_str = f'{zero_bw_pkgs}/{brain_computer_x}'
+        fin.rows.append(
+            RobotDetailRow(
+                name='Zero-slot options and Zero-BW skill packages',
+                col2=f'{zero_slot_count}/{zero_slot_quota}',
+                col3=zero_bw_str,
             )
         )
         if self._raw_cost < entry.basic_cost:

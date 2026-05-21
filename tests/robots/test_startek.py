@@ -200,7 +200,7 @@ class TestStarTekManipulatorsPhase3:
 _startek_fuller_expected = SimpleNamespace(
     hits=20,
     locomotion='Grav',
-    speed='5m',
+    speed='6m',
     tl=14,
     base_armour=4,
     traits='Armour (+10), ATV, Flyer (idle), IR/UV Vision',

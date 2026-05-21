@@ -464,3 +464,25 @@ The vehicle skill type follows the locomotion type:
 | Hovercraft | Drive (hovercraft) |
 | Thruster | Pilot (small craft) |
 | Walker / None | — (no vehicle skill) |
+
+### RIR-009 Speed Label Convention
+
+`Robot.speed_label` expresses speed as follows:
+
+- **No VSM, standard locomotion**: tactical speed in metres — `'{effective_speed + agility + speed_bonus}m'`. Affected by Tactical Speed Enhancement and Tactical Speed Reduction.
+- **Thruster locomotion** (with or without VSM): thrust expressed as `'{thrust_g:g}G'` (e.g. `'0.1G'`).
+- **VSM present, locomotion with a Flyer trait** (e.g. Grav): the vehicle speed band replaces the Flyer trait value — returned directly (e.g. `'high'`).
+- **VSM present, non-Flyer locomotion** (e.g. Wheels, Tracks): the vehicle speed band string from `_vehicle_speed_band` is returned (e.g. `'slow'`, `'very slow'`, `'medium'`).
+
+Every locomotion type that can carry VSM must declare `_vehicle_speed_band` matching the Vehicle Speed Locomotion table (refs/robot/08_locomotion_modifications.md).
+
+### RIR-010 Vehicle Speed Modification: Incompatibilities and Agility Enhancement Interaction
+
+**Incompatibilities.** The *Robot Handbook* (p.53) states that Vehicle Speed Modification cannot be combined with Tactical Speed Enhancement. By symmetry, it also cannot be combined with Tactical Speed Reduction — both modifications alter the robot's tactical speed band, which is superseded by vehicle speed movement and therefore meaningless alongside VSM.
+
+**Agility Enhancement with VSM.** Agility Enhancement and Vehicle Speed Modification *can* coexist on the same robot. When VSM is installed, the robot's movement is governed by its vehicle speed band, not by tactical speed. The speed bonus that Agility Enhancement would normally add to tactical movement is therefore suppressed — it has no effect on the displayed speed. However, the enhancement still:
+
+- grants `Athletics (dexterity) N` (the skill is unconditional)
+- contributes to the robot's *effective agility* used elsewhere, e.g. the vehicle skill level granted by a `Basic (locomotion)` brain (see RIR-008)
+
+Ceres models this by having `AgilityEnhancement.speed_bonus` return its level unconditionally, but `Robot.speed_label` short-circuits on VSM before consuming that value (see RIR-009), so the displayed speed is always the vehicle speed band. The Athletics (dexterity) grant is emitted regardless.

@@ -185,8 +185,8 @@ class Expert(SoftwarePackage):
         'Animals (Veterinary)': {'tl': 9, 'cost': 200.0},
         'Astrogation': {'tl': 12, 'cost': 500.0},
         'Broker': {'tl': 10, 'cost': 200.0},
-        'Electronics (Computers)': {'tl': 8, 'cost': 100.0},
         'Electronics (Comms)': {'tl': 8, 'cost': 100.0},
+        'Electronics (Computers)': {'tl': 8, 'cost': 100.0},
         'Electronics (Remote Ops)': {'tl': 8, 'cost': 100.0},
         'Electronics (Sensors)': {'tl': 8, 'cost': 100.0},
         'Engineer (J-Drive)': {'tl': 9, 'cost': 200.0},
@@ -279,16 +279,17 @@ class Expert(SoftwarePackage):
         notes = NoteList()
         if self.rating not in {1, 2, 3}:
             notes.error(f'Invalid Expert rating {self.rating}; expected one of: 1, 2, 3')
-        if not self.skill:
+        skill_name = self._resolved_skill_name
+        if not skill_name:
             notes.error('Expert skill cannot be blank')
-        elif self.skill not in type(self).KNOWN_SKILLS:
-            notes.warning(f'Unfamiliar Expert skill {self.skill} uses CSC fallback values')
+        elif skill_name not in type(self).KNOWN_SKILLS:
+            notes.warning(f'Unfamiliar Expert skill {skill_name} uses CSC fallback values')
         return notes
 
     @property
     def _resolved_spec(self) -> dict[str, int | float]:
         cls = type(self)
-        return cls.KNOWN_SKILLS.get(self.skill, {'tl': cls.FALLBACK_TL, 'cost': cls.FALLBACK_COST})
+        return cls.KNOWN_SKILLS.get(self._resolved_skill_name, {'tl': cls.FALLBACK_TL, 'cost': cls.FALLBACK_COST})
 
     @property
     def _resolved_skill_name(self) -> str:
