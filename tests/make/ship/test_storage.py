@@ -9,6 +9,7 @@ from ceres.make.ship.storage import (
     CargoAirlock,
     CargoCrane,
     CargoHold,
+    CargoNet,
     CargoScoop,
     CargoSection,
     FuelCargoContainer,
@@ -193,6 +194,31 @@ def test_cargo_scoop_appears_in_ship_spec():
     row = my_ship.build_spec().row('Cargo Scoop', section=SpecSection.CARGO)
     assert row.tons == pytest.approx(2.0)
     assert row.cost == pytest.approx(500_000.0)
+
+
+def test_cargo_net_values_and_notes():
+    net = CargoNet()
+
+    assert net.tons == pytest.approx(5.0)
+    assert net.cost == pytest.approx(1_000_000.0)
+    assert net.power == pytest.approx(0.0)
+    assert net.notes.infos == [
+        'Tow drones extend a retrieval net',
+        'Ship cannot jump while cargo net is deployed',
+    ]
+
+
+def test_cargo_net_appears_in_ship_spec():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        cargo=CargoSection(cargo_nets=[CargoNet()]),
+    )
+
+    row = my_ship.build_spec().row('Cargo Net', section=SpecSection.CARGO)
+    assert row.tons == pytest.approx(5.0)
+    assert row.cost == pytest.approx(1_000_000.0)
 
 
 def test_cargo_hold_display_label_appears_in_ship_spec():

@@ -293,7 +293,16 @@ def _apply_mishap(projection: CharacterProjection, event: MishapEvent) -> None:
                         )
                     )
                     pending_idx += 1
-                # severe injury: deferred
+                elif severity == 'severe':
+                    projection.pending_inputs.append(
+                        PendingInput(
+                            id=f'{event.id}.{pending_idx}',
+                            kind='characteristic_choice',
+                            instruction='Severely injured: choose STR, DEX, or END to reduce by 2',
+                            options=['STR', 'DEX', 'END'],
+                        )
+                    )
+                    pending_idx += 1
             else:
                 _apply_simple_effect(projection, effect, source=mishap.text, source_event_id=event.id)
     stay = event.stay_in_career or (mishap is not None and mishap.stay_in_career)
@@ -416,7 +425,7 @@ def _apply_skill_roll(projection: CharacterProjection, event: SkillRollEvent) ->
 def _apply_characteristic_choice(projection: CharacterProjection, event: CharacteristicChoiceEvent) -> None:
     char = event.characteristic
     current = projection.summary.characteristics.get(char, 0)
-    projection.summary.characteristics[char] = max(0, current - 1)
+    projection.summary.characteristics[char] = max(0, current - event.amount)
 
 
 def _apply_advancement(projection: CharacterProjection, event: AdvancementEvent) -> None:

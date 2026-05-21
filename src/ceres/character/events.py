@@ -71,6 +71,7 @@ class SkillTableEvent(EventBase):
 class CharacteristicChoiceEvent(EventBase):
     kind: Literal['characteristic_choice'] = 'characteristic_choice'
     characteristic: str  # the chosen characteristic to apply the pending effect to
+    amount: int = 1  # how much to reduce the characteristic by
 
 
 class ConnectionsRollEvent(EventBase):

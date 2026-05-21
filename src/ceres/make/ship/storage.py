@@ -299,6 +299,26 @@ class CargoScoop(_ZeroPowerStoragePart):
         return notes
 
 
+class CargoNet(_ZeroPowerStoragePart):
+    description: Literal['Cargo Net'] = 'Cargo Net'
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+
+    @property
+    def tons(self) -> float:
+        return 5.0
+
+    @property
+    def cost(self) -> float:
+        return 1_000_000.0
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('Tow drones extend a retrieval net')
+        notes.info('Ship cannot jump while cargo net is deployed')
+        return notes
+
+
 class CargoHold(CeresModel):
     description: Literal['Cargo Hold'] = 'Cargo Hold'
     tons: float | None = None
@@ -372,9 +392,16 @@ class CargoSection(CeresModel):
     fuel_cargo_containers: list[FuelCargoContainer] = Field(default_factory=list)
     loading_belts: list[LoadingBelt] = Field(default_factory=list)
     cargo_scoops: list[CargoScoop] = Field(default_factory=list)
+    cargo_nets: list[CargoNet] = Field(default_factory=list)
 
     def _all_parts(self) -> list[ShipPart]:
-        return [*self.cargo_airlocks, *self.fuel_cargo_containers, *self.loading_belts, *self.cargo_scoops]
+        return [
+            *self.cargo_airlocks,
+            *self.fuel_cargo_containers,
+            *self.loading_belts,
+            *self.cargo_scoops,
+            *self.cargo_nets,
+        ]
 
     @staticmethod
     def maximum_stores_tons(ship) -> float | None:

@@ -1250,3 +1250,62 @@ class TestNormalInjury:
         projection = replay(1, events)
 
         assert projection.summary.current_career is None
+
+
+class TestSevereInjury:
+    """Mishap 1 for Scout and Scholar: severely injured — reduce one physical characteristic by 2."""
+
+    def _setup_through_failed_survive(self, career: str = 'Scout', assignment: str = 'Courier') -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career=career, assignment=assignment),
+            SurviveEvent(id=5, fulfills='4.0', roll=3),  # fail
+        ]
+
+    def test_scout_mishap_1_creates_characteristic_choice_for_physical_stats(self):
+        events = [*self._setup_through_failed_survive(), MishapEvent(id=6, fulfills='5.0', roll=1)]
+        projection = replay(1, events)
+
+        choice = next((p for p in projection.pending_inputs if p.kind == 'characteristic_choice'), None)
+        assert choice is not None
+        assert set(choice.options) == {'STR', 'DEX', 'END'}
+
+    def test_scout_mishap_1_instruction_mentions_reduction_of_2(self):
+        events = [*self._setup_through_failed_survive(), MishapEvent(id=6, fulfills='5.0', roll=1)]
+        projection = replay(1, events)
+
+        choice = next(p for p in projection.pending_inputs if p.kind == 'characteristic_choice')
+        assert '2' in choice.instruction
+
+    def test_scout_mishap_1_choice_reduces_characteristic_by_2(self):
+        events = [
+            *self._setup_through_failed_survive(),
+            MishapEvent(id=6, fulfills='5.0', roll=1),
+            CharacteristicChoiceEvent(id=7, fulfills='6.0', characteristic='STR', amount=2),
+        ]
+        projection = replay(1, events)
+
+        # STR was 7 from UCP '7869A5'
+        assert projection.summary.characteristics['STR'] == 5
+
+    def test_scholar_mishap_1_also_creates_characteristic_choice(self):
+        events = [
+            *self._setup_through_failed_survive('Scholar', 'Field Researcher'),
+            MishapEvent(id=6, fulfills='5.0', roll=1),
+        ]
+        projection = replay(1, events)
+
+        choice = next((p for p in projection.pending_inputs if p.kind == 'characteristic_choice'), None)
+        assert choice is not None
+        assert set(choice.options) == {'STR', 'DEX', 'END'}
+
+    def test_normal_injury_still_reduces_by_1(self):
+        # Scout mishap 6: normal injury should still only reduce by 1
+        events = [
+            *self._setup_through_failed_survive(),
+            MishapEvent(id=6, fulfills='5.0', roll=6),
+            CharacteristicChoiceEvent(id=7, fulfills='6.0', characteristic='STR'),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.characteristics['STR'] == 6  # 7 - 1
