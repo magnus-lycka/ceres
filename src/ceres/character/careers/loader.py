@@ -60,7 +60,7 @@ def _parse_career_event(raw: dict) -> CareerEventEntry:
 
 def _parse_mishap(raw: dict) -> MishapEntry:
     effects = [EventEffect(**e) for e in raw.get('effects', [])]
-    return MishapEntry(text=raw['text'], effects=effects)
+    return MishapEntry(text=raw['text'], stay_in_career=raw.get('stay_in_career', False), effects=effects)
 
 
 def _load_career_file(path: Path) -> CareerData:

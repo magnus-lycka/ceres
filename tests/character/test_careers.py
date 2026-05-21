@@ -641,13 +641,13 @@ class TestSkillTable:
             ReenlistEvent(id=8, fulfills='7.0', reenlist=True),
         ]
 
-    def test_skill_table_courier_roll_grants_skill(self):
-        # Courier table roll 1: Electronics
+    def test_skill_table_courier_roll_grants_new_skill_at_level_0(self):
+        # Courier table roll 1: Electronics — not in Scout service skills → first gain at level 0
         events = [*self._setup_in_term_2(), SkillTableEvent(id=9, fulfills='8.0', table='courier', roll=1)]
 
         projection = replay(1, events)
 
-        assert projection.summary.skills.get('Electronics') == 1
+        assert projection.summary.skills.get('Electronics') == 0
 
     def test_skill_table_personal_development_characteristic_increase(self):
         # Personal development roll 1: STR +1 (STR was 7, should be 8)
@@ -900,3 +900,151 @@ class TestScholarTerm:
         assert projection.summary.skills.get('Survival', -1) >= 1
         assert projection.summary.current_career is None
         assert not any(p.kind == 'advancement' for p in projection.pending_inputs)
+
+    def test_scholar_mishap_6_stays_in_career_and_gains_rival(self):
+        events = [
+            *self._setup_with_scholar(),
+            SurviveEvent(id=5, fulfills='4.0', roll=3),
+            MishapEvent(id=6, fulfills='5.0', roll=6),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.current_career == 'Scholar'
+        assert any(p.kind == 'advancement' for p in projection.pending_inputs)
+        assert any(c.kind == 'rival' for c in projection.summary.connections)
+
+    def test_scholar_mishap_6_stays_even_without_explicit_flag(self):
+        # MishapEntry.stay_in_career overrides player's default stay_in_career=False
+        events = [
+            *self._setup_with_scholar(),
+            SurviveEvent(id=5, fulfills='4.0', roll=3),
+            MishapEvent(id=6, fulfills='5.0', roll=6, stay_in_career=False),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.current_career == 'Scholar'
+
+
+class TestSkillTableIncrement:
+    """Skill table rolls increment: gain at 0 if new, +1 if already possessed."""
+
+    def _setup_in_term_2(self) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=7),
+            AdvancementEvent(id=7, fulfills='6.0', roll=9),
+            ReenlistEvent(id=8, fulfills='7.0', reenlist=True),
+        ]
+
+    def test_new_skill_gains_level_0(self):
+        # Courier table roll 2: Persuade — not in Scout service skills → first gain at 0
+        events = [*self._setup_in_term_2(), SkillTableEvent(id=9, fulfills='8.0', table='courier', roll=2)]
+        projection = replay(1, events)
+
+        assert projection.summary.skills.get('Persuade') == 0
+
+    def test_existing_skill_at_0_increments_to_1(self):
+        # Courier table roll 3: Pilot — Scout has Pilot 0 from initial training → 1
+        events = [*self._setup_in_term_2(), SkillTableEvent(id=9, fulfills='8.0', table='courier', roll=3)]
+        projection = replay(1, events)
+
+        assert projection.summary.skills.get('Pilot') == 1
+
+    def test_existing_skill_at_1_increments_to_2(self):
+        # Scout rank 1 bonus: Vacc Suit 1. Roll service_skills 5 (Vacc Suit) in term 2 → 2
+        events = [*self._setup_in_term_2(), SkillTableEvent(id=9, fulfills='8.0', table='service_skills', roll=5)]
+        projection = replay(1, events)
+
+        assert projection.summary.skills.get('Vacc Suit') == 2
+
+
+class TestSkillTableChoice:
+    """Skill table entries with multiple options create a pending choice."""
+
+    def _setup_scholar_term_2(self) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Scientist'),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=7),
+            AdvancementEvent(id=7, fulfills='6.0', roll=7),
+            ReenlistEvent(id=8, fulfills='7.0', reenlist=True),
+        ]
+
+    def test_choice_entry_creates_skill_table_choice_pending(self):
+        # Scholar service_skills roll 1: Drive/Flyer choice
+        events = [*self._setup_scholar_term_2(), SkillTableEvent(id=9, fulfills='8.0', table='service_skills', roll=1)]
+        projection = replay(1, events)
+
+        pending = next((p for p in projection.pending_inputs if p.kind == 'skill_table_choice'), None)
+        assert pending is not None
+        assert set(pending.options) == {'Drive', 'Flyer'}
+
+    def test_choice_increments_chosen_skill(self):
+        # Scholar has Drive 0 from initial training → choose Drive → Drive 1
+        events = [
+            *self._setup_scholar_term_2(),
+            SkillTableEvent(id=9, fulfills='8.0', table='service_skills', roll=1),
+            SkillChoiceEvent(id=10, fulfills='9.0', skill='Drive'),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.skills.get('Drive') == 1
+
+    def test_choice_creates_survive_pending_not_advancement(self):
+        events = [
+            *self._setup_scholar_term_2(),
+            SkillTableEvent(id=9, fulfills='8.0', table='service_skills', roll=1),
+            SkillChoiceEvent(id=10, fulfills='9.0', skill='Flyer'),
+        ]
+        projection = replay(1, events)
+
+        assert any(p.kind == 'survive' for p in projection.pending_inputs)
+        assert not any(p.kind == 'advancement' for p in projection.pending_inputs)
+
+
+class TestAdvancementDmFromScheduledEffects:
+    """Scheduled advancement DMs are consumed and applied during the advancement check."""
+
+    def test_breakthrough_dm_helps_marginal_roll_succeed(self):
+        # Scholar Scientist: INT 9 (DM+1) needs INT 8+
+        # Without event DM: roll 6 + DM+1 = 7 < 8 → fail
+        # With Scholar event 9 DM+2: roll 6 + DM+1 + DM+2 = 9 >= 8 → success
+        events = [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Scientist'),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=9),  # breakthrough → DM+2
+            AdvancementEvent(id=7, fulfills='6.0', roll=6),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.rank == 1
+
+    def test_without_dm_same_roll_fails(self):
+        # Same roll (6) without the breakthrough DM → 7 < 8 → fail
+        events = [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Scientist'),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=7),  # life event, no DM
+            AdvancementEvent(id=7, fulfills='6.0', roll=6),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.rank == 0
+
+    def test_breakthrough_dm_is_consumed_after_advancement(self):
+        events = [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Scientist'),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=9),
+            AdvancementEvent(id=7, fulfills='6.0', roll=6),
+        ]
+        projection = replay(1, events)
+
+        adv_dms = [se for se in projection.scheduled_effects if se.trigger == 'advancement']
+        assert len(adv_dms) == 0

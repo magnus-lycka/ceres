@@ -279,6 +279,7 @@ def build_app(backend: SqliteCharacterBackend | None = None, current_path: Path 
         from pydantic import TypeAdapter, ValidationError
 
         from ceres.character.events import AnyEvent
+
         adapter: TypeAdapter[AnyEvent] = TypeAdapter(AnyEvent)
         try:
             event = adapter.validate_python(raw)

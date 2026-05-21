@@ -9,6 +9,7 @@ from ceres.make.ship.storage import (
     CargoAirlock,
     CargoCrane,
     CargoHold,
+    CargoScoop,
     CargoSection,
     FuelCargoContainer,
     FuelProcessor,
@@ -167,6 +168,31 @@ def test_loading_belt_requires_matching_ship_tl():
     assert my_ship.cargo is not None
     loading_belt = my_ship.cargo.loading_belts[0]
     assert 'Requires TL12, ship is TL9' in loading_belt.notes.errors
+
+
+def test_cargo_scoop_values_and_notes():
+    scoop = CargoScoop()
+
+    assert scoop.tons == pytest.approx(2.0)
+    assert scoop.cost == pytest.approx(500_000.0)
+    assert scoop.power == pytest.approx(0.0)
+    assert scoop.notes.infos == [
+        'Picks up floating cargo at one ton per round',
+        'Pilot check required; ship takes damage equal to negative Effect on failure',
+    ]
+
+
+def test_cargo_scoop_appears_in_ship_spec():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        cargo=CargoSection(cargo_scoops=[CargoScoop()]),
+    )
+
+    row = my_ship.build_spec().row('Cargo Scoop', section=SpecSection.CARGO)
+    assert row.tons == pytest.approx(2.0)
+    assert row.cost == pytest.approx(500_000.0)
 
 
 def test_cargo_hold_display_label_appears_in_ship_spec():

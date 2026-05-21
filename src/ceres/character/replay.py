@@ -72,7 +72,9 @@ def replay(character_id: int, events: Sequence[AnyEvent]) -> CharacterProjection
 
 
 def _apply(projection: CharacterProjection, event: AnyEvent) -> None:
+    fulfilled_kind: str | None = None
     if event.fulfills is not None:
+        fulfilled_kind = next((p.kind for p in projection.pending_inputs if p.id == event.fulfills), None)
         _fulfill(projection, event)
     elif _has_blocking_pending(projection):
         raise ReplayError(
@@ -96,7 +98,7 @@ def _apply(projection: CharacterProjection, event: AnyEvent) -> None:
         case TermEventEvent():
             _apply_term_event(projection, event)
         case SkillChoiceEvent():
-            _apply_skill_choice(projection, event)
+            _apply_skill_choice(projection, event, fulfilled_kind)
         case AdvancementEvent():
             _apply_advancement(projection, event)
         case ReenlistEvent():
@@ -281,7 +283,8 @@ def _apply_mishap(projection: CharacterProjection, event: MishapEvent) -> None:
                 pending_idx += 1
             else:
                 _apply_simple_effect(projection, effect, source=mishap.text, source_event_id=event.id)
-    if event.stay_in_career:
+    stay = event.stay_in_career or (mishap is not None and mishap.stay_in_career)
+    if stay:
         projection.pending_inputs.append(_advancement_pending(projection, career, event.id, pending_idx))
     else:
         projection.summary.current_career = None
@@ -358,11 +361,20 @@ def _apply_auto_advance(projection: CharacterProjection, career: CareerData, eve
     )
 
 
-def _apply_skill_choice(projection: CharacterProjection, event: SkillChoiceEvent) -> None:
-    _grant_skill(projection, event.skill, 1)
-    if projection.summary.current_career is not None:
-        career = _current_career(projection)
-        projection.pending_inputs.append(_advancement_pending(projection, career, event.id))
+def _apply_skill_choice(
+    projection: CharacterProjection, event: SkillChoiceEvent, fulfilled_kind: str | None = None
+) -> None:
+    if fulfilled_kind == 'skill_table_choice':
+        _increment_skill(projection, event.skill)
+        if projection.summary.current_career is not None:
+            career = _current_career(projection)
+            assignment_name = projection.summary.current_assignment or ''
+            projection.pending_inputs.append(_survive_pending(projection, career, assignment_name, event.id))
+    else:
+        _grant_skill(projection, event.skill, 1)
+        if projection.summary.current_career is not None:
+            career = _current_career(projection)
+            projection.pending_inputs.append(_advancement_pending(projection, career, event.id))
 
 
 def _apply_skill_roll(projection: CharacterProjection, event: SkillRollEvent) -> None:
@@ -392,6 +404,10 @@ def _apply_advancement(projection: CharacterProjection, event: AdvancementEvent)
     char = assignment.advancement.characteristic
     target = assignment.advancement.target
     dm = _char_dm(projection.summary.characteristics.get(char, 0))
+    to_consume = [se for se in projection.scheduled_effects if se.trigger == 'advancement' and se.consume]
+    for se in to_consume:
+        dm += se.effect.get('amount', 0)
+        projection.scheduled_effects.remove(se)
     success = (event.roll + dm) >= target
 
     if success:
@@ -452,10 +468,20 @@ def _apply_skill_table(projection: CharacterProjection, event: SkillTableEvent) 
     entry = table.entries.get(event.roll)
     if entry is None:
         raise ReplayError(f'No entry for roll {event.roll} in table {event.table!r}')
-    _apply_skill_table_entry(projection, entry)
-
     assignment_name = projection.summary.current_assignment or ''
-    projection.pending_inputs.append(_survive_pending(projection, career, assignment_name, event.id))
+    if entry.choices:
+        projection.pending_inputs.append(
+            PendingInput(
+                id=f'{event.id}.0',
+                kind='skill_table_choice',
+                instruction=f'Choose one skill: {", ".join(entry.choices)}',
+                options=entry.choices,
+            )
+        )
+        # survive pending created after choice is made in _apply_skill_choice
+    else:
+        _apply_skill_table_entry(projection, entry)
+        projection.pending_inputs.append(_survive_pending(projection, career, assignment_name, event.id))
 
 
 def _apply_skill_table_entry(projection: CharacterProjection, entry: SkillTableEntry) -> None:
@@ -463,7 +489,7 @@ def _apply_skill_table_entry(projection: CharacterProjection, entry: SkillTableE
         char = entry.characteristic
         projection.summary.characteristics[char] = projection.summary.characteristics.get(char, 0) + 1
     elif entry.skill:
-        _grant_skill(projection, entry.skill, entry.level)
+        _increment_skill(projection, entry.skill)
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -491,6 +517,11 @@ def _current_career(projection: CharacterProjection) -> CareerData:
     if career is None:
         raise ReplayError(f'Unknown career: {career_name!r}')
     return career
+
+
+def _increment_skill(projection: CharacterProjection, skill: str) -> None:
+    current = projection.summary.skills.get(skill, -1)
+    projection.summary.skills[skill] = current + 1
 
 
 def _grant_skill(projection: CharacterProjection, skill: str, level: int) -> None:

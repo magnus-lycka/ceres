@@ -3,7 +3,7 @@ from typing import Annotated, ClassVar, Literal
 
 from pydantic import ConfigDict, Field
 
-from ceres.shared import CeresModel, _Note
+from ceres.shared import CeresModel, NoteList, _Note
 
 from .parts import ShipPart
 from .spec import ShipSpec, SpecRow, SpecSection
@@ -279,6 +279,26 @@ class LoadingBeltTL12(_LoadingBelt):
 type LoadingBelt = Annotated[LoadingBeltTL7 | LoadingBeltTL12, Field(discriminator='loading_belt_type')]
 
 
+class CargoScoop(_ZeroPowerStoragePart):
+    description: Literal['Cargo Scoop'] = 'Cargo Scoop'
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+
+    @property
+    def tons(self) -> float:
+        return 2.0
+
+    @property
+    def cost(self) -> float:
+        return 500_000.0
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('Picks up floating cargo at one ton per round')
+        notes.info('Pilot check required; ship takes damage equal to negative Effect on failure')
+        return notes
+
+
 class CargoHold(CeresModel):
     description: Literal['Cargo Hold'] = 'Cargo Hold'
     tons: float | None = None
@@ -351,9 +371,10 @@ class CargoSection(CeresModel):
     cargo_airlocks: list[CargoAirlock] = Field(default_factory=list)
     fuel_cargo_containers: list[FuelCargoContainer] = Field(default_factory=list)
     loading_belts: list[LoadingBelt] = Field(default_factory=list)
+    cargo_scoops: list[CargoScoop] = Field(default_factory=list)
 
     def _all_parts(self) -> list[ShipPart]:
-        return [*self.cargo_airlocks, *self.fuel_cargo_containers, *self.loading_belts]
+        return [*self.cargo_airlocks, *self.fuel_cargo_containers, *self.loading_belts, *self.cargo_scoops]
 
     @staticmethod
     def maximum_stores_tons(ship) -> float | None:

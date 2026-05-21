@@ -43,6 +43,7 @@ class CareerEventEntry(BaseModel):
 
 class MishapEntry(BaseModel):
     text: str
+    stay_in_career: bool = False
     effects: list[EventEffect] = []
 
 

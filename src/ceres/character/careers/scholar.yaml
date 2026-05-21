@@ -94,8 +94,9 @@ mishaps:
       - {type: note, text: "Give up (keep this term's benefit roll, leave career) or start again (lose all benefit rolls, stay in career)."}
   6:
     text: A rival researcher blackens your name or steals your research. Gain a Rival but you do not have to leave this career.
+    stay_in_career: true
     effects:
-      - {type: note, text: "Gain a Rival. Does not cause you to leave."}
+      - {type: gain_rival}
 
 events:
   2:
