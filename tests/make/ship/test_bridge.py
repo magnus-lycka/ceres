@@ -29,6 +29,33 @@ def test_cockpit_holographic_cost():
     assert c.build_item() == 'Holographic Cockpit'
 
 
+def test_dual_cockpit_adds_space_and_cost_for_extra_crew_station():
+    c = Cockpit(dual=True)
+    c.bind(DummyOwner(12, 6))
+
+    assert c.tons == pytest.approx(4.0)
+    assert c.cost == pytest.approx(25_000.0)
+    assert c.build_item() == 'Dual Cockpit'
+
+
+def test_cockpit_ejector_seat_adds_cost_per_seat():
+    c = Cockpit(ejector_seat=True)
+    c.bind(DummyOwner(12, 6))
+
+    assert c.tons == pytest.approx(1.5)
+    assert c.cost == pytest.approx(15_000.0)
+    assert c.build_item() == 'Cockpit with Ejector Seat'
+
+
+def test_dual_cockpit_ejector_seats_cover_both_seats():
+    c = Cockpit(dual=True, ejector_seat=True)
+    c.bind(DummyOwner(12, 6))
+
+    assert c.tons == pytest.approx(4.0)
+    assert c.cost == pytest.approx(35_000.0)
+    assert c.build_item() == 'Dual Cockpit with Ejector Seats'
+
+
 def test_cockpit_power_zero():
     c = Cockpit()
     c.bind(DummyOwner(12, 6))

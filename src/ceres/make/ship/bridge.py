@@ -12,21 +12,38 @@ class Cockpit(ShipPart):
     cost: ClassVar[float]
     power: ClassVar[float]
     holographic: bool = False
+    dual: bool = False
+    ejector_seat: bool = False
 
     def item_description(self) -> str:
+        cockpit = 'Dual Cockpit' if self.dual else 'Cockpit'
         if self.holographic:
-            return 'Holographic Cockpit'
-        return 'Cockpit'
+            cockpit = f'Holographic {cockpit}'
+        if self.ejector_seat:
+            seat = 'Ejector Seats' if self.seat_count > 1 else 'Ejector Seat'
+            return f'{cockpit} with {seat}'
+        return cockpit
+
+    @property
+    def seat_count(self) -> int:
+        return 2 if self.dual else 1
 
     @property
     def tons(self) -> float:
-        return 1.5
+        tons = 1.5
+        if self.dual:
+            tons += 2.5
+        return tons
 
     @property
     def cost(self) -> float:
         cost = 10_000
         if self.holographic:
             cost += 2_500
+        if self.dual:
+            cost += 15_000
+        if self.ejector_seat:
+            cost += 5_000 * self.seat_count
         return float(cost)
 
     @property
