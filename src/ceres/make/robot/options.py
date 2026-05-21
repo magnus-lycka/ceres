@@ -498,8 +498,9 @@ class VehicleSpeedModification(RobotPart):
     Slots = ceil(25% × base_slots). Cost = Base Chassis Cost.
     Replaces the locomotion's Flyer (idle) trait with the vehicle speed band trait.
     Reduces endurance by ×4 when operating at vehicle speed.
-    Cannot be combined with Tactical Speed Enhancement or Tactical Speed Reduction (RIR-009).
-    AgilityEnhancement may coexist but its speed bonus is suppressed; Athletics (dex) still applies.
+    Cannot be combined with Tactical Speed Enhancement or Tactical Speed Reduction (RHB p.53; RIR-010).
+    AgilityEnhancement may coexist: it raises tactical speed and grants Athletics (dex), but does not
+    affect the vehicle speed band.
     """
 
     @property
@@ -1264,8 +1265,8 @@ class AgilityEnhancement(RobotPart):
 
     Zero-slot. Cost = level_multiplier × BCC (cumulative). Grants Athletics (dexterity) N.
     Increases tactical speed by +N metres per Minor Action. Cannot be combined with
-    TacticalSpeedReduction. May coexist with VehicleSpeedModification, but the speed bonus is
-    suppressed when VSM is installed — only Athletics (dexterity) and effective agility apply (RIR-009).
+    TacticalSpeedReduction (RHB p.53; RIR-010). May coexist with VehicleSpeedModification — the speed
+    bonus applies to tactical movement; Athletics (dexterity) and effective agility are always granted.
     """
 
     level: int

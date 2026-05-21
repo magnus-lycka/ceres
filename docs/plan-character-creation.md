@@ -58,39 +58,31 @@ engine more explicitly.
 
 ## Core Idea
 
-Use two related models:
+Use three related concepts:
 
 1. A final/reportable character model.
-2. A mutable creation session driven by an event log.
+2. An event log containing every external input that changes the character.
+3. A derived projection built by replaying the event log.
 
 The final character is the thing we render as a PDF. It contains current
 characteristics, skills, terms, equipment, contacts, finances, notes, and other
 finished character data.
 
-The creation session is the process engine. It keeps a cursor into character
-creation, records every roll and decision, tracks pending obligations, applies
-scheduled effects, and produces the next requested input.
+The event log is the authoritative creation history. User decisions, referee
+decisions, dice rolls, manual corrections, and system-mediated input are all
+recorded as events. Given the same repository code/rules context, the event log
+must contain enough information to recreate an identical character, no more and
+no less.
 
-Conceptually:
+The projection is the current derived state: the current character draft, any
+pending input requirements, any scheduled future effects, and any cursor-like
+position the engine needs while replaying. Projection state can be cached for
+performance, but it is disposable. Rebuilding from the event log must produce
+the same result.
 
-```python
-session = CharacterCreationSession(...)
-
-while not session.done:
-    request = session.advance(rules)
-    if request is not None:
-        # UI, test, or CLI supplies the requested roll or decision.
-        session.resolve(request, answer)
-```
-
-`advance()` should continue automatically only while the next step is fully
-determined by existing state and rules. When a roll or player choice is needed,
-it returns a structured request instead of improvising.
-
-The public session API should consistently use:
-
-- `advance()` to progress until the next request, completion, or error.
-- `resolve(request_id, answer)` to answer a pending request.
+Every meaningful write path should create an event. Convenience commands such
+as `create ucp 7869A5` are allowed, but they are wrappers around event creation,
+not separate mutation paths.
 
 ## Event Log
 
@@ -98,44 +90,90 @@ Use the term **event log** for the authoritative creation history. Avoid using
 "journal" as a second term in engine APIs. Reports may render the event log as a
 human-readable journal, but code and tests should refer to event log entries.
 
-The event log records what happened, why it happened, and what effects were
-applied.
+The event log records external inputs to character creation. It should not log
+derived state changes merely because the engine computed them. If event `Y`
+deterministically changes three fields when replayed, the log needs `Y`, not
+three extra "field changed" records.
 
 Example entries:
 
 ```yaml
-- type: decision.made
-  step: term.2.skill
-  prompt: choose_skill_table
-  choice: Service Skills
+- id: 1
+  kind: character_started
+  sophont: Vilani
+  player: NPC
+  name: Boss
 
-- type: roll.resolved
-  step: term.2.survival
-  rule: "INT 5+"
+- id: 2
+  kind: ucp_provided
+  fulfills: 1.0
+  ucp: 7869A5
+
+- id: 18
+  kind: survival_rolled
+  fulfills: 17.0
   dice: [3, 5]
-  modifiers:
-    - value: 1
-      reason: Decorated in previous event
-      source: term.1.event
-  total: 9
-  outcome: success
-
-- type: effect.applied
-  step: term.2.survival
-  effect:
-    type: gain_skill
-    skill: Vacc Suit
-    level: 1
+  applied_effects: [12.0]
 ```
 
-The current creation state can be rebuilt by reducing the event log. In
-practice we can cache a mutable state object for performance, but the event log
-should remain the authoritative explanation.
+The current creation state is rebuilt by reducing the event log. While replaying
+the log, events can create pending inputs and scheduled effects. Later events
+can fulfill a specific pending input, or the engine can automatically consume a
+scheduled effect when its trigger matches.
 
-## Scheduled Effects
+Event identifiers are stable within a character log. Pending identifiers derived
+from an event must also be deterministic so replay can match fulfillment events
+to the same pending items every time. A simple starting policy is:
 
-Traveller character creation often creates effects that apply later. These
-should be first-class objects, not hidden flags scattered across procedural code.
+```text
+<source-event-id>.<local-index>
+```
+
+For example, event `1` might create pending items `1.0` and `1.1`. If event `2`
+fulfills `1.0`, then replay removes `1.0` from the projection when event `2` is
+processed. Nothing separate needs to be logged for "pending item removed"; the
+fulfillment event is the historical fact.
+
+## Pending Inputs And Scheduled Effects
+
+Traveller character creation often creates things that matter later. They should
+be first-class derived projection state, not hidden flags scattered across
+procedural code.
+
+There are at least two broad categories.
+
+### Pending Inputs
+
+A pending input is something the engine needs from outside itself. It is not a
+presentation-layer prompt and should not imply `input()` or a specific UI. It is
+a rule-state requirement with a machine-readable input shape and a
+human-readable instruction.
+
+Some pending inputs are immediate and blocking. While any active blocking input
+exists, the engine should reject unrelated character events. Examples:
+
+- Choose a skill table.
+- Choose a specialization for a gained skill.
+- Roll or provide dice for an injury result.
+- Decide whether to accept a commission.
+- Choose whether to reenlist or muster out.
+
+Other pending inputs are deferred. They exist in the projection but are not
+available to fulfill until the engine reaches a matching phase or cursor state.
+Examples:
+
+- Choose a benefit when mustering out.
+- Resolve a contact or enemy choice that the rules postpone.
+- Enter a forced next career when the next career-choice step is reached.
+
+Pending inputs are created during event replay. They are removed during replay
+when a later valid event references their deterministic pending id through
+`fulfills`.
+
+### Scheduled Effects
+
+A scheduled effect is a future hook that the engine can usually consume without
+user input.
 
 Examples:
 
@@ -145,7 +183,11 @@ Examples:
 - Resolve an injury before continuing.
 - Gain DM+1 to survival rolls while staying in this career.
 
-Represent these as scheduled effects:
+Represent these as scheduled effects or deferred inputs depending on whether
+they need outside input when they become active. A next-roll modifier is a
+scheduled effect. A future choice of benefit is a deferred pending input.
+
+An illustrative shape:
 
 ```python
 class ScheduledEffect(CeresModel):
@@ -183,92 +225,48 @@ effect and logs that application:
 Some effects are one-shot and consumed. Others remain active while a condition
 holds, such as "while in this career".
 
-## Pending Obligations
-
-Scheduled effects are not the same as pending obligations.
-
-A scheduled effect is a future hook. A pending obligation is something that
-blocks progress until resolved.
-
-Examples of pending obligations:
-
-- Choose a skill table.
-- Choose a specialization for a gained skill.
-- Decide whether to accept a commission.
-- Resolve an injury.
-- Pick an ally, contact, enemy, or rival.
-- Choose whether to reenlist or muster out.
-
-The engine should expose pending obligations as structured requests:
-
-```python
-class PendingDecision(CeresModel):
-    request_id: str
-    step: StepId
-    prompt: str
-    options: list[DecisionOption] = []
-    free_text_allowed: bool = False
-```
-
-Rolls are also structured requests:
-
-```python
-class PendingRoll(CeresModel):
-    request_id: str
-    step: StepId
-    dice: str
-    target: int | None
-    modifiers: list[RollModifier]
-```
-
-`target=None` means the roll is not pass/fail by itself. The result is still
-logged and may be interpreted by a table or handler.
-
-Tests can resolve these with scripted choices and dice. A CLI or future UI can
-ask the user.
-
 ## Interaction Model
 
 The interaction model is part of the engine design, not a later presentation
 detail. Character creation should be driven through a client/server-like
-request/response protocol:
+request/response protocol, but that protocol is event-based rather than
+prompt-based.
 
-1. The client asks the session to advance.
-2. The session either advances internally and returns updated state, or returns
-   one structured request that needs an answer.
-3. The client submits an answer for that request.
-4. The session validates the answer, logs it, applies resulting effects, and can
-   be advanced again.
+1. The client asks for the current character projection, including pending
+   inputs and scheduled effects.
+2. The client creates an event. If the event fulfills a pending input, it
+   references that pending id.
+3. The engine validates the event against the current projection, appends it to
+   the event log, replays or updates the projection, and returns the new
+   projection.
 
 The engine should not push information directly to clients, call `input()`, roll
 hidden dice, or require UI callbacks. A pure request/response model should be
-enough for character creation, because the rules only need progress when the
-player, referee, scripted test, or random roller supplies the next answer.
+enough for character creation, because progress occurs when the player, referee,
+scripted test, or random roller supplies the next event.
 
 Useful early clients:
 
-- scripted tests that answer requests deterministically
-- a CLI runner that prints the current state and pending request, then accepts a
-  JSON/YAML answer
-- a small FastAPI app whose OpenAPI pages can exercise the same request and
-  answer models
+- scripted tests that append deterministic events
+- a CLI runner that lists current pending inputs and creates events
+- a small FastAPI app whose OpenAPI pages can exercise the same event and
+  projection models
 
 The CLI may be the most ergonomic early manual workbench, while FastAPI/OpenAPI
 is useful for inspecting schemas and making sure the protocol is clean. Both
 should talk to the same session API. Neither should get special authority to
 mutate state outside the event log.
 
-The response from `advance()` should include enough context for a simple client
+The current projection should include enough context for a simple client
 to be usable:
 
 ```python
-class AdvanceResponse(CeresModel):
-    session_id: str
+class CharacterProjection(CeresModel):
+    character_id: int
     character_summary: CharacterSummary
     cursor: StepId
-    event_log_tail: list[EventLogEntry]
-    pending: PendingDecision | PendingRoll | PendingText | None = None
-    scheduled_preview: list[ScheduledEffect] = []
+    pending_inputs: list[PendingInput] = []
+    scheduled_effects: list[ScheduledEffect] = []
 ```
 
 This is deliberately not a polished UI design. It is a protocol that lets tests,
@@ -293,24 +291,31 @@ class CharacterSummary(CeresModel):
 ## Session Persistence
 
 Session persistence is an early design decision, not an implementation detail to
-defer. The request/response model only works if a session can survive between
-calls.
+defer. The event-based request/response model only works if a character creation
+can survive between calls.
 
-Initial implementation should persist sessions as serialized event logs plus
-small metadata:
+Initial implementation should persist character creation as an event log plus
+small metadata. SQLite is a good early default because it gives us ordinary
+application storage and in-memory tests:
 
 ```text
-data/characters/<session-id>/
-  session.json
-  event-log.jsonl
+characters
+  id
+  sophont
+  player
+  name
+
+character_events
+  id
+  character_id
+  kind
+  fulfills
+  payload_json
 ```
 
-An in-memory cache may exist for speed, but it must be rebuildable from the
-stored event log. This keeps CLI, FastAPI, and tests on the same model and makes
-`session_id` meaningful.
-
-The first implementation can use local files. A database can come later without
-changing the session API if the repository interface is explicit.
+An in-memory cache or projected columns may exist for speed, but they must be
+rebuildable from the stored event log. The event log is the truth; database
+columns such as current UCP are projections or conveniences.
 
 ## State Machine
 
@@ -360,13 +365,14 @@ pay, pensions, gratuities, and deferred obligations from previous events.
 
 At each step, the engine should:
 
-1. Build the current state from the event log and cached state.
-2. Apply scheduled effects whose trigger matches the current step.
-3. Return any blocking pending obligation.
-4. Return any required pending roll.
-5. Apply deterministic rule effects.
-6. Log the outcome.
-7. Move to the next step.
+1. Rebuild or update projection state from the event log.
+2. Add any pending inputs or scheduled effects created by the current event.
+3. Validate any fulfillment reference on the current event.
+4. Remove fulfilled pending inputs from the projection.
+5. Activate deferred pending inputs whose availability now matches.
+6. Apply and consume scheduled effects whose trigger matches.
+7. Advance deterministic state until external input is needed or creation is
+   complete.
 
 This avoids one huge function while still making the lifecycle easy to inspect.
 
@@ -536,8 +542,8 @@ Careers are the most integrated plug-ins. A career package may include:
 
 New careers may require new message handlers. That is acceptable if the message
 boundary remains explicit and tested. A custom handler may emit career-specific
-pending requests, but those requests must still be ordinary Pydantic messages
-that a scripted test, CLI, or UI can answer.
+pending inputs, but those inputs must still be ordinary Pydantic messages that
+scripted tests, CLI commands, or UI clients can satisfy by creating events.
 
 ## Data Format
 
@@ -566,33 +572,34 @@ into prose-only term notes.
 
 ## Testing Strategy
 
-Tests should script both rolls and decisions.
+Tests should build event logs and assert projections. Rolls and decisions are
+events, not hidden callbacks.
 
 Example:
 
 ```python
-session = CharacterCreationSession(
-    character=CharacterDraft(...),
-    roller=ScriptedRoller([8, 7, 6]),
-    decisions=ScriptedDecisions({
-        "term:1:step:skill_table": "Service Skills",
-        "term:1:step:reenlist": "continue",
-    }),
-)
+events = [
+    CharacterStarted(sophont="Vilani", player="NPC", name="Boss"),
+    UcpProvided(fulfills="1.0", ucp="7869A5"),
+    BirthLocationProvided(fulfills="1.1", location="TROJ2815"),
+]
+
+projection = replay(events)
 ```
 
-Request identifiers should be generated by the engine and must be unique within
-the event log. Human-readable step ids are useful, but tests should not depend
-on ambiguous keys such as `term.1.skill_table` when multiple careers, repeated
-terms, or event-specific choices can produce similar prompts.
+Pending identifiers should be deterministic. Human-readable kinds are useful,
+but tests should not depend on ambiguous names such as `term.1.skill_table` when
+multiple careers, repeated terms, or event-specific choices can produce similar
+pending inputs.
 
 Tests should assert:
 
 - final character state
 - important event log entries
-- pending requests at interaction boundaries
+- pending inputs at interaction boundaries
 - scheduled effects are applied once or remain active as intended
 - unusual event handlers emit typed effects rather than silent mutations
+- unrelated events are rejected while blocking pending inputs exist
 
 The first tests should cover a very small career subset and one or two scripted
 terms before expanding into broad source coverage.
@@ -601,26 +608,29 @@ terms before expanding into broad source coverage.
 
 1. Define final character draft models and basic skill/characteristic models.
 2. Define event log entry models.
-3. Define pending request models for decisions and rolls.
-4. Define scheduled effect and effect models.
-5. Implement a minimal reducer/session that can apply effects and record them.
-6. Decide and implement file-backed session persistence for event logs.
-7. Implement `advance()`/`resolve()` request-response session methods.
-8. Add scripted roller and scripted decision providers as the first client.
-9. Add handler registry and load-time handler validation.
-10. Add pre-career setup steps for characteristics and background.
-11. Add a minimal CLI workbench that uses the same message protocol.
-12. Optionally add a tiny FastAPI/OpenAPI workbench for schema inspection.
-13. Implement one small career with qualification and a normal term path.
-14. Add initial training.
-15. Add mishap and event tables.
-16. Add advancement, rank rewards, and benefit rolls.
-17. Add scheduled effects such as next-roll modifiers.
-18. Add aging steps.
-19. Add mustering-out steps.
-20. Add handler escape hatches for unusual event rules.
-21. Add a non-default species only after relevant Alien module rules are in `refs/`.
-22. Build a simple report from final state plus event log.
+3. Define pending input and scheduled effect projection models.
+4. Implement deterministic pending ids from source event id plus local index.
+5. Implement a minimal replay/projection reducer.
+6. Persist event logs in SQLite and treat projected columns as rebuildable.
+7. Add `GET` projection/obligations-style API endpoints.
+8. Add generic event-creation API endpoints.
+9. Make existing CLI convenience commands append events.
+10. Add undo by deleting the last event and rebuilding projection.
+11. Add handler registry and load-time handler validation.
+12. Add pre-career setup events for UCP and birth location.
+13. Add background skill pending inputs.
+14. Add a minimal CLI workbench that uses the same event protocol.
+15. Optionally add or expand FastAPI/OpenAPI endpoints for schema inspection.
+16. Implement one small career with qualification and a normal term path.
+17. Add initial training.
+18. Add mishap and event tables.
+19. Add advancement, rank rewards, and benefit rolls.
+20. Add scheduled effects such as next-roll modifiers.
+21. Add aging steps.
+22. Add mustering-out steps.
+23. Add handler escape hatches for unusual event rules.
+24. Add a non-default species only after relevant Alien module rules are in `refs/`.
+25. Build a simple report from final state plus event log.
 
 ## Open Questions
 

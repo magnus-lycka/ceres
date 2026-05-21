@@ -443,7 +443,6 @@ type AnySkill = Annotated[
 
 class SkillInfo(NamedTuple):
     type: str
-    name: str
     specialities: tuple[str, ...] = ()
 
 
@@ -456,4 +455,4 @@ def _skill_classes(skill_union: object) -> tuple[type[Skill], ...]:
 
 
 def skill_list(skill_union: object = AnySkill) -> tuple[SkillInfo, ...]:
-    return tuple(SkillInfo(skill.name(), skill.name(), skill.specialities()) for skill in _skill_classes(skill_union))
+    return tuple(SkillInfo(skill.name(), skill.specialities()) for skill in _skill_classes(skill_union))

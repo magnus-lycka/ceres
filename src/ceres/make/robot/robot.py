@@ -214,6 +214,15 @@ class Robot(RobotBase):
         return sorted(unique, key=lambda t: str(t).lower())
 
     @property
+    def locomotion_label(self) -> str:
+        from .options import VehicleSpeedModification
+
+        label = self.locomotion.label()
+        if any(isinstance(o, VehicleSpeedModification) for o in self.options):
+            return f'{label} (VSM)'
+        return label
+
+    @property
     def speed_label(self) -> str:
         from .locomotion import ThrusterLocomotion
         from .options import VehicleSpeedModification
@@ -221,13 +230,15 @@ class Robot(RobotBase):
         if any(isinstance(o, VehicleSpeedModification) for o in self.options):
             if isinstance(self.locomotion, ThrusterLocomotion):
                 return f'{self.locomotion.thrust_g:g}G'
+            speed_bonus = sum(opt.speed_bonus for opt in self.options if isinstance(opt, RobotPartMixin))
+            tactical = self.locomotion.effective_speed + (self.locomotion.agility or 0) + speed_bonus
             for t in self.traits:
                 if t.name == 'Flyer':
-                    return str(t.value)
+                    return f'{tactical}m ({t.value})'
             band = self.locomotion._vehicle_speed_band
             if band:
-                return band
-            return 'Vehicle speed'
+                return f'{tactical}m ({band})'
+            return f'{tactical}m'
         speed_bonus = sum(opt.speed_bonus for opt in self.options if isinstance(opt, RobotPartMixin))
         return f'{self.locomotion.effective_speed + (self.locomotion.agility or 0) + speed_bonus}m'
 
@@ -551,7 +562,7 @@ class Robot(RobotBase):
                     ('Robot', self.name),
                     ('Size', str(int(self.size))),
                     ('Hits', str(self.hits)),
-                    ('Locomotion', self.locomotion.label()),
+                    ('Locomotion', self.locomotion_label),
                     ('Speed', self.speed_label),
                     ('TL', str(self.tl)),
                     ('Cost', format_credits(self.total_cost)),

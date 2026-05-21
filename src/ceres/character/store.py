@@ -4,7 +4,18 @@ import re
 import sqlite3
 from typing import TypedDict
 
+from pydantic import TypeAdapter
+
 from ceres import settings
+from ceres.character.characteristics import UCP_STATS
+from ceres.character.events import AnyEvent, CharacterStartedEvent, UcpEvent
+from ceres.character.projection import CharacterProjection
+from ceres.character.replay import replay
+
+UCP_CHANGE_PATTERN = re.compile(r'^([A-Z]{3})(?:(=)(\d+)|([+-])(\d+))$')
+UCP_SHORT_PATTERN = re.compile(r'^[0-9A-F]{6}$')
+
+_event_adapter: TypeAdapter[AnyEvent] = TypeAdapter(AnyEvent)
 
 
 class CharacterRow(TypedDict):
@@ -12,17 +23,6 @@ class CharacterRow(TypedDict):
     sophont: str
     player: str
     name: str
-
-
-class CharacterEvent(TypedDict):
-    kind: str
-    changes: list[str]
-    note: str | None
-
-
-UCP_STATS = ('STR', 'DEX', 'END', 'INT', 'EDU', 'SOC')
-UCP_CHANGE_PATTERN = re.compile(r'^([A-Z]{3})(?:(=)(\d+)|([+-])(\d+))$')
-UCP_SHORT_PATTERN = re.compile(r'^[0-9A-F]{6}$')
 
 
 class SqliteCharacterBackend:
@@ -58,11 +58,13 @@ class SqliteCharacterBackend:
         character_id = cursor.lastrowid
         if character_id is None:
             raise RuntimeError('SQLite did not return a character id')
-        return {'id': character_id, 'sophont': sophont, 'player': player, 'name': name}
+        row: CharacterRow = {'id': character_id, 'sophont': sophont, 'player': player, 'name': name}
+        self.append_event(character_id, CharacterStartedEvent(sophont=sophont, player=player, name=name))
+        return row
 
     def list_characters(self) -> list[CharacterRow]:
         cursor = self.connection.execute('select id, sophont, player, name from characters order by id')
-        return [{'id': row[0], 'sophont': row[1], 'player': row[2], 'name': row[3]} for row in cursor]
+        return [{'id': r[0], 'sophont': r[1], 'player': r[2], 'name': r[3]} for r in cursor]
 
     def get_character(self, character_id: int) -> CharacterRow | None:
         cursor = self.connection.execute(
@@ -83,41 +85,68 @@ class SqliteCharacterBackend:
         character['name'] = name
         return character
 
-    def get_ucp(self, character_id: int) -> dict[str, int] | None:
-        cursor = self.connection.execute('select ucp_json from characters where id = ?', (character_id,))
-        row = cursor.fetchone()
-        if row is None:
-            return None
-        data = json.loads(row[0])
-        return {stat: int(value) for stat, value in data.items()}
+    def append_event(self, character_id: int, event: AnyEvent) -> AnyEvent:
+        events = self.load_typed_events(character_id) or []
+        event = event.model_copy(update={'id': len(events) + 1})
+        candidate = [*events, event]
+        replay(character_id, candidate)  # raises ReplayError if invalid; do not save
+        self._save_events(character_id, candidate)
+        return event
 
-    def patch_ucp(self, character_id: int, changes: list[str], note: str | None = None) -> dict[str, int] | None:
-        ucp = self.get_ucp(character_id)
-        if ucp is None:
-            return None
-        for change in expand_ucp_changes(changes):
-            stat, operation, value = parse_ucp_change(change)
-            if operation == 'set':
-                ucp[stat] = value
-            else:
-                ucp[stat] = ucp.get(stat, 0) + value
-        events = self.list_events(character_id)
-        if events is None:
-            return None
-        events.append({'kind': 'ucp_changed', 'changes': changes, 'note': note})
-        self.connection.execute(
-            'update characters set ucp_json = ?, events_json = ? where id = ?',
-            (json.dumps(ucp), json.dumps(events), character_id),
-        )
-        self.connection.commit()
-        return ucp
-
-    def list_events(self, character_id: int) -> list[CharacterEvent] | None:
+    def load_typed_events(self, character_id: int) -> list[AnyEvent] | None:
         cursor = self.connection.execute('select events_json from characters where id = ?', (character_id,))
         row = cursor.fetchone()
         if row is None:
             return None
-        return json.loads(row[0])
+        data = json.loads(row[0])
+        return [_event_adapter.validate_python(e) for e in data]
+
+    def get_projection(self, character_id: int) -> CharacterProjection | None:
+        events = self.load_typed_events(character_id)
+        if events is None:
+            return None
+        return replay(character_id, events)
+
+    def _save_events(self, character_id: int, events: list[AnyEvent]) -> None:
+        serialized = json.dumps([e.model_dump() for e in events])
+        self.connection.execute('update characters set events_json = ? where id = ?', (serialized, character_id))
+        self.connection.commit()
+
+    def get_ucp(self, character_id: int) -> dict[str, int] | None:
+        projection = self.get_projection(character_id)
+        if projection is None:
+            return None
+        return dict(projection.summary.characteristics)
+
+    def patch_ucp(self, character_id: int, changes: list[str]) -> dict[str, int] | None:
+        projection = self.get_projection(character_id)
+        if projection is None:
+            return None
+        current = dict(projection.summary.characteristics)
+        for change in expand_ucp_changes(changes):
+            stat, operation, value = parse_ucp_change(change)
+            if operation == 'set':
+                current[stat] = value
+            else:
+                current[stat] = current.get(stat, 0) + value
+        new_ucp = ''.join(f'{current.get(stat, 0):X}' for stat in UCP_STATS)
+        ucp_pending = next(
+            (p for p in projection.pending_inputs if p.kind == 'ucp' and p.blocking),
+            None,
+        )
+        self.append_event(character_id, UcpEvent(ucp=new_ucp, fulfills=ucp_pending.id if ucp_pending else None))
+        return {stat: int(digit, 16) for stat, digit in zip(UCP_STATS, new_ucp, strict=True)}
+
+    def delete_character(self, character_id: int) -> CharacterRow | None:
+        character = self.get_character(character_id)
+        if character is None:
+            return None
+        self.connection.execute('delete from characters where id = ?', (character_id,))
+        self.connection.commit()
+        return character
+
+    def list_events(self, character_id: int) -> list[AnyEvent] | None:
+        return self.load_typed_events(character_id)
 
     def close(self) -> None:
         self.connection.close()

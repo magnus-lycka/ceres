@@ -43,7 +43,8 @@ def test_cli_starts_character_creation_with_vilani_sophont(memory_app):
     result = CliRunner().invoke(memory_app, ['create', 'start', '-s', 'Vilani', 'Boss'])
 
     assert result.exit_code == 0
-    assert result.stdout.splitlines() == ['Started character creation: Boss']
+    assert result.stdout.splitlines()[0] == 'Started character creation: Boss'
+    assert 'Pending:' in result.stdout
 
 
 def test_cli_rejects_unknown_sophont_and_lists_available_sophonts(memory_app):
@@ -242,15 +243,17 @@ def test_cli_lists_ucp_short_form(memory_app):
     ]
 
 
-def test_cli_patches_current_ucp_with_note_and_adjustments(memory_app):
+def test_cli_patches_current_ucp_with_adjustments(memory_app):
     runner = CliRunner()
 
     runner.invoke(memory_app, ['create', 'start', '-s', 'Vilani', 'Boss'])
     runner.invoke(memory_app, ['create', 'ucp', 'STR=7', 'DEX=8'])
-    changed = runner.invoke(memory_app, ['create', 'ucp', '--note', 'Aging', 'STR-2', 'DEX-1', 'EDU+1'])
+    changed = runner.invoke(memory_app, ['create', 'ucp', 'STR-2', 'DEX-1', 'EDU+1'])
 
     assert changed.exit_code == 0
-    assert changed.stdout.splitlines() == ['STR 5 DEX 7 EDU 1']
+    assert 'STR 5' in changed.stdout
+    assert 'DEX 7' in changed.stdout
+    assert 'EDU 1' in changed.stdout
 
 
 def test_cli_rejects_ucp_without_current_character(memory_app):
@@ -311,3 +314,25 @@ def test_cli_requires_character_name_when_starting_creation(memory_app):
 
     assert result.exit_code != 0
     assert 'Name must not be empty' in result.output
+
+
+def test_cli_deletes_current_character(memory_app):
+    runner = CliRunner()
+
+    runner.invoke(memory_app, ['create', 'start', '-s', 'Vilani', 'Boss'])
+    runner.invoke(memory_app, ['create', 'start', '-s', 'Humaniti', 'Lynn'])
+    result = runner.invoke(memory_app, ['create', 'delete', '1'])
+    listed = runner.invoke(memory_app, ['create', 'list'])
+
+    assert result.exit_code == 0
+    assert 'Deleted' in result.stdout
+    assert 'Boss' in result.stdout
+    assert 'Lynn' in listed.stdout
+    assert 'Boss' not in listed.stdout
+
+
+def test_cli_rejects_delete_for_unknown_character(memory_app):
+    result = CliRunner().invoke(memory_app, ['create', 'delete', '999'])
+
+    assert result.exit_code != 0
+    assert 'Unknown character creation id: 999' in result.output

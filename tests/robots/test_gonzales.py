@@ -42,7 +42,8 @@ from ceres.make.robot.text import format_traits
 _expected = SimpleNamespace(
     hits=12,
     locomotion='Wheels, ATV',
-    speed='slow',  # VSM on Wheels ATV → speed band 'slow'
+    locomotion_label='Wheels, ATV (VSM)',
+    speed='7m (slow)',  # 5(base)+0(agility)+2(AgilityEnh)=7m tactical, (slow) from VSM band
     tl=15,
     base_armour=4,  # TL15 base; total = 4+4 = 8 from IncreasedArmour(+4)
     traits='Armour (+8), ATV, Heightened Senses, IR/UV Vision, Small (-1)',
@@ -124,6 +125,9 @@ class TestGonzales:
 
     def test_locomotion_label(self):
         assert build_gonzales().locomotion.label() == _expected.locomotion
+
+    def test_locomotion_label_with_vsm(self):
+        assert build_gonzales().locomotion_label == _expected.locomotion_label
 
     def test_speed_label(self):
         assert build_gonzales().speed_label == _expected.speed

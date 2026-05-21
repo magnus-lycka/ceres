@@ -5,9 +5,11 @@ from typing import Annotated
 import typer
 
 from ceres import settings
+from ceres.character.characteristics import UCP_STATS
+from ceres.character.projection import CharacterProjection
 from ceres.character.skills import SkillInfo, skill_list
 from ceres.character.sophonts import SOPHONTS
-from ceres.character.store import UCP_STATS, CharacterRow, SqliteCharacterBackend
+from ceres.character.store import CharacterRow, SqliteCharacterBackend
 
 
 def read_current_id(current_path: Path) -> int | None:
@@ -58,8 +60,18 @@ def render_ucp_short(ucp: dict[str, int] | None) -> str:
 
 def render_skill(skill: SkillInfo) -> str:
     if skill.specialities:
-        return f'{skill.name}: {", ".join(skill.specialities)}'
-    return skill.name
+        return f'{skill.type}: {", ".join(skill.specialities)}'
+    return skill.type
+
+
+def render_pending_inputs(projection: CharacterProjection) -> list[str]:
+    if not projection.pending_inputs:
+        return []
+    lines = ['Pending:']
+    for p in projection.pending_inputs:
+        blocking = ' [blocking]' if p.blocking else ''
+        lines.append(f'  {p.id}  {p.kind}{blocking}  — {p.instruction}')
+    return lines
 
 
 def build_app(backend: SqliteCharacterBackend | None = None, current_path: Path | None = None) -> typer.Typer:
@@ -103,6 +115,10 @@ def build_app(backend: SqliteCharacterBackend | None = None, current_path: Path 
         character = backend.start(sophont=sophont, player=player, name=name)
         write_current_id(current_path, character['id'])
         typer.echo(f'Started character creation: {name}')
+        projection = backend.get_projection(character['id'])
+        if projection:
+            for line in render_pending_inputs(projection):
+                typer.echo(line)
 
     @create_app.command('list')
     def list_character_creations() -> None:
@@ -142,7 +158,6 @@ def build_app(backend: SqliteCharacterBackend | None = None, current_path: Path 
     @create_app.command('ucp')
     def ucp_command(
         changes: Annotated[list[str] | None, typer.Argument()] = None,
-        note: str | None = typer.Option(None, '--note'),
     ) -> None:
         current_id = read_current_id(current_path)
         if current_id is None:
@@ -160,7 +175,7 @@ def build_app(backend: SqliteCharacterBackend | None = None, current_path: Path 
             typer.echo(render_ucp(ucp))
             return
         try:
-            ucp = backend.patch_ucp(current_id, changes, note=note)
+            ucp = backend.patch_ucp(current_id, changes)
         except ValueError as error:
             typer.echo(str(error), err=True)
             raise typer.Exit(1) from error
@@ -168,6 +183,10 @@ def build_app(backend: SqliteCharacterBackend | None = None, current_path: Path 
             typer.echo('No current character creation', err=True)
             raise typer.Exit(1)
         typer.echo(render_ucp(ucp))
+        projection = backend.get_projection(current_id)
+        if projection:
+            for line in render_pending_inputs(projection):
+                typer.echo(line)
 
     @create_app.command('use')
     def use_character_creation(character_id: int) -> None:
@@ -177,6 +196,14 @@ def build_app(backend: SqliteCharacterBackend | None = None, current_path: Path 
             raise typer.Exit(1)
         write_current_id(current_path, character_id)
         typer.echo(f'Current character creation: {character["name"]}')
+
+    @create_app.command('delete')
+    def delete_character_creation(character_id: int) -> None:
+        deleted = backend.delete_character(character_id)
+        if deleted is None:
+            typer.echo(f'Unknown character creation id: {character_id}', err=True)
+            raise typer.Exit(1)
+        typer.echo(f'Deleted character creation: {deleted["name"]}')
 
     @create_app.command('rename')
     def rename_character_creation(name: str) -> None:

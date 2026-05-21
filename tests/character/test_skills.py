@@ -36,14 +36,14 @@ def test_specialised_skill_has_one_level_per_speciality():
 def test_all_skills_can_be_listed_from_the_any_skill_union():
     skills = skill_list(AnySkill)
 
-    assert 'Admin' in [skill.name for skill in skills]
-    assert next(skill for skill in skills if skill.name == 'Electronics').specialities == (
+    assert 'Admin' in [skill.type for skill in skills]
+    assert next(skill for skill in skills if skill.type == 'Electronics').specialities == (
         'Comms',
         'Computers',
         'Remote Ops',
         'Sensors',
     )
-    assert next(skill for skill in skills if skill.name == 'Space Science').specialities == (
+    assert next(skill for skill in skills if skill.type == 'Space Science').specialities == (
         'Astronomy',
         'Cosmology',
         'Planetology',
@@ -51,9 +51,9 @@ def test_all_skills_can_be_listed_from_the_any_skill_union():
 
 
 def test_skill_group_unions_can_be_listed_separately():
-    assert [skill.name for skill in skill_list(ArtSkill)] == ['Performing Art', 'Creative Art', 'Presentation Art']
-    assert 'Worker Profession' in [skill.name for skill in skill_list(ProfessionSkill)]
-    assert [skill.name for skill in skill_list(ScienceSkill)] == [
+    assert [skill.type for skill in skill_list(ArtSkill)] == ['Performing Art', 'Creative Art', 'Presentation Art']
+    assert 'Worker Profession' in [skill.type for skill in skill_list(ProfessionSkill)]
+    assert [skill.type for skill in skill_list(ScienceSkill)] == [
         'Life Science',
         'Physical Science',
         'Robotic Science',

@@ -27,18 +27,17 @@ def test_api_lists_skills(memory_client):
 
     assert response.status_code == 200
     skills = response.json()['skills']
-    skill_names = [skill['name'] for skill in skills]
-    assert 'Admin' in skill_names
-    assert 'Animals' in skill_names
-    assert 'Art' not in skill_names
-    assert 'Creative Art' in skill_names
-    assert 'Profession' not in skill_names
-    assert 'Worker Profession' in skill_names
-    assert 'Science' not in skill_names
-    assert 'Space Science' in skill_names
-    assert next(skill for skill in skills if skill['name'] == 'Space Science') == {
+    skill_types = [skill['type'] for skill in skills]
+    assert 'Admin' in skill_types
+    assert 'Animals' in skill_types
+    assert 'Art' not in skill_types
+    assert 'Creative Art' in skill_types
+    assert 'Profession' not in skill_types
+    assert 'Worker Profession' in skill_types
+    assert 'Science' not in skill_types
+    assert 'Space Science' in skill_types
+    assert next(skill for skill in skills if skill['type'] == 'Space Science') == {
         'type': 'Space Science',
-        'name': 'Space Science',
         'specialities': ['Astronomy', 'Cosmology', 'Planetology'],
     }
 
@@ -92,14 +91,14 @@ def test_api_gets_empty_ucp(memory_client):
     assert response.json() == {'ucp': {}}
 
 
-def test_api_patches_ucp_and_logs_note(memory_client):
+def test_api_patches_ucp_and_records_typed_events(memory_client):
     memory_client.post('/characters', json={'sophont': 'Vilani', 'name': 'Boss'})
 
     first = memory_client.patch(
         '/characters/1/ucp',
         json={'changes': ['STR=7', 'DEX=8', 'END=6', 'INT=9', 'EDU=10', 'SOC=5']},
     )
-    second = memory_client.patch('/characters/1/ucp', json={'changes': ['STR-2', 'DEX-1'], 'note': 'Aging'})
+    second = memory_client.patch('/characters/1/ucp', json={'changes': ['STR-2', 'DEX-1']})
     shown = memory_client.get('/characters/1/ucp')
     character = memory_client.get('/characters/1')
     events = memory_client.get('/characters/1/events')
@@ -119,16 +118,17 @@ def test_api_patches_ucp_and_logs_note(memory_client):
         'ucp': {'STR': 5, 'DEX': 7, 'END': 6, 'INT': 9, 'EDU': 10, 'SOC': 5},
     }
     assert events.status_code == 200
-    assert events.json() == {
-        'events': [
-            {
-                'kind': 'ucp_changed',
-                'changes': ['STR=7', 'DEX=8', 'END=6', 'INT=9', 'EDU=10', 'SOC=5'],
-                'note': None,
-            },
-            {'kind': 'ucp_changed', 'changes': ['STR-2', 'DEX-1'], 'note': 'Aging'},
-        ]
+    event_list = events.json()['events']
+    assert event_list[0] == {
+        'id': 1,
+        'kind': 'character_started',
+        'sophont': 'Vilani',
+        'player': 'NPC',
+        'name': 'Boss',
+        'fulfills': None,
     }
+    assert event_list[1] == {'id': 2, 'kind': 'ucp', 'ucp': '7869A5', 'fulfills': '1.0'}
+    assert event_list[2] == {'id': 3, 'kind': 'ucp', 'ucp': '5769A5', 'fulfills': None}
 
 
 def test_api_patches_ucp_from_short_form(memory_client):
@@ -186,3 +186,86 @@ def test_api_rejects_empty_rename(memory_client):
 
     assert renamed.status_code == 400
     assert renamed.json() == {'detail': 'Name must not be empty'}
+
+
+def test_api_creation_produces_pending_input_for_ucp(memory_client):
+    memory_client.post('/characters', json={'sophont': 'Vilani', 'name': 'Boss'})
+
+    projection = memory_client.get('/characters/1/projection')
+
+    assert projection.status_code == 200
+    data = projection.json()
+    assert len(data['pending_inputs']) == 1
+    assert data['pending_inputs'][0] == {
+        'id': '1.0',
+        'kind': 'ucp',
+        'instruction': 'Provide characteristics (UCP)',
+        'blocking': True,
+    }
+
+
+def test_api_post_event_resolves_pending_ucp(memory_client):
+    memory_client.post('/characters', json={'sophont': 'Vilani', 'name': 'Boss'})
+
+    response = memory_client.post(
+        '/characters/1/events',
+        json={'kind': 'ucp', 'ucp': '7869A5', 'fulfills': '1.0'},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data['pending_inputs'] == []
+    assert data['summary']['characteristics'] == {
+        'STR': 7,
+        'DEX': 8,
+        'END': 6,
+        'INT': 9,
+        'EDU': 10,
+        'SOC': 5,
+    }
+
+
+def test_api_post_event_rejects_unknown_fulfills(memory_client):
+    memory_client.post('/characters', json={'sophont': 'Vilani', 'name': 'Boss'})
+
+    response = memory_client.post(
+        '/characters/1/events',
+        json={'kind': 'ucp', 'ucp': '7869A5', 'fulfills': '99.0'},
+    )
+
+    assert response.status_code == 400
+
+
+def test_api_post_event_rejects_unrelated_event_while_blocking(memory_client):
+    memory_client.post('/characters', json={'sophont': 'Vilani', 'name': 'Boss'})
+
+    response = memory_client.post(
+        '/characters/1/events',
+        json={'kind': 'ucp', 'ucp': '7869A5'},
+    )
+
+    assert response.status_code == 400
+
+
+def test_api_projection_404_for_unknown_character(memory_client):
+    response = memory_client.get('/characters/999/projection')
+
+    assert response.status_code == 404
+
+
+def test_api_deletes_character(memory_client):
+    memory_client.post('/characters', json={'sophont': 'Vilani', 'name': 'Boss'})
+    memory_client.post('/characters', json={'sophont': 'Humaniti', 'name': 'Lynn'})
+
+    deleted = memory_client.delete('/characters/1')
+    listed = memory_client.get('/characters')
+
+    assert deleted.status_code == 200
+    assert deleted.json() == {'id': 1, 'sophont': 'Vilani', 'player': 'NPC', 'name': 'Boss'}
+    assert listed.json() == {'characters': [{'id': 2, 'sophont': 'Humaniti', 'player': 'NPC', 'name': 'Lynn'}]}
+
+
+def test_api_delete_returns_404_for_unknown(memory_client):
+    response = memory_client.delete('/characters/999')
+
+    assert response.status_code == 404

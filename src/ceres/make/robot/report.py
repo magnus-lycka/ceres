@@ -15,7 +15,7 @@ __all__ = [
 
 _TEMPLATES = Path(__file__).parent / 'templates'
 
-_NARROW_COLUMNS = frozenset({'Size', 'Hits', 'Speed', 'TL'})
+_NARROW_COLUMNS = frozenset({'Size', 'Hits', 'TL'})
 
 
 def _robot_column_widths(columns: list[tuple[str, str]]) -> list[list]:

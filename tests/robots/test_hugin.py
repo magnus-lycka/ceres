@@ -47,7 +47,8 @@ from ceres.make.robot.text import format_traits
 _expected = SimpleNamespace(
     hits=1,
     locomotion='Grav',
-    speed='high',  # VehicleSpeedModification on GravLocomotion → Flyer(high) → speed_label='high'
+    locomotion_label='Grav (VSM)',
+    speed='10m (high)',  # 5(base)+1(agility)+4(AgilityEnh)=10m tactical, (high) from VSM band
     tl=15,
     base_armour=4,
     # Ceres uses lowercase 'high'; source shows 'Flyer (High)' with capital H.
@@ -141,8 +142,11 @@ class TestHugin:
     def test_locomotion_label(self):
         assert build_hugin().locomotion.label() == _expected.locomotion
 
+    def test_locomotion_label_with_vsm(self):
+        assert build_hugin().locomotion_label == _expected.locomotion_label
+
     def test_speed_label(self):
-        # VSM on Grav → Flyer(high) trait → speed_label returns 'high'
+        # VSM on Grav → tactical 12m + (high) band
         assert build_hugin().speed_label == _expected.speed
 
     def test_available_slots(self):

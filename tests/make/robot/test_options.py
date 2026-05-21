@@ -1108,10 +1108,10 @@ class TestVehicleSpeedModification:
             brain=PrimitiveBrain(),
             options=[VehicleSpeedModification()],
         )
-        assert robot.speed_label == 'slow'
+        assert robot.speed_label == '5m (slow)'
 
     def test_tracks_vsm_speed_label_very_slow(self):
-        # refs/robot/08_locomotion_modifications.md — Tracks → Very Slow
+        # refs/robot/08_locomotion_modifications.md — Tracks → Very Slow; 5−1=4m tactical
         robot = Robot(
             name='T',
             tl=8,
@@ -1120,10 +1120,10 @@ class TestVehicleSpeedModification:
             brain=PrimitiveBrain(),
             options=[VehicleSpeedModification()],
         )
-        assert robot.speed_label == 'very slow'
+        assert robot.speed_label == '4m (very slow)'
 
     def test_aquatic_vsm_speed_label_very_slow(self):
-        # refs/robot/08_locomotion_modifications.md — Aquatic → Very Slow
+        # refs/robot/08_locomotion_modifications.md — Aquatic → Very Slow; 5−2=3m tactical
         robot = Robot(
             name='T',
             tl=8,
@@ -1132,10 +1132,10 @@ class TestVehicleSpeedModification:
             brain=PrimitiveBrain(),
             options=[VehicleSpeedModification()],
         )
-        assert robot.speed_label == 'very slow'
+        assert robot.speed_label == '3m (very slow)'
 
     def test_vtol_vsm_speed_label_medium(self):
-        # refs/robot/08_locomotion_modifications.md — VTOL → Medium
+        # refs/robot/08_locomotion_modifications.md — VTOL → Medium; 5+0=5m tactical
         robot = Robot(
             name='T',
             tl=10,
@@ -1144,10 +1144,10 @@ class TestVehicleSpeedModification:
             brain=PrimitiveBrain(),
             options=[VehicleSpeedModification()],
         )
-        assert robot.speed_label == 'medium'
+        assert robot.speed_label == '5m (medium)'
 
     def test_walker_vsm_speed_label_very_slow(self):
-        # refs/robot/08_locomotion_modifications.md — Walker → Very Slow
+        # refs/robot/08_locomotion_modifications.md — Walker → Very Slow; 5+0=5m tactical
         robot = Robot(
             name='T',
             tl=10,
@@ -1156,10 +1156,10 @@ class TestVehicleSpeedModification:
             brain=PrimitiveBrain(),
             options=[VehicleSpeedModification()],
         )
-        assert robot.speed_label == 'very slow'
+        assert robot.speed_label == '5m (very slow)'
 
     def test_hovercraft_vsm_speed_label_medium(self):
-        # refs/robot/08_locomotion_modifications.md — Hovercraft → Medium
+        # refs/robot/08_locomotion_modifications.md — Hovercraft → Medium; 5+1=6m tactical
         robot = Robot(
             name='T',
             tl=10,
@@ -1168,7 +1168,7 @@ class TestVehicleSpeedModification:
             brain=PrimitiveBrain(),
             options=[VehicleSpeedModification()],
         )
-        assert robot.speed_label == 'medium'
+        assert robot.speed_label == '6m (medium)'
 
     def test_thruster_vsm_speed_label_shows_thrust(self):
         # refs/robot/08_locomotion_modifications.md — Thruster → shows thrust e.g. '0.1G'

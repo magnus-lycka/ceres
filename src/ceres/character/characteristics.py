@@ -8,3 +8,6 @@ class Chars(StrEnum):
     INT = auto()
     EDU = auto()
     SOC = auto()
+
+
+UCP_STATS: tuple[str, ...] = tuple(c.name for c in Chars)

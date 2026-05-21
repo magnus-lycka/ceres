@@ -14,7 +14,8 @@ from ceres.make.robot.spec import RobotSpecSection
 _expected = SimpleNamespace(
     hits=8,
     locomotion='Grav',
-    speed='high',
+    locomotion_label='Grav (VSM)',
+    speed='6m (high)',  # 5(base)+1(agility)=6m tactical, (high) from VSM band
     tl=10,
     armour=3,
     traits='Armour (+3), Flyer (high), Small (-2)',
@@ -100,6 +101,9 @@ class TestBasicCourier:
 
     def test_locomotion_label(self):
         assert build_basic_courier().locomotion.label() == _expected.locomotion
+
+    def test_locomotion_label_with_vsm(self):
+        assert build_basic_courier().locomotion_label == _expected.locomotion_label
 
     def test_speed_label(self):
         assert build_basic_courier().speed_label == _expected.speed
