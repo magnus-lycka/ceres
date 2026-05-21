@@ -1,10 +1,17 @@
-from ceres.make.ship import armour
+from ceres.make.ship import armour, hull
 from ceres.make.ship.base import ShipBase
+from ceres.make.ship.hull import Hull
 
 
 class DummyOwner(ShipBase):
-    def __init__(self, tl, displacement, armour_volume_modifier=1.0):
-        super().__init__(tl=tl, displacement=displacement)
+    hull: Hull
+
+    def __init__(self, tl, displacement, armour_volume_modifier=1.0, military_hull=False):
+        super().__init__(
+            tl=tl,
+            displacement=displacement,
+            hull=Hull(configuration=hull.standard_hull.model_copy(update={'military': military_hull})),
+        )
         self._armour_volume_modifier = armour_volume_modifier
 
     @property
@@ -176,6 +183,16 @@ def test_max_protection_bonded_superdense_armour():
         assert error_messages(a_bad)
 
 
+def test_military_hull_allows_double_normal_armour_tl_cap():
+    a_ok = armour.BondedSuperdenseArmour(protection=28)
+    a_ok.bind(DummyOwner(14, 10_000, military_hull=True))
+    assert not error_messages(a_ok)
+
+    a_bad = armour.BondedSuperdenseArmour(protection=29)
+    a_bad.bind(DummyOwner(14, 10_000, military_hull=True))
+    assert 'Protection 29 exceeds military hull cap 28' in error_messages(a_bad)
+
+
 def test_molecular_bonded_armour_too_low_tl_adds_error_note():
     a = armour.MolecularBondedArmour(protection=2)
     a.bind(DummyOwner(15, 999))
@@ -202,3 +219,13 @@ def test_max_protection_molecular_bonded_armour():
         a_bad = armour.MolecularBondedArmour(protection=max_prot + 1)
         a_bad.bind(DummyOwner(tl, 999))
         assert error_messages(a_bad)
+
+
+def test_military_hull_allows_double_molecular_bonded_armour_tl_cap():
+    a_ok = armour.MolecularBondedArmour(protection=40)
+    a_ok.bind(DummyOwner(16, 10_000, military_hull=True))
+    assert not error_messages(a_ok)
+
+    a_bad = armour.MolecularBondedArmour(protection=41)
+    a_bad.bind(DummyOwner(16, 10_000, military_hull=True))
+    assert 'Protection 41 exceeds military hull cap 40' in error_messages(a_bad)

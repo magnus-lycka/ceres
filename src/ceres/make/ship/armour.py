@@ -21,7 +21,29 @@ class Armour(ShipPart):
         self.check_protection_limit()
 
     def check_protection_limit(self) -> None:
-        pass
+        limit = self.protection_limit()
+        if self.protection > limit:
+            if self._military_hull():
+                self.error(f'Protection {self.protection} exceeds military hull cap {limit}')
+            else:
+                self.error(self.protection_limit_error(limit))
+
+    def protection_limit(self) -> int:
+        limit = self.normal_protection_limit()
+        if self._military_hull():
+            return limit * 2
+        return limit
+
+    def normal_protection_limit(self) -> int:
+        return self.assembly.tl
+
+    def protection_limit_error(self, limit: int) -> str:
+        return f'Protection {self.protection} exceeds TL{limit}'
+
+    def _military_hull(self) -> bool:
+        ship_hull = getattr(self.assembly, 'hull', None)
+        configuration = getattr(ship_hull, 'configuration', None)
+        return bool(getattr(configuration, 'military', False))
 
     def item_description(self) -> str:
         return f'{self.description}, Armour: {self.protection}'
@@ -58,12 +80,13 @@ class TitaniumSteelArmour(Armour):
     _cost_per_ton = 50_000
     _tonnage_consumed = 0.025
 
-    def check_protection_limit(self) -> None:
-        tl = self.assembly.tl
-        if self.protection > tl:
-            self.error(f'Protection {self.protection} exceeds TL{tl}')
-        elif self.protection > 9:
-            self.error(f'Protection {self.protection} exceeds maximum 9 for Titanium Steel')
+    def normal_protection_limit(self) -> int:
+        return min(self.assembly.tl, 9)
+
+    def protection_limit_error(self, limit: int) -> str:
+        if limit == self.assembly.tl:
+            return f'Protection {self.protection} exceeds TL{limit}'
+        return f'Protection {self.protection} exceeds maximum 9 for Titanium Steel'
 
 
 class CrystalironArmour(Armour):
@@ -72,12 +95,13 @@ class CrystalironArmour(Armour):
     _cost_per_ton = 200_000
     _tonnage_consumed = 0.0125
 
-    def check_protection_limit(self) -> None:
-        tl = self.assembly.tl
-        if self.protection > tl:
-            self.error(f'Protection {self.protection} exceeds TL{tl}')
-        elif self.protection > 13:
-            self.error(f'Protection {self.protection} exceeds maximum 13 for Crystaliron')
+    def normal_protection_limit(self) -> int:
+        return min(self.assembly.tl, 13)
+
+    def protection_limit_error(self, limit: int) -> str:
+        if limit == self.assembly.tl:
+            return f'Protection {self.protection} exceeds TL{limit}'
+        return f'Protection {self.protection} exceeds maximum 13 for Crystaliron'
 
 
 class BondedSuperdenseArmour(Armour):
@@ -86,11 +110,6 @@ class BondedSuperdenseArmour(Armour):
     _cost_per_ton = 500_000
     _tonnage_consumed = 0.008
 
-    def check_protection_limit(self) -> None:
-        tl = self.assembly.tl
-        if self.protection > tl:
-            self.error(f'Protection {self.protection} exceeds TL{tl}')
-
 
 class MolecularBondedArmour(Armour):
     description: Literal['Molecular Bonded'] = 'Molecular Bonded'
@@ -98,7 +117,8 @@ class MolecularBondedArmour(Armour):
     _cost_per_ton = 1_500_000
     _tonnage_consumed = 0.005
 
-    def check_protection_limit(self) -> None:
-        tl = self.assembly.tl
-        if self.protection > tl + 4:
-            self.error(f'Protection {self.protection} exceeds TL{tl}+4')
+    def normal_protection_limit(self) -> int:
+        return self.assembly.tl + 4
+
+    def protection_limit_error(self, limit: int) -> str:
+        return f'Protection {self.protection} exceeds TL{self.assembly.tl}+4'

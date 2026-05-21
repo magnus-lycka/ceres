@@ -85,6 +85,9 @@ class Ship(ShipBase):
         if self.hull.configuration.non_gravity and self.displacement > 500_000:
             notes.error(f'Non-gravity hull exceeds maximum displacement: {self.displacement:,} > 500,000 tons')
 
+        if self.hull.configuration.military and self.displacement <= 5_000:
+            notes.error(f'Military hull requires capital ship displacement: {self.displacement:,} <= 5,000 tons')
+
         power_shortfall = self.total_power_load - self.available_power
         if power_shortfall > 0.005 and (self.power is None or self.power.plant is None):
             notes.warning(f'Power: capacity {power_shortfall:.2f} less than max use')

@@ -1,5 +1,6 @@
 from ceres.make.ship import hull
 from ceres.make.ship.base import ShipBase
+from ceres.make.ship.ship import Ship
 
 
 class DummyOwner(ShipBase):
@@ -113,3 +114,23 @@ def test_pressure_hull_values():
     assert ship_hull.pressure_hull_tons(400) == 100
     assert ship_hull.total_cost(400) == 200_000_000
     assert ship_hull.build_item() == 'Standard Hull, Pressure Hull'
+
+
+def test_military_hull_requires_capital_ship_displacement():
+    my_ship = Ship(
+        tl=14,
+        displacement=5_000,
+        hull=hull.Hull(configuration=hull.standard_hull.model_copy(update={'military': True})),
+    )
+
+    assert 'Military hull requires capital ship displacement: 5,000 <= 5,000 tons' in my_ship.notes.errors
+
+
+def test_military_hull_allowed_above_five_thousand_tons():
+    my_ship = Ship(
+        tl=14,
+        displacement=5_001,
+        hull=hull.Hull(configuration=hull.standard_hull.model_copy(update={'military': True})),
+    )
+
+    assert 'Military hull requires capital ship displacement' not in '\n'.join(my_ship.notes.errors)
