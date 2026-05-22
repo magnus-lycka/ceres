@@ -12,11 +12,14 @@ from ceres.make.ship.storage import (
     CargoNet,
     CargoScoop,
     CargoSection,
+    ConcealedCompartment,
     ExternalCargoMount,
     FuelCargoContainer,
     FuelProcessor,
     FuelScoops,
     FuelSection,
+    InterplanetaryJumpNet,
+    InterstellarJumpNet,
     JumpFuel,
     LoadingBeltTL7,
     LoadingBeltTL12,
@@ -222,6 +225,46 @@ def test_cargo_net_appears_in_ship_spec():
     assert row.cost == pytest.approx(1_000_000.0)
 
 
+def test_concealed_compartment_values_and_notes():
+    compartment = ConcealedCompartment(tons=5)
+
+    assert compartment.tons == pytest.approx(5.0)
+    assert compartment.cost == pytest.approx(100_000.0)
+    assert compartment.power == pytest.approx(0.0)
+    assert compartment.sensors_dm == -2
+    assert compartment.investigate_dm == -4
+    assert compartment.notes.infos == [
+        'Hidden space shielded against sensors',
+        'DM-2 to Electronics (sensors) checks and DM-4 to Investigate checks',
+    ]
+
+
+def test_concealed_compartment_rejects_more_than_5_percent_of_ship_tonnage():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        cargo=CargoSection(concealed_compartments=[ConcealedCompartment(tons=5.1)]),
+    )
+
+    assert my_ship.cargo is not None
+    compartment = my_ship.cargo.concealed_compartments[0]
+    assert 'Concealed compartment exceeds 5% of ship tonnage: 5.1 > 5.0' in compartment.notes.errors
+
+
+def test_concealed_compartment_appears_in_ship_spec():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        cargo=CargoSection(concealed_compartments=[ConcealedCompartment(tons=5)]),
+    )
+
+    row = my_ship.build_spec().row('Concealed Compartment', section=SpecSection.CARGO)
+    assert row.tons == pytest.approx(5.0)
+    assert row.cost == pytest.approx(100_000.0)
+
+
 def test_external_cargo_mount_values_and_notes():
     mount = ExternalCargoMount(capacity=40)
 
@@ -277,6 +320,68 @@ def test_external_cargo_mount_contributes_to_performance_displacement():
         hull=hull.Hull(configuration=hull.standard_hull),
         drives=DriveSection(m_drive=MDrive2()),
         cargo=CargoSection(external_cargo_mounts=[ExternalCargoMount(capacity=40)]),
+    )
+
+    assert my_ship.performance_displacement == pytest.approx(440.0)
+    assert my_ship.drives is not None
+    assert my_ship.drives.m_drive is not None
+    assert my_ship.drives.m_drive.build_item() == 'M-Drive 2 (440t)'
+    assert my_ship.drives.m_drive.tons == pytest.approx(8.8)
+    assert my_ship.drives.m_drive.power == pytest.approx(88.0)
+
+
+@pytest.mark.parametrize(
+    ('jump_net', 'expected_tl', 'expected_tons', 'expected_cost'),
+    [
+        (InterplanetaryJumpNet(capacity=100), 8, 1.0, 100_000.0),
+        (InterplanetaryJumpNet(capacity=101), 8, 2.0, 200_000.0),
+        (InterstellarJumpNet(capacity=100), 10, 1.0, 300_000.0),
+        (InterstellarJumpNet(capacity=101), 10, 2.0, 600_000.0),
+    ],
+)
+def test_jump_net_values(jump_net, expected_tl, expected_tons, expected_cost):
+    assert jump_net.tl == expected_tl
+    assert jump_net.tons == pytest.approx(expected_tons)
+    assert jump_net.cost == pytest.approx(expected_cost)
+    assert jump_net.power == pytest.approx(0.0)
+    assert jump_net.performance_displacement_contribution == pytest.approx(jump_net.capacity)
+
+
+def test_interplanetary_jump_net_notes():
+    jump_net = InterplanetaryJumpNet(capacity=100)
+
+    assert jump_net.notes.infos == [
+        'Ship is effectively unstreamlined while jump net is deployed',
+        'Cannot perform jump while interplanetary jump net is deployed',
+    ]
+
+
+def test_interstellar_jump_net_notes():
+    jump_net = InterstellarJumpNet(capacity=100)
+
+    assert jump_net.notes.infos == ['Ship is effectively unstreamlined while jump net is deployed']
+
+
+def test_jump_net_appears_in_ship_spec():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        cargo=CargoSection(jump_nets=[InterstellarJumpNet(capacity=150)]),
+    )
+
+    row = my_ship.build_spec().row('Interstellar Jump Net (150 tons)', section=SpecSection.CARGO)
+    assert row.tons == pytest.approx(2.0)
+    assert row.cost == pytest.approx(600_000.0)
+
+
+def test_jump_net_contributes_to_performance_displacement():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        drives=DriveSection(m_drive=MDrive2()),
+        cargo=CargoSection(jump_nets=[InterstellarJumpNet(capacity=40)]),
     )
 
     assert my_ship.performance_displacement == pytest.approx(440.0)

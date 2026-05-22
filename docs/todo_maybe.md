@@ -663,45 +663,6 @@ Three ship components enabling psionic operation or defence. None currently impl
 
 Psionic Capacitor (TL18) is out of scope.
 
-## Vault [todo]
-
-Reference: `refs/hg/26_drones.md`
-
-An armoured chamber designed to survive ship destruction. Contents survive in vacuum for a limited
-time. Provides Armour 1 per ton (max 10) and 1 Hull point per 5 tons. Size range 4–40 tons,
-MCr0.5/ton.
-
-Not yet implemented; no existing todo. Implement in `systems.py`. Note: the Vault's armour
-modifies critical hit severity for its contents, not the ship's overall armour rating; decide how
-to represent this.
-
-## Re-entry Capsule and Re-entry Pod [todo]
-
-Reference: `refs/hg/26_drones.md`
-
-Emergency escape and planetary insertion systems, typically installed per crew member.
-
-**Re-entry Capsule** (1 person): three tiers — basic (TL8, 0.5t, Cr20,000), assault (TL10, 0.5t,
-Cr50,000, Protection +20, DM-2 to detect), high-survivability (TL14, 0.5t, MCr0.1, Protection
-+30, DM-4 to detect, DM-2 against attacks).
-
-**Re-entry Pod** (TL9, 2 people, 1t, MCr0.15): has a gliding surface and computer guidance;
-Flyer (wing) can take manual control.
-
-Not yet implemented; no existing todo. Implement in `systems.py`. These appear on published ship
-stat blocks (e.g. military vessels allocate one capsule per crew).
-
-## Stable [todo]
-
-Reference: `refs/hg/26_drones.md`
-
-Housing for animals (and, in some systems, slaves). Includes air scrubbers and waste-collectors
-separate from main life support. A 10-ton stable houses 20 human-sized or 10 cattle-sized
-creatures. Variable size, minimum 10 tons, Cr2,500/ton, life support Cr250/ton.
-
-Not yet implemented; no existing todo. Appears in published agricultural and transport ship
-designs. Implement in `habitation.py` or `systems.py`.
-
 ## Concealed Compartment [todo]
 
 Reference: `refs/hg/26_drones.md`
@@ -931,33 +892,6 @@ Several sensor modules listed in HG are not yet modelled:
 - Shallow Penetration Suite
 - Signal Processing System
 
-## Accommodation additions [todo]
-
-Reference: `refs/hg/23_spacecraft_options.md`
-
-Two accommodation options from the Spacecraft Options chapter are not yet modelled:
-
-- **Acceleration Bench**: 4 seats, 1 ton, Cr10,000. `AccelerationSeat` (0.5t, Cr30,000) already
-  exists in `systems.py`; the bench is just a lower-cost 4-seat variant in the same space.
-- **Multi-Environment Space**: adds +5% to the tonnage of the designated area, MCr0.5/ton, and
-  requires 1 Power per ton of environmental equipment. Intended for alien/animal occupants.
-
-## Cargo handling equipment [todo]
-
-References: `refs/hg/23_spacecraft_options.md`, `refs/hg/25_solar_energy_systems.md`
-
-Four cargo-handling parts are absent:
-
-- **Cargo Crane**: tonnage = 2.5 + 0.5 per 150 tons (or part thereof) of cargo space; MCr1/ton.
-  Appears in Type-A Free Trader and Type-A2 Far Trader. Implement in `systems.py`.
-- **Cargo Scoop** (2 tons, MCr0.5): picks up floating cargo. One ton per round; Pilot check or
-  take damage equal to negative Effect.
-- **Cargo Net** (5 tons, MCr1): tow drones extend a retrieval net; ship cannot jump while deployed.
-- **Loading Belt** (1 ton, Cr3,000 at TL7 / Cr10,000 at TL12, 1 Power): offloads cargo; replaces
-  10 crewmen (TL7) or 25 (TL12).
-
-All are good candidates for `systems.py` as `_ZeroPower`-style parts (Cargo Crane may need power).
-
 ## External attachment systems
 
 Reference: `refs/hg/26_drones.md` (external systems section)
@@ -972,34 +906,6 @@ Implemented: `GrapplingArm`, `TowCable` (in `systems.py`).
 
 External loads from grappling/tow should feed into effective displacement for drive performance
 (related to the Modulars and effective displacement item above).
-
-## External Cargo Mount [todo]
-
-Reference: `refs/hg/25_solar_energy_systems.md`
-
-Attaches cargo externally to the ship hull. Cost: Cr1,000/ton of external cargo. Thrust must be
-recalculated including the external cargo tonnage. Not available on streamlined or dispersed-structure
-hulls. Makes the ship effectively unstreamlined while cargo is mounted.
-
-Not yet implemented; no existing todo. Best modelled in `crafts.py` alongside `DockingClamp`, or
-in `systems.py`. External cargo tonnage should feed into the effective-displacement tracking (related
-to the "External-load drive performance" item above).
-
-## Jump Net [todo]
-
-Reference: `refs/hg/25_solar_energy_systems.md`
-
-Allows a ship to carry external cargo through jump. Two variants:
-
-- **Interplanetary Jump Net** (TL8): 1 ton per 100 tons of external cargo; MCr0.1/ton. Allows jump
-  within a system only.
-- **Interstellar Jump Net** (TL10): MCr0.3/ton. Allows full interstellar jump.
-
-Jump net makes the ship unstreamlined. External cargo tonnage must be included in thrust and jump
-fuel calculations.
-
-Not yet implemented; no existing todo. Closely related to "External-load drive performance" and
-"External Cargo Mount". May belong in `crafts.py` or `systems.py`.
 
 ## Space stations as a build target
 

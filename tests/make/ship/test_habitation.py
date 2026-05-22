@@ -16,6 +16,7 @@ from ceres.make.ship.habitation import (
     HighStateroom,
     LowBerth,
     LuxuryStateroom,
+    Stable,
     Stateroom,
 )
 from ceres.make.ship.occupants import BasicPassage, HighPassage, LowPassage, MiddlePassage, ResidenceDemand
@@ -198,6 +199,57 @@ def test_emergency_low_berths_count_toward_default_low_passengers():
     assert my_ship.habitation is not None
     assert my_ship.habitation.low_passage_capacity() == 6
     assert my_ship.habitation.passenger_counts(my_ship) == {'low': 6}
+
+
+def test_stable_values_and_capacity():
+    stable = Stable(tons=10)
+
+    assert stable.tons == pytest.approx(10.0)
+    assert stable.cost == pytest.approx(25_000.0)
+    assert stable.power == pytest.approx(0.0)
+    assert stable.human_sized_capacity == 20
+    assert stable.cattle_sized_capacity == 10
+    assert stable.fixed_life_support_cost == pytest.approx(2_500.0)
+    assert stable.notes.infos == ['Includes air scrubbers and waste-collectors separate from main life support']
+
+
+def test_stable_capacity_scales_with_tonnage():
+    stable = Stable(tons=15)
+
+    assert stable.human_sized_capacity == 30
+    assert stable.cattle_sized_capacity == 15
+    assert stable.fixed_life_support_cost == pytest.approx(3_750.0)
+
+
+def test_stable_reports_below_minimum_size():
+    stable = Stable(tons=9.99)
+
+    assert 'Stable minimum size is 10 tons' in stable.notes.errors
+
+
+def test_stable_life_support_counts_as_facility_cost():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        habitation=HabitationSection(stables=[Stable(tons=10)]),
+    )
+
+    assert my_ship.habitation is not None
+    assert my_ship.habitation.life_support_facilities_cost(my_ship) == pytest.approx(2_500.0)
+
+
+def test_stable_appears_in_ship_spec():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        habitation=HabitationSection(stables=[Stable(tons=10)]),
+    )
+
+    row = my_ship.build_spec().row('Stable', section='Habitation')
+    assert row.tons == pytest.approx(10.0)
+    assert row.cost == pytest.approx(25_000.0)
 
 
 def test_habitation_section_groups_emergency_low_berths():

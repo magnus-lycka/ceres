@@ -266,6 +266,40 @@ class CabinSpace(_ExplicitTonsHabitationPart):
         return [(ResidenceDemand.PASSENGER_STATEROOM_BED, self.passenger_capacity)]
 
 
+class Stable(_ExplicitTonsHabitationPart):
+    description: Literal['Stable'] = 'Stable'
+    cost: ClassVar[float]
+    power: ClassVar[float]
+    life_support_per_ton: ClassVar[float] = 250.0
+
+    @property
+    def cost(self) -> float:
+        return self.tons * 2_500.0
+
+    @property
+    def power(self) -> float:
+        return 0.0
+
+    @property
+    def human_sized_capacity(self) -> int:
+        return math.floor(self.tons * 2)
+
+    @property
+    def cattle_sized_capacity(self) -> int:
+        return math.floor(self.tons)
+
+    @property
+    def fixed_life_support_cost(self) -> float:
+        return self.tons * self.life_support_per_ton
+
+    def build_notes(self):
+        notes = NoteList()
+        if self.tons < 10:
+            notes.error('Stable minimum size is 10 tons')
+        notes.info('Includes air scrubbers and waste-collectors separate from main life support')
+        return notes
+
+
 class HabitationSection(CeresModel):
     staterooms: list[StateroomUnion] = Field(default_factory=list)
     low_berths: list[LowBerth] = Field(default_factory=list)
@@ -281,6 +315,7 @@ class HabitationSection(CeresModel):
     hot_tubs: list[HotTub] = Field(default_factory=list)
     theatres: list[Theatre] = Field(default_factory=list)
     wet_bar: WetBar | None = None
+    stables: list[Stable] = Field(default_factory=list)
 
     def model_post_init(self, __context) -> None:
         super().model_post_init(__context)
@@ -357,6 +392,7 @@ class HabitationSection(CeresModel):
             *self.hot_tubs,
             *self.theatres,
             self.wet_bar,
+            *self.stables,
         ):
             if part is not None:
                 parts.append(part)
@@ -394,7 +430,8 @@ class HabitationSection(CeresModel):
     def life_support_facilities_cost(self, ship) -> float:
         stateroom_life_support = sum(room.fixed_life_support_cost for room in self.staterooms)
         cabin_life_support = 0.0 if self.cabin_space is None else self.cabin_space.fixed_life_support_cost
-        return stateroom_life_support + cabin_life_support
+        stable_life_support = sum(stable.fixed_life_support_cost for stable in self.stables)
+        return stateroom_life_support + cabin_life_support + stable_life_support
 
     def life_support_people_cost(self, ship) -> float:
         passengers = self.occupants(ship)
@@ -465,6 +502,7 @@ class HabitationSection(CeresModel):
                     *self.hot_tubs,
                     *self.theatres,
                     self.wet_bar,
+                    *self.stables,
                 ]
                 if part is not None
             ],

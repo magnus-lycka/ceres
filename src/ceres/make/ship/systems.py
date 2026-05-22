@@ -121,6 +121,30 @@ class CommandBridge(_ZeroPowerSystemPart):
         return 1
 
 
+class ConstructionDeck(_ExplicitTonsSystemPart):
+    system_type: Literal['CONSTRUCTION_DECK'] = 'CONSTRUCTION_DECK'
+    description: Literal['Construction Deck'] = 'Construction Deck'
+    cost: ClassVar[float]
+    power: ClassVar[float]
+
+    @property
+    def maximum_constructible_tons(self) -> float:
+        return self.tons / 2.0
+
+    @property
+    def cost(self) -> float:
+        return self.tons * 500_000.0
+
+    @property
+    def power(self) -> float:
+        return self.tons
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info(f'Can build or repair ships up to {self.maximum_constructible_tons:g} tons at TL{self.assembly_tl}')
+        return notes
+
+
 class Armoury(_ZeroPowerSystemPart):
     system_type: Literal['ARMOURY'] = 'ARMOURY'
     description: Literal['Armoury'] = 'Armoury'
@@ -191,6 +215,66 @@ class CommercialZone(_ExplicitTonsSystemPart):
         return float(max(1, int(self.tons // 200)))
 
 
+class MultiEnvironmentSpace(ShipPart):
+    system_type: Literal['MULTI_ENVIRONMENT_SPACE'] = 'MULTI_ENVIRONMENT_SPACE'
+    description: Literal['Multi-Environment Space'] = 'Multi-Environment Space'
+    covered_tons: float
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+
+    def item_description(self) -> str:
+        return f'Multi-Environment Space ({self.covered_tons:g} tons)'
+
+    @property
+    def tons(self) -> float:
+        return self.covered_tons * 0.05
+
+    @property
+    def cost(self) -> float:
+        return self.tons * 500_000.0
+
+    @property
+    def power(self) -> float:
+        return self.tons
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('Support equipment for modifying a designated area to unusual environmental conditions')
+        return notes
+
+
+class Vault(_ExplicitTonsSystemPart):
+    system_type: Literal['VAULT'] = 'VAULT'
+    description: Literal['Vault'] = 'Vault'
+    cost: ClassVar[float]
+    power: ClassVar[float]
+
+    @property
+    def cost(self) -> float:
+        return self.tons * 500_000.0
+
+    @property
+    def power(self) -> float:
+        return 0.0
+
+    @property
+    def content_armour(self) -> int:
+        return min(10, int(self.tons))
+
+    @property
+    def content_hull_points(self) -> int:
+        return int(self.tons // 5)
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        if self.tons < 4 or self.tons > 40:
+            notes.error('Vault size must be between 4 and 40 tons')
+        notes.info('Vault armour and Hull points protect contents only, not the ship')
+        notes.info('Contents can survive in vacuum for a limited time if the ship is destroyed')
+        return notes
+
+
 class SwimmingPool(CommonArea):
     description: Literal['Swimming Pool'] = 'Swimming Pool'
 
@@ -208,6 +292,77 @@ class Theatre(CommonArea):
         if self.advanced:
             return self.tons * 200_000.0
         return self.tons * 100_000.0
+
+
+class Brewery(ShipPart):
+    system_type: Literal['BREWERY'] = 'BREWERY'
+    description: Literal['Brewery'] = 'Brewery'
+    tl: int = 10
+    litres_per_week: float
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+
+    def item_description(self) -> str:
+        return f'Brewery ({self.litres_per_week:g} litres/week)'
+
+    @property
+    def tons(self) -> float:
+        return self.litres_per_week / 20.0
+
+    @property
+    def cost(self) -> float:
+        return self.tons * 100_000.0
+
+    @property
+    def power(self) -> float:
+        return 0.0
+
+
+class GourmetKitchen(ShipPart):
+    system_type: Literal['GOURMET_KITCHEN'] = 'GOURMET_KITCHEN'
+    description: Literal['Gourmet Kitchen'] = 'Gourmet Kitchen'
+    diners: int
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+
+    def item_description(self) -> str:
+        diner_label = 'diner' if self.diners == 1 else 'diners'
+        return f'Gourmet Kitchen ({self.diners} {diner_label})'
+
+    @property
+    def tons(self) -> float:
+        return float(self.diners)
+
+    @property
+    def cost(self) -> float:
+        return self.tons * 200_000.0
+
+    @property
+    def power(self) -> float:
+        return 0.0
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('Requires Steward 2 to use properly')
+        notes.info('DM +1 when seeking high passengers')
+        return notes
+
+
+class ZeroGRoom(CommonArea):
+    system_type: Literal['ZERO_G_ROOM'] = 'ZERO_G_ROOM'
+    description: Literal['Zero-G Room'] = 'Zero-G Room'
+    cost: ClassVar[float]
+
+    @property
+    def cost(self) -> float:
+        return 50_000.0
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('Includes controls and safe-access portal')
+        return notes
 
 
 class WetBar(_ZeroPowerSystemPart):
@@ -299,13 +454,70 @@ class Biosphere(_ExplicitTonsSystemPart):
         return self.tons
 
 
+class _BoobyTrap(CeresModel):
+    trap_type: str
+    tl: int
+    cost: float
+    damage_per_round: str
+
+    def check_tl(self, part: ShipPart) -> None:
+        if part.assembly_tl < self.tl:
+            part.error(f'Requires TL{self.tl}, ship is TL{part.assembly_tl}')
+
+
+class BoobyTrapTL6(_BoobyTrap):
+    trap_type: Literal['BOOBY_TRAP_TL6'] = 'BOOBY_TRAP_TL6'
+    tl: Literal[6] = 6
+    cost: float = 100_000.0
+    damage_per_round: Literal['3D'] = '3D'
+
+
+class BoobyTrapTL8(_BoobyTrap):
+    trap_type: Literal['BOOBY_TRAP_TL8'] = 'BOOBY_TRAP_TL8'
+    tl: Literal[8] = 8
+    cost: float = 300_000.0
+    damage_per_round: Literal['5D'] = '5D'
+
+
+class BoobyTrapTL10(_BoobyTrap):
+    trap_type: Literal['BOOBY_TRAP_TL10'] = 'BOOBY_TRAP_TL10'
+    tl: Literal[10] = 10
+    cost: float = 500_000.0
+    damage_per_round: Literal['6D'] = '6D'
+
+
+class BoobyTrapTL12(_BoobyTrap):
+    trap_type: Literal['BOOBY_TRAP_TL12'] = 'BOOBY_TRAP_TL12'
+    tl: Literal[12] = 12
+    cost: float = 1_000_000.0
+    damage_per_round: Literal['8D'] = '8D'
+
+
+type BoobyTrap = Annotated[
+    BoobyTrapTL6 | BoobyTrapTL8 | BoobyTrapTL10 | BoobyTrapTL12,
+    Field(discriminator='trap_type'),
+]
+
+
 class Airlock(_ZeroPowerSystemPart):
     tons: ClassVar[float]
     cost: ClassVar[float]
     size: float = 2.0
+    booby_trap: BoobyTrap | None = None
 
     def item_description(self) -> str:
         return f'Airlock ({self.size:g} tons)'
+
+    def bind(self, assembly: ShipBase) -> None:
+        super().bind(assembly)
+        if self.booby_trap is not None:
+            self.booby_trap.check_tl(self)
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        if self.booby_trap is not None:
+            notes.info(f'Booby-trapped: {self.booby_trap.damage_per_round} damage/round')
+        return notes
 
     def am_i_for_free(self) -> bool:
         if self.assembly.displacement < 100:
@@ -328,9 +540,10 @@ class Airlock(_ZeroPowerSystemPart):
 
     @property
     def cost(self) -> float:
+        trap_cost = 0.0 if self.booby_trap is None else self.booby_trap.cost
         if self.am_i_for_free():
-            return 0.0
-        return self.tons * 100_000.0
+            return trap_cost
+        return self.tons * 100_000.0 + trap_cost
 
 
 class Aerofins(_ZeroPowerSystemPart):
@@ -514,6 +727,136 @@ class AccelerationSeat(_ZeroPowerSystemPart):
         return 30_000.0
 
 
+class AccelerationBench(_ZeroPowerSystemPart):
+    system_type: Literal['ACCELERATION_BENCH'] = 'ACCELERATION_BENCH'
+    tl: int = 1
+    description: Literal['Acceleration Bench'] = 'Acceleration Bench'
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    seats: int = 4
+
+    @property
+    def tons(self) -> float:
+        return 1.0
+
+    @property
+    def cost(self) -> float:
+        return 10_000.0
+
+
+class _ReEntrySystem(_ZeroPowerSystemPart):
+    _capacity: ClassVar[int]
+    _protection: ClassVar[int | None] = None
+    _detection_dm: ClassVar[int | None] = None
+    _attack_dm: ClassVar[int | None] = None
+
+    @property
+    def capacity(self) -> int:
+        return self._capacity
+
+    @property
+    def protection(self) -> int | None:
+        return self._protection
+
+    @property
+    def detection_dm(self) -> int | None:
+        return self._detection_dm
+
+    @property
+    def attack_dm(self) -> int | None:
+        return self._attack_dm
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        capacity_text = 'one person' if self.capacity == 1 else 'two people'
+        notes.info(f'Emergency escape and planetary insertion system for {capacity_text}')
+        if self.protection is not None:
+            notes.info(f'Protection +{self.protection}')
+        if self.detection_dm is not None:
+            notes.info(f'DM{self.detection_dm} to detect')
+        if self.attack_dm is not None:
+            notes.info(f'DM{self.attack_dm} against attacks')
+        return notes
+
+
+class BasicReEntryCapsule(_ReEntrySystem):
+    system_type: Literal['BASIC_RE_ENTRY_CAPSULE'] = 'BASIC_RE_ENTRY_CAPSULE'
+    tl: int = 8
+    description: Literal['Re-entry Capsule (basic)'] = 'Re-entry Capsule (basic)'
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    _capacity: ClassVar[int] = 1
+
+    @property
+    def tons(self) -> float:
+        return 0.5
+
+    @property
+    def cost(self) -> float:
+        return 20_000.0
+
+
+class AssaultReEntryCapsule(_ReEntrySystem):
+    system_type: Literal['ASSAULT_RE_ENTRY_CAPSULE'] = 'ASSAULT_RE_ENTRY_CAPSULE'
+    tl: int = 10
+    description: Literal['Re-entry Capsule (assault)'] = 'Re-entry Capsule (assault)'
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    _capacity: ClassVar[int] = 1
+    _protection: ClassVar[int | None] = 20
+    _detection_dm: ClassVar[int | None] = -2
+
+    @property
+    def tons(self) -> float:
+        return 0.5
+
+    @property
+    def cost(self) -> float:
+        return 50_000.0
+
+
+class HighSurvivabilityReEntryCapsule(_ReEntrySystem):
+    system_type: Literal['HIGH_SURVIVABILITY_RE_ENTRY_CAPSULE'] = 'HIGH_SURVIVABILITY_RE_ENTRY_CAPSULE'
+    tl: int = 14
+    description: Literal['Re-entry Capsule (high-survivability)'] = 'Re-entry Capsule (high-survivability)'
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    _capacity: ClassVar[int] = 1
+    _protection: ClassVar[int | None] = 30
+    _detection_dm: ClassVar[int | None] = -4
+    _attack_dm: ClassVar[int | None] = -2
+
+    @property
+    def tons(self) -> float:
+        return 0.5
+
+    @property
+    def cost(self) -> float:
+        return 100_000.0
+
+
+class ReEntryPod(_ReEntrySystem):
+    system_type: Literal['RE_ENTRY_POD'] = 'RE_ENTRY_POD'
+    tl: int = 9
+    description: Literal['Re-entry Pod'] = 'Re-entry Pod'
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    _capacity: ClassVar[int] = 2
+
+    @property
+    def tons(self) -> float:
+        return 1.0
+
+    @property
+    def cost(self) -> float:
+        return 150_000.0
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList(super().build_notes())
+        notes.info('Includes gliding surface and computer guidance; Flyer (wing) can take manual control')
+        return notes
+
+
 type AnyDroneSystem = Annotated[
     ProbeDrones | AdvancedProbeDrones | RepairDrones | MiningDrones,
     Field(discriminator='drone_type'),
@@ -523,18 +866,29 @@ type AnyInternalSystem = Annotated[
     Armoury
     | Biosphere
     | CommercialZone
+    | MultiEnvironmentSpace
+    | Vault
     | MedicalBay
     | Laboratory
     | LibraryFacility
     | BriefingRoom
     | CommandBridge
+    | ConstructionDeck
     | GravScreen
     | TrainingFacility
     | UNREPSystem
     | Workshop
     | TowCable
     | GrapplingArm
-    | AccelerationSeat,
+    | Brewery
+    | GourmetKitchen
+    | ZeroGRoom
+    | AccelerationBench
+    | AccelerationSeat
+    | BasicReEntryCapsule
+    | AssaultReEntryCapsule
+    | HighSurvivabilityReEntryCapsule
+    | ReEntryPod,
     Field(discriminator='system_type'),
 ]
 

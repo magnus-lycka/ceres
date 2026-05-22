@@ -319,6 +319,32 @@ class CargoNet(_ZeroPowerStoragePart):
         return notes
 
 
+class ConcealedCompartment(_ExplicitTonsStoragePart):
+    description: Literal['Concealed Compartment'] = 'Concealed Compartment'
+    cost: ClassVar[float]
+    power: ClassVar[float]
+    sensors_dm: ClassVar[int] = -2
+    investigate_dm: ClassVar[int] = -4
+
+    @property
+    def cost(self) -> float:
+        return self.tons * 20_000.0
+
+    @property
+    def power(self) -> float:
+        return 0.0
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        if self._assembly is not None:
+            maximum_tons = self.assembly.displacement * 0.05
+            if self.tons > maximum_tons:
+                notes.error(f'Concealed compartment exceeds 5% of ship tonnage: {self.tons:.1f} > {maximum_tons:.1f}')
+        notes.info('Hidden space shielded against sensors')
+        notes.info('DM-2 to Electronics (sensors) checks and DM-4 to Investigate checks')
+        return notes
+
+
 class ExternalCargoMount(_ZeroPowerStoragePart):
     description: Literal['External Cargo Mount'] = 'External Cargo Mount'
     tons: ClassVar[float]
@@ -356,6 +382,58 @@ class ExternalCargoMount(_ZeroPowerStoragePart):
         notes = NoteList()
         notes.info('Ship is effectively unstreamlined while external cargo is mounted')
         return notes
+
+
+class _JumpNet(_ZeroPowerStoragePart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    capacity: float
+    cost_per_ton: ClassVar[float]
+    _label: ClassVar[str]
+
+    @property
+    def tons(self) -> float:
+        return math.ceil(self.capacity / 100)
+
+    @property
+    def cost(self) -> float:
+        return self.tons * self.cost_per_ton
+
+    @property
+    def performance_displacement_contribution(self) -> float:
+        return self.capacity
+
+    def item_description(self) -> str:
+        return f'{self._label} ({self.capacity:g} tons)'
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('Ship is effectively unstreamlined while jump net is deployed')
+        return notes
+
+
+class InterplanetaryJumpNet(_JumpNet):
+    jump_net_type: Literal['INTERPLANETARY_JUMP_NET'] = 'INTERPLANETARY_JUMP_NET'
+    description: Literal['Interplanetary Jump Net'] = 'Interplanetary Jump Net'
+    tl: Literal[8] = 8
+    cost_per_ton: ClassVar[float] = 100_000.0
+    _label: ClassVar[str] = 'Interplanetary Jump Net'
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList(super().build_notes())
+        notes.info('Cannot perform jump while interplanetary jump net is deployed')
+        return notes
+
+
+class InterstellarJumpNet(_JumpNet):
+    jump_net_type: Literal['INTERSTELLAR_JUMP_NET'] = 'INTERSTELLAR_JUMP_NET'
+    description: Literal['Interstellar Jump Net'] = 'Interstellar Jump Net'
+    tl: Literal[10] = 10
+    cost_per_ton: ClassVar[float] = 300_000.0
+    _label: ClassVar[str] = 'Interstellar Jump Net'
+
+
+type JumpNet = Annotated[InterplanetaryJumpNet | InterstellarJumpNet, Field(discriminator='jump_net_type')]
 
 
 class CargoHold(CeresModel):
@@ -432,7 +510,9 @@ class CargoSection(CeresModel):
     loading_belts: list[LoadingBelt] = Field(default_factory=list)
     cargo_scoops: list[CargoScoop] = Field(default_factory=list)
     cargo_nets: list[CargoNet] = Field(default_factory=list)
+    concealed_compartments: list[ConcealedCompartment] = Field(default_factory=list)
     external_cargo_mounts: list[ExternalCargoMount] = Field(default_factory=list)
+    jump_nets: list[JumpNet] = Field(default_factory=list)
 
     def _all_parts(self) -> list[ShipPart]:
         return [
@@ -441,12 +521,16 @@ class CargoSection(CeresModel):
             *self.loading_belts,
             *self.cargo_scoops,
             *self.cargo_nets,
+            *self.concealed_compartments,
             *self.external_cargo_mounts,
+            *self.jump_nets,
         ]
 
     @property
     def performance_displacement_contribution(self) -> float:
-        return sum(mount.performance_displacement_contribution for mount in self.external_cargo_mounts)
+        return sum(mount.performance_displacement_contribution for mount in self.external_cargo_mounts) + sum(
+            jump_net.performance_displacement_contribution for jump_net in self.jump_nets
+        )
 
     @staticmethod
     def maximum_stores_tons(ship) -> float | None:

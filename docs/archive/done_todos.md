@@ -201,3 +201,103 @@ not as a variant of the ship-control bridge.
 They add 40 tons, add MCr30 to bridge cost, require ship displacement greater
 than 5,000 tons, and add a spec note for DM+1 to Tactics (naval) checks made
 within the command bridge.
+
+## Cargo handling equipment
+
+Cargo handling equipment from High Guard is implemented in `storage.py` and
+rendered in the Cargo section of ship specs.
+
+Implemented parts:
+
+- `CargoCrane`: tonnage = 2.5 + 0.5 per 150 tons or part thereof of cargo
+  space; MCr1 per ton of crane; reduces usable cargo hold capacity.
+- `CargoScoop`: 2 tons, MCr0.5, with operational notes for scooping floating
+  cargo and failed Pilot checks.
+- `CargoNet`: 5 tons, MCr1, with operational notes for tow drones and jump
+  restrictions while deployed.
+- `LoadingBeltTL7`: 1 ton, Cr3,000, replaces 10 loading crew.
+- `LoadingBeltTL12`: 1 ton, Cr10,000, 1 Power, replaces 25 loading crew.
+
+## External Cargo Mount
+
+External cargo mounts are implemented in `storage.py` as
+`ExternalCargoMount(capacity=...)`.
+
+They cost Cr1,000 per ton of external cargo capacity, add no internal tonnage
+or power load, cannot be installed on streamlined or dispersed-structure hulls,
+and add notes that the ship is effectively unstreamlined while external cargo
+is mounted.
+
+External cargo mount capacity contributes to ship `performance_displacement`,
+so drive and fuel calculations using the combined tonnage are updated.
+
+## Jump Net
+
+Jump nets are implemented in `storage.py` and rendered in the Cargo section of
+ship specs.
+
+Implemented variants:
+
+- `InterplanetaryJumpNet(capacity=...)`: TL8, 1 ton per 100 tons of external
+  cargo capacity or part thereof, MCr0.1 per ton of net, cannot perform jump
+  while deployed.
+- `InterstellarJumpNet(capacity=...)`: TL10, 1 ton per 100 tons of external
+  cargo capacity or part thereof, MCr0.3 per ton of net.
+
+Both variants add notes that the ship is effectively unstreamlined while the
+jump net is deployed. Jump net capacity contributes to
+`performance_displacement`, so drive and fuel calculations include the external
+cargo tonnage.
+
+## Accommodation additions
+
+Accommodation/support options from the High Guard Spacecraft Options chapter
+are implemented in `systems.py` and render in the ship spec as internal system
+rows.
+
+Implemented parts:
+
+- `AccelerationBench`: 4 seats, 1 ton, Cr10,000, a lower-cost bench variant of
+  `AccelerationSeat`.
+- `MultiEnvironmentSpace(covered_tons=...)`: support equipment for unusual
+  environmental conditions, adding 5% of the designated area's tonnage,
+  MCr0.5 per equipment ton, and 1 Power per equipment ton.
+
+## Vault
+
+Vaults are implemented in `systems.py` as `Vault(tons=...)`.
+
+They support the High Guard 4-40 ton size range, cost MCr0.5 per ton, add no
+power load, and expose content-only protection values:
+
+- `content_armour = min(10, tons)`
+- `content_hull_points = tons // 5`
+
+Spec notes state that vault armour and Hull points protect contents only, not
+the ship, and that contents can survive in vacuum for a limited time if the
+ship is destroyed.
+
+## Re-entry Capsule and Re-entry Pod
+
+Re-entry capsules and pods are implemented in `systems.py` and render in ship
+specs as internal system rows.
+
+Implemented variants:
+
+- `BasicReEntryCapsule`: TL8, 0.5 tons, Cr20,000, capacity 1.
+- `AssaultReEntryCapsule`: TL10, 0.5 tons, Cr50,000, capacity 1,
+  Protection +20, DM-2 to detect.
+- `HighSurvivabilityReEntryCapsule`: TL14, 0.5 tons, MCr0.1, capacity 1,
+  Protection +30, DM-4 to detect, DM-2 against attacks.
+- `ReEntryPod`: TL9, 1 ton, MCr0.15, capacity 2, with notes for its gliding
+  surface, computer guidance, and manual Flyer (wing) control.
+
+## Stable
+
+Stables are implemented in `habitation.py` as `Stable(tons=...)` and render in
+the Habitation section of ship specs.
+
+They cost Cr2,500 per ton, add no power load, require a minimum size of 10
+tons, and add Cr250 per ton to life support facility costs. Capacity scales
+from the High Guard baseline of 10 tons housing 20 human-sized or 10
+cattle-sized creatures.

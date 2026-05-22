@@ -6,31 +6,47 @@ from ceres.make.ship.bridge import Bridge, CommandSection
 from ceres.make.ship.habitation import HabitationSection
 from ceres.make.ship.storage import FuelScoops, FuelSection
 from ceres.make.ship.systems import (
+    AccelerationBench,
+    AccelerationSeat,
     AdvancedProbeDrones,
     Aerofins,
     Airlock,
     Armoury,
+    AssaultReEntryCapsule,
     BasicAutodoc,
+    BasicReEntryCapsule,
     Biosphere,
+    BoobyTrapTL6,
+    BoobyTrapTL8,
+    BoobyTrapTL10,
+    BoobyTrapTL12,
+    Brewery,
     BriefingRoom,
     CommandBridge,
     CommercialZone,
     CommonArea,
+    ConstructionDeck,
+    GourmetKitchen,
     GravScreen,
+    HighSurvivabilityReEntryCapsule,
     HotTub,
     Laboratory,
     LibraryFacility,
     MedicalBay,
     MiningDrones,
+    MultiEnvironmentSpace,
     ProbeDrones,
+    ReEntryPod,
     RepairDrones,
     SwimmingPool,
     SystemsSection,
     Theatre,
     TrainingFacility,
     UNREPSystem,
+    Vault,
     WetBar,
     Workshop,
+    ZeroGRoom,
 )
 
 
@@ -61,6 +77,14 @@ def _dummy_owner_for(part) -> DummyOwner:
         (MedicalBay(), 4.0, 2_000_000.0, 1.0),
         (MedicalBay(autodoc=BasicAutodoc()), 4.0, 2_100_000.0, 1.0),
         (GravScreen(), 2.0, 2_000_000.0, 4.0),
+        (AccelerationBench(), 1.0, 10_000.0, 0.0),
+        (AccelerationSeat(), 0.5, 30_000.0, 0.0),
+        (Brewery(litres_per_week=20), 1.0, 100_000.0, 0.0),
+        (GourmetKitchen(diners=4), 4.0, 800_000.0, 0.0),
+        (BasicReEntryCapsule(), 0.5, 20_000.0, 0.0),
+        (AssaultReEntryCapsule(), 0.5, 50_000.0, 0.0),
+        (HighSurvivabilityReEntryCapsule(), 0.5, 100_000.0, 0.0),
+        (ReEntryPod(), 1.0, 150_000.0, 0.0),
         (Airlock(size=3.0), 3.0, 300_000.0, 0.0),
         (Aerofins(), 20.0, 2_000_000.0, 0.0),
         (HotTub(users=2), 0.5, 6_000.0, 0.0),
@@ -91,6 +115,7 @@ def test_converted_system_values_are_computed_properties_not_serialized_fields(
         (LibraryFacility, {}, 4.0, 4_000_000.0, 0.0),
         (BriefingRoom, {}, 4.0, 500_000.0, 0.0),
         (CommandBridge, {}, 40.0, 30_000_000.0, 0.0),
+        (ConstructionDeck, {'tons': 100.0}, 100.0, 50_000_000.0, 100.0),
         (Armoury, {}, 1.0, 250_000.0, 0.0),
         (WetBar, {}, 0.0, 2_000.0, 0.0),
         (MedicalBay, {}, 4.0, 2_000_000.0, 1.0),
@@ -103,6 +128,8 @@ def test_converted_system_values_are_computed_properties_not_serialized_fields(
         (RepairDrones, {}, 4.0, 800_000.0, 0.0),
         (MiningDrones, {'count': 10}, 20.0, 2_000_000.0, 0.0),
         (TrainingFacility, {'trainees': 2}, 4.0, 800_000.0, 0.0),
+        (Brewery, {'litres_per_week': 20}, 1.0, 100_000.0, 0.0),
+        (GourmetKitchen, {'diners': 4}, 4.0, 800_000.0, 0.0),
     ],
 )
 def test_converted_system_values_ignore_stale_numeric_inputs(
@@ -122,6 +149,7 @@ def test_converted_system_values_ignore_stale_numeric_inputs(
         (SwimmingPool, {'tons': 2.0}, 2.0, 40_000.0, 0.0),
         (Theatre, {'tons': 2.0}, 2.0, 200_000.0, 0.0),
         (Theatre, {'tons': 2.0, 'advanced': True}, 2.0, 400_000.0, 0.0),
+        (ZeroGRoom, {'tons': 2.0}, 2.0, 50_000.0, 0.0),
         (CommercialZone, {'tons': 240.0}, 240.0, 48_000_000.0, 1.0),
         (Biosphere, {'tons': 4.0}, 4.0, 800_000.0, 4.0),
         (UNREPSystem, {'tons': 25.0}, 25.0, 12_500_000.0, 25.0),
@@ -160,6 +188,263 @@ def test_common_area_display_label_appears_in_ship_spec():
     row = my_ship.build_spec().row('Trophy Lounge (Common Area)')
 
     assert row.tons == pytest.approx(8.0)
+
+
+def test_acceleration_bench_seats_four():
+    bench = AccelerationBench()
+
+    assert bench.seats == 4
+
+
+def test_acceleration_bench_appears_in_ship_spec():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        systems=SystemsSection(internal_systems=[AccelerationBench()]),
+    )
+
+    row = my_ship.build_spec().row('Acceleration Bench')
+    assert row.tons == pytest.approx(1.0)
+    assert row.cost == pytest.approx(10_000.0)
+
+
+def test_multi_environment_space_values_and_notes():
+    space = MultiEnvironmentSpace(covered_tons=40)
+
+    assert space.tons == pytest.approx(2.0)
+    assert space.cost == pytest.approx(1_000_000.0)
+    assert space.power == pytest.approx(2.0)
+    assert space.notes.infos == [
+        'Support equipment for modifying a designated area to unusual environmental conditions'
+    ]
+
+
+def test_multi_environment_space_appears_in_ship_spec():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        systems=SystemsSection(internal_systems=[MultiEnvironmentSpace(covered_tons=40)]),
+    )
+
+    row = my_ship.build_spec().row('Multi-Environment Space (40 tons)')
+    assert row.tons == pytest.approx(2.0)
+    assert row.cost == pytest.approx(1_000_000.0)
+    assert row.power == pytest.approx(-2.0)
+
+
+def test_vault_values_and_notes():
+    vault = Vault(tons=8)
+
+    assert vault.tons == pytest.approx(8.0)
+    assert vault.cost == pytest.approx(4_000_000.0)
+    assert vault.power == pytest.approx(0.0)
+    assert vault.content_armour == 8
+    assert vault.content_hull_points == 1
+    assert vault.notes.infos == [
+        'Vault armour and Hull points protect contents only, not the ship',
+        'Contents can survive in vacuum for a limited time if the ship is destroyed',
+    ]
+
+
+def test_vault_armour_is_capped_at_10():
+    vault = Vault(tons=40)
+
+    assert vault.content_armour == 10
+    assert vault.content_hull_points == 8
+
+
+@pytest.mark.parametrize('tons', [3.99, 40.01])
+def test_vault_reports_size_outside_allowed_range(tons):
+    vault = Vault(tons=tons)
+
+    assert 'Vault size must be between 4 and 40 tons' in vault.notes.errors
+
+
+def test_vault_appears_in_ship_spec():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        systems=SystemsSection(internal_systems=[Vault(tons=8)]),
+    )
+
+    row = my_ship.build_spec().row('Vault')
+    assert row.tons == pytest.approx(8.0)
+    assert row.cost == pytest.approx(4_000_000.0)
+
+
+@pytest.mark.parametrize(
+    ('trap', 'expected_tl', 'expected_cost', 'expected_damage'),
+    [
+        (BoobyTrapTL6(), 6, 100_000.0, '3D'),
+        (BoobyTrapTL8(), 8, 300_000.0, '5D'),
+        (BoobyTrapTL10(), 10, 500_000.0, '6D'),
+        (BoobyTrapTL12(), 12, 1_000_000.0, '8D'),
+    ],
+)
+def test_booby_trap_values(trap, expected_tl, expected_cost, expected_damage):
+    assert trap.tl == expected_tl
+    assert trap.cost == pytest.approx(expected_cost)
+    assert trap.damage_per_round == expected_damage
+
+
+def test_booby_trapped_airlock_adds_cost_and_notes():
+    airlock = Airlock(size=3, booby_trap=BoobyTrapTL8())
+    airlock.bind(DummyOwner(12, 99))
+
+    assert airlock.tons == pytest.approx(3.0)
+    assert airlock.cost == pytest.approx(600_000.0)
+    assert airlock.notes.infos == ['Booby-trapped: 5D damage/round']
+
+
+def test_booby_trap_cost_applies_to_free_airlock():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.standard_hull, airlocks=[Airlock(booby_trap=BoobyTrapTL6())]),
+    )
+
+    airlock = my_ship.hull.airlocks[0]
+    assert airlock.tons == pytest.approx(0.0)
+    assert airlock.cost == pytest.approx(100_000.0)
+
+
+def test_booby_trapped_airlock_appears_in_ship_spec():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=99,
+        hull=hull.Hull(configuration=hull.standard_hull, airlocks=[Airlock(booby_trap=BoobyTrapTL12())]),
+    )
+
+    row = my_ship.build_spec().row('Airlock (2 tons)')
+    assert row.tons == pytest.approx(2.0)
+    assert row.cost == pytest.approx(1_200_000.0)
+    assert row.notes.infos == ['Booby-trapped: 8D damage/round']
+
+
+def test_booby_trap_requires_matching_ship_tl():
+    airlock = Airlock(booby_trap=BoobyTrapTL12())
+    airlock.bind(DummyOwner(10, 99))
+
+    assert 'Requires TL12, ship is TL10' in airlock.notes.errors
+
+
+def test_construction_deck_values_and_notes():
+    deck = ConstructionDeck(tons=100)
+    deck.bind(DummyOwner(12, 400))
+
+    assert deck.tons == pytest.approx(100.0)
+    assert deck.cost == pytest.approx(50_000_000.0)
+    assert deck.power == pytest.approx(100.0)
+    assert deck.maximum_constructible_tons == pytest.approx(50.0)
+    assert deck.notes.infos == ['Can build or repair ships up to 50 tons at TL12']
+
+
+def test_construction_deck_appears_in_ship_spec():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        systems=SystemsSection(internal_systems=[ConstructionDeck(tons=100)]),
+    )
+
+    row = my_ship.build_spec().row('Construction Deck')
+    assert row.tons == pytest.approx(100.0)
+    assert row.cost == pytest.approx(50_000_000.0)
+    assert row.power == pytest.approx(-100.0)
+    assert row.notes.infos == ['Can build or repair ships up to 50 tons at TL12']
+
+
+def test_common_area_extras_notes_and_tl():
+    brewery = Brewery(litres_per_week=20)
+    kitchen = GourmetKitchen(diners=4)
+    zero_g_room = ZeroGRoom(tons=2)
+
+    brewery.bind(DummyOwner(9, 400))
+    kitchen.bind(DummyOwner(12, 400))
+    zero_g_room.bind(DummyOwner(12, 400))
+
+    assert 'Requires TL10, ship is TL9' in brewery.notes.errors
+    assert kitchen.notes.infos == [
+        'Requires Steward 2 to use properly',
+        'DM +1 when seeking high passengers',
+    ]
+    assert zero_g_room.notes.infos == ['Includes controls and safe-access portal']
+
+
+@pytest.mark.parametrize(
+    (
+        'part',
+        'expected_tl',
+        'expected_capacity',
+        'expected_protection',
+        'expected_detection_dm',
+        'expected_attack_dm',
+    ),
+    [
+        (BasicReEntryCapsule(), 8, 1, None, None, None),
+        (AssaultReEntryCapsule(), 10, 1, 20, -2, None),
+        (HighSurvivabilityReEntryCapsule(), 14, 1, 30, -4, -2),
+        (ReEntryPod(), 9, 2, None, None, None),
+    ],
+)
+def test_re_entry_system_capabilities(
+    part,
+    expected_tl,
+    expected_capacity,
+    expected_protection,
+    expected_detection_dm,
+    expected_attack_dm,
+):
+    assert part.tl == expected_tl
+    assert part.capacity == expected_capacity
+    assert part.protection == expected_protection
+    assert part.detection_dm == expected_detection_dm
+    assert part.attack_dm == expected_attack_dm
+
+
+def test_re_entry_capsule_notes():
+    capsule = HighSurvivabilityReEntryCapsule()
+
+    assert capsule.notes.infos == [
+        'Emergency escape and planetary insertion system for one person',
+        'Protection +30',
+        'DM-4 to detect',
+        'DM-2 against attacks',
+    ]
+
+
+def test_re_entry_pod_notes():
+    pod = ReEntryPod()
+
+    assert pod.notes.infos == [
+        'Emergency escape and planetary insertion system for two people',
+        'Includes gliding surface and computer guidance; Flyer (wing) can take manual control',
+    ]
+
+
+def test_re_entry_systems_appear_in_ship_spec():
+    my_ship = ship.Ship(
+        tl=14,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        systems=SystemsSection(
+            internal_systems=[
+                HighSurvivabilityReEntryCapsule(),
+                ReEntryPod(),
+            ]
+        ),
+    )
+
+    spec = my_ship.build_spec()
+    capsule_row = spec.row('Re-entry Capsule (high-survivability)')
+    pod_row = spec.row('Re-entry Pod')
+    assert capsule_row.tons == pytest.approx(0.5)
+    assert capsule_row.cost == pytest.approx(100_000.0)
+    assert pod_row.tons == pytest.approx(1.0)
+    assert pod_row.cost == pytest.approx(150_000.0)
 
 
 def test_workshop_tons():

@@ -29,6 +29,7 @@ class CareerEvent(EventBase):
     kind: Literal['career'] = 'career'
     career: str
     assignment: str
+    qualification_roll: int  # 2D result before characteristic DM
 
 
 class SurviveEvent(EventBase):

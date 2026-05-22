@@ -31,16 +31,88 @@ def _full_setup(character_id: int = 1) -> list:
     ]
 
 
+class TestQualification:
+    """Qualification roll on career entry."""
+
+    def test_success_starts_career(self):
+        # Scout: INT 5+, character has INT=9 (DM+1), roll 5 → 5+1=6 >= 5
+        events = [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=5),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.current_career == 'Scout'
+        assert any(p.kind == 'survive' for p in projection.pending_inputs)
+
+    def test_failure_clears_career_and_creates_retry_pending(self):
+        # Scout: INT 5+, INT=9 (DM+1), roll 3 → 3+1=4 < 5
+        events = [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=3),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.current_career is None
+        assert any(p.kind == 'career' for p in projection.pending_inputs)
+
+    def test_failure_adds_problem_with_career_name(self):
+        events = [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=3),
+        ]
+        projection = replay(1, events)
+
+        assert any('Scout' in p for p in projection.summary.problems)
+
+    def test_scholar_failure(self):
+        # Scholar: EDU 6+, EDU=10 (DM+1), roll 4 → 4+1=5 < 6
+        events = [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=4),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.current_career is None
+
+    def test_scholar_success(self):
+        # EDU=10 (DM+1), roll 5 → 5+1=6 >= 6
+        events = [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.current_career == 'Scholar'
+
+    def test_retry_after_failure_can_succeed(self):
+        # Fail Scout, then succeed Scholar
+        events = [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=3),
+            CareerEvent(id=5, fulfills='4.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.current_career == 'Scholar'
+
+
 class TestCareerEntry:
     def test_career_event_creates_survive_pending(self):
-        events = [*_full_setup(), CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier')]
+        events = [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+        ]
 
         projection = replay(1, events)
 
         assert any(p.kind == 'survive' for p in projection.pending_inputs)
 
     def test_career_event_sets_current_career_in_summary(self):
-        events = [*_full_setup(), CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier')]
+        events = [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+        ]
 
         projection = replay(1, events)
 
@@ -48,7 +120,10 @@ class TestCareerEntry:
         assert projection.summary.current_assignment == 'Courier'
 
     def test_career_event_grants_initial_training_service_skills(self):
-        events = [*_full_setup(), CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier')]
+        events = [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+        ]
 
         projection = replay(1, events)
 
@@ -62,14 +137,29 @@ class TestCareerEntry:
 
     def test_career_event_rejects_unknown_career(self):
         with pytest.raises(ReplayError):
-            replay(1, [*_full_setup(), CareerEvent(id=4, fulfills='3.0', career='Pirate', assignment='Freebooter')])
+            replay(
+                1,
+                [
+                    *_full_setup(),
+                    CareerEvent(id=4, fulfills='3.0', career='Pirate', assignment='Freebooter', qualification_roll=7),
+                ],
+            )
 
     def test_career_event_rejects_unknown_assignment(self):
         with pytest.raises(ReplayError):
-            replay(1, [*_full_setup(), CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Admiral')])
+            replay(
+                1,
+                [
+                    *_full_setup(),
+                    CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Admiral', qualification_roll=7),
+                ],
+            )
 
     def test_career_pending_id_derived_from_background_skills_event_id(self):
-        events = [*_full_setup(), CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier')]
+        events = [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+        ]
 
         projection = replay(1, events)
 
@@ -78,7 +168,10 @@ class TestCareerEntry:
         assert survive_pending.id == '4.0'
 
     def test_survive_pending_instruction_mentions_target(self):
-        events = [*_full_setup(), CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier')]
+        events = [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+        ]
 
         projection = replay(1, events)
 
@@ -90,7 +183,7 @@ class TestCareerEntry:
     def test_scholar_career_event_grants_scholar_service_skills(self):
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher'),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
         ]
 
         projection = replay(1, events)
@@ -105,7 +198,7 @@ class TestSurvive:
     def _setup_with_career(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
         ]
 
     def test_survive_success_creates_term_event_pending(self):
@@ -145,7 +238,7 @@ class TestMishap:
     def _setup_through_failed_survive(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
             SurviveEvent(id=5, fulfills='4.0', roll=3),  # fail
         ]
 
@@ -177,7 +270,7 @@ class TestScoutAmbush:
     def _setup_to_ambush(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=3),
         ]
@@ -251,7 +344,7 @@ class TestScoutEvent8:
     def _setup(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=8),
         ]
@@ -300,7 +393,7 @@ class TestScoutEvent9:
     def _setup(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=9),
         ]
@@ -342,7 +435,7 @@ class TestScoutEvent10:
     def _setup(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=10),
         ]
@@ -402,7 +495,7 @@ class TestConnections:
     def _setup_through_failed_survive(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
             SurviveEvent(id=5, fulfills='4.0', roll=3),  # fail
         ]
 
@@ -451,7 +544,7 @@ class TestConnections:
         # Scout event 3: ambush, always gain an Enemy regardless of skill roll outcome
         setup = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=3),
         ]
@@ -468,7 +561,7 @@ class TestMishapWithChoice:
     def _setup_through_failed_survive(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
             SurviveEvent(id=5, fulfills='4.0', roll=3),  # fail
         ]
 
@@ -511,7 +604,7 @@ class TestTermEvent:
     def _setup_through_survive(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
             SurviveEvent(id=5, fulfills='4.0', roll=7),  # success
         ]
 
@@ -545,7 +638,7 @@ class TestAdvancement:
     def _setup_through_term_event(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=7),  # life event, simple
         ]
@@ -594,7 +687,7 @@ class TestReenlist:
     def _setup_through_advancement(self, advancement_roll: int = 9) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=7),
             AdvancementEvent(id=7, fulfills='6.0', roll=advancement_roll),
@@ -634,7 +727,7 @@ class TestSkillTable:
     def _setup_in_term_2(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=7),
             AdvancementEvent(id=7, fulfills='6.0', roll=9),
@@ -674,7 +767,7 @@ class TestSkillTable:
             CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Boss'),
             UcpEvent(id=2, fulfills='1.0', ucp='786600'),  # EDU=6
             BackgroundSkillsEvent(id=3, fulfills='2.0', skills=['Admin', 'Athletics', 'Drive']),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=7),
             AdvancementEvent(id=7, fulfills='6.0', roll=9),
@@ -690,10 +783,14 @@ class TestSkillTable:
 class TestTermEventRollMishap:
     """Event 2 Disaster! — creates mishap pending; character stays in career."""
 
-    def _setup_to_disaster(self, career: str = 'Scout', assignment: str = 'Courier') -> list:
+    def _setup_to_disaster(
+        self, career: str = 'Scout', assignment: str = 'Courier', qualification_roll: int = 7
+    ) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career=career, assignment=assignment),
+            CareerEvent(
+                id=4, fulfills='3.0', career=career, assignment=assignment, qualification_roll=qualification_roll
+            ),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=2),
         ]
@@ -724,7 +821,7 @@ class TestTermEventRollMishap:
     def test_works_for_scholar_too(self):
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher'),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=2),
         ]
@@ -739,7 +836,7 @@ class TestTermEventAutoAdvance:
     def test_scout_event_12_promotes_rank(self):
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=12),
         ]
@@ -750,7 +847,7 @@ class TestTermEventAutoAdvance:
     def test_scout_event_12_applies_rank_1_vacc_suit_bonus(self):
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=12),
         ]
@@ -761,7 +858,7 @@ class TestTermEventAutoAdvance:
     def test_creates_reenlist_pending_not_advancement(self):
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=12),
         ]
@@ -773,7 +870,7 @@ class TestTermEventAutoAdvance:
     def test_scholar_event_12_promotes_with_space_science(self):
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher'),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=12),
         ]
@@ -789,7 +886,7 @@ class TestScholarTerm:
     def _setup_with_scholar(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher'),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
         ]
 
     def test_survive_pending_is_end_6(self):
@@ -931,7 +1028,7 @@ class TestSkillTableIncrement:
     def _setup_in_term_2(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=7),
             AdvancementEvent(id=7, fulfills='6.0', roll=9),
@@ -966,7 +1063,7 @@ class TestSkillTableChoice:
     def _setup_scholar_term_2(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Scientist'),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Scientist', qualification_roll=5),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=7),
             AdvancementEvent(id=7, fulfills='6.0', roll=7),
@@ -1014,7 +1111,7 @@ class TestAdvancementDmFromScheduledEffects:
         # With Scholar event 9 DM+2: roll 6 + DM+1 + DM+2 = 9 >= 8 → success
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Scientist'),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Scientist', qualification_roll=5),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=9),  # breakthrough → DM+2
             AdvancementEvent(id=7, fulfills='6.0', roll=6),
@@ -1027,7 +1124,7 @@ class TestAdvancementDmFromScheduledEffects:
         # Same roll (6) without the breakthrough DM → 7 < 8 → fail
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Scientist'),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Scientist', qualification_roll=5),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=7),  # life event, no DM
             AdvancementEvent(id=7, fulfills='6.0', roll=6),
@@ -1039,7 +1136,7 @@ class TestAdvancementDmFromScheduledEffects:
     def test_breakthrough_dm_is_consumed_after_advancement(self):
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Scientist'),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Scientist', qualification_roll=5),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=9),
             AdvancementEvent(id=7, fulfills='6.0', roll=6),
@@ -1056,7 +1153,7 @@ class TestAgeTracking:
     def test_reenlist_false_increments_age_by_4(self):
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=7),
             AdvancementEvent(id=7, fulfills='6.0', roll=5),
@@ -1069,7 +1166,7 @@ class TestAgeTracking:
     def test_reenlist_true_also_increments_age_by_4(self):
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=7),
             AdvancementEvent(id=7, fulfills='6.0', roll=5),
@@ -1082,7 +1179,7 @@ class TestAgeTracking:
     def test_two_terms_adds_8_years(self):
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=7),
             AdvancementEvent(id=7, fulfills='6.0', roll=5),
@@ -1100,7 +1197,7 @@ class TestAgeTracking:
     def test_mishap_that_ejects_increments_age_by_4(self):
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
             SurviveEvent(id=5, fulfills='4.0', roll=3),
             MishapEvent(id=6, fulfills='5.0', roll=5),  # Scout mishap 5: no effects, career ends
         ]
@@ -1120,7 +1217,7 @@ class TestScholarEvent6:
     def _setup_to_event_6(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher'),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=6),
         ]
@@ -1178,7 +1275,7 @@ class TestScoutEvent11:
     def _setup_to_event_11(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=11),
         ]
@@ -1222,7 +1319,7 @@ class TestNormalInjury:
     def _setup_through_failed_survive(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier'),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
             SurviveEvent(id=5, fulfills='4.0', roll=3),  # fail
         ]
 
@@ -1258,7 +1355,7 @@ class TestScholarMishap3:
     def _setup(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher'),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
             SurviveEvent(id=5, fulfills='4.0', roll=3),  # fail
         ]
 
@@ -1317,7 +1414,7 @@ class TestScholarMishap5:
     def _setup(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher'),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
             SurviveEvent(id=5, fulfills='4.0', roll=3),  # fail
         ]
 
@@ -1376,7 +1473,7 @@ class TestScholarEvent3:
     def _setup(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher'),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=3),
         ]
@@ -1442,7 +1539,7 @@ class TestScholarEvent8:
     def _setup(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher'),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=8),
         ]
@@ -1515,7 +1612,7 @@ class TestScholarEvent11:
     def _setup(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher'),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=11),
         ]
@@ -1556,10 +1653,14 @@ class TestScholarEvent11:
 class TestSevereInjury:
     """Mishap 1 for Scout and Scholar: severely injured — reduce one physical characteristic by 2."""
 
-    def _setup_through_failed_survive(self, career: str = 'Scout', assignment: str = 'Courier') -> list:
+    def _setup_through_failed_survive(
+        self, career: str = 'Scout', assignment: str = 'Courier', qualification_roll: int = 7
+    ) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career=career, assignment=assignment),
+            CareerEvent(
+                id=4, fulfills='3.0', career=career, assignment=assignment, qualification_roll=qualification_roll
+            ),
             SurviveEvent(id=5, fulfills='4.0', roll=3),  # fail
         ]
 
@@ -1591,7 +1692,7 @@ class TestSevereInjury:
 
     def test_scholar_mishap_1_also_creates_characteristic_choice(self):
         events = [
-            *self._setup_through_failed_survive('Scholar', 'Field Researcher'),
+            *self._setup_through_failed_survive('Scholar', 'Field Researcher', qualification_roll=5),
             MishapEvent(id=6, fulfills='5.0', roll=1),
         ]
         projection = replay(1, events)

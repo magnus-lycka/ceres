@@ -186,6 +186,21 @@ def _apply_career(projection: CharacterProjection, event: CareerEvent) -> None:
     if assignment is None:
         raise ReplayError(f'Unknown assignment {event.assignment!r} for career {event.career!r}')
 
+    char = career.qualification.characteristic
+    target = career.qualification.target
+    dm = _char_dm(projection.summary.characteristics.get(char, 0))
+    if event.qualification_roll + dm < target:
+        projection.summary.problems.append(f'Failed to qualify for {career.name}.')
+        projection.pending_inputs.append(
+            PendingInput(
+                id=f'{event.id}.0',
+                kind='career',
+                instruction='Qualification failed — choose another career',
+                options=sorted(careers.keys()),
+            )
+        )
+        return
+
     projection.summary.current_career = career.name
     projection.summary.current_assignment = assignment.name
     projection.summary.term_count += 1
