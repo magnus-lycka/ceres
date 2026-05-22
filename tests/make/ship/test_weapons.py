@@ -5,14 +5,21 @@ from ceres.make.ship.base import ShipBase
 from ceres.make.ship.bridge import Bridge, CommandSection
 from ceres.make.ship.computer import Computer5, Computer20, ComputerSection
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, MDrive1, PowerSection
-from ceres.make.ship.parts import Advanced, EnergyEfficient, HighTechnology, SizeReduction, VeryAdvanced
+from ceres.make.ship.parts import Advanced, Budget, EnergyEfficient, HighTechnology, SizeReduction, VeryAdvanced
 from ceres.make.ship.view import collapsed_main_rows
 from ceres.make.ship.weapons import (
+    Accurate,
     BeamLaser,
     DoubleTurret,
+    EasyToRepair,
     FixedMount,
+    FusionCarronade,
     GaussPointDefenseBattery3,
+    GeneralPurposeMassDriverBay,
     HighYield,
+    Inaccurate,
+    IntenseFocus,
+    LargeHullcutterBay,
     LargeMesonGunBay,
     LargeTorpedoBay,
     LaserPointDefenseBattery2,
@@ -25,16 +32,20 @@ from ceres.make.ship.weapons import (
     MissileStorage,
     ParticleAcceleratorSpinalMount,
     ParticleBarbette,
+    PlasmaBarbette,
+    PlasmaCarronade,
     PulseLaser,
     PulseLaserBarbette,
     QuadTurret,
     RailgunSpinalMount,
+    Resilient,
     Sandcaster,
     SandcasterCanisterStorage,
     SingleTurret,
     SmallFusionGunBay,
     SmallMissileBay,
     TorpedoBarbette,
+    TorpedoInterceptorCluster,
     TorpedoStorage,
     TripleTurret,
     VeryHighYield,
@@ -281,6 +292,23 @@ def test_fixed_mount_values_are_computed_properties_not_serialized_fields():
     assert 'power' not in dump
 
 
+def test_pop_up_fixed_mount_adds_tons_cost_tl_and_note():
+    mount = FixedMount(pop_up=True, weapons=[PulseLaser()])
+    mount.bind(DummyOwner(10, 100))
+
+    assert mount.tons == pytest.approx(1.0)
+    assert mount.cost == pytest.approx(2_100_000.0)
+    assert mount.power == pytest.approx(3.0)
+    assert mount.notes.infos == ['Pop-up mounting: concealed until deployed']
+
+
+def test_pop_up_fixed_mount_requires_tl10():
+    mount = FixedMount(pop_up=True, weapons=[PulseLaser()])
+    mount.bind(DummyOwner(9, 100))
+
+    assert 'Requires TL10, ship is TL9' in mount.notes.errors
+
+
 def test_sandcaster_canister_storage_values():
     storage = SandcasterCanisterStorage(count=20)
     storage.bind(DummyOwner(12, 400))
@@ -352,6 +380,48 @@ def test_mount_weapon_long_range_is_allowed():
     assert w.cost_modifier == pytest.approx(1.25)
 
 
+def test_mount_weapon_accurate_is_allowed_and_noted():
+    w = PulseLaser(customisation=VeryAdvanced(modifications=[Accurate]))
+
+    assert 'Modification not allowed for MountWeapon: Accurate' not in w.notes.errors
+    note = w.customisation_note()
+    assert note is not None
+    assert note.message == 'Very Advanced: Accurate'
+    assert w.notes.infos == ['Accurate weapons gain DM+1 to attack rolls']
+
+
+def test_mount_weapon_easy_to_repair_and_resilient_are_allowed_and_noted():
+    w = BeamLaser(customisation=VeryAdvanced(modifications=[EasyToRepair, Resilient]))
+
+    assert 'Modification not allowed for MountWeapon: Easy to Repair' not in w.notes.errors
+    assert 'Modification not allowed for MountWeapon: Resilient' not in w.notes.errors
+    assert w.notes.infos == [
+        'Easy to Repair weapons grant DM+1 to repair attempts',
+        'Resilient weapons reduce weapon critical hit Severity by -1',
+    ]
+
+
+def test_mount_weapon_inaccurate_is_allowed_as_disadvantage():
+    w = PulseLaser(customisation=Budget(modifications=[Inaccurate]))
+
+    assert 'Modification not allowed for MountWeapon: Inaccurate' not in w.notes.errors
+    assert w.notes.infos == ['Inaccurate weapons suffer DM-1 to attack rolls']
+    assert w.cost_modifier == pytest.approx(0.75)
+
+
+def test_mount_weapon_intense_focus_is_allowed_for_lasers_and_noted():
+    w = PulseLaser(customisation=VeryAdvanced(modifications=[IntenseFocus]))
+
+    assert 'Intense Focus is only applicable for laser and particle weapons' not in w.notes.errors
+    assert w.notes.infos == ['Intense Focus weapons gain AP+2']
+
+
+def test_mount_weapon_intense_focus_rejects_missile_rack():
+    w = MissileRack(customisation=VeryAdvanced(modifications=[IntenseFocus]))
+
+    assert 'Intense Focus is only applicable for laser and particle weapons' in w.notes.errors
+
+
 def test_mount_weapon_high_yield_is_allowed():
     w = PulseLaser(customisation=Advanced(modifications=[HighYield]))
     assert 'Modification not allowed for MountWeapon: High Yield' not in w.notes.errors
@@ -418,6 +488,34 @@ def test_reused_weapon_and_turret_references_render_like_distinct_identical_obje
     notes = turret_row.notes
     assert notes.contents == ['Pulse Laser × 3']
     assert notes.infos == ['High Technology: Long Range, High Yield']
+
+
+def test_pop_up_turret_adds_tons_cost_and_note():
+    turret = SingleTurret(pop_up=True, weapons=[PulseLaser()])
+    turret.bind(DummyOwner(10, 100))
+
+    assert turret.tons == pytest.approx(2.0)
+    assert turret.cost == pytest.approx(2_200_000.0)
+    assert turret.power == pytest.approx(5.0)
+    assert turret.notes.contents == ['Pulse Laser']
+    assert turret.notes.infos == ['Pop-up mounting: concealed until deployed']
+
+
+def test_pop_up_turret_appears_in_ship_spec():
+    turret = SingleTurret(pop_up=True, weapons=[PulseLaser()])
+    my_ship = ship.Ship(
+        tl=10,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        weapons=WeaponsSection(turrets=[turret]),
+    )
+
+    row = my_ship.build_spec().row('Single Turret', section='Weapons')
+    assert row.tons == pytest.approx(2.0)
+    assert row.cost == pytest.approx(2_200_000.0)
+    assert row.power == pytest.approx(-5.0)
+    assert row.notes.contents == ['Pulse Laser']
+    assert row.notes.infos == ['Pop-up mounting: concealed until deployed']
 
 
 def test_different_triple_turrets_do_not_collapse_in_spec_or_report_rows():
@@ -503,6 +601,48 @@ def test_small_missile_bay_values():
     assert bay.hardpoints_required == 1
 
 
+def test_general_purpose_mass_driver_bay_values_and_notes():
+    bay = GeneralPurposeMassDriverBay()
+    bay.bind(DummyOwner(8, 1_000))
+
+    assert bay.build_item() == 'Small General-Purpose Mass Driver Bay'
+    assert bay.tons == pytest.approx(50.0)
+    assert bay.cost == pytest.approx(4_000_000.0)
+    assert bay.power == pytest.approx(10.0)
+    assert bay.hardpoints_required == 1
+    assert bay.crew_required_military == 1
+    assert bay.notes.infos == [
+        'Can launch 50 tons; DM-4 to attack rolls against manoeuvring targets',
+    ]
+
+
+def test_general_purpose_mass_driver_bay_extra_capacity_values():
+    bay = GeneralPurposeMassDriverBay(extra_launch_capacity=3)
+    bay.bind(DummyOwner(8, 1_000))
+
+    assert bay.tons == pytest.approx(56.0)
+    assert bay.cost == pytest.approx(4_225_000.0)
+    assert bay.power == pytest.approx(19.0)
+    assert bay.launch_capacity == pytest.approx(53.0)
+    assert bay.notes.infos == [
+        'Can launch 53 tons; DM-4 to attack rolls against manoeuvring targets',
+    ]
+
+
+def test_general_purpose_mass_driver_bay_appears_in_ship_spec():
+    my_ship = ship.Ship(
+        tl=8,
+        displacement=1_000,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        weapons=WeaponsSection(bays=[GeneralPurposeMassDriverBay(extra_launch_capacity=3)]),
+    )
+
+    row = my_ship.build_spec().row('Small General-Purpose Mass Driver Bay', section='Weapons')
+    assert row.tons == pytest.approx(56.0)
+    assert row.cost == pytest.approx(4_225_000.0)
+    assert row.power == pytest.approx(-19.0)
+
+
 def test_small_missile_bay_size_reduction_values():
     bay = SmallMissileBay(customisation=Advanced(modifications=[SizeReduction]))
     bay.bind(DummyOwner(13, 1_000))
@@ -563,6 +703,34 @@ def test_large_torpedo_bay_uses_five_hardpoints():
     assert bay.hardpoints_required == 5
 
 
+def test_large_hullcutter_bay_values_and_notes():
+    bay = LargeHullcutterBay()
+    bay.bind(DummyOwner(16, 10_000))
+
+    assert bay.build_item() == 'Large Hullcutter Bay'
+    assert bay.tons == pytest.approx(500.0)
+    assert bay.cost == pytest.approx(110_000_000.0)
+    assert bay.power == pytest.approx(100.0)
+    assert bay.hardpoints_required == 5
+    assert bay.notes.infos == [
+        'Reductor: target armour is reduced by -1 per damage die before damage is applied',
+    ]
+
+
+def test_large_hullcutter_bay_appears_in_ship_spec():
+    my_ship = ship.Ship(
+        tl=16,
+        displacement=10_000,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        weapons=WeaponsSection(bays=[LargeHullcutterBay()]),
+    )
+
+    row = my_ship.build_spec().row('Large Hullcutter Bay', section='Weapons')
+    assert row.tons == pytest.approx(500.0)
+    assert row.cost == pytest.approx(110_000_000.0)
+    assert row.power == pytest.approx(-100.0)
+
+
 def test_type_ii_laser_point_defense_battery_values():
     battery = LaserPointDefenseBattery2()
     battery.bind(DummyOwner(12, 1_000))
@@ -570,6 +738,90 @@ def test_type_ii_laser_point_defense_battery_values():
     assert battery.cost == 10_000_000
     assert battery.power == 20.0
     assert battery.hardpoints_required == 1
+
+
+def test_torpedo_interceptor_cluster_values_and_notes():
+    cluster = TorpedoInterceptorCluster()
+    cluster.bind(DummyOwner(10, 1_000))
+
+    assert cluster.build_item() == 'Torpedo-Interceptor Cluster'
+    assert cluster.tons == pytest.approx(1.0)
+    assert cluster.cost == pytest.approx(1_000_000.0)
+    assert cluster.power == pytest.approx(1.0)
+    assert cluster.hardpoints_required == 1
+    assert cluster.notes.infos == [
+        'One-shot system; must be replaced dockside after firing',
+        'Four interceptors; each kills one missile on 6+ or torpedo on 8+',
+    ]
+
+
+def test_torpedo_interceptor_cluster_appears_in_ship_spec():
+    my_ship = ship.Ship(
+        tl=10,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        weapons=WeaponsSection(point_defense_batteries=[TorpedoInterceptorCluster()]),
+    )
+
+    row = my_ship.build_spec().row('Torpedo-Interceptor Cluster', section='Weapons')
+    assert row.tons == pytest.approx(1.0)
+    assert row.cost == pytest.approx(1_000_000.0)
+    assert row.power == pytest.approx(-1.0)
+
+
+def test_plasma_carronade_values_and_notes():
+    carronade = PlasmaCarronade()
+    carronade.bind(DummyOwner(10, 1_000))
+
+    assert carronade.build_item() == 'Plasma Carronade'
+    assert carronade.tons == pytest.approx(4.0)
+    assert carronade.cost == pytest.approx(10_000_000.0)
+    assert carronade.power == pytest.approx(35.0)
+    assert carronade.hardpoints_required == 4
+    assert carronade.notes.infos == [
+        'Damage: 12D; Weak trait doubles target armour against damage',
+    ]
+
+
+def test_fusion_carronade_values_and_notes():
+    carronade = FusionCarronade()
+    carronade.bind(DummyOwner(12, 1_000))
+
+    assert carronade.build_item() == 'Fusion Carronade'
+    assert carronade.tons == pytest.approx(4.0)
+    assert carronade.cost == pytest.approx(12_000_000.0)
+    assert carronade.power == pytest.approx(45.0)
+    assert carronade.hardpoints_required == 4
+    assert carronade.notes.infos == [
+        'Damage: 16D; Radiation, Weak trait doubles target armour against damage',
+    ]
+
+
+def test_carronade_appears_in_ship_spec():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        weapons=WeaponsSection(carronades=[FusionCarronade()]),
+    )
+
+    row = my_ship.build_spec().row('Fusion Carronade', section='Weapons')
+    assert row.tons == pytest.approx(4.0)
+    assert row.cost == pytest.approx(12_000_000.0)
+    assert row.power == pytest.approx(-45.0)
+
+
+def test_carronade_requires_four_hardpoints():
+    my_ship = ship.Ship(
+        tl=10,
+        displacement=300,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        weapons=WeaponsSection(carronades=[PlasmaCarronade()]),
+    )
+
+    assert my_ship.weapons is not None
+    errors = my_ship.weapons.carronades[0].notes.errors
+    assert 'Exceeds available hardpoints: 4 mounts installed, capacity is 3' in errors
 
 
 def test_type_ii_laser_point_defense_battery_item_values():
@@ -607,11 +859,30 @@ def test_type_ii_laser_point_defense_battery_energy_efficient_values():
             5.0,
         ),
         (
+            LargeHullcutterBay.model_validate({'tons': 999, 'cost': 999, 'power': 999}),
+            500.0,
+            110_000_000.0,
+            100.0,
+        ),
+        (
+            GeneralPurposeMassDriverBay.model_validate({'tons': 999, 'cost': 999, 'power': 999}),
+            50.0,
+            4_000_000.0,
+            10.0,
+        ),
+        (
             LaserPointDefenseBattery2.model_validate({'tons': 999, 'cost': 999, 'power': 999}),
             20.0,
             10_000_000.0,
             20.0,
         ),
+        (
+            TorpedoInterceptorCluster.model_validate({'tons': 999, 'cost': 999, 'power': 999}),
+            1.0,
+            1_000_000.0,
+            1.0,
+        ),
+        (PlasmaCarronade.model_validate({'tons': 999, 'cost': 999, 'power': 999}), 4.0, 10_000_000.0, 35.0),
     ],
 )
 def test_weapon_part_values_are_computed_properties_not_serialized_fields(
@@ -848,6 +1119,21 @@ def test_barbette_with_very_high_yield_has_customisation_note():
     assert 'Damage × 3 after armour' not in info_notes
 
 
+def test_barbette_intense_focus_is_allowed_for_particle_weapons_and_noted():
+    barbette = ParticleBarbette(customisation=VeryAdvanced(modifications=[IntenseFocus]))
+    barbette.bind(DummyOwner(13, 400))
+
+    assert 'Intense Focus is only applicable for laser and particle weapons' not in barbette.notes.errors
+    assert 'Intense Focus weapons gain AP+2' in barbette.notes.infos
+
+
+def test_barbette_intense_focus_rejects_plasma_weapons():
+    barbette = PlasmaBarbette(customisation=VeryAdvanced(modifications=[IntenseFocus]))
+    barbette.bind(DummyOwner(13, 400))
+
+    assert 'Intense Focus is only applicable for laser and particle weapons' in barbette.notes.errors
+
+
 def test_bay_with_size_reduction_item_is_base_name_only():
     bay = SmallMissileBay(
         customisation=HighTechnology(modifications=[SizeReduction, SizeReduction, SizeReduction]),
@@ -865,6 +1151,14 @@ def test_bay_with_size_reduction_has_customisation_note():
     assert 'Magazine: 144 missiles (12 full salvos)' in info_notes
     assert 'High Technology: Size Reduction × 3' in info_notes
     assert 'Damage × 10 after armour' not in info_notes
+
+
+def test_bay_intense_focus_is_allowed_for_particle_weapons_and_noted():
+    bay = MediumParticleBeamBay(customisation=VeryAdvanced(modifications=[IntenseFocus]))
+    bay.bind(DummyOwner(14, 1_000))
+
+    assert 'Intense Focus is only applicable for laser and particle weapons' not in bay.notes.errors
+    assert 'Intense Focus weapons gain AP+2' in bay.notes.infos
 
 
 def test_small_energy_bay_has_damage_multiple_note():

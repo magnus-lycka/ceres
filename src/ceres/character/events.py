@@ -88,8 +88,35 @@ class SkillRollEvent(EventBase):
     modified_roll: int  # 2D + skill level + any other DMs already applied by the player
 
 
+class AgingRollEvent(EventBase):
+    kind: Literal['aging_roll'] = 'aging_roll'
+    roll: int  # 2D result (2-12) before the -term_count DM
+
+
+class InjuryTableEvent(EventBase):
+    kind: Literal['injury_table'] = 'injury_table'
+    roll: int  # 1D result (1-6) on the Injury table
+
+
+class LifeEventEvent(EventBase):
+    kind: Literal['life_event'] = 'life_event'
+    roll: int  # 2D result (2-12) on the Life Events table
+
+
+class LifeEventUnusualEvent(EventBase):
+    kind: Literal['life_event_unusual'] = 'life_event_unusual'
+    roll: int  # 1D result (1-6) on the Unusual Event sub-table
+
+
+class MusterOutEvent(EventBase):
+    kind: Literal['muster_out'] = 'muster_out'
+    table: Literal['cash', 'benefits']
+    roll: int  # 1D result (1-6), DMs already applied by player
+
+
 type AnyEvent = Annotated[
-    CharacterStartedEvent
+    AgingRollEvent
+    | CharacterStartedEvent
     | UcpEvent
     | BackgroundSkillsEvent
     | CareerEvent
@@ -102,7 +129,11 @@ type AnyEvent = Annotated[
     | SkillTableEvent
     | CharacteristicChoiceEvent
     | ConnectionsRollEvent
-    | SkillRollEvent,
+    | SkillRollEvent
+    | InjuryTableEvent
+    | LifeEventEvent
+    | LifeEventUnusualEvent
+    | MusterOutEvent,
     Field(discriminator='kind'),
 ]
 
@@ -110,13 +141,18 @@ type AnyEvent = Annotated[
 __all__ = [
     'AnyEvent',
     'AdvancementEvent',
+    'AgingRollEvent',
     'BackgroundSkillsEvent',
     'CareerEvent',
     'CharacteristicChoiceEvent',
     'CharacterStartedEvent',
     'ConnectionsRollEvent',
     'EventBase',
+    'InjuryTableEvent',
+    'LifeEventEvent',
+    'LifeEventUnusualEvent',
     'MishapEvent',
+    'MusterOutEvent',
     'ReenlistEvent',
     'SkillChoiceEvent',
     'SkillRollEvent',

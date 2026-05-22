@@ -36,6 +36,9 @@ class CharacterSummary(BaseModel):
     skills: dict[str, int] = Field(default_factory=dict)
     connections: list[Connection] = Field(default_factory=list)
     problems: list[str] = Field(default_factory=list)
+    cash: int = 0
+    benefits: list[str] = Field(default_factory=list)
+    muster_out_cash_count: int = 0
 
 
 class CharacterProjection(BaseModel):
@@ -43,6 +46,8 @@ class CharacterProjection(BaseModel):
     summary: CharacterSummary = Field(default_factory=CharacterSummary)
     pending_inputs: list[PendingInput] = Field(default_factory=list)
     scheduled_effects: list[ScheduledEffect] = Field(default_factory=list)
+    pending_reenlist: bool | None = None  # stores reenlist decision during aging chain
+    muster_out_career: str | None = None  # career name used to look up benefit table
 
 
 __all__ = [

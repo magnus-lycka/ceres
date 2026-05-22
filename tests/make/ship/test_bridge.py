@@ -146,6 +146,31 @@ def test_bridge_holographic_cost():
     assert b.cost == pytest.approx(1_250_000)
 
 
+def test_detachable_bridge_adds_tonnage_and_cost():
+    b = Bridge(detachable=True)
+    b.bind(DummyOwner(12, 1_500))
+
+    assert b.tons == pytest.approx(48.0)
+    assert b.cost == pytest.approx(11_250_000.0)
+    assert b.build_item() == 'Detachable Standard Bridge'
+
+
+def test_detachable_bridge_combines_with_small_and_holographic_controls():
+    b = Bridge(detachable=True, small=True, holographic=True)
+    b.bind(DummyOwner(12, 1_500))
+
+    assert b.tons == pytest.approx(24.0)
+    assert b.cost == pytest.approx(7_031_250.0)
+    assert b.build_item() == 'Detachable Smaller Holographic Controls'
+
+
+def test_detachable_bridge_warns_when_below_minimum_size():
+    b = Bridge(detachable=True, small=True)
+    b.bind(DummyOwner(12, 1_500))
+
+    assert b.notes.errors == ['Detachable bridge below minimum size: 24.00 < 50.00 tons']
+
+
 def test_bridge_holographic_build_item():
     b = Bridge(holographic=True)
     b.bind(DummyOwner(12, 200))

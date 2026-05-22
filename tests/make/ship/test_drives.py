@@ -7,6 +7,7 @@ from ceres.make.ship.crafts import CraftSection, DockingClamp, SpaceCraft
 from ceres.make.ship.drives import (
     DecreasedFuel,
     DriveSection,
+    EarlyJump,
     EmergencyPowerSystem,
     FusionPlantTL8,
     FusionPlantTL12,
@@ -21,6 +22,8 @@ from ceres.make.ship.drives import (
     JDrive7,
     JDrive8,
     JDrive9,
+    JumpEnergyInefficient,
+    LateJump,
     LimitedRange,
     MDrive,
     MDrive0,
@@ -32,6 +35,7 @@ from ceres.make.ship.drives import (
     RDrive,
     RDrive3,
     RDrive16,
+    StealthJump,
 )
 from ceres.make.ship.parts import Advanced, Budget, IncreasedSize, SizeReduction, VeryAdvanced
 from ceres.make.ship.storage import FuelSection, JumpFuel, OperationFuel, ReactionFuel
@@ -77,6 +81,42 @@ def test_jdrive_with_decreased_fuel_x2_changes_cost_and_required_tl():
     assert float(d.tons) == pytest.approx(27.5)
     assert float(d.cost) == pytest.approx(51_562_500.0)
     assert float(d.power) == pytest.approx(90.0)
+
+
+def test_jdrive_with_early_jump_is_allowed_and_noted():
+    d = JDrive2(customisation=Advanced(modifications=[EarlyJump]))
+    d.bind(DummyOwner(12, 200))
+
+    assert 'Modification not allowed for JDrive2: Early Jump' not in d.notes.errors
+    assert 'Advanced: Early Jump' in d.notes.infos
+    assert 'Can jump at the 90-diameter limit' in d.notes.infos
+
+
+def test_jdrive_with_stealth_jump_is_allowed_and_noted():
+    d = JDrive2(customisation=VeryAdvanced(modifications=[StealthJump]))
+    d.bind(DummyOwner(13, 200))
+
+    assert 'Modification not allowed for JDrive2: Stealth Jump' not in d.notes.errors
+    assert 'Very Advanced: Stealth Jump' in d.notes.infos
+    assert 'Reduces jump emergence radiation signature' in d.notes.infos
+
+
+def test_jdrive_with_late_jump_is_allowed_and_noted():
+    d = JDrive2(customisation=Budget(modifications=[LateJump]))
+    d.bind(DummyOwner(11, 200))
+
+    assert 'Modification not allowed for JDrive2: Late Jump' not in d.notes.errors
+    assert 'Budget: Late Jump' in d.notes.infos
+    assert 'Requires the 150-diameter limit before jumping' in d.notes.infos
+
+
+def test_jdrive_energy_inefficient_uses_jump_drive_power_rule():
+    d = JDrive2(customisation=Budget(modifications=[JumpEnergyInefficient]))
+    d.bind(DummyOwner(11, 200))
+
+    assert 'Modification not allowed for JDrive2: Energy Inefficient' not in d.notes.errors
+    assert d.power == pytest.approx(52.0)
+    assert 'Budget: Energy Inefficient' in d.notes.infos
 
 
 def test_jdrive_values_are_computed_properties_not_serialized_fields():

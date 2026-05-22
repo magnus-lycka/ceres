@@ -53,6 +53,15 @@ class AssignmentData(BaseModel):
     advancement: CharCheck
 
 
+class MusterOutRow(BaseModel):
+    cash: int
+    benefit: str
+
+
+class MusterOutData(BaseModel):
+    rows: dict[int, MusterOutRow]  # 1D roll (1-7) → row
+
+
 class CareerData(BaseModel):
     name: str
     source: str
@@ -62,6 +71,7 @@ class CareerData(BaseModel):
     ranks: dict[int, RankEntry]  # rank number → rank entry
     events: dict[int, CareerEventEntry]  # 2D roll → event
     mishaps: dict[int, MishapEntry]  # 1D roll → mishap
+    muster_out: MusterOutData | None = None
 
     def assignment(self, name: str) -> AssignmentData | None:
         return next((a for a in self.assignments if a.name == name), None)

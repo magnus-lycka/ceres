@@ -27,6 +27,7 @@ from ceres.make.ship.systems import (
     CommonArea,
     ConstructionDeck,
     GourmetKitchen,
+    GravityWellGenerator,
     GravScreen,
     HighSurvivabilityReEntryCapsule,
     HotTub,
@@ -77,6 +78,7 @@ def _dummy_owner_for(part) -> DummyOwner:
         (MedicalBay(), 4.0, 2_000_000.0, 1.0),
         (MedicalBay(autodoc=BasicAutodoc()), 4.0, 2_100_000.0, 1.0),
         (GravScreen(), 2.0, 2_000_000.0, 4.0),
+        (GravityWellGenerator(), 100.0, 120_000_000.0, 500.0),
         (AccelerationBench(), 1.0, 10_000.0, 0.0),
         (AccelerationSeat(), 0.5, 30_000.0, 0.0),
         (Brewery(litres_per_week=20), 1.0, 100_000.0, 0.0),
@@ -120,6 +122,7 @@ def test_converted_system_values_are_computed_properties_not_serialized_fields(
         (WetBar, {}, 0.0, 2_000.0, 0.0),
         (MedicalBay, {}, 4.0, 2_000_000.0, 1.0),
         (GravScreen, {}, 2.0, 2_000_000.0, 4.0),
+        (GravityWellGenerator, {}, 100.0, 120_000_000.0, 500.0),
         (Airlock, {'size': 3.0}, 3.0, 300_000.0, 0.0),
         (Aerofins, {}, 20.0, 2_000_000.0, 0.0),
         (HotTub, {'users': 2}, 0.5, 6_000.0, 0.0),
@@ -592,6 +595,17 @@ def test_grav_screen_values_scale_by_displacement():
     assert grav_screen.notes.infos == [
         'Blocks densitometers; the presence of a grav screen is obvious to sensor operators'
     ]
+
+
+def test_gravity_well_generator_values_and_notes():
+    generator = GravityWellGenerator()
+    generator.bind(DummyOwner(16, 10_000))
+
+    assert generator.tons == pytest.approx(100.0)
+    assert generator.cost == pytest.approx(120_000_000.0)
+    assert generator.power == pytest.approx(500.0)
+    assert generator.build_item() == 'Gravity Well Generator'
+    assert generator.notes.infos == ['Creates an artificial gravity well; tactical effects are out of scope']
 
 
 def test_probe_drones_tons():

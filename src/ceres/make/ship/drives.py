@@ -59,6 +59,30 @@ DecreasedFuel = Modification(
     fuel_delta_percent=-0.05,
 )
 
+EarlyJump = Modification(
+    name='Early Jump',
+    advantage=1,
+    info_notes=('Can jump at the 90-diameter limit',),
+)
+
+StealthJump = Modification(
+    name='Stealth Jump',
+    advantage=2,
+    info_notes=('Reduces jump emergence radiation signature',),
+)
+
+JumpEnergyInefficient = Modification(
+    name='Energy Inefficient',
+    disadvantage=1,
+    power_multiplier=1.30,
+)
+
+LateJump = Modification(
+    name='Late Jump',
+    disadvantage=1,
+    info_notes=('Requires the 150-diameter limit before jumping',),
+)
+
 
 class _RDrive(ShipPart):
     tons: ClassVar[float]
@@ -399,8 +423,12 @@ class _JDrive(CustomisableShipPart):
     allowed_modifications: ClassVar[frozenset[str]] = frozenset(
         {
             DecreasedFuel.name,
+            EarlyJump.name,
             EnergyEfficient.name,
+            JumpEnergyInefficient.name,
+            LateJump.name,
             SizeReduction.name,
+            StealthJump.name,
         }
     )
 
@@ -411,6 +439,13 @@ class _JDrive(CustomisableShipPart):
 
     def bulkhead_label(self) -> str:
         return 'Jump Drive'
+
+    def build_notes(self) -> list:
+        notes = NoteList(super().build_notes())
+        if self.customisation is not None:
+            for mod in self.customisation.modifications:
+                notes.extend(mod.build_notes())
+        return notes
 
     @property
     def parsecs(self) -> int:

@@ -28,6 +28,62 @@ HighYield = Modification(name='High Yield', advantage=1)
 
 VeryHighYield = Modification(name='Very High Yield', advantage=2)
 
+Accurate = Modification(
+    name='Accurate',
+    advantage=2,
+    info_notes=('Accurate weapons gain DM+1 to attack rolls',),
+)
+
+EasyToRepair = Modification(
+    name='Easy to Repair',
+    advantage=1,
+    info_notes=('Easy to Repair weapons grant DM+1 to repair attempts',),
+)
+
+Resilient = Modification(
+    name='Resilient',
+    advantage=1,
+    info_notes=('Resilient weapons reduce weapon critical hit Severity by -1',),
+)
+
+Inaccurate = Modification(
+    name='Inaccurate',
+    disadvantage=1,
+    info_notes=('Inaccurate weapons suffer DM-1 to attack rolls',),
+)
+
+IntenseFocus = Modification(
+    name='Intense Focus',
+    advantage=2,
+    info_notes=('Intense Focus weapons gain AP+2',),
+)
+
+_GENERAL_WEAPON_MODIFICATIONS = frozenset(
+    {
+        Accurate.name,
+        EasyToRepair.name,
+        EnergyEfficient.name,
+        HighYield.name,
+        Inaccurate.name,
+        IntenseFocus.name,
+        LongRange.name,
+        Resilient.name,
+        VeryHighYield.name,
+    }
+)
+
+_INTENSE_FOCUS_WEAPONS = frozenset({'beam_laser', 'particle', 'particle_beam', 'pulse_laser'})
+
+
+def _check_intense_focus(notes: NoteList, customisation: CustomisationUnion | None, weapon: str) -> None:
+    if customisation is None:
+        return
+    if weapon in _INTENSE_FOCUS_WEAPONS:
+        return
+    for mod in customisation.modifications:
+        if mod.name == IntenseFocus.name:
+            notes.error('Intense Focus is only applicable for laser and particle weapons')
+
 
 def _size_reduction_steps(value: bool | int) -> int:
     return 1 if value is True else int(value)
@@ -85,14 +141,7 @@ class _MountWeapon(CeresModel):
     base_power: ClassVar[float]
     high_yield_allowed: ClassVar[bool] = True
     customisation: CustomisationUnion | None = None
-    allowed_modifications: ClassVar[frozenset[str]] = frozenset(
-        {
-            EnergyEfficient.name,
-            HighYield.name,
-            LongRange.name,
-            VeryHighYield.name,
-        }
-    )
+    allowed_modifications: ClassVar[frozenset[str]] = _GENERAL_WEAPON_MODIFICATIONS
 
     @property
     def notes(self) -> NoteList:
@@ -103,12 +152,15 @@ class _MountWeapon(CeresModel):
             for mod in self.customisation.modifications:
                 if mod.name not in self.allowed_modifications:
                     notes.error(f'Modification not allowed for MountWeapon: {mod.name}')
+            _check_intense_focus(notes, self.customisation, self.weapon_type)
             notes.extend(self.customisation.notes)
 
             if not self.high_yield_allowed:
                 for mod in self.customisation.modifications:
                     if mod.name in {HighYield.name, VeryHighYield.name}:
                         notes.error(f'{mod.name} is not applicable for {self.build_item()}')
+            for mod in self.customisation.modifications:
+                notes.extend(mod.build_notes())
         return notes
 
     def customisation_note(self) -> _Note | None:
@@ -173,7 +225,13 @@ class FixedMount(ShipPart):
     power: ClassVar[float]
     mount_cost: ClassVar[int] = 100_000
     tl: int = 9
+    pop_up: bool = False
     weapons: list[MountWeapon] = Field(default_factory=list)
+
+    def check_tl(self) -> None:
+        super().check_tl()
+        if self.pop_up and self.assembly_tl < 10:
+            self.error(f'Requires TL10, ship is TL{self.assembly_tl}')
 
     def item_description(self) -> str:
         if len(self.weapons) == 1:
@@ -181,7 +239,9 @@ class FixedMount(ShipPart):
         return 'Fixed Mount'
 
     def build_notes(self) -> list[_Note]:
-        notes = super().build_notes()
+        notes = NoteList(super().build_notes())
+        if self.pop_up:
+            notes.info('Pop-up mounting: concealed until deployed')
         if len(self.weapons) == 1:
             cust = self.weapons[0].customisation_note()
             return [*notes, cust] if cust else notes
@@ -189,11 +249,12 @@ class FixedMount(ShipPart):
 
     @property
     def tons(self) -> float:
-        return 0.0
+        return 1.0 if self.pop_up else 0.0
 
     @property
     def cost(self) -> float:
-        return self.mount_cost + _mounted_weapon_cost(self.weapons)
+        pop_up_cost = 1_000_000.0 if self.pop_up else 0.0
+        return self.mount_cost + pop_up_cost + _mounted_weapon_cost(self.weapons)
 
     @property
     def power(self) -> float:
@@ -215,13 +276,22 @@ class _Turret(ShipPart):
     mount_cost: ClassVar[float]
     mount_power: ClassVar[float]
     capacity: ClassVar[int]
+    pop_up: bool = False
     weapons: list[MountWeapon] = Field(default_factory=list)
+
+    def check_tl(self) -> None:
+        super().check_tl()
+        if self.pop_up and self.assembly_tl < 10:
+            self.error(f'Requires TL10, ship is TL{self.assembly_tl}')
 
     def item_description(self) -> str:
         return f'{self.size.title()} Turret'
 
     def build_notes(self) -> list[_Note]:
-        return _mounted_weapon_notes(self.weapons, empty_message='No weapons in turret')
+        notes = NoteList(_mounted_weapon_notes(self.weapons, empty_message='No weapons in turret'))
+        if self.pop_up:
+            notes.info('Pop-up mounting: concealed until deployed')
+        return notes
 
     @property
     def group_key(self) -> str:
@@ -238,11 +308,12 @@ class _Turret(ShipPart):
 
     @property
     def tons(self) -> float:
-        return 1.0
+        return 2.0 if self.pop_up else 1.0
 
     @property
     def cost(self) -> float:
-        return self.mount_cost + _mounted_weapon_cost(self.weapons)
+        pop_up_cost = 1_000_000.0 if self.pop_up else 0.0
+        return self.mount_cost + pop_up_cost + _mounted_weapon_cost(self.weapons)
 
     @property
     def power(self) -> float:
@@ -386,13 +457,7 @@ class _Barbette(CustomisableShipPart):
     damage_multiplier: ClassVar[int | None]
     base_cost: ClassVar[float]
     base_power: ClassVar[float]
-    allowed_modifications: ClassVar[frozenset[str]] = frozenset(
-        {
-            SizeReduction.name,
-            HighYield.name,
-            VeryHighYield.name,
-        }
-    )
+    allowed_modifications: ClassVar[frozenset[str]] = _GENERAL_WEAPON_MODIFICATIONS | {SizeReduction.name}
 
     def item_description(self) -> str:
         item = f'{self.weapon_label} Barbette'
@@ -404,7 +469,10 @@ class _Barbette(CustomisableShipPart):
     def build_notes(self) -> list[_Note]:
         notes = NoteList(ShipPart.build_notes(self))
         if self.customisation is not None:
+            _check_intense_focus(notes, self.customisation, self.weapon)
             notes.info(self.customisation.note_text)
+            for mod in self.customisation.modifications:
+                notes.extend(mod.build_notes())
         return notes
 
     @property
@@ -543,6 +611,7 @@ type Barbette = Annotated[
 BaySize = Literal['small', 'medium', 'large']
 BayWeapon = Literal[
     'fusion_gun',
+    'hullcutter',
     'ion_cannon',
     'mass_driver',
     'meson_gun',
@@ -575,12 +644,7 @@ class _Bay(CustomisableShipPart):
     damage_multiplier: ClassVar[int | None]
     salvo_text: ClassVar[str | None] = None
     magazine_summary: ClassVar[str | None] = None
-    allowed_modifications: ClassVar[frozenset[str]] = frozenset(
-        {
-            SizeReduction.name,
-            HighYield.name,
-        }
-    )
+    allowed_modifications: ClassVar[frozenset[str]] = _GENERAL_WEAPON_MODIFICATIONS | {SizeReduction.name}
 
     def model_post_init(self, __context) -> None:
         super().model_post_init(__context)
@@ -610,7 +674,10 @@ class _Bay(CustomisableShipPart):
         if self.magazine_summary is not None:
             notes.info(self.magazine_summary)
         if self.customisation is not None:
+            _check_intense_focus(notes, self.customisation, self.weapon)
             notes.info(self.customisation.note_text)
+            for mod in self.customisation.modifications:
+                notes.extend(mod.build_notes())
         return notes
 
     @property
@@ -636,6 +703,73 @@ class _Bay(CustomisableShipPart):
     @property
     def power(self) -> float:
         return self.base_power * self.power_multiplier
+
+
+class _Carronade(ShipPart):
+    carronade_type: str
+    description: ClassVar[str]
+    damage: ClassVar[str]
+    traits: ClassVar[tuple[str, ...]] = ('Weak',)
+    base_cost: ClassVar[float]
+    base_power: ClassVar[float]
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+
+    @property
+    def hardpoints_required(self) -> int:
+        return 4
+
+    @property
+    def crew_required_commercial(self) -> int:
+        return 0
+
+    @property
+    def crew_required_military(self) -> int:
+        return 1
+
+    @property
+    def tons(self) -> float:
+        return 4.0
+
+    @property
+    def cost(self) -> float:
+        return self.base_cost
+
+    @property
+    def power(self) -> float:
+        return self.base_power
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        trait_text = ', '.join(self.traits)
+        notes.info(f'Damage: {self.damage}; {trait_text} trait doubles target armour against damage')
+        return notes
+
+
+class PlasmaCarronade(_Carronade):
+    carronade_type: Literal['plasma_carronade'] = 'plasma_carronade'
+    description = 'Plasma Carronade'
+    tl: int = 10
+    damage = '12D'
+    base_power = 35.0
+    base_cost = 10_000_000.0
+
+
+class FusionCarronade(_Carronade):
+    carronade_type: Literal['fusion_carronade'] = 'fusion_carronade'
+    description = 'Fusion Carronade'
+    tl: int = 12
+    damage = '16D'
+    traits = ('Radiation', 'Weak')
+    base_power = 45.0
+    base_cost = 12_000_000.0
+
+
+type Carronade = Annotated[
+    PlasmaCarronade | FusionCarronade,
+    Field(discriminator='carronade_type'),
+]
 
 
 class _SmallBay(_Bay):
@@ -687,6 +821,21 @@ class LargeFusionGunBay(_LargeBay):
     tl: int = 12
     base_power = 100.0
     base_cost = 25_000_000.0
+
+
+class LargeHullcutterBay(_LargeBay):
+    bay_type: Literal['large_hullcutter_bay'] = 'large_hullcutter_bay'
+    weapon: ClassVar[BayWeapon] = 'hullcutter'
+    weapon_label = 'Hullcutter'
+    tl: int = 16
+    base_power = 100.0
+    base_cost = 110_000_000.0
+    damage_multiplier: ClassVar[int | None] = None
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList(super().build_notes())
+        notes.info('Reductor: target armour is reduced by -1 per damage die before damage is applied')
+        return notes
 
 
 class SmallIonCannonBay(_SmallBay):
@@ -741,6 +890,49 @@ class LargeMassDriverBay(_LargeBay):
     tl: int = 8
     base_power = 35.0
     base_cost = 80_000_000.0
+
+
+class GeneralPurposeMassDriverBay(ShipPart):
+    bay_type: Literal['general_purpose_mass_driver_bay'] = 'general_purpose_mass_driver_bay'
+    description: Literal['Small General-Purpose Mass Driver Bay'] = 'Small General-Purpose Mass Driver Bay'
+    tl: int = 8
+    extra_launch_capacity: float = 0.0
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+
+    @property
+    def hardpoints_required(self) -> int:
+        return 1
+
+    @property
+    def crew_required_commercial(self) -> int:
+        return 0
+
+    @property
+    def crew_required_military(self) -> int:
+        return 1
+
+    @property
+    def launch_capacity(self) -> float:
+        return 50.0 + self.extra_launch_capacity
+
+    @property
+    def tons(self) -> float:
+        return 50.0 + 2.0 * self.extra_launch_capacity
+
+    @property
+    def cost(self) -> float:
+        return 4_000_000.0 + 75_000.0 * self.extra_launch_capacity
+
+    @property
+    def power(self) -> float:
+        return 10.0 + 3.0 * self.extra_launch_capacity
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info(f'Can launch {self.launch_capacity:g} tons; DM-4 to attack rolls against manoeuvring targets')
+        return notes
 
 
 class SmallMesonGunBay(_SmallBay):
@@ -1135,12 +1327,14 @@ type Bay = Annotated[
     SmallFusionGunBay
     | MediumFusionGunBay
     | LargeFusionGunBay
+    | LargeHullcutterBay
     | SmallIonCannonBay
     | MediumIonCannonBay
     | LargeIonCannonBay
     | SmallMassDriverBay
     | MediumMassDriverBay
     | LargeMassDriverBay
+    | GeneralPurposeMassDriverBay
     | SmallMesonGunBay
     | MediumMesonGunBay
     | LargeMesonGunBay
@@ -1180,12 +1374,7 @@ class _PointDefenseBattery(CustomisableShipPart):
     base_tons: ClassVar[float]
     base_cost: ClassVar[float]
     base_power: ClassVar[float]
-    allowed_modifications: ClassVar[frozenset[str]] = frozenset(
-        {
-            SizeReduction.name,
-            EnergyEfficient.name,
-        }
-    )
+    allowed_modifications: ClassVar[frozenset[str]] = _GENERAL_WEAPON_MODIFICATIONS | {SizeReduction.name}
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList(super().build_notes())
@@ -1278,13 +1467,45 @@ class GaussPointDefenseBattery3(_PointDefenseBattery):
     base_cost = 10_000_000.0
 
 
+class TorpedoInterceptorCluster(ShipPart):
+    battery_type: Literal['torpedo_interceptor_cluster'] = 'torpedo_interceptor_cluster'
+    description: Literal['Torpedo-Interceptor Cluster'] = 'Torpedo-Interceptor Cluster'
+    tl: int = 10
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('One-shot system; must be replaced dockside after firing')
+        notes.info('Four interceptors; each kills one missile on 6+ or torpedo on 8+')
+        return notes
+
+    @property
+    def hardpoints_required(self) -> int:
+        return 1
+
+    @property
+    def tons(self) -> float:
+        return 1.0
+
+    @property
+    def cost(self) -> float:
+        return 1_000_000.0
+
+    @property
+    def power(self) -> float:
+        return 1.0
+
+
 type PointDefenseBattery = Annotated[
     LaserPointDefenseBattery1
     | LaserPointDefenseBattery2
     | LaserPointDefenseBattery3
     | GaussPointDefenseBattery1
     | GaussPointDefenseBattery2
-    | GaussPointDefenseBattery3,
+    | GaussPointDefenseBattery3
+    | TorpedoInterceptorCluster,
     Field(discriminator='battery_type'),
 ]
 
@@ -1292,6 +1513,7 @@ type PointDefenseBattery = Annotated[
 class WeaponsSection(CeresModel):
     turrets: list[Turret] = Field(default_factory=list)
     fixed_mounts: list[FixedMount] = Field(default_factory=list)
+    carronades: list[Carronade] = Field(default_factory=list)
     barbettes: list[Barbette] = Field(default_factory=list)
     spinal_mounts: list[SpinalMount] = Field(default_factory=list)
     bays: list[Bay] = Field(default_factory=list)
@@ -1318,6 +1540,7 @@ class WeaponsSection(CeresModel):
         total_mounts = (
             len(self.turrets)
             + len(self.fixed_mounts)
+            + sum(carronade.hardpoints_required for carronade in self.carronades)
             + sum(barbette.hardpoints_required for barbette in self.barbettes)
             + sum(spinal_mount.hardpoints_required for spinal_mount in self.spinal_mounts)
             + sum(bay.hardpoints_required for bay in self.bays)
@@ -1329,6 +1552,7 @@ class WeaponsSection(CeresModel):
             overflowing_parts = [
                 *self.fixed_mounts,
                 *self.turrets,
+                *self.carronades,
                 *self.barbettes,
                 *self.spinal_mounts,
                 *self.bays,
@@ -1365,6 +1589,7 @@ class WeaponsSection(CeresModel):
         parts: list[ShipPart] = [
             *self.turrets,
             *self.fixed_mounts,
+            *self.carronades,
             *self.barbettes,
             *self.spinal_mounts,
             *self.bays,
@@ -1382,6 +1607,8 @@ class WeaponsSection(CeresModel):
         for row in ship._grouped_spec_rows(SpecSection.WEAPONS, self.turrets):
             spec.add_row(row)
         for row in ship._grouped_spec_rows(SpecSection.WEAPONS, self.fixed_mounts):
+            spec.add_row(row)
+        for row in ship._grouped_spec_rows(SpecSection.WEAPONS, self.carronades):
             spec.add_row(row)
         for row in ship._grouped_spec_rows(SpecSection.WEAPONS, self.barbettes):
             spec.add_row(row)

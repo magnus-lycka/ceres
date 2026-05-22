@@ -301,3 +301,265 @@ They cost Cr2,500 per ton, add no power load, require a minimum size of 10
 tons, and add Cr250 per ton to life support facility costs. Capacity scales
 from the High Guard baseline of 10 tons housing 20 human-sized or 10
 cattle-sized creatures.
+
+## Concealed Compartment
+
+Concealed compartments are implemented in `storage.py` as
+`ConcealedCompartment(tons=...)` and render in the Cargo section of ship specs.
+
+They cost Cr20,000 per ton, add no power load, and validate the High Guard
+limit of at most 5% of ship tonnage. Spec notes include DM-2 to Electronics
+(sensors) checks and DM-4 to Investigate checks made to find the compartment.
+
+## Booby-Trapped Airlock
+
+Booby-trapped airlocks are implemented as an optional `booby_trap` sub-part on
+`Airlock`.
+
+Implemented variants:
+
+- `BoobyTrapTL6`: MCr0.1, 3D damage/round.
+- `BoobyTrapTL8`: MCr0.3, 5D damage/round.
+- `BoobyTrapTL10`: MCr0.5, 6D damage/round.
+- `BoobyTrapTL12`: MCr1, 8D damage/round.
+
+The trap adds no tonnage, adds its cost even when the airlock itself is part of
+the ship's free airlock allowance, validates its TL, and renders a damage note
+in the ship spec. The actual combat effect is out of scope for ship building.
+
+## Construction Deck
+
+Construction decks are implemented in `systems.py` as `ConstructionDeck(tons=...)`
+and render in ship specs as internal system rows.
+
+They cost MCr0.5 per ton, require 1 Power per ton, and report that they can
+build or repair ships up to half the construction deck tonnage at the carrying
+ship's TL. Construction simulation is out of scope.
+
+## Optional Label On Parts
+
+Generic display labels are implemented on `CeresModel` through
+`display_label: str | None`.
+
+The base `build_item()` renders labelled instances as
+`"<display label> (<description>)"`, so generic parts can represent published
+design names such as `Trophy Lounge (Common Area)` without changing tonnage,
+cost, power, validation, or grouping semantics.
+
+## Common Area Extras
+
+Additional High Guard common-area extras are implemented in `systems.py`:
+
+- `Brewery(litres_per_week=...)`: TL10, 0.5 tons per 10 litres/week, MCr0.1 per
+  ton.
+- `GourmetKitchen(diners=...)`: 1 ton per diner, MCr0.2 per ton, with notes for
+  Steward 2 and DM+1 when seeking high passengers.
+- `ZeroGRoom(tons=...)`: any specified room size, Cr50,000 fixed cost for
+  controls and safe-access portal.
+
+## Companion Weapon Additions
+
+Traveller Companion starship weapon additions are implemented in `weapons.py`.
+
+Implemented parts:
+
+- `PlasmaCarronade`: TL10, 4 hardpoints, 4 tons, MCr10, 35 Power, 12D, Weak.
+- `FusionCarronade`: TL12, 4 hardpoints, 4 tons, MCr12, 45 Power, 16D,
+  Radiation and Weak.
+- `GeneralPurposeMassDriverBay(extra_launch_capacity=...)`: TL8, base 50 tons,
+  MCr4, 10 Power, 1 hardpoint, with optional extra launch capacity.
+- `TorpedoInterceptorCluster`: TL10, 1 hardpoint, 1 ton, MCr1, 1 Power,
+  one-shot system with four interceptors.
+- `LargeHullcutterBay`: TL16, 5 hardpoints, 500 tons, MCr110, 100 Power, with
+  Reductor noted as an operational combat effect.
+
+Operational combat mechanics such as Weak, Reductor, and interceptor kill rolls
+are represented as notes only.
+
+## Pop-Up Mounting
+
+Pop-up mounting is implemented on `FixedMount` and turrets through
+`pop_up: bool = False`.
+
+When enabled, it requires TL10, adds 1 ton and MCr1 to the mount, and renders a
+note that the weapon system is concealed until deployed. Hardpoint/firmpoint
+allocation remains the same as the underlying fixed mount or turret.
+
+## Weapon Customisation Modifiers
+
+Additional High Guard weapon customisation modifiers are implemented in
+`weapons.py`:
+
+- `Accurate`: 2 Advantages, note for DM+1 to attack rolls.
+- `EasyToRepair`: 1 Advantage, note for DM+1 to repair attempts.
+- `IntenseFocus`: 2 Advantages, note for AP+2, restricted to laser and
+  particle weapons.
+- `Resilient`: 1 Advantage, note for reducing weapon critical hit Severity by
+  -1.
+- `Inaccurate`: 1 Disadvantage, note for DM-1 to attack rolls.
+
+They are wired into the existing customisation framework and allowed on weapon
+parts that already support weapon customisation.
+
+## Jump Drive Customisation Modifiers
+
+Additional High Guard jump drive customisation modifiers are implemented in
+`drives.py`:
+
+- `EarlyJump`: 1 Advantage, note for jumping at the 90-diameter limit.
+- `StealthJump`: 2 Advantages, note for reduced jump emergence radiation
+  signature.
+- `JumpEnergyInefficient`: 1 Disadvantage, +30% Power for jump drives.
+- `LateJump`: 1 Disadvantage, note for requiring the 150-diameter limit before
+  jumping.
+
+## Weapon Model Refactor
+
+The broad weapon model refactor is complete enough to close the original
+`Sort out weapons.py` doing item.
+
+Implemented structure:
+
+- hardpoint/firmpoint capacity checks
+- small craft restriction to single turrets
+- concrete turret classes such as `SingleTurret`, `DoubleTurret`, and
+  `TripleTurret`
+- shared concrete mount weapon classes for fixed mounts and turrets
+- concrete barbettes, bays, point-defence batteries, spinal mounts, and
+  ammunition/storage parts
+- size-reduction weapon modifiers for barbettes, bays, and point-defence
+  batteries
+- fixed mounts with multiple weapons and small-craft restrictions
+
+Remaining coverage and policy questions were moved back to `todo_maybe.md` as
+follow-up todo items rather than keeping the broad refactor open.
+
+## Crew Calculation Structure
+
+The broad crew-calculation structure is complete enough to close the original
+`DETERMINE CREW` doing item.
+
+Implemented structure:
+
+- `crew.py` is the single source of truth for ship crew calculations
+- `Ship` delegates crew analysis to `crew.py`
+- commercial crew rules
+- military crew rules
+- large ship crew reduction, including bracket-boundary cap
+- medic count uses habitation capacity as a population proxy
+
+Remaining role-inference policy questions were moved back to `todo_maybe.md` as
+follow-up todo items.
+
+## Screens Follow-Up
+
+The broad screens follow-up is complete enough to close the doing item.
+
+Implemented screen support:
+
+- `MesonScreen`
+- `NuclearDamper`
+- `DeflectorScreen`
+- `EnergyShield`
+- screen gunner counts in commercial and military crew analysis
+
+Remaining Black Globe and source-coverage work was moved back to `todo_maybe.md`
+as a focused todo item.
+
+## Spinal Mount Follow-Up
+
+The broad spinal mount follow-up is complete enough to close the doing item.
+
+Implemented support:
+
+- High Guard mass driver, meson, particle accelerator, and railgun spinal mounts
+- TL improvement rows (`+1`, `+2`, `+3`)
+- military gunner count for spinal weaponry
+- mass driver spinal mount ammunition cargo helper
+- railgun spinal mount extra rounds cargo helper
+
+Remaining source-coverage work was moved back to `todo_maybe.md` as a focused
+todo item.
+
+## Military Hull Armour Cap
+
+Military hull armour-cap handling is implemented.
+
+Implemented support:
+
+- `HullConfiguration.effective_hull_cost_modifier` applies the +25% military
+  hull cost modifier.
+- ships with `military=True` on hull configuration emit an error at
+  displacement <= 5,000 tons.
+- armour validation doubles the normal TL-derived armour cap for military
+  hulls and reports a military-hull-specific error when exceeded.
+
+## Cockpit Options
+
+Dual cockpit and ejector seat options are implemented on `Cockpit`.
+
+Implemented support:
+
+- `dual: bool = False` adds space for a second crew member, +2.5 tons, and
+  Cr15,000.
+- `ejector_seat: bool = False` adds Cr5,000 per cockpit seat.
+- cockpit display labels describe dual and ejector-seat variants.
+- unit tests cover standard, holographic, dual, ejector-seat, and combined
+  cockpit values.
+
+## Emergency Low Berth
+
+Emergency low berths are implemented in `habitation.py`.
+
+Implemented support:
+
+- `EmergencyLowBerth` consumes 1 ton, costs MCr1, requires 1 Power, and holds
+  four occupants.
+- emergency low berths are included in `HabitationSection`.
+- occupant capacity is included in habitation capacity calculations.
+- unit tests cover cost, tonnage, power, capacity, and section integration.
+
+## Grav Screen
+
+Grav screens are implemented in `systems.py`.
+
+Implemented support:
+
+- `GravScreen` is TL12.
+- tonnage is one ton per 200 tons of hull displacement, rounded up.
+- cost is MCr1 per ton.
+- power requirement is 2 Power per ton.
+- notes record the operational densitometer-blocking effect.
+- unit tests cover scaling by ship displacement.
+
+## Detachable Bridge
+
+Detachable bridges are implemented on `Bridge`.
+
+Implemented support:
+
+- `detachable: bool = False` adds 20% to bridge tonnage.
+- detachable bridges add 50% to bridge cost, combining with small and
+  holographic bridge modifiers.
+- bridge labels identify detachable standard, small, and holographic variants.
+- minimum detachable bridge sizes are validated by displacement band:
+  15 tons up to 200 tons displacement, 30 tons up to 1,000 tons, 50 tons up to
+  2,000 tons, and 80 tons above 2,000 tons.
+- unit tests cover tonnage, cost, item labels, and minimum-size validation.
+
+## Gravity Well Generator
+
+Gravity well generators are implemented in `systems.py`.
+
+Implemented support:
+
+- `GravityWellGenerator` is TL16.
+- tonnage is 100 tons.
+- cost is MCr120.
+- power requirement is 500 Power.
+- notes record that the artificial-gravity-well effect is tactical and out of
+  scope for ship construction.
+- the part is included in `AnyInternalSystem` for serialization and system
+  section use.
+- unit tests cover values, notes, stale numeric input handling, and computed
+  property serialization.

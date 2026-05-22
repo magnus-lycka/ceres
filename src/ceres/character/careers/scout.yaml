@@ -70,6 +70,15 @@ ranks:
   5: {}
   6: {}
 
+muster_out:
+  1: {cash: 20000, benefit: ship_share}
+  2: {cash: 20000, benefit: int_plus_1}
+  3: {cash: 30000, benefit: edu_plus_1}
+  4: {cash: 30000, benefit: weapon}
+  5: {cash: 50000, benefit: weapon}
+  6: {cash: 50000, benefit: scout_ship}
+  7: {cash: 50000, benefit: scout_ship}
+
 mishaps:
   1:
     text: Severely injured.

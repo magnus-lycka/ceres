@@ -70,6 +70,15 @@ ranks:
   5: {bonus: {skill: Space Science, level: 2}}
   6: {}
 
+muster_out:
+  1: {cash: 5000, benefit: int_plus_1}
+  2: {cash: 10000, benefit: edu_plus_1}
+  3: {cash: 20000, benefit: two_ship_shares}
+  4: {cash: 30000, benefit: soc_plus_1}
+  5: {cash: 40000, benefit: scientific_equipment}
+  6: {cash: 60000, benefit: scout_ship}
+  7: {cash: 100000, benefit: scout_ship}
+
 mishaps:
   1:
     text: Severely injured.

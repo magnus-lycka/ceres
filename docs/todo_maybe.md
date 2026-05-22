@@ -4,55 +4,26 @@ Update todo items in this document as progress is made.
 When todo items are done, please move them
 to docs/archive/done_todos.md
 
-## Sort out weapons.py [doing]
+## Weapon coverage follow-up [todo]
 
-All ships have hardpoint in proportion to displacement, except smallcraft which have firmpoints.
+The core weapon model has been split into concrete fixed mounts, turrets, barbettes, bays,
+spinal mounts, point-defence batteries, carronades, and ammunition/storage parts.
 
-Fixed mounts, turrets, barbettes and bays can be mounted in hardpoints of firmpoints (not bays in firmpoints).
+Remaining work is coverage and policy rather than the broad model refactor:
 
-Some weapons are designed to be mounted either on fixed mounts or turrests, some on barbettes and some in bays.
-
-Firmpoint mounting of weapons reduces/limits range and reduces power.
-
-The code as written matches the rules structure poorly.
-
-Current status:
-
-- hardpoint / firmpoint capacity checks implemented
-- small craft restriction to single turrets implemented
-- turret API split into concrete classes such as `SingleTurret`, `DoubleTurret`, and `TripleTurret`
-- `FixedMount` and turrets now share concrete mount weapon classes such as `PulseLaser` and `MissileRack`
-- `Barbette`, `Bay`, `PointDefenseBattery`, and `MissileStorage` are modeled with concrete weapon-installation classes
-- size-reduction weapon modifiers are modeled for barbettes, bays, and point defense batteries
-- fixed mounts can carry multiple weapons in the model, with small-craft restrictions enforced
-
-Still missing / unclear:
-
-- firmpoint range limitations are not yet modeled, only power / capacity effects
+- firmpoint range limitations are not yet modelled, only power/capacity effects
 - weapon families and mount compatibility are still incomplete
-- broader weapon coverage is still incomplete (for example sandcasters and other mountable weapon families)
+- broader weapon coverage is still incomplete for some mountable weapon families
 
-## DETERMINE CREW [doing]
+## Crew role inference [todo]
 
-Calculate crew needs. Means we need to have a way to determine if military or civilian ship,
-or if we want civilian or military crew analysis.
+Crew calculation is implemented in `crew.py` and `Ship` delegates to it for commercial and
+military crew analysis.
 
-Calculate crew by rules if not given. Warning, not error, given if stated crew seems understaffed.
+Remaining policy question:
 
-Use new module crew.py as single source of truth for crew.
-
-Structural status:
-
-- `crew.py` now exists and `Ship` delegates there
-- commercial rules implemented
-- military rules implemented
-- large ship crew reduction implemented, including bracket-boundary cap
-- medic count uses habitation capacity (stateroom beds + low berths + cabin space) as population proxy
-- remaining work is further rule expansion and validation, not structure
-
-Remaining ideas:
-
-- decide whether ship role inference should remain explicit (`military=True`) or become partly automatic
+- decide whether ship role inference should remain explicit (`military=True`) or become partly
+  automatic
 
 Automation crew effects have been split into a separate item below.
 
@@ -82,41 +53,28 @@ Remaining work:
   craft, astrogator, etc.)
 - surface any task DM in spec notes
 
-## Screens follow-up [doing]
+## Screens source coverage and Black Globe [todo]
 
-The High Guard crew table requires gunners for screens:
-
-- commercial: 1 gunner per screen
-- military: 2 gunners per screen
-
-Current status:
-
-- Meson screens and nuclear dampers are modelled in `screens.py`.
-- Screen gunners are counted in `_commercial_gunner_count` and `_military_gunner_count`.
+Meson screens, nuclear dampers, deflector screens, and energy shields are modelled in
+`screens.py`. Screen gunners are counted in commercial and military crew analysis.
 
 Remaining work:
 
 - broader source coverage for meson screens and mixed screen installations
-- implement **Deflector Screens** (TL10, 5t, MCr5, 10 Power): reduces radiation/particle damage; the lowest-TL screen and most likely to appear in published designs
-- implement **Energy Shields** (TL14, 50t, MCr60, 90 Power): reduces all energy weapon damage
-- implement **Black Globe Generator** (TL15): absorbs all damage into a capacitor bank; legality note needed (not commercially available); already referenced in this section
-- decide how to model capacitor bank, energy bleed, and overload mechanics for Black Globe (these are operational effects; the ship-building side is tonnage/cost/power)
+- implement **Black Globe Generator** (TL15): absorbs all damage into a capacitor bank; legality
+  note needed (not commercially available)
+- decide how to model capacitor bank, energy bleed, and overload mechanics for Black Globe
 
-## Spinal mount follow-up [doing]
+## Spinal mount source coverage [todo]
 
-Mass driver, meson, particle accelerator, and railgun spinal mounts are
-modelled from the High Guard spinal mount table. Military gunner count includes
-spinal weaponry at 1 gunner per 100 tons before existing large-ship crew
-reductions. TL improvement rows (`+1`, `+2`, `+3`) are modelled, and the
-High Guard Valiant light cruiser now provides source coverage for a TL15
-Meson spinal mount.
+Mass driver, meson, particle accelerator, and railgun spinal mounts are modelled from the High
+Guard spinal mount table, including TL improvement rows and ammunition cargo helpers for mass
+driver and railgun spinal mounts.
 
 Remaining work:
 
-- decide whether railgun and mass-driver ammunition should be represented as
-  separate storage parts
-- add broader source test coverage for non-meson spinal mount TL improvements
-  and other spinal mount families
+- add broader source test coverage for non-meson spinal mount TL improvements and other spinal
+  mount families
 
 ## Google Sheet fuel mismatch
 
@@ -212,27 +170,6 @@ Note:
 - when we later add external carry systems such as docking clamps, tow cables, cargo nets, external cargo mounts, jump nets, jump shuttles, modular cutter handling or similar, they should not be treated like internal docking space
 - external loads should affect effective displacement for drive-performance calculations
 - this likely wants parameterized specs, e.g. performance at `+X dTons`
-
-## Military Hull armour cap [todo]
-
-Military hulls (+25% hull cost) allow up to double the normal maximum armour
-rating. For example, bonded superdense on a non-military hull caps at the ship's
-TL; a military hull doubles that cap. Military hulls are restricted to capital
-ships (>5,000 tons) and stack with reinforced hull.
-
-Reference: `refs/hg/05_specialised_hull_types.md`
-
-Current status:
-
-- +25% cost modifier is implemented in `HullConfiguration.effective_hull_cost_modifier`
-- capital-ship restriction is not validated
-- double armour cap is not enforced in armour validation
-
-Remaining work:
-
-- add a validation error when `military=True` is set on a ship ≤5,000 tons
-- enforce the double-cap rule in armour validation (compare installed protection
-  against 2× the normal TL-derived maximum when `military=True`)
 
 ## Non-Gravity Hull
 
@@ -521,53 +458,6 @@ Two TL tiers:
 Not currently modelled. This is a specialist/military option; decide whether it belongs in
 `hull.py` as a flag or as a `HullOption` subpart.
 
-## Detachable Bridge [todo]
-
-Reference: `refs/hg/23_spacecraft_options.md`
-
-A detachable bridge can be ejected in emergencies. It has two weeks of life support and battery
-power, and basic manoeuvring (effective Thrust 0). Adds +50% to bridge cost and +20% to bridge
-tonnage. Minimum sizes by ship displacement:
-
-| Ship Size          | Min Bridge Size |
-|--------------------|-----------------|
-| ≤200 tons          | 15 tons         |
-| 201–1,000 tons     | 30 tons         |
-| 1,001–2,000 tons   | 50 tons         |
-| >2,000 tons        | 80 tons         |
-
-Not currently modelled. Implement as `detachable: bool = False` on `Bridge`.
-
-## Cockpit options (Dual Cockpit, Ejector Seat) [todo]
-
-Reference: `refs/hg/09_step_5_install_bridge.md`
-
-A **dual cockpit** provides space for an additional crew member (sensor operator or gunner).
-It consumes 2.5 tons and costs Cr15,000.
-
-An **ejector seat** can be added to any cockpit at Cr5,000 per seat (no additional tonnage).
-
-Neither option is currently modelled. Cockpits have `holographic: bool` but no dual or ejector-seat fields.
-
-Remaining work:
-
-- add `dual: bool = False` to `Cockpit`; add 2.5 tons and Cr15,000 when set
-- add `ejector_seat: bool = False` to `Cockpit`; add Cr5,000 when set
-
-## Emergency Low Berth [todo]
-
-Reference: `refs/hg/13_step_11_install_staterooms.md`
-
-An emergency low berth holds up to 4 people in dire circumstances. It consumes 1 ton, costs
-MCr1, and requires 1 Power. Regular low berths are already modelled in `habitation.py`; the
-emergency variant is absent.
-
-Remaining work:
-
-- add `EmergencyLowBerth` to `habitation.py` (1t, MCr1, 1 Power, occupant capacity 4)
-- wire it into `HabitationSection` alongside `low_berths`
-- include occupant capacity in crew/passenger capacity calculations
-
 ## Breakaway Hulls [todo]
 
 A ship can be designed to separate into two or more independently operating
@@ -617,25 +507,6 @@ function as a full hangar.
 Not yet implemented; no existing todo. Good candidates for `crafts.py` alongside `FullHangar`
 and `InternalDockingSpace`.
 
-## Grav Screen [todo]
-
-Reference: `refs/hg/26_drones.md`
-
-Blocks densitometers (returns error codes). Presence of grav screen is itself obvious to sensor
-operators. TL12, 1 ton per 200 tons of hull, MCr1/ton, 2 Power/ton.
-
-Not yet implemented; no existing todo. Implement in `systems.py` as a `ShipPart`.
-
-## Gravity Well Generator [todo]
-
-Reference: `refs/hg/34_exotic_technology.md`
-
-Creates an artificial gravity well that affects nearby vessels (tactical effect). TL16, 100 tons,
-MCr120, 500 Power.
-
-Not yet implemented; no existing todo. Implement in `systems.py`. The ship-building side is
-tonnage/cost/power; combat effects are out of scope.
-
 ## Jump Filter [todo]
 
 Reference: `refs/hg/35_jump_filters_and_psionics.md`
@@ -662,146 +533,6 @@ Three ship components enabling psionic operation or defence. None currently impl
   and intrusion; different tonnage/cost formula. Implement in `systems.py`.
 
 Psionic Capacitor (TL18) is out of scope.
-
-## Concealed Compartment [todo]
-
-Reference: `refs/hg/26_drones.md`
-
-Hidden space shielded against sensors. Up to 5% of ship tonnage. Inflicts DM-2 to Electronics
-(sensors) and DM-4 to Investigate checks. Cr20,000/ton.
-
-Not yet implemented; no existing todo. Appears in published scout and free trader designs.
-Implement in `systems.py`; note that the tonnage is deducted from cargo or other space.
-
-## Booby-Trapped Airlock [todo]
-
-Reference: `refs/hg/26_drones.md`
-
-Lethal defensive equipment fitted to any existing airlock. Four TL tiers (TL6–TL12), no extra
-tonnage.
-
-| TL | Cost   | Damage/Round |
-|----|--------|--------------|
-| 6  | MCr0.1 | 3D           |
-| 8  | MCr0.3 | 5D           |
-| 10 | MCr0.5 | 6D           |
-| 12 | MCr1   | 8D           |
-
-Not yet implemented; no existing todo. Implement as an optional flag or sub-part on `Airlock`
-in `systems.py`. Damage is relevant for ship spec notes; the actual combat mechanic is out of
-scope for ship building.
-
-## Construction Deck [todo]
-
-Reference: `refs/hg/26_drones.md`
-
-A mobile shipyard capable of building and repairing ships whose tonnage is at most half the
-construction deck's own tonnage. MCr0.5/ton, 1 Power/ton. Appears on very large civilian
-vessels and some megacorporate ships.
-
-Not yet implemented; no existing todo. Implement in `systems.py`. Ship-building capability
-note is relevant; the actual construction simulation is out of scope.
-
-## Optional label on parts [todo]
-
-Published designs often give bespoke names to generic components — a yacht's common area appears
-as "Studio + Trophy Lounge", a scout ship's cabin space as "Owner's Cabin". These are not distinct
-part types; they are named instances of existing parts.
-
-Consider adding an optional `label: str | None = None` field broadly — possibly to all `ShipPart`,
-or even all `CeresPart` — so the spec sheet can render "Studio + Trophy Lounge (Common Area)"
-rather than just "Common Area". The label would be purely cosmetic: no effect on tonnage, cost,
-power, validation, or grouping unless explicitly decided otherwise.
-
-Remaining work:
-
-- decide the right level: `ShipPart`, `CeresPart`, or per-class
-- add the field and thread it through the spec context / Typst template so it renders correctly
-
-## Common Area Extras: Brewery, Gourmet Kitchen, Zero-G Room [todo]
-
-Reference: `refs/hg/26_drones.md`
-
-Three common-area extras that appear alongside the already-implemented Hot Tub, Swimming Pool,
-Theatre, and Wet Bar, but are not yet modelled:
-
-- **Brewery / Distillery** (TL10, 0.5t per 10 litres/week, MCr0.1/ton)
-- **Gourmet Kitchen** (1t per diner, MCr0.2/ton; requires Steward 2, DM+1 when seeking high
-  passengers)
-- **Zero-G Room** (any size; Cr50,000 for controls and safe-access portal, no tonnage stated)
-
-Not yet implemented. Implement in `systems.py` alongside the existing common-area parts.
-
-## Carronade [todo]
-
-Reference: `refs/companion/56_starship_weaponry.md`
-
-A short-ranged plasma weapon occupying 4 hardpoints. Two variants:
-
-| Weapon           | TL | Power | Damage | Cost  | Tons | Traits          |
-|------------------|----|-------|--------|-------|------|-----------------|
-| Plasma Carronade | 10 | 35    | 12D    | MCr10 | 4    | Weak            |
-| Fusion Carronade | 12 | 45    | 16D    | MCr12 | 4    | Radiation, Weak |
-
-The **Weak** trait doubles the target's armour score against damage — devastating against
-unarmoured ships, weak against armoured ones. The Carronade consumes 4 hardpoints, which is
-unusual — no existing Ceres mount type spans multiple hardpoints. Decide whether this is modelled
-as a fixed mount occupying 4 hardpoints, or as a special mount class.
-
-## General-Purpose Mass Driver Bay [todo]
-
-Reference: `refs/companion/56_starship_weaponry.md`
-
-A low-powered mass driver primarily used for launching ore or cargo to remote destinations
-(mining ships), secondarily for orbital bombardment or mine/satellite deployment. TL8, 50 tons
-(small bay), 10 Power, 4D damage, MCr4. Suffers DM-4 to attack rolls against manoeuvring
-targets. Additional launch capacity: 2 tons per extra ton, Cr75,000/ton, 3 Power/ton.
-
-Not the same as the High Guard orbital-strike mass driver. Implement as a separate bay class in
-`weapons.py`.
-
-## Torpedo-Interceptor Cluster [todo]
-
-Reference: `refs/companion/56_starship_weaponry.md`
-
-A one-shot point-defence hardpoint fitting (not a turret). A cluster of 4 interceptors occupies
-1 hardpoint, 1 ton, MCr1, 1 Power. Fired at the last instant before missile/torpedo impact;
-each interceptor kills one incoming missile on 6+ or torpedo on 8+ (2D roll). Must be replaced
-dockside after firing.
-
-Not yet modelled. The one-shot nature and per-interceptor kill probability are operational
-effects; the ship-building side is tonnage, cost, power, and hardpoint allocation.
-
-## Hullcutter Bay (TL16) [todo]
-
-Reference: `refs/companion/56_starship_weaponry.md`
-
-A beam of exotic particles that degrades armour as it damages. The **Reductor** trait reduces
-the target's armour by -1 for each damage die rolled (applied before damage). Three sizes:
-
-| Weapon               | TL | Power | Damage | Cost   | Tons |
-|----------------------|----|-------|--------|--------|------|
-| Large Hullcutter Bay | 16 | 100   | 12D    | MCr110 | 500  |
-
-(Small at TL18 and Medium at TL17 are out of scope.)
-
-Not yet modelled. Implement as `LargeHullcutterBay` in `weapons.py`. The Reductor trait is an
-operational combat effect; only tonnage/cost/power need to be modelled for ship building.
-
-## Pop-Up Mounting [todo]
-
-Reference: `refs/hg/16_turrets_and_fixed_mounts.md`
-
-A pop-up mounting conceals a turret or fixed mount in a pod or recess. A ship with all weapons
-in pop-up mounts appears unarmed to external sensor scans. TL10, adds +1 ton and MCr1 to any
-turret or fixed mount.
-
-Not yet implemented; no existing todo.
-
-Remaining work:
-
-- add `pop_up: bool = False` to `_Turret` and `FixedMount`; add 1 ton and MCr1 when set
-- wire a note into the weapon description indicating the mount is concealed
 
 ## Hardened Systems — General Investigation [todo]
 
@@ -831,22 +562,6 @@ is in place and used on drives, jump drives, power plants, screens, and weapons.
 SizeReduction, LongRange, HighYield, VeryHighYield are already coded.
 
 The following specific modifications from HG are not yet implemented:
-
-**Weapons:**
-
-- Accurate (DM+1 to attack, 2 Advantages)
-- Easy to Repair (DM+1 repair attempts, 1 Advantage)
-- Intense Focus (AP+2, lasers and particle only, 2 Advantages)
-- Resilient (critical hit Severity -1, 1 Advantage)
-- Inaccurate (DM-1 attacks, 1 Disadvantage)
-
-**Jump Drive:**
-
-- Decreased Fuel (-5% fuel, 1 Advantage)
-- Early Jump (90-diameter limit, 1 Advantage)
-- Stealth Jump (reduced emergence radiation signature, 2 Advantages)
-- Energy Inefficient (+30% Power, 1 Disadvantage)
-- Late Jump (150-diameter limit, 1 Disadvantage)
 
 **Reaction Drive:**
 

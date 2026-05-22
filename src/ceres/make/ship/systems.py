@@ -186,6 +186,32 @@ class GravScreen(ShipPart):
         return self.tons * 2.0
 
 
+class GravityWellGenerator(ShipPart):
+    system_type: Literal['GRAVITY_WELL_GENERATOR'] = 'GRAVITY_WELL_GENERATOR'
+    description: Literal['Gravity Well Generator'] = 'Gravity Well Generator'
+    tl: int = 16
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('Creates an artificial gravity well; tactical effects are out of scope')
+        return notes
+
+    @property
+    def tons(self) -> float:
+        return 100.0
+
+    @property
+    def cost(self) -> float:
+        return 120_000_000.0
+
+    @property
+    def power(self) -> float:
+        return 500.0
+
+
 class CommonArea(_ExplicitTonsSystemPart):
     description: Literal['Common Area'] = 'Common Area'
     cost: ClassVar[float]
@@ -875,6 +901,7 @@ type AnyInternalSystem = Annotated[
     | CommandBridge
     | ConstructionDeck
     | GravScreen
+    | GravityWellGenerator
     | TrainingFacility
     | UNREPSystem
     | Workshop

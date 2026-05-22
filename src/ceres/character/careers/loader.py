@@ -12,6 +12,8 @@ from ceres.character.careers.career_data import (
     CharCheck,
     EventEffect,
     MishapEntry,
+    MusterOutData,
+    MusterOutRow,
     RankBonus,
     RankEntry,
     SkillTable,
@@ -63,6 +65,11 @@ def _parse_mishap(raw: dict) -> MishapEntry:
     return MishapEntry(text=raw['text'], stay_in_career=raw.get('stay_in_career', False), effects=effects)
 
 
+def _parse_muster_out(raw: dict) -> MusterOutData:
+    rows = {int(roll): MusterOutRow(cash=row['cash'], benefit=row['benefit']) for roll, row in raw.items()}
+    return MusterOutData(rows=rows)
+
+
 def _load_career_file(path: Path) -> CareerData:
     data = yaml.safe_load(path.read_text())
 
@@ -84,6 +91,9 @@ def _load_career_file(path: Path) -> CareerData:
     events = {int(k): _parse_career_event(v) for k, v in data.get('events', {}).items()}
     mishaps = {int(k): _parse_mishap(v) for k, v in data.get('mishaps', {}).items()}
 
+    muster_out_raw = data.get('muster_out')
+    muster_out = _parse_muster_out(muster_out_raw) if muster_out_raw else None
+
     return CareerData(
         name=data['name'],
         source=data['source'],
@@ -93,6 +103,7 @@ def _load_career_file(path: Path) -> CareerData:
         ranks=ranks,
         events=events,
         mishaps=mishaps,
+        muster_out=muster_out,
     )
 
 

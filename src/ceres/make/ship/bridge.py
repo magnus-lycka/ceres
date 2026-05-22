@@ -57,28 +57,44 @@ class Bridge(ShipPart):
     power: ClassVar[float]
     small: bool = False
     holographic: bool = False
+    detachable: bool = False
 
     def item_description(self) -> str:
         if self.holographic:
             if self.small:
-                return 'Smaller Holographic Controls'
-            return 'Holographic Controls'
-        if self.small:
-            return 'Smaller Bridge'
-        return 'Standard Bridge'
+                item = 'Smaller Holographic Controls'
+            else:
+                item = 'Holographic Controls'
+        elif self.small:
+            item = 'Smaller Bridge'
+        else:
+            item = 'Standard Bridge'
+        if self.detachable:
+            return f'Detachable {item}'
+        return item
 
     def bulkhead_label(self) -> str:
         return 'Bridge'
 
     def build_notes(self) -> list[_Note]:
+        notes = NoteList(super().build_notes())
         if self.small:
-            notes = NoteList()
             notes.info('DM -1 for all checks related to spacecraft operations')
-            return notes
-        return []
+        if self.detachable and self.tons < self.detachable_minimum_tons:
+            notes.error(
+                f'Detachable bridge below minimum size: {self.tons:.2f} < {self.detachable_minimum_tons:.2f} tons'
+            )
+        return notes
 
     @property
     def tons(self) -> float:
+        tons = self._base_tons
+        if self.detachable:
+            tons *= 1.2
+        return tons
+
+    @property
+    def _base_tons(self) -> float:
         displacement = self.assembly.displacement
         if displacement <= 200_000:
             weight_limits = [50, 99, 200, 1000, 2000, 100_000]
@@ -97,6 +113,8 @@ class Bridge(ShipPart):
         cost = float(((self.assembly.displacement - 1) // 100 + 1) * 500_000)
         if self.holographic:
             cost *= 1.25
+        if self.detachable:
+            cost *= 1.5
         return cost * factor
 
     @property
@@ -108,6 +126,17 @@ class Bridge(ShipPart):
         if self.small:
             return -1
         return 0
+
+    @property
+    def detachable_minimum_tons(self) -> float:
+        displacement = self.assembly.displacement
+        if displacement <= 200:
+            return 15.0
+        if displacement <= 1_000:
+            return 30.0
+        if displacement <= 2_000:
+            return 50.0
+        return 80.0
 
 
 class CommandSection(CeresModel):
