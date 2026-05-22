@@ -114,8 +114,15 @@ class MusterOutEvent(EventBase):
     roll: int  # 1D result (1-6), DMs already applied by player
 
 
+class AgingCrisisEvent(EventBase):
+    kind: Literal['aging_crisis'] = 'aging_crisis'
+    paid: bool
+    medical_roll: int = 0  # 1D result for medical cost; 0 if not paying
+
+
 type AnyEvent = Annotated[
-    AgingRollEvent
+    AgingCrisisEvent
+    | AgingRollEvent
     | CharacterStartedEvent
     | UcpEvent
     | BackgroundSkillsEvent
@@ -141,6 +148,7 @@ type AnyEvent = Annotated[
 __all__ = [
     'AnyEvent',
     'AdvancementEvent',
+    'AgingCrisisEvent',
     'AgingRollEvent',
     'BackgroundSkillsEvent',
     'CareerEvent',

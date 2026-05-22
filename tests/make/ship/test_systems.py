@@ -9,6 +9,7 @@ from ceres.make.ship.systems import (
     AccelerationBench,
     AccelerationSeat,
     AdvancedProbeDrones,
+    AdvancedPsionicShielding,
     Aerofins,
     Airlock,
     Armoury,
@@ -31,12 +32,14 @@ from ceres.make.ship.systems import (
     GravScreen,
     HighSurvivabilityReEntryCapsule,
     HotTub,
+    JumpFilter,
     Laboratory,
     LibraryFacility,
     MedicalBay,
     MiningDrones,
     MultiEnvironmentSpace,
     ProbeDrones,
+    PsionicShielding,
     ReEntryPod,
     RepairDrones,
     SwimmingPool,
@@ -79,6 +82,9 @@ def _dummy_owner_for(part) -> DummyOwner:
         (MedicalBay(autodoc=BasicAutodoc()), 4.0, 2_100_000.0, 1.0),
         (GravScreen(), 2.0, 2_000_000.0, 4.0),
         (GravityWellGenerator(), 100.0, 120_000_000.0, 500.0),
+        (JumpFilter(), 0.0, 5_000_000.0, 1.0),
+        (PsionicShielding(), 4.0, 2_000_000.0, 0.0),
+        (AdvancedPsionicShielding(), 0.0, 4_000_000.0, 0.0),
         (AccelerationBench(), 1.0, 10_000.0, 0.0),
         (AccelerationSeat(), 0.5, 30_000.0, 0.0),
         (Brewery(litres_per_week=20), 1.0, 100_000.0, 0.0),
@@ -123,6 +129,9 @@ def test_converted_system_values_are_computed_properties_not_serialized_fields(
         (MedicalBay, {}, 4.0, 2_000_000.0, 1.0),
         (GravScreen, {}, 2.0, 2_000_000.0, 4.0),
         (GravityWellGenerator, {}, 100.0, 120_000_000.0, 500.0),
+        (JumpFilter, {}, 0.0, 5_000_000.0, 1.0),
+        (PsionicShielding, {}, 4.0, 2_000_000.0, 0.0),
+        (AdvancedPsionicShielding, {}, 0.0, 4_000_000.0, 0.0),
         (Airlock, {'size': 3.0}, 3.0, 300_000.0, 0.0),
         (Aerofins, {}, 20.0, 2_000_000.0, 0.0),
         (HotTub, {'users': 2}, 0.5, 6_000.0, 0.0),
@@ -606,6 +615,98 @@ def test_gravity_well_generator_values_and_notes():
     assert generator.power == pytest.approx(500.0)
     assert generator.build_item() == 'Gravity Well Generator'
     assert generator.notes.infos == ['Creates an artificial gravity well; tactical effects are out of scope']
+
+
+def test_jump_filter_values_and_notes():
+    jump_filter = JumpFilter()
+    jump_filter.bind(DummyOwner(14, 10_000))
+
+    assert jump_filter.tons == pytest.approx(0.0)
+    assert jump_filter.cost == pytest.approx(5_000_000.0)
+    assert jump_filter.power == pytest.approx(1.0)
+    assert jump_filter.bandwidth == 5
+    assert jump_filter.build_item() == 'Jump Filter'
+    assert jump_filter.notes.infos == [
+        'Analyses witnessed jumps to help predict destination; operational effects are out of scope'
+    ]
+
+
+def test_jump_filter_requires_tl14():
+    jump_filter = JumpFilter()
+    jump_filter.bind(DummyOwner(13, 10_000))
+
+    assert jump_filter.notes.errors == ['Requires TL14, ship is TL13']
+
+
+def test_jump_filter_spec_row():
+    my_ship = ship.Ship(
+        tl=14,
+        displacement=10_000,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        systems=SystemsSection(internal_systems=[JumpFilter()]),
+    )
+
+    row = my_ship.build_spec().row('Jump Filter', section='Systems')
+
+    assert row.tons is None
+    assert row.cost == pytest.approx(5_000_000.0)
+    assert row.power == pytest.approx(-1.0)
+
+
+@pytest.mark.parametrize(
+    ('displacement', 'expected_note'),
+    [
+        (99, 'Psionic shielding makes ships under 100 tons impenetrable to Clairvoyance and Telepathy'),
+        (100, 'DM-4 to Clairvoyance and Telepathy powers within or upon the ship'),
+        (300, 'DM-4 to Clairvoyance and Telepathy powers within or upon the ship'),
+        (301, 'DM-2 to Clairvoyance and Telepathy powers within or upon the ship'),
+        (500, 'DM-2 to Clairvoyance and Telepathy powers within or upon the ship'),
+        (501, 'No Clairvoyance or Telepathy DM for ships above 500 tons'),
+    ],
+)
+def test_psionic_shielding_values_and_notes(displacement, expected_note):
+    shielding = PsionicShielding()
+    shielding.bind(DummyOwner(12, displacement))
+
+    assert shielding.tons == pytest.approx(displacement * 0.01)
+    assert shielding.cost == pytest.approx(shielding.tons * 500_000.0)
+    assert shielding.power == pytest.approx(0.0)
+    assert shielding.build_item() == 'Psionic Shielding'
+    assert shielding.notes.infos == [expected_note]
+
+
+def test_psionic_shielding_requires_tl12():
+    shielding = PsionicShielding()
+    shielding.bind(DummyOwner(11, 400))
+
+    assert shielding.notes.errors == ['Requires TL12, ship is TL11']
+
+
+@pytest.mark.parametrize(
+    ('displacement', 'expected_cost'),
+    [
+        (1, 1_000_000.0),
+        (100, 1_000_000.0),
+        (101, 2_000_000.0),
+        (400, 4_000_000.0),
+    ],
+)
+def test_advanced_psionic_shielding_values_and_notes(displacement, expected_cost):
+    shielding = AdvancedPsionicShielding()
+    shielding.bind(DummyOwner(16, displacement))
+
+    assert shielding.tons == pytest.approx(0.0)
+    assert shielding.cost == pytest.approx(expected_cost)
+    assert shielding.power == pytest.approx(0.0)
+    assert shielding.build_item() == 'Advanced Psionic Shielding'
+    assert shielding.notes.infos == ['Advanced psionic shielding consumes no tonnage']
+
+
+def test_advanced_psionic_shielding_requires_tl16():
+    shielding = AdvancedPsionicShielding()
+    shielding.bind(DummyOwner(15, 400))
+
+    assert shielding.notes.errors == ['Requires TL16, ship is TL15']
 
 
 def test_probe_drones_tons():

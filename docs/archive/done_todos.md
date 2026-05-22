@@ -563,3 +563,82 @@ Implemented support:
   section use.
 - unit tests cover values, notes, stale numeric input handling, and computed
   property serialization.
+
+## Launch Tube And Recovery Deck
+
+Launch tubes and recovery decks are implemented in `crafts.py`.
+
+Implemented support:
+
+- `LaunchTube(largest_craft_tons=...)` is TL9.
+- `RecoveryDeck(largest_craft_tons=...)` models the recovery counterpart.
+- both consume tonnage equal to 10 times the largest craft they support.
+- both cost MCr0.5 per ton and require 1 Power per ton.
+- notes record the construction-relevant operational limits: launch tubes do
+  not replace docking space/full hangars, and recovery decks are open to vacuum
+  and not full hangars.
+- both parts are included in `InternalCraftHousing` for serialization and craft
+  section use.
+- unit tests cover values, notes, TL validation, power, stale numeric input
+  handling, and computed property serialization.
+
+## Jump Filter
+
+Jump filters are implemented in `systems.py`.
+
+Implemented support:
+
+- `JumpFilter` is TL14.
+- tonnage is 0 tons.
+- cost is MCr5.
+- power requirement is 1 Power.
+- bandwidth is exposed as a property with value 5; ship spec rows do not yet
+  have a bandwidth column.
+- notes record the construction-relevant operational effect while keeping
+  detailed jump-disruption mechanics out of scope.
+- the part is included in `AnyInternalSystem` for serialization and system
+  section use.
+- unit tests cover values, notes, TL validation, spec row output, stale numeric
+  input handling, and computed property serialization.
+
+## Psion Stateroom
+
+Psion staterooms are implemented in `habitation.py`.
+
+Implemented support:
+
+- `PsionStateroom` is TL12.
+- tonnage is 4 tons, matching a normal stateroom.
+- cost is MCr2.
+- the room is otherwise modelled as a normal stateroom, including occupancy,
+  residence provision, and life-support facility cost.
+- notes record the +50% PSI-regeneration effect for a psion occupant.
+- the part is included in the stateroom union for serialization and habitation
+  section use.
+- unit tests cover values, notes, TL validation, residence/life-support
+  integration, and JSON round-trip.
+
+## Psionic Shielding
+
+Psionic shielding is implemented in `systems.py`.
+
+Implemented support:
+
+- `PsionicShielding` is TL12.
+- standard shielding consumes 1% of ship displacement.
+- standard shielding costs MCr0.5 per ton.
+- standard shielding consumes no Power.
+- standard shielding notes report the size-dependent Clairvoyance and Telepathy
+  effect: impenetrable below 100 tons, DM-4 up to 300 tons, DM-2 up to 500 tons,
+  and no DM above 500 tons.
+- `AdvancedPsionicShielding` is TL16.
+- advanced shielding consumes no tonnage or Power.
+- advanced shielding costs MCr1 per 100 tons, or part thereof, of ship
+  displacement.
+- both parts are included in `AnyInternalSystem` for serialization and system
+  section use.
+- unit tests cover values, notes, TL validation, stale numeric input handling,
+  and computed property serialization.
+
+Psionic Capacitor remains intentionally out of scope because Ceres currently
+supports TL16 and lower.

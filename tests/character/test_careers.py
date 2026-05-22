@@ -2659,3 +2659,263 @@ class TestMusterOut:
 
         muster_out_pendings = [p for p in projection.pending_inputs if p.kind == 'muster_out']
         assert len(muster_out_pendings) == 3
+
+
+# ── Life event roll=10 and roll=11 ─────────────────────────────────────────
+
+
+class TestLifeEventGoodFortune:
+    """Life event roll=10: Good Fortune — DM+2 to any one Benefit roll."""
+
+    def _setup_through_life_event_10(self) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=7),  # life_event pending
+            LifeEventEvent(id=7, fulfills='6.0', roll=10),  # Good Fortune
+        ]
+
+    def test_good_fortune_creates_muster_out_dm_scheduled_effect(self):
+        projection = replay(1, self._setup_through_life_event_10())
+
+        dm_effects = [se for se in projection.scheduled_effects if se.trigger == 'muster_out']
+        assert len(dm_effects) == 1
+        assert dm_effects[0].effect.get('amount') == 2
+
+    def test_good_fortune_also_creates_advancement_pending(self):
+        projection = replay(1, self._setup_through_life_event_10())
+
+        assert any(p.kind == 'advancement' for p in projection.pending_inputs)
+
+
+class TestLifeEventCrime:
+    """Life event roll=11: Crime — lose one Benefit roll."""
+
+    def _setup_through_life_event_11(self) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=7),  # life_event pending
+            LifeEventEvent(id=7, fulfills='6.0', roll=11),  # Crime
+        ]
+
+    def test_crime_reduces_muster_out_roll_count_by_1(self):
+        # 1 term, rank 0 → normally 1 roll; crime reduces by 1 → 0 rolls
+        events = [
+            *self._setup_through_life_event_11(),
+            AdvancementEvent(id=8, fulfills='7.0', roll=3),
+            ReenlistEvent(id=9, fulfills='8.0', reenlist=False),
+        ]
+        projection = replay(1, events)
+
+        muster_out_pendings = [p for p in projection.pending_inputs if p.kind == 'muster_out']
+        assert len(muster_out_pendings) == 0
+
+    def test_crime_roll_count_cannot_go_negative(self):
+        # 1 term, rank 0, crime → would be -1 rolls → clamped to 0
+        events = [
+            *self._setup_through_life_event_11(),
+            AdvancementEvent(id=8, fulfills='7.0', roll=3),
+            ReenlistEvent(id=9, fulfills='8.0', reenlist=False),
+        ]
+        projection = replay(1, events)
+
+        muster_out_pendings = [p for p in projection.pending_inputs if p.kind == 'muster_out']
+        assert len(muster_out_pendings) == 0
+
+    def test_crime_with_2_terms_gives_1_roll(self):
+        # 2 terms rank 0 → 2 - 1 = 1 roll
+        events = [
+            *self._setup_through_life_event_11(),
+            AdvancementEvent(id=8, fulfills='7.0', roll=3),
+            ReenlistEvent(id=9, fulfills='8.0', reenlist=True),
+            SkillTableEvent(id=10, fulfills='9.0', table='service_skills', roll=1),
+            SurviveEvent(id=11, fulfills='10.0', roll=7),
+            TermEventEvent(id=12, fulfills='11.0', roll=5),
+            AdvancementEvent(id=13, fulfills='12.0', roll=3),
+            ReenlistEvent(id=14, fulfills='13.0', reenlist=False),
+        ]
+        projection = replay(1, events)
+
+        muster_out_pendings = [p for p in projection.pending_inputs if p.kind == 'muster_out']
+        assert len(muster_out_pendings) == 1
+
+    def test_crime_still_creates_advancement_pending(self):
+        projection = replay(1, self._setup_through_life_event_11())
+
+        assert any(p.kind == 'advancement' for p in projection.pending_inputs)
+
+
+# ── Aging crisis ────────────────────────────────────────────────────────────
+
+
+def _setup_low_str(character_id: int = 1) -> list:
+    """Character with STR=1 for aging crisis tests. UCP '1869A5'."""
+    # STR=1 DEX=8 END=6 INT=9 EDU=10 SOC=5 — 4 background skills
+    return [
+        CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Boss'),
+        UcpEvent(id=2, fulfills='1.0', ucp='1869A5'),
+        BackgroundSkillsEvent(id=3, fulfills='2.0', skills=['Admin', 'Athletics', 'Carouse', 'Drive']),
+    ]
+
+
+def _setup_low_str_through_4_terms_advancement() -> list:
+    """Low-STR character through 4 terms to advancement, ready for ReenlistEvent."""
+    return [
+        *_setup_low_str(),
+        # Term 1
+        CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+        SurviveEvent(id=5, fulfills='4.0', roll=7),
+        TermEventEvent(id=6, fulfills='5.0', roll=5),
+        AdvancementEvent(id=7, fulfills='6.0', roll=3),
+        ReenlistEvent(id=8, fulfills='7.0', reenlist=True),  # age=22
+        # Term 2
+        SkillTableEvent(id=9, fulfills='8.0', table='service_skills', roll=1),
+        SurviveEvent(id=10, fulfills='9.0', roll=7),
+        TermEventEvent(id=11, fulfills='10.0', roll=5),
+        AdvancementEvent(id=12, fulfills='11.0', roll=3),
+        ReenlistEvent(id=13, fulfills='12.0', reenlist=True),  # age=26
+        # Term 3
+        SkillTableEvent(id=14, fulfills='13.0', table='service_skills', roll=1),
+        SurviveEvent(id=15, fulfills='14.0', roll=7),
+        TermEventEvent(id=16, fulfills='15.0', roll=5),
+        AdvancementEvent(id=17, fulfills='16.0', roll=3),
+        ReenlistEvent(id=18, fulfills='17.0', reenlist=True),  # age=30
+        # Term 4
+        SkillTableEvent(id=19, fulfills='18.0', table='service_skills', roll=1),
+        SurviveEvent(id=20, fulfills='19.0', roll=7),
+        TermEventEvent(id=21, fulfills='20.0', roll=5),
+        AdvancementEvent(id=22, fulfills='21.0', roll=3),
+    ]
+
+
+class TestAgingCrisis:
+    """Aging crisis: any characteristic reduced to 0 triggers crisis pending."""
+
+    def test_crisis_pending_when_str_reaches_0(self):
+        # STR=1, aging effective=0 (1 physical -1) → choose STR → STR=0 → crisis
+        events = [
+            *_setup_low_str_through_4_terms_advancement(),
+            ReenlistEvent(id=23, fulfills='22.0', reenlist=True),
+            AgingRollEvent(id=24, fulfills='23.0', roll=4),  # 4-4=0: one physical -1
+            CharacteristicChoiceEvent(id=25, fulfills='24.0', characteristic='STR', amount=1),
+        ]
+        projection = replay(1, events)
+
+        assert any(p.kind == 'aging_crisis' for p in projection.pending_inputs)
+
+    def test_no_skill_table_before_crisis_resolved(self):
+        events = [
+            *_setup_low_str_through_4_terms_advancement(),
+            ReenlistEvent(id=23, fulfills='22.0', reenlist=True),
+            AgingRollEvent(id=24, fulfills='23.0', roll=4),
+            CharacteristicChoiceEvent(id=25, fulfills='24.0', characteristic='STR', amount=1),
+        ]
+        projection = replay(1, events)
+
+        assert not any(p.kind == 'skill_table' for p in projection.pending_inputs)
+
+    def test_crisis_triggered_by_auto_reduction(self):
+        # STR=1, aging effective=-2 (all 3 physicals -1, auto) → STR=0 → crisis
+        events = [
+            *_setup_low_str_through_4_terms_advancement(),
+            ReenlistEvent(id=23, fulfills='22.0', reenlist=True),
+            AgingRollEvent(id=24, fulfills='23.0', roll=2),  # 2-4=-2: auto all physicals -1
+        ]
+        projection = replay(1, events)
+
+        assert any(p.kind == 'aging_crisis' for p in projection.pending_inputs)
+
+    def test_crisis_clears_remaining_aging_choices(self):
+        # effective=-1: 2 aging_choices; choose STR first → STR=0 → crisis clears the other
+        events = [
+            *_setup_low_str_through_4_terms_advancement(),
+            ReenlistEvent(id=23, fulfills='22.0', reenlist=True),
+            AgingRollEvent(id=24, fulfills='23.0', roll=3),  # 3-4=-1: 2 physicals -1
+            CharacteristicChoiceEvent(id=25, fulfills='24.0', characteristic='STR', amount=1),
+        ]
+        projection = replay(1, events)
+
+        aging_choices = [p for p in projection.pending_inputs if p.kind == 'aging_choice']
+        assert len(aging_choices) == 0
+        assert any(p.kind == 'aging_crisis' for p in projection.pending_inputs)
+
+    def test_crisis_paid_restores_str_to_1(self):
+        from ceres.character.events import AgingCrisisEvent
+
+        events = [
+            *_setup_low_str_through_4_terms_advancement(),
+            ReenlistEvent(id=23, fulfills='22.0', reenlist=True),
+            AgingRollEvent(id=24, fulfills='23.0', roll=4),
+            CharacteristicChoiceEvent(id=25, fulfills='24.0', characteristic='STR', amount=1),
+            AgingCrisisEvent(id=26, fulfills='25.crisis', paid=True, medical_roll=3),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.characteristics['STR'] == 1
+
+    def test_crisis_paid_ends_career(self):
+        from ceres.character.events import AgingCrisisEvent
+
+        events = [
+            *_setup_low_str_through_4_terms_advancement(),
+            ReenlistEvent(id=23, fulfills='22.0', reenlist=True),
+            AgingRollEvent(id=24, fulfills='23.0', roll=4),
+            CharacteristicChoiceEvent(id=25, fulfills='24.0', characteristic='STR', amount=1),
+            AgingCrisisEvent(id=26, fulfills='25.crisis', paid=True, medical_roll=3),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.current_career is None
+
+    def test_crisis_paid_creates_muster_out_pendings(self):
+        from ceres.character.events import AgingCrisisEvent
+
+        # 4 terms reenlisting → crisis during term 5 aging (reenlist=True path)
+        # term_count at crisis: 4 (from 4 reenlist=True increments in _complete_aging for terms 1-4)
+        # Actually: in reenlist=True aging path, term_count is incremented in _complete_aging.
+        # After 3 completed terms (3 reenlist=True non-aging), term_count=3 after 3rd reenlist.
+        # Then term 4: reenlist=True with aging → pending_reenlist=True → crisis before _complete_aging
+        # → term_count still=3 at crisis time, but _apply_aging_crisis adds 1 for completed term → 4 rolls
+        # rank=0 → 4 + 0 = 4 muster out rolls
+        events = [
+            *_setup_low_str_through_4_terms_advancement(),
+            ReenlistEvent(id=23, fulfills='22.0', reenlist=True),  # triggers aging
+            AgingRollEvent(id=24, fulfills='23.0', roll=4),  # effective=0: one choice
+            CharacteristicChoiceEvent(id=25, fulfills='24.0', characteristic='STR', amount=1),
+            AgingCrisisEvent(id=26, fulfills='25.crisis', paid=True, medical_roll=3),
+        ]
+        projection = replay(1, events)
+
+        muster_out_pendings = [p for p in projection.pending_inputs if p.kind == 'muster_out']
+        assert len(muster_out_pendings) > 0
+
+    def test_crisis_die_marks_character_dead(self):
+        from ceres.character.events import AgingCrisisEvent
+
+        events = [
+            *_setup_low_str_through_4_terms_advancement(),
+            ReenlistEvent(id=23, fulfills='22.0', reenlist=True),
+            AgingRollEvent(id=24, fulfills='23.0', roll=4),
+            CharacteristicChoiceEvent(id=25, fulfills='24.0', characteristic='STR', amount=1),
+            AgingCrisisEvent(id=26, fulfills='25.crisis', paid=False, medical_roll=0),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.dead is True
+
+    def test_crisis_die_no_muster_out(self):
+        from ceres.character.events import AgingCrisisEvent
+
+        events = [
+            *_setup_low_str_through_4_terms_advancement(),
+            ReenlistEvent(id=23, fulfills='22.0', reenlist=True),
+            AgingRollEvent(id=24, fulfills='23.0', roll=4),
+            CharacteristicChoiceEvent(id=25, fulfills='24.0', characteristic='STR', amount=1),
+            AgingCrisisEvent(id=26, fulfills='25.crisis', paid=False, medical_roll=0),
+        ]
+        projection = replay(1, events)
+
+        assert not any(p.kind == 'muster_out' for p in projection.pending_inputs)

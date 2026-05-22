@@ -1,4 +1,13 @@
-from ceres.character.skills import Admin, AnySkill, ArtSkill, Electronics, ProfessionSkill, ScienceSkill, skill_list
+from ceres.character.skills import (
+    Admin,
+    AnySkill,
+    ArtSkill,
+    Electronics,
+    Melee,
+    ProfessionSkill,
+    ScienceSkill,
+    skill_list,
+)
 
 
 def test_level_can_be_set_and_incremented():
@@ -48,6 +57,26 @@ def test_all_skills_can_be_listed_from_the_any_skill_union():
         'Cosmology',
         'Planetology',
     )
+
+
+def test_melee_includes_companion_specialities():
+    melee = next(skill for skill in skill_list(AnySkill) if skill.type == 'Melee')
+
+    assert 'Grapple' in melee.specialities
+    assert 'Striking' in melee.specialities
+    assert 'Fencing' in melee.specialities
+
+
+def test_melee_companion_specialities_are_independent_levels():
+    skill = Melee()
+
+    skill.grapple.set(2)
+    skill.striking += 1
+
+    assert skill.grapple.value == 2
+    assert skill.striking.value == 1
+    assert skill.fencing.value == 0
+    assert skill.unarmed.value == 0
 
 
 def test_skill_group_unions_can_be_listed_separately():

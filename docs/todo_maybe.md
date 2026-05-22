@@ -492,48 +492,6 @@ per percent of spun hull. Hamster cage requires ring radius ≥15m.
 
 Probably out of scope until Non-Gravity Hull and the spin-radius calculation have a clear policy.
 
-## Launch Tube and Recovery Deck [todo]
-
-Reference: `refs/hg/26_drones.md`
-
-**Launch Tube** (TL9): launches up to 10 craft per space-combat round. Consumes tonnage equal to
-10× the size of the largest craft it must launch. MCr0.5/ton, 1 Power/ton. Each craft using it
-still needs its own docking space or full hangar.
-
-**Recovery Deck**: counterpart to launch tube — recovers up to 10 craft per round. Consumes 10×
-the size of the largest craft it must recover. MCr0.5/ton, 1 Power/ton. Open to vacuum; cannot
-function as a full hangar.
-
-Not yet implemented; no existing todo. Good candidates for `crafts.py` alongside `FullHangar`
-and `InternalDockingSpace`.
-
-## Jump Filter [todo]
-
-Reference: `refs/hg/35_jump_filters_and_psionics.md`
-
-Prevents ships from jumping into the equipped vessel's surrounding space by detecting jump drive
-initiation and disrupting emergence. TL14, no tonnage, 5 bandwidth, 1 Power, MCr5.
-
-Not yet implemented; no existing todo. Implement in `computer.py` (software/hardware hybrid) or
-`systems.py`. No tonnage required, so it is unusual — decide whether to model it as a software
-package (like `JumpControl`) or as a zero-ton hardware system.
-
-## Psionic Technology [todo]
-
-Reference: `refs/hg/35_jump_filters_and_psionics.md`
-
-Three ship components enabling psionic operation or defence. None currently implemented:
-
-- **Psion Stateroom** (TL12, 4t, MCr2): enhanced stateroom for psionic crew; includes psionic
-  shielding and amplification equipment. Good candidate for `habitation.py` alongside `HighStateroom`.
-- **Psionic Shielding — Interior** (TL12, 0.25t per shielded room, MCr0.1 per room): blocks
-  telepathic intrusion into a specific room. Implement as an option on staterooms/compartments or
-  as a standalone part in `systems.py`.
-- **Psionic Shielding — Exterior** (TL16): shields the entire ship's hull against psionic detection
-  and intrusion; different tonnage/cost formula. Implement in `systems.py`.
-
-Psionic Capacitor (TL18) is out of scope.
-
 ## Hardened Systems — General Investigation [todo]
 
 References: `refs/hg/10_step_6_install_computer.md`, `refs/hg/26_drones.md`,

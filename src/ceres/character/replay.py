@@ -6,6 +6,7 @@ from ceres.character.careers.loader import get_effect_handler, get_skill_roll_ha
 from ceres.character.characteristics import UCP_STATS
 from ceres.character.events import (
     AdvancementEvent,
+    AgingCrisisEvent,
     AgingRollEvent,
     AnyEvent,
     BackgroundSkillsEvent,
@@ -129,6 +130,8 @@ def _apply(projection: CharacterProjection, event: AnyEvent) -> None:
             _apply_aging_roll(projection, event)
         case MusterOutEvent():
             _apply_muster_out_event(projection, event)
+        case AgingCrisisEvent():
+            _apply_aging_crisis_event(projection, event)
 
 
 def _fulfill(projection: CharacterProjection, event: AnyEvent) -> None:
@@ -666,10 +669,18 @@ def _apply_life_event(projection: CharacterProjection, event: LifeEventEvent) ->
         )
         projection.pending_inputs.append(_advancement_pending(projection, career, event.id))
     elif roll == 10:
-        # Good fortune — no mechanical effect in base rules
+        # Good fortune — DM+2 to any one Benefit roll
+        projection.scheduled_effects.append(
+            ScheduledEffect(trigger='muster_out', source_event_id=event.id, effect={'type': 'dm', 'amount': 2})
+        )
         projection.pending_inputs.append(_advancement_pending(projection, career, event.id))
     elif roll == 11:
-        # Crime or illegal activity — no mechanical effect in base rules
+        # Crime — lose one Benefit roll
+        projection.scheduled_effects.append(
+            ScheduledEffect(
+                trigger='muster_out_reduce', source_event_id=event.id, effect={'type': 'reduce', 'value': 1}
+            )
+        )
         projection.pending_inputs.append(_advancement_pending(projection, career, event.id))
     elif roll == 12:
         # Unusual event — roll on unusual sub-table; advancement after that resolves
@@ -730,7 +741,8 @@ def _apply_aging_roll(projection: CharacterProjection, event: AgingRollEvent) ->
     elif effective == -2:
         for char in ('STR', 'DEX', 'END'):
             projection.summary.characteristics[char] = max(0, projection.summary.characteristics.get(char, 0) - 1)
-        _complete_aging(projection, event.id)
+        if not _check_aging_crisis(projection, event.id):
+            _complete_aging(projection, event.id)
     elif effective == -3:
         projection.pending_inputs.append(
             PendingInput(
@@ -773,18 +785,20 @@ def _apply_aging_roll(projection: CharacterProjection, event: AgingRollEvent) ->
     elif effective == -5:
         for char in ('STR', 'DEX', 'END'):
             projection.summary.characteristics[char] = max(0, projection.summary.characteristics.get(char, 0) - 2)
-        _complete_aging(projection, event.id)
+        if not _check_aging_crisis(projection, event.id):
+            _complete_aging(projection, event.id)
     else:  # <= -6
         for char in ('STR', 'DEX', 'END'):
             projection.summary.characteristics[char] = max(0, projection.summary.characteristics.get(char, 0) - 2)
-        projection.pending_inputs.append(
-            PendingInput(
-                id=f'{event.id}.0',
-                kind='aging_choice_mental',
-                instruction='Aging: choose INT or SOC to reduce by 1',
-                options=['INT', 'SOC'],
+        if not _check_aging_crisis(projection, event.id):
+            projection.pending_inputs.append(
+                PendingInput(
+                    id=f'{event.id}.0',
+                    kind='aging_choice_mental',
+                    instruction='Aging: choose INT or SOC to reduce by 1',
+                    options=['INT', 'SOC'],
+                )
             )
-        )
 
 
 def _complete_aging(projection: CharacterProjection, source_event_id: int) -> None:
@@ -811,6 +825,49 @@ def _complete_aging(projection: CharacterProjection, source_event_id: int) -> No
     projection.pending_reenlist = None
 
 
+def _check_aging_crisis(projection: CharacterProjection, source_event_id: int) -> bool:
+    if any(v == 0 for v in projection.summary.characteristics.values()):
+        projection.pending_inputs = [
+            p for p in projection.pending_inputs if p.kind not in ('aging_choice', 'aging_choice_mental')
+        ]
+        projection.pending_inputs.append(
+            PendingInput(
+                id=f'{source_event_id}.crisis',
+                kind='aging_crisis',
+                instruction='Aging crisis: pay for medical care or die?',
+                options=['pay', 'die'],
+            )
+        )
+        return True
+    return False
+
+
+def _apply_aging_crisis_event(projection: CharacterProjection, event: AgingCrisisEvent) -> None:
+    career_name = projection.summary.current_career or projection.muster_out_career
+    careers = load_careers()
+    career = careers.get(career_name) if career_name else None
+
+    if event.paid:
+        for char in list(projection.summary.characteristics.keys()):
+            if projection.summary.characteristics[char] == 0:
+                projection.summary.characteristics[char] = 1
+        if projection.pending_reenlist is True:
+            projection.summary.term_count += 1
+        projection.pending_reenlist = None
+        projection.muster_out_career = None
+        if career:
+            _apply_muster_out_setup(projection, career, event.id, 0, clear_career=True)
+        else:
+            projection.summary.current_career = None
+            projection.summary.current_assignment = None
+    else:
+        projection.summary.dead = True
+        projection.summary.current_career = None
+        projection.summary.current_assignment = None
+        projection.muster_out_career = None
+        projection.pending_reenlist = None
+
+
 def _apply_muster_out_setup(
     projection: CharacterProjection,
     career: CareerData,
@@ -822,6 +879,10 @@ def _apply_muster_out_setup(
     roll_count = projection.summary.term_count + (projection.summary.rank or 0) // 2
     if lose_current_term:
         roll_count = max(0, roll_count - 1)
+    reduce_effects = [se for se in projection.scheduled_effects if se.trigger == 'muster_out_reduce' and se.consume]
+    for se in reduce_effects:
+        roll_count = max(0, roll_count - se.effect.get('value', 1))
+        projection.scheduled_effects.remove(se)
     if clear_career:
         projection.summary.current_career = None
         projection.summary.current_assignment = None
@@ -889,9 +950,10 @@ def _apply_characteristic_choice(
             if other != char:
                 projection.summary.characteristics[other] = max(0, projection.summary.characteristics.get(other, 0) - 2)
     elif fulfilled_kind in ('aging_choice', 'aging_choice_mental'):
-        remaining = [p for p in projection.pending_inputs if p.kind in ('aging_choice', 'aging_choice_mental')]
-        if not remaining:
-            _complete_aging(projection, event.id)
+        if not _check_aging_crisis(projection, event.id):
+            remaining = [p for p in projection.pending_inputs if p.kind in ('aging_choice', 'aging_choice_mental')]
+            if not remaining:
+                _complete_aging(projection, event.id)
 
 
 def _apply_advancement(projection: CharacterProjection, event: AdvancementEvent) -> None:

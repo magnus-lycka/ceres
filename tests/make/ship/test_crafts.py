@@ -8,6 +8,8 @@ from ceres.make.ship.crafts import (
     EmptyOccupant,
     FullHangar,
     InternalDockingSpace,
+    LaunchTube,
+    RecoveryDeck,
     SpaceCraft,
     Vehicle,
 )
@@ -52,6 +54,8 @@ def test_internal_docking_space_does_not_overround_floating_point_edges():
         (DockingClamp(kind='II'), 5.0, 1_000_000.0),
         (InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft')), 5.0, 1_250_000.0),
         (FullHangar(craft=EmptyOccupant(docking_space=95)), 190.0, 38_000_000.0),
+        (LaunchTube(largest_craft_tons=20), 200.0, 100_000_000.0),
+        (RecoveryDeck(largest_craft_tons=20), 200.0, 100_000_000.0),
     ],
 )
 def test_craft_housing_values_are_computed_properties_not_serialized_fields(part, expected_tons, expected_cost):
@@ -60,7 +64,25 @@ def test_craft_housing_values_are_computed_properties_not_serialized_fields(part
 
     assert part.tons == pytest.approx(expected_tons)
     assert part.cost == pytest.approx(expected_cost)
-    assert part.power == pytest.approx(0.0)
+    assert 'tons' not in dump
+    assert 'cost' not in dump
+
+
+@pytest.mark.parametrize(
+    ('part', 'expected_power'),
+    [
+        (DockingClamp(kind='II'), 0.0),
+        (InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft')), 0.0),
+        (FullHangar(craft=EmptyOccupant(docking_space=95)), 0.0),
+        (LaunchTube(largest_craft_tons=20), 200.0),
+        (RecoveryDeck(largest_craft_tons=20), 200.0),
+    ],
+)
+def test_craft_housing_power(part, expected_power):
+    part.bind(DummyOwner(12, 1_000))
+    dump = part.model_dump()
+
+    assert part.power == pytest.approx(expected_power)
     assert 'tons' not in dump
     assert 'cost' not in dump
     assert 'power' not in dump
@@ -124,6 +146,39 @@ def test_full_hangar_with_empty_occupant_values():
     assert hangar.tons == pytest.approx(190.0)
     assert hangar.cost == pytest.approx(38_000_000.0)
     assert hangar.build_item() == 'Full Hangar (95 tons)'
+
+
+def test_launch_tube_values_and_notes():
+    launch_tube = LaunchTube(largest_craft_tons=95)
+    launch_tube.bind(DummyOwner(12, 10_000))
+
+    assert launch_tube.tons == pytest.approx(950.0)
+    assert launch_tube.cost == pytest.approx(475_000_000.0)
+    assert launch_tube.power == pytest.approx(950.0)
+    assert launch_tube.build_item() == 'Launch Tube (95 tons craft)'
+    assert launch_tube.notes.infos == [
+        'Launches up to 10 craft per space-combat round; each craft still needs docking space or full hangar'
+    ]
+
+
+def test_recovery_deck_values_and_notes():
+    recovery_deck = RecoveryDeck(largest_craft_tons=95)
+    recovery_deck.bind(DummyOwner(12, 10_000))
+
+    assert recovery_deck.tons == pytest.approx(950.0)
+    assert recovery_deck.cost == pytest.approx(475_000_000.0)
+    assert recovery_deck.power == pytest.approx(950.0)
+    assert recovery_deck.build_item() == 'Recovery Deck (95 tons craft)'
+    assert recovery_deck.notes.infos == [
+        'Recovers up to 10 craft per space-combat round; open to vacuum and not a full hangar'
+    ]
+
+
+def test_launch_tube_requires_tl9():
+    launch_tube = LaunchTube(largest_craft_tons=20)
+    launch_tube.bind(DummyOwner(8, 1_000))
+
+    assert launch_tube.notes.errors == ['Requires TL9, ship is TL8']
 
 
 def test_passenger_shuttle_values():
@@ -198,7 +253,9 @@ def test_freeform_carried_spacecraft_roundtrips_with_metadata():
     loaded = ship.Ship.model_validate_json(my_ship.model_dump_json())
     assert loaded.craft is not None
     assert len(loaded.craft.internal_housing) == 1
-    carried_craft = loaded.craft.internal_housing[0].craft
+    loaded_housing = loaded.craft.internal_housing[0]
+    assert isinstance(loaded_housing, InternalDockingSpace)
+    carried_craft = loaded_housing.craft
     assert isinstance(carried_craft, SpaceCraft)
     assert carried_craft.kind == 'Owned Pinnace'
     assert carried_craft.cost == 0.0

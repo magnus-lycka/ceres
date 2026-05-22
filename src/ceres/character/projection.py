@@ -39,6 +39,7 @@ class CharacterSummary(BaseModel):
     cash: int = 0
     benefits: list[str] = Field(default_factory=list)
     muster_out_cash_count: int = 0
+    dead: bool = False
 
 
 class CharacterProjection(BaseModel):

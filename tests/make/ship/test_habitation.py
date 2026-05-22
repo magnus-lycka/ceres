@@ -16,6 +16,7 @@ from ceres.make.ship.habitation import (
     HighStateroom,
     LowBerth,
     LuxuryStateroom,
+    PsionStateroom,
     Stable,
     Stateroom,
 )
@@ -381,18 +382,51 @@ def test_luxury_stateroom_values():
     assert s.fixed_life_support_cost == pytest.approx(4_000.0)
 
 
+def test_psion_stateroom_values_and_notes():
+    s = PsionStateroom()
+    s.bind(DummyOwner(12, 100))
+
+    assert s.description == 'Psion Stateroom'
+    assert s.occupancy == 2
+    assert s.tons == pytest.approx(4.0)
+    assert s.cost == pytest.approx(2_000_000.0)
+    assert s.fixed_life_support_cost == pytest.approx(1_000.0)
+    assert s.notes.infos == ['Psion occupant increases PSI regeneration rate by +50%']
+
+
+def test_psion_stateroom_requires_tl12():
+    s = PsionStateroom()
+    s.bind(DummyOwner(11, 100))
+
+    assert s.notes.errors == ['Requires TL12, ship is TL11']
+
+
 def test_habitation_section_supports_standard_and_high_staterooms():
     my_ship = ship.Ship(
         tl=12,
         displacement=200,
         hull=hull.Hull(configuration=hull.streamlined_hull),
         habitation=HabitationSection(
-            staterooms=[Stateroom()] * 4 + [HighStateroom()],
+            staterooms=[Stateroom()] * 4 + [HighStateroom(), PsionStateroom()],
         ),
     )
 
     assert my_ship.habitation is not None
-    assert my_ship.habitation.life_support_facilities_cost(my_ship) == pytest.approx(6_000.0)
+    assert my_ship.habitation.life_support_facilities_cost(my_ship) == pytest.approx(7_000.0)
+
+
+def test_psion_stateroom_roundtrips_in_habitation_section():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=[PsionStateroom()]),
+    )
+
+    loaded = ship.Ship.model_validate_json(my_ship.model_dump_json())
+
+    assert loaded.habitation is not None
+    assert isinstance(loaded.habitation.staterooms[0], PsionStateroom)
 
 
 def test_habitation_default_passengers_use_unused_staterooms_and_low_berths():

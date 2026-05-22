@@ -21,10 +21,6 @@ class CharacterPatch(BaseModel):
     name: str
 
 
-class UcpPatch(BaseModel):
-    changes: list[str]
-
-
 class SophontList(BaseModel):
     sophonts: list[str]
 
@@ -40,18 +36,6 @@ class SkillList(BaseModel):
 
 class CharacterList(BaseModel):
     characters: list[CharacterRow]
-
-
-class CharacterDetail(BaseModel):
-    id: int
-    sophont: str
-    player: str
-    name: str
-    ucp: dict[str, int]
-
-
-class UcpResponse(BaseModel):
-    ucp: dict[str, int]
 
 
 class EventsResponse(BaseModel):
@@ -85,18 +69,27 @@ def build_app(backend: SqliteCharacterBackend | None = None) -> FastAPI:
         return CharacterList(characters=backend.list_characters())
 
     @app.get('/characters/{character_id}')
-    def get_character(character_id: int) -> CharacterDetail:
+    def get_character(character_id: int) -> CharacterRow:
         character = backend.get_character(character_id)
         if character is None:
             raise HTTPException(status_code=404, detail=f'Unknown character creation id: {character_id}')
-        ucp = backend.get_ucp(character_id)
-        return CharacterDetail(
-            id=character['id'],
-            sophont=character['sophont'],
-            player=character['player'],
-            name=character['name'],
-            ucp={} if ucp is None else ucp,
-        )
+        return character
+
+    @app.patch('/characters/{character_id}')
+    def update_character(character_id: int, character: CharacterPatch) -> CharacterRow:
+        if not character.name:
+            raise HTTPException(status_code=400, detail='Name must not be empty')
+        renamed = backend.rename_character(character_id, character.name)
+        if renamed is None:
+            raise HTTPException(status_code=404, detail=f'Unknown character creation id: {character_id}')
+        return renamed
+
+    @app.delete('/characters/{character_id}')
+    def delete_character(character_id: int) -> CharacterRow:
+        deleted = backend.delete_character(character_id)
+        if deleted is None:
+            raise HTTPException(status_code=404, detail=f'Unknown character creation id: {character_id}')
+        return deleted
 
     @app.get('/characters/{character_id}/projection')
     def get_projection(character_id: int) -> CharacterProjection:
@@ -122,45 +115,12 @@ def build_app(backend: SqliteCharacterBackend | None = None) -> FastAPI:
             raise HTTPException(status_code=500, detail='Projection unavailable after event')
         return projection
 
-    @app.get('/characters/{character_id}/ucp')
-    def get_ucp(character_id: int) -> UcpResponse:
-        if backend.get_character(character_id) is None:
-            raise HTTPException(status_code=404, detail=f'Unknown character creation id: {character_id}')
-        ucp = backend.get_ucp(character_id)
-        return UcpResponse(ucp={} if ucp is None else ucp)
-
-    @app.patch('/characters/{character_id}/ucp')
-    def update_ucp(character_id: int, patch: UcpPatch) -> UcpResponse:
-        try:
-            ucp = backend.patch_ucp(character_id, patch.changes)
-        except (ValueError, ReplayError) as error:
-            raise HTTPException(status_code=400, detail=str(error)) from error
-        if ucp is None:
-            raise HTTPException(status_code=404, detail=f'Unknown character creation id: {character_id}')
-        return UcpResponse(ucp=ucp)
-
     @app.get('/characters/{character_id}/events')
     def list_events(character_id: int) -> EventsResponse:
-        events = backend.list_events(character_id)
+        events = backend.load_typed_events(character_id)
         if events is None:
             raise HTTPException(status_code=404, detail=f'Unknown character creation id: {character_id}')
         return EventsResponse(events=[e.model_dump() for e in events])
-
-    @app.delete('/characters/{character_id}')
-    def delete_character(character_id: int) -> CharacterRow:
-        deleted = backend.delete_character(character_id)
-        if deleted is None:
-            raise HTTPException(status_code=404, detail=f'Unknown character creation id: {character_id}')
-        return deleted
-
-    @app.patch('/characters/{character_id}')
-    def update_character(character_id: int, character: CharacterPatch) -> CharacterRow:
-        if not character.name:
-            raise HTTPException(status_code=400, detail='Name must not be empty')
-        renamed = backend.rename_character(character_id, character.name)
-        if renamed is None:
-            raise HTTPException(status_code=404, detail=f'Unknown character creation id: {character_id}')
-        return renamed
 
     return app
 

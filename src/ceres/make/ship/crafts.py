@@ -3,7 +3,7 @@ from typing import Annotated, ClassVar, Literal, TypedDict
 
 from pydantic import Field
 
-from ceres.shared import CeresModel
+from ceres.shared import CeresModel, NoteList, _Note
 
 from .parts import ShipPart
 from .spec import ShipSpec, SpecRow, SpecSection
@@ -242,8 +242,58 @@ class FullHangar(_ZeroPowerCraftPart):
         return 0.0
 
 
+class _LaunchRecoveryPart(ShipPart):
+    largest_craft_tons: float
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+    _label: ClassVar[str]
+    _note: ClassVar[str]
+
+    def item_description(self) -> str:
+        return f'{self._label} ({self.largest_craft_tons:g} tons craft)'
+
+    @property
+    def tons(self) -> float:
+        return self.largest_craft_tons * 10.0
+
+    @property
+    def cost(self) -> float:
+        return self.tons * 500_000.0
+
+    @property
+    def power(self) -> float:
+        return self.tons
+
+    @property
+    def performance_displacement_contribution(self) -> float:
+        return 0.0
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info(self._note)
+        return notes
+
+
+class LaunchTube(_LaunchRecoveryPart):
+    housing_type: Literal['LAUNCH_TUBE'] = 'LAUNCH_TUBE'
+    description: Literal['Launch Tube'] = 'Launch Tube'
+    tl: int = 9
+    _label: ClassVar[str] = 'Launch Tube'
+    _note: ClassVar[str] = (
+        'Launches up to 10 craft per space-combat round; each craft still needs docking space or full hangar'
+    )
+
+
+class RecoveryDeck(_LaunchRecoveryPart):
+    housing_type: Literal['RECOVERY_DECK'] = 'RECOVERY_DECK'
+    description: Literal['Recovery Deck'] = 'Recovery Deck'
+    _label: ClassVar[str] = 'Recovery Deck'
+    _note: ClassVar[str] = 'Recovers up to 10 craft per space-combat round; open to vacuum and not a full hangar'
+
+
 type InternalCraftHousing = Annotated[
-    FullHangar | InternalDockingSpace,
+    FullHangar | InternalDockingSpace | LaunchTube | RecoveryDeck,
     Field(discriminator='housing_type'),
 ]
 

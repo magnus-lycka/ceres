@@ -1,17 +1,45 @@
 import atexit
 import json
 from pathlib import Path
+import re
 from typing import Annotated
 
 import typer
 
 from ceres import settings
 from ceres.character.characteristics import UCP_STATS
+from ceres.character.events import AnyEvent, UcpEvent
 from ceres.character.projection import CharacterProjection
 from ceres.character.replay import ReplayError
 from ceres.character.skills import SkillInfo, skill_list
 from ceres.character.sophonts import SOPHONTS
 from ceres.character.store import CharacterRow, SqliteCharacterBackend
+
+_UCP_CHANGE_PATTERN = re.compile(r'^([A-Z]{3})(?:(=)(\d+)|([+-])(\d+))$')
+_UCP_SHORT_PATTERN = re.compile(r'^[0-9A-F]{6}$')
+
+
+def _parse_ucp_change(change: str) -> tuple[str, str, int]:
+    match = _UCP_CHANGE_PATTERN.match(change)
+    if not match:
+        raise ValueError(f'Invalid UCP change: {change}')
+    stat = match.group(1)
+    if stat not in UCP_STATS:
+        raise ValueError(f'Invalid UCP change: {change}')
+    if match.group(2) == '=':
+        return stat, 'set', int(match.group(3))
+    sign = 1 if match.group(4) == '+' else -1
+    return stat, 'adjust', sign * int(match.group(5))
+
+
+def _expand_ucp_changes(changes: list[str]) -> list[str]:
+    expanded: list[str] = []
+    for change in changes:
+        if _UCP_SHORT_PATTERN.match(change):
+            expanded.extend(f'{stat}={int(value, 16)}' for stat, value in zip(UCP_STATS, change, strict=True))
+        else:
+            expanded.append(change)
+    return expanded
 
 
 def read_current_id(current_path: Path) -> int | None:
@@ -32,17 +60,18 @@ def render_character(character: CharacterRow) -> str:
     return f'{character["id"]} {character["sophont"]} {character["player"]} {character["name"]}'
 
 
-def render_character_show(character: CharacterRow, ucp: dict[str, int] | None) -> list[str]:
+def render_character_show(character: CharacterRow, projection: CharacterProjection | None) -> list[str]:
     lines = [
         f'Id: {character["id"]}',
         f'Sophont: {character["sophont"]}',
         f'Player: {character["player"]}',
         f'Name: {character["name"]}',
     ]
-    ucp_short = render_ucp_short(ucp)
-    if ucp_short:
-        lines.append(f'UCP: {ucp_short}')
-        lines.append(f'Characteristics: {render_ucp(ucp or {})}')
+    if projection and projection.summary.characteristics:
+        ucp_short = render_ucp_short(projection.summary.characteristics)
+        if ucp_short:
+            lines.append(f'UCP: {ucp_short}')
+            lines.append(f'Characteristics: {render_ucp(projection.summary.characteristics)}')
     return lines
 
 
@@ -158,7 +187,8 @@ def build_app(backend: SqliteCharacterBackend | None = None, current_path: Path 
         typer.echo('*  Id  Sophont   UCP     Player  Name')
         for character in backend.list_characters():
             marker = '*  ' if character['id'] == current_id else '   '
-            ucp_short = render_ucp_short(backend.get_ucp(character['id']))
+            projection = backend.get_projection(character['id'])
+            ucp_short = render_ucp_short(projection.summary.characteristics if projection else None)
             typer.echo(
                 f'{marker}{character["id"]:<3} {character["sophont"]:<9} {ucp_short:<7} '
                 f'{character["player"]:<7} {character["name"]}'
@@ -184,7 +214,8 @@ def build_app(backend: SqliteCharacterBackend | None = None, current_path: Path 
         if character is None:
             typer.echo(f'Unknown character creation id: {character_id}', err=True)
             raise typer.Exit(1)
-        for line in render_character_show(character, backend.get_ucp(character_id)):
+        projection = backend.get_projection(character_id)
+        for line in render_character_show(character, projection):
             typer.echo(line)
 
     @create_app.command('ucp')
@@ -195,29 +226,41 @@ def build_app(backend: SqliteCharacterBackend | None = None, current_path: Path 
         if current_id is None:
             typer.echo('No current character creation', err=True)
             raise typer.Exit(1)
-        character = backend.get_character(current_id)
-        if character is None:
+        if backend.get_character(current_id) is None:
+            typer.echo('No current character creation', err=True)
+            raise typer.Exit(1)
+        projection = backend.get_projection(current_id)
+        if projection is None:
             typer.echo('No current character creation', err=True)
             raise typer.Exit(1)
         if not changes:
-            ucp = backend.get_ucp(current_id)
-            if ucp is None:
-                typer.echo('No current character creation', err=True)
-                raise typer.Exit(1)
-            typer.echo(render_ucp(ucp))
+            typer.echo(render_ucp(projection.summary.characteristics))
             return
+        current = dict(projection.summary.characteristics)
         try:
-            ucp = backend.patch_ucp(current_id, changes)
+            for change in _expand_ucp_changes(changes):
+                stat, operation, value = _parse_ucp_change(change)
+                if operation == 'set':
+                    current[stat] = value
+                else:
+                    current[stat] = current.get(stat, 0) + value
         except ValueError as error:
             typer.echo(str(error), err=True)
             raise typer.Exit(1) from error
-        if ucp is None:
-            typer.echo('No current character creation', err=True)
-            raise typer.Exit(1)
-        typer.echo(render_ucp(ucp))
-        projection = backend.get_projection(current_id)
-        if projection:
-            for line in render_pending_inputs(projection):
+        new_ucp = ''.join(f'{current.get(stat, 0):X}' for stat in UCP_STATS)
+        ucp_pending = next(
+            (p for p in projection.pending_inputs if p.kind == 'ucp' and p.blocking),
+            None,
+        )
+        try:
+            backend.append_event(current_id, UcpEvent(ucp=new_ucp, fulfills=ucp_pending.id if ucp_pending else None))
+        except ReplayError as error:
+            typer.echo(str(error), err=True)
+            raise typer.Exit(1) from error
+        typer.echo(render_ucp({stat: int(digit, 16) for stat, digit in zip(UCP_STATS, new_ucp, strict=True)}))
+        updated = backend.get_projection(current_id)
+        if updated:
+            for line in render_pending_inputs(updated):
                 typer.echo(line)
 
     @create_app.command('use')
@@ -277,8 +320,6 @@ def build_app(backend: SqliteCharacterBackend | None = None, current_path: Path 
             typer.echo(f'Invalid JSON: {exc}', err=True)
             raise typer.Exit(1) from exc
         from pydantic import TypeAdapter, ValidationError
-
-        from ceres.character.events import AnyEvent
 
         adapter: TypeAdapter[AnyEvent] = TypeAdapter(AnyEvent)
         try:

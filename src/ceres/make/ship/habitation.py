@@ -88,7 +88,20 @@ class LuxuryStateroom(Stateroom):
     fixed_life_support_per_room: ClassVar[float] = 4_000.0
 
 
-StateroomUnion = Annotated[Stateroom | HighStateroom | LuxuryStateroom, Field(discriminator='kind')]
+class PsionStateroom(Stateroom):
+    kind: Literal['psion'] = 'psion'
+    description: ClassVar[str] = 'Psion Stateroom'
+    plural_label: ClassVar[str] = 'Psion Staterooms'
+    tl: int = 12
+    cost_per_room: ClassVar[float] = 2_000_000.0
+
+    def build_notes(self):
+        notes = NoteList()
+        notes.info('Psion occupant increases PSI regeneration rate by +50%')
+        return notes
+
+
+StateroomUnion = Annotated[Stateroom | HighStateroom | LuxuryStateroom | PsionStateroom, Field(discriminator='kind')]
 _stateroom_adapter: TypeAdapter[StateroomUnion] = TypeAdapter(StateroomUnion)
 
 

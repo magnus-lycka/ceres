@@ -212,6 +212,93 @@ class GravityWellGenerator(ShipPart):
         return 500.0
 
 
+class JumpFilter(ShipPart):
+    system_type: Literal['JUMP_FILTER'] = 'JUMP_FILTER'
+    description: Literal['Jump Filter'] = 'Jump Filter'
+    tl: int = 14
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+    bandwidth: ClassVar[int] = 5
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('Analyses witnessed jumps to help predict destination; operational effects are out of scope')
+        return notes
+
+    @property
+    def tons(self) -> float:
+        return 0.0
+
+    @property
+    def cost(self) -> float:
+        return 5_000_000.0
+
+    @property
+    def power(self) -> float:
+        return 1.0
+
+
+class PsionicShielding(ShipPart):
+    system_type: Literal['PSIONIC_SHIELDING'] = 'PSIONIC_SHIELDING'
+    description: Literal['Psionic Shielding'] = 'Psionic Shielding'
+    tl: int = 12
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        displacement = self.assembly.displacement
+        if displacement < 100:
+            notes.info('Psionic shielding makes ships under 100 tons impenetrable to Clairvoyance and Telepathy')
+        elif displacement <= 300:
+            notes.info('DM-4 to Clairvoyance and Telepathy powers within or upon the ship')
+        elif displacement <= 500:
+            notes.info('DM-2 to Clairvoyance and Telepathy powers within or upon the ship')
+        else:
+            notes.info('No Clairvoyance or Telepathy DM for ships above 500 tons')
+        return notes
+
+    @property
+    def tons(self) -> float:
+        return self.assembly.displacement * 0.01
+
+    @property
+    def cost(self) -> float:
+        return self.tons * 500_000.0
+
+    @property
+    def power(self) -> float:
+        return 0.0
+
+
+class AdvancedPsionicShielding(ShipPart):
+    system_type: Literal['ADVANCED_PSIONIC_SHIELDING'] = 'ADVANCED_PSIONIC_SHIELDING'
+    description: Literal['Advanced Psionic Shielding'] = 'Advanced Psionic Shielding'
+    tl: int = 16
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('Advanced psionic shielding consumes no tonnage')
+        return notes
+
+    @property
+    def tons(self) -> float:
+        return 0.0
+
+    @property
+    def cost(self) -> float:
+        return ceil(self.assembly.displacement / 100) * 1_000_000.0
+
+    @property
+    def power(self) -> float:
+        return 0.0
+
+
 class CommonArea(_ExplicitTonsSystemPart):
     description: Literal['Common Area'] = 'Common Area'
     cost: ClassVar[float]
@@ -902,6 +989,9 @@ type AnyInternalSystem = Annotated[
     | ConstructionDeck
     | GravScreen
     | GravityWellGenerator
+    | JumpFilter
+    | PsionicShielding
+    | AdvancedPsionicShielding
     | TrainingFacility
     | UNREPSystem
     | Workshop

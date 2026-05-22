@@ -213,6 +213,9 @@ class Melee(Skill):
     blade: Level = _level('Blade')
     bludgeon: Level = _level('Bludgeon')
     natural: Level = _level('Natural')
+    grapple: Level = _level('Grapple')
+    striking: Level = _level('Striking')
+    fencing: Level = _level('Fencing')
 
 
 class Navigation(Skill):

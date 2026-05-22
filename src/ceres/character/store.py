@@ -1,19 +1,14 @@
 import json
 from pathlib import Path
-import re
 import sqlite3
 from typing import TypedDict
 
 from pydantic import TypeAdapter
 
 from ceres import settings
-from ceres.character.characteristics import UCP_STATS
-from ceres.character.events import AnyEvent, CharacterStartedEvent, UcpEvent
+from ceres.character.events import AnyEvent, CharacterStartedEvent
 from ceres.character.projection import CharacterProjection
 from ceres.character.replay import replay
-
-UCP_CHANGE_PATTERN = re.compile(r'^([A-Z]{3})(?:(=)(\d+)|([+-])(\d+))$')
-UCP_SHORT_PATTERN = re.compile(r'^[0-9A-F]{6}$')
 
 _event_adapter: TypeAdapter[AnyEvent] = TypeAdapter(AnyEvent)
 
@@ -38,10 +33,8 @@ class SqliteCharacterBackend:
             'sophont text not null, '
             'player text not null, '
             'name text not null, '
-            "ucp_json text not null default '{}', "
             "events_json text not null default '[]')"
         )
-        self._ensure_column('ucp_json', "text not null default '{}'")
         self._ensure_column('events_json', "text not null default '[]'")
 
     def _ensure_column(self, column: str, definition: str) -> None:
@@ -112,31 +105,6 @@ class SqliteCharacterBackend:
         self.connection.execute('update characters set events_json = ? where id = ?', (serialized, character_id))
         self.connection.commit()
 
-    def get_ucp(self, character_id: int) -> dict[str, int] | None:
-        projection = self.get_projection(character_id)
-        if projection is None:
-            return None
-        return dict(projection.summary.characteristics)
-
-    def patch_ucp(self, character_id: int, changes: list[str]) -> dict[str, int] | None:
-        projection = self.get_projection(character_id)
-        if projection is None:
-            return None
-        current = dict(projection.summary.characteristics)
-        for change in expand_ucp_changes(changes):
-            stat, operation, value = parse_ucp_change(change)
-            if operation == 'set':
-                current[stat] = value
-            else:
-                current[stat] = current.get(stat, 0) + value
-        new_ucp = ''.join(f'{current.get(stat, 0):X}' for stat in UCP_STATS)
-        ucp_pending = next(
-            (p for p in projection.pending_inputs if p.kind == 'ucp' and p.blocking),
-            None,
-        )
-        self.append_event(character_id, UcpEvent(ucp=new_ucp, fulfills=ucp_pending.id if ucp_pending else None))
-        return {stat: int(digit, 16) for stat, digit in zip(UCP_STATS, new_ucp, strict=True)}
-
     def delete_character(self, character_id: int) -> CharacterRow | None:
         character = self.get_character(character_id)
         if character is None:
@@ -144,9 +112,6 @@ class SqliteCharacterBackend:
         self.connection.execute('delete from characters where id = ?', (character_id,))
         self.connection.commit()
         return character
-
-    def list_events(self, character_id: int) -> list[AnyEvent] | None:
-        return self.load_typed_events(character_id)
 
     def close(self) -> None:
         self.connection.close()
@@ -156,26 +121,3 @@ class SqliteCharacterBackend:
 
     def __exit__(self, *_exc_info) -> None:
         self.close()
-
-
-def parse_ucp_change(change: str) -> tuple[str, str, int]:
-    match = UCP_CHANGE_PATTERN.match(change)
-    if not match:
-        raise ValueError(f'Invalid UCP change: {change}')
-    stat = match.group(1)
-    if stat not in UCP_STATS:
-        raise ValueError(f'Invalid UCP change: {change}')
-    if match.group(2) == '=':
-        return stat, 'set', int(match.group(3))
-    sign = 1 if match.group(4) == '+' else -1
-    return stat, 'adjust', sign * int(match.group(5))
-
-
-def expand_ucp_changes(changes: list[str]) -> list[str]:
-    expanded: list[str] = []
-    for change in changes:
-        if UCP_SHORT_PATTERN.match(change):
-            expanded.extend(f'{stat}={int(value, 16)}' for stat, value in zip(UCP_STATS, change, strict=True))
-        else:
-            expanded.append(change)
-    return expanded
