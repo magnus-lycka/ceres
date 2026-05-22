@@ -642,3 +642,53 @@ Implemented support:
 
 Psionic Capacitor remains intentionally out of scope because Ceres currently
 supports TL16 and lower.
+
+## Power Plant Increased Power Customisation
+
+The High Guard `Increased Power` customisation modifier is implemented for
+power plants.
+
+Implemented support:
+
+- `IncreasedPower` is a 2-Advantage modification.
+- power plants store the requested base output as the serialized `output`
+  field and expose effective `.output` after customisation.
+- `IncreasedPower` multiplies effective output by 1.10.
+- plant tonnage remains based on base output, while customisation grade cost
+  modifiers continue to apply normally.
+- `PowerSection.output`, available ship power, and Power spec rows use the
+  effective output.
+- unit tests cover output, cost, tonnage, spec rows, notes, available power, and
+  JSON/model round-trip.
+
+## Reaction Drive Fuel Customisation
+
+Reaction-drive fuel customisation modifiers are implemented.
+
+Implemented support:
+
+- `FuelEfficient` is a 1-Advantage modification and reduces reaction-fuel
+  requirement by 20%.
+- `FuelInefficient` is a 1-Disadvantage modification and increases
+  reaction-fuel requirement by 25%.
+- R-drives are now `CustomisableShipPart` instances and allow those
+  reaction-drive fuel modifiers.
+- `ReactionFuel` reads the installed R-drive customisation fuel multiplier.
+- R-drive customisation notes are displayed alongside high-burn thruster notes
+  where applicable.
+- unit tests cover efficient and inefficient fuel calculations, notes, allowed
+  modification handling, and JSON/model round-trip.
+
+## Reflec Hull Option
+
+The High Guard reflec hull option is implemented on `Hull`.
+
+Implemented support:
+
+- `Hull.reflec` adds a Hull spec row named `Reflec`.
+- cost is MCr0.1 per ton of ship displacement.
+- notes record +3 armour protection against lasers.
+- reflec cost is included in production cost.
+- ships with both reflec and stealth emit an error.
+- unit tests cover cost, spec row output, production cost, and stealth
+  incompatibility.

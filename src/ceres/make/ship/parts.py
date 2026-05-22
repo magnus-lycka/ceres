@@ -27,6 +27,7 @@ class Modification(CeresModel):
     cost_multiplier: float = 1.0
     tons_delta_percent: float = 0.0
     power_multiplier: float = 1.0
+    output_multiplier: float = 1.0
     fuel_delta_percent: float = 0.0
     tl_delta: int = 0
     info_notes: tuple[str, ...] = ()
@@ -99,6 +100,13 @@ class Customisation(CeresModel):
         result = 1.0
         for m in self.modifications:
             result *= m.power_multiplier
+        return result
+
+    @property
+    def output_multiplier(self) -> float:
+        result = 1.0
+        for m in self.modifications:
+            result *= m.output_multiplier
         return result
 
     @property

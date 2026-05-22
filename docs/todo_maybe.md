@@ -431,14 +431,14 @@ Already implemented:
 - **Light Hull** — −25% hull cost, −10% hull points
 - **Armoured Bulkhead** — 10% of protected item's tonnage, MCr0.2/ton, with protected-area notes
 - **Pressure Hull** — 25% of total tonnage, ×10 hull cost, intrinsic Armour +4
+- **Reflec** — MCr0.1 per ton of hull, +3 armour protection against lasers, incompatible with
+  stealth
 
 (Military Hull already tracked separately above.)
 
 Remaining work:
 
 - validate incompatible hull combinations if any source rule requires it
-- implement `reflec: bool` cost on `Hull`: MCr0.1 per ton of hull, +3 armour protection against
-  lasers; validate that reflec and stealth are not combined on the same hull
 
 ## Adjustable Hull [todo]
 
@@ -510,32 +510,6 @@ Before implementing, investigate:
 - Is this a per-part flag, a hull-level option, or something else?
 - How does the 75%-threshold fleet trait interact with the per-part model?
 - Does radiation shielding's "treats the bridge as if Hardened" need to be modelled separately, or is it purely an operational note?
-
-## Incomplete Customisation Advantages and Disadvantages [todo]
-
-Reference: `refs/hg/29_customising_ships.md`
-
-The customisation framework (EarlyPrototype through HighTechnology grades, `CustomisableShipPart`)
-is in place and used on drives, jump drives, power plants, screens, and weapons. EnergyEfficient,
-SizeReduction, LongRange, HighYield, VeryHighYield are already coded.
-
-The following specific modifications from HG are not yet implemented:
-
-**Reaction Drive:**
-
-- Fuel Efficient (-20% fuel, 1 Advantage)
-- Fuel Inefficient (+25% fuel, 1 Disadvantage)
-
-**Power Plant:**
-
-- Increased Power (+10% output, 2 Advantages)
-
-**Manoeuvre Drive:**
-
-- Limited Range (within 100-diameter limit only, 2 Disadvantages)
-- Orbital Range (within Short range of a planet only, 2 Disadvantages)
-
-Decide which to prioritise based on occurrence in published ship designs.
 
 ## Portable Computer Options and Specialised Computer Variants
 

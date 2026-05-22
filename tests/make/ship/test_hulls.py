@@ -108,6 +108,36 @@ def test_radiation_shielding_cost():
     assert ship_hull.radiation_shielding_cost(400) == 10_000_000
 
 
+def test_reflec_cost():
+    ship_hull = hull.Hull(configuration=hull.standard_hull, reflec=True)
+    assert ship_hull.reflec_cost(400) == 40_000_000
+
+
+def test_reflec_spec_row_and_production_cost():
+    my_ship = Ship(
+        tl=12,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull, reflec=True),
+    )
+
+    row = my_ship.build_spec().row('Reflec', section='Hull')
+
+    assert row.tons is None
+    assert row.cost == 40_000_000
+    assert row.notes.infos == ['+3 armour protection against lasers']
+    assert my_ship.expenses.production_cost == my_ship.hull_cost + 40_000_000
+
+
+def test_reflec_cannot_be_combined_with_stealth():
+    my_ship = Ship(
+        tl=12,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull, reflec=True, stealth=hull.BasicStealth()),
+    )
+
+    assert 'Reflec cannot be combined with stealth' in my_ship.notes.errors
+
+
 def test_pressure_hull_values():
     ship_hull = hull.Hull(configuration=hull.standard_hull, pressure_hull=True)
 

@@ -250,6 +250,11 @@ class Hull(CeresModel):
             return 0.0
         return displacement * 25_000.0
 
+    def reflec_cost(self, displacement: float) -> float:
+        if not self.reflec:
+            return 0.0
+        return displacement * 100_000.0
+
     def pressure_hull_tons(self, displacement: float) -> float:
         if not self.pressure_hull:
             return 0.0
@@ -271,6 +276,12 @@ class Hull(CeresModel):
         if item is not None and self.pressure_hull:
             return f'{item}, Pressure Hull'
         return item or ''
+
+    def build_notes(self):
+        notes = NoteList()
+        if self.reflec and self.stealth is not None:
+            notes.error('Reflec cannot be combined with stealth')
+        return notes
 
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = []
@@ -336,6 +347,18 @@ class Hull(CeresModel):
                     item='Radiation Shielding: Reduce Rads by 1,000',
                     tons=0.0,
                     cost=self.radiation_shielding_cost(ship.displacement) or None,
+                )
+            )
+        if self.reflec:
+            notes = NoteList()
+            notes.info('+3 armour protection against lasers')
+            spec.add_row(
+                SpecRow(
+                    section=SpecSection.HULL,
+                    item='Reflec',
+                    tons=None,
+                    cost=self.reflec_cost(ship.displacement) or None,
+                    notes=notes,
                 )
             )
         bulkheads = ship.armoured_bulkhead_parts()

@@ -157,8 +157,13 @@ class ReactionFuel(_ZeroPowerStoragePart):
             self.error('Ship must have an RDrive to compute ReactionFuel')
             return 0.0
         if reaction_drive.level == 0:
-            return 0.25
-        return self.assembly.performance_displacement * 0.025 * reaction_drive.level
+            base_rate = 0.25
+        else:
+            base_rate = self.assembly.performance_displacement * 0.025 * reaction_drive.level
+        multiplier = 1.0
+        if getattr(reaction_drive, 'customisation', None) is not None:
+            multiplier = reaction_drive.customisation.fuel_multiplier
+        return base_rate * multiplier
 
     @property
     def tons(self) -> float:

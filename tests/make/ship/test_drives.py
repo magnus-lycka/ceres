@@ -9,6 +9,8 @@ from ceres.make.ship.drives import (
     DriveSection,
     EarlyJump,
     EmergencyPowerSystem,
+    FuelEfficient,
+    FuelInefficient,
     FusionPlantTL8,
     FusionPlantTL12,
     FusionPlantTL15,
@@ -474,6 +476,53 @@ def test_reaction_fuel_minutes_of_operation():
     assert my_ship.fuel is not None
     assert my_ship.fuel.reaction_fuel is not None
     assert my_ship.fuel.reaction_fuel.tons == pytest.approx(2.08)
+
+
+def test_reaction_fuel_respects_fuel_efficient_rdrive_customisation():
+    my_ship = ship.Ship(
+        tl=13,
+        displacement=6,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        drives=DriveSection(r_drive=RDrive16(customisation=Advanced(modifications=[FuelEfficient]))),
+        fuel=FuelSection(reaction_fuel=ReactionFuel(minutes=52)),
+    )
+
+    assert my_ship.fuel is not None
+    assert my_ship.fuel.reaction_fuel is not None
+    assert my_ship.fuel.reaction_fuel.tons == pytest.approx(2.08 * 0.8)
+    assert my_ship.drives is not None
+    r_drive = my_ship.drives.r_drive
+    assert r_drive is not None
+    assert 'Modification not allowed for RDrive16: Fuel Efficient' not in r_drive.notes.errors
+    assert 'Advanced: Fuel Efficient' in r_drive.notes.infos
+
+
+def test_reaction_fuel_respects_fuel_inefficient_rdrive_customisation():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=6,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        drives=DriveSection(r_drive=RDrive16(customisation=Budget(modifications=[FuelInefficient]))),
+        fuel=FuelSection(reaction_fuel=ReactionFuel(minutes=52)),
+    )
+
+    assert my_ship.fuel is not None
+    assert my_ship.fuel.reaction_fuel is not None
+    assert my_ship.fuel.reaction_fuel.tons == pytest.approx(2.08 * 1.25)
+    assert my_ship.drives is not None
+    r_drive = my_ship.drives.r_drive
+    assert r_drive is not None
+    assert 'Modification not allowed for RDrive16: Fuel Inefficient' not in r_drive.notes.errors
+    assert 'Budget: Fuel Inefficient' in r_drive.notes.infos
+
+
+def test_customised_rdrive_roundtrips():
+    original = RDrive16(customisation=Budget(modifications=[FuelInefficient]))
+    restored = TypeAdapter(RDrive).validate_json(original.model_dump_json())
+
+    assert isinstance(restored, RDrive16)
+    assert restored.customisation is not None
+    assert restored.customisation.modifications == [FuelInefficient]
 
 
 def test_size_reduced_fusion_plant_item_includes_output_but_not_customisation_label():

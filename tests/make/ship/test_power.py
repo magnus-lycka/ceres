@@ -3,6 +3,7 @@ import pytest
 
 from ceres.make.ship import hull, ship
 from ceres.make.ship.drives import DriveSection, MDrive1
+from ceres.make.ship.parts import VeryAdvanced
 from ceres.make.ship.power import (
     AdvancedSolarCoating,
     AntimatterPlant,
@@ -10,8 +11,10 @@ from ceres.make.ship.power import (
     EnhancedSolarCoating,
     FissionPlant,
     FusionPlantTL8,
+    FusionPlantTL12,
     HighEfficiencyBatteriesTL10,
     HighEfficiencyBatteriesTL12,
+    IncreasedPower,
     PowerSection,
     SolarPanelsTL6,
     SolarPanelsTL8,
@@ -45,6 +48,42 @@ def test_fission_plant_build_item():
     p2 = FissionPlant(output=80, tl=7)
     assert p.build_item() == 'Fission Plant (TL 6), Power 80'
     assert p2.build_item() == 'Fission Plant (TL 7), Power 80'
+
+
+def test_increased_power_power_plant_customisation_increases_output():
+    p = FusionPlantTL12(output=100, customisation=VeryAdvanced(modifications=[IncreasedPower]))
+
+    assert p.output == pytest.approx(110.0)
+    assert p.tons == pytest.approx(100 / 15)
+    assert p.cost == pytest.approx(100 / 15 * 1_000_000 * 1.25)
+    assert p.build_item() == 'Fusion (TL 12), Power 110'
+    assert 'Modification not allowed for FusionPlantTL12: Increased Power' not in p.notes.errors
+    assert 'Very Advanced: Increased Power' in p.notes.infos
+
+
+def test_increased_power_contributes_to_available_power_and_spec_output():
+    my_ship = ship.Ship(
+        tl=14,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        power=PowerSection(
+            plant=FusionPlantTL12(output=100, customisation=VeryAdvanced(modifications=[IncreasedPower]))
+        ),
+    )
+
+    assert my_ship.available_power == pytest.approx(110.0)
+    row = my_ship.build_spec().row('Fusion (TL 12), Power 110', section='Power')
+    assert row.power == pytest.approx(110.0)
+
+
+def test_increased_power_power_plant_roundtrips_base_output():
+    p = FusionPlantTL12(output=100, customisation=VeryAdvanced(modifications=[IncreasedPower]))
+    dump = p.model_dump()
+    loaded = FusionPlantTL12.model_validate(dump)
+
+    assert dump['output'] == 100
+    assert 'base_output' not in dump
+    assert loaded.output == pytest.approx(110.0)
 
 
 def test_fission_plant_fuel_for_weeks_matches_fusion_rule():

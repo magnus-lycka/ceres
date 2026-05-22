@@ -78,6 +78,7 @@ class Ship(ShipBase):
 
     def build_notes(self) -> list:
         notes = NoteList()
+        notes.extend(self.hull.notes.problems)
         residual_tonnage = self.remaining_usable_tonnage()
         if residual_tonnage < -0.005:
             notes.error(f'Hull overloaded by {-residual_tonnage:.2f} tons')

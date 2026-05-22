@@ -59,6 +59,18 @@ DecreasedFuel = Modification(
     fuel_delta_percent=-0.05,
 )
 
+FuelEfficient = Modification(
+    name='Fuel Efficient',
+    advantage=1,
+    fuel_delta_percent=-0.20,
+)
+
+FuelInefficient = Modification(
+    name='Fuel Inefficient',
+    disadvantage=1,
+    fuel_delta_percent=0.25,
+)
+
 EarlyJump = Modification(
     name='Early Jump',
     advantage=1,
@@ -84,7 +96,7 @@ LateJump = Modification(
 )
 
 
-class _RDrive(ShipPart):
+class _RDrive(CustomisableShipPart):
     tons: ClassVar[float]
     cost: ClassVar[float]
     power: ClassVar[float]
@@ -92,6 +104,7 @@ class _RDrive(ShipPart):
     level: ClassVar[int]
     _tons_percent: ClassVar[float]
     high_burn_thruster: bool = False
+    allowed_modifications: ClassVar[frozenset[str]] = frozenset({FuelEfficient.name, FuelInefficient.name})
 
     def item_description(self) -> str:
         if self.high_burn_thruster:
@@ -114,9 +127,9 @@ class _RDrive(ShipPart):
         return 0.0
 
     def build_notes(self) -> list:
+        notes = NoteList(super().build_notes())
         if not self.high_burn_thruster:
-            return []
-        notes = NoteList()
+            return notes
         notes.info('No inertial compensation above manoeuvre-drive thrust')
         return notes
 

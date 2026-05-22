@@ -1,11 +1,13 @@
 from typing import Annotated, ClassVar, Literal
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from ceres.shared import NoteList
 
-from .parts import CustomisableShipPart, EnergyInefficient, IncreasedSize, ShipPart, SizeReduction
+from .parts import CustomisableShipPart, EnergyInefficient, IncreasedSize, Modification, ShipPart, SizeReduction
 from .spec import ShipSpec, SpecSection
+
+IncreasedPower = Modification(name='Increased Power', advantage=2, output_multiplier=1.10)
 
 
 class _PowerPlant(CustomisableShipPart):
@@ -14,27 +16,35 @@ class _PowerPlant(CustomisableShipPart):
     power: ClassVar[float]
     power_per_ton: ClassVar[int | float]
     cost_per_ton: ClassVar[int | float]
+    output: ClassVar[float]
     allowed_modifications: ClassVar[frozenset[str]] = frozenset(
         {
             IncreasedSize.name,
             SizeReduction.name,
             EnergyInefficient.name,
+            IncreasedPower.name,
         }
     )
-    output: int
+    base_output: float = Field(alias='output')
+    model_config = ConfigDict(frozen=True, populate_by_name=True, serialize_by_alias=True)
+
+    @property
+    def output(self) -> float:
+        multiplier = 1.0 if self.customisation is None else self.customisation.output_multiplier
+        return self.base_output * multiplier
 
     def bulkhead_label(self) -> str:
         return 'Power Plant'
 
     @property
     def tons(self) -> float:
-        tons = self.output / self.power_per_ton
+        tons = self.base_output / self.power_per_ton
         multiplier = 1.0 if self.customisation is None else self.customisation.tons_multiplier
         return tons * multiplier
 
     @property
     def cost(self) -> float:
-        cost = (self.output / self.power_per_ton) * self.cost_per_ton
+        cost = (self.base_output / self.power_per_ton) * self.cost_per_ton
         multiplier = 1.0 if self.customisation is None else self.customisation.cost_multiplier
         return cost * multiplier
 
@@ -54,7 +64,7 @@ class _PowerPlant(CustomisableShipPart):
 
 class _FusionPlant(_PowerPlant):
     def item_description(self) -> str:
-        return f'Fusion (TL {self.tl}), Power {self.output}'
+        return f'Fusion (TL {self.tl}), Power {self.output:g}'
 
     @property
     def fusion_tl(self) -> int:
@@ -89,7 +99,7 @@ class FissionPlant(_PowerPlant):
     cost_per_ton: ClassVar[int] = 400_000
 
     def item_description(self) -> str:
-        return f'Fission Plant (TL {self.tl}), Power {self.output}'
+        return f'Fission Plant (TL {self.tl}), Power {self.output:g}'
 
 
 class ChemicalPlant(_PowerPlant):
@@ -99,7 +109,7 @@ class ChemicalPlant(_PowerPlant):
     cost_per_ton: ClassVar[int] = 250_000
 
     def item_description(self) -> str:
-        return f'Chemical Plant (TL {self.tl}), Power {self.output}'
+        return f'Chemical Plant (TL {self.tl}), Power {self.output:g}'
 
     def fuel_for_weeks(self, weeks: int) -> float:
         """Chemical plants need 10 tons of fuel per ton of plant per 2 weeks."""
@@ -115,10 +125,10 @@ class _SterlingFissionPlant(_PowerPlant):
     lifespan_years: ClassVar[int]
 
     def item_description(self) -> str:
-        return f'Sterling Fission (TL {self.tl}), Power {self.output}'
+        return f'Sterling Fission (TL {self.tl}), Power {self.output:g}'
 
     def _base_tons(self) -> float:
-        return max(self.minimum_tons, self.output / self.power_per_ton)
+        return max(self.minimum_tons, self.base_output / self.power_per_ton)
 
     @property
     def tons(self) -> float:
@@ -181,7 +191,7 @@ class AntimatterPlant(_PowerPlant):
     cost_per_ton: ClassVar[int] = 10_000_000
 
     def item_description(self) -> str:
-        return f'Antimatter Plant (TL {self.tl}), Power {self.output}'
+        return f'Antimatter Plant (TL {self.tl}), Power {self.output:g}'
 
 
 type AnyPowerPlant = Annotated[
