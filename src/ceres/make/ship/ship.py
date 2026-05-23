@@ -141,9 +141,11 @@ class Ship(ShipBase):
 
     @property
     def fuel_power_load(self) -> float:
-        if self.fuel is None or self.fuel.fuel_processor is None:
+        if self.fuel is None:
             return 0.0
-        return self.fuel.fuel_processor.power
+        fuel_processor_power = 0.0 if self.fuel.fuel_processor is None else self.fuel.fuel_processor.power
+        fuel_refinery_power = 0.0 if self.fuel.fuel_refinery is None else self.fuel.fuel_refinery.power
+        return fuel_processor_power + fuel_refinery_power
 
     @property
     def weapon_power_load(self) -> float:

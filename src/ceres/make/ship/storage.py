@@ -214,6 +214,42 @@ class FuelProcessor(_ExplicitTonsStoragePart):
         return self.tons
 
 
+class FuelRefinery(_ExplicitTonsStoragePart):
+    cost: ClassVar[float]
+    power: ClassVar[float]
+    description: Literal['Fuel Refinery'] = 'Fuel Refinery'
+    tl: Literal[7, 10, 13] = 7
+
+    _output_per_ton: ClassVar[dict[int, float]] = {7: 10.0, 10: 12.0, 13: 15.0}
+    _power_per_ton: ClassVar[dict[int, float]] = {7: 2.0, 10: 1.0, 13: 1.0}
+    _crew_per_tons: ClassVar[dict[int, float]] = {7: 50.0, 10: 100.0, 13: 500.0}
+    _cost_per_ton: ClassVar[dict[int, float]] = {7: 100_000.0, 10: 250_000.0, 13: 500_000.0}
+
+    def item_description(self) -> str:
+        return f'Fuel Refinery ({self.output_per_day:g} tons/day)'
+
+    @property
+    def output_per_day(self) -> float:
+        return self.tons * self._output_per_ton[self.tl]
+
+    @property
+    def crew_requirement(self) -> float:
+        return self.tons / self._crew_per_tons[self.tl]
+
+    @property
+    def cost(self) -> float:
+        return self.tons * self._cost_per_ton[self.tl]
+
+    @property
+    def power(self) -> float:
+        return self.tons * self._power_per_ton[self.tl]
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info(f'Requires 1 crew per {self._crew_per_tons[self.tl]:g} tons')
+        return notes
+
+
 class FuelSection(CeresModel):
     # Fuel and cargo live in the same module on purpose: future rules are likely
     # to blur the line between them via fuel bladders, combined containers, and
@@ -224,6 +260,7 @@ class FuelSection(CeresModel):
     reaction_fuel: ReactionFuel | None = None
     fuel_scoops: FuelScoops | None = None
     fuel_processor: FuelProcessor | None = None
+    fuel_refinery: FuelRefinery | None = None
 
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = []
@@ -234,6 +271,7 @@ class FuelSection(CeresModel):
             self.reaction_fuel,
             self.fuel_scoops,
             self.fuel_processor,
+            self.fuel_refinery,
         ):
             if part is not None:
                 parts.append(part)
@@ -265,7 +303,7 @@ class FuelSection(CeresModel):
                     tons=total_fuel_tons or None,
                 )
             )
-        for fuel_part in (self.collector, self.fuel_scoops, self.fuel_processor):
+        for fuel_part in (self.collector, self.fuel_scoops, self.fuel_processor, self.fuel_refinery):
             if fuel_part is not None:
                 spec.add_row(ship._spec_row_for_part(SpecSection.FUEL, fuel_part))
 

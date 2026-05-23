@@ -343,15 +343,6 @@ Remaining work:
   likely most common in published designs)
 - implement as `ShipPart` subclasses in `storage.py` or a new `fuel.py` subsection
 
-## Fuel Refinery
-
-Implement the on-board fuel refinery as a ship component.
-
-Reference: `refs/hg/28_fuel_refinery.md`
-
-Three TL tiers (7, 10, 13) with different output rates, power draw, crew requirements, and MCr/ton costs.
-A fuel refinery allows processing of unrefined fuel into refined fuel. Also adds an operator crew role.
-
 ## Screens
 
 Implement screens (Meson Screen, Nuclear Damper, Black Globe Generator) as ship components.

@@ -17,6 +17,7 @@ from ceres.make.ship.storage import (
     ExternalCargoMount,
     FuelCargoContainer,
     FuelProcessor,
+    FuelRefinery,
     FuelScoops,
     FuelSection,
     InterplanetaryJumpNet,
@@ -91,6 +92,63 @@ def test_fuel_processor_values_are_property_backed_design_fields():
     assert dump['tons'] == pytest.approx(2.0)
     assert 'cost' not in dump
     assert 'power' not in dump
+
+
+@pytest.mark.parametrize(
+    ('tl', 'output_per_ton', 'power_per_ton', 'crew_per_tons', 'cost_per_ton'),
+    [
+        (7, 10.0, 2.0, 50.0, 100_000.0),
+        (10, 12.0, 1.0, 100.0, 250_000.0),
+        (13, 15.0, 1.0, 500.0, 500_000.0),
+    ],
+)
+def test_fuel_refinery_values(tl, output_per_ton, power_per_ton, crew_per_tons, cost_per_ton):
+    refinery = FuelRefinery(tl=tl, tons=10)
+    refinery.bind(DummyOwner(tl, 200))
+
+    assert refinery.output_per_day == pytest.approx(10 * output_per_ton)
+    assert refinery.power == pytest.approx(10 * power_per_ton)
+    assert refinery.crew_requirement == pytest.approx(10 / crew_per_tons)
+    assert refinery.cost == pytest.approx(10 * cost_per_ton)
+    assert refinery.build_item() == f'Fuel Refinery ({10 * output_per_ton:g} tons/day)'
+
+
+def test_fuel_refinery_values_are_property_backed_design_fields():
+    refinery = FuelRefinery.model_validate({'tl': 10, 'tons': 10, 'cost': 99, 'power': 99})
+    refinery.bind(DummyOwner(10, 200))
+    dump = refinery.model_dump()
+
+    assert refinery.tons == pytest.approx(10.0)
+    assert refinery.output_per_day == pytest.approx(120.0)
+    assert refinery.cost == pytest.approx(2_500_000.0)
+    assert refinery.power == pytest.approx(10.0)
+    assert dump['tons'] == pytest.approx(10.0)
+    assert 'cost' not in dump
+    assert 'power' not in dump
+
+
+def test_fuel_refinery_appears_as_fuel_spec_row():
+    my_ship = ship.Ship(
+        tl=10,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.dispersed_structure),
+        fuel=FuelSection(fuel_refinery=FuelRefinery(tl=10, tons=10)),
+    )
+    row = my_ship.build_spec().row('Fuel Refinery (120 tons/day)', section=SpecSection.FUEL)
+    assert row.tons == pytest.approx(10.0)
+    assert row.power == pytest.approx(-10.0)
+    assert row.cost == pytest.approx(2_500_000.0)
+    assert row.notes.infos == ['Requires 1 crew per 100 tons']
+
+
+def test_fuel_power_load_includes_processor_and_refinery():
+    my_ship = ship.Ship(
+        tl=10,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.dispersed_structure),
+        fuel=FuelSection(fuel_processor=FuelProcessor(tons=2), fuel_refinery=FuelRefinery(tl=10, tons=10)),
+    )
+    assert my_ship.fuel_power_load == pytest.approx(12.0)
 
 
 def test_cargo_crane_tons_up_to_150():

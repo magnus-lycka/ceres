@@ -740,3 +740,18 @@ Implemented support:
 - collector rows render in the Fuel section and note that they collect and
   store interstellar hydrogen for jump fuel.
 - unit tests cover values, computed-field serialization, and spec output.
+
+## Fuel Refinery
+
+High Guard fuel refineries are implemented as Fuel section parts.
+
+Implemented support:
+
+- `FuelRefinery(tons=..., tl=7|10|13)` models the three High Guard tiers.
+- output per day, power, crew requirement, and cost follow the TL-specific
+  table.
+- refinery rows render in the Fuel section with the output rate in tons/day.
+- fuel power load includes both fuel processors and fuel refineries.
+- notes record the table's crew requirement.
+- unit tests cover all TL tiers, computed-field serialization, spec output,
+  and fuel power load.
