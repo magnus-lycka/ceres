@@ -12,6 +12,7 @@ from ceres.make.ship.storage import (
     CargoNet,
     CargoScoop,
     CargoSection,
+    Collector,
     ConcealedCompartment,
     ExternalCargoMount,
     FuelCargoContainer,
@@ -550,6 +551,42 @@ def test_jump_fuel_values_are_computed_properties_not_serialized_fields():
     assert 'tons' not in dump
     assert 'cost' not in dump
     assert 'power' not in dump
+
+
+def test_collector_values():
+    collector = Collector(parsecs=2)
+    collector.bind(DummyOwner(14, 400))
+    assert collector.tl == 14
+    assert collector.tons == pytest.approx(13.0)
+    assert collector.cost == pytest.approx(6_500_000.0)
+    assert collector.power == pytest.approx(0.0)
+    assert collector.build_item() == 'Collector (J-2)'
+
+
+def test_collector_values_are_computed_properties_not_serialized_fields():
+    collector = Collector.model_validate({'parsecs': 2, 'tons': 99, 'cost': 99, 'power': 99})
+    collector.bind(DummyOwner(14, 400))
+    dump = collector.model_dump()
+
+    assert collector.tons == pytest.approx(13.0)
+    assert collector.cost == pytest.approx(6_500_000.0)
+    assert collector.power == pytest.approx(0.0)
+    assert 'tons' not in dump
+    assert 'cost' not in dump
+    assert 'power' not in dump
+
+
+def test_collector_appears_as_fuel_spec_row():
+    my_ship = ship.Ship(
+        tl=14,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.dispersed_structure),
+        fuel=FuelSection(collector=Collector(parsecs=2)),
+    )
+    row = my_ship.build_spec().row('Collector (J-2)', section=SpecSection.FUEL)
+    assert row.tons == pytest.approx(13.0)
+    assert row.cost == pytest.approx(6_500_000.0)
+    assert row.notes.infos == ['Collects and stores interstellar hydrogen for jump fuel']
 
 
 def test_reaction_fuel_values_are_computed_properties_not_serialized_fields():

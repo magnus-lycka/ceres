@@ -726,3 +726,17 @@ Implemented support:
   rule, and that removing the outer bulkhead does not improve performance.
 - unit tests cover values, notes, and JSON/model round-trip through the M-drive
   union.
+
+## Collectors
+
+High Guard collector arrays are implemented as Fuel section parts.
+
+Implemented support:
+
+- `Collector(parsecs=...)` models a TL14 collector sized for a jump rating.
+- tonnage is `(1% of hull tonnage * jump rating) + 5`.
+- cost is MCr0.5 per ton.
+- collectors draw no ship power.
+- collector rows render in the Fuel section and note that they collect and
+  store interstellar hydrogen for jump fuel.
+- unit tests cover values, computed-field serialization, and spec output.

@@ -131,6 +131,30 @@ class JumpFuel(_ZeroPowerStoragePart):
         return 0.0
 
 
+class Collector(_ZeroPowerStoragePart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    description: Literal['Collector'] = 'Collector'
+    tl: Literal[14] = 14
+    parsecs: int
+
+    def item_description(self) -> str:
+        return f'Collector (J-{self.parsecs})'
+
+    @property
+    def tons(self) -> float:
+        return self.assembly.displacement * 0.01 * self.parsecs + 5
+
+    @property
+    def cost(self) -> float:
+        return self.tons * 500_000.0
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('Collects and stores interstellar hydrogen for jump fuel')
+        return notes
+
+
 class ReactionFuel(_ZeroPowerStoragePart):
     tons: ClassVar[float]
     cost: ClassVar[float]
@@ -195,6 +219,7 @@ class FuelSection(CeresModel):
     # to blur the line between them via fuel bladders, combined containers, and
     # other storage-like arrangements.
     jump_fuel: JumpFuel | None = None
+    collector: Collector | None = None
     operation_fuel: OperationFuel | None = None
     reaction_fuel: ReactionFuel | None = None
     fuel_scoops: FuelScoops | None = None
@@ -202,7 +227,14 @@ class FuelSection(CeresModel):
 
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = []
-        for part in (self.jump_fuel, self.operation_fuel, self.reaction_fuel, self.fuel_scoops, self.fuel_processor):
+        for part in (
+            self.jump_fuel,
+            self.collector,
+            self.operation_fuel,
+            self.reaction_fuel,
+            self.fuel_scoops,
+            self.fuel_processor,
+        ):
             if part is not None:
                 parts.append(part)
         return parts
@@ -233,7 +265,7 @@ class FuelSection(CeresModel):
                     tons=total_fuel_tons or None,
                 )
             )
-        for fuel_part in (self.fuel_scoops, self.fuel_processor):
+        for fuel_part in (self.collector, self.fuel_scoops, self.fuel_processor):
             if fuel_part is not None:
                 spec.add_row(ship._spec_row_for_part(SpecSection.FUEL, fuel_part))
 

@@ -343,20 +343,6 @@ Remaining work:
   likely most common in published designs)
 - implement as `ShipPart` subclasses in `storage.py` or a new `fuel.py` subsection
 
-## Collectors [todo]
-
-Reference: `refs/hg/34_exotic_technology.md`
-
-An alternative to standard jump fuel tanks. A collector array gathers interstellar hydrogen using
-field projectors and stores it for jump use, eliminating dependence on fuel refineries or gas giant
-skimming. TL14.
-
-Tonnage formula: (1% of hull tonnage × jump rating) + 5 tons. Cost: MCr0.5/ton.
-
-Not yet implemented; no existing todo. Implement as a `ShipPart` in `storage.py` or a new section of
-`power.py`; wire into fuel accounting so the ship can jump without dedicated fuel tanks when collectors
-provide sufficient capacity.
-
 ## Fuel Refinery
 
 Implement the on-board fuel refinery as a ship component.
