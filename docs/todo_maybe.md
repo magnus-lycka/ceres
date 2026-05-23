@@ -289,18 +289,6 @@ Implementation notes:
 - Solar distance/hot/cold/boiling/frozen-zone modifiers are operational context;
   record as notes unless Ceres later gains scenario-state modelling.
 
-## Concealed Manoeuvre Drive [todo]
-
-Reference: `refs/hg/23_spacecraft_options.md`
-
-A concealed manoeuvre drive is hidden behind bulkheads for stealth. It adds +25% to the
-m-drive's tonnage and cost, and halves effective Thrust (rounding down). The drive must be
-within 3 metres of the accelerating surface; removing the outer bulkhead does not improve
-performance.
-
-Not currently modelled; no existing todo. Implement as a flag or wrapper on the existing
-`_MDrive` hierarchy, similar to how `high_burn_thruster` is a flag on reaction drives.
-
 ## Plasma Drives
 
 Implement Spinward Extents plasma drives.

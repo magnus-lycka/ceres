@@ -10,6 +10,8 @@ All rule data from:
 
 import pytest
 
+from ceres.character import skills as character_skills
+from ceres.character.skills import Level
 from ceres.make.robot import (
     AquaticLocomotion,
     GravLocomotion,
@@ -183,7 +185,7 @@ class TestReconSensor:
         assert opt.cost == expected_cost
         grants = opt.skill_grants
         assert len(grants) == 1
-        assert grants[0] == SkillGrant('Recon', expected_level)
+        assert grants[0] == SkillGrant(character_skills.Recon(level=Level(value=expected_level)), expected_level)
 
     def test_default_quality_is_improved(self):
         assert ReconSensor().quality == 'improved'
@@ -198,7 +200,7 @@ class TestReconSensor:
         # Recon Sensor skills are hardware-based, not subject to INT DM.
         # Skill grant is always the table value regardless of brain INT.
         opt = ReconSensor(quality='improved')
-        assert opt.skill_grants == (SkillGrant('Recon', 1),)
+        assert opt.skill_grants == (SkillGrant(character_skills.Recon(level=Level(value=1)), 1),)
 
 
 # ──────────────────────────────────────────────────────
@@ -390,7 +392,7 @@ class TestEnvironmentProcessor:
 
     def test_skill_grants_recon_0(self):
         grants = EnvironmentProcessor().skill_grants
-        assert grants == (SkillGrant('Recon', 0),)
+        assert grants == (SkillGrant(character_skills.Recon(), 0),)
 
     def test_label(self):
         opt = EnvironmentProcessor()
@@ -758,7 +760,10 @@ class TestCamouflageVisual:
         assert opt.tl == expected_tl
         grants = opt.skill_grants
         assert len(grants) == 1
-        assert grants[0] == SkillGrant('Stealth', expected_stealth_level)
+        assert grants[0] == SkillGrant(
+            character_skills.Stealth(level=Level(value=expected_stealth_level)),
+            expected_stealth_level,
+        )
 
     @pytest.mark.parametrize(
         'quality, size, expected_cost',
@@ -884,7 +889,7 @@ class TestNavigationSystem:
 
     def test_skill_grant_navigation_1(self):
         grants = NavigationSystem(quality='basic').skill_grants
-        assert grants == (SkillGrant('Navigation', 1),)
+        assert grants == (SkillGrant(character_skills.Navigation(level=Level(value=1)), 1),)
 
     def test_label(self):
         opt = NavigationSystem(quality='basic')
@@ -1635,7 +1640,7 @@ class TestAgilityEnhancement:
     def test_skill_grant(self):
         grants = AgilityEnhancement(level=2).skill_grants
         assert len(grants) == 1
-        assert grants[0].name == 'Athletics (dexterity)'
+        assert grants[0] == SkillGrant(character_skills.Athletics(dexterity=Level(value=2)), 2)
         assert grants[0].level == 2
 
     def test_cost_level_1(self):

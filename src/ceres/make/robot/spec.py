@@ -60,4 +60,4 @@ class RobotSpec:
         return [r for r in self._rows if r.section is section]
 
 
-__all__ = ['RobotSpecSection', 'RobotSpecRow', 'RobotSpec', 'RobotDetailRow', 'RobotDetailSection']
+__all__ = [RobotSpecSection, RobotSpecRow, RobotSpec, RobotDetailRow, RobotDetailSection]

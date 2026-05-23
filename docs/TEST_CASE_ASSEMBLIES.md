@@ -178,3 +178,43 @@ display convention and omit it from the Ceres model. Record the omission in
 **Ships with a non-Core secondary computer:** If the ship's backup computer
 is a standard `Computer/N` (not a Core), `JumpControl` must appear in the
 ship's software list, or the backup computer can't be used for jumps.
+
+## Robot Entries
+
+The following entries apply only to robots.
+
+TCR entries are general conventions for translating robot reference data into
+Ceres test cases. Robot source stat blocks often use older or abbreviated skill
+labels; test cases should normalize those labels to the concrete Ceres skill
+classes rather than preserve them as free-form strings.
+
+### TCR-001 Robot Skill Label Normalization
+
+Robot skill packages and source stat blocks should be encoded as skill objects.
+When the source uses a broad Traveller skill label that Ceres models through
+Traveller Companion broad skills, use the matching broad-skill class:
+
+| Source label             | Ceres skill object                          |
+|--------------------------|---------------------------------------------|
+| `Language (Vilani)`      | `LanguageVilani`                            |
+| `Profession (Belter)`    | `SpacerProfession.belter`                   |
+| `Science (Biology)`      | `LifeScience.biology`                       |
+| `Science (Chemistry)`    | `PhysicalScience.chemistry`                 |
+| `Science (Planetology)`  | `SpaceScience.planetology`                  |
+| `Science (Robotics)`     | `RoboticScience.robotics`                   |
+
+Robot-only source labels that do not correspond to current character skills
+belong in `ceres.make.robot.skills`, not in `ceres.character.skills`. Current
+robot-only normalizations include:
+
+| Source label                         | Ceres robot skill object                 |
+|--------------------------------------|------------------------------------------|
+| `Profession (domestic cleaner)`      | `RobotProfession.domestic_cleaner`       |
+| `Profession (domestic servant)`      | `RobotProfession.domestic_servant`       |
+| `Profession (labourer)`              | `RobotProfession.labourer`               |
+| `Profession (cleaning)`              | `RobotProfession.cleaning`               |
+| `Profession (gardening)`             | `RobotProfession.gardening`              |
+| `Profession (Fabricator)`            | `RobotProfession.fabricator`             |
+| `Profession (Robotics)`              | `RobotProfession.robotics`               |
+| `Weapon`                             | `Weapon`                                 |
+| `Zoology`                            | `Zoology`                                |

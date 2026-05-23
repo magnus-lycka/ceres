@@ -710,3 +710,19 @@ Implemented support:
   spec row with any task DM notes.
 - unit tests cover tier values, cost basis, spec row output, serialization, and
   non-gravity automation basis handling.
+
+## Concealed Manoeuvre Drive
+
+High Guard concealed manoeuvre drives are implemented on M-drive parts.
+
+Implemented support:
+
+- `MDrive*` parts accept `concealed=True`.
+- concealed drives add +25% to M-drive tonnage and cost.
+- effective Thrust is halved, rounding down, through `.effective_thrust`.
+- power remains based on the installed drive rating because the option only
+  changes tonnage, cost, and effective Thrust.
+- notes record the effective Thrust, the 3-metre accelerating-surface placement
+  rule, and that removing the outer bulkhead does not improve performance.
+- unit tests cover values, notes, and JSON/model round-trip through the M-drive
+  union.

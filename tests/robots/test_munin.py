@@ -42,9 +42,9 @@ from ceres.make.robot.options import (
     VoderSpeaker,
     WirelessDataLink,
 )
-from ceres.make.robot.skills import SkillPackage
 from ceres.make.robot.spec import RobotSpecSection
 from ceres.make.robot.text import format_traits
+from tests.robots import skill_packages as sp
 
 _expected = SimpleNamespace(
     hits=1,
@@ -82,7 +82,7 @@ def build_munin() -> Robot:
         brain=AdvancedBrain(
             brain_tl=15,
             hardened=True,
-            installed_skills=(SkillPackage(name='Recon', level=1, bandwidth=1),),
+            installed_skills=(sp.recon(level=1, bandwidth=1),),
         ),
         options=[
             AgilityEnhancement(level=4),
@@ -178,7 +178,7 @@ class TestMunin:
 
     def test_athletics_dexterity_4(self):
         robot = build_munin()
-        assert 'Athletics (dexterity) 4' in robot.skills_display
+        assert 'Athletics (Dexterity) 4' in robot.skills_display
 
     def test_recon_1(self):
         # EnvironmentProcessor → Recon 0; SkillPackage Recon 1 → merged max = 1

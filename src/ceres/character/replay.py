@@ -28,50 +28,11 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.projection import CharacterProjection, CharacterSummary, Connection, PendingInput, ScheduledEffect
+from ceres.character.skills import BackgroundSkill, ScienceSkill, SpaceScience, skill_list
 
-# All skill types valid as background skills in the Explorer edition.
-# Art, Profession, and Science are represented by their specific subtypes.
-BACKGROUND_SKILLS: frozenset[str] = frozenset(
-    {
-        'Admin',
-        'Animals',
-        'Performing Art',
-        'Creative Art',
-        'Presentation Art',
-        'Athletics',
-        'Carouse',
-        'Drive',
-        'Electronics',
-        'Flyer',
-        'Language Galanglic',
-        'Language Gvegh',
-        'Language Oynprith',
-        'Language Trokh',
-        'Language Vilani',
-        'Language Zdetl',
-        'Mechanic',
-        'Medic',
-        'Colonist Profession',
-        'Crewmember Profession',
-        'Freeloader Profession',
-        'Hostile Environment Profession',
-        'Spacer Profession',
-        'Sport Profession',
-        'Worker Profession',
-        'Life Science',
-        'Physical Science',
-        'Robotic Science',
-        'Social Science',
-        'Space Science',
-        'Seafarer',
-        'Streetwise',
-        'Survival',
-        'Vacc Suit',
-    }
-)
+BACKGROUND_SKILLS: frozenset[str] = frozenset(s.type for s in skill_list(BackgroundSkill))
 
-
-_SCHOLAR_SCIENCES = sorted(['Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science'])
+_SCHOLAR_SCIENCES = sorted(s.type for s in skill_list(ScienceSkill))
 
 
 class ReplayError(Exception):
@@ -740,7 +701,7 @@ def _apply_life_event_unusual(projection: CharacterProjection, event: LifeEventU
     elif roll == 2:
         # Aliens — gain contact + any science skill at level 1
         projection.summary.connections.append(Connection(kind='contact', source='Unusual event: alien contact'))
-        _grant_skill(projection, 'Space Science', 1)
+        _grant_skill(projection, SpaceScience.name(), 1)
     # rolls 3-6: no mechanical effect in Explorer edition
     # advancement was pre-created by _apply_life_event at event.id.1
 

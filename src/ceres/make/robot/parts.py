@@ -94,4 +94,4 @@ class RobotPart(CeresPart, RobotPartMixin):
         super().model_post_init(__context)
 
 
-__all__ = ['RobotPartMixin', 'RobotPart']
+__all__ = [RobotPartMixin, RobotPart]

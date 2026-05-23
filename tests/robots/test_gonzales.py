@@ -8,8 +8,8 @@
 # Armour: TL15 → base +4. IncreasedArmour(+4) → total +8 = Armour (+8). ✓
 # Speed: VehicleSpeedModification on WheelsATV → speed band 'slow' (WheelsAtvLocomotion._vehicle_speed_band).
 # Skills: Basic (locomotion) gives Vehicle (type) X = Drive (wheel) 2 (type from WheelsATV, X = agility 0+2).
-#   AgilityEnhancement +2: Athletics (dexterity) 2 (max wins over locomotion's Athletics 1). ✓
-# Source: Drive (Wheel) 2, Athletics (dexterity) 2. ✓
+#   AgilityEnhancement +2: Athletics (Dexterity) 2 (max wins over locomotion's Athletics 1). ✓
+# Source: Drive (Wheel) 2, Athletics (Dexterity) 2. ✓
 # Efficiency: cost = 50% BCC = Cr1,200. ✓
 # Stealth 3: from CamouflageVisual (enhanced), DM-3 → effective Stealth 3. ✓
 # Heightened Senses: from AuditorySensor (broad spectrum). ✓
@@ -222,18 +222,18 @@ class TestGonzales:
         assert 'Stealth 3' in skills_str
 
     def test_locomotion_gives_drive_wheel_2(self):
-        # Basic (locomotion): Drive (wheel) at agility level = 0 (WheelsATV base) + 2 (AgEnh) = 2
+        # Basic (locomotion): Drive (Wheel) at agility level = 0 (WheelsATV base) + 2 (AgEnh) = 2
         robot = build_gonzales()
-        assert 'Drive (wheel) 2' in robot.skills_display
+        assert 'Drive (Wheel) 2' in robot.skills_display
 
     def test_agility_enhancement_gives_athletics_dexterity_2(self):
         # AgilityEnhancement(level=2) grant wins over locomotion's Athletics(dex) 1
         robot = build_gonzales()
-        assert 'Athletics (dexterity) 2' in robot.skills_display
+        assert 'Athletics (Dexterity) 2' in robot.skills_display
 
     def test_no_flyer_grav_in_skills(self):
         robot = build_gonzales()
-        assert 'Flyer (grav)' not in robot.skills_display
+        assert 'Flyer (Grav)' not in robot.skills_display
 
     def test_manipulator_str_5(self):
         robot = build_gonzales()

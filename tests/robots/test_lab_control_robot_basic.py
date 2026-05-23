@@ -11,8 +11,8 @@ from ceres.make.robot.options import (
     RobotTransceiver,
     VideoScreen,
 )
-from ceres.make.robot.skills import SkillPackage
 from ceres.make.robot.spec import RobotSpecSection
+from tests.robots import skill_packages as sp
 
 _expected = SimpleNamespace(
     hits=1,
@@ -20,7 +20,7 @@ _expected = SimpleNamespace(
     speed='0m',
     tl=12,
     cost=12000,
-    skills='Electronics (remote ops) 1, +1 Bandwidth available',
+    skills='Electronics (Remote Ops) 1, +1 Bandwidth available',
     attacks='—',
     manipulators='—',
     endurance_hours=324,
@@ -52,7 +52,7 @@ def build_basic_lab_control_robot() -> Robot:
         locomotion=NoneLocomotion(),
         brain=AdvancedBrain(
             brain_tl=12,
-            installed_skills=(SkillPackage(name='Electronics (remote ops)', level=1, bandwidth=1),),
+            installed_skills=(sp.electronics_remote_ops(level=1, bandwidth=1),),
         ),
         manipulators=[],
         # Default suite substitutes Visual Spectrum Sensor → Video Screen (improved) (Cr500)
@@ -84,7 +84,7 @@ class TestBasicLabControlRobot:
         assert build_basic_lab_control_robot().total_cost == _expected.cost
 
     def test_skills_electronics(self):
-        assert 'Electronics (remote ops) 1' in build_basic_lab_control_robot().skills_display
+        assert 'Electronics (Remote Ops) 1' in build_basic_lab_control_robot().skills_display
 
     def test_skills_bandwidth(self):
         assert '+1 Bandwidth available' in build_basic_lab_control_robot().skills_display

@@ -6,13 +6,6 @@ from ceres.make.robot.robot import Robot
 from ceres.make.robot.spec import RobotSpec
 from ceres.shared import NoteList, _Note
 
-__all__ = [
-    'render_robot_pdf',
-    'render_robot_spec_pdf',
-    'render_robot_spec_typst',
-    'render_robot_typst',
-]
-
 _TEMPLATES = Path(__file__).parent / 'templates'
 
 _NARROW_COLUMNS = frozenset({'Size', 'Hits', 'TL'})
@@ -92,3 +85,11 @@ def _build_context(spec: RobotSpec, *, page_size: str = 'a4', note: str | None =
 
 def _notes_for_display(notes: list[_Note]) -> list[dict]:
     return NoteList(notes).detail_entries
+
+
+__all__ = [
+    render_robot_pdf,
+    render_robot_spec_pdf,
+    render_robot_spec_typst,
+    render_robot_typst,
+]

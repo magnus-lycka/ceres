@@ -11,17 +11,9 @@ from .base import ShipBase
 from .bridge import CommandSection
 from .computer import ComputerSection
 from .crafts import CraftSection
-from .crew import (
-    CrewRole,
-    ShipCrew,
-)
-from .drives import (
-    DriveSection,
-    PowerSection,
-)
-from .expense import (
-    ShipExpenses,
-)
+from .crew import CrewRole, ShipCrew
+from .drives import DriveSection, PowerSection
+from .expense import ShipExpenses
 from .habitation import HabitationSection
 from .hull import ArmouredBulkhead, Hull, Streamlined
 from .occupants import ShipOccupant
@@ -33,8 +25,6 @@ from .storage import CargoSection, FuelScoops, FuelSection
 from .systems import Airlock, Armoury, SystemsSection
 from .text import optional_count
 from .weapons import WeaponsSection
-
-__all__ = ['CrewRole', 'Ship', 'ShipDesignType']
 
 
 class ShipDesignType(StrEnum):
@@ -409,3 +399,6 @@ def _recommended_armouries(ship: Ship) -> int:
     non_marine_requirement = max(0, non_marine_count - 12) / 25
     required = non_marine_requirement + (marine_count / 5)
     return ceil(required - 0.0001)
+
+
+__all__ = [CrewRole, Ship, ShipDesignType]

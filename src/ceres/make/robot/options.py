@@ -28,6 +28,8 @@ Rule sources:
 from math import ceil
 from typing import Any
 
+from ceres.character import skills as character_skills
+from ceres.character.skills import Level
 from ceres.gear.comm import RadioTransceiverPart
 
 from .chassis import Trait, chassis_entry
@@ -120,7 +122,7 @@ class ReconSensor(RobotPart):
     @property
     def skill_grants(self) -> tuple[SkillGrant, ...]:
         level = int(_RECON_SENSOR_TABLE[self.quality]['level'])
-        return (SkillGrant('Recon', level),)
+        return (SkillGrant(character_skills.Recon(level=Level(value=level)), level),)
 
     def model_post_init(self, __context: Any) -> None:
         super().model_post_init(__context)
@@ -210,7 +212,7 @@ class NavigationSystem(RobotPart):
     @property
     def skill_grants(self) -> tuple[SkillGrant, ...]:
         level = int(_NAVIGATION_TABLE[self.quality]['level'])
-        return (SkillGrant('Navigation', level),)
+        return (SkillGrant(character_skills.Navigation(level=Level(value=level)), level),)
 
     def model_post_init(self, __context: Any) -> None:
         super().model_post_init(__context)
@@ -375,7 +377,8 @@ class CamouflageVisual(RobotPart):
     @property
     def skill_grants(self) -> tuple[SkillGrant, ...]:
         _tl, dm, _rate = _CAMOUFLAGE_VISUAL_TABLE[self.quality]
-        return (SkillGrant('Stealth', abs(dm)),)
+        level = abs(dm)
+        return (SkillGrant(character_skills.Stealth(level=Level(value=level)), level),)
 
     def model_post_init(self, __context: Any) -> None:
         super().model_post_init(__context)
@@ -594,7 +597,7 @@ class ActiveCamouflage(RobotPart):
 
     @property
     def skill_grants(self) -> tuple[SkillGrant, ...]:
-        return (SkillGrant('Stealth', 4),)
+        return (SkillGrant(character_skills.Stealth(level=Level(value=4)), 4),)
 
     @property
     def robot_traits(self) -> tuple[Trait, ...]:
@@ -834,7 +837,7 @@ class EnvironmentProcessor(RobotPart):
 
     @property
     def skill_grants(self) -> tuple[SkillGrant, ...]:
-        return (SkillGrant('Recon', 0),)
+        return (SkillGrant(character_skills.Recon(), 0),)
 
     def model_post_init(self, __context: Any) -> None:
         super().model_post_init(__context)
@@ -1277,7 +1280,12 @@ class AgilityEnhancement(RobotPart):
 
     @property
     def skill_grants(self) -> tuple[SkillGrant, ...]:
-        return (SkillGrant('Athletics (dexterity)', self.level),)
+        return (
+            SkillGrant(
+                character_skills.Athletics(dexterity=Level(value=self.level)),
+                self.level,
+            ),
+        )
 
     def bind(self, assembly: RobotBase) -> None:
         super().bind(assembly)
@@ -1449,57 +1457,57 @@ def default_suite(
 
 
 __all__ = [
-    'VisualSpectrumSensor',
-    'VoderSpeaker',
-    'AuditorySensor',
-    'WirelessDataLink',
-    'DroneInterface',
-    'VideoScreen',
-    'RobotTransceiver',
-    'default_suite',
-    'StorageCompartment',
-    'DomesticCleaningEquipment',
-    'ReconSensor',
-    'ExternalPower',
-    'RoboticDroneController',
-    'AvatarController',
-    'AvatarReceiver',
-    'ActiveCamouflage',
-    'SwarmController',
-    'DecreasedResiliency',
-    'NavigationSystem',
-    'AgriculturalEquipment',
-    'LightIntensifierSensor',
-    'OlfactorySensor',
-    'GeckoGrippers',
-    'PrisSensor',
-    'ThermalSensor',
-    'VehicleSpeedModification',
-    'Autochef',
-    'StylistToolkit',
-    'CamouflageVisual',
-    'CamouflageAudible',
-    'CamouflageOlfactory',
-    'EncryptionModule',
-    'EnvironmentProcessor',
-    'ParasiticLink',
-    'InjectorNeedle',
-    'SelfMaintenanceEnhancement',
-    'VacuumEnvironmentProtection',
-    'BioscanneSensor',
-    'DensitometerSensor',
-    'NeuralActivitySensor',
-    'Medikit',
-    'SolarCoating',
-    'ScientificToolkit',
-    'FabricationChamber',
-    'MedicalChamber',
-    'Autobar',
-    'IncreasedArmour',
-    'AgilityEnhancement',
-    'Efficiency',
-    'RadiationEnvironmentProtection',
-    'SecondaryLocomotion',
-    'StarshipEngineeringToolkit',
-    'WeaponMount',
+    VisualSpectrumSensor,
+    VoderSpeaker,
+    AuditorySensor,
+    WirelessDataLink,
+    DroneInterface,
+    VideoScreen,
+    RobotTransceiver,
+    default_suite,
+    StorageCompartment,
+    DomesticCleaningEquipment,
+    ReconSensor,
+    ExternalPower,
+    RoboticDroneController,
+    AvatarController,
+    AvatarReceiver,
+    ActiveCamouflage,
+    SwarmController,
+    DecreasedResiliency,
+    NavigationSystem,
+    AgriculturalEquipment,
+    LightIntensifierSensor,
+    OlfactorySensor,
+    GeckoGrippers,
+    PrisSensor,
+    ThermalSensor,
+    VehicleSpeedModification,
+    Autochef,
+    StylistToolkit,
+    CamouflageVisual,
+    CamouflageAudible,
+    CamouflageOlfactory,
+    EncryptionModule,
+    EnvironmentProcessor,
+    ParasiticLink,
+    InjectorNeedle,
+    SelfMaintenanceEnhancement,
+    VacuumEnvironmentProtection,
+    BioscanneSensor,
+    DensitometerSensor,
+    NeuralActivitySensor,
+    Medikit,
+    SolarCoating,
+    ScientificToolkit,
+    FabricationChamber,
+    MedicalChamber,
+    Autobar,
+    IncreasedArmour,
+    AgilityEnhancement,
+    Efficiency,
+    RadiationEnvironmentProtection,
+    SecondaryLocomotion,
+    StarshipEngineeringToolkit,
+    WeaponMount,
 ]

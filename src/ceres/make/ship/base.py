@@ -26,4 +26,4 @@ class ShipBase(Assembly):
         return 0.0
 
 
-__all__ = ['ShipBase']
+__all__ = [ShipBase]

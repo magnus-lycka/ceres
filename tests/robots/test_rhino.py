@@ -60,9 +60,10 @@ from ceres.make.robot.options import (
     VacuumEnvironmentProtection,
     VideoScreen,
 )
-from ceres.make.robot.skills import BrainSoftware, SkillPackage
+from ceres.make.robot.skills import BrainSoftware
 from ceres.make.robot.spec import RobotSpecSection
 from ceres.make.robot.text import format_traits
+from tests.robots import skill_packages as sp
 
 _expected = SimpleNamespace(
     hits=72,
@@ -89,28 +90,28 @@ def build_rhino() -> Robot:
             bandwidth=18,
             installed_skills=(
                 # STR skill: pkg 0 + STR DM+3 = 3
-                SkillPackage(name='Athletics (Strength)', level=0, bandwidth=0),
+                sp.athletics_strength(level=0, bandwidth=0),
                 # DEX skill: pkg 0 + DEX DM+1 = 1
-                SkillPackage(name='Athletics (Dexterity)', level=0, bandwidth=0),
+                sp.athletics_dexterity(level=0, bandwidth=0),
                 # INT skills: pkg 2 + DM+2 = 4
-                SkillPackage(name='Medic', level=2, bandwidth=2),
+                sp.medic(level=2, bandwidth=2),
                 # Investigate base BW=1; pkg 2 + DM+2 = 4
-                SkillPackage(name='Investigate', level=2, bandwidth=3),
-                SkillPackage(name='Science (Biology)', level=2, bandwidth=2),
-                SkillPackage(name='Science (Chemistry)', level=2, bandwidth=2),
-                SkillPackage(name='Science (Robotics)', level=2, bandwidth=2),
-                SkillPackage(name='Profession (Fabricator)', level=2, bandwidth=2),
-                SkillPackage(name='Profession (Robotics)', level=2, bandwidth=2),
+                sp.investigate(level=2, bandwidth=3),
+                sp.science_biology(level=2, bandwidth=2),
+                sp.science_chemistry(level=2, bandwidth=2),
+                sp.science_robotics(level=2, bandwidth=2),
+                sp.profession_fabricator(level=2, bandwidth=2),
+                sp.profession_robotics(level=2, bandwidth=2),
                 # INT skills, level 0 → (All) in Ceres; source shows individual speciality
-                SkillPackage(name='Electronics (Comms)', level=0, bandwidth=0),
-                SkillPackage(name='Engineer (J-Drive)', level=0, bandwidth=0),
-                SkillPackage(name='Mechanic', level=0, bandwidth=0),
-                SkillPackage(name='Tactics (Military)', level=0, bandwidth=0),
-                SkillPackage(name='Profession (Belter)', level=0, bandwidth=0),
+                sp.electronics_comms(level=0, bandwidth=0),
+                sp.engineer_j_drive(level=0, bandwidth=0),
+                sp.mechanic(level=0, bandwidth=0),
+                sp.tactics_military(level=0, bandwidth=0),
+                sp.profession_belter(level=0, bandwidth=0),
                 # DEX skill at level 0; collapse to "Melee (All)"; pkg 0 + DEX DM+1 = 1
-                SkillPackage(name='Melee (Unarmed)', level=0, bandwidth=0),
-                SkillPackage(name='Recon', level=0, bandwidth=0),
-                SkillPackage(name='Survival', level=0, bandwidth=0),
+                sp.melee_unarmed(level=0, bandwidth=0),
+                sp.recon(level=0, bandwidth=0),
+                sp.survival(level=0, bandwidth=0),
             ),
             installed_software=(
                 BrainSoftware(name='Fab Creator/3', bandwidth=3, tl=13, cost=20_000.0),
@@ -222,7 +223,7 @@ class TestRhino:
         assert 'Science (Chemistry) 4' in build_rhino().skills_display
 
     def test_skills_science_robotics_4(self):
-        assert 'Science (Robotics) 4' in build_rhino().skills_display
+        assert 'Robotic Science (Robotics) 4' in build_rhino().skills_display
 
     def test_skills_recon_2(self):
         # pkg 0 + INT DM+2 = 2; EnvironmentProcessor Recon 0 superseded

@@ -11,9 +11,11 @@ from typing import Any, ClassVar, Literal
 
 import pytest
 
+from ceres.character import skills as character_skills
+from ceres.character.skills import Level
 from ceres.make.robot.chassis import Trait
 from ceres.make.robot.parts import RobotPart
-from ceres.make.robot.skills import SkillGrant
+from ceres.make.robot.skills import SkillGrant, Zoology
 
 
 class _SlottedPart(RobotPart):
@@ -43,7 +45,7 @@ class _SkillPart(RobotPart):
 
     @property
     def skill_grants(self) -> tuple[SkillGrant, ...]:
-        return (SkillGrant('Recon', 1),)
+        return (SkillGrant(character_skills.Recon(level=Level(value=1)), 1),)
 
 
 def make_robot(**kwargs):
@@ -434,9 +436,9 @@ class TestOptions:
         brain = AdvancedBrain(
             brain_tl=12,
             installed_skills=(
-                SkillPackage(name='Recon', level=1, bandwidth=1),
-                SkillPackage(name='Mechanic', level=1, bandwidth=1),
-                SkillPackage(name='Medic', level=1, bandwidth=1),
+                SkillPackage(name=character_skills.Recon(), level=1, bandwidth=1),
+                SkillPackage(name=character_skills.Mechanic(), level=1, bandwidth=1),
+                SkillPackage(name=character_skills.Medic(), level=1, bandwidth=1),
             ),
         )
         robot = make_robot(brain=brain)
@@ -617,12 +619,14 @@ class TestBuildSpec:
 
         brain = AdvancedBrain(
             brain_tl=12,
-            installed_skills=(SkillPackage(name='Electronics (remote ops)', level=1, bandwidth=1),),
+            installed_skills=(
+                SkillPackage(name=character_skills.Electronics(remote_ops=Level(value=1)), level=1, bandwidth=1),
+            ),
         )
         robot = make_robot(brain=brain)
         rows = robot.build_spec().rows_for_section(RobotSpecSection.SKILLS)
         value = rows[0].value
-        assert 'Electronics (remote ops) 1' in value
+        assert 'Electronics (Remote Ops) 1' in value
         assert '+1 Bandwidth available' in value
 
 
@@ -643,11 +647,13 @@ class TestSkillsDisplay:
 
         brain = AdvancedBrain(
             brain_tl=12,
-            installed_skills=(SkillPackage(name='Electronics (remote ops)', level=1, bandwidth=1),),
+            installed_skills=(
+                SkillPackage(name=character_skills.Electronics(remote_ops=Level(value=1)), level=1, bandwidth=1),
+            ),
         )
         robot = make_robot(brain=brain)
         display = robot.skills_display
-        assert 'Electronics (remote ops) 1' in display
+        assert 'Electronics (Remote Ops) 1' in display
         assert '+1 Bandwidth available' in display
 
     def test_option_skill_included(self):
@@ -661,8 +667,8 @@ class TestSkillsDisplay:
         brain = AdvancedBrain(
             brain_tl=12,
             installed_skills=(
-                SkillPackage(name='Steward', level=1, bandwidth=1),
-                SkillPackage(name='Admin', level=1, bandwidth=0),
+                SkillPackage(name=character_skills.Steward(), level=1, bandwidth=1),
+                SkillPackage(name=character_skills.Admin(), level=1, bandwidth=0),
             ),
         )
         robot = make_robot(brain=brain)
@@ -676,7 +682,7 @@ class TestSkillsDisplay:
 
         brain = AdvancedBrain(
             brain_tl=12,
-            installed_skills=(SkillPackage(name='Recon', level=1, bandwidth=1),),
+            installed_skills=(SkillPackage(name=character_skills.Recon(), level=1, bandwidth=1),),
         )
         robot = make_robot(brain=brain, options=[_SkillPart()])  # _SkillPart grants Recon 1 too
         display = robot.skills_display
@@ -690,7 +696,7 @@ class TestSkillsDisplay:
 
         brain = AdvancedBrain(
             brain_tl=12,
-            installed_skills=(SkillPackage(name='Recon', level=0, bandwidth=0),),
+            installed_skills=(SkillPackage(name=character_skills.Recon(), level=0, bandwidth=0),),
         )
 
         class _HighReconPart(_SkillPart):
@@ -698,7 +704,7 @@ class TestSkillsDisplay:
 
             @property
             def skill_grants(self) -> tuple[SkillGrant, ...]:
-                return (SkillGrant('Recon', 2),)
+                return (SkillGrant(character_skills.Recon(level=Level(value=2)), 2),)
 
         robot = make_robot(brain=brain, options=[_HighReconPart()])
         display = robot.skills_display
@@ -711,7 +717,7 @@ class TestSkillsDisplay:
 
         brain = AdvancedBrain(
             brain_tl=12,
-            installed_skills=(SkillPackage(name='Zoology', level=1, bandwidth=1),),
+            installed_skills=(SkillPackage(name=Zoology(), level=1, bandwidth=1),),
         )
         robot = make_robot(brain=brain)
         display = robot.skills_display
@@ -726,7 +732,7 @@ class TestSkillsDisplay:
         from ceres.make.robot.skills import SkillPackage
 
         brain = SelfAwareBrain(
-            installed_skills=(SkillPackage(name='Flyer (Grav)', level=0, bandwidth=0),),
+            installed_skills=(SkillPackage(name=character_skills.Flyer(grav=Level(value=1)), level=0, bandwidth=0),),
         )
         robot = make_robot(tl=15, brain=brain, size=RobotSize.SIZE_1, locomotion=NoneLocomotion())
         assert 'Flyer (All) 1' in robot.skills_display
@@ -738,7 +744,7 @@ class TestSkillsDisplay:
         from ceres.make.robot.skills import SkillPackage
 
         brain = SelfAwareBrain(
-            installed_skills=(SkillPackage(name='Admin', level=1, bandwidth=1),),
+            installed_skills=(SkillPackage(name=character_skills.Admin(), level=1, bandwidth=1),),
         )
         robot = make_robot(tl=15, brain=brain, size=RobotSize.SIZE_1, locomotion=NoneLocomotion())
         assert 'Admin 3' in robot.skills_display
@@ -754,8 +760,8 @@ class TestSkillsDisplay:
             int_upgrade=1,
             bandwidth=4,
             installed_skills=(
-                SkillPackage(name='Admin', level=1, bandwidth=1),
-                SkillPackage(name='Flyer (All)', level=0, bandwidth=0),
+                SkillPackage(name=character_skills.Admin(), level=1, bandwidth=1),
+                SkillPackage(name=character_skills.Flyer(), level=0, bandwidth=0, all_specialities=True),
             ),
         )
         robot = make_robot(tl=15, brain=brain)

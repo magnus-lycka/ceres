@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Annotated, ClassVar, Literal
+from typing import TYPE_CHECKING, Annotated, ClassVar, Literal, get_args, get_origin
 
 from pydantic import Field, PrivateAttr, field_validator
 
@@ -176,8 +176,25 @@ class Translator(RatedSoftwarePackage):
     }
 
 
-def _skill_spec(skill_cls: type[Skill], speciality: str | None = None) -> tuple[type[Skill], str | None]:
+type _SkillSpecKey = object
+
+
+def _skill_spec(skill_cls: type[Skill], speciality: str) -> tuple[type[Skill], str]:
     return skill_cls, speciality
+
+
+def _skill_classes_from_key(key: _SkillSpecKey) -> tuple[type[Skill], ...]:
+    if hasattr(key, '__value__'):
+        key = key.__value__
+    if get_origin(key) is Annotated:
+        key = get_args(key)[0]
+    if isinstance(key, type) and issubclass(key, Skill):
+        return (key,)
+    return tuple(arg for arg in get_args(key) if isinstance(arg, type) and issubclass(arg, Skill))
+
+
+def _key_matches_skill(key: _SkillSpecKey, skill_cls: type[Skill]) -> bool:
+    return skill_cls in _skill_classes_from_key(key)
 
 
 def _speciality_label(skill: Skill, field_name: str) -> str:
@@ -208,39 +225,26 @@ def _active_speciality_label(skill: Skill) -> str | None:
     return _speciality_label(skill, field_name)
 
 
-_EXPERT_SKILL_SPECS: dict[tuple[type[Skill], str | None], dict[str, int | float]] = {
-    _skill_spec(character_skills.Admin): {'tl': 8, 'cost': 100.0},
-    _skill_spec(character_skills.Advocate): {'tl': 10, 'cost': 500.0},
+_EXPERT_SKILL_SPECS: dict[_SkillSpecKey, dict[str, int | float]] = {
+    character_skills.Admin: {'tl': 8, 'cost': 100.0},
+    character_skills.Advocate: {'tl': 10, 'cost': 500.0},
     _skill_spec(character_skills.Animals, 'veterinary'): {'tl': 9, 'cost': 200.0},
-    _skill_spec(character_skills.Astrogation): {'tl': 12, 'cost': 500.0},
-    _skill_spec(character_skills.Broker): {'tl': 10, 'cost': 200.0},
-    _skill_spec(character_skills.Electronics): {'tl': 8, 'cost': 100.0},
-    _skill_spec(character_skills.Engineer): {'tl': 9, 'cost': 200.0},
-    _skill_spec(character_skills.Explosives): {'tl': 8, 'cost': 100.0},
-    _skill_spec(character_skills.Gambler): {'tl': 10, 'cost': 500.0},
-    _skill_spec(character_skills.LanguageGalanglic): {'tl': 9, 'cost': 200.0},
-    _skill_spec(character_skills.LanguageGvegh): {'tl': 9, 'cost': 200.0},
-    _skill_spec(character_skills.LanguageOynprith): {'tl': 9, 'cost': 200.0},
-    _skill_spec(character_skills.LanguageTrokh): {'tl': 9, 'cost': 200.0},
-    _skill_spec(character_skills.LanguageVilani): {'tl': 9, 'cost': 200.0},
-    _skill_spec(character_skills.LanguageZdetl): {'tl': 9, 'cost': 200.0},
-    _skill_spec(character_skills.Mechanic): {'tl': 8, 'cost': 100.0},
-    _skill_spec(character_skills.Medic): {'tl': 9, 'cost': 200.0},
-    _skill_spec(character_skills.Navigation): {'tl': 8, 'cost': 100.0},
-    _skill_spec(character_skills.ColonistProfession): {'tl': 9, 'cost': 200.0},
-    _skill_spec(character_skills.FreeloaderProfession): {'tl': 9, 'cost': 200.0},
-    _skill_spec(character_skills.HostileEnvironmentProfession): {'tl': 9, 'cost': 200.0},
-    _skill_spec(character_skills.SpacerProfession): {'tl': 9, 'cost': 200.0},
-    _skill_spec(character_skills.SportProfession): {'tl': 9, 'cost': 200.0},
-    _skill_spec(character_skills.WorkerProfession): {'tl': 9, 'cost': 200.0},
-    _skill_spec(character_skills.LifeScience): {'tl': 9, 'cost': 200.0},
-    _skill_spec(character_skills.PhysicalScience): {'tl': 9, 'cost': 200.0},
-    _skill_spec(character_skills.RoboticScience): {'tl': 9, 'cost': 200.0},
-    _skill_spec(character_skills.SocialScience): {'tl': 9, 'cost': 200.0},
-    _skill_spec(character_skills.SpaceScience): {'tl': 9, 'cost': 200.0},
-    _skill_spec(character_skills.Steward): {'tl': 8, 'cost': 100.0},
-    _skill_spec(character_skills.Survival): {'tl': 10, 'cost': 200.0},
-    _skill_spec(character_skills.Tactics): {'tl': 8, 'cost': 100.0},
+    character_skills.ArtSkill: {'tl': 9, 'cost': 200.0},
+    character_skills.Astrogation: {'tl': 12, 'cost': 500.0},
+    character_skills.Broker: {'tl': 10, 'cost': 200.0},
+    character_skills.Electronics: {'tl': 8, 'cost': 100.0},
+    character_skills.Engineer: {'tl': 9, 'cost': 200.0},
+    character_skills.Explosives: {'tl': 8, 'cost': 100.0},
+    character_skills.Gambler: {'tl': 10, 'cost': 500.0},
+    character_skills.Languages: {'tl': 9, 'cost': 200.0},
+    character_skills.Mechanic: {'tl': 8, 'cost': 100.0},
+    character_skills.Medic: {'tl': 9, 'cost': 200.0},
+    character_skills.Navigation: {'tl': 8, 'cost': 100.0},
+    character_skills.ProfessionSkill: {'tl': 9, 'cost': 200.0},
+    character_skills.ScienceSkill: {'tl': 9, 'cost': 200.0},
+    character_skills.Steward: {'tl': 8, 'cost': 100.0},
+    character_skills.Survival: {'tl': 10, 'cost': 200.0},
+    character_skills.Tactics: {'tl': 8, 'cost': 100.0},
 }
 
 
@@ -249,7 +253,7 @@ class Expert(SoftwarePackage):
     rating: int
     skill: AnySkill
 
-    KNOWN_SKILLS: ClassVar[dict[tuple[type[Skill], str | None], dict[str, int | float]]] = _EXPERT_SKILL_SPECS
+    KNOWN_SKILLS: ClassVar[dict[_SkillSpecKey, dict[str, int | float]]] = _EXPERT_SKILL_SPECS
     FALLBACK_TL: ClassVar[int] = 11
     FALLBACK_COST: ClassVar[float] = 1_000.0
 
@@ -280,22 +284,43 @@ class Expert(SoftwarePackage):
     @property
     def _resolved_spec(self) -> dict[str, int | float]:
         cls = type(self)
-        return cls.KNOWN_SKILLS.get(
-            self._skill_key,
-            cls.KNOWN_SKILLS.get(self._skill_type_key, {'tl': cls.FALLBACK_TL, 'cost': cls.FALLBACK_COST}),
-        )
+        spec = cls.KNOWN_SKILLS.get(self._skill_key)
+        if spec is not None:
+            return spec
+        spec = cls.KNOWN_SKILLS.get(self._skill_type_key)
+        if spec is not None:
+            return spec
+        if group_spec := self._skill_group_spec:
+            return group_spec
+        return {'tl': cls.FALLBACK_TL, 'cost': cls.FALLBACK_COST}
 
     @property
     def _has_known_skill_spec(self) -> bool:
-        return self._skill_key in type(self).KNOWN_SKILLS or self._skill_type_key in type(self).KNOWN_SKILLS
+        return (
+            self._skill_key in type(self).KNOWN_SKILLS
+            or self._skill_type_key in type(self).KNOWN_SKILLS
+            or self._skill_group_spec is not None
+        )
 
     @property
     def _skill_key(self) -> tuple[type[Skill], str | None]:
         return type(self.skill), _active_speciality_field(self.skill)
 
     @property
-    def _skill_type_key(self) -> tuple[type[Skill], str | None]:
-        return type(self.skill), None
+    def _skill_type_key(self) -> type[Skill]:
+        return type(self.skill)
+
+    @property
+    def _skill_group_spec(self) -> dict[str, int | float] | None:
+        skill_cls = type(self.skill)
+        for key, spec in type(self).KNOWN_SKILLS.items():
+            if isinstance(key, tuple):
+                continue
+            if key is skill_cls:
+                continue
+            if _key_matches_skill(key, skill_cls):
+                return spec
+        return None
 
     @property
     def skill_name(self) -> str:

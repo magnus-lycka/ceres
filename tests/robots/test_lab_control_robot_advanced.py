@@ -11,8 +11,8 @@ from ceres.make.robot.options import (
     SwarmController,
     VideoScreen,
 )
-from ceres.make.robot.skills import SkillPackage
 from ceres.make.robot.spec import RobotSpecSection
+from tests.robots import skill_packages as sp
 
 _expected = SimpleNamespace(
     hits=8,
@@ -24,7 +24,7 @@ _expected = SimpleNamespace(
     # source: "Advanced (INT 9)". Advanced TL12 has base INT 8; the robot uses
     # an INT upgrade to 9 per refs/robot/34_retrotech.md (1 BW, Cr9,000). ✓
     programming='Advanced (INT 9)',
-    skills='Electronics (remote ops) 3, Science (robotics) 2',
+    skills='Electronics (Remote Ops) 3, Robotic Science (Robotics) 2',
     endurance_hours=324,
     attacks='—',
     manipulators='—',
@@ -49,8 +49,8 @@ def build_advanced_lab_control_robot() -> Robot:
             int_upgrade=1,
             bandwidth=4,
             installed_skills=(
-                SkillPackage(name='Electronics (remote ops)', level=2, bandwidth=2),
-                SkillPackage(name='Science (robotics)', level=1, bandwidth=1),
+                sp.electronics_remote_ops(level=2, bandwidth=2),
+                sp.science_robotics(level=1, bandwidth=1),
             ),
         ),
         manipulators=[],

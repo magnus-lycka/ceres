@@ -14,8 +14,6 @@ from typing import Any
 import jinja2
 from pydantic import BaseModel
 
-__all__ = ['render_html', 'render_pdf', 'render_pdf_source', 'render_typst_source']
-
 _TOOLKIT_TEMPLATES = Path(__file__).parent / 'templates'
 
 
@@ -161,3 +159,6 @@ def _fmt_mass(mass: float) -> str:
     if mass <= 0:
         return '—'
     return f'{mass:g}'
+
+
+__all__ = [render_html, render_pdf, render_pdf_source, render_typst_source]

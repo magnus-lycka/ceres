@@ -1,5 +1,5 @@
 from math import ceil
-from typing import Any
+from typing import Any, cast
 
 from pydantic import Field
 
@@ -19,7 +19,7 @@ from .locomotion import LocomotionUnion, WalkerLocomotion
 from .manipulators import LegOrManipulator, Manipulator
 from .options import default_suite
 from .parts import RobotPartMixin
-from .skills import SkillGrant
+from .skills import RobotSkill, SkillGrant
 from .spec import RobotSpec, RobotSpecRow, RobotSpecSection
 from .text import format_credits, format_traits
 
@@ -275,13 +275,14 @@ class Robot(RobotBase):
         if isinstance(self.brain, (BasicBrain, PrimitiveBrain)) and self.brain.function == 'locomotion':
             agility_enh = sum(opt.level for opt in self.options if isinstance(opt, AgilityEnhancement))
             effective_agility = (self.locomotion.agility or 0) + agility_enh
-            vehicle_skill = self.locomotion.vehicle_skill_name
+            vehicle_skill = self.locomotion.vehicle_skill
             if vehicle_skill is not None:
-                grants.append(SkillGrant(vehicle_skill, effective_agility))
+                grants.append(SkillGrant(cast(RobotSkill, vehicle_skill), effective_agility))
         merged: dict[str, int] = {}
         for g in grants:
-            if g.name not in merged or g.level > merged[g.name]:
-                merged[g.name] = g.level
+            name = g.name_text
+            if name not in merged or g.level > merged[name]:
+                merged[name] = g.level
         parts = sorted(f'{name} {level}' for name, level in merged.items())
         rem = self.brain.remaining_bandwidth
         if rem is not None and rem > 0:
@@ -632,4 +633,4 @@ class Robot(RobotBase):
         return spec
 
 
-__all__ = ['Robot']
+__all__ = [Robot]

@@ -1,8 +1,9 @@
 from ceres.character.careers.career_data import EventEffect
 from ceres.character.events import SkillRollEvent
 from ceres.character.projection import CharacterProjection, Connection, PendingInput
+from ceres.character.skills import ScienceSkill, skill_list
 
-_SCIENCES = sorted(['Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science'])
+_SCIENCES = sorted(s.type for s in skill_list(ScienceSkill))
 
 # ── event 3: research against conscience ─────────────────────────────────────
 

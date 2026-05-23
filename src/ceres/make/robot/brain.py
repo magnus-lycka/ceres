@@ -11,9 +11,6 @@ from pydantic import Field, model_validator
 from ceres.shared import CeresModel
 
 from .skills import (
-    _DEX_SKILL_GRANTS,
-    _DEX_SKILLS,
-    _STR_SKILL_GRANTS,
     BrainSoftware,
     SkillGrant,
     SkillPackage,
@@ -280,26 +277,24 @@ class _AdvancedBrainBase(_BrainBase):
     @property
     def skill_grants(self) -> tuple[SkillGrant, ...]:
         dm = self.skill_dm
-        return tuple(SkillGrant(pkg.grant_name(), max(0, pkg.level + dm)) for pkg in self.installed_skills)
+        return tuple(pkg.skill_grant(max(0, pkg.level + dm)) for pkg in self.installed_skills)
 
     def skill_grants_for_robot(self, dex_dm: int, str_dm: int = 0) -> tuple[SkillGrant, ...]:
         int_dm = self.skill_dm
         result = []
         for pkg in self.installed_skills:
-            pkg_base = pkg.name.split('(')[0].strip()
-            if pkg.name in _STR_SKILL_GRANTS:
+            if pkg.uses_str_dm:
                 dm = str_dm
-                grant_name = pkg.name
-            elif pkg.name in _DEX_SKILL_GRANTS:
+            elif pkg.uses_dex_dm:
                 dm = dex_dm
-                grant_name = pkg.name
-            elif pkg_base in _DEX_SKILLS:
-                dm = dex_dm
-                grant_name = pkg.grant_name()
             else:
                 dm = int_dm
-                grant_name = pkg.grant_name()
-            result.append(SkillGrant(grant_name, max(0, pkg.level + dm)))
+            result.append(
+                pkg.skill_grant(
+                    max(0, pkg.level + dm),
+                    exact_speciality=pkg.uses_exact_speciality_dm,
+                )
+            )
         return tuple(result)
 
     @property
@@ -447,11 +442,11 @@ def UniversalTranslator() -> BrainSoftware:
 
 
 __all__ = [
-    'RobotBrainUnion',
-    'PrimitiveBrain',
-    'BasicBrain',
-    'AdvancedBrain',
-    'VeryAdvancedBrain',
-    'SelfAwareBrain',
-    'UniversalTranslator',
+    RobotBrainUnion,
+    PrimitiveBrain,
+    BasicBrain,
+    AdvancedBrain,
+    VeryAdvancedBrain,
+    SelfAwareBrain,
+    UniversalTranslator,
 ]

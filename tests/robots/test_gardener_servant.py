@@ -28,9 +28,9 @@ from ceres.make.robot.options import (
     PrisSensor,
     StorageCompartment,
 )
-from ceres.make.robot.skills import SkillPackage
 from ceres.make.robot.spec import RobotSpecSection
 from ceres.make.robot.text import format_traits
+from tests.robots import skill_packages as sp
 
 _expected = SimpleNamespace(
     hits=20,
@@ -61,11 +61,11 @@ def build_gardener_servant() -> Robot:
             int_upgrade=1,
             bandwidth=6,
             installed_skills=(
-                SkillPackage(name='Animals (veterinary)', level=1, bandwidth=1),
-                SkillPackage(name='Medic', level=1, bandwidth=1),
-                SkillPackage(name='Profession (cleaning)', level=1, bandwidth=1),
-                SkillPackage(name='Profession (gardening)', level=1, bandwidth=1),
-                SkillPackage(name='Steward', level=1, bandwidth=1),
+                sp.animals_veterinary(level=1, bandwidth=1),
+                sp.medic(level=1, bandwidth=1),
+                sp.profession_cleaning(level=1, bandwidth=1),
+                sp.profession_gardening(level=1, bandwidth=1),
+                sp.steward(level=1, bandwidth=1),
             ),
         ),
         manipulators=[Manipulator(), Manipulator(), Manipulator(), Manipulator()],
@@ -112,7 +112,7 @@ class TestGardenerServant:
 
     def test_skills_animals_veterinary_2(self):
         # pkg 1 + INT DM+1 = 2
-        assert 'Animals (veterinary) 2' in build_gardener_servant().skills_display
+        assert 'Animals (Veterinary) 2' in build_gardener_servant().skills_display
 
     def test_skills_medic_2(self):
         assert 'Medic 2' in build_gardener_servant().skills_display

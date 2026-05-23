@@ -3,6 +3,8 @@ from typing import Annotated, Any, ClassVar, Literal
 
 from pydantic import Field
 
+from ceres.character import skills as character_skills
+from ceres.character.skills import Level, Skill
 from ceres.shared import CeresModel
 
 from .chassis import Trait
@@ -20,7 +22,7 @@ class _LocomotionBase(CeresModel):
     _none_locomotion: ClassVar[bool]
     # Skill granted by Basic (locomotion) brain function (Vehicle (type) X).
     # None means no vehicle-class skill (e.g. walker, stationary locomotion).
-    _vehicle_skill_name: ClassVar[str | None]
+    _vehicle_skill: ClassVar[Skill | None]
     # Speed band from Vehicle Speed Locomotion table (refs/robot/08_locomotion_modifications.md).
     # None for locomotion types not in the table (NoneLocomotion, Aeroplane, Thruster).
     _vehicle_speed_band: ClassVar[str | None] = None
@@ -72,8 +74,8 @@ class _LocomotionBase(CeresModel):
         return self._none_locomotion
 
     @property
-    def vehicle_skill_name(self) -> str | None:
-        return self._vehicle_skill_name
+    def vehicle_skill(self) -> Skill | None:
+        return self._vehicle_skill
 
     def label(self) -> str:
         raise NotImplementedError
@@ -99,7 +101,7 @@ class NoneLocomotion(_LocomotionBase):
     _base_speed: ClassVar[int] = 0
     _locomotion_traits: ClassVar[tuple[Trait, ...]] = ()
     _none_locomotion: ClassVar[bool] = True
-    _vehicle_skill_name: ClassVar[str | None] = None
+    _vehicle_skill: ClassVar[Skill | None] = None
 
     def label(self) -> str:
         return 'None'
@@ -114,7 +116,7 @@ class WheelsLocomotion(_LocomotionBase):
     _base_speed: ClassVar[int] = 5
     _locomotion_traits: ClassVar[tuple[Trait, ...]] = ()
     _none_locomotion: ClassVar[bool] = False
-    _vehicle_skill_name: ClassVar[str | None] = 'Drive (wheel)'
+    _vehicle_skill: ClassVar[Skill | None] = character_skills.Drive(wheel=Level(value=1))
     _vehicle_speed_band: ClassVar[str | None] = 'slow'
 
     def label(self) -> str:
@@ -130,7 +132,7 @@ class WheelsAtvLocomotion(_LocomotionBase):
     _base_speed: ClassVar[int] = 5
     _locomotion_traits: ClassVar[tuple[Trait, ...]] = (Trait('ATV'),)
     _none_locomotion: ClassVar[bool] = False
-    _vehicle_skill_name: ClassVar[str | None] = 'Drive (wheel)'
+    _vehicle_skill: ClassVar[Skill | None] = character_skills.Drive(wheel=Level(value=1))
     _vehicle_speed_band: ClassVar[str | None] = 'slow'
 
     def label(self) -> str:
@@ -146,7 +148,7 @@ class TracksLocomotion(_LocomotionBase):
     _base_speed: ClassVar[int] = 5
     _locomotion_traits: ClassVar[tuple[Trait, ...]] = (Trait('ATV'),)
     _none_locomotion: ClassVar[bool] = False
-    _vehicle_skill_name: ClassVar[str | None] = 'Drive (tracked)'
+    _vehicle_skill: ClassVar[Skill | None] = character_skills.Drive(track=Level(value=1))
     _vehicle_speed_band: ClassVar[str | None] = 'very slow'
 
     def label(self) -> str:
@@ -162,7 +164,7 @@ class GravLocomotion(_LocomotionBase):
     _base_speed: ClassVar[int] = 5
     _locomotion_traits: ClassVar[tuple[Trait, ...]] = (Trait('Flyer', 'idle'),)
     _none_locomotion: ClassVar[bool] = False
-    _vehicle_skill_name: ClassVar[str | None] = 'Flyer (grav)'
+    _vehicle_skill: ClassVar[Skill | None] = character_skills.Flyer(grav=Level(value=1))
     _vehicle_speed_band: ClassVar[str | None] = 'high'
 
     def label(self) -> str:
@@ -178,7 +180,7 @@ class AeroplaneLocomotion(_LocomotionBase):
     _base_speed: ClassVar[int] = 5
     _locomotion_traits: ClassVar[tuple[Trait, ...]] = (Trait('Flyer', 'idle'),)
     _none_locomotion: ClassVar[bool] = False
-    _vehicle_skill_name: ClassVar[str | None] = 'Flyer (wing)'
+    _vehicle_skill: ClassVar[Skill | None] = character_skills.Flyer(wing=Level(value=1))
 
     def label(self) -> str:
         return 'Aeroplane'
@@ -193,7 +195,7 @@ class AquaticLocomotion(_LocomotionBase):
     _base_speed: ClassVar[int] = 5
     _locomotion_traits: ClassVar[tuple[Trait, ...]] = (Trait('Seafarer'),)
     _none_locomotion: ClassVar[bool] = False
-    _vehicle_skill_name: ClassVar[str | None] = 'Seafarer (personal)'
+    _vehicle_skill: ClassVar[Skill | None] = character_skills.Seafarer(personal=Level(value=1))
     _vehicle_speed_band: ClassVar[str | None] = 'very slow'
 
     def label(self) -> str:
@@ -209,7 +211,7 @@ class VtolLocomotion(_LocomotionBase):
     _base_speed: ClassVar[int] = 5
     _locomotion_traits: ClassVar[tuple[Trait, ...]] = (Trait('Flyer', 'idle'),)
     _none_locomotion: ClassVar[bool] = False
-    _vehicle_skill_name: ClassVar[str | None] = 'Flyer (rotor)'
+    _vehicle_skill: ClassVar[Skill | None] = character_skills.Flyer(rotor=Level(value=1))
     _vehicle_speed_band: ClassVar[str | None] = 'medium'
 
     def label(self) -> str:
@@ -225,7 +227,7 @@ class WalkerLocomotion(_LocomotionBase):
     _base_speed: ClassVar[int] = 5
     _locomotion_traits: ClassVar[tuple[Trait, ...]] = (Trait('ATV'),)
     _none_locomotion: ClassVar[bool] = False
-    _vehicle_skill_name: ClassVar[str | None] = None
+    _vehicle_skill: ClassVar[Skill | None] = None
     _vehicle_speed_band: ClassVar[str | None] = 'very slow'
 
     def label(self) -> str:
@@ -241,7 +243,7 @@ class HovercraftLocomotion(_LocomotionBase):
     _base_speed: ClassVar[int] = 5
     _locomotion_traits: ClassVar[tuple[Trait, ...]] = (Trait('ACV'),)
     _none_locomotion: ClassVar[bool] = False
-    _vehicle_skill_name: ClassVar[str | None] = 'Drive (hovercraft)'
+    _vehicle_skill: ClassVar[Skill | None] = character_skills.Drive(hovercraft=Level(value=1))
     _vehicle_speed_band: ClassVar[str | None] = 'medium'
 
     def label(self) -> str:
@@ -257,7 +259,7 @@ class ThrusterLocomotion(_LocomotionBase):
     _base_speed: ClassVar[int] = 5
     _locomotion_traits: ClassVar[tuple[Trait, ...]] = ()
     _none_locomotion: ClassVar[bool] = False
-    _vehicle_skill_name: ClassVar[str | None] = 'Pilot (small craft)'
+    _vehicle_skill: ClassVar[Skill | None] = character_skills.Pilot(small_craft=Level(value=1))
     # _vehicle_speed_band stays None; speed is expressed as thrust (thrust_g field)
 
     thrust_g: float = 0.1
@@ -282,16 +284,16 @@ LocomotionUnion = Annotated[
 ]
 
 __all__ = [
-    'LocomotionUnion',
-    'NoneLocomotion',
-    'WheelsLocomotion',
-    'WheelsAtvLocomotion',
-    'TracksLocomotion',
-    'GravLocomotion',
-    'AeroplaneLocomotion',
-    'AquaticLocomotion',
-    'VtolLocomotion',
-    'WalkerLocomotion',
-    'HovercraftLocomotion',
-    'ThrusterLocomotion',
+    LocomotionUnion,
+    NoneLocomotion,
+    WheelsLocomotion,
+    WheelsAtvLocomotion,
+    TracksLocomotion,
+    GravLocomotion,
+    AeroplaneLocomotion,
+    AquaticLocomotion,
+    VtolLocomotion,
+    WalkerLocomotion,
+    HovercraftLocomotion,
+    ThrusterLocomotion,
 ]

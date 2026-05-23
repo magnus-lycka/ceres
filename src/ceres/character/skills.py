@@ -414,6 +414,28 @@ type ScienceSkill = Annotated[Sciences, Field(discriminator='type')]
 Languages = LanguageGalanglic | LanguageVilani | LanguageZdetl | LanguageOynprith | LanguageTrokh | LanguageGvegh
 type LanguageSkill = Annotated[Languages, Field(discriminator='type')]
 
+# Please Claude, don't be a fool and try to make this a type. It's not a type.
+BackgroundSkills = (
+    Admin
+    | Animals
+    | Arts
+    | Athletics
+    | Carouse
+    | Drive
+    | Electronics
+    | Flyer
+    | Languages
+    | Mechanic
+    | Medic
+    | Professions
+    | Sciences
+    | Seafarer
+    | Streetwise
+    | Survival
+    | VaccSuit
+)
+type BackgroundSkill = Annotated[BackgroundSkills, Field(discriminator='type')]
+
 type AnySkill = Annotated[
     Admin
     | Advocate

@@ -101,12 +101,12 @@ def base_available_slots(size: RobotSize, *, none_locomotion: bool) -> int:
 
 
 __all__ = [
-    'RobotSize',
-    'Trait',
-    'chassis_entry',
-    'size_label',
-    'base_armour',
-    'base_endurance_multiplier',
-    'size_trait',
-    'base_available_slots',
+    RobotSize,
+    Trait,
+    chassis_entry,
+    size_label,
+    base_armour,
+    base_endurance_multiplier,
+    size_trait,
+    base_available_slots,
 ]

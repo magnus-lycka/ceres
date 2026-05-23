@@ -15,6 +15,8 @@ from ceres.character.skills import SkillInfo, skill_list
 from ceres.character.sophonts import SOPHONTS
 from ceres.character.store import CharacterRow, SqliteCharacterBackend
 
+_SPECIALITY_SKILLS: frozenset[str] = frozenset(s.type for s in skill_list() if s.specialities)
+
 _UCP_CHANGE_PATTERN = re.compile(r'^([A-Z]{3})(?:(=)(\d+)|([+-])(\d+))$')
 _UCP_SHORT_PATTERN = re.compile(r'^[0-9A-F]{6}$')
 
@@ -114,7 +116,9 @@ def render_projection_summary(projection: CharacterProjection) -> list[str]:
         char_str = '  '.join(f'{stat} {s.characteristics.get(stat, 0)}' for stat in UCP_STATS)
         lines.append(f'UCP  {ucp_str}    {char_str}')
     if s.skills:
-        skill_str = '  '.join(f'{k} {v}' for k, v in sorted(s.skills.items()))
+        skill_str = '  '.join(
+            f'{k} (all)-{v}' if k in _SPECIALITY_SKILLS else f'{k} {v}' for k, v in sorted(s.skills.items())
+        )
         lines.append(f'Skills  {skill_str}')
     if s.connections:
         conn_str = '  '.join(f'{c.kind}({c.source or "?"})' for c in s.connections)

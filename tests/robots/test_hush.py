@@ -15,7 +15,7 @@
 # GeckoGrippers: zero-slot, TL9, Cr500 × base_slots = Cr500 × 2 = Cr1,000. ✓
 # Navigation 1: from NavigationSystem (Basic). ✓
 # Stealth 3: from CamouflageVisual (Enhanced), DM-3. ✓
-# Recon 2, Athletics (dexterity) 1: from BasicBrain (recon) function. ✓
+# Recon 2, Athletics (Dexterity) 1: from BasicBrain (recon) function. ✓
 #
 # Default suite: PRIS (paid upgrade), broad audio (paid upgrade), broad voder (paid upgrade),
 #   DroneInterface (free, 1 of 5 slots). Remaining 4 free slots treated as unused.
@@ -211,7 +211,7 @@ class TestHushPartial:
 
     def test_basic_brain_recon_gives_athletics_dex_1(self):
         robot = build_hush()
-        assert 'Athletics (dexterity) 1' in robot.skills_display
+        assert 'Athletics (Dexterity) 1' in robot.skills_display
 
     def test_navigation_system_gives_navigation_1(self):
         robot = build_hush()

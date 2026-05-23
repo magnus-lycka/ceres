@@ -12,15 +12,6 @@ from ceres.shared import NoteList, _Note
 
 ReportTheme = Literal['light', 'dark']
 
-__all__ = [
-    'render_ship_html',
-    'render_ship_pdf',
-    'render_ship_spec_html',
-    'render_ship_spec_pdf',
-    'render_ship_spec_typst',
-    'render_ship_typst',
-]
-
 _TEMPLATES = Path(__file__).parent / 'templates'
 
 
@@ -174,3 +165,13 @@ def _fmt_cr_col(v: float | None) -> str:
     if v is None or abs(v) < 0.5:
         return ''
     return f'{round(v):,}'
+
+
+__all__ = [
+    render_ship_html,
+    render_ship_pdf,
+    render_ship_spec_html,
+    render_ship_spec_pdf,
+    render_ship_spec_typst,
+    render_ship_typst,
+]

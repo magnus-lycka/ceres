@@ -52,9 +52,9 @@ class CharacterProjection(BaseModel):
 
 
 __all__ = [
-    'CharacterProjection',
-    'CharacterSummary',
-    'Connection',
-    'PendingInput',
-    'ScheduledEffect',
+    CharacterProjection,
+    CharacterSummary,
+    Connection,
+    PendingInput,
+    ScheduledEffect,
 ]

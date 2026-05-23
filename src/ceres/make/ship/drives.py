@@ -282,6 +282,7 @@ class _MDrive(CustomisableShipPart):
     drive_type: str
     level: ClassVar[int]
     _tons_percent: ClassVar[float]
+    concealed: bool = False
     allowed_modifications: ClassVar[frozenset[str]] = frozenset(
         {
             EnergyEfficient.name,
@@ -301,19 +302,29 @@ class _MDrive(CustomisableShipPart):
     def bulkhead_label(self) -> str:
         return 'M-Drive'
 
+    @property
+    def effective_thrust(self) -> int:
+        if self.concealed:
+            return math.floor(self.level / 2)
+        return self.level
+
     def _base_tons(self) -> float:
         return self.assembly.performance_displacement * self._tons_percent
 
     @property
+    def concealed_multiplier(self) -> float:
+        return 1.25 if self.concealed else 1.0
+
+    @property
     def tons(self) -> float:
         multiplier = 1.0 if self.customisation is None else self.customisation.tons_multiplier
-        return self._base_tons() * multiplier
+        return self._base_tons() * multiplier * self.concealed_multiplier
 
     @property
     def cost(self) -> float:
         cost = self._base_tons() * 2_000_000
         multiplier = 1.0 if self.customisation is None else self.customisation.cost_multiplier
-        return cost * multiplier
+        return cost * multiplier * self.concealed_multiplier
 
     @property
     def power(self) -> float:
@@ -323,6 +334,14 @@ class _MDrive(CustomisableShipPart):
             power = float(math.ceil(0.1 * self.assembly.performance_displacement * self.level))
         multiplier = 1.0 if self.customisation is None else self.customisation.power_multiplier
         return power * multiplier
+
+    def build_notes(self) -> list:
+        notes = NoteList(super().build_notes())
+        if self.concealed:
+            notes.info(f'Concealed manoeuvre drive: effective Thrust {self.effective_thrust}')
+            notes.info('Concealed manoeuvre drive must be within 3 metres of the accelerating surface')
+            notes.info('Removing the outer bulkhead does not improve concealed manoeuvre drive performance')
+        return notes
 
 
 class MDrive0(_MDrive):

@@ -5,87 +5,127 @@ refs/robot/35_skill_packages.md — Primitive brain package table.
 
 import pytest
 
-from ceres.make.robot.skills import _DEX_SKILLS, BrainSoftware, SkillGrant, SkillPackage, primitive_package_skills
+from ceres.character import skills as character_skills
+from ceres.character.skills import Electronics, Level, Recon, Steward
+from ceres.make.robot.skills import (
+    _DEX_SKILLS,
+    BrainSoftware,
+    RobotProfession,
+    SkillGrant,
+    SkillPackage,
+    Weapon,
+    primitive_package_skills,
+)
+
+
+def _skill(skill_cls, field_name: str = 'level', value: int = 1):
+    skill = skill_cls()
+    getattr(skill, field_name).set(value)
+    return skill
 
 
 class TestSkillGrant:
     def test_str_with_level(self):
-        assert str(SkillGrant('Electronics (remote ops)', 1)) == 'Electronics (remote ops) 1'
+        assert str(SkillGrant(Electronics(remote_ops=Level(value=1)), 1)) == 'Electronics (Remote Ops) 1'
 
     def test_str_zero_level(self):
-        assert str(SkillGrant('Recon', 0)) == 'Recon 0'
+        assert str(SkillGrant(Recon(), 0)) == 'Recon 0'
 
     def test_equality(self):
-        assert SkillGrant('Recon', 1) == SkillGrant('Recon', 1)
+        assert SkillGrant(Recon(), 1) == SkillGrant(Recon(), 1)
 
     def test_inequality_level(self):
-        assert SkillGrant('Recon', 0) != SkillGrant('Recon', 1)
+        assert SkillGrant(Recon(), 0) != SkillGrant(Recon(), 1)
 
     def test_inequality_name(self):
-        assert SkillGrant('Recon', 0) != SkillGrant('Electronics', 0)
+        assert SkillGrant(Recon(), 0) != SkillGrant(Electronics(), 0)
+
+    def test_character_skill_str_uses_speciality(self):
+        grant = SkillGrant(Electronics(remote_ops=Level(value=1)), 1)
+
+        assert str(grant) == 'Electronics (Remote Ops) 1'
 
 
 class TestSkillPackage:
     def test_fields(self):
-        pkg = SkillPackage(name='Electronics (remote ops)', level=1, bandwidth=1)
-        assert pkg.name == 'Electronics (remote ops)'
+        pkg = SkillPackage(name=Electronics(remote_ops=Level(value=1)), level=1, bandwidth=1)
+        assert pkg.name_text == 'Electronics (Remote Ops)'
         assert pkg.level == 1
         assert pkg.bandwidth == 1
 
     def test_roundtrip_json(self):
-        pkg = SkillPackage(name='Steward', level=2, bandwidth=2)
+        pkg = SkillPackage(name=Steward(level=Level(value=2)), level=2, bandwidth=2)
         restored = SkillPackage.model_validate_json(pkg.model_dump_json())
         assert restored == pkg
+
+    def test_character_skill_roundtrip_json(self):
+        pkg = SkillPackage(name=Steward(level=Level(value=2)), level=2, bandwidth=2)
+        restored = SkillPackage.model_validate_json(pkg.model_dump_json())
+
+        assert restored == pkg
+        assert restored.name_text == 'Steward'
+
+    def test_group_skill_cost_uses_union_key(self):
+        pkg = SkillPackage(name=character_skills.RoboticScience(robotics=Level(value=1)), level=2, bandwidth=2)
+        assert pkg.cost == 20_000.0
+
+    def test_robot_specific_profession_cost_uses_class_key(self):
+        pkg = SkillPackage(name=RobotProfession(domestic_cleaner=Level(value=1)), level=2, bandwidth=2)
+        assert pkg.cost == 20_000.0
 
 
 class TestSkillPackageGrantName:
     """Level-0 speciality packages display as (All); level 1+ keep their speciality."""
 
     def test_level_0_specialty_becomes_all(self):
-        pkg = SkillPackage(name='Electronics (Remote Ops)', level=0, bandwidth=0)
-        assert pkg.grant_name() == 'Electronics (All)'
+        pkg = SkillPackage(name=Electronics(remote_ops=Level(value=1)), level=0, bandwidth=0)
+        assert pkg.skill_grant(0).name_text == 'Electronics (All)'
 
     def test_level_1_specialty_preserved(self):
-        pkg = SkillPackage(name='Electronics (Remote Ops)', level=1, bandwidth=1)
-        assert pkg.grant_name() == 'Electronics (Remote Ops)'
+        pkg = SkillPackage(name=Electronics(remote_ops=Level(value=1)), level=1, bandwidth=1)
+        assert pkg.skill_grant(1).name_text == 'Electronics (Remote Ops)'
+
+    def test_character_skill_speciality_preserved(self):
+        pkg = SkillPackage(name=Electronics(remote_ops=Level(value=1)), level=1, bandwidth=1)
+        assert pkg.skill_grant(1).name_text == 'Electronics (Remote Ops)'
 
     def test_level_0_no_specialty_unchanged(self):
-        pkg = SkillPackage(name='Admin', level=0, bandwidth=0)
-        assert pkg.grant_name() == 'Admin'
+        pkg = SkillPackage(name=character_skills.Admin(), level=0, bandwidth=0)
+        assert pkg.skill_grant(0).name_text == 'Admin'
 
     def test_level_2_specialty_preserved(self):
-        pkg = SkillPackage(name='Science (Robotics)', level=2, bandwidth=2)
-        assert pkg.grant_name() == 'Science (Robotics)'
+        pkg = SkillPackage(name=character_skills.RoboticScience(robotics=Level(value=1)), level=2, bandwidth=2)
+        assert pkg.skill_grant(2).name_text == 'Robotic Science (Robotics)'
 
     def test_level_0_engineer_specialty_becomes_all(self):
-        pkg = SkillPackage(name='Engineer (J-Drive)', level=0, bandwidth=0)
-        assert pkg.grant_name() == 'Engineer (All)'
+        pkg = SkillPackage(name=character_skills.Engineer(j_drive=Level(value=1)), level=0, bandwidth=0)
+        assert pkg.skill_grant(0).name_text == 'Engineer (All)'
 
     def test_level_0_flyer_specialty_becomes_all(self):
-        pkg = SkillPackage(name='Flyer (Grav)', level=0, bandwidth=0)
-        assert pkg.grant_name() == 'Flyer (All)'
+        pkg = SkillPackage(name=character_skills.Flyer(grav=Level(value=1)), level=0, bandwidth=0)
+        assert pkg.skill_grant(0).name_text == 'Flyer (All)'
 
 
 class TestDexSkillsSet:
     """_DEX_SKILLS identifies skills whose characteristic is DEX per the skill packages table."""
 
     def test_flyer_is_dex(self):
-        assert 'Flyer' in _DEX_SKILLS
+        assert character_skills.Flyer in _DEX_SKILLS
 
     def test_stealth_is_dex(self):
-        assert 'Stealth' in _DEX_SKILLS
+        assert character_skills.Stealth in _DEX_SKILLS
 
     def test_drive_is_dex(self):
-        assert 'Drive' in _DEX_SKILLS
+        assert character_skills.Drive in _DEX_SKILLS
 
-    def test_pilot_is_dex(self):
-        assert 'Pilot' in _DEX_SKILLS
+    def test_pilot_is_not_whole_skill_dex(self):
+        assert character_skills.Pilot not in _DEX_SKILLS
 
     def test_admin_not_dex(self):
-        assert 'Admin' not in _DEX_SKILLS
+        assert character_skills.Admin not in _DEX_SKILLS
 
     def test_recon_not_dex(self):
-        assert 'Recon' not in _DEX_SKILLS
+        assert character_skills.Recon not in _DEX_SKILLS
 
 
 class TestBrainSoftware:
@@ -122,9 +162,9 @@ class TestPrimitivePackageSkills:
     @pytest.mark.parametrize(
         'function, expected_grants',
         [
-            ('clean', (SkillGrant('Profession (domestic cleaner)', 2),)),
-            ('alert', (SkillGrant('Recon', 0),)),
-            ('homing', (SkillGrant('Weapon', 1),)),
+            ('clean', (SkillGrant(_skill(RobotProfession, 'domestic_cleaner'), 2),)),
+            ('alert', (SkillGrant(Recon(), 0),)),
+            ('homing', (SkillGrant(Weapon(), 1),)),
             ('none', ()),
         ],
     )
@@ -133,5 +173,5 @@ class TestPrimitivePackageSkills:
 
     def test_evade_has_two_skills(self):
         skills = primitive_package_skills('evade')
-        assert SkillGrant('Athletics (dexterity)', 1) in skills
-        assert SkillGrant('Stealth', 2) in skills
+        assert SkillGrant(character_skills.Athletics(dexterity=Level(value=1)), 1) in skills
+        assert SkillGrant(character_skills.Stealth(), 2) in skills

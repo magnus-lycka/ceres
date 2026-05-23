@@ -31,6 +31,7 @@ from ceres.make.ship.drives import (
     MDrive0,
     MDrive1,
     MDrive2,
+    MDrive5,
     MDrive6,
     MDrive7,
     PowerSection,
@@ -207,6 +208,30 @@ def test_mdrive_thrust_zero_uses_station_power_rule():
     assert d.tons == pytest.approx(50.0)
     assert d.cost == pytest.approx(100_000_000.0)
     assert d.power == pytest.approx(250.0)
+
+
+def test_concealed_mdrive_adds_tons_and_cost_but_not_power():
+    d = MDrive6(concealed=True)
+    d.bind(DummyOwner(12, 100))
+    assert d.tons == pytest.approx(7.5)
+    assert d.cost == pytest.approx(15_000_000.0)
+    assert d.power == pytest.approx(60.0)
+
+
+def test_concealed_mdrive_halves_effective_thrust_rounding_down():
+    d = MDrive5(concealed=True)
+    d.bind(DummyOwner(12, 100))
+    assert d.effective_thrust == 2
+    assert d.notes.infos == [
+        'Concealed manoeuvre drive: effective Thrust 2',
+        'Concealed manoeuvre drive must be within 3 metres of the accelerating surface',
+        'Removing the outer bulkhead does not improve concealed manoeuvre drive performance',
+    ]
+
+
+def test_concealed_mdrive_roundtrips_through_mdrive_union():
+    restored = TypeAdapter(MDrive).validate_python(MDrive6(concealed=True).model_dump())
+    assert restored.concealed is True
 
 
 def test_budget_increased_size_mdrive_values():

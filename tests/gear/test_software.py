@@ -5,6 +5,7 @@ import pytest
 
 from ceres.character.skills import (
     Admin,
+    CreativeArt,
     Electronics,
     LanguageVilani,
     Level,
@@ -65,6 +66,15 @@ def test_expert_broad_science_planetology_matches_skill_table():
     assert package.cost == 200.0
 
 
+def test_expert_art_skill_uses_art_union_lookup():
+    package = Expert(rating=1, skill=CreativeArt(visual_media=Level(value=1)))
+
+    assert package.description == 'Expert (Creative Art (Visual Media))/1'
+    assert package.bandwidth == 1
+    assert package.tl == 9
+    assert package.cost == 200.0
+
+
 def test_expert_higher_rating_increases_tl_and_cost_from_base_skill():
     package = Expert(rating=3, skill=Admin(level=Level(value=3)))
     assert package.description == 'Expert (Admin)/3'
@@ -120,7 +130,7 @@ def test_expert_known_skill_uses_skill_lookup_without_active_speciality_when_all
     assert not package.notes.warnings
 
 
-def test_expert_language_vilani_uses_known_lookup():
+def test_expert_language_vilani_uses_languages_union_lookup():
     package = Expert(rating=1, skill=LanguageVilani(level=Level(value=1)))
     assert package.description == 'Expert (Language Vilani)/1'
     assert package.tl == 9

@@ -57,9 +57,9 @@ from ceres.make.robot.options import (
     SwarmController,
     VacuumEnvironmentProtection,
 )
-from ceres.make.robot.skills import SkillPackage
 from ceres.make.robot.spec import RobotSpecSection
 from ceres.make.robot.text import format_traits
+from tests.robots import skill_packages as sp
 
 _expected = SimpleNamespace(
     hits=1,
@@ -90,22 +90,22 @@ def build_mimer() -> Robot:
             bandwidth=20,
             installed_software=(UniversalTranslator(),),
             installed_skills=(
-                SkillPackage(name='Recon', level=2, bandwidth=2),
-                SkillPackage(name='Stealth', level=1, bandwidth=1),
-                SkillPackage(name='Investigate', level=2, bandwidth=3),
-                SkillPackage(name='Electronics (Remote Ops)', level=0, bandwidth=0),
-                SkillPackage(name='Broker', level=3, bandwidth=3),
-                SkillPackage(name='Admin', level=1, bandwidth=1),
-                SkillPackage(name='Advocate', level=1, bandwidth=1),
-                SkillPackage(name='Engineer (J-Drive)', level=0, bandwidth=0),
-                SkillPackage(name='Mechanic', level=0, bandwidth=0),
-                SkillPackage(name='Medic', level=2, bandwidth=2),
-                SkillPackage(name='Steward', level=0, bandwidth=0),
-                SkillPackage(name='Science (Robotics)', level=2, bandwidth=2),
-                SkillPackage(name='Language (Vilani)', level=0, bandwidth=0),
-                SkillPackage(name='Tactics (Military)', level=0, bandwidth=0),
-                SkillPackage(name='Flyer (Grav)', level=0, bandwidth=0),
-                SkillPackage(name='Navigation', level=0, bandwidth=0),
+                sp.recon(level=2, bandwidth=2),
+                sp.stealth(level=1, bandwidth=1),
+                sp.investigate(level=2, bandwidth=3),
+                sp.electronics_remote_ops(level=0, bandwidth=0),
+                sp.broker(level=3, bandwidth=3),
+                sp.admin(level=1, bandwidth=1),
+                sp.advocate(level=1, bandwidth=1),
+                sp.engineer_j_drive(level=0, bandwidth=0),
+                sp.mechanic(level=0, bandwidth=0),
+                sp.medic(level=2, bandwidth=2),
+                sp.steward(level=0, bandwidth=0),
+                sp.science_robotics(level=2, bandwidth=2),
+                sp.language_vilani(level=0, bandwidth=0),
+                sp.tactics_military(level=0, bandwidth=0),
+                sp.flyer_grav(level=0, bandwidth=0),
+                sp.navigation(level=0, bandwidth=0),
             ),
         ),
         manipulators=[],
@@ -207,8 +207,8 @@ class TestMimer:
         assert 'Medic 4' in build_mimer().skills_display
 
     def test_skills_science_robotics_4(self):
-        # Science (Robotics) level 2 + brain DM+2 = Science (Robotics) 4
-        assert 'Science (Robotics) 4' in build_mimer().skills_display
+        # TCR-001 maps Science (Robotics) to Robotic Science (Robotics).
+        assert 'Robotic Science (Robotics) 4' in build_mimer().skills_display
 
     def test_skills_stealth_4(self):
         # CamouflageVisual(advanced): detection DM −4 → Stealth 4 from hardware
@@ -251,8 +251,8 @@ class TestMimer:
         assert 'Tactics (All) 2' in build_mimer().skills_display
 
     def test_skills_language_all_2(self):
-        # Language (Vilani) level 0 + DM+2: unspecialized → (All) 2
-        assert 'Language (All) 2' in build_mimer().skills_display
+        # TCR-001 maps Language (Vilani) to the concrete Language Vilani skill.
+        assert 'Language Vilani 2' in build_mimer().skills_display
 
     def test_skills_remaining_bandwidth_shown(self):
         # 20 − 15(skill BW) − 3(Universal Translator BW) = 2

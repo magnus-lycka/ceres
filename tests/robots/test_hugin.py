@@ -183,7 +183,7 @@ class TestHugin:
 
     def test_athletics_dexterity_4(self):
         robot = build_hugin()
-        assert 'Athletics (dexterity) 4' in robot.skills_display
+        assert 'Athletics (Dexterity) 4' in robot.skills_display
 
     def test_spec_attacks_row(self):
         spec = build_hugin().build_spec()
