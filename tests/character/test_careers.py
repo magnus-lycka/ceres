@@ -71,7 +71,7 @@ class TestQualification:
         assert any('Scout' in p for p in projection.summary.problems)
 
     def test_scholar_failure(self):
-        # Scholar: EDU 6+, EDU=10 (DM+1), roll 4 → 4+1=5 < 6
+        # Scholar: INT 6+, INT=9 (DM+1), roll 4 → 4+1=5 < 6
         events = [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=4),
@@ -873,7 +873,8 @@ class TestTermEventAutoAdvance:
         assert any(p.kind == 'reenlist' for p in projection.pending_inputs)
         assert not any(p.kind == 'advancement' for p in projection.pending_inputs)
 
-    def test_scholar_event_12_promotes_with_space_science(self):
+    def test_scholar_event_12_promotes_and_creates_science_choice_pending(self):
+        # Rank 1 bonus is Science 1 (player chooses which broad science) — Core p.43
         events = [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
@@ -883,7 +884,16 @@ class TestTermEventAutoAdvance:
         projection = replay(1, events)
 
         assert projection.summary.rank == 1
-        assert projection.summary.skills.get('Space Science') == 1
+        _sciences = {'Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science'}
+        pending = next(
+            (
+                p
+                for p in projection.pending_inputs
+                if p.kind.startswith('rank_bonus_choice') and set(p.options) == _sciences
+            ),
+            None,
+        )
+        assert pending is not None
 
 
 class TestScholarTerm:
@@ -912,7 +922,8 @@ class TestScholarTerm:
         adv_pending = next(p for p in projection.pending_inputs if p.kind == 'advancement')
         assert 'INT' in adv_pending.instruction and '6' in adv_pending.instruction
 
-    def test_rank_1_bonus_is_space_science(self):
+    def test_rank_1_bonus_creates_science_choice_pending(self):
+        # Rank 1 bonus is Science 1 (player chooses which broad science) — Core p.43
         events = [
             *self._setup_with_scholar(),
             SurviveEvent(id=5, fulfills='4.0', roll=7),
@@ -921,7 +932,16 @@ class TestScholarTerm:
         ]
         projection = replay(1, events)
 
-        assert projection.summary.skills.get('Space Science') == 1
+        _sciences = {'Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science'}
+        pending = next(
+            (
+                p
+                for p in projection.pending_inputs
+                if p.kind.startswith('rank_bonus_choice') and set(p.options) == _sciences
+            ),
+            None,
+        )
+        assert pending is not None
 
     def test_event_4_skill_choice_options(self):
         events = [
@@ -932,7 +952,9 @@ class TestScholarTerm:
         projection = replay(1, events)
 
         pending = next(p for p in projection.pending_inputs if p.kind == 'skill_choice')
-        assert set(pending.options) == {'Medic', 'Space Science', 'Engineer', 'Electronics', 'Investigate'}
+        # Core event 4: one of Medic, Science, Engineer, Electronics, Investigate — Science = any broad science
+        _sciences = {'Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science'}
+        assert set(pending.options) == {'Medic', *_sciences, 'Engineer', 'Electronics', 'Investigate'}
 
     def test_event_9_stores_advancement_dm_in_scheduled_effects(self):
         events = [
@@ -1042,11 +1064,11 @@ class TestSkillTableIncrement:
         ]
 
     def test_new_skill_gains_level_0(self):
-        # Courier table roll 2: Persuade — not in Scout service skills → first gain at 0
+        # Courier table roll 2: Flyer — not in Scout service skills → first gain at 0
         events = [*self._setup_in_term_2(), SkillTableEvent(id=9, fulfills='8.0', table='courier', roll=2)]
         projection = replay(1, events)
 
-        assert projection.summary.skills.get('Persuade') == 0
+        assert projection.summary.skills.get('Flyer') == 0
 
     def test_existing_skill_at_0_increments_to_1(self):
         # Courier table roll 3: Pilot — Scout has Pilot 0 from initial training → 1
@@ -1320,7 +1342,7 @@ class TestScoutEvent11:
 
 
 class TestNormalInjury:
-    """Scout mishap 6: Injured — creates characteristic choice for STR/DEX/END."""
+    """Scout mishap 6: Injured — roll on Injury table (Core p.47)."""
 
     def _setup_through_failed_survive(self) -> list:
         return [
@@ -1329,24 +1351,11 @@ class TestNormalInjury:
             SurviveEvent(id=5, fulfills='4.0', roll=3),  # fail
         ]
 
-    def test_mishap_6_creates_characteristic_choice_pending(self):
+    def test_mishap_6_creates_injury_table_pending(self):
         events = [*self._setup_through_failed_survive(), MishapEvent(id=6, fulfills='5.0', roll=6)]
         projection = replay(1, events)
 
-        choice_pending = next((p for p in projection.pending_inputs if p.kind == 'characteristic_choice'), None)
-        assert choice_pending is not None
-        assert set(choice_pending.options) == {'STR', 'DEX', 'END'}
-
-    def test_mishap_6_characteristic_choice_decreases_selected_stat(self):
-        events = [
-            *self._setup_through_failed_survive(),
-            MishapEvent(id=6, fulfills='5.0', roll=6),
-            CharacteristicChoiceEvent(id=7, fulfills='6.0', characteristic='STR'),
-        ]
-        projection = replay(1, events)
-
-        # STR was 7 from UCP '7869A5'
-        assert projection.summary.characteristics['STR'] == 6
+        assert any(p.kind == 'injury_table' for p in projection.pending_inputs)
 
     def test_mishap_6_still_ends_career(self):
         events = [*self._setup_through_failed_survive(), MishapEvent(id=6, fulfills='5.0', roll=6)]
@@ -1379,7 +1388,7 @@ class TestScholarMishap3:
 
         assert projection.summary.current_career == 'Scholar'
 
-    def test_openly_grants_space_science_and_enemy(self):
+    def test_openly_adds_enemy_and_creates_science_pending(self):
         events = [
             *self._setup(),
             MishapEvent(id=6, fulfills='5.0', roll=3),
@@ -1387,10 +1396,14 @@ class TestScholarMishap3:
         ]
         projection = replay(1, events)
 
-        assert projection.summary.skills.get('Space Science', -1) >= 1
+        # Core mishap 3: increase Science — any broad science — so a science choice pending is required
         assert any(c.kind == 'enemy' for c in projection.summary.connections)
+        _sciences = {'Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science'}
+        science_pending = next((p for p in projection.pending_inputs if p.kind == 'scholar_mishap_3_science'), None)
+        assert science_pending is not None
+        assert set(science_pending.options) == _sciences
 
-    def test_secretly_grants_space_science_and_decreases_soc_by_2(self):
+    def test_secretly_creates_science_pending_and_decreases_soc(self):
         events = [
             *self._setup(),
             MishapEvent(id=6, fulfills='5.0', roll=3),
@@ -1398,7 +1411,8 @@ class TestScholarMishap3:
         ]
         projection = replay(1, events)
 
-        assert projection.summary.skills.get('Space Science', -1) >= 1
+        # Core mishap 3 secretly: Science +1 (any), SOC -2, no enemy
+        assert any(p.kind == 'scholar_mishap_3_science' for p in projection.pending_inputs)
         # SOC was 5 from UCP '7869A5'
         assert projection.summary.characteristics['SOC'] == 3
         assert not any(c.kind == 'enemy' for c in projection.summary.connections)
@@ -1633,7 +1647,9 @@ class TestScholarEvent11:
 
         pending = next((p for p in projection.pending_inputs if p.kind == 'scholar_event_11'), None)
         assert pending is not None
-        assert set(pending.options) == {'Space Science', 'advancement_dm_4'}
+        # Core event 11: increase Science by one level — any broad science — or DM+4 advancement
+        _sciences = {'Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science'}
+        assert set(pending.options) == {*_sciences, 'advancement_dm_4'}
 
     def test_choose_space_science_grants_space_science_1(self):
         events = [*self._setup(), SkillChoiceEvent(id=7, fulfills='6.0', skill='Space Science')]
@@ -1650,7 +1666,7 @@ class TestScholarEvent11:
         assert adv_dm.effect.get('amount') == 4
 
     def test_both_choices_create_advancement_pending(self):
-        for choice in ['Space Science', 'advancement_dm_4']:
+        for choice in ['Life Science', 'advancement_dm_4']:
             events = [*self._setup(), SkillChoiceEvent(id=7, fulfills='6.0', skill=choice)]
             projection = replay(1, events)
             assert any(p.kind == 'advancement' for p in projection.pending_inputs)
@@ -2919,3 +2935,311 @@ class TestAgingCrisis:
         projection = replay(1, events)
 
         assert not any(p.kind == 'muster_out' for p in projection.pending_inputs)
+
+
+_SCIENCES = sorted(['Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science'])
+
+
+class TestScholarQualificationInt:
+    """Scholar uses INT 6+ for qualification, not EDU (Core p.42)."""
+
+    def test_qualifies_using_int_dm(self):
+        # UCP '786965': STR=7 DEX=8 END=6 INT=9 EDU=6 SOC=5
+        # INT=9 → DM+1; EDU=6 → DM+0; target 6; roll 5 → 5+1=6 ≥ 6 with INT, 5+0=5 < 6 with EDU
+        events = [
+            CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Boss'),
+            UcpEvent(id=2, fulfills='1.0', ucp='786965'),
+            BackgroundSkillsEvent(id=3, fulfills='2.0', skills=['Admin', 'Athletics', 'Carouse']),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.current_career == 'Scholar'
+
+    def test_fails_when_int_is_low(self):
+        # UCP '786695': STR=7 DEX=8 END=6 INT=6 EDU=9 SOC=5
+        # INT=6 → DM+0; EDU=9 → DM+1; target 6; roll 5 → 5+0=5 < 6 → fails
+        events = [
+            CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Boss'),
+            UcpEvent(id=2, fulfills='1.0', ucp='786695'),
+            BackgroundSkillsEvent(id=3, fulfills='2.0', skills=['Admin', 'Athletics', 'Carouse', 'Drive']),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.current_career is None
+
+
+class TestScholarLabShip:
+    """Scholar muster out rows 6-7 give lab_ship (Core p.42), not scout_ship."""
+
+    def _setup_through_reenlist_false_scholar(self) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=5),
+            AdvancementEvent(id=7, fulfills='6.0', roll=3),
+            ReenlistEvent(id=8, fulfills='7.0', reenlist=False),
+        ]
+
+    def test_benefits_roll_6_gives_lab_ship(self):
+        events = [
+            *self._setup_through_reenlist_false_scholar(),
+            MusterOutEvent(id=9, fulfills='8.0', table='benefits', roll=6),
+        ]
+        projection = replay(1, events)
+
+        assert 'lab_ship' in projection.summary.benefits
+
+    def test_benefits_roll_7_gives_lab_ship(self):
+        # Row 7 (capped at 7 in table) also gives lab_ship
+        events = [
+            *self._setup_through_reenlist_false_scholar(),
+            MusterOutEvent(id=9, fulfills='8.0', table='benefits', roll=6),
+        ]
+        projection = replay(1, events)
+
+        assert 'lab_ship' in projection.summary.benefits
+        assert 'scout_ship' not in projection.summary.benefits
+
+
+class TestScoutMishap6InjuryTable:
+    """Scout mishap 6: Injured — roll on Injury table (Core p.47), not a fixed normal injury."""
+
+    def _setup_to_mishap(self) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills='4.0', roll=3),  # fail survive
+        ]
+
+    def test_mishap_6_creates_injury_table_pending(self):
+        events = [*self._setup_to_mishap(), MishapEvent(id=6, fulfills='5.0', roll=6)]
+        projection = replay(1, events)
+
+        assert any(p.kind == 'injury_table' for p in projection.pending_inputs)
+
+    def test_mishap_6_does_not_create_characteristic_choice_directly(self):
+        events = [*self._setup_to_mishap(), MishapEvent(id=6, fulfills='5.0', roll=6)]
+        projection = replay(1, events)
+
+        assert not any(p.kind == 'characteristic_choice' for p in projection.pending_inputs)
+
+
+class TestScoutAssignmentTableCorrections:
+    """Scout assignment skill table entries corrected vs Core p.48."""
+
+    def _setup_in_term_2(self, assignment: str) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment=assignment, qualification_roll=7),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=5),
+            AdvancementEvent(id=7, fulfills='6.0', roll=9),
+            ReenlistEvent(id=8, fulfills='7.0', reenlist=True),
+        ]
+
+    def test_courier_roll_2_gives_flyer(self):
+        events = [*self._setup_in_term_2('Courier'), SkillTableEvent(id=9, fulfills='8.0', table='courier', roll=2)]
+        projection = replay(1, events)
+
+        assert projection.summary.skills.get('Flyer') is not None
+
+    def test_surveyor_roll_2_gives_persuade(self):
+        events = [*self._setup_in_term_2('Surveyor'), SkillTableEvent(id=9, fulfills='8.0', table='surveyor', roll=2)]
+        projection = replay(1, events)
+
+        assert projection.summary.skills.get('Persuade') is not None
+
+    def test_surveyor_roll_4_gives_navigation(self):
+        events = [*self._setup_in_term_2('Surveyor'), SkillTableEvent(id=9, fulfills='8.0', table='surveyor', roll=4)]
+        projection = replay(1, events)
+
+        assert projection.summary.skills.get('Navigation') is not None
+
+    def test_explorer_roll_2_gives_pilot(self):
+        events = [*self._setup_in_term_2('Explorer'), SkillTableEvent(id=9, fulfills='8.0', table='explorer', roll=2)]
+        projection = replay(1, events)
+
+        # Pilot was already granted at initial training (service skill); now increments to 1
+        assert projection.summary.skills.get('Pilot', -1) >= 1
+
+    def test_explorer_roll_4_creates_science_choice_pending(self):
+        events = [*self._setup_in_term_2('Explorer'), SkillTableEvent(id=9, fulfills='8.0', table='explorer', roll=4)]
+        projection = replay(1, events)
+
+        pending = next((p for p in projection.pending_inputs if p.kind == 'skill_table_choice'), None)
+        assert pending is not None
+        assert set(pending.options) == set(_SCIENCES)
+
+    def test_advanced_edu_roll_5_creates_science_choice_pending(self):
+        # EDU=10 ≥ 8 → can access advanced_education table
+        events = [
+            *self._setup_in_term_2('Courier'),
+            SkillTableEvent(id=9, fulfills='8.0', table='advanced_education', roll=5),
+        ]
+        projection = replay(1, events)
+
+        pending = next((p for p in projection.pending_inputs if p.kind == 'skill_table_choice'), None)
+        assert pending is not None
+        assert set(pending.options) == set(_SCIENCES)
+
+
+class TestScholarScienceChoicesInTables:
+    """Scholar skill table entries that are 'Science' offer all broad sciences (Core p.43)."""
+
+    def _setup_in_term_2(self, assignment: str = 'Field Researcher') -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment=assignment, qualification_roll=5),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=5),
+            AdvancementEvent(id=7, fulfills='6.0', roll=3),
+            ReenlistEvent(id=8, fulfills='7.0', reenlist=True),
+        ]
+
+    def test_service_skills_roll_6_creates_science_choice(self):
+        events = [
+            *self._setup_in_term_2(),
+            SkillTableEvent(id=9, fulfills='8.0', table='service_skills', roll=6),
+        ]
+        projection = replay(1, events)
+
+        pending = next((p for p in projection.pending_inputs if p.kind == 'skill_table_choice'), None)
+        assert pending is not None
+        assert set(pending.options) == set(_SCIENCES)
+
+    def test_advanced_education_roll_6_creates_science_choice(self):
+        # EDU=10 ≥ 10 → can access Scholar advanced_education table
+        events = [
+            *self._setup_in_term_2(),
+            SkillTableEvent(id=9, fulfills='8.0', table='advanced_education', roll=6),
+        ]
+        projection = replay(1, events)
+
+        pending = next((p for p in projection.pending_inputs if p.kind == 'skill_table_choice'), None)
+        assert pending is not None
+        assert set(pending.options) == set(_SCIENCES)
+
+    def test_advanced_education_roll_1_creates_art_choice(self):
+        # Core advanced_education row 1: Art (any broad art type)
+        events = [
+            *self._setup_in_term_2(),
+            SkillTableEvent(id=9, fulfills='8.0', table='advanced_education', roll=1),
+        ]
+        projection = replay(1, events)
+
+        pending = next((p for p in projection.pending_inputs if p.kind == 'skill_table_choice'), None)
+        assert pending is not None
+        assert set(pending.options) == {'Performing Art', 'Creative Art', 'Presentation Art'}
+
+    def test_field_researcher_roll_6_creates_science_choice(self):
+        events = [
+            *self._setup_in_term_2('Field Researcher'),
+            SkillTableEvent(id=9, fulfills='8.0', table='field researcher', roll=6),
+        ]
+        projection = replay(1, events)
+
+        pending = next((p for p in projection.pending_inputs if p.kind == 'skill_table_choice'), None)
+        assert pending is not None
+        assert set(pending.options) == set(_SCIENCES)
+
+    def test_scientist_roll_3_creates_science_choice(self):
+        events = [
+            *self._setup_in_term_2('Scientist'),
+            SkillTableEvent(id=9, fulfills='8.0', table='scientist', roll=3),
+        ]
+        projection = replay(1, events)
+
+        pending = next((p for p in projection.pending_inputs if p.kind == 'skill_table_choice'), None)
+        assert pending is not None
+        assert set(pending.options) == set(_SCIENCES)
+
+    def test_physician_roll_6_creates_science_choice(self):
+        events = [
+            *self._setup_in_term_2('Physician'),
+            SkillTableEvent(id=9, fulfills='8.0', table='physician', roll=6),
+        ]
+        projection = replay(1, events)
+
+        pending = next((p for p in projection.pending_inputs if p.kind == 'skill_table_choice'), None)
+        assert pending is not None
+        assert set(pending.options) == set(_SCIENCES)
+
+
+class TestScholarMishap3ScienceChoice:
+    """Mishap 3 Science +1 is deferred until player chooses which broad science (Core p.44)."""
+
+    def _setup_to_choice(self, openly_or_secretly: str) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
+            SurviveEvent(id=5, fulfills='4.0', roll=3),
+            MishapEvent(id=6, fulfills='5.0', roll=3),
+            SkillChoiceEvent(id=7, fulfills='6.0', skill=openly_or_secretly),
+        ]
+
+    def test_openly_choice_grants_chosen_science(self):
+        events = [*self._setup_to_choice('openly'), SkillChoiceEvent(id=8, fulfills='7.0', skill='Life Science')]
+        projection = replay(1, events)
+
+        assert projection.summary.skills.get('Life Science', -1) >= 1
+
+    def test_secretly_choice_grants_chosen_science(self):
+        events = [*self._setup_to_choice('secretly'), SkillChoiceEvent(id=8, fulfills='7.0', skill='Physical Science')]
+        projection = replay(1, events)
+
+        assert projection.summary.skills.get('Physical Science', -1) >= 1
+
+    def test_openly_chosen_science_not_fixed_to_space_science(self):
+        # Verify a non-space science can be chosen (science choice is free)
+        events = [*self._setup_to_choice('openly'), SkillChoiceEvent(id=8, fulfills='7.0', skill='Social Science')]
+        projection = replay(1, events)
+
+        assert projection.summary.skills.get('Social Science', -1) >= 1
+        # Space Science starts at 0 from initial training, but is NOT raised to 1 by the mishap choice
+        assert projection.summary.skills.get('Space Science', -1) == 0
+
+
+class TestPhysicianRankBonuses:
+    """Physician rank 1 grants Medic 1 (not Science); Field Researcher rank 1 grants Science (choice)."""
+
+    def _setup_to_advancement(self, assignment: str) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment=assignment, qualification_roll=5),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=5),
+        ]
+
+    def test_physician_rank_1_grants_medic_not_science_choice(self):
+        events = [
+            *self._setup_to_advancement('Physician'),
+            AdvancementEvent(id=7, fulfills='6.0', roll=9),  # INT=9 DM+1 → 10 ≥ 8 → advance to rank 1
+        ]
+        projection = replay(1, events)
+
+        # Physician rank 1 = Medic 1; no science choice pending should be created
+        assert projection.summary.skills.get('Medic', -1) >= 1
+        science_pending = next((p for p in projection.pending_inputs if p.kind == 'skill_choice'), None)
+        assert science_pending is None or set(science_pending.options) != set(_SCIENCES)
+
+    def test_field_researcher_rank_1_creates_science_choice_pending(self):
+        events = [
+            *self._setup_to_advancement('Field Researcher'),
+            AdvancementEvent(id=7, fulfills='6.0', roll=5),  # INT=9 DM+1 → 6 ≥ 6 → advance to rank 1
+        ]
+        projection = replay(1, events)
+
+        # Field Researcher rank 1 = Science 1 — player chooses which science
+        # Pending kind is rank_bonus_choice_{level} to distinguish from event skill choices
+        science_pending = next(
+            (
+                p
+                for p in projection.pending_inputs
+                if p.kind.startswith('rank_bonus_choice') and set(p.options) == set(_SCIENCES)
+            ),
+            None,
+        )
+        assert science_pending is not None

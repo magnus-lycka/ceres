@@ -1,5 +1,6 @@
 import pytest
 
+from ceres.character.skills import Admin, Astrogation, Broker, Level, Medic, Steward
 from ceres.gear.computer import (
     ComputerChip,
     ComputerTerminal,
@@ -13,6 +14,26 @@ from ceres.gear.computer import (
     Tablet,
 )
 from ceres.gear.software import Expert
+
+
+def _admin(level: int = 1) -> Admin:
+    return Admin(level=Level(value=level))
+
+
+def _astrogation(level: int = 1) -> Astrogation:
+    return Astrogation(level=Level(value=level))
+
+
+def _broker(level: int = 1) -> Broker:
+    return Broker(level=Level(value=level))
+
+
+def _medic(level: int = 1) -> Medic:
+    return Medic(level=Level(value=level))
+
+
+def _steward(level: int = 1) -> Steward:
+    return Steward(level=Level(value=level))
 
 
 def test_portable_computer_zero_matches_csc_values():
@@ -162,14 +183,14 @@ def test_microscopic_chip_matches_csc_values():
 
 
 def test_specialised_portable_ii_admin_cost():
-    sc = SpecialisedComputer(processing=1, expert=Expert(rating=1, skill='Admin'), variant='intelligent_interface')
+    sc = SpecialisedComputer(processing=1, expert=Expert(rating=1, skill=_admin()), variant='intelligent_interface')
     assert sc.tl == 8
     assert sc.mass_kg == 2.0
     assert sc.cost == 1_350.0  # 5 * 250 + 100
 
 
 def test_specialised_portable_intellect_broker3_cost():
-    sc = SpecialisedComputer(processing=3, expert=Expert(rating=3, skill='Broker'), variant='intellect')
+    sc = SpecialisedComputer(processing=3, expert=Expert(rating=3, skill=_broker(3)), variant='intellect')
     assert sc.tl == 12
     assert sc.mass_kg == 0.5
     assert sc.cost == 30_000.0  # 10 * 1000 + 100 * 200
@@ -177,14 +198,14 @@ def test_specialised_portable_intellect_broker3_cost():
 
 def test_specialised_portable_ii_astrogation2_cost():
     sc = SpecialisedComputer(
-        processing=2, expert=Expert(rating=2, skill='Astrogation'), variant='intelligent_interface'
+        processing=2, expert=Expert(rating=2, skill=_astrogation(2)), variant='intelligent_interface'
     )
     assert sc.tl == 13  # max(PC/2 TL10, Expert Astrogation/2 TL13)
     assert sc.cost == 5 * 500.0 + 5_000.0  # 5 * Cr500 + Expert Astrogation/2
 
 
 def test_specialised_computer_insufficient_processing_gives_error_note():
-    sc = SpecialisedComputer(processing=1, expert=Expert(rating=3, skill='Admin'), variant='intellect')
+    sc = SpecialisedComputer(processing=1, expert=Expert(rating=3, skill=_admin(3)), variant='intellect')
     error_notes = [n for n in sc.notes if n.category == 'error']
     assert len(error_notes) == 1
     assert 'Processing 1' in error_notes[0].message
@@ -192,7 +213,7 @@ def test_specialised_computer_insufficient_processing_gives_error_note():
 
 
 def test_specialised_ii_computer_has_one_info_note():
-    sc = SpecialisedComputer(processing=1, expert=Expert(rating=1, skill='Admin'), variant='intelligent_interface')
+    sc = SpecialisedComputer(processing=1, expert=Expert(rating=1, skill=_admin()), variant='intelligent_interface')
     info_notes = [n for n in sc.notes if n.category == 'info']
     assert len(info_notes) == 1
     assert 'DM+1 on Admin' in info_notes[0].message
@@ -200,7 +221,7 @@ def test_specialised_ii_computer_has_one_info_note():
 
 
 def test_specialised_intellect_computer_has_two_info_notes():
-    sc = SpecialisedComputer(processing=3, expert=Expert(rating=3, skill='Broker'), variant='intellect')
+    sc = SpecialisedComputer(processing=3, expert=Expert(rating=3, skill=_broker(3)), variant='intellect')
     info_notes = [n for n in sc.notes if n.category == 'info']
     assert len(info_notes) == 2
     assert 'DM+1 on Broker' in info_notes[0].message
@@ -210,46 +231,46 @@ def test_specialised_intellect_computer_has_two_info_notes():
 
 
 def test_specialised_tablet_intellect_medic_cost():
-    sc = SpecialisedTablet(processing=2, expert=Expert(rating=2, skill='Medic'), variant='intellect')
+    sc = SpecialisedTablet(processing=2, expert=Expert(rating=2, skill=_medic(2)), variant='intellect')
     assert sc.tl == 11
     assert sc.mass_kg == 0.25
     assert sc.cost == 10 * 250.0 + 2_000.0  # 10 * Cr250 + Expert Medic/2
 
 
 def test_specialised_computer_processing_in_part():
-    sc = SpecialisedComputer(processing=1, expert=Expert(rating=1, skill='Admin'), variant='intelligent_interface')
+    sc = SpecialisedComputer(processing=1, expert=Expert(rating=1, skill=_admin()), variant='intelligent_interface')
     assert sc.parts[0].processing == 1
 
 
 def test_specialised_tablet_processing_in_part():
-    sc = SpecialisedTablet(processing=3, expert=Expert(rating=1, skill='Steward'), variant='intelligent_interface')
+    sc = SpecialisedTablet(processing=3, expert=Expert(rating=1, skill=_steward()), variant='intelligent_interface')
     assert sc.parts[0].processing == 3
     assert sc.tl == 13
 
 
 def test_specialised_computer_item_note_full_name():
-    sc = SpecialisedComputer(processing=1, expert=Expert(rating=1, skill='Admin'), variant='intelligent_interface')
+    sc = SpecialisedComputer(processing=1, expert=Expert(rating=1, skill=_admin()), variant='intelligent_interface')
     assert sc.notes[0].message == 'Specialised Portable Computer Admin/1 Intelligent Interface'
 
 
 def test_specialised_tablet_item_note_full_name():
-    sc = SpecialisedTablet(processing=2, expert=Expert(rating=2, skill='Broker'), variant='intellect')
+    sc = SpecialisedTablet(processing=2, expert=Expert(rating=2, skill=_broker(2)), variant='intellect')
     assert sc.notes[0].message == 'Specialised Tablet Broker/2 Intellect'
 
 
 def test_specialised_computer_roundtrip():
-    sc = SpecialisedComputer(processing=1, expert=Expert(rating=1, skill='Admin'), variant='intelligent_interface')
+    sc = SpecialisedComputer(processing=1, expert=Expert(rating=1, skill=_admin()), variant='intelligent_interface')
     sc2 = SpecialisedComputer.model_validate_json(sc.model_dump_json())
     assert sc2.cost == 1_350.0
-    assert sc2.expert.skill == 'Admin'
+    assert sc2.expert.skill_name == 'Admin'
     assert sc2.parts[0].processing == 1
 
 
 def test_specialised_tablet_roundtrip():
-    sc = SpecialisedTablet(processing=2, expert=Expert(rating=2, skill='Broker'), variant='intellect')
+    sc = SpecialisedTablet(processing=2, expert=Expert(rating=2, skill=_broker(2)), variant='intellect')
     sc2 = SpecialisedTablet.model_validate_json(sc.model_dump_json())
     assert sc2.cost == sc.cost
-    assert sc2.expert.skill == 'Broker'
+    assert sc2.expert.skill_name == 'Broker'
     assert sc2.parts[0].processing == 2
 
 

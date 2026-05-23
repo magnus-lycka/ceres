@@ -4,6 +4,7 @@ import json
 
 import pytest
 
+from ceres.character.skills import Level, SpaceScience
 from ceres.gear.software import Expert
 from ceres.make.ship import armour, hull
 from ceres.make.ship.bridge import Cockpit, CommandSection
@@ -276,7 +277,7 @@ def test_roundtrip_expert_software_package():
         hull=Hull(configuration=hull.standard_hull),
         computer=ComputerSection(
             hardware=Computer10(),
-            software=[Expert(rating=3, skill='Space Science (Planetology)')],
+            software=[Expert(rating=3, skill=SpaceScience(planetology=Level(value=3)))],
         ),
     )
     loaded = _roundtrip(source_ship)
@@ -284,7 +285,7 @@ def test_roundtrip_expert_software_package():
     expert = next((package for package in loaded.computer.software_packages if isinstance(package, Expert)), None)
     assert expert is not None
     assert expert.rating == 3
-    assert expert.skill == 'Space Science (Planetology)'
+    assert expert.skill_name == 'Space Science (Planetology)'
     assert expert.description == 'Expert (Space Science (Planetology))/3'
     assert expert.cost == pytest.approx(20_000.0)
 

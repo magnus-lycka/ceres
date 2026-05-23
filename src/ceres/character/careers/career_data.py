@@ -22,6 +22,7 @@ class RankBonus(BaseModel):
     skill: str | None = None
     characteristic: str | None = None
     level: int = 1
+    choices: list[str] | None = None  # if player picks which broad skill to gain
 
 
 class RankEntry(BaseModel):
@@ -68,7 +69,8 @@ class CareerData(BaseModel):
     qualification: CharCheck
     assignments: list[AssignmentData]
     skill_tables: dict[str, SkillTable]  # keyed by table name, e.g. 'service_skills' or assignment name
-    ranks: dict[int, RankEntry]  # rank number → rank entry
+    ranks: dict[int, RankEntry]  # default rank table (used when no per-assignment override)
+    ranks_by_assignment: dict[str, dict[int, RankEntry]] = {}  # assignment name → rank table override
     events: dict[int, CareerEventEntry]  # 2D roll → event
     mishaps: dict[int, MishapEntry]  # 1D roll → mishap
     muster_out: MusterOutData | None = None
@@ -78,3 +80,6 @@ class CareerData(BaseModel):
 
     def skill_table(self, name: str) -> SkillTable | None:
         return self.skill_tables.get(name)
+
+    def assignment_ranks(self, assignment_name: str) -> dict[int, RankEntry]:
+        return self.ranks_by_assignment.get(assignment_name, self.ranks)

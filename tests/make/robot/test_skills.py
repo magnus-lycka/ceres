@@ -108,7 +108,7 @@ class TestBrainSoftware:
         import pytest
 
         with pytest.raises(Exception):
-            sw.bandwidth = 2  # type: ignore[misc]
+            setattr(sw, 'bandwidth', 2)
 
     def test_json_roundtrip(self):
         sw = BrainSoftware(name='Universal Translator', bandwidth=3, tl=12, cost=25000.0)

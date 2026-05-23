@@ -88,6 +88,12 @@ def _load_career_file(path: Path) -> CareerData:
 
     ranks = {int(k): _parse_rank_entry(int(k), v) for k, v in data.get('ranks', {}).items()}
 
+    ranks_by_assignment: dict[str, dict[int, RankEntry]] = {}
+    for assignment_name, assignment_ranks_raw in data.get('ranks_by_assignment', {}).items():
+        ranks_by_assignment[assignment_name] = {
+            int(k): _parse_rank_entry(int(k), v) for k, v in assignment_ranks_raw.items()
+        }
+
     events = {int(k): _parse_career_event(v) for k, v in data.get('events', {}).items()}
     mishaps = {int(k): _parse_mishap(v) for k, v in data.get('mishaps', {}).items()}
 
@@ -101,6 +107,7 @@ def _load_career_file(path: Path) -> CareerData:
         assignments=assignments,
         skill_tables=skill_tables,
         ranks=ranks,
+        ranks_by_assignment=ranks_by_assignment,
         events=events,
         mishaps=mishaps,
         muster_out=muster_out,

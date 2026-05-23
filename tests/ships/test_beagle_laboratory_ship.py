@@ -18,13 +18,14 @@ Source handling for this test case:
     external displacement, so drive and jump-fuel sizing use `455t`
 - still excluded from the modeled reference case:
   - software packages `Mentor/1` and `Research Assist/1` have no HG 2022 equivalent (see RIS-008)
-  - `Planetology/1` is modeled as `Expert(rating=3, skill='Space Science (Planetology)')`
+  - `Planetology/1` is modeled as `Expert(rating=3, skill=SpaceScience(planetology=Level(value=3)))`
 """
 
 from types import SimpleNamespace
 
 import pytest
 
+from ceres.character.skills import Level, SpaceScience
 from ceres.gear.software import Expert
 from ceres.make.ship import hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection
@@ -235,7 +236,7 @@ def build_beagle_laboratory_ship() -> ship.Ship:
         command=CommandSection(bridge=Bridge(small=True, holographic=True)),
         computer=ComputerSection(
             hardware=Computer10(),
-            software=[JumpControl(rating=2), Expert(rating=3, skill='Space Science (Planetology)')],
+            software=[JumpControl(rating=2), Expert(rating=3, skill=SpaceScience(planetology=Level(value=3)))],
         ),
         sensors=SensorsSection(primary=ImprovedSensors(), sensor_stations=SensorStations(count=1)),
         weapons=WeaponsSection(

@@ -3,6 +3,7 @@
 from pathlib import Path
 from typing import Literal
 
+from ceres.character.skills import Admin, Astrogation, Broker, Engineer, Level, Medic, Steward
 from ceres.report.render import render_html, render_pdf, render_typst_source
 from ceres.shared import NoteList
 
@@ -58,14 +59,38 @@ _COMPUTER_TYPES: list[type[ComputerEquipment]] = [
 ]
 
 _SPECIALISED_EXAMPLES: list[SpecialisedComputer] = [
-    SpecialisedComputer(processing=1, expert=Expert(rating=1, skill='Admin'), variant='intelligent_interface'),
-    SpecialisedComputer(processing=2, expert=Expert(rating=2, skill='Astrogation'), variant='intelligent_interface'),
-    SpecialisedComputer(processing=1, expert=Expert(rating=1, skill='Medic'), variant='intelligent_interface'),
-    SpecialisedTablet(processing=1, expert=Expert(rating=1, skill='Steward'), variant='intelligent_interface'),
-    SpecialisedTablet(processing=2, expert=Expert(rating=2, skill='Medic'), variant='intelligent_interface'),
-    SpecialisedComputer(processing=3, expert=Expert(rating=3, skill='Broker'), variant='intellect'),
-    SpecialisedComputer(processing=2, expert=Expert(rating=2, skill='Engineer (M-Drive)'), variant='intellect'),
-    SpecialisedTablet(processing=2, expert=Expert(rating=2, skill='Broker'), variant='intellect'),
+    SpecialisedComputer(
+        processing=1,
+        expert=Expert(rating=1, skill=Admin(level=Level(value=1))),
+        variant='intelligent_interface',
+    ),
+    SpecialisedComputer(
+        processing=2,
+        expert=Expert(rating=2, skill=Astrogation(level=Level(value=2))),
+        variant='intelligent_interface',
+    ),
+    SpecialisedComputer(
+        processing=1,
+        expert=Expert(rating=1, skill=Medic(level=Level(value=1))),
+        variant='intelligent_interface',
+    ),
+    SpecialisedTablet(
+        processing=1,
+        expert=Expert(rating=1, skill=Steward(level=Level(value=1))),
+        variant='intelligent_interface',
+    ),
+    SpecialisedTablet(
+        processing=2,
+        expert=Expert(rating=2, skill=Medic(level=Level(value=2))),
+        variant='intelligent_interface',
+    ),
+    SpecialisedComputer(processing=3, expert=Expert(rating=3, skill=Broker(level=Level(value=3))), variant='intellect'),
+    SpecialisedComputer(
+        processing=2,
+        expert=Expert(rating=2, skill=Engineer(m_drive=Level(value=2))),
+        variant='intellect',
+    ),
+    SpecialisedTablet(processing=2, expert=Expert(rating=2, skill=Broker(level=Level(value=2))), variant='intellect'),
 ]
 
 

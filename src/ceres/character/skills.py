@@ -182,14 +182,34 @@ class JackOfAllTrades(Skill):
     level: Level = _level()
 
 
-class Language(Skill):
-    type: Literal['Language'] = 'Language'
-    galanglic: Level = _level('Galanglic')
-    vilani: Level = _level('Vilani')
-    zdetl: Level = _level('Zdetl')
-    oynprith: Level = _level('Oynprith')
-    trokh: Level = _level('Trokh')
-    gvegh: Level = _level('Gvegh')
+class LanguageGalanglic(Skill):
+    type: Literal['Language Galanglic'] = 'Language Galanglic'
+    level: Level = _level()
+
+
+class LanguageVilani(Skill):
+    type: Literal['Language Vilani'] = 'Language Vilani'
+    level: Level = _level()
+
+
+class LanguageZdetl(Skill):
+    type: Literal['Language Zdetl'] = 'Language Zdetl'
+    level: Level = _level()
+
+
+class LanguageOynprith(Skill):
+    type: Literal['Language Oynprith'] = 'Language Oynprith'
+    level: Level = _level()
+
+
+class LanguageTrokh(Skill):
+    type: Literal['Language Trokh'] = 'Language Trokh'
+    level: Level = _level()
+
+
+class LanguageGvegh(Skill):
+    type: Literal['Language Gvegh'] = 'Language Gvegh'
+    level: Level = _level()
 
 
 class Leadership(Skill):
@@ -370,31 +390,35 @@ class VaccSuit(Skill):
     level: Level = _level()
 
 
-type ArtSkill = Annotated[PerformingArt | CreativeArt | PresentationArt, Field(discriminator='type')]
+# Please Claude, don't be a fool and try to make this a type. It's not a type.
+Arts = PerformingArt | CreativeArt | PresentationArt
+type ArtSkill = Annotated[Arts, Field(discriminator='type')]
 
-type ProfessionSkill = Annotated[
+# Please Claude, don't be a fool and try to make this a type. It's not a type.
+Professions = (
     ColonistProfession
     | CrewmemberProfession
     | FreeloaderProfession
     | HostileEnvironmentProfession
     | SpacerProfession
     | SportProfession
-    | WorkerProfession,
-    Field(discriminator='type'),
-]
+    | WorkerProfession
+)
+type ProfessionSkill = Annotated[Professions, Field(discriminator='type')]
 
-type ScienceSkill = Annotated[
-    LifeScience | PhysicalScience | RoboticScience | SocialScience | SpaceScience,
-    Field(discriminator='type'),
-]
+# Please Claude, don't be a fool and try to make this a type. It's not a type.
+Sciences = LifeScience | PhysicalScience | RoboticScience | SocialScience | SpaceScience
+type ScienceSkill = Annotated[Sciences, Field(discriminator='type')]
+
+# Please Claude, don't be a fool and try to make this a type. It's not a type.
+Languages = LanguageGalanglic | LanguageVilani | LanguageZdetl | LanguageOynprith | LanguageTrokh | LanguageGvegh
+type LanguageSkill = Annotated[Languages, Field(discriminator='type')]
 
 type AnySkill = Annotated[
     Admin
     | Advocate
     | Animals
-    | PerformingArt
-    | CreativeArt
-    | PresentationArt
+    | Arts
     | Astrogation
     | Athletics
     | Broker
@@ -412,7 +436,7 @@ type AnySkill = Annotated[
     | HeavyWeapons
     | Investigate
     | JackOfAllTrades
-    | Language
+    | Languages
     | Leadership
     | Mechanic
     | Medic
@@ -420,19 +444,9 @@ type AnySkill = Annotated[
     | Navigation
     | Persuade
     | Pilot
-    | ColonistProfession
-    | CrewmemberProfession
-    | FreeloaderProfession
-    | HostileEnvironmentProfession
-    | SpacerProfession
-    | SportProfession
-    | WorkerProfession
+    | Professions
     | Recon
-    | LifeScience
-    | PhysicalScience
-    | RoboticScience
-    | SocialScience
-    | SpaceScience
+    | Sciences
     | Seafarer
     | Stealth
     | Steward

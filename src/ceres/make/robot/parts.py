@@ -14,16 +14,17 @@ class RobotPartMixin(ABC):
     cost: float
     tl: int
     notes: NoteList
+    _assembly: RobotBase | None
 
     @property
     @abstractmethod
     def slots(self) -> int: ...
 
     def bind(self, assembly: RobotBase) -> None:
-        self._assembly = assembly  # type: ignore[attr-defined]
+        self._assembly = assembly
         self.check_tl()
-        if message := self.build_item():  # type: ignore[attr-defined]
-            self.item(message)  # type: ignore[attr-defined]
+        if message := self.build_item():
+            self.item(message)
 
     @property
     @abstractmethod

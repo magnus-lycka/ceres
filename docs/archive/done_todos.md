@@ -692,3 +692,21 @@ Implemented support:
 - ships with both reflec and stealth emit an error.
 - unit tests cover cost, spec row output, production cost, and stealth
   incompatibility.
+
+## Automation
+
+Traveller Companion ship automation levels are implemented.
+
+Implemented support:
+
+- `Ship.automation` defaults to `StandardAutomation`.
+- all six automation tiers are modelled: crew-intensive, low, standard,
+  enhanced, advanced, and high.
+- automation cost modifiers use the configured hull basis plus drives and power
+  plant costs.
+- the non-gravity hull discount is excluded from the automation cost basis.
+- crew multipliers are applied to reducible crew roles.
+- standard automation emits no spec row; non-standard automation emits a Hull
+  spec row with any task DM notes.
+- unit tests cover tier values, cost basis, spec row output, serialization, and
+  non-gravity automation basis handling.

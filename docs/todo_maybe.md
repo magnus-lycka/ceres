@@ -27,32 +27,6 @@ Remaining policy question:
 
 Automation crew effects have been split into a separate item below.
 
-## Automation [todo]
-
-Model ship automation levels and their effect on crew requirements.
-
-Reference: `refs/companion/54_starship_automation.md`
-
-The Traveller Companion defines six automation tiers — from Crew-Intensive
-(−40% hull/drive cost, +100% crew) through High Automation (+100% cost, −40%
-crew) — each with a cost modifier, a crew-requirement multiplier, and a task
-DM. Standard Automation is the current implicit default.
-
-The cost side affects hull plus drives/power-plant totals. The crew side applies
-a percentage multiplier to the normal crew complement. Some roles are exempt
-from reduction (e.g. a ship needing one astrogator still needs one astrogator
-regardless of automation level). Task DMs apply to all shipboard checks.
-
-Remaining work:
-
-- add an `automation` field to `Ship` (or a hull/drives option) with the six
-  tiers
-- apply the cost modifier to hull and drive/plant costs
-- apply the crew-requirement multiplier to reducible roles
-- clarify which roles are immune to the reduction (pilot count for carried
-  craft, astrogator, etc.)
-- surface any task DM in spec notes
-
 ## Screens source coverage and Black Globe [todo]
 
 Meson screens, nuclear dampers, deflector screens, and energy shields are modelled in

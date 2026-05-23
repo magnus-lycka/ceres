@@ -1,5 +1,19 @@
+from typing import Any
+
+from pydantic import ValidationError
 import pytest
 
+from ceres.character.skills import (
+    Admin,
+    Electronics,
+    LanguageVilani,
+    Level,
+    PhysicalScience,
+    SpacerProfession,
+    SpaceScience,
+    Tactics,
+    WorkerProfession,
+)
 from ceres.gear.software import (
     Agent,
     Expert,
@@ -44,7 +58,7 @@ def test_intellect_three_matches_csc_values():
 
 
 def test_expert_broad_science_planetology_matches_skill_table():
-    package = Expert(rating=1, skill='Space Science (Planetology)')
+    package = Expert(rating=1, skill=SpaceScience(planetology=Level(value=1)))
     assert package.description == 'Expert (Space Science (Planetology))/1'
     assert package.bandwidth == 1
     assert package.tl == 9
@@ -52,7 +66,7 @@ def test_expert_broad_science_planetology_matches_skill_table():
 
 
 def test_expert_higher_rating_increases_tl_and_cost_from_base_skill():
-    package = Expert(rating=3, skill='Admin')
+    package = Expert(rating=3, skill=Admin(level=Level(value=3)))
     assert package.description == 'Expert (Admin)/3'
     assert package.bandwidth == 3
     assert package.tl == 10
@@ -60,15 +74,15 @@ def test_expert_higher_rating_increases_tl_and_cost_from_base_skill():
 
 
 def test_expert_supports_all_companion_science_subskills():
-    package = Expert(rating=2, skill='Physical Science (Jumpspace Physics)')
+    package = Expert(rating=2, skill=PhysicalScience(jumpspace_physics=Level(value=1)))
     assert package.description == 'Expert (Physical Science (Jumpspace Physics))/2'
     assert package.bandwidth == 2
     assert package.tl == 10
     assert package.cost == 2_000.0
 
 
-def test_expert_known_specialised_skill_uses_flat_lookup():
-    package = Expert(rating=1, skill='Electronics (Computers)')
+def test_expert_known_specialised_skill_uses_skill_lookup_when_all_specialities_match():
+    package = Expert(rating=1, skill=Electronics(computers=Level(value=1)))
     assert package.description == 'Expert (Electronics (Computers))/1'
     assert package.bandwidth == 1
     assert package.tl == 8
@@ -76,7 +90,7 @@ def test_expert_known_specialised_skill_uses_flat_lookup():
 
 
 def test_expert_known_broad_profession_subskill_uses_flat_lookup():
-    package = Expert(rating=1, skill='Spacer Profession (Crewmember)')
+    package = Expert(rating=1, skill=SpacerProfession(crewmember=Level(value=1)))
     assert package.description == 'Expert (Spacer Profession (Crewmember))/1'
     assert package.bandwidth == 1
     assert package.tl == 9
@@ -84,34 +98,30 @@ def test_expert_known_broad_profession_subskill_uses_flat_lookup():
 
 
 def test_expert_known_worker_profession_subskill_uses_flat_lookup():
-    package = Expert(rating=1, skill='Worker Profession (Polymers)')
+    package = Expert(rating=1, skill=WorkerProfession(polymers=Level(value=1)))
     assert package.description == 'Expert (Worker Profession (Polymers))/1'
     assert package.bandwidth == 1
     assert package.tl == 9
     assert package.cost == 200.0
 
 
-def test_expert_unknown_skill_uses_csc_fallback_and_warns():
-    package = Expert(rating=1, skill='Cementology')
-    assert package.description == 'Expert (Cementology)/1'
+def test_expert_rejects_string_skill_input():
+    bad_input: Any = 'Admin'
+    with pytest.raises(ValidationError):
+        Expert(rating=1, skill=bad_input)
+
+
+def test_expert_known_skill_uses_skill_lookup_without_active_speciality_when_all_specialities_match():
+    package = Expert(rating=1, skill=Tactics())
+    assert package.description == 'Expert (Tactics)/1'
     assert package.bandwidth == 1
-    assert package.tl == 11
-    assert package.cost == 1_000.0
-    assert 'Unfamiliar Expert skill Cementology uses CSC fallback values' in package.notes.warnings
-
-
-def test_expert_tactics_any_falls_back_like_unknown_skill():
-    cementology = Expert(rating=1, skill='Cementology')
-    tactics_any = Expert(rating=1, skill='Tactics (Any)')
-    assert tactics_any.description == 'Expert (Tactics (Any))/1'
-    assert tactics_any.bandwidth == cementology.bandwidth
-    assert tactics_any.tl == cementology.tl
-    assert tactics_any.cost == cementology.cost
-    assert 'Unfamiliar Expert skill Tactics (Any) uses CSC fallback values' in tactics_any.notes.warnings
+    assert package.tl == 8
+    assert package.cost == 100.0
+    assert not package.notes.warnings
 
 
 def test_expert_language_vilani_uses_known_lookup():
-    package = Expert(rating=1, skill='Language Vilani')
+    package = Expert(rating=1, skill=LanguageVilani(level=Level(value=1)))
     assert package.description == 'Expert (Language Vilani)/1'
     assert package.tl == 9
     assert package.cost == 200.0
@@ -119,7 +129,7 @@ def test_expert_language_vilani_uses_known_lookup():
 
 
 def test_expert_tactics_military_uses_known_lookup():
-    package = Expert(rating=1, skill='Tactics (Military)')
+    package = Expert(rating=1, skill=Tactics(military=Level(value=1)))
     assert package.description == 'Expert (Tactics (Military))/1'
     assert package.tl == 8
     assert package.cost == 100.0
@@ -127,7 +137,7 @@ def test_expert_tactics_military_uses_known_lookup():
 
 
 def test_expert_tactics_naval_uses_known_lookup():
-    package = Expert(rating=1, skill='Tactics (Naval)')
+    package = Expert(rating=1, skill=Tactics(naval=Level(value=1)))
     assert package.description == 'Expert (Tactics (Naval))/1'
     assert package.tl == 8
     assert package.cost == 100.0

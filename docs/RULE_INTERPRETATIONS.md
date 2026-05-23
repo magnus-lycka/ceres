@@ -202,6 +202,10 @@ to `Expert(N, skill='Space Science (Planetology)')` names a broad skill, not
 a flat speciality. The software table in `ceres.gear.software` lists broad
 science skills (and their specialities) as top-level entries accordingly.
 
+The same model applies to character creation: career tables that say "Science",
+"Art", or "Profession" are resolved as player choices from the appropriate broad
+skill group. See **RIC-001** for the character creation details.
+
 ### RIS-010 Carried Craft — Displacement, Performance Sizing, and Crew
 
 **Ship displacement**: A ship's displacement is its own internal hull volume
@@ -366,6 +370,45 @@ requirement is the specific use case called out by the armoury rule. The small
 epsilon prevents floating-point noise from turning exact boundary cases into an
 extra armoury.
 
+## Character Interpretations
+
+### RIC-001 "Science", "Art", and "Profession" in Career Tables Mean Player Chooses a Broad Skill
+
+The *Core Rulebook* (2022) career skill tables list generic names such as
+**Science**, **Art**, and **Profession** — e.g. "Gain Science 1" or roll
+result "Science" on an assignment table. These entries do not refer to a flat
+speciality; they mean the player chooses any one of the available broad skills
+in that group.
+
+The broad skills themselves come from the *Traveller Companion* (2024) model
+(see RIS-009):
+
+| Generic name | Available broad skills |
+| --- | --- |
+| Science | Life Science, Physical Science, Robotic Science, Social Science, Space Science |
+| Art | Performing Art, Creative Art, Presentation Art |
+| Profession | Colonist Profession, Crewmember Profession, Freeloader Profession, Hostile Environment Profession, Spacer Profession, Sport Profession, Worker Profession |
+
+**Implications for character creation:**
+
+- Skill table entries that list "Science" (e.g. Scout advanced education row 5,
+  Scholar service skill row 6) offer all five broad sciences as choices; the
+  player picks one.
+- Event or mishap text that says "increase Science by one level" (e.g. Scholar
+  event 11, Scholar mishap 3) likewise means player chooses which broad science.
+- Rank bonuses listed as "Science 1" or "Science 2" (e.g. Scholar / Field
+  Researcher / Scientist rank 1 and 5) defer the grant until the player chooses
+  the science.
+- The Physician career has a separate rank table from Field Researcher /
+  Scientist because the Core Rulebook lists different rank bonuses for it (rank 1
+  = Medic 1 instead of Science 1).
+
+This interpretation is consistent with the *Traveller Companion* broad-skill
+model and avoids hard-coding a particular speciality where the source says
+"Science" generically. See also RIS-009.
+
+---
+
 ## Robot Interpretations
 
 ### RIR-001 Manipulator Cost Credit — 20% BCC Cap Applied to Combined Net
@@ -439,7 +482,7 @@ Worked example — Size 3 arm on a Size 5 robot (base_slots = 16):
 
 ### RIR-007 Walker Leg-Manipulators: Cost Only, No Slots
 
-The *Robot Handbook* (p.27) states: "A robot designed as a walker may enhance a leg to operate as a manipulator by paying the base manipulator cost of a robot of its Size (Cr100 × Size per modified manipulator). … their size may not be altered."
+  The *Robot Handbook* (p.27) states: "A robot designed as a walker may enhance a leg to operate as a manipulator by paying the base manipulator cost of a robot of its Size (Cr100 × Size per modified manipulator). … their size may not be altered."
 
 The rule mentions only cost, not slots. The size restriction is the counterpart to that: because the legs are not resized or fully added as extra components, they carry no slot expenditure. Ceres therefore treats converting a walker's default two legs into manipulators as costing Cr100 × robot_size each with no slot effect.
 

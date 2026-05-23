@@ -1,5 +1,5 @@
 name: Scout
-source: Explorer
+source: Core
 
 qualification:
   characteristic: INT
@@ -37,27 +37,27 @@ skill_tables:
     2: {skill: Language}
     3: {skill: Seafarer}
     4: {skill: Explosives}
-    5: {skill: Space Science}
+    5: {skill: Science, choices: [Life Science, Physical Science, Robotic Science, Social Science, Space Science]}
     6: {skill: Jack-of-All-Trades}
   courier:
     1: {skill: Electronics}
-    2: {skill: Persuade}
+    2: {skill: Flyer}
     3: {skill: Pilot}
     4: {skill: Engineer}
     5: {skill: Athletics}
     6: {skill: Astrogation}
   surveyor:
     1: {skill: Electronics}
-    2: {skill: Pilot}
+    2: {skill: Persuade}
     3: {skill: Pilot}
-    4: {skill: Space Science}
+    4: {skill: Navigation}
     5: {skill: Diplomat}
     6: {skill: Streetwise}
   explorer:
     1: {skill: Electronics}
-    2: {skill: Flyer}
+    2: {skill: Pilot}
     3: {skill: Engineer}
-    4: {skill: Navigation}
+    4: {skill: Science, choices: [Life Science, Physical Science, Robotic Science, Social Science, Space Science]}
     5: {skill: Stealth}
     6: {skill: Recon}
 
@@ -102,9 +102,9 @@ mishaps:
     text: You have no idea what happened to you — they found your ship drifting on the fringes of friendly space.
     effects: []
   6:
-    text: Injured.
+    text: Injured. Roll on the Injury table.
     effects:
-      - {type: injury, severity: normal}
+      - {type: injury, severity: from_table}
 
 events:
   2:

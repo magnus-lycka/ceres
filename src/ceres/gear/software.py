@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING, Annotated, ClassVar, Literal
 
 from pydantic import Field, PrivateAttr, field_validator
 
+from ceres.character import skills as character_skills
+from ceres.character.skills import AnySkill, Level, Skill
 from ceres.shared import CeresModel, NoteList, _Note
 
 if TYPE_CHECKING:
@@ -174,94 +176,86 @@ class Translator(RatedSoftwarePackage):
     }
 
 
+def _skill_spec(skill_cls: type[Skill], speciality: str | None = None) -> tuple[type[Skill], str | None]:
+    return skill_cls, speciality
+
+
+def _speciality_label(skill: Skill, field_name: str) -> str:
+    field = type(skill).model_fields[field_name]
+    extra = field.json_schema_extra or {}
+    return str(extra.get('name') or field_name.replace('_', ' ').title())
+
+
+def _active_speciality_field(skill: Skill) -> str | None:
+    if 'level' in type(skill).model_fields:
+        return None
+    active: list[str] = []
+    for field_name, field in type(skill).model_fields.items():
+        if field_name in {'display_label', 'type'} or field.annotation is not Level:
+            continue
+        level = getattr(skill, field_name)
+        if isinstance(level, Level) and level.value > 0:
+            active.append(field_name)
+    if len(active) == 1:
+        return active[0]
+    return None
+
+
+def _active_speciality_label(skill: Skill) -> str | None:
+    field_name = _active_speciality_field(skill)
+    if field_name is None:
+        return None
+    return _speciality_label(skill, field_name)
+
+
+_EXPERT_SKILL_SPECS: dict[tuple[type[Skill], str | None], dict[str, int | float]] = {
+    _skill_spec(character_skills.Admin): {'tl': 8, 'cost': 100.0},
+    _skill_spec(character_skills.Advocate): {'tl': 10, 'cost': 500.0},
+    _skill_spec(character_skills.Animals, 'veterinary'): {'tl': 9, 'cost': 200.0},
+    _skill_spec(character_skills.Astrogation): {'tl': 12, 'cost': 500.0},
+    _skill_spec(character_skills.Broker): {'tl': 10, 'cost': 200.0},
+    _skill_spec(character_skills.Electronics): {'tl': 8, 'cost': 100.0},
+    _skill_spec(character_skills.Engineer): {'tl': 9, 'cost': 200.0},
+    _skill_spec(character_skills.Explosives): {'tl': 8, 'cost': 100.0},
+    _skill_spec(character_skills.Gambler): {'tl': 10, 'cost': 500.0},
+    _skill_spec(character_skills.LanguageGalanglic): {'tl': 9, 'cost': 200.0},
+    _skill_spec(character_skills.LanguageGvegh): {'tl': 9, 'cost': 200.0},
+    _skill_spec(character_skills.LanguageOynprith): {'tl': 9, 'cost': 200.0},
+    _skill_spec(character_skills.LanguageTrokh): {'tl': 9, 'cost': 200.0},
+    _skill_spec(character_skills.LanguageVilani): {'tl': 9, 'cost': 200.0},
+    _skill_spec(character_skills.LanguageZdetl): {'tl': 9, 'cost': 200.0},
+    _skill_spec(character_skills.Mechanic): {'tl': 8, 'cost': 100.0},
+    _skill_spec(character_skills.Medic): {'tl': 9, 'cost': 200.0},
+    _skill_spec(character_skills.Navigation): {'tl': 8, 'cost': 100.0},
+    _skill_spec(character_skills.ColonistProfession): {'tl': 9, 'cost': 200.0},
+    _skill_spec(character_skills.FreeloaderProfession): {'tl': 9, 'cost': 200.0},
+    _skill_spec(character_skills.HostileEnvironmentProfession): {'tl': 9, 'cost': 200.0},
+    _skill_spec(character_skills.SpacerProfession): {'tl': 9, 'cost': 200.0},
+    _skill_spec(character_skills.SportProfession): {'tl': 9, 'cost': 200.0},
+    _skill_spec(character_skills.WorkerProfession): {'tl': 9, 'cost': 200.0},
+    _skill_spec(character_skills.LifeScience): {'tl': 9, 'cost': 200.0},
+    _skill_spec(character_skills.PhysicalScience): {'tl': 9, 'cost': 200.0},
+    _skill_spec(character_skills.RoboticScience): {'tl': 9, 'cost': 200.0},
+    _skill_spec(character_skills.SocialScience): {'tl': 9, 'cost': 200.0},
+    _skill_spec(character_skills.SpaceScience): {'tl': 9, 'cost': 200.0},
+    _skill_spec(character_skills.Steward): {'tl': 8, 'cost': 100.0},
+    _skill_spec(character_skills.Survival): {'tl': 10, 'cost': 200.0},
+    _skill_spec(character_skills.Tactics): {'tl': 8, 'cost': 100.0},
+}
+
+
 class Expert(SoftwarePackage):
     package: Literal['expert'] = 'expert'
     rating: int
-    skill: str
+    skill: AnySkill
 
-    KNOWN_SKILLS: ClassVar[dict[str, dict[str, int | float]]] = {
-        'Admin': {'tl': 8, 'cost': 100.0},
-        'Advocate': {'tl': 10, 'cost': 500.0},
-        'Animals (Veterinary)': {'tl': 9, 'cost': 200.0},
-        'Astrogation': {'tl': 12, 'cost': 500.0},
-        'Broker': {'tl': 10, 'cost': 200.0},
-        'Electronics (Comms)': {'tl': 8, 'cost': 100.0},
-        'Electronics (Computers)': {'tl': 8, 'cost': 100.0},
-        'Electronics (Remote Ops)': {'tl': 8, 'cost': 100.0},
-        'Electronics (Sensors)': {'tl': 8, 'cost': 100.0},
-        'Engineer (J-Drive)': {'tl': 9, 'cost': 200.0},
-        'Engineer (Life Support)': {'tl': 9, 'cost': 200.0},
-        'Engineer (M-Drive)': {'tl': 9, 'cost': 200.0},
-        'Engineer (Power)': {'tl': 9, 'cost': 200.0},
-        'Explosives': {'tl': 8, 'cost': 100.0},
-        'Gambler': {'tl': 10, 'cost': 500.0},
-        'Language Galanglic': {'tl': 9, 'cost': 200.0},
-        'Language Gvegh': {'tl': 9, 'cost': 200.0},
-        'Language Oynprith': {'tl': 9, 'cost': 200.0},
-        'Language Trokh': {'tl': 9, 'cost': 200.0},
-        'Language Vilani': {'tl': 9, 'cost': 200.0},
-        'Language Zdetl': {'tl': 9, 'cost': 200.0},
-        'Mechanic': {'tl': 8, 'cost': 100.0},
-        'Medic': {'tl': 9, 'cost': 200.0},
-        'Navigation': {'tl': 8, 'cost': 100.0},
-        'Colonist Profession (Farming)': {'tl': 9, 'cost': 200.0},
-        'Colonist Profession (Ranching)': {'tl': 9, 'cost': 200.0},
-        'Freeloader Profession (Scrounging)': {'tl': 9, 'cost': 200.0},
-        'Freeloader Profession (Security)': {'tl': 9, 'cost': 200.0},
-        'Hostile Environment Profession (Contaminant)': {'tl': 9, 'cost': 200.0},
-        'Hostile Environment Profession (High-G)': {'tl': 9, 'cost': 200.0},
-        'Hostile Environment Profession (Low-G)': {'tl': 9, 'cost': 200.0},
-        'Hostile Environment Profession (Underwater)': {'tl': 9, 'cost': 200.0},
-        'Spacer Profession (Belter)': {'tl': 9, 'cost': 200.0},
-        'Spacer Profession (Crewmember)': {'tl': 9, 'cost': 200.0},
-        'Sport Profession (Atmosphere Surfing)': {'tl': 9, 'cost': 200.0},
-        'Sport Profession (Golf)': {'tl': 9, 'cost': 200.0},
-        'Sport Profession (Motorsports)': {'tl': 9, 'cost': 200.0},
-        'Sport Profession (Racquet Sports)': {'tl': 9, 'cost': 200.0},
-        'Sport Profession (Team Ball Sports)': {'tl': 9, 'cost': 200.0},
-        'Sport Profession (Track & Field)': {'tl': 9, 'cost': 200.0},
-        'Worker Profession (Armourer)': {'tl': 9, 'cost': 200.0},
-        'Worker Profession (Biologicals)': {'tl': 9, 'cost': 200.0},
-        'Worker Profession (Civil Engineering)': {'tl': 9, 'cost': 200.0},
-        'Worker Profession (Construction)': {'tl': 9, 'cost': 200.0},
-        'Worker Profession (Hydroponics)': {'tl': 9, 'cost': 200.0},
-        'Worker Profession (Metalworking)': {'tl': 9, 'cost': 200.0},
-        'Worker Profession (Polymers)': {'tl': 9, 'cost': 200.0},
-        'Life Science (Biology)': {'tl': 9, 'cost': 200.0},
-        'Life Science (Genetics)': {'tl': 9, 'cost': 200.0},
-        'Life Science (Psionicology)': {'tl': 9, 'cost': 200.0},
-        'Life Science (Xenology)': {'tl': 9, 'cost': 200.0},
-        'Physical Science (Chemistry)': {'tl': 9, 'cost': 200.0},
-        'Physical Science (Physics)': {'tl': 9, 'cost': 200.0},
-        'Physical Science (Jumpspace Physics)': {'tl': 9, 'cost': 200.0},
-        'Robotic Science (Cybernetics)': {'tl': 9, 'cost': 200.0},
-        'Robotic Science (Robotics)': {'tl': 9, 'cost': 200.0},
-        'Social Science (Archaeology)': {'tl': 9, 'cost': 200.0},
-        'Social Science (Economics)': {'tl': 9, 'cost': 200.0},
-        'Social Science (History)': {'tl': 9, 'cost': 200.0},
-        'Social Science (Linguistics)': {'tl': 9, 'cost': 200.0},
-        'Social Science (Philosophy)': {'tl': 9, 'cost': 200.0},
-        'Social Science (Psychology)': {'tl': 9, 'cost': 200.0},
-        'Social Science (Sophontology)': {'tl': 9, 'cost': 200.0},
-        'Space Science (Astronomy)': {'tl': 9, 'cost': 200.0},
-        'Space Science (Cosmology)': {'tl': 9, 'cost': 200.0},
-        'Space Science (Planetology)': {'tl': 9, 'cost': 200.0},
-        'Steward': {'tl': 8, 'cost': 100.0},
-        'Survival': {'tl': 10, 'cost': 200.0},
-        'Tactics (Military)': {'tl': 8, 'cost': 100.0},
-        'Tactics (Naval)': {'tl': 8, 'cost': 100.0},
-    }
+    KNOWN_SKILLS: ClassVar[dict[tuple[type[Skill], str | None], dict[str, int | float]]] = _EXPERT_SKILL_SPECS
     FALLBACK_TL: ClassVar[int] = 11
     FALLBACK_COST: ClassVar[float] = 1_000.0
 
-    @field_validator('skill')
-    @classmethod
-    def validate_skill(cls, value: str) -> str:
-        return ' '.join(value.strip().split())
-
     @property
     def description(self) -> str:
-        return f'Expert ({self._resolved_skill_name})/{self.rating}'
+        return f'Expert ({self.skill_name})/{self.rating}'
 
     @property
     def bandwidth(self) -> int:
@@ -279,21 +273,37 @@ class Expert(SoftwarePackage):
         notes = NoteList()
         if self.rating not in {1, 2, 3}:
             notes.error(f'Invalid Expert rating {self.rating}; expected one of: 1, 2, 3')
-        skill_name = self._resolved_skill_name
-        if not skill_name:
-            notes.error('Expert skill cannot be blank')
-        elif skill_name not in type(self).KNOWN_SKILLS:
-            notes.warning(f'Unfamiliar Expert skill {skill_name} uses CSC fallback values')
+        if not self._has_known_skill_spec:
+            notes.warning(f'Unfamiliar Expert skill {self.skill_name} uses CSC fallback values')
         return notes
 
     @property
     def _resolved_spec(self) -> dict[str, int | float]:
         cls = type(self)
-        return cls.KNOWN_SKILLS.get(self._resolved_skill_name, {'tl': cls.FALLBACK_TL, 'cost': cls.FALLBACK_COST})
+        return cls.KNOWN_SKILLS.get(
+            self._skill_key,
+            cls.KNOWN_SKILLS.get(self._skill_type_key, {'tl': cls.FALLBACK_TL, 'cost': cls.FALLBACK_COST}),
+        )
 
     @property
-    def _resolved_skill_name(self) -> str:
-        return self.skill
+    def _has_known_skill_spec(self) -> bool:
+        return self._skill_key in type(self).KNOWN_SKILLS or self._skill_type_key in type(self).KNOWN_SKILLS
+
+    @property
+    def _skill_key(self) -> tuple[type[Skill], str | None]:
+        return type(self.skill), _active_speciality_field(self.skill)
+
+    @property
+    def _skill_type_key(self) -> tuple[type[Skill], str | None]:
+        return type(self.skill), None
+
+    @property
+    def skill_name(self) -> str:
+        skill_type = self.skill.name()
+        speciality = _active_speciality_label(self.skill)
+        if speciality is None:
+            return skill_type
+        return f'{skill_type} ({speciality})'
 
 
 type AnySoftware = Annotated[

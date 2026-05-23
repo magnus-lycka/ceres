@@ -43,7 +43,12 @@ BACKGROUND_SKILLS: frozenset[str] = frozenset(
         'Drive',
         'Electronics',
         'Flyer',
-        'Language',
+        'Language Galanglic',
+        'Language Gvegh',
+        'Language Oynprith',
+        'Language Trokh',
+        'Language Vilani',
+        'Language Zdetl',
         'Mechanic',
         'Medic',
         'Colonist Profession',
@@ -439,10 +444,21 @@ def _apply_term_event(projection: CharacterProjection, event: TermEventEvent) ->
 def _apply_auto_advance(projection: CharacterProjection, career: CareerData, event_id: int) -> None:
     new_rank = (projection.summary.rank or 0) + 1
     projection.summary.rank = new_rank
-    rank_entry = career.ranks.get(new_rank)
+    assignment_name = projection.summary.current_assignment or ''
+    rank_entry = career.assignment_ranks(assignment_name).get(new_rank)
     if rank_entry and rank_entry.bonus:
         bonus = rank_entry.bonus
-        if bonus.skill:
+        if bonus.choices:
+            projection.pending_inputs.append(
+                PendingInput(
+                    id=f'{event_id}.0',
+                    kind=f'rank_bonus_choice_{bonus.level}',
+                    instruction=f'Rank {new_rank} bonus: choose skill at level {bonus.level}',
+                    options=bonus.choices,
+                )
+            )
+            return  # reenlist pending deferred until after choice
+        elif bonus.skill:
             _grant_skill(projection, bonus.skill, bonus.level)
         elif bonus.characteristic:
             char = bonus.characteristic
@@ -516,14 +532,33 @@ def _apply_skill_choice(
                     options=['Deception', 'Admin'],
                 )
             )
+    elif fulfilled_kind and fulfilled_kind.startswith('rank_bonus_choice_'):
+        level = int(fulfilled_kind.rsplit('_', 1)[-1])
+        _grant_skill(projection, event.skill, level)
+        projection.pending_inputs.append(
+            PendingInput(
+                id=f'{event.id}.0', kind='reenlist', instruction='Reenlist or muster out?', options=['true', 'false']
+            )
+        )
     elif fulfilled_kind == 'scholar_mishap_3':
-        _grant_skill(projection, 'Space Science', 1)
         if event.skill == 'openly':
             projection.summary.connections.append(Connection(kind='enemy', source='Planetary government interference'))
         else:
             soc = projection.summary.characteristics.get('SOC', 0)
             projection.summary.characteristics['SOC'] = max(0, soc - 2)
+        # Defer science grant until player picks which science
+        projection.pending_inputs.append(
+            PendingInput(
+                id=f'{event.id}.0',
+                kind='scholar_mishap_3_science',
+                instruction='Increase Science by one level: choose which broad science',
+                options=_SCHOLAR_SCIENCES,
+            )
+        )
         # advancement was already created by _apply_mishap (stay_in_career=True)
+    elif fulfilled_kind == 'scholar_mishap_3_science':
+        _grant_skill(projection, event.skill, 1)
+        # advancement was pre-created by _apply_mishap
     elif fulfilled_kind in ('life_event_4', 'life_event_8'):
         kind = cast(Literal['contact', 'ally', 'rival', 'enemy'], event.skill)
         projection.summary.connections.append(Connection(kind=kind, source=f'Life event: {fulfilled_kind}'))
@@ -974,10 +1009,21 @@ def _apply_advancement(projection: CharacterProjection, event: AdvancementEvent)
     if success:
         new_rank = (projection.summary.rank or 0) + 1
         projection.summary.rank = new_rank
-        rank_entry = career.ranks.get(new_rank)
+        assignment_name = projection.summary.current_assignment or ''
+        rank_entry = career.assignment_ranks(assignment_name).get(new_rank)
         if rank_entry and rank_entry.bonus:
             bonus = rank_entry.bonus
-            if bonus.skill:
+            if bonus.choices:
+                projection.pending_inputs.append(
+                    PendingInput(
+                        id=f'{event.id}.0',
+                        kind=f'rank_bonus_choice_{bonus.level}',
+                        instruction=f'Rank {new_rank} bonus: choose skill at level {bonus.level}',
+                        options=bonus.choices,
+                    )
+                )
+                return  # reenlist pending deferred until after choice
+            elif bonus.skill:
                 _grant_skill(projection, bonus.skill, bonus.level)
             elif bonus.characteristic:
                 char = bonus.characteristic

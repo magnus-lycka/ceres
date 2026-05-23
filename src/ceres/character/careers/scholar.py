@@ -106,8 +106,8 @@ def _handle_scholar_event_11(
         PendingInput(
             id=f'{event_id}.{pending_idx}',
             kind='scholar_event_11',
-            instruction='Gain Space Science +1, or DM+4 to your next advancement roll',
-            options=['Space Science', 'advancement_dm_4'],
+            instruction='Increase Science by one level (choose which), or DM+4 to your next advancement roll',
+            options=[*_SCIENCES, 'advancement_dm_4'],
         )
     )
     return pending_idx + 1
@@ -126,7 +126,7 @@ def _handle_scholar_mishap_3(
         PendingInput(
             id=f'{event_id}.{pending_idx}',
             kind='scholar_mishap_3',
-            instruction='Continue openly (Space Science +1, Enemy) or secretly (Space Science +1, SOC -2)?',
+            instruction='Continue openly (Science +1, Enemy) or secretly (Science +1, SOC -2)?',
             options=['openly', 'secretly'],
         )
     )

@@ -12,21 +12,16 @@ career term is not just data to total up; it is a state machine with steps such
 as qualification, initial training, survival, mishaps, events, advancement,
 rank rewards, aging, reenlistment, and mustering out.
 
-Many rules also create future obligations. An event might grant a
-modifier to a later advancement roll, force or suggest the next career, create
-an unresolved injury, require a later choice of contact or enemy, or change the
-next term's available options. These behave like messages sent into the future,
-to be opened when character creation reaches the relevant point.
+Many rules also create future obligations. An event might grant a modifier to a
+later advancement roll, force or suggest the next career, create an unresolved
+injury, require a later choice of contact or enemy, or change the next term's
+available options. These behave like messages sent into the future, to be opened
+when character creation reaches the relevant point.
 
-There is an older prototype at:
-
-```text
-/Users/magnuslycka/work/traveller/travchar
-```
-
-That project has useful examples of final character data and PDF output, but the
-new Ceres implementation separates final character state from the creation
-engine more explicitly.
+**Scope** is the full *Traveller Core Rulebook* character creation process
+as described in `docs/character-creation-rules.md`, excluding alien races
+(Aslan/Vargr) and post-career improvement (training). This covers all 12 standard
+careers plus the Prisoner special career.
 
 ## Goals
 
@@ -55,6 +50,8 @@ engine more explicitly.
 - Do not build a polished UI as part of the initial engine.
 - Do not let an early CLI or web workbench bypass the same interaction protocol
   used by tests.
+- Do not model alien species (Aslan, Vargr) — no `refs/` material available.
+- Do not model post-career improvement (training study periods).
 
 ## Core Idea
 
@@ -116,10 +113,12 @@ Example entries:
 ```
 
 Event kinds name the step or decision, not the effect (`ucp`, not `ucp_provided`;
-`survive`, not `survival_rolled`). Representative kinds across character creation:
-`character_started`, `ucp`, `homeworld`, `background_skills`, `career`,
-`skill_table`, `skill`, `survive`, `mishap`, `term_event`, `life_event`,
-`commission`, `advancement`, `aging`, and others as needed.
+`survive`, not `survival_rolled`). Current implemented kinds:
+`character_started`, `ucp`, `background_skills`, `career`,
+`survive`, `mishap`, `term_event`, `skill_choice`, `advancement`,
+`reenlist`, `skill_table`, `characteristic_choice`, `connections_roll`,
+`skill_roll`, `aging_roll`, `injury_table`, `life_event`, `life_event_unusual`,
+`muster_out`, `aging_crisis`.
 
 The current creation state is rebuilt by reducing the event log. While replaying
 the log, events can create pending inputs and scheduled effects. Later events
@@ -196,13 +195,13 @@ Represent these as scheduled effects or deferred inputs depending on whether
 they need outside input when they become active. A next-roll modifier is a
 scheduled effect. A future choice of benefit is a deferred pending input.
 
-An illustrative shape:
+Current `ScheduledEffect` shape:
 
 ```python
 class ScheduledEffect(BaseModel):
     trigger: str
-    effect: dict
-    source_event_id: str
+    source_event_id: int
+    effect: dict = Field(default_factory=dict)
     expires: str | None = None
     consume: bool = True
 ```
@@ -241,40 +240,51 @@ The CLI and FastAPI app are already working, both sharing the same
 `SqliteCharacterBackend`. Neither gets special authority to mutate state outside
 the event log.
 
-The current projection includes enough context for a simple client to be usable:
+The current projection models:
 
 ```python
 class PendingInput(BaseModel):
     id: str
     kind: str
     instruction: str
+    options: list[str] = []
     blocking: bool = True
+
+class ScheduledEffect(BaseModel):
+    trigger: str
+    source_event_id: int
+    effect: dict = {}
+    expires: str | None = None
+    consume: bool = True
+
+class Connection(BaseModel):
+    kind: Literal['contact', 'ally', 'rival', 'enemy']
+    source: str = ''
+
+class CharacterSummary(BaseModel):
+    name: str | None = None
+    age: int = 18
+    species: str | None = None
+    characteristics: dict[str, int] = {}
+    current_career: str | None = None
+    current_assignment: str | None = None
+    rank: int | None = None
+    term_count: int = 0
+    skills: dict[str, int] = {}
+    connections: list[Connection] = []
+    problems: list[str] = []
+    cash: int = 0
+    benefits: list[str] = []
+    muster_out_cash_count: int = 0
+    dead: bool = False
 
 class CharacterProjection(BaseModel):
     character_id: int
     summary: CharacterSummary
     pending_inputs: list[PendingInput] = []
     scheduled_effects: list[ScheduledEffect] = []
-```
-
-There is no `cursor` field. The first blocking pending input's `kind` encodes
-the current step. When there are no blocking inputs, creation either advances
-deterministically or is complete.
-
-`CharacterSummary` carries enough for every simple client to render:
-
-```python
-class CharacterSummary(BaseModel):
-    name: str | None = None
-    age: int = 0
-    species: str = ''
-    characteristics: dict[str, int] = {}
-    current_career: str | None = None
-    current_assignment: str | None = None
-    rank: str | int | None = None
-    term_count: int = 0
-    skills: list[SkillSummary] = []
-    problems: list[str] = []
+    pending_reenlist: bool | None = None
+    muster_out_career: str | None = None
 ```
 
 ## Session Persistence
@@ -298,55 +308,52 @@ replaces the full JSON column with a new list. The store runs a dry replay befor
 persisting any new event, so an invalid event raises `ReplayError` without
 touching the database.
 
-Projected columns such as UCP are derivable from replaying the event log; the
-event log is the truth.
-
 ## Event Models
 
 Events are Pydantic models forming a discriminated union. The store assigns real
 sequential IDs via `model_copy`; the `id` field defaults to `0` to indicate
-"not yet assigned":
+"not yet assigned".
 
-```python
-class EventBase(BaseModel):
-    id: int = 0  # assigned by store; 0 means unassigned
-    fulfills: str | None = None
-
-class CharacterStartedEvent(EventBase):
-    kind: Literal['character_started'] = 'character_started'
-    sophont: str
-    player: str = 'NPC'
-    name: str
-
-class UcpEvent(EventBase):
-    kind: Literal['ucp'] = 'ucp'
-    ucp: str  # 6 hex digits, one per characteristic in UCP_STATS order
-
-type AnyEvent = Annotated[
-    CharacterStartedEvent | UcpEvent,
-    Field(discriminator='kind'),
-]
-```
-
-The `TypeAdapter[AnyEvent]` is used for deserialization. New event kinds are
-added here as character creation expands.
+See `src/ceres/character/events.py` for the current `AnyEvent` union covering
+all implemented event kinds.
 
 ## Skill Model
 
-`ceres.character.skills` is the canonical skill registry. `SkillInfo` carries
-only `type` (the display name, e.g. `"Space Science"`) and `specialities` (a
-tuple of strings). There is no separate `name` field; `type` is the identifier.
+`ceres.character.skills` is the canonical skill registry. Each skill is a
+Pydantic class with a `type` literal identifier. Specialised skills have
+individual `Level` fields. Languages are individual classes (`LanguageGalanglic`,
+`LanguageVilani`, etc.) created via `_make_language()`, with a `Languages`
+union variable and a `LanguageSkill` type alias. The `AnySkill` discriminated
+union contains all skill classes.
+
+`SkillInfo` (a `NamedTuple` of `type` and `specialities`) is used for listing
+and display. `skill_list(union)` enumerates any skill union.
 
 Once the character skill model is solid, `ceres.make.robot.skills`
 (currently string-based SkillGrant/SkillPackage) and gear software Expert
 packages should migrate to reference the canonical character skill classes.
 
+## Rules Data
+
+Career data is authored in YAML under `src/ceres/character/careers/`. Currently
+Scout (`scout.yaml`) and Scholar (`scholar.yaml`) are implemented. The YAML
+loader validates into `CareerData` Pydantic models at load time.
+
+Career-specific unusual event handling is registered as Python handlers in
+`scout.py` and `scholar.py` alongside their YAML data, via
+`get_effect_handler()` and `get_skill_roll_handler()` from
+`src/ceres/character/careers/loader.py`.
+
+A new career requires:
+
+- a YAML file with qualification, assignments, skill tables, ranks, events, mishaps, muster out
+- optional Python module with handlers for unusual event effects
+- tests covering the full term flow
+
 ## Testing Strategy
 
 Tests build event logs and assert projections. Rolls and decisions are events,
 not hidden callbacks.
-
-Example:
 
 ```python
 from ceres.character.events import CharacterStartedEvent, UcpEvent
@@ -356,223 +363,161 @@ events = [
     CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Boss'),
     UcpEvent(id=2, fulfills='1.0', ucp='7869A5'),
 ]
-
 projection = replay(character_id=1, events=events)
 ```
 
 Pending identifiers are deterministic. Tests assert:
 
 - final character state
-- important event log entries
 - pending inputs at interaction boundaries
 - scheduled effects are applied once or remain active as intended
 - unusual event handlers emit typed effects rather than silent mutations
 - unrelated events are rejected while blocking pending inputs exist
 - same event log replays to the same projection every time
 
-## Effects
-
-Most rules should produce typed effects. The session applies effects and logs
-the result. Useful initial effect types include:
-
-- `gain_skill`
-- `increase_characteristic`
-- `decrease_characteristic`
-- `gain_rank`
-- `gain_benefit_roll`
-- `gain_contact`
-- `gain_ally`
-- `gain_enemy`
-- `gain_rival`
-- `add_note`
-- `add_debt`
-- `add_asset`
-- `injury`
-- `end_career`
-- `end_character_creation`
-- `force_next_career`
-- `schedule_effect`
-- `roll_modifier`
-
-`roll_modifier` is one concrete effect type. A `ScheduledEffect` can wrap a
-`roll_modifier` for future use, but the two concepts stay separate: scheduling
-describes when an effect applies; the effect describes what happens.
-
-Some source events are too unusual to model cleanly as simple data. For those,
-rule data should be allowed to name a registered handler:
-
-```yaml
-effect:
-  type: handler
-  handler: core.unusual_event.psionics
-```
-
-The handler string must resolve through a registry at rules-load time, not by
-ad-hoc importing at runtime:
-
-```python
-@character_rule_handler("core.unusual_event.psionics")
-def handle_psionics(context: HandlerContext) -> list[Effect]:
-    ...
-```
-
-This keeps source YAML stable while still letting tests and type checks catch
-missing or renamed handlers before a character reaches the event in play.
-Handlers should still emit typed effects and event log entries. They should not
-silently mutate state.
-
-## Rules Data
-
-Career data should be authored to resemble the source material.
-
-Example shape (first careers are Scout and Scholar from the Explorer edition):
-
-```yaml
-name: Scout
-source: Explorer
-
-qualification:
-  characteristic: INT
-  target: 5
-
-assignments:
-  - name: Courier
-    survival:
-      characteristic: END
-      target: 7
-    advancement:
-      characteristic: EDU
-      target: 9
-    skill_tables:
-      personal_development: [...]
-      service_skills: [...]
-      specialist: [...]
-
-ranks:
-  - rank: 0
-    title: Scout
-  - rank: 3
-    title: Senior Scout
-    effects:
-      - type: gain_skill
-        skill: Pilot
-        level: 1
-
-events:
-  2:
-    text: Disaster!
-    effects:
-      - type: handler
-        handler: core.scout.disaster
-
-mishaps:
-  1:
-    text: Severely injured.
-    effects:
-      - type: injury
-        severity: severe
-      - type: end_career
-```
-
-The authored data should be validated into normalized Pydantic models at load
-time. The normalized model does not need to look exactly like the source file.
-
-## Plug-In Rule Domains
-
-Character creation needs several kinds of rule plug-ins. They do not all have
-the same shape.
-
-### Skills
-
-Skills are mostly data, closer to gear or weapons. They need stable identifiers
-(the `type` field), optional specialties, defaulting rules, and improvement
-logic. They are the canonical skill model used by characters and eventually by
-robots.
-
-### Characteristics
-
-Characteristics are currently hard-coded as the six-stat human model (`STR`,
-`DEX`, `END`, `INT`, `EDU`, `SOC`) via the `Chars` StrEnum in
-`ceres.character.characteristics`. `UCP_STATS` is a convenience tuple derived
-from that enum.
-
-A registry-driven model is a later concern. Do not hard-code species variants
-until the relevant Alien module rules are available in `refs/`.
-
-### Species
-
-Species are data plus hooks. They can affect the characteristic set, starting
-values, aging rules, traits, career access, starting skills, and event handlers.
-The exact shape should be designed after the relevant Alien module material has
-been added to `refs/`. Species are more integrated than skills and should be
-treated as rule packages.
-
-### Careers
-
-Careers are the most integrated plug-ins. A career package may include:
-
-- source-like career data
-- assignment tables
-- skill tables
-- qualification, survival, and advancement rules
-- rank and benefit tables
-- event and mishap tables
-- optional Python handlers for unusual rules
-- tests for career-specific messages and effects
-
-New careers may require new message handlers. That is acceptable if the message
-boundary remains explicit and tested. A custom handler may emit career-specific
-pending inputs, but those inputs must still be ordinary Pydantic messages that
-scripted tests, CLI commands, or UI clients can satisfy by creating events.
-
-## Data Format
-
-JSON round-trips cleanly with Pydantic, but is unpleasant for source-like rules.
-YAML is easier to read and can look much more like career pages.
-
-Recommended approach:
-
-- Use YAML for hand-authored rule data.
-- Validate loaded YAML into Pydantic models.
-- Validate handler references against the registered handler catalogue at load
-  time.
-- Do not expect Pydantic to rewrite source-authored YAML without losing
-  formatting and comments.
-- If normalized machine-readable output is useful, write generated JSON as a
-  cache/debug artifact, not as the canonical source.
-
 ## Implementation Status
 
 ### Done
 
-- **Slice 1** — Core event/projection models + pure `replay()` function.
-  Event kinds: `character_started`, `ucp`. Tests in `tests/character/test_replay.py`.
-- **Slice 2** — Store: JSON column event log, typed event round-trip, dry-replay
-  validation before save.
-- **Slice 3** — FastAPI endpoints: `GET /characters/{id}/projection`,
-  `POST /characters/{id}/events`. Full CRUD for characters including
-  `DELETE /characters/{id}`.
-- **Slice 4** — CLI: `create start` shows pending inputs, `create ucp` posts
-  `UcpEvent`, `create delete` command.
+- **Core event/projection models** — `events.py`, `projection.py`,
+  `replay.py`. Pure `replay()` function.
+- **Store** — SQLite with JSON event log column; typed event round-trip;
+  dry-replay validation before save.
+- **FastAPI endpoints** — full CRUD for characters; `GET /characters/{id}/projection`;
+  `POST /characters/{id}/events`.
+- **CLI** — `create start`, `create ucp`, `create status`, `create event`,
+  full character management commands.
+- **Pre-career setup** — `CharacterStartedEvent` → UCP pending; `UcpEvent`
+  → background skills pending (count = EDU DM + 3); `BackgroundSkillsEvent`
+  → career choice pending.
+- **Career loader** — YAML → `CareerData` Pydantic models; `CareerEvent`
+  handles qualification roll with characteristic DM and `qualification`
+  scheduled effects; initial basic training (all service skills at level 0)
+  on first term.
+- **Full term loop** — survive → event → advancement → reenlist/muster out.
+  `SurviveEvent`, `TermEventEvent`, `AdvancementEvent`, `ReenlistEvent`.
+- **Skill tables** — `SkillTableEvent` + `SkillChoiceEvent`; `SkillRollEvent`
+  for career-specific skill checks. Advancement-DM scheduled effects consumed
+  on advancement roll.
+- **Mishap handling** — `MishapEvent` with typed effects: `decrease_characteristic_choice`,
+  `gain_connections_rolled`, `skill_choice`, `injury` (normal/severe/from_table);
+  career-registered handlers for unusual mishap effects.
+- **Life Events table** — `LifeEventEvent` (all 12 entries) +
+  `LifeEventUnusualEvent` (sub-table rolls 1–6).
+- **Aging** — `AgingRollEvent` covering all rows of the Ageing table;
+  `CharacteristicChoiceEvent` for aging choices; aging crisis path with
+  `AgingCrisisEvent`; aging interleaved with reenlist/muster-out flow.
+- **Injury table** — `InjuryTableEvent` for all 6 rows including
+  "nearly killed" with two-step characteristic reduction.
+- **Muster out** — `MusterOutEvent`; cash/benefits columns; cash limit
+  (max 3 across all careers); benefit roll count = terms + rank ÷ 2
+  (minus 1 for mishap loss); `muster_out_reduce` scheduled effects.
+- **Connections and characteristic adjustments** — `ConnectionsRollEvent`,
+  `CharacteristicChoiceEvent`.
+- **Scout career** — full YAML + handlers (all events, mishaps, muster out).
+- **Scholar career** — full YAML + handlers (all events, mishaps, muster out).
+- **Language skills** — individual skill classes (`LanguageGalanglic` etc.)
+  via `_make_language()` factory; `Languages` union; included in background
+  skill options.
 
 ### Remaining Work
 
-- **Slice 5** — Pre-career setup: `homeworld` and `background_skills` events.
-  UCP → homeworld → background skill pending input sequence. Options depend on
-  homeworld, so the pending input for background skills is deferred until
-  homeworld is known.
+#### Correctness gaps in current implementation
 
-- **Slice 6** — Handler registry + YAML career loader. `@character_rule_handler`
-  decorator, validated YAML → Pydantic career models, handler references
-  validated at load time.
+These rules exist in the implemented flow but are not yet enforced:
 
-- **Slice 7** — First careers: Scout and Scholar (Explorer edition). Both with
-  qualification, one assignment each, full normal term path: skill/initial
-  training → survival → event → advancement → rank rewards → reenlist/muster.
-  Career data lives under `src/ceres/character/careers/`.
+- **Skill level cap** — skills may not exceed level 4 during creation; total
+  skill levels may not exceed 3 × (INT + EDU). Add enforcement in `_grant_skill`
+  and `_increment_skill`.
+- **Subsequent basic training** — from term 2 onward (reenlisting or entering
+  a new career), the Traveller picks any one Service Skill at level 0.
+  Currently only first-term basic training is applied. Needs a `basic_training`
+  pending input when entering a career for the second or later time.
+- **Advancement forced exit** — if the advancement roll ≤ terms served in the
+  career, the Traveller is forced to leave (muster out). Currently the
+  reenlist choice is always offered.
+- **Advancement natural 12** — a natural 12 forces the Traveller to stay in
+  the career (reenlist=True, no choice). Currently treated as a normal success.
+- **Benefit roll bonus at rank 5–6** — reaching rank 5 or 6 grants DM+1 to
+  all Benefit rolls from that career. Not yet tracked in `_apply_muster_out_setup`.
+- **Medical debt** — unpaid injury costs from `_apply_muster_out_benefit` should
+  accumulate as debt when cash benefits are insufficient.
+- **Pension** — Travellers leaving a qualifying career (not Scout, Rogue, Prisoner,
+  or Drifter) after 5+ terms earn an annual pension. Should be calculated and
+  recorded at end of creation.
+- **End-of-creation marker** — no pending inputs and no active career should
+  transition the character to a "complete" state with a summary of final cash,
+  pension, and medical debt.
 
-- **Slices 8+** — Aging, mustering out, mishaps, scheduled effects (next-roll
-  modifiers), additional careers, species variants, PDF report.
+#### Pre-career education (optional, available in terms 1–3)
+
+- New event kinds: `university_entry`, `military_academy_entry`,
+  `precareer_event`, `precareer_graduation`.
+- University: EDU 6+ entry (with term-based DMs); pick one skill at level 0 and
+  one at level 1 from the allowed list; EDU+1; graduation INT 6+; honours at 10+;
+  graduation bonuses including qualification DMs and commission roll entitlement.
+- Military Academy: service-branch-specific entry roll; gain all Service Skills
+  at level 0; graduation INT 7+ with DMs; graduation bonuses including automatic
+  entry and commission rights.
+- Pre-career events table (12 entries) replaces the normal events roll.
+- A new `commission_roll` pending input type arising from pre-career graduation.
+- Career YAML: add `precareer_bonus_qualification_careers` and
+  `precareer_commission_bonus` fields to careers that benefit from graduation.
+
+#### Additional careers
+
+The remaining 10 standard careers and 1 special career from the core rulebook.
+Each requires a YAML file + optional Python handler module + tests.
+
+| Career | Special notes |
+| ------- | ------------- |
+| Agent | Assignment-based qualification DM change (Intel/Corporate separate ranking table) |
+| Army | Commission mechanic; officer rank table; aged-30 qualification penalty |
+| Citizen | Assignment skill table used for basic training, not service skills |
+| Drifter | Automatic qualification; assignment skill table for basic training |
+| Entertainer | DEX or INT qualification |
+| Marines | Commission mechanic; officer rank table; aged-30 qualification penalty |
+| Merchant | "Free Trader" benefit requires special handling |
+| Navy | Commission mechanic; officer rank table; aged-34 qualification penalty |
+| Nobility | SOC 10+ automatic qualification |
+| Rogue | — |
+| Prisoner | Special career: Parole Threshold (starts 1D+2, max 12); leave only when advancement > threshold; mishaps do not eject; no anagathics |
+
+#### Commission mechanic (Army, Navy, Marines)
+
+- New event kind: `commission_roll` with `roll: int`.
+- Qualification: SOC 8+ base; only allowed in first term unless SOC 9+;
+  DM-1 per term after first.
+- On success: enter officer rank table at rank 1; no advancement roll this term.
+- On failure: normal advancement roll still allowed.
+- Pre-career graduation entitlement: commission roll before first term with DM+2
+  (automatic if graduated with honours from military academy).
+- Career YAML: add `commission` check and `officer_ranks` table to military careers.
+
+#### Draft, career switching, and assignment changes
+
+- **Draft** — after qualification failure (once per lifetime unless stated
+  otherwise); roll 1D on draft table: 1=Navy, 2=Army, 3=Marines, 4=Merchant
+  (marine), 5=Scout, 6=Agent (law enforcement). New `draft_roll` event kind.
+- **Changing careers** — normal qualification roll for the new career; failure
+  → draft or Drifter. Tracked in projection; cannot return to a career in the
+  term immediately after leaving it.
+- **Changing assignments** — within Army/Marines/Navy/Nobility/Rogue/Scholar/Scout:
+  qualification roll; failure = continue with same assignment, no penalty.
+  Within Agent/Citizen/Entertainer/Merchant: treated as a new career with
+  full muster out; new `assignment_change` event kind.
+
+#### Connections Rule and Skill Packages
+
+- **Connections Rule** — at any event, two Travellers may link their histories;
+  both gain one free skill (max level 3, no Jack-of-all-Trades); max two
+  connections per Traveller. This is a group-play mechanic. Event kind:
+  `connection_skill`, referencing the other character.
+- **Skill packages** — after all Travellers finish creation, one of eight
+  packages is chosen collectively and skills distributed round-robin. This
+  operates at the group level and may be out of scope for per-character
+  modelling; consider a separate group session concept or a post-creation
+  `skill_package` event kind.
 
 ### Verification
 
