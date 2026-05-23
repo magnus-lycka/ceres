@@ -755,3 +755,18 @@ Implemented support:
 - notes record the table's crew requirement.
 - unit tests cover all TL tiers, computed-field serialization, spec output,
   and fuel power load.
+
+## Adjustable Hull
+
+High Guard adjustable hulls are implemented as Hull section parts.
+
+Implemented support:
+
+- `AdjustableHull(tl=12|15)` models the two High Guard tiers.
+- TL12 consumes 5% of ship tonnage and costs +10% of base hull cost.
+- TL15 consumes 1% of ship tonnage and costs +100% of base hull cost.
+- spec rows render in the Hull section.
+- notes record the same-tonnage/configuration/options/external-systems mimicry
+  rule and that all weapons receive pop-up mountings at no additional cost.
+- TL validation is covered by normal ship-part validation.
+- unit tests cover both tiers, production cost, spec rows, notes, and TL errors.

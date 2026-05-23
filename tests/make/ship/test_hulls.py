@@ -138,6 +138,50 @@ def test_reflec_cannot_be_combined_with_stealth():
     assert 'Reflec cannot be combined with stealth' in my_ship.notes.errors
 
 
+def test_adjustable_hull_tl12_spec_row_and_production_cost():
+    my_ship = Ship(
+        tl=12,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull, adjustable_hull=hull.AdjustableHull(tl=12)),
+    )
+
+    row = my_ship.build_spec().row('Adjustable Hull (TL12)', section='Hull')
+
+    assert row.tons == 20.0
+    assert row.cost == 2_000_000.0
+    assert row.notes.infos == [
+        'Can mimic ships of the same tonnage, hull configuration, hull options, and external systems',
+        'All weapons have pop-up mountings at no additional cost',
+    ]
+    assert my_ship.expenses.production_cost == my_ship.hull_cost + 2_000_000.0
+
+
+def test_adjustable_hull_tl15_spec_row_and_production_cost():
+    my_ship = Ship(
+        tl=15,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull, adjustable_hull=hull.AdjustableHull(tl=15)),
+    )
+
+    row = my_ship.build_spec().row('Adjustable Hull (TL15)', section='Hull')
+
+    assert row.tons == 4.0
+    assert row.cost == 20_000_000.0
+    assert my_ship.expenses.production_cost == my_ship.hull_cost + 20_000_000.0
+
+
+def test_adjustable_hull_reports_tl_error():
+    my_ship = Ship(
+        tl=11,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull, adjustable_hull=hull.AdjustableHull(tl=12)),
+    )
+
+    row = my_ship.build_spec().row('Adjustable Hull (TL12)', section='Hull')
+
+    assert 'Requires TL12, ship is TL11' in row.notes.errors
+
+
 def test_pressure_hull_values():
     ship_hull = hull.Hull(configuration=hull.standard_hull, pressure_hull=True)
 

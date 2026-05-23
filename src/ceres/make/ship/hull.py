@@ -233,11 +233,46 @@ class ArmouredBulkhead(ShipPart):
         return 0.0
 
 
+class AdjustableHull(ShipPart):
+    description: Literal['Adjustable Hull'] = 'Adjustable Hull'
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+    tl: Literal[12, 15] = 12
+
+    @property
+    def tons(self) -> float:
+        rate = 0.05 if self.tl == 12 else 0.01
+        return self.assembly.displacement * rate
+
+    @property
+    def cost(self) -> float:
+        hull = getattr(self.assembly, 'hull', None)
+        if hull is None:
+            return 0.0
+        multiplier = 0.10 if self.tl == 12 else 1.0
+        return hull.configuration.cost(self.assembly.displacement) * multiplier
+
+    @property
+    def power(self) -> float:
+        return 0.0
+
+    def item_description(self) -> str:
+        return f'Adjustable Hull (TL{self.tl})'
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('Can mimic ships of the same tonnage, hull configuration, hull options, and external systems')
+        notes.info('All weapons have pop-up mountings at no additional cost')
+        return notes
+
+
 class Hull(CeresModel):
     configuration: HullConfiguration
     armour: HullArmour | None = None
     stealth: HullStealth | None = None
     pressure_hull: bool = False
+    adjustable_hull: AdjustableHull | None = None
     armoured_bulkheads: list[ArmouredBulkhead] = Field(default_factory=list)
     airlocks: list[Airlock] = Field(default_factory=list)
     aerofins: Aerofins | None = None
@@ -289,6 +324,8 @@ class Hull(CeresModel):
             parts.append(a)
         if (s := self.stealth) is not None:
             parts.append(s)
+        if (ah := self.adjustable_hull) is not None:
+            parts.append(ah)
         parts.extend(self.armoured_bulkheads)
         parts.extend(self.airlocks)
         if (af := self.aerofins) is not None:
@@ -331,6 +368,8 @@ class Hull(CeresModel):
             )
         if self.stealth is not None:
             spec.add_row(ship._spec_row_for_part(SpecSection.HULL, self.stealth))
+        if self.adjustable_hull is not None:
+            spec.add_row(ship._spec_row_for_part(SpecSection.HULL, self.adjustable_hull))
         if self.heat_shielding:
             spec.add_row(
                 SpecRow(

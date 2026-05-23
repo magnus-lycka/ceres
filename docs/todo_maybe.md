@@ -379,24 +379,6 @@ Remaining work:
 
 - validate incompatible hull combinations if any source rule requires it
 
-## Adjustable Hull [todo]
-
-Reference: `refs/hg/23_spacecraft_options.md`
-
-An adjustable hull changes its outline to mimic any other ship of the same tonnage, hull
-configuration, and options. All weapons on an adjustable hull get pop-up mountings at no extra
-cost.
-
-Two TL tiers:
-
-| TL | Tons        | Cost            |
-|----|-------------|-----------------|
-| 12 | +5% of hull | +10% base hull  |
-| 15 | +1% of hull | +100% base hull |
-
-Not currently modelled. This is a specialist/military option; decide whether it belongs in
-`hull.py` as a flag or as a `HullOption` subpart.
-
 ## Breakaway Hulls [todo]
 
 A ship can be designed to separate into two or more independently operating
