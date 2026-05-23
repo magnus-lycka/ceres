@@ -156,7 +156,7 @@ def test_api_post_background_skills_resolves_pending(memory_client):
         '/characters/1/events',
         json={
             'kind': 'background_skills',
-            'skills': ['Admin', 'Athletics', 'Carouse', 'Drive'],
+            'skills': [{'type': 'Admin'}, {'type': 'Athletics'}, {'type': 'Carouse'}, {'type': 'Drive'}],
             'fulfills': '2.0',
         },
     )
@@ -165,7 +165,8 @@ def test_api_post_background_skills_resolves_pending(memory_client):
     data = response.json()
     assert len(data['pending_inputs']) == 1
     assert data['pending_inputs'][0]['kind'] == 'career'
-    assert data['summary']['skills'] == {'Admin': 0, 'Athletics': 0, 'Carouse': 0, 'Drive': 0}
+    assert len(data['summary']['skills']) == 4
+    assert {s['type'] for s in data['summary']['skills']} == {'Admin', 'Athletics', 'Carouse', 'Drive'}
 
 
 def test_api_post_background_skills_rejects_wrong_count(memory_client):
@@ -174,7 +175,7 @@ def test_api_post_background_skills_rejects_wrong_count(memory_client):
 
     response = memory_client.post(
         '/characters/1/events',
-        json={'kind': 'background_skills', 'skills': ['Admin', 'Athletics'], 'fulfills': '2.0'},
+        json={'kind': 'background_skills', 'skills': [{'type': 'Admin'}, {'type': 'Athletics'}], 'fulfills': '2.0'},
     )
 
     assert response.status_code == 400
@@ -188,7 +189,7 @@ def test_api_post_background_skills_rejects_invalid_skill(memory_client):
         '/characters/1/events',
         json={
             'kind': 'background_skills',
-            'skills': ['Admin', 'FakeSkill', 'Carouse', 'Drive'],
+            'skills': [{'type': 'Admin'}, {'type': 'FakeSkill'}, {'type': 'Carouse'}, {'type': 'Drive'}],
             'fulfills': '2.0',
         },
     )

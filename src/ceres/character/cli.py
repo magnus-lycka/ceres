@@ -11,11 +11,13 @@ from ceres.character.characteristics import UCP_STATS
 from ceres.character.events import AnyEvent, UcpEvent
 from ceres.character.projection import CharacterProjection
 from ceres.character.replay import ReplayError
-from ceres.character.skills import SkillInfo, skill_list
+from ceres.character.skills import AnySkill, Skill, SkillInfo, _skill_classes, skill_list
 from ceres.character.sophonts import SOPHONTS
 from ceres.character.store import CharacterRow, SqliteCharacterBackend
 
-_SPECIALITY_SKILLS: frozenset[str] = frozenset(s.type for s in skill_list() if s.specialities)
+_SPECIALITY_SKILL_TYPES: frozenset[type[Skill]] = frozenset(
+    cls for cls in _skill_classes(AnySkill) if cls().specialities()
+)
 
 _UCP_CHANGE_PATTERN = re.compile(r'^([A-Z]{3})(?:(=)(\d+)|([+-])(\d+))$')
 _UCP_SHORT_PATTERN = re.compile(r'^[0-9A-F]{6}$')
@@ -91,6 +93,19 @@ def render_ucp_short(ucp: dict[str, int] | None) -> str:
     return ''.join(f'{ucp[stat]:X}' for stat in UCP_STATS)
 
 
+def _format_skill(skill: AnySkill) -> list[str]:
+    from ceres.character.projection import _level_fields
+
+    fields = _level_fields(type(skill))
+    if len(fields) == 1 and fields[0] == 'level':
+        return [f'{skill.name()} {getattr(skill, "level").value}']
+    levels = [getattr(skill, f).value for f in fields]
+    spec_names = type(skill).specialities()
+    if len(set(levels)) == 1:
+        return [f'{skill.name()} (all)-{levels[0]}']
+    return [f'{skill.name()} ({name})-{lvl}' for name, lvl in zip(spec_names, levels) if lvl > 0]
+
+
 def render_skill(skill: SkillInfo) -> str:
     if skill.specialities:
         return f'{skill.type}: {", ".join(skill.specialities)}'
@@ -116,10 +131,10 @@ def render_projection_summary(projection: CharacterProjection) -> list[str]:
         char_str = '  '.join(f'{stat} {s.characteristics.get(stat, 0)}' for stat in UCP_STATS)
         lines.append(f'UCP  {ucp_str}    {char_str}')
     if s.skills:
-        skill_str = '  '.join(
-            f'{k} (all)-{v}' if k in _SPECIALITY_SKILLS else f'{k} {v}' for k, v in sorted(s.skills.items())
-        )
-        lines.append(f'Skills  {skill_str}')
+        parts = []
+        for skill in sorted(s.skills, key=lambda sk: sk.name()):
+            parts.extend(_format_skill(skill))
+        lines.append(f'Skills  {"  ".join(parts)}')
     if s.connections:
         conn_str = '  '.join(f'{c.kind}({c.source or "?"})' for c in s.connections)
         lines.append(f'Connections  {conn_str}')

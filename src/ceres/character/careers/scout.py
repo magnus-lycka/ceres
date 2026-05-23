@@ -1,6 +1,7 @@
 from ceres.character.careers.career_data import EventEffect
 from ceres.character.events import SkillRollEvent
 from ceres.character.projection import CharacterProjection, Connection, PendingInput, ScheduledEffect
+from ceres.character.replay import _grant_skill, _skill_from_str
 
 # ── event 3: ambush ──────────────────────────────────────────────────────────
 
@@ -26,11 +27,10 @@ def _handle_scout_event_3(
 
 def _resolve_scout_event_3(projection: CharacterProjection, event: SkillRollEvent) -> None:
     """Advancement pending is created by the replay engine after this returns."""
-    target = _AMBUSH_TARGETS[event.skill]
+    skill_name = event.skill if isinstance(event.skill, str) else type(event.skill).name()
+    target = _AMBUSH_TARGETS[skill_name]
     if event.modified_roll >= target:
-        current = projection.summary.skills.get('Electronics', -1)
-        if current < 1:
-            projection.summary.skills['Electronics'] = 1
+        _grant_skill(projection, _skill_from_str('Electronics', 1))
     else:
         projection.summary.problems.append('Ship destroyed; may not re-enlist in Scouts at the end of this term.')
 

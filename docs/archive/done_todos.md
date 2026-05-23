@@ -770,3 +770,21 @@ Implemented support:
   rule and that all weapons receive pop-up mountings at no additional cost.
 - TL validation is covered by normal ship-part validation.
 - unit tests cover both tiers, production cost, spec rows, notes, and TL errors.
+
+## Ramscoops
+
+High Guard ramscoops are implemented as Fuel section parts.
+
+Implemented support:
+
+- `Ramscoop(extra_tons=0)` models the passive hydrogen collector.
+- tonnage is `max(1% of hull tonnage + 5, 10) + extra_tons`.
+- collection rate is 5 tons of hydrogen per week per ton of ramscoop.
+- cost is MCr0.25 per ton.
+- ramscoop rows render in the Fuel section.
+- notes record the collection rate and that ramscoops do not require fuel
+  scoops or fuel processors.
+- streamlined hulls report an error because ramscoops prevent atmospheric
+  re-entry.
+- unit tests cover minimum sizing, extra tonnage, computed-field
+  serialization, spec output, and streamlined-hull validation.

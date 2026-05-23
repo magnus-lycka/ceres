@@ -7,7 +7,7 @@ import re
 
 def test_all_ship_test_files_in_gallery():
     ships_dir = Path(__file__).parent
-    excluded = {'test_gallery.py', 'test_gallery_coverage.py'}
+    excluded = {'test_gallery.py', 'test_gallery_coverage.py', 'test_spec_sanity.py'}
 
     ship_files = {f.stem for f in ships_dir.glob('test_*.py') if f.name not in excluded}
 

@@ -250,6 +250,39 @@ class FuelRefinery(_ExplicitTonsStoragePart):
         return notes
 
 
+class Ramscoop(_ZeroPowerStoragePart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    extra_tons: float = 0.0
+
+    def item_description(self) -> str:
+        return f'Ramscoop ({self.collection_per_week:g} tons/week)'
+
+    @property
+    def tons(self) -> float:
+        return max(self.assembly.displacement * 0.01 + 5, 10) + self.extra_tons
+
+    @property
+    def collection_per_week(self) -> float:
+        return self.tons * 5
+
+    @property
+    def cost(self) -> float:
+        return self.tons * 250_000.0
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        hull = getattr(self.assembly, 'hull', None)
+        if hull is not None:
+            from .hull import Streamlined
+
+            if hull.configuration.streamlined is Streamlined.YES:
+                notes.error('Ramscoops prevent atmospheric re-entry and cannot be installed on streamlined hulls')
+        notes.info('Collects 5 tons of hydrogen per week per ton of ramscoop')
+        notes.info('Does not require fuel scoops or fuel processors')
+        return notes
+
+
 class FuelSection(CeresModel):
     # Fuel and cargo live in the same module on purpose: future rules are likely
     # to blur the line between them via fuel bladders, combined containers, and
@@ -261,6 +294,7 @@ class FuelSection(CeresModel):
     fuel_scoops: FuelScoops | None = None
     fuel_processor: FuelProcessor | None = None
     fuel_refinery: FuelRefinery | None = None
+    ramscoop: Ramscoop | None = None
 
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = []
@@ -272,6 +306,7 @@ class FuelSection(CeresModel):
             self.fuel_scoops,
             self.fuel_processor,
             self.fuel_refinery,
+            self.ramscoop,
         ):
             if part is not None:
                 parts.append(part)
@@ -303,7 +338,7 @@ class FuelSection(CeresModel):
                     tons=total_fuel_tons or None,
                 )
             )
-        for fuel_part in (self.collector, self.fuel_scoops, self.fuel_processor, self.fuel_refinery):
+        for fuel_part in (self.collector, self.fuel_scoops, self.fuel_processor, self.fuel_refinery, self.ramscoop):
             if fuel_part is not None:
                 spec.add_row(ship._spec_row_for_part(SpecSection.FUEL, fuel_part))
 
@@ -627,7 +662,7 @@ class CargoSection(CeresModel):
         spec.add_row(
             SpecRow(
                 section=SpecSection.CARGO,
-                item='Cargo Space',
+                item='Cargo Hold',
                 tons=self.residual_cargo_space(ship),
             )
         )
@@ -654,7 +689,8 @@ class CargoSection(CeresModel):
                             cost=cargo_hold.crane_cost(ship) or None,
                         )
                     )
-            self._add_residual_cargo_space_row(ship, spec)
+            if all(cargo_hold.tons is not None for cargo_hold in self.cargo_holds):
+                self._add_residual_cargo_space_row(ship, spec)
             self._add_stores_notes(ship, spec)
             return
         if self._all_parts():

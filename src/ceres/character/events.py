@@ -2,6 +2,8 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
+from ceres.character.skills import AnySkill
+
 
 class EventBase(BaseModel):
     id: int = 0  # assigned by store; 0 means unassigned
@@ -22,7 +24,7 @@ class UcpEvent(EventBase):
 
 class BackgroundSkillsEvent(EventBase):
     kind: Literal['background_skills'] = 'background_skills'
-    skills: list[str]
+    skills: list[AnySkill]
 
 
 class CareerEvent(EventBase):
@@ -50,7 +52,36 @@ class TermEventEvent(EventBase):
 
 class SkillChoiceEvent(EventBase):
     kind: Literal['skill_choice'] = 'skill_choice'
-    skill: str
+    skill: AnySkill
+
+
+class AdvancementDmChoiceEvent(EventBase):
+    kind: Literal['advancement_dm_choice'] = 'advancement_dm_choice'
+
+
+class ConnectionKindChoiceEvent(EventBase):
+    kind: Literal['connection_kind_choice'] = 'connection_kind_choice'
+    connection_kind: Literal['contact', 'ally', 'rival', 'enemy']
+
+
+class ScholarEvent3ChoiceEvent(EventBase):
+    kind: Literal['scholar_event_3_choice'] = 'scholar_event_3_choice'
+    choice: Literal['accept', 'decline']
+
+
+class ScholarEvent8ChoiceEvent(EventBase):
+    kind: Literal['scholar_event_8_choice'] = 'scholar_event_8_choice'
+    choice: Literal['accept', 'refuse']
+
+
+class ScholarMishap3ChoiceEvent(EventBase):
+    kind: Literal['scholar_mishap_3_choice'] = 'scholar_mishap_3_choice'
+    choice: Literal['openly', 'secretly']
+
+
+class ScholarMishap5ChoiceEvent(EventBase):
+    kind: Literal['scholar_mishap_5_choice'] = 'scholar_mishap_5_choice'
+    choice: Literal['give_up', 'start_again']
 
 
 class AdvancementEvent(EventBase):
@@ -84,7 +115,7 @@ class ConnectionsRollEvent(EventBase):
 class SkillRollEvent(EventBase):
     kind: Literal['skill_roll'] = 'skill_roll'
     context: str  # matches the pending kind — dispatch key for the career handler
-    skill: str  # which skill was chosen
+    skill: AnySkill | str  # str is temporary for characteristic rolls (EDU, INT, etc.)
     modified_roll: int  # 2D + skill level + any other DMs already applied by the player
 
 
@@ -123,6 +154,7 @@ class AgingCrisisEvent(EventBase):
 type AnyEvent = Annotated[
     AgingCrisisEvent
     | AgingRollEvent
+    | AdvancementDmChoiceEvent
     | CharacterStartedEvent
     | UcpEvent
     | BackgroundSkillsEvent
@@ -136,17 +168,23 @@ type AnyEvent = Annotated[
     | SkillTableEvent
     | CharacteristicChoiceEvent
     | ConnectionsRollEvent
+    | ConnectionKindChoiceEvent
     | SkillRollEvent
     | InjuryTableEvent
     | LifeEventEvent
     | LifeEventUnusualEvent
-    | MusterOutEvent,
+    | MusterOutEvent
+    | ScholarEvent3ChoiceEvent
+    | ScholarEvent8ChoiceEvent
+    | ScholarMishap3ChoiceEvent
+    | ScholarMishap5ChoiceEvent,
     Field(discriminator='kind'),
 ]
 
 
 __all__ = [
     AnyEvent,
+    AdvancementDmChoiceEvent,
     AdvancementEvent,
     AgingCrisisEvent,
     AgingRollEvent,
@@ -154,6 +192,7 @@ __all__ = [
     CareerEvent,
     CharacteristicChoiceEvent,
     CharacterStartedEvent,
+    ConnectionKindChoiceEvent,
     ConnectionsRollEvent,
     EventBase,
     InjuryTableEvent,
@@ -162,6 +201,10 @@ __all__ = [
     MishapEvent,
     MusterOutEvent,
     ReenlistEvent,
+    ScholarEvent3ChoiceEvent,
+    ScholarEvent8ChoiceEvent,
+    ScholarMishap3ChoiceEvent,
+    ScholarMishap5ChoiceEvent,
     SkillChoiceEvent,
     SkillRollEvent,
     SkillTableEvent,

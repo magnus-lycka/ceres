@@ -202,7 +202,7 @@ _expected = SimpleNamespace(
     },
     spec_tons={
         'J-2 (400t), 8 weeks of operation': 83.0,
-        'Cargo Space': 1.0,
+        'Cargo Hold': 1.0,
     },
 )
 # Ceres 360t hull (MCr9 vs ref MCr10), no Ship's Mechanic (-MCr0.05), adds Expert (+MCr0.02)

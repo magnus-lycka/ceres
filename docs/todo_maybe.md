@@ -323,24 +323,20 @@ References: `refs/hg/23_spacecraft_options.md`, `refs/hg/25_solar_energy_systems
 
 Several standard fuel tank options from HG Spacecraft Options are not yet modelled:
 
-- **Collapsible Fuel Tank** (fuel bladder): consumes 1% of its full tonnage when empty, Cr500/ton.
-  Cannot be pumped directly to jump drive; must complete a jump first.
-- **Mountable Tank**: converts cargo space to fuel; Cr1000/ton. Takes 4 weeks to add/remove.
+- **Collapsible Fuel Tank** (fuel bladder): treated as loose equipment /
+  operational cargo state, not a static ship design component. See RIS-017.
+- **Mountable Tank**: treated as cargo-space conversion / operational state, not
+  a static ship design component. See RIS-017.
 - **Metal Hydride Storage** (TL9): replaces liquid-H₂ tanks; twice the space, MCr0.2/ton; reduces
   fuel-leak severity.
-- **Drop Tank**: external fuel tank jettisoned before jump. Mount fitting consumes 0.4% of tank
-  tonnage, MCr0.5/ton; tank itself Cr25000/ton. Imposes DM penalty on Engineer (J-drive) jump
-  check and prevents streamlining.
-- **Ramscoops**: passive hydrogen collector; 1% of hull + 5 tons (minimum 10 tons), MCr0.25/ton;
-  collects 5 tons hydrogen/week/ton ramscoop; no fuel processor needed; prevents streamlining.
+- **Drop Tank**: treated as loose/external operational equipment rather than a
+  static ship design component. See RIS-017.
 - **Fuel Tank Compartment**: fuel tanks concealed inside cargo or other space. Inflicts DM-4 to
   sensor checks and DM-6 to Investigate checks to detect. Cr4,000/ton; tonnage deducted from
   fuel allocation, not from hull tonnage directly.
 
 Remaining work:
 
-- decide which variants are worth implementing first (mountable tanks and collapsible tanks are
-  likely most common in published designs)
 - implement as `ShipPart` subclasses in `storage.py` or a new `fuel.py` subsection
 
 ## Screens

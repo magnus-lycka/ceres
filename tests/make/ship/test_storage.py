@@ -26,6 +26,7 @@ from ceres.make.ship.storage import (
     LoadingBeltTL7,
     LoadingBeltTL12,
     OperationFuel,
+    Ramscoop,
     ReactionFuel,
 )
 
@@ -149,6 +150,57 @@ def test_fuel_power_load_includes_processor_and_refinery():
         fuel=FuelSection(fuel_processor=FuelProcessor(tons=2), fuel_refinery=FuelRefinery(tl=10, tons=10)),
     )
     assert my_ship.fuel_power_load == pytest.approx(12.0)
+
+
+def test_ramscoop_values_use_minimum_size():
+    ramscoop = Ramscoop()
+    ramscoop.bind(DummyOwner(12, 200))
+
+    assert ramscoop.tons == pytest.approx(10.0)
+    assert ramscoop.cost == pytest.approx(2_500_000.0)
+    assert ramscoop.power == pytest.approx(0.0)
+    assert ramscoop.collection_per_week == pytest.approx(50.0)
+    assert ramscoop.build_item() == 'Ramscoop (50 tons/week)'
+
+
+def test_ramscoop_values_use_one_percent_plus_five_and_extra_tons():
+    ramscoop = Ramscoop(extra_tons=5)
+    ramscoop.bind(DummyOwner(12, 1_000))
+
+    assert ramscoop.tons == pytest.approx(20.0)
+    assert ramscoop.cost == pytest.approx(5_000_000.0)
+    assert ramscoop.collection_per_week == pytest.approx(100.0)
+
+
+def test_ramscoop_values_are_computed_properties_not_serialized_fields():
+    ramscoop = Ramscoop.model_validate({'extra_tons': 5, 'tons': 99, 'cost': 99, 'power': 99})
+    ramscoop.bind(DummyOwner(12, 1_000))
+    dump = ramscoop.model_dump()
+
+    assert ramscoop.tons == pytest.approx(20.0)
+    assert ramscoop.cost == pytest.approx(5_000_000.0)
+    assert ramscoop.power == pytest.approx(0.0)
+    assert dump['extra_tons'] == pytest.approx(5.0)
+    assert 'tons' not in dump
+    assert 'cost' not in dump
+    assert 'power' not in dump
+
+
+def test_ramscoop_appears_as_fuel_spec_row_and_rejects_streamlined_hull():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        fuel=FuelSection(ramscoop=Ramscoop()),
+    )
+    row = my_ship.build_spec().row('Ramscoop (50 tons/week)', section=SpecSection.FUEL)
+    assert row.tons == pytest.approx(10.0)
+    assert row.cost == pytest.approx(2_500_000.0)
+    assert row.notes.infos == [
+        'Collects 5 tons of hydrogen per week per ton of ramscoop',
+        'Does not require fuel scoops or fuel processors',
+    ]
+    assert 'Ramscoops prevent atmospheric re-entry and cannot be installed on streamlined hulls' in row.notes.errors
 
 
 def test_cargo_crane_tons_up_to_150():
@@ -692,7 +744,7 @@ def test_military_cargo_warning_if_below_recommended_stores_capacity():
     assert 'Cargo is below recommended 100-day stores capacity of 2 tons' in cargo_row.notes.warnings
 
 
-def test_spec_always_shows_residual_cargo_space_even_with_explicit_cargo_parts():
+def test_spec_always_shows_residual_cargo_hold_even_with_explicit_cargo_parts():
     my_ship = ship.Ship(
         tl=12,
         displacement=200,
@@ -707,5 +759,5 @@ def test_spec_always_shows_residual_cargo_space_even_with_explicit_cargo_parts()
     assert [(row.item, row.tons) for row in cargo_rows] == [
         ('Cargo Airlock (2 tons)', 2.0),
         ('Fuel/Cargo Container (30 tons)', 32),
-        ('Cargo Space', pytest.approx(166.0)),
+        ('Cargo Hold', pytest.approx(166.0)),
     ]

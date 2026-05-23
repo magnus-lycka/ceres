@@ -1,5 +1,6 @@
 from ceres.character.events import BackgroundSkillsEvent, CharacterStartedEvent, UcpEvent
 from ceres.character.replay import BACKGROUND_SKILLS, ReplayError, replay
+from ceres.character.skills import Admin, Advocate, Athletics, Carouse, Drive, skill_list
 
 
 def _started(id: int = 1) -> CharacterStartedEvent:
@@ -15,9 +16,9 @@ def _ucp_low_edu(id: int = 2) -> UcpEvent:
     return UcpEvent(id=id, fulfills='1.0', ucp='786000')
 
 
-def _bg_skills(id: int = 3, skills: list[str] | None = None) -> BackgroundSkillsEvent:
+def _bg_skills(id: int = 3, skills: list | None = None) -> BackgroundSkillsEvent:
     if skills is None:
-        skills = ['Admin', 'Athletics', 'Carouse', 'Drive']  # 4 skills for EDU=10
+        skills = [Admin(), Athletics(), Carouse(), Drive()]  # 4 skills for EDU=10
     return BackgroundSkillsEvent(id=id, fulfills='2.0', skills=skills)
 
 
@@ -151,15 +152,18 @@ class TestBackgroundSkillsEvent:
         assert projection.pending_inputs[0].kind == 'career'
 
     def test_grants_skills_at_level_0_in_summary(self):
-        skills = ['Admin', 'Athletics', 'Carouse', 'Drive']
-        events = [_started(), _ucp(), _bg_skills(skills=skills)]
+        events = [_started(), _ucp(), _bg_skills(skills=[Admin(), Athletics(), Carouse(), Drive()])]
 
         projection = replay(1, events)
 
-        assert projection.summary.skills == {'Admin': 0, 'Athletics': 0, 'Carouse': 0, 'Drive': 0}
+        assert projection.summary.skill_level('Admin') == 0
+        assert projection.summary.skill_level('Athletics') == 0
+        assert projection.summary.skill_level('Carouse') == 0
+        assert projection.summary.skill_level('Drive') == 0
+        assert len(projection.summary.skills) == 4
 
     def test_rejects_wrong_number_of_skills(self):
-        too_few = BackgroundSkillsEvent(id=3, fulfills='2.0', skills=['Admin', 'Athletics'])
+        too_few = BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics()])
 
         try:
             replay(1, [_started(), _ucp(), too_few])
@@ -167,8 +171,9 @@ class TestBackgroundSkillsEvent:
         except ReplayError:
             pass
 
-    def test_rejects_invalid_skill_name(self):
-        invalid = BackgroundSkillsEvent(id=3, fulfills='2.0', skills=['Admin', 'FakeSkill', 'Carouse', 'Drive'])
+    def test_rejects_non_background_skill(self):
+        # Advocate is not in BackgroundSkills
+        invalid = BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Advocate(), Carouse(), Drive()])
 
         try:
             replay(1, [_started(), _ucp(), invalid])
@@ -177,10 +182,9 @@ class TestBackgroundSkillsEvent:
             pass
 
     def test_all_background_skills_are_known_skill_types(self):
-        from ceres.character.skills import skill_list
-
-        known_types = {info.type for info in skill_list()}
-        unknown = BACKGROUND_SKILLS - known_types
+        known_types = {cls.name() for cls in BACKGROUND_SKILLS}
+        all_types = {info.type for info in skill_list()}
+        unknown = known_types - all_types
         assert unknown == set(), f'Unknown skill types in BACKGROUND_SKILLS: {unknown}'
 
     def test_background_skills_blocked_by_no_pending(self):

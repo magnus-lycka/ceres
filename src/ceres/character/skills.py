@@ -495,3 +495,10 @@ def _skill_classes(skill_union: object) -> tuple[type[Skill], ...]:
 
 def skill_list(skill_union: object = AnySkill) -> tuple[SkillInfo, ...]:
     return tuple(SkillInfo(skill.name(), skill.specialities()) for skill in _skill_classes(skill_union))
+
+
+def skill_class_by_name(name: str) -> type[Skill]:
+    for cls in _skill_classes(AnySkill):
+        if cls.name() == name:
+            return cls
+    raise ValueError(f'Unknown skill: {name!r}')

@@ -364,6 +364,7 @@ class Hull(CeresModel):
                 SpecRow(
                     section=SpecSection.HULL,
                     item='Armour: 4',
+                    tons=self.pressure_hull_tons(ship.displacement),
                 )
             )
         if self.stealth is not None:

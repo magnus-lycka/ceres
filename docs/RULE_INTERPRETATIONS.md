@@ -370,6 +370,32 @@ requirement is the specific use case called out by the armoury rule. The small
 epsilon prevents floating-point noise from turning exact boundary cases into an
 extra armoury.
 
+### RIS-017 Collapsible, Mountable, And Drop Tanks Are Operational Equipment
+
+High Guard describes collapsible fuel tanks as flexible bladders stored in cargo
+space, mountable tanks as cargo-space conversions that take weeks to add or
+remove, and drop tanks as external tanks used and jettisoned around jump
+operations. These all change the ship's usable cargo/displacement state
+depending on whether they are installed, carried, full, empty, attached, or
+jettisoned.
+
+Ceres does not model these as static ship construction components. They are
+treated as loose equipment and operational state, analogous to carrying spare
+fuel containers in cargo space rather than permanently installing another fuel
+system in the ship design.
+
+Implications:
+
+- `FuelSection` does not include collapsible fuel tanks, mountable tanks, or
+  drop tanks.
+- published references to these items should be handled as source notes or
+  future cargo/equipment state, not as rows in the static ship spec.
+- mountable-tank installation/removal time and cargo-space conversion are
+  operational/campaign state rather than static construction state.
+- drop-tank jump penalties, jettison survival, streamlining effects, and thrust
+  recalculation while attached are operational rules outside the current
+  ship-building model.
+
 ## Character Interpretations
 
 ### RIC-001 "Science", "Art", and "Profession" in Career Tables Mean Player Chooses a Broad Skill

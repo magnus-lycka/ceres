@@ -161,7 +161,7 @@ _expected = SimpleNamespace(
         'Staterooms': 4,
         'Low Berths': 4,
     },
-    spec_tons={'Cargo Space': 2.0},
+    spec_tons={'Cargo Hold': 2.0},
 )
 # Ceres rounds op fuel up to whole dTons: ceil(150 * 0.001 * 16 / 4) = ceil(0.6) = 1 dTon … RIS-007
 # gives 2t for 150-ton ship, equating to ~20 weeks endurance rather than 16
