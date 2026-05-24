@@ -326,22 +326,6 @@ Specialised variants:
 - Intelligent Interface (TL8, ×5 cost of standard computer)
 - Intellect (TL9, ×10 cost of standard computer)
 
-## Additional sensor suites
-
-Reference: `refs/hg/26_drones.md` (sensors section, pages 54–63)
-
-Several sensor modules listed in HG are not yet modelled:
-
-- Countermeasures Suite
-- Deep Penetration Scanners
-- Distributed Array / Extended Array / Extension Net
-- Life Scanner
-- Mail Distribution Array
-- Mineral Detection Suite
-- Rapid-Deployment Extended Arrays
-- Shallow Penetration Suite
-- Signal Processing System
-
 ## Space stations as a build target
 
 Reference: `refs/hg/27_space_stations.md`

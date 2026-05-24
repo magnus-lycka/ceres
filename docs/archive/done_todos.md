@@ -1041,3 +1041,24 @@ Deliberate policies:
 
 Possible future weapon families from non-HG sources should be opened as
 source-specific todos when those sources are being implemented.
+
+## Additional Sensor Suites
+
+High Guard sensor option coverage from `refs/hg/26_drones.md` is complete for
+the currently modelled ship-building scope.
+
+Implemented and covered:
+
+- `CountermeasuresSuite` and `MilitaryCountermeasuresSuite`
+- `DeepPenetrationScanners`
+- `DistributedArray`, `ExtendedArrays`, `RapidDeploymentExtendedArrays`, and
+  `ExtensionNet`
+- `LifeScanner` and `LifeScannerAnalysisSuite`
+- `MailDistributionArray`
+- `MineralDetectionSuite`
+- `ShallowPenetrationSuite`
+- `ImprovedSignalProcessing` and `EnhancedSignalProcessing`
+
+Operational scanner procedures, range detail adjudication, jamming resolution,
+and scan timing are represented as notes or remain out of scope for
+`ceres.make.ship`.

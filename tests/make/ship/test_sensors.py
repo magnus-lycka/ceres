@@ -7,15 +7,23 @@ from ceres.make.ship.sensors import (
     BasicSensors,
     CivilianSensors,
     CountermeasuresSuite,
+    DeepPenetrationScanners,
+    DistributedArray,
     EnhancedSignalProcessing,
     ExtendedArrays,
+    ExtensionNet,
     ImprovedSensors,
+    ImprovedSignalProcessing,
+    LifeScanner,
     LifeScannerAnalysisSuite,
+    MailDistributionArray,
     MilitaryCountermeasuresSuite,
     MilitarySensors,
+    MineralDetectionSuite,
     RapidDeploymentExtendedArrays,
     SensorsSection,
     SensorStations,
+    ShallowPenetrationSuite,
 )
 
 
@@ -198,7 +206,13 @@ def test_civilian_grade_recomputes_cost_from_input():
         (AdvancedSensors(), 5.0, 5_300_000.0, 6.0),
         (CountermeasuresSuite(), 2.0, 4_000_000.0, 1.0),
         (MilitaryCountermeasuresSuite(), 15.0, 28_000_000.0, 2.0),
+        (LifeScanner(), 1.0, 2_000_000.0, 1.0),
         (LifeScannerAnalysisSuite(), 1.0, 4_000_000.0, 1.0),
+        (MailDistributionArray(tl=10), 10.0, 20_000_000.0, 0.0),
+        (MailDistributionArray(tl=13), 20.0, 10_000_000.0, 0.0),
+        (MineralDetectionSuite(), 1.0, 5_000_000.0, 0.0),
+        (ShallowPenetrationSuite(), 10.0, 5_000_000.0, 1.0),
+        (ImprovedSignalProcessing(), 1.0, 4_000_000.0, 1.0),
         (EnhancedSignalProcessing(), 2.0, 8_000_000.0, 2.0),
         (SensorStations(count=2), 2.0, 1_000_000.0, 0.0),
     ],
@@ -251,6 +265,93 @@ def test_enhanced_signal_processing_values():
     assert 'DM +4 to all sensor-related checks' in s.notes.infos
 
 
+def test_countermeasures_suite_uses_hg_tl():
+    s = CountermeasuresSuite()
+    s.bind(DummyOwner(13, 400))
+    assert s.tl == 13
+
+
+def test_deep_penetration_scanners_scale_with_tons():
+    s = DeepPenetrationScanners(tons=4)
+    s.bind(DummyOwner(13, 400))
+    assert s.build_item() == 'Deep Penetration Scanners'
+    assert s.tons == 4
+    assert s.cost == 4_000_000
+    assert s.power == 1
+    assert 'Each ton scans 20 tons of target vessel per hour at Adjacent range' in s.notes.infos
+
+
+def test_life_scanner_values_and_notes():
+    s = LifeScanner()
+    s.bind(DummyOwner(12, 400))
+    assert s.tons == 1
+    assert s.cost == 2_000_000
+    assert s.power == 1
+    assert 'Ship-mounted life scanner; typically 70-85% accurate' in s.notes.contents
+    assert 'Requires Electronics (sensors) to interpret results' in s.notes.infos
+
+
+def test_mail_distribution_array_tl10_values():
+    s = MailDistributionArray(tl=10)
+    s.bind(DummyOwner(10, 400))
+    assert s.build_item() == 'Mail Distribution Array (TL10)'
+    assert s.tons == 10
+    assert s.cost == 20_000_000
+    assert s.power == 0
+
+
+def test_mail_distribution_array_tl13_values():
+    s = MailDistributionArray(tl=13)
+    s.bind(DummyOwner(13, 400))
+    assert s.build_item() == 'Mail Distribution Array (TL13)'
+    assert s.tons == 20
+    assert s.cost == 10_000_000
+    assert s.power == 0
+
+
+def test_mineral_detection_suite_requires_densitometer_sensor_package():
+    s = MineralDetectionSuite()
+    owner = ship.Ship(
+        tl=12,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        sensors=SensorsSection(primary=MilitarySensors(), mineral_detection_suite=s),
+    )
+    s.bind(owner)
+    assert 'Mineral detection suite requires a sensor package with a densitometer' in s.notes.errors
+
+
+def test_mineral_detection_suite_accepts_improved_sensors():
+    s = MineralDetectionSuite()
+    owner = ship.Ship(
+        tl=12,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        sensors=SensorsSection(primary=ImprovedSensors(), mineral_detection_suite=s),
+    )
+    s.bind(owner)
+    assert not s.notes.errors
+
+
+def test_shallow_penetration_suite_values_and_notes():
+    s = ShallowPenetrationSuite()
+    s.bind(DummyOwner(10, 400))
+    assert s.tons == 10
+    assert s.cost == 5_000_000
+    assert s.power == 1
+    assert 'Thermal/EM hull penetration scanning up to Very Long range' in s.notes.contents
+
+
+def test_improved_signal_processing_values_and_notes():
+    s = ImprovedSignalProcessing()
+    s.bind(DummyOwner(11, 400))
+    assert s.tons == 1
+    assert s.cost == 4_000_000
+    assert s.power == 1
+    assert 'DM +2 to all sensor-related checks' in s.notes.infos
+    assert 'Other ships double all jamming DMs against this ship' in s.notes.infos
+
+
 def test_countermeasures_suite_notes_explain_bonus():
     from ceres.make.ship.sensors import CountermeasuresSuite
 
@@ -282,6 +383,74 @@ def test_extended_arrays_add_twice_primary_sensor_values():
     assert s.tons == 6
     assert s.cost == 8_600_000
     assert s.power == 9
+
+
+def test_distributed_array_adds_twice_primary_sensor_values_for_large_ship():
+    s = DistributedArray()
+    owner = ship.Ship(
+        tl=13,
+        displacement=6000,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        sensors=SensorsSection(primary=ImprovedSensors(), distributed_array=s),
+    )
+    owner.sensors.primary.bind(owner)
+    s.bind(owner)
+    assert s.tons == 6
+    assert s.cost == 8_600_000
+    assert s.power == 9
+    assert 'Extends EM and active radar/lidar detection to Distant range' in s.notes.infos
+
+
+def test_distributed_array_requires_improved_or_advanced_sensors():
+    s = DistributedArray()
+    owner = ship.Ship(
+        tl=13,
+        displacement=6000,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        sensors=SensorsSection(primary=MilitarySensors(), distributed_array=s),
+    )
+    s.bind(owner)
+    assert 'Distributed array requires Improved or Advanced sensors' in s.notes.errors
+
+
+def test_distributed_array_requires_large_ship():
+    s = DistributedArray()
+    owner = ship.Ship(
+        tl=13,
+        displacement=5000,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        sensors=SensorsSection(primary=ImprovedSensors(), distributed_array=s),
+    )
+    s.bind(owner)
+    assert 'Distributed array requires displacement greater than 5000 tons' in s.notes.errors
+
+
+def test_extension_net_values_scale_with_ship_size():
+    s = ExtensionNet()
+    owner = ship.Ship(
+        tl=10,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        sensors=SensorsSection(primary=MilitarySensors(), extension_net=s),
+    )
+    s.bind(owner)
+    assert s.tons == 4
+    assert s.cost == 4_000_000
+    assert s.power == 0
+    assert 'Raises Limited or Full detail range by one step' in s.notes.infos
+
+
+def test_extension_net_has_one_ton_minimum():
+    s = ExtensionNet()
+    owner = ship.Ship(
+        tl=10,
+        displacement=50,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        sensors=SensorsSection(primary=BasicSensors(), extension_net=s),
+    )
+    s.bind(owner)
+    assert s.tons == 1
+    assert s.cost == 1_000_000
 
 
 def test_extended_arrays_values_are_computed_properties_not_serialized_fields():

@@ -208,7 +208,7 @@ class AdvancedSensors(SensorPackage):
 
 class CountermeasuresSuite(ShipPart):
     description: Literal['Countermeasures Suite'] = 'Countermeasures Suite'
-    tl: int = 11
+    tl: int = 13
     tons: ClassVar[float]
     cost: ClassVar[float]
     power: ClassVar[float]
@@ -256,6 +256,54 @@ class MilitaryCountermeasuresSuite(ShipPart):
         return 2.0
 
 
+class DeepPenetrationScanners(ShipPart):
+    description: Literal['Deep Penetration Scanners'] = 'Deep Penetration Scanners'
+    tl: int = 13
+    tons: float
+    cost: ClassVar[float]
+    power: ClassVar[float]
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('Each ton scans 20 tons of target vessel per hour at Adjacent range')
+        notes.info('Can reveal layout, hidden spaces, cargo, crew, and personal effects')
+        return notes
+
+    @property
+    def cost(self) -> float:
+        return self.tons * 1_000_000.0
+
+    @property
+    def power(self) -> float:
+        return 1.0
+
+
+class LifeScanner(ShipPart):
+    description: Literal['Life Scanner'] = 'Life Scanner'
+    tl: int = 12
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.content('Ship-mounted life scanner; typically 70-85% accurate')
+        notes.info('Requires Electronics (sensors) to interpret results')
+        return notes
+
+    @property
+    def tons(self) -> float:
+        return 1.0
+
+    @property
+    def cost(self) -> float:
+        return 2_000_000.0
+
+    @property
+    def power(self) -> float:
+        return 1.0
+
+
 class LifeScannerAnalysisSuite(ShipPart):
     description: Literal['Life Scanner Analysis Suite'] = 'Life Scanner Analysis Suite'
     tl: int = 14
@@ -280,6 +328,68 @@ class LifeScannerAnalysisSuite(ShipPart):
     @property
     def power(self) -> float:
         return 1.0
+
+
+class MailDistributionArray(ShipPart):
+    description: Literal['Mail Distribution Array'] = 'Mail Distribution Array'
+    tl: Literal[10, 13] = 10
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+
+    def item_description(self) -> str:
+        return f'Mail Distribution Array (TL{self.tl})'
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('High-volume mail data communications array for x-boats and similar ships')
+        return notes
+
+    @property
+    def tons(self) -> float:
+        if self.tl == 10:
+            return 10.0
+        return 20.0
+
+    @property
+    def cost(self) -> float:
+        if self.tl == 10:
+            return 20_000_000.0
+        return 10_000_000.0
+
+    @property
+    def power(self) -> float:
+        return 0.0
+
+
+class MineralDetectionSuite(ShipPart):
+    description: Literal['Mineral Detection Suite'] = 'Mineral Detection Suite'
+    tl: int = 12
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.content('Determines mineral types and quantities')
+        owner = getattr(self, '_assembly', None)
+        if owner is not None:
+            primary = cast(Any, self.assembly).sensors.primary
+            if not isinstance(primary, ImprovedSensors | AdvancedSensors):
+                notes.error('Mineral detection suite requires a sensor package with a densitometer')
+        return notes
+
+    @property
+    def tons(self) -> float:
+        return 1.0
+
+    @property
+    def cost(self) -> float:
+        return 5_000_000.0
+
+    @property
+    def power(self) -> float:
+        return 0.0
 
 
 class SensorStations(ShipPart):
@@ -309,6 +419,57 @@ class SensorStations(ShipPart):
         return 0.0
 
 
+class ShallowPenetrationSuite(ShipPart):
+    description: Literal['Shallow Penetration Suite'] = 'Shallow Penetration Suite'
+    tl: int = 10
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.content('Thermal/EM hull penetration scanning up to Very Long range')
+        return notes
+
+    @property
+    def tons(self) -> float:
+        return 10.0
+
+    @property
+    def cost(self) -> float:
+        return 5_000_000.0
+
+    @property
+    def power(self) -> float:
+        return 1.0
+
+
+class ImprovedSignalProcessing(ShipPart):
+    description: Literal['Improved Signal Processing'] = 'Improved Signal Processing'
+    tl: int = 11
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('DM +2 to all sensor-related checks')
+        notes.info('Other ships double all jamming DMs against this ship')
+        return notes
+
+    @property
+    def tons(self) -> float:
+        return 1.0
+
+    @property
+    def cost(self) -> float:
+        return 4_000_000.0
+
+    @property
+    def power(self) -> float:
+        return 1.0
+
+
 class EnhancedSignalProcessing(ShipPart):
     description: Literal['Enhanced Signal Processing'] = 'Enhanced Signal Processing'
     tl: int = 13
@@ -332,6 +493,43 @@ class EnhancedSignalProcessing(ShipPart):
     @property
     def power(self) -> float:
         return 2.0
+
+
+class DistributedArray(ShipPart):
+    description: Literal['Distributed Array'] = 'Distributed Array'
+    tl: int = 11
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+
+    @property
+    def _primary_suite(self) -> ShipPart:
+        return cast(Any, self.assembly).sensors.primary
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('Extends EM and active radar/lidar detection to Distant range')
+        notes.info('Extends passive radar/lidar detection to Long range')
+        notes.info('Only minimal information is available at the extended ranges')
+        owner = getattr(self, '_assembly', None)
+        if owner is not None:
+            if not isinstance(self._primary_suite, ImprovedSensors | AdvancedSensors):
+                notes.error('Distributed array requires Improved or Advanced sensors')
+            if self.assembly.displacement <= 5_000:
+                notes.error('Distributed array requires displacement greater than 5000 tons')
+        return notes
+
+    @property
+    def tons(self) -> float:
+        return self._primary_suite.tons * 2
+
+    @property
+    def cost(self) -> float:
+        return self._primary_suite.cost * 2
+
+    @property
+    def power(self) -> float:
+        return self._primary_suite.power * 3
 
 
 class ExtendedArrays(ShipPart):
@@ -378,30 +576,83 @@ class RapidDeploymentExtendedArrays(ExtendedArrays):
         return self._primary_suite.cost * 4
 
 
+class ExtensionNet(ShipPart):
+    description: Literal['Extension Net'] = 'Extension Net'
+    tl: int = 10
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('Raises Limited or Full detail range by one step')
+        notes.info('Cannot be used with NAS or densitometers')
+        notes.info('Cannot receive data while the deploying ship manoeuvres')
+        return notes
+
+    @property
+    def tons(self) -> float:
+        return max(1.0, self.assembly.displacement * 0.01)
+
+    @property
+    def cost(self) -> float:
+        return self.tons * 1_000_000.0
+
+    @property
+    def power(self) -> float:
+        return 0.0
+
+
 ShipSensors = Annotated[
     BasicSensors | CivilianSensors | MilitarySensors | ImprovedSensors | AdvancedSensors,
+    Field(discriminator='description'),
+]
+
+SignalProcessing = Annotated[
+    ImprovedSignalProcessing | EnhancedSignalProcessing,
     Field(discriminator='description'),
 ]
 
 
 class SensorsSection(CeresModel):
     primary: ShipSensors = Field(default_factory=BasicSensors)
+    deep_penetration_scanners: DeepPenetrationScanners | None = None
+    life_scanner: LifeScanner | None = None
     life_scanner_analysis_suite: LifeScannerAnalysisSuite | None = None
+    mail_distribution_array: MailDistributionArray | None = None
+    mineral_detection_suite: MineralDetectionSuite | None = None
+    shallow_penetration_suite: ShallowPenetrationSuite | None = None
     countermeasures: CountermeasuresSuite | MilitaryCountermeasuresSuite | None = None
-    signal_processing: EnhancedSignalProcessing | None = None
+    signal_processing: SignalProcessing | None = None
+    distributed_array: DistributedArray | None = None
     extended_arrays: ExtendedArrays | RapidDeploymentExtendedArrays | None = None
+    extension_net: ExtensionNet | None = None
     sensor_stations: SensorStations | None = None
 
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = [self.primary]
+        if self.deep_penetration_scanners is not None:
+            parts.append(self.deep_penetration_scanners)
+        if self.life_scanner is not None:
+            parts.append(self.life_scanner)
         if self.life_scanner_analysis_suite is not None:
             parts.append(self.life_scanner_analysis_suite)
+        if self.mail_distribution_array is not None:
+            parts.append(self.mail_distribution_array)
+        if self.mineral_detection_suite is not None:
+            parts.append(self.mineral_detection_suite)
+        if self.shallow_penetration_suite is not None:
+            parts.append(self.shallow_penetration_suite)
         if self.countermeasures is not None:
             parts.append(self.countermeasures)
         if self.signal_processing is not None:
             parts.append(self.signal_processing)
+        if self.distributed_array is not None:
+            parts.append(self.distributed_array)
         if self.extended_arrays is not None:
             parts.append(self.extended_arrays)
+        if self.extension_net is not None:
+            parts.append(self.extension_net)
         if self.sensor_stations is not None:
             parts.append(self.sensor_stations)
         return parts
