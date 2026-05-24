@@ -72,4 +72,4 @@ def _format_npc_skill(skill: AnySkill) -> list[str]:
     return [f'{name} ({sname}){_NBSP}{lvl}' for sname, lvl in non_zero]
 
 
-__all__ = [NpcSpec, format_npc_skills, spec_from_summary]
+__all__ = ['NpcSpec', 'format_npc_skills', 'spec_from_summary']

@@ -168,10 +168,10 @@ def _fmt_cr_col(v: float | None) -> str:
 
 
 __all__ = [
-    render_ship_html,
-    render_ship_pdf,
-    render_ship_spec_html,
-    render_ship_spec_pdf,
-    render_ship_spec_typst,
-    render_ship_typst,
+    'render_ship_html',
+    'render_ship_pdf',
+    'render_ship_spec_html',
+    'render_ship_spec_pdf',
+    'render_ship_spec_typst',
+    'render_ship_typst',
 ]

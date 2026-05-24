@@ -406,4 +406,4 @@ def _recommended_armouries(ship: Ship) -> int:
     return ceil(required - 0.0001)
 
 
-__all__ = [CrewRole, Ship, ShipDesignType]
+__all__ = ['CrewRole', 'Ship', 'ShipDesignType']

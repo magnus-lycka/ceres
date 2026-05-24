@@ -442,11 +442,11 @@ def UniversalTranslator() -> BrainSoftware:
 
 
 __all__ = [
-    RobotBrainUnion,
-    PrimitiveBrain,
-    BasicBrain,
-    AdvancedBrain,
-    VeryAdvancedBrain,
-    SelfAwareBrain,
-    UniversalTranslator,
+    'RobotBrainUnion',
+    'PrimitiveBrain',
+    'BasicBrain',
+    'AdvancedBrain',
+    'VeryAdvancedBrain',
+    'SelfAwareBrain',
+    'UniversalTranslator',
 ]

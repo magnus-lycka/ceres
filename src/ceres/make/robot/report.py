@@ -87,9 +87,4 @@ def _notes_for_display(notes: list[_Note]) -> list[dict]:
     return NoteList(notes).detail_entries
 
 
-__all__ = [
-    render_robot_pdf,
-    render_robot_spec_pdf,
-    render_robot_spec_typst,
-    render_robot_typst,
-]
+__all__ = ['render_robot_pdf', 'render_robot_spec_pdf', 'render_robot_spec_typst', 'render_robot_typst']

@@ -64,4 +64,4 @@ def _build_npc_context(spec: NpcSpec, *, notes: str | None = None) -> dict:
     }
 
 
-__all__ = [render_npc_gallery_pdf, render_npc_gallery_typst]
+__all__ = ['render_npc_gallery_pdf', 'render_npc_gallery_typst']

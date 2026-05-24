@@ -284,16 +284,16 @@ LocomotionUnion = Annotated[
 ]
 
 __all__ = [
-    LocomotionUnion,
-    NoneLocomotion,
-    WheelsLocomotion,
-    WheelsAtvLocomotion,
-    TracksLocomotion,
-    GravLocomotion,
-    AeroplaneLocomotion,
-    AquaticLocomotion,
-    VtolLocomotion,
-    WalkerLocomotion,
-    HovercraftLocomotion,
-    ThrusterLocomotion,
+    'LocomotionUnion',
+    'NoneLocomotion',
+    'WheelsLocomotion',
+    'WheelsAtvLocomotion',
+    'TracksLocomotion',
+    'GravLocomotion',
+    'AeroplaneLocomotion',
+    'AquaticLocomotion',
+    'VtolLocomotion',
+    'WalkerLocomotion',
+    'HovercraftLocomotion',
+    'ThrusterLocomotion',
 ]

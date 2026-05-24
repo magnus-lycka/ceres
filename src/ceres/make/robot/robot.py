@@ -633,4 +633,4 @@ class Robot(RobotBase):
         return spec
 
 
-__all__ = [Robot]
+__all__ = ['Robot']

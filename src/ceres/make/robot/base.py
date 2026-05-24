@@ -15,4 +15,4 @@ class RobotBase(Assembly):
         return []
 
 
-__all__ = [RobotBase]
+__all__ = ['RobotBase']

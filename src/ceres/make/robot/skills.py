@@ -389,12 +389,12 @@ class BrainSoftware(CeresModel):
 
 
 __all__ = [
-    SkillGrant,
-    SkillPackage,
-    BrainSoftware,
-    RobotProfession,
-    Weapon,
-    Zoology,
-    primitive_package_skills,
-    _DEX_SKILLS,
+    'SkillGrant',
+    'SkillPackage',
+    'BrainSoftware',
+    'RobotProfession',
+    'Weapon',
+    'Zoology',
+    'primitive_package_skills',
+    '_DEX_SKILLS',
 ]

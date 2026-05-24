@@ -161,4 +161,4 @@ def _fmt_mass(mass: float) -> str:
     return f'{mass:g}'
 
 
-__all__ = [render_html, render_pdf, render_pdf_source, render_typst_source]
+__all__ = ['render_html', 'render_pdf', 'render_pdf_source', 'render_typst_source']
