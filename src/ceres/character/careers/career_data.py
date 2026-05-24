@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 
+from ceres.character.benefits import AnyBenefit
+
 
 class CharCheck(BaseModel):
     characteristic: str
@@ -56,7 +58,8 @@ class AssignmentData(BaseModel):
 
 class MusterOutRow(BaseModel):
     cash: int
-    benefit: str
+    benefit: AnyBenefit
+    count: int = 1
 
 
 class MusterOutData(BaseModel):

@@ -20,11 +20,13 @@ from ceres.make.ship.storage import (
     FuelRefinery,
     FuelScoops,
     FuelSection,
+    FuelTankCompartment,
     InterplanetaryJumpNet,
     InterstellarJumpNet,
     JumpFuel,
     LoadingBeltTL7,
     LoadingBeltTL12,
+    MetalHydrideStorage,
     OperationFuel,
     Ramscoop,
     ReactionFuel,
@@ -203,6 +205,47 @@ def test_ramscoop_appears_as_fuel_spec_row_and_rejects_streamlined_hull():
     assert 'Ramscoops prevent atmospheric re-entry and cannot be installed on streamlined hulls' in row.notes.errors
 
 
+def test_metal_hydride_storage_doubles_fuel_tankage_and_adds_cost():
+    my_ship = ship.Ship(
+        tl=9,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        fuel=FuelSection(
+            jump_fuel=JumpFuel(parsecs=1),
+            metal_hydride_storage=MetalHydrideStorage(),
+        ),
+    )
+
+    fuel_row = my_ship.build_spec().row('J-1, metal hydride storage', section=SpecSection.FUEL)
+    assert my_ship.fuel is not None
+    assert my_ship.fuel.jump_fuel is not None
+    assert my_ship.fuel.metal_hydride_storage is not None
+    assert my_ship.fuel.jump_fuel.tons == pytest.approx(10.0)
+    assert my_ship.fuel.metal_hydride_storage.tons == pytest.approx(10.0)
+    assert fuel_row.tons == pytest.approx(20.0)
+    assert fuel_row.cost == pytest.approx(4_000_000.0)
+    assert fuel_row.notes.infos == [
+        'Replaces normal liquid hydrogen fuel tankage; consumes twice the stored fuel volume',
+        'Fuel leak loss reduced to 25% of indicated amount, minimum 1 ton',
+    ]
+
+
+def test_metal_hydride_storage_requires_tl9():
+    my_ship = ship.Ship(
+        tl=8,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        fuel=FuelSection(
+            jump_fuel=JumpFuel(parsecs=1),
+            metal_hydride_storage=MetalHydrideStorage(),
+        ),
+    )
+
+    assert my_ship.fuel is not None
+    assert my_ship.fuel.metal_hydride_storage is not None
+    assert 'Requires TL9, ship is TL8' in my_ship.fuel.metal_hydride_storage.notes.errors
+
+
 def test_cargo_crane_tons_up_to_150():
     c = CargoCrane()
     assert c.tons_for_space(67) == pytest.approx(3.0)
@@ -242,6 +285,25 @@ def test_cargo_crane_appears_in_ship_spec():
     crane_row = my_ship.build_spec().row('Cargo Crane', section=SpecSection.CARGO)
     assert crane_row.tons == pytest.approx(3.0)
     assert crane_row.cost == pytest.approx(3_000_000.0)
+
+
+def test_auto_sized_cargo_hold_consumes_remaining_displacement_without_extra_residual_row():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        cargo=CargoSection(
+            cargo_airlocks=[CargoAirlock()],
+            cargo_holds=[CargoHold(crane=CargoCrane())],
+        ),
+    )
+
+    cargo_rows = my_ship.build_spec().rows_for_section(SpecSection.CARGO)
+    assert [(row.item, row.tons) for row in cargo_rows] == [
+        ('Cargo Airlock (2 tons)', 2.0),
+        ('Cargo Hold', pytest.approx(194.5)),
+        ('Cargo Crane', pytest.approx(3.5)),
+    ]
 
 
 @pytest.mark.parametrize(
@@ -374,6 +436,41 @@ def test_concealed_compartment_appears_in_ship_spec():
     row = my_ship.build_spec().row('Concealed Compartment', section=SpecSection.CARGO)
     assert row.tons == pytest.approx(5.0)
     assert row.cost == pytest.approx(100_000.0)
+
+
+def test_fuel_tank_compartment_values_and_notes():
+    compartment = FuelTankCompartment(tons=5)
+
+    assert compartment.tons == pytest.approx(5.0)
+    assert compartment.cost == pytest.approx(20_000.0)
+    assert compartment.power == pytest.approx(0.0)
+    assert compartment.sensors_dm == -4
+    assert compartment.investigate_dm == -6
+    assert compartment.notes.infos == [
+        'Officially counts as fuel tankage; Ceres counts it as real cargo volume (RIS-018)',
+        'Can only be accessed when fuel tank is at least three-quarters empty',
+        'DM-4 to Electronics (sensors) checks and DM-6 to Investigate checks',
+    ]
+
+
+def test_fuel_tank_compartment_appears_as_cargo_with_official_fuel_note():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        power=PowerSection(plant=FusionPlantTL12(output=60)),
+        cargo=CargoSection(fuel_tank_compartments=[FuelTankCompartment(tons=10)]),
+    )
+
+    row = my_ship.build_spec().row('Fuel Tank Compartment', section=SpecSection.CARGO)
+    assert row.tons == pytest.approx(10.0)
+    assert row.cost == pytest.approx(40_000.0)
+    assert row.notes.infos == [
+        'Officially counts as fuel tankage; Ceres counts it as real cargo volume (RIS-018)',
+        'Can only be accessed when fuel tank is at least three-quarters empty',
+        'DM-4 to Electronics (sensors) checks and DM-6 to Investigate checks',
+        'Would overstate official operation endurance by 100 weeks',
+    ]
 
 
 def test_external_cargo_mount_values_and_notes():
@@ -761,3 +858,15 @@ def test_spec_always_shows_residual_cargo_hold_even_with_explicit_cargo_parts():
         ('Fuel/Cargo Container (30 tons)', 32),
         ('Cargo Hold', pytest.approx(166.0)),
     ]
+
+
+def test_spec_does_not_show_zero_ton_residual_cargo_hold():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        cargo=CargoSection(cargo_holds=[CargoHold(tons=200.0)]),
+    )
+
+    cargo_rows = my_ship.build_spec().rows_for_section(SpecSection.CARGO)
+    assert [(row.item, row.tons) for row in cargo_rows] == [('Cargo Hold', pytest.approx(200.0))]

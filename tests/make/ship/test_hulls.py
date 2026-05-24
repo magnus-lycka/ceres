@@ -46,6 +46,16 @@ def test_light_streamlined_hull():
     assert hull_config.points(100) == 36
 
 
+def test_hull_cannot_be_both_reinforced_and_light():
+    my_ship = Ship(
+        tl=12,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.standard_hull.model_copy(update={'reinforced': True, 'light': True})),
+    )
+
+    assert 'Hull cannot be both reinforced and light' in my_ship.notes.errors
+
+
 def test_massive_ship_hull_points_use_large_ship_bracing_scale():
     assert hull.standard_hull.points(24_999) == 9_999
     assert hull.standard_hull.points(25_000) == 12_500

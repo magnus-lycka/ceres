@@ -284,7 +284,9 @@ def test_pressure_hull_uses_tonnage_and_adds_armour_row():
     assert my_ship.remaining_usable_tonnage() == 300
     assert my_ship.hull_cost == 200_000_000
     assert spec.row('Standard Hull, Pressure Hull', section='Hull').cost == 200_000_000
-    assert spec.row('Armour: 4', section='Hull').section == 'Hull'
+    pressure_hull_row = spec.row('Armour: 4', section='Hull')
+    assert pressure_hull_row.section == 'Hull'
+    assert pressure_hull_row.tons == pytest.approx(100)
 
 
 def test_ship_jump_fuel_and_weapon_power_accessors_handle_missing_sections():
@@ -360,7 +362,7 @@ def test_small_craft_uses_single_pilot_crew_model():
     ]
 
 
-def test_ship_with_negative_cargo_adds_local_note():
+def test_ship_with_negative_remaining_usable_tonnage_adds_overload_note():
     my_ship = ship.Ship(
         tl=12,
         displacement=6,
@@ -368,9 +370,9 @@ def test_ship_with_negative_cargo_adds_local_note():
         sensors=SensorsSection(primary=CivilianSensors()),
         systems=SystemsSection(internal_systems=[Workshop()]),
     )
-    cargo_tons = CargoSection.cargo_tons_for_ship(my_ship)
-    assert cargo_tons < 0
-    assert f'Hull overloaded by {-cargo_tons:.2f} tons' in my_ship.notes.errors
+    remaining_usable_tonnage = CargoSection.cargo_tons_for_ship(my_ship)
+    assert remaining_usable_tonnage < 0
+    assert f'Hull overloaded by {-remaining_usable_tonnage:.2f} tons' in my_ship.notes.errors
 
 
 def test_hull_overloaded_puts_error_on_ship():

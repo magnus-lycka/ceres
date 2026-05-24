@@ -69,12 +69,15 @@ class Ship(ShipBase):
     def build_notes(self) -> list:
         notes = NoteList()
         notes.extend(self.hull.notes.problems)
-        residual_tonnage = self.remaining_usable_tonnage()
-        if residual_tonnage < -0.005:
-            notes.error(f'Hull overloaded by {-residual_tonnage:.2f} tons')
+        remaining_usable_tonnage = self.remaining_usable_tonnage()
+        if remaining_usable_tonnage < -0.005:
+            notes.error(f'Hull overloaded by {-remaining_usable_tonnage:.2f} tons')
 
         if self.hull.configuration.non_gravity and self.displacement > 500_000:
             notes.error(f'Non-gravity hull exceeds maximum displacement: {self.displacement:,} > 500,000 tons')
+
+        if self.hull.configuration.reinforced and self.hull.configuration.light:
+            notes.error('Hull cannot be both reinforced and light')
 
         if self.hull.configuration.military and self.displacement <= 5_000:
             notes.error(f'Military hull requires capital ship displacement: {self.displacement:,} <= 5,000 tons')

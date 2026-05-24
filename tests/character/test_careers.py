@@ -213,7 +213,7 @@ class TestCareerEntry:
         assert 'END' in survive_pending.instruction
         assert '5' in survive_pending.instruction
 
-    def test_scholar_career_event_grants_scholar_service_skills(self):
+    def test_scholar_career_event_grants_non_choice_service_skills(self):
         events = [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
@@ -221,10 +221,118 @@ class TestCareerEntry:
 
         projection = replay(1, events)
 
-        # Scholar service skills
+        # Non-choice Scholar service skills are granted
         assert projection.summary.skill_level('Electronics') is not None
+        assert projection.summary.skill_level('Diplomat') is not None
         assert projection.summary.skill_level('Medic') is not None
         assert projection.summary.skill_level('Investigate') is not None
+        # Choice entries (Drive/Flyer and Science) are NOT auto-granted
+        assert projection.summary.skill_level('Flyer') is None
+        assert projection.summary.skill_level('Life Science') is None
+
+
+_SCIENCES = sorted(
+    {
+        'Life Science',
+        'Physical Science',
+        'Robotic Science',
+        'Social Science',
+        'Space Science',
+    }
+)
+
+
+class TestScholarInitialTraining:
+    """Scholar service_skills roll 1 (Drive/Flyer) and roll 6 (Science) require a player choice."""
+
+    def _setup(self) -> list:
+        return [
+            CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Boss'),
+            UcpEvent(id=2, fulfills='1.0', ucp='7869A5'),
+            # Background skills without Drive/Flyer/Science so choice tests are unambiguous
+            BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Medic()]),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
+        ]
+
+    def test_two_initial_training_choice_pendings_created(self):
+        projection = replay(1, self._setup())
+
+        choice_pendings = [p for p in projection.pending_inputs if p.kind == 'initial_training_choice']
+        assert len(choice_pendings) == 2
+
+    def test_drive_flyer_choice_pending_has_correct_options(self):
+        projection = replay(1, self._setup())
+
+        pending = next(
+            (p for p in projection.pending_inputs if p.kind == 'initial_training_choice' and 'Drive' in p.options),
+            None,
+        )
+        assert pending is not None
+        assert set(pending.options) == {'Drive', 'Flyer'}
+
+    def test_science_choice_pending_has_correct_options(self):
+        projection = replay(1, self._setup())
+
+        pending = next(
+            (
+                p
+                for p in projection.pending_inputs
+                if p.kind == 'initial_training_choice' and 'Life Science' in p.options
+            ),
+            None,
+        )
+        assert pending is not None
+        assert set(pending.options) == set(_SCIENCES)
+
+    def test_drive_not_granted_before_choice(self):
+        projection = replay(1, self._setup())
+        assert projection.summary.skill_level('Drive') is None
+
+    def test_science_not_granted_before_choice(self):
+        projection = replay(1, self._setup())
+        assert projection.summary.skill_level('Life Science') is None
+
+    def test_survive_not_pending_before_choices_resolved(self):
+        projection = replay(1, self._setup())
+        assert not any(p.kind == 'survive' for p in projection.pending_inputs)
+
+    def test_drive_choice_grants_drive_at_level_0(self):
+        events = [*self._setup(), SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive())]
+        projection = replay(1, events)
+
+        assert projection.summary.skill_level('Drive') == 0
+
+    def test_survive_pending_appears_after_both_choices_resolved(self):
+        events = [
+            *self._setup(),
+            SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
+            SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
+        ]
+        projection = replay(1, events)
+
+        assert any(p.kind == 'survive' for p in projection.pending_inputs)
+
+    def test_survive_pending_id_from_last_choice_event(self):
+        events = [
+            *self._setup(),
+            SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
+            SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
+        ]
+        projection = replay(1, events)
+
+        survive = next(p for p in projection.pending_inputs if p.kind == 'survive')
+        assert survive.id == '6.0'
+
+    def test_no_initial_training_choice_for_scout(self):
+        events = [
+            CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Boss'),
+            UcpEvent(id=2, fulfills='1.0', ucp='7869A5'),
+            BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Medic()]),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+        ]
+        projection = replay(1, events)
+
+        assert not any(p.kind == 'initial_training_choice' for p in projection.pending_inputs)
 
 
 class TestSurvive:
@@ -856,8 +964,10 @@ class TestTermEventRollMishap:
         events = [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=2),
+            SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
+            SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
+            SurviveEvent(id=7, fulfills='6.0', roll=7),
+            TermEventEvent(id=8, fulfills='7.0', roll=2),
         ]
         projection = replay(1, events)
 
@@ -906,8 +1016,10 @@ class TestTermEventAutoAdvance:
         events = [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=12),
+            SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
+            SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
+            SurviveEvent(id=7, fulfills='6.0', roll=7),
+            TermEventEvent(id=8, fulfills='7.0', roll=12),
         ]
         projection = replay(1, events)
 
@@ -931,6 +1043,8 @@ class TestScholarTerm:
         return [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
+            SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
+            SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
         ]
 
     def test_survive_pending_is_end_6(self):
@@ -942,8 +1056,8 @@ class TestScholarTerm:
     def test_advancement_pending_is_int_6(self):
         events = [
             *self._setup_with_scholar(),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=5),  # benefit_dm → direct advancement
+            SurviveEvent(id=7, fulfills='6.0', roll=7),
+            TermEventEvent(id=8, fulfills='7.0', roll=5),  # benefit_dm → direct advancement
         ]
         projection = replay(1, events)
 
@@ -954,9 +1068,9 @@ class TestScholarTerm:
         # Rank 1 bonus is Science 1 (player chooses which broad science) — Core p.43
         events = [
             *self._setup_with_scholar(),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=5),  # benefit_dm → direct advancement
-            AdvancementEvent(id=7, fulfills='6.0', roll=7),  # INT=9 DM+1 → 8 >= 6
+            SurviveEvent(id=7, fulfills='6.0', roll=7),
+            TermEventEvent(id=8, fulfills='7.0', roll=5),  # benefit_dm → direct advancement
+            AdvancementEvent(id=9, fulfills='8.0', roll=7),  # INT=9 DM+1 → 8 >= 6
         ]
         projection = replay(1, events)
 
@@ -974,8 +1088,8 @@ class TestScholarTerm:
     def test_event_4_skill_choice_options(self):
         events = [
             *self._setup_with_scholar(),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=4),
+            SurviveEvent(id=7, fulfills='6.0', roll=7),
+            TermEventEvent(id=8, fulfills='7.0', roll=4),
         ]
         projection = replay(1, events)
 
@@ -987,8 +1101,8 @@ class TestScholarTerm:
     def test_event_9_stores_advancement_dm_in_scheduled_effects(self):
         events = [
             *self._setup_with_scholar(),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=9),
+            SurviveEvent(id=7, fulfills='6.0', roll=7),
+            TermEventEvent(id=8, fulfills='7.0', roll=9),
         ]
         projection = replay(1, events)
 
@@ -999,8 +1113,8 @@ class TestScholarTerm:
     def test_event_9_still_creates_advancement_pending(self):
         events = [
             *self._setup_with_scholar(),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=9),
+            SurviveEvent(id=7, fulfills='6.0', roll=7),
+            TermEventEvent(id=8, fulfills='7.0', roll=9),
         ]
         projection = replay(1, events)
 
@@ -1009,8 +1123,8 @@ class TestScholarTerm:
     def test_event_10_skill_choice_options(self):
         events = [
             *self._setup_with_scholar(),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=10),
+            SurviveEvent(id=7, fulfills='6.0', roll=7),
+            TermEventEvent(id=8, fulfills='7.0', roll=10),
         ]
         projection = replay(1, events)
 
@@ -1020,8 +1134,8 @@ class TestScholarTerm:
     def test_event_11_gains_ally_and_creates_scholar_event_11_pending(self):
         events = [
             *self._setup_with_scholar(),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=11),
+            SurviveEvent(id=7, fulfills='6.0', roll=7),
+            TermEventEvent(id=8, fulfills='7.0', roll=11),
         ]
         projection = replay(1, events)
 
@@ -1032,8 +1146,8 @@ class TestScholarTerm:
         # Scholar mishap 4: skill_choice [Survival, Athletics], character still leaves career
         events = [
             *self._setup_with_scholar(),
-            SurviveEvent(id=5, fulfills='4.0', roll=3),  # fail
-            MishapEvent(id=6, fulfills='5.0', roll=4),
+            SurviveEvent(id=7, fulfills='6.0', roll=3),  # fail
+            MishapEvent(id=8, fulfills='7.0', roll=4),
         ]
         projection = replay(1, events)
 
@@ -1044,9 +1158,9 @@ class TestScholarTerm:
     def test_mishap_4_skill_choice_grants_skill_and_no_advancement_pending(self):
         events = [
             *self._setup_with_scholar(),
-            SurviveEvent(id=5, fulfills='4.0', roll=3),
-            MishapEvent(id=6, fulfills='5.0', roll=4),
-            SkillChoiceEvent(id=7, fulfills='6.0', skill=Survival(level=Level(value=1))),
+            SurviveEvent(id=7, fulfills='6.0', roll=3),
+            MishapEvent(id=8, fulfills='7.0', roll=4),
+            SkillChoiceEvent(id=9, fulfills='8.0', skill=Survival(level=Level(value=1))),
         ]
         projection = replay(1, events)
 
@@ -1057,8 +1171,8 @@ class TestScholarTerm:
     def test_scholar_mishap_6_stays_in_career_and_gains_rival(self):
         events = [
             *self._setup_with_scholar(),
-            SurviveEvent(id=5, fulfills='4.0', roll=3),
-            MishapEvent(id=6, fulfills='5.0', roll=6),
+            SurviveEvent(id=7, fulfills='6.0', roll=3),
+            MishapEvent(id=8, fulfills='7.0', roll=6),
         ]
         projection = replay(1, events)
 
@@ -1070,8 +1184,8 @@ class TestScholarTerm:
         # MishapEntry.stay_in_career overrides player's default stay_in_career=False
         events = [
             *self._setup_with_scholar(),
-            SurviveEvent(id=5, fulfills='4.0', roll=3),
-            MishapEvent(id=6, fulfills='5.0', roll=6, stay_in_career=False),
+            SurviveEvent(id=7, fulfills='6.0', roll=3),
+            MishapEvent(id=8, fulfills='7.0', roll=6, stay_in_career=False),
         ]
         projection = replay(1, events)
 
@@ -1120,15 +1234,20 @@ class TestSkillTableChoice:
         return [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Scientist', qualification_roll=5),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=5),  # benefit_dm → direct advancement
-            AdvancementEvent(id=7, fulfills='6.0', roll=7),
-            ReenlistEvent(id=8, fulfills='7.0', reenlist=True),
+            SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
+            SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
+            SurviveEvent(id=7, fulfills='6.0', roll=7),
+            TermEventEvent(id=8, fulfills='7.0', roll=5),  # benefit_dm → direct advancement
+            AdvancementEvent(id=9, fulfills='8.0', roll=7),
+            ReenlistEvent(id=10, fulfills='9.0', reenlist=True),
         ]
 
     def test_choice_entry_creates_skill_table_choice_pending(self):
         # Scholar service_skills roll 1: Drive/Flyer choice
-        events = [*self._setup_scholar_term_2(), SkillTableEvent(id=9, fulfills='8.0', table='service_skills', roll=1)]
+        events = [
+            *self._setup_scholar_term_2(),
+            SkillTableEvent(id=11, fulfills='10.0', table='service_skills', roll=1),
+        ]
         projection = replay(1, events)
 
         pending = next((p for p in projection.pending_inputs if p.kind == 'skill_table_choice'), None)
@@ -1139,8 +1258,8 @@ class TestSkillTableChoice:
         # Scholar has Drive 0 from initial training → choose Drive → Drive 1
         events = [
             *self._setup_scholar_term_2(),
-            SkillTableEvent(id=9, fulfills='8.0', table='service_skills', roll=1),
-            SkillChoiceEvent(id=10, fulfills='9.0', skill=Drive(wheel=Level(value=1))),
+            SkillTableEvent(id=11, fulfills='10.0', table='service_skills', roll=1),
+            SkillChoiceEvent(id=12, fulfills='11.0', skill=Drive(wheel=Level(value=1))),
         ]
         projection = replay(1, events)
 
@@ -1149,8 +1268,8 @@ class TestSkillTableChoice:
     def test_choice_creates_survive_pending_not_advancement(self):
         events = [
             *self._setup_scholar_term_2(),
-            SkillTableEvent(id=9, fulfills='8.0', table='service_skills', roll=1),
-            SkillChoiceEvent(id=10, fulfills='9.0', skill=Flyer(grav=Level(value=1))),
+            SkillTableEvent(id=11, fulfills='10.0', table='service_skills', roll=1),
+            SkillChoiceEvent(id=12, fulfills='11.0', skill=Flyer(grav=Level(value=1))),
         ]
         projection = replay(1, events)
 
@@ -1168,9 +1287,11 @@ class TestAdvancementDmFromScheduledEffects:
         events = [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Scientist', qualification_roll=5),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=9),  # breakthrough → DM+2
-            AdvancementEvent(id=7, fulfills='6.0', roll=6),
+            SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
+            SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
+            SurviveEvent(id=7, fulfills='6.0', roll=7),
+            TermEventEvent(id=8, fulfills='7.0', roll=9),  # breakthrough → DM+2
+            AdvancementEvent(id=9, fulfills='8.0', roll=6),
         ]
         projection = replay(1, events)
 
@@ -1181,9 +1302,11 @@ class TestAdvancementDmFromScheduledEffects:
         events = [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Scientist', qualification_roll=5),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=5),  # benefit_dm (no advancement DM)
-            AdvancementEvent(id=7, fulfills='6.0', roll=6),
+            SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
+            SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
+            SurviveEvent(id=7, fulfills='6.0', roll=7),
+            TermEventEvent(id=8, fulfills='7.0', roll=5),  # benefit_dm (no advancement DM)
+            AdvancementEvent(id=9, fulfills='8.0', roll=6),
         ]
         projection = replay(1, events)
 
@@ -1193,9 +1316,11 @@ class TestAdvancementDmFromScheduledEffects:
         events = [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Scientist', qualification_roll=5),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=9),
-            AdvancementEvent(id=7, fulfills='6.0', roll=6),
+            SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
+            SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
+            SurviveEvent(id=7, fulfills='6.0', roll=7),
+            TermEventEvent(id=8, fulfills='7.0', roll=9),
+            AdvancementEvent(id=9, fulfills='8.0', roll=6),
         ]
         projection = replay(1, events)
 
@@ -1274,8 +1399,10 @@ class TestScholarEvent6:
         return [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=6),
+            SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
+            SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
+            SurviveEvent(id=7, fulfills='6.0', roll=7),
+            TermEventEvent(id=8, fulfills='7.0', roll=6),
         ]
 
     def test_creates_scholar_event_6_pending(self):
@@ -1287,7 +1414,7 @@ class TestScholarEvent6:
         # EDU=10 (DM+1), need 8+, modified_roll=8 → success
         events = [
             *self._setup_to_event_6(),
-            SkillRollEvent(id=7, fulfills='6.0', context='scholar_event_6', skill='EDU', modified_roll=8),
+            SkillRollEvent(id=9, fulfills='8.0', context='scholar_event_6', skill='EDU', modified_roll=8),
         ]
         projection = replay(1, events)
 
@@ -1297,7 +1424,7 @@ class TestScholarEvent6:
         # modified_roll=5 < 8 → failure
         events = [
             *self._setup_to_event_6(),
-            SkillRollEvent(id=7, fulfills='6.0', context='scholar_event_6', skill='EDU', modified_roll=5),
+            SkillRollEvent(id=9, fulfills='8.0', context='scholar_event_6', skill='EDU', modified_roll=5),
         ]
         projection = replay(1, events)
 
@@ -1307,8 +1434,8 @@ class TestScholarEvent6:
     def test_success_skill_choice_grants_skill_at_level_1(self):
         events = [
             *self._setup_to_event_6(),
-            SkillRollEvent(id=7, fulfills='6.0', context='scholar_event_6', skill='EDU', modified_roll=8),
-            SkillChoiceEvent(id=8, fulfills='7.0', skill=Navigation(level=Level(value=1))),
+            SkillRollEvent(id=9, fulfills='8.0', context='scholar_event_6', skill='EDU', modified_roll=8),
+            SkillChoiceEvent(id=10, fulfills='9.0', skill=Navigation(level=Level(value=1))),
         ]
         projection = replay(1, events)
 
@@ -1317,8 +1444,8 @@ class TestScholarEvent6:
     def test_success_skill_choice_creates_advancement_pending(self):
         events = [
             *self._setup_to_event_6(),
-            SkillRollEvent(id=7, fulfills='6.0', context='scholar_event_6', skill='EDU', modified_roll=8),
-            SkillChoiceEvent(id=8, fulfills='7.0', skill=Navigation(level=Level(value=1))),
+            SkillRollEvent(id=9, fulfills='8.0', context='scholar_event_6', skill='EDU', modified_roll=8),
+            SkillChoiceEvent(id=10, fulfills='9.0', skill=Navigation(level=Level(value=1))),
         ]
         projection = replay(1, events)
 
@@ -1401,11 +1528,13 @@ class TestScholarMishap3:
         return [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
-            SurviveEvent(id=5, fulfills='4.0', roll=3),  # fail
+            SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
+            SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
+            SurviveEvent(id=7, fulfills='6.0', roll=3),  # fail
         ]
 
     def test_creates_choice_pending_openly_or_secretly(self):
-        events = [*self._setup(), MishapEvent(id=6, fulfills='5.0', roll=3)]
+        events = [*self._setup(), MishapEvent(id=8, fulfills='7.0', roll=3)]
         projection = replay(1, events)
 
         pending = next((p for p in projection.pending_inputs if p.kind == 'scholar_mishap_3'), None)
@@ -1413,7 +1542,7 @@ class TestScholarMishap3:
         assert set(pending.options) == {'openly', 'secretly'}
 
     def test_stays_in_career_before_choice(self):
-        events = [*self._setup(), MishapEvent(id=6, fulfills='5.0', roll=3)]
+        events = [*self._setup(), MishapEvent(id=8, fulfills='7.0', roll=3)]
         projection = replay(1, events)
 
         assert projection.summary.current_career == 'Scholar'
@@ -1421,8 +1550,8 @@ class TestScholarMishap3:
     def test_openly_adds_enemy_and_creates_science_pending(self):
         events = [
             *self._setup(),
-            MishapEvent(id=6, fulfills='5.0', roll=3),
-            ScholarMishap3ChoiceEvent(id=7, fulfills='6.0', choice='openly'),
+            MishapEvent(id=8, fulfills='7.0', roll=3),
+            ScholarMishap3ChoiceEvent(id=9, fulfills='8.0', choice='openly'),
         ]
         projection = replay(1, events)
 
@@ -1436,8 +1565,8 @@ class TestScholarMishap3:
     def test_secretly_creates_science_pending_and_decreases_soc(self):
         events = [
             *self._setup(),
-            MishapEvent(id=6, fulfills='5.0', roll=3),
-            ScholarMishap3ChoiceEvent(id=7, fulfills='6.0', choice='secretly'),
+            MishapEvent(id=8, fulfills='7.0', roll=3),
+            ScholarMishap3ChoiceEvent(id=9, fulfills='8.0', choice='secretly'),
         ]
         projection = replay(1, events)
 
@@ -1450,8 +1579,8 @@ class TestScholarMishap3:
     def test_choice_creates_advancement_pending(self):
         events = [
             *self._setup(),
-            MishapEvent(id=6, fulfills='5.0', roll=3),
-            ScholarMishap3ChoiceEvent(id=7, fulfills='6.0', choice='openly'),
+            MishapEvent(id=8, fulfills='7.0', roll=3),
+            ScholarMishap3ChoiceEvent(id=9, fulfills='8.0', choice='openly'),
         ]
         projection = replay(1, events)
 
@@ -1465,11 +1594,13 @@ class TestScholarMishap5:
         return [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
-            SurviveEvent(id=5, fulfills='4.0', roll=3),  # fail
+            SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
+            SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
+            SurviveEvent(id=7, fulfills='6.0', roll=3),  # fail
         ]
 
     def test_creates_give_up_or_start_again_pending(self):
-        events = [*self._setup(), MishapEvent(id=6, fulfills='5.0', roll=5)]
+        events = [*self._setup(), MishapEvent(id=8, fulfills='7.0', roll=5)]
         projection = replay(1, events)
 
         pending = next((p for p in projection.pending_inputs if p.kind == 'scholar_mishap_5'), None)
@@ -1479,8 +1610,8 @@ class TestScholarMishap5:
     def test_give_up_ends_career(self):
         events = [
             *self._setup(),
-            MishapEvent(id=6, fulfills='5.0', roll=5),
-            ScholarMishap5ChoiceEvent(id=7, fulfills='6.0', choice='give_up'),
+            MishapEvent(id=8, fulfills='7.0', roll=5),
+            ScholarMishap5ChoiceEvent(id=9, fulfills='8.0', choice='give_up'),
         ]
         projection = replay(1, events)
 
@@ -1489,8 +1620,8 @@ class TestScholarMishap5:
     def test_give_up_increments_age_by_4(self):
         events = [
             *self._setup(),
-            MishapEvent(id=6, fulfills='5.0', roll=5),
-            ScholarMishap5ChoiceEvent(id=7, fulfills='6.0', choice='give_up'),
+            MishapEvent(id=8, fulfills='7.0', roll=5),
+            ScholarMishap5ChoiceEvent(id=9, fulfills='8.0', choice='give_up'),
         ]
         projection = replay(1, events)
 
@@ -1499,8 +1630,8 @@ class TestScholarMishap5:
     def test_start_again_stays_in_career(self):
         events = [
             *self._setup(),
-            MishapEvent(id=6, fulfills='5.0', roll=5),
-            ScholarMishap5ChoiceEvent(id=7, fulfills='6.0', choice='start_again'),
+            MishapEvent(id=8, fulfills='7.0', roll=5),
+            ScholarMishap5ChoiceEvent(id=9, fulfills='8.0', choice='start_again'),
         ]
         projection = replay(1, events)
 
@@ -1509,8 +1640,8 @@ class TestScholarMishap5:
     def test_start_again_creates_advancement_pending(self):
         events = [
             *self._setup(),
-            MishapEvent(id=6, fulfills='5.0', roll=5),
-            ScholarMishap5ChoiceEvent(id=7, fulfills='6.0', choice='start_again'),
+            MishapEvent(id=8, fulfills='7.0', roll=5),
+            ScholarMishap5ChoiceEvent(id=9, fulfills='8.0', choice='start_again'),
         ]
         projection = replay(1, events)
 
@@ -1524,8 +1655,10 @@ class TestScholarEvent3:
         return [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=3),
+            SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
+            SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
+            SurviveEvent(id=7, fulfills='6.0', roll=7),
+            TermEventEvent(id=8, fulfills='7.0', roll=3),
         ]
 
     def test_creates_accept_decline_pending(self):
@@ -1536,13 +1669,13 @@ class TestScholarEvent3:
         assert set(pending.options) == {'accept', 'decline'}
 
     def test_decline_creates_advancement_pending(self):
-        events = [*self._setup(), ScholarEvent3ChoiceEvent(id=7, fulfills='6.0', choice='decline')]
+        events = [*self._setup(), ScholarEvent3ChoiceEvent(id=9, fulfills='8.0', choice='decline')]
         projection = replay(1, events)
 
         assert any(p.kind == 'advancement' for p in projection.pending_inputs)
 
     def test_accept_creates_connections_roll_pending_for_d3_enemies(self):
-        events = [*self._setup(), ScholarEvent3ChoiceEvent(id=7, fulfills='6.0', choice='accept')]
+        events = [*self._setup(), ScholarEvent3ChoiceEvent(id=9, fulfills='8.0', choice='accept')]
         projection = replay(1, events)
 
         conn = next((p for p in projection.pending_inputs if p.kind == 'connections_roll'), None)
@@ -1550,14 +1683,14 @@ class TestScholarEvent3:
         assert conn.options == ['1', '2', '3']
 
     def test_accept_creates_two_science_choice_pendings(self):
-        events = [*self._setup(), ScholarEvent3ChoiceEvent(id=7, fulfills='6.0', choice='accept')]
+        events = [*self._setup(), ScholarEvent3ChoiceEvent(id=9, fulfills='8.0', choice='accept')]
         projection = replay(1, events)
 
         sciences = [p for p in projection.pending_inputs if p.kind == 'scholar_event_3_science']
         assert len(sciences) == 2
 
     def test_accept_science_choice_options_contain_sciences(self):
-        events = [*self._setup(), ScholarEvent3ChoiceEvent(id=7, fulfills='6.0', choice='accept')]
+        events = [*self._setup(), ScholarEvent3ChoiceEvent(id=9, fulfills='8.0', choice='accept')]
         projection = replay(1, events)
 
         pending = next(p for p in projection.pending_inputs if p.kind == 'scholar_event_3_science')
@@ -1567,9 +1700,9 @@ class TestScholarEvent3:
     def test_accept_resolving_science_choices_grants_skills(self):
         events = [
             *self._setup(),
-            ScholarEvent3ChoiceEvent(id=7, fulfills='6.0', choice='accept'),
-            SkillChoiceEvent(id=8, fulfills='7.1', skill=SpaceScience(planetology=Level(value=1))),
-            SkillChoiceEvent(id=9, fulfills='7.2', skill=LifeScience(biology=Level(value=1))),
+            ScholarEvent3ChoiceEvent(id=9, fulfills='8.0', choice='accept'),
+            SkillChoiceEvent(id=10, fulfills='9.1', skill=SpaceScience(planetology=Level(value=1))),
+            SkillChoiceEvent(id=11, fulfills='9.2', skill=LifeScience(biology=Level(value=1))),
         ]
         projection = replay(1, events)
 
@@ -1577,7 +1710,7 @@ class TestScholarEvent3:
         assert projection.summary.skill_level('Life Science', -1) >= 1
 
     def test_accept_creates_advancement_pending(self):
-        events = [*self._setup(), ScholarEvent3ChoiceEvent(id=7, fulfills='6.0', choice='accept')]
+        events = [*self._setup(), ScholarEvent3ChoiceEvent(id=9, fulfills='8.0', choice='accept')]
         projection = replay(1, events)
 
         assert any(p.kind == 'advancement' for p in projection.pending_inputs)
@@ -1590,8 +1723,10 @@ class TestScholarEvent8:
         return [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=8),
+            SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
+            SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
+            SurviveEvent(id=7, fulfills='6.0', roll=7),
+            TermEventEvent(id=8, fulfills='7.0', roll=8),
         ]
 
     def test_creates_accept_refuse_pending(self):
@@ -1602,13 +1737,13 @@ class TestScholarEvent8:
         assert set(pending.options) == {'accept', 'refuse'}
 
     def test_refuse_creates_advancement_pending(self):
-        events = [*self._setup(), ScholarEvent8ChoiceEvent(id=7, fulfills='6.0', choice='refuse')]
+        events = [*self._setup(), ScholarEvent8ChoiceEvent(id=9, fulfills='8.0', choice='refuse')]
         projection = replay(1, events)
 
         assert any(p.kind == 'advancement' for p in projection.pending_inputs)
 
     def test_accept_creates_skill_roll_pending_with_deception_admin(self):
-        events = [*self._setup(), ScholarEvent8ChoiceEvent(id=7, fulfills='6.0', choice='accept')]
+        events = [*self._setup(), ScholarEvent8ChoiceEvent(id=9, fulfills='8.0', choice='accept')]
         projection = replay(1, events)
 
         pending = next((p for p in projection.pending_inputs if p.kind == 'scholar_event_8_roll'), None)
@@ -1618,8 +1753,8 @@ class TestScholarEvent8:
     def test_accept_success_gains_enemy(self):
         events = [
             *self._setup(),
-            ScholarEvent8ChoiceEvent(id=7, fulfills='6.0', choice='accept'),
-            SkillRollEvent(id=8, fulfills='7.0', context='scholar_event_8_roll', skill=Deception(), modified_roll=9),
+            ScholarEvent8ChoiceEvent(id=9, fulfills='8.0', choice='accept'),
+            SkillRollEvent(id=10, fulfills='9.0', context='scholar_event_8_roll', skill=Deception(), modified_roll=9),
         ]
         projection = replay(1, events)
 
@@ -1628,8 +1763,8 @@ class TestScholarEvent8:
     def test_accept_success_creates_skill_choice_pending(self):
         events = [
             *self._setup(),
-            ScholarEvent8ChoiceEvent(id=7, fulfills='6.0', choice='accept'),
-            SkillRollEvent(id=8, fulfills='7.0', context='scholar_event_8_roll', skill=Deception(), modified_roll=9),
+            ScholarEvent8ChoiceEvent(id=9, fulfills='8.0', choice='accept'),
+            SkillRollEvent(id=10, fulfills='9.0', context='scholar_event_8_roll', skill=Deception(), modified_roll=9),
         ]
         projection = replay(1, events)
 
@@ -1638,8 +1773,8 @@ class TestScholarEvent8:
     def test_accept_failure_gains_enemy(self):
         events = [
             *self._setup(),
-            ScholarEvent8ChoiceEvent(id=7, fulfills='6.0', choice='accept'),
-            SkillRollEvent(id=8, fulfills='7.0', context='scholar_event_8_roll', skill=Deception(), modified_roll=5),
+            ScholarEvent8ChoiceEvent(id=9, fulfills='8.0', choice='accept'),
+            SkillRollEvent(id=10, fulfills='9.0', context='scholar_event_8_roll', skill=Deception(), modified_roll=5),
         ]
         projection = replay(1, events)
 
@@ -1648,8 +1783,8 @@ class TestScholarEvent8:
     def test_accept_failure_creates_advancement_pending(self):
         events = [
             *self._setup(),
-            ScholarEvent8ChoiceEvent(id=7, fulfills='6.0', choice='accept'),
-            SkillRollEvent(id=8, fulfills='7.0', context='scholar_event_8_roll', skill=Deception(), modified_roll=5),
+            ScholarEvent8ChoiceEvent(id=9, fulfills='8.0', choice='accept'),
+            SkillRollEvent(id=10, fulfills='9.0', context='scholar_event_8_roll', skill=Deception(), modified_roll=5),
         ]
         projection = replay(1, events)
 
@@ -1663,8 +1798,10 @@ class TestScholarEvent11:
         return [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=11),
+            SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
+            SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
+            SurviveEvent(id=7, fulfills='6.0', roll=7),
+            TermEventEvent(id=8, fulfills='7.0', roll=11),
         ]
 
     def test_gains_ally_unconditionally(self):
@@ -1682,14 +1819,14 @@ class TestScholarEvent11:
         assert set(pending.options) == {*_sciences, 'advancement_dm_4'}
 
     def test_choose_space_science_grants_space_science_1(self):
-        sci_choice = SkillChoiceEvent(id=7, fulfills='6.0', skill=SpaceScience(planetology=Level(value=1)))
+        sci_choice = SkillChoiceEvent(id=9, fulfills='8.0', skill=SpaceScience(planetology=Level(value=1)))
         events = [*self._setup(), sci_choice]
         projection = replay(1, events)
 
         assert projection.summary.skill_level('Space Science', -1) >= 1
 
     def test_choose_advancement_dm_adds_scheduled_effect(self):
-        events = [*self._setup(), AdvancementDmChoiceEvent(id=7, fulfills='6.0')]
+        events = [*self._setup(), AdvancementDmChoiceEvent(id=9, fulfills='8.0')]
         projection = replay(1, events)
 
         adv_dm = next((se for se in projection.scheduled_effects if se.trigger == 'advancement'), None)
@@ -1697,12 +1834,12 @@ class TestScholarEvent11:
         assert adv_dm.effect.get('amount') == 4
 
     def test_skill_choice_creates_advancement_pending(self):
-        events = [*self._setup(), SkillChoiceEvent(id=7, fulfills='6.0', skill=LifeScience(biology=Level(value=1)))]
+        events = [*self._setup(), SkillChoiceEvent(id=9, fulfills='8.0', skill=LifeScience(biology=Level(value=1)))]
         projection = replay(1, events)
         assert any(p.kind == 'advancement' for p in projection.pending_inputs)
 
     def test_advancement_dm_choice_creates_advancement_pending(self):
-        events = [*self._setup(), AdvancementDmChoiceEvent(id=7, fulfills='6.0')]
+        events = [*self._setup(), AdvancementDmChoiceEvent(id=9, fulfills='8.0')]
         projection = replay(1, events)
         assert any(p.kind == 'advancement' for p in projection.pending_inputs)
 
@@ -1777,8 +1914,10 @@ class TestFromTableInjury:
         return [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
-            SurviveEvent(id=5, fulfills='4.0', roll=3),  # fail
-            MishapEvent(id=6, fulfills='5.0', roll=2),  # Scholar mishap 2: from_table injury + rival
+            SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
+            SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
+            SurviveEvent(id=7, fulfills='6.0', roll=3),  # fail
+            MishapEvent(id=8, fulfills='7.0', roll=2),  # Scholar mishap 2: from_table injury + rival
         ]
 
     def test_creates_injury_table_pending(self):
@@ -1794,7 +1933,7 @@ class TestFromTableInjury:
     def test_roll_6_lightly_injured_no_characteristic_change(self):
         events = [
             *self._setup_to_mishap_2(),
-            InjuryTableEvent(id=7, fulfills='6.0', roll=6),
+            InjuryTableEvent(id=9, fulfills='8.0', roll=6),
         ]
         projection = replay(1, events)
 
@@ -1805,7 +1944,7 @@ class TestFromTableInjury:
         assert not any(p.kind == 'characteristic_choice' for p in projection.pending_inputs)
 
     def test_roll_5_creates_characteristic_choice_reduce_by_1(self):
-        events = [*self._setup_to_mishap_2(), InjuryTableEvent(id=7, fulfills='6.0', roll=5)]
+        events = [*self._setup_to_mishap_2(), InjuryTableEvent(id=9, fulfills='8.0', roll=5)]
         projection = replay(1, events)
 
         choice = next((p for p in projection.pending_inputs if p.kind == 'characteristic_choice'), None)
@@ -1816,15 +1955,15 @@ class TestFromTableInjury:
     def test_roll_5_choice_reduces_by_1(self):
         events = [
             *self._setup_to_mishap_2(),
-            InjuryTableEvent(id=7, fulfills='6.0', roll=5),
-            CharacteristicChoiceEvent(id=8, fulfills='7.0', characteristic='END', amount=1),
+            InjuryTableEvent(id=9, fulfills='8.0', roll=5),
+            CharacteristicChoiceEvent(id=10, fulfills='9.0', characteristic='END', amount=1),
         ]
         projection = replay(1, events)
 
         assert projection.summary.characteristics['END'] == 5  # 6 - 1
 
     def test_roll_4_creates_characteristic_choice_reduce_by_2(self):
-        events = [*self._setup_to_mishap_2(), InjuryTableEvent(id=7, fulfills='6.0', roll=4)]
+        events = [*self._setup_to_mishap_2(), InjuryTableEvent(id=9, fulfills='8.0', roll=4)]
         projection = replay(1, events)
 
         choice = next((p for p in projection.pending_inputs if p.kind == 'characteristic_choice'), None)
@@ -1835,15 +1974,15 @@ class TestFromTableInjury:
     def test_roll_4_choice_reduces_by_2(self):
         events = [
             *self._setup_to_mishap_2(),
-            InjuryTableEvent(id=7, fulfills='6.0', roll=4),
-            CharacteristicChoiceEvent(id=8, fulfills='7.0', characteristic='STR', amount=2),
+            InjuryTableEvent(id=9, fulfills='8.0', roll=4),
+            CharacteristicChoiceEvent(id=10, fulfills='9.0', characteristic='STR', amount=2),
         ]
         projection = replay(1, events)
 
         assert projection.summary.characteristics['STR'] == 5  # 7 - 2
 
     def test_roll_3_options_are_str_and_dex_only(self):
-        events = [*self._setup_to_mishap_2(), InjuryTableEvent(id=7, fulfills='6.0', roll=3)]
+        events = [*self._setup_to_mishap_2(), InjuryTableEvent(id=9, fulfills='8.0', roll=3)]
         projection = replay(1, events)
 
         choice = next((p for p in projection.pending_inputs if p.kind == 'characteristic_choice'), None)
@@ -1853,15 +1992,15 @@ class TestFromTableInjury:
     def test_roll_3_choice_reduces_by_2(self):
         events = [
             *self._setup_to_mishap_2(),
-            InjuryTableEvent(id=7, fulfills='6.0', roll=3),
-            CharacteristicChoiceEvent(id=8, fulfills='7.0', characteristic='DEX', amount=2),
+            InjuryTableEvent(id=9, fulfills='8.0', roll=3),
+            CharacteristicChoiceEvent(id=10, fulfills='9.0', characteristic='DEX', amount=2),
         ]
         projection = replay(1, events)
 
         assert projection.summary.characteristics['DEX'] == 6  # 8 - 2
 
     def test_roll_2_creates_characteristic_choice_for_1d_reduction(self):
-        events = [*self._setup_to_mishap_2(), InjuryTableEvent(id=7, fulfills='6.0', roll=2)]
+        events = [*self._setup_to_mishap_2(), InjuryTableEvent(id=9, fulfills='8.0', roll=2)]
         projection = replay(1, events)
 
         choice = next((p for p in projection.pending_inputs if p.kind == 'characteristic_choice'), None)
@@ -1872,8 +2011,8 @@ class TestFromTableInjury:
         # Player rolled 1D=4 for the reduction
         events = [
             *self._setup_to_mishap_2(),
-            InjuryTableEvent(id=7, fulfills='6.0', roll=2),
-            CharacteristicChoiceEvent(id=8, fulfills='7.0', characteristic='DEX', amount=4),
+            InjuryTableEvent(id=9, fulfills='8.0', roll=2),
+            CharacteristicChoiceEvent(id=10, fulfills='9.0', characteristic='DEX', amount=4),
         ]
         projection = replay(1, events)
 
@@ -1883,7 +2022,7 @@ class TestFromTableInjury:
         assert projection.summary.characteristics['END'] == 6
 
     def test_roll_1_creates_nearly_killed_pending(self):
-        events = [*self._setup_to_mishap_2(), InjuryTableEvent(id=7, fulfills='6.0', roll=1)]
+        events = [*self._setup_to_mishap_2(), InjuryTableEvent(id=9, fulfills='8.0', roll=1)]
         projection = replay(1, events)
 
         choice = next((p for p in projection.pending_inputs if p.kind == 'nearly_killed'), None)
@@ -1894,8 +2033,8 @@ class TestFromTableInjury:
         # Player rolled 1D=3 for the chosen stat (DEX); STR and END auto-reduced by 2
         events = [
             *self._setup_to_mishap_2(),
-            InjuryTableEvent(id=7, fulfills='6.0', roll=1),
-            CharacteristicChoiceEvent(id=8, fulfills='7.0', characteristic='DEX', amount=3),
+            InjuryTableEvent(id=9, fulfills='8.0', roll=1),
+            CharacteristicChoiceEvent(id=10, fulfills='9.0', characteristic='DEX', amount=3),
         ]
         projection = replay(1, events)
 
@@ -2152,21 +2291,13 @@ class TestAging:
         assert not any(p.kind == 'aging_roll' for p in projection.pending_inputs)
         assert any(p.kind == 'skill_table' for p in projection.pending_inputs)
 
-    def test_aging_roll_pending_after_4th_term_reenlist(self):
-        events = [
-            *_setup_through_4_terms_advancement(),
-            ReenlistEvent(id=23, fulfills='22.0', reenlist=True),
-        ]
-        projection = replay(1, events)
+    def test_aging_roll_pending_after_4th_term_advancement(self):
+        projection = replay(1, _setup_through_4_terms_advancement())
 
         assert any(p.kind == 'aging_roll' for p in projection.pending_inputs)
 
     def test_no_skill_table_before_aging_resolves(self):
-        events = [
-            *_setup_through_4_terms_advancement(),
-            ReenlistEvent(id=23, fulfills='22.0', reenlist=True),
-        ]
-        projection = replay(1, events)
+        projection = replay(1, _setup_through_4_terms_advancement())
 
         assert not any(p.kind == 'skill_table' for p in projection.pending_inputs)
 
@@ -2180,11 +2311,11 @@ class TestAging:
         assert projection.summary.age == 34
 
     def test_no_effect_creates_skill_table(self):
-        # 4 terms: DM=-4. roll=5 -> 5-4=1 -> no effect
+        # 4 terms: DM=-4. roll=5 -> 5-4=1 -> no effect -> reenlist pending -> reenlist -> skill_table
         events = [
             *_setup_through_4_terms_advancement(),
-            ReenlistEvent(id=23, fulfills='22.0', reenlist=True),
-            AgingRollEvent(id=24, fulfills='23.0', roll=5),
+            AgingRollEvent(id=23, fulfills='22.0', roll=5),
+            ReenlistEvent(id=24, fulfills='23.0', reenlist=True),
         ]
         projection = replay(1, events)
 
@@ -2206,8 +2337,7 @@ class TestAging:
         # roll=4 -> 4-4=0 -> reduce 1 physical by 1
         events = [
             *_setup_through_4_terms_advancement(),
-            ReenlistEvent(id=23, fulfills='22.0', reenlist=True),
-            AgingRollEvent(id=24, fulfills='23.0', roll=4),
+            AgingRollEvent(id=23, fulfills='22.0', roll=4),
         ]
         projection = replay(1, events)
 
@@ -2229,9 +2359,9 @@ class TestAging:
     def test_effective_0_after_choice_creates_skill_table(self):
         events = [
             *_setup_through_4_terms_advancement(),
-            ReenlistEvent(id=23, fulfills='22.0', reenlist=True),
-            AgingRollEvent(id=24, fulfills='23.0', roll=4),
-            CharacteristicChoiceEvent(id=25, fulfills='24.0', characteristic='STR', amount=1),
+            AgingRollEvent(id=23, fulfills='22.0', roll=4),
+            CharacteristicChoiceEvent(id=24, fulfills='23.0', characteristic='STR', amount=1),
+            ReenlistEvent(id=25, fulfills='24.0', reenlist=True),
         ]
         projection = replay(1, events)
 
@@ -2241,8 +2371,7 @@ class TestAging:
         # roll=3 -> 3-4=-1 -> reduce 2 physicals by 1
         events = [
             *_setup_through_4_terms_advancement(),
-            ReenlistEvent(id=23, fulfills='22.0', reenlist=True),
-            AgingRollEvent(id=24, fulfills='23.0', roll=3),
+            AgingRollEvent(id=23, fulfills='22.0', roll=3),
         ]
         projection = replay(1, events)
 
@@ -2252,9 +2381,8 @@ class TestAging:
     def test_effective_minus1_no_skill_table_until_both_resolved(self):
         events = [
             *_setup_through_4_terms_advancement(),
-            ReenlistEvent(id=23, fulfills='22.0', reenlist=True),
-            AgingRollEvent(id=24, fulfills='23.0', roll=3),
-            CharacteristicChoiceEvent(id=25, fulfills='24.0', characteristic='STR', amount=1),
+            AgingRollEvent(id=23, fulfills='22.0', roll=3),
+            CharacteristicChoiceEvent(id=24, fulfills='23.0', characteristic='STR', amount=1),
         ]
         projection = replay(1, events)
 
@@ -2264,10 +2392,10 @@ class TestAging:
     def test_effective_minus1_skill_table_after_both_resolved(self):
         events = [
             *_setup_through_4_terms_advancement(),
-            ReenlistEvent(id=23, fulfills='22.0', reenlist=True),
-            AgingRollEvent(id=24, fulfills='23.0', roll=3),
-            CharacteristicChoiceEvent(id=25, fulfills='24.0', characteristic='STR', amount=1),
-            CharacteristicChoiceEvent(id=26, fulfills='24.1', characteristic='DEX', amount=1),
+            AgingRollEvent(id=23, fulfills='22.0', roll=3),
+            CharacteristicChoiceEvent(id=24, fulfills='23.0', characteristic='STR', amount=1),
+            CharacteristicChoiceEvent(id=25, fulfills='23.1', characteristic='DEX', amount=1),
+            ReenlistEvent(id=26, fulfills='25.0', reenlist=True),
         ]
         projection = replay(1, events)
 
@@ -2277,8 +2405,7 @@ class TestAging:
         # roll=2 -> 2-4=-2 -> auto reduce all 3 physicals by 1, no choice pending
         events = [
             *_setup_through_4_terms_advancement(),
-            ReenlistEvent(id=23, fulfills='22.0', reenlist=True),
-            AgingRollEvent(id=24, fulfills='23.0', roll=2),
+            AgingRollEvent(id=23, fulfills='22.0', roll=2),
         ]
         projection = replay(1, events)
 
@@ -2289,8 +2416,7 @@ class TestAging:
     def test_effective_minus2_no_aging_choice_pending(self):
         events = [
             *_setup_through_4_terms_advancement(),
-            ReenlistEvent(id=23, fulfills='22.0', reenlist=True),
-            AgingRollEvent(id=24, fulfills='23.0', roll=2),
+            AgingRollEvent(id=23, fulfills='22.0', roll=2),
         ]
         projection = replay(1, events)
 
@@ -2299,8 +2425,8 @@ class TestAging:
     def test_effective_minus2_creates_skill_table(self):
         events = [
             *_setup_through_4_terms_advancement(),
-            ReenlistEvent(id=23, fulfills='22.0', reenlist=True),
-            AgingRollEvent(id=24, fulfills='23.0', roll=2),
+            AgingRollEvent(id=23, fulfills='22.0', roll=2),
+            ReenlistEvent(id=24, fulfills='23.0', reenlist=True),
         ]
         projection = replay(1, events)
 
@@ -2412,7 +2538,7 @@ class TestMusterOut:
         ]
         projection = replay(1, events)
 
-        assert 'weapon' in projection.summary.benefits
+        assert any(b.key == 'weapon' for b in projection.summary.benefits)
 
     def test_benefits_roll_ship_share_adds_to_benefits(self):
         # Scout benefits roll 1 → ship_share
@@ -2422,7 +2548,7 @@ class TestMusterOut:
         ]
         projection = replay(1, events)
 
-        assert 'ship_share' in projection.summary.benefits
+        assert any(b.key == 'ship_share' for b in projection.summary.benefits)
 
     def test_benefits_roll_int_plus_1_increases_int(self):
         # Scout benefits roll 2 → INT +1 (INT was 9)
@@ -2452,7 +2578,7 @@ class TestMusterOut:
         ]
         projection = replay(1, events)
 
-        assert 'scout_ship' in projection.summary.benefits
+        assert any(b.key == 'scout_ship' for b in projection.summary.benefits)
 
     def test_muster_out_career_cleared_after_all_rolls(self):
         events = [
@@ -2616,10 +2742,12 @@ class TestMusterOut:
         events = [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=5),  # scholar event 5: benefit_dm +1
-            AdvancementEvent(id=7, fulfills='6.0', roll=3),
-            ReenlistEvent(id=8, fulfills='7.0', reenlist=False),
+            SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
+            SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
+            SurviveEvent(id=7, fulfills='6.0', roll=7),
+            TermEventEvent(id=8, fulfills='7.0', roll=5),  # scholar event 5: benefit_dm +1
+            AdvancementEvent(id=9, fulfills='8.0', roll=3),
+            ReenlistEvent(id=10, fulfills='9.0', reenlist=False),
         ]
         projection = replay(1, events)
 
@@ -2633,11 +2761,13 @@ class TestMusterOut:
         events = [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=5),
-            AdvancementEvent(id=7, fulfills='6.0', roll=3),
-            ReenlistEvent(id=8, fulfills='7.0', reenlist=False),
-            MusterOutEvent(id=9, fulfills='8.0', table='benefits', roll=4),
+            SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
+            SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
+            SurviveEvent(id=7, fulfills='6.0', roll=7),
+            TermEventEvent(id=8, fulfills='7.0', roll=5),
+            AdvancementEvent(id=9, fulfills='8.0', roll=3),
+            ReenlistEvent(id=10, fulfills='9.0', reenlist=False),
+            MusterOutEvent(id=11, fulfills='10.0', table='benefits', roll=4),
         ]
         projection = replay(1, events)
 
@@ -2648,30 +2778,34 @@ class TestMusterOut:
         events = [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=5),
-            AdvancementEvent(id=7, fulfills='6.0', roll=3),
-            ReenlistEvent(id=8, fulfills='7.0', reenlist=False),
-            MusterOutEvent(id=9, fulfills='8.0', table='benefits', roll=3),
+            SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
+            SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
+            SurviveEvent(id=7, fulfills='6.0', roll=7),
+            TermEventEvent(id=8, fulfills='7.0', roll=5),
+            AdvancementEvent(id=9, fulfills='8.0', roll=3),
+            ReenlistEvent(id=10, fulfills='9.0', reenlist=False),
+            MusterOutEvent(id=11, fulfills='10.0', table='benefits', roll=3),
         ]
         projection = replay(1, events)
 
-        assert projection.summary.benefits.count('ship_share') == 2
+        assert sum(1 for b in projection.summary.benefits if b.key == 'ship_share') == 2
 
     def test_scholar_scientific_equipment_benefit(self):
         # Scholar benefits roll 5 → scientific_equipment
         events = [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=5),
-            AdvancementEvent(id=7, fulfills='6.0', roll=3),
-            ReenlistEvent(id=8, fulfills='7.0', reenlist=False),
-            MusterOutEvent(id=9, fulfills='8.0', table='benefits', roll=5),
+            SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
+            SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
+            SurviveEvent(id=7, fulfills='6.0', roll=7),
+            TermEventEvent(id=8, fulfills='7.0', roll=5),
+            AdvancementEvent(id=9, fulfills='8.0', roll=3),
+            ReenlistEvent(id=10, fulfills='9.0', reenlist=False),
+            MusterOutEvent(id=11, fulfills='10.0', table='benefits', roll=5),
         ]
         projection = replay(1, events)
 
-        assert 'scientific_equipment' in projection.summary.benefits
+        assert any(b.key == 'scientific_equipment' for b in projection.summary.benefits)
 
     def test_aging_reenlist_false_gets_muster_out_after_aging(self):
         # 4 terms, reenlist=False, age=34 → aging required → muster out after aging resolves
@@ -2689,8 +2823,8 @@ class TestMusterOut:
         # 4 terms, rank 0 → 4 muster out rolls
         events = [
             *_setup_through_4_terms_advancement(),
-            ReenlistEvent(id=23, fulfills='22.0', reenlist=False),
-            AgingRollEvent(id=24, fulfills='23.0', roll=5),  # no effect
+            AgingRollEvent(id=23, fulfills='22.0', roll=5),  # no effect → reenlist pending
+            ReenlistEvent(id=24, fulfills='23.0', reenlist=False),
         ]
         projection = replay(1, events)
 
@@ -2872,8 +3006,7 @@ class TestAgingCrisis:
         # STR=1, aging effective=-2 (all 3 physicals -1, auto) → STR=0 → crisis
         events = [
             *_setup_low_str_through_4_terms_advancement(),
-            ReenlistEvent(id=23, fulfills='22.0', reenlist=True),
-            AgingRollEvent(id=24, fulfills='23.0', roll=2),  # 2-4=-2: auto all physicals -1
+            AgingRollEvent(id=23, fulfills='22.0', roll=2),  # 2-4=-2: auto all physicals -1
         ]
         projection = replay(1, events)
 
@@ -2883,9 +3016,8 @@ class TestAgingCrisis:
         # effective=-1: 2 aging_choices; choose STR first → STR=0 → crisis clears the other
         events = [
             *_setup_low_str_through_4_terms_advancement(),
-            ReenlistEvent(id=23, fulfills='22.0', reenlist=True),
-            AgingRollEvent(id=24, fulfills='23.0', roll=3),  # 3-4=-1: 2 physicals -1
-            CharacteristicChoiceEvent(id=25, fulfills='24.0', characteristic='STR', amount=1),
+            AgingRollEvent(id=23, fulfills='22.0', roll=3),  # 3-4=-1: 2 physicals -1
+            CharacteristicChoiceEvent(id=24, fulfills='23.0', characteristic='STR', amount=1),
         ]
         projection = replay(1, events)
 
@@ -3012,31 +3144,33 @@ class TestScholarLabShip:
         return [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=5),
-            AdvancementEvent(id=7, fulfills='6.0', roll=3),
-            ReenlistEvent(id=8, fulfills='7.0', reenlist=False),
+            SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
+            SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
+            SurviveEvent(id=7, fulfills='6.0', roll=7),
+            TermEventEvent(id=8, fulfills='7.0', roll=5),
+            AdvancementEvent(id=9, fulfills='8.0', roll=3),
+            ReenlistEvent(id=10, fulfills='9.0', reenlist=False),
         ]
 
     def test_benefits_roll_6_gives_lab_ship(self):
         events = [
             *self._setup_through_reenlist_false_scholar(),
-            MusterOutEvent(id=9, fulfills='8.0', table='benefits', roll=6),
+            MusterOutEvent(id=11, fulfills='10.0', table='benefits', roll=6),
         ]
         projection = replay(1, events)
 
-        assert 'lab_ship' in projection.summary.benefits
+        assert any(b.key == 'lab_ship' for b in projection.summary.benefits)
 
     def test_benefits_roll_7_gives_lab_ship(self):
         # Row 7 (capped at 7 in table) also gives lab_ship
         events = [
             *self._setup_through_reenlist_false_scholar(),
-            MusterOutEvent(id=9, fulfills='8.0', table='benefits', roll=6),
+            MusterOutEvent(id=11, fulfills='10.0', table='benefits', roll=6),
         ]
         projection = replay(1, events)
 
-        assert 'lab_ship' in projection.summary.benefits
-        assert 'scout_ship' not in projection.summary.benefits
+        assert any(b.key == 'lab_ship' for b in projection.summary.benefits)
+        assert not any(b.key == 'scout_ship' for b in projection.summary.benefits)
 
 
 class TestScoutMishap6InjuryTable:
@@ -3128,16 +3262,18 @@ class TestScholarScienceChoicesInTables:
         return [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment=assignment, qualification_roll=5),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=5),
-            AdvancementEvent(id=7, fulfills='6.0', roll=3),
-            ReenlistEvent(id=8, fulfills='7.0', reenlist=True),
+            SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
+            SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
+            SurviveEvent(id=7, fulfills='6.0', roll=7),
+            TermEventEvent(id=8, fulfills='7.0', roll=5),
+            AdvancementEvent(id=9, fulfills='8.0', roll=3),
+            ReenlistEvent(id=10, fulfills='9.0', reenlist=True),
         ]
 
     def test_service_skills_roll_6_creates_science_choice(self):
         events = [
             *self._setup_in_term_2(),
-            SkillTableEvent(id=9, fulfills='8.0', table='service_skills', roll=6),
+            SkillTableEvent(id=11, fulfills='10.0', table='service_skills', roll=6),
         ]
         projection = replay(1, events)
 
@@ -3149,7 +3285,7 @@ class TestScholarScienceChoicesInTables:
         # EDU=10 ≥ 10 → can access Scholar advanced_education table
         events = [
             *self._setup_in_term_2(),
-            SkillTableEvent(id=9, fulfills='8.0', table='advanced_education', roll=6),
+            SkillTableEvent(id=11, fulfills='10.0', table='advanced_education', roll=6),
         ]
         projection = replay(1, events)
 
@@ -3161,7 +3297,7 @@ class TestScholarScienceChoicesInTables:
         # Core advanced_education row 1: Art (any broad art type)
         events = [
             *self._setup_in_term_2(),
-            SkillTableEvent(id=9, fulfills='8.0', table='advanced_education', roll=1),
+            SkillTableEvent(id=11, fulfills='10.0', table='advanced_education', roll=1),
         ]
         projection = replay(1, events)
 
@@ -3172,7 +3308,7 @@ class TestScholarScienceChoicesInTables:
     def test_field_researcher_roll_6_creates_science_choice(self):
         events = [
             *self._setup_in_term_2('Field Researcher'),
-            SkillTableEvent(id=9, fulfills='8.0', table='field researcher', roll=6),
+            SkillTableEvent(id=11, fulfills='10.0', table='field researcher', roll=6),
         ]
         projection = replay(1, events)
 
@@ -3183,7 +3319,7 @@ class TestScholarScienceChoicesInTables:
     def test_scientist_roll_3_creates_science_choice(self):
         events = [
             *self._setup_in_term_2('Scientist'),
-            SkillTableEvent(id=9, fulfills='8.0', table='scientist', roll=3),
+            SkillTableEvent(id=11, fulfills='10.0', table='scientist', roll=3),
         ]
         projection = replay(1, events)
 
@@ -3194,7 +3330,7 @@ class TestScholarScienceChoicesInTables:
     def test_physician_roll_6_creates_science_choice(self):
         events = [
             *self._setup_in_term_2('Physician'),
-            SkillTableEvent(id=9, fulfills='8.0', table='physician', roll=6),
+            SkillTableEvent(id=11, fulfills='10.0', table='physician', roll=6),
         ]
         projection = replay(1, events)
 
@@ -3210,20 +3346,22 @@ class TestScholarMishap3ScienceChoice:
         return [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
-            SurviveEvent(id=5, fulfills='4.0', roll=3),
-            MishapEvent(id=6, fulfills='5.0', roll=3),
-            ScholarMishap3ChoiceEvent(id=7, fulfills='6.0', choice=openly_or_secretly),
+            SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
+            SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
+            SurviveEvent(id=7, fulfills='6.0', roll=3),
+            MishapEvent(id=8, fulfills='7.0', roll=3),
+            ScholarMishap3ChoiceEvent(id=9, fulfills='8.0', choice=openly_or_secretly),
         ]
 
     def test_openly_choice_grants_chosen_science(self):
-        sci_choice = SkillChoiceEvent(id=8, fulfills='7.0', skill=LifeScience(biology=Level(value=1)))
+        sci_choice = SkillChoiceEvent(id=10, fulfills='9.0', skill=LifeScience(biology=Level(value=1)))
         events = [*self._setup_to_choice('openly'), sci_choice]
         projection = replay(1, events)
 
         assert projection.summary.skill_level('Life Science', -1) >= 1
 
     def test_secretly_choice_grants_chosen_science(self):
-        sci_choice = SkillChoiceEvent(id=8, fulfills='7.0', skill=PhysicalScience(chemistry=Level(value=1)))
+        sci_choice = SkillChoiceEvent(id=10, fulfills='9.0', skill=PhysicalScience(chemistry=Level(value=1)))
         events = [*self._setup_to_choice('secretly'), sci_choice]
         projection = replay(1, events)
 
@@ -3231,7 +3369,7 @@ class TestScholarMishap3ScienceChoice:
 
     def test_openly_chosen_science_not_fixed_to_space_science(self):
         # Verify a non-space science can be chosen (science choice is free)
-        sci_choice = SkillChoiceEvent(id=8, fulfills='7.0', skill=SocialScience(economics=Level(value=1)))
+        sci_choice = SkillChoiceEvent(id=10, fulfills='9.0', skill=SocialScience(economics=Level(value=1)))
         events = [*self._setup_to_choice('openly'), sci_choice]
         projection = replay(1, events)
 
@@ -3247,14 +3385,16 @@ class TestPhysicianRankBonuses:
         return [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment=assignment, qualification_roll=5),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=5),
+            SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
+            SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
+            SurviveEvent(id=7, fulfills='6.0', roll=7),
+            TermEventEvent(id=8, fulfills='7.0', roll=5),
         ]
 
     def test_physician_rank_1_grants_medic_not_science_choice(self):
         events = [
             *self._setup_to_advancement('Physician'),
-            AdvancementEvent(id=7, fulfills='6.0', roll=9),  # INT=9 DM+1 → 10 ≥ 8 → advance to rank 1
+            AdvancementEvent(id=9, fulfills='8.0', roll=9),  # INT=9 DM+1 → 10 ≥ 8 → advance to rank 1
         ]
         projection = replay(1, events)
 
@@ -3266,7 +3406,7 @@ class TestPhysicianRankBonuses:
     def test_field_researcher_rank_1_creates_science_choice_pending(self):
         events = [
             *self._setup_to_advancement('Field Researcher'),
-            AdvancementEvent(id=7, fulfills='6.0', roll=5),  # INT=9 DM+1 → 6 ≥ 6 → advance to rank 1
+            AdvancementEvent(id=9, fulfills='8.0', roll=5),  # INT=9 DM+1 → 6 ≥ 6 → advance to rank 1
         ]
         projection = replay(1, events)
 

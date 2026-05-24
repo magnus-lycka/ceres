@@ -1,7 +1,9 @@
 import pytest
 from typer.testing import CliRunner
 
-from ceres.character.cli import app, build_app
+from ceres.character.benefits import parse_benefit
+from ceres.character.cli import app, build_app, render_projection_summary
+from ceres.character.projection import CharacterProjection, CharacterSummary
 from ceres.character.store import SqliteCharacterBackend
 
 
@@ -338,3 +340,36 @@ def test_cli_rejects_delete_for_unknown_character(memory_app):
 
     assert result.exit_code != 0
     assert 'Unknown character creation id: 999' in result.output
+
+
+class TestRenderProjectionSummaryBenefits:
+    """render_projection_summary should display non-characteristic benefits and cash."""
+
+    def _projection(self, **kwargs) -> CharacterProjection:
+        return CharacterProjection(character_id=1, summary=CharacterSummary(name='Test', **kwargs))
+
+    def test_benefits_shown_in_summary(self):
+        projection = self._projection(benefits=[parse_benefit('lab_ship'), parse_benefit('ship_share')])
+        lines = render_projection_summary(projection)
+        combined = '\n'.join(lines)
+        assert 'Lab Ship' in combined
+        assert 'Ship Share' in combined
+
+    def test_cash_shown_in_summary(self):
+        projection = self._projection(cash=50000)
+        lines = render_projection_summary(projection)
+        combined = '\n'.join(lines)
+        assert 'Cr50,000' in combined
+
+    def test_zero_cash_not_shown(self):
+        projection = self._projection(cash=0)
+        lines = render_projection_summary(projection)
+        combined = '\n'.join(lines)
+        assert 'cash' not in combined.lower()
+        assert 'Cr' not in combined
+
+    def test_empty_benefits_not_shown(self):
+        projection = self._projection(benefits=[])
+        lines = render_projection_summary(projection)
+        combined = '\n'.join(lines)
+        assert 'Benefits' not in combined

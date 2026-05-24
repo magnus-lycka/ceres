@@ -359,7 +359,8 @@ Additional High Guard common-area extras are implemented in `systems.py`:
 
 ## Companion Weapon Additions
 
-Traveller Companion starship weapon additions are implemented in `weapons.py`.
+Traveller Companion starship weapon additions are implemented in the
+`weapons/` package.
 
 Implemented parts:
 
@@ -387,8 +388,8 @@ allocation remains the same as the underlying fixed mount or turret.
 
 ## Weapon Customisation Modifiers
 
-Additional High Guard weapon customisation modifiers are implemented in
-`weapons.py`:
+Additional High Guard weapon customisation modifiers are implemented in the
+`weapons/` package:
 
 - `Accurate`: 2 Advantages, note for DM+1 to attack rolls.
 - `EasyToRepair`: 1 Advantage, note for DM+1 to repair attempts.
@@ -416,7 +417,7 @@ Additional High Guard jump drive customisation modifiers are implemented in
 ## Weapon Model Refactor
 
 The broad weapon model refactor is complete enough to close the original
-`Sort out weapons.py` doing item.
+`Sort out weapons` doing item.
 
 Implemented structure:
 
@@ -448,8 +449,9 @@ Implemented structure:
 - large ship crew reduction, including bracket-boundary cap
 - medic count uses habitation capacity as a population proxy
 
-Remaining role-inference policy questions were moved back to `todo_maybe.md` as
-follow-up todo items.
+Role inference policy is now decided: ship role stays explicit. Ceres does not
+infer military construction/crew mode automatically; callers opt into military
+crew analysis with the existing `military=True` switch.
 
 ## Screens Follow-Up
 
@@ -788,3 +790,254 @@ Implemented support:
   re-entry.
 - unit tests cover minimum sizing, extra tonnage, computed-field
   serialization, spec output, and streamlined-hull validation.
+
+## Fuel Tank Compartments
+
+High Guard fuel tank compartments are implemented as Cargo section parts.
+
+Implemented support:
+
+- `FuelTankCompartment(tons=...)` models hidden compartments that officially
+  count as fuel tankage.
+- Ceres treats them as real cargo volume per RIS-018, without increasing real
+  jump or operation fuel capacity.
+- cost is Cr4000 per ton.
+- notes record the access restriction, DM-4 Electronics (sensors), DM-6
+  Investigate, and the official-operation-endurance overstatement where a power
+  plant fuel rate is available.
+- unit tests cover values, notes, spec output, and the RIS-018 behaviour.
+
+## Metal Hydride Storage
+
+High Guard metal hydride storage is implemented as a Fuel section option.
+
+Implemented support:
+
+- `FuelSection(metal_hydride_storage=MetalHydrideStorage())` replaces normal
+  liquid hydrogen fuel tankage.
+- stored fuel still comes from the normal fuel parts (`JumpFuel`,
+  `OperationFuel`, and `ReactionFuel`), while metal hydride storage adds an
+  equal amount of extra tankage so the fuel row consumes twice the stored fuel
+  volume.
+- cost is MCr0.2 per ton of metal hydride tankage.
+- notes record the doubled-volume rule and the 25%/minimum-1-ton fuel leak
+  loss rule.
+- TL9 validation, spec output, production-cost accounting, and ship-gallery
+  sanity tests are covered.
+
+## Fuel System Variants Decisions
+
+The remaining High Guard fuel tank variants in this group are intentionally not
+static ship construction components:
+
+- Collapsible Fuel Tank, Mountable Tank, and Drop Tank are treated as loose
+  equipment or operational state; see RIS-017.
+- Fuel Tank Compartment is modelled as real cargo volume with official fuel
+  tankage notes; see RIS-018.
+
+## Black Globe Generator Construction
+
+High Guard black globe generators are implemented as Screen section parts.
+
+Implemented support:
+
+- `BlackGlobeGenerator` models the TL15 screen generator.
+- `BlackGlobeCapacitorBank(tons=...)` models additional black globe capacitors.
+- construction values are 50 tons, MCr100, and 30 Power.
+- additional capacitors cost MCr3 per ton and absorb 50 points of damage per
+  ton.
+- spec rows render in the Screens section.
+- notes record that black globe generators are not commercially available, block
+  manoeuvre/dodge/jump/weapons/sensors while active, and use capacitor/overload
+  operational rules outside build-spec modelling.
+- unit tests cover table values, capacitor values, spec output, notes, and
+  discriminated-union deserialization.
+
+## Holographic Hull
+
+High Guard holographic hulls are implemented as Systems section parts.
+
+Implemented support:
+
+- `HolographicHull` models the TL10 projector system.
+- tonnage is zero.
+- cost is Cr100000 per ton of hull.
+- power draw is 1 Power per 2 tons of hull.
+- notes record that the system changes hull colours, graphics, and visual
+  appearance without changing the ship's shape.
+- unit tests cover values and spec output.
+
+## Breaching Tube
+
+High Guard breaching tubes are implemented as Systems section parts.
+
+Implemented support:
+
+- `BreachingTube` models the military boarding tube.
+- tonnage is 3 tons.
+- cost is MCr3.
+- notes record the DM +1 Boarding Actions modifier and operational attachment
+  limits.
+- unit tests cover values and spec output.
+
+## External Attachment Systems
+
+High Guard external attachment systems from `refs/hg/26_drones.md` are now
+covered as construction/spec parts where they belong in the current ship model.
+
+Implemented support:
+
+- `DockingClamp` in `crafts.py`.
+- `TowCable`, `GrapplingArm`, `HolographicHull`, `BreachingTube`, and
+  `ForcedLinkageApparatus` in `systems.py`.
+- forced linkage apparatus tiers model the Basic, Improved, Enhanced, and
+  Advanced table rows, including TL, pilot-check DM, tonnage, cost, notes, and
+  the 5000-ton target-use limit.
+
+External-load drive-performance effects remain covered by the separate
+effective-displacement todo.
+
+## Split Big Ship Files
+
+The large ship implementation files have been split into focused modules.
+
+Completed splits:
+
+- drives and power plants/systems are separate: `drives.py` and `power.py`
+- the former monolithic `weapons.py` is now the `weapons/` package, with
+  `weapons/__init__.py` as a small backwards-compatible facade over focused
+  weapon modules:
+  - `weapons/common.py`
+  - `weapons/mounts.py`
+  - `weapons/magazines.py`
+  - `weapons/barbettes.py`
+  - `weapons/bays.py`
+  - `weapons/spinal.py`
+  - `weapons/point_defense.py`
+  - `weapons/section.py`
+- the former monolithic `systems.py` is now the `systems/` package, with
+  `systems/__init__.py` as a small backwards-compatible facade over focused
+  system modules:
+  - `systems/common.py`
+  - `systems/facilities.py`
+  - `systems/command.py`
+  - `systems/security.py`
+  - `systems/common_areas.py`
+  - `systems/medical.py`
+  - `systems/access.py`
+  - `systems/external.py`
+  - `systems/drones.py`
+  - `systems/logistics.py`
+  - `systems/acceleration.py`
+  - `systems/reentry.py`
+  - `systems/advanced.py`
+  - `systems/section.py`
+
+Existing imports from `ceres.make.ship.weapons` continue to work.
+Existing imports from `ceres.make.ship.systems` continue to work.
+
+## Hull Modifications
+
+Specialised High Guard hull modification support is complete for the currently
+modelled hull modifiers.
+
+References: `refs/hg/05_specialised_hull_types.md` and
+`refs/hg/23_spacecraft_options.md`.
+
+Implemented:
+
+- **Reinforced Hull** — +50% hull cost, +10% hull points.
+- **Light Hull** — -25% hull cost, -10% hull points.
+- **Armoured Bulkhead** — 10% of protected item's tonnage, MCr0.2/ton, with
+  protected-area notes.
+- **Pressure Hull** — 25% of total tonnage, x10 hull cost, intrinsic Armour +4.
+- **Reflec** — MCr0.1 per ton of hull, +3 armour protection against lasers,
+  incompatible with stealth.
+- Reinforced and light hull construction are validated as mutually exclusive
+  alternatives.
+
+Military Hull remains covered by its own model and validation.
+
+## Screens Source Coverage
+
+High Guard screen construction coverage is complete for the currently modelled
+ship-building scope.
+
+References: `refs/hg/22_screens.md` and
+`refs/hg/34_space_folding_potential.md`.
+
+Implemented:
+
+- `MesonScreen`: TL13, 30 Power, 10 tons, MCr20, 2D x 10 damage reduction.
+- `NuclearDamper`: TL12, 20 Power, 10 tons, MCr10, 2D damage reduction.
+- `DeflectorScreen`: TL10, 10 Power, 5 tons, MCr5, 1D damage reduction.
+- `EnergyShield`: TL14, 50 Power, 20 tons, MCr25, 10-point energy buffer.
+- `ImprovedEnergyShield`: TL16, 75 Power, 15 tons, MCr35, 20-point energy
+  buffer.
+- `AdvancedEnergyShield`: TL18, 100 Power, 10 tons, MCr60, 50-point energy
+  buffer.
+- `BlackGlobeGenerator`: TL15, 30 Power, 50 tons, at least MCr100.
+- `BlackGlobeCapacitorBank`: MCr3 per ton, no Power requirement, 50 absorbed
+  damage points per ton.
+
+Operational rules such as angling screens, energy-shield buffer depletion and
+regeneration, black-globe flicker, capacitor discharge, and overload remain
+represented as notes or are out of scope for `ceres.make.ship`.
+
+## Spinal Mount Source Coverage
+
+High Guard spinal mount construction coverage is complete for the currently
+modelled ship-building scope.
+
+Reference: `refs/hg/18_railgun_ammunition.md`.
+
+Implemented and covered:
+
+- `MassDriverSpinalMount`
+- `MesonSpinalMount`
+- `ParticleAcceleratorSpinalMount`
+- `RailgunSpinalMount`
+- base TL, base size, base Power, base cost, damage dice, max size, traits, and
+  hardpoint / military crew requirements
+- TL improvement rows for +1, +2, and +3 across all four spinal mount families
+- mass driver spinal mount ammunition cargo helper: 50 tons and Cr500000 per
+  attack
+- railgun spinal mount extra-rounds cargo helper: 20 tons and MCr0.2 per round
+
+Operational targeting, range adjustment, and combat resolution remain out of
+scope for `ceres.make.ship`.
+
+## Weapon Coverage Follow-Up
+
+The High Guard weapon construction model is complete for the currently modelled
+ship-building scope.
+
+References:
+
+- `refs/hg/16_turrets_and_fixed_mounts.md`
+- `refs/hg/17_particle_beam.md`
+- `refs/hg/18_railgun_ammunition.md`
+- `refs/hg/29_customising_ships.md`
+
+Implemented and covered:
+
+- concrete fixed mounts and turrets
+- turret/fixed-mount weapons from the High Guard Turret Weapons table: beam
+  laser, fusion gun, laser drill, missile rack, particle beam, plasma gun,
+  pulse laser, railgun, and sandcaster
+- barbettes, bays, spinal mounts, point-defence batteries, carronades, and
+  ammunition/storage parts
+- hardpoint/firmpoint capacity checks
+- small-craft firmpoint restrictions
+- High Guard weapon customisation modifiers
+
+Deliberate policies:
+
+- firmpoint range limitations are combat/operations scope, not construction
+  calculations; see RIS-019.
+- Ceres uses the High Guard Turret Weapons table as the compatibility boundary
+  for fixed mounts and turrets and does not add extra construction-time
+  restrictions; see RIS-020.
+
+Possible future weapon families from non-HG sources should be opened as
+source-specific todos when those sources are being implemented.

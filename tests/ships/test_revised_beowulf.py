@@ -160,7 +160,7 @@ def build_revised_beowulf() -> ship.Ship:
             common_area=CommonArea(tons=10.0),
             entertainment=AdvancedEntertainmentSystem(cost=5_000),
         ),
-        cargo=CargoSection(cargo_holds=[CargoHold(tons=67.5, crane=CargoCrane())]),
+        cargo=CargoSection(cargo_holds=[CargoHold(tons=67.5, crane=CargoCrane(), display_label='Cargo Bay')]),
         crew=ShipCrew(roles=[Pilot(), Astrogator(), Engineer(), Steward()]),
         occupants=[MiddlePassage()] * 16,
     )

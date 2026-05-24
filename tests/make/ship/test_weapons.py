@@ -14,6 +14,7 @@ from ceres.make.ship.weapons import (
     EasyToRepair,
     FixedMount,
     FusionCarronade,
+    FusionGun,
     GaussPointDefenseBattery3,
     GeneralPurposeMassDriverBay,
     HighYield,
@@ -22,6 +23,7 @@ from ceres.make.ship.weapons import (
     LargeHullcutterBay,
     LargeMesonGunBay,
     LargeTorpedoBay,
+    LaserDrill,
     LaserPointDefenseBattery2,
     LongRange,
     MassDriverSpinalMount,
@@ -32,11 +34,14 @@ from ceres.make.ship.weapons import (
     MissileStorage,
     ParticleAcceleratorSpinalMount,
     ParticleBarbette,
+    ParticleBeam,
     PlasmaBarbette,
     PlasmaCarronade,
+    PlasmaGun,
     PulseLaser,
     PulseLaserBarbette,
     QuadTurret,
+    Railgun,
     RailgunSpinalMount,
     Resilient,
     Sandcaster,
@@ -81,6 +86,41 @@ def test_sandcaster_base_values():
     assert w.base_cost == 250_000
     assert w.base_power == 0
     assert w.build_item() == 'Sandcaster'
+
+
+@pytest.mark.parametrize(
+    ('weapon', 'cost', 'power', 'item'),
+    [
+        (BeamLaser(), 500_000.0, 4.0, 'Beam Laser'),
+        (FusionGun(), 2_000_000.0, 12.0, 'Fusion Gun'),
+        (LaserDrill(), 150_000.0, 4.0, 'Laser Drill'),
+        (MissileRack(), 750_000.0, 0.0, 'Missile Rack'),
+        (ParticleBeam(), 4_000_000.0, 8.0, 'Particle Beam'),
+        (PlasmaGun(), 2_500_000.0, 6.0, 'Plasma Gun'),
+        (PulseLaser(), 1_000_000.0, 4.0, 'Pulse Laser'),
+        (Railgun(), 1_000_000.0, 2.0, 'Railgun'),
+        (Sandcaster(), 250_000.0, 0.0, 'Sandcaster'),
+    ],
+)
+def test_mount_weapon_hg_table_values(weapon, cost, power, item):
+    assert weapon.weapon_cost == pytest.approx(cost)
+    assert weapon.weapon_power == pytest.approx(power)
+    assert weapon.build_item() == item
+
+
+def test_mount_weapon_union_accepts_all_hg_table_weapons_from_json_shape():
+    turret = TripleTurret.model_validate(
+        {
+            'turret_type': 'triple_turret',
+            'weapons': [
+                {'weapon_type': 'fusion_gun'},
+                {'weapon_type': 'particle_beam'},
+                {'weapon_type': 'railgun'},
+            ],
+        }
+    )
+
+    assert [type(weapon) for weapon in turret.weapons] == [FusionGun, ParticleBeam, Railgun]
 
 
 def test_torpedo_storage_uses_three_torpedoes_per_ton():
@@ -147,21 +187,38 @@ def test_particle_accelerator_spinal_mount_appears_in_weapon_spec_rows():
 
 
 @pytest.mark.parametrize(
-    ('tl_improvement', 'tons', 'cost'),
+    ('spinal_cls', 'base_tl', 'base_tons', 'base_cost'),
     [
-        (1, 6_750.0, 2_200_000_000.0),
-        (2, 6_375.0, 2_400_000_000.0),
-        (3, 6_000.0, 2_600_000_000.0),
+        (MassDriverSpinalMount, 10, 5_000.0, 1_500_000_000.0),
+        (MesonSpinalMount, 12, 7_500.0, 2_000_000_000.0),
+        (ParticleAcceleratorSpinalMount, 11, 3_500.0, 1_000_000_000.0),
+        (RailgunSpinalMount, 10, 3_500.0, 500_000_000.0),
     ],
 )
-def test_meson_spinal_mount_tl_improvement_values(tl_improvement, tons, cost):
-    spinal_mount = MesonSpinalMount(tl_improvement=tl_improvement)
-    spinal_mount.bind(DummyOwner(12 + tl_improvement, 100_000))
+@pytest.mark.parametrize(
+    ('tl_improvement', 'tons_multiplier', 'cost_multiplier'),
+    [
+        (1, 0.9, 1.1),
+        (2, 0.85, 1.2),
+        (3, 0.8, 1.3),
+    ],
+)
+def test_spinal_mount_tl_improvement_values(
+    spinal_cls,
+    base_tl,
+    base_tons,
+    base_cost,
+    tl_improvement,
+    tons_multiplier,
+    cost_multiplier,
+):
+    spinal_mount = spinal_cls(tl_improvement=tl_improvement)
+    spinal_mount.bind(DummyOwner(base_tl + tl_improvement, 100_000))
 
-    assert spinal_mount.build_item() == f'Meson Spinal Mount (TL{12 + tl_improvement})'
-    assert spinal_mount.tons == pytest.approx(tons)
-    assert spinal_mount.cost == pytest.approx(cost)
-    assert spinal_mount.power == pytest.approx(1_000.0)
+    assert spinal_mount.build_item() == f'{spinal_mount.description} (TL{base_tl + tl_improvement})'
+    assert spinal_mount.tons == pytest.approx(base_tons * tons_multiplier)
+    assert spinal_mount.cost == pytest.approx(base_cost * cost_multiplier)
+    assert spinal_mount.power == pytest.approx(spinal_mount.base_power)
 
 
 def test_spinal_mount_tl_improvement_requires_corresponding_ship_tl():

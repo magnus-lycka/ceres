@@ -4,52 +4,6 @@ Update todo items in this document as progress is made.
 When todo items are done, please move them
 to docs/archive/done_todos.md
 
-## Weapon coverage follow-up [todo]
-
-The core weapon model has been split into concrete fixed mounts, turrets, barbettes, bays,
-spinal mounts, point-defence batteries, carronades, and ammunition/storage parts.
-
-Remaining work is coverage and policy rather than the broad model refactor:
-
-- firmpoint range limitations are not yet modelled, only power/capacity effects
-- weapon families and mount compatibility are still incomplete
-- broader weapon coverage is still incomplete for some mountable weapon families
-
-## Crew role inference [todo]
-
-Crew calculation is implemented in `crew.py` and `Ship` delegates to it for commercial and
-military crew analysis.
-
-Remaining policy question:
-
-- decide whether ship role inference should remain explicit (`military=True`) or become partly
-  automatic
-
-Automation crew effects have been split into a separate item below.
-
-## Screens source coverage and Black Globe [todo]
-
-Meson screens, nuclear dampers, deflector screens, and energy shields are modelled in
-`screens.py`. Screen gunners are counted in commercial and military crew analysis.
-
-Remaining work:
-
-- broader source coverage for meson screens and mixed screen installations
-- implement **Black Globe Generator** (TL15): absorbs all damage into a capacitor bank; legality
-  note needed (not commercially available)
-- decide how to model capacitor bank, energy bleed, and overload mechanics for Black Globe
-
-## Spinal mount source coverage [todo]
-
-Mass driver, meson, particle accelerator, and railgun spinal mounts are modelled from the High
-Guard spinal mount table, including TL improvement rows and ammunition cargo helpers for mass
-driver and railgun spinal mounts.
-
-Remaining work:
-
-- add broader source test coverage for non-meson spinal mount TL improvements and other spinal
-  mount families
-
 ## Google Sheet fuel mismatch
 
 We should keep an eye out for any remaining Google Sheet / export-based fuel
@@ -159,7 +113,7 @@ Remaining work:
 
 - decide how to model spin-capable layouts separately from the generic `non_gravity=True` flag
 
-*To use this and still get artificial gravity the ship must be able to spin. It could be a torus, a cylinder or something like a capsule connected to a counterweight with a wire (of course it could be two capsules acting as counterweights to each other, but you might have heavy stuff, like power plant, where you don't need full gravity). Either way, the spin radius must be big enough to make this more good than bad. One can of course settle for less than 1G gravity, but there are several well known issues. Both torus and capsule with counterweight would -- I think be dispersed structure. A cyliner, wgich could be a standard structure, would have to be huge, and either a lot of wasted space or most areas wouls have much less gravity. With rotation, there are several issues, which all get worse with less radius (which also means faster rotation): Things fall in tangential direction, not at all same as perceived down. Coriolis effects are stronger. Rapid spin makes people dizzy etc. All of this will place a lower bound on reasonable radius. Of course, working in Zero-G with penaltiess is an option.*
+*To use this and still get artificial gravity the ship must be able to spin. It could be a torus, a cylinder or something like a capsule connected to a counterweight with a wire (of course it could be two capsules acting as counterweights to each other, but you might have heavy stuff, like power plant, where you don't need full gravity). Either way, the spin radius must be big enough to make this more good than bad. One can of course settle for less than 1G gravity, but there are several well known issues. Both torus and capsule with counterweight would -- I think be dispersed structure. A cyliner, which could be a standard structure, would have to be huge, and either a lot of wasted space or most areas wouls have much less gravity. With rotation, there are several issues, which all get worse with less radius (which also means faster rotation): Things fall in tangential direction, not at all same as perceived down. Coriolis effects are stronger. Rapid spin makes people dizzy etc. All of this will place a lower bound on reasonable radius. Of course, working in Zero-G with penalties is an option.*
 
 ## Culture property etc
 
@@ -190,16 +144,6 @@ We want to be able to attach random, somewhat formatted text to be attached to s
 designs. We'd use markdown for that.
 
 Eventually we'll also want to provide illustrations and floor plans/drwaings.
-
-## Split big files
-
-     632 src/ceres/make/ship/drives.py
-
-Separate into drives and powerplants
-
-    1215 src/ceres/make/ship/weapons.py
-
-Split up the big weapons file
 
 ## Add other types of drives
 
@@ -317,64 +261,6 @@ Open questions:
   build specs should still produce notes/errors where the design itself violates
   construction limits.
 
-## Fuel System Variants [todo]
-
-References: `refs/hg/23_spacecraft_options.md`, `refs/hg/25_solar_energy_systems.md`
-
-Several standard fuel tank options from HG Spacecraft Options are not yet modelled:
-
-- **Collapsible Fuel Tank** (fuel bladder): treated as loose equipment /
-  operational cargo state, not a static ship design component. See RIS-017.
-- **Mountable Tank**: treated as cargo-space conversion / operational state, not
-  a static ship design component. See RIS-017.
-- **Metal Hydride Storage** (TL9): replaces liquid-H₂ tanks; twice the space, MCr0.2/ton; reduces
-  fuel-leak severity.
-- **Drop Tank**: treated as loose/external operational equipment rather than a
-  static ship design component. See RIS-017.
-- **Fuel Tank Compartment**: fuel tanks concealed inside cargo or other space. Inflicts DM-4 to
-  sensor checks and DM-6 to Investigate checks to detect. Cr4,000/ton; tonnage deducted from
-  fuel allocation, not from hull tonnage directly.
-
-Remaining work:
-
-- implement as `ShipPart` subclasses in `storage.py` or a new `fuel.py` subsection
-
-## Screens
-
-Implement screens (Meson Screen, Nuclear Damper, Black Globe Generator) as ship components.
-
-Reference: `refs/hg/22_screens.md`
-
-Currently screens are referenced in two crew-count todos but do not exist as ship parts.
-Once added to `weapons.py` or a dedicated `screens.py`, wire them into:
-
-- hardpoint/firmpoint allocation (screens occupy turret hardpoints)
-- power accounting
-- `_commercial_gunner_count` / `_military_gunner_count` (see existing todos)
-
-Black Globe Generator is TL15+, not commercially available — needs a legality note.
-
-## Hull modifications (remaining validation)
-
-Complete the remaining specialised hull modification work.
-
-References: `refs/hg/05_specialised_hull_types.md` and `refs/hg/23_spacecraft_options.md`
-
-Already implemented:
-
-- **Reinforced Hull** — +50% hull cost, +10% hull points
-- **Light Hull** — −25% hull cost, −10% hull points
-- **Armoured Bulkhead** — 10% of protected item's tonnage, MCr0.2/ton, with protected-area notes
-- **Pressure Hull** — 25% of total tonnage, ×10 hull cost, intrinsic Armour +4
-- **Reflec** — MCr0.1 per ton of hull, +3 armour protection against lasers, incompatible with
-  stealth
-
-(Military Hull already tracked separately above.)
-
-Remaining work:
-
-- validate incompatible hull combinations if any source rule requires it
-
 ## Breakaway Hulls [todo]
 
 A ship can be designed to separate into two or more independently operating
@@ -455,21 +341,6 @@ Several sensor modules listed in HG are not yet modelled:
 - Rapid-Deployment Extended Arrays
 - Shallow Penetration Suite
 - Signal Processing System
-
-## External attachment systems
-
-Reference: `refs/hg/26_drones.md` (external systems section)
-
-Only `DockingClamp` is currently in `crafts.py`. Still missing:
-
-- Breaching Tube
-- Forced Linkage Apparatus
-- Holographic Hull
-
-Implemented: `GrapplingArm`, `TowCable` (in `systems.py`).
-
-External loads from grappling/tow should feed into effective displacement for drive performance
-(related to the Modulars and effective displacement item above).
 
 ## Space stations as a build target
 

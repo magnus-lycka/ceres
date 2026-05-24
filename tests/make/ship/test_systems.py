@@ -21,16 +21,19 @@ from ceres.make.ship.systems import (
     BoobyTrapTL8,
     BoobyTrapTL10,
     BoobyTrapTL12,
+    BreachingTube,
     Brewery,
     BriefingRoom,
     CommandBridge,
     CommercialZone,
     CommonArea,
     ConstructionDeck,
+    ForcedLinkageApparatus,
     GourmetKitchen,
     GravityWellGenerator,
     GravScreen,
     HighSurvivabilityReEntryCapsule,
+    HolographicHull,
     HotTub,
     JumpFilter,
     Laboratory,
@@ -95,6 +98,12 @@ def _dummy_owner_for(part) -> DummyOwner:
         (ReEntryPod(), 1.0, 150_000.0, 0.0),
         (Airlock(size=3.0), 3.0, 300_000.0, 0.0),
         (Aerofins(), 20.0, 2_000_000.0, 0.0),
+        (BreachingTube(), 3.0, 3_000_000.0, 0.0),
+        (ForcedLinkageApparatus(tier='Basic'), 2.0, 50_000.0, 0.0),
+        (ForcedLinkageApparatus(tier='Improved'), 2.0, 75_000.0, 0.0),
+        (ForcedLinkageApparatus(tier='Enhanced'), 2.0, 100_000.0, 0.0),
+        (ForcedLinkageApparatus(tier='Advanced'), 2.0, 500_000.0, 0.0),
+        (HolographicHull(), 0.0, 40_000_000.0, 200.0),
         (HotTub(users=2), 0.5, 6_000.0, 0.0),
         (ProbeDrones(count=10), 2.0, 1_000_000.0, 0.0),
         (AdvancedProbeDrones(count=10), 2.0, 1_600_000.0, 0.0),
@@ -134,6 +143,9 @@ def test_converted_system_values_are_computed_properties_not_serialized_fields(
         (AdvancedPsionicShielding, {}, 0.0, 4_000_000.0, 0.0),
         (Airlock, {'size': 3.0}, 3.0, 300_000.0, 0.0),
         (Aerofins, {}, 20.0, 2_000_000.0, 0.0),
+        (BreachingTube, {}, 3.0, 3_000_000.0, 0.0),
+        (ForcedLinkageApparatus, {'tier': 'Basic'}, 2.0, 50_000.0, 0.0),
+        (HolographicHull, {}, 0.0, 40_000_000.0, 200.0),
         (HotTub, {'users': 2}, 0.5, 6_000.0, 0.0),
         (ProbeDrones, {'count': 10}, 2.0, 1_000_000.0, 0.0),
         (AdvancedProbeDrones, {'count': 10}, 2.0, 1_600_000.0, 0.0),
@@ -200,6 +212,90 @@ def test_common_area_display_label_appears_in_ship_spec():
     row = my_ship.build_spec().row('Trophy Lounge (Common Area)')
 
     assert row.tons == pytest.approx(8.0)
+
+
+def test_holographic_hull_appears_in_ship_spec():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        systems=SystemsSection(internal_systems=[HolographicHull()]),
+    )
+
+    row = my_ship.build_spec().row('Holographic Hull')
+
+    assert row.tons is None
+    assert row.cost == pytest.approx(20_000_000.0)
+    assert row.power == pytest.approx(-100.0)
+    assert row.notes.infos == [
+        'Can change hull colours, add graphics, and alter visual appearance without changing shape'
+    ]
+
+
+def test_breaching_tube_appears_in_ship_spec():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        systems=SystemsSection(internal_systems=[BreachingTube()]),
+    )
+
+    row = my_ship.build_spec().row('Breaching Tube')
+
+    assert row.tons == pytest.approx(3.0)
+    assert row.cost == pytest.approx(3_000_000.0)
+    assert row.power is None
+    assert row.notes.infos == [
+        'DM +1 to Boarding Actions rolls',
+        'Can only attach to disabled or otherwise inert ships',
+        'Destroyed if either ship moves while attached; attached ship receives 2D damage',
+    ]
+
+
+@pytest.mark.parametrize(
+    ('tier', 'tl', 'pilot_dm'),
+    [
+        ('Basic', 7, -2),
+        ('Improved', 9, -1),
+        ('Enhanced', 12, 0),
+        ('Advanced', 15, 2),
+    ],
+)
+def test_forced_linkage_apparatus_table_values(tier, tl, pilot_dm):
+    apparatus = ForcedLinkageApparatus(tier=tier)
+    apparatus.bind(DummyOwner(15, 400))
+
+    assert apparatus.tl == tl
+    assert apparatus.tons == pytest.approx(2.0)
+    assert apparatus.pilot_check_dm == pilot_dm
+
+
+def test_forced_linkage_apparatus_appears_in_ship_spec():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        systems=SystemsSection(internal_systems=[ForcedLinkageApparatus(tier='Enhanced')]),
+    )
+
+    row = my_ship.build_spec().row('Forced Linkage Apparatus (Enhanced)', section='Systems')
+
+    assert row.tons == pytest.approx(2.0)
+    assert row.cost == pytest.approx(100_000.0)
+    assert row.power is None
+    assert row.notes.infos == [
+        'Pilot check DM +0',
+        'Requires Thrust advantage of at least 1 over the target',
+        'Cannot target ships above 5000 tons',
+        'May be combined with a breaching tube',
+    ]
+
+
+def test_forced_linkage_apparatus_rejects_large_ship():
+    apparatus = ForcedLinkageApparatus(tier='Enhanced')
+    apparatus.bind(DummyOwner(12, 5_001))
+
+    assert 'Forced linkage apparatus may only be used on ships of 5000 tons or less' in apparatus.notes.errors
 
 
 def test_acceleration_bench_seats_four():

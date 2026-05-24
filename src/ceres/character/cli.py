@@ -141,6 +141,10 @@ def render_projection_summary(projection: CharacterProjection) -> list[str]:
     if s.problems:
         for prob in s.problems:
             lines.append(f'Problem  {prob}')
+    if s.cash:
+        lines.append(f'Cash  Cr{s.cash:,}')
+    if s.benefits:
+        lines.append(f'Benefits  {"  ".join(b.display_label for b in s.benefits)}')
     return lines
 
 

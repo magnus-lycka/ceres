@@ -283,6 +283,41 @@ class Ramscoop(_ZeroPowerStoragePart):
         return notes
 
 
+class MetalHydrideStorage(ShipPart):
+    description: Literal['Metal Hydride Storage'] = 'Metal Hydride Storage'
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    power: ClassVar[float]
+    tl: Literal[9] = 9
+
+    @property
+    def tons(self) -> float:
+        return self._stored_fuel_tons()
+
+    @property
+    def cost(self) -> float:
+        return self._metal_hydride_tankage_tons() * 200_000.0
+
+    @property
+    def power(self) -> float:
+        return 0.0
+
+    def _stored_fuel_tons(self) -> float:
+        fuel = getattr(self.assembly, 'fuel', None)
+        if fuel is None:
+            return 0.0
+        return fuel.raw_fuel_tons()
+
+    def _metal_hydride_tankage_tons(self) -> float:
+        return self._stored_fuel_tons() * 2
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList(super().build_notes())
+        notes.info('Replaces normal liquid hydrogen fuel tankage; consumes twice the stored fuel volume')
+        notes.info('Fuel leak loss reduced to 25% of indicated amount, minimum 1 ton')
+        return notes
+
+
 class FuelSection(CeresModel):
     # Fuel and cargo live in the same module on purpose: future rules are likely
     # to blur the line between them via fuel bladders, combined containers, and
@@ -295,6 +330,7 @@ class FuelSection(CeresModel):
     fuel_processor: FuelProcessor | None = None
     fuel_refinery: FuelRefinery | None = None
     ramscoop: Ramscoop | None = None
+    metal_hydride_storage: MetalHydrideStorage | None = None
 
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = []
@@ -307,10 +343,21 @@ class FuelSection(CeresModel):
             self.fuel_processor,
             self.fuel_refinery,
             self.ramscoop,
+            self.metal_hydride_storage,
         ):
             if part is not None:
                 parts.append(part)
         return parts
+
+    def raw_fuel_tons(self) -> float:
+        total_fuel_tons = 0.0
+        if self.jump_fuel is not None:
+            total_fuel_tons += self.jump_fuel.tons
+        if self.operation_fuel is not None:
+            total_fuel_tons += self.operation_fuel.tons
+        if self.reaction_fuel is not None:
+            total_fuel_tons += self.reaction_fuel.tons
+        return total_fuel_tons
 
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
         parts: list[str] = []
@@ -324,18 +371,21 @@ class FuelSection(CeresModel):
             if item is not None:
                 parts.append(item)
         if parts:
-            total_fuel_tons = 0.0
-            if self.jump_fuel is not None:
-                total_fuel_tons += self.jump_fuel.tons
-            if self.operation_fuel is not None:
-                total_fuel_tons += self.operation_fuel.tons
-            if self.reaction_fuel is not None:
-                total_fuel_tons += self.reaction_fuel.tons
+            total_fuel_tons = self.raw_fuel_tons()
+            fuel_cost = None
+            notes = NoteList()
+            if self.metal_hydride_storage is not None:
+                total_fuel_tons *= 2
+                fuel_cost = self.metal_hydride_storage.cost
+                notes.extend(self.metal_hydride_storage.notes.details)
+                parts.append('metal hydride storage')
             spec.add_row(
                 SpecRow(
                     section=SpecSection.FUEL,
                     item=', '.join(parts),
                     tons=total_fuel_tons or None,
+                    cost=fuel_cost,
+                    notes=notes,
                 )
             )
         for fuel_part in (self.collector, self.fuel_scoops, self.fuel_processor, self.fuel_refinery, self.ramscoop):
@@ -453,6 +503,44 @@ class ConcealedCompartment(_ExplicitTonsStoragePart):
         notes.info('Hidden space shielded against sensors')
         notes.info('DM-2 to Electronics (sensors) checks and DM-4 to Investigate checks')
         return notes
+
+
+class FuelTankCompartment(_ExplicitTonsStoragePart):
+    description: Literal['Fuel Tank Compartment'] = 'Fuel Tank Compartment'
+    cost: ClassVar[float]
+    power: ClassVar[float]
+    sensors_dm: ClassVar[int] = -4
+    investigate_dm: ClassVar[int] = -6
+
+    @property
+    def cost(self) -> float:
+        return self.tons * 4_000.0
+
+    @property
+    def power(self) -> float:
+        return 0.0
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        notes.info('Officially counts as fuel tankage; Ceres counts it as real cargo volume (RIS-018)')
+        notes.info('Can only be accessed when fuel tank is at least three-quarters empty')
+        notes.info('DM-4 to Electronics (sensors) checks and DM-6 to Investigate checks')
+        extra_weeks = self._official_operation_weeks()
+        if extra_weeks is not None:
+            notes.info(f'Would overstate official operation endurance by {extra_weeks:g} weeks')
+        return notes
+
+    def _official_operation_weeks(self) -> float | None:
+        if self._assembly is None:
+            return None
+        power = getattr(self.assembly, 'power', None)
+        plant = None if power is None else power.plant
+        if plant is None:
+            return None
+        period_fuel = plant.fuel_for_weeks(plant.fuel_period_weeks)
+        if period_fuel <= 0:
+            return None
+        return self.tons / period_fuel * plant.fuel_period_weeks
 
 
 class ExternalCargoMount(_ZeroPowerStoragePart):
@@ -621,6 +709,7 @@ class CargoSection(CeresModel):
     cargo_scoops: list[CargoScoop] = Field(default_factory=list)
     cargo_nets: list[CargoNet] = Field(default_factory=list)
     concealed_compartments: list[ConcealedCompartment] = Field(default_factory=list)
+    fuel_tank_compartments: list[FuelTankCompartment] = Field(default_factory=list)
     external_cargo_mounts: list[ExternalCargoMount] = Field(default_factory=list)
     jump_nets: list[JumpNet] = Field(default_factory=list)
 
@@ -632,6 +721,7 @@ class CargoSection(CeresModel):
             *self.cargo_scoops,
             *self.cargo_nets,
             *self.concealed_compartments,
+            *self.fuel_tank_compartments,
             *self.external_cargo_mounts,
             *self.jump_nets,
         ]
@@ -655,15 +745,18 @@ class CargoSection(CeresModel):
         return ship.remaining_usable_tonnage() + container_capacity
 
     @staticmethod
-    def residual_cargo_space(ship) -> float:
+    def residual_cargo_hold_tons(ship) -> float:
         return ship.remaining_usable_tonnage()
 
-    def _add_residual_cargo_space_row(self, ship, spec: ShipSpec) -> None:
+    def _add_residual_cargo_hold_row(self, ship, spec: ShipSpec) -> None:
+        residual_tons = self.residual_cargo_hold_tons(ship)
+        if residual_tons < 0.005:
+            return
         spec.add_row(
             SpecRow(
                 section=SpecSection.CARGO,
                 item='Cargo Hold',
-                tons=self.residual_cargo_space(ship),
+                tons=residual_tons,
             )
         )
 
@@ -690,11 +783,11 @@ class CargoSection(CeresModel):
                         )
                     )
             if all(cargo_hold.tons is not None for cargo_hold in self.cargo_holds):
-                self._add_residual_cargo_space_row(ship, spec)
+                self._add_residual_cargo_hold_row(ship, spec)
             self._add_stores_notes(ship, spec)
             return
         if self._all_parts():
-            self._add_residual_cargo_space_row(ship, spec)
+            self._add_residual_cargo_hold_row(ship, spec)
             self._add_stores_notes(ship, spec)
             return
         cargo_tons = self.cargo_tons(ship)

@@ -66,7 +66,16 @@ def _parse_mishap(raw: dict) -> MishapEntry:
 
 
 def _parse_muster_out(raw: dict) -> MusterOutData:
-    rows = {int(roll): MusterOutRow(cash=row['cash'], benefit=row['benefit']) for roll, row in raw.items()}
+    from ceres.character.benefits import parse_benefit
+
+    rows = {
+        int(roll): MusterOutRow(
+            cash=row['cash'],
+            benefit=parse_benefit(row['benefit']),
+            count=row.get('count', 1),
+        )
+        for roll, row in raw.items()
+    }
     return MusterOutData(rows=rows)
 
 

@@ -2,6 +2,7 @@ from typing import Any, Literal, cast, overload
 
 from pydantic import BaseModel, Field
 
+from ceres.character.benefits import ItemBenefit
 from ceres.character.skills import AnySkill, Level, Skill
 
 
@@ -33,13 +34,16 @@ class CharacterSummary(BaseModel):
     characteristics: dict[str, int] = Field(default_factory=dict)
     current_career: str | None = None
     current_assignment: str | None = None
+    last_career: str | None = None  # career name after muster-out
+    last_assignment: str | None = None  # assignment name after muster-out
     rank: int | None = None
     term_count: int = 0
     skills: list[AnySkill] = Field(default_factory=list)
     connections: list[Connection] = Field(default_factory=list)
     problems: list[str] = Field(default_factory=list)
+    narrative: list[str] = Field(default_factory=list)
     cash: int = 0
-    benefits: list[str] = Field(default_factory=list)
+    benefits: list[ItemBenefit] = Field(default_factory=list)
     muster_out_cash_count: int = 0
     dead: bool = False
 

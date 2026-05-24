@@ -396,6 +396,67 @@ Implications:
   recalculation while attached are operational rules outside the current
   ship-building model.
 
+### RIS-018 Fuel Tank Compartments Count As Real Cargo Volume
+
+High Guard states that fuel tank compartment tonnage is deducted from ship
+fuel tankage rather than total hull tonnage. Ceres treats this as an official
+or deceptive specification convention rather than the physical construction
+model.
+
+In Ceres, jump fuel and operation fuel requirements are calculated from the
+actual fuel the ship must carry. A fuel tank compartment then consumes real
+cargo volume in addition to that fuel, because the compartment occupies space
+inside what is officially presented as fuel tankage but does not itself hold
+fuel.
+
+Implications:
+
+- `FuelTankCompartment` is modelled in the Cargo section, not as extra usable
+  fuel.
+- it reports the High Guard detection and access notes.
+- where a power plant fuel rate is available, it notes how much the hidden
+  compartment would overstate official operation endurance without changing the
+  ship's real operation fuel.
+
+### RIS-019 Firmpoint Range Limits Are Operational Combat Scope
+
+High Guard states that firmpoint-mounted weapons have limited targeting range
+compared with hardpoint/turret installations.
+
+Ceres treats this as an operational combat limitation, not a ship-construction
+calculation. Firmpoint range limits therefore do not alter installed tonnage,
+cost, Power, hardpoint/firmpoint capacity, or crew requirements in
+`ceres.make.ship`.
+
+The build model still applies construction-relevant firmpoint effects:
+
+- firmpoints provide lower mount capacity than hardpoints
+- fixed-mount weapons on firmpoints use the firmpoint Power reduction
+- firmpoint missile racks carry four missiles rather than twelve where this is
+  modelled as installed ammunition/storage
+
+Detailed targeting range, attack eligibility, and combat range-band effects
+belong in a future combat/operations model rather than the static ship spec.
+
+### RIS-020 Turret And Fixed-Mount Compatibility Uses The High Guard Weapon Table
+
+High Guard presents fixed mounts and turrets together and states that they use
+the same type of weapons. Ceres therefore treats the weapons in the High Guard
+Turret Weapons table as valid for both fixed mounts and turrets.
+
+Ceres models the construction restrictions stated by the rules:
+
+- one turret or fixed mount may be attached to each hardpoint
+- fixed mounts may carry up to three weapons on ships
+- small craft firmpoint fixed mounts may carry only one weapon
+- turrets carry one, two, or three weapons according to turret type
+- small craft may upgrade one firmpoint to a single turret
+
+Ceres does not add extra construction-time compatibility restrictions beyond
+those rules. Combat-use details such as only firing one weapon type from a
+mixed turret in the same attack are operational rules outside the static ship
+spec.
+
 ## Character Interpretations
 
 ### RIC-001 "Science", "Art", and "Profession" in Career Tables Mean Player Chooses a Broad Skill

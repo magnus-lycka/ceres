@@ -343,7 +343,7 @@ def build_acrux_heavy_cruiser():
             ],
             drones=[RepairDrones()],
         ),
-        cargo=CargoSection(cargo_holds=[CargoHold(tons=428.5, crane=CargoCrane())]),
+        cargo=CargoSection(cargo_holds=[CargoHold(tons=428.5, crane=CargoCrane(), display_label='Cargo Bay')]),
     )
 
 
@@ -454,7 +454,7 @@ def test_acrux_heavy_cruiser_key_source_values_that_match_current_ceres(acrux_sp
         ('Craft', 'Full Hangar (360 tons)', 'Craft', 'Full Hangar (360 tons)'),
         ('Staterooms', 'Low Berths x20', 'Staterooms', 'Low Berths'),
         ('Common Areas', 'Common Areas', 'Common Areas', 'Common Area'),
-        ('Cargo', 'Cargo', 'Cargo', 'Cargo Hold'),
+        ('Cargo', 'Cargo', 'Cargo', 'Cargo Bay (Cargo Hold)'),
     ]:
         _assert_row_matches_source(
             acrux_spec,
