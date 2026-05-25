@@ -1,19 +1,19 @@
 from enum import Enum
 from typing import Annotated, ClassVar, Literal
 
-from pydantic import Field, model_serializer
+from pydantic import Field, field_validator, model_serializer
 
 from ceres.shared import CeresModel, NoteList, _Note
 
-from .armour import (
+from ..armour import (
     BondedSuperdenseArmour,
     CrystalironArmour,
     MolecularBondedArmour,
     TitaniumSteelArmour,
 )
-from .parts import ShipPart
-from .spec import ShipSpec, SpecRow, SpecSection
-from .systems import Aerofins, Airlock
+from ..parts import ShipPart
+from ..spec import ShipSpec, SpecRow, SpecSection
+from ..systems import Aerofins, Airlock
 
 
 class Streamlined(Enum):
@@ -279,6 +279,16 @@ class Hull(CeresModel):
     heat_shielding: bool = False
     radiation_shielding: bool = False
     reflec: bool = False
+
+    @field_validator('configuration', mode='before')
+    @classmethod
+    def _deserialize_source_specific_configuration(cls, value):
+        description = value.get('description') if isinstance(value, dict) else getattr(value, 'description', None)
+        if description == 'SpinExt Primitive Hull':
+            from .spinext import SpinExtPrimitiveHull
+
+            return SpinExtPrimitiveHull.model_validate(value)
+        return value
 
     def radiation_shielding_cost(self, displacement: float) -> float:
         if not self.radiation_shielding:

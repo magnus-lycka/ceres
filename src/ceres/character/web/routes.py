@@ -57,16 +57,6 @@ _SKILL_CHOICE_KINDS = frozenset(
     }
 )
 
-# Kinds whose sub-form is determined by career+roll on the pending input
-_CAREER_EVENT_SUB_KINDS = {
-    ('Scholar', 3, False): 'scholar_event_3',
-    ('Scholar', 8, False): 'scholar_event_8',
-}
-_CAREER_MISHAP_SUB_KINDS = {
-    ('Scholar', 3, True): 'scholar_mishap_3',
-    ('Scholar', 5, True): 'scholar_mishap_5',
-}
-
 _CONNECTION_TYPE_RE = re.compile(r'\b(contacts?|allies|ally|rivals?|enemies|enemy)\b', re.IGNORECASE)
 _CONNECTION_TYPE_MAP = {'contacts': 'contact', 'allies': 'ally', 'rivals': 'rival', 'enemies': 'enemy'}
 
@@ -366,31 +356,8 @@ def _projection_context(projection: CharacterProjection, character_id: int) -> d
             # roll 4 → rival/enemy, roll 8 → rival/enemy (same options)
             extra['connection_options'] = ['rival', 'enemy']
 
-        elif kind == 'career_event':
-            career_name = getattr(pi, 'career', '')
-            roll = getattr(pi, 'roll', 0)
-            sub = _CAREER_EVENT_SUB_KINDS.get((career_name, roll, False), 'generic_career_event')
-            extra['sub_kind'] = sub
-            extra['career'] = career_name
-            extra['roll'] = roll
-
-        elif kind == 'career_mishap':
-            career_name = getattr(pi, 'career', '')
-            roll = getattr(pi, 'roll', 0)
-            sub = _CAREER_MISHAP_SUB_KINDS.get((career_name, roll, True), 'generic_career_mishap')
-            extra['sub_kind'] = sub
-            extra['career'] = career_name
-            extra['roll'] = roll
-
         elif kind == 'career_skill_choice':
             extra['skill_choices'] = _compute_skill_choices_for_pending(pi, projection)
-            extra['career'] = getattr(pi, 'career', '')
-            extra['roll'] = getattr(pi, 'roll', 0)
-
-        elif kind == 'career_skill_roll':
-            extra['context'] = getattr(pi, 'context', '')
-            extra['career'] = getattr(pi, 'career', '')
-            extra['roll'] = getattr(pi, 'roll', 0)
 
         enriched_inputs.append({'input': pi, 'extra': extra})
 

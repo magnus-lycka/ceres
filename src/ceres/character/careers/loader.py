@@ -131,6 +131,7 @@ def _load_career_file(path: Path) -> CareerData:
         events=events,
         mishaps=mishaps,
         muster_out=muster_out,
+        allows_assignment_change=data['allows_assignment_change'],
     )
 
 

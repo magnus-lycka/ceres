@@ -21,7 +21,7 @@ from ceres.make.ship.drives import (
     SpinExtPlasmaDriveFuelEfficient,
     SpinExtSolarPanelsTL8,
 )
-from ceres.make.ship.hull import BasicStealth, Hull
+from ceres.make.ship.hull import BasicStealth, Hull, SpinExtPrimitiveHull
 from ceres.make.ship.parts import EnergyEfficient, HighTechnology
 from ceres.make.ship.power import SterlingFissionPlant
 from ceres.make.ship.screens import NuclearDamper, ScreensSection
@@ -155,6 +155,20 @@ def test_roundtrip_bare_ship():
 def test_roundtrip_hull_configuration():
     loaded = _roundtrip(ultralight)
     assert loaded.hull.configuration == ultralight.hull.configuration
+
+
+def test_roundtrip_spinext_primitive_hull_configuration():
+    source_ship = Ship(
+        tl=8,
+        displacement=100,
+        hull=Hull(configuration=SpinExtPrimitiveHull(streamlined=hull.Streamlined.PARTIAL)),
+    )
+
+    loaded = _roundtrip(source_ship)
+
+    assert isinstance(loaded.hull.configuration, SpinExtPrimitiveHull)
+    assert loaded.hull_cost == 1_500_000
+    assert loaded.basic_hull_power_load == 1
 
 
 def test_roundtrip_armour_type_and_protection():

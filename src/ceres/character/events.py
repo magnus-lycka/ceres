@@ -155,6 +155,19 @@ class AgingCrisisEvent(EventBase):
     medical_roll: int = 0  # 1D result for medical cost; 0 if not paying
 
 
+class AssignmentChangeChoiceEvent(EventBase):
+    """End-of-term choice for careers that allow intra-career assignment changes.
+
+    choice is one of: 'same' (reenlist same assignment), 'muster_out', or an assignment name
+    to attempt. When an assignment name is given, qualification_roll must be provided; on
+    failure a PendingReenlist is created for the character to choose same or muster out.
+    """
+
+    kind: Literal['assignment_change_choice'] = 'assignment_change_choice'
+    choice: str  # 'same', 'muster_out', or target assignment name
+    qualification_roll: int | None = None  # required when choice is an assignment name
+
+
 type AnyEvent = Annotated[
     AgingCrisisEvent
     | AgingRollEvent
@@ -180,7 +193,8 @@ type AnyEvent = Annotated[
     | LifeEventUnusualEvent
     | MusterOutEvent
     | BenefitChoiceEvent
-    | CareerChoiceEvent,
+    | CareerChoiceEvent
+    | AssignmentChangeChoiceEvent,
     Field(discriminator='kind'),
 ]
 
@@ -191,6 +205,7 @@ __all__ = [
     'AdvancementEvent',
     'AgingCrisisEvent',
     'AgingRollEvent',
+    'AssignmentChangeChoiceEvent',
     'BackgroundSkillsEvent',
     'BenefitChoiceEvent',
     'CareerChoiceEvent',

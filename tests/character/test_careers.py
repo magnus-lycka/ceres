@@ -9,6 +9,7 @@ from ceres.character.events import (
     AdvancementDmChoiceEvent,
     AdvancementEvent,
     AgingRollEvent,
+    AssignmentChangeChoiceEvent,
     BackgroundSkillsEvent,
     CareerChoiceEvent,
     CareerEvent,
@@ -37,6 +38,7 @@ from ceres.character.projection import (
     PendingAgingChoice,
     PendingAgingCrisis,
     PendingAgingRoll,
+    PendingAssignmentChangeChoice,
     PendingCareerChoice,
     PendingCareerEvent,
     PendingCareerMishap,
@@ -862,12 +864,12 @@ class TestAdvancement:
 
         assert projection.summary.rank == 0
 
-    def test_advancement_creates_reenlist_pending(self):
+    def test_advancement_creates_assignment_change_pending(self):
         events = [*self._setup_through_term_event(), AdvancementEvent(id=7, fulfills='6.0', roll=9)]
 
         projection = replay(1, events)
 
-        assert any(isinstance(p, PendingReenlist) for p in projection.pending_inputs)
+        assert any(isinstance(p, PendingAssignmentChangeChoice) for p in projection.pending_inputs)
 
     def test_advancement_instruction_mentions_target(self):
         setup = self._setup_through_term_event()
@@ -889,34 +891,41 @@ class TestReenlist:
             AdvancementEvent(id=7, fulfills='6.0', roll=advancement_roll),
         ]
 
-    def test_reenlist_true_increments_term_count(self):
-        events = [*self._setup_through_advancement(), ReenlistEvent(id=8, fulfills='7.0', reenlist=True)]
+    def test_same_assignment_increments_term_count(self):
+        events = [*self._setup_through_advancement(), AssignmentChangeChoiceEvent(id=8, fulfills='7.0', choice='same')]
 
         projection = replay(1, events)
 
         assert projection.summary.term_count == 2
 
-    def test_reenlist_true_creates_skill_table_pending(self):
-        events = [*self._setup_through_advancement(), ReenlistEvent(id=8, fulfills='7.0', reenlist=True)]
+    def test_same_assignment_creates_skill_table_pending(self):
+        events = [*self._setup_through_advancement(), AssignmentChangeChoiceEvent(id=8, fulfills='7.0', choice='same')]
 
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingSkillTable) for p in projection.pending_inputs)
 
-    def test_reenlist_false_ends_career(self):
-        events = [*self._setup_through_advancement(), ReenlistEvent(id=8, fulfills='7.0', reenlist=False)]
+    def test_muster_out_ends_career(self):
+        events = [
+            *self._setup_through_advancement(),
+            AssignmentChangeChoiceEvent(id=8, fulfills='7.0', choice='muster_out'),
+        ]
 
         projection = replay(1, events)
 
         assert projection.summary.current_career is None
         assert not any(isinstance(p, PendingSkillTable) for p in projection.pending_inputs)
 
-    def test_reenlist_pending_options_include_true_false(self):
+    def test_assignment_change_pending_options(self):
+        """Scout shows same + two other assignments + muster_out."""
         setup = self._setup_through_advancement()
         projection = replay(1, setup)
 
-        reenlist_pending = next(p for p in projection.pending_inputs if isinstance(p, PendingReenlist))
-        assert reenlist_pending.options == ['true', 'false']
+        pending = next(p for p in projection.pending_inputs if isinstance(p, PendingAssignmentChangeChoice))
+        assert 'same' in pending.options
+        assert 'muster_out' in pending.options
+        assert 'Surveyor' in pending.options
+        assert 'Explorer' in pending.options
 
 
 class TestSkillTable:
@@ -927,12 +936,26 @@ class TestSkillTable:
             SurviveEvent(id=5, fulfills='4.0', roll=7),
             TermEventEvent(id=6, fulfills='5.0', roll=5),  # benefit_dm → direct advancement
             AdvancementEvent(id=7, fulfills='6.0', roll=9),
-            ReenlistEvent(id=8, fulfills='7.0', reenlist=True),
+            AssignmentChangeChoiceEvent(id=8, fulfills='7.0', choice='same'),
         ]
 
-    def test_skill_table_courier_roll_grants_new_skill_at_level_1(self):
-        # Courier table roll 1: Electronics — not in Scout service skills → career table grants level 1
+    def test_skill_table_courier_roll_specialised_creates_choice_pending(self):
+        # Courier table roll 1: Electronics (specialised) → PendingSkillTableChoice, not auto-granted
         events = [*self._setup_in_term_2(), SkillTableEvent(id=9, fulfills='8.0', table='courier', roll=1)]
+
+        projection = replay(1, events)
+
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
+        assert pending is not None
+        assert 'Electronics' in pending.options
+
+    def test_skill_table_courier_roll_specialised_grants_after_choice(self):
+        # Choose Electronics (Comms) → Electronics (Comms) 1 granted
+        events = [
+            *self._setup_in_term_2(),
+            SkillTableEvent(id=9, fulfills='8.0', table='courier', roll=1),
+            SkillChoiceEvent(id=10, fulfills='9.0', skill=Electronics(comms=Level(value=1))),
+        ]
 
         projection = replay(1, events)
 
@@ -949,11 +972,28 @@ class TestSkillTable:
 
         assert projection.summary.characteristics.get(Chars.STR) == 8
 
-    def test_skill_table_creates_survive_pending(self):
-        events = [*self._setup_in_term_2(), SkillTableEvent(id=9, fulfills='8.0', table='courier', roll=1)]
+    def test_skill_table_creates_survive_pending_after_non_specialised_roll(self):
+        # Personal development roll 1 (STR) — non-specialised → survive appears immediately
+        events = [
+            *self._setup_in_term_2(),
+            SkillTableEvent(id=9, fulfills='8.0', table='personal_development', roll=1),
+        ]
 
         projection = replay(1, events)
 
+        assert any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
+
+    def test_skill_table_specialised_survive_pending_after_choice(self):
+        # Electronics (specialised) → survive only appears after the specialisation choice
+        events = [
+            *self._setup_in_term_2(),
+            SkillTableEvent(id=9, fulfills='8.0', table='courier', roll=1),
+        ]
+        projection = replay(1, events)
+        assert not any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
+
+        events.append(SkillChoiceEvent(id=10, fulfills='9.0', skill=Electronics(comms=Level(value=1))))
+        projection = replay(1, events)
         assert any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
 
     def test_skill_table_rejects_advanced_education_when_edu_too_low(self):
@@ -1053,7 +1093,7 @@ class TestTermEventAutoAdvance:
 
         assert projection.summary.skill_level('Vacc Suit') == 1
 
-    def test_creates_reenlist_pending_not_advancement(self):
+    def test_creates_assignment_change_pending_not_advancement(self):
         events = [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
@@ -1062,7 +1102,7 @@ class TestTermEventAutoAdvance:
         ]
         projection = replay(1, events)
 
-        assert any(isinstance(p, PendingReenlist) for p in projection.pending_inputs)
+        assert any(isinstance(p, PendingAssignmentChangeChoice) for p in projection.pending_inputs)
         assert not any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
     def test_scholar_event_12_promotes_and_creates_science_choice_pending(self):
@@ -1263,15 +1303,23 @@ class TestSkillTableIncrement:
         ]
 
     def test_new_skill_gains_level_1(self):
-        # Courier table roll 2: Flyer — not in Scout service skills → career table grants level 1
-        events = [*self._setup_in_term_2(), SkillTableEvent(id=9, fulfills='8.0', table='courier', roll=2)]
+        # Courier table roll 2: Flyer (specialised) → choice pending, then Flyer 1 after picking spec
+        events = [
+            *self._setup_in_term_2(),
+            SkillTableEvent(id=9, fulfills='8.0', table='courier', roll=2),
+            SkillChoiceEvent(id=10, fulfills='9.0', skill=Flyer(grav=Level(value=1))),
+        ]
         projection = replay(1, events)
 
         assert projection.summary.skill_level('Flyer') == 1
 
     def test_existing_skill_at_0_increments_to_1(self):
-        # Courier table roll 3: Pilot — Scout has Pilot 0 from initial training → 1
-        events = [*self._setup_in_term_2(), SkillTableEvent(id=9, fulfills='8.0', table='courier', roll=3)]
+        # Courier table roll 3: Pilot (specialised, existing at 0) → choice pending, then Pilot 1
+        events = [
+            *self._setup_in_term_2(),
+            SkillTableEvent(id=9, fulfills='8.0', table='courier', roll=3),
+            SkillChoiceEvent(id=10, fulfills='9.0', skill=Pilot(spacecraft=Level(value=1))),
+        ]
         projection = replay(1, events)
 
         assert projection.summary.skill_level('Pilot') == 1
@@ -3402,11 +3450,14 @@ class TestScoutAssignmentTableCorrections:
             ReenlistEvent(id=8, fulfills='7.0', reenlist=True),
         ]
 
-    def test_courier_roll_2_gives_flyer(self):
+    def test_courier_roll_2_offers_flyer(self):
+        # Courier roll 2 is Flyer (specialised) — player must choose a specialisation
         events = [*self._setup_in_term_2('Courier'), SkillTableEvent(id=9, fulfills='8.0', table='courier', roll=2)]
         projection = replay(1, events)
 
-        assert projection.summary.skill_level('Flyer') is not None
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
+        assert pending is not None
+        assert 'Flyer' in pending.options
 
     def test_surveyor_roll_2_gives_persuade(self):
         events = [*self._setup_in_term_2('Surveyor'), SkillTableEvent(id=9, fulfills='8.0', table='surveyor', roll=2)]
@@ -3420,12 +3471,14 @@ class TestScoutAssignmentTableCorrections:
 
         assert projection.summary.skill_level('Navigation') is not None
 
-    def test_explorer_roll_2_gives_pilot(self):
+    def test_explorer_roll_2_offers_pilot(self):
+        # Explorer roll 2 is Pilot (specialised) — player must choose a specialisation
         events = [*self._setup_in_term_2('Explorer'), SkillTableEvent(id=9, fulfills='8.0', table='explorer', roll=2)]
         projection = replay(1, events)
 
-        # Pilot was already granted at initial training (service skill); now increments to 1
-        assert projection.summary.skill_level('Pilot', -1) >= 1
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
+        assert pending is not None
+        assert 'Pilot' in pending.options
 
     def test_explorer_roll_4_creates_science_choice_pending(self):
         events = [*self._setup_in_term_2('Explorer'), SkillTableEvent(id=9, fulfills='8.0', table='explorer', roll=4)]
@@ -3661,3 +3714,251 @@ class TestAgentAssignmentTableFiltering:
         assert 'law enforcement' in options
         assert 'intelligence' not in options
         assert 'corporate' not in options
+
+
+# ── regression: no spurious survive after end-of-term skill-table choice ─────
+
+
+class TestNoSpuriousSurviveAfterEndOfTermSkillTableChoice:
+    """After advancement, skill table + reenlist/aging are queued together.
+    If the skill table roll requires a sub-choice (Language, Science, etc.),
+    fulfilling that choice must NOT add another PendingSurvive before the
+    already-queued PendingReenlist/PendingAgingRoll."""
+
+    def _through_advancement(self) -> list:
+        # Scout/Courier: survive END 5+, advancement EDU 9+ (EDU=10, DM+1, roll 8 → 9 ≥ 9)
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=5),  # simple event, no extra effects
+            AdvancementEvent(id=7, fulfills='6.0', roll=8),  # EDU 9+; EDU=10, DM+1 → 9 ≥ 9
+        ]
+
+    def test_no_survive_after_choice_path_advanced_edu_language(self):
+        """Choosing Language from advanced_education must not produce a spurious survive."""
+        events = [
+            *self._through_advancement(),
+            SkillTableEvent(id=8, fulfills='7.0', table='advanced_education', roll=2),  # Language → choice
+        ]
+        projection = replay(1, events)
+        assert any(isinstance(p, PendingSkillTableChoice) for p in projection.pending_inputs)
+        assert not any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
+
+        # Fulfill the choice — still no spurious survive
+        from ceres.character.skills import LanguageGalanglic
+
+        events2 = [*events, SkillChoiceEvent(id=9, fulfills='8.0', skill=LanguageGalanglic())]
+        projection2 = replay(1, events2)
+        assert not any(isinstance(p, PendingSurvive) for p in projection2.pending_inputs)
+        assert any(
+            isinstance(p, (PendingAssignmentChangeChoice, PendingReenlist, PendingAgingRoll))
+            for p in projection2.pending_inputs
+        )
+
+    def test_no_survive_after_no_choice_path_service_skills(self):
+        """A non-choice skill table roll at end-of-term must also not add survive."""
+        events = [
+            *self._through_advancement(),
+            SkillTableEvent(id=8, fulfills='7.0', table='service_skills', roll=1),  # Pilot — no choice
+        ]
+        projection = replay(1, events)
+        assert not any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
+        assert any(
+            isinstance(p, (PendingAssignmentChangeChoice, PendingReenlist, PendingAgingRoll))
+            for p in projection.pending_inputs
+        )
+
+
+class TestAssignmentChange:
+    """Tests for the Changing Assignments rule: careers that allow intra-career assignment changes."""
+
+    def _through_advancement(self, assignment: str = 'Courier') -> list:
+        """Events through advancement for Scout (which allows assignment changes)."""
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment=assignment, qualification_roll=7),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=5),  # benefit_dm → direct advancement
+            AdvancementEvent(id=7, fulfills='6.0', roll=9),
+        ]
+
+    def _through_advancement_scholar(self, assignment: str = 'Field Researcher') -> list:
+        """Events through advancement for Scholar (also allows assignment changes).
+
+        Scholar rank 1 grants a Science skill choice (PendingRankBonusChoice), which must be
+        resolved before the assignment-change pending is created.
+        """
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment=assignment, qualification_roll=5),
+            SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
+            SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
+            SurviveEvent(id=7, fulfills='6.0', roll=7),
+            TermEventEvent(id=8, fulfills='7.0', roll=5),
+            # INT 6+, INT=9 (DM+1), roll 6 → 6+1=7 >= 6 → success → rank 1 bonus
+            AdvancementEvent(id=9, fulfills='8.0', roll=6),
+            # Scholar rank 1 bonus: Science 1 (specialised) → PendingRankBonusChoice first
+            SkillChoiceEvent(id=10, fulfills='9.0', skill=SpaceScience(astronomy=Level(value=1))),
+        ]
+
+    # ── pending options ────────────────────────────────────────────────────────
+
+    def test_scout_courier_pending_options_include_all_assignments(self):
+        """Scout Courier gets same + Surveyor + Explorer + muster_out."""
+        projection = replay(1, self._through_advancement())
+
+        pending = next(p for p in projection.pending_inputs if isinstance(p, PendingAssignmentChangeChoice))
+        assert set(pending.options) == {'same', 'Surveyor', 'Explorer', 'muster_out'}
+
+    def test_scout_surveyor_pending_excludes_current_assignment(self):
+        """Scout Surveyor gets same + Courier + Explorer + muster_out (not Surveyor in others)."""
+        projection = replay(1, self._through_advancement(assignment='Surveyor'))
+
+        pending = next(p for p in projection.pending_inputs if isinstance(p, PendingAssignmentChangeChoice))
+        assert 'Surveyor' not in pending.options
+        assert 'Courier' in pending.options
+        assert 'Explorer' in pending.options
+        assert 'same' in pending.options
+        assert 'muster_out' in pending.options
+
+    def test_scholar_also_gets_assignment_change_pending(self):
+        """Scholar also allows assignment changes."""
+        projection = replay(1, self._through_advancement_scholar())
+
+        assert any(isinstance(p, PendingAssignmentChangeChoice) for p in projection.pending_inputs)
+
+    def test_agent_does_not_get_assignment_change_pending(self):
+        """Agent (allows_assignment_change=false) creates PendingReenlist, not PendingAssignmentChangeChoice."""
+        events = [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Agent', assignment='Intelligence', qualification_roll=7),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=3),  # generic event, no special effect
+            AdvancementEvent(id=7, fulfills='6.0', roll=9),
+        ]
+        projection = replay(1, events)
+
+        assert not any(isinstance(p, PendingAssignmentChangeChoice) for p in projection.pending_inputs)
+        assert any(isinstance(p, PendingReenlist) for p in projection.pending_inputs)
+
+    # ── successful assignment change ───────────────────────────────────────────
+
+    def test_successful_change_updates_current_assignment(self):
+        """A passing qualification roll changes current_assignment."""
+        # Scout: INT 5+, INT=9 (DM+1), roll 5 → 5+1=6 >= 5 (success)
+        events = [
+            *self._through_advancement(),
+            AssignmentChangeChoiceEvent(id=8, fulfills='7.0', choice='Surveyor', qualification_roll=5),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.current_assignment == 'Surveyor'
+
+    def test_successful_change_keeps_career(self):
+        """Successful assignment change keeps character in the same career."""
+        events = [
+            *self._through_advancement(),
+            AssignmentChangeChoiceEvent(id=8, fulfills='7.0', choice='Surveyor', qualification_roll=5),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.current_career == 'Scout'
+
+    def test_successful_change_increments_term_count(self):
+        """Successful assignment change starts a new term."""
+        events = [
+            *self._through_advancement(),
+            AssignmentChangeChoiceEvent(id=8, fulfills='7.0', choice='Surveyor', qualification_roll=5),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.term_count == 2
+
+    def test_successful_change_creates_skill_table_pending(self):
+        """After successful assignment change, a skill table choice is presented."""
+        events = [
+            *self._through_advancement(),
+            AssignmentChangeChoiceEvent(id=8, fulfills='7.0', choice='Surveyor', qualification_roll=5),
+        ]
+        projection = replay(1, events)
+
+        assert any(isinstance(p, PendingSkillTable) for p in projection.pending_inputs)
+
+    def test_successful_change_new_skill_table_options_include_new_assignment(self):
+        """After changing to Surveyor, the skill table options include the surveyor table."""
+        events = [
+            *self._through_advancement(),
+            AssignmentChangeChoiceEvent(id=8, fulfills='7.0', choice='Surveyor', qualification_roll=5),
+        ]
+        projection = replay(1, events)
+
+        pending = next(p for p in projection.pending_inputs if isinstance(p, PendingSkillTable))
+        assert 'surveyor' in pending.options
+
+    # ── failed assignment change ───────────────────────────────────────────────
+
+    def test_failed_change_keeps_original_assignment(self):
+        """A failing qualification roll leaves assignment unchanged."""
+        # Scout: INT 5+, INT=9 (DM+1), roll 3 → 3+1=4 < 5 (fail)
+        events = [
+            *self._through_advancement(),
+            AssignmentChangeChoiceEvent(id=8, fulfills='7.0', choice='Surveyor', qualification_roll=3),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.current_assignment == 'Courier'
+
+    def test_failed_change_creates_reenlist_pending(self):
+        """Failed qualification for assignment change creates PendingReenlist (same or muster out)."""
+        events = [
+            *self._through_advancement(),
+            AssignmentChangeChoiceEvent(id=8, fulfills='7.0', choice='Surveyor', qualification_roll=3),
+        ]
+        projection = replay(1, events)
+
+        assert any(isinstance(p, PendingReenlist) for p in projection.pending_inputs)
+
+    def test_failed_change_reenlist_true_continues_same_assignment(self):
+        """After failed change, choosing reenlist=True continues with original assignment."""
+        events = [
+            *self._through_advancement(),
+            AssignmentChangeChoiceEvent(id=8, fulfills='7.0', choice='Surveyor', qualification_roll=3),
+            ReenlistEvent(id=9, fulfills='8.0', reenlist=True),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.current_assignment == 'Courier'
+        assert projection.summary.current_career == 'Scout'
+        assert any(isinstance(p, PendingSkillTable) for p in projection.pending_inputs)
+
+    def test_failed_change_reenlist_false_ends_career(self):
+        """After failed change, choosing reenlist=False musters out."""
+        events = [
+            *self._through_advancement(),
+            AssignmentChangeChoiceEvent(id=8, fulfills='7.0', choice='Surveyor', qualification_roll=3),
+            ReenlistEvent(id=9, fulfills='8.0', reenlist=False),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.current_career is None
+
+    # ── validation ─────────────────────────────────────────────────────────────
+
+    def test_assignment_change_to_unknown_assignment_raises(self):
+        """Attempting to change to a non-existent assignment raises ReplayError."""
+        events = [
+            *self._through_advancement(),
+            AssignmentChangeChoiceEvent(id=8, fulfills='7.0', choice='Admiral', qualification_roll=5),
+        ]
+        with pytest.raises(ReplayError):
+            replay(1, events)
+
+    def test_assignment_change_without_qual_roll_raises(self):
+        """Providing an assignment name without a qualification_roll raises ReplayError."""
+        events = [
+            *self._through_advancement(),
+            AssignmentChangeChoiceEvent(id=8, fulfills='7.0', choice='Surveyor'),
+        ]
+        with pytest.raises(ReplayError):
+            replay(1, events)

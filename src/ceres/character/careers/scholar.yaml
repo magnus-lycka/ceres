@@ -1,5 +1,6 @@
 name: Scholar
 source: Core
+allows_assignment_change: true
 
 qualification:
   characteristic: INT

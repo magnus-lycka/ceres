@@ -218,6 +218,7 @@ default rules:
 - `SpinExtSolarPanelsTL8`
 - `SpinExtSterlingFissionPlantTL8`
 - `SpinExtPlasmaDrive`
+- `SpinExtPrimitiveHull`
 
 If a class is imported from a source-specific module directly, shorter names may
 be acceptable inside that module, but the package-level facade should avoid
@@ -250,7 +251,9 @@ choice is settled.
 
 Do not refactor all ship modules now. The next practical step is:
 
-1. Consider converting `power.py` into the package structure above if solar or
+1. `hull` now follows the package structure with `standard.py` and `spinext.py`
+   so Spinward Extents primitive hulls can stay separate from default hulls.
+2. Consider converting `power.py` into the package structure above if solar or
    source-specific power support grows further.
-2. Continue the drives package cleanup only when another source-specific drive
+3. Continue the drives package cleanup only when another source-specific drive
    change makes it worthwhile.

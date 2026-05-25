@@ -211,6 +211,34 @@ def test_build_event_career_choice():
     assert event.qualification_roll == 8
 
 
+def test_build_event_career_event_uses_generic_context():
+    from starlette.datastructures import FormData
+
+    from ceres.character.events import CareerChoiceEvent
+    from ceres.character.web.routes import _build_event_from_form
+
+    form = FormData({'career': 'Scholar', 'roll': '8', 'choice': 'accept'})
+    event = _build_event_from_form('career_event', '9.0', form)
+    assert isinstance(event, CareerChoiceEvent)
+    assert event.context == 'scholar_event_8'
+    assert event.choice == 'accept'
+    assert event.fulfills == '9.0'
+
+
+def test_build_event_career_mishap_uses_generic_context():
+    from starlette.datastructures import FormData
+
+    from ceres.character.events import CareerChoiceEvent
+    from ceres.character.web.routes import _build_event_from_form
+
+    form = FormData({'career': 'Agent', 'roll': '5', 'choice': 'ally'})
+    event = _build_event_from_form('career_mishap', '8.0', form)
+    assert isinstance(event, CareerChoiceEvent)
+    assert event.context == 'agent_mishap_5'
+    assert event.choice == 'ally'
+    assert event.fulfills == '8.0'
+
+
 def test_build_event_reenlist_true():
     from starlette.datastructures import FormData
 

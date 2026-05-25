@@ -27,6 +27,15 @@ class RankBonus(BaseModel):
     level: int = 1
     choices: list[str] | None = None  # if player picks which broad skill to gain
 
+    def resolve_choices(self) -> list[str] | None:
+        from ceres.character.skills import skill_names_for_category
+
+        if self.choices:
+            return self.choices
+        if self.skill:
+            return skill_names_for_category(self.skill)
+        return None
+
 
 class RankEntry(BaseModel):
     rank: int
@@ -79,6 +88,7 @@ class CareerData(BaseModel):
     events: dict[int, CareerEventEntry]  # 2D roll → event
     mishaps: dict[int, MishapEntry]  # 1D roll → mishap
     muster_out: MusterOutData | None = None
+    allows_assignment_change: bool
 
     def assignment(self, name: str) -> AssignmentData | None:
         return next((a for a in self.assignments if a.name == name), None)
@@ -88,3 +98,20 @@ class CareerData(BaseModel):
 
     def assignment_ranks(self, assignment_name: str) -> dict[int, RankEntry]:
         return self.ranks_by_assignment.get(assignment_name, self.ranks)
+
+    def available_tables(self, edu: int, current_assignment: str) -> list[str]:
+        """Return skill table names available to this character.
+
+        Excludes tables that belong to a different assignment, and tables whose min_edu
+        the character does not meet.
+        """
+        assignment_names_lower = {a.name.lower() for a in self.assignments}
+        current_lower = current_assignment.lower()
+        result = []
+        for name, table in self.skill_tables.items():
+            if name in assignment_names_lower and name != current_lower:
+                continue
+            if table.min_edu is not None and edu < table.min_edu:
+                continue
+            result.append(name)
+        return sorted(result)

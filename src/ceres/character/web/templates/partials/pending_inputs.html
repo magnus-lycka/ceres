@@ -282,71 +282,22 @@
         </div>
       </div>
 
-      {# ── Career Event: Scholar Event 3 ──────────────────────────────────── #}
-      {% elif pi.kind == 'career_event' and extra.get('sub_kind') == 'scholar_event_3' %}
-      <input type="hidden" name="career" value="{{ extra.get('career', '') }}">
-      <input type="hidden" name="roll" value="{{ extra.get('roll', 0) }}">
+      {# ── Career Event / Mishap: buttons from pi.options ─────────────────── #}
+      {% elif pi.kind in ('career_event', 'career_mishap') %}
+      <input type="hidden" name="career" value="{{ pi.career }}">
+      <input type="hidden" name="roll" value="{{ pi.roll }}">
       <div class="flex gap-3 mb-4">
-        <button type="submit" name="choice" value="accept"
-                class="bg-amber-700 hover:bg-amber-600 text-white font-bold px-6 py-3 text-sm uppercase tracking-wide">
-          Accept
+        {% for opt in pi.options %}
+        <button type="submit" name="choice" value="{{ opt }}"
+                class="{% if loop.first %}bg-amber-700 hover:bg-amber-600{% else %}bg-gray-700 hover:bg-gray-600{% endif %} text-white font-bold px-6 py-3 text-sm uppercase tracking-wide">
+          {{ opt | replace('_', ' ') | title }}
         </button>
-        <button type="submit" name="choice" value="decline"
-                class="bg-gray-700 hover:bg-gray-600 text-white font-bold px-6 py-3 text-sm uppercase tracking-wide">
-          Decline
-        </button>
+        {% endfor %}
       </div>
 
-      {# ── Career Event: Scholar Event 8 ──────────────────────────────────── #}
-      {% elif pi.kind == 'career_event' and extra.get('sub_kind') == 'scholar_event_8' %}
-      <input type="hidden" name="career" value="{{ extra.get('career', '') }}">
-      <input type="hidden" name="roll" value="{{ extra.get('roll', 0) }}">
-      <div class="flex gap-3 mb-4">
-        <button type="submit" name="choice" value="accept"
-                class="bg-amber-700 hover:bg-amber-600 text-white font-bold px-6 py-3 text-sm uppercase tracking-wide">
-          Accept
-        </button>
-        <button type="submit" name="choice" value="refuse"
-                class="bg-gray-700 hover:bg-gray-600 text-white font-bold px-6 py-3 text-sm uppercase tracking-wide">
-          Refuse
-        </button>
-      </div>
-
-      {# ── Career Mishap: Scholar Mishap 3 ────────────────────────────────── #}
-      {% elif pi.kind == 'career_mishap' and extra.get('sub_kind') == 'scholar_mishap_3' %}
-      <input type="hidden" name="career" value="{{ extra.get('career', '') }}">
-      <input type="hidden" name="roll" value="{{ extra.get('roll', 0) }}">
-      <div class="flex gap-3 mb-4">
-        <button type="submit" name="choice" value="openly"
-                class="bg-amber-700 hover:bg-amber-600 text-white font-bold px-6 py-3 text-sm uppercase tracking-wide">
-          Openly
-        </button>
-        <button type="submit" name="choice" value="secretly"
-                class="bg-gray-700 hover:bg-gray-600 text-white font-bold px-6 py-3 text-sm uppercase tracking-wide">
-          Secretly
-        </button>
-      </div>
-
-      {# ── Career Mishap: Scholar Mishap 5 ────────────────────────────────── #}
-      {% elif pi.kind == 'career_mishap' and extra.get('sub_kind') == 'scholar_mishap_5' %}
-      <input type="hidden" name="career" value="{{ extra.get('career', '') }}">
-      <input type="hidden" name="roll" value="{{ extra.get('roll', 0) }}">
-      <div class="flex gap-3 mb-4">
-        <button type="submit" name="choice" value="give_up"
-                class="bg-gray-700 hover:bg-gray-600 text-white font-bold px-6 py-3 text-sm uppercase tracking-wide">
-          Give Up
-        </button>
-        <button type="submit" name="choice" value="start_again"
-                class="bg-amber-700 hover:bg-amber-600 text-white font-bold px-6 py-3 text-sm uppercase tracking-wide">
-          Start Again
-        </button>
-      </div>
-
-      {# ── Career Skill Roll (e.g. Scholar Event 8) ───────────────────────── #}
+      {# ── Career Skill Roll ──────────────────────────────────────────────── #}
       {% elif pi.kind == 'career_skill_roll' %}
-      <input type="hidden" name="context" value="{{ extra.get('context', '') }}">
-      <input type="hidden" name="career" value="{{ extra.get('career', '') }}">
-      <input type="hidden" name="roll" value="{{ extra.get('roll', 0) }}">
+      <input type="hidden" name="context" value="{{ pi.context }}">
       <div class="space-y-3 mb-4">
         <div>
           <label class="block text-xs text-gray-500 mb-1">Skill to roll</label>

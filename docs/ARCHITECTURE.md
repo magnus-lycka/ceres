@@ -386,3 +386,24 @@ We have studied Mark F. Anderson's ship design tool output and other external
 sources, but cross-cutting decisions such as unsupported drive cost reduction
 labels and unsupported retro starship computer pricing should now be recorded
 in `RULE_INTERPRETATIONS.md` rather than duplicated here.
+
+## Character creation: career encapsulation rule
+
+**No code outside `src/ceres/character/career/` may hardcode anything
+career-specific.** Adding a new career must require changes only within that
+package.
+
+What this means in practice:
+
+- Career names, roll numbers, and event/mishap option sets are owned by the
+  career package. External code — routes, templates, projection, bulk generation
+  — treats careers generically.
+- `PendingCareerEvent` and `PendingCareerMishap` carry `options: list[str]` set
+  by the career handler. The UI renders those options as buttons; it has no
+  knowledge of which career produced them.
+- Per-career event/mishap logic lives in `src/ceres/character/career/<name>.py`
+  and is registered via that career's `CHOICE_HANDLERS`. The replay engine
+  dispatches through `CareerChoiceEvent.context` without knowing the career.
+- `CareerData` is the right place to add any data that generic infrastructure
+  needs to query about a career (e.g., available tables, rank bonus rules). Do
+  not let those queries leak out as hardcoded conditionals elsewhere.

@@ -1,11 +1,79 @@
+from dataclasses import dataclass
+import random
+import re
 from typing import Annotated, Any, Literal, cast, overload
 
 from pydantic import BaseModel, Field
 
 from ceres.character.benefits import AnyBenefit, ItemBenefit
+from ceres.character.careers.career_data import CareerData
 from ceres.character.characteristics import Chars
-from ceres.character.skills import AnySkill, Level, Skill
+from ceres.character.events import (
+    AdvancementDmChoiceEvent,
+    AdvancementEvent,
+    AgingCrisisEvent,
+    AgingRollEvent,
+    AnyEvent,
+    AssignmentChangeChoiceEvent,
+    BackgroundSkillsEvent,
+    BenefitChoiceEvent,
+    CareerChoiceEvent,
+    CareerEvent,
+    CharacteristicChoiceEvent,
+    ConnectionKindChoiceEvent,
+    ConnectionsRollEvent,
+    DoubleInjuryTableEvent,
+    InjuryTableEvent,
+    LifeEventEvent,
+    LifeEventUnusualEvent,
+    MishapEvent,
+    MusterOutEvent,
+    ReenlistEvent,
+    SkillChoiceEvent,
+    SkillRollEvent,
+    SkillTableEvent,
+    SurviveEvent,
+    TermEventEvent,
+    UcpEvent,
+)
+from ceres.character.skills import AnySkill, Level, Skill, skill_class_by_name
 from ceres.shared import CeresModel
+
+_CONNECTION_TYPE_RE = re.compile(r'\b(contacts?|allies|ally|rivals?|enemies|enemy)\b', re.IGNORECASE)
+_CONNECTION_TYPE_MAP: dict[str, str] = {
+    'contacts': 'contact',
+    'allies': 'ally',
+    'rivals': 'rival',
+    'enemies': 'enemy',
+}
+_CHOOSE_COUNT_RE = re.compile(r'Choose (\d+)')
+
+
+def _roll2d(rng: random.Random) -> int:
+    return rng.randint(1, 6) + rng.randint(1, 6)
+
+
+def _roll1d(rng: random.Random) -> int:
+    return rng.randint(1, 6)
+
+
+def _connection_kind(instruction: str) -> Literal['contact', 'ally', 'rival', 'enemy']:
+    m = _CONNECTION_TYPE_RE.search(instruction)
+    if not m:
+        return 'contact'
+    word = m.group(1).lower()
+    candidate = _CONNECTION_TYPE_MAP.get(word, word)
+    if candidate in ('contact', 'ally', 'rival', 'enemy'):
+        return cast(Literal['contact', 'ally', 'rival', 'enemy'], candidate)
+    return 'contact'
+
+
+@dataclass(frozen=True)
+class AutoFillContext:
+    career: str
+    assignment: str | None
+    max_terms: int
+    careers: dict[str, CareerData]
 
 
 class PendingInputBase(BaseModel):
@@ -52,6 +120,16 @@ class PendingReenlist(PendingInputBase):
     kind: Literal['reenlist'] = 'reenlist'
 
 
+class PendingAssignmentChangeChoice(PendingInputBase):
+    """End-of-term choice for careers that allow intra-career assignment changes.
+
+    options: ['same', 'muster_out', *other_assignment_names]
+    Resolved by AssignmentChangeChoiceEvent.
+    """
+
+    kind: Literal['assignment_change_choice'] = 'assignment_change_choice'
+
+
 class PendingMusterOut(PendingInputBase):
     kind: Literal['muster_out'] = 'muster_out'
 
@@ -66,6 +144,7 @@ class PendingInitialTrainingChoice(PendingInputBase):
 
 class PendingSkillTableChoice(PendingInputBase):
     kind: Literal['skill_table_choice'] = 'skill_table_choice'
+    reenlist_queued: bool = False  # True when reenlist/aging already queued (end-of-term path)
 
 
 class PendingRankBonusChoice(PendingInputBase):
@@ -178,6 +257,7 @@ type AnyPending = Annotated[
     | PendingAdvancement
     | PendingSkillTable
     | PendingReenlist
+    | PendingAssignmentChangeChoice
     | PendingMusterOut
     | PendingSkillChoice
     | PendingInitialTrainingChoice
@@ -358,11 +438,180 @@ class CharacterProjection(BaseModel):
     ) -> bool:
         return choice in self.skill_choices(skill_types, level)
 
+    def _pick_skill_auto(self, options: list[str], rng: random.Random, level: int | None) -> AnySkill | None:
+        valid = [o for o in options if o != 'advancement_dm_4']
+        rng.shuffle(valid)
+        for name in valid:
+            try:
+                cls = skill_class_by_name(name)
+            except ValueError:
+                continue
+            choices = self.skill_choices([cls], level)
+            if choices:
+                return rng.choice(choices)
+        return None
+
+    def auto_event(self, pi: AnyPending, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        """Generate a random event to auto-fulfill a pending input."""
+        match pi:
+            case PendingUcp():
+                ucp = ''.join(f'{_roll2d(rng):X}' for _ in range(6))
+                return UcpEvent(ucp=ucp, fulfills=pi.id)
+
+            case PendingBackgroundSkills():
+                m = _CHOOSE_COUNT_RE.search(pi.instruction)
+                count = int(m.group(1)) if m else 3
+                shuffled = list(pi.options)
+                rng.shuffle(shuffled)
+                skills: list[AnySkill] = []
+                for name in shuffled:
+                    if len(skills) >= count:
+                        break
+                    try:
+                        cls = skill_class_by_name(name)
+                        skills.append(cast(AnySkill, cls()))
+                    except ValueError:
+                        pass
+                return BackgroundSkillsEvent(skills=skills, fulfills=pi.id)
+
+            case PendingCareerChoice():
+                career_data = ctx.careers.get(ctx.career)
+                if career_data is None:
+                    career_data = ctx.careers[rng.choice(sorted(ctx.careers.keys()))]
+                if ctx.assignment and any(a.name == ctx.assignment for a in career_data.assignments):
+                    assignment = ctx.assignment
+                else:
+                    assignment = rng.choice([a.name for a in career_data.assignments])
+                return CareerEvent(
+                    career=career_data.name,
+                    assignment=assignment,
+                    qualification_roll=12,
+                    fulfills=pi.id,
+                )
+
+            case PendingSurvive():
+                return SurviveEvent(roll=_roll2d(rng), fulfills=pi.id)
+
+            case PendingTermEvent():
+                return TermEventEvent(roll=_roll2d(rng), fulfills=pi.id)
+
+            case PendingMishap():
+                return MishapEvent(roll=_roll1d(rng), fulfills=pi.id)
+
+            case PendingAdvancement():
+                return AdvancementEvent(roll=_roll2d(rng), fulfills=pi.id)
+
+            case PendingSkillTable():
+                table = rng.choice(pi.options) if pi.options else 'service_skills'
+                return SkillTableEvent(table=table, roll=_roll1d(rng), fulfills=pi.id)
+
+            case PendingInitialTrainingChoice():
+                skill = self._pick_skill_auto(pi.options, rng, 0)
+                if skill is not None:
+                    return SkillChoiceEvent(skill=skill, fulfills=pi.id)
+                return AdvancementDmChoiceEvent(fulfills=pi.id)
+
+            case PendingSkillTableChoice() | PendingSkillChoice():
+                skill = self._pick_skill_auto(pi.options, rng, None)
+                if skill is not None:
+                    return SkillChoiceEvent(skill=skill, fulfills=pi.id)
+                return AdvancementDmChoiceEvent(fulfills=pi.id)
+
+            case PendingRankBonusChoice():
+                skill = self._pick_skill_auto(pi.options, rng, pi.level)
+                if skill is not None:
+                    return SkillChoiceEvent(skill=skill, fulfills=pi.id)
+                return AdvancementDmChoiceEvent(fulfills=pi.id)
+
+            case PendingCareerSkillChoice():
+                skill = self._pick_skill_auto(pi.options, rng, None)
+                if skill is not None:
+                    return SkillChoiceEvent(skill=skill, fulfills=pi.id)
+                return AdvancementDmChoiceEvent(fulfills=pi.id)
+
+            case PendingReenlist():
+                return ReenlistEvent(reenlist=self.summary.term_count < ctx.max_terms, fulfills=pi.id)
+
+            case PendingAssignmentChangeChoice():
+                if self.summary.term_count < ctx.max_terms:
+                    return AssignmentChangeChoiceEvent(choice='same', fulfills=pi.id)
+                return AssignmentChangeChoiceEvent(choice='muster_out', fulfills=pi.id)
+
+            case PendingMusterOut():
+                tables: list[Literal['cash', 'benefits']] = ['cash', 'benefits']
+                return MusterOutEvent(table=rng.choice(tables), roll=_roll1d(rng), fulfills=pi.id)
+
+            case PendingAgingRoll():
+                return AgingRollEvent(roll=_roll2d(rng), fulfills=pi.id)
+
+            case PendingNearlyKilled() | PendingInjuryTable():
+                return InjuryTableEvent(roll=_roll1d(rng), fulfills=pi.id)
+
+            case PendingDoubleInjuryRoll():
+                return DoubleInjuryTableEvent(roll1=_roll1d(rng), roll2=_roll1d(rng), fulfills=pi.id)
+
+            case PendingBenefitChoice():
+                return BenefitChoiceEvent(
+                    choice_index=rng.randint(0, len(pi.benefit_options) - 1),
+                    fulfills=pi.id,
+                )
+
+            case PendingLifeEvent():
+                return LifeEventEvent(roll=_roll2d(rng), fulfills=pi.id)
+
+            case PendingLifeEventUnusual():
+                return LifeEventUnusualEvent(roll=_roll1d(rng), fulfills=pi.id)
+
+            case PendingConnectionsRoll():
+                return ConnectionsRollEvent(
+                    connection_type=_connection_kind(pi.instruction),
+                    count=_roll1d(rng),
+                    fulfills=pi.id,
+                )
+
+            case PendingCharacteristicChoice() | PendingAgingChoice() | PendingAgingChoiceMental():
+                char = rng.choice(pi.options) if pi.options else 'STR'
+                return CharacteristicChoiceEvent(characteristic=Chars(char), fulfills=pi.id)
+
+            case PendingLifeEventChoice():
+                kinds: list[Literal['contact', 'ally', 'rival', 'enemy']] = [
+                    'contact',
+                    'ally',
+                    'rival',
+                    'enemy',
+                ]
+                return ConnectionKindChoiceEvent(connection_kind=rng.choice(kinds), fulfills=pi.id)
+
+            case PendingAgingCrisis():
+                return AgingCrisisEvent(paid=False, medical_roll=0, fulfills=pi.id)
+
+            case PendingCareerEvent():
+                context = f'{pi.career.lower()}_event_{pi.roll}'
+                choice = rng.choice(list(pi.options)) if pi.options else ''
+                return CareerChoiceEvent(context=context, choice=choice, fulfills=pi.id)
+
+            case PendingCareerMishap():
+                context = f'{pi.career.lower()}_mishap_{pi.roll}'
+                choice = rng.choice(list(pi.options)) if pi.options else ''
+                return CareerChoiceEvent(context=context, choice=choice, fulfills=pi.id)
+
+            case PendingCareerSkillRoll():
+                skill_str = rng.choice(pi.options) if pi.options else 'Admin'
+                try:
+                    auto_skill: AnySkill | Chars = Chars(skill_str)
+                except ValueError:
+                    auto_skill = cast(AnySkill, skill_class_by_name(skill_str)())
+                return SkillRollEvent(context=pi.context, skill=auto_skill, modified_roll=_roll2d(rng), fulfills=pi.id)
+
+            case _:
+                raise ValueError(f'No auto_event handler for {type(pi).__name__!r}')
+
 
 __all__ = [
     'Ally',
     'AnyConnection',
     'AnyPending',
+    'AutoFillContext',
     'CharacterProjection',
     'CharacterSummary',
     'Connection',
@@ -370,6 +619,7 @@ __all__ = [
     'Enemy',
     'make_connection',
     'PendingAdvancement',
+    'PendingAssignmentChangeChoice',
     'Rival',
     'PendingAgingChoice',
     'PendingAgingChoiceMental',

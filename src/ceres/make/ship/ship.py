@@ -82,6 +82,21 @@ class Ship(ShipBase):
         if self.hull.configuration.military and self.displacement <= 5_000:
             notes.error(f'Military hull requires capital ship displacement: {self.displacement:,} <= 5,000 tons')
 
+        if getattr(self.hull.configuration, 'primitive', False) and self.drives is not None:
+            if self.drives.m_drive is not None:
+                notes.error('Primitive hull cannot fit manoeuvre drives')
+            if self.drives.j_drive is not None:
+                notes.error('Primitive hull cannot fit jump drives')
+            if self.drives.r_drive is not None and self.drives.r_drive.level > 3:
+                notes.error(
+                    f'Primitive hull cannot support reaction drive Thrust above 3: {self.drives.r_drive.level} > 3'
+                )
+            if self.drives.plasma_drive is not None and self.drives.plasma_drive.thrust > 3:
+                notes.error(
+                    'Primitive hull cannot support plasma drive Thrust above 3: '
+                    f'{self.drives.plasma_drive.thrust:g} > 3'
+                )
+
         power_shortfall = self.total_power_load - self.available_power
         if power_shortfall > 0.005 and (self.power is None or self.power.plant is None):
             notes.warning(f'Power: capacity {power_shortfall:.2f} less than max use')
@@ -121,6 +136,8 @@ class Ship(ShipBase):
 
     @property
     def basic_hull_power_load(self) -> float:
+        if getattr(self.hull.configuration, 'primitive', False):
+            return float(ceil(self.displacement * 0.01))
         base = self.displacement * 0.2
         if self.hull.configuration.non_gravity:
             base *= 0.5

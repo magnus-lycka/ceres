@@ -150,15 +150,22 @@ Implement Spinward Extents primitive hulls.
 
 Reference: `refs/spinext/59_arcturus.md`
 
+Started in `src/ceres/make/ship/hull/spinext.py`:
+
+- `hull` is now a package with `standard.py` and `spinext.py`
+- `SpinExtPrimitiveHull` is separate from `non_gravity=True`
+- base primitive hull cost, basic ship systems Power, Hull point reduction, and
+  invalid-drive notes are implemented
+
 Primitive hulls are not the same thing as existing High Guard `non_gravity`
 hulls. They are a separate low-tech spacecraft construction model:
 
 - no artificial gravity, lifter support, advanced environmental controls, or
   structural support for high-G manoeuvres
-- cannot fit manoeuvre drives or jump drives
-- cannot support reaction thruster acceleration above Thrust 3
-- cost Cr15000/ton and use basic ship systems Power equal to 1% of hull tonnage
-- -50% Hull points
+- cannot fit manoeuvre drives or jump drives ✅
+- cannot support reaction thruster acceleration above Thrust 3 ✅
+- cost Cr15000/ton and use basic ship systems Power equal to 1% of hull tonnage ✅
+- -50% Hull points ✅
 - may still use Reinforced/Light Hulls, hull configurations, special hulls,
   armour, and hull options
 - primitive asteroid hulls cost Cr2000/ton and do not suffer reduced Hull

@@ -1,5 +1,6 @@
 from ceres.make.ship import hull
 from ceres.make.ship.base import ShipBase
+from ceres.make.ship.drives import DriveSection, JDrive1, MDrive1, RDrive4, SpinExtPlasmaDrive
 from ceres.make.ship.ship import Ship
 
 
@@ -14,6 +15,43 @@ def test_standard_hull():
     assert hull_config.armour_volume_modifier == 1
     assert hull_config.cost(100) == 5_000_000
     assert hull_config.points(100) == 40
+
+
+def test_spinext_primitive_hull_basic_values():
+    hull_config = hull.SpinExtPrimitiveHull(streamlined=hull.Streamlined.PARTIAL)
+    my_ship = Ship(tl=8, displacement=100, hull=hull.Hull(configuration=hull_config))
+
+    assert hull_config.cost(100) == 1_500_000
+    assert hull_config.points(100) == 20
+    assert my_ship.hull_cost == 1_500_000
+    assert my_ship.hull_points == 20
+    assert my_ship.basic_hull_power_load == 1
+
+
+def test_spinext_primitive_hull_rejects_incompatible_drives():
+    hull_config = hull.SpinExtPrimitiveHull(streamlined=hull.Streamlined.PARTIAL)
+    my_ship = Ship(
+        tl=8,
+        displacement=100,
+        hull=hull.Hull(configuration=hull_config),
+        drives=DriveSection(m_drive=MDrive1(), j_drive=JDrive1(), r_drive=RDrive4()),
+    )
+
+    assert 'Primitive hull cannot fit manoeuvre drives' in my_ship.notes.errors
+    assert 'Primitive hull cannot fit jump drives' in my_ship.notes.errors
+    assert 'Primitive hull cannot support reaction drive Thrust above 3: 4 > 3' in my_ship.notes.errors
+
+
+def test_spinext_primitive_hull_rejects_excessive_plasma_thrust():
+    hull_config = hull.SpinExtPrimitiveHull(streamlined=hull.Streamlined.PARTIAL)
+    my_ship = Ship(
+        tl=8,
+        displacement=100,
+        hull=hull.Hull(configuration=hull_config),
+        drives=DriveSection(plasma_drive=SpinExtPlasmaDrive(thrust=4)),
+    )
+
+    assert 'Primitive hull cannot support plasma drive Thrust above 3: 4 > 3' in my_ship.notes.errors
 
 
 def test_streamlined_hull():

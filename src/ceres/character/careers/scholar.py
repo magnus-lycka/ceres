@@ -61,7 +61,9 @@ def _choice_scholar_event_3(projection: CharacterProjection, event) -> None:
             )
         if projection.summary.current_career is not None:
             career = _current_career(projection)
-            projection.pending_inputs.append(_advancement_pending(projection, career, event.id, 3))
+            projection.pending_inputs.append(
+                _advancement_pending(career, projection.summary.current_assignment or '', event.id, 3)
+            )
         # Extra benefit roll
         projection.muster_out_career = projection.summary.current_career
         projection.pending_inputs.append(
@@ -74,7 +76,9 @@ def _choice_scholar_event_3(projection: CharacterProjection, event) -> None:
     else:
         if projection.summary.current_career is not None:
             career = _current_career(projection)
-            projection.pending_inputs.append(_advancement_pending(projection, career, event.id))
+            projection.pending_inputs.append(
+                _advancement_pending(career, projection.summary.current_assignment or '', event.id)
+            )
 
 
 # ── event 6: advanced training ───────────────────────────────────────────────
@@ -138,7 +142,9 @@ def _choice_scholar_event_8(projection: CharacterProjection, event) -> None:
     if event.choice == 'refuse':
         if projection.summary.current_career is not None:
             career = _current_career(projection)
-            projection.pending_inputs.append(_advancement_pending(projection, career, event.id))
+            projection.pending_inputs.append(
+                _advancement_pending(career, projection.summary.current_assignment or '', event.id)
+            )
     else:
         projection.pending_inputs.append(
             PendingCareerSkillRoll(
