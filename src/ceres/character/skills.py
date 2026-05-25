@@ -497,6 +497,22 @@ def skill_list(skill_union: object = AnySkill) -> tuple[SkillInfo, ...]:
     return tuple(SkillInfo(skill.name(), skill.specialities()) for skill in _skill_classes(skill_union))
 
 
+_BROAD_SKILL_GROUPS: dict[str, object] = {
+    'Art': Arts,
+    'Language': Languages,
+    'Profession': Professions,
+    'Science': Sciences,
+}
+
+
+def skill_names_for_category(category: str) -> list[str] | None:
+    """Return names of all skills in a broad category (e.g. 'Language'), or None if not recognised."""
+    group = _BROAD_SKILL_GROUPS.get(category)
+    if group is None:
+        return None
+    return [cls.name() for cls in _skill_classes(group)]
+
+
 def skill_class_by_name(name: str) -> type[Skill]:
     for cls in _skill_classes(AnySkill):
         if cls.name() == name:

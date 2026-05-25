@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Ceres{% endblock %} — Traveller Character Tools</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@2.0.3/dist/htmx.min.js"></script>
+  <style>
+    [x-cloak] { display: none !important; }
+    .htmx-indicator { opacity: 0; transition: opacity 0.2s; }
+    .htmx-request .htmx-indicator { opacity: 1; }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-200 min-h-screen font-mono">
+
+  <nav class="bg-gray-900 border-b border-amber-800/40 px-6 py-3 flex gap-6 items-center">
+    <a href="/ui/" class="text-amber-400 font-bold text-lg tracking-widest uppercase">Ceres</a>
+    <span class="text-gray-700">|</span>
+    <a href="/ui/" class="text-gray-400 hover:text-amber-300 text-sm uppercase tracking-wide">Characters</a>
+    <a href="/ui/gallery/new" class="text-gray-400 hover:text-amber-300 text-sm uppercase tracking-wide">NPC Gallery</a>
+  </nav>
+
+  <main class="container mx-auto px-6 py-8 max-w-5xl">
+    {% block content %}{% endblock %}
+  </main>
+
+</body>
+</html>

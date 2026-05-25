@@ -99,22 +99,6 @@ Note:
 - external loads should affect effective displacement for drive-performance calculations
 - this likely wants parameterized specs, e.g. performance at `+X dTons`
 
-## Non-Gravity Hull
-
-Basic hulls include artificial gravity, using grav plates to ensure a normal gravitational environment for the comfort and convenience of the crew. Hulls can be built cheaper without artificial grav plating, using specific configurations that allow the hull to constantly spin in order to generate gravity if desired. Non-gravity hulls reduce hull cost by 50% but are limited to a maximum size of 500,000 tons due to structural limitations. Base Power Requirements for non-gravity hulls are half that of other hull types. See Power Requirements on page 17 for more information.
-
-Current status:
-
-- hull cost reduction implemented
-- basic hull power reduction implemented
-- 500,000-ton maximum size reported as a ship error
-
-Remaining work:
-
-- decide how to model spin-capable layouts separately from the generic `non_gravity=True` flag
-
-*To use this and still get artificial gravity the ship must be able to spin. It could be a torus, a cylinder or something like a capsule connected to a counterweight with a wire (of course it could be two capsules acting as counterweights to each other, but you might have heavy stuff, like power plant, where you don't need full gravity). Either way, the spin radius must be big enough to make this more good than bad. One can of course settle for less than 1G gravity, but there are several well known issues. Both torus and capsule with counterweight would -- I think be dispersed structure. A cyliner, which could be a standard structure, would have to be huge, and either a lot of wasted space or most areas wouls have much less gravity. With rotation, there are several issues, which all get worse with less radius (which also means faster rotation): Things fall in tangential direction, not at all same as perceived down. Coriolis effects are stronger. Rapid spin makes people dizzy etc. All of this will place a lower bound on reasonable radius. Of course, working in Zero-G with penalties is an option.*
-
 ## Culture property etc
 
 Ships are buit differently for different audiences.
@@ -160,45 +144,6 @@ Candidates that still need rule/API work:
 
 - plasma drives (tracked separately below)
 - source-specific drive families from non-HG books
-
-## Solar Energy Systems
-
-Settle the source split and complete solar energy support.
-
-Reference: `refs/hg/25_solar_energy_systems.md`
-Related comparison: `docs/solar-energy-systems-comparison.md`
-
-Four tiers (Basic TL6 through Advanced TL12) for both solar coating and solar panels.
-Rules include:
-
-- Solar coating only works on standard/sphere configurations; reduced 50% on close-structure/dispersed;
-  not available on streamlined (atmospheric stress).
-- Solar panels are deployed (cannot accelerate while deployed), measured in tons = units.
-- Coatings increase hull repair cost ×2.
-
-Some solar panel/coating support exists in code, but the source identity and
-API still need cleanup before extending it further.
-
-Spinward Extents (`refs/spinext/59_arcturus.md`) adds another solar technology
-family: TL6/TL8/TL12 solar panels, hull coatings, and solar sails with different
-tables and constraints. Decide whether Ceres should support only High Guard,
-only Spinward Extents, or both as separate variants such as `HGSolarPanel` and
-`SpinExtSolarPanel`. Do not merge them until the API and source identity are
-clear.
-
-Open questions:
-
-- SpinExt solar coating works in increments of 10 tons of displacement covered;
-  decide whether the API should take `covered_tons`, require multiples of 10, or
-  expose another representation.
-- SpinExt solar sails use "Thrust per %" based on the percentage of ship tonnage
-  dedicated to sails; decide rounding, display, and whether sails belong with
-  drives or power/auxiliary systems.
-- HG solar sail is a drive accessory (5% hull tonnage, MCr0.2/ton, effective Thrust 0,
-  prevents jump while deployed); SpinExt sails are scalable and can double as panels.
-  These must remain distinct classes — see `docs/solar-energy-systems-comparison.md`
-  for the detailed comparison. Placement decision (drives vs power vs auxiliary) is
-  tracked in `docs/plan-source-specific-ship-rules.md`.
 
 ## Primitive Hulls
 
@@ -261,27 +206,18 @@ Open questions:
   build specs should still produce notes/errors where the design itself violates
   construction limits.
 
-## Breakaway Hulls [todo]
+## Breakaway multi-section model
 
-A ship can be designed to separate into two or more independently operating
-sections. Each section must have its own bridge and power plant; drives, weapons,
-and screens are optional per section but combined while docked. The separation
-mechanism consumes 2% of the combined hull tonnage at MCr2/ton. Hull points
-of each section are proportional to the total.
+The current breakaway hull construction cost and tonnage support is complete
+for a single `Ship` design. Future work should only reopen this area when Ceres
+is ready to model multiple independently operating sections.
 
-Reference: `refs/hg/05_specialised_hull_types.md`
-
-Current status:
-
-- `breakaway: bool` field exists on `HullConfiguration` but has no effect on
-  cost, tonnage, or validation
-
-Remaining work:
+Open design questions:
 
 - decide whether breakaway sections are modelled as a single `Ship` with a
   sub-structure, or as two separate `Ship` objects linked by a relation
-- implement the 2% tonnage + MCr2/ton cost for the separation mechanism
-- validate that each section has at least a bridge and a power plant
+- validate that each section has at least a bridge and a power plant once
+  sections are explicit model objects
 - drive/weapon combining while docked is likely out of scope until a
   multi-section model exists
 
@@ -293,26 +229,9 @@ Allows artificial gravity through rotation instead of grav plates (relates to No
 Both require dedicated spin machinery (0.1 tons per ton of spun section) and increase hull cost
 per percent of spun hull. Hamster cage requires ring radius ≥15m.
 
-Probably out of scope until Non-Gravity Hull and the spin-radius calculation have a clear policy.
-
-## Hardened Systems — General Investigation [todo]
-
-References: `refs/hg/10_step_6_install_computer.md`, `refs/hg/26_drones.md`,
-`refs/hg/17_particle_beam.md`, `refs/hg/43_fleet_evaluation.md`
-
-`Computer` already supports `/fib` (+50% cost, ion immunity). The broader rule from HG is:
-
-> Any system that draws power from the power plant can be Hardened to render it immune to Ion weapons. A Hardened system has its cost increased by +50%.
-
-This implies every powered `ShipPart` could carry a `hardened: bool` flag. The fleet combat trait
-"Hardened" (from `43_fleet_evaluation.md`) requires ≥75% of powered systems to be Hardened.
-
-Before implementing, investigate:
-
-- Which published ship designs include hardened non-computer systems? How common is this in practice?
-- Is this a per-part flag, a hull-level option, or something else?
-- How does the 75%-threshold fleet trait interact with the per-part model?
-- Does radiation shielding's "treats the bridge as if Hardened" need to be modelled separately, or is it purely an operational note?
+Probably out of scope for `ceres.make.ship` unless Ceres later starts modelling
+layout dimensions. Spin radius and comfort are runtime/layout concerns; see
+RIS-021.
 
 ## Portable Computer Options and Specialised Computer Variants
 

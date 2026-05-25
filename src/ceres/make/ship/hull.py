@@ -300,6 +300,14 @@ class Hull(CeresModel):
             return 0.0
         return displacement * 100_000.0
 
+    def breakaway_tons(self, displacement: float) -> float:
+        if not self.configuration.breakaway:
+            return 0.0
+        return displacement * 0.02
+
+    def breakaway_cost(self, displacement: float) -> float:
+        return self.breakaway_tons(displacement) * 2_000_000.0
+
     def total_cost(self, displacement: float) -> float:
         base_cost = self.configuration.cost(displacement)
         if self.pressure_hull:
@@ -371,6 +379,20 @@ class Hull(CeresModel):
             spec.add_row(ship._spec_row_for_part(SpecSection.HULL, self.stealth))
         if self.adjustable_hull is not None:
             spec.add_row(ship._spec_row_for_part(SpecSection.HULL, self.adjustable_hull))
+        if self.configuration.breakaway:
+            notes = NoteList()
+            notes.info('Consumes 2% of combined hull tonnage for extra bulkheads and connections')
+            notes.info('Each breakaway section needs an appropriate bridge and power plant')
+            notes.info('Section drives, power plants, and weapons can be combined while sections are together')
+            spec.add_row(
+                SpecRow(
+                    section=SpecSection.HULL,
+                    item='Breakaway Hull Connections',
+                    tons=self.breakaway_tons(ship.displacement) or None,
+                    cost=self.breakaway_cost(ship.displacement) or None,
+                    notes=notes,
+                )
+            )
         if self.heat_shielding:
             spec.add_row(
                 SpecRow(

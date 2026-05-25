@@ -218,3 +218,34 @@ def test_military_hull_allowed_above_five_thousand_tons():
     )
 
     assert 'Military hull requires capital ship displacement' not in '\n'.join(my_ship.notes.errors)
+
+
+def test_breakaway_hull_adds_connections_to_spec_and_cost():
+    my_ship = Ship(
+        tl=12,
+        displacement=1_000,
+        hull=hull.Hull(configuration=hull.standard_hull.model_copy(update={'breakaway': True})),
+    )
+
+    row = my_ship.build_spec().row('Breakaway Hull Connections', section='Hull')
+
+    assert row.tons == 20
+    assert row.cost == 40_000_000
+    assert row.notes.infos == [
+        'Consumes 2% of combined hull tonnage for extra bulkheads and connections',
+        'Each breakaway section needs an appropriate bridge and power plant',
+        'Section drives, power plants, and weapons can be combined while sections are together',
+    ]
+    assert my_ship.expenses.production_cost == my_ship.hull_cost + 40_000_000
+
+
+def test_breakaway_hull_connections_reduce_residual_cargo_hold():
+    my_ship = Ship(
+        tl=12,
+        displacement=1_000,
+        hull=hull.Hull(configuration=hull.standard_hull.model_copy(update={'breakaway': True})),
+    )
+
+    row = my_ship.build_spec().row('Cargo Hold', section='Cargo')
+
+    assert row.tons == 980

@@ -1,4 +1,9 @@
 from ceres.character.events import BackgroundSkillsEvent, CharacterStartedEvent, UcpEvent
+from ceres.character.projection import (
+    PendingBackgroundSkills,
+    PendingCareerChoice,
+    PendingUcp,
+)
 from ceres.character.replay import BACKGROUND_SKILLS, ReplayError, replay
 from ceres.character.skills import Admin, Advocate, Athletics, Carouse, Drive, skill_list
 
@@ -28,7 +33,7 @@ class TestCharacterStarted:
 
         assert len(projection.pending_inputs) == 1
         assert projection.pending_inputs[0].id == '1.0'
-        assert projection.pending_inputs[0].kind == 'ucp'
+        assert isinstance(projection.pending_inputs[0], PendingUcp)
 
     def test_ucp_pending_is_blocking(self):
         projection = replay(1, [_started()])
@@ -49,21 +54,21 @@ class TestCharacterStarted:
     def test_first_pending_input_is_ucp(self):
         projection = replay(1, [_started()])
 
-        assert projection.pending_inputs[0].kind == 'ucp'
+        assert isinstance(projection.pending_inputs[0], PendingUcp)
 
 
 class TestUcpEvent:
     def test_ucp_pending_removed_after_ucp_event(self):
         projection = replay(1, [_started(), _ucp_low_edu()])
 
-        assert not any(p.kind == 'ucp' for p in projection.pending_inputs)
+        assert not any(isinstance(p, PendingUcp) for p in projection.pending_inputs)
 
     def test_creates_background_skills_pending_when_edu_has_positive_dm(self):
         # EDU=10 → DM+1 → 4 background skills
         projection = replay(1, [_started(), _ucp(ucp='7869A5')])
 
         assert len(projection.pending_inputs) == 1
-        assert projection.pending_inputs[0].kind == 'background_skills'
+        assert isinstance(projection.pending_inputs[0], PendingBackgroundSkills)
         assert projection.pending_inputs[0].blocking is True
 
     def test_background_skills_pending_id_derived_from_ucp_event_id(self):
@@ -95,21 +100,21 @@ class TestUcpEvent:
         # UCP: STR=7 DEX=8 END=6 INT=0 EDU=7 SOC=0 → EDU=7, DM+0 → 3 background skills
         projection = replay(1, [_started(), _ucp(ucp='786070')])
 
-        pending = next(p for p in projection.pending_inputs if p.kind == 'background_skills')
+        pending = next(p for p in projection.pending_inputs if isinstance(p, PendingBackgroundSkills))
         assert '3' in pending.instruction
 
     def test_background_skill_count_for_edu_9_to_11(self):
         # UCP: STR=7 DEX=8 END=6 INT=0 EDU=9 SOC=0 → EDU=9, DM+1 → 4 background skills
         projection = replay(1, [_started(), _ucp(ucp='786090')])
 
-        pending = next(p for p in projection.pending_inputs if p.kind == 'background_skills')
+        pending = next(p for p in projection.pending_inputs if isinstance(p, PendingBackgroundSkills))
         assert '4' in pending.instruction
 
     def test_background_skill_count_for_edu_12_to_14(self):
         # UCP: STR=7 DEX=8 END=6 INT=0 EDU=12=C SOC=0 → EDU=12, DM+2 → 5 background skills
         projection = replay(1, [_started(), _ucp(ucp='7860C0')])
 
-        pending = next(p for p in projection.pending_inputs if p.kind == 'background_skills')
+        pending = next(p for p in projection.pending_inputs if isinstance(p, PendingBackgroundSkills))
         assert '5' in pending.instruction
 
     def test_sets_characteristics_from_short_form(self):
@@ -139,7 +144,7 @@ class TestUcpEvent:
     def test_no_pending_ucp_after_ucp_provided(self):
         projection = replay(1, [_started(), _ucp_low_edu()])
 
-        assert not any(p.kind == 'ucp' for p in projection.pending_inputs)
+        assert not any(isinstance(p, PendingUcp) for p in projection.pending_inputs)
 
 
 class TestBackgroundSkillsEvent:
@@ -149,7 +154,7 @@ class TestBackgroundSkillsEvent:
         projection = replay(1, events)
 
         assert len(projection.pending_inputs) == 1
-        assert projection.pending_inputs[0].kind == 'career'
+        assert isinstance(projection.pending_inputs[0], PendingCareerChoice)
 
     def test_grants_skills_at_level_0_in_summary(self):
         events = [_started(), _ucp(), _bg_skills(skills=[Admin(), Athletics(), Carouse(), Drive()])]

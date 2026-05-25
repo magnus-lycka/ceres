@@ -297,6 +297,7 @@ class ShipPart(CeresPart, ShipPartMixin):
     tons: float = 0.0
     power: float = 0.0
     armoured_bulkhead: bool = False
+    hardened: bool = False
 
     @property
     def assembly(self) -> ShipBase:
@@ -308,11 +309,17 @@ class ShipPart(CeresPart, ShipPartMixin):
         return a
 
     def build_notes(self) -> list[_Note]:
+        notes = NoteList()
         if self.armoured_bulkhead:
-            notes = NoteList()
             notes.info('Armoured bulkhead, see Hull section.')
-            return notes
-        return []
+        return notes
+
+    @property
+    def group_key(self) -> str:
+        base = self.notes.item_message or self.__class__.__name__
+        if self.hardened:
+            return f'{base}|hardened'
+        return base
 
     def model_post_init(self, __context: Any) -> None:
         super().model_post_init(__context)

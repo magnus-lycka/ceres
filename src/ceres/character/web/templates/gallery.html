@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}NPC Gallery{% endblock %}
+{% block content %}
+
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h1 class="text-2xl font-bold text-amber-400 tracking-wide">NPC Gallery</h1>
+    <p class="text-gray-500 text-sm mt-1">
+      {{ specs | length }} {{ params.career }} NPC{% if specs | length != 1 %}s{% endif %}
+      · {{ params.min_terms }}–{{ params.max_terms }} terms
+    </p>
+  </div>
+  <div class="flex gap-3">
+    <form method="post" action="/ui/gallery/pdf">
+      <input type="hidden" name="career" value="{{ params.career }}">
+      <input type="hidden" name="assignment" value="{{ params.assignment or '' }}">
+      <input type="hidden" name="sophont" value="{{ params.sophont }}">
+      <input type="hidden" name="min_terms" value="{{ params.min_terms }}">
+      <input type="hidden" name="max_terms" value="{{ params.max_terms }}">
+      <input type="hidden" name="count" value="{{ specs | length }}">
+      <input type="hidden" name="name_prefix" value="{{ params.name_prefix }}">
+      <button type="submit"
+              class="border border-gray-600 hover:border-gray-400 text-gray-400 hover:text-gray-200 px-4 py-2 text-xs uppercase tracking-wide">
+        Export PDF
+      </button>
+    </form>
+    <a href="/ui/gallery/new" class="text-gray-600 hover:text-gray-400 text-xs uppercase px-2 py-2">← New</a>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  {% for spec in specs %}
+  <div class="border border-gray-700 p-4">
+    <div class="flex justify-between items-start mb-2">
+      <h2 class="font-bold text-gray-100">{{ spec.name }}</h2>
+      <span class="text-xs text-gray-500">{{ spec.sophont }}</span>
+    </div>
+    {% if spec.career %}
+    <p class="text-xs text-amber-400 mb-2">
+      {{ spec.career }}{% if spec.assignment %} ({{ spec.assignment }}){% endif %}
+      · {{ spec.terms }} term{% if spec.terms != 1 %}s{% endif %}
+    </p>
+    {% endif %}
+    {% if spec.ucp %}
+    <p class="text-xs text-gray-500 font-mono">UCP: {{ spec.ucp }}</p>
+    {% endif %}
+    {% if spec.skills %}
+    <p class="text-xs text-gray-400 mt-1">{{ spec.skills | format_skills }}</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}

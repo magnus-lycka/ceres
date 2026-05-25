@@ -16,7 +16,7 @@ from ceres.make.ship.drives import (
     HighEfficiencyBatteriesTL12,
     MDrive6,
     PowerSection,
-    SolarPanelsTL8,
+    SpinExtSolarPanelsTL8,
 )
 from ceres.make.ship.hull import BasicStealth, Hull
 from ceres.make.ship.parts import EnergyEfficient, HighTechnology
@@ -234,7 +234,7 @@ def test_roundtrip_sterling_fission_and_solar_power():
         hull=Hull(configuration=hull.standard_hull),
         power=PowerSection(
             plant=SterlingFissionPlant(output=8),
-            solar=[SolarPanelsTL8(tons=0.5)],
+            solar=[SpinExtSolarPanelsTL8(tons=0.5)],
             batteries=[HighEfficiencyBatteriesTL12(stored_power=60)],
         ),
     )
@@ -244,7 +244,7 @@ def test_roundtrip_sterling_fission_and_solar_power():
     assert isinstance(loaded.power.plant, SterlingFissionPlant)
     assert loaded.power.plant.output == 8
     assert len(loaded.power.solar) == 1
-    assert isinstance(loaded.power.solar[0], SolarPanelsTL8)
+    assert isinstance(loaded.power.solar[0], SpinExtSolarPanelsTL8)
     assert len(loaded.power.batteries) == 1
     assert isinstance(loaded.power.batteries[0], HighEfficiencyBatteriesTL12)
     assert loaded.power.batteries[0].stored_power == 60

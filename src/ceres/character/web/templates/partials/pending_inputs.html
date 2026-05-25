@@ -1,0 +1,411 @@
+{% if is_htmx %}{% with oob=true %}{% include 'partials/char_summary.html' %}{% endwith %}{% endif %}
+
+{% if error is defined and error %}
+<div class="bg-red-900/40 border border-red-700 text-red-300 px-4 py-3 mb-4 text-sm">{{ error }}</div>
+{% endif %}
+
+{% if changes is defined and changes %}
+<div class="border border-gray-700/50 bg-gray-800/30 px-4 py-3 mb-4">
+  <div class="text-xs uppercase tracking-widest text-gray-600 mb-2">What happened</div>
+  <ul class="text-xs text-gray-400 space-y-0.5">
+    {% for change in changes %}
+    <li>{{ change }}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+{% if not enriched_inputs %}
+<div class="border border-green-700/50 bg-green-900/20 px-6 py-8 text-center">
+  <p class="text-green-400 font-bold text-lg mb-2">Character creation complete!</p>
+  <p class="text-gray-500 text-sm mb-4">{{ summary.name }} is ready.</p>
+  <a href="/ui/characters/{{ character_id }}"
+     class="bg-amber-600 hover:bg-amber-500 text-black font-bold px-6 py-2 text-sm uppercase tracking-wide">
+    View Character Sheet →
+  </a>
+</div>
+
+{% else %}
+
+{% for item in enriched_inputs %}
+{% set pi = item.input %}
+{% set extra = item.extra %}
+
+<div class="border {% if pi.blocking %}border-amber-700/60{% else %}border-gray-700{% endif %} mb-4">
+  <div class="bg-gray-800/60 px-4 py-2 border-b border-gray-700 flex items-center gap-2">
+    <span class="text-xs text-gray-500 font-mono">{{ pi.kind }}</span>
+    {% if pi.blocking %}
+    <span class="text-xs bg-amber-900/50 text-amber-400 px-1">required</span>
+    {% endif %}
+  </div>
+
+  <div class="px-4 py-4">
+    <p class="text-sm text-gray-300 mb-4">{{ pi.instruction }}</p>
+
+    <form hx-post="/ui/characters/{{ character_id }}/events"
+          hx-target="#pending-panel"
+          hx-swap="innerHTML"
+          hx-indicator="#spinner">
+      <input type="hidden" name="kind" value="{{ pi.kind }}">
+      <input type="hidden" name="fulfills" value="{{ pi.id }}">
+
+      {# ── UCP ───────────────────────────────────────────────────────────── #}
+      {% if pi.kind == 'ucp' %}
+      {% set stats = [('STR', 7), ('DEX', 7), ('END', 7), ('INT', 7), ('EDU', 7), ('SOC', 7)] %}
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        {% for stat, default in stats %}
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">{{ stat }}</label>
+          <input type="number" name="{{ stat }}"
+                 value="{{ summary.characteristics.get(stat, default) }}"
+                 min="1" max="15"
+                 class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 text-center font-bold text-lg focus:outline-none focus:border-amber-500">
+        </div>
+        {% endfor %}
+      </div>
+
+      {# ── Background Skills (checkboxes) ─────────────────────────────────── #}
+      {% elif pi.kind == 'background_skills' %}
+      {% set bg_count = extra.get('bg_count', 1) %}
+      <p class="text-xs text-gray-500 mb-3">Choose exactly {{ bg_count }}:</p>
+      <div class="grid grid-cols-2 gap-1 mb-4 max-h-64 overflow-y-auto">
+        {% for label, json_val in extra.get('skill_choices', []) %}
+        <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-800/50 cursor-pointer text-sm">
+          <input type="checkbox" name="skill" value="{{ json_val }}"
+                 class="accent-amber-500"
+                 onclick="enforceLimit(this, {{ bg_count }})">
+          <span class="text-gray-300">{{ label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      <script>
+      function enforceLimit(el, max) {
+        const boxes = document.querySelectorAll('input[name="skill"]');
+        if (Array.from(boxes).filter(c => c.checked).length > max) el.checked = false;
+      }
+      </script>
+
+      {# ── Career Choice ──────────────────────────────────────────────────── #}
+      {% elif pi.kind == 'career_choice' %}
+      <div class="space-y-3 mb-4">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Career</label>
+          <select name="career" id="career-select-{{ pi.id | replace('.', '-') }}"
+                  class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500"
+                  onchange="updateAssignments(this, '{{ pi.id | replace('.', '-') }}')">
+            {% for opt in pi.options %}
+            <option value="{{ opt }}">{{ opt }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Assignment</label>
+          <select name="assignment" id="assignments-{{ pi.id | replace('.', '-') }}"
+                  class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500">
+            {% if extra.get('careers') and pi.options %}
+            {% set first = extra.careers.get(pi.options[0]) %}
+            {% if first %}
+            {% for a in first.assignments %}<option value="{{ a.name }}">{{ a.name }}</option>{% endfor %}
+            {% endif %}
+            {% endif %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Qualification Roll (2D, before DMs)</label>
+          <input type="number" name="roll" value="7" min="2" max="12"
+                 class="w-32 bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500">
+        </div>
+      </div>
+      <script>
+      function updateAssignments(select, uid) {
+        fetch('/ui/careers/' + encodeURIComponent(select.value) + '/assignments')
+          .then(r => r.text())
+          .then(html => { document.getElementById('assignments-' + uid).outerHTML = html; });
+      }
+      document.addEventListener('DOMContentLoaded', function() {
+        var s = document.getElementById('career-select-{{ pi.id | replace('.', '-') }}');
+        if (s) updateAssignments(s, '{{ pi.id | replace('.', '-') }}');
+      });
+      </script>
+
+      {# ── 2D Roll (survive, term_event, advancement, aging_roll, life_event) #}
+      {% elif pi.kind in ('survive', 'term_event', 'advancement', 'aging_roll', 'life_event') %}
+      <div class="mb-4">
+        <label class="block text-xs text-gray-500 mb-1">2D roll (2–12)</label>
+        <input type="number" name="roll" value="7" min="2" max="12" autofocus
+               class="w-32 bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 text-center text-lg font-bold focus:outline-none focus:border-amber-500">
+      </div>
+
+      {# ── 1D Roll (mishap, injury, nearly_killed, life_event_unusual) ──────── #}
+      {% elif pi.kind in ('mishap', 'injury_table', 'nearly_killed', 'life_event_unusual') %}
+      <div class="mb-4">
+        <label class="block text-xs text-gray-500 mb-1">1D roll (1–6)</label>
+        <input type="number" name="roll" value="3" min="1" max="6" autofocus
+               class="w-32 bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 text-center text-lg font-bold focus:outline-none focus:border-amber-500">
+      </div>
+
+      {# ── Skill Table ────────────────────────────────────────────────────── #}
+      {% elif pi.kind == 'skill_table' %}
+      <div class="space-y-3 mb-4">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Table</label>
+          <div class="flex flex-wrap gap-3">
+            {% for opt in pi.options %}
+            <label class="flex items-center gap-2 cursor-pointer text-sm">
+              <input type="radio" name="table" value="{{ opt }}"
+                     {% if loop.first %}checked{% endif %}
+                     class="accent-amber-500">
+              <span class="text-gray-300">{{ opt | replace('_', ' ') | title }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">1D roll (1–6)</label>
+          <input type="number" name="roll" value="3" min="1" max="6"
+                 class="w-32 bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 text-center text-lg font-bold focus:outline-none focus:border-amber-500">
+        </div>
+      </div>
+
+      {# ── Skill Choices (radio) ──────────────────────────────────────────── #}
+      {% elif pi.kind in ('initial_training_choice', 'skill_table_choice', 'skill_choice',
+                          'career_skill_choice', 'rank_bonus_choice') %}
+      <div class="flex flex-wrap gap-2 mb-4">
+        {% for label, json_val in extra.get('skill_choices', []) %}
+        <label class="flex items-center gap-2 px-3 py-2 border border-gray-700 hover:border-amber-600 cursor-pointer text-sm">
+          <input type="radio" name="skill" value="{{ json_val }}"
+                 {% if loop.first %}checked{% endif %}
+                 class="accent-amber-500">
+          <span class="text-gray-300">{{ label }}</span>
+        </label>
+        {% else %}
+        <p class="text-gray-600 text-sm">No valid choices available.</p>
+        {% endfor %}
+      </div>
+
+      {# ── Reenlist ───────────────────────────────────────────────────────── #}
+      {% elif pi.kind == 'reenlist' %}
+      <div class="flex gap-3 mb-4">
+        <button type="submit" name="reenlist" value="true"
+                class="bg-cyan-700 hover:bg-cyan-600 text-white font-bold px-6 py-3 text-sm uppercase tracking-wide">
+          Reenlist
+        </button>
+        <button type="submit" name="reenlist" value="false"
+                class="bg-gray-700 hover:bg-gray-600 text-white font-bold px-6 py-3 text-sm uppercase tracking-wide">
+          Muster Out
+        </button>
+      </div>
+
+      {# ── Muster Out ─────────────────────────────────────────────────────── #}
+      {% elif pi.kind == 'muster_out' %}
+      <div class="space-y-3 mb-4">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Table</label>
+          <div class="flex gap-4">
+            {% for opt in pi.options %}
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="table" value="{{ opt }}"
+                     {% if loop.first %}checked{% endif %}
+                     class="accent-amber-500">
+              <span class="text-sm text-gray-300">{{ opt | title }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">1D roll (1–6, apply DMs first)</label>
+          <input type="number" name="roll" value="3" min="1" max="7"
+                 class="w-32 bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 text-center text-lg font-bold focus:outline-none focus:border-amber-500">
+        </div>
+      </div>
+
+      {# ── Characteristic Choice ──────────────────────────────────────────── #}
+      {% elif pi.kind in ('characteristic_choice', 'aging_choice', 'aging_choice_mental', 'nearly_killed') %}
+      <div class="flex flex-wrap gap-2 mb-4">
+        {% for opt in pi.options %}
+        <label class="flex items-center gap-2 px-3 py-2 border border-gray-700 hover:border-amber-600 cursor-pointer">
+          <input type="radio" name="characteristic" value="{{ opt }}"
+                 {% if loop.first %}checked{% endif %}
+                 class="accent-amber-500">
+          <span class="text-gray-300 font-bold text-sm">{{ opt }}</span>
+        </label>
+        {% endfor %}
+      </div>
+
+      {# ── Connections Roll ───────────────────────────────────────────────── #}
+      {% elif pi.kind == 'connections_roll' %}
+      <input type="hidden" name="connection_type" value="{{ extra.get('connection_type', 'contact') }}">
+      <div class="mb-4">
+        <label class="block text-xs text-gray-500 mb-1">Count</label>
+        <div class="flex flex-wrap gap-2">
+          {% for opt in pi.options %}
+          <label class="flex items-center gap-2 px-3 py-2 border border-gray-700 hover:border-amber-600 cursor-pointer">
+            <input type="radio" name="count" value="{{ opt }}"
+                   {% if loop.first %}checked{% endif %}
+                   class="accent-amber-500">
+            <span class="text-gray-300 text-sm">{{ opt }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      {# ── Life Event Choice (connection kind: rival/enemy) ───────────────── #}
+      {% elif pi.kind == 'life_event_choice' %}
+      <div class="flex flex-wrap gap-2 mb-4">
+        {% for opt in extra.get('connection_options', pi.options) %}
+        <label class="flex items-center gap-2 px-3 py-2 border border-gray-700 hover:border-amber-600 cursor-pointer">
+          <input type="radio" name="connection_kind" value="{{ opt }}"
+                 {% if loop.first %}checked{% endif %}
+                 class="accent-amber-500">
+          <span class="text-gray-300 text-sm">{{ opt }}</span>
+        </label>
+        {% endfor %}
+      </div>
+
+      {# ── Aging Crisis ───────────────────────────────────────────────────── #}
+      {% elif pi.kind == 'aging_crisis' %}
+      <div class="mb-4 space-y-3">
+        <div class="flex gap-3 flex-wrap">
+          <label class="flex items-center gap-2 px-3 py-2 border border-gray-700 hover:border-amber-600 cursor-pointer text-sm">
+            <input type="radio" name="paid" value="true" checked class="accent-amber-500">
+            <span class="text-gray-300">Pay for medical care</span>
+          </label>
+          <label class="flex items-center gap-2 px-3 py-2 border border-red-900/50 hover:border-red-700 cursor-pointer text-sm">
+            <input type="radio" name="paid" value="false" class="accent-amber-500">
+            <span class="text-gray-300">Cannot afford / decline</span>
+          </label>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Medical Roll (1D, if paying)</label>
+          <input type="number" name="medical_roll" value="3" min="0" max="6"
+                 class="w-32 bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500">
+        </div>
+      </div>
+
+      {# ── Career Event: Scholar Event 3 ──────────────────────────────────── #}
+      {% elif pi.kind == 'career_event' and extra.get('sub_kind') == 'scholar_event_3' %}
+      <input type="hidden" name="career" value="{{ extra.get('career', '') }}">
+      <input type="hidden" name="roll" value="{{ extra.get('roll', 0) }}">
+      <div class="flex gap-3 mb-4">
+        <button type="submit" name="choice" value="accept"
+                class="bg-amber-700 hover:bg-amber-600 text-white font-bold px-6 py-3 text-sm uppercase tracking-wide">
+          Accept
+        </button>
+        <button type="submit" name="choice" value="decline"
+                class="bg-gray-700 hover:bg-gray-600 text-white font-bold px-6 py-3 text-sm uppercase tracking-wide">
+          Decline
+        </button>
+      </div>
+
+      {# ── Career Event: Scholar Event 8 ──────────────────────────────────── #}
+      {% elif pi.kind == 'career_event' and extra.get('sub_kind') == 'scholar_event_8' %}
+      <input type="hidden" name="career" value="{{ extra.get('career', '') }}">
+      <input type="hidden" name="roll" value="{{ extra.get('roll', 0) }}">
+      <div class="flex gap-3 mb-4">
+        <button type="submit" name="choice" value="accept"
+                class="bg-amber-700 hover:bg-amber-600 text-white font-bold px-6 py-3 text-sm uppercase tracking-wide">
+          Accept
+        </button>
+        <button type="submit" name="choice" value="refuse"
+                class="bg-gray-700 hover:bg-gray-600 text-white font-bold px-6 py-3 text-sm uppercase tracking-wide">
+          Refuse
+        </button>
+      </div>
+
+      {# ── Career Mishap: Scholar Mishap 3 ────────────────────────────────── #}
+      {% elif pi.kind == 'career_mishap' and extra.get('sub_kind') == 'scholar_mishap_3' %}
+      <input type="hidden" name="career" value="{{ extra.get('career', '') }}">
+      <input type="hidden" name="roll" value="{{ extra.get('roll', 0) }}">
+      <div class="flex gap-3 mb-4">
+        <button type="submit" name="choice" value="openly"
+                class="bg-amber-700 hover:bg-amber-600 text-white font-bold px-6 py-3 text-sm uppercase tracking-wide">
+          Openly
+        </button>
+        <button type="submit" name="choice" value="secretly"
+                class="bg-gray-700 hover:bg-gray-600 text-white font-bold px-6 py-3 text-sm uppercase tracking-wide">
+          Secretly
+        </button>
+      </div>
+
+      {# ── Career Mishap: Scholar Mishap 5 ────────────────────────────────── #}
+      {% elif pi.kind == 'career_mishap' and extra.get('sub_kind') == 'scholar_mishap_5' %}
+      <input type="hidden" name="career" value="{{ extra.get('career', '') }}">
+      <input type="hidden" name="roll" value="{{ extra.get('roll', 0) }}">
+      <div class="flex gap-3 mb-4">
+        <button type="submit" name="choice" value="give_up"
+                class="bg-gray-700 hover:bg-gray-600 text-white font-bold px-6 py-3 text-sm uppercase tracking-wide">
+          Give Up
+        </button>
+        <button type="submit" name="choice" value="start_again"
+                class="bg-amber-700 hover:bg-amber-600 text-white font-bold px-6 py-3 text-sm uppercase tracking-wide">
+          Start Again
+        </button>
+      </div>
+
+      {# ── Career Skill Roll (e.g. Scholar Event 8) ───────────────────────── #}
+      {% elif pi.kind == 'career_skill_roll' %}
+      <input type="hidden" name="context" value="{{ extra.get('context', '') }}">
+      <input type="hidden" name="career" value="{{ extra.get('career', '') }}">
+      <input type="hidden" name="roll" value="{{ extra.get('roll', 0) }}">
+      <div class="space-y-3 mb-4">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Skill to roll</label>
+          <div class="flex flex-wrap gap-2">
+            {% for opt in pi.options %}
+            <label class="flex items-center gap-2 px-3 py-2 border border-gray-700 hover:border-amber-600 cursor-pointer text-sm">
+              <input type="radio" name="skill" value="{{ opt }}"
+                     {% if loop.first %}checked{% endif %}
+                     class="accent-amber-500">
+              <span class="text-gray-300">{{ opt }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Modified roll (2D + skill level + DMs)</label>
+          <input type="number" name="modified_roll" value="8" min="2" max="20"
+                 class="w-32 bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500">
+        </div>
+      </div>
+
+      {# ── Advancement DM Choice ──────────────────────────────────────────── #}
+      {% elif pi.kind == 'advancement_dm_choice' %}
+      <p class="text-xs text-gray-500 mb-4">Applying +4 DM to your next advancement roll.</p>
+
+      {# ── Generic Fallback ───────────────────────────────────────────────── #}
+      {% else %}
+      <div class="text-xs text-gray-600 mb-3 border border-gray-800 px-3 py-2">
+        kind: {{ pi.kind }} | options: {{ pi.options | join(', ') }}
+      </div>
+      <p class="text-xs text-amber-600 mb-4">This input type is not yet fully supported in the UI.</p>
+      {% endif %}
+
+      {# Submit button (shown for all non-inline-button forms) #}
+      {% set inline_buttons = ['reenlist', 'aging_crisis', 'advancement_dm_choice',
+                               'career_event', 'career_mishap'] %}
+      {% if pi.kind not in inline_buttons %}
+      <div class="flex items-center gap-3">
+        <button type="submit"
+                class="bg-amber-600 hover:bg-amber-500 text-black font-bold px-6 py-2 text-sm uppercase tracking-wide">
+          Confirm →
+        </button>
+        <span id="spinner" class="htmx-indicator text-gray-500 text-xs">Working…</span>
+      </div>
+      {% elif pi.kind == 'advancement_dm_choice' %}
+      <button type="submit"
+              class="bg-amber-600 hover:bg-amber-500 text-black font-bold px-6 py-2 text-sm uppercase tracking-wide">
+        Apply →
+      </button>
+      {% endif %}
+
+    </form>
+  </div>
+</div>
+
+{% if not pi.blocking %}
+<p class="text-xs text-gray-700 -mt-3 mb-4 px-1">Non-blocking — can resolve later</p>
+{% endif %}
+
+{% endfor %}
+
+{% endif %}

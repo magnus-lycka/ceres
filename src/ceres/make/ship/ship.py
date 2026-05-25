@@ -115,9 +115,9 @@ class Ship(ShipBase):
 
     @property
     def available_power(self) -> float:
-        if self.power is None:
-            return 0.0
-        return float(self.power.output)
+        power_output = 0.0 if self.power is None else float(self.power.output)
+        drive_output = 0.0 if self.drives is None else float(self.drives.output)
+        return power_output + drive_output
 
     @property
     def basic_hull_power_load(self) -> float:
@@ -237,6 +237,7 @@ class Ship(ShipBase):
     def remaining_usable_tonnage(self) -> float:
         remaining = self.displacement * self.hull.configuration.usage_factor
         remaining -= self.hull.pressure_hull_tons(self.displacement)
+        remaining -= self.hull.breakaway_tons(self.displacement)
         for part in self._all_parts():
             remaining -= part.tons
         cargo_holds = [] if self.cargo is None else self.cargo.cargo_holds
@@ -249,7 +250,18 @@ class Ship(ShipBase):
         return obj.notes.item_message or fallback
 
     def _display_notes(self, obj) -> NoteList:
-        return obj.notes.details
+        notes = NoteList(obj.notes.details)
+        if isinstance(obj, ShipPart) and getattr(obj, 'hardened', False):
+            if obj.power > 0:
+                notes.info('Hardened against Ion weapons')
+            else:
+                notes.error('Hardened requires a system that draws Power')
+        return notes
+
+    def _part_cost(self, part: ShipPart) -> float:
+        if getattr(part, 'hardened', False) and part.power > 0:
+            return part.cost * 1.5
+        return part.cost
 
     def _spec_row_for_part(
         self,
@@ -269,7 +281,7 @@ class Ship(ShipBase):
             item=resolved_item,
             tons=part.tons or None,
             power=resolved_power,
-            cost=part.cost or None,
+            cost=self._part_cost(part) or None,
             emphasize_power=emphasize_power,
             notes=self._display_notes(part),
         )
@@ -287,7 +299,7 @@ class Ship(ShipBase):
         rows: list[SpecRow] = []
         for _key, display_item, group in groups:
             total_tons = sum(part.tons for part in group) or None
-            total_cost = sum(part.cost for part in group) or None
+            total_cost = sum(self._part_cost(part) for part in group) or None
             total_power = sum(part.power for part in group)
             seen: set[tuple] = set()
             notes = NoteList()

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ summary.name or 'Character' }} — Wizard{% endblock %}
+{% block content %}
+
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h1 class="text-xl font-bold text-amber-400">{{ summary.name or '?' }}</h1>
+    <p class="text-gray-600 text-xs mt-1">
+      {{ summary.species or '?' }}
+      {% if summary.current_career %}· {{ summary.current_career }}{% if summary.current_assignment %} ({{ summary.current_assignment }}){% endif %}{% endif %}
+      {% if summary.term_count > 0 %} · {{ summary.term_count }} term{% if summary.term_count != 1 %}s{% endif %}{% endif %}
+      · Age {{ summary.age }}
+    </p>
+  </div>
+  <a href="/ui/characters/{{ character_id }}" class="text-gray-600 hover:text-gray-400 text-xs uppercase">View Sheet →</a>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  {# Left: Character Summary #}
+  <div class="lg:col-span-1 space-y-4">
+    {% with oob=false %}{% include 'partials/char_summary.html' %}{% endwith %}
+  </div>
+
+  {# Right: Pending Inputs (HTMX target) #}
+  <div class="lg:col-span-2" id="pending-panel">
+    {% include 'partials/pending_inputs.html' %}
+  </div>
+
+</div>
+
+{% endblock %}

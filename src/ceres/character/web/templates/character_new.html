@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}New Character{% endblock %}
+{% block content %}
+
+<div class="max-w-md">
+  <h1 class="text-2xl font-bold text-amber-400 tracking-wide mb-6">New Character</h1>
+
+  {% if error %}
+  <div class="bg-red-900/40 border border-red-700 text-red-300 px-4 py-3 mb-4 text-sm">{{ error }}</div>
+  {% endif %}
+
+  <form method="post" action="/ui/characters/new" class="space-y-5">
+
+    <div>
+      <label class="block text-xs uppercase tracking-wide text-gray-500 mb-1">Name</label>
+      <input type="text" name="name" required autofocus
+             class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500"
+             placeholder="Character name">
+    </div>
+
+    <div>
+      <label class="block text-xs uppercase tracking-wide text-gray-500 mb-1">Sophont</label>
+      <select name="sophont"
+              class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500">
+        {% for s in sophonts %}
+        <option value="{{ s }}">{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-xs uppercase tracking-wide text-gray-500 mb-1">Player <span class="text-gray-600">(leave blank for NPC)</span></label>
+      <input type="text" name="player" value="NPC"
+             class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500"
+             placeholder="NPC">
+    </div>
+
+    <div class="flex gap-3 pt-2">
+      <button type="submit"
+              class="bg-amber-600 hover:bg-amber-500 text-black font-bold px-6 py-2 text-sm uppercase tracking-wide">
+        Create →
+      </button>
+      <a href="/ui/" class="text-gray-500 hover:text-gray-300 px-4 py-2 text-sm">Cancel</a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

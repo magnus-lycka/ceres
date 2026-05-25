@@ -1,13 +1,13 @@
-from enum import StrEnum, auto
+from enum import StrEnum
 
 
 class Chars(StrEnum):
-    STR = auto()
-    DEX = auto()
-    END = auto()
-    INT = auto()
-    EDU = auto()
-    SOC = auto()
+    STR = 'STR'
+    DEX = 'DEX'
+    END = 'END'
+    INT = 'INT'
+    EDU = 'EDU'
+    SOC = 'SOC'
 
 
-UCP_STATS: tuple[str, ...] = tuple(c.name for c in Chars)
+UCP_STATS: tuple[Chars, ...] = tuple(Chars)

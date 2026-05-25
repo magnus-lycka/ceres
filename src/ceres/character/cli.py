@@ -7,7 +7,7 @@ from typing import Annotated
 import typer
 
 from ceres import settings
-from ceres.character.characteristics import UCP_STATS
+from ceres.character.characteristics import UCP_STATS, Chars
 from ceres.character.events import AnyEvent, UcpEvent
 from ceres.character.projection import CharacterProjection
 from ceres.character.replay import ReplayError
@@ -23,13 +23,14 @@ _UCP_CHANGE_PATTERN = re.compile(r'^([A-Z]{3})(?:(=)(\d+)|([+-])(\d+))$')
 _UCP_SHORT_PATTERN = re.compile(r'^[0-9A-F]{6}$')
 
 
-def _parse_ucp_change(change: str) -> tuple[str, str, int]:
+def _parse_ucp_change(change: str) -> tuple[Chars, str, int]:
     match = _UCP_CHANGE_PATTERN.match(change)
     if not match:
         raise ValueError(f'Invalid UCP change: {change}')
-    stat = match.group(1)
-    if stat not in UCP_STATS:
+    stat_str = match.group(1)
+    if stat_str not in UCP_STATS:
         raise ValueError(f'Invalid UCP change: {change}')
+    stat = Chars(stat_str)
     if match.group(2) == '=':
         return stat, 'set', int(match.group(3))
     sign = 1 if match.group(4) == '+' else -1
@@ -79,13 +80,13 @@ def render_character_show(character: CharacterRow, projection: CharacterProjecti
     return lines
 
 
-def render_ucp(ucp: dict[str, int]) -> str:
+def render_ucp(ucp: dict[Chars, int]) -> str:
     if not ucp:
         return 'No UCP set'
     return ' '.join(f'{stat} {ucp[stat]}' for stat in UCP_STATS if stat in ucp)
 
 
-def render_ucp_short(ucp: dict[str, int] | None) -> str:
+def render_ucp_short(ucp: dict[Chars, int] | None) -> str:
     if not ucp:
         return ''
     if any(stat not in ucp for stat in UCP_STATS):

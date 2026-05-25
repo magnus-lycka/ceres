@@ -69,6 +69,35 @@ def test_screens_appear_in_spec_rows():
     assert row.power == pytest.approx(-40.0)
 
 
+def test_hardened_powered_screen_costs_50_percent_more_in_ship_spec():
+    my_ship = ship.Ship(
+        tl=15,
+        displacement=1_000,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        screens=ScreensSection(screens=[NuclearDamper(hardened=True)]),
+    )
+
+    row = my_ship.build_spec().row('Nuclear Damper', section='Screens')
+
+    assert row.cost == pytest.approx(15_000_000.0)
+    assert 'Hardened against Ion weapons' in row.notes.infos
+    assert my_ship.expenses.production_cost == pytest.approx(my_ship.hull_cost + 15_000_000.0)
+
+
+def test_hardened_zero_power_screen_part_reports_error_without_cost_increase():
+    my_ship = ship.Ship(
+        tl=15,
+        displacement=1_000,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        screens=ScreensSection(capacitor_banks=[BlackGlobeCapacitorBank(tons=4, hardened=True)]),
+    )
+
+    row = my_ship.build_spec().row('Black Globe Capacitor Bank', section='Screens')
+
+    assert row.cost == pytest.approx(12_000_000.0)
+    assert 'Hardened requires a system that draws Power' in row.notes.errors
+
+
 def test_mixed_screen_installations_appear_as_separate_grouped_rows():
     my_ship = ship.Ship(
         tl=15,

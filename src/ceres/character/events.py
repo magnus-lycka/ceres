@@ -2,6 +2,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
+from ceres.character.characteristics import Chars
 from ceres.character.skills import AnySkill
 
 
@@ -64,24 +65,12 @@ class ConnectionKindChoiceEvent(EventBase):
     connection_kind: Literal['contact', 'ally', 'rival', 'enemy']
 
 
-class ScholarEvent3ChoiceEvent(EventBase):
-    kind: Literal['scholar_event_3_choice'] = 'scholar_event_3_choice'
-    choice: Literal['accept', 'decline']
+class CareerChoiceEvent(EventBase):
+    """Generic career-specific choice event replacing per-career event types."""
 
-
-class ScholarEvent8ChoiceEvent(EventBase):
-    kind: Literal['scholar_event_8_choice'] = 'scholar_event_8_choice'
-    choice: Literal['accept', 'refuse']
-
-
-class ScholarMishap3ChoiceEvent(EventBase):
-    kind: Literal['scholar_mishap_3_choice'] = 'scholar_mishap_3_choice'
-    choice: Literal['openly', 'secretly']
-
-
-class ScholarMishap5ChoiceEvent(EventBase):
-    kind: Literal['scholar_mishap_5_choice'] = 'scholar_mishap_5_choice'
-    choice: Literal['give_up', 'start_again']
+    kind: Literal['career_decision'] = 'career_decision'
+    context: str  # key into the career's CHOICE_HANDLERS registry
+    choice: str
 
 
 class AdvancementEvent(EventBase):
@@ -102,7 +91,7 @@ class SkillTableEvent(EventBase):
 
 class CharacteristicChoiceEvent(EventBase):
     kind: Literal['characteristic_choice'] = 'characteristic_choice'
-    characteristic: str  # the chosen characteristic to apply the pending effect to
+    characteristic: Chars  # the chosen characteristic to apply the pending effect to
     amount: int = 1  # how much to reduce the characteristic by
 
 
@@ -115,7 +104,7 @@ class ConnectionsRollEvent(EventBase):
 class SkillRollEvent(EventBase):
     kind: Literal['skill_roll'] = 'skill_roll'
     context: str  # matches the pending kind — dispatch key for the career handler
-    skill: AnySkill | str  # str is temporary for characteristic rolls (EDU, INT, etc.)
+    skill: AnySkill | Chars  # Chars for characteristic rolls (EDU, INT, etc.)
     modified_roll: int  # 2D + skill level + any other DMs already applied by the player
 
 
@@ -127,6 +116,14 @@ class AgingRollEvent(EventBase):
 class InjuryTableEvent(EventBase):
     kind: Literal['injury_table'] = 'injury_table'
     roll: int  # 1D result (1-6) on the Injury table
+
+
+class DoubleInjuryTableEvent(EventBase):
+    """Roll twice on the Injury table; the system takes the lower result."""
+
+    kind: Literal['double_injury_table'] = 'double_injury_table'
+    roll1: int  # first 1D result (1-6)
+    roll2: int  # second 1D result (1-6)
 
 
 class LifeEventEvent(EventBase):
@@ -143,6 +140,13 @@ class MusterOutEvent(EventBase):
     kind: Literal['muster_out'] = 'muster_out'
     table: Literal['cash', 'benefits']
     roll: int  # 1D result (1-6), DMs already applied by player
+
+
+class BenefitChoiceEvent(EventBase):
+    """Resolves a PendingBenefitChoice by selecting one option from the list."""
+
+    kind: Literal['benefit_choice'] = 'benefit_choice'
+    choice_index: int  # 0-based index into PendingBenefitChoice.benefit_options
 
 
 class AgingCrisisEvent(EventBase):
@@ -171,13 +175,12 @@ type AnyEvent = Annotated[
     | ConnectionKindChoiceEvent
     | SkillRollEvent
     | InjuryTableEvent
+    | DoubleInjuryTableEvent
     | LifeEventEvent
     | LifeEventUnusualEvent
     | MusterOutEvent
-    | ScholarEvent3ChoiceEvent
-    | ScholarEvent8ChoiceEvent
-    | ScholarMishap3ChoiceEvent
-    | ScholarMishap5ChoiceEvent,
+    | BenefitChoiceEvent
+    | CareerChoiceEvent,
     Field(discriminator='kind'),
 ]
 
@@ -189,11 +192,14 @@ __all__ = [
     'AgingCrisisEvent',
     'AgingRollEvent',
     'BackgroundSkillsEvent',
+    'BenefitChoiceEvent',
+    'CareerChoiceEvent',
     'CareerEvent',
     'CharacteristicChoiceEvent',
     'CharacterStartedEvent',
     'ConnectionKindChoiceEvent',
     'ConnectionsRollEvent',
+    'DoubleInjuryTableEvent',
     'EventBase',
     'InjuryTableEvent',
     'LifeEventEvent',
@@ -201,10 +207,6 @@ __all__ = [
     'MishapEvent',
     'MusterOutEvent',
     'ReenlistEvent',
-    'ScholarEvent3ChoiceEvent',
-    'ScholarEvent8ChoiceEvent',
-    'ScholarMishap3ChoiceEvent',
-    'ScholarMishap5ChoiceEvent',
     'SkillChoiceEvent',
     'SkillRollEvent',
     'SkillTableEvent',

@@ -38,6 +38,10 @@ from ceres.make.ship.drives import (
     RDrive,
     RDrive3,
     RDrive16,
+    SolarSail,
+    SpinExtSolarSailTL6,
+    SpinExtSolarSailTL8,
+    SpinExtSolarSailTL12,
     StealthJump,
 )
 from ceres.make.ship.parts import Advanced, Budget, IncreasedSize, SizeReduction, VeryAdvanced
@@ -251,6 +255,89 @@ def test_limited_range_is_drive_specific_customisation():
 def test_drive_section_all_parts():
     drives = DriveSection(m_drive=MDrive6(), r_drive=RDrive3(), j_drive=JDrive2())
     assert drives._all_parts() == [drives.m_drive, drives.r_drive, drives.j_drive]
+
+
+def test_solar_sail_values_and_notes():
+    sail = SolarSail()
+    sail.bind(DummyOwner(9, 200))
+
+    assert sail.tons == pytest.approx(10.0)
+    assert sail.cost == pytest.approx(2_000_000.0)
+    assert sail.power == 0.0
+    assert sail.build_item() == 'Solar Sail'
+    assert 'Effective Thrust 0 while using the solar sail as primary propulsion' in sail.notes.infos
+    assert 'Requires several days to change course or speed' in sail.notes.infos
+    assert 'Jump drives cannot be engaged while the solar sail is deployed' in sail.notes.infos
+
+
+def test_solar_sail_appears_in_propulsion_spec_rows():
+    my_ship = ship.Ship(
+        tl=9,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        drives=DriveSection(solar_sail=SolarSail()),
+    )
+
+    row = my_ship.build_spec().row('Solar Sail', section='Propulsion')
+
+    assert row.tons == pytest.approx(10.0)
+    assert row.cost == pytest.approx(2_000_000.0)
+    assert row.power is None
+
+
+def test_spinext_tl8_solar_sail_values_and_notes():
+    sail = SpinExtSolarSailTL8(tons=10)
+    sail.bind(DummyOwner(8, 100))
+
+    assert sail.cost == pytest.approx(4_000_000.0)
+    assert sail.power == 0.0
+    assert sail.effective_thrust == pytest.approx(0.01)
+    assert sail.output == pytest.approx(0.0)
+    assert sail.build_item() == 'SpinExt Solar Sail (TL 8), Thrust 0.01'
+    assert 'Solar sail thrust assumes operation in a star habitable zone' in sail.notes.infos
+    assert 'Solar sails require 1D × 10 rounds to deploy or retract' in sail.notes.infos
+    assert 'Ships cannot jump with solar sails deployed' in sail.notes.infos
+    assert 'Ships cannot use any other manoeuvre drive while solar sails are deployed' in sail.notes.infos
+
+
+def test_spinext_solar_sail_table_values():
+    tl6 = SpinExtSolarSailTL6(tons=10)
+    tl8 = SpinExtSolarSailTL8(tons=10)
+    tl12 = SpinExtSolarSailTL12(tons=10)
+    for sail in [tl6, tl8, tl12]:
+        sail.bind(DummyOwner(sail.tl, 100))
+
+    assert tl6.effective_thrust == pytest.approx(0.005)
+    assert tl6.cost == pytest.approx(2_000_000)
+    assert tl8.effective_thrust == pytest.approx(0.01)
+    assert tl8.cost == pytest.approx(4_000_000)
+    assert tl12.effective_thrust == pytest.approx(0.02)
+    assert tl12.cost == pytest.approx(8_000_000)
+
+
+def test_spinext_solar_sail_panel_mode_doubles_cost_and_generates_half_panel_output():
+    sail = SpinExtSolarSailTL8(tons=10, solar_panel_mode=True)
+    sail.bind(DummyOwner(8, 100))
+
+    assert sail.cost == pytest.approx(8_000_000)
+    assert sail.output == pytest.approx(10.0)
+    assert sail.build_item() == 'SpinExt Solar Sail (TL 8), Thrust 0.01, Power 10'
+    assert 'Acts as solar panels for double cost at half same-tonnage solar panel Power' in sail.notes.infos
+
+
+def test_spinext_solar_sail_panel_mode_contributes_to_available_power():
+    my_ship = ship.Ship(
+        tl=8,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        drives=DriveSection(solar_sail=SpinExtSolarSailTL8(tons=10, solar_panel_mode=True)),
+        power=PowerSection(plant=FusionPlantTL8(output=20)),
+    )
+
+    row = my_ship.build_spec().row('SpinExt Solar Sail (TL 8), Thrust 0.01, Power 10', section='Propulsion')
+
+    assert my_ship.available_power == pytest.approx(30.0)
+    assert row.power == pytest.approx(10.0)
 
 
 def test_power_section_all_parts():

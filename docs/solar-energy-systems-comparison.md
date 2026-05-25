@@ -138,7 +138,8 @@ Option 3: Support both as explicit variants.
 This is likely the safest route. Possible names:
 
 - `SolarPanels`, `SolarCoating`, `SolarSail` for versions in HG
-- `SpinExtSolarPanels`, `SpinExtSolarCoating`, `SpinExtSolarSail`
+- `SpinExtSolarPanelsTL6`, `SpinExtSolarPanelsTL8`, `SpinExtSolarPanelsTL12`,
+  `SpinExtSolarCoating`, `SpinExtSolarSail`
 
 The shared concept can be "solar power source" or "solar auxiliary system", but
 the classes should preserve source identity because the tables and constraints
@@ -155,3 +156,37 @@ in the API. Do not merge coating or sail rules until we choose:
   section
 - how to display operational constraints without turning Ceres into an
   operations simulator
+
+## Current Ceres Status
+
+The currently implemented High Guard/default panel classes are
+`BasicSolarPanels`, `ImprovedSolarPanels`, `EnhancedSolarPanels`, and
+`AdvancedSolarPanels`. Their output, cost, and deployment notes follow
+`refs/hg/25_solar_energy_systems.md`.
+
+The currently implemented Spinward Extents panel classes are
+`SpinExtSolarPanelsTL6`, `SpinExtSolarPanelsTL8`, and
+`SpinExtSolarPanelsTL12`. Their output, cost, minimum size, and deployment notes
+follow `refs/spinext/59_arcturus.md`.
+
+The currently implemented coating classes, `EnhancedSolarCoating` and
+`AdvancedSolarCoating`, are High Guard variants from
+`refs/hg/25_solar_energy_systems.md`. They keep the default unprefixed names
+because High Guard is the default ship-building ruleset.
+
+The currently implemented Spinward Extents coating classes are
+`SpinExtSolarCoatingTL6`, `SpinExtSolarCoatingTL8`, and
+`SpinExtSolarCoatingTL12`. They use `covered_tons`, report an error when the
+covered tonnage is not in 10-ton increments, and enforce the TL12-only
+compatibility with Heat Shielding and Stealth Hull options.
+
+The High Guard/default `SolarSail` is implemented as a drive accessory. It
+consumes 5% of hull tonnage, costs MCr0.2 per ton, and carries operational notes
+for effective Thrust 0, days-scale manoeuvre, and no jump while deployed.
+
+The currently implemented Spinward Extents solar sail classes are
+`SpinExtSolarSailTL6`, `SpinExtSolarSailTL8`, and `SpinExtSolarSailTL12`. They
+are modelled as drive accessories with stored sail tonnage, computed effective
+thrust, and deployment/jump/manoeuvre notes. When `solar_panel_mode=True`, the
+sail costs double and contributes half the Power of same-tonnage Spinward
+Extents solar panels.

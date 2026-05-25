@@ -31,9 +31,9 @@ from .power import (  # noqa: F401
     HighEfficiencyBatteriesTL10,
     HighEfficiencyBatteriesTL12,
     PowerSection,
-    SolarPanelsTL6,
-    SolarPanelsTL8,
-    SolarPanelsTL12,
+    SpinExtSolarPanelsTL6,
+    SpinExtSolarPanelsTL8,
+    SpinExtSolarPanelsTL12,
     SterlingFissionPlant,
     SterlingFissionPlantTL6,
     SterlingFissionPlantTL12,
@@ -571,13 +571,122 @@ type JDrive = Annotated[
 ]
 
 
+class SolarSail(ShipPart):
+    tons: ClassVar[float]
+    cost: ClassVar[float]
+    description: Literal['Solar Sail'] = 'Solar Sail'
+    drive_type: Literal['solar_sail'] = 'solar_sail'
+    tl: int = 9
+    power: float = 0.0
+
+    @property
+    def tons(self) -> float:
+        return self.assembly.displacement * 0.05
+
+    @property
+    def cost(self) -> float:
+        return self.tons * 200_000
+
+    def build_notes(self) -> list:
+        notes = NoteList()
+        notes.info('Effective Thrust 0 while using the solar sail as primary propulsion')
+        notes.info('Requires several days to change course or speed')
+        notes.info('Jump drives cannot be engaged while the solar sail is deployed')
+        return notes
+
+
+class _SpinExtSolarSail(ShipPart):
+    cost: ClassVar[float]
+    power: ClassVar[float]
+    drive_type: str
+    tl: int
+    tons: float
+    solar_panel_mode: bool = False
+    thrust_per_percent: ClassVar[float]
+    cost_per_ton: ClassVar[int]
+    panel_power_per_ton: ClassVar[float]
+
+    @property
+    def cost(self) -> float:
+        multiplier = 2 if self.solar_panel_mode else 1
+        return self.tons * self.cost_per_ton * multiplier
+
+    @property
+    def power(self) -> float:
+        return 0.0
+
+    @property
+    def effective_thrust(self) -> float:
+        return (self.tons / self.assembly.displacement) * 100 * self.thrust_per_percent
+
+    @property
+    def output(self) -> float:
+        if not self.solar_panel_mode:
+            return 0.0
+        return self.tons * self.panel_power_per_ton * 0.5
+
+    def item_description(self) -> str:
+        label = f'SpinExt Solar Sail (TL {self.tl}), Thrust {self.effective_thrust:g}'
+        if self.output:
+            label += f', Power {self.output:g}'
+        return label
+
+    def build_notes(self) -> list:
+        notes = NoteList()
+        notes.info('Solar sail thrust assumes operation in a star habitable zone')
+        notes.info('Solar sails are useless in interstellar space')
+        notes.info('Solar sails require 1D × 10 rounds to deploy or retract')
+        notes.info('Ships cannot jump with solar sails deployed')
+        notes.info('Ships cannot use any other manoeuvre drive while solar sails are deployed')
+        if self.solar_panel_mode:
+            notes.info('Acts as solar panels for double cost at half same-tonnage solar panel Power')
+        return notes
+
+
+class SpinExtSolarSailTL6(_SpinExtSolarSail):
+    drive_type: Literal['spinext_solar_sail_tl6'] = 'spinext_solar_sail_tl6'
+    tl: int = 6
+    thrust_per_percent: ClassVar[float] = 0.0005
+    cost_per_ton: ClassVar[int] = 200_000
+    panel_power_per_ton: ClassVar[float] = 1.0
+
+
+class SpinExtSolarSailTL8(_SpinExtSolarSail):
+    drive_type: Literal['spinext_solar_sail_tl8'] = 'spinext_solar_sail_tl8'
+    tl: int = 8
+    thrust_per_percent: ClassVar[float] = 0.001
+    cost_per_ton: ClassVar[int] = 400_000
+    panel_power_per_ton: ClassVar[float] = 2.0
+
+
+class SpinExtSolarSailTL12(_SpinExtSolarSail):
+    drive_type: Literal['spinext_solar_sail_tl12'] = 'spinext_solar_sail_tl12'
+    tl: int = 12
+    thrust_per_percent: ClassVar[float] = 0.002
+    cost_per_ton: ClassVar[int] = 800_000
+    panel_power_per_ton: ClassVar[float] = 3.0
+
+
+type AnySolarSail = Annotated[
+    SolarSail | SpinExtSolarSailTL6 | SpinExtSolarSailTL8 | SpinExtSolarSailTL12,
+    Field(discriminator='drive_type'),
+]
+
+
 class DriveSection(ShipPart):
     m_drive: MDrive | None = None
     r_drive: RDrive | None = None
     j_drive: JDrive | None = None
+    solar_sail: AnySolarSail | None = None
 
     def _all_parts(self) -> list[ShipPart]:
-        return [part for part in [self.m_drive, self.r_drive, self.j_drive] if part is not None]
+        return [part for part in [self.m_drive, self.r_drive, self.j_drive, self.solar_sail] if part is not None]
+
+    @property
+    def output(self) -> float:
+        if self.solar_sail is None:
+            return 0.0
+        return getattr(self.solar_sail, 'output', 0.0)
 
     def validate_jump_control(self, software_packages: list[SoftwarePackage]) -> None:
         if self.j_drive is None:
@@ -599,3 +708,13 @@ class DriveSection(ShipPart):
             spec.add_row(ship._spec_row_for_part(SpecSection.PROPULSION, self.r_drive))
         if self.m_drive is not None:
             spec.add_row(ship._spec_row_for_part(SpecSection.PROPULSION, self.m_drive))
+        if self.solar_sail is not None:
+            output = getattr(self.solar_sail, 'output', 0.0)
+            spec.add_row(
+                ship._spec_row_for_part(
+                    SpecSection.PROPULSION,
+                    self.solar_sail,
+                    power=output or None,
+                    emphasize_power=bool(output),
+                )
+            )

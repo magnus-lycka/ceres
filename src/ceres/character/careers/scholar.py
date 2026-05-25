@@ -1,7 +1,16 @@
 from ceres.character.careers.career_data import EventEffect
+from ceres.character.characteristics import Chars
 from ceres.character.events import SkillRollEvent
-from ceres.character.projection import CharacterProjection, Connection, PendingInput
-from ceres.character.skills import ScienceSkill, skill_list
+from ceres.character.projection import (
+    CharacterProjection,
+    Enemy,
+    PendingCareerEvent,
+    PendingCareerMishap,
+    PendingCareerSkillChoice,
+    PendingCareerSkillRoll,
+    PendingSkillChoice,
+)
+from ceres.character.skills import ScienceSkill, skill_list, skill_names_for_category
 
 _SCIENCES = sorted(s.type for s in skill_list(ScienceSkill))
 
@@ -15,14 +24,57 @@ def _handle_scholar_event_3(
     pending_idx: int,
 ) -> int:
     projection.pending_inputs.append(
-        PendingInput(
+        PendingCareerEvent(
             id=f'{event_id}.{pending_idx}',
-            kind='scholar_event_3',
+            career='Scholar',
+            roll=3,
             instruction='Accept (2 Science specialties + D3 Enemies + extra Benefit roll) or Decline?',
             options=['accept', 'decline'],
         )
     )
     return pending_idx + 1
+
+
+def _choice_scholar_event_3(projection: CharacterProjection, event) -> None:
+    from ceres.character.projection import PendingConnectionsRoll, PendingMusterOut
+    from ceres.character.replay import _advancement_pending, _current_career
+
+    if event.choice == 'accept':
+        projection.pending_inputs.append(
+            PendingConnectionsRoll(
+                id=f'{event.id}.0',
+                instruction='Roll D3 for number of Enemies gained',
+                options=['1', '2', '3'],
+            )
+        )
+        for i, label in enumerate(['first', 'second'], start=1):
+            projection.pending_inputs.append(
+                PendingCareerSkillChoice(
+                    id=f'{event.id}.{i}',
+                    career='Scholar',
+                    roll=3,
+                    mishap=False,
+                    advancement_precreated=True,
+                    instruction=f'Choose {label} Science specialty to increase by one level',
+                    options=skill_names_for_category('Science') or [],
+                )
+            )
+        if projection.summary.current_career is not None:
+            career = _current_career(projection)
+            projection.pending_inputs.append(_advancement_pending(projection, career, event.id, 3))
+        # Extra benefit roll
+        projection.muster_out_career = projection.summary.current_career
+        projection.pending_inputs.append(
+            PendingMusterOut(
+                id=f'{event.id}.4',
+                instruction='Extra Benefit roll (accepted research against conscience)',
+                options=['cash', 'benefits'],
+            )
+        )
+    else:
+        if projection.summary.current_career is not None:
+            career = _current_career(projection)
+            projection.pending_inputs.append(_advancement_pending(projection, career, event.id))
 
 
 # ── event 6: advanced training ───────────────────────────────────────────────
@@ -35,11 +87,13 @@ def _handle_scholar_event_6(
     pending_idx: int,
 ) -> int:
     projection.pending_inputs.append(
-        PendingInput(
+        PendingCareerSkillRoll(
             id=f'{event_id}.{pending_idx}',
-            kind='scholar_event_6',
+            career='Scholar',
+            roll=6,
+            context='scholar_event_6',
             instruction='Roll EDU 8+ to gain any skill of your choice at level 1',
-            options=['EDU'],
+            options=[Chars.EDU],
         )
     )
     return pending_idx + 1
@@ -48,9 +102,8 @@ def _handle_scholar_event_6(
 def _resolve_scholar_event_6(projection: CharacterProjection, event: SkillRollEvent) -> None:
     if event.modified_roll >= 8:
         projection.pending_inputs.append(
-            PendingInput(
+            PendingSkillChoice(
                 id=f'{event.id}.0',
-                kind='skill_choice',
                 instruction='Choose any skill to gain at level 1',
                 options=[],
             )
@@ -68,9 +121,10 @@ def _handle_scholar_event_8(
     pending_idx: int,
 ) -> int:
     projection.pending_inputs.append(
-        PendingInput(
+        PendingCareerEvent(
             id=f'{event_id}.{pending_idx}',
-            kind='scholar_event_8',
+            career='Scholar',
+            roll=8,
             instruction='Refuse (nothing) or Accept (roll Deception/Admin 8+)?',
             options=['accept', 'refuse'],
         )
@@ -78,19 +132,38 @@ def _handle_scholar_event_8(
     return pending_idx + 1
 
 
+def _choice_scholar_event_8(projection: CharacterProjection, event) -> None:
+    from ceres.character.replay import _advancement_pending, _current_career
+
+    if event.choice == 'refuse':
+        if projection.summary.current_career is not None:
+            career = _current_career(projection)
+            projection.pending_inputs.append(_advancement_pending(projection, career, event.id))
+    else:
+        projection.pending_inputs.append(
+            PendingCareerSkillRoll(
+                id=f'{event.id}.0',
+                career='Scholar',
+                roll=8,
+                context='scholar_event_8_roll',
+                instruction='Roll Deception 8+ or Admin 8+ to cheat successfully',
+                options=['Deception', 'Admin'],
+            )
+        )
+
+
 def _resolve_scholar_event_8_roll(projection: CharacterProjection, event: SkillRollEvent) -> None:
     if event.modified_roll >= 8:
-        projection.summary.connections.append(Connection(kind='enemy', source='Cheating in the field'))
+        projection.summary.connections.append(Enemy(source='Cheating in the field'))
         projection.pending_inputs.append(
-            PendingInput(
+            PendingSkillChoice(
                 id=f'{event.id}.0',
-                kind='skill_choice',
                 instruction='Cheat succeeded: choose any skill to gain +1',
                 options=[],
             )
         )
     else:
-        projection.summary.connections.append(Connection(kind='enemy', source='Cheating discovered'))
+        projection.summary.connections.append(Enemy(source='Cheating discovered'))
     # _apply_skill_roll creates advancement if no new pending (failure), or after skill_choice (success)
 
 
@@ -104,9 +177,11 @@ def _handle_scholar_event_11(
     pending_idx: int,
 ) -> int:
     projection.pending_inputs.append(
-        PendingInput(
+        PendingCareerSkillChoice(
             id=f'{event_id}.{pending_idx}',
-            kind='scholar_event_11',
+            career='Scholar',
+            roll=11,
+            advancement_precreated=False,
             instruction='Increase Science by one level (choose which), or DM+4 to your next advancement roll',
             options=[*_SCIENCES, 'advancement_dm_4'],
         )
@@ -124,14 +199,35 @@ def _handle_scholar_mishap_3(
     pending_idx: int,
 ) -> int:
     projection.pending_inputs.append(
-        PendingInput(
+        PendingCareerMishap(
             id=f'{event_id}.{pending_idx}',
-            kind='scholar_mishap_3',
+            career='Scholar',
+            roll=3,
             instruction='Continue openly (Science +1, Enemy) or secretly (Science +1, SOC -2)?',
             options=['openly', 'secretly'],
         )
     )
     return pending_idx + 1
+
+
+def _choice_scholar_mishap_3(projection: CharacterProjection, event) -> None:
+    if event.choice == 'openly':
+        projection.summary.connections.append(Enemy(source='Planetary government interference'))
+    else:
+        soc = projection.summary.characteristics.get(Chars.SOC, 0)
+        projection.summary.characteristics[Chars.SOC] = max(0, soc - 2)
+    projection.pending_inputs.append(
+        PendingCareerSkillChoice(
+            id=f'{event.id}.0',
+            career='Scholar',
+            roll=3,
+            mishap=True,
+            advancement_precreated=True,
+            instruction='Increase Science by one level: choose which broad science',
+            options=skill_names_for_category('Science') or [],
+        )
+    )
+    # advancement was already created by _apply_mishap (stay_in_career=True)
 
 
 # ── mishap 5: work sabotaged ──────────────────────────────────────────────────
@@ -144,14 +240,32 @@ def _handle_scholar_mishap_5(
     pending_idx: int,
 ) -> int:
     projection.pending_inputs.append(
-        PendingInput(
+        PendingCareerMishap(
             id=f'{event_id}.{pending_idx}',
-            kind='scholar_mishap_5',
+            career='Scholar',
+            roll=5,
             instruction='Give up (leave career) or start again (stay, lose benefit rolls)?',
             options=['give_up', 'start_again'],
         )
     )
     return pending_idx + 1
+
+
+def _choice_scholar_mishap_5(projection: CharacterProjection, event) -> None:
+    from ceres.character.projection import PendingAdvancement, PendingAgingRoll
+    from ceres.character.replay import _apply_muster_out_setup, _clear_current_career, _current_career
+
+    if event.choice == 'give_up':
+        career = _current_career(projection)
+        projection.pending_inputs = [p for p in projection.pending_inputs if not isinstance(p, PendingAdvancement)]
+        projection.summary.age += 4
+        if projection.summary.age >= 34:
+            projection.muster_out_career = career.name
+            _clear_current_career(projection)
+            projection.pending_inputs.append(PendingAgingRoll(id=f'{event.id}.0', instruction='Roll 2D on Aging table'))
+        else:
+            _apply_muster_out_setup(projection, career, event.id, 0, lose_current_term=True)
+    # 'start_again': advancement is already there from _apply_mishap, career stays
 
 
 # ── handler registries ───────────────────────────────────────────────────────
@@ -168,4 +282,11 @@ EFFECT_HANDLERS: dict[str, object] = {
 SKILL_ROLL_HANDLERS: dict[str, object] = {
     'scholar_event_6': _resolve_scholar_event_6,
     'scholar_event_8_roll': _resolve_scholar_event_8_roll,
+}
+
+CHOICE_HANDLERS: dict[str, object] = {
+    'scholar_event_3': _choice_scholar_event_3,
+    'scholar_event_8': _choice_scholar_event_8,
+    'scholar_mishap_3': _choice_scholar_mishap_3,
+    'scholar_mishap_5': _choice_scholar_mishap_5,
 }

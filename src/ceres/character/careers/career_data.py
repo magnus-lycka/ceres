@@ -1,16 +1,17 @@
 from pydantic import BaseModel
 
 from ceres.character.benefits import AnyBenefit
+from ceres.character.characteristics import Chars
 
 
 class CharCheck(BaseModel):
-    characteristic: str
+    characteristic: Chars
     target: int
 
 
 class SkillTableEntry(BaseModel):
     skill: str | None = None
-    characteristic: str | None = None  # for +1 characteristic entries
+    characteristic: Chars | None = None  # for +1 characteristic entries
     level: int = 1
     choices: list[str] | None = None  # if multiple skill options (e.g. "Drive or Flyer")
 
@@ -22,7 +23,7 @@ class SkillTable(BaseModel):
 
 class RankBonus(BaseModel):
     skill: str | None = None
-    characteristic: str | None = None
+    characteristic: Chars | None = None
     level: int = 1
     choices: list[str] | None = None  # if player picks which broad skill to gain
 
@@ -47,6 +48,7 @@ class CareerEventEntry(BaseModel):
 class MishapEntry(BaseModel):
     text: str
     stay_in_career: bool = False
+    defer_ejection: bool = False  # handler owns ejection flow; no auto-purge or advancement pending
     effects: list[EventEffect] = []
 
 

@@ -6,19 +6,26 @@ from ceres.make.ship.drives import DriveSection, MDrive1
 from ceres.make.ship.parts import VeryAdvanced
 from ceres.make.ship.power import (
     AdvancedSolarCoating,
+    AdvancedSolarPanels,
     AntimatterPlant,
+    BasicSolarPanels,
     ChemicalPlant,
     EnhancedSolarCoating,
+    EnhancedSolarPanels,
     FissionPlant,
     FusionPlantTL8,
     FusionPlantTL12,
     HighEfficiencyBatteriesTL10,
     HighEfficiencyBatteriesTL12,
+    ImprovedSolarPanels,
     IncreasedPower,
     PowerSection,
-    SolarPanelsTL6,
-    SolarPanelsTL8,
-    SolarPanelsTL12,
+    SpinExtSolarCoatingTL6,
+    SpinExtSolarCoatingTL8,
+    SpinExtSolarCoatingTL12,
+    SpinExtSolarPanelsTL6,
+    SpinExtSolarPanelsTL8,
+    SpinExtSolarPanelsTL12,
     SterlingFissionPlant,
     SterlingFissionPlantTL6,
     SterlingFissionPlantTL12,
@@ -236,40 +243,121 @@ def test_ship_with_fission_plant():
 # --- Solar energy systems ---
 
 
-def test_tl8_solar_panels_tons_cost_and_output():
-    panels = SolarPanelsTL8(tons=0.5)
-    assert panels.tons == pytest.approx(0.5)
-    assert panels.cost == pytest.approx(100_000)
+def test_high_guard_improved_solar_panels_units_cost_and_output():
+    panels = ImprovedSolarPanels(units=2)
+    assert panels.tons == pytest.approx(2.0)
+    assert panels.cost == pytest.approx(400_000)
     assert panels.output == pytest.approx(1.0)
     assert panels.power == 0.0
-    assert panels.build_item() == 'Solar Panels (TL 8), Power 1'
+    assert panels.build_item() == 'Solar Panels (Improved), Power 1'
 
 
-def test_solar_panel_table_values():
-    assert SolarPanelsTL6(tons=1).output == pytest.approx(1.0)
-    assert SolarPanelsTL6(tons=1).cost == pytest.approx(100_000)
-    assert SolarPanelsTL8(tons=1).output == pytest.approx(2.0)
-    assert SolarPanelsTL8(tons=1).cost == pytest.approx(200_000)
-    assert SolarPanelsTL12(tons=1).output == pytest.approx(3.0)
-    assert SolarPanelsTL12(tons=1).cost == pytest.approx(400_000)
+def test_high_guard_solar_panel_table_values():
+    assert BasicSolarPanels(units=1).output == pytest.approx(0.25)
+    assert BasicSolarPanels(units=1).cost == pytest.approx(100_000)
+    assert ImprovedSolarPanels(units=1).output == pytest.approx(0.5)
+    assert ImprovedSolarPanels(units=1).cost == pytest.approx(200_000)
+    assert EnhancedSolarPanels(units=1).output == pytest.approx(1.0)
+    assert EnhancedSolarPanels(units=1).cost == pytest.approx(300_000)
+    assert AdvancedSolarPanels(units=1).output == pytest.approx(2.0)
+    assert AdvancedSolarPanels(units=1).cost == pytest.approx(400_000)
 
 
-def test_solar_panels_minimum_size():
-    with pytest.raises(ValidationError):
-        SolarPanelsTL8(tons=0.49)
-
-
-def test_solar_panel_notes_capture_deployment_and_use_limits():
+def test_high_guard_solar_panel_notes_capture_deployment_and_use_limits():
     my_ship = ship.Ship(
         tl=8,
         displacement=100,
         hull=hull.Hull(configuration=hull.standard_hull),
-        power=PowerSection(solar=[SolarPanelsTL8(tons=0.5)]),
+        power=PowerSection(solar=[ImprovedSolarPanels(units=2)]),
+    )
+    assert my_ship.power is not None
+    panels = my_ship.power.solar[0]
+    assert 'DM+2 to detect the ship while solar panels are deployed' in panels.notes.infos
+    assert 'Solar panels require one six-minute combat turn to deploy' in panels.notes.infos
+    assert 'Ships cannot accelerate while solar panels are deployed or deploying' in panels.notes.infos
+
+
+def test_spinext_tl8_solar_panels_tons_cost_and_output():
+    panels = SpinExtSolarPanelsTL8(tons=0.5)
+    assert panels.tons == pytest.approx(0.5)
+    assert panels.cost == pytest.approx(100_000)
+    assert panels.output == pytest.approx(1.0)
+    assert panels.power == 0.0
+    assert panels.build_item() == 'SpinExt Solar Panels (TL 8), Power 1'
+
+
+def test_spinext_solar_panel_table_values():
+    assert SpinExtSolarPanelsTL6(tons=1).output == pytest.approx(1.0)
+    assert SpinExtSolarPanelsTL6(tons=1).cost == pytest.approx(100_000)
+    assert SpinExtSolarPanelsTL8(tons=1).output == pytest.approx(2.0)
+    assert SpinExtSolarPanelsTL8(tons=1).cost == pytest.approx(200_000)
+    assert SpinExtSolarPanelsTL12(tons=1).output == pytest.approx(3.0)
+    assert SpinExtSolarPanelsTL12(tons=1).cost == pytest.approx(400_000)
+
+
+def test_spinext_solar_panels_minimum_size():
+    with pytest.raises(ValidationError):
+        SpinExtSolarPanelsTL8(tons=0.49)
+
+
+def test_spinext_solar_panel_notes_capture_deployment_and_use_limits():
+    my_ship = ship.Ship(
+        tl=8,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        power=PowerSection(solar=[SpinExtSolarPanelsTL8(tons=0.5)]),
     )
     assert my_ship.power is not None
     panels = my_ship.power.solar[0]
     assert 'Ships cannot jump with solar panels deployed' in panels.notes.infos
     assert 'Ships cannot manoeuvre above Thrust 1 with solar panels deployed' in panels.notes.infos
+
+
+def test_spinext_tl8_solar_coating_covered_tons_cost_and_output():
+    coating = SpinExtSolarCoatingTL8(covered_tons=20)
+    assert coating.tons == 0.0
+    assert coating.cost == pytest.approx(40_000)
+    assert coating.output == pytest.approx(0.4)
+    assert coating.power == 0.0
+    assert coating.build_item() == 'SpinExt Solar Coating (TL 8), Power 0.4'
+
+
+def test_spinext_solar_coating_table_values():
+    assert SpinExtSolarCoatingTL6(covered_tons=10).output == pytest.approx(0.1)
+    assert SpinExtSolarCoatingTL6(covered_tons=10).cost == pytest.approx(10_000)
+    assert SpinExtSolarCoatingTL8(covered_tons=10).output == pytest.approx(0.2)
+    assert SpinExtSolarCoatingTL8(covered_tons=10).cost == pytest.approx(20_000)
+    assert SpinExtSolarCoatingTL12(covered_tons=10).output == pytest.approx(0.3)
+    assert SpinExtSolarCoatingTL12(covered_tons=10).cost == pytest.approx(40_000)
+
+
+def test_spinext_solar_coating_reports_non_10_ton_increment():
+    my_ship = ship.Ship(
+        tl=8,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        power=PowerSection(solar=[SpinExtSolarCoatingTL8(covered_tons=15)]),
+    )
+    assert my_ship.power is not None
+    coating = my_ship.power.solar[0]
+    assert 'SpinExt solar coating should cover hull tonnage in 10-ton increments' in coating.notes.errors
+
+
+def test_spinext_low_tl_solar_coating_rejects_heat_shielding_and_stealth():
+    my_ship = ship.Ship(
+        tl=8,
+        displacement=100,
+        hull=hull.Hull(
+            configuration=hull.standard_hull,
+            heat_shielding=True,
+            stealth=hull.BasicStealth(),
+        ),
+        power=PowerSection(solar=[SpinExtSolarCoatingTL8(covered_tons=20)]),
+    )
+    assert my_ship.power is not None
+    coating = my_ship.power.solar[0]
+    assert 'Only TL12 SpinExt solar coating can be used with Heat Shielding' in coating.notes.errors
+    assert 'Only TL12 SpinExt solar coating can be used with Stealth Hull options' in coating.notes.errors
 
 
 def test_solar_coating_has_no_tonnage():
@@ -316,7 +404,7 @@ def test_solar_coating_rejects_more_than_forty_percent_coverage():
 
 
 def test_power_section_output_sums_plant_and_solar():
-    ps = PowerSection(plant=FissionPlant(output=8), solar=[SolarPanelsTL8(tons=0.5)])
+    ps = PowerSection(plant=FissionPlant(output=8), solar=[SpinExtSolarPanelsTL8(tons=0.5)])
     assert ps.output == pytest.approx(9.0)
 
 
@@ -325,7 +413,7 @@ def test_ship_available_power_includes_solar():
         tl=8,
         displacement=90,
         hull=hull.Hull(configuration=hull.standard_hull),
-        power=PowerSection(plant=SterlingFissionPlant(output=8), solar=[SolarPanelsTL8(tons=0.5)]),
+        power=PowerSection(plant=SterlingFissionPlant(output=8), solar=[SpinExtSolarPanelsTL8(tons=0.5)]),
     )
     assert s.available_power == pytest.approx(9.0)
 

@@ -1,0 +1,74 @@
+<div id="char-summary" {% if oob %}hx-swap-oob="true"{% endif %}>
+
+  {% set chars = summary.characteristics %}
+  {% if chars %}
+  <div class="mb-4">
+    <div class="text-xs uppercase tracking-widest text-gray-600 mb-2">Characteristics</div>
+    {% set stats = ['STR', 'DEX', 'END', 'INT', 'EDU', 'SOC'] %}
+    <div class="grid grid-cols-3 gap-1 text-center text-xs">
+      {% for stat in stats %}
+      {% set val = chars.get(stat, 0) %}
+      <div class="bg-gray-800/50 border border-gray-700/50 py-2">
+        <div class="text-gray-600 text-xs">{{ stat }}</div>
+        <div class="font-bold {% if val >= 10 %}text-amber-300{% elif val <= 3 %}text-red-400{% else %}text-gray-200{% endif %}">
+          {{ val }}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if summary.current_career or summary.last_career %}
+  <div class="mb-4">
+    <div class="text-xs uppercase tracking-widest text-gray-600 mb-2">Career</div>
+    <div class="text-xs text-gray-400 space-y-0.5">
+      {% set career = summary.current_career or summary.last_career %}
+      {% set assignment = summary.current_assignment or summary.last_assignment %}
+      <div>{{ career }}{% if assignment %} · {{ assignment }}{% endif %}</div>
+      {% if summary.rank is not none %}<div>Rank {{ summary.rank }}</div>{% endif %}
+      {% if summary.term_count %}<div>{{ summary.term_count }} term{% if summary.term_count != 1 %}s{% endif %} · Age {{ summary.age }}</div>{% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if summary.skills %}
+  <div class="mb-4">
+    <div class="text-xs uppercase tracking-widest text-gray-600 mb-2">Skills</div>
+    <p class="text-xs text-gray-400 leading-relaxed">{{ summary.skills | format_skills }}</p>
+  </div>
+  {% endif %}
+
+  {% if summary.cash or summary.benefits %}
+  <div class="mb-4">
+    <div class="text-xs uppercase tracking-widest text-gray-600 mb-2">Benefits</div>
+    <div class="text-xs text-gray-400 space-y-0.5">
+      {% if summary.cash %}<div>Cash: Cr{{ '{:,}'.format(summary.cash) }}</div>{% endif %}
+      {% for b in summary.benefits %}<div>{{ b.display_label }}</div>{% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if summary.connections %}
+  <div class="mb-4">
+    <div class="text-xs uppercase tracking-widest text-gray-600 mb-2">Connections</div>
+    <div class="text-xs text-gray-400 space-y-0.5">
+      {% for c in summary.connections %}
+      <div class="capitalize">{{ c.kind }}{% if c.source %}: {{ c.source }}{% endif %}</div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if summary.narrative %}
+  <div>
+    <div class="text-xs uppercase tracking-widest text-gray-600 mb-2">History</div>
+    <ul class="text-xs text-gray-500 space-y-1">
+      {% for entry in summary.narrative | reverse %}
+      <li>{{ entry }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+</div>

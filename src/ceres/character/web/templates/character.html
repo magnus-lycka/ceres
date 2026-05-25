@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}{{ summary.name or 'Character' }}{% endblock %}
+{% block content %}
+
+<div class="flex items-start justify-between mb-6 gap-4 flex-wrap">
+  <div>
+    <h1 class="text-2xl font-bold text-amber-400 tracking-wide">{{ summary.name or '—' }}</h1>
+    <p class="text-gray-500 text-sm mt-1">
+      {{ summary.species or '?' }}
+      {% if summary.current_career or summary.last_career %}
+        · {{ summary.current_career or summary.last_career }}
+        {% if summary.current_assignment or summary.last_assignment %}
+          ({{ summary.current_assignment or summary.last_assignment }})
+        {% endif %}
+        {% if summary.rank is not none %}· Rank {{ summary.rank }}{% endif %}
+        · {{ summary.term_count }} term{% if summary.term_count != 1 %}s{% endif %}
+      {% endif %}
+      · Age {{ summary.age }}
+    </p>
+  </div>
+  <div class="flex gap-3 flex-wrap">
+    {% if projection.pending_inputs %}
+    <a href="/ui/characters/{{ character_id }}/wizard"
+       class="bg-cyan-700 hover:bg-cyan-600 text-white font-bold px-4 py-2 text-xs uppercase tracking-wide">
+      Continue Creation →
+    </a>
+    {% endif %}
+    <a href="/ui/characters/{{ character_id }}/pdf"
+       class="border border-gray-600 hover:border-gray-400 text-gray-400 hover:text-gray-200 px-4 py-2 text-xs uppercase tracking-wide">
+      Export PDF
+    </a>
+    <a href="/ui/" class="text-gray-600 hover:text-gray-400 px-2 py-2 text-xs uppercase">← Back</a>
+  </div>
+</div>
+
+{# UCP / Characteristics #}
+<div class="mb-8">
+  {% set stat_order = ['STR', 'DEX', 'END', 'INT', 'EDU', 'SOC'] %}
+  {% set chars = summary.characteristics %}
+  <div class="inline-block border border-gray-700">
+    <table class="text-center text-sm">
+      <thead>
+        <tr class="bg-gray-800/80 text-gray-500 text-xs uppercase tracking-wide">
+          {% for stat in stat_order %}
+          <th class="px-5 py-1 border-r border-gray-700 last:border-r-0">{{ stat }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="border-t border-gray-700">
+          {% for stat in stat_order %}
+          {% set val = chars.get(stat, 0) %}
+          <td class="px-5 py-2 border-r border-gray-700 last:border-r-0 font-bold text-base
+                     {% if val >= 10 %}text-amber-300{% elif val <= 3 %}text-red-400{% else %}text-gray-100{% endif %}">
+            {{ val }}
+          </td>
+          {% endfor %}
+        </tr>
+        <tr class="border-t border-gray-700/40 bg-gray-900/20">
+          {% for stat in stat_order %}
+          <td class="px-5 py-1 text-xs text-gray-600 border-r border-gray-700/40 last:border-r-0">
+            {{ '%X' % chars.get(stat, 0) }}
+          </td>
+          {% endfor %}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# Skills #}
+{% if summary.skills %}
+<div class="mb-6">
+  <h2 class="text-xs uppercase tracking-widest text-gray-600 mb-3">Skills</h2>
+  <p class="text-sm text-gray-300 leading-relaxed">{{ summary.skills | format_skills }}</p>
+</div>
+{% endif %}
+
+{# Benefits & Cash #}
+{% if summary.cash or summary.benefits %}
+<div class="mb-6">
+  <h2 class="text-xs uppercase tracking-widest text-gray-600 mb-3">Benefits &amp; Cash</h2>
+  <div class="text-sm text-gray-300 space-y-1">
+    {% if summary.cash %}
+    <div>Cash: <span class="text-amber-400 font-bold">Cr{{ '{:,}'.format(summary.cash) }}</span></div>
+    {% endif %}
+    {% for b in summary.benefits %}
+    <div class="text-gray-300">{{ b.display_label or b.item }}</div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{# Connections #}
+{% if summary.connections %}
+<div class="mb-6">
+  <h2 class="text-xs uppercase tracking-widest text-gray-600 mb-3">Connections</h2>
+  <div class="text-sm space-y-1">
+    {% for conn in summary.connections %}
+    <div>
+      <span class="text-xs uppercase tracking-wide font-bold
+        {% if conn.kind == 'ally' %}text-green-400
+        {% elif conn.kind == 'contact' %}text-cyan-400
+        {% elif conn.kind == 'rival' %}text-yellow-400
+        {% else %}text-red-400{% endif %}">{{ conn.kind }}</span>
+      {% if conn.source %}
+        <span class="text-gray-500 ml-2 text-xs">{{ conn.source }}</span>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{# Narrative #}
+{% if summary.narrative %}
+<div class="mb-6">
+  <h2 class="text-xs uppercase tracking-widest text-gray-600 mb-3">History</h2>
+  <ul class="text-sm text-gray-400 space-y-1 list-disc list-inside">
+    {% for entry in summary.narrative %}
+    <li>{{ entry }}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+{# Problems #}
+{% if summary.problems %}
+<div class="mb-6">
+  <h2 class="text-xs uppercase tracking-widest text-gray-600 mb-3">Problems</h2>
+  <ul class="text-sm text-red-400/80 space-y-1 list-disc list-inside">
+    {% for p in summary.problems %}
+    <li>{{ p }}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+{% endblock %}

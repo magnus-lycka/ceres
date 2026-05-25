@@ -37,7 +37,7 @@ skill_tables:
     2: {skill: Language}
     3: {skill: Seafarer}
     4: {skill: Explosives}
-    5: {skill: Science, choices: [Life Science, Physical Science, Robotic Science, Social Science, Space Science]}
+    5: {skill: Science}
     6: {skill: Jack-of-All-Trades}
   courier:
     1: {skill: Electronics}
@@ -57,7 +57,7 @@ skill_tables:
     1: {skill: Electronics}
     2: {skill: Pilot}
     3: {skill: Engineer}
-    4: {skill: Science, choices: [Life Science, Physical Science, Robotic Science, Social Science, Space Science]}
+    4: {skill: Science}
     5: {skill: Stealth}
     6: {skill: Recon}
 

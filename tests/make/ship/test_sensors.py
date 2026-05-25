@@ -291,6 +291,35 @@ def test_life_scanner_values_and_notes():
     assert 'Requires Electronics (sensors) to interpret results' in s.notes.infos
 
 
+def test_hardened_powered_sensor_costs_50_percent_more_in_ship_spec():
+    my_ship = ship.Ship(
+        tl=13,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        sensors=SensorsSection(primary=BasicSensors(), life_scanner=LifeScanner(hardened=True)),
+    )
+
+    row = my_ship.build_spec().row('Life Scanner', section='Sensors')
+
+    assert row.cost == 3_000_000
+    assert 'Hardened against Ion weapons' in row.notes.infos
+    assert my_ship.expenses.production_cost == my_ship.hull_cost + 3_000_000
+
+
+def test_hardened_zero_power_sensor_reports_error_without_cost_increase():
+    my_ship = ship.Ship(
+        tl=13,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        sensors=SensorsSection(primary=BasicSensors(hardened=True)),
+    )
+
+    row = my_ship.build_spec().row('Basic Sensors', section='Sensors')
+
+    assert row.cost is None
+    assert 'Hardened requires a system that draws Power' in row.notes.errors
+
+
 def test_mail_distribution_array_tl10_values():
     s = MailDistributionArray(tl=10)
     s.bind(DummyOwner(10, 400))

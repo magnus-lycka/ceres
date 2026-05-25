@@ -457,6 +457,22 @@ those rules. Combat-use details such as only firing one weapon type from a
 mixed turret in the same attack are operational rules outside the static ship
 spec.
 
+### RIS-021 Non-Gravity Hull Spin Layout Is Outside Ship Construction Scope
+
+High Guard states that non-gravity hulls can use specific configurations that
+allow the hull to spin in order to generate gravity if desired. Ceres models
+the construction effects that are explicit and measurable in the ship design:
+
+- 50% hull cost reduction
+- basic ship systems Power reduced to half the normal requirement
+- maximum displacement of 500,000 tons
+
+Ceres does not model hull dimensions, spin radius, deck orientation, Coriolis
+effects, comfort, or whether a particular layout is operationally useful as a
+rotating habitat. Those are layout and runtime concerns, not static
+construction costs. A non-gravity ship may therefore be a poor or inconvenient
+operational design without being an invalid Ceres build.
+
 ## Character Interpretations
 
 ### RIC-001 "Science", "Art", and "Profession" in Career Tables Mean Player Chooses a Broad Skill

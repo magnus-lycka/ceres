@@ -476,7 +476,7 @@ class HabitationSection(CeresModel):
         if quantity > 1 and plural_label is not None:
             item = plural_label
         total_tons = sum(part.tons for part in group) or None
-        total_cost = sum(part.cost for part in group) or None
+        total_cost = sum(ship._part_cost(part) for part in group) or None
         total_power = sum(part.power for part in group)
         seen: set[tuple] = set()
         notes = NoteList()

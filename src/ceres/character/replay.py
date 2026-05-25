@@ -1,9 +1,14 @@
 from collections.abc import Sequence
 from typing import Literal, cast
 
-from ceres.character.careers.career_data import CareerData, SkillTableEntry
-from ceres.character.careers.loader import get_effect_handler, get_skill_roll_handler, load_careers
-from ceres.character.characteristics import UCP_STATS
+from ceres.character.careers.career_data import CareerData, RankBonus, SkillTableEntry
+from ceres.character.careers.loader import (
+    get_choice_handler,
+    get_effect_handler,
+    get_skill_roll_handler,
+    load_careers,
+)
+from ceres.character.characteristics import UCP_STATS, Chars
 from ceres.character.events import (
     AdvancementDmChoiceEvent,
     AdvancementEvent,
@@ -11,21 +16,20 @@ from ceres.character.events import (
     AgingRollEvent,
     AnyEvent,
     BackgroundSkillsEvent,
+    BenefitChoiceEvent,
+    CareerChoiceEvent,
     CareerEvent,
     CharacteristicChoiceEvent,
     CharacterStartedEvent,
     ConnectionKindChoiceEvent,
     ConnectionsRollEvent,
+    DoubleInjuryTableEvent,
     InjuryTableEvent,
     LifeEventEvent,
     LifeEventUnusualEvent,
     MishapEvent,
     MusterOutEvent,
     ReenlistEvent,
-    ScholarEvent3ChoiceEvent,
-    ScholarEvent8ChoiceEvent,
-    ScholarMishap3ChoiceEvent,
-    ScholarMishap5ChoiceEvent,
     SkillChoiceEvent,
     SkillRollEvent,
     SkillTableEvent,
@@ -33,22 +37,57 @@ from ceres.character.events import (
     TermEventEvent,
     UcpEvent,
 )
-from ceres.character.projection import CharacterProjection, CharacterSummary, Connection, PendingInput, ScheduledEffect
+from ceres.character.projection import (
+    Ally,
+    AnyPending,
+    CharacterProjection,
+    CharacterSummary,
+    Contact,
+    PendingAdvancement,
+    PendingAgingChoice,
+    PendingAgingChoiceMental,
+    PendingAgingCrisis,
+    PendingAgingRoll,
+    PendingBackgroundSkills,
+    PendingBenefitChoice,
+    PendingCareerChoice,
+    PendingCareerEvent,
+    PendingCareerMishap,
+    PendingCareerSkillChoice,
+    PendingCareerSkillRoll,
+    PendingCharacteristicChoice,
+    PendingConnectionsRoll,
+    PendingInitialTrainingChoice,
+    PendingInjuryTable,
+    PendingLifeEvent,
+    PendingLifeEventChoice,
+    PendingLifeEventUnusual,
+    PendingMishap,
+    PendingMusterOut,
+    PendingNearlyKilled,
+    PendingRankBonusChoice,
+    PendingReenlist,
+    PendingSkillChoice,
+    PendingSkillTable,
+    PendingSkillTableChoice,
+    PendingSurvive,
+    PendingTermEvent,
+    PendingUcp,
+    ScheduledEffect,
+    make_connection,
+)
 from ceres.character.skills import (
     AnySkill,
     BackgroundSkill,
     Level,
-    ScienceSkill,
     Skill,
     SpaceScience,
     _skill_classes,
     skill_class_by_name,
-    skill_list,
+    skill_names_for_category,
 )
 
 BACKGROUND_SKILLS: frozenset[type[Skill]] = frozenset(_skill_classes(BackgroundSkill))
-
-_SCHOLAR_SCIENCES = sorted(s.type for s in skill_list(ScienceSkill))
 
 
 class ReplayError(Exception):
@@ -63,9 +102,9 @@ def replay(character_id: int, events: Sequence[AnyEvent]) -> CharacterProjection
 
 
 def _apply(projection: CharacterProjection, event: AnyEvent) -> None:
-    fulfilled_kind: str | None = None
+    fulfilled_pending: AnyPending | None = None
     if event.fulfills is not None:
-        fulfilled_kind = next((p.kind for p in projection.pending_inputs if p.id == event.fulfills), None)
+        fulfilled_pending = next((p for p in projection.pending_inputs if p.id == event.fulfills), None)
         _fulfill(projection, event)
     elif _has_blocking_pending(projection):
         raise ReplayError(
@@ -89,19 +128,15 @@ def _apply(projection: CharacterProjection, event: AnyEvent) -> None:
         case TermEventEvent():
             _apply_term_event(projection, event)
         case SkillChoiceEvent():
-            _apply_skill_choice(projection, event, fulfilled_kind)
+            _apply_skill_choice(projection, event, fulfilled_pending)
         case AdvancementDmChoiceEvent():
-            _apply_advancement_dm_choice(projection, event, fulfilled_kind)
+            _apply_advancement_dm_choice(projection, event)
         case ConnectionKindChoiceEvent():
-            _apply_connection_kind_choice(projection, event, fulfilled_kind)
-        case ScholarEvent3ChoiceEvent():
-            _apply_scholar_event3_choice(projection, event)
-        case ScholarEvent8ChoiceEvent():
-            _apply_scholar_event8_choice(projection, event)
-        case ScholarMishap3ChoiceEvent():
-            _apply_scholar_mishap3_choice(projection, event)
-        case ScholarMishap5ChoiceEvent():
-            _apply_scholar_mishap5_choice(projection, event)
+            _apply_connection_kind_choice(projection, event, fulfilled_pending)
+        case CareerChoiceEvent():
+            _apply_career_choice(projection, event)
+        case BenefitChoiceEvent():
+            _apply_benefit_choice(projection, event, fulfilled_pending)
         case AdvancementEvent():
             _apply_advancement(projection, event)
         case ReenlistEvent():
@@ -109,13 +144,15 @@ def _apply(projection: CharacterProjection, event: AnyEvent) -> None:
         case SkillTableEvent():
             _apply_skill_table(projection, event)
         case CharacteristicChoiceEvent():
-            _apply_characteristic_choice(projection, event, fulfilled_kind)
+            _apply_characteristic_choice(projection, event, fulfilled_pending)
         case ConnectionsRollEvent():
-            _apply_connections_roll(projection, event, fulfilled_kind)
+            _apply_connections_roll(projection, event)
         case SkillRollEvent():
             _apply_skill_roll(projection, event)
         case InjuryTableEvent():
             _apply_injury_table(projection, event)
+        case DoubleInjuryTableEvent():
+            _apply_double_injury_table(projection, event)
         case LifeEventEvent():
             _apply_life_event(projection, event)
         case LifeEventUnusualEvent():
@@ -151,22 +188,64 @@ def _clear_current_career(projection: CharacterProjection) -> None:
     projection.summary.current_assignment = None
 
 
+_CAREER_PHASE_PENDING_TYPES = (
+    PendingSurvive,
+    PendingTermEvent,
+    PendingMishap,
+    PendingAdvancement,
+    PendingSkillTable,
+    PendingSkillTableChoice,
+    PendingRankBonusChoice,
+    PendingCareerEvent,
+    PendingCareerMishap,
+    PendingCareerSkillChoice,
+    PendingCareerSkillRoll,
+)
+
+
+def _purge_career_pendings(projection: CharacterProjection) -> None:
+    """Remove pending inputs that require an active career and can no longer be fulfilled.
+
+    Called when a career ends (mishap or reenlist=False) to clear inputs that were queued
+    by prior career-phase processing and are now orphaned.
+    """
+    projection.pending_inputs[:] = [
+        p for p in projection.pending_inputs if not isinstance(p, _CAREER_PHASE_PENDING_TYPES)
+    ]
+
+
+def _available_tables(career: CareerData, projection: CharacterProjection) -> list[str]:
+    """Return the skill table names this character can currently choose from.
+
+    Excludes tables with a min_edu requirement the character does not meet, and
+    excludes assignment-specific tables that belong to a different assignment.
+    """
+    edu = projection.summary.characteristics.get(Chars.EDU, 0)
+    assignment_names_lower = {a.name.lower() for a in career.assignments}
+    current_lower = (projection.summary.current_assignment or '').lower()
+    result = []
+    for name, table in career.skill_tables.items():
+        if name in assignment_names_lower and name != current_lower:
+            continue
+        if table.min_edu is not None and edu < table.min_edu:
+            continue
+        result.append(name)
+    return sorted(result)
+
+
 def _apply_character_started(projection: CharacterProjection, event: CharacterStartedEvent) -> None:
     projection.summary = CharacterSummary(name=event.name, species=event.sophont)
-    projection.pending_inputs.append(
-        PendingInput(id=f'{event.id}.0', kind='ucp', instruction='Provide characteristics (UCP)')
-    )
+    projection.pending_inputs.append(PendingUcp(id=f'{event.id}.0', instruction='Provide characteristics (UCP)'))
 
 
 def _apply_ucp(projection: CharacterProjection, event: UcpEvent) -> None:
     projection.summary.characteristics = _parse_ucp(event.ucp)
-    edu = projection.summary.characteristics.get('EDU', 0)
+    edu = projection.summary.characteristics.get(Chars.EDU, 0)
     count = _background_skill_count(edu)
     if count > 0:
         projection.pending_inputs.append(
-            PendingInput(
+            PendingBackgroundSkills(
                 id=f'{event.id}.0',
-                kind='background_skills',
                 instruction=f'Choose {count} background skill(s)',
                 options=sorted(cls.name() for cls in BACKGROUND_SKILLS),
             )
@@ -174,7 +253,7 @@ def _apply_ucp(projection: CharacterProjection, event: UcpEvent) -> None:
 
 
 def _apply_background_skills(projection: CharacterProjection, event: BackgroundSkillsEvent) -> None:
-    edu = projection.summary.characteristics.get('EDU', 0)
+    edu = projection.summary.characteristics.get(Chars.EDU, 0)
     expected = _background_skill_count(edu)
     if len(event.skills) != expected:
         raise ReplayError(f'Expected {expected} background skill(s), got {len(event.skills)}')
@@ -185,9 +264,8 @@ def _apply_background_skills(projection: CharacterProjection, event: BackgroundS
         _grant_skill(projection, skill)
     career_options = sorted(load_careers().keys())
     projection.pending_inputs.append(
-        PendingInput(
+        PendingCareerChoice(
             id=f'{event.id}.0',
-            kind='career',
             instruction='Choose a career',
             options=career_options,
         )
@@ -216,9 +294,8 @@ def _apply_career(projection: CharacterProjection, event: CareerEvent) -> None:
     if event.qualification_roll + dm < target:
         projection.summary.problems.append(f'Failed to qualify for {career.name}.')
         projection.pending_inputs.append(
-            PendingInput(
+            PendingCareerChoice(
                 id=f'{event.id}.0',
-                kind='career',
                 instruction='Qualification failed — choose another career',
                 options=sorted(careers.keys()),
             )
@@ -236,13 +313,15 @@ def _apply_career(projection: CharacterProjection, event: CareerEvent) -> None:
         service_table = career.skill_tables['service_skills']
         choice_idx = 0
         for entry in service_table.entries.values():
-            if entry.choices:
+            choices = entry.choices
+            if choices is None and entry.skill is not None:
+                choices = skill_names_for_category(entry.skill)
+            if choices:
                 projection.pending_inputs.append(
-                    PendingInput(
+                    PendingInitialTrainingChoice(
                         id=f'{event.id}.{choice_idx}',
-                        kind='initial_training_choice',
-                        instruction=f'Initial training: choose one of {", ".join(entry.choices)}',
-                        options=entry.choices,
+                        instruction=f'Initial training: choose one of {", ".join(choices)}',
+                        options=choices,
                     )
                 )
                 choice_idx += 1
@@ -266,13 +345,13 @@ def _apply_initial_training_entry(projection: CharacterProjection, entry: SkillT
 
 def _survive_pending(
     projection: CharacterProjection, career: CareerData, assignment_name: str, event_id: int
-) -> PendingInput:
+) -> PendingSurvive:
     assignment = career.assignment(assignment_name)
     if assignment is None:
         raise ReplayError(f'Unknown assignment {assignment_name!r} in career {career.name!r}')
     char = assignment.survival.characteristic
     target = assignment.survival.target
-    return PendingInput(id=f'{event_id}.0', kind='survive', instruction=f'Survive: {char} {target}+')
+    return PendingSurvive(id=f'{event_id}.0', instruction=f'Survive: {char} {target}+')
 
 
 def _apply_survive(projection: CharacterProjection, event: SurviveEvent) -> None:
@@ -287,17 +366,13 @@ def _apply_survive(projection: CharacterProjection, event: SurviveEvent) -> None
     success = event.roll != 2 and (event.roll + dm) >= target
 
     if success:
+        projection.pending_inputs.append(PendingTermEvent(id=f'{event.id}.0', instruction='Roll 2D on Events table'))
+    else:
         if event.roll == 2:
             projection.summary.narrative.append(
-                f'Barely survived term {projection.summary.term_count + 1} (rolled natural 2)'
+                f'Automatic mishap (rolled natural 2) in term {projection.summary.term_count}'
             )
-        projection.pending_inputs.append(
-            PendingInput(id=f'{event.id}.0', kind='term_event', instruction='Roll 2D on Events table')
-        )
-    else:
-        projection.pending_inputs.append(
-            PendingInput(id=f'{event.id}.0', kind='mishap', instruction='Roll 1D on Mishap table')
-        )
+        projection.pending_inputs.append(PendingMishap(id=f'{event.id}.0', instruction='Roll 1D on Mishap table'))
 
 
 def _apply_mishap(projection: CharacterProjection, event: MishapEvent) -> None:
@@ -312,9 +387,8 @@ def _apply_mishap(projection: CharacterProjection, event: MishapEvent) -> None:
                 options = list(getattr(effect, 'options', []))
                 amount = getattr(effect, 'amount', 1)
                 projection.pending_inputs.append(
-                    PendingInput(
+                    PendingCharacteristicChoice(
                         id=f'{event.id}.{pending_idx}',
-                        kind='characteristic_choice',
                         instruction=f'Choose characteristic to decrease by {amount}: {", ".join(options)}',
                         options=options,
                     )
@@ -324,9 +398,8 @@ def _apply_mishap(projection: CharacterProjection, event: MishapEvent) -> None:
                 connection_type = getattr(effect, 'connection_type', 'contact')
                 dice = getattr(effect, 'dice', '1d6')
                 projection.pending_inputs.append(
-                    PendingInput(
+                    PendingConnectionsRoll(
                         id=f'{event.id}.{pending_idx}',
-                        kind='connections_roll',
                         instruction=f'Roll {dice.upper()} for number of {connection_type}s',
                         options=[str(i) for i in range(1, 7)],
                     )
@@ -335,9 +408,8 @@ def _apply_mishap(projection: CharacterProjection, event: MishapEvent) -> None:
             elif effect.type == 'skill_choice':
                 options = list(getattr(effect, 'options', []))
                 projection.pending_inputs.append(
-                    PendingInput(
+                    PendingSkillChoice(
                         id=f'{event.id}.{pending_idx}',
-                        kind='skill_choice',
                         instruction=f'Choose one skill: {", ".join(options)}',
                         options=options,
                     )
@@ -347,29 +419,26 @@ def _apply_mishap(projection: CharacterProjection, event: MishapEvent) -> None:
                 severity = getattr(effect, 'severity', 'normal')
                 if severity == 'normal':
                     projection.pending_inputs.append(
-                        PendingInput(
+                        PendingCharacteristicChoice(
                             id=f'{event.id}.{pending_idx}',
-                            kind='characteristic_choice',
                             instruction='Injured: choose STR, DEX, or END to reduce by 1',
-                            options=['STR', 'DEX', 'END'],
+                            options=[Chars.STR, Chars.DEX, Chars.END],
                         )
                     )
                     pending_idx += 1
                 elif severity == 'severe':
                     projection.pending_inputs.append(
-                        PendingInput(
+                        PendingCharacteristicChoice(
                             id=f'{event.id}.{pending_idx}',
-                            kind='characteristic_choice',
                             instruction='Severely injured: choose STR, DEX, or END to reduce by 2',
-                            options=['STR', 'DEX', 'END'],
+                            options=[Chars.STR, Chars.DEX, Chars.END],
                         )
                     )
                     pending_idx += 1
                 elif severity == 'from_table':
                     projection.pending_inputs.append(
-                        PendingInput(
+                        PendingInjuryTable(
                             id=f'{event.id}.{pending_idx}',
-                            kind='injury_table',
                             instruction='Roll 1D on Injury table',
                             options=['1', '2', '3', '4', '5', '6'],
                         )
@@ -381,17 +450,21 @@ def _apply_mishap(projection: CharacterProjection, event: MishapEvent) -> None:
                     pending_idx = handler(projection, effect, event.id, pending_idx)
                 else:
                     _apply_simple_effect(projection, effect, source=mishap.text, source_event_id=event.id)
-    stay = event.stay_in_career or (mishap is not None and mishap.stay_in_career)
-    if stay:
+    defer = mishap is not None and mishap.defer_ejection
+    if defer:
+        pass  # handler owns the full ejection/stay flow; nothing automatic here
+    elif event.stay_in_career or (mishap is not None and mishap.stay_in_career):
         projection.pending_inputs.append(_advancement_pending(projection, career, event.id, pending_idx))
     else:
+        # Career is ending — purge orphaned career-phase pendings that can no longer be fulfilled.
+        _purge_career_pendings(projection)
         projection.summary.age += 4
         if projection.summary.age >= 34:
             # Save career for muster out after aging resolves (mishap = lose current term)
             projection.muster_out_career = career.name
             _clear_current_career(projection)
             projection.pending_inputs.append(
-                PendingInput(id=f'{event.id}.{pending_idx}', kind='aging_roll', instruction='Roll 2D on Aging table')
+                PendingAgingRoll(id=f'{event.id}.{pending_idx}', instruction='Roll 2D on Aging table')
             )
         else:
             _apply_muster_out_setup(projection, career, event.id, pending_idx, lose_current_term=True)
@@ -433,23 +506,20 @@ def _apply_term_event(projection: CharacterProjection, event: TermEventEvent) ->
         instruction = (
             'Roll 1D on Mishap table (you are not ejected from this career)' if not leave else 'Roll 1D on Mishap table'
         )
-        projection.pending_inputs.append(
-            PendingInput(id=f'{event.id}.{pending_idx}', kind='mishap', instruction=instruction)
-        )
+        projection.pending_inputs.append(PendingMishap(id=f'{event.id}.{pending_idx}', instruction=instruction))
         # advancement pending created when mishap resolves with stay_in_career=True
     elif auto_advance:
         _apply_auto_advance(projection, career, event.id)
     elif life_event_pending:
         projection.pending_inputs.append(
-            PendingInput(id=f'{event.id}.{pending_idx}', kind='life_event', instruction='Roll 2D on Life Events table')
+            PendingLifeEvent(id=f'{event.id}.{pending_idx}', instruction='Roll 2D on Life Events table')
         )
         # advancement pending created by _apply_life_event or _apply_life_event_unusual
     elif skill_choice_effect is not None:
         options = list(getattr(skill_choice_effect, 'options', []))
         projection.pending_inputs.append(
-            PendingInput(
+            PendingSkillChoice(
                 id=f'{event.id}.{pending_idx}',
-                kind='skill_choice',
                 instruction=f'Choose one skill: {", ".join(options)}',
                 options=options,
             )
@@ -460,6 +530,15 @@ def _apply_term_event(projection: CharacterProjection, event: TermEventEvent) ->
     # If a career handler was invoked it owns the flow; _apply_skill_roll creates advancement
 
 
+def _resolve_rank_bonus_choices(bonus: RankBonus) -> list[str] | None:
+    """Return the choice list for a rank bonus, deriving it from skills.py if not explicit."""
+    if bonus.choices:
+        return bonus.choices
+    if bonus.skill:
+        return skill_names_for_category(bonus.skill)
+    return None
+
+
 def _apply_auto_advance(projection: CharacterProjection, career: CareerData, event_id: int) -> None:
     new_rank = (projection.summary.rank or 0) + 1
     projection.summary.rank = new_rank
@@ -467,13 +546,14 @@ def _apply_auto_advance(projection: CharacterProjection, career: CareerData, eve
     rank_entry = career.assignment_ranks(assignment_name).get(new_rank)
     if rank_entry and rank_entry.bonus:
         bonus = rank_entry.bonus
-        if bonus.choices:
+        choices = _resolve_rank_bonus_choices(bonus)
+        if choices:
             projection.pending_inputs.append(
-                PendingInput(
+                PendingRankBonusChoice(
                     id=f'{event_id}.0',
-                    kind=f'rank_bonus_choice_{bonus.level}',
+                    level=bonus.level,
                     instruction=f'Rank {new_rank} bonus: choose skill at level {bonus.level}',
-                    options=bonus.choices,
+                    options=choices,
                 )
             )
             return  # skill_table + reenlist pending deferred until after choice
@@ -482,50 +562,40 @@ def _apply_auto_advance(projection: CharacterProjection, career: CareerData, eve
         elif bonus.characteristic:
             char = bonus.characteristic
             projection.summary.characteristics[char] = projection.summary.characteristics.get(char, 0) + bonus.level
-    tables = sorted(career.skill_tables.keys())
+    tables = _available_tables(career, projection)
     projection.pending_inputs.append(
-        PendingInput(
-            id=f'{event_id}.0', kind='skill_table', instruction='Choose a skill table and roll 1D', options=tables
-        )
+        PendingSkillTable(id=f'{event_id}.0', instruction='Choose a skill table and roll 1D', options=tables)
     )
     _queue_reenlist_or_aging(projection, event_id, 1)
 
 
 def _apply_skill_choice(
-    projection: CharacterProjection, event: SkillChoiceEvent, fulfilled_kind: str | None = None
+    projection: CharacterProjection, event: SkillChoiceEvent, fulfilled_pending: AnyPending | None = None
 ) -> None:
-    if fulfilled_kind == 'initial_training_choice':
+    if isinstance(fulfilled_pending, PendingInitialTrainingChoice):
         _grant_skill(projection, event.skill)
-        remaining = [p for p in projection.pending_inputs if p.kind == 'initial_training_choice']
+        remaining = [p for p in projection.pending_inputs if isinstance(p, PendingInitialTrainingChoice)]
         if not remaining and projection.summary.current_career is not None:
             career = _current_career(projection)
             assignment_name = projection.summary.current_assignment or ''
             projection.pending_inputs.append(_survive_pending(projection, career, assignment_name, event.id))
-    elif fulfilled_kind == 'skill_table_choice':
+    elif isinstance(fulfilled_pending, PendingSkillTableChoice):
         _grant_skill(projection, event.skill)
         if projection.summary.current_career is not None:
             career = _current_career(projection)
             assignment_name = projection.summary.current_assignment or ''
             projection.pending_inputs.append(_survive_pending(projection, career, assignment_name, event.id))
-    elif fulfilled_kind in ('scout_event_11', 'scholar_event_11'):
+    elif isinstance(fulfilled_pending, PendingCareerSkillChoice):
         _grant_skill(projection, event.skill)
-        if projection.summary.current_career is not None:
+        if not fulfilled_pending.advancement_precreated and projection.summary.current_career is not None:
             career = _current_career(projection)
             projection.pending_inputs.append(_advancement_pending(projection, career, event.id))
-    elif fulfilled_kind == 'scholar_event_3_science':
-        _grant_skill(projection, event.skill)
-        # advancement was created when 'accept' was chosen
-    elif fulfilled_kind == 'scholar_mishap_3_science':
-        _grant_skill(projection, event.skill)
-        # advancement was pre-created by _apply_mishap
-    elif fulfilled_kind and fulfilled_kind.startswith('rank_bonus_choice_'):
+    elif isinstance(fulfilled_pending, PendingRankBonusChoice):
         _grant_skill(projection, event.skill)
         career = _current_career(projection)
-        tables = sorted(career.skill_tables.keys())
+        tables = _available_tables(career, projection)
         projection.pending_inputs.append(
-            PendingInput(
-                id=f'{event.id}.0', kind='skill_table', instruction='Choose a skill table and roll 1D', options=tables
-            )
+            PendingSkillTable(id=f'{event.id}.0', instruction='Choose a skill table and roll 1D', options=tables)
         )
         _queue_reenlist_or_aging(projection, event.id, 1)
     else:
@@ -535,9 +605,7 @@ def _apply_skill_choice(
             projection.pending_inputs.append(_advancement_pending(projection, career, event.id))
 
 
-def _apply_advancement_dm_choice(
-    projection: CharacterProjection, event: AdvancementDmChoiceEvent, fulfilled_kind: str | None = None
-) -> None:
+def _apply_advancement_dm_choice(projection: CharacterProjection, event: AdvancementDmChoiceEvent) -> None:
     projection.scheduled_effects.append(
         ScheduledEffect(trigger='advancement', source_event_id=event.id, effect={'type': 'dm', 'amount': 4})
     )
@@ -547,106 +615,52 @@ def _apply_advancement_dm_choice(
 
 
 def _apply_connection_kind_choice(
-    projection: CharacterProjection, event: ConnectionKindChoiceEvent, fulfilled_kind: str | None = None
+    projection: CharacterProjection, event: ConnectionKindChoiceEvent, fulfilled_pending: AnyPending | None = None
 ) -> None:
-    projection.summary.connections.append(
-        Connection(kind=event.connection_kind, source=f'Life event: {fulfilled_kind or "unknown"}')
+    source = (
+        f'Life event roll {fulfilled_pending.roll}'
+        if isinstance(fulfilled_pending, PendingLifeEventChoice)
+        else 'unknown'
     )
+    projection.summary.connections.append(make_connection(event.connection_kind, source=f'Life event: {source}'))
     _CHOICE_NARRATIVE = {
-        'life_event_4': {
+        4: {
             'rival': 'Life event: relationship ended, gained a rival',
             'enemy': 'Life event: relationship ended, gained an enemy',
         },
-        'life_event_8': {
+        8: {
             'rival': 'Life event: betrayal, gained a rival',
             'enemy': 'Life event: betrayal, gained an enemy',
         },
     }
-    kind_map = _CHOICE_NARRATIVE.get(fulfilled_kind or '')
-    if kind_map:
-        entry = kind_map.get(event.connection_kind)
-        if entry:
-            projection.summary.narrative.append(entry)
+    if isinstance(fulfilled_pending, PendingLifeEventChoice):
+        kind_map = _CHOICE_NARRATIVE.get(fulfilled_pending.roll)
+        if kind_map:
+            entry = kind_map.get(event.connection_kind)
+            if entry:
+                projection.summary.narrative.append(entry)
     # advancement was pre-created by _apply_life_event
 
 
-def _apply_scholar_event3_choice(projection: CharacterProjection, event: ScholarEvent3ChoiceEvent) -> None:
-    if event.choice == 'accept':
-        projection.pending_inputs.append(
-            PendingInput(
-                id=f'{event.id}.0',
-                kind='connections_roll',
-                instruction='Roll D3 for number of Enemies gained',
-                options=['1', '2', '3'],
-            )
-        )
-        for i, label in enumerate(['first', 'second'], start=1):
-            projection.pending_inputs.append(
-                PendingInput(
-                    id=f'{event.id}.{i}',
-                    kind='scholar_event_3_science',
-                    instruction=f'Choose {label} Science specialty to increase by one level',
-                    options=_SCHOLAR_SCIENCES,
-                )
-            )
-        if projection.summary.current_career is not None:
-            career = _current_career(projection)
-            projection.pending_inputs.append(_advancement_pending(projection, career, event.id, 3))
-        # Extra benefit roll
-        projection.muster_out_career = projection.summary.current_career
-        projection.pending_inputs.append(
-            PendingInput(
-                id=f'{event.id}.4',
-                kind='muster_out',
-                instruction='Extra Benefit roll (accepted research against conscience)',
-                options=['cash', 'benefits'],
-            )
-        )
-    else:
-        if projection.summary.current_career is not None:
-            career = _current_career(projection)
-            projection.pending_inputs.append(_advancement_pending(projection, career, event.id))
+def _apply_career_choice(projection: CharacterProjection, event: CareerChoiceEvent) -> None:
+    career_name = projection.summary.current_career
+    if career_name is None:
+        raise ReplayError(f'CareerChoiceEvent submitted with no active career (context={event.context!r})')
+    handler = get_choice_handler(career_name, event.context)
+    if handler is None:
+        raise ReplayError(f'No choice handler for career {career_name!r} context {event.context!r}')
+    handler(projection, event)
 
 
-def _apply_scholar_event8_choice(projection: CharacterProjection, event: ScholarEvent8ChoiceEvent) -> None:
-    if event.choice == 'refuse':
-        if projection.summary.current_career is not None:
-            career = _current_career(projection)
-            projection.pending_inputs.append(_advancement_pending(projection, career, event.id))
-    else:
-        projection.pending_inputs.append(
-            PendingInput(
-                id=f'{event.id}.0',
-                kind='scholar_event_8_roll',
-                instruction='Roll Deception 8+ or Admin 8+ to cheat successfully',
-                options=['Deception', 'Admin'],
-            )
-        )
-
-
-def _apply_scholar_mishap3_choice(projection: CharacterProjection, event: ScholarMishap3ChoiceEvent) -> None:
-    if event.choice == 'openly':
-        projection.summary.connections.append(Connection(kind='enemy', source='Planetary government interference'))
-    else:
-        soc = projection.summary.characteristics.get('SOC', 0)
-        projection.summary.characteristics['SOC'] = max(0, soc - 2)
-    projection.pending_inputs.append(
-        PendingInput(
-            id=f'{event.id}.0',
-            kind='scholar_mishap_3_science',
-            instruction='Increase Science by one level: choose which broad science',
-            options=_SCHOLAR_SCIENCES,
-        )
-    )
-    # advancement was already created by _apply_mishap (stay_in_career=True)
-
-
-def _apply_scholar_mishap5_choice(projection: CharacterProjection, event: ScholarMishap5ChoiceEvent) -> None:
-    if event.choice == 'give_up':
-        projection.pending_inputs = [p for p in projection.pending_inputs if p.kind != 'advancement']
-        _clear_current_career(projection)
-        projection.summary.age += 4
-    # 'start_again': advancement is already there from _apply_mishap, career stays
+def _apply_benefit_choice(
+    projection: CharacterProjection, event: BenefitChoiceEvent, fulfilled_pending: AnyPending | None = None
+) -> None:
+    if not isinstance(fulfilled_pending, PendingBenefitChoice):
+        raise ReplayError('BenefitChoiceEvent must fulfill a PendingBenefitChoice')
+    options = fulfilled_pending.benefit_options
+    if not (0 <= event.choice_index < len(options)):
+        raise ReplayError(f'choice_index {event.choice_index} out of range for {len(options)} options')
+    _apply_muster_out_benefit(projection, options[event.choice_index], event.id)
 
 
 def _apply_skill_roll(projection: CharacterProjection, event: SkillRollEvent) -> None:
@@ -655,63 +669,69 @@ def _apply_skill_roll(projection: CharacterProjection, event: SkillRollEvent) ->
     pending_count_before = len(projection.pending_inputs)
     if handler:
         handler(projection, event)
-    if len(projection.pending_inputs) == pending_count_before:
-        # Handler applied effects directly; advancement is next
+    if len(projection.pending_inputs) == pending_count_before and projection.summary.current_career is not None:
+        # Handler applied effects directly and career is still active; advancement is next
         projection.pending_inputs.append(_advancement_pending(projection, career, event.id))
-    # Otherwise handler created its own pending (skill_choice or mishap-stay); it leads to advancement
+    # Otherwise handler created its own pending (skill_choice or mishap-stay), or ejected the career
 
 
 def _apply_injury_table(projection: CharacterProjection, event: InjuryTableEvent) -> None:
     if not (1 <= event.roll <= 6):
         raise ReplayError(f'Injury table roll must be 1-6, got {event.roll}')
-    if event.roll == 6:
+    _apply_injury_table_result(projection, event.roll, event.id)
+
+
+def _apply_double_injury_table(projection: CharacterProjection, event: DoubleInjuryTableEvent) -> None:
+    for roll in (event.roll1, event.roll2):
+        if not (1 <= roll <= 6):
+            raise ReplayError(f'Double injury roll must be 1-6, got {roll}')
+    _apply_injury_table_result(projection, min(event.roll1, event.roll2), event.id)
+
+
+def _apply_injury_table_result(projection: CharacterProjection, roll: int, event_id: int) -> None:
+    if roll == 6:
         return  # lightly injured — no permanent effect
-    elif event.roll == 5:
+    elif roll == 5:
         projection.pending_inputs.append(
-            PendingInput(
-                id=f'{event.id}.0',
-                kind='characteristic_choice',
+            PendingCharacteristicChoice(
+                id=f'{event_id}.0',
                 instruction='Injured: choose STR, DEX, or END to reduce by 1',
-                options=['STR', 'DEX', 'END'],
+                options=[Chars.STR, Chars.DEX, Chars.END],
             )
         )
-    elif event.roll == 4:
+    elif roll == 4:
         projection.pending_inputs.append(
-            PendingInput(
-                id=f'{event.id}.0',
-                kind='characteristic_choice',
+            PendingCharacteristicChoice(
+                id=f'{event_id}.0',
                 instruction='Scarred: choose STR, DEX, or END to reduce by 2',
-                options=['STR', 'DEX', 'END'],
+                options=[Chars.STR, Chars.DEX, Chars.END],
             )
         )
-    elif event.roll == 3:
+    elif roll == 3:
         projection.pending_inputs.append(
-            PendingInput(
-                id=f'{event.id}.0',
-                kind='characteristic_choice',
+            PendingCharacteristicChoice(
+                id=f'{event_id}.0',
                 instruction='Missing Eye or Limb: choose STR or DEX to reduce by 2',
-                options=['STR', 'DEX'],
+                options=[Chars.STR, Chars.DEX],
             )
         )
-    elif event.roll == 2:
+    elif roll == 2:
         projection.pending_inputs.append(
-            PendingInput(
-                id=f'{event.id}.0',
-                kind='characteristic_choice',
+            PendingCharacteristicChoice(
+                id=f'{event_id}.0',
                 instruction='Severely injured: roll 1D — choose STR, DEX, or END to reduce by that amount',
-                options=['STR', 'DEX', 'END'],
+                options=[Chars.STR, Chars.DEX, Chars.END],
             )
         )
-    elif event.roll == 1:
+    elif roll == 1:
         projection.pending_inputs.append(
-            PendingInput(
-                id=f'{event.id}.0',
-                kind='nearly_killed',
+            PendingNearlyKilled(
+                id=f'{event_id}.0',
                 instruction=(
                     'Nearly killed: roll 1D — choose STR, DEX, or END to reduce by that amount; '
                     'the other two physical characteristics are each reduced by 2'
                 ),
-                options=['STR', 'DEX', 'END'],
+                options=[Chars.STR, Chars.DEX, Chars.END],
             )
         )
 
@@ -738,9 +758,8 @@ def _apply_life_event(projection: CharacterProjection, event: LifeEventEvent) ->
     if roll == 2:
         # Sickness or injury — roll on injury table, advancement after that resolves
         projection.pending_inputs.append(
-            PendingInput(
+            PendingInjuryTable(
                 id=f'{event.id}.0',
-                kind='injury_table',
                 instruction='Roll 1D on Injury table (sickness/injury)',
                 options=['1', '2', '3', '4', '5', '6'],
             )
@@ -752,9 +771,9 @@ def _apply_life_event(projection: CharacterProjection, event: LifeEventEvent) ->
     elif roll == 4:
         # Ending of relationship — choose to gain rival or enemy
         projection.pending_inputs.append(
-            PendingInput(
+            PendingLifeEventChoice(
                 id=f'{event.id}.0',
-                kind='life_event_4',
+                roll=4,
                 instruction='Ending relationship: gain a rival or enemy?',
                 options=['rival', 'enemy'],
             )
@@ -762,22 +781,22 @@ def _apply_life_event(projection: CharacterProjection, event: LifeEventEvent) ->
         projection.pending_inputs.append(_advancement_pending(projection, career, event.id, 1))
     elif roll == 5:
         # Improved relationship — ally
-        projection.summary.connections.append(Connection(kind='ally', source='Life event: improved relationship'))
+        projection.summary.connections.append(Ally(source='Life event: improved relationship'))
         projection.pending_inputs.append(_advancement_pending(projection, career, event.id))
     elif roll == 6:
         # New relationship — ally
-        projection.summary.connections.append(Connection(kind='ally', source='Life event: new relationship'))
+        projection.summary.connections.append(Ally(source='Life event: new relationship'))
         projection.pending_inputs.append(_advancement_pending(projection, career, event.id))
     elif roll == 7:
         # New contact
-        projection.summary.connections.append(Connection(kind='contact', source='Life event: new contact'))
+        projection.summary.connections.append(Contact(source='Life event: new contact'))
         projection.pending_inputs.append(_advancement_pending(projection, career, event.id))
     elif roll == 8:
         # Betrayal — gain rival or enemy
         projection.pending_inputs.append(
-            PendingInput(
+            PendingLifeEventChoice(
                 id=f'{event.id}.0',
-                kind='life_event_8',
+                roll=8,
                 instruction='Betrayal: gain a rival or enemy?',
                 options=['rival', 'enemy'],
             )
@@ -806,9 +825,8 @@ def _apply_life_event(projection: CharacterProjection, event: LifeEventEvent) ->
     elif roll == 12:
         # Unusual event — roll on unusual sub-table; advancement after that resolves
         projection.pending_inputs.append(
-            PendingInput(
+            PendingLifeEventUnusual(
                 id=f'{event.id}.0',
-                kind='life_event_unusual',
                 instruction='Roll 1D on Unusual Events table',
                 options=['1', '2', '3', '4', '5', '6'],
             )
@@ -822,11 +840,11 @@ def _apply_life_event_unusual(projection: CharacterProjection, event: LifeEventU
     roll = event.roll
     if roll == 1:
         # Useful ally — gain ally
-        projection.summary.connections.append(Connection(kind='ally', source='Unusual event: useful ally'))
+        projection.summary.connections.append(Ally(source='Unusual event: useful ally'))
         projection.summary.narrative.append('Unusual event: gained a useful ally')
     elif roll == 2:
         # Aliens — gain contact + any science skill at level 1
-        projection.summary.connections.append(Connection(kind='contact', source='Unusual event: alien contact'))
+        projection.summary.connections.append(Contact(source='Unusual event: alien contact'))
         _grant_skill(projection, _skill_from_str(SpaceScience.name(), 1))
         projection.summary.narrative.append('Unusual event: alien encounter — gained contact and Space Science 1')
     else:
@@ -845,83 +863,76 @@ def _apply_aging_roll(projection: CharacterProjection, event: AgingRollEvent) ->
         _complete_aging(projection, event.id)
     elif effective == 0:
         projection.pending_inputs.append(
-            PendingInput(
+            PendingAgingChoice(
                 id=f'{event.id}.{pending_idx}',
-                kind='aging_choice',
                 instruction='Aging: choose STR, DEX, or END to reduce by 1',
-                options=['STR', 'DEX', 'END'],
+                options=[Chars.STR, Chars.DEX, Chars.END],
             )
         )
     elif effective == -1:
         for _ in range(2):
             projection.pending_inputs.append(
-                PendingInput(
+                PendingAgingChoice(
                     id=f'{event.id}.{pending_idx}',
-                    kind='aging_choice',
                     instruction='Aging: choose STR, DEX, or END to reduce by 1',
-                    options=['STR', 'DEX', 'END'],
+                    options=[Chars.STR, Chars.DEX, Chars.END],
                 )
             )
             pending_idx += 1
     elif effective == -2:
-        for char in ('STR', 'DEX', 'END'):
+        for char in (Chars.STR, Chars.DEX, Chars.END):
             projection.summary.characteristics[char] = max(0, projection.summary.characteristics.get(char, 0) - 1)
         if not _check_aging_crisis(projection, event.id):
             _complete_aging(projection, event.id)
     elif effective == -3:
         projection.pending_inputs.append(
-            PendingInput(
+            PendingAgingChoice(
                 id=f'{event.id}.{pending_idx}',
-                kind='aging_choice',
                 instruction='Aging: choose STR, DEX, or END to reduce by 2',
-                options=['STR', 'DEX', 'END'],
+                options=[Chars.STR, Chars.DEX, Chars.END],
             )
         )
         pending_idx += 1
         for _ in range(2):
             projection.pending_inputs.append(
-                PendingInput(
+                PendingAgingChoice(
                     id=f'{event.id}.{pending_idx}',
-                    kind='aging_choice',
                     instruction='Aging: choose STR, DEX, or END to reduce by 1',
-                    options=['STR', 'DEX', 'END'],
+                    options=[Chars.STR, Chars.DEX, Chars.END],
                 )
             )
             pending_idx += 1
     elif effective == -4:
         for _ in range(2):
             projection.pending_inputs.append(
-                PendingInput(
+                PendingAgingChoice(
                     id=f'{event.id}.{pending_idx}',
-                    kind='aging_choice',
                     instruction='Aging: choose STR, DEX, or END to reduce by 2',
-                    options=['STR', 'DEX', 'END'],
+                    options=[Chars.STR, Chars.DEX, Chars.END],
                 )
             )
             pending_idx += 1
         projection.pending_inputs.append(
-            PendingInput(
+            PendingAgingChoice(
                 id=f'{event.id}.{pending_idx}',
-                kind='aging_choice',
                 instruction='Aging: choose STR, DEX, or END to reduce by 1',
-                options=['STR', 'DEX', 'END'],
+                options=[Chars.STR, Chars.DEX, Chars.END],
             )
         )
     elif effective == -5:
-        for char in ('STR', 'DEX', 'END'):
+        for char in (Chars.STR, Chars.DEX, Chars.END):
             projection.summary.characteristics[char] = max(0, projection.summary.characteristics.get(char, 0) - 2)
         if not _check_aging_crisis(projection, event.id):
             _complete_aging(projection, event.id)
     else:  # <= -6
-        for char in ('STR', 'DEX', 'END'):
+        for char in (Chars.STR, Chars.DEX, Chars.END):
             projection.summary.characteristics[char] = max(0, projection.summary.characteristics.get(char, 0) - 2)
         if not _check_aging_crisis(projection, event.id):
             projection.pending_inputs.append(
-                PendingInput(
+                PendingAgingChoiceMental(
                     id=f'{event.id}.0',
-                    kind='aging_choice_mental',
                     instruction='Aging: choose INT or SOC to reduce by 1',
-                    options=['INT', 'SOC'],
+                    options=[Chars.INT, Chars.SOC],
                 )
             )
 
@@ -938,9 +949,8 @@ def _complete_aging(projection: CharacterProjection, source_event_id: int) -> No
     else:
         # end-of-term aging: reenlist decision comes after aging resolves
         projection.pending_inputs.append(
-            PendingInput(
+            PendingReenlist(
                 id=f'{source_event_id}.0',
-                kind='reenlist',
                 instruction='Reenlist or muster out?',
                 options=['true', 'false'],
             )
@@ -951,12 +961,11 @@ def _complete_aging(projection: CharacterProjection, source_event_id: int) -> No
 def _check_aging_crisis(projection: CharacterProjection, source_event_id: int) -> bool:
     if any(v == 0 for v in projection.summary.characteristics.values()):
         projection.pending_inputs = [
-            p for p in projection.pending_inputs if p.kind not in ('aging_choice', 'aging_choice_mental')
+            p for p in projection.pending_inputs if not isinstance(p, (PendingAgingChoice, PendingAgingChoiceMental))
         ]
         projection.pending_inputs.append(
-            PendingInput(
+            PendingAgingCrisis(
                 id=f'{source_event_id}.crisis',
-                kind='aging_crisis',
                 instruction='Aging crisis: pay for medical care or die?',
                 options=['pay', 'die'],
             )
@@ -974,6 +983,8 @@ def _apply_aging_crisis_event(projection: CharacterProjection, event: AgingCrisi
         for char in list(projection.summary.characteristics.keys()):
             if projection.summary.characteristics[char] == 0:
                 projection.summary.characteristics[char] = 1
+        # pending_reenlist=True would mean a reenlist decision was deferred across an aging crisis,
+        # but aging always precedes the reenlist prompt so this branch is currently unreachable.
         if projection.pending_reenlist is True:
             projection.summary.term_count += 1
         projection.pending_reenlist = None
@@ -1010,9 +1021,8 @@ def _apply_muster_out_setup(
         projection.muster_out_career = career.name
         for _ in range(roll_count):
             projection.pending_inputs.append(
-                PendingInput(
+                PendingMusterOut(
                     id=f'{source_event_id}.{pending_idx}',
-                    kind='muster_out',
                     instruction='Muster out: choose cash or benefits table',
                     options=['cash', 'benefits'],
                 )
@@ -1042,36 +1052,47 @@ def _apply_muster_out_event(projection: CharacterProjection, event: MusterOutEve
         projection.summary.muster_out_cash_count += 1
     else:
         for _ in range(row.count):
-            _apply_muster_out_benefit(projection, row.benefit)
+            _apply_muster_out_benefit(projection, row.benefit, event.id)
 
-    remaining = [p for p in projection.pending_inputs if p.kind == 'muster_out']
+    remaining = [p for p in projection.pending_inputs if isinstance(p, PendingMusterOut)]
     if not remaining:
         projection.muster_out_career = None
 
 
-def _apply_muster_out_benefit(projection: CharacterProjection, benefit: object) -> None:
-    from ceres.character.benefits import CharacteristicIncrease, ItemBenefit
+def _apply_muster_out_benefit(projection: CharacterProjection, benefit: object, event_id: int = 0) -> None:
+    from ceres.character.benefits import CharacteristicIncrease, ChoiceBenefit, ItemBenefit
 
     if isinstance(benefit, CharacteristicIncrease):
         current = projection.summary.characteristics.get(benefit.char, 0)
         projection.summary.characteristics[benefit.char] = min(15, current + benefit.amount)
     elif isinstance(benefit, ItemBenefit):
         projection.summary.benefits.append(benefit)
+    elif isinstance(benefit, ChoiceBenefit):
+        projection.pending_inputs.append(
+            PendingBenefitChoice(
+                id=f'{event_id}.benefit_choice',
+                instruction=f'Choose one benefit: {benefit.display_label}',
+                options=[b.display_label for b in benefit.options],
+                benefit_options=list(benefit.options),
+            )
+        )
 
 
 def _apply_characteristic_choice(
-    projection: CharacterProjection, event: CharacteristicChoiceEvent, fulfilled_kind: str | None = None
+    projection: CharacterProjection, event: CharacteristicChoiceEvent, fulfilled_pending: AnyPending | None = None
 ) -> None:
     char = event.characteristic
     current = projection.summary.characteristics.get(char, 0)
     projection.summary.characteristics[char] = max(0, current - event.amount)
-    if fulfilled_kind == 'nearly_killed':
-        for other in ('STR', 'DEX', 'END'):
+    if isinstance(fulfilled_pending, PendingNearlyKilled):
+        for other in (Chars.STR, Chars.DEX, Chars.END):
             if other != char:
                 projection.summary.characteristics[other] = max(0, projection.summary.characteristics.get(other, 0) - 2)
-    elif fulfilled_kind in ('aging_choice', 'aging_choice_mental'):
+    elif isinstance(fulfilled_pending, (PendingAgingChoice, PendingAgingChoiceMental)):
         if not _check_aging_crisis(projection, event.id):
-            remaining = [p for p in projection.pending_inputs if p.kind in ('aging_choice', 'aging_choice_mental')]
+            remaining = [
+                p for p in projection.pending_inputs if isinstance(p, (PendingAgingChoice, PendingAgingChoiceMental))
+            ]
             if not remaining:
                 _complete_aging(projection, event.id)
 
@@ -1098,13 +1119,14 @@ def _apply_advancement(projection: CharacterProjection, event: AdvancementEvent)
         rank_entry = career.assignment_ranks(assignment_name).get(new_rank)
         if rank_entry and rank_entry.bonus:
             bonus = rank_entry.bonus
-            if bonus.choices:
+            choices = _resolve_rank_bonus_choices(bonus)
+            if choices:
                 projection.pending_inputs.append(
-                    PendingInput(
+                    PendingRankBonusChoice(
                         id=f'{event.id}.0',
-                        kind=f'rank_bonus_choice_{bonus.level}',
+                        level=bonus.level,
                         instruction=f'Rank {new_rank} bonus: choose skill at level {bonus.level}',
-                        options=bonus.choices,
+                        options=choices,
                     )
                 )
                 return  # skill_table + reenlist pending deferred until after choice
@@ -1113,11 +1135,10 @@ def _apply_advancement(projection: CharacterProjection, event: AdvancementEvent)
             elif bonus.characteristic:
                 char = bonus.characteristic
                 projection.summary.characteristics[char] = projection.summary.characteristics.get(char, 0) + bonus.level
-        tables = sorted(career.skill_tables.keys())
+        tables = _available_tables(career, projection)
         projection.pending_inputs.append(
-            PendingInput(
+            PendingSkillTable(
                 id=f'{event.id}.0',
-                kind='skill_table',
                 instruction='Choose a skill table and roll 1D',
                 options=tables,
             )
@@ -1131,14 +1152,11 @@ def _apply_advancement(projection: CharacterProjection, event: AdvancementEvent)
 def _queue_reenlist_or_aging(projection: CharacterProjection, event_id: int, idx: int) -> None:
     projection.summary.age += 4
     if projection.summary.age >= 34:
-        projection.pending_inputs.append(
-            PendingInput(id=f'{event_id}.{idx}', kind='aging_roll', instruction='Roll 2D on Aging table')
-        )
+        projection.pending_inputs.append(PendingAgingRoll(id=f'{event_id}.{idx}', instruction='Roll 2D on Aging table'))
     else:
         projection.pending_inputs.append(
-            PendingInput(
+            PendingReenlist(
                 id=f'{event_id}.{idx}',
-                kind='reenlist',
                 instruction='Reenlist or muster out?',
                 options=['true', 'false'],
             )
@@ -1149,20 +1167,23 @@ def _apply_reenlist(projection: CharacterProjection, event: ReenlistEvent) -> No
     if event.reenlist:
         career = _current_career(projection)
         projection.summary.term_count += 1
+        # Clear all orphaned career-phase pendings from the ending term (survive, skill table choices, etc.).
+        _purge_career_pendings(projection)
         assignment_name = projection.summary.current_assignment or ''
         assignment = career.assignment(assignment_name)
         if assignment is None:
             raise ReplayError(f'Unknown assignment {assignment_name!r} in career {career.name!r}')
-        tables = sorted(career.skill_tables.keys())
+        tables = _available_tables(career, projection)
         projection.pending_inputs.append(
-            PendingInput(
+            PendingSkillTable(
                 id=f'{event.id}.0',
-                kind='skill_table',
                 instruction='Choose a skill table and roll 1D',
                 options=tables,
             )
         )
     else:
+        # Mustering out — purge orphaned career-phase pendings queued by the last skill table.
+        _purge_career_pendings(projection)
         career = _current_career(projection)
         _apply_muster_out_setup(projection, career, event.id, 0, lose_current_term=False)
 
@@ -1173,7 +1194,7 @@ def _apply_skill_table(projection: CharacterProjection, event: SkillTableEvent) 
     if table is None:
         raise ReplayError(f'Unknown skill table: {event.table!r}')
     if table.min_edu is not None:
-        edu = projection.summary.characteristics.get('EDU', 0)
+        edu = projection.summary.characteristics.get(Chars.EDU, 0)
         if edu < table.min_edu:
             raise ReplayError(f'Table {event.table!r} requires EDU {table.min_edu}+, character has {edu}')
     if not (1 <= event.roll <= 6):
@@ -1182,13 +1203,15 @@ def _apply_skill_table(projection: CharacterProjection, event: SkillTableEvent) 
     if entry is None:
         raise ReplayError(f'No entry for roll {event.roll} in table {event.table!r}')
     assignment_name = projection.summary.current_assignment or ''
-    if entry.choices:
+    choices = entry.choices
+    if choices is None and entry.skill is not None:
+        choices = skill_names_for_category(entry.skill)
+    if choices:
         projection.pending_inputs.append(
-            PendingInput(
+            PendingSkillTableChoice(
                 id=f'{event.id}.0',
-                kind='skill_table_choice',
-                instruction=f'Choose one skill: {", ".join(entry.choices)}',
-                options=entry.choices,
+                instruction=f'Choose one skill: {", ".join(choices)}',
+                options=choices,
             )
         )
         # survive pending created after choice is made in _apply_skill_choice
@@ -1210,15 +1233,13 @@ def _apply_skill_table_entry(projection: CharacterProjection, entry: SkillTableE
 
 def _advancement_pending(
     projection: CharacterProjection, career: CareerData, event_id: int, pending_idx: int = 0
-) -> PendingInput:
+) -> PendingAdvancement:
     assignment = career.assignment(projection.summary.current_assignment or '')
     if assignment is None:
         raise ReplayError(f'Unknown assignment {projection.summary.current_assignment!r}')
     char = assignment.advancement.characteristic
     target = assignment.advancement.target
-    return PendingInput(
-        id=f'{event_id}.{pending_idx}', kind='advancement', instruction=f'Advancement: {char} {target}+'
-    )
+    return PendingAdvancement(id=f'{event_id}.{pending_idx}', instruction=f'Advancement: {char} {target}+')
 
 
 def _current_career(projection: CharacterProjection) -> CareerData:
@@ -1257,7 +1278,11 @@ def _increment_yaml_skill(projection: CharacterProjection, skill_name: str) -> N
     skill_cls = skill_class_by_name(skill_name)
     existing = next((s for s in projection.summary.skills if type(s) is skill_cls), None)
     if existing is None:
-        projection.summary.skills.append(_cast(_AnySkill, skill_cls()))
+        # Career tables grant skills at level 1 (new skill: gain it, then increase by 1)
+        new_skill = skill_cls()
+        fields = _level_fields(skill_cls)
+        getattr(new_skill, fields[0]).set(1)
+        projection.summary.skills.append(_cast(_AnySkill, new_skill))
         return
     fields = _level_fields(skill_cls)
     if len(fields) == 1:
@@ -1305,7 +1330,7 @@ def _apply_simple_effect(
             projection.summary.characteristics[char] = max(0, current - amount)
     elif effect_type in ('gain_contact', 'gain_ally', 'gain_rival', 'gain_enemy'):
         kind = cast(Literal['contact', 'ally', 'rival', 'enemy'], effect_type.removeprefix('gain_'))
-        projection.summary.connections.append(Connection(kind=kind, source=source))
+        projection.summary.connections.append(make_connection(kind, source=source))
     elif effect_type == 'advancement_dm':
         amount = getattr(effect, 'amount', 0)
         projection.scheduled_effects.append(
@@ -1323,17 +1348,15 @@ def _apply_simple_effect(
     # note, injury, life_event, etc. are deferred
 
 
-def _apply_connections_roll(
-    projection: CharacterProjection, event: ConnectionsRollEvent, fulfilled_kind: str | None = None
-) -> None:
+def _apply_connections_roll(projection: CharacterProjection, event: ConnectionsRollEvent) -> None:
     for _ in range(event.count):
-        projection.summary.connections.append(Connection(kind=event.connection_type, source=''))
+        projection.summary.connections.append(make_connection(event.connection_type))
 
 
 # ── characteristic DM and UCP parsing ────────────────────────────────────────
 
 
-def _parse_ucp(ucp: str) -> dict[str, int]:
+def _parse_ucp(ucp: str) -> dict[Chars, int]:
     if len(ucp) != 6:
         raise ReplayError(f'Invalid UCP: {ucp!r} — expected 6 hex digits')
     return {stat: int(digit, 16) for stat, digit in zip(UCP_STATS, ucp, strict=True)}

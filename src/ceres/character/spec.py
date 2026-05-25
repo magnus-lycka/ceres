@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 
 from ceres.character.benefits import ItemBenefit
+from ceres.character.characteristics import Chars
 from ceres.character.projection import CharacterSummary, _level_fields
 from ceres.character.skills import AnySkill
 
@@ -13,7 +14,7 @@ class NpcSpec(BaseModel):
     terms: int = 0
     sophont: str = 'Human'
     ucp: str = ''
-    characteristics: dict[str, int] = Field(default_factory=dict)
+    characteristics: dict[Chars, int] = Field(default_factory=dict)
     age: int = 18
     skills: list[AnySkill] = Field(default_factory=list)
     equipment: list[ItemBenefit] = Field(default_factory=list)

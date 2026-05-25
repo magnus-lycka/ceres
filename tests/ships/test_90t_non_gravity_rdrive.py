@@ -12,7 +12,7 @@ from ceres.make.ship import hull, ship
 from ceres.make.ship.automation import LowAutomation
 from ceres.make.ship.bridge import Bridge, CommandSection
 from ceres.make.ship.computer import Computer5, ComputerSection
-from ceres.make.ship.drives import DriveSection, RDrive4, SolarPanelsTL8, SterlingFissionPlant
+from ceres.make.ship.drives import DriveSection, RDrive4, SpinExtSolarPanelsTL8, SterlingFissionPlant
 from ceres.make.ship.power import PowerSection
 from ceres.make.ship.sensors import SensorsSection
 from ceres.make.ship.software import Library, Manoeuvre
@@ -67,7 +67,7 @@ def build_90t_non_gravity_rdrive():
         drives=DriveSection(r_drive=RDrive4()),
         power=PowerSection(
             plant=SterlingFissionPlant(output=8),
-            solar=[SolarPanelsTL8(tons=0.5)],
+            solar=[SpinExtSolarPanelsTL8(tons=0.5)],
         ),
         fuel=FuelSection(
             operation_fuel=OperationFuel(weeks=52 * 15),

@@ -119,6 +119,115 @@ more crew than one just above it. The cap is not applied to ships ≤ 5,000 dTon
 The commercial medic rule is "1 per 120 crew **and** passengers." Previously
 only crew count was used.
 
+## Hardened Systems
+
+References: `refs/hg/10_step_6_install_computer.md`, `refs/hg/26_drones.md`,
+`refs/hg/17_particle_beam.md`, `refs/hg/43_fleet_evaluation.md`
+
+`Computer` already supports `/fib` (+50% cost, ion immunity). The broader rule
+from HG is:
+
+> Any system that draws power from the power plant can be Hardened to render it immune to Ion weapons. A Hardened system has its cost increased by +50%.
+
+Current status:
+
+- The construction rule is implemented per powered system, not as a hull-level
+  option.
+- `ShipPart` has `hardened: bool = False`.
+- Ship spec rows and production cost apply +50% cost only when `hardened=True`
+  and the part draws Power.
+- Hardened powered parts add the note "Hardened against Ion weapons".
+- Hardened zero-Power `ShipPart`s report an error and do not receive a cost
+  increase.
+- Computer `/fib` remains the computer-specific spelling used by the source
+  material; it is not collapsed into generic hardening.
+- Radiation shielding treats the bridge as Hardened, but this is part of the
+  radiation-shielding rule and remains an operational note unless bridge
+  hardening becomes explicitly modelled.
+- The fleet combat trait "Hardened" from `43_fleet_evaluation.md` is derived
+  from powered-system coverage and is not a separate ship input flag.
+
+## Breakaway Hulls
+
+A ship can be designed to separate into two or more independently operating
+sections. Each section must have its own bridge and power plant; drives,
+weapons, and screens are optional per section but combined while docked. The
+separation mechanism consumes 2% of the combined hull tonnage at MCr2/ton. Hull
+points of each section are proportional to the total.
+
+Reference: `refs/hg/05_specialised_hull_types.md`
+
+Current status:
+
+- `breakaway: bool` on `HullConfiguration` adds the 2% tonnage and MCr2/ton
+  separation mechanism cost to the ship spec.
+- the separation mechanism reduces residual cargo/usable tonnage.
+- operational section separation and docked performance remain notes/out of
+  scope until sections are explicitly modelled.
+
+Future multi-section modelling is tracked separately in `docs/todo_maybe.md`.
+
+## Non-Gravity Hull
+
+Basic hulls include artificial gravity, using grav plates to ensure a normal
+gravitational environment for the comfort and convenience of the crew. Hulls
+can be built cheaper without artificial grav plating, using specific
+configurations that allow the hull to spin in order to generate gravity if
+desired. Non-gravity hulls reduce hull cost by 50% but are limited to a maximum
+size of 500,000 tons due to structural limitations. Base Power Requirements for
+non-gravity hulls are half that of other hull types.
+
+Current status:
+
+- hull cost reduction implemented
+- basic hull power reduction implemented
+- 500,000-ton maximum size reported as a ship error
+- spin-capable layout, spin radius, comfort, and usefulness are layout/runtime
+  concerns and are not modelled by `ceres.make.ship`; see RIS-021
+
+## Solar Energy Systems
+
+High Guard and Spinward Extents solar-energy ship-building products are now
+kept as separate source-specific classes where their tables and constraints
+differ.
+
+References:
+
+- `refs/hg/25_solar_energy_systems.md`
+- `refs/spinext/59_arcturus.md`
+- `docs/solar-energy-systems-comparison.md`
+
+Implemented High Guard/default variants:
+
+- `BasicSolarPanels`
+- `ImprovedSolarPanels`
+- `EnhancedSolarPanels`
+- `AdvancedSolarPanels`
+- `EnhancedSolarCoating`
+- `AdvancedSolarCoating`
+- `SolarSail`
+
+Implemented Spinward Extents variants:
+
+- `SpinExtSolarPanelsTL6`
+- `SpinExtSolarPanelsTL8`
+- `SpinExtSolarPanelsTL12`
+- `SpinExtSolarCoatingTL6`
+- `SpinExtSolarCoatingTL8`
+- `SpinExtSolarCoatingTL12`
+- `SpinExtSolarSailTL6`
+- `SpinExtSolarSailTL8`
+- `SpinExtSolarSailTL12`
+
+Solar sails are modelled as drive accessories. Spinward Extents solar sails can
+also act as solar panels with `solar_panel_mode=True`, doubling their cost and
+contributing half the Power of same-tonnage Spinward Extents solar panels.
+
+Distance from the star, deployment timing, manoeuvre restrictions, jump
+restrictions, detection modifiers, repair/replacement behaviour, and similar
+operational effects are represented as notes or errors in the construction
+model rather than simulated as runtime state.
+
 Added `_habitation_population` which sums stateroom `.occupancy`, low berth
 count, and `cabin_space.passenger_capacity`. Both `_commercial_roles` and
 `_military_roles` now use this as the population denominator when habitation is

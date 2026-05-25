@@ -1,6 +1,16 @@
 from ceres.character.careers.career_data import EventEffect
 from ceres.character.events import SkillRollEvent
-from ceres.character.projection import CharacterProjection, Connection, PendingInput, ScheduledEffect
+from ceres.character.projection import (
+    Ally,
+    CharacterProjection,
+    Contact,
+    Enemy,
+    PendingCareerSkillChoice,
+    PendingCareerSkillRoll,
+    PendingMishap,
+    PendingSkillChoice,
+    ScheduledEffect,
+)
 from ceres.character.replay import _grant_skill, _skill_from_str
 
 # ── event 3: ambush ──────────────────────────────────────────────────────────
@@ -15,9 +25,11 @@ def _handle_scout_event_3(
     pending_idx: int,
 ) -> int:
     projection.pending_inputs.append(
-        PendingInput(
+        PendingCareerSkillRoll(
             id=f'{event_id}.{pending_idx}',
-            kind='scout_event_3',
+            career='Scout',
+            roll=3,
+            context='scout_event_3',
             instruction='Roll Pilot 8+ to escape or Persuade 10+ to bargain',
             options=list(_AMBUSH_TARGETS),
         )
@@ -45,9 +57,11 @@ def _handle_scout_event_8(
     pending_idx: int,
 ) -> int:
     projection.pending_inputs.append(
-        PendingInput(
+        PendingCareerSkillRoll(
             id=f'{event_id}.{pending_idx}',
-            kind='scout_event_8',
+            career='Scout',
+            roll=8,
+            context='scout_event_8',
             instruction='Roll Electronics 8+ or Deception 8+',
             options=['Electronics', 'Deception'],
         )
@@ -57,7 +71,7 @@ def _handle_scout_event_8(
 
 def _resolve_scout_event_8(projection: CharacterProjection, event: SkillRollEvent) -> None:
     if event.modified_roll >= 8:
-        projection.summary.connections.append(Connection(kind='ally', source='Alien intelligence contact'))
+        projection.summary.connections.append(Ally(source='Alien intelligence contact'))
         projection.scheduled_effects.append(
             ScheduledEffect(
                 trigger='advancement',
@@ -67,9 +81,8 @@ def _resolve_scout_event_8(projection: CharacterProjection, event: SkillRollEven
         )
     else:
         projection.pending_inputs.append(
-            PendingInput(
+            PendingMishap(
                 id=f'{event.id}.0',
-                kind='mishap',
                 instruction='Roll 1D Mishap (you are not ejected from this career)',
             )
         )
@@ -85,9 +98,11 @@ def _handle_scout_event_9(
     pending_idx: int,
 ) -> int:
     projection.pending_inputs.append(
-        PendingInput(
+        PendingCareerSkillRoll(
             id=f'{event_id}.{pending_idx}',
-            kind='scout_event_9',
+            career='Scout',
+            roll=9,
+            context='scout_event_9',
             instruction='Roll Medic 8+ or Engineer 8+',
             options=['Medic', 'Engineer'],
         )
@@ -97,7 +112,7 @@ def _handle_scout_event_9(
 
 def _resolve_scout_event_9(projection: CharacterProjection, event: SkillRollEvent) -> None:
     if event.modified_roll >= 8:
-        projection.summary.connections.append(Connection(kind='contact', source='Disaster survivor'))
+        projection.summary.connections.append(Contact(source='Disaster survivor'))
         projection.scheduled_effects.append(
             ScheduledEffect(
                 trigger='advancement',
@@ -106,7 +121,7 @@ def _resolve_scout_event_9(projection: CharacterProjection, event: SkillRollEven
             )
         )
     else:
-        projection.summary.connections.append(Connection(kind='enemy', source='Disaster relief gone wrong'))
+        projection.summary.connections.append(Enemy(source='Disaster relief gone wrong'))
 
 
 # ── event 10: fringes of Charted Space ───────────────────────────────────────
@@ -119,9 +134,11 @@ def _handle_scout_event_10(
     pending_idx: int,
 ) -> int:
     projection.pending_inputs.append(
-        PendingInput(
+        PendingCareerSkillRoll(
             id=f'{event_id}.{pending_idx}',
-            kind='scout_event_10',
+            career='Scout',
+            roll=10,
+            context='scout_event_10',
             instruction='Roll Survival 8+ or Pilot 8+',
             options=['Survival', 'Pilot'],
         )
@@ -131,22 +148,18 @@ def _handle_scout_event_10(
 
 def _resolve_scout_event_10(projection: CharacterProjection, event: SkillRollEvent) -> None:
     if event.modified_roll >= 8:
-        projection.summary.connections.append(
-            Connection(kind='contact', source='Alien contact from the fringes of Charted Space')
-        )
+        projection.summary.connections.append(Contact(source='Alien contact from the fringes of Charted Space'))
         projection.pending_inputs.append(
-            PendingInput(
+            PendingSkillChoice(
                 id=f'{event.id}.0',
-                kind='skill_choice',
                 instruction='Choose any skill +1 (alien contact)',
                 options=[],
             )
         )
     else:
         projection.pending_inputs.append(
-            PendingInput(
+            PendingMishap(
                 id=f'{event.id}.0',
-                kind='mishap',
                 instruction='Roll 1D Mishap (you are not ejected from this career)',
             )
         )
@@ -162,9 +175,11 @@ def _handle_scout_event_11(
     pending_idx: int,
 ) -> int:
     projection.pending_inputs.append(
-        PendingInput(
+        PendingCareerSkillChoice(
             id=f'{event_id}.{pending_idx}',
-            kind='scout_event_11',
+            career='Scout',
+            roll=11,
+            advancement_precreated=False,
             instruction='Gain Diplomat 1, or DM+4 to your next advancement roll',
             options=['Diplomat', 'advancement_dm_4'],
         )

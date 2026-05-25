@@ -20,10 +20,11 @@ class ShipExpenses:
             software_cost = sum(package.cost for package in self.ship.computer.software_packages)
         return (
             self.ship.hull_cost
+            + self.ship.hull.breakaway_cost(self.ship.displacement)
             + self.ship.hull.radiation_shielding_cost(self.ship.displacement)
             + self.ship.hull.heat_shielding_cost(self.ship.displacement)
             + self.ship.hull.reflec_cost(self.ship.displacement)
-            + sum(part.cost for part in self.ship._all_parts())
+            + sum(self.ship._part_cost(part) for part in self.ship._all_parts())
             + software_cost
             + craft_cost
             + cargo_hold_cost

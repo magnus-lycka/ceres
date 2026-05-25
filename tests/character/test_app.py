@@ -164,7 +164,7 @@ def test_api_post_background_skills_resolves_pending(memory_client):
     assert response.status_code == 200
     data = response.json()
     assert len(data['pending_inputs']) == 1
-    assert data['pending_inputs'][0]['kind'] == 'career'
+    assert data['pending_inputs'][0]['kind'] == 'career_choice'
     assert len(data['summary']['skills']) == 4
     assert {s['type'] for s in data['summary']['skills']} == {'Admin', 'Athletics', 'Carouse', 'Drive'}
 

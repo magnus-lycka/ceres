@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}NPC Gallery{% endblock %}
+{% block content %}
+
+<div class="max-w-lg">
+  <h1 class="text-2xl font-bold text-amber-400 tracking-wide mb-6">Generate NPC Cohort</h1>
+
+  <form method="post" action="/ui/gallery/generate" class="space-y-5">
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-xs uppercase tracking-wide text-gray-500 mb-1">Career</label>
+        <select name="career"
+                class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500">
+          {% for name in careers %}
+          <option value="{{ name }}">{{ name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs uppercase tracking-wide text-gray-500 mb-1">Sophont</label>
+        <select name="sophont"
+                class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500">
+          {% for s in sophonts %}
+          <option value="{{ s }}">{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-xs uppercase tracking-wide text-gray-500 mb-1">Assignment <span class="text-gray-600">(optional)</span></label>
+      <input type="text" name="assignment" placeholder="e.g. Courier"
+             class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500">
+    </div>
+
+    <div class="grid grid-cols-3 gap-4">
+      <div>
+        <label class="block text-xs uppercase tracking-wide text-gray-500 mb-1">Min Terms</label>
+        <input type="number" name="min_terms" value="2" min="1" max="7"
+               class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500">
+      </div>
+      <div>
+        <label class="block text-xs uppercase tracking-wide text-gray-500 mb-1">Max Terms</label>
+        <input type="number" name="max_terms" value="4" min="1" max="7"
+               class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500">
+      </div>
+      <div>
+        <label class="block text-xs uppercase tracking-wide text-gray-500 mb-1">Count</label>
+        <input type="number" name="count" value="4" min="1" max="20"
+               class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500">
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-xs uppercase tracking-wide text-gray-500 mb-1">Name Prefix</label>
+      <input type="text" name="name_prefix" value="NPC"
+             class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500">
+    </div>
+
+    <button type="submit"
+            class="bg-amber-600 hover:bg-amber-500 text-black font-bold px-6 py-2 text-sm uppercase tracking-wide">
+      Generate →
+    </button>
+  </form>
+</div>
+
+{% endblock %}

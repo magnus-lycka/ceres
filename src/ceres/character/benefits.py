@@ -4,10 +4,12 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
+from ceres.character.characteristics import Chars
+
 
 class CharacteristicIncrease(BaseModel):
     type: Literal['characteristic'] = 'characteristic'
-    char: str
+    char: Chars
     amount: int
 
     @property
@@ -30,7 +32,22 @@ class ItemBenefit(BaseModel):
         return self.label
 
 
-AnyBenefit = Annotated[CharacteristicIncrease | ItemBenefit, Field(discriminator='type')]
+class ChoiceBenefit(BaseModel):
+    """A benefit where the player picks one of several options (e.g. 'SOC +1 or Cybernetic Implant')."""
+
+    type: Literal['choice'] = 'choice'
+    options: list[CharacteristicIncrease | ItemBenefit]
+
+    @property
+    def display_label(self) -> str:
+        return ' or '.join(b.display_label for b in self.options)
+
+    @property
+    def exceptional(self) -> bool:
+        return any(b.exceptional for b in self.options)
+
+
+AnyBenefit = Annotated[CharacteristicIncrease | ItemBenefit | ChoiceBenefit, Field(discriminator='type')]
 
 _BENEFIT_REGISTRY: dict[str, ItemBenefit] = {
     'ship_share': ItemBenefit(key='ship_share', label='Ship Share'),
@@ -46,18 +63,27 @@ _BENEFIT_REGISTRY: dict[str, ItemBenefit] = {
     'scientific_equipment': ItemBenefit(key='scientific_equipment', label='Scientific Equipment'),
     'armor': ItemBenefit(key='armor', label='Armor'),
     'combat_implant': ItemBenefit(key='combat_implant', label='Combat Implant'),
+    'cybernetic_implant': ItemBenefit(key='cybernetic_implant', label='Cybernetic Implant'),
 }
 
 
-def parse_benefit(s: str) -> AnyBenefit:
-    """Parse a YAML benefit string into a typed benefit object."""
+def parse_benefit(s: str | list) -> AnyBenefit:
+    """Parse a YAML benefit string (or list for a choice) into a typed benefit object."""
+    if isinstance(s, list):
+        options: list[CharacteristicIncrease | ItemBenefit] = []
+        for item in s:
+            benefit = parse_benefit(item)
+            if isinstance(benefit, ChoiceBenefit):
+                raise ValueError('Nested choice benefits are not supported')
+            options.append(benefit)
+        return ChoiceBenefit(options=options)
     parts = s.split('_')
     if len(parts) == 3 and parts[1] == 'plus' and parts[2].isdigit():
-        return CharacteristicIncrease(char=parts[0].upper(), amount=int(parts[2]))
+        return CharacteristicIncrease(char=Chars(parts[0].upper()), amount=int(parts[2]))
     if s in _BENEFIT_REGISTRY:
         return _BENEFIT_REGISTRY[s]
     label = ' '.join(word.capitalize() for word in parts)
     return ItemBenefit(key=s, label=label)
 
 
-__all__ = ['AnyBenefit', 'CharacteristicIncrease', 'ItemBenefit', 'parse_benefit']
+__all__ = ['AnyBenefit', 'CharacteristicIncrease', 'ChoiceBenefit', 'ItemBenefit', 'parse_benefit']

@@ -234,7 +234,60 @@ class _SolarPowerSource(ShipPart):
         return f'{self.output:g}'
 
 
-class _SolarPanels(ShipPart):
+class _SolarPanels(_SolarPowerSource):
+    tons: ClassVar[float]
+
+    @property
+    def tons(self) -> float:
+        return self.units
+
+    def item_description(self) -> str:
+        return f'Solar Panels ({self.grade}), Power {self._output_label()}'
+
+    def build_notes(self) -> list:
+        notes = NoteList()
+        notes.info('Solar panel Power assumes operation in a star habitable zone')
+        notes.info('Solar panels are useless in interstellar space')
+        notes.info('Solar panels require one six-minute combat turn to deploy')
+        notes.info('Ships cannot accelerate while solar panels are deployed or deploying')
+        notes.info('DM+2 to detect the ship while solar panels are deployed')
+        notes.info('Solar panels can charge batteries')
+        return notes
+
+
+class BasicSolarPanels(_SolarPanels):
+    solar_type: Literal['basic_solar_panels'] = 'basic_solar_panels'
+    tl: int = 6
+    grade: ClassVar[str] = 'Basic'
+    power_per_unit: ClassVar[float] = 0.25
+    cost_per_unit: ClassVar[int] = 100_000
+
+
+class ImprovedSolarPanels(_SolarPanels):
+    solar_type: Literal['improved_solar_panels'] = 'improved_solar_panels'
+    tl: int = 8
+    grade: ClassVar[str] = 'Improved'
+    power_per_unit: ClassVar[float] = 0.5
+    cost_per_unit: ClassVar[int] = 200_000
+
+
+class EnhancedSolarPanels(_SolarPanels):
+    solar_type: Literal['enhanced_solar_panels'] = 'enhanced_solar_panels'
+    tl: int = 10
+    grade: ClassVar[str] = 'Enhanced'
+    power_per_unit: ClassVar[int] = 1
+    cost_per_unit: ClassVar[int] = 300_000
+
+
+class AdvancedSolarPanels(_SolarPanels):
+    solar_type: Literal['advanced_solar_panels'] = 'advanced_solar_panels'
+    tl: int = 12
+    grade: ClassVar[str] = 'Advanced'
+    power_per_unit: ClassVar[int] = 2
+    cost_per_unit: ClassVar[int] = 400_000
+
+
+class _SpinExtSolarPanels(ShipPart):
     cost: ClassVar[float]
     power: ClassVar[float]
     solar_type: str
@@ -244,7 +297,7 @@ class _SolarPanels(ShipPart):
     cost_per_ton: ClassVar[int]
 
     def item_description(self) -> str:
-        return f'Solar Panels (TL {self.tl}), Power {self.output:g}'
+        return f'SpinExt Solar Panels (TL {self.tl}), Power {self.output:g}'
 
     @property
     def cost(self) -> float:
@@ -269,25 +322,89 @@ class _SolarPanels(ShipPart):
         return notes
 
 
-class SolarPanelsTL6(_SolarPanels):
-    solar_type: Literal['solar_panels_tl6'] = 'solar_panels_tl6'
+class SpinExtSolarPanelsTL6(_SpinExtSolarPanels):
+    solar_type: Literal['spinext_solar_panels_tl6'] = 'spinext_solar_panels_tl6'
     tl: int = 6
     power_per_ton: ClassVar[int] = 1
     cost_per_ton: ClassVar[int] = 100_000
 
 
-class SolarPanelsTL8(_SolarPanels):
-    solar_type: Literal['solar_panels_tl8'] = 'solar_panels_tl8'
+class SpinExtSolarPanelsTL8(_SpinExtSolarPanels):
+    solar_type: Literal['spinext_solar_panels_tl8'] = 'spinext_solar_panels_tl8'
     tl: int = 8
     power_per_ton: ClassVar[int] = 2
     cost_per_ton: ClassVar[int] = 200_000
 
 
-class SolarPanelsTL12(_SolarPanels):
-    solar_type: Literal['solar_panels_tl12'] = 'solar_panels_tl12'
+class SpinExtSolarPanelsTL12(_SpinExtSolarPanels):
+    solar_type: Literal['spinext_solar_panels_tl12'] = 'spinext_solar_panels_tl12'
     tl: int = 12
     power_per_ton: ClassVar[int] = 3
     cost_per_ton: ClassVar[int] = 400_000
+
+
+class _SpinExtSolarCoating(ShipPart):
+    cost: ClassVar[float]
+    power: ClassVar[float]
+    tons: ClassVar[float]
+    solar_type: str
+    tl: int
+    covered_tons: float
+    power_per_covered_ton: ClassVar[float]
+    cost_per_covered_ton: ClassVar[int]
+
+    @property
+    def tons(self) -> float:
+        return 0.0
+
+    @property
+    def cost(self) -> float:
+        return self.covered_tons * self.cost_per_covered_ton
+
+    @property
+    def power(self) -> float:
+        return 0.0
+
+    @property
+    def output(self) -> float:
+        return self.covered_tons * self.power_per_covered_ton
+
+    def item_description(self) -> str:
+        return f'SpinExt Solar Coating (TL {self.tl}), Power {self.output:g}'
+
+    def build_notes(self) -> list:
+        notes = NoteList()
+        if self.covered_tons % 10:
+            notes.error('SpinExt solar coating should cover hull tonnage in 10-ton increments')
+        if self._assembly is not None and self.tl < 12:
+            hull = getattr(self.assembly, 'hull', None)
+            if hull is not None and hull.heat_shielding:
+                notes.error('Only TL12 SpinExt solar coating can be used with Heat Shielding')
+            if hull is not None and hull.stealth is not None:
+                notes.error('Only TL12 SpinExt solar coating can be used with Stealth Hull options')
+        notes.info('Destroyed in proportion to hull damage and must be replaced rather than repaired')
+        return notes
+
+
+class SpinExtSolarCoatingTL6(_SpinExtSolarCoating):
+    solar_type: Literal['spinext_solar_coating_tl6'] = 'spinext_solar_coating_tl6'
+    tl: int = 6
+    power_per_covered_ton: ClassVar[float] = 0.01
+    cost_per_covered_ton: ClassVar[int] = 1_000
+
+
+class SpinExtSolarCoatingTL8(_SpinExtSolarCoating):
+    solar_type: Literal['spinext_solar_coating_tl8'] = 'spinext_solar_coating_tl8'
+    tl: int = 8
+    power_per_covered_ton: ClassVar[float] = 0.02
+    cost_per_covered_ton: ClassVar[int] = 2_000
+
+
+class SpinExtSolarCoatingTL12(_SpinExtSolarCoating):
+    solar_type: Literal['spinext_solar_coating_tl12'] = 'spinext_solar_coating_tl12'
+    tl: int = 12
+    power_per_covered_ton: ClassVar[float] = 0.03
+    cost_per_covered_ton: ClassVar[int] = 4_000
 
 
 class _SolarCoating(_SolarPowerSource):
@@ -349,7 +466,18 @@ class AdvancedSolarCoating(_SolarCoating):
 
 
 type AnySolarPowerSource = Annotated[
-    SolarPanelsTL6 | SolarPanelsTL8 | SolarPanelsTL12 | EnhancedSolarCoating | AdvancedSolarCoating,
+    BasicSolarPanels
+    | ImprovedSolarPanels
+    | EnhancedSolarPanels
+    | AdvancedSolarPanels
+    | SpinExtSolarPanelsTL6
+    | SpinExtSolarPanelsTL8
+    | SpinExtSolarPanelsTL12
+    | SpinExtSolarCoatingTL6
+    | SpinExtSolarCoatingTL8
+    | SpinExtSolarCoatingTL12
+    | EnhancedSolarCoating
+    | AdvancedSolarCoating,
     Field(discriminator='solar_type'),
 ]
 
