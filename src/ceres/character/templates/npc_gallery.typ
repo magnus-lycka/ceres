@@ -1,13 +1,13 @@
-// npc_gallery.typ — NPC stat blocks, 2×2 per A4 page.
+// npc_gallery.typ — NPC stat blocks, 2-column page, one per slot, flowing across pages.
 // Data injected by Python as: #let report_data = (...)
 
 #let accent = rgb("#384a6b")
 #let rule-color = 0.3pt + rgb("#b0a090")
 
-#set page(paper: report_data.page_size, margin: (x: 10mm, top: 10mm, bottom: 10mm))
+#set page(paper: report_data.page_size, margin: (x: 10mm, top: 10mm, bottom: 10mm), columns: 2)
 #set text(font: ("Arial Narrow", "Helvetica Neue Condensed", "Helvetica"), size: 9pt)
 
-#let render-npc(npc) = block(breakable: false, width: 100%)[
+#let render-npc(npc) = block(breakable: false, width: 100%, below: 6mm)[
   #block(
     width: 100%,
     fill: accent,
@@ -38,9 +38,6 @@
   )
 ]
 
-#grid(
-  columns: (1fr, 1fr),
-  column-gutter: 8mm,
-  row-gutter: 8mm,
-  ..report_data.npcs.map(render-npc),
-)
+#for npc in report_data.npcs {
+  render-npc(npc)
+}
