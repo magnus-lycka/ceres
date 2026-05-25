@@ -6,7 +6,7 @@ from pydantic import Field
 from ceres.gear.software import SoftwarePackage
 from ceres.shared import NoteList
 
-from .parts import (
+from ..parts import (
     CustomisableShipPart,
     EnergyEfficient,
     EnergyInefficient,
@@ -15,7 +15,7 @@ from .parts import (
     ShipPart,
     SizeReduction,
 )
-from .power import (  # noqa: F401
+from ..power import (  # noqa: F401
     AdvancedSolarCoating,
     AntimatterPlant,
     AnyHighEfficiencyBatteries,
@@ -38,8 +38,9 @@ from .power import (  # noqa: F401
     SterlingFissionPlantTL6,
     SterlingFissionPlantTL12,
 )
-from .software import JumpControl
-from .spec import ShipSpec, SpecSection
+from ..software import JumpControl
+from ..spec import ShipSpec, SpecSection
+from .spinext import AnyPlasmaDrive
 
 LimitedRange = Modification(
     name='Limited Range',
@@ -677,10 +678,15 @@ class DriveSection(ShipPart):
     m_drive: MDrive | None = None
     r_drive: RDrive | None = None
     j_drive: JDrive | None = None
+    plasma_drive: AnyPlasmaDrive | None = None
     solar_sail: AnySolarSail | None = None
 
     def _all_parts(self) -> list[ShipPart]:
-        return [part for part in [self.m_drive, self.r_drive, self.j_drive, self.solar_sail] if part is not None]
+        return [
+            part
+            for part in [self.m_drive, self.r_drive, self.j_drive, self.plasma_drive, self.solar_sail]
+            if part is not None
+        ]
 
     @property
     def output(self) -> float:
@@ -708,6 +714,8 @@ class DriveSection(ShipPart):
             spec.add_row(ship._spec_row_for_part(SpecSection.PROPULSION, self.r_drive))
         if self.m_drive is not None:
             spec.add_row(ship._spec_row_for_part(SpecSection.PROPULSION, self.m_drive))
+        if self.plasma_drive is not None:
+            spec.add_row(ship._spec_row_for_part(SpecSection.PROPULSION, self.plasma_drive))
         if self.solar_sail is not None:
             output = getattr(self.solar_sail, 'output', 0.0)
             spec.add_row(

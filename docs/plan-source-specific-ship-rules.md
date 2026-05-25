@@ -116,32 +116,30 @@ default.py   spinext.py
 The important rule is that source modules import bases, but base/default/source
 modules do not import the assembled package facade.
 
-## Drives Package Later
+## Drives Package Status
 
-When Spinward Extents plasma drives or other source-specific drive rules are
-implemented, use the same shape:
+The drives module has been converted into a package as part of adding Spinward
+Extents plasma drives. The current shape is intentionally smaller than the full
+future package decomposition:
 
 ```text
 src/ceres/make/ship/drives/
   __init__.py
-  base.py
-  default.py
+  standard.py
   spinext.py
-  types.py
-  section.py
 ```
 
-Default/Core/High Guard manoeuvre, jump, and reaction drives remain together in
-`default.py`. Spinward Extents plasma drives go in `spinext.py`.
+Default/Core/High Guard manoeuvre, jump, reaction, and default solar-sail
+support remain together in `standard.py`. Spinward Extents plasma drives are in
+`spinext.py`. The public import path remains `ceres.make.ship.drives`.
 
-Solar sails need a decision before implementation. They might belong in:
+Solar-sail placement decision:
 
-- `drives/spinext.py`, because they provide thrust, or
-- `power/spinext.py`, because they are solar auxiliary systems and can also act
-  as panels, or
-- a future auxiliary systems package if the model grows.
-
-Document the decision before coding.
+- High Guard `SolarSail` is in `drives.standard` because it is a drive
+  accessory and does not generate Power.
+- Spinward Extents solar sails are also currently in `drives.standard` because
+  they integrate with `DriveSection`; they may move to `drives.spinext` in a
+  later cleanup if the source-specific package split is expanded.
 
 ## Migration Steps For Power
 
@@ -163,17 +161,18 @@ Python cannot have both `power.py` and a `power/` package at the same import
 path. The migration must rename/remove `power.py` in the same change that adds
 the package directory.
 
-## Migration Steps For Drives
+## Future Drives Package Cleanup
 
-Do this later, when implementing plasma drives or another drive rule that needs
-source separation.
+The first migration slice is done. If the package grows further, continue with:
 
-1. Convert `drives.py` into `drives/` using the same package structure.
-2. Keep default/Core/High Guard drive families in `drives/default.py`.
-3. Place plasma drives in `drives/spinext.py`.
+1. Move source-neutral bases into `drives/base.py`.
+2. Rename `standard.py` to `default.py` if we want naming symmetry with other
+   packages.
+3. Move Spinward Extents solar sails from `standard.py` to `spinext.py` if the
+   section and union wiring is split out.
 4. Assemble drive unions in `drives/types.py`.
 5. Move `DriveSection` to `drives/section.py`.
-6. Re-export the current public API from `drives/__init__.py`.
+6. Keep re-exporting the current public API from `drives/__init__.py`.
 
 ## Pydantic Union Policy
 
@@ -251,7 +250,7 @@ choice is settled.
 
 Do not refactor all ship modules now. The next practical step is:
 
-1. Finish deciding the solar HG vs SpinExt model.
-2. When that decision is ready, convert `power.py` into the package structure
-   above as part of implementing source-specific solar classes cleanly.
-3. Apply the same pattern to `drives.py` later when plasma drives are added.
+1. Consider converting `power.py` into the package structure above if solar or
+   source-specific power support grows further.
+2. Continue the drives package cleanup only when another source-specific drive
+   change makes it worthwhile.

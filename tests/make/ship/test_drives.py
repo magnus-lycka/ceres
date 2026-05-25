@@ -39,6 +39,13 @@ from ceres.make.ship.drives import (
     RDrive3,
     RDrive16,
     SolarSail,
+    SpinExtPlasmaDrive,
+    SpinExtPlasmaDriveEnergyEfficient,
+    SpinExtPlasmaDriveEnergyInefficient,
+    SpinExtPlasmaDriveFuelEfficient,
+    SpinExtPlasmaDriveFuelInefficient,
+    SpinExtPlasmaDriveIncreasedSize,
+    SpinExtPlasmaDriveSizeReduction,
     SpinExtSolarSailTL6,
     SpinExtSolarSailTL8,
     SpinExtSolarSailTL12,
@@ -283,6 +290,63 @@ def test_solar_sail_appears_in_propulsion_spec_rows():
     assert row.tons == pytest.approx(10.0)
     assert row.cost == pytest.approx(2_000_000.0)
     assert row.power is None
+
+
+def test_spinext_plasma_drive_values_and_notes():
+    plasma = SpinExtPlasmaDrive(thrust=0.5)
+    plasma.bind(DummyOwner(8, 100))
+
+    assert plasma.tl == 8
+    assert plasma.tons == pytest.approx(10.0)
+    assert plasma.cost == pytest.approx(4_000_000.0)
+    assert plasma.power == pytest.approx(10.0)
+    assert plasma.fuel_tons_per_hour == pytest.approx(0.5)
+    assert plasma.build_item() == 'SpinExt Plasma Drive, Thrust 0.5'
+    assert 'Uses standard liquid hydrogen fuel' in plasma.notes.infos
+    assert 'Consumes 0.5 tons of fuel per hour' in plasma.notes.infos
+    assert 'Does not require or benefit from a gravity field, so it works in deep space' in plasma.notes.infos
+
+
+def test_spinext_plasma_drive_modifications_apply_to_their_own_values():
+    plasma = SpinExtPlasmaDrive(
+        thrust=0.5,
+        modifications=[
+            SpinExtPlasmaDriveEnergyEfficient,
+            SpinExtPlasmaDriveEnergyInefficient,
+            SpinExtPlasmaDriveFuelEfficient,
+            SpinExtPlasmaDriveFuelInefficient,
+            SpinExtPlasmaDriveSizeReduction,
+            SpinExtPlasmaDriveIncreasedSize,
+        ],
+    )
+    plasma.bind(DummyOwner(8, 100))
+
+    assert plasma.tons == pytest.approx(10.0 * 1.15)
+    assert plasma.cost == pytest.approx(plasma.tons * 400_000)
+    assert plasma.power == pytest.approx(plasma.tons * 0.80 * 1.30)
+    assert plasma.fuel_tons_per_hour == pytest.approx(0.5 * 1.05)
+    assert plasma.build_item() == (
+        'SpinExt Plasma Drive, Thrust 0.5 '
+        '(Energy Efficient, Energy Inefficient, Fuel Efficient, Fuel Inefficient, '
+        'Size Reduction, Increased Size)'
+    )
+    assert 'Energy Efficient: consumes 20% less Power' in plasma.notes.infos
+    assert 'Increased Size: uses 25% more tonnage' in plasma.notes.infos
+
+
+def test_spinext_plasma_drive_appears_in_propulsion_spec_rows():
+    my_ship = ship.Ship(
+        tl=8,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        drives=DriveSection(plasma_drive=SpinExtPlasmaDrive(thrust=0.5)),
+    )
+
+    row = my_ship.build_spec().row('SpinExt Plasma Drive, Thrust 0.5', section='Propulsion')
+
+    assert row.tons == pytest.approx(10.0)
+    assert row.cost == pytest.approx(4_000_000.0)
+    assert row.power == pytest.approx(-10.0)
 
 
 def test_spinext_tl8_solar_sail_values_and_notes():

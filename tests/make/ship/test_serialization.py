@@ -16,6 +16,9 @@ from ceres.make.ship.drives import (
     HighEfficiencyBatteriesTL12,
     MDrive6,
     PowerSection,
+    SpinExtPlasmaDrive,
+    SpinExtPlasmaDriveEnergyEfficient,
+    SpinExtPlasmaDriveFuelEfficient,
     SpinExtSolarPanelsTL8,
 )
 from ceres.make.ship.hull import BasicStealth, Hull
@@ -202,6 +205,34 @@ def test_roundtrip_m_drive_attributes():
     assert ultralight.drives.m_drive is not None
     assert type(loaded.drives.m_drive) is type(ultralight.drives.m_drive)
     assert loaded.drives.m_drive.level == ultralight.drives.m_drive.level
+
+
+def test_roundtrip_spinext_plasma_drive():
+    source_ship = Ship(
+        tl=8,
+        displacement=100,
+        hull=Hull(configuration=hull.standard_hull),
+        drives=DriveSection(
+            plasma_drive=SpinExtPlasmaDrive(
+                thrust=0.5,
+                modifications=[SpinExtPlasmaDriveEnergyEfficient, SpinExtPlasmaDriveFuelEfficient],
+            )
+        ),
+    )
+
+    loaded = _roundtrip(source_ship)
+
+    assert loaded.drives is not None
+    assert loaded.drives.plasma_drive is not None
+    assert isinstance(loaded.drives.plasma_drive, SpinExtPlasmaDrive)
+    assert loaded.drives.plasma_drive.thrust == 0.5
+    assert loaded.drives.plasma_drive.tons == pytest.approx(10)
+    assert [modification.name for modification in loaded.drives.plasma_drive.modifications] == [
+        'Energy Efficient',
+        'Fuel Efficient',
+    ]
+    assert loaded.drives.plasma_drive.power == pytest.approx(8)
+    assert loaded.drives.plasma_drive.fuel_tons_per_hour == pytest.approx(0.4)
 
 
 def test_roundtrip_recomputes_derived_part_values():

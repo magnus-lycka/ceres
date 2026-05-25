@@ -1171,3 +1171,26 @@ Implemented and covered:
 Operational scanner procedures, range detail adjudication, jamming resolution,
 and scan timing are represented as notes or remain out of scope for
 `ceres.make.ship`.
+
+## Plasma Drives
+
+Spinward Extents plasma drive construction coverage is complete for the
+currently modelled ship-building scope.
+
+Reference: `refs/spinext/59_arcturus.md`.
+
+Implemented and covered:
+
+- `SpinExtPlasmaDrive` in `src/ceres/make/ship/drives/spinext.py`
+- available at TL8
+- uses standard liquid hydrogen fuel
+- tonnage is 20% of hull tonnage per Thrust
+- cost is MCr0.4 per ton
+- each ton of plasma drive requires 1 Power
+- fuel use is 1% per Thrust per hour
+- does not require or benefit from a gravity field, so it works in deep space
+- plasma-drive-specific modifiers from the source: Energy Efficient, Fuel
+  Efficient, Size Reduction, Energy Inefficient, Increased Size, and Fuel
+  Inefficient
+
+Operational planetary-use details remain out of scope for `ceres.make.ship`.
