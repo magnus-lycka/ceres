@@ -1,6 +1,7 @@
 """Tests for CharacterProjection.skill_choices and check_skill_choice."""
 
-from ceres.character.projection import CharacterProjection, CharacterSummary
+from ceres.character.characteristics import ConnectionKind
+from ceres.character.projection import CharacterProjection, CharacterSummary, make_connection
 from ceres.character.skills import (
     Admin,
     Animals,
@@ -17,6 +18,37 @@ from ceres.character.skills import (
 def _projection(skills=None) -> CharacterProjection:
     summary = CharacterSummary(skills=skills or [])
     return CharacterProjection(character_id=1, summary=summary)
+
+
+class TestCompanionConnectionRules:
+    def test_ally_roll_sets_affinity_and_zero_enmity(self):
+        connection = make_connection(ConnectionKind.ALLY, affinity_roll=7)
+
+        assert connection.affinity == 3
+        assert connection.enmity == 0
+
+    def test_contact_rolls_can_be_mixed(self):
+        connection = make_connection(ConnectionKind.CONTACT, affinity_roll=5, enmity_roll=2)
+
+        assert connection.affinity == 2
+        assert connection.enmity == 0
+
+    def test_rival_can_have_affinity(self):
+        connection = make_connection(ConnectionKind.RIVAL, affinity_roll=5, enmity_roll=2)
+
+        assert connection.affinity == 2
+        assert connection.enmity == 0
+
+    def test_enemy_roll_sets_zero_affinity_and_negative_enmity(self):
+        connection = make_connection(ConnectionKind.ENEMY, enmity_roll=8)
+
+        assert connection.affinity == 0
+        assert connection.enmity == -3
+
+    def test_affinity_enmity_result_12_is_extreme_value_6(self):
+        connection = make_connection(ConnectionKind.ALLY, affinity_roll=12)
+
+        assert connection.affinity == 6
 
 
 class TestSkillChoicesNonSpecialised:

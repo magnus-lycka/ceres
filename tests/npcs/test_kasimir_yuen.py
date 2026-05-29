@@ -11,6 +11,7 @@ from ceres.character.events import (
     BackgroundSkillsEvent,
     CareerEvent,
     CharacterStartedEvent,
+    FinishCreationEvent,
     MusterOutEvent,
     SkillChoiceEvent,
     SkillTableEvent,
@@ -59,6 +60,7 @@ def _events() -> list:
         # Muster out: 2 rolls (term_count=2, rank=0)
         MusterOutEvent(id=15, fulfills='14.0', table='benefits', roll=6),  # scout_ship
         MusterOutEvent(id=16, fulfills='14.1', table='cash', roll=1),  # Cr20,000
+        FinishCreationEvent(id=17, fulfills='16.0'),
     ]
 
 
@@ -75,7 +77,7 @@ def kasimir_spec():
     return build_kasimir_spec()
 
 
-def test_no_pending_inputs_after_muster_out():
+def test_no_pending_inputs_after_finish_creation():
     assert replay(1, _events()).pending_inputs == []
 
 

@@ -9,25 +9,35 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import TypeAdapter
 
-from ceres.character.careers.loader import load_careers
-from ceres.character.characteristics import Chars
+from ceres.character.careers.loader import load_careers, selectable_careers
+from ceres.character.characteristics import Chars, ConnectionKind
 from ceres.character.events import (
     AdvancementDmChoiceEvent,
     AdvancementEvent,
     AgingCrisisEvent,
     AgingRollEvent,
     AnyEvent,
+    AssignmentChangeChoiceEvent,
     BackgroundSkillsEvent,
+    BenefitChoiceEvent,
     CareerChoiceEvent,
     CareerEvent,
     CharacteristicChoiceEvent,
+    CommissionEvent,
     ConnectionKindChoiceEvent,
     ConnectionsRollEvent,
+    DraftAssignmentEvent,
+    DraftEvent,
+    FinishCreationEvent,
     InjuryTableEvent,
     LifeEventEvent,
     LifeEventUnusualEvent,
     MishapEvent,
     MusterOutEvent,
+    PreCareerEntryEvent,
+    PreCareerEventEvent,
+    PreCareerGraduationEvent,
+    PreCareerSkillChoiceEvent,
     ReenlistEvent,
     SkillChoiceEvent,
     SkillRollEvent,
@@ -36,7 +46,13 @@ from ceres.character.events import (
     TermEventEvent,
     UcpEvent,
 )
-from ceres.character.projection import CharacterProjection, CharacterSummary, PendingInputBase, _level_fields
+from ceres.character.projection import (
+    CharacterProjection,
+    CharacterSummary,
+    PendingConnectionsRoll,
+    PendingInputBase,
+    _level_fields,
+)
 from ceres.character.replay import ReplayError
 from ceres.character.report import render_npc_gallery_pdf
 from ceres.character.skills import AnySkill, skill_class_by_name
@@ -57,10 +73,6 @@ _SKILL_CHOICE_KINDS = frozenset(
     }
 )
 
-_CONNECTION_TYPE_RE = re.compile(r'\b(contacts?|allies|ally|rivals?|enemies|enemy)\b', re.IGNORECASE)
-_CONNECTION_TYPE_MAP = {'contacts': 'contact', 'allies': 'ally', 'rivals': 'rival', 'enemies': 'enemy'}
-
-ConnectionKind = Literal['contact', 'ally', 'rival', 'enemy']
 MusterOutTable = Literal['cash', 'benefits']
 
 
@@ -89,13 +101,14 @@ def _skill_class_or_none(name: str) -> type[AnySkill] | None:
         return None
 
 
-def _connection_type_from_instruction(instruction: str) -> str:
-    m = _CONNECTION_TYPE_RE.search(instruction)
-    if not m:
-        return 'contact'
-    word = m.group(1).lower()
-    return _CONNECTION_TYPE_MAP.get(word, word)
-
+_DRAFT_TABLE: dict[int, str] = {
+    1: 'Navy',
+    2: 'Army',
+    3: 'Marines',
+    4: 'Merchant',
+    5: 'Scout',
+    6: 'Agent',
+}
 
 _NON_SKILL_OPTION_LABELS: dict[str, str] = {
     'advancement_dm_4': 'DM+4 to next advancement roll',
@@ -166,11 +179,56 @@ def _build_event_from_form(kind: str, fulfills: str, form: Any) -> AnyEvent:
         skills = [_skill_adapter.validate_json(j) for j in raw]
         return BackgroundSkillsEvent(skills=skills, fulfills=f)
 
+    if kind == 'finish_creation':
+        return FinishCreationEvent(fulfills=f)
+
+    if kind == 'precareer_entry':
+        precareer = _form_str(form, 'precareer', 'University')
+        roll = _form_int(form, 'roll', 7)
+        return PreCareerEntryEvent(precareer=precareer, roll=roll, fulfills=f)
+
+    if kind == 'precareer_skill_choice':
+        skill = _form_str(form, 'skill')
+        return PreCareerSkillChoiceEvent(skill=skill, fulfills=f)
+
+    if kind == 'precareer_event':
+        return PreCareerEventEvent(roll=_form_int(form, 'roll', 7), fulfills=f)
+
+    if kind == 'precareer_graduation':
+        return PreCareerGraduationEvent(roll=_form_int(form, 'roll', 7), fulfills=f)
+
     if kind == 'career_choice':
         career = _form_str(form, 'career')
         assignment = _form_str(form, 'assignment')
         roll = _form_int(form, 'roll', 2)
         return CareerEvent(career=career, assignment=assignment, qualification_roll=roll, fulfills=f)
+
+    if kind == 'draft_choice':
+        choice = _form_str(form, 'choice', 'drifter')
+        if choice == 'draft':
+            roll = _form_int(form, 'roll', 1)
+            career = _DRAFT_TABLE.get(roll, 'Navy')
+            return DraftEvent(career=career, fulfills=f)
+        assignment = _form_str(form, 'assignment', 'Wanderer')
+        return CareerEvent(career='Drifter', assignment=assignment, qualification_roll=2, fulfills=f)
+
+    if kind == 'draft_assignment_choice':
+        return DraftAssignmentEvent(
+            career=_form_str(form, 'career'),
+            assignment=_form_str(form, 'assignment'),
+            fulfills=f,
+        )
+
+    if kind == 'commission_choice':
+        choice = _form_str(form, 'choice', 'skip')
+        if choice == 'attempt':
+            return CommissionEvent(attempt=True, roll=_form_int(form, 'roll', 7), fulfills=f)
+        return CommissionEvent(attempt=False, fulfills=f)
+
+    if kind == 'assignment_change_choice':
+        choice = _form_str(form, 'choice', 'muster_out')
+        roll = _form_int(form, 'roll', 7) if choice not in ('same', 'muster_out') else None
+        return AssignmentChangeChoiceEvent(choice=choice, qualification_roll=roll, fulfills=f)
 
     if kind == 'career_skill_choice':
         skill_str = _form_str(form, 'skill', '{}')
@@ -226,28 +284,26 @@ def _build_event_from_form(kind: str, fulfills: str, form: Any) -> AnyEvent:
         return LifeEventUnusualEvent(roll=_form_int(form, 'roll', 1), fulfills=f)
 
     if kind == 'connections_roll':
-        connection_type = cast(
-            ConnectionKind,
-            _literal(_form_str(form, 'connection_type', 'contact'), ('contact', 'ally', 'rival', 'enemy'), 'contact'),
-        )
+        raw_ct = _literal(_form_str(form, 'connection_type', 'contact'), tuple(ConnectionKind), 'contact')
         count = _form_int(form, 'count', 1)
-        return ConnectionsRollEvent(connection_type=connection_type, count=count, fulfills=f)
+        return ConnectionsRollEvent(connection_type=ConnectionKind(raw_ct), count=count, fulfills=f)
 
     if kind in ('characteristic_choice', 'aging_choice', 'aging_choice_mental'):
         characteristic = Chars(_form_str(form, 'characteristic', Chars.STR))
         return CharacteristicChoiceEvent(characteristic=characteristic, fulfills=f)
 
     if kind == 'life_event_choice':
-        connection_kind = cast(
-            ConnectionKind,
-            _literal(_form_str(form, 'connection_kind', 'rival'), ('contact', 'ally', 'rival', 'enemy'), 'rival'),
-        )
-        return ConnectionKindChoiceEvent(connection_kind=connection_kind, fulfills=f)
+        raw_ck = _literal(_form_str(form, 'connection_kind', 'rival'), tuple(ConnectionKind), 'rival')
+        return ConnectionKindChoiceEvent(connection_kind=ConnectionKind(raw_ck), fulfills=f)
 
     if kind == 'aging_crisis':
         paid = _form_str(form, 'paid', 'false').lower() in ('true', '1', 'yes')
         medical_roll = _form_int(form, 'medical_roll', 0)
         return AgingCrisisEvent(paid=paid, medical_roll=medical_roll, fulfills=f)
+
+    if kind == 'benefit_choice_pending':
+        choice_index = _form_int(form, 'choice_index', 0)
+        return BenefitChoiceEvent(choice_index=choice_index, fulfills=f)
 
     if kind in ('career_event', 'career_mishap'):
         career = _form_str(form, 'career')
@@ -349,8 +405,12 @@ def _projection_context(projection: CharacterProjection, character_id: int) -> d
         elif kind == 'career_choice':
             extra['careers'] = careers
 
+        elif kind == 'draft_choice':
+            drifter = careers.get('Drifter')
+            extra['drifter_assignments'] = [a.name for a in drifter.assignments] if drifter else ['Wanderer']
+
         elif kind == 'connections_roll':
-            extra['connection_type'] = _connection_type_from_instruction(pi.instruction)
+            extra['connection_type'] = cast(PendingConnectionsRoll, pi).connection_type
 
         elif kind == 'life_event_choice':
             # roll 4 → rival/enemy, roll 8 → rival/enemy (same options)
@@ -430,6 +490,11 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
         ctx = {**_projection_context(projection, character_id), 'is_htmx': False}
         return templates.TemplateResponse(request=request, name='wizard.html', context=ctx)
 
+    @router.post('/characters/{character_id}/delete')
+    def delete_character(character_id: int) -> Any:
+        backend.delete_character(character_id)
+        return RedirectResponse(url='/ui/', status_code=303)
+
     @router.post('/characters/{character_id}/events', response_class=HTMLResponse)
     async def post_event(request: Request, character_id: int) -> Any:
         projection = backend.get_projection(character_id)
@@ -496,7 +561,7 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
 
     @router.get('/gallery/new', response_class=HTMLResponse)
     def gallery_form(request: Request) -> Any:
-        careers = load_careers()
+        careers = selectable_careers()
         return templates.TemplateResponse(
             request=request,
             name='gallery_form.html',

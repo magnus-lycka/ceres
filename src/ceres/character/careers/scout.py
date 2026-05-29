@@ -1,4 +1,4 @@
-from ceres.character.careers.career_data import EventEffect
+from ceres.character.careers.career_data import CareerDispatchEffect
 from ceres.character.events import SkillRollEvent
 from ceres.character.projection import (
     Ally,
@@ -20,7 +20,7 @@ _AMBUSH_TARGETS = {'Pilot': 8, 'Persuade': 10}
 
 def _handle_scout_event_3(
     projection: CharacterProjection,
-    effect: EventEffect,
+    effect: CareerDispatchEffect,
     event_id: int,
     pending_idx: int,
 ) -> int:
@@ -52,7 +52,7 @@ def _resolve_scout_event_3(projection: CharacterProjection, event: SkillRollEven
 
 def _handle_scout_event_8(
     projection: CharacterProjection,
-    effect: EventEffect,
+    effect: CareerDispatchEffect,
     event_id: int,
     pending_idx: int,
 ) -> int:
@@ -93,7 +93,7 @@ def _resolve_scout_event_8(projection: CharacterProjection, event: SkillRollEven
 
 def _handle_scout_event_9(
     projection: CharacterProjection,
-    effect: EventEffect,
+    effect: CareerDispatchEffect,
     event_id: int,
     pending_idx: int,
 ) -> int:
@@ -129,7 +129,7 @@ def _resolve_scout_event_9(projection: CharacterProjection, event: SkillRollEven
 
 def _handle_scout_event_10(
     projection: CharacterProjection,
-    effect: EventEffect,
+    effect: CareerDispatchEffect,
     event_id: int,
     pending_idx: int,
 ) -> int:
@@ -170,7 +170,7 @@ def _resolve_scout_event_10(projection: CharacterProjection, event: SkillRollEve
 
 def _handle_scout_event_11(
     projection: CharacterProjection,
-    effect: EventEffect,
+    effect: CareerDispatchEffect,
     event_id: int,
     pending_idx: int,
 ) -> int:

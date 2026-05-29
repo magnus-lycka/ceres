@@ -4,6 +4,15 @@ Update todo items in this document as progress is made.
 When todo items are done, please move them
 to docs/archive/done_todos.md
 
+## Crewmember Profession is wrong
+
+Rule interpretation RIC-001 claims that the Profession broad skill consists of skills:
+Colonist Profession, Crewmember Profession, Freeloader Profession,
+Hostile Environment Profession, Spacer Profession, Sport Profession and Worker Profession,
+but this isn't right. Crewmember Profession does not exist, instead there is an already
+implemented Spacer Profession Crewmember specialisation. Crewmember Profession is wrong,
+redundant and should be removed. 
+
 ## Google Sheet fuel mismatch
 
 We should keep an eye out for any remaining Google Sheet / export-based fuel

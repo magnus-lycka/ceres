@@ -29,6 +29,13 @@
        class="border border-gray-600 hover:border-gray-400 text-gray-400 hover:text-gray-200 px-4 py-2 text-xs uppercase tracking-wide">
       Export PDF
     </a>
+    <form method="POST" action="/ui/characters/{{ character_id }}/delete" class="inline">
+      <button type="submit"
+              onclick="return confirm('Delete {{ summary.name or 'this character' }}? This cannot be undone.')"
+              class="border border-red-900/60 hover:border-red-700 text-red-800 hover:text-red-500 px-4 py-2 text-xs uppercase tracking-wide">
+        Delete
+      </button>
+    </form>
     <a href="/ui/" class="text-gray-600 hover:text-gray-400 px-2 py-2 text-xs uppercase">← Back</a>
   </div>
 </div>
@@ -67,6 +74,20 @@
     </table>
   </div>
 </div>
+
+{# Pre-career Education #}
+{% if summary.precareer_completed or summary.precareer %}
+<div class="mb-6">
+  <h2 class="text-xs uppercase tracking-widest text-gray-600 mb-3">Education</h2>
+  <p class="text-sm text-gray-300">
+    {% if summary.precareer_completed %}
+      {{ summary.precareer_completed }}
+    {% else %}
+      {{ summary.precareer }} <span class="text-gray-600">(in progress)</span>
+    {% endif %}
+  </p>
+</div>
+{% endif %}
 
 {# Skills #}
 {% if summary.skills %}

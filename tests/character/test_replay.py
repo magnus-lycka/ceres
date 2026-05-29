@@ -1,3 +1,5 @@
+from random import Random
+
 from ceres.character.events import BackgroundSkillsEvent, CharacterStartedEvent, UcpEvent
 from ceres.character.projection import (
     PendingBackgroundSkills,
@@ -6,6 +8,8 @@ from ceres.character.projection import (
 )
 from ceres.character.replay import BACKGROUND_SKILLS, ReplayError, replay
 from ceres.character.skills import Admin, Advocate, Athletics, Carouse, Drive, skill_list
+from ceres.character.store import SqliteCharacterBackend
+from ceres.character.web.bulk import CohortParams, generate_npc
 
 
 def _started(id: int = 1) -> CharacterStartedEvent:
@@ -201,6 +205,68 @@ class TestBackgroundSkillsEvent:
             assert False, 'Expected ReplayError'
         except ReplayError:
             pass
+
+
+class TestReplayFromPersistedEventLog:
+    def test_replaying_persisted_event_log_rebuilds_identical_projection(self):
+        backend = SqliteCharacterBackend(':memory:')
+        try:
+            row = backend.start(sophont='Vilani', player='NPC', name='Boss')
+            character_id = row['id']
+            backend.append_event(character_id, UcpEvent(fulfills='1.0', ucp='7869A5'))
+            backend.append_event(
+                character_id,
+                BackgroundSkillsEvent(
+                    fulfills='2.0',
+                    skills=[Admin(), Athletics(), Carouse(), Drive()],
+                ),
+            )
+
+            original = backend.get_projection(character_id)
+            events = backend.load_typed_events(character_id)
+
+            assert original is not None
+            assert events is not None
+            rebuilt = replay(character_id, events)
+            assert rebuilt.model_dump(mode='json') == original.model_dump(mode='json')
+        finally:
+            backend.close()
+
+    def test_replaying_three_term_persisted_log_rebuilds_identical_projection(self):
+        backend = SqliteCharacterBackend(':memory:')
+        try:
+            generate_npc(
+                backend,
+                CohortParams(
+                    career='Scout',
+                    assignment='Courier',
+                    sophont='Humaniti',
+                    min_terms=3,
+                    max_terms=3,
+                    name_prefix='Replay',
+                ),
+                name='Replay Test',
+                rng=Random(1),
+            )
+
+            original = backend.get_projection(1)
+            events = backend.load_typed_events(1)
+
+            assert original is not None
+            assert events is not None
+            assert original.summary.term_count == 3
+            assert any(
+                event.kind == 'skill_choice'
+                and (skill := event.model_dump(mode='json')['skill'])['type'] == 'Pilot'
+                and skill['small_craft']['value'] == 0
+                and skill['spacecraft']['value'] == 1
+                and skill['capital_ships']['value'] == 0
+                for event in events
+            )
+            rebuilt = replay(1, events)
+            assert rebuilt.model_dump(mode='json') == original.model_dump(mode='json')
+        finally:
+            backend.close()
 
 
 class TestReplayBlocking:

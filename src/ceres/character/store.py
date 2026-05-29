@@ -79,12 +79,16 @@ class SqliteCharacterBackend:
         return character
 
     def append_event(self, character_id: int, event: AnyEvent) -> AnyEvent:
+        event, _projection = self.append_event_with_projection(character_id, event)
+        return event
+
+    def append_event_with_projection(self, character_id: int, event: AnyEvent) -> tuple[AnyEvent, CharacterProjection]:
         events = self.load_typed_events(character_id) or []
         event = event.model_copy(update={'id': len(events) + 1})
         candidate = [*events, event]
-        replay(character_id, candidate)  # raises ReplayError if invalid; do not save
+        projection = replay(character_id, candidate)  # raises ReplayError if invalid; do not save
         self._save_events(character_id, candidate)
-        return event
+        return event, projection
 
     def load_typed_events(self, character_id: int) -> list[AnyEvent] | None:
         cursor = self.connection.execute('select events_json from characters where id = ?', (character_id,))

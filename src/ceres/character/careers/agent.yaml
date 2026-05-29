@@ -1,6 +1,8 @@
 name: Agent
 source: Core
 allows_assignment_change: false
+draft:
+  assignment: Law Enforcement
 
 qualification:
   characteristic: INT

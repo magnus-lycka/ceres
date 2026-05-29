@@ -60,7 +60,7 @@ class HullConfiguration(CeresModel):
             modifier *= 0.9
         return modifier
 
-    def cost(self, ton):
+    def cost(self, ton, tl: int | None = None):
         return 50000 * ton * self.effective_hull_cost_modifier
 
     def automation_basis_cost(self, ton: float) -> float:
@@ -318,8 +318,8 @@ class Hull(CeresModel):
     def breakaway_cost(self, displacement: float) -> float:
         return self.breakaway_tons(displacement) * 2_000_000.0
 
-    def total_cost(self, displacement: float) -> float:
-        base_cost = self.configuration.cost(displacement)
+    def total_cost(self, displacement: float, tl: int | None = None) -> float:
+        base_cost = self.configuration.cost(displacement, tl=tl)
         if self.pressure_hull:
             return base_cost * 10
         return base_cost

@@ -1,4 +1,4 @@
-from ceres.character.careers.career_data import EventEffect
+from ceres.character.careers.career_data import AssignmentData, CareerData, CareerDispatchEffect
 from ceres.character.characteristics import Chars
 from ceres.character.events import SkillRollEvent
 from ceres.character.projection import (
@@ -12,12 +12,18 @@ from ceres.character.projection import (
     PendingSkillChoice,
 )
 
+
+class AgentCareerData(CareerData):
+    def prior_terms(self, terms, assignment: AssignmentData) -> list:
+        return [term for term in terms if term.career == self.name and term.assignment == assignment.name]
+
+
 # ── mishap 2: criminal deal ───────────────────────────────────────────────────
 
 
 def _handle_agent_mishap_2(
     projection: CharacterProjection,
-    effect: EventEffect,
+    effect: CareerDispatchEffect,
     event_id: int,
     pending_idx: int,
 ) -> int:
@@ -76,7 +82,7 @@ def _choice_agent_mishap_2(projection: CharacterProjection, event) -> None:
 
 def _handle_agent_mishap_3(
     projection: CharacterProjection,
-    effect: EventEffect,
+    effect: CareerDispatchEffect,
     event_id: int,
     pending_idx: int,
 ) -> int:
@@ -116,7 +122,7 @@ def _resolve_agent_mishap_3(projection: CharacterProjection, event: SkillRollEve
 
 def _handle_agent_mishap_5(
     projection: CharacterProjection,
-    effect: EventEffect,
+    effect: CareerDispatchEffect,
     event_id: int,
     pending_idx: int,
 ) -> int:
@@ -155,7 +161,7 @@ def _choice_agent_mishap_5(projection: CharacterProjection, event) -> None:
 
 def _handle_agent_event_3(
     projection: CharacterProjection,
-    effect: EventEffect,
+    effect: CareerDispatchEffect,
     event_id: int,
     pending_idx: int,
 ) -> int:
@@ -198,7 +204,7 @@ def _resolve_agent_event_3(projection: CharacterProjection, event: SkillRollEven
 
 def _handle_agent_event_6(
     projection: CharacterProjection,
-    effect: EventEffect,
+    effect: CareerDispatchEffect,
     event_id: int,
     pending_idx: int,
 ) -> int:
@@ -217,11 +223,12 @@ def _handle_agent_event_6(
 
 def _resolve_agent_event_6(projection: CharacterProjection, event: SkillRollEvent) -> None:
     if event.modified_roll >= 8:
+        existing_skills = [type(s).name() for s in projection.summary.skills]
         projection.pending_inputs.append(
             PendingSkillChoice(
                 id=f'{event.id}.0',
                 instruction='Advanced training: increase any existing skill by one level',
-                options=[],
+                options=existing_skills,
             )
         )
 
@@ -231,7 +238,7 @@ def _resolve_agent_event_6(projection: CharacterProjection, event: SkillRollEven
 
 def _handle_agent_event_8(
     projection: CharacterProjection,
-    effect: EventEffect,
+    effect: CareerDispatchEffect,
     event_id: int,
     pending_idx: int,
 ) -> int:
@@ -267,7 +274,7 @@ def _resolve_agent_event_8(projection: CharacterProjection, event: SkillRollEven
 
 def _handle_agent_event_11(
     projection: CharacterProjection,
-    effect: EventEffect,
+    effect: CareerDispatchEffect,
     event_id: int,
     pending_idx: int,
 ) -> int:
@@ -307,3 +314,5 @@ CHOICE_HANDLERS: dict[str, object] = {
     'agent_mishap_2': _choice_agent_mishap_2,
     'agent_mishap_5': _choice_agent_mishap_5,
 }
+
+CAREER_DATA_CLASS = AgentCareerData

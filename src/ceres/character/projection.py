@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 from ceres.character.benefits import AnyBenefit, ItemBenefit
 from ceres.character.careers.career_data import CareerData
-from ceres.character.characteristics import Chars
+from ceres.character.characteristics import Chars, ConnectionKind
 from ceres.character.events import (
     AdvancementDmChoiceEvent,
     AdvancementEvent,
@@ -20,9 +20,13 @@ from ceres.character.events import (
     CareerChoiceEvent,
     CareerEvent,
     CharacteristicChoiceEvent,
+    CommissionEvent,
     ConnectionKindChoiceEvent,
     ConnectionsRollEvent,
     DoubleInjuryTableEvent,
+    DraftAssignmentEvent,
+    DraftEvent,
+    FinishCreationEvent,
     InjuryTableEvent,
     LifeEventEvent,
     LifeEventUnusualEvent,
@@ -39,13 +43,6 @@ from ceres.character.events import (
 from ceres.character.skills import AnySkill, Level, Skill, skill_class_by_name
 from ceres.shared import CeresModel
 
-_CONNECTION_TYPE_RE = re.compile(r'\b(contacts?|allies|ally|rivals?|enemies|enemy)\b', re.IGNORECASE)
-_CONNECTION_TYPE_MAP: dict[str, str] = {
-    'contacts': 'contact',
-    'allies': 'ally',
-    'rivals': 'rival',
-    'enemies': 'enemy',
-}
 _CHOOSE_COUNT_RE = re.compile(r'Choose (\d+)')
 
 
@@ -55,17 +52,6 @@ def _roll2d(rng: random.Random) -> int:
 
 def _roll1d(rng: random.Random) -> int:
     return rng.randint(1, 6)
-
-
-def _connection_kind(instruction: str) -> Literal['contact', 'ally', 'rival', 'enemy']:
-    m = _CONNECTION_TYPE_RE.search(instruction)
-    if not m:
-        return 'contact'
-    word = m.group(1).lower()
-    candidate = _CONNECTION_TYPE_MAP.get(word, word)
-    if candidate in ('contact', 'ally', 'rival', 'enemy'):
-        return cast(Literal['contact', 'ally', 'rival', 'enemy'], candidate)
-    return 'contact'
 
 
 @dataclass(frozen=True)
@@ -96,6 +82,15 @@ class PendingCareerChoice(PendingInputBase):
     kind: Literal['career_choice'] = 'career_choice'
 
 
+class PendingDraftChoice(PendingInputBase):
+    kind: Literal['draft_choice'] = 'draft_choice'
+
+
+class PendingDraftAssignmentChoice(PendingInputBase):
+    kind: Literal['draft_assignment_choice'] = 'draft_assignment_choice'
+    career: str
+
+
 class PendingSurvive(PendingInputBase):
     kind: Literal['survive'] = 'survive'
 
@@ -110,6 +105,10 @@ class PendingMishap(PendingInputBase):
 
 class PendingAdvancement(PendingInputBase):
     kind: Literal['advancement'] = 'advancement'
+
+
+class PendingCommissionChoice(PendingInputBase):
+    kind: Literal['commission_choice'] = 'commission_choice'
 
 
 class PendingSkillTable(PendingInputBase):
@@ -210,6 +209,7 @@ class PendingLifeEventUnusual(PendingInputBase):
 
 class PendingConnectionsRoll(PendingInputBase):
     kind: Literal['connections_roll'] = 'connections_roll'
+    connection_type: ConnectionKind = ConnectionKind.CONTACT
 
 
 class PendingCareerEvent(PendingInputBase):
@@ -247,14 +247,36 @@ class PendingCareerSkillRoll(PendingInputBase):
     context: str
 
 
+class PendingPreCareerSkillChoice(PendingInputBase):
+    """University: choose one skill at the given level (0 or 1) from the pre-career skill list."""
+
+    kind: Literal['precareer_skill_choice'] = 'precareer_skill_choice'
+    level: int
+
+
+class PendingPreCareerEvent(PendingInputBase):
+    """Roll 2D on the Pre-career Events table."""
+
+    kind: Literal['precareer_event'] = 'precareer_event'
+
+
+class PendingPreCareerGraduation(PendingInputBase):
+    """Roll 2D for graduation from pre-career education."""
+
+    kind: Literal['precareer_graduation'] = 'precareer_graduation'
+
+
 type AnyPending = Annotated[
     PendingUcp
     | PendingBackgroundSkills
     | PendingCareerChoice
+    | PendingDraftChoice
+    | PendingDraftAssignmentChoice
     | PendingSurvive
     | PendingTermEvent
     | PendingMishap
     | PendingAdvancement
+    | PendingCommissionChoice
     | PendingSkillTable
     | PendingReenlist
     | PendingAssignmentChangeChoice
@@ -279,7 +301,10 @@ type AnyPending = Annotated[
     | PendingCareerEvent
     | PendingCareerMishap
     | PendingCareerSkillChoice
-    | PendingCareerSkillRoll,
+    | PendingCareerSkillRoll
+    | PendingPreCareerSkillChoice
+    | PendingPreCareerEvent
+    | PendingPreCareerGraduation,
     Field(discriminator='kind'),
 ]
 
@@ -297,8 +322,8 @@ class Connection(CeresModel):
 
     source: str = ''  # how/when this person entered the character's life
     power: int | None = None  # 1-6: degree of power or influence
-    affinity: int | None = None  # 1-6: degree of affinity towards the Traveller
-    enmity: int | None = None  # 1-6: degree of enmity towards the Traveller
+    affinity: int | None = None  # 0-6: degree of affinity towards the Traveller
+    enmity: int | None = None  # 0 to -6: degree of enmity towards the Traveller
 
 
 class Contact(Connection):
@@ -323,20 +348,73 @@ type AnyConnection = Annotated[
 ]
 
 
+def _affinity_enmity_value(roll: int, *, enmity: bool = False) -> int:
+    if roll <= 2:
+        value = 0
+    elif roll <= 4:
+        value = 1
+    elif roll <= 6:
+        value = 2
+    elif roll <= 8:
+        value = 3
+    elif roll <= 10:
+        value = 4
+    elif roll == 11:
+        value = 5
+    else:
+        value = 6
+    return -value if enmity else value
+
+
+def _connection_affinity_enmity(
+    kind: ConnectionKind,
+    affinity_roll: int | None,
+    enmity_roll: int | None,
+) -> tuple[int | None, int | None]:
+    if affinity_roll is None and enmity_roll is None:
+        return None, None
+
+    match kind:
+        case ConnectionKind.ALLY:
+            affinity = _affinity_enmity_value(affinity_roll) if affinity_roll is not None else None
+            return affinity, 0
+        case ConnectionKind.CONTACT:
+            affinity = _affinity_enmity_value(affinity_roll) if affinity_roll is not None else None
+            enmity = _affinity_enmity_value(enmity_roll, enmity=True) if enmity_roll is not None else None
+            return affinity, enmity
+        case ConnectionKind.RIVAL:
+            affinity = _affinity_enmity_value(affinity_roll) if affinity_roll is not None else None
+            enmity = _affinity_enmity_value(enmity_roll, enmity=True) if enmity_roll is not None else None
+            return affinity, enmity
+        case ConnectionKind.ENEMY:
+            enmity = _affinity_enmity_value(enmity_roll, enmity=True) if enmity_roll is not None else None
+            return 0, enmity
+
+
 def make_connection(
-    kind: Literal['contact', 'ally', 'rival', 'enemy'],
+    kind: ConnectionKind,
     source: str = '',
     power: int | None = None,
+    affinity_roll: int | None = None,
+    enmity_roll: int | None = None,
 ) -> AnyConnection:
+    affinity, enmity = _connection_affinity_enmity(kind, affinity_roll, enmity_roll)
     match kind:
-        case 'contact':
-            return Contact(source=source, power=power)
-        case 'ally':
-            return Ally(source=source, power=power)
-        case 'rival':
-            return Rival(source=source, power=power)
-        case 'enemy':
-            return Enemy(source=source, power=power)
+        case ConnectionKind.CONTACT:
+            return Contact(source=source, power=power, affinity=affinity, enmity=enmity)
+        case ConnectionKind.ALLY:
+            return Ally(source=source, power=power, affinity=affinity, enmity=enmity)
+        case ConnectionKind.RIVAL:
+            return Rival(source=source, power=power, affinity=affinity, enmity=enmity)
+        case ConnectionKind.ENEMY:
+            return Enemy(source=source, power=power, affinity=affinity, enmity=enmity)
+
+
+class CareerTerm(BaseModel):
+    career: str
+    assignment: str
+    commission: bool = False
+    rank_after_term: int = 0
 
 
 class CharacterSummary(BaseModel):
@@ -350,6 +428,8 @@ class CharacterSummary(BaseModel):
     last_assignment: str | None = None  # assignment name after muster-out
     rank: int | None = None
     term_count: int = 0
+    career_terms: list[CareerTerm] = Field(default_factory=list)
+    drafted: bool = False
     skills: list[AnySkill] = Field(default_factory=list)
     connections: list[AnyConnection] = Field(default_factory=list)
     problems: list[str] = Field(default_factory=list)
@@ -358,6 +438,9 @@ class CharacterSummary(BaseModel):
     benefits: list[ItemBenefit] = Field(default_factory=list)
     muster_out_cash_count: int = 0
     dead: bool = False
+    precareer: str | None = None  # pre-career currently in progress
+    precareer_completed: str | None = None  # pre-career that was attended (whether graduated or not)
+    precareer_skills: list[str] = Field(default_factory=list)  # skills chosen during university (for graduation boost)
 
     @overload
     def skill_level(self, name: str, default: int) -> int: ...
@@ -475,6 +558,8 @@ class CharacterProjection(BaseModel):
                 return BackgroundSkillsEvent(skills=skills, fulfills=pi.id)
 
             case PendingCareerChoice():
+                if self.summary.term_count >= ctx.max_terms:
+                    return FinishCreationEvent(fulfills=pi.id)
                 career_data = ctx.careers.get(ctx.career)
                 if career_data is None:
                     career_data = ctx.careers[rng.choice(sorted(ctx.careers.keys()))]
@@ -489,6 +574,18 @@ class CharacterProjection(BaseModel):
                     fulfills=pi.id,
                 )
 
+            case PendingDraftChoice():
+                draft_careers = [career for career in ctx.careers.values() if career.does_draft()]
+                career = rng.choice(draft_careers)
+                return DraftEvent(career=career.name, fulfills=pi.id)
+
+            case PendingDraftAssignmentChoice():
+                return DraftAssignmentEvent(
+                    career=pi.career,
+                    assignment=rng.choice(pi.options),
+                    fulfills=pi.id,
+                )
+
             case PendingSurvive():
                 return SurviveEvent(roll=_roll2d(rng), fulfills=pi.id)
 
@@ -500,6 +597,9 @@ class CharacterProjection(BaseModel):
 
             case PendingAdvancement():
                 return AdvancementEvent(roll=_roll2d(rng), fulfills=pi.id)
+
+            case PendingCommissionChoice():
+                return CommissionEvent(attempt=False, fulfills=pi.id)
 
             case PendingSkillTable():
                 table = rng.choice(pi.options) if pi.options else 'service_skills'
@@ -564,7 +664,7 @@ class CharacterProjection(BaseModel):
 
             case PendingConnectionsRoll():
                 return ConnectionsRollEvent(
-                    connection_type=_connection_kind(pi.instruction),
+                    connection_type=pi.connection_type,
                     count=_roll1d(rng),
                     fulfills=pi.id,
                 )
@@ -574,13 +674,7 @@ class CharacterProjection(BaseModel):
                 return CharacteristicChoiceEvent(characteristic=Chars(char), fulfills=pi.id)
 
             case PendingLifeEventChoice():
-                kinds: list[Literal['contact', 'ally', 'rival', 'enemy']] = [
-                    'contact',
-                    'ally',
-                    'rival',
-                    'enemy',
-                ]
-                return ConnectionKindChoiceEvent(connection_kind=rng.choice(kinds), fulfills=pi.id)
+                return ConnectionKindChoiceEvent(connection_kind=rng.choice(list(ConnectionKind)), fulfills=pi.id)
 
             case PendingAgingCrisis():
                 return AgingCrisisEvent(paid=False, medical_roll=0, fulfills=pi.id)
@@ -612,6 +706,7 @@ __all__ = [
     'AnyConnection',
     'AnyPending',
     'AutoFillContext',
+    'CareerTerm',
     'CharacterProjection',
     'CharacterSummary',
     'Connection',
@@ -628,6 +723,7 @@ __all__ = [
     'PendingBackgroundSkills',
     'PendingBenefitChoice',
     'PendingCareerChoice',
+    'PendingCommissionChoice',
     'PendingCareerEvent',
     'PendingCareerMishap',
     'PendingCareerSkillChoice',
@@ -635,6 +731,8 @@ __all__ = [
     'PendingCharacteristicChoice',
     'PendingConnectionsRoll',
     'PendingDoubleInjuryRoll',
+    'PendingDraftAssignmentChoice',
+    'PendingDraftChoice',
     'PendingInitialTrainingChoice',
     'PendingInputBase',
     'PendingInjuryTable',

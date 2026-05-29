@@ -46,22 +46,21 @@ def generate_npc(
         max_terms=params.max_terms,
         careers=load_careers(),
     )
+    projection = backend.get_projection(cid)
     for _ in range(500):
-        projection = backend.get_projection(cid)
         if projection is None or not projection.pending_inputs:
             break
         pi = projection.pending_inputs[0]
         for _retry in range(20):
             event = projection.auto_event(pi, ctx, rng)
             try:
-                backend.append_event(cid, event)
+                _event, projection = backend.append_event_with_projection(cid, event)
                 break
             except ValueError, RuntimeError, ReplayError:
                 if _retry == 19:
                     raise
     else:
         raise RuntimeError(f'NPC generation did not complete after 500 steps for character {cid}')
-    projection = backend.get_projection(cid)
     if projection is None:
         raise RuntimeError(f'Could not load projection for character {cid}')
     return spec_from_summary(projection.summary)

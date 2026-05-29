@@ -6,16 +6,32 @@ from pathlib import Path
 import yaml
 
 from ceres.character.careers.career_data import (
+    AdvancementDmEffect,
+    AnyEffect,
     AssignmentData,
+    AutoAdvanceEffect,
+    BenefitDmEffect,
     CareerData,
+    CareerDispatchEffect,
     CareerEventEntry,
     CharCheck,
-    EventEffect,
+    DecreaseCharacteristicChoiceEffect,
+    DecreaseCharacteristicEffect,
+    GainAllyEffect,
+    GainConnectionsRolledEffect,
+    GainContactEffect,
+    GainEnemyEffect,
+    GainRivalEffect,
+    GainSkillEffect,
+    InjuryEffect,
+    LifeEventEffect,
     MishapEntry,
     MusterOutData,
     MusterOutRow,
     RankBonus,
     RankEntry,
+    RollMishapEffect,
+    SkillChoiceEffect,
     SkillTable,
     SkillTableEntry,
 )
@@ -42,6 +58,42 @@ def get_choice_handler(career_name: str, context: str) -> Callable | None:
     return _choice_handlers.get(career_name, {}).get(context)
 
 
+def _parse_effect(raw: dict) -> AnyEffect:
+    match raw.get('type', ''):
+        case 'gain_skill':
+            return GainSkillEffect(**raw)
+        case 'decrease_characteristic':
+            return DecreaseCharacteristicEffect(**raw)
+        case 'decrease_characteristic_choice':
+            return DecreaseCharacteristicChoiceEffect(**raw)
+        case 'gain_contact':
+            return GainContactEffect()
+        case 'gain_ally':
+            return GainAllyEffect()
+        case 'gain_rival':
+            return GainRivalEffect()
+        case 'gain_enemy':
+            return GainEnemyEffect()
+        case 'gain_connections_rolled':
+            return GainConnectionsRolledEffect(**raw)
+        case 'skill_choice':
+            return SkillChoiceEffect(**raw)
+        case 'injury':
+            return InjuryEffect(**raw)
+        case 'roll_mishap':
+            return RollMishapEffect(**raw)
+        case 'auto_advance':
+            return AutoAdvanceEffect()
+        case 'life_event':
+            return LifeEventEffect()
+        case 'advancement_dm':
+            return AdvancementDmEffect(**raw)
+        case 'benefit_dm':
+            return BenefitDmEffect(**raw)
+        case type_str:
+            return CareerDispatchEffect(type=type_str)
+
+
 def _parse_skill_table(raw: dict) -> SkillTable:
     min_edu = raw.pop('min_edu', None)
     entries = {}
@@ -62,12 +114,12 @@ def _parse_rank_entry(rank: int, raw: dict | None) -> RankEntry:
 
 
 def _parse_career_event(raw: dict) -> CareerEventEntry:
-    effects = [EventEffect(**e) for e in raw.get('effects', [])]
+    effects = [_parse_effect(e) for e in raw.get('effects', [])]
     return CareerEventEntry(text=raw['text'], effects=effects)
 
 
 def _parse_mishap(raw: dict) -> MishapEntry:
-    effects = [EventEffect(**e) for e in raw.get('effects', [])]
+    effects = [_parse_effect(e) for e in raw.get('effects', [])]
     return MishapEntry(
         text=raw['text'],
         stay_in_career=raw.get('stay_in_career', False),
@@ -90,8 +142,29 @@ def _parse_muster_out(raw: dict) -> MusterOutData:
     return MusterOutData(rows=rows)
 
 
+def _parse_draft_assignments(data: dict, assignments: list[AssignmentData]) -> list[str]:
+    draft = data.get('draft')
+    if not draft:
+        return []
+    if draft is True:
+        return [assignment.name for assignment in assignments]
+    if isinstance(draft, list):
+        return [str(assignment) for assignment in draft]
+    if isinstance(draft, dict):
+        if 'assignments' in draft:
+            return list(draft['assignments'])
+        if 'assignment' in draft:
+            return [draft['assignment']]
+    raise ValueError(f'Invalid draft data for {data["name"]!r}: {draft!r}')
+
+
 def _load_career_file(path: Path) -> CareerData:
     data = yaml.safe_load(path.read_text())
+    career_class = CareerData
+    py_path = path.with_suffix('.py')
+    if py_path.exists():
+        mod = importlib.import_module(f'ceres.character.careers.{path.stem}')
+        career_class = getattr(mod, 'CAREER_DATA_CLASS', CareerData)
 
     assignments = [
         AssignmentData(
@@ -120,7 +193,7 @@ def _load_career_file(path: Path) -> CareerData:
     muster_out_raw = data.get('muster_out')
     muster_out = _parse_muster_out(muster_out_raw) if muster_out_raw else None
 
-    return CareerData(
+    return career_class(
         name=data['name'],
         source=data['source'],
         qualification=CharCheck(**data['qualification']),
@@ -128,10 +201,14 @@ def _load_career_file(path: Path) -> CareerData:
         skill_tables=skill_tables,
         ranks=ranks,
         ranks_by_assignment=ranks_by_assignment,
+        commission=CharCheck(**data['commission']) if data.get('commission') else None,
+        officer_ranks={int(k): _parse_rank_entry(int(k), v) for k, v in data.get('officer_ranks', {}).items()},
         events=events,
         mishaps=mishaps,
         muster_out=muster_out,
         allows_assignment_change=data['allows_assignment_change'],
+        selectable=data.get('selectable', True),
+        draft_assignments=_parse_draft_assignments(data, assignments),
     )
 
 
@@ -148,3 +225,7 @@ def load_careers() -> dict[str, CareerData]:
             _skill_roll_handlers[career.name] = getattr(mod, 'SKILL_ROLL_HANDLERS', {})
             _choice_handlers[career.name] = getattr(mod, 'CHOICE_HANDLERS', {})
     return careers
+
+
+def selectable_careers(projection=None) -> dict[str, CareerData]:
+    return {name: career for name, career in load_careers().items() if career.is_selectable(projection)}

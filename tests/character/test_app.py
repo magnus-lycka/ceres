@@ -275,7 +275,9 @@ def _setup_through_background_skills(client) -> None:
     )
 
 
-def test_api_scholar_initial_training_creates_two_choice_pendings(memory_client):
+def test_api_scholar_initial_training_creates_one_choice_pending(memory_client):
+    # Character has Drive from background skills; Drive/Flyer row yields only Flyer
+    # which is auto-granted (single-option → no dialog). Science row yields 5 choices.
     _setup_through_background_skills(memory_client)
 
     response = memory_client.post(
@@ -292,18 +294,11 @@ def test_api_scholar_initial_training_creates_two_choice_pendings(memory_client)
     assert response.status_code == 200
     data = response.json()
     choice_pendings = [p for p in data['pending_inputs'] if p['kind'] == 'initial_training_choice']
-    assert len(choice_pendings) == 2
+    assert len(choice_pendings) == 1
     assert not any(p['kind'] == 'survive' for p in data['pending_inputs'])
+    _sciences = ['Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science']
     assert choice_pendings[0] == {
         'id': '4.0',
-        'kind': 'initial_training_choice',
-        'instruction': 'Initial training: choose one of Drive, Flyer',
-        'options': ['Drive', 'Flyer'],
-        'blocking': True,
-    }
-    _sciences = ['Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science']
-    assert choice_pendings[1] == {
-        'id': '4.1',
         'kind': 'initial_training_choice',
         'instruction': f'Initial training: choose one of {", ".join(_sciences)}',
         'options': _sciences,
@@ -312,6 +307,8 @@ def test_api_scholar_initial_training_creates_two_choice_pendings(memory_client)
 
 
 def test_api_scholar_initial_training_choices_unlock_survive(memory_client):
+    # Flyer is auto-granted (Drive already known, only one option left → no dialog).
+    # Only the Science choice requires user input.
     _setup_through_background_skills(memory_client)
     memory_client.post(
         '/characters/1/events',
@@ -324,23 +321,13 @@ def test_api_scholar_initial_training_choices_unlock_survive(memory_client):
         },
     )
 
-    after_first = memory_client.post(
+    after_science = memory_client.post(
         '/characters/1/events',
-        json={'kind': 'skill_choice', 'skill': {'type': 'Flyer'}, 'fulfills': '4.0'},
+        json={'kind': 'skill_choice', 'skill': {'type': 'Space Science'}, 'fulfills': '4.0'},
     )
 
-    assert after_first.status_code == 200
-    data = after_first.json()
-    assert any(p['kind'] == 'initial_training_choice' for p in data['pending_inputs'])
-    assert not any(p['kind'] == 'survive' for p in data['pending_inputs'])
-
-    after_second = memory_client.post(
-        '/characters/1/events',
-        json={'kind': 'skill_choice', 'skill': {'type': 'Space Science'}, 'fulfills': '4.1'},
-    )
-
-    assert after_second.status_code == 200
-    data = after_second.json()
+    assert after_science.status_code == 200
+    data = after_science.json()
     assert not any(p['kind'] == 'initial_training_choice' for p in data['pending_inputs'])
     assert any(p['kind'] == 'survive' for p in data['pending_inputs'])
     skill_types = {s['type'] for s in data['summary']['skills']}

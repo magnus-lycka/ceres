@@ -36,6 +36,13 @@
       <td class="py-3 text-right space-x-3">
         <a href="/ui/characters/{{ c.id }}" class="text-amber-500 hover:text-amber-300 text-xs uppercase">Sheet</a>
         <a href="/ui/characters/{{ c.id }}/wizard" class="text-cyan-500 hover:text-cyan-300 text-xs uppercase">Wizard</a>
+        <form method="POST" action="/ui/characters/{{ c.id }}/delete" class="inline">
+          <button type="submit"
+                  onclick="return confirm('Delete {{ c.name }}?')"
+                  class="text-red-800 hover:text-red-500 text-xs uppercase">
+            Delete
+          </button>
+        </form>
       </td>
     </tr>
     {% endfor %}

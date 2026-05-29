@@ -1,4 +1,4 @@
-from ceres.character.careers.career_data import EventEffect
+from ceres.character.careers.career_data import CareerDispatchEffect
 from ceres.character.characteristics import Chars
 from ceres.character.events import SkillRollEvent
 from ceres.character.projection import (
@@ -19,7 +19,7 @@ _SCIENCES = sorted(s.type for s in skill_list(ScienceSkill))
 
 def _handle_scholar_event_3(
     projection: CharacterProjection,
-    effect: EventEffect,
+    effect: CareerDispatchEffect,
     event_id: int,
     pending_idx: int,
 ) -> int:
@@ -86,7 +86,7 @@ def _choice_scholar_event_3(projection: CharacterProjection, event) -> None:
 
 def _handle_scholar_event_6(
     projection: CharacterProjection,
-    effect: EventEffect,
+    effect: CareerDispatchEffect,
     event_id: int,
     pending_idx: int,
 ) -> int:
@@ -120,7 +120,7 @@ def _resolve_scholar_event_6(projection: CharacterProjection, event: SkillRollEv
 
 def _handle_scholar_event_8(
     projection: CharacterProjection,
-    effect: EventEffect,
+    effect: CareerDispatchEffect,
     event_id: int,
     pending_idx: int,
 ) -> int:
@@ -178,7 +178,7 @@ def _resolve_scholar_event_8_roll(projection: CharacterProjection, event: SkillR
 
 def _handle_scholar_event_11(
     projection: CharacterProjection,
-    effect: EventEffect,
+    effect: CareerDispatchEffect,
     event_id: int,
     pending_idx: int,
 ) -> int:
@@ -200,7 +200,7 @@ def _handle_scholar_event_11(
 
 def _handle_scholar_mishap_3(
     projection: CharacterProjection,
-    effect: EventEffect,
+    effect: CareerDispatchEffect,
     event_id: int,
     pending_idx: int,
 ) -> int:
@@ -241,7 +241,7 @@ def _choice_scholar_mishap_3(projection: CharacterProjection, event) -> None:
 
 def _handle_scholar_mishap_5(
     projection: CharacterProjection,
-    effect: EventEffect,
+    effect: CareerDispatchEffect,
     event_id: int,
     pending_idx: int,
 ) -> int:

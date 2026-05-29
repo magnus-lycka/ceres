@@ -1,6 +1,6 @@
 from ceres.make.ship import hull
 from ceres.make.ship.base import ShipBase
-from ceres.make.ship.drives import DriveSection, JDrive1, MDrive1, RDrive4, SpinExtPlasmaDrive
+from ceres.make.ship.drives import DriveSection, JDrive1, MDrive1, RDrive2, RDrive4, SpinExtPlasmaDrive
 from ceres.make.ship.ship import Ship
 
 
@@ -28,6 +28,14 @@ def test_spinext_primitive_hull_basic_values():
     assert my_ship.basic_hull_power_load == 1
 
 
+def test_spinext_primitive_hull_tl5_costs_double():
+    hull_config = hull.SpinExtPrimitiveHull(streamlined=hull.Streamlined.PARTIAL)
+    my_ship = Ship(tl=5, displacement=100, hull=hull.Hull(configuration=hull_config))
+
+    assert hull_config.cost(100, tl=5) == 3_000_000
+    assert my_ship.hull_cost == 3_000_000
+
+
 def test_spinext_primitive_hull_rejects_incompatible_drives():
     hull_config = hull.SpinExtPrimitiveHull(streamlined=hull.Streamlined.PARTIAL)
     my_ship = Ship(
@@ -52,6 +60,30 @@ def test_spinext_primitive_hull_rejects_excessive_plasma_thrust():
     )
 
     assert 'Primitive hull cannot support plasma drive Thrust above 3: 4 > 3' in my_ship.notes.errors
+
+
+def test_spinext_primitive_hull_tl5_rejects_reaction_thrust_above_1():
+    hull_config = hull.SpinExtPrimitiveHull(streamlined=hull.Streamlined.PARTIAL)
+    my_ship = Ship(
+        tl=5,
+        displacement=100,
+        hull=hull.Hull(configuration=hull_config),
+        drives=DriveSection(r_drive=RDrive2()),
+    )
+
+    assert 'Primitive TL5 hull cannot support reaction drive Thrust above 1: 2 > 1' in my_ship.notes.errors
+
+
+def test_spinext_primitive_hull_tl5_rejects_plasma_thrust_above_1():
+    hull_config = hull.SpinExtPrimitiveHull(streamlined=hull.Streamlined.PARTIAL)
+    my_ship = Ship(
+        tl=5,
+        displacement=100,
+        hull=hull.Hull(configuration=hull_config),
+        drives=DriveSection(plasma_drive=SpinExtPlasmaDrive(thrust=1.5)),
+    )
+
+    assert 'Primitive TL5 hull cannot support plasma drive Thrust above 1: 1.5 > 1' in my_ship.notes.errors
 
 
 def test_streamlined_hull():

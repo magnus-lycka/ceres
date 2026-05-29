@@ -2,7 +2,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
-from ceres.character.characteristics import Chars
+from ceres.character.characteristics import Chars, ConnectionKind
 from ceres.character.skills import AnySkill
 
 
@@ -35,6 +35,18 @@ class CareerEvent(EventBase):
     qualification_roll: int  # 2D result before characteristic DM
 
 
+class DraftEvent(EventBase):
+    kind: Literal['draft'] = 'draft'
+    career: str
+    assignment: str | None = None
+
+
+class DraftAssignmentEvent(EventBase):
+    kind: Literal['draft_assignment'] = 'draft_assignment'
+    career: str
+    assignment: str
+
+
 class SurviveEvent(EventBase):
     kind: Literal['survive'] = 'survive'
     roll: int  # sum of 2D, before characteristic DM
@@ -62,7 +74,7 @@ class AdvancementDmChoiceEvent(EventBase):
 
 class ConnectionKindChoiceEvent(EventBase):
     kind: Literal['connection_kind_choice'] = 'connection_kind_choice'
-    connection_kind: Literal['contact', 'ally', 'rival', 'enemy']
+    connection_kind: ConnectionKind
 
 
 class CareerChoiceEvent(EventBase):
@@ -76,6 +88,12 @@ class CareerChoiceEvent(EventBase):
 class AdvancementEvent(EventBase):
     kind: Literal['advancement'] = 'advancement'
     roll: int  # sum of 2D, before characteristic DM
+
+
+class CommissionEvent(EventBase):
+    kind: Literal['commission'] = 'commission'
+    attempt: bool
+    roll: int = 0  # sum of 2D, before characteristic DM and term DM; ignored when attempt is False
 
 
 class ReenlistEvent(EventBase):
@@ -97,7 +115,7 @@ class CharacteristicChoiceEvent(EventBase):
 
 class ConnectionsRollEvent(EventBase):
     kind: Literal['connections_roll'] = 'connections_roll'
-    connection_type: Literal['contact', 'ally', 'rival', 'enemy']
+    connection_type: ConnectionKind
     count: int  # final count (client applies the dice expression from the pending instruction)
 
 
@@ -168,6 +186,41 @@ class AssignmentChangeChoiceEvent(EventBase):
     qualification_roll: int | None = None  # required when choice is an assignment name
 
 
+class FinishCreationEvent(EventBase):
+    """Player chooses to end character creation after completing muster out."""
+
+    kind: Literal['finish_creation'] = 'finish_creation'
+
+
+class PreCareerEntryEvent(EventBase):
+    """Attempt to enter pre-career education (university or military academy)."""
+
+    kind: Literal['precareer_entry'] = 'precareer_entry'
+    precareer: str
+    roll: int  # 2D result for entry check (before characteristic DM)
+
+
+class PreCareerSkillChoiceEvent(EventBase):
+    """Choose a skill gained during university pre-career; level is set by the pending input."""
+
+    kind: Literal['precareer_skill_choice'] = 'precareer_skill_choice'
+    skill: str  # specific skill name (may include specialisation, e.g. 'Science (biology)')
+
+
+class PreCareerEventEvent(EventBase):
+    """Roll on the Pre-career Events table."""
+
+    kind: Literal['precareer_event'] = 'precareer_event'
+    roll: int  # 2D result (2-12)
+
+
+class PreCareerGraduationEvent(EventBase):
+    """Roll for graduation from pre-career education."""
+
+    kind: Literal['precareer_graduation'] = 'precareer_graduation'
+    roll: int  # 2D result for graduation check (before characteristic DM)
+
+
 type AnyEvent = Annotated[
     AgingCrisisEvent
     | AgingRollEvent
@@ -176,11 +229,14 @@ type AnyEvent = Annotated[
     | UcpEvent
     | BackgroundSkillsEvent
     | CareerEvent
+    | DraftEvent
+    | DraftAssignmentEvent
     | SurviveEvent
     | MishapEvent
     | TermEventEvent
     | SkillChoiceEvent
     | AdvancementEvent
+    | CommissionEvent
     | ReenlistEvent
     | SkillTableEvent
     | CharacteristicChoiceEvent
@@ -194,7 +250,12 @@ type AnyEvent = Annotated[
     | MusterOutEvent
     | BenefitChoiceEvent
     | CareerChoiceEvent
-    | AssignmentChangeChoiceEvent,
+    | AssignmentChangeChoiceEvent
+    | FinishCreationEvent
+    | PreCareerEntryEvent
+    | PreCareerSkillChoiceEvent
+    | PreCareerEventEvent
+    | PreCareerGraduationEvent,
     Field(discriminator='kind'),
 ]
 
@@ -202,6 +263,7 @@ type AnyEvent = Annotated[
 __all__ = [
     'AnyEvent',
     'AdvancementDmChoiceEvent',
+    'ConnectionKind',
     'AdvancementEvent',
     'AgingCrisisEvent',
     'AgingRollEvent',
@@ -212,8 +274,16 @@ __all__ = [
     'CareerEvent',
     'CharacteristicChoiceEvent',
     'CharacterStartedEvent',
+    'CommissionEvent',
     'ConnectionKindChoiceEvent',
     'ConnectionsRollEvent',
+    'DraftEvent',
+    'DraftAssignmentEvent',
+    'FinishCreationEvent',
+    'PreCareerEntryEvent',
+    'PreCareerSkillChoiceEvent',
+    'PreCareerEventEvent',
+    'PreCareerGraduationEvent',
     'DoubleInjuryTableEvent',
     'EventBase',
     'InjuryTableEvent',

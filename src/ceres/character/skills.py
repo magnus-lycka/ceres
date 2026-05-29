@@ -518,3 +518,15 @@ def skill_class_by_name(name: str) -> type[Skill]:
         if cls.name() == name:
             return cls
     raise ValueError(f'Unknown skill: {name!r}')
+
+
+def field_for_spec(cls: type[Skill], spec: str) -> str:
+    """Return the field name for a specialisation display name (e.g. 'Computers' → 'computers')."""
+    for field_name, field in cls.model_fields.items():
+        if field_name in {'display_label', 'type'}:
+            continue
+        extra = field.json_schema_extra or {}
+        label = str(extra.get('name') or field_name.replace('_', ' ').title())
+        if label.lower() == spec.lower():
+            return field_name
+    raise ValueError(f'Unknown specialisation {spec!r} for skill {cls.name()!r}')

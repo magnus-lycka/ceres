@@ -83,18 +83,21 @@ class Ship(ShipBase):
             notes.error(f'Military hull requires capital ship displacement: {self.displacement:,} <= 5,000 tons')
 
         if getattr(self.hull.configuration, 'primitive', False) and self.drives is not None:
+            primitive_max_thrust = 1 if self.tl == 5 else 3
+            primitive_hull_label = 'Primitive TL5 hull' if self.tl == 5 else 'Primitive hull'
             if self.drives.m_drive is not None:
                 notes.error('Primitive hull cannot fit manoeuvre drives')
             if self.drives.j_drive is not None:
                 notes.error('Primitive hull cannot fit jump drives')
-            if self.drives.r_drive is not None and self.drives.r_drive.level > 3:
+            if self.drives.r_drive is not None and self.drives.r_drive.level > primitive_max_thrust:
                 notes.error(
-                    f'Primitive hull cannot support reaction drive Thrust above 3: {self.drives.r_drive.level} > 3'
+                    f'{primitive_hull_label} cannot support reaction drive Thrust above '
+                    f'{primitive_max_thrust}: {self.drives.r_drive.level} > {primitive_max_thrust}'
                 )
-            if self.drives.plasma_drive is not None and self.drives.plasma_drive.thrust > 3:
+            if self.drives.plasma_drive is not None and self.drives.plasma_drive.thrust > primitive_max_thrust:
                 notes.error(
-                    'Primitive hull cannot support plasma drive Thrust above 3: '
-                    f'{self.drives.plasma_drive.thrust:g} > 3'
+                    f'{primitive_hull_label} cannot support plasma drive Thrust above '
+                    f'{primitive_max_thrust}: {self.drives.plasma_drive.thrust:g} > {primitive_max_thrust}'
                 )
 
         power_shortfall = self.total_power_load - self.available_power
@@ -122,7 +125,7 @@ class Ship(ShipBase):
 
     @property
     def hull_cost(self) -> float:
-        return float(self.hull.total_cost(self.displacement))
+        return float(self.hull.total_cost(self.displacement, tl=self.tl))
 
     @property
     def hull_points(self) -> float:

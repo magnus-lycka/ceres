@@ -1,0 +1,122 @@
+name: Merchant
+source: Core
+allows_assignment_change: false
+draft:
+  assignment: Merchant Marine
+
+qualification:
+  characteristic: INT
+  target: 4
+
+assignments:
+  - name: Merchant Marine
+    survival: {characteristic: EDU, target: 5}
+    advancement: {characteristic: INT, target: 7}
+  - name: Free Trader
+    survival: {characteristic: DEX, target: 6}
+    advancement: {characteristic: INT, target: 6}
+  - name: Broker
+    survival: {characteristic: EDU, target: 5}
+    advancement: {characteristic: INT, target: 7}
+
+skill_tables:
+  personal_development:
+    1: {characteristic: STR}
+    2: {characteristic: DEX}
+    3: {characteristic: END}
+    4: {characteristic: INT}
+    5: {skill: Language}
+    6: {skill: Streetwise}
+  service_skills:
+    1: {skill: Drive}
+    2: {skill: Vacc Suit}
+    3: {skill: Broker}
+    4: {skill: Steward}
+    5: {skill: Electronics}
+    6: {skill: Persuade}
+  advanced_education:
+    min_edu: 8
+    1: {skill: Engineer}
+    2: {skill: Astrogation}
+    3: {skill: Electronics}
+    4: {skill: Pilot}
+    5: {skill: Admin}
+    6: {skill: Advocate}
+  merchant marine:
+    1: {skill: Pilot}
+    2: {skill: Vacc Suit}
+    3: {skill: Athletics}
+    4: {skill: Mechanic}
+    5: {skill: Engineer}
+    6: {skill: Electronics}
+  free trader:
+    1: {skill: Pilot, spec: Spacecraft}
+    2: {skill: Vacc Suit}
+    3: {skill: Deception}
+    4: {skill: Mechanic}
+    5: {skill: Streetwise}
+    6: {skill: Gunner}
+  broker:
+    1: {skill: Admin}
+    2: {skill: Advocate}
+    3: {skill: Broker}
+    4: {skill: Streetwise}
+    5: {skill: Deception}
+    6: {skill: Persuade}
+
+ranks:
+  0: {}
+  1: {title: Senior Crewman, bonus: {skill: Mechanic, level: 1}}
+  2: {title: 4th Officer}
+  3: {title: 3rd Officer}
+  4: {title: 2nd Officer, bonus: {skill: Pilot, level: 1}}
+  5: {title: 1st Officer, bonus: {characteristic: SOC, level: 1}}
+  6: {title: Captain}
+
+ranks_by_assignment:
+  Free Trader:
+    0: {}
+    1: {bonus: {skill: Persuade, level: 1}}
+    2: {}
+    3: {title: Experienced Trader, bonus: {skill: Jack-of-All-Trades, level: 1}}
+    4: {}
+    5: {}
+    6: {}
+  Broker:
+    0: {}
+    1: {bonus: {skill: Broker, level: 1}}
+    2: {}
+    3: {title: Experienced Broker, bonus: {skill: Streetwise, level: 1}}
+    4: {}
+    5: {}
+    6: {}
+
+muster_out:
+  1: {cash: 1000, benefit: blade}
+  2: {cash: 5000, benefit: int_plus_1}
+  3: {cash: 10000, benefit: edu_plus_1}
+  4: {cash: 20000, benefit: gun}
+  5: {cash: 20000, benefit: ship_share}
+  6: {cash: 40000, benefit: free_trader}
+  7: {cash: 40000, benefit: free_trader}
+
+mishaps:
+  1: {text: Severely injured., effects: [{type: injury, severity: severe}]}
+  2: {text: You are bankrupted by a rival. You lose all Benefits from this career and gain the other trader as a Rival., effects: [{type: gain_rival}]}
+  3: {text: A sudden war destroys your trade routes and contacts, forcing you to flee that region of space. Gain Gun Combat 1 or Pilot 1., effects: [{type: skill_choice, options: [Gun Combat, Pilot], level: 1}]}
+  4: {text: Your ship or starport is destroyed by criminals. Gain them as an Enemy., effects: [{type: gain_enemy}]}
+  5: {text: Imperial trade restrictions force you out of business., effects: []}
+  6: {text: Injured. Roll on the Injury table., effects: [{type: injury, severity: from_table}]}
+
+events:
+  2: {text: "Disaster! Roll on the Mishap table but you are not ejected from this career.", effects: [{type: roll_mishap, leave: false}]}
+  3: {text: You are offered the opportunity to smuggle illegal items onto a planet., effects: []}
+  4: {text: Gain any one of these skills, reflecting your time spent dealing with suppliers and spacers., effects: [{type: skill_choice, options: [Profession, Electronics, Engineer, Animals, Science], level: 1}]}
+  5: {text: You have a chance to risk your fortune on a possibly lucrative deal., effects: []}
+  6: {text: You make an unexpected connection outside your normal circles. Gain a Contact., effects: [{type: gain_contact}]}
+  7: {text: Life Event., effects: [{type: life_event}]}
+  8: {text: You are embroiled in legal trouble., effects: [{type: skill_choice, options: [Advocate, Admin, Diplomat, Investigate], level: 1}]}
+  9: {text: You are given advanced training in a specialist field., effects: []}
+  10: {text: A good deal ensures you are living the high life for a few years. Gain DM+1 to any one Benefit roll., effects: [{type: benefit_dm, amount: 1}]}
+  11: {text: You befriend a useful ally in one sphere., effects: [{type: gain_ally}]}
+  12: {text: Your business or ship thrives. You are automatically promoted., effects: [{type: auto_advance}]}

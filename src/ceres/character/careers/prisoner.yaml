@@ -1,0 +1,135 @@
+name: Prisoner
+source: Core
+selectable: false
+allows_assignment_change: true
+
+qualification:
+  characteristic: END
+  target: 0
+
+assignments:
+  - name: Inmate
+    survival: {characteristic: END, target: 7}
+    advancement: {characteristic: STR, target: 7}
+  - name: Thug
+    survival: {characteristic: STR, target: 8}
+    advancement: {characteristic: END, target: 6}
+  - name: Fixer
+    survival: {characteristic: INT, target: 9}
+    advancement: {characteristic: END, target: 5}
+
+skill_tables:
+  personal_development:
+    1: {characteristic: STR}
+    2: {skill: Melee, choices: [Melee]}
+    3: {characteristic: END}
+    4: {skill: Jack-of-All-Trades}
+    5: {characteristic: EDU}
+    6: {skill: Gambler}
+  service_skills:
+    1: {skill: Athletics}
+    2: {skill: Deception}
+    3: {skill: Profession}
+    4: {skill: Streetwise}
+    5: {skill: Melee, choices: [Melee]}
+    6: {skill: Persuade}
+  inmate:
+    1: {skill: Stealth}
+    2: {skill: Melee, choices: [Melee]}
+    3: {skill: Streetwise}
+    4: {skill: Survival}
+    5: {skill: Athletics, choices: [Athletics]}
+    6: {skill: Mechanic}
+  thug:
+    1: {skill: Persuade}
+    2: {skill: Melee, choices: [Melee]}
+    3: {skill: Melee, choices: [Melee]}
+    4: {skill: Melee, choices: [Melee]}
+    5: {skill: Athletics, choices: [Athletics]}
+    6: {skill: Athletics, choices: [Athletics]}
+  fixer:
+    1: {skill: Investigate}
+    2: {skill: Broker}
+    3: {skill: Deception}
+    4: {skill: Streetwise}
+    5: {skill: Stealth}
+    6: {skill: Admin}
+
+ranks:
+  0: {bonus: {skill: Melee, level: 1}}
+  1: {}
+  2: {bonus: {skill: Athletics, level: 1}}
+  3: {}
+  4: {bonus: {skill: Advocate, level: 1}}
+  5: {}
+  6: {bonus: {characteristic: END, level: 1}}
+
+muster_out:
+  1: {cash: 0, benefit: contact}
+  2: {cash: 0, benefit: blade}
+  3: {cash: 100, benefit: [deception, persuade, stealth]}
+  4: {cash: 200, benefit: ally}
+  5: {cash: 500, benefit: [melee, recon, streetwise]}
+  6: {cash: 1000, benefit: [str_plus_1, end_plus_1]}
+  7: {cash: 2500, benefit: deception_persuade_and_stealth}
+
+mishaps:
+  1:
+    text: Severely injured.
+    effects:
+      - {type: injury, severity: severe}
+  2:
+    text: You are accused of assaulting a prison guard. Parole Threshold +2.
+    effects: []
+  3:
+    text: A prison gang persecutes you.
+    effects: []
+  4:
+    text: A guard takes a dislike to you. Gain an Enemy and raise your Parole Threshold by +1.
+    effects:
+      - {type: gain_enemy}
+  5:
+    text: Disgraced. Word of your criminal past reaches your homeworld. Lose 1 SOC.
+    effects:
+      - {type: decrease_characteristic, characteristic: SOC, amount: 1}
+  6:
+    text: Injured. Roll on the Injury table.
+    effects:
+      - {type: injury, severity: from_table}
+
+events:
+  2:
+    text: "Disaster! Roll on the Mishap table but you are not ejected from this career."
+    effects:
+      - {type: roll_mishap, leave: false}
+  3:
+    text: You have the opportunity to escape the prison.
+    effects: []
+  4:
+    text: You are assigned to difficult or backbreaking labour.
+    effects: []
+  5:
+    text: You have the opportunity to join a gang.
+    effects: []
+  6:
+    text: Vocational Training.
+    effects: []
+  7:
+    text: Prison Event.
+    effects: []
+  8:
+    text: Parole hearing. Reduce your Parole Threshold by -1.
+    effects: []
+  9:
+    text: You have the opportunity to hire a new lawyer.
+    effects: []
+  10:
+    text: Special Duty.
+    effects:
+      - {type: skill_choice, options: [Admin, Advocate, Electronics, Steward], level: 1}
+  11:
+    text: The warden takes an interest in your case. Reduce your Parole Threshold by -2.
+    effects: []
+  12:
+    text: Heroism.
+    effects: []

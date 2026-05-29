@@ -7,8 +7,9 @@ class SpinExtPrimitiveHull(HullConfiguration):
     primitive: ClassVar[bool] = True
     description: str = 'SpinExt Primitive Hull'
 
-    def cost(self, ton):
-        return 15_000 * ton * self.effective_hull_cost_modifier
+    def cost(self, ton, tl: int | None = None):
+        tl_multiplier = 2 if tl == 5 else 1
+        return 15_000 * ton * self.effective_hull_cost_modifier * tl_multiplier
 
     def automation_basis_cost(self, ton: float) -> float:
         modifier = self.hull_cost_modifier

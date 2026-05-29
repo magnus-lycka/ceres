@@ -1,6 +1,7 @@
 name: Scout
 source: Core
 allows_assignment_change: true
+draft: true
 
 qualification:
   characteristic: INT

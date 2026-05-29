@@ -61,6 +61,30 @@ def test_create_character_blank_name_returns_form():
     assert 'required' in r.text.lower()
 
 
+# ── character deletion ───────────────────────────────────────────────────────
+
+
+def test_delete_character_redirects_to_list():
+    client, backend = _client_with_backend()
+    row = backend.start(sophont='Humaniti', player='NPC', name='Doomed')
+    r = client.post(f'/ui/characters/{row["id"]}/delete')
+    assert r.status_code == 200
+    assert 'Doomed' not in r.text
+
+
+def test_delete_character_removes_from_list():
+    client, backend = _client_with_backend()
+    row = backend.start(sophont='Humaniti', player='NPC', name='Ephemeral')
+    client.post(f'/ui/characters/{row["id"]}/delete')
+    assert backend.get_projection(row['id']) is None
+
+
+def test_delete_nonexistent_character_redirects():
+    client = _client()
+    r = client.post('/ui/characters/9999/delete')
+    assert r.status_code == 200
+
+
 # ── wizard ────────────────────────────────────────────────────────────────────
 
 
@@ -375,24 +399,6 @@ def test_post_event_response_includes_char_summary_oob():
 
 
 # ── connection_type_from_instruction ─────────────────────────────────────────
-
-
-def test_connection_type_from_instruction_enemy():
-    from ceres.character.web.routes import _connection_type_from_instruction
-
-    assert _connection_type_from_instruction('Roll D3 for number of Enemies gained') == 'enemy'
-
-
-def test_connection_type_from_instruction_contact():
-    from ceres.character.web.routes import _connection_type_from_instruction
-
-    assert _connection_type_from_instruction('Roll 1D6 for number of contacts') == 'contact'
-
-
-def test_connection_type_from_instruction_fallback():
-    from ceres.character.web.routes import _connection_type_from_instruction
-
-    assert _connection_type_from_instruction('Something vague') == 'contact'
 
 
 # ── career_skill_choice with advancement_dm_4 sentinel ────────────────────────

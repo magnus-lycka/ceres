@@ -4,7 +4,7 @@ from typing import Literal
 
 import pytest
 
-from ceres.character.characteristics import Chars
+from ceres.character.characteristics import Chars, ConnectionKind
 from ceres.character.events import (
     AdvancementDmChoiceEvent,
     AdvancementEvent,
@@ -39,7 +39,6 @@ from ceres.character.projection import (
     PendingAgingCrisis,
     PendingAgingRoll,
     PendingAssignmentChangeChoice,
-    PendingCareerChoice,
     PendingCareerEvent,
     PendingCareerMishap,
     PendingCareerSkillChoice,
@@ -86,6 +85,57 @@ from ceres.character.skills import (
 )
 
 
+class TestCoreCareerCoverage:
+    def test_all_core_careers_are_loaded(self):
+        from ceres.character.careers.loader import load_careers
+
+        assert {
+            'Agent',
+            'Army',
+            'Citizen',
+            'Drifter',
+            'Entertainer',
+            'Marines',
+            'Merchant',
+            'Navy',
+            'Noble',
+            'Prisoner',
+            'Rogue',
+            'Scholar',
+            'Scout',
+        } <= set(load_careers())
+
+    @pytest.mark.parametrize(
+        ('career_name', 'assignments'),
+        [
+            ('Entertainer', {'Artist', 'Journalist', 'Performer'}),
+            ('Noble', {'Administrator', 'Diplomat', 'Dilettante'}),
+            ('Rogue', {'Thief', 'Enforcer', 'Pirate'}),
+        ],
+    )
+    def test_remaining_core_careers_have_assignments(self, career_name, assignments):
+        from ceres.character.careers.loader import load_careers
+
+        career = load_careers()[career_name]
+
+        assert {assignment.name for assignment in career.assignments} == assignments
+        assert career.skill_table('personal_development') is not None
+        assert career.skill_table('service_skills') is not None
+        assert career.skill_table('advanced_education') is not None
+
+    def test_entertainer_qualification_accepts_dex_or_int(self):
+        events = [
+            CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Boss'),
+            UcpEvent(id=2, fulfills='1.0', ucp='7833A5'),
+            BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Drive()]),
+            CareerEvent(id=4, fulfills='3.0', career='Entertainer', assignment='Performer', qualification_roll=5),
+        ]
+
+        projection = replay(1, events)
+
+        assert projection.summary.current_career == 'Entertainer'
+
+
 def _full_setup(character_id: int = 1) -> list:
     """Return events that get a character through setup: started → ucp → background skills."""
     # STR=7 DEX=8 END=6 INT=9 EDU=10 SOC=5 → 4 background skills
@@ -93,6 +143,20 @@ def _full_setup(character_id: int = 1) -> list:
         CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Boss'),
         UcpEvent(id=2, fulfills='1.0', ucp='7869A5'),
         BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Drive()]),
+    ]
+
+
+def _scholar_setup(character_id: int = 1) -> list:
+    """Like _full_setup() but with Medic instead of Drive.
+
+    Scholar service_skills row 1 offers Drive/Flyer. Using Drive in background causes Flyer to be
+    auto-granted (only 1 option left). This setup preserves both options so Scholar initial training
+    creates two choice pendings: Drive/Flyer (id .0) and Science (id .1).
+    """
+    return [
+        CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Boss'),
+        UcpEvent(id=2, fulfills='1.0', ucp='7869A5'),
+        BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Medic()]),
     ]
 
 
@@ -110,7 +174,7 @@ class TestQualification:
         assert projection.summary.current_career == 'Scout'
         assert any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
 
-    def test_failure_clears_career_and_creates_retry_pending(self):
+    def test_failure_clears_career_and_creates_draft_pending(self):
         # Scout: INT 5+, INT=9 (DM+1), roll 3 → 3+1=4 < 5
         events = [
             *_full_setup(),
@@ -119,7 +183,11 @@ class TestQualification:
         projection = replay(1, events)
 
         assert projection.summary.current_career is None
-        assert any(isinstance(p, PendingCareerChoice) for p in projection.pending_inputs)
+        from ceres.character.projection import PendingDraftChoice
+
+        pi = next(p for p in projection.pending_inputs if isinstance(p, PendingDraftChoice))
+        assert 'draft' in pi.options
+        assert 'drifter' in pi.options
 
     def test_failure_adds_problem_with_career_name(self):
         events = [
@@ -258,8 +326,9 @@ class TestCareerEntry:
         assert projection.summary.skill_level('Diplomat') is not None
         assert projection.summary.skill_level('Medic') is not None
         assert projection.summary.skill_level('Investigate') is not None
-        # Choice entries (Drive/Flyer and Science) are NOT auto-granted
-        assert projection.summary.skill_level('Flyer') is None
+        # Drive already known → Flyer is the only remaining option → auto-granted, no dialog
+        assert projection.summary.skill_level('Flyer') is not None
+        # Science still requires a choice (5 options)
         assert projection.summary.skill_level('Life Science') is None
 
 
@@ -724,8 +793,8 @@ class TestConnections:
         events = [
             *self._setup_through_failed_survive(),
             MishapEvent(id=6, fulfills='5.0', roll=3),
-            ConnectionsRollEvent(id=7, fulfills='6.0', connection_type='contact', count=3),
-            ConnectionsRollEvent(id=8, fulfills='6.1', connection_type='enemy', count=1),
+            ConnectionsRollEvent(id=7, fulfills='6.0', connection_type=ConnectionKind.CONTACT, count=3),
+            ConnectionsRollEvent(id=8, fulfills='6.1', connection_type=ConnectionKind.ENEMY, count=1),
         ]
 
         projection = replay(1, events)
@@ -1055,13 +1124,13 @@ class TestTermEventRollMishap:
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
     def test_works_for_scholar_too(self):
+        # _full_setup includes Drive, so Drive/Flyer row auto-grants Flyer; only Science needs a choice.
         events = [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
-            SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
-            SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
-            SurviveEvent(id=7, fulfills='6.0', roll=7),
-            TermEventEvent(id=8, fulfills='7.0', roll=2),
+            SkillChoiceEvent(id=5, fulfills='4.0', skill=SpaceScience()),
+            SurviveEvent(id=6, fulfills='5.0', roll=7),
+            TermEventEvent(id=7, fulfills='6.0', roll=2),
         ]
         projection = replay(1, events)
 
@@ -1108,7 +1177,7 @@ class TestTermEventAutoAdvance:
     def test_scholar_event_12_promotes_and_creates_science_choice_pending(self):
         # Rank 1 bonus is Science 1 (player chooses which broad science) — Core p.43
         events = [
-            *_full_setup(),
+            *_scholar_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
             SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
             SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
@@ -1135,7 +1204,7 @@ class TestScholarTerm:
 
     def _setup_with_scholar(self) -> list:
         return [
-            *_full_setup(),
+            *_scholar_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
             SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
             SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
@@ -1337,7 +1406,7 @@ class TestSkillTableChoice:
 
     def _setup_scholar_term_2(self) -> list:
         return [
-            *_full_setup(),
+            *_scholar_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Scientist', qualification_roll=5),
             SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
             SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
@@ -1420,7 +1489,7 @@ class TestSkillTableChoice:
         from ceres.character.skills import Sciences, _skill_classes
 
         events = [
-            *_full_setup(),
+            *_scholar_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Scientist', qualification_roll=5),
             SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
             SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
@@ -1455,7 +1524,7 @@ class TestAdvancementDmFromScheduledEffects:
         # Without event DM: roll 6 + DM+1 = 7 < 8 → fail
         # With Scholar event 9 DM+2: roll 6 + DM+1 + DM+2 = 9 >= 8 → success
         events = [
-            *_full_setup(),
+            *_scholar_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Scientist', qualification_roll=5),
             SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
             SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
@@ -1470,7 +1539,7 @@ class TestAdvancementDmFromScheduledEffects:
     def test_without_dm_same_roll_fails(self):
         # Same roll (6) without the breakthrough DM → 7 < 8 → fail
         events = [
-            *_full_setup(),
+            *_scholar_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Scientist', qualification_roll=5),
             SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
             SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
@@ -1484,7 +1553,7 @@ class TestAdvancementDmFromScheduledEffects:
 
     def test_breakthrough_dm_is_consumed_after_advancement(self):
         events = [
-            *_full_setup(),
+            *_scholar_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Scientist', qualification_roll=5),
             SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
             SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
@@ -1567,7 +1636,7 @@ class TestScholarEvent6:
 
     def _setup_to_event_6(self) -> list:
         return [
-            *_full_setup(),
+            *_scholar_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
             SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
             SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
@@ -1703,7 +1772,7 @@ class TestScholarMishap3:
 
     def _setup(self) -> list:
         return [
-            *_full_setup(),
+            *_scholar_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
             SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
             SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
@@ -1786,7 +1855,7 @@ class TestScholarMishap5:
 
     def _setup(self) -> list:
         return [
-            *_full_setup(),
+            *_scholar_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
             SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
             SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
@@ -1854,7 +1923,7 @@ class TestScholarEvent3:
 
     def _setup(self) -> list:
         return [
-            *_full_setup(),
+            *_scholar_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
             SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
             SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
@@ -1937,7 +2006,7 @@ class TestScholarEvent8:
 
     def _setup(self) -> list:
         return [
-            *_full_setup(),
+            *_scholar_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
             SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
             SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
@@ -2026,7 +2095,7 @@ class TestScholarEvent11:
 
     def _setup(self) -> list:
         return [
-            *_full_setup(),
+            *_scholar_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
             SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
             SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
@@ -2149,7 +2218,7 @@ class TestFromTableInjury:
 
     def _setup_to_mishap_2(self) -> list:
         return [
-            *_full_setup(),
+            *_scholar_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
             SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
             SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
@@ -2342,7 +2411,7 @@ class TestLifeEvents:
         events = [
             *self._setup_to_life_event(),
             LifeEventEvent(id=7, fulfills='6.0', roll=4),
-            ConnectionKindChoiceEvent(id=8, fulfills='7.0', connection_kind='rival'),
+            ConnectionKindChoiceEvent(id=8, fulfills='7.0', connection_kind=ConnectionKind.RIVAL),
         ]
         projection = replay(1, events)
 
@@ -2352,7 +2421,7 @@ class TestLifeEvents:
         events = [
             *self._setup_to_life_event(),
             LifeEventEvent(id=7, fulfills='6.0', roll=4),
-            ConnectionKindChoiceEvent(id=8, fulfills='7.0', connection_kind='enemy'),
+            ConnectionKindChoiceEvent(id=8, fulfills='7.0', connection_kind=ConnectionKind.ENEMY),
         ]
         projection = replay(1, events)
 
@@ -2362,7 +2431,7 @@ class TestLifeEvents:
         events = [
             *self._setup_to_life_event(),
             LifeEventEvent(id=7, fulfills='6.0', roll=4),
-            ConnectionKindChoiceEvent(id=8, fulfills='7.0', connection_kind='rival'),
+            ConnectionKindChoiceEvent(id=8, fulfills='7.0', connection_kind=ConnectionKind.RIVAL),
         ]
         projection = replay(1, events)
 
@@ -2382,7 +2451,7 @@ class TestLifeEvents:
         events = [
             *self._setup_to_life_event(),
             LifeEventEvent(id=7, fulfills='6.0', roll=8),
-            ConnectionKindChoiceEvent(id=8, fulfills='7.0', connection_kind='rival'),
+            ConnectionKindChoiceEvent(id=8, fulfills='7.0', connection_kind=ConnectionKind.RIVAL),
         ]
         projection = replay(1, events)
 
@@ -2981,7 +3050,7 @@ class TestMusterOut:
         # The player includes the DM in their roll value (MusterOutEvent.roll already includes DMs).
         # Scholar cash row 1=Cr5000, row 2=Cr10000. Player rolls 1 and applies DM+1 → submits roll=2.
         events = [
-            *_full_setup(),
+            *_scholar_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
             SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
             SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
@@ -3000,7 +3069,7 @@ class TestMusterOut:
     def test_scholar_soc_plus_1_benefit(self):
         # Scholar benefits roll 4 → SOC +1 (SOC was 5)
         events = [
-            *_full_setup(),
+            *_scholar_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
             SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
             SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
@@ -3017,7 +3086,7 @@ class TestMusterOut:
     def test_scholar_two_ship_shares_benefit(self):
         # Scholar benefits roll 3 → Two Ship Shares → 2 ship_share entries
         events = [
-            *_full_setup(),
+            *_scholar_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
             SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
             SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
@@ -3034,7 +3103,7 @@ class TestMusterOut:
     def test_scholar_scientific_equipment_benefit(self):
         # Scholar benefits roll 5 → scientific_equipment
         events = [
-            *_full_setup(),
+            *_scholar_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
             SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
             SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
@@ -3383,7 +3452,7 @@ class TestScholarLabShip:
 
     def _setup_through_reenlist_false_scholar(self) -> list:
         return [
-            *_full_setup(),
+            *_scholar_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
             SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
             SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
@@ -3506,7 +3575,7 @@ class TestScholarScienceChoicesInTables:
 
     def _setup_in_term_2(self, assignment: str = 'Field Researcher') -> list:
         return [
-            *_full_setup(),
+            *_scholar_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment=assignment, qualification_roll=5),
             SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
             SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
@@ -3590,7 +3659,7 @@ class TestScholarMishap3ScienceChoice:
 
     def _setup_to_choice(self, openly_or_secretly: Literal['openly', 'secretly']) -> list:
         return [
-            *_full_setup(),
+            *_scholar_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
             SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
             SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
@@ -3629,7 +3698,7 @@ class TestPhysicianRankBonuses:
 
     def _setup_to_advancement(self, assignment: str) -> list:
         return [
-            *_full_setup(),
+            *_scholar_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment=assignment, qualification_roll=5),
             SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
             SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
@@ -3790,7 +3859,7 @@ class TestAssignmentChange:
         resolved before the assignment-change pending is created.
         """
         return [
-            *_full_setup(),
+            *_scholar_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment=assignment, qualification_roll=5),
             SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive()),
             SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
