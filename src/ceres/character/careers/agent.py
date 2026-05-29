@@ -43,8 +43,7 @@ def _handle_agent_mishap_2(
 
 
 def _choice_agent_mishap_2(projection: CharacterProjection, event) -> None:
-    from ceres.character.projection import PendingAgingRoll
-    from ceres.character.replay import _apply_muster_out_setup, _clear_current_career, _current_career
+    from ceres.character.replay import _apply_mishap_ejection, _current_career
 
     career = _current_career(projection)
     pending_idx = 0
@@ -66,15 +65,7 @@ def _choice_agent_mishap_2(projection: CharacterProjection, event) -> None:
             )
         )
         pending_idx += 1
-    projection.summary.age += 4
-    if projection.summary.age >= 34:
-        projection.muster_out_career = career.name
-        _clear_current_career(projection)
-        projection.pending_inputs.append(
-            PendingAgingRoll(id=f'{event.id}.{pending_idx}', instruction='Roll 2D on Aging table')
-        )
-    else:
-        _apply_muster_out_setup(projection, career, event.id, pending_idx, lose_current_term=True)
+    _apply_mishap_ejection(projection, career, event.id, pending_idx, lose_current_term=True)
 
 
 # ── mishap 3: investigation gone wrong ───────────────────────────────────────
@@ -139,21 +130,14 @@ def _handle_agent_mishap_5(
 
 
 def _choice_agent_mishap_5(projection: CharacterProjection, event) -> None:
-    from ceres.character.projection import PendingAgingRoll
-    from ceres.character.replay import _apply_muster_out_setup, _clear_current_career, _current_career
+    from ceres.character.replay import _apply_mishap_ejection, _current_career
 
     career = _current_career(projection)
     projection.summary.problems.append(
         f'Agent mishap 5: your {event.choice} was hurt — roll twice on the Injury table for them '
         'and apply the lower result (NPC injury; no mechanical effect on your character).'
     )
-    projection.summary.age += 4
-    if projection.summary.age >= 34:
-        projection.muster_out_career = career.name
-        _clear_current_career(projection)
-        projection.pending_inputs.append(PendingAgingRoll(id=f'{event.id}.0', instruction='Roll 2D on Aging table'))
-    else:
-        _apply_muster_out_setup(projection, career, event.id, 0, lose_current_term=True)
+    _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
 
 
 # ── event 3: dangerous investigation ─────────────────────────────────────────

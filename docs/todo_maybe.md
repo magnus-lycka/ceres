@@ -11,7 +11,7 @@ Colonist Profession, Crewmember Profession, Freeloader Profession,
 Hostile Environment Profession, Spacer Profession, Sport Profession and Worker Profession,
 but this isn't right. Crewmember Profession does not exist, instead there is an already
 implemented Spacer Profession Crewmember specialisation. Crewmember Profession is wrong,
-redundant and should be removed. 
+redundant and should be removed.
 
 ## Google Sheet fuel mismatch
 

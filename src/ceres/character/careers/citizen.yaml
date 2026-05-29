@@ -121,10 +121,14 @@ mishaps:
       - {type: decrease_characteristic, characteristic: SOC, amount: 1}
   4:
     text: Your business or colony is investigated or interfered with.
-    effects: []
+    defer_ejection: true
+    effects:
+      - {type: citizen_mishap_4}
   5:
     text: A revolution, attack or unusual event throws life into chaos, forcing you to leave the planet.
-    effects: []
+    defer_ejection: true
+    effects:
+      - {type: citizen_mishap_5}
   6:
     text: Injured. Roll on the Injury table.
     effects:
@@ -149,14 +153,16 @@ events:
       - {type: benefit_dm, amount: 1}
   6:
     text: You are given advanced training in a specialist field.
-    effects: []
+    effects:
+      - {type: citizen_event_6}
   7:
     text: Life Event.
     effects:
       - {type: life_event}
   8:
     text: You learn something illegal but profitable.
-    effects: []
+    effects:
+      - {type: citizen_event_8}
   9:
     text: You are rewarded for your diligence or cunning.
     effects:

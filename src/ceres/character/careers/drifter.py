@@ -1,4 +1,13 @@
-from ceres.character.careers.career_data import CareerData
+from ceres.character.careers.career_data import CareerData, CareerDispatchEffect
+from ceres.character.events import SkillRollEvent
+from ceres.character.projection import (
+    CharacterProjection,
+    Enemy,
+    PendingCareerEvent,
+    PendingCareerSkillRoll,
+    PendingSkillChoice,
+    ScheduledEffect,
+)
 
 
 class DrifterCareerData(CareerData):
@@ -6,8 +15,150 @@ class DrifterCareerData(CareerData):
         return assignment.name.lower()
 
 
+# ── event 3: patron job offer ─────────────────────────────────────────────────
+
+
+def _handle_drifter_event_3(
+    projection: CharacterProjection,
+    effect: CareerDispatchEffect,
+    event_id: int,
+    pending_idx: int,
+) -> int:
+    projection.pending_inputs.append(
+        PendingCareerEvent(
+            id=f'{event_id}.{pending_idx}',
+            career='Drifter',
+            roll=3,
+            instruction="Accept the patron's job offer (DM+4 to next Qualification roll) or decline?",
+            options=['accept', 'decline'],
+        )
+    )
+    return pending_idx + 1
+
+
+def _choice_drifter_event_3(projection: CharacterProjection, event) -> None:
+    from ceres.character.replay import _career_progress_pending, _current_career
+
+    career = _current_career(projection)
+    if event.choice == 'accept':
+        projection.scheduled_effects.append(
+            ScheduledEffect(
+                trigger='qualification',
+                source_event_id=event.id,
+                effect={'type': 'dm', 'amount': 4},
+            )
+        )
+    projection.pending_inputs.append(_career_progress_pending(career, projection, event.id))
+
+
+# ── event 8: attacked by enemies ─────────────────────────────────────────────
+
+
+def _handle_drifter_event_8(
+    projection: CharacterProjection,
+    effect: CareerDispatchEffect,
+    event_id: int,
+    pending_idx: int,
+) -> int:
+    projection.summary.connections.append(Enemy(source='Attacker (Drifter event 8)'))
+    projection.pending_inputs.append(
+        PendingCareerSkillRoll(
+            id=f'{event_id}.{pending_idx}',
+            career='Drifter',
+            roll=8,
+            context='drifter_event_8',
+            instruction='Roll Melee or Gun Combat 8+: success = increase that skill; fail = injured',
+            options=['Melee', 'Gun Combat'],
+        )
+    )
+    return pending_idx + 1
+
+
+def _resolve_drifter_event_8(projection: CharacterProjection, event: SkillRollEvent) -> None:
+    if event.modified_roll >= 8:
+        projection.pending_inputs.append(
+            PendingSkillChoice(
+                id=f'{event.id}.0',
+                instruction='Attack survived: increase Melee or Gun Combat by one level',
+                options=['Melee', 'Gun Combat'],
+            )
+        )
+    else:
+        projection.summary.problems.append(
+            'Attacked by enemies: you are injured — roll on the Injury table and apply the result.'
+        )
+
+
+# ── event 9: risky adventure ──────────────────────────────────────────────────
+
+
+def _handle_drifter_event_9(
+    projection: CharacterProjection,
+    effect: CareerDispatchEffect,
+    event_id: int,
+    pending_idx: int,
+) -> int:
+    projection.pending_inputs.append(
+        PendingCareerEvent(
+            id=f'{event_id}.{pending_idx}',
+            career='Drifter',
+            roll=9,
+            instruction='Accept the risky adventure (roll 1D: 1-3 = injured, 4-6 = extra Benefit roll) or decline?',
+            options=['accept', 'decline'],
+        )
+    )
+    return pending_idx + 1
+
+
+def _choice_drifter_event_9(projection: CharacterProjection, event) -> None:
+    from ceres.character.replay import _career_progress_pending, _current_career
+
+    career = _current_career(projection)
+    if event.choice == 'accept':
+        projection.summary.problems.append(
+            'Drifter event 9: risky adventure — roll 1D. '
+            '1-3: roll on the Injury table. '
+            '4-6: gain one extra Benefit roll. Apply manually.'
+        )
+    projection.pending_inputs.append(_career_progress_pending(career, projection, event.id))
+
+
+# ── event 11: forcibly drafted ────────────────────────────────────────────────
+
+
+def _handle_drifter_event_11(
+    projection: CharacterProjection,
+    effect: CareerDispatchEffect,
+    event_id: int,
+    pending_idx: int,
+) -> int:
+    from ceres.character.replay import _career_progress_pending, _current_career
+
+    career = _current_career(projection)
+    projection.summary.problems.append(
+        'Drifter event 11: forcibly drafted — roll 1D: 1-2 Army, 3-4 Marines, 5-6 Navy. '
+        'Leave this career and enter the rolled career next term (no qualification roll needed). Apply manually.'
+    )
+    projection.pending_inputs.append(_career_progress_pending(career, projection, event_id))
+    return pending_idx
+
+
+# ── handler registries ────────────────────────────────────────────────────────
+
 CAREER_DATA_CLASS = DrifterCareerData
 
-EFFECT_HANDLERS: dict[str, object] = {}
-SKILL_ROLL_HANDLERS: dict[str, object] = {}
-CHOICE_HANDLERS: dict[str, object] = {}
+EFFECT_HANDLERS: dict[str, object] = {
+    'drifter_event_3': _handle_drifter_event_3,
+    'drifter_event_8': _handle_drifter_event_8,
+    'drifter_event_9': _handle_drifter_event_9,
+    'drifter_event_11': _handle_drifter_event_11,
+}
+
+SKILL_ROLL_HANDLERS: dict[str, object] = {
+    'drifter_event_8': _resolve_drifter_event_8,
+}
+
+CHOICE_HANDLERS: dict[str, object] = {
+    'drifter_event_3': _choice_drifter_event_3,
+    'drifter_event_9': _choice_drifter_event_9,
+}

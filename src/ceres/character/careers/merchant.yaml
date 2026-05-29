@@ -110,13 +110,13 @@ mishaps:
 
 events:
   2: {text: "Disaster! Roll on the Mishap table but you are not ejected from this career.", effects: [{type: roll_mishap, leave: false}]}
-  3: {text: You are offered the opportunity to smuggle illegal items onto a planet., effects: []}
+  3: {text: You are offered the opportunity to smuggle illegal items onto a planet., effects: [{type: merchant_event_3}]}
   4: {text: Gain any one of these skills, reflecting your time spent dealing with suppliers and spacers., effects: [{type: skill_choice, options: [Profession, Electronics, Engineer, Animals, Science], level: 1}]}
-  5: {text: You have a chance to risk your fortune on a possibly lucrative deal., effects: []}
+  5: {text: You have a chance to risk your fortune on a possibly lucrative deal., effects: [{type: merchant_event_5}]}
   6: {text: You make an unexpected connection outside your normal circles. Gain a Contact., effects: [{type: gain_contact}]}
   7: {text: Life Event., effects: [{type: life_event}]}
   8: {text: You are embroiled in legal trouble., effects: [{type: skill_choice, options: [Advocate, Admin, Diplomat, Investigate], level: 1}]}
-  9: {text: You are given advanced training in a specialist field., effects: []}
+  9: {text: You are given advanced training in a specialist field., effects: [{type: merchant_event_9}]}
   10: {text: A good deal ensures you are living the high life for a few years. Gain DM+1 to any one Benefit roll., effects: [{type: benefit_dm, amount: 1}]}
   11: {text: You befriend a useful ally in one sphere., effects: [{type: gain_ally}]}
   12: {text: Your business or ship thrives. You are automatically promoted., effects: [{type: auto_advance}]}

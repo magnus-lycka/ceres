@@ -1040,6 +1040,27 @@ def _apply_aging_crisis_event(projection: CharacterProjection, event: AgingCrisi
         projection.pending_reenlist = None
 
 
+def _apply_mishap_ejection(
+    projection: CharacterProjection,
+    career: CareerData,
+    source_event_id: int,
+    pending_idx: int,
+    lose_current_term: bool = True,
+) -> int:
+    """Age the character, then handle aging roll or muster out setup for mishap ejection."""
+    projection.summary.age += 4
+    if projection.summary.age >= 34:
+        projection.muster_out_career = career.name
+        _clear_current_career(projection)
+        projection.pending_inputs.append(
+            PendingAgingRoll(id=f'{source_event_id}.{pending_idx}', instruction='Roll 2D on Aging table')
+        )
+        return pending_idx + 1
+    return _apply_muster_out_setup(
+        projection, career, source_event_id, pending_idx, lose_current_term=lose_current_term
+    )
+
+
 def _apply_muster_out_setup(
     projection: CharacterProjection,
     career: CareerData,
@@ -1054,6 +1075,10 @@ def _apply_muster_out_setup(
     reduce_effects = [se for se in projection.scheduled_effects if se.trigger == 'muster_out_reduce' and se.consume]
     for se in reduce_effects:
         roll_count = max(0, roll_count - se.effect.get('value', 1))
+        projection.scheduled_effects.remove(se)
+    add_effects = [se for se in projection.scheduled_effects if se.trigger == 'muster_out_add' and se.consume]
+    for se in add_effects:
+        roll_count += se.effect.get('value', 1)
         projection.scheduled_effects.remove(se)
     if clear_career:
         _clear_current_career(projection)

@@ -130,7 +130,8 @@ events:
       - {type: roll_mishap, leave: false}
   3:
     text: A patron offers you a chance at a job.
-    effects: []
+    effects:
+      - {type: drifter_event_3}
   4:
     text: You pick up a few useful skills here and there.
     effects:
@@ -149,17 +150,20 @@ events:
       - {type: life_event}
   8:
     text: You are attacked by enemies.
-    effects: []
+    effects:
+      - {type: drifter_event_8}
   9:
     text: You are offered a chance to take part in a risky but rewarding adventure.
-    effects: []
+    effects:
+      - {type: drifter_event_9}
   10:
     text: Life on the edge hones your abilities.
     effects:
       - {type: skill_choice, options: [], level: 1}
   11:
     text: You are forcibly drafted.
-    effects: []
+    effects:
+      - {type: drifter_event_11}
   12:
     text: You thrive on adversity. You are automatically promoted.
     effects:

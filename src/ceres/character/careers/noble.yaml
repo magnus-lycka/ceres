@@ -109,9 +109,9 @@ muster_out:
 mishaps:
   1: {text: Severely injured., effects: [{type: injury, severity: severe}]}
   2: {text: A family scandal forces you out of your position. Lose one SOC., effects: [{type: decrease_characteristic, characteristic: SOC, amount: 1}]}
-  3: {text: A disaster or war strikes. Roll Stealth 8+ or Deception 8+ to escape unhurt., effects: []}
+  3: {text: A disaster or war strikes. Roll Stealth 8+ or Deception 8+ to escape unhurt., defer_ejection: true, effects: [{type: noble_mishap_3}]}
   4: {text: Political manoeuvrings usurp your position. Increase Diplomat or Advocate and gain a Rival., effects: [{type: skill_choice, options: [Diplomat, Advocate], level: 1}, {type: gain_rival}]}
-  5: {text: An assassin attempts to end your life. Roll END 8+ or roll on the Injury table., effects: []}
+  5: {text: An assassin attempts to end your life. Roll END 8+ or roll on the Injury table., defer_ejection: true, effects: [{type: noble_mishap_5}]}
   6: {text: Injured. Roll on the Injury table., effects: [{type: injury, severity: from_table}]}
 
 events:
@@ -121,7 +121,7 @@ events:
   5: {text: You inherit a gift from a rich relative., effects: [{type: benefit_dm, amount: 1}]}
   6: {text: You become deeply involved in politics., effects: [{type: skill_choice, options: [Advocate, Admin, Diplomat, Persuade], level: 1}, {type: gain_rival}]}
   7: {text: Life Event., effects: [{type: life_event}]}
-  8: {text: A conspiracy of nobles attempts to recruit you., effects: []}
+  8: {text: A conspiracy of nobles attempts to recruit you., effects: [{type: noble_event_8}]}
   9: {text: Your reign is acclaimed as fair and wise., effects: [{type: gain_enemy}, {type: advancement_dm, amount: 2}]}
   10: {text: You manipulate and charm your way through high society., effects: [{type: skill_choice, options: [Carouse, Diplomat, Persuade, Steward], level: 1}, {type: gain_rival}, {type: gain_ally}]}
   11: {text: You make an alliance with a powerful noble., effects: [{type: gain_ally}, {type: skill_choice, options: [Leadership, advancement_dm_4], level: 1}]}
