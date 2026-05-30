@@ -46,6 +46,7 @@ from ceres.character.events import (
     TermEventEvent,
     UcpEvent,
 )
+from ceres.character.precareers import load_precareers
 from ceres.character.projection import (
     CharacterProjection,
     CharacterSummary,
@@ -427,6 +428,7 @@ def _projection_context(projection: CharacterProjection, character_id: int) -> d
         'character_id': character_id,
         'enriched_inputs': enriched_inputs,
         'careers': careers,
+        'precareers': load_precareers(),
     }
 
 

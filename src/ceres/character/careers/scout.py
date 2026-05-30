@@ -11,7 +11,7 @@ from ceres.character.projection import (
     PendingSkillChoice,
     ScheduledEffect,
 )
-from ceres.character.replay import _grant_skill, _skill_from_str
+from ceres.character.skills import skill_from_str
 
 # ── event 3: ambush ──────────────────────────────────────────────────────────
 
@@ -42,7 +42,7 @@ def _resolve_scout_event_3(projection: CharacterProjection, event: SkillRollEven
     skill_name = event.skill if isinstance(event.skill, str) else type(event.skill).name()
     target = _AMBUSH_TARGETS[skill_name]
     if event.modified_roll >= target:
-        _grant_skill(projection, _skill_from_str('Electronics', 1))
+        projection.grant_skill(skill_from_str('Electronics', 1))
     else:
         projection.summary.problems.append('Ship destroyed; may not re-enlist in Scouts at the end of this term.')
 

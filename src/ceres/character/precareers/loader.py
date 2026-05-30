@@ -13,7 +13,14 @@ from ceres.character.careers.career_data import (
     SkillTableEntry,
 )
 from ceres.character.characteristics import Chars, ConnectionKind
+from ceres.character.precareers.colonial_upbringing import ColonialUprbringingPreCareer
+from ceres.character.precareers.merchant_academy import MerchantAcademyPreCareer
+from ceres.character.precareers.military_academy import MilitaryAcademyPreCareer
 from ceres.character.precareers.precareer_data import PreCareerData
+from ceres.character.precareers.psionic_community import PsionicCommunityPreCareer
+from ceres.character.precareers.school_of_hard_knocks import SchoolOfHardKnocksPreCareer
+from ceres.character.precareers.spacer_community import SpacerCommunityPreCareer
+from ceres.character.precareers.university import UniversityPreCareer
 
 _PRECAREER_EVENTS = {
     2: CareerEventEntry(text='Approached by an illegal psionic group.', effects=[]),
@@ -93,8 +100,30 @@ _SPACER_COMMUNITY_SKILLS = [
 ]
 
 
-def _military_academy(name: str, tied_career: str, entry: CharCheck) -> PreCareerData:
-    return PreCareerData(
+def _merchant_academy(name: str, curriculum_table: str) -> MerchantAcademyPreCareer:
+    return MerchantAcademyPreCareer(
+        name=name,
+        source='Companion',
+        curriculum_table=curriculum_table,
+        entry=CharCheck(characteristic=Chars.INT, target=9),
+        entry_soc_bonus_min=8,
+        entry_soc_bonus=1,
+        graduation=CharCheck(characteristic=Chars.INT, target=7),
+        graduation_dms={'EDU_8+': 1, 'SOC_8+': 1},
+        honours_target=11,
+        graduation_benefits=[
+            'Increase one skill from the chosen Broker or Merchant Marine table to level 1',
+            'Increase EDU by +1',
+            'Automatic entry into Merchant or Citizen at rank 1 if first career and appropriate branch',
+            'Honours graduates may enter those careers at rank 2',
+            'DM+1 to advancement checks in Merchant or Citizen; DM+2 with honours',
+        ],
+        events=_PRECAREER_EVENTS,
+    )
+
+
+def _military_academy(name: str, tied_career: str, entry: CharCheck) -> MilitaryAcademyPreCareer:
+    return MilitaryAcademyPreCareer(
         name=name,
         source='Core',
         entry=entry,
@@ -118,7 +147,7 @@ def _military_academy(name: str, tied_career: str, entry: CharCheck) -> PreCaree
 @cache
 def load_precareers() -> dict[str, PreCareerData]:
     precareers = [
-        PreCareerData(
+        UniversityPreCareer(
             name='University',
             source='Core',
             entry=CharCheck(characteristic=Chars.EDU, target=6),
@@ -139,7 +168,7 @@ def load_precareers() -> dict[str, PreCareerData]:
         _military_academy('Army Academy', 'Army', CharCheck(characteristic=Chars.END, target=7)),
         _military_academy('Marine Academy', 'Marines', CharCheck(characteristic=Chars.END, target=8)),
         _military_academy('Navy Academy', 'Navy', CharCheck(characteristic=Chars.INT, target=8)),
-        PreCareerData(
+        ColonialUprbringingPreCareer(
             name='Colonial Upbringing',
             source='Companion',
             entry_requirement='Automatic if homeworld is TL8-',
@@ -157,26 +186,9 @@ def load_precareers() -> dict[str, PreCareerData]:
             ],
             events=_PRECAREER_EVENTS,
         ),
-        PreCareerData(
-            name='Merchant Academy',
-            source='Companion',
-            entry=CharCheck(characteristic=Chars.INT, target=9),
-            entry_soc_bonus_min=8,
-            entry_soc_bonus=1,
-            curricula=['Business', 'Shipboard'],
-            graduation=CharCheck(characteristic=Chars.INT, target=7),
-            graduation_dms={'EDU_8+': 1, 'SOC_8+': 1},
-            honours_target=11,
-            graduation_benefits=[
-                'Increase one skill from the chosen Broker or Merchant Marine table to level 1',
-                'Increase EDU by +1',
-                'Automatic entry into Merchant or Citizen at rank 1 if first career and appropriate branch',
-                'Honours graduates may enter those careers at rank 2',
-                'DM+1 to advancement checks in Merchant or Citizen; DM+2 with honours',
-            ],
-            events=_PRECAREER_EVENTS,
-        ),
-        PreCareerData(
+        _merchant_academy('Merchant Academy (Business)', 'broker'),
+        _merchant_academy('Merchant Academy (Shipboard)', 'merchant marine'),
+        PsionicCommunityPreCareer(
             name='Psionic Community',
             source='Companion',
             entry_requirement='PSI 8+, DM+1 if INT 8+',
@@ -197,11 +209,12 @@ def load_precareers() -> dict[str, PreCareerData]:
             ],
             events=_PRECAREER_EVENTS,
         ),
-        PreCareerData(
+        SchoolOfHardKnocksPreCareer(
             name='School of Hard Knocks',
             source='Companion',
             entry_requirement='Automatic if SOC 6-',
             skill_choices=_SCHOOL_OF_HARD_KNOCKS_SKILLS,
+            entry_pick_count=2,
             graduation=CharCheck(characteristic=Chars.INT, target=7),
             graduation_dms={'END_9+': 1},
             honours_target=11,
@@ -214,11 +227,12 @@ def load_precareers() -> dict[str, PreCareerData]:
             ],
             events=_PRECAREER_EVENTS,
         ),
-        PreCareerData(
+        SpacerCommunityPreCareer(
             name='Spacer Community',
             source='Companion',
             entry_requirement='Automatic if homeworld size code 0; INT 4+, DM+1 if DEX 8+',
             skill_choices=_SPACER_COMMUNITY_SKILLS,
+            entry_pick_count=2,
             graduation=CharCheck(characteristic=Chars.INT, target=8),
             graduation_dms={'DEX_6+': 1},
             honours_target=12,

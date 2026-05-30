@@ -1,0 +1,695 @@
+"""Tests for companion precareer entry and graduation (Mongoose Traveller Companion precareers)."""
+
+from ceres.character.characteristics import Chars, ConnectionKind
+from ceres.character.events import (
+    CharacterStartedEvent,
+    PreCareerEntryEvent,
+    PreCareerEventEvent,
+    PreCareerGraduationEvent,
+    PreCareerSkillChoiceEvent,
+    UcpEvent,
+)
+from ceres.character.projection import (
+    PendingCareerChoice,
+    PendingPreCareerEvent,
+    PendingPreCareerGraduation,
+    PendingPreCareerSkillChoice,
+    _level_fields,
+)
+from ceres.character.replay import replay
+from ceres.character.skills import skill_class_by_name
+
+
+def _base():
+    """Character with EDU=0 (no background skills) and all other stats at 7."""
+    return [
+        CharacterStartedEvent(id=1, sophont='Human', player='Test', name='Tester'),
+        UcpEvent(id=2, fulfills='1.0', ucp='777707'),  # STR=7 DEX=7 END=7 INT=7 EDU=0 SOC=7
+    ]
+
+
+def _skill_level(projection, name: str) -> int:
+    """Highest level of a named skill in the projection, or -1 if absent."""
+    try:
+        cls = skill_class_by_name(name)
+    except ValueError:
+        return -1
+    skill = next((s for s in projection.summary.skills if type(s) is cls), None)
+    if skill is None:
+        return -1
+    fields = _level_fields(cls)
+    return max((getattr(skill, f).value for f in fields), default=0)
+
+
+# ── Colonial Upbringing ───────────────────────────────────────────────────────
+
+
+class TestColonialUpbringing:
+    def test_entry_auto_grants_nine_concrete_level_zero_skills(self):
+        # 'Profession' is a broad skill category — it becomes a pending pick, not auto-granted
+        events = [*_base(), PreCareerEntryEvent(id=3, precareer='Colonial Upbringing', roll=5)]
+        projection = replay(1, events)
+
+        for name in (
+            'Animals',
+            'Athletics',
+            'Drive',
+            'Gun Combat',
+            'Mechanic',
+            'Medic',
+            'Navigation',
+            'Recon',
+            'Seafarer',
+        ):
+            assert _skill_level(projection, name) >= 0, f'{name} should be auto-granted at entry'
+
+    def test_entry_auto_grants_survival_at_level_one(self):
+        events = [*_base(), PreCareerEntryEvent(id=3, precareer='Colonial Upbringing', roll=5)]
+        projection = replay(1, events)
+
+        assert _skill_level(projection, 'Survival') >= 1
+
+    def test_entry_queues_one_skill_pick_for_profession_category(self):
+        # 'Profession' in the Colonial skill list is a category; player must pick a specialisation
+        events = [*_base(), PreCareerEntryEvent(id=3, precareer='Colonial Upbringing', roll=5)]
+        projection = replay(1, events)
+
+        picks = [p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)]
+        assert len(picks) == 1
+        assert picks[0].level == 0
+        assert 'Colonist Profession' in picks[0].options
+
+    def test_entry_queues_event_and_graduation_pendings(self):
+        events = [*_base(), PreCareerEntryEvent(id=3, precareer='Colonial Upbringing', roll=5)]
+        projection = replay(1, events)
+
+        assert any(isinstance(p, PendingPreCareerEvent) for p in projection.pending_inputs)
+        assert any(isinstance(p, PendingPreCareerGraduation) for p in projection.pending_inputs)
+
+    def test_graduation_grants_jack_of_all_trades_at_level_one(self):
+        # Pending IDs: '3.0' = Profession pick, '3.1' = event, '3.2' = graduation
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Colonial Upbringing', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Colonist Profession'),
+            PreCareerEventEvent(id=5, fulfills='3.1', roll=5),
+            PreCareerGraduationEvent(id=6, fulfills='3.2', roll=10),  # effective=10>=8, no honours
+        ]
+        projection = replay(1, events)
+
+        assert _skill_level(projection, 'Jack-of-All-Trades') >= 1
+
+    def test_graduation_increases_end_by_one(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Colonial Upbringing', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Colonist Profession'),
+            PreCareerEventEvent(id=5, fulfills='3.1', roll=5),
+            PreCareerGraduationEvent(id=6, fulfills='3.2', roll=10),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.characteristics[Chars.END] == 8  # 7+1
+
+    def test_graduation_queues_three_skill_picks_at_level_one(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Colonial Upbringing', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Colonist Profession'),
+            PreCareerEventEvent(id=5, fulfills='3.1', roll=5),
+            PreCareerGraduationEvent(id=6, fulfills='3.2', roll=10),
+        ]
+        projection = replay(1, events)
+
+        picks = [p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)]
+        assert len(picks) == 3
+        assert all(p.level == 1 for p in picks)
+
+    def test_graduation_queues_career_choice_with_distinct_id(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Colonial Upbringing', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Colonist Profession'),
+            PreCareerEventEvent(id=5, fulfills='3.1', roll=5),
+            PreCareerGraduationEvent(id=6, fulfills='3.2', roll=10),
+        ]
+        projection = replay(1, events)
+
+        career_choices = [p for p in projection.pending_inputs if isinstance(p, PendingCareerChoice)]
+        assert len(career_choices) == 1
+        pick_ids = {p.id for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)}
+        assert career_choices[0].id not in pick_ids
+
+    def test_graduation_adds_edu_and_age_problem_messages(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Colonial Upbringing', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Colonist Profession'),
+            PreCareerEventEvent(id=5, fulfills='3.1', roll=5),
+            PreCareerGraduationEvent(id=6, fulfills='3.2', roll=10),
+        ]
+        projection = replay(1, events)
+
+        combined = ' '.join(projection.summary.problems)
+        assert 'EDU' in combined
+        assert 'age' in combined.lower()
+
+    def test_honours_graduation_grants_leadership_and_extra_pick(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Colonial Upbringing', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Colonist Profession'),
+            PreCareerEventEvent(id=5, fulfills='3.1', roll=5),
+            PreCareerGraduationEvent(id=6, fulfills='3.2', roll=12),  # effective=12>=12, honours
+        ]
+        projection = replay(1, events)
+
+        assert _skill_level(projection, 'Leadership') >= 1
+        picks = [p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)]
+        assert len(picks) == 4  # 3 regular + 1 honours
+
+    def test_honours_career_choice_id_distinct_from_four_picks(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Colonial Upbringing', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Colonist Profession'),
+            PreCareerEventEvent(id=5, fulfills='3.1', roll=5),
+            PreCareerGraduationEvent(id=6, fulfills='3.2', roll=12),
+        ]
+        projection = replay(1, events)
+
+        career_choices = [p for p in projection.pending_inputs if isinstance(p, PendingCareerChoice)]
+        pick_ids = {p.id for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)}
+        assert len(career_choices) == 1
+        assert career_choices[0].id not in pick_ids
+
+
+# ── Merchant Academy ─────────────────────────────────────────────────────────
+
+
+class TestMerchantAcademy:
+    def test_entry_business_grants_broker_table_skills_at_level_zero(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Merchant Academy (Business)', roll=12),
+        ]
+        projection = replay(1, events)
+
+        for name in ('Admin', 'Advocate', 'Broker', 'Streetwise', 'Deception', 'Persuade'):
+            assert _skill_level(projection, name) >= 0, f'{name} should be granted at level 0'
+
+    def test_entry_shipboard_grants_merchant_marine_skills_at_level_zero(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Merchant Academy (Shipboard)', roll=12),
+        ]
+        projection = replay(1, events)
+
+        for name in ('Pilot', 'Vacc Suit', 'Athletics', 'Mechanic', 'Engineer', 'Electronics'):
+            assert _skill_level(projection, name) >= 0, f'{name} should be granted at level 0'
+
+    def test_entry_queues_one_service_skill_pick_at_level_one(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Merchant Academy (Business)', roll=12),
+        ]
+        projection = replay(1, events)
+
+        picks = [p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)]
+        assert len(picks) == 1
+        assert picks[0].level == 1
+
+    def test_entry_service_skill_options_are_merchant_service_skills(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Merchant Academy (Business)', roll=12),
+        ]
+        projection = replay(1, events)
+
+        picks = [p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)]
+        assert 'Drive' in picks[0].options
+
+    def test_shipboard_entry_grants_pilot_not_broker_skills(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Merchant Academy (Shipboard)', roll=12),
+        ]
+        projection = replay(1, events)
+
+        assert _skill_level(projection, 'Pilot') >= 0
+        assert _skill_level(projection, 'Broker') == -1
+
+    def test_graduation_increases_edu_by_one(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Merchant Academy (Business)', roll=12),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Drive'),
+            PreCareerEventEvent(id=5, fulfills='3.1', roll=5),
+            PreCareerGraduationEvent(id=6, fulfills='3.2', roll=9),  # effective=9>=7, no honours
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.characteristics[Chars.EDU] == 1  # 0+1
+
+    def test_graduation_queues_one_curriculum_skill_pick_at_level_one(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Merchant Academy (Business)', roll=12),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Drive'),
+            PreCareerEventEvent(id=5, fulfills='3.1', roll=5),
+            PreCareerGraduationEvent(id=6, fulfills='3.2', roll=9),
+        ]
+        projection = replay(1, events)
+
+        picks = [p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)]
+        assert len(picks) == 1
+        assert picks[0].level == 1
+
+    def test_graduation_adds_advancement_dm_plus_one(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Merchant Academy (Business)', roll=12),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Drive'),
+            PreCareerEventEvent(id=5, fulfills='3.1', roll=5),
+            PreCareerGraduationEvent(id=6, fulfills='3.2', roll=9),
+        ]
+        projection = replay(1, events)
+
+        adv_effects = [e for e in projection.scheduled_effects if e.trigger == 'advancement']
+        assert len(adv_effects) == 1
+        assert adv_effects[0].effect['amount'] == 1
+
+    def test_graduation_queues_career_choice_with_distinct_id(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Merchant Academy (Business)', roll=12),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Drive'),
+            PreCareerEventEvent(id=5, fulfills='3.1', roll=5),
+            PreCareerGraduationEvent(id=6, fulfills='3.2', roll=9),
+        ]
+        projection = replay(1, events)
+
+        career_choices = [p for p in projection.pending_inputs if isinstance(p, PendingCareerChoice)]
+        assert len(career_choices) == 1
+        pick_ids = {p.id for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)}
+        assert career_choices[0].id not in pick_ids
+
+    def test_honours_graduation_gives_advancement_dm_plus_two(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Merchant Academy (Business)', roll=12),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Drive'),
+            PreCareerEventEvent(id=5, fulfills='3.1', roll=5),
+            PreCareerGraduationEvent(id=6, fulfills='3.2', roll=11),  # effective=11>=11, honours
+        ]
+        projection = replay(1, events)
+
+        adv_effects = [e for e in projection.scheduled_effects if e.trigger == 'advancement']
+        assert len(adv_effects) == 1
+        assert adv_effects[0].effect['amount'] == 2
+
+    def test_honours_graduation_adds_rank_two_problem_message(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Merchant Academy (Business)', roll=12),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Drive'),
+            PreCareerEventEvent(id=5, fulfills='3.1', roll=5),
+            PreCareerGraduationEvent(id=6, fulfills='3.2', roll=11),
+        ]
+        projection = replay(1, events)
+
+        combined = ' '.join(projection.summary.problems)
+        assert 'rank 2' in combined
+
+
+# ── Psionic Community ────────────────────────────────────────────────────────
+
+
+class TestPsionicCommunity:
+    def test_entry_auto_grants_streetwise(self):
+        # 'Profession' and 'Science' are broad skill categories — they become pending picks, not auto-granted
+        events = [*_base(), PreCareerEntryEvent(id=3, precareer='Psionic Community', roll=5)]
+        projection = replay(1, events)
+
+        assert _skill_level(projection, 'Streetwise') >= 0, 'Streetwise should be auto-granted at entry'
+
+    def test_entry_queues_two_picks_for_profession_and_science_categories(self):
+        # 'Profession' and 'Science' in skill_choices are categories; player picks a specialisation each
+        events = [*_base(), PreCareerEntryEvent(id=3, precareer='Psionic Community', roll=5)]
+        projection = replay(1, events)
+
+        picks = [p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)]
+        assert len(picks) == 2
+        # Both picks are at level 0
+        assert all(p.level == 0 for p in picks)
+        all_options = picks[0].options + picks[1].options
+        assert any('Profession' in o for o in all_options)
+        assert any('Science' in o for o in all_options)
+
+    def test_entry_queues_graduation_pending_for_text_based_requirement(self):
+        events = [*_base(), PreCareerEntryEvent(id=3, precareer='Psionic Community', roll=5)]
+        projection = replay(1, events)
+
+        assert any(isinstance(p, PendingPreCareerGraduation) for p in projection.pending_inputs)
+
+    def test_graduation_queues_science_skill_pick_at_level_one(self):
+        # Rules award Science (psionicology) 1; system queues a pick since no Psionicology exists
+        # Pending IDs: '3.0'=Profession pick, '3.1'=Science pick, '3.2'=event, '3.3'=graduation
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Psionic Community', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Colonist Profession'),
+            PreCareerSkillChoiceEvent(id=5, fulfills='3.1', skill='Life Science'),
+            PreCareerEventEvent(id=6, fulfills='3.2', roll=5),
+            PreCareerGraduationEvent(id=7, fulfills='3.3', roll=10),  # no honours (10<12)
+        ]
+        projection = replay(1, events)
+
+        science_picks = [
+            p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice) and p.level == 1
+        ]
+        assert len(science_picks) == 1
+        assert 'Space Science' in science_picks[0].options
+
+    def test_graduation_adds_rival_connection(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Psionic Community', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Colonist Profession'),
+            PreCareerSkillChoiceEvent(id=5, fulfills='3.1', skill='Space Science'),
+            PreCareerEventEvent(id=6, fulfills='3.2', roll=5),
+            PreCareerGraduationEvent(id=7, fulfills='3.3', roll=10),
+        ]
+        projection = replay(1, events)
+
+        kinds = [c.kind for c in projection.summary.connections]
+        assert ConnectionKind.RIVAL in kinds
+        assert ConnectionKind.ENEMY not in kinds
+
+    def test_honours_graduation_adds_enemy_not_rival(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Psionic Community', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Colonist Profession'),
+            PreCareerSkillChoiceEvent(id=5, fulfills='3.1', skill='Space Science'),
+            PreCareerEventEvent(id=6, fulfills='3.2', roll=5),
+            PreCareerGraduationEvent(id=7, fulfills='3.3', roll=12),  # honours (12>=12)
+        ]
+        projection = replay(1, events)
+
+        kinds = [c.kind for c in projection.summary.connections]
+        assert ConnectionKind.ENEMY in kinds
+        assert ConnectionKind.RIVAL not in kinds
+
+    def test_graduation_adds_psi_problem_message(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Psionic Community', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Colonist Profession'),
+            PreCareerSkillChoiceEvent(id=5, fulfills='3.1', skill='Space Science'),
+            PreCareerEventEvent(id=6, fulfills='3.2', roll=5),
+            PreCareerGraduationEvent(id=7, fulfills='3.3', roll=10),
+        ]
+        projection = replay(1, events)
+
+        assert any('PSI' in p for p in projection.summary.problems)
+
+    def test_graduation_queues_career_choice(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Psionic Community', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Colonist Profession'),
+            PreCareerSkillChoiceEvent(id=5, fulfills='3.1', skill='Space Science'),
+            PreCareerEventEvent(id=6, fulfills='3.2', roll=5),
+            PreCareerGraduationEvent(id=7, fulfills='3.3', roll=10),
+        ]
+        projection = replay(1, events)
+
+        assert any(isinstance(p, PendingCareerChoice) for p in projection.pending_inputs)
+
+
+# ── School of Hard Knocks ────────────────────────────────────────────────────
+
+
+class TestSchoolOfHardKnocks:
+    def test_entry_auto_grants_streetwise_at_level_one(self):
+        events = [*_base(), PreCareerEntryEvent(id=3, precareer='School of Hard Knocks', roll=5)]
+        projection = replay(1, events)
+
+        assert _skill_level(projection, 'Streetwise') >= 1
+
+    def test_entry_queues_two_skill_picks_at_level_zero(self):
+        events = [*_base(), PreCareerEntryEvent(id=3, precareer='School of Hard Knocks', roll=5)]
+        projection = replay(1, events)
+
+        picks = [p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)]
+        assert len(picks) == 2
+        assert all(p.level == 0 for p in picks)
+
+    def test_entry_pick_pool_excludes_auto_granted_streetwise(self):
+        events = [*_base(), PreCareerEntryEvent(id=3, precareer='School of Hard Knocks', roll=5)]
+        projection = replay(1, events)
+
+        picks = [p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)]
+        assert 'Streetwise' not in picks[0].options
+        assert 'Athletics' in picks[0].options
+
+    def test_graduation_grants_gun_combat(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='School of Hard Knocks', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Athletics'),
+            PreCareerSkillChoiceEvent(id=5, fulfills='3.1', skill='Deception'),
+            PreCareerEventEvent(id=6, fulfills='3.2', roll=5),
+            PreCareerGraduationEvent(id=7, fulfills='3.3', roll=9),  # effective=9>=7, no honours
+        ]
+        projection = replay(1, events)
+
+        assert _skill_level(projection, 'Gun Combat') >= 0
+
+    def test_graduation_decreases_soc_by_one(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='School of Hard Knocks', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Athletics'),
+            PreCareerSkillChoiceEvent(id=5, fulfills='3.1', skill='Deception'),
+            PreCareerEventEvent(id=6, fulfills='3.2', roll=5),
+            PreCareerGraduationEvent(id=7, fulfills='3.3', roll=9),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.characteristics[Chars.SOC] == 6  # 7-1
+
+    def test_graduation_queues_three_skill_picks_at_level_zero(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='School of Hard Knocks', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Athletics'),
+            PreCareerSkillChoiceEvent(id=5, fulfills='3.1', skill='Deception'),
+            PreCareerEventEvent(id=6, fulfills='3.2', roll=5),
+            PreCareerGraduationEvent(id=7, fulfills='3.3', roll=9),
+        ]
+        projection = replay(1, events)
+
+        picks = [p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)]
+        assert len(picks) == 3
+        assert all(p.level == 0 for p in picks)
+
+    def test_graduation_queues_career_choice_with_distinct_id(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='School of Hard Knocks', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Athletics'),
+            PreCareerSkillChoiceEvent(id=5, fulfills='3.1', skill='Deception'),
+            PreCareerEventEvent(id=6, fulfills='3.2', roll=5),
+            PreCareerGraduationEvent(id=7, fulfills='3.3', roll=9),
+        ]
+        projection = replay(1, events)
+
+        career_choices = [p for p in projection.pending_inputs if isinstance(p, PendingCareerChoice)]
+        assert len(career_choices) == 1
+        pick_ids = {p.id for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)}
+        assert career_choices[0].id not in pick_ids
+
+    def test_graduation_adds_dm_minus_two_problem(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='School of Hard Knocks', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Athletics'),
+            PreCareerSkillChoiceEvent(id=5, fulfills='3.1', skill='Deception'),
+            PreCareerEventEvent(id=6, fulfills='3.2', roll=5),
+            PreCareerGraduationEvent(id=7, fulfills='3.3', roll=9),
+        ]
+        projection = replay(1, events)
+
+        assert any('DM-2' in p for p in projection.summary.problems)
+
+    def test_honours_graduation_grants_carouse_at_level_one(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='School of Hard Knocks', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Athletics'),
+            PreCareerSkillChoiceEvent(id=5, fulfills='3.1', skill='Deception'),
+            PreCareerEventEvent(id=6, fulfills='3.2', roll=5),
+            PreCareerGraduationEvent(id=7, fulfills='3.3', roll=11),  # effective=11>=11, honours
+        ]
+        projection = replay(1, events)
+
+        assert _skill_level(projection, 'Carouse') >= 1
+
+    def test_honours_graduation_queues_four_picks_including_one_at_level_one(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='School of Hard Knocks', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Athletics'),
+            PreCareerSkillChoiceEvent(id=5, fulfills='3.1', skill='Deception'),
+            PreCareerEventEvent(id=6, fulfills='3.2', roll=5),
+            PreCareerGraduationEvent(id=7, fulfills='3.3', roll=11),
+        ]
+        projection = replay(1, events)
+
+        picks = [p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)]
+        assert len(picks) == 4
+        assert sum(1 for p in picks if p.level == 1) == 1
+
+    def test_honours_career_choice_id_distinct_from_four_picks(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='School of Hard Knocks', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Athletics'),
+            PreCareerSkillChoiceEvent(id=5, fulfills='3.1', skill='Deception'),
+            PreCareerEventEvent(id=6, fulfills='3.2', roll=5),
+            PreCareerGraduationEvent(id=7, fulfills='3.3', roll=11),
+        ]
+        projection = replay(1, events)
+
+        career_choices = [p for p in projection.pending_inputs if isinstance(p, PendingCareerChoice)]
+        pick_ids = {p.id for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)}
+        assert len(career_choices) == 1
+        assert career_choices[0].id not in pick_ids
+
+
+# ── Spacer Community ─────────────────────────────────────────────────────────
+
+
+class TestSpacerCommunity:
+    def test_entry_auto_grants_vacc_suit_at_level_one(self):
+        events = [*_base(), PreCareerEntryEvent(id=3, precareer='Spacer Community', roll=5)]
+        projection = replay(1, events)
+
+        assert _skill_level(projection, 'Vacc Suit') >= 1
+
+    def test_entry_queues_two_skill_picks_at_level_zero(self):
+        events = [*_base(), PreCareerEntryEvent(id=3, precareer='Spacer Community', roll=5)]
+        projection = replay(1, events)
+
+        picks = [p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)]
+        assert len(picks) == 2
+        assert all(p.level == 0 for p in picks)
+
+    def test_entry_pick_pool_excludes_auto_granted_vacc_suit(self):
+        events = [*_base(), PreCareerEntryEvent(id=3, precareer='Spacer Community', roll=5)]
+        projection = replay(1, events)
+
+        picks = [p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)]
+        assert 'Vacc Suit' not in picks[0].options
+        assert 'Astrogation' in picks[0].options
+
+    def test_graduation_grants_pilot(self):
+        # DEX=7 (>=6) → graduation_dms DEX_6+ applies: effective = roll + DM(INT=7) + 1 = roll+1
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Spacer Community', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Astrogation'),
+            PreCareerSkillChoiceEvent(id=5, fulfills='3.1', skill='Electronics'),
+            PreCareerEventEvent(id=6, fulfills='3.2', roll=5),
+            PreCareerGraduationEvent(id=7, fulfills='3.3', roll=9),  # effective=10>=8, no honours
+        ]
+        projection = replay(1, events)
+
+        assert _skill_level(projection, 'Pilot') >= 0
+
+    def test_graduation_increases_dex_by_one(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Spacer Community', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Astrogation'),
+            PreCareerSkillChoiceEvent(id=5, fulfills='3.1', skill='Electronics'),
+            PreCareerEventEvent(id=6, fulfills='3.2', roll=5),
+            PreCareerGraduationEvent(id=7, fulfills='3.3', roll=9),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.characteristics[Chars.DEX] == 8  # 7+1
+
+    def test_graduation_decreases_soc_by_two(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Spacer Community', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Astrogation'),
+            PreCareerSkillChoiceEvent(id=5, fulfills='3.1', skill='Electronics'),
+            PreCareerEventEvent(id=6, fulfills='3.2', roll=5),
+            PreCareerGraduationEvent(id=7, fulfills='3.3', roll=9),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.characteristics[Chars.SOC] == 5  # 7-2
+
+    def test_graduation_queues_two_level_zero_and_one_level_one_pick(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Spacer Community', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Astrogation'),
+            PreCareerSkillChoiceEvent(id=5, fulfills='3.1', skill='Electronics'),
+            PreCareerEventEvent(id=6, fulfills='3.2', roll=5),
+            PreCareerGraduationEvent(id=7, fulfills='3.3', roll=9),
+        ]
+        projection = replay(1, events)
+
+        picks = [p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)]
+        assert len(picks) == 3
+        assert sum(1 for p in picks if p.level == 0) == 2
+        assert sum(1 for p in picks if p.level == 1) == 1
+
+    def test_graduation_adds_qualification_scheduled_effect(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Spacer Community', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Astrogation'),
+            PreCareerSkillChoiceEvent(id=5, fulfills='3.1', skill='Electronics'),
+            PreCareerEventEvent(id=6, fulfills='3.2', roll=5),
+            PreCareerGraduationEvent(id=7, fulfills='3.3', roll=9),
+        ]
+        projection = replay(1, events)
+
+        qual_effects = [e for e in projection.scheduled_effects if e.trigger == 'qualification']
+        assert len(qual_effects) == 1
+
+    def test_graduation_queues_career_choice_with_distinct_id(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Spacer Community', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Astrogation'),
+            PreCareerSkillChoiceEvent(id=5, fulfills='3.1', skill='Electronics'),
+            PreCareerEventEvent(id=6, fulfills='3.2', roll=5),
+            PreCareerGraduationEvent(id=7, fulfills='3.3', roll=9),
+        ]
+        projection = replay(1, events)
+
+        career_choices = [p for p in projection.pending_inputs if isinstance(p, PendingCareerChoice)]
+        assert len(career_choices) == 1
+        pick_ids = {p.id for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)}
+        assert career_choices[0].id not in pick_ids
+
+    def test_honours_graduation_grants_jack_of_all_trades(self):
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Spacer Community', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Astrogation'),
+            PreCareerSkillChoiceEvent(id=5, fulfills='3.1', skill='Electronics'),
+            PreCareerEventEvent(id=6, fulfills='3.2', roll=5),
+            PreCareerGraduationEvent(id=7, fulfills='3.3', roll=11),  # effective=12>=12, honours
+        ]
+        projection = replay(1, events)
+
+        assert _skill_level(projection, 'Jack-of-All-Trades') >= 1

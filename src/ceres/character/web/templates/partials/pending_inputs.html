@@ -113,12 +113,22 @@
           <div class="flex flex-wrap items-end gap-3">
             <div>
               <label class="block text-xs text-gray-500 mb-1">Pre-career</label>
-              <select name="precareer"
+              <select name="precareer" id="precareer-select"
+                      onchange="updatePrecareerDetails(this)"
                       class="bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500">
-                <option value="University">University (EDU 6+)</option>
-                <option value="Army Academy">Army Academy (END 7+)</option>
-                <option value="Marine Academy">Marine Academy (END 8+)</option>
-                <option value="Navy Academy">Navy Academy (INT 8+)</option>
+                {% for pc in precareers.values() %}
+                <option value="{{ pc.name }}"
+                        data-entry="{{ pc.entry.characteristic ~ ' ' ~ pc.entry.target ~ '+' if pc.entry else (pc.entry_requirement or 'Automatic') }}"
+                        data-curricula="{{ pc.curricula | join(',') }}">
+                  {{ pc.name }}{% if pc.entry %} ({{ pc.entry.characteristic }} {{ pc.entry.target }}+){% elif pc.entry_requirement %} ({{ pc.entry_requirement[:30] }}{% if pc.entry_requirement|length > 30 %}…{% endif %}){% else %} (automatic){% endif %}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div id="curriculum-panel" class="hidden">
+              <label class="block text-xs text-gray-500 mb-1">Curriculum</label>
+              <select name="curriculum" id="curriculum-select"
+                      class="bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500">
               </select>
             </div>
             <div>
@@ -132,6 +142,26 @@
             </button>
           </div>
         </form>
+        <script>
+        function updatePrecareerDetails(select) {
+          var opt = select.options[select.selectedIndex];
+          var curricula = (opt.dataset.curricula || '').split(',').filter(Boolean);
+          var panel = document.getElementById('curriculum-panel');
+          var sel = document.getElementById('curriculum-select');
+          if (curricula.length > 0) {
+            sel.innerHTML = curricula.map(function(c) {
+              return '<option value="' + c + '">' + c + '</option>';
+            }).join('');
+            panel.classList.remove('hidden');
+          } else {
+            panel.classList.add('hidden');
+          }
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+          var s = document.getElementById('precareer-select');
+          if (s) updatePrecareerDetails(s);
+        });
+        </script>
       </div>
       {% endif %}
       <div class="space-y-3 mb-4">

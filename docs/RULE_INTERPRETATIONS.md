@@ -510,6 +510,41 @@ This interpretation is consistent with the *Traveller Companion* broad-skill
 model and avoids hard-coding a particular speciality where the source says
 "Science" generically. See also RIS-009.
 
+### RIC-002 Colonial Upbringing Lasts Exactly 8 Years (Two Standard Terms)
+
+The *Traveller Companion* (2024) states that a Colonial Upbringing Traveller
+"is aged 22+2D3 years when entering their first career" and that graduation
+"Increase END by +1, and decrease EDU by −D3."
+
+The 22+2D3 formula produces a variable age of 24–28 and implies the Traveller
+spends 6–10 years beyond the standard 18 in the precareer. Ceres normalises
+this to exactly **two standard terms of 4 years each** (8 years total), giving
+a fixed starting age of **26**.
+
+The model mirrors the *Core Rulebook* Prisoner career mechanic: the first term
+is the Colonial Upbringing precareer itself (entry, event, graduation); the
+**second term is mandatory** — there is no career choice. The second term
+applies the EDU −1D3 effect from the graduation benefits block. END +1 is
+applied at graduation of the first term.
+
+**Rationale:**
+
+- The variable "22+2D3" is treated as flavour text describing the range a
+  real colonial upbringing might last; a fixed 8-year / 2-term model is
+  consistent with that range at its midpoint (22+2×2 = 26).
+- Making the second term mandatory and explicit is the cleanest way to apply
+  the EDU −1D3 roll as a discrete, trackable event in the event-sourced model.
+- It keeps character age deterministic during creation, which simplifies
+  ageing-roll scheduling.
+
+**Consequences:**
+
+- A Colonial Upbringing character always begins their first career at age 26.
+- The EDU −1D3 roll is resolved during the mandatory second term, not at first
+  graduation.
+- The DM-2 on career entry and DM-1 on commission/promotion that the rules
+  attach to Colonial Upbringing still apply throughout all subsequent careers.
+
 ---
 
 ## Robot Interpretations

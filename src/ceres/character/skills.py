@@ -1,4 +1,4 @@
-from typing import Annotated, Literal, NamedTuple, Self, get_args, get_origin
+from typing import Annotated, Literal, NamedTuple, Self, cast, get_args, get_origin
 
 from pydantic import Field
 
@@ -507,6 +507,14 @@ def skill_names_for_category(category: str) -> list[str] | None:
     return [cls.name() for cls in _skill_classes(group)]
 
 
+def _level_fields(skill_cls: type[Skill]) -> list[str]:
+    return [
+        name
+        for name, field in skill_cls.model_fields.items()
+        if name not in {'type', 'display_label'} and field.annotation is Level
+    ]
+
+
 def skill_class_by_name(name: str) -> type[Skill]:
     for cls in _skill_classes(AnySkill):
         if cls.name() == name:
@@ -524,3 +532,17 @@ def field_for_spec(cls: type[Skill], spec: str) -> str:
         if label.lower() == spec.lower():
             return field_name
     raise ValueError(f'Unknown specialisation {spec!r} for skill {cls.name()!r}')
+
+
+def skill_from_str(name: str, level: int = 0) -> AnySkill:
+    """Create a skill instance from a string name and level."""
+    from typing import Any
+
+    skill_cls = skill_class_by_name(name)
+    _cls: Any = skill_cls
+    if level == 0:
+        return cast(AnySkill, _cls())
+    if not _cls().specialities():
+        return cast(AnySkill, _cls(level=Level(value=level)))
+    fields = {f: Level(value=level) for f in _level_fields(skill_cls)}
+    return cast(AnySkill, _cls(**fields))

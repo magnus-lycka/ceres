@@ -41,7 +41,7 @@ from ceres.character.events import (
     TermEventEvent,
     UcpEvent,
 )
-from ceres.character.skills import AnySkill, Level, Skill, skill_class_by_name
+from ceres.character.skills import AnySkill, Level, Skill, _level_fields, field_for_spec, skill_class_by_name
 from ceres.shared import CeresModel
 
 _CHOOSE_COUNT_RE = re.compile(r'Choose (\d+)')
@@ -465,12 +465,7 @@ class CharacterSummary(BaseModel):
         return default
 
 
-def _level_fields(skill_cls: type[Skill]) -> list[str]:
-    return [
-        name
-        for name, field in skill_cls.model_fields.items()
-        if name not in {'type', 'display_label'} and field.annotation is Level
-    ]
+
 
 
 class CharacterProjection(BaseModel):
@@ -523,6 +518,36 @@ class CharacterProjection(BaseModel):
                         if current < level:
                             choices.append(cast(AnySkill, _cls(**{field: Level(value=level)})))
         return choices
+
+    def grant_skill(self, skill: AnySkill) -> None:
+        skill_cls = type(skill)
+        existing = next((s for s in self.summary.skills if type(s) is skill_cls), None)
+        if existing is None:
+            self.summary.skills.append(skill_cls())
+            existing = self.summary.skills[-1]
+        for field in _level_fields(skill_cls):
+            given = getattr(skill, field).value
+            if given > 0:
+                current = getattr(existing, field).value
+                getattr(existing, field).set(max(current, given))
+
+    def increment_skill(self, skill_name: str, spec: str | None = None) -> None:
+        from typing import cast as _cast
+
+        skill_cls = skill_class_by_name(skill_name)
+        existing = next((s for s in self.summary.skills if type(s) is skill_cls), None)
+        fields = _level_fields(skill_cls)
+        target_field = field_for_spec(skill_cls, spec) if spec is not None else (fields[0] if fields else None)
+        if existing is None:
+            new_skill = skill_cls()
+            if target_field:
+                getattr(new_skill, target_field).set(1)
+            self.summary.skills.append(_cast(AnySkill, new_skill))
+            return
+        if (spec is not None or len(fields) == 1) and target_field:
+            current = getattr(existing, target_field).value
+            if current < 4:
+                getattr(existing, target_field).set(current + 1)
 
     def check_skill_choice(
         self,
@@ -722,6 +747,22 @@ class CharacterProjection(BaseModel):
 
             case PendingParoleRoll():
                 return ParoleRollEvent(roll=_roll1d(rng), fulfills=pi.id)
+
+            case PendingPreCareerSkillChoice():
+                skill_name = rng.choice(pi.options) if pi.options else 'Admin'
+                from ceres.character.events import PreCareerSkillChoiceEvent
+
+                return PreCareerSkillChoiceEvent(skill=skill_name, fulfills=pi.id)
+
+            case PendingPreCareerEvent():
+                from ceres.character.events import PreCareerEventEvent
+
+                return PreCareerEventEvent(roll=_roll2d(rng), fulfills=pi.id)
+
+            case PendingPreCareerGraduation():
+                from ceres.character.events import PreCareerGraduationEvent
+
+                return PreCareerGraduationEvent(roll=_roll2d(rng), fulfills=pi.id)
 
             case _:
                 raise ValueError(f'No auto_event handler for {type(pi).__name__!r}')

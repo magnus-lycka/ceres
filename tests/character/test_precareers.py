@@ -22,7 +22,8 @@ def test_core_precareers_are_loaded():
         'Army Academy',
         'Colonial Upbringing',
         'Marine Academy',
-        'Merchant Academy',
+        'Merchant Academy (Business)',
+        'Merchant Academy (Shipboard)',
         'Navy Academy',
         'Psionic Community',
         'School of Hard Knocks',
@@ -81,9 +82,12 @@ def test_companion_precareers_are_loaded():
     assert _graduation('Colonial Upbringing').target == 8
     assert precareers['Colonial Upbringing'].skill_choices[-1].skill == 'Survival'
 
-    assert _entry('Merchant Academy').characteristic == Chars.INT
-    assert _entry('Merchant Academy').target == 9
-    assert precareers['Merchant Academy'].curricula == ['Business', 'Shipboard']
+    assert _entry('Merchant Academy (Business)').characteristic == Chars.INT
+    assert _entry('Merchant Academy (Business)').target == 9
+    assert precareers['Merchant Academy (Business)'].curriculum_table == 'broker'
+    assert _entry('Merchant Academy (Shipboard)').characteristic == Chars.INT
+    assert _entry('Merchant Academy (Shipboard)').target == 9
+    assert precareers['Merchant Academy (Shipboard)'].curriculum_table == 'merchant marine'
 
     assert precareers['Psionic Community'].entry_requirement == 'PSI 8+, DM+1 if INT 8+'
     assert precareers['Psionic Community'].graduation_requirement == 'PSI 6+, DM+1 if INT 8+'
