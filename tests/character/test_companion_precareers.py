@@ -1,4 +1,4 @@
-"""Tests for companion precareer entry and graduation (Mongoose Traveller Companion precareers)."""
+"""Tests for precareer entry and graduation (core University and Mongoose Traveller Companion precareers)."""
 
 from ceres.character.characteristics import Chars, ConnectionKind
 from ceres.character.events import (
@@ -17,7 +17,7 @@ from ceres.character.projection import (
     _level_fields,
 )
 from ceres.character.replay import replay
-from ceres.character.skills import skill_class_by_name
+from ceres.character.skills import PhysicalScience, skill_class_by_name
 
 
 def _base():
@@ -693,3 +693,80 @@ class TestSpacerCommunity:
         projection = replay(1, events)
 
         assert _skill_level(projection, 'Jack-of-All-Trades') >= 1
+
+
+class TestUniversity:
+    # _base() uses EDU=0 (no background skills). University requires EDU 6+; with EDU=0 (DM-3),
+    # a roll of 9 yields effective 6, which just passes. All tests use roll=9 for entry.
+
+    def test_entry_queues_level_zero_and_level_one_skill_picks(self):
+        events = [*_base(), PreCareerEntryEvent(id=3, precareer='University', roll=9)]
+        projection = replay(1, events)
+
+        picks = [p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)]
+        assert sum(1 for p in picks if p.level == 0) == 1
+        assert sum(1 for p in picks if p.level == 1) == 1
+
+    def test_level_one_options_contain_specialisation_labels_not_base_names(self):
+        events = [*_base(), PreCareerEntryEvent(id=3, precareer='University', roll=9)]
+        projection = replay(1, events)
+
+        level1_picks = [
+            p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice) and p.level == 1
+        ]
+        assert len(level1_picks) == 1
+        opts = level1_picks[0].options
+        # Specialised Science skills must appear as 'Skill (Spec)' not as 'Physical Science' etc.
+        assert 'Physical Science' not in opts
+        assert 'Physical Science (Chemistry)' in opts
+        assert 'Physical Science (Physics)' in opts
+        assert 'Physical Science (Jumpspace Physics)' in opts
+
+    def test_level_zero_options_contain_base_skill_names(self):
+        events = [*_base(), PreCareerEntryEvent(id=3, precareer='University', roll=9)]
+        projection = replay(1, events)
+
+        level0_picks = [
+            p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice) and p.level == 0
+        ]
+        assert len(level0_picks) == 1
+        opts = level0_picks[0].options
+        assert 'Physical Science' in opts
+        # Base names only, not expanded specs
+        assert 'Physical Science (Chemistry)' not in opts
+
+    def test_choosing_specialised_skill_at_level_one_grants_only_that_spec(self):
+        # Selecting 'Physical Science (Chemistry)' at level 1 must not grant all Physical Science specs.
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='University', roll=9),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Admin'),
+            PreCareerSkillChoiceEvent(id=5, fulfills='3.1', skill='Physical Science (Chemistry)'),
+        ]
+        projection = replay(1, events)
+
+        ps_skill = next((s for s in projection.summary.skills if type(s).name() == 'Physical Science'), None)
+        assert ps_skill is not None
+        assert isinstance(ps_skill, PhysicalScience)
+        assert ps_skill.chemistry.value == 1
+        assert ps_skill.physics.value == 0
+        assert ps_skill.jumpspace_physics.value == 0
+
+    def test_graduation_increments_chosen_specialisation_not_all(self):
+        # After graduation, Physical Science (Chemistry) 1 should become Chemistry 2, not all specs 2.
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='University', roll=9),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Admin'),
+            PreCareerSkillChoiceEvent(id=5, fulfills='3.1', skill='Physical Science (Chemistry)'),
+            PreCareerEventEvent(id=6, fulfills='3.2', roll=5),
+            PreCareerGraduationEvent(id=7, fulfills='3.3', roll=8),  # INT=7, DM+0, effective=8 >= 6
+        ]
+        projection = replay(1, events)
+
+        ps_skill = next((s for s in projection.summary.skills if type(s).name() == 'Physical Science'), None)
+        assert ps_skill is not None
+        assert isinstance(ps_skill, PhysicalScience)
+        assert ps_skill.chemistry.value == 2
+        assert ps_skill.physics.value == 0
+        assert ps_skill.jumpspace_physics.value == 0

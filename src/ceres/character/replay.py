@@ -118,6 +118,7 @@ from ceres.character.skills import (
     SpaceScience,
     _level_fields,
     _skill_classes,
+    parse_skill_spec_option,
     skill_class_by_name,
     skill_from_str,
     skill_names_for_category,
@@ -1688,7 +1689,11 @@ def _apply_precareer_skill_choice(
     fulfilled_pending: AnyPending | None,
 ) -> None:
     level = fulfilled_pending.level if isinstance(fulfilled_pending, PendingPreCareerSkillChoice) else 0
-    projection.grant_skill(skill_from_str(event.skill, level))
+    skill_name, spec = parse_skill_spec_option(event.skill)
+    if level == 0:
+        projection.grant_skill(skill_from_str(skill_name, 0))
+    else:
+        projection.increment_skill(skill_name, spec)
     projection.summary.precareer_skills.append(event.skill)
 
 

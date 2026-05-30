@@ -507,6 +507,23 @@ def skill_names_for_category(category: str) -> list[str] | None:
     return [cls.name() for cls in _skill_classes(group)]
 
 
+def skill_spec_option_names(skill_name: str) -> list[str]:
+    """Return one option label per specialisation for specialised skills, or [skill_name] for unspecialised."""
+    cls = skill_class_by_name(skill_name)
+    specs = cls.specialities()
+    if not specs:
+        return [skill_name]
+    return [f'{skill_name} ({spec})' for spec in specs]
+
+
+def parse_skill_spec_option(option: str) -> tuple[str, str | None]:
+    """Parse 'Skill (Spec)' into (skill_name, spec_name), or 'Skill' into (skill_name, None)."""
+    if option.endswith(')') and ' (' in option:
+        idx = option.rfind(' (')
+        return option[:idx], option[idx + 2 : -1]
+    return option, None
+
+
 def _level_fields(skill_cls: type[Skill]) -> list[str]:
     return [
         name

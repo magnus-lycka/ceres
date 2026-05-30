@@ -1,0 +1,577 @@
+"""Tests for Scout career events, mishaps, and assignment table corrections."""
+
+from ceres.character.characteristics import Chars, ConnectionKind
+from ceres.character.events import (
+    AdvancementDmChoiceEvent,
+    AdvancementEvent,
+    BackgroundSkillsEvent,
+    CareerEvent,
+    CharacteristicChoiceEvent,
+    CharacterStartedEvent,
+    ConnectionsRollEvent,
+    MishapEvent,
+    ReenlistEvent,
+    SkillChoiceEvent,
+    SkillRollEvent,
+    SkillTableEvent,
+    SurviveEvent,
+    TermEventEvent,
+    UcpEvent,
+)
+from ceres.character.projection import (
+    Ally,
+    Contact,
+    Enemy,
+    PendingAdvancement,
+    PendingCareerSkillChoice,
+    PendingCareerSkillRoll,
+    PendingCharacteristicChoice,
+    PendingConnectionsRoll,
+    PendingInjuryTable,
+    PendingMishap,
+    PendingSkillChoice,
+    PendingSkillTableChoice,
+    Rival,
+)
+from ceres.character.replay import replay
+from ceres.character.skills import (
+    Admin,
+    Athletics,
+    Carouse,
+    Diplomat,
+    Drive,
+    Electronics,
+    Level,
+    Medic,
+    Navigation,
+    Persuade,
+    Pilot,
+)
+
+_SCIENCES = sorted(['Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science'])
+
+
+def _full_setup(character_id: int = 1) -> list:
+    """Return events that get a character through setup: started → ucp → background skills."""
+    # STR=7 DEX=8 END=6 INT=9 EDU=10 SOC=5 → 4 background skills
+    return [
+        CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Boss'),
+        UcpEvent(id=2, fulfills='1.0', ucp='7869A5'),
+        BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Drive()]),
+    ]
+
+
+class TestScoutAmbush:
+    """Scout event 3: ambush — choose Pilot 8+ or Persuade 10+, conditional outcomes."""
+
+    def _setup_to_ambush(self) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=3),
+        ]
+
+    def test_creates_ambush_pending_with_skill_options(self):
+        projection = replay(1, self._setup_to_ambush())
+
+        pending = next(
+            (
+                p
+                for p in projection.pending_inputs
+                if isinstance(p, PendingCareerSkillRoll) and p.career == 'Scout' and p.roll == 3
+            ),
+            None,
+        )
+        assert pending is not None
+        assert set(pending.options) == {'Pilot', 'Persuade'}
+
+    def test_gain_enemy_applied_immediately_before_roll(self):
+        projection = replay(1, self._setup_to_ambush())
+
+        enemies = [c for c in projection.summary.connections if isinstance(c, Enemy)]
+        assert len(enemies) == 1
+
+    def test_success_pilot_grants_electronics(self):
+        # Pilot 8+, roll 9 → success
+        events = [
+            *self._setup_to_ambush(),
+            SkillRollEvent(id=7, fulfills='6.0', context='scout_event_3', skill=Pilot(), modified_roll=9),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.skill_level('Electronics', -1) >= 1
+
+    def test_success_persuade_grants_electronics(self):
+        # Persuade 10+, roll 11 → success
+        events = [
+            *self._setup_to_ambush(),
+            SkillRollEvent(id=7, fulfills='6.0', context='scout_event_3', skill=Persuade(), modified_roll=11),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.skill_level('Electronics', -1) >= 1
+
+    def test_failure_pilot_adds_problem(self):
+        # Pilot 8+, roll 6 → failure
+        events = [
+            *self._setup_to_ambush(),
+            SkillRollEvent(id=7, fulfills='6.0', context='scout_event_3', skill=Pilot(), modified_roll=6),
+        ]
+        projection = replay(1, events)
+
+        assert any('re-enlist' in p.lower() or 'destroyed' in p.lower() for p in projection.summary.problems)
+
+    def test_failure_persuade_adds_problem(self):
+        # Persuade 10+, roll 8 → failure
+        events = [
+            *self._setup_to_ambush(),
+            SkillRollEvent(id=7, fulfills='6.0', context='scout_event_3', skill=Persuade(), modified_roll=8),
+        ]
+        projection = replay(1, events)
+
+        assert any('re-enlist' in p.lower() or 'destroyed' in p.lower() for p in projection.summary.problems)
+
+    def test_skill_roll_creates_advancement_pending(self):
+        events = [
+            *self._setup_to_ambush(),
+            SkillRollEvent(id=7, fulfills='6.0', context='scout_event_3', skill=Pilot(), modified_roll=9),
+        ]
+        projection = replay(1, events)
+
+        assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+
+
+class TestScoutEvent8:
+    """Roll Electronics 8+ or Deception 8+. Success: Ally + DM+2. Failure: mishap, stay in career."""
+
+    def _setup(self) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=8),
+        ]
+
+    def test_creates_pending_with_electronics_and_deception_options(self):
+        projection = replay(1, self._setup())
+
+        pending = next(
+            p
+            for p in projection.pending_inputs
+            if isinstance(p, PendingCareerSkillRoll) and p.career == 'Scout' and p.roll == 8
+        )
+        assert set(pending.options) == {'Electronics', 'Deception'}
+
+    def test_success_gains_ally(self):
+        roll = SkillRollEvent(id=7, fulfills='6.0', context='scout_event_8', skill=Electronics(), modified_roll=9)
+        projection = replay(1, [*self._setup(), roll])
+
+        assert any(isinstance(c, Ally) for c in projection.summary.connections)
+
+    def test_success_creates_advancement_pending(self):
+        roll = SkillRollEvent(id=7, fulfills='6.0', context='scout_event_8', skill=Electronics(), modified_roll=9)
+        projection = replay(1, [*self._setup(), roll])
+
+        assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+
+    def test_failure_creates_mishap_pending(self):
+        roll = SkillRollEvent(id=7, fulfills='6.0', context='scout_event_8', skill=Electronics(), modified_roll=5)
+        events = [*self._setup(), roll]
+        projection = replay(1, events)
+
+        assert any(isinstance(p, PendingMishap) for p in projection.pending_inputs)
+
+    def test_failure_mishap_stay_keeps_career_active(self):
+        events = [
+            *self._setup(),
+            SkillRollEvent(id=7, fulfills='6.0', context='scout_event_8', skill=Electronics(), modified_roll=5),
+            MishapEvent(id=8, fulfills='7.0', roll=5, stay_in_career=True),
+        ]
+
+        projection = replay(1, events)
+
+        assert projection.summary.current_career == 'Scout'
+        assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+
+
+class TestScoutEvent9:
+    """Roll Medic 8+ or Engineer 8+. Success: Contact + DM+2. Failure: Enemy."""
+
+    def _setup(self) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=9),
+        ]
+
+    def test_creates_pending_with_medic_and_engineer_options(self):
+        projection = replay(1, self._setup())
+
+        pending = next(
+            p
+            for p in projection.pending_inputs
+            if isinstance(p, PendingCareerSkillRoll) and p.career == 'Scout' and p.roll == 9
+        )
+        assert set(pending.options) == {'Medic', 'Engineer'}
+
+    def test_success_gains_contact(self):
+        roll = SkillRollEvent(id=7, fulfills='6.0', context='scout_event_9', skill=Medic(), modified_roll=9)
+        projection = replay(1, [*self._setup(), roll])
+
+        assert any(isinstance(c, Contact) for c in projection.summary.connections)
+
+    def test_failure_gains_enemy(self):
+        roll = SkillRollEvent(id=7, fulfills='6.0', context='scout_event_9', skill=Medic(), modified_roll=5)
+        projection = replay(1, [*self._setup(), roll])
+
+        assert any(isinstance(c, Enemy) for c in projection.summary.connections)
+
+    def test_success_creates_advancement_pending(self):
+        roll = SkillRollEvent(id=7, fulfills='6.0', context='scout_event_9', skill=Medic(), modified_roll=9)
+        projection = replay(1, [*self._setup(), roll])
+
+        assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+
+    def test_failure_creates_advancement_pending(self):
+        roll = SkillRollEvent(id=7, fulfills='6.0', context='scout_event_9', skill=Medic(), modified_roll=5)
+        projection = replay(1, [*self._setup(), roll])
+
+        assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+
+
+class TestScoutEvent10:
+    """Roll Survival 8+ or Pilot 8+. Success: alien Contact + any skill +1. Failure: mishap, stay."""
+
+    def _setup(self) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=10),
+        ]
+
+    def test_creates_pending_with_survival_and_pilot_options(self):
+        projection = replay(1, self._setup())
+
+        pending = next(
+            p
+            for p in projection.pending_inputs
+            if isinstance(p, PendingCareerSkillRoll) and p.career == 'Scout' and p.roll == 10
+        )
+        assert set(pending.options) == {'Survival', 'Pilot'}
+
+    def test_success_gains_contact(self):
+        roll = SkillRollEvent(id=7, fulfills='6.0', context='scout_event_10', skill=Pilot(), modified_roll=9)
+        projection = replay(1, [*self._setup(), roll])
+
+        assert any(isinstance(c, Contact) for c in projection.summary.connections)
+
+    def test_success_creates_skill_choice_pending(self):
+        roll = SkillRollEvent(id=7, fulfills='6.0', context='scout_event_10', skill=Pilot(), modified_roll=9)
+        projection = replay(1, [*self._setup(), roll])
+
+        assert any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
+
+    def test_success_skill_choice_grants_skill_and_creates_advancement(self):
+        events = [
+            *self._setup(),
+            SkillRollEvent(id=7, fulfills='6.0', context='scout_event_10', skill=Pilot(), modified_roll=9),
+            SkillChoiceEvent(id=8, fulfills='7.0', skill=Navigation(level=Level(value=1))),
+        ]
+
+        projection = replay(1, events)
+
+        assert projection.summary.skill_level('Navigation', -1) >= 1
+        assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+
+    def test_failure_creates_mishap_pending(self):
+        roll = SkillRollEvent(id=7, fulfills='6.0', context='scout_event_10', skill=Pilot(), modified_roll=5)
+        projection = replay(1, [*self._setup(), roll])
+
+        assert any(isinstance(p, PendingMishap) for p in projection.pending_inputs)
+
+    def test_failure_mishap_stay_keeps_career_active(self):
+        events = [
+            *self._setup(),
+            SkillRollEvent(id=7, fulfills='6.0', context='scout_event_10', skill=Pilot(), modified_roll=5),
+            MishapEvent(id=8, fulfills='7.0', roll=5, stay_in_career=True),
+        ]
+
+        projection = replay(1, events)
+
+        assert projection.summary.current_career == 'Scout'
+        assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+
+
+class TestConnections:
+    """Mishap and event effects that produce connections on the character sheet."""
+
+    def _setup_through_failed_survive(self) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills='4.0', roll=3),  # fail
+        ]
+
+    def test_mishap_4_adds_rival_immediately(self):
+        # Mishap 4: gain Diplomat 1 + Rival
+        events = [*self._setup_through_failed_survive(), MishapEvent(id=6, fulfills='5.0', roll=4)]
+
+        projection = replay(1, events)
+
+        rivals = [c for c in projection.summary.connections if isinstance(c, Rival)]
+        assert len(rivals) == 1
+
+    def test_mishap_4_rival_source_is_mishap_text(self):
+        events = [*self._setup_through_failed_survive(), MishapEvent(id=6, fulfills='5.0', roll=4)]
+
+        projection = replay(1, events)
+
+        rival = next(c for c in projection.summary.connections if isinstance(c, Rival))
+        assert 'conflict' in rival.source.lower() or 'rival' in rival.source.lower()
+
+    def test_mishap_3_creates_pending_for_contacts_roll(self):
+        # Mishap 3: Gain 1D Contacts and D3 Enemies
+        events = [*self._setup_through_failed_survive(), MishapEvent(id=6, fulfills='5.0', roll=3)]
+
+        projection = replay(1, events)
+
+        assert sum(isinstance(p, PendingConnectionsRoll) for p in projection.pending_inputs) == 2
+
+    def test_mishap_3_connections_roll_contact_adds_connections(self):
+        events = [
+            *self._setup_through_failed_survive(),
+            MishapEvent(id=6, fulfills='5.0', roll=3),
+            ConnectionsRollEvent(id=7, fulfills='6.0', connection_type=ConnectionKind.CONTACT, count=3),
+            ConnectionsRollEvent(id=8, fulfills='6.1', connection_type=ConnectionKind.ENEMY, count=1),
+        ]
+
+        projection = replay(1, events)
+
+        contacts = [c for c in projection.summary.connections if isinstance(c, Contact)]
+        enemies = [c for c in projection.summary.connections if isinstance(c, Enemy)]
+        assert len(contacts) == 3
+        assert len(enemies) == 1
+
+    def test_event_3_scout_adds_enemy_unconditionally(self):
+        # Scout event 3: ambush, always gain an Enemy regardless of skill roll outcome
+        setup = [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=3),
+        ]
+
+        projection = replay(1, setup)
+
+        enemies = [c for c in projection.summary.connections if isinstance(c, Enemy)]
+        assert len(enemies) == 1
+
+
+class TestMishapWithChoice:
+    """Mishap #2 for Scout: 'Reduce your INT or SOC by 1' — player chooses."""
+
+    def _setup_through_failed_survive(self) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills='4.0', roll=3),  # fail
+        ]
+
+    def test_mishap_2_creates_characteristic_choice_pending(self):
+        events = [*self._setup_through_failed_survive(), MishapEvent(id=6, fulfills='5.0', roll=2)]
+
+        projection = replay(1, events)
+
+        choice_pending = next(
+            (p for p in projection.pending_inputs if isinstance(p, PendingCharacteristicChoice)), None
+        )
+        assert choice_pending is not None
+        assert set(choice_pending.options) == {'INT', 'SOC'}
+
+    def test_mishap_2_characteristic_choice_int_decreases_int(self):
+        events = [
+            *self._setup_through_failed_survive(),
+            MishapEvent(id=6, fulfills='5.0', roll=2),
+            CharacteristicChoiceEvent(id=7, fulfills='6.0', characteristic=Chars.INT),
+        ]
+
+        projection = replay(1, events)
+
+        # INT was 9 (from UCP '7869A5': STR=7, DEX=8, END=6, INT=9, EDU=10, SOC=5)
+        assert projection.summary.characteristics[Chars.INT] == 8
+
+    def test_mishap_2_characteristic_choice_soc_decreases_soc(self):
+        events = [
+            *self._setup_through_failed_survive(),
+            MishapEvent(id=6, fulfills='5.0', roll=2),
+            CharacteristicChoiceEvent(id=7, fulfills='6.0', characteristic=Chars.SOC),
+        ]
+
+        projection = replay(1, events)
+
+        # SOC was 5
+        assert projection.summary.characteristics[Chars.SOC] == 4
+        assert projection.summary.characteristics[Chars.INT] == 9  # unchanged
+
+
+class TestScoutEvent11:
+    """Scout event 11: gain Diplomat 1 OR DM+4 to next advancement roll."""
+
+    def _setup_to_event_11(self) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=11),
+        ]
+
+    def test_creates_scout_event_11_pending_with_two_options(self):
+        projection = replay(1, self._setup_to_event_11())
+
+        pending = next(
+            p
+            for p in projection.pending_inputs
+            if isinstance(p, PendingCareerSkillChoice) and p.career == 'Scout' and p.roll == 11
+        )
+        assert set(pending.options) == {'Diplomat', 'advancement_dm_4'}
+
+    def test_choose_diplomat_grants_diplomat_1(self):
+        diplomat_choice = SkillChoiceEvent(id=7, fulfills='6.0', skill=Diplomat(level=Level(value=1)))
+        events = [*self._setup_to_event_11(), diplomat_choice]
+        projection = replay(1, events)
+
+        assert projection.summary.skill_level('Diplomat', -1) >= 1
+
+    def test_choose_advancement_dm_adds_scheduled_effect(self):
+        events = [*self._setup_to_event_11(), AdvancementDmChoiceEvent(id=7, fulfills='6.0')]
+        projection = replay(1, events)
+
+        adv_dm = next((se for se in projection.scheduled_effects if se.trigger == 'advancement'), None)
+        assert adv_dm is not None
+        assert adv_dm.effect.get('amount') == 4
+
+    def test_diplomat_choice_creates_advancement_pending(self):
+        diplomat_choice = SkillChoiceEvent(id=7, fulfills='6.0', skill=Diplomat(level=Level(value=1)))
+        events = [*self._setup_to_event_11(), diplomat_choice]
+        projection = replay(1, events)
+
+        assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+
+    def test_advancement_dm_choice_creates_advancement_pending(self):
+        events = [*self._setup_to_event_11(), AdvancementDmChoiceEvent(id=7, fulfills='6.0')]
+        projection = replay(1, events)
+
+        assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+
+
+class TestNormalInjury:
+    """Scout mishap 6: Injured — roll on Injury table (Core p.47)."""
+
+    def _setup_through_failed_survive(self) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills='4.0', roll=3),  # fail
+        ]
+
+    def test_mishap_6_creates_injury_table_pending(self):
+        events = [*self._setup_through_failed_survive(), MishapEvent(id=6, fulfills='5.0', roll=6)]
+        projection = replay(1, events)
+
+        assert any(isinstance(p, PendingInjuryTable) for p in projection.pending_inputs)
+
+    def test_mishap_6_still_ends_career(self):
+        events = [*self._setup_through_failed_survive(), MishapEvent(id=6, fulfills='5.0', roll=6)]
+        projection = replay(1, events)
+
+        assert projection.summary.current_career is None
+
+
+class TestScoutMishap6InjuryTable:
+    """Scout mishap 6: Injured — roll on Injury table (Core p.47), not a fixed normal injury."""
+
+    def _setup_to_mishap(self) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills='4.0', roll=3),  # fail survive
+        ]
+
+    def test_mishap_6_creates_injury_table_pending(self):
+        events = [*self._setup_to_mishap(), MishapEvent(id=6, fulfills='5.0', roll=6)]
+        projection = replay(1, events)
+
+        assert any(isinstance(p, PendingInjuryTable) for p in projection.pending_inputs)
+
+    def test_mishap_6_does_not_create_characteristic_choice_directly(self):
+        events = [*self._setup_to_mishap(), MishapEvent(id=6, fulfills='5.0', roll=6)]
+        projection = replay(1, events)
+
+        assert not any(isinstance(p, PendingCharacteristicChoice) for p in projection.pending_inputs)
+
+
+class TestScoutAssignmentTableCorrections:
+    """Scout assignment skill table entries corrected vs Core p.48."""
+
+    def _setup_in_term_2(self, assignment: str) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment=assignment, qualification_roll=7),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=5),
+            AdvancementEvent(id=7, fulfills='6.0', roll=9),
+            ReenlistEvent(id=8, fulfills='7.0', reenlist=True),
+        ]
+
+    def test_courier_roll_2_offers_flyer(self):
+        # Courier roll 2 is Flyer (specialised) — player must choose a specialisation
+        events = [*self._setup_in_term_2('Courier'), SkillTableEvent(id=9, fulfills='8.0', table='courier', roll=2)]
+        projection = replay(1, events)
+
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
+        assert pending is not None
+        assert 'Flyer' in pending.options
+
+    def test_surveyor_roll_2_gives_persuade(self):
+        events = [*self._setup_in_term_2('Surveyor'), SkillTableEvent(id=9, fulfills='8.0', table='surveyor', roll=2)]
+        projection = replay(1, events)
+
+        assert projection.summary.skill_level('Persuade') is not None
+
+    def test_surveyor_roll_4_gives_navigation(self):
+        events = [*self._setup_in_term_2('Surveyor'), SkillTableEvent(id=9, fulfills='8.0', table='surveyor', roll=4)]
+        projection = replay(1, events)
+
+        assert projection.summary.skill_level('Navigation') is not None
+
+    def test_explorer_roll_2_offers_pilot(self):
+        # Explorer roll 2 is Pilot (specialised) — player must choose a specialisation
+        events = [*self._setup_in_term_2('Explorer'), SkillTableEvent(id=9, fulfills='8.0', table='explorer', roll=2)]
+        projection = replay(1, events)
+
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
+        assert pending is not None
+        assert 'Pilot' in pending.options
+
+    def test_explorer_roll_4_creates_science_choice_pending(self):
+        events = [*self._setup_in_term_2('Explorer'), SkillTableEvent(id=9, fulfills='8.0', table='explorer', roll=4)]
+        projection = replay(1, events)
+
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
+        assert pending is not None
+        assert set(pending.options) == set(_SCIENCES)
+
+    def test_advanced_edu_roll_5_creates_science_choice_pending(self):
+        # EDU=10 ≥ 8 → can access advanced_education table
+        events = [
+            *self._setup_in_term_2('Courier'),
+            SkillTableEvent(id=9, fulfills='8.0', table='advanced_education', roll=5),
+        ]
+        projection = replay(1, events)
+
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
+        assert pending is not None
+        assert set(pending.options) == set(_SCIENCES)
