@@ -32,6 +32,7 @@ from ceres.character.events import (
     LifeEventUnusualEvent,
     MishapEvent,
     MusterOutEvent,
+    ParoleRollEvent,
     ReenlistEvent,
     SkillChoiceEvent,
     SkillRollEvent,
@@ -266,6 +267,12 @@ class PendingPreCareerGraduation(PendingInputBase):
     kind: Literal['precareer_graduation'] = 'precareer_graduation'
 
 
+class PendingParoleRoll(PendingInputBase):
+    """Roll 1D to determine initial Parole Threshold when entering Prisoner career."""
+
+    kind: Literal['parole_roll'] = 'parole_roll'
+
+
 type AnyPending = Annotated[
     PendingUcp
     | PendingBackgroundSkills
@@ -304,7 +311,8 @@ type AnyPending = Annotated[
     | PendingCareerSkillRoll
     | PendingPreCareerSkillChoice
     | PendingPreCareerEvent
-    | PendingPreCareerGraduation,
+    | PendingPreCareerGraduation
+    | PendingParoleRoll,
     Field(discriminator='kind'),
 ]
 
@@ -441,6 +449,7 @@ class CharacterSummary(BaseModel):
     precareer: str | None = None  # pre-career currently in progress
     precareer_completed: str | None = None  # pre-career that was attended (whether graduated or not)
     precareer_skills: list[str] = Field(default_factory=list)  # skills chosen during university (for graduation boost)
+    parole_threshold: int | None = None  # Prisoner career: current Parole Threshold (3-12)
 
     @overload
     def skill_level(self, name: str, default: int) -> int: ...
@@ -471,6 +480,8 @@ class CharacterProjection(BaseModel):
     scheduled_effects: list[ScheduledEffect] = Field(default_factory=list)
     pending_reenlist: bool | None = None  # stores reenlist decision during aging chain
     muster_out_career: str | None = None  # career name used to look up benefit table
+    forced_next_career: str | None = None  # set by prison-sending events; consumed by next career choice
+    prisoner_freed: bool = False  # set by _apply_prisoner_advancement when parole granted
 
     def skill_choices(
         self,
@@ -560,7 +571,17 @@ class CharacterProjection(BaseModel):
             case PendingCareerChoice():
                 if self.summary.term_count >= ctx.max_terms:
                     return FinishCreationEvent(fulfills=pi.id)
-                career_data = ctx.careers.get(ctx.career)
+                # If options is restricted (e.g. forced career), respect it
+                available = pi.options if pi.options else sorted(ctx.careers.keys())
+                career_data = None
+                if ctx.career in available:
+                    career_data = ctx.careers.get(ctx.career)
+                if career_data is None:
+                    from ceres.character.careers.loader import load_careers as _load_careers
+
+                    all_careers = _load_careers()
+                    chosen_name = rng.choice(available) if available else rng.choice(sorted(ctx.careers.keys()))
+                    career_data = all_careers.get(chosen_name) or ctx.careers.get(chosen_name)
                 if career_data is None:
                     career_data = ctx.careers[rng.choice(sorted(ctx.careers.keys()))]
                 if ctx.assignment and any(a.name == ctx.assignment for a in career_data.assignments):
@@ -635,7 +656,9 @@ class CharacterProjection(BaseModel):
             case PendingAssignmentChangeChoice():
                 if self.summary.term_count < ctx.max_terms:
                     return AssignmentChangeChoiceEvent(choice='same', fulfills=pi.id)
-                return AssignmentChangeChoiceEvent(choice='muster_out', fulfills=pi.id)
+                if 'muster_out' in pi.options:
+                    return AssignmentChangeChoiceEvent(choice='muster_out', fulfills=pi.id)
+                return AssignmentChangeChoiceEvent(choice='same', fulfills=pi.id)
 
             case PendingMusterOut():
                 tables: list[Literal['cash', 'benefits']] = ['cash', 'benefits']
@@ -697,6 +720,9 @@ class CharacterProjection(BaseModel):
                     auto_skill = cast(AnySkill, skill_class_by_name(skill_str)())
                 return SkillRollEvent(context=pi.context, skill=auto_skill, modified_roll=_roll2d(rng), fulfills=pi.id)
 
+            case PendingParoleRoll():
+                return ParoleRollEvent(roll=_roll1d(rng), fulfills=pi.id)
+
             case _:
                 raise ValueError(f'No auto_event handler for {type(pi).__name__!r}')
 
@@ -742,6 +768,7 @@ __all__ = [
     'PendingMishap',
     'PendingMusterOut',
     'PendingNearlyKilled',
+    'PendingParoleRoll',
     'PendingRankBonusChoice',
     'PendingReenlist',
     'PendingSkillChoice',

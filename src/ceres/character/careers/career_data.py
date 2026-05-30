@@ -120,6 +120,11 @@ class BenefitDmEffect(BaseModel):
     amount: int
 
 
+class ParoleThresholdChangeEffect(BaseModel):
+    type: Literal['parole_threshold_change'] = 'parole_threshold_change'
+    amount: int  # positive = increase PT, negative = decrease PT
+
+
 class CareerDispatchEffect(BaseModel):
     """Career-specific effect; dispatched via EFFECT_HANDLERS registry in the career's .py module."""
 
@@ -142,6 +147,7 @@ type AnyEffect = (
     | LifeEventEffect
     | AdvancementDmEffect
     | BenefitDmEffect
+    | ParoleThresholdChangeEffect
     | CareerDispatchEffect
 )
 

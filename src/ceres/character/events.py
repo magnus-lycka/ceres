@@ -221,6 +221,13 @@ class PreCareerGraduationEvent(EventBase):
     roll: int  # 2D result for graduation check (before characteristic DM)
 
 
+class ParoleRollEvent(EventBase):
+    """Initial Parole Threshold roll when entering Prisoner career."""
+
+    kind: Literal['parole_roll'] = 'parole_roll'
+    roll: int  # 1D result (1-6); Parole Threshold = roll + 2
+
+
 type AnyEvent = Annotated[
     AgingCrisisEvent
     | AgingRollEvent
@@ -255,7 +262,8 @@ type AnyEvent = Annotated[
     | PreCareerEntryEvent
     | PreCareerSkillChoiceEvent
     | PreCareerEventEvent
-    | PreCareerGraduationEvent,
+    | PreCareerGraduationEvent
+    | ParoleRollEvent,
     Field(discriminator='kind'),
 ]
 
@@ -291,6 +299,7 @@ __all__ = [
     'LifeEventUnusualEvent',
     'MishapEvent',
     'MusterOutEvent',
+    'ParoleRollEvent',
     'ReenlistEvent',
     'SkillChoiceEvent',
     'SkillRollEvent',

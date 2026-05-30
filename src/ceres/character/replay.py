@@ -17,6 +17,7 @@ from ceres.character.careers.career_data import (
     GainSkillEffect,
     InjuryEffect,
     LifeEventEffect,
+    ParoleThresholdChangeEffect,
     RollMishapEffect,
     SkillChoiceEffect,
     SkillTableEntry,
@@ -54,6 +55,7 @@ from ceres.character.events import (
     LifeEventUnusualEvent,
     MishapEvent,
     MusterOutEvent,
+    ParoleRollEvent,
     PreCareerEntryEvent,
     PreCareerEventEvent,
     PreCareerGraduationEvent,
@@ -217,6 +219,8 @@ def _apply(projection: CharacterProjection, event: AnyEvent) -> None:
             _apply_precareer_event(projection, event)
         case PreCareerGraduationEvent():
             _apply_precareer_graduation(projection, event)
+        case ParoleRollEvent():
+            _apply_parole_roll(projection, event)
 
 
 def _fulfill(projection: CharacterProjection, event: AnyEvent) -> None:
@@ -304,14 +308,31 @@ def _apply_background_skills(projection: CharacterProjection, event: BackgroundS
 
 
 def _queue_career_choice(projection: CharacterProjection, event_id: int, instruction: str) -> None:
-    career_options = sorted(selectable_careers(projection).keys())
-    projection.pending_inputs.append(
-        PendingCareerChoice(
-            id=f'{event_id}.0',
-            instruction=instruction,
-            options=career_options,
+    _queue_career_choice_indexed(projection, event_id, 0, instruction)
+
+
+def _queue_career_choice_indexed(
+    projection: CharacterProjection, event_id: int, idx: int, instruction: str = 'Choose a career'
+) -> None:
+    if projection.forced_next_career:
+        career_name = projection.forced_next_career
+        projection.forced_next_career = None
+        projection.pending_inputs.append(
+            PendingCareerChoice(
+                id=f'{event_id}.{idx}',
+                instruction=f'Next career: {career_name} (mandatory)',
+                options=[career_name],
+            )
         )
-    )
+    else:
+        career_options = sorted(selectable_careers(projection).keys())
+        projection.pending_inputs.append(
+            PendingCareerChoice(
+                id=f'{event_id}.{idx}',
+                instruction=instruction,
+                options=career_options,
+            )
+        )
 
 
 # ── career ───────────────────────────────────────────────────────────────────
@@ -634,6 +655,12 @@ def _apply_connection_kind_choice(
     # advancement was pre-created by _apply_life_event
 
 
+def _apply_parole_roll(projection: CharacterProjection, event: ParoleRollEvent) -> None:
+    pt = event.roll + 2
+    projection.summary.parole_threshold = pt
+    projection.summary.narrative.append(f'Prisoner: Parole Threshold set to {pt} (rolled {event.roll}+2)')
+
+
 def _apply_career_choice(projection: CharacterProjection, event: CareerChoiceEvent) -> None:
     career_name = projection.summary.current_career
     if career_name is None:
@@ -661,7 +688,11 @@ def _apply_skill_roll(projection: CharacterProjection, event: SkillRollEvent) ->
     pending_count_before = len(projection.pending_inputs)
     if handler:
         handler(projection, event)
-    if len(projection.pending_inputs) == pending_count_before and projection.summary.current_career is not None:
+    if (
+        len(projection.pending_inputs) == pending_count_before
+        and projection.summary.current_career is not None
+        and not any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+    ):
         # Handler applied effects directly and career is still active; advancement is next
         projection.pending_inputs.append(
             _advancement_pending(career, projection.summary.current_assignment or '', event.id)
@@ -837,7 +868,7 @@ def _apply_life_event(projection: CharacterProjection, event: LifeEventEvent) ->
                 _advancement_pending(career, projection.summary.current_assignment or '', event.id)
             )
     elif roll == 11:
-        # Crime — lose one Benefit roll
+        # Crime — automatically lose one Benefit roll
         projection.scheduled_effects.append(
             ScheduledEffect(
                 trigger='muster_out_reduce', source_event_id=event.id, effect={'type': 'reduce', 'value': 1}
@@ -845,7 +876,7 @@ def _apply_life_event(projection: CharacterProjection, event: LifeEventEvent) ->
         )
         if in_career and career is not None:
             projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment or '', event.id)
+                _advancement_pending(career, projection.summary.current_assignment or '', event.id, 0)
             )
     elif roll == 12:
         # Unusual event — roll on unusual sub-table; advancement after that resolves
@@ -1093,6 +1124,9 @@ def _apply_muster_out_setup(
                 )
             )
             pending_idx += 1
+    else:
+        _queue_career_choice_indexed(projection, source_event_id, pending_idx)
+        pending_idx += 1
     return pending_idx
 
 
@@ -1123,7 +1157,7 @@ def _apply_muster_out_event(projection: CharacterProjection, event: MusterOutEve
     if not remaining:
         projection.muster_out_career = None
         if not projection.summary.dead:
-            _queue_career_choice(projection, event.id, 'Start a new career, or finish character creation')
+            _queue_career_choice_indexed(projection, event.id, 0, 'Start a new career, or finish character creation')
 
 
 def _apply_muster_out_benefit(projection: CharacterProjection, benefit: object, event_id: int = 0) -> None:
@@ -1166,6 +1200,10 @@ def _apply_characteristic_choice(
 
 def _apply_advancement(projection: CharacterProjection, event: AdvancementEvent) -> None:
     career = _current_career(projection)
+    if career.name == 'Prisoner':
+        _apply_prisoner_advancement(projection, event, career)
+        return
+
     assignment = career.assignment(projection.summary.current_assignment or '')
     if assignment is None:
         raise ReplayError(f'Unknown assignment {projection.summary.current_assignment!r}')
@@ -1215,6 +1253,65 @@ def _apply_advancement(projection: CharacterProjection, event: AdvancementEvent)
         return
 
     _queue_reenlist_or_aging(projection, event.id, 0)
+
+
+def _apply_prisoner_advancement(projection: CharacterProjection, event: AdvancementEvent, career: CareerData) -> None:
+    assignment = career.assignment(projection.summary.current_assignment or '')
+    if assignment is None:
+        raise ReplayError(f'Unknown assignment {projection.summary.current_assignment!r}')
+
+    char = assignment.advancement.characteristic
+    target = assignment.advancement.target
+    dm = characteristic_dm(projection.summary.characteristics.get(char, 0))
+    to_consume = [se for se in projection.scheduled_effects if se.trigger == 'advancement' and se.consume]
+    for se in to_consume:
+        dm += se.effect.get('amount', 0)
+        projection.scheduled_effects.remove(se)
+    effective = event.roll + dm
+
+    pt = projection.summary.parole_threshold or 0
+    freed = effective > pt
+
+    rank_bonus_pending = None
+    success = effective >= target
+    if success:
+        new_rank = (projection.summary.rank or 0) + 1
+        projection.summary.rank = new_rank
+        career.update_current_term_rank(projection)
+        rank_entry = career.current_ranks(projection).get(new_rank)
+        if rank_entry and rank_entry.bonus:
+            bonus = rank_entry.bonus
+            choices = bonus.resolve_choices()
+            if choices:
+                rank_bonus_pending = PendingRankBonusChoice(
+                    id=f'{event.id}.0',
+                    level=bonus.level,
+                    instruction=f'Rank {new_rank} bonus: choose skill at level {bonus.level}',
+                    options=choices,
+                )
+            elif bonus.skill:
+                _grant_skill(projection, _skill_from_str(bonus.skill, bonus.level))
+            elif bonus.characteristic:
+                char = bonus.characteristic
+                projection.summary.characteristics[char] = projection.summary.characteristics.get(char, 0) + bonus.level
+
+    if freed:
+        projection.prisoner_freed = True
+        projection.summary.narrative.append(f'Parole granted! (rolled {effective}, Parole Threshold was {pt})')
+
+    if rank_bonus_pending:
+        projection.pending_inputs.append(rank_bonus_pending)
+        return  # reenlist deferred until after rank bonus choice resolves
+
+    if success:
+        edu = projection.summary.characteristics.get(Chars.EDU, 0)
+        tables = career.available_tables(edu, projection.summary.current_assignment or '')
+        projection.pending_inputs.append(
+            PendingSkillTable(id=f'{event.id}.0', instruction='Choose a skill table and roll 1D', options=tables)
+        )
+        _queue_reenlist_or_aging(projection, event.id, 1)
+    else:
+        _queue_reenlist_or_aging(projection, event.id, 0)
 
 
 def _apply_commission(projection: CharacterProjection, event: CommissionEvent) -> None:
@@ -1270,6 +1367,26 @@ def _apply_commission(projection: CharacterProjection, event: CommissionEvent) -
 
 
 def _queue_reenlist_or_aging(projection: CharacterProjection, event_id: int, idx: int) -> None:
+    # Prisoner freed via parole — head straight to muster out
+    if projection.prisoner_freed:
+        projection.prisoner_freed = False
+        projection.summary.age += 4
+        career_name = projection.summary.current_career
+        careers = load_careers()
+        career = careers.get(career_name) if career_name else None
+        if projection.summary.age >= 34:
+            if career:
+                projection.muster_out_career = career.name
+            projection.pending_reenlist = False  # not a mishap; use lose_current_term=False in _complete_aging
+            _clear_current_career(projection)
+            projection.pending_inputs.append(
+                PendingAgingRoll(id=f'{event_id}.{idx}', instruction='Roll 2D on Aging table')
+            )
+        else:
+            if career:
+                _apply_muster_out_setup(projection, career, event_id, idx, lose_current_term=False)
+        return
+
     projection.summary.age += 4
     if projection.summary.age >= 34:
         projection.pending_inputs.append(PendingAgingRoll(id=f'{event_id}.{idx}', instruction='Roll 2D on Aging table'))
@@ -1278,11 +1395,15 @@ def _queue_reenlist_or_aging(projection: CharacterProjection, event_id: int, idx
         if career and career.allows_assignment_change and len(career.assignments) > 1:
             current = projection.summary.current_assignment or ''
             others = [a.name for a in career.assignments if a.name != current]
+            # Prisoner cannot muster out voluntarily; other careers always include muster_out
+            options = ['same', *others]
+            if career.name != 'Prisoner':
+                options.append('muster_out')
             projection.pending_inputs.append(
                 PendingAssignmentChangeChoice(
                     id=f'{event_id}.{idx}',
                     instruction='Reenlist same assignment, switch assignment, or muster out?',
-                    options=['same', *others, 'muster_out'],
+                    options=options,
                 )
             )
         else:
@@ -1375,7 +1496,7 @@ def _apply_skill_table(projection: CharacterProjection, event: SkillTableEvent) 
             except ValueError:
                 pass
     reenlist_queued = any(
-        isinstance(p, (PendingReenlist, PendingAssignmentChangeChoice, PendingAgingRoll))
+        isinstance(p, (PendingReenlist, PendingAssignmentChangeChoice, PendingAgingRoll, PendingMusterOut))
         for p in projection.pending_inputs
     )
     if choices:
@@ -1386,12 +1507,15 @@ def _apply_skill_table(projection: CharacterProjection, event: SkillTableEvent) 
             reenlist_queued=reenlist_queued,
         )
         if reenlist_queued:
-            # Insert before the aging/reenlist pending so the skill choice resolves first
+            # Insert before the aging/reenlist/muster-out pending so the skill choice resolves first
             idx = next(
                 (
                     i
                     for i, p in enumerate(projection.pending_inputs)
-                    if isinstance(p, (PendingReenlist, PendingAssignmentChangeChoice, PendingAgingRoll))
+                    if isinstance(
+                        p,
+                        (PendingReenlist, PendingAssignmentChangeChoice, PendingAgingRoll, PendingMusterOut),
+                    )
                 ),
                 len(projection.pending_inputs),
             )
@@ -1528,6 +1652,10 @@ def _apply_simple_effect(
                 trigger='muster_out', source_event_id=source_event_id, effect={'type': 'dm', 'amount': effect.amount}
             )
         )
+    elif isinstance(effect, ParoleThresholdChangeEffect):
+        if projection.summary.parole_threshold is not None:
+            new_pt = projection.summary.parole_threshold + effect.amount
+            projection.summary.parole_threshold = max(0, min(12, new_pt))
     # InjuryEffect, SkillChoiceEffect, etc. are handled before _apply_simple_effect is called
 
 

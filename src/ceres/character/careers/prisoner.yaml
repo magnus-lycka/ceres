@@ -76,24 +76,34 @@ muster_out:
 mishaps:
   1:
     text: Severely injured.
+    stay_in_career: true
     effects:
       - {type: injury, severity: severe}
   2:
     text: You are accused of assaulting a prison guard. Parole Threshold +2.
-    effects: []
+    stay_in_career: true
+    effects:
+      - {type: parole_threshold_change, amount: 2}
   3:
     text: A prison gang persecutes you.
-    effects: []
+    stay_in_career: true
+    defer_ejection: true
+    effects:
+      - {type: prisoner_mishap_3}
   4:
     text: A guard takes a dislike to you. Gain an Enemy and raise your Parole Threshold by +1.
+    stay_in_career: true
     effects:
       - {type: gain_enemy}
+      - {type: parole_threshold_change, amount: 1}
   5:
     text: Disgraced. Word of your criminal past reaches your homeworld. Lose 1 SOC.
+    stay_in_career: true
     effects:
       - {type: decrease_characteristic, characteristic: SOC, amount: 1}
   6:
     text: Injured. Roll on the Injury table.
+    stay_in_career: true
     effects:
       - {type: injury, severity: from_table}
 
@@ -104,32 +114,41 @@ events:
       - {type: roll_mishap, leave: false}
   3:
     text: You have the opportunity to escape the prison.
-    effects: []
+    effects:
+      - {type: prisoner_event_3}
   4:
     text: You are assigned to difficult or backbreaking labour.
-    effects: []
+    effects:
+      - {type: prisoner_event_4}
   5:
     text: You have the opportunity to join a gang.
-    effects: []
+    effects:
+      - {type: prisoner_event_5}
   6:
     text: Vocational Training.
-    effects: []
+    effects:
+      - {type: prisoner_event_6}
   7:
     text: Prison Event.
-    effects: []
+    effects:
+      - {type: prisoner_event_7}
   8:
     text: Parole hearing. Reduce your Parole Threshold by -1.
-    effects: []
+    effects:
+      - {type: parole_threshold_change, amount: -1}
   9:
     text: You have the opportunity to hire a new lawyer.
-    effects: []
+    effects:
+      - {type: prisoner_event_9}
   10:
     text: Special Duty.
     effects:
       - {type: skill_choice, options: [Admin, Advocate, Electronics, Steward], level: 1}
   11:
     text: The warden takes an interest in your case. Reduce your Parole Threshold by -2.
-    effects: []
+    effects:
+      - {type: parole_threshold_change, amount: -2}
   12:
     text: Heroism.
-    effects: []
+    effects:
+      - {type: prisoner_event_12}

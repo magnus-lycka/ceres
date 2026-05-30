@@ -1,35 +1,35 @@
 """Integration tests for the character web UI routes."""
 
 from fastapi.testclient import TestClient
+import pytest
 
 from ceres.character.app import build_app
 from ceres.character.store import SqliteCharacterBackend
 
 
-def _client() -> TestClient:
-    backend = SqliteCharacterBackend(':memory:')
-    app = build_app(backend)
-    return TestClient(app, follow_redirects=True)
+@pytest.fixture
+def client():
+    with SqliteCharacterBackend(':memory:') as backend:
+        yield TestClient(build_app(backend), follow_redirects=True)
 
 
-def _client_with_backend() -> tuple[TestClient, SqliteCharacterBackend]:
-    backend = SqliteCharacterBackend(':memory:')
-    app = build_app(backend)
-    return TestClient(app, follow_redirects=True), backend
+@pytest.fixture
+def client_with_backend():
+    with SqliteCharacterBackend(':memory:') as backend:
+        yield TestClient(build_app(backend), follow_redirects=True), backend
 
 
 # ── character list ────────────────────────────────────────────────────────────
 
 
-def test_character_list_empty():
-    client = _client()
+def test_character_list_empty(client):
     r = client.get('/ui/')
     assert r.status_code == 200
     assert 'Characters' in r.text
 
 
-def test_character_list_shows_characters():
-    client, backend = _client_with_backend()
+def test_character_list_shows_characters(client_with_backend):
+    client, backend = client_with_backend
     backend.start(sophont='Humaniti', player='NPC', name='Aria')
     r = client.get('/ui/')
     assert r.status_code == 200
@@ -39,23 +39,20 @@ def test_character_list_shows_characters():
 # ── character creation ────────────────────────────────────────────────────────
 
 
-def test_new_character_form():
-    client = _client()
+def test_new_character_form(client):
     r = client.get('/ui/characters/new')
     assert r.status_code == 200
     assert 'New Character' in r.text
     assert 'Humaniti' in r.text
 
 
-def test_create_character_redirects_to_wizard():
-    client = _client()
+def test_create_character_redirects_to_wizard(client):
     r = client.post('/ui/characters/new', data={'name': 'Bob', 'sophont': 'Humaniti', 'player': 'NPC'})
     assert r.status_code == 200
     assert 'wizard' in str(r.url) or 'Bob' in r.text
 
 
-def test_create_character_blank_name_returns_form():
-    client = _client()
+def test_create_character_blank_name_returns_form(client):
     r = client.post('/ui/characters/new', data={'name': '', 'sophont': 'Humaniti', 'player': 'NPC'})
     assert r.status_code == 422
     assert 'required' in r.text.lower()
@@ -64,23 +61,22 @@ def test_create_character_blank_name_returns_form():
 # ── character deletion ───────────────────────────────────────────────────────
 
 
-def test_delete_character_redirects_to_list():
-    client, backend = _client_with_backend()
+def test_delete_character_redirects_to_list(client_with_backend):
+    client, backend = client_with_backend
     row = backend.start(sophont='Humaniti', player='NPC', name='Doomed')
     r = client.post(f'/ui/characters/{row["id"]}/delete')
     assert r.status_code == 200
     assert 'Doomed' not in r.text
 
 
-def test_delete_character_removes_from_list():
-    client, backend = _client_with_backend()
+def test_delete_character_removes_from_list(client_with_backend):
+    client, backend = client_with_backend
     row = backend.start(sophont='Humaniti', player='NPC', name='Ephemeral')
     client.post(f'/ui/characters/{row["id"]}/delete')
     assert backend.get_projection(row['id']) is None
 
 
-def test_delete_nonexistent_character_redirects():
-    client = _client()
+def test_delete_nonexistent_character_redirects(client):
     r = client.post('/ui/characters/9999/delete')
     assert r.status_code == 200
 
@@ -88,16 +84,15 @@ def test_delete_nonexistent_character_redirects():
 # ── wizard ────────────────────────────────────────────────────────────────────
 
 
-def test_wizard_shows_ucp_pending():
-    client, backend = _client_with_backend()
+def test_wizard_shows_ucp_pending(client_with_backend):
+    client, backend = client_with_backend
     row = backend.start(sophont='Humaniti', player='NPC', name='Clio')
     r = client.get(f'/ui/characters/{row["id"]}/wizard')
     assert r.status_code == 200
     assert 'ucp' in r.text
 
 
-def test_wizard_404_for_missing_character():
-    client = _client()
+def test_wizard_404_for_missing_character(client):
     r = client.get('/ui/characters/9999/wizard')
     assert r.status_code == 404
 
@@ -105,8 +100,8 @@ def test_wizard_404_for_missing_character():
 # ── event submission (HTMX) ───────────────────────────────────────────────────
 
 
-def test_submit_ucp_event():
-    client, backend = _client_with_backend()
+def test_submit_ucp_event(client_with_backend):
+    client, backend = client_with_backend
     row = backend.start(sophont='Humaniti', player='NPC', name='Drax')
     cid = row['id']
     projection = backend.get_projection(cid)
@@ -132,8 +127,8 @@ def test_submit_ucp_event():
     assert 'background_skills' in r.text or 'background' in r.text.lower()
 
 
-def test_submit_bad_kind_shows_error():
-    client, backend = _client_with_backend()
+def test_submit_bad_kind_shows_error(client_with_backend):
+    client, backend = client_with_backend
     row = backend.start(sophont='Humaniti', player='NPC', name='Eryn')
     r = client.post(
         f'/ui/characters/{row["id"]}/events',
@@ -146,16 +141,15 @@ def test_submit_bad_kind_shows_error():
 # ── character sheet ───────────────────────────────────────────────────────────
 
 
-def test_character_sheet_shows_name():
-    client, backend = _client_with_backend()
+def test_character_sheet_shows_name(client_with_backend):
+    client, backend = client_with_backend
     row = backend.start(sophont='Humaniti', player='NPC', name='Fyra')
     r = client.get(f'/ui/characters/{row["id"]}')
     assert r.status_code == 200
     assert 'Fyra' in r.text
 
 
-def test_character_sheet_404():
-    client = _client()
+def test_character_sheet_404(client):
     r = client.get('/ui/characters/9999')
     assert r.status_code == 404
 
@@ -163,15 +157,13 @@ def test_character_sheet_404():
 # ── career assignments endpoint ───────────────────────────────────────────────
 
 
-def test_career_assignments_returns_html():
-    client = _client()
+def test_career_assignments_returns_html(client):
     r = client.get('/ui/careers/Scout/assignments')
     assert r.status_code == 200
     assert 'Courier' in r.text or 'option' in r.text.lower()
 
 
-def test_career_assignments_unknown_career():
-    client = _client()
+def test_career_assignments_unknown_career(client):
     r = client.get('/ui/careers/NonexistentCareer/assignments')
     assert r.status_code == 200
     assert r.text == ''
@@ -180,15 +172,13 @@ def test_career_assignments_unknown_career():
 # ── gallery ───────────────────────────────────────────────────────────────────
 
 
-def test_gallery_form_renders():
-    client = _client()
+def test_gallery_form_renders(client):
     r = client.get('/ui/gallery/new')
     assert r.status_code == 200
     assert 'Scout' in r.text or 'career' in r.text.lower()
 
 
-def test_gallery_generate_returns_specs():
-    client = _client()
+def test_gallery_generate_returns_specs(client):
     r = client.post(
         '/ui/gallery/generate',
         data={
@@ -373,9 +363,9 @@ def test_diff_empty_when_nothing_changed():
     assert _diff_summaries(s, s) == []
 
 
-def test_post_event_response_includes_char_summary_oob():
+def test_post_event_response_includes_char_summary_oob(client_with_backend):
     """HTMX response should include an OOB char-summary div after event submission."""
-    client, backend = _client_with_backend()
+    client, backend = client_with_backend
     row = backend.start(sophont='Humaniti', player='NPC', name='Oryn')
     cid = row['id']
     projection = backend.get_projection(cid)

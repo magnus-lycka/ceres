@@ -28,6 +28,7 @@ from ceres.character.careers.career_data import (
     MishapEntry,
     MusterOutData,
     MusterOutRow,
+    ParoleThresholdChangeEffect,
     RankBonus,
     RankEntry,
     RollMishapEffect,
@@ -90,6 +91,8 @@ def _parse_effect(raw: dict) -> AnyEffect:
             return AdvancementDmEffect(**raw)
         case 'benefit_dm':
             return BenefitDmEffect(**raw)
+        case 'parole_threshold_change':
+            return ParoleThresholdChangeEffect(**raw)
         case type_str:
             return CareerDispatchEffect(type=type_str)
 

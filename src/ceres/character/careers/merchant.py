@@ -96,6 +96,41 @@ def _handle_merchant_event_5(
     return pending_idx
 
 
+# ── event 8: legal trouble ────────────────────────────────────────────────────
+
+
+def _handle_merchant_event_8(
+    projection: CharacterProjection,
+    effect: CareerDispatchEffect,
+    event_id: int,
+    pending_idx: int,
+) -> int:
+    projection.pending_inputs.append(
+        PendingSkillChoice(
+            id=f'{event_id}.{pending_idx}',
+            instruction='Legal trouble: gain one of Advocate, Admin, Diplomat or Investigate at level 1',
+            options=['Advocate', 'Admin', 'Diplomat', 'Investigate'],
+        )
+    )
+    pending_idx += 1
+    projection.pending_inputs.append(
+        PendingCareerSkillRoll(
+            id=f'{event_id}.{pending_idx}',
+            career='Merchant',
+            roll=8,
+            context='merchant_event_8_roll',
+            instruction='Legal trouble: roll 2D — on a natural 2 you must take the Prisoner career next term',
+            options=[],
+        )
+    )
+    return pending_idx + 1
+
+
+def _resolve_merchant_event_8_roll(projection: CharacterProjection, event: SkillRollEvent) -> None:
+    if event.modified_roll == 2:
+        projection.forced_next_career = 'Prisoner'
+
+
 # ── event 9: advanced training ────────────────────────────────────────────────
 
 
@@ -137,11 +172,13 @@ CAREER_DATA_CLASS = CareerData
 EFFECT_HANDLERS: dict[str, object] = {
     'merchant_event_3': _handle_merchant_event_3,
     'merchant_event_5': _handle_merchant_event_5,
+    'merchant_event_8': _handle_merchant_event_8,
     'merchant_event_9': _handle_merchant_event_9,
 }
 
 SKILL_ROLL_HANDLERS: dict[str, object] = {
     'merchant_event_3_skill': _resolve_merchant_event_3_skill,
+    'merchant_event_8_roll': _resolve_merchant_event_8_roll,
     'merchant_event_9': _resolve_merchant_event_9,
 }
 

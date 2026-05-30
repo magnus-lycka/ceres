@@ -1,18 +1,33 @@
 from ceres.character.careers.loader import load_careers
+from ceres.character.characteristics import Chars
 from ceres.character.events import (
     AdvancementEvent,
     BackgroundSkillsEvent,
+    CareerChoiceEvent,
     CareerEvent,
     CharacterStartedEvent,
+    MishapEvent,
     ReenlistEvent,
     SkillChoiceEvent,
+    SkillRollEvent,
     SurviveEvent,
     TermEventEvent,
     UcpEvent,
 )
-from ceres.character.projection import PendingInitialTrainingChoice, PendingSurvive
+from ceres.character.projection import (
+    Contact,
+    PendingAdvancement,
+    PendingCareerEvent,
+    PendingCareerMishap,
+    PendingCareerSkillRoll,
+    PendingInitialTrainingChoice,
+    PendingMusterOut,
+    PendingSkillChoice,
+    PendingSurvive,
+    Rival,
+)
 from ceres.character.replay import replay
-from ceres.character.skills import Admin, Athletics, Carouse, Drive, Mechanic
+from ceres.character.skills import Admin, Athletics, Carouse, Drive, Mechanic, Streetwise
 
 
 def _setup() -> list:
@@ -83,3 +98,244 @@ def test_citizen_subsequent_career_basic_training_choice_unlocks_survival():
 
     assert projection.summary.skill_level('Mechanic') == 0
     assert any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
+
+
+# ── Corporate assignment helpers ──────────────────────────────────────────────
+# Corporate table (Advocate, Admin, Broker, Electronics+spec, Diplomat, Leadership)
+# has no broad-category skills, so all training is auto-applied: no PendingInitialTrainingChoice.
+# Qualification: EDU 5+, EDU=10, DM+1 → need roll 4.
+# Corporate survival: SOC 6+, SOC=5, DM−1 → need roll 7 (7+DM-1=6 ≥ 6 ✓).
+
+
+def _enter_citizen(assignment: str = 'Corporate', qual_roll: int = 4) -> list:
+    return [
+        *_setup(),
+        CareerEvent(id=4, fulfills='3.0', career='Citizen', assignment=assignment, qualification_roll=qual_roll),
+    ]
+
+
+def _through_survive(assignment: str = 'Corporate', survive_roll: int = 7) -> list:
+    return [*_enter_citizen(assignment), SurviveEvent(id=5, fulfills='4.0', roll=survive_roll)]
+
+
+def _through_term_event(event_roll: int, assignment: str = 'Corporate') -> list:
+    return [*_through_survive(assignment), TermEventEvent(id=6, fulfills='5.0', roll=event_roll)]
+
+
+# ── mishap 4: investigation by authorities ────────────────────────────────────
+
+
+class TestCitizenMishap4:
+    def _setup_to_mishap(self) -> list:
+        return [
+            *_enter_citizen(),
+            SurviveEvent(id=5, fulfills='4.0', roll=6),  # SOC 6+, DM−1, 6 → 5 < 6 — fail
+        ]
+
+    def test_mishap_4_creates_choice_pending(self):
+        events = [*self._setup_to_mishap(), MishapEvent(id=6, fulfills='5.0', roll=4)]
+        projection = replay(1, events)
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerMishap)), None)
+        assert pending is not None
+        assert set(pending.options) == {'cooperate', 'resist'}
+
+    def test_cooperate_adds_contact(self):
+        events = [
+            *self._setup_to_mishap(),
+            MishapEvent(id=6, fulfills='5.0', roll=4),
+            CareerChoiceEvent(id=7, fulfills='6.0', context='citizen_mishap_4', choice='cooperate'),
+        ]
+        projection = replay(1, events)
+        contacts = [c for c in projection.summary.connections if isinstance(c, Contact)]
+        assert len(contacts) == 1
+
+    def test_cooperate_ends_career_and_keeps_benefit_roll(self):
+        events = [
+            *self._setup_to_mishap(),
+            MishapEvent(id=6, fulfills='5.0', roll=4),
+            CareerChoiceEvent(id=7, fulfills='6.0', context='citizen_mishap_4', choice='cooperate'),
+        ]
+        projection = replay(1, events)
+        assert projection.summary.current_career is None
+        assert any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
+
+    def test_resist_adds_rival(self):
+        events = [
+            *self._setup_to_mishap(),
+            MishapEvent(id=6, fulfills='5.0', roll=4),
+            CareerChoiceEvent(id=7, fulfills='6.0', context='citizen_mishap_4', choice='resist'),
+        ]
+        projection = replay(1, events)
+        rivals = [c for c in projection.summary.connections if isinstance(c, Rival)]
+        assert len(rivals) == 1
+
+    def test_resist_ends_career_and_loses_benefit_roll(self):
+        events = [
+            *self._setup_to_mishap(),
+            MishapEvent(id=6, fulfills='5.0', roll=4),
+            CareerChoiceEvent(id=7, fulfills='6.0', context='citizen_mishap_4', choice='resist'),
+        ]
+        projection = replay(1, events)
+        assert projection.summary.current_career is None
+        assert not any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
+
+
+# ── mishap 5: revolution ──────────────────────────────────────────────────────
+
+
+class TestCitizenMishap5:
+    def _setup_to_mishap(self) -> list:
+        return [
+            *_enter_citizen(),
+            SurviveEvent(id=5, fulfills='4.0', roll=6),
+        ]
+
+    def test_mishap_5_creates_streetwise_roll_pending(self):
+        events = [*self._setup_to_mishap(), MishapEvent(id=6, fulfills='5.0', roll=5)]
+        projection = replay(1, events)
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerSkillRoll)), None)
+        assert pending is not None
+        assert pending.options == ['Streetwise']
+
+    def test_success_creates_skill_choice_from_existing_skills(self):
+        events = [
+            *self._setup_to_mishap(),
+            MishapEvent(id=6, fulfills='5.0', roll=5),
+            SkillRollEvent(id=7, fulfills='6.0', context='citizen_mishap_5', skill=Streetwise(), modified_roll=9),
+        ]
+        projection = replay(1, events)
+        assert any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
+
+    def test_failure_no_skill_choice(self):
+        events = [
+            *self._setup_to_mishap(),
+            MishapEvent(id=6, fulfills='5.0', roll=5),
+            SkillRollEvent(id=7, fulfills='6.0', context='citizen_mishap_5', skill=Streetwise(), modified_roll=7),
+        ]
+        projection = replay(1, events)
+        assert not any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
+
+    def test_both_outcomes_end_career(self):
+        for roll in (9, 7):
+            events = [
+                *self._setup_to_mishap(),
+                MishapEvent(id=6, fulfills='5.0', roll=5),
+                SkillRollEvent(
+                    id=7, fulfills='6.0', context='citizen_mishap_5', skill=Streetwise(), modified_roll=roll
+                ),
+            ]
+            projection = replay(1, events)
+            assert projection.summary.current_career is None, f'roll={roll}'
+
+
+# ── event 6: advanced training ────────────────────────────────────────────────
+
+
+class TestCitizenEvent6:
+    def _setup_to_event(self) -> list:
+        return _through_term_event(event_roll=6)
+
+    def test_creates_edu_skill_roll_pending(self):
+        projection = replay(1, self._setup_to_event())
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerSkillRoll)), None)
+        assert pending is not None
+        assert pending.options == [Chars.EDU]
+
+    def test_success_creates_skill_choice_from_existing_skills(self):
+        events = [
+            *self._setup_to_event(),
+            SkillRollEvent(id=7, fulfills='6.0', context='citizen_event_6', skill=Chars.EDU, modified_roll=11),
+        ]
+        projection = replay(1, events)
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
+        assert pending is not None
+        assert 'Admin' in pending.options
+
+    def test_failure_no_skill_choice(self):
+        events = [
+            *self._setup_to_event(),
+            SkillRollEvent(id=7, fulfills='6.0', context='citizen_event_6', skill=Chars.EDU, modified_roll=9),
+        ]
+        projection = replay(1, events)
+        assert not any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
+
+    def test_failure_queues_advancement(self):
+        events = [
+            *self._setup_to_event(),
+            SkillRollEvent(id=7, fulfills='6.0', context='citizen_event_6', skill=Chars.EDU, modified_roll=9),
+        ]
+        projection = replay(1, events)
+        assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+
+
+# ── event 8: illegal information ─────────────────────────────────────────────
+
+
+class TestCitizenEvent8:
+    def _setup_to_event(self) -> list:
+        return _through_term_event(event_roll=8)
+
+    def test_creates_event_pending_with_options(self):
+        projection = replay(1, self._setup_to_event())
+        pending = next(
+            (p for p in projection.pending_inputs if isinstance(p, PendingCareerEvent) and p.roll == 8), None
+        )
+        assert pending is not None
+        assert set(pending.options) == {'use_it', 'refuse'}
+
+    def test_refuse_schedules_advancement_dm_2(self):
+        events = [
+            *self._setup_to_event(),
+            CareerChoiceEvent(id=7, fulfills='6.0', context='citizen_event_8', choice='refuse'),
+        ]
+        projection = replay(1, events)
+        dm_effects = [se for se in projection.scheduled_effects if se.trigger == 'advancement']
+        assert any(se.effect.get('amount') == 2 for se in dm_effects)
+
+    def test_refuse_queues_advancement(self):
+        events = [
+            *self._setup_to_event(),
+            CareerChoiceEvent(id=7, fulfills='6.0', context='citizen_event_8', choice='refuse'),
+        ]
+        projection = replay(1, events)
+        assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+
+    def test_use_it_creates_streetwise_roll(self):
+        events = [
+            *self._setup_to_event(),
+            CareerChoiceEvent(id=7, fulfills='6.0', context='citizen_event_8', choice='use_it'),
+        ]
+        projection = replay(1, events)
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerSkillRoll)), None)
+        assert pending is not None
+        assert pending.options == ['Streetwise']
+
+    def test_use_it_success_adds_extra_benefit_roll(self):
+        events = [
+            *self._setup_to_event(),
+            CareerChoiceEvent(id=7, fulfills='6.0', context='citizen_event_8', choice='use_it'),
+            SkillRollEvent(id=8, fulfills='7.0', context='citizen_event_8_skill', skill=Streetwise(), modified_roll=9),
+        ]
+        projection = replay(1, events)
+        add_effects = [se for se in projection.scheduled_effects if se.trigger == 'muster_out_add']
+        assert len(add_effects) == 1
+
+    def test_use_it_success_continues_career(self):
+        events = [
+            *self._setup_to_event(),
+            CareerChoiceEvent(id=7, fulfills='6.0', context='citizen_event_8', choice='use_it'),
+            SkillRollEvent(id=8, fulfills='7.0', context='citizen_event_8_skill', skill=Streetwise(), modified_roll=9),
+        ]
+        projection = replay(1, events)
+        assert projection.summary.current_career == 'Citizen'
+
+    def test_use_it_failure_adds_rival_and_ends_career(self):
+        events = [
+            *self._setup_to_event(),
+            CareerChoiceEvent(id=7, fulfills='6.0', context='citizen_event_8', choice='use_it'),
+            SkillRollEvent(id=8, fulfills='7.0', context='citizen_event_8_skill', skill=Streetwise(), modified_roll=7),
+        ]
+        projection = replay(1, events)
+        rivals = [c for c in projection.summary.connections if isinstance(c, Rival)]
+        assert len(rivals) == 1
+        assert projection.summary.current_career is None

@@ -100,12 +100,9 @@ def _resolve_agent_mishap_3(projection: CharacterProjection, event: SkillRollEve
         return
 
     succeed = event.modified_roll >= 8
-    _apply_muster_out_setup(projection, career, event.id, 0, lose_current_term=not succeed)
-
     if event.modified_roll <= 2:
-        projection.summary.problems.append(
-            'Natural roll of 2 on Advocate check: must take the Prisoner career in the next term (apply manually).'
-        )
+        projection.forced_next_career = 'Prisoner'
+    _apply_muster_out_setup(projection, career, event.id, 0, lose_current_term=not succeed)
 
 
 # ── mishap 5: someone close gets hurt ────────────────────────────────────────

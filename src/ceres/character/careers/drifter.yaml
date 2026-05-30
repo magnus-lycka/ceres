@@ -116,9 +116,10 @@ mishaps:
     effects:
       - {type: decrease_characteristic, characteristic: END, amount: 1}
   5:
-    text: Betrayed by a friend.
+    text: "Betrayed by a friend. Gain a Rival. Roll 2D — on a natural 2, you must take the Prisoner career next term."
+    defer_ejection: true
     effects:
-      - {type: gain_rival}
+      - {type: drifter_mishap_5}
   6:
     text: You do not know what happened to you. There is a gap in your memory.
     effects: []

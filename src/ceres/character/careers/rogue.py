@@ -23,9 +23,7 @@ def _handle_rogue_mishap_2(
     event_id: int,
     pending_idx: int,
 ) -> int:
-    projection.summary.problems.append(
-        'Rogue mishap 2: arrested — you must take the Prisoner career in your next term. Apply manually.'
-    )
+    projection.forced_next_career = 'Prisoner'
     return pending_idx
 
 
@@ -89,10 +87,7 @@ def _resolve_rogue_event_3_skill(projection: CharacterProjection, event: SkillRo
         pass  # cleared — _apply_skill_roll auto-queues advancement
     else:
         career = _current_career(projection)
-        projection.summary.problems.append(
-            'Rogue event 3: charges failed — you are ejected and must take the Prisoner career next term. '
-            'Apply manually.'
-        )
+        projection.forced_next_career = 'Prisoner'
         _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
 
 
