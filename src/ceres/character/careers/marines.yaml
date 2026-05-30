@@ -1,4 +1,7 @@
 name: Marines
+description: >-
+  Members of the armed fighting forces carried aboard starships, marines deal with piracy and boarding actions in
+  space, defend the starports and bases belonging to the navy and supplement ground forces such as the army.
 source: Core
 allows_assignment_change: true
 draft: true
@@ -12,12 +15,15 @@ qualification:
 
 assignments:
   - name: Support
+    description: You are a quartermaster, engineer or battlefield medic in the marines.
     survival: {characteristic: END, target: 5}
     advancement: {characteristic: EDU, target: 7}
   - name: Star Marine
+    description: You are trained to fight boarding actions and capture enemy vessels.
     survival: {characteristic: END, target: 6}
     advancement: {characteristic: EDU, target: 6}
   - name: Ground Assault
+    description: You are kicked out of a spacecraft in high orbit and told to 'capture that planet'.
     survival: {characteristic: END, target: 7}
     advancement: {characteristic: EDU, target: 5}
 

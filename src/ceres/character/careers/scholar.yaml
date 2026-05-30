@@ -1,4 +1,7 @@
 name: Scholar
+description: >-
+  Individuals trained in technological or research sciences who conduct scientific investigations into materials,
+  situations and phenomena, or who practise medicine.
 source: Core
 allows_assignment_change: true
 
@@ -8,12 +11,16 @@ qualification:
 
 assignments:
   - name: Field Researcher
+    description: You are an explorer or field researcher, equally at home in the laboratory or wilderness.
     survival: {characteristic: END, target: 6}
     advancement: {characteristic: INT, target: 6}
   - name: Scientist
+    description: >-
+      You are a researcher in some corporation or research institution or a mad scientist in an orbiting laboratory.
     survival: {characteristic: EDU, target: 4}
     advancement: {characteristic: INT, target: 8}
   - name: Physician
+    description: You are a doctor, healer or medical researcher.
     survival: {characteristic: EDU, target: 4}
     advancement: {characteristic: EDU, target: 8}
 

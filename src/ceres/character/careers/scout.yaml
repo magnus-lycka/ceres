@@ -1,4 +1,7 @@
 name: Scout
+description: >-
+  Members of the exploratory service. Scouts explore new areas, map and survey known or newly discovered areas and
+  maintain communication ships which carry information and messages between the worlds of the galaxy.
 source: Core
 allows_assignment_change: true
 draft: true
@@ -9,12 +12,15 @@ qualification:
 
 assignments:
   - name: Courier
+    description: You are responsible for shuttling messages and high value packages around the galaxy.
     survival: {characteristic: END, target: 5}
     advancement: {characteristic: EDU, target: 9}
   - name: Surveyor
+    description: You visit border worlds and assess their worth.
     survival: {characteristic: END, target: 6}
     advancement: {characteristic: INT, target: 8}
   - name: Explorer
+    description: You go wherever the map is blank, exploring unknown worlds and uncharted space.
     survival: {characteristic: END, target: 7}
     advancement: {characteristic: EDU, target: 7}
 

@@ -1,4 +1,7 @@
 name: Army
+description: >-
+  Members of the planetary armed fighting forces. Soldiers deal with planetary surface actions, battles and
+  campaigns. Such individuals may also be mercenaries for hire.
 source: Core
 allows_assignment_change: true
 draft: true
@@ -12,12 +15,15 @@ qualification:
 
 assignments:
   - name: Support
+    description: You are an engineer, cook or in some other role behind the front lines.
     survival: {characteristic: END, target: 5}
     advancement: {characteristic: EDU, target: 7}
   - name: Infantry
+    description: You are one of the Poor Bloody Infantry on the ground.
     survival: {characteristic: STR, target: 6}
     advancement: {characteristic: EDU, target: 6}
   - name: Cavalry
+    description: You are one of the crew of a gunship or tank.
     survival: {characteristic: DEX, target: 7}
     advancement: {characteristic: INT, target: 5}
 

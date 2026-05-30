@@ -1,4 +1,7 @@
 name: Merchant
+description: >-
+  Members of a commercial enterprise. Merchants may crew the ships of the huge trading corporations or they may
+  work for independent free traders who carry chance cargoes and passengers between worlds.
 source: Core
 allows_assignment_change: false
 draft:
@@ -10,12 +13,15 @@ qualification:
 
 assignments:
   - name: Merchant Marine
+    description: You work on one of the massive cargo haulers run by the Imperium or a megacorporation.
     survival: {characteristic: EDU, target: 5}
     advancement: {characteristic: INT, target: 7}
   - name: Free Trader
+    description: You are part of the crew of a tramp trader.
     survival: {characteristic: DEX, target: 6}
     advancement: {characteristic: INT, target: 6}
   - name: Broker
+    description: You work in a planetside brokerage or starport.
     survival: {characteristic: EDU, target: 5}
     advancement: {characteristic: INT, target: 7}
 

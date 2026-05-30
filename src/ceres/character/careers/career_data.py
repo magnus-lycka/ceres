@@ -166,6 +166,7 @@ class MishapEntry(BaseModel):
 
 class AssignmentData(BaseModel):
     name: str
+    description: str | None = None
     survival: CharCheck
     advancement: CharCheck
 
@@ -187,6 +188,7 @@ class BasicTrainingPlan(BaseModel):
 
 class CareerData(BaseModel):
     name: str
+    description: str | None = None
     source: str
     qualification: CharCheck
     assignments: list[AssignmentData]

@@ -1,4 +1,7 @@
 name: Prisoner
+description: >-
+  Every society has its bad apples and even in the far future punishments usually take place within faceless
+  institutions where criminals can be conveniently forgotten.
 source: Core
 selectable: false
 allows_assignment_change: true
@@ -9,12 +12,15 @@ qualification:
 
 assignments:
   - name: Inmate
+    description: You just try to get through your time in prison without getting into trouble.
     survival: {characteristic: END, target: 7}
     advancement: {characteristic: STR, target: 7}
   - name: Thug
+    description: You are part of a gang in prison, terrorising the other inmates.
     survival: {characteristic: STR, target: 8}
     advancement: {characteristic: END, target: 6}
   - name: Fixer
+    description: You can arrange anything – for the right price.
     survival: {characteristic: INT, target: 9}
     advancement: {characteristic: END, target: 5}
 

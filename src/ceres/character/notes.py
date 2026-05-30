@@ -14,6 +14,43 @@ _DEFAULT_MODEL = 'llama3.2:3b'
 _DEFAULT_HOST = 'http://localhost:11434'
 
 
+def _career_context_lines(summary: CharacterSummary) -> str:
+    """Build career/assignment description lines for all distinct (career, assignment) pairs in history."""
+    from ceres.character.careers.loader import load_careers
+
+    careers_data = load_careers()
+    seen: set[tuple[str, str | None]] = set()
+    pairs: list[tuple[str, str | None]] = []
+    for term in summary.career_terms:
+        key = (term.career, term.assignment)
+        if key not in seen:
+            seen.add(key)
+            pairs.append(key)
+    current = summary.current_career or summary.last_career
+    current_assignment = summary.current_assignment or summary.last_assignment
+    if current:
+        key = (current, current_assignment)
+        if key not in seen:
+            pairs.append(key)
+
+    if not pairs:
+        return ''
+
+    lines: list[str] = []
+    for career_name, assignment_name in pairs:
+        career_data = careers_data.get(career_name)
+        if career_data is None:
+            continue
+        if career_data.description:
+            lines.append(f'{career_name}: {career_data.description}')
+        if assignment_name:
+            asgn = career_data.assignment(assignment_name)
+            if asgn and asgn.description:
+                lines.append(f'  {assignment_name}: {asgn.description}')
+
+    return '\n'.join(lines)
+
+
 def build_prompt(summary: CharacterSummary) -> str:
     from ceres.character.characteristics import UCP_STATS
 
@@ -59,6 +96,8 @@ def build_prompt(summary: CharacterSummary) -> str:
     narrative_block = '\n'.join(f'- {e}' for e in narrative_events) or '- (no notable events)'
     problems_block = '\n'.join(f'- {p}' for p in summary.problems)
     mishap_section = f'\nMishaps:\n{problems_block}' if problems_block else ''
+    career_context = _career_context_lines(summary)
+    career_context_section = f'\nCareer context:\n{career_context}' if career_context else ''
     n_sentences = summary.term_count + 2
     return (
         f'You are writing flavour notes for a Mongoose Traveller 2nd Edition NPC stat block.\n'
@@ -72,7 +111,8 @@ def build_prompt(summary: CharacterSummary) -> str:
         f'Age: {summary.age}\n'
         f'Characteristics: {char_lines}\n\n'
         f'Career history:\n{narrative_block}'
-        f'{mishap_section}\n\n'
+        f'{mishap_section}'
+        f'{career_context_section}\n\n'
         f'Write exactly {n_sentences} sentences of flavour notes. '
         f'One paragraph, no line breaks inside it. Stop after {n_sentences} sentences.\n\n'
         f'Tone: plain, dry, understated. No hyperbole or emotional inflation. '

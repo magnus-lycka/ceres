@@ -172,6 +172,7 @@ def _load_career_file(path: Path) -> CareerData:
     assignments = [
         AssignmentData(
             name=a['name'],
+            description=a.get('description'),
             survival=CharCheck(**a['survival']),
             advancement=CharCheck(**a['advancement']),
         )
@@ -198,6 +199,7 @@ def _load_career_file(path: Path) -> CareerData:
 
     return career_class(
         name=data['name'],
+        description=data.get('description'),
         source=data['source'],
         qualification=CharCheck(**data['qualification']),
         assignments=assignments,

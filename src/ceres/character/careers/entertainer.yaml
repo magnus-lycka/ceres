@@ -1,4 +1,5 @@
 name: Entertainer
+description: Individuals who are involved with the media, whether as reporters, artists or celebrities.
 source: Core
 allows_assignment_change: false
 
@@ -8,12 +9,15 @@ qualification:
 
 assignments:
   - name: Artist
+    description: You are a writer, holographer or other creative.
     survival: {characteristic: SOC, target: 6}
     advancement: {characteristic: INT, target: 6}
   - name: Journalist
+    description: You report on local or galactic events for a news feed, the TAS or other organisation.
     survival: {characteristic: EDU, target: 7}
     advancement: {characteristic: INT, target: 5}
   - name: Performer
+    description: You are an actor, dancer, acrobat, professional athlete or other public performer.
     survival: {characteristic: INT, target: 5}
     advancement: {characteristic: DEX, target: 7}
 

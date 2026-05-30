@@ -1,4 +1,6 @@
 name: Drifter
+description: >-
+  Wanderers, hitchhikers and travellers, drifters are those who roam the stars without obvious purpose or direction.
 source: Core
 allows_assignment_change: true
 
@@ -8,12 +10,15 @@ qualification:
 
 assignments:
   - name: Barbarian
+    description: You live on a primitive world without the benefits of technology.
     survival: {characteristic: END, target: 7}
     advancement: {characteristic: STR, target: 7}
   - name: Wanderer
+    description: You are a space bum, living hand-to-mouth in slums and spaceports across the galaxy.
     survival: {characteristic: END, target: 7}
     advancement: {characteristic: INT, target: 7}
   - name: Scavenger
+    description: You work as a belter (asteroid miner) or on a salvage crew.
     survival: {characteristic: DEX, target: 7}
     advancement: {characteristic: END, target: 7}
 

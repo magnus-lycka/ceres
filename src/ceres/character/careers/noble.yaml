@@ -1,4 +1,6 @@
 name: Noble
+description: >-
+  Individuals of the upper class who perform little consistent function but often have large amounts of ready money.
 source: Core
 allows_assignment_change: true
 
@@ -8,12 +10,15 @@ qualification:
 
 assignments:
   - name: Administrator
+    description: You serve in the planetary government or even ruled over a fiefdom or other domain.
     survival: {characteristic: INT, target: 4}
     advancement: {characteristic: EDU, target: 6}
   - name: Diplomat
+    description: You are a diplomat or other state official.
     survival: {characteristic: INT, target: 5}
     advancement: {characteristic: SOC, target: 7}
   - name: Dilettante
+    description: You are known for being known and have absolutely no useful function in society.
     survival: {characteristic: SOC, target: 5}
     advancement: {characteristic: INT, target: 7}
 

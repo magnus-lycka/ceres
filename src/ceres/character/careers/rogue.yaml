@@ -1,4 +1,5 @@
 name: Rogue
+description: Criminal elements familiar with the rougher or more illegal methods of attaining goals.
 source: Core
 allows_assignment_change: true
 
@@ -8,12 +9,15 @@ qualification:
 
 assignments:
   - name: Thief
+    description: You steal from the rich and give to… well, yourself, actually.
     survival: {characteristic: INT, target: 6}
     advancement: {characteristic: DEX, target: 6}
   - name: Enforcer
+    description: You are a leg breaker, thug or assassin for a criminal group.
     survival: {characteristic: END, target: 6}
     advancement: {characteristic: STR, target: 6}
   - name: Pirate
+    description: You are a space-going corsair.
     survival: {characteristic: DEX, target: 6}
     advancement: {characteristic: INT, target: 6}
 

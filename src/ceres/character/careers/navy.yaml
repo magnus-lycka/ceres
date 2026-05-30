@@ -1,4 +1,7 @@
 name: Navy
+description: >-
+  Members of the interstellar navy that patrols space between the stars. The navy has the responsibility for the
+  protection of society from foreign powers and lawless elements in the interstellar trade channels.
 source: Core
 allows_assignment_change: true
 draft: true
@@ -12,12 +15,15 @@ qualification:
 
 assignments:
   - name: Line/Crew
+    description: You serve as a general crewman or officer on a ship of the line.
     survival: {characteristic: INT, target: 5}
     advancement: {characteristic: EDU, target: 7}
   - name: Engineer/Gunner
+    description: You serve as a specialist technician on a starship.
     survival: {characteristic: INT, target: 6}
     advancement: {characteristic: EDU, target: 6}
   - name: Flight
+    description: You are a pilot of a shuttle, fighter or other light craft.
     survival: {characteristic: DEX, target: 7}
     advancement: {characteristic: EDU, target: 5}
 

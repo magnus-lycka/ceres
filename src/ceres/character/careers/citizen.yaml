@@ -1,4 +1,6 @@
 name: Citizen
+description: >-
+  Individuals serving in a corporation, bureaucracy or industry, or who are making a new life on an untamed planet.
 source: Core
 allows_assignment_change: false
 
@@ -8,12 +10,15 @@ qualification:
 
 assignments:
   - name: Corporate
+    description: You are an executive or manager in a large corporation.
     survival: {characteristic: SOC, target: 6}
     advancement: {characteristic: INT, target: 6}
   - name: Worker
+    description: You are a blue collar worker on an industrial world.
     survival: {characteristic: END, target: 4}
     advancement: {characteristic: EDU, target: 8}
   - name: Colonist
+    description: You are building a new life on a recently settled world that still needs taming.
     survival: {characteristic: INT, target: 7}
     advancement: {characteristic: END, target: 5}
 
