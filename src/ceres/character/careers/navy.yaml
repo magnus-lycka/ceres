@@ -101,21 +101,53 @@ muster_out:
 
 mishaps:
   1: {text: Severely injured in action., effects: [{type: injury, severity: severe}]}
-  2: {text: Placed in the frozen watch and revived improperly. Reduce STR, DEX or END. You are not ejected., stay_in_career: true, effects: [{type: decrease_characteristic_choice, options: [STR, DEX, END], amount: 1}]}
-  3: {text: During a battle, defeat or victory depends on your actions., defer_ejection: true, effects: [{type: navy_mishap_3}]}
-  4: {text: Blamed for an accident that causes the death of several crew members., defer_ejection: true, effects: [{type: navy_mishap_4}]}
+  2:
+    text: Placed in the frozen watch and revived improperly. Reduce STR, DEX or END. You are not ejected.
+    stay_in_career: true
+    effects:
+      - {type: decrease_characteristic_choice, options: [STR, DEX, END], amount: 1}
+  3:
+    text: During a battle, defeat or victory depends on your actions.
+    defer_ejection: true
+    effects:
+      - {type: navy_mishap_3}
+  4:
+    text: Blamed for an accident that causes the death of several crew members.
+    defer_ejection: true
+    effects:
+      - {type: navy_mishap_4}
   5: {text: You quarrel with an officer or fellow crewman. Gain a Rival., effects: [{type: gain_rival}]}
   6: {text: Injured. Roll on the Injury table., effects: [{type: injury, severity: from_table}]}
 
 events:
-  2: {text: "Disaster! Roll on the Mishap table but you are not ejected from this career.", effects: [{type: roll_mishap, leave: false}]}
-  3: {text: You join a gambling circle on board., effects: [{type: skill_choice, options: [Gambler, Deception], level: 1}]}
+  2:
+    text: Disaster! Roll on the Mishap table but you are not ejected from this career.
+    effects:
+      - {type: roll_mishap, leave: false}
+  3:
+    text: You join a gambling circle on board.
+    effects:
+      - {type: skill_choice, options: [Gambler, Deception], level: 1}
   4: {text: Given a special assignment or duty on board ship., effects: [{type: benefit_dm, amount: 1}]}
   5: {text: Advanced training in a specialist field., effects: [{type: navy_event_5}]}
-  6: {text: Your vessel participates in a notable military engagement., effects: [{type: skill_choice, options: [Electronics, Engineer, Gunner, Pilot], level: 1}]}
+  6:
+    text: Your vessel participates in a notable military engagement.
+    effects:
+      - {type: skill_choice, options: [Electronics, Engineer, Gunner, Pilot], level: 1}
   7: {text: Life Event., effects: [{type: life_event}]}
-  8: {text: Your vessel participates in a diplomatic mission., effects: [{type: skill_choice, options: [Recon, Diplomat, Steward], level: 1}, {type: gain_contact}]}
-  9: {text: You foil an attempted crime on board. Gain an Enemy and DM+2 to next advancement., effects: [{type: gain_enemy}, {type: advancement_dm, amount: 2}]}
+  8:
+    text: Your vessel participates in a diplomatic mission.
+    effects:
+      - {type: skill_choice, options: [Recon, Diplomat, Steward], level: 1}
+      - {type: gain_contact}
+  9:
+    text: You foil an attempted crime on board. Gain an Enemy and DM+2 to next advancement.
+    effects:
+      - {type: gain_enemy}
+      - {type: advancement_dm, amount: 2}
   10: {text: Opportunity to abuse your position for profit., effects: [{type: navy_event_10}]}
-  11: {text: Your commanding officer takes an interest in your career., effects: [{type: skill_choice, options: [Tactics, advancement_dm_4], level: 1}]}
+  11:
+    text: Your commanding officer takes an interest in your career.
+    effects:
+      - {type: skill_choice, options: [Tactics, advancement_dm_4], level: 1}
   12: {text: You display heroism in battle, saving the whole ship., effects: [{type: auto_advance}]}

@@ -1,11 +1,13 @@
 from ceres.character.careers.career_data import CareerData, CareerDispatchEffect
 from ceres.character.events import SkillRollEvent
 from ceres.character.projection import (
+    Ally,
     CharacterProjection,
     Contact,
     Enemy,
     PendingCareerEvent,
     PendingCareerSkillRoll,
+    Rival,
     ScheduledEffect,
 )
 
@@ -25,6 +27,50 @@ def _handle_rogue_mishap_2(
 ) -> int:
     projection.forced_next_career = 'Prisoner'
     return pending_idx
+
+
+# ── mishap 3: betrayed by a friend ───────────────────────────────────────────
+
+
+def _handle_rogue_mishap_3(
+    projection: CharacterProjection,
+    effect: CareerDispatchEffect,
+    event_id: int,
+    pending_idx: int,
+) -> int:
+    friends = [c for c in projection.summary.connections if isinstance(c, (Contact, Ally))]
+    if friends:
+        betrayer = friends[-1]
+        projection.summary.connections.remove(betrayer)
+        projection.summary.connections.append(Rival(source=f'Betrayed you (was {betrayer.kind}, Rogue mishap 3)'))
+    else:
+        projection.summary.connections.append(Rival(source='Betrayal by unknown (Rogue mishap 3)'))
+
+    projection.pending_inputs.append(
+        PendingCareerSkillRoll(
+            id=f'{event_id}.{pending_idx}',
+            career='Rogue',
+            roll=3,
+            context='rogue_mishap_3_prisoner_check',
+            instruction='Roll 2D: on a result of exactly 2, you must take the Prisoner career next term',
+            options=[str(i) for i in range(2, 13)],
+        )
+    )
+    return pending_idx + 1
+
+
+def _resolve_rogue_mishap_3_prisoner_check(projection: CharacterProjection, event: SkillRollEvent) -> None:
+    from ceres.character.careers.loader import load_careers
+    from ceres.character.replay import _apply_muster_out_setup
+
+    if event.modified_roll == 2:
+        projection.forced_next_career = 'Prisoner'
+
+    career_name = projection.summary.current_career
+    career = load_careers().get(career_name or '')
+    if career is None:
+        return
+    _apply_muster_out_setup(projection, career, event.id, 0, lose_current_term=True)
 
 
 # ── event 3: arrested and charged ────────────────────────────────────────────
@@ -176,12 +222,14 @@ CAREER_DATA_CLASS = RogueCareerData
 
 EFFECT_HANDLERS: dict[str, object] = {
     'rogue_mishap_2': _handle_rogue_mishap_2,
+    'rogue_mishap_3': _handle_rogue_mishap_3,
     'rogue_event_3': _handle_rogue_event_3,
     'rogue_event_6': _handle_rogue_event_6,
     'rogue_event_9': _handle_rogue_event_9,
 }
 
 SKILL_ROLL_HANDLERS: dict[str, object] = {
+    'rogue_mishap_3_prisoner_check': _resolve_rogue_mishap_3_prisoner_check,
     'rogue_event_3_skill': _resolve_rogue_event_3_skill,
     'rogue_event_9': _resolve_rogue_event_9,
 }

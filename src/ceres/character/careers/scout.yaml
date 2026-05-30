@@ -91,12 +91,16 @@ mishaps:
     effects:
       - {type: decrease_characteristic_choice, options: [INT, SOC], amount: 1}
   3:
-    text: Your ship is damaged and you have to hitch-hike your way back across the stars. Gain 1D Contacts and D3 Enemies.
+    text: >-
+      Your ship is damaged and you have to hitch-hike your way back across the stars. Gain 1D Contacts and D3
+      Enemies.
     effects:
       - {type: gain_connections_rolled, connection_type: contact, dice: 1d6}
       - {type: gain_connections_rolled, connection_type: enemy, dice: d3}
   4:
-    text: You inadvertently cause a conflict between the Imperium and a minor world or species. Gain a Rival and Diplomat 1.
+    text: >-
+      You inadvertently cause a conflict between the Imperium and a minor world or species. Gain a Rival and
+      Diplomat 1.
     effects:
       - {type: gain_skill, skill: Diplomat, level: 1}
       - {type: gain_rival}

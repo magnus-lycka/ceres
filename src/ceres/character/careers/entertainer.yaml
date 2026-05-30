@@ -109,20 +109,47 @@ muster_out:
 mishaps:
   1: {text: Severely injured., effects: [{type: injury, severity: severe}]}
   2: {text: You expose or are involved in a scandal of some sort., effects: []}
-  3: {text: Public opinion turns on you. Reduce SOC by 1., effects: [{type: decrease_characteristic, characteristic: SOC, amount: 1}]}
+  3:
+    text: Public opinion turns on you. Reduce SOC by 1.
+    effects:
+      - {type: decrease_characteristic, characteristic: SOC, amount: 1}
   4: {text: You are betrayed by a peer. Gain a Rival or Enemy., effects: [{type: gain_rival}]}
-  5: {text: A project goes wrong, stranding you far from home., effects: [{type: skill_choice, options: [Survival, Pilot, Persuade, Streetwise], level: 1}]}
+  5:
+    text: A project goes wrong, stranding you far from home.
+    effects:
+      - {type: skill_choice, options: [Survival, Pilot, Persuade, Streetwise], level: 1}
   6: {text: You are forced out because of censorship or controversy., effects: [{type: advancement_dm, amount: 2}]}
 
 events:
-  2: {text: "Disaster! Roll on the Mishap table but you are not ejected from this career.", effects: [{type: roll_mishap, leave: false}]}
-  3: {text: You are invited to take part in a controversial event or exhibition., effects: [{type: entertainer_event_3}]}
-  4: {text: You are part of your homeworld's celebrity circles., effects: [{type: skill_choice, options: [Carouse, Persuade, Steward], level: 1}, {type: gain_contact}]}
+  2:
+    text: Disaster! Roll on the Mishap table but you are not ejected from this career.
+    effects:
+      - {type: roll_mishap, leave: false}
+  3:
+    text: You are invited to take part in a controversial event or exhibition.
+    effects:
+      - {type: entertainer_event_3}
+  4:
+    text: You are part of your homeworld's celebrity circles.
+    effects:
+      - {type: skill_choice, options: [Carouse, Persuade, Steward], level: 1}
+      - {type: gain_contact}
   5: {text: One of your works is especially well received and popular., effects: [{type: benefit_dm, amount: 1}]}
   6: {text: You gain a patron in the arts., effects: [{type: advancement_dm, amount: 2}, {type: gain_ally}]}
   7: {text: Life Event., effects: [{type: life_event}]}
-  8: {text: You have the opportunity to criticise or bring down a questionable political leader., effects: [{type: entertainer_event_8}]}
-  9: {text: You go on a tour of the sector, visiting several worlds., effects: [{type: gain_connections_rolled, connection_type: contact, dice: d3}]}
-  10: {text: One of your pieces of art is stolen and the investigation brings you into the criminal underworld., effects: [{type: skill_choice, options: [Streetwise, Investigate, Recon, Stealth], level: 1}]}
+  8:
+    text: >-
+      You have the opportunity to criticise or bring down a questionable political leader.
+    effects:
+      - {type: entertainer_event_8}
+  9:
+    text: You go on a tour of the sector, visiting several worlds.
+    effects:
+      - {type: gain_connections_rolled, connection_type: contact, dice: d3}
+  10:
+    text: >-
+      One of your pieces of art is stolen and the investigation brings you into the criminal underworld.
+    effects:
+      - {type: skill_choice, options: [Streetwise, Investigate, Recon, Stealth], level: 1}
   11: {text: As an artist, you lead a strange and charmed life., effects: [{type: life_event}]}
   12: {text: You win a prestigious prize. You are automatically promoted., effects: [{type: auto_advance}]}

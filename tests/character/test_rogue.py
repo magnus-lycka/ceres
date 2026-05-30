@@ -20,6 +20,7 @@ from ceres.character.projection import (
     PendingCareerSkillRoll,
     PendingMishap,
     PendingMusterOut,
+    Rival,
 )
 from ceres.character.replay import replay
 from ceres.character.skills import Admin, Athletics, Carouse, Drive, Streetwise
@@ -83,6 +84,75 @@ class TestRogueMishap2:
         events = [*self._setup_to_mishap(), MishapEvent(id=6, fulfills='5.0', roll=2)]
         projection = replay(1, events)
         assert not any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
+
+
+# ── mishap 3: betrayed by a friend ───────────────────────────────────────────
+
+
+class TestRogueMishap3:
+    def _setup_to_mishap(self) -> list:
+        return [
+            *_enter_rogue(),
+            SurviveEvent(id=5, fulfills='4.0', roll=4),  # Thief INT 6+, DM+1, 4→5 < 6 — fail
+        ]
+
+    def test_mishap_3_queues_prisoner_roll_pending(self):
+        events = [*self._setup_to_mishap(), MishapEvent(id=6, fulfills='5.0', roll=3)]
+        projection = replay(1, events)
+        pending = next(
+            (
+                p
+                for p in projection.pending_inputs
+                if isinstance(p, PendingCareerSkillRoll) and p.context == 'rogue_mishap_3_prisoner_check'
+            ),
+            None,
+        )
+        assert pending is not None
+
+    def test_mishap_3_no_contacts_adds_rival(self):
+        events = [*self._setup_to_mishap(), MishapEvent(id=6, fulfills='5.0', roll=3)]
+        projection = replay(1, events)
+        rivals = [c for c in projection.summary.connections if isinstance(c, Rival)]
+        assert len(rivals) == 1
+
+    def test_mishap_3_prisoner_roll_2_forces_prisoner(self):
+        events = [
+            *self._setup_to_mishap(),
+            MishapEvent(id=6, fulfills='5.0', roll=3),
+            SkillRollEvent(
+                id=7, fulfills='6.0', context='rogue_mishap_3_prisoner_check', skill=Streetwise(), modified_roll=2
+            ),
+        ]
+        projection = replay(1, events)
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerChoice)), None)
+        assert pending is not None
+        assert pending.options == ['Prisoner']
+
+    def test_mishap_3_prisoner_roll_other_no_forced_prisoner(self):
+        events = [
+            *self._setup_to_mishap(),
+            MishapEvent(id=6, fulfills='5.0', roll=3),
+            SkillRollEvent(
+                id=7, fulfills='6.0', context='rogue_mishap_3_prisoner_check', skill=Streetwise(), modified_roll=5
+            ),
+        ]
+        projection = replay(1, events)
+        prisoner_pending = next(
+            (p for p in projection.pending_inputs if isinstance(p, PendingCareerChoice) and p.options == ['Prisoner']),
+            None,
+        )
+        assert prisoner_pending is None
+
+    def test_mishap_3_ends_career(self):
+        events = [
+            *self._setup_to_mishap(),
+            MishapEvent(id=6, fulfills='5.0', roll=3),
+            SkillRollEvent(
+                id=7, fulfills='6.0', context='rogue_mishap_3_prisoner_check', skill=Streetwise(), modified_roll=5
+            ),
+        ]
+        projection = replay(1, events)
+        assert projection.summary.current_career is None
 
 
 # ── event 3: arrested and charged ────────────────────────────────────────────

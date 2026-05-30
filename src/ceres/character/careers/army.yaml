@@ -101,21 +101,53 @@ muster_out:
 
 mishaps:
   1: {text: Severely injured in action., effects: [{type: injury, severity: severe}]}
-  2: {text: Your unit is slaughtered in a disastrous battle. Gain the commander as an Enemy., effects: [{type: gain_enemy}]}
-  3: {text: You are discharged after a brutal campaign. Increase Recon or Survival and gain an Enemy., effects: [{type: gain_enemy}, {type: skill_choice, options: [Recon, Survival], level: 1}]}
-  4: {text: You uncover illegal activity by your commanding officer., defer_ejection: true, effects: [{type: army_mishap_4}]}
+  2:
+    text: Your unit is slaughtered in a disastrous battle. Gain the commander as an Enemy.
+    effects:
+      - {type: gain_enemy}
+  3:
+    text: You are discharged after a brutal campaign. Increase Recon or Survival and gain an Enemy.
+    effects:
+      - {type: gain_enemy}
+      - {type: skill_choice, options: [Recon, Survival], level: 1}
+  4:
+    text: You uncover illegal activity by your commanding officer.
+    defer_ejection: true
+    effects:
+      - {type: army_mishap_4}
   5: {text: You quarrel with an officer or fellow soldier. Gain a Rival., effects: [{type: gain_rival}]}
   6: {text: Injured. Roll on the Injury table., effects: [{type: injury, severity: from_table}]}
 
 events:
-  2: {text: "Disaster! Roll on the Mishap table but you are not ejected from this career.", effects: [{type: roll_mishap, leave: false}]}
-  3: {text: You are assigned to a hostile or wild environment., effects: [{type: skill_choice, options: [Vacc Suit, Engineer, Animals, Recon], level: 1}]}
-  4: {text: You are assigned to an urbanised planet torn by war., effects: [{type: skill_choice, options: [Stealth, Streetwise, Persuade, Recon], level: 1}]}
+  2:
+    text: Disaster! Roll on the Mishap table but you are not ejected from this career.
+    effects:
+      - {type: roll_mishap, leave: false}
+  3:
+    text: You are assigned to a hostile or wild environment.
+    effects:
+      - {type: skill_choice, options: [Vacc Suit, Engineer, Animals, Recon], level: 1}
+  4:
+    text: You are assigned to an urbanised planet torn by war.
+    effects:
+      - {type: skill_choice, options: [Stealth, Streetwise, Persuade, Recon], level: 1}
   5: {text: You are given a special assignment or duty in your unit., effects: [{type: benefit_dm, amount: 1}]}
   6: {text: You are thrown into a brutal ground war., effects: [{type: army_event_6}]}
   7: {text: Life Event., effects: [{type: life_event}]}
   8: {text: You are given advanced training in a specialist field., effects: [{type: army_event_8}]}
-  9: {text: Surrounded and outnumbered, you hold out until relief arrives., effects: [{type: advancement_dm, amount: 2}]}
-  10: {text: You are assigned to a peacekeeping role., effects: [{type: skill_choice, options: [Admin, Investigate, Deception, Recon], level: 1}]}
-  11: {text: Your commanding officer takes an interest in your career., effects: [{type: skill_choice, options: [Tactics, advancement_dm_4], level: 1}]}
-  12: {text: You display heroism in battle. You may gain a promotion or a commission automatically., effects: [{type: auto_advance}]}
+  9:
+    text: Surrounded and outnumbered, you hold out until relief arrives.
+    effects:
+      - {type: advancement_dm, amount: 2}
+  10:
+    text: You are assigned to a peacekeeping role.
+    effects:
+      - {type: skill_choice, options: [Admin, Investigate, Deception, Recon], level: 1}
+  11:
+    text: Your commanding officer takes an interest in your career.
+    effects:
+      - {type: skill_choice, options: [Tactics, advancement_dm_4], level: 1}
+  12:
+    text: You display heroism in battle. You may gain a promotion or a commission automatically.
+    effects:
+      - {type: auto_advance}

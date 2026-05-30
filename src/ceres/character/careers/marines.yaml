@@ -101,21 +101,52 @@ muster_out:
 
 mishaps:
   1: {text: Severely injured., effects: [{type: injury, severity: severe}]}
-  2: {text: Captured and mistreated by the enemy. Gain your jailer as an Enemy and reduce STR and DEX by one., effects: [{type: gain_enemy}, {type: decrease_characteristic, characteristic: STR, amount: 1}, {type: decrease_characteristic, characteristic: DEX, amount: 1}]}
-  3: {text: Stranded behind enemy lines. Increase Stealth or Survival but you are ejected., effects: [{type: skill_choice, options: [Stealth, Survival], level: 1}]}
-  4: {text: Ordered to take part in a black ops mission that goes against your conscience., defer_ejection: true, effects: [{type: marines_mishap_4}]}
+  2:
+    text: >-
+      Captured and mistreated by the enemy. Gain your jailer as an Enemy and reduce STR and DEX by one.
+    effects:
+      - {type: gain_enemy}
+      - {type: decrease_characteristic, characteristic: STR, amount: 1}
+      - {type: decrease_characteristic, characteristic: DEX, amount: 1}
+  3:
+    text: Stranded behind enemy lines. Increase Stealth or Survival but you are ejected.
+    effects:
+      - {type: skill_choice, options: [Stealth, Survival], level: 1}
+  4:
+    text: Ordered to take part in a black ops mission that goes against your conscience.
+    defer_ejection: true
+    effects:
+      - {type: marines_mishap_4}
   5: {text: You quarrel with an officer or fellow marine. Gain a Rival., effects: [{type: gain_rival}]}
   6: {text: Injured. Roll on the Injury table., effects: [{type: injury, severity: from_table}]}
 
 events:
-  2: {text: "Disaster! Roll on the Mishap table but you are not ejected from this career.", effects: [{type: roll_mishap, leave: false}]}
-  3: {text: Trapped behind enemy lines., effects: [{type: skill_choice, options: [Survival, Stealth, Deception, Streetwise], level: 1}]}
-  4: {text: Assigned to the security staff of a space station., effects: [{type: skill_choice, options: [Vacc Suit, Athletics], level: 1}]}
+  2:
+    text: Disaster! Roll on the Mishap table but you are not ejected from this career.
+    effects:
+      - {type: roll_mishap, leave: false}
+  3:
+    text: Trapped behind enemy lines.
+    effects:
+      - {type: skill_choice, options: [Survival, Stealth, Deception, Streetwise], level: 1}
+  4:
+    text: Assigned to the security staff of a space station.
+    effects:
+      - {type: skill_choice, options: [Vacc Suit, Athletics], level: 1}
   5: {text: Advanced training in a specialist field., effects: [{type: marines_event_5}]}
   6: {text: Assault on an enemy fortress., effects: [{type: marines_event_6}]}
   7: {text: Life Event., effects: [{type: life_event}]}
-  8: {text: Front lines of a planetary assault and occupation., effects: [{type: skill_choice, options: [Recon, Gun Combat, Leadership, Electronics], level: 1}]}
+  8:
+    text: Front lines of a planetary assault and occupation.
+    effects:
+      - {type: skill_choice, options: [Recon, Gun Combat, Leadership, Electronics], level: 1}
   9: {text: A mission goes disastrously wrong due to your commander's error., effects: [{type: marines_event_9}]}
   10: {text: Assigned to a black ops mission., effects: [{type: advancement_dm, amount: 2}]}
-  11: {text: Your commanding officer takes an interest in your career., effects: [{type: skill_choice, options: [Tactics, advancement_dm_4], level: 1}]}
-  12: {text: You display heroism in battle. You may gain a promotion or a commission automatically., effects: [{type: auto_advance}]}
+  11:
+    text: Your commanding officer takes an interest in your career.
+    effects:
+      - {type: skill_choice, options: [Tactics, advancement_dm_4], level: 1}
+  12:
+    text: You display heroism in battle. You may gain a promotion or a commission automatically.
+    effects:
+      - {type: auto_advance}

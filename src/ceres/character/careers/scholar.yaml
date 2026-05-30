@@ -115,7 +115,9 @@ mishaps:
     effects:
       - {type: scholar_mishap_5_choice}
   6:
-    text: A rival researcher blackens your name or steals your research. Gain a Rival but you do not have to leave this career.
+    text: >-
+      A rival researcher blackens your name or steals your research. Gain a Rival but you do not have to leave
+      this career.
     stay_in_career: true
     effects:
       - {type: gain_rival}
@@ -132,7 +134,10 @@ events:
   4:
     text: You are assigned to work on a secret project for a patron or organisation.
     effects:
-      - {type: skill_choice, options: [Medic, Life Science, Physical Science, Robotic Science, Social Science, Space Science, Engineer, Electronics, Investigate], level: 1}
+      - type: skill_choice
+        options: [Medic, Life Science, Physical Science, Robotic Science, Social Science, Space Science,
+                  Engineer, Electronics, Investigate]
+        level: 1
   5:
     text: You win a prestigious prize for your work.
     effects:
