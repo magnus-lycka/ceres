@@ -5,7 +5,7 @@ from ceres.character.events import AnyEvent
 from ceres.character.projection import CharacterProjection
 from ceres.character.replay import ReplayError
 from ceres.character.skills import skill_list
-from ceres.character.sophonts import SOPHONTS
+from ceres.character.sophonts import SOPHONT_NAMES
 from ceres.character.store import CharacterRow, SqliteCharacterBackend
 
 _event_adapter: TypeAdapter[AnyEvent] = TypeAdapter(AnyEvent)
@@ -51,7 +51,7 @@ def build_app(backend: SqliteCharacterBackend | None = None) -> FastAPI:
 
     @app.get('/sophonts')
     def list_sophonts() -> SophontList:
-        return SophontList(sophonts=SOPHONTS)
+        return SophontList(sophonts=SOPHONT_NAMES)
 
     @app.get('/skills')
     def list_skills() -> SkillList:
@@ -63,7 +63,7 @@ def build_app(backend: SqliteCharacterBackend | None = None) -> FastAPI:
     def create_character(character: CharacterCreate) -> CharacterRow:
         if not character.name:
             raise HTTPException(status_code=400, detail='Name must not be empty')
-        if character.sophont not in SOPHONTS:
+        if character.sophont not in SOPHONT_NAMES:
             raise HTTPException(status_code=400, detail=f'Unknown sophont: {character.sophont}')
         return backend.start(sophont=character.sophont, player=character.player, name=character.name)
 

@@ -6,7 +6,7 @@ from ceres.character.careers.career_data import AnyEffect, CareerEventEntry, Cha
 
 if TYPE_CHECKING:
     from ceres.character.events import PreCareerEntryEvent, PreCareerGraduationEvent
-    from ceres.character.projection import CharacterProjection
+    from ceres.character.projection import CharacterProjection, CharacterSummary
 
 
 class PreCareerData(BaseModel):
@@ -32,6 +32,10 @@ class PreCareerData(BaseModel):
     honours_target: int | None = None
     graduation_benefits: list[str] = []
     events: dict[int, CareerEventEntry]
+
+    def is_available(self, summary: CharacterSummary) -> bool:
+        """Return True if this precareer is available for the given character."""
+        return True
 
     def apply_entry(
         self,

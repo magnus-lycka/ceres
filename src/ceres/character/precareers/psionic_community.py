@@ -1,11 +1,14 @@
-from ceres.character.characteristics import ConnectionKind
+from ceres.character.characteristics import Chars, ConnectionKind
 from ceres.character.events import PreCareerGraduationEvent
 from ceres.character.precareers.precareer_data import PreCareerData
-from ceres.character.projection import CharacterProjection, PendingPreCareerSkillChoice
+from ceres.character.projection import CharacterProjection, CharacterSummary, PendingPreCareerSkillChoice
 from ceres.character.skills import skill_names_for_category
 
 
 class PsionicCommunityPreCareer(PreCareerData):
+    def is_available(self, summary: CharacterSummary) -> bool:
+        return Chars.PSI in summary.characteristics
+
     def apply_graduation(
         self,
         projection: CharacterProjection,

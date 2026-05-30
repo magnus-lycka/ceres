@@ -12,7 +12,7 @@ from ceres.character.events import AnyEvent, UcpEvent
 from ceres.character.projection import CharacterProjection
 from ceres.character.replay import ReplayError
 from ceres.character.skills import AnySkill, Skill, SkillInfo, _skill_classes, skill_list
-from ceres.character.sophonts import SOPHONTS
+from ceres.character.sophonts import SOPHONT_NAMES
 from ceres.character.store import CharacterRow, SqliteCharacterBackend
 
 _SPECIALITY_SKILL_TYPES: frozenset[type[Skill]] = frozenset(
@@ -175,7 +175,7 @@ def build_app(backend: SqliteCharacterBackend | None = None, current_path: Path 
 
     @sophonts_app.command('list')
     def list_sophonts_command() -> None:
-        for sophont in SOPHONTS:
+        for sophont in SOPHONT_NAMES:
             typer.echo(sophont)
 
     @skills_app.command('list')
@@ -192,8 +192,8 @@ def build_app(backend: SqliteCharacterBackend | None = None, current_path: Path 
         if not name:
             typer.echo('Name must not be empty', err=True)
             raise typer.Exit(1)
-        if sophont not in SOPHONTS:
-            available = ', '.join(SOPHONTS)
+        if sophont not in SOPHONT_NAMES:
+            available = ', '.join(SOPHONT_NAMES)
             typer.echo(f'Unknown sophont: {sophont}', err=True)
             typer.echo(f'Available sophonts: {available}', err=True)
             raise typer.Exit(1)

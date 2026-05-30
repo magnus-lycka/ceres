@@ -10,7 +10,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import TypeAdapter
 
 from ceres.character.careers.loader import load_careers, selectable_careers
-from ceres.character.characteristics import Chars, ConnectionKind
+from ceres.character.characteristics import UCP_STATS, Chars, ConnectionKind
 from ceres.character.events import (
     AdvancementDmChoiceEvent,
     AdvancementEvent,
@@ -57,7 +57,7 @@ from ceres.character.projection import (
 from ceres.character.replay import ReplayError
 from ceres.character.report import render_npc_gallery_pdf
 from ceres.character.skills import AnySkill, skill_class_by_name
-from ceres.character.sophonts import SOPHONTS
+from ceres.character.sophonts import SOPHONT_NAMES
 from ceres.character.spec import spec_from_summary
 from ceres.character.store import SqliteCharacterBackend
 
@@ -171,8 +171,7 @@ def _build_event_from_form(kind: str, fulfills: str, form: Any) -> AnyEvent:
     f = fulfills or None
 
     if kind == 'ucp':
-        stats = list(Chars)
-        ucp = ''.join(f'{_form_int(form, stat, 0):X}' for stat in stats)
+        ucp = ''.join(f'{_form_int(form, stat, 0):X}' for stat in UCP_STATS)
         return UcpEvent(ucp=ucp, fulfills=f)
 
     if kind == 'background_skills':
@@ -428,7 +427,7 @@ def _projection_context(projection: CharacterProjection, character_id: int) -> d
         'character_id': character_id,
         'enriched_inputs': enriched_inputs,
         'careers': careers,
-        'precareers': load_precareers(),
+        'precareers': {name: pc for name, pc in load_precareers().items() if pc.is_available(projection.summary)},
     }
 
 
@@ -453,7 +452,7 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
         return templates.TemplateResponse(
             request=request,
             name='character_new.html',
-            context={'sophonts': SOPHONTS},
+            context={'sophonts': SOPHONT_NAMES},
         )
 
     @router.post('/characters/new')
@@ -468,11 +467,11 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
             return templates.TemplateResponse(
                 request=request,
                 name='character_new.html',
-                context={'sophonts': SOPHONTS, 'error': 'Name is required'},
+                context={'sophonts': SOPHONT_NAMES, 'error': 'Name is required'},
                 status_code=422,
             )
-        if sophont not in SOPHONTS:
-            sophont = SOPHONTS[0]
+        if sophont not in SOPHONT_NAMES:
+            sophont = SOPHONT_NAMES[0]
         row = backend.start(sophont=sophont, player=player.strip() or 'NPC', name=name)
         return RedirectResponse(url=f'/ui/characters/{row["id"]}/wizard', status_code=303)
 
@@ -567,7 +566,7 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
         return templates.TemplateResponse(
             request=request,
             name='gallery_form.html',
-            context={'careers': careers, 'sophonts': SOPHONTS},
+            context={'careers': careers, 'sophonts': SOPHONT_NAMES},
         )
 
     @router.post('/gallery/generate', response_class=HTMLResponse)
@@ -577,7 +576,7 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
         form = await request.form()
         career_name = _form_str(form, 'career')
         assignment = _form_str(form, 'assignment') or None
-        sophont = _form_str(form, 'sophont', SOPHONTS[0])
+        sophont = _form_str(form, 'sophont', SOPHONT_NAMES[0])
         min_terms = max(1, _form_int(form, 'min_terms', 2))
         max_terms = max(min_terms, _form_int(form, 'max_terms', 4))
         count = min(20, max(1, _form_int(form, 'count', 4)))
@@ -605,7 +604,7 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
         form = await request.form()
         career_name = _form_str(form, 'career')
         assignment = _form_str(form, 'assignment') or None
-        sophont = _form_str(form, 'sophont', SOPHONTS[0])
+        sophont = _form_str(form, 'sophont', SOPHONT_NAMES[0])
         min_terms = max(1, _form_int(form, 'min_terms', 2))
         max_terms = max(min_terms, _form_int(form, 'max_terms', 4))
         count = min(20, max(1, _form_int(form, 'count', 4)))

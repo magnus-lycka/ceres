@@ -6,7 +6,7 @@ import random
 from ceres.character.careers.loader import load_careers
 from ceres.character.projection import AutoFillContext
 from ceres.character.replay import ReplayError
-from ceres.character.sophonts import SOPHONTS
+from ceres.character.sophonts import SOPHONT_NAMES
 from ceres.character.spec import NpcSpec, spec_from_summary
 from ceres.character.store import SqliteCharacterBackend
 
@@ -37,7 +37,7 @@ def generate_npc(
     """Generate a single NPC by auto-piloting the character creation engine."""
     if rng is None:
         rng = _npc_rng()
-    sophont = params.sophont if params.sophont in SOPHONTS else 'Humaniti'
+    sophont = params.sophont if params.sophont in SOPHONT_NAMES else 'Humaniti'
     row = backend.start(sophont=sophont, player='NPC', name=name)
     cid = row['id']
     ctx = AutoFillContext(

@@ -279,7 +279,7 @@ def _apply_character_started(projection: CharacterProjection, event: CharacterSt
 
 
 def _apply_ucp(projection: CharacterProjection, event: UcpEvent) -> None:
-    projection.summary.characteristics = _parse_ucp(event.ucp)
+    projection.summary.characteristics = _parse_ucp(event.ucp, projection.summary.species)
     edu = projection.summary.characteristics.get(Chars.EDU, 0)
     count = _background_skill_count(edu)
     if count > 0:
@@ -1827,10 +1827,14 @@ def _apply_precareer_graduation(projection: CharacterProjection, event: PreCaree
 # ── characteristic DM and UCP parsing ────────────────────────────────────────
 
 
-def _parse_ucp(ucp: str) -> dict[Chars, int]:
-    if len(ucp) != 6:
-        raise ReplayError(f'Invalid UCP: {ucp!r} — expected 6 hex digits')
-    return {stat: int(digit, 16) for stat, digit in zip(UCP_STATS, ucp, strict=True)}
+def _parse_ucp(ucp: str, species: str | None = None) -> dict[Chars, int]:
+    from ceres.character.sophonts import get_sophont
+
+    sophont = get_sophont(species or '') if species else None
+    ucp_stats = sophont.ucp_stats if sophont is not None else UCP_STATS
+    if len(ucp) != len(ucp_stats):
+        raise ReplayError(f'Invalid UCP: {ucp!r} — expected {len(ucp_stats)} hex digits')
+    return {stat: int(digit, 16) for stat, digit in zip(ucp_stats, ucp, strict=True)}
 
 
 def _background_skill_count(edu: int) -> int:

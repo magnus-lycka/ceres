@@ -465,9 +465,6 @@ class CharacterSummary(BaseModel):
         return default
 
 
-
-
-
 class CharacterProjection(BaseModel):
     character_id: int
     summary: CharacterSummary = Field(default_factory=CharacterSummary)

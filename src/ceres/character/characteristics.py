@@ -8,6 +8,8 @@ class Chars(StrEnum):
     INT = 'INT'
     EDU = 'EDU'
     SOC = 'SOC'
+    CHA = 'CHA'
+    PSI = 'PSI'
 
 
 class ConnectionKind(StrEnum):
@@ -17,7 +19,8 @@ class ConnectionKind(StrEnum):
     ENEMY = 'enemy'
 
 
-UCP_STATS: tuple[Chars, ...] = tuple(Chars)
+# Default UCP order for Humaniti/Vilani. Per-sophont order is defined in the sophont object.
+UCP_STATS: tuple[Chars, ...] = (Chars.STR, Chars.DEX, Chars.END, Chars.INT, Chars.EDU, Chars.SOC)
 
 
 def characteristic_dm(value: int) -> int:
