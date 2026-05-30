@@ -261,11 +261,6 @@ class ColonistProfession(Skill):
     ranching: Level = _level('Ranching')
 
 
-class CrewmemberProfession(Skill):
-    type: Literal['Crewmember Profession'] = 'Crewmember Profession'
-    level: Level = _level()
-
-
 class FreeloaderProfession(Skill):
     type: Literal['Freeloader Profession'] = 'Freeloader Profession'
     scrounging: Level = _level('Scrounging')
@@ -397,7 +392,6 @@ type ArtSkill = Annotated[Arts, Field(discriminator='type')]
 # Please Claude, don't be a fool and try to make this a type. It's not a type.
 Professions = (
     ColonistProfession
-    | CrewmemberProfession
     | FreeloaderProfession
     | HostileEnvironmentProfession
     | SpacerProfession

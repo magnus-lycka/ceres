@@ -214,7 +214,6 @@ def _base_skill_name(skill: RobotSkill) -> str:
         skill,
         (
             character_skills.ColonistProfession,
-            character_skills.CrewmemberProfession,
             character_skills.FreeloaderProfession,
             character_skills.HostileEnvironmentProfession,
             character_skills.SpacerProfession,

@@ -2,6 +2,13 @@
 
 Moved from `docs/todo_maybe.md` once fully implemented.
 
+## Crewmember Profession is wrong
+
+Removed `CrewmemberProfession` class from `src/ceres/character/skills.py` and the `Professions` union.
+Removed it from the `isinstance` check in `src/ceres/make/robot/skills.py`.
+Removed "Crewmember Profession" from the RIC-001 broad-skill table in `docs/RULE_INTERPRETATIONS.md`.
+"Crewmember" is a specialisation of `SpacerProfession`, not a separate broad skill.
+
 ## Naming
 
 Renamed `self.owner` → `self.ship` and `_owner` → `_ship` throughout `parts.py` and all subclasses.

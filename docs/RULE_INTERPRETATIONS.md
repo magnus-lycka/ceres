@@ -490,7 +490,7 @@ The broad skills themselves come from the *Traveller Companion* (2024) model
 | --- | --- |
 | Science | Life Science, Physical Science, Robotic Science, Social Science, Space Science |
 | Art | Performing Art, Creative Art, Presentation Art |
-| Profession | Colonist Profession, Crewmember Profession, Freeloader Profession, Hostile Environment Profession, Spacer Profession, Sport Profession, Worker Profession |
+| Profession | Colonist Profession, Freeloader Profession, Hostile Environment Profession, Spacer Profession, Sport Profession, Worker Profession |
 
 **Implications for character creation:**
 
