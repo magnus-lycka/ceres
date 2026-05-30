@@ -6,7 +6,6 @@ This module serialises the data and drives the template engine (Jinja2 or Typst)
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 import tempfile
 from typing import Any
@@ -76,14 +75,13 @@ def render_pdf(template_path: Path, data: dict[str, Any], *, page_size: str = 'a
     import typst
 
     source = render_typst_source(template_path, data, page_size=page_size)
-    tmp_dir = tempfile.mkdtemp()
+    tmp_dir = Path(tempfile.mkdtemp())
     try:
         for base_file in _TOOLKIT_TEMPLATES.glob('*.typ'):
-            shutil.copy2(base_file, os.path.join(tmp_dir, base_file.name))
-        typ_path = os.path.join(tmp_dir, 'main.typ')
-        with open(typ_path, 'w', encoding='utf-8') as f:
-            f.write(source)
-        return typst.compile(typ_path)
+            shutil.copy2(base_file, tmp_dir / base_file.name)
+        typ_path = tmp_dir / 'main.typ'
+        typ_path.write_text(source, encoding='utf-8')
+        return typst.compile(str(typ_path))
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
@@ -94,14 +92,13 @@ def render_pdf_source(source: str) -> bytes:
 
     import typst
 
-    tmp_dir = tempfile.mkdtemp()
+    tmp_dir = Path(tempfile.mkdtemp())
     try:
         for base_file in _TOOLKIT_TEMPLATES.glob('*.typ'):
-            shutil.copy2(base_file, os.path.join(tmp_dir, base_file.name))
-        typ_path = os.path.join(tmp_dir, 'main.typ')
-        with open(typ_path, 'w', encoding='utf-8') as f:
-            f.write(source)
-        return typst.compile(typ_path)
+            shutil.copy2(base_file, tmp_dir / base_file.name)
+        typ_path = tmp_dir / 'main.typ'
+        typ_path.write_text(source, encoding='utf-8')
+        return typst.compile(str(typ_path))
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
@@ -113,28 +110,28 @@ def render_pdf_source(source: str) -> bytes:
 
 def _to_typst(obj: Any) -> str:
     """Recursively serialise a Python value to a Typst literal."""
-    if obj is None:
-        return 'none'
-    if isinstance(obj, bool):
-        return 'true' if obj else 'false'
-    if isinstance(obj, int):
-        return str(obj)
-    if isinstance(obj, float):
-        return str(obj)
-    if isinstance(obj, str):
-        escaped = obj.replace('\\', '\\\\').replace('"', '\\"')
-        return f'"{escaped}"'
-    if isinstance(obj, BaseModel):
-        return _to_typst(obj.model_dump())
-    if isinstance(obj, dict):
-        pairs = ', '.join(f'{_typst_key(k)}: {_to_typst(v)}' for k, v in obj.items())
-        return f'({pairs})'
-    if isinstance(obj, (list, tuple)):
-        if not obj:
+    match obj:
+        case None:
+            return 'none'
+        case bool():
+            return 'true' if obj else 'false'
+        case int() | float():
+            return str(obj)
+        case str():
+            escaped = obj.replace('\\', '\\\\').replace('"', '\\"')
+            return f'"{escaped}"'
+        case BaseModel():
+            return _to_typst(obj.model_dump())
+        case dict():
+            pairs = ', '.join(f'{_typst_key(k)}: {_to_typst(v)}' for k, v in obj.items())
+            return f'({pairs})'
+        case list() | tuple() if not obj:
             return '()'
-        items = ', '.join(_to_typst(x) for x in obj)
-        return f'({items},)'
-    return f'"{obj}"'
+        case list() | tuple():
+            items = ', '.join(_to_typst(x) for x in obj)
+            return f'({items},)'
+        case _:
+            return f'"{obj}"'
 
 
 def _typst_key(key: str) -> str:

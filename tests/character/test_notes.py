@@ -5,19 +5,22 @@ from unittest.mock import MagicMock, patch
 
 from ceres.character.notes import NpcNotesCache, build_prompt, generate_notes
 from ceres.character.projection import CharacterSummary
+from ceres.character.sophonts import VILANI
+from tests.character.helpers import MOCK_WORLD
 
 
 def _summary(**kwargs) -> CharacterSummary:
-    defaults = dict(
-        name='Test Character',
-        age=26,
-        species='Human',
-        characteristics={'STR': 7, 'DEX': 8, 'END': 6, 'INT': 9, 'EDU': 7, 'SOC': 5},
-        current_career='Scout',
-        current_assignment='Explorer',
-        rank=1,
-        term_count=2,
-    )
+    defaults = {
+        'name': 'Test Character',
+        'sophont': VILANI,
+        'homeworld': MOCK_WORLD,
+        'age': 26,
+        'characteristics': {'STR': 7, 'DEX': 8, 'END': 6, 'INT': 9, 'EDU': 7, 'SOC': 5},
+        'current_career': 'Scout',
+        'current_assignment': 'Explorer',
+        'rank': 1,
+        'term_count': 2,
+    }
     return CharacterSummary.model_validate({**defaults, **kwargs})
 
 

@@ -1,3 +1,4 @@
+from pydantic import ValidationError
 import pytest
 
 from ceres.shared import CeresPart, Equipment
@@ -22,8 +23,8 @@ def test_equipment_with_explicit_fields():
 
 def test_equipment_is_frozen():
     e = Equipment()
-    with pytest.raises(Exception):
-        setattr(e, 'tl', 5)
+    with pytest.raises(ValidationError):
+        e.tl = 5
 
 
 def test_equipment_serialises_and_roundtrips():

@@ -296,7 +296,7 @@ def test_source_power_sums_by_section(suleiman_spec):
     for r in suleiman_spec.rows:
         if r.power is not None:
             sums[r.section.value] += r.power
-    for section, total in sums.items():
+    for total in sums.values():
         assert f'{abs(total):.2f}' in src
 
 

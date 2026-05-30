@@ -1,7 +1,7 @@
 import math
 from typing import Annotated, ClassVar, Literal, TypedDict
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from ceres.shared import CeresModel, NoteList, _Note
 
@@ -49,7 +49,7 @@ class CarriedOccupant(CeresModel):
     shipping_size: int
     cost: float
     render_in_spec: bool = True
-    model_config = {'frozen': True}
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     @property
     def requires_pilot(self) -> bool:

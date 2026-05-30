@@ -9,4 +9,4 @@ def get_sophont(name: str) -> Sophont | None:
     return next((s for s in SOPHONTS if s.name == name), None)
 
 
-__all__ = ['Sophont', 'SOPHONTS', 'SOPHONT_NAMES', 'get_sophont']
+__all__ = ['SOPHONTS', 'SOPHONT_NAMES', 'Sophont', 'get_sophont']

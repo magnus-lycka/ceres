@@ -72,13 +72,13 @@ from ceres.make.robot.skills import SkillGrant
 
 
 def _robot(size=RobotSize.SIZE_3, tl=8, locomotion=None, options=None) -> Robot:
-    kwargs: dict = dict(
-        name='T',
-        tl=tl,
-        size=size,
-        locomotion=locomotion or WheelsLocomotion(),
-        brain=PrimitiveBrain(),
-    )
+    kwargs: dict = {
+        'name': 'T',
+        'tl': tl,
+        'size': size,
+        'locomotion': locomotion or WheelsLocomotion(),
+        'brain': PrimitiveBrain(),
+    }
     if options is not None:
         kwargs['options'] = options
     return Robot(**kwargs)

@@ -5,6 +5,7 @@ from typing import Annotated, Any, Literal, cast, overload
 
 from pydantic import BaseModel, Field
 
+from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.benefits import AnyBenefit, ItemBenefit
 from ceres.character.careers.career_data import CareerData
 from ceres.character.characteristics import Chars, ConnectionKind
@@ -42,6 +43,7 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.skills import AnySkill, Level, Skill, _level_fields, field_for_spec, skill_class_by_name
+from ceres.character.sophonts import Sophont
 from ceres.shared import CeresModel
 
 _CHOOSE_COUNT_RE = re.compile(r'Choose (\d+)')
@@ -426,9 +428,10 @@ class CareerTerm(BaseModel):
 
 
 class CharacterSummary(BaseModel):
-    name: str | None = None
+    name: str
     age: int = 18
-    species: str | None = None
+    sophont: Sophont
+    homeworld: TravellerMapWorld
     characteristics: dict[Chars, int] = Field(default_factory=dict)
     current_career: str | None = None
     current_assignment: str | None = None
@@ -467,7 +470,7 @@ class CharacterSummary(BaseModel):
 
 class CharacterProjection(BaseModel):
     character_id: int
-    summary: CharacterSummary = Field(default_factory=CharacterSummary)
+    summary: CharacterSummary
     pending_inputs: list[AnyPending] = Field(default_factory=list)
     scheduled_effects: list[ScheduledEffect] = Field(default_factory=list)
     pending_reenlist: bool | None = None  # stores reenlist decision during aging chain
@@ -487,7 +490,7 @@ class CharacterProjection(BaseModel):
             _cls: Any = skill_cls
             if len(fields) == 1 and fields[0] == 'level':
                 # Non-specialised skill
-                current = getattr(existing, 'level').value if existing is not None else None
+                current = getattr(existing, fields[0]).value if existing is not None else None
                 if level is None:
                     if current is None or current < 4:
                         new_level = 1 if current is None else current + 1
@@ -496,24 +499,23 @@ class CharacterProjection(BaseModel):
                     actual = current if current is not None else -1
                     if actual < level:
                         choices.append(cast(AnySkill, _cls(level=Level(value=level))))
+            # Specialised skill
+            elif level == 0:
+                # Level-0 grant adds the whole type if absent
+                if existing is None:
+                    choices.append(cast(AnySkill, _cls()))
+            elif level is None:
+                # Increment — one choice per specialization field
+                for field in fields:
+                    current = getattr(existing, field).value if existing is not None else 0
+                    if current < 4:
+                        choices.append(cast(AnySkill, _cls(**{field: Level(value=current + 1)})))
             else:
-                # Specialised skill
-                if level == 0:
-                    # Level-0 grant adds the whole type if absent
-                    if existing is None:
-                        choices.append(cast(AnySkill, _cls()))
-                elif level is None:
-                    # Increment — one choice per specialization field
-                    for field in fields:
-                        current = getattr(existing, field).value if existing is not None else 0
-                        if current < 4:
-                            choices.append(cast(AnySkill, _cls(**{field: Level(value=current + 1)})))
-                else:
-                    # Fixed level > 0 — one choice per spec currently below target
-                    for field in fields:
-                        current = getattr(existing, field).value if existing is not None else 0
-                        if current < level:
-                            choices.append(cast(AnySkill, _cls(**{field: Level(value=level)})))
+                # Fixed level > 0 — one choice per spec currently below target
+                for field in fields:
+                    current = getattr(existing, field).value if existing is not None else 0
+                    if current < level:
+                        choices.append(cast(AnySkill, _cls(**{field: Level(value=level)})))
         return choices
 
     def grant_skill(self, skill: AnySkill) -> None:
@@ -571,7 +573,9 @@ class CharacterProjection(BaseModel):
         """Generate a random event to auto-fulfill a pending input."""
         match pi:
             case PendingUcp():
-                ucp = ''.join(f'{_roll2d(rng):X}' for _ in range(6))
+                sophont = self.summary.sophont
+                n = len(sophont.ucp_stats) if sophont is not None else 6
+                ucp = ''.join(f'{_roll2d(rng):X}' for _ in range(n))
                 return UcpEvent(ucp=ucp, fulfills=pi.id)
 
             case PendingBackgroundSkills():
@@ -594,7 +598,7 @@ class CharacterProjection(BaseModel):
                 if self.summary.term_count >= ctx.max_terms:
                     return FinishCreationEvent(fulfills=pi.id)
                 # If options is restricted (e.g. forced career), respect it
-                available = pi.options if pi.options else sorted(ctx.careers.keys())
+                available = pi.options or sorted(ctx.careers.keys())
                 career_data = None
                 if ctx.career in available:
                     career_data = ctx.careers.get(ctx.career)
@@ -776,30 +780,28 @@ __all__ = [
     'Connection',
     'Contact',
     'Enemy',
-    'make_connection',
     'PendingAdvancement',
-    'PendingAssignmentChangeChoice',
-    'Rival',
     'PendingAgingChoice',
     'PendingAgingChoiceMental',
     'PendingAgingCrisis',
     'PendingAgingRoll',
+    'PendingAssignmentChangeChoice',
     'PendingBackgroundSkills',
     'PendingBenefitChoice',
     'PendingCareerChoice',
-    'PendingCommissionChoice',
     'PendingCareerEvent',
     'PendingCareerMishap',
     'PendingCareerSkillChoice',
     'PendingCareerSkillRoll',
     'PendingCharacteristicChoice',
+    'PendingCommissionChoice',
     'PendingConnectionsRoll',
     'PendingDoubleInjuryRoll',
     'PendingDraftAssignmentChoice',
     'PendingDraftChoice',
     'PendingInitialTrainingChoice',
-    'PendingInputBase',
     'PendingInjuryTable',
+    'PendingInputBase',
     'PendingLifeEvent',
     'PendingLifeEventChoice',
     'PendingLifeEventUnusual',
@@ -815,5 +817,7 @@ __all__ = [
     'PendingSurvive',
     'PendingTermEvent',
     'PendingUcp',
+    'Rival',
     'ScheduledEffect',
+    'make_connection',
 ]

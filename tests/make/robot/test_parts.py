@@ -117,5 +117,5 @@ class TestWrongAssemblyType:
 
         part = _SamplePart()
         part._assembly = Assembly(tl=8)
-        with pytest.raises(RuntimeError, match='unexpected type'):
+        with pytest.raises(TypeError, match='unexpected type'):
             _ = part.assembly

@@ -47,6 +47,8 @@ from ceres.character.skills import (
     Persuade,
     Pilot,
 )
+from ceres.character.sophonts import VILANI
+from tests.character.helpers import MOCK_WORLD
 
 _SCIENCES = sorted(['Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science'])
 
@@ -55,7 +57,7 @@ def _full_setup(character_id: int = 1) -> list:
     """Return events that get a character through setup: started → ucp → background skills."""
     # STR=7 DEX=8 END=6 INT=9 EDU=10 SOC=5 → 4 background skills
     return [
-        CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Boss'),
+        CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'),
         UcpEvent(id=2, fulfills='1.0', ucp='7869A5'),
         BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Drive()]),
     ]

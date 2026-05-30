@@ -74,7 +74,7 @@ def parse_benefit(s: str | list) -> AnyBenefit:
         for item in s:
             benefit = parse_benefit(item)
             if isinstance(benefit, ChoiceBenefit):
-                raise ValueError('Nested choice benefits are not supported')
+                raise TypeError('Nested choice benefits are not supported')
             options.append(benefit)
         return ChoiceBenefit(options=options)
     parts = s.split('_')

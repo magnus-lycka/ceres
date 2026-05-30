@@ -34,7 +34,7 @@ def spec_from_summary(summary: CharacterSummary, notes: str | None = None) -> Np
         assignment=assignment,
         rank=summary.rank,
         terms=summary.term_count,
-        sophont=summary.species or 'Human',
+        sophont=summary.sophont.name,
         ucp=ucp,
         characteristics=dict(summary.characteristics),
         age=summary.age,
@@ -65,7 +65,7 @@ def _format_npc_skill(skill: AnySkill) -> list[str]:
         return [f'{name}{_NBSP}{lvl}']
     spec_names = type(skill).specialities()
     levels = [getattr(skill, f).value for f in fields]
-    non_zero = [(sname, lvl) for sname, lvl in zip(spec_names, levels) if lvl > 0]
+    non_zero = [(sname, lvl) for sname, lvl in zip(spec_names, levels, strict=False) if lvl > 0]
     if not non_zero:
         return [f'{name}{_NBSP}0']
     if len(set(levels)) == 1:

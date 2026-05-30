@@ -3,12 +3,43 @@
 from dataclasses import dataclass
 import random
 
+from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.careers.loader import load_careers
 from ceres.character.projection import AutoFillContext
 from ceres.character.replay import ReplayError
-from ceres.character.sophonts import SOPHONT_NAMES
+from ceres.character.sophonts import SOPHONT_NAMES, get_sophont
 from ceres.character.spec import NpcSpec, spec_from_summary
 from ceres.character.store import SqliteCharacterBackend
+
+_NPC_DEFAULT_HOMEWORLD = TravellerMapWorld.model_validate(
+    {
+        'Name': 'Terra',
+        'Hex': '1827',
+        'UWP': 'A867A69-F',
+        'PBG': '700',
+        'Zone': '',
+        'Bases': 'N',
+        'Allegiance': 'ImSy',
+        'Stellar': 'G2 V',
+        'SS': 'C',
+        'Ix': '{ 5 }',
+        'Ex': '(H9G+5)',
+        'Cx': '[DC8F]',
+        'Nobility': 'BcCeEfFGH',
+        'Worlds': 12,
+        'ResourceUnits': 6050,
+        'Subsector': 6,
+        'Quadrant': 1,
+        'WorldX': 0,
+        'WorldY': 0,
+        'Remarks': 'Hi In Cx Cs',
+        'LegacyBaseCode': 'N',
+        'Sector': 'Solomani Rim',
+        'SubsectorName': 'Sol',
+        'SectorAbbreviation': 'Solo',
+        'AllegianceName': 'Third Imperium, Solomani Autonomous Region',
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -37,8 +68,11 @@ def generate_npc(
     """Generate a single NPC by auto-piloting the character creation engine."""
     if rng is None:
         rng = _npc_rng()
-    sophont = params.sophont if params.sophont in SOPHONT_NAMES else 'Humaniti'
-    row = backend.start(sophont=sophont, player='NPC', name=name)
+    sophont_name = params.sophont if params.sophont in SOPHONT_NAMES else 'Humaniti'
+    sophont = get_sophont(sophont_name) or get_sophont('Humaniti')
+    if sophont is None:
+        raise RuntimeError('No fallback sophont available for NPC generation')
+    row = backend.start(sophont=sophont, homeworld=_NPC_DEFAULT_HOMEWORLD, player='NPC', name=name)
     cid = row['id']
     ctx = AutoFillContext(
         career=params.career,

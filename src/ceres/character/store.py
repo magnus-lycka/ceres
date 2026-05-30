@@ -6,9 +6,11 @@ from typing import TypedDict
 from pydantic import TypeAdapter
 
 from ceres import settings
+from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.events import AnyEvent, CharacterStartedEvent
 from ceres.character.projection import CharacterProjection
 from ceres.character.replay import replay
+from ceres.character.sophonts import Sophont
 
 _event_adapter: TypeAdapter[AnyEvent] = TypeAdapter(AnyEvent)
 
@@ -42,17 +44,19 @@ class SqliteCharacterBackend:
         if column not in columns:
             self.connection.execute(f'alter table characters add column {column} {definition}')
 
-    def start(self, *, sophont: str, player: str, name: str) -> CharacterRow:
+    def start(self, *, sophont: Sophont, homeworld: TravellerMapWorld, player: str, name: str) -> CharacterRow:
         cursor = self.connection.execute(
             'insert into characters (sophont, player, name) values (?, ?, ?)',
-            (sophont, player, name),
+            (sophont.name, player, name),
         )
         self.connection.commit()
         character_id = cursor.lastrowid
         if character_id is None:
             raise RuntimeError('SQLite did not return a character id')
-        row: CharacterRow = {'id': character_id, 'sophont': sophont, 'player': player, 'name': name}
-        self.append_event(character_id, CharacterStartedEvent(sophont=sophont, player=player, name=name))
+        row: CharacterRow = {'id': character_id, 'sophont': sophont.name, 'player': player, 'name': name}
+        self.append_event(
+            character_id, CharacterStartedEvent(sophont=sophont, homeworld=homeworld, player=player, name=name)
+        )
         return row
 
     def list_characters(self) -> list[CharacterRow]:

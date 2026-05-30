@@ -233,14 +233,14 @@ def test_api_events_records_typed_events(memory_client):
 
     assert events.status_code == 200
     event_list = events.json()['events']
-    assert event_list[0] == {
-        'id': 1,
-        'kind': 'character_started',
-        'sophont': 'Vilani',
-        'player': 'NPC',
-        'name': 'Boss',
-        'fulfills': None,
-    }
+    e0 = event_list[0]
+    assert e0['id'] == 1
+    assert e0['kind'] == 'character_started'
+    assert e0['sophont'] == 'Vilani'
+    assert e0['player'] == 'NPC'
+    assert e0['name'] == 'Boss'
+    assert e0['fulfills'] is None
+    assert e0['homeworld']['name'] == 'Terra'
     assert event_list[1] == {'id': 2, 'kind': 'ucp', 'ucp': '7869A5', 'fulfills': '1.0'}
 
 

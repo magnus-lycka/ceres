@@ -21,12 +21,14 @@ from ceres.character.projection import (
 )
 from ceres.character.replay import replay
 from ceres.character.skills import Admin, Athletics, Carouse, Drive
+from ceres.character.sophonts import VILANI
+from tests.character.helpers import MOCK_WORLD
 
 
 def _setup() -> list:
     """STR=7 DEX=8 END=6 INT=9 EDU=10 SOC=5 — INT DM+1, EDU DM+2."""
     return [
-        CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Mer'),
+        CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Mer'),
         UcpEvent(id=2, fulfills='1.0', ucp='7869A5'),
         BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Drive()]),
     ]

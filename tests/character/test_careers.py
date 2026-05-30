@@ -58,6 +58,8 @@ from ceres.character.skills import (
     Pilot,
     SpaceScience,
 )
+from ceres.character.sophonts import VILANI
+from tests.character.helpers import MOCK_WORLD
 
 
 class TestCoreCareerCoverage:
@@ -100,7 +102,7 @@ class TestCoreCareerCoverage:
 
     def test_entertainer_qualification_accepts_dex_or_int(self):
         events = [
-            CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Boss'),
+            CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'),
             UcpEvent(id=2, fulfills='1.0', ucp='7833A5'),
             BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Drive()]),
             CareerEvent(id=4, fulfills='3.0', career='Entertainer', assignment='Performer', qualification_roll=5),
@@ -115,7 +117,7 @@ def _full_setup(character_id: int = 1) -> list:
     """Return events that get a character through setup: started → ucp → background skills."""
     # STR=7 DEX=8 END=6 INT=9 EDU=10 SOC=5 → 4 background skills
     return [
-        CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Boss'),
+        CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'),
         UcpEvent(id=2, fulfills='1.0', ucp='7869A5'),
         BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Drive()]),
     ]
@@ -129,7 +131,7 @@ def _scholar_setup(character_id: int = 1) -> list:
     creates two choice pendings: Drive/Flyer (id .0) and Science (id .1).
     """
     return [
-        CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Boss'),
+        CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'),
         UcpEvent(id=2, fulfills='1.0', ucp='7869A5'),
         BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Medic()]),
     ]
@@ -580,7 +582,7 @@ class TestSkillTable:
         # EDU=10 meets Scout advanced education min EDU 8
         # Make a character with EDU=6 to fail the advanced education requirement
         low_edu_events = [
-            CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Boss'),
+            CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'),
             UcpEvent(id=2, fulfills='1.0', ucp='786600'),  # EDU=6
             BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Drive()]),
             CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),

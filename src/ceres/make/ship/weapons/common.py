@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from typing import Annotated, ClassVar, Literal
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from ceres.shared import CeresModel, NoteList, _Note
 
@@ -128,7 +128,7 @@ def _mounted_weapon_power(weapons: Sequence[MountWeapon]) -> float:
 
 class _MountWeapon(CeresModel):
     notes: ClassVar[NoteList]
-    model_config = {'frozen': True}
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
     weapon_type: str
     description: ClassVar[str]
     base_cost: ClassVar[float]

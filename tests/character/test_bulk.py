@@ -85,11 +85,9 @@ def test_generate_npc_deterministic():
 def test_generate_npc_different_seeds_may_differ():
     params = _scout_params()
     with _backend() as b1:
-        spec1 = generate_npc(b1, params, name='Test', rng=random.Random(1))
+        generate_npc(b1, params, name='Test', rng=random.Random(1))
     with _backend() as b2:
-        spec2 = generate_npc(b2, params, name='Test', rng=random.Random(999))
-    # Very unlikely both seeds produce identical UCP; this mainly checks seeding works
-    assert spec1.ucp != spec2.ucp or spec1.terms != spec2.terms or True  # non-binding
+        generate_npc(b2, params, name='Test', rng=random.Random(999))
 
 
 def test_generate_npc_no_assignment_picks_randomly():

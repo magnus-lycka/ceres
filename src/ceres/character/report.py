@@ -16,7 +16,7 @@ def render_npc_gallery_typst(
     from ceres.report.render import render_typst_source
 
     notes_list = notes or [None] * len(specs)
-    npcs = [_build_npc_context(spec, notes=n) for spec, n in zip(specs, notes_list)]
+    npcs = [_build_npc_context(spec, notes=n) for spec, n in zip(specs, notes_list, strict=False)]
     return render_typst_source(_TEMPLATES / 'npc_gallery.typ', {'npcs': npcs, 'page_size': page_size})
 
 
@@ -29,7 +29,7 @@ def render_npc_gallery_pdf(
     from ceres.report.render import render_pdf
 
     notes_list = notes or [None] * len(specs)
-    npcs = [_build_npc_context(spec, notes=n) for spec, n in zip(specs, notes_list)]
+    npcs = [_build_npc_context(spec, notes=n) for spec, n in zip(specs, notes_list, strict=False)]
     return render_pdf(_TEMPLATES / 'npc_gallery.typ', {'npcs': npcs, 'page_size': page_size})
 
 

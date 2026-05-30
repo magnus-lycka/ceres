@@ -67,10 +67,7 @@ class OperationFuel(_ZeroPowerStoragePart):
     @property
     def tons(self) -> float:
         total = self._raw_tons()
-        if self.assembly.displacement < 100:
-            increment = 0.1
-        else:
-            increment = 1.0
+        increment = 0.1 if self.assembly.displacement < 100 else 1.0
         return math.ceil(total / increment - 1e-9) * increment
 
     def _raw_tons(self) -> float:
@@ -162,11 +159,10 @@ class ReactionFuel(_ZeroPowerStoragePart):
 
     def item_description(self) -> str:
         reaction_drive = self._reaction_drive if self._assembly is not None else None
-        if reaction_drive is not None and reaction_drive.high_burn_thruster:
-            if self.minutes % 60 == 0:
-                hours = self.minutes // 60
-                unit = 'hour' if hours == 1 else 'hours'
-                return f'{hours} {unit} Thruster'
+        if reaction_drive is not None and reaction_drive.high_burn_thruster and self.minutes % 60 == 0:
+            hours = self.minutes // 60
+            unit = 'hour' if hours == 1 else 'hours'
+            return f'{hours} {unit} Thruster'
         unit = 'minute' if self.minutes == 1 else 'minutes'
         return f'{self.minutes} {unit} of operation'
 
@@ -333,21 +329,21 @@ class FuelSection(CeresModel):
     metal_hydride_storage: MetalHydrideStorage | None = None
 
     def _all_parts(self) -> list[ShipPart]:
-        parts: list[ShipPart] = []
-        for part in (
-            self.jump_fuel,
-            self.collector,
-            self.operation_fuel,
-            self.reaction_fuel,
-            self.fuel_scoops,
-            self.fuel_processor,
-            self.fuel_refinery,
-            self.ramscoop,
-            self.metal_hydride_storage,
-        ):
-            if part is not None:
-                parts.append(part)
-        return parts
+        return [
+            part
+            for part in (
+                self.jump_fuel,
+                self.collector,
+                self.operation_fuel,
+                self.reaction_fuel,
+                self.fuel_scoops,
+                self.fuel_processor,
+                self.fuel_refinery,
+                self.ramscoop,
+                self.metal_hydride_storage,
+            )
+            if part is not None
+        ]
 
     def raw_fuel_tons(self) -> float:
         total_fuel_tons = 0.0

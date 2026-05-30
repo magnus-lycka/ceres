@@ -1,9 +1,9 @@
 """Skill grants and installed skill packages for robot brains."""
 
 from dataclasses import dataclass
-from typing import Annotated, Literal, cast, get_args, get_origin
+from typing import Annotated, ClassVar, Literal, cast, get_args, get_origin
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from ceres.character import skills as character_skills
 from ceres.character.skills import AnySkill, Level, Skill
@@ -302,7 +302,7 @@ class SkillGrant:
 class SkillPackage(CeresModel):
     """An installed skill package on an Advanced (or higher) robot brain."""
 
-    model_config = {'frozen': True}
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     name: RobotSkill
     level: int
@@ -379,7 +379,7 @@ class BrainSoftware(CeresModel):
     and consume bandwidth but do not grant skills.
     """
 
-    model_config = {'frozen': True}
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     name: str
     bandwidth: int
@@ -388,12 +388,12 @@ class BrainSoftware(CeresModel):
 
 
 __all__ = [
-    'SkillGrant',
-    'SkillPackage',
+    '_DEX_SKILLS',
     'BrainSoftware',
     'RobotProfession',
+    'SkillGrant',
+    'SkillPackage',
     'Weapon',
     'Zoology',
     'primitive_package_skills',
-    '_DEX_SKILLS',
 ]

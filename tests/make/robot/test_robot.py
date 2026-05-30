@@ -539,7 +539,7 @@ class TestBuildSpec:
         rows = robot.build_spec().rows_for_section(RobotSpecSection.ROBOT)
         assert len(rows) == 1
         headers = [h for h, _ in rows[0].columns]
-        values = {h: v for h, v in rows[0].columns}
+        values = dict(rows[0].columns)
         assert 'Hits' in headers
         assert values['Locomotion'] == 'Wheels'
         assert values['Size'] == '3'

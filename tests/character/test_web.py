@@ -4,7 +4,9 @@ from fastapi.testclient import TestClient
 import pytest
 
 from ceres.character.app import build_app
+from ceres.character.sophonts import HUMANITI, VILANI
 from ceres.character.store import SqliteCharacterBackend
+from tests.character.helpers import MOCK_WORLD
 
 
 @pytest.fixture
@@ -30,7 +32,7 @@ def test_character_list_empty(client):
 
 def test_character_list_shows_characters(client_with_backend):
     client, backend = client_with_backend
-    backend.start(sophont='Humaniti', player='NPC', name='Aria')
+    backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Aria')
     r = client.get('/ui/')
     assert r.status_code == 200
     assert 'Aria' in r.text
@@ -63,7 +65,7 @@ def test_create_character_blank_name_returns_form(client):
 
 def test_delete_character_redirects_to_list(client_with_backend):
     client, backend = client_with_backend
-    row = backend.start(sophont='Humaniti', player='NPC', name='Doomed')
+    row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Doomed')
     r = client.post(f'/ui/characters/{row["id"]}/delete')
     assert r.status_code == 200
     assert 'Doomed' not in r.text
@@ -71,7 +73,7 @@ def test_delete_character_redirects_to_list(client_with_backend):
 
 def test_delete_character_removes_from_list(client_with_backend):
     client, backend = client_with_backend
-    row = backend.start(sophont='Humaniti', player='NPC', name='Ephemeral')
+    row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Ephemeral')
     client.post(f'/ui/characters/{row["id"]}/delete')
     assert backend.get_projection(row['id']) is None
 
@@ -86,7 +88,7 @@ def test_delete_nonexistent_character_redirects(client):
 
 def test_wizard_shows_ucp_pending(client_with_backend):
     client, backend = client_with_backend
-    row = backend.start(sophont='Humaniti', player='NPC', name='Clio')
+    row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Clio')
     r = client.get(f'/ui/characters/{row["id"]}/wizard')
     assert r.status_code == 200
     assert 'ucp' in r.text
@@ -102,7 +104,7 @@ def test_wizard_404_for_missing_character(client):
 
 def test_submit_ucp_event(client_with_backend):
     client, backend = client_with_backend
-    row = backend.start(sophont='Humaniti', player='NPC', name='Drax')
+    row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Drax')
     cid = row['id']
     projection = backend.get_projection(cid)
     assert projection is not None
@@ -129,7 +131,7 @@ def test_submit_ucp_event(client_with_backend):
 
 def test_submit_bad_kind_shows_error(client_with_backend):
     client, backend = client_with_backend
-    row = backend.start(sophont='Humaniti', player='NPC', name='Eryn')
+    row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Eryn')
     r = client.post(
         f'/ui/characters/{row["id"]}/events',
         data={'kind': 'unknown_kind', 'fulfills': '1.0'},
@@ -143,7 +145,7 @@ def test_submit_bad_kind_shows_error(client_with_backend):
 
 def test_character_sheet_shows_name(client_with_backend):
     client, backend = client_with_backend
-    row = backend.start(sophont='Humaniti', player='NPC', name='Fyra')
+    row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Fyra')
     r = client.get(f'/ui/characters/{row["id"]}')
     assert r.status_code == 200
     assert 'Fyra' in r.text
@@ -283,11 +285,8 @@ def test_build_event_unknown_raises():
     from ceres.character.web.routes import _build_event_from_form
 
     form = FormData({})
-    try:
+    with pytest.raises(ValueError):
         _build_event_from_form('no_such_kind', '', form)
-        assert False, 'should have raised'
-    except ValueError:
-        pass
 
 
 # ── _diff_summaries unit tests ────────────────────────────────────────────────
@@ -296,6 +295,9 @@ def test_build_event_unknown_raises():
 def _make_summary(**kwargs):
     from ceres.character.projection import CharacterSummary
 
+    kwargs.setdefault('name', 'Test')
+    kwargs.setdefault('sophont', VILANI)
+    kwargs.setdefault('homeworld', MOCK_WORLD)
     return CharacterSummary(**kwargs)
 
 
@@ -366,7 +368,7 @@ def test_diff_empty_when_nothing_changed():
 def test_post_event_response_includes_char_summary_oob(client_with_backend):
     """HTMX response should include an OOB char-summary div after event submission."""
     client, backend = client_with_backend
-    row = backend.start(sophont='Humaniti', player='NPC', name='Oryn')
+    row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Oryn')
     cid = row['id']
     projection = backend.get_projection(cid)
     assert projection is not None
@@ -407,8 +409,10 @@ def test_compute_skill_choices_includes_advancement_dm_4():
         instruction='Investigate or DM+4',
         options=['Investigate', 'advancement_dm_4'],
     )
-    projection = CharacterProjection(character_id=1)
-    projection.summary = CharacterSummary(name='Test')
+    projection = CharacterProjection(
+        character_id=1,
+        summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD),
+    )
 
     choices = _compute_skill_choices_for_pending(pi, projection)
     values = [v for _, v in choices]

@@ -84,7 +84,7 @@ class StorageCompartment(RobotPart):
     def item_description(self) -> str:
         if self.storage_type == 'standard':
             return f'Storage Compartment ({self.slots_count} Slots)'
-        elif self.storage_type == 'hazardous':
+        if self.storage_type == 'hazardous':
             return f'Storage Compartment ({self.slots_count} Slots hazardous material)'
         return f'Storage Compartment ({self.slots_count} Slots {self.storage_type})'
 
@@ -799,7 +799,7 @@ class RobotTransceiver(RadioTransceiverPart, RobotPartMixin):
         if a is None:
             raise RuntimeError(f'{type(self).__name__} not bound to an Assembly')
         if not isinstance(a, RobotBase):
-            raise RuntimeError(f'{type(self).__name__} bound to unexpected type {type(a).__name__}')
+            raise TypeError(f'{type(self).__name__} bound to unexpected type {type(a).__name__}')
         return a
 
     def model_post_init(self, __context: Any) -> None:
@@ -1457,57 +1457,57 @@ def default_suite(
 
 
 __all__ = [
-    'VisualSpectrumSensor',
-    'VoderSpeaker',
+    'ActiveCamouflage',
+    'AgilityEnhancement',
+    'AgriculturalEquipment',
     'AuditorySensor',
-    'WirelessDataLink',
-    'DroneInterface',
-    'VideoScreen',
-    'RobotTransceiver',
-    'default_suite',
-    'StorageCompartment',
-    'DomesticCleaningEquipment',
-    'ReconSensor',
-    'ExternalPower',
-    'RoboticDroneController',
+    'Autobar',
+    'Autochef',
     'AvatarController',
     'AvatarReceiver',
-    'ActiveCamouflage',
-    'SwarmController',
-    'DecreasedResiliency',
-    'NavigationSystem',
-    'AgriculturalEquipment',
-    'LightIntensifierSensor',
-    'OlfactorySensor',
-    'GeckoGrippers',
-    'PrisSensor',
-    'ThermalSensor',
-    'VehicleSpeedModification',
-    'Autochef',
-    'StylistToolkit',
-    'CamouflageVisual',
+    'BioscanneSensor',
     'CamouflageAudible',
     'CamouflageOlfactory',
+    'CamouflageVisual',
+    'DecreasedResiliency',
+    'DensitometerSensor',
+    'DomesticCleaningEquipment',
+    'DroneInterface',
+    'Efficiency',
     'EncryptionModule',
     'EnvironmentProcessor',
-    'ParasiticLink',
-    'InjectorNeedle',
-    'SelfMaintenanceEnhancement',
-    'VacuumEnvironmentProtection',
-    'BioscanneSensor',
-    'DensitometerSensor',
-    'NeuralActivitySensor',
-    'Medikit',
-    'SolarCoating',
-    'ScientificToolkit',
+    'ExternalPower',
     'FabricationChamber',
-    'MedicalChamber',
-    'Autobar',
+    'GeckoGrippers',
     'IncreasedArmour',
-    'AgilityEnhancement',
-    'Efficiency',
+    'InjectorNeedle',
+    'LightIntensifierSensor',
+    'MedicalChamber',
+    'Medikit',
+    'NavigationSystem',
+    'NeuralActivitySensor',
+    'OlfactorySensor',
+    'ParasiticLink',
+    'PrisSensor',
     'RadiationEnvironmentProtection',
+    'ReconSensor',
+    'RobotTransceiver',
+    'RoboticDroneController',
+    'ScientificToolkit',
     'SecondaryLocomotion',
+    'SelfMaintenanceEnhancement',
+    'SolarCoating',
     'StarshipEngineeringToolkit',
+    'StorageCompartment',
+    'StylistToolkit',
+    'SwarmController',
+    'ThermalSensor',
+    'VacuumEnvironmentProtection',
+    'VehicleSpeedModification',
+    'VideoScreen',
+    'VisualSpectrumSensor',
+    'VoderSpeaker',
     'WeaponMount',
+    'WirelessDataLink',
+    'default_suite',
 ]

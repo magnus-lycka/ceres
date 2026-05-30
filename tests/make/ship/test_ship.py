@@ -28,17 +28,17 @@ def test_ship_initial():
 
 def test_ship_needs_hull():
     with pytest.raises(ValidationError):
-        ship.Ship.model_validate(dict(tl=15, displacement=100))
+        ship.Ship.model_validate({'tl': 15, 'displacement': 100})
 
 
 def test_ship_needs_displacement():
     with pytest.raises(ValidationError):
-        ship.Ship.model_validate(dict(tl=15, hull=hull.Hull(configuration=hull.sphere)))
+        ship.Ship.model_validate({'tl': 15, 'hull': hull.Hull(configuration=hull.sphere)})
 
 
 def test_ship_needs_tech_level():
     with pytest.raises(ValidationError):
-        ship.Ship.model_validate(dict(hull=hull.Hull(configuration=hull.sphere), displacement=100))
+        ship.Ship.model_validate({'hull': hull.Hull(configuration=hull.sphere), 'displacement': 100})
 
 
 def test_ship_rejects_tl_above_16():

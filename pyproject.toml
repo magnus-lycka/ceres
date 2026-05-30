@@ -10,6 +10,7 @@ classifiers = [
 ]
 dependencies = [
     "fastapi[standard]>=0.125.0",
+    "httpx>=0.28.0",
     "jinja2>=3.1",
     "ollama>=0.6.2",
     "platformdirs>=4.5.1",
@@ -40,7 +41,27 @@ fix = true
 quote-style = "single"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "RUF005"]
+select = [
+  "E", "F", "I", "UP",
+  "B",      # bugbear
+  "C4",     # comprehensions
+  "SIM",    # simplify
+  "RET",    # return hygiene
+#  "ARG",    # unused args
+  "PTH",    # pathlib
+#  "PL",     # pylint subset
+  "RUF",    # ruff-specific
+  "TRY",    # exception handling
+  "PERF",   # performance
+  "FURB",   # refurb
+]
+ignore = [
+  "PLR0913",  # too many arguments; often noisy
+  "RUF001",  # No, we don't just want ASCII
+  "RUF002",  # No, we don't just want ASCII
+  "RUF003",  # No, we don't just want ASCII
+  "TRY003",  # more than 100 places to fix
+]
 
 [tool.ruff.lint.isort]
 known-first-party = ["ceres"]

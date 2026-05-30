@@ -102,8 +102,7 @@ class Robot(RobotBase):
     @property
     def _manipulator_slot_effect(self) -> int:
         std_slots = self._std_manip_slots
-        arm_effect = sum(m.slots for m in self.manipulators) - 2 * std_slots
-        return arm_effect
+        return sum(m.slots for m in self.manipulators) - 2 * std_slots
 
     @property
     def _manipulator_cost_effect(self) -> float:
@@ -201,8 +200,7 @@ class Robot(RobotBase):
         for opt in self.options:
             if isinstance(opt, RobotPartMixin):
                 result.extend(opt.robot_traits)
-        for t in self.brain.brain_traits:
-            result.append(t)
+        result.extend(self.brain.brain_traits)
         # Deduplicate preserving first-seen order, then sort case-insensitively
         seen: set[tuple] = set()
         unique: list[Trait] = []
@@ -453,8 +451,7 @@ class Robot(RobotBase):
                 allocated = min(std_cost, remaining_credit)
                 remaining_credit -= allocated
                 manip_rows.append(('Removed manipulator', std_slots, -allocated))
-        for m in self.manipulators[2:]:
-            manip_rows.append((m.stat_label(self.size, self.tl), -m.slots, m.cost))
+        manip_rows.extend((m.stat_label(self.size, self.tl), -m.slots, m.cost) for m in self.manipulators[2:])
         for m in self._leg_manipulators:
             label = f'Manipulator leg {m.stat_label(self.size, self.tl)}'
             manip_rows.append((label, 0, m.cost))

@@ -4,16 +4,25 @@ from typer.testing import CliRunner
 from ceres.character.benefits import parse_benefit
 from ceres.character.cli import app, build_app, render_projection_summary
 from ceres.character.projection import CharacterProjection, CharacterSummary
+from ceres.character.sophonts import VILANI
 from ceres.character.store import SqliteCharacterBackend
+from tests.character.helpers import MOCK_WORLD
 
 
 @pytest.fixture
-def memory_app(tmp_path):
+def memory_app(tmp_path, monkeypatch):
+    monkeypatch.setattr('ceres.character.cli.fetch_world', lambda s, h: MOCK_WORLD)
     backend = SqliteCharacterBackend(':memory:')
     try:
         yield build_app(backend=backend, current_path=tmp_path / '.current')
     finally:
         backend.close()
+
+
+def _start_vilani(runner: CliRunner, app, name: str = 'Boss', player: str = 'NPC') -> None:
+    """Start a character with sophont=Vilani and a mock homeworld in one command."""
+    player_args = ['-p', player] if player != 'NPC' else []
+    runner.invoke(app, ['create', 'start', *player_args, name, 'Vilani', 'Troj', '2715'])
 
 
 def test_cli_lists_sophonts():
@@ -41,32 +50,31 @@ def test_cli_lists_skills():
     assert 'Space Science: Astronomy, Cosmology, Planetology' in lines
 
 
-def test_cli_starts_character_creation_with_vilani_sophont(memory_app):
-    result = CliRunner().invoke(memory_app, ['create', 'start', '-s', 'Vilani', 'Boss'])
+def test_cli_starts_character_creation(memory_app):
+    result = CliRunner().invoke(memory_app, ['create', 'start', 'Boss', 'Vilani', 'Troj', '2715'])
 
     assert result.exit_code == 0
     assert result.stdout.splitlines()[0] == 'Started character creation: Boss'
     assert 'Pending:' in result.stdout
+    assert 'ucp' in result.stdout
 
 
-def test_cli_rejects_unknown_sophont_and_lists_available_sophonts(memory_app):
-    result = CliRunner().invoke(memory_app, ['create', 'start', '-s', 'UnknownAlien', 'Boss'])
+def test_cli_rejects_unknown_sophont(memory_app):
+    result = CliRunner().invoke(memory_app, ['create', 'start', 'Boss', 'UnknownAlien', 'Troj', '2715'])
 
     assert result.exit_code != 0
     assert 'Unknown sophont: UnknownAlien' in result.output
-    assert 'Available sophonts: Vilani, Humaniti' in result.output
+    assert 'Available:' in result.output
 
 
 def test_cli_lists_started_character_creations(memory_app):
     test_app = memory_app
     runner = CliRunner()
 
-    first = runner.invoke(test_app, ['create', 'start', '-s', 'Vilani', 'Boss'])
-    second = runner.invoke(test_app, ['create', 'start', '-s', 'Humaniti', '-p', 'Anders', 'Lynn Rashid'])
+    _start_vilani(runner, test_app)
+    runner.invoke(test_app, ['create', 'start', '-p', 'Anders', 'Lynn Rashid', 'Humaniti', 'Troj', '2715'])
     listed = runner.invoke(test_app, ['create', 'list'])
 
-    assert first.exit_code == 0
-    assert second.exit_code == 0
     assert listed.exit_code == 0
     assert listed.stdout.splitlines() == [
         '*  Id  Sophont   UCP     Player  Name',
@@ -78,9 +86,9 @@ def test_cli_lists_started_character_creations(memory_app):
 def test_cli_tracks_current_character_creation(memory_app):
     runner = CliRunner()
 
-    runner.invoke(memory_app, ['create', 'start', '-s', 'Vilani', 'Boss'])
+    _start_vilani(runner, memory_app)
     current_after_first = runner.invoke(memory_app, ['create', 'current'])
-    runner.invoke(memory_app, ['create', 'start', '-s', 'Humaniti', '-p', 'Anders', 'Lynn Rashid'])
+    runner.invoke(memory_app, ['create', 'start', '-p', 'Anders', 'Lynn Rashid', 'Humaniti', 'Troj', '2715'])
     current_after_second = runner.invoke(memory_app, ['create', 'current'])
     use_first = runner.invoke(memory_app, ['create', 'use', '1'])
     current_after_use = runner.invoke(memory_app, ['create', 'current'])
@@ -102,15 +110,16 @@ def test_cli_tracks_current_character_creation(memory_app):
     ]
 
 
-def test_cli_current_character_is_local_to_current_file(tmp_path):
+def test_cli_current_character_is_local_to_current_file(tmp_path, monkeypatch):
+    monkeypatch.setattr('ceres.character.cli.fetch_world', lambda s, h: MOCK_WORLD)
     backend = SqliteCharacterBackend(':memory:')
     try:
         first_app = build_app(backend=backend, current_path=tmp_path / 'first' / '.current')
         second_app = build_app(backend=backend, current_path=tmp_path / 'second' / '.current')
         runner = CliRunner()
 
-        runner.invoke(first_app, ['create', 'start', '-s', 'Vilani', 'Boss'])
-        runner.invoke(first_app, ['create', 'start', '-s', 'Humaniti', '-p', 'Anders', 'Lynn Rashid'])
+        _start_vilani(runner, first_app)
+        runner.invoke(first_app, ['create', 'start', '-p', 'Anders', 'Lynn Rashid', 'Humaniti', 'Troj', '2715'])
         runner.invoke(first_app, ['create', 'use', '1'])
         second_current = runner.invoke(second_app, ['create', 'current'])
 
@@ -139,7 +148,7 @@ def test_cli_rejects_unknown_current_character_id(memory_app):
 def test_cli_shows_current_character_creation(memory_app):
     runner = CliRunner()
 
-    runner.invoke(memory_app, ['create', 'start', '-s', 'Vilani', 'Boss'])
+    _start_vilani(runner, memory_app)
     shown = runner.invoke(memory_app, ['create', 'show'])
 
     assert shown.exit_code == 0
@@ -154,8 +163,8 @@ def test_cli_shows_current_character_creation(memory_app):
 def test_cli_shows_character_creation_by_id(memory_app):
     runner = CliRunner()
 
-    runner.invoke(memory_app, ['create', 'start', '-s', 'Vilani', 'Boss'])
-    runner.invoke(memory_app, ['create', 'start', '-s', 'Humaniti', '-p', 'Anders', 'Lynn Rashid'])
+    _start_vilani(runner, memory_app)
+    runner.invoke(memory_app, ['create', 'start', '-p', 'Anders', 'Lynn Rashid', 'Humaniti', 'Troj', '2715'])
     shown = runner.invoke(memory_app, ['create', 'show', '1'])
 
     assert shown.exit_code == 0
@@ -170,7 +179,7 @@ def test_cli_shows_character_creation_by_id(memory_app):
 def test_cli_show_includes_ucp(memory_app):
     runner = CliRunner()
 
-    runner.invoke(memory_app, ['create', 'start', '-s', 'Vilani', 'Boss'])
+    _start_vilani(runner, memory_app)
     runner.invoke(memory_app, ['create', 'ucp', '7869A5'])
     shown = runner.invoke(memory_app, ['create', 'show'])
 
@@ -202,7 +211,7 @@ def test_cli_rejects_show_for_unknown_character(memory_app):
 def test_cli_sets_and_shows_current_ucp(memory_app):
     runner = CliRunner()
 
-    runner.invoke(memory_app, ['create', 'start', '-s', 'Vilani', 'Boss'])
+    _start_vilani(runner, memory_app)
     changed = runner.invoke(memory_app, ['create', 'ucp', 'STR=7', 'DEX=8', 'END=6', 'INT=9', 'EDU=10', 'SOC=5'])
     shown = runner.invoke(memory_app, ['create', 'ucp'])
 
@@ -216,7 +225,7 @@ def test_cli_sets_and_shows_current_ucp(memory_app):
 def test_cli_sets_current_ucp_from_short_form(memory_app):
     runner = CliRunner()
 
-    runner.invoke(memory_app, ['create', 'start', '-s', 'Vilani', 'Boss'])
+    _start_vilani(runner, memory_app)
     changed = runner.invoke(memory_app, ['create', 'ucp', '7788B4'])
     shown = runner.invoke(memory_app, ['create', 'ucp'])
     listed = runner.invoke(memory_app, ['create', 'list'])
@@ -236,7 +245,7 @@ def test_cli_sets_current_ucp_from_short_form(memory_app):
 def test_cli_lists_ucp_short_form(memory_app):
     runner = CliRunner()
 
-    runner.invoke(memory_app, ['create', 'start', '-s', 'Vilani', 'Boss'])
+    _start_vilani(runner, memory_app)
     runner.invoke(memory_app, ['create', 'ucp', 'STR=7', 'DEX=8', 'END=6', 'INT=9', 'EDU=10', 'SOC=5'])
     listed = runner.invoke(memory_app, ['create', 'list'])
 
@@ -250,7 +259,7 @@ def test_cli_lists_ucp_short_form(memory_app):
 def test_cli_patches_current_ucp_with_adjustments(memory_app):
     runner = CliRunner()
 
-    runner.invoke(memory_app, ['create', 'start', '-s', 'Vilani', 'Boss'])
+    _start_vilani(runner, memory_app)
     runner.invoke(memory_app, ['create', 'ucp', 'STR=7', 'DEX=8'])
     changed = runner.invoke(memory_app, ['create', 'ucp', 'STR-2', 'DEX-1', 'EDU+1'])
 
@@ -270,7 +279,7 @@ def test_cli_rejects_ucp_without_current_character(memory_app):
 def test_cli_rejects_invalid_ucp_change(memory_app):
     runner = CliRunner()
 
-    runner.invoke(memory_app, ['create', 'start', '-s', 'Vilani', 'Boss'])
+    _start_vilani(runner, memory_app)
     result = runner.invoke(memory_app, ['create', 'ucp', 'FOO=7'])
 
     assert result.exit_code != 0
@@ -280,7 +289,7 @@ def test_cli_rejects_invalid_ucp_change(memory_app):
 def test_cli_renames_current_character_creation(memory_app):
     runner = CliRunner()
 
-    runner.invoke(memory_app, ['create', 'start', '-s', 'Vilani', 'Boss'])
+    _start_vilani(runner, memory_app)
     renamed = runner.invoke(memory_app, ['create', 'rename', 'Flavius Rupert'])
     current = runner.invoke(memory_app, ['create', 'current'])
     listed = runner.invoke(memory_app, ['create', 'list'])
@@ -306,7 +315,7 @@ def test_cli_rejects_rename_without_current_character(memory_app):
 def test_cli_rejects_empty_rename(memory_app):
     runner = CliRunner()
 
-    runner.invoke(memory_app, ['create', 'start', '-s', 'Vilani', 'Boss'])
+    runner.invoke(memory_app, ['create', 'start', 'Boss', 'Vilani', 'Troj', '2715'])
     result = runner.invoke(memory_app, ['create', 'rename', ''])
 
     assert result.exit_code != 0
@@ -314,7 +323,7 @@ def test_cli_rejects_empty_rename(memory_app):
 
 
 def test_cli_requires_character_name_when_starting_creation(memory_app):
-    result = CliRunner().invoke(memory_app, ['create', 'start', '-s', 'Vilani', ''])
+    result = CliRunner().invoke(memory_app, ['create', 'start', '', 'Vilani', 'Troj', '2715'])
 
     assert result.exit_code != 0
     assert 'Name must not be empty' in result.output
@@ -323,8 +332,8 @@ def test_cli_requires_character_name_when_starting_creation(memory_app):
 def test_cli_deletes_current_character(memory_app):
     runner = CliRunner()
 
-    runner.invoke(memory_app, ['create', 'start', '-s', 'Vilani', 'Boss'])
-    runner.invoke(memory_app, ['create', 'start', '-s', 'Humaniti', 'Lynn'])
+    runner.invoke(memory_app, ['create', 'start', 'Boss', 'Vilani', 'Troj', '2715'])
+    runner.invoke(memory_app, ['create', 'start', 'Lynn', 'Vilani', 'Troj', '2715'])
     result = runner.invoke(memory_app, ['create', 'delete', '1'])
     listed = runner.invoke(memory_app, ['create', 'list'])
 
@@ -346,7 +355,10 @@ class TestRenderProjectionSummaryBenefits:
     """render_projection_summary should display non-characteristic benefits and cash."""
 
     def _projection(self, **kwargs) -> CharacterProjection:
-        return CharacterProjection(character_id=1, summary=CharacterSummary(name='Test', **kwargs))
+        return CharacterProjection(
+            character_id=1,
+            summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD, **kwargs),
+        )
 
     def test_benefits_shown_in_summary(self):
         projection = self._projection(benefits=[parse_benefit('lab_ship'), parse_benefit('ship_share')])

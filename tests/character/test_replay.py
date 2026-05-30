@@ -1,6 +1,12 @@
 from random import Random
 
-from ceres.character.events import BackgroundSkillsEvent, CharacterStartedEvent, UcpEvent
+import pytest
+
+from ceres.character.events import (
+    BackgroundSkillsEvent,
+    CharacterStartedEvent,
+    UcpEvent,
+)
 from ceres.character.projection import (
     PendingBackgroundSkills,
     PendingCareerChoice,
@@ -8,12 +14,14 @@ from ceres.character.projection import (
 )
 from ceres.character.replay import BACKGROUND_SKILLS, ReplayError, replay
 from ceres.character.skills import Admin, Advocate, Athletics, Carouse, Drive, skill_list
+from ceres.character.sophonts import VILANI, Sophont
 from ceres.character.store import SqliteCharacterBackend
 from ceres.character.web.bulk import CohortParams, generate_npc
+from tests.character.helpers import MOCK_WORLD
 
 
-def _started(id: int = 1) -> CharacterStartedEvent:
-    return CharacterStartedEvent(id=id, sophont='Vilani', player='NPC', name='Boss')
+def _started(id: int = 1, sophont: Sophont = VILANI) -> CharacterStartedEvent:
+    return CharacterStartedEvent(id=id, sophont=sophont, homeworld=MOCK_WORLD, player='NPC', name='Boss')
 
 
 def _ucp(id: int = 2, ucp: str = '7869A5') -> UcpEvent:
@@ -49,11 +57,12 @@ class TestCharacterStarted:
 
         assert projection.character_id == 42
 
-    def test_sets_name_and_species_in_summary(self):
+    def test_sets_name_sophont_and_homeworld_in_summary(self):
         projection = replay(1, [_started()])
 
         assert projection.summary.name == 'Boss'
-        assert projection.summary.species == 'Vilani'
+        assert projection.summary.sophont == VILANI
+        assert projection.summary.homeworld == MOCK_WORLD
 
     def test_first_pending_input_is_ucp(self):
         projection = replay(1, [_started()])
@@ -174,21 +183,15 @@ class TestBackgroundSkillsEvent:
     def test_rejects_wrong_number_of_skills(self):
         too_few = BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics()])
 
-        try:
+        with pytest.raises(ReplayError):
             replay(1, [_started(), _ucp(), too_few])
-            assert False, 'Expected ReplayError'
-        except ReplayError:
-            pass
 
     def test_rejects_non_background_skill(self):
         # Advocate is not in BackgroundSkills
         invalid = BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Advocate(), Carouse(), Drive()])
 
-        try:
+        with pytest.raises(ReplayError):
             replay(1, [_started(), _ucp(), invalid])
-            assert False, 'Expected ReplayError'
-        except ReplayError:
-            pass
 
     def test_all_background_skills_are_known_skill_types(self):
         known_types = {cls.name() for cls in BACKGROUND_SKILLS}
@@ -200,18 +203,15 @@ class TestBackgroundSkillsEvent:
         # Cannot submit background_skills when no such pending exists (EDU=0)
         event = BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[])
 
-        try:
+        with pytest.raises(ReplayError):
             replay(1, [_started(), _ucp_low_edu(), event])
-            assert False, 'Expected ReplayError'
-        except ReplayError:
-            pass
 
 
 class TestReplayFromPersistedEventLog:
     def test_replaying_persisted_event_log_rebuilds_identical_projection(self):
         backend = SqliteCharacterBackend(':memory:')
         try:
-            row = backend.start(sophont='Vilani', player='NPC', name='Boss')
+            row = backend.start(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')
             character_id = row['id']
             backend.append_event(character_id, UcpEvent(fulfills='1.0', ucp='7869A5'))
             backend.append_event(
@@ -273,20 +273,14 @@ class TestReplayBlocking:
     def test_rejects_unrelated_event_while_ucp_pending(self):
         unrelated = UcpEvent(id=2, fulfills=None, ucp='7869A5')
 
-        try:
+        with pytest.raises(ReplayError):
             replay(1, [_started(), unrelated])
-            assert False, 'Expected ReplayError'
-        except ReplayError:
-            pass
 
     def test_rejects_event_with_unknown_fulfills(self):
         wrong = UcpEvent(id=2, fulfills='99.0', ucp='7869A5')
 
-        try:
+        with pytest.raises(ReplayError):
             replay(1, [_started(), wrong])
-            assert False, 'Expected ReplayError'
-        except ReplayError:
-            pass
 
 
 class TestDeterminism:
@@ -298,9 +292,39 @@ class TestDeterminism:
 
         assert first.model_dump() == second.model_dump()
 
-    def test_empty_events(self):
-        projection = replay(1, [])
+    def test_empty_events_raises(self):
+        with pytest.raises(ReplayError):
+            replay(1, [])
 
-        assert projection.character_id == 1
-        assert projection.pending_inputs == []
-        assert projection.summary.name is None
+
+class TestCharacterStartedEventJsonRoundTrip:
+    def test_sophont_survives_json_round_trip(self):
+        import json
+
+        from pydantic import TypeAdapter
+
+        from ceres.character.events import AnyEvent
+
+        event = _started()
+        adapter: TypeAdapter[AnyEvent] = TypeAdapter(AnyEvent)
+        serialized = json.dumps(event.model_dump())
+        restored = adapter.validate_python(json.loads(serialized))
+
+        assert isinstance(restored, CharacterStartedEvent)
+        assert restored.sophont == VILANI
+
+    def test_homeworld_survives_json_round_trip(self):
+        import json
+
+        from pydantic import TypeAdapter
+
+        from ceres.character.events import AnyEvent
+
+        event = _started()
+        adapter: TypeAdapter[AnyEvent] = TypeAdapter(AnyEvent)
+        serialized = json.dumps(event.model_dump())
+        restored = adapter.validate_python(json.loads(serialized))
+
+        assert isinstance(restored, CharacterStartedEvent)
+        assert restored.homeworld.name == MOCK_WORLD.name
+        assert restored.homeworld.uwp == MOCK_WORLD.uwp

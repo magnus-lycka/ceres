@@ -413,10 +413,7 @@ class Ship(ShipBase):
             self.computer.validate_jump_drive(self.drives)
         if self.drives is not None:
             software_packages: list[SoftwarePackage]
-            if self.computer is None:
-                software_packages = []
-            else:
-                software_packages = self.computer.software_packages
+            software_packages = [] if self.computer is None else self.computer.software_packages
             self.drives.validate_jump_control(software_packages)
         if self.power is not None:
             self.power.validate_emergency_power_system()

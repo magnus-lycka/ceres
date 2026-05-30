@@ -4,9 +4,9 @@ Rules: refs/robot/09_manipulators.md
 """
 
 from math import ceil
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, ClassVar, Literal
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from ceres.shared import CeresModel
 
@@ -33,7 +33,7 @@ def _slot_pct(delta: int) -> float:
 class Leg(CeresModel):
     """A plain walker leg with no manipulation capability."""
 
-    model_config = {'frozen': True}
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
     type: Literal['LEG'] = 'LEG'
 
 
@@ -44,7 +44,7 @@ class Manipulator(RobotPart):
     str_bonus and dex_bonus are enhancements above default values.
     """
 
-    model_config = {'frozen': True}
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
     type: Literal['MANIPULATOR'] = 'MANIPULATOR'
 
     size: RobotSize | None = None

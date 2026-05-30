@@ -2,7 +2,9 @@ from typer.testing import CliRunner
 
 from ceres import settings
 from ceres.character.cli import build_app
+from ceres.character.sophonts import VILANI
 from ceres.character.store import SqliteCharacterBackend
+from tests.character.helpers import MOCK_WORLD
 
 
 def test_settings_directories_come_from_platformdirs(monkeypatch, tmp_path):
@@ -19,7 +21,7 @@ def test_sqlite_character_backend_defaults_to_ceres_data_dir(monkeypatch, tmp_pa
     monkeypatch.setattr(settings, 'data_dir', lambda: tmp_path / 'data')
 
     with SqliteCharacterBackend() as backend:
-        backend.start(sophont='Vilani', player='NPC', name='Boss')
+        backend.start(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')
 
     assert (tmp_path / 'data' / 'characters.sqlite').exists()
 
@@ -28,18 +30,19 @@ def test_sqlite_character_backend_creates_database_parent_directory(tmp_path):
     database = tmp_path / 'missing' / 'characters.sqlite'
 
     with SqliteCharacterBackend(database) as backend:
-        backend.start(sophont='Vilani', player='NPC', name='Boss')
+        backend.start(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')
 
     assert database.exists()
 
 
 def test_cli_current_file_defaults_to_ceres_cache_dir(monkeypatch, tmp_path):
     monkeypatch.setattr(settings, 'cache_dir', lambda: tmp_path / 'cache')
+    monkeypatch.setattr('ceres.character.cli.fetch_world', lambda s, h: MOCK_WORLD)
     backend = SqliteCharacterBackend(':memory:')
     try:
         cli = build_app(backend=backend)
 
-        CliRunner().invoke(cli, ['create', 'start', '-s', 'Vilani', 'Boss'])
+        CliRunner().invoke(cli, ['create', 'start', 'Boss', 'Vilani', 'Troj', '2715'])
 
         assert (tmp_path / 'cache' / 'current-character').read_text() == '1\n'
     finally:

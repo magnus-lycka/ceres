@@ -106,7 +106,7 @@ def build_prompt(summary: CharacterSummary) -> str:
         f'Scouts are members of the IISS (Imperial Interstellar Scout Service), '
         f'not called "Vilani Scouts".\n\n'
         f'Name: {summary.name or "Unknown"}\n'
-        f'Species: {summary.species or "Human"}\n'
+        f'Species: {summary.sophont.name}\n'
         f'Career: {career_label} — Rank {summary.rank}, {summary.term_count} terms\n'
         f'Age: {summary.age}\n'
         f'Characteristics: {char_lines}\n\n'
@@ -188,9 +188,10 @@ def generate_notes(
             return None
         notes = response.response.strip()
         cache.put(h, notes)
-        return notes
     except Exception:
         return None
+    else:
+        return notes
     finally:
         if owned_cache:
             cache.close()

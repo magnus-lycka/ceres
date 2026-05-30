@@ -57,9 +57,10 @@ from ceres.character.projection import (
 from ceres.character.replay import ReplayError
 from ceres.character.report import render_npc_gallery_pdf
 from ceres.character.skills import AnySkill, skill_class_by_name
-from ceres.character.sophonts import SOPHONT_NAMES
+from ceres.character.sophonts import SOPHONT_NAMES, get_sophont
 from ceres.character.spec import spec_from_summary
 from ceres.character.store import SqliteCharacterBackend
+from ceres.character.web.bulk import _NPC_DEFAULT_HOMEWORLD
 
 _TEMPLATES_DIR = Path(__file__).parent / 'templates'
 _skill_adapter: TypeAdapter[AnySkill] = TypeAdapter(AnySkill)
@@ -156,7 +157,7 @@ def _compute_skill_choices_for_pending(pi: PendingInputBase, projection: Charact
                 label = opt
                 fields = _level_fields(skill_cls)
                 if len(fields) > 1:
-                    for fname, sname in zip(fields, skill_cls.specialities()):
+                    for fname, sname in zip(fields, skill_cls.specialities(), strict=False):
                         given = getattr(skill, fname).value
                         if given > 0:
                             label = f'{opt} ({sname})'
@@ -371,16 +372,13 @@ def _diff_summaries(before: CharacterSummary, after: CharacterSummary) -> list[s
         changes.append(f'Cash {sign}Cr{delta:,}')
 
     # Benefits
-    for b in after.benefits[len(before.benefits) :]:
-        changes.append(f'Benefit: {b.display_label}')
+    changes.extend(f'Benefit: {b.display_label}' for b in after.benefits[len(before.benefits) :])
 
     # Connections
-    for c in after.connections[len(before.connections) :]:
-        changes.append(f'New {c.kind}: {c.source or "unknown"}')
+    changes.extend(f'New {c.kind}: {c.source or "unknown"}' for c in after.connections[len(before.connections) :])
 
     # Problems
-    for p in after.problems[len(before.problems) :]:
-        changes.append(f'Problem: {p}')
+    changes.extend(f'Problem: {p}' for p in after.problems[len(before.problems) :])
 
     return changes
 
@@ -470,9 +468,15 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
                 context={'sophonts': SOPHONT_NAMES, 'error': 'Name is required'},
                 status_code=422,
             )
-        if sophont not in SOPHONT_NAMES:
-            sophont = SOPHONT_NAMES[0]
-        row = backend.start(sophont=sophont, player=player.strip() or 'NPC', name=name)
+        sophont_obj = get_sophont(sophont) or get_sophont(SOPHONT_NAMES[0])
+        if sophont_obj is None:
+            raise RuntimeError(f'No fallback sophont available: {sophont!r}')
+        row = backend.start(
+            sophont=sophont_obj,
+            homeworld=_NPC_DEFAULT_HOMEWORLD,
+            player=player.strip() or 'NPC',
+            name=name,
+        )
         return RedirectResponse(url=f'/ui/characters/{row["id"]}/wizard', status_code=303)
 
     @router.get('/characters/{character_id}', response_class=HTMLResponse)

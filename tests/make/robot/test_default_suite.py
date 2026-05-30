@@ -137,7 +137,7 @@ class TestDefaultSuiteInRobot:
         robot = _robot()
         ds = default_suite()
         assert len(robot.options) == len(ds)
-        for opt_r, opt_ds in zip(robot.options, ds):
+        for opt_r, opt_ds in zip(robot.options, ds, strict=True):
             assert type(opt_r) is type(opt_ds)
 
     def test_default_suite_items_have_zero_cost_in_robot(self):

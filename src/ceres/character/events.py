@@ -1,9 +1,11 @@
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer, field_validator
 
+from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.characteristics import Chars, ConnectionKind
 from ceres.character.skills import AnySkill
+from ceres.character.sophonts import Sophont, get_sophont
 
 
 class EventBase(BaseModel):
@@ -13,9 +15,26 @@ class EventBase(BaseModel):
 
 class CharacterStartedEvent(EventBase):
     kind: Literal['character_started'] = 'character_started'
-    sophont: str
+    sophont: Sophont
+    homeworld: TravellerMapWorld
     player: str = 'NPC'
     name: str
+
+    @field_validator('sophont', mode='before')
+    @classmethod
+    def _coerce_sophont(cls, v: object) -> Sophont:
+        if isinstance(v, Sophont):
+            return v
+        if isinstance(v, str):
+            result = get_sophont(v)
+            if result is None:
+                raise ValueError(f'Unknown sophont: {v!r}')
+            return result
+        raise ValueError(f'Expected Sophont or sophont name, got {type(v).__name__}')
+
+    @field_serializer('sophont')
+    def _serialize_sophont(self, v: Sophont) -> str:
+        return v.name
 
 
 class UcpEvent(EventBase):
@@ -269,37 +288,37 @@ type AnyEvent = Annotated[
 
 
 __all__ = [
-    'AnyEvent',
     'AdvancementDmChoiceEvent',
-    'ConnectionKind',
     'AdvancementEvent',
     'AgingCrisisEvent',
     'AgingRollEvent',
+    'AnyEvent',
     'AssignmentChangeChoiceEvent',
     'BackgroundSkillsEvent',
     'BenefitChoiceEvent',
     'CareerChoiceEvent',
     'CareerEvent',
-    'CharacteristicChoiceEvent',
     'CharacterStartedEvent',
+    'CharacteristicChoiceEvent',
     'CommissionEvent',
+    'ConnectionKind',
     'ConnectionKindChoiceEvent',
     'ConnectionsRollEvent',
-    'DraftEvent',
-    'DraftAssignmentEvent',
-    'FinishCreationEvent',
-    'PreCareerEntryEvent',
-    'PreCareerSkillChoiceEvent',
-    'PreCareerEventEvent',
-    'PreCareerGraduationEvent',
     'DoubleInjuryTableEvent',
+    'DraftAssignmentEvent',
+    'DraftEvent',
     'EventBase',
+    'FinishCreationEvent',
     'InjuryTableEvent',
     'LifeEventEvent',
     'LifeEventUnusualEvent',
     'MishapEvent',
     'MusterOutEvent',
     'ParoleRollEvent',
+    'PreCareerEntryEvent',
+    'PreCareerEventEvent',
+    'PreCareerGraduationEvent',
+    'PreCareerSkillChoiceEvent',
     'ReenlistEvent',
     'SkillChoiceEvent',
     'SkillRollEvent',

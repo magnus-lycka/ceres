@@ -11,4 +11,4 @@ def format_credits(amount: float) -> str:
     return f'Cr{int(amount):,}'
 
 
-__all__ = ['format_traits', 'format_credits']
+__all__ = ['format_credits', 'format_traits']

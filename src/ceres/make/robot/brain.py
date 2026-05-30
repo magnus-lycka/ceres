@@ -6,7 +6,7 @@ Brain table values from refs/robot/33_brain.md.
 from dataclasses import dataclass
 from typing import Annotated, Any, ClassVar, Literal, cast
 
-from pydantic import Field, model_validator
+from pydantic import ConfigDict, Field, model_validator
 
 from ceres.shared import CeresModel
 
@@ -93,7 +93,7 @@ def _lookup(table: tuple[_BrainEntry, ...], tl: int) -> _BrainEntry:
 
 
 class _BrainBase(CeresModel):
-    model_config = {'frozen': True}
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     brain_tl: int = 0  # subclasses override with their default
 
@@ -442,11 +442,11 @@ def UniversalTranslator() -> BrainSoftware:
 
 
 __all__ = [
-    'RobotBrainUnion',
-    'PrimitiveBrain',
-    'BasicBrain',
     'AdvancedBrain',
-    'VeryAdvancedBrain',
+    'BasicBrain',
+    'PrimitiveBrain',
+    'RobotBrainUnion',
     'SelfAwareBrain',
     'UniversalTranslator',
+    'VeryAdvancedBrain',
 ]

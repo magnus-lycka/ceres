@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from ceres.make.ship.occupants import (
     BasicPassage,
     Crew,
@@ -15,14 +17,14 @@ from ceres.make.ship.occupants import (
 
 
 class RoomOneBed:
-    provides = [
+    provides: ClassVar[list[tuple[ResidenceDemand, int]]] = [
         (ResidenceDemand.CREW_STATEROOM, 1),
         (ResidenceDemand.PASSENGER_STATEROOM, 1),
     ]
 
 
 class RoomTwoBeds:
-    provides = [
+    provides: ClassVar[list[tuple[ResidenceDemand, int]]] = [
         (ResidenceDemand.CREW_STATEROOM, 1),
         (ResidenceDemand.PASSENGER_STATEROOM, 1),
         (ResidenceDemand.CREW_STATEROOM_BED, 2),
@@ -32,7 +34,7 @@ class RoomTwoBeds:
 
 
 class LowBerthResidence:
-    provides = [(ResidenceDemand.LOW_BERTH, 1)]
+    provides: ClassVar[list[tuple[ResidenceDemand, int]]] = [(ResidenceDemand.LOW_BERTH, 1)]
 
 
 def test_high_passage_requirements():

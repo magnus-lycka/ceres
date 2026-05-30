@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Annotated, ClassVar, Literal, get_args, get_origin
 
-from pydantic import Field, PrivateAttr, field_validator
+from pydantic import ConfigDict, Field, PrivateAttr, field_validator
 
 from ceres.character import skills as character_skills
 from ceres.character.skills import AnySkill, Level, Skill
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 class SoftwarePackage(CeresModel, ABC):
     package: str
-    model_config = {'frozen': True}
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     @property
     @abstractmethod

@@ -18,12 +18,14 @@ from ceres.character.projection import (
 )
 from ceres.character.replay import replay
 from ceres.character.skills import PhysicalScience, skill_class_by_name
+from ceres.character.sophonts import HUMANITI
+from tests.character.helpers import MOCK_WORLD
 
 
 def _base():
     """Character with EDU=0 (no background skills) and all other stats at 7."""
     return [
-        CharacterStartedEvent(id=1, sophont='Human', player='Test', name='Tester'),
+        CharacterStartedEvent(id=1, sophont=HUMANITI, homeworld=MOCK_WORLD, player='Test', name='Tester'),
         UcpEvent(id=2, fulfills='1.0', ucp='777707'),  # STR=7 DEX=7 END=7 INT=7 EDU=0 SOC=7
     ]
 

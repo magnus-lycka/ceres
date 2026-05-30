@@ -3,6 +3,7 @@
 refs/robot/35_skill_packages.md — Primitive brain package table.
 """
 
+from pydantic import ValidationError
 import pytest
 
 from ceres.character import skills as character_skills
@@ -147,8 +148,8 @@ class TestBrainSoftware:
         sw = BrainSoftware(name='X', bandwidth=1)
         import pytest
 
-        with pytest.raises(Exception):
-            setattr(sw, 'bandwidth', 2)
+        with pytest.raises(ValidationError):
+            sw.bandwidth = 2
 
     def test_json_roundtrip(self):
         sw = BrainSoftware(name='Universal Translator', bandwidth=3, tl=12, cost=25000.0)

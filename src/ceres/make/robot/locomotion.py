@@ -1,7 +1,7 @@
 from math import ceil
 from typing import Annotated, Any, ClassVar, Literal
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from ceres.character import skills as character_skills
 from ceres.character.skills import Level, Skill
@@ -11,7 +11,7 @@ from .chassis import Trait
 
 
 class _LocomotionBase(CeresModel):
-    model_config = {'frozen': True}
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     _required_tl: ClassVar[int]
     _agility: ClassVar[int | None]
@@ -284,16 +284,16 @@ LocomotionUnion = Annotated[
 ]
 
 __all__ = [
-    'LocomotionUnion',
-    'NoneLocomotion',
-    'WheelsLocomotion',
-    'WheelsAtvLocomotion',
-    'TracksLocomotion',
-    'GravLocomotion',
     'AeroplaneLocomotion',
     'AquaticLocomotion',
+    'GravLocomotion',
+    'HovercraftLocomotion',
+    'LocomotionUnion',
+    'NoneLocomotion',
+    'ThrusterLocomotion',
+    'TracksLocomotion',
     'VtolLocomotion',
     'WalkerLocomotion',
-    'HovercraftLocomotion',
-    'ThrusterLocomotion',
+    'WheelsAtvLocomotion',
+    'WheelsLocomotion',
 ]

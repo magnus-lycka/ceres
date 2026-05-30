@@ -61,10 +61,7 @@ class Bridge(ShipPart):
 
     def item_description(self) -> str:
         if self.holographic:
-            if self.small:
-                item = 'Smaller Holographic Controls'
-            else:
-                item = 'Holographic Controls'
+            item = 'Smaller Holographic Controls' if self.small else 'Holographic Controls'
         elif self.small:
             item = 'Smaller Bridge'
         else:
@@ -144,11 +141,7 @@ class CommandSection(CeresModel):
     cockpit: Cockpit | None = None
 
     def _all_parts(self) -> list[ShipPart]:
-        parts: list[ShipPart] = []
-        for part in (self.bridge, self.cockpit):
-            if part is not None:
-                parts.append(part)
-        return parts
+        return [part for part in (self.bridge, self.cockpit) if part is not None]
 
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
         for part in (self.bridge, self.cockpit):

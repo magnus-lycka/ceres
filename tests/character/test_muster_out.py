@@ -21,13 +21,15 @@ from ceres.character.events import (
 from ceres.character.projection import PendingMusterOut
 from ceres.character.replay import ReplayError, replay
 from ceres.character.skills import Admin, Athletics, Carouse, Drive, Medic, SpaceScience
+from ceres.character.sophonts import VILANI
+from tests.character.helpers import MOCK_WORLD
 
 
 def _full_setup(character_id: int = 1) -> list:
     """Return events that get a character through setup: started → ucp → background skills."""
     # STR=7 DEX=8 END=6 INT=9 EDU=10 SOC=5 → 4 background skills
     return [
-        CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Boss'),
+        CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'),
         UcpEvent(id=2, fulfills='1.0', ucp='7869A5'),
         BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Drive()]),
     ]
@@ -41,7 +43,7 @@ def _scholar_setup(character_id: int = 1) -> list:
     creates two choice pendings: Drive/Flyer (id .0) and Science (id .1).
     """
     return [
-        CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Boss'),
+        CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'),
         UcpEvent(id=2, fulfills='1.0', ucp='7869A5'),
         BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Medic()]),
     ]
@@ -50,7 +52,7 @@ def _scholar_setup(character_id: int = 1) -> list:
 def _setup_through_3_terms_reenlist() -> list:
     """Complete setup and 3 Scout Courier terms. Age=30 after. Skill_table pending at '18.0'."""
     return [
-        CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Boss'),
+        CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'),
         UcpEvent(id=2, fulfills='1.0', ucp='7869A5'),
         BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Drive()]),
         # Term 1

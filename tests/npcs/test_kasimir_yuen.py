@@ -21,7 +21,9 @@ from ceres.character.events import (
 )
 from ceres.character.replay import replay
 from ceres.character.skills import Admin, Athletics, Carouse, Drive, Level, Pilot
+from ceres.character.sophonts import VILANI
 from ceres.character.spec import NpcSpec, spec_from_summary
+from tests.character.helpers import MOCK_WORLD
 
 _expected = SimpleNamespace(
     name='Kasimir Yuen',
@@ -41,7 +43,7 @@ _expected = SimpleNamespace(
 
 def _events() -> list:
     return [
-        CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Kasimir Yuen'),
+        CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Kasimir Yuen'),
         UcpEvent(id=2, fulfills='1.0', ucp='7869A5'),
         BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Drive()]),
         # Term 1: qualify Scout Courier, survive, event 5 (benefit_dm), advancement fails, reenlist same

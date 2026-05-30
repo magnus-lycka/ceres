@@ -14,11 +14,13 @@ from ceres.character.events import (
 from ceres.character.projection import PendingCommissionChoice, PendingDraftAssignmentChoice, PendingDraftChoice
 from ceres.character.replay import replay
 from ceres.character.skills import Admin, Athletics, Carouse, Drive, VaccSuit
+from ceres.character.sophonts import VILANI
+from tests.character.helpers import MOCK_WORLD
 
 
 def _setup(ucp: str = '7869A5') -> list:
     return [
-        CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Boss'),
+        CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'),
         UcpEvent(id=2, fulfills='1.0', ucp=ucp),
         BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Drive()]),
     ]

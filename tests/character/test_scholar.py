@@ -56,6 +56,8 @@ from ceres.character.skills import (
     SpaceScience,
     Survival,
 )
+from ceres.character.sophonts import VILANI
+from tests.character.helpers import MOCK_WORLD
 
 _SCIENCES = sorted(['Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science'])
 
@@ -68,7 +70,7 @@ def _scholar_setup(character_id: int = 1) -> list:
     creates two choice pendings: Drive/Flyer (id .0) and Science (id .1).
     """
     return [
-        CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Boss'),
+        CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'),
         UcpEvent(id=2, fulfills='1.0', ucp='7869A5'),
         BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Medic()]),
     ]
@@ -79,7 +81,7 @@ class TestScholarInitialTraining:
 
     def _setup(self) -> list:
         return [
-            CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Boss'),
+            CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'),
             UcpEvent(id=2, fulfills='1.0', ucp='7869A5'),
             # Background skills without Drive/Flyer/Science so choice tests are unambiguous
             BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Medic()]),
@@ -161,7 +163,7 @@ class TestScholarInitialTraining:
 
     def test_no_initial_training_choice_for_scout(self):
         events = [
-            CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Boss'),
+            CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'),
             UcpEvent(id=2, fulfills='1.0', ucp='7869A5'),
             BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Medic()]),
             CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
@@ -919,7 +921,7 @@ class TestScholarQualificationInt:
         # UCP '786965': STR=7 DEX=8 END=6 INT=9 EDU=6 SOC=5
         # INT=9 → DM+1; EDU=6 → DM+0; target 6; roll 5 → 5+1=6 ≥ 6 with INT, 5+0=5 < 6 with EDU
         events = [
-            CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Boss'),
+            CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'),
             UcpEvent(id=2, fulfills='1.0', ucp='786965'),
             BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Carouse()]),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),
@@ -932,7 +934,7 @@ class TestScholarQualificationInt:
         # UCP '786695': STR=7 DEX=8 END=6 INT=6 EDU=9 SOC=5
         # INT=6 → DM+0; EDU=9 → DM+1; target 6; roll 5 → 5+0=5 < 6 → fails
         events = [
-            CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Boss'),
+            CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'),
             UcpEvent(id=2, fulfills='1.0', ucp='786695'),
             BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Drive()]),
             CareerEvent(id=4, fulfills='3.0', career='Scholar', assignment='Field Researcher', qualification_roll=5),

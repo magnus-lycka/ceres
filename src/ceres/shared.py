@@ -4,6 +4,24 @@ from typing import ClassVar, Self
 from pydantic import BaseModel, Field, PrivateAttr
 from pydantic_core import core_schema
 
+# Traveller extended hex: digits 0-9 then A-Z excluding I and O (values 0-33)
+_EHEX = '0123456789ABCDEFGHJKLMNPQRSTUVWXYZ'
+_EHEX_DECODE: dict[str, int] = {ch: i for i, ch in enumerate(_EHEX)}
+
+
+def ehex_to_int(code: str) -> int:
+    """Convert a single Traveller ehex digit to its integer value (0-33)."""
+    if code in _EHEX:
+        return _EHEX_DECODE[code]
+    raise ValueError('Invalid ehex digit: %s', code)
+
+
+def int_to_ehex(value: int) -> str:
+    """Convert an integer (0-33) to its Traveller ehex digit."""
+    if value < 0 or value >= len(_EHEX):
+        raise ValueError('Value %s out of ehex range 0-33', value)
+    return _EHEX[value]
+
 
 class _NoteCategory(StrEnum):
     ITEM = 'item'
@@ -207,7 +225,7 @@ class CeresPart(CeresModel):
     @property
     def assembly(self) -> Assembly:
         if self._assembly is None:
-            raise RuntimeError(f'{type(self).__name__} not bound to an Assembly')
+            raise RuntimeError('%s not bound to an Assembly', type(self).__name__)
         return self._assembly
 
 

@@ -73,12 +73,11 @@ def _choice_scholar_event_3(projection: CharacterProjection, event) -> None:
                 options=['cash', 'benefits'],
             )
         )
-    else:
-        if projection.summary.current_career is not None:
-            career = _current_career(projection)
-            projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment or '', event.id)
-            )
+    elif projection.summary.current_career is not None:
+        career = _current_career(projection)
+        projection.pending_inputs.append(
+            _advancement_pending(career, projection.summary.current_assignment or '', event.id)
+        )
 
 
 # ── event 6: advanced training ───────────────────────────────────────────────

@@ -46,14 +46,13 @@ class Stateroom(ShipPart):
 
     @property
     def provides(self) -> list[tuple[ResidenceDemand, int]]:
-        provisions = [
+        return [
             (ResidenceDemand.CREW_STATEROOM, 1),
             (ResidenceDemand.PASSENGER_STATEROOM, 1),
             (ResidenceDemand.CREW_STATEROOM_BED, self.occupancy),
             (ResidenceDemand.ANY_CREW_BED, self.occupancy),
             (ResidenceDemand.PASSENGER_STATEROOM_BED, self.occupancy),
         ]
-        return provisions
 
     @property
     def tons(self) -> float:
@@ -393,22 +392,24 @@ class HabitationSection(CeresModel):
 
     def _all_parts(self) -> list[ShipPart]:
         parts: list[ShipPart] = [*self.staterooms, *self.low_berths, *self.emergency_low_berths]
-        for part in (
-            self.brig,
-            *self.brigs,
-            *self.barracks,
-            self.cabin_space,
-            self.common_area,
-            *self.common_areas,
-            self.entertainment,
-            self.swimming_pool,
-            *self.hot_tubs,
-            *self.theatres,
-            self.wet_bar,
-            *self.stables,
-        ):
-            if part is not None:
-                parts.append(part)
+        parts.extend(
+            part
+            for part in (
+                self.brig,
+                *self.brigs,
+                *self.barracks,
+                self.cabin_space,
+                self.common_area,
+                *self.common_areas,
+                self.entertainment,
+                self.swimming_pool,
+                *self.hot_tubs,
+                *self.theatres,
+                self.wet_bar,
+                *self.stables,
+            )
+            if part is not None
+        )
         return parts
 
     def crew_count(self, ship) -> int:

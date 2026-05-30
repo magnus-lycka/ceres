@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from enum import StrEnum
 from typing import Annotated, Any, ClassVar, Literal
 
-from pydantic import Field, PrivateAttr, TypeAdapter
+from pydantic import ConfigDict, Field, PrivateAttr, TypeAdapter
 
 from ceres.shared import CeresModel, CeresPart, NoteList, _Note
 
@@ -31,7 +31,7 @@ class Modification(CeresModel):
     fuel_delta_percent: float = 0.0
     tl_delta: int = 0
     info_notes: tuple[str, ...] = ()
-    model_config = {'frozen': True}
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     def item_description(self) -> str:
         return self.name
@@ -55,7 +55,7 @@ class Customisation(CeresModel):
     notes: ClassVar[NoteList]
     grade: CustomisationGrade
     modifications: list[Modification]
-    model_config = {'frozen': True}
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     _cost_multiplier: ClassVar[float]
     _tons_multiplier: ClassVar[float]
@@ -305,7 +305,7 @@ class ShipPart(CeresPart, ShipPartMixin):
         if a is None:
             raise RuntimeError(f'{type(self).__name__} not bound to an Assembly')
         if not isinstance(a, ShipBase):
-            raise RuntimeError(f'{type(self).__name__} bound to unexpected assembly type {type(a).__name__}')
+            raise TypeError(f'{type(self).__name__} bound to unexpected assembly type {type(a).__name__}')
         return a
 
     def build_notes(self) -> list[_Note]:

@@ -13,10 +13,12 @@ from ceres.character.skills import (
     SocialScience,
     SpaceScience,
 )
+from ceres.character.sophonts import VILANI
+from tests.character.helpers import MOCK_WORLD
 
 
 def _projection(skills=None) -> CharacterProjection:
-    summary = CharacterSummary(skills=skills or [])
+    summary = CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD, skills=skills or [])
     return CharacterProjection(character_id=1, summary=summary)
 
 

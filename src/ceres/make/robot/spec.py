@@ -61,9 +61,9 @@ class RobotSpec:
 
 
 __all__ = [
-    'RobotSpecSection',
-    'RobotSpecRow',
-    'RobotSpec',
     'RobotDetailRow',
     'RobotDetailSection',
+    'RobotSpec',
+    'RobotSpecRow',
+    'RobotSpecSection',
 ]

@@ -7,12 +7,13 @@ from typing import Annotated
 import typer
 
 from ceres import settings
+from ceres.adapters.travellermap import fetch_world
 from ceres.character.characteristics import UCP_STATS, Chars
 from ceres.character.events import AnyEvent, UcpEvent
 from ceres.character.projection import CharacterProjection
 from ceres.character.replay import ReplayError
 from ceres.character.skills import AnySkill, Skill, SkillInfo, _skill_classes, skill_list
-from ceres.character.sophonts import SOPHONT_NAMES
+from ceres.character.sophonts import SOPHONT_NAMES, get_sophont
 from ceres.character.store import CharacterRow, SqliteCharacterBackend
 
 _SPECIALITY_SKILL_TYPES: frozenset[type[Skill]] = frozenset(
@@ -61,14 +62,17 @@ def write_current_id(current_path: Path, character_id: int) -> None:
     current_path.write_text(f'{character_id}\n')
 
 
-def render_character(character: CharacterRow) -> str:
-    return f'{character["id"]} {character["sophont"]} {character["player"]} {character["name"]}'
+def render_character(character: CharacterRow, sophont_name: str | None = None) -> str:
+    name = sophont_name or character['sophont']
+    return f'{character["id"]} {name} {character["player"]} {character["name"]}'
 
 
 def render_character_show(character: CharacterRow, projection: CharacterProjection | None) -> list[str]:
+    sophont = projection.summary.sophont if projection else None
+    sophont_name = sophont.name if sophont else character['sophont']
     lines = [
         f'Id: {character["id"]}',
-        f'Sophont: {character["sophont"]}',
+        f'Sophont: {sophont_name}',
         f'Player: {character["player"]}',
         f'Name: {character["name"]}',
     ]
@@ -99,12 +103,12 @@ def _format_skill(skill: AnySkill) -> list[str]:
 
     fields = _level_fields(type(skill))
     if len(fields) == 1 and fields[0] == 'level':
-        return [f'{skill.name()} {getattr(skill, "level").value}']
+        return [f'{skill.name()} {getattr(skill, fields[0]).value}']
     levels = [getattr(skill, f).value for f in fields]
     spec_names = type(skill).specialities()
     if len(set(levels)) == 1:
         return [f'{skill.name()} (all)-{levels[0]}']
-    return [f'{skill.name()} ({name})-{lvl}' for name, lvl in zip(spec_names, levels) if lvl > 0]
+    return [f'{skill.name()} ({name})-{lvl}' for name, lvl in zip(spec_names, levels, strict=False) if lvl > 0]
 
 
 def render_skill(skill: SkillInfo) -> str:
@@ -126,7 +130,7 @@ def render_projection_summary(projection: CharacterProjection) -> list[str]:
                 career_part += f'  rank {s.rank}'
             if s.term_count:
                 career_part += f'  term {s.term_count}'
-        lines.append(f'{s.name}  ({s.species or "?"}){career_part}')
+        lines.append(f'{s.name}  ({s.sophont.name if s.sophont else "?"}){career_part}')
     if s.characteristics:
         ucp_str = ''.join(f'{s.characteristics.get(stat, 0):X}' for stat in UCP_STATS)
         char_str = '  '.join(f'{stat} {s.characteristics.get(stat, 0)}' for stat in UCP_STATS)
@@ -140,8 +144,7 @@ def render_projection_summary(projection: CharacterProjection) -> list[str]:
         conn_str = '  '.join(f'{c.kind}({c.source or "?"})' for c in s.connections)
         lines.append(f'Connections  {conn_str}')
     if s.problems:
-        for prob in s.problems:
-            lines.append(f'Problem  {prob}')
+        lines.extend(f'Problem  {prob}' for prob in s.problems)
     if s.cash:
         lines.append(f'Cash  Cr{s.cash:,}')
     if s.benefits:
@@ -186,18 +189,25 @@ def build_app(backend: SqliteCharacterBackend | None = None, current_path: Path 
     @create_app.command('start')
     def start_character_creation(
         name: str,
-        sophont: str = typer.Option(..., '--sophont', '-s'),
+        sophont_name: str = typer.Argument(..., metavar='SOPHONT'),
+        sector: str = typer.Argument(..., metavar='SECTOR'),
+        hex_code: str = typer.Argument(..., metavar='HEX'),
         player: str = typer.Option('NPC', '--player', '-p'),
     ) -> None:
         if not name:
             typer.echo('Name must not be empty', err=True)
             raise typer.Exit(1)
-        if sophont not in SOPHONT_NAMES:
-            available = ', '.join(SOPHONT_NAMES)
-            typer.echo(f'Unknown sophont: {sophont}', err=True)
-            typer.echo(f'Available sophonts: {available}', err=True)
+        sophont_obj = get_sophont(sophont_name)
+        if sophont_obj is None:
+            typer.echo(f'Unknown sophont: {sophont_name}', err=True)
+            typer.echo(f'Available: {", ".join(SOPHONT_NAMES)}', err=True)
             raise typer.Exit(1)
-        character = backend.start(sophont=sophont, player=player, name=name)
+        try:
+            world = fetch_world(sector, hex_code)
+        except Exception as error:
+            typer.echo(f'Failed to fetch world {sector}/{hex_code}: {error}', err=True)
+            raise typer.Exit(1) from error
+        character = backend.start(sophont=sophont_obj, homeworld=world, player=player, name=name)
         write_current_id(current_path, character['id'])
         typer.echo(f'Started character creation: {name}')
         projection = backend.get_projection(character['id'])
@@ -213,19 +223,25 @@ def build_app(backend: SqliteCharacterBackend | None = None, current_path: Path 
             marker = '*  ' if character['id'] == current_id else '   '
             projection = backend.get_projection(character['id'])
             ucp_short = render_ucp_short(projection.summary.characteristics if projection else None)
-            typer.echo(
-                f'{marker}{character["id"]:<3} {character["sophont"]:<9} {ucp_short:<7} '
-                f'{character["player"]:<7} {character["name"]}'
-            )
+            sophont = projection.summary.sophont if projection else None
+            sophont_name = sophont.name if sophont else character['sophont']
+            id = character['id']
+            player = character['player']
+            typer.echo(f'{marker}{id:<3} {sophont_name:<9} {ucp_short:<7} {player:<7} {character["name"]}')
 
     @create_app.command('current')
     def current_character_creation() -> None:
         current_id = read_current_id(current_path)
-        character = None if current_id is None else backend.get_character(current_id)
+        if current_id is None:
+            typer.echo('No current character creation', err=True)
+            raise typer.Exit(1)
+        character = backend.get_character(current_id)
         if character is None:
             typer.echo('No current character creation', err=True)
             raise typer.Exit(1)
-        typer.echo(render_character(character))
+        projection = backend.get_projection(current_id)
+        sophont = projection.summary.sophont if projection else None
+        typer.echo(render_character(character, sophont_name=sophont.name if sophont else None))
 
     @create_app.command('show')
     def show_character_creation(character_id: Annotated[int | None, typer.Argument()] = None) -> None:

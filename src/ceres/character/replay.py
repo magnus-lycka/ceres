@@ -132,8 +132,19 @@ class ReplayError(Exception):
 
 
 def replay(character_id: int, events: Sequence[AnyEvent]) -> CharacterProjection:
-    projection = CharacterProjection(character_id=character_id)
-    for event in events:
+    if not events or not isinstance(events[0], CharacterStartedEvent):
+        raise ReplayError('First event must be CharacterStartedEvent')
+    first = events[0]
+    projection = CharacterProjection(
+        character_id=character_id,
+        summary=CharacterSummary(
+            name=first.name,
+            sophont=first.sophont,
+            homeworld=first.homeworld,
+        ),
+    )
+    projection.pending_inputs.append(PendingUcp(id=f'{first.id}.0', instruction='Provide characteristics (UCP)'))
+    for event in events[1:]:
         _apply(projection, event)
     return projection
 
@@ -150,8 +161,6 @@ def _apply(projection: CharacterProjection, event: AnyEvent) -> None:
         )
 
     match event:
-        case CharacterStartedEvent():
-            _apply_character_started(projection, event)
         case UcpEvent():
             _apply_ucp(projection, event)
         case BackgroundSkillsEvent():
@@ -274,13 +283,8 @@ def _purge_career_pendings(projection: CharacterProjection) -> None:
     ]
 
 
-def _apply_character_started(projection: CharacterProjection, event: CharacterStartedEvent) -> None:
-    projection.summary = CharacterSummary(name=event.name, species=event.sophont)
-    projection.pending_inputs.append(PendingUcp(id=f'{event.id}.0', instruction='Provide characteristics (UCP)'))
-
-
 def _apply_ucp(projection: CharacterProjection, event: UcpEvent) -> None:
-    projection.summary.characteristics = _parse_ucp(event.ucp, projection.summary.species)
+    projection.summary.characteristics = _parse_ucp(event.ucp, projection.summary.sophont)
     edu = projection.summary.characteristics.get(Chars.EDU, 0)
     count = _background_skill_count(edu)
     if count > 0:
@@ -565,7 +569,7 @@ def _apply_auto_advance(projection: CharacterProjection, career: CareerData, eve
                 )
             )
             return  # skill_table + reenlist pending deferred until after choice
-        elif bonus.skill:
+        if bonus.skill:
             projection.grant_skill(skill_from_str(bonus.skill, bonus.level))
         elif bonus.characteristic:
             char = bonus.characteristic
@@ -715,7 +719,7 @@ def _apply_double_injury_table(projection: CharacterProjection, event: DoubleInj
 def _apply_injury_table_result(projection: CharacterProjection, roll: int, event_id: int) -> None:
     if roll == 6:
         return  # lightly injured — no permanent effect
-    elif roll == 5:
+    if roll == 5:
         projection.pending_inputs.append(
             PendingCharacteristicChoice(
                 id=f'{event_id}.0',
@@ -1188,13 +1192,14 @@ def _apply_characteristic_choice(
         for other in (Chars.STR, Chars.DEX, Chars.END):
             if other != char:
                 projection.summary.characteristics[other] = max(0, projection.summary.characteristics.get(other, 0) - 2)
-    elif isinstance(fulfilled_pending, (PendingAgingChoice, PendingAgingChoiceMental)):
-        if not _check_aging_crisis(projection, event.id):
-            remaining = [
-                p for p in projection.pending_inputs if isinstance(p, (PendingAgingChoice, PendingAgingChoiceMental))
-            ]
-            if not remaining:
-                _complete_aging(projection, event.id)
+    elif isinstance(fulfilled_pending, (PendingAgingChoice, PendingAgingChoiceMental)) and not _check_aging_crisis(
+        projection, event.id
+    ):
+        remaining = [
+            p for p in projection.pending_inputs if isinstance(p, (PendingAgingChoice, PendingAgingChoiceMental))
+        ]
+        if not remaining:
+            _complete_aging(projection, event.id)
 
 
 def _apply_advancement(projection: CharacterProjection, event: AdvancementEvent) -> None:
@@ -1234,7 +1239,7 @@ def _apply_advancement(projection: CharacterProjection, event: AdvancementEvent)
                     )
                 )
                 return  # skill_table + reenlist pending deferred until after choice
-            elif bonus.skill:
+            if bonus.skill:
                 projection.grant_skill(skill_from_str(bonus.skill, bonus.level))
             elif bonus.characteristic:
                 char = bonus.characteristic
@@ -1381,9 +1386,8 @@ def _queue_reenlist_or_aging(projection: CharacterProjection, event_id: int, idx
             projection.pending_inputs.append(
                 PendingAgingRoll(id=f'{event_id}.{idx}', instruction='Roll 2D on Aging table')
             )
-        else:
-            if career:
-                _apply_muster_out_setup(projection, career, event_id, idx, lose_current_term=False)
+        elif career:
+            _apply_muster_out_setup(projection, career, event_id, idx, lose_current_term=False)
         return
 
     projection.summary.age += 4
@@ -1603,10 +1607,9 @@ def _apply_simple_effect(
                 trigger='muster_out', source_event_id=source_event_id, effect={'type': 'dm', 'amount': effect.amount}
             )
         )
-    elif isinstance(effect, ParoleThresholdChangeEffect):
-        if projection.summary.parole_threshold is not None:
-            new_pt = projection.summary.parole_threshold + effect.amount
-            projection.summary.parole_threshold = max(0, min(12, new_pt))
+    elif isinstance(effect, ParoleThresholdChangeEffect) and projection.summary.parole_threshold is not None:
+        new_pt = projection.summary.parole_threshold + effect.amount
+        projection.summary.parole_threshold = max(0, min(12, new_pt))
     # InjuryEffect, SkillChoiceEffect, etc. are handled before _apply_simple_effect is called
 
 
@@ -1745,7 +1748,7 @@ def _apply_precareer_event(projection: CharacterProjection, event: PreCareerEven
             pending_idx += 1
         elif isinstance(effect, SkillChoiceEffect):
             all_skills = sorted(cls.name() for cls in _skill_classes(AnySkill) if cls.name() != 'Jack-of-All-Trades')
-            opts = effect.options if effect.options else all_skills
+            opts = effect.options or all_skills
             projection.pending_inputs.append(
                 PendingSkillChoice(
                     id=f'{event.id}.{pending_idx}',
@@ -1832,11 +1835,10 @@ def _apply_precareer_graduation(projection: CharacterProjection, event: PreCaree
 # ── characteristic DM and UCP parsing ────────────────────────────────────────
 
 
-def _parse_ucp(ucp: str, species: str | None = None) -> dict[Chars, int]:
-    from ceres.character.sophonts import get_sophont
+def _parse_ucp(ucp: str, sophont: object = None) -> dict[Chars, int]:
+    from ceres.character.sophonts import Sophont
 
-    sophont = get_sophont(species or '') if species else None
-    ucp_stats = sophont.ucp_stats if sophont is not None else UCP_STATS
+    ucp_stats = sophont.ucp_stats if isinstance(sophont, Sophont) else UCP_STATS
     if len(ucp) != len(ucp_stats):
         raise ReplayError(f'Invalid UCP: {ucp!r} — expected {len(ucp_stats)} hex digits')
     return {stat: int(digit, 16) for stat, digit in zip(ucp_stats, ucp, strict=True)}

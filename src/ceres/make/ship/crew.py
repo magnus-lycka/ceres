@@ -474,10 +474,7 @@ def _military_gunner_count(ship) -> int:
 
 
 def _sensor_operator_count(ship, *, military: bool) -> int:
-    if military:
-        tonnage_based_count = math.ceil(ship.displacement / 7_500) * 3
-    else:
-        tonnage_based_count = ship.displacement // 7_500
+    tonnage_based_count = math.ceil(ship.displacement / 7500) * 3 if military else ship.displacement // 7500
     station_based_count = 0
     if ship.sensors.sensor_stations is not None:
         station_based_count = ship.sensors.sensor_stations.count + 1

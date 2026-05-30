@@ -87,11 +87,11 @@ class RobotPart(CeresPart, RobotPartMixin):
         if a is None:
             raise RuntimeError(f'{type(self).__name__} not bound to an Assembly')
         if not isinstance(a, RobotBase):
-            raise RuntimeError(f'{type(self).__name__} bound to unexpected type {type(a).__name__}')
+            raise TypeError(f'{type(self).__name__} bound to unexpected type {type(a).__name__}')
         return a
 
     def model_post_init(self, __context: Any) -> None:
         super().model_post_init(__context)
 
 
-__all__ = ['RobotPartMixin', 'RobotPart']
+__all__ = ['RobotPart', 'RobotPartMixin']
