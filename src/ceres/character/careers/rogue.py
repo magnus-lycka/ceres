@@ -61,7 +61,6 @@ def _handle_rogue_mishap_3(
 
 def _resolve_rogue_mishap_3_prisoner_check(projection: CharacterProjection, event: SkillRollEvent) -> None:
     from ceres.character.careers.loader import load_careers
-    from ceres.character.replay import _apply_muster_out_setup
 
     if event.modified_roll == 2:
         projection.forced_next_career = 'Prisoner'
@@ -70,7 +69,7 @@ def _resolve_rogue_mishap_3_prisoner_check(projection: CharacterProjection, even
     career = load_careers().get(career_name or '')
     if career is None:
         return
-    _apply_muster_out_setup(projection, career, event.id, 0, lose_current_term=True)
+    projection.muster_out_setup(career, event.id, 0, lose_current_term=True)
 
 
 # ── event 3: arrested and charged ────────────────────────────────────────────
@@ -98,9 +97,7 @@ def _handle_rogue_event_3(
 
 
 def _choice_rogue_event_3(projection: CharacterProjection, event) -> None:
-    from ceres.character.replay import _career_progress_pending, _current_career
-
-    career = _current_career(projection)
+    career = projection.get_current_career()
     if event.choice == 'lawyer':
         projection.scheduled_effects.append(
             ScheduledEffect(
@@ -109,7 +106,7 @@ def _choice_rogue_event_3(projection: CharacterProjection, event) -> None:
                 effect={'type': 'reduce', 'value': 1},
             )
         )
-        projection.pending_inputs.append(_career_progress_pending(career, projection, event.id))
+        projection.pending_inputs.append(projection.career_progress_pending(career, event.id))
     else:
         projection.pending_inputs.append(
             PendingCareerSkillRoll(
@@ -127,12 +124,12 @@ def _choice_rogue_event_3(projection: CharacterProjection, event) -> None:
 
 
 def _resolve_rogue_event_3_skill(projection: CharacterProjection, event: SkillRollEvent) -> None:
-    from ceres.character.replay import _apply_mishap_ejection, _current_career
+    from ceres.character.events import _apply_mishap_ejection
 
     if event.modified_roll >= 8:
         pass  # cleared — _apply_skill_roll auto-queues advancement
     else:
-        career = _current_career(projection)
+        career = projection.get_current_career()
         projection.forced_next_career = 'Prisoner'
         _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
 
@@ -161,9 +158,7 @@ def _handle_rogue_event_6(
 
 
 def _choice_rogue_event_6(projection: CharacterProjection, event) -> None:
-    from ceres.character.replay import _career_progress_pending, _current_career
-
-    career = _current_career(projection)
+    career = projection.get_current_career()
     if event.choice == 'backstab':
         projection.summary.connections.append(Enemy(source='Backstabbed rogue (Rogue event 6)'))
         projection.scheduled_effects.append(
@@ -175,7 +170,7 @@ def _choice_rogue_event_6(projection: CharacterProjection, event) -> None:
         )
     else:
         projection.summary.connections.append(Contact(source='Fellow rogue (Rogue event 6)'))
-    projection.pending_inputs.append(_career_progress_pending(career, projection, event.id))
+    projection.pending_inputs.append(projection.career_progress_pending(career, event.id))
 
 
 # ── event 9: feud with rival organisation ────────────────────────────────────

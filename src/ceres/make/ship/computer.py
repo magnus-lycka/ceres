@@ -10,6 +10,10 @@ from .parts import ShipPart, ShipPartMixin
 from .software import JumpControl, Library, Manoeuvre, ShipSoftware
 from .spec import ShipSpec, SpecRow, SpecSection
 
+MAX_PROTO_LEVELS = 2
+INTELLECT_INCLUDED_MIN_TL = 11
+PROTO_LEVEL_UNRELIABLE = 2
+
 
 class ComputerBase(ComputerPart, ShipPartMixin):
     kind: str
@@ -29,7 +33,7 @@ class ComputerBase(ComputerPart, ShipPartMixin):
     def _validate_retro_proto(self) -> ComputerBase:
         if self.retro_levels > 0 and self.proto_levels > 0:
             raise ValueError('Cannot have both retro_levels and proto_levels')
-        if self.proto_levels > 2:
+        if self.proto_levels > MAX_PROTO_LEVELS:
             raise ValueError(f'Proto tech not available for {self.proto_levels} TLs')
         return self
 
@@ -58,7 +62,7 @@ class ComputerBase(ComputerPart, ShipPartMixin):
             notes.warning(f'Skill DM -{self.proto_levels}')
         if self.proto_levels == 1:
             notes.warning('1+ Quirk')
-        elif self.proto_levels == 2:
+        elif self.proto_levels == PROTO_LEVEL_UNRELIABLE:
             notes.warning('Unreliable')
             notes.warning('2+ Quirks')
         return notes
@@ -88,13 +92,13 @@ class ComputerBase(ComputerPart, ShipPartMixin):
     @property
     def included_software(self) -> list[SoftwarePackage]:
         packages: list[SoftwarePackage] = [Library(), Manoeuvre()]
-        if self.assembly_tl >= 11:  # Intellect minimum TL
+        if self.assembly_tl >= INTELLECT_INCLUDED_MIN_TL:
             packages.append(Intellect(rating=0))
         return packages
 
     @property
     def tons(self) -> float:
-        if self.proto_levels == 2:
+        if self.proto_levels == PROTO_LEVEL_UNRELIABLE:
             return 1.0
         if self.proto_levels == 1:
             return 0.1

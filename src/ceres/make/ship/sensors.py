@@ -9,6 +9,10 @@ from .spec import ShipSpec, SpecSection
 from .text import format_counted_label, optional_count
 
 LowInterceptMode = Literal['NONE', 'LPI', 'ELPI']
+INSTALLED_RADAR_LIDAR_LPI_MIN_TL = 9
+INSTALLED_RADAR_LIDAR_ELPI_MIN_TL = 10
+MAIL_DISTRIBUTION_ARRAY_TL10 = 10
+DISTRIBUTED_ARRAY_MIN_DISPLACEMENT = 5_000
 
 
 def _intercept_available(sensor: str, mode: LowInterceptMode, *, tl: int) -> bool:
@@ -107,9 +111,9 @@ class SensorPackage(ShipPart):
             return notes
         if self.assembly_tl < self.tl:
             notes.error(f'Requires TL{self.tl}, ship is TL{self.assembly_tl}')
-        if self.low_intercept == 'LPI' and self.assembly_tl < 9:
+        if self.low_intercept == 'LPI' and self.assembly_tl < INSTALLED_RADAR_LIDAR_LPI_MIN_TL:
             notes.error('LPI requires TL9 for installed radar/lidar')
-        if self.low_intercept == 'ELPI' and self.assembly_tl < 10:
+        if self.low_intercept == 'ELPI' and self.assembly_tl < INSTALLED_RADAR_LIDAR_ELPI_MIN_TL:
             notes.error('ELPI requires TL10 for installed radar/lidar')
         return notes
 
@@ -347,13 +351,13 @@ class MailDistributionArray(ShipPart):
 
     @property
     def tons(self) -> float:
-        if self.tl == 10:
+        if self.tl == MAIL_DISTRIBUTION_ARRAY_TL10:
             return 10.0
         return 20.0
 
     @property
     def cost(self) -> float:
-        if self.tl == 10:
+        if self.tl == MAIL_DISTRIBUTION_ARRAY_TL10:
             return 20_000_000.0
         return 10_000_000.0
 
@@ -515,7 +519,7 @@ class DistributedArray(ShipPart):
         if owner is not None:
             if not isinstance(self._primary_suite, ImprovedSensors | AdvancedSensors):
                 notes.error('Distributed array requires Improved or Advanced sensors')
-            if self.assembly.displacement <= 5_000:
+            if self.assembly.displacement <= DISTRIBUTED_ARRAY_MIN_DISPLACEMENT:
                 notes.error('Distributed array requires displacement greater than 5000 tons')
         return notes
 

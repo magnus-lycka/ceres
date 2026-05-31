@@ -7,6 +7,8 @@ from ceres.shared import NoteList
 from .parts import CustomisableShipPart, EnergyInefficient, IncreasedSize, Modification, ShipPart, SizeReduction
 from .spec import ShipSpec, SpecSection
 
+SPINEXT_SOLAR_COATING_HULL_OPTION_MIN_TL = 12
+
 IncreasedPower = Modification(name='Increased Power', advantage=2, output_multiplier=1.10)
 
 
@@ -376,7 +378,7 @@ class _SpinExtSolarCoating(ShipPart):
         notes = NoteList()
         if self.covered_tons % 10:
             notes.error('SpinExt solar coating should cover hull tonnage in 10-ton increments')
-        if self._assembly is not None and self.tl < 12:
+        if self._assembly is not None and self.tl < SPINEXT_SOLAR_COATING_HULL_OPTION_MIN_TL:
             hull = getattr(self.assembly, 'hull', None)
             if hull is not None and hull.heat_shielding:
                 notes.error('Only TL12 SpinExt solar coating can be used with Heat Shielding')

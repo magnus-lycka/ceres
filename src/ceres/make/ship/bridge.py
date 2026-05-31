@@ -6,6 +6,17 @@ from ceres.shared import CeresModel, NoteList, _Note
 from .parts import ShipPart
 from .spec import ShipSpec, SpecSection
 
+BRIDGE_TABLE_MAX_DISPLACEMENT = 200_000
+BRIDGE_TABLE_LIMITS = [50, 99, 200, 1_000, 2_000, 100_000]
+BRIDGE_TABLE_TONS = [3.0, 6.0, 10.0, 20.0, 40.0, 60.0, 80.0]
+BRIDGE_EXTRA_STEP_TONS = 100_000
+DETACHABLE_BRIDGE_MINIMUMS = (
+    (200, 15.0),
+    (1_000, 30.0),
+    (2_000, 50.0),
+)
+DETACHABLE_CAPITAL_BRIDGE_MINIMUM_TONS = 80.0
+
 
 class Cockpit(ShipPart):
     tons: ClassVar[float]
@@ -93,15 +104,14 @@ class Bridge(ShipPart):
     @property
     def _base_tons(self) -> float:
         displacement = self.assembly.displacement
-        if displacement <= 200_000:
-            weight_limits = [50, 99, 200, 1000, 2000, 100_000]
-            ix = bisect_left(weight_limits, displacement)
+        if displacement <= BRIDGE_TABLE_MAX_DISPLACEMENT:
+            ix = bisect_left(BRIDGE_TABLE_LIMITS, displacement)
             if ix > 0 and self.small:
                 ix -= 1
-            return [3.0, 6.0, 10.0, 20.0, 40.0, 60.0, 80.0][ix]
+            return BRIDGE_TABLE_TONS[ix]
         if self.small:
-            displacement -= 100_000
-        extra_steps = (displacement - 100_001) // 100_000 + 1
+            displacement -= BRIDGE_EXTRA_STEP_TONS
+        extra_steps = (displacement - (BRIDGE_EXTRA_STEP_TONS + 1)) // BRIDGE_EXTRA_STEP_TONS + 1
         return 60.0 + extra_steps * 20.0
 
     @property
@@ -127,13 +137,10 @@ class Bridge(ShipPart):
     @property
     def detachable_minimum_tons(self) -> float:
         displacement = self.assembly.displacement
-        if displacement <= 200:
-            return 15.0
-        if displacement <= 1_000:
-            return 30.0
-        if displacement <= 2_000:
-            return 50.0
-        return 80.0
+        for displacement_limit, minimum_tons in DETACHABLE_BRIDGE_MINIMUMS:
+            if displacement <= displacement_limit:
+                return minimum_tons
+        return DETACHABLE_CAPITAL_BRIDGE_MINIMUM_TONS
 
 
 class CommandSection(CeresModel):

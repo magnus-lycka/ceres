@@ -35,9 +35,9 @@ def _handle_army_mishap_4(
 
 
 def _choice_army_mishap_4(projection: CharacterProjection, event) -> None:
-    from ceres.character.replay import _apply_mishap_ejection, _current_career
+    from ceres.character.events import _apply_mishap_ejection
 
-    career = _current_career(projection)
+    career = projection.get_current_career()
     if event.choice == 'join_ring':
         projection.summary.connections.append(Ally(source='Commanding officer (Army mishap 4)'))
         _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)

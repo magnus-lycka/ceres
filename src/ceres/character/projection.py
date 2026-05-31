@@ -65,6 +65,10 @@ class AutoFillContext:
     careers: dict[str, CareerData]
 
 
+class ReplayError(Exception):
+    pass
+
+
 class PendingInputBase(BaseModel):
     id: str
     kind: str
@@ -275,6 +279,24 @@ class PendingParoleRoll(PendingInputBase):
     kind: Literal['parole_roll'] = 'parole_roll'
 
 
+_CAREER_PHASE_PENDING_TYPES = (
+    PendingSurvive,
+    PendingTermEvent,
+    PendingMishap,
+    PendingAdvancement,
+    PendingCommissionChoice,
+    PendingSkillTable,
+    PendingSkillTableChoice,
+    PendingRankBonusChoice,
+    PendingReenlist,
+    PendingAssignmentChangeChoice,
+    PendingCareerEvent,
+    PendingCareerMishap,
+    PendingCareerSkillChoice,
+    PendingCareerSkillRoll,
+)
+
+
 type AnyPending = Annotated[
     PendingUcp
     | PendingBackgroundSkills
@@ -477,6 +499,225 @@ class CharacterProjection(BaseModel):
     muster_out_career: str | None = None  # career name used to look up benefit table
     forced_next_career: str | None = None  # set by prison-sending events; consumed by next career choice
     prisoner_freed: bool = False  # set by _apply_prisoner_advancement when parole granted
+
+    def has_blocking_pending(self) -> bool:
+        return any(p.blocking for p in self.pending_inputs)
+
+    def purge_career_pendings(self) -> None:
+        """Remove pending inputs that require an active career and can no longer be fulfilled.
+
+        Called when a career ends (mishap or reenlist=False) to clear inputs that were queued
+        by prior career-phase processing and are now orphaned.
+        """
+        self.pending_inputs[:] = [p for p in self.pending_inputs if not isinstance(p, _CAREER_PHASE_PENDING_TYPES)]
+
+    def clear_current_career(self) -> None:
+        if self.summary.current_career is not None:
+            self.summary.last_career = self.summary.current_career
+            self.summary.last_assignment = self.summary.current_assignment
+        self.summary.current_career = None
+        self.summary.current_assignment = None
+
+    def get_current_career(self) -> CareerData:
+        from ceres.character.careers.loader import load_careers
+
+        career_name = self.summary.current_career
+        if career_name is None:
+            raise ReplayError('No active career')
+        careers = load_careers()
+        career = careers.get(career_name)
+        if career is None:
+            raise ReplayError(f'Unknown career: {career_name!r}')
+        return career
+
+    def fulfill_pending(self, event: Any) -> None:
+        fulfills = event.fulfills
+        matched = next((p for p in self.pending_inputs if p.id == fulfills), None)
+        if matched is None:
+            raise ReplayError(f'Event {event.id} ({event.kind!r}) references unknown pending input {fulfills!r}')
+        self.pending_inputs.remove(matched)
+
+    def queue_career_choice_indexed(
+        self, event_id: int, idx: int, instruction: str = 'Choose a career'
+    ) -> None:
+        from ceres.character.careers.loader import selectable_careers
+
+        if self.forced_next_career:
+            career_name = self.forced_next_career
+            self.forced_next_career = None
+            self.pending_inputs.append(
+                PendingCareerChoice(
+                    id=f'{event_id}.{idx}',
+                    instruction=f'Next career: {career_name} (mandatory)',
+                    options=[career_name],
+                )
+            )
+        else:
+            career_options = sorted(selectable_careers(self).keys())
+            self.pending_inputs.append(
+                PendingCareerChoice(
+                    id=f'{event_id}.{idx}',
+                    instruction=instruction,
+                    options=career_options,
+                )
+            )
+
+    def queue_career_choice(self, event_id: int, instruction: str = 'Choose a career') -> None:
+        self.queue_career_choice_indexed(event_id, 0, instruction)
+
+    def queue_reenlist_or_aging(self, event_id: int, idx: int) -> None:
+        from ceres.character.careers.loader import load_careers
+
+        if self.prisoner_freed:
+            self.prisoner_freed = False
+            self.summary.age += 4
+            career_name = self.summary.current_career
+            careers = load_careers()
+            career = careers.get(career_name) if career_name else None
+            if self.summary.age >= 34:
+                if career:
+                    self.muster_out_career = career.name
+                self.pending_reenlist = False
+                self.clear_current_career()
+                self.pending_inputs.append(
+                    PendingAgingRoll(id=f'{event_id}.{idx}', instruction='Roll 2D on Aging table')
+                )
+            elif career:
+                self.muster_out_setup(career, event_id, idx, lose_current_term=False)
+            return
+
+        self.summary.age += 4
+        if self.summary.age >= 34:
+            self.pending_inputs.append(PendingAgingRoll(id=f'{event_id}.{idx}', instruction='Roll 2D on Aging table'))
+        else:
+            career = self.get_current_career() if self.summary.current_career else None
+            if career and career.allows_assignment_change and len(career.assignments) > 1:
+                current = self.summary.current_assignment or ''
+                others = [a.name for a in career.assignments if a.name != current]
+                options = ['same', *others]
+                if career.name != 'Prisoner':
+                    options.append('muster_out')
+                self.pending_inputs.append(
+                    PendingAssignmentChangeChoice(
+                        id=f'{event_id}.{idx}',
+                        instruction='Reenlist same assignment, switch assignment, or muster out?',
+                        options=options,
+                    )
+                )
+            else:
+                self.pending_inputs.append(
+                    PendingReenlist(
+                        id=f'{event_id}.{idx}',
+                        instruction='Reenlist or muster out?',
+                        options=['true', 'false'],
+                    )
+                )
+
+    def muster_out_setup(
+        self,
+        career: CareerData,
+        source_event_id: int,
+        pending_idx: int = 0,
+        lose_current_term: bool = False,
+        clear_career: bool = True,
+    ) -> int:
+        roll_count = self.summary.term_count + (self.summary.rank or 0) // 2
+        if lose_current_term:
+            roll_count = max(0, roll_count - 1)
+        reduce_effects = [se for se in self.scheduled_effects if se.trigger == 'muster_out_reduce' and se.consume]
+        for se in reduce_effects:
+            roll_count = max(0, roll_count - se.effect.get('value', 1))
+            self.scheduled_effects.remove(se)
+        add_effects = [se for se in self.scheduled_effects if se.trigger == 'muster_out_add' and se.consume]
+        for se in add_effects:
+            roll_count += se.effect.get('value', 1)
+            self.scheduled_effects.remove(se)
+        if clear_career:
+            self.clear_current_career()
+        if roll_count > 0:
+            self.muster_out_career = career.name
+            for _ in range(roll_count):
+                self.pending_inputs.append(
+                    PendingMusterOut(
+                        id=f'{source_event_id}.{pending_idx}',
+                        instruction='Muster out: choose cash or benefits table',
+                        options=['cash', 'benefits'],
+                    )
+                )
+                pending_idx += 1
+        else:
+            self.queue_career_choice_indexed(source_event_id, pending_idx)
+            pending_idx += 1
+        return pending_idx
+
+    def complete_aging(self, source_event_id: int) -> None:
+        from ceres.character.careers.loader import load_careers
+
+        if self.muster_out_career is not None:
+            careers = load_careers()
+            career = careers.get(self.muster_out_career)
+            lose = self.pending_reenlist is None
+            self.muster_out_career = None
+            if career:
+                self.muster_out_setup(career, source_event_id, 0, lose_current_term=lose, clear_career=False)
+        else:
+            career = self.get_current_career() if self.summary.current_career else None
+            if career and career.allows_assignment_change and len(career.assignments) > 1:
+                current = self.summary.current_assignment or ''
+                others = [a.name for a in career.assignments if a.name != current]
+                self.pending_inputs.append(
+                    PendingAssignmentChangeChoice(
+                        id=f'{source_event_id}.0',
+                        instruction='Reenlist same assignment, switch assignment, or muster out?',
+                        options=['same', *others, 'muster_out'],
+                    )
+                )
+            else:
+                self.pending_inputs.append(
+                    PendingReenlist(
+                        id=f'{source_event_id}.0',
+                        instruction='Reenlist or muster out?',
+                        options=['true', 'false'],
+                    )
+                )
+        self.pending_reenlist = None
+
+    def check_aging_crisis(self, source_event_id: int) -> bool:
+        if any(v == 0 for v in self.summary.characteristics.values()):
+            self.pending_inputs = [
+                p
+                for p in self.pending_inputs
+                if not isinstance(p, (PendingAgingChoice, PendingAgingChoiceMental))
+            ]
+            self.pending_inputs.append(
+                PendingAgingCrisis(
+                    id=f'{source_event_id}.crisis',
+                    instruction='Aging crisis: pay for medical care or die?',
+                    options=['pay', 'die'],
+                )
+            )
+            return True
+        return False
+
+    def career_progress_pending(
+        self, career: CareerData, event_id: int, pending_idx: int = 0
+    ) -> PendingAdvancement | PendingCommissionChoice:
+        if career.can_attempt_commission(self):
+            commission = career.commission
+            if commission is None:
+                raise ReplayError(f'{career.name} can attempt commission without commission rules')
+            return PendingCommissionChoice(
+                id=f'{event_id}.{pending_idx}',
+                instruction=f'Attempt commission ({commission.characteristic} {commission.target}+) or roll advancement?',
+                options=['attempt', 'skip'],
+            )
+        assignment_name = self.summary.current_assignment or ''
+        assignment = career.assignment(assignment_name)
+        if assignment is None:
+            raise ReplayError(f'Unknown assignment {assignment_name!r}')
+        char = assignment.advancement.characteristic
+        target = assignment.advancement.target
+        return PendingAdvancement(id=f'{event_id}.{pending_idx}', instruction=f'Advancement: {char} {target}+')
 
     def skill_choices(
         self,

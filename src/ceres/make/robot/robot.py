@@ -3,8 +3,10 @@ from typing import Any, cast
 
 from pydantic import Field
 
+from ceres.shared import _Note
+
 from .base import RobotBase
-from .brain import AdvancedBrain, RobotBrainUnion, SelfAwareBrain, VeryAdvancedBrain
+from .brain import AdvancedBrain, BasicBrain, PrimitiveBrain, RobotBrainUnion, SelfAwareBrain, VeryAdvancedBrain
 from .chassis import (
     RobotSize,
     Trait,
@@ -15,25 +17,30 @@ from .chassis import (
     size_label,
     size_trait,
 )
-from .locomotion import LocomotionUnion, WalkerLocomotion
+from .locomotion import LocomotionUnion, ThrusterLocomotion, WalkerLocomotion
 from .manipulators import LegOrManipulator, Manipulator
-from .options import default_suite
+from .options import AgilityEnhancement, Efficiency, VehicleSpeedModification, default_suite
 from .parts import RobotPartMixin
 from .skills import RobotSkill, SkillGrant
-from .spec import RobotSpec, RobotSpecRow, RobotSpecSection
+from .spec import RobotDetailRow, RobotDetailSection, RobotSpec, RobotSpecRow, RobotSpecSection
 from .text import format_credits, format_traits
+
+DM_MINUS_1_MAX_CHARACTERISTIC = 5
+DM_ZERO_MAX_CHARACTERISTIC = 8
+DM_PLUS_1_MAX_CHARACTERISTIC = 11
+DM_PLUS_2_MAX_CHARACTERISTIC = 14
 
 
 def _characteristic_dm(char: int) -> int:
     if char <= 1:
         return -2
-    if char <= 5:
+    if char <= DM_MINUS_1_MAX_CHARACTERISTIC:
         return -1
-    if char <= 8:
+    if char <= DM_ZERO_MAX_CHARACTERISTIC:
         return 0
-    if char <= 11:
+    if char <= DM_PLUS_1_MAX_CHARACTERISTIC:
         return 1
-    if char <= 14:
+    if char <= DM_PLUS_2_MAX_CHARACTERISTIC:
         return 2
     return 3
 
@@ -122,8 +129,6 @@ class Robot(RobotBase):
 
     @property
     def used_slots(self) -> int:
-        from .options import AgilityEnhancement, Efficiency
-
         brain_slot = self.brain.brain_slots(self.tl, int(self.size))
         option_slots = sum(o.slots for o in self.options if isinstance(o, RobotPartMixin) and o.slots > 0)
         # Chassis mods (item_message is None, or Efficiency/AgilityEnhancement) excluded from quota.
@@ -183,8 +188,6 @@ class Robot(RobotBase):
 
     @property
     def traits(self) -> list[Trait]:
-        from .options import VehicleSpeedModification
-
         result: list[Trait] = []
         armour_val = self.base_armour + sum(opt.armour_delta for opt in self.options if isinstance(opt, RobotPartMixin))
         if armour_val:
@@ -213,8 +216,6 @@ class Robot(RobotBase):
 
     @property
     def locomotion_label(self) -> str:
-        from .options import VehicleSpeedModification
-
         label = self.locomotion.label()
         if any(isinstance(o, VehicleSpeedModification) for o in self.options):
             return f'{label} (VSM)'
@@ -222,9 +223,6 @@ class Robot(RobotBase):
 
     @property
     def speed_label(self) -> str:
-        from .locomotion import ThrusterLocomotion
-        from .options import VehicleSpeedModification
-
         if any(isinstance(o, VehicleSpeedModification) for o in self.options):
             if isinstance(self.locomotion, ThrusterLocomotion):
                 return f'{self.locomotion.thrust_g:g}G'
@@ -242,8 +240,6 @@ class Robot(RobotBase):
 
     @property
     def endurance_label(self) -> str:
-        from .options import VehicleSpeedModification
-
         base = int(self.base_endurance)
         for opt in self.options:
             if isinstance(opt, VehicleSpeedModification):
@@ -253,9 +249,6 @@ class Robot(RobotBase):
 
     @property
     def skills_display(self) -> str:
-        from .brain import BasicBrain, PrimitiveBrain
-        from .options import AgilityEnhancement
-
         dex_dm = _characteristic_dm(_robot_dex(self.tl))
         base_str = _robot_str(int(self.size))
         if self.manipulators:
@@ -295,8 +288,6 @@ class Robot(RobotBase):
         return ', '.join(parts) if parts else '—'
 
     def build_notes(self) -> list:
-        from ceres.shared import _Note
-
         notes = []
         rem_slots = self.remaining_slots
         if rem_slots < 0:
@@ -309,10 +300,7 @@ class Robot(RobotBase):
             notes.append(_Note.info(f'Cost raised to Basic Cost minimum ({format_credits(basic)})'))
         return notes
 
-    def _build_detail_sections(self) -> list:
-        from .options import AgilityEnhancement, Efficiency, VehicleSpeedModification
-        from .spec import RobotDetailRow, RobotDetailSection
-
+    def _build_detail_sections(self) -> list:  # noqa: PLR0912, PLR0915
         sections = []
         entry = chassis_entry(self.size)
         base_slots = entry.base_slots

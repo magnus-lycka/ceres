@@ -10,6 +10,10 @@ from .spec import CrewRow as SpecCrewRow
 from .systems import MedicalBay
 from .text import optional_count
 
+SIMPLE_CRAFT_MAX_DISPLACEMENT = 100
+COMMERCIAL_MAINTENANCE_TONS_PER_CREW = 1_000
+MILITARY_MAINTENANCE_TONS_PER_CREW = 500
+
 
 def _salary_for_level(base_salary: int, level: int) -> int:
     return int(base_salary / 2 * (1 + level))
@@ -402,7 +406,7 @@ def _apply_large_ship_reduction(ship, count: int) -> int:
 
 
 def _is_simple_craft(ship) -> bool:
-    return ship.displacement <= 100 and (ship.drives is None or ship.drives.j_drive is None)
+    return ship.displacement <= SIMPLE_CRAFT_MAX_DISPLACEMENT and (ship.drives is None or ship.drives.j_drive is None)
 
 
 def _drives_and_power_tonnage(ship) -> float:
@@ -483,16 +487,16 @@ def _sensor_operator_count(ship, *, military: bool) -> int:
 
 def _commercial_maintenance_count(ship) -> int:
     tonnage = ship.displacement + _maintained_small_craft_tonnage(ship)
-    if tonnage < 1_000:
+    if tonnage < COMMERCIAL_MAINTENANCE_TONS_PER_CREW:
         return 0
-    return math.ceil(tonnage / 1_000)
+    return math.ceil(tonnage / COMMERCIAL_MAINTENANCE_TONS_PER_CREW)
 
 
 def _military_maintenance_count(ship) -> int:
     tonnage = ship.displacement + _maintained_small_craft_tonnage(ship)
-    if tonnage < 500:
+    if tonnage < MILITARY_MAINTENANCE_TONS_PER_CREW:
         return 0
-    return math.ceil(tonnage / 500)
+    return math.ceil(tonnage / MILITARY_MAINTENANCE_TONS_PER_CREW)
 
 
 def _steward_required_level(ship) -> int:

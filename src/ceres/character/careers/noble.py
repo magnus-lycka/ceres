@@ -40,9 +40,9 @@ def _handle_noble_mishap_3(
 
 
 def _resolve_noble_mishap_3(projection: CharacterProjection, event: SkillRollEvent) -> None:
-    from ceres.character.replay import _apply_mishap_ejection, _current_career
+    from ceres.character.events import _apply_mishap_ejection
 
-    career = _current_career(projection)
+    career = projection.get_current_career()
     if event.modified_roll >= 8:
         _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=False)
     else:
@@ -75,9 +75,9 @@ def _handle_noble_mishap_5(
 
 
 def _resolve_noble_mishap_5(projection: CharacterProjection, event: SkillRollEvent) -> None:
-    from ceres.character.replay import _apply_mishap_ejection, _current_career
+    from ceres.character.events import _apply_mishap_ejection
 
-    career = _current_career(projection)
+    career = projection.get_current_career()
     if event.modified_roll < 8:
         projection.summary.problems.append('Noble mishap 5: assassin — roll on the Injury table and apply the result.')
     _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
@@ -109,12 +109,10 @@ def _handle_noble_event_8(
 
 
 def _choice_noble_event_8(projection: CharacterProjection, event) -> None:
-    from ceres.character.replay import _career_progress_pending, _current_career
-
-    career = _current_career(projection)
+    career = projection.get_current_career()
     if event.choice == 'refuse':
         projection.summary.connections.append(Rival(source='Conspiracy leader (Noble event 8)'))
-        projection.pending_inputs.append(_career_progress_pending(career, projection, event.id))
+        projection.pending_inputs.append(projection.career_progress_pending(career, event.id))
     else:
         projection.pending_inputs.append(
             PendingCareerSkillRoll(
@@ -129,7 +127,7 @@ def _choice_noble_event_8(projection: CharacterProjection, event) -> None:
 
 
 def _resolve_noble_event_8_skill(projection: CharacterProjection, event: SkillRollEvent) -> None:
-    from ceres.character.replay import _apply_mishap_ejection, _current_career
+    from ceres.character.events import _apply_mishap_ejection
 
     if event.modified_roll >= 8:
         projection.scheduled_effects.append(
@@ -141,7 +139,7 @@ def _resolve_noble_event_8_skill(projection: CharacterProjection, event: SkillRo
         )
         # no pending added — _apply_skill_roll auto-queues advancement
     else:
-        career = _current_career(projection)
+        career = projection.get_current_career()
         projection.summary.connections.append(Enemy(source='Noble conspiracy (Noble event 8)'))
         _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
 

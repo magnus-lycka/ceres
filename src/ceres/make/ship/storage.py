@@ -8,6 +8,9 @@ from ceres.shared import CeresModel, NoteList, _Note
 from .parts import ShipPart
 from .spec import ShipSpec, SpecRow, SpecSection
 
+SMALL_CRAFT_MAX_DISPLACEMENT = 100
+TONNAGE_EPSILON = 0.005
+
 
 class _ZeroPowerStoragePart(ShipPart):
     power: ClassVar[float]
@@ -67,7 +70,7 @@ class OperationFuel(_ZeroPowerStoragePart):
     @property
     def tons(self) -> float:
         total = self._raw_tons()
-        increment = 0.1 if self.assembly.displacement < 100 else 1.0
+        increment = 0.1 if self.assembly.displacement < SMALL_CRAFT_MAX_DISPLACEMENT else 1.0
         return math.ceil(total / increment - 1e-9) * increment
 
     def _raw_tons(self) -> float:
@@ -270,7 +273,7 @@ class Ramscoop(_ZeroPowerStoragePart):
         notes = NoteList()
         hull = getattr(self.assembly, 'hull', None)
         if hull is not None:
-            from .hull import Streamlined
+            from .hull import Streamlined  # noqa: PLC0415
 
             if hull.configuration.streamlined is Streamlined.YES:
                 notes.error('Ramscoops prevent atmospheric re-entry and cannot be installed on streamlined hulls')
@@ -562,7 +565,7 @@ class ExternalCargoMount(_ZeroPowerStoragePart):
 
     def bind(self, assembly) -> None:
         super().bind(assembly)
-        from .hull import Streamlined
+        from .hull import Streamlined  # noqa: PLC0415
 
         hull = self.assembly.hull
         if hull is None:
@@ -746,7 +749,7 @@ class CargoSection(CeresModel):
 
     def _add_residual_cargo_hold_row(self, ship, spec: ShipSpec) -> None:
         residual_tons = self.residual_cargo_hold_tons(ship)
-        if residual_tons < 0.005:
+        if residual_tons < TONNAGE_EPSILON:
             return
         spec.add_row(
             SpecRow(
@@ -788,7 +791,7 @@ class CargoSection(CeresModel):
             return
         cargo_tons = self.cargo_tons(ship)
         cargo_item = 'Cargo Hold'
-        if abs(cargo_tons) < 0.005:
+        if abs(cargo_tons) < TONNAGE_EPSILON:
             cargo_item = 'Cargo (0.00 tons)'
         spec.add_row(
             SpecRow(

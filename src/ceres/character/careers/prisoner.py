@@ -59,9 +59,9 @@ def _handle_prisoner_mishap_3(
 
 
 def _choice_prisoner_mishap_3(projection: CharacterProjection, event) -> None:
-    from ceres.character.replay import _advancement_pending, _current_career
+    from ceres.character.events import _advancement_pending
 
-    career = _current_career(projection)
+    career = projection.get_current_career()
     if event.choice == 'submit':
         projection.summary.problems.append(
             'Prison gang (Prisoner mishap 3): submitted — lose your Benefit roll for this term.'
@@ -83,9 +83,9 @@ def _choice_prisoner_mishap_3(projection: CharacterProjection, event) -> None:
 
 
 def _resolve_prisoner_mishap_3_fight(projection: CharacterProjection, event: SkillRollEvent) -> None:
-    from ceres.character.replay import _advancement_pending, _current_career
+    from ceres.character.events import _advancement_pending
 
-    career = _current_career(projection)
+    career = projection.get_current_career()
     if event.modified_roll >= 8:
         projection.summary.connections.append(Enemy(source='Prison gang leader (Prisoner mishap 3)'))
         projection.summary.parole_threshold = min(12, (projection.summary.parole_threshold or 0) + 1)
@@ -127,11 +127,9 @@ def _handle_prisoner_event_3(
 
 
 def _choice_prisoner_event_3(projection: CharacterProjection, event) -> None:
-    from ceres.character.replay import _career_progress_pending, _current_career
-
-    career = _current_career(projection)
+    career = projection.get_current_career()
     if event.choice == 'stay':
-        projection.pending_inputs.append(_career_progress_pending(career, projection, event.id))
+        projection.pending_inputs.append(projection.career_progress_pending(career, event.id))
     else:
         projection.pending_inputs.append(
             PendingCareerSkillRoll(
@@ -146,12 +144,10 @@ def _choice_prisoner_event_3(projection: CharacterProjection, event) -> None:
 
 
 def _resolve_prisoner_event_3_escape(projection: CharacterProjection, event: SkillRollEvent) -> None:
-    from ceres.character.replay import _apply_muster_out_setup, _current_career
-
-    career = _current_career(projection)
+    career = projection.get_current_career()
     if event.modified_roll >= 10:
         projection.summary.narrative.append('Prisoner event 3: escaped from prison — career ends.')
-        _apply_muster_out_setup(projection, career, event.id, 0, lose_current_term=False)
+        projection.muster_out_setup(career, event.id, 0, lose_current_term=False)
     else:
         projection.summary.parole_threshold = min(12, (projection.summary.parole_threshold or 0) + 2)
         projection.summary.narrative.append('Prisoner event 3: escape failed — Parole Threshold +2.')
@@ -302,9 +298,7 @@ def _handle_prisoner_event_7(
 
 
 def _choice_prisoner_event_7(projection: CharacterProjection, event) -> None:
-    from ceres.character.replay import _career_progress_pending, _current_career
-
-    career = _current_career(projection)
+    career = projection.get_current_career()
     sub = event.choice
     if sub == '1':
         # Riot — roll END 8+
@@ -322,31 +316,31 @@ def _choice_prisoner_event_7(projection: CharacterProjection, event) -> None:
         # Forced into gang — PT +1, gain Enemy
         projection.summary.parole_threshold = min(12, (projection.summary.parole_threshold or 0) + 1)
         projection.summary.connections.append(Enemy(source='Prison gang (Prisoner event 7, forced)'))
-        projection.pending_inputs.append(_career_progress_pending(career, projection, event.id))
+        projection.pending_inputs.append(projection.career_progress_pending(career, event.id))
     elif sub == '3':
         # Transfer to another prison
         projection.summary.problems.append(
             'Prisoner event 7: transferred to another prison — no mechanical effect. Apply manually if needed.'
         )
-        projection.pending_inputs.append(_career_progress_pending(career, projection, event.id))
+        projection.pending_inputs.append(projection.career_progress_pending(career, event.id))
     elif sub == '4':
         # Visitation rights restored — gain Ally
         projection.summary.connections.append(Ally(source='Visitor (Prisoner event 7)'))
-        projection.pending_inputs.append(_career_progress_pending(career, projection, event.id))
+        projection.pending_inputs.append(projection.career_progress_pending(career, event.id))
     elif sub == '5':
         # Parole hearing — PT -1
         projection.summary.parole_threshold = max(0, (projection.summary.parole_threshold or 0) - 1)
-        projection.pending_inputs.append(_career_progress_pending(career, projection, event.id))
+        projection.pending_inputs.append(projection.career_progress_pending(career, event.id))
     else:  # '6'
         # Good behaviour — PT -1
         projection.summary.parole_threshold = max(0, (projection.summary.parole_threshold or 0) - 1)
-        projection.pending_inputs.append(_career_progress_pending(career, projection, event.id))
+        projection.pending_inputs.append(projection.career_progress_pending(career, event.id))
 
 
 def _resolve_prisoner_event_7_riot(projection: CharacterProjection, event: SkillRollEvent) -> None:
-    from ceres.character.replay import _advancement_pending, _current_career
+    from ceres.character.events import _advancement_pending
 
-    career = _current_career(projection)
+    career = projection.get_current_career()
     if event.modified_roll < 8:
         projection.pending_inputs.append(
             PendingInjuryTable(
@@ -386,11 +380,9 @@ def _handle_prisoner_event_9(
 
 
 def _choice_prisoner_event_9(projection: CharacterProjection, event) -> None:
-    from ceres.character.replay import _career_progress_pending, _current_career
-
-    career = _current_career(projection)
+    career = projection.get_current_career()
     if event.choice == 'decline':
-        projection.pending_inputs.append(_career_progress_pending(career, projection, event.id))
+        projection.pending_inputs.append(projection.career_progress_pending(career, event.id))
         return
     level = int(event.choice[-1])
     projection.summary.problems.append(
@@ -437,11 +429,9 @@ def _handle_prisoner_event_12(
 
 
 def _choice_prisoner_event_12(projection: CharacterProjection, event) -> None:
-    from ceres.character.replay import _career_progress_pending, _current_career
-
-    career = _current_career(projection)
+    career = projection.get_current_career()
     if event.choice == 'refuse':
-        projection.pending_inputs.append(_career_progress_pending(career, projection, event.id))
+        projection.pending_inputs.append(projection.career_progress_pending(career, event.id))
     else:
         projection.pending_inputs.append(
             PendingCareerSkillRoll(
@@ -456,9 +446,9 @@ def _choice_prisoner_event_12(projection: CharacterProjection, event) -> None:
 
 
 def _resolve_prisoner_event_12_heroism(projection: CharacterProjection, event: SkillRollEvent) -> None:
-    from ceres.character.replay import _advancement_pending, _current_career
+    from ceres.character.events import _advancement_pending
 
-    career = _current_career(projection)
+    career = projection.get_current_career()
     if event.modified_roll >= 8:
         projection.summary.connections.append(Ally(source='Saved fellow prisoner (Prisoner event 12)'))
         projection.summary.parole_threshold = max(0, (projection.summary.parole_threshold or 0) - 2)

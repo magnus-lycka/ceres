@@ -26,6 +26,16 @@ from .systems import Airlock, Armoury, SystemsSection
 from .text import optional_count
 from .weapons import WeaponsSection
 
+TONNAGE_EPSILON = 0.005
+NON_GRAVITY_MAX_DISPLACEMENT = 500_000
+CAPITAL_SHIP_MIN_DISPLACEMENT = 5_000
+PRIMITIVE_TL5 = 5
+PRIMITIVE_TL5_MAX_THRUST = 1
+PRIMITIVE_MAX_THRUST = 3
+AIRLOCK_MIN_DISPLACEMENT = 100
+AIRLOCK_DISPLACEMENT_INTERVAL = 500
+MAX_SUPPORTED_TL = 16
+
 
 class ShipDesignType(StrEnum):
     STANDARD = 'STANDARD'
@@ -66,25 +76,25 @@ class Ship(ShipBase):
     systems: SystemsSection | None = None
     weapons: WeaponsSection | None = None
 
-    def build_notes(self) -> list:
+    def build_notes(self) -> list:  # noqa: PLR0912
         notes = NoteList()
         notes.extend(self.hull.notes.problems)
         remaining_usable_tonnage = self.remaining_usable_tonnage()
-        if remaining_usable_tonnage < -0.005:
+        if remaining_usable_tonnage < -TONNAGE_EPSILON:
             notes.error(f'Hull overloaded by {-remaining_usable_tonnage:.2f} tons')
 
-        if self.hull.configuration.non_gravity and self.displacement > 500_000:
+        if self.hull.configuration.non_gravity and self.displacement > NON_GRAVITY_MAX_DISPLACEMENT:
             notes.error(f'Non-gravity hull exceeds maximum displacement: {self.displacement:,} > 500,000 tons')
 
         if self.hull.configuration.reinforced and self.hull.configuration.light:
             notes.error('Hull cannot be both reinforced and light')
 
-        if self.hull.configuration.military and self.displacement <= 5_000:
+        if self.hull.configuration.military and self.displacement <= CAPITAL_SHIP_MIN_DISPLACEMENT:
             notes.error(f'Military hull requires capital ship displacement: {self.displacement:,} <= 5,000 tons')
 
         if getattr(self.hull.configuration, 'primitive', False) and self.drives is not None:
-            primitive_max_thrust = 1 if self.tl == 5 else 3
-            primitive_hull_label = 'Primitive TL5 hull' if self.tl == 5 else 'Primitive hull'
+            primitive_max_thrust = PRIMITIVE_TL5_MAX_THRUST if self.tl == PRIMITIVE_TL5 else PRIMITIVE_MAX_THRUST
+            primitive_hull_label = 'Primitive TL5 hull' if self.tl == PRIMITIVE_TL5 else 'Primitive hull'
             if self.drives.m_drive is not None:
                 notes.error('Primitive hull cannot fit manoeuvre drives')
             if self.drives.j_drive is not None:
@@ -101,10 +111,14 @@ class Ship(ShipBase):
                 )
 
         power_shortfall = self.total_power_load - self.available_power
-        if power_shortfall > 0.005 and (self.power is None or self.power.plant is None):
+        if power_shortfall > TONNAGE_EPSILON and (self.power is None or self.power.plant is None):
             notes.warning(f'Power: capacity {power_shortfall:.2f} less than max use')
 
-        minimum_airlocks = ceil(self.displacement / 500) if self.displacement >= 100 else 0
+        minimum_airlocks = (
+            ceil(self.displacement / AIRLOCK_DISPLACEMENT_INTERVAL)
+            if self.displacement >= AIRLOCK_MIN_DISPLACEMENT
+            else 0
+        )
         installed_airlocks = len(self.hull.airlocks)
         if minimum_airlocks and installed_airlocks < minimum_airlocks:
             notes.warning(f'Installed airlocks below minimum recommendation: {installed_airlocks} < {minimum_airlocks}')
@@ -392,10 +406,10 @@ class Ship(ShipBase):
 
     def model_post_init(self, __context: object) -> None:
         super().model_post_init(__context)
-        if self.tl > 16:
+        if self.tl > MAX_SUPPORTED_TL:
             raise ValueError(f'Ceres currently supports TL16 and lower, got TL{self.tl}')
-        if not self.hull.airlocks and self.displacement >= 100:
-            minimum_airlocks = ceil(self.displacement / 500)
+        if not self.hull.airlocks and self.displacement >= AIRLOCK_MIN_DISPLACEMENT:
+            minimum_airlocks = ceil(self.displacement / AIRLOCK_DISPLACEMENT_INTERVAL)
             self.hull = self.hull.model_copy(update={'airlocks': [Airlock() for _ in range(minimum_airlocks)]})
         if self.hull.configuration.streamlined == Streamlined.YES:
             if self.fuel is None:
@@ -420,7 +434,7 @@ class Ship(ShipBase):
         if self.weapons is not None:
             self.weapons.validate_mounting(self)
         power_shortfall = self.total_power_load - self.available_power
-        if power_shortfall > 0.005 and self.power is not None and self.power.plant is not None:
+        if power_shortfall > TONNAGE_EPSILON and self.power is not None and self.power.plant is not None:
             message = f'Capacity {power_shortfall:.2f} less than max use'
             self.power.plant.warning(message)
 

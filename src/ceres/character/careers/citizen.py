@@ -43,9 +43,9 @@ def _handle_citizen_mishap_4(
 
 
 def _choice_citizen_mishap_4(projection: CharacterProjection, event) -> None:
-    from ceres.character.replay import _apply_mishap_ejection, _current_career
+    from ceres.character.events import _apply_mishap_ejection
 
-    career = _current_career(projection)
+    career = projection.get_current_career()
     if event.choice == 'cooperate':
         projection.summary.connections.append(Contact(source='Investigator (Citizen mishap 4)'))
         _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=False)
@@ -77,9 +77,9 @@ def _handle_citizen_mishap_5(
 
 
 def _resolve_citizen_mishap_5(projection: CharacterProjection, event: SkillRollEvent) -> None:
-    from ceres.character.replay import _apply_mishap_ejection, _current_career
+    from ceres.character.events import _apply_mishap_ejection
 
-    career = _current_career(projection)
+    career = projection.get_current_career()
     if event.modified_roll >= 8:
         existing_skills = [type(s).name() for s in projection.summary.skills]
         projection.pending_inputs.append(
@@ -137,9 +137,7 @@ def _handle_citizen_event_8(
 
 
 def _choice_citizen_event_8(projection: CharacterProjection, event) -> None:
-    from ceres.character.replay import _career_progress_pending, _current_career
-
-    career = _current_career(projection)
+    career = projection.get_current_career()
     if event.choice == 'refuse':
         projection.scheduled_effects.append(
             ScheduledEffect(
@@ -148,7 +146,7 @@ def _choice_citizen_event_8(projection: CharacterProjection, event) -> None:
                 effect={'type': 'dm', 'amount': 2},
             )
         )
-        projection.pending_inputs.append(_career_progress_pending(career, projection, event.id))
+        projection.pending_inputs.append(projection.career_progress_pending(career, event.id))
     else:
         projection.pending_inputs.append(
             PendingCareerSkillRoll(
@@ -163,7 +161,7 @@ def _choice_citizen_event_8(projection: CharacterProjection, event) -> None:
 
 
 def _resolve_citizen_event_8_skill(projection: CharacterProjection, event: SkillRollEvent) -> None:
-    from ceres.character.replay import _apply_mishap_ejection, _current_career
+    from ceres.character.events import _apply_mishap_ejection
 
     if event.modified_roll >= 8:
         projection.scheduled_effects.append(
@@ -175,7 +173,7 @@ def _resolve_citizen_event_8_skill(projection: CharacterProjection, event: Skill
         )
         # no pending added — _apply_skill_roll auto-queues advancement
     else:
-        career = _current_career(projection)
+        career = projection.get_current_career()
         projection.summary.connections.append(Rival(source='Illegal information leak (Citizen event 8)'))
         _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
 

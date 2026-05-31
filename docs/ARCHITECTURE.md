@@ -389,21 +389,39 @@ in `RULE_INTERPRETATIONS.md` rather than duplicated here.
 
 ## Character creation: career encapsulation rule
 
-**No code outside `src/ceres/character/career/` may hardcode anything
-career-specific.** Adding a new career must require changes only within that
-package.
+**No code outside the career, precareer, and sophont packages may hardcode
+anything career-specific, precareer-specific, or sophont/species-specific.**
+Adding a new career, precareer, or sophont must require changes only within
+those packages.
 
 What this means in practice:
 
 - Career names, roll numbers, and event/mishap option sets are owned by the
-  career package. External code — routes, templates, projection, bulk generation
-  — treats careers generically.
+  career package (`src/ceres/character/careers/`). External code — routes,
+  templates, projection, bulk generation — treats careers generically.
 - `PendingCareerEvent` and `PendingCareerMishap` carry `options: list[str]` set
   by the career handler. The UI renders those options as buttons; it has no
   knowledge of which career produced them.
-- Per-career event/mishap logic lives in `src/ceres/character/career/<name>.py`
+- Per-career event/mishap logic lives in `src/ceres/character/careers/<name>.py`
   and is registered via that career's `CHOICE_HANDLERS`. The replay engine
   dispatches through `CareerChoiceEvent.context` without knowing the career.
 - `CareerData` is the right place to add any data that generic infrastructure
   needs to query about a career (e.g., available tables, rank bonus rules). Do
   not let those queries leak out as hardcoded conditionals elsewhere.
+- The same principle applies to precareers: entry conditions, curricula, event
+  tables, and graduation effects belong entirely within the precareer modules.
+- Sophont/species data — characteristic arrays, UCP stat names, homeworld
+  defaults — belongs in the sophont package. No external module may hardcode
+  which characteristics a sophont has or what their labels are.
+
+**Exceptions** — a small number of places may need to reference a specific
+career or sophont name as a lookup key (e.g. finding a `CareerData` by name).
+These are only acceptable when `CareerData` fields cannot carry the information
+instead. Any such exception must be documented and approved before being
+introduced; an unapproved hardcoded reference is a rule violation.
+
+**Group-play mechanics are out of scope.** The Connections Rule (linking two
+Travellers' histories for a free skill), skill packages (collectively chosen
+after creation and distributed round-robin), and similar mechanics that operate
+across multiple characters are not planned for `ceres.character`. They require a
+group session concept that is outside the current single-character model.

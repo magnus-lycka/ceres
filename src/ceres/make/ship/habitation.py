@@ -20,6 +20,8 @@ from .parts import ShipPart
 from .spec import ShipSpec, SpecRow, SpecSection
 from .systems import CommonArea, HotTub, SwimmingPool, Theatre, WetBar
 
+STABLE_MIN_TONS = 10
+
 
 class Stateroom(ShipPart):
     kind: Literal['standard'] = 'standard'
@@ -306,7 +308,7 @@ class Stable(_ExplicitTonsHabitationPart):
 
     def build_notes(self):
         notes = NoteList()
-        if self.tons < 10:
+        if self.tons < STABLE_MIN_TONS:
             notes.error('Stable minimum size is 10 tons')
         notes.info('Includes air scrubbers and waste-collectors separate from main life support')
         return notes

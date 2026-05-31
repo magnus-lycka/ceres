@@ -5,6 +5,11 @@ from pydantic import Field
 from .base import ShipBase
 from .parts import ShipPart
 
+ARMOUR_MIN_DISPLACEMENT = 5
+ARMOUR_SIZE_FACTOR_4_MAX_DISPLACEMENT = 16
+ARMOUR_SIZE_FACTOR_3_MAX_DISPLACEMENT = 26
+SMALL_CRAFT_MAX_DISPLACEMENT = 100
+
 
 class Armour(ShipPart):
     description: str
@@ -55,14 +60,14 @@ class Armour(ShipPart):
     @property
     def tons(self) -> float:
         displacement = self.assembly.displacement
-        if displacement < 5:
+        if displacement < ARMOUR_MIN_DISPLACEMENT:
             self.error('Displacement must be at least 5 tons for armour.')
             return 0.0
-        if displacement < 16:
+        if displacement < ARMOUR_SIZE_FACTOR_4_MAX_DISPLACEMENT:
             size_factor = 4
-        elif displacement < 26:
+        elif displacement < ARMOUR_SIZE_FACTOR_3_MAX_DISPLACEMENT:
             size_factor = 3
-        elif displacement < 100:
+        elif displacement < SMALL_CRAFT_MAX_DISPLACEMENT:
             size_factor = 2
         else:
             size_factor = 1

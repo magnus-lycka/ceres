@@ -37,12 +37,10 @@ def _handle_merchant_event_3(
 
 
 def _choice_merchant_event_3(projection: CharacterProjection, event) -> None:
-    from ceres.character.replay import _career_progress_pending, _current_career
-
-    career = _current_career(projection)
+    career = projection.get_current_career()
     if event.choice == 'refuse':
         projection.summary.connections.append(Rival(source='Merchant who offered smuggling job (Merchant event 3)'))
-        projection.pending_inputs.append(_career_progress_pending(career, projection, event.id))
+        projection.pending_inputs.append(projection.career_progress_pending(career, event.id))
     else:
         projection.pending_inputs.append(
             PendingCareerSkillRoll(
@@ -57,7 +55,7 @@ def _choice_merchant_event_3(projection: CharacterProjection, event) -> None:
 
 
 def _resolve_merchant_event_3_skill(projection: CharacterProjection, event: SkillRollEvent) -> None:
-    from ceres.character.replay import _apply_mishap_ejection, _current_career
+    from ceres.character.events import _apply_mishap_ejection
 
     if event.modified_roll >= 8:
         projection.scheduled_effects.append(
@@ -69,7 +67,7 @@ def _resolve_merchant_event_3_skill(projection: CharacterProjection, event: Skil
         )
         # no pending added — _apply_skill_roll auto-queues advancement
     else:
-        career = _current_career(projection)
+        career = projection.get_current_career()
         projection.summary.connections.append(Enemy(source='Smuggling job failed (Merchant event 3)'))
         _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
 
@@ -83,16 +81,14 @@ def _handle_merchant_event_5(
     event_id: int,
     pending_idx: int,
 ) -> int:
-    from ceres.character.replay import _career_progress_pending, _current_career
-
-    career = _current_career(projection)
+    career = projection.get_current_career()
     projection.summary.problems.append(
         'Merchant event 5: gambling opportunity — decide how many Benefit rolls to wager, '
         'then roll Gambler 8+ or Broker 8+. '
         'Success: gain half the wagered rolls (round up). '
         'Fail: lose all the wagered rolls. Apply the result manually.'
     )
-    projection.pending_inputs.append(_career_progress_pending(career, projection, event_id))
+    projection.pending_inputs.append(projection.career_progress_pending(career, event_id))
     return pending_idx
 
 

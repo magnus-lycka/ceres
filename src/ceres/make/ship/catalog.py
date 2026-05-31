@@ -26,6 +26,8 @@ from .computer import (
 ReportTheme = Literal['light', 'dark']
 
 _GEAR_TEMPLATES = Path(__file__).parent.parent.parent / 'gear' / 'templates'
+MCR = 1_000_000
+MIN_PROTO_COMPUTER_TL = 4
 
 _COMPUTERS: list[ComputerBase] = [
     Computer5(),
@@ -48,9 +50,9 @@ _CORES: list[ComputerBase] = [
 
 
 def _fmt_mcr(cost: float) -> str:
-    if cost < 1_000_000:
+    if cost < MCR:
         return f'kCr{cost / 1_000:,.3f}'
-    return f'MCr{cost / 1_000_000:,.3f}'
+    return f'MCr{cost / MCR:,.3f}'
 
 
 _HEADERS = ['Processing', 'TL', 'Cost', 'BIS', 'FIB', 'BIS+FIB']
@@ -92,7 +94,7 @@ def _proto_section(instances: list[ComputerBase], heading: str) -> dict:
     for proto_levels in range(1, 3):
         for c in instances:
             ship_tl = c.tl - proto_levels
-            if ship_tl >= 4:
+            if ship_tl >= MIN_PROTO_COMPUTER_TL:
                 proto = c.model_copy(update={'proto_levels': proto_levels})
                 rows.append(_cost_row(proto, ship_tl))
     return {'heading': f'Proto {heading}', 'headers': _HEADERS, 'alignments': _ALIGNMENTS, 'rows': rows}

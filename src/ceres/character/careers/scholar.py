@@ -36,8 +36,8 @@ def _handle_scholar_event_3(
 
 
 def _choice_scholar_event_3(projection: CharacterProjection, event) -> None:
+    from ceres.character.events import _advancement_pending
     from ceres.character.projection import PendingConnectionsRoll, PendingMusterOut
-    from ceres.character.replay import _advancement_pending, _current_career
 
     if event.choice == 'accept':
         projection.pending_inputs.append(
@@ -60,7 +60,7 @@ def _choice_scholar_event_3(projection: CharacterProjection, event) -> None:
                 )
             )
         if projection.summary.current_career is not None:
-            career = _current_career(projection)
+            career = projection.get_current_career()
             projection.pending_inputs.append(
                 _advancement_pending(career, projection.summary.current_assignment or '', event.id, 3)
             )
@@ -74,7 +74,7 @@ def _choice_scholar_event_3(projection: CharacterProjection, event) -> None:
             )
         )
     elif projection.summary.current_career is not None:
-        career = _current_career(projection)
+        career = projection.get_current_career()
         projection.pending_inputs.append(
             _advancement_pending(career, projection.summary.current_assignment or '', event.id)
         )
@@ -136,11 +136,11 @@ def _handle_scholar_event_8(
 
 
 def _choice_scholar_event_8(projection: CharacterProjection, event) -> None:
-    from ceres.character.replay import _advancement_pending, _current_career
+    from ceres.character.events import _advancement_pending
 
     if event.choice == 'refuse':
         if projection.summary.current_career is not None:
-            career = _current_career(projection)
+            career = projection.get_current_career()
             projection.pending_inputs.append(
                 _advancement_pending(career, projection.summary.current_assignment or '', event.id)
             )
@@ -258,18 +258,17 @@ def _handle_scholar_mishap_5(
 
 def _choice_scholar_mishap_5(projection: CharacterProjection, event) -> None:
     from ceres.character.projection import PendingAdvancement, PendingAgingRoll
-    from ceres.character.replay import _apply_muster_out_setup, _clear_current_career, _current_career
 
     if event.choice == 'give_up':
-        career = _current_career(projection)
+        career = projection.get_current_career()
         projection.pending_inputs = [p for p in projection.pending_inputs if not isinstance(p, PendingAdvancement)]
         projection.summary.age += 4
         if projection.summary.age >= 34:
             projection.muster_out_career = career.name
-            _clear_current_career(projection)
+            projection.clear_current_career()
             projection.pending_inputs.append(PendingAgingRoll(id=f'{event.id}.0', instruction='Roll 2D on Aging table'))
         else:
-            _apply_muster_out_setup(projection, career, event.id, 0, lose_current_term=True)
+            projection.muster_out_setup(career, event.id, 0, lose_current_term=True)
     # 'start_again': advancement is already there from _apply_mishap, career stays
 
 

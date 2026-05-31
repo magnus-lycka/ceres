@@ -1,3 +1,39 @@
+# Plan: Character Creation [ARCHIVED]
+
+> **Archived 2026-05-31.** This plan is largely superseded. See notes below for
+> current status.
+>
+> **What's done:** All standard careers (Agent, Army, Citizen, Drifter,
+> Entertainer, Marines, Merchant, Navy, Nobility, Rogue, Scholar, Scout) and the
+> Prisoner special career are implemented. Precareers (University, Military
+> Academy, Colonial Upbringing) are implemented. The core event/projection/replay
+> engine, SQLite store, FastAPI endpoints, CLI, and bulk NPC generation are all
+> working.
+>
+> **OO refactoring (Phases 0–2 complete):** All behavioral dispatch has been
+> moved out of the procedural `replay.py` into `apply()` methods on each
+> `EventBase` subclass. `replay.py` is now ~41 lines. See plan
+> `~/.claude/plans/i-think-we-need-groovy-lake.md` for Phases 3–5 (moving
+> `auto_event()`, `event_from_form()`, and `input_specs()` to pending classes;
+> extracting `state.py`; simplifying routes and template).
+>
+> **Code model evolution:** The `CharacterProjection` and event models described
+> in this plan are still broadly accurate in structure but have evolved in detail.
+> The pending classes are now typed subclasses of `PendingInputBase` rather than a
+> single `PendingInput` class. The `species` field is now `sophont`. Code snippets
+> in this plan may be outdated.
+>
+> **Remaining correctness gaps and future work:** Moved to `docs/todo_maybe.md`
+> under "Character creation: correctness gaps and remaining rules". Rule
+> interpretations for draft mechanics (RIC-003) and benefit roll bonuses (RIC-004)
+> are in `docs/RULE_INTERPRETATIONS.md`. The career encapsulation rule has been
+> updated in `docs/ARCHITECTURE.md` to cover precareers and sophonts.
+>
+> **Group-play mechanics** (Connections Rule, skill packages) are out of scope;
+> see architecture note in `docs/ARCHITECTURE.md`.
+
+---
+
 # Plan: Character Creation
 
 ## Context
@@ -264,7 +300,7 @@ class Connection(BaseModel):
 class CharacterSummary(BaseModel):
     name: str | None = None
     age: int = 18
-    species: str | None = None
+    species: str | None = None  # NOTE: now called 'sophont' in current code
     characteristics: dict[str, int] = {}
     current_career: str | None = None
     current_assignment: str | None = None
@@ -286,6 +322,11 @@ class CharacterProjection(BaseModel):
     pending_reenlist: bool | None = None
     muster_out_career: str | None = None
 ```
+
+> **Note (archived):** `PendingInput` is now a typed hierarchy of
+> `PendingInputBase` subclasses, one per pending kind. The `kind` field is still
+> present as a Pydantic discriminator but must not be used for behavioral
+> dispatch. See `projection.py` and the OO refactoring plan.
 
 ## Session Persistence
 
@@ -339,6 +380,9 @@ Career data is authored in YAML under `src/ceres/character/careers/`. Currently
 Scout (`scout.yaml`) and Scholar (`scholar.yaml`) are implemented. The YAML
 loader validates into `CareerData` Pydantic models at load time.
 
+> **Note (archived):** All 12 standard careers + Prisoner + precareers are now
+> implemented.
+
 Career-specific unusual event handling is registered as Python handlers in
 `scout.py` and `scholar.py` alongside their YAML data, via
 `get_effect_handler()` and `get_skill_roll_handler()` from
@@ -376,6 +420,10 @@ Pending identifiers are deterministic. Tests assert:
 - same event log replays to the same projection every time
 
 ## Implementation Status
+
+> **Note (archived):** This section was accurate at the time of writing.
+> See git log for actual current state. All items under "Done" below were
+> completed; the "Remaining Work" items have been moved to `docs/todo_maybe.md`.
 
 ### Done
 
@@ -419,112 +467,11 @@ Pending identifiers are deterministic. Tests assert:
 - **Language skills** — individual skill classes (`LanguageGalanglic` etc.)
   via `_make_language()` factory; `Languages` union; included in background
   skill options.
+- **All 12 standard careers + Prisoner + precareers** — completed after this
+  plan was originally written.
+- **OO refactoring Phases 0–2** — all `_apply_XXX` logic moved into `apply()`
+  methods on event classes; `replay.py` reduced to ~41 lines.
 
 ### Remaining Work
 
-#### Correctness gaps in current implementation
-
-These rules exist in the implemented flow but are not yet enforced:
-
-- **Skill level cap** — skills may not exceed level 4 during creation; total
-  skill levels may not exceed 3 × (INT + EDU). Add enforcement in `_grant_skill`
-  and `_increment_skill`.
-- **Subsequent basic training** — from term 2 onward (reenlisting or entering
-  a new career), the Traveller picks any one Service Skill at level 0.
-  Currently only first-term basic training is applied. Needs a `basic_training`
-  pending input when entering a career for the second or later time.
-- **Advancement forced exit** — if the advancement roll ≤ terms served in the
-  career, the Traveller is forced to leave (muster out). Currently the
-  reenlist choice is always offered.
-- **Advancement natural 12** — a natural 12 forces the Traveller to stay in
-  the career (reenlist=True, no choice). Currently treated as a normal success.
-- **Benefit roll bonus at rank 5–6** — reaching rank 5 or 6 grants DM+1 to
-  all Benefit rolls from that career. Not yet tracked in `_apply_muster_out_setup`.
-- **Medical debt** — unpaid injury costs from `_apply_muster_out_benefit` should
-  accumulate as debt when cash benefits are insufficient.
-- **Pension** — Travellers leaving a qualifying career (not Scout, Rogue, Prisoner,
-  or Drifter) after 5+ terms earn an annual pension. Should be calculated and
-  recorded at end of creation.
-- **End-of-creation marker** — no pending inputs and no active career should
-  transition the character to a "complete" state with a summary of final cash,
-  pension, and medical debt.
-
-#### Pre-career education (optional, available in terms 1–3)
-
-- New event kinds: `university_entry`, `military_academy_entry`,
-  `precareer_event`, `precareer_graduation`.
-- University: EDU 6+ entry (with term-based DMs); pick one skill at level 0 and
-  one at level 1 from the allowed list; EDU+1; graduation INT 6+; honours at 10+;
-  graduation bonuses including qualification DMs and commission roll entitlement.
-- Military Academy: service-branch-specific entry roll; gain all Service Skills
-  at level 0; graduation INT 7+ with DMs; graduation bonuses including automatic
-  entry and commission rights.
-- Pre-career events table (12 entries) replaces the normal events roll.
-- A new `commission_roll` pending input type arising from pre-career graduation.
-- Career YAML: add `precareer_bonus_qualification_careers` and
-  `precareer_commission_bonus` fields to careers that benefit from graduation.
-
-#### Additional careers
-
-The remaining 10 standard careers and 1 special career from the core rulebook.
-Each requires a YAML file + optional Python handler module + tests.
-
-| Career | Special notes |
-| ------- | ------------- |
-| Agent | Assignment-based qualification DM change (Intel/Corporate separate ranking table) |
-| Army | Commission mechanic; officer rank table; aged-30 qualification penalty |
-| Citizen | Assignment skill table used for basic training, not service skills |
-| Drifter | Automatic qualification; assignment skill table for basic training |
-| Entertainer | DEX or INT qualification |
-| Marines | Commission mechanic; officer rank table; aged-30 qualification penalty |
-| Merchant | "Free Trader" benefit requires special handling |
-| Navy | Commission mechanic; officer rank table; aged-34 qualification penalty |
-| Nobility | SOC 10+ automatic qualification |
-| Rogue | — |
-| Prisoner | Special career: Parole Threshold (starts 1D+2, max 12); leave only when advancement > threshold; mishaps do not eject; no anagathics |
-
-#### Commission mechanic (Army, Navy, Marines)
-
-- New event kind: `commission_roll` with `roll: int`.
-- Qualification: SOC 8+ base; only allowed in first term unless SOC 9+;
-  DM-1 per term after first.
-- On success: enter officer rank table at rank 1; no advancement roll this term.
-- On failure: normal advancement roll still allowed.
-- Pre-career graduation entitlement: commission roll before first term with DM+2
-  (automatic if graduated with honours from military academy).
-- Career YAML: add `commission` check and `officer_ranks` table to military careers.
-
-#### Draft, career switching, and assignment changes
-
-- **Draft** — after qualification failure (once per lifetime unless stated
-  otherwise); roll 1D on draft table: 1=Navy, 2=Army, 3=Marines, 4=Merchant
-  (marine), 5=Scout, 6=Agent (law enforcement). New `draft_roll` event kind.
-- **Changing careers** — normal qualification roll for the new career; failure
-  → draft or Drifter. Tracked in projection; cannot return to a career in the
-  term immediately after leaving it.
-- **Changing assignments** — within Army/Marines/Navy/Nobility/Rogue/Scholar/Scout:
-  qualification roll; failure = continue with same assignment, no penalty.
-  Within Agent/Citizen/Entertainer/Merchant: treated as a new career with
-  full muster out; new `assignment_change` event kind.
-
-#### Connections Rule and Skill Packages
-
-- **Connections Rule** — at any event, two Travellers may link their histories;
-  both gain one free skill (max level 3, no Jack-of-all-Trades); max two
-  connections per Traveller. This is a group-play mechanic. Event kind:
-  `connection_skill`, referencing the other character.
-- **Skill packages** — after all Travellers finish creation, one of eight
-  packages is chosen collectively and skills distributed round-robin. This
-  operates at the group level and may be out of scope for per-character
-  modelling; consider a separate group session concept or a post-creation
-  `skill_package` event kind.
-
-### Verification
-
-After each slice:
-
-```bash
-uv run pytest tests/character/
-uvx ruff check src/ceres/character/
-uvx ty check
-```
+> **Note (archived):** Moved to `docs/todo_maybe.md`.

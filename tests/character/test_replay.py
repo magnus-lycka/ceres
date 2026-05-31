@@ -26,7 +26,8 @@ from ceres.character.projection import (
     PendingInjuryTable,
     PendingUcp,
 )
-from ceres.character.replay import BACKGROUND_SKILLS, ReplayError, replay
+from ceres.character.events import BACKGROUND_SKILLS
+from ceres.character.replay import ReplayError, replay
 from ceres.character.skills import Admin, Advocate, Athletics, Carouse, Drive, skill_list
 from ceres.character.sophonts import VILANI, Sophont
 from ceres.character.store import SqliteCharacterBackend

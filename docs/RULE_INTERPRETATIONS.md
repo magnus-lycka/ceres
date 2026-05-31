@@ -545,6 +545,50 @@ applied at graduation of the first term.
 - The DM-2 on career entry and DM-1 on commission/promotion that the rules
   attach to Colonial Upbringing still apply throughout all subsequent careers.
 
+### RIC-003 Draft Eligibility Is Career-Owned; Merchant Draft Is for a Specific Assignment
+
+The *Core Rulebook* draft table names six careers (Navy, Army, Marines, Merchant,
+Scout, Agent) in fixed order 1–6. This table is implicitly human-centric and
+Imperium-specific. Different sophonts or cultures might draft into different
+careers in different order.
+
+Ceres interprets draft eligibility as a career-owned predicate:
+`is_in_draft(character_summary) -> bool`. The draft table is constructed at
+runtime by collecting all careers that return `True`, in the order they were
+registered. For the six standard core-rulebook careers, all return `True`
+regardless of input; all other careers return `False` by default. The resulting
+1–N roll mapping is derived from career registration, not hardcoded.
+
+Similarly, the Drifter alternative to the draft is declared as
+`is_draft_alternative(character_summary) -> bool`. When a Traveller fails
+qualification and wants to avoid the draft, any career returning `True` from
+this predicate is offered as an alternative.
+
+For **Merchant**, the draft is for the specific Merchant Marine assignment rather
+than a free choice of assignment. The career expresses this as a `draft_assignment`
+field alongside its `is_in_draft` declaration.
+
+For five of the six draft careers (Navy, Army, Marines, Scout, Agent), any
+assignment within the career may be chosen on entry via draft.
+
+### RIC-004 Benefit Roll Bonus: Rank 5–6 Applies to All Rolls; "Any One Roll" Events Allow Post-Roll Choice
+
+Two distinct sources can grant DM+1 to benefit rolls:
+
+**Rank 5–6 DM+1**: Careers that grant DM+1 to all Benefit rolls at rank 5 or 6
+apply this bonus unconditionally to every benefit roll from that career. The
+player does not choose when to use it.
+
+**"DM+1 to any one Benefit roll"** (e.g. Agent event 4): A scheduled effect
+granting DM+1 to one specific benefit roll. Ceres interprets "any" as
+post-roll: the player rolls the benefit die (1–6) and, if this effect is
+active, is offered both the rolled result and the rolled result +1 as choices.
+Selecting the higher result consumes the scheduled effect.
+
+**Interaction**: If the character already has the rank 5–6 DM+1 (which applies
+to all benefit rolls), a "any one roll" scheduled effect is redundant and is not
+additionally applied. The effect is consumed without offering a separate choice.
+
 ---
 
 ## Robot Interpretations

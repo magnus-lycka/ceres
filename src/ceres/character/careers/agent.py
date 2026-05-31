@@ -43,9 +43,9 @@ def _handle_agent_mishap_2(
 
 
 def _choice_agent_mishap_2(projection: CharacterProjection, event) -> None:
-    from ceres.character.replay import _apply_mishap_ejection, _current_career
+    from ceres.character.events import _apply_mishap_ejection
 
-    career = _current_career(projection)
+    career = projection.get_current_career()
     pending_idx = 0
     if event.choice == 'refuse':
         projection.summary.connections.append(Enemy(source='Refused criminal deal (Agent mishap)'))
@@ -92,7 +92,6 @@ def _handle_agent_mishap_3(
 
 def _resolve_agent_mishap_3(projection: CharacterProjection, event: SkillRollEvent) -> None:
     from ceres.character.careers.loader import load_careers
-    from ceres.character.replay import _apply_muster_out_setup
 
     career_name = projection.summary.current_career
     career = load_careers().get(career_name or '')
@@ -102,7 +101,7 @@ def _resolve_agent_mishap_3(projection: CharacterProjection, event: SkillRollEve
     succeed = event.modified_roll >= 8
     if event.modified_roll <= 2:
         projection.forced_next_career = 'Prisoner'
-    _apply_muster_out_setup(projection, career, event.id, 0, lose_current_term=not succeed)
+    projection.muster_out_setup(career, event.id, 0, lose_current_term=not succeed)
 
 
 # ── mishap 5: someone close gets hurt ────────────────────────────────────────
@@ -127,9 +126,9 @@ def _handle_agent_mishap_5(
 
 
 def _choice_agent_mishap_5(projection: CharacterProjection, event) -> None:
-    from ceres.character.replay import _apply_mishap_ejection, _current_career
+    from ceres.character.events import _apply_mishap_ejection
 
-    career = _current_career(projection)
+    career = projection.get_current_career()
     projection.summary.problems.append(
         f'Agent mishap 5: your {event.choice} was hurt — roll twice on the Injury table for them '
         'and apply the lower result (NPC injury; no mechanical effect on your character).'

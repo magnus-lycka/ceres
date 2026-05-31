@@ -1414,6 +1414,9 @@ class WeaponMount(RobotPart):
         return f'Weapon Mount ({self.size})'
 
 
+DEFAULT_SUITE_ITEM_LIMIT = 5
+
+
 def default_suite(
     see: bool = True,
     speak: bool = True,
@@ -1434,7 +1437,7 @@ def default_suite(
     screen (Video Screen basic).
     """
     flags = [see, speak, hear, wireless, improved_transceiver, drone, basic_transceiver, screen]
-    if sum(flags) > 5:
+    if sum(flags) > DEFAULT_SUITE_ITEM_LIMIT:
         raise ValueError(f'default_suite allows at most 5 items; got {sum(flags)}')
     items: list[RobotPartMixin] = []
     if see:

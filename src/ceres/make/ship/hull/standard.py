@@ -15,6 +15,10 @@ from ..parts import ShipPart
 from ..spec import ShipSpec, SpecRow, SpecSection
 from ..systems import Aerofins, Airlock
 
+LARGE_SHIP_HULL_POINTS_MIN_DISPLACEMENT = 25_000
+VERY_LARGE_SHIP_HULL_POINTS_MIN_DISPLACEMENT = 100_000
+ADJUSTABLE_HULL_TL12 = 12
+
 
 class Streamlined(Enum):
     YES = 1
@@ -79,9 +83,9 @@ class HullConfiguration(CeresModel):
         return 50000 * ton * modifier
 
     def points(self, ton):
-        if ton >= 100_000:
+        if ton >= VERY_LARGE_SHIP_HULL_POINTS_MIN_DISPLACEMENT:
             divisor = 1.5
-        elif ton >= 25_000:
+        elif ton >= LARGE_SHIP_HULL_POINTS_MIN_DISPLACEMENT:
             divisor = 2.0
         else:
             divisor = 2.5
@@ -242,7 +246,7 @@ class AdjustableHull(ShipPart):
 
     @property
     def tons(self) -> float:
-        rate = 0.05 if self.tl == 12 else 0.01
+        rate = 0.05 if self.tl == ADJUSTABLE_HULL_TL12 else 0.01
         return self.assembly.displacement * rate
 
     @property
@@ -250,7 +254,7 @@ class AdjustableHull(ShipPart):
         hull = getattr(self.assembly, 'hull', None)
         if hull is None:
             return 0.0
-        multiplier = 0.10 if self.tl == 12 else 1.0
+        multiplier = 0.10 if self.tl == ADJUSTABLE_HULL_TL12 else 1.0
         return hull.configuration.cost(self.assembly.displacement) * multiplier
 
     @property
@@ -285,7 +289,7 @@ class Hull(CeresModel):
     def _deserialize_source_specific_configuration(cls, value):
         description = value.get('description') if isinstance(value, dict) else getattr(value, 'description', None)
         if description == 'SpinExt Primitive Hull':
-            from .spinext import SpinExtPrimitiveHull
+            from .spinext import SpinExtPrimitiveHull  # noqa: PLC0415
 
             return SpinExtPrimitiveHull.model_validate(value)
         return value

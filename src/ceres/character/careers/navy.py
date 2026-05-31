@@ -44,9 +44,9 @@ def _handle_navy_mishap_3(
 
 
 def _resolve_navy_mishap_3(projection: CharacterProjection, event: SkillRollEvent) -> None:
-    from ceres.character.replay import _apply_mishap_ejection, _current_career
+    from ceres.character.events import _apply_mishap_ejection
 
-    career = _current_career(projection)
+    career = projection.get_current_career()
     lose = event.modified_roll < 8
     _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=lose)
 
@@ -77,9 +77,9 @@ def _handle_navy_mishap_4(
 
 
 def _choice_navy_mishap_4(projection: CharacterProjection, event) -> None:
-    from ceres.character.replay import _apply_mishap_ejection, _current_career
+    from ceres.character.events import _apply_mishap_ejection
 
-    career = _current_career(projection)
+    career = projection.get_current_career()
     if event.choice == 'responsible':
         projection.summary.problems.append(
             'Navy mishap 4 (responsible): you gain one free roll on the Skills and Training tables '
@@ -131,9 +131,7 @@ def _handle_navy_event_10(
 
 
 def _choice_navy_event_10(projection: CharacterProjection, event) -> None:
-    from ceres.character.replay import _career_progress_pending, _current_career
-
-    career = _current_career(projection)
+    career = projection.get_current_career()
     if event.choice == 'profit':
         projection.scheduled_effects.append(
             ScheduledEffect(
@@ -150,7 +148,7 @@ def _choice_navy_event_10(projection: CharacterProjection, event) -> None:
                 effect={'type': 'dm', 'amount': 2},
             )
         )
-    projection.pending_inputs.append(_career_progress_pending(career, projection, event.id))
+    projection.pending_inputs.append(projection.career_progress_pending(career, event.id))
 
 
 # ── handler registries ────────────────────────────────────────────────────────

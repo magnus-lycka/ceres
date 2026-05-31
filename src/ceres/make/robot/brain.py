@@ -16,6 +16,10 @@ from .skills import (
     SkillPackage,
     primitive_package_skills,
 )
+from .chassis import Trait
+
+
+RETROTECH_INT_SURCHARGE_THRESHOLD = 12
 
 
 @dataclass(frozen=True)
@@ -249,7 +253,7 @@ class _AdvancedBrainBase(_BrainBase):
         for i in range(1, self.int_upgrade + 1):
             product *= base_int + i
         # Cost ×2 when the upgrade brings INT to 12 or above (refs/robot/34_retrotech.md)
-        multiplier = 2 if base_int + self.int_upgrade >= 12 else 1
+        multiplier = 2 if base_int + self.int_upgrade >= RETROTECH_INT_SURCHARGE_THRESHOLD else 1
         return float(product * 1000 * multiplier)
 
     @property
@@ -343,8 +347,6 @@ class AdvancedBrain(_AdvancedBrainBase):
 
     @property
     def brain_traits(self) -> tuple:
-        from .chassis import Trait
-
         if self.hardened:
             return (Trait('Hardened'),)
         return ()
@@ -409,8 +411,6 @@ class SelfAwareBrain(_AdvancedBrainBase):
 
     @property
     def brain_traits(self) -> tuple:
-        from .chassis import Trait
-
         if self.hardened:
             return (Trait('Hardened'),)
         return ()

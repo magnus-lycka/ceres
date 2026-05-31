@@ -38,9 +38,9 @@ def _handle_marines_mishap_4(
 
 
 def _choice_marines_mishap_4(projection: CharacterProjection, event) -> None:
-    from ceres.character.replay import _apply_mishap_ejection, _current_career
+    from ceres.character.events import _apply_mishap_ejection
 
-    career = _current_career(projection)
+    career = projection.get_current_career()
     if event.choice == 'refuse':
         projection.summary.connections.append(Contact(source='Soldier from black ops mission (Marines mishap 4)'))
         _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
@@ -58,9 +58,9 @@ def _choice_marines_mishap_4(projection: CharacterProjection, event) -> None:
 
 
 def _resolve_marines_mishap_4_skill(projection: CharacterProjection, event: SkillRollEvent) -> None:
-    from ceres.character.replay import _apply_mishap_ejection, _current_career
+    from ceres.character.events import _apply_mishap_ejection
 
-    career = _current_career(projection)
+    career = projection.get_current_career()
     if event.modified_roll < 8:
         _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
     # success: do nothing — _apply_skill_roll auto-queues advancement
@@ -144,9 +144,7 @@ def _handle_marines_event_9(
 
 
 def _choice_marines_event_9(projection: CharacterProjection, event) -> None:
-    from ceres.character.replay import _career_progress_pending, _current_career
-
-    career = _current_career(projection)
+    career = projection.get_current_career()
     if event.choice == 'report':
         projection.summary.connections.append(Enemy(source='Commander (Marines event 9)'))
         projection.scheduled_effects.append(
@@ -165,7 +163,7 @@ def _choice_marines_event_9(projection: CharacterProjection, event) -> None:
                 effect={'type': 'dm', 'amount': 1},
             )
         )
-    projection.pending_inputs.append(_career_progress_pending(career, projection, event.id))
+    projection.pending_inputs.append(projection.career_progress_pending(career, event.id))
 
 
 # ── handler registries ────────────────────────────────────────────────────────

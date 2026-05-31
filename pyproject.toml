@@ -49,7 +49,7 @@ select = [
   "RET",    # return hygiene
 #  "ARG",    # unused args
   "PTH",    # pathlib
-#  "PL",     # pylint subset
+  "PL",     # pylint subset
   "RUF",    # ruff-specific
   "TRY",    # exception handling
   "PERF",   # performance

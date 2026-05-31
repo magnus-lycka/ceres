@@ -67,6 +67,9 @@ _ARMOUR_TL_BANDS: list[tuple[int, int, int]] = [
     (18, 999, 5),
 ]
 
+ENDURANCE_150_PERCENT_MIN_TL = 12
+ENDURANCE_200_PERCENT_MIN_TL = 15
+
 
 def base_armour(tl: int) -> int:
     for tl_min, tl_max, protection in _ARMOUR_TL_BANDS:
@@ -77,9 +80,9 @@ def base_armour(tl: int) -> int:
 
 # refs/robot/07_chassis_options.md — Endurance Modifier table
 def base_endurance_multiplier(tl: int) -> float:
-    if tl >= 15:
+    if tl >= ENDURANCE_200_PERCENT_MIN_TL:
         return 2.0
-    if tl >= 12:
+    if tl >= ENDURANCE_150_PERCENT_MIN_TL:
         return 1.5
     return 1.0
 

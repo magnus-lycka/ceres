@@ -40,9 +40,9 @@ def _handle_drifter_mishap_5(
 
 
 def _resolve_drifter_mishap_5(projection: CharacterProjection, event: SkillRollEvent) -> None:
-    from ceres.character.replay import _apply_mishap_ejection, _current_career
+    from ceres.character.events import _apply_mishap_ejection
 
-    career = _current_career(projection)
+    career = projection.get_current_career()
     projection.summary.connections.append(Rival(source='Former friend who betrayed you (Drifter mishap 5)'))
     if event.modified_roll == 2:
         projection.forced_next_career = 'Prisoner'
@@ -71,9 +71,7 @@ def _handle_drifter_event_3(
 
 
 def _choice_drifter_event_3(projection: CharacterProjection, event) -> None:
-    from ceres.character.replay import _career_progress_pending, _current_career
-
-    career = _current_career(projection)
+    career = projection.get_current_career()
     if event.choice == 'accept':
         projection.scheduled_effects.append(
             ScheduledEffect(
@@ -82,7 +80,7 @@ def _choice_drifter_event_3(projection: CharacterProjection, event) -> None:
                 effect={'type': 'dm', 'amount': 4},
             )
         )
-    projection.pending_inputs.append(_career_progress_pending(career, projection, event.id))
+    projection.pending_inputs.append(projection.career_progress_pending(career, event.id))
 
 
 # ── event 8: attacked by enemies ─────────────────────────────────────────────
@@ -145,11 +143,9 @@ def _handle_drifter_event_9(
 
 
 def _choice_drifter_event_9(projection: CharacterProjection, event) -> None:
-    from ceres.character.replay import _career_progress_pending, _current_career
-
-    career = _current_career(projection)
+    career = projection.get_current_career()
     if event.choice == 'decline':
-        projection.pending_inputs.append(_career_progress_pending(career, projection, event.id))
+        projection.pending_inputs.append(projection.career_progress_pending(career, event.id))
     elif event.choice == 'injury':
         # outcome choice: injury
         projection.pending_inputs.append(
@@ -176,9 +172,7 @@ def _choice_drifter_event_9(projection: CharacterProjection, event) -> None:
 
 
 def _resolve_drifter_event_9_roll(projection: CharacterProjection, event: SkillRollEvent) -> None:
-    from ceres.character.replay import _career_progress_pending, _current_career
-
-    career = _current_career(projection)
+    career = projection.get_current_career()
     roll = event.modified_roll
     if roll <= 2:
         # Choice: injury or prison
@@ -191,7 +185,7 @@ def _resolve_drifter_event_9_roll(projection: CharacterProjection, event: SkillR
                 options=['injury', 'prison'],
             )
         )
-        projection.pending_inputs.append(_career_progress_pending(career, projection, event.id, 1))
+        projection.pending_inputs.append(projection.career_progress_pending(career, event.id, 1))
     elif roll == 3:
         projection.pending_inputs.append(
             PendingInjuryTable(
@@ -200,7 +194,7 @@ def _resolve_drifter_event_9_roll(projection: CharacterProjection, event: SkillR
                 options=['1', '2', '3', '4', '5', '6'],
             )
         )
-        projection.pending_inputs.append(_career_progress_pending(career, projection, event.id, 1))
+        projection.pending_inputs.append(projection.career_progress_pending(career, event.id, 1))
     else:  # 4-6
         projection.scheduled_effects.append(
             ScheduledEffect(
@@ -221,14 +215,12 @@ def _handle_drifter_event_11(
     event_id: int,
     pending_idx: int,
 ) -> int:
-    from ceres.character.replay import _career_progress_pending, _current_career
-
-    career = _current_career(projection)
+    career = projection.get_current_career()
     projection.summary.problems.append(
         'Drifter event 11: forcibly drafted — roll 1D: 1-2 Army, 3-4 Marines, 5-6 Navy. '
         'Leave this career and enter the rolled career next term (no qualification roll needed). Apply manually.'
     )
-    projection.pending_inputs.append(_career_progress_pending(career, projection, event_id))
+    projection.pending_inputs.append(projection.career_progress_pending(career, event_id))
     return pending_idx
 
 
