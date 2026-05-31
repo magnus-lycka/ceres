@@ -6,7 +6,7 @@ from typing import Annotated, ClassVar, Literal, cast, get_args, get_origin
 from pydantic import ConfigDict, Field
 
 from ceres.character import skills as character_skills
-from ceres.character.skills import AnySkill, Level, Skill
+from ceres.character.skills import AnySkill, Level, Skill, active_speciality_field, active_speciality_label
 from ceres.shared import CeresModel
 
 
@@ -164,37 +164,9 @@ def _skill_base_cost(skill: RobotSkill) -> float:
     return 100.0
 
 
-def _speciality_label(skill: Skill, field_name: str) -> str:
-    field = type(skill).model_fields[field_name]
-    extra = field.json_schema_extra or {}
-    return str(extra.get('name') or field_name.replace('_', ' ').title())
-
-
-def _active_speciality_field(skill: Skill) -> str | None:
-    if 'level' in type(skill).model_fields:
-        return None
-    active: list[str] = []
-    for field_name, field in type(skill).model_fields.items():
-        if field_name in {'display_label', 'type'} or field.annotation is not Level:
-            continue
-        level = getattr(skill, field_name)
-        if isinstance(level, Level) and level.value > 0:
-            active.append(field_name)
-    if len(active) == 1:
-        return active[0]
-    return None
-
-
-def _active_speciality_label(skill: Skill) -> str | None:
-    field_name = _active_speciality_field(skill)
-    if field_name is None:
-        return None
-    return _speciality_label(skill, field_name)
-
-
 def skill_name(skill: RobotSkill) -> str:
     base = skill.name()
-    speciality = _active_speciality_label(skill)
+    speciality = active_speciality_label(skill)
     if speciality is None:
         return base
     return f'{base} ({speciality})'
@@ -249,7 +221,7 @@ def _base_skill_name(skill: RobotSkill) -> str:
 
 
 def _skill_key(skill: RobotSkill) -> tuple[type[Skill], str | None]:
-    return type(skill), _active_speciality_field(skill)
+    return type(skill), active_speciality_field(skill)
 
 
 def _is_dex_skill(skill: RobotSkill) -> bool:
@@ -321,7 +293,7 @@ class SkillPackage(CeresModel):
 
     def grants_all_specialities(self) -> bool:
         """Level-0 speciality packages grant all specialities, not one named speciality."""
-        return self.all_specialities or (self.level == 0 and _active_speciality_field(self.name) is not None)
+        return self.all_specialities or (self.level == 0 and active_speciality_field(self.name) is not None)
 
     def skill_grant(self, level: int, *, exact_speciality: bool = False) -> SkillGrant:
         return SkillGrant(

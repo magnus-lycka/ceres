@@ -563,3 +563,31 @@ def skill_from_str(name: str, level: int = 0) -> AnySkill:
         return cast(AnySkill, _cls(level=Level(value=level)))
     fields = {f: Level(value=level) for f in _level_fields(skill_cls)}
     return cast(AnySkill, _cls(**fields))
+
+
+def speciality_label(skill: Skill, field_name: str) -> str:
+    field = type(skill).model_fields[field_name]
+    extra = field.json_schema_extra or {}
+    return str(extra.get('name') or field_name.replace('_', ' ').title())
+
+
+def active_speciality_field(skill: Skill) -> str | None:
+    if 'level' in type(skill).model_fields:
+        return None
+    active: list[str] = []
+    for field_name, field in type(skill).model_fields.items():
+        if field_name in {'display_label', 'type'} or field.annotation is not Level:
+            continue
+        lvl = getattr(skill, field_name)
+        if isinstance(lvl, Level) and lvl.value > 0:
+            active.append(field_name)
+    if len(active) == 1:
+        return active[0]
+    return None
+
+
+def active_speciality_label(skill: Skill) -> str | None:
+    field_name = active_speciality_field(skill)
+    if field_name is None:
+        return None
+    return speciality_label(skill, field_name)

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Annotated, ClassVar, Literal, get_args, get_or
 from pydantic import ConfigDict, Field, PrivateAttr, field_validator
 
 from ceres.character import skills as character_skills
-from ceres.character.skills import AnySkill, Level, Skill
+from ceres.character.skills import AnySkill, Skill, active_speciality_field, active_speciality_label
 from ceres.shared import CeresModel, NoteList, _Note
 
 if TYPE_CHECKING:
@@ -197,34 +197,6 @@ def _key_matches_skill(key: _SkillSpecKey, skill_cls: type[Skill]) -> bool:
     return skill_cls in _skill_classes_from_key(key)
 
 
-def _speciality_label(skill: Skill, field_name: str) -> str:
-    field = type(skill).model_fields[field_name]
-    extra = field.json_schema_extra or {}
-    return str(extra.get('name') or field_name.replace('_', ' ').title())
-
-
-def _active_speciality_field(skill: Skill) -> str | None:
-    if 'level' in type(skill).model_fields:
-        return None
-    active: list[str] = []
-    for field_name, field in type(skill).model_fields.items():
-        if field_name in {'display_label', 'type'} or field.annotation is not Level:
-            continue
-        level = getattr(skill, field_name)
-        if isinstance(level, Level) and level.value > 0:
-            active.append(field_name)
-    if len(active) == 1:
-        return active[0]
-    return None
-
-
-def _active_speciality_label(skill: Skill) -> str | None:
-    field_name = _active_speciality_field(skill)
-    if field_name is None:
-        return None
-    return _speciality_label(skill, field_name)
-
-
 _EXPERT_SKILL_SPECS: dict[_SkillSpecKey, dict[str, int | float]] = {
     character_skills.Admin: {'tl': 8, 'cost': 100.0},
     character_skills.Advocate: {'tl': 10, 'cost': 500.0},
@@ -304,7 +276,7 @@ class Expert(SoftwarePackage):
 
     @property
     def _skill_key(self) -> tuple[type[Skill], str | None]:
-        return type(self.skill), _active_speciality_field(self.skill)
+        return type(self.skill), active_speciality_field(self.skill)
 
     @property
     def _skill_type_key(self) -> type[Skill]:
@@ -325,7 +297,7 @@ class Expert(SoftwarePackage):
     @property
     def skill_name(self) -> str:
         skill_type = self.skill.name()
-        speciality = _active_speciality_label(self.skill)
+        speciality = active_speciality_label(self.skill)
         if speciality is None:
             return skill_type
         return f'{skill_type} ({speciality})'

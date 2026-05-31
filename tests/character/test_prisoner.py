@@ -1,6 +1,7 @@
 from ceres.character.careers.loader import load_careers, selectable_careers
 from ceres.character.characteristics import Chars
 from ceres.character.events import (
+    AdvancementEvent,
     BackgroundSkillsEvent,
     CareerChoiceEvent,
     CareerEvent,
@@ -17,6 +18,7 @@ from ceres.character.projection import (
     Ally,
     Enemy,
     PendingAdvancement,
+    PendingAssignmentChangeChoice,
     PendingCareerChoice,
     PendingCareerEvent,
     PendingCareerMishap,
@@ -26,6 +28,7 @@ from ceres.character.projection import (
     PendingInjuryTable,
     PendingMusterOut,
     PendingSkillChoice,
+    PendingSkillTable,
 )
 from ceres.character.replay import replay
 from ceres.character.skills import Admin, Athletics, Carouse, Drive, WorkerProfession
@@ -98,6 +101,15 @@ def _setup_to_mishap() -> list:
         *_enter_prisoner(),
         SurviveEvent(id=7, fulfills='5.0', roll=6),  # END 7+, DM+0, 6 < 7 — fail
     ]
+
+
+def _prisoner_at_advancement() -> list:
+    """Events leaving a Prisoner/Inmate at PendingAdvancement('8.0').
+
+    Uses term event 8 (parole hearing, PT −1): PT goes 5 → 4. Inmate advancement:
+    STR 7+, STR=7, DM=0.  effective = roll (no DM).  Parole threshold = 4.
+    """
+    return _through_term_event(event_roll=8)
 
 
 # ── mishap 3: prison gang ─────────────────────────────────────────────────────
@@ -473,3 +485,53 @@ class TestPrisonerEvent12:
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingInjuryTable) for p in projection.pending_inputs)
+
+
+# ── prisoner advancement ──────────────────────────────────────────────────────
+# Prisoner advancement differs from normal careers: it checks parole threshold.
+# Parole threshold after _prisoner_at_advancement() = 4 (started at 5, event 8 −1).
+# Inmate advancement: STR 7+, STR=7, DM=0.  effective = roll.
+#   roll=4: fail (4<7), not freed (4≤4)         → PendingAssignmentChangeChoice
+#   roll=5: fail (5<7), freed  (5>4)             → parole → muster out
+#   roll=7: success (7≥7), freed (7>4)           → rank 1 + skill table + muster out
+
+
+class TestPrisonerAdvancement:
+    def test_advancement_failure_creates_assignment_change_choice(self):
+        events = [*_prisoner_at_advancement(), AdvancementEvent(id=9, fulfills='8.0', roll=4)]
+        projection = replay(1, events)
+        assert any(isinstance(p, PendingAssignmentChangeChoice) for p in projection.pending_inputs)
+
+    def test_assignment_change_options_exclude_muster_out_for_prisoner(self):
+        events = [*_prisoner_at_advancement(), AdvancementEvent(id=9, fulfills='8.0', roll=4)]
+        projection = replay(1, events)
+        choice = next(p for p in projection.pending_inputs if isinstance(p, PendingAssignmentChangeChoice))
+        assert 'muster_out' not in choice.options
+        assert 'same' in choice.options
+
+    def test_parole_granted_clears_career(self):
+        events = [*_prisoner_at_advancement(), AdvancementEvent(id=9, fulfills='8.0', roll=5)]
+        projection = replay(1, events)
+        assert projection.summary.current_career is None
+
+    def test_parole_granted_creates_muster_out_pending(self):
+        events = [*_prisoner_at_advancement(), AdvancementEvent(id=9, fulfills='8.0', roll=5)]
+        projection = replay(1, events)
+        assert any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
+
+    def test_parole_narrative_recorded(self):
+        events = [*_prisoner_at_advancement(), AdvancementEvent(id=9, fulfills='8.0', roll=5)]
+        projection = replay(1, events)
+        assert any('Parole' in n for n in projection.summary.narrative)
+
+    def test_advancement_success_with_parole_grants_skill_table(self):
+        # roll=7: success (rank 0→1) and freed → skill table + muster out both pending
+        events = [*_prisoner_at_advancement(), AdvancementEvent(id=9, fulfills='8.0', roll=7)]
+        projection = replay(1, events)
+        assert any(isinstance(p, PendingSkillTable) for p in projection.pending_inputs)
+        assert any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
+
+    def test_advancement_success_with_parole_increments_rank(self):
+        events = [*_prisoner_at_advancement(), AdvancementEvent(id=9, fulfills='8.0', roll=7)]
+        projection = replay(1, events)
+        assert projection.summary.rank == 1

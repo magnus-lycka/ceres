@@ -1,5 +1,5 @@
 from ceres.character.careers.career_data import CareerData, CareerDispatchEffect
-from ceres.character.characteristics import Chars
+from ceres.character.careers.common import handle_advanced_training, resolve_advanced_training
 from ceres.character.events import SkillRollEvent
 from ceres.character.projection import (
     CharacterProjection,
@@ -103,29 +103,13 @@ def _handle_citizen_event_6(
     event_id: int,
     pending_idx: int,
 ) -> int:
-    projection.pending_inputs.append(
-        PendingCareerSkillRoll(
-            id=f'{event_id}.{pending_idx}',
-            career='Citizen',
-            roll=6,
-            context='citizen_event_6',
-            instruction='Roll EDU 10+ to increase any one skill you already have by one level',
-            options=[Chars.EDU],
-        )
+    return handle_advanced_training(
+        'Citizen', 6, 'citizen_event_6', projection, effect, event_id, pending_idx, threshold=10
     )
-    return pending_idx + 1
 
 
 def _resolve_citizen_event_6(projection: CharacterProjection, event: SkillRollEvent) -> None:
-    if event.modified_roll >= 10:
-        existing_skills = [type(s).name() for s in projection.summary.skills]
-        projection.pending_inputs.append(
-            PendingSkillChoice(
-                id=f'{event.id}.0',
-                instruction='Advanced training: increase any existing skill by one level',
-                options=existing_skills,
-            )
-        )
+    resolve_advanced_training(projection, event, threshold=10)
 
 
 # ── event 8: illegal information ─────────────────────────────────────────────

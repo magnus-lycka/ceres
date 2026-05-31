@@ -1,5 +1,7 @@
 """Tests for aging: age tracking, aging roll effects, and aging crisis."""
 
+import pytest
+
 from ceres.character.characteristics import Chars
 from ceres.character.events import (
     AdvancementEvent,
@@ -23,7 +25,7 @@ from ceres.character.projection import (
     PendingMusterOut,
     PendingSkillTable,
 )
-from ceres.character.replay import replay
+from ceres.character.replay import ReplayError, replay
 from ceres.character.skills import Admin, Athletics, Carouse, Drive
 from ceres.character.sophonts import VILANI
 from tests.character.helpers import MOCK_WORLD
@@ -495,3 +497,65 @@ class TestAgingCrisis:
         projection = replay(1, events)
 
         assert not any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
+
+
+def _setup_through_5_terms_advancement() -> list:
+    """Extend _setup_through_4_terms_advancement() with a 5th term through advancement.
+
+    Aging after term 4 resolves with no effect (roll=5, effective=1). Term 5 fails
+    advancement, triggering a second aging roll at age=38, term_count=5.
+    Leaves PendingAgingRoll('28.0').
+    """
+    return [
+        *_setup_through_4_terms_advancement(),
+        AgingRollEvent(id=23, fulfills='22.0', roll=5),  # effective=5-4=1 → no effect
+        # _complete_aging → PendingAssignmentChangeChoice('23.0') (Scout has 3 assignments)
+        ReenlistEvent(id=24, fulfills='23.0', reenlist=True),  # same assignment, term 5 starts
+        SkillTableEvent(id=25, fulfills='24.0', table='service_skills', roll=2),  # Survival → PendingSurvive
+        SurviveEvent(id=26, fulfills='25.0', roll=10),
+        TermEventEvent(id=27, fulfills='26.0', roll=5),  # benefit_dm → PendingAdvancement
+        AdvancementEvent(id=28, fulfills='27.0', roll=3),  # EDU 9+, DM+1 → 4<9 → fail → age=38
+        # term_count=5, age=38 → PendingAgingRoll('28.0')
+    ]
+
+
+class TestAgingRollValidation:
+    def test_roll_too_low_raises(self):
+        events = [*_setup_through_4_terms_advancement(), AgingRollEvent(id=23, fulfills='22.0', roll=1)]
+        with pytest.raises(ReplayError, match='2-12'):
+            replay(1, events)
+
+    def test_roll_too_high_raises(self):
+        events = [*_setup_through_4_terms_advancement(), AgingRollEvent(id=23, fulfills='22.0', roll=13)]
+        with pytest.raises(ReplayError, match='2-12'):
+            replay(1, events)
+
+
+class TestAgingEffectiveMinus3:
+    """Effective -3 aging: one -2 choice and two -1 choices."""
+
+    def test_creates_three_aging_choices(self):
+        # effective = 2 - 5 = -3 requires term_count=5
+        events = [*_setup_through_5_terms_advancement(), AgingRollEvent(id=29, fulfills='28.0', roll=2)]
+        projection = replay(1, events)
+
+        aging_choices = [p for p in projection.pending_inputs if isinstance(p, PendingAgingChoice)]
+        assert len(aging_choices) == 3
+
+    def test_first_choice_reduces_by_2(self):
+        events = [*_setup_through_5_terms_advancement(), AgingRollEvent(id=29, fulfills='28.0', roll=2)]
+        projection = replay(1, events)
+
+        by_2 = [
+            p for p in projection.pending_inputs if isinstance(p, PendingAgingChoice) and 'reduce by 2' in p.instruction
+        ]
+        assert len(by_2) == 1
+
+    def test_two_choices_reduce_by_1(self):
+        events = [*_setup_through_5_terms_advancement(), AgingRollEvent(id=29, fulfills='28.0', roll=2)]
+        projection = replay(1, events)
+
+        by_1 = [
+            p for p in projection.pending_inputs if isinstance(p, PendingAgingChoice) and 'reduce by 1' in p.instruction
+        ]
+        assert len(by_1) == 2
