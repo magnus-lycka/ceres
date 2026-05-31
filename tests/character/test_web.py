@@ -129,15 +129,15 @@ def test_submit_ucp_event(client_with_backend):
     assert 'background_skills' in r.text or 'background' in r.text.lower()
 
 
-def test_submit_bad_kind_shows_error(client_with_backend):
+def test_submit_nonexistent_fulfills_shows_error(client_with_backend):
     client, backend = client_with_backend
     row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Eryn')
     r = client.post(
         f'/ui/characters/{row["id"]}/events',
-        data={'kind': 'unknown_kind', 'fulfills': '1.0'},
+        data={'fulfills': 'nonexistent.999'},
     )
     assert r.status_code == 200
-    assert 'error' in r.text.lower() or 'unknown' in r.text.lower()
+    assert 'error' in r.text.lower() or 'nonexistent' in r.text.lower()
 
 
 # ── character sheet ───────────────────────────────────────────────────────────
@@ -197,84 +197,90 @@ def test_gallery_generate_returns_specs(client):
     assert 'Scout' in r.text
 
 
-# ── build_event_from_form unit tests ─────────────────────────────────────────
+# ── event_from_form unit tests ────────────────────────────────────────────────
 
 
-def test_build_event_ucp():
+def test_event_from_form_ucp():
     from starlette.datastructures import FormData
 
     from ceres.character.events import UcpEvent
-    from ceres.character.web.routes import _build_event_from_form
+    from ceres.character.projection import PendingUcp
 
+    pi = PendingUcp(id='1.0', instruction='')
     form = FormData({'STR': '7', 'DEX': '8', 'END': '6', 'INT': '9', 'EDU': '10', 'SOC': '5'})
-    event = _build_event_from_form('ucp', '1.0', form)
+    event = pi.event_from_form(form)
     assert isinstance(event, UcpEvent)
     assert event.ucp == '7869A5'
     assert event.fulfills == '1.0'
 
 
-def test_build_event_career_choice():
+def test_event_from_form_career_choice():
     from starlette.datastructures import FormData
 
     from ceres.character.events import CareerEvent
-    from ceres.character.web.routes import _build_event_from_form
+    from ceres.character.projection import PendingCareerChoice
 
+    pi = PendingCareerChoice(id='3.0', instruction='')
     form = FormData({'career': 'Scout', 'assignment': 'Courier', 'roll': '8'})
-    event = _build_event_from_form('career_choice', '3.0', form)
+    event = pi.event_from_form(form)
     assert isinstance(event, CareerEvent)
     assert event.career == 'Scout'
     assert event.assignment == 'Courier'
     assert event.qualification_roll == 8
 
 
-def test_build_event_career_event_uses_generic_context():
+def test_event_from_form_career_event_uses_self_context():
     from starlette.datastructures import FormData
 
     from ceres.character.events import CareerChoiceEvent
-    from ceres.character.web.routes import _build_event_from_form
+    from ceres.character.projection import PendingCareerEvent
 
-    form = FormData({'career': 'Scholar', 'roll': '8', 'choice': 'accept'})
-    event = _build_event_from_form('career_event', '9.0', form)
+    pi = PendingCareerEvent(id='9.0', career='Scholar', roll=8, instruction='')
+    form = FormData({'choice': 'accept'})
+    event = pi.event_from_form(form)
     assert isinstance(event, CareerChoiceEvent)
     assert event.context == 'scholar_event_8'
     assert event.choice == 'accept'
     assert event.fulfills == '9.0'
 
 
-def test_build_event_career_mishap_uses_generic_context():
+def test_event_from_form_career_mishap_uses_self_context():
     from starlette.datastructures import FormData
 
     from ceres.character.events import CareerChoiceEvent
-    from ceres.character.web.routes import _build_event_from_form
+    from ceres.character.projection import PendingCareerMishap
 
-    form = FormData({'career': 'Agent', 'roll': '5', 'choice': 'ally'})
-    event = _build_event_from_form('career_mishap', '8.0', form)
+    pi = PendingCareerMishap(id='8.0', career='Agent', roll=5, instruction='')
+    form = FormData({'choice': 'ally'})
+    event = pi.event_from_form(form)
     assert isinstance(event, CareerChoiceEvent)
     assert event.context == 'agent_mishap_5'
     assert event.choice == 'ally'
     assert event.fulfills == '8.0'
 
 
-def test_build_event_reenlist_true():
+def test_event_from_form_reenlist_true():
     from starlette.datastructures import FormData
 
     from ceres.character.events import ReenlistEvent
-    from ceres.character.web.routes import _build_event_from_form
+    from ceres.character.projection import PendingReenlist
 
+    pi = PendingReenlist(id='5.1', instruction='')
     form = FormData({'reenlist': 'true'})
-    event = _build_event_from_form('reenlist', '5.1', form)
+    event = pi.event_from_form(form)
     assert isinstance(event, ReenlistEvent)
     assert event.reenlist is True
 
 
-def test_build_event_reenlist_false():
+def test_event_from_form_reenlist_false():
     from starlette.datastructures import FormData
 
     from ceres.character.events import ReenlistEvent
-    from ceres.character.web.routes import _build_event_from_form
+    from ceres.character.projection import PendingReenlist
 
+    pi = PendingReenlist(id='5.1', instruction='')
     form = FormData({'reenlist': 'false'})
-    event = _build_event_from_form('reenlist', '5.1', form)
+    event = pi.event_from_form(form)
     assert isinstance(event, ReenlistEvent)
     assert event.reenlist is False
 
@@ -282,11 +288,79 @@ def test_build_event_reenlist_false():
 def test_build_event_unknown_raises():
     from starlette.datastructures import FormData
 
+    from ceres.character.projection import CharacterProjection, CharacterSummary
     from ceres.character.web.routes import _build_event_from_form
 
+    projection = CharacterProjection(
+        character_id=1,
+        summary=CharacterSummary(name='T', sophont=VILANI, homeworld=MOCK_WORLD),
+    )
     form = FormData({})
     with pytest.raises(ValueError):
-        _build_event_from_form('no_such_kind', '', form)
+        _build_event_from_form('no_such_kind', 'nonexistent.0', form, projection)
+
+
+# ── career_skill_choice with advancement_dm_4 sentinel ────────────────────────
+
+
+def test_input_specs_includes_advancement_dm_4():
+    """advancement_dm_4 sentinel appears in input_specs Select options with a readable label."""
+    from ceres.character.input_specs import Select
+    from ceres.character.projection import CharacterProjection, CharacterSummary, PendingCareerSkillChoice
+
+    pi = PendingCareerSkillChoice(
+        id='6.0',
+        career='Agent',
+        roll=11,
+        advancement_precreated=False,
+        instruction='Investigate or DM+4',
+        options=['Investigate', 'advancement_dm_4'],
+    )
+    projection = CharacterProjection(
+        character_id=1,
+        summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD),
+    )
+
+    specs = pi.input_specs(projection)
+    assert specs
+    select = next((s for s in specs if isinstance(s, Select)), None)
+    assert select is not None
+    values = [v for _, v in select.options]
+    labels = [lbl for lbl, _ in select.options]
+
+    assert 'advancement_dm_4' in values
+    assert any('advancement' in lbl.lower() or 'DM' in lbl for lbl in labels)
+
+
+def test_event_from_form_career_skill_choice_advancement_dm_4():
+    """Submitting advancement_dm_4 via career_skill_choice creates AdvancementDmChoiceEvent."""
+    from starlette.datastructures import FormData
+
+    from ceres.character.events import AdvancementDmChoiceEvent
+    from ceres.character.projection import PendingCareerSkillChoice
+
+    pi = PendingCareerSkillChoice(id='6.0', career='Agent', roll=11, instruction='')
+    form = FormData({'skill': 'advancement_dm_4'})
+    event = pi.event_from_form(form)
+    assert isinstance(event, AdvancementDmChoiceEvent)
+    assert event.fulfills == '6.0'
+
+
+def test_event_from_form_career_skill_choice_skill():
+    """Submitting a skill JSON via career_skill_choice creates SkillChoiceEvent."""
+    from starlette.datastructures import FormData
+
+    from ceres.character.events import SkillChoiceEvent
+    from ceres.character.projection import PendingCareerSkillChoice
+    from ceres.character.skills import Investigate, Level
+
+    pi = PendingCareerSkillChoice(id='6.0', career='Agent', roll=11, instruction='')
+    skill_json = '{"type":"Investigate","level":{"value":1}}'
+    form = FormData({'skill': skill_json})
+    event = pi.event_from_form(form)
+    assert isinstance(event, SkillChoiceEvent)
+    assert isinstance(event.skill, Investigate)
+    assert event.skill.level == Level(value=1)
 
 
 # ── _diff_summaries unit tests ────────────────────────────────────────────────
@@ -391,61 +465,3 @@ def test_post_event_response_includes_char_summary_oob(client_with_backend):
 
 
 # ── connection_type_from_instruction ─────────────────────────────────────────
-
-
-# ── career_skill_choice with advancement_dm_4 sentinel ────────────────────────
-
-
-def test_compute_skill_choices_includes_advancement_dm_4():
-    """advancement_dm_4 sentinel appears in skill_choices list with a readable label."""
-    from ceres.character.projection import CharacterProjection, CharacterSummary, PendingCareerSkillChoice
-    from ceres.character.web.routes import _compute_skill_choices_for_pending
-
-    pi = PendingCareerSkillChoice(
-        id='6.0',
-        career='Agent',
-        roll=11,
-        advancement_precreated=False,
-        instruction='Investigate or DM+4',
-        options=['Investigate', 'advancement_dm_4'],
-    )
-    projection = CharacterProjection(
-        character_id=1,
-        summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD),
-    )
-
-    choices = _compute_skill_choices_for_pending(pi, projection)
-    values = [v for _, v in choices]
-    labels = [lbl for lbl, _ in choices]
-
-    assert 'advancement_dm_4' in values
-    assert any('advancement' in lbl.lower() or 'DM' in lbl for lbl in labels)
-
-
-def test_build_event_career_skill_choice_advancement_dm_4():
-    """Submitting advancement_dm_4 via career_skill_choice creates AdvancementDmChoiceEvent."""
-    from starlette.datastructures import FormData
-
-    from ceres.character.events import AdvancementDmChoiceEvent
-    from ceres.character.web.routes import _build_event_from_form
-
-    form = FormData({'skill': 'advancement_dm_4'})
-    event = _build_event_from_form('career_skill_choice', '6.0', form)
-    assert isinstance(event, AdvancementDmChoiceEvent)
-    assert event.fulfills == '6.0'
-
-
-def test_build_event_career_skill_choice_skill():
-    """Submitting a skill JSON via career_skill_choice creates SkillChoiceEvent."""
-    from starlette.datastructures import FormData
-
-    from ceres.character.events import SkillChoiceEvent
-    from ceres.character.skills import Investigate, Level
-    from ceres.character.web.routes import _build_event_from_form
-
-    skill_json = '{"type":"Investigate","level":{"value":1}}'
-    form = FormData({'skill': skill_json})
-    event = _build_event_from_form('career_skill_choice', '6.0', form)
-    assert isinstance(event, SkillChoiceEvent)
-    assert isinstance(event.skill, Investigate)
-    assert event.skill.level == Level(value=1)

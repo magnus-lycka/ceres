@@ -6,6 +6,9 @@ from ..base import ShipBase
 from .common import _ZeroPowerSystemPart
 from .security import BoobyTrap
 
+AIRLOCK_FREE_DISPLACEMENT_INTERVAL = 100
+FORCED_LINKAGE_MAX_DISPLACEMENT = 5_000
+
 
 class Airlock(_ZeroPowerSystemPart):
     tons: ClassVar[float]
@@ -28,9 +31,9 @@ class Airlock(_ZeroPowerSystemPart):
         return notes
 
     def am_i_for_free(self) -> bool:
-        if self.assembly.displacement < 100:
+        if self.assembly.displacement < AIRLOCK_FREE_DISPLACEMENT_INTERVAL:
             return False
-        free_airlocks = self.assembly.displacement // 100
+        free_airlocks = self.assembly.displacement // AIRLOCK_FREE_DISPLACEMENT_INTERVAL
         hull = self.assembly.hull
         if hull is None:
             return False
@@ -113,7 +116,7 @@ class ForcedLinkageApparatus(_ZeroPowerSystemPart):
 
     def bind(self, assembly: ShipBase) -> None:
         super().bind(assembly)
-        if self.assembly.displacement > 5_000:
+        if self.assembly.displacement > FORCED_LINKAGE_MAX_DISPLACEMENT:
             self.error('Forced linkage apparatus may only be used on ships of 5000 tons or less')
 
     def build_notes(self) -> list[_Note]:

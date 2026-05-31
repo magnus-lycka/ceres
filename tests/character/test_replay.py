@@ -3,6 +3,7 @@ from random import Random
 import pytest
 
 from ceres.character.events import (
+    BACKGROUND_SKILLS,
     AdvancementEvent,
     BackgroundSkillsEvent,
     CareerEvent,
@@ -26,7 +27,6 @@ from ceres.character.projection import (
     PendingInjuryTable,
     PendingUcp,
 )
-from ceres.character.events import BACKGROUND_SKILLS
 from ceres.character.replay import ReplayError, replay
 from ceres.character.skills import Admin, Advocate, Athletics, Carouse, Drive, skill_list
 from ceres.character.sophonts import VILANI, Sophont

@@ -10,14 +10,13 @@ from pydantic import ConfigDict, Field, model_validator
 
 from ceres.shared import CeresModel
 
+from .chassis import Trait
 from .skills import (
     BrainSoftware,
     SkillGrant,
     SkillPackage,
     primitive_package_skills,
 )
-from .chassis import Trait
-
 
 RETROTECH_INT_SURCHARGE_THRESHOLD = 12
 

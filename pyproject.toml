@@ -47,13 +47,14 @@ select = [
   "C4",     # comprehensions
   "SIM",    # simplify
   "RET",    # return hygiene
-#  "ARG",    # unused args
+  "ARG001", # Only check function arguments 
   "PTH",    # pathlib
   "PL",     # pylint subset
   "RUF",    # ruff-specific
   "TRY",    # exception handling
   "PERF",   # performance
   "FURB",   # refurb
+  "UP",     # upgrade
 ]
 ignore = [
   "PLR0913",  # too many arguments; often noisy
@@ -67,6 +68,28 @@ ignore = [
 known-first-party = ["ceres"]
 force-sort-within-sections = true
 combine-as-imports = true
+
+[tool.ruff.lint.per-file-ignores]
+"src/ceres/character/**/*.py" = [
+  "ARG001",
+  "E501",
+  "PLC0415",
+  "PLR0911",
+  "PLR0912",
+  "PLR0915",
+  "PLR2004",
+]
+"tests/**/*.py" = [
+  "ARG001",  # pytest fixtures/hooks and helper signatures often keep unused parameters intentionally
+  "PLC0415",  # tests often import locally to isolate dependencies and fixtures
+  "PLR0915",  # reference tests are often long, literal checklists
+  "PLR2004",  # expected values in tests are clearer as literals
+]
+
+[tool.ruff.lint.pylint]
+max-args = 6
+max-branches = 12
+max-statements = 50
 
 [tool.deptry]
 exclude = ["tests", ".venv", "graphify-corpus"]

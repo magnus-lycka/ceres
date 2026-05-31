@@ -153,10 +153,14 @@ class NoteList(list[_Note]):
         return self
 
 
+def _new_note_list() -> NoteList:
+    return NoteList()
+
+
 class CeresModel(BaseModel):
     notes: ClassVar[NoteList]
     display_label: str | None = None
-    _notes: NoteList = PrivateAttr(default_factory=NoteList)
+    _notes: NoteList = PrivateAttr(default_factory=_new_note_list)
 
     def item_description(self) -> str:
         return getattr(self, 'description', '')

@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Annotated, ClassVar, Literal, get_args, get_origin
+from typing import TYPE_CHECKING, Annotated, ClassVar, Literal
 
 from pydantic import ConfigDict, Field, PrivateAttr, field_validator
 
 from ceres.character import skills as character_skills
 from ceres.character.skills import AnySkill, Skill, active_speciality_field, active_speciality_label
+from ceres.gear.skill_keys import SkillCostKey, key_matches_skill
 from ceres.shared import CeresModel, NoteList, _Note
 
 if TYPE_CHECKING:
@@ -31,14 +32,18 @@ class SoftwarePackage(CeresModel, ABC):
     @abstractmethod
     def cost(self) -> float: ...
 
-    def validate_on_computer(self, computer: ComputerPart) -> None:
+    def _validate_tl_on_computer(self, computer: ComputerPart) -> bool:
         if computer.assembly.tl < self.tl:
             self.error(f'{self.description} requires TL{self.tl}')
-            return
+            return False
         if computer.retro_levels > 0:
             effective_tl = computer.assembly.tl - computer.retro_levels
             if self.tl > effective_tl:
                 self.warning(f'{self.description} requires TL{self.tl}, but computer effective TL is {effective_tl}')
+        return True
+
+    def validate_on_computer(self, computer: ComputerPart) -> None:
+        self._validate_tl_on_computer(computer)
 
 
 class FixedSoftwarePackage(SoftwarePackage):
@@ -176,25 +181,11 @@ class Translator(RatedSoftwarePackage):
     }
 
 
-type _SkillSpecKey = object
+type _SkillSpecKey = SkillCostKey
 
 
 def _skill_spec(skill_cls: type[Skill], speciality: str) -> tuple[type[Skill], str]:
     return skill_cls, speciality
-
-
-def _skill_classes_from_key(key: _SkillSpecKey) -> tuple[type[Skill], ...]:
-    if hasattr(key, '__value__'):
-        key = key.__value__
-    if get_origin(key) is Annotated:
-        key = get_args(key)[0]
-    if isinstance(key, type) and issubclass(key, Skill):
-        return (key,)
-    return tuple(arg for arg in get_args(key) if isinstance(arg, type) and issubclass(arg, Skill))
-
-
-def _key_matches_skill(key: _SkillSpecKey, skill_cls: type[Skill]) -> bool:
-    return skill_cls in _skill_classes_from_key(key)
 
 
 _EXPERT_SKILL_SPECS: dict[_SkillSpecKey, dict[str, int | float]] = {
@@ -290,7 +281,7 @@ class Expert(SoftwarePackage):
                 continue
             if key is skill_cls:
                 continue
-            if _key_matches_skill(key, skill_cls):
+            if key_matches_skill(key, skill_cls):
                 return spec
         return None
 

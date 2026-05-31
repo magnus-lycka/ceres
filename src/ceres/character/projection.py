@@ -3,12 +3,12 @@ import random
 import re
 from typing import Annotated, Any, Literal, cast, overload
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, TypeAdapter
 
 from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.benefits import AnyBenefit, ItemBenefit
 from ceres.character.careers.career_data import CareerData
-from ceres.character.characteristics import Chars, ConnectionKind
+from ceres.character.characteristics import UCP_STATS, Chars, ConnectionKind
 from ceres.character.events import (
     AdvancementDmChoiceEvent,
     AdvancementEvent,
@@ -34,6 +34,9 @@ from ceres.character.events import (
     MishapEvent,
     MusterOutEvent,
     ParoleRollEvent,
+    PreCareerEventEvent,
+    PreCareerGraduationEvent,
+    PreCareerSkillChoiceEvent,
     ReenlistEvent,
     SkillChoiceEvent,
     SkillRollEvent,
@@ -42,11 +45,22 @@ from ceres.character.events import (
     TermEventEvent,
     UcpEvent,
 )
+from ceres.character.input_specs import (
+    InputSpec,
+    NumberEntry,
+    Reference,
+    Select,
+    form_int,
+    form_str,
+    literal,
+)
 from ceres.character.skills import AnySkill, Level, Skill, _level_fields, field_for_spec, skill_class_by_name
 from ceres.character.sophonts import Sophont
 from ceres.shared import CeresModel
 
 _CHOOSE_COUNT_RE = re.compile(r'Choose (\d+)')
+_skill_adapter: TypeAdapter[AnySkill] = TypeAdapter(AnySkill)
+_NON_SKILL_OPTION_LABELS: dict[str, str] = {'advancement_dm_4': 'DM+4 to next advancement roll'}
 
 
 def _roll2d(rng: random.Random) -> int:
@@ -76,54 +90,286 @@ class PendingInputBase(BaseModel):
     options: list[str] = Field(default_factory=list)
     blocking: bool = True
 
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        """Return a synthesized event (used by bulk/NPC generation). All subclasses must implement."""
+        raise NotImplementedError(f'{type(self).__name__}.auto_event() not implemented')
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        """Construct the appropriate AnyEvent from submitted form data. All subclasses must implement."""
+        raise NotImplementedError(f'{type(self).__name__}.event_from_form() not implemented')
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        """Return web-agnostic InputSpec descriptors for rendering this pending input. All subclasses must implement."""
+        raise NotImplementedError(f'{type(self).__name__}.input_specs() not implemented')
+
 
 class PendingUcp(PendingInputBase):
     kind: Literal['ucp'] = 'ucp'
+    stat_names: list[str] = Field(default_factory=lambda: [s.value for s in UCP_STATS])
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        sophont = projection.summary.sophont
+        n = len(sophont.ucp_stats) if sophont is not None else 6
+        ucp = ''.join(f'{_roll2d(rng):X}' for _ in range(n))
+        return UcpEvent(ucp=ucp, fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        ucp = ''.join(f'{form_int(form, stat, 0):X}' for stat in self.stat_names)
+        return UcpEvent(ucp=ucp, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [
+            NumberEntry(
+                name=stat,
+                label=stat,
+                default=projection.summary.characteristics.get(Chars(stat), 7),
+                min=1,
+                max=15,
+            )
+            for stat in self.stat_names
+        ]
 
 
 class PendingBackgroundSkills(PendingInputBase):
     kind: Literal['background_skills'] = 'background_skills'
 
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        m = _CHOOSE_COUNT_RE.search(self.instruction)
+        count = int(m.group(1)) if m else 3
+        shuffled = list(self.options)
+        rng.shuffle(shuffled)
+        skills: list[AnySkill] = []
+        for name in shuffled:
+            if len(skills) >= count:
+                break
+            try:
+                cls = skill_class_by_name(name)
+                skills.append(cast(AnySkill, cls()))
+            except ValueError:
+                pass
+        return BackgroundSkillsEvent(skills=skills, fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        raw = form.getlist('skill')
+        skills = [_skill_adapter.validate_json(j) for j in raw]
+        return BackgroundSkillsEvent(skills=skills, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        m = _CHOOSE_COUNT_RE.search(self.instruction)
+        count = int(m.group(1)) if m else 1
+        options: list[tuple[str, str]] = []
+        for opt in self.options:
+            try:
+                cls = skill_class_by_name(opt)
+            except ValueError:
+                continue
+            skill = cast(AnySkill, cls())
+            options.append((opt, _skill_adapter.dump_json(skill).decode()))
+        return [Select(name='skill', label='Skills', options=options, min_select=count, max_select=count)]
+
 
 class PendingCareerChoice(PendingInputBase):
     kind: Literal['career_choice'] = 'career_choice'
 
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        if projection.summary.term_count >= ctx.max_terms:
+            return FinishCreationEvent(fulfills=self.id)
+        available = self.options or sorted(ctx.careers.keys())
+        career_data = None
+        if ctx.career in available:
+            career_data = ctx.careers.get(ctx.career)
+        if career_data is None:
+            from ceres.character.careers.loader import load_careers as _load_careers
+
+            all_careers = _load_careers()
+            chosen_name = rng.choice(available) if available else rng.choice(sorted(ctx.careers.keys()))
+            career_data = all_careers.get(chosen_name) or ctx.careers.get(chosen_name)
+        if career_data is None:
+            career_data = ctx.careers[rng.choice(sorted(ctx.careers.keys()))]
+        if ctx.assignment and any(a.name == ctx.assignment for a in career_data.assignments):
+            assignment = ctx.assignment
+        else:
+            assignment = rng.choice([a.name for a in career_data.assignments])
+        return CareerEvent(
+            career=career_data.name,
+            assignment=assignment,
+            qualification_roll=12,
+            fulfills=self.id,
+        )
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        kind = form_str(form, 'kind', '')
+        if kind == 'finish_creation':
+            return FinishCreationEvent(fulfills=self.id)
+        career = form_str(form, 'career')
+        assignment = form_str(form, 'assignment')
+        roll = form_int(form, 'roll', 2)
+        return CareerEvent(career=career, assignment=assignment, qualification_roll=roll, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        # Career choice uses a complex HTMX-driven form; no generic InputSpec
+        return []
+
 
 class PendingDraftChoice(PendingInputBase):
     kind: Literal['draft_choice'] = 'draft_choice'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        draft_careers = [career for career in ctx.careers.values() if career.does_draft()]
+        career = rng.choice(draft_careers)
+        return DraftEvent(career=career.name, fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        choice = form_str(form, 'choice', 'drifter')
+        if choice == 'draft':
+            roll = form_int(form, 'roll', 1)
+            _DRAFT_ORDER = ['Navy', 'Army', 'Marines', 'Merchant', 'Scout', 'Agent']
+            career_name = _DRAFT_ORDER[max(0, min(roll, len(_DRAFT_ORDER)) - 1)]
+            return DraftEvent(career=career_name, fulfills=self.id)
+        assignment = form_str(form, 'assignment', 'Wanderer')
+        return CareerEvent(career='Drifter', assignment=assignment, qualification_roll=2, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        # Draft choice uses toggle JS panels; no generic InputSpec
+        return []
 
 
 class PendingDraftAssignmentChoice(PendingInputBase):
     kind: Literal['draft_assignment_choice'] = 'draft_assignment_choice'
     career: str
 
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return DraftAssignmentEvent(
+            career=self.career,
+            assignment=rng.choice(self.options),
+            fulfills=self.id,
+        )
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return DraftAssignmentEvent(
+            career=self.career,
+            assignment=form_str(form, 'assignment'),
+            fulfills=self.id,
+        )
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        options = [(opt, opt) for opt in self.options]
+        return [
+            Reference(name='career', value=self.career),
+            Select(name='assignment', label='Assignment', options=options),
+        ]
+
 
 class PendingSurvive(PendingInputBase):
     kind: Literal['survive'] = 'survive'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return SurviveEvent(roll=_roll2d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return SurviveEvent(roll=form_int(form, 'roll', 2), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [NumberEntry(name='roll', label='2D roll (2–12)', default=7, min=2, max=12)]
 
 
 class PendingTermEvent(PendingInputBase):
     kind: Literal['term_event'] = 'term_event'
 
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return TermEventEvent(roll=_roll2d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return TermEventEvent(roll=form_int(form, 'roll', 2), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [NumberEntry(name='roll', label='2D roll (2–12)', default=7, min=2, max=12)]
+
 
 class PendingMishap(PendingInputBase):
     kind: Literal['mishap'] = 'mishap'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return MishapEvent(roll=_roll1d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return MishapEvent(roll=form_int(form, 'roll', 1), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [NumberEntry(name='roll', label='1D roll (1–6)', default=3, min=1, max=6)]
 
 
 class PendingAdvancement(PendingInputBase):
     kind: Literal['advancement'] = 'advancement'
 
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return AdvancementEvent(roll=_roll2d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return AdvancementEvent(roll=form_int(form, 'roll', 2), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [NumberEntry(name='roll', label='2D roll (2–12)', default=7, min=2, max=12)]
+
 
 class PendingCommissionChoice(PendingInputBase):
     kind: Literal['commission_choice'] = 'commission_choice'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return CommissionEvent(attempt=False, fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        choice = form_str(form, 'choice', 'skip')
+        if choice == 'attempt':
+            return CommissionEvent(attempt=True, roll=form_int(form, 'roll', 7), fulfills=self.id)
+        return CommissionEvent(attempt=False, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [
+            Select(
+                name='choice',
+                label='Commission',
+                options=[('Attempt commission', 'attempt'), ('Skip (roll advancement)', 'skip')],
+            ),
+            NumberEntry(name='roll', label='Commission roll (2D, if attempting)', default=7, min=2, max=12),
+        ]
 
 
 class PendingSkillTable(PendingInputBase):
     kind: Literal['skill_table'] = 'skill_table'
 
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        table = rng.choice(self.options) if self.options else 'service_skills'
+        return SkillTableEvent(table=table, roll=_roll1d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return SkillTableEvent(
+            table=form_str(form, 'table'),
+            roll=form_int(form, 'roll', 1),
+            fulfills=self.id,
+        )
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        table_options = [(opt.replace('_', ' ').title(), opt) for opt in self.options]
+        return [
+            Select(name='table', label='Table', options=table_options),
+            NumberEntry(name='roll', label='1D roll (1–6)', default=3, min=1, max=6),
+        ]
+
 
 class PendingReenlist(PendingInputBase):
     kind: Literal['reenlist'] = 'reenlist'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return ReenlistEvent(reenlist=projection.summary.term_count < ctx.max_terms, fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        reenlist = form_str(form, 'reenlist', 'false').lower() in ('true', '1', 'yes')
+        return ReenlistEvent(reenlist=reenlist, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        # Reenlist uses big inline buttons; no generic InputSpec
+        return []
 
 
 class PendingAssignmentChangeChoice(PendingInputBase):
@@ -135,45 +381,203 @@ class PendingAssignmentChangeChoice(PendingInputBase):
 
     kind: Literal['assignment_change_choice'] = 'assignment_change_choice'
 
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        if projection.summary.term_count < ctx.max_terms:
+            return AssignmentChangeChoiceEvent(choice='same', fulfills=self.id)
+        if 'muster_out' in self.options:
+            return AssignmentChangeChoiceEvent(choice='muster_out', fulfills=self.id)
+        return AssignmentChangeChoiceEvent(choice='same', fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        choice = form_str(form, 'choice', 'muster_out')
+        roll = form_int(form, 'roll', 7) if choice not in ('same', 'muster_out') else None
+        return AssignmentChangeChoiceEvent(choice=choice, qualification_roll=roll, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        labels = {'same': 'Stay in current assignment', 'muster_out': 'Muster out'}
+        options = [(labels.get(opt, opt), opt) for opt in self.options]
+        return [
+            Select(name='choice', label='Assignment choice', options=options),
+            NumberEntry(
+                name='roll', label='Qualification roll (2D, if switching assignment)', default=7, min=2, max=12
+            ),
+        ]
+
 
 class PendingMusterOut(PendingInputBase):
     kind: Literal['muster_out'] = 'muster_out'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        tables: list[Literal['cash', 'benefits']] = ['cash', 'benefits']
+        return MusterOutEvent(table=rng.choice(tables), roll=_roll1d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        from typing import Literal as _Literal, cast as _cast
+
+        table = _cast(
+            _Literal['cash', 'benefits'],
+            literal(form_str(form, 'table', 'benefits'), ('cash', 'benefits'), 'benefits'),
+        )
+        return MusterOutEvent(table=table, roll=form_int(form, 'roll', 1), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        table_options = [(opt.title(), opt) for opt in self.options]
+        return [
+            Select(name='table', label='Table', options=table_options),
+            NumberEntry(name='roll', label='1D roll (1–6, apply DMs first)', default=3, min=1, max=7),
+        ]
 
 
 class PendingSkillChoice(PendingInputBase):
     kind: Literal['skill_choice'] = 'skill_choice'
 
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        skill = projection._pick_skill_auto(self.options, rng, None)
+        if skill is not None:
+            return SkillChoiceEvent(skill=skill, fulfills=self.id)
+        return AdvancementDmChoiceEvent(fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        skill_str = form_str(form, 'skill', '{}')
+        if skill_str == 'advancement_dm_4':
+            return AdvancementDmChoiceEvent(fulfills=self.id)
+        skill = _skill_adapter.validate_json(skill_str)
+        return SkillChoiceEvent(skill=skill, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        options = _build_skill_select_options(projection, self.options, None)
+        return [Select(name='skill', label='Choose a skill', options=options)]
+
 
 class PendingInitialTrainingChoice(PendingInputBase):
     kind: Literal['initial_training_choice'] = 'initial_training_choice'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        skill = projection._pick_skill_auto(self.options, rng, 0)
+        if skill is not None:
+            return SkillChoiceEvent(skill=skill, fulfills=self.id)
+        return AdvancementDmChoiceEvent(fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        skill_str = form_str(form, 'skill', '{}')
+        if skill_str == 'advancement_dm_4':
+            return AdvancementDmChoiceEvent(fulfills=self.id)
+        skill = _skill_adapter.validate_json(skill_str)
+        return SkillChoiceEvent(skill=skill, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        options = _build_skill_select_options(projection, self.options, 0)
+        return [Select(name='skill', label='Choose a skill', options=options)]
 
 
 class PendingSkillTableChoice(PendingInputBase):
     kind: Literal['skill_table_choice'] = 'skill_table_choice'
     reenlist_queued: bool = False  # True when reenlist/aging already queued (end-of-term path)
 
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        skill = projection._pick_skill_auto(self.options, rng, None)
+        if skill is not None:
+            return SkillChoiceEvent(skill=skill, fulfills=self.id)
+        return AdvancementDmChoiceEvent(fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        skill_str = form_str(form, 'skill', '{}')
+        if skill_str == 'advancement_dm_4':
+            return AdvancementDmChoiceEvent(fulfills=self.id)
+        skill = _skill_adapter.validate_json(skill_str)
+        return SkillChoiceEvent(skill=skill, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        options = _build_skill_select_options(projection, self.options, None)
+        return [Select(name='skill', label='Choose a skill', options=options)]
+
 
 class PendingRankBonusChoice(PendingInputBase):
     kind: Literal['rank_bonus_choice'] = 'rank_bonus_choice'
     level: int
 
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        skill = projection._pick_skill_auto(self.options, rng, self.level)
+        if skill is not None:
+            return SkillChoiceEvent(skill=skill, fulfills=self.id)
+        return AdvancementDmChoiceEvent(fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        skill_str = form_str(form, 'skill', '{}')
+        if skill_str == 'advancement_dm_4':
+            return AdvancementDmChoiceEvent(fulfills=self.id)
+        skill = _skill_adapter.validate_json(skill_str)
+        return SkillChoiceEvent(skill=skill, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        options = _build_skill_select_options(projection, self.options, self.level)
+        return [Select(name='skill', label='Choose a skill', options=options)]
+
 
 class PendingCharacteristicChoice(PendingInputBase):
     kind: Literal['characteristic_choice'] = 'characteristic_choice'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        char = rng.choice(self.options) if self.options else 'STR'
+        return CharacteristicChoiceEvent(characteristic=Chars(char), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return CharacteristicChoiceEvent(
+            characteristic=Chars(form_str(form, 'characteristic', Chars.STR)),
+            fulfills=self.id,
+        )
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        options = [(opt, opt) for opt in self.options]
+        return [Select(name='characteristic', label='Characteristic', options=options)]
 
 
 class PendingNearlyKilled(PendingInputBase):
     kind: Literal['nearly_killed'] = 'nearly_killed'
 
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return InjuryTableEvent(roll=_roll1d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return InjuryTableEvent(roll=form_int(form, 'roll', 1), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [NumberEntry(name='roll', label='1D roll (1–6)', default=3, min=1, max=6)]
+
 
 class PendingInjuryTable(PendingInputBase):
     kind: Literal['injury_table'] = 'injury_table'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return InjuryTableEvent(roll=_roll1d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return InjuryTableEvent(roll=form_int(form, 'roll', 1), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [NumberEntry(name='roll', label='1D roll (1–6)', default=3, min=1, max=6)]
 
 
 class PendingDoubleInjuryRoll(PendingInputBase):
     """Roll 1D twice; system takes the lower result and applies Injury table."""
 
     kind: Literal['double_injury_roll'] = 'double_injury_roll'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return DoubleInjuryTableEvent(roll1=_roll1d(rng), roll2=_roll1d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return DoubleInjuryTableEvent(
+            roll1=form_int(form, 'roll1', 1),
+            roll2=form_int(form, 'roll2', 1),
+            fulfills=self.id,
+        )
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [
+            NumberEntry(name='roll1', label='First 1D roll (1–6)', default=3, min=1, max=6),
+            NumberEntry(name='roll2', label='Second 1D roll (1–6)', default=3, min=1, max=6),
+        ]
 
 
 class PendingBenefitChoice(PendingInputBase):
@@ -182,25 +586,102 @@ class PendingBenefitChoice(PendingInputBase):
     kind: Literal['benefit_choice_pending'] = 'benefit_choice_pending'
     benefit_options: list[AnyBenefit]
 
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return BenefitChoiceEvent(
+            choice_index=rng.randint(0, len(self.benefit_options) - 1),
+            fulfills=self.id,
+        )
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return BenefitChoiceEvent(choice_index=form_int(form, 'choice_index', 0), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        options = [(opt, str(i)) for i, opt in enumerate(self.options)]
+        return [Select(name='choice_index', label='Choose benefit', options=options)]
+
 
 class PendingAgingRoll(PendingInputBase):
     kind: Literal['aging_roll'] = 'aging_roll'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return AgingRollEvent(roll=_roll2d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return AgingRollEvent(roll=form_int(form, 'roll', 2), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [NumberEntry(name='roll', label='2D roll (2–12)', default=7, min=2, max=12)]
 
 
 class PendingAgingChoice(PendingInputBase):
     kind: Literal['aging_choice'] = 'aging_choice'
 
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        char = rng.choice(self.options) if self.options else 'STR'
+        return CharacteristicChoiceEvent(characteristic=Chars(char), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return CharacteristicChoiceEvent(
+            characteristic=Chars(form_str(form, 'characteristic', Chars.STR)),
+            fulfills=self.id,
+        )
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        options = [(opt, opt) for opt in self.options]
+        return [Select(name='characteristic', label='Characteristic', options=options)]
+
 
 class PendingAgingChoiceMental(PendingInputBase):
     kind: Literal['aging_choice_mental'] = 'aging_choice_mental'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        char = rng.choice(self.options) if self.options else 'STR'
+        return CharacteristicChoiceEvent(characteristic=Chars(char), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return CharacteristicChoiceEvent(
+            characteristic=Chars(form_str(form, 'characteristic', Chars.STR)),
+            fulfills=self.id,
+        )
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        options = [(opt, opt) for opt in self.options]
+        return [Select(name='characteristic', label='Characteristic', options=options)]
 
 
 class PendingAgingCrisis(PendingInputBase):
     kind: Literal['aging_crisis'] = 'aging_crisis'
 
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return AgingCrisisEvent(paid=False, medical_roll=0, fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        paid = form_str(form, 'paid', 'false').lower() in ('true', '1', 'yes')
+        medical_roll = form_int(form, 'medical_roll', 0)
+        return AgingCrisisEvent(paid=paid, medical_roll=medical_roll, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [
+            Select(
+                name='paid',
+                label='Medical care',
+                options=[('Pay for medical care', 'true'), ('Cannot afford / decline', 'false')],
+            ),
+            NumberEntry(name='medical_roll', label='Medical roll (1D, if paying)', default=3, min=0, max=6),
+        ]
+
 
 class PendingLifeEvent(PendingInputBase):
     kind: Literal['life_event'] = 'life_event'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return LifeEventEvent(roll=_roll2d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return LifeEventEvent(roll=form_int(form, 'roll', 2), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [NumberEntry(name='roll', label='2D roll (2–12)', default=7, min=2, max=12)]
 
 
 class PendingLifeEventChoice(PendingInputBase):
@@ -209,14 +690,55 @@ class PendingLifeEventChoice(PendingInputBase):
     kind: Literal['life_event_choice'] = 'life_event_choice'
     roll: int
 
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return ConnectionKindChoiceEvent(connection_kind=rng.choice(list(ConnectionKind)), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        raw_ck = literal(form_str(form, 'connection_kind', 'rival'), tuple(ConnectionKind), 'rival')
+        return ConnectionKindChoiceEvent(connection_kind=ConnectionKind(raw_ck), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        options = [('Rival', 'rival'), ('Enemy', 'enemy')]
+        return [Select(name='connection_kind', label='Connection type', options=options)]
+
 
 class PendingLifeEventUnusual(PendingInputBase):
     kind: Literal['life_event_unusual'] = 'life_event_unusual'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return LifeEventUnusualEvent(roll=_roll1d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return LifeEventUnusualEvent(roll=form_int(form, 'roll', 1), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [NumberEntry(name='roll', label='1D roll (1–6)', default=3, min=1, max=6)]
 
 
 class PendingConnectionsRoll(PendingInputBase):
     kind: Literal['connections_roll'] = 'connections_roll'
     connection_type: ConnectionKind = ConnectionKind.CONTACT
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return ConnectionsRollEvent(
+            connection_type=self.connection_type,
+            count=_roll1d(rng),
+            fulfills=self.id,
+        )
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        raw_ct = literal(form_str(form, 'connection_type', 'contact'), tuple(ConnectionKind), 'contact')
+        count = form_int(form, 'count', 1)
+        return ConnectionsRollEvent(connection_type=ConnectionKind(raw_ct), count=count, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        count_options = (
+            [(str(opt), opt) for opt in self.options] if self.options else [(str(i), str(i)) for i in range(1, 7)]
+        )
+        return [
+            Reference(name='connection_type', value=self.connection_type.value),
+            Select(name='count', label='Count', options=count_options),
+        ]
 
 
 class PendingCareerEvent(PendingInputBase):
@@ -226,6 +748,20 @@ class PendingCareerEvent(PendingInputBase):
     career: str
     roll: int
 
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        context = f'{self.career.lower()}_event_{self.roll}'
+        choice = rng.choice(list(self.options)) if self.options else ''
+        return CareerChoiceEvent(context=context, choice=choice, fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        context = f'{self.career.lower()}_event_{self.roll}'
+        choice = form_str(form, 'choice', '')
+        return CareerChoiceEvent(context=context, choice=choice, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        # Career event uses inline submit buttons; choice is submitted via button value
+        return []
+
 
 class PendingCareerMishap(PendingInputBase):
     """Career-specific mishap requiring player input; career+roll identifies the exact mishap."""
@@ -233,6 +769,20 @@ class PendingCareerMishap(PendingInputBase):
     kind: Literal['career_mishap'] = 'career_mishap'
     career: str
     roll: int
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        context = f'{self.career.lower()}_mishap_{self.roll}'
+        choice = rng.choice(list(self.options)) if self.options else ''
+        return CareerChoiceEvent(context=context, choice=choice, fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        context = f'{self.career.lower()}_mishap_{self.roll}'
+        choice = form_str(form, 'choice', '')
+        return CareerChoiceEvent(context=context, choice=choice, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        # Career mishap uses inline submit buttons; choice is submitted via button value
+        return []
 
 
 class PendingCareerSkillChoice(PendingInputBase):
@@ -244,6 +794,23 @@ class PendingCareerSkillChoice(PendingInputBase):
     mishap: bool = False
     advancement_precreated: bool = False
 
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        skill = projection._pick_skill_auto(self.options, rng, None)
+        if skill is not None:
+            return SkillChoiceEvent(skill=skill, fulfills=self.id)
+        return AdvancementDmChoiceEvent(fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        skill_str = form_str(form, 'skill', '{}')
+        if skill_str == 'advancement_dm_4':
+            return AdvancementDmChoiceEvent(fulfills=self.id)
+        skill = _skill_adapter.validate_json(skill_str)
+        return SkillChoiceEvent(skill=skill, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        options = _build_skill_select_options(projection, self.options, None)
+        return [Select(name='skill', label='Choose a skill', options=options)]
+
 
 class PendingCareerSkillRoll(PendingInputBase):
     """Skill roll required by a specific career event; context matches SkillRollEvent.context."""
@@ -253,6 +820,30 @@ class PendingCareerSkillRoll(PendingInputBase):
     roll: int
     context: str
 
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        skill_str = rng.choice(self.options) if self.options else 'Admin'
+        try:
+            auto_skill: AnySkill | Chars = Chars(skill_str)
+        except ValueError:
+            auto_skill = cast(AnySkill, skill_class_by_name(skill_str)())
+        return SkillRollEvent(context=self.context, skill=auto_skill, modified_roll=_roll2d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        skill_str = form_str(form, 'skill')
+        modified_roll = form_int(form, 'modified_roll', 8)
+        try:
+            skill: AnySkill | Chars = Chars(skill_str)
+        except ValueError:
+            skill = _skill_adapter.validate_python({'type': skill_str})
+        return SkillRollEvent(context=self.context, skill=skill, modified_roll=modified_roll, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        skill_options = [(opt, opt) for opt in self.options]
+        return [
+            Select(name='skill', label='Skill to roll', options=skill_options),
+            NumberEntry(name='modified_roll', label='Modified roll (2D + skill level + DMs)', default=8, min=2, max=20),
+        ]
+
 
 class PendingPreCareerSkillChoice(PendingInputBase):
     """University: choose one skill at the given level (0 or 1) from the pre-career skill list."""
@@ -260,11 +851,32 @@ class PendingPreCareerSkillChoice(PendingInputBase):
     kind: Literal['precareer_skill_choice'] = 'precareer_skill_choice'
     level: int
 
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        skill_name = rng.choice(self.options) if self.options else 'Admin'
+        return PreCareerSkillChoiceEvent(skill=skill_name, fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        skill = form_str(form, 'skill')
+        return PreCareerSkillChoiceEvent(skill=skill, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        options = [(opt, opt) for opt in self.options]
+        return [Select(name='skill', label='Choose a skill', options=options)]
+
 
 class PendingPreCareerEvent(PendingInputBase):
     """Roll 2D on the Pre-career Events table."""
 
     kind: Literal['precareer_event'] = 'precareer_event'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return PreCareerEventEvent(roll=_roll2d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return PreCareerEventEvent(roll=form_int(form, 'roll', 7), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [NumberEntry(name='roll', label='2D roll (2–12)', default=7, min=2, max=12)]
 
 
 class PendingPreCareerGraduation(PendingInputBase):
@@ -272,11 +884,29 @@ class PendingPreCareerGraduation(PendingInputBase):
 
     kind: Literal['precareer_graduation'] = 'precareer_graduation'
 
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return PreCareerGraduationEvent(roll=_roll2d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return PreCareerGraduationEvent(roll=form_int(form, 'roll', 7), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [NumberEntry(name='roll', label='2D roll (2–12)', default=7, min=2, max=12)]
+
 
 class PendingParoleRoll(PendingInputBase):
     """Roll 1D to determine initial Parole Threshold when entering Prisoner career."""
 
     kind: Literal['parole_roll'] = 'parole_roll'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return ParoleRollEvent(roll=_roll1d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return ParoleRollEvent(roll=form_int(form, 'roll', 1), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [NumberEntry(name='roll', label='1D roll (1–6)', default=3, min=1, max=6)]
 
 
 _CAREER_PHASE_PENDING_TYPES = (
@@ -537,9 +1167,7 @@ class CharacterProjection(BaseModel):
             raise ReplayError(f'Event {event.id} ({event.kind!r}) references unknown pending input {fulfills!r}')
         self.pending_inputs.remove(matched)
 
-    def queue_career_choice_indexed(
-        self, event_id: int, idx: int, instruction: str = 'Choose a career'
-    ) -> None:
+    def queue_career_choice_indexed(self, event_id: int, idx: int, instruction: str = 'Choose a career') -> None:
         from ceres.character.careers.loader import selectable_careers
 
         if self.forced_next_career:
@@ -685,9 +1313,7 @@ class CharacterProjection(BaseModel):
     def check_aging_crisis(self, source_event_id: int) -> bool:
         if any(v == 0 for v in self.summary.characteristics.values()):
             self.pending_inputs = [
-                p
-                for p in self.pending_inputs
-                if not isinstance(p, (PendingAgingChoice, PendingAgingChoiceMental))
+                p for p in self.pending_inputs if not isinstance(p, (PendingAgingChoice, PendingAgingChoiceMental))
             ]
             self.pending_inputs.append(
                 PendingAgingCrisis(
@@ -811,203 +1437,40 @@ class CharacterProjection(BaseModel):
         return None
 
     def auto_event(self, pi: AnyPending, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
-        """Generate a random event to auto-fulfill a pending input."""
-        match pi:
-            case PendingUcp():
-                sophont = self.summary.sophont
-                n = len(sophont.ucp_stats) if sophont is not None else 6
-                ucp = ''.join(f'{_roll2d(rng):X}' for _ in range(n))
-                return UcpEvent(ucp=ucp, fulfills=pi.id)
+        return pi.auto_event(self, ctx, rng)
 
-            case PendingBackgroundSkills():
-                m = _CHOOSE_COUNT_RE.search(pi.instruction)
-                count = int(m.group(1)) if m else 3
-                shuffled = list(pi.options)
-                rng.shuffle(shuffled)
-                skills: list[AnySkill] = []
-                for name in shuffled:
-                    if len(skills) >= count:
-                        break
-                    try:
-                        cls = skill_class_by_name(name)
-                        skills.append(cast(AnySkill, cls()))
-                    except ValueError:
-                        pass
-                return BackgroundSkillsEvent(skills=skills, fulfills=pi.id)
 
-            case PendingCareerChoice():
-                if self.summary.term_count >= ctx.max_terms:
-                    return FinishCreationEvent(fulfills=pi.id)
-                # If options is restricted (e.g. forced career), respect it
-                available = pi.options or sorted(ctx.careers.keys())
-                career_data = None
-                if ctx.career in available:
-                    career_data = ctx.careers.get(ctx.career)
-                if career_data is None:
-                    from ceres.character.careers.loader import load_careers as _load_careers
-
-                    all_careers = _load_careers()
-                    chosen_name = rng.choice(available) if available else rng.choice(sorted(ctx.careers.keys()))
-                    career_data = all_careers.get(chosen_name) or ctx.careers.get(chosen_name)
-                if career_data is None:
-                    career_data = ctx.careers[rng.choice(sorted(ctx.careers.keys()))]
-                if ctx.assignment and any(a.name == ctx.assignment for a in career_data.assignments):
-                    assignment = ctx.assignment
-                else:
-                    assignment = rng.choice([a.name for a in career_data.assignments])
-                return CareerEvent(
-                    career=career_data.name,
-                    assignment=assignment,
-                    qualification_roll=12,
-                    fulfills=pi.id,
-                )
-
-            case PendingDraftChoice():
-                draft_careers = [career for career in ctx.careers.values() if career.does_draft()]
-                career = rng.choice(draft_careers)
-                return DraftEvent(career=career.name, fulfills=pi.id)
-
-            case PendingDraftAssignmentChoice():
-                return DraftAssignmentEvent(
-                    career=pi.career,
-                    assignment=rng.choice(pi.options),
-                    fulfills=pi.id,
-                )
-
-            case PendingSurvive():
-                return SurviveEvent(roll=_roll2d(rng), fulfills=pi.id)
-
-            case PendingTermEvent():
-                return TermEventEvent(roll=_roll2d(rng), fulfills=pi.id)
-
-            case PendingMishap():
-                return MishapEvent(roll=_roll1d(rng), fulfills=pi.id)
-
-            case PendingAdvancement():
-                return AdvancementEvent(roll=_roll2d(rng), fulfills=pi.id)
-
-            case PendingCommissionChoice():
-                return CommissionEvent(attempt=False, fulfills=pi.id)
-
-            case PendingSkillTable():
-                table = rng.choice(pi.options) if pi.options else 'service_skills'
-                return SkillTableEvent(table=table, roll=_roll1d(rng), fulfills=pi.id)
-
-            case PendingInitialTrainingChoice():
-                skill = self._pick_skill_auto(pi.options, rng, 0)
-                if skill is not None:
-                    return SkillChoiceEvent(skill=skill, fulfills=pi.id)
-                return AdvancementDmChoiceEvent(fulfills=pi.id)
-
-            case PendingSkillTableChoice() | PendingSkillChoice():
-                skill = self._pick_skill_auto(pi.options, rng, None)
-                if skill is not None:
-                    return SkillChoiceEvent(skill=skill, fulfills=pi.id)
-                return AdvancementDmChoiceEvent(fulfills=pi.id)
-
-            case PendingRankBonusChoice():
-                skill = self._pick_skill_auto(pi.options, rng, pi.level)
-                if skill is not None:
-                    return SkillChoiceEvent(skill=skill, fulfills=pi.id)
-                return AdvancementDmChoiceEvent(fulfills=pi.id)
-
-            case PendingCareerSkillChoice():
-                skill = self._pick_skill_auto(pi.options, rng, None)
-                if skill is not None:
-                    return SkillChoiceEvent(skill=skill, fulfills=pi.id)
-                return AdvancementDmChoiceEvent(fulfills=pi.id)
-
-            case PendingReenlist():
-                return ReenlistEvent(reenlist=self.summary.term_count < ctx.max_terms, fulfills=pi.id)
-
-            case PendingAssignmentChangeChoice():
-                if self.summary.term_count < ctx.max_terms:
-                    return AssignmentChangeChoiceEvent(choice='same', fulfills=pi.id)
-                if 'muster_out' in pi.options:
-                    return AssignmentChangeChoiceEvent(choice='muster_out', fulfills=pi.id)
-                return AssignmentChangeChoiceEvent(choice='same', fulfills=pi.id)
-
-            case PendingMusterOut():
-                tables: list[Literal['cash', 'benefits']] = ['cash', 'benefits']
-                return MusterOutEvent(table=rng.choice(tables), roll=_roll1d(rng), fulfills=pi.id)
-
-            case PendingAgingRoll():
-                return AgingRollEvent(roll=_roll2d(rng), fulfills=pi.id)
-
-            case PendingNearlyKilled() | PendingInjuryTable():
-                return InjuryTableEvent(roll=_roll1d(rng), fulfills=pi.id)
-
-            case PendingDoubleInjuryRoll():
-                return DoubleInjuryTableEvent(roll1=_roll1d(rng), roll2=_roll1d(rng), fulfills=pi.id)
-
-            case PendingBenefitChoice():
-                return BenefitChoiceEvent(
-                    choice_index=rng.randint(0, len(pi.benefit_options) - 1),
-                    fulfills=pi.id,
-                )
-
-            case PendingLifeEvent():
-                return LifeEventEvent(roll=_roll2d(rng), fulfills=pi.id)
-
-            case PendingLifeEventUnusual():
-                return LifeEventUnusualEvent(roll=_roll1d(rng), fulfills=pi.id)
-
-            case PendingConnectionsRoll():
-                return ConnectionsRollEvent(
-                    connection_type=pi.connection_type,
-                    count=_roll1d(rng),
-                    fulfills=pi.id,
-                )
-
-            case PendingCharacteristicChoice() | PendingAgingChoice() | PendingAgingChoiceMental():
-                char = rng.choice(pi.options) if pi.options else 'STR'
-                return CharacteristicChoiceEvent(characteristic=Chars(char), fulfills=pi.id)
-
-            case PendingLifeEventChoice():
-                return ConnectionKindChoiceEvent(connection_kind=rng.choice(list(ConnectionKind)), fulfills=pi.id)
-
-            case PendingAgingCrisis():
-                return AgingCrisisEvent(paid=False, medical_roll=0, fulfills=pi.id)
-
-            case PendingCareerEvent():
-                context = f'{pi.career.lower()}_event_{pi.roll}'
-                choice = rng.choice(list(pi.options)) if pi.options else ''
-                return CareerChoiceEvent(context=context, choice=choice, fulfills=pi.id)
-
-            case PendingCareerMishap():
-                context = f'{pi.career.lower()}_mishap_{pi.roll}'
-                choice = rng.choice(list(pi.options)) if pi.options else ''
-                return CareerChoiceEvent(context=context, choice=choice, fulfills=pi.id)
-
-            case PendingCareerSkillRoll():
-                skill_str = rng.choice(pi.options) if pi.options else 'Admin'
-                try:
-                    auto_skill: AnySkill | Chars = Chars(skill_str)
-                except ValueError:
-                    auto_skill = cast(AnySkill, skill_class_by_name(skill_str)())
-                return SkillRollEvent(context=pi.context, skill=auto_skill, modified_roll=_roll2d(rng), fulfills=pi.id)
-
-            case PendingParoleRoll():
-                return ParoleRollEvent(roll=_roll1d(rng), fulfills=pi.id)
-
-            case PendingPreCareerSkillChoice():
-                skill_name = rng.choice(pi.options) if pi.options else 'Admin'
-                from ceres.character.events import PreCareerSkillChoiceEvent
-
-                return PreCareerSkillChoiceEvent(skill=skill_name, fulfills=pi.id)
-
-            case PendingPreCareerEvent():
-                from ceres.character.events import PreCareerEventEvent
-
-                return PreCareerEventEvent(roll=_roll2d(rng), fulfills=pi.id)
-
-            case PendingPreCareerGraduation():
-                from ceres.character.events import PreCareerGraduationEvent
-
-                return PreCareerGraduationEvent(roll=_roll2d(rng), fulfills=pi.id)
-
-            case _:
-                raise ValueError(f'No auto_event handler for {type(pi).__name__!r}')
+def _build_skill_select_options(
+    projection: CharacterProjection,
+    options: list[str],
+    level: int | None,
+) -> list[tuple[str, str]]:
+    """Build (display_label, form_value) pairs for skill-choice pending inputs."""
+    results: list[tuple[str, str]] = []
+    for opt in options:
+        if opt in _NON_SKILL_OPTION_LABELS:
+            results.append((_NON_SKILL_OPTION_LABELS[opt], opt))
+            continue
+        try:
+            skill_cls = skill_class_by_name(opt)
+        except ValueError:
+            continue
+        if level == 0:
+            skill = cast(AnySkill, skill_cls())
+            results.append((opt, _skill_adapter.dump_json(skill).decode()))
+        else:
+            choices = projection.skill_choices([skill_cls], level)
+            for skill in choices:
+                label = opt
+                fields = _level_fields(skill_cls)
+                if len(fields) > 1:
+                    for fname, sname in zip(fields, skill_cls.specialities(), strict=False):
+                        given = getattr(skill, fname).value
+                        if given > 0:
+                            label = f'{opt} ({sname})'
+                            break
+                results.append((label, _skill_adapter.dump_json(skill).decode()))
+    return results
 
 
 __all__ = [

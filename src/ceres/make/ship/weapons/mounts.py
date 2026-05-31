@@ -8,6 +8,8 @@ from ceres.shared import NoteList, _Note
 from ..parts import ShipPart
 from .common import MountWeapon, _mounted_weapon_cost, _mounted_weapon_notes, _mounted_weapon_power
 
+POP_UP_MOUNT_MIN_TL = 10
+
 
 class FixedMount(ShipPart):
     tons: ClassVar[float]
@@ -20,7 +22,7 @@ class FixedMount(ShipPart):
 
     def check_tl(self) -> None:
         super().check_tl()
-        if self.pop_up and self.assembly_tl < 10:
+        if self.pop_up and self.assembly_tl < POP_UP_MOUNT_MIN_TL:
             self.error(f'Requires TL10, ship is TL{self.assembly_tl}')
 
     def item_description(self) -> str:
@@ -71,7 +73,7 @@ class _Turret(ShipPart):
 
     def check_tl(self) -> None:
         super().check_tl()
-        if self.pop_up and self.assembly_tl < 10:
+        if self.pop_up and self.assembly_tl < POP_UP_MOUNT_MIN_TL:
             self.error(f'Requires TL10, ship is TL{self.assembly_tl}')
 
     def item_description(self) -> str:

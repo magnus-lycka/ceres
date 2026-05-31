@@ -795,12 +795,7 @@ class RobotTransceiver(RadioTransceiverPart, RobotPartMixin):
 
     @property
     def assembly(self) -> RobotBase:
-        a = self._assembly
-        if a is None:
-            raise RuntimeError(f'{type(self).__name__} not bound to an Assembly')
-        if not isinstance(a, RobotBase):
-            raise TypeError(f'{type(self).__name__} bound to unexpected type {type(a).__name__}')
-        return a
+        return self._robot_assembly()
 
     def model_post_init(self, __context: Any) -> None:
         super().model_post_init(__context)

@@ -1,12 +1,13 @@
 """Skill grants and installed skill packages for robot brains."""
 
 from dataclasses import dataclass
-from typing import Annotated, ClassVar, Literal, cast, get_args, get_origin
+from typing import Annotated, ClassVar, Literal, cast
 
 from pydantic import ConfigDict, Field
 
 from ceres.character import skills as character_skills
 from ceres.character.skills import AnySkill, Level, Skill, active_speciality_field, active_speciality_label
+from ceres.gear.skill_keys import SkillCostKey, key_matches_skill
 from ceres.shared import CeresModel
 
 
@@ -50,21 +51,7 @@ class Zoology(Skill):
 
 type RobotSpecificSkill = Annotated[RobotProfession | Weapon | Zoology, Field(discriminator='type')]
 type RobotSkill = AnySkill | RobotSpecificSkill
-type _SkillCostKey = object
-
-
-def _skill_classes_from_key(key: _SkillCostKey) -> tuple[type[Skill], ...]:
-    if hasattr(key, '__value__'):
-        key = key.__value__
-    if get_origin(key) is Annotated:
-        key = get_args(key)[0]
-    if isinstance(key, type) and issubclass(key, Skill):
-        return (key,)
-    return tuple(arg for arg in get_args(key) if isinstance(arg, type) and issubclass(arg, Skill))
-
-
-def _key_matches_skill(key: _SkillCostKey, skill_cls: type[Skill]) -> bool:
-    return skill_cls in _skill_classes_from_key(key)
+type _SkillCostKey = SkillCostKey
 
 
 # Skills whose characteristic DM is DEX (not INT).
@@ -159,7 +146,7 @@ def _skill_base_cost(skill: RobotSkill) -> float:
     for key, cost in _SKILL_BASE_COSTS.items():
         if key is skill_cls:
             continue
-        if _key_matches_skill(key, skill_cls):
+        if key_matches_skill(key, skill_cls):
             return cost
     return 100.0
 

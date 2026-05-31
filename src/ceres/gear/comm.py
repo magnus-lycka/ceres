@@ -5,6 +5,11 @@ from pydantic import Field, model_validator
 from ceres.gear.computer import ComputerPart
 from ceres.shared import CeresPart, Equipment
 
+INTEGRATED_COMPUTER_0_MIN_TL = 10
+INTEGRATED_COMPUTER_0_MAX_TL = 12
+INTEGRATED_COMPUTER_1_MIN_TL = 13
+SATELLITE_UPLINK_MIN_RANGE_KM = 500
+
 
 def _format_range(range_km: int) -> str:
     return f'{range_km:,}km'
@@ -19,9 +24,9 @@ class TransceiverPart(CeresPart):
 
     @property
     def integrated_computer_processing(self) -> int | None:
-        if 10 <= self.tl <= 12:
+        if INTEGRATED_COMPUTER_0_MIN_TL <= self.tl <= INTEGRATED_COMPUTER_0_MAX_TL:
             return 0
-        if self.tl >= 13:
+        if self.tl >= INTEGRATED_COMPUTER_1_MIN_TL:
             return 1
         return None
 
@@ -113,7 +118,7 @@ class TransceiverEquipment(Equipment):
         if satellite_uplink != 'none':
             if part.medium != 'radio':
                 raise ValueError('Satellite uplinks are only available for radio transceivers')
-            if part.range_km < 500:
+            if part.range_km < SATELLITE_UPLINK_MIN_RANGE_KM:
                 raise ValueError('Satellite uplink requires a radio transceiver with at least 500km range')
             static = satellite_uplink == 'static'
             uplink_cost = base_cost * 0.5 if static else max(base_cost * 0.5, 1_000.0)

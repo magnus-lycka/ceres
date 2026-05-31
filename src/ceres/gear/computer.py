@@ -21,6 +21,8 @@ from pydantic import Field, model_validator
 from ceres.gear.software import Expert
 from ceres.shared import CeresPart, Equipment, NoteList, _Note
 
+MAX_PROTO_LEVELS = 2
+
 
 class ComputerPart(CeresPart):
     processing: int
@@ -79,7 +81,7 @@ class ComputerEquipment(Equipment):
         return data
 
     def proto_spec(processing: int, data: dict, spec: dict, levels: int):
-        if levels > 2:
+        if levels > MAX_PROTO_LEVELS:
             raise ValueError(f'Proto tech not available for {levels} TLs')
         factor = 10**levels
         part = ComputerPart(processing=processing, tl=int(spec['tl']))

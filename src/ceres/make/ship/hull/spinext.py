@@ -14,13 +14,7 @@ class SpinExtPrimitiveHull(HullConfiguration):
         return 15_000 * ton * self.effective_hull_cost_modifier * tl_multiplier
 
     def automation_basis_cost(self, ton: float) -> float:
-        modifier = self.hull_cost_modifier
-        if self.reinforced:
-            modifier *= 1.5
-        if self.light:
-            modifier *= 0.75
-        if self.military:
-            modifier *= 1.25
+        modifier = self.hull_cost_modifier_without_non_gravity()
         return 15_000 * ton * modifier
 
     def points(self, ton):

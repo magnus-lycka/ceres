@@ -7,11 +7,13 @@ This module serialises the data and drives the template engine (Jinja2 or Typst)
 from __future__ import annotations
 
 from pathlib import Path
+import shutil
 import tempfile
 from typing import Any
 
 import jinja2
 from pydantic import BaseModel
+import typst
 
 _TOOLKIT_TEMPLATES = Path(__file__).parent / 'templates'
 
@@ -59,6 +61,7 @@ def render_typst_source(template_path: Path, data: dict[str, Any], *, page_size:
     Returns the combined Typst source string (useful for debugging/inspection).
     The template receives the data via a top-level `report_data` variable.
     """
+    _ = page_size  # Reserved for report renderers that need page-size-specific Typst source.
     preamble = f'#let report_data = {_to_typst(data)}\n\n'
     template_source = template_path.read_text(encoding='utf-8')
     return preamble + template_source
@@ -70,10 +73,6 @@ def render_pdf(template_path: Path, data: dict[str, Any], *, page_size: str = 'a
     Toolkit base templates (e.g. base.typ) are copied into the temp dir so that
     `#import "base.typ": ...` in domain templates resolves correctly.
     """
-    import shutil
-
-    import typst
-
     source = render_typst_source(template_path, data, page_size=page_size)
     tmp_dir = Path(tempfile.mkdtemp())
     try:
@@ -88,10 +87,6 @@ def render_pdf(template_path: Path, data: dict[str, Any], *, page_size: str = 'a
 
 def render_pdf_source(source: str) -> bytes:
     """Compile a complete Typst source string to PDF bytes."""
-    import shutil
-
-    import typst
-
     tmp_dir = Path(tempfile.mkdtemp())
     try:
         for base_file in _TOOLKIT_TEMPLATES.glob('*.typ'):
@@ -108,7 +103,7 @@ def render_pdf_source(source: str) -> bytes:
 # ---------------------------------------------------------------------------
 
 
-def _to_typst(obj: Any) -> str:
+def _to_typst(obj: Any) -> str:  # noqa: PLR0911
     """Recursively serialise a Python value to a Typst literal."""
     match obj:
         case None:

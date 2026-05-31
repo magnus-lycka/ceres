@@ -122,6 +122,7 @@ def test_api_creation_produces_pending_input_for_ucp(memory_client):
         'instruction': 'Provide characteristics (UCP)',
         'options': [],
         'blocking': True,
+        'stat_names': ['STR', 'DEX', 'END', 'INT', 'EDU', 'SOC'],
     }
 
 

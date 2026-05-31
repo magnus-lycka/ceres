@@ -8,6 +8,12 @@ from ceres.shared import CeresModel, NoteList, _Note
 from ..parts import ShipPart
 from .common import _ExplicitTonsSystemPart, _ZeroPowerSystemPart
 
+PSIONIC_SHIELDING_IMPENETRABLE_MAX_DISPLACEMENT = 100
+PSIONIC_SHIELDING_DM4_MAX_DISPLACEMENT = 300
+PSIONIC_SHIELDING_DM2_MAX_DISPLACEMENT = 500
+VAULT_MIN_TONS = 4
+VAULT_MAX_TONS = 40
+
 
 class Armoury(_ZeroPowerSystemPart):
     system_type: Literal['ARMOURY'] = 'ARMOURY'
@@ -35,11 +41,11 @@ class PsionicShielding(ShipPart):
     def build_notes(self) -> list[_Note]:
         notes = NoteList()
         displacement = self.assembly.displacement
-        if displacement < 100:
+        if displacement < PSIONIC_SHIELDING_IMPENETRABLE_MAX_DISPLACEMENT:
             notes.info('Psionic shielding makes ships under 100 tons impenetrable to Clairvoyance and Telepathy')
-        elif displacement <= 300:
+        elif displacement <= PSIONIC_SHIELDING_DM4_MAX_DISPLACEMENT:
             notes.info('DM-4 to Clairvoyance and Telepathy powers within or upon the ship')
-        elif displacement <= 500:
+        elif displacement <= PSIONIC_SHIELDING_DM2_MAX_DISPLACEMENT:
             notes.info('DM-2 to Clairvoyance and Telepathy powers within or upon the ship')
         else:
             notes.info('No Clairvoyance or Telepathy DM for ships above 500 tons')
@@ -108,7 +114,7 @@ class Vault(_ExplicitTonsSystemPart):
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList()
-        if self.tons < 4 or self.tons > 40:
+        if self.tons < VAULT_MIN_TONS or self.tons > VAULT_MAX_TONS:
             notes.error('Vault size must be between 4 and 40 tons')
         notes.info('Vault armour and Hull points protect contents only, not the ship')
         notes.info('Contents can survive in vacuum for a limited time if the ship is destroyed')

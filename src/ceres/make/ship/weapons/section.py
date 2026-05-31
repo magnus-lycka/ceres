@@ -11,6 +11,10 @@ from .mounts import FixedMount, Turret
 from .point_defense import PointDefenseBattery
 from .spinal import SpinalMount
 
+SMALL_CRAFT_MAX_DISPLACEMENT = 100
+ONE_SMALL_CRAFT_MOUNT_MAX_DISPLACEMENT = 35
+TWO_SMALL_CRAFT_MOUNTS_MAX_DISPLACEMENT = 70
+
 
 class WeaponsSection(CeresModel):
     turrets: list[Turret] = Field(default_factory=list)
@@ -26,14 +30,14 @@ class WeaponsSection(CeresModel):
 
     @staticmethod
     def is_small_craft(ship) -> bool:
-        return ship.displacement < 100
+        return ship.displacement < SMALL_CRAFT_MAX_DISPLACEMENT
 
     @classmethod
     def mount_capacity(cls, ship) -> int:
         if cls.is_small_craft(ship):
-            if ship.displacement < 35:
+            if ship.displacement < ONE_SMALL_CRAFT_MOUNT_MAX_DISPLACEMENT:
                 return 1
-            if ship.displacement <= 70:
+            if ship.displacement <= TWO_SMALL_CRAFT_MOUNTS_MAX_DISPLACEMENT:
                 return 2
             return 3
         return ship.displacement // 100

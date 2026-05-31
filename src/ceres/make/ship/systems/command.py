@@ -5,6 +5,8 @@ from ceres.shared import NoteList, _Note
 from ..base import ShipBase
 from .common import _ZeroPowerSystemPart
 
+COMMAND_BRIDGE_MIN_DISPLACEMENT = 5_000
+
 
 class BriefingRoom(_ZeroPowerSystemPart):
     system_type: Literal['BRIEFING_ROOM'] = 'BRIEFING_ROOM'
@@ -29,7 +31,7 @@ class CommandBridge(_ZeroPowerSystemPart):
 
     def bind(self, assembly: ShipBase) -> None:
         super().bind(assembly)
-        if self.assembly.displacement <= 5_000:
+        if self.assembly.displacement <= COMMAND_BRIDGE_MIN_DISPLACEMENT:
             self.error('Command bridge requires displacement greater than 5000 tons')
 
     def build_notes(self) -> list[_Note]:

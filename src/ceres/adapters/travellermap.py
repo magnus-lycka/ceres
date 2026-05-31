@@ -123,7 +123,7 @@ def _extract(line: str, col_positions: list[tuple[int, int]], idx: int) -> str:
 
 def _parse_sec_worlds(text: str) -> list[SectorWorldEntry]:
     lines = [line for line in text.splitlines() if line.strip() and not line.startswith('#')]
-    if len(lines) < 3:
+    if len(lines) < 3:  # noqa: PLR2004 - SEC text needs header, separator, and at least one data row.
         return []
 
     header, separator, *data_lines = lines

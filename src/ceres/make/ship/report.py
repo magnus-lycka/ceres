@@ -11,6 +11,8 @@ from ceres.make.ship.view import collapsed_main_rows
 from ceres.shared import NoteList, _Note
 
 ReportTheme = Literal['light', 'dark']
+TONS_DISPLAY_EPSILON = 0.005
+CREDITS_DISPLAY_EPSILON = 0.5
 
 _TEMPLATES = Path(__file__).parent / 'templates'
 
@@ -20,7 +22,7 @@ def render_ship_html(ship: Ship, *, theme: ReportTheme = 'light') -> str:
 
 
 def render_ship_spec_html(spec: ShipSpec, *, theme: ReportTheme = 'light') -> str:
-    from ceres.report.render import render_html
+    from ceres.report.render import render_html  # noqa: PLC0415
 
     return render_html(_TEMPLATES / 'ship_spec.html.j2', _build_context(spec, theme=theme))
 
@@ -30,7 +32,7 @@ def render_ship_typst(ship: Ship, *, page_size: str = 'a4', note: str | None = N
 
 
 def render_ship_spec_typst(spec: ShipSpec, *, page_size: str = 'a4', note: str | None = None) -> str:
-    from ceres.report.render import render_typst_source
+    from ceres.report.render import render_typst_source  # noqa: PLC0415
 
     return render_typst_source(_TEMPLATES / 'ship_spec.typ', _build_context(spec, page_size=page_size, note=note))
 
@@ -40,7 +42,7 @@ def render_ship_pdf(ship: Ship, *, page_size: str = 'a4', note: str | None = Non
 
 
 def render_ship_spec_pdf(spec: ShipSpec, *, page_size: str = 'a4', note: str | None = None) -> bytes:
-    from ceres.report.render import render_pdf
+    from ceres.report.render import render_pdf  # noqa: PLC0415
 
     return render_pdf(_TEMPLATES / 'ship_spec.typ', _build_context(spec, page_size=page_size, note=note))
 
@@ -81,7 +83,7 @@ def _build_context(
 def _build_sections(rows: list[SpecRow]) -> list[dict]:
     result = []
     for section, section_rows in groupby(rows, key=lambda r: r.section):
-        section_rows = list(section_rows)
+        rows_for_section = list(section_rows)
         result.append(
             {
                 'label': section.value,
@@ -93,7 +95,7 @@ def _build_sections(rows: list[SpecRow]) -> list[dict]:
                         'emphasize_tons': row.emphasize_tons,
                         'notes': _notes_for_display(row.notes),
                     }
-                    for row in section_rows
+                    for row in rows_for_section
                 ],
             }
         )
@@ -156,13 +158,13 @@ def _notes_for_display(notes: list[_Note]) -> list[dict]:
 
 
 def _fmt_tons(v: float | None) -> str:
-    if v is None or abs(v) < 0.005:
+    if v is None or abs(v) < TONS_DISPLAY_EPSILON:
         return ''
     return f'{v:,.2f}'
 
 
 def _fmt_cr_col(v: float | None) -> str:
-    if v is None or abs(v) < 0.5:
+    if v is None or abs(v) < CREDITS_DISPLAY_EPSILON:
         return ''
     return f'{round(v):,}'
 

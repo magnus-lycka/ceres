@@ -22,7 +22,12 @@ def replay(character_id: int, events: Sequence[AnyEvent]) -> CharacterProjection
             homeworld=first.homeworld,
         ),
     )
-    projection.pending_inputs.append(PendingUcp(id=f'{first.id}.0', instruction='Provide characteristics (UCP)'))
+    stat_names = (
+        [s.value for s in first.sophont.ucp_stats] if first.sophont else ['STR', 'DEX', 'END', 'INT', 'EDU', 'SOC']
+    )
+    projection.pending_inputs.append(
+        PendingUcp(id=f'{first.id}.0', instruction='Provide characteristics (UCP)', stat_names=stat_names)
+    )
     for event in events[1:]:
         _apply(projection, event)
     return projection

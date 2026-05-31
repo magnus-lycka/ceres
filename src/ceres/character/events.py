@@ -39,6 +39,7 @@ def _apply_simple_effect(projection: Any, effect: Any, source: str = '', source_
     )
     from ceres.character.projection import ScheduledEffect, make_connection
     from ceres.character.skills import skill_from_str
+
     if isinstance(effect, GainSkillEffect):
         projection.grant_skill(skill_from_str(effect.skill, effect.level))
     elif isinstance(effect, DecreaseCharacteristicEffect):
@@ -73,6 +74,7 @@ def _apply_simple_effect(projection: Any, effect: Any, source: str = '', source_
 def _apply_auto_advance(projection: Any, career: Any, event_id: int) -> None:
     from ceres.character.projection import PendingRankBonusChoice, PendingSkillTable
     from ceres.character.skills import skill_from_str
+
     new_rank = (projection.summary.rank or 0) + 1
     projection.summary.rank = new_rank
     career.update_current_term_rank(projection)
@@ -105,6 +107,7 @@ def _apply_auto_advance(projection: Any, career: Any, event_id: int) -> None:
 
 def _start_new_career_term(projection: Any, career: Any, event_id: int) -> None:
     from ceres.character.projection import ReplayError
+
     projection.purge_career_pendings()
     assignment_name = projection.summary.current_assignment or ''
     assignment = career.assignment(assignment_name)
@@ -115,6 +118,7 @@ def _start_new_career_term(projection: Any, career: Any, event_id: int) -> None:
 
 def _survive_pending(career: Any, assignment_name: str, event_id: int) -> Any:
     from ceres.character.projection import ReplayError
+
     assignment = career.assignment(assignment_name)
     if assignment is None:
         raise ReplayError(f'Unknown assignment {assignment_name!r} in career {career.name!r}')
@@ -123,6 +127,7 @@ def _survive_pending(career: Any, assignment_name: str, event_id: int) -> Any:
 
 def _advancement_pending(career: Any, assignment_name: str, event_id: int, pending_idx: int = 0) -> Any:
     from ceres.character.projection import PendingAdvancement, ReplayError
+
     assignment = career.assignment(assignment_name)
     if assignment is None:
         raise ReplayError(f'Unknown assignment {assignment_name!r}')
@@ -133,6 +138,7 @@ def _advancement_pending(career: Any, assignment_name: str, event_id: int, pendi
 
 def _apply_injury_table_result(projection: Any, roll: int, event_id: int) -> None:
     from ceres.character.projection import PendingCharacteristicChoice, PendingNearlyKilled
+
     if roll == 6:
         return
     if roll == 5:
@@ -183,6 +189,7 @@ def _apply_injury_table_result(projection: Any, roll: int, event_id: int) -> Non
 def _apply_muster_out_benefit(projection: Any, benefit: object, event_id: int = 0) -> None:
     from ceres.character.benefits import CharacteristicIncrease, ChoiceBenefit, ItemBenefit
     from ceres.character.projection import PendingBenefitChoice
+
     if isinstance(benefit, CharacteristicIncrease):
         current = projection.summary.characteristics.get(benefit.char, 0)
         projection.summary.characteristics[benefit.char] = min(15, current + benefit.amount)
@@ -215,6 +222,7 @@ def _apply_mishap_ejection(
     lose_current_term: bool = True,
 ) -> int:
     from ceres.character.projection import PendingAgingRoll
+
     projection.summary.age += 4
     if projection.summary.age >= 34:
         projection.muster_out_career = career.name
@@ -223,13 +231,12 @@ def _apply_mishap_ejection(
             PendingAgingRoll(id=f'{source_event_id}.{pending_idx}', instruction='Roll 2D on Aging table')
         )
         return pending_idx + 1
-    return projection.muster_out_setup(
-        career, source_event_id, pending_idx, lose_current_term=lose_current_term
-    )
+    return projection.muster_out_setup(career, source_event_id, pending_idx, lose_current_term=lose_current_term)
 
 
 def _apply_prisoner_advancement(projection: Any, event: Any, career: Any) -> None:
     from ceres.character.projection import PendingRankBonusChoice, PendingSkillTable, ReplayError
+
     assignment = career.assignment(projection.summary.current_assignment or '')
     if assignment is None:
         raise ReplayError(f'Unknown assignment {projection.summary.current_assignment!r}')
@@ -320,6 +327,7 @@ class UcpEvent(EventBase):
 
     def _parse_characteristics(self, sophont: Any) -> dict[Chars, int]:
         from ceres.character.projection import ReplayError
+
         ucp_stats = sophont.ucp_stats if isinstance(sophont, Sophont) else UCP_STATS
         if len(self.ucp) != len(ucp_stats):
             raise ReplayError(f'Invalid UCP: {self.ucp!r} — expected {len(ucp_stats)} hex digits')
@@ -327,6 +335,7 @@ class UcpEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.projection import PendingBackgroundSkills
+
         projection.summary.characteristics = self._parse_characteristics(projection.summary.sophont)
         edu = projection.summary.characteristics.get(Chars.EDU, 0)
         count = _background_skill_count(edu)
@@ -346,6 +355,7 @@ class BackgroundSkillsEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.projection import ReplayError
+
         edu = projection.summary.characteristics.get(Chars.EDU, 0)
         expected = _background_skill_count(edu)
         if len(self.skills) != expected:
@@ -367,6 +377,7 @@ class CareerEvent(EventBase):
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.careers.loader import load_careers
         from ceres.character.projection import ReplayError
+
         careers = load_careers()
         career = careers.get(self.career)
         if career is None:
@@ -385,6 +396,7 @@ class DraftEvent(EventBase):
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.careers.loader import load_careers
         from ceres.character.projection import ReplayError
+
         if projection.summary.drafted:
             raise ReplayError('A character may only enter the draft once')
         career = load_careers().get(self.career)
@@ -401,6 +413,7 @@ class DraftAssignmentEvent(EventBase):
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.careers.loader import load_careers
         from ceres.character.projection import ReplayError
+
         career = load_careers().get(self.career)
         if career is None:
             raise ReplayError(f'Unknown career: {self.career!r}')
@@ -413,6 +426,7 @@ class SurviveEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.projection import PendingMishap, PendingTermEvent, ReplayError
+
         career = projection.get_current_career()
         assignment = career.assignment(projection.summary.current_assignment or '')
         if assignment is None:
@@ -451,6 +465,7 @@ class MishapEvent(EventBase):
             PendingInjuryTable,
             PendingSkillChoice,
         )
+
         career = projection.get_current_career()
         mishap = career.mishaps.get(self.roll)
         pending_idx = 0
@@ -555,6 +570,7 @@ class TermEventEvent(EventBase):
         )
         from ceres.character.careers.loader import get_effect_handler
         from ceres.character.projection import PendingLifeEvent, PendingMishap, PendingSkillChoice
+
         career = projection.get_current_career()
         term_event = career.events.get(self.roll)
         skill_choice_effect = None
@@ -620,6 +636,7 @@ class SkillChoiceEvent(EventBase):
             PendingSkillTable,
             PendingSkillTableChoice,
         )
+
         if isinstance(fulfilled_pending, PendingInitialTrainingChoice):
             projection.grant_skill(self.skill)
             remaining = [p for p in projection.pending_inputs if isinstance(p, PendingInitialTrainingChoice)]
@@ -661,6 +678,7 @@ class AdvancementDmChoiceEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.projection import ScheduledEffect
+
         projection.scheduled_effects.append(
             ScheduledEffect(trigger='advancement', source_event_id=self.id, effect={'type': 'dm', 'amount': 4})
         )
@@ -677,6 +695,7 @@ class ConnectionKindChoiceEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.projection import PendingLifeEventChoice, make_connection
+
         source = (
             f'Life event roll {fulfilled_pending.roll}'
             if isinstance(fulfilled_pending, PendingLifeEventChoice)
@@ -712,6 +731,7 @@ class CareerChoiceEvent(EventBase):
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.careers.loader import get_choice_handler
         from ceres.character.projection import ReplayError
+
         career_name = projection.summary.current_career
         if career_name is None:
             raise ReplayError(f'CareerChoiceEvent submitted with no active career (context={self.context!r})')
@@ -727,6 +747,7 @@ class AdvancementEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.projection import PendingRankBonusChoice, PendingSkillTable, ReplayError
+
         career = projection.get_current_career()
         if career.name == 'Prisoner':
             _apply_prisoner_advancement(projection, self, career)
@@ -784,6 +805,7 @@ class CommissionEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.projection import PendingRankBonusChoice, PendingSkillTable, ReplayError
+
         career = projection.get_current_career()
         if not self.attempt:
             projection.pending_inputs.append(
@@ -824,9 +846,7 @@ class CommissionEvent(EventBase):
                 projection.grant_skill(skill_from_str(bonus.skill, bonus.level))
             elif bonus.characteristic:
                 char = bonus.characteristic
-                projection.summary.characteristics[char] = (
-                    projection.summary.characteristics.get(char, 0) + bonus.level
-                )
+                projection.summary.characteristics[char] = projection.summary.characteristics.get(char, 0) + bonus.level
         edu = projection.summary.characteristics.get(Chars.EDU, 0)
         tables = career.available_tables(edu, projection.summary.current_assignment or '')
         projection.pending_inputs.append(
@@ -863,6 +883,7 @@ class SkillTableEvent(EventBase):
             PendingSkillTableChoice,
             ReplayError,
         )
+
         career = projection.get_current_career()
         table = career.skill_tables.get(self.table)
         if table is None:
@@ -926,6 +947,7 @@ class CharacteristicChoiceEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.projection import PendingAgingChoice, PendingAgingChoiceMental, PendingNearlyKilled
+
         char = self.characteristic
         current = projection.summary.characteristics.get(char, 0)
         projection.summary.characteristics[char] = max(0, current - self.amount)
@@ -952,6 +974,7 @@ class ConnectionsRollEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.projection import make_connection
+
         for _ in range(self.count):
             projection.summary.connections.append(make_connection(self.connection_type))
 
@@ -965,6 +988,7 @@ class SkillRollEvent(EventBase):
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.careers.loader import get_skill_roll_handler
         from ceres.character.projection import PendingAdvancement
+
         career = projection.get_current_career()
         handler = get_skill_roll_handler(career.name, self.context)
         pending_count_before = len(projection.pending_inputs)
@@ -986,6 +1010,7 @@ class AgingRollEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.projection import PendingAgingChoice, PendingAgingChoiceMental, ReplayError
+
         if not (2 <= self.roll <= 12):
             raise ReplayError(f'Aging roll must be 2-12, got {self.roll}')
         effective = self.roll - projection.summary.term_count
@@ -1012,9 +1037,7 @@ class AgingRollEvent(EventBase):
                 pending_idx += 1
         elif effective == -2:
             for char in (Chars.STR, Chars.DEX, Chars.END):
-                projection.summary.characteristics[char] = max(
-                    0, projection.summary.characteristics.get(char, 0) - 1
-                )
+                projection.summary.characteristics[char] = max(0, projection.summary.characteristics.get(char, 0) - 1)
             if not projection.check_aging_crisis(self.id):
                 projection.complete_aging(self.id)
         elif effective == -3:
@@ -1054,16 +1077,12 @@ class AgingRollEvent(EventBase):
             )
         elif effective == -5:
             for char in (Chars.STR, Chars.DEX, Chars.END):
-                projection.summary.characteristics[char] = max(
-                    0, projection.summary.characteristics.get(char, 0) - 2
-                )
+                projection.summary.characteristics[char] = max(0, projection.summary.characteristics.get(char, 0) - 2)
             if not projection.check_aging_crisis(self.id):
                 projection.complete_aging(self.id)
         else:  # <= -6
             for char in (Chars.STR, Chars.DEX, Chars.END):
-                projection.summary.characteristics[char] = max(
-                    0, projection.summary.characteristics.get(char, 0) - 2
-                )
+                projection.summary.characteristics[char] = max(0, projection.summary.characteristics.get(char, 0) - 2)
             if not projection.check_aging_crisis(self.id):
                 projection.pending_inputs.append(
                     PendingAgingChoiceMental(
@@ -1080,6 +1099,7 @@ class InjuryTableEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.projection import ReplayError
+
         if not (1 <= self.roll <= 6):
             raise ReplayError(f'Injury table roll must be 1-6, got {self.roll}')
         _apply_injury_table_result(projection, self.roll, self.id)
@@ -1094,6 +1114,7 @@ class DoubleInjuryTableEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.projection import ReplayError
+
         for roll in (self.roll1, self.roll2):
             if not (1 <= roll <= 6):
                 raise ReplayError(f'Double injury roll must be 1-6, got {roll}')
@@ -1114,6 +1135,7 @@ class LifeEventEvent(EventBase):
             ReplayError,
             ScheduledEffect,
         )
+
         if not (2 <= self.roll <= 12):
             raise ReplayError(f'Life event roll must be 2-12, got {self.roll}')
         in_career = projection.summary.current_career is not None
@@ -1239,6 +1261,7 @@ class LifeEventUnusualEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.projection import Ally, Contact, ReplayError
+
         if not (1 <= self.roll <= 6):
             raise ReplayError(f'Life event unusual roll must be 1-6, got {self.roll}')
         if self.roll == 1:
@@ -1261,6 +1284,7 @@ class MusterOutEvent(EventBase):
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.careers.loader import load_careers
         from ceres.character.projection import PendingMusterOut, ReplayError
+
         career_name = projection.muster_out_career
         if career_name is None:
             raise ReplayError('No muster out career set')
@@ -1295,6 +1319,7 @@ class BenefitChoiceEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.projection import PendingBenefitChoice, ReplayError
+
         if not isinstance(fulfilled_pending, PendingBenefitChoice):
             raise ReplayError('BenefitChoiceEvent must fulfill a PendingBenefitChoice')
         options = fulfilled_pending.benefit_options
@@ -1310,6 +1335,7 @@ class AgingCrisisEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.careers.loader import load_careers
+
         career_name = projection.summary.current_career or projection.muster_out_career
         careers = load_careers()
         career = careers.get(career_name) if career_name else None
@@ -1346,6 +1372,7 @@ class AssignmentChangeChoiceEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.projection import PendingReenlist, ReplayError
+
         career = projection.get_current_career()
         if self.choice == 'same':
             _start_new_career_term(projection, career, self.id)
@@ -1396,6 +1423,7 @@ class PreCareerEntryEvent(EventBase):
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.precareers.loader import load_precareers
         from ceres.character.projection import PendingPreCareerEvent, PendingPreCareerGraduation, ReplayError
+
         precareer = load_precareers().get(self.precareer)
         if precareer is None:
             raise ReplayError(f'Unknown pre-career: {self.precareer!r}')
@@ -1458,6 +1486,7 @@ class PreCareerSkillChoiceEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.projection import PendingPreCareerSkillChoice
+
         level = fulfilled_pending.level if isinstance(fulfilled_pending, PendingPreCareerSkillChoice) else 0
         skill_name, spec = parse_skill_spec_option(self.skill)
         if level == 0:
@@ -1483,6 +1512,7 @@ class PreCareerEventEvent(EventBase):
             PendingSkillChoice,
             ReplayError,
         )
+
         precareer_name = projection.summary.precareer
         if precareer_name is None:
             raise ReplayError('No active pre-career for pre-career event')
@@ -1521,7 +1551,9 @@ class PreCareerEventEvent(EventBase):
                 )
                 pending_idx += 1
             elif isinstance(effect, SkillChoiceEffect):
-                all_skills = sorted(cls.name() for cls in _skill_classes(AnySkill) if cls.name() != 'Jack-of-All-Trades')
+                all_skills = sorted(
+                    cls.name() for cls in _skill_classes(AnySkill) if cls.name() != 'Jack-of-All-Trades'
+                )
                 opts = effect.options or all_skills
                 projection.pending_inputs.append(
                     PendingSkillChoice(
@@ -1542,9 +1574,7 @@ class PreCareerEventEvent(EventBase):
             else:
                 _apply_simple_effect(projection, effect, source=term_event.text, source_event_id=self.id)
         if self.roll == 12:
-            projection.summary.characteristics[Chars.SOC] = (
-                projection.summary.characteristics.get(Chars.SOC, 0) + 1
-            )
+            projection.summary.characteristics[Chars.SOC] = projection.summary.characteristics.get(Chars.SOC, 0) + 1
         elif self.roll == 2:
             projection.summary.problems.append(
                 'Pre-career event 2: you may test your PSI and attempt to enter the Psion career '
@@ -1566,6 +1596,7 @@ class PreCareerGraduationEvent(EventBase):
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.precareers.loader import load_precareers
         from ceres.character.projection import ReplayError
+
         precareer_name = projection.summary.precareer
         if precareer_name is None:
             raise ReplayError('No active pre-career for graduation')
@@ -1583,7 +1614,7 @@ class PreCareerGraduationEvent(EventBase):
                     char = Chars(char_name)
                     if projection.summary.characteristics.get(char, 0) >= threshold:
                         dm += dm_val
-                except (ValueError, KeyError):
+                except ValueError, KeyError:
                     pass
             effective = self.roll + dm
             graduated = self.roll != 2 and effective >= precareer.graduation.target

@@ -42,8 +42,7 @@ class HullConfiguration(CeresModel):
     protection: int = 0
     usage_factor: float = 1
 
-    @property
-    def effective_hull_cost_modifier(self) -> float:
+    def hull_cost_modifier_without_non_gravity(self) -> float:
         modifier = self.hull_cost_modifier
         if self.reinforced:
             modifier *= 1.5
@@ -51,6 +50,11 @@ class HullConfiguration(CeresModel):
             modifier *= 0.75
         if self.military:
             modifier *= 1.25
+        return modifier
+
+    @property
+    def effective_hull_cost_modifier(self) -> float:
+        modifier = self.hull_cost_modifier_without_non_gravity()
         if self.non_gravity:
             modifier *= 0.5
         return modifier
@@ -73,13 +77,7 @@ class HullConfiguration(CeresModel):
         Non-gravity is an economic discount on hull structure, not a technology choice, so it is
         excluded from the automation basis per the Traveller Companion rule.
         """
-        modifier = self.hull_cost_modifier
-        if self.reinforced:
-            modifier *= 1.5
-        if self.light:
-            modifier *= 0.75
-        if self.military:
-            modifier *= 1.25
+        modifier = self.hull_cost_modifier_without_non_gravity()
         return 50000 * ton * modifier
 
     def points(self, ton):

@@ -269,7 +269,7 @@ class ShipPartMixin(ABC):
         if not self.armoured_bulkhead:
             self._armoured_bulkhead_part = None
             return
-        from .hull import ArmouredBulkhead
+        from .hull import ArmouredBulkhead  # noqa: PLC0415
 
         bulkhead = ArmouredBulkhead(
             protected_tonnage=self.bulkhead_protected_tonnage(),

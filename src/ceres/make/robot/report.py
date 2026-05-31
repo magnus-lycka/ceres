@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from ceres.make.robot.robot import Robot
-from ceres.make.robot.spec import RobotSpec
+from ceres.make.robot.spec import RobotSpec, RobotSpecSection
 from ceres.shared import NoteList, _Note
 
 _TEMPLATES = Path(__file__).parent / 'templates'
@@ -31,7 +31,7 @@ def render_robot_pdf(robot: Robot, *, page_size: str = 'a4', note: str | None = 
 
 
 def render_robot_spec_pdf(spec: RobotSpec, *, page_size: str = 'a4', note: str | None = None) -> bytes:
-    from ceres.report.render import render_pdf
+    from ceres.report.render import render_pdf  # noqa: PLC0415
 
     return render_pdf(_TEMPLATES / 'robot_spec.typ', _build_context(spec, page_size=page_size, note=note))
 
@@ -41,14 +41,12 @@ def render_robot_typst(robot: Robot, *, page_size: str = 'a4', note: str | None 
 
 
 def render_robot_spec_typst(spec: RobotSpec, *, page_size: str = 'a4', note: str | None = None) -> str:
-    from ceres.report.render import render_typst_source
+    from ceres.report.render import render_typst_source  # noqa: PLC0415
 
     return render_typst_source(_TEMPLATES / 'robot_spec.typ', _build_context(spec, page_size=page_size, note=note))
 
 
 def _build_context(spec: RobotSpec, *, page_size: str = 'a4', note: str | None = None) -> dict:
-    from ceres.make.robot.spec import RobotSpecSection
-
     robot_row = next(
         (row for row in spec.rows if row.section is RobotSpecSection.ROBOT and row.columns),
         None,
