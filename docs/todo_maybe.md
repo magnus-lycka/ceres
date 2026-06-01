@@ -257,6 +257,11 @@ Decide whether `Ship` should be extended or whether a separate `Station` class i
   Service Skill at level 0 (not all service skills at 0 as in term 1).
 - **Benefit roll bonus at rank 5–6 and "any one Benefit roll" events** — neither
   is implemented; see RIC-004.
+- **Muster-out benefits are string-key encoded** — career data currently writes
+  benefits as string keys passed through `parse_benefit(...)`, e.g.
+  `parse_benefit('ship_share')` or `parse_benefit(['soc_plus_1',
+  'cybernetic_implant'])`. These should be proper benefit objects with typed
+  semantics, not stringly-typed identifiers.
 - **Medical debt** — unpaid injury costs should accumulate as debt when cash
   benefits are insufficient.
 - **Pension** — Travellers leaving a qualifying career after 5+ terms earn an
@@ -278,6 +283,53 @@ Decide whether `Ship` should be extended or whether a separate `Station` class i
   qualification roll, failure = continue same assignment. Within
   Agent/Citizen/Entertainer/Merchant: treated as a new career with full muster
   out.
+
+## Character creation: eliminate remaining semantic strings
+
+The career YAML migration removed string-based skill/characteristic fields from
+career data. Several string-based patterns remain and should be eliminated in
+follow-up work packages.
+
+### Migrate precareers to typed skill objects
+
+`precareer_data.py` and the individual precareer modules (`colonial_upbringing`,
+`military_academy`, `spacer_community`, etc.) call `skill_from_str()` and store
+skill names as strings. Migrate these the same way as careers: replace
+string-based precareer tables with Python that carries `AnySkill` instances
+directly.
+
+### Remove `skill_from_str` / `skill_class_by_name` from `events.py`
+
+`events.py` calls `skill_from_str()` and `skill_class_by_name()` in many
+places to resolve skill names carried on effect objects. Once all effect models
+hold `AnySkill` instances and precareers are migrated, these call sites go away
+and both functions can be deleted.
+
+### Remove `str` overload from `CharacterSummary.skill_level`
+
+`state.py` exposes `skill_level(name: str | type[Skill])`. Remove the `str`
+overload once no caller needs string-based lookup; the method should accept only
+`type[Skill]`.
+
+### Replace `CareerDispatchEffect` string dispatch with effect subclasses
+
+Custom event and mishap effects such as `agent_mishap_2_choice` are dispatched
+via string keys in `EFFECT_HANDLERS` dicts. Replace `CareerDispatchEffect` with
+proper subclasses, each with an `apply(projection, ...)` method, so the effect
+objects carry the logic and string-keyed dispatch tables are eliminated.
+
+### Replace string identity checks on career/assignment in `CharacterSummary`
+
+`CharacterSummary.current_career` and `current_assignment` are `str | None`.
+Display use is fine, but identity checks (`career.name == 'Prisoner'`, the check
+at `events.py:750`) should use `isinstance` or a typed property. Assignment
+should also be identified by index (1/2/3) rather than the human-readable name
+string.
+
+### Replace sophont string-name lookup with typed objects
+
+`sophonts/__init__.py` finds sophonts by string name. Sophonts should be
+referenced as typed objects or an enum rather than matched by string.
 
 ## Make ShipPart generic over assembly type
 
