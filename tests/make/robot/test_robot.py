@@ -15,7 +15,7 @@ from ceres.character import skills as character_skills
 from ceres.character.skills import Level
 from ceres.make.robot.chassis import Trait
 from ceres.make.robot.parts import RobotPart
-from ceres.make.robot.skills import SkillGrant, Zoology
+from ceres.make.robot.skills import SkillGrant
 
 
 class _SlottedPart(RobotPart):
@@ -717,12 +717,12 @@ class TestSkillsDisplay:
 
         brain = AdvancedBrain(
             brain_tl=12,
-            installed_skills=(SkillPackage(name=Zoology(), level=1, bandwidth=1),),
+            installed_skills=(SkillPackage(name=character_skills.Recon(), level=1, bandwidth=1),),
         )
         robot = make_robot(brain=brain)
         display = robot.skills_display
         bw_idx = display.index('+1 Bandwidth available')
-        assert display.index('Zoology') < bw_idx
+        assert display.index('Recon') < bw_idx
         assert display.endswith('+1 Bandwidth available')
 
     def test_dex_skill_uses_dex_dm_not_int_dm(self):

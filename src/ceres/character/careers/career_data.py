@@ -175,7 +175,7 @@ class MishapEntry(BaseModel):
 
 class AssignmentData(BaseModel):
     name: str
-    description: str | None = None
+    description: str
     survival: CharCheck
     advancement: CharCheck
 
@@ -197,7 +197,7 @@ class BasicTrainingPlan(BaseModel):
 
 class CareerData(BaseModel):
     name: str
-    description: str | None = None
+    description: str
     source: str
     qualification: CharCheck
     assignments: list[AssignmentData]
@@ -208,7 +208,7 @@ class CareerData(BaseModel):
     officer_ranks: dict[int, RankEntry] = {}
     events: dict[int, CareerEventEntry]  # 2D roll → event
     mishaps: dict[int, MishapEntry]  # 1D roll → mishap
-    muster_out: MusterOutData | None = None
+    muster_out: MusterOutData
     allows_assignment_change: bool
     selectable: bool = True
     draft_assignments: list[str] = []

@@ -2,7 +2,7 @@ from typing import cast
 
 from ceres.character import skills as character_skills
 from ceres.character.skills import Level, Skill
-from ceres.make.robot.skills import RobotProfession, RobotSkill, SkillPackage, Zoology
+from ceres.make.robot.skills import RobotProfession, RobotSkill, SkillPackage
 
 
 def _pkg(skill: Skill, level: int, bandwidth: int, *, all_specialities: bool = False) -> SkillPackage:
@@ -156,7 +156,3 @@ def survival(level: int, bandwidth: int) -> SkillPackage:
 
 def tactics_military(level: int, bandwidth: int) -> SkillPackage:
     return _pkg(character_skills.Tactics(military=Level(value=1)), level, bandwidth)
-
-
-def zoology(level: int, bandwidth: int) -> SkillPackage:
-    return _pkg(Zoology(), level, bandwidth)

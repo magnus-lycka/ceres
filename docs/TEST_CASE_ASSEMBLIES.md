@@ -217,4 +217,3 @@ robot-only normalizations include:
 | `Profession (Fabricator)`            | `RobotProfession.fabricator`             |
 | `Profession (Robotics)`              | `RobotProfession.robotics`               |
 | `Weapon`                             | `Weapon`                                 |
-| `Zoology`                            | `Zoology`                                |

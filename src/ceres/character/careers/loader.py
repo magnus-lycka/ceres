@@ -195,7 +195,7 @@ def _load_career_file(path: Path) -> CareerData:
     mishaps = {int(k): _parse_mishap(v) for k, v in data.get('mishaps', {}).items()}
 
     muster_out_raw = data.get('muster_out')
-    muster_out = _parse_muster_out(muster_out_raw) if muster_out_raw else None
+    muster_out = _parse_muster_out(muster_out_raw)
 
     return career_class(
         name=data['name'],

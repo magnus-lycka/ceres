@@ -40,16 +40,7 @@ class Weapon(Skill):
         return 'Weapon'
 
 
-class Zoology(Skill):
-    type: Literal['Robot Zoology'] = 'Robot Zoology'
-    level: Level = _level()
-
-    @classmethod
-    def name(cls) -> str:
-        return 'Zoology'
-
-
-type RobotSpecificSkill = Annotated[RobotProfession | Weapon | Zoology, Field(discriminator='type')]
+type RobotSpecificSkill = Annotated[RobotProfession | Weapon, Field(discriminator='type')]
 type RobotSkill = AnySkill | RobotSpecificSkill
 type _SkillCostKey = SkillCostKey
 
@@ -353,6 +344,5 @@ __all__ = [
     'SkillGrant',
     'SkillPackage',
     'Weapon',
-    'Zoology',
     'primitive_package_skills',
 ]
