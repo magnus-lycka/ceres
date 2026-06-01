@@ -44,7 +44,6 @@ dependencies = [
     { name = "platformdirs" },
     { name = "pydantic" },
     { name = "pydantic-core" },
-    { name = "pyyaml" },
     { name = "typer" },
     { name = "typst" },
 ]
@@ -66,7 +65,6 @@ requires-dist = [
     { name = "platformdirs", specifier = ">=4.5.1" },
     { name = "pydantic", specifier = ">=2.12.5" },
     { name = "pydantic-core", specifier = ">=2.41.5" },
-    { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "typer", specifier = ">=0.20.0" },
     { name = "typst", specifier = ">=0.14.8" },
 ]

@@ -10,17 +10,17 @@ from ceres.character.careers.career_data import (
     GainSkillEffect,
     LifeEventEffect,
     SkillChoiceEffect,
-    SkillTableEntry,
 )
 from ceres.character.characteristics import Chars, ConnectionKind
 from ceres.character.precareers.colonial_upbringing import ColonialUprbringingPreCareer
 from ceres.character.precareers.merchant_academy import MerchantAcademyPreCareer
 from ceres.character.precareers.military_academy import MilitaryAcademyPreCareer
-from ceres.character.precareers.precareer_data import PreCareerData
+from ceres.character.precareers.precareer_data import PreCareerData, PrecareerSkillEntry
 from ceres.character.precareers.psionic_community import PsionicCommunityPreCareer
 from ceres.character.precareers.school_of_hard_knocks import SchoolOfHardKnocksPreCareer
 from ceres.character.precareers.spacer_community import SpacerCommunityPreCareer
 from ceres.character.precareers.university import UniversityPreCareer
+from ceres.character.skills import Carouse
 
 _PRECAREER_EVENTS = {
     2: CareerEventEntry(text='Approached by an illegal psionic group.', effects=[]),
@@ -28,7 +28,7 @@ _PRECAREER_EVENTS = {
     4: CareerEventEntry(text='A prank goes wrong and someone gets hurt.', effects=[]),
     5: CareerEventEntry(
         text='Taking advantage of youth, you party as much as you study.',
-        effects=[GainSkillEffect(skill='Carouse')],
+        effects=[GainSkillEffect(skill=Carouse())],
     ),
     6: CareerEventEntry(
         text='You become involved in a tightly knit clique or group.',
@@ -52,51 +52,51 @@ _PRECAREER_EVENTS = {
 }
 
 _UNIVERSITY_SKILLS = [
-    SkillTableEntry(skill='Admin'),
-    SkillTableEntry(skill='Advocate'),
-    SkillTableEntry(skill='Animals', choices=['Animals']),
-    SkillTableEntry(skill='Art'),
-    SkillTableEntry(skill='Astrogation'),
-    SkillTableEntry(skill='Electronics'),
-    SkillTableEntry(skill='Engineer'),
-    SkillTableEntry(skill='Language'),
-    SkillTableEntry(skill='Medic'),
-    SkillTableEntry(skill='Navigation'),
-    SkillTableEntry(skill='Profession'),
-    SkillTableEntry(skill='Science'),
+    PrecareerSkillEntry(skill='Admin'),
+    PrecareerSkillEntry(skill='Advocate'),
+    PrecareerSkillEntry(skill='Animals', choices=['Animals']),
+    PrecareerSkillEntry(skill='Art'),
+    PrecareerSkillEntry(skill='Astrogation'),
+    PrecareerSkillEntry(skill='Electronics'),
+    PrecareerSkillEntry(skill='Engineer'),
+    PrecareerSkillEntry(skill='Language'),
+    PrecareerSkillEntry(skill='Medic'),
+    PrecareerSkillEntry(skill='Navigation'),
+    PrecareerSkillEntry(skill='Profession'),
+    PrecareerSkillEntry(skill='Science'),
 ]
 
 _COLONIAL_SKILLS = [
-    SkillTableEntry(skill='Animals', level=0),
-    SkillTableEntry(skill='Athletics', level=0),
-    SkillTableEntry(skill='Drive', level=0),
-    SkillTableEntry(skill='Gun Combat', level=0),
-    SkillTableEntry(skill='Mechanic', level=0),
-    SkillTableEntry(skill='Medic', level=0),
-    SkillTableEntry(skill='Navigation', level=0),
-    SkillTableEntry(skill='Recon', level=0),
-    SkillTableEntry(skill='Profession', level=0),
-    SkillTableEntry(skill='Seafarer', level=0),
-    SkillTableEntry(skill='Survival', level=1),
+    PrecareerSkillEntry(skill='Animals', level=0),
+    PrecareerSkillEntry(skill='Athletics', level=0),
+    PrecareerSkillEntry(skill='Drive', level=0),
+    PrecareerSkillEntry(skill='Gun Combat', level=0),
+    PrecareerSkillEntry(skill='Mechanic', level=0),
+    PrecareerSkillEntry(skill='Medic', level=0),
+    PrecareerSkillEntry(skill='Navigation', level=0),
+    PrecareerSkillEntry(skill='Recon', level=0),
+    PrecareerSkillEntry(skill='Profession', level=0),
+    PrecareerSkillEntry(skill='Seafarer', level=0),
+    PrecareerSkillEntry(skill='Survival', level=1),
 ]
 
 _SCHOOL_OF_HARD_KNOCKS_SKILLS = [
-    SkillTableEntry(skill='Streetwise', level=1),
-    SkillTableEntry(skill='Athletics', level=0),
-    SkillTableEntry(skill='Deception', level=0),
-    SkillTableEntry(skill='Drive', level=0),
-    SkillTableEntry(skill='Gambler', level=0),
-    SkillTableEntry(skill='Melee', level=0),
-    SkillTableEntry(skill='Persuade', level=0),
-    SkillTableEntry(skill='Stealth', level=0),
+    PrecareerSkillEntry(skill='Streetwise', level=1),
+    PrecareerSkillEntry(skill='Athletics', level=0),
+    PrecareerSkillEntry(skill='Deception', level=0),
+    PrecareerSkillEntry(skill='Drive', level=0),
+    PrecareerSkillEntry(skill='Gambler', level=0),
+    PrecareerSkillEntry(skill='Melee', level=0),
+    PrecareerSkillEntry(skill='Persuade', level=0),
+    PrecareerSkillEntry(skill='Stealth', level=0),
 ]
 
 _SPACER_COMMUNITY_SKILLS = [
-    SkillTableEntry(skill='Vacc Suit', level=1),
-    SkillTableEntry(skill='Astrogation', level=0),
-    SkillTableEntry(skill='Electronics', level=0),
-    SkillTableEntry(skill='Engineer', level=0),
-    SkillTableEntry(skill='Profession', level=0),
+    PrecareerSkillEntry(skill='Vacc Suit', level=1),
+    PrecareerSkillEntry(skill='Astrogation', level=0),
+    PrecareerSkillEntry(skill='Electronics', level=0),
+    PrecareerSkillEntry(skill='Engineer', level=0),
+    PrecareerSkillEntry(skill='Profession', level=0),
 ]
 
 
@@ -193,9 +193,9 @@ def load_precareers() -> dict[str, PreCareerData]:
             source='Companion',
             entry_requirement='PSI 8+, DM+1 if INT 8+',
             skill_choices=[
-                SkillTableEntry(skill='Profession', level=0),
-                SkillTableEntry(skill='Science', level=0),
-                SkillTableEntry(skill='Streetwise', level=0),
+                PrecareerSkillEntry(skill='Profession', level=0),
+                PrecareerSkillEntry(skill='Science', level=0),
+                PrecareerSkillEntry(skill='Streetwise', level=0),
             ],
             graduation_requirement='PSI 6+, DM+1 if INT 8+',
             honours_target=12,

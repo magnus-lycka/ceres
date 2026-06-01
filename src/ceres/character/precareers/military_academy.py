@@ -1,7 +1,6 @@
 from ceres.character.characteristics import Chars
 from ceres.character.events import PreCareerEntryEvent, PreCareerGraduationEvent
 from ceres.character.precareers.precareer_data import PreCareerData
-from ceres.character.skills import skill_from_str
 from ceres.character.state import (
     CharacterProjection,
     ScheduledEffect,
@@ -19,11 +18,11 @@ class MilitaryAcademyPreCareer(PreCareerData):
 
         tied_career = load_careers().get(self.service_skills_from or '')
         if tied_career:
-            service_table = tied_career.skill_tables.get('service_skills')
+            service_table = tied_career.skill_table('service_skills')
             if service_table:
-                for entry in service_table.entries.values():
-                    if entry.skill:
-                        projection.grant_skill(skill_from_str(entry.skill, 0))
+                for entry in service_table.entries:
+                    if not isinstance(entry, (Chars, list)):
+                        projection.grant_skill(entry)
         return pending_idx
 
     def apply_graduation(

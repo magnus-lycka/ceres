@@ -1,4 +1,30 @@
-from ceres.character.careers.career_data import CareerDispatchEffect
+from ceres.character.benefits import parse_benefit
+from ceres.character.careers.career_data import (
+    AssignmentData,
+    AutoAdvanceEffect,
+    BenefitDmEffect,
+    CareerData,
+    CareerDispatchEffect,
+    CareerEventEntry,
+    CareerSkillTables,
+    CharCheck,
+    DecreaseCharacteristicChoiceEffect,
+    GainConnectionsRolledEffect,
+    GainEnemyEffect,
+    GainRivalEffect,
+    GainSkillEffect,
+    InjuryEffect,
+    LifeEventEffect,
+    MishapEntry,
+    MusterOutData,
+    MusterOutRow,
+    RankBonus,
+    RankEntry,
+    RollMishapEffect,
+    SkillChoiceEffect,
+    SkillTable,
+)
+from ceres.character.characteristics import Chars, ConnectionKind
 from ceres.character.events import (
     PendingCareerSkillChoice,
     PendingCareerSkillRoll,
@@ -6,7 +32,31 @@ from ceres.character.events import (
     PendingSkillChoice,
     SkillRollEvent,
 )
-from ceres.character.skills import skill_from_str
+from ceres.character.skills import (
+    Astrogation,
+    Athletics,
+    Diplomat,
+    Electronics,
+    Engineer,
+    Explosives,
+    Flyer,
+    GunCombat,
+    JackOfAllTrades,
+    Level,
+    Mechanic,
+    Medic,
+    Navigation,
+    Persuade,
+    Pilot,
+    Recon,
+    Seafarer,
+    Stealth,
+    Streetwise,
+    Survival,
+    VaccSuit,
+    skill_category_instances,
+    skill_from_str,
+)
 from ceres.character.state import (
     Ally,
     CharacterProjection,
@@ -14,6 +64,213 @@ from ceres.character.state import (
     Enemy,
     ScheduledEffect,
 )
+
+CAREER_DATA = CareerData(
+    name='Scout',
+    description=(
+        'Members of the exploratory service. Scouts explore new areas, map and survey known or newly discovered areas '
+        'and maintain communication ships which carry information and messages between the worlds of the galaxy.'
+    ),
+    source='Core',
+    allows_assignment_change=True,
+    qualification=CharCheck(characteristic=Chars.INT, target=5),
+    assignments=[
+        AssignmentData(
+            name='Courier',
+            description='You are responsible for shuttling messages and high value packages around the galaxy.',
+            survival=CharCheck(characteristic=Chars.END, target=5),
+            advancement=CharCheck(characteristic=Chars.EDU, target=9),
+        ),
+        AssignmentData(
+            name='Surveyor',
+            description='You visit border worlds and assess their worth.',
+            survival=CharCheck(characteristic=Chars.END, target=6),
+            advancement=CharCheck(characteristic=Chars.INT, target=8),
+        ),
+        AssignmentData(
+            name='Explorer',
+            description='You go wherever the map is blank, exploring unknown worlds and uncharted space.',
+            survival=CharCheck(characteristic=Chars.END, target=7),
+            advancement=CharCheck(characteristic=Chars.EDU, target=7),
+        ),
+    ],
+    skill_tables=CareerSkillTables(
+        personal_development=SkillTable(
+            [
+                Chars.STR,
+                Chars.DEX,
+                Chars.END,
+                Chars.INT,
+                Chars.EDU,
+                JackOfAllTrades(),
+            ]
+        ),
+        service_skills=SkillTable(
+            [
+                Pilot(),
+                Survival(),
+                Mechanic(),
+                Astrogation(),
+                VaccSuit(),
+                GunCombat(),
+            ]
+        ),
+        advanced_education=SkillTable(
+            [
+                Medic(),
+                skill_category_instances('Language'),
+                Seafarer(),
+                Explosives(),
+                skill_category_instances('Science'),
+                JackOfAllTrades(),
+            ],
+            min_edu=8,
+        ),
+        assignment1=SkillTable(
+            [  # Courier
+                Electronics(),
+                Flyer(),
+                Pilot(),
+                Engineer(),
+                Athletics(),
+                Astrogation(),
+            ]
+        ),
+        assignment2=SkillTable(
+            [  # Surveyor
+                Electronics(),
+                Persuade(),
+                Pilot(),
+                Navigation(),
+                Diplomat(),
+                Streetwise(),
+            ]
+        ),
+        assignment3=SkillTable(
+            [  # Explorer
+                Electronics(),
+                Pilot(),
+                Engineer(),
+                skill_category_instances('Science'),
+                Stealth(),
+                Recon(),
+            ]
+        ),
+    ),
+    ranks={
+        0: RankEntry(rank=0),
+        1: RankEntry(rank=1, title='Scout', bonus=RankBonus(skill=VaccSuit(), level=1)),
+        2: RankEntry(rank=2),
+        3: RankEntry(rank=3, title='Senior Scout', bonus=RankBonus(skill=Pilot(), level=1)),
+        4: RankEntry(rank=4),
+        5: RankEntry(rank=5),
+        6: RankEntry(rank=6),
+    },
+    muster_out=MusterOutData(
+        rows={
+            1: MusterOutRow(cash=20000, benefit=parse_benefit('ship_share')),
+            2: MusterOutRow(cash=20000, benefit=parse_benefit('int_plus_1')),
+            3: MusterOutRow(cash=30000, benefit=parse_benefit('edu_plus_1')),
+            4: MusterOutRow(cash=30000, benefit=parse_benefit('weapon')),
+            5: MusterOutRow(cash=50000, benefit=parse_benefit('weapon')),
+            6: MusterOutRow(cash=50000, benefit=parse_benefit('scout_ship')),
+            7: MusterOutRow(cash=50000, benefit=parse_benefit('scout_ship')),
+        }
+    ),
+    mishaps={
+        1: MishapEntry(
+            text='Severely injured.',
+            effects=[InjuryEffect(severity='severe')],
+        ),
+        2: MishapEntry(
+            text='Psychologically damaged by your time in the scouts. Reduce your INT or SOC by 1.',
+            effects=[DecreaseCharacteristicChoiceEffect(options=['INT', 'SOC'], amount=1)],
+        ),
+        3: MishapEntry(
+            text=(
+                'Your ship is damaged and you have to hitch-hike your way back across the stars. '
+                'Gain 1D Contacts and D3 Enemies.'
+            ),
+            effects=[
+                GainConnectionsRolledEffect(connection_type=ConnectionKind.CONTACT, dice='1d6'),
+                GainConnectionsRolledEffect(connection_type=ConnectionKind.ENEMY, dice='d3'),
+            ],
+        ),
+        4: MishapEntry(
+            text=(
+                'You inadvertently cause a conflict between the Imperium and a minor world or species. '
+                'Gain a Rival and Diplomat 1.'
+            ),
+            effects=[
+                GainSkillEffect(skill=Diplomat(level=Level(value=1))),
+                GainRivalEffect(),
+            ],
+        ),
+        5: MishapEntry(
+            text='You have no idea what happened to you — they found your ship drifting on the fringes of friendly space.',
+            effects=[],
+        ),
+        6: MishapEntry(
+            text='Injured. Roll on the Injury table.',
+            effects=[InjuryEffect(severity='from_table')],
+        ),
+    },
+    events={
+        2: CareerEventEntry(
+            text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
+            effects=[RollMishapEffect(leave=False)],
+        ),
+        3: CareerEventEntry(
+            text=(
+                'Your ship is ambushed by enemy vessels. Either run and roll Pilot 8+ to escape, or treat with them '
+                'and roll Persuade 10+ to bargain with them. If you fail the check, then your ship is destroyed and '
+                'you may not re-enlist in the Scouts at the end of this term. If you succeed, you survive and gain '
+                'Electronics (sensors) 1. Either way, gain an Enemy.'
+            ),
+            effects=[CareerDispatchEffect(type='scout_event_3'), GainEnemyEffect()],
+        ),
+        4: CareerEventEntry(
+            text='You survey an alien world.',
+            effects=[SkillChoiceEffect(options=['Animals', 'Survival', 'Recon', 'Space Science'], level=1)],
+        ),
+        5: CareerEventEntry(
+            text='You perform an exemplary service for the scouts.',
+            effects=[BenefitDmEffect(amount=1)],
+        ),
+        6: CareerEventEntry(
+            text='You spend several years jumping from world to world in your scout ship.',
+            effects=[
+                SkillChoiceEffect(options=['Astrogation', 'Electronics', 'Navigation', 'Pilot', 'Mechanic'], level=1)
+            ],
+        ),
+        7: CareerEventEntry(
+            text='Life Event.',
+            effects=[LifeEventEffect()],
+        ),
+        8: CareerEventEntry(
+            text='When dealing with an alien species, you have an opportunity to gather extra intelligence.',
+            effects=[CareerDispatchEffect(type='scout_event_8')],
+        ),
+        9: CareerEventEntry(
+            text='Your scout ship is one of the first on the scene to rescue the survivors of a disaster.',
+            effects=[CareerDispatchEffect(type='scout_event_9')],
+        ),
+        10: CareerEventEntry(
+            text='You spend a great deal of time on the fringes of Charted Space.',
+            effects=[CareerDispatchEffect(type='scout_event_10')],
+        ),
+        11: CareerEventEntry(
+            text='You serve as the courier for an important message from the Imperium.',
+            effects=[CareerDispatchEffect(type='scout_event_11')],
+        ),
+        12: CareerEventEntry(
+            text='You discover a world, item or information of worth to the Imperium. You are automatically promoted.',
+            effects=[AutoAdvanceEffect()],
+        ),
+    },
+    draft_assignments=['Courier', 'Surveyor', 'Explorer'],
+)
+
 
 # ── event 3: ambush ──────────────────────────────────────────────────────────
 

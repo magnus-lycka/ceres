@@ -1,10 +1,59 @@
-from ceres.character.careers.career_data import CareerData, CareerDispatchEffect
+from ceres.character.benefits import parse_benefit
+from ceres.character.careers.career_data import (
+    AssignmentData,
+    AutoAdvanceEffect,
+    BenefitDmEffect,
+    CareerData,
+    CareerDispatchEffect,
+    CareerEventEntry,
+    CareerSkillTables,
+    CharCheck,
+    GainEnemyEffect,
+    GainSkillEffect,
+    InjuryEffect,
+    LifeEventEffect,
+    MishapEntry,
+    MusterOutData,
+    MusterOutRow,
+    RankBonus,
+    RankEntry,
+    RollMishapEffect,
+    SkillChoiceEffect,
+    SkillTable,
+)
+from ceres.character.characteristics import Chars
 from ceres.character.events import (
     PendingCareerEvent,
     PendingCareerSkillRoll,
     SkillRollEvent,
     career_progress_pending,
     muster_out_setup,
+)
+from ceres.character.skills import (
+    Advocate,
+    Astrogation,
+    Athletics,
+    Broker,
+    Carouse,
+    Deception,
+    Drive,
+    Electronics,
+    Engineer,
+    Gambler,
+    GunCombat,
+    Gunner,
+    Investigate,
+    Leadership,
+    Level,
+    Medic,
+    Melee,
+    Navigation,
+    Persuade,
+    Pilot,
+    Recon,
+    Stealth,
+    Streetwise,
+    VaccSuit,
 )
 from ceres.character.state import (
     Ally,
@@ -18,6 +67,224 @@ from ceres.character.state import (
 
 class RogueCareerData(CareerData):
     pass
+
+
+CAREER_DATA = RogueCareerData(
+    name='Rogue',
+    description='Criminal elements familiar with the rougher or more illegal methods of attaining goals.',
+    source='Core',
+    allows_assignment_change=True,
+    qualification=CharCheck(characteristic=Chars.DEX, target=6),
+    assignments=[
+        AssignmentData(
+            name='Thief',
+            description='You steal from the rich and give to… well, yourself, actually.',
+            survival=CharCheck(characteristic=Chars.INT, target=6),
+            advancement=CharCheck(characteristic=Chars.DEX, target=6),
+        ),
+        AssignmentData(
+            name='Enforcer',
+            description='You are a leg breaker, thug or assassin for a criminal group.',
+            survival=CharCheck(characteristic=Chars.END, target=6),
+            advancement=CharCheck(characteristic=Chars.STR, target=6),
+        ),
+        AssignmentData(
+            name='Pirate',
+            description='You are a space-going corsair.',
+            survival=CharCheck(characteristic=Chars.DEX, target=6),
+            advancement=CharCheck(characteristic=Chars.INT, target=6),
+        ),
+    ],
+    skill_tables=CareerSkillTables(
+        personal_development=SkillTable(
+            [
+                Carouse(),
+                Chars.DEX,
+                Chars.END,
+                Gambler(),
+                Melee(),
+                GunCombat(),
+            ]
+        ),
+        service_skills=SkillTable(
+            [
+                Deception(),
+                Recon(),
+                Athletics(),
+                GunCombat(),
+                Stealth(),
+                Streetwise(),
+            ]
+        ),
+        advanced_education=SkillTable(
+            [
+                Electronics(),
+                Navigation(),
+                Medic(),
+                Investigate(),
+                Broker(),
+                Advocate(),
+            ],
+            min_edu=10,
+        ),
+        assignment1=SkillTable(
+            [  # Thief
+                Stealth(),
+                Electronics(),
+                Recon(),
+                Streetwise(),
+                Deception(),
+                Athletics(),
+            ]
+        ),
+        assignment2=SkillTable(
+            [  # Enforcer
+                GunCombat(),
+                Melee(),
+                Streetwise(),
+                Persuade(),
+                Athletics(),
+                Drive(),
+            ]
+        ),
+        assignment3=SkillTable(
+            [  # Pirate
+                Pilot(),
+                Astrogation(),
+                Gunner(),
+                Engineer(),
+                VaccSuit(),
+                Melee(),
+            ]
+        ),
+    ),
+    ranks={
+        0: RankEntry(rank=0),
+        1: RankEntry(rank=1, bonus=RankBonus(skill=Stealth(), level=1)),
+        2: RankEntry(rank=2),
+        3: RankEntry(rank=3, bonus=RankBonus(skill=Streetwise(), level=1)),
+        4: RankEntry(rank=4),
+        5: RankEntry(rank=5, bonus=RankBonus(skill=Recon(), level=1)),
+        6: RankEntry(rank=6),
+    },
+    ranks_by_assignment={
+        'Thief': {
+            0: RankEntry(rank=0),
+            1: RankEntry(rank=1, bonus=RankBonus(skill=Stealth(), level=1)),
+            2: RankEntry(rank=2),
+            3: RankEntry(rank=3, bonus=RankBonus(skill=Streetwise(), level=1)),
+            4: RankEntry(rank=4),
+            5: RankEntry(rank=5, bonus=RankBonus(skill=Recon(), level=1)),
+            6: RankEntry(rank=6),
+        },
+        'Enforcer': {
+            0: RankEntry(rank=0),
+            1: RankEntry(rank=1, bonus=RankBonus(skill=Persuade(), level=1)),
+            2: RankEntry(rank=2),
+            3: RankEntry(rank=3, bonus=RankBonus(choices=['Gun Combat', 'Melee'], level=1)),
+            4: RankEntry(rank=4),
+            5: RankEntry(rank=5, bonus=RankBonus(skill=Streetwise(), level=1)),
+            6: RankEntry(rank=6),
+        },
+        'Pirate': {
+            0: RankEntry(rank=0, title='Lackey'),
+            1: RankEntry(rank=1, title='Henchman', bonus=RankBonus(choices=['Pilot', 'Gunner'], level=1)),
+            2: RankEntry(rank=2, title='Corporal'),
+            3: RankEntry(rank=3, title='Sergeant', bonus=RankBonus(choices=['Gun Combat', 'Melee'], level=1)),
+            4: RankEntry(rank=4, title='Lieutenant'),
+            5: RankEntry(rank=5, title='Leader', bonus=RankBonus(skill=Leadership(), level=1)),
+            6: RankEntry(rank=6, title='Captain'),
+        },
+    },
+    muster_out=MusterOutData(
+        rows={
+            1: MusterOutRow(cash=0, benefit=parse_benefit('ship_share')),
+            2: MusterOutRow(cash=0, benefit=parse_benefit('weapon')),
+            3: MusterOutRow(cash=10000, benefit=parse_benefit('int_plus_1')),
+            4: MusterOutRow(cash=10000, benefit=parse_benefit('ship_share'), count=1),
+            5: MusterOutRow(cash=50000, benefit=parse_benefit('armor')),
+            6: MusterOutRow(cash=100000, benefit=parse_benefit('dex_plus_1')),
+            7: MusterOutRow(cash=100000, benefit=parse_benefit('ship_share'), count=2),
+        }
+    ),
+    mishaps={
+        1: MishapEntry(
+            text='Severely injured.',
+            effects=[InjuryEffect(severity='severe')],
+        ),
+        2: MishapEntry(
+            text='Arrested. You must take the Prisoner career in your next term.',
+            effects=[CareerDispatchEffect(type='rogue_mishap_2')],
+        ),
+        3: MishapEntry(
+            text=(
+                'Betrayed by a friend. One of your Contacts or Allies betrays you, ending your career. '
+                'That Contact or Ally becomes a Rival or Enemy. If you have no Contacts or Allies, you still '
+                'gain a Rival or Enemy. Roll 2D — on a 2, you must take the Prisoner career next term.'
+            ),
+            defer_ejection=True,
+            effects=[CareerDispatchEffect(type='rogue_mishap_3')],
+        ),
+        4: MishapEntry(
+            text='A job goes wrong, forcing you to flee off-planet.',
+            effects=[SkillChoiceEffect(options=['Deception', 'Pilot', 'Athletics', 'Gunner'], level=1)],
+        ),
+        5: MishapEntry(
+            text='A police detective or rival criminal forces you to flee and vows to hunt you down.',
+            effects=[GainEnemyEffect()],
+        ),
+        6: MishapEntry(
+            text='Injured. Roll on the Injury table.',
+            effects=[InjuryEffect(severity='from_table')],
+        ),
+    },
+    events={
+        2: CareerEventEntry(
+            text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
+            effects=[RollMishapEffect(leave=False)],
+        ),
+        3: CareerEventEntry(
+            text='You are arrested and charged.',
+            effects=[CareerDispatchEffect(type='rogue_event_3')],
+        ),
+        4: CareerEventEntry(
+            text='You are involved in the planning of an impressive heist.',
+            effects=[SkillChoiceEffect(options=['Electronics', 'Mechanic'], level=1)],
+        ),
+        5: CareerEventEntry(
+            text='One of your crimes pays off.',
+            effects=[BenefitDmEffect(amount=2), GainEnemyEffect()],
+        ),
+        6: CareerEventEntry(
+            text='You have the opportunity to backstab a fellow rogue for personal gain.',
+            effects=[CareerDispatchEffect(type='rogue_event_6')],
+        ),
+        7: CareerEventEntry(
+            text='Life Event.',
+            effects=[LifeEventEffect()],
+        ),
+        8: CareerEventEntry(
+            text='You spend months in the dangerous criminal underworld.',
+            effects=[SkillChoiceEffect(options=['Streetwise', 'Stealth', 'Melee', 'Gun Combat'], level=1)],
+        ),
+        9: CareerEventEntry(
+            text='You become involved in a feud with a rival criminal organisation.',
+            effects=[CareerDispatchEffect(type='rogue_event_9')],
+        ),
+        10: CareerEventEntry(
+            text='You are involved in a gambling ring. Gain Gambler 1.',
+            effects=[GainSkillEffect(skill=Gambler(level=Level(value=1)))],
+        ),
+        11: CareerEventEntry(
+            text='A crime lord considers you his protege.',
+            effects=[SkillChoiceEffect(options=['Tactics', 'advancement_dm_4'], level=1)],
+        ),
+        12: CareerEventEntry(
+            text='You commit a legendary crime. You are automatically promoted.',
+            effects=[AutoAdvanceEffect()],
+        ),
+    },
+)
 
 
 # ── mishap 2: arrested ────────────────────────────────────────────────────────

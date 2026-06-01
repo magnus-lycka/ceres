@@ -1,11 +1,15 @@
 from ceres.character.characteristics import Chars
 from ceres.character.events import PendingPreCareerSkillChoice, PreCareerEntryEvent, PreCareerGraduationEvent
 from ceres.character.precareers.precareer_data import PreCareerData
-from ceres.character.skills import skill_from_str
 from ceres.character.state import (
     CharacterProjection,
     ScheduledEffect,
 )
+
+
+def _skill_names_from_table(table) -> list[str]:
+    """Return the skill names for all non-characteristic, non-list entries in a SkillTable."""
+    return [type(e).name() for e in table.entries if not isinstance(e, (Chars, list))]
 
 
 class MerchantAcademyPreCareer(PreCareerData):
@@ -19,14 +23,14 @@ class MerchantAcademyPreCareer(PreCareerData):
 
         merchant = load_careers().get('Merchant')
         if merchant and self.curriculum_table:
-            table = merchant.skill_tables.get(self.curriculum_table)
+            table = merchant.skill_table(self.curriculum_table)
             if table:
-                for entry in table.entries.values():
-                    if entry.skill:
-                        projection.grant_skill(skill_from_str(entry.skill, 0))
-            service_table = merchant.skill_tables.get('service_skills')
+                for entry in table.entries:
+                    if not isinstance(entry, (Chars, list)):
+                        projection.grant_skill(entry)
+            service_table = merchant.skill_table('service_skills')
             if service_table:
-                service_skills = [e.skill for e in service_table.entries.values() if e.skill]
+                service_skills = _skill_names_from_table(service_table)
                 projection.pending_inputs.append(
                     PendingPreCareerSkillChoice(
                         id=f'{event.id}.{pending_idx}',
@@ -50,9 +54,9 @@ class MerchantAcademyPreCareer(PreCareerData):
         merchant = load_careers().get('Merchant')
         skill_pool: list[str] = []
         if merchant and self.curriculum_table:
-            table = merchant.skill_tables.get(self.curriculum_table)
+            table = merchant.skill_table(self.curriculum_table)
             if table:
-                skill_pool = [e.skill for e in table.entries.values() if e.skill]
+                skill_pool = _skill_names_from_table(table)
         if skill_pool:
             projection.pending_inputs.append(
                 PendingPreCareerSkillChoice(

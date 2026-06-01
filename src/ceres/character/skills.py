@@ -529,6 +529,14 @@ def skill_names_for_category(category: str) -> list[str] | None:
     return [cls.name() for cls in _skill_classes(group)]
 
 
+def skill_category_instances(category: str) -> list[Skill]:
+    """Return one default instance (level 0) per skill in a broad category (e.g. 'Profession')."""
+    group = _BROAD_SKILL_GROUPS.get(category)
+    if group is None:
+        raise ValueError(f'Unknown skill category: {category!r}')
+    return [cls() for cls in _skill_classes(group)]
+
+
 def skill_spec_option_names(skill_name: str) -> list[str]:
     """Return one option label per specialisation for specialised skills, or [skill_name] for unspecialised."""
     cls = skill_class_by_name(skill_name)

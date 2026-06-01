@@ -1,6 +1,7 @@
+from dataclasses import dataclass
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from ceres.character.benefits import AnyBenefit
 from ceres.character.characteristics import Chars, ConnectionKind, characteristic_dm
@@ -11,8 +12,27 @@ from ceres.character.events import (
     PendingSkillTable,
     PendingSurvive,
 )
-from ceres.character.skills import _level_fields
+from ceres.character.skills import AnySkill, Level, Skill, _level_fields, skill_names_for_category
 from ceres.character.state import CareerTerm
+
+type SkillTableEntry = AnySkill | Chars | list[Skill]
+
+
+@dataclass
+class SkillTable:
+    entries: list[SkillTableEntry]  # length 6, index 0 = die roll 1
+    min_edu: int | None = None
+
+
+@dataclass
+class CareerSkillTables:
+    personal_development: SkillTable
+    service_skills: SkillTable
+    assignment1: SkillTable
+    assignment2: SkillTable
+    assignment3: SkillTable
+    advanced_education: SkillTable | None = None
+    officer: SkillTable | None = None
 
 
 class CharCheck(BaseModel):
@@ -20,32 +40,19 @@ class CharCheck(BaseModel):
     target: int
 
 
-class SkillTableEntry(BaseModel):
-    skill: str | None = None
-    spec: str | None = None  # specific specialisation to grant (e.g. 'Computers' for Electronics)
-    characteristic: Chars | None = None  # for +1 characteristic entries
-    level: int = 1
-    choices: list[str] | None = None  # if multiple skill options (e.g. "Drive or Flyer")
-
-
-class SkillTable(BaseModel):
-    min_edu: int | None = None
-    entries: dict[int, SkillTableEntry]
-
-
 class RankBonus(BaseModel):
-    skill: str | None = None
+    skill: AnySkill | None = None
     characteristic: Chars | None = None
     level: int = 1
     choices: list[str] | None = None  # if player picks which broad skill to gain
 
-    def resolve_choices(self) -> list[str] | None:
-        from ceres.character.skills import skill_names_for_category
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
+    def resolve_choices(self) -> list[str] | None:
         if self.choices:
             return self.choices
         if self.skill:
-            return skill_names_for_category(self.skill)
+            return skill_names_for_category(type(self.skill).name())
         return None
 
 
@@ -57,8 +64,9 @@ class RankEntry(BaseModel):
 
 class GainSkillEffect(BaseModel):
     type: Literal['gain_skill'] = 'gain_skill'
-    skill: str
-    level: int = 1
+    skill: AnySkill
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class DecreaseCharacteristicEffect(BaseModel):
@@ -196,12 +204,14 @@ class BasicTrainingPlan(BaseModel):
 
 
 class CareerData(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     name: str
     description: str
     source: str
     qualification: CharCheck
     assignments: list[AssignmentData]
-    skill_tables: dict[str, SkillTable]  # keyed by table name, e.g. 'service_skills' or assignment name
+    skill_tables: CareerSkillTables
     ranks: dict[int, RankEntry]  # default rank table (used when no per-assignment override)
     ranks_by_assignment: dict[str, dict[int, RankEntry]] = {}  # assignment name → rank table override
     commission: CharCheck | None = None
@@ -217,7 +227,19 @@ class CareerData(BaseModel):
         return next((a for a in self.assignments if a.name == name), None)
 
     def skill_table(self, name: str) -> SkillTable | None:
-        return self.skill_tables.get(name)
+        match name:
+            case 'personal_development':
+                return self.skill_tables.personal_development
+            case 'service_skills':
+                return self.skill_tables.service_skills
+            case 'advanced_education':
+                return self.skill_tables.advanced_education
+            case 'officer':
+                return self.skill_tables.officer
+        for i, a in enumerate(self.assignments, 1):
+            if a.name.lower() == name.lower():
+                return getattr(self.skill_tables, f'assignment{i}')
+        return None
 
     def assignment_ranks(self, assignment_name: str) -> dict[int, RankEntry]:
         return self.ranks_by_assignment.get(assignment_name, self.ranks)
@@ -368,14 +390,12 @@ class CareerData(BaseModel):
         return 'service_skills'
 
     def _apply_fixed_rank_bonus(self, projection, rank: int) -> None:
-        from ceres.character.skills import Level, skill_class_by_name
-
         rank_entry = self.current_ranks(projection).get(rank)
         if not rank_entry or not rank_entry.bonus:
             return
         bonus = rank_entry.bonus
         if bonus.skill:
-            skill_cls = skill_class_by_name(bonus.skill)
+            skill_cls = type(bonus.skill)
             fields = _level_fields(skill_cls)
             existing = next((s for s in projection.summary.skills if type(s) is skill_cls), None)
             if existing is None:
@@ -406,10 +426,12 @@ class CareerData(BaseModel):
         event_id: int,
     ) -> None:
 
-        table = self.skill_tables[table_name]
+        table = self.skill_table(table_name)
+        if table is None:
+            raise ValueError(f'Unknown skill table: {table_name!r}')
         if grant_all:
             choice_idx = 0
-            for entry in table.entries.values():
+            for entry in table.entries:
                 choices = self._training_pending_choices(projection, entry)
                 if len(choices) > 1:
                     projection.pending_inputs.append(
@@ -427,7 +449,7 @@ class CareerData(BaseModel):
             return
 
         choices = []
-        for entry in table.entries.values():
+        for entry in table.entries:
             choices.extend(self._training_selectable_skills(projection, entry))
         if choices:
             projection.pending_inputs.append(
@@ -441,37 +463,47 @@ class CareerData(BaseModel):
             projection.pending_inputs.append(self.survival_pending(assignment, event_id))
 
     def _apply_initial_training_entry(self, projection, entry: SkillTableEntry) -> None:
-        from ceres.character.skills import skill_class_by_name
-
-        if entry.choices:
-            choices = entry.choices
-        elif entry.skill:
-            choices = [entry.skill]
+        if isinstance(entry, Chars):
+            return  # characteristic boosts are not granted during basic training
+        if isinstance(entry, list):
+            # Choice entry: add all unknown skills at level 0
+            for skill in entry:
+                skill_cls = type(skill)
+                if projection.summary.skill_level(skill_cls) is None:
+                    projection.summary.skills.append(skill_cls())
         else:
-            choices = []
-        for skill in choices:
-            if projection.summary.skill_level(skill) is None:
-                projection.summary.skills.append(skill_class_by_name(skill)())
+            # Single AnySkill entry
+            skill_cls = type(entry)
+            if projection.summary.skill_level(skill_cls) is None:
+                projection.summary.skills.append(skill_cls())
 
     def _training_pending_choices(self, projection, entry: SkillTableEntry) -> list[str]:
-        from ceres.character.skills import skill_names_for_category
-
-        if entry.spec is not None:
+        if isinstance(entry, Chars):
             return []
-        choices = entry.choices
-        if choices is None and entry.skill is not None:
-            choices = skill_names_for_category(entry.skill)
-        return [skill for skill in choices or [] if projection.summary.skill_level(skill) is None]
+        if isinstance(entry, list):
+            return [type(s).name() for s in entry if projection.summary.skill_level(type(s)) is None]
+        # AnySkill instance
+        skill_cls = type(entry)
+        fields = _level_fields(skill_cls)
+        # Check if a specific specialisation is pre-selected (non-zero level field)
+        spec_field = next((f for f in fields if getattr(entry, f).value > 0), None)
+        if spec_field is not None:
+            return []  # pre-selected spec, no choice
+        if len(fields) > 1:
+            specs = skill_names_for_category(skill_cls.name())
+            if specs:
+                return [s for s in specs if projection.summary.skill_level(skill_cls) is None]
+        name = skill_cls.name()
+        return [name] if projection.summary.skill_level(skill_cls) is None else []
 
     def _training_selectable_skills(self, projection, entry: SkillTableEntry) -> list[str]:
-        from ceres.character.skills import skill_names_for_category
-
-        choices = entry.choices
-        if choices is None and entry.skill is not None:
-            choices = skill_names_for_category(entry.skill)
-        if choices is None and entry.skill is not None:
-            choices = [entry.skill]
-        return [skill for skill in choices or [] if projection.summary.skill_level(skill) is None]
+        if isinstance(entry, Chars):
+            return []
+        if isinstance(entry, list):
+            return [type(s).name() for s in entry if projection.summary.skill_level(type(s)) is None]
+        skill_cls = type(entry)
+        name = skill_cls.name()
+        return [name] if projection.summary.skill_level(skill_cls) is None else []
 
     def _queue_skill_table_before_survival(self, projection, assignment: AssignmentData, event_id: int) -> None:
 
@@ -488,18 +520,14 @@ class CareerData(BaseModel):
         return PendingSurvive(id=f'{event_id}.{pending_idx}', instruction=f'Survive: {char} {target}+')
 
     def available_tables(self, edu: int, current_assignment: str) -> list[str]:
-        """Return skill table names available to this character.
-
-        Excludes tables that belong to a different assignment, and tables whose min_edu
-        the character does not meet.
-        """
-        assignment_names_lower = {a.name.lower() for a in self.assignments}
-        current_lower = current_assignment.lower()
-        result = []
-        for name, table in self.skill_tables.items():
-            if name in assignment_names_lower and name != current_lower:
-                continue
-            if table.min_edu is not None and edu < table.min_edu:
-                continue
-            result.append(name)
+        result = ['personal_development', 'service_skills']
+        adv_edu = self.skill_tables.advanced_education
+        if adv_edu is not None and edu >= (adv_edu.min_edu or 0):
+            result.append('advanced_education')
+        if self.skill_tables.officer is not None:
+            result.append('officer')
+        for a in self.assignments:
+            if a.name.lower() == current_assignment.lower():
+                result.append(a.name.lower())
+                break
         return sorted(result)

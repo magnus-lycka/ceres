@@ -1,5 +1,29 @@
-from ceres.character.careers.career_data import CareerData, CareerDispatchEffect
+from ceres.character.benefits import parse_benefit
+from ceres.character.careers.career_data import (
+    AdvancementDmEffect,
+    AssignmentData,
+    AutoAdvanceEffect,
+    CareerData,
+    CareerDispatchEffect,
+    CareerEventEntry,
+    CareerSkillTables,
+    CharCheck,
+    DecreaseCharacteristicEffect,
+    GainEnemyEffect,
+    GainRivalEffect,
+    InjuryEffect,
+    LifeEventEffect,
+    MishapEntry,
+    MusterOutData,
+    MusterOutRow,
+    RankBonus,
+    RankEntry,
+    RollMishapEffect,
+    SkillChoiceEffect,
+    SkillTable,
+)
 from ceres.character.careers.common import handle_advanced_training, resolve_advanced_training
+from ceres.character.characteristics import Chars
 from ceres.character.events import (
     PendingCareerEvent,
     PendingCareerMishap,
@@ -8,6 +32,32 @@ from ceres.character.events import (
     SkillRollEvent,
     career_progress_pending,
 )
+from ceres.character.skills import (
+    Admin,
+    Advocate,
+    Athletics,
+    Diplomat,
+    Drive,
+    Electronics,
+    Engineer,
+    Explosives,
+    Flyer,
+    Gambler,
+    GunCombat,
+    HeavyWeapons,
+    Leadership,
+    Level,
+    Mechanic,
+    Medic,
+    Melee,
+    Navigation,
+    Pilot,
+    Recon,
+    Stealth,
+    Survival,
+    Tactics,
+    VaccSuit,
+)
 from ceres.character.state import (
     Ally,
     CharacterProjection,
@@ -15,6 +65,218 @@ from ceres.character.state import (
     Enemy,
     ScheduledEffect,
 )
+
+CAREER_DATA = CareerData(
+    name='Marines',
+    description=(
+        'Members of the armed fighting forces carried aboard starships, marines deal with piracy and boarding actions '
+        'in space, defend the starports and bases belonging to the navy and supplement ground forces such as the army.'
+    ),
+    source='Core',
+    allows_assignment_change=True,
+    qualification=CharCheck(characteristic=Chars.END, target=6),
+    commission=CharCheck(characteristic=Chars.SOC, target=8),
+    assignments=[
+        AssignmentData(
+            name='Support',
+            description='You are a quartermaster, engineer or battlefield medic in the marines.',
+            survival=CharCheck(characteristic=Chars.END, target=5),
+            advancement=CharCheck(characteristic=Chars.EDU, target=7),
+        ),
+        AssignmentData(
+            name='Star Marine',
+            description='You are trained to fight boarding actions and capture enemy vessels.',
+            survival=CharCheck(characteristic=Chars.END, target=6),
+            advancement=CharCheck(characteristic=Chars.EDU, target=6),
+        ),
+        AssignmentData(
+            name='Ground Assault',
+            description="You are kicked out of a spacecraft in high orbit and told to 'capture that planet'.",
+            survival=CharCheck(characteristic=Chars.END, target=7),
+            advancement=CharCheck(characteristic=Chars.EDU, target=5),
+        ),
+    ],
+    skill_tables=CareerSkillTables(
+        personal_development=SkillTable(
+            [
+                Chars.STR,
+                Chars.DEX,
+                Chars.END,
+                Gambler(),
+                Melee(unarmed=Level(value=1)),
+                Melee(blade=Level(value=1)),
+            ]
+        ),
+        service_skills=SkillTable(
+            [
+                Athletics(),
+                VaccSuit(),
+                Tactics(),
+                HeavyWeapons(),
+                GunCombat(),
+                Stealth(),
+            ]
+        ),
+        advanced_education=SkillTable(
+            [
+                Medic(),
+                Survival(),
+                Explosives(),
+                Engineer(),
+                Pilot(),
+                Navigation(),
+            ],
+            min_edu=8,
+        ),
+        officer=SkillTable(
+            [
+                Electronics(),
+                Tactics(),
+                Admin(),
+                Advocate(),
+                Diplomat(),
+                Leadership(),
+            ]
+        ),
+        assignment1=SkillTable(
+            [  # Support
+                Electronics(),
+                Mechanic(),
+                [Drive(), Flyer()],
+                Medic(),
+                HeavyWeapons(),
+                GunCombat(),
+            ]
+        ),
+        assignment2=SkillTable(
+            [  # Star Marine
+                VaccSuit(),
+                Athletics(),
+                Recon(),
+                Melee(blade=Level(value=1)),
+                Electronics(),
+                GunCombat(),
+            ]
+        ),
+        assignment3=SkillTable(
+            [  # Ground Assault
+                VaccSuit(),
+                HeavyWeapons(),
+                Recon(),
+                Melee(blade=Level(value=1)),
+                Tactics(military=Level(value=1)),
+                GunCombat(),
+            ]
+        ),
+    ),
+    ranks={
+        0: RankEntry(rank=0, title='Marine'),
+        1: RankEntry(rank=1, title='Lance Corporal', bonus=RankBonus(skill=GunCombat(), level=1)),
+        2: RankEntry(rank=2, title='Corporal'),
+        3: RankEntry(rank=3, title='Lance Sergeant', bonus=RankBonus(skill=Leadership(), level=1)),
+        4: RankEntry(rank=4, title='Sergeant'),
+        5: RankEntry(rank=5, title='Gunnery Sergeant', bonus=RankBonus(characteristic=Chars.END, level=1)),
+        6: RankEntry(rank=6, title='Sergeant Major'),
+    },
+    officer_ranks={
+        1: RankEntry(rank=1, title='Lieutenant', bonus=RankBonus(skill=Leadership(), level=1)),
+        2: RankEntry(rank=2, title='Captain'),
+        3: RankEntry(rank=3, title='Force Commander', bonus=RankBonus(skill=Tactics(), level=1)),
+        4: RankEntry(rank=4, title='Lieutenant Colonel'),
+        5: RankEntry(rank=5, title='Colonel', bonus=RankBonus(characteristic=Chars.SOC, level=1)),
+        6: RankEntry(rank=6, title='Brigadier'),
+    },
+    muster_out=MusterOutData(
+        rows={
+            1: MusterOutRow(cash=2000, benefit=parse_benefit('armor')),
+            2: MusterOutRow(cash=5000, benefit=parse_benefit('int_plus_1')),
+            3: MusterOutRow(cash=5000, benefit=parse_benefit('edu_plus_1')),
+            4: MusterOutRow(cash=10000, benefit=parse_benefit('weapon')),
+            5: MusterOutRow(cash=20000, benefit=parse_benefit('tas_membership')),
+            6: MusterOutRow(cash=30000, benefit=parse_benefit(['armor', 'end_plus_1'])),
+            7: MusterOutRow(cash=40000, benefit=parse_benefit('soc_plus_2')),
+        }
+    ),
+    mishaps={
+        1: MishapEntry(
+            text='Severely injured.',
+            effects=[InjuryEffect(severity='severe')],
+        ),
+        2: MishapEntry(
+            text='Captured and mistreated by the enemy. Gain your jailer as an Enemy and reduce STR and DEX by one.',
+            effects=[
+                GainEnemyEffect(),
+                DecreaseCharacteristicEffect(characteristic=Chars.STR, amount=1),
+                DecreaseCharacteristicEffect(characteristic=Chars.DEX, amount=1),
+            ],
+        ),
+        3: MishapEntry(
+            text='Stranded behind enemy lines. Increase Stealth or Survival but you are ejected.',
+            effects=[SkillChoiceEffect(options=['Stealth', 'Survival'], level=1)],
+        ),
+        4: MishapEntry(
+            text='Ordered to take part in a black ops mission that goes against your conscience.',
+            defer_ejection=True,
+            effects=[CareerDispatchEffect(type='marines_mishap_4')],
+        ),
+        5: MishapEntry(
+            text='You quarrel with an officer or fellow marine. Gain a Rival.',
+            effects=[GainRivalEffect()],
+        ),
+        6: MishapEntry(
+            text='Injured. Roll on the Injury table.',
+            effects=[InjuryEffect(severity='from_table')],
+        ),
+    },
+    events={
+        2: CareerEventEntry(
+            text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
+            effects=[RollMishapEffect(leave=False)],
+        ),
+        3: CareerEventEntry(
+            text='Trapped behind enemy lines.',
+            effects=[SkillChoiceEffect(options=['Survival', 'Stealth', 'Deception', 'Streetwise'], level=1)],
+        ),
+        4: CareerEventEntry(
+            text='Assigned to the security staff of a space station.',
+            effects=[SkillChoiceEffect(options=['Vacc Suit', 'Athletics'], level=1)],
+        ),
+        5: CareerEventEntry(
+            text='Advanced training in a specialist field.',
+            effects=[CareerDispatchEffect(type='marines_event_5')],
+        ),
+        6: CareerEventEntry(
+            text='Assault on an enemy fortress.',
+            effects=[CareerDispatchEffect(type='marines_event_6')],
+        ),
+        7: CareerEventEntry(
+            text='Life Event.',
+            effects=[LifeEventEffect()],
+        ),
+        8: CareerEventEntry(
+            text='Front lines of a planetary assault and occupation.',
+            effects=[SkillChoiceEffect(options=['Recon', 'Gun Combat', 'Leadership', 'Electronics'], level=1)],
+        ),
+        9: CareerEventEntry(
+            text="A mission goes disastrously wrong due to your commander's error.",
+            effects=[CareerDispatchEffect(type='marines_event_9')],
+        ),
+        10: CareerEventEntry(
+            text='Assigned to a black ops mission.',
+            effects=[AdvancementDmEffect(amount=2)],
+        ),
+        11: CareerEventEntry(
+            text='Your commanding officer takes an interest in your career.',
+            effects=[SkillChoiceEffect(options=['Tactics', 'advancement_dm_4'], level=1)],
+        ),
+        12: CareerEventEntry(
+            text='You display heroism in battle. You may gain a promotion or a commission automatically.',
+            effects=[AutoAdvanceEffect()],
+        ),
+    },
+    draft_assignments=['Support', 'Star Marine', 'Ground Assault'],
+)
+
 
 # ── mishap 4: black ops mission ───────────────────────────────────────────────
 

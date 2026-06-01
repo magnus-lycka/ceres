@@ -1,4 +1,27 @@
-from ceres.character.careers.career_data import CareerDispatchEffect
+from ceres.character.benefits import parse_benefit
+from ceres.character.careers.career_data import (
+    AdvancementDmEffect,
+    AssignmentData,
+    AutoAdvanceEffect,
+    BenefitDmEffect,
+    CareerData,
+    CareerDispatchEffect,
+    CareerEventEntry,
+    CareerSkillTables,
+    CharCheck,
+    GainAllyEffect,
+    GainRivalEffect,
+    InjuryEffect,
+    LifeEventEffect,
+    MishapEntry,
+    MusterOutData,
+    MusterOutRow,
+    RankBonus,
+    RankEntry,
+    RollMishapEffect,
+    SkillChoiceEffect,
+    SkillTable,
+)
 from ceres.character.characteristics import Chars
 from ceres.character.events import (
     PendingCareerEvent,
@@ -9,13 +32,253 @@ from ceres.character.events import (
     SkillRollEvent,
     muster_out_setup,
 )
-from ceres.character.skills import ScienceSkill, skill_list, skill_names_for_category
+from ceres.character.skills import (
+    Admin,
+    Advocate,
+    Diplomat,
+    Drive,
+    Electronics,
+    Engineer,
+    Flyer,
+    Investigate,
+    Medic,
+    Navigation,
+    Persuade,
+    ScienceSkill,
+    Survival,
+    VaccSuit,
+    skill_category_instances,
+    skill_list,
+    skill_names_for_category,
+)
 from ceres.character.state import (
     CharacterProjection,
     Enemy,
 )
 
 _SCIENCES = sorted(s.type for s in skill_list(ScienceSkill))
+
+CAREER_DATA = CareerData(
+    name='Scholar',
+    description=(
+        'Individuals trained in technological or research sciences who conduct scientific investigations into '
+        'materials, situations and phenomena, or who practise medicine.'
+    ),
+    source='Core',
+    allows_assignment_change=True,
+    qualification=CharCheck(characteristic=Chars.INT, target=6),
+    assignments=[
+        AssignmentData(
+            name='Field Researcher',
+            description='You are an explorer or field researcher, equally at home in the laboratory or wilderness.',
+            survival=CharCheck(characteristic=Chars.END, target=6),
+            advancement=CharCheck(characteristic=Chars.INT, target=6),
+        ),
+        AssignmentData(
+            name='Scientist',
+            description=(
+                'You are a researcher in some corporation or research institution or a mad scientist in an '
+                'orbiting laboratory.'
+            ),
+            survival=CharCheck(characteristic=Chars.EDU, target=4),
+            advancement=CharCheck(characteristic=Chars.INT, target=8),
+        ),
+        AssignmentData(
+            name='Physician',
+            description='You are a doctor, healer or medical researcher.',
+            survival=CharCheck(characteristic=Chars.EDU, target=4),
+            advancement=CharCheck(characteristic=Chars.EDU, target=8),
+        ),
+    ],
+    skill_tables=CareerSkillTables(
+        personal_development=SkillTable(
+            [
+                Chars.INT,
+                Chars.EDU,
+                Chars.SOC,
+                Chars.DEX,
+                Chars.END,
+                skill_category_instances('Language'),
+            ]
+        ),
+        service_skills=SkillTable(
+            [
+                [Drive(), Flyer()],
+                Electronics(),
+                Diplomat(),
+                Medic(),
+                Investigate(),
+                skill_category_instances('Science'),
+            ]
+        ),
+        advanced_education=SkillTable(
+            [
+                skill_category_instances('Art'),
+                Advocate(),
+                Electronics(),
+                skill_category_instances('Language'),
+                Engineer(),
+                skill_category_instances('Science'),
+            ],
+            min_edu=10,
+        ),
+        assignment1=SkillTable(
+            [  # Field Researcher
+                Electronics(),
+                VaccSuit(),
+                Navigation(),
+                Survival(),
+                Investigate(),
+                skill_category_instances('Science'),
+            ]
+        ),
+        assignment2=SkillTable(
+            [  # Scientist
+                Admin(),
+                Engineer(),
+                skill_category_instances('Science'),
+                skill_category_instances('Science'),
+                Electronics(),
+                skill_category_instances('Science'),
+            ]
+        ),
+        assignment3=SkillTable(
+            [  # Physician
+                Medic(),
+                Electronics(),
+                Investigate(),
+                Medic(),
+                Persuade(),
+                skill_category_instances('Science'),
+            ]
+        ),
+    ),
+    ranks={
+        0: RankEntry(rank=0),
+        1: RankEntry(rank=1, bonus=RankBonus(choices=skill_names_for_category('Science'), level=1)),
+        2: RankEntry(rank=2, bonus=RankBonus(skill=Electronics(), level=1)),
+        3: RankEntry(rank=3, bonus=RankBonus(skill=Investigate(), level=1)),
+        4: RankEntry(rank=4),
+        5: RankEntry(rank=5, bonus=RankBonus(choices=skill_names_for_category('Science'), level=2)),
+        6: RankEntry(rank=6),
+    },
+    ranks_by_assignment={
+        'Physician': {
+            0: RankEntry(rank=0),
+            1: RankEntry(rank=1, bonus=RankBonus(skill=Medic(), level=1)),
+            2: RankEntry(rank=2),
+            3: RankEntry(rank=3, bonus=RankBonus(choices=skill_names_for_category('Science'), level=1)),
+            4: RankEntry(rank=4),
+            5: RankEntry(rank=5, bonus=RankBonus(choices=skill_names_for_category('Science'), level=2)),
+            6: RankEntry(rank=6),
+        },
+    },
+    muster_out=MusterOutData(
+        rows={
+            1: MusterOutRow(cash=5000, benefit=parse_benefit('int_plus_1')),
+            2: MusterOutRow(cash=10000, benefit=parse_benefit('edu_plus_1')),
+            3: MusterOutRow(cash=20000, benefit=parse_benefit('ship_share'), count=2),
+            4: MusterOutRow(cash=30000, benefit=parse_benefit('soc_plus_1')),
+            5: MusterOutRow(cash=40000, benefit=parse_benefit('scientific_equipment')),
+            6: MusterOutRow(cash=60000, benefit=parse_benefit('lab_ship')),
+            7: MusterOutRow(cash=100000, benefit=parse_benefit('lab_ship')),
+        }
+    ),
+    mishaps={
+        1: MishapEntry(
+            text='Severely injured.',
+            effects=[InjuryEffect(severity='severe')],
+        ),
+        2: MishapEntry(
+            text='A disaster leaves several injured and others blame you, forcing you to leave your career. Gain a Rival.',
+            effects=[InjuryEffect(severity='from_table'), GainRivalEffect()],
+        ),
+        3: MishapEntry(
+            text='The planetary government interferes with your research for political or religious reasons.',
+            stay_in_career=True,
+            effects=[CareerDispatchEffect(type='scholar_mishap_3_choice')],
+        ),
+        4: MishapEntry(
+            text='An expedition or voyage goes wrong, leaving you stranded in the wilderness.',
+            effects=[SkillChoiceEffect(options=['Survival', 'Athletics'], level=1)],
+        ),
+        5: MishapEntry(
+            text='Your work is sabotaged by unknown parties.',
+            stay_in_career=True,
+            effects=[CareerDispatchEffect(type='scholar_mishap_5_choice')],
+        ),
+        6: MishapEntry(
+            text=(
+                'A rival researcher blackens your name or steals your research. Gain a Rival but you do not have to '
+                'leave this career.'
+            ),
+            stay_in_career=True,
+            effects=[GainRivalEffect()],
+        ),
+    },
+    events={
+        2: CareerEventEntry(
+            text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
+            effects=[RollMishapEffect(leave=False)],
+        ),
+        3: CareerEventEntry(
+            text='You are called upon to perform research that goes against your conscience.',
+            effects=[CareerDispatchEffect(type='scholar_event_3')],
+        ),
+        4: CareerEventEntry(
+            text='You are assigned to work on a secret project for a patron or organisation.',
+            effects=[
+                SkillChoiceEffect(
+                    options=[
+                        'Medic',
+                        'Life Science',
+                        'Physical Science',
+                        'Robotic Science',
+                        'Social Science',
+                        'Space Science',
+                        'Engineer',
+                        'Electronics',
+                        'Investigate',
+                    ],
+                    level=1,
+                )
+            ],
+        ),
+        5: CareerEventEntry(
+            text='You win a prestigious prize for your work.',
+            effects=[BenefitDmEffect(amount=1)],
+        ),
+        6: CareerEventEntry(
+            text='You are given advanced training in a specialist field.',
+            effects=[CareerDispatchEffect(type='scholar_event_6')],
+        ),
+        7: CareerEventEntry(
+            text='Life Event.',
+            effects=[LifeEventEffect()],
+        ),
+        8: CareerEventEntry(
+            text='You have the opportunity to cheat in some fashion.',
+            effects=[CareerDispatchEffect(type='scholar_event_8')],
+        ),
+        9: CareerEventEntry(
+            text='You make a breakthrough in your field.',
+            effects=[AdvancementDmEffect(amount=2)],
+        ),
+        10: CareerEventEntry(
+            text='You become entangled in a bureaucratic or legal morass.',
+            effects=[SkillChoiceEffect(options=['Admin', 'Advocate', 'Persuade', 'Diplomat'], level=1)],
+        ),
+        11: CareerEventEntry(
+            text='You work for an eccentric but brilliant mentor, who becomes an Ally.',
+            effects=[GainAllyEffect(), CareerDispatchEffect(type='scholar_event_11')],
+        ),
+        12: CareerEventEntry(
+            text='Your work leads to a considerable breakthrough. You are automatically promoted.',
+            effects=[AutoAdvanceEffect()],
+        ),
+    },
+)
+
 
 # ── event 3: research against conscience ─────────────────────────────────────
 
@@ -275,6 +538,8 @@ def _choice_scholar_mishap_5(projection: CharacterProjection, event) -> None:
 
 
 # ── handler registries ───────────────────────────────────────────────────────
+
+CAREER_DATA_CLASS = CareerData
 
 EFFECT_HANDLERS: dict[str, object] = {
     'scholar_event_3': _handle_scholar_event_3,

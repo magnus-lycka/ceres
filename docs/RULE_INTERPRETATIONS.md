@@ -727,3 +727,32 @@ Every locomotion type that can carry VSM must declare `_vehicle_speed_band` matc
 **Agility Enhancement with VSM.** The rules place no restriction on combining Agility Enhancement with VSM. A robot with VSM can still move at its normal tactical speed (to conserve endurance, for instance), and Agility Enhancement increases that tactical speed as normal. The enhancement also grants `Athletics (dexterity) N` unconditionally and raises the robot's effective agility used in other calculations (e.g. the vehicle skill level from a `Basic (locomotion)` brain, see RIR-008). What Agility Enhancement does *not* do is change the vehicle speed band — that is fixed by locomotion type.
 
 Ceres reflects this correctly: `AgilityEnhancement.speed_bonus` contributes to the tactical portion of `speed_label` regardless of VSM (see RIR-009), and the Athletics skill grant is always emitted.
+
+### RIR-011 Robot Skill Package Characteristics May Follow Speciality Task
+
+The *Robot Handbook* Standard Skill Packages table assigns one characteristic to
+each skill row regardless of specialisation. Ceres uses that row characteristic as
+the default, but allows a speciality to use a different characteristic when the
+speciality's task clearly differs from the broad row's physical handling assumption.
+
+Current robot skill package characteristic interpretations:
+
+| Skill package | Table row | Ceres characteristic | Reason |
+| --- | --- | --- | --- |
+| Animals (handling) | DEX | DEX | physical handling/riding animals |
+| Animals (training) | DEX | INT | instruction and behavioural judgement |
+| Animals (veterinary) | DEX | INT | robot equivalent of EDU-based diagnosis/treatment |
+| Gunner (turret) | DEX | DEX | direct weapon operation |
+| Gunner (screen) | DEX | DEX | direct defensive system operation |
+| Gunner (ortillery) | DEX | INT | indirect orbital fire-control work |
+| Gunner (capital) | DEX | INT | large-ship weapon system coordination |
+| Pilot (small craft) | DEX | DEX | direct piloting |
+| Pilot (spacecraft) | DEX | DEX | direct piloting |
+| Pilot (capital ships) | DEX | INT | large-ship command/system piloting rather than manual dexterity |
+| Seafarer (personal) | DEX | DEX | direct craft handling |
+| Seafarer (sail) | DEX | DEX | direct craft handling |
+| Seafarer (ocean ships) | DEX | INT | vessel systems/navigation command rather than manual dexterity |
+| Seafarer (submarine) | DEX | INT | vessel systems/navigation command rather than manual dexterity |
+
+Robot brains do not model EDU for ordinary skill package DMs, so specialities
+that would be EDU-based for sophonts are treated as INT-based robot tasks.

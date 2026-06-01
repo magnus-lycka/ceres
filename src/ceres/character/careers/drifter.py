@@ -1,4 +1,27 @@
-from ceres.character.careers.career_data import CareerData, CareerDispatchEffect
+from ceres.character.benefits import parse_benefit
+from ceres.character.careers.career_data import (
+    AssignmentData,
+    AutoAdvanceEffect,
+    BenefitDmEffect,
+    CareerData,
+    CareerDispatchEffect,
+    CareerEventEntry,
+    CareerSkillTables,
+    CharCheck,
+    DecreaseCharacteristicEffect,
+    GainEnemyEffect,
+    InjuryEffect,
+    LifeEventEffect,
+    MishapEntry,
+    MusterOutData,
+    MusterOutRow,
+    RankBonus,
+    RankEntry,
+    RollMishapEffect,
+    SkillChoiceEffect,
+    SkillTable,
+)
+from ceres.character.characteristics import Chars
 from ceres.character.events import (
     PendingCareerEvent,
     PendingCareerSkillRoll,
@@ -6,6 +29,27 @@ from ceres.character.events import (
     PendingSkillChoice,
     SkillRollEvent,
     career_progress_pending,
+)
+from ceres.character.skills import (
+    Animals,
+    Astrogation,
+    Athletics,
+    Carouse,
+    Deception,
+    Drive,
+    GunCombat,
+    JackOfAllTrades,
+    Leadership,
+    Mechanic,
+    Melee,
+    Pilot,
+    Recon,
+    Seafarer,
+    Stealth,
+    Streetwise,
+    Survival,
+    VaccSuit,
+    skill_category_instances,
 )
 from ceres.character.state import (
     CharacterProjection,
@@ -18,6 +62,212 @@ from ceres.character.state import (
 class DrifterCareerData(CareerData):
     def _basic_training_table_name(self, assignment) -> str:
         return assignment.name.lower()
+
+
+CAREER_DATA = DrifterCareerData(
+    name='Drifter',
+    description=(
+        'Wanderers, hitchhikers and travellers, drifters are those who roam the stars without obvious '
+        'purpose or direction.'
+    ),
+    source='Core',
+    allows_assignment_change=True,
+    qualification=CharCheck(characteristic=Chars.END, target=0),
+    assignments=[
+        AssignmentData(
+            name='Barbarian',
+            description='You live on a primitive world without the benefits of technology.',
+            survival=CharCheck(characteristic=Chars.END, target=7),
+            advancement=CharCheck(characteristic=Chars.STR, target=7),
+        ),
+        AssignmentData(
+            name='Wanderer',
+            description='You are a space bum, living hand-to-mouth in slums and spaceports across the galaxy.',
+            survival=CharCheck(characteristic=Chars.END, target=7),
+            advancement=CharCheck(characteristic=Chars.INT, target=7),
+        ),
+        AssignmentData(
+            name='Scavenger',
+            description='You work as a belter (asteroid miner) or on a salvage crew.',
+            survival=CharCheck(characteristic=Chars.DEX, target=7),
+            advancement=CharCheck(characteristic=Chars.END, target=7),
+        ),
+    ],
+    skill_tables=CareerSkillTables(
+        personal_development=SkillTable(
+            [
+                Chars.STR,
+                Chars.END,
+                Chars.DEX,
+                skill_category_instances('Language'),
+                skill_category_instances('Profession'),
+                JackOfAllTrades(),
+            ]
+        ),
+        service_skills=SkillTable(
+            [
+                Athletics(),
+                [Melee()],
+                Recon(),
+                Streetwise(),
+                Stealth(),
+                Survival(),
+            ]
+        ),
+        assignment1=SkillTable(
+            [  # Barbarian
+                Animals(),
+                Carouse(),
+                [Melee()],
+                Stealth(),
+                [Seafarer()],
+                Survival(),
+            ]
+        ),
+        assignment2=SkillTable(
+            [  # Wanderer
+                Drive(),
+                Deception(),
+                Recon(),
+                Stealth(),
+                Streetwise(),
+                Survival(),
+            ]
+        ),
+        assignment3=SkillTable(
+            [  # Scavenger
+                [Pilot()],
+                Mechanic(),
+                Astrogation(),
+                VaccSuit(),
+                skill_category_instances('Profession'),
+                GunCombat(),
+            ]
+        ),
+    ),
+    ranks={
+        0: RankEntry(rank=0),
+        1: RankEntry(rank=1),
+        2: RankEntry(rank=2),
+        3: RankEntry(rank=3),
+        4: RankEntry(rank=4),
+        5: RankEntry(rank=5),
+        6: RankEntry(rank=6),
+    },
+    ranks_by_assignment={
+        'Barbarian': {
+            0: RankEntry(rank=0),
+            1: RankEntry(rank=1, bonus=RankBonus(skill=Survival(), level=1)),
+            2: RankEntry(rank=2, title='Warrior', bonus=RankBonus(skill=Melee(), level=1)),
+            3: RankEntry(rank=3),
+            4: RankEntry(rank=4, title='Chieftain', bonus=RankBonus(skill=Leadership(), level=1)),
+            5: RankEntry(rank=5),
+            6: RankEntry(rank=6, title='Warlord'),
+        },
+        'Wanderer': {
+            0: RankEntry(rank=0),
+            1: RankEntry(rank=1, bonus=RankBonus(skill=Streetwise(), level=1)),
+            2: RankEntry(rank=2),
+            3: RankEntry(rank=3, bonus=RankBonus(skill=Deception(), level=1)),
+            4: RankEntry(rank=4),
+            5: RankEntry(rank=5),
+            6: RankEntry(rank=6),
+        },
+        'Scavenger': {
+            0: RankEntry(rank=0),
+            1: RankEntry(rank=1, bonus=RankBonus(skill=VaccSuit(), level=1)),
+            2: RankEntry(rank=2),
+            3: RankEntry(rank=3, bonus=RankBonus(skill=Mechanic(), level=1)),
+            4: RankEntry(rank=4),
+            5: RankEntry(rank=5),
+            6: RankEntry(rank=6),
+        },
+    },
+    muster_out=MusterOutData(
+        rows={
+            1: MusterOutRow(cash=0, benefit=parse_benefit('contact')),
+            2: MusterOutRow(cash=0, benefit=parse_benefit('weapon')),
+            3: MusterOutRow(cash=1000, benefit=parse_benefit('ally')),
+            4: MusterOutRow(cash=2000, benefit=parse_benefit('weapon')),
+            5: MusterOutRow(cash=3000, benefit=parse_benefit('edu_plus_1')),
+            6: MusterOutRow(cash=4000, benefit=parse_benefit('ship_share')),
+            7: MusterOutRow(cash=8000, benefit=parse_benefit('ship_share'), count=2),
+        }
+    ),
+    mishaps={
+        1: MishapEntry(
+            text='Severely injured.',
+            effects=[InjuryEffect(severity='severe')],
+        ),
+        2: MishapEntry(
+            text='Injured. Roll on the Injury table.',
+            effects=[InjuryEffect(severity='from_table')],
+        ),
+        3: MishapEntry(
+            text='You run afoul of a criminal gang, corrupt bureaucrat or other foe. Gain an Enemy.',
+            effects=[GainEnemyEffect()],
+        ),
+        4: MishapEntry(
+            text='You suffer from a life-threatening illness. Reduce your END by 1.',
+            effects=[DecreaseCharacteristicEffect(characteristic=Chars.END, amount=1)],
+        ),
+        5: MishapEntry(
+            text='Betrayed by a friend. Gain a Rival. Roll 2D — on a natural 2, you must take the Prisoner career next term.',
+            defer_ejection=True,
+            effects=[CareerDispatchEffect(type='drifter_mishap_5')],
+        ),
+        6: MishapEntry(
+            text='You do not know what happened to you. There is a gap in your memory.',
+            effects=[],
+        ),
+    },
+    events={
+        2: CareerEventEntry(
+            text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
+            effects=[RollMishapEffect(leave=False)],
+        ),
+        3: CareerEventEntry(
+            text='A patron offers you a chance at a job.',
+            effects=[CareerDispatchEffect(type='drifter_event_3')],
+        ),
+        4: CareerEventEntry(
+            text='You pick up a few useful skills here and there.',
+            effects=[SkillChoiceEffect(options=['Jack-of-All-Trades', 'Survival', 'Streetwise', 'Melee'], level=1)],
+        ),
+        5: CareerEventEntry(
+            text='You manage to scavenge something of use.',
+            effects=[BenefitDmEffect(amount=1)],
+        ),
+        6: CareerEventEntry(
+            text='You encounter something unusual.',
+            effects=[LifeEventEffect()],
+        ),
+        7: CareerEventEntry(
+            text='Life Event.',
+            effects=[LifeEventEffect()],
+        ),
+        8: CareerEventEntry(
+            text='You are attacked by enemies.',
+            effects=[CareerDispatchEffect(type='drifter_event_8')],
+        ),
+        9: CareerEventEntry(
+            text='You are offered a chance to take part in a risky but rewarding adventure.',
+            effects=[CareerDispatchEffect(type='drifter_event_9')],
+        ),
+        10: CareerEventEntry(
+            text='Life on the edge hones your abilities.',
+            effects=[SkillChoiceEffect(options=[], level=1)],
+        ),
+        11: CareerEventEntry(
+            text='You are forcibly drafted.',
+            effects=[CareerDispatchEffect(type='drifter_event_11')],
+        ),
+        12: CareerEventEntry(
+            text='You thrive on adversity. You are automatically promoted.',
+            effects=[AutoAdvanceEffect()],
+        ),
+    },
+)
 
 
 # ── mishap 5: betrayed by a friend ───────────────────────────────────────────

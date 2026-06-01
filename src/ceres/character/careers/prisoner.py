@@ -1,4 +1,24 @@
-from ceres.character.careers.career_data import AssignmentData, CareerData, CareerDispatchEffect
+from ceres.character.benefits import parse_benefit
+from ceres.character.careers.career_data import (
+    AssignmentData,
+    CareerData,
+    CareerDispatchEffect,
+    CareerEventEntry,
+    CareerSkillTables,
+    CharCheck,
+    DecreaseCharacteristicEffect,
+    GainEnemyEffect,
+    InjuryEffect,
+    MishapEntry,
+    MusterOutData,
+    MusterOutRow,
+    ParoleThresholdChangeEffect,
+    RankBonus,
+    RankEntry,
+    RollMishapEffect,
+    SkillChoiceEffect,
+    SkillTable,
+)
 from ceres.character.characteristics import Chars
 from ceres.character.events import (
     PendingCareerEvent,
@@ -11,6 +31,23 @@ from ceres.character.events import (
     SkillRollEvent,
     career_progress_pending,
     muster_out_setup,
+)
+from ceres.character.skills import (
+    Admin,
+    Advocate,
+    Athletics,
+    Broker,
+    Deception,
+    Gambler,
+    Investigate,
+    JackOfAllTrades,
+    Mechanic,
+    Melee,
+    Persuade,
+    Stealth,
+    Streetwise,
+    Survival,
+    skill_category_instances,
 )
 from ceres.character.state import (
     Ally,
@@ -39,6 +76,190 @@ class PrisonerCareerData(CareerData):
                 options=['1', '2', '3', '4', '5', '6'],
             )
         )
+
+
+CAREER_DATA = PrisonerCareerData(
+    name='Prisoner',
+    description=(
+        'Every society has its bad apples and even in the far future punishments usually take place within '
+        'faceless institutions where criminals can be conveniently forgotten.'
+    ),
+    source='Core',
+    selectable=False,
+    allows_assignment_change=True,
+    qualification=CharCheck(characteristic=Chars.END, target=0),
+    assignments=[
+        AssignmentData(
+            name='Inmate',
+            description='You just try to get through your time in prison without getting into trouble.',
+            survival=CharCheck(characteristic=Chars.END, target=7),
+            advancement=CharCheck(characteristic=Chars.STR, target=7),
+        ),
+        AssignmentData(
+            name='Thug',
+            description='You are part of a gang in prison, terrorising the other inmates.',
+            survival=CharCheck(characteristic=Chars.STR, target=8),
+            advancement=CharCheck(characteristic=Chars.END, target=6),
+        ),
+        AssignmentData(
+            name='Fixer',
+            description='You can arrange anything – for the right price.',
+            survival=CharCheck(characteristic=Chars.INT, target=9),
+            advancement=CharCheck(characteristic=Chars.END, target=5),
+        ),
+    ],
+    skill_tables=CareerSkillTables(
+        personal_development=SkillTable(
+            [
+                Chars.STR,
+                [Melee()],
+                Chars.END,
+                JackOfAllTrades(),
+                Chars.EDU,
+                Gambler(),
+            ]
+        ),
+        service_skills=SkillTable(
+            [
+                Athletics(),
+                Deception(),
+                skill_category_instances('Profession'),
+                Streetwise(),
+                [Melee()],
+                Persuade(),
+            ]
+        ),
+        assignment1=SkillTable(
+            [  # Inmate
+                Stealth(),
+                [Melee()],
+                Streetwise(),
+                Survival(),
+                [Athletics()],
+                Mechanic(),
+            ]
+        ),
+        assignment2=SkillTable(
+            [  # Thug
+                Persuade(),
+                [Melee()],
+                [Melee()],
+                [Melee()],
+                [Athletics()],
+                [Athletics()],
+            ]
+        ),
+        assignment3=SkillTable(
+            [  # Fixer
+                Investigate(),
+                Broker(),
+                Deception(),
+                Streetwise(),
+                Stealth(),
+                Admin(),
+            ]
+        ),
+    ),
+    ranks={
+        0: RankEntry(rank=0, bonus=RankBonus(skill=Melee(), level=1)),
+        1: RankEntry(rank=1),
+        2: RankEntry(rank=2, bonus=RankBonus(skill=Athletics(), level=1)),
+        3: RankEntry(rank=3),
+        4: RankEntry(rank=4, bonus=RankBonus(skill=Advocate(), level=1)),
+        5: RankEntry(rank=5),
+        6: RankEntry(rank=6, bonus=RankBonus(characteristic=Chars.END, level=1)),
+    },
+    muster_out=MusterOutData(
+        rows={
+            1: MusterOutRow(cash=0, benefit=parse_benefit('contact')),
+            2: MusterOutRow(cash=0, benefit=parse_benefit('blade')),
+            3: MusterOutRow(cash=100, benefit=parse_benefit(['deception', 'persuade', 'stealth'])),
+            4: MusterOutRow(cash=200, benefit=parse_benefit('ally')),
+            5: MusterOutRow(cash=500, benefit=parse_benefit(['melee', 'recon', 'streetwise'])),
+            6: MusterOutRow(cash=1000, benefit=parse_benefit(['str_plus_1', 'end_plus_1'])),
+            7: MusterOutRow(cash=2500, benefit=parse_benefit('deception_persuade_and_stealth')),
+        }
+    ),
+    mishaps={
+        1: MishapEntry(
+            text='Severely injured.',
+            stay_in_career=True,
+            effects=[InjuryEffect(severity='severe')],
+        ),
+        2: MishapEntry(
+            text='You are accused of assaulting a prison guard. Parole Threshold +2.',
+            stay_in_career=True,
+            effects=[ParoleThresholdChangeEffect(amount=2)],
+        ),
+        3: MishapEntry(
+            text='A prison gang persecutes you.',
+            stay_in_career=True,
+            defer_ejection=True,
+            effects=[CareerDispatchEffect(type='prisoner_mishap_3')],
+        ),
+        4: MishapEntry(
+            text='A guard takes a dislike to you. Gain an Enemy and raise your Parole Threshold by +1.',
+            stay_in_career=True,
+            effects=[GainEnemyEffect(), ParoleThresholdChangeEffect(amount=1)],
+        ),
+        5: MishapEntry(
+            text='Disgraced. Word of your criminal past reaches your homeworld. Lose 1 SOC.',
+            stay_in_career=True,
+            effects=[DecreaseCharacteristicEffect(characteristic=Chars.SOC, amount=1)],
+        ),
+        6: MishapEntry(
+            text='Injured. Roll on the Injury table.',
+            stay_in_career=True,
+            effects=[InjuryEffect(severity='from_table')],
+        ),
+    },
+    events={
+        2: CareerEventEntry(
+            text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
+            effects=[RollMishapEffect(leave=False)],
+        ),
+        3: CareerEventEntry(
+            text='You have the opportunity to escape the prison.',
+            effects=[CareerDispatchEffect(type='prisoner_event_3')],
+        ),
+        4: CareerEventEntry(
+            text='You are assigned to difficult or backbreaking labour.',
+            effects=[CareerDispatchEffect(type='prisoner_event_4')],
+        ),
+        5: CareerEventEntry(
+            text='You have the opportunity to join a gang.',
+            effects=[CareerDispatchEffect(type='prisoner_event_5')],
+        ),
+        6: CareerEventEntry(
+            text='Vocational Training.',
+            effects=[CareerDispatchEffect(type='prisoner_event_6')],
+        ),
+        7: CareerEventEntry(
+            text='Prison Event.',
+            effects=[CareerDispatchEffect(type='prisoner_event_7')],
+        ),
+        8: CareerEventEntry(
+            text='Parole hearing. Reduce your Parole Threshold by -1.',
+            effects=[ParoleThresholdChangeEffect(amount=-1)],
+        ),
+        9: CareerEventEntry(
+            text='You have the opportunity to hire a new lawyer.',
+            effects=[CareerDispatchEffect(type='prisoner_event_9')],
+        ),
+        10: CareerEventEntry(
+            text='Special Duty.',
+            effects=[SkillChoiceEffect(options=['Admin', 'Advocate', 'Electronics', 'Steward'], level=1)],
+        ),
+        11: CareerEventEntry(
+            text='The warden takes an interest in your case. Reduce your Parole Threshold by -2.',
+            effects=[ParoleThresholdChangeEffect(amount=-2)],
+        ),
+        12: CareerEventEntry(
+            text='Heroism.',
+            effects=[CareerDispatchEffect(type='prisoner_event_12')],
+        ),
+    },
+)
 
 
 # ── mishap 3: prison gang ─────────────────────────────────────────────────────

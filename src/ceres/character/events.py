@@ -54,6 +54,23 @@ def _roll2d(rng: random.Random) -> int:
     return rng.randint(1, 6) + rng.randint(1, 6)
 
 
+def _rank_bonus_skill(bonus: Any) -> AnySkill:
+    """Return an AnySkill instance at the bonus level, derived from a RankBonus.skill instance."""
+    from ceres.character.skills import Level as _Level
+
+    skill_cls = type(bonus.skill)
+    fields = _level_fields(skill_cls)
+    if len(fields) == 1:
+        return skill_cls(**{fields[0]: _Level(value=bonus.level)})
+    return skill_cls(**{f: _Level(value=bonus.level) for f in fields})
+
+
+def _spec_name_for_field(skill_cls: Any, field_name: str) -> str:
+    """Return the display name for a skill specialisation field."""
+    extra = skill_cls.model_fields[field_name].json_schema_extra or {}
+    return str(extra.get('name') or field_name.replace('_', ' ').title())
+
+
 def _roll1d(rng: random.Random) -> int:
     return rng.randint(1, 6)
 
@@ -70,10 +87,9 @@ def _apply_simple_effect(projection: Any, effect: Any, source: str = '', source_
         GainSkillEffect,
         ParoleThresholdChangeEffect,
     )
-    from ceres.character.skills import skill_from_str
 
     if isinstance(effect, GainSkillEffect):
-        projection.grant_skill(skill_from_str(effect.skill, effect.level))
+        projection.grant_skill(effect.skill)
     elif isinstance(effect, DecreaseCharacteristicEffect):
         current = projection.summary.characteristics.get(effect.characteristic, 0)
         projection.summary.characteristics[effect.characteristic] = max(0, current - effect.amount)
@@ -104,8 +120,6 @@ def _apply_simple_effect(projection: Any, effect: Any, source: str = '', source_
 
 
 def _apply_auto_advance(projection: Any, career: Any, event_id: int) -> None:
-    from ceres.character.skills import skill_from_str
-
     new_rank = (projection.summary.rank or 0) + 1
     projection.summary.rank = new_rank
     career.update_current_term_rank(projection)
@@ -124,7 +138,7 @@ def _apply_auto_advance(projection: Any, career: Any, event_id: int) -> None:
             )
             return
         if bonus.skill:
-            projection.grant_skill(skill_from_str(bonus.skill, bonus.level))
+            projection.grant_skill(_rank_bonus_skill(bonus))
         elif bonus.characteristic:
             char = bonus.characteristic
             projection.summary.characteristics[char] = projection.summary.characteristics.get(char, 0) + bonus.level
@@ -233,11 +247,19 @@ def _apply_muster_out_benefit(projection: Any, benefit: object, event_id: int = 
 
 
 def _apply_skill_table_entry(projection: Any, entry: Any) -> None:
-    if entry.characteristic:
-        char = entry.characteristic
-        projection.summary.characteristics[char] = projection.summary.characteristics.get(char, 0) + 1
-    elif entry.skill:
-        projection.increment_skill(entry.skill, entry.spec)
+    from ceres.character.characteristics import Chars as _Chars
+
+    if isinstance(entry, _Chars):
+        projection.summary.characteristics[entry] = projection.summary.characteristics.get(entry, 0) + 1
+    else:
+        skill_cls = type(entry)
+        fields = _level_fields(skill_cls)
+        spec_field = next((f for f in fields if getattr(entry, f).value > 0), None)
+        if spec_field is not None:
+            spec_name = _spec_name_for_field(skill_cls, spec_field)
+            projection.increment_skill(skill_cls.name(), spec_name)
+        else:
+            projection.increment_skill(skill_cls.name())
 
 
 def _apply_mishap_ejection(
@@ -292,7 +314,7 @@ def _apply_prisoner_advancement(projection: Any, event: Any, career: Any) -> Non
                     options=choices,
                 )
             elif bonus.skill:
-                projection.grant_skill(skill_from_str(bonus.skill, bonus.level))
+                projection.grant_skill(_rank_bonus_skill(bonus))
             elif bonus.characteristic:
                 char = bonus.characteristic
                 projection.summary.characteristics[char] = projection.summary.characteristics.get(char, 0) + bonus.level
@@ -780,7 +802,7 @@ class AdvancementEvent(EventBase):
                     )
                     return
                 if bonus.skill:
-                    projection.grant_skill(skill_from_str(bonus.skill, bonus.level))
+                    projection.grant_skill(_rank_bonus_skill(bonus))
                 elif bonus.characteristic:
                     char = bonus.characteristic
                     projection.summary.characteristics[char] = (
@@ -840,7 +862,7 @@ class CommissionEvent(EventBase):
                 )
                 return
             if bonus.skill:
-                projection.grant_skill(skill_from_str(bonus.skill, bonus.level))
+                projection.grant_skill(_rank_bonus_skill(bonus))
             elif bonus.characteristic:
                 char = bonus.characteristic
                 projection.summary.characteristics[char] = projection.summary.characteristics.get(char, 0) + bonus.level
@@ -873,8 +895,10 @@ class SkillTableEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
 
+        from ceres.character.characteristics import Chars as _Chars
+
         career = projection.get_current_career()
-        table = career.skill_tables.get(self.table)
+        table = career.skill_table(self.table)
         if table is None:
             raise ReplayError(f'Unknown skill table: {self.table!r}')
         if table.min_edu is not None:
@@ -883,20 +907,19 @@ class SkillTableEvent(EventBase):
                 raise ReplayError(f'Table {self.table!r} requires EDU {table.min_edu}+, character has {edu}')
         if not (1 <= self.roll <= 6):
             raise ReplayError(f'Skill table roll must be 1-6, got {self.roll}')
-        entry = table.entries.get(self.roll)
-        if entry is None:
-            raise ReplayError(f'No entry for roll {self.roll} in table {self.table!r}')
+        entry = table.entries[self.roll - 1]
         assignment_name = projection.summary.current_assignment or ''
-        choices = entry.choices
-        if choices is None and entry.spec is None and entry.skill is not None:
-            choices = skill_names_for_category(entry.skill)
-            if choices is None:
-                try:
-                    cls = skill_class_by_name(entry.skill)
-                    if len(_level_fields(cls)) > 1:
-                        choices = [entry.skill]
-                except ValueError:
-                    pass
+        choices: list[str] | None = None
+        if isinstance(entry, list):
+            choices = [type(s).name() for s in entry]
+        elif not isinstance(entry, _Chars):
+            skill_cls = type(entry)
+            fields = _level_fields(skill_cls)
+            spec_field = next((f for f in fields if getattr(entry, f).value > 0), None)
+            if spec_field is None and len(fields) > 1:
+                choices = skill_names_for_category(skill_cls.name())
+                if choices is None:
+                    choices = [skill_cls.name()]
         reenlist_queued = any(
             isinstance(p, (PendingReenlist, PendingAssignmentChangeChoice, PendingAgingRoll, PendingMusterOut))
             for p in projection.pending_inputs

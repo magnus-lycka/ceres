@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
-from ceres.character.careers.career_data import AnyEffect, CareerEventEntry, CharCheck, SkillTableEntry
+from ceres.character.careers.career_data import AnyEffect, CareerEventEntry, CharCheck
 from ceres.character.events import PendingPreCareerSkillChoice
 from ceres.character.state import (
     CharacterProjection,
@@ -11,6 +11,15 @@ from ceres.character.state import (
 
 if TYPE_CHECKING:
     from ceres.character.events import PreCareerEntryEvent, PreCareerGraduationEvent
+
+
+class PrecareerSkillEntry(BaseModel):
+    """String-based skill entry used in pre-career skill lists. Will be migrated to AnySkill in a future pass."""
+
+    skill: str | None = None
+    level: int = 0
+    choices: list[str] | None = None
+    spec: str | None = None
 
 
 class PreCareerData(BaseModel):
@@ -23,7 +32,7 @@ class PreCareerData(BaseModel):
     entry_soc_bonus_min: int | None = None
     entry_soc_bonus: int = 0
     curriculum_table: str | None = None
-    skill_choices: list[SkillTableEntry] = []
+    skill_choices: list[PrecareerSkillEntry] = []
     # entry_pick_count > 0: level>=1 skills in skill_choices are auto-granted; player
     # picks entry_pick_count from the level==0 skills. If 0, all skill_choices are auto-granted.
     # University and military academies handle their own entry logic separately.
@@ -121,4 +130,4 @@ class PreCareerData(BaseModel):
         """Default: no effects on failed graduation."""
 
 
-__all__ = ['AnyEffect', 'PreCareerData']
+__all__ = ['AnyEffect', 'PreCareerData', 'PrecareerSkillEntry']

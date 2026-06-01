@@ -1,10 +1,59 @@
-from ceres.character.careers.career_data import CareerData, CareerDispatchEffect
-from ceres.character.characteristics import Chars, characteristic_dm
+from ceres.character.benefits import parse_benefit
+from ceres.character.careers.career_data import (
+    AdvancementDmEffect,
+    AssignmentData,
+    AutoAdvanceEffect,
+    BenefitDmEffect,
+    CareerData,
+    CareerDispatchEffect,
+    CareerEventEntry,
+    CareerSkillTables,
+    CharCheck,
+    DecreaseCharacteristicEffect,
+    GainAllyEffect,
+    GainConnectionsRolledEffect,
+    GainContactEffect,
+    GainRivalEffect,
+    InjuryEffect,
+    LifeEventEffect,
+    MishapEntry,
+    MusterOutData,
+    MusterOutRow,
+    RankBonus,
+    RankEntry,
+    RollMishapEffect,
+    SkillChoiceEffect,
+    SkillTable,
+)
+from ceres.character.characteristics import Chars, ConnectionKind, characteristic_dm
 from ceres.character.events import (
     PendingCareerEvent,
     PendingCareerSkillRoll,
     SkillRollEvent,
     career_progress_pending,
+)
+from ceres.character.skills import (
+    Advocate,
+    Athletics,
+    Broker,
+    Carouse,
+    Deception,
+    Diplomat,
+    Drive,
+    Electronics,
+    Gambler,
+    Investigate,
+    JackOfAllTrades,
+    Level,
+    PerformingArt,
+    Persuade,
+    PresentationArt,
+    Recon,
+    Stealth,
+    Steward,
+    Streetwise,
+    skill_category_instances,
+    skill_names_for_category,
 )
 from ceres.character.state import (
     CharacterProjection,
@@ -18,6 +67,219 @@ class EntertainerCareerData(CareerData):
         dex_dm = characteristic_dm(projection.summary.characteristics.get(Chars.DEX, 0))
         int_dm = characteristic_dm(projection.summary.characteristics.get(Chars.INT, 0))
         return max(dex_dm, int_dm)
+
+
+CAREER_DATA = EntertainerCareerData(
+    name='Entertainer',
+    description='Individuals who are involved with the media, whether as reporters, artists or celebrities.',
+    source='Core',
+    allows_assignment_change=False,
+    qualification=CharCheck(characteristic=Chars.INT, target=5),
+    assignments=[
+        AssignmentData(
+            name='Artist',
+            description='You are a writer, holographer or other creative.',
+            survival=CharCheck(characteristic=Chars.SOC, target=6),
+            advancement=CharCheck(characteristic=Chars.INT, target=6),
+        ),
+        AssignmentData(
+            name='Journalist',
+            description='You report on local or galactic events for a news feed, the TAS or other organisation.',
+            survival=CharCheck(characteristic=Chars.EDU, target=7),
+            advancement=CharCheck(characteristic=Chars.INT, target=5),
+        ),
+        AssignmentData(
+            name='Performer',
+            description='You are an actor, dancer, acrobat, professional athlete or other public performer.',
+            survival=CharCheck(characteristic=Chars.INT, target=5),
+            advancement=CharCheck(characteristic=Chars.DEX, target=7),
+        ),
+    ],
+    skill_tables=CareerSkillTables(
+        personal_development=SkillTable(
+            [
+                Chars.DEX,
+                Chars.INT,
+                Chars.SOC,
+                skill_category_instances('Language'),
+                Carouse(),
+                JackOfAllTrades(),
+            ]
+        ),
+        service_skills=SkillTable(
+            [
+                skill_category_instances('Art'),
+                Carouse(),
+                Deception(),
+                Drive(),
+                Persuade(),
+                Steward(),
+            ]
+        ),
+        advanced_education=SkillTable(
+            [
+                Advocate(),
+                Broker(),
+                Deception(),
+                skill_category_instances('Science'),
+                Streetwise(),
+                Diplomat(),
+            ],
+            min_edu=10,
+        ),
+        assignment1=SkillTable(
+            [  # Artist
+                skill_category_instances('Art'),
+                Carouse(),
+                Electronics(computers=Level(value=1)),
+                Gambler(),
+                Persuade(),
+                skill_category_instances('Profession'),
+            ]
+        ),
+        assignment2=SkillTable(
+            [  # Journalist
+                PresentationArt(),
+                Electronics(),
+                Drive(),
+                Investigate(),
+                Recon(),
+                Streetwise(),
+            ]
+        ),
+        assignment3=SkillTable(
+            [  # Performer
+                PerformingArt(),
+                Athletics(),
+                Carouse(),
+                Deception(),
+                Stealth(),
+                Streetwise(),
+            ]
+        ),
+    ),
+    ranks={
+        0: RankEntry(rank=0),
+        1: RankEntry(rank=1, bonus=RankBonus(choices=skill_names_for_category('Art'), level=1)),
+        2: RankEntry(rank=2),
+        3: RankEntry(rank=3, bonus=RankBonus(skill=Investigate(), level=1)),
+        4: RankEntry(rank=4),
+        5: RankEntry(rank=5, title='Famous Artist', bonus=RankBonus(characteristic=Chars.SOC, level=1)),
+        6: RankEntry(rank=6),
+    },
+    ranks_by_assignment={
+        'Artist': {
+            0: RankEntry(rank=0),
+            1: RankEntry(rank=1, bonus=RankBonus(choices=skill_names_for_category('Art'), level=1)),
+            2: RankEntry(rank=2),
+            3: RankEntry(rank=3, bonus=RankBonus(skill=Investigate(), level=1)),
+            4: RankEntry(rank=4),
+            5: RankEntry(rank=5, title='Famous Artist', bonus=RankBonus(characteristic=Chars.SOC, level=1)),
+            6: RankEntry(rank=6),
+        },
+        'Journalist': {
+            0: RankEntry(rank=0),
+            1: RankEntry(rank=1, title='Freelancer', bonus=RankBonus(skill=Electronics(), level=1)),
+            2: RankEntry(rank=2, title='Staff Writer', bonus=RankBonus(skill=Investigate(), level=1)),
+            3: RankEntry(rank=3),
+            4: RankEntry(rank=4, title='Correspondent', bonus=RankBonus(skill=Persuade(), level=1)),
+            5: RankEntry(rank=5),
+            6: RankEntry(rank=6, title='Senior Correspondent', bonus=RankBonus(characteristic=Chars.SOC, level=1)),
+        },
+        'Performer': {
+            0: RankEntry(rank=0),
+            1: RankEntry(rank=1, bonus=RankBonus(characteristic=Chars.DEX, level=1)),
+            2: RankEntry(rank=2),
+            3: RankEntry(rank=3, bonus=RankBonus(characteristic=Chars.STR, level=1)),
+            4: RankEntry(rank=4),
+            5: RankEntry(rank=5, title='Famous Performer', bonus=RankBonus(characteristic=Chars.SOC, level=1)),
+            6: RankEntry(rank=6),
+        },
+    },
+    muster_out=MusterOutData(
+        rows={
+            1: MusterOutRow(cash=0, benefit=parse_benefit('contact')),
+            2: MusterOutRow(cash=0, benefit=parse_benefit('soc_plus_1')),
+            3: MusterOutRow(cash=10000, benefit=parse_benefit('contact')),
+            4: MusterOutRow(cash=10000, benefit=parse_benefit('soc_plus_1')),
+            5: MusterOutRow(cash=40000, benefit=parse_benefit('int_plus_1')),
+            6: MusterOutRow(cash=40000, benefit=parse_benefit('ship_share'), count=2),
+            7: MusterOutRow(cash=80000, benefit=parse_benefit('soc_plus_1_and_edu_plus_1')),
+        }
+    ),
+    mishaps={
+        1: MishapEntry(
+            text='Severely injured.',
+            effects=[InjuryEffect(severity='severe')],
+        ),
+        2: MishapEntry(
+            text='You expose or are involved in a scandal of some sort.',
+            effects=[],
+        ),
+        3: MishapEntry(
+            text='Public opinion turns on you. Reduce SOC by 1.',
+            effects=[DecreaseCharacteristicEffect(characteristic=Chars.SOC, amount=1)],
+        ),
+        4: MishapEntry(
+            text='You are betrayed by a peer. Gain a Rival or Enemy.',
+            effects=[GainRivalEffect()],
+        ),
+        5: MishapEntry(
+            text='A project goes wrong, stranding you far from home.',
+            effects=[SkillChoiceEffect(options=['Survival', 'Pilot', 'Persuade', 'Streetwise'], level=1)],
+        ),
+        6: MishapEntry(
+            text='You are forced out because of censorship or controversy.',
+            effects=[AdvancementDmEffect(amount=2)],
+        ),
+    },
+    events={
+        2: CareerEventEntry(
+            text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
+            effects=[RollMishapEffect(leave=False)],
+        ),
+        3: CareerEventEntry(
+            text='You are invited to take part in a controversial event or exhibition.',
+            effects=[CareerDispatchEffect(type='entertainer_event_3')],
+        ),
+        4: CareerEventEntry(
+            text="You are part of your homeworld's celebrity circles.",
+            effects=[SkillChoiceEffect(options=['Carouse', 'Persuade', 'Steward'], level=1), GainContactEffect()],
+        ),
+        5: CareerEventEntry(
+            text='One of your works is especially well received and popular.',
+            effects=[BenefitDmEffect(amount=1)],
+        ),
+        6: CareerEventEntry(
+            text='You gain a patron in the arts.',
+            effects=[AdvancementDmEffect(amount=2), GainAllyEffect()],
+        ),
+        7: CareerEventEntry(
+            text='Life Event.',
+            effects=[LifeEventEffect()],
+        ),
+        8: CareerEventEntry(
+            text='You have the opportunity to criticise or bring down a questionable political leader.',
+            effects=[CareerDispatchEffect(type='entertainer_event_8')],
+        ),
+        9: CareerEventEntry(
+            text='You go on a tour of the sector, visiting several worlds.',
+            effects=[GainConnectionsRolledEffect(connection_type=ConnectionKind.CONTACT, dice='d3')],
+        ),
+        10: CareerEventEntry(
+            text='One of your pieces of art is stolen and the investigation brings you into the criminal underworld.',
+            effects=[SkillChoiceEffect(options=['Streetwise', 'Investigate', 'Recon', 'Stealth'], level=1)],
+        ),
+        11: CareerEventEntry(
+            text='As an artist, you lead a strange and charmed life.',
+            effects=[LifeEventEffect()],
+        ),
+        12: CareerEventEntry(
+            text='You win a prestigious prize. You are automatically promoted.',
+            effects=[AutoAdvanceEffect()],
+        ),
+    },
+)
 
 
 # ── event 3: controversial exhibition ────────────────────────────────────────

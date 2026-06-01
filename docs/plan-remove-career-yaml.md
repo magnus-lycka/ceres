@@ -46,7 +46,7 @@ personal_development=SkillTable([Chars.STR, Chars.DEX, Chars.END, Gambler(), Med
 
 ---
 
-## Phase 1 — Data model changes (`career_data.py`)
+## Phase 1 — Data model changes (`career_data.py`) ✅ COMPLETE
 
 ### 1a. `CareerSkillTables` — replace `dict[str, SkillTable]`
 
@@ -106,7 +106,7 @@ simplified to use the value directly.
 
 ---
 
-## Phase 2 — Loader changes (`loader.py`)
+## Phase 2 — Loader changes (`loader.py`) ✅ COMPLETE
 
 Replace YAML-parsing with Python-module discovery:
 
@@ -203,7 +203,13 @@ EFFECT_HANDLERS: dict = {}
 
 ---
 
-## Phase 4 — Cleanup
+## Phase 3 — Migrate careers one at a time ✅ COMPLETE
+
+All 13 careers migrated. Each `*.yaml` file deleted.
+
+---
+
+## Phase 4 — Cleanup ✅ COMPLETE
 
 - Delete all 13 `*.yaml` files.
 - Remove PyYAML from `pyproject.toml` if it is not used outside careers.
