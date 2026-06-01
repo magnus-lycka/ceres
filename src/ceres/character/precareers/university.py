@@ -1,8 +1,11 @@
 from ceres.character.characteristics import Chars
-from ceres.character.events import PreCareerEntryEvent, PreCareerGraduationEvent
+from ceres.character.events import PendingPreCareerSkillChoice, PreCareerEntryEvent, PreCareerGraduationEvent
 from ceres.character.precareers.precareer_data import PreCareerData
-from ceres.character.projection import CharacterProjection, PendingPreCareerSkillChoice, ScheduledEffect
 from ceres.character.skills import parse_skill_spec_option, skill_names_for_category, skill_spec_option_names
+from ceres.character.state import (
+    CharacterProjection,
+    ScheduledEffect,
+)
 
 
 class UniversityPreCareer(PreCareerData):

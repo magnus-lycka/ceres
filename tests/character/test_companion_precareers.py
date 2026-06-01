@@ -3,21 +3,22 @@
 from ceres.character.characteristics import Chars, ConnectionKind
 from ceres.character.events import (
     CharacterStartedEvent,
+    PendingCareerChoice,
+    PendingPreCareerEvent,
+    PendingPreCareerGraduation,
+    PendingPreCareerSkillChoice,
     PreCareerEntryEvent,
     PreCareerEventEvent,
     PreCareerGraduationEvent,
     PreCareerSkillChoiceEvent,
     UcpEvent,
 )
-from ceres.character.projection import (
-    PendingCareerChoice,
-    PendingPreCareerEvent,
-    PendingPreCareerGraduation,
-    PendingPreCareerSkillChoice,
-    _level_fields,
-)
 from ceres.character.replay import replay
-from ceres.character.skills import PhysicalScience, skill_class_by_name
+from ceres.character.skills import (
+    PhysicalScience,
+    _level_fields,
+    skill_class_by_name,
+)
 from ceres.character.sophonts import HUMANITI
 from tests.character.helpers import MOCK_WORLD
 

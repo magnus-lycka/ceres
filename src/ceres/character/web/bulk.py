@@ -5,10 +5,10 @@ import random
 
 from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.careers.loader import load_careers
-from ceres.character.projection import AutoFillContext
 from ceres.character.replay import ReplayError
 from ceres.character.sophonts import SOPHONT_NAMES, get_sophont
 from ceres.character.spec import NpcSpec, spec_from_summary
+from ceres.character.state import AutoFillContext
 from ceres.character.store import SqliteCharacterBackend
 
 _NPC_DEFAULT_HOMEWORLD = TravellerMapWorld.model_validate(
@@ -90,7 +90,7 @@ def generate_npc(
             try:
                 _event, projection = backend.append_event_with_projection(cid, event)
                 break
-            except ValueError, RuntimeError, ReplayError:
+            except (ValueError, RuntimeError, ReplayError):
                 if _retry == 19:
                     raise
     else:

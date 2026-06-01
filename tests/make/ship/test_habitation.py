@@ -20,17 +20,9 @@ from ceres.make.ship.habitation import (
     Stable,
     Stateroom,
 )
-from ceres.make.ship.occupants import BasicPassage, HighPassage, LowPassage, MiddlePassage, ResidenceDemand
+from ceres.make.ship.occupants import ResidenceDemand
 from ceres.make.ship.systems import CommonArea, SwimmingPool
-
-
-def passengers(*, high=0, middle=0, basic=0, low=0):
-    return (
-        [HighPassage() for _ in range(high)]
-        + [MiddlePassage() for _ in range(middle)]
-        + [BasicPassage() for _ in range(basic)]
-        + [LowPassage() for _ in range(low)]
-    )
+from tests.make.ship.helpers import passengers
 
 
 class DummyOwner(ShipBase):
@@ -465,7 +457,7 @@ def test_habitation_explicit_occupants_override_default_passengers():
         command=CommandSection(bridge=Bridge()),
         computer=ComputerSection(hardware=Computer5()),
         habitation=HabitationSection(staterooms=[Stateroom()] * 4),
-        occupants=[HighPassage()],
+        occupants=passengers(high=1),
     )
 
     assert my_ship.habitation is not None

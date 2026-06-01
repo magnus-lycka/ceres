@@ -1,11 +1,14 @@
 from ceres.character.careers.career_data import CareerData, CareerDispatchEffect
 from ceres.character.characteristics import Chars
-from ceres.character.events import SkillRollEvent
-from ceres.character.projection import (
-    CharacterProjection,
-    Enemy,
+from ceres.character.events import (
     PendingCareerEvent,
     PendingCareerSkillRoll,
+    SkillRollEvent,
+    career_progress_pending,
+)
+from ceres.character.state import (
+    CharacterProjection,
+    Enemy,
     Rival,
     ScheduledEffect,
 )
@@ -112,7 +115,7 @@ def _choice_noble_event_8(projection: CharacterProjection, event) -> None:
     career = projection.get_current_career()
     if event.choice == 'refuse':
         projection.summary.connections.append(Rival(source='Conspiracy leader (Noble event 8)'))
-        projection.pending_inputs.append(projection.career_progress_pending(career, event.id))
+        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
     else:
         projection.pending_inputs.append(
             PendingCareerSkillRoll(

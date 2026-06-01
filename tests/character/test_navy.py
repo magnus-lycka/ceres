@@ -6,13 +6,6 @@ from ceres.character.events import (
     CareerEvent,
     CharacterStartedEvent,
     MishapEvent,
-    SkillRollEvent,
-    SurviveEvent,
-    TermEventEvent,
-    UcpEvent,
-)
-from ceres.character.projection import (
-    Enemy,
     PendingAdvancement,
     PendingCareerEvent,
     PendingCareerMishap,
@@ -20,10 +13,15 @@ from ceres.character.projection import (
     PendingCommissionChoice,
     PendingMusterOut,
     PendingSkillChoice,
+    SkillRollEvent,
+    SurviveEvent,
+    TermEventEvent,
+    UcpEvent,
 )
 from ceres.character.replay import replay
 from ceres.character.skills import Admin, Athletics, Carouse, Drive
 from ceres.character.sophonts import VILANI
+from ceres.character.state import Enemy
 from tests.character.helpers import MOCK_WORLD
 
 

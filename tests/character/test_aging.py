@@ -12,18 +12,16 @@ from ceres.character.events import (
     CharacteristicChoiceEvent,
     CharacterStartedEvent,
     MishapEvent,
-    ReenlistEvent,
-    SkillTableEvent,
-    SurviveEvent,
-    TermEventEvent,
-    UcpEvent,
-)
-from ceres.character.projection import (
     PendingAgingChoice,
     PendingAgingCrisis,
     PendingAgingRoll,
     PendingMusterOut,
     PendingSkillTable,
+    ReenlistEvent,
+    SkillTableEvent,
+    SurviveEvent,
+    TermEventEvent,
+    UcpEvent,
 )
 from ceres.character.replay import ReplayError, replay
 from ceres.character.skills import Admin, Athletics, Carouse, Drive

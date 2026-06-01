@@ -1,9 +1,16 @@
-from typing import Annotated, Any, Literal
+import random
+import re
+from typing import TYPE_CHECKING, Annotated, Any, Literal, cast
 
-from pydantic import BaseModel, Field, field_serializer, field_validator
+from pydantic import BaseModel, Field, TypeAdapter, field_serializer, field_validator
 
 from ceres.adapters.travellermap import TravellerMapWorld
+from ceres.character.benefits import AnyBenefit, ItemBenefit
 from ceres.character.characteristics import UCP_STATS, Chars, ConnectionKind, characteristic_dm
+
+if TYPE_CHECKING:
+    from ceres.character.careers.career_data import CareerData
+from ceres.character.input_specs import InputSpec, NumberEntry, Reference, Select, form_int, form_str, literal
 from ceres.character.skills import (
     AnySkill,
     BackgroundSkill,
@@ -17,12 +24,37 @@ from ceres.character.skills import (
     skill_names_for_category,
 )
 from ceres.character.sophonts import Sophont, get_sophont
+from ceres.character.state import (
+    Ally,
+    AutoFillContext,
+    CareerTerm,
+    CharacterProjection,
+    CharacterSummary,
+    Contact,
+    PendingInputBase,
+    ReplayError,
+    ScheduledEffect,
+    make_connection,
+)
 
 BACKGROUND_SKILLS: frozenset[type[Skill]] = frozenset(_skill_classes(BackgroundSkill))
 
 
 def _background_skill_count(edu: int) -> int:
     return max(0, characteristic_dm(edu) + 3)
+
+
+_CHOOSE_COUNT_RE = re.compile(r'Choose (\d+)')
+_skill_adapter: TypeAdapter[AnySkill] = TypeAdapter(AnySkill)
+_NON_SKILL_OPTION_LABELS: dict[str, str] = {'advancement_dm_4': 'DM+4 to next advancement roll'}
+
+
+def _roll2d(rng: random.Random) -> int:
+    return rng.randint(1, 6) + rng.randint(1, 6)
+
+
+def _roll1d(rng: random.Random) -> int:
+    return rng.randint(1, 6)
 
 
 def _apply_simple_effect(projection: Any, effect: Any, source: str = '', source_event_id: int = 0) -> None:
@@ -37,7 +69,6 @@ def _apply_simple_effect(projection: Any, effect: Any, source: str = '', source_
         GainSkillEffect,
         ParoleThresholdChangeEffect,
     )
-    from ceres.character.projection import ScheduledEffect, make_connection
     from ceres.character.skills import skill_from_str
 
     if isinstance(effect, GainSkillEffect):
@@ -72,7 +103,6 @@ def _apply_simple_effect(projection: Any, effect: Any, source: str = '', source_
 
 
 def _apply_auto_advance(projection: Any, career: Any, event_id: int) -> None:
-    from ceres.character.projection import PendingRankBonusChoice, PendingSkillTable
     from ceres.character.skills import skill_from_str
 
     new_rank = (projection.summary.rank or 0) + 1
@@ -102,13 +132,12 @@ def _apply_auto_advance(projection: Any, career: Any, event_id: int) -> None:
     projection.pending_inputs.append(
         PendingSkillTable(id=f'{event_id}.0', instruction='Choose a skill table and roll 1D', options=tables)
     )
-    projection.queue_reenlist_or_aging(event_id, 1)
+    queue_reenlist_or_aging(projection, event_id, 1)
 
 
 def _start_new_career_term(projection: Any, career: Any, event_id: int) -> None:
-    from ceres.character.projection import ReplayError
 
-    projection.purge_career_pendings()
+    purge_career_pendings(projection)
     assignment_name = projection.summary.current_assignment or ''
     assignment = career.assignment(assignment_name)
     if assignment is None:
@@ -117,7 +146,6 @@ def _start_new_career_term(projection: Any, career: Any, event_id: int) -> None:
 
 
 def _survive_pending(career: Any, assignment_name: str, event_id: int) -> Any:
-    from ceres.character.projection import ReplayError
 
     assignment = career.assignment(assignment_name)
     if assignment is None:
@@ -126,7 +154,6 @@ def _survive_pending(career: Any, assignment_name: str, event_id: int) -> Any:
 
 
 def _advancement_pending(career: Any, assignment_name: str, event_id: int, pending_idx: int = 0) -> Any:
-    from ceres.character.projection import PendingAdvancement, ReplayError
 
     assignment = career.assignment(assignment_name)
     if assignment is None:
@@ -137,7 +164,6 @@ def _advancement_pending(career: Any, assignment_name: str, event_id: int, pendi
 
 
 def _apply_injury_table_result(projection: Any, roll: int, event_id: int) -> None:
-    from ceres.character.projection import PendingCharacteristicChoice, PendingNearlyKilled
 
     if roll == 6:
         return
@@ -187,8 +213,7 @@ def _apply_injury_table_result(projection: Any, roll: int, event_id: int) -> Non
 
 
 def _apply_muster_out_benefit(projection: Any, benefit: object, event_id: int = 0) -> None:
-    from ceres.character.benefits import CharacteristicIncrease, ChoiceBenefit, ItemBenefit
-    from ceres.character.projection import PendingBenefitChoice
+    from ceres.character.benefits import CharacteristicIncrease, ChoiceBenefit
 
     if isinstance(benefit, CharacteristicIncrease):
         current = projection.summary.characteristics.get(benefit.char, 0)
@@ -221,7 +246,6 @@ def _apply_mishap_ejection(
     pending_idx: int,
     lose_current_term: bool = True,
 ) -> int:
-    from ceres.character.projection import PendingAgingRoll
 
     projection.summary.age += 4
     if projection.summary.age >= 34:
@@ -231,11 +255,10 @@ def _apply_mishap_ejection(
             PendingAgingRoll(id=f'{source_event_id}.{pending_idx}', instruction='Roll 2D on Aging table')
         )
         return pending_idx + 1
-    return projection.muster_out_setup(career, source_event_id, pending_idx, lose_current_term=lose_current_term)
+    return muster_out_setup(projection, career, source_event_id, pending_idx, lose_current_term=lose_current_term)
 
 
 def _apply_prisoner_advancement(projection: Any, event: Any, career: Any) -> None:
-    from ceres.character.projection import PendingRankBonusChoice, PendingSkillTable, ReplayError
 
     assignment = career.assignment(projection.summary.current_assignment or '')
     if assignment is None:
@@ -284,9 +307,9 @@ def _apply_prisoner_advancement(projection: Any, event: Any, career: Any) -> Non
         projection.pending_inputs.append(
             PendingSkillTable(id=f'{event.id}.0', instruction='Choose a skill table and roll 1D', options=tables)
         )
-        projection.queue_reenlist_or_aging(event.id, 1)
+        queue_reenlist_or_aging(projection, event.id, 1)
     else:
-        projection.queue_reenlist_or_aging(event.id, 0)
+        queue_reenlist_or_aging(projection, event.id, 0)
 
 
 class EventBase(BaseModel):
@@ -326,7 +349,6 @@ class UcpEvent(EventBase):
     ucp: str
 
     def _parse_characteristics(self, sophont: Any) -> dict[Chars, int]:
-        from ceres.character.projection import ReplayError
 
         ucp_stats = sophont.ucp_stats if isinstance(sophont, Sophont) else UCP_STATS
         if len(self.ucp) != len(ucp_stats):
@@ -334,7 +356,6 @@ class UcpEvent(EventBase):
         return {stat: int(digit, 16) for stat, digit in zip(ucp_stats, self.ucp, strict=True)}
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.projection import PendingBackgroundSkills
 
         projection.summary.characteristics = self._parse_characteristics(projection.summary.sophont)
         edu = projection.summary.characteristics.get(Chars.EDU, 0)
@@ -354,7 +375,6 @@ class BackgroundSkillsEvent(EventBase):
     skills: list[AnySkill]
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.projection import ReplayError
 
         edu = projection.summary.characteristics.get(Chars.EDU, 0)
         expected = _background_skill_count(edu)
@@ -365,7 +385,7 @@ class BackgroundSkillsEvent(EventBase):
             raise ReplayError(f'Invalid background skill(s): {", ".join(sorted(type(s).__name__ for s in invalid))}')
         for skill in self.skills:
             projection.grant_skill(skill)
-        projection.queue_career_choice(self.id, 'Choose a career')
+        queue_career_choice(projection, self.id, 'Choose a career')
 
 
 class CareerEvent(EventBase):
@@ -376,7 +396,6 @@ class CareerEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.careers.loader import load_careers
-        from ceres.character.projection import ReplayError
 
         careers = load_careers()
         career = careers.get(self.career)
@@ -395,7 +414,6 @@ class DraftEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.careers.loader import load_careers
-        from ceres.character.projection import ReplayError
 
         if projection.summary.drafted:
             raise ReplayError('A character may only enter the draft once')
@@ -412,7 +430,6 @@ class DraftAssignmentEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.careers.loader import load_careers
-        from ceres.character.projection import ReplayError
 
         career = load_careers().get(self.career)
         if career is None:
@@ -425,7 +442,6 @@ class SurviveEvent(EventBase):
     roll: int  # sum of 2D, before characteristic DM
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.projection import PendingMishap, PendingTermEvent, ReplayError
 
         career = projection.get_current_career()
         assignment = career.assignment(projection.summary.current_assignment or '')
@@ -458,13 +474,6 @@ class MishapEvent(EventBase):
             SkillChoiceEffect,
         )
         from ceres.character.careers.loader import get_effect_handler
-        from ceres.character.projection import (
-            PendingAgingRoll,
-            PendingCharacteristicChoice,
-            PendingConnectionsRoll,
-            PendingInjuryTable,
-            PendingSkillChoice,
-        )
 
         career = projection.get_current_career()
         mishap = career.mishaps.get(self.roll)
@@ -545,7 +554,7 @@ class MishapEvent(EventBase):
                 _advancement_pending(career, projection.summary.current_assignment or '', self.id, pending_idx)
             )
         else:
-            projection.purge_career_pendings()
+            purge_career_pendings(projection)
             projection.summary.age += 4
             if projection.summary.age >= 34:
                 projection.muster_out_career = career.name
@@ -554,7 +563,7 @@ class MishapEvent(EventBase):
                     PendingAgingRoll(id=f'{self.id}.{pending_idx}', instruction='Roll 2D on Aging table')
                 )
             else:
-                projection.muster_out_setup(career, self.id, pending_idx, lose_current_term=True)
+                muster_out_setup(projection, career, self.id, pending_idx, lose_current_term=True)
 
 
 class TermEventEvent(EventBase):
@@ -569,7 +578,6 @@ class TermEventEvent(EventBase):
             SkillChoiceEffect,
         )
         from ceres.character.careers.loader import get_effect_handler
-        from ceres.character.projection import PendingLifeEvent, PendingMishap, PendingSkillChoice
 
         career = projection.get_current_career()
         term_event = career.events.get(self.roll)
@@ -621,7 +629,7 @@ class TermEventEvent(EventBase):
                 )
             )
         elif not career_handler_invoked:
-            projection.pending_inputs.append(projection.career_progress_pending(career, self.id))
+            projection.pending_inputs.append(career_progress_pending(projection, career, self.id))
 
 
 class SkillChoiceEvent(EventBase):
@@ -629,13 +637,6 @@ class SkillChoiceEvent(EventBase):
     skill: AnySkill
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.projection import (
-            PendingCareerSkillChoice,
-            PendingInitialTrainingChoice,
-            PendingRankBonusChoice,
-            PendingSkillTable,
-            PendingSkillTableChoice,
-        )
 
         if isinstance(fulfilled_pending, PendingInitialTrainingChoice):
             projection.grant_skill(self.skill)
@@ -656,7 +657,7 @@ class SkillChoiceEvent(EventBase):
             projection.grant_skill(self.skill)
             if not fulfilled_pending.advancement_precreated and projection.summary.current_career is not None:
                 career = projection.get_current_career()
-                projection.pending_inputs.append(projection.career_progress_pending(career, self.id))
+                projection.pending_inputs.append(career_progress_pending(projection, career, self.id))
         elif isinstance(fulfilled_pending, PendingRankBonusChoice):
             projection.grant_skill(self.skill)
             career = projection.get_current_career()
@@ -665,19 +666,18 @@ class SkillChoiceEvent(EventBase):
             projection.pending_inputs.append(
                 PendingSkillTable(id=f'{self.id}.0', instruction='Choose a skill table and roll 1D', options=tables)
             )
-            projection.queue_reenlist_or_aging(self.id, 1)
+            queue_reenlist_or_aging(projection, self.id, 1)
         else:
             projection.grant_skill(self.skill)
             if projection.summary.current_career is not None:
                 career = projection.get_current_career()
-                projection.pending_inputs.append(projection.career_progress_pending(career, self.id))
+                projection.pending_inputs.append(career_progress_pending(projection, career, self.id))
 
 
 class AdvancementDmChoiceEvent(EventBase):
     kind: Literal['advancement_dm_choice'] = 'advancement_dm_choice'
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.projection import ScheduledEffect
 
         projection.scheduled_effects.append(
             ScheduledEffect(trigger='advancement', source_event_id=self.id, effect={'type': 'dm', 'amount': 4})
@@ -694,7 +694,6 @@ class ConnectionKindChoiceEvent(EventBase):
     connection_kind: ConnectionKind
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.projection import PendingLifeEventChoice, make_connection
 
         source = (
             f'Life event roll {fulfilled_pending.roll}'
@@ -730,7 +729,6 @@ class CareerChoiceEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.careers.loader import get_choice_handler
-        from ceres.character.projection import ReplayError
 
         career_name = projection.summary.current_career
         if career_name is None:
@@ -746,7 +744,6 @@ class AdvancementEvent(EventBase):
     roll: int  # sum of 2D, before characteristic DM
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.projection import PendingRankBonusChoice, PendingSkillTable, ReplayError
 
         career = projection.get_current_career()
         if career.name == 'Prisoner':
@@ -793,9 +790,9 @@ class AdvancementEvent(EventBase):
             projection.pending_inputs.append(
                 PendingSkillTable(id=f'{self.id}.0', instruction='Choose a skill table and roll 1D', options=tables)
             )
-            projection.queue_reenlist_or_aging(self.id, 1)
+            queue_reenlist_or_aging(projection, self.id, 1)
             return
-        projection.queue_reenlist_or_aging(self.id, 0)
+        queue_reenlist_or_aging(projection, self.id, 0)
 
 
 class CommissionEvent(EventBase):
@@ -804,7 +801,6 @@ class CommissionEvent(EventBase):
     roll: int = 0  # sum of 2D, before characteristic DM and term DM; ignored when attempt is False
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.projection import PendingRankBonusChoice, PendingSkillTable, ReplayError
 
         career = projection.get_current_career()
         if not self.attempt:
@@ -852,7 +848,7 @@ class CommissionEvent(EventBase):
         projection.pending_inputs.append(
             PendingSkillTable(id=f'{self.id}.0', instruction='Choose a skill table and roll 1D', options=tables)
         )
-        projection.queue_reenlist_or_aging(self.id, 1)
+        queue_reenlist_or_aging(projection, self.id, 1)
 
 
 class ReenlistEvent(EventBase):
@@ -864,9 +860,9 @@ class ReenlistEvent(EventBase):
             career = projection.get_current_career()
             _start_new_career_term(projection, career, self.id)
         else:
-            projection.purge_career_pendings()
+            purge_career_pendings(projection)
             career = projection.get_current_career()
-            projection.muster_out_setup(career, self.id, 0, lose_current_term=False)
+            muster_out_setup(projection, career, self.id, 0, lose_current_term=False)
 
 
 class SkillTableEvent(EventBase):
@@ -875,14 +871,6 @@ class SkillTableEvent(EventBase):
     roll: int  # 1D result (1-6)
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.projection import (
-            PendingAgingRoll,
-            PendingAssignmentChangeChoice,
-            PendingMusterOut,
-            PendingReenlist,
-            PendingSkillTableChoice,
-            ReplayError,
-        )
 
         career = projection.get_current_career()
         table = career.skill_tables.get(self.table)
@@ -946,7 +934,6 @@ class CharacteristicChoiceEvent(EventBase):
     amount: int = 1  # how much to reduce the characteristic by
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.projection import PendingAgingChoice, PendingAgingChoiceMental, PendingNearlyKilled
 
         char = self.characteristic
         current = projection.summary.characteristics.get(char, 0)
@@ -958,13 +945,13 @@ class CharacteristicChoiceEvent(EventBase):
                         0, projection.summary.characteristics.get(other, 0) - 2
                     )
         elif isinstance(fulfilled_pending, (PendingAgingChoice, PendingAgingChoiceMental)) and not (
-            projection.check_aging_crisis(self.id)
+            check_aging_crisis(projection, self.id)
         ):
             remaining = [
                 p for p in projection.pending_inputs if isinstance(p, (PendingAgingChoice, PendingAgingChoiceMental))
             ]
             if not remaining:
-                projection.complete_aging(self.id)
+                complete_aging(projection, self.id)
 
 
 class ConnectionsRollEvent(EventBase):
@@ -973,7 +960,6 @@ class ConnectionsRollEvent(EventBase):
     count: int  # final count (client applies the dice expression from the pending instruction)
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.projection import make_connection
 
         for _ in range(self.count):
             projection.summary.connections.append(make_connection(self.connection_type))
@@ -987,7 +973,6 @@ class SkillRollEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.careers.loader import get_skill_roll_handler
-        from ceres.character.projection import PendingAdvancement
 
         career = projection.get_current_career()
         handler = get_skill_roll_handler(career.name, self.context)
@@ -1009,14 +994,13 @@ class AgingRollEvent(EventBase):
     roll: int  # 2D result (2-12) before the -term_count DM
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.projection import PendingAgingChoice, PendingAgingChoiceMental, ReplayError
 
         if not (2 <= self.roll <= 12):
             raise ReplayError(f'Aging roll must be 2-12, got {self.roll}')
         effective = self.roll - projection.summary.term_count
         pending_idx = 0
         if effective >= 1:
-            projection.complete_aging(self.id)
+            complete_aging(projection, self.id)
         elif effective == 0:
             projection.pending_inputs.append(
                 PendingAgingChoice(
@@ -1038,8 +1022,8 @@ class AgingRollEvent(EventBase):
         elif effective == -2:
             for char in (Chars.STR, Chars.DEX, Chars.END):
                 projection.summary.characteristics[char] = max(0, projection.summary.characteristics.get(char, 0) - 1)
-            if not projection.check_aging_crisis(self.id):
-                projection.complete_aging(self.id)
+            if not check_aging_crisis(projection, self.id):
+                complete_aging(projection, self.id)
         elif effective == -3:
             projection.pending_inputs.append(
                 PendingAgingChoice(
@@ -1078,12 +1062,12 @@ class AgingRollEvent(EventBase):
         elif effective == -5:
             for char in (Chars.STR, Chars.DEX, Chars.END):
                 projection.summary.characteristics[char] = max(0, projection.summary.characteristics.get(char, 0) - 2)
-            if not projection.check_aging_crisis(self.id):
-                projection.complete_aging(self.id)
+            if not check_aging_crisis(projection, self.id):
+                complete_aging(projection, self.id)
         else:  # <= -6
             for char in (Chars.STR, Chars.DEX, Chars.END):
                 projection.summary.characteristics[char] = max(0, projection.summary.characteristics.get(char, 0) - 2)
-            if not projection.check_aging_crisis(self.id):
+            if not check_aging_crisis(projection, self.id):
                 projection.pending_inputs.append(
                     PendingAgingChoiceMental(
                         id=f'{self.id}.0',
@@ -1098,7 +1082,6 @@ class InjuryTableEvent(EventBase):
     roll: int  # 1D result (1-6) on the Injury table
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.projection import ReplayError
 
         if not (1 <= self.roll <= 6):
             raise ReplayError(f'Injury table roll must be 1-6, got {self.roll}')
@@ -1113,7 +1096,6 @@ class DoubleInjuryTableEvent(EventBase):
     roll2: int  # second 1D result (1-6)
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.projection import ReplayError
 
         for roll in (self.roll1, self.roll2):
             if not (1 <= roll <= 6):
@@ -1126,15 +1108,6 @@ class LifeEventEvent(EventBase):
     roll: int  # 2D result (2-12) on the Life Events table
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.projection import (
-            Ally,
-            Contact,
-            PendingInjuryTable,
-            PendingLifeEventChoice,
-            PendingLifeEventUnusual,
-            ReplayError,
-            ScheduledEffect,
-        )
 
         if not (2 <= self.roll <= 12):
             raise ReplayError(f'Life event roll must be 2-12, got {self.roll}')
@@ -1260,7 +1233,6 @@ class LifeEventUnusualEvent(EventBase):
     roll: int  # 1D result (1-6) on the Unusual Event sub-table
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.projection import Ally, Contact, ReplayError
 
         if not (1 <= self.roll <= 6):
             raise ReplayError(f'Life event unusual roll must be 1-6, got {self.roll}')
@@ -1283,7 +1255,6 @@ class MusterOutEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.careers.loader import load_careers
-        from ceres.character.projection import PendingMusterOut, ReplayError
 
         career_name = projection.muster_out_career
         if career_name is None:
@@ -1308,7 +1279,7 @@ class MusterOutEvent(EventBase):
         if not remaining:
             projection.muster_out_career = None
             if not projection.summary.dead:
-                projection.queue_career_choice_indexed(self.id, 0, 'Start a new career, or finish character creation')
+                queue_career_choice_indexed(projection, self.id, 0, 'Start a new career, or finish character creation')
 
 
 class BenefitChoiceEvent(EventBase):
@@ -1318,7 +1289,6 @@ class BenefitChoiceEvent(EventBase):
     choice_index: int  # 0-based index into PendingBenefitChoice.benefit_options
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.projection import PendingBenefitChoice, ReplayError
 
         if not isinstance(fulfilled_pending, PendingBenefitChoice):
             raise ReplayError('BenefitChoiceEvent must fulfill a PendingBenefitChoice')
@@ -1348,7 +1318,7 @@ class AgingCrisisEvent(EventBase):
             projection.pending_reenlist = None
             projection.muster_out_career = None
             if career:
-                projection.muster_out_setup(career, self.id, 0, clear_career=True)
+                muster_out_setup(projection, career, self.id, 0, clear_career=True)
             else:
                 projection.clear_current_career()
         else:
@@ -1371,14 +1341,13 @@ class AssignmentChangeChoiceEvent(EventBase):
     qualification_roll: int | None = None  # required when choice is an assignment name
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.projection import PendingReenlist, ReplayError
 
         career = projection.get_current_career()
         if self.choice == 'same':
             _start_new_career_term(projection, career, self.id)
         elif self.choice == 'muster_out':
-            projection.purge_career_pendings()
-            projection.muster_out_setup(career, self.id, 0, lose_current_term=False)
+            purge_career_pendings(projection)
+            muster_out_setup(projection, career, self.id, 0, lose_current_term=False)
         else:
             new_assignment = career.assignment(self.choice)
             if new_assignment is None:
@@ -1422,7 +1391,6 @@ class PreCareerEntryEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.precareers.loader import load_precareers
-        from ceres.character.projection import PendingPreCareerEvent, PendingPreCareerGraduation, ReplayError
 
         precareer = load_precareers().get(self.precareer)
         if precareer is None:
@@ -1442,7 +1410,7 @@ class PreCareerEntryEvent(EventBase):
                 if soc >= precareer.entry_soc_bonus_min:
                     dm += precareer.entry_soc_bonus
             if self.roll == 2 or self.roll + dm < precareer.entry.target:
-                projection.queue_career_choice(self.id, 'Pre-career entry failed — choose a career')
+                queue_career_choice(projection, self.id, 'Pre-career entry failed — choose a career')
                 return
         projection.summary.precareer = self.precareer
         projection.summary.term_count += 1
@@ -1485,7 +1453,6 @@ class PreCareerSkillChoiceEvent(EventBase):
     skill: str  # specific skill name (may include specialisation, e.g. 'Science (biology)')
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.projection import PendingPreCareerSkillChoice
 
         level = fulfilled_pending.level if isinstance(fulfilled_pending, PendingPreCareerSkillChoice) else 0
         skill_name, spec = parse_skill_spec_option(self.skill)
@@ -1505,13 +1472,6 @@ class PreCareerEventEvent(EventBase):
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.careers.career_data import GainConnectionsRolledEffect, LifeEventEffect, SkillChoiceEffect
         from ceres.character.precareers.loader import load_precareers
-        from ceres.character.projection import (
-            PendingConnectionsRoll,
-            PendingLifeEvent,
-            PendingPreCareerGraduation,
-            PendingSkillChoice,
-            ReplayError,
-        )
 
         precareer_name = projection.summary.precareer
         if precareer_name is None:
@@ -1536,7 +1496,7 @@ class PreCareerEventEvent(EventBase):
                 projection.pending_inputs.remove(p)
             projection.summary.precareer_completed = precareer_name
             projection.summary.precareer = None
-            projection.queue_career_choice(self.id, 'Pre-career ended (no graduation) — choose a career')
+            queue_career_choice(projection, self.id, 'Pre-career ended (no graduation) — choose a career')
             return
         for effect in term_event.effects:
             if isinstance(effect, GainConnectionsRolledEffect):
@@ -1595,7 +1555,6 @@ class PreCareerGraduationEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.precareers.loader import load_precareers
-        from ceres.character.projection import ReplayError
 
         precareer_name = projection.summary.precareer
         if precareer_name is None:
@@ -1634,7 +1593,9 @@ class PreCareerGraduationEvent(EventBase):
         projection.summary.precareer_completed = precareer_name
         projection.summary.precareer = None
         projection.summary.precareer_skills = []
-        projection.queue_career_choice_indexed(self.id, pending_graduation_idx, 'Pre-career complete — choose a career')
+        queue_career_choice_indexed(
+            projection, self.id, pending_graduation_idx, 'Pre-career complete — choose a career'
+        )
 
 
 class ParoleRollEvent(EventBase):
@@ -1647,6 +1608,1116 @@ class ParoleRollEvent(EventBase):
         pt = self.roll + 2
         projection.summary.parole_threshold = pt
         projection.summary.narrative.append(f'Prisoner: Parole Threshold set to {pt} (rolled {self.roll}+2)')
+
+
+# ── Free functions (formerly CharacterProjection methods) ─────────────────────
+
+
+def purge_career_pendings(projection: CharacterProjection) -> None:
+    """Remove pending inputs that require an active career and can no longer be fulfilled.
+
+    Called when a career ends (mishap or reenlist=False) to clear inputs that were queued
+    by prior career-phase processing and are now orphaned.
+    """
+    projection.pending_inputs[:] = [
+        p for p in projection.pending_inputs if not isinstance(p, _CAREER_PHASE_PENDING_TYPES)
+    ]
+
+
+def queue_career_choice_indexed(
+    projection: CharacterProjection, event_id: int, idx: int, instruction: str = 'Choose a career'
+) -> None:
+    from ceres.character.careers.loader import selectable_careers
+
+    if projection.forced_next_career:
+        career_name = projection.forced_next_career
+        projection.forced_next_career = None
+        projection.pending_inputs.append(
+            PendingCareerChoice(
+                id=f'{event_id}.{idx}',
+                instruction=f'Next career: {career_name} (mandatory)',
+                options=[career_name],
+            )
+        )
+    else:
+        career_options = sorted(selectable_careers(projection).keys())
+        projection.pending_inputs.append(
+            PendingCareerChoice(
+                id=f'{event_id}.{idx}',
+                instruction=instruction,
+                options=career_options,
+            )
+        )
+
+
+def queue_career_choice(projection: CharacterProjection, event_id: int, instruction: str = 'Choose a career') -> None:
+    queue_career_choice_indexed(projection, event_id, 0, instruction)
+
+
+def queue_reenlist_or_aging(projection: CharacterProjection, event_id: int, idx: int) -> None:
+    from ceres.character.careers.loader import load_careers
+
+    if projection.prisoner_freed:
+        projection.prisoner_freed = False
+        projection.summary.age += 4
+        career_name = projection.summary.current_career
+        careers = load_careers()
+        career = careers.get(career_name) if career_name else None
+        if projection.summary.age >= 34:
+            if career:
+                projection.muster_out_career = career.name
+            projection.pending_reenlist = False
+            projection.clear_current_career()
+            projection.pending_inputs.append(
+                PendingAgingRoll(id=f'{event_id}.{idx}', instruction='Roll 2D on Aging table')
+            )
+        elif career:
+            muster_out_setup(projection, career, event_id, idx, lose_current_term=False)
+        return
+
+    projection.summary.age += 4
+    if projection.summary.age >= 34:
+        projection.pending_inputs.append(PendingAgingRoll(id=f'{event_id}.{idx}', instruction='Roll 2D on Aging table'))
+    else:
+        career = projection.get_current_career() if projection.summary.current_career else None
+        if career and career.allows_assignment_change and len(career.assignments) > 1:
+            current = projection.summary.current_assignment or ''
+            others = [a.name for a in career.assignments if a.name != current]
+            options = ['same', *others]
+            if career.name != 'Prisoner':
+                options.append('muster_out')
+            projection.pending_inputs.append(
+                PendingAssignmentChangeChoice(
+                    id=f'{event_id}.{idx}',
+                    instruction='Reenlist same assignment, switch assignment, or muster out?',
+                    options=options,
+                )
+            )
+        else:
+            projection.pending_inputs.append(
+                PendingReenlist(
+                    id=f'{event_id}.{idx}',
+                    instruction='Reenlist or muster out?',
+                    options=['true', 'false'],
+                )
+            )
+
+
+def muster_out_setup(
+    projection,
+    career: CareerData,
+    source_event_id: int,
+    pending_idx: int = 0,
+    lose_current_term: bool = False,
+    clear_career: bool = True,
+) -> int:
+    roll_count = projection.summary.term_count + (projection.summary.rank or 0) // 2
+    if lose_current_term:
+        roll_count = max(0, roll_count - 1)
+    reduce_effects = [se for se in projection.scheduled_effects if se.trigger == 'muster_out_reduce' and se.consume]
+    for se in reduce_effects:
+        roll_count = max(0, roll_count - se.effect.get('value', 1))
+        projection.scheduled_effects.remove(se)
+    add_effects = [se for se in projection.scheduled_effects if se.trigger == 'muster_out_add' and se.consume]
+    for se in add_effects:
+        roll_count += se.effect.get('value', 1)
+        projection.scheduled_effects.remove(se)
+    if clear_career:
+        projection.clear_current_career()
+    if roll_count > 0:
+        projection.muster_out_career = career.name
+        for _ in range(roll_count):
+            projection.pending_inputs.append(
+                PendingMusterOut(
+                    id=f'{source_event_id}.{pending_idx}',
+                    instruction='Muster out: choose cash or benefits table',
+                    options=['cash', 'benefits'],
+                )
+            )
+            pending_idx += 1
+    else:
+        queue_career_choice_indexed(projection, source_event_id, pending_idx)
+        pending_idx += 1
+    return pending_idx
+
+
+def complete_aging(projection: CharacterProjection, source_event_id: int) -> None:
+    from ceres.character.careers.loader import load_careers
+
+    if projection.muster_out_career is not None:
+        careers = load_careers()
+        career = careers.get(projection.muster_out_career)
+        lose = projection.pending_reenlist is None
+        projection.muster_out_career = None
+        if career:
+            muster_out_setup(projection, career, source_event_id, 0, lose_current_term=lose, clear_career=False)
+    else:
+        career = projection.get_current_career() if projection.summary.current_career else None
+        if career and career.allows_assignment_change and len(career.assignments) > 1:
+            current = projection.summary.current_assignment or ''
+            others = [a.name for a in career.assignments if a.name != current]
+            projection.pending_inputs.append(
+                PendingAssignmentChangeChoice(
+                    id=f'{source_event_id}.0',
+                    instruction='Reenlist same assignment, switch assignment, or muster out?',
+                    options=['same', *others, 'muster_out'],
+                )
+            )
+        else:
+            projection.pending_inputs.append(
+                PendingReenlist(
+                    id=f'{source_event_id}.0',
+                    instruction='Reenlist or muster out?',
+                    options=['true', 'false'],
+                )
+            )
+    projection.pending_reenlist = None
+
+
+def check_aging_crisis(projection: CharacterProjection, source_event_id: int) -> bool:
+    if any(v == 0 for v in projection.summary.characteristics.values()):
+        projection.pending_inputs = [
+            p for p in projection.pending_inputs if not isinstance(p, (PendingAgingChoice, PendingAgingChoiceMental))
+        ]
+        projection.pending_inputs.append(
+            PendingAgingCrisis(
+                id=f'{source_event_id}.crisis',
+                instruction='Aging crisis: pay for medical care or die?',
+                options=['pay', 'die'],
+            )
+        )
+        return True
+    return False
+
+
+def career_progress_pending(
+    projection, career: CareerData, event_id: int, pending_idx: int = 0
+) -> PendingAdvancement | PendingCommissionChoice:
+    if career.can_attempt_commission(projection):
+        commission = career.commission
+        if commission is None:
+            raise ReplayError(f'{career.name} can attempt commission without commission rules')
+        return PendingCommissionChoice(
+            id=f'{event_id}.{pending_idx}',
+            instruction=f'Attempt commission ({commission.characteristic} {commission.target}+) or roll advancement?',
+            options=['attempt', 'skip'],
+        )
+    assignment_name = projection.summary.current_assignment or ''
+    assignment = career.assignment(assignment_name)
+    if assignment is None:
+        raise ReplayError(f'Unknown assignment {assignment_name!r}')
+    char = assignment.advancement.characteristic
+    target = assignment.advancement.target
+    return PendingAdvancement(id=f'{event_id}.{pending_idx}', instruction=f'Advancement: {char} {target}+')
+
+
+# ── Skill-choice option builder ───────────────────────────────────────────────
+
+
+def _build_skill_select_options(
+    projection: CharacterProjection,
+    options: list[str],
+    level: int | None,
+) -> list[tuple[str, str]]:
+    """Build (display_label, form_value) pairs for skill-choice pending inputs."""
+    results: list[tuple[str, str]] = []
+    for opt in options:
+        if opt in _NON_SKILL_OPTION_LABELS:
+            results.append((_NON_SKILL_OPTION_LABELS[opt], opt))
+            continue
+        try:
+            skill_cls = skill_class_by_name(opt)
+        except ValueError:
+            continue
+        if level == 0:
+            skill = cast(AnySkill, skill_cls())
+            results.append((opt, _skill_adapter.dump_json(skill).decode()))
+        else:
+            choices = projection.skill_choices([skill_cls], level)
+            for skill in choices:
+                label = opt
+                fields = _level_fields(skill_cls)
+                if len(fields) > 1:
+                    for fname, sname in zip(fields, skill_cls.specialities(), strict=False):
+                        given = getattr(skill, fname).value
+                        if given > 0:
+                            label = f'{opt} ({sname})'
+                            break
+                results.append((label, _skill_adapter.dump_json(skill).decode()))
+    return results
+
+
+# ── Pending-input types ───────────────────────────────────────────────────────
+
+
+class PendingUcp(PendingInputBase):
+    kind: Literal['ucp'] = 'ucp'
+    stat_names: list[str] = Field(default_factory=lambda: [s.value for s in UCP_STATS])
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        sophont = projection.summary.sophont
+        n = len(sophont.ucp_stats) if sophont is not None else 6
+        ucp = ''.join(f'{_roll2d(rng):X}' for _ in range(n))
+        return UcpEvent(ucp=ucp, fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        ucp = ''.join(f'{form_int(form, stat, 0):X}' for stat in self.stat_names)
+        return UcpEvent(ucp=ucp, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [
+            NumberEntry(
+                name=stat,
+                label=stat,
+                default=projection.summary.characteristics.get(Chars(stat), 7),
+                min=1,
+                max=15,
+            )
+            for stat in self.stat_names
+        ]
+
+
+class PendingBackgroundSkills(PendingInputBase):
+    kind: Literal['background_skills'] = 'background_skills'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        m = _CHOOSE_COUNT_RE.search(self.instruction)
+        count = int(m.group(1)) if m else 3
+        shuffled = list(self.options)
+        rng.shuffle(shuffled)
+        skills: list[AnySkill] = []
+        for name in shuffled:
+            if len(skills) >= count:
+                break
+            try:
+                cls = skill_class_by_name(name)
+                skills.append(cast(AnySkill, cls()))
+            except ValueError:
+                pass
+        return BackgroundSkillsEvent(skills=skills, fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        raw = form.getlist('skill')
+        skills = [_skill_adapter.validate_json(j) for j in raw]
+        return BackgroundSkillsEvent(skills=skills, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        m = _CHOOSE_COUNT_RE.search(self.instruction)
+        count = int(m.group(1)) if m else 1
+        options: list[tuple[str, str]] = []
+        for opt in self.options:
+            try:
+                cls = skill_class_by_name(opt)
+            except ValueError:
+                continue
+            skill = cast(AnySkill, cls())
+            options.append((opt, _skill_adapter.dump_json(skill).decode()))
+        return [Select(name='skill', label='Skills', options=options, min_select=count, max_select=count)]
+
+
+class PendingCareerChoice(PendingInputBase):
+    kind: Literal['career_choice'] = 'career_choice'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        if projection.summary.term_count >= ctx.max_terms:
+            return FinishCreationEvent(fulfills=self.id)
+        available = self.options or sorted(ctx.careers.keys())
+        career_data = None
+        if ctx.career in available:
+            career_data = ctx.careers.get(ctx.career)
+        if career_data is None:
+            from ceres.character.careers.loader import load_careers as _load_careers
+
+            all_careers = _load_careers()
+            chosen_name = rng.choice(available) if available else rng.choice(sorted(ctx.careers.keys()))
+            career_data = all_careers.get(chosen_name) or ctx.careers.get(chosen_name)
+        if career_data is None:
+            career_data = ctx.careers[rng.choice(sorted(ctx.careers.keys()))]
+        if ctx.assignment and any(a.name == ctx.assignment for a in career_data.assignments):
+            assignment = ctx.assignment
+        else:
+            assignment = rng.choice([a.name for a in career_data.assignments])
+        return CareerEvent(
+            career=career_data.name,
+            assignment=assignment,
+            qualification_roll=12,
+            fulfills=self.id,
+        )
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        kind = form_str(form, 'kind', '')
+        if kind == 'finish_creation':
+            return FinishCreationEvent(fulfills=self.id)
+        if kind == 'precareer_entry':
+            precareer = form_str(form, 'precareer', 'University')
+            roll = form_int(form, 'roll', 7)
+            return PreCareerEntryEvent(precareer=precareer, roll=roll, fulfills=self.id)
+        career = form_str(form, 'career')
+        assignment = form_str(form, 'assignment')
+        roll = form_int(form, 'roll', 2)
+        return CareerEvent(career=career, assignment=assignment, qualification_roll=roll, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        # Career choice uses a complex HTMX-driven form; no generic InputSpec
+        return []
+
+
+class PendingDraftChoice(PendingInputBase):
+    kind: Literal['draft_choice'] = 'draft_choice'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        draft_careers = [career for career in ctx.careers.values() if career.does_draft()]
+        career = rng.choice(draft_careers)
+        return DraftEvent(career=career.name, fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        choice = form_str(form, 'choice', 'drifter')
+        if choice == 'draft':
+            roll = form_int(form, 'roll', 1)
+            _DRAFT_ORDER = ['Navy', 'Army', 'Marines', 'Merchant', 'Scout', 'Agent']
+            career_name = _DRAFT_ORDER[max(0, min(roll, len(_DRAFT_ORDER)) - 1)]
+            return DraftEvent(career=career_name, fulfills=self.id)
+        assignment = form_str(form, 'assignment', 'Wanderer')
+        return CareerEvent(career='Drifter', assignment=assignment, qualification_roll=2, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        # Draft choice uses toggle JS panels; no generic InputSpec
+        return []
+
+
+class PendingDraftAssignmentChoice(PendingInputBase):
+    kind: Literal['draft_assignment_choice'] = 'draft_assignment_choice'
+    career: str
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return DraftAssignmentEvent(
+            career=self.career,
+            assignment=rng.choice(self.options),
+            fulfills=self.id,
+        )
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return DraftAssignmentEvent(
+            career=self.career,
+            assignment=form_str(form, 'assignment'),
+            fulfills=self.id,
+        )
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        options = [(opt, opt) for opt in self.options]
+        return [
+            Reference(name='career', value=self.career),
+            Select(name='assignment', label='Assignment', options=options),
+        ]
+
+
+class PendingSurvive(PendingInputBase):
+    kind: Literal['survive'] = 'survive'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return SurviveEvent(roll=_roll2d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return SurviveEvent(roll=form_int(form, 'roll', 2), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [NumberEntry(name='roll', label='2D roll (2–12)', default=7, min=2, max=12)]
+
+
+class PendingTermEvent(PendingInputBase):
+    kind: Literal['term_event'] = 'term_event'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return TermEventEvent(roll=_roll2d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return TermEventEvent(roll=form_int(form, 'roll', 2), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [NumberEntry(name='roll', label='2D roll (2–12)', default=7, min=2, max=12)]
+
+
+class PendingMishap(PendingInputBase):
+    kind: Literal['mishap'] = 'mishap'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return MishapEvent(roll=_roll1d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return MishapEvent(roll=form_int(form, 'roll', 1), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [NumberEntry(name='roll', label='1D roll (1–6)', default=3, min=1, max=6)]
+
+
+class PendingAdvancement(PendingInputBase):
+    kind: Literal['advancement'] = 'advancement'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return AdvancementEvent(roll=_roll2d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return AdvancementEvent(roll=form_int(form, 'roll', 2), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [NumberEntry(name='roll', label='2D roll (2–12)', default=7, min=2, max=12)]
+
+
+class PendingCommissionChoice(PendingInputBase):
+    kind: Literal['commission_choice'] = 'commission_choice'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return CommissionEvent(attempt=False, fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        choice = form_str(form, 'choice', 'skip')
+        if choice == 'attempt':
+            return CommissionEvent(attempt=True, roll=form_int(form, 'roll', 7), fulfills=self.id)
+        return CommissionEvent(attempt=False, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [
+            Select(
+                name='choice',
+                label='Commission',
+                options=[('Attempt commission', 'attempt'), ('Skip (roll advancement)', 'skip')],
+            ),
+            NumberEntry(name='roll', label='Commission roll (2D, if attempting)', default=7, min=2, max=12),
+        ]
+
+
+class PendingSkillTable(PendingInputBase):
+    kind: Literal['skill_table'] = 'skill_table'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        table = rng.choice(self.options) if self.options else 'service_skills'
+        return SkillTableEvent(table=table, roll=_roll1d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return SkillTableEvent(
+            table=form_str(form, 'table'),
+            roll=form_int(form, 'roll', 1),
+            fulfills=self.id,
+        )
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        table_options = [(opt.replace('_', ' ').title(), opt) for opt in self.options]
+        return [
+            Select(name='table', label='Table', options=table_options),
+            NumberEntry(name='roll', label='1D roll (1–6)', default=3, min=1, max=6),
+        ]
+
+
+class PendingReenlist(PendingInputBase):
+    kind: Literal['reenlist'] = 'reenlist'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return ReenlistEvent(reenlist=projection.summary.term_count < ctx.max_terms, fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        reenlist = form_str(form, 'reenlist', 'false').lower() in ('true', '1', 'yes')
+        return ReenlistEvent(reenlist=reenlist, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        # Reenlist uses big inline buttons; no generic InputSpec
+        return []
+
+
+class PendingAssignmentChangeChoice(PendingInputBase):
+    """End-of-term choice for careers that allow intra-career assignment changes.
+
+    options: ['same', 'muster_out', *other_assignment_names]
+    Resolved by AssignmentChangeChoiceEvent.
+    """
+
+    kind: Literal['assignment_change_choice'] = 'assignment_change_choice'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        if projection.summary.term_count < ctx.max_terms:
+            return AssignmentChangeChoiceEvent(choice='same', fulfills=self.id)
+        if 'muster_out' in self.options:
+            return AssignmentChangeChoiceEvent(choice='muster_out', fulfills=self.id)
+        return AssignmentChangeChoiceEvent(choice='same', fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        choice = form_str(form, 'choice', 'muster_out')
+        roll = form_int(form, 'roll', 7) if choice not in ('same', 'muster_out') else None
+        return AssignmentChangeChoiceEvent(choice=choice, qualification_roll=roll, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        labels = {'same': 'Stay in current assignment', 'muster_out': 'Muster out'}
+        options = [(labels.get(opt, opt), opt) for opt in self.options]
+        return [
+            Select(name='choice', label='Assignment choice', options=options),
+            NumberEntry(
+                name='roll', label='Qualification roll (2D, if switching assignment)', default=7, min=2, max=12
+            ),
+        ]
+
+
+class PendingMusterOut(PendingInputBase):
+    kind: Literal['muster_out'] = 'muster_out'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        tables: list[Literal['cash', 'benefits']] = ['cash', 'benefits']
+        return MusterOutEvent(table=rng.choice(tables), roll=_roll1d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        from typing import Literal as _Literal, cast as _cast
+
+        table = _cast(
+            _Literal['cash', 'benefits'],
+            literal(form_str(form, 'table', 'benefits'), ('cash', 'benefits'), 'benefits'),
+        )
+        return MusterOutEvent(table=table, roll=form_int(form, 'roll', 1), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        table_options = [(opt.title(), opt) for opt in self.options]
+        return [
+            Select(name='table', label='Table', options=table_options),
+            NumberEntry(name='roll', label='1D roll (1–6, apply DMs first)', default=3, min=1, max=7),
+        ]
+
+
+class PendingSkillChoice(PendingInputBase):
+    kind: Literal['skill_choice'] = 'skill_choice'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        skill = projection._pick_skill_auto(self.options, rng, None)
+        if skill is not None:
+            return SkillChoiceEvent(skill=skill, fulfills=self.id)
+        return AdvancementDmChoiceEvent(fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        skill_str = form_str(form, 'skill', '{}')
+        if skill_str == 'advancement_dm_4':
+            return AdvancementDmChoiceEvent(fulfills=self.id)
+        skill = _skill_adapter.validate_json(skill_str)
+        return SkillChoiceEvent(skill=skill, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        options = _build_skill_select_options(projection, self.options, None)
+        return [Select(name='skill', label='Choose a skill', options=options)]
+
+
+class PendingInitialTrainingChoice(PendingInputBase):
+    kind: Literal['initial_training_choice'] = 'initial_training_choice'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        skill = projection._pick_skill_auto(self.options, rng, 0)
+        if skill is not None:
+            return SkillChoiceEvent(skill=skill, fulfills=self.id)
+        return AdvancementDmChoiceEvent(fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        skill_str = form_str(form, 'skill', '{}')
+        if skill_str == 'advancement_dm_4':
+            return AdvancementDmChoiceEvent(fulfills=self.id)
+        skill = _skill_adapter.validate_json(skill_str)
+        return SkillChoiceEvent(skill=skill, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        options = _build_skill_select_options(projection, self.options, 0)
+        return [Select(name='skill', label='Choose a skill', options=options)]
+
+
+class PendingSkillTableChoice(PendingInputBase):
+    kind: Literal['skill_table_choice'] = 'skill_table_choice'
+    reenlist_queued: bool = False  # True when reenlist/aging already queued (end-of-term path)
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        skill = projection._pick_skill_auto(self.options, rng, None)
+        if skill is not None:
+            return SkillChoiceEvent(skill=skill, fulfills=self.id)
+        return AdvancementDmChoiceEvent(fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        skill_str = form_str(form, 'skill', '{}')
+        if skill_str == 'advancement_dm_4':
+            return AdvancementDmChoiceEvent(fulfills=self.id)
+        skill = _skill_adapter.validate_json(skill_str)
+        return SkillChoiceEvent(skill=skill, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        options = _build_skill_select_options(projection, self.options, None)
+        return [Select(name='skill', label='Choose a skill', options=options)]
+
+
+class PendingRankBonusChoice(PendingInputBase):
+    kind: Literal['rank_bonus_choice'] = 'rank_bonus_choice'
+    level: int
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        skill = projection._pick_skill_auto(self.options, rng, self.level)
+        if skill is not None:
+            return SkillChoiceEvent(skill=skill, fulfills=self.id)
+        return AdvancementDmChoiceEvent(fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        skill_str = form_str(form, 'skill', '{}')
+        if skill_str == 'advancement_dm_4':
+            return AdvancementDmChoiceEvent(fulfills=self.id)
+        skill = _skill_adapter.validate_json(skill_str)
+        return SkillChoiceEvent(skill=skill, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        options = _build_skill_select_options(projection, self.options, self.level)
+        return [Select(name='skill', label='Choose a skill', options=options)]
+
+
+class PendingCharacteristicChoice(PendingInputBase):
+    kind: Literal['characteristic_choice'] = 'characteristic_choice'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        char = rng.choice(self.options) if self.options else 'STR'
+        return CharacteristicChoiceEvent(characteristic=Chars(char), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return CharacteristicChoiceEvent(
+            characteristic=Chars(form_str(form, 'characteristic', Chars.STR)),
+            fulfills=self.id,
+        )
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        options = [(opt, opt) for opt in self.options]
+        return [Select(name='characteristic', label='Characteristic', options=options)]
+
+
+class PendingNearlyKilled(PendingInputBase):
+    kind: Literal['nearly_killed'] = 'nearly_killed'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return InjuryTableEvent(roll=_roll1d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return InjuryTableEvent(roll=form_int(form, 'roll', 1), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [NumberEntry(name='roll', label='1D roll (1–6)', default=3, min=1, max=6)]
+
+
+class PendingInjuryTable(PendingInputBase):
+    kind: Literal['injury_table'] = 'injury_table'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return InjuryTableEvent(roll=_roll1d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return InjuryTableEvent(roll=form_int(form, 'roll', 1), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [NumberEntry(name='roll', label='1D roll (1–6)', default=3, min=1, max=6)]
+
+
+class PendingDoubleInjuryRoll(PendingInputBase):
+    """Roll 1D twice; system takes the lower result and applies Injury table."""
+
+    kind: Literal['double_injury_roll'] = 'double_injury_roll'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return DoubleInjuryTableEvent(roll1=_roll1d(rng), roll2=_roll1d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return DoubleInjuryTableEvent(
+            roll1=form_int(form, 'roll1', 1),
+            roll2=form_int(form, 'roll2', 1),
+            fulfills=self.id,
+        )
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [
+            NumberEntry(name='roll1', label='First 1D roll (1–6)', default=3, min=1, max=6),
+            NumberEntry(name='roll2', label='Second 1D roll (1–6)', default=3, min=1, max=6),
+        ]
+
+
+class PendingBenefitChoice(PendingInputBase):
+    """Player must pick one option from a ChoiceBenefit muster-out row."""
+
+    kind: Literal['benefit_choice_pending'] = 'benefit_choice_pending'
+    benefit_options: list[AnyBenefit]
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return BenefitChoiceEvent(
+            choice_index=rng.randint(0, len(self.benefit_options) - 1),
+            fulfills=self.id,
+        )
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return BenefitChoiceEvent(choice_index=form_int(form, 'choice_index', 0), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        options = [(opt, str(i)) for i, opt in enumerate(self.options)]
+        return [Select(name='choice_index', label='Choose benefit', options=options)]
+
+
+class PendingAgingRoll(PendingInputBase):
+    kind: Literal['aging_roll'] = 'aging_roll'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return AgingRollEvent(roll=_roll2d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return AgingRollEvent(roll=form_int(form, 'roll', 2), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [NumberEntry(name='roll', label='2D roll (2–12)', default=7, min=2, max=12)]
+
+
+class PendingAgingChoice(PendingInputBase):
+    kind: Literal['aging_choice'] = 'aging_choice'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        char = rng.choice(self.options) if self.options else 'STR'
+        return CharacteristicChoiceEvent(characteristic=Chars(char), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return CharacteristicChoiceEvent(
+            characteristic=Chars(form_str(form, 'characteristic', Chars.STR)),
+            fulfills=self.id,
+        )
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        options = [(opt, opt) for opt in self.options]
+        return [Select(name='characteristic', label='Characteristic', options=options)]
+
+
+class PendingAgingChoiceMental(PendingInputBase):
+    kind: Literal['aging_choice_mental'] = 'aging_choice_mental'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        char = rng.choice(self.options) if self.options else 'STR'
+        return CharacteristicChoiceEvent(characteristic=Chars(char), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return CharacteristicChoiceEvent(
+            characteristic=Chars(form_str(form, 'characteristic', Chars.STR)),
+            fulfills=self.id,
+        )
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        options = [(opt, opt) for opt in self.options]
+        return [Select(name='characteristic', label='Characteristic', options=options)]
+
+
+class PendingAgingCrisis(PendingInputBase):
+    kind: Literal['aging_crisis'] = 'aging_crisis'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return AgingCrisisEvent(paid=False, medical_roll=0, fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        paid = form_str(form, 'paid', 'false').lower() in ('true', '1', 'yes')
+        medical_roll = form_int(form, 'medical_roll', 0)
+        return AgingCrisisEvent(paid=paid, medical_roll=medical_roll, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [
+            Select(
+                name='paid',
+                label='Medical care',
+                options=[('Pay for medical care', 'true'), ('Cannot afford / decline', 'false')],
+            ),
+            NumberEntry(name='medical_roll', label='Medical roll (1D, if paying)', default=3, min=0, max=6),
+        ]
+
+
+class PendingLifeEvent(PendingInputBase):
+    kind: Literal['life_event'] = 'life_event'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return LifeEventEvent(roll=_roll2d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return LifeEventEvent(roll=form_int(form, 'roll', 2), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [NumberEntry(name='roll', label='2D roll (2–12)', default=7, min=2, max=12)]
+
+
+class PendingLifeEventChoice(PendingInputBase):
+    """Life event that requires a connection kind choice (rolls 4 and 8)."""
+
+    kind: Literal['life_event_choice'] = 'life_event_choice'
+    roll: int
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return ConnectionKindChoiceEvent(connection_kind=rng.choice(list(ConnectionKind)), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        raw_ck = literal(form_str(form, 'connection_kind', 'rival'), tuple(ConnectionKind), 'rival')
+        return ConnectionKindChoiceEvent(connection_kind=ConnectionKind(raw_ck), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        options = [('Rival', 'rival'), ('Enemy', 'enemy')]
+        return [Select(name='connection_kind', label='Connection type', options=options)]
+
+
+class PendingLifeEventUnusual(PendingInputBase):
+    kind: Literal['life_event_unusual'] = 'life_event_unusual'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return LifeEventUnusualEvent(roll=_roll1d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return LifeEventUnusualEvent(roll=form_int(form, 'roll', 1), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [NumberEntry(name='roll', label='1D roll (1–6)', default=3, min=1, max=6)]
+
+
+class PendingConnectionsRoll(PendingInputBase):
+    kind: Literal['connections_roll'] = 'connections_roll'
+    connection_type: ConnectionKind = ConnectionKind.CONTACT
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return ConnectionsRollEvent(
+            connection_type=self.connection_type,
+            count=_roll1d(rng),
+            fulfills=self.id,
+        )
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        raw_ct = literal(form_str(form, 'connection_type', 'contact'), tuple(ConnectionKind), 'contact')
+        count = form_int(form, 'count', 1)
+        return ConnectionsRollEvent(connection_type=ConnectionKind(raw_ct), count=count, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        count_options = (
+            [(str(opt), opt) for opt in self.options] if self.options else [(str(i), str(i)) for i in range(1, 7)]
+        )
+        return [
+            Reference(name='connection_type', value=self.connection_type.value),
+            Select(name='count', label='Count', options=count_options),
+        ]
+
+
+class PendingCareerEvent(PendingInputBase):
+    """Career-specific event requiring player input; career+roll identifies the exact event."""
+
+    kind: Literal['career_event'] = 'career_event'
+    career: str
+    roll: int
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        context = f'{self.career.lower()}_event_{self.roll}'
+        choice = rng.choice(list(self.options)) if self.options else ''
+        return CareerChoiceEvent(context=context, choice=choice, fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        context = f'{self.career.lower()}_event_{self.roll}'
+        choice = form_str(form, 'choice', '')
+        return CareerChoiceEvent(context=context, choice=choice, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        # Career event uses inline submit buttons; choice is submitted via button value
+        return []
+
+
+class PendingCareerMishap(PendingInputBase):
+    """Career-specific mishap requiring player input; career+roll identifies the exact mishap."""
+
+    kind: Literal['career_mishap'] = 'career_mishap'
+    career: str
+    roll: int
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        context = f'{self.career.lower()}_mishap_{self.roll}'
+        choice = rng.choice(list(self.options)) if self.options else ''
+        return CareerChoiceEvent(context=context, choice=choice, fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        context = f'{self.career.lower()}_mishap_{self.roll}'
+        choice = form_str(form, 'choice', '')
+        return CareerChoiceEvent(context=context, choice=choice, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        # Career mishap uses inline submit buttons; choice is submitted via button value
+        return []
+
+
+class PendingCareerSkillChoice(PendingInputBase):
+    """Skill choice triggered by a career event or mishap."""
+
+    kind: Literal['career_skill_choice'] = 'career_skill_choice'
+    career: str
+    roll: int
+    mishap: bool = False
+    advancement_precreated: bool = False
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        skill = projection._pick_skill_auto(self.options, rng, None)
+        if skill is not None:
+            return SkillChoiceEvent(skill=skill, fulfills=self.id)
+        return AdvancementDmChoiceEvent(fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        skill_str = form_str(form, 'skill', '{}')
+        if skill_str == 'advancement_dm_4':
+            return AdvancementDmChoiceEvent(fulfills=self.id)
+        skill = _skill_adapter.validate_json(skill_str)
+        return SkillChoiceEvent(skill=skill, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        options = _build_skill_select_options(projection, self.options, None)
+        return [Select(name='skill', label='Choose a skill', options=options)]
+
+
+class PendingCareerSkillRoll(PendingInputBase):
+    """Skill roll required by a specific career event; context matches SkillRollEvent.context."""
+
+    kind: Literal['career_skill_roll'] = 'career_skill_roll'
+    career: str
+    roll: int
+    context: str
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        skill_str = rng.choice(self.options) if self.options else 'Admin'
+        try:
+            auto_skill: AnySkill | Chars = Chars(skill_str)
+        except ValueError:
+            auto_skill = cast(AnySkill, skill_class_by_name(skill_str)())
+        return SkillRollEvent(context=self.context, skill=auto_skill, modified_roll=_roll2d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        skill_str = form_str(form, 'skill')
+        modified_roll = form_int(form, 'modified_roll', 8)
+        try:
+            skill: AnySkill | Chars = Chars(skill_str)
+        except ValueError:
+            skill = _skill_adapter.validate_python({'type': skill_str})
+        return SkillRollEvent(context=self.context, skill=skill, modified_roll=modified_roll, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        skill_options = [(opt, opt) for opt in self.options]
+        return [
+            Select(name='skill', label='Skill to roll', options=skill_options),
+            NumberEntry(name='modified_roll', label='Modified roll (2D + skill level + DMs)', default=8, min=2, max=20),
+        ]
+
+
+class PendingPreCareerSkillChoice(PendingInputBase):
+    """University: choose one skill at the given level (0 or 1) from the pre-career skill list."""
+
+    kind: Literal['precareer_skill_choice'] = 'precareer_skill_choice'
+    level: int
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        skill_name = rng.choice(self.options) if self.options else 'Admin'
+        return PreCareerSkillChoiceEvent(skill=skill_name, fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        skill = form_str(form, 'skill')
+        return PreCareerSkillChoiceEvent(skill=skill, fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        options = [(opt, opt) for opt in self.options]
+        return [Select(name='skill', label='Choose a skill', options=options)]
+
+
+class PendingPreCareerEvent(PendingInputBase):
+    """Roll 2D on the Pre-career Events table."""
+
+    kind: Literal['precareer_event'] = 'precareer_event'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return PreCareerEventEvent(roll=_roll2d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return PreCareerEventEvent(roll=form_int(form, 'roll', 7), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [NumberEntry(name='roll', label='2D roll (2–12)', default=7, min=2, max=12)]
+
+
+class PendingPreCareerGraduation(PendingInputBase):
+    """Roll 2D for graduation from pre-career education."""
+
+    kind: Literal['precareer_graduation'] = 'precareer_graduation'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return PreCareerGraduationEvent(roll=_roll2d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return PreCareerGraduationEvent(roll=form_int(form, 'roll', 7), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [NumberEntry(name='roll', label='2D roll (2–12)', default=7, min=2, max=12)]
+
+
+class PendingParoleRoll(PendingInputBase):
+    """Roll 1D to determine initial Parole Threshold when entering Prisoner career."""
+
+    kind: Literal['parole_roll'] = 'parole_roll'
+
+    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
+        return ParoleRollEvent(roll=_roll1d(rng), fulfills=self.id)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return ParoleRollEvent(roll=form_int(form, 'roll', 1), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [NumberEntry(name='roll', label='1D roll (1–6)', default=3, min=1, max=6)]
+
+
+_CAREER_PHASE_PENDING_TYPES = (
+    PendingSurvive,
+    PendingTermEvent,
+    PendingMishap,
+    PendingAdvancement,
+    PendingCommissionChoice,
+    PendingSkillTable,
+    PendingSkillTableChoice,
+    PendingRankBonusChoice,
+    PendingReenlist,
+    PendingAssignmentChangeChoice,
+    PendingCareerEvent,
+    PendingCareerMishap,
+    PendingCareerSkillChoice,
+    PendingCareerSkillRoll,
+)
+type AnyPending = Annotated[
+    PendingUcp
+    | PendingBackgroundSkills
+    | PendingCareerChoice
+    | PendingDraftChoice
+    | PendingDraftAssignmentChoice
+    | PendingSurvive
+    | PendingTermEvent
+    | PendingMishap
+    | PendingAdvancement
+    | PendingCommissionChoice
+    | PendingSkillTable
+    | PendingReenlist
+    | PendingAssignmentChangeChoice
+    | PendingMusterOut
+    | PendingSkillChoice
+    | PendingInitialTrainingChoice
+    | PendingSkillTableChoice
+    | PendingRankBonusChoice
+    | PendingCharacteristicChoice
+    | PendingNearlyKilled
+    | PendingInjuryTable
+    | PendingDoubleInjuryRoll
+    | PendingBenefitChoice
+    | PendingAgingRoll
+    | PendingAgingChoice
+    | PendingAgingChoiceMental
+    | PendingAgingCrisis
+    | PendingLifeEvent
+    | PendingLifeEventChoice
+    | PendingLifeEventUnusual
+    | PendingConnectionsRoll
+    | PendingCareerEvent
+    | PendingCareerMishap
+    | PendingCareerSkillChoice
+    | PendingCareerSkillRoll
+    | PendingPreCareerSkillChoice
+    | PendingPreCareerEvent
+    | PendingPreCareerGraduation
+    | PendingParoleRoll,
+    Field(discriminator='kind'),
+]
 
 
 type AnyEvent = Annotated[
@@ -1695,12 +2766,17 @@ __all__ = [
     'AgingCrisisEvent',
     'AgingRollEvent',
     'AnyEvent',
+    'AnyPending',
     'AssignmentChangeChoiceEvent',
+    'AutoFillContext',
     'BackgroundSkillsEvent',
     'BenefitChoiceEvent',
     'CareerChoiceEvent',
     'CareerEvent',
+    'CareerTerm',
+    'CharacterProjection',
     'CharacterStartedEvent',
+    'CharacterSummary',
     'CharacteristicChoiceEvent',
     'CommissionEvent',
     'ConnectionKind',
@@ -1717,15 +2793,65 @@ __all__ = [
     'MishapEvent',
     'MusterOutEvent',
     'ParoleRollEvent',
+    'PendingAdvancement',
+    'PendingAgingChoice',
+    'PendingAgingChoiceMental',
+    'PendingAgingCrisis',
+    'PendingAgingRoll',
+    'PendingAssignmentChangeChoice',
+    'PendingBackgroundSkills',
+    'PendingBenefitChoice',
+    'PendingCareerChoice',
+    'PendingCareerEvent',
+    'PendingCareerMishap',
+    'PendingCareerSkillChoice',
+    'PendingCareerSkillRoll',
+    'PendingCharacteristicChoice',
+    'PendingCommissionChoice',
+    'PendingConnectionsRoll',
+    'PendingDoubleInjuryRoll',
+    'PendingDraftAssignmentChoice',
+    'PendingDraftChoice',
+    'PendingInitialTrainingChoice',
+    'PendingInjuryTable',
+    'PendingInputBase',
+    'PendingLifeEvent',
+    'PendingLifeEventChoice',
+    'PendingLifeEventUnusual',
+    'PendingMishap',
+    'PendingMusterOut',
+    'PendingNearlyKilled',
+    'PendingParoleRoll',
+    'PendingPreCareerEvent',
+    'PendingPreCareerGraduation',
+    'PendingPreCareerSkillChoice',
+    'PendingRankBonusChoice',
+    'PendingReenlist',
+    'PendingSkillChoice',
+    'PendingSkillTable',
+    'PendingSkillTableChoice',
+    'PendingSurvive',
+    'PendingTermEvent',
+    'PendingUcp',
     'PreCareerEntryEvent',
     'PreCareerEventEvent',
     'PreCareerGraduationEvent',
     'PreCareerSkillChoiceEvent',
     'ReenlistEvent',
+    'ReplayError',
+    'ScheduledEffect',
     'SkillChoiceEvent',
     'SkillRollEvent',
     'SkillTableEvent',
     'SurviveEvent',
     'TermEventEvent',
     'UcpEvent',
+    'career_progress_pending',
+    'check_aging_crisis',
+    'complete_aging',
+    'muster_out_setup',
+    'purge_career_pendings',
+    'queue_career_choice',
+    'queue_career_choice_indexed',
+    'queue_reenlist_or_aging',
 ]

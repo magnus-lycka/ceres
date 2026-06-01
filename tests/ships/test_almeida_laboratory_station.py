@@ -31,6 +31,10 @@ from ceres.make.ship.habitation import HabitationSection, Stateroom
 from ceres.make.ship.sensors import AdvancedSensors, SensorsSection
 from ceres.make.ship.storage import CargoHold, CargoSection, FuelSection, OperationFuel
 from ceres.make.ship.systems import AdvancedProbeDrones, CommonArea, Laboratory, LibraryFacility, SystemsSection
+from tests.ships.reference_assertions import (
+    assert_laboratory_station_matches_reference,
+    assert_laboratory_station_spec_matches_reference,
+)
 
 _expected = SimpleNamespace(
     tl=15,
@@ -163,105 +167,8 @@ def almeida_laboratory_station_spec(almeida_laboratory_station):
 
 
 def test_almeida_laboratory_station_matches_reference_sheet(almeida_laboratory_station):
-    station = almeida_laboratory_station
-
-    assert station.tl == _expected.tl
-    assert station.displacement == _expected.displacement
-    assert station.hull_cost == pytest.approx(_expected.hull_cost_mcr * 1_000_000)
-    assert station.hull_points == pytest.approx(_expected.hull_points)
-
-    assert station.drives is not None
-    assert station.drives.m_drive is not None
-    assert station.drives.m_drive.tons == pytest.approx(_expected.m_drive_tons)
-    assert station.drives.m_drive.cost == pytest.approx(_expected.m_drive_cost_mcr * 1_000_000)
-    assert station.drives.m_drive.power == pytest.approx(_expected.m_drive_power)
-
-    assert station.power is not None
-    assert station.power.plant is not None
-    assert station.power.plant.tons == pytest.approx(_expected.plant_tons)
-    assert station.power.plant.cost == pytest.approx(_expected.plant_cost_mcr * 1_000_000)
-    assert station.available_power == pytest.approx(_expected.available_power)
-
-    assert station.fuel is not None
-    assert station.fuel.operation_fuel is not None
-    assert station.fuel.operation_fuel.tons == pytest.approx(_expected.operation_fuel_tons)
-
-    assert station.command is not None
-    assert station.command.bridge is not None
-    assert station.command.bridge.tons == pytest.approx(_expected.bridge_tons)
-    assert station.command.bridge.cost == pytest.approx(_expected.bridge_cost_mcr * 1_000_000)
-
-    assert station.computer is not None
-    assert station.computer.hardware is not None
-    assert station.computer.hardware.cost == pytest.approx(_expected.computer_cost_mcr * 1_000_000)
-    assert [(package.description, package.cost) for package in station.computer.software_packages] == (
-        _expected.software_packages
-    )
-
-    assert station.sensors.primary.tons == pytest.approx(_expected.sensors_tons)
-    assert station.sensors.primary.cost == pytest.approx(_expected.sensors_cost_mcr * 1_000_000)
-    assert station.sensors.primary.power == pytest.approx(_expected.sensors_power)
-
-    assert station.craft is not None
-    assert len(station.craft.internal_housing) == _expected.docking_space_count
-    assert station.craft.internal_housing[0].tons == pytest.approx(_expected.docking_space_tons)
-    assert station.craft.internal_housing[0].cost == pytest.approx(_expected.docking_space_cost_mcr * 1_000_000)
-    assert station.craft.internal_housing[0].craft.cost == pytest.approx(_expected.air_raft_cost_mcr * 1_000_000)
-
-    assert station.systems is not None
-    assert len(station.systems.drones) == _expected.probe_drones_count
-    assert station.systems.drones[0].tons == pytest.approx(_expected.probe_drones_tons)
-    assert station.systems.drones[0].cost == pytest.approx(_expected.probe_drones_cost_mcr * 1_000_000)
-    assert len(station.systems.laboratories) == _expected.lab_count
-    assert sum(lab.tons for lab in station.systems.laboratories) == pytest.approx(_expected.labs_total_tons)
-    assert sum(lab.cost for lab in station.systems.laboratories) == pytest.approx(
-        _expected.labs_total_cost_mcr * 1_000_000
-    )
-    assert station.systems.libraries[0] is not None
-    assert station.systems.libraries[0].tons == pytest.approx(_expected.library_tons)
-    assert station.systems.libraries[0].cost == pytest.approx(_expected.library_cost_mcr * 1_000_000)
-
-    assert station.habitation is not None
-    assert sum(room.tons for room in station.habitation.staterooms) == pytest.approx(_expected.staterooms_total_tons)
-    assert sum(room.cost for room in station.habitation.staterooms) == pytest.approx(
-        _expected.staterooms_total_cost_mcr * 1_000_000
-    )
-    assert station.habitation.common_area is not None
-    assert station.habitation.common_area.tons == pytest.approx(_expected.common_area_tons)
-    assert station.habitation.common_area.cost == pytest.approx(_expected.common_area_cost_mcr * 1_000_000)
-
-    assert station.cargo is not None
-    assert len(station.cargo.cargo_holds) == _expected.cargo_hold_count
-    assert station.cargo.cargo_holds[0].usable_tons(station) == pytest.approx(_expected.cargo_tons)
-    assert CargoSection.cargo_tons_for_ship(station) == pytest.approx(_expected.cargo_tons)
-
-    assert station.available_power == pytest.approx(_expected.available_power)
-    assert station.basic_hull_power_load == pytest.approx(_expected.power_basic)
-    assert station.maneuver_power_load == pytest.approx(_expected.power_maneuver)
-    assert station.sensor_power_load == pytest.approx(_expected.power_sensors)
-    assert station.total_power_load == pytest.approx(_expected.total_power)
-
-    assert station.production_cost == pytest.approx(_expected.production_cost_mcr * 1_000_000)
-    assert station.sales_price_new == pytest.approx(_expected.sales_price_mcr * 1_000_000)
-    assert station.expenses.maintenance == pytest.approx(_expected.maintenance_cr)
-
-    assert [(role.role, quantity, role.monthly_salary) for role, quantity in station.crew.grouped_roles] == (
-        _expected.crew
-    )
-
-    assert station.notes.errors == _expected.expected_errors
-    assert station.notes.warnings == _expected.expected_warnings
-    assert station.crew.notes.infos == _expected.expected_crew_infos
-    assert station.crew.notes.warnings == _expected.expected_crew_warnings
+    assert_laboratory_station_matches_reference(almeida_laboratory_station, _expected)
 
 
 def test_almeida_laboratory_station_spec_structure(almeida_laboratory_station_spec):
-    for item in _expected.spec_rows:
-        assert (
-            almeida_laboratory_station_spec.row(item, section=_expected.spec_rows[item]).section
-            == _expected.spec_rows[item]
-        )
-    assert almeida_laboratory_station_spec.row('Advanced Probe Drones').quantity == _expected.probe_drones_quantity
-    assert almeida_laboratory_station_spec.row('Laboratory').quantity == _expected.lab_count
-    assert almeida_laboratory_station_spec.row('Staterooms').quantity == _expected.staterooms_count
-    assert almeida_laboratory_station_spec.row('Cargo Hold').tons == pytest.approx(_expected.cargo_tons)
+    assert_laboratory_station_spec_matches_reference(almeida_laboratory_station_spec, _expected)

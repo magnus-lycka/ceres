@@ -2,8 +2,8 @@ from pydantic import BaseModel, Field
 
 from ceres.character.benefits import ItemBenefit
 from ceres.character.characteristics import Chars
-from ceres.character.projection import CharacterSummary, _level_fields
-from ceres.character.skills import AnySkill
+from ceres.character.skills import AnySkill, _level_fields
+from ceres.character.state import CharacterSummary
 
 
 class NpcSpec(BaseModel):

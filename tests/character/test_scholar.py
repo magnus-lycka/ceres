@@ -14,17 +14,6 @@ from ceres.character.events import (
     InjuryTableEvent,
     MishapEvent,
     MusterOutEvent,
-    ReenlistEvent,
-    SkillChoiceEvent,
-    SkillRollEvent,
-    SkillTableEvent,
-    SurviveEvent,
-    TermEventEvent,
-    UcpEvent,
-)
-from ceres.character.projection import (
-    Ally,
-    Enemy,
     PendingAdvancement,
     PendingCareerEvent,
     PendingCareerMishap,
@@ -38,7 +27,13 @@ from ceres.character.projection import (
     PendingSkillChoice,
     PendingSkillTableChoice,
     PendingSurvive,
-    Rival,
+    ReenlistEvent,
+    SkillChoiceEvent,
+    SkillRollEvent,
+    SkillTableEvent,
+    SurviveEvent,
+    TermEventEvent,
+    UcpEvent,
 )
 from ceres.character.replay import replay
 from ceres.character.skills import (
@@ -57,6 +52,11 @@ from ceres.character.skills import (
     Survival,
 )
 from ceres.character.sophonts import VILANI
+from ceres.character.state import (
+    Ally,
+    Enemy,
+    Rival,
+)
 from tests.character.helpers import MOCK_WORLD
 
 _SCIENCES = sorted(['Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science'])

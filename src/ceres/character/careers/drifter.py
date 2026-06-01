@@ -1,12 +1,15 @@
 from ceres.character.careers.career_data import CareerData, CareerDispatchEffect
-from ceres.character.events import SkillRollEvent
-from ceres.character.projection import (
-    CharacterProjection,
-    Enemy,
+from ceres.character.events import (
     PendingCareerEvent,
     PendingCareerSkillRoll,
     PendingInjuryTable,
     PendingSkillChoice,
+    SkillRollEvent,
+    career_progress_pending,
+)
+from ceres.character.state import (
+    CharacterProjection,
+    Enemy,
     Rival,
     ScheduledEffect,
 )
@@ -80,7 +83,7 @@ def _choice_drifter_event_3(projection: CharacterProjection, event) -> None:
                 effect={'type': 'dm', 'amount': 4},
             )
         )
-    projection.pending_inputs.append(projection.career_progress_pending(career, event.id))
+    projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 
 
 # ── event 8: attacked by enemies ─────────────────────────────────────────────
@@ -145,7 +148,7 @@ def _handle_drifter_event_9(
 def _choice_drifter_event_9(projection: CharacterProjection, event) -> None:
     career = projection.get_current_career()
     if event.choice == 'decline':
-        projection.pending_inputs.append(projection.career_progress_pending(career, event.id))
+        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
     elif event.choice == 'injury':
         # outcome choice: injury
         projection.pending_inputs.append(
@@ -185,7 +188,7 @@ def _resolve_drifter_event_9_roll(projection: CharacterProjection, event: SkillR
                 options=['injury', 'prison'],
             )
         )
-        projection.pending_inputs.append(projection.career_progress_pending(career, event.id, 1))
+        projection.pending_inputs.append(career_progress_pending(projection, career, event.id, 1))
     elif roll == 3:
         projection.pending_inputs.append(
             PendingInjuryTable(
@@ -194,7 +197,7 @@ def _resolve_drifter_event_9_roll(projection: CharacterProjection, event: SkillR
                 options=['1', '2', '3', '4', '5', '6'],
             )
         )
-        projection.pending_inputs.append(projection.career_progress_pending(career, event.id, 1))
+        projection.pending_inputs.append(career_progress_pending(projection, career, event.id, 1))
     else:  # 4-6
         projection.scheduled_effects.append(
             ScheduledEffect(
@@ -220,7 +223,7 @@ def _handle_drifter_event_11(
         'Drifter event 11: forcibly drafted — roll 1D: 1-2 Army, 3-4 Marines, 5-6 Navy. '
         'Leave this career and enter the rolled career next term (no qualification roll needed). Apply manually.'
     )
-    projection.pending_inputs.append(projection.career_progress_pending(career, event_id))
+    projection.pending_inputs.append(career_progress_pending(projection, career, event_id))
     return pending_idx
 
 

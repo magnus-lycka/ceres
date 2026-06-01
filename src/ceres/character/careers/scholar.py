@@ -1,16 +1,19 @@
 from ceres.character.careers.career_data import CareerDispatchEffect
 from ceres.character.characteristics import Chars
-from ceres.character.events import SkillRollEvent
-from ceres.character.projection import (
-    CharacterProjection,
-    Enemy,
+from ceres.character.events import (
     PendingCareerEvent,
     PendingCareerMishap,
     PendingCareerSkillChoice,
     PendingCareerSkillRoll,
     PendingSkillChoice,
+    SkillRollEvent,
+    muster_out_setup,
 )
 from ceres.character.skills import ScienceSkill, skill_list, skill_names_for_category
+from ceres.character.state import (
+    CharacterProjection,
+    Enemy,
+)
 
 _SCIENCES = sorted(s.type for s in skill_list(ScienceSkill))
 
@@ -36,8 +39,7 @@ def _handle_scholar_event_3(
 
 
 def _choice_scholar_event_3(projection: CharacterProjection, event) -> None:
-    from ceres.character.events import _advancement_pending
-    from ceres.character.projection import PendingConnectionsRoll, PendingMusterOut
+    from ceres.character.events import PendingConnectionsRoll, PendingMusterOut, _advancement_pending
 
     if event.choice == 'accept':
         projection.pending_inputs.append(
@@ -257,7 +259,7 @@ def _handle_scholar_mishap_5(
 
 
 def _choice_scholar_mishap_5(projection: CharacterProjection, event) -> None:
-    from ceres.character.projection import PendingAdvancement, PendingAgingRoll
+    from ceres.character.events import PendingAdvancement, PendingAgingRoll
 
     if event.choice == 'give_up':
         career = projection.get_current_career()
@@ -268,7 +270,7 @@ def _choice_scholar_mishap_5(projection: CharacterProjection, event) -> None:
             projection.clear_current_career()
             projection.pending_inputs.append(PendingAgingRoll(id=f'{event.id}.0', instruction='Roll 2D on Aging table'))
         else:
-            projection.muster_out_setup(career, event.id, 0, lose_current_term=True)
+            muster_out_setup(projection, career, event.id, 0, lose_current_term=True)
     # 'start_again': advancement is already there from _apply_mishap, career stays
 
 

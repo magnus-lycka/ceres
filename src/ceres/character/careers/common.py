@@ -2,12 +2,12 @@
 
 from ceres.character.careers.career_data import CareerDispatchEffect
 from ceres.character.characteristics import Chars
-from ceres.character.events import SkillRollEvent
-from ceres.character.projection import (
-    CharacterProjection,
+from ceres.character.events import (
     PendingCareerSkillRoll,
     PendingSkillChoice,
+    SkillRollEvent,
 )
+from ceres.character.state import CharacterProjection
 
 
 def handle_advanced_training(

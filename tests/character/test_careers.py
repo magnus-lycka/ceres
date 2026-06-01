@@ -15,17 +15,6 @@ from ceres.character.events import (
     LifeEventEvent,
     LifeEventUnusualEvent,
     MishapEvent,
-    ReenlistEvent,
-    SkillChoiceEvent,
-    SkillTableEvent,
-    SurviveEvent,
-    TermEventEvent,
-    UcpEvent,
-)
-from ceres.character.projection import (
-    Ally,
-    Contact,
-    Enemy,
     PendingAdvancement,
     PendingAgingRoll,
     PendingAssignmentChangeChoice,
@@ -43,7 +32,12 @@ from ceres.character.projection import (
     PendingSkillTableChoice,
     PendingSurvive,
     PendingTermEvent,
-    Rival,
+    ReenlistEvent,
+    SkillChoiceEvent,
+    SkillTableEvent,
+    SurviveEvent,
+    TermEventEvent,
+    UcpEvent,
 )
 from ceres.character.replay import ReplayError, replay
 from ceres.character.skills import (
@@ -59,6 +53,12 @@ from ceres.character.skills import (
     SpaceScience,
 )
 from ceres.character.sophonts import VILANI
+from ceres.character.state import (
+    Ally,
+    Contact,
+    Enemy,
+    Rival,
+)
 from tests.character.helpers import MOCK_WORLD
 
 
@@ -160,7 +160,7 @@ class TestQualification:
         projection = replay(1, events)
 
         assert projection.summary.current_career is None
-        from ceres.character.projection import PendingDraftChoice
+        from ceres.character.events import PendingDraftChoice
 
         pi = next(p for p in projection.pending_inputs if isinstance(p, PendingDraftChoice))
         assert 'draft' in pi.options

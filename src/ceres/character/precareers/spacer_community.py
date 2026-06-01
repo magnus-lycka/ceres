@@ -1,8 +1,11 @@
 from ceres.character.characteristics import Chars
-from ceres.character.events import PreCareerGraduationEvent
+from ceres.character.events import PendingPreCareerSkillChoice, PreCareerGraduationEvent
 from ceres.character.precareers.precareer_data import PreCareerData
-from ceres.character.projection import CharacterProjection, PendingPreCareerSkillChoice, ScheduledEffect
 from ceres.character.skills import skill_from_str, skill_names_for_category
+from ceres.character.state import (
+    CharacterProjection,
+    ScheduledEffect,
+)
 
 
 class SpacerCommunityPreCareer(PreCareerData):

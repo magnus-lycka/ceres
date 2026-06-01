@@ -92,7 +92,7 @@ max-branches = 12
 max-statements = 50
 
 [tool.deptry]
-exclude = ["tests", ".venv", "graphify-corpus"]
+exclude = ["tests", ".venv", ".claude", "graphify-corpus"]
 known_first_party = ["ceres"]
 
 [tool.coverage.run]

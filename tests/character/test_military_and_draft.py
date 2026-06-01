@@ -6,12 +6,14 @@ from ceres.character.events import (
     CommissionEvent,
     DraftAssignmentEvent,
     DraftEvent,
+    PendingCommissionChoice,
+    PendingDraftAssignmentChoice,
+    PendingDraftChoice,
     SkillChoiceEvent,
     SurviveEvent,
     TermEventEvent,
     UcpEvent,
 )
-from ceres.character.projection import PendingCommissionChoice, PendingDraftAssignmentChoice, PendingDraftChoice
 from ceres.character.replay import replay
 from ceres.character.skills import Admin, Athletics, Carouse, Drive, VaccSuit
 from ceres.character.sophonts import VILANI

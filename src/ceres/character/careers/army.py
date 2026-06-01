@@ -1,13 +1,15 @@
 from ceres.character.careers.career_data import CareerData, CareerDispatchEffect
 from ceres.character.careers.common import handle_advanced_training, resolve_advanced_training
 from ceres.character.characteristics import Chars
-from ceres.character.events import SkillRollEvent
-from ceres.character.projection import (
-    Ally,
-    CharacterProjection,
+from ceres.character.events import (
     PendingCareerMishap,
     PendingCareerSkillRoll,
     PendingSkillChoice,
+    SkillRollEvent,
+)
+from ceres.character.state import (
+    Ally,
+    CharacterProjection,
 )
 
 # ── mishap 4: illegal activity ────────────────────────────────────────────────

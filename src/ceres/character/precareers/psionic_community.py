@@ -1,8 +1,12 @@
 from ceres.character.characteristics import Chars, ConnectionKind
-from ceres.character.events import PreCareerGraduationEvent
+from ceres.character.events import PendingPreCareerSkillChoice, PreCareerGraduationEvent
 from ceres.character.precareers.precareer_data import PreCareerData
-from ceres.character.projection import CharacterProjection, CharacterSummary, PendingPreCareerSkillChoice
 from ceres.character.skills import skill_names_for_category
+from ceres.character.state import (
+    CharacterProjection,
+    CharacterSummary,
+    make_connection,
+)
 
 
 class PsionicCommunityPreCareer(PreCareerData):
@@ -15,7 +19,6 @@ class PsionicCommunityPreCareer(PreCareerData):
         event: PreCareerGraduationEvent,
         honours: bool,
     ) -> int:
-        from ceres.character.projection import make_connection
 
         pending_idx = 0
         projection.summary.problems.append('Psionic Community graduation: increase PSI by +1. Apply manually.')

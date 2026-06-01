@@ -23,7 +23,6 @@ from ceres.make.ship.drives import (
     PowerSection,
 )
 from ceres.make.ship.habitation import CabinSpace, HabitationSection, LowBerth, Stateroom
-from ceres.make.ship.occupants import BasicPassage, HighPassage, LowPassage, MiddlePassage
 from ceres.make.ship.screens import NuclearDamper, ScreensSection
 from ceres.make.ship.sensors import SensorsSection, SensorStations
 from ceres.make.ship.systems import MedicalBay, SystemsSection
@@ -35,6 +34,7 @@ from ceres.make.ship.weapons import (
     SmallMissileBay,
     WeaponsSection,
 )
+from tests.make.ship.helpers import passengers
 
 
 def grouped_role_counts(roles):
@@ -43,15 +43,6 @@ def grouped_role_counts(roles):
 
 def grouped_role_salaries(roles):
     return [(role.role, quantity, role.monthly_salary) for role, quantity in roles.grouped_roles]
-
-
-def passengers(*, high=0, middle=0, basic=0, low=0):
-    return (
-        [HighPassage() for _ in range(high)]
-        + [MiddlePassage() for _ in range(middle)]
-        + [BasicPassage() for _ in range(basic)]
-        + [LowPassage() for _ in range(low)]
-    )
 
 
 def test_crew_role_total_salary():

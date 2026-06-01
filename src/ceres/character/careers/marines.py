@@ -1,15 +1,18 @@
 from ceres.character.careers.career_data import CareerData, CareerDispatchEffect
 from ceres.character.careers.common import handle_advanced_training, resolve_advanced_training
-from ceres.character.events import SkillRollEvent
-from ceres.character.projection import (
-    Ally,
-    CharacterProjection,
-    Contact,
-    Enemy,
+from ceres.character.events import (
     PendingCareerEvent,
     PendingCareerMishap,
     PendingCareerSkillRoll,
     PendingSkillChoice,
+    SkillRollEvent,
+    career_progress_pending,
+)
+from ceres.character.state import (
+    Ally,
+    CharacterProjection,
+    Contact,
+    Enemy,
     ScheduledEffect,
 )
 
@@ -163,7 +166,7 @@ def _choice_marines_event_9(projection: CharacterProjection, event) -> None:
                 effect={'type': 'dm', 'amount': 1},
             )
         )
-    projection.pending_inputs.append(projection.career_progress_pending(career, event.id))
+    projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 
 
 # ── handler registries ────────────────────────────────────────────────────────

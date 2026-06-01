@@ -3,8 +3,11 @@ from typer.testing import CliRunner
 
 from ceres.character.benefits import parse_benefit
 from ceres.character.cli import app, build_app, render_projection_summary
-from ceres.character.projection import CharacterProjection, CharacterSummary
 from ceres.character.sophonts import VILANI
+from ceres.character.state import (
+    CharacterProjection,
+    CharacterSummary,
+)
 from ceres.character.store import SqliteCharacterBackend
 from tests.character.helpers import MOCK_WORLD
 

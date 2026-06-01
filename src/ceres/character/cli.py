@@ -10,10 +10,10 @@ from ceres import settings
 from ceres.adapters.travellermap import fetch_world
 from ceres.character.characteristics import UCP_STATS, Chars
 from ceres.character.events import AnyEvent, UcpEvent
-from ceres.character.projection import CharacterProjection
 from ceres.character.replay import ReplayError
-from ceres.character.skills import AnySkill, Skill, SkillInfo, _skill_classes, skill_list
+from ceres.character.skills import AnySkill, Skill, SkillInfo, _level_fields, _skill_classes, skill_list
 from ceres.character.sophonts import SOPHONT_NAMES, get_sophont
+from ceres.character.state import CharacterProjection
 from ceres.character.store import CharacterRow, SqliteCharacterBackend
 
 _SPECIALITY_SKILL_TYPES: frozenset[type[Skill]] = frozenset(
@@ -99,7 +99,6 @@ def render_ucp_short(ucp: dict[Chars, int] | None) -> str:
 
 
 def _format_skill(skill: AnySkill) -> list[str]:
-    from ceres.character.projection import _level_fields
 
     fields = _level_fields(type(skill))
     if len(fields) == 1 and fields[0] == 'level':

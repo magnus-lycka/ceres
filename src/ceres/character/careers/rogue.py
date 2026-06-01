@@ -1,12 +1,16 @@
 from ceres.character.careers.career_data import CareerData, CareerDispatchEffect
-from ceres.character.events import SkillRollEvent
-from ceres.character.projection import (
+from ceres.character.events import (
+    PendingCareerEvent,
+    PendingCareerSkillRoll,
+    SkillRollEvent,
+    career_progress_pending,
+    muster_out_setup,
+)
+from ceres.character.state import (
     Ally,
     CharacterProjection,
     Contact,
     Enemy,
-    PendingCareerEvent,
-    PendingCareerSkillRoll,
     Rival,
     ScheduledEffect,
 )
@@ -69,7 +73,7 @@ def _resolve_rogue_mishap_3_prisoner_check(projection: CharacterProjection, even
     career = load_careers().get(career_name or '')
     if career is None:
         return
-    projection.muster_out_setup(career, event.id, 0, lose_current_term=True)
+    muster_out_setup(projection, career, event.id, 0, lose_current_term=True)
 
 
 # ── event 3: arrested and charged ────────────────────────────────────────────
@@ -106,7 +110,7 @@ def _choice_rogue_event_3(projection: CharacterProjection, event) -> None:
                 effect={'type': 'reduce', 'value': 1},
             )
         )
-        projection.pending_inputs.append(projection.career_progress_pending(career, event.id))
+        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
     else:
         projection.pending_inputs.append(
             PendingCareerSkillRoll(
@@ -170,7 +174,7 @@ def _choice_rogue_event_6(projection: CharacterProjection, event) -> None:
         )
     else:
         projection.summary.connections.append(Contact(source='Fellow rogue (Rogue event 6)'))
-    projection.pending_inputs.append(projection.career_progress_pending(career, event.id))
+    projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 
 
 # ── event 9: feud with rival organisation ────────────────────────────────────

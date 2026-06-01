@@ -1,11 +1,9 @@
 from collections.abc import Sequence
 
-from ceres.character.events import AnyEvent, CharacterStartedEvent
-from ceres.character.projection import (
-    AnyPending,
+from ceres.character.events import AnyEvent, CharacterStartedEvent, PendingUcp
+from ceres.character.state import (
     CharacterProjection,
     CharacterSummary,
-    PendingUcp,
     ReplayError,
 )
 
@@ -34,7 +32,9 @@ def replay(character_id: int, events: Sequence[AnyEvent]) -> CharacterProjection
 
 
 def _apply(projection: CharacterProjection, event: AnyEvent) -> None:
-    fulfilled_pending: AnyPending | None = None
+    from ceres.character.state import PendingInputBase
+
+    fulfilled_pending: PendingInputBase | None = None
     if event.fulfills is not None:
         fulfilled_pending = next((p for p in projection.pending_inputs if p.id == event.fulfills), None)
         projection.fulfill_pending(event)

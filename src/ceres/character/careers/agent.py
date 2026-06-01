@@ -1,15 +1,18 @@
 from ceres.character.careers.career_data import AssignmentData, CareerData, CareerDispatchEffect
 from ceres.character.careers.common import handle_advanced_training, resolve_advanced_training
-from ceres.character.events import SkillRollEvent
-from ceres.character.projection import (
-    CharacterProjection,
-    Enemy,
+from ceres.character.events import (
     PendingCareerMishap,
     PendingCareerSkillChoice,
     PendingCareerSkillRoll,
     PendingDoubleInjuryRoll,
     PendingMishap,
     PendingSkillChoice,
+    SkillRollEvent,
+    muster_out_setup,
+)
+from ceres.character.state import (
+    CharacterProjection,
+    Enemy,
 )
 
 
@@ -101,7 +104,7 @@ def _resolve_agent_mishap_3(projection: CharacterProjection, event: SkillRollEve
     succeed = event.modified_roll >= 8
     if event.modified_roll <= 2:
         projection.forced_next_career = 'Prisoner'
-    projection.muster_out_setup(career, event.id, 0, lose_current_term=not succeed)
+    muster_out_setup(projection, career, event.id, 0, lose_current_term=not succeed)
 
 
 # ── mishap 5: someone close gets hurt ────────────────────────────────────────

@@ -8,80 +8,23 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from ceres.character.careers.loader import load_careers, selectable_careers
-from ceres.character.events import (
-    AnyEvent,
-    PreCareerEntryEvent,
-)
+from ceres.character.events import AnyEvent
 from ceres.character.input_specs import form_int, form_str
 from ceres.character.precareers import load_precareers
-from ceres.character.projection import (
-    CharacterProjection,
-    CharacterSummary,
-)
 from ceres.character.replay import ReplayError
 from ceres.character.report import render_npc_gallery_pdf
 from ceres.character.sophonts import SOPHONT_NAMES, get_sophont
 from ceres.character.spec import spec_from_summary
+from ceres.character.state import (
+    CharacterProjection,
+    CharacterSummary,
+    diff_summaries,
+)
 from ceres.character.store import SqliteCharacterBackend
 from ceres.character.web.bulk import _NPC_DEFAULT_HOMEWORLD
 
 _TEMPLATES_DIR = Path(__file__).parent / 'templates'
 
-
-def _diff_summaries(before: CharacterSummary, after: CharacterSummary) -> list[str]:
-    """Return human-readable strings describing mechanical changes between two summaries."""
-    changes: list[str] = []
-
-    # Narrative (story events: survive result, mishaps, life events)
-    changes.extend(after.narrative[len(before.narrative) :])
-
-    # Career/assignment joined
-    if after.current_career != before.current_career and after.current_career:
-        line = f'Joined {after.current_career}'
-        if after.current_assignment:
-            line += f' ({after.current_assignment})'
-        changes.append(line)
-
-    # Rank
-    if after.rank is not None and after.rank != before.rank:
-        changes.append(f'Rank {before.rank or 0} → {after.rank}')
-
-    # Characteristics
-    all_chars = set(before.characteristics) | set(after.characteristics)
-    for char in sorted(all_chars, key=lambda c: c.value):
-        b_val = before.characteristics.get(char, 0)
-        a_val = after.characteristics.get(char, 0)
-        if a_val != b_val:
-            changes.append(f'{char.value} {b_val} → {a_val}')
-
-    # Skills
-    before_by_name = {type(s).name(): s for s in before.skills}
-    after_by_name = {type(s).name(): s for s in after.skills}
-    for name in sorted(set(after_by_name) - set(before_by_name)):
-        level = after.skill_level(name, 0)
-        changes.append(f'Gained {name} {level}')
-    for name in sorted(set(after_by_name) & set(before_by_name)):
-        b_lvl = before.skill_level(name, 0)
-        a_lvl = after.skill_level(name, 0)
-        if a_lvl != b_lvl:
-            changes.append(f'{name} {b_lvl} → {a_lvl}')
-
-    # Cash
-    if after.cash != before.cash:
-        delta = after.cash - before.cash
-        sign = '+' if delta > 0 else ''
-        changes.append(f'Cash {sign}Cr{delta:,}')
-
-    # Benefits
-    changes.extend(f'Benefit: {b.display_label}' for b in after.benefits[len(before.benefits) :])
-
-    # Connections
-    changes.extend(f'New {c.kind}: {c.source or "unknown"}' for c in after.connections[len(before.connections) :])
-
-    # Problems
-    changes.extend(f'Problem: {p}' for p in after.problems[len(before.problems) :])
-
-    return changes
 
 
 def _projection_context(projection: CharacterProjection, character_id: int) -> dict[str, Any]:
@@ -180,11 +123,10 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
             return HTMLResponse('<p class="text-red-400">Character not found</p>', status_code=404)
 
         form = await request.form()
-        kind = str(form.get('kind', ''))
         fulfills = str(form.get('fulfills', ''))
 
         try:
-            event = _build_event_from_form(kind, fulfills, form, projection)
+            event = _build_event_from_form(fulfills, form, projection)
         except Exception as exc:
             ctx = {**_projection_context(projection, character_id), 'error': str(exc), 'changes': [], 'is_htmx': True}
             return templates.TemplateResponse(request=request, name='partials/pending_inputs.html', context=ctx)
@@ -202,7 +144,7 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
         if projection is None:
             return HTMLResponse('<p class="text-red-400">Projection unavailable</p>', status_code=500)
 
-        changes = _diff_summaries(before_summary, projection.summary)
+        changes = diff_summaries(before_summary, projection.summary)
         ctx = {**_projection_context(projection, character_id), 'changes': changes, 'is_htmx': True}
         return templates.TemplateResponse(
             request=request,
@@ -307,13 +249,7 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
     return router
 
 
-def _build_event_from_form(kind: str, fulfills: str, form: Any, projection: CharacterProjection) -> AnyEvent:
-    """Construct the correct AnyEvent from form data, routing via the pending input."""
-    if kind == 'precareer_entry':
-        precareer = form_str(form, 'precareer', 'University')
-        roll = form_int(form, 'roll', 7)
-        return PreCareerEntryEvent(precareer=precareer, roll=roll, fulfills=fulfills or None)
-
+def _build_event_from_form(fulfills: str, form: Any, projection: CharacterProjection) -> AnyEvent:
     pending = next((p for p in projection.pending_inputs if p.id == fulfills), None)
     if pending is None:
         raise ValueError(f'No pending input with id={fulfills!r}')

@@ -4,6 +4,15 @@ from pydantic import BaseModel
 
 from ceres.character.benefits import AnyBenefit
 from ceres.character.characteristics import Chars, ConnectionKind, characteristic_dm
+from ceres.character.events import (
+    PendingDraftAssignmentChoice,
+    PendingDraftChoice,
+    PendingInitialTrainingChoice,
+    PendingSkillTable,
+    PendingSurvive,
+)
+from ceres.character.skills import _level_fields
+from ceres.character.state import CareerTerm
 
 
 class CharCheck(BaseModel):
@@ -225,7 +234,6 @@ class CareerData(BaseModel):
         return bool(self.draft_assignments)
 
     def start_draft(self, projection, event_id: int, assignment_name: str | None = None) -> None:
-        from ceres.character.projection import PendingDraftAssignmentChoice
 
         if assignment_name is None and len(self.draft_assignments) > 1:
             projection.pending_inputs.append(
@@ -264,7 +272,6 @@ class CareerData(BaseModel):
         return same_track[-1].rank_after_term if same_track else 0
 
     def append_term(self, projection, assignment: AssignmentData) -> None:
-        from ceres.character.projection import CareerTerm
 
         projection.summary.career_terms.append(
             CareerTerm(
@@ -307,7 +314,6 @@ class CareerData(BaseModel):
         event_id: int,
         qualification_roll: int,
     ) -> None:
-        from ceres.character.projection import PendingDraftChoice
 
         # Check for auto-qualify from pre-career graduation
         auto_effects = [
@@ -362,7 +368,6 @@ class CareerData(BaseModel):
         return 'service_skills'
 
     def _apply_fixed_rank_bonus(self, projection, rank: int) -> None:
-        from ceres.character.projection import _level_fields
         from ceres.character.skills import Level, skill_class_by_name
 
         rank_entry = self.current_ranks(projection).get(rank)
@@ -400,7 +405,6 @@ class CareerData(BaseModel):
         grant_all: bool,
         event_id: int,
     ) -> None:
-        from ceres.character.projection import PendingInitialTrainingChoice
 
         table = self.skill_tables[table_name]
         if grant_all:
@@ -470,7 +474,6 @@ class CareerData(BaseModel):
         return [skill for skill in choices or [] if projection.summary.skill_level(skill) is None]
 
     def _queue_skill_table_before_survival(self, projection, assignment: AssignmentData, event_id: int) -> None:
-        from ceres.character.projection import PendingSkillTable
 
         edu = projection.summary.characteristics.get(Chars.EDU, 0)
         tables = self.available_tables(edu, assignment.name)
@@ -479,7 +482,6 @@ class CareerData(BaseModel):
         )
 
     def survival_pending(self, assignment: AssignmentData, event_id: int, pending_idx: int = 0):
-        from ceres.character.projection import PendingSurvive
 
         char = assignment.survival.characteristic
         target = assignment.survival.target

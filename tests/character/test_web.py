@@ -203,8 +203,7 @@ def test_gallery_generate_returns_specs(client):
 def test_event_from_form_ucp():
     from starlette.datastructures import FormData
 
-    from ceres.character.events import UcpEvent
-    from ceres.character.projection import PendingUcp
+    from ceres.character.events import PendingUcp, UcpEvent
 
     pi = PendingUcp(id='1.0', instruction='')
     form = FormData({'STR': '7', 'DEX': '8', 'END': '6', 'INT': '9', 'EDU': '10', 'SOC': '5'})
@@ -217,8 +216,7 @@ def test_event_from_form_ucp():
 def test_event_from_form_career_choice():
     from starlette.datastructures import FormData
 
-    from ceres.character.events import CareerEvent
-    from ceres.character.projection import PendingCareerChoice
+    from ceres.character.events import CareerEvent, PendingCareerChoice
 
     pi = PendingCareerChoice(id='3.0', instruction='')
     form = FormData({'career': 'Scout', 'assignment': 'Courier', 'roll': '8'})
@@ -232,8 +230,7 @@ def test_event_from_form_career_choice():
 def test_event_from_form_career_event_uses_self_context():
     from starlette.datastructures import FormData
 
-    from ceres.character.events import CareerChoiceEvent
-    from ceres.character.projection import PendingCareerEvent
+    from ceres.character.events import CareerChoiceEvent, PendingCareerEvent
 
     pi = PendingCareerEvent(id='9.0', career='Scholar', roll=8, instruction='')
     form = FormData({'choice': 'accept'})
@@ -247,8 +244,7 @@ def test_event_from_form_career_event_uses_self_context():
 def test_event_from_form_career_mishap_uses_self_context():
     from starlette.datastructures import FormData
 
-    from ceres.character.events import CareerChoiceEvent
-    from ceres.character.projection import PendingCareerMishap
+    from ceres.character.events import CareerChoiceEvent, PendingCareerMishap
 
     pi = PendingCareerMishap(id='8.0', career='Agent', roll=5, instruction='')
     form = FormData({'choice': 'ally'})
@@ -262,8 +258,7 @@ def test_event_from_form_career_mishap_uses_self_context():
 def test_event_from_form_reenlist_true():
     from starlette.datastructures import FormData
 
-    from ceres.character.events import ReenlistEvent
-    from ceres.character.projection import PendingReenlist
+    from ceres.character.events import PendingReenlist, ReenlistEvent
 
     pi = PendingReenlist(id='5.1', instruction='')
     form = FormData({'reenlist': 'true'})
@@ -275,8 +270,7 @@ def test_event_from_form_reenlist_true():
 def test_event_from_form_reenlist_false():
     from starlette.datastructures import FormData
 
-    from ceres.character.events import ReenlistEvent
-    from ceres.character.projection import PendingReenlist
+    from ceres.character.events import PendingReenlist, ReenlistEvent
 
     pi = PendingReenlist(id='5.1', instruction='')
     form = FormData({'reenlist': 'false'})
@@ -288,7 +282,7 @@ def test_event_from_form_reenlist_false():
 def test_build_event_unknown_raises():
     from starlette.datastructures import FormData
 
-    from ceres.character.projection import CharacterProjection, CharacterSummary
+    from ceres.character.state import CharacterProjection, CharacterSummary
     from ceres.character.web.routes import _build_event_from_form
 
     projection = CharacterProjection(
@@ -297,7 +291,7 @@ def test_build_event_unknown_raises():
     )
     form = FormData({})
     with pytest.raises(ValueError):
-        _build_event_from_form('no_such_kind', 'nonexistent.0', form, projection)
+        _build_event_from_form('nonexistent.0', form, projection)
 
 
 # ── career_skill_choice with advancement_dm_4 sentinel ────────────────────────
@@ -305,8 +299,9 @@ def test_build_event_unknown_raises():
 
 def test_input_specs_includes_advancement_dm_4():
     """advancement_dm_4 sentinel appears in input_specs Select options with a readable label."""
+    from ceres.character.events import PendingCareerSkillChoice
     from ceres.character.input_specs import Select
-    from ceres.character.projection import CharacterProjection, CharacterSummary, PendingCareerSkillChoice
+    from ceres.character.state import CharacterProjection, CharacterSummary
 
     pi = PendingCareerSkillChoice(
         id='6.0',
@@ -336,8 +331,7 @@ def test_event_from_form_career_skill_choice_advancement_dm_4():
     """Submitting advancement_dm_4 via career_skill_choice creates AdvancementDmChoiceEvent."""
     from starlette.datastructures import FormData
 
-    from ceres.character.events import AdvancementDmChoiceEvent
-    from ceres.character.projection import PendingCareerSkillChoice
+    from ceres.character.events import AdvancementDmChoiceEvent, PendingCareerSkillChoice
 
     pi = PendingCareerSkillChoice(id='6.0', career='Agent', roll=11, instruction='')
     form = FormData({'skill': 'advancement_dm_4'})
@@ -350,8 +344,7 @@ def test_event_from_form_career_skill_choice_skill():
     """Submitting a skill JSON via career_skill_choice creates SkillChoiceEvent."""
     from starlette.datastructures import FormData
 
-    from ceres.character.events import SkillChoiceEvent
-    from ceres.character.projection import PendingCareerSkillChoice
+    from ceres.character.events import PendingCareerSkillChoice, SkillChoiceEvent
     from ceres.character.skills import Investigate, Level
 
     pi = PendingCareerSkillChoice(id='6.0', career='Agent', roll=11, instruction='')
@@ -367,7 +360,7 @@ def test_event_from_form_career_skill_choice_skill():
 
 
 def _make_summary(**kwargs):
-    from ceres.character.projection import CharacterSummary
+    from ceres.character.state import CharacterSummary
 
     kwargs.setdefault('name', 'Test')
     kwargs.setdefault('sophont', VILANI)
@@ -377,7 +370,7 @@ def _make_summary(**kwargs):
 
 def test_diff_shows_characteristic_change():
     from ceres.character.characteristics import Chars
-    from ceres.character.web.routes import _diff_summaries
+    from ceres.character.state import diff_summaries as _diff_summaries
 
     before = _make_summary(characteristics={Chars.STR: 7, Chars.DEX: 8})
     after = _make_summary(characteristics={Chars.STR: 8, Chars.DEX: 8})
@@ -387,7 +380,7 @@ def test_diff_shows_characteristic_change():
 
 def test_diff_shows_new_skill():
     from ceres.character.skills import Admin
-    from ceres.character.web.routes import _diff_summaries
+    from ceres.character.state import diff_summaries as _diff_summaries
 
     before = _make_summary()
     after = _make_summary(skills=[Admin()])
@@ -397,7 +390,7 @@ def test_diff_shows_new_skill():
 
 def test_diff_shows_skill_level_up():
     from ceres.character.skills import Admin, Level
-    from ceres.character.web.routes import _diff_summaries
+    from ceres.character.state import diff_summaries as _diff_summaries
 
     before = _make_summary(skills=[Admin()])
     after = _make_summary(skills=[Admin(level=Level(value=1))])
@@ -406,7 +399,7 @@ def test_diff_shows_skill_level_up():
 
 
 def test_diff_shows_rank_change():
-    from ceres.character.web.routes import _diff_summaries
+    from ceres.character.state import diff_summaries as _diff_summaries
 
     before = _make_summary(rank=0)
     after = _make_summary(rank=1)
@@ -415,7 +408,7 @@ def test_diff_shows_rank_change():
 
 
 def test_diff_shows_cash_gain():
-    from ceres.character.web.routes import _diff_summaries
+    from ceres.character.state import diff_summaries as _diff_summaries
 
     before = _make_summary(cash=0)
     after = _make_summary(cash=5000)
@@ -424,7 +417,7 @@ def test_diff_shows_cash_gain():
 
 
 def test_diff_shows_new_narrative():
-    from ceres.character.web.routes import _diff_summaries
+    from ceres.character.state import diff_summaries as _diff_summaries
 
     before = _make_summary(narrative=['Term 1'])
     after = _make_summary(narrative=['Term 1', 'Survived the storm'])
@@ -433,7 +426,7 @@ def test_diff_shows_new_narrative():
 
 
 def test_diff_empty_when_nothing_changed():
-    from ceres.character.web.routes import _diff_summaries
+    from ceres.character.state import diff_summaries as _diff_summaries
 
     s = _make_summary(characteristics={}, skills=[])
     assert _diff_summaries(s, s) == []

@@ -11,6 +11,7 @@ from ceres.character.events import (
     CharacterStartedEvent,
     MishapEvent,
     MusterOutEvent,
+    PendingMusterOut,
     ReenlistEvent,
     SkillChoiceEvent,
     SkillTableEvent,
@@ -18,7 +19,6 @@ from ceres.character.events import (
     TermEventEvent,
     UcpEvent,
 )
-from ceres.character.projection import PendingMusterOut
 from ceres.character.replay import ReplayError, replay
 from ceres.character.skills import Admin, Athletics, Carouse, Drive, Medic, SpaceScience
 from ceres.character.sophonts import VILANI

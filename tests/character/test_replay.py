@@ -13,23 +13,23 @@ from ceres.character.events import (
     LifeEventEvent,
     LifeEventUnusualEvent,
     MishapEvent,
-    SkillTableEvent,
-    SurviveEvent,
-    TermEventEvent,
-    UcpEvent,
-)
-from ceres.character.projection import (
-    Ally,
-    Contact,
     PendingBackgroundSkills,
     PendingCareerChoice,
     PendingCharacteristicChoice,
     PendingInjuryTable,
     PendingUcp,
+    SkillTableEvent,
+    SurviveEvent,
+    TermEventEvent,
+    UcpEvent,
 )
 from ceres.character.replay import ReplayError, replay
 from ceres.character.skills import Admin, Advocate, Athletics, Carouse, Drive, skill_list
 from ceres.character.sophonts import VILANI, Sophont
+from ceres.character.state import (
+    Ally,
+    Contact,
+)
 from ceres.character.store import SqliteCharacterBackend
 from ceres.character.web.bulk import CohortParams, generate_npc
 from tests.character.helpers import MOCK_WORLD

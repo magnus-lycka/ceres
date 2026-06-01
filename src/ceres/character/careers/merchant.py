@@ -1,12 +1,15 @@
 from ceres.character.careers.career_data import CareerData, CareerDispatchEffect
 from ceres.character.careers.common import handle_advanced_training, resolve_advanced_training
-from ceres.character.events import SkillRollEvent
-from ceres.character.projection import (
-    CharacterProjection,
-    Enemy,
+from ceres.character.events import (
     PendingCareerEvent,
     PendingCareerSkillRoll,
     PendingSkillChoice,
+    SkillRollEvent,
+    career_progress_pending,
+)
+from ceres.character.state import (
+    CharacterProjection,
+    Enemy,
     Rival,
     ScheduledEffect,
 )
@@ -40,7 +43,7 @@ def _choice_merchant_event_3(projection: CharacterProjection, event) -> None:
     career = projection.get_current_career()
     if event.choice == 'refuse':
         projection.summary.connections.append(Rival(source='Merchant who offered smuggling job (Merchant event 3)'))
-        projection.pending_inputs.append(projection.career_progress_pending(career, event.id))
+        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
     else:
         projection.pending_inputs.append(
             PendingCareerSkillRoll(
@@ -88,7 +91,7 @@ def _handle_merchant_event_5(
         'Success: gain half the wagered rolls (round up). '
         'Fail: lose all the wagered rolls. Apply the result manually.'
     )
-    projection.pending_inputs.append(projection.career_progress_pending(career, event_id))
+    projection.pending_inputs.append(career_progress_pending(projection, career, event_id))
     return pending_idx
 
 

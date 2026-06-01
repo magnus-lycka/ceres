@@ -101,6 +101,13 @@ unit tests. They should also check that no unexpected errors or warnings appear.
   - `uv run pytest --cov --cov-report=term-missing` for coverage
 - **ruff** - `uvx ruff check` and `uvx ruff format` (fix lint and formatting)
 - **ty** - `uvx ty check` (type checking)
+- **pylint duplicate-code** - Run
+  `uvx pylint --disable=all --enable=duplicate-code src/ceres/ tests`
+  regularly as a design smell check. Treat the output as signal, not a
+  commandment: source-derived reference data, intentionally parallel tests, and
+  clear examples may stay duplicated. When the same setup, assertion block, or
+  helper logic appears in several places, consider extracting a small test
+  helper or shared assertion that keeps the tests readable.
 
 The usual full local gate is `./pre-commit.sh`, which also runs `deptry` and
 `bandit`.
@@ -129,4 +136,5 @@ uv run pytest --cov --cov-report=term-missing        # tests + coverage
 uvx ruff check --fix                                   # lint and auto-fix
 uvx ruff format                                        # format code
 uvx ty check                                           # type check
+uvx pylint --disable=all --enable=duplicate-code src/ceres/ tests
 ```

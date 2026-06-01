@@ -3,10 +3,14 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel
 
 from ceres.character.careers.career_data import AnyEffect, CareerEventEntry, CharCheck, SkillTableEntry
+from ceres.character.events import PendingPreCareerSkillChoice
+from ceres.character.state import (
+    CharacterProjection,
+    CharacterSummary,
+)
 
 if TYPE_CHECKING:
     from ceres.character.events import PreCareerEntryEvent, PreCareerGraduationEvent
-    from ceres.character.projection import CharacterProjection, CharacterSummary
 
 
 class PreCareerData(BaseModel):
@@ -44,7 +48,6 @@ class PreCareerData(BaseModel):
         pending_idx: int,
     ) -> int:
         """Default: generic companion entry — auto-grant fixed skills, queue picks for categories."""
-        from ceres.character.projection import PendingPreCareerSkillChoice
         from ceres.character.skills import skill_from_str, skill_names_for_category
 
         if self.entry_pick_count == 0:

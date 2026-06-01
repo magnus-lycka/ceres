@@ -11,16 +11,6 @@ from ceres.character.events import (
     CharacterStartedEvent,
     MishapEvent,
     MusterOutEvent,
-    SkillChoiceEvent,
-    SkillRollEvent,
-    SkillTableEvent,
-    SurviveEvent,
-    TermEventEvent,
-    UcpEvent,
-)
-from ceres.character.projection import (
-    CharacterProjection,
-    Enemy,
     PendingAdvancement,
     PendingBenefitChoice,
     PendingCareerMishap,
@@ -32,6 +22,12 @@ from ceres.character.projection import (
     PendingMusterOut,
     PendingSkillChoice,
     PendingSurvive,
+    SkillChoiceEvent,
+    SkillRollEvent,
+    SkillTableEvent,
+    SurviveEvent,
+    TermEventEvent,
+    UcpEvent,
 )
 from ceres.character.replay import ReplayError, replay
 from ceres.character.skills import (
@@ -45,6 +41,10 @@ from ceres.character.skills import (
     Medic,
 )
 from ceres.character.sophonts import VILANI
+from ceres.character.state import (
+    CharacterProjection,
+    Enemy,
+)
 from tests.character.helpers import MOCK_WORLD
 
 
@@ -131,7 +131,7 @@ class TestAgentSurvival:
     def test_law_enforcement_survival_failure_creates_mishap_pending(self):
         # END=6 (DM+0), roll 5 → 5 < 6, mishap pending created
         projection = replay(1, [*_enter_agent('Law Enforcement'), SurviveEvent(id=5, fulfills='4.0', roll=5)])
-        from ceres.character.projection import PendingMishap
+        from ceres.character.events import PendingMishap
 
         assert any(isinstance(p, PendingMishap) for p in projection.pending_inputs)
 
@@ -155,7 +155,7 @@ class TestAgentSurvival:
     def test_intelligence_survival_int_7plus_fail_creates_mishap_pending(self):
         # INT=9 (DM+1), roll 5 → 6 < 7, mishap pending
         projection = replay(1, [*_enter_agent('Intelligence'), SurviveEvent(id=5, fulfills='4.0', roll=5)])
-        from ceres.character.projection import PendingMishap
+        from ceres.character.events import PendingMishap
 
         assert any(isinstance(p, PendingMishap) for p in projection.pending_inputs)
 

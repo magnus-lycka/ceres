@@ -2,10 +2,10 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, TypeAdapter
 
 from ceres.character.events import AnyEvent
-from ceres.character.projection import CharacterProjection
 from ceres.character.replay import ReplayError
 from ceres.character.skills import skill_list
 from ceres.character.sophonts import SOPHONT_NAMES, get_sophont
+from ceres.character.state import CharacterProjection
 from ceres.character.store import CharacterRow, SqliteCharacterBackend
 from ceres.character.web.bulk import _NPC_DEFAULT_HOMEWORLD
 
