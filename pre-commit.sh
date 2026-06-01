@@ -8,4 +8,3 @@ uvx ruff format --check src tests
 uvx ty check
 uv run deptry .
 uvx bandit -r src
-uvx yamllint src

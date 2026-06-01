@@ -211,18 +211,6 @@ Probably out of scope for `ceres.make.ship` unless Ceres later starts modelling
 layout dimensions. Spin radius and comfort are runtime/layout concerns; see
 RIS-021.
 
-## Portable Computer Options and Specialised Computer Variants
-
-Tracked as code TODOs in `src/ceres/gear/computer.py` but not yet implemented.
-
-Portable options: Camera, Comms, Data Display/Recorder, Data Wafer, Physical User Interface (all TL8+
-or TL13).
-
-Specialised variants:
-
-- Intelligent Interface (TL8, ×5 cost of standard computer)
-- Intellect (TL9, ×10 cost of standard computer)
-
 ## Space stations as a build target
 
 Reference: `refs/hg/27_space_stations.md`
@@ -289,14 +277,6 @@ Decide whether `Ship` should be extended or whether a separate `Station` class i
 The career YAML migration removed string-based skill/characteristic fields from
 career data. Several string-based patterns remain and should be eliminated in
 follow-up work packages.
-
-### Migrate precareers to typed skill objects
-
-`precareer_data.py` and the individual precareer modules (`colonial_upbringing`,
-`military_academy`, `spacer_community`, etc.) call `skill_from_str()` and store
-skill names as strings. Migrate these the same way as careers: replace
-string-based precareer tables with Python that carries `AnySkill` instances
-directly.
 
 ### Remove `skill_from_str` / `skill_class_by_name` from `events.py`
 

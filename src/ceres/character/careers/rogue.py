@@ -1,4 +1,9 @@
-from ceres.character.benefits import parse_benefit
+from ceres.character.benefits import (
+    ARMOR,
+    SHIP_SHARE,
+    WEAPON,
+    CharacteristicIncrease,
+)
 from ceres.character.careers.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
@@ -168,7 +173,7 @@ CAREER_DATA = RogueCareerData(
         6: RankEntry(rank=6),
     },
     ranks_by_assignment={
-        'Thief': {
+        1: {  # Thief
             0: RankEntry(rank=0),
             1: RankEntry(rank=1, bonus=RankBonus(skill=Stealth(), level=1)),
             2: RankEntry(rank=2),
@@ -177,7 +182,7 @@ CAREER_DATA = RogueCareerData(
             5: RankEntry(rank=5, bonus=RankBonus(skill=Recon(), level=1)),
             6: RankEntry(rank=6),
         },
-        'Enforcer': {
+        2: {  # Enforcer
             0: RankEntry(rank=0),
             1: RankEntry(rank=1, bonus=RankBonus(skill=Persuade(), level=1)),
             2: RankEntry(rank=2),
@@ -186,7 +191,7 @@ CAREER_DATA = RogueCareerData(
             5: RankEntry(rank=5, bonus=RankBonus(skill=Streetwise(), level=1)),
             6: RankEntry(rank=6),
         },
-        'Pirate': {
+        3: {  # Pirate
             0: RankEntry(rank=0, title='Lackey'),
             1: RankEntry(rank=1, title='Henchman', bonus=RankBonus(choices=['Pilot', 'Gunner'], level=1)),
             2: RankEntry(rank=2, title='Corporal'),
@@ -198,13 +203,13 @@ CAREER_DATA = RogueCareerData(
     },
     muster_out=MusterOutData(
         rows={
-            1: MusterOutRow(cash=0, benefit=parse_benefit('ship_share')),
-            2: MusterOutRow(cash=0, benefit=parse_benefit('weapon')),
-            3: MusterOutRow(cash=10000, benefit=parse_benefit('int_plus_1')),
-            4: MusterOutRow(cash=10000, benefit=parse_benefit('ship_share'), count=1),
-            5: MusterOutRow(cash=50000, benefit=parse_benefit('armor')),
-            6: MusterOutRow(cash=100000, benefit=parse_benefit('dex_plus_1')),
-            7: MusterOutRow(cash=100000, benefit=parse_benefit('ship_share'), count=2),
+            1: MusterOutRow(cash=0, benefit=SHIP_SHARE),
+            2: MusterOutRow(cash=0, benefit=WEAPON),
+            3: MusterOutRow(cash=10000, benefit=CharacteristicIncrease(char=Chars.INT, amount=1)),
+            4: MusterOutRow(cash=10000, benefit=SHIP_SHARE, count=1),
+            5: MusterOutRow(cash=50000, benefit=ARMOR),
+            6: MusterOutRow(cash=100000, benefit=CharacteristicIncrease(char=Chars.DEX, amount=1)),
+            7: MusterOutRow(cash=100000, benefit=SHIP_SHARE, count=2),
         }
     ),
     mishaps={

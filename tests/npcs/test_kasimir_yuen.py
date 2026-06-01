@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from ceres.character.benefits import parse_benefit
+from ceres.character.benefits import SCOUT_SHIP
 from ceres.character.events import (
     AdvancementEvent,
     AssignmentChangeChoiceEvent,
@@ -37,7 +37,7 @@ _expected = SimpleNamespace(
     # Term 2 skill table: service_skills roll 1 (Pilot) → increments small_craft 0→1
     pilot_small_craft=1,
     cash=20_000,
-    equipment=[parse_benefit('scout_ship')],
+    equipment=[SCOUT_SHIP],
 )
 
 

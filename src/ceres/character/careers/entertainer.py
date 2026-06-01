@@ -1,4 +1,9 @@
-from ceres.character.benefits import parse_benefit
+from ceres.character.benefits import (
+    CONTACT,
+    SHIP_SHARE,
+    CharacteristicIncrease,
+    CombinedBenefit,
+)
 from ceres.character.careers.career_data import (
     AdvancementDmEffect,
     AssignmentData,
@@ -34,6 +39,7 @@ from ceres.character.events import (
 )
 from ceres.character.skills import (
     Advocate,
+    ArtSkill,
     Athletics,
     Broker,
     Carouse,
@@ -44,16 +50,19 @@ from ceres.character.skills import (
     Gambler,
     Investigate,
     JackOfAllTrades,
+    LanguageSkill,
     Level,
     PerformingArt,
     Persuade,
     PresentationArt,
+    ProfessionSkill,
     Recon,
+    ScienceSkill,
     Stealth,
     Steward,
     Streetwise,
-    skill_category_instances,
-    skill_names_for_category,
+    skill_instances,
+    skill_names,
 )
 from ceres.character.state import (
     CharacterProjection,
@@ -101,14 +110,14 @@ CAREER_DATA = EntertainerCareerData(
                 Chars.DEX,
                 Chars.INT,
                 Chars.SOC,
-                skill_category_instances('Language'),
+                skill_instances(LanguageSkill),
                 Carouse(),
                 JackOfAllTrades(),
             ]
         ),
         service_skills=SkillTable(
             [
-                skill_category_instances('Art'),
+                skill_instances(ArtSkill),
                 Carouse(),
                 Deception(),
                 Drive(),
@@ -121,7 +130,7 @@ CAREER_DATA = EntertainerCareerData(
                 Advocate(),
                 Broker(),
                 Deception(),
-                skill_category_instances('Science'),
+                skill_instances(ScienceSkill),
                 Streetwise(),
                 Diplomat(),
             ],
@@ -129,12 +138,12 @@ CAREER_DATA = EntertainerCareerData(
         ),
         assignment1=SkillTable(
             [  # Artist
-                skill_category_instances('Art'),
+                skill_instances(ArtSkill),
                 Carouse(),
                 Electronics(computers=Level(value=1)),
                 Gambler(),
                 Persuade(),
-                skill_category_instances('Profession'),
+                skill_instances(ProfessionSkill),
             ]
         ),
         assignment2=SkillTable(
@@ -160,7 +169,7 @@ CAREER_DATA = EntertainerCareerData(
     ),
     ranks={
         0: RankEntry(rank=0),
-        1: RankEntry(rank=1, bonus=RankBonus(choices=skill_names_for_category('Art'), level=1)),
+        1: RankEntry(rank=1, bonus=RankBonus(choices=skill_names(ArtSkill), level=1)),
         2: RankEntry(rank=2),
         3: RankEntry(rank=3, bonus=RankBonus(skill=Investigate(), level=1)),
         4: RankEntry(rank=4),
@@ -168,16 +177,16 @@ CAREER_DATA = EntertainerCareerData(
         6: RankEntry(rank=6),
     },
     ranks_by_assignment={
-        'Artist': {
+        1: {  # Artist
             0: RankEntry(rank=0),
-            1: RankEntry(rank=1, bonus=RankBonus(choices=skill_names_for_category('Art'), level=1)),
+            1: RankEntry(rank=1, bonus=RankBonus(choices=skill_names(ArtSkill), level=1)),
             2: RankEntry(rank=2),
             3: RankEntry(rank=3, bonus=RankBonus(skill=Investigate(), level=1)),
             4: RankEntry(rank=4),
             5: RankEntry(rank=5, title='Famous Artist', bonus=RankBonus(characteristic=Chars.SOC, level=1)),
             6: RankEntry(rank=6),
         },
-        'Journalist': {
+        2: {  # Journalist
             0: RankEntry(rank=0),
             1: RankEntry(rank=1, title='Freelancer', bonus=RankBonus(skill=Electronics(), level=1)),
             2: RankEntry(rank=2, title='Staff Writer', bonus=RankBonus(skill=Investigate(), level=1)),
@@ -186,7 +195,7 @@ CAREER_DATA = EntertainerCareerData(
             5: RankEntry(rank=5),
             6: RankEntry(rank=6, title='Senior Correspondent', bonus=RankBonus(characteristic=Chars.SOC, level=1)),
         },
-        'Performer': {
+        3: {  # Performer
             0: RankEntry(rank=0),
             1: RankEntry(rank=1, bonus=RankBonus(characteristic=Chars.DEX, level=1)),
             2: RankEntry(rank=2),
@@ -198,13 +207,21 @@ CAREER_DATA = EntertainerCareerData(
     },
     muster_out=MusterOutData(
         rows={
-            1: MusterOutRow(cash=0, benefit=parse_benefit('contact')),
-            2: MusterOutRow(cash=0, benefit=parse_benefit('soc_plus_1')),
-            3: MusterOutRow(cash=10000, benefit=parse_benefit('contact')),
-            4: MusterOutRow(cash=10000, benefit=parse_benefit('soc_plus_1')),
-            5: MusterOutRow(cash=40000, benefit=parse_benefit('int_plus_1')),
-            6: MusterOutRow(cash=40000, benefit=parse_benefit('ship_share'), count=2),
-            7: MusterOutRow(cash=80000, benefit=parse_benefit('soc_plus_1_and_edu_plus_1')),
+            1: MusterOutRow(cash=0, benefit=CONTACT),
+            2: MusterOutRow(cash=0, benefit=CharacteristicIncrease(char=Chars.SOC, amount=1)),
+            3: MusterOutRow(cash=10000, benefit=CONTACT),
+            4: MusterOutRow(cash=10000, benefit=CharacteristicIncrease(char=Chars.SOC, amount=1)),
+            5: MusterOutRow(cash=40000, benefit=CharacteristicIncrease(char=Chars.INT, amount=1)),
+            6: MusterOutRow(cash=40000, benefit=SHIP_SHARE, count=2),
+            7: MusterOutRow(
+                cash=80000,
+                benefit=CombinedBenefit(
+                    benefits=[
+                        CharacteristicIncrease(char=Chars.SOC, amount=1),
+                        CharacteristicIncrease(char=Chars.EDU, amount=1),
+                    ]
+                ),
+            ),
         }
     ),
     mishaps={

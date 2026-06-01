@@ -2,6 +2,16 @@
 
 Moved from `docs/todo_maybe.md` once fully implemented.
 
+## Muster-out benefits are string-key encoded
+
+Replaced `parse_benefit(...)` throughout career data with typed benefit objects.
+Added `CombinedBenefit` to `benefits.py` for rows that grant multiple benefits
+simultaneously (Noble roll 7: SOC+1 and Yacht; Entertainer roll 7: SOC+1 and
+EDU+1; Prisoner roll 7: Deception, Persuade, and Stealth). Added named constants
+for all item benefits (`SHIP_SHARE`, `SCOUT_SHIP`, `BLADE`, `CONTACT`, etc.).
+Updated `_apply_muster_out_benefit` in `events.py` to apply `CombinedBenefit`
+sub-benefits in sequence. Removed `parse_benefit` entirely.
+
 ## Crewmember Profession is wrong
 
 Removed `CrewmemberProfession` class from `src/ceres/character/skills.py` and the `Professions` union.

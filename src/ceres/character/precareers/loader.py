@@ -1,5 +1,6 @@
 from functools import cache
 
+from ceres.character import skills as character_skills
 from ceres.character.careers.career_data import (
     CareerEventEntry,
     CharCheck,
@@ -20,7 +21,7 @@ from ceres.character.precareers.psionic_community import PsionicCommunityPreCare
 from ceres.character.precareers.school_of_hard_knocks import SchoolOfHardKnocksPreCareer
 from ceres.character.precareers.spacer_community import SpacerCommunityPreCareer
 from ceres.character.precareers.university import UniversityPreCareer
-from ceres.character.skills import Carouse
+from ceres.character.skills import ArtSkill, Carouse, LanguageSkill, ProfessionSkill, ScienceSkill, skill_instances
 
 _PRECAREER_EVENTS = {
     2: CareerEventEntry(text='Approached by an illegal psionic group.', effects=[]),
@@ -52,51 +53,51 @@ _PRECAREER_EVENTS = {
 }
 
 _UNIVERSITY_SKILLS = [
-    PrecareerSkillEntry(skill='Admin'),
-    PrecareerSkillEntry(skill='Advocate'),
-    PrecareerSkillEntry(skill='Animals', choices=['Animals']),
-    PrecareerSkillEntry(skill='Art'),
-    PrecareerSkillEntry(skill='Astrogation'),
-    PrecareerSkillEntry(skill='Electronics'),
-    PrecareerSkillEntry(skill='Engineer'),
-    PrecareerSkillEntry(skill='Language'),
-    PrecareerSkillEntry(skill='Medic'),
-    PrecareerSkillEntry(skill='Navigation'),
-    PrecareerSkillEntry(skill='Profession'),
-    PrecareerSkillEntry(skill='Science'),
+    PrecareerSkillEntry(skill=character_skills.Admin()),
+    PrecareerSkillEntry(skill=character_skills.Advocate()),
+    PrecareerSkillEntry(skill=character_skills.Animals()),
+    PrecareerSkillEntry(skill=skill_instances(ArtSkill)),
+    PrecareerSkillEntry(skill=character_skills.Astrogation()),
+    PrecareerSkillEntry(skill=character_skills.Electronics()),
+    PrecareerSkillEntry(skill=character_skills.Engineer()),
+    PrecareerSkillEntry(skill=skill_instances(LanguageSkill)),
+    PrecareerSkillEntry(skill=character_skills.Medic()),
+    PrecareerSkillEntry(skill=character_skills.Navigation()),
+    PrecareerSkillEntry(skill=skill_instances(ProfessionSkill)),
+    PrecareerSkillEntry(skill=skill_instances(ScienceSkill)),
 ]
 
 _COLONIAL_SKILLS = [
-    PrecareerSkillEntry(skill='Animals', level=0),
-    PrecareerSkillEntry(skill='Athletics', level=0),
-    PrecareerSkillEntry(skill='Drive', level=0),
-    PrecareerSkillEntry(skill='Gun Combat', level=0),
-    PrecareerSkillEntry(skill='Mechanic', level=0),
-    PrecareerSkillEntry(skill='Medic', level=0),
-    PrecareerSkillEntry(skill='Navigation', level=0),
-    PrecareerSkillEntry(skill='Recon', level=0),
-    PrecareerSkillEntry(skill='Profession', level=0),
-    PrecareerSkillEntry(skill='Seafarer', level=0),
-    PrecareerSkillEntry(skill='Survival', level=1),
+    PrecareerSkillEntry(skill=character_skills.Animals(), level=0),
+    PrecareerSkillEntry(skill=character_skills.Athletics(), level=0),
+    PrecareerSkillEntry(skill=character_skills.Drive(), level=0),
+    PrecareerSkillEntry(skill=character_skills.GunCombat(), level=0),
+    PrecareerSkillEntry(skill=character_skills.Mechanic(), level=0),
+    PrecareerSkillEntry(skill=character_skills.Medic(), level=0),
+    PrecareerSkillEntry(skill=character_skills.Navigation(), level=0),
+    PrecareerSkillEntry(skill=character_skills.Recon(), level=0),
+    PrecareerSkillEntry(skill=skill_instances(ProfessionSkill), level=0),
+    PrecareerSkillEntry(skill=character_skills.Seafarer(), level=0),
+    PrecareerSkillEntry(skill=character_skills.Survival(), level=1),
 ]
 
 _SCHOOL_OF_HARD_KNOCKS_SKILLS = [
-    PrecareerSkillEntry(skill='Streetwise', level=1),
-    PrecareerSkillEntry(skill='Athletics', level=0),
-    PrecareerSkillEntry(skill='Deception', level=0),
-    PrecareerSkillEntry(skill='Drive', level=0),
-    PrecareerSkillEntry(skill='Gambler', level=0),
-    PrecareerSkillEntry(skill='Melee', level=0),
-    PrecareerSkillEntry(skill='Persuade', level=0),
-    PrecareerSkillEntry(skill='Stealth', level=0),
+    PrecareerSkillEntry(skill=character_skills.Streetwise(), level=1),
+    PrecareerSkillEntry(skill=character_skills.Athletics(), level=0),
+    PrecareerSkillEntry(skill=character_skills.Deception(), level=0),
+    PrecareerSkillEntry(skill=character_skills.Drive(), level=0),
+    PrecareerSkillEntry(skill=character_skills.Gambler(), level=0),
+    PrecareerSkillEntry(skill=character_skills.Melee(), level=0),
+    PrecareerSkillEntry(skill=character_skills.Persuade(), level=0),
+    PrecareerSkillEntry(skill=character_skills.Stealth(), level=0),
 ]
 
 _SPACER_COMMUNITY_SKILLS = [
-    PrecareerSkillEntry(skill='Vacc Suit', level=1),
-    PrecareerSkillEntry(skill='Astrogation', level=0),
-    PrecareerSkillEntry(skill='Electronics', level=0),
-    PrecareerSkillEntry(skill='Engineer', level=0),
-    PrecareerSkillEntry(skill='Profession', level=0),
+    PrecareerSkillEntry(skill=character_skills.VaccSuit(), level=1),
+    PrecareerSkillEntry(skill=character_skills.Astrogation(), level=0),
+    PrecareerSkillEntry(skill=character_skills.Electronics(), level=0),
+    PrecareerSkillEntry(skill=character_skills.Engineer(), level=0),
+    PrecareerSkillEntry(skill=skill_instances(ProfessionSkill), level=0),
 ]
 
 
@@ -193,9 +194,9 @@ def load_precareers() -> dict[str, PreCareerData]:
             source='Companion',
             entry_requirement='PSI 8+, DM+1 if INT 8+',
             skill_choices=[
-                PrecareerSkillEntry(skill='Profession', level=0),
-                PrecareerSkillEntry(skill='Science', level=0),
-                PrecareerSkillEntry(skill='Streetwise', level=0),
+                PrecareerSkillEntry(skill=skill_instances(ProfessionSkill), level=0),
+                PrecareerSkillEntry(skill=skill_instances(ScienceSkill), level=0),
+                PrecareerSkillEntry(skill=character_skills.Streetwise(), level=0),
             ],
             graduation_requirement='PSI 6+, DM+1 if INT 8+',
             honours_target=12,

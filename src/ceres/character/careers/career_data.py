@@ -12,7 +12,7 @@ from ceres.character.events import (
     PendingSkillTable,
     PendingSurvive,
 )
-from ceres.character.skills import AnySkill, Level, Skill, _level_fields, skill_names_for_category
+from ceres.character.skills import AnySkill, Level, Skill, _level_fields
 from ceres.character.state import CareerTerm
 
 type SkillTableEntry = AnySkill | Chars | list[Skill]
@@ -51,8 +51,6 @@ class RankBonus(BaseModel):
     def resolve_choices(self) -> list[str] | None:
         if self.choices:
             return self.choices
-        if self.skill:
-            return skill_names_for_category(type(self.skill).name())
         return None
 
 
@@ -213,7 +211,7 @@ class CareerData(BaseModel):
     assignments: list[AssignmentData]
     skill_tables: CareerSkillTables
     ranks: dict[int, RankEntry]  # default rank table (used when no per-assignment override)
-    ranks_by_assignment: dict[str, dict[int, RankEntry]] = {}  # assignment name → rank table override
+    ranks_by_assignment: dict[int, dict[int, RankEntry]] = {}  # assignment index → rank table override
     commission: CharCheck | None = None
     officer_ranks: dict[int, RankEntry] = {}
     events: dict[int, CareerEventEntry]  # 2D roll → event
@@ -223,8 +221,19 @@ class CareerData(BaseModel):
     selectable: bool = True
     draft_assignments: list[str] = []
 
+    def advancement_is_special(self) -> bool:
+        return False
+
     def assignment(self, name: str) -> AssignmentData | None:
         return next((a for a in self.assignments if a.name == name), None)
+
+    def assignment_by_index(self, index: int) -> AssignmentData | None:
+        if index < 1 or index > len(self.assignments):
+            return None
+        return self.assignments[index - 1]
+
+    def assignment_index(self, assignment: AssignmentData) -> int:
+        return self.assignments.index(assignment) + 1
 
     def skill_table(self, name: str) -> SkillTable | None:
         match name:
@@ -241,13 +250,13 @@ class CareerData(BaseModel):
                 return getattr(self.skill_tables, f'assignment{i}')
         return None
 
-    def assignment_ranks(self, assignment_name: str) -> dict[int, RankEntry]:
-        return self.ranks_by_assignment.get(assignment_name, self.ranks)
+    def assignment_ranks(self, index: int) -> dict[int, RankEntry]:
+        return self.ranks_by_assignment.get(index, self.ranks)
 
     def current_ranks(self, projection) -> dict[int, RankEntry]:
         if projection.summary.career_terms and projection.summary.career_terms[-1].commission:
             return self.officer_ranks
-        return self.assignment_ranks(projection.summary.current_assignment or '')
+        return self.assignment_ranks(projection.summary.current_assignment_index or 0)
 
     def is_selectable(self, projection=None) -> bool:
         return self.selectable
@@ -276,6 +285,7 @@ class CareerData(BaseModel):
         projection.summary.drafted = True
         projection.summary.current_career = self.name
         projection.summary.current_assignment = assignment.name
+        projection.summary.current_assignment_index = self.assignment_index(assignment)
         self.start_new_term(projection, assignment, event_id)
 
     def prior_terms(self, terms, assignment: AssignmentData) -> list:
@@ -299,6 +309,7 @@ class CareerData(BaseModel):
             CareerTerm(
                 career=self.name,
                 assignment=assignment.name,
+                assignment_index=self.assignment_index(assignment),
                 commission=self.is_commissioned(projection.summary.career_terms),
                 rank_after_term=projection.summary.rank or 0,
             )
@@ -348,6 +359,7 @@ class CareerData(BaseModel):
                 projection.scheduled_effects.remove(se)
             projection.summary.current_career = self.name
             projection.summary.current_assignment = assignment.name
+            projection.summary.current_assignment_index = self.assignment_index(assignment)
             self.start_new_term(projection, assignment, event_id)
             return
 
@@ -371,6 +383,7 @@ class CareerData(BaseModel):
 
         projection.summary.current_career = self.name
         projection.summary.current_assignment = assignment.name
+        projection.summary.current_assignment_index = self.assignment_index(assignment)
         self.start_new_term(projection, assignment, event_id)
 
     def start_new_term(self, projection, assignment: AssignmentData, event_id: int) -> None:
@@ -489,11 +502,9 @@ class CareerData(BaseModel):
         spec_field = next((f for f in fields if getattr(entry, f).value > 0), None)
         if spec_field is not None:
             return []  # pre-selected spec, no choice
-        if len(fields) > 1:
-            specs = skill_names_for_category(skill_cls.name())
-            if specs:
-                return [s for s in specs if projection.summary.skill_level(skill_cls) is None]
         name = skill_cls.name()
+        if len(fields) > 1:
+            return [name] if projection.summary.skill_level(skill_cls) is None else []
         return [name] if projection.summary.skill_level(skill_cls) is None else []
 
     def _training_selectable_skills(self, projection, entry: SkillTableEntry) -> list[str]:
@@ -508,7 +519,7 @@ class CareerData(BaseModel):
     def _queue_skill_table_before_survival(self, projection, assignment: AssignmentData, event_id: int) -> None:
 
         edu = projection.summary.characteristics.get(Chars.EDU, 0)
-        tables = self.available_tables(edu, assignment.name)
+        tables = self.available_tables(edu, self.assignment_index(assignment))
         projection.pending_inputs.append(
             PendingSkillTable(id=f'{event_id}.0', instruction='Choose a skill table and roll 1D', options=tables)
         )
@@ -519,15 +530,14 @@ class CareerData(BaseModel):
         target = assignment.survival.target
         return PendingSurvive(id=f'{event_id}.{pending_idx}', instruction=f'Survive: {char} {target}+')
 
-    def available_tables(self, edu: int, current_assignment: str) -> list[str]:
+    def available_tables(self, edu: int, assignment_index: int) -> list[str]:
         result = ['personal_development', 'service_skills']
         adv_edu = self.skill_tables.advanced_education
         if adv_edu is not None and edu >= (adv_edu.min_edu or 0):
             result.append('advanced_education')
         if self.skill_tables.officer is not None:
             result.append('officer')
-        for a in self.assignments:
-            if a.name.lower() == current_assignment.lower():
-                result.append(a.name.lower())
-                break
+        assignment = self.assignment_by_index(assignment_index)
+        if assignment is not None:
+            result.append(assignment.name.lower())
         return sorted(result)

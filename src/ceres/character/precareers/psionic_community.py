@@ -1,7 +1,7 @@
 from ceres.character.characteristics import Chars, ConnectionKind
 from ceres.character.events import PendingPreCareerSkillChoice, PreCareerGraduationEvent
 from ceres.character.precareers.precareer_data import PreCareerData
-from ceres.character.skills import skill_names_for_category
+from ceres.character.skills import ScienceSkill, skill_names
 from ceres.character.state import (
     CharacterProjection,
     CharacterSummary,
@@ -25,7 +25,7 @@ class PsionicCommunityPreCareer(PreCareerData):
         projection.summary.problems.append(
             'Psionic Community graduation: gain level 1 in any one psionic talent possessed. Apply manually.'
         )
-        science_options = skill_names_for_category('Science') or []
+        science_options = skill_names(ScienceSkill)
         if science_options:
             projection.pending_inputs.append(
                 PendingPreCareerSkillChoice(

@@ -1,7 +1,7 @@
 from ceres.character.characteristics import Chars
 from ceres.character.events import PendingPreCareerSkillChoice, PreCareerEntryEvent, PreCareerGraduationEvent
 from ceres.character.precareers.precareer_data import PreCareerData
-from ceres.character.skills import parse_skill_spec_option, skill_names_for_category, skill_spec_option_names
+from ceres.character.skills import parse_skill_spec_option, skill_spec_option_names
 from ceres.character.state import (
     CharacterProjection,
     ScheduledEffect,
@@ -68,14 +68,7 @@ class UniversityPreCareer(PreCareerData):
 def _precareer_skill_options(precareer: PreCareerData) -> list[str]:
     opts: list[str] = []
     for entry in precareer.skill_choices:
-        if entry.choices:
-            opts.extend(entry.choices)
-        elif entry.skill:
-            expanded = skill_names_for_category(entry.skill)
-            if expanded:
-                opts.extend(expanded)
-            else:
-                opts.append(entry.skill)
+        opts.extend(entry.option_names)
     return sorted(set(opts))
 
 

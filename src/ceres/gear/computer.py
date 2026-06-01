@@ -1,22 +1,11 @@
 """
 Only Computer Hardware Parts and Equipment in this file.
 All software in software.py
-
-TODO: Portable Computer Options not yet implemented:
-  - Camera (TL8+, built-in still/video camera)
-  - Comms (TL8+, short-range comm unit, no extra cost)
-  - Data Display/Recorder (TL13, heads-up display, Cr500)
-  - Data Wafer (TL8+, stores Bandwidth 0 or 1 programs, Cr5)
-  - Physical User Interface (keyboard/screen at TL7, voice at TL8, holographic at TL12)
-
-TODO: Specialised Computers not yet implemented:
-  - Intelligent Interface variant: TL8, cost x5 of standard computer
-  - Intellect variant: TL9, cost x10 of standard computer
 """
 
-from typing import Any, ClassVar, Literal
+from typing import Annotated, Any, ClassVar, Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 
 from ceres.gear.software import Expert
 from ceres.shared import CeresPart, Equipment, NoteList, _Note
@@ -95,6 +84,92 @@ class ComputerEquipment(Equipment):
         return f'{self._label}/{self.parts[0].processing}'
 
 
+class PortableComputerOption(CeresPart):
+    kind: str
+    label: ClassVar[str]
+
+    @property
+    def description(self) -> str:
+        return type(self).label
+
+
+class CameraOption(PortableComputerOption):
+    kind: Literal['camera'] = 'camera'
+    tl: int = 8
+    cost: float = 0.0
+    label: ClassVar[str] = 'Camera'
+
+
+class CommsOption(PortableComputerOption):
+    kind: Literal['comms'] = 'comms'
+    tl: int = 8
+    cost: float = 0.0
+    label: ClassVar[str] = 'Comms'
+
+
+class DataDisplayRecorderOption(PortableComputerOption):
+    kind: Literal['data_display_recorder'] = 'data_display_recorder'
+    tl: int = 13
+    cost: float = 500.0
+    label: ClassVar[str] = 'Data Display/Recorder'
+
+
+class DataWaferOption(PortableComputerOption):
+    kind: Literal['data_wafer'] = 'data_wafer'
+    tl: int = 8
+    cost: float = 5.0
+    bandwidth: int = 0
+    label: ClassVar[str] = 'Data Wafer'
+
+    @field_validator('bandwidth')
+    @classmethod
+    def validate_bandwidth(cls, value: int) -> int:
+        if value not in {0, 1}:
+            raise ValueError('Data Wafer bandwidth must be 0 or 1')
+        return value
+
+    @property
+    def description(self) -> str:
+        return f'{self.label} (Bandwidth {self.bandwidth})'
+
+
+class PhysicalUserInterfaceOption(PortableComputerOption):
+    kind: Literal['physical_user_interface'] = 'physical_user_interface'
+    interface: Literal['keyboard_screen', 'voice', 'holographic'] = 'voice'
+    cost: float = 0.0
+    label: ClassVar[str] = 'Physical User Interface'
+    _INTERFACE_TL: ClassVar[dict[str, int]] = {
+        'keyboard_screen': 7,
+        'voice': 8,
+        'holographic': 12,
+    }
+    _INTERFACE_LABEL: ClassVar[dict[str, str]] = {
+        'keyboard_screen': 'Keyboard/Screen',
+        'voice': 'Voice',
+        'holographic': 'Holographic',
+    }
+
+    @model_validator(mode='before')
+    @classmethod
+    def _resolve_tl(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        interface = data.get('interface', 'voice')
+        if interface in cls._INTERFACE_TL:
+            data.setdefault('tl', cls._INTERFACE_TL[interface])
+        return data
+
+    @property
+    def description(self) -> str:
+        return f'{self.label} ({self._INTERFACE_LABEL[self.interface]})'
+
+
+PortableComputerOptionUnion = Annotated[
+    CameraOption | CommsOption | DataDisplayRecorderOption | DataWaferOption | PhysicalUserInterfaceOption,
+    Field(discriminator='kind'),
+]
+
+
 # ---------------------------------------------------------------------------
 # Computer Terminal / Interface Device (CSC p.66)
 # Computer/0 only; can only run Interface software.
@@ -155,6 +230,7 @@ class MidSizedComputer(ComputerEquipment):
 class PortableComputer(ComputerEquipment):
     _label = 'Portable Computer'
     _allow_retro: ClassVar[bool] = False
+    options: list[PortableComputerOptionUnion] = Field(default_factory=list)
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         0: {'tl': 7, 'mass_kg': 5.0, 'cost': 500.0},
         1: {'tl': 8, 'mass_kg': 2.0, 'cost': 250.0},
@@ -163,6 +239,24 @@ class PortableComputer(ComputerEquipment):
         4: {'tl': 13, 'mass_kg': 0.5, 'cost': 1_500.0},
         5: {'tl': 14, 'mass_kg': 0.5, 'cost': 5_000.0},
     }
+
+    @model_validator(mode='after')
+    def _validate_options(self):
+        for option in self.options:
+            if option.tl > self.tl:
+                raise ValueError(f'{option.description} requires TL{option.tl}')
+        processing = self.parts[0].processing
+        spec = type(self)._specs[processing]
+        proto_levels = max(0, int(spec['tl']) - self.tl)
+        base_cost = float(spec['cost']) * (10**proto_levels)
+        object.__setattr__(self, 'cost', base_cost + sum(option.cost for option in self.options))
+        return self
+
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList()
+        for option in self.options:
+            notes.content(option.description)
+        return notes
 
 
 class Tablet(ComputerEquipment):
@@ -211,7 +305,7 @@ class MicroscopicChip(ComputerEquipment):
 # All bandwidth is available for the Expert skill; cannot be reprogrammed.
 #
 # Cost = portable_computer_cost × variant_multiplier + expert_package_cost
-# TL   = portable computer TL for that processing level
+# TL   = max(portable computer TL, variant TL, expert package TL)
 #
 # Intelligent Interface variant (x5): requires at least skill 0 → DM+1
 # Intellect variant (x10): allows unskilled use as if having skill Expert-1
@@ -220,6 +314,11 @@ class MicroscopicChip(ComputerEquipment):
 _VARIANT_MULTIPLIER: dict[str, int] = {
     'intelligent_interface': 5,
     'intellect': 10,
+}
+
+_VARIANT_TL: dict[str, int] = {
+    'intelligent_interface': 8,
+    'intellect': 9,
 }
 
 _VARIANT_FULL_NAME: dict[str, str] = {
@@ -263,7 +362,7 @@ class SpecialisedComputer(Equipment):
         expert = raw_expert if isinstance(raw_expert, Expert) else Expert.model_validate(raw_expert)
         total_cost = float(spec['cost']) * multiplier + expert.cost
         data.setdefault('parts', [part])
-        data.setdefault('tl', max(part.tl, expert.tl))
+        data.setdefault('tl', max(part.tl, expert.tl, _VARIANT_TL[data['variant']]))
         data.setdefault('cost', total_cost)
         data.setdefault('mass_kg', float(spec['mass_kg']))
         return data

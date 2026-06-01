@@ -1,7 +1,7 @@
 from ceres.character.characteristics import Chars
 from ceres.character.events import PendingPreCareerSkillChoice, PreCareerGraduationEvent
 from ceres.character.precareers.precareer_data import PreCareerData
-from ceres.character.skills import skill_from_str, skill_names_for_category
+from ceres.character.skills import JackOfAllTrades, Level, Pilot
 from ceres.character.state import (
     CharacterProjection,
     ScheduledEffect,
@@ -19,8 +19,7 @@ class SpacerCommunityPreCareer(PreCareerData):
         choice_pool: list[str] = []
         for entry in self.skill_choices:
             if entry.skill and entry.level == 0:
-                expanded = skill_names_for_category(entry.skill)
-                choice_pool.extend(expanded if expanded is not None else [entry.skill])
+                choice_pool.extend(entry.option_names)
         for i in range(2):
             projection.pending_inputs.append(
                 PendingPreCareerSkillChoice(
@@ -40,9 +39,9 @@ class SpacerCommunityPreCareer(PreCareerData):
             )
         )
         pending_idx += 1
-        projection.grant_skill(skill_from_str('Pilot', 0))
+        projection.grant_skill(Pilot())
         if honours:
-            projection.grant_skill(skill_from_str('Jack-of-All-Trades', 1))
+            projection.grant_skill(JackOfAllTrades(level=Level(value=1)))
         projection.summary.characteristics[Chars.DEX] = projection.summary.characteristics.get(Chars.DEX, 0) + 1
         projection.summary.characteristics[Chars.SOC] = max(0, projection.summary.characteristics.get(Chars.SOC, 0) - 2)
         projection.scheduled_effects.append(

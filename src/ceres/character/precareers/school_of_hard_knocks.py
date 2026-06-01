@@ -1,7 +1,7 @@
 from ceres.character.characteristics import Chars
 from ceres.character.events import PendingPreCareerSkillChoice, PreCareerGraduationEvent
 from ceres.character.precareers.precareer_data import PreCareerData
-from ceres.character.skills import skill_from_str
+from ceres.character.skills import Carouse, GunCombat, Level
 from ceres.character.state import CharacterProjection
 
 
@@ -13,7 +13,9 @@ class SchoolOfHardKnocksPreCareer(PreCareerData):
         honours: bool,
     ) -> int:
         pending_idx = 0
-        choice_pool = [s.skill for s in self.skill_choices if s.skill and s.level == 0]
+        choice_pool = [
+            option for entry in self.skill_choices if entry.skill and entry.level == 0 for option in entry.option_names
+        ]
         for i in range(3):
             projection.pending_inputs.append(
                 PendingPreCareerSkillChoice(
@@ -24,9 +26,9 @@ class SchoolOfHardKnocksPreCareer(PreCareerData):
                 )
             )
             pending_idx += 1
-        projection.grant_skill(skill_from_str('Gun Combat', 0))
+        projection.grant_skill(GunCombat())
         if honours:
-            projection.grant_skill(skill_from_str('Carouse', 1))
+            projection.grant_skill(Carouse(level=Level(value=1)))
             projection.pending_inputs.append(
                 PendingPreCareerSkillChoice(
                     id=f'{event.id}.{pending_idx}',

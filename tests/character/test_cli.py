@@ -1,15 +1,49 @@
 import pytest
 from typer.testing import CliRunner
 
-from ceres.character.benefits import parse_benefit
-from ceres.character.cli import app, build_app, render_projection_summary
+from ceres.character import skills as character_skills
+from ceres.character.benefits import LAB_SHIP, SHIP_SHARE
+from ceres.character.characteristics import Chars
+from ceres.character.cli import (
+    _expand_ucp_changes,
+    _format_skill,
+    _parse_ucp_change,
+    app,
+    build_app,
+    read_current_id,
+    render_character,
+    render_character_show,
+    render_pending_inputs,
+    render_projection_summary,
+    render_ucp,
+    render_ucp_short,
+    write_current_id,
+)
+from ceres.character.events import AnyEvent
+from ceres.character.replay import ReplayError
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     CharacterProjection,
     CharacterSummary,
+    Contact,
+    PendingInputBase,
 )
-from ceres.character.store import SqliteCharacterBackend
+from ceres.character.store import CharacterRow, SqliteCharacterBackend
 from tests.character.helpers import MOCK_WORLD
+
+
+class ProjectionlessBackend(SqliteCharacterBackend):
+    def get_projection(self, character_id: int) -> CharacterProjection | None:
+        return None
+
+
+class ReplayErrorBackend(SqliteCharacterBackend):
+    fail_append: bool = False
+
+    def append_event(self, character_id: int, event: AnyEvent) -> AnyEvent:
+        if self.fail_append:
+            raise ReplayError('synthetic replay failure')
+        return super().append_event(character_id, event)
 
 
 @pytest.fixture
@@ -26,6 +60,158 @@ def _start_vilani(runner: CliRunner, app, name: str = 'Boss', player: str = 'NPC
     """Start a character with sophont=Vilani and a mock homeworld in one command."""
     player_args = ['-p', player] if player != 'NPC' else []
     runner.invoke(app, ['create', 'start', *player_args, name, 'Vilani', 'Troj', '2715'])
+
+
+def _projection(**kwargs) -> CharacterProjection:
+    return CharacterProjection(
+        character_id=1,
+        summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD, **kwargs),
+    )
+
+
+def test_parse_ucp_change_accepts_set_and_adjustments():
+    assert _parse_ucp_change('STR=7') == (Chars.STR, 'set', 7)
+    assert _parse_ucp_change('EDU+2') == (Chars.EDU, 'adjust', 2)
+    assert _parse_ucp_change('SOC-1') == (Chars.SOC, 'adjust', -1)
+
+
+@pytest.mark.parametrize('change', ['FOO=7', 'STR', 'STR++1', 'STR=A'])
+def test_parse_ucp_change_rejects_invalid_changes(change):
+    with pytest.raises(ValueError) as exc_info:
+        _parse_ucp_change(change)
+    assert str(exc_info.value) == f'Invalid UCP change: {change}'
+
+
+def test_expand_ucp_changes_expands_short_form_and_preserves_explicit_changes():
+    assert _expand_ucp_changes(['7869A5', 'SOC+1']) == [
+        'STR=7',
+        'DEX=8',
+        'END=6',
+        'INT=9',
+        'EDU=10',
+        'SOC=5',
+        'SOC+1',
+    ]
+
+
+def test_current_character_id_file_round_trips(tmp_path):
+    current_path = tmp_path / 'nested' / '.current'
+
+    assert read_current_id(current_path) is None
+    current_path.parent.mkdir()
+    current_path.write_text('\n')
+    assert read_current_id(current_path) is None
+
+    write_current_id(current_path, 42)
+
+    assert read_current_id(current_path) == 42
+    assert current_path.read_text() == '42\n'
+
+
+def test_render_character_uses_projection_sophont_name_when_supplied():
+    character: CharacterRow = {'id': 7, 'sophont': 'Humaniti', 'player': 'NPC', 'name': 'Boss'}
+
+    assert render_character(character) == '7 Humaniti NPC Boss'
+    assert render_character(character, sophont_name='Vilani') == '7 Vilani NPC Boss'
+
+
+def test_render_character_show_includes_complete_ucp_from_projection():
+    character: CharacterRow = {'id': 7, 'sophont': 'Humaniti', 'player': 'NPC', 'name': 'Boss'}
+    projection = _projection(
+        characteristics={
+            Chars.STR: 7,
+            Chars.DEX: 8,
+            Chars.END: 6,
+            Chars.INT: 9,
+            Chars.EDU: 10,
+            Chars.SOC: 5,
+        }
+    )
+
+    assert render_character_show(character, projection) == [
+        'Id: 7',
+        'Sophont: Vilani',
+        'Player: NPC',
+        'Name: Boss',
+        'UCP: 7869A5',
+        'Characteristics: STR 7 DEX 8 END 6 INT 9 EDU 10 SOC 5',
+    ]
+
+
+def test_render_ucp_handles_missing_partial_and_complete_values():
+    full_ucp = {
+        Chars.STR: 7,
+        Chars.DEX: 8,
+        Chars.END: 6,
+        Chars.INT: 9,
+        Chars.EDU: 10,
+        Chars.SOC: 5,
+    }
+
+    assert render_ucp({}) == 'No UCP set'
+    assert render_ucp({Chars.STR: 7, Chars.DEX: 8}) == 'STR 7 DEX 8'
+    assert render_ucp_short({Chars.STR: 7}) == ''
+    assert render_ucp_short(full_ucp) == '7869A5'
+
+
+def test_format_skill_handles_plain_and_speciality_skills():
+    admin = character_skills.Admin(level=character_skills.Level(value=1))
+    electronics_all = character_skills.Electronics(
+        comms=character_skills.Level(value=1),
+        computers=character_skills.Level(value=1),
+        remote_ops=character_skills.Level(value=1),
+        sensors=character_skills.Level(value=1),
+    )
+    electronics_mixed = character_skills.Electronics(
+        comms=character_skills.Level(value=1),
+        sensors=character_skills.Level(value=2),
+    )
+
+    assert _format_skill(admin) == ['Admin 1']
+    assert _format_skill(electronics_all) == ['Electronics (all)-1']
+    assert _format_skill(electronics_mixed) == ['Electronics (Comms)-1', 'Electronics (Sensors)-2']
+
+
+def test_render_projection_summary_shows_active_character_state():
+    projection = _projection(
+        current_career='Scout',
+        current_assignment='Courier',
+        rank=1,
+        term_count=2,
+        characteristics={Chars.STR: 7, Chars.DEX: 8, Chars.END: 6, Chars.INT: 9, Chars.EDU: 10, Chars.SOC: 5},
+        skills=[
+            character_skills.Admin(level=character_skills.Level(value=1)),
+            character_skills.Electronics(sensors=character_skills.Level(value=2)),
+        ],
+        connections=[Contact(source='mentor')],
+        problems=['Enemy made'],
+        cash=50000,
+        benefits=[LAB_SHIP, SHIP_SHARE],
+    )
+
+    assert render_projection_summary(projection) == [
+        'Test  (Vilani)  |  Scout / Courier  rank 1  term 2',
+        'UCP  7869A5    STR 7  DEX 8  END 6  INT 9  EDU 10  SOC 5',
+        'Skills  Admin 1  Electronics (Sensors)-2',
+        'Connections  contact(mentor)',
+        'Problem  Enemy made',
+        'Cash  Cr50,000',
+        'Benefits  Lab Ship  Ship Share',
+    ]
+
+
+def test_render_pending_inputs_marks_blocking_inputs():
+    projection = _projection()
+    projection.pending_inputs = [
+        PendingInputBase(id='1.0', kind='ucp', instruction='Set UCP'),
+        PendingInputBase(id='1.1', kind='note', instruction='Optional note', blocking=False),
+    ]
+
+    assert render_pending_inputs(projection) == [
+        'Pending:',
+        '  1.0  ucp [blocking]  — Set UCP',
+        '  1.1  note  — Optional note',
+    ]
 
 
 def test_cli_lists_sophonts():
@@ -68,6 +254,22 @@ def test_cli_rejects_unknown_sophont(memory_app):
     assert result.exit_code != 0
     assert 'Unknown sophont: UnknownAlien' in result.output
     assert 'Available:' in result.output
+
+
+def test_cli_reports_world_fetch_failure(tmp_path, monkeypatch):
+    def fail_fetch_world(sector: str, hex_code: str):
+        raise RuntimeError(f'{sector}/{hex_code} unavailable')
+
+    monkeypatch.setattr('ceres.character.cli.fetch_world', fail_fetch_world)
+    backend = SqliteCharacterBackend(':memory:')
+    try:
+        test_app = build_app(backend=backend, current_path=tmp_path / '.current')
+        result = CliRunner().invoke(test_app, ['create', 'start', 'Boss', 'Vilani', 'Troj', '2715'])
+    finally:
+        backend.close()
+
+    assert result.exit_code != 0
+    assert 'Failed to fetch world Troj/2715: Troj/2715 unavailable' in result.output
 
 
 def test_cli_lists_started_character_creations(memory_app):
@@ -146,6 +348,20 @@ def test_cli_rejects_unknown_current_character_id(memory_app):
 
     assert result.exit_code != 0
     assert 'Unknown character creation id: 999' in result.output
+
+
+def test_cli_rejects_stale_current_character_id(tmp_path):
+    current_path = tmp_path / '.current'
+    write_current_id(current_path, 999)
+    backend = SqliteCharacterBackend(':memory:')
+    try:
+        test_app = build_app(backend=backend, current_path=current_path)
+        result = CliRunner().invoke(test_app, ['create', 'current'])
+    finally:
+        backend.close()
+
+    assert result.exit_code != 0
+    assert 'No current character creation' in result.output
 
 
 def test_cli_shows_current_character_creation(memory_app):
@@ -279,6 +495,35 @@ def test_cli_rejects_ucp_without_current_character(memory_app):
     assert 'No current character creation' in result.output
 
 
+def test_cli_rejects_ucp_with_stale_current_character_id(tmp_path):
+    current_path = tmp_path / '.current'
+    write_current_id(current_path, 999)
+    backend = SqliteCharacterBackend(':memory:')
+    try:
+        test_app = build_app(backend=backend, current_path=current_path)
+        result = CliRunner().invoke(test_app, ['create', 'ucp', '777777'])
+    finally:
+        backend.close()
+
+    assert result.exit_code != 0
+    assert 'No current character creation' in result.output
+
+
+def test_cli_rejects_ucp_when_projection_is_unavailable(tmp_path):
+    current_path = tmp_path / '.current'
+    backend = ProjectionlessBackend(':memory:')
+    try:
+        character = backend.start(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')
+        write_current_id(current_path, character['id'])
+        test_app = build_app(backend=backend, current_path=current_path)
+        result = CliRunner().invoke(test_app, ['create', 'ucp', '777777'])
+    finally:
+        backend.close()
+
+    assert result.exit_code != 0
+    assert 'No current character creation' in result.output
+
+
 def test_cli_rejects_invalid_ucp_change(memory_app):
     runner = CliRunner()
 
@@ -287,6 +532,22 @@ def test_cli_rejects_invalid_ucp_change(memory_app):
 
     assert result.exit_code != 0
     assert 'Invalid UCP change: FOO=7' in result.output
+
+
+def test_cli_reports_ucp_replay_error(tmp_path):
+    current_path = tmp_path / '.current'
+    backend = ReplayErrorBackend(':memory:')
+    try:
+        character = backend.start(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')
+        write_current_id(current_path, character['id'])
+        backend.fail_append = True
+        test_app = build_app(backend=backend, current_path=current_path)
+        result = CliRunner().invoke(test_app, ['create', 'ucp', '777777'])
+    finally:
+        backend.close()
+
+    assert result.exit_code != 0
+    assert 'synthetic replay failure' in result.output
 
 
 def test_cli_renames_current_character_creation(memory_app):
@@ -354,6 +615,80 @@ def test_cli_rejects_delete_for_unknown_character(memory_app):
     assert 'Unknown character creation id: 999' in result.output
 
 
+def test_cli_rejects_status_without_current_character(memory_app):
+    result = CliRunner().invoke(memory_app, ['create', 'status'])
+
+    assert result.exit_code != 0
+    assert 'No current character creation' in result.output
+
+
+def test_cli_rejects_status_for_unknown_character(memory_app):
+    result = CliRunner().invoke(memory_app, ['create', 'status', '999'])
+
+    assert result.exit_code != 0
+    assert 'Unknown character creation id: 999' in result.output
+
+
+def test_cli_shows_status_for_current_character(memory_app):
+    runner = CliRunner()
+
+    _start_vilani(runner, memory_app)
+    result = runner.invoke(memory_app, ['create', 'status'])
+
+    assert result.exit_code == 0
+    assert 'Boss  (Vilani)' in result.stdout
+    assert 'Pending:' in result.stdout
+    assert 'ucp [blocking]' in result.stdout
+
+
+def test_cli_rejects_event_without_current_character(memory_app):
+    result = CliRunner().invoke(memory_app, ['create', 'event', '{"kind": "ucp", "ucp": "777777"}'])
+
+    assert result.exit_code != 0
+    assert 'No current character creation' in result.output
+
+
+def test_cli_rejects_invalid_event_json(memory_app):
+    runner = CliRunner()
+
+    _start_vilani(runner, memory_app)
+    result = runner.invoke(memory_app, ['create', 'event', '{not-json'])
+
+    assert result.exit_code != 0
+    assert 'Invalid JSON:' in result.output
+
+
+def test_cli_rejects_invalid_event_payload(memory_app):
+    runner = CliRunner()
+
+    _start_vilani(runner, memory_app)
+    result = runner.invoke(memory_app, ['create', 'event', '{"kind": "unknown"}'])
+
+    assert result.exit_code != 0
+    assert 'Invalid event:' in result.output
+
+
+def test_cli_reports_event_replay_error(memory_app):
+    runner = CliRunner()
+
+    _start_vilani(runner, memory_app)
+    result = runner.invoke(memory_app, ['create', 'event', '{"kind": "ucp", "ucp": "777777"}'])
+
+    assert result.exit_code != 0
+    assert 'Replay error:' in result.output
+
+
+def test_cli_appends_event_and_shows_updated_status(memory_app):
+    runner = CliRunner()
+
+    _start_vilani(runner, memory_app)
+    result = runner.invoke(memory_app, ['create', 'event', '{"kind": "ucp", "ucp": "777777", "fulfills": "1.0"}'])
+
+    assert result.exit_code == 0
+    assert 'UCP  777777' in result.stdout
+    assert 'Pending:' in result.stdout
+
+
 class TestRenderProjectionSummaryBenefits:
     """render_projection_summary should display non-characteristic benefits and cash."""
 
@@ -364,7 +699,7 @@ class TestRenderProjectionSummaryBenefits:
         )
 
     def test_benefits_shown_in_summary(self):
-        projection = self._projection(benefits=[parse_benefit('lab_ship'), parse_benefit('ship_share')])
+        projection = self._projection(benefits=[LAB_SHIP, SHIP_SHARE])
         lines = render_projection_summary(projection)
         combined = '\n'.join(lines)
         assert 'Lab Ship' in combined

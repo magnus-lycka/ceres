@@ -1,4 +1,10 @@
-from ceres.character.benefits import parse_benefit
+from ceres.character.benefits import (
+    ARMOR,
+    CYBERNETIC_IMPLANT,
+    WEAPON,
+    CharacteristicIncrease,
+    ChoiceBenefit,
+)
 from ceres.character.careers.career_data import (
     AdvancementDmEffect,
     AssignmentData,
@@ -49,12 +55,13 @@ from ceres.character.skills import (
     Medic,
     Melee,
     Navigation,
+    ProfessionSkill,
     Recon,
     Stealth,
     Survival,
     Tactics,
     VaccSuit,
-    skill_category_instances,
+    skill_instances,
 )
 from ceres.character.state import (
     Ally,
@@ -137,7 +144,7 @@ CAREER_DATA = CareerData(
             [  # Support
                 Mechanic(),
                 [Drive(), Flyer()],
-                skill_category_instances('Profession'),
+                skill_instances(ProfessionSkill),
                 Explosives(),
                 Electronics(comms=Level(value=1)),
                 Medic(),
@@ -183,13 +190,16 @@ CAREER_DATA = CareerData(
     },
     muster_out=MusterOutData(
         rows={
-            1: MusterOutRow(cash=2000, benefit=parse_benefit('cybernetic_implant')),
-            2: MusterOutRow(cash=5000, benefit=parse_benefit('int_plus_1')),
-            3: MusterOutRow(cash=10000, benefit=parse_benefit('edu_plus_1')),
-            4: MusterOutRow(cash=10000, benefit=parse_benefit('weapon')),
-            5: MusterOutRow(cash=10000, benefit=parse_benefit('armor')),
-            6: MusterOutRow(cash=20000, benefit=parse_benefit(['end_plus_1', 'cybernetic_implant'])),
-            7: MusterOutRow(cash=30000, benefit=parse_benefit('soc_plus_1')),
+            1: MusterOutRow(cash=2000, benefit=CYBERNETIC_IMPLANT),
+            2: MusterOutRow(cash=5000, benefit=CharacteristicIncrease(char=Chars.INT, amount=1)),
+            3: MusterOutRow(cash=10000, benefit=CharacteristicIncrease(char=Chars.EDU, amount=1)),
+            4: MusterOutRow(cash=10000, benefit=WEAPON),
+            5: MusterOutRow(cash=10000, benefit=ARMOR),
+            6: MusterOutRow(
+                cash=20000,
+                benefit=ChoiceBenefit(options=[CharacteristicIncrease(char=Chars.END, amount=1), CYBERNETIC_IMPLANT]),
+            ),
+            7: MusterOutRow(cash=30000, benefit=CharacteristicIncrease(char=Chars.SOC, amount=1)),
         }
     ),
     mishaps={

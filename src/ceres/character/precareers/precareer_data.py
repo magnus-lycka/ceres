@@ -1,9 +1,10 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from ceres.character.careers.career_data import AnyEffect, CareerEventEntry, CharCheck
 from ceres.character.events import PendingPreCareerSkillChoice
+from ceres.character.skills import AnySkill, Level, Skill, _level_fields
 from ceres.character.state import (
     CharacterProjection,
     CharacterSummary,
@@ -14,12 +15,57 @@ if TYPE_CHECKING:
 
 
 class PrecareerSkillEntry(BaseModel):
-    """String-based skill entry used in pre-career skill lists. Will be migrated to AnySkill in a future pass."""
+    """Skill entry used in pre-career skill lists.
 
-    skill: str | None = None
+    A single skill is a fixed grant/choice. A list of skills represents a broad
+    category choice, matching the career skill table pattern.
+    """
+
+    skill: AnySkill | list[Skill] | None = None
     level: int = 0
     choices: list[str] | None = None
     spec: str | None = None
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    @property
+    def option_names(self) -> list[str]:
+        if self.choices:
+            return self.choices
+        if self.skill is None:
+            return []
+        if isinstance(self.skill, list):
+            return [type(skill).name() for skill in self.skill]
+        return [type(self.skill).name()]
+
+    @property
+    def category_label(self) -> str:
+        if self.choices:
+            return '/'.join(self.choices)
+        if self.skill is None:
+            return 'skill'
+        if isinstance(self.skill, list):
+            return 'skill'
+        return type(self.skill).name()
+
+    def grant_skill(self) -> AnySkill | None:
+        if self.skill is None or isinstance(self.skill, list):
+            return None
+        return _skill_at_level(self.skill, self.level)
+
+
+def _skill_at_level(skill: AnySkill, level: int) -> AnySkill:
+    skill_cls = type(skill)
+    cls = cast(type[Any], skill_cls)
+    fields = _level_fields(skill_cls)
+    if level == 0:
+        return cast(AnySkill, cls())
+    if len(fields) == 1 and fields[0] == 'level':
+        return cast(AnySkill, cls(level=Level(value=level)))
+    active = [field for field in fields if getattr(skill, field).value > 0]
+    selected = active or fields
+    values = {field: Level(value=level if field in selected else 0) for field in fields}
+    return cast(AnySkill, cls(**values))
 
 
 class PreCareerData(BaseModel):
@@ -57,49 +103,47 @@ class PreCareerData(BaseModel):
         pending_idx: int,
     ) -> int:
         """Default: generic companion entry — auto-grant fixed skills, queue picks for categories."""
-        from ceres.character.skills import skill_from_str, skill_names_for_category
 
         if self.entry_pick_count == 0:
             for entry in self.skill_choices:
                 if not entry.skill:
                     continue
-                expanded = skill_names_for_category(entry.skill)
-                if expanded:
-                    instr = f'{self.name}: choose one {entry.skill} specialisation at level {entry.level}'
+                if isinstance(entry.skill, list) or entry.choices:
+                    options = entry.option_names
+                    instr = f'{self.name}: choose one {entry.category_label} specialisation at level {entry.level}'
                     projection.pending_inputs.append(
                         PendingPreCareerSkillChoice(
                             id=f'{event.id}.{pending_idx}',
                             level=entry.level,
                             instruction=instr,
-                            options=expanded,
+                            options=options,
                         )
                     )
                     pending_idx += 1
-                else:
-                    projection.grant_skill(skill_from_str(entry.skill, entry.level))
+                elif grant := entry.grant_skill():
+                    projection.grant_skill(grant)
         else:
             choice_pool: list[str] = []
             for entry in self.skill_choices:
                 if not entry.skill:
                     continue
-                expanded = skill_names_for_category(entry.skill)
-                names = expanded if expanded is not None else [entry.skill]
                 if entry.level >= 1:
-                    if expanded:
-                        instr = f'{self.name}: choose one {entry.skill} specialisation at level {entry.level}'
+                    if isinstance(entry.skill, list) or entry.choices:
+                        options = entry.option_names
+                        instr = f'{self.name}: choose one {entry.category_label} specialisation at level {entry.level}'
                         projection.pending_inputs.append(
                             PendingPreCareerSkillChoice(
                                 id=f'{event.id}.{pending_idx}',
                                 level=entry.level,
                                 instruction=instr,
-                                options=expanded,
+                                options=options,
                             )
                         )
                         pending_idx += 1
-                    else:
-                        projection.grant_skill(skill_from_str(entry.skill, entry.level))
+                    elif grant := entry.grant_skill():
+                        projection.grant_skill(grant)
                 else:
-                    choice_pool.extend(names)
+                    choice_pool.extend(entry.option_names)
             for i in range(self.entry_pick_count):
                 instr = f'{self.name}: choose skill {i + 1} of {self.entry_pick_count} at level 0'
                 projection.pending_inputs.append(

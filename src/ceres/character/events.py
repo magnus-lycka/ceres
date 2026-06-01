@@ -22,7 +22,6 @@ from ceres.character.skills import (
     parse_skill_spec_option,
     skill_class_by_name,
     skill_from_str,
-    skill_names_for_category,
 )
 from ceres.character.sophonts import Sophont, get_sophont
 from ceres.character.state import (
@@ -143,7 +142,7 @@ def _apply_auto_advance(projection: Any, career: Any, event_id: int) -> None:
             char = bonus.characteristic
             projection.summary.characteristics[char] = projection.summary.characteristics.get(char, 0) + bonus.level
     edu = projection.summary.characteristics.get(Chars.EDU, 0)
-    tables = career.available_tables(edu, projection.summary.current_assignment or '')
+    tables = career.available_tables(edu, projection.summary.current_assignment_index or 0)
     projection.pending_inputs.append(
         PendingSkillTable(id=f'{event_id}.0', instruction='Choose a skill table and roll 1D', options=tables)
     )
@@ -153,26 +152,26 @@ def _apply_auto_advance(projection: Any, career: Any, event_id: int) -> None:
 def _start_new_career_term(projection: Any, career: Any, event_id: int) -> None:
 
     purge_career_pendings(projection)
-    assignment_name = projection.summary.current_assignment or ''
-    assignment = career.assignment(assignment_name)
+    assignment_index = projection.summary.current_assignment_index or 0
+    assignment = career.assignment_by_index(assignment_index)
     if assignment is None:
-        raise ReplayError(f'Unknown assignment {assignment_name!r} in career {career.name!r}')
+        raise ReplayError(f'Unknown assignment index {assignment_index!r} in career {career.name!r}')
     career.start_new_term(projection, assignment, event_id)
 
 
-def _survive_pending(career: Any, assignment_name: str, event_id: int) -> Any:
+def _survive_pending(career: Any, assignment_index: int, event_id: int) -> Any:
 
-    assignment = career.assignment(assignment_name)
+    assignment = career.assignment_by_index(assignment_index)
     if assignment is None:
-        raise ReplayError(f'Unknown assignment {assignment_name!r} in career {career.name!r}')
+        raise ReplayError(f'Unknown assignment index {assignment_index!r} in career {career.name!r}')
     return career.survival_pending(assignment, event_id)
 
 
-def _advancement_pending(career: Any, assignment_name: str, event_id: int, pending_idx: int = 0) -> Any:
+def _advancement_pending(career: Any, assignment_index: int, event_id: int, pending_idx: int = 0) -> Any:
 
-    assignment = career.assignment(assignment_name)
+    assignment = career.assignment_by_index(assignment_index)
     if assignment is None:
-        raise ReplayError(f'Unknown assignment {assignment_name!r}')
+        raise ReplayError(f'Unknown assignment index {assignment_index!r}')
     char = assignment.advancement.characteristic
     target = assignment.advancement.target
     return PendingAdvancement(id=f'{event_id}.{pending_idx}', instruction=f'Advancement: {char} {target}+')
@@ -228,7 +227,7 @@ def _apply_injury_table_result(projection: Any, roll: int, event_id: int) -> Non
 
 
 def _apply_muster_out_benefit(projection: Any, benefit: object, event_id: int = 0) -> None:
-    from ceres.character.benefits import CharacteristicIncrease, ChoiceBenefit
+    from ceres.character.benefits import CharacteristicIncrease, ChoiceBenefit, CombinedBenefit
 
     if isinstance(benefit, CharacteristicIncrease):
         current = projection.summary.characteristics.get(benefit.char, 0)
@@ -244,6 +243,9 @@ def _apply_muster_out_benefit(projection: Any, benefit: object, event_id: int = 
                 benefit_options=list(benefit.options),
             )
         )
+    elif isinstance(benefit, CombinedBenefit):
+        for sub_benefit in benefit.benefits:
+            _apply_muster_out_benefit(projection, sub_benefit, event_id)
 
 
 def _apply_skill_table_entry(projection: Any, entry: Any) -> None:
@@ -283,9 +285,9 @@ def _apply_mishap_ejection(
 
 def _apply_prisoner_advancement(projection: Any, event: Any, career: Any) -> None:
 
-    assignment = career.assignment(projection.summary.current_assignment or '')
+    assignment = career.assignment_by_index(projection.summary.current_assignment_index or 0)
     if assignment is None:
-        raise ReplayError(f'Unknown assignment {projection.summary.current_assignment!r}')
+        raise ReplayError(f'Unknown assignment index {projection.summary.current_assignment_index!r}')
     char = assignment.advancement.characteristic
     target = assignment.advancement.target
     dm = characteristic_dm(projection.summary.characteristics.get(char, 0))
@@ -326,7 +328,7 @@ def _apply_prisoner_advancement(projection: Any, event: Any, career: Any) -> Non
         return
     if success:
         edu = projection.summary.characteristics.get(Chars.EDU, 0)
-        tables = career.available_tables(edu, projection.summary.current_assignment or '')
+        tables = career.available_tables(edu, projection.summary.current_assignment_index or 0)
         projection.pending_inputs.append(
             PendingSkillTable(id=f'{event.id}.0', instruction='Choose a skill table and roll 1D', options=tables)
         )
@@ -467,9 +469,9 @@ class SurviveEvent(EventBase):
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
 
         career = projection.get_current_career()
-        assignment = career.assignment(projection.summary.current_assignment or '')
+        assignment = career.assignment_by_index(projection.summary.current_assignment_index or 0)
         if assignment is None:
-            raise ReplayError(f'Unknown assignment {projection.summary.current_assignment!r}')
+            raise ReplayError(f'Unknown assignment index {projection.summary.current_assignment_index!r}')
         char = assignment.survival.characteristic
         target = assignment.survival.target
         dm = characteristic_dm(projection.summary.characteristics.get(char, 0))
@@ -574,7 +576,7 @@ class MishapEvent(EventBase):
             pass  # handler owns the full ejection/stay flow; nothing automatic here
         elif self.stay_in_career or (mishap is not None and mishap.stay_in_career):
             projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment or '', self.id, pending_idx)
+                _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id, pending_idx)
             )
         else:
             purge_career_pendings(projection)
@@ -667,14 +669,14 @@ class SkillChoiceEvent(EventBase):
             if not remaining and projection.summary.current_career is not None:
                 career = projection.get_current_career()
                 projection.pending_inputs.append(
-                    _survive_pending(career, projection.summary.current_assignment or '', self.id)
+                    _survive_pending(career, projection.summary.current_assignment_index or 0, self.id)
                 )
         elif isinstance(fulfilled_pending, PendingSkillTableChoice):
             projection.grant_skill(self.skill)
             if projection.summary.current_career is not None and not fulfilled_pending.reenlist_queued:
                 career = projection.get_current_career()
                 projection.pending_inputs.append(
-                    _survive_pending(career, projection.summary.current_assignment or '', self.id)
+                    _survive_pending(career, projection.summary.current_assignment_index or 0, self.id)
                 )
         elif isinstance(fulfilled_pending, PendingCareerSkillChoice):
             projection.grant_skill(self.skill)
@@ -685,7 +687,7 @@ class SkillChoiceEvent(EventBase):
             projection.grant_skill(self.skill)
             career = projection.get_current_career()
             edu = projection.summary.characteristics.get(Chars.EDU, 0)
-            tables = career.available_tables(edu, projection.summary.current_assignment or '')
+            tables = career.available_tables(edu, projection.summary.current_assignment_index or 0)
             projection.pending_inputs.append(
                 PendingSkillTable(id=f'{self.id}.0', instruction='Choose a skill table and roll 1D', options=tables)
             )
@@ -708,7 +710,7 @@ class AdvancementDmChoiceEvent(EventBase):
         if projection.summary.current_career is not None:
             career = projection.get_current_career()
             projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment or '', self.id)
+                _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id)
             )
 
 
@@ -769,12 +771,12 @@ class AdvancementEvent(EventBase):
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
 
         career = projection.get_current_career()
-        if career.name == 'Prisoner':
+        if career.advancement_is_special():
             _apply_prisoner_advancement(projection, self, career)
             return
-        assignment = career.assignment(projection.summary.current_assignment or '')
+        assignment = career.assignment_by_index(projection.summary.current_assignment_index or 0)
         if assignment is None:
-            raise ReplayError(f'Unknown assignment {projection.summary.current_assignment!r}')
+            raise ReplayError(f'Unknown assignment index {projection.summary.current_assignment_index!r}')
         char = assignment.advancement.characteristic
         target = assignment.advancement.target
         dm = characteristic_dm(projection.summary.characteristics.get(char, 0))
@@ -809,7 +811,7 @@ class AdvancementEvent(EventBase):
                         projection.summary.characteristics.get(char, 0) + bonus.level
                     )
             edu = projection.summary.characteristics.get(Chars.EDU, 0)
-            tables = career.available_tables(edu, projection.summary.current_assignment or '')
+            tables = career.available_tables(edu, projection.summary.current_assignment_index or 0)
             projection.pending_inputs.append(
                 PendingSkillTable(id=f'{self.id}.0', instruction='Choose a skill table and roll 1D', options=tables)
             )
@@ -828,7 +830,7 @@ class CommissionEvent(EventBase):
         career = projection.get_current_career()
         if not self.attempt:
             projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment or '', self.id)
+                _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id)
             )
             return
         if career.commission is None:
@@ -840,7 +842,7 @@ class CommissionEvent(EventBase):
             projection.scheduled_effects.remove(se)
         if self.roll + dm < career.commission.target:
             projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment or '', self.id)
+                _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id)
             )
             return
         projection.summary.rank = 1
@@ -867,7 +869,7 @@ class CommissionEvent(EventBase):
                 char = bonus.characteristic
                 projection.summary.characteristics[char] = projection.summary.characteristics.get(char, 0) + bonus.level
         edu = projection.summary.characteristics.get(Chars.EDU, 0)
-        tables = career.available_tables(edu, projection.summary.current_assignment or '')
+        tables = career.available_tables(edu, projection.summary.current_assignment_index or 0)
         projection.pending_inputs.append(
             PendingSkillTable(id=f'{self.id}.0', instruction='Choose a skill table and roll 1D', options=tables)
         )
@@ -908,7 +910,7 @@ class SkillTableEvent(EventBase):
         if not (1 <= self.roll <= 6):
             raise ReplayError(f'Skill table roll must be 1-6, got {self.roll}')
         entry = table.entries[self.roll - 1]
-        assignment_name = projection.summary.current_assignment or ''
+        assignment_index = projection.summary.current_assignment_index or 0
         choices: list[str] | None = None
         if isinstance(entry, list):
             choices = [type(s).name() for s in entry]
@@ -917,9 +919,7 @@ class SkillTableEvent(EventBase):
             fields = _level_fields(skill_cls)
             spec_field = next((f for f in fields if getattr(entry, f).value > 0), None)
             if spec_field is None and len(fields) > 1:
-                choices = skill_names_for_category(skill_cls.name())
-                if choices is None:
-                    choices = [skill_cls.name()]
+                choices = [skill_cls.name()]
         reenlist_queued = any(
             isinstance(p, (PendingReenlist, PendingAssignmentChangeChoice, PendingAgingRoll, PendingMusterOut))
             for p in projection.pending_inputs
@@ -949,7 +949,7 @@ class SkillTableEvent(EventBase):
         else:
             _apply_skill_table_entry(projection, entry)
             if not reenlist_queued:
-                projection.pending_inputs.append(_survive_pending(career, assignment_name, self.id))
+                projection.pending_inputs.append(_survive_pending(career, assignment_index, self.id))
 
 
 class CharacteristicChoiceEvent(EventBase):
@@ -1009,7 +1009,7 @@ class SkillRollEvent(EventBase):
             and not any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
         ):
             projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment or '', self.id)
+                _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id)
             )
 
 
@@ -1161,12 +1161,12 @@ class LifeEventEvent(EventBase):
             )
             if in_career and career is not None:
                 projection.pending_inputs.append(
-                    _advancement_pending(career, projection.summary.current_assignment or '', self.id, 1)
+                    _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id, 1)
                 )
         elif roll == 3:
             if in_career and career is not None:
                 projection.pending_inputs.append(
-                    _advancement_pending(career, projection.summary.current_assignment or '', self.id)
+                    _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id)
                 )
         elif roll == 4:
             projection.pending_inputs.append(
@@ -1179,25 +1179,25 @@ class LifeEventEvent(EventBase):
             )
             if in_career and career is not None:
                 projection.pending_inputs.append(
-                    _advancement_pending(career, projection.summary.current_assignment or '', self.id, 1)
+                    _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id, 1)
                 )
         elif roll == 5:
             projection.summary.connections.append(Ally(source='Life event: improved relationship'))
             if in_career and career is not None:
                 projection.pending_inputs.append(
-                    _advancement_pending(career, projection.summary.current_assignment or '', self.id)
+                    _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id)
                 )
         elif roll == 6:
             projection.summary.connections.append(Ally(source='Life event: new relationship'))
             if in_career and career is not None:
                 projection.pending_inputs.append(
-                    _advancement_pending(career, projection.summary.current_assignment or '', self.id)
+                    _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id)
                 )
         elif roll == 7:
             projection.summary.connections.append(Contact(source='Life event: new contact'))
             if in_career and career is not None:
                 projection.pending_inputs.append(
-                    _advancement_pending(career, projection.summary.current_assignment or '', self.id)
+                    _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id)
                 )
         elif roll == 8:
             projection.pending_inputs.append(
@@ -1210,7 +1210,7 @@ class LifeEventEvent(EventBase):
             )
             if in_career and career is not None:
                 projection.pending_inputs.append(
-                    _advancement_pending(career, projection.summary.current_assignment or '', self.id, 1)
+                    _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id, 1)
                 )
         elif roll == 9:
             projection.scheduled_effects.append(
@@ -1218,7 +1218,7 @@ class LifeEventEvent(EventBase):
             )
             if in_career and career is not None:
                 projection.pending_inputs.append(
-                    _advancement_pending(career, projection.summary.current_assignment or '', self.id)
+                    _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id)
                 )
         elif roll == 10:
             projection.scheduled_effects.append(
@@ -1226,7 +1226,7 @@ class LifeEventEvent(EventBase):
             )
             if in_career and career is not None:
                 projection.pending_inputs.append(
-                    _advancement_pending(career, projection.summary.current_assignment or '', self.id)
+                    _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id)
                 )
         elif roll == 11:
             projection.scheduled_effects.append(
@@ -1236,7 +1236,7 @@ class LifeEventEvent(EventBase):
             )
             if in_career and career is not None:
                 projection.pending_inputs.append(
-                    _advancement_pending(career, projection.summary.current_assignment or '', self.id, 0)
+                    _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id, 0)
                 )
         elif roll == 12:
             projection.pending_inputs.append(
@@ -1248,7 +1248,7 @@ class LifeEventEvent(EventBase):
             )
             if in_career and career is not None:
                 projection.pending_inputs.append(
-                    _advancement_pending(career, projection.summary.current_assignment or '', self.id, 1)
+                    _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id, 1)
                 )
 
 
@@ -1383,6 +1383,10 @@ class AssignmentChangeChoiceEvent(EventBase):
             dm = characteristic_dm(projection.summary.characteristics.get(char, 0))
             if self.qualification_roll + dm >= target:
                 projection.summary.current_assignment = self.choice
+                new_assignment = career.assignment(self.choice)
+                projection.summary.current_assignment_index = (
+                    career.assignment_index(new_assignment) if new_assignment else None
+                )
                 _start_new_career_term(projection, career, self.id)
             else:
                 projection.pending_inputs.append(
@@ -1705,10 +1709,10 @@ def queue_reenlist_or_aging(projection: CharacterProjection, event_id: int, idx:
     else:
         career = projection.get_current_career() if projection.summary.current_career else None
         if career and career.allows_assignment_change and len(career.assignments) > 1:
-            current = projection.summary.current_assignment or ''
-            others = [a.name for a in career.assignments if a.name != current]
+            current_index = projection.summary.current_assignment_index or 0
+            others = [a.name for i, a in enumerate(career.assignments, 1) if i != current_index]
             options = ['same', *others]
-            if career.name != 'Prisoner':
+            if not career.advancement_is_special():
                 options.append('muster_out')
             projection.pending_inputs.append(
                 PendingAssignmentChangeChoice(
@@ -1778,8 +1782,8 @@ def complete_aging(projection: CharacterProjection, source_event_id: int) -> Non
     else:
         career = projection.get_current_career() if projection.summary.current_career else None
         if career and career.allows_assignment_change and len(career.assignments) > 1:
-            current = projection.summary.current_assignment or ''
-            others = [a.name for a in career.assignments if a.name != current]
+            current_index = projection.summary.current_assignment_index or 0
+            others = [a.name for i, a in enumerate(career.assignments, 1) if i != current_index]
             projection.pending_inputs.append(
                 PendingAssignmentChangeChoice(
                     id=f'{source_event_id}.0',
@@ -1826,10 +1830,9 @@ def career_progress_pending(
             instruction=f'Attempt commission ({commission.characteristic} {commission.target}+) or roll advancement?',
             options=['attempt', 'skip'],
         )
-    assignment_name = projection.summary.current_assignment or ''
-    assignment = career.assignment(assignment_name)
+    assignment = career.assignment_by_index(projection.summary.current_assignment_index or 0)
     if assignment is None:
-        raise ReplayError(f'Unknown assignment {assignment_name!r}')
+        raise ReplayError(f'Unknown assignment index {projection.summary.current_assignment_index!r}')
     char = assignment.advancement.characteristic
     target = assignment.advancement.target
     return PendingAdvancement(id=f'{event_id}.{pending_idx}', instruction=f'Advancement: {char} {target}+')

@@ -91,6 +91,8 @@ def test_computer_catalog_typst_output(computer_catalog_typst):
     source = computer_catalog_typst
     assert 'Portable Computer' in source
     assert 'Mid-Sized Computer' in source
+    assert 'Portable Computer Options' in source
+    assert 'Data Display/Recorder' in source
 
 
 # @pytest.mark.skip(reason='PDF generation requires typst font — run manually')

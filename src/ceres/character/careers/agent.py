@@ -1,4 +1,12 @@
-from ceres.character.benefits import parse_benefit
+from ceres.character.benefits import (
+    CYBERNETIC_IMPLANT,
+    SCIENTIFIC_EQUIPMENT,
+    SHIP_SHARE,
+    TAS_MEMBERSHIP,
+    WEAPON,
+    CharacteristicIncrease,
+    ChoiceBenefit,
+)
 from ceres.character.careers.career_data import (
     AdvancementDmEffect,
     AssignmentData,
@@ -47,6 +55,7 @@ from ceres.character.skills import (
     Flyer,
     GunCombat,
     Investigate,
+    LanguageSkill,
     Level,
     Medic,
     Melee,
@@ -55,7 +64,7 @@ from ceres.character.skills import (
     Stealth,
     Streetwise,
     VaccSuit,
-    skill_category_instances,
+    skill_instances,
 )
 from ceres.character.state import (
     CharacterProjection,
@@ -65,7 +74,8 @@ from ceres.character.state import (
 
 class AgentCareerData(CareerData):
     def prior_terms(self, terms, assignment: AssignmentData) -> list:
-        return [term for term in terms if term.career == self.name and term.assignment == assignment.name]
+        idx = self.assignment_index(assignment)
+        return [term for term in terms if term.career == self.name and term.assignment_index == idx]
 
 
 CAREER_DATA = AgentCareerData(
@@ -118,7 +128,7 @@ CAREER_DATA = AgentCareerData(
         advanced_education=SkillTable(
             [
                 Advocate(),
-                skill_category_instances('Language'),
+                skill_instances(LanguageSkill),
                 Explosives(),
                 Medic(),
                 VaccSuit(),
@@ -167,7 +177,7 @@ CAREER_DATA = AgentCareerData(
         6: RankEntry(rank=6, title='Director'),
     },
     ranks_by_assignment={
-        'Law Enforcement': {
+        1: {  # Law Enforcement
             0: RankEntry(rank=0, title='Rookie'),
             1: RankEntry(rank=1, title='Corporal', bonus=RankBonus(skill=Streetwise(), level=1)),
             2: RankEntry(rank=2, title='Sergeant'),
@@ -179,13 +189,16 @@ CAREER_DATA = AgentCareerData(
     },
     muster_out=MusterOutData(
         rows={
-            1: MusterOutRow(cash=1000, benefit=parse_benefit('scientific_equipment')),
-            2: MusterOutRow(cash=2000, benefit=parse_benefit('int_plus_1')),
-            3: MusterOutRow(cash=5000, benefit=parse_benefit('ship_share')),
-            4: MusterOutRow(cash=7500, benefit=parse_benefit('weapon')),
-            5: MusterOutRow(cash=10000, benefit=parse_benefit('cybernetic_implant')),
-            6: MusterOutRow(cash=25000, benefit=parse_benefit(['soc_plus_1', 'cybernetic_implant'])),
-            7: MusterOutRow(cash=50000, benefit=parse_benefit('tas_membership')),
+            1: MusterOutRow(cash=1000, benefit=SCIENTIFIC_EQUIPMENT),
+            2: MusterOutRow(cash=2000, benefit=CharacteristicIncrease(char=Chars.INT, amount=1)),
+            3: MusterOutRow(cash=5000, benefit=SHIP_SHARE),
+            4: MusterOutRow(cash=7500, benefit=WEAPON),
+            5: MusterOutRow(cash=10000, benefit=CYBERNETIC_IMPLANT),
+            6: MusterOutRow(
+                cash=25000,
+                benefit=ChoiceBenefit(options=[CharacteristicIncrease(char=Chars.SOC, amount=1), CYBERNETIC_IMPLANT]),
+            ),
+            7: MusterOutRow(cash=50000, benefit=TAS_MEMBERSHIP),
         }
     ),
     mishaps={

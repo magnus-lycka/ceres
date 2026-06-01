@@ -47,43 +47,97 @@ class ChoiceBenefit(BaseModel):
         return any(b.exceptional for b in self.options)
 
 
-AnyBenefit = Annotated[CharacteristicIncrease | ItemBenefit | ChoiceBenefit, Field(discriminator='type')]
+class CombinedBenefit(BaseModel):
+    """Multiple benefits all granted together (e.g. 'SOC +1 and Yacht')."""
 
-_BENEFIT_REGISTRY: dict[str, ItemBenefit] = {
-    'ship_share': ItemBenefit(key='ship_share', label='Ship Share'),
-    'scout_ship': ItemBenefit(key='scout_ship', label='Scout Ship', exceptional=True),
-    'lab_ship': ItemBenefit(key='lab_ship', label='Lab Ship', exceptional=True),
-    'free_trader': ItemBenefit(key='free_trader', label='Free Trader', exceptional=True),
-    'yacht': ItemBenefit(key='yacht', label='Yacht', exceptional=True),
-    'far_trader': ItemBenefit(key='far_trader', label='Far Trader', exceptional=True),
-    'subsidised_merchant': ItemBenefit(key='subsidised_merchant', label='Subsidised Merchant', exceptional=True),
-    'safari_ship': ItemBenefit(key='safari_ship', label='Safari Ship', exceptional=True),
-    'tas_membership': ItemBenefit(key='tas_membership', label='TAS Membership'),
-    'weapon': ItemBenefit(key='weapon', label='Weapon'),
-    'scientific_equipment': ItemBenefit(key='scientific_equipment', label='Scientific Equipment'),
-    'armor': ItemBenefit(key='armor', label='Armor'),
-    'combat_implant': ItemBenefit(key='combat_implant', label='Combat Implant'),
-    'cybernetic_implant': ItemBenefit(key='cybernetic_implant', label='Cybernetic Implant'),
-}
+    type: Literal['combined'] = 'combined'
+    benefits: list[CharacteristicIncrease | ItemBenefit]
+
+    @property
+    def display_label(self) -> str:
+        return ' and '.join(b.display_label for b in self.benefits)
+
+    @property
+    def exceptional(self) -> bool:
+        return any(b.exceptional for b in self.benefits)
 
 
-def parse_benefit(s: str | list) -> AnyBenefit:
-    """Parse a YAML benefit string (or list for a choice) into a typed benefit object."""
-    if isinstance(s, list):
-        options: list[CharacteristicIncrease | ItemBenefit] = []
-        for item in s:
-            benefit = parse_benefit(item)
-            if isinstance(benefit, ChoiceBenefit):
-                raise TypeError('Nested choice benefits are not supported')
-            options.append(benefit)
-        return ChoiceBenefit(options=options)
-    parts = s.split('_')
-    if len(parts) == 3 and parts[1] == 'plus' and parts[2].isdigit():
-        return CharacteristicIncrease(char=Chars(parts[0].upper()), amount=int(parts[2]))
-    if s in _BENEFIT_REGISTRY:
-        return _BENEFIT_REGISTRY[s]
-    label = ' '.join(word.capitalize() for word in parts)
-    return ItemBenefit(key=s, label=label)
+AnyBenefit = Annotated[
+    CharacteristicIncrease | ItemBenefit | ChoiceBenefit | CombinedBenefit,
+    Field(discriminator='type'),
+]
 
+# Ships and vehicles
+SCOUT_SHIP = ItemBenefit(key='scout_ship', label='Scout Ship', exceptional=True)
+LAB_SHIP = ItemBenefit(key='lab_ship', label='Lab Ship', exceptional=True)
+FREE_TRADER = ItemBenefit(key='free_trader', label='Free Trader', exceptional=True)
+YACHT = ItemBenefit(key='yacht', label='Yacht', exceptional=True)
+FAR_TRADER = ItemBenefit(key='far_trader', label='Far Trader', exceptional=True)
+SUBSIDISED_MERCHANT = ItemBenefit(key='subsidised_merchant', label='Subsidised Merchant', exceptional=True)
+SAFARI_SHIP = ItemBenefit(key='safari_ship', label='Safari Ship', exceptional=True)
+PERSONAL_VEHICLE = ItemBenefit(key='personal_vehicle', label='Personal Vehicle')
+SHIPS_BOAT = ItemBenefit(key='ships_boat', label="Ship's Boat")
 
-__all__ = ['AnyBenefit', 'CharacteristicIncrease', 'ChoiceBenefit', 'ItemBenefit', 'parse_benefit']
+# Financial instruments
+SHIP_SHARE = ItemBenefit(key='ship_share', label='Ship Share')
+TAS_MEMBERSHIP = ItemBenefit(key='tas_membership', label='TAS Membership')
+
+# Weapons and armour
+WEAPON = ItemBenefit(key='weapon', label='Weapon')
+BLADE = ItemBenefit(key='blade', label='Blade')
+GUN = ItemBenefit(key='gun', label='Gun')
+ARMOR = ItemBenefit(key='armor', label='Armor')
+
+# Implants
+COMBAT_IMPLANT = ItemBenefit(key='combat_implant', label='Combat Implant')
+CYBERNETIC_IMPLANT = ItemBenefit(key='cybernetic_implant', label='Cybernetic Implant')
+
+# Equipment
+SCIENTIFIC_EQUIPMENT = ItemBenefit(key='scientific_equipment', label='Scientific Equipment')
+
+# Contacts
+CONTACT = ItemBenefit(key='contact', label='Contact')
+ALLY = ItemBenefit(key='ally', label='Ally')
+
+# Prisoner career skill benefits
+DECEPTION = ItemBenefit(key='deception', label='Deception')
+PERSUADE = ItemBenefit(key='persuade', label='Persuade')
+STEALTH = ItemBenefit(key='stealth', label='Stealth')
+MELEE = ItemBenefit(key='melee', label='Melee')
+RECON = ItemBenefit(key='recon', label='Recon')
+STREETWISE = ItemBenefit(key='streetwise', label='Streetwise')
+
+__all__ = [
+    # Item benefit constants
+    'ALLY',
+    'ARMOR',
+    'BLADE',
+    'COMBAT_IMPLANT',
+    'CONTACT',
+    'CYBERNETIC_IMPLANT',
+    'DECEPTION',
+    'FAR_TRADER',
+    'FREE_TRADER',
+    'GUN',
+    'LAB_SHIP',
+    'MELEE',
+    'PERSONAL_VEHICLE',
+    'PERSUADE',
+    'RECON',
+    'SAFARI_SHIP',
+    'SCIENTIFIC_EQUIPMENT',
+    'SCOUT_SHIP',
+    'SHIPS_BOAT',
+    'SHIP_SHARE',
+    'STEALTH',
+    'STREETWISE',
+    'SUBSIDISED_MERCHANT',
+    'TAS_MEMBERSHIP',
+    'WEAPON',
+    'YACHT',
+    'AnyBenefit',
+    'CharacteristicIncrease',
+    'ChoiceBenefit',
+    'CombinedBenefit',
+    'ItemBenefit',
+]

@@ -2,12 +2,17 @@ import pytest
 
 from ceres.character.skills import Admin, Astrogation, Broker, Level, Medic, Steward
 from ceres.gear.computer import (
+    CameraOption,
+    CommsOption,
     ComputerChip,
     ComputerTerminal,
+    DataDisplayRecorderOption,
+    DataWaferOption,
     InterfaceDevice,
     MainframeComputer,
     MicroscopicChip,
     MidSizedComputer,
+    PhysicalUserInterfaceOption,
     PortableComputer,
     SpecialisedComputer,
     SpecialisedTablet,
@@ -77,6 +82,55 @@ def test_portable_proto_3_computer_fails():
 def test_portable_computer_rejects_invalid_processing():
     with pytest.raises(ValueError, match='Unsupported PortableComputer processing 6'):
         PortableComputer(processing=6)
+
+
+def test_portable_computer_options_add_cost_and_notes():
+    pc = PortableComputer(
+        processing=4,
+        options=[CameraOption(), CommsOption(), DataDisplayRecorderOption(), DataWaferOption(bandwidth=1)],
+    )
+
+    assert pc.tl == 13
+    assert pc.cost == 1_500.0 + 500.0 + 5.0
+    assert pc.notes.contents == [
+        'Camera',
+        'Comms',
+        'Data Display/Recorder',
+        'Data Wafer (Bandwidth 1)',
+    ]
+
+
+def test_portable_computer_rejects_options_above_computer_tl():
+    with pytest.raises(ValueError, match='Data Display/Recorder requires TL13'):
+        PortableComputer(processing=3, options=[DataDisplayRecorderOption()])
+
+
+def test_portable_computer_physical_user_interface_variants_set_tl():
+    keyboard = PhysicalUserInterfaceOption(interface='keyboard_screen')
+    voice = PhysicalUserInterfaceOption(interface='voice')
+    holographic = PhysicalUserInterfaceOption(interface='holographic')
+
+    assert keyboard.tl == 7
+    assert keyboard.description == 'Physical User Interface (Keyboard/Screen)'
+    assert voice.tl == 8
+    assert holographic.tl == 12
+
+
+def test_portable_computer_rejects_invalid_data_wafer_bandwidth():
+    with pytest.raises(ValueError, match='Data Wafer bandwidth must be 0 or 1'):
+        DataWaferOption(bandwidth=2)
+
+
+def test_portable_computer_options_roundtrip():
+    pc = PortableComputer(
+        processing=4,
+        options=[DataWaferOption(bandwidth=1), PhysicalUserInterfaceOption(interface='holographic')],
+    )
+    pc2 = PortableComputer.model_validate_json(pc.model_dump_json())
+
+    assert pc2.cost == pc.cost
+    assert pc2.options[0].description == 'Data Wafer (Bandwidth 1)'
+    assert pc2.options[1].description == 'Physical User Interface (Holographic)'
 
 
 def test_mid_sized_computer_one_matches_csc_values():
@@ -187,6 +241,16 @@ def test_specialised_portable_ii_admin_cost():
     assert sc.tl == 8
     assert sc.mass_kg == 2.0
     assert sc.cost == 1_350.0  # 5 * 250 + 100
+
+
+def test_specialised_portable_ii_uses_variant_tl_when_base_computer_is_lower():
+    sc = SpecialisedComputer(processing=0, expert=Expert(rating=1, skill=_admin()), variant='intelligent_interface')
+    assert sc.tl == 8
+
+
+def test_specialised_portable_intellect_uses_variant_tl_when_expert_is_lower():
+    sc = SpecialisedComputer(processing=0, expert=Expert(rating=1, skill=_admin()), variant='intellect')
+    assert sc.tl == 9
 
 
 def test_specialised_portable_intellect_broker3_cost():

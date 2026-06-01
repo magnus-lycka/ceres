@@ -1,4 +1,10 @@
-from ceres.character.benefits import parse_benefit
+from ceres.character.benefits import (
+    ALLY,
+    CONTACT,
+    SHIP_SHARE,
+    WEAPON,
+    CharacteristicIncrease,
+)
 from ceres.character.careers.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
@@ -39,17 +45,19 @@ from ceres.character.skills import (
     Drive,
     GunCombat,
     JackOfAllTrades,
+    LanguageSkill,
     Leadership,
     Mechanic,
     Melee,
     Pilot,
+    ProfessionSkill,
     Recon,
     Seafarer,
     Stealth,
     Streetwise,
     Survival,
     VaccSuit,
-    skill_category_instances,
+    skill_instances,
 )
 from ceres.character.state import (
     CharacterProjection,
@@ -99,8 +107,8 @@ CAREER_DATA = DrifterCareerData(
                 Chars.STR,
                 Chars.END,
                 Chars.DEX,
-                skill_category_instances('Language'),
-                skill_category_instances('Profession'),
+                skill_instances(LanguageSkill),
+                skill_instances(ProfessionSkill),
                 JackOfAllTrades(),
             ]
         ),
@@ -140,7 +148,7 @@ CAREER_DATA = DrifterCareerData(
                 Mechanic(),
                 Astrogation(),
                 VaccSuit(),
-                skill_category_instances('Profession'),
+                skill_instances(ProfessionSkill),
                 GunCombat(),
             ]
         ),
@@ -155,7 +163,7 @@ CAREER_DATA = DrifterCareerData(
         6: RankEntry(rank=6),
     },
     ranks_by_assignment={
-        'Barbarian': {
+        1: {  # Barbarian
             0: RankEntry(rank=0),
             1: RankEntry(rank=1, bonus=RankBonus(skill=Survival(), level=1)),
             2: RankEntry(rank=2, title='Warrior', bonus=RankBonus(skill=Melee(), level=1)),
@@ -164,7 +172,7 @@ CAREER_DATA = DrifterCareerData(
             5: RankEntry(rank=5),
             6: RankEntry(rank=6, title='Warlord'),
         },
-        'Wanderer': {
+        2: {  # Wanderer
             0: RankEntry(rank=0),
             1: RankEntry(rank=1, bonus=RankBonus(skill=Streetwise(), level=1)),
             2: RankEntry(rank=2),
@@ -173,7 +181,7 @@ CAREER_DATA = DrifterCareerData(
             5: RankEntry(rank=5),
             6: RankEntry(rank=6),
         },
-        'Scavenger': {
+        3: {  # Scavenger
             0: RankEntry(rank=0),
             1: RankEntry(rank=1, bonus=RankBonus(skill=VaccSuit(), level=1)),
             2: RankEntry(rank=2),
@@ -185,13 +193,13 @@ CAREER_DATA = DrifterCareerData(
     },
     muster_out=MusterOutData(
         rows={
-            1: MusterOutRow(cash=0, benefit=parse_benefit('contact')),
-            2: MusterOutRow(cash=0, benefit=parse_benefit('weapon')),
-            3: MusterOutRow(cash=1000, benefit=parse_benefit('ally')),
-            4: MusterOutRow(cash=2000, benefit=parse_benefit('weapon')),
-            5: MusterOutRow(cash=3000, benefit=parse_benefit('edu_plus_1')),
-            6: MusterOutRow(cash=4000, benefit=parse_benefit('ship_share')),
-            7: MusterOutRow(cash=8000, benefit=parse_benefit('ship_share'), count=2),
+            1: MusterOutRow(cash=0, benefit=CONTACT),
+            2: MusterOutRow(cash=0, benefit=WEAPON),
+            3: MusterOutRow(cash=1000, benefit=ALLY),
+            4: MusterOutRow(cash=2000, benefit=WEAPON),
+            5: MusterOutRow(cash=3000, benefit=CharacteristicIncrease(char=Chars.EDU, amount=1)),
+            6: MusterOutRow(cash=4000, benefit=SHIP_SHARE),
+            7: MusterOutRow(cash=8000, benefit=SHIP_SHARE, count=2),
         }
     ),
     mishaps={

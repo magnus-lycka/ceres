@@ -1,4 +1,9 @@
-from ceres.character.benefits import parse_benefit
+from ceres.character.benefits import (
+    SCOUT_SHIP,
+    SHIP_SHARE,
+    WEAPON,
+    CharacteristicIncrease,
+)
 from ceres.character.careers.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
@@ -42,6 +47,7 @@ from ceres.character.skills import (
     Flyer,
     GunCombat,
     JackOfAllTrades,
+    LanguageSkill,
     Level,
     Mechanic,
     Medic,
@@ -49,13 +55,13 @@ from ceres.character.skills import (
     Persuade,
     Pilot,
     Recon,
+    ScienceSkill,
     Seafarer,
     Stealth,
     Streetwise,
     Survival,
     VaccSuit,
-    skill_category_instances,
-    skill_from_str,
+    skill_instances,
 )
 from ceres.character.state import (
     Ally,
@@ -118,10 +124,10 @@ CAREER_DATA = CareerData(
         advanced_education=SkillTable(
             [
                 Medic(),
-                skill_category_instances('Language'),
+                skill_instances(LanguageSkill),
                 Seafarer(),
                 Explosives(),
-                skill_category_instances('Science'),
+                skill_instances(ScienceSkill),
                 JackOfAllTrades(),
             ],
             min_edu=8,
@@ -151,7 +157,7 @@ CAREER_DATA = CareerData(
                 Electronics(),
                 Pilot(),
                 Engineer(),
-                skill_category_instances('Science'),
+                skill_instances(ScienceSkill),
                 Stealth(),
                 Recon(),
             ]
@@ -168,13 +174,13 @@ CAREER_DATA = CareerData(
     },
     muster_out=MusterOutData(
         rows={
-            1: MusterOutRow(cash=20000, benefit=parse_benefit('ship_share')),
-            2: MusterOutRow(cash=20000, benefit=parse_benefit('int_plus_1')),
-            3: MusterOutRow(cash=30000, benefit=parse_benefit('edu_plus_1')),
-            4: MusterOutRow(cash=30000, benefit=parse_benefit('weapon')),
-            5: MusterOutRow(cash=50000, benefit=parse_benefit('weapon')),
-            6: MusterOutRow(cash=50000, benefit=parse_benefit('scout_ship')),
-            7: MusterOutRow(cash=50000, benefit=parse_benefit('scout_ship')),
+            1: MusterOutRow(cash=20000, benefit=SHIP_SHARE),
+            2: MusterOutRow(cash=20000, benefit=CharacteristicIncrease(char=Chars.INT, amount=1)),
+            3: MusterOutRow(cash=30000, benefit=CharacteristicIncrease(char=Chars.EDU, amount=1)),
+            4: MusterOutRow(cash=30000, benefit=WEAPON),
+            5: MusterOutRow(cash=50000, benefit=WEAPON),
+            6: MusterOutRow(cash=50000, benefit=SCOUT_SHIP),
+            7: MusterOutRow(cash=50000, benefit=SCOUT_SHIP),
         }
     ),
     mishaps={
@@ -301,7 +307,14 @@ def _resolve_scout_event_3(projection: CharacterProjection, event: SkillRollEven
     skill_name = event.skill if isinstance(event.skill, str) else type(event.skill).name()
     target = _AMBUSH_TARGETS[skill_name]
     if event.modified_roll >= target:
-        projection.grant_skill(skill_from_str('Electronics', 1))
+        projection.grant_skill(
+            Electronics(
+                comms=Level(value=1),
+                computers=Level(value=1),
+                remote_ops=Level(value=1),
+                sensors=Level(value=1),
+            )
+        )
     else:
         projection.summary.problems.append('Ship destroyed; may not re-enlist in Scouts at the end of this term.')
 

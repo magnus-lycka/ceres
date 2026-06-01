@@ -1,4 +1,10 @@
-from ceres.character.benefits import parse_benefit
+from ceres.character.benefits import (
+    BLADE,
+    FREE_TRADER,
+    GUN,
+    SHIP_SHARE,
+    CharacteristicIncrease,
+)
 from ceres.character.careers.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
@@ -44,6 +50,7 @@ from ceres.character.skills import (
     Engineer,
     Gunner,
     JackOfAllTrades,
+    LanguageSkill,
     Level,
     Mechanic,
     Persuade,
@@ -51,7 +58,7 @@ from ceres.character.skills import (
     Steward,
     Streetwise,
     VaccSuit,
-    skill_category_instances,
+    skill_instances,
 )
 from ceres.character.state import (
     CharacterProjection,
@@ -96,7 +103,7 @@ CAREER_DATA = CareerData(
                 Chars.DEX,
                 Chars.END,
                 Chars.INT,
-                skill_category_instances('Language'),
+                skill_instances(LanguageSkill),
                 Streetwise(),
             ]
         ),
@@ -162,7 +169,7 @@ CAREER_DATA = CareerData(
         6: RankEntry(rank=6, title='Captain'),
     },
     ranks_by_assignment={
-        'Free Trader': {
+        2: {  # Free Trader
             0: RankEntry(rank=0),
             1: RankEntry(rank=1, bonus=RankBonus(skill=Persuade(), level=1)),
             2: RankEntry(rank=2),
@@ -171,7 +178,7 @@ CAREER_DATA = CareerData(
             5: RankEntry(rank=5),
             6: RankEntry(rank=6),
         },
-        'Broker': {
+        3: {  # Broker
             0: RankEntry(rank=0),
             1: RankEntry(rank=1, bonus=RankBonus(skill=Broker(), level=1)),
             2: RankEntry(rank=2),
@@ -183,13 +190,13 @@ CAREER_DATA = CareerData(
     },
     muster_out=MusterOutData(
         rows={
-            1: MusterOutRow(cash=1000, benefit=parse_benefit('blade')),
-            2: MusterOutRow(cash=5000, benefit=parse_benefit('int_plus_1')),
-            3: MusterOutRow(cash=10000, benefit=parse_benefit('edu_plus_1')),
-            4: MusterOutRow(cash=20000, benefit=parse_benefit('gun')),
-            5: MusterOutRow(cash=20000, benefit=parse_benefit('ship_share')),
-            6: MusterOutRow(cash=40000, benefit=parse_benefit('free_trader')),
-            7: MusterOutRow(cash=40000, benefit=parse_benefit('free_trader')),
+            1: MusterOutRow(cash=1000, benefit=BLADE),
+            2: MusterOutRow(cash=5000, benefit=CharacteristicIncrease(char=Chars.INT, amount=1)),
+            3: MusterOutRow(cash=10000, benefit=CharacteristicIncrease(char=Chars.EDU, amount=1)),
+            4: MusterOutRow(cash=20000, benefit=GUN),
+            5: MusterOutRow(cash=20000, benefit=SHIP_SHARE),
+            6: MusterOutRow(cash=40000, benefit=FREE_TRADER),
+            7: MusterOutRow(cash=40000, benefit=FREE_TRADER),
         }
     ),
     mishaps={

@@ -44,8 +44,14 @@ def test_university_entry_and_graduation_rules_are_loaded():
     assert _graduation('University').characteristic == Chars.INT
     assert _graduation('University').target == 6
     assert university.honours_target == 10
-    assert university.skill_choices[0].skill == 'Admin'
-    assert university.skill_choices[-1].skill == 'Science'
+    assert university.skill_choices[0].option_names == ['Admin']
+    assert university.skill_choices[-1].option_names == [
+        'Life Science',
+        'Physical Science',
+        'Robotic Science',
+        'Social Science',
+        'Space Science',
+    ]
 
 
 def test_military_academies_have_distinct_entry_and_same_graduation():
@@ -80,7 +86,7 @@ def test_companion_precareers_are_loaded():
 
     assert precareers['Colonial Upbringing'].entry_requirement == 'Automatic if homeworld is TL8-'
     assert _graduation('Colonial Upbringing').target == 8
-    assert precareers['Colonial Upbringing'].skill_choices[-1].skill == 'Survival'
+    assert precareers['Colonial Upbringing'].skill_choices[-1].option_names == ['Survival']
 
     assert _entry('Merchant Academy (Business)').characteristic == Chars.INT
     assert _entry('Merchant Academy (Business)').target == 9

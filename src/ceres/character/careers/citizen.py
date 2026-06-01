@@ -1,4 +1,10 @@
-from ceres.character.benefits import parse_benefit
+from ceres.character.benefits import (
+    ALLY,
+    SHIP_SHARE,
+    TAS_MEMBERSHIP,
+    WEAPON,
+    CharacteristicIncrease,
+)
 from ceres.character.careers.career_data import (
     AdvancementDmEffect,
     AssignmentData,
@@ -37,6 +43,7 @@ from ceres.character.skills import (
     Admin,
     Advocate,
     Animals,
+    ArtSkill,
     Athletics,
     Broker,
     Carouse,
@@ -48,18 +55,21 @@ from ceres.character.skills import (
     Gambler,
     GunCombat,
     JackOfAllTrades,
+    LanguageSkill,
     Leadership,
     Level,
     Mechanic,
     Medic,
     Melee,
     Navigation,
+    ProfessionSkill,
     Recon,
+    ScienceSkill,
     Steward,
     Streetwise,
     Survival,
-    skill_category_instances,
-    skill_names_for_category,
+    skill_instances,
+    skill_names,
 )
 from ceres.character.state import (
     CharacterProjection,
@@ -121,15 +131,15 @@ CAREER_DATA = CitizenCareerData(
                 Streetwise(),
                 Melee(),
                 Steward(),
-                skill_category_instances('Profession'),
+                skill_instances(ProfessionSkill),
             ]
         ),
         advanced_education=SkillTable(
             [
-                skill_category_instances('Art'),
+                skill_instances(ArtSkill),
                 Advocate(),
                 Diplomat(),
-                skill_category_instances('Language'),
+                skill_instances(LanguageSkill),
                 Electronics(computers=Level(value=1)),
                 Medic(),
             ],
@@ -151,8 +161,8 @@ CAREER_DATA = CitizenCareerData(
                 Mechanic(),
                 Electronics(),
                 Engineer(),
-                skill_category_instances('Profession'),
-                skill_category_instances('Science'),
+                skill_instances(ProfessionSkill),
+                skill_instances(ScienceSkill),
             ]
         ),
         assignment3=SkillTable(
@@ -176,7 +186,7 @@ CAREER_DATA = CitizenCareerData(
         6: RankEntry(rank=6),
     },
     ranks_by_assignment={
-        'Corporate': {
+        1: {  # Corporate
             0: RankEntry(rank=0),
             1: RankEntry(rank=1),
             2: RankEntry(rank=2, title='Manager', bonus=RankBonus(skill=Admin(), level=1)),
@@ -185,18 +195,16 @@ CAREER_DATA = CitizenCareerData(
             5: RankEntry(rank=5),
             6: RankEntry(rank=6, title='Director', bonus=RankBonus(characteristic=Chars.SOC, level=1)),
         },
-        'Worker': {
+        2: {  # Worker
             0: RankEntry(rank=0),
             1: RankEntry(rank=1),
-            2: RankEntry(
-                rank=2, title='Technician', bonus=RankBonus(choices=skill_names_for_category('Profession'), level=1)
-            ),
+            2: RankEntry(rank=2, title='Technician', bonus=RankBonus(choices=skill_names(ProfessionSkill), level=1)),
             3: RankEntry(rank=3),
             4: RankEntry(rank=4, title='Craftsman', bonus=RankBonus(skill=Mechanic(), level=1)),
             5: RankEntry(rank=5),
             6: RankEntry(rank=6, title='Master Technician', bonus=RankBonus(skill=Engineer(), level=1)),
         },
-        'Colonist': {
+        3: {  # Colonist
             0: RankEntry(rank=0),
             1: RankEntry(rank=1),
             2: RankEntry(rank=2, title='Settler', bonus=RankBonus(skill=Survival(), level=1)),
@@ -208,13 +216,13 @@ CAREER_DATA = CitizenCareerData(
     },
     muster_out=MusterOutData(
         rows={
-            1: MusterOutRow(cash=2000, benefit=parse_benefit('ship_share')),
-            2: MusterOutRow(cash=5000, benefit=parse_benefit('ally')),
-            3: MusterOutRow(cash=10000, benefit=parse_benefit('int_plus_1')),
-            4: MusterOutRow(cash=10000, benefit=parse_benefit('weapon')),
-            5: MusterOutRow(cash=10000, benefit=parse_benefit('edu_plus_1')),
-            6: MusterOutRow(cash=50000, benefit=parse_benefit('ship_share'), count=2),
-            7: MusterOutRow(cash=100000, benefit=parse_benefit('tas_membership')),
+            1: MusterOutRow(cash=2000, benefit=SHIP_SHARE),
+            2: MusterOutRow(cash=5000, benefit=ALLY),
+            3: MusterOutRow(cash=10000, benefit=CharacteristicIncrease(char=Chars.INT, amount=1)),
+            4: MusterOutRow(cash=10000, benefit=WEAPON),
+            5: MusterOutRow(cash=10000, benefit=CharacteristicIncrease(char=Chars.EDU, amount=1)),
+            6: MusterOutRow(cash=50000, benefit=SHIP_SHARE, count=2),
+            7: MusterOutRow(cash=100000, benefit=TAS_MEMBERSHIP),
         }
     ),
     mishaps={

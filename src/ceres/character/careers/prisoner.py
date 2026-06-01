@@ -1,4 +1,17 @@
-from ceres.character.benefits import parse_benefit
+from ceres.character.benefits import (
+    ALLY,
+    BLADE,
+    CONTACT,
+    DECEPTION,
+    MELEE,
+    PERSUADE,
+    RECON,
+    STEALTH,
+    STREETWISE,
+    CharacteristicIncrease,
+    ChoiceBenefit,
+    CombinedBenefit,
+)
 from ceres.character.careers.career_data import (
     AssignmentData,
     CareerData,
@@ -44,10 +57,11 @@ from ceres.character.skills import (
     Mechanic,
     Melee,
     Persuade,
+    ProfessionSkill,
     Stealth,
     Streetwise,
     Survival,
-    skill_category_instances,
+    skill_instances,
 )
 from ceres.character.state import (
     Ally,
@@ -57,6 +71,9 @@ from ceres.character.state import (
 
 
 class PrisonerCareerData(CareerData):
+    def advancement_is_special(self) -> bool:
+        return True
+
     def start_career(
         self,
         projection: CharacterProjection,
@@ -66,6 +83,7 @@ class PrisonerCareerData(CareerData):
     ) -> None:
         projection.summary.current_career = self.name
         projection.summary.current_assignment = assignment.name
+        projection.summary.current_assignment_index = self.assignment_index(assignment)
         count_before = len(projection.pending_inputs)
         self.start_new_term(projection, assignment, event_id)
         pending_added = len(projection.pending_inputs) - count_before
@@ -123,7 +141,7 @@ CAREER_DATA = PrisonerCareerData(
             [
                 Athletics(),
                 Deception(),
-                skill_category_instances('Profession'),
+                skill_instances(ProfessionSkill),
                 Streetwise(),
                 [Melee()],
                 Persuade(),
@@ -171,13 +189,21 @@ CAREER_DATA = PrisonerCareerData(
     },
     muster_out=MusterOutData(
         rows={
-            1: MusterOutRow(cash=0, benefit=parse_benefit('contact')),
-            2: MusterOutRow(cash=0, benefit=parse_benefit('blade')),
-            3: MusterOutRow(cash=100, benefit=parse_benefit(['deception', 'persuade', 'stealth'])),
-            4: MusterOutRow(cash=200, benefit=parse_benefit('ally')),
-            5: MusterOutRow(cash=500, benefit=parse_benefit(['melee', 'recon', 'streetwise'])),
-            6: MusterOutRow(cash=1000, benefit=parse_benefit(['str_plus_1', 'end_plus_1'])),
-            7: MusterOutRow(cash=2500, benefit=parse_benefit('deception_persuade_and_stealth')),
+            1: MusterOutRow(cash=0, benefit=CONTACT),
+            2: MusterOutRow(cash=0, benefit=BLADE),
+            3: MusterOutRow(cash=100, benefit=ChoiceBenefit(options=[DECEPTION, PERSUADE, STEALTH])),
+            4: MusterOutRow(cash=200, benefit=ALLY),
+            5: MusterOutRow(cash=500, benefit=ChoiceBenefit(options=[MELEE, RECON, STREETWISE])),
+            6: MusterOutRow(
+                cash=1000,
+                benefit=ChoiceBenefit(
+                    options=[
+                        CharacteristicIncrease(char=Chars.STR, amount=1),
+                        CharacteristicIncrease(char=Chars.END, amount=1),
+                    ]
+                ),
+            ),
+            7: MusterOutRow(cash=2500, benefit=CombinedBenefit(benefits=[DECEPTION, PERSUADE, STEALTH])),
         }
     ),
     mishaps={
@@ -292,7 +318,7 @@ def _choice_prisoner_mishap_3(projection: CharacterProjection, event) -> None:
             'Prison gang (Prisoner mishap 3): submitted — lose your Benefit roll for this term.'
         )
         projection.pending_inputs.append(
-            _advancement_pending(career, projection.summary.current_assignment or '', event.id)
+            _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id)
         )
     else:
         projection.pending_inputs.append(
@@ -315,7 +341,7 @@ def _resolve_prisoner_mishap_3_fight(projection: CharacterProjection, event: Ski
         projection.summary.connections.append(Enemy(source='Prison gang leader (Prisoner mishap 3)'))
         projection.summary.parole_threshold = min(12, (projection.summary.parole_threshold or 0) + 1)
         projection.pending_inputs.append(
-            _advancement_pending(career, projection.summary.current_assignment or '', event.id)
+            _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id)
         )
     else:
         projection.pending_inputs.append(
@@ -326,7 +352,7 @@ def _resolve_prisoner_mishap_3_fight(projection: CharacterProjection, event: Ski
             )
         )
         projection.pending_inputs.append(
-            _advancement_pending(career, projection.summary.current_assignment or '', event.id, 1)
+            _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id, 1)
         )
 
 
@@ -575,7 +601,7 @@ def _resolve_prisoner_event_7_riot(projection: CharacterProjection, event: Skill
             )
         )
         projection.pending_inputs.append(
-            _advancement_pending(career, projection.summary.current_assignment or '', event.id, 1)
+            _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id, 1)
         )
     # Success: _apply_skill_roll auto-queues advancement
 
@@ -687,7 +713,7 @@ def _resolve_prisoner_event_12_heroism(projection: CharacterProjection, event: S
             )
         )
         projection.pending_inputs.append(
-            _advancement_pending(career, projection.summary.current_assignment or '', event.id, 1)
+            _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id, 1)
         )
 
 

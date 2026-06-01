@@ -1,4 +1,9 @@
-from ceres.character.benefits import parse_benefit
+from ceres.character.benefits import (
+    LAB_SHIP,
+    SCIENTIFIC_EQUIPMENT,
+    SHIP_SHARE,
+    CharacteristicIncrease,
+)
 from ceres.character.careers.career_data import (
     AdvancementDmEffect,
     AssignmentData,
@@ -35,21 +40,23 @@ from ceres.character.events import (
 from ceres.character.skills import (
     Admin,
     Advocate,
+    ArtSkill,
     Diplomat,
     Drive,
     Electronics,
     Engineer,
     Flyer,
     Investigate,
+    LanguageSkill,
     Medic,
     Navigation,
     Persuade,
     ScienceSkill,
     Survival,
     VaccSuit,
-    skill_category_instances,
+    skill_instances,
     skill_list,
-    skill_names_for_category,
+    skill_names,
 )
 from ceres.character.state import (
     CharacterProjection,
@@ -98,7 +105,7 @@ CAREER_DATA = CareerData(
                 Chars.SOC,
                 Chars.DEX,
                 Chars.END,
-                skill_category_instances('Language'),
+                skill_instances(LanguageSkill),
             ]
         ),
         service_skills=SkillTable(
@@ -108,17 +115,17 @@ CAREER_DATA = CareerData(
                 Diplomat(),
                 Medic(),
                 Investigate(),
-                skill_category_instances('Science'),
+                skill_instances(ScienceSkill),
             ]
         ),
         advanced_education=SkillTable(
             [
-                skill_category_instances('Art'),
+                skill_instances(ArtSkill),
                 Advocate(),
                 Electronics(),
-                skill_category_instances('Language'),
+                skill_instances(LanguageSkill),
                 Engineer(),
-                skill_category_instances('Science'),
+                skill_instances(ScienceSkill),
             ],
             min_edu=10,
         ),
@@ -129,17 +136,17 @@ CAREER_DATA = CareerData(
                 Navigation(),
                 Survival(),
                 Investigate(),
-                skill_category_instances('Science'),
+                skill_instances(ScienceSkill),
             ]
         ),
         assignment2=SkillTable(
             [  # Scientist
                 Admin(),
                 Engineer(),
-                skill_category_instances('Science'),
-                skill_category_instances('Science'),
+                skill_instances(ScienceSkill),
+                skill_instances(ScienceSkill),
                 Electronics(),
-                skill_category_instances('Science'),
+                skill_instances(ScienceSkill),
             ]
         ),
         assignment3=SkillTable(
@@ -149,39 +156,39 @@ CAREER_DATA = CareerData(
                 Investigate(),
                 Medic(),
                 Persuade(),
-                skill_category_instances('Science'),
+                skill_instances(ScienceSkill),
             ]
         ),
     ),
     ranks={
         0: RankEntry(rank=0),
-        1: RankEntry(rank=1, bonus=RankBonus(choices=skill_names_for_category('Science'), level=1)),
+        1: RankEntry(rank=1, bonus=RankBonus(choices=skill_names(ScienceSkill), level=1)),
         2: RankEntry(rank=2, bonus=RankBonus(skill=Electronics(), level=1)),
         3: RankEntry(rank=3, bonus=RankBonus(skill=Investigate(), level=1)),
         4: RankEntry(rank=4),
-        5: RankEntry(rank=5, bonus=RankBonus(choices=skill_names_for_category('Science'), level=2)),
+        5: RankEntry(rank=5, bonus=RankBonus(choices=skill_names(ScienceSkill), level=2)),
         6: RankEntry(rank=6),
     },
     ranks_by_assignment={
-        'Physician': {
+        3: {  # Physician
             0: RankEntry(rank=0),
             1: RankEntry(rank=1, bonus=RankBonus(skill=Medic(), level=1)),
             2: RankEntry(rank=2),
-            3: RankEntry(rank=3, bonus=RankBonus(choices=skill_names_for_category('Science'), level=1)),
+            3: RankEntry(rank=3, bonus=RankBonus(choices=skill_names(ScienceSkill), level=1)),
             4: RankEntry(rank=4),
-            5: RankEntry(rank=5, bonus=RankBonus(choices=skill_names_for_category('Science'), level=2)),
+            5: RankEntry(rank=5, bonus=RankBonus(choices=skill_names(ScienceSkill), level=2)),
             6: RankEntry(rank=6),
         },
     },
     muster_out=MusterOutData(
         rows={
-            1: MusterOutRow(cash=5000, benefit=parse_benefit('int_plus_1')),
-            2: MusterOutRow(cash=10000, benefit=parse_benefit('edu_plus_1')),
-            3: MusterOutRow(cash=20000, benefit=parse_benefit('ship_share'), count=2),
-            4: MusterOutRow(cash=30000, benefit=parse_benefit('soc_plus_1')),
-            5: MusterOutRow(cash=40000, benefit=parse_benefit('scientific_equipment')),
-            6: MusterOutRow(cash=60000, benefit=parse_benefit('lab_ship')),
-            7: MusterOutRow(cash=100000, benefit=parse_benefit('lab_ship')),
+            1: MusterOutRow(cash=5000, benefit=CharacteristicIncrease(char=Chars.INT, amount=1)),
+            2: MusterOutRow(cash=10000, benefit=CharacteristicIncrease(char=Chars.EDU, amount=1)),
+            3: MusterOutRow(cash=20000, benefit=SHIP_SHARE, count=2),
+            4: MusterOutRow(cash=30000, benefit=CharacteristicIncrease(char=Chars.SOC, amount=1)),
+            5: MusterOutRow(cash=40000, benefit=SCIENTIFIC_EQUIPMENT),
+            6: MusterOutRow(cash=60000, benefit=LAB_SHIP),
+            7: MusterOutRow(cash=100000, benefit=LAB_SHIP),
         }
     ),
     mishaps={
@@ -321,13 +328,13 @@ def _choice_scholar_event_3(projection: CharacterProjection, event) -> None:
                     mishap=False,
                     advancement_precreated=True,
                     instruction=f'Choose {label} Science specialty to increase by one level',
-                    options=skill_names_for_category('Science') or [],
+                    options=skill_names(ScienceSkill),
                 )
             )
         if projection.summary.current_career is not None:
             career = projection.get_current_career()
             projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment or '', event.id, 3)
+                _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id, 3)
             )
         # Extra benefit roll
         projection.muster_out_career = projection.summary.current_career
@@ -341,7 +348,7 @@ def _choice_scholar_event_3(projection: CharacterProjection, event) -> None:
     elif projection.summary.current_career is not None:
         career = projection.get_current_career()
         projection.pending_inputs.append(
-            _advancement_pending(career, projection.summary.current_assignment or '', event.id)
+            _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id)
         )
 
 
@@ -407,7 +414,7 @@ def _choice_scholar_event_8(projection: CharacterProjection, event) -> None:
         if projection.summary.current_career is not None:
             career = projection.get_current_career()
             projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment or '', event.id)
+                _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id)
             )
     else:
         projection.pending_inputs.append(
@@ -494,7 +501,7 @@ def _choice_scholar_mishap_3(projection: CharacterProjection, event) -> None:
             mishap=True,
             advancement_precreated=True,
             instruction='Increase Science by one level: choose which broad science',
-            options=skill_names_for_category('Science') or [],
+            options=skill_names(ScienceSkill),
         )
     )
     # advancement was already created by _apply_mishap (stay_in_career=True)

@@ -152,6 +152,7 @@ def make_connection(
 class CareerTerm(BaseModel):
     career: str
     assignment: str
+    assignment_index: int = 0
     commission: bool = False
     rank_after_term: int = 0
 
@@ -164,8 +165,10 @@ class CharacterSummary(BaseModel):
     characteristics: dict[Chars, int] = Field(default_factory=dict)
     current_career: str | None = None
     current_assignment: str | None = None
+    current_assignment_index: int | None = None
     last_career: str | None = None  # career name after muster-out
     last_assignment: str | None = None  # assignment name after muster-out
+    last_assignment_index: int | None = None
     rank: int | None = None
     term_count: int = 0
     career_terms: list[CareerTerm] = Field(default_factory=list)
@@ -215,8 +218,10 @@ class CharacterProjection(BaseModel):
         if self.summary.current_career is not None:
             self.summary.last_career = self.summary.current_career
             self.summary.last_assignment = self.summary.current_assignment
+            self.summary.last_assignment_index = self.summary.current_assignment_index
         self.summary.current_career = None
         self.summary.current_assignment = None
+        self.summary.current_assignment_index = None
 
     def get_current_career(self) -> CareerData:
         from ceres.character.careers.loader import load_careers

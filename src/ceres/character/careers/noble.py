@@ -1,4 +1,11 @@
-from ceres.character.benefits import parse_benefit
+from ceres.character.benefits import (
+    BLADE,
+    SHIP_SHARE,
+    TAS_MEMBERSHIP,
+    YACHT,
+    CharacteristicIncrease,
+    CombinedBenefit,
+)
 from ceres.character.careers.career_data import (
     AdvancementDmEffect,
     AssignmentData,
@@ -34,6 +41,7 @@ from ceres.character.events import (
 from ceres.character.skills import (
     Admin,
     Advocate,
+    ArtSkill,
     Broker,
     Carouse,
     Deception,
@@ -44,12 +52,14 @@ from ceres.character.skills import (
     GunCombat,
     Investigate,
     JackOfAllTrades,
+    LanguageSkill,
     Leadership,
     Melee,
     Persuade,
+    ScienceSkill,
     Steward,
     Streetwise,
-    skill_category_instances,
+    skill_instances,
 )
 from ceres.character.state import (
     CharacterProjection,
@@ -115,12 +125,12 @@ CAREER_DATA = NobleCareerData(
         ),
         advanced_education=SkillTable(
             [
-                skill_category_instances('Science'),
+                skill_instances(ScienceSkill),
                 Advocate(),
-                skill_category_instances('Language'),
+                skill_instances(LanguageSkill),
                 Leadership(),
                 Diplomat(),
-                skill_category_instances('Art'),
+                skill_instances(ArtSkill),
             ],
             min_edu=8,
         ),
@@ -165,7 +175,7 @@ CAREER_DATA = NobleCareerData(
         6: RankEntry(rank=6),
     },
     ranks_by_assignment={
-        'Administrator': {
+        1: {  # Administrator
             0: RankEntry(rank=0, title='Assistant'),
             1: RankEntry(rank=1, title='Clerk', bonus=RankBonus(skill=Admin(), level=1)),
             2: RankEntry(rank=2, title='Supervisor'),
@@ -174,7 +184,7 @@ CAREER_DATA = NobleCareerData(
             5: RankEntry(rank=5, title='Director', bonus=RankBonus(skill=Leadership(), level=1)),
             6: RankEntry(rank=6, title='Minister'),
         },
-        'Diplomat': {
+        2: {  # Diplomat
             0: RankEntry(rank=0, title='Intern'),
             1: RankEntry(rank=1, title='3rd Secretary', bonus=RankBonus(skill=Admin(), level=1)),
             2: RankEntry(rank=2, title='2nd Secretary'),
@@ -183,7 +193,7 @@ CAREER_DATA = NobleCareerData(
             5: RankEntry(rank=5, title='Minister', bonus=RankBonus(skill=Diplomat(), level=1)),
             6: RankEntry(rank=6, title='Ambassador'),
         },
-        'Dilettante': {
+        3: {  # Dilettante
             0: RankEntry(rank=0, title='Wastrel'),
             1: RankEntry(rank=1),
             2: RankEntry(rank=2, title='Ingrate', bonus=RankBonus(skill=Carouse(), level=1)),
@@ -195,13 +205,15 @@ CAREER_DATA = NobleCareerData(
     },
     muster_out=MusterOutData(
         rows={
-            1: MusterOutRow(cash=10000, benefit=parse_benefit('ship_share')),
-            2: MusterOutRow(cash=10000, benefit=parse_benefit('ship_share'), count=2),
-            3: MusterOutRow(cash=50000, benefit=parse_benefit('blade')),
-            4: MusterOutRow(cash=50000, benefit=parse_benefit('soc_plus_1')),
-            5: MusterOutRow(cash=100000, benefit=parse_benefit('tas_membership')),
-            6: MusterOutRow(cash=100000, benefit=parse_benefit('yacht')),
-            7: MusterOutRow(cash=200000, benefit=parse_benefit('soc_plus_1_and_yacht')),
+            1: MusterOutRow(cash=10000, benefit=SHIP_SHARE),
+            2: MusterOutRow(cash=10000, benefit=SHIP_SHARE, count=2),
+            3: MusterOutRow(cash=50000, benefit=BLADE),
+            4: MusterOutRow(cash=50000, benefit=CharacteristicIncrease(char=Chars.SOC, amount=1)),
+            5: MusterOutRow(cash=100000, benefit=TAS_MEMBERSHIP),
+            6: MusterOutRow(cash=100000, benefit=YACHT),
+            7: MusterOutRow(
+                cash=200000, benefit=CombinedBenefit(benefits=[CharacteristicIncrease(char=Chars.SOC, amount=1), YACHT])
+            ),
         }
     ),
     mishaps={

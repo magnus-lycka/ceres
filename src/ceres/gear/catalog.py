@@ -16,14 +16,19 @@ from .comm import (
     TransceiverEquipment,
 )
 from .computer import (
+    CameraOption,
+    CommsOption,
     ComputerChip,
     ComputerEquipment,
     ComputerPart,
     ComputerTerminal,
+    DataDisplayRecorderOption,
+    DataWaferOption,
     InterfaceDevice,
     MainframeComputer,
     MicroscopicChip,
     MidSizedComputer,
+    PhysicalUserInterfaceOption,
     PortableComputer,
     SpecialisedComputer,
     SpecialisedTablet,
@@ -178,6 +183,36 @@ def _specialised_section() -> dict:
     }
 
 
+def _portable_options_section() -> dict:
+    options = [
+        (CameraOption(), 'Built-in still/video camera'),
+        (CommsOption(), 'Short-range communications unit'),
+        (DataDisplayRecorderOption(), 'Heads-up display and recorder'),
+        (DataWaferOption(), 'Stores Bandwidth 0 or 1 programs'),
+        (PhysicalUserInterfaceOption(interface='keyboard_screen'), 'Keyboard and screen'),
+        (PhysicalUserInterfaceOption(interface='voice'), 'Voice interface'),
+        (PhysicalUserInterfaceOption(interface='holographic'), 'Holographic interface'),
+    ]
+    return {
+        'heading': 'Portable Computer Options',
+        'headers': ['Option', 'TL', 'Effect/Limitation', 'Mass (kg)', 'Cost'],
+        'alignments': ['left', 'right', 'left', 'right', 'right'],
+        'rows': [
+            {
+                'cells': [
+                    option.description,
+                    str(option.tl),
+                    effect,
+                    '—',
+                    f'+{_fmt_cost(option.cost)}' if option.cost else '—',
+                ],
+                'notes': [],
+            }
+            for option, effect in options
+        ],
+    }
+
+
 def _transceiver_section(cls: type[TransceiverEquipment], heading: str) -> dict:
     rows = []
     specs = sorted(cls._specs, key=lambda key: (key[0], key[1]))
@@ -272,6 +307,7 @@ def _computer_sections() -> list[dict]:
     sections = [_standard_section(cls) for cls in _COMPUTER_TYPES]
     sections.extend(_retro_section(cls) for cls in _COMPUTER_TYPES if cls._allow_retro)
     sections.extend(_proto_section(cls) for cls in _COMPUTER_TYPES if cls._allow_proto)
+    sections.append(_portable_options_section())
     sections.append(_specialised_section())
     return sections
 

@@ -1,4 +1,12 @@
-from ceres.character.benefits import parse_benefit
+from ceres.character.benefits import (
+    PERSONAL_VEHICLE,
+    SHIP_SHARE,
+    SHIPS_BOAT,
+    TAS_MEMBERSHIP,
+    WEAPON,
+    CharacteristicIncrease,
+    ChoiceBenefit,
+)
 from ceres.character.careers.career_data import (
     AdvancementDmEffect,
     AssignmentData,
@@ -179,13 +187,15 @@ CAREER_DATA = CareerData(
     },
     muster_out=MusterOutData(
         rows={
-            1: MusterOutRow(cash=1000, benefit=parse_benefit(['personal_vehicle', 'ship_share'])),
-            2: MusterOutRow(cash=5000, benefit=parse_benefit('int_plus_1')),
-            3: MusterOutRow(cash=5000, benefit=parse_benefit(['edu_plus_1', 'ship_share'])),
-            4: MusterOutRow(cash=10000, benefit=parse_benefit('weapon')),
-            5: MusterOutRow(cash=20000, benefit=parse_benefit('tas_membership')),
-            6: MusterOutRow(cash=50000, benefit=parse_benefit(['ships_boat', 'ship_share'])),
-            7: MusterOutRow(cash=50000, benefit=parse_benefit('soc_plus_2')),
+            1: MusterOutRow(cash=1000, benefit=ChoiceBenefit(options=[PERSONAL_VEHICLE, SHIP_SHARE])),
+            2: MusterOutRow(cash=5000, benefit=CharacteristicIncrease(char=Chars.INT, amount=1)),
+            3: MusterOutRow(
+                cash=5000, benefit=ChoiceBenefit(options=[CharacteristicIncrease(char=Chars.EDU, amount=1), SHIP_SHARE])
+            ),
+            4: MusterOutRow(cash=10000, benefit=WEAPON),
+            5: MusterOutRow(cash=20000, benefit=TAS_MEMBERSHIP),
+            6: MusterOutRow(cash=50000, benefit=ChoiceBenefit(options=[SHIPS_BOAT, SHIP_SHARE])),
+            7: MusterOutRow(cash=50000, benefit=CharacteristicIncrease(char=Chars.SOC, amount=2)),
         }
     ),
     mishaps={
