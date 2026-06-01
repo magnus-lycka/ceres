@@ -184,12 +184,13 @@ class CharacterSummary(BaseModel):
     parole_threshold: int | None = None  # Prisoner career: current Parole Threshold (3-12)
 
     @overload
-    def skill_level(self, name: str, default: int) -> int: ...
+    def skill_level(self, name: str | type[Skill], default: int) -> int: ...
     @overload
-    def skill_level(self, name: str, default: None = None) -> int | None: ...
-    def skill_level(self, name: str, default: int | None = None) -> int | None:
+    def skill_level(self, name: str | type[Skill], default: None = None) -> int | None: ...
+    def skill_level(self, name: str | type[Skill], default: int | None = None) -> int | None:
+        skill_name = name.name() if isinstance(name, type) else name
         for skill in self.skills:
-            if type(skill).name() == name:
+            if type(skill).name() == skill_name:
                 fields = _level_fields(type(skill))
                 if not fields:
                     return 0
@@ -355,8 +356,9 @@ def diff_summaries(before: CharacterSummary, after: CharacterSummary) -> list[st
 
     before_by_name = {type(s).name(): s for s in before.skills}
     after_by_name = {type(s).name(): s for s in after.skills}
-    for name in sorted(set(after_by_name) - set(before_by_name)):
-        changes.append(f'Gained {name} {after.skill_level(name, 0)}')
+    changes.extend(
+        f'Gained {name} {after.skill_level(name, 0)}' for name in sorted(set(after_by_name) - set(before_by_name))
+    )
     for name in sorted(set(after_by_name) & set(before_by_name)):
         b_lvl = before.skill_level(name, 0)
         a_lvl = after.skill_level(name, 0)

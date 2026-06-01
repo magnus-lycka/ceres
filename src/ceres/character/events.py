@@ -18,6 +18,7 @@ from ceres.character.skills import (
     SpaceScience,
     _level_fields,
     _skill_classes,
+    expand_to_spec_options,
     parse_skill_spec_option,
     skill_class_by_name,
     skill_from_str,
@@ -2602,8 +2603,17 @@ class PendingPreCareerSkillChoice(PendingInputBase):
     kind: Literal['precareer_skill_choice'] = 'precareer_skill_choice'
     level: int
 
+    def _expanded_options(self) -> list[str]:
+        if self.level == 0:
+            return list(self.options)
+        result: list[str] = []
+        for opt in self.options:
+            result.extend(expand_to_spec_options(opt))
+        return result
+
     def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
-        skill_name = rng.choice(self.options) if self.options else 'Admin'
+        options = self._expanded_options()
+        skill_name = rng.choice(options) if options else 'Admin'
         return PreCareerSkillChoiceEvent(skill=skill_name, fulfills=self.id)
 
     def event_from_form(self, form: Any) -> AnyEvent:
@@ -2611,7 +2621,7 @@ class PendingPreCareerSkillChoice(PendingInputBase):
         return PreCareerSkillChoiceEvent(skill=skill, fulfills=self.id)
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
-        options = [(opt, opt) for opt in self.options]
+        options = [(opt, opt) for opt in self._expanded_options()]
         return [Select(name='skill', label='Choose a skill', options=options)]
 
 

@@ -17,14 +17,12 @@ from ceres.character.sophonts import SOPHONT_NAMES, get_sophont
 from ceres.character.spec import spec_from_summary
 from ceres.character.state import (
     CharacterProjection,
-    CharacterSummary,
     diff_summaries,
 )
 from ceres.character.store import SqliteCharacterBackend
 from ceres.character.web.bulk import _NPC_DEFAULT_HOMEWORLD
 
 _TEMPLATES_DIR = Path(__file__).parent / 'templates'
-
 
 
 def _projection_context(projection: CharacterProjection, character_id: int) -> dict[str, Any]:

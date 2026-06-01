@@ -171,6 +171,46 @@ class TestColonialUpbringing:
         picks = [p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)]
         assert len(picks) == 4  # 3 regular + 1 honours
 
+    def test_graduation_pick_options_expand_specialized_skills_to_specs(self):
+        # Gun Combat is a specialized skill — at level 1, the player must choose a spec,
+        # so the option should appear as 'Gun Combat (Archaic)' etc., not bare 'Gun Combat'.
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Colonial Upbringing', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Colonist Profession'),
+            PreCareerEventEvent(id=5, fulfills='3.1', roll=5),
+            PreCareerGraduationEvent(id=6, fulfills='3.2', roll=10),
+        ]
+        projection = replay(1, events)
+        pick = next(p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice))
+        from ceres.character.input_specs import Select
+
+        spec = pick.input_specs(projection)[0]
+        assert isinstance(spec, Select)
+        opts = [v for _, v in spec.options]
+        assert 'Gun Combat' not in opts, 'bare specialised skill name must not appear at level 1'
+        assert any(o.startswith('Gun Combat (') for o in opts)
+
+    def test_graduation_specialized_skill_pick_gives_level_one(self):
+        # Choosing 'Gun Combat (Slug)' at graduation must result in Gun Combat Slug 1,
+        # even though Gun Combat 0 was already granted at entry.
+        from ceres.character.skills import GunCombat
+
+        events = [
+            *_base(),
+            PreCareerEntryEvent(id=3, precareer='Colonial Upbringing', roll=5),
+            PreCareerSkillChoiceEvent(id=4, fulfills='3.0', skill='Colonist Profession'),
+            PreCareerEventEvent(id=5, fulfills='3.1', roll=5),
+            PreCareerGraduationEvent(id=6, fulfills='3.2', roll=10),
+            PreCareerSkillChoiceEvent(id=7, fulfills='6.0', skill='Gun Combat (Slug)'),
+        ]
+        projection = replay(1, events)
+        gc = next((s for s in projection.summary.skills if isinstance(s, GunCombat)), None)
+        assert gc is not None
+        assert gc.slug.value == 1
+        assert gc.energy.value == 0
+        assert gc.archaic.value == 0
+
     def test_honours_career_choice_id_distinct_from_four_picks(self):
         events = [
             *_base(),

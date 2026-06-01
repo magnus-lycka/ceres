@@ -1,4 +1,8 @@
-from typing import Annotated, Literal, NamedTuple, Self, cast, get_args, get_origin
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Annotated, Any, Final, Literal, NamedTuple, Self, cast, get_args, get_origin
+
+if TYPE_CHECKING:
+    from ceres.character.state import CharacterSummary
 
 from pydantic import Field
 
@@ -37,6 +41,24 @@ class Skill(CeresModel):
             extra = field.json_schema_extra or {}
             names.append(str(extra.get('name') or field_name.replace('_', ' ').title()))
         return tuple(names)
+
+    def __str__(self) -> str:
+        fields = _level_fields(type(self))
+        if len(fields) == 1 and fields[0] == 'level':
+            lvl = cast(Level, getattr(self, fields[0]))
+            return f'{type(self).name()}-{lvl.value}'
+        active: list[str] = []
+        for field_name, field in type(self).model_fields.items():
+            if field_name in {'display_label', 'type'} or field.annotation is not Level:
+                continue
+            lvl = getattr(self, field_name)
+            if isinstance(lvl, Level) and lvl.value > 0:
+                extra = field.json_schema_extra or {}
+                label = str(extra.get('name') or field_name.replace('_', ' ').title())
+                active.append(f'{type(self).name()} ({label})-{lvl.value}')
+        if active:
+            return ', '.join(active)
+        return f'{type(self).name()}-0'
 
 
 class Admin(Skill):
@@ -553,7 +575,6 @@ def field_for_spec(cls: type[Skill], spec: str) -> str:
 
 def skill_from_str(name: str, level: int = 0) -> AnySkill:
     """Create a skill instance from a string name and level."""
-    from typing import Any
 
     skill_cls = skill_class_by_name(name)
     _cls: Any = skill_cls
@@ -563,6 +584,21 @@ def skill_from_str(name: str, level: int = 0) -> AnySkill:
         return cast(AnySkill, _cls(level=Level(value=level)))
     fields = {f: Level(value=level) for f in _level_fields(skill_cls)}
     return cast(AnySkill, _cls(**fields))
+
+
+def expand_to_spec_options(skill_name: str) -> list[str]:
+    """For a specialised skill, return 'Skill (Spec)' for every specialisation.
+
+    For plain (non-specialised) skills, returns [skill_name] unchanged.
+    Use this when presenting level > 0 choices: specialised skills must be chosen
+    at the specialisation level, never as a bare name.
+    """
+    try:
+        cls = skill_class_by_name(skill_name)
+    except ValueError:
+        return [skill_name]
+    specs = cls.specialities()
+    return [f'{skill_name} ({spec})' for spec in specs] if specs else [skill_name]
 
 
 def speciality_label(skill: Skill, field_name: str) -> str:
@@ -591,3 +627,92 @@ def active_speciality_label(skill: Skill) -> str | None:
     if field_name is None:
         return None
     return speciality_label(skill, field_name)
+
+
+@dataclass(frozen=True)
+class SkillSpecialization:
+    """Targets one specific specialisation of a specialised skill."""
+
+    skill_cls: type[Skill]
+    spec: str  # display name, e.g. 'Slug' for GunCombat
+
+    def __post_init__(self) -> None:
+        field_for_spec(self.skill_cls, self.spec)  # raises ValueError if invalid
+
+
+def skill_spec(cls: type[Skill], spec: str) -> SkillSpecialization:
+    """Validated factory for SkillSpecialization. Raises ValueError for unknown specs."""
+    return SkillSpecialization(cls, spec)
+
+
+class _ExistingSkillsSentinel:
+    """Sentinel: expand to increment every skill the character currently has."""
+
+
+EXISTING_SKILLS: Final[_ExistingSkillsSentinel] = _ExistingSkillsSentinel()
+
+
+def _to_skill_classes(spec: object) -> tuple[type[Skill], ...]:
+    if isinstance(spec, type) and issubclass(spec, Skill):
+        return (spec,)
+    return _skill_classes(spec)
+
+
+def _gain_from_class(
+    cls: type[Skill],
+    spec_name: str | None,
+    level: int | None,
+    existing: AnySkill | None,
+) -> list[AnySkill]:
+    fields = _level_fields(cls)
+    is_specialised = not (len(fields) == 1 and fields[0] == 'level')
+    _cls: Any = cls
+
+    if level == 0:
+        if existing is None:
+            return [cast(AnySkill, _cls())]
+        return []
+
+    if not is_specialised:
+        current = cast(Level, getattr(existing, fields[0])).value if existing is not None else 0
+        new_level = (current + 1) if level is None else level
+        if new_level > current and new_level <= 4:
+            return [cast(AnySkill, _cls(level=Level(value=new_level)))]
+        return []
+
+    target_fields = [field_for_spec(cls, spec_name)] if spec_name is not None else fields
+    results: list[AnySkill] = []
+    for field in target_fields:
+        current = getattr(existing, field).value if existing is not None else 0
+        new_level = (current + 1) if level is None else level
+        if new_level > current and new_level <= 4:
+            results.append(cast(AnySkill, _cls(**{field: Level(value=new_level)})))
+    return results
+
+
+def gain_skills(
+    summary: CharacterSummary,
+    spec: object,
+    level: int | None = None,
+) -> list[AnySkill]:
+    """Return possible skill improvements for the given spec and level target."""
+    if isinstance(spec, _ExistingSkillsSentinel):
+        if level is not None:
+            raise ValueError('EXISTING_SKILLS requires level=None')
+        results: list[AnySkill] = []
+        for existing_skill in summary.skills:
+            results.extend(_gain_from_class(type(existing_skill), None, None, existing_skill))
+        return results
+
+    if isinstance(spec, SkillSpecialization):
+        cls = spec.skill_cls
+        existing = next((s for s in summary.skills if type(s) is cls), None)
+        spec_name = None if level == 0 else spec.spec
+        return _gain_from_class(cls, spec_name, level, existing)
+
+    classes = _to_skill_classes(spec)
+    results = []
+    for cls in classes:
+        existing = next((s for s in summary.skills if type(s) is cls), None)
+        results.extend(_gain_from_class(cls, None, level, existing))
+    return results

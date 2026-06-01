@@ -571,6 +571,26 @@ field alongside its `is_in_draft` declaration.
 For five of the six draft careers (Navy, Army, Marines, Scout, Agent), any
 assignment within the career may be chosen on entry via draft.
 
+### RIC-005 Skill Labels Use the Achieved Specialisation Only; Level-0 Grants Are Written Without Specialisation
+
+When a character gains a skill from a career table or basic training, Ceres
+represents the outcome as a single label of the form `Skill-N` or
+`Skill (Specialisation)-N`.
+
+**Specialised skills at level > 0**: Only the chosen specialisation is named.
+`Gun Combat (Slug)-1` means Slug reached level 1 in this step; the other
+specialisations (Archaic, Energy) are implicitly at whatever level they were
+before (including zero). Writing them out would be `Gun Combat (Slug)-1,
+Gun Combat (Archaic)-0, Gun Combat (Energy)-0`, but that is unnecessarily
+verbose. Ceres uses the short form.
+
+**Level-0 grants**: When basic training or a similar rule grants a skill at
+level 0, the entire skill is added to the sheet without choosing a
+specialisation. Even where the source table names a specialisation — e.g.
+"Pilot (small craft)" in Drifter/Scavenger basic training — a level-0 grant
+means only "you now have this skill on your sheet". The result is written
+`Pilot-0`, not `Pilot (Small Craft)-0`.
+
 ### RIC-004 Benefit Roll Bonus: Rank 5–6 Applies to All Rolls; "Any One Roll" Events Allow Post-Roll Choice
 
 Two distinct sources can grant DM+1 to benefit rolls:

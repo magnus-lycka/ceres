@@ -90,7 +90,7 @@ def generate_npc(
             try:
                 _event, projection = backend.append_event_with_projection(cid, event)
                 break
-            except (ValueError, RuntimeError, ReplayError):
+            except ValueError, RuntimeError, ReplayError:
                 if _retry == 19:
                     raise
     else:
