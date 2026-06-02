@@ -35,19 +35,22 @@ class JumpControl(RatedSoftwarePackage):
         4: {'bandwidth': 20, 'tl': 13, 'cost': 400_000.0},
         5: {'bandwidth': 25, 'tl': 14, 'cost': 500_000.0},
         6: {'bandwidth': 30, 'tl': 15, 'cost': 600_000.0},
+        7: {'bandwidth': 35, 'tl': 16, 'cost': 700_000.0},
     }
 
     def validate_on_computer(self, computer: ComputerPart) -> None:
-        if not self._validate_tl_on_computer(computer):
-            return
+        self._validate_tl_on_computer(computer)
         ship_computer = cast('ComputerBase', computer)
+        effective_tl = self._computer_effective_tl(computer)
         for r in range(self.rating, 0, -1):
-            if ship_computer.can_run_jump_control(int(self._specs[r]['bandwidth'])):
+            if int(self._specs[r]['tl']) <= effective_tl and ship_computer.can_run_jump_control(
+                int(self._specs[r]['bandwidth'])
+            ):
                 if r < self.rating:
                     self.warning(f'{computer.description} can only run Jump Control/{r} (degraded from {self.rating})')
                 self._effective_rating = r
                 return
-        self.error(f'{computer.description} cannot run {self.description}')
+        self.warning(f'{computer.description} cannot run {self.description}')
 
 
 class AutoRepair(RatedSoftwarePackage):

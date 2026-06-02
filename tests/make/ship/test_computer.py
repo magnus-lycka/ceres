@@ -10,6 +10,9 @@ from ceres.make.ship.computer import (
     Computer15,
     Core40,
     Core50,
+    Core60,
+    Core70,
+    Core100,
 )
 from ceres.make.ship.software import Library, Manoeuvre
 
@@ -156,6 +159,18 @@ def test_core40_retro_1_level_halves_base_cost():
     assert c.base_cost == 22_500_000.0
 
 
+def test_standard_computer_effective_tl_matches_ship_tl():
+    c = Computer5()
+    c.bind(DummyOwner(12, 100))
+    assert c.effective_tl == 12
+
+
+def test_retro_computer_effective_tl_is_below_ship_tl():
+    c = Computer5(retro_levels=1)
+    c.bind(DummyOwner(12, 100))
+    assert c.effective_tl == 11
+
+
 def test_computer10_proto_1_level_multiplies_base_cost_by_10():
     c = Computer10(proto_levels=1)
     assert c.base_cost == 1_600_000.0
@@ -164,6 +179,12 @@ def test_computer10_proto_1_level_multiplies_base_cost_by_10():
 def test_computer10_proto_2_levels_multiplies_base_cost_by_100():
     c = Computer10(proto_levels=2)
     assert c.base_cost == 16_000_000.0
+
+
+def test_proto_computer_effective_tl_is_above_ship_tl():
+    c = Computer15(proto_levels=1)
+    c.bind(DummyOwner(10, 100))
+    assert c.effective_tl == 11
 
 
 def test_computer_proto_3_levels_raises():
@@ -218,6 +239,22 @@ def test_retro_computer_info_note_shows_software_tl_cap():
     c = Computer10(retro_levels=2)
     c.bind(DummyOwner(11, 100))
     assert any('Software limited to TL9' in msg for msg in c.notes.infos)
+
+
+@pytest.mark.parametrize(
+    ('hardware', 'ship_tl', 'expected_rating'),
+    [
+        (Core40(), 9, 1),
+        (Core50(), 10, 1),
+        (Core60(), 11, 2),
+        (Core70(retro_levels=1), 13, 3),
+        (Core100(), 15, 6),
+        (Core100(), 16, 7),
+    ],
+)
+def test_core_included_jump_control_rating_follows_effective_tl(hardware, ship_tl, expected_rating):
+    hardware.bind(DummyOwner(ship_tl, 100))
+    assert hardware.included_jump_control_rating == expected_rating
 
 
 def test_prototype_computer_has_0_1_ton():

@@ -186,7 +186,6 @@ _expected.expected_spec_errors = [
     'Requires TL12, ship is TL11',
 ]
 _expected.expected_spec_warnings = [
-    'No Jump Control software',
     'Recommended common area is 350.50 tons',
     'Cargo is below recommended 100-day stores capacity of 500 tons',
 ]

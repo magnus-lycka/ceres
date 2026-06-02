@@ -52,7 +52,7 @@ class ComputerBase(ComputerPart, ShipPartMixin):
 
     @property
     def effective_tl(self) -> int:
-        return self.tl - self.proto_levels
+        return self.assembly_tl + self.proto_levels - self.retro_levels
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList()
@@ -76,8 +76,9 @@ class ComputerBase(ComputerPart, ShipPartMixin):
         return item
 
     def check_tl(self) -> None:
-        if self.assembly_tl < self.effective_tl:
-            self.error(f'Requires TL{self.effective_tl}, ship is TL{self.assembly_tl}')
+        minimum_ship_tl = self.tl - self.proto_levels
+        if self.assembly_tl < minimum_ship_tl:
+            self.error(f'Requires TL{minimum_ship_tl}, ship is TL{self.assembly_tl}')
         if self.retro_levels > 0 and self.assembly_tl < self.tl + self.retro_levels:
             self.error(
                 f'Retro/{self.retro_levels} requires ship TL{self.tl + self.retro_levels}, ship is TL{self.assembly_tl}'
@@ -183,6 +184,10 @@ class _Core(ComputerBase):
     def can_run_jump_control(self, required_processing: int) -> bool:
         return True
 
+    @property
+    def included_jump_control_rating(self) -> int | None:
+        return JumpControl.maximum_rating_at_tl(self.effective_tl)
+
 
 class Core40(_Core):
     kind: Literal['core_40'] = 'core_40'
@@ -272,6 +277,18 @@ class ComputerSection(CeresModel):
             self.backup_hardware.error('Backup computer must have lower Processing than primary computer')
         for package in self.software:
             package.validate_on_computer(self.hardware)
+
+    def effective_jump_control_rating(self) -> int | None:
+        installed_ratings = [
+            package.effective_rating
+            for package in self.software_packages
+            if isinstance(package, JumpControl) and package.effective_rating is not None
+        ]
+        if isinstance(self.hardware, _Core):
+            included_rating = self.hardware.included_jump_control_rating
+            if included_rating is not None:
+                installed_ratings.append(included_rating)
+        return max(installed_ratings, default=None)
 
     def validate_jump_drive(self, drives) -> None:
         jump_control = next((package for package in self.software_packages if isinstance(package, JumpControl)), None)

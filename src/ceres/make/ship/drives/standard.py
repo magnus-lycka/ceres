@@ -3,7 +3,6 @@ from typing import Annotated, ClassVar, Literal
 
 from pydantic import Field
 
-from ceres.gear.software import SoftwarePackage
 from ceres.shared import NoteList
 
 from ..parts import (
@@ -38,7 +37,6 @@ from ..power import (  # noqa: F401
     SterlingFissionPlantTL6,
     SterlingFissionPlantTL12,
 )
-from ..software import JumpControl
 from ..spec import ShipSpec, SpecSection
 from .spinext import AnyPlasmaDrive
 
@@ -694,18 +692,14 @@ class DriveSection(ShipPart):
             return 0.0
         return getattr(self.solar_sail, 'output', 0.0)
 
-    def validate_jump_control(self, software_packages: list[SoftwarePackage]) -> None:
+    def validate_jump_control(self, effective_jump_control_rating: int | None) -> None:
         if self.j_drive is None:
             return
-        jump_control = next((package for package in software_packages if isinstance(package, JumpControl)), None)
-        if jump_control is None:
+        if effective_jump_control_rating is None:
             self.j_drive.warning('No Jump Control software')
             return
-        effective = jump_control.effective_rating
-        if effective is None:
-            return
-        if effective < self.j_drive.level:
-            self.j_drive.warning(f'Limited to Jump {effective} by control software')
+        if effective_jump_control_rating < self.j_drive.level:
+            self.j_drive.warning(f'Limited to Jump {effective_jump_control_rating} by control software')
 
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:
         if self.j_drive is not None:

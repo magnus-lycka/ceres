@@ -32,14 +32,13 @@ class SoftwarePackage(CeresModel, ABC):
     @abstractmethod
     def cost(self) -> float: ...
 
+    def _computer_effective_tl(self, computer: ComputerPart) -> int:
+        return getattr(computer, 'effective_tl', computer.assembly.tl - computer.retro_levels)
+
     def _validate_tl_on_computer(self, computer: ComputerPart) -> bool:
-        if computer.assembly.tl < self.tl:
-            self.error(f'{self.description} requires TL{self.tl}')
-            return False
-        if computer.retro_levels > 0:
-            effective_tl = computer.assembly.tl - computer.retro_levels
-            if self.tl > effective_tl:
-                self.warning(f'{self.description} requires TL{self.tl}, but computer effective TL is {effective_tl}')
+        effective_tl = self._computer_effective_tl(computer)
+        if self.tl > effective_tl:
+            self.warning(f'{self.description} requires TL{self.tl}, but computer effective TL is {effective_tl}')
         return True
 
     def validate_on_computer(self, computer: ComputerPart) -> None:
@@ -87,6 +86,15 @@ class RatedSoftwarePackage(SoftwarePackage):
             allowed = ', '.join(str(v) for v in sorted(cls._specs))
             raise ValueError(f'Unsupported {cls.__name__} rating {value}; expected one of: {allowed}')
         return value
+
+    @classmethod
+    def maximum_rating(cls) -> int:
+        return max(cls._specs)
+
+    @classmethod
+    def maximum_rating_at_tl(cls, tl: int) -> int | None:
+        supported = [rating for rating, spec in cls._specs.items() if int(spec['tl']) <= tl]
+        return max(supported, default=None)
 
     @property
     def description(self) -> str:

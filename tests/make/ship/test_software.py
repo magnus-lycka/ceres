@@ -9,8 +9,10 @@ from ceres.make.ship.computer import (
     Computer35,
     ComputerSection,
     Core40,
+    Core60,
+    Core100,
 )
-from ceres.make.ship.drives import DriveSection, JDrive2
+from ceres.make.ship.drives import DriveSection, JDrive2, JDrive7
 from ceres.make.ship.software import (
     AdvancedFireControl,
     AntiHijack,
@@ -43,6 +45,15 @@ def test_jump_control_2_data():
     assert p.bandwidth == 10
     assert p.cost == 200_000
     assert p.rating == 2
+
+
+def test_jump_control_7_data():
+    p = JumpControl(rating=7)
+    assert p.description == 'Jump Control/7'
+    assert p.tl == 16
+    assert p.bandwidth == 35
+    assert p.cost == 700_000
+    assert p.rating == 7
 
 
 def test_advanced_fire_control_1_data():
@@ -151,8 +162,8 @@ def test_evade_3_matches_core_values():
 
 
 def test_jump_control_rejects_invalid_rating():
-    with pytest.raises(ValueError, match='Unsupported JumpControl rating 7'):
-        JumpControl(rating=7)
+    with pytest.raises(ValueError, match='Unsupported JumpControl rating 8'):
+        JumpControl(rating=8)
 
 
 def test_jump_control_2_degrades_on_computer_5():
@@ -212,6 +223,34 @@ def test_jump_drive_2_without_jump_control_2_adds_local_note():
     assert my_ship.drives.j_drive is not None
     assert my_ship.drives.j_drive.notes.items == ['Jump 2']
     assert my_ship.drives.j_drive.notes.warnings == ['No Jump Control software']
+
+
+def test_core_computer_supplies_builtin_jump_control_for_jump_drive():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        drives=DriveSection(j_drive=JDrive2()),
+        computer=ComputerSection(hardware=Core60()),
+    )
+    assert my_ship.drives is not None
+    assert my_ship.drives.j_drive is not None
+    assert my_ship.drives.j_drive.notes.items == ['Jump 2']
+    assert my_ship.drives.j_drive.notes.warnings == []
+
+
+def test_tl16_core_computer_supplies_builtin_jump_control_7_for_jump_drive_7():
+    my_ship = ship.Ship(
+        tl=16,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        drives=DriveSection(j_drive=JDrive7()),
+        computer=ComputerSection(hardware=Core100()),
+    )
+    assert my_ship.drives is not None
+    assert my_ship.drives.j_drive is not None
+    assert my_ship.drives.j_drive.notes.items == ['Jump 7']
+    assert my_ship.drives.j_drive.notes.warnings == []
 
 
 def test_jump_drive_with_lower_jump_control_warns_on_drive():
@@ -322,7 +361,7 @@ def test_software_packages_keep_repeated_new_software_families():
     assert [package.rating for package in virtual_gunners] == [0, 1]
 
 
-def test_validate_software_adds_tl_error():
+def test_validate_software_adds_tl_warning_and_degrades_jump_control():
     hardware = Computer5(bis=True)
     hardware.bind(DummyOwner(10, 100))
     section = ComputerSection(hardware=hardware, software=[JumpControl(rating=2)])
@@ -330,7 +369,12 @@ def test_validate_software_adds_tl_error():
     section.validate_software()
 
     jump_control = next(package for package in section.software_packages if isinstance(package, JumpControl))
-    assert 'Jump Control/2 requires TL11' in jump_control.notes.errors
+    assert jump_control.effective_rating == 1
+    assert jump_control.notes.errors == []
+    assert jump_control.notes.warnings == [
+        'Jump Control/2 requires TL11, but computer effective TL is 10',
+        'Computer/5 can only run Jump Control/1 (degraded from 2)',
+    ]
 
 
 def test_jump_control_blocked_by_tl_leaves_effective_rating_none():
@@ -342,7 +386,11 @@ def test_jump_control_blocked_by_tl_leaves_effective_rating_none():
 
     jump_control = next(package for package in section.software_packages if isinstance(package, JumpControl))
     assert jump_control.effective_rating is None
-    assert jump_control.notes.errors == ['Jump Control/1 requires TL9']
+    assert jump_control.notes.errors == []
+    assert jump_control.notes.warnings == [
+        'Jump Control/1 requires TL9, but computer effective TL is 8',
+        'Computer/5 cannot run Jump Control/1',
+    ]
 
 
 def test_jump_control_degrades_when_processing_insufficient():
@@ -364,6 +412,28 @@ def test_jump_control_runs_at_full_on_core():
     c.bind(DummyOwner(15, 100))
     jc.validate_on_computer(c)
     assert jc.effective_rating == 6
+
+
+def test_core_computer_section_has_builtin_jump_control_without_software_row():
+    hardware = Core60()
+    hardware.bind(DummyOwner(12, 100))
+    section = ComputerSection(hardware=hardware)
+
+    assert section.effective_jump_control_rating() == hardware.included_jump_control_rating
+    assert not any(isinstance(package, JumpControl) for package in section.software_packages)
+
+
+def test_proto_computer_can_run_software_at_effective_tl():
+    hardware = Computer15(proto_levels=1)
+    hardware.bind(DummyOwner(10, 100))
+    section = ComputerSection(hardware=hardware, software=[JumpControl(rating=2)])
+
+    section.validate_software()
+
+    jump_control = next(package for package in section.software_packages if isinstance(package, JumpControl))
+    assert jump_control.effective_rating == 2
+    assert not jump_control.notes.errors
+    assert not jump_control.notes.warnings
 
 
 def test_retro_computer_software_tl_cap_is_not_error():

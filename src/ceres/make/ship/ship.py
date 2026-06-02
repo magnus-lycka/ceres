@@ -3,7 +3,6 @@ from math import ceil
 
 from pydantic import Field
 
-from ceres.gear.software import SoftwarePackage
 from ceres.shared import NoteList
 
 from .automation import AnyAutomation, StandardAutomation
@@ -426,9 +425,8 @@ class Ship(ShipBase):
             self.computer.validate_software()
             self.computer.validate_jump_drive(self.drives)
         if self.drives is not None:
-            software_packages: list[SoftwarePackage]
-            software_packages = [] if self.computer is None else self.computer.software_packages
-            self.drives.validate_jump_control(software_packages)
+            jump_control_rating = None if self.computer is None else self.computer.effective_jump_control_rating()
+            self.drives.validate_jump_control(jump_control_rating)
         if self.power is not None:
             self.power.validate_emergency_power_system()
         if self.weapons is not None:
