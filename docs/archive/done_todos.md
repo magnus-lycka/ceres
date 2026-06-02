@@ -2,6 +2,27 @@
 
 Moved from `docs/todo_maybe.md` once fully implemented.
 
+## Character creation: TermData base class
+
+Introduced `TermData(BaseModel)` in `career_data.py` as the shared base for both
+`CareerData` and `PreCareerData`. `TermData` owns the `events: dict[int, CareerEventEntry]`
+field (previously duplicated in both). `CareerData(TermData)` and `PreCareerData(TermData)`
+both inherit from it.
+
+All career modules now define a named `CareerData` subclass (`ArmyCareerData`,
+`MarinesCareerData`, `MerchantCareerData`, `NavyCareerData`, `ScholarCareerData`,
+`ScoutCareerData`) rather than using `CareerData` directly — mirroring how precareers
+are already structured as subclasses of `PreCareerData`.
+
+The `_CAREER_MODULE_NAMES` lazy-load pattern in `careers/__init__.py` was kept as-is
+because eager imports cause a circular import via the `events.py → state.py →
+careers/__init__.py → common.py → events.py` chain.
+
+Added `RUF012` to the per-file-ignores for `src/ceres/character/**/*.py` in
+`pyproject.toml` because ruff cannot trace cross-file Pydantic inheritance chains
+(it recognises `PreCareerData(BaseModel)` but not `PreCareerData(TermData)` where
+`TermData(BaseModel)` is defined in another file).
+
 ## Muster-out benefits are string-key encoded
 
 Replaced `parse_benefit(...)` throughout career data with typed benefit objects.

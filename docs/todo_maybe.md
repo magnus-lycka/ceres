@@ -272,28 +272,6 @@ Decide whether `Ship` should be extended or whether a separate `Station` class i
   Agent/Citizen/Entertainer/Merchant: treated as a new career with full muster
   out.
 
-## Character creation: TermData base class
-
-Introduce a `TermData` base class in `career_data.py` that `CareerData` and `PreCareerData`
-both inherit from, unifying the common interface between careers and precareers.
-
-Motivation: `CareerData` and `PreCareerData` share structural similarities (term-based
-progression, skill tables, benefits, etc.) but have no shared base class, making it
-harder to write generic code that works with both.
-
-Work items:
-
-- Define `TermData` (Pydantic `BaseModel`) with the fields and methods common to both
-  `CareerData` and `PreCareerData`
-- Make `CareerData(TermData)` a subclass, removing duplicated fields
-- Make `PreCareerData(TermData)` a subclass similarly
-- Make each individual career (e.g. `ScoutCareerData`) a subclass of `CareerData` rather
-  than a standalone class with a `CAREER_DATA = CareerData(...)` module constant — this
-  mirrors how precareers are already structured as subclasses of `PreCareerData`
-- Update `load_careers()` and `load_precareers()` to work with the new hierarchy if needed
-- Remove `_CAREER_MODULE_NAMES`-style indirection if the subclass pattern makes it
-  unnecessary
-
 ## Character creation: eliminate remaining semantic strings
 
 The career YAML migration removed string-based skill/characteristic fields from

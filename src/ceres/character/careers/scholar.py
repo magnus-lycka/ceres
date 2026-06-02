@@ -74,7 +74,12 @@ SCHOLAR = Career(
     ),
 )
 
-CAREER_DATA = CareerData(
+
+class ScholarCareerData(CareerData):
+    pass
+
+
+CAREER_DATA = ScholarCareerData(
     career=SCHOLAR,
     allows_assignment_change=True,
     qualification=CharCheck(characteristic=Chars.INT, target=6),

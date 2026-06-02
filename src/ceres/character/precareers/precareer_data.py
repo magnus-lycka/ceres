@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from pydantic import BaseModel, ConfigDict
 
-from ceres.character.careers.career_data import AnyEffect, CareerEventEntry, CharCheck
+from ceres.character.careers.career_data import AnyEffect, CharCheck, TermData
 from ceres.character.events import PendingPreCareerSkillChoice
 from ceres.character.skills import AnySkill, Level, Skill, _level_fields
 from ceres.character.state import (
@@ -68,7 +68,7 @@ def _skill_at_level(skill: AnySkill, level: int) -> AnySkill:
     return cast(AnySkill, cls(**values))
 
 
-class PreCareerData(BaseModel):
+class PreCareerData(TermData):
     name: str
     source: str
     duration_years: int = 4
@@ -90,7 +90,6 @@ class PreCareerData(BaseModel):
     graduation_dms: dict[str, int] = {}
     honours_target: int | None = None
     graduation_benefits: list[str] = []
-    events: dict[int, CareerEventEntry]
 
     def is_available(self, summary: CharacterSummary) -> bool:
         """Return True if this precareer is available for the given character."""

@@ -175,6 +175,14 @@ class CareerEventEntry(BaseModel):
     effects: list[AnyEffect] = []
 
 
+class TermData(BaseModel):
+    """Base class for both CareerData and PreCareerData, capturing their common interface."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    events: dict[int, CareerEventEntry]
+
+
 class MishapEntry(BaseModel):
     text: str
     stay_in_career: bool = False
@@ -204,9 +212,7 @@ class BasicTrainingPlan(BaseModel):
     grant_all: bool
 
 
-class CareerData(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
+class CareerData(TermData):
     career: Career
     qualification: CharCheck
 
@@ -228,7 +234,6 @@ class CareerData(BaseModel):
     ranks_by_assignment: dict[int, dict[int, RankEntry]] = {}  # assignment index → rank table override
     commission: CharCheck | None = None
     officer_ranks: dict[int, RankEntry] = {}
-    events: dict[int, CareerEventEntry]  # 2D roll → event
     mishaps: dict[int, MishapEntry]  # 1D roll → mishap
     muster_out: MusterOutData
     allows_assignment_change: bool

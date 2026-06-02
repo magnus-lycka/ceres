@@ -80,7 +80,12 @@ SCOUT = Career(
     ),
 )
 
-CAREER_DATA = CareerData(
+
+class ScoutCareerData(CareerData):
+    pass
+
+
+CAREER_DATA = ScoutCareerData(
     career=SCOUT,
     allows_assignment_change=True,
     qualification=CharCheck(characteristic=Chars.INT, target=5),

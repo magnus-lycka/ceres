@@ -76,7 +76,12 @@ MERCHANT = Career(
     ),
 )
 
-CAREER_DATA = CareerData(
+
+class MerchantCareerData(CareerData):
+    pass
+
+
+CAREER_DATA = MerchantCareerData(
     career=MERCHANT,
     allows_assignment_change=False,
     qualification=CharCheck(characteristic=Chars.INT, target=4),

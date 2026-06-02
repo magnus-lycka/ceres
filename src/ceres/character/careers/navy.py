@@ -74,7 +74,12 @@ NAVY = Career(
     ),
 )
 
-CAREER_DATA = CareerData(
+
+class NavyCareerData(CareerData):
+    pass
+
+
+CAREER_DATA = NavyCareerData(
     career=NAVY,
     allows_assignment_change=True,
     qualification=CharCheck(characteristic=Chars.INT, target=6),

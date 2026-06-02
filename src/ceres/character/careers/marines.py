@@ -81,7 +81,12 @@ MARINES = Career(
     ),
 )
 
-CAREER_DATA = CareerData(
+
+class MarinesCareerData(CareerData):
+    pass
+
+
+CAREER_DATA = MarinesCareerData(
     career=MARINES,
     allows_assignment_change=True,
     qualification=CharCheck(characteristic=Chars.END, target=6),
