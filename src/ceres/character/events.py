@@ -498,7 +498,6 @@ class MishapEvent(EventBase):
             InjuryEffect,
             SkillChoiceEffect,
         )
-        from ceres.character.careers.loader import get_effect_handler
 
         career = projection.get_current_career()
         mishap = career.mishaps.get(self.roll)
@@ -566,9 +565,10 @@ class MishapEvent(EventBase):
                         )
                         pending_idx += 1
                 else:
-                    handler = get_effect_handler(career.name, effect.type)
-                    if handler:
-                        pending_idx = handler(projection, effect, self.id, pending_idx)
+                    from ceres.character.careers.career_data import CareerHandlerBase
+
+                    if isinstance(effect, CareerHandlerBase):
+                        pending_idx = effect.handle(projection, self.id, pending_idx)
                     else:
                         _apply_simple_effect(projection, effect, source=mishap.text, source_event_id=self.id)
         defer = mishap is not None and mishap.defer_ejection
@@ -602,7 +602,6 @@ class TermEventEvent(EventBase):
             RollMishapEffect,
             SkillChoiceEffect,
         )
-        from ceres.character.careers.loader import get_effect_handler
 
         career = projection.get_current_career()
         term_event = career.events.get(self.roll)
@@ -626,9 +625,10 @@ class TermEventEvent(EventBase):
                 elif isinstance(effect, LifeEventEffect):
                     life_event_pending = True
                 else:
-                    handler = get_effect_handler(career.name, effect.type)
-                    if handler:
-                        pending_idx = handler(projection, effect, self.id, pending_idx)
+                    from ceres.character.careers.career_data import CareerHandlerBase
+
+                    if isinstance(effect, CareerHandlerBase):
+                        pending_idx = effect.handle(projection, self.id, pending_idx)
                         career_handler_invoked = True
                     else:
                         _apply_simple_effect(projection, effect, source=term_event.text, source_event_id=self.id)
@@ -753,15 +753,15 @@ class CareerChoiceEvent(EventBase):
     choice: str
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.careers.loader import get_choice_handler
+        from ceres.character.careers.career_data import get_career_handler
 
         current_career = projection.summary.current_career
         if current_career is None:
             raise ReplayError(f'CareerChoiceEvent submitted with no active career (context={self.context!r})')
-        handler = get_choice_handler(current_career.name, self.context)
-        if handler is None:
+        handler_cls = get_career_handler(self.context)
+        if handler_cls is None:
             raise ReplayError(f'No choice handler for career {current_career.name!r} context {self.context!r}')
-        handler(projection, self)
+        handler_cls.on_choice(projection, self)
 
 
 class AdvancementEvent(EventBase):
@@ -996,13 +996,13 @@ class SkillRollEvent(EventBase):
     modified_roll: int  # 2D + skill level + any other DMs already applied by the player
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.careers.loader import get_skill_roll_handler
+        from ceres.character.careers.career_data import get_career_handler
 
         career = projection.get_current_career()
-        handler = get_skill_roll_handler(career.name, self.context)
+        handler_cls = get_career_handler(self.context)
         pending_count_before = len(projection.pending_inputs)
-        if handler:
-            handler(projection, self)
+        if handler_cls:
+            handler_cls.resolve(projection, self)
         if (
             len(projection.pending_inputs) == pending_count_before
             and projection.summary.current_career is not None

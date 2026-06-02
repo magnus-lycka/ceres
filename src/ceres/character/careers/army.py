@@ -1,3 +1,5 @@
+from typing import Literal
+
 from ceres.character.benefits import (
     ARMOR,
     CYBERNETIC_IMPLANT,
@@ -12,8 +14,8 @@ from ceres.character.careers.career_data import (
     BenefitDmEffect,
     Career,
     CareerData,
-    CareerDispatchEffect,
     CareerEventEntry,
+    CareerHandlerBase,
     CareerSkillTables,
     CharCheck,
     GainEnemyEffect,
@@ -76,6 +78,91 @@ ARMY = Career(
         'surface actions, battles and campaigns. Such individuals may also be mercenaries for hire.'
     ),
 )
+
+
+# ── mishap 4: illegal activity ────────────────────────────────────────────────
+
+
+class ArmyMishap4Handler(CareerHandlerBase):
+    type: Literal['army_mishap_4'] = 'army_mishap_4'
+
+    @staticmethod
+    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
+        projection.pending_inputs.append(
+            PendingCareerMishap(
+                id=f'{event_id}.{pending_idx}',
+                career='Army',
+                roll=4,
+                instruction=(
+                    'Join their ring (gain commanding officer as Ally, lose Benefit roll) '
+                    'or co-operate with MPs (keep Benefit roll from this term)?'
+                ),
+                options=['join_ring', 'cooperate'],
+            )
+        )
+        return pending_idx + 1
+
+    @staticmethod
+    def on_choice(projection: CharacterProjection, event) -> None:
+        from ceres.character.events import _apply_mishap_ejection
+
+        career = projection.get_current_career()
+        if event.choice == 'join_ring':
+            projection.summary.connections.append(Ally(source='Commanding officer (Army mishap 4)'))
+            _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+        else:
+            _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=False)
+
+
+# ── event 6: brutal ground war ───────────────────────────────────────────────
+
+
+class ArmyEvent6Handler(CareerHandlerBase):
+    type: Literal['army_event_6'] = 'army_event_6'
+
+    @staticmethod
+    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
+        projection.pending_inputs.append(
+            PendingCareerSkillRoll(
+                id=f'{event_id}.{pending_idx}',
+                career='Army',
+                roll=6,
+                context='army_event_6',
+                instruction='Roll EDU 8+ to avoid injury in the brutal ground war',
+                options=[Chars.EDU],
+            )
+        )
+        return pending_idx + 1
+
+    @staticmethod
+    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
+        if event.modified_roll >= 8:
+            projection.pending_inputs.append(
+                PendingSkillChoice(
+                    id=f'{event.id}.0',
+                    instruction='Ground war success: gain one level in Gun Combat or Leadership',
+                    options=['Gun Combat', 'Leadership'],
+                )
+            )
+        else:
+            projection.summary.problems.append(
+                'Brutal ground war: you are injured — roll on the Injury table and apply the result.'
+            )
+
+
+# ── event 8: advanced training ───────────────────────────────────────────────
+
+
+class ArmyEvent8Handler(CareerHandlerBase):
+    type: Literal['army_event_8'] = 'army_event_8'
+
+    @staticmethod
+    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
+        return handle_advanced_training('Army', 8, 'army_event_8', projection, event_id, pending_idx)
+
+    @staticmethod
+    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
+        resolve_advanced_training(projection, event)
 
 
 class ArmyCareerData(CareerData):
@@ -227,7 +314,7 @@ CAREER_DATA = ArmyCareerData(
         4: MishapEntry(
             text='You uncover illegal activity by your commanding officer.',
             defer_ejection=True,
-            effects=[CareerDispatchEffect(type='army_mishap_4')],
+            effects=[ArmyMishap4Handler()],
         ),
         5: MishapEntry(
             text='You quarrel with an officer or fellow soldier. Gain a Rival.',
@@ -257,7 +344,7 @@ CAREER_DATA = ArmyCareerData(
         ),
         6: CareerEventEntry(
             text='You are thrown into a brutal ground war.',
-            effects=[CareerDispatchEffect(type='army_event_6')],
+            effects=[ArmyEvent6Handler()],
         ),
         7: CareerEventEntry(
             text='Life Event.',
@@ -265,7 +352,7 @@ CAREER_DATA = ArmyCareerData(
         ),
         8: CareerEventEntry(
             text='You are given advanced training in a specialist field.',
-            effects=[CareerDispatchEffect(type='army_event_8')],
+            effects=[ArmyEvent8Handler()],
         ),
         9: CareerEventEntry(
             text='Surrounded and outnumbered, you hold out until relief arrives.',
@@ -286,111 +373,3 @@ CAREER_DATA = ArmyCareerData(
     },
     draft_assignments=['Support', 'Infantry', 'Cavalry'],
 )
-
-
-# ── mishap 4: illegal activity ────────────────────────────────────────────────
-
-
-def _handle_army_mishap_4(
-    projection: CharacterProjection,
-    effect: CareerDispatchEffect,
-    event_id: int,
-    pending_idx: int,
-) -> int:
-    projection.pending_inputs.append(
-        PendingCareerMishap(
-            id=f'{event_id}.{pending_idx}',
-            career='Army',
-            roll=4,
-            instruction=(
-                'Join their ring (gain commanding officer as Ally, lose Benefit roll) '
-                'or co-operate with MPs (keep Benefit roll from this term)?'
-            ),
-            options=['join_ring', 'cooperate'],
-        )
-    )
-    return pending_idx + 1
-
-
-def _choice_army_mishap_4(projection: CharacterProjection, event) -> None:
-    from ceres.character.events import _apply_mishap_ejection
-
-    career = projection.get_current_career()
-    if event.choice == 'join_ring':
-        projection.summary.connections.append(Ally(source='Commanding officer (Army mishap 4)'))
-        _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
-    else:
-        _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=False)
-
-
-# ── event 6: brutal ground war ───────────────────────────────────────────────
-
-
-def _handle_army_event_6(
-    projection: CharacterProjection,
-    effect: CareerDispatchEffect,
-    event_id: int,
-    pending_idx: int,
-) -> int:
-    projection.pending_inputs.append(
-        PendingCareerSkillRoll(
-            id=f'{event_id}.{pending_idx}',
-            career='Army',
-            roll=6,
-            context='army_event_6',
-            instruction='Roll EDU 8+ to avoid injury in the brutal ground war',
-            options=[Chars.EDU],
-        )
-    )
-    return pending_idx + 1
-
-
-def _resolve_army_event_6(projection: CharacterProjection, event: SkillRollEvent) -> None:
-    if event.modified_roll >= 8:
-        projection.pending_inputs.append(
-            PendingSkillChoice(
-                id=f'{event.id}.0',
-                instruction='Ground war success: gain one level in Gun Combat or Leadership',
-                options=['Gun Combat', 'Leadership'],
-            )
-        )
-    else:
-        projection.summary.problems.append(
-            'Brutal ground war: you are injured — roll on the Injury table and apply the result.'
-        )
-
-
-# ── event 8: advanced training ───────────────────────────────────────────────
-
-
-def _handle_army_event_8(
-    projection: CharacterProjection,
-    effect: CareerDispatchEffect,
-    event_id: int,
-    pending_idx: int,
-) -> int:
-    return handle_advanced_training('Army', 8, 'army_event_8', projection, effect, event_id, pending_idx)
-
-
-def _resolve_army_event_8(projection: CharacterProjection, event: SkillRollEvent) -> None:
-    resolve_advanced_training(projection, event)
-
-
-# ── handler registries ────────────────────────────────────────────────────────
-
-CAREER_DATA_CLASS = CareerData
-
-EFFECT_HANDLERS: dict[str, object] = {
-    'army_mishap_4': _handle_army_mishap_4,
-    'army_event_6': _handle_army_event_6,
-    'army_event_8': _handle_army_event_8,
-}
-
-SKILL_ROLL_HANDLERS: dict[str, object] = {
-    'army_event_6': _resolve_army_event_6,
-    'army_event_8': _resolve_army_event_8,
-}
-
-CHOICE_HANDLERS: dict[str, object] = {
-    'army_mishap_4': _choice_army_mishap_4,
-}

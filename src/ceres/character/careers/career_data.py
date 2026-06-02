@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, ClassVar, Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -8,7 +8,8 @@ from ceres.character.characteristics import Chars, ConnectionKind, characteristi
 from ceres.character.skills import AnySkill, Level, Skill, _level_fields
 
 if TYPE_CHECKING:
-    pass
+    from ceres.character.events import CareerChoiceEvent, SkillRollEvent
+    from ceres.character.state import CharacterProjection
 
 
 @dataclass(frozen=True)
@@ -144,9 +145,44 @@ class ParoleThresholdChangeEffect(BaseModel):
 
 
 class CareerDispatchEffect(BaseModel):
-    """Career-specific effect; dispatched via EFFECT_HANDLERS registry in the career's .py module."""
+    """Career-specific effect; base for CareerHandlerBase."""
 
     type: str
+
+
+class CareerHandlerBase(CareerDispatchEffect):
+    """Auto-registering base for career-specific event/mishap handlers.
+
+    Subclasses declare ``type: Literal['handler_key'] = 'handler_key'`` to self-register.
+    The literal string is the sole canonical occurrence of the handler key in the source.
+    """
+
+    _handler_registry: ClassVar[dict[str, type[CareerHandlerBase]]] = {}
+
+    def __init_subclass__(cls) -> None:
+        super().__init_subclass__()
+        # __init_subclass__ is called before Pydantic processes the class, so
+        # cls.__dict__['type'] still holds the raw default string.
+        type_default = cls.__dict__.get('type')
+        if isinstance(type_default, str) and type_default:
+            CareerHandlerBase._handler_registry[type_default] = cls
+
+    @staticmethod
+    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
+        return pending_idx
+
+    @staticmethod
+    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
+        pass
+
+    @staticmethod
+    def on_choice(projection: CharacterProjection, event: CareerChoiceEvent) -> None:
+        pass
+
+
+def get_career_handler(context: str) -> type[CareerHandlerBase] | None:
+    """Return the handler class registered under *context*, or None."""
+    return CareerHandlerBase._handler_registry.get(context)
 
 
 type AnyEffect = (

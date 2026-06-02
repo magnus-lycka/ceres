@@ -1,6 +1,5 @@
 """Shared helpers for career event and mishap handlers."""
 
-from ceres.character.careers.career_data import CareerDispatchEffect
 from ceres.character.characteristics import Chars
 from ceres.character.events import (
     PendingCareerSkillRoll,
@@ -15,7 +14,6 @@ def handle_advanced_training(
     roll: int,
     context: str,
     projection: CharacterProjection,
-    effect: CareerDispatchEffect,
     event_id: int,
     pending_idx: int,
     threshold: int = 8,
