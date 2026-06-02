@@ -122,7 +122,7 @@ def render_projection_summary(projection: CharacterProjection) -> list[str]:
     if s.name:
         career_part = ''
         if s.current_career:
-            career_part = f'  |  {s.current_career}'
+            career_part = f'  |  {s.current_career.name}'
             if s.current_assignment:
                 career_part += f' / {s.current_assignment}'
             if s.rank is not None:

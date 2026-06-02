@@ -65,7 +65,8 @@ class TestArmyQualification:
     def test_success_enters_career(self):
         # END 5+, END=6, DM+0, roll 5 → 5 ≥ 5
         projection = replay(1, _enter_army())
-        assert projection.summary.current_career == 'Army'
+        assert projection.summary.current_career is not None
+        assert projection.summary.current_career.name == 'Army'
 
     def test_failure_clears_career(self):
         # END 5+, END=6, DM+0, roll 4 → 4 < 5

@@ -11,6 +11,7 @@ from ceres.character.careers.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
     BenefitDmEffect,
+    Career,
     CareerData,
     CareerDispatchEffect,
     CareerEventEntry,
@@ -73,13 +74,16 @@ class NobleCareerData(CareerData):
     pass
 
 
-CAREER_DATA = NobleCareerData(
+NOBLE = Career(
     name='Noble',
     description=(
-        'Individuals of the upper class who perform little consistent function but often have large amounts of '
-        'ready money.'
+        'Individuals of the upper class who perform little'
+        'consistent function but often have large amounts of ready money.'
     ),
-    source='Core',
+)
+
+CAREER_DATA = NobleCareerData(
+    career=NOBLE,
     allows_assignment_change=True,
     qualification=CharCheck(characteristic=Chars.SOC, target=10),
     assignments=[

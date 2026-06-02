@@ -1189,6 +1189,29 @@ Operational scanner procedures, range detail adjudication, jamming resolution,
 and scan timing are represented as notes or remain out of scope for
 `ceres.make.ship`.
 
+## Replace string identity checks on career/assignment in CharacterSummary
+
+Added `advancement_is_special() -> bool` to `CareerData` (returns `False`) and
+overridden in `PrisonerCareerData` (returns `True`), replacing the
+`career.name == 'Prisoner'` string check in `AdvancementEvent` and
+`queue_reenlist_or_aging`. Added `assignment_by_index(index: int)` and
+`assignment_index(assignment)` methods to `CareerData` for 1-based int-indexed
+assignment lookup. Changed `ranks_by_assignment` from `dict[str, ...]` to
+`dict[int, ...]` in all eight career files that use it (`agent.py`, `citizen.py`,
+`drifter.py`, `entertainer.py`, `merchant.py`, `noble.py`, `rogue.py`, and
+`scholar.py`). Changed `assignment_ranks` and `available_tables` signatures from
+`str` to `int`. Added `current_assignment_index: int | None` and
+`last_assignment_index: int | None` to `CharacterSummary`, and `assignment_index:
+int` to `CareerTerm`. Updated all call sites in `events.py` and `career_data.py`
+to pass and read assignment indexes instead of name strings, including
+`_survive_pending`, `_advancement_pending`, `_start_new_career_term`, all five
+`available_tables` call sites, and `AssignmentChangeChoiceEvent`. Updated
+`AgentCareerData.prior_terms` to compare `term.assignment_index` instead of the
+assignment name string. The circular-import constraint between `prisoner.py` and
+`events.py` was solved by the `advancement_is_special()` polymorphism pattern —
+no direct import of `PrisonerCareerData` is needed in `events.py`. Display code
+continues to use `current_assignment: str | None` unchanged.
+
 ## Plasma Drives
 
 Spinward Extents plasma drive construction coverage is complete for the

@@ -26,11 +26,11 @@ def spec_from_summary(summary: CharacterSummary, notes: str | None = None) -> Np
     from ceres.character.characteristics import UCP_STATS
 
     ucp = ''.join(f'{summary.characteristics.get(stat, 0):X}' for stat in UCP_STATS)
-    career = summary.current_career or summary.last_career
+    career_obj = summary.current_career or summary.last_career
     assignment = summary.current_assignment or summary.last_assignment
     return NpcSpec(
         name=summary.name or 'Unknown',
-        career=career,
+        career=career_obj.name if career_obj else None,
         assignment=assignment,
         rank=summary.rank,
         terms=summary.term_count,

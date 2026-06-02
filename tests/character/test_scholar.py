@@ -316,7 +316,8 @@ class TestScholarTerm:
         ]
         projection = replay(1, events)
 
-        assert projection.summary.current_career == 'Scholar'
+        assert projection.summary.current_career is not None
+        assert projection.summary.current_career.name == 'Scholar'
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
         assert any(isinstance(c, Rival) for c in projection.summary.connections)
 
@@ -329,7 +330,8 @@ class TestScholarTerm:
         ]
         projection = replay(1, events)
 
-        assert projection.summary.current_career == 'Scholar'
+        assert projection.summary.current_career is not None
+        assert projection.summary.current_career.name == 'Scholar'
 
 
 class TestScholarEvent6:
@@ -426,7 +428,8 @@ class TestScholarMishap3:
         events = [*self._setup(), MishapEvent(id=8, fulfills='7.0', roll=3)]
         projection = replay(1, events)
 
-        assert projection.summary.current_career == 'Scholar'
+        assert projection.summary.current_career is not None
+        assert projection.summary.current_career.name == 'Scholar'
 
     def test_openly_adds_enemy_and_creates_science_pending(self):
         events = [
@@ -533,7 +536,8 @@ class TestScholarMishap5:
         ]
         projection = replay(1, events)
 
-        assert projection.summary.current_career == 'Scholar'
+        assert projection.summary.current_career is not None
+        assert projection.summary.current_career.name == 'Scholar'
 
     def test_start_again_creates_advancement_pending(self):
         events = [
@@ -928,7 +932,8 @@ class TestScholarQualificationInt:
         ]
         projection = replay(1, events)
 
-        assert projection.summary.current_career == 'Scholar'
+        assert projection.summary.current_career is not None
+        assert projection.summary.current_career.name == 'Scholar'
 
     def test_fails_when_int_is_low(self):
         # UCP '786695': STR=7 DEX=8 END=6 INT=6 EDU=9 SOC=5

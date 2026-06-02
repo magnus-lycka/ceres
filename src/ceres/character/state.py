@@ -10,6 +10,7 @@ from ceres.character.characteristics import Chars, ConnectionKind
 
 if TYPE_CHECKING:
     from ceres.character.careers.career_data import CareerData
+from ceres.character.careers.career_data import Career
 from ceres.character.input_specs import InputSpec
 from ceres.character.skills import AnySkill, Level, Skill, _level_fields, field_for_spec, skill_class_by_name
 from ceres.character.sophonts import Sophont
@@ -150,7 +151,7 @@ def make_connection(
 
 
 class CareerTerm(BaseModel):
-    career: str
+    career: Career
     assignment: str
     assignment_index: int = 0
     commission: bool = False
@@ -163,10 +164,10 @@ class CharacterSummary(BaseModel):
     sophont: Sophont
     homeworld: TravellerMapWorld
     characteristics: dict[Chars, int] = Field(default_factory=dict)
-    current_career: str | None = None
+    current_career: Career | None = None
     current_assignment: str | None = None
     current_assignment_index: int | None = None
-    last_career: str | None = None  # career name after muster-out
+    last_career: Career | None = None
     last_assignment: str | None = None  # assignment name after muster-out
     last_assignment_index: int | None = None
     rank: int | None = None
@@ -207,8 +208,8 @@ class CharacterProjection(BaseModel):
     pending_inputs: list[SerializeAsAny[PendingInputBase]] = Field(default_factory=list)
     scheduled_effects: list[ScheduledEffect] = Field(default_factory=list)
     pending_reenlist: bool | None = None  # stores reenlist decision during aging chain
-    muster_out_career: str | None = None  # career name used to look up benefit table
-    forced_next_career: str | None = None  # set by prison-sending events; consumed by next career choice
+    muster_out_career: Career | None = None
+    forced_next_career: Career | None = None  # set by prison-sending events; consumed by next career choice
     prisoner_freed: bool = False  # set by _apply_prisoner_advancement when parole granted
 
     def has_blocking_pending(self) -> bool:
@@ -226,13 +227,13 @@ class CharacterProjection(BaseModel):
     def get_current_career(self) -> CareerData:
         from ceres.character.careers.loader import load_careers
 
-        career_name = self.summary.current_career
-        if career_name is None:
+        current = self.summary.current_career
+        if current is None:
             raise ReplayError('No active career')
         careers = load_careers()
-        career = careers.get(career_name)
+        career = careers.get(current.name)
         if career is None:
-            raise ReplayError(f'Unknown career: {career_name!r}')
+            raise ReplayError(f'Unknown career: {current.name!r}')
         return career
 
     def fulfill_pending(self, event: Any) -> None:
@@ -344,7 +345,7 @@ def diff_summaries(before: CharacterSummary, after: CharacterSummary) -> list[st
     changes.extend(after.narrative[len(before.narrative) :])
 
     if after.current_career != before.current_career and after.current_career:
-        line = f'Joined {after.current_career}'
+        line = f'Joined {after.current_career.name}'
         if after.current_assignment:
             line += f' ({after.current_assignment})'
         changes.append(line)

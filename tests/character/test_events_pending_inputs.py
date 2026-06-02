@@ -6,6 +6,7 @@ import pytest
 
 from ceres.character import skills as character_skills
 from ceres.character.benefits import SHIP_SHARE, WEAPON
+from ceres.character.careers import ARMY, PRISONER, SCOUT
 from ceres.character.careers.career_data import (
     AdvancementDmEffect,
     AssignmentData,
@@ -248,14 +249,15 @@ def test_assignment_helper_errors_are_reported():
 
 
 def test_mishap_ejection_queues_aging_for_older_character():
-    projection = _projection(age=30, current_career='Scout', current_assignment='Courier', current_assignment_index=1)
+    projection = _projection(age=30, current_career=SCOUT, current_assignment='Courier', current_assignment_index=1)
     career = load_careers()['Scout']
 
     next_idx = _apply_mishap_ejection(projection, career, source_event_id=7, pending_idx=2)
 
     assert next_idx == 3
     assert projection.summary.age == 34
-    assert projection.muster_out_career == 'Scout'
+    assert projection.muster_out_career is not None
+    assert projection.muster_out_career.name == 'Scout'
     assert projection.summary.current_career is None
     assert any(isinstance(pending, PendingAgingRoll) and pending.id == '7.2' for pending in projection.pending_inputs)
 
@@ -270,7 +272,7 @@ def test_basic_event_error_branches():
     with pytest.raises(ReplayError, match="Unknown career: 'Nope'"):
         DraftAssignmentEvent(career='Nope', assignment='Infantry').apply(_projection())
 
-    active = _projection(current_career='Scout', current_assignment='Courier', current_assignment_index=99)
+    active = _projection(current_career=SCOUT, current_assignment='Courier', current_assignment_index=99)
     with pytest.raises(ReplayError, match='Unknown assignment index 99'):
         SurviveEvent(roll=8).apply(active)
 
@@ -284,8 +286,10 @@ def test_muster_out_and_benefit_choice_error_branches():
     with pytest.raises(ReplayError, match='No muster out career set'):
         MusterOutEvent(table='cash', roll=1).apply(_projection())
 
+    from ceres.character.careers.career_data import Career
+
     projection = _projection()
-    projection.muster_out_career = 'Nope'
+    projection.muster_out_career = Career(name='Nope')
     with pytest.raises(ReplayError, match="Career 'Nope' has no muster out table"):
         MusterOutEvent(table='cash', roll=1).apply(projection)
 
@@ -330,16 +334,16 @@ def test_aging_roll_extreme_results():
 
 
 def test_commission_event_skip_failure_success_and_unsupported_career():
-    scout = _projection(current_career='Scout', current_assignment='Courier', current_assignment_index=1)
+    scout = _projection(current_career=SCOUT, current_assignment='Courier', current_assignment_index=1)
     with pytest.raises(ReplayError, match='Scout does not support commission'):
         CommissionEvent(attempt=True, roll=12).apply(scout)
 
-    skipped = _projection(current_career='Army', current_assignment='Support', current_assignment_index=1)
+    skipped = _projection(current_career=ARMY, current_assignment='Support', current_assignment_index=1)
     CommissionEvent(id=1, attempt=False).apply(skipped)
     assert any(isinstance(p, PendingAdvancement) and p.id == '1.0' for p in skipped.pending_inputs)
 
     failed = _projection(
-        current_career='Army',
+        current_career=ARMY,
         current_assignment='Support',
         current_assignment_index=1,
         characteristics={Chars.SOC: 2},
@@ -352,11 +356,11 @@ def test_commission_event_skip_failure_success_and_unsupported_career():
     assert any(isinstance(p, PendingAdvancement) and p.id == '2.0' for p in failed.pending_inputs)
 
     succeeded = _projection(
-        current_career='Army',
+        current_career=ARMY,
         current_assignment='Support',
         current_assignment_index=1,
         characteristics={Chars.SOC: 12, Chars.EDU: 10},
-        career_terms=[CareerTerm(career='Army', assignment='Support', assignment_index=1)],
+        career_terms=[CareerTerm(career=ARMY, assignment='Support', assignment_index=1)],
     )
     CommissionEvent(id=3, attempt=True, roll=12).apply(succeeded)
     assert succeeded.summary.rank == 1
@@ -478,7 +482,7 @@ def test_prisoner_advancement_special_cases():
 def test_queue_reenlist_or_aging_handles_freed_prisoner_paths():
     older = _projection(
         age=30,
-        current_career='Prisoner',
+        current_career=PRISONER,
         current_assignment='Inmate',
         current_assignment_index=1,
     )
@@ -486,12 +490,13 @@ def test_queue_reenlist_or_aging_handles_freed_prisoner_paths():
     queue_reenlist_or_aging(older, event_id=4, idx=0)
     assert older.prisoner_freed is False
     assert older.pending_reenlist is False
-    assert older.muster_out_career == 'Prisoner'
+    assert older.muster_out_career is not None
+    assert older.muster_out_career.name == 'Prisoner'
     assert any(isinstance(p, PendingAgingRoll) for p in older.pending_inputs)
 
     younger = _projection(
         age=22,
-        current_career='Prisoner',
+        current_career=PRISONER,
         current_assignment='Inmate',
         current_assignment_index=1,
         term_count=1,
@@ -499,14 +504,15 @@ def test_queue_reenlist_or_aging_handles_freed_prisoner_paths():
     younger.prisoner_freed = True
     queue_reenlist_or_aging(younger, event_id=5, idx=1)
     assert younger.prisoner_freed is False
-    assert younger.muster_out_career == 'Prisoner'
+    assert younger.muster_out_career is not None
+    assert younger.muster_out_career.name == 'Prisoner'
     assert any(isinstance(p, PendingMusterOut) for p in younger.pending_inputs)
 
 
 def test_muster_out_setup_and_complete_aging_helper_branches():
     career = load_careers()['Scout']
     projection = _projection(
-        current_career='Scout',
+        current_career=SCOUT,
         current_assignment='Courier',
         current_assignment_index=1,
         term_count=1,
@@ -525,7 +531,7 @@ def test_muster_out_setup_and_complete_aging_helper_branches():
     assert len([p for p in projection.pending_inputs if isinstance(p, PendingMusterOut)]) == 3
 
     assignment_change = _projection(
-        current_career='Scout',
+        current_career=SCOUT,
         current_assignment='Courier',
         current_assignment_index=1,
     )

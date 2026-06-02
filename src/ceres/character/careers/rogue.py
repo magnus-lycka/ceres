@@ -8,6 +8,7 @@ from ceres.character.careers.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
     BenefitDmEffect,
+    Career,
     CareerData,
     CareerDispatchEffect,
     CareerEventEntry,
@@ -74,10 +75,13 @@ class RogueCareerData(CareerData):
     pass
 
 
-CAREER_DATA = RogueCareerData(
+ROGUE = Career(
     name='Rogue',
-    description='Criminal elements familiar with the rougher or more illegal methods of attaining goals.',
-    source='Core',
+    description=('Criminal elements familiar with therougher or more illegal methods of attaining goals.'),
+)
+
+CAREER_DATA = RogueCareerData(
+    career=ROGUE,
     allows_assignment_change=True,
     qualification=CharCheck(characteristic=Chars.DEX, target=6),
     assignments=[
@@ -301,7 +305,9 @@ def _handle_rogue_mishap_2(
     event_id: int,
     pending_idx: int,
 ) -> int:
-    projection.forced_next_career = 'Prisoner'
+    from ceres.character.careers.prisoner import PRISONER
+
+    projection.forced_next_career = PRISONER
     return pending_idx
 
 
@@ -337,12 +343,13 @@ def _handle_rogue_mishap_3(
 
 def _resolve_rogue_mishap_3_prisoner_check(projection: CharacterProjection, event: SkillRollEvent) -> None:
     from ceres.character.careers.loader import load_careers
+    from ceres.character.careers.prisoner import PRISONER
 
     if event.modified_roll == 2:
-        projection.forced_next_career = 'Prisoner'
+        projection.forced_next_career = PRISONER
 
-    career_name = projection.summary.current_career
-    career = load_careers().get(career_name or '')
+    career_obj = projection.summary.current_career
+    career = load_careers().get(career_obj.name if career_obj else '')
     if career is None:
         return
     muster_out_setup(projection, career, event.id, 0, lose_current_term=True)
@@ -400,13 +407,14 @@ def _choice_rogue_event_3(projection: CharacterProjection, event) -> None:
 
 
 def _resolve_rogue_event_3_skill(projection: CharacterProjection, event: SkillRollEvent) -> None:
+    from ceres.character.careers.prisoner import PRISONER
     from ceres.character.events import _apply_mishap_ejection
 
     if event.modified_roll >= 8:
         pass  # cleared — _apply_skill_roll auto-queues advancement
     else:
         career = projection.get_current_career()
-        projection.forced_next_career = 'Prisoner'
+        projection.forced_next_career = PRISONER
         _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
 
 

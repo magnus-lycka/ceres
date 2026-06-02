@@ -8,6 +8,7 @@ from ceres.character.careers.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
     BenefitDmEffect,
+    Career,
     CareerData,
     CareerDispatchEffect,
     CareerEventEntry,
@@ -71,13 +72,16 @@ from ceres.character.state import (
     ScheduledEffect,
 )
 
-CAREER_DATA = CareerData(
+SCOUT = Career(
     name='Scout',
     description=(
-        'Members of the exploratory service. Scouts explore new areas, map and survey known or newly discovered areas '
-        'and maintain communication ships which carry information and messages between the worlds of the galaxy.'
+        'Members of the exploratory service. Scouts explore new areas, map and survey known or newly discovered'
+        'areas and maintain communication ships which carry information and messages between the worlds of the galaxy.'
     ),
-    source='Core',
+)
+
+CAREER_DATA = CareerData(
+    career=SCOUT,
     allows_assignment_change=True,
     qualification=CharCheck(characteristic=Chars.INT, target=5),
     assignments=[

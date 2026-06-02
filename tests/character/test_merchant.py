@@ -114,7 +114,8 @@ class TestMerchantEvent3:
             SkillRollEvent(id=8, fulfills='7.0', context='merchant_event_3_skill', skill=Admin(), modified_roll=9),
         ]
         projection = replay(1, events)
-        assert projection.summary.current_career == 'Merchant'
+        assert projection.summary.current_career is not None
+        assert projection.summary.current_career.name == 'Merchant'
 
     def test_accept_failure_adds_enemy_and_ends_career(self):
         events = [
@@ -171,7 +172,8 @@ class TestMerchantEvent8:
             SkillRollEvent(id=8, fulfills='6.1', context='merchant_event_8_roll', skill=Admin(), modified_roll=2),
         ]
         projection = replay(1, events)
-        assert projection.forced_next_career == 'Prisoner'
+        assert projection.forced_next_career is not None
+        assert projection.forced_next_career.name == 'Prisoner'
 
     def test_roll_above_2_does_not_force_prisoner(self):
         events = [

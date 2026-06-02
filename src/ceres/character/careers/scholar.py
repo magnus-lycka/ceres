@@ -9,6 +9,7 @@ from ceres.character.careers.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
     BenefitDmEffect,
+    Career,
     CareerData,
     CareerDispatchEffect,
     CareerEventEntry,
@@ -65,13 +66,16 @@ from ceres.character.state import (
 
 _SCIENCES = sorted(s.type for s in skill_list(ScienceSkill))
 
-CAREER_DATA = CareerData(
+SCHOLAR = Career(
     name='Scholar',
     description=(
-        'Individuals trained in technological or research sciences who conduct scientific investigations into '
-        'materials, situations and phenomena, or who practise medicine.'
+        'Individuals trained in technological or research sciences who conduct scientific'
+        'investigations into materials, situations and phenomena, or who practise medicine.'
     ),
-    source='Core',
+)
+
+CAREER_DATA = CareerData(
+    career=SCHOLAR,
     allows_assignment_change=True,
     qualification=CharCheck(characteristic=Chars.INT, target=6),
     assignments=[
@@ -536,7 +540,7 @@ def _choice_scholar_mishap_5(projection: CharacterProjection, event) -> None:
         projection.pending_inputs = [p for p in projection.pending_inputs if not isinstance(p, PendingAdvancement)]
         projection.summary.age += 4
         if projection.summary.age >= 34:
-            projection.muster_out_career = career.name
+            projection.muster_out_career = career.career
             projection.clear_current_career()
             projection.pending_inputs.append(PendingAgingRoll(id=f'{event.id}.0', instruction='Roll 2D on Aging table'))
         else:

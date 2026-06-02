@@ -110,7 +110,8 @@ class TestCoreCareerCoverage:
 
         projection = replay(1, events)
 
-        assert projection.summary.current_career == 'Entertainer'
+        assert projection.summary.current_career is not None
+        assert projection.summary.current_career.name == 'Entertainer'
 
 
 def _full_setup(character_id: int = 1) -> list:
@@ -148,7 +149,8 @@ class TestQualification:
         ]
         projection = replay(1, events)
 
-        assert projection.summary.current_career == 'Scout'
+        assert projection.summary.current_career is not None
+        assert projection.summary.current_career.name == 'Scout'
         assert any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
 
     def test_failure_clears_career_and_creates_draft_pending(self):
@@ -193,7 +195,8 @@ class TestQualification:
         ]
         projection = replay(1, events)
 
-        assert projection.summary.current_career == 'Scholar'
+        assert projection.summary.current_career is not None
+        assert projection.summary.current_career.name == 'Scholar'
 
     def test_retry_after_failure_can_succeed(self):
         # Fail Scout, then succeed Scholar
@@ -204,7 +207,8 @@ class TestQualification:
         ]
         projection = replay(1, events)
 
-        assert projection.summary.current_career == 'Scholar'
+        assert projection.summary.current_career is not None
+        assert projection.summary.current_career.name == 'Scholar'
 
 
 class TestCareerEntry:
@@ -226,7 +230,8 @@ class TestCareerEntry:
 
         projection = replay(1, events)
 
-        assert projection.summary.current_career == 'Scout'
+        assert projection.summary.current_career is not None
+        assert projection.summary.current_career.name == 'Scout'
         assert projection.summary.current_assignment == 'Courier'
 
     def test_career_event_grants_initial_training_service_skills(self):
@@ -625,7 +630,8 @@ class TestTermEventRollMishap:
         ]
         projection = replay(1, events)
 
-        assert projection.summary.current_career == 'Scout'
+        assert projection.summary.current_career is not None
+        assert projection.summary.current_career.name == 'Scout'
 
     def test_mishap_stay_creates_advancement_pending(self):
         events = [
@@ -1467,7 +1473,8 @@ class TestAssignmentChange:
         ]
         projection = replay(1, events)
 
-        assert projection.summary.current_career == 'Scout'
+        assert projection.summary.current_career is not None
+        assert projection.summary.current_career.name == 'Scout'
 
     def test_successful_change_increments_term_count(self):
         """Successful assignment change starts a new term."""
@@ -1533,7 +1540,8 @@ class TestAssignmentChange:
         projection = replay(1, events)
 
         assert projection.summary.current_assignment == 'Courier'
-        assert projection.summary.current_career == 'Scout'
+        assert projection.summary.current_career is not None
+        assert projection.summary.current_career.name == 'Scout'
         assert any(isinstance(p, PendingSkillTable) for p in projection.pending_inputs)
 
     def test_failed_change_reenlist_false_ends_career(self):

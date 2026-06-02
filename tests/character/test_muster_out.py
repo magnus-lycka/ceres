@@ -121,7 +121,8 @@ class TestMusterOut:
     def test_muster_out_career_set_while_pendings_remain(self):
         projection = replay(1, _setup_through_reenlist_false())
 
-        assert projection.muster_out_career == 'Scout'
+        assert projection.muster_out_career is not None
+        assert projection.muster_out_career.name == 'Scout'
 
     def test_cash_roll_adds_to_summary_cash(self):
         # Scout roll 1 on cash table → Cr20000

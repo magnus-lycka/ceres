@@ -22,14 +22,14 @@ def _career_context_lines(summary: CharacterSummary) -> str:
     seen: set[tuple[str, str | None]] = set()
     pairs: list[tuple[str, str | None]] = []
     for term in summary.career_terms:
-        key = (term.career, term.assignment)
+        key = (term.career.name, term.assignment)
         if key not in seen:
             seen.add(key)
             pairs.append(key)
     current = summary.current_career or summary.last_career
     current_assignment = summary.current_assignment or summary.last_assignment
     if current:
-        key = (current, current_assignment)
+        key = (current.name, current_assignment)
         if key not in seen:
             pairs.append(key)
 

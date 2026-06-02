@@ -9,6 +9,7 @@ from ceres.character.careers.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
     BenefitDmEffect,
+    Career,
     CareerData,
     CareerDispatchEffect,
     CareerEventEntry,
@@ -72,13 +73,16 @@ class DrifterCareerData(CareerData):
         return assignment.name.lower()
 
 
-CAREER_DATA = DrifterCareerData(
+DRIFTER = Career(
     name='Drifter',
     description=(
-        'Wanderers, hitchhikers and travellers, drifters are those who roam the stars without obvious '
-        'purpose or direction.'
+        'Wanderers, hitchhikers and travellers, drifters are'
+        'those who roam the stars without obvious purpose or direction.'
     ),
-    source='Core',
+)
+
+CAREER_DATA = DrifterCareerData(
+    career=DRIFTER,
     allows_assignment_change=True,
     qualification=CharCheck(characteristic=Chars.END, target=0),
     assignments=[
@@ -301,12 +305,13 @@ def _handle_drifter_mishap_5(
 
 
 def _resolve_drifter_mishap_5(projection: CharacterProjection, event: SkillRollEvent) -> None:
+    from ceres.character.careers.prisoner import PRISONER
     from ceres.character.events import _apply_mishap_ejection
 
     career = projection.get_current_career()
     projection.summary.connections.append(Rival(source='Former friend who betrayed you (Drifter mishap 5)'))
     if event.modified_roll == 2:
-        projection.forced_next_career = 'Prisoner'
+        projection.forced_next_career = PRISONER
     _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
 
 
@@ -404,6 +409,8 @@ def _handle_drifter_event_9(
 
 
 def _choice_drifter_event_9(projection: CharacterProjection, event) -> None:
+    from ceres.character.careers.prisoner import PRISONER
+
     career = projection.get_current_career()
     if event.choice == 'decline':
         projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
@@ -418,7 +425,7 @@ def _choice_drifter_event_9(projection: CharacterProjection, event) -> None:
         )
     elif event.choice == 'prison':
         # outcome choice: prison
-        projection.forced_next_career = 'Prisoner'
+        projection.forced_next_career = PRISONER
     else:  # 'accept'
         projection.pending_inputs.append(
             PendingCareerSkillRoll(

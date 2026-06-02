@@ -193,7 +193,8 @@ class TestScoutEvent8:
 
         projection = replay(1, events)
 
-        assert projection.summary.current_career == 'Scout'
+        assert projection.summary.current_career is not None
+        assert projection.summary.current_career.name == 'Scout'
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
 
@@ -303,7 +304,8 @@ class TestScoutEvent10:
 
         projection = replay(1, events)
 
-        assert projection.summary.current_career == 'Scout'
+        assert projection.summary.current_career is not None
+        assert projection.summary.current_career.name == 'Scout'
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
 

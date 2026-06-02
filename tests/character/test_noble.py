@@ -215,7 +215,8 @@ class TestNobleEvent8:
             SkillRollEvent(id=8, fulfills='7.0', context='noble_event_8_skill', skill=Admin(), modified_roll=9),
         ]
         projection = replay(1, events)
-        assert projection.summary.current_career == 'Noble'
+        assert projection.summary.current_career is not None
+        assert projection.summary.current_career.name == 'Noble'
 
     def test_accept_failure_adds_enemy_and_ends_career(self):
         events = [

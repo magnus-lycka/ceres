@@ -88,7 +88,8 @@ class TestAgentQualification:
     def test_success_enters_career(self):
         # INT 6+, INT=9 (DM+1), roll 5 → 6 ≥ 6
         projection = replay(1, _enter_agent())
-        assert projection.summary.current_career == 'Agent'
+        assert projection.summary.current_career is not None
+        assert projection.summary.current_career.name == 'Agent'
 
     def test_failure_clears_career(self):
         # INT 6+, INT=9 (DM+1), roll 4 → 5 < 6
@@ -150,7 +151,8 @@ class TestAgentSurvival:
     def test_intelligence_survival_int_7plus_pass(self):
         # INT=9 (DM+1), roll 6 → 7 ≥ 7, survive
         projection = replay(1, [*_enter_agent('Intelligence'), SurviveEvent(id=5, fulfills='4.0', roll=6)])
-        assert projection.summary.current_career == 'Agent'
+        assert projection.summary.current_career is not None
+        assert projection.summary.current_career.name == 'Agent'
 
     def test_intelligence_survival_int_7plus_fail_creates_mishap_pending(self):
         # INT=9 (DM+1), roll 5 → 6 < 7, mishap pending
@@ -162,7 +164,8 @@ class TestAgentSurvival:
     def test_corporate_survival_int_5plus_pass(self):
         # INT=9 (DM+1), roll 4 → 5 ≥ 5, survive
         projection = replay(1, [*_enter_agent('Corporate'), SurviveEvent(id=5, fulfills='4.0', roll=4)])
-        assert projection.summary.current_career == 'Agent'
+        assert projection.summary.current_career is not None
+        assert projection.summary.current_career.name == 'Agent'
 
 
 # ── rank tables ───────────────────────────────────────────────────────────────
@@ -248,7 +251,8 @@ class TestAgentEvent3:
             MishapEvent(id=8, fulfills='7.0', roll=6, stay_in_career=True),
         ]
         projection = replay(1, events)
-        assert projection.summary.current_career == 'Agent'
+        assert projection.summary.current_career is not None
+        assert projection.summary.current_career.name == 'Agent'
 
 
 # ── event 6: advanced training ────────────────────────────────────────────────

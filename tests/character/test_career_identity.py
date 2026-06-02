@@ -221,7 +221,6 @@ class TestCurrentAssignmentIndex:
         projection2.pending_inputs.append(
             PendingAssignmentChangeChoice(
                 id='99.0',
-                career='Noble',
                 instruction='Change assignment',
                 options=['Administrator', 'Diplomat', 'Dilettante'],
             )
@@ -248,4 +247,5 @@ class TestAdvancementEventUsesSpecialMethod:
         ]
         projection = replay(1, events)
         # Should not crash and should still be in Scout career
-        assert projection.summary.current_career == 'Scout'
+        assert projection.summary.current_career is not None
+        assert projection.summary.current_career.name == 'Scout'

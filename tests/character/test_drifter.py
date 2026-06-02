@@ -331,7 +331,8 @@ class TestDrifterEvent9:
             CareerChoiceEvent(id=9, fulfills='8.0', context='drifter_event_9', choice='prison'),
         ]
         projection = replay(1, events)
-        assert projection.forced_next_career == 'Prisoner'
+        assert projection.forced_next_career is not None
+        assert projection.forced_next_career.name == 'Prisoner'
 
     def test_1d_roll_3_creates_injury_table(self):
         events = [

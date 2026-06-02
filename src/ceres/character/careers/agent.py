@@ -12,6 +12,7 @@ from ceres.character.careers.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
     BenefitDmEffect,
+    Career,
     CareerData,
     CareerDispatchEffect,
     CareerEventEntry,
@@ -75,13 +76,16 @@ from ceres.character.state import (
 class AgentCareerData(CareerData):
     def prior_terms(self, terms, assignment: AssignmentData) -> list:
         idx = self.assignment_index(assignment)
-        return [term for term in terms if term.career == self.name and term.assignment_index == idx]
+        return [term for term in terms if term.career == self.career and term.assignment_index == idx]
 
+
+AGENT = Career(
+    name='Agent',
+    description=('Law enforcement agencies, corporateoperatives, spies and others who work in the shadows.'),
+)
 
 CAREER_DATA = AgentCareerData(
-    name='Agent',
-    description='Law enforcement agencies, corporate operatives, spies and others who work in the shadows.',
-    source='Core',
+    career=AGENT,
     allows_assignment_change=False,
     qualification=CharCheck(characteristic=Chars.INT, target=6),
     assignments=[
@@ -375,14 +379,16 @@ def _handle_agent_mishap_3(
 def _resolve_agent_mishap_3(projection: CharacterProjection, event: SkillRollEvent) -> None:
     from ceres.character.careers.loader import load_careers
 
-    career_name = projection.summary.current_career
-    career = load_careers().get(career_name or '')
+    career_obj = projection.summary.current_career
+    career = load_careers().get(career_obj.name if career_obj else '')
     if career is None:
         return
 
+    from ceres.character.careers.prisoner import PRISONER
+
     succeed = event.modified_roll >= 8
     if event.modified_roll <= 2:
-        projection.forced_next_career = 'Prisoner'
+        projection.forced_next_career = PRISONER
     muster_out_setup(projection, career, event.id, 0, lose_current_term=not succeed)
 
 

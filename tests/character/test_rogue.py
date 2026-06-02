@@ -211,7 +211,8 @@ class TestRogueEvent3:
             SkillRollEvent(id=8, fulfills='7.0', context='rogue_event_3_skill', skill=Streetwise(), modified_roll=9),
         ]
         projection = replay(1, events)
-        assert projection.summary.current_career == 'Rogue'
+        assert projection.summary.current_career is not None
+        assert projection.summary.current_career.name == 'Rogue'
 
     def test_defend_success_creates_advancement_pending(self):
         events = [

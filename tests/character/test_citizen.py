@@ -329,7 +329,8 @@ class TestCitizenEvent8:
             SkillRollEvent(id=8, fulfills='7.0', context='citizen_event_8_skill', skill=Streetwise(), modified_roll=9),
         ]
         projection = replay(1, events)
-        assert projection.summary.current_career == 'Citizen'
+        assert projection.summary.current_career is not None
+        assert projection.summary.current_career.name == 'Citizen'
 
     def test_use_it_failure_adds_rival_and_ends_career(self):
         events = [

@@ -70,7 +70,8 @@ def test_draft_event_records_selected_career_and_assignment():
     projection = replay(1, events)
 
     assert projection.summary.drafted
-    assert projection.summary.current_career == 'Merchant'
+    assert projection.summary.current_career is not None
+    assert projection.summary.current_career.name == 'Merchant'
     assert projection.summary.current_assignment == 'Merchant Marine'
 
 
@@ -100,7 +101,8 @@ def test_draft_assignment_choice_starts_selected_assignment():
     projection = replay(1, events)
 
     assert projection.summary.drafted
-    assert projection.summary.current_career == 'Army'
+    assert projection.summary.current_career is not None
+    assert projection.summary.current_career.name == 'Army'
     assert projection.summary.current_assignment == 'Cavalry'
 
 

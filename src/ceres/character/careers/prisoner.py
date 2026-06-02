@@ -14,6 +14,7 @@ from ceres.character.benefits import (
 )
 from ceres.character.careers.career_data import (
     AssignmentData,
+    Career,
     CareerData,
     CareerDispatchEffect,
     CareerEventEntry,
@@ -81,7 +82,7 @@ class PrisonerCareerData(CareerData):
         event_id: int,
         qualification_roll: int,
     ) -> None:
-        projection.summary.current_career = self.name
+        projection.summary.current_career = self.career
         projection.summary.current_assignment = assignment.name
         projection.summary.current_assignment_index = self.assignment_index(assignment)
         count_before = len(projection.pending_inputs)
@@ -96,13 +97,16 @@ class PrisonerCareerData(CareerData):
         )
 
 
-CAREER_DATA = PrisonerCareerData(
+PRISONER = Career(
     name='Prisoner',
     description=(
-        'Every society has its bad apples and even in the far future punishments usually take place within '
-        'faceless institutions where criminals can be conveniently forgotten.'
+        'Every society has its bad apples and even in the far future punishments usually'
+        'take place within faceless institutions where criminals can be conveniently forgotten.'
     ),
-    source='Core',
+)
+
+CAREER_DATA = PrisonerCareerData(
+    career=PRISONER,
     selectable=False,
     allows_assignment_change=True,
     qualification=CharCheck(characteristic=Chars.END, target=0),

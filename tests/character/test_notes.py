@@ -3,6 +3,7 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+from ceres.character.careers import SCOUT
 from ceres.character.notes import NpcNotesCache, build_prompt, generate_notes
 from ceres.character.sophonts import VILANI
 from ceres.character.state import CharacterSummary
@@ -16,7 +17,7 @@ def _summary(**kwargs) -> CharacterSummary:
         'homeworld': MOCK_WORLD,
         'age': 26,
         'characteristics': {'STR': 7, 'DEX': 8, 'END': 6, 'INT': 9, 'EDU': 7, 'SOC': 5},
-        'current_career': 'Scout',
+        'current_career': SCOUT,
         'current_assignment': 'Explorer',
         'rank': 1,
         'term_count': 2,

@@ -12,6 +12,7 @@ from ceres.character.careers.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
     BenefitDmEffect,
+    Career,
     CareerData,
     CareerDispatchEffect,
     CareerEventEntry,
@@ -65,13 +66,16 @@ from ceres.character.state import (
     ScheduledEffect,
 )
 
-CAREER_DATA = CareerData(
+NAVY = Career(
     name='Navy',
     description=(
-        'Members of the interstellar navy that patrols space between the stars. The navy has the responsibility for '
-        'the protection of society from foreign powers and lawless elements in the interstellar trade channels.'
+        'Members of the interstellar navy that patrols space between the stars. The navy has the responsibility'
+        'for the protection of society from foreign powers and lawless elements in the interstellar trade channels.'
     ),
-    source='Core',
+)
+
+CAREER_DATA = CareerData(
+    career=NAVY,
     allows_assignment_change=True,
     qualification=CharCheck(characteristic=Chars.INT, target=6),
     commission=CharCheck(characteristic=Chars.SOC, target=8),

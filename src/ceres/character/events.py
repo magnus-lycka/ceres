@@ -274,7 +274,7 @@ def _apply_mishap_ejection(
 
     projection.summary.age += 4
     if projection.summary.age >= 34:
-        projection.muster_out_career = career.name
+        projection.muster_out_career = career.career
         projection.clear_current_career()
         projection.pending_inputs.append(
             PendingAgingRoll(id=f'{source_event_id}.{pending_idx}', instruction='Roll 2D on Aging table')
@@ -582,7 +582,7 @@ class MishapEvent(EventBase):
             purge_career_pendings(projection)
             projection.summary.age += 4
             if projection.summary.age >= 34:
-                projection.muster_out_career = career.name
+                projection.muster_out_career = career.career
                 projection.clear_current_career()
                 projection.pending_inputs.append(
                     PendingAgingRoll(id=f'{self.id}.{pending_idx}', instruction='Roll 2D on Aging table')
@@ -755,12 +755,12 @@ class CareerChoiceEvent(EventBase):
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.careers.loader import get_choice_handler
 
-        career_name = projection.summary.current_career
-        if career_name is None:
+        current_career = projection.summary.current_career
+        if current_career is None:
             raise ReplayError(f'CareerChoiceEvent submitted with no active career (context={self.context!r})')
-        handler = get_choice_handler(career_name, self.context)
+        handler = get_choice_handler(current_career.name, self.context)
         if handler is None:
-            raise ReplayError(f'No choice handler for career {career_name!r} context {self.context!r}')
+            raise ReplayError(f'No choice handler for career {current_career.name!r} context {self.context!r}')
         handler(projection, self)
 
 
@@ -1280,13 +1280,13 @@ class MusterOutEvent(EventBase):
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.careers.loader import load_careers
 
-        career_name = projection.muster_out_career
-        if career_name is None:
+        muster_out_career = projection.muster_out_career
+        if muster_out_career is None:
             raise ReplayError('No muster out career set')
         careers = load_careers()
-        career = careers.get(career_name)
+        career = careers.get(muster_out_career.name)
         if career is None or career.muster_out is None:
-            raise ReplayError(f'Career {career_name!r} has no muster out table')
+            raise ReplayError(f'Career {muster_out_career.name!r} has no muster out table')
         effective_roll = max(1, min(7, self.roll))
         row = career.muster_out.rows.get(effective_roll)
         if row is None:
@@ -1330,9 +1330,9 @@ class AgingCrisisEvent(EventBase):
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         from ceres.character.careers.loader import load_careers
 
-        career_name = projection.summary.current_career or projection.muster_out_career
+        career_obj = projection.summary.current_career or projection.muster_out_career
         careers = load_careers()
-        career = careers.get(career_name) if career_name else None
+        career = careers.get(career_obj.name) if career_obj else None
         if self.paid:
             for char in list(projection.summary.characteristics.keys()):
                 if projection.summary.characteristics[char] == 0:
@@ -1658,13 +1658,13 @@ def queue_career_choice_indexed(
     from ceres.character.careers.loader import selectable_careers
 
     if projection.forced_next_career:
-        career_name = projection.forced_next_career
+        forced = projection.forced_next_career
         projection.forced_next_career = None
         projection.pending_inputs.append(
             PendingCareerChoice(
                 id=f'{event_id}.{idx}',
-                instruction=f'Next career: {career_name} (mandatory)',
-                options=[career_name],
+                instruction=f'Next career: {forced.name} (mandatory)',
+                options=[forced.name],
             )
         )
     else:
@@ -1688,12 +1688,12 @@ def queue_reenlist_or_aging(projection: CharacterProjection, event_id: int, idx:
     if projection.prisoner_freed:
         projection.prisoner_freed = False
         projection.summary.age += 4
-        career_name = projection.summary.current_career
+        current_career = projection.summary.current_career
         careers = load_careers()
-        career = careers.get(career_name) if career_name else None
+        career = careers.get(current_career.name) if current_career else None
         if projection.summary.age >= 34:
             if career:
-                projection.muster_out_career = career.name
+                projection.muster_out_career = career.career
             projection.pending_reenlist = False
             projection.clear_current_career()
             projection.pending_inputs.append(
@@ -1753,7 +1753,7 @@ def muster_out_setup(
     if clear_career:
         projection.clear_current_career()
     if roll_count > 0:
-        projection.muster_out_career = career.name
+        projection.muster_out_career = career.career
         for _ in range(roll_count):
             projection.pending_inputs.append(
                 PendingMusterOut(
@@ -1774,7 +1774,7 @@ def complete_aging(projection: CharacterProjection, source_event_id: int) -> Non
 
     if projection.muster_out_career is not None:
         careers = load_careers()
-        career = careers.get(projection.muster_out_career)
+        career = careers.get(projection.muster_out_career.name)
         lose = projection.pending_reenlist is None
         projection.muster_out_career = None
         if career:
@@ -2000,10 +2000,15 @@ class PendingDraftChoice(PendingInputBase):
     def event_from_form(self, form: Any) -> AnyEvent:
         choice = form_str(form, 'choice', 'drifter')
         if choice == 'draft':
+            from ceres.character.careers.loader import load_careers
+
             roll = form_int(form, 'roll', 1)
-            _DRAFT_ORDER = ['Navy', 'Army', 'Marines', 'Merchant', 'Scout', 'Agent']
-            career_name = _DRAFT_ORDER[max(0, min(roll, len(_DRAFT_ORDER)) - 1)]
-            return DraftEvent(career=career_name, fulfills=self.id)
+            draft_careers = sorted(
+                [c for c in load_careers().values() if c.does_draft()],
+                key=lambda c: c.name,
+            )
+            career = draft_careers[max(0, min(roll, len(draft_careers)) - 1)]
+            return DraftEvent(career=career.name, fulfills=self.id)
         assignment = form_str(form, 'assignment', 'Wanderer')
         return CareerEvent(career='Drifter', assignment=assignment, qualification_roll=2, fulfills=self.id)
 

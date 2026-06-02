@@ -10,6 +10,7 @@ from ceres.character.careers.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
     BenefitDmEffect,
+    Career,
     CareerData,
     CareerDispatchEffect,
     CareerEventEntry,
@@ -68,13 +69,16 @@ from ceres.character.state import (
     CharacterProjection,
 )
 
-CAREER_DATA = CareerData(
+ARMY = Career(
     name='Army',
     description=(
-        'Members of the planetary armed fighting forces. Soldiers deal with planetary surface actions, battles and '
-        'campaigns. Such individuals may also be mercenaries for hire.'
+        'Members of the planetary armed fighting forces. Soldiers deal with planetary'
+        'surface actions, battles and campaigns. Such individuals may also be mercenaries for hire.'
     ),
-    source='Core',
+)
+
+CAREER_DATA = CareerData(
+    career=ARMY,
     allows_assignment_change=True,
     qualification=CharCheck(characteristic=Chars.END, target=5),
     commission=CharCheck(characteristic=Chars.SOC, target=8),

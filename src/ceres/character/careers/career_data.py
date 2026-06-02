@@ -1,19 +1,22 @@
 from dataclasses import dataclass
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel, ConfigDict
 
 from ceres.character.benefits import AnyBenefit
 from ceres.character.characteristics import Chars, ConnectionKind, characteristic_dm
-from ceres.character.events import (
-    PendingDraftAssignmentChoice,
-    PendingDraftChoice,
-    PendingInitialTrainingChoice,
-    PendingSkillTable,
-    PendingSurvive,
-)
 from ceres.character.skills import AnySkill, Level, Skill, _level_fields
-from ceres.character.state import CareerTerm
+
+if TYPE_CHECKING:
+    pass
+
+
+@dataclass(frozen=True)
+class Career:
+    name: str
+    source: str = 'Core'
+    description: str = ''
+
 
 type SkillTableEntry = AnySkill | Chars | list[Skill]
 
@@ -204,10 +207,21 @@ class BasicTrainingPlan(BaseModel):
 class CareerData(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    name: str
-    description: str
-    source: str
+    career: Career
     qualification: CharCheck
+
+    @property
+    def name(self) -> str:
+        return self.career.name
+
+    @property
+    def description(self) -> str:
+        return self.career.description
+
+    @property
+    def source(self) -> str:
+        return self.career.source
+
     assignments: list[AssignmentData]
     skill_tables: CareerSkillTables
     ranks: dict[int, RankEntry]  # default rank table (used when no per-assignment override)
@@ -265,6 +279,7 @@ class CareerData(BaseModel):
         return bool(self.draft_assignments)
 
     def start_draft(self, projection, event_id: int, assignment_name: str | None = None) -> None:
+        from ceres.character.events import PendingDraftAssignmentChoice
 
         if assignment_name is None and len(self.draft_assignments) > 1:
             projection.pending_inputs.append(
@@ -283,16 +298,16 @@ class CareerData(BaseModel):
             raise ValueError(f'Unknown draft assignment {selected!r} for {self.name}')
 
         projection.summary.drafted = True
-        projection.summary.current_career = self.name
+        projection.summary.current_career = self.career
         projection.summary.current_assignment = assignment.name
         projection.summary.current_assignment_index = self.assignment_index(assignment)
         self.start_new_term(projection, assignment, event_id)
 
     def prior_terms(self, terms, assignment: AssignmentData) -> list:
-        return [term for term in terms if term.career == self.name]
+        return [term for term in terms if term.career == self.career]
 
     def is_commissioned(self, terms) -> bool:
-        prior = [term for term in terms if term.career == self.name]
+        prior = [term for term in terms if term.career == self.career]
         return bool(prior and prior[-1].commission)
 
     def current_rank(self, terms, assignment: AssignmentData) -> int:
@@ -304,10 +319,11 @@ class CareerData(BaseModel):
         return same_track[-1].rank_after_term if same_track else 0
 
     def append_term(self, projection, assignment: AssignmentData) -> None:
+        from ceres.character.state import CareerTerm
 
         projection.summary.career_terms.append(
             CareerTerm(
-                career=self.name,
+                career=self.career,
                 assignment=assignment.name,
                 assignment_index=self.assignment_index(assignment),
                 commission=self.is_commissioned(projection.summary.career_terms),
@@ -357,7 +373,7 @@ class CareerData(BaseModel):
         if auto_effects:
             for se in auto_effects:
                 projection.scheduled_effects.remove(se)
-            projection.summary.current_career = self.name
+            projection.summary.current_career = self.career
             projection.summary.current_assignment = assignment.name
             projection.summary.current_assignment_index = self.assignment_index(assignment)
             self.start_new_term(projection, assignment, event_id)
@@ -370,6 +386,8 @@ class CareerData(BaseModel):
             dm += se.effect.get('amount', 0)
             projection.scheduled_effects.remove(se)
         if qualification_roll + dm < target:
+            from ceres.character.events import PendingDraftChoice
+
             projection.summary.problems.append(f'Failed to qualify for {self.name}.')
             options = ['drifter'] if projection.summary.drafted else ['draft', 'drifter']
             projection.pending_inputs.append(
@@ -381,7 +399,7 @@ class CareerData(BaseModel):
             )
             return
 
-        projection.summary.current_career = self.name
+        projection.summary.current_career = self.career
         projection.summary.current_assignment = assignment.name
         projection.summary.current_assignment_index = self.assignment_index(assignment)
         self.start_new_term(projection, assignment, event_id)
@@ -443,6 +461,8 @@ class CareerData(BaseModel):
         if table is None:
             raise ValueError(f'Unknown skill table: {table_name!r}')
         if grant_all:
+            from ceres.character.events import PendingInitialTrainingChoice
+
             choice_idx = 0
             for entry in table.entries:
                 choices = self._training_pending_choices(projection, entry)
@@ -460,6 +480,8 @@ class CareerData(BaseModel):
             if choice_idx == 0:
                 projection.pending_inputs.append(self.survival_pending(assignment, event_id))
             return
+
+        from ceres.character.events import PendingInitialTrainingChoice
 
         choices = []
         for entry in table.entries:
@@ -517,6 +539,7 @@ class CareerData(BaseModel):
         return [name] if projection.summary.skill_level(skill_cls) is None else []
 
     def _queue_skill_table_before_survival(self, projection, assignment: AssignmentData, event_id: int) -> None:
+        from ceres.character.events import PendingSkillTable
 
         edu = projection.summary.characteristics.get(Chars.EDU, 0)
         tables = self.available_tables(edu, self.assignment_index(assignment))
@@ -525,6 +548,7 @@ class CareerData(BaseModel):
         )
 
     def survival_pending(self, assignment: AssignmentData, event_id: int, pending_idx: int = 0):
+        from ceres.character.events import PendingSurvive
 
         char = assignment.survival.characteristic
         target = assignment.survival.target

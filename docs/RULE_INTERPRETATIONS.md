@@ -552,13 +552,19 @@ Scout, Agent) in fixed order 1–6. This table is implicitly human-centric and
 Imperium-specific. Different sophonts or cultures might draft into different
 careers in different order.
 
-Ceres interprets draft eligibility as a career-owned predicate:
-`is_in_draft(character_summary) -> bool`. The draft table is constructed at
-runtime by collecting all careers that return `True`, in the order they were
-registered. For the six standard core-rulebook careers, all return `True`
-regardless of input; all other careers return `False` by default. The resulting
-1–N roll mapping is derived from career registration, not hardcoded.
+E.g. Darrians also include pre-carrers in the draft, see `Aliens of Charted Space vol 3`.
 
+Ceres interprets draft eligibility as a career-owned predicate:
+`is_in_draft(character_summary) -> int`. The draft table is constructed at
+runtime by collecting all careers that return > 1, in alphabetical order.
+For the six standard core-rulebook draftable careers, all return 1 regardless
+of input; all other careers return 0 by default. This would lead to a draft
+table like this: 1 Agent, 2 Army, 3 Marine, 4 Merchant, 5 Navy, 6 Scout.
+When we add Darrian support from `Aliens of Charted Space vol 3` people with
+a homeworld in the Darrian Confederation will get a Draft Table looking like this:
+1: Guard, 2: Military Academy, 3: Militia 4: Navy, 5: University, 6: University.
+I.e. pre-career university will return 2 on is_in_draft(character_summary) if
+Allegience of their homeworld is DaCf (Darrian Confederation).
 Similarly, the Drifter alternative to the draft is declared as
 `is_draft_alternative(character_summary) -> bool`. When a Traveller fails
 qualification and wants to avoid the draft, any career returning `True` from

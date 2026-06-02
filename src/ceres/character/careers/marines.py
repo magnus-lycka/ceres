@@ -9,6 +9,7 @@ from ceres.character.careers.career_data import (
     AdvancementDmEffect,
     AssignmentData,
     AutoAdvanceEffect,
+    Career,
     CareerData,
     CareerDispatchEffect,
     CareerEventEntry,
@@ -72,13 +73,16 @@ from ceres.character.state import (
     ScheduledEffect,
 )
 
-CAREER_DATA = CareerData(
+MARINES = Career(
     name='Marines',
     description=(
-        'Members of the armed fighting forces carried aboard starships, marines deal with piracy and boarding actions '
+        'Members of the armed fighting forces carried aboard starships, marines deal with piracy and boarding actions'
         'in space, defend the starports and bases belonging to the navy and supplement ground forces such as the army.'
     ),
-    source='Core',
+)
+
+CAREER_DATA = CareerData(
+    career=MARINES,
     allows_assignment_change=True,
     qualification=CharCheck(characteristic=Chars.END, target=6),
     commission=CharCheck(characteristic=Chars.SOC, target=8),

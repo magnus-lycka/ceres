@@ -9,6 +9,7 @@ from ceres.character.careers.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
     BenefitDmEffect,
+    Career,
     CareerData,
     CareerDispatchEffect,
     CareerEventEntry,
@@ -67,13 +68,16 @@ from ceres.character.state import (
     ScheduledEffect,
 )
 
-CAREER_DATA = CareerData(
+MERCHANT = Career(
     name='Merchant',
     description=(
-        'Members of a commercial enterprise. Merchants may crew the ships of the huge trading corporations or they '
-        'may work for independent free traders who carry chance cargoes and passengers between worlds.'
+        'Members of a commercial enterprise. Merchants may crew the ships of the huge trading corporations'
+        'or they may work for independent free traders who carry chance cargoes and passengers between worlds.'
     ),
-    source='Core',
+)
+
+CAREER_DATA = CareerData(
+    career=MERCHANT,
     allows_assignment_change=False,
     qualification=CharCheck(characteristic=Chars.INT, target=4),
     assignments=[
@@ -389,8 +393,10 @@ def _handle_merchant_event_8(
 
 
 def _resolve_merchant_event_8_roll(projection: CharacterProjection, event: SkillRollEvent) -> None:
+    from ceres.character.careers.prisoner import PRISONER
+
     if event.modified_roll == 2:
-        projection.forced_next_career = 'Prisoner'
+        projection.forced_next_career = PRISONER
 
 
 # ── event 9: advanced training ────────────────────────────────────────────────

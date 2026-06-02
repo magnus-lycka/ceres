@@ -132,7 +132,7 @@ plans.
 ```bash
 uv run pytest                                         # quick suite
 uv run pytest --all-tests                            # full suite
-uv run pytest --cov --cov-report=term-missing        # tests + coverage
+uv run pytest --cov --cov-branch --all-tests --cov-report=term-missing # tests + coverage
 uvx ruff check --fix                                   # lint and auto-fix
 uvx ruff format                                        # format code
 uvx ty check                                           # type check

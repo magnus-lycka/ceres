@@ -9,6 +9,7 @@ from ceres.character.careers.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
     BenefitDmEffect,
+    Career,
     CareerData,
     CareerDispatchEffect,
     CareerEventEntry,
@@ -78,10 +79,13 @@ class EntertainerCareerData(CareerData):
         return max(dex_dm, int_dm)
 
 
-CAREER_DATA = EntertainerCareerData(
+ENTERTAINER = Career(
     name='Entertainer',
-    description='Individuals who are involved with the media, whether as reporters, artists or celebrities.',
-    source='Core',
+    description=('Individuals who are involved with the media, whether as reporters, artists or celebrities.'),
+)
+
+CAREER_DATA = EntertainerCareerData(
+    career=ENTERTAINER,
     allows_assignment_change=False,
     qualification=CharCheck(characteristic=Chars.INT, target=5),
     assignments=[

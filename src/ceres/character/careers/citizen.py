@@ -10,6 +10,7 @@ from ceres.character.careers.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
     BenefitDmEffect,
+    Career,
     CareerData,
     CareerDispatchEffect,
     CareerEventEntry,
@@ -84,13 +85,16 @@ class CitizenCareerData(CareerData):
         return assignment.name.lower()
 
 
-CAREER_DATA = CitizenCareerData(
+CITIZEN = Career(
     name='Citizen',
     description=(
-        'Individuals serving in a corporation, bureaucracy or industry, or who are making a new life on an untamed '
-        'planet.'
+        'Individuals serving in a corporation, bureaucracy or'
+        'industry, or who are making a new life on an untamed planet.'
     ),
-    source='Core',
+)
+
+CAREER_DATA = CitizenCareerData(
+    career=CITIZEN,
     allows_assignment_change=False,
     qualification=CharCheck(characteristic=Chars.EDU, target=5),
     assignments=[

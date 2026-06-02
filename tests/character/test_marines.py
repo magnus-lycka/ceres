@@ -114,7 +114,8 @@ class TestMarinesMishap4:
             SkillRollEvent(id=8, fulfills='7.0', context='marines_mishap_4_skill', skill=Admin(), modified_roll=9),
         ]
         projection = replay(1, events)
-        assert projection.summary.current_career == 'Marines'
+        assert projection.summary.current_career is not None
+        assert projection.summary.current_career.name == 'Marines'
 
     def test_accept_failure_ends_career_and_loses_benefit(self):
         events = [

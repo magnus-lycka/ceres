@@ -3,6 +3,7 @@ from typer.testing import CliRunner
 
 from ceres.character import skills as character_skills
 from ceres.character.benefits import LAB_SHIP, SHIP_SHARE
+from ceres.character.careers import SCOUT
 from ceres.character.characteristics import Chars
 from ceres.character.cli import (
     _expand_ucp_changes,
@@ -174,7 +175,7 @@ def test_format_skill_handles_plain_and_speciality_skills():
 
 def test_render_projection_summary_shows_active_character_state():
     projection = _projection(
-        current_career='Scout',
+        current_career=SCOUT,
         current_assignment='Courier',
         rank=1,
         term_count=2,

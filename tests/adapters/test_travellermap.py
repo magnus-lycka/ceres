@@ -1,9 +1,16 @@
+import pytest
+
+from ceres.adapters import travellermap
 from ceres.adapters.travellermap import (
     SectorInfo,
     SectorWorldEntry,
     TravellerMapWorld,
+    _extract,
     _parse_column_positions,
     _parse_sec_worlds,
+    fetch_sector_worlds,
+    fetch_sectors,
+    fetch_world,
 )
 
 _SAMPLE_WORLD_JSON = {
@@ -142,6 +149,21 @@ class TestParseColumnPositions:
         cols = _parse_column_positions('---- ----')
         assert cols == [(0, 4), (5, 9)]
 
+    def test_separator_ending_after_column(self) -> None:
+        cols = _parse_column_positions('---- ---- ')
+        assert cols == [(0, 4), (5, 9)]
+
+
+class TestExtract:
+    def test_extracts_full_column(self) -> None:
+        assert _extract('0103 Taltern', [(0, 4), (5, 12)], 1) == 'Taltern'
+
+    def test_extracts_truncated_column(self) -> None:
+        assert _extract('0103 Ta', [(0, 4), (5, 12)], 1) == 'Ta'
+
+    def test_missing_column_is_empty(self) -> None:
+        assert _extract('0103', [(0, 4), (5, 12)], 1) == ''
+
 
 class TestParseSectorWorlds:
     def test_count(self) -> None:
@@ -165,3 +187,107 @@ class TestParseSectorWorlds:
 
     def test_only_comments(self) -> None:
         assert _parse_sec_worlds('# comment\n# another\n') == []
+
+
+class _FakeResponse:
+    def __init__(self, *, json_data: dict | None = None, text: str = '') -> None:
+        self._json_data = {} if json_data is None else json_data
+        self.text = text
+        self.raise_for_status_called = False
+
+    def json(self) -> dict:
+        return self._json_data
+
+    def raise_for_status(self) -> None:
+        self.raise_for_status_called = True
+
+
+class _FakeClient:
+    requests: list[tuple[str, dict | None]]
+    response: _FakeResponse
+
+    def __enter__(self) -> _FakeClient:
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        return None
+
+    def get(self, url: str, *, params: dict | None = None) -> _FakeResponse:
+        self.requests.append((url, params))
+        return self.response
+
+
+class TestFetchSectors:
+    def test_fetches_sector_info_from_travellermap_data_endpoint(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        response = _FakeResponse(json_data={'Sectors': [_SAMPLE_SECTOR_JSON]})
+        requests: list[tuple[str, dict | None]] = []
+
+        def client_factory() -> _FakeClient:
+            client = _FakeClient()
+            client.response = response
+            client.requests = requests
+            return client
+
+        monkeypatch.setattr(travellermap.httpx, 'Client', client_factory)
+
+        sectors = fetch_sectors('M1120')
+
+        assert sectors == [SectorInfo.from_raw(_SAMPLE_SECTOR_JSON)]
+        assert requests == [('https://travellermap.com/data', {'milieu': 'M1120'})]
+        assert response.raise_for_status_called
+
+
+class TestFetchSectorWorlds:
+    def test_fetches_and_parses_sector_sec_text(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        response = _FakeResponse(text=_SAMPLE_SEC_TEXT)
+        requests: list[tuple[str, dict | None]] = []
+
+        def client_factory() -> _FakeClient:
+            client = _FakeClient()
+            client.response = response
+            client.requests = requests
+            return client
+
+        monkeypatch.setattr(travellermap.httpx, 'Client', client_factory)
+
+        worlds = fetch_sector_worlds('Troj')
+
+        assert worlds[0] == SectorWorldEntry(hex='0103', name='Taltern', uwp='E530240-6', remarks='De Lo Po')
+        assert requests == [('https://travellermap.com/data/Troj', None)]
+        assert response.raise_for_status_called
+
+
+class TestFetchWorld:
+    def test_fetches_world_from_travellermap_data_endpoint(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        response = _FakeResponse(json_data={'Worlds': [_SAMPLE_WORLD_JSON]})
+        requests: list[tuple[str, dict | None]] = []
+
+        def client_factory() -> _FakeClient:
+            client = _FakeClient()
+            client.response = response
+            client.requests = requests
+            return client
+
+        monkeypatch.setattr(travellermap.httpx, 'Client', client_factory)
+
+        world = fetch_world('Troj', '2715')
+
+        assert world == TravellerMapWorld.model_validate(_SAMPLE_WORLD_JSON)
+        assert requests == [('https://travellermap.com/data/Troj/2715', None)]
+        assert response.raise_for_status_called
+
+    def test_missing_world_raises_value_error(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        response = _FakeResponse(json_data={'Worlds': []})
+
+        def client_factory() -> _FakeClient:
+            client = _FakeClient()
+            client.response = response
+            client.requests = []
+            return client
+
+        monkeypatch.setattr(travellermap.httpx, 'Client', client_factory)
+
+        with pytest.raises(ValueError, match='No world at Troj/9999'):
+            fetch_world('Troj', '9999')
+
+        assert response.raise_for_status_called
