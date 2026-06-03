@@ -1,4 +1,3 @@
-import random
 from typing import Any, cast
 
 from pydantic import TypeAdapter, ValidationError
@@ -116,7 +115,7 @@ from ceres.character.events import (
 )
 from ceres.character.input_specs import NumberEntry, Reference, Select
 from ceres.character.sophonts import VILANI
-from ceres.character.state import AutoFillContext, CareerTerm, CharacterProjection, CharacterSummary, ScheduledEffect
+from ceres.character.state import CareerTerm, CharacterProjection, CharacterSummary, ScheduledEffect
 from tests.character.helpers import MOCK_WORLD
 
 
@@ -131,10 +130,6 @@ def _projection(**summary_kwargs: Any) -> CharacterProjection:
         character_id=1,
         summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD, **summary_kwargs),
     )
-
-
-def _ctx(max_terms: int = 4) -> AutoFillContext:
-    return AutoFillContext(career='Scout', assignment='Courier', max_terms=max_terms, careers=load_careers())
 
 
 class FakeCareer:
@@ -553,21 +548,7 @@ def test_career_progress_pending_reports_invalid_career_shape():
         career_progress_pending(_projection(), cast(Any, BadCommissionCareer()), event_id=1)
 
 
-def test_skill_choice_auto_events_fall_back_to_advancement_dm_when_no_skill_can_be_chosen():
-    projection = _projection(skills=[character_skills.Admin(level=character_skills.Level(value=4))])
-
-    for pending in (
-        PendingInitialTrainingChoice(id='1.0', instruction='Skill', options=[character_skills.Admin()]),
-        PendingSkillTableChoice(id='2.0', instruction='Skill', options=[character_skills.Admin()]),
-        PendingRankBonusChoice(id='3.0', instruction='Skill', options=[character_skills.Admin()], level=1),
-        PendingCareerSkillChoice(
-            id='4.0', instruction='Skill', career='Scout', roll=6, options=[character_skills.Admin()]
-        ),
-    ):
-        assert isinstance(pending.auto_event(projection, _ctx(), random.Random(1)), AdvancementDmChoiceEvent)
-
-
-def test_pending_background_skills_builds_form_auto_event_and_specs():
+def test_pending_background_skills_builds_form_and_specs():
     pending = PendingBackgroundSkills(
         id='2.0',
         instruction='Choose 2 background skills',
@@ -576,24 +557,20 @@ def test_pending_background_skills_builds_form_auto_event_and_specs():
     form = Form(skill='{"type":"Admin","level":{"value":0}}|{"type":"Medic","level":{"value":0}}')
 
     form_event = pending.event_from_form(form)
-    auto_event = pending.auto_event(_projection(), _ctx(), random.Random(1))
     specs = pending.input_specs(_projection())
 
     assert isinstance(form_event, BackgroundSkillsEvent)
     assert [skill.name() for skill in form_event.skills] == ['Admin', 'Medic']
-    assert isinstance(auto_event, BackgroundSkillsEvent)
-    assert len(auto_event.skills) == 2
     assert isinstance(specs[0], Select)
     assert specs[0].min_select == 2
     assert specs[0].max_select == 2
     assert [label for label, _value in specs[0].options] == ['Admin', 'Medic']
 
 
-def test_pending_career_choice_form_auto_event_and_specs():
+def test_pending_career_choice_form_and_specs():
     projection = _projection(term_count=4)
     pending = PendingCareerChoice(id='3.0', instruction='Choose career', options=['Scout'])
 
-    assert isinstance(pending.auto_event(projection, _ctx(max_terms=4), random.Random(1)), FinishCreationEvent)
     assert isinstance(pending.event_from_form(Form(kind='finish_creation')), FinishCreationEvent)
 
     pre_career = pending.event_from_form(Form(kind='precareer_entry', precareer='University', roll='9'))
@@ -607,11 +584,6 @@ def test_pending_career_choice_form_auto_event_and_specs():
     assert career.assignment == 'Courier'
     assert career.qualification_roll == 12
 
-    projection.summary.term_count = 0
-    auto_career = pending.auto_event(projection, _ctx(), random.Random(1))
-    assert isinstance(auto_career, CareerEvent)
-    assert auto_career.career == 'Scout'
-    assert auto_career.assignment == 'Courier'
     assert pending.input_specs(projection) == []
 
 
@@ -625,18 +597,15 @@ def test_pending_draft_choices_build_expected_events_and_specs():
     assert isinstance(drifter_event, CareerEvent)
     assert drifter_event.career == 'Drifter'
     assert drifter_event.assignment == 'Scavenger'
-    assert isinstance(draft.auto_event(_projection(), _ctx(), random.Random(1)), DraftEvent)
     assert draft.input_specs(_projection()) == []
 
     assignment = PendingDraftAssignmentChoice(id='4.0', instruction='Assignment', career='Army', options=['Support'])
     form_event = assignment.event_from_form(Form(assignment='Support'))
-    auto_event = assignment.auto_event(_projection(), _ctx(), random.Random(1))
     specs = assignment.input_specs(_projection())
 
     assert isinstance(form_event, DraftAssignmentEvent)
     assert form_event.career == 'Army'
     assert form_event.assignment == 'Support'
-    assert isinstance(auto_event, DraftAssignmentEvent)
     assert isinstance(specs[0], Reference)
     assert specs[0].value == 'Army'
     assert isinstance(specs[1], Select)
@@ -686,13 +655,11 @@ def test_pending_draft_choices_build_expected_events_and_specs():
 )
 def test_roll_pending_inputs_build_events_and_number_specs(pending, form, event_type, field, expected):
     form_event = pending.event_from_form(form)
-    auto_event = pending.auto_event(_projection(), _ctx(), random.Random(1))
     specs = pending.input_specs(_projection())
 
     assert isinstance(form_event, event_type)
     assert getattr(form_event, field) == expected
     assert form_event.fulfills == pending.id
-    assert isinstance(auto_event, event_type)
     assert any(isinstance(spec, NumberEntry) for spec in specs)
 
 
@@ -703,7 +670,6 @@ def test_double_injury_pending_builds_two_roll_event_and_specs():
     assert isinstance(event, DoubleInjuryTableEvent)
     assert event.roll1 == 4
     assert event.roll2 == 2
-    assert isinstance(pending.auto_event(_projection(), _ctx(), random.Random(1)), DoubleInjuryTableEvent)
     assert len(pending.input_specs(_projection())) == 2
 
 
@@ -713,19 +679,10 @@ def test_decision_pending_inputs_build_events_and_specs():
         attempt=True, roll=9, fulfills='1.0'
     )
     assert commission.event_from_form(Form(choice='skip')) == CommissionEvent(attempt=False, fulfills='1.0')
-    assert commission.auto_event(_projection(), _ctx(), random.Random(1)) == CommissionEvent(
-        attempt=False, fulfills='1.0'
-    )
     assert len(commission.input_specs(_projection())) == 2
 
     reenlist = PendingReenlist(id='2.0', instruction='Reenlist')
     assert reenlist.event_from_form(Form(reenlist='yes')) == ReenlistEvent(reenlist=True, fulfills='2.0')
-    assert reenlist.auto_event(_projection(term_count=3), _ctx(max_terms=4), random.Random(1)) == ReenlistEvent(
-        reenlist=True, fulfills='2.0'
-    )
-    assert reenlist.auto_event(_projection(term_count=4), _ctx(max_terms=4), random.Random(1)) == ReenlistEvent(
-        reenlist=False, fulfills='2.0'
-    )
     assert reenlist.input_specs(_projection()) == []
 
     assignment = PendingAssignmentChangeChoice(
@@ -737,16 +694,12 @@ def test_decision_pending_inputs_build_events_and_specs():
     assert assignment.event_from_form(Form(choice='same')) == AssignmentChangeChoiceEvent(
         choice='same', qualification_roll=None, fulfills='3.0'
     )
-    assert assignment.auto_event(_projection(term_count=4), _ctx(max_terms=4), random.Random(1)) == (
-        AssignmentChangeChoiceEvent(choice='muster_out', fulfills='3.0')
-    )
     assert isinstance(assignment.input_specs(_projection())[0], Select)
 
     muster = PendingMusterOut(id='4.0', instruction='Muster', options=['cash', 'benefits'])
     assert muster.event_from_form(Form(table='not-valid', roll='7')) == MusterOutEvent(
         table='benefits', roll=7, fulfills='4.0'
     )
-    assert isinstance(muster.auto_event(_projection(), _ctx(), random.Random(1)), MusterOutEvent)
     assert len(muster.input_specs(_projection())) == 2
 
 
@@ -777,8 +730,6 @@ def test_skill_choice_pending_inputs_parse_skills_and_advancement_dm():
         assert isinstance(skill_event.skill, character_skills.Admin)
         assert isinstance(dm_event, AdvancementDmChoiceEvent)
         assert isinstance(specs[0], Select)
-        auto_event = pending.auto_event(projection, _ctx(), random.Random(1))
-        assert isinstance(auto_event, SkillChoiceEvent | AdvancementDmChoiceEvent)
 
     # PendingSkillChoice uses typed AnySkill options only (no advancement_dm_4)
     skill_pending = PendingSkillChoice(id='1.0', instruction='Skill', options=[character_skills.Admin()])
@@ -787,8 +738,6 @@ def test_skill_choice_pending_inputs_parse_skills_and_advancement_dm():
     assert isinstance(skill_event, SkillChoiceEvent)
     assert isinstance(skill_event.skill, character_skills.Admin)
     assert isinstance(specs[0], Select)
-    auto_event = skill_pending.auto_event(projection, _ctx(), random.Random(1))
-    assert isinstance(auto_event, SkillChoiceEvent)
 
 
 def test_characteristic_benefit_life_and_connection_pending_inputs():
@@ -800,15 +749,11 @@ def test_characteristic_benefit_life_and_connection_pending_inputs():
         event = pending.event_from_form(Form(characteristic='DEX'))
         assert isinstance(event, CharacteristicChoiceEvent)
         assert event.characteristic == Chars.DEX
-        assert isinstance(pending.auto_event(_projection(), _ctx(), random.Random(1)), CharacteristicChoiceEvent)
         assert isinstance(pending.input_specs(_projection())[0], Select)
 
     crisis = PendingAgingCrisis(id='2.0', instruction='Crisis')
     assert crisis.event_from_form(Form(paid='true', medical_roll='4')) == AgingCrisisEvent(
         paid=True, medical_roll=4, fulfills='2.0'
-    )
-    assert crisis.auto_event(_projection(), _ctx(), random.Random(1)) == AgingCrisisEvent(
-        paid=False, medical_roll=0, fulfills='2.0'
     )
     assert len(crisis.input_specs(_projection())) == 2
 
@@ -816,7 +761,6 @@ def test_characteristic_benefit_life_and_connection_pending_inputs():
     assert life_choice.event_from_form(Form(connection_kind='enemy')) == ConnectionKindChoiceEvent(
         connection_kind=ConnectionKind.ENEMY, fulfills='3.0'
     )
-    assert isinstance(life_choice.auto_event(_projection(), _ctx(), random.Random(1)), ConnectionKindChoiceEvent)
     assert isinstance(life_choice.input_specs(_projection())[0], Select)
 
     connections = PendingConnectionsRoll(
@@ -825,7 +769,6 @@ def test_characteristic_benefit_life_and_connection_pending_inputs():
     assert connections.event_from_form(Form(connection_type='enemy', count='3')) == ConnectionsRollEvent(
         connection_type=ConnectionKind.ENEMY, count=3, fulfills='4.0'
     )
-    assert isinstance(connections.auto_event(_projection(), _ctx(), random.Random(1)), ConnectionsRollEvent)
     assert isinstance(connections.input_specs(_projection())[0], Reference)
 
     benefit = PendingBenefitChoice(
@@ -835,7 +778,6 @@ def test_characteristic_benefit_life_and_connection_pending_inputs():
         benefit_options=[SHIP_SHARE, WEAPON],
     )
     assert benefit.event_from_form(Form(choice_index='1')) == BenefitChoiceEvent(choice_index=1, fulfills='5.0')
-    assert isinstance(benefit.auto_event(_projection(), _ctx(), random.Random(1)), BenefitChoiceEvent)
     assert isinstance(benefit.input_specs(_projection())[0], Select)
 
 
@@ -844,14 +786,12 @@ def test_career_and_precareer_specific_pending_inputs():
     assert career_event.event_from_form(Form(choice='take_skill')) == CareerChoiceEvent(
         context='scout_event_6', choice='take_skill', fulfills='1.0'
     )
-    assert isinstance(career_event.auto_event(_projection(), _ctx(), random.Random(1)), CareerChoiceEvent)
     assert career_event.input_specs(_projection()) == []
 
     mishap = PendingCareerMishap(id='2.0', instruction='Mishap', career='Scout', roll=4, options=['accept'])
     assert mishap.event_from_form(Form(choice='accept')) == CareerChoiceEvent(
         context='scout_mishap_4', choice='accept', fulfills='2.0'
     )
-    assert isinstance(mishap.auto_event(_projection(), _ctx(), random.Random(1)), CareerChoiceEvent)
     assert mishap.input_specs(_projection()) == []
 
     skill_roll = PendingCareerSkillRoll(
@@ -868,7 +808,6 @@ def test_career_and_precareer_specific_pending_inputs():
     assert char_event.skill == Chars.STR
     assert isinstance(skill_event, SkillRollEvent)
     assert isinstance(skill_event.skill, character_skills.Admin)
-    assert isinstance(skill_roll.auto_event(_projection(), _ctx(), random.Random(1)), SkillRollEvent)
     assert len(skill_roll.input_specs(_projection())) == 2
 
     precareer_skill_0 = PendingPreCareerSkillChoice(
@@ -887,4 +826,3 @@ def test_career_and_precareer_specific_pending_inputs():
     assert isinstance(level_1_specs[0], Select)
     assert any(label == 'Life Science' for label, _ in level_0_specs[0].options)
     assert any(label.startswith('Life Science (') for label, _ in level_1_specs[0].options)
-    assert isinstance(precareer_skill_1.auto_event(_projection(), _ctx(), random.Random(1)), PreCareerSkillChoiceEvent)

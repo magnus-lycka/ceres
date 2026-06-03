@@ -37,6 +37,8 @@ def test_character_list_shows_characters(client_with_backend):
     r = client.get('/ui/')
     assert r.status_code == 200
     assert 'Aria' in r.text
+    assert 'Delete Selected' in r.text
+    assert 'name="character_ids"' in r.text
 
 
 # ── character creation ────────────────────────────────────────────────────────
@@ -247,6 +249,37 @@ def test_delete_character_removes_from_list(client_with_backend):
     assert backend.get_projection(row['id']) is None
 
 
+def test_bulk_delete_characters_removes_checked_rows(client_with_backend):
+    client, backend = client_with_backend
+    first = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='First')
+    second = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Second')
+    third = backend.start(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Third')
+
+    r = client.post(
+        '/ui/characters/delete',
+        data={'character_ids': [str(first['id']), str(third['id'])]},
+    )
+
+    assert r.status_code == 200
+    assert backend.get_projection(first['id']) is None
+    assert backend.get_projection(third['id']) is None
+    assert backend.get_projection(second['id']) is not None
+    assert 'First' not in r.text
+    assert 'Third' not in r.text
+    assert 'Second' in r.text
+
+
+def test_bulk_delete_with_no_selection_is_noop(client_with_backend):
+    client, backend = client_with_backend
+    row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Still Here')
+
+    r = client.post('/ui/characters/delete', data={})
+
+    assert r.status_code == 200
+    assert backend.get_projection(row['id']) is not None
+    assert 'Still Here' in r.text
+
+
 def test_delete_nonexistent_character_redirects(client):
     r = client.post('/ui/characters/9999/delete')
     assert r.status_code == 200
@@ -338,32 +371,6 @@ def test_career_assignments_unknown_career(client):
     r = client.get('/ui/careers/NonexistentCareer/assignments')
     assert r.status_code == 200
     assert r.text == ''
-
-
-# ── gallery ───────────────────────────────────────────────────────────────────
-
-
-def test_gallery_form_renders(client):
-    r = client.get('/ui/gallery/new')
-    assert r.status_code == 200
-    assert 'Scout' in r.text or 'career' in r.text.lower()
-
-
-def test_gallery_generate_returns_specs(client):
-    r = client.post(
-        '/ui/gallery/generate',
-        data={
-            'career': 'Scout',
-            'assignment': '',
-            'sophont': 'Humaniti',
-            'min_terms': '2',
-            'max_terms': '3',
-            'count': '3',
-            'name_prefix': 'Scout',
-        },
-    )
-    assert r.status_code == 200
-    assert 'Scout' in r.text
 
 
 # ── event_from_form unit tests ────────────────────────────────────────────────

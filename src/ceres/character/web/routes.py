@@ -7,9 +7,9 @@ from fastapi import APIRouter, Form, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from ceres.character.careers.loader import load_careers, selectable_careers
+from ceres.adapters.travellermap import TravellerMapWorld
+from ceres.character.careers.loader import load_careers
 from ceres.character.events import AnyEvent
-from ceres.character.input_specs import form_int, form_str
 from ceres.character.precareers import load_precareers
 from ceres.character.replay import ReplayError
 from ceres.character.report import render_npc_gallery_pdf
@@ -20,8 +20,37 @@ from ceres.character.state import (
     diff_summaries,
 )
 from ceres.character.store import SqliteCharacterBackend
-from ceres.character.web.bulk import _NPC_DEFAULT_HOMEWORLD
 from ceres.worlds import SectorWorldFilters, search_sectors
+
+_DEFAULT_HOMEWORLD = TravellerMapWorld.model_validate(
+    {
+        'Name': 'Terra',
+        'Hex': '1827',
+        'UWP': 'A867A69-F',
+        'PBG': '700',
+        'Zone': '',
+        'Bases': 'N',
+        'Allegiance': 'ImSy',
+        'Stellar': 'G2 V',
+        'SS': 'C',
+        'Ix': '{ 5 }',
+        'Ex': '(H9G+5)',
+        'Cx': '[DC8F]',
+        'Nobility': 'BcCeEfFGH',
+        'Worlds': 12,
+        'ResourceUnits': 6050,
+        'Subsector': 6,
+        'Quadrant': 1,
+        'WorldX': 0,
+        'WorldY': 0,
+        'Remarks': 'Hi In Cx Cs',
+        'LegacyBaseCode': 'N',
+        'Sector': 'Solomani Rim',
+        'SubsectorName': 'Sol',
+        'SectorAbbreviation': 'Solo',
+        'AllegianceName': 'Third Imperium, Solomani Autonomous Region',
+    }
+)
 
 _TEMPLATES_DIR = Path(__file__).parent / 'templates'
 _STRING_FILTER_GROUPS = ('allegiances', 'remarks', 'bases', 'starports')
@@ -188,7 +217,7 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
             raise RuntimeError(f'No fallback sophont available: {sophont!r}')
         row = backend.start(
             sophont=sophont_obj,
-            homeworld=_NPC_DEFAULT_HOMEWORLD,
+            homeworld=_DEFAULT_HOMEWORLD,
             player=player.strip() or 'NPC',
             name=name,
         )
@@ -209,6 +238,14 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
             return Response(status_code=404)
         ctx = {**_projection_context(projection, character_id), 'is_htmx': False}
         return templates.TemplateResponse(request=request, name='wizard.html', context=ctx)
+
+    @router.post('/characters/delete')
+    async def delete_characters(request: Request) -> Any:
+        form = await request.form()
+        for character_id in form.getlist('character_ids'):
+            if isinstance(character_id, str):
+                backend.delete_character(int(character_id))
+        return RedirectResponse(url='/ui/', status_code=303)
 
     @router.post('/characters/{character_id}/delete')
     def delete_character(character_id: int) -> Any:
@@ -276,86 +313,6 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
             request=request,
             name='partials/assignments.html',
             context={'assignments': assignments},
-        )
-
-    @router.get('/gallery/assignments', response_class=HTMLResponse)
-    def gallery_assignments(request: Request, career: str = '') -> Any:
-        all_careers = load_careers()
-        career_obj = all_careers.get(career)
-        assignments = [a.name for a in career_obj.assignments] if career_obj else []
-        return templates.TemplateResponse(
-            request=request,
-            name='partials/assignments.html',
-            context={'assignments': assignments},
-        )
-
-    @router.get('/gallery/new', response_class=HTMLResponse)
-    def gallery_form(request: Request) -> Any:
-        careers = selectable_careers()
-        first_career = next(iter(careers.values()), None)
-        initial_assignments = [a.name for a in first_career.assignments] if first_career else []
-        return templates.TemplateResponse(
-            request=request,
-            name='gallery_form.html',
-            context={'careers': careers, 'sophonts': SOPHONT_NAMES, 'initial_assignments': initial_assignments},
-        )
-
-    @router.post('/gallery/generate', response_class=HTMLResponse)
-    async def gallery_generate(request: Request) -> Any:
-        from ceres.character.web.bulk import CohortParams, generate_cohort
-
-        form = await request.form()
-        career_name = form_str(form, 'career')
-        assignment = form_str(form, 'assignment') or None
-        sophont = form_str(form, 'sophont', SOPHONT_NAMES[0])
-        min_terms = max(1, form_int(form, 'min_terms', 2))
-        max_terms = max(min_terms, form_int(form, 'max_terms', 4))
-        count = min(20, max(1, form_int(form, 'count', 4)))
-        name_prefix = form_str(form, 'name_prefix', 'NPC').strip() or 'NPC'
-
-        params = CohortParams(
-            career=career_name,
-            assignment=assignment,
-            sophont=sophont,
-            min_terms=min_terms,
-            max_terms=max_terms,
-            name_prefix=name_prefix,
-        )
-        specs = generate_cohort(backend, params, count)
-        return templates.TemplateResponse(
-            request=request,
-            name='gallery.html',
-            context={'specs': specs, 'params': params},
-        )
-
-    @router.post('/gallery/pdf')
-    async def gallery_pdf(request: Request) -> Any:
-        from ceres.character.web.bulk import CohortParams, generate_cohort
-
-        form = await request.form()
-        career_name = form_str(form, 'career')
-        assignment = form_str(form, 'assignment') or None
-        sophont = form_str(form, 'sophont', SOPHONT_NAMES[0])
-        min_terms = max(1, form_int(form, 'min_terms', 2))
-        max_terms = max(min_terms, form_int(form, 'max_terms', 4))
-        count = min(20, max(1, form_int(form, 'count', 4)))
-        name_prefix = form_str(form, 'name_prefix', 'NPC').strip() or 'NPC'
-
-        params = CohortParams(
-            career=career_name,
-            assignment=assignment,
-            sophont=sophont,
-            min_terms=min_terms,
-            max_terms=max_terms,
-            name_prefix=name_prefix,
-        )
-        specs = generate_cohort(backend, params, count)
-        pdf = render_npc_gallery_pdf(specs)
-        safe = (career_name or 'npcs').replace(' ', '_').lower()
-        return Response(
-            content=pdf,
-            media_type='application/pdf',
-            headers={'Content-Disposition': f'attachment; filename="{safe}_gallery.pdf"'},
         )
 
     return router

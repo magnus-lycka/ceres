@@ -1,5 +1,3 @@
-from random import Random
-
 import pytest
 
 from ceres.character.events import (
@@ -31,7 +29,6 @@ from ceres.character.state import (
     Contact,
 )
 from ceres.character.store import SqliteCharacterBackend
-from ceres.character.web.bulk import CohortParams, generate_npc
 from tests.character.helpers import MOCK_WORLD
 
 
@@ -298,38 +295,6 @@ class TestReplayFromPersistedEventLog:
             assert original is not None
             assert events is not None
             rebuilt = replay(character_id, events)
-            assert rebuilt.model_dump(mode='json') == original.model_dump(mode='json')
-        finally:
-            backend.close()
-
-    def test_replaying_three_term_persisted_log_rebuilds_identical_projection(self):
-        backend = SqliteCharacterBackend(':memory:')
-        try:
-            generate_npc(
-                backend,
-                CohortParams(
-                    career='Scout',
-                    assignment='Courier',
-                    sophont='Humaniti',
-                    min_terms=3,
-                    max_terms=3,
-                    name_prefix='Replay',
-                ),
-                name='Replay Test',
-                rng=Random(1),
-            )
-
-            original = backend.get_projection(1)
-            events = backend.load_typed_events(1)
-
-            assert original is not None
-            assert events is not None
-            assert original.summary.term_count == 3
-            bg_event = next((e for e in events if e.kind == 'background_skills'), None)
-            assert bg_event is not None
-            bg_skills = bg_event.model_dump(mode='json')['skills']
-            assert len(bg_skills) >= 1
-            rebuilt = replay(1, events)
             assert rebuilt.model_dump(mode='json') == original.model_dump(mode='json')
         finally:
             backend.close()

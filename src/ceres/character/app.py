@@ -1,13 +1,43 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, TypeAdapter
 
+from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.events import AnyEvent
 from ceres.character.replay import ReplayError
 from ceres.character.skills import skill_list
 from ceres.character.sophonts import SOPHONT_NAMES, get_sophont
 from ceres.character.state import CharacterProjection
 from ceres.character.store import CharacterRow, SqliteCharacterBackend
-from ceres.character.web.bulk import _NPC_DEFAULT_HOMEWORLD
+
+_DEFAULT_HOMEWORLD = TravellerMapWorld.model_validate(
+    {
+        'Name': 'Terra',
+        'Hex': '1827',
+        'UWP': 'A867A69-F',
+        'PBG': '700',
+        'Zone': '',
+        'Bases': 'N',
+        'Allegiance': 'ImSy',
+        'Stellar': 'G2 V',
+        'SS': 'C',
+        'Ix': '{ 5 }',
+        'Ex': '(H9G+5)',
+        'Cx': '[DC8F]',
+        'Nobility': 'BcCeEfFGH',
+        'Worlds': 12,
+        'ResourceUnits': 6050,
+        'Subsector': 6,
+        'Quadrant': 1,
+        'WorldX': 0,
+        'WorldY': 0,
+        'Remarks': 'Hi In Cx Cs',
+        'LegacyBaseCode': 'N',
+        'Sector': 'Solomani Rim',
+        'SubsectorName': 'Sol',
+        'SectorAbbreviation': 'Solo',
+        'AllegianceName': 'Third Imperium, Solomani Autonomous Region',
+    }
+)
 
 _event_adapter: TypeAdapter[AnyEvent] = TypeAdapter(AnyEvent)
 
@@ -69,7 +99,7 @@ def build_app(backend: SqliteCharacterBackend | None = None) -> FastAPI:
             raise HTTPException(status_code=400, detail=f'Unknown sophont: {character.sophont}')
         return backend.start(
             sophont=sophont,
-            homeworld=_NPC_DEFAULT_HOMEWORLD,
+            homeworld=_DEFAULT_HOMEWORLD,
             player=character.player,
             name=character.name,
         )

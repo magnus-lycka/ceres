@@ -1,6 +1,3 @@
-from collections.abc import Sequence
-from dataclasses import dataclass
-import random
 from typing import TYPE_CHECKING, Annotated, Any, Literal, cast, overload
 
 from pydantic import BaseModel, Field, SerializeAsAny
@@ -11,19 +8,11 @@ from ceres.character.characteristics import Chars, ConnectionKind
 
 if TYPE_CHECKING:
     from ceres.character.careers.career_data import CareerData
-from ceres.character.careers.career_data import AdvancementDmOption, Career
+from ceres.character.careers.career_data import Career
 from ceres.character.input_specs import InputSpec
 from ceres.character.skills import AnySkill, Level, Skill, _level_fields
 from ceres.character.sophonts import Sophont
 from ceres.shared import CeresModel
-
-
-@dataclass(frozen=True)
-class AutoFillContext:
-    career: str
-    assignment: str | None
-    max_terms: int
-    careers: dict[str, CareerData]
 
 
 class ReplayError(Exception):
@@ -36,10 +25,6 @@ class PendingInputBase(BaseModel):
     instruction: str
     options: list[str] = Field(default_factory=list)
     blocking: bool = True
-
-    def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> Any:
-        """Return a synthesized event (used by bulk/NPC generation). All subclasses must implement."""
-        raise NotImplementedError(f'{type(self).__name__}.auto_event() not implemented')
 
     def event_from_form(self, form: Any) -> Any:
         """Construct the appropriate AnyEvent from submitted form data. All subclasses must implement."""
@@ -322,20 +307,6 @@ class CharacterProjection(BaseModel):
     ) -> bool:
         return choice in self.skill_choices(skill_types, level)
 
-    def _pick_skill_auto(
-        self, options: Sequence[AnySkill | AdvancementDmOption], rng: random.Random, level: int | None
-    ) -> AnySkill | None:
-        valid: list[AnySkill] = [o for o in options if not isinstance(o, AdvancementDmOption)]
-        rng.shuffle(valid)
-        for opt in valid:
-            choices = self.skill_choices([cast(type[Skill], type(opt))], level)
-            if choices:
-                return rng.choice(choices)
-        return None
-
-    def auto_event(self, pi: PendingInputBase, ctx: AutoFillContext, rng: random.Random) -> Any:
-        return pi.auto_event(self, ctx, rng)
-
 
 def diff_summaries(before: CharacterSummary, after: CharacterSummary) -> list[str]:
     """Human-readable strings describing mechanical changes between two summaries."""
@@ -384,7 +355,6 @@ def diff_summaries(before: CharacterSummary, after: CharacterSummary) -> list[st
 __all__ = [
     'Ally',
     'AnyConnection',
-    'AutoFillContext',
     'CareerTerm',
     'CharacterProjection',
     'CharacterSummary',
