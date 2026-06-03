@@ -57,6 +57,7 @@ from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Ally,
     Contact,
+    EffectTrigger,
     Enemy,
     Rival,
 )
@@ -445,7 +446,7 @@ class TestScoutEvent11:
         events = [*self._setup_to_event_11(), AdvancementDmChoiceEvent(id=7, fulfills='6.0')]
         projection = replay(1, events)
 
-        adv_dm = next((se for se in projection.scheduled_effects if se.trigger == 'advancement'), None)
+        adv_dm = next((se for se in projection.scheduled_effects if se.trigger == EffectTrigger.ADVANCEMENT), None)
         assert adv_dm is not None
         assert adv_dm.effect.get('amount') == 4
 

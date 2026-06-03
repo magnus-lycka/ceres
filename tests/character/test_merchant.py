@@ -34,6 +34,7 @@ from ceres.character.skills import (
 )
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
+    EffectTrigger,
     Enemy,
     Rival,
 )
@@ -119,7 +120,7 @@ class TestMerchantEvent3:
             SkillRollEvent(id=8, fulfills='7.0', skill=Admin(), modified_roll=9),
         ]
         projection = replay(1, events)
-        add_effects = [se for se in projection.scheduled_effects if se.trigger == 'muster_out_add']
+        add_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.MUSTER_OUT_ADD]
         assert len(add_effects) == 1
 
     def test_accept_success_continues_career(self):
@@ -251,4 +252,17 @@ class TestMerchantEvent9:
         ]
         projection = replay(1, events)
         # On failure no skill choice created; _apply_skill_roll auto-queues advancement
+        assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+
+
+# ── event 5: gambling opportunity ────────────────────────────────────────────
+
+
+class TestMerchantEvent5:
+    def _setup_to_event(self) -> list:
+        return _through_term_event(event_roll=5)
+
+    def test_gambling_adds_problem_note_and_queues_advancement(self):
+        projection = replay(1, self._setup_to_event())
+        assert any('gambling' in p.lower() for p in projection.summary.problems)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)

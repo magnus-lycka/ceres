@@ -32,6 +32,7 @@ from ceres.character.events import (
     AssignmentChangeChoiceEvent,
     BackgroundSkillsEvent,
     BenefitChoiceEvent,
+    CareerChoiceEvent,
     CareerEvent,
     CharacteristicChoiceEvent,
     CharacterStartedEvent,
@@ -90,6 +91,7 @@ from ceres.character.events import (
     ReenlistEvent,
     ReplayError,
     SkillChoiceEvent,
+    SkillRollEvent,
     SkillTableEvent,
     SurviveEvent,
     TermEventEvent,
@@ -109,7 +111,14 @@ from ceres.character.events import (
 )
 from ceres.character.input_specs import NumberEntry, Reference, Select
 from ceres.character.sophonts import VILANI
-from ceres.character.state import CareerTerm, CharacterProjection, CharacterSummary, ScheduledEffect
+from ceres.character.state import (
+    CareerTerm,
+    CharacterProjection,
+    CharacterSummary,
+    EffectTrigger,
+    EffectType,
+    ScheduledEffect,
+)
 from tests.character.helpers import MOCK_WORLD
 
 
@@ -337,7 +346,9 @@ def test_commission_event_skip_failure_success_and_unsupported_career():
         characteristics={Chars.SOC: 2},
     )
     failed.scheduled_effects.append(
-        ScheduledEffect(trigger='advancement', source_event_id=99, effect={'type': 'dm', 'amount': 1})
+        ScheduledEffect(
+            trigger=EffectTrigger.ADVANCEMENT, source_event_id=99, effect={'type': EffectType.DM, 'amount': 1}
+        )
     )
     CommissionEvent(id=2, attempt=True, roll=2).apply(failed)
     assert failed.scheduled_effects == []
@@ -442,7 +453,9 @@ def test_prisoner_advancement_special_cases():
         parole_threshold=6,
     )
     choice_bonus.scheduled_effects.append(
-        ScheduledEffect(trigger='advancement', source_event_id=1, effect={'type': 'dm', 'amount': 1})
+        ScheduledEffect(
+            trigger=EffectTrigger.ADVANCEMENT, source_event_id=1, effect={'type': EffectType.DM, 'amount': 1}
+        )
     )
     _apply_prisoner_advancement(
         choice_bonus,
@@ -510,8 +523,8 @@ def test_muster_out_setup_and_complete_aging_helper_branches():
         rank=2,
     )
     projection.scheduled_effects = [
-        ScheduledEffect(trigger='muster_out_reduce', source_event_id=1, effect={'value': 1}),
-        ScheduledEffect(trigger='muster_out_add', source_event_id=2, effect={'value': 2}),
+        ScheduledEffect(trigger=EffectTrigger.MUSTER_OUT_REDUCE, source_event_id=1, effect={'value': 1}),
+        ScheduledEffect(trigger=EffectTrigger.MUSTER_OUT_ADD, source_event_id=2, effect={'value': 2}),
     ]
 
     next_idx = muster_out_setup(projection, career, source_event_id=6, pending_idx=0)
@@ -785,3 +798,138 @@ def test_precareer_specific_pending_inputs():
     assert isinstance(level_1_specs[0], Select)
     assert any(label == 'Life Science' for label, _ in level_0_specs[0].options)
     assert any(label.startswith('Life Science (') for label, _ in level_1_specs[0].options)
+
+
+# ── common_pending base class event_from_form / input_specs ──────────────────
+
+
+def test_career_choice_pending_base_event_from_form_and_input_specs():
+    from ceres.character.careers.navy import PendingNavyMishap4
+
+    pending = PendingNavyMishap4(id='6.0', instruction='Choose', options=['responsible', 'not_responsible'])
+
+    event = pending.event_from_form(Form(choice='responsible'))
+    assert isinstance(event, CareerChoiceEvent)
+    assert event.choice == 'responsible'
+    assert event.fulfills == '6.0'
+
+    assert pending.input_specs(_projection()) == []
+
+
+def test_career_skill_roll_pending_base_event_from_form_char_and_skill():
+    from typing import Literal
+
+    from ceres.character.careers.common_pending import CareerSkillRollPendingBase
+    from ceres.character.careers.navy import PendingNavyMishap3SkillRoll
+
+    pending = PendingNavyMishap3SkillRoll(
+        id='7.0',
+        instruction='Roll',
+        options=[character_skills.Electronics(), character_skills.Gunner()],
+    )
+
+    # Char option
+    class _PendingWithChar(CareerSkillRollPendingBase):
+        kind: Literal['_test_char_roll'] = '_test_char_roll'
+
+    char_pending = _PendingWithChar(id='8.0', instruction='Roll', options=[Chars.EDU])
+    edu_event = char_pending.event_from_form(Form(skill='EDU', modified_roll='9'))
+    assert isinstance(edu_event, SkillRollEvent)
+    assert edu_event.skill == Chars.EDU
+    assert edu_event.modified_roll == 9
+    assert edu_event.fulfills == '8.0'
+
+    # Skill option
+    skill_event = pending.event_from_form(Form(skill='Electronics', modified_roll='8'))
+    assert isinstance(skill_event, SkillRollEvent)
+    assert isinstance(skill_event.skill, character_skills.Electronics)
+    assert skill_event.modified_roll == 8
+
+    specs = pending.input_specs(_projection())
+    assert len(specs) == 2
+    assert isinstance(specs[0], Select)
+    assert isinstance(specs[1], NumberEntry)
+    labels = [lbl for lbl, _ in specs[0].options]
+    assert 'Electronics' in labels
+    assert 'Gunner' in labels
+
+
+def test_career_skill_roll_pending_base_input_specs_includes_char_options():
+    from typing import Literal
+
+    from ceres.character.careers.common_pending import CareerSkillRollPendingBase
+
+    class _PendingEduRoll(CareerSkillRollPendingBase):
+        kind: Literal['_test_edu_roll'] = '_test_edu_roll'
+
+    pending = _PendingEduRoll(id='1.0', instruction='Roll', options=[Chars.EDU])
+    specs = pending.input_specs(_projection())
+    assert isinstance(specs[0], Select)
+    labels = [lbl for lbl, _ in specs[0].options]
+    assert 'EDU' in labels
+
+
+def test_career_skill_choice_pending_base_event_from_form_and_input_specs():
+    from ceres.character.careers.career_data import AdvancementDmOption
+    from ceres.character.careers.scholar import PendingScholarScienceChoice
+    from ceres.character.skills import LifeScience
+
+    adv_dm = AdvancementDmOption()
+    science = LifeScience()
+    science_json = science.model_dump_json()
+
+    pending = PendingScholarScienceChoice(
+        id='9.0', instruction='Choose science', options=[science, adv_dm], advancement_precreated=True
+    )
+
+    # Skill choice
+    skill_event = pending.event_from_form(Form(skill=science_json))
+    assert isinstance(skill_event, SkillChoiceEvent)
+
+    # AdvancementDmOption choice
+    dm_event = pending.event_from_form(Form(skill=adv_dm.model_dump_json()))
+    assert isinstance(dm_event, AdvancementDmChoiceEvent)
+    assert dm_event.fulfills == '9.0'
+
+    specs = pending.input_specs(_projection())
+    assert isinstance(specs[0], Select)
+    labels = [lbl for lbl, _ in specs[0].options]
+    assert any('Science' in lbl or 'science' in lbl.lower() for lbl in labels)
+
+
+def test_career_skill_choice_pending_base_on_skill_chosen_grants_skill_and_queues_progress():
+    from typing import Literal
+
+    from ceres.character.careers.career_data import Career
+    from ceres.character.careers.common_pending import CareerSkillChoicePendingBase
+    from ceres.character.careers.scholar import PendingScholarScienceChoice
+
+    class _PendingSkillChoice(CareerSkillChoicePendingBase):
+        kind: Literal['_test_skill_choice'] = '_test_skill_choice'
+
+    class _FakeEvent:
+        id = 10
+        skill = character_skills.Admin()
+
+    # Without advancement_precreated — should queue career progress
+    pending = _PendingSkillChoice(id='1.0', instruction='Choose', options=[], advancement_precreated=False)
+    proj = _projection(
+        characteristics={Chars.STR: 7, Chars.DEX: 8, Chars.END: 6, Chars.INT: 9, Chars.EDU: 10, Chars.SOC: 5}
+    )
+    proj.summary.current_career = Career(name='Scout')
+    proj.summary.current_assignment = 'Courier'
+    proj.summary.current_assignment_index = 1
+    before_count = len(proj.pending_inputs)
+    pending.on_skill_chosen(proj, _FakeEvent())
+    assert proj.summary.skill_level(character_skills.Admin) is not None
+    assert len(proj.pending_inputs) > before_count
+
+    # With advancement_precreated — should NOT queue career progress
+    pending2 = PendingScholarScienceChoice(id='2.0', instruction='Choose', options=[], advancement_precreated=True)
+    proj2 = _projection()
+    proj2.summary.current_career = Career(name='Scout')
+    proj2.summary.current_assignment = 'Courier'
+    proj2.summary.current_assignment_index = 1
+    before2 = len(proj2.pending_inputs)
+    pending2.on_skill_chosen(proj2, _FakeEvent())
+    assert len(proj2.pending_inputs) == before2

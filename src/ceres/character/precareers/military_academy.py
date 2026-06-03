@@ -3,6 +3,7 @@ from ceres.character.events import PreCareerEntryEvent, PreCareerGraduationEvent
 from ceres.character.precareers.precareer_data import PreCareerData
 from ceres.character.state import (
     CharacterProjection,
+    EffectTrigger,
     ScheduledEffect,
 )
 
@@ -36,7 +37,7 @@ class MilitaryAcademyPreCareer(PreCareerData):
             projection.summary.characteristics[Chars.SOC] = projection.summary.characteristics.get(Chars.SOC, 0) + 1
         projection.scheduled_effects.append(
             ScheduledEffect(
-                trigger='auto_qualify',
+                trigger=EffectTrigger.AUTO_QUALIFY,
                 source_event_id=event.id,
                 effect={'career': self.service_skills_from},
                 consume=True,
@@ -62,7 +63,7 @@ class MilitaryAcademyPreCareer(PreCareerData):
         if event.roll > 2:
             projection.scheduled_effects.append(
                 ScheduledEffect(
-                    trigger='auto_qualify',
+                    trigger=EffectTrigger.AUTO_QUALIFY,
                     source_event_id=event.id,
                     effect={'career': self.service_skills_from, 'no_commission': True},
                     consume=True,

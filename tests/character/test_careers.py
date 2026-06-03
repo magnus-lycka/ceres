@@ -67,6 +67,7 @@ from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Ally,
     Contact,
+    EffectTrigger,
     Enemy,
     Rival,
 )
@@ -932,7 +933,7 @@ class TestAdvancementDmFromScheduledEffects:
         ]
         projection = replay(1, events)
 
-        adv_dms = [se for se in projection.scheduled_effects if se.trigger == 'advancement']
+        adv_dms = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.ADVANCEMENT]
         assert len(adv_dms) == 0
 
 
@@ -1111,7 +1112,7 @@ class TestLifeEvents:
         events = [*self._setup_to_life_event(), LifeEventEvent(id=7, fulfills='6.0', roll=9)]
         projection = replay(1, events)
 
-        qual_dm = next((se for se in projection.scheduled_effects if se.trigger == 'qualification'), None)
+        qual_dm = next((se for se in projection.scheduled_effects if se.trigger == EffectTrigger.QUALIFICATION), None)
         assert qual_dm is not None
         assert qual_dm.effect.get('amount') == 2
 
@@ -1219,7 +1220,7 @@ class TestLifeEventGoodFortune:
     def test_good_fortune_creates_muster_out_dm_scheduled_effect(self):
         projection = replay(1, self._setup_through_life_event_10())
 
-        dm_effects = [se for se in projection.scheduled_effects if se.trigger == 'muster_out']
+        dm_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.MUSTER_OUT]
         assert len(dm_effects) == 1
         assert dm_effects[0].effect.get('amount') == 2
 

@@ -226,6 +226,40 @@ Decide whether `Ship` should be extended or whether a separate `Station` class i
 
 ## Character creation: correctness gaps and remaining rules
 
+## Birthworld vs mutable homeworld during character creation
+
+See [docs/plan-homeworld-changes.md](docs/plan-homeworld-changes.md).
+
+Ceres should distinguish between:
+
+- immutable `birthworld`
+- mutable `homeworld` during character creation
+
+Character creation should log homeworld-change triggers explicitly in the event
+log, using only two trigger classes:
+
+- forced change
+- optional change
+
+This includes discovering where such triggers should arise in the domain model:
+
+- Life Events and career/pre-career event tables
+- interstellar-career start or end-of-term relocation opportunities
+- academy/career entry cases that may require relocation
+
+Careers and pre-careers should be able to:
+
+- trigger required or optional homeworld changes
+- attach target-world constraints (for example Scout-base, naval-base, or
+  assignment/TL-based requirements)
+
+This work is intentionally limited to character creation. It does **not**
+include:
+
+- homeworld changes during play
+- a new UI for picking the replacement world
+- current-location tracking
+
 ### Known implementation gaps (rules not yet enforced)
 
 - **Advancement forced-leave** — if the advancement roll ≤ terms served in the

@@ -25,7 +25,7 @@
     <div class="text-xs text-gray-400 space-y-0.5">
       {% set career = summary.current_career or summary.last_career %}
       {% set assignment = summary.current_assignment or summary.last_assignment %}
-      <div>{{ career }}{% if assignment %} · {{ assignment }}{% endif %}</div>
+      <div>{{ career.name }}{% if assignment %} · {{ assignment }}{% endif %}</div>
       {% if summary.rank is not none %}<div>Rank {{ summary.rank }}</div>{% endif %}
       {% if summary.term_count %}<div>{{ summary.term_count }} term{% if summary.term_count != 1 %}s{% endif %} · Age {{ summary.age }}</div>{% endif %}
     </div>

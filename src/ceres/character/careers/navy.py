@@ -36,7 +36,7 @@ from ceres.character.careers.career_data import (
     SkillChoiceEffect,
     SkillTable,
 )
-from ceres.character.careers.common import handle_advanced_training, resolve_advanced_training
+from ceres.character.careers.common import handle_advanced_training
 from ceres.character.careers.common_pending import CareerChoicePendingBase, CareerSkillRollPendingBase
 from ceres.character.characteristics import Chars
 from ceres.character.events import (
@@ -68,6 +68,8 @@ from ceres.character.skills import (
 )
 from ceres.character.state import (
     CharacterProjection,
+    EffectTrigger,
+    EffectType,
     Enemy,
     ScheduledEffect,
 )
@@ -127,17 +129,17 @@ class PendingNavyEvent10(CareerChoicePendingBase):
         if event.choice == 'profit':
             projection.scheduled_effects.append(
                 ScheduledEffect(
-                    trigger='muster_out_add',
+                    trigger=EffectTrigger.MUSTER_OUT_ADD,
                     source_event_id=event.id,
-                    effect={'type': 'add', 'value': 1},
+                    effect={'type': EffectType.ADD, 'value': 1},
                 )
             )
         else:
             projection.scheduled_effects.append(
                 ScheduledEffect(
-                    trigger='advancement',
+                    trigger=EffectTrigger.ADVANCEMENT,
                     source_event_id=event.id,
-                    effect={'type': 'dm', 'amount': 2},
+                    effect={'type': EffectType.DM, 'amount': 2},
                 )
             )
         projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
@@ -197,10 +199,6 @@ class NavyEvent5Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         return handle_advanced_training('Navy', 5, 'navy_event_5', projection, event_id, pending_idx)
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        resolve_advanced_training(projection, event)
 
 
 # ── event 10: abuse position for profit ──────────────────────────────────────

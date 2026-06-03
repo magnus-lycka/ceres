@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field, SerializeAsAny
 from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.benefits import ItemBenefit
 from ceres.character.characteristics import Chars, ConnectionKind
+from ceres.character.effect_enums import EffectTrigger, EffectType
 
 if TYPE_CHECKING:
     from ceres.character.careers.career_data import CareerData
@@ -42,7 +43,7 @@ class PendingInputBase(BaseModel):
 
 
 class ScheduledEffect(BaseModel):
-    trigger: str
+    trigger: EffectTrigger
     source_event_id: int
     effect: dict = Field(default_factory=dict)
     expires: str | None = None
@@ -366,6 +367,8 @@ __all__ = [
     'CharacterSummary',
     'Connection',
     'Contact',
+    'EffectTrigger',
+    'EffectType',
     'Enemy',
     'PendingInputBase',
     'ReplayError',

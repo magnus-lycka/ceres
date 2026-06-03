@@ -63,6 +63,8 @@ from ceres.character.skills import (
 )
 from ceres.character.state import (
     CharacterProjection,
+    EffectTrigger,
+    EffectType,
     Enemy,
     Rival,
     ScheduledEffect,
@@ -102,9 +104,9 @@ class PendingDrifterEvent3(CareerChoicePendingBase):
         if event.choice == 'accept':
             projection.scheduled_effects.append(
                 ScheduledEffect(
-                    trigger='qualification',
+                    trigger=EffectTrigger.QUALIFICATION,
                     source_event_id=event.id,
-                    effect={'type': 'dm', 'amount': 4},
+                    effect={'type': EffectType.DM, 'amount': 4},
                 )
             )
         projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
@@ -132,21 +134,9 @@ class PendingDrifterEvent9(CareerChoicePendingBase):
     kind: Literal['drifter_event_9'] = 'drifter_event_9'
 
     def on_choice(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.careers.prisoner import PRISONER
-
         career = projection.get_current_career()
         if event.choice == 'decline':
             projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
-        elif event.choice == 'injury':
-            projection.pending_inputs.append(
-                PendingInjuryTable(
-                    id=f'{event.id}.0',
-                    instruction='Risky adventure outcome: roll 1D on Injury table',
-                    options=['1', '2', '3', '4', '5', '6'],
-                )
-            )
-        elif event.choice == 'prison':
-            projection.forced_next_career = PRISONER
         else:  # 'accept'
             projection.pending_inputs.append(
                 PendingDrifterEvent9RollSkillRoll(
@@ -184,9 +174,9 @@ class PendingDrifterEvent9RollSkillRoll(CareerSkillRollPendingBase):
         else:  # 4-6
             projection.scheduled_effects.append(
                 ScheduledEffect(
-                    trigger='muster_out_add',
+                    trigger=EffectTrigger.MUSTER_OUT_ADD,
                     source_event_id=event.id,
-                    effect={'type': 'add', 'value': 1},
+                    effect={'type': EffectType.ADD, 'value': 1},
                 )
             )
             # _apply_skill_roll auto-queues advancement
@@ -281,43 +271,6 @@ class DrifterEvent9Handler(CareerHandlerBase):
             )
         )
         return pending_idx + 1
-
-
-class DrifterEvent9RollHandler(CareerHandlerBase):
-    type: Literal['drifter_event_9_roll'] = 'drifter_event_9_roll'
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        # Legacy dispatch path — new path uses PendingDrifterEvent9RollSkillRoll.resolve()
-        career = projection.get_current_career()
-        roll = event.modified_roll
-        if roll <= 2:
-            projection.pending_inputs.append(
-                PendingDrifterEvent9Choice2(
-                    id=f'{event.id}.0',
-                    instruction='Risky adventure (1-2): choose — roll on Injury table, or be sent to Prisoner career?',
-                    options=['injury', 'prison'],
-                )
-            )
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id, 1))
-        elif roll == 3:
-            projection.pending_inputs.append(
-                PendingInjuryTable(
-                    id=f'{event.id}.0',
-                    instruction='Risky adventure (3): roll 1D on Injury table',
-                    options=['1', '2', '3', '4', '5', '6'],
-                )
-            )
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id, 1))
-        else:  # 4-6
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger='muster_out_add',
-                    source_event_id=event.id,
-                    effect={'type': 'add', 'value': 1},
-                )
-            )
-            # _apply_skill_roll auto-queues advancement
 
 
 # ── event 11: forcibly drafted ────────────────────────────────────────────────

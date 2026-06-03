@@ -32,7 +32,7 @@ from ceres.character.careers.career_data import (
     SkillChoiceEffect,
     SkillTable,
 )
-from ceres.character.careers.common import handle_advanced_training, resolve_advanced_training
+from ceres.character.careers.common import handle_advanced_training
 from ceres.character.careers.common_pending import CareerChoicePendingBase, CareerSkillRollPendingBase
 from ceres.character.characteristics import Chars
 from ceres.character.events import (
@@ -73,6 +73,8 @@ from ceres.character.state import (
     Ally,
     CharacterProjection,
     Contact,
+    EffectTrigger,
+    EffectType,
     Enemy,
     ScheduledEffect,
 )
@@ -148,18 +150,18 @@ class PendingMarinesEvent9(CareerChoicePendingBase):
             projection.summary.connections.append(Enemy(source='Commander (Marines event 9)'))
             projection.scheduled_effects.append(
                 ScheduledEffect(
-                    trigger='advancement',
+                    trigger=EffectTrigger.ADVANCEMENT,
                     source_event_id=event.id,
-                    effect={'type': 'dm', 'amount': 2},
+                    effect={'type': EffectType.DM, 'amount': 2},
                 )
             )
         else:
             projection.summary.connections.append(Ally(source='Commander (Marines event 9)'))
             projection.scheduled_effects.append(
                 ScheduledEffect(
-                    trigger='advancement',
+                    trigger=EffectTrigger.ADVANCEMENT,
                     source_event_id=event.id,
-                    effect={'type': 'dm', 'amount': 1},
+                    effect={'type': EffectType.DM, 'amount': 1},
                 )
             )
         projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
@@ -186,20 +188,6 @@ class MarinesMishap4Handler(CareerHandlerBase):
         return pending_idx + 1
 
 
-class MarinesMishap4SkillHandler(CareerHandlerBase):
-    type: Literal['marines_mishap_4_skill'] = 'marines_mishap_4_skill'
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        # Legacy dispatch path — new path uses PendingMarinesMishap4SkillRoll.resolve()
-        from ceres.character.events import _apply_mishap_ejection
-
-        career = projection.get_current_career()
-        if event.modified_roll < 8:
-            _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
-        # success: do nothing — _apply_skill_roll auto-queues advancement
-
-
 # ── event 5: advanced training ───────────────────────────────────────────────
 
 
@@ -209,10 +197,6 @@ class MarinesEvent5Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         return handle_advanced_training('Marines', 5, 'marines_event_5', projection, event_id, pending_idx)
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        resolve_advanced_training(projection, event)
 
 
 # ── event 6: assault on an enemy fortress ────────────────────────────────────

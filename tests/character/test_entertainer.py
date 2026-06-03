@@ -29,7 +29,7 @@ from ceres.character.skills import (
     PresentationArt,
 )
 from ceres.character.sophonts import VILANI
-from ceres.character.state import Enemy
+from ceres.character.state import EffectTrigger, Enemy
 from tests.character.helpers import MOCK_WORLD
 
 
@@ -150,7 +150,7 @@ class TestEntertainerEvent8:
             SkillRollEvent(id=9, fulfills='8.0', skill=Admin(), modified_roll=9),
         ]
         projection = replay(1, events)
-        dm_effects = [se for se in projection.scheduled_effects if se.trigger == 'advancement']
+        dm_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.ADVANCEMENT]
         assert any(se.effect.get('amount') == 2 for se in dm_effects)
 
     def test_accept_failure_adds_enemy(self):

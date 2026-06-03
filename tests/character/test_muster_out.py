@@ -22,6 +22,7 @@ from ceres.character.events import (
 from ceres.character.replay import ReplayError, replay
 from ceres.character.skills import Admin, Athletics, Carouse, Drive, Medic, SpaceScience
 from ceres.character.sophonts import VILANI
+from ceres.character.state import EffectTrigger
 from tests.character.helpers import MOCK_WORLD
 
 
@@ -365,7 +366,7 @@ class TestMusterOut:
         projection = replay(1, events)
 
         # benefit_dm tracked as a scheduled effect
-        muster_out_dms = [se for se in projection.scheduled_effects if se.trigger == 'muster_out']
+        muster_out_dms = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.MUSTER_OUT]
         assert len(muster_out_dms) == 1
         assert muster_out_dms[0].effect.get('amount') == 1
 

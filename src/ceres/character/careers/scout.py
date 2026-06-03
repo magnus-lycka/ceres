@@ -73,6 +73,8 @@ from ceres.character.state import (
     Ally,
     CharacterProjection,
     Contact,
+    EffectTrigger,
+    EffectType,
     Enemy,
     ScheduledEffect,
 )
@@ -124,23 +126,6 @@ class ScoutEvent3Handler(CareerHandlerBase):
         )
         return pending_idx + 1
 
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        # Legacy dispatch path — new path uses PendingScoutEvent3SkillRoll.resolve()
-        skill_name = event.skill if isinstance(event.skill, str) else type(event.skill).name()
-        target = _AMBUSH_TARGETS[skill_name]
-        if event.modified_roll >= target:
-            projection.grant_skill(
-                Electronics(
-                    comms=Level(value=1),
-                    computers=Level(value=1),
-                    remote_ops=Level(value=1),
-                    sensors=Level(value=1),
-                )
-            )
-        else:
-            projection.summary.problems.append('Ship destroyed; may not re-enlist in Scouts at the end of this term.')
-
 
 # ── event 8: alien intelligence ──────────────────────────────────────────────
 
@@ -153,9 +138,9 @@ class PendingScoutEvent8SkillRoll(CareerSkillRollPendingBase):
             projection.summary.connections.append(Ally(source='Alien intelligence contact'))
             projection.scheduled_effects.append(
                 ScheduledEffect(
-                    trigger='advancement',
+                    trigger=EffectTrigger.ADVANCEMENT,
                     source_event_id=event.id,
-                    effect={'type': 'dm', 'amount': 2},
+                    effect={'type': EffectType.DM, 'amount': 2},
                 )
             )
         else:
@@ -181,26 +166,6 @@ class ScoutEvent8Handler(CareerHandlerBase):
         )
         return pending_idx + 1
 
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        # Legacy dispatch path — new path uses PendingScoutEvent8SkillRoll.resolve()
-        if event.modified_roll >= 8:
-            projection.summary.connections.append(Ally(source='Alien intelligence contact'))
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger='advancement',
-                    source_event_id=event.id,
-                    effect={'type': 'dm', 'amount': 2},
-                )
-            )
-        else:
-            projection.pending_inputs.append(
-                PendingMishap(
-                    id=f'{event.id}.0',
-                    instruction='Roll 1D Mishap (you are not ejected from this career)',
-                )
-            )
-
 
 # ── event 9: disaster rescue ─────────────────────────────────────────────────
 
@@ -213,9 +178,9 @@ class PendingScoutEvent9SkillRoll(CareerSkillRollPendingBase):
             projection.summary.connections.append(Contact(source='Disaster survivor'))
             projection.scheduled_effects.append(
                 ScheduledEffect(
-                    trigger='advancement',
+                    trigger=EffectTrigger.ADVANCEMENT,
                     source_event_id=event.id,
-                    effect={'type': 'dm', 'amount': 2},
+                    effect={'type': EffectType.DM, 'amount': 2},
                 )
             )
         else:
@@ -235,21 +200,6 @@ class ScoutEvent9Handler(CareerHandlerBase):
             )
         )
         return pending_idx + 1
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        # Legacy dispatch path — new path uses PendingScoutEvent9SkillRoll.resolve()
-        if event.modified_roll >= 8:
-            projection.summary.connections.append(Contact(source='Disaster survivor'))
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger='advancement',
-                    source_event_id=event.id,
-                    effect={'type': 'dm', 'amount': 2},
-                )
-            )
-        else:
-            projection.summary.connections.append(Enemy(source='Disaster relief gone wrong'))
 
 
 # ── event 10: fringes of Charted Space ───────────────────────────────────────
@@ -290,26 +240,6 @@ class ScoutEvent10Handler(CareerHandlerBase):
             )
         )
         return pending_idx + 1
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        # Legacy dispatch path — new path uses PendingScoutEvent10SkillRoll.resolve()
-        if event.modified_roll >= 8:
-            projection.summary.connections.append(Contact(source='Alien contact from the fringes of Charted Space'))
-            projection.pending_inputs.append(
-                PendingSkillChoice(
-                    id=f'{event.id}.0',
-                    instruction='Choose any skill +1 (alien contact)',
-                    options=[],
-                )
-            )
-        else:
-            projection.pending_inputs.append(
-                PendingMishap(
-                    id=f'{event.id}.0',
-                    instruction='Roll 1D Mishap (you are not ejected from this career)',
-                )
-            )
 
 
 # ── event 11: imperial courier ───────────────────────────────────────────────

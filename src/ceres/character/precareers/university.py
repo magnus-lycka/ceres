@@ -4,6 +4,8 @@ from ceres.character.precareers.precareer_data import PreCareerData
 from ceres.character.skills import AnySkill, _level_fields
 from ceres.character.state import (
     CharacterProjection,
+    EffectTrigger,
+    EffectType,
     ScheduledEffect,
 )
 
@@ -50,9 +52,9 @@ class UniversityPreCareer(PreCareerData):
         dm_amount = 2 if honours else 1
         projection.scheduled_effects.append(
             ScheduledEffect(
-                trigger='qualification',
+                trigger=EffectTrigger.QUALIFICATION,
                 source_event_id=event.id,
-                effect={'type': 'dm', 'amount': dm_amount},
+                effect={'type': EffectType.DM, 'amount': dm_amount},
                 consume=True,
             )
         )

@@ -4,6 +4,8 @@ from ceres.character.precareers.precareer_data import PreCareerData
 from ceres.character.skills import AnySkill
 from ceres.character.state import (
     CharacterProjection,
+    EffectTrigger,
+    EffectType,
     ScheduledEffect,
 )
 
@@ -74,9 +76,9 @@ class MerchantAcademyPreCareer(PreCareerData):
         adv_dm = 2 if honours else 1
         projection.scheduled_effects.append(
             ScheduledEffect(
-                trigger='advancement',
+                trigger=EffectTrigger.ADVANCEMENT,
                 source_event_id=event.id,
-                effect={'type': 'dm', 'amount': adv_dm},
+                effect={'type': EffectType.DM, 'amount': adv_dm},
                 consume=False,
             )
         )

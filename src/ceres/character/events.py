@@ -28,6 +28,8 @@ from ceres.character.state import (
     CharacterProjection,
     CharacterSummary,
     Contact,
+    EffectTrigger,
+    EffectType,
     PendingInputBase,
     ReplayError,
     ScheduledEffect,
@@ -102,13 +104,17 @@ def _apply_simple_effect(projection: Any, effect: Any, source: str = '', source_
     elif isinstance(effect, AdvancementDmEffect):
         projection.scheduled_effects.append(
             ScheduledEffect(
-                trigger='advancement', source_event_id=source_event_id, effect={'type': 'dm', 'amount': effect.amount}
+                trigger=EffectTrigger.ADVANCEMENT,
+                source_event_id=source_event_id,
+                effect={'type': EffectType.DM, 'amount': effect.amount},
             )
         )
     elif isinstance(effect, BenefitDmEffect):
         projection.scheduled_effects.append(
             ScheduledEffect(
-                trigger='muster_out', source_event_id=source_event_id, effect={'type': 'dm', 'amount': effect.amount}
+                trigger=EffectTrigger.MUSTER_OUT,
+                source_event_id=source_event_id,
+                effect={'type': EffectType.DM, 'amount': effect.amount},
             )
         )
     elif isinstance(effect, ParoleThresholdChangeEffect) and projection.summary.parole_threshold is not None:
@@ -283,7 +289,7 @@ def _apply_prisoner_advancement(projection: Any, event: Any, career: Any) -> Non
     char = assignment.advancement.characteristic
     target = assignment.advancement.target
     dm = characteristic_dm(projection.summary.characteristics.get(char, 0))
-    to_consume = [se for se in projection.scheduled_effects if se.trigger == 'advancement' and se.consume]
+    to_consume = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.ADVANCEMENT and se.consume]
     for se in to_consume:
         dm += se.effect.get('amount', 0)
         projection.scheduled_effects.remove(se)
@@ -671,7 +677,11 @@ class AdvancementDmChoiceEvent(EventBase):
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
 
         projection.scheduled_effects.append(
-            ScheduledEffect(trigger='advancement', source_event_id=self.id, effect={'type': 'dm', 'amount': 4})
+            ScheduledEffect(
+                trigger=EffectTrigger.ADVANCEMENT,
+                source_event_id=self.id,
+                effect={'type': EffectType.DM, 'amount': 4},
+            )
         )
         if projection.summary.current_career is not None:
             career = projection.get_current_career()
@@ -741,7 +751,9 @@ class AdvancementEvent(EventBase):
         char = assignment.advancement.characteristic
         target = assignment.advancement.target
         dm = characteristic_dm(projection.summary.characteristics.get(char, 0))
-        to_consume = [se for se in projection.scheduled_effects if se.trigger == 'advancement' and se.consume]
+        to_consume = [
+            se for se in projection.scheduled_effects if se.trigger == EffectTrigger.ADVANCEMENT and se.consume
+        ]
         for se in to_consume:
             dm += se.effect.get('amount', 0)
             projection.scheduled_effects.remove(se)
@@ -797,7 +809,9 @@ class CommissionEvent(EventBase):
         if career.commission is None:
             raise ReplayError(f'{career.name} does not support commission')
         dm = career.commission_dm(projection)
-        to_consume = [se for se in projection.scheduled_effects if se.trigger == 'advancement' and se.consume]
+        to_consume = [
+            se for se in projection.scheduled_effects if se.trigger == EffectTrigger.ADVANCEMENT and se.consume
+        ]
         for se in to_consume:
             dm += se.effect.get('amount', 0)
             projection.scheduled_effects.remove(se)
@@ -1182,7 +1196,11 @@ class LifeEventEvent(EventBase):
                 )
         elif roll == 9:
             projection.scheduled_effects.append(
-                ScheduledEffect(trigger='qualification', source_event_id=self.id, effect={'type': 'dm', 'amount': 2})
+                ScheduledEffect(
+                    trigger=EffectTrigger.QUALIFICATION,
+                    source_event_id=self.id,
+                    effect={'type': EffectType.DM, 'amount': 2},
+                )
             )
             if in_career and career is not None:
                 projection.pending_inputs.append(
@@ -1190,7 +1208,11 @@ class LifeEventEvent(EventBase):
                 )
         elif roll == 10:
             projection.scheduled_effects.append(
-                ScheduledEffect(trigger='muster_out', source_event_id=self.id, effect={'type': 'dm', 'amount': 2})
+                ScheduledEffect(
+                    trigger=EffectTrigger.MUSTER_OUT,
+                    source_event_id=self.id,
+                    effect={'type': EffectType.DM, 'amount': 2},
+                )
             )
             if in_career and career is not None:
                 projection.pending_inputs.append(
@@ -1199,7 +1221,9 @@ class LifeEventEvent(EventBase):
         elif roll == 11:
             projection.scheduled_effects.append(
                 ScheduledEffect(
-                    trigger='muster_out_reduce', source_event_id=self.id, effect={'type': 'reduce', 'value': 1}
+                    trigger=EffectTrigger.MUSTER_OUT_REDUCE,
+                    source_event_id=self.id,
+                    effect={'type': EffectType.REDUCE, 'value': 1},
                 )
             )
             if in_career and career is not None:
@@ -1711,11 +1735,15 @@ def muster_out_setup(
     roll_count = projection.summary.term_count + (projection.summary.rank or 0) // 2
     if lose_current_term:
         roll_count = max(0, roll_count - 1)
-    reduce_effects = [se for se in projection.scheduled_effects if se.trigger == 'muster_out_reduce' and se.consume]
+    reduce_effects = [
+        se for se in projection.scheduled_effects if se.trigger == EffectTrigger.MUSTER_OUT_REDUCE and se.consume
+    ]
     for se in reduce_effects:
         roll_count = max(0, roll_count - se.effect.get('value', 1))
         projection.scheduled_effects.remove(se)
-    add_effects = [se for se in projection.scheduled_effects if se.trigger == 'muster_out_add' and se.consume]
+    add_effects = [
+        se for se in projection.scheduled_effects if se.trigger == EffectTrigger.MUSTER_OUT_ADD and se.consume
+    ]
     for se in add_effects:
         roll_count += se.effect.get('value', 1)
         projection.scheduled_effects.remove(se)

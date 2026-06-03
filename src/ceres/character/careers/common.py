@@ -2,7 +2,6 @@
 
 from ceres.character.careers.common_pending import PendingAdvancedTrainingSkillRoll
 from ceres.character.characteristics import Chars
-from ceres.character.events import SkillRollEvent
 from ceres.character.state import CharacterProjection
 
 
@@ -25,16 +24,3 @@ def handle_advanced_training(
         )
     )
     return pending_idx + 1
-
-
-def resolve_advanced_training(projection: CharacterProjection, event: SkillRollEvent, threshold: int = 8) -> None:
-    if event.modified_roll >= threshold:
-        from ceres.character.events import PendingSkillChoice
-
-        projection.pending_inputs.append(
-            PendingSkillChoice(
-                id=f'{event.id}.0',
-                instruction='Advanced training: increase any existing skill by one level',
-                options=list(projection.summary.skills),
-            )
-        )

@@ -75,6 +75,7 @@ from ceres.character.skills import (
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Ally,
+    EffectTrigger,
     Enemy,
     Rival,
 )
@@ -273,7 +274,7 @@ class TestScholarTerm:
         ]
         projection = replay(1, events)
 
-        adv_dm = next((se for se in projection.scheduled_effects if se.trigger == 'advancement'), None)
+        adv_dm = next((se for se in projection.scheduled_effects if se.trigger == EffectTrigger.ADVANCEMENT), None)
         assert adv_dm is not None
         assert adv_dm.effect.get('amount') == 2
 
@@ -563,6 +564,37 @@ class TestScholarMishap5:
 
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
+    def test_give_up_at_age_30_creates_aging_roll(self):
+        from types import SimpleNamespace
+
+        from ceres.character.careers.loader import load_careers
+        from ceres.character.events import PendingAgingRoll
+        from ceres.character.state import CharacterProjection, CharacterSummary
+
+        scholar = load_careers()['Scholar']
+        proj = CharacterProjection(
+            character_id=1,
+            summary=CharacterSummary(
+                name='Test',
+                sophont=VILANI,
+                homeworld=MOCK_WORLD,
+                age=30,
+                current_career=scholar.career,
+                rank=1,
+            ),
+        )
+        proj.pending_inputs.append(PendingAdvancement(id='99.0', instruction='Advance'))
+
+        pending = PendingScholarMishap5(
+            id='8.0', instruction='Give up or start again?', options=['give_up', 'start_again']
+        )
+        pending.on_choice(proj, SimpleNamespace(id=9, choice='give_up'))
+
+        assert proj.summary.age == 34
+        assert proj.summary.current_career is None
+        assert not any(isinstance(p, PendingAdvancement) for p in proj.pending_inputs)
+        assert any(isinstance(p, PendingAgingRoll) for p in proj.pending_inputs)
+
 
 class TestScholarEvent3:
     """Event 3: research against conscience. Accept (2 Sciences, D3 Enemies) or Decline (nothing)."""
@@ -763,7 +795,7 @@ class TestScholarEvent11:
         events = [*self._setup(), AdvancementDmChoiceEvent(id=9, fulfills='8.0')]
         projection = replay(1, events)
 
-        adv_dm = next((se for se in projection.scheduled_effects if se.trigger == 'advancement'), None)
+        adv_dm = next((se for se in projection.scheduled_effects if se.trigger == EffectTrigger.ADVANCEMENT), None)
         assert adv_dm is not None
         assert adv_dm.effect.get('amount') == 4
 

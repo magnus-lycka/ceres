@@ -69,6 +69,8 @@ from ceres.character.skills import (
 )
 from ceres.character.state import (
     CharacterProjection,
+    EffectTrigger,
+    EffectType,
     Enemy,
     ScheduledEffect,
 )
@@ -119,9 +121,9 @@ class PendingEntertainerEvent8SkillRoll(CareerSkillRollPendingBase):
         if event.modified_roll >= 8:
             projection.scheduled_effects.append(
                 ScheduledEffect(
-                    trigger='advancement',
+                    trigger=EffectTrigger.ADVANCEMENT,
                     source_event_id=event.id,
-                    effect={'type': 'dm', 'amount': 2},
+                    effect={'type': EffectType.DM, 'amount': 2},
                 )
             )
         else:
@@ -166,25 +168,6 @@ class EntertainerEvent8Handler(CareerHandlerBase):
             )
         )
         return pending_idx + 1
-
-
-class EntertainerEvent8SkillHandler(CareerHandlerBase):
-    type: Literal['entertainer_event_8_skill'] = 'entertainer_event_8_skill'
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        # Legacy dispatch path — new path uses PendingEntertainerEvent8SkillRoll.resolve()
-        if event.modified_roll >= 8:
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger='advancement',
-                    source_event_id=event.id,
-                    effect={'type': 'dm', 'amount': 2},
-                )
-            )
-        else:
-            projection.summary.connections.append(Enemy(source='Powerful politician (Entertainer event 8)'))
-        # no pending added — _apply_skill_roll auto-queues advancement
 
 
 class EntertainerCareerData(CareerData):

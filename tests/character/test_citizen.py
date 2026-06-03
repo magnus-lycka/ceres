@@ -31,6 +31,7 @@ from ceres.character.skills import Admin, Athletics, Carouse, Drive, Engineer, M
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Contact,
+    EffectTrigger,
     Rival,
 )
 from tests.character.helpers import MOCK_WORLD
@@ -291,7 +292,7 @@ class TestCitizenEvent8:
             CareerChoiceEvent(id=7, fulfills='6.0', choice='refuse'),
         ]
         projection = replay(1, events)
-        dm_effects = [se for se in projection.scheduled_effects if se.trigger == 'advancement']
+        dm_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.ADVANCEMENT]
         assert any(se.effect.get('amount') == 2 for se in dm_effects)
 
     def test_refuse_queues_advancement(self):
@@ -319,7 +320,7 @@ class TestCitizenEvent8:
             SkillRollEvent(id=8, fulfills='7.0', skill=Streetwise(), modified_roll=9),
         ]
         projection = replay(1, events)
-        add_effects = [se for se in projection.scheduled_effects if se.trigger == 'muster_out_add']
+        add_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.MUSTER_OUT_ADD]
         assert len(add_effects) == 1
 
     def test_use_it_success_continues_career(self):

@@ -405,6 +405,49 @@ def test_wizard_shows_ucp_pending(client_with_backend):
     r = client.get(f'/ui/characters/{row["id"]}/wizard')
     assert r.status_code == 200
     assert 'ucp' in r.text
+    assert 'Humaniti' in r.text
+    assert 'Hexx (Trojan Reach 2715)' in r.text
+    assert 'Career(name=' not in r.text
+
+
+def test_wizard_shows_career_name_not_repr(client_with_backend, monkeypatch):
+    from ceres.character.careers.career_data import Career
+    from ceres.character.state import CharacterProjection, CharacterSummary
+
+    client, backend = client_with_backend
+    monkeypatch.setattr(
+        backend,
+        'get_projection',
+        lambda character_id: CharacterProjection(
+            character_id=character_id,
+            summary=CharacterSummary(
+                name='Clio',
+                age=30,
+                sophont=HUMANITI,
+                homeworld=MOCK_WORLD,
+                current_career=Career(
+                    name='Citizen',
+                    source='Core',
+                    description=(
+                        'Individuals serving in a corporation, bureaucracy or industry, '
+                        'or who are making a new life on an untamed planet.'
+                    ),
+                ),
+                current_assignment='Colonist',
+                rank=3,
+                term_count=3,
+            ),
+        ),
+    )
+
+    r = client.get('/ui/characters/1/wizard')
+    assert r.status_code == 200
+    assert 'Citizen' in r.text
+    assert '(Colonist)' in r.text
+    assert 'Rank 3' in r.text
+    assert '3 terms' in r.text
+    assert 'Age 30' in r.text
+    assert 'Career(name=' not in r.text
 
 
 def test_wizard_404_for_missing_character(client):
@@ -462,6 +505,50 @@ def test_character_sheet_shows_name(client_with_backend):
     r = client.get(f'/ui/characters/{row["id"]}')
     assert r.status_code == 200
     assert 'Fyra' in r.text
+    assert 'Humaniti' in r.text
+    assert 'Hexx (Trojan Reach 2715)' in r.text
+    assert '>?\n' not in r.text
+    assert 'Career(name=' not in r.text
+
+
+def test_character_sheet_shows_career_name_not_repr(client_with_backend, monkeypatch):
+    from ceres.character.careers.career_data import Career
+    from ceres.character.state import CharacterProjection, CharacterSummary
+
+    client, backend = client_with_backend
+    monkeypatch.setattr(
+        backend,
+        'get_projection',
+        lambda character_id: CharacterProjection(
+            character_id=character_id,
+            summary=CharacterSummary(
+                name='Fyra',
+                age=30,
+                sophont=HUMANITI,
+                homeworld=MOCK_WORLD,
+                current_career=Career(
+                    name='Citizen',
+                    source='Core',
+                    description=(
+                        'Individuals serving in a corporation, bureaucracy or industry, '
+                        'or who are making a new life on an untamed planet.'
+                    ),
+                ),
+                current_assignment='Colonist',
+                rank=3,
+                term_count=3,
+            ),
+        ),
+    )
+
+    r = client.get('/ui/characters/1')
+    assert r.status_code == 200
+    assert 'Citizen' in r.text
+    assert '(Colonist)' in r.text
+    assert 'Rank 3' in r.text
+    assert '3 terms' in r.text
+    assert 'Age 30' in r.text
+    assert 'Career(name=' not in r.text
 
 
 def test_character_sheet_404(client):

@@ -5,12 +5,15 @@
 <div class="flex items-start justify-between mb-6 gap-4 flex-wrap">
   <div>
     <h1 class="text-2xl font-bold text-amber-400 tracking-wide">{{ summary.name or '—' }}</h1>
+    {% set displayed_career = summary.current_career or summary.last_career %}
+    {% set displayed_assignment = summary.current_assignment or summary.last_assignment %}
     <p class="text-gray-500 text-sm mt-1">
-      {{ summary.species or '?' }}
-      {% if summary.current_career or summary.last_career %}
-        · {{ summary.current_career or summary.last_career }}
-        {% if summary.current_assignment or summary.last_assignment %}
-          ({{ summary.current_assignment or summary.last_assignment }})
+      {{ summary.sophont.name }}
+      · {{ summary.homeworld.name }} ({{ summary.homeworld.sector }} {{ summary.homeworld.hex }})
+      {% if displayed_career %}
+        · {{ displayed_career.name }}
+        {% if displayed_assignment %}
+          ({{ displayed_assignment }})
         {% endif %}
         {% if summary.rank is not none %}· Rank {{ summary.rank }}{% endif %}
         · {{ summary.term_count }} term{% if summary.term_count != 1 %}s{% endif %}

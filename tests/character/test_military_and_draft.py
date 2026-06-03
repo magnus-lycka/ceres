@@ -151,3 +151,33 @@ def test_successful_commission_sets_officer_rank_and_skips_advancement():
     assert projection.summary.career_terms[-1].commission
     assert projection.summary.skill_level(Leadership) == 1
     assert not any(p.kind == 'advancement' for p in projection.pending_inputs)
+
+
+def test_qualification_dm_scheduled_effect_is_consumed_on_career_entry():
+    from ceres.character.characteristics import Chars
+    from ceres.character.state import CharacterProjection, CharacterSummary, EffectTrigger, EffectType, ScheduledEffect
+
+    careers = load_careers()
+    army = careers['Army']
+    proj = CharacterProjection(
+        character_id=1,
+        summary=CharacterSummary(
+            name='Test',
+            sophont=VILANI,
+            homeworld=MOCK_WORLD,
+            characteristics={Chars.END: 7},
+        ),
+    )
+    # DM of +10 ensures a roll of 0 still qualifies (Army END 5+)
+    proj.scheduled_effects.append(
+        ScheduledEffect(
+            trigger=EffectTrigger.QUALIFICATION, source_event_id=5, effect={'type': EffectType.DM, 'amount': 10}
+        )
+    )
+    infantry = army.assignment('Infantry')
+    assert infantry is not None
+    army.start_career(proj, infantry, event_id=6, qualification_roll=0)
+
+    assert proj.summary.current_career is not None
+    assert proj.summary.current_career.name == 'Army'
+    assert proj.scheduled_effects == []

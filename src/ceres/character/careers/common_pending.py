@@ -44,28 +44,21 @@ def _build_skill_choice_select_options(
             continue
         skill_cls = type(opt)
         skill_name = skill_cls.name()
-        if level == 0:
-            skill = skill_cls()
-            from pydantic import TypeAdapter
+        choices = projection.skill_choices([skill_cls], level)
+        for skill in choices:
+            label = skill_name
+            fields = _level_fields(skill_cls)
+            if len(fields) > 1:
+                spec_names = skill_cls.specialities() if hasattr(skill_cls, 'specialities') else fields
+                for fname, sname in zip(fields, spec_names, strict=False):
+                    given = getattr(skill, fname).value
+                    if given > 0:
+                        label = f'{skill_name} ({sname})'
+                        break
+            from pydantic import TypeAdapter as _TA
 
-            adapter: TypeAdapter[AnySkill] = TypeAdapter(AnySkill)
-            results.append((skill_name, adapter.dump_json(skill).decode()))
-        else:
-            choices = projection.skill_choices([skill_cls], level)
-            for skill in choices:
-                label = skill_name
-                fields = _level_fields(skill_cls)
-                if len(fields) > 1:
-                    spec_names = skill_cls.specialities() if hasattr(skill_cls, 'specialities') else fields
-                    for fname, sname in zip(fields, spec_names, strict=False):
-                        given = getattr(skill, fname).value
-                        if given > 0:
-                            label = f'{skill_name} ({sname})'
-                            break
-                from pydantic import TypeAdapter as _TA
-
-                _adapter: _TA[AnySkill] = _TA(AnySkill)
-                results.append((label, _adapter.dump_json(skill).decode()))
+            _adapter: _TA[AnySkill] = _TA(AnySkill)
+            results.append((label, _adapter.dump_json(skill).decode()))
     return results
 
 

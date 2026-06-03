@@ -148,55 +148,6 @@ class PrisonerMishap3Handler(CareerHandlerBase):
         )
         return pending_idx + 1
 
-    @staticmethod
-    def on_choice(projection: CharacterProjection, event) -> None:
-        # Legacy dispatch path — new path uses PendingPrisonerMishap3.on_choice()
-        from ceres.character.events import _advancement_pending
-
-        career = projection.get_current_career()
-        if event.choice == 'submit':
-            projection.summary.problems.append(
-                'Prison gang (Prisoner mishap 3): submitted — lose your Benefit roll for this term.'
-            )
-            projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id)
-            )
-        else:
-            projection.pending_inputs.append(
-                PendingPrisonerMishap3FightSkillRoll(
-                    id=f'{event.id}.0',
-                    instruction='Roll Melee 8+: success = gain Enemy + PT+1; fail = roll twice on Injury table',
-                    options=[Melee()],
-                )
-            )
-
-
-class PrisonerMishap3FightHandler(CareerHandlerBase):
-    type: Literal['prisoner_mishap_3_fight'] = 'prisoner_mishap_3_fight'
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        from ceres.character.events import _advancement_pending
-
-        career = projection.get_current_career()
-        if event.modified_roll >= 8:
-            projection.summary.connections.append(Enemy(source='Prison gang leader (Prisoner mishap 3)'))
-            projection.summary.parole_threshold = min(12, (projection.summary.parole_threshold or 0) + 1)
-            projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id)
-            )
-        else:
-            projection.pending_inputs.append(
-                PendingDoubleInjuryRoll(
-                    id=f'{event.id}.0',
-                    instruction='Gang fight: roll twice on the Injury table, apply lower result',
-                    options=['1', '2', '3', '4', '5', '6'],
-                )
-            )
-            projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id, 1)
-            )
-
 
 # ── event 3: escape opportunity ───────────────────────────────────────────────
 
@@ -246,37 +197,6 @@ class PrisonerEvent3Handler(CareerHandlerBase):
         )
         return pending_idx + 1
 
-    @staticmethod
-    def on_choice(projection: CharacterProjection, event) -> None:
-        # Legacy dispatch path — new path uses PendingPrisonerEvent3.on_choice()
-        career = projection.get_current_career()
-        if event.choice == 'stay':
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
-        else:
-            projection.pending_inputs.append(
-                PendingPrisonerEvent3EscapeSkillRoll(
-                    id=f'{event.id}.0',
-                    instruction='Roll Stealth or Deception 10+: success = escape (freed); fail = PT+2',
-                    options=[Stealth(), Deception()],
-                )
-            )
-
-
-class PrisonerEvent3EscapeHandler(CareerHandlerBase):
-    type: Literal['prisoner_event_3_escape'] = 'prisoner_event_3_escape'
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        # Legacy dispatch path — new path uses PendingPrisonerEvent3EscapeSkillRoll.resolve()
-        career = projection.get_current_career()
-        if event.modified_roll >= 10:
-            projection.summary.narrative.append('Prisoner event 3: escaped from prison — career ends.')
-            muster_out_setup(projection, career, event.id, 0, lose_current_term=False)
-        else:
-            projection.summary.parole_threshold = min(12, (projection.summary.parole_threshold or 0) + 2)
-            projection.summary.narrative.append('Prisoner event 3: escape failed — Parole Threshold +2.')
-            # _apply_skill_roll auto-queues advancement since no pending was added
-
 
 # ── event 4: hard labour ──────────────────────────────────────────────────────
 
@@ -313,23 +233,6 @@ class PrisonerEvent4Handler(CareerHandlerBase):
             )
         )
         return pending_idx + 1
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        # Legacy dispatch path — new path uses PendingPrisonerEvent4SkillRoll.resolve()
-        if event.modified_roll >= 8:
-            projection.summary.parole_threshold = max(0, (projection.summary.parole_threshold or 0) - 1)
-            projection.pending_inputs.append(
-                PendingSkillChoice(
-                    id=f'{event.id}.0',
-                    instruction='Hard labour endured: choose Athletics, Mechanic, or Melee (unarmed)',
-                    options=[Athletics(), Mechanic(), Melee()],
-                )
-            )
-        else:
-            projection.summary.parole_threshold = min(12, (projection.summary.parole_threshold or 0) + 1)
-        # _apply_skill_roll auto-queues advancement when no pending added (fail case)
-        # For success: skill choice is pending; advancement queued after it resolves via _apply_skill_choice
 
 
 # ── event 5: gang opportunity ─────────────────────────────────────────────────
@@ -370,26 +273,6 @@ class PrisonerEvent5Handler(CareerHandlerBase):
             )
         )
         return pending_idx + 1
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        # Legacy dispatch path — new path uses PendingPrisonerEvent5SkillRoll.resolve()
-        if event.modified_roll >= 8:
-            projection.summary.parole_threshold = min(12, (projection.summary.parole_threshold or 0) + 1)
-            projection.summary.problems.append(
-                'Prisoner event 5: joined a gang — gain DM+1 to survival rolls while in this career.'
-            )
-            projection.pending_inputs.append(
-                PendingSkillChoice(
-                    id=f'{event.id}.0',
-                    instruction='Joined gang: choose Persuade, Melee, or Stealth',
-                    options=[Persuade(), Melee(), Stealth()],
-                )
-            )
-        else:
-            projection.summary.connections.append(Enemy(source='Prison gang (Prisoner event 5)'))
-        # Fail: _apply_skill_roll auto-queues advancement (no pending added)
-        # Success: skill choice queued; advancement queued after it resolves
 
 
 # ── event 6: vocational training ─────────────────────────────────────────────
@@ -436,32 +319,6 @@ class PrisonerEvent6Handler(CareerHandlerBase):
             )
         )
         return pending_idx + 1
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        # Legacy dispatch path — new path uses PendingPrisonerEvent6SkillRoll.resolve()
-        if event.modified_roll >= 8:
-            from ceres.character.skills import AnySkill, _skill_classes
-
-            all_skills: list[AnySkill] = cast(
-                list[AnySkill],
-                sorted(
-                    [
-                        cls()
-                        for cls in _skill_classes(AnySkill)
-                        if cls.name() not in {'Jack-of-all-Trades', 'Jack-of-All-Trades'}
-                    ],
-                    key=lambda s: type(s).name(),
-                ),
-            )
-            projection.pending_inputs.append(
-                PendingSkillChoice(
-                    id=f'{event.id}.0',
-                    instruction='Vocational training: choose any skill at level 1',
-                    options=all_skills,
-                )
-            )
-        # Fail or success-with-pending: _apply_skill_roll handles advancement correctly
 
 
 # ── event 7: prison event sub-table ──────────────────────────────────────────
@@ -536,61 +393,6 @@ class PrisonerEvent7Handler(CareerHandlerBase):
         )
         return pending_idx + 1
 
-    @staticmethod
-    def on_choice(projection: CharacterProjection, event) -> None:
-        # Legacy dispatch path — new path uses PendingPrisonerEvent7.on_choice()
-        career = projection.get_current_career()
-        sub = event.choice
-        if sub == '1':
-            projection.pending_inputs.append(
-                PendingPrisonerEvent7RiotSkillRoll(
-                    id=f'{event.id}.0',
-                    instruction='Riot: roll END 8+: success = survive unhurt; fail = roll on Injury table',
-                    options=[Chars.END],
-                )
-            )
-        elif sub == '2':
-            projection.summary.parole_threshold = min(12, (projection.summary.parole_threshold or 0) + 1)
-            projection.summary.connections.append(Enemy(source='Prison gang (Prisoner event 7, forced)'))
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
-        elif sub == '3':
-            projection.summary.problems.append(
-                'Prisoner event 7: transferred to another prison — no mechanical effect. Apply manually if needed.'
-            )
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
-        elif sub == '4':
-            projection.summary.connections.append(Ally(source='Visitor (Prisoner event 7)'))
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
-        elif sub == '5':
-            projection.summary.parole_threshold = max(0, (projection.summary.parole_threshold or 0) - 1)
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
-        else:  # '6'
-            projection.summary.parole_threshold = max(0, (projection.summary.parole_threshold or 0) - 1)
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
-
-
-class PrisonerEvent7RiotHandler(CareerHandlerBase):
-    type: Literal['prisoner_event_7_riot'] = 'prisoner_event_7_riot'
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        # Legacy dispatch path — new path uses PendingPrisonerEvent7RiotSkillRoll.resolve()
-        from ceres.character.events import _advancement_pending
-
-        career = projection.get_current_career()
-        if event.modified_roll < 8:
-            projection.pending_inputs.append(
-                PendingInjuryTable(
-                    id=f'{event.id}.0',
-                    instruction='Riot injury: roll 1D on Injury table',
-                    options=['1', '2', '3', '4', '5', '6'],
-                )
-            )
-            projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id, 1)
-            )
-        # Success: _apply_skill_roll auto-queues advancement
-
 
 # ── event 9: hire lawyer ──────────────────────────────────────────────────────
 
@@ -643,26 +445,6 @@ class PrisonerEvent9Handler(CareerHandlerBase):
             )
         )
         return pending_idx + 1
-
-    @staticmethod
-    def on_choice(projection: CharacterProjection, event) -> None:
-        # Legacy dispatch path — new path uses PendingPrisonerEvent9.on_choice()
-        career = projection.get_current_career()
-        if event.choice == 'decline':
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
-            return
-        level = int(event.choice[-1])
-        projection.summary.problems.append(
-            f'Prisoner event 9: lawyer level {level} hired — deduct Cr{level * 1000} from cash. Apply manually.'
-        )
-        projection.pending_inputs.append(
-            PendingPrisonerEvent9LawyerSkillRoll(
-                id=f'{event.id}.0',
-                instruction=f'Roll 2D + {level} vs 8+: success = PT-1',
-                options=[],
-                lawyer_level=level,
-            )
-        )
 
 
 # ── event 12: heroism ─────────────────────────────────────────────────────────
@@ -722,47 +504,6 @@ class PrisonerEvent12Handler(CareerHandlerBase):
             )
         )
         return pending_idx + 1
-
-    @staticmethod
-    def on_choice(projection: CharacterProjection, event) -> None:
-        # Legacy dispatch path — new path uses PendingPrisonerEvent12.on_choice()
-        career = projection.get_current_career()
-        if event.choice == 'refuse':
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
-        else:
-            projection.pending_inputs.append(
-                PendingPrisonerEvent12HeroismSkillRoll(
-                    id=f'{event.id}.0',
-                    instruction='Roll 2D: 8+ = Ally + PT-2; 7 or less = roll on Injury table',
-                    options=[],
-                )
-            )
-
-
-class PrisonerEvent12HeroismHandler(CareerHandlerBase):
-    type: Literal['prisoner_event_12_heroism'] = 'prisoner_event_12_heroism'
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        # Legacy dispatch path — new path uses PendingPrisonerEvent12HeroismSkillRoll.resolve()
-        from ceres.character.events import _advancement_pending
-
-        career = projection.get_current_career()
-        if event.modified_roll >= 8:
-            projection.summary.connections.append(Ally(source='Saved fellow prisoner (Prisoner event 12)'))
-            projection.summary.parole_threshold = max(0, (projection.summary.parole_threshold or 0) - 2)
-            # _apply_skill_roll auto-queues advancement (no pending added)
-        else:
-            projection.pending_inputs.append(
-                PendingInjuryTable(
-                    id=f'{event.id}.0',
-                    instruction='Heroism failed: roll 1D on Injury table',
-                    options=['1', '2', '3', '4', '5', '6'],
-                )
-            )
-            projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id, 1)
-            )
 
 
 class PrisonerCareerData(CareerData):

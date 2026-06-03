@@ -4,6 +4,8 @@ from ceres.character.precareers.precareer_data import PreCareerData
 from ceres.character.skills import AnySkill, JackOfAllTrades, Level, Pilot
 from ceres.character.state import (
     CharacterProjection,
+    EffectTrigger,
+    EffectType,
     ScheduledEffect,
 )
 
@@ -46,9 +48,9 @@ class SpacerCommunityPreCareer(PreCareerData):
         projection.summary.characteristics[Chars.SOC] = max(0, projection.summary.characteristics.get(Chars.SOC, 0) - 2)
         projection.scheduled_effects.append(
             ScheduledEffect(
-                trigger='qualification',
+                trigger=EffectTrigger.QUALIFICATION,
                 source_event_id=event.id,
-                effect={'type': 'dm', 'amount': 1, 'career': 'Merchant', 'assignment': 'Free Trader'},
+                effect={'type': EffectType.DM, 'amount': 1, 'career': 'Merchant', 'assignment': 'Free Trader'},
                 consume=True,
             )
         )

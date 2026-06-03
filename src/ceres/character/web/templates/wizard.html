@@ -5,9 +5,11 @@
 <div class="flex items-center justify-between mb-6">
   <div>
     <h1 class="text-xl font-bold text-amber-400">{{ summary.name or '?' }}</h1>
+    {% set displayed_career = summary.current_career or summary.last_career %}
     <p class="text-gray-600 text-xs mt-1">
-      {{ summary.species or '?' }}
-      {% if summary.current_career %}· {{ summary.current_career }}{% if summary.current_assignment %} ({{ summary.current_assignment }}){% endif %}{% endif %}
+      {{ summary.sophont.name }}
+      · {{ summary.homeworld.name }} ({{ summary.homeworld.sector }} {{ summary.homeworld.hex }})
+      {% if displayed_career %}· {{ displayed_career.name }}{% if summary.current_assignment %} ({{ summary.current_assignment }}){% elif summary.last_assignment %} ({{ summary.last_assignment }}){% endif %}{% endif %}
       {% if summary.term_count > 0 %} · {{ summary.term_count }} term{% if summary.term_count != 1 %}s{% endif %}{% endif %}
       · Age {{ summary.age }}
     </p>

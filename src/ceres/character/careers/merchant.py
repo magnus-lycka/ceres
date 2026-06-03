@@ -32,7 +32,7 @@ from ceres.character.careers.career_data import (
     SkillChoiceEffect,
     SkillTable,
 )
-from ceres.character.careers.common import handle_advanced_training, resolve_advanced_training
+from ceres.character.careers.common import handle_advanced_training
 from ceres.character.careers.common_pending import CareerChoicePendingBase, CareerSkillRollPendingBase
 from ceres.character.characteristics import Chars
 from ceres.character.events import (
@@ -70,6 +70,8 @@ from ceres.character.skills import (
 )
 from ceres.character.state import (
     CharacterProjection,
+    EffectTrigger,
+    EffectType,
     Enemy,
     Rival,
     ScheduledEffect,
@@ -114,9 +116,9 @@ class PendingMerchantEvent3SkillRoll(CareerSkillRollPendingBase):
         if event.modified_roll >= 8:
             projection.scheduled_effects.append(
                 ScheduledEffect(
-                    trigger='muster_out_add',
+                    trigger=EffectTrigger.MUSTER_OUT_ADD,
                     source_event_id=event.id,
-                    effect={'type': 'add', 'value': 1},
+                    effect={'type': EffectType.ADD, 'value': 1},
                 )
             )
             # no pending added — _apply_skill_roll auto-queues advancement
@@ -143,45 +145,6 @@ class MerchantEvent3Handler(CareerHandlerBase):
             )
         )
         return pending_idx + 1
-
-    @staticmethod
-    def on_choice(projection: CharacterProjection, event) -> None:
-        # Legacy dispatch path — new path uses PendingMerchantEvent3.on_choice()
-        career = projection.get_current_career()
-        if event.choice == 'refuse':
-            projection.summary.connections.append(Rival(source='Merchant who offered smuggling job (Merchant event 3)'))
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
-        else:
-            projection.pending_inputs.append(
-                PendingMerchantEvent3SkillRoll(
-                    id=f'{event.id}.0',
-                    instruction='Roll Deception or Persuade 8+: success = extra Benefit roll; fail = ejected, gain Enemy',
-                    options=[Deception(), Persuade()],
-                )
-            )
-
-
-class MerchantEvent3SkillHandler(CareerHandlerBase):
-    type: Literal['merchant_event_3_skill'] = 'merchant_event_3_skill'
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        # Legacy dispatch path — new path uses PendingMerchantEvent3SkillRoll.resolve()
-        from ceres.character.events import _apply_mishap_ejection
-
-        if event.modified_roll >= 8:
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger='muster_out_add',
-                    source_event_id=event.id,
-                    effect={'type': 'add', 'value': 1},
-                )
-            )
-            # no pending added — _apply_skill_roll auto-queues advancement
-        else:
-            career = projection.get_current_career()
-            projection.summary.connections.append(Enemy(source='Smuggling job failed (Merchant event 3)'))
-            _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
 
 
 # ── event 5: gambling opportunity ────────────────────────────────────────────
@@ -239,18 +202,6 @@ class MerchantEvent8Handler(CareerHandlerBase):
         return pending_idx + 1
 
 
-class MerchantEvent8RollHandler(CareerHandlerBase):
-    type: Literal['merchant_event_8_roll'] = 'merchant_event_8_roll'
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        # Legacy dispatch path — new path uses PendingMerchantEvent8Roll.resolve()
-        from ceres.character.careers.prisoner import PRISONER
-
-        if event.modified_roll == 2:
-            projection.forced_next_career = PRISONER
-
-
 # ── event 9: advanced training ────────────────────────────────────────────────
 
 
@@ -260,10 +211,6 @@ class MerchantEvent9Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         return handle_advanced_training('Merchant', 9, 'merchant_event_9', projection, event_id, pending_idx)
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        resolve_advanced_training(projection, event)
 
 
 class MerchantCareerData(CareerData):

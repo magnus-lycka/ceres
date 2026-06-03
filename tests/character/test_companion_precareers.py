@@ -31,6 +31,7 @@ from ceres.character.skills import (
     _level_fields,
 )
 from ceres.character.sophonts import HUMANITI
+from ceres.character.state import EffectTrigger
 from tests.character.helpers import MOCK_WORLD
 
 
@@ -324,7 +325,7 @@ class TestMerchantAcademy:
         ]
         projection = replay(1, events)
 
-        adv_effects = [e for e in projection.scheduled_effects if e.trigger == 'advancement']
+        adv_effects = [e for e in projection.scheduled_effects if e.trigger == EffectTrigger.ADVANCEMENT]
         assert len(adv_effects) == 1
         assert adv_effects[0].effect['amount'] == 1
 
@@ -353,7 +354,7 @@ class TestMerchantAcademy:
         ]
         projection = replay(1, events)
 
-        adv_effects = [e for e in projection.scheduled_effects if e.trigger == 'advancement']
+        adv_effects = [e for e in projection.scheduled_effects if e.trigger == EffectTrigger.ADVANCEMENT]
         assert len(adv_effects) == 1
         assert adv_effects[0].effect['amount'] == 2
 
@@ -711,7 +712,7 @@ class TestSpacerCommunity:
         ]
         projection = replay(1, events)
 
-        qual_effects = [e for e in projection.scheduled_effects if e.trigger == 'qualification']
+        qual_effects = [e for e in projection.scheduled_effects if e.trigger == EffectTrigger.QUALIFICATION]
         assert len(qual_effects) == 1
 
     def test_graduation_queues_career_choice_with_distinct_id(self):

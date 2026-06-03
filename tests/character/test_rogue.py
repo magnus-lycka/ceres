@@ -27,6 +27,7 @@ from ceres.character.skills import Admin, Advocate, Athletics, Carouse, Drive, G
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Contact,
+    EffectTrigger,
     Enemy,
     Rival,
 )
@@ -151,6 +152,25 @@ class TestRogueMishap3:
         projection = replay(1, events)
         assert projection.summary.current_career is None
 
+    def test_mishap_3_existing_contact_is_converted_to_rival(self):
+        from ceres.character.careers.rogue import RogueMishap3Handler
+        from ceres.character.sophonts import VILANI
+        from ceres.character.state import CharacterProjection, CharacterSummary, Contact
+        from tests.character.helpers import MOCK_WORLD
+
+        proj = CharacterProjection(
+            character_id=1,
+            summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD),
+        )
+        proj.summary.connections.append(Contact(source='Old friend'))
+        RogueMishap3Handler.handle(proj, event_id=5, pending_idx=0)
+
+        contacts = [c for c in proj.summary.connections if isinstance(c, Contact)]
+        rivals = [c for c in proj.summary.connections if isinstance(c, Rival)]
+        assert len(contacts) == 0
+        assert len(rivals) == 1
+        assert 'contact' in rivals[0].source.lower()
+
 
 # ── event 3: arrested and charged ────────────────────────────────────────────
 
@@ -175,7 +195,7 @@ class TestRogueEvent3:
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
-        reduce_effects = [se for se in projection.scheduled_effects if se.trigger == 'muster_out_reduce']
+        reduce_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.MUSTER_OUT_REDUCE]
         assert len(reduce_effects) == 1
 
     def test_lawyer_queues_advancement(self):
@@ -271,7 +291,7 @@ class TestRogueEvent6:
             CareerChoiceEvent(id=7, fulfills='6.0', choice='backstab'),
         ]
         projection = replay(1, events)
-        dm_effects = [se for se in projection.scheduled_effects if se.trigger == 'advancement']
+        dm_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.ADVANCEMENT]
         assert any(se.effect.get('amount') == 2 for se in dm_effects)
 
     def test_refuse_adds_contact(self):
@@ -324,7 +344,7 @@ class TestRogueEvent9:
             SkillRollEvent(id=7, fulfills='6.0', skill=Streetwise(), modified_roll=9),
         ]
         projection = replay(1, events)
-        add_effects = [se for se in projection.scheduled_effects if se.trigger == 'muster_out_add']
+        add_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.MUSTER_OUT_ADD]
         assert len(add_effects) == 1
 
     def test_failure_adds_injury_problem(self):

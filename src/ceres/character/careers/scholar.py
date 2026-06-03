@@ -160,25 +160,6 @@ class ScholarMishap5Handler(CareerHandlerBase):
         )
         return pending_idx + 1
 
-    @staticmethod
-    def on_choice(projection: CharacterProjection, event) -> None:
-        # Legacy dispatch path — new path uses PendingScholarMishap5.on_choice()
-        from ceres.character.events import PendingAdvancement, PendingAgingRoll
-
-        if event.choice == 'give_up':
-            career = projection.get_current_career()
-            projection.pending_inputs = [p for p in projection.pending_inputs if not isinstance(p, PendingAdvancement)]
-            projection.summary.age += 4
-            if projection.summary.age >= 34:
-                projection.muster_out_career = career.career
-                projection.clear_current_career()
-                projection.pending_inputs.append(
-                    PendingAgingRoll(id=f'{event.id}.0', instruction='Roll 2D on Aging table')
-                )
-            else:
-                muster_out_setup(projection, career, event.id, 0, lose_current_term=True)
-        # 'start_again': advancement is already there from _apply_mishap, career stays
-
 
 # ── event 3: research against conscience ─────────────────────────────────────
 
@@ -277,19 +258,6 @@ class ScholarEvent6Handler(CareerHandlerBase):
         )
         return pending_idx + 1
 
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        # Legacy dispatch path — new path uses PendingScholarEvent6SkillRoll.resolve()
-        if event.modified_roll >= 8:
-            projection.pending_inputs.append(
-                PendingSkillChoice(
-                    id=f'{event.id}.0',
-                    instruction='Choose any skill to gain at level 1',
-                    options=[],
-                )
-            )
-        # failure: _apply_skill_roll creates advancement pending
-
 
 # ── event 8: opportunity to cheat ────────────────────────────────────────────
 
@@ -347,46 +315,6 @@ class ScholarEvent8Handler(CareerHandlerBase):
             )
         )
         return pending_idx + 1
-
-    @staticmethod
-    def on_choice(projection: CharacterProjection, event) -> None:
-        # Legacy dispatch path — new path uses PendingScholarEvent8.on_choice()
-        from ceres.character.events import _advancement_pending
-
-        if event.choice == 'refuse':
-            if projection.summary.current_career is not None:
-                career = projection.get_current_career()
-                projection.pending_inputs.append(
-                    _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id)
-                )
-        else:
-            projection.pending_inputs.append(
-                PendingScholarEvent8SkillRoll(
-                    id=f'{event.id}.0',
-                    instruction='Roll Deception 8+ or Admin 8+ to cheat successfully',
-                    options=[Deception(), Admin()],
-                )
-            )
-
-
-class ScholarEvent8RollHandler(CareerHandlerBase):
-    type: Literal['scholar_event_8_roll'] = 'scholar_event_8_roll'
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        # Legacy dispatch path — new path uses PendingScholarEvent8SkillRoll.resolve()
-        if event.modified_roll >= 8:
-            projection.summary.connections.append(Enemy(source='Cheating in the field'))
-            projection.pending_inputs.append(
-                PendingSkillChoice(
-                    id=f'{event.id}.0',
-                    instruction='Cheat succeeded: choose any skill to gain +1',
-                    options=[],
-                )
-            )
-        else:
-            projection.summary.connections.append(Enemy(source='Cheating discovered'))
-        # _apply_skill_roll creates advancement if no new pending (failure), or after skill_choice (success)
 
 
 # ── event 11: brilliant mentor ────────────────────────────────────────────────

@@ -35,7 +35,7 @@ from ceres.character.skills import (
     VaccSuit,
 )
 from ceres.character.sophonts import VILANI
-from ceres.character.state import Enemy
+from ceres.character.state import EffectTrigger, Enemy
 from tests.character.helpers import MOCK_WORLD
 
 
@@ -281,7 +281,7 @@ class TestNavyEvent10:
             CareerChoiceEvent(id=7, fulfills='6.0', choice='profit'),
         ]
         projection = replay(1, events)
-        add_effects = [se for se in projection.scheduled_effects if se.trigger == 'muster_out_add']
+        add_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.MUSTER_OUT_ADD]
         assert len(add_effects) == 1
 
     def test_refuse_schedules_advancement_dm_2(self):
@@ -290,7 +290,7 @@ class TestNavyEvent10:
             CareerChoiceEvent(id=7, fulfills='6.0', choice='refuse'),
         ]
         projection = replay(1, events)
-        dm_effects = [se for se in projection.scheduled_effects if se.trigger == 'advancement']
+        dm_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.ADVANCEMENT]
         assert any(se.effect.get('amount') == 2 for se in dm_effects)
 
     def test_profit_no_advancement_dm(self):
@@ -299,7 +299,7 @@ class TestNavyEvent10:
             CareerChoiceEvent(id=7, fulfills='6.0', choice='profit'),
         ]
         projection = replay(1, events)
-        dm_effects = [se for se in projection.scheduled_effects if se.trigger == 'advancement']
+        dm_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.ADVANCEMENT]
         assert len(dm_effects) == 0
 
     def test_both_choices_queue_career_progress(self):

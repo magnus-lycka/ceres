@@ -23,6 +23,7 @@ from ceres.character.events import (
     MusterOutEvent,
     PendingAdvancement,
     PendingBenefitChoice,
+    PendingCareerChoice,
     PendingDoubleInjuryRoll,
     PendingInjuryTable,
     PendingMishap,
@@ -485,6 +486,16 @@ class TestAgentMishap3:
             ]
             projection = replay(1, events)
             assert projection.summary.current_career is None
+
+    def test_roll_2_forces_prisoner_next(self):
+        events = [
+            *self._setup_to_mishap(),
+            SkillRollEvent(id=7, fulfills='6.0', skill=Medic(), modified_roll=2),
+        ]
+        projection = replay(1, events)
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerChoice)), None)
+        assert pending is not None
+        assert pending.options == ['Prisoner']
 
 
 # ── mishap 5: someone gets hurt ───────────────────────────────────────────────

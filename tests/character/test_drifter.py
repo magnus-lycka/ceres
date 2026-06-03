@@ -31,6 +31,7 @@ from ceres.character.replay import replay
 from ceres.character.skills import Admin, Athletics, Carouse, Deception, Drive, GunCombat, Melee, Survival
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
+    EffectTrigger,
     Enemy,
     Rival,
 )
@@ -191,7 +192,7 @@ class TestDrifterEvent3:
             CareerChoiceEvent(id=7, fulfills='6.0', choice='accept'),
         ]
         projection = replay(1, events)
-        qual_effects = [se for se in projection.scheduled_effects if se.trigger == 'qualification']
+        qual_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.QUALIFICATION]
         assert any(se.effect.get('amount') == 4 for se in qual_effects)
 
     def test_decline_no_qualification_dm(self):
@@ -200,7 +201,7 @@ class TestDrifterEvent3:
             CareerChoiceEvent(id=7, fulfills='6.0', choice='decline'),
         ]
         projection = replay(1, events)
-        qual_effects = [se for se in projection.scheduled_effects if se.trigger == 'qualification']
+        qual_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.QUALIFICATION]
         assert len(qual_effects) == 0
 
     def test_both_choices_queue_advancement(self):
@@ -355,7 +356,7 @@ class TestDrifterEvent9:
             SkillRollEvent(id=8, fulfills='7.0', skill=Admin(), modified_roll=5),
         ]
         projection = replay(1, events)
-        add_effects = [se for se in projection.scheduled_effects if se.trigger == 'muster_out_add']
+        add_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.MUSTER_OUT_ADD]
         assert len(add_effects) == 1
 
     def test_1d_roll_high_queues_advancement(self):

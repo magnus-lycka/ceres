@@ -69,6 +69,8 @@ from ceres.character.skills import (
 )
 from ceres.character.state import (
     CharacterProjection,
+    EffectTrigger,
+    EffectType,
     Enemy,
     Rival,
     ScheduledEffect,
@@ -116,20 +118,6 @@ class NobleMishap3Handler(CareerHandlerBase):
         )
         return pending_idx + 1
 
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        # Legacy dispatch path — new path uses PendingNobleMishap3SkillRoll.resolve()
-        from ceres.character.events import _apply_mishap_ejection
-
-        career = projection.get_current_career()
-        if event.modified_roll >= 8:
-            _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=False)
-        else:
-            projection.summary.problems.append(
-                'Noble mishap 3: failed to escape — roll on the Injury table and apply the result.'
-            )
-            _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
-
 
 # ── mishap 5: assassin attempt ────────────────────────────────────────────────
 
@@ -162,18 +150,6 @@ class NobleMishap5Handler(CareerHandlerBase):
         )
         return pending_idx + 1
 
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        # Legacy dispatch path — new path uses PendingNobleMishap5SkillRoll.resolve()
-        from ceres.character.events import _apply_mishap_ejection
-
-        career = projection.get_current_career()
-        if event.modified_roll < 8:
-            projection.summary.problems.append(
-                'Noble mishap 5: assassin — roll on the Injury table and apply the result.'
-            )
-        _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
-
 
 # ── event 8: conspiracy recruitment ──────────────────────────────────────────
 
@@ -205,9 +181,9 @@ class PendingNobleEvent8SkillRoll(CareerSkillRollPendingBase):
         if event.modified_roll >= 8:
             projection.scheduled_effects.append(
                 ScheduledEffect(
-                    trigger='muster_out_add',
+                    trigger=EffectTrigger.MUSTER_OUT_ADD,
                     source_event_id=event.id,
-                    effect={'type': 'add', 'value': 1},
+                    effect={'type': EffectType.ADD, 'value': 1},
                 )
             )
             # no pending added — _apply_skill_roll auto-queues advancement
@@ -234,45 +210,6 @@ class NobleEvent8Handler(CareerHandlerBase):
             )
         )
         return pending_idx + 1
-
-    @staticmethod
-    def on_choice(projection: CharacterProjection, event) -> None:
-        # Legacy dispatch path — new path uses PendingNobleEvent8.on_choice()
-        career = projection.get_current_career()
-        if event.choice == 'refuse':
-            projection.summary.connections.append(Rival(source='Conspiracy leader (Noble event 8)'))
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
-        else:
-            projection.pending_inputs.append(
-                PendingNobleEvent8SkillRoll(
-                    id=f'{event.id}.0',
-                    instruction='Roll Deception or Persuade 8+: success = extra Benefit roll; fail = ejected, gain Enemy',
-                    options=[Deception(), Persuade()],
-                )
-            )
-
-
-class NobleEvent8SkillHandler(CareerHandlerBase):
-    type: Literal['noble_event_8_skill'] = 'noble_event_8_skill'
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        # Legacy dispatch path — new path uses PendingNobleEvent8SkillRoll.resolve()
-        from ceres.character.events import _apply_mishap_ejection
-
-        if event.modified_roll >= 8:
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger='muster_out_add',
-                    source_event_id=event.id,
-                    effect={'type': 'add', 'value': 1},
-                )
-            )
-            # no pending added — _apply_skill_roll auto-queues advancement
-        else:
-            career = projection.get_current_career()
-            projection.summary.connections.append(Enemy(source='Noble conspiracy (Noble event 8)'))
-            _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
 
 
 class NobleCareerData(CareerData):

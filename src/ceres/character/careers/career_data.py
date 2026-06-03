@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict
 
 from ceres.character.benefits import AnyBenefit
 from ceres.character.characteristics import Chars, ConnectionKind, characteristic_dm
+from ceres.character.effect_enums import EffectTrigger
 from ceres.character.skills import AnySkill, Level, _level_fields
 
 if TYPE_CHECKING:
@@ -391,7 +392,7 @@ class CareerData(TermData):
         auto_effects = [
             se
             for se in projection.scheduled_effects
-            if se.trigger == 'auto_qualify' and se.effect.get('career') == self.name
+            if se.trigger == EffectTrigger.AUTO_QUALIFY and se.effect.get('career') == self.name
         ]
         if auto_effects:
             for se in auto_effects:
@@ -404,7 +405,9 @@ class CareerData(TermData):
 
         target = self.qualification.target
         dm = self.qualification_dm(projection)
-        qual_effects = [se for se in projection.scheduled_effects if se.trigger == 'qualification' and se.consume]
+        qual_effects = [
+            se for se in projection.scheduled_effects if se.trigger == EffectTrigger.QUALIFICATION and se.consume
+        ]
         for se in qual_effects:
             dm += se.effect.get('amount', 0)
             projection.scheduled_effects.remove(se)

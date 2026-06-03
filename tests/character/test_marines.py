@@ -39,6 +39,7 @@ from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Ally,
     Contact,
+    EffectTrigger,
     Enemy,
 )
 from tests.character.helpers import MOCK_WORLD
@@ -267,7 +268,7 @@ class TestMarinesEvent9:
             CareerChoiceEvent(id=7, fulfills='6.0', choice='report'),
         ]
         projection = replay(1, events)
-        dm_effects = [se for se in projection.scheduled_effects if se.trigger == 'advancement']
+        dm_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.ADVANCEMENT]
         assert any(se.effect.get('amount') == 2 for se in dm_effects)
 
     def test_protect_adds_ally(self):
@@ -285,7 +286,7 @@ class TestMarinesEvent9:
             CareerChoiceEvent(id=7, fulfills='6.0', choice='protect'),
         ]
         projection = replay(1, events)
-        dm_effects = [se for se in projection.scheduled_effects if se.trigger == 'advancement']
+        dm_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.ADVANCEMENT]
         assert any(se.effect.get('amount') == 1 for se in dm_effects)
 
     def test_both_choices_queue_career_progress(self):

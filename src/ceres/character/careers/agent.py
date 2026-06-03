@@ -35,7 +35,7 @@ from ceres.character.careers.career_data import (
     SkillChoiceEffect,
     SkillTable,
 )
-from ceres.character.careers.common import handle_advanced_training, resolve_advanced_training
+from ceres.character.careers.common import handle_advanced_training
 from ceres.character.careers.common_pending import (
     CareerChoicePendingBase,
     CareerSkillChoicePendingBase,
@@ -282,10 +282,6 @@ class AgentEvent6Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         return handle_advanced_training('Agent', 6, 'agent_event_6', projection, event_id, pending_idx)
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        resolve_advanced_training(projection, event)
 
 
 # ── event 8: undercover mission ──────────────────────────────────────────────

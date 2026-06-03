@@ -32,7 +32,7 @@ from ceres.character.careers.career_data import (
     SkillChoiceEffect,
     SkillTable,
 )
-from ceres.character.careers.common import handle_advanced_training, resolve_advanced_training
+from ceres.character.careers.common import handle_advanced_training
 from ceres.character.careers.common_pending import CareerChoicePendingBase, CareerSkillRollPendingBase
 from ceres.character.characteristics import Chars
 from ceres.character.events import (
@@ -76,6 +76,8 @@ from ceres.character.skills import (
 from ceres.character.state import (
     CharacterProjection,
     Contact,
+    EffectTrigger,
+    EffectType,
     Rival,
     ScheduledEffect,
 )
@@ -135,9 +137,9 @@ class PendingCitizenEvent8(CareerChoicePendingBase):
         if event.choice == 'refuse':
             projection.scheduled_effects.append(
                 ScheduledEffect(
-                    trigger='advancement',
+                    trigger=EffectTrigger.ADVANCEMENT,
                     source_event_id=event.id,
-                    effect={'type': 'dm', 'amount': 2},
+                    effect={'type': EffectType.DM, 'amount': 2},
                 )
             )
             projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
@@ -160,9 +162,9 @@ class PendingCitizenEvent8SkillRoll(CareerSkillRollPendingBase):
         if event.modified_roll >= 8:
             projection.scheduled_effects.append(
                 ScheduledEffect(
-                    trigger='muster_out_add',
+                    trigger=EffectTrigger.MUSTER_OUT_ADD,
                     source_event_id=event.id,
-                    effect={'type': 'add', 'value': 1},
+                    effect={'type': EffectType.ADD, 'value': 1},
                 )
             )
             # no pending added — _apply_skill_roll auto-queues advancement
@@ -223,10 +225,6 @@ class CitizenEvent6Handler(CareerHandlerBase):
             'Citizen', 6, 'citizen_event_6', projection, event_id, pending_idx, threshold=10
         )
 
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        resolve_advanced_training(projection, event, threshold=10)
-
 
 # ── event 8: illegal information ─────────────────────────────────────────────
 
@@ -247,28 +245,6 @@ class CitizenEvent8Handler(CareerHandlerBase):
             )
         )
         return pending_idx + 1
-
-
-class CitizenEvent8SkillHandler(CareerHandlerBase):
-    type: Literal['citizen_event_8_skill'] = 'citizen_event_8_skill'
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        # Legacy dispatch path — new path uses PendingCitizenEvent8SkillRoll.resolve()
-        from ceres.character.events import _apply_mishap_ejection
-
-        if event.modified_roll >= 8:
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger='muster_out_add',
-                    source_event_id=event.id,
-                    effect={'type': 'add', 'value': 1},
-                )
-            )
-        else:
-            career = projection.get_current_career()
-            projection.summary.connections.append(Rival(source='Illegal information leak (Citizen event 8)'))
-            _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
 
 
 class CitizenCareerData(CareerData):

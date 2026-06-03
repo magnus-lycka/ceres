@@ -70,6 +70,8 @@ from ceres.character.state import (
     Ally,
     CharacterProjection,
     Contact,
+    EffectTrigger,
+    EffectType,
     Enemy,
     Rival,
     ScheduledEffect,
@@ -137,21 +139,6 @@ class RogueMishap3Handler(CareerHandlerBase):
         )
         return pending_idx + 1
 
-    @staticmethod
-    def on_choice(projection: CharacterProjection, event: CareerChoiceEvent) -> None:
-        # Legacy dispatch path — new path uses PendingRogueMishap3.on_choice()
-        from ceres.character.careers.loader import load_careers
-        from ceres.character.careers.prisoner import PRISONER
-
-        if event.choice == '2':
-            projection.forced_next_career = PRISONER
-
-        career_obj = projection.summary.current_career
-        career = load_careers().get(career_obj.name if career_obj else '')
-        if career is None:
-            return
-        muster_out_setup(projection, career, event.id, 0, lose_current_term=True)
-
 
 # ── event 3: arrested and charged ────────────────────────────────────────────
 
@@ -164,9 +151,9 @@ class PendingRogueEvent3(CareerChoicePendingBase):
         if event.choice == 'lawyer':
             projection.scheduled_effects.append(
                 ScheduledEffect(
-                    trigger='muster_out_reduce',
+                    trigger=EffectTrigger.MUSTER_OUT_REDUCE,
                     source_event_id=event.id,
-                    effect={'type': 'reduce', 'value': 1},
+                    effect={'type': EffectType.REDUCE, 'value': 1},
                 )
             )
             projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
@@ -215,48 +202,6 @@ class RogueEvent3Handler(CareerHandlerBase):
         )
         return pending_idx + 1
 
-    @staticmethod
-    def on_choice(projection: CharacterProjection, event) -> None:
-        # Legacy dispatch path — new path uses PendingRogueEvent3.on_choice()
-        career = projection.get_current_career()
-        if event.choice == 'lawyer':
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger='muster_out_reduce',
-                    source_event_id=event.id,
-                    effect={'type': 'reduce', 'value': 1},
-                )
-            )
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
-        else:
-            projection.pending_inputs.append(
-                PendingRogueEvent3SkillRoll(
-                    id=f'{event.id}.0',
-                    instruction=(
-                        'Roll Advocate 8+: success = cleared, career continues; '
-                        'fail = ejected, must take Prisoner next term'
-                    ),
-                    options=[Advocate()],
-                )
-            )
-
-
-class RogueEvent3SkillHandler(CareerHandlerBase):
-    type: Literal['rogue_event_3_skill'] = 'rogue_event_3_skill'
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        # Legacy dispatch path — new path uses PendingRogueEvent3SkillRoll.resolve()
-        from ceres.character.careers.prisoner import PRISONER
-        from ceres.character.events import _apply_mishap_ejection
-
-        if event.modified_roll >= 8:
-            pass  # cleared — _apply_skill_roll auto-queues advancement
-        else:
-            career = projection.get_current_career()
-            projection.forced_next_career = PRISONER
-            _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
-
 
 # ── event 6: backstab fellow rogue ───────────────────────────────────────────
 
@@ -270,9 +215,9 @@ class PendingRogueEvent6(CareerChoicePendingBase):
             projection.summary.connections.append(Enemy(source='Backstabbed rogue (Rogue event 6)'))
             projection.scheduled_effects.append(
                 ScheduledEffect(
-                    trigger='advancement',
+                    trigger=EffectTrigger.ADVANCEMENT,
                     source_event_id=event.id,
-                    effect={'type': 'dm', 'amount': 2},
+                    effect={'type': EffectType.DM, 'amount': 2},
                 )
             )
         else:
@@ -294,23 +239,6 @@ class RogueEvent6Handler(CareerHandlerBase):
         )
         return pending_idx + 1
 
-    @staticmethod
-    def on_choice(projection: CharacterProjection, event) -> None:
-        # Legacy dispatch path — new path uses PendingRogueEvent6.on_choice()
-        career = projection.get_current_career()
-        if event.choice == 'backstab':
-            projection.summary.connections.append(Enemy(source='Backstabbed rogue (Rogue event 6)'))
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger='advancement',
-                    source_event_id=event.id,
-                    effect={'type': 'dm', 'amount': 2},
-                )
-            )
-        else:
-            projection.summary.connections.append(Contact(source='Fellow rogue (Rogue event 6)'))
-        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
-
 
 # ── event 9: feud with rival organisation ────────────────────────────────────
 
@@ -322,9 +250,9 @@ class PendingRogueEvent9SkillRoll(CareerSkillRollPendingBase):
         if event.modified_roll >= 8:
             projection.scheduled_effects.append(
                 ScheduledEffect(
-                    trigger='muster_out_add',
+                    trigger=EffectTrigger.MUSTER_OUT_ADD,
                     source_event_id=event.id,
-                    effect={'type': 'add', 'value': 1},
+                    effect={'type': EffectType.ADD, 'value': 1},
                 )
             )
             # no pending added — _apply_skill_roll auto-queues advancement
@@ -347,23 +275,6 @@ class RogueEvent9Handler(CareerHandlerBase):
             )
         )
         return pending_idx + 1
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        # Legacy dispatch path — new path uses PendingRogueEvent9SkillRoll.resolve()
-        if event.modified_roll >= 8:
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger='muster_out_add',
-                    source_event_id=event.id,
-                    effect={'type': 'add', 'value': 1},
-                )
-            )
-            # no pending added — _apply_skill_roll auto-queues advancement
-        else:
-            projection.summary.problems.append(
-                'Criminal feud: you are injured — roll on the Injury table and apply the result.'
-            )
 
 
 class RogueCareerData(CareerData):
