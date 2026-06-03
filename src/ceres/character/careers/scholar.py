@@ -8,6 +8,7 @@ from ceres.character.benefits import (
 )
 from ceres.character.careers.career_data import (
     AdvancementDmEffect,
+    AdvancementDmOption,
     AssignmentData,
     AutoAdvanceEffect,
     BenefitDmEffect,
@@ -61,7 +62,6 @@ from ceres.character.skills import (
     Survival,
     VaccSuit,
     skill_instances,
-    skill_names,
 )
 from ceres.character.state import (
     CharacterProjection,
@@ -113,7 +113,7 @@ class ScholarMishap3Handler(CareerHandlerBase):
                 mishap=True,
                 advancement_precreated=True,
                 instruction='Increase Science by one level: choose which broad science',
-                options=cast(list[AnySkill | Literal['advancement_dm_4']], skill_instances(ScienceSkill)),
+                options=cast(list[AnySkill | AdvancementDmOption], skill_instances(ScienceSkill)),
             )
         )
         # advancement was already created by _apply_mishap (stay_in_career=True)
@@ -197,7 +197,7 @@ class ScholarEvent3Handler(CareerHandlerBase):
                         mishap=False,
                         advancement_precreated=True,
                         instruction=f'Choose {label} Science specialty to increase by one level',
-                        options=cast(list[AnySkill | Literal['advancement_dm_4']], skill_instances(ScienceSkill)),
+                        options=cast(list[AnySkill | AdvancementDmOption], skill_instances(ScienceSkill)),
                     )
                 )
             if projection.summary.current_career is not None:
@@ -329,7 +329,7 @@ class ScholarEvent11Handler(CareerHandlerBase):
                 roll=11,
                 advancement_precreated=False,
                 instruction='Increase Science by one level (choose which), or DM+4 to your next advancement roll',
-                options=[*_SCIENCES, 'advancement_dm_4'],
+                options=[*_SCIENCES, AdvancementDmOption()],
             )
         )
         return pending_idx + 1
@@ -431,11 +431,11 @@ CAREER_DATA = ScholarCareerData(
     ),
     ranks={
         0: RankEntry(rank=0),
-        1: RankEntry(rank=1, bonus=RankBonus(choices=skill_names(ScienceSkill), level=1)),
+        1: RankEntry(rank=1, bonus=RankBonus(choices=_SCIENCES, level=1)),
         2: RankEntry(rank=2, bonus=RankBonus(skill=Electronics(), level=1)),
         3: RankEntry(rank=3, bonus=RankBonus(skill=Investigate(), level=1)),
         4: RankEntry(rank=4),
-        5: RankEntry(rank=5, bonus=RankBonus(choices=skill_names(ScienceSkill), level=2)),
+        5: RankEntry(rank=5, bonus=RankBonus(choices=_SCIENCES, level=2)),
         6: RankEntry(rank=6),
     },
     ranks_by_assignment={
@@ -443,9 +443,9 @@ CAREER_DATA = ScholarCareerData(
             0: RankEntry(rank=0),
             1: RankEntry(rank=1, bonus=RankBonus(skill=Medic(), level=1)),
             2: RankEntry(rank=2),
-            3: RankEntry(rank=3, bonus=RankBonus(choices=skill_names(ScienceSkill), level=1)),
+            3: RankEntry(rank=3, bonus=RankBonus(choices=_SCIENCES, level=1)),
             4: RankEntry(rank=4),
-            5: RankEntry(rank=5, bonus=RankBonus(choices=skill_names(ScienceSkill), level=2)),
+            5: RankEntry(rank=5, bonus=RankBonus(choices=_SCIENCES, level=2)),
             6: RankEntry(rank=6),
         },
     },

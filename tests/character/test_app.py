@@ -297,14 +297,11 @@ def test_api_scholar_initial_training_creates_one_choice_pending(memory_client):
     choice_pendings = [p for p in data['pending_inputs'] if p['kind'] == 'initial_training_choice']
     assert len(choice_pendings) == 1
     assert not any(p['kind'] == 'survive' for p in data['pending_inputs'])
-    _sciences = ['Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science']
-    assert choice_pendings[0] == {
-        'id': '4.0',
-        'kind': 'initial_training_choice',
-        'instruction': f'Initial training: choose one of {", ".join(_sciences)}',
-        'options': _sciences,
-        'blocking': True,
-    }
+    _sciences = sorted(['Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science'])
+    assert choice_pendings[0]['id'] == '4.0'
+    assert choice_pendings[0]['kind'] == 'initial_training_choice'
+    assert choice_pendings[0]['instruction'] == f'Initial training: choose one of {", ".join(_sciences)}'
+    assert {o['type'] for o in choice_pendings[0]['options']} == set(_sciences)
 
 
 def test_api_scholar_initial_training_choices_unlock_survive(memory_client):

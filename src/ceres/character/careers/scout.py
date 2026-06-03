@@ -7,6 +7,7 @@ from ceres.character.benefits import (
     CharacteristicIncrease,
 )
 from ceres.character.careers.career_data import (
+    AdvancementDmOption,
     AssignmentData,
     AutoAdvanceEffect,
     BenefitDmEffect,
@@ -255,7 +256,7 @@ class ScoutEvent11Handler(CareerHandlerBase):
                 roll=11,
                 advancement_precreated=False,
                 instruction='Gain Diplomat 1, or DM+4 to your next advancement roll',
-                options=[Diplomat(), 'advancement_dm_4'],
+                options=[Diplomat(), AdvancementDmOption()],
             )
         )
         return pending_idx + 1

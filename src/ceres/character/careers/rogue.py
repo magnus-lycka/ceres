@@ -7,6 +7,7 @@ from ceres.character.benefits import (
     CharacteristicIncrease,
 )
 from ceres.character.careers.career_data import (
+    AdvancementDmOption,
     AssignmentData,
     AutoAdvanceEffect,
     BenefitDmEffect,
@@ -391,16 +392,16 @@ CAREER_DATA = RogueCareerData(
             0: RankEntry(rank=0),
             1: RankEntry(rank=1, bonus=RankBonus(skill=Persuade(), level=1)),
             2: RankEntry(rank=2),
-            3: RankEntry(rank=3, bonus=RankBonus(choices=['Gun Combat', 'Melee'], level=1)),
+            3: RankEntry(rank=3, bonus=RankBonus(choices=[GunCombat(), Melee()], level=1)),
             4: RankEntry(rank=4),
             5: RankEntry(rank=5, bonus=RankBonus(skill=Streetwise(), level=1)),
             6: RankEntry(rank=6),
         },
         3: {  # Pirate
             0: RankEntry(rank=0, title='Lackey'),
-            1: RankEntry(rank=1, title='Henchman', bonus=RankBonus(choices=['Pilot', 'Gunner'], level=1)),
+            1: RankEntry(rank=1, title='Henchman', bonus=RankBonus(choices=[Pilot(), Gunner()], level=1)),
             2: RankEntry(rank=2, title='Corporal'),
-            3: RankEntry(rank=3, title='Sergeant', bonus=RankBonus(choices=['Gun Combat', 'Melee'], level=1)),
+            3: RankEntry(rank=3, title='Sergeant', bonus=RankBonus(choices=[GunCombat(), Melee()], level=1)),
             4: RankEntry(rank=4, title='Lieutenant'),
             5: RankEntry(rank=5, title='Leader', bonus=RankBonus(skill=Leadership(), level=1)),
             6: RankEntry(rank=6, title='Captain'),
@@ -487,7 +488,7 @@ CAREER_DATA = RogueCareerData(
         ),
         11: CareerEventEntry(
             text='A crime lord considers you his protege.',
-            effects=[SkillChoiceEffect(options=[Tactics(), 'advancement_dm_4'], level=1)],
+            effects=[SkillChoiceEffect(options=[Tactics(), AdvancementDmOption()], level=1)],
         ),
         12: CareerEventEntry(
             text='You commit a legendary crime. You are automatically promoted.',

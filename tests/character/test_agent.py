@@ -2,6 +2,7 @@
 
 import pytest
 
+from ceres.character.careers.career_data import AdvancementDmOption
 from ceres.character.characteristics import Chars
 from ceres.character.events import (
     AdvancementEvent,
@@ -357,7 +358,7 @@ class TestAgentEvent11:
             None,
         )
         assert pending is not None
-        assert pending.options == [Investigate(), 'advancement_dm_4']
+        assert pending.options == [Investigate(), AdvancementDmOption()]
 
     def test_choose_investigate_grants_investigate_level_1(self):
         events = [

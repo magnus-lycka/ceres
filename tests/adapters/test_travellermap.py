@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from ceres.adapters import travellermap
@@ -9,6 +11,7 @@ from ceres.adapters.travellermap import (
     _parse_column_positions,
     _parse_sec_worlds,
     clear_travellermap_cache,
+    clear_travellermap_memory_cache,
     fetch_sector,
     fetch_sector_worlds,
     fetch_sectors,
@@ -63,6 +66,15 @@ Hex  Name              UWP       Remarks                       {Ix}   (Ex)    [C
 0103 Taltern           E530240-6 De Lo Po                      { -3 } (410-5) [1111] -     -  - 202 7  NaHu M2 V M2 V
 0110 Bilke             D987341-7 Lo FlorW                      { -3 } (520-5) [1113] -     -  - 202 6  FlLe F0 V
 0201 Szirp             A436538-D Ni Ht                         { 1 }  (745+1) [565D] -     -  - 800 9  NaHu M8 V
+"""
+
+_UNKNOWN_SEC_TEXT = """\
+# Sector: Reft
+# Milieu: M1105
+
+Hex  Name              UWP       Remarks                       {Ix}   (Ex)    [Cx]   N     B  Z PBG W  A    Stellar
+---- ----------------- --------- ----------------------------- ------ ------- ------ ----- -- - --- -- ---- ---------
+0101 Marker            ???????-?                               { 0 }  (000+0) [0000] -     -  - 000 0  NaXX Pulsar
 """
 
 
@@ -145,6 +157,22 @@ class TestSectorInfo:
         info = SectorInfo.from_raw(raw)
         assert info.abbreviation == ''
 
+    @pytest.mark.parametrize(
+        ('abbreviation', 'name'),
+        [
+            ('Spin', 'Spinward Marches'),
+            ('Troj', 'Trojan Reach'),
+            ('Dene', 'Deneb'),
+            ('Core', 'Core'),
+            ('Reft', 'Reft'),
+            ('Touc', 'Touchstone'),
+        ],
+    )
+    def test_directory_name_examples(self, abbreviation: str, name: str) -> None:
+        info = SectorInfo(x=0, y=0, milieu='M1105', abbreviation=abbreviation, tags='OTU', names=[name])
+        assert info.abbreviation == abbreviation
+        assert info.names[0] == name
+
 
 class TestParseColumnPositions:
     def test_three_columns(self) -> None:
@@ -187,8 +215,16 @@ class TestParseSectorWorlds:
             name='Taltern',
             uwp='E530240-6',
             remarks='De Lo Po',
+            ix='{ -3 }',
+            ex='(410-5)',
+            cx='[1111]',
+            nobility='-',
             bases='-',
+            zone='-',
+            pbg='202',
+            world_count='7',
             allegiance='NaHu',
+            stellar='M2 V M2 V',
         )
 
     def test_second_entry(self) -> None:
@@ -198,8 +234,16 @@ class TestParseSectorWorlds:
             name='Bilke',
             uwp='D987341-7',
             remarks='Lo FlorW',
+            ix='{ -3 }',
+            ex='(520-5)',
+            cx='[1113]',
+            nobility='-',
             bases='-',
+            zone='-',
+            pbg='202',
+            world_count='6',
             allegiance='FlLe',
+            stellar='F0 V',
         )
 
     def test_third_entry(self) -> None:
@@ -209,8 +253,16 @@ class TestParseSectorWorlds:
             name='Szirp',
             uwp='A436538-D',
             remarks='Ni Ht',
+            ix='{ 1 }',
+            ex='(745+1)',
+            cx='[565D]',
+            nobility='-',
             bases='-',
+            zone='-',
+            pbg='800',
+            world_count='9',
             allegiance='NaHu',
+            stellar='M8 V',
         )
 
     def test_empty_text(self) -> None:
@@ -219,8 +271,39 @@ class TestParseSectorWorlds:
     def test_only_comments(self) -> None:
         assert _parse_sec_worlds('# comment\n# another\n') == []
 
+    def test_unknown_uwp_digits_are_preserved_without_numeric_crash(self) -> None:
+        worlds = _parse_sec_worlds(_UNKNOWN_SEC_TEXT)
+
+        assert worlds[0] == SectorWorldEntry(
+            hex='0101',
+            name='Marker',
+            uwp='???????-?',
+            remarks='',
+            ix='{ 0 }',
+            ex='(000+0)',
+            cx='[0000]',
+            nobility='-',
+            bases='-',
+            zone='-',
+            pbg='000',
+            world_count='0',
+            allegiance='NaXX',
+            stellar='Pulsar',
+        )
+        assert worlds[0].starport == '?'
+        assert worlds[0].size is None
+        assert worlds[0].atmosphere is None
+        assert worlds[0].hydrographics is None
+        assert worlds[0].population is None
+        assert worlds[0].government is None
+        assert worlds[0].law_level is None
+        assert worlds[0].tl is None
+
 
 class TestFetchSector:
+    def setup_method(self) -> None:
+        clear_travellermap_cache()
+
     def test_parses_sector_name_and_allegiance_labels_from_sec_text(self, monkeypatch: pytest.MonkeyPatch) -> None:
         response = _FakeResponse(text=_SAMPLE_SEC_TEXT)
         requests: list[tuple[str, dict | None]] = []
@@ -244,6 +327,31 @@ class TestFetchSector:
         assert [world.name for world in sector.worlds] == ['Taltern', 'Bilke', 'Szirp']
         assert requests == [('https://travellermap.com/data/Troj', None)]
         assert response.raise_for_status_called
+
+    def test_falls_back_to_sector_directory_name_when_sec_header_lacks_name(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        response = _FakeResponse(text=_SAMPLE_SEC_TEXT.replace('# Sector: Trojan Reach\n', ''))
+        requests: list[tuple[str, dict | None]] = []
+
+        def client_factory() -> _FakeClient:
+            client = _FakeClient()
+            client.response = response
+            client.requests = requests
+            return client
+
+        monkeypatch.setattr(travellermap.httpx, 'Client', client_factory)
+        monkeypatch.setattr(
+            travellermap,
+            'fetch_sectors',
+            lambda milieu='M1105': [
+                SectorInfo(x=0, y=0, milieu='M1105', abbreviation='Troj', tags='OTU', names=['Trojan Reach'])
+            ],
+        )
+
+        sector = travellermap.fetch_sector('Troj')
+
+        assert sector.name == 'Trojan Reach'
 
 
 class _FakeResponse:
@@ -314,6 +422,27 @@ class TestFetchSectors:
         assert first == second == [SectorInfo.from_raw(_SAMPLE_SECTOR_JSON)]
         assert requests == [('https://travellermap.com/data', {'milieu': 'M1120'})]
 
+    def test_reuses_disk_cached_sector_list(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        clear_travellermap_cache()
+        response = _FakeResponse(json_data={'Sectors': [_SAMPLE_SECTOR_JSON]})
+        requests: list[tuple[str, dict | None]] = []
+
+        def client_factory() -> _FakeClient:
+            client = _FakeClient()
+            client.response = response
+            client.requests = requests
+            return client
+
+        monkeypatch.setattr(travellermap.httpx, 'Client', client_factory)
+        monkeypatch.setattr(travellermap.settings, 'cache_dir', lambda: tmp_path)
+
+        first = fetch_sectors('M1120')
+        clear_travellermap_memory_cache()
+        second = fetch_sectors('M1120')
+
+        assert first == second == [SectorInfo.from_raw(_SAMPLE_SECTOR_JSON)]
+        assert requests == [('https://travellermap.com/data', {'milieu': 'M1120'})]
+
 
 class TestFetchSectorWorlds:
     def setup_method(self) -> None:
@@ -338,8 +467,16 @@ class TestFetchSectorWorlds:
             name='Taltern',
             uwp='E530240-6',
             remarks='De Lo Po',
+            ix='{ -3 }',
+            ex='(410-5)',
+            cx='[1111]',
+            nobility='-',
             bases='-',
+            zone='-',
+            pbg='202',
+            world_count='7',
             allegiance='NaHu',
+            stellar='M2 V M2 V',
         )
         assert requests == [('https://travellermap.com/data/Troj', None)]
         assert response.raise_for_status_called
@@ -363,6 +500,27 @@ class TestFetchSectorWorlds:
         assert sector.name == 'Trojan Reach'
         assert [world.name for world in worlds] == ['Taltern', 'Bilke', 'Szirp']
         assert again == sector
+        assert requests == [('https://travellermap.com/data/Troj', None)]
+
+    def test_reuses_disk_cached_sector_data(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        clear_travellermap_cache()
+        response = _FakeResponse(text=_SAMPLE_SEC_TEXT)
+        requests: list[tuple[str, dict | None]] = []
+
+        def client_factory() -> _FakeClient:
+            client = _FakeClient()
+            client.response = response
+            client.requests = requests
+            return client
+
+        monkeypatch.setattr(travellermap.httpx, 'Client', client_factory)
+        monkeypatch.setattr(travellermap.settings, 'cache_dir', lambda: tmp_path)
+
+        first = fetch_sector('Troj')
+        clear_travellermap_memory_cache()
+        second = fetch_sector('Troj')
+
+        assert first == second
         assert requests == [('https://travellermap.com/data/Troj', None)]
 
 

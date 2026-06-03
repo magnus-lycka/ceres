@@ -10,6 +10,7 @@ from ceres.character.benefits import (
 )
 from ceres.character.careers.career_data import (
     AdvancementDmEffect,
+    AdvancementDmOption,
     AssignmentData,
     AutoAdvanceEffect,
     BenefitDmEffect,
@@ -431,7 +432,7 @@ CAREER_DATA = NobleCareerData(
         ),
         11: CareerEventEntry(
             text='You make an alliance with a powerful noble.',
-            effects=[GainAllyEffect(), SkillChoiceEffect(options=[Leadership(), 'advancement_dm_4'], level=1)],
+            effects=[GainAllyEffect(), SkillChoiceEffect(options=[Leadership(), AdvancementDmOption()], level=1)],
         ),
         12: CareerEventEntry(
             text='Your efforts do not go unnoticed by the Imperium. You are automatically promoted.',

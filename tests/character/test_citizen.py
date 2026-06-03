@@ -23,7 +23,7 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.replay import replay
-from ceres.character.skills import Admin, Athletics, Carouse, Drive, Mechanic, Streetwise
+from ceres.character.skills import Admin, Athletics, Carouse, Drive, Engineer, Mechanic, Steward, Streetwise
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Contact,
@@ -78,9 +78,9 @@ def test_citizen_subsequent_career_basic_training_chooses_one_assignment_skill()
     projection = replay(1, events)
 
     pending = next(p for p in projection.pending_inputs if isinstance(p, PendingInitialTrainingChoice))
-    assert 'Engineer' in pending.options
-    assert 'Mechanic' not in pending.options
-    assert 'Steward' not in pending.options
+    assert Engineer() in pending.options
+    assert Mechanic() not in pending.options
+    assert Steward() not in pending.options
     assert not any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
 
 

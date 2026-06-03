@@ -280,25 +280,24 @@ follow-up work packages.
 
 ### Remove `skill_from_str` / `skill_class_by_name` from `events.py`
 
-**Partial progress**: `PendingCareerSkillRoll`, `PendingSkillChoice`,
-`PendingCareerSkillChoice`, and `PendingBackgroundSkills` now hold `AnySkill`
-instances instead of strings. `_pick_skill_auto` handles typed instances
-directly. All career event handlers and test assertions use typed skill objects.
+**Largely complete**: `PendingCareerSkillRoll`, `PendingSkillChoice`,
+`PendingCareerSkillChoice`, `PendingBackgroundSkills`,
+`PendingInitialTrainingChoice`, `PendingSkillTableChoice`, and
+`PendingRankBonusChoice` all now hold `list[AnySkill | Literal['advancement_dm_4']]`
+options instead of strings. `_build_skill_select_options` and `_pick_skill_auto`
+have no `str` branch. `skill_class_by_name` removed from `events.py`.
+`RankBonus.choices` is `list[AnySkill] | None`. Career files use typed skill
+instances in all `RankBonus.choices` entries.
 
 Remaining string-based paths:
 
-- `PendingInitialTrainingChoice`, `PendingSkillTableChoice`,
-  `PendingRankBonusChoice` still inherit `options: list[str]` from
-  `PendingInputBase` — because the career `SkillTable` entries and initial
-  training lookups still use string names.
-- `events.py:1508` — `skill_from_str(skill_name, 0)` in initial training apply
-- `events.py:1884` — `skill_class_by_name(opt)` in `_build_skill_select_options`
-  for the `str` branch
-- `state.py:302` and `state.py:335` — `skill_class_by_name` in `skill_choices`
-  and `_pick_skill_auto` for the `str` branch
+- `events.py` — `skill_from_str` still imported and used in
+  `PreCareerSkillChoiceEvent.apply` (spec strings like `'Science (biology)'`)
+- `state.py:302` — `increment_skill` still uses `skill_class_by_name` for
+  string-based lookup in `PreCareerSkillChoiceEvent` flow
 
-Once the initial-training and skill-table paths migrate to typed `AnySkill`
-entries, these call sites go away and both functions can be deleted.
+Once `PreCareerSkillChoiceEvent.skill` migrates from `str` to a typed object,
+`skill_from_str` and `skill_class_by_name` can be deleted from the codebase.
 
 ### Remove `str` overload from `CharacterSummary.skill_level`
 

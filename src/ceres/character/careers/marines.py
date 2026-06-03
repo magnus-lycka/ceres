@@ -9,6 +9,7 @@ from ceres.character.benefits import (
 )
 from ceres.character.careers.career_data import (
     AdvancementDmEffect,
+    AdvancementDmOption,
     AssignmentData,
     AutoAdvanceEffect,
     Career,
@@ -442,7 +443,7 @@ CAREER_DATA = MarinesCareerData(
         ),
         11: CareerEventEntry(
             text='Your commanding officer takes an interest in your career.',
-            effects=[SkillChoiceEffect(options=[Tactics(), 'advancement_dm_4'], level=1)],
+            effects=[SkillChoiceEffect(options=[Tactics(), AdvancementDmOption()], level=1)],
         ),
         12: CareerEventEntry(
             text='You display heroism in battle. You may gain a promotion or a commission automatically.',

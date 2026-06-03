@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, ClassVar, Literal
+from typing import TYPE_CHECKING, ClassVar, Literal, cast
 
 from pydantic import BaseModel, ConfigDict
 
@@ -48,14 +48,12 @@ class RankBonus(BaseModel):
     skill: AnySkill | None = None
     characteristic: Chars | None = None
     level: int = 1
-    choices: list[str] | None = None  # if player picks which broad skill to gain
+    choices: list[AnySkill] | None = None
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def resolve_choices(self) -> list[str] | None:
-        if self.choices:
-            return self.choices
-        return None
+    def resolve_choices(self) -> list[AnySkill] | None:
+        return self.choices or None
 
 
 class RankEntry(BaseModel):
@@ -105,9 +103,19 @@ class GainConnectionsRolledEffect(BaseModel):
     dice: str
 
 
+class AdvancementDmOption(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    kind: Literal['advancement_dm'] = 'advancement_dm'
+    amount: int = 4
+
+    def label(self) -> str:
+        return f'DM+{self.amount} to next advancement roll'
+
+
 class SkillChoiceEffect(BaseModel):
     type: Literal['skill_choice'] = 'skill_choice'
-    options: list[AnySkill | Literal['advancement_dm_4']] = []
+    options: list[AnySkill | AdvancementDmOption] = []
     level: int = 1
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -513,8 +521,8 @@ class CareerData(TermData):
                     projection.pending_inputs.append(
                         PendingInitialTrainingChoice(
                             id=f'{event_id}.{choice_idx}',
-                            instruction=f'Initial training: choose one of {", ".join(choices)}',
-                            options=choices,
+                            instruction=f'Initial training: choose one of {", ".join(type(s).name() for s in choices)}',
+                            options=cast(list[AnySkill | AdvancementDmOption], choices),
                         )
                     )
                     choice_idx += 1
@@ -526,15 +534,19 @@ class CareerData(TermData):
 
         from ceres.character.events import PendingInitialTrainingChoice
 
-        choices = []
+        raw: list[AnySkill] = []
         for entry in table.entries:
-            choices.extend(self._training_selectable_skills(projection, entry))
-        if choices:
+            raw.extend(self._training_selectable_skills(projection, entry))
+        by_name: dict[str, AnySkill] = {}
+        for s in raw:
+            by_name.setdefault(type(s).name(), s)
+        deduped: list[AnySkill] = sorted(by_name.values(), key=lambda s: type(s).name())
+        if deduped:
             projection.pending_inputs.append(
                 PendingInitialTrainingChoice(
                     id=f'{event_id}.0',
                     instruction=f'Basic training: choose one skill at level 0 from {table_name}',
-                    options=sorted(set(choices)),
+                    options=cast(list[AnySkill | AdvancementDmOption], deduped),
                 )
             )
         else:
@@ -555,31 +567,29 @@ class CareerData(TermData):
             if projection.summary.skill_level(skill_cls) is None:
                 projection.summary.skills.append(skill_cls())
 
-    def _training_pending_choices(self, projection, entry: SkillTableEntry) -> list[str]:
+    def _training_pending_choices(self, projection, entry: SkillTableEntry) -> list[AnySkill]:
         if isinstance(entry, Chars):
             return []
         if isinstance(entry, list):
-            return [type(s).name() for s in entry if projection.summary.skill_level(type(s)) is None]
-        # AnySkill instance
+            return [s for s in entry if projection.summary.skill_level(type(s)) is None]
         skill_cls = type(entry)
         fields = _level_fields(skill_cls)
-        # Check if a specific specialisation is pre-selected (non-zero level field)
         spec_field = next((f for f in fields if getattr(entry, f).value > 0), None)
         if spec_field is not None:
-            return []  # pre-selected spec, no choice
-        name = skill_cls.name()
-        if len(fields) > 1:
-            return [name] if projection.summary.skill_level(skill_cls) is None else []
-        return [name] if projection.summary.skill_level(skill_cls) is None else []
+            return []
+        if projection.summary.skill_level(skill_cls) is None:
+            return [skill_cls()]
+        return []
 
-    def _training_selectable_skills(self, projection, entry: SkillTableEntry) -> list[str]:
+    def _training_selectable_skills(self, projection, entry: SkillTableEntry) -> list[AnySkill]:
         if isinstance(entry, Chars):
             return []
         if isinstance(entry, list):
-            return [type(s).name() for s in entry if projection.summary.skill_level(type(s)) is None]
+            return [s for s in entry if projection.summary.skill_level(type(s)) is None]
         skill_cls = type(entry)
-        name = skill_cls.name()
-        return [name] if projection.summary.skill_level(skill_cls) is None else []
+        if projection.summary.skill_level(skill_cls) is None:
+            return [skill_cls()]
+        return []
 
     def _queue_skill_table_before_survival(self, projection, assignment: AssignmentData, event_id: int) -> None:
         from ceres.character.events import PendingSkillTable

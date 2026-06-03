@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 import random
 import re
 from typing import TYPE_CHECKING, Annotated, Any, Literal, cast
@@ -10,6 +11,7 @@ from ceres.character.characteristics import UCP_STATS, Chars, ConnectionKind, ch
 
 if TYPE_CHECKING:
     from ceres.character.careers.career_data import CareerData
+from ceres.character.careers.career_data import AdvancementDmOption
 from ceres.character.input_specs import InputSpec, NumberEntry, Reference, Select, form_int, form_str, literal
 from ceres.character.skills import (
     AnySkill,
@@ -25,7 +27,6 @@ from ceres.character.skills import (
     _skill_classes,
     expand_to_spec_options,
     parse_skill_spec_option,
-    skill_class_by_name,
     skill_from_str,
 )
 from ceres.character.sophonts import Sophont, get_sophont
@@ -56,12 +57,14 @@ def _background_skill_count(edu: int) -> int:
 
 _CHOOSE_COUNT_RE = re.compile(r'Choose (\d+)')
 _skill_adapter: TypeAdapter[AnySkill] = TypeAdapter(AnySkill)
-_NON_SKILL_OPTION_LABELS: dict[str, str] = {'advancement_dm_4': 'DM+4 to next advancement roll'}
+_adv_dm_or_skill_adapter: TypeAdapter[AdvancementDmOption | AnySkill] = TypeAdapter(
+    Annotated[AdvancementDmOption | AnySkill, Field(union_mode='left_to_right')]
+)
 
 
-def _skill_option_label(opt: AnySkill | Literal['advancement_dm_4']) -> str:
-    if opt == 'advancement_dm_4':
-        return _NON_SKILL_OPTION_LABELS['advancement_dm_4']
+def _skill_option_label(opt: AnySkill | AdvancementDmOption) -> str:
+    if isinstance(opt, AdvancementDmOption):
+        return opt.label()
     return type(opt).name()
 
 
@@ -940,15 +943,15 @@ class SkillTableEvent(EventBase):
             raise ReplayError(f'Skill table roll must be 1-6, got {self.roll}')
         entry = table.entries[self.roll - 1]
         assignment_index = projection.summary.current_assignment_index or 0
-        choices: list[str] | None = None
+        choices: list[AnySkill] | None = None
         if isinstance(entry, list):
-            choices = [type(s).name() for s in entry]
+            choices = list(entry)
         elif not isinstance(entry, _Chars):
             skill_cls = type(entry)
             fields = _level_fields(skill_cls)
             spec_field = next((f for f in fields if getattr(entry, f).value > 0), None)
             if spec_field is None and len(fields) > 1:
-                choices = [skill_cls.name()]
+                choices = [skill_cls()]
         reenlist_queued = any(
             isinstance(p, (PendingReenlist, PendingAssignmentChangeChoice, PendingAgingRoll, PendingMusterOut))
             for p in projection.pending_inputs
@@ -956,8 +959,8 @@ class SkillTableEvent(EventBase):
         if choices:
             new_pending = PendingSkillTableChoice(
                 id=f'{self.id}.0',
-                instruction=f'Choose one skill: {", ".join(choices)}',
-                options=choices,
+                instruction=f'Choose one skill: {", ".join(type(s).name() for s in choices)}',
+                options=cast(list[AnySkill | AdvancementDmOption], choices),
                 reenlist_queued=reenlist_queued,
             )
             if reenlist_queued:
@@ -1875,29 +1878,19 @@ def career_progress_pending(
 
 def _build_skill_select_options(
     projection: CharacterProjection,
-    options: list[Any],
+    options: Sequence[AnySkill | AdvancementDmOption],
     level: int | None,
 ) -> list[tuple[str, str]]:
     """Build (display_label, form_value) pairs for skill-choice pending inputs."""
     results: list[tuple[str, str]] = []
     for opt in options:
-        if opt == 'advancement_dm_4':
-            results.append((_NON_SKILL_OPTION_LABELS['advancement_dm_4'], 'advancement_dm_4'))
+        if isinstance(opt, AdvancementDmOption):
+            results.append((opt.label(), opt.model_dump_json()))
             continue
-        if isinstance(opt, str) and opt in _NON_SKILL_OPTION_LABELS:
-            results.append((_NON_SKILL_OPTION_LABELS[opt], opt))
-            continue
-        if isinstance(opt, Skill):
-            skill_cls = type(opt)
-            skill_name = skill_cls.name()
-        else:
-            try:
-                skill_cls = skill_class_by_name(opt)
-                skill_name = opt
-            except ValueError:
-                continue
+        skill_cls = type(opt)
+        skill_name = skill_cls.name()
         if level == 0:
-            skill = cast(AnySkill, skill_cls())
+            skill = skill_cls()
             results.append((skill_name, _skill_adapter.dump_json(skill).decode()))
         else:
             choices = projection.skill_choices([skill_cls], level)
@@ -2279,11 +2272,10 @@ class PendingSkillChoice(PendingInputBase):
         return AdvancementDmChoiceEvent(fulfills=self.id)
 
     def event_from_form(self, form: Any) -> AnyEvent:
-        skill_str = form_str(form, 'skill', '{}')
-        if skill_str == 'advancement_dm_4':
+        parsed = _adv_dm_or_skill_adapter.validate_json(form_str(form, 'skill', '{}'))
+        if isinstance(parsed, AdvancementDmOption):
             return AdvancementDmChoiceEvent(fulfills=self.id)
-        skill = _skill_adapter.validate_json(skill_str)
-        return SkillChoiceEvent(skill=skill, fulfills=self.id)
+        return SkillChoiceEvent(skill=cast(AnySkill, parsed), fulfills=self.id)
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
         options = _build_skill_select_options(projection, self.options, None)
@@ -2292,6 +2284,9 @@ class PendingSkillChoice(PendingInputBase):
 
 class PendingInitialTrainingChoice(PendingInputBase):
     kind: Literal['initial_training_choice'] = 'initial_training_choice'
+    options: list[AnySkill | AdvancementDmOption] = Field(default_factory=list)  # type: ignore[assignment]
+
+    model_config = {'arbitrary_types_allowed': True}
 
     def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
         skill = projection._pick_skill_auto(self.options, rng, 0)
@@ -2300,11 +2295,10 @@ class PendingInitialTrainingChoice(PendingInputBase):
         return AdvancementDmChoiceEvent(fulfills=self.id)
 
     def event_from_form(self, form: Any) -> AnyEvent:
-        skill_str = form_str(form, 'skill', '{}')
-        if skill_str == 'advancement_dm_4':
+        parsed = _adv_dm_or_skill_adapter.validate_json(form_str(form, 'skill', '{}'))
+        if isinstance(parsed, AdvancementDmOption):
             return AdvancementDmChoiceEvent(fulfills=self.id)
-        skill = _skill_adapter.validate_json(skill_str)
-        return SkillChoiceEvent(skill=skill, fulfills=self.id)
+        return SkillChoiceEvent(skill=cast(AnySkill, parsed), fulfills=self.id)
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
         options = _build_skill_select_options(projection, self.options, 0)
@@ -2314,6 +2308,9 @@ class PendingInitialTrainingChoice(PendingInputBase):
 class PendingSkillTableChoice(PendingInputBase):
     kind: Literal['skill_table_choice'] = 'skill_table_choice'
     reenlist_queued: bool = False  # True when reenlist/aging already queued (end-of-term path)
+    options: list[AnySkill | AdvancementDmOption] = Field(default_factory=list)  # type: ignore[assignment]
+
+    model_config = {'arbitrary_types_allowed': True}
 
     def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
         skill = projection._pick_skill_auto(self.options, rng, None)
@@ -2322,11 +2319,10 @@ class PendingSkillTableChoice(PendingInputBase):
         return AdvancementDmChoiceEvent(fulfills=self.id)
 
     def event_from_form(self, form: Any) -> AnyEvent:
-        skill_str = form_str(form, 'skill', '{}')
-        if skill_str == 'advancement_dm_4':
+        parsed = _adv_dm_or_skill_adapter.validate_json(form_str(form, 'skill', '{}'))
+        if isinstance(parsed, AdvancementDmOption):
             return AdvancementDmChoiceEvent(fulfills=self.id)
-        skill = _skill_adapter.validate_json(skill_str)
-        return SkillChoiceEvent(skill=skill, fulfills=self.id)
+        return SkillChoiceEvent(skill=cast(AnySkill, parsed), fulfills=self.id)
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
         options = _build_skill_select_options(projection, self.options, None)
@@ -2336,6 +2332,9 @@ class PendingSkillTableChoice(PendingInputBase):
 class PendingRankBonusChoice(PendingInputBase):
     kind: Literal['rank_bonus_choice'] = 'rank_bonus_choice'
     level: int
+    options: list[AnySkill | AdvancementDmOption] = Field(default_factory=list)  # type: ignore[assignment]
+
+    model_config = {'arbitrary_types_allowed': True}
 
     def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
         skill = projection._pick_skill_auto(self.options, rng, self.level)
@@ -2344,11 +2343,10 @@ class PendingRankBonusChoice(PendingInputBase):
         return AdvancementDmChoiceEvent(fulfills=self.id)
 
     def event_from_form(self, form: Any) -> AnyEvent:
-        skill_str = form_str(form, 'skill', '{}')
-        if skill_str == 'advancement_dm_4':
+        parsed = _adv_dm_or_skill_adapter.validate_json(form_str(form, 'skill', '{}'))
+        if isinstance(parsed, AdvancementDmOption):
             return AdvancementDmChoiceEvent(fulfills=self.id)
-        skill = _skill_adapter.validate_json(skill_str)
-        return SkillChoiceEvent(skill=skill, fulfills=self.id)
+        return SkillChoiceEvent(skill=cast(AnySkill, parsed), fulfills=self.id)
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
         options = _build_skill_select_options(projection, self.options, self.level)
@@ -2630,7 +2628,7 @@ class PendingCareerSkillChoice(PendingInputBase):
     """Skill choice triggered by a career event or mishap."""
 
     kind: Literal['career_skill_choice'] = 'career_skill_choice'
-    options: list[AnySkill | Literal['advancement_dm_4']] = Field(default_factory=list)  # type: ignore[assignment]
+    options: list[AnySkill | AdvancementDmOption] = Field(default_factory=list)  # type: ignore[assignment]
     career: str
     roll: int
     mishap: bool = False
@@ -2645,11 +2643,10 @@ class PendingCareerSkillChoice(PendingInputBase):
         return AdvancementDmChoiceEvent(fulfills=self.id)
 
     def event_from_form(self, form: Any) -> AnyEvent:
-        skill_str = form_str(form, 'skill', '{}')
-        if skill_str == 'advancement_dm_4':
+        parsed = _adv_dm_or_skill_adapter.validate_json(form_str(form, 'skill', '{}'))
+        if isinstance(parsed, AdvancementDmOption):
             return AdvancementDmChoiceEvent(fulfills=self.id)
-        skill = _skill_adapter.validate_json(skill_str)
-        return SkillChoiceEvent(skill=skill, fulfills=self.id)
+        return SkillChoiceEvent(skill=cast(AnySkill, parsed), fulfills=self.id)
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
         options = _build_skill_select_options(projection, self.options, None)

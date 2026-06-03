@@ -11,7 +11,7 @@ from ceres.character.characteristics import Chars, ConnectionKind
 
 if TYPE_CHECKING:
     from ceres.character.careers.career_data import CareerData
-from ceres.character.careers.career_data import Career
+from ceres.character.careers.career_data import AdvancementDmOption, Career
 from ceres.character.input_specs import InputSpec
 from ceres.character.skills import AnySkill, Level, Skill, _level_fields, field_for_spec, skill_class_by_name
 from ceres.character.sophonts import Sophont
@@ -323,19 +323,12 @@ class CharacterProjection(BaseModel):
         return choice in self.skill_choices(skill_types, level)
 
     def _pick_skill_auto(
-        self, options: Sequence[AnySkill | str], rng: random.Random, level: int | None
+        self, options: Sequence[AnySkill | AdvancementDmOption], rng: random.Random, level: int | None
     ) -> AnySkill | None:
-        valid = [o for o in options if o != 'advancement_dm_4']
+        valid: list[AnySkill] = [o for o in options if not isinstance(o, AdvancementDmOption)]
         rng.shuffle(valid)
         for opt in valid:
-            if isinstance(opt, Skill):
-                cls = type(opt)
-            else:
-                try:
-                    cls = skill_class_by_name(opt)
-                except ValueError:
-                    continue
-            choices = self.skill_choices([cls], level)
+            choices = self.skill_choices([cast(type[Skill], type(opt))], level)
             if choices:
                 return rng.choice(choices)
         return None

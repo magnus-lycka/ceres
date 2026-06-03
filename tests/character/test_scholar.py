@@ -2,6 +2,7 @@
 
 from typing import Literal
 
+from ceres.character.careers.career_data import AdvancementDmOption
 from ceres.character.characteristics import Chars
 from ceres.character.events import (
     AdvancementDmChoiceEvent,
@@ -41,22 +42,28 @@ from ceres.character.skills import (
     Advocate,
     Athletics,
     Carouse,
+    CreativeArt,
     Deception,
     Diplomat,
     Drive,
     Electronics,
     Engineer,
+    Flyer,
     Investigate,
     Level,
     LifeScience,
     Medic,
     Navigation,
+    PerformingArt,
     Persuade,
     PhysicalScience,
+    PresentationArt,
     RoboticScience,
+    Sciences,
     SocialScience,
     SpaceScience,
     Survival,
+    _skill_classes,
 )
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
@@ -67,6 +74,7 @@ from ceres.character.state import (
 from tests.character.helpers import MOCK_WORLD
 
 _SCIENCES = sorted(['Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science'])
+_SCIENCE_CLASSES = set(_skill_classes(Sciences))
 
 
 def _scholar_setup(character_id: int = 1) -> list:
@@ -108,12 +116,12 @@ class TestScholarInitialTraining:
             (
                 p
                 for p in projection.pending_inputs
-                if isinstance(p, PendingInitialTrainingChoice) and 'Drive' in p.options
+                if isinstance(p, PendingInitialTrainingChoice) and Drive() in p.options
             ),
             None,
         )
         assert pending is not None
-        assert set(pending.options) == {'Drive', 'Flyer'}
+        assert {type(s) for s in pending.options} == {Drive, Flyer}
 
     def test_science_choice_pending_has_correct_options(self):
         projection = replay(1, self._setup())
@@ -122,12 +130,12 @@ class TestScholarInitialTraining:
             (
                 p
                 for p in projection.pending_inputs
-                if isinstance(p, PendingInitialTrainingChoice) and 'Life Science' in p.options
+                if isinstance(p, PendingInitialTrainingChoice) and LifeScience() in p.options
             ),
             None,
         )
         assert pending is not None
-        assert set(pending.options) == set(_SCIENCES)
+        assert {type(s) for s in pending.options} == _SCIENCE_CLASSES
 
     def test_drive_not_granted_before_choice(self):
         projection = replay(1, self._setup())
@@ -218,12 +226,11 @@ class TestScholarTerm:
         ]
         projection = replay(1, events)
 
-        _sciences = {'Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science'}
         pending = next(
             (
                 p
                 for p in projection.pending_inputs
-                if p.kind.startswith('rank_bonus_choice') and set(p.options) == _sciences
+                if p.kind.startswith('rank_bonus_choice') and {type(s) for s in p.options} == _SCIENCE_CLASSES
             ),
             None,
         )
@@ -780,7 +787,7 @@ class TestScholarEvent11:
             RoboticScience(),
             SocialScience(),
             SpaceScience(),
-            'advancement_dm_4',
+            AdvancementDmOption(),
         ]
 
     def test_choose_space_science_grants_space_science_1(self):
@@ -1036,7 +1043,7 @@ class TestScholarScienceChoicesInTables:
 
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
         assert pending is not None
-        assert set(pending.options) == set(_SCIENCES)
+        assert {type(s) for s in pending.options} == _SCIENCE_CLASSES
 
     def test_advanced_education_roll_6_creates_science_choice(self):
         # EDU=10 ≥ 10 → can access Scholar advanced_education table
@@ -1048,7 +1055,7 @@ class TestScholarScienceChoicesInTables:
 
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
         assert pending is not None
-        assert set(pending.options) == set(_SCIENCES)
+        assert {type(s) for s in pending.options} == _SCIENCE_CLASSES
 
     def test_advanced_education_roll_1_creates_art_choice(self):
         # Core advanced_education row 1: Art (any broad art type)
@@ -1060,7 +1067,7 @@ class TestScholarScienceChoicesInTables:
 
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
         assert pending is not None
-        assert set(pending.options) == {'Performing Art', 'Creative Art', 'Presentation Art'}
+        assert {type(s) for s in pending.options} == {PerformingArt, CreativeArt, PresentationArt}
 
     def test_field_researcher_roll_6_creates_science_choice(self):
         events = [
@@ -1071,7 +1078,7 @@ class TestScholarScienceChoicesInTables:
 
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
         assert pending is not None
-        assert set(pending.options) == set(_SCIENCES)
+        assert {type(s) for s in pending.options} == _SCIENCE_CLASSES
 
     def test_scientist_roll_3_creates_science_choice(self):
         events = [
@@ -1082,7 +1089,7 @@ class TestScholarScienceChoicesInTables:
 
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
         assert pending is not None
-        assert set(pending.options) == set(_SCIENCES)
+        assert {type(s) for s in pending.options} == _SCIENCE_CLASSES
 
     def test_physician_roll_6_creates_science_choice(self):
         events = [
@@ -1093,7 +1100,7 @@ class TestScholarScienceChoicesInTables:
 
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
         assert pending is not None
-        assert set(pending.options) == set(_SCIENCES)
+        assert {type(s) for s in pending.options} == _SCIENCE_CLASSES
 
 
 class TestScholarMishap3ScienceChoice:
@@ -1158,7 +1165,7 @@ class TestPhysicianRankBonuses:
         # Physician rank 1 = Medic 1; no science choice pending should be created
         assert projection.summary.skill_level('Medic', -1) >= 1
         science_pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
-        assert science_pending is None or set(science_pending.options) != set(_SCIENCES)
+        assert science_pending is None or {type(s) for s in science_pending.options} != _SCIENCE_CLASSES
 
     def test_field_researcher_rank_1_creates_science_choice_pending(self):
         events = [
@@ -1173,7 +1180,7 @@ class TestPhysicianRankBonuses:
             (
                 p
                 for p in projection.pending_inputs
-                if p.kind.startswith('rank_bonus_choice') and set(p.options) == set(_SCIENCES)
+                if p.kind.startswith('rank_bonus_choice') and {type(s) for s in p.options} == _SCIENCE_CLASSES
             ),
             None,
         )

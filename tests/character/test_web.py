@@ -127,6 +127,13 @@ def test_sector_filter_page_renders_checkbox_options(client, monkeypatch):
     assert 'Aster' in r.text
     assert 'Beryl' in r.text
     assert 'Cinder' in r.text
+    assert 'Hex' in r.text
+    assert 'Stellar' in r.text
+    assert '{ 0 }' in r.text
+    assert '(000+0)' in r.text
+    assert '[0000]' in r.text
+    assert '111' in r.text
+    assert 'G2 V' in r.text
 
 
 def test_sector_filter_page_applies_query_filters_and_shows_matching_worlds(client, monkeypatch):
@@ -455,23 +462,25 @@ def test_build_event_unknown_raises():
         _build_event_from_form('nonexistent.0', form, projection)
 
 
-# ── career_skill_choice with advancement_dm_4 sentinel ────────────────────────
+# ── career_skill_choice with AdvancementDmOption ──────────────────────────────
 
 
-def test_input_specs_includes_advancement_dm_4():
-    """advancement_dm_4 sentinel appears in input_specs Select options with a readable label."""
+def test_input_specs_includes_advancement_dm_option():
+    """AdvancementDmOption appears in input_specs Select options with a readable label."""
+    from ceres.character.careers.career_data import AdvancementDmOption
     from ceres.character.events import PendingCareerSkillChoice
     from ceres.character.input_specs import Select
     from ceres.character.skills import Investigate
     from ceres.character.state import CharacterProjection, CharacterSummary
 
+    adv_dm = AdvancementDmOption()
     pi = PendingCareerSkillChoice(
         id='6.0',
         career='Agent',
         roll=11,
         advancement_precreated=False,
         instruction='Investigate or DM+4',
-        options=[Investigate(), 'advancement_dm_4'],
+        options=[Investigate(), adv_dm],
     )
     projection = CharacterProjection(
         character_id=1,
@@ -485,18 +494,19 @@ def test_input_specs_includes_advancement_dm_4():
     values = [v for _, v in select.options]
     labels = [lbl for lbl, _ in select.options]
 
-    assert 'advancement_dm_4' in values
+    assert adv_dm.model_dump_json() in values
     assert any('advancement' in lbl.lower() or 'DM' in lbl for lbl in labels)
 
 
-def test_event_from_form_career_skill_choice_advancement_dm_4():
-    """Submitting advancement_dm_4 via career_skill_choice creates AdvancementDmChoiceEvent."""
+def test_event_from_form_career_skill_choice_advancement_dm():
+    """Submitting AdvancementDmOption JSON via career_skill_choice creates AdvancementDmChoiceEvent."""
     from starlette.datastructures import FormData
 
+    from ceres.character.careers.career_data import AdvancementDmOption
     from ceres.character.events import AdvancementDmChoiceEvent, PendingCareerSkillChoice
 
     pi = PendingCareerSkillChoice(id='6.0', career='Agent', roll=11, instruction='')
-    form = FormData({'skill': 'advancement_dm_4'})
+    form = FormData({'skill': AdvancementDmOption().model_dump_json()})
     event = pi.event_from_form(form)
     assert isinstance(event, AdvancementDmChoiceEvent)
     assert event.fulfills == '6.0'

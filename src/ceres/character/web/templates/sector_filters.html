@@ -253,17 +253,47 @@
       <h2 class="text-sm uppercase tracking-wide text-amber-400">Worlds</h2>
       <p class="text-sm text-gray-400">{{ filtered_world_count }} matching worlds</p>
     </div>
-    <div class="space-y-2">
-      {% for world in filtered_worlds %}
-      <div class="grid gap-1 border border-gray-800 px-3 py-2 md:grid-cols-[5rem_minmax(0,1fr)_10rem] md:items-baseline">
-        <div class="text-sm font-medium text-gray-300">{{ world.hex }}</div>
-        <div>
-          <div class="text-sm font-medium text-gray-100">{{ world.name }}</div>
-          <div class="text-xs text-gray-400">{{ world.remarks or "No remarks" }}</div>
-        </div>
-        <div class="text-sm text-gray-300 md:text-right">{{ world.uwp }}</div>
-      </div>
-      {% endfor %}
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-left text-sm text-gray-200">
+        <thead class="text-xs uppercase tracking-wide text-amber-400">
+          <tr class="border-b border-gray-800">
+            <th class="px-2 py-2 font-medium">Hex</th>
+            <th class="px-2 py-2 font-medium">Name</th>
+            <th class="px-2 py-2 font-medium">UWP</th>
+            <th class="px-2 py-2 font-medium">Remarks</th>
+            <th class="px-2 py-2 font-medium">{Ix}</th>
+            <th class="px-2 py-2 font-medium">(Ex)</th>
+            <th class="px-2 py-2 font-medium">[Cx]</th>
+            <th class="px-2 py-2 font-medium">N</th>
+            <th class="px-2 py-2 font-medium">B</th>
+            <th class="px-2 py-2 font-medium">Z</th>
+            <th class="px-2 py-2 font-medium">PBG</th>
+            <th class="px-2 py-2 font-medium">W</th>
+            <th class="px-2 py-2 font-medium">A</th>
+            <th class="px-2 py-2 font-medium">Stellar</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for world in filtered_worlds %}
+          <tr class="border-b border-gray-900 align-top">
+            <td class="px-2 py-2 font-medium text-gray-300 whitespace-nowrap">{{ world.hex }}</td>
+            <td class="px-2 py-2 whitespace-nowrap">{{ world.name }}</td>
+            <td class="px-2 py-2 whitespace-nowrap">{{ world.uwp }}</td>
+            <td class="px-2 py-2 whitespace-nowrap">{{ world.remarks }}</td>
+            <td class="px-2 py-2 whitespace-nowrap">{{ world.ix }}</td>
+            <td class="px-2 py-2 whitespace-nowrap">{{ world.ex }}</td>
+            <td class="px-2 py-2 whitespace-nowrap">{{ world.cx }}</td>
+            <td class="px-2 py-2 whitespace-nowrap">{{ world.nobility }}</td>
+            <td class="px-2 py-2 whitespace-nowrap">{{ world.bases }}</td>
+            <td class="px-2 py-2 whitespace-nowrap">{{ world.zone }}</td>
+            <td class="px-2 py-2 whitespace-nowrap">{{ world.pbg }}</td>
+            <td class="px-2 py-2 whitespace-nowrap">{{ world.world_count }}</td>
+            <td class="px-2 py-2 whitespace-nowrap">{{ world.allegiance }}</td>
+            <td class="px-2 py-2 whitespace-nowrap">{{ world.stellar }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </section>
 </div>

@@ -1,5 +1,6 @@
 """Tests for Scout career events, mishaps, and assignment table corrections."""
 
+from ceres.character.careers.career_data import AdvancementDmOption
 from ceres.character.characteristics import Chars, ConnectionKind
 from ceres.character.events import (
     AdvancementDmChoiceEvent,
@@ -37,12 +38,15 @@ from ceres.character.skills import (
     Drive,
     Electronics,
     Engineer,
+    Flyer,
     Level,
     Medic,
     Navigation,
     Persuade,
     Pilot,
+    Sciences,
     Survival,
+    _skill_classes,
 )
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
@@ -53,7 +57,7 @@ from ceres.character.state import (
 )
 from tests.character.helpers import MOCK_WORLD
 
-_SCIENCES = sorted(['Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science'])
+_SCIENCE_CLASSES = set(_skill_classes(Sciences))
 
 
 def _full_setup(character_id: int = 1) -> list:
@@ -443,7 +447,7 @@ class TestScoutEvent11:
             for p in projection.pending_inputs
             if isinstance(p, PendingCareerSkillChoice) and p.career == 'Scout' and p.roll == 11
         )
-        assert pending.options == [Diplomat(), 'advancement_dm_4']
+        assert pending.options == [Diplomat(), AdvancementDmOption()]
 
     def test_choose_diplomat_grants_diplomat_1(self):
         diplomat_choice = SkillChoiceEvent(id=7, fulfills='6.0', skill=Diplomat(level=Level(value=1)))
@@ -540,7 +544,7 @@ class TestScoutAssignmentTableCorrections:
 
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
         assert pending is not None
-        assert 'Flyer' in pending.options
+        assert Flyer() in pending.options
 
     def test_surveyor_roll_2_gives_persuade(self):
         events = [*self._setup_in_term_2('Surveyor'), SkillTableEvent(id=9, fulfills='8.0', table='surveyor', roll=2)]
@@ -561,7 +565,7 @@ class TestScoutAssignmentTableCorrections:
 
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
         assert pending is not None
-        assert 'Pilot' in pending.options
+        assert Pilot() in pending.options
 
     def test_explorer_roll_4_creates_science_choice_pending(self):
         events = [*self._setup_in_term_2('Explorer'), SkillTableEvent(id=9, fulfills='8.0', table='explorer', roll=4)]
@@ -569,7 +573,7 @@ class TestScoutAssignmentTableCorrections:
 
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
         assert pending is not None
-        assert set(pending.options) == set(_SCIENCES)
+        assert {type(s) for s in pending.options} == _SCIENCE_CLASSES
 
     def test_advanced_edu_roll_5_creates_science_choice_pending(self):
         # EDU=10 ≥ 8 → can access advanced_education table
@@ -581,4 +585,4 @@ class TestScoutAssignmentTableCorrections:
 
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
         assert pending is not None
-        assert set(pending.options) == set(_SCIENCES)
+        assert {type(s) for s in pending.options} == _SCIENCE_CLASSES

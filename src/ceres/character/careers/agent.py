@@ -11,6 +11,7 @@ from ceres.character.benefits import (
 )
 from ceres.character.careers.career_data import (
     AdvancementDmEffect,
+    AdvancementDmOption,
     AssignmentData,
     AutoAdvanceEffect,
     BenefitDmEffect,
@@ -308,7 +309,7 @@ class AgentEvent11Handler(CareerHandlerBase):
                 roll=11,
                 advancement_precreated=False,
                 instruction='Senior agent mentor: increase Investigate by one level or DM+4 to your next advancement roll',
-                options=[Investigate(), 'advancement_dm_4'],
+                options=[Investigate(), AdvancementDmOption()],
             )
         )
         return pending_idx + 1

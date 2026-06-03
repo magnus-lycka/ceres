@@ -9,6 +9,7 @@ from ceres.character.benefits import SHIP_SHARE, WEAPON
 from ceres.character.careers import ARMY, PRISONER, SCOUT
 from ceres.character.careers.career_data import (
     AdvancementDmEffect,
+    AdvancementDmOption,
     AssignmentData,
     BenefitDmEffect,
     CharCheck,
@@ -459,11 +460,14 @@ def test_prisoner_advancement_special_cases():
     _apply_prisoner_advancement(
         choice_bonus,
         AdvancementEvent(id=2, roll=12),
-        FakePrisonerCareer(RankBonus(choices=['Admin'], level=1)),
+        FakePrisonerCareer(RankBonus(choices=[character_skills.Admin()], level=1)),
     )
     assert choice_bonus.scheduled_effects == []
     assert choice_bonus.prisoner_freed is True
-    assert any(isinstance(p, PendingRankBonusChoice) and p.options == ['Admin'] for p in choice_bonus.pending_inputs)
+    assert any(
+        isinstance(p, PendingRankBonusChoice) and p.options == [character_skills.Admin()]
+        for p in choice_bonus.pending_inputs
+    )
 
     characteristic_bonus = _projection(
         current_assignment_index=1,
@@ -555,9 +559,9 @@ def test_skill_choice_auto_events_fall_back_to_advancement_dm_when_no_skill_can_
     projection = _projection(skills=[character_skills.Admin(level=character_skills.Level(value=4))])
 
     for pending in (
-        PendingInitialTrainingChoice(id='1.0', instruction='Skill', options=['Admin']),
-        PendingSkillTableChoice(id='2.0', instruction='Skill', options=['Admin']),
-        PendingRankBonusChoice(id='3.0', instruction='Skill', options=['Admin'], level=1),
+        PendingInitialTrainingChoice(id='1.0', instruction='Skill', options=[character_skills.Admin()]),
+        PendingSkillTableChoice(id='2.0', instruction='Skill', options=[character_skills.Admin()]),
+        PendingRankBonusChoice(id='3.0', instruction='Skill', options=[character_skills.Admin()], level=1),
         PendingCareerSkillChoice(
             id='4.0', instruction='Skill', career='Scout', roll=6, options=[character_skills.Admin()]
         ),
@@ -752,21 +756,23 @@ def test_skill_choice_pending_inputs_parse_skills_and_advancement_dm():
     projection = _projection()
     admin_json = character_skills.Admin().model_dump_json()
 
-    # Types that support the advancement_dm_4 sentinel alongside skill options
+    # Types that support AdvancementDmOption alongside skill options
+    adv_dm = AdvancementDmOption()
+    opts: list[character_skills.AnySkill | AdvancementDmOption] = [character_skills.Admin(), adv_dm]
     for pending in (
-        PendingInitialTrainingChoice(id='1.0', instruction='Skill', options=['Admin', 'advancement_dm_4']),
-        PendingSkillTableChoice(id='1.0', instruction='Skill', options=['Admin', 'advancement_dm_4']),
-        PendingRankBonusChoice(id='1.0', instruction='Skill', options=['Admin', 'advancement_dm_4'], level=1),
+        PendingInitialTrainingChoice(id='1.0', instruction='Skill', options=opts),
+        PendingSkillTableChoice(id='1.0', instruction='Skill', options=opts),
+        PendingRankBonusChoice(id='1.0', instruction='Skill', options=opts, level=1),
         PendingCareerSkillChoice(
             id='1.0',
             instruction='Skill',
             career='Scout',
             roll=6,
-            options=[character_skills.Admin(), 'advancement_dm_4'],
+            options=[character_skills.Admin(), adv_dm],
         ),
     ):
         skill_event = pending.event_from_form(Form(skill=admin_json))
-        dm_event = pending.event_from_form(Form(skill='advancement_dm_4'))
+        dm_event = pending.event_from_form(Form(skill=adv_dm.model_dump_json()))
         specs = pending.input_specs(projection)
 
         assert isinstance(skill_event, SkillChoiceEvent)

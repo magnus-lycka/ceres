@@ -74,7 +74,6 @@ from ceres.character.skills import (
     Streetwise,
     Survival,
     skill_instances,
-    skill_names,
 )
 from ceres.character.state import (
     CharacterProjection,
@@ -365,7 +364,9 @@ CAREER_DATA = CitizenCareerData(
         2: {  # Worker
             0: RankEntry(rank=0),
             1: RankEntry(rank=1),
-            2: RankEntry(rank=2, title='Technician', bonus=RankBonus(choices=skill_names(ProfessionSkill), level=1)),
+            2: RankEntry(
+                rank=2, title='Technician', bonus=RankBonus(choices=skill_instances(ProfessionSkill), level=1)
+            ),
             3: RankEntry(rank=3),
             4: RankEntry(rank=4, title='Craftsman', bonus=RankBonus(skill=Mechanic(), level=1)),
             5: RankEntry(rank=5),

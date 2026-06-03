@@ -67,7 +67,6 @@ from ceres.character.skills import (
     Streetwise,
     Survival,
     skill_instances,
-    skill_names,
 )
 from ceres.character.state import (
     CharacterProjection,
@@ -266,7 +265,7 @@ CAREER_DATA = EntertainerCareerData(
     ),
     ranks={
         0: RankEntry(rank=0),
-        1: RankEntry(rank=1, bonus=RankBonus(choices=skill_names(ArtSkill), level=1)),
+        1: RankEntry(rank=1, bonus=RankBonus(choices=skill_instances(ArtSkill), level=1)),
         2: RankEntry(rank=2),
         3: RankEntry(rank=3, bonus=RankBonus(skill=Investigate(), level=1)),
         4: RankEntry(rank=4),
@@ -276,7 +275,7 @@ CAREER_DATA = EntertainerCareerData(
     ranks_by_assignment={
         1: {  # Artist
             0: RankEntry(rank=0),
-            1: RankEntry(rank=1, bonus=RankBonus(choices=skill_names(ArtSkill), level=1)),
+            1: RankEntry(rank=1, bonus=RankBonus(choices=skill_instances(ArtSkill), level=1)),
             2: RankEntry(rank=2),
             3: RankEntry(rank=3, bonus=RankBonus(skill=Investigate(), level=1)),
             4: RankEntry(rank=4),

@@ -534,7 +534,7 @@ class TestSkillTable:
 
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
         assert pending is not None
-        assert 'Electronics' in pending.options
+        assert Electronics() in pending.options
 
     def test_skill_table_courier_roll_specialised_grants_after_choice(self):
         # Choose Electronics (Comms) → Electronics (Comms) 1 granted
@@ -705,13 +705,15 @@ class TestTermEventAutoAdvance:
         ]
         projection = replay(1, events)
 
+        from ceres.character.skills import Sciences, _skill_classes
+
         assert projection.summary.rank == 1
-        _sciences = {'Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science'}
+        science_classes = set(_skill_classes(Sciences))
         pending = next(
             (
                 p
                 for p in projection.pending_inputs
-                if p.kind.startswith('rank_bonus_choice') and set(p.options) == _sciences
+                if p.kind.startswith('rank_bonus_choice') and {type(s) for s in p.options} == science_classes
             ),
             None,
         )
@@ -786,7 +788,7 @@ class TestSkillTableChoice:
 
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
         assert pending is not None
-        assert set(pending.options) == {'Drive', 'Flyer'}
+        assert {type(s) for s in pending.options} == {Drive, Flyer}
 
     def test_choice_increments_chosen_skill(self):
         # Scholar has Drive 0 from initial training → choose Drive → Drive 1
@@ -811,8 +813,7 @@ class TestSkillTableChoice:
 
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
         assert pending is not None
-        expected = {cls.name() for cls in _skill_classes(Languages)}
-        assert set(pending.options) == expected
+        assert {type(s) for s in pending.options} == set(_skill_classes(Languages))
 
     def test_science_entry_creates_skill_table_choice_with_all_sciences(self):
         # Scholar service_skills roll 6: Science → choice from all Science skills in skills.py
@@ -826,8 +827,7 @@ class TestSkillTableChoice:
 
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
         assert pending is not None
-        expected = {cls.name() for cls in _skill_classes(Sciences)}
-        assert set(pending.options) == expected
+        assert {type(s) for s in pending.options} == set(_skill_classes(Sciences))
 
     def test_art_entry_creates_skill_table_choice_with_all_arts(self):
         # Scholar advanced_education roll 1: Art → choice from all Art skills in skills.py
@@ -841,8 +841,7 @@ class TestSkillTableChoice:
 
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
         assert pending is not None
-        expected = {cls.name() for cls in _skill_classes(Arts)}
-        assert set(pending.options) == expected
+        assert {type(s) for s in pending.options} == set(_skill_classes(Arts))
 
     def test_rank_bonus_science_creates_rank_bonus_choice_with_all_sciences(self):
         # Scholar/Scientist advances to rank 1 → rank bonus = Science choice from skills.py
@@ -861,8 +860,7 @@ class TestSkillTableChoice:
 
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingRankBonusChoice)), None)
         assert pending is not None
-        expected = {cls.name() for cls in _skill_classes(Sciences)}
-        assert set(pending.options) == expected
+        assert {type(s) for s in pending.options} == set(_skill_classes(Sciences))
 
     def test_choice_creates_survive_pending_not_advancement(self):
         events = [

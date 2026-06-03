@@ -1,5 +1,5 @@
 from ceres.adapters.travellermap import SectorInfo, SectorWorldEntry
-from ceres.worlds import NO_ALLEGIANCE, SectorWorldFilters, SectorWorldOptions, search_sectors
+from ceres.worlds import NO_ALLEGIANCE, UNKNOWN_UWP, SectorWorldFilters, SectorWorldOptions, search_sectors
 
 
 def _entry(
@@ -16,8 +16,16 @@ def _entry(
         name=name,
         uwp=uwp,
         remarks=remarks,
+        ix='{ 0 }',
+        ex='(000+0)',
+        cx='[0000]',
+        nobility='-',
         bases=bases,
+        zone='-',
+        pbg='111',
+        world_count='1',
         allegiance=allegiance,
+        stellar='G2 V',
     )
 
 
@@ -64,6 +72,20 @@ def _sample_worlds_with_unaligned() -> list[SectorWorldEntry]:
     ]
 
 
+def _sample_worlds_with_unknown_uwp() -> list[SectorWorldEntry]:
+    return [
+        *_sample_worlds(),
+        _entry(
+            name='Anomaly',
+            hex_code='9999',
+            uwp='???????-?',
+            bases='',
+            allegiance='NaXX',
+            remarks='',
+        ),
+    ]
+
+
 class TestSectorWorldOptions:
     def test_collects_checkbox_values_from_sector_worlds(self) -> None:
         filters = SectorWorldFilters(worlds=_sample_worlds())
@@ -91,6 +113,18 @@ class TestSectorWorldOptions:
         filters = SectorWorldFilters(worlds=_sample_worlds_with_unaligned())
 
         assert filters.options.allegiances == ('ImAp', 'ImDd', 'NaHu', NO_ALLEGIANCE)
+
+    def test_ignores_unknown_uwp_digits_in_numeric_filter_options(self) -> None:
+        filters = SectorWorldFilters(worlds=_sample_worlds_with_unknown_uwp())
+
+        assert filters.options.starports == ('?', 'A', 'C', 'E')
+        assert filters.options.sizes == (UNKNOWN_UWP, 1, 4, 8)
+        assert filters.options.atmospheres == (UNKNOWN_UWP, 0, 3, 6)
+        assert filters.options.hydrographics == (UNKNOWN_UWP, 0, 3, 7)
+        assert filters.options.populations == (UNKNOWN_UWP, 2, 5, 10)
+        assert filters.options.governments == (UNKNOWN_UWP, 0, 6, 9)
+        assert filters.options.law_levels == (UNKNOWN_UWP, 0, 7, 9)
+        assert filters.options.tech_levels == (UNKNOWN_UWP, 7, 10, 13)
 
 
 class TestSectorWorldFiltering:
@@ -133,6 +167,13 @@ class TestSectorWorldFiltering:
         selected = filters.filter_worlds(allegiances={NO_ALLEGIANCE})
 
         assert [world.name for world in selected] == ['Drift']
+
+    def test_filter_by_unknown_uwp_value(self) -> None:
+        filters = SectorWorldFilters(worlds=_sample_worlds_with_unknown_uwp())
+
+        selected = filters.filter_worlds(sizes={UNKNOWN_UWP}, tech_levels={UNKNOWN_UWP})
+
+        assert [world.name for world in selected] == ['Anomaly']
 
     def test_filter_combines_categories_with_and_logic(self) -> None:
         filters = SectorWorldFilters(worlds=_sample_worlds())
