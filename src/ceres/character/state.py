@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from ceres.character.careers.career_data import CareerData
 from ceres.character.careers.career_data import AdvancementDmOption, Career
 from ceres.character.input_specs import InputSpec
-from ceres.character.skills import AnySkill, Level, Skill, _level_fields, field_for_spec, skill_class_by_name
+from ceres.character.skills import AnySkill, Level, Skill, _level_fields
 from ceres.character.sophonts import Sophont
 from ceres.shared import CeresModel
 
@@ -185,7 +185,9 @@ class CharacterSummary(BaseModel):
     dead: bool = False
     precareer: str | None = None  # pre-career currently in progress
     precareer_completed: str | None = None  # pre-career that was attended (whether graduated or not)
-    precareer_skills: list[str] = Field(default_factory=list)  # skills chosen during university (for graduation boost)
+    precareer_skills: list[SerializeAsAny[AnySkill]] = Field(
+        default_factory=list
+    )  # skills chosen during university (for graduation boost)
     parole_threshold: int | None = None  # Prisoner career: current Parole Threshold (3-12)
 
     @overload
@@ -296,20 +298,19 @@ class CharacterProjection(BaseModel):
                 current = getattr(existing, field).value
                 getattr(existing, field).set(max(current, given))
 
-    def increment_skill(self, skill_name: str, spec: str | None = None) -> None:
-        from typing import cast as _cast
-
-        skill_cls = skill_class_by_name(skill_name)
+    def increment_skill(self, skill: AnySkill) -> None:
+        skill_cls = type(skill)
         existing = next((s for s in self.summary.skills if type(s) is skill_cls), None)
         fields = _level_fields(skill_cls)
-        target_field = field_for_spec(skill_cls, spec) if spec is not None else (fields[0] if fields else None)
+        active_field = next((f for f in fields if getattr(skill, f).value > 0), None)
+        target_field = active_field or (fields[0] if fields else None)
         if existing is None:
             new_skill = skill_cls()
             if target_field:
                 getattr(new_skill, target_field).set(1)
-            self.summary.skills.append(_cast(AnySkill, new_skill))
+            self.summary.skills.append(new_skill)
             return
-        if (spec is not None or len(fields) == 1) and target_field:
+        if (active_field is not None or len(fields) == 1) and target_field:
             current = getattr(existing, target_field).value
             if current < 4:
                 getattr(existing, target_field).set(current + 1)

@@ -1,7 +1,7 @@
 from ceres.character.characteristics import Chars
 from ceres.character.events import PendingPreCareerSkillChoice, PreCareerEntryEvent, PreCareerGraduationEvent
 from ceres.character.precareers.precareer_data import PreCareerData
-from ceres.character.skills import parse_skill_spec_option, skill_spec_option_names
+from ceres.character.skills import AnySkill, _level_fields
 from ceres.character.state import (
     CharacterProjection,
     ScheduledEffect,
@@ -44,9 +44,8 @@ class UniversityPreCareer(PreCareerData):
         event: PreCareerGraduationEvent,
         honours: bool,
     ) -> int:
-        for skill_entry in projection.summary.precareer_skills:
-            skill_name, spec = parse_skill_spec_option(skill_entry)
-            projection.increment_skill(skill_name, spec)
+        for skill in projection.summary.precareer_skills:
+            projection.increment_skill(skill)
         projection.summary.characteristics[Chars.EDU] = projection.summary.characteristics.get(Chars.EDU, 0) + 1
         dm_amount = 2 if honours else 1
         projection.scheduled_effects.append(
@@ -65,16 +64,40 @@ class UniversityPreCareer(PreCareerData):
         return 0
 
 
-def _precareer_skill_options(precareer: PreCareerData) -> list[str]:
-    opts: list[str] = []
+def _precareer_skill_options(precareer: PreCareerData) -> list[AnySkill]:
+    seen: set[str] = set()
+    result: list[AnySkill] = []
     for entry in precareer.skill_choices:
-        opts.extend(entry.option_names)
-    return sorted(set(opts))
+        for skill in entry.skill_options:
+            key = type(skill).name()
+            if key not in seen:
+                seen.add(key)
+                result.append(skill)
+    return sorted(result, key=lambda s: type(s).name())
 
 
-def _precareer_skill_options_level1(precareer: PreCareerData) -> list[str]:
-    """Like _precareer_skill_options but expands specialised skills to per-specialisation options."""
-    opts: list[str] = []
-    for name in _precareer_skill_options(precareer):
-        opts.extend(skill_spec_option_names(name))
-    return sorted(set(opts))
+def _precareer_skill_options_level1(precareer: PreCareerData) -> list[AnySkill]:
+    """Like _precareer_skill_options but expands specialised skills to per-spec instances at Level(1)."""
+    from ceres.character.events import _expand_skill_to_spec_instances
+
+    seen: set[str] = set()
+    result: list[AnySkill] = []
+    for skill in _precareer_skill_options(precareer):
+        for expanded in _expand_skill_to_spec_instances(skill):
+            key = _skill_instance_key(expanded)
+            if key not in seen:
+                seen.add(key)
+                result.append(expanded)
+    return sorted(result, key=_skill_instance_key)
+
+
+def _skill_instance_key(skill: AnySkill) -> str:
+    skill_cls = type(skill)
+    fields = _level_fields(skill_cls)
+    active = next((f for f in fields if getattr(skill, f).value > 0), None)
+    base = skill_cls.name()
+    if active is None:
+        return base
+    extra = skill_cls.model_fields[active].json_schema_extra or {}
+    spec_label = str(extra.get('name') or active.replace('_', ' ').title())
+    return f'{base} ({spec_label})'

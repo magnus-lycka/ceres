@@ -23,25 +23,20 @@ class PrecareerSkillEntry(BaseModel):
 
     skill: AnySkill | list[AnySkill] | None = None
     level: int = 0
-    choices: list[str] | None = None
     spec: str | None = None
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @property
-    def option_names(self) -> list[str]:
-        if self.choices:
-            return self.choices
+    def skill_options(self) -> list[AnySkill]:
         if self.skill is None:
             return []
         if isinstance(self.skill, list):
-            return [type(skill).name() for skill in self.skill]
-        return [type(self.skill).name()]
+            return self.skill
+        return [self.skill]
 
     @property
     def category_label(self) -> str:
-        if self.choices:
-            return '/'.join(self.choices)
         if self.skill is None:
             return 'skill'
         if isinstance(self.skill, list):
@@ -107,8 +102,8 @@ class PreCareerData(TermData):
             for entry in self.skill_choices:
                 if not entry.skill:
                     continue
-                if isinstance(entry.skill, list) or entry.choices:
-                    options = entry.option_names
+                if isinstance(entry.skill, list):
+                    options = entry.skill_options
                     instr = f'{self.name}: choose one {entry.category_label} specialisation at level {entry.level}'
                     projection.pending_inputs.append(
                         PendingPreCareerSkillChoice(
@@ -122,13 +117,13 @@ class PreCareerData(TermData):
                 elif grant := entry.grant_skill():
                     projection.grant_skill(grant)
         else:
-            choice_pool: list[str] = []
+            choice_pool: list[AnySkill] = []
             for entry in self.skill_choices:
                 if not entry.skill:
                     continue
                 if entry.level >= 1:
-                    if isinstance(entry.skill, list) or entry.choices:
-                        options = entry.option_names
+                    if isinstance(entry.skill, list):
+                        options = entry.skill_options
                         instr = f'{self.name}: choose one {entry.category_label} specialisation at level {entry.level}'
                         projection.pending_inputs.append(
                             PendingPreCareerSkillChoice(
@@ -142,7 +137,7 @@ class PreCareerData(TermData):
                     elif grant := entry.grant_skill():
                         projection.grant_skill(grant)
                 else:
-                    choice_pool.extend(entry.option_names)
+                    choice_pool.extend(entry.skill_options)
             for i in range(self.entry_pick_count):
                 instr = f'{self.name}: choose skill {i + 1} of {self.entry_pick_count} at level 0'
                 projection.pending_inputs.append(

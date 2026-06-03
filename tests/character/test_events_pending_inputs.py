@@ -107,7 +107,6 @@ from ceres.character.events import (
     _apply_prisoner_advancement,
     _apply_simple_effect,
     _apply_skill_table_entry,
-    _spec_name_for_field,
     _start_new_career_term,
     _survive_pending,
     career_progress_pending,
@@ -222,7 +221,6 @@ def test_event_helpers_apply_simple_effects_and_skill_entries():
     assert projection.summary.skill_level(character_skills.Admin) == 0
     assert projection.summary.skill_level(character_skills.Electronics) == 1
     assert [effect.trigger for effect in projection.scheduled_effects] == ['advancement', 'muster_out']
-    assert _spec_name_for_field(character_skills.Admin, 'level') == 'Level'
 
 
 def test_auto_advance_can_apply_characteristic_rank_bonus():
@@ -874,18 +872,19 @@ def test_career_and_precareer_specific_pending_inputs():
     assert len(skill_roll.input_specs(_projection())) == 2
 
     precareer_skill_0 = PendingPreCareerSkillChoice(
-        id='4.0', instruction='Precareer skill', options=['Science'], level=0
+        id='4.0', instruction='Precareer skill', options=[character_skills.LifeScience()], level=0
     )
     precareer_skill_1 = PendingPreCareerSkillChoice(
-        id='5.0', instruction='Precareer skill', options=['Life Science'], level=1
+        id='5.0', instruction='Precareer skill', options=[character_skills.LifeScience()], level=1
     )
-    assert precareer_skill_0.event_from_form(Form(skill='Science')) == PreCareerSkillChoiceEvent(
-        skill='Science', fulfills='4.0'
+    life_science_json = character_skills.LifeScience().model_dump_json()
+    assert precareer_skill_0.event_from_form(Form(skill=life_science_json)) == PreCareerSkillChoiceEvent(
+        skill=character_skills.LifeScience(), fulfills='4.0'
     )
     level_0_specs = precareer_skill_0.input_specs(_projection())
     level_1_specs = precareer_skill_1.input_specs(_projection())
     assert isinstance(level_0_specs[0], Select)
     assert isinstance(level_1_specs[0], Select)
-    assert 'Science' in [value for _label, value in level_0_specs[0].options]
-    assert any(value.startswith('Life Science (') for _label, value in level_1_specs[0].options)
+    assert any(label == 'Life Science' for label, _ in level_0_specs[0].options)
+    assert any(label.startswith('Life Science (') for label, _ in level_1_specs[0].options)
     assert isinstance(precareer_skill_1.auto_event(_projection(), _ctx(), random.Random(1)), PreCareerSkillChoiceEvent)

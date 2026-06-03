@@ -12,8 +12,22 @@ directly. All career event handlers and test assertions use typed skill objects.
 `career_data.py` and `PrecareerSkillEntry.skill` in `precareer_data.py` both use
 `AnySkill`. `scholar.py` and `prisoner.py` updated with typed options.
 
-Remaining string-based paths are tracked in the active todo item
-"Remove `skill_from_str` / `skill_class_by_name` from `events.py`".
+The remaining string-based paths were eliminated in the follow-up work package below.
+
+## Character creation: eliminate all string-based skill lookup
+
+`PreCareerSkillChoiceEvent.skill` migrated from `str` to `AnySkill`. All
+string-based skill functions (`skill_from_str`, `skill_class_by_name`,
+`skill_names`, `expand_to_spec_options`, `parse_skill_spec_option`,
+`skill_spec_option_names`) deleted from `skills.py`. `increment_skill` in
+`state.py` now takes `AnySkill` directly. `precareer_skills` in
+`CharacterSummary` changed from `list[str]` to `list[SerializeAsAny[AnySkill]]`.
+`PendingPreCareerSkillChoice.options` is `list[AnySkill]`; `auto_event`,
+`event_from_form`, and `input_specs` updated accordingly.
+`PrecareerSkillEntry.option_names` renamed to `skill_options` and now returns
+`list[AnySkill]`. All precareer files (`university.py`, `psionic_community.py`,
+`colonial_upbringing.py`, `school_of_hard_knocks.py`, `spacer_community.py`,
+`merchant_academy.py`) updated to work with typed instances throughout.
 
 ## Character creation: Prisoner advancement + parole simultaneity fix
 

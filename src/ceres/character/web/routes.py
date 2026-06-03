@@ -21,7 +21,7 @@ from ceres.character.state import (
 )
 from ceres.character.store import SqliteCharacterBackend
 from ceres.character.web.bulk import _NPC_DEFAULT_HOMEWORLD
-from ceres.worlds import UNKNOWN_UWP, SectorWorldFilters, search_sectors
+from ceres.worlds import SectorWorldFilters, search_sectors
 
 _TEMPLATES_DIR = Path(__file__).parent / 'templates'
 _STRING_FILTER_GROUPS = ('allegiances', 'remarks', 'bases', 'starports')
@@ -54,10 +54,10 @@ def _projection_context(projection: CharacterProjection, character_id: int) -> d
     }
 
 
-def _selected_world_filters(request: Request) -> tuple[dict[str, set[str]], dict[str, set[int | str]], bool]:
+def _selected_world_filters(request: Request) -> tuple[dict[str, set[str]], dict[str, set[str]], bool]:
     filters_active = request.query_params.get('filters') == '1'
     selected_strings: dict[str, set[str]] = {}
-    selected_ints: dict[str, set[int | str]] = {}
+    selected_uwp_codes: dict[str, set[str]] = {}
     for group in _STRING_FILTER_GROUPS:
         values = [value for value in request.query_params.getlist(group) if value]
         if values:
@@ -65,23 +65,19 @@ def _selected_world_filters(request: Request) -> tuple[dict[str, set[str]], dict
         elif not filters_active:
             selected_strings[group] = set()
     for group in _INT_FILTER_GROUPS:
-        values: list[int | str] = []
-        for value in request.query_params.getlist(group):
-            if not value:
-                continue
-            values.append(UNKNOWN_UWP if value == UNKNOWN_UWP else int(value))
+        values = [value for value in request.query_params.getlist(group) if value]
         if values:
-            selected_ints[group] = set(values)
+            selected_uwp_codes[group] = set(values)
         elif not filters_active:
-            selected_ints[group] = set()
-    return selected_strings, selected_ints, filters_active
+            selected_uwp_codes[group] = set()
+    return selected_strings, selected_uwp_codes, filters_active
 
 
 def _normalize_world_filters_for_matching(
     selected_strings: dict[str, set[str]],
-    selected_ints: dict[str, set[int | str]],
+    selected_ints: dict[str, set[str]],
     sector: SectorWorldFilters,
-) -> tuple[dict[str, set[str]], dict[str, set[int | str]]]:
+) -> tuple[dict[str, set[str]], dict[str, set[str]]]:
     normalized_strings = dict(selected_strings)
     normalized_ints = dict(selected_ints)
 
@@ -157,7 +153,7 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
             law_levels=applied_ints.get('law_levels'),
             tech_levels=applied_ints.get('tech_levels'),
         )
-        selected: dict[str, set[str] | set[int | str]] = {**selected_strings, **selected_ints}
+        selected: dict[str, set[str]] = {**selected_strings, **selected_ints}
         return templates.TemplateResponse(
             request=request,
             name='sector_filters.html',

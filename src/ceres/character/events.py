@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 from ceres.character.careers.career_data import AdvancementDmOption
 from ceres.character.input_specs import InputSpec, NumberEntry, Reference, Select, form_int, form_str, literal
 from ceres.character.skills import (
+    Admin,
     AnySkill,
     ArtSkill,
     BackgroundSkill,
@@ -25,9 +26,6 @@ from ceres.character.skills import (
     SpaceScience,
     _level_fields,
     _skill_classes,
-    expand_to_spec_options,
-    parse_skill_spec_option,
-    skill_from_str,
 )
 from ceres.character.sophonts import Sophont, get_sophont
 from ceres.character.state import (
@@ -65,7 +63,15 @@ _adv_dm_or_skill_adapter: TypeAdapter[AdvancementDmOption | AnySkill] = TypeAdap
 def _skill_option_label(opt: AnySkill | AdvancementDmOption) -> str:
     if isinstance(opt, AdvancementDmOption):
         return opt.label()
-    return type(opt).name()
+    skill_cls = type(opt)
+    fields = _level_fields(skill_cls)
+    if len(fields) > 1:
+        active = next((f for f in fields if getattr(opt, f).value > 0), None)
+        if active is not None:
+            extra = skill_cls.model_fields[active].json_schema_extra or {}
+            spec_label = str(extra.get('name') or active.replace('_', ' ').title())
+            return f'{skill_cls.name()} ({spec_label})'
+    return skill_cls.name()
 
 
 def _roll2d(rng: random.Random) -> int:
@@ -81,12 +87,6 @@ def _rank_bonus_skill(bonus: Any) -> AnySkill:
     if len(fields) == 1:
         return skill_cls(**{fields[0]: _Level(value=bonus.level)})
     return skill_cls(**{f: _Level(value=bonus.level) for f in fields})
-
-
-def _spec_name_for_field(skill_cls: Any, field_name: str) -> str:
-    """Return the display name for a skill specialisation field."""
-    extra = skill_cls.model_fields[field_name].json_schema_extra or {}
-    return str(extra.get('name') or field_name.replace('_', ' ').title())
 
 
 def _roll1d(rng: random.Random) -> int:
@@ -273,14 +273,7 @@ def _apply_skill_table_entry(projection: Any, entry: Any) -> None:
     if isinstance(entry, _Chars):
         projection.summary.characteristics[entry] = projection.summary.characteristics.get(entry, 0) + 1
     else:
-        skill_cls = type(entry)
-        fields = _level_fields(skill_cls)
-        spec_field = next((f for f in fields if getattr(entry, f).value > 0), None)
-        if spec_field is not None:
-            spec_name = _spec_name_for_field(skill_cls, spec_field)
-            projection.increment_skill(skill_cls.name(), spec_name)
-        else:
-            projection.increment_skill(skill_cls.name())
+        projection.increment_skill(entry)
 
 
 def _apply_mishap_ejection(
@@ -1512,16 +1505,14 @@ class PreCareerSkillChoiceEvent(EventBase):
     """Choose a skill gained during university pre-career; level is set by the pending input."""
 
     kind: Literal['precareer_skill_choice'] = 'precareer_skill_choice'
-    skill: str  # specific skill name (may include specialisation, e.g. 'Science (biology)')
+    skill: AnySkill
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-
         level = fulfilled_pending.level if isinstance(fulfilled_pending, PendingPreCareerSkillChoice) else 0
-        skill_name, spec = parse_skill_spec_option(self.skill)
         if level == 0:
-            projection.grant_skill(skill_from_str(skill_name, 0))
+            projection.grant_skill(self.skill)
         else:
-            projection.increment_skill(skill_name, spec)
+            projection.increment_skill(self.skill)
         projection.summary.precareer_skills.append(self.skill)
 
 
@@ -2665,9 +2656,7 @@ class PendingCareerSkillRoll(PendingInputBase):
     model_config = {'arbitrary_types_allowed': True}
 
     def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
-        from ceres.character.skills import Admin as _Admin
-
-        opt: AnySkill | Chars = rng.choice(self.options) if self.options else _Admin()
+        opt: AnySkill | Chars = rng.choice(self.options) if self.options else Admin()
         return SkillRollEvent(context=self.context, skill=opt, modified_roll=_roll2d(rng), fulfills=self.id)
 
     def event_from_form(self, form: Any) -> AnyEvent:
@@ -2693,31 +2682,42 @@ class PendingCareerSkillRoll(PendingInputBase):
         ]
 
 
+def _expand_skill_to_spec_instances(skill: AnySkill) -> list[AnySkill]:
+    """Return one instance per spec at Level(1) for specialised skills, or [skill] for unspecialised."""
+    skill_cls = type(skill)
+    fields = _level_fields(skill_cls)
+    if len(fields) <= 1:
+        return [skill]
+    cls: Any = skill_cls
+    return [cast(AnySkill, cls(**{f: Level(value=1 if f == fn else 0) for f in fields})) for fn in fields]
+
+
 class PendingPreCareerSkillChoice(PendingInputBase):
     """University: choose one skill at the given level (0 or 1) from the pre-career skill list."""
 
     kind: Literal['precareer_skill_choice'] = 'precareer_skill_choice'
     level: int
+    options: list[AnySkill] = Field(default_factory=list)  # type: ignore[assignment]
 
-    def _expanded_options(self) -> list[str]:
+    def _expanded_options(self) -> list[AnySkill]:
         if self.level == 0:
             return list(self.options)
-        result: list[str] = []
-        for opt in self.options:
-            result.extend(expand_to_spec_options(opt))
+        result: list[AnySkill] = []
+        for skill in self.options:
+            result.extend(_expand_skill_to_spec_instances(skill))
         return result
 
     def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
         options = self._expanded_options()
-        skill_name = rng.choice(options) if options else 'Admin'
-        return PreCareerSkillChoiceEvent(skill=skill_name, fulfills=self.id)
+        skill: AnySkill = rng.choice(options) if options else Admin()
+        return PreCareerSkillChoiceEvent(skill=skill, fulfills=self.id)
 
     def event_from_form(self, form: Any) -> AnyEvent:
-        skill = form_str(form, 'skill')
+        skill = _skill_adapter.validate_json(form_str(form, 'skill', '{}'))
         return PreCareerSkillChoiceEvent(skill=skill, fulfills=self.id)
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
-        options = [(opt, opt) for opt in self._expanded_options()]
+        options = [(_skill_option_label(opt), opt.model_dump_json()) for opt in self._expanded_options()]
         return [Select(name='skill', label='Choose a skill', options=options)]
 
 

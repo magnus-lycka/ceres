@@ -513,29 +513,8 @@ def skill_list(skill_union: object = AnySkill) -> tuple[SkillInfo, ...]:
     return tuple(SkillInfo(skill.name(), skill.specialities()) for skill in _skill_classes(skill_union))
 
 
-def skill_names(skill_union: object) -> list[str]:
-    return [cls.name() for cls in _skill_classes(skill_union)]
-
-
 def skill_instances(skill_union: object) -> list[AnySkill]:
     return [cast(AnySkill, cls()) for cls in _skill_classes(skill_union)]
-
-
-def skill_spec_option_names(skill_name: str) -> list[str]:
-    """Return one option label per specialisation for specialised skills, or [skill_name] for unspecialised."""
-    cls = skill_class_by_name(skill_name)
-    specs = cls.specialities()
-    if not specs:
-        return [skill_name]
-    return [f'{skill_name} ({spec})' for spec in specs]
-
-
-def parse_skill_spec_option(option: str) -> tuple[str, str | None]:
-    """Parse 'Skill (Spec)' into (skill_name, spec_name), or 'Skill' into (skill_name, None)."""
-    if option.endswith(')') and ' (' in option:
-        idx = option.rfind(' (')
-        return option[:idx], option[idx + 2 : -1]
-    return option, None
 
 
 def _level_fields(skill_cls: type[Skill]) -> list[str]:
@@ -544,13 +523,6 @@ def _level_fields(skill_cls: type[Skill]) -> list[str]:
         for name, field in skill_cls.model_fields.items()
         if name not in {'type', 'display_label'} and field.annotation is Level
     ]
-
-
-def skill_class_by_name(name: str) -> type[Skill]:
-    for cls in _skill_classes(AnySkill):
-        if cls.name() == name:
-            return cls
-    raise ValueError(f'Unknown skill: {name!r}')
 
 
 def field_for_spec(cls: type[Skill], spec: str) -> str:
@@ -563,34 +535,6 @@ def field_for_spec(cls: type[Skill], spec: str) -> str:
         if label.lower() == spec.lower():
             return field_name
     raise ValueError(f'Unknown specialisation {spec!r} for skill {cls.name()!r}')
-
-
-def skill_from_str(name: str, level: int = 0) -> AnySkill:
-    """Create a skill instance from a string name and level."""
-
-    skill_cls = skill_class_by_name(name)
-    _cls: Any = skill_cls
-    if level == 0:
-        return cast(AnySkill, _cls())
-    if not _cls().specialities():
-        return cast(AnySkill, _cls(level=Level(value=level)))
-    fields = {f: Level(value=level) for f in _level_fields(skill_cls)}
-    return cast(AnySkill, _cls(**fields))
-
-
-def expand_to_spec_options(skill_name: str) -> list[str]:
-    """For a specialised skill, return 'Skill (Spec)' for every specialisation.
-
-    For plain (non-specialised) skills, returns [skill_name] unchanged.
-    Use this when presenting level > 0 choices: specialised skills must be chosen
-    at the specialisation level, never as a bare name.
-    """
-    try:
-        cls = skill_class_by_name(skill_name)
-    except ValueError:
-        return [skill_name]
-    specs = cls.specialities()
-    return [f'{skill_name} ({spec})' for spec in specs] if specs else [skill_name]
 
 
 def speciality_label(skill: Skill, field_name: str) -> str:

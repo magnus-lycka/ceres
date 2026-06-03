@@ -245,6 +245,24 @@ Decide whether `Ship` should be extended or whether a separate `Station` class i
   Service Skill at level 0 (not all service skills at 0 as in term 1).
 - **Benefit roll bonus at rank 5–6 and "any one Benefit roll" events** — neither
   is implemented; see RIC-004.
+- **Generic Life Events table must match Core literally** — the generic
+  `LifeEventEvent` / `LifeEventUnusualEvent` implementation in
+  `ceres.character.events` should match the Traveller Core Rulebook Life Events
+  table word-for-word in meaning and behavior, not merely approximate the same
+  mechanics. Current known deviations include:
+  - roll 8 Betrayal does not clearly implement "convert one Contact or Ally"
+    before falling back to gaining a Rival or Enemy
+  - roll 9 Travel does not currently model "You move to another world"
+  - roll 11 Crime does not currently offer the "lose one Benefit roll or take
+    the Prisoner career in your next term" choice
+  - roll 12 Unusual Event is substantially altered from core
+  This should be fixed from the rulebook text itself, with tests asserting the
+  core outcomes rather than current implementation behavior.
+- **PSI characteristic support** — add explicit support for the PSI
+  characteristic in `ceres.character`. This is needed both generally for core
+  psionics rules and specifically so Life Event unusual subtable roll 1
+  (encountering a Psionic institute and testing Psionic Strength) can be
+  implemented correctly.
 - **Muster-out benefits are string-key encoded** — career data currently writes
   benefits as string keys passed through `parse_benefit(...)`, e.g.
   `parse_benefit('ship_share')` or `parse_benefit(['soc_plus_1',
@@ -277,27 +295,6 @@ Decide whether `Ship` should be extended or whether a separate `Station` class i
 The career YAML migration removed string-based skill/characteristic fields from
 career data. Several string-based patterns remain and should be eliminated in
 follow-up work packages.
-
-### Remove `skill_from_str` / `skill_class_by_name` from `events.py`
-
-**Largely complete**: `PendingCareerSkillRoll`, `PendingSkillChoice`,
-`PendingCareerSkillChoice`, `PendingBackgroundSkills`,
-`PendingInitialTrainingChoice`, `PendingSkillTableChoice`, and
-`PendingRankBonusChoice` all now hold `list[AnySkill | Literal['advancement_dm_4']]`
-options instead of strings. `_build_skill_select_options` and `_pick_skill_auto`
-have no `str` branch. `skill_class_by_name` removed from `events.py`.
-`RankBonus.choices` is `list[AnySkill] | None`. Career files use typed skill
-instances in all `RankBonus.choices` entries.
-
-Remaining string-based paths:
-
-- `events.py` — `skill_from_str` still imported and used in
-  `PreCareerSkillChoiceEvent.apply` (spec strings like `'Science (biology)'`)
-- `state.py:302` — `increment_skill` still uses `skill_class_by_name` for
-  string-based lookup in `PreCareerSkillChoiceEvent` flow
-
-Once `PreCareerSkillChoiceEvent.skill` migrates from `str` to a typed object,
-`skill_from_str` and `skill_class_by_name` can be deleted from the codebase.
 
 ### Remove `str` overload from `CharacterSummary.skill_level`
 

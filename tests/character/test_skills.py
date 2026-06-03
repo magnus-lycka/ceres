@@ -20,10 +20,8 @@ from ceres.character.skills import (
     SocialScience,
     SpaceScience,
     gain_skills,
-    parse_skill_spec_option,
     skill_list,
     skill_spec,
-    skill_spec_option_names,
 )
 from ceres.character.sophonts import VILANI
 from ceres.character.state import CharacterProjection, CharacterSummary
@@ -148,36 +146,6 @@ def test_skill_str_specialised_multiple_active():
     gc.energy.set(1)
     gc.slug.set(2)
     assert str(gc) == 'Gun Combat (Energy)-1, Gun Combat (Slug)-2'
-
-
-def test_skill_spec_option_names_expands_specialised_skill():
-    opts = skill_spec_option_names('Physical Science')
-
-    assert opts == [
-        'Physical Science (Chemistry)',
-        'Physical Science (Physics)',
-        'Physical Science (Jumpspace Physics)',
-    ]
-
-
-def test_skill_spec_option_names_returns_name_for_unspecialised_skill():
-    opts = skill_spec_option_names('Admin')
-
-    assert opts == ['Admin']
-
-
-def test_parse_skill_spec_option_parses_spec():
-    skill, spec = parse_skill_spec_option('Physical Science (Chemistry)')
-
-    assert skill == 'Physical Science'
-    assert spec == 'Chemistry'
-
-
-def test_parse_skill_spec_option_returns_none_spec_for_plain_name():
-    skill, spec = parse_skill_spec_option('Admin')
-
-    assert skill == 'Admin'
-    assert spec is None
 
 
 # ---------------------------------------------------------------------------

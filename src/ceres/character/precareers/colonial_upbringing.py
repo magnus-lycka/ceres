@@ -1,7 +1,7 @@
 from ceres.character.characteristics import Chars
 from ceres.character.events import PendingPreCareerSkillChoice, PreCareerGraduationEvent
 from ceres.character.precareers.precareer_data import PreCareerData
-from ceres.character.skills import JackOfAllTrades, Leadership, Level
+from ceres.character.skills import AnySkill, JackOfAllTrades, Leadership, Level
 from ceres.character.state import CharacterProjection
 
 
@@ -13,10 +13,10 @@ class ColonialUprbringingPreCareer(PreCareerData):
         honours: bool,
     ) -> int:
         pending_idx = 0
-        skill_pool: list[str] = []
+        skill_pool: list[AnySkill] = []
         for entry in self.skill_choices:
             if entry.skill:
-                skill_pool.extend(entry.option_names)
+                skill_pool.extend(entry.skill_options)
         for i in range(3):
             projection.pending_inputs.append(
                 PendingPreCareerSkillChoice(

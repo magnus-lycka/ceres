@@ -1,15 +1,18 @@
 from ceres.character.characteristics import Chars
 from ceres.character.events import PendingPreCareerSkillChoice, PreCareerEntryEvent, PreCareerGraduationEvent
 from ceres.character.precareers.precareer_data import PreCareerData
+from ceres.character.skills import AnySkill
 from ceres.character.state import (
     CharacterProjection,
     ScheduledEffect,
 )
 
 
-def _skill_names_from_table(table) -> list[str]:
-    """Return the skill names for all non-characteristic, non-list entries in a SkillTable."""
-    return [type(e).name() for e in table.entries if not isinstance(e, (Chars, list))]
+def _skill_instances_from_table(table) -> list[AnySkill]:
+    """Return skill instances for all non-characteristic, non-list entries in a SkillTable."""
+    from typing import cast as _cast
+
+    return [_cast(AnySkill, e) for e in table.entries if not isinstance(e, (Chars, list))]
 
 
 class MerchantAcademyPreCareer(PreCareerData):
@@ -30,7 +33,7 @@ class MerchantAcademyPreCareer(PreCareerData):
                         projection.grant_skill(entry)
             service_table = merchant.skill_table('service_skills')
             if service_table:
-                service_skills = _skill_names_from_table(service_table)
+                service_skills = _skill_instances_from_table(service_table)
                 projection.pending_inputs.append(
                     PendingPreCareerSkillChoice(
                         id=f'{event.id}.{pending_idx}',
@@ -52,11 +55,11 @@ class MerchantAcademyPreCareer(PreCareerData):
 
         pending_idx = 0
         merchant = load_careers().get('Merchant')
-        skill_pool: list[str] = []
+        skill_pool: list[AnySkill] = []
         if merchant and self.curriculum_table:
             table = merchant.skill_table(self.curriculum_table)
             if table:
-                skill_pool = _skill_names_from_table(table)
+                skill_pool = _skill_instances_from_table(table)
         if skill_pool:
             projection.pending_inputs.append(
                 PendingPreCareerSkillChoice(

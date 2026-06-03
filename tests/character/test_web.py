@@ -6,6 +6,7 @@ import pytest
 from ceres.character.app import build_app
 from ceres.character.sophonts import HUMANITI, VILANI
 from ceres.character.store import SqliteCharacterBackend
+from ceres.worlds import DEFAULT_MILIEU
 from tests.character.helpers import MOCK_WORLD
 
 
@@ -58,12 +59,12 @@ def test_sector_picker_page_renders_search_input(client):
 def test_sector_search_returns_matching_options(client, monkeypatch):
     from ceres.adapters.travellermap import SectorInfo
 
-    def fake_search(query: str, *, milieu: str = 'M1105'):
+    def fake_search(query: str, *, milieu: str = DEFAULT_MILIEU):
         assert query == 'tro'
-        assert milieu == 'M1105'
+        assert milieu == DEFAULT_MILIEU
         return [
-            SectorInfo(x=0, y=0, milieu='M1105', abbreviation='Troj', tags='OTU', names=['Trojan Reach']),
-            SectorInfo(x=1, y=0, milieu='M1105', abbreviation='Vlan', tags='OTU', names=['The Trojans']),
+            SectorInfo(x=0, y=0, milieu=DEFAULT_MILIEU, abbreviation='Troj', tags='OTU', names=['Trojan Reach']),
+            SectorInfo(x=1, y=0, milieu=DEFAULT_MILIEU, abbreviation='Vlan', tags='OTU', names=['The Trojans']),
         ]
 
     monkeypatch.setattr('ceres.character.web.routes.search_sectors', fake_search)
@@ -86,8 +87,8 @@ def test_sector_search_without_abbreviation_is_not_selectable(client, monkeypatc
 
     monkeypatch.setattr(
         'ceres.character.web.routes.search_sectors',
-        lambda query, milieu='M1105': [
-            SectorInfo(x=0, y=0, milieu='M1105', abbreviation='', tags='OTU', names=['Aslan Hierate'])
+        lambda query, milieu=DEFAULT_MILIEU: [
+            SectorInfo(x=0, y=0, milieu=DEFAULT_MILIEU, abbreviation='', tags='OTU', names=['Aslan Hierate'])
         ],
     )
 
