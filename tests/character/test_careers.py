@@ -42,15 +42,26 @@ from ceres.character.events import (
 from ceres.character.replay import ReplayError, replay
 from ceres.character.skills import (
     Admin,
+    Astrogation,
     Athletics,
     Carouse,
+    Diplomat,
     Drive,
     Electronics,
     Flyer,
+    GunCombat,
+    Investigate,
     Level,
+    LifeScience,
+    Mechanic,
     Medic,
+    PhysicalScience,
     Pilot,
+    RoboticScience,
+    SocialScience,
     SpaceScience,
+    Survival,
+    VaccSuit,
 )
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
@@ -243,12 +254,12 @@ class TestCareerEntry:
         projection = replay(1, events)
 
         # First term: all service skills at level 0
-        assert projection.summary.skill_level('Pilot') == 0
-        assert projection.summary.skill_level('Survival') == 0
-        assert projection.summary.skill_level('Mechanic') == 0
-        assert projection.summary.skill_level('Astrogation') == 0
-        assert projection.summary.skill_level('Vacc Suit') == 0
-        assert projection.summary.skill_level('Gun Combat') == 0
+        assert projection.summary.skill_level(Pilot) == 0
+        assert projection.summary.skill_level(Survival) == 0
+        assert projection.summary.skill_level(Mechanic) == 0
+        assert projection.summary.skill_level(Astrogation) == 0
+        assert projection.summary.skill_level(VaccSuit) == 0
+        assert projection.summary.skill_level(GunCombat) == 0
 
     def test_career_event_rejects_unknown_career(self):
         with pytest.raises(ReplayError):
@@ -304,14 +315,14 @@ class TestCareerEntry:
         projection = replay(1, events)
 
         # Non-choice Scholar service skills are granted
-        assert projection.summary.skill_level('Electronics') is not None
-        assert projection.summary.skill_level('Diplomat') is not None
-        assert projection.summary.skill_level('Medic') is not None
-        assert projection.summary.skill_level('Investigate') is not None
+        assert projection.summary.skill_level(Electronics) is not None
+        assert projection.summary.skill_level(Diplomat) is not None
+        assert projection.summary.skill_level(Medic) is not None
+        assert projection.summary.skill_level(Investigate) is not None
         # Drive already known → Flyer is the only remaining option → auto-granted, no dialog
-        assert projection.summary.skill_level('Flyer') is not None
+        assert projection.summary.skill_level(Flyer) is not None
         # Science still requires a choice (5 options)
-        assert projection.summary.skill_level('Life Science') is None
+        assert projection.summary.skill_level(LifeScience) is None
 
 
 class TestSurvive:
@@ -442,7 +453,7 @@ class TestAdvancement:
 
         projection = replay(1, events)
 
-        assert projection.summary.skill_level('Vacc Suit') == 1
+        assert projection.summary.skill_level(VaccSuit) == 1
 
     def test_advancement_failure_keeps_rank(self):
         events = [*self._setup_through_term_event(), AdvancementEvent(id=7, fulfills='6.0', roll=5)]
@@ -546,7 +557,7 @@ class TestSkillTable:
 
         projection = replay(1, events)
 
-        assert projection.summary.skill_level('Electronics') == 1
+        assert projection.summary.skill_level(Electronics) == 1
 
     def test_skill_table_personal_development_characteristic_increase(self):
         # Personal development roll 1: STR +1 (STR was 7, should be 8)
@@ -679,7 +690,7 @@ class TestTermEventAutoAdvance:
         ]
         projection = replay(1, events)
 
-        assert projection.summary.skill_level('Vacc Suit') == 1
+        assert projection.summary.skill_level(VaccSuit) == 1
 
     def test_creates_assignment_change_pending_not_advancement(self):
         events = [
@@ -742,7 +753,7 @@ class TestSkillTableIncrement:
         ]
         projection = replay(1, events)
 
-        assert projection.summary.skill_level('Flyer') == 1
+        assert projection.summary.skill_level(Flyer) == 1
 
     def test_existing_skill_at_0_increments_to_1(self):
         # Courier table roll 3: Pilot (specialised, existing at 0) → choice pending, then Pilot 1
@@ -753,14 +764,14 @@ class TestSkillTableIncrement:
         ]
         projection = replay(1, events)
 
-        assert projection.summary.skill_level('Pilot') == 1
+        assert projection.summary.skill_level(Pilot) == 1
 
     def test_existing_skill_at_1_increments_to_2(self):
         # Scout rank 1 bonus: Vacc Suit 1. Roll service_skills 5 (Vacc Suit) in term 2 → 2
         events = [*self._setup_in_term_2(), SkillTableEvent(id=9, fulfills='8.0', table='service_skills', roll=5)]
         projection = replay(1, events)
 
-        assert projection.summary.skill_level('Vacc Suit') == 2
+        assert projection.summary.skill_level(VaccSuit) == 2
 
 
 class TestSkillTableChoice:
@@ -799,7 +810,7 @@ class TestSkillTableChoice:
         ]
         projection = replay(1, events)
 
-        assert projection.summary.skill_level('Drive') == 1
+        assert projection.summary.skill_level(Drive) == 1
 
     def test_language_entry_creates_skill_table_choice_with_all_languages(self):
         # Scholar personal_development roll 6: Language → choice from all Language skills in skills.py
@@ -1166,8 +1177,8 @@ class TestLifeEvents:
 
         assert any(isinstance(c, Contact) for c in projection.summary.connections)
         # Any science skill gained at level 1
-        science_skills = {'Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science'}
-        assert any(projection.summary.skill_level(s, -1) >= 1 for s in science_skills)
+        science_skills = (LifeScience, PhysicalScience, RoboticScience, SocialScience, SpaceScience)
+        assert any(projection.summary.skill_level(cls, -1) >= 1 for cls in science_skills)
 
     def test_roll_12_unusual_3_to_6_no_connections_or_skills(self):
         for roll in [3, 4, 5, 6]:

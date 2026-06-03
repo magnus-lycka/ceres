@@ -22,7 +22,7 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.replay import replay
-from ceres.character.skills import Admin, Athletics, Carouse, Drive, GunCombat, Melee
+from ceres.character.skills import Admin, Athletics, Carouse, Deception, Drive, GunCombat, Melee, Survival
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Enemy,
@@ -75,9 +75,9 @@ def test_drifter_first_career_basic_training_uses_assignment_skills():
 
     projection = replay(1, events)
 
-    assert projection.summary.skill_level('Deception') == 0
-    assert projection.summary.skill_level('Survival') == 0
-    assert projection.summary.skill_level('Melee') is None
+    assert projection.summary.skill_level(Deception) == 0
+    assert projection.summary.skill_level(Survival) == 0
+    assert projection.summary.skill_level(Melee) is None
 
 
 def test_drifter_basic_training_defers_survival_for_assignment_skill_choices():

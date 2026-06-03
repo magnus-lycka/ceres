@@ -24,7 +24,7 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.replay import ReplayError, replay
-from ceres.character.skills import Admin, Advocate, Athletics, Carouse, Drive, VaccSuit, skill_list
+from ceres.character.skills import Admin, Advocate, Athletics, Carouse, Drive, SpaceScience, VaccSuit, skill_list
 from ceres.character.sophonts import VILANI, Sophont
 from ceres.character.state import (
     Ally,
@@ -244,10 +244,10 @@ class TestBackgroundSkillsEvent:
 
         projection = replay(1, events)
 
-        assert projection.summary.skill_level('Admin') == 0
-        assert projection.summary.skill_level('Athletics') == 0
-        assert projection.summary.skill_level('Carouse') == 0
-        assert projection.summary.skill_level('Drive') == 0
+        assert projection.summary.skill_level(Admin) == 0
+        assert projection.summary.skill_level(Athletics) == 0
+        assert projection.summary.skill_level(Carouse) == 0
+        assert projection.summary.skill_level(Drive) == 0
         assert len(projection.summary.skills) == 4
 
     def test_rejects_wrong_number_of_skills(self):
@@ -418,7 +418,7 @@ class TestLifeEventUnusualBranches:
     def test_roll_2_gains_contact_and_space_science(self):
         projection = replay(1, [*_drifter_at_unusual_event(), LifeEventUnusualEvent(id=7, fulfills='6.0', roll=2)])
         assert any(isinstance(c, Contact) for c in projection.summary.connections)
-        assert projection.summary.skill_level('Space Science') == 1
+        assert projection.summary.skill_level(SpaceScience) == 1
 
     def test_roll_3_no_mechanical_effect(self):
         projection = replay(1, [*_drifter_at_unusual_event(), LifeEventUnusualEvent(id=7, fulfills='6.0', roll=3)])

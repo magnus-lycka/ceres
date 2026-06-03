@@ -174,7 +174,7 @@ class TestMerchantEvent8:
         ]
         projection = replay(1, events)
         # Admin was already at level 0 from background; should now be higher
-        assert projection.summary.skill_level('Admin') is not None
+        assert projection.summary.skill_level(Admin) is not None
 
     def test_natural_2_sets_forced_next_career_prisoner(self):
         events = [

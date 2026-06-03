@@ -191,14 +191,13 @@ class CharacterSummary(BaseModel):
     parole_threshold: int | None = None  # Prisoner career: current Parole Threshold (3-12)
 
     @overload
-    def skill_level(self, name: str | type[Skill], default: int) -> int: ...
+    def skill_level(self, skill_cls: type[Skill], default: int) -> int: ...
     @overload
-    def skill_level(self, name: str | type[Skill], default: None = None) -> int | None: ...
-    def skill_level(self, name: str | type[Skill], default: int | None = None) -> int | None:
-        skill_name = name.name() if isinstance(name, type) else name
+    def skill_level(self, skill_cls: type[Skill], default: None = None) -> int | None: ...
+    def skill_level(self, skill_cls: type[Skill], default: int | None = None) -> int | None:
         for skill in self.skills:
-            if type(skill).name() == skill_name:
-                fields = _level_fields(type(skill))
+            if type(skill) is skill_cls:
+                fields = _level_fields(skill_cls)
                 if not fields:
                     return 0
                 return max(getattr(skill, f).value for f in fields)
@@ -360,16 +359,15 @@ def diff_summaries(before: CharacterSummary, after: CharacterSummary) -> list[st
         if a_val != b_val:
             changes.append(f'{char.value} {b_val} → {a_val}')
 
-    before_by_name = {type(s).name(): s for s in before.skills}
-    after_by_name = {type(s).name(): s for s in after.skills}
-    changes.extend(
-        f'Gained {name} {after.skill_level(name, 0)}' for name in sorted(set(after_by_name) - set(before_by_name))
-    )
-    for name in sorted(set(after_by_name) & set(before_by_name)):
-        b_lvl = before.skill_level(name, 0)
-        a_lvl = after.skill_level(name, 0)
+    before_by_type = {type(s): s for s in before.skills}
+    after_by_type = {type(s): s for s in after.skills}
+    new_types = sorted(set(after_by_type) - set(before_by_type), key=lambda cls: cls.name())
+    changes.extend(f'Gained {cls.name()} {after.skill_level(cls, 0)}' for cls in new_types)
+    for cls in sorted(set(after_by_type) & set(before_by_type), key=lambda cls: cls.name()):
+        b_lvl = before.skill_level(cls, 0)
+        a_lvl = after.skill_level(cls, 0)
         if a_lvl != b_lvl:
-            changes.append(f'{name} {b_lvl} → {a_lvl}')
+            changes.append(f'{cls.name()} {b_lvl} → {a_lvl}')
 
     if after.cash != before.cash:
         delta = after.cash - before.cash

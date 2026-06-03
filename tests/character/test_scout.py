@@ -109,7 +109,7 @@ class TestScoutAmbush:
         ]
         projection = replay(1, events)
 
-        assert projection.summary.skill_level('Electronics', -1) >= 1
+        assert projection.summary.skill_level(Electronics, -1) >= 1
 
     def test_success_persuade_grants_electronics(self):
         # Persuade 10+, roll 11 → success
@@ -119,7 +119,7 @@ class TestScoutAmbush:
         ]
         projection = replay(1, events)
 
-        assert projection.summary.skill_level('Electronics', -1) >= 1
+        assert projection.summary.skill_level(Electronics, -1) >= 1
 
     def test_failure_pilot_adds_problem(self):
         # Pilot 8+, roll 6 → failure
@@ -293,7 +293,7 @@ class TestScoutEvent10:
 
         projection = replay(1, events)
 
-        assert projection.summary.skill_level('Navigation', -1) >= 1
+        assert projection.summary.skill_level(Navigation, -1) >= 1
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
     def test_failure_creates_mishap_pending(self):
@@ -454,7 +454,7 @@ class TestScoutEvent11:
         events = [*self._setup_to_event_11(), diplomat_choice]
         projection = replay(1, events)
 
-        assert projection.summary.skill_level('Diplomat', -1) >= 1
+        assert projection.summary.skill_level(Diplomat, -1) >= 1
 
     def test_choose_advancement_dm_adds_scheduled_effect(self):
         events = [*self._setup_to_event_11(), AdvancementDmChoiceEvent(id=7, fulfills='6.0')]
@@ -550,13 +550,13 @@ class TestScoutAssignmentTableCorrections:
         events = [*self._setup_in_term_2('Surveyor'), SkillTableEvent(id=9, fulfills='8.0', table='surveyor', roll=2)]
         projection = replay(1, events)
 
-        assert projection.summary.skill_level('Persuade') is not None
+        assert projection.summary.skill_level(Persuade) is not None
 
     def test_surveyor_roll_4_gives_navigation(self):
         events = [*self._setup_in_term_2('Surveyor'), SkillTableEvent(id=9, fulfills='8.0', table='surveyor', roll=4)]
         projection = replay(1, events)
 
-        assert projection.summary.skill_level('Navigation') is not None
+        assert projection.summary.skill_level(Navigation) is not None
 
     def test_explorer_roll_2_offers_pilot(self):
         # Explorer roll 2 is Pilot (specialised) — player must choose a specialisation

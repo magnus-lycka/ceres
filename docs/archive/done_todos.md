@@ -12,7 +12,15 @@ directly. All career event handlers and test assertions use typed skill objects.
 `career_data.py` and `PrecareerSkillEntry.skill` in `precareer_data.py` both use
 `AnySkill`. `scholar.py` and `prisoner.py` updated with typed options.
 
-The remaining string-based paths were eliminated in the follow-up work package below.
+The remaining string-based paths were eliminated in the two follow-up work packages below.
+
+## Character creation: remove `str` overload from `CharacterSummary.skill_level`
+
+`skill_level(name: str | type[Skill])` simplified to `skill_level(skill_cls:
+type[Skill])`. The `str` branch is gone; the implementation now uses `type(skill)
+is skill_cls` instead of string name comparison. `diff_summaries` updated to key
+on `type(s)` instead of `type(s).name()`. All callers in test files converted to
+typed class references, with missing imports added to each file.
 
 ## Character creation: eliminate all string-based skill lookup
 

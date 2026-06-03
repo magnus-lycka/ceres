@@ -263,6 +263,26 @@ Decide whether `Ship` should be extended or whether a separate `Station` class i
   psionics rules and specifically so Life Event unusual subtable roll 1
   (encountering a Psionic institute and testing Psionic Strength) can be
   implemented correctly.
+- **Generic Pre-Career Events table must match Core literally** — the generic
+  pre-career events in `ceres.character.precareers.loader` and
+  `PreCareerEvent` handling in `ceres.character.events` should match the
+  Traveller Core Rulebook Pre-Career Events table word-for-word in meaning and
+  behavior, not merely approximate the same outcomes. Current known deviations
+  include:
+  - roll 2 psionic-group approach is only recorded as a manual note because PSI
+    support is missing
+  - roll 4 prank-gone-wrong is not implemented; SOC 8+, Rival/Enemy, and
+    natural-2 -> Prisoner handling are all left manual
+  - roll 8 political movement wrongly grants Ally + Enemy automatically instead
+    of requiring SOC 8+ and only then becoming a leading figure
+  - roll 10 tutor conflict drops the required 9+ skill roll and the possible
+    skill increase, leaving only a Rival
+  - roll 11 wartime draft is mostly a manual note instead of modeled flee /
+    draft / SOC 9+ avoidance behavior
+  - roll 7 depends on the generic Life Events table, which already has its own
+    correctness todo above
+  This should be fixed from the rulebook text itself, with tests asserting core
+  table outcomes rather than current implementation behavior.
 - **Muster-out benefits are string-key encoded** — career data currently writes
   benefits as string keys passed through `parse_benefit(...)`, e.g.
   `parse_benefit('ship_share')` or `parse_benefit(['soc_plus_1',
@@ -295,12 +315,6 @@ Decide whether `Ship` should be extended or whether a separate `Station` class i
 The career YAML migration removed string-based skill/characteristic fields from
 career data. Several string-based patterns remain and should be eliminated in
 follow-up work packages.
-
-### Remove `str` overload from `CharacterSummary.skill_level`
-
-`state.py` exposes `skill_level(name: str | type[Skill])`. Remove the `str`
-overload once no caller needs string-based lookup; the method should accept only
-`type[Skill]`.
 
 ### Replace remaining `CareerDispatchEffect` registry dispatch with effect subclasses
 

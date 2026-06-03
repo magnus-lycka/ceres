@@ -139,11 +139,11 @@ class TestScholarInitialTraining:
 
     def test_drive_not_granted_before_choice(self):
         projection = replay(1, self._setup())
-        assert projection.summary.skill_level('Drive') is None
+        assert projection.summary.skill_level(Drive) is None
 
     def test_science_not_granted_before_choice(self):
         projection = replay(1, self._setup())
-        assert projection.summary.skill_level('Life Science') is None
+        assert projection.summary.skill_level(LifeScience) is None
 
     def test_survive_not_pending_before_choices_resolved(self):
         projection = replay(1, self._setup())
@@ -153,7 +153,7 @@ class TestScholarInitialTraining:
         events = [*self._setup(), SkillChoiceEvent(id=5, fulfills='4.0', skill=Drive())]
         projection = replay(1, events)
 
-        assert projection.summary.skill_level('Drive') == 0
+        assert projection.summary.skill_level(Drive) == 0
 
     def test_survive_pending_appears_after_both_choices_resolved(self):
         events = [
@@ -327,7 +327,7 @@ class TestScholarTerm:
         ]
         projection = replay(1, events)
 
-        assert projection.summary.skill_level('Survival', -1) >= 1
+        assert projection.summary.skill_level(Survival, -1) >= 1
         assert projection.summary.current_career is None
         assert not any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
@@ -407,7 +407,7 @@ class TestScholarEvent6:
         ]
         projection = replay(1, events)
 
-        assert projection.summary.skill_level('Navigation', -1) >= 1
+        assert projection.summary.skill_level(Navigation, -1) >= 1
 
     def test_success_skill_choice_creates_advancement_pending(self):
         events = [
@@ -651,8 +651,8 @@ class TestScholarEvent3:
         ]
         projection = replay(1, events)
 
-        assert projection.summary.skill_level('Space Science', -1) >= 1
-        assert projection.summary.skill_level('Life Science', -1) >= 1
+        assert projection.summary.skill_level(SpaceScience, -1) >= 1
+        assert projection.summary.skill_level(LifeScience, -1) >= 1
 
     def test_accept_creates_advancement_pending(self):
         events = [*self._setup(), CareerChoiceEvent(id=9, fulfills='8.0', context='scholar_event_3', choice='accept')]
@@ -795,7 +795,7 @@ class TestScholarEvent11:
         events = [*self._setup(), sci_choice]
         projection = replay(1, events)
 
-        assert projection.summary.skill_level('Space Science', -1) >= 1
+        assert projection.summary.skill_level(SpaceScience, -1) >= 1
 
     def test_choose_advancement_dm_adds_scheduled_effect(self):
         events = [*self._setup(), AdvancementDmChoiceEvent(id=9, fulfills='8.0')]
@@ -1122,14 +1122,14 @@ class TestScholarMishap3ScienceChoice:
         events = [*self._setup_to_choice('openly'), sci_choice]
         projection = replay(1, events)
 
-        assert projection.summary.skill_level('Life Science', -1) >= 1
+        assert projection.summary.skill_level(LifeScience, -1) >= 1
 
     def test_secretly_choice_grants_chosen_science(self):
         sci_choice = SkillChoiceEvent(id=10, fulfills='9.0', skill=PhysicalScience(chemistry=Level(value=1)))
         events = [*self._setup_to_choice('secretly'), sci_choice]
         projection = replay(1, events)
 
-        assert projection.summary.skill_level('Physical Science', -1) >= 1
+        assert projection.summary.skill_level(PhysicalScience, -1) >= 1
 
     def test_openly_chosen_science_not_fixed_to_space_science(self):
         # Verify a non-space science can be chosen (science choice is free)
@@ -1137,9 +1137,9 @@ class TestScholarMishap3ScienceChoice:
         events = [*self._setup_to_choice('openly'), sci_choice]
         projection = replay(1, events)
 
-        assert projection.summary.skill_level('Social Science', -1) >= 1
+        assert projection.summary.skill_level(SocialScience, -1) >= 1
         # Space Science starts at 0 from initial training, but is NOT raised to 1 by the mishap choice
-        assert projection.summary.skill_level('Space Science', -1) == 0
+        assert projection.summary.skill_level(SpaceScience, -1) == 0
 
 
 class TestPhysicianRankBonuses:
@@ -1163,7 +1163,7 @@ class TestPhysicianRankBonuses:
         projection = replay(1, events)
 
         # Physician rank 1 = Medic 1; no science choice pending should be created
-        assert projection.summary.skill_level('Medic', -1) >= 1
+        assert projection.summary.skill_level(Medic, -1) >= 1
         science_pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
         assert science_pending is None or {type(s) for s in science_pending.options} != _SCIENCE_CLASSES
 

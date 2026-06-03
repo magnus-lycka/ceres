@@ -15,7 +15,7 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.replay import replay
-from ceres.character.skills import Admin, Athletics, Carouse, Drive, VaccSuit
+from ceres.character.skills import Admin, Athletics, Carouse, Drive, Leadership, VaccSuit
 from ceres.character.sophonts import VILANI
 from tests.character.helpers import MOCK_WORLD
 
@@ -149,5 +149,5 @@ def test_successful_commission_sets_officer_rank_and_skips_advancement():
 
     assert projection.summary.rank == 1
     assert projection.summary.career_terms[-1].commission
-    assert projection.summary.skill_level('Leadership') == 1
+    assert projection.summary.skill_level(Leadership) == 1
     assert not any(p.kind == 'advancement' for p in projection.pending_inputs)

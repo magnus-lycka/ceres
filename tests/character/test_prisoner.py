@@ -80,7 +80,7 @@ def test_prisoner_can_be_entered_when_event_log_sends_character_there():
     assert projection.summary.current_career is not None
     assert projection.summary.current_career.name == 'Prisoner'
     assert projection.summary.current_assignment == 'Inmate'
-    assert projection.summary.skill_level('Melee') == 1
+    assert projection.summary.skill_level(Melee) == 1
     assert any(isinstance(p, PendingInitialTrainingChoice) for p in projection.pending_inputs)
 
 

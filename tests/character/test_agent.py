@@ -38,11 +38,14 @@ from ceres.character.skills import (
     Carouse,
     Deception,
     Drive,
+    Flyer,
+    GunCombat,
     Investigate,
     JackOfAllTrades,
     Level,
     Medic,
     Persuade,
+    Recon,
     Streetwise,
     Tactics,
 )
@@ -118,8 +121,8 @@ class TestAgentQualification:
 class TestAgentInitialTraining:
     def test_service_skills_granted_at_level_0(self):
         projection = replay(1, _enter_agent())
-        for skill in ('Streetwise', 'Drive', 'Investigate', 'Flyer', 'Recon', 'Gun Combat'):
-            assert projection.summary.skill_level(skill) is not None, f'{skill} not granted'
+        for cls in (Streetwise, Drive, Investigate, Flyer, Recon, GunCombat):
+            assert projection.summary.skill_level(cls) is not None, f'{cls.name()} not granted'
 
     def test_survive_pending_created(self):
         projection = replay(1, _enter_agent())
@@ -189,19 +192,19 @@ class TestAgentRanks:
         # INT advancement for Law Enforcement = INT 6+; INT=9 (DM+1), roll 5 → 6 ≥ 6
         projection = self._advance_once('Law Enforcement', adv_roll=5)
         assert projection.summary.rank == 1
-        assert (projection.summary.skill_level('Streetwise') or 0) >= 1
+        assert (projection.summary.skill_level(Streetwise) or 0) >= 1
 
     def test_intelligence_rank1_grants_deception(self):
         # INT advancement for Intelligence = INT 5+; INT=9 (DM+1), roll 4 → 5 ≥ 5
         projection = self._advance_once('Intelligence', adv_roll=4)
         assert projection.summary.rank == 1
-        assert (projection.summary.skill_level('Deception') or 0) >= 1
+        assert (projection.summary.skill_level(Deception) or 0) >= 1
 
     def test_corporate_rank1_grants_deception(self):
         # INT advancement for Corporate = INT 7+; INT=9 (DM+1), roll 6 → 7 ≥ 7
         projection = self._advance_once('Corporate', adv_roll=6)
         assert projection.summary.rank == 1
-        assert (projection.summary.skill_level('Deception') or 0) >= 1
+        assert (projection.summary.skill_level(Deception) or 0) >= 1
 
 
 # ── event 3: dangerous investigation ─────────────────────────────────────────
@@ -366,7 +369,7 @@ class TestAgentEvent11:
             SkillChoiceEvent(id=7, fulfills='6.0', skill=Investigate(level=Level(value=1))),
         ]
         projection = replay(1, events)
-        assert (projection.summary.skill_level('Investigate') or 0) >= 1
+        assert (projection.summary.skill_level(Investigate) or 0) >= 1
 
     def test_choose_advancement_dm_creates_advancement_pending(self):
         from ceres.character.events import AdvancementDmChoiceEvent

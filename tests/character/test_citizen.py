@@ -60,8 +60,8 @@ def test_citizen_first_career_basic_training_uses_assignment_skills():
 
     projection = replay(1, events)
 
-    assert projection.summary.skill_level('Mechanic') == 0
-    assert projection.summary.skill_level('Steward') is None
+    assert projection.summary.skill_level(Mechanic) == 0
+    assert projection.summary.skill_level(Steward) is None
 
 
 def test_citizen_subsequent_career_basic_training_chooses_one_assignment_skill():
@@ -98,7 +98,7 @@ def test_citizen_subsequent_career_basic_training_choice_unlocks_survival():
 
     projection = replay(1, events)
 
-    assert projection.summary.skill_level('Mechanic') == 0
+    assert projection.summary.skill_level(Mechanic) == 0
     assert any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
 
 
