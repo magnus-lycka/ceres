@@ -19,7 +19,18 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.replay import replay
-from ceres.character.skills import Admin, Athletics, Carouse, Drive
+from ceres.character.skills import (
+    Admin,
+    Athletics,
+    Carouse,
+    Drive,
+    Electronics,
+    Gunner,
+    Mechanic,
+    Pilot,
+    Tactics,
+    VaccSuit,
+)
 from ceres.character.sophonts import VILANI
 from ceres.character.state import Enemy
 from tests.character.helpers import MOCK_WORLD
@@ -69,7 +80,7 @@ class TestNavyMishap3:
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerSkillRoll)), None)
         assert pending is not None
-        assert set(pending.options) == {'Electronics', 'Gunner'}
+        assert pending.options == [Electronics(), Gunner()]
 
     def test_engineer_gunner_mishap_3_options_are_mechanic_or_vacc_suit(self):
         events = [
@@ -81,7 +92,7 @@ class TestNavyMishap3:
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerSkillRoll)), None)
         assert pending is not None
-        assert set(pending.options) == {'Mechanic', 'Vacc Suit'}
+        assert pending.options == [Mechanic(), VaccSuit()]
 
     def test_flight_mishap_3_options_are_pilot_or_tactics(self):
         events = [
@@ -100,7 +111,7 @@ class TestNavyMishap3:
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerSkillRoll)), None)
         assert pending is not None
-        assert set(pending.options) == {'Pilot', 'Tactics'}
+        assert pending.options == [Pilot(), Tactics()]
 
     def test_success_keeps_benefit_roll(self):
         events = [
@@ -221,7 +232,7 @@ class TestNavyEvent5:
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
         assert pending is not None
         # Navy service skills auto-applied first career: Pilot, Vacc Suit, Athletics, Gunner, Mechanic, Gun Combat
-        assert 'Athletics' in pending.options
+        assert any(isinstance(o, Athletics) for o in pending.options)
 
     def test_failure_no_skill_choice(self):
         events = [

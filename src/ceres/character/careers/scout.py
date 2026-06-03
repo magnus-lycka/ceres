@@ -41,8 +41,10 @@ from ceres.character.events import (
     SkillRollEvent,
 )
 from ceres.character.skills import (
+    Animals,
     Astrogation,
     Athletics,
+    Deception,
     Diplomat,
     Electronics,
     Engineer,
@@ -60,6 +62,7 @@ from ceres.character.skills import (
     Recon,
     ScienceSkill,
     Seafarer,
+    SpaceScience,
     Stealth,
     Streetwise,
     Survival,
@@ -77,7 +80,7 @@ from ceres.character.state import (
 SCOUT = Career(
     name='Scout',
     description=(
-        'Members of the exploratory service. Scouts explore new areas, map and survey known or newly discovered'
+        'Members of the exploratory service. Scouts explore new areas, map and survey known or newly discovered '
         'areas and maintain communication ships which carry information and messages between the worlds of the galaxy.'
     ),
 )
@@ -100,7 +103,7 @@ class ScoutEvent3Handler(CareerHandlerBase):
                 roll=3,
                 context='scout_event_3',
                 instruction='Roll Pilot 8+ to escape or Persuade 10+ to bargain',
-                options=list(_AMBUSH_TARGETS),
+                options=[Pilot(), Persuade()],
             )
         )
         return pending_idx + 1
@@ -137,7 +140,7 @@ class ScoutEvent8Handler(CareerHandlerBase):
                 roll=8,
                 context='scout_event_8',
                 instruction='Roll Electronics 8+ or Deception 8+',
-                options=['Electronics', 'Deception'],
+                options=[Electronics(), Deception()],
             )
         )
         return pending_idx + 1
@@ -177,7 +180,7 @@ class ScoutEvent9Handler(CareerHandlerBase):
                 roll=9,
                 context='scout_event_9',
                 instruction='Roll Medic 8+ or Engineer 8+',
-                options=['Medic', 'Engineer'],
+                options=[Medic(), Engineer()],
             )
         )
         return pending_idx + 1
@@ -212,7 +215,7 @@ class ScoutEvent10Handler(CareerHandlerBase):
                 roll=10,
                 context='scout_event_10',
                 instruction='Roll Survival 8+ or Pilot 8+',
-                options=['Survival', 'Pilot'],
+                options=[Survival(), Pilot()],
             )
         )
         return pending_idx + 1
@@ -252,7 +255,7 @@ class ScoutEvent11Handler(CareerHandlerBase):
                 roll=11,
                 advancement_precreated=False,
                 instruction='Gain Diplomat 1, or DM+4 to your next advancement roll',
-                options=['Diplomat', 'advancement_dm_4'],
+                options=[Diplomat(), 'advancement_dm_4'],
             )
         )
         return pending_idx + 1
@@ -423,7 +426,7 @@ CAREER_DATA = ScoutCareerData(
         ),
         4: CareerEventEntry(
             text='You survey an alien world.',
-            effects=[SkillChoiceEffect(options=['Animals', 'Survival', 'Recon', 'Space Science'], level=1)],
+            effects=[SkillChoiceEffect(options=[Animals(), Survival(), Recon(), SpaceScience()], level=1)],
         ),
         5: CareerEventEntry(
             text='You perform an exemplary service for the scouts.',
@@ -432,7 +435,7 @@ CAREER_DATA = ScoutCareerData(
         6: CareerEventEntry(
             text='You spend several years jumping from world to world in your scout ship.',
             effects=[
-                SkillChoiceEffect(options=['Astrogation', 'Electronics', 'Navigation', 'Pilot', 'Mechanic'], level=1)
+                SkillChoiceEffect(options=[Astrogation(), Electronics(), Navigation(), Pilot(), Mechanic()], level=1)
             ],
         ),
         7: CareerEventEntry(

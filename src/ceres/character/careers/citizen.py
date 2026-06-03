@@ -54,6 +54,7 @@ from ceres.character.skills import (
     Drive,
     Electronics,
     Engineer,
+    Explosives,
     Flyer,
     Gambler,
     GunCombat,
@@ -65,6 +66,7 @@ from ceres.character.skills import (
     Medic,
     Melee,
     Navigation,
+    Persuade,
     ProfessionSkill,
     Recon,
     ScienceSkill,
@@ -84,7 +86,7 @@ from ceres.character.state import (
 CITIZEN = Career(
     name='Citizen',
     description=(
-        'Individuals serving in a corporation, bureaucracy or'
+        'Individuals serving in a corporation, bureaucracy or '
         'industry, or who are making a new life on an untamed planet.'
     ),
 )
@@ -140,7 +142,7 @@ class CitizenMishap5Handler(CareerHandlerBase):
                 roll=5,
                 context='citizen_mishap_5',
                 instruction='Roll Streetwise 8+: success = increase any existing skill by one level (ejected either way)',
-                options=['Streetwise'],
+                options=[Streetwise()],
             )
         )
         return pending_idx + 1
@@ -151,12 +153,11 @@ class CitizenMishap5Handler(CareerHandlerBase):
 
         career = projection.get_current_career()
         if event.modified_roll >= 8:
-            existing_skills = [type(s).name() for s in projection.summary.skills]
             projection.pending_inputs.append(
                 PendingSkillChoice(
                     id=f'{event.id}.0',
                     instruction='Forced to flee: increase any existing skill by one level',
-                    options=existing_skills,
+                    options=[type(s)() for s in projection.summary.skills],
                 )
             )
             _apply_mishap_ejection(projection, career, event.id, 1, lose_current_term=True)
@@ -223,7 +224,7 @@ class CitizenEvent8Handler(CareerHandlerBase):
                     roll=8,
                     context='citizen_event_8_skill',
                     instruction='Roll Streetwise 8+: success = extra Benefit roll; fail = ejected, gain Rival',
-                    options=['Streetwise'],
+                    options=[Streetwise()],
                 )
             )
 
@@ -426,11 +427,11 @@ CAREER_DATA = CitizenCareerData(
         ),
         3: CareerEventEntry(
             text='Political upheaval strikes your homeworld or colony.',
-            effects=[SkillChoiceEffect(options=['Advocate', 'Persuade', 'Explosives', 'Streetwise'], level=1)],
+            effects=[SkillChoiceEffect(options=[Advocate(), Persuade(), Explosives(), Streetwise()], level=1)],
         ),
         4: CareerEventEntry(
             text='You spend time maintaining and using heavy vehicles.',
-            effects=[SkillChoiceEffect(options=['Mechanic', 'Drive', 'Electronics', 'Flyer', 'Engineer'], level=1)],
+            effects=[SkillChoiceEffect(options=[Mechanic(), Drive(), Electronics(), Flyer(), Engineer()], level=1)],
         ),
         5: CareerEventEntry(
             text='Your business expands, your corporation grows, or your colony thrives.',
@@ -454,7 +455,7 @@ CAREER_DATA = CitizenCareerData(
         ),
         10: CareerEventEntry(
             text='You gain experience in a technical field.',
-            effects=[SkillChoiceEffect(options=['Electronics', 'Engineer'], level=1)],
+            effects=[SkillChoiceEffect(options=[Electronics(), Engineer()], level=1)],
         ),
         11: CareerEventEntry(
             text='You befriend a superior in the corporation, bureaucracy or colony.',

@@ -72,7 +72,7 @@ from ceres.character.state import (
 DRIFTER = Career(
     name='Drifter',
     description=(
-        'Wanderers, hitchhikers and travellers, drifters are'
+        'Wanderers, hitchhikers and travellers, drifters are '
         'those who roam the stars without obvious purpose or direction.'
     ),
 )
@@ -159,7 +159,7 @@ class DrifterEvent8Handler(CareerHandlerBase):
                 roll=8,
                 context='drifter_event_8',
                 instruction='Roll Melee or Gun Combat 8+: success = increase that skill; fail = injured',
-                options=['Melee', 'Gun Combat'],
+                options=[Melee(), GunCombat()],
             )
         )
         return pending_idx + 1
@@ -171,7 +171,7 @@ class DrifterEvent8Handler(CareerHandlerBase):
                 PendingSkillChoice(
                     id=f'{event.id}.0',
                     instruction='Attack survived: increase Melee or Gun Combat by one level',
-                    options=['Melee', 'Gun Combat'],
+                    options=[Melee(), GunCombat()],
                 )
             )
         else:
@@ -452,7 +452,7 @@ CAREER_DATA = DrifterCareerData(
         ),
         4: CareerEventEntry(
             text='You pick up a few useful skills here and there.',
-            effects=[SkillChoiceEffect(options=['Jack-of-All-Trades', 'Survival', 'Streetwise', 'Melee'], level=1)],
+            effects=[SkillChoiceEffect(options=[JackOfAllTrades(), Survival(), Streetwise(), Melee()], level=1)],
         ),
         5: CareerEventEntry(
             text='You manage to scavenge something of use.',

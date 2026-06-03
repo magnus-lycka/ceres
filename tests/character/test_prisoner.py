@@ -27,7 +27,18 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.replay import replay
-from ceres.character.skills import Admin, Athletics, Carouse, Drive, WorkerProfession
+from ceres.character.skills import (
+    Admin,
+    Athletics,
+    Carouse,
+    Deception,
+    Drive,
+    Mechanic,
+    Melee,
+    Persuade,
+    Stealth,
+    WorkerProfession,
+)
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Ally,
@@ -143,7 +154,7 @@ class TestPrisonerMishap3:
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerSkillRoll)), None)
         assert pending is not None
-        assert pending.options == ['Melee']
+        assert pending.options == [Melee()]
 
     def test_fight_success_adds_enemy_and_increases_pt(self):
         events = [
@@ -196,7 +207,7 @@ class TestPrisonerEvent3:
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerSkillRoll)), None)
         assert pending is not None
-        assert set(pending.options) == {'Stealth', 'Deception'}
+        assert pending.options == [Stealth(), Deception()]
 
     def test_escape_success_ends_career_with_muster_out(self):
         events = [
@@ -239,7 +250,7 @@ class TestPrisonerEvent4:
         assert projection.summary.parole_threshold == 4  # PT was 5; −1 = 4
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
         assert pending is not None
-        assert set(pending.options) == {'Athletics', 'Mechanic', 'Melee'}
+        assert pending.options == [Athletics(), Mechanic(), Melee()]
 
     def test_failure_increases_pt_and_queues_advancement(self):
         events = [
@@ -261,7 +272,7 @@ class TestPrisonerEvent5:
             (p for p in projection.pending_inputs if isinstance(p, PendingCareerSkillRoll) and p.roll == 5), None
         )
         assert pending is not None
-        assert set(pending.options) == {'Persuade', 'Melee'}
+        assert pending.options == [Persuade(), Melee()]
 
     def test_success_increases_pt_and_creates_skill_choice(self):
         events = [
@@ -303,7 +314,7 @@ class TestPrisonerEvent6:
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
         assert pending is not None
-        assert 'Admin' in pending.options
+        assert any(isinstance(o, Admin) for o in pending.options)
 
     def test_failure_queues_advancement(self):
         events = [

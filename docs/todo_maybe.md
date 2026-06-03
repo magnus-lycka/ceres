@@ -280,10 +280,25 @@ follow-up work packages.
 
 ### Remove `skill_from_str` / `skill_class_by_name` from `events.py`
 
-`events.py` calls `skill_from_str()` and `skill_class_by_name()` in many
-places to resolve skill names carried on effect objects. Once all effect models
-hold `AnySkill` instances and precareers are migrated, these call sites go away
-and both functions can be deleted.
+**Partial progress**: `PendingCareerSkillRoll`, `PendingSkillChoice`,
+`PendingCareerSkillChoice`, and `PendingBackgroundSkills` now hold `AnySkill`
+instances instead of strings. `_pick_skill_auto` handles typed instances
+directly. All career event handlers and test assertions use typed skill objects.
+
+Remaining string-based paths:
+
+- `PendingInitialTrainingChoice`, `PendingSkillTableChoice`,
+  `PendingRankBonusChoice` still inherit `options: list[str]` from
+  `PendingInputBase` — because the career `SkillTable` entries and initial
+  training lookups still use string names.
+- `events.py:1508` — `skill_from_str(skill_name, 0)` in initial training apply
+- `events.py:1884` — `skill_class_by_name(opt)` in `_build_skill_select_options`
+  for the `str` branch
+- `state.py:302` and `state.py:335` — `skill_class_by_name` in `skill_choices`
+  and `_pick_skill_auto` for the `str` branch
+
+Once the initial-training and skill-table paths migrate to typed `AnySkill`
+entries, these call sites go away and both functions can be deleted.
 
 ### Remove `str` overload from `CharacterSummary.skill_level`
 
@@ -291,12 +306,19 @@ and both functions can be deleted.
 overload once no caller needs string-based lookup; the method should accept only
 `type[Skill]`.
 
-### Replace `CareerDispatchEffect` string dispatch with effect subclasses
+### Replace remaining `CareerDispatchEffect` registry dispatch with effect subclasses
 
-Custom event and mishap effects such as `agent_mishap_2_choice` are dispatched
-via string keys in `EFFECT_HANDLERS` dicts. Replace `CareerDispatchEffect` with
-proper subclasses, each with an `apply(projection, ...)` method, so the effect
-objects carry the logic and string-keyed dispatch tables are eliminated.
+The old `EFFECT_HANDLERS` dicts are gone, and raw
+`CareerDispatchEffect(type='...')` entries have mostly been replaced with
+`CareerHandlerBase` subclasses such as `AgentMishap2Handler`. The remaining
+design smell is that these handlers still self-register under string `type`
+keys and `events.py` still dispatches choice/skill-roll resolution through
+`get_career_handler(context: str)`.
+
+Replace `CareerDispatchEffect`/`CareerHandlerBase` with proper effect objects
+that carry their own logic through an `apply(projection, ...)`-style interface.
+The remaining context strings and handler registry should disappear; effects in
+career data should be typed objects rather than string-dispatched handlers.
 
 ### Replace sophont string-name lookup with typed objects
 

@@ -48,6 +48,167 @@ def test_new_character_form(client):
     assert 'Humaniti' in r.text
 
 
+def test_sector_picker_page_renders_search_input(client):
+    r = client.get('/ui/worlds/sectors')
+    assert r.status_code == 200
+    assert 'Sector' in r.text
+    assert 'sector-query' in r.text
+
+
+def test_sector_search_returns_matching_options(client, monkeypatch):
+    from ceres.adapters.travellermap import SectorInfo
+
+    def fake_search(query: str, *, milieu: str = 'M1105'):
+        assert query == 'tro'
+        assert milieu == 'M1105'
+        return [
+            SectorInfo(x=0, y=0, milieu='M1105', abbreviation='Troj', tags='OTU', names=['Trojan Reach']),
+            SectorInfo(x=1, y=0, milieu='M1105', abbreviation='Vlan', tags='OTU', names=['The Trojans']),
+        ]
+
+    monkeypatch.setattr('ceres.character.web.routes.search_sectors', fake_search)
+
+    r = client.get('/ui/worlds/sectors/search', params={'q': 'tro'})
+    assert r.status_code == 200
+    assert 'Trojan Reach' in r.text
+    assert 'Troj' in r.text
+    assert '/ui/worlds/sectors/Troj' in r.text
+
+
+def test_sector_search_blank_query_returns_empty_results(client):
+    r = client.get('/ui/worlds/sectors/search', params={'q': ''})
+    assert r.status_code == 200
+    assert r.text.strip() == ''
+
+
+def test_sector_search_without_abbreviation_is_not_selectable(client, monkeypatch):
+    from ceres.adapters.travellermap import SectorInfo
+
+    monkeypatch.setattr(
+        'ceres.character.web.routes.search_sectors',
+        lambda query, milieu='M1105': [
+            SectorInfo(x=0, y=0, milieu='M1105', abbreviation='', tags='OTU', names=['Aslan Hierate'])
+        ],
+    )
+
+    r = client.get('/ui/worlds/sectors/search', params={'q': 'aslan'})
+    assert r.status_code == 200
+    assert 'Aslan Hierate' in r.text
+    assert '/ui/worlds/sectors/' not in r.text
+
+
+def test_sector_filter_page_renders_checkbox_options(client, monkeypatch):
+    from ceres.worlds import SectorWorldFilters
+    from tests.worlds.test_sector_filters import _sample_worlds
+
+    monkeypatch.setattr(
+        'ceres.character.web.routes.SectorWorldFilters.from_travellermap',
+        lambda sector_abbreviation: SectorWorldFilters(
+            worlds=_sample_worlds(),
+            sector_abbreviation=sector_abbreviation,
+            sector_name='Trojan Reach',
+            allegiance_names={'ImDd': 'Third Imperium, Domain of Deneb'},
+        ),
+    )
+
+    r = client.get('/ui/worlds/sectors/Troj')
+    assert r.status_code == 200
+    assert 'Trojan Reach' in r.text
+    assert 'ImDd' in r.text
+    assert 'Third Imperium, Domain of Deneb' in r.text
+    assert 'Ni' in r.text
+    assert 'name="allegiances"' in r.text
+    assert 'name="remarks"' in r.text
+    assert 'name="starports"' in r.text
+    assert 'data-check-all' in r.text
+    assert 'data-clear-all' in r.text
+    assert 'checked' in r.text
+    assert 'Apply Filters' in r.text
+    assert 'Aster' in r.text
+    assert 'Beryl' in r.text
+    assert 'Cinder' in r.text
+
+
+def test_sector_filter_page_applies_query_filters_and_shows_matching_worlds(client, monkeypatch):
+    from ceres.worlds import SectorWorldFilters
+    from tests.worlds.test_sector_filters import _sample_worlds
+
+    monkeypatch.setattr(
+        'ceres.character.web.routes.SectorWorldFilters.from_travellermap',
+        lambda sector_abbreviation: SectorWorldFilters(
+            worlds=_sample_worlds(),
+            sector_abbreviation=sector_abbreviation,
+            sector_name='Trojan Reach',
+            allegiance_names={'ImDd': 'Third Imperium, Domain of Deneb'},
+        ),
+    )
+
+    r = client.get('/ui/worlds/sectors/Troj', params={'filters': '1', 'remarks': 'Ni'})
+    assert r.status_code == 200
+    assert '1 matching worlds' in r.text
+    assert 'Beryl' in r.text
+    assert 'Aster' not in r.text
+    assert 'Cinder' not in r.text
+
+
+def test_sector_filter_page_shows_no_allegiance_option_for_blank_allegiance_worlds(client, monkeypatch):
+    from ceres.worlds import SectorWorldFilters
+    from tests.worlds.test_sector_filters import _sample_worlds_with_unaligned
+
+    monkeypatch.setattr(
+        'ceres.character.web.routes.SectorWorldFilters.from_travellermap',
+        lambda sector_abbreviation: SectorWorldFilters(
+            worlds=_sample_worlds_with_unaligned(),
+            sector_abbreviation=sector_abbreviation,
+            sector_name='Trojan Reach',
+            allegiance_names={'ImDd': 'Third Imperium, Domain of Deneb'},
+        ),
+    )
+
+    r = client.get('/ui/worlds/sectors/Troj')
+    assert r.status_code == 200
+    assert 'No Allegiance' in r.text
+
+
+def test_sector_filter_page_treats_all_checked_as_unconstrained(client, monkeypatch):
+    from ceres.worlds import SectorWorldFilters
+    from tests.worlds.test_sector_filters import _sample_worlds_with_unaligned
+
+    worlds = _sample_worlds_with_unaligned()
+    filters = SectorWorldFilters(
+        worlds=worlds,
+        sector_abbreviation='Troj',
+        sector_name='Trojan Reach',
+        allegiance_names={'ImDd': 'Third Imperium, Domain of Deneb'},
+    )
+
+    monkeypatch.setattr(
+        'ceres.character.web.routes.SectorWorldFilters.from_travellermap',
+        lambda sector_abbreviation: filters,
+    )
+
+    params = [('filters', '1')]
+    params.extend(('allegiances', value) for value in filters.options.allegiances)
+    params.extend(('remarks', value) for value in filters.options.remarks)
+    params.extend(('bases', value) for value in filters.options.bases)
+    params.extend(('starports', value) for value in filters.options.starports)
+    params.extend(('sizes', str(value)) for value in filters.options.sizes)
+    params.extend(('atmospheres', str(value)) for value in filters.options.atmospheres)
+    params.extend(('hydrographics', str(value)) for value in filters.options.hydrographics)
+    params.extend(('populations', str(value)) for value in filters.options.populations)
+    params.extend(('governments', str(value)) for value in filters.options.governments)
+    params.extend(('law_levels', str(value)) for value in filters.options.law_levels)
+    params.extend(('tech_levels', str(value)) for value in filters.options.tech_levels)
+
+    r = client.get('/ui/worlds/sectors/Troj', params=params)
+    assert r.status_code == 200
+    assert '4 matching worlds' in r.text
+    assert 'Aster' in r.text
+    assert 'Beryl' in r.text
+    assert 'Cinder' in r.text
+    assert 'Drift' in r.text
+
+
 def test_create_character_redirects_to_wizard(client):
     r = client.post('/ui/characters/new', data={'name': 'Bob', 'sophont': 'Humaniti', 'player': 'NPC'})
     assert r.status_code == 200
@@ -301,6 +462,7 @@ def test_input_specs_includes_advancement_dm_4():
     """advancement_dm_4 sentinel appears in input_specs Select options with a readable label."""
     from ceres.character.events import PendingCareerSkillChoice
     from ceres.character.input_specs import Select
+    from ceres.character.skills import Investigate
     from ceres.character.state import CharacterProjection, CharacterSummary
 
     pi = PendingCareerSkillChoice(
@@ -309,7 +471,7 @@ def test_input_specs_includes_advancement_dm_4():
         roll=11,
         advancement_precreated=False,
         instruction='Investigate or DM+4',
-        options=['Investigate', 'advancement_dm_4'],
+        options=[Investigate(), 'advancement_dm_4'],
     )
     projection = CharacterProjection(
         character_id=1,

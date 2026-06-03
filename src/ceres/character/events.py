@@ -13,7 +13,12 @@ if TYPE_CHECKING:
 from ceres.character.input_specs import InputSpec, NumberEntry, Reference, Select, form_int, form_str, literal
 from ceres.character.skills import (
     AnySkill,
+    ArtSkill,
     BackgroundSkill,
+    LanguageSkill,
+    Level,
+    ProfessionSkill,
+    ScienceSkill,
     Skill,
     SpaceScience,
     _level_fields,
@@ -39,6 +44,11 @@ from ceres.character.state import (
 
 BACKGROUND_SKILLS: frozenset[type[Skill]] = frozenset(_skill_classes(BackgroundSkill))
 
+_ART_CLASSES: frozenset[type[Skill]] = frozenset(_skill_classes(ArtSkill))
+_LANGUAGE_CLASSES: frozenset[type[Skill]] = frozenset(_skill_classes(LanguageSkill))
+_SCIENCE_CLASSES: frozenset[type[Skill]] = frozenset(_skill_classes(ScienceSkill))
+_PROFESSION_CLASSES: frozenset[type[Skill]] = frozenset(_skill_classes(ProfessionSkill))
+
 
 def _background_skill_count(edu: int) -> int:
     return max(0, characteristic_dm(edu) + 3)
@@ -47,6 +57,12 @@ def _background_skill_count(edu: int) -> int:
 _CHOOSE_COUNT_RE = re.compile(r'Choose (\d+)')
 _skill_adapter: TypeAdapter[AnySkill] = TypeAdapter(AnySkill)
 _NON_SKILL_OPTION_LABELS: dict[str, str] = {'advancement_dm_4': 'DM+4 to next advancement roll'}
+
+
+def _skill_option_label(opt: AnySkill | Literal['advancement_dm_4']) -> str:
+    if opt == 'advancement_dm_4':
+        return _NON_SKILL_OPTION_LABELS['advancement_dm_4']
+    return type(opt).name()
 
 
 def _roll2d(rng: random.Random) -> int:
@@ -390,7 +406,9 @@ class UcpEvent(EventBase):
                 PendingBackgroundSkills(
                     id=f'{self.id}.0',
                     instruction=f'Choose {count} background skill(s)',
-                    options=sorted(cls.name() for cls in BACKGROUND_SKILLS),
+                    options=cast(
+                        list[AnySkill], sorted([cls() for cls in BACKGROUND_SKILLS], key=lambda s: type(s).name())
+                    ),
                 )
             )
 
@@ -531,7 +549,7 @@ class MishapEvent(EventBase):
                     projection.pending_inputs.append(
                         PendingSkillChoice(
                             id=f'{self.id}.{pending_idx}',
-                            instruction=f'Choose one skill: {", ".join(effect.options)}',
+                            instruction=f'Choose one skill: {", ".join(_skill_option_label(o) for o in effect.options)}',
                             options=effect.options,
                         )
                     )
@@ -649,7 +667,7 @@ class TermEventEvent(EventBase):
             projection.pending_inputs.append(
                 PendingSkillChoice(
                     id=f'{self.id}.{pending_idx}',
-                    instruction=f'Choose one skill: {", ".join(skill_choice_effect.options)}',
+                    instruction=f'Choose one skill: {", ".join(_skill_option_label(o) for o in skill_choice_effect.options)}',
                     options=skill_choice_effect.options,
                 )
             )
@@ -899,7 +917,18 @@ class SkillTableEvent(EventBase):
 
         from ceres.character.characteristics import Chars as _Chars
 
-        career = projection.get_current_career()
+        if projection.summary.current_career is not None:
+            career = projection.get_current_career()
+        elif projection.muster_out_career is not None:
+            from ceres.character.careers.loader import load_careers
+
+            careers = load_careers()
+            career_name = projection.muster_out_career.name
+            career = careers.get(career_name)
+            if career is None:
+                raise ReplayError(f'Career {career_name!r} not found after muster-out')
+        else:
+            raise ReplayError('No active career')
         table = career.skill_table(self.table)
         if table is None:
             raise ReplayError(f'Unknown skill table: {self.table!r}')
@@ -1265,7 +1294,9 @@ class LifeEventUnusualEvent(EventBase):
             projection.summary.narrative.append('Unusual event: gained a useful ally')
         elif self.roll == 2:
             projection.summary.connections.append(Contact(source='Unusual event: alien contact'))
-            projection.grant_skill(skill_from_str(SpaceScience.name(), 1))
+            projection.grant_skill(
+                cast(AnySkill, SpaceScience.model_validate({f: Level(value=1) for f in _level_fields(SpaceScience)}))
+            )
             projection.summary.narrative.append('Unusual event: alien encounter — gained contact and Space Science 1')
         else:
             projection.summary.narrative.append('Unusual event: something strange (no mechanical effect)')
@@ -1539,10 +1570,11 @@ class PreCareerEventEvent(EventBase):
                 )
                 pending_idx += 1
             elif isinstance(effect, SkillChoiceEffect):
-                all_skills = sorted(
-                    cls.name() for cls in _skill_classes(AnySkill) if cls.name() != 'Jack-of-All-Trades'
+                all_skills: list[AnySkill] = sorted(
+                    [cast(AnySkill, cls()) for cls in _skill_classes(AnySkill) if cls.name() != 'Jack-of-All-Trades'],
+                    key=lambda s: type(s).name(),
                 )
-                opts = effect.options or all_skills
+                opts: list[AnySkill] = cast(list[AnySkill], effect.options) if effect.options else all_skills
                 projection.pending_inputs.append(
                     PendingSkillChoice(
                         id=f'{self.id}.{pending_idx}',
@@ -1843,32 +1875,40 @@ def career_progress_pending(
 
 def _build_skill_select_options(
     projection: CharacterProjection,
-    options: list[str],
+    options: list[Any],
     level: int | None,
 ) -> list[tuple[str, str]]:
     """Build (display_label, form_value) pairs for skill-choice pending inputs."""
     results: list[tuple[str, str]] = []
     for opt in options:
-        if opt in _NON_SKILL_OPTION_LABELS:
+        if opt == 'advancement_dm_4':
+            results.append((_NON_SKILL_OPTION_LABELS['advancement_dm_4'], 'advancement_dm_4'))
+            continue
+        if isinstance(opt, str) and opt in _NON_SKILL_OPTION_LABELS:
             results.append((_NON_SKILL_OPTION_LABELS[opt], opt))
             continue
-        try:
-            skill_cls = skill_class_by_name(opt)
-        except ValueError:
-            continue
+        if isinstance(opt, Skill):
+            skill_cls = type(opt)
+            skill_name = skill_cls.name()
+        else:
+            try:
+                skill_cls = skill_class_by_name(opt)
+                skill_name = opt
+            except ValueError:
+                continue
         if level == 0:
             skill = cast(AnySkill, skill_cls())
-            results.append((opt, _skill_adapter.dump_json(skill).decode()))
+            results.append((skill_name, _skill_adapter.dump_json(skill).decode()))
         else:
             choices = projection.skill_choices([skill_cls], level)
             for skill in choices:
-                label = opt
+                label = skill_name
                 fields = _level_fields(skill_cls)
                 if len(fields) > 1:
                     for fname, sname in zip(fields, skill_cls.specialities(), strict=False):
                         given = getattr(skill, fname).value
                         if given > 0:
-                            label = f'{opt} ({sname})'
+                            label = f'{skill_name} ({sname})'
                             break
                 results.append((label, _skill_adapter.dump_json(skill).decode()))
     return results
@@ -1906,21 +1946,39 @@ class PendingUcp(PendingInputBase):
 
 class PendingBackgroundSkills(PendingInputBase):
     kind: Literal['background_skills'] = 'background_skills'
+    options: list[AnySkill] = Field(default_factory=list)  # type: ignore[assignment]
+
+    model_config = {'arbitrary_types_allowed': True}
 
     def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
         m = _CHOOSE_COUNT_RE.search(self.instruction)
         count = int(m.group(1)) if m else 3
-        shuffled = list(self.options)
-        rng.shuffle(shuffled)
+
+        # Group subspecialties into families so Science/Language/Art/Profession
+        # each occupy one slot — matching how the rules list them ("Science, any").
+        families: dict[str, list[AnySkill]] = {}
+        for skill in self.options:
+            cls = type(skill)
+            if cls in _SCIENCE_CLASSES:
+                key = 'Science'
+            elif cls in _ART_CLASSES:
+                key = 'Art'
+            elif cls in _LANGUAGE_CLASSES:
+                key = 'Language'
+            elif cls in _PROFESSION_CLASSES:
+                key = 'Profession'
+            else:
+                key = cls.name()
+            families.setdefault(key, []).append(skill)
+
+        family_keys = list(families)
+        rng.shuffle(family_keys)
         skills: list[AnySkill] = []
-        for name in shuffled:
+        for key in family_keys:
             if len(skills) >= count:
                 break
-            try:
-                cls = skill_class_by_name(name)
-                skills.append(cast(AnySkill, cls()))
-            except ValueError:
-                pass
+            chosen = rng.choice(families[key])
+            skills.append(type(chosen)())
         return BackgroundSkillsEvent(skills=skills, fulfills=self.id)
 
     def event_from_form(self, form: Any) -> AnyEvent:
@@ -1932,13 +1990,10 @@ class PendingBackgroundSkills(PendingInputBase):
         m = _CHOOSE_COUNT_RE.search(self.instruction)
         count = int(m.group(1)) if m else 1
         options: list[tuple[str, str]] = []
-        for opt in self.options:
-            try:
-                cls = skill_class_by_name(opt)
-            except ValueError:
-                continue
-            skill = cast(AnySkill, cls())
-            options.append((opt, _skill_adapter.dump_json(skill).decode()))
+        for skill in self.options:
+            skill_cls = type(skill)
+            empty = skill_cls()
+            options.append((skill_cls.name(), _skill_adapter.dump_json(empty).decode()))
         return [Select(name='skill', label='Skills', options=options, min_select=count, max_select=count)]
 
 
@@ -2213,6 +2268,9 @@ class PendingMusterOut(PendingInputBase):
 
 class PendingSkillChoice(PendingInputBase):
     kind: Literal['skill_choice'] = 'skill_choice'
+    options: list[AnySkill] = Field(default_factory=list)  # type: ignore[assignment]
+
+    model_config = {'arbitrary_types_allowed': True}
 
     def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
         skill = projection._pick_skill_auto(self.options, rng, None)
@@ -2572,10 +2630,13 @@ class PendingCareerSkillChoice(PendingInputBase):
     """Skill choice triggered by a career event or mishap."""
 
     kind: Literal['career_skill_choice'] = 'career_skill_choice'
+    options: list[AnySkill | Literal['advancement_dm_4']] = Field(default_factory=list)  # type: ignore[assignment]
     career: str
     roll: int
     mishap: bool = False
     advancement_precreated: bool = False
+
+    model_config = {'arbitrary_types_allowed': True}
 
     def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
         skill = projection._pick_skill_auto(self.options, rng, None)
@@ -2599,17 +2660,18 @@ class PendingCareerSkillRoll(PendingInputBase):
     """Skill roll required by a specific career event; context matches SkillRollEvent.context."""
 
     kind: Literal['career_skill_roll'] = 'career_skill_roll'
+    options: list[AnySkill | Chars] = Field(default_factory=list)  # type: ignore[assignment]
     career: str
     roll: int
     context: str
 
+    model_config = {'arbitrary_types_allowed': True}
+
     def auto_event(self, projection: CharacterProjection, ctx: AutoFillContext, rng: random.Random) -> AnyEvent:
-        skill_str = rng.choice(self.options) if self.options else 'Admin'
-        try:
-            auto_skill: AnySkill | Chars = Chars(skill_str)
-        except ValueError:
-            auto_skill = cast(AnySkill, skill_class_by_name(skill_str)())
-        return SkillRollEvent(context=self.context, skill=auto_skill, modified_roll=_roll2d(rng), fulfills=self.id)
+        from ceres.character.skills import Admin as _Admin
+
+        opt: AnySkill | Chars = rng.choice(self.options) if self.options else _Admin()
+        return SkillRollEvent(context=self.context, skill=opt, modified_roll=_roll2d(rng), fulfills=self.id)
 
     def event_from_form(self, form: Any) -> AnyEvent:
         skill_str = form_str(form, 'skill')
@@ -2621,7 +2683,13 @@ class PendingCareerSkillRoll(PendingInputBase):
         return SkillRollEvent(context=self.context, skill=skill, modified_roll=modified_roll, fulfills=self.id)
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
-        skill_options = [(opt, opt) for opt in self.options]
+        skill_options = [
+            (
+                opt.value if isinstance(opt, Chars) else type(opt).name(),
+                opt.value if isinstance(opt, Chars) else type(opt).name(),
+            )
+            for opt in self.options
+        ]
         return [
             Select(name='skill', label='Skill to roll', options=skill_options),
             NumberEntry(name='modified_roll', label='Modified roll (2D + skill level + DMs)', default=8, min=2, max=20),

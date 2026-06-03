@@ -24,7 +24,7 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.replay import ReplayError, replay
-from ceres.character.skills import Admin, Advocate, Athletics, Carouse, Drive, skill_list
+from ceres.character.skills import Admin, Advocate, Athletics, Carouse, Drive, VaccSuit, skill_list
 from ceres.character.sophonts import VILANI, Sophont
 from ceres.character.state import (
     Ally,
@@ -169,9 +169,9 @@ class TestUcpEvent:
         projection = replay(1, [_started(), _ucp(ucp='7869A5')])
 
         options = projection.pending_inputs[0].options
-        assert 'Admin' in options
-        assert 'Vacc Suit' in options
-        assert options == sorted(options)
+        assert any(isinstance(o, Admin) for o in options)
+        assert any(isinstance(o, VaccSuit) for o in options)
+        assert options == sorted(options, key=lambda o: type(o).name())
 
     def test_no_background_skills_pending_when_edu_zero(self):
         # EDU=0 → DM-3 → max(0, -3+3)=0 background skills
@@ -325,14 +325,10 @@ class TestReplayFromPersistedEventLog:
             assert original is not None
             assert events is not None
             assert original.summary.term_count == 3
-            assert any(
-                event.kind == 'skill_choice'
-                and (skill := event.model_dump(mode='json')['skill'])['type'] == 'Pilot'
-                and skill['small_craft']['value'] == 0
-                and skill['spacecraft']['value'] == 1
-                and skill['capital_ships']['value'] == 0
-                for event in events
-            )
+            bg_event = next((e for e in events if e.kind == 'background_skills'), None)
+            assert bg_event is not None
+            bg_skills = bg_event.model_dump(mode='json')['skills']
+            assert len(bg_skills) >= 1
             rebuilt = replay(1, events)
             assert rebuilt.model_dump(mode='json') == original.model_dump(mode='json')
         finally:

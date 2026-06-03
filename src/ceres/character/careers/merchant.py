@@ -44,20 +44,26 @@ from ceres.character.events import (
 from ceres.character.skills import (
     Admin,
     Advocate,
+    Animals,
     Astrogation,
     Athletics,
     Broker,
     Deception,
+    Diplomat,
     Drive,
     Electronics,
     Engineer,
+    GunCombat,
     Gunner,
+    Investigate,
     JackOfAllTrades,
     LanguageSkill,
     Level,
     Mechanic,
     Persuade,
     Pilot,
+    ProfessionSkill,
+    ScienceSkill,
     Steward,
     Streetwise,
     VaccSuit,
@@ -73,7 +79,7 @@ from ceres.character.state import (
 MERCHANT = Career(
     name='Merchant',
     description=(
-        'Members of a commercial enterprise. Merchants may crew the ships of the huge trading corporations'
+        'Members of a commercial enterprise. Merchants may crew the ships of the huge trading corporations '
         'or they may work for independent free traders who carry chance cargoes and passengers between worlds.'
     ),
 )
@@ -116,7 +122,7 @@ class MerchantEvent3Handler(CareerHandlerBase):
                     roll=3,
                     context='merchant_event_3_skill',
                     instruction='Roll Deception or Persuade 8+: success = extra Benefit roll; fail = ejected, gain Enemy',
-                    options=['Deception', 'Persuade'],
+                    options=[Deception(), Persuade()],
                 )
             )
 
@@ -174,7 +180,7 @@ class MerchantEvent8Handler(CareerHandlerBase):
             PendingSkillChoice(
                 id=f'{event_id}.{pending_idx}',
                 instruction='Legal trouble: gain one of Advocate, Admin, Diplomat or Investigate at level 1',
-                options=['Advocate', 'Admin', 'Diplomat', 'Investigate'],
+                options=[Advocate(), Admin(), Diplomat(), Investigate()],
             )
         )
         pending_idx += 1
@@ -359,7 +365,7 @@ CAREER_DATA = MerchantCareerData(
         ),
         3: MishapEntry(
             text='A sudden war destroys your trade routes and contacts, forcing you to flee that region of space. Gain Gun Combat 1 or Pilot 1.',
-            effects=[SkillChoiceEffect(options=['Gun Combat', 'Pilot'], level=1)],
+            effects=[SkillChoiceEffect(options=[GunCombat(), Pilot()], level=1)],
         ),
         4: MishapEntry(
             text='Your ship or starport is destroyed by criminals. Gain them as an Enemy.',
@@ -386,7 +392,16 @@ CAREER_DATA = MerchantCareerData(
         4: CareerEventEntry(
             text='Gain any one of these skills, reflecting your time spent dealing with suppliers and spacers.',
             effects=[
-                SkillChoiceEffect(options=['Profession', 'Electronics', 'Engineer', 'Animals', 'Science'], level=1)
+                SkillChoiceEffect(
+                    options=[
+                        *skill_instances(ProfessionSkill),
+                        Electronics(),
+                        Engineer(),
+                        Animals(),
+                        *skill_instances(ScienceSkill),
+                    ],
+                    level=1,
+                )
             ],
         ),
         5: CareerEventEntry(

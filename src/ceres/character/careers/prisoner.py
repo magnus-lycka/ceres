@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, cast
 
 from ceres.character.benefits import (
     ALLY,
@@ -54,6 +54,7 @@ from ceres.character.skills import (
     Athletics,
     Broker,
     Deception,
+    Electronics,
     Gambler,
     Investigate,
     JackOfAllTrades,
@@ -62,6 +63,7 @@ from ceres.character.skills import (
     Persuade,
     ProfessionSkill,
     Stealth,
+    Steward,
     Streetwise,
     Survival,
     skill_instances,
@@ -75,7 +77,7 @@ from ceres.character.state import (
 PRISONER = Career(
     name='Prisoner',
     description=(
-        'Every society has its bad apples and even in the far future punishments usually'
+        'Every society has its bad apples and even in the far future punishments usually '
         'take place within faceless institutions where criminals can be conveniently forgotten.'
     ),
 )
@@ -120,7 +122,7 @@ class PrisonerMishap3Handler(CareerHandlerBase):
                     roll=3,
                     context='prisoner_mishap_3_fight',
                     instruction='Roll Melee 8+: success = gain Enemy + PT+1; fail = roll twice on Injury table',
-                    options=['Melee'],
+                    options=[Melee()],
                 )
             )
 
@@ -184,7 +186,7 @@ class PrisonerEvent3Handler(CareerHandlerBase):
                     roll=3,
                     context='prisoner_event_3_escape',
                     instruction='Roll Stealth or Deception 10+: success = escape (freed); fail = PT+2',
-                    options=['Stealth', 'Deception'],
+                    options=[Stealth(), Deception()],
                 )
             )
 
@@ -232,7 +234,7 @@ class PrisonerEvent4Handler(CareerHandlerBase):
                 PendingSkillChoice(
                     id=f'{event.id}.0',
                     instruction='Hard labour endured: choose Athletics, Mechanic, or Melee (unarmed)',
-                    options=['Athletics', 'Mechanic', 'Melee'],
+                    options=[Athletics(), Mechanic(), Melee()],
                 )
             )
         else:
@@ -256,7 +258,7 @@ class PrisonerEvent5Handler(CareerHandlerBase):
                 roll=5,
                 context='prisoner_event_5',
                 instruction='Roll Persuade or Melee 8+ to join the gang: success = PT+1 + skill; fail = gain Enemy',
-                options=['Persuade', 'Melee'],
+                options=[Persuade(), Melee()],
             )
         )
         return pending_idx + 1
@@ -272,7 +274,7 @@ class PrisonerEvent5Handler(CareerHandlerBase):
                 PendingSkillChoice(
                     id=f'{event.id}.0',
                     instruction='Joined gang: choose Persuade, Melee, or Stealth',
-                    options=['Persuade', 'Melee', 'Stealth'],
+                    options=[Persuade(), Melee(), Stealth()],
                 )
             )
         else:
@@ -306,10 +308,16 @@ class PrisonerEvent6Handler(CareerHandlerBase):
         if event.modified_roll >= 8:
             from ceres.character.skills import AnySkill, _skill_classes
 
-            all_skills = sorted(
-                cls.name()
-                for cls in _skill_classes(AnySkill)
-                if cls.name() not in {'Jack-of-all-Trades', 'Jack-of-All-Trades'}
+            all_skills: list[AnySkill] = cast(
+                list[AnySkill],
+                sorted(
+                    [
+                        cls()
+                        for cls in _skill_classes(AnySkill)
+                        if cls.name() not in {'Jack-of-all-Trades', 'Jack-of-All-Trades'}
+                    ],
+                    key=lambda s: type(s).name(),
+                ),
             )
             projection.pending_inputs.append(
                 PendingSkillChoice(
@@ -735,7 +743,7 @@ CAREER_DATA = PrisonerCareerData(
         ),
         10: CareerEventEntry(
             text='Special Duty.',
-            effects=[SkillChoiceEffect(options=['Admin', 'Advocate', 'Electronics', 'Steward'], level=1)],
+            effects=[SkillChoiceEffect(options=[Admin(), Advocate(), Electronics(), Steward()], level=1)],
         ),
         11: CareerEventEntry(
             text='The warden takes an interest in your case. Reduce your Parole Threshold by -2.',

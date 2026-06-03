@@ -45,6 +45,7 @@ from ceres.character.skills import (
     Admin,
     Advocate,
     Athletics,
+    Deception,
     Diplomat,
     Drive,
     Electronics,
@@ -60,9 +61,11 @@ from ceres.character.skills import (
     Medic,
     Melee,
     Navigation,
+    Persuade,
     Pilot,
     Recon,
     Stealth,
+    Streetwise,
     Survival,
     Tactics,
     VaccSuit,
@@ -78,7 +81,7 @@ from ceres.character.state import (
 MARINES = Career(
     name='Marines',
     description=(
-        'Members of the armed fighting forces carried aboard starships, marines deal with piracy and boarding actions'
+        'Members of the armed fighting forces carried aboard starships, marines deal with piracy and boarding actions '
         'in space, defend the starports and bases belonging to the navy and supplement ground forces such as the army.'
     ),
 )
@@ -122,7 +125,7 @@ class MarinesMishap4Handler(CareerHandlerBase):
                     roll=4,
                     context='marines_mishap_4_skill',
                     instruction='Roll Deception or Persuade 8+: success = stay in career; fail = ejected, lose Benefit',
-                    options=['Deception', 'Persuade'],
+                    options=[Deception(), Persuade()],
                 )
             )
 
@@ -170,7 +173,7 @@ class MarinesEvent6Handler(CareerHandlerBase):
                 roll=6,
                 context='marines_event_6',
                 instruction='Roll Melee or Gun Combat 8+: success = gain Tactics or Leadership; fail = injured',
-                options=['Melee', 'Gun Combat'],
+                options=[Melee(), GunCombat()],
             )
         )
         return pending_idx + 1
@@ -182,7 +185,7 @@ class MarinesEvent6Handler(CareerHandlerBase):
                 PendingSkillChoice(
                     id=f'{event.id}.0',
                     instruction='Fortress assault success: gain one level in Tactics or Leadership',
-                    options=['Tactics', 'Leadership'],
+                    options=[Tactics(), Leadership()],
                 )
             )
         else:
@@ -384,7 +387,7 @@ CAREER_DATA = MarinesCareerData(
         ),
         3: MishapEntry(
             text='Stranded behind enemy lines. Increase Stealth or Survival but you are ejected.',
-            effects=[SkillChoiceEffect(options=['Stealth', 'Survival'], level=1)],
+            effects=[SkillChoiceEffect(options=[Stealth(), Survival()], level=1)],
         ),
         4: MishapEntry(
             text='Ordered to take part in a black ops mission that goes against your conscience.',
@@ -407,11 +410,11 @@ CAREER_DATA = MarinesCareerData(
         ),
         3: CareerEventEntry(
             text='Trapped behind enemy lines.',
-            effects=[SkillChoiceEffect(options=['Survival', 'Stealth', 'Deception', 'Streetwise'], level=1)],
+            effects=[SkillChoiceEffect(options=[Survival(), Stealth(), Deception(), Streetwise()], level=1)],
         ),
         4: CareerEventEntry(
             text='Assigned to the security staff of a space station.',
-            effects=[SkillChoiceEffect(options=['Vacc Suit', 'Athletics'], level=1)],
+            effects=[SkillChoiceEffect(options=[VaccSuit(), Athletics()], level=1)],
         ),
         5: CareerEventEntry(
             text='Advanced training in a specialist field.',
@@ -427,7 +430,7 @@ CAREER_DATA = MarinesCareerData(
         ),
         8: CareerEventEntry(
             text='Front lines of a planetary assault and occupation.',
-            effects=[SkillChoiceEffect(options=['Recon', 'Gun Combat', 'Leadership', 'Electronics'], level=1)],
+            effects=[SkillChoiceEffect(options=[Recon(), GunCombat(), Leadership(), Electronics()], level=1)],
         ),
         9: CareerEventEntry(
             text="A mission goes disastrously wrong due to your commander's error.",
@@ -439,7 +442,7 @@ CAREER_DATA = MarinesCareerData(
         ),
         11: CareerEventEntry(
             text='Your commanding officer takes an interest in your career.',
-            effects=[SkillChoiceEffect(options=['Tactics', 'advancement_dm_4'], level=1)],
+            effects=[SkillChoiceEffect(options=[Tactics(), 'advancement_dm_4'], level=1)],
         ),
         12: CareerEventEntry(
             text='You display heroism in battle. You may gain a promotion or a commission automatically.',

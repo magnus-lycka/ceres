@@ -57,15 +57,19 @@ from ceres.character.skills import (
     Explosives,
     Flyer,
     GunCombat,
+    Gunner,
     Investigate,
+    JackOfAllTrades,
     LanguageSkill,
     Level,
     Medic,
     Melee,
     Persuade,
+    Pilot,
     Recon,
     Stealth,
     Streetwise,
+    Tactics,
     VaccSuit,
     skill_instances,
 )
@@ -76,7 +80,7 @@ from ceres.character.state import (
 
 AGENT = Career(
     name='Agent',
-    description=('Law enforcement agencies, corporateoperatives, spies and others who work in the shadows.'),
+    description=('Law enforcement agencies, corporate operatives, spies and others who work in the shadows.'),
 )
 
 
@@ -144,7 +148,7 @@ class AgentMishap3Handler(CareerHandlerBase):
                 roll=3,
                 context='agent_mishap_3',
                 instruction='Roll Advocate 8+ to keep the Benefit roll from this term',
-                options=['Advocate'],
+                options=[Advocate()],
             )
         )
         return pending_idx + 1
@@ -212,7 +216,7 @@ class AgentEvent3Handler(CareerHandlerBase):
                 roll=3,
                 context='agent_event_3',
                 instruction='Roll Investigate 8+ or Streetwise 8+',
-                options=['Investigate', 'Streetwise'],
+                options=[Investigate(), Streetwise()],
             )
         )
         return pending_idx + 1
@@ -227,7 +231,7 @@ class AgentEvent3Handler(CareerHandlerBase):
                         'Investigation success: increase one skill by one level — Deception, '
                         'Jack-of-all-Trades, Persuade or Tactics'
                     ),
-                    options=['Deception', 'Jack-of-all-Trades', 'Persuade', 'Tactics'],
+                    options=[Deception(), JackOfAllTrades(), Persuade(), Tactics()],
                 )
             )
         else:
@@ -269,7 +273,7 @@ class AgentEvent8Handler(CareerHandlerBase):
                 roll=8,
                 context='agent_event_8',
                 instruction='Roll Deception 8+ for the undercover mission',
-                options=['Deception'],
+                options=[Deception()],
             )
         )
         return pending_idx + 1
@@ -304,7 +308,7 @@ class AgentEvent11Handler(CareerHandlerBase):
                 roll=11,
                 advancement_precreated=False,
                 instruction='Senior agent mentor: increase Investigate by one level or DM+4 to your next advancement roll',
-                options=['Investigate', 'advancement_dm_4'],
+                options=[Investigate(), 'advancement_dm_4'],
             )
         )
         return pending_idx + 1
@@ -521,7 +525,7 @@ CAREER_DATA = AgentCareerData(
         ),
         10: CareerEventEntry(
             text='You are given specialist training in vehicles. Gain one of Drive 1, Flyer 1, Pilot 1 or Gunner 1.',
-            effects=[SkillChoiceEffect(options=['Drive', 'Flyer', 'Pilot', 'Gunner'], level=1)],
+            effects=[SkillChoiceEffect(options=[Drive(), Flyer(), Pilot(), Gunner()], level=1)],
         ),
         11: CareerEventEntry(
             text='You are befriended by a senior agent. Either increase Investigate by one level or DM+4 to an advancement roll thanks to their aid.',

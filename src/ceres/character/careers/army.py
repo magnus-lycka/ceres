@@ -42,7 +42,9 @@ from ceres.character.events import (
 from ceres.character.skills import (
     Admin,
     Advocate,
+    Animals,
     Athletics,
+    Deception,
     Diplomat,
     Drive,
     Electronics,
@@ -52,15 +54,18 @@ from ceres.character.skills import (
     Gambler,
     GunCombat,
     HeavyWeapons,
+    Investigate,
     Leadership,
     Level,
     Mechanic,
     Medic,
     Melee,
     Navigation,
+    Persuade,
     ProfessionSkill,
     Recon,
     Stealth,
+    Streetwise,
     Survival,
     Tactics,
     VaccSuit,
@@ -74,7 +79,7 @@ from ceres.character.state import (
 ARMY = Career(
     name='Army',
     description=(
-        'Members of the planetary armed fighting forces. Soldiers deal with planetary'
+        'Members of the planetary armed fighting forces. Soldiers deal with planetary '
         'surface actions, battles and campaigns. Such individuals may also be mercenaries for hire.'
     ),
 )
@@ -141,7 +146,7 @@ class ArmyEvent6Handler(CareerHandlerBase):
                 PendingSkillChoice(
                     id=f'{event.id}.0',
                     instruction='Ground war success: gain one level in Gun Combat or Leadership',
-                    options=['Gun Combat', 'Leadership'],
+                    options=[GunCombat(), Leadership()],
                 )
             )
         else:
@@ -309,7 +314,7 @@ CAREER_DATA = ArmyCareerData(
         ),
         3: MishapEntry(
             text='You are discharged after a brutal campaign. Increase Recon or Survival and gain an Enemy.',
-            effects=[GainEnemyEffect(), SkillChoiceEffect(options=['Recon', 'Survival'], level=1)],
+            effects=[GainEnemyEffect(), SkillChoiceEffect(options=[Recon(), Survival()], level=1)],
         ),
         4: MishapEntry(
             text='You uncover illegal activity by your commanding officer.',
@@ -332,11 +337,11 @@ CAREER_DATA = ArmyCareerData(
         ),
         3: CareerEventEntry(
             text='You are assigned to a hostile or wild environment.',
-            effects=[SkillChoiceEffect(options=['Vacc Suit', 'Engineer', 'Animals', 'Recon'], level=1)],
+            effects=[SkillChoiceEffect(options=[VaccSuit(), Engineer(), Animals(), Recon()], level=1)],
         ),
         4: CareerEventEntry(
             text='You are assigned to an urbanised planet torn by war.',
-            effects=[SkillChoiceEffect(options=['Stealth', 'Streetwise', 'Persuade', 'Recon'], level=1)],
+            effects=[SkillChoiceEffect(options=[Stealth(), Streetwise(), Persuade(), Recon()], level=1)],
         ),
         5: CareerEventEntry(
             text='You are given a special assignment or duty in your unit.',
@@ -360,11 +365,11 @@ CAREER_DATA = ArmyCareerData(
         ),
         10: CareerEventEntry(
             text='You are assigned to a peacekeeping role.',
-            effects=[SkillChoiceEffect(options=['Admin', 'Investigate', 'Deception', 'Recon'], level=1)],
+            effects=[SkillChoiceEffect(options=[Admin(), Investigate(), Deception(), Recon()], level=1)],
         ),
         11: CareerEventEntry(
             text='Your commanding officer takes an interest in your career.',
-            effects=[SkillChoiceEffect(options=['Tactics', 'advancement_dm_4'], level=1)],
+            effects=[SkillChoiceEffect(options=[Tactics(), 'advancement_dm_4'], level=1)],
         ),
         12: CareerEventEntry(
             text='You display heroism in battle. You may gain a promotion or a commission automatically.',

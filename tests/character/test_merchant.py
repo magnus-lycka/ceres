@@ -16,7 +16,18 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.replay import replay
-from ceres.character.skills import Admin, Athletics, Carouse, Drive
+from ceres.character.skills import (
+    Admin,
+    Advocate,
+    Athletics,
+    Broker,
+    Carouse,
+    Deception,
+    Diplomat,
+    Drive,
+    Investigate,
+    Persuade,
+)
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Enemy,
@@ -95,7 +106,7 @@ class TestMerchantEvent3:
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerSkillRoll)), None)
         assert pending is not None
-        assert set(pending.options) == {'Deception', 'Persuade'}
+        assert pending.options == [Deception(), Persuade()]
 
     def test_accept_success_adds_benefit_roll(self):
         events = [
@@ -140,7 +151,7 @@ class TestMerchantEvent8:
         projection = replay(1, self._setup_to_event())
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
         assert pending is not None
-        assert set(pending.options) == {'Advocate', 'Admin', 'Diplomat', 'Investigate'}
+        assert pending.options == [Advocate(), Admin(), Diplomat(), Investigate()]
 
     def test_creates_2d_roll_pending(self):
         projection = replay(1, self._setup_to_event())
@@ -219,7 +230,7 @@ class TestMerchantEvent9:
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
         assert pending is not None
         # Merchant service skills auto-applied: Drive, Vacc Suit, Broker, Steward, Electronics, Persuade
-        assert 'Broker' in pending.options
+        assert any(isinstance(o, Broker) for o in pending.options)
 
     def test_failure_no_skill_choice(self):
         events = [

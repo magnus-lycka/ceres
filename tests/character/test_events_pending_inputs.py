@@ -558,7 +558,9 @@ def test_skill_choice_auto_events_fall_back_to_advancement_dm_when_no_skill_can_
         PendingInitialTrainingChoice(id='1.0', instruction='Skill', options=['Admin']),
         PendingSkillTableChoice(id='2.0', instruction='Skill', options=['Admin']),
         PendingRankBonusChoice(id='3.0', instruction='Skill', options=['Admin'], level=1),
-        PendingCareerSkillChoice(id='4.0', instruction='Skill', career='Scout', roll=6, options=['Admin']),
+        PendingCareerSkillChoice(
+            id='4.0', instruction='Skill', career='Scout', roll=6, options=[character_skills.Admin()]
+        ),
     ):
         assert isinstance(pending.auto_event(projection, _ctx(), random.Random(1)), AdvancementDmChoiceEvent)
 
@@ -567,7 +569,7 @@ def test_pending_background_skills_builds_form_auto_event_and_specs():
     pending = PendingBackgroundSkills(
         id='2.0',
         instruction='Choose 2 background skills',
-        options=['Admin', 'No Such Skill', 'Medic'],
+        options=[character_skills.Admin(), character_skills.Medic()],
     )
     form = Form(skill='{"type":"Admin","level":{"value":0}}|{"type":"Medic","level":{"value":0}}')
 
@@ -750,12 +752,18 @@ def test_skill_choice_pending_inputs_parse_skills_and_advancement_dm():
     projection = _projection()
     admin_json = character_skills.Admin().model_dump_json()
 
+    # Types that support the advancement_dm_4 sentinel alongside skill options
     for pending in (
-        PendingSkillChoice(id='1.0', instruction='Skill', options=['Admin', 'advancement_dm_4']),
         PendingInitialTrainingChoice(id='1.0', instruction='Skill', options=['Admin', 'advancement_dm_4']),
         PendingSkillTableChoice(id='1.0', instruction='Skill', options=['Admin', 'advancement_dm_4']),
         PendingRankBonusChoice(id='1.0', instruction='Skill', options=['Admin', 'advancement_dm_4'], level=1),
-        PendingCareerSkillChoice(id='1.0', instruction='Skill', career='Scout', roll=6, options=['Admin']),
+        PendingCareerSkillChoice(
+            id='1.0',
+            instruction='Skill',
+            career='Scout',
+            roll=6,
+            options=[character_skills.Admin(), 'advancement_dm_4'],
+        ),
     ):
         skill_event = pending.event_from_form(Form(skill=admin_json))
         dm_event = pending.event_from_form(Form(skill='advancement_dm_4'))
@@ -767,6 +775,16 @@ def test_skill_choice_pending_inputs_parse_skills_and_advancement_dm():
         assert isinstance(specs[0], Select)
         auto_event = pending.auto_event(projection, _ctx(), random.Random(1))
         assert isinstance(auto_event, SkillChoiceEvent | AdvancementDmChoiceEvent)
+
+    # PendingSkillChoice uses typed AnySkill options only (no advancement_dm_4)
+    skill_pending = PendingSkillChoice(id='1.0', instruction='Skill', options=[character_skills.Admin()])
+    skill_event = skill_pending.event_from_form(Form(skill=admin_json))
+    specs = skill_pending.input_specs(projection)
+    assert isinstance(skill_event, SkillChoiceEvent)
+    assert isinstance(skill_event.skill, character_skills.Admin)
+    assert isinstance(specs[0], Select)
+    auto_event = skill_pending.auto_event(projection, _ctx(), random.Random(1))
+    assert isinstance(auto_event, SkillChoiceEvent)
 
 
 def test_characteristic_benefit_life_and_connection_pending_inputs():
@@ -833,7 +851,12 @@ def test_career_and_precareer_specific_pending_inputs():
     assert mishap.input_specs(_projection()) == []
 
     skill_roll = PendingCareerSkillRoll(
-        id='3.0', instruction='Skill roll', career='Scout', roll=6, context='scout_event_6', options=['STR', 'Admin']
+        id='3.0',
+        instruction='Skill roll',
+        career='Scout',
+        roll=6,
+        context='scout_event_6',
+        options=[Chars.STR, character_skills.Admin()],
     )
     char_event = skill_roll.event_from_form(Form(skill='STR', modified_roll='9'))
     skill_event = skill_roll.event_from_form(Form(skill='Admin', modified_roll='8'))

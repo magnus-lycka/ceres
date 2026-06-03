@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict
 
 from ceres.character.careers.career_data import AnyEffect, CharCheck, TermData
 from ceres.character.events import PendingPreCareerSkillChoice
-from ceres.character.skills import AnySkill, Level, Skill, _level_fields
+from ceres.character.skills import AnySkill, Level, _level_fields
 from ceres.character.state import (
     CharacterProjection,
     CharacterSummary,
@@ -21,7 +21,7 @@ class PrecareerSkillEntry(BaseModel):
     category choice, matching the career skill table pattern.
     """
 
-    skill: AnySkill | list[Skill] | None = None
+    skill: AnySkill | list[AnySkill] | None = None
     level: int = 0
     choices: list[str] | None = None
     spec: str | None = None

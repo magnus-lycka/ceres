@@ -9,6 +9,7 @@ from ceres.character.events import (
     PendingAdvancement,
     PendingCareerChoice,
     PendingCareerEvent,
+    PendingCareerMishap,
     PendingCareerSkillRoll,
     PendingMishap,
     PendingMusterOut,
@@ -18,7 +19,7 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.replay import replay
-from ceres.character.skills import Admin, Athletics, Carouse, Drive, Streetwise
+from ceres.character.skills import Admin, Advocate, Athletics, Carouse, Drive, GunCombat, Stealth, Streetwise
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Contact,
@@ -102,11 +103,7 @@ class TestRogueMishap3:
         events = [*self._setup_to_mishap(), MishapEvent(id=6, fulfills='5.0', roll=3)]
         projection = replay(1, events)
         pending = next(
-            (
-                p
-                for p in projection.pending_inputs
-                if isinstance(p, PendingCareerSkillRoll) and p.context == 'rogue_mishap_3_prisoner_check'
-            ),
+            (p for p in projection.pending_inputs if isinstance(p, PendingCareerMishap) and p.roll == 3),
             None,
         )
         assert pending is not None
@@ -121,9 +118,7 @@ class TestRogueMishap3:
         events = [
             *self._setup_to_mishap(),
             MishapEvent(id=6, fulfills='5.0', roll=3),
-            SkillRollEvent(
-                id=7, fulfills='6.0', context='rogue_mishap_3_prisoner_check', skill=Streetwise(), modified_roll=2
-            ),
+            CareerChoiceEvent(id=7, fulfills='6.0', context='rogue_mishap_3', choice='2'),
         ]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerChoice)), None)
@@ -134,9 +129,7 @@ class TestRogueMishap3:
         events = [
             *self._setup_to_mishap(),
             MishapEvent(id=6, fulfills='5.0', roll=3),
-            SkillRollEvent(
-                id=7, fulfills='6.0', context='rogue_mishap_3_prisoner_check', skill=Streetwise(), modified_roll=5
-            ),
+            CareerChoiceEvent(id=7, fulfills='6.0', context='rogue_mishap_3', choice='5'),
         ]
         projection = replay(1, events)
         prisoner_pending = next(
@@ -149,9 +142,7 @@ class TestRogueMishap3:
         events = [
             *self._setup_to_mishap(),
             MishapEvent(id=6, fulfills='5.0', roll=3),
-            SkillRollEvent(
-                id=7, fulfills='6.0', context='rogue_mishap_3_prisoner_check', skill=Streetwise(), modified_roll=5
-            ),
+            CareerChoiceEvent(id=7, fulfills='6.0', context='rogue_mishap_3', choice='5'),
         ]
         projection = replay(1, events)
         assert projection.summary.current_career is None
@@ -202,7 +193,7 @@ class TestRogueEvent3:
             None,
         )
         assert pending is not None
-        assert 'Advocate' in pending.options
+        assert Advocate() in pending.options
 
     def test_defend_success_continues_career(self):
         events = [
@@ -321,7 +312,7 @@ class TestRogueEvent9:
             None,
         )
         assert pending is not None
-        assert set(pending.options) == {'Stealth', 'Gun Combat'}
+        assert pending.options == [Stealth(), GunCombat()]
 
     def test_success_schedules_extra_benefit_roll(self):
         events = [

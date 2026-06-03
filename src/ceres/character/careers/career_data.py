@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict
 
 from ceres.character.benefits import AnyBenefit
 from ceres.character.characteristics import Chars, ConnectionKind, characteristic_dm
-from ceres.character.skills import AnySkill, Level, Skill, _level_fields
+from ceres.character.skills import AnySkill, Level, _level_fields
 
 if TYPE_CHECKING:
     from ceres.character.events import CareerChoiceEvent, SkillRollEvent
@@ -19,7 +19,7 @@ class Career:
     description: str = ''
 
 
-type SkillTableEntry = AnySkill | Chars | list[Skill]
+type SkillTableEntry = AnySkill | Chars | list[AnySkill]
 
 
 @dataclass
@@ -107,8 +107,10 @@ class GainConnectionsRolledEffect(BaseModel):
 
 class SkillChoiceEffect(BaseModel):
     type: Literal['skill_choice'] = 'skill_choice'
-    options: list[str]
+    options: list[AnySkill | Literal['advancement_dm_4']] = []
     level: int = 1
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class InjuryEffect(BaseModel):

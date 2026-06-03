@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, cast
 
 from ceres.character.benefits import (
     LAB_SHIP,
@@ -43,7 +43,10 @@ from ceres.character.events import (
 from ceres.character.skills import (
     Admin,
     Advocate,
+    AnySkill,
     ArtSkill,
+    Athletics,
+    Deception,
     Diplomat,
     Drive,
     Electronics,
@@ -58,7 +61,6 @@ from ceres.character.skills import (
     Survival,
     VaccSuit,
     skill_instances,
-    skill_list,
     skill_names,
 )
 from ceres.character.state import (
@@ -66,12 +68,12 @@ from ceres.character.state import (
     Enemy,
 )
 
-_SCIENCES = sorted(s.type for s in skill_list(ScienceSkill))
+_SCIENCES = skill_instances(ScienceSkill)
 
 SCHOLAR = Career(
     name='Scholar',
     description=(
-        'Individuals trained in technological or research sciences who conduct scientific'
+        'Individuals trained in technological or research sciences who conduct scientific '
         'investigations into materials, situations and phenomena, or who practise medicine.'
     ),
 )
@@ -111,7 +113,7 @@ class ScholarMishap3Handler(CareerHandlerBase):
                 mishap=True,
                 advancement_precreated=True,
                 instruction='Increase Science by one level: choose which broad science',
-                options=skill_names(ScienceSkill),
+                options=cast(list[AnySkill | Literal['advancement_dm_4']], skill_instances(ScienceSkill)),
             )
         )
         # advancement was already created by _apply_mishap (stay_in_career=True)
@@ -195,7 +197,7 @@ class ScholarEvent3Handler(CareerHandlerBase):
                         mishap=False,
                         advancement_precreated=True,
                         instruction=f'Choose {label} Science specialty to increase by one level',
-                        options=skill_names(ScienceSkill),
+                        options=cast(list[AnySkill | Literal['advancement_dm_4']], skill_instances(ScienceSkill)),
                     )
                 )
             if projection.summary.current_career is not None:
@@ -288,7 +290,7 @@ class ScholarEvent8Handler(CareerHandlerBase):
                     roll=8,
                     context='scholar_event_8_roll',
                     instruction='Roll Deception 8+ or Admin 8+ to cheat successfully',
-                    options=['Deception', 'Admin'],
+                    options=[Deception(), Admin()],
                 )
             )
 
@@ -474,7 +476,7 @@ CAREER_DATA = ScholarCareerData(
         ),
         4: MishapEntry(
             text='An expedition or voyage goes wrong, leaving you stranded in the wilderness.',
-            effects=[SkillChoiceEffect(options=['Survival', 'Athletics'], level=1)],
+            effects=[SkillChoiceEffect(options=[Survival(), Athletics()], level=1)],
         ),
         5: MishapEntry(
             text='Your work is sabotaged by unknown parties.',
@@ -503,17 +505,7 @@ CAREER_DATA = ScholarCareerData(
             text='You are assigned to work on a secret project for a patron or organisation.',
             effects=[
                 SkillChoiceEffect(
-                    options=[
-                        'Medic',
-                        'Life Science',
-                        'Physical Science',
-                        'Robotic Science',
-                        'Social Science',
-                        'Space Science',
-                        'Engineer',
-                        'Electronics',
-                        'Investigate',
-                    ],
+                    options=[Medic(), *skill_instances(ScienceSkill), Engineer(), Electronics(), Investigate()],
                     level=1,
                 )
             ],
@@ -540,7 +532,7 @@ CAREER_DATA = ScholarCareerData(
         ),
         10: CareerEventEntry(
             text='You become entangled in a bureaucratic or legal morass.',
-            effects=[SkillChoiceEffect(options=['Admin', 'Advocate', 'Persuade', 'Diplomat'], level=1)],
+            effects=[SkillChoiceEffect(options=[Admin(), Advocate(), Persuade(), Diplomat()], level=1)],
         ),
         11: CareerEventEntry(
             text='You work for an eccentric but brilliant mentor, who becomes an Ally.',

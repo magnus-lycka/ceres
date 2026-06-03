@@ -11,6 +11,10 @@
       <div>
         <label class="block text-xs uppercase tracking-wide text-gray-500 mb-1">Career</label>
         <select name="career"
+                hx-get="/ui/gallery/assignments"
+                hx-target="#assignment-select"
+                hx-swap="innerHTML"
+                hx-trigger="change"
                 class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500">
           {% for name in careers %}
           <option value="{{ name }}">{{ name }}</option>
@@ -30,9 +34,14 @@
     </div>
 
     <div>
-      <label class="block text-xs uppercase tracking-wide text-gray-500 mb-1">Assignment <span class="text-gray-600">(optional)</span></label>
-      <input type="text" name="assignment" placeholder="e.g. Courier"
-             class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500">
+      <label class="block text-xs uppercase tracking-wide text-gray-500 mb-1">Assignment</label>
+      <select name="assignment" id="assignment-select"
+              class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500">
+        <option value="">Random</option>
+        {% for a in initial_assignments %}
+        <option value="{{ a }}">{{ a }}</option>
+        {% endfor %}
+      </select>
     </div>
 
     <div class="grid grid-cols-3 gap-4">

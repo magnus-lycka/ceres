@@ -15,7 +15,16 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.replay import replay
-from ceres.character.skills import Admin, Athletics, Carouse, Drive, PerformingArt
+from ceres.character.skills import (
+    Admin,
+    Athletics,
+    Carouse,
+    CreativeArt,
+    Drive,
+    Investigate,
+    PerformingArt,
+    PresentationArt,
+)
 from ceres.character.sophonts import VILANI
 from ceres.character.state import Enemy
 from tests.character.helpers import MOCK_WORLD
@@ -65,7 +74,7 @@ class TestEntertainerEvent3:
             None,
         )
         assert pending is not None
-        assert set(pending.options) == {'Art', 'Investigate'}
+        assert pending.options == [PerformingArt(), CreativeArt(), PresentationArt(), Investigate()]
 
     def test_success_increases_soc(self):
         events = [
@@ -129,7 +138,7 @@ class TestEntertainerEvent8:
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerSkillRoll)), None)
         assert pending is not None
-        assert set(pending.options) == {'Art', 'Investigate'}
+        assert pending.options == [PerformingArt(), CreativeArt(), PresentationArt(), Investigate()]
 
     def test_accept_success_schedules_advancement_dm_2(self):
         events = [

@@ -38,15 +38,22 @@ from ceres.character.events import (
 from ceres.character.replay import replay
 from ceres.character.skills import (
     Admin,
+    Advocate,
     Athletics,
     Carouse,
     Deception,
+    Diplomat,
     Drive,
+    Electronics,
+    Engineer,
+    Investigate,
     Level,
     LifeScience,
     Medic,
     Navigation,
+    Persuade,
     PhysicalScience,
+    RoboticScience,
     SocialScience,
     SpaceScience,
     Survival,
@@ -232,8 +239,17 @@ class TestScholarTerm:
 
         pending = next(p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice))
         # Core event 4: one of Medic, Science, Engineer, Electronics, Investigate — Science = any broad science
-        _sciences = {'Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science'}
-        assert set(pending.options) == {'Medic', *_sciences, 'Engineer', 'Electronics', 'Investigate'}
+        assert pending.options == [
+            Medic(),
+            LifeScience(),
+            PhysicalScience(),
+            RoboticScience(),
+            SocialScience(),
+            SpaceScience(),
+            Engineer(),
+            Electronics(),
+            Investigate(),
+        ]
 
     def test_event_9_stores_advancement_dm_in_scheduled_effects(self):
         events = [
@@ -266,7 +282,7 @@ class TestScholarTerm:
         projection = replay(1, events)
 
         pending = next(p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice))
-        assert set(pending.options) == {'Admin', 'Advocate', 'Persuade', 'Diplomat'}
+        assert pending.options == [Admin(), Advocate(), Persuade(), Diplomat()]
 
     def test_event_11_gains_ally_and_creates_scholar_event_11_pending(self):
         events = [
@@ -293,7 +309,7 @@ class TestScholarTerm:
 
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
         assert pending is not None
-        assert set(pending.options) == {'Survival', 'Athletics'}
+        assert pending.options == [Survival(), Athletics()]
 
     def test_mishap_4_skill_choice_grants_skill_and_no_advancement_pending(self):
         events = [
@@ -441,7 +457,6 @@ class TestScholarMishap3:
 
         # Core mishap 3: increase Science — any broad science — so a science choice pending is required
         assert any(isinstance(c, Enemy) for c in projection.summary.connections)
-        _sciences = {'Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science'}
         science_pending = next(
             (
                 p
@@ -451,7 +466,13 @@ class TestScholarMishap3:
             None,
         )
         assert science_pending is not None
-        assert set(science_pending.options) == _sciences
+        assert science_pending.options == [
+            LifeScience(),
+            PhysicalScience(),
+            RoboticScience(),
+            SocialScience(),
+            SpaceScience(),
+        ]
 
     def test_secretly_creates_science_pending_and_decreases_soc(self):
         events = [
@@ -611,8 +632,8 @@ class TestScholarEvent3:
             for p in projection.pending_inputs
             if isinstance(p, PendingCareerSkillChoice) and p.career == 'Scholar' and p.roll == 3 and not p.mishap
         )
-        assert 'Space Science' in pending.options
-        assert 'Life Science' in pending.options
+        assert SpaceScience() in pending.options
+        assert LifeScience() in pending.options
 
     def test_accept_resolving_science_choices_grants_skills(self):
         events = [
@@ -679,7 +700,7 @@ class TestScholarEvent8:
             None,
         )
         assert pending is not None
-        assert set(pending.options) == {'Deception', 'Admin'}
+        assert pending.options == [Deception(), Admin()]
 
     def test_accept_success_gains_enemy(self):
         events = [
@@ -753,8 +774,14 @@ class TestScholarEvent11:
         )
         assert pending is not None
         # Core event 11: increase Science by one level — any broad science — or DM+4 advancement
-        _sciences = {'Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science'}
-        assert set(pending.options) == {*_sciences, 'advancement_dm_4'}
+        assert pending.options == [
+            LifeScience(),
+            PhysicalScience(),
+            RoboticScience(),
+            SocialScience(),
+            SpaceScience(),
+            'advancement_dm_4',
+        ]
 
     def test_choose_space_science_grants_space_science_1(self):
         sci_choice = SkillChoiceEvent(id=9, fulfills='8.0', skill=SpaceScience(planetology=Level(value=1)))

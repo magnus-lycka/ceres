@@ -34,11 +34,10 @@ def handle_advanced_training(
 
 def resolve_advanced_training(projection: CharacterProjection, event: SkillRollEvent, threshold: int = 8) -> None:
     if event.modified_roll >= threshold:
-        existing_skills = [type(s).name() for s in projection.summary.skills]
         projection.pending_inputs.append(
             PendingSkillChoice(
                 id=f'{event.id}.0',
                 instruction='Advanced training: increase any existing skill by one level',
-                options=existing_skills,
+                options=list(projection.summary.skills),
             )
         )

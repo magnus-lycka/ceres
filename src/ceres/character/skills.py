@@ -517,8 +517,8 @@ def skill_names(skill_union: object) -> list[str]:
     return [cls.name() for cls in _skill_classes(skill_union)]
 
 
-def skill_instances(skill_union: object) -> list[Skill]:
-    return [cls() for cls in _skill_classes(skill_union)]
+def skill_instances(skill_union: object) -> list[AnySkill]:
+    return [cast(AnySkill, cls()) for cls in _skill_classes(skill_union)]
 
 
 def skill_spec_option_names(skill_name: str) -> list[str]:

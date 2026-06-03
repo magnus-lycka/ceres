@@ -19,7 +19,18 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.replay import replay
-from ceres.character.skills import Admin, Athletics, Carouse, Drive
+from ceres.character.skills import (
+    Admin,
+    Athletics,
+    Carouse,
+    Deception,
+    Drive,
+    GunCombat,
+    Leadership,
+    Melee,
+    Persuade,
+    Tactics,
+)
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Ally,
@@ -104,7 +115,7 @@ class TestMarinesMishap4:
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerSkillRoll)), None)
         assert pending is not None
-        assert set(pending.options) == {'Deception', 'Persuade'}
+        assert pending.options == [Deception(), Persuade()]
 
     def test_accept_success_continues_career(self):
         events = [
@@ -154,7 +165,7 @@ class TestMarinesEvent5:
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
         assert pending is not None
         # Marines service skills (auto-applied first career): Athletics, Vacc Suit, Tactics, etc.
-        assert 'Athletics' in pending.options
+        assert any(isinstance(o, Athletics) for o in pending.options)
 
     def test_failure_no_skill_choice(self):
         events = [
@@ -192,7 +203,7 @@ class TestMarinesEvent6:
             None,
         )
         assert pending is not None
-        assert set(pending.options) == {'Melee', 'Gun Combat'}
+        assert pending.options == [Melee(), GunCombat()]
 
     def test_success_creates_tactics_or_leadership_choice(self):
         events = [
@@ -202,7 +213,7 @@ class TestMarinesEvent6:
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
         assert pending is not None
-        assert set(pending.options) == {'Tactics', 'Leadership'}
+        assert pending.options == [Tactics(), Leadership()]
 
     def test_failure_adds_injury_problem(self):
         events = [

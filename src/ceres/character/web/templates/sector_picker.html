@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Sector Picker{% endblock %}
+{% block content %}
+
+<div class="max-w-3xl space-y-6">
+  <div class="flex items-end justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-amber-400 tracking-wide">Sector</h1>
+      <p class="text-sm text-gray-400">Search by name or abbreviation.</p>
+    </div>
+    <a href="/ui/characters/new" class="text-gray-500 hover:text-gray-300 px-4 py-2 text-sm">Back</a>
+  </div>
+
+  <div class="space-y-3">
+    <input id="sector-query"
+           type="text"
+           name="q"
+           placeholder="Try Troj or Trojan Reach"
+           hx-get="/ui/worlds/sectors/search"
+           hx-trigger="input changed delay:250ms"
+           hx-target="#sector-search-results"
+           hx-swap="innerHTML"
+           class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-4 py-3 focus:outline-none focus:border-amber-500">
+    <div id="sector-search-results" class="space-y-2"></div>
+  </div>
+</div>
+
+{% endblock %}

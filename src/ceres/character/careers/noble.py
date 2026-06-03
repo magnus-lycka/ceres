@@ -44,6 +44,7 @@ from ceres.character.events import (
 from ceres.character.skills import (
     Admin,
     Advocate,
+    Animals,
     ArtSkill,
     Broker,
     Carouse,
@@ -60,8 +61,10 @@ from ceres.character.skills import (
     Melee,
     Persuade,
     ScienceSkill,
+    Stealth,
     Steward,
     Streetwise,
+    Tactics,
     skill_instances,
 )
 from ceres.character.state import (
@@ -74,7 +77,7 @@ from ceres.character.state import (
 NOBLE = Career(
     name='Noble',
     description=(
-        'Individuals of the upper class who perform little'
+        'Individuals of the upper class who perform little '
         'consistent function but often have large amounts of ready money.'
     ),
 )
@@ -95,7 +98,7 @@ class NobleMishap3Handler(CareerHandlerBase):
                 roll=3,
                 context='noble_mishap_3',
                 instruction='Roll Stealth or Deception 8+: success = escape unhurt (keep Benefit); fail = injury + lose Benefit',
-                options=['Stealth', 'Deception'],
+                options=[Stealth(), Deception()],
             )
         )
         return pending_idx + 1
@@ -183,7 +186,7 @@ class NobleEvent8Handler(CareerHandlerBase):
                     roll=8,
                     context='noble_event_8_skill',
                     instruction='Roll Deception or Persuade 8+: success = extra Benefit roll; fail = ejected, gain Enemy',
-                    options=['Deception', 'Persuade'],
+                    options=[Deception(), Persuade()],
                 )
             )
 
@@ -368,7 +371,7 @@ CAREER_DATA = NobleCareerData(
         ),
         4: MishapEntry(
             text='Political manoeuvrings usurp your position. Increase Diplomat or Advocate and gain a Rival.',
-            effects=[SkillChoiceEffect(options=['Diplomat', 'Advocate'], level=1), GainRivalEffect()],
+            effects=[SkillChoiceEffect(options=[Diplomat(), Advocate()], level=1), GainRivalEffect()],
         ),
         5: MishapEntry(
             text='An assassin attempts to end your life. Roll END 8+ or roll on the Injury table.',
@@ -387,11 +390,13 @@ CAREER_DATA = NobleCareerData(
         ),
         3: CareerEventEntry(
             text='You are challenged to a duel for your honour and standing.',
-            effects=[SkillChoiceEffect(options=['Melee', 'Leadership', 'Tactics', 'Deception'], level=1)],
+            effects=[SkillChoiceEffect(options=[Melee(), Leadership(), Tactics(), Deception()], level=1)],
         ),
         4: CareerEventEntry(
             text='Your time as a ruler or playboy gives you a wide range of experiences.',
-            effects=[SkillChoiceEffect(options=['Animals', 'Art', 'Carouse', 'Streetwise'], level=1)],
+            effects=[
+                SkillChoiceEffect(options=[Animals(), *skill_instances(ArtSkill), Carouse(), Streetwise()], level=1)
+            ],
         ),
         5: CareerEventEntry(
             text='You inherit a gift from a rich relative.',
@@ -400,7 +405,7 @@ CAREER_DATA = NobleCareerData(
         6: CareerEventEntry(
             text='You become deeply involved in politics.',
             effects=[
-                SkillChoiceEffect(options=['Advocate', 'Admin', 'Diplomat', 'Persuade'], level=1),
+                SkillChoiceEffect(options=[Advocate(), Admin(), Diplomat(), Persuade()], level=1),
                 GainRivalEffect(),
             ],
         ),
@@ -419,14 +424,14 @@ CAREER_DATA = NobleCareerData(
         10: CareerEventEntry(
             text='You manipulate and charm your way through high society.',
             effects=[
-                SkillChoiceEffect(options=['Carouse', 'Diplomat', 'Persuade', 'Steward'], level=1),
+                SkillChoiceEffect(options=[Carouse(), Diplomat(), Persuade(), Steward()], level=1),
                 GainRivalEffect(),
                 GainAllyEffect(),
             ],
         ),
         11: CareerEventEntry(
             text='You make an alliance with a powerful noble.',
-            effects=[GainAllyEffect(), SkillChoiceEffect(options=['Leadership', 'advancement_dm_4'], level=1)],
+            effects=[GainAllyEffect(), SkillChoiceEffect(options=[Leadership(), 'advancement_dm_4'], level=1)],
         ),
         12: CareerEventEntry(
             text='Your efforts do not go unnoticed by the Imperium. You are automatically promoted.',

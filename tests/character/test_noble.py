@@ -17,7 +17,7 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.replay import replay
-from ceres.character.skills import Admin, Athletics, Carouse, Drive
+from ceres.character.skills import Admin, Athletics, Carouse, Deception, Drive, Persuade, Stealth
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Enemy,
@@ -67,7 +67,7 @@ class TestNobleMishap3:
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerSkillRoll)), None)
         assert pending is not None
-        assert set(pending.options) == {'Stealth', 'Deception'}
+        assert pending.options == [Stealth(), Deception()]
 
     def test_success_keeps_benefit_roll(self):
         events = [
@@ -196,7 +196,7 @@ class TestNobleEvent8:
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerSkillRoll)), None)
         assert pending is not None
-        assert set(pending.options) == {'Deception', 'Persuade'}
+        assert pending.options == [Deception(), Persuade()]
 
     def test_accept_success_adds_extra_benefit_roll(self):
         events = [

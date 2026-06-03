@@ -197,7 +197,7 @@ class TestCitizenMishap5:
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerSkillRoll)), None)
         assert pending is not None
-        assert pending.options == ['Streetwise']
+        assert pending.options == [Streetwise()]
 
     def test_success_creates_skill_choice_from_existing_skills(self):
         events = [
@@ -251,7 +251,7 @@ class TestCitizenEvent6:
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
         assert pending is not None
-        assert 'Admin' in pending.options
+        assert any(isinstance(o, Admin) for o in pending.options)
 
     def test_failure_no_skill_choice(self):
         events = [
@@ -310,7 +310,7 @@ class TestCitizenEvent8:
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerSkillRoll)), None)
         assert pending is not None
-        assert pending.options == ['Streetwise']
+        assert pending.options == [Streetwise()]
 
     def test_use_it_success_adds_extra_benefit_roll(self):
         events = [

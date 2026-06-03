@@ -2,6 +2,31 @@
 
 Moved from `docs/todo_maybe.md` once fully implemented.
 
+## Character creation: typed skill instances in pending events
+
+`PendingCareerSkillRoll`, `PendingSkillChoice`, `PendingCareerSkillChoice`, and
+`PendingBackgroundSkills` now hold `AnySkill` instances in their `options` fields
+instead of strings. `_pick_skill_auto` in `state.py` handles typed instances
+directly. All career event handlers and test assertions use typed skill objects.
+`skill_instances()` in `skills.py` returns `list[AnySkill]`. `SkillTableEntry` in
+`career_data.py` and `PrecareerSkillEntry.skill` in `precareer_data.py` both use
+`AnySkill`. `scholar.py` and `prisoner.py` updated with typed options.
+
+Remaining string-based paths are tracked in the active todo item
+"Remove `skill_from_str` / `skill_class_by_name` from `events.py`".
+
+## Character creation: Prisoner advancement + parole simultaneity fix
+
+`SkillTableEvent.apply` previously called `get_current_career()` unconditionally.
+For a Prisoner who simultaneously advances (rank up) and earns parole, the
+`queue_reenlist_or_aging` call triggered by the advancement clears `current_career`
+via `muster_out_setup` before the queued `PendingSkillTable` is processed, causing
+a `ReplayError: No active career`.
+
+Fixed by falling back to `projection.muster_out_career` when `current_career is
+None` — `muster_out_setup` sets `muster_out_career` before clearing the active
+career, so the skill table can still be applied.
+
 ## Character creation: TermData base class
 
 Introduced `TermData(BaseModel)` in `career_data.py` as the shared base for both

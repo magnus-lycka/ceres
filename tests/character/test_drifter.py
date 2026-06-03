@@ -22,7 +22,7 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.replay import replay
-from ceres.character.skills import Admin, Athletics, Carouse, Drive
+from ceres.character.skills import Admin, Athletics, Carouse, Drive, GunCombat, Melee
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Enemy,
@@ -227,7 +227,7 @@ class TestDrifterEvent8:
             None,
         )
         assert pending is not None
-        assert set(pending.options) == {'Melee', 'Gun Combat'}
+        assert pending.options == [Melee(), GunCombat()]
 
     def test_success_creates_skill_choice(self):
         events = [
@@ -237,7 +237,7 @@ class TestDrifterEvent8:
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
         assert pending is not None
-        assert set(pending.options) == {'Melee', 'Gun Combat'}
+        assert pending.options == [Melee(), GunCombat()]
 
     def test_failure_adds_injury_problem(self):
         events = [

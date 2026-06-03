@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+{% block title %}Sector Filters{% endblock %}
+{% block content %}
+
+<div class="max-w-7xl space-y-6">
+  <div class="flex items-end justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-amber-400 tracking-wide">{{ sector_name }}</h1>
+      <p class="text-sm text-gray-400">{{ sector.sector_abbreviation }} · {{ sector.worlds|length }} worlds</p>
+    </div>
+    <a href="/ui/worlds/sectors" class="text-gray-500 hover:text-gray-300 px-4 py-2 text-sm">Back</a>
+  </div>
+
+  <form method="get" class="space-y-4">
+    <input type="hidden" name="filters" value="1">
+    {% if options.allegiances %}
+    <section class="border border-gray-800 bg-gray-950/60 p-4 space-y-3" data-filter-group>
+      <div class="flex items-center justify-between gap-4">
+        <h2 class="text-sm uppercase tracking-wide text-amber-400">Allegiances</h2>
+        <div class="flex items-center gap-2 text-xs">
+          <button type="button" data-check-all class="px-2 py-1 text-gray-400 hover:text-gray-200">All</button>
+          <button type="button" data-clear-all class="px-2 py-1 text-gray-500 hover:text-gray-300">None</button>
+        </div>
+      </div>
+      <div class="grid gap-x-6 gap-y-2 lg:grid-cols-2">
+        {% for value in options.allegiances %}
+        <label class="grid grid-cols-[auto_auto_minmax(0,1fr)] items-start gap-x-3 text-sm text-gray-200">
+          <input type="checkbox" name="allegiances" value="{{ value }}" {% if not filters_active or value in selected.get('allegiances', []) %}checked{% endif %} class="mt-0.5 accent-amber-500">
+          <span class="font-medium text-gray-100">{{ value }}</span>
+          {% if value == 'No Allegiance' %}
+          <span class="text-gray-400">Blank allegiance code in sector data</span>
+          {% elif sector.allegiance_names.get(value) %}
+          <span class="text-gray-400">{{ sector.allegiance_names[value] }}</span>
+          {% else %}
+          <span class="text-gray-500"> </span>
+          {% endif %}
+        </label>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {% if options.remarks %}
+    <section class="border border-gray-800 bg-gray-950/60 p-4 space-y-3" data-filter-group>
+      <div class="flex items-center justify-between gap-4">
+        <h2 class="text-sm uppercase tracking-wide text-amber-400">Remarks</h2>
+        <div class="flex items-center gap-2 text-xs">
+          <button type="button" data-check-all class="px-2 py-1 text-gray-400 hover:text-gray-200">All</button>
+          <button type="button" data-clear-all class="px-2 py-1 text-gray-500 hover:text-gray-300">None</button>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-x-4 gap-y-2">
+        {% for value in options.remarks %}
+        <label class="inline-flex items-center gap-2 text-sm text-gray-200">
+          <input type="checkbox" name="remarks" value="{{ value }}" {% if not filters_active or value in selected.get('remarks', []) %}checked{% endif %} class="accent-amber-500">
+          <span>{{ value }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {% if options.bases %}
+      <section class="border border-gray-800 bg-gray-950/60 p-4 space-y-3" data-filter-group>
+        <div class="flex items-center justify-between gap-4">
+          <h2 class="text-sm uppercase tracking-wide text-amber-400">Bases</h2>
+          <div class="flex items-center gap-2 text-xs">
+            <button type="button" data-check-all class="px-2 py-1 text-gray-400 hover:text-gray-200">All</button>
+            <button type="button" data-clear-all class="px-2 py-1 text-gray-500 hover:text-gray-300">None</button>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-x-4 gap-y-2">
+          {% for value in options.bases %}
+          <label class="inline-flex items-center gap-2 text-sm text-gray-200">
+            <input type="checkbox" name="bases" value="{{ value }}" {% if not filters_active or value in selected.get('bases', []) %}checked{% endif %} class="accent-amber-500">
+            <span>{{ value }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if options.starports %}
+      <section class="border border-gray-800 bg-gray-950/60 p-4 space-y-3" data-filter-group>
+        <div class="flex items-center justify-between gap-4">
+          <h2 class="text-sm uppercase tracking-wide text-amber-400">Starport</h2>
+          <div class="flex items-center gap-2 text-xs">
+            <button type="button" data-check-all class="px-2 py-1 text-gray-400 hover:text-gray-200">All</button>
+            <button type="button" data-clear-all class="px-2 py-1 text-gray-500 hover:text-gray-300">None</button>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-x-4 gap-y-2">
+          {% for value in options.starports %}
+          <label class="inline-flex items-center gap-2 text-sm text-gray-200">
+            <input type="checkbox" name="starports" value="{{ value }}" {% if not filters_active or value in selected.get('starports', []) %}checked{% endif %} class="accent-amber-500">
+            <span>{{ value }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if options.sizes %}
+      <section class="border border-gray-800 bg-gray-950/60 p-4 space-y-3" data-filter-group>
+        <div class="flex items-center justify-between gap-4">
+          <h2 class="text-sm uppercase tracking-wide text-amber-400">Size</h2>
+          <div class="flex items-center gap-2 text-xs">
+            <button type="button" data-check-all class="px-2 py-1 text-gray-400 hover:text-gray-200">All</button>
+            <button type="button" data-clear-all class="px-2 py-1 text-gray-500 hover:text-gray-300">None</button>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-x-4 gap-y-2">
+          {% for value in options.sizes %}
+          <label class="inline-flex items-center gap-2 text-sm text-gray-200">
+            <input type="checkbox" name="sizes" value="{{ value }}" {% if not filters_active or value in selected.get('sizes', []) %}checked{% endif %} class="accent-amber-500">
+            <span>{{ value }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if options.atmospheres %}
+      <section class="border border-gray-800 bg-gray-950/60 p-4 space-y-3" data-filter-group>
+        <div class="flex items-center justify-between gap-4">
+          <h2 class="text-sm uppercase tracking-wide text-amber-400">Atmosphere</h2>
+          <div class="flex items-center gap-2 text-xs">
+            <button type="button" data-check-all class="px-2 py-1 text-gray-400 hover:text-gray-200">All</button>
+            <button type="button" data-clear-all class="px-2 py-1 text-gray-500 hover:text-gray-300">None</button>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-x-4 gap-y-2">
+          {% for value in options.atmospheres %}
+          <label class="inline-flex items-center gap-2 text-sm text-gray-200">
+            <input type="checkbox" name="atmospheres" value="{{ value }}" {% if not filters_active or value in selected.get('atmospheres', []) %}checked{% endif %} class="accent-amber-500">
+            <span>{{ value }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if options.hydrographics %}
+      <section class="border border-gray-800 bg-gray-950/60 p-4 space-y-3" data-filter-group>
+        <div class="flex items-center justify-between gap-4">
+          <h2 class="text-sm uppercase tracking-wide text-amber-400">Hydrographics</h2>
+          <div class="flex items-center gap-2 text-xs">
+            <button type="button" data-check-all class="px-2 py-1 text-gray-400 hover:text-gray-200">All</button>
+            <button type="button" data-clear-all class="px-2 py-1 text-gray-500 hover:text-gray-300">None</button>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-x-4 gap-y-2">
+          {% for value in options.hydrographics %}
+          <label class="inline-flex items-center gap-2 text-sm text-gray-200">
+            <input type="checkbox" name="hydrographics" value="{{ value }}" {% if not filters_active or value in selected.get('hydrographics', []) %}checked{% endif %} class="accent-amber-500">
+            <span>{{ value }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if options.populations %}
+      <section class="border border-gray-800 bg-gray-950/60 p-4 space-y-3" data-filter-group>
+        <div class="flex items-center justify-between gap-4">
+          <h2 class="text-sm uppercase tracking-wide text-amber-400">Population</h2>
+          <div class="flex items-center gap-2 text-xs">
+            <button type="button" data-check-all class="px-2 py-1 text-gray-400 hover:text-gray-200">All</button>
+            <button type="button" data-clear-all class="px-2 py-1 text-gray-500 hover:text-gray-300">None</button>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-x-4 gap-y-2">
+          {% for value in options.populations %}
+          <label class="inline-flex items-center gap-2 text-sm text-gray-200">
+            <input type="checkbox" name="populations" value="{{ value }}" {% if not filters_active or value in selected.get('populations', []) %}checked{% endif %} class="accent-amber-500">
+            <span>{{ value }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if options.governments %}
+      <section class="border border-gray-800 bg-gray-950/60 p-4 space-y-3" data-filter-group>
+        <div class="flex items-center justify-between gap-4">
+          <h2 class="text-sm uppercase tracking-wide text-amber-400">Government</h2>
+          <div class="flex items-center gap-2 text-xs">
+            <button type="button" data-check-all class="px-2 py-1 text-gray-400 hover:text-gray-200">All</button>
+            <button type="button" data-clear-all class="px-2 py-1 text-gray-500 hover:text-gray-300">None</button>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-x-4 gap-y-2">
+          {% for value in options.governments %}
+          <label class="inline-flex items-center gap-2 text-sm text-gray-200">
+            <input type="checkbox" name="governments" value="{{ value }}" {% if not filters_active or value in selected.get('governments', []) %}checked{% endif %} class="accent-amber-500">
+            <span>{{ value }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if options.law_levels %}
+      <section class="border border-gray-800 bg-gray-950/60 p-4 space-y-3" data-filter-group>
+        <div class="flex items-center justify-between gap-4">
+          <h2 class="text-sm uppercase tracking-wide text-amber-400">Law Level</h2>
+          <div class="flex items-center gap-2 text-xs">
+            <button type="button" data-check-all class="px-2 py-1 text-gray-400 hover:text-gray-200">All</button>
+            <button type="button" data-clear-all class="px-2 py-1 text-gray-500 hover:text-gray-300">None</button>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-x-4 gap-y-2">
+          {% for value in options.law_levels %}
+          <label class="inline-flex items-center gap-2 text-sm text-gray-200">
+            <input type="checkbox" name="law_levels" value="{{ value }}" {% if not filters_active or value in selected.get('law_levels', []) %}checked{% endif %} class="accent-amber-500">
+            <span>{{ value }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if options.tech_levels %}
+      <section class="border border-gray-800 bg-gray-950/60 p-4 space-y-3" data-filter-group>
+        <div class="flex items-center justify-between gap-4">
+          <h2 class="text-sm uppercase tracking-wide text-amber-400">Tech Level</h2>
+          <div class="flex items-center gap-2 text-xs">
+            <button type="button" data-check-all class="px-2 py-1 text-gray-400 hover:text-gray-200">All</button>
+            <button type="button" data-clear-all class="px-2 py-1 text-gray-500 hover:text-gray-300">None</button>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-x-4 gap-y-2">
+          {% for value in options.tech_levels %}
+          <label class="inline-flex items-center gap-2 text-sm text-gray-200">
+            <input type="checkbox" name="tech_levels" value="{{ value }}" {% if not filters_active or value in selected.get('tech_levels', []) %}checked{% endif %} class="accent-amber-500">
+            <span>{{ value }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+    </div>
+
+    <div class="flex items-center justify-end gap-3">
+      <a href="/ui/worlds/sectors/{{ sector.sector_abbreviation }}" class="px-3 py-2 text-sm text-gray-400 hover:text-gray-200">Reset</a>
+      <button type="submit" class="px-4 py-2 text-sm font-medium text-gray-950 bg-amber-400 hover:bg-amber-300">Apply Filters</button>
+    </div>
+  </form>
+
+  <section class="border border-gray-800 bg-gray-950/60 p-4 space-y-3">
+    <div class="flex items-center justify-between gap-4">
+      <h2 class="text-sm uppercase tracking-wide text-amber-400">Worlds</h2>
+      <p class="text-sm text-gray-400">{{ filtered_world_count }} matching worlds</p>
+    </div>
+    <div class="space-y-2">
+      {% for world in filtered_worlds %}
+      <div class="grid gap-1 border border-gray-800 px-3 py-2 md:grid-cols-[5rem_minmax(0,1fr)_10rem] md:items-baseline">
+        <div class="text-sm font-medium text-gray-300">{{ world.hex }}</div>
+        <div>
+          <div class="text-sm font-medium text-gray-100">{{ world.name }}</div>
+          <div class="text-xs text-gray-400">{{ world.remarks or "No remarks" }}</div>
+        </div>
+        <div class="text-sm text-gray-300 md:text-right">{{ world.uwp }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+<script>
+  document.querySelectorAll('[data-filter-group]').forEach((group) => {
+    const checkboxes = () => [...group.querySelectorAll('input[type="checkbox"]')];
+    group.querySelector('[data-check-all]')?.addEventListener('click', () => {
+      checkboxes().forEach((checkbox) => {
+        checkbox.checked = true;
+      });
+    });
+    group.querySelector('[data-clear-all]')?.addEventListener('click', () => {
+      checkboxes().forEach((checkbox) => {
+        checkbox.checked = false;
+      });
+    });
+  });
+</script>
+
+{% endblock %}

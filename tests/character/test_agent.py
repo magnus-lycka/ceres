@@ -32,13 +32,18 @@ from ceres.character.events import (
 from ceres.character.replay import ReplayError, replay
 from ceres.character.skills import (
     Admin,
+    Advocate,
     Athletics,
     Carouse,
     Deception,
     Drive,
     Investigate,
+    JackOfAllTrades,
     Level,
     Medic,
+    Persuade,
+    Streetwise,
+    Tactics,
 )
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
@@ -215,7 +220,7 @@ class TestAgentEvent3:
             None,
         )
         assert pending is not None
-        assert set(pending.options) == {'Investigate', 'Streetwise'}
+        assert pending.options == [Investigate(), Streetwise()]
 
     def test_success_creates_skill_choice(self):
         events = [
@@ -225,7 +230,7 @@ class TestAgentEvent3:
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
         assert pending is not None
-        assert set(pending.options) == {'Deception', 'Jack-of-all-Trades', 'Persuade', 'Tactics'}
+        assert pending.options == [Deception(), JackOfAllTrades(), Persuade(), Tactics()]
 
     def test_success_creates_advancement_pending_after_skill_choice(self):
         events = [
@@ -308,7 +313,7 @@ class TestAgentEvent8:
             None,
         )
         assert pending is not None
-        assert pending.options == ['Deception']
+        assert pending.options == [Deception()]
 
     def test_success_adds_problem_about_cross_career_tables(self):
         events = [
@@ -352,7 +357,7 @@ class TestAgentEvent11:
             None,
         )
         assert pending is not None
-        assert set(pending.options) == {'Investigate', 'advancement_dm_4'}
+        assert pending.options == [Investigate(), 'advancement_dm_4']
 
     def test_choose_investigate_grants_investigate_level_1(self):
         events = [
@@ -442,7 +447,7 @@ class TestAgentMishap3:
             None,
         )
         assert pending is not None
-        assert 'Advocate' in pending.options
+        assert Advocate() in pending.options
 
     def test_success_keeps_benefit_roll(self):
         # term_count=1, rank=0 → roll_count=1; success → lose_current_term=False → 1 muster-out pending

@@ -32,14 +32,17 @@ from ceres.character.skills import (
     Admin,
     Athletics,
     Carouse,
+    Deception,
     Diplomat,
     Drive,
     Electronics,
+    Engineer,
     Level,
     Medic,
     Navigation,
     Persuade,
     Pilot,
+    Survival,
 )
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
@@ -86,7 +89,7 @@ class TestScoutAmbush:
             None,
         )
         assert pending is not None
-        assert set(pending.options) == {'Pilot', 'Persuade'}
+        assert pending.options == [Pilot(), Persuade()]
 
     def test_gain_enemy_applied_immediately_before_roll(self):
         projection = replay(1, self._setup_to_ambush())
@@ -163,7 +166,7 @@ class TestScoutEvent8:
             for p in projection.pending_inputs
             if isinstance(p, PendingCareerSkillRoll) and p.career == 'Scout' and p.roll == 8
         )
-        assert set(pending.options) == {'Electronics', 'Deception'}
+        assert pending.options == [Electronics(), Deception()]
 
     def test_success_gains_ally(self):
         roll = SkillRollEvent(id=7, fulfills='6.0', context='scout_event_8', skill=Electronics(), modified_roll=9)
@@ -217,7 +220,7 @@ class TestScoutEvent9:
             for p in projection.pending_inputs
             if isinstance(p, PendingCareerSkillRoll) and p.career == 'Scout' and p.roll == 9
         )
-        assert set(pending.options) == {'Medic', 'Engineer'}
+        assert pending.options == [Medic(), Engineer()]
 
     def test_success_gains_contact(self):
         roll = SkillRollEvent(id=7, fulfills='6.0', context='scout_event_9', skill=Medic(), modified_roll=9)
@@ -263,7 +266,7 @@ class TestScoutEvent10:
             for p in projection.pending_inputs
             if isinstance(p, PendingCareerSkillRoll) and p.career == 'Scout' and p.roll == 10
         )
-        assert set(pending.options) == {'Survival', 'Pilot'}
+        assert pending.options == [Survival(), Pilot()]
 
     def test_success_gains_contact(self):
         roll = SkillRollEvent(id=7, fulfills='6.0', context='scout_event_10', skill=Pilot(), modified_roll=9)
@@ -440,7 +443,7 @@ class TestScoutEvent11:
             for p in projection.pending_inputs
             if isinstance(p, PendingCareerSkillChoice) and p.career == 'Scout' and p.roll == 11
         )
-        assert set(pending.options) == {'Diplomat', 'advancement_dm_4'}
+        assert pending.options == [Diplomat(), 'advancement_dm_4']
 
     def test_choose_diplomat_grants_diplomat_1(self):
         diplomat_choice = SkillChoiceEvent(id=7, fulfills='6.0', skill=Diplomat(level=Level(value=1)))

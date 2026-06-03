@@ -48,9 +48,12 @@ from ceres.character.skills import (
     Admin,
     Astrogation,
     Athletics,
+    Deception,
+    Diplomat,
     Electronics,
     Engineer,
     Flyer,
+    Gambler,
     GunCombat,
     Gunner,
     Leadership,
@@ -59,6 +62,8 @@ from ceres.character.skills import (
     Medic,
     Melee,
     Pilot,
+    Recon,
+    Steward,
     Tactics,
     VaccSuit,
 )
@@ -71,15 +76,15 @@ from ceres.character.state import (
 NAVY = Career(
     name='Navy',
     description=(
-        'Members of the interstellar navy that patrols space between the stars. The navy has the responsibility'
+        'Members of the interstellar navy that patrols space between the stars. The navy has the responsibility '
         'for the protection of society from foreign powers and lawless elements in the interstellar trade channels.'
     ),
 )
 
-_MISHAP_3_SKILLS: dict[str, list[str]] = {
-    'Line/Crew': ['Electronics', 'Gunner'],
-    'Engineer/Gunner': ['Mechanic', 'Vacc Suit'],
-    'Flight': ['Pilot', 'Tactics'],
+_MISHAP_3_SKILLS: dict[str, list] = {
+    'Line/Crew': [Electronics(), Gunner()],
+    'Engineer/Gunner': [Mechanic(), VaccSuit()],
+    'Flight': [Pilot(), Tactics()],
 }
 
 
@@ -92,7 +97,7 @@ class NavyMishap3Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         assignment = projection.summary.current_assignment or 'Line/Crew'
-        options = _MISHAP_3_SKILLS.get(assignment, ['Electronics', 'Gunner'])
+        options = _MISHAP_3_SKILLS.get(assignment, [Electronics(), Gunner()])
         projection.pending_inputs.append(
             PendingCareerSkillRoll(
                 id=f'{event_id}.{pending_idx}',
@@ -100,7 +105,7 @@ class NavyMishap3Handler(CareerHandlerBase):
                 roll=3,
                 context='navy_mishap_3',
                 instruction=(
-                    f'Roll {" or ".join(options)} 8+ — success: honourable discharge (keep Benefit); '
+                    f'Roll {" or ".join(type(o).name() for o in options)} 8+ — success: honourable discharge (keep Benefit); '
                     'fail: court-martialled (lose Benefit)'
                 ),
                 options=options,
@@ -380,7 +385,7 @@ CAREER_DATA = NavyCareerData(
         ),
         3: CareerEventEntry(
             text='You join a gambling circle on board.',
-            effects=[SkillChoiceEffect(options=['Gambler', 'Deception'], level=1)],
+            effects=[SkillChoiceEffect(options=[Gambler(), Deception()], level=1)],
         ),
         4: CareerEventEntry(
             text='Given a special assignment or duty on board ship.',
@@ -392,7 +397,7 @@ CAREER_DATA = NavyCareerData(
         ),
         6: CareerEventEntry(
             text='Your vessel participates in a notable military engagement.',
-            effects=[SkillChoiceEffect(options=['Electronics', 'Engineer', 'Gunner', 'Pilot'], level=1)],
+            effects=[SkillChoiceEffect(options=[Electronics(), Engineer(), Gunner(), Pilot()], level=1)],
         ),
         7: CareerEventEntry(
             text='Life Event.',
@@ -400,7 +405,7 @@ CAREER_DATA = NavyCareerData(
         ),
         8: CareerEventEntry(
             text='Your vessel participates in a diplomatic mission.',
-            effects=[SkillChoiceEffect(options=['Recon', 'Diplomat', 'Steward'], level=1), GainContactEffect()],
+            effects=[SkillChoiceEffect(options=[Recon(), Diplomat(), Steward()], level=1), GainContactEffect()],
         ),
         9: CareerEventEntry(
             text='You foil an attempted crime on board. Gain an Enemy and DM+2 to next advancement.',
@@ -412,7 +417,7 @@ CAREER_DATA = NavyCareerData(
         ),
         11: CareerEventEntry(
             text='Your commanding officer takes an interest in your career.',
-            effects=[SkillChoiceEffect(options=['Tactics', 'advancement_dm_4'], level=1)],
+            effects=[SkillChoiceEffect(options=[Tactics(), 'advancement_dm_4'], level=1)],
         ),
         12: CareerEventEntry(
             text='You display heroism in battle, saving the whole ship.',

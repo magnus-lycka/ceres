@@ -148,7 +148,6 @@ _ALL_EXPECTED_HANDLER_KEYS: list[str] = [
     # rogue
     'rogue_mishap_2',
     'rogue_mishap_3',
-    'rogue_mishap_3_prisoner_check',
     'rogue_event_3',
     'rogue_event_3_skill',
     'rogue_event_6',

@@ -18,7 +18,7 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.replay import replay
-from ceres.character.skills import Admin, Athletics, Carouse, Drive
+from ceres.character.skills import Admin, Athletics, Carouse, Drive, GunCombat, Leadership
 from ceres.character.sophonts import VILANI
 from ceres.character.state import Ally
 from tests.character.helpers import MOCK_WORLD
@@ -180,7 +180,7 @@ class TestArmyEvent6:
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
         assert pending is not None
-        assert set(pending.options) == {'Gun Combat', 'Leadership'}
+        assert pending.options == [GunCombat(), Leadership()]
 
     def test_success_no_injury_problem(self):
         events = [
@@ -232,7 +232,7 @@ class TestArmyEvent8:
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
         assert pending is not None
         # Army service skills (auto-applied): Athletics, Gun Combat, Recon, Melee, Heavy Weapons
-        assert 'Athletics' in pending.options
+        assert any(isinstance(o, Athletics) for o in pending.options)
 
     def test_failure_no_skill_choice(self):
         events = [

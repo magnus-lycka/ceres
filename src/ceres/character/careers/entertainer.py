@@ -57,6 +57,7 @@ from ceres.character.skills import (
     Level,
     PerformingArt,
     Persuade,
+    Pilot,
     PresentationArt,
     ProfessionSkill,
     Recon,
@@ -64,6 +65,7 @@ from ceres.character.skills import (
     Stealth,
     Steward,
     Streetwise,
+    Survival,
     skill_instances,
     skill_names,
 )
@@ -94,7 +96,7 @@ class EntertainerEvent3Handler(CareerHandlerBase):
                 roll=3,
                 context='entertainer_event_3',
                 instruction='Roll Art or Investigate 8+: success = SOC +1; fail = SOC -1',
-                options=['Art', 'Investigate'],
+                options=[*skill_instances(ArtSkill), Investigate()],
             )
         )
         return pending_idx + 1
@@ -145,7 +147,7 @@ class EntertainerEvent8Handler(CareerHandlerBase):
                     roll=8,
                     context='entertainer_event_8_skill',
                     instruction='Roll Art or Investigate 8+: success = DM+2 to next advancement; fail = gain powerful Enemy',
-                    options=['Art', 'Investigate'],
+                    options=[*skill_instances(ArtSkill), Investigate()],
                 )
             )
 
@@ -338,7 +340,7 @@ CAREER_DATA = EntertainerCareerData(
         ),
         5: MishapEntry(
             text='A project goes wrong, stranding you far from home.',
-            effects=[SkillChoiceEffect(options=['Survival', 'Pilot', 'Persuade', 'Streetwise'], level=1)],
+            effects=[SkillChoiceEffect(options=[Survival(), Pilot(), Persuade(), Streetwise()], level=1)],
         ),
         6: MishapEntry(
             text='You are forced out because of censorship or controversy.',
@@ -356,7 +358,7 @@ CAREER_DATA = EntertainerCareerData(
         ),
         4: CareerEventEntry(
             text="You are part of your homeworld's celebrity circles.",
-            effects=[SkillChoiceEffect(options=['Carouse', 'Persuade', 'Steward'], level=1), GainContactEffect()],
+            effects=[SkillChoiceEffect(options=[Carouse(), Persuade(), Steward()], level=1), GainContactEffect()],
         ),
         5: CareerEventEntry(
             text='One of your works is especially well received and popular.',
@@ -380,7 +382,7 @@ CAREER_DATA = EntertainerCareerData(
         ),
         10: CareerEventEntry(
             text='One of your pieces of art is stolen and the investigation brings you into the criminal underworld.',
-            effects=[SkillChoiceEffect(options=['Streetwise', 'Investigate', 'Recon', 'Stealth'], level=1)],
+            effects=[SkillChoiceEffect(options=[Streetwise(), Investigate(), Recon(), Stealth()], level=1)],
         ),
         11: CareerEventEntry(
             text='As an artist, you lead a strange and charmed life.',

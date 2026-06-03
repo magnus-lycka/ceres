@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from dataclasses import dataclass
 import random
 from typing import TYPE_CHECKING, Annotated, Any, Literal, cast, overload
@@ -321,14 +322,19 @@ class CharacterProjection(BaseModel):
     ) -> bool:
         return choice in self.skill_choices(skill_types, level)
 
-    def _pick_skill_auto(self, options: list[str], rng: random.Random, level: int | None) -> AnySkill | None:
+    def _pick_skill_auto(
+        self, options: Sequence[AnySkill | str], rng: random.Random, level: int | None
+    ) -> AnySkill | None:
         valid = [o for o in options if o != 'advancement_dm_4']
         rng.shuffle(valid)
-        for name in valid:
-            try:
-                cls = skill_class_by_name(name)
-            except ValueError:
-                continue
+        for opt in valid:
+            if isinstance(opt, Skill):
+                cls = type(opt)
+            else:
+                try:
+                    cls = skill_class_by_name(opt)
+                except ValueError:
+                    continue
             choices = self.skill_choices([cls], level)
             if choices:
                 return rng.choice(choices)

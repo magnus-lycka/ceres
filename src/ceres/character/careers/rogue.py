@@ -31,7 +31,9 @@ from ceres.character.careers.career_data import (
 )
 from ceres.character.characteristics import Chars
 from ceres.character.events import (
+    CareerChoiceEvent,
     PendingCareerEvent,
+    PendingCareerMishap,
     PendingCareerSkillRoll,
     SkillRollEvent,
     career_progress_pending,
@@ -53,6 +55,7 @@ from ceres.character.skills import (
     Investigate,
     Leadership,
     Level,
+    Mechanic,
     Medic,
     Melee,
     Navigation,
@@ -61,6 +64,7 @@ from ceres.character.skills import (
     Recon,
     Stealth,
     Streetwise,
+    Tactics,
     VaccSuit,
 )
 from ceres.character.state import (
@@ -74,7 +78,7 @@ from ceres.character.state import (
 
 ROGUE = Career(
     name='Rogue',
-    description=('Criminal elements familiar with therougher or more illegal methods of attaining goals.'),
+    description=('Criminal elements familiar with the rougher or more illegal methods of attaining goals.'),
 )
 
 
@@ -109,27 +113,22 @@ class RogueMishap3Handler(CareerHandlerBase):
             projection.summary.connections.append(Rival(source='Betrayal by unknown (Rogue mishap 3)'))
 
         projection.pending_inputs.append(
-            PendingCareerSkillRoll(
+            PendingCareerMishap(
                 id=f'{event_id}.{pending_idx}',
                 career='Rogue',
                 roll=3,
-                context='rogue_mishap_3_prisoner_check',
                 instruction='Roll 2D: on a result of exactly 2, you must take the Prisoner career next term',
                 options=[str(i) for i in range(2, 13)],
             )
         )
         return pending_idx + 1
 
-
-class RogueMishap3PrisonerCheckHandler(CareerHandlerBase):
-    type: Literal['rogue_mishap_3_prisoner_check'] = 'rogue_mishap_3_prisoner_check'
-
     @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def on_choice(projection: CharacterProjection, event: CareerChoiceEvent) -> None:
         from ceres.character.careers.loader import load_careers
         from ceres.character.careers.prisoner import PRISONER
 
-        if event.modified_roll == 2:
+        if event.choice == '2':
             projection.forced_next_career = PRISONER
 
         career_obj = projection.summary.current_career
@@ -184,7 +183,7 @@ class RogueEvent3Handler(CareerHandlerBase):
                         'Roll Advocate 8+: success = cleared, career continues; '
                         'fail = ejected, must take Prisoner next term'
                     ),
-                    options=['Advocate'],
+                    options=[Advocate()],
                 )
             )
 
@@ -256,7 +255,7 @@ class RogueEvent9Handler(CareerHandlerBase):
                 roll=9,
                 context='rogue_event_9',
                 instruction='Roll Stealth or Gun Combat 8+: success = extra Benefit roll; fail = injured',
-                options=['Stealth', 'Gun Combat'],
+                options=[Stealth(), GunCombat()],
             )
         )
         return pending_idx + 1
@@ -438,7 +437,7 @@ CAREER_DATA = RogueCareerData(
         ),
         4: MishapEntry(
             text='A job goes wrong, forcing you to flee off-planet.',
-            effects=[SkillChoiceEffect(options=['Deception', 'Pilot', 'Athletics', 'Gunner'], level=1)],
+            effects=[SkillChoiceEffect(options=[Deception(), Pilot(), Athletics(), Gunner()], level=1)],
         ),
         5: MishapEntry(
             text='A police detective or rival criminal forces you to flee and vows to hunt you down.',
@@ -460,7 +459,7 @@ CAREER_DATA = RogueCareerData(
         ),
         4: CareerEventEntry(
             text='You are involved in the planning of an impressive heist.',
-            effects=[SkillChoiceEffect(options=['Electronics', 'Mechanic'], level=1)],
+            effects=[SkillChoiceEffect(options=[Electronics(), Mechanic()], level=1)],
         ),
         5: CareerEventEntry(
             text='One of your crimes pays off.',
@@ -476,7 +475,7 @@ CAREER_DATA = RogueCareerData(
         ),
         8: CareerEventEntry(
             text='You spend months in the dangerous criminal underworld.',
-            effects=[SkillChoiceEffect(options=['Streetwise', 'Stealth', 'Melee', 'Gun Combat'], level=1)],
+            effects=[SkillChoiceEffect(options=[Streetwise(), Stealth(), Melee(), GunCombat()], level=1)],
         ),
         9: CareerEventEntry(
             text='You become involved in a feud with a rival criminal organisation.',
@@ -488,7 +487,7 @@ CAREER_DATA = RogueCareerData(
         ),
         11: CareerEventEntry(
             text='A crime lord considers you his protege.',
-            effects=[SkillChoiceEffect(options=['Tactics', 'advancement_dm_4'], level=1)],
+            effects=[SkillChoiceEffect(options=[Tactics(), 'advancement_dm_4'], level=1)],
         ),
         12: CareerEventEntry(
             text='You commit a legendary crime. You are automatically promoted.',
