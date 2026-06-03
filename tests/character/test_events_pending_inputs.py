@@ -32,7 +32,6 @@ from ceres.character.events import (
     AssignmentChangeChoiceEvent,
     BackgroundSkillsEvent,
     BenefitChoiceEvent,
-    CareerChoiceEvent,
     CareerEvent,
     CharacteristicChoiceEvent,
     CharacterStartedEvent,
@@ -59,10 +58,6 @@ from ceres.character.events import (
     PendingBackgroundSkills,
     PendingBenefitChoice,
     PendingCareerChoice,
-    PendingCareerEvent,
-    PendingCareerMishap,
-    PendingCareerSkillChoice,
-    PendingCareerSkillRoll,
     PendingCharacteristicChoice,
     PendingCommissionChoice,
     PendingConnectionsRoll,
@@ -95,7 +90,6 @@ from ceres.character.events import (
     ReenlistEvent,
     ReplayError,
     SkillChoiceEvent,
-    SkillRollEvent,
     SkillTableEvent,
     SurviveEvent,
     TermEventEvent,
@@ -714,13 +708,6 @@ def test_skill_choice_pending_inputs_parse_skills_and_advancement_dm():
         PendingInitialTrainingChoice(id='1.0', instruction='Skill', options=opts),
         PendingSkillTableChoice(id='1.0', instruction='Skill', options=opts),
         PendingRankBonusChoice(id='1.0', instruction='Skill', options=opts, level=1),
-        PendingCareerSkillChoice(
-            id='1.0',
-            instruction='Skill',
-            career='Scout',
-            roll=6,
-            options=[character_skills.Admin(), adv_dm],
-        ),
     ):
         skill_event = pending.event_from_form(Form(skill=admin_json))
         dm_event = pending.event_from_form(Form(skill=adv_dm.model_dump_json()))
@@ -781,35 +768,7 @@ def test_characteristic_benefit_life_and_connection_pending_inputs():
     assert isinstance(benefit.input_specs(_projection())[0], Select)
 
 
-def test_career_and_precareer_specific_pending_inputs():
-    career_event = PendingCareerEvent(id='1.0', instruction='Event', career='Scout', roll=6, options=['take_skill'])
-    assert career_event.event_from_form(Form(choice='take_skill')) == CareerChoiceEvent(
-        context='scout_event_6', choice='take_skill', fulfills='1.0'
-    )
-    assert career_event.input_specs(_projection()) == []
-
-    mishap = PendingCareerMishap(id='2.0', instruction='Mishap', career='Scout', roll=4, options=['accept'])
-    assert mishap.event_from_form(Form(choice='accept')) == CareerChoiceEvent(
-        context='scout_mishap_4', choice='accept', fulfills='2.0'
-    )
-    assert mishap.input_specs(_projection()) == []
-
-    skill_roll = PendingCareerSkillRoll(
-        id='3.0',
-        instruction='Skill roll',
-        career='Scout',
-        roll=6,
-        context='scout_event_6',
-        options=[Chars.STR, character_skills.Admin()],
-    )
-    char_event = skill_roll.event_from_form(Form(skill='STR', modified_roll='9'))
-    skill_event = skill_roll.event_from_form(Form(skill='Admin', modified_roll='8'))
-    assert isinstance(char_event, SkillRollEvent)
-    assert char_event.skill == Chars.STR
-    assert isinstance(skill_event, SkillRollEvent)
-    assert isinstance(skill_event.skill, character_skills.Admin)
-    assert len(skill_roll.input_specs(_projection())) == 2
-
+def test_precareer_specific_pending_inputs():
     precareer_skill_0 = PendingPreCareerSkillChoice(
         id='4.0', instruction='Precareer skill', options=[character_skills.LifeScience()], level=0
     )

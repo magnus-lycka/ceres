@@ -49,6 +49,24 @@ def test_new_character_form(client):
     assert r.status_code == 200
     assert 'New Character' in r.text
     assert 'Humaniti' in r.text
+    assert 'Not selected' in r.text
+    assert 'Choose Homeworld' in r.text
+    assert 'formnovalidate' in r.text
+
+
+def test_new_character_form_shows_selected_homeworld_from_query(client, monkeypatch):
+    monkeypatch.setattr('ceres.character.web.routes.fetch_world', lambda sector, hex_code: MOCK_WORLD)
+
+    r = client.get(
+        '/ui/characters/new',
+        params={'homeworld_sector': 'Troj', 'homeworld_hex': '2715', 'name': 'Ada', 'player': 'NPC'},
+    )
+
+    assert r.status_code == 200
+    assert 'Hexx' in r.text
+    assert 'Trojan Reach' in r.text
+    assert 'value="2715"' in r.text
+    assert 'value="Troj"' in r.text
 
 
 def test_sector_picker_page_renders_search_input(client):
@@ -76,6 +94,24 @@ def test_sector_search_returns_matching_options(client, monkeypatch):
     assert 'Trojan Reach' in r.text
     assert 'Troj' in r.text
     assert '/ui/worlds/sectors/Troj' in r.text
+
+
+def test_sector_search_preserves_character_form_query(client, monkeypatch):
+    from ceres.adapters.travellermap import SectorInfo
+
+    monkeypatch.setattr(
+        'ceres.character.web.routes.search_sectors',
+        lambda query, milieu=DEFAULT_MILIEU: [
+            SectorInfo(x=0, y=0, milieu=DEFAULT_MILIEU, abbreviation='Troj', tags='OTU', names=['Trojan Reach'])
+        ],
+    )
+
+    r = client.get(
+        '/ui/worlds/sectors/search',
+        params={'q': 'troj', 'name': 'Ada', 'player': 'NPC', 'sophont': 'Humaniti'},
+    )
+    assert r.status_code == 200
+    assert '/ui/worlds/sectors/Troj?name=Ada&amp;sophont=Humaniti&amp;player=NPC' in r.text
 
 
 def test_sector_search_blank_query_returns_empty_results(client):
@@ -137,6 +173,8 @@ def test_sector_filter_page_renders_checkbox_options(client, monkeypatch):
     assert '[0000]' in r.text
     assert '111' in r.text
     assert 'G2 V' in r.text
+    assert 'Filter by world name or hex' in r.text
+    assert 'Select' in r.text
 
 
 def test_sector_filter_page_applies_query_filters_and_shows_matching_worlds(client, monkeypatch):
@@ -159,6 +197,52 @@ def test_sector_filter_page_applies_query_filters_and_shows_matching_worlds(clie
     assert 'Beryl' in r.text
     assert 'Aster' not in r.text
     assert 'Cinder' not in r.text
+
+
+def test_sector_filter_page_can_filter_by_world_name_or_hex(client, monkeypatch):
+    from ceres.worlds import SectorWorldFilters
+    from tests.worlds.test_sector_filters import _sample_worlds
+
+    monkeypatch.setattr(
+        'ceres.character.web.routes.SectorWorldFilters.from_travellermap',
+        lambda sector_abbreviation: SectorWorldFilters(
+            worlds=_sample_worlds(),
+            sector_abbreviation=sector_abbreviation,
+            sector_name='Trojan Reach',
+            allegiance_names={'ImDd': 'Third Imperium, Domain of Deneb'},
+        ),
+    )
+
+    by_name = client.get('/ui/worlds/sectors/Troj', params={'filters': '1', 'world_query': 'ber'})
+    assert by_name.status_code == 200
+    assert 'Beryl' in by_name.text
+    assert 'Aster' not in by_name.text
+
+    by_hex = client.get('/ui/worlds/sectors/Troj', params={'filters': '1', 'world_query': '0103'})
+    assert by_hex.status_code == 200
+    assert 'Cinder' in by_hex.text
+    assert 'Aster' not in by_hex.text
+
+
+def test_sector_filter_page_select_link_returns_to_new_character_form_with_world(client, monkeypatch):
+    from ceres.worlds import SectorWorldFilters
+    from tests.worlds.test_sector_filters import _sample_worlds
+
+    monkeypatch.setattr(
+        'ceres.character.web.routes.SectorWorldFilters.from_travellermap',
+        lambda sector_abbreviation: SectorWorldFilters(
+            worlds=_sample_worlds(),
+            sector_abbreviation=sector_abbreviation,
+            sector_name='Trojan Reach',
+            allegiance_names={'ImDd': 'Third Imperium, Domain of Deneb'},
+        ),
+    )
+
+    r = client.get('/ui/worlds/sectors/Troj', params={'name': 'Ada', 'player': 'NPC', 'sophont': 'Humaniti'})
+    assert r.status_code == 200
+    assert (
+        '/ui/characters/new?name=Ada&amp;sophont=Humaniti&amp;player=NPC&homeworld_sector=Troj&homeworld_hex=0101'
+    ) in r.text
 
 
 def test_sector_filter_page_shows_no_allegiance_option_for_blank_allegiance_worlds(client, monkeypatch):
@@ -220,9 +304,36 @@ def test_sector_filter_page_treats_all_checked_as_unconstrained(client, monkeypa
 
 
 def test_create_character_redirects_to_wizard(client):
-    r = client.post('/ui/characters/new', data={'name': 'Bob', 'sophont': 'Humaniti', 'player': 'NPC'})
-    assert r.status_code == 200
-    assert 'wizard' in str(r.url) or 'Bob' in r.text
+    r = client.post(
+        '/ui/characters/new',
+        data={'name': 'Bob', 'sophont': 'Humaniti', 'player': 'NPC'},
+        follow_redirects=False,
+    )
+    assert r.status_code == 422
+    assert 'Homeworld is required' in r.text
+
+
+def test_create_character_uses_selected_homeworld(client_with_backend, monkeypatch):
+    client, backend = client_with_backend
+    monkeypatch.setattr('ceres.character.web.routes.fetch_world', lambda sector, hex_code: MOCK_WORLD)
+
+    r = client.post(
+        '/ui/characters/new',
+        data={
+            'name': 'Bob',
+            'sophont': 'Humaniti',
+            'player': 'NPC',
+            'homeworld_sector': 'Troj',
+            'homeworld_hex': '2715',
+        },
+        follow_redirects=False,
+    )
+
+    assert r.status_code == 303
+    projection = backend.get_projection(1)
+    assert projection is not None
+    assert projection.summary.homeworld.name == 'Hexx'
+    assert projection.summary.homeworld.sector_abbreviation == 'Troj'
 
 
 def test_create_character_blank_name_returns_form(client):
@@ -403,34 +514,6 @@ def test_event_from_form_career_choice():
     assert event.qualification_roll == 8
 
 
-def test_event_from_form_career_event_uses_self_context():
-    from starlette.datastructures import FormData
-
-    from ceres.character.events import CareerChoiceEvent, PendingCareerEvent
-
-    pi = PendingCareerEvent(id='9.0', career='Scholar', roll=8, instruction='')
-    form = FormData({'choice': 'accept'})
-    event = pi.event_from_form(form)
-    assert isinstance(event, CareerChoiceEvent)
-    assert event.context == 'scholar_event_8'
-    assert event.choice == 'accept'
-    assert event.fulfills == '9.0'
-
-
-def test_event_from_form_career_mishap_uses_self_context():
-    from starlette.datastructures import FormData
-
-    from ceres.character.events import CareerChoiceEvent, PendingCareerMishap
-
-    pi = PendingCareerMishap(id='8.0', career='Agent', roll=5, instruction='')
-    form = FormData({'choice': 'ally'})
-    event = pi.event_from_form(form)
-    assert isinstance(event, CareerChoiceEvent)
-    assert event.context == 'agent_mishap_5'
-    assert event.choice == 'ally'
-    assert event.fulfills == '8.0'
-
-
 def test_event_from_form_reenlist_true():
     from starlette.datastructures import FormData
 
@@ -468,72 +551,6 @@ def test_build_event_unknown_raises():
     form = FormData({})
     with pytest.raises(ValueError):
         _build_event_from_form('nonexistent.0', form, projection)
-
-
-# ── career_skill_choice with AdvancementDmOption ──────────────────────────────
-
-
-def test_input_specs_includes_advancement_dm_option():
-    """AdvancementDmOption appears in input_specs Select options with a readable label."""
-    from ceres.character.careers.career_data import AdvancementDmOption
-    from ceres.character.events import PendingCareerSkillChoice
-    from ceres.character.input_specs import Select
-    from ceres.character.skills import Investigate
-    from ceres.character.state import CharacterProjection, CharacterSummary
-
-    adv_dm = AdvancementDmOption()
-    pi = PendingCareerSkillChoice(
-        id='6.0',
-        career='Agent',
-        roll=11,
-        advancement_precreated=False,
-        instruction='Investigate or DM+4',
-        options=[Investigate(), adv_dm],
-    )
-    projection = CharacterProjection(
-        character_id=1,
-        summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD),
-    )
-
-    specs = pi.input_specs(projection)
-    assert specs
-    select = next((s for s in specs if isinstance(s, Select)), None)
-    assert select is not None
-    values = [v for _, v in select.options]
-    labels = [lbl for lbl, _ in select.options]
-
-    assert adv_dm.model_dump_json() in values
-    assert any('advancement' in lbl.lower() or 'DM' in lbl for lbl in labels)
-
-
-def test_event_from_form_career_skill_choice_advancement_dm():
-    """Submitting AdvancementDmOption JSON via career_skill_choice creates AdvancementDmChoiceEvent."""
-    from starlette.datastructures import FormData
-
-    from ceres.character.careers.career_data import AdvancementDmOption
-    from ceres.character.events import AdvancementDmChoiceEvent, PendingCareerSkillChoice
-
-    pi = PendingCareerSkillChoice(id='6.0', career='Agent', roll=11, instruction='')
-    form = FormData({'skill': AdvancementDmOption().model_dump_json()})
-    event = pi.event_from_form(form)
-    assert isinstance(event, AdvancementDmChoiceEvent)
-    assert event.fulfills == '6.0'
-
-
-def test_event_from_form_career_skill_choice_skill():
-    """Submitting a skill JSON via career_skill_choice creates SkillChoiceEvent."""
-    from starlette.datastructures import FormData
-
-    from ceres.character.events import PendingCareerSkillChoice, SkillChoiceEvent
-    from ceres.character.skills import Investigate, Level
-
-    pi = PendingCareerSkillChoice(id='6.0', career='Agent', roll=11, instruction='')
-    skill_json = '{"type":"Investigate","level":{"value":1}}'
-    form = FormData({'skill': skill_json})
-    event = pi.event_from_form(form)
-    assert isinstance(event, SkillChoiceEvent)
-    assert isinstance(event.skill, Investigate)
-    assert event.skill.level == Level(value=1)
 
 
 # ── _diff_summaries unit tests ────────────────────────────────────────────────

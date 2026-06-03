@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, ClassVar, Literal, cast
+from typing import TYPE_CHECKING, Literal, cast
 
 from pydantic import BaseModel, ConfigDict
 
@@ -8,7 +8,6 @@ from ceres.character.characteristics import Chars, ConnectionKind, characteristi
 from ceres.character.skills import AnySkill, Level, _level_fields
 
 if TYPE_CHECKING:
-    from ceres.character.events import CareerChoiceEvent, SkillRollEvent
     from ceres.character.state import CharacterProjection
 
 
@@ -154,45 +153,18 @@ class ParoleThresholdChangeEffect(BaseModel):
     amount: int  # positive = increase PT, negative = decrease PT
 
 
-class CareerDispatchEffect(BaseModel):
-    """Career-specific effect; base for CareerHandlerBase."""
+class CareerHandlerBase(BaseModel):
+    """Base for career-specific event/mishap effect handlers.
 
-    type: str
-
-
-class CareerHandlerBase(CareerDispatchEffect):
-    """Auto-registering base for career-specific event/mishap handlers.
-
-    Subclasses declare ``type: Literal['handler_key'] = 'handler_key'`` to self-register.
-    The literal string is the sole canonical occurrence of the handler key in the source.
+    Subclasses declare ``type: Literal['handler_key'] = 'handler_key'`` and implement
+    ``handle()`` to append career-specific pending inputs.
     """
 
-    _handler_registry: ClassVar[dict[str, type[CareerHandlerBase]]] = {}
-
-    def __init_subclass__(cls) -> None:
-        super().__init_subclass__()
-        # __init_subclass__ is called before Pydantic processes the class, so
-        # cls.__dict__['type'] still holds the raw default string.
-        type_default = cls.__dict__.get('type')
-        if isinstance(type_default, str) and type_default:
-            CareerHandlerBase._handler_registry[type_default] = cls
+    type: str
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         return pending_idx
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        pass
-
-    @staticmethod
-    def on_choice(projection: CharacterProjection, event: CareerChoiceEvent) -> None:
-        pass
-
-
-def get_career_handler(context: str) -> type[CareerHandlerBase] | None:
-    """Return the handler class registered under *context*, or None."""
-    return CareerHandlerBase._handler_registry.get(context)
 
 
 type AnyEffect = (
@@ -212,7 +184,7 @@ type AnyEffect = (
     | AdvancementDmEffect
     | BenefitDmEffect
     | ParoleThresholdChangeEffect
-    | CareerDispatchEffect
+    | CareerHandlerBase
 )
 
 

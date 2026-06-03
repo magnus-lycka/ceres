@@ -36,11 +36,13 @@ from ceres.character.careers.career_data import (
     SkillTable,
 )
 from ceres.character.careers.common import handle_advanced_training, resolve_advanced_training
+from ceres.character.careers.common_pending import (
+    CareerChoicePendingBase,
+    CareerSkillChoicePendingBase,
+    CareerSkillRollPendingBase,
+)
 from ceres.character.characteristics import Chars, ConnectionKind
 from ceres.character.events import (
-    PendingCareerMishap,
-    PendingCareerSkillChoice,
-    PendingCareerSkillRoll,
     PendingDoubleInjuryRoll,
     PendingMishap,
     PendingSkillChoice,
@@ -85,30 +87,13 @@ AGENT = Career(
 )
 
 
-# ── mishap 2: criminal deal ───────────────────────────────────────────────────
+# ── Career-specific pending input types ──────────────────────────────────────
 
 
-class AgentMishap2Handler(CareerHandlerBase):
-    type: Literal['agent_mishap_2'] = 'agent_mishap_2'
+class PendingAgentMishap2(CareerChoicePendingBase):
+    kind: Literal['agent_mishap_2'] = 'agent_mishap_2'
 
-    @staticmethod
-    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
-            PendingCareerMishap(
-                id=f'{event_id}.{pending_idx}',
-                career='Agent',
-                roll=2,
-                instruction=(
-                    'Accept (leave without further penalty, lose Benefit roll as normal) or Refuse '
-                    '(roll twice on Injury table take lower, gain Enemy, choose skill)?'
-                ),
-                options=['accept', 'refuse'],
-            )
-        )
-        return pending_idx + 1
-
-    @staticmethod
-    def on_choice(projection: CharacterProjection, event) -> None:
+    def on_choice(self, projection: CharacterProjection, event) -> None:
         from ceres.character.events import _apply_mishap_ejection
 
         career = projection.get_current_career()
@@ -134,28 +119,10 @@ class AgentMishap2Handler(CareerHandlerBase):
         _apply_mishap_ejection(projection, career, event.id, pending_idx, lose_current_term=True)
 
 
-# ── mishap 3: investigation gone wrong ───────────────────────────────────────
+class PendingAgentMishap3SkillRoll(CareerSkillRollPendingBase):
+    kind: Literal['agent_mishap_3_skill_roll'] = 'agent_mishap_3_skill_roll'
 
-
-class AgentMishap3Handler(CareerHandlerBase):
-    type: Literal['agent_mishap_3'] = 'agent_mishap_3'
-
-    @staticmethod
-    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
-            PendingCareerSkillRoll(
-                id=f'{event_id}.{pending_idx}',
-                career='Agent',
-                roll=3,
-                context='agent_mishap_3',
-                instruction='Roll Advocate 8+ to keep the Benefit roll from this term',
-                options=[Advocate()],
-            )
-        )
-        return pending_idx + 1
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
         from ceres.character.careers.loader import load_careers
 
         career_obj = projection.summary.current_career
@@ -171,27 +138,10 @@ class AgentMishap3Handler(CareerHandlerBase):
         muster_out_setup(projection, career, event.id, 0, lose_current_term=not succeed)
 
 
-# ── mishap 5: someone close gets hurt ────────────────────────────────────────
+class PendingAgentMishap5(CareerChoicePendingBase):
+    kind: Literal['agent_mishap_5'] = 'agent_mishap_5'
 
-
-class AgentMishap5Handler(CareerHandlerBase):
-    type: Literal['agent_mishap_5'] = 'agent_mishap_5'
-
-    @staticmethod
-    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
-            PendingCareerMishap(
-                id=f'{event_id}.{pending_idx}',
-                career='Agent',
-                roll=5,
-                instruction='Choose who was hurt: a Contact, an Ally, or a family member?',
-                options=['contact', 'ally', 'family'],
-            )
-        )
-        return pending_idx + 1
-
-    @staticmethod
-    def on_choice(projection: CharacterProjection, event) -> None:
+    def on_choice(self, projection: CharacterProjection, event) -> None:
         from ceres.character.events import _apply_mishap_ejection
 
         career = projection.get_current_career()
@@ -202,28 +152,10 @@ class AgentMishap5Handler(CareerHandlerBase):
         _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
 
 
-# ── event 3: dangerous investigation ─────────────────────────────────────────
+class PendingAgentEvent3SkillRoll(CareerSkillRollPendingBase):
+    kind: Literal['agent_event_3_skill_roll'] = 'agent_event_3_skill_roll'
 
-
-class AgentEvent3Handler(CareerHandlerBase):
-    type: Literal['agent_event_3'] = 'agent_event_3'
-
-    @staticmethod
-    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
-            PendingCareerSkillRoll(
-                id=f'{event_id}.{pending_idx}',
-                career='Agent',
-                roll=3,
-                context='agent_event_3',
-                instruction='Roll Investigate 8+ or Streetwise 8+',
-                options=[Investigate(), Streetwise()],
-            )
-        )
-        return pending_idx + 1
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
         if event.modified_roll >= 8:
             projection.pending_inputs.append(
                 PendingSkillChoice(
@@ -242,6 +174,103 @@ class AgentEvent3Handler(CareerHandlerBase):
                     instruction='Investigation went wrong: roll 1D on Mishap table (you are not ejected from this career)',
                 )
             )
+
+
+class PendingAgentEvent8SkillRoll(CareerSkillRollPendingBase):
+    kind: Literal['agent_event_8_skill_roll'] = 'agent_event_8_skill_roll'
+
+    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+        if event.modified_roll >= 8:
+            projection.summary.problems.append(
+                'Undercover mission success: roll on Rogue or Citizen Events table and '
+                'make one roll on any Specialist skill table for that career (apply manually — '
+                'cross-career table automation not yet implemented).'
+            )
+        else:
+            projection.summary.problems.append(
+                'Undercover mission failed: roll on Rogue or Citizen Mishap table '
+                '(apply manually — cross-career table automation not yet implemented).'
+            )
+
+
+class PendingAgentEvent11SkillChoice(CareerSkillChoicePendingBase):
+    kind: Literal['agent_event_11_skill_choice'] = 'agent_event_11_skill_choice'
+    advancement_precreated: bool = False
+
+
+# ── mishap 2: criminal deal ───────────────────────────────────────────────────
+
+
+class AgentMishap2Handler(CareerHandlerBase):
+    type: Literal['agent_mishap_2'] = 'agent_mishap_2'
+
+    @staticmethod
+    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
+        projection.pending_inputs.append(
+            PendingAgentMishap2(
+                id=f'{event_id}.{pending_idx}',
+                instruction=(
+                    'Accept (leave without further penalty, lose Benefit roll as normal) or Refuse '
+                    '(roll twice on Injury table take lower, gain Enemy, choose skill)?'
+                ),
+                options=['accept', 'refuse'],
+            )
+        )
+        return pending_idx + 1
+
+
+# ── mishap 3: investigation gone wrong ───────────────────────────────────────
+
+
+class AgentMishap3Handler(CareerHandlerBase):
+    type: Literal['agent_mishap_3'] = 'agent_mishap_3'
+
+    @staticmethod
+    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
+        projection.pending_inputs.append(
+            PendingAgentMishap3SkillRoll(
+                id=f'{event_id}.{pending_idx}',
+                instruction='Roll Advocate 8+ to keep the Benefit roll from this term',
+                options=[Advocate()],
+            )
+        )
+        return pending_idx + 1
+
+
+# ── mishap 5: someone close gets hurt ────────────────────────────────────────
+
+
+class AgentMishap5Handler(CareerHandlerBase):
+    type: Literal['agent_mishap_5'] = 'agent_mishap_5'
+
+    @staticmethod
+    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
+        projection.pending_inputs.append(
+            PendingAgentMishap5(
+                id=f'{event_id}.{pending_idx}',
+                instruction='Choose who was hurt: a Contact, an Ally, or a family member?',
+                options=['contact', 'ally', 'family'],
+            )
+        )
+        return pending_idx + 1
+
+
+# ── event 3: dangerous investigation ─────────────────────────────────────────
+
+
+class AgentEvent3Handler(CareerHandlerBase):
+    type: Literal['agent_event_3'] = 'agent_event_3'
+
+    @staticmethod
+    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
+        projection.pending_inputs.append(
+            PendingAgentEvent3SkillRoll(
+                id=f'{event_id}.{pending_idx}',
+                instruction='Roll Investigate 8+ or Streetwise 8+',
+                options=[Investigate(), Streetwise()],
+            )
+        )
+        return pending_idx + 1
 
 
 # ── event 6: advanced training ───────────────────────────────────────────────
@@ -268,30 +297,13 @@ class AgentEvent8Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingCareerSkillRoll(
+            PendingAgentEvent8SkillRoll(
                 id=f'{event_id}.{pending_idx}',
-                career='Agent',
-                roll=8,
-                context='agent_event_8',
                 instruction='Roll Deception 8+ for the undercover mission',
                 options=[Deception()],
             )
         )
         return pending_idx + 1
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
-        if event.modified_roll >= 8:
-            projection.summary.problems.append(
-                'Undercover mission success: roll on Rogue or Citizen Events table and '
-                'make one roll on any Specialist skill table for that career (apply manually — '
-                'cross-career table automation not yet implemented).'
-            )
-        else:
-            projection.summary.problems.append(
-                'Undercover mission failed: roll on Rogue or Citizen Mishap table '
-                '(apply manually — cross-career table automation not yet implemented).'
-            )
 
 
 # ── event 11: senior agent mentor ────────────────────────────────────────────
@@ -303,11 +315,8 @@ class AgentEvent11Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingCareerSkillChoice(
+            PendingAgentEvent11SkillChoice(
                 id=f'{event_id}.{pending_idx}',
-                career='Agent',
-                roll=11,
-                advancement_precreated=False,
                 instruction='Senior agent mentor: increase Investigate by one level or DM+4 to your next advancement roll',
                 options=[Investigate(), AdvancementDmOption()],
             )

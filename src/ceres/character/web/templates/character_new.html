@@ -10,12 +10,15 @@
   {% endif %}
 
   <form method="post" action="/ui/characters/new" class="space-y-5">
+    <input type="hidden" name="homeworld_sector" value="{{ form_defaults.homeworld_sector }}">
+    <input type="hidden" name="homeworld_hex" value="{{ form_defaults.homeworld_hex }}">
 
     <div>
       <label class="block text-xs uppercase tracking-wide text-gray-500 mb-1">Name</label>
       <input type="text" name="name" required autofocus
              class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500"
-             placeholder="Character name">
+             placeholder="Character name"
+             value="{{ form_defaults.name }}">
     </div>
 
     <div>
@@ -23,28 +26,40 @@
       <select name="sophont"
               class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500">
         {% for s in sophonts %}
-        <option value="{{ s }}">{{ s }}</option>
+        <option value="{{ s }}" {% if s == form_defaults.sophont %}selected{% endif %}>{{ s }}</option>
         {% endfor %}
       </select>
     </div>
 
     <div>
       <label class="block text-xs uppercase tracking-wide text-gray-500 mb-1">Player <span class="text-gray-600">(leave blank for NPC)</span></label>
-      <input type="text" name="player" value="NPC"
+      <input type="text" name="player" value="{{ form_defaults.player }}"
              class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500"
              placeholder="NPC">
     </div>
 
-    <div class="border border-gray-800 bg-gray-950/60 px-4 py-4">
+    <div class="border border-gray-800 bg-gray-950/60 px-4 py-4 space-y-4">
       <div class="flex items-center justify-between gap-4">
         <div>
-          <div class="text-xs uppercase tracking-wide text-gray-500">Homeworld Sector</div>
-          <div class="text-sm text-gray-300">Choose sector</div>
+          <div class="text-xs uppercase tracking-wide text-gray-500">Homeworld</div>
+          {% if homeworld %}
+          <div class="text-sm font-semibold text-gray-100">{{ homeworld.name }}</div>
+          <div class="text-sm text-gray-400">
+            {{ homeworld.sector }} · {{ homeworld.hex }} · {{ homeworld.uwp }}
+          </div>
+          <div class="text-xs text-gray-500 mt-1">{{ homeworld.remarks }}</div>
+          {% else %}
+          <div class="text-sm font-semibold text-gray-300">Not selected</div>
+          <div class="text-sm text-gray-500">Choose a sector, then pick a world by filters, name, or hex.</div>
+          {% endif %}
         </div>
-        <a href="/ui/worlds/sectors"
-           class="bg-gray-900 hover:bg-gray-800 border border-gray-700 text-gray-200 px-4 py-2 text-sm uppercase tracking-wide">
-          Find Sector
-        </a>
+        <button type="submit"
+                formaction="/ui/worlds/sectors"
+                formmethod="get"
+                formnovalidate
+                class="bg-gray-900 hover:bg-gray-800 border border-gray-700 text-gray-200 px-4 py-2 text-sm uppercase tracking-wide">
+          Choose Homeworld
+        </button>
       </div>
     </div>
 

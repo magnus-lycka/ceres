@@ -8,11 +8,27 @@
       <h1 class="text-2xl font-bold text-amber-400 tracking-wide">{{ sector_name }}</h1>
       <p class="text-sm text-gray-400">{{ sector.sector_abbreviation }} · {{ sector.worlds|length }} worlds</p>
     </div>
-    <a href="/ui/worlds/sectors" class="text-gray-500 hover:text-gray-300 px-4 py-2 text-sm">Back</a>
+    <a href="{{ back_to_picker_url }}" class="text-gray-500 hover:text-gray-300 px-4 py-2 text-sm">Back</a>
   </div>
 
   <form method="get" class="space-y-4">
     <input type="hidden" name="filters" value="1">
+    <input type="hidden" name="name" value="{{ form_defaults.name }}">
+    <input type="hidden" name="sophont" value="{{ form_defaults.sophont }}">
+    <input type="hidden" name="player" value="{{ form_defaults.player }}">
+    <input type="hidden" name="homeworld_sector" value="{{ form_defaults.homeworld_sector }}">
+    <input type="hidden" name="homeworld_hex" value="{{ form_defaults.homeworld_hex }}">
+
+    <section class="border border-gray-800 bg-gray-950/60 p-4 space-y-3">
+      <div class="flex items-center justify-between gap-4">
+        <h2 class="text-sm uppercase tracking-wide text-amber-400">World Search</h2>
+      </div>
+      <input type="text"
+             name="world_query"
+             value="{{ world_query }}"
+             placeholder="Filter by world name or hex"
+             class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-4 py-3 focus:outline-none focus:border-amber-500">
+    </section>
     {% if options.allegiances %}
     <section class="border border-gray-800 bg-gray-950/60 p-4 space-y-3" data-filter-group>
       <div class="flex items-center justify-between gap-4">
@@ -243,7 +259,7 @@
     </div>
 
     <div class="flex items-center justify-end gap-3">
-      <a href="/ui/worlds/sectors/{{ sector.sector_abbreviation }}" class="px-3 py-2 text-sm text-gray-400 hover:text-gray-200">Reset</a>
+      <a href="{{ reset_filters_url }}" class="px-3 py-2 text-sm text-gray-400 hover:text-gray-200">Reset</a>
       <button type="submit" class="px-4 py-2 text-sm font-medium text-gray-950 bg-amber-400 hover:bg-amber-300">Apply Filters</button>
     </div>
   </form>
@@ -257,6 +273,7 @@
       <table class="min-w-full text-left text-sm text-gray-200">
         <thead class="text-xs uppercase tracking-wide text-amber-400">
           <tr class="border-b border-gray-800">
+            <th class="px-2 py-2 font-medium"></th>
             <th class="px-2 py-2 font-medium">Hex</th>
             <th class="px-2 py-2 font-medium">Name</th>
             <th class="px-2 py-2 font-medium">UWP</th>
@@ -276,6 +293,12 @@
         <tbody>
           {% for world in filtered_worlds %}
           <tr class="border-b border-gray-900 align-top">
+            <td class="px-2 py-2 whitespace-nowrap">
+              <a href="{{ select_homeworld_base }}{% if '?' in select_homeworld_base %}&{% else %}?{% endif %}homeworld_sector={{ sector.sector_abbreviation }}&homeworld_hex={{ world.hex }}"
+                 class="text-xs uppercase tracking-wide text-cyan-400 hover:text-cyan-200">
+                Select
+              </a>
+            </td>
             <td class="px-2 py-2 font-medium text-gray-300 whitespace-nowrap">{{ world.hex }}</td>
             <td class="px-2 py-2 whitespace-nowrap">{{ world.name }}</td>
             <td class="px-2 py-2 whitespace-nowrap">{{ world.uwp }}</td>

@@ -37,11 +37,9 @@ from ceres.character.careers.career_data import (
     SkillTable,
 )
 from ceres.character.careers.common import handle_advanced_training, resolve_advanced_training
+from ceres.character.careers.common_pending import CareerChoicePendingBase, CareerSkillRollPendingBase
 from ceres.character.characteristics import Chars
 from ceres.character.events import (
-    PendingCareerEvent,
-    PendingCareerMishap,
-    PendingCareerSkillRoll,
     SkillRollEvent,
     career_progress_pending,
 )
@@ -89,33 +87,13 @@ _MISHAP_3_SKILLS: dict[str, list] = {
 }
 
 
-# ── mishap 3: battle skill check ─────────────────────────────────────────────
+# ── Career-specific pending input types ──────────────────────────────────────
 
 
-class NavyMishap3Handler(CareerHandlerBase):
-    type: Literal['navy_mishap_3'] = 'navy_mishap_3'
+class PendingNavyMishap3SkillRoll(CareerSkillRollPendingBase):
+    kind: Literal['navy_mishap_3_skill_roll'] = 'navy_mishap_3_skill_roll'
 
-    @staticmethod
-    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        assignment = projection.summary.current_assignment or 'Line/Crew'
-        options = _MISHAP_3_SKILLS.get(assignment, [Electronics(), Gunner()])
-        projection.pending_inputs.append(
-            PendingCareerSkillRoll(
-                id=f'{event_id}.{pending_idx}',
-                career='Navy',
-                roll=3,
-                context='navy_mishap_3',
-                instruction=(
-                    f'Roll {" or ".join(type(o).name() for o in options)} 8+ — success: honourable discharge (keep Benefit); '
-                    'fail: court-martialled (lose Benefit)'
-                ),
-                options=options,
-            )
-        )
-        return pending_idx + 1
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
         from ceres.character.events import _apply_mishap_ejection
 
         career = projection.get_current_career()
@@ -123,31 +101,10 @@ class NavyMishap3Handler(CareerHandlerBase):
         _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=lose)
 
 
-# ── mishap 4: blamed for accident ────────────────────────────────────────────
+class PendingNavyMishap4(CareerChoicePendingBase):
+    kind: Literal['navy_mishap_4'] = 'navy_mishap_4'
 
-
-class NavyMishap4Handler(CareerHandlerBase):
-    type: Literal['navy_mishap_4'] = 'navy_mishap_4'
-
-    @staticmethod
-    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
-            PendingCareerMishap(
-                id=f'{event_id}.{pending_idx}',
-                career='Navy',
-                roll=4,
-                instruction=(
-                    'Were you responsible for the accident? '
-                    'Responsible: gain one free skill table roll before ejection. '
-                    'Not responsible: gain the officer who blamed you as an Enemy, but keep your Benefit roll.'
-                ),
-                options=['responsible', 'not_responsible'],
-            )
-        )
-        return pending_idx + 1
-
-    @staticmethod
-    def on_choice(projection: CharacterProjection, event) -> None:
+    def on_choice(self, projection: CharacterProjection, event) -> None:
         from ceres.character.events import _apply_mishap_ejection
 
         career = projection.get_current_career()
@@ -160,6 +117,75 @@ class NavyMishap4Handler(CareerHandlerBase):
         else:
             projection.summary.connections.append(Enemy(source='Officer who blamed you (Navy mishap 4)'))
             _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=False)
+
+
+class PendingNavyEvent10(CareerChoicePendingBase):
+    kind: Literal['navy_event_10'] = 'navy_event_10'
+
+    def on_choice(self, projection: CharacterProjection, event) -> None:
+        career = projection.get_current_career()
+        if event.choice == 'profit':
+            projection.scheduled_effects.append(
+                ScheduledEffect(
+                    trigger='muster_out_add',
+                    source_event_id=event.id,
+                    effect={'type': 'add', 'value': 1},
+                )
+            )
+        else:
+            projection.scheduled_effects.append(
+                ScheduledEffect(
+                    trigger='advancement',
+                    source_event_id=event.id,
+                    effect={'type': 'dm', 'amount': 2},
+                )
+            )
+        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+
+
+# ── mishap 3: battle skill check ─────────────────────────────────────────────
+
+
+class NavyMishap3Handler(CareerHandlerBase):
+    type: Literal['navy_mishap_3'] = 'navy_mishap_3'
+
+    @staticmethod
+    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
+        assignment = projection.summary.current_assignment or 'Line/Crew'
+        options = _MISHAP_3_SKILLS.get(assignment, [Electronics(), Gunner()])
+        projection.pending_inputs.append(
+            PendingNavyMishap3SkillRoll(
+                id=f'{event_id}.{pending_idx}',
+                instruction=(
+                    f'Roll {" or ".join(type(o).name() for o in options)} 8+ — success: honourable discharge (keep Benefit); '
+                    'fail: court-martialled (lose Benefit)'
+                ),
+                options=options,
+            )
+        )
+        return pending_idx + 1
+
+
+# ── mishap 4: blamed for accident ────────────────────────────────────────────
+
+
+class NavyMishap4Handler(CareerHandlerBase):
+    type: Literal['navy_mishap_4'] = 'navy_mishap_4'
+
+    @staticmethod
+    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
+        projection.pending_inputs.append(
+            PendingNavyMishap4(
+                id=f'{event_id}.{pending_idx}',
+                instruction=(
+                    'Were you responsible for the accident? '
+                    'Responsible: gain one free skill table roll before ejection. '
+                    'Not responsible: gain the officer who blamed you as an Enemy, but keep your Benefit roll.'
+                ),
+                options=['responsible', 'not_responsible'],
+            )
+        )
+        return pending_idx + 1
 
 
 # ── event 5: advanced training ───────────────────────────────────────────────
@@ -186,36 +212,13 @@ class NavyEvent10Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingCareerEvent(
+            PendingNavyEvent10(
                 id=f'{event_id}.{pending_idx}',
-                career='Navy',
-                roll=10,
                 instruction='Abuse your position for profit (gain extra Benefit roll) or refuse (DM+2 to next advancement)?',
                 options=['profit', 'refuse'],
             )
         )
         return pending_idx + 1
-
-    @staticmethod
-    def on_choice(projection: CharacterProjection, event) -> None:
-        career = projection.get_current_career()
-        if event.choice == 'profit':
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger='muster_out_add',
-                    source_event_id=event.id,
-                    effect={'type': 'add', 'value': 1},
-                )
-            )
-        else:
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger='advancement',
-                    source_event_id=event.id,
-                    effect={'type': 'dm', 'amount': 2},
-                )
-            )
-        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 
 
 class NavyCareerData(CareerData):

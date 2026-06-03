@@ -34,6 +34,12 @@ class PendingInputBase(BaseModel):
         """Return web-agnostic InputSpec descriptors for rendering this pending input. All subclasses must implement."""
         raise NotImplementedError(f'{type(self).__name__}.input_specs() not implemented')
 
+    def on_choice(self, projection: Any, event: Any) -> None:
+        """Called by CareerChoiceEvent.apply() when this pending is fulfilled. Override in career-specific subclasses."""
+
+    def resolve(self, projection: Any, event: Any) -> None:
+        """Called by SkillRollEvent.apply() when this pending is fulfilled. Override in career-specific subclasses."""
+
 
 class ScheduledEffect(BaseModel):
     trigger: str

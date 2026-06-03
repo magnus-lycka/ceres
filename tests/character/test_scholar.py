@@ -3,6 +3,17 @@
 from typing import Literal
 
 from ceres.character.careers.career_data import AdvancementDmOption
+from ceres.character.careers.scholar import (
+    PendingScholarEvent3,
+    PendingScholarEvent6SkillRoll,
+    PendingScholarEvent8,
+    PendingScholarEvent8SkillRoll,
+    PendingScholarEvent11,
+    PendingScholarMishap3,
+    PendingScholarMishap5,
+    PendingScholarScienceChoice,
+    PendingScholarScienceChoicePreCreated,
+)
 from ceres.character.characteristics import Chars
 from ceres.character.events import (
     AdvancementDmChoiceEvent,
@@ -16,10 +27,6 @@ from ceres.character.events import (
     MishapEvent,
     MusterOutEvent,
     PendingAdvancement,
-    PendingCareerEvent,
-    PendingCareerMishap,
-    PendingCareerSkillChoice,
-    PendingCareerSkillRoll,
     PendingCharacteristicChoice,
     PendingConnectionsRoll,
     PendingInitialTrainingChoice,
@@ -300,10 +307,7 @@ class TestScholarTerm:
         projection = replay(1, events)
 
         assert any(isinstance(c, Ally) for c in projection.summary.connections)
-        assert any(
-            isinstance(p, PendingCareerSkillChoice) and p.career == 'Scholar' and p.roll == 11
-            for p in projection.pending_inputs
-        )
+        assert any(isinstance(p, PendingScholarEvent11) for p in projection.pending_inputs)
 
     def test_mishap_4_grants_skill_choice_before_ejection(self):
         # Scholar mishap 4: skill_choice [Survival, Athletics], character still leaves career
@@ -373,16 +377,13 @@ class TestScholarEvent6:
     def test_creates_scholar_event_6_pending(self):
         projection = replay(1, self._setup_to_event_6())
 
-        assert any(
-            isinstance(p, PendingCareerSkillRoll) and p.career == 'Scholar' and p.roll == 6
-            for p in projection.pending_inputs
-        )
+        assert any(isinstance(p, PendingScholarEvent6SkillRoll) for p in projection.pending_inputs)
 
     def test_success_creates_skill_choice_pending(self):
         # EDU=10 (DM+1), need 8+, modified_roll=8 → success
         events = [
             *self._setup_to_event_6(),
-            SkillRollEvent(id=9, fulfills='8.0', context='scholar_event_6', skill=Chars.EDU, modified_roll=8),
+            SkillRollEvent(id=9, fulfills='8.0', skill=Chars.EDU, modified_roll=8),
         ]
         projection = replay(1, events)
 
@@ -392,7 +393,7 @@ class TestScholarEvent6:
         # modified_roll=5 < 8 → failure
         events = [
             *self._setup_to_event_6(),
-            SkillRollEvent(id=9, fulfills='8.0', context='scholar_event_6', skill=Chars.EDU, modified_roll=5),
+            SkillRollEvent(id=9, fulfills='8.0', skill=Chars.EDU, modified_roll=5),
         ]
         projection = replay(1, events)
 
@@ -402,7 +403,7 @@ class TestScholarEvent6:
     def test_success_skill_choice_grants_skill_at_level_1(self):
         events = [
             *self._setup_to_event_6(),
-            SkillRollEvent(id=9, fulfills='8.0', context='scholar_event_6', skill=Chars.EDU, modified_roll=8),
+            SkillRollEvent(id=9, fulfills='8.0', skill=Chars.EDU, modified_roll=8),
             SkillChoiceEvent(id=10, fulfills='9.0', skill=Navigation(level=Level(value=1))),
         ]
         projection = replay(1, events)
@@ -412,7 +413,7 @@ class TestScholarEvent6:
     def test_success_skill_choice_creates_advancement_pending(self):
         events = [
             *self._setup_to_event_6(),
-            SkillRollEvent(id=9, fulfills='8.0', context='scholar_event_6', skill=Chars.EDU, modified_roll=8),
+            SkillRollEvent(id=9, fulfills='8.0', skill=Chars.EDU, modified_roll=8),
             SkillChoiceEvent(id=10, fulfills='9.0', skill=Navigation(level=Level(value=1))),
         ]
         projection = replay(1, events)
@@ -437,11 +438,7 @@ class TestScholarMishap3:
         projection = replay(1, events)
 
         pending = next(
-            (
-                p
-                for p in projection.pending_inputs
-                if isinstance(p, PendingCareerMishap) and p.career == 'Scholar' and p.roll == 3
-            ),
+            (p for p in projection.pending_inputs if isinstance(p, PendingScholarMishap3)),
             None,
         )
         assert pending is not None
@@ -458,18 +455,14 @@ class TestScholarMishap3:
         events = [
             *self._setup(),
             MishapEvent(id=8, fulfills='7.0', roll=3),
-            CareerChoiceEvent(id=9, fulfills='8.0', context='scholar_mishap_3', choice='openly'),
+            CareerChoiceEvent(id=9, fulfills='8.0', choice='openly'),
         ]
         projection = replay(1, events)
 
         # Core mishap 3: increase Science — any broad science — so a science choice pending is required
         assert any(isinstance(c, Enemy) for c in projection.summary.connections)
         science_pending = next(
-            (
-                p
-                for p in projection.pending_inputs
-                if isinstance(p, PendingCareerSkillChoice) and p.career == 'Scholar' and p.roll == 3 and p.mishap
-            ),
+            (p for p in projection.pending_inputs if isinstance(p, PendingScholarScienceChoice)),
             None,
         )
         assert science_pending is not None
@@ -485,15 +478,12 @@ class TestScholarMishap3:
         events = [
             *self._setup(),
             MishapEvent(id=8, fulfills='7.0', roll=3),
-            CareerChoiceEvent(id=9, fulfills='8.0', context='scholar_mishap_3', choice='secretly'),
+            CareerChoiceEvent(id=9, fulfills='8.0', choice='secretly'),
         ]
         projection = replay(1, events)
 
         # Core mishap 3 secretly: Science +1 (any), SOC -2, no enemy
-        assert any(
-            isinstance(p, PendingCareerSkillChoice) and p.career == 'Scholar' and p.roll == 3 and p.mishap
-            for p in projection.pending_inputs
-        )
+        assert any(isinstance(p, PendingScholarScienceChoice) for p in projection.pending_inputs)
         # SOC was 5 from UCP '7869A5'
         assert projection.summary.characteristics[Chars.SOC] == 3
         assert not any(isinstance(c, Enemy) for c in projection.summary.connections)
@@ -502,7 +492,7 @@ class TestScholarMishap3:
         events = [
             *self._setup(),
             MishapEvent(id=8, fulfills='7.0', roll=3),
-            CareerChoiceEvent(id=9, fulfills='8.0', context='scholar_mishap_3', choice='openly'),
+            CareerChoiceEvent(id=9, fulfills='8.0', choice='openly'),
         ]
         projection = replay(1, events)
 
@@ -526,11 +516,7 @@ class TestScholarMishap5:
         projection = replay(1, events)
 
         pending = next(
-            (
-                p
-                for p in projection.pending_inputs
-                if isinstance(p, PendingCareerMishap) and p.career == 'Scholar' and p.roll == 5
-            ),
+            (p for p in projection.pending_inputs if isinstance(p, PendingScholarMishap5)),
             None,
         )
         assert pending is not None
@@ -540,7 +526,7 @@ class TestScholarMishap5:
         events = [
             *self._setup(),
             MishapEvent(id=8, fulfills='7.0', roll=5),
-            CareerChoiceEvent(id=9, fulfills='8.0', context='scholar_mishap_5', choice='give_up'),
+            CareerChoiceEvent(id=9, fulfills='8.0', choice='give_up'),
         ]
         projection = replay(1, events)
 
@@ -550,7 +536,7 @@ class TestScholarMishap5:
         events = [
             *self._setup(),
             MishapEvent(id=8, fulfills='7.0', roll=5),
-            CareerChoiceEvent(id=9, fulfills='8.0', context='scholar_mishap_5', choice='give_up'),
+            CareerChoiceEvent(id=9, fulfills='8.0', choice='give_up'),
         ]
         projection = replay(1, events)
 
@@ -560,7 +546,7 @@ class TestScholarMishap5:
         events = [
             *self._setup(),
             MishapEvent(id=8, fulfills='7.0', roll=5),
-            CareerChoiceEvent(id=9, fulfills='8.0', context='scholar_mishap_5', choice='start_again'),
+            CareerChoiceEvent(id=9, fulfills='8.0', choice='start_again'),
         ]
         projection = replay(1, events)
 
@@ -571,7 +557,7 @@ class TestScholarMishap5:
         events = [
             *self._setup(),
             MishapEvent(id=8, fulfills='7.0', roll=5),
-            CareerChoiceEvent(id=9, fulfills='8.0', context='scholar_mishap_5', choice='start_again'),
+            CareerChoiceEvent(id=9, fulfills='8.0', choice='start_again'),
         ]
         projection = replay(1, events)
 
@@ -595,24 +581,20 @@ class TestScholarEvent3:
         projection = replay(1, self._setup())
 
         pending = next(
-            (
-                p
-                for p in projection.pending_inputs
-                if isinstance(p, PendingCareerEvent) and p.career == 'Scholar' and p.roll == 3
-            ),
+            (p for p in projection.pending_inputs if isinstance(p, PendingScholarEvent3)),
             None,
         )
         assert pending is not None
         assert set(pending.options) == {'accept', 'decline'}
 
     def test_decline_creates_advancement_pending(self):
-        events = [*self._setup(), CareerChoiceEvent(id=9, fulfills='8.0', context='scholar_event_3', choice='decline')]
+        events = [*self._setup(), CareerChoiceEvent(id=9, fulfills='8.0', choice='decline')]
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
     def test_accept_creates_connections_roll_pending_for_d3_enemies(self):
-        events = [*self._setup(), CareerChoiceEvent(id=9, fulfills='8.0', context='scholar_event_3', choice='accept')]
+        events = [*self._setup(), CareerChoiceEvent(id=9, fulfills='8.0', choice='accept')]
         projection = replay(1, events)
 
         conn = next((p for p in projection.pending_inputs if isinstance(p, PendingConnectionsRoll)), None)
@@ -620,32 +602,24 @@ class TestScholarEvent3:
         assert conn.options == ['1', '2', '3']
 
     def test_accept_creates_two_science_choice_pendings(self):
-        events = [*self._setup(), CareerChoiceEvent(id=9, fulfills='8.0', context='scholar_event_3', choice='accept')]
+        events = [*self._setup(), CareerChoiceEvent(id=9, fulfills='8.0', choice='accept')]
         projection = replay(1, events)
 
-        sciences = [
-            p
-            for p in projection.pending_inputs
-            if isinstance(p, PendingCareerSkillChoice) and p.career == 'Scholar' and p.roll == 3 and not p.mishap
-        ]
+        sciences = [p for p in projection.pending_inputs if isinstance(p, PendingScholarScienceChoicePreCreated)]
         assert len(sciences) == 2
 
     def test_accept_science_choice_options_contain_sciences(self):
-        events = [*self._setup(), CareerChoiceEvent(id=9, fulfills='8.0', context='scholar_event_3', choice='accept')]
+        events = [*self._setup(), CareerChoiceEvent(id=9, fulfills='8.0', choice='accept')]
         projection = replay(1, events)
 
-        pending = next(
-            p
-            for p in projection.pending_inputs
-            if isinstance(p, PendingCareerSkillChoice) and p.career == 'Scholar' and p.roll == 3 and not p.mishap
-        )
+        pending = next(p for p in projection.pending_inputs if isinstance(p, PendingScholarScienceChoicePreCreated))
         assert SpaceScience() in pending.options
         assert LifeScience() in pending.options
 
     def test_accept_resolving_science_choices_grants_skills(self):
         events = [
             *self._setup(),
-            CareerChoiceEvent(id=9, fulfills='8.0', context='scholar_event_3', choice='accept'),
+            CareerChoiceEvent(id=9, fulfills='8.0', choice='accept'),
             SkillChoiceEvent(id=10, fulfills='9.1', skill=SpaceScience(planetology=Level(value=1))),
             SkillChoiceEvent(id=11, fulfills='9.2', skill=LifeScience(biology=Level(value=1))),
         ]
@@ -655,7 +629,7 @@ class TestScholarEvent3:
         assert projection.summary.skill_level(LifeScience, -1) >= 1
 
     def test_accept_creates_advancement_pending(self):
-        events = [*self._setup(), CareerChoiceEvent(id=9, fulfills='8.0', context='scholar_event_3', choice='accept')]
+        events = [*self._setup(), CareerChoiceEvent(id=9, fulfills='8.0', choice='accept')]
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
@@ -678,32 +652,24 @@ class TestScholarEvent8:
         projection = replay(1, self._setup())
 
         pending = next(
-            (
-                p
-                for p in projection.pending_inputs
-                if isinstance(p, PendingCareerEvent) and p.career == 'Scholar' and p.roll == 8
-            ),
+            (p for p in projection.pending_inputs if isinstance(p, PendingScholarEvent8)),
             None,
         )
         assert pending is not None
         assert set(pending.options) == {'accept', 'refuse'}
 
     def test_refuse_creates_advancement_pending(self):
-        events = [*self._setup(), CareerChoiceEvent(id=9, fulfills='8.0', context='scholar_event_8', choice='refuse')]
+        events = [*self._setup(), CareerChoiceEvent(id=9, fulfills='8.0', choice='refuse')]
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
     def test_accept_creates_skill_roll_pending_with_deception_admin(self):
-        events = [*self._setup(), CareerChoiceEvent(id=9, fulfills='8.0', context='scholar_event_8', choice='accept')]
+        events = [*self._setup(), CareerChoiceEvent(id=9, fulfills='8.0', choice='accept')]
         projection = replay(1, events)
 
         pending = next(
-            (
-                p
-                for p in projection.pending_inputs
-                if isinstance(p, PendingCareerSkillRoll) and p.career == 'Scholar' and p.roll == 8
-            ),
+            (p for p in projection.pending_inputs if isinstance(p, PendingScholarEvent8SkillRoll)),
             None,
         )
         assert pending is not None
@@ -712,8 +678,8 @@ class TestScholarEvent8:
     def test_accept_success_gains_enemy(self):
         events = [
             *self._setup(),
-            CareerChoiceEvent(id=9, fulfills='8.0', context='scholar_event_8', choice='accept'),
-            SkillRollEvent(id=10, fulfills='9.0', context='scholar_event_8_roll', skill=Deception(), modified_roll=9),
+            CareerChoiceEvent(id=9, fulfills='8.0', choice='accept'),
+            SkillRollEvent(id=10, fulfills='9.0', skill=Deception(), modified_roll=9),
         ]
         projection = replay(1, events)
 
@@ -722,8 +688,8 @@ class TestScholarEvent8:
     def test_accept_success_creates_skill_choice_pending(self):
         events = [
             *self._setup(),
-            CareerChoiceEvent(id=9, fulfills='8.0', context='scholar_event_8', choice='accept'),
-            SkillRollEvent(id=10, fulfills='9.0', context='scholar_event_8_roll', skill=Deception(), modified_roll=9),
+            CareerChoiceEvent(id=9, fulfills='8.0', choice='accept'),
+            SkillRollEvent(id=10, fulfills='9.0', skill=Deception(), modified_roll=9),
         ]
         projection = replay(1, events)
 
@@ -732,8 +698,8 @@ class TestScholarEvent8:
     def test_accept_failure_gains_enemy(self):
         events = [
             *self._setup(),
-            CareerChoiceEvent(id=9, fulfills='8.0', context='scholar_event_8', choice='accept'),
-            SkillRollEvent(id=10, fulfills='9.0', context='scholar_event_8_roll', skill=Deception(), modified_roll=5),
+            CareerChoiceEvent(id=9, fulfills='8.0', choice='accept'),
+            SkillRollEvent(id=10, fulfills='9.0', skill=Deception(), modified_roll=5),
         ]
         projection = replay(1, events)
 
@@ -742,8 +708,8 @@ class TestScholarEvent8:
     def test_accept_failure_creates_advancement_pending(self):
         events = [
             *self._setup(),
-            CareerChoiceEvent(id=9, fulfills='8.0', context='scholar_event_8', choice='accept'),
-            SkillRollEvent(id=10, fulfills='9.0', context='scholar_event_8_roll', skill=Deception(), modified_roll=5),
+            CareerChoiceEvent(id=9, fulfills='8.0', choice='accept'),
+            SkillRollEvent(id=10, fulfills='9.0', skill=Deception(), modified_roll=5),
         ]
         projection = replay(1, events)
 
@@ -772,11 +738,7 @@ class TestScholarEvent11:
         projection = replay(1, self._setup())
 
         pending = next(
-            (
-                p
-                for p in projection.pending_inputs
-                if isinstance(p, PendingCareerSkillChoice) and p.career == 'Scholar' and p.roll == 11
-            ),
+            (p for p in projection.pending_inputs if isinstance(p, PendingScholarEvent11)),
             None,
         )
         assert pending is not None
@@ -1114,7 +1076,7 @@ class TestScholarMishap3ScienceChoice:
             SkillChoiceEvent(id=6, fulfills='4.1', skill=SpaceScience()),
             SurviveEvent(id=7, fulfills='6.0', roll=3),
             MishapEvent(id=8, fulfills='7.0', roll=3),
-            CareerChoiceEvent(id=9, fulfills='8.0', context='scholar_mishap_3', choice=openly_or_secretly),
+            CareerChoiceEvent(id=9, fulfills='8.0', choice=openly_or_secretly),
         ]
 
     def test_openly_choice_grants_chosen_science(self):

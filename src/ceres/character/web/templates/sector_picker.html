@@ -8,7 +8,8 @@
       <h1 class="text-2xl font-bold text-amber-400 tracking-wide">Sector</h1>
       <p class="text-sm text-gray-400">Search by name or abbreviation.</p>
     </div>
-    <a href="/ui/characters/new" class="text-gray-500 hover:text-gray-300 px-4 py-2 text-sm">Back</a>
+    <a href="{% if picker_query %}/ui/characters/new?{{ picker_query }}{% else %}/ui/characters/new{% endif %}"
+       class="text-gray-500 hover:text-gray-300 px-4 py-2 text-sm">Back</a>
   </div>
 
   <div class="space-y-3">
@@ -17,10 +18,18 @@
            name="q"
            placeholder="Try Troj or Trojan Reach"
            hx-get="/ui/worlds/sectors/search"
+           hx-include="#sector-picker-state"
            hx-trigger="input changed delay:250ms"
            hx-target="#sector-search-results"
            hx-swap="innerHTML"
            class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-4 py-3 focus:outline-none focus:border-amber-500">
+    <div id="sector-picker-state" class="hidden">
+      <input type="hidden" name="name" value="{{ form_defaults.name }}">
+      <input type="hidden" name="sophont" value="{{ form_defaults.sophont }}">
+      <input type="hidden" name="player" value="{{ form_defaults.player }}">
+      <input type="hidden" name="homeworld_sector" value="{{ form_defaults.homeworld_sector }}">
+      <input type="hidden" name="homeworld_hex" value="{{ form_defaults.homeworld_hex }}">
+    </div>
     <div id="sector-search-results" class="space-y-2"></div>
   </div>
 </div>

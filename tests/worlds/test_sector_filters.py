@@ -196,6 +196,15 @@ class TestSectorWorldFiltering:
 
         assert [world.name for world in selected] == ['Aster']
 
+    def test_filter_by_world_name_or_hex(self) -> None:
+        filters = SectorWorldFilters(worlds=_sample_worlds())
+
+        by_name = filters.filter_worlds(world_query='ber')
+        by_hex = filters.filter_worlds(world_query='0103')
+
+        assert [world.name for world in by_name] == ['Beryl']
+        assert [world.name for world in by_hex] == ['Cinder']
+
 
 class TestSectorFromTravellerMap:
     def test_loads_sector_worlds_from_adapter_without_fetching_each_world(self, monkeypatch) -> None:

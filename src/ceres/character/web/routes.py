@@ -2,12 +2,13 @@
 
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, Form, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from ceres.adapters.travellermap import TravellerMapWorld
+from ceres.adapters.travellermap import TravellerMapWorld, fetch_world
 from ceres.character.careers.loader import load_careers
 from ceres.character.events import AnyEvent
 from ceres.character.precareers import load_precareers
@@ -22,36 +23,6 @@ from ceres.character.state import (
 from ceres.character.store import SqliteCharacterBackend
 from ceres.worlds import SectorWorldFilters, search_sectors
 
-_DEFAULT_HOMEWORLD = TravellerMapWorld.model_validate(
-    {
-        'Name': 'Terra',
-        'Hex': '1827',
-        'UWP': 'A867A69-F',
-        'PBG': '700',
-        'Zone': '',
-        'Bases': 'N',
-        'Allegiance': 'ImSy',
-        'Stellar': 'G2 V',
-        'SS': 'C',
-        'Ix': '{ 5 }',
-        'Ex': '(H9G+5)',
-        'Cx': '[DC8F]',
-        'Nobility': 'BcCeEfFGH',
-        'Worlds': 12,
-        'ResourceUnits': 6050,
-        'Subsector': 6,
-        'Quadrant': 1,
-        'WorldX': 0,
-        'WorldY': 0,
-        'Remarks': 'Hi In Cx Cs',
-        'LegacyBaseCode': 'N',
-        'Sector': 'Solomani Rim',
-        'SubsectorName': 'Sol',
-        'SectorAbbreviation': 'Solo',
-        'AllegianceName': 'Third Imperium, Solomani Autonomous Region',
-    }
-)
-
 _TEMPLATES_DIR = Path(__file__).parent / 'templates'
 _STRING_FILTER_GROUPS = ('allegiances', 'remarks', 'bases', 'starports')
 _INT_FILTER_GROUPS = (
@@ -63,6 +34,46 @@ _INT_FILTER_GROUPS = (
     'law_levels',
     'tech_levels',
 )
+
+
+def _character_form_defaults(
+    *,
+    name: str = '',
+    sophont: str = SOPHONT_NAMES[0],
+    player: str = 'NPC',
+    homeworld_sector: str = '',
+    homeworld_hex: str = '',
+) -> dict[str, str]:
+    return {
+        'name': name,
+        'sophont': sophont,
+        'player': player,
+        'homeworld_sector': homeworld_sector,
+        'homeworld_hex': homeworld_hex,
+    }
+
+
+def _character_form_defaults_from_request(request: Request) -> dict[str, str]:
+    sophont = request.query_params.get('sophont', SOPHONT_NAMES[0]) or SOPHONT_NAMES[0]
+    return _character_form_defaults(
+        name=request.query_params.get('name', ''),
+        sophont=sophont if sophont in SOPHONT_NAMES else SOPHONT_NAMES[0],
+        player=request.query_params.get('player', 'NPC') or 'NPC',
+        homeworld_sector=request.query_params.get('homeworld_sector', ''),
+        homeworld_hex=request.query_params.get('homeworld_hex', ''),
+    )
+
+
+def _character_form_query_string(form_defaults: dict[str, str]) -> str:
+    return urlencode({key: value for key, value in form_defaults.items() if value})
+
+
+def _selected_homeworld(form_defaults: dict[str, str]) -> TravellerMapWorld | None:
+    sector = form_defaults['homeworld_sector'].strip()
+    hex_code = form_defaults['homeworld_hex'].strip()
+    if not sector or not hex_code:
+        return None
+    return fetch_world(sector, hex_code)
 
 
 def _projection_context(projection: CharacterProjection, character_id: int) -> dict[str, Any]:
@@ -141,34 +152,66 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
 
     @router.get('/characters/new', response_class=HTMLResponse)
     def new_character_form(request: Request) -> Any:
+        form_defaults = _character_form_defaults_from_request(request)
+        try:
+            homeworld = _selected_homeworld(form_defaults)
+        except ValueError as exc:
+            return templates.TemplateResponse(
+                request=request,
+                name='character_new.html',
+                context={
+                    'sophonts': SOPHONT_NAMES,
+                    'error': str(exc),
+                    'form_defaults': form_defaults,
+                    'homeworld': None,
+                    'homeworld_picker_query': _character_form_query_string(form_defaults),
+                },
+                status_code=422,
+            )
         return templates.TemplateResponse(
             request=request,
             name='character_new.html',
-            context={'sophonts': SOPHONT_NAMES},
+            context={
+                'sophonts': SOPHONT_NAMES,
+                'form_defaults': form_defaults,
+                'homeworld': homeworld,
+                'homeworld_picker_query': _character_form_query_string(form_defaults),
+            },
         )
 
     @router.get('/worlds/sectors', response_class=HTMLResponse)
     def sector_picker(request: Request) -> Any:
+        form_defaults = _character_form_defaults_from_request(request)
         return templates.TemplateResponse(
             request=request,
             name='sector_picker.html',
-            context={},
+            context={
+                'form_defaults': form_defaults,
+                'picker_query': _character_form_query_string(form_defaults),
+            },
         )
 
     @router.get('/worlds/sectors/search', response_class=HTMLResponse)
     def sector_search(request: Request, q: str = '') -> Any:
+        form_defaults = _character_form_defaults_from_request(request)
         matches = search_sectors(q)
         return templates.TemplateResponse(
             request=request,
             name='partials/sector_search_results.html',
-            context={'matches': matches, 'query': q},
+            context={
+                'matches': matches,
+                'query': q,
+                'picker_query': _character_form_query_string(form_defaults),
+            },
         )
 
     @router.get('/worlds/sectors/{sector_abbreviation}', response_class=HTMLResponse)
     def sector_filters(request: Request, sector_abbreviation: str) -> Any:
+        form_defaults = _character_form_defaults_from_request(request)
         sector = SectorWorldFilters.from_travellermap(sector_abbreviation)
         selected_strings, selected_ints, filters_active = _selected_world_filters(request)
         applied_strings, applied_ints = _normalize_world_filters_for_matching(selected_strings, selected_ints, sector)
+        world_query = request.query_params.get('world_query', '').strip()
         filtered_worlds = sector.filter_worlds(
             allegiances=applied_strings.get('allegiances'),
             remarks=applied_strings.get('remarks'),
@@ -181,8 +224,10 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
             governments=applied_ints.get('governments'),
             law_levels=applied_ints.get('law_levels'),
             tech_levels=applied_ints.get('tech_levels'),
+            world_query=world_query,
         )
         selected: dict[str, set[str]] = {**selected_strings, **selected_ints}
+        picker_query = _character_form_query_string(form_defaults)
         return templates.TemplateResponse(
             request=request,
             name='sector_filters.html',
@@ -194,6 +239,16 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
                 'filtered_world_count': len(filtered_worlds),
                 'selected': selected,
                 'filters_active': filters_active,
+                'world_query': world_query,
+                'form_defaults': form_defaults,
+                'picker_query': picker_query,
+                'select_homeworld_base': f'/ui/characters/new?{picker_query}' if picker_query else '/ui/characters/new',
+                'back_to_picker_url': f'/ui/worlds/sectors?{picker_query}' if picker_query else '/ui/worlds/sectors',
+                'reset_filters_url': (
+                    f'/ui/worlds/sectors/{sector.sector_abbreviation}?{picker_query}'
+                    if picker_query
+                    else f'/ui/worlds/sectors/{sector.sector_abbreviation}'
+                ),
             },
         )
 
@@ -203,22 +258,65 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
         name: str = Form(...),
         sophont: str = Form(...),
         player: str = Form('NPC'),
+        homeworld_sector: str = Form(''),
+        homeworld_hex: str = Form(''),
     ) -> Any:
         name = name.strip()
+        form_defaults = _character_form_defaults(
+            name=name,
+            sophont=sophont,
+            player=player.strip() or 'NPC',
+            homeworld_sector=homeworld_sector.strip(),
+            homeworld_hex=homeworld_hex.strip(),
+        )
         if not name:
             return templates.TemplateResponse(
                 request=request,
                 name='character_new.html',
-                context={'sophonts': SOPHONT_NAMES, 'error': 'Name is required'},
+                context={
+                    'sophonts': SOPHONT_NAMES,
+                    'error': 'Name is required',
+                    'form_defaults': form_defaults,
+                    'homeworld': None,
+                    'homeworld_picker_query': _character_form_query_string(form_defaults),
+                },
                 status_code=422,
             )
         sophont_obj = get_sophont(sophont) or get_sophont(SOPHONT_NAMES[0])
         if sophont_obj is None:
             raise RuntimeError(f'No fallback sophont available: {sophont!r}')
+        try:
+            homeworld = _selected_homeworld(form_defaults)
+        except ValueError as exc:
+            return templates.TemplateResponse(
+                request=request,
+                name='character_new.html',
+                context={
+                    'sophonts': SOPHONT_NAMES,
+                    'error': str(exc),
+                    'form_defaults': form_defaults,
+                    'homeworld': None,
+                    'homeworld_picker_query': _character_form_query_string(form_defaults),
+                },
+                status_code=422,
+            )
+        if homeworld is None:
+            return templates.TemplateResponse(
+                request=request,
+                name='character_new.html',
+                context={
+                    'sophonts': SOPHONT_NAMES,
+                    'error': 'Homeworld is required',
+                    'form_defaults': form_defaults,
+                    'homeworld': None,
+                    'homeworld_picker_query': _character_form_query_string(form_defaults),
+                },
+                status_code=422,
+            )
         row = backend.start(
             sophont=sophont_obj,
-            homeworld=_DEFAULT_HOMEWORLD,
-            player=player.strip() or 'NPC',
+            homeworld=homeworld,
+            player=form_defaults['player'],
             name=name,
         )
         return RedirectResponse(url=f'/ui/characters/{row["id"]}/wizard', status_code=303)

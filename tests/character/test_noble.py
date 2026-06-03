@@ -1,5 +1,11 @@
 """Tests for the Noble career — administrator, diplomat, and dilettante assignments."""
 
+from ceres.character.careers.noble import (
+    PendingNobleEvent8,
+    PendingNobleEvent8SkillRoll,
+    PendingNobleMishap3SkillRoll,
+    PendingNobleMishap5SkillRoll,
+)
 from ceres.character.characteristics import Chars
 from ceres.character.events import (
     BackgroundSkillsEvent,
@@ -8,8 +14,6 @@ from ceres.character.events import (
     CharacterStartedEvent,
     MishapEvent,
     PendingAdvancement,
-    PendingCareerEvent,
-    PendingCareerSkillRoll,
     PendingMusterOut,
     SkillRollEvent,
     SurviveEvent,
@@ -65,7 +69,7 @@ class TestNobleMishap3:
     def test_mishap_3_creates_skill_roll_pending(self):
         events = [*self._setup_to_mishap(), MishapEvent(id=6, fulfills='5.0', roll=3)]
         projection = replay(1, events)
-        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerSkillRoll)), None)
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingNobleMishap3SkillRoll)), None)
         assert pending is not None
         assert pending.options == [Stealth(), Deception()]
 
@@ -73,7 +77,7 @@ class TestNobleMishap3:
         events = [
             *self._setup_to_mishap(),
             MishapEvent(id=6, fulfills='5.0', roll=3),
-            SkillRollEvent(id=7, fulfills='6.0', context='noble_mishap_3', skill=Admin(), modified_roll=9),
+            SkillRollEvent(id=7, fulfills='6.0', skill=Admin(), modified_roll=9),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
@@ -82,7 +86,7 @@ class TestNobleMishap3:
         events = [
             *self._setup_to_mishap(),
             MishapEvent(id=6, fulfills='5.0', roll=3),
-            SkillRollEvent(id=7, fulfills='6.0', context='noble_mishap_3', skill=Admin(), modified_roll=7),
+            SkillRollEvent(id=7, fulfills='6.0', skill=Admin(), modified_roll=7),
         ]
         projection = replay(1, events)
         assert not any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
@@ -91,7 +95,7 @@ class TestNobleMishap3:
         events = [
             *self._setup_to_mishap(),
             MishapEvent(id=6, fulfills='5.0', roll=3),
-            SkillRollEvent(id=7, fulfills='6.0', context='noble_mishap_3', skill=Admin(), modified_roll=7),
+            SkillRollEvent(id=7, fulfills='6.0', skill=Admin(), modified_roll=7),
         ]
         projection = replay(1, events)
         assert any('injur' in p.lower() or 'escape' in p.lower() for p in projection.summary.problems)
@@ -101,7 +105,7 @@ class TestNobleMishap3:
             events = [
                 *self._setup_to_mishap(),
                 MishapEvent(id=6, fulfills='5.0', roll=3),
-                SkillRollEvent(id=7, fulfills='6.0', context='noble_mishap_3', skill=Admin(), modified_roll=roll),
+                SkillRollEvent(id=7, fulfills='6.0', skill=Admin(), modified_roll=roll),
             ]
             projection = replay(1, events)
             assert projection.summary.current_career is None, f'roll={roll}'
@@ -120,7 +124,7 @@ class TestNobleMishap5:
     def test_mishap_5_creates_end_roll_pending(self):
         events = [*self._setup_to_mishap(), MishapEvent(id=6, fulfills='5.0', roll=5)]
         projection = replay(1, events)
-        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerSkillRoll)), None)
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingNobleMishap5SkillRoll)), None)
         assert pending is not None
         assert pending.options == [Chars.END]
 
@@ -129,7 +133,7 @@ class TestNobleMishap5:
         events = [
             *self._setup_to_mishap(),
             MishapEvent(id=6, fulfills='5.0', roll=5),
-            SkillRollEvent(id=7, fulfills='6.0', context='noble_mishap_5', skill=Chars.END, modified_roll=7),
+            SkillRollEvent(id=7, fulfills='6.0', skill=Chars.END, modified_roll=7),
         ]
         projection = replay(1, events)
         assert any('apply the result' in p.lower() for p in projection.summary.problems)
@@ -139,7 +143,7 @@ class TestNobleMishap5:
         events = [
             *self._setup_to_mishap(),
             MishapEvent(id=6, fulfills='5.0', roll=5),
-            SkillRollEvent(id=7, fulfills='6.0', context='noble_mishap_5', skill=Chars.END, modified_roll=9),
+            SkillRollEvent(id=7, fulfills='6.0', skill=Chars.END, modified_roll=9),
         ]
         projection = replay(1, events)
         assert not any('apply the result' in p.lower() for p in projection.summary.problems)
@@ -149,7 +153,7 @@ class TestNobleMishap5:
             events = [
                 *self._setup_to_mishap(),
                 MishapEvent(id=6, fulfills='5.0', roll=5),
-                SkillRollEvent(id=7, fulfills='6.0', context='noble_mishap_5', skill=Chars.END, modified_roll=roll),
+                SkillRollEvent(id=7, fulfills='6.0', skill=Chars.END, modified_roll=roll),
             ]
             projection = replay(1, events)
             assert projection.summary.current_career is None, f'roll={roll}'
@@ -165,7 +169,7 @@ class TestNobleEvent8:
     def test_creates_event_pending_with_options(self):
         projection = replay(1, self._setup_to_event())
         pending = next(
-            (p for p in projection.pending_inputs if isinstance(p, PendingCareerEvent) and p.roll == 8),
+            (p for p in projection.pending_inputs if isinstance(p, PendingNobleEvent8)),
             None,
         )
         assert pending is not None
@@ -174,7 +178,7 @@ class TestNobleEvent8:
     def test_refuse_adds_rival(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', context='noble_event_8', choice='refuse'),
+            CareerChoiceEvent(id=7, fulfills='6.0', choice='refuse'),
         ]
         projection = replay(1, events)
         rivals = [c for c in projection.summary.connections if isinstance(c, Rival)]
@@ -183,7 +187,7 @@ class TestNobleEvent8:
     def test_refuse_queues_advancement(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', context='noble_event_8', choice='refuse'),
+            CareerChoiceEvent(id=7, fulfills='6.0', choice='refuse'),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
@@ -191,18 +195,18 @@ class TestNobleEvent8:
     def test_accept_creates_skill_roll(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', context='noble_event_8', choice='accept'),
+            CareerChoiceEvent(id=7, fulfills='6.0', choice='accept'),
         ]
         projection = replay(1, events)
-        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerSkillRoll)), None)
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingNobleEvent8SkillRoll)), None)
         assert pending is not None
         assert pending.options == [Deception(), Persuade()]
 
     def test_accept_success_adds_extra_benefit_roll(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', context='noble_event_8', choice='accept'),
-            SkillRollEvent(id=8, fulfills='7.0', context='noble_event_8_skill', skill=Admin(), modified_roll=9),
+            CareerChoiceEvent(id=7, fulfills='6.0', choice='accept'),
+            SkillRollEvent(id=8, fulfills='7.0', skill=Admin(), modified_roll=9),
         ]
         projection = replay(1, events)
         add_effects = [se for se in projection.scheduled_effects if se.trigger == 'muster_out_add']
@@ -211,8 +215,8 @@ class TestNobleEvent8:
     def test_accept_success_continues_career(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', context='noble_event_8', choice='accept'),
-            SkillRollEvent(id=8, fulfills='7.0', context='noble_event_8_skill', skill=Admin(), modified_roll=9),
+            CareerChoiceEvent(id=7, fulfills='6.0', choice='accept'),
+            SkillRollEvent(id=8, fulfills='7.0', skill=Admin(), modified_roll=9),
         ]
         projection = replay(1, events)
         assert projection.summary.current_career is not None
@@ -221,8 +225,8 @@ class TestNobleEvent8:
     def test_accept_failure_adds_enemy_and_ends_career(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', context='noble_event_8', choice='accept'),
-            SkillRollEvent(id=8, fulfills='7.0', context='noble_event_8_skill', skill=Admin(), modified_roll=7),
+            CareerChoiceEvent(id=7, fulfills='6.0', choice='accept'),
+            SkillRollEvent(id=8, fulfills='7.0', skill=Admin(), modified_roll=7),
         ]
         projection = replay(1, events)
         enemies = [c for c in projection.summary.connections if isinstance(c, Enemy)]

@@ -33,10 +33,9 @@ from ceres.character.careers.career_data import (
     SkillChoiceEffect,
     SkillTable,
 )
+from ceres.character.careers.common_pending import CareerSkillChoicePendingBase, CareerSkillRollPendingBase
 from ceres.character.characteristics import Chars, ConnectionKind
 from ceres.character.events import (
-    PendingCareerSkillChoice,
-    PendingCareerSkillRoll,
     PendingMishap,
     PendingSkillChoice,
     SkillRollEvent,
@@ -92,17 +91,33 @@ _AMBUSH_TARGETS: dict[str, int] = {'Pilot': 8, 'Persuade': 10}
 # ── event 3: ambush ──────────────────────────────────────────────────────────
 
 
+class PendingScoutEvent3SkillRoll(CareerSkillRollPendingBase):
+    kind: Literal['scout_event_3_skill_roll'] = 'scout_event_3_skill_roll'
+
+    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+        skill_name = event.skill if isinstance(event.skill, str) else type(event.skill).name()
+        target = _AMBUSH_TARGETS[skill_name]
+        if event.modified_roll >= target:
+            projection.grant_skill(
+                Electronics(
+                    comms=Level(value=1),
+                    computers=Level(value=1),
+                    remote_ops=Level(value=1),
+                    sensors=Level(value=1),
+                )
+            )
+        else:
+            projection.summary.problems.append('Ship destroyed; may not re-enlist in Scouts at the end of this term.')
+
+
 class ScoutEvent3Handler(CareerHandlerBase):
     type: Literal['scout_event_3'] = 'scout_event_3'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingCareerSkillRoll(
+            PendingScoutEvent3SkillRoll(
                 id=f'{event_id}.{pending_idx}',
-                career='Scout',
-                roll=3,
-                context='scout_event_3',
                 instruction='Roll Pilot 8+ to escape or Persuade 10+ to bargain',
                 options=[Pilot(), Persuade()],
             )
@@ -111,6 +126,7 @@ class ScoutEvent3Handler(CareerHandlerBase):
 
     @staticmethod
     def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
+        # Legacy dispatch path — new path uses PendingScoutEvent3SkillRoll.resolve()
         skill_name = event.skill if isinstance(event.skill, str) else type(event.skill).name()
         target = _AMBUSH_TARGETS[skill_name]
         if event.modified_roll >= target:
@@ -129,17 +145,36 @@ class ScoutEvent3Handler(CareerHandlerBase):
 # ── event 8: alien intelligence ──────────────────────────────────────────────
 
 
+class PendingScoutEvent8SkillRoll(CareerSkillRollPendingBase):
+    kind: Literal['scout_event_8_skill_roll'] = 'scout_event_8_skill_roll'
+
+    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+        if event.modified_roll >= 8:
+            projection.summary.connections.append(Ally(source='Alien intelligence contact'))
+            projection.scheduled_effects.append(
+                ScheduledEffect(
+                    trigger='advancement',
+                    source_event_id=event.id,
+                    effect={'type': 'dm', 'amount': 2},
+                )
+            )
+        else:
+            projection.pending_inputs.append(
+                PendingMishap(
+                    id=f'{event.id}.0',
+                    instruction='Roll 1D Mishap (you are not ejected from this career)',
+                )
+            )
+
+
 class ScoutEvent8Handler(CareerHandlerBase):
     type: Literal['scout_event_8'] = 'scout_event_8'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingCareerSkillRoll(
+            PendingScoutEvent8SkillRoll(
                 id=f'{event_id}.{pending_idx}',
-                career='Scout',
-                roll=8,
-                context='scout_event_8',
                 instruction='Roll Electronics 8+ or Deception 8+',
                 options=[Electronics(), Deception()],
             )
@@ -148,6 +183,7 @@ class ScoutEvent8Handler(CareerHandlerBase):
 
     @staticmethod
     def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
+        # Legacy dispatch path — new path uses PendingScoutEvent8SkillRoll.resolve()
         if event.modified_roll >= 8:
             projection.summary.connections.append(Ally(source='Alien intelligence contact'))
             projection.scheduled_effects.append(
@@ -169,17 +205,31 @@ class ScoutEvent8Handler(CareerHandlerBase):
 # ── event 9: disaster rescue ─────────────────────────────────────────────────
 
 
+class PendingScoutEvent9SkillRoll(CareerSkillRollPendingBase):
+    kind: Literal['scout_event_9_skill_roll'] = 'scout_event_9_skill_roll'
+
+    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+        if event.modified_roll >= 8:
+            projection.summary.connections.append(Contact(source='Disaster survivor'))
+            projection.scheduled_effects.append(
+                ScheduledEffect(
+                    trigger='advancement',
+                    source_event_id=event.id,
+                    effect={'type': 'dm', 'amount': 2},
+                )
+            )
+        else:
+            projection.summary.connections.append(Enemy(source='Disaster relief gone wrong'))
+
+
 class ScoutEvent9Handler(CareerHandlerBase):
     type: Literal['scout_event_9'] = 'scout_event_9'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingCareerSkillRoll(
+            PendingScoutEvent9SkillRoll(
                 id=f'{event_id}.{pending_idx}',
-                career='Scout',
-                roll=9,
-                context='scout_event_9',
                 instruction='Roll Medic 8+ or Engineer 8+',
                 options=[Medic(), Engineer()],
             )
@@ -188,6 +238,7 @@ class ScoutEvent9Handler(CareerHandlerBase):
 
     @staticmethod
     def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
+        # Legacy dispatch path — new path uses PendingScoutEvent9SkillRoll.resolve()
         if event.modified_roll >= 8:
             projection.summary.connections.append(Contact(source='Disaster survivor'))
             projection.scheduled_effects.append(
@@ -204,17 +255,36 @@ class ScoutEvent9Handler(CareerHandlerBase):
 # ── event 10: fringes of Charted Space ───────────────────────────────────────
 
 
+class PendingScoutEvent10SkillRoll(CareerSkillRollPendingBase):
+    kind: Literal['scout_event_10_skill_roll'] = 'scout_event_10_skill_roll'
+
+    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+        if event.modified_roll >= 8:
+            projection.summary.connections.append(Contact(source='Alien contact from the fringes of Charted Space'))
+            projection.pending_inputs.append(
+                PendingSkillChoice(
+                    id=f'{event.id}.0',
+                    instruction='Choose any skill +1 (alien contact)',
+                    options=[],
+                )
+            )
+        else:
+            projection.pending_inputs.append(
+                PendingMishap(
+                    id=f'{event.id}.0',
+                    instruction='Roll 1D Mishap (you are not ejected from this career)',
+                )
+            )
+
+
 class ScoutEvent10Handler(CareerHandlerBase):
     type: Literal['scout_event_10'] = 'scout_event_10'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingCareerSkillRoll(
+            PendingScoutEvent10SkillRoll(
                 id=f'{event_id}.{pending_idx}',
-                career='Scout',
-                roll=10,
-                context='scout_event_10',
                 instruction='Roll Survival 8+ or Pilot 8+',
                 options=[Survival(), Pilot()],
             )
@@ -223,6 +293,7 @@ class ScoutEvent10Handler(CareerHandlerBase):
 
     @staticmethod
     def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
+        # Legacy dispatch path — new path uses PendingScoutEvent10SkillRoll.resolve()
         if event.modified_roll >= 8:
             projection.summary.connections.append(Contact(source='Alien contact from the fringes of Charted Space'))
             projection.pending_inputs.append(
@@ -244,19 +315,21 @@ class ScoutEvent10Handler(CareerHandlerBase):
 # ── event 11: imperial courier ───────────────────────────────────────────────
 
 
+class PendingScoutEvent11(CareerSkillChoicePendingBase):
+    kind: Literal['scout_event_11'] = 'scout_event_11'
+
+
 class ScoutEvent11Handler(CareerHandlerBase):
     type: Literal['scout_event_11'] = 'scout_event_11'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingCareerSkillChoice(
+            PendingScoutEvent11(
                 id=f'{event_id}.{pending_idx}',
-                career='Scout',
-                roll=11,
-                advancement_precreated=False,
                 instruction='Gain Diplomat 1, or DM+4 to your next advancement roll',
                 options=[Diplomat(), AdvancementDmOption()],
+                advancement_precreated=False,
             )
         )
         return pending_idx + 1

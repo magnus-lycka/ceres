@@ -33,10 +33,9 @@ from ceres.character.careers.career_data import (
     SkillTable,
 )
 from ceres.character.careers.common import handle_advanced_training, resolve_advanced_training
+from ceres.character.careers.common_pending import CareerChoicePendingBase, CareerSkillRollPendingBase
 from ceres.character.characteristics import Chars
 from ceres.character.events import (
-    PendingCareerMishap,
-    PendingCareerSkillRoll,
     PendingSkillChoice,
     SkillRollEvent,
 )
@@ -86,30 +85,13 @@ ARMY = Career(
 )
 
 
-# ── mishap 4: illegal activity ────────────────────────────────────────────────
+# ── Career-specific pending input types ──────────────────────────────────────
 
 
-class ArmyMishap4Handler(CareerHandlerBase):
-    type: Literal['army_mishap_4'] = 'army_mishap_4'
+class PendingArmyMishap4(CareerChoicePendingBase):
+    kind: Literal['army_mishap_4'] = 'army_mishap_4'
 
-    @staticmethod
-    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
-            PendingCareerMishap(
-                id=f'{event_id}.{pending_idx}',
-                career='Army',
-                roll=4,
-                instruction=(
-                    'Join their ring (gain commanding officer as Ally, lose Benefit roll) '
-                    'or co-operate with MPs (keep Benefit roll from this term)?'
-                ),
-                options=['join_ring', 'cooperate'],
-            )
-        )
-        return pending_idx + 1
-
-    @staticmethod
-    def on_choice(projection: CharacterProjection, event) -> None:
+    def on_choice(self, projection: CharacterProjection, event) -> None:
         from ceres.character.events import _apply_mishap_ejection
 
         career = projection.get_current_career()
@@ -120,28 +102,10 @@ class ArmyMishap4Handler(CareerHandlerBase):
             _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=False)
 
 
-# ── event 6: brutal ground war ───────────────────────────────────────────────
+class PendingArmyEvent6SkillRoll(CareerSkillRollPendingBase):
+    kind: Literal['army_event_6_skill_roll'] = 'army_event_6_skill_roll'
 
-
-class ArmyEvent6Handler(CareerHandlerBase):
-    type: Literal['army_event_6'] = 'army_event_6'
-
-    @staticmethod
-    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
-            PendingCareerSkillRoll(
-                id=f'{event_id}.{pending_idx}',
-                career='Army',
-                roll=6,
-                context='army_event_6',
-                instruction='Roll EDU 8+ to avoid injury in the brutal ground war',
-                options=[Chars.EDU],
-            )
-        )
-        return pending_idx + 1
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
         if event.modified_roll >= 8:
             projection.pending_inputs.append(
                 PendingSkillChoice(
@@ -154,6 +118,45 @@ class ArmyEvent6Handler(CareerHandlerBase):
             projection.summary.problems.append(
                 'Brutal ground war: you are injured — roll on the Injury table and apply the result.'
             )
+
+
+# ── mishap 4: illegal activity ────────────────────────────────────────────────
+
+
+class ArmyMishap4Handler(CareerHandlerBase):
+    type: Literal['army_mishap_4'] = 'army_mishap_4'
+
+    @staticmethod
+    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
+        projection.pending_inputs.append(
+            PendingArmyMishap4(
+                id=f'{event_id}.{pending_idx}',
+                instruction=(
+                    'Join their ring (gain commanding officer as Ally, lose Benefit roll) '
+                    'or co-operate with MPs (keep Benefit roll from this term)?'
+                ),
+                options=['join_ring', 'cooperate'],
+            )
+        )
+        return pending_idx + 1
+
+
+# ── event 6: brutal ground war ───────────────────────────────────────────────
+
+
+class ArmyEvent6Handler(CareerHandlerBase):
+    type: Literal['army_event_6'] = 'army_event_6'
+
+    @staticmethod
+    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
+        projection.pending_inputs.append(
+            PendingArmyEvent6SkillRoll(
+                id=f'{event_id}.{pending_idx}',
+                instruction='Roll EDU 8+ to avoid injury in the brutal ground war',
+                options=[Chars.EDU],
+            )
+        )
+        return pending_idx + 1
 
 
 # ── event 8: advanced training ───────────────────────────────────────────────

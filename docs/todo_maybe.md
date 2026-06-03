@@ -578,6 +578,128 @@ Known differences:
   against the project's text-fidelity policy after the behavioral gaps are
   fixed.
 
+## Merchant career tables: bring Ceres fully in line with Core
+
+The `Merchant` career has several important fidelity gaps in both event/mishap
+text and handler behavior compared with the Core Rulebook.
+
+References:
+
+- `refs/core/02_traveller_creation.md` (Merchant mishaps/events)
+- `src/ceres/character/careers/merchant.py`
+
+Known differences:
+
+- **Mishap 2** — text matches Core, but Ceres appears to implement only the
+  `Rival` part and not the required "lose all Benefits from this career"
+  consequence.
+- **Mishap 5** — Core says the Traveller may take the `Rogue` career next term
+  without a qualification roll. Ceres currently drops that rule entirely.
+- **Mishap 6** — Core says bankruptcy still allows a Benefit roll for the term.
+  Ceres currently has an unrelated injury mishap here instead, so this row
+  appears to be outright wrong.
+- **Event 3** — this is a substantial rewrite in Ceres. Core says refusing the
+  smuggling job gains an `Enemy`; accepting and succeeding grants `Streetwise
+  1` and an extra Benefit roll. Ceres instead gives a `Rival` on refusal, and
+  on acceptance it omits the `Streetwise 1`, ejects the Traveller on failure,
+  and adds an `Enemy`.
+- **Event 5** — Core says to risk a chosen number of Benefit rolls, roll
+  `Gambler 8+` or `Broker 8+`, then gain or lose Benefit rolls accordingly and
+  gain one level in whichever skill was used. Ceres currently leaves the whole
+  process as a manual problem note and does not automate the skill increase.
+- **Event 11** — Core grants an `Ally` and either `Carouse 1` or `DM+4` to the
+  next advancement roll. Ceres currently grants only the `Ally`.
+- **Event 7** — inherits the generic Life Events correctness gap; once the
+  generic Life Events todo is fixed, re-check Merchant event 7 against Core.
+- **Text drift across multiple rows** — Mishap 1, Mishap 5, Event 3, Event 4,
+  Event 5, Event 7, Event 8, Event 9, and Event 11 are shortened relative to
+  Core even where the mechanical intent is closer. Review these strings against
+  the project's text-fidelity policy after the behavioral gaps are fixed.
+
+## Navy career tables: bring Ceres fully in line with Core
+
+The `Navy` career still needs the same kind of strict Core-vs-Ceres audit that
+has now been done for several other careers.
+
+References:
+
+- `refs/core/02_traveller_creation.md` (Navy mishaps/events)
+- `src/ceres/character/careers/navy.py`
+
+This needs a row-by-row comparison of `MishapEntry.text` / `CareerEventEntry.text`
+and handler behavior against the Core Rulebook, with any text drift and
+behavioral mismatches turned into concrete follow-up items.
+
+## Noble career tables: bring Ceres fully in line with Core
+
+The `Noble` career still needs the same kind of strict Core-vs-Ceres audit that
+has now been done for several other careers.
+
+References:
+
+- `refs/core/02_traveller_creation.md` (Noble mishaps/events)
+- `src/ceres/character/careers/noble.py`
+
+This needs a row-by-row comparison of `MishapEntry.text` / `CareerEventEntry.text`
+and handler behavior against the Core Rulebook, with any text drift and
+behavioral mismatches turned into concrete follow-up items.
+
+## Prisoner career tables: bring Ceres fully in line with Core
+
+The `Prisoner` career still needs the same kind of strict Core-vs-Ceres audit
+that has now been done for several other careers.
+
+References:
+
+- `refs/core/02_traveller_creation.md` (Prisoner mishaps/events)
+- `src/ceres/character/careers/prisoner.py`
+
+This needs a row-by-row comparison of `MishapEntry.text` / `CareerEventEntry.text`
+and handler behavior against the Core Rulebook, with any text drift and
+behavioral mismatches turned into concrete follow-up items.
+
+## Rogue career tables: bring Ceres fully in line with Core
+
+The `Rogue` career still needs the same kind of strict Core-vs-Ceres audit that
+has now been done for several other careers.
+
+References:
+
+- `refs/core/02_traveller_creation.md` (Rogue mishaps/events)
+- `src/ceres/character/careers/rogue.py`
+
+This needs a row-by-row comparison of `MishapEntry.text` / `CareerEventEntry.text`
+and handler behavior against the Core Rulebook, with any text drift and
+behavioral mismatches turned into concrete follow-up items.
+
+## Scholar career tables: bring Ceres fully in line with Core
+
+The `Scholar` career still needs the same kind of strict Core-vs-Ceres audit
+that has now been done for several other careers.
+
+References:
+
+- `refs/core/02_traveller_creation.md` (Scholar mishaps/events)
+- `src/ceres/character/careers/scholar.py`
+
+This needs a row-by-row comparison of `MishapEntry.text` / `CareerEventEntry.text`
+and handler behavior against the Core Rulebook, with any text drift and
+behavioral mismatches turned into concrete follow-up items.
+
+## Scout career tables: bring Ceres fully in line with Core
+
+The `Scout` career still needs the same kind of strict Core-vs-Ceres audit that
+has now been done for several other careers.
+
+References:
+
+- `refs/core/02_traveller_creation.md` (Scout mishaps/events)
+- `src/ceres/character/careers/scout.py`
+
+This needs a row-by-row comparison of `MishapEntry.text` / `CareerEventEntry.text`
+and handler behavior against the Core Rulebook, with any text drift and
+behavioral mismatches turned into concrete follow-up items.
+
 ### Replace sophont string-name lookup with typed objects
 
 `sophonts/__init__.py` finds sophonts by string name. Sophonts should be

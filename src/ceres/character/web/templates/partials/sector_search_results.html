@@ -1,6 +1,6 @@
 {% for sector in matches %}
 {% if sector.abbreviation %}
-<a href="/ui/worlds/sectors/{{ sector.abbreviation }}"
+<a href="/ui/worlds/sectors/{{ sector.abbreviation }}{% if picker_query %}?{{ picker_query }}{% endif %}"
    class="block border border-gray-800 bg-gray-950/70 px-4 py-3 hover:border-amber-700/60">
   <span class="font-semibold text-gray-100">{{ sector.names[0] if sector.names else sector.abbreviation }}</span>
   <span class="ml-2 text-xs uppercase tracking-wide text-amber-400">{{ sector.abbreviation }}</span>

@@ -33,11 +33,9 @@ from ceres.character.careers.career_data import (
     SkillTable,
 )
 from ceres.character.careers.common import handle_advanced_training, resolve_advanced_training
+from ceres.character.careers.common_pending import CareerChoicePendingBase, CareerSkillRollPendingBase
 from ceres.character.characteristics import Chars
 from ceres.character.events import (
-    PendingCareerEvent,
-    PendingCareerMishap,
-    PendingCareerSkillRoll,
     PendingSkillChoice,
     SkillRollEvent,
     career_progress_pending,
@@ -91,30 +89,13 @@ CITIZEN = Career(
 )
 
 
-# ── mishap 4: investigation by authorities ────────────────────────────────────
+# ── Career-specific pending input types ──────────────────────────────────────
 
 
-class CitizenMishap4Handler(CareerHandlerBase):
-    type: Literal['citizen_mishap_4'] = 'citizen_mishap_4'
+class PendingCitizenMishap4(CareerChoicePendingBase):
+    kind: Literal['citizen_mishap_4'] = 'citizen_mishap_4'
 
-    @staticmethod
-    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
-            PendingCareerMishap(
-                id=f'{event_id}.{pending_idx}',
-                career='Citizen',
-                roll=4,
-                instruction=(
-                    'Co-operate with the investigation (gain investigators as a Contact, keep Benefit roll) '
-                    'or resist (gain a Rival, lose Benefit roll)?'
-                ),
-                options=['cooperate', 'resist'],
-            )
-        )
-        return pending_idx + 1
-
-    @staticmethod
-    def on_choice(projection: CharacterProjection, event) -> None:
+    def on_choice(self, projection: CharacterProjection, event) -> None:
         from ceres.character.events import _apply_mishap_ejection
 
         career = projection.get_current_career()
@@ -126,28 +107,10 @@ class CitizenMishap4Handler(CareerHandlerBase):
             _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
 
 
-# ── mishap 5: revolution or attack ───────────────────────────────────────────
+class PendingCitizenMishap5SkillRoll(CareerSkillRollPendingBase):
+    kind: Literal['citizen_mishap_5_skill_roll'] = 'citizen_mishap_5_skill_roll'
 
-
-class CitizenMishap5Handler(CareerHandlerBase):
-    type: Literal['citizen_mishap_5'] = 'citizen_mishap_5'
-
-    @staticmethod
-    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
-            PendingCareerSkillRoll(
-                id=f'{event_id}.{pending_idx}',
-                career='Citizen',
-                roll=5,
-                context='citizen_mishap_5',
-                instruction='Roll Streetwise 8+: success = increase any existing skill by one level (ejected either way)',
-                options=[Streetwise()],
-            )
-        )
-        return pending_idx + 1
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
         from ceres.character.events import _apply_mishap_ejection
 
         career = projection.get_current_career()
@@ -162,6 +125,90 @@ class CitizenMishap5Handler(CareerHandlerBase):
             _apply_mishap_ejection(projection, career, event.id, 1, lose_current_term=True)
         else:
             _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+
+
+class PendingCitizenEvent8(CareerChoicePendingBase):
+    kind: Literal['citizen_event_8'] = 'citizen_event_8'
+
+    def on_choice(self, projection: CharacterProjection, event) -> None:
+        career = projection.get_current_career()
+        if event.choice == 'refuse':
+            projection.scheduled_effects.append(
+                ScheduledEffect(
+                    trigger='advancement',
+                    source_event_id=event.id,
+                    effect={'type': 'dm', 'amount': 2},
+                )
+            )
+            projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+        else:
+            projection.pending_inputs.append(
+                PendingCitizenEvent8SkillRoll(
+                    id=f'{event.id}.0',
+                    instruction='Roll Streetwise 8+: success = extra Benefit roll; fail = ejected, gain Rival',
+                    options=[Streetwise()],
+                )
+            )
+
+
+class PendingCitizenEvent8SkillRoll(CareerSkillRollPendingBase):
+    kind: Literal['citizen_event_8_skill_roll'] = 'citizen_event_8_skill_roll'
+
+    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+        from ceres.character.events import _apply_mishap_ejection
+
+        if event.modified_roll >= 8:
+            projection.scheduled_effects.append(
+                ScheduledEffect(
+                    trigger='muster_out_add',
+                    source_event_id=event.id,
+                    effect={'type': 'add', 'value': 1},
+                )
+            )
+            # no pending added — _apply_skill_roll auto-queues advancement
+        else:
+            career = projection.get_current_career()
+            projection.summary.connections.append(Rival(source='Illegal information leak (Citizen event 8)'))
+            _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+
+
+# ── mishap 4: investigation by authorities ────────────────────────────────────
+
+
+class CitizenMishap4Handler(CareerHandlerBase):
+    type: Literal['citizen_mishap_4'] = 'citizen_mishap_4'
+
+    @staticmethod
+    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
+        projection.pending_inputs.append(
+            PendingCitizenMishap4(
+                id=f'{event_id}.{pending_idx}',
+                instruction=(
+                    'Co-operate with the investigation (gain investigators as a Contact, keep Benefit roll) '
+                    'or resist (gain a Rival, lose Benefit roll)?'
+                ),
+                options=['cooperate', 'resist'],
+            )
+        )
+        return pending_idx + 1
+
+
+# ── mishap 5: revolution or attack ───────────────────────────────────────────
+
+
+class CitizenMishap5Handler(CareerHandlerBase):
+    type: Literal['citizen_mishap_5'] = 'citizen_mishap_5'
+
+    @staticmethod
+    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
+        projection.pending_inputs.append(
+            PendingCitizenMishap5SkillRoll(
+                id=f'{event_id}.{pending_idx}',
+                instruction='Roll Streetwise 8+: success = increase any existing skill by one level (ejected either way)',
+                options=[Streetwise()],
+            )
+        )
+        return pending_idx + 1
 
 
 # ── event 6: advanced training ────────────────────────────────────────────────
@@ -190,10 +237,8 @@ class CitizenEvent8Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingCareerEvent(
+            PendingCitizenEvent8(
                 id=f'{event_id}.{pending_idx}',
-                career='Citizen',
-                roll=8,
                 instruction=(
                     'Use the illegal information (roll Streetwise 8+: success = extra Benefit roll, '
                     'fail = ejected, gain Rival) or refuse (DM+2 to next advancement)?'
@@ -203,36 +248,13 @@ class CitizenEvent8Handler(CareerHandlerBase):
         )
         return pending_idx + 1
 
-    @staticmethod
-    def on_choice(projection: CharacterProjection, event) -> None:
-        career = projection.get_current_career()
-        if event.choice == 'refuse':
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger='advancement',
-                    source_event_id=event.id,
-                    effect={'type': 'dm', 'amount': 2},
-                )
-            )
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
-        else:
-            projection.pending_inputs.append(
-                PendingCareerSkillRoll(
-                    id=f'{event.id}.0',
-                    career='Citizen',
-                    roll=8,
-                    context='citizen_event_8_skill',
-                    instruction='Roll Streetwise 8+: success = extra Benefit roll; fail = ejected, gain Rival',
-                    options=[Streetwise()],
-                )
-            )
-
 
 class CitizenEvent8SkillHandler(CareerHandlerBase):
     type: Literal['citizen_event_8_skill'] = 'citizen_event_8_skill'
 
     @staticmethod
     def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
+        # Legacy dispatch path — new path uses PendingCitizenEvent8SkillRoll.resolve()
         from ceres.character.events import _apply_mishap_ejection
 
         if event.modified_roll >= 8:
@@ -243,7 +265,6 @@ class CitizenEvent8SkillHandler(CareerHandlerBase):
                     effect={'type': 'add', 'value': 1},
                 )
             )
-            # no pending added — _apply_skill_roll auto-queues advancement
         else:
             career = projection.get_current_career()
             projection.summary.connections.append(Rival(source='Illegal information leak (Citizen event 8)'))

@@ -30,10 +30,9 @@ from ceres.character.careers.career_data import (
     SkillChoiceEffect,
     SkillTable,
 )
+from ceres.character.careers.common_pending import CareerChoicePendingBase, CareerSkillRollPendingBase
 from ceres.character.characteristics import Chars
 from ceres.character.events import (
-    PendingCareerEvent,
-    PendingCareerSkillRoll,
     PendingInjuryTable,
     PendingSkillChoice,
     SkillRollEvent,
@@ -78,28 +77,13 @@ DRIFTER = Career(
 )
 
 
-# ── mishap 5: betrayed by a friend ───────────────────────────────────────────
+# ── Career-specific pending input types ──────────────────────────────────────
 
 
-class DrifterMishap5Handler(CareerHandlerBase):
-    type: Literal['drifter_mishap_5'] = 'drifter_mishap_5'
+class PendingDrifterMishap5SkillRoll(CareerSkillRollPendingBase):
+    kind: Literal['drifter_mishap_5_skill_roll'] = 'drifter_mishap_5_skill_roll'
 
-    @staticmethod
-    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
-            PendingCareerSkillRoll(
-                id=f'{event_id}.{pending_idx}',
-                career='Drifter',
-                roll=5,
-                context='drifter_mishap_5',
-                instruction='Betrayed by a friend: gain a Rival. Roll 2D — on a natural 2, must take Prisoner next term',
-                options=[],
-            )
-        )
-        return pending_idx + 1
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
         from ceres.character.careers.prisoner import PRISONER
         from ceres.character.events import _apply_mishap_ejection
 
@@ -110,27 +94,10 @@ class DrifterMishap5Handler(CareerHandlerBase):
         _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
 
 
-# ── event 3: patron job offer ─────────────────────────────────────────────────
+class PendingDrifterEvent3(CareerChoicePendingBase):
+    kind: Literal['drifter_event_3'] = 'drifter_event_3'
 
-
-class DrifterEvent3Handler(CareerHandlerBase):
-    type: Literal['drifter_event_3'] = 'drifter_event_3'
-
-    @staticmethod
-    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
-            PendingCareerEvent(
-                id=f'{event_id}.{pending_idx}',
-                career='Drifter',
-                roll=3,
-                instruction="Accept the patron's job offer (DM+4 to next Qualification roll) or decline?",
-                options=['accept', 'decline'],
-            )
-        )
-        return pending_idx + 1
-
-    @staticmethod
-    def on_choice(projection: CharacterProjection, event) -> None:
+    def on_choice(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
         if event.choice == 'accept':
             projection.scheduled_effects.append(
@@ -143,29 +110,10 @@ class DrifterEvent3Handler(CareerHandlerBase):
         projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 
 
-# ── event 8: attacked by enemies ─────────────────────────────────────────────
+class PendingDrifterEvent8SkillRoll(CareerSkillRollPendingBase):
+    kind: Literal['drifter_event_8_skill_roll'] = 'drifter_event_8_skill_roll'
 
-
-class DrifterEvent8Handler(CareerHandlerBase):
-    type: Literal['drifter_event_8'] = 'drifter_event_8'
-
-    @staticmethod
-    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.summary.connections.append(Enemy(source='Attacker (Drifter event 8)'))
-        projection.pending_inputs.append(
-            PendingCareerSkillRoll(
-                id=f'{event_id}.{pending_idx}',
-                career='Drifter',
-                roll=8,
-                context='drifter_event_8',
-                instruction='Roll Melee or Gun Combat 8+: success = increase that skill; fail = injured',
-                options=[Melee(), GunCombat()],
-            )
-        )
-        return pending_idx + 1
-
-    @staticmethod
-    def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
         if event.modified_roll >= 8:
             projection.pending_inputs.append(
                 PendingSkillChoice(
@@ -180,27 +128,10 @@ class DrifterEvent8Handler(CareerHandlerBase):
             )
 
 
-# ── event 9: risky adventure ──────────────────────────────────────────────────
+class PendingDrifterEvent9(CareerChoicePendingBase):
+    kind: Literal['drifter_event_9'] = 'drifter_event_9'
 
-
-class DrifterEvent9Handler(CareerHandlerBase):
-    type: Literal['drifter_event_9'] = 'drifter_event_9'
-
-    @staticmethod
-    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
-            PendingCareerEvent(
-                id=f'{event_id}.{pending_idx}',
-                career='Drifter',
-                roll=9,
-                instruction='Accept the risky adventure (roll 1D for outcome) or decline?',
-                options=['accept', 'decline'],
-            )
-        )
-        return pending_idx + 1
-
-    @staticmethod
-    def on_choice(projection: CharacterProjection, event) -> None:
+    def on_choice(self, projection: CharacterProjection, event) -> None:
         from ceres.character.careers.prisoner import PRISONER
 
         career = projection.get_current_career()
@@ -218,15 +149,138 @@ class DrifterEvent9Handler(CareerHandlerBase):
             projection.forced_next_career = PRISONER
         else:  # 'accept'
             projection.pending_inputs.append(
-                PendingCareerSkillRoll(
+                PendingDrifterEvent9RollSkillRoll(
                     id=f'{event.id}.0',
-                    career='Drifter',
-                    roll=9,
-                    context='drifter_event_9_roll',
                     instruction='Risky adventure: roll 1D (1-2: injured or arrested, 3: injured, 4-6: bonus Benefit roll)',
                     options=[],
                 )
             )
+
+
+class PendingDrifterEvent9RollSkillRoll(CareerSkillRollPendingBase):
+    kind: Literal['drifter_event_9_roll_skill_roll'] = 'drifter_event_9_roll_skill_roll'
+
+    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+        career = projection.get_current_career()
+        roll = event.modified_roll
+        if roll <= 2:
+            projection.pending_inputs.append(
+                PendingDrifterEvent9Choice2(
+                    id=f'{event.id}.0',
+                    instruction='Risky adventure (1-2): choose — roll on Injury table, or be sent to Prisoner career?',
+                    options=['injury', 'prison'],
+                )
+            )
+            projection.pending_inputs.append(career_progress_pending(projection, career, event.id, 1))
+        elif roll == 3:
+            projection.pending_inputs.append(
+                PendingInjuryTable(
+                    id=f'{event.id}.0',
+                    instruction='Risky adventure (3): roll 1D on Injury table',
+                    options=['1', '2', '3', '4', '5', '6'],
+                )
+            )
+            projection.pending_inputs.append(career_progress_pending(projection, career, event.id, 1))
+        else:  # 4-6
+            projection.scheduled_effects.append(
+                ScheduledEffect(
+                    trigger='muster_out_add',
+                    source_event_id=event.id,
+                    effect={'type': 'add', 'value': 1},
+                )
+            )
+            # _apply_skill_roll auto-queues advancement
+
+
+class PendingDrifterEvent9Choice2(CareerChoicePendingBase):
+    kind: Literal['drifter_event_9_choice2'] = 'drifter_event_9_choice2'
+
+    def on_choice(self, projection: CharacterProjection, event) -> None:
+        from ceres.character.careers.prisoner import PRISONER
+
+        if event.choice == 'injury':
+            projection.pending_inputs.append(
+                PendingInjuryTable(
+                    id=f'{event.id}.0',
+                    instruction='Risky adventure outcome: roll 1D on Injury table',
+                    options=['1', '2', '3', '4', '5', '6'],
+                )
+            )
+        elif event.choice == 'prison':
+            projection.forced_next_career = PRISONER
+
+
+# ── mishap 5: betrayed by a friend ───────────────────────────────────────────
+
+
+class DrifterMishap5Handler(CareerHandlerBase):
+    type: Literal['drifter_mishap_5'] = 'drifter_mishap_5'
+
+    @staticmethod
+    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
+        projection.pending_inputs.append(
+            PendingDrifterMishap5SkillRoll(
+                id=f'{event_id}.{pending_idx}',
+                instruction='Betrayed by a friend: gain a Rival. Roll 2D — on a natural 2, must take Prisoner next term',
+                options=[],
+            )
+        )
+        return pending_idx + 1
+
+
+# ── event 3: patron job offer ─────────────────────────────────────────────────
+
+
+class DrifterEvent3Handler(CareerHandlerBase):
+    type: Literal['drifter_event_3'] = 'drifter_event_3'
+
+    @staticmethod
+    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
+        projection.pending_inputs.append(
+            PendingDrifterEvent3(
+                id=f'{event_id}.{pending_idx}',
+                instruction="Accept the patron's job offer (DM+4 to next Qualification roll) or decline?",
+                options=['accept', 'decline'],
+            )
+        )
+        return pending_idx + 1
+
+
+# ── event 8: attacked by enemies ─────────────────────────────────────────────
+
+
+class DrifterEvent8Handler(CareerHandlerBase):
+    type: Literal['drifter_event_8'] = 'drifter_event_8'
+
+    @staticmethod
+    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
+        projection.summary.connections.append(Enemy(source='Attacker (Drifter event 8)'))
+        projection.pending_inputs.append(
+            PendingDrifterEvent8SkillRoll(
+                id=f'{event_id}.{pending_idx}',
+                instruction='Roll Melee or Gun Combat 8+: success = increase that skill; fail = injured',
+                options=[Melee(), GunCombat()],
+            )
+        )
+        return pending_idx + 1
+
+
+# ── event 9: risky adventure ──────────────────────────────────────────────────
+
+
+class DrifterEvent9Handler(CareerHandlerBase):
+    type: Literal['drifter_event_9'] = 'drifter_event_9'
+
+    @staticmethod
+    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
+        projection.pending_inputs.append(
+            PendingDrifterEvent9(
+                id=f'{event_id}.{pending_idx}',
+                instruction='Accept the risky adventure (roll 1D for outcome) or decline?',
+                options=['accept', 'decline'],
+            )
+        )
+        return pending_idx + 1
 
 
 class DrifterEvent9RollHandler(CareerHandlerBase):
@@ -234,14 +288,13 @@ class DrifterEvent9RollHandler(CareerHandlerBase):
 
     @staticmethod
     def resolve(projection: CharacterProjection, event: SkillRollEvent) -> None:
+        # Legacy dispatch path — new path uses PendingDrifterEvent9RollSkillRoll.resolve()
         career = projection.get_current_career()
         roll = event.modified_roll
         if roll <= 2:
             projection.pending_inputs.append(
-                PendingCareerEvent(
+                PendingDrifterEvent9Choice2(
                     id=f'{event.id}.0',
-                    career='Drifter',
-                    roll=9,
                     instruction='Risky adventure (1-2): choose — roll on Injury table, or be sent to Prisoner career?',
                     options=['injury', 'prison'],
                 )

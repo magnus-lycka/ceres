@@ -1,13 +1,16 @@
 """Tests for the Entertainer career — artist, journalist, and performer assignments."""
 
+from ceres.character.careers.entertainer import (
+    PendingEntertainerEvent3SkillRoll,
+    PendingEntertainerEvent8,
+    PendingEntertainerEvent8SkillRoll,
+)
 from ceres.character.events import (
     BackgroundSkillsEvent,
     CareerChoiceEvent,
     CareerEvent,
     CharacterStartedEvent,
     PendingAdvancement,
-    PendingCareerEvent,
-    PendingCareerSkillRoll,
     SkillChoiceEvent,
     SkillRollEvent,
     SurviveEvent,
@@ -70,7 +73,7 @@ class TestEntertainerEvent3:
     def test_creates_art_or_investigate_roll_pending(self):
         projection = replay(1, self._setup_to_event())
         pending = next(
-            (p for p in projection.pending_inputs if isinstance(p, PendingCareerSkillRoll) and p.roll == 3),
+            (p for p in projection.pending_inputs if isinstance(p, PendingEntertainerEvent3SkillRoll)),
             None,
         )
         assert pending is not None
@@ -79,7 +82,7 @@ class TestEntertainerEvent3:
     def test_success_increases_soc(self):
         events = [
             *self._setup_to_event(),
-            SkillRollEvent(id=8, fulfills='7.0', context='entertainer_event_3', skill=Admin(), modified_roll=9),
+            SkillRollEvent(id=8, fulfills='7.0', skill=Admin(), modified_roll=9),
         ]
         projection = replay(1, events)
         from ceres.character.characteristics import Chars
@@ -89,7 +92,7 @@ class TestEntertainerEvent3:
     def test_failure_decreases_soc(self):
         events = [
             *self._setup_to_event(),
-            SkillRollEvent(id=8, fulfills='7.0', context='entertainer_event_3', skill=Admin(), modified_roll=7),
+            SkillRollEvent(id=8, fulfills='7.0', skill=Admin(), modified_roll=7),
         ]
         projection = replay(1, events)
         from ceres.character.characteristics import Chars
@@ -100,7 +103,7 @@ class TestEntertainerEvent3:
         for roll in (9, 7):
             events = [
                 *self._setup_to_event(),
-                SkillRollEvent(id=8, fulfills='7.0', context='entertainer_event_3', skill=Admin(), modified_roll=roll),
+                SkillRollEvent(id=8, fulfills='7.0', skill=Admin(), modified_roll=roll),
             ]
             projection = replay(1, events)
             assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs), f'roll={roll}'
@@ -116,7 +119,7 @@ class TestEntertainerEvent8:
     def test_creates_event_pending_with_options(self):
         projection = replay(1, self._setup_to_event())
         pending = next(
-            (p for p in projection.pending_inputs if isinstance(p, PendingCareerEvent) and p.roll == 8),
+            (p for p in projection.pending_inputs if isinstance(p, PendingEntertainerEvent8)),
             None,
         )
         assert pending is not None
@@ -125,7 +128,7 @@ class TestEntertainerEvent8:
     def test_refuse_queues_advancement(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=8, fulfills='7.0', context='entertainer_event_8', choice='refuse'),
+            CareerChoiceEvent(id=8, fulfills='7.0', choice='refuse'),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
@@ -133,18 +136,18 @@ class TestEntertainerEvent8:
     def test_accept_creates_art_or_investigate_roll(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=8, fulfills='7.0', context='entertainer_event_8', choice='accept'),
+            CareerChoiceEvent(id=8, fulfills='7.0', choice='accept'),
         ]
         projection = replay(1, events)
-        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerSkillRoll)), None)
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingEntertainerEvent8SkillRoll)), None)
         assert pending is not None
         assert pending.options == [PerformingArt(), CreativeArt(), PresentationArt(), Investigate()]
 
     def test_accept_success_schedules_advancement_dm_2(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=8, fulfills='7.0', context='entertainer_event_8', choice='accept'),
-            SkillRollEvent(id=9, fulfills='8.0', context='entertainer_event_8_skill', skill=Admin(), modified_roll=9),
+            CareerChoiceEvent(id=8, fulfills='7.0', choice='accept'),
+            SkillRollEvent(id=9, fulfills='8.0', skill=Admin(), modified_roll=9),
         ]
         projection = replay(1, events)
         dm_effects = [se for se in projection.scheduled_effects if se.trigger == 'advancement']
@@ -153,8 +156,8 @@ class TestEntertainerEvent8:
     def test_accept_failure_adds_enemy(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=8, fulfills='7.0', context='entertainer_event_8', choice='accept'),
-            SkillRollEvent(id=9, fulfills='8.0', context='entertainer_event_8_skill', skill=Admin(), modified_roll=7),
+            CareerChoiceEvent(id=8, fulfills='7.0', choice='accept'),
+            SkillRollEvent(id=9, fulfills='8.0', skill=Admin(), modified_roll=7),
         ]
         projection = replay(1, events)
         enemies = [c for c in projection.summary.connections if isinstance(c, Enemy)]
@@ -164,10 +167,8 @@ class TestEntertainerEvent8:
         for roll in (9, 7):
             events = [
                 *self._setup_to_event(),
-                CareerChoiceEvent(id=8, fulfills='7.0', context='entertainer_event_8', choice='accept'),
-                SkillRollEvent(
-                    id=9, fulfills='8.0', context='entertainer_event_8_skill', skill=Admin(), modified_roll=roll
-                ),
+                CareerChoiceEvent(id=8, fulfills='7.0', choice='accept'),
+                SkillRollEvent(id=9, fulfills='8.0', skill=Admin(), modified_roll=roll),
             ]
             projection = replay(1, events)
             assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs), f'roll={roll}'

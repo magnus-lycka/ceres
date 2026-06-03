@@ -124,6 +124,54 @@ class SectorWorldFilters:
     def sorted_uwp_codes(self, index: int) -> tuple[str, ...]:
         return self._sort_uwp_codes(self._uwp_code(world, index) for world in self.worlds)
 
+    @staticmethod
+    def _matches_world_query(world: SectorWorldEntry, world_query: str | None) -> bool:
+        if world_query is None:
+            return True
+        needle = world_query.strip().lower()
+        if not needle:
+            return True
+        return needle in world.name.lower() or needle in world.hex.lower()
+
+    def _world_matches_filters(
+        self,
+        world: SectorWorldEntry,
+        *,
+        selected_allegiances: set[str] | None,
+        selected_remarks: set[str] | None,
+        selected_bases: set[str] | None,
+        selected_starports: set[str] | None,
+        selected_sizes: set[str] | None,
+        selected_atmospheres: set[str] | None,
+        selected_hydrographics: set[str] | None,
+        selected_populations: set[str] | None,
+        selected_governments: set[str] | None,
+        selected_law_levels: set[str] | None,
+        selected_tech_levels: set[str] | None,
+        world_query: str | None,
+    ) -> bool:
+        matches_no_allegiance = (
+            not world.allegiance and selected_allegiances is not None and NO_ALLEGIANCE in selected_allegiances
+        )
+        matches_allegiance = (
+            selected_allegiances is None or world.allegiance in selected_allegiances or matches_no_allegiance
+        )
+        checks = (
+            self._matches_world_query(world, world_query),
+            matches_allegiance,
+            selected_remarks is None or not self._remark_tokens(world).isdisjoint(selected_remarks),
+            selected_bases is None or not self._base_codes(world).isdisjoint(selected_bases),
+            selected_starports is None or world.starport in selected_starports,
+            self._matches_selected_codes(selected_sizes, self._uwp_code(world, UWP_SIZE_INDEX)),
+            self._matches_selected_codes(selected_atmospheres, self._uwp_code(world, UWP_ATMOSPHERE_INDEX)),
+            self._matches_selected_codes(selected_hydrographics, self._uwp_code(world, UWP_HYDROGRAPHICS_INDEX)),
+            self._matches_selected_codes(selected_populations, self._uwp_code(world, UWP_POPULATION_INDEX)),
+            self._matches_selected_codes(selected_governments, self._uwp_code(world, UWP_GOVERNMENT_INDEX)),
+            self._matches_selected_codes(selected_law_levels, self._uwp_code(world, UWP_LAW_LEVEL_INDEX)),
+            self._matches_selected_codes(selected_tech_levels, self._uwp_code(world, UWP_TECH_LEVEL_INDEX)),
+        )
+        return all(checks)
+
     def _allegiance_options(self) -> tuple[str, ...]:
         values = {world.allegiance for world in self.worlds if world.allegiance}
         if any(not world.allegiance for world in self.worlds):
@@ -160,6 +208,7 @@ class SectorWorldFilters:
         governments: Iterable[str] | None = None,
         law_levels: Iterable[str] | None = None,
         tech_levels: Iterable[str] | None = None,
+        world_query: str | None = None,
     ) -> list[SectorWorldEntry]:
         selected_allegiances = self._normalize_selection(allegiances)
         selected_remarks = self._normalize_selection(remarks)
@@ -173,39 +222,25 @@ class SectorWorldFilters:
         selected_law_levels = self._normalize_selection(law_levels)
         selected_tech_levels = self._normalize_selection(tech_levels)
 
-        matches: list[SectorWorldEntry] = []
-        for world in self.worlds:
-            matches_no_allegiance = (
-                not world.allegiance and selected_allegiances is not None and NO_ALLEGIANCE in selected_allegiances
+        return [
+            world
+            for world in self.worlds
+            if self._world_matches_filters(
+                world,
+                selected_allegiances=selected_allegiances,
+                selected_remarks=selected_remarks,
+                selected_bases=selected_bases,
+                selected_starports=selected_starports,
+                selected_sizes=selected_sizes,
+                selected_atmospheres=selected_atmospheres,
+                selected_hydrographics=selected_hydrographics,
+                selected_populations=selected_populations,
+                selected_governments=selected_governments,
+                selected_law_levels=selected_law_levels,
+                selected_tech_levels=selected_tech_levels,
+                world_query=world_query,
             )
-            if (
-                selected_allegiances is not None
-                and world.allegiance not in selected_allegiances
-                and not matches_no_allegiance
-            ):
-                continue
-            if selected_remarks is not None and self._remark_tokens(world).isdisjoint(selected_remarks):
-                continue
-            if selected_bases is not None and self._base_codes(world).isdisjoint(selected_bases):
-                continue
-            if selected_starports is not None and world.starport not in selected_starports:
-                continue
-            if not self._matches_selected_codes(selected_sizes, self._uwp_code(world, UWP_SIZE_INDEX)):
-                continue
-            if not self._matches_selected_codes(selected_atmospheres, self._uwp_code(world, UWP_ATMOSPHERE_INDEX)):
-                continue
-            if not self._matches_selected_codes(selected_hydrographics, self._uwp_code(world, UWP_HYDROGRAPHICS_INDEX)):
-                continue
-            if not self._matches_selected_codes(selected_populations, self._uwp_code(world, UWP_POPULATION_INDEX)):
-                continue
-            if not self._matches_selected_codes(selected_governments, self._uwp_code(world, UWP_GOVERNMENT_INDEX)):
-                continue
-            if not self._matches_selected_codes(selected_law_levels, self._uwp_code(world, UWP_LAW_LEVEL_INDEX)):
-                continue
-            if not self._matches_selected_codes(selected_tech_levels, self._uwp_code(world, UWP_TECH_LEVEL_INDEX)):
-                continue
-            matches.append(world)
-        return matches
+        ]
 
 
 __all__ = ['DEFAULT_MILIEU', 'SectorWorldFilters', 'SectorWorldOptions', 'search_sectors']
