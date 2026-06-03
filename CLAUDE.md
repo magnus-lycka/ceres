@@ -90,6 +90,18 @@ unit tests. They should also check that no unexpected errors or warnings appear.
   - No `from __future__ import annotations` (deprecated in 3.14)
   - No quoted type hints — PEP 649 makes annotations lazy by default in 3.14
 
+## Alpha status and backward compatibility
+
+Ceres is Alpha software (version 0.1.x). There is one user, all existing data
+lives in the test suite, and nothing is deployed. Therefore:
+
+- **Never consider backward compatibility or data migration.** If changing a
+  model, event, or serialization format is the right design decision, do it.
+  Do not add shims, compatibility hacks, migration scripts, or deprecated
+  aliases to avoid breaking saved state.
+- This applies to event logs, JSON snapshots, Pydantic model fields, API
+  signatures, and any other artifact. Just change it.
+
 ## Ways of Working
 
 - **TDD** - Write tests first, then implement. Tests live in `tests/`.

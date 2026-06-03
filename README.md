@@ -1,5 +1,8 @@
 # ceres
 
+> **Alpha software** — version 0.1.x, single-user, no stability guarantees.
+> APIs, data formats, and serialized event logs may change without notice.
+
 **Ceres** builds Mongoose Traveller 2nd Edition assemblies in Python: starships,
 robots, and reusable gear/catalogue items. A design is an ordinary Python
 object: instantiate the relevant model, pass it part objects and parameters,

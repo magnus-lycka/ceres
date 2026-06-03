@@ -318,17 +318,71 @@ follow-up work packages.
 
 ### Replace remaining `CareerDispatchEffect` registry dispatch with effect subclasses
 
-The old `EFFECT_HANDLERS` dicts are gone, and raw
-`CareerDispatchEffect(type='...')` entries have mostly been replaced with
-`CareerHandlerBase` subclasses such as `AgentMishap2Handler`. The remaining
-design smell is that these handlers still self-register under string `type`
-keys and `events.py` still dispatches choice/skill-roll resolution through
-`get_career_handler(context: str)`.
+The `CareerHandlerBase` self-registration pattern is intentional and clean for
+**single-phase handlers**: the string `type: Literal['citizen_mishap_4'] =
+'citizen_mishap_4'` appears only in the class definition; dispatch to
+`effect.handle()` is via `isinstance`, so there are no free-floating string
+references that could drift.
 
-Replace `CareerDispatchEffect`/`CareerHandlerBase` with proper effect objects
-that carry their own logic through an `apply(projection, ...)`-style interface.
-The remaining context strings and handler registry should disappear; effects in
-career data should be typed objects rather than string-dispatched handlers.
+The actual smell is **multi-phase handlers**, where the primary handler's
+`handle()` method creates a `PendingCareerChoice(context='secondary_key')` or
+`PendingCareerSkillRoll(context='secondary_key')` referencing another handler's
+key as a bare string. Affected pairs (primary → secondary):
+
+- `prisoner_mishap_3` → `prisoner_mishap_3_fight`
+- `prisoner_event_3` → `prisoner_event_3_escape`
+- `prisoner_event_9` → `prisoner_event_9_level_{1,2,3}` (f-string, not bare string)
+- `prisoner_event_12` → `prisoner_event_12_heroism`
+- `prisoner_event_7` → `prisoner_event_7_riot`
+- `drifter_event_9` → `drifter_event_9_roll`
+- `scholar_event_8` → `scholar_event_8_roll`
+- `merchant_event_3` → `merchant_event_3_skill`
+- `merchant_event_8` → `merchant_event_8_roll`
+- `rogue_event_3` → `rogue_event_3_skill`
+- `noble_event_8` → `noble_event_8_skill`
+- `citizen_event_8` → `citizen_event_8_skill`
+- `entertainer_event_8` → `entertainer_event_8_skill`
+- `marines_mishap_4` → `marines_mishap_4_skill`
+- `scout_event_9` (creates `PendingCareerSkillRoll(context='scout_event_9')`,
+  self-referential — the same handler resolves the roll)
+
+These cross-handler string references also appear in the corresponding tests
+(`SkillRollEvent(context='scholar_event_8_roll', ...)`, etc.).
+
+The minimal fix is to replace `context='secondary_key'` literals with
+`SecondaryHandlerClass.type` in the primary handler's `handle()` method.
+This eliminates the raw string references in production code while keeping
+the overall pattern intact.
+
+A fuller refactor would make pending inputs carry the handler class directly
+rather than a string key, eliminating `get_career_handler(context: str)` and
+the registry lookup entirely.
+
+## Agent career tables: bring Ceres fully in line with Core
+
+The `Agent` career is close to the Core Rulebook, but it still has a few
+fidelity gaps in event/mishap text and handler behavior.
+
+References:
+
+- `refs/core/02_traveller_creation.md` (Agent mishaps/events)
+- `src/ceres/character/careers/agent.py`
+
+Known differences:
+
+- **Mishap 5** — text matches Core, but the handler only records a manual note
+  for the harmed Contact/Ally/family-member injury instead of actually
+  resolving the "roll twice on the Injury table for them, taking the lower
+  result" outcome in whatever NPC-facing form Ceres decides to support.
+- **Event 8** — text matches Core, but the handler does not actually perform
+  the immediate Rogue/Citizen Event or Mishap roll, nor the Specialist skill
+  table roll on success; it only records a manual note.
+- **Event 7** — inherits the generic Life Events correctness gap; once the
+  generic Life Events todo is fixed, re-check Agent event 7 against Core.
+- **Minor text drift** — Mishap 1, Mishap 6, and Event 7 omit some Core
+  wording/page-reference detail. Once behavior is correct, decide whether these
+  strings should match Core literally as part of the broader text-fidelity
+  policy.
 
 ### Replace sophont string-name lookup with typed objects
 
