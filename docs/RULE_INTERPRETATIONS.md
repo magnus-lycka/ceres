@@ -577,6 +577,24 @@ field alongside its `is_in_draft` declaration.
 For five of the six draft careers (Navy, Army, Marines, Scout, Agent), any
 assignment within the career may be chosen on entry via draft.
 
+### RIC-004 Benefit Roll Bonus: Rank 5–6 Applies to All Rolls; "Any One Roll" Events Allow Post-Roll Choice
+
+Two distinct sources can grant DM+1 to benefit rolls:
+
+**Rank 5–6 DM+1**: Careers that grant DM+1 to all Benefit rolls at rank 5 or 6
+apply this bonus unconditionally to every benefit roll from that career. The
+player does not choose when to use it.
+
+**"DM+1 to any one Benefit roll"** (e.g. Agent event 4): A scheduled effect
+granting DM+1 to one specific benefit roll. Ceres interprets "any" as
+post-roll: the player rolls the benefit die (1–6) and, if this effect is
+active, is offered both the rolled result and the rolled result +1 as choices.
+Selecting the higher result consumes the scheduled effect.
+
+**Interaction**: If the character already has the rank 5–6 DM+1 (which applies
+to all benefit rolls), a "any one roll" scheduled effect is redundant and is not
+additionally applied. The effect is consumed without offering a separate choice.
+
 ### RIC-005 Skill Labels Use the Achieved Specialisation Only; Level-0 Grants Are Written Without Specialisation
 
 When a character gains a skill from a career table or basic training, Ceres
@@ -597,23 +615,75 @@ specialisation. Even where the source table names a specialisation — e.g.
 means only "you now have this skill on your sheet". The result is written
 `Pilot-0`, not `Pilot (Small Craft)-0`.
 
-### RIC-004 Benefit Roll Bonus: Rank 5–6 Applies to All Rolls; "Any One Roll" Events Allow Post-Roll Choice
+### RIC-006 Homeworld Requirements and Options for Pre-careers and Careers
 
-Two distinct sources can grant DM+1 to benefit rolls:
+The *Core Rulebook* does not state explicitly that a Traveller must reside on a
+world with a specific installation in order to serve a career term. However,
+the nature of certain services implies it: a Scout is assigned to and operates
+from a Scout installation, and a term of service begins with the character
+reporting to one.
 
-**Rank 5–6 DM+1**: Careers that grant DM+1 to all Benefit rolls at rank 5 or 6
-apply this bonus unconditionally to every benefit roll from that career. The
-player does not choose when to use it.
+Ceres models this as a **start-of-term homeworld trigger**. At the beginning
+of every career term (both the first and all subsequent re-enlistment terms),
+a career may inspect the character's current homeworld and raise either a
+required or optional homeworld change. **No end-of-term trigger is modelled**:
+when a term ends, the character is free; it is the start of the *next* term —
+the act of entering service again — that creates the requirement or option.
 
-**"DM+1 to any one Benefit roll"** (e.g. Agent event 4): A scheduled effect
-granting DM+1 to one specific benefit roll. Ceres interprets "any" as
-post-roll: the player rolls the benefit die (1–6) and, if this effect is
-active, is offered both the rolled result and the rolled result +1 as choices.
-Selecting the higher result consumes the scheduled effect.
+#### General trigger kinds at term start
 
-**Interaction**: If the character already has the rank 5–6 DM+1 (which applies
-to all benefit rolls), a "any one roll" scheduled effect is redundant and is not
-additionally applied. The effect is consumed without offering a separate choice.
+- **Required change**: current homeworld does not meet the career's base
+  requirement. The character must relocate to a qualifying world before the
+  term can proceed.
+- **Optional change**: current homeworld already qualifies, but the career
+  offers the opportunity to relocate to another qualifying world. The character
+  may decline and stay put.
+
+Both raise the appropriate homeworld-change event (required or offered) with
+`source_kind='career_entry'` and set `target_constraints` to describe which
+worlds are valid targets.
+
+#### Scout: Imperial Scout Base (S) or Way Station (W)
+
+*Core Rulebook*, trade chapter: "**Scout (S):** A scout base offers refined
+fuel and supplies to scout ships." "**Way Station (W):** A large Imperial
+Interstellar Scout Service installation dedicated to the x-boat communication
+network and servicing scout ships."
+
+Scouts serve from and are supplied by these installations. A term of Scout
+service therefore requires the character to be based at a world that carries
+at least one of these facilities.
+
+**Base-code check**: `'S' in world.bases or 'W' in world.bases`
+
+(`TravellerMapWorld.bases` is a string of concatenated single-character codes,
+e.g. `'NW'` for a world with a Naval base and a Way Station.)
+
+**At the start of each Scout term:**
+
+- If the current homeworld **does not** contain `S` or `W`: raise
+  `HomeworldChangeRequiredEvent` with
+  `target_constraints='world_with_imperial_scout_base'`.
+  The character cannot proceed until relocated.
+
+- If the current homeworld **does** contain `S` or `W`: raise
+  `HomeworldChangeOfferedEvent` with the same `target_constraints`.
+  Scouts move around; the option to relocate to a different Scout installation
+  is always present even when the existing homeworld qualifies.
+
+**Reason text (required)**: `"Scout service requires a homeworld with an
+Imperial Scout Base (S) or Way Station (W)."`
+
+**Reason text (optional)**: `"Scout service: you may relocate to another
+world with an Imperial Scout Base (S) or Way Station (W)."`
+
+**Allegiance**: The `S` and `W` codes identify Imperial Scout Service
+facilities. A non-Imperial Scout career (e.g. Zhodani, Darrian) would need
+its own base-code set and this rule would not apply; that is TBD.
+
+**Scope**: This interpretation covers the Scout career only. Requirements or
+options for Navy, Marines, Merchant, Noble, and other careers are TBD.
+
 
 ---
 

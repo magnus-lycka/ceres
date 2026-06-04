@@ -260,6 +260,48 @@ include:
 - a new UI for picking the replacement world
 - current-location tracking
 
+### Scout career: homeworld trigger at term start (RIC-006)
+
+See [docs/RULE_INTERPRETATIONS.md](docs/RULE_INTERPRETATIONS.md) — RIC-006.
+
+The Scout career (IISS) requires the character to be based at a world with an
+Imperial Scout Base (`S`) or Way Station (`W`) in `TravellerMapWorld.bases`.
+This should fire at the start of **every** Scout term (first entry and all
+re-enlistments).
+
+**Logic:**
+
+- If `'S' not in homeworld.bases and 'W' not in homeworld.bases`:
+  emit `HomeworldChangeRequiredEvent` with `source_kind='career_entry'`,
+  `source_career='Scout'`,
+  `target_constraints='world_with_imperial_scout_base'`, and reason text from
+  RIC-006.
+- Otherwise (homeworld already qualifies):
+  emit `HomeworldChangeOfferedEvent` with the same fields and the optional
+  reason text from RIC-006.
+
+**Where to hook it:** The trigger belongs in Scout career domain logic, not in
+the web layer. The right hook point is at the beginning of each Scout term —
+equivalent to where other per-term career logic fires (survival, events, etc.).
+
+**Dependency:** Another session is reworking the event-handling internals.
+Implement this only after that work lands, to avoid merge conflicts around
+career term lifecycle hooks.
+
+**Tests to write first:**
+
+- A character with a Scout-base homeworld: `HomeworldChangeOfferedEvent` appears
+  in the projection; `homeworld` is not mutated.
+- A character with a non-Scout-base homeworld: `HomeworldChangeRequiredEvent`
+  appears and is blocking; `homeworld` is not mutated.
+- After `HomeworldChangedEvent` fulfils the pending: `homeworld` is updated,
+  `birthworld` is unchanged.
+- Re-enlistment into a second Scout term produces the same check again.
+
+**Out of scope for this item:** Navy, Marines, Merchant, Noble, and other
+careers (their RIC-006 entries are TBD). The UI for picking a replacement
+world.
+
 ### Known implementation gaps (rules not yet enforced)
 
 - **Advancement forced-leave** — if the advancement roll ≤ terms served in the
