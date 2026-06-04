@@ -11,6 +11,7 @@ classifiers = [
 dependencies = [
     "fastapi[standard]>=0.125.0",
     "httpx>=0.28.0",
+    "httpx2>=2.3.0",
     "jinja2>=3.1",
     "ollama>=0.6.2",
     "platformdirs>=4.5.1",
@@ -26,7 +27,6 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "deptry>=0.25.1",
-    "httpx>=0.28.0",
     "pytest>=9.0.2",
     "pytest-cov>=7.0.0",
 ]
@@ -94,6 +94,9 @@ max-statements = 50
 [tool.deptry]
 exclude = ["tests", ".venv", ".claude", "graphify-corpus"]
 known_first_party = ["ceres"]
+
+[tool.deptry.per_rule_ignores]
+DEP002 = ["httpx2"]
 
 [tool.coverage.run]
 source_pkgs = ["ceres"]
