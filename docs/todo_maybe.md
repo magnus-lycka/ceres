@@ -467,9 +467,16 @@ In this picture:
 
 - replay is the mailman
 - events are envelopes
-- the fulfilled pending input IS the routing mechanism: it knows what kind of
-  handler to call, the same way a self-addressed envelope knows where it goes
-- domain modules (careers, pre-careers, TermData) decide what messages mean
+- domain modules decide what messages mean
+
+There are two routing modes:
+
+- **fulfilled-pending routing** — most continuation events are routed through
+  the pending input they fulfil; the pending acts like a self-addressed
+  envelope and identifies the responsible handler
+- **root-event routing** — events that arrive without a fulfilled pending input
+  (for example phase-start or term-root events) need a small registry from
+  event kind to the lifecycle component that owns them
 
 #### Lifecycle structure
 
@@ -481,13 +488,14 @@ manager. It is just:
 3. Cycle around terms (career events → term handling → new pending inputs)
 4. Finish (near no-op)
 
-Aging, mishap, life events, and injury all happen within terms. `TermData` (or
-the career term handling module) is the natural owner of that logic.
+Aging, mishap, life events, and injury all happen within terms. A plausible
+ownership boundary is that `TermData` (or the career term handling module)
+owns that logic, but this is still a proposed split, not a settled fact.
 
-The only events that arrive without a fulfilled pending input — `CareerEvent`,
-`MishapEvent`, `AgingEvent` — need a small dispatch registry from event kind to
-the module that handles them. Everything else is routed via the fulfilled
-pending.
+Under that proposed split, the only events that arrive without a fulfilled
+pending input — `CareerEvent`, `MishapEvent`, `AgingEvent` — would use the
+small root-event registry described above. Everything else would be routed via
+the fulfilled pending.
 
 #### DB schema change
 
@@ -509,12 +517,14 @@ pending-input storage is required; the table can be rebuilt by replaying.
 
 #### Decoupling events from pending inputs
 
-This schema change is the key to removing the circular Python dependency. Once
-events and pending inputs reference each other only by `(int, int)` — two
-columns in a DB row — neither class hierarchy needs to import the other at the
-Python level. Events are plain Pydantic models carrying a `fulfills` tuple.
-Pending inputs are plain Pydantic models carrying their `(event_id, seq)`
-identity. The relationship lives in the DB schema, not in Python types.
+The important idea is **identity-based decoupling**, not the schema change by
+itself. If events and pending inputs reference each other only by `(int, int)`
+identity — whether as two DB columns or as a tuple in the model layer —
+neither class hierarchy needs to import the other at the Python level. Events
+can become plain Pydantic models carrying a `fulfills` identity. Pending inputs
+can become plain Pydantic models carrying their own `(event_id, seq)` identity.
+The relationship is then expressed by stable identifiers instead of Python
+type-level coupling.
 
 #### What this would pay off
 
@@ -529,8 +539,17 @@ identity. The relationship lives in the DB schema, not in Python types.
 
 [docs/plan-event-and-pending-input-rethink.md](plan-event-and-pending-input-rethink.md)
 is a good incremental first slice: it replaces stringly `PendingXxxChoice` /
-`on_choice()` dispatch with self-addressed envelopes. This todo describes the
-broader end state those changes are growing toward.
+`on_choice()` dispatch with self-addressed envelopes.
+
+That plan still uses `Event.apply()` as transitional scaffolding for choice
+dispatch. That is fine as an incremental move.
+
+This todo describes the broader end state those changes are growing toward:
+
+- self-addressed envelopes remain a good routing mechanism
+- but event classes should eventually stop being little executors
+- and the meaning of events should live with the lifecycle/domain component
+  responsible for that phase
 
 #### Migration slices
 
