@@ -359,7 +359,10 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
             player=form_defaults['player'],
             name=name,
         )
-        return RedirectResponse(url=f'/ui/characters/{row["id"]}/wizard', status_code=303)
+        return RedirectResponse(
+            url=str(request.url_for('character_wizard', character_id=str(row['id']))),
+            status_code=303,
+        )
 
     @router.get('/characters/{character_id}', response_class=HTMLResponse)
     def character_sheet(request: Request, character_id: int) -> Any:
@@ -394,7 +397,10 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
             ctx = {**_projection_context(projection, character_id), 'error': str(exc), 'changes': [], 'is_htmx': False}
             return templates.TemplateResponse(request=request, name='wizard.html', context=ctx, status_code=422)
 
-        return RedirectResponse(url=f'/ui/characters/{character_id}/wizard', status_code=303)
+        return RedirectResponse(
+            url=str(request.url_for('character_wizard', character_id=str(character_id))),
+            status_code=303,
+        )
 
     @router.post('/characters/delete')
     async def delete_characters(request: Request) -> Any:
