@@ -18,6 +18,8 @@
     <input type="hidden" name="player" value="{{ form_defaults.player }}">
     <input type="hidden" name="homeworld_sector" value="{{ form_defaults.homeworld_sector }}">
     <input type="hidden" name="homeworld_hex" value="{{ form_defaults.homeworld_hex }}">
+    <input type="hidden" name="character_id" value="{{ select_homeworld_character_id }}">
+    <input type="hidden" name="fulfills" value="{{ select_homeworld_fulfills }}">
 
     <section class="border border-gray-800 bg-gray-950/60 p-4 space-y-3">
       <div class="flex items-center justify-between gap-4">
@@ -28,6 +30,18 @@
              value="{{ world_query }}"
              placeholder="Filter by world name or hex"
              class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-4 py-3 focus:outline-none focus:border-amber-500">
+    </section>
+
+    <section class="border border-gray-800 bg-gray-950/60 p-4 space-y-3">
+      <div class="flex items-center justify-between gap-4">
+        <h2 class="text-sm uppercase tracking-wide text-amber-400">Reference World</h2>
+      </div>
+      <input type="text"
+             name="reference_hex"
+             value="{{ reference_hex }}"
+             placeholder="Hex for distance sorting, e.g. 2715"
+             class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-4 py-3 focus:outline-none focus:border-amber-500">
+      <p class="text-xs text-gray-500">When set, worlds are sorted by distance from this hex and distance is shown in parsecs.</p>
     </section>
     {% if options.allegiances %}
     <section class="border border-gray-800 bg-gray-950/60 p-4 space-y-3" data-filter-group>
@@ -274,6 +288,7 @@
         <thead class="text-xs uppercase tracking-wide text-amber-400">
           <tr class="border-b border-gray-800">
             <th class="px-2 py-2 font-medium"></th>
+            {% if reference_hex %}<th class="px-2 py-2 font-medium">Dist</th>{% endif %}
             <th class="px-2 py-2 font-medium">Hex</th>
             <th class="px-2 py-2 font-medium">Name</th>
             <th class="px-2 py-2 font-medium">UWP</th>
@@ -294,11 +309,26 @@
           {% for world in filtered_worlds %}
           <tr class="border-b border-gray-900 align-top">
             <td class="px-2 py-2 whitespace-nowrap">
+              {% if select_homeworld_character_id and select_homeworld_fulfills %}
+              <form method="post" action="/ui/characters/{{ select_homeworld_character_id }}/homeworld">
+                <input type="hidden" name="fulfills" value="{{ select_homeworld_fulfills }}">
+                <input type="hidden" name="sector" value="{{ sector.sector_abbreviation }}">
+                <input type="hidden" name="hex_code" value="{{ world.hex }}">
+                <button type="submit"
+                        class="text-xs uppercase tracking-wide text-cyan-400 hover:text-cyan-200">
+                  Select
+                </button>
+              </form>
+              {% else %}
               <a href="{{ select_homeworld_base }}{% if '?' in select_homeworld_base %}&{% else %}?{% endif %}homeworld_sector={{ sector.sector_abbreviation }}&homeworld_hex={{ world.hex }}"
                  class="text-xs uppercase tracking-wide text-cyan-400 hover:text-cyan-200">
                 Select
               </a>
+              {% endif %}
             </td>
+            {% if reference_hex %}
+            <td class="px-2 py-2 whitespace-nowrap text-gray-300">{{ world_distances.get(world.hex) }}</td>
+            {% endif %}
             <td class="px-2 py-2 font-medium text-gray-300 whitespace-nowrap">{{ world.hex }}</td>
             <td class="px-2 py-2 whitespace-nowrap">{{ world.name }}</td>
             <td class="px-2 py-2 whitespace-nowrap">{{ world.uwp }}</td>

@@ -63,7 +63,8 @@ Effect for this phase:
 
 - append a dedicated event to the log recording that a homeworld change is
   required
-- surface an unresolved problem/note in the summary
+- add a blocking pending input to the projection so the character cannot
+  progress until the change is resolved
 - do **not** silently mutate `summary.homeworld`
 - when the trigger comes from a career or pre-career, record enough metadata to
   say what kind of target world is required
@@ -76,7 +77,7 @@ Effect for this phase:
 
 - append a dedicated event to the log recording that a homeworld change was
   offered
-- surface a note in the summary
+- add a non-blocking pending input to the projection surfacing the opportunity
 - do **not** silently mutate `summary.homeworld`
 - when the trigger comes from a career or pre-career, record enough metadata to
   say what kind of target world is allowed
@@ -145,7 +146,7 @@ Examples:
 - Navy:
   - only worlds with an appropriate naval base presence
 - Marines:
-  - likely worlds with naval/military support presence
+  - likely worlds with an appropriate naval base presence
 - Citizen / Corporate:
   - possibly require current or target homeworld TL to be high enough
 - Citizen / Colonist:
@@ -188,7 +189,8 @@ Likely event types:
 - `HomeworldChangeOfferedEvent`
 - `HomeworldChangedEvent`
 
-The first two should be able to carry origin/context metadata, such as:
+`HomeworldChangeRequiredEvent` and `HomeworldChangeOfferedEvent` carry
+origin/context metadata:
 
 - source kind (`life_event`, `career_entry`, `career_term_end`, `career_event`,
   `precareer_entry`, etc.)
@@ -197,8 +199,9 @@ The first two should be able to carry origin/context metadata, such as:
 - target-world constraints or a serializable selector description
 - human-readable reason text
 
-For this scoped pass, only the first two are required. `HomeworldChangedEvent`
-can wait until there is UI support for actually choosing the new homeworld.
+`HomeworldChangedEvent` is the fulfillment event: it carries the new world,
+references the pending input via `fulfills`, and mutates `summary.homeworld`.
+All three event types are part of this pass.
 
 ## Replay / Compatibility
 
@@ -208,7 +211,8 @@ Existing saved characters begin with:
 
 - `CharacterStartedEvent(homeworld=...)`
 
-Replay should initialize:
+Both fields are initialized in `replay()` (`src/ceres/character/replay.py`) when
+constructing `CharacterSummary` from the first event:
 
 - `summary.birthworld = first.homeworld`
 - `summary.homeworld = first.homeworld`
@@ -228,33 +232,37 @@ Display policy:
   compact views
 - if they differ, show both explicitly
 
-Until replacement-world selection exists, forced and optional triggers should
-also appear as visible notes/problems so the unresolved state is obvious.
-
 ## Initial Implementation Slice
 
-1. Add `birthworld` to `CharacterSummary`
-2. Initialize both `birthworld` and `homeworld` from `CharacterStartedEvent`
-3. Update replay tests for backward compatibility
-4. Update summary/sheet rendering to show both when relevant
-5. Audit and classify the first set of creation-time triggers:
+1. Write tests: replay sets `birthworld = homeworld` for both fresh and old
+   event logs
+2. Add `birthworld` to `CharacterSummary`; initialize both fields in `replay()`
+   (`src/ceres/character/replay.py`) when constructing `CharacterSummary` from
+   `CharacterStartedEvent`
+3. Update summary/sheet rendering to show both when relevant
+4. Audit and classify the first set of creation-time triggers:
    - Life Event 9
    - Citizen mishap 5
    - obvious interstellar career-entry / term-end cases for Navy, Marines,
      Scout, Merchant, Noble, and Citizen assignments
+5. Write tests: `HomeworldChangeRequiredEvent` creates a blocking pending input
+   and does not mutate `summary.homeworld`; `HomeworldChangeOfferedEvent`
+   creates a non-blocking pending input; `HomeworldChangedEvent` fulfills the
+   pending input and updates `summary.homeworld`
 6. Add:
    - `HomeworldChangeRequiredEvent`
    - `HomeworldChangeOfferedEvent`
-7. Hook the clearest generic trigger:
-   - Life Event 9
-8. Hook the clearest career-specific trigger:
-   - Citizen mishap 5
-9. Add a minimal career-owned trigger mechanism for start-of-career and
-   end-of-term relocation opportunities, even if it initially supports only a
-   very small subset of careers
+   - `HomeworldChangedEvent`
+7. Write tests: Life Event 9 produces `HomeworldChangeRequiredEvent`
+8. Hook Life Event 9
+9. Write tests: Citizen mishap 5 produces `HomeworldChangeRequiredEvent`
+10. Hook Citizen mishap 5
+11. Add a minimal career-owned trigger mechanism for start-of-career and
+    end-of-term relocation opportunities, even if it initially supports only a
+    very small subset of careers
 
 ## Explicit Non-Goal for This Pass
 
-This pass should not try to solve the actual selection of a replacement
-homeworld. It should only make the data model and event log honest, so later UI
-work has a clean foundation.
+This pass should not implement the UI for selecting a replacement homeworld. The
+full domain machinery — event types, pending inputs, and `HomeworldChangedEvent`
+— is in scope. The web layer that lets a user pick a world and submit it is not.

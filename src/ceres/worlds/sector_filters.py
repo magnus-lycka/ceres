@@ -125,6 +125,28 @@ class SectorWorldFilters:
         return self._sort_uwp_codes(self._uwp_code(world, index) for world in self.worlds)
 
     @staticmethod
+    def _hex_coordinates(hex_code: str) -> tuple[int, int]:
+        return int(hex_code[:2]), int(hex_code[2:])
+
+    @classmethod
+    def hex_distance_parsecs(cls, origin_hex: str, destination_hex: str) -> int:
+        # Even-Q vertical layout hex grid, coordinates down and right
+        def even_q_to_cube(col, row):
+            x = col
+            z = row - (col + (col % 2)) // 2
+            y = -x - z
+            return x, y, z
+
+        col1, row1 = cls._hex_coordinates(origin_hex)
+        col2, row2 = cls._hex_coordinates(destination_hex)
+        x1, y1, z1 = even_q_to_cube(col1, row1)
+        x2, y2, z2 = even_q_to_cube(col2, row2)
+        return max(abs(x2 - x1), abs(y2 - y1), abs(z2 - z1))
+
+    def world_distance_parsecs(self, reference_hex: str, world: SectorWorldEntry) -> int:
+        return self.hex_distance_parsecs(reference_hex, world.hex)
+
+    @staticmethod
     def _matches_world_query(world: SectorWorldEntry, world_query: str | None) -> bool:
         if world_query is None:
             return True
@@ -209,6 +231,7 @@ class SectorWorldFilters:
         law_levels: Iterable[str] | None = None,
         tech_levels: Iterable[str] | None = None,
         world_query: str | None = None,
+        reference_hex: str | None = None,
     ) -> list[SectorWorldEntry]:
         selected_allegiances = self._normalize_selection(allegiances)
         selected_remarks = self._normalize_selection(remarks)
@@ -222,7 +245,7 @@ class SectorWorldFilters:
         selected_law_levels = self._normalize_selection(law_levels)
         selected_tech_levels = self._normalize_selection(tech_levels)
 
-        return [
+        matches = [
             world
             for world in self.worlds
             if self._world_matches_filters(
@@ -241,6 +264,18 @@ class SectorWorldFilters:
                 world_query=world_query,
             )
         ]
+
+        if reference_hex is not None:
+            return sorted(
+                matches,
+                key=lambda world: (
+                    self.world_distance_parsecs(reference_hex, world),
+                    world.hex,
+                    world.name,
+                ),
+            )
+
+        return matches
 
 
 __all__ = ['DEFAULT_MILIEU', 'SectorWorldFilters', 'SectorWorldOptions', 'search_sectors']

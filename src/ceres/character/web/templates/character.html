@@ -10,6 +10,7 @@
     <p class="text-gray-500 text-sm mt-1">
       {{ summary.sophont.name }}
       · {{ summary.homeworld.name }} ({{ summary.homeworld.sector }} {{ summary.homeworld.hex }})
+      {% if summary.birthworld != summary.homeworld %}· born {{ summary.birthworld.name }} ({{ summary.birthworld.sector }} {{ summary.birthworld.hex }}){% endif %}
       {% if displayed_career %}
         · {{ displayed_career.name }}
         {% if displayed_assignment %}

@@ -68,6 +68,20 @@ def _character_form_query_string(form_defaults: dict[str, str]) -> str:
     return urlencode({key: value for key, value in form_defaults.items() if value})
 
 
+def _world_picker_query(request: Request) -> str:
+    keys = (
+        'name',
+        'sophont',
+        'player',
+        'homeworld_sector',
+        'homeworld_hex',
+        'character_id',
+        'fulfills',
+        'reference_hex',
+    )
+    return urlencode({key: value for key in keys if (value := request.query_params.get(key, '').strip())})
+
+
 def _selected_homeworld(form_defaults: dict[str, str]) -> TravellerMapWorld | None:
     sector = form_defaults['homeworld_sector'].strip()
     hex_code = form_defaults['homeworld_hex'].strip()
@@ -182,18 +196,27 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
     @router.get('/worlds/sectors', response_class=HTMLResponse)
     def sector_picker(request: Request) -> Any:
         form_defaults = _character_form_defaults_from_request(request)
+        character_id = request.query_params.get('character_id', '').strip()
+        fulfills = request.query_params.get('fulfills', '').strip()
+        form_query = _character_form_query_string(form_defaults)
         return templates.TemplateResponse(
             request=request,
             name='sector_picker.html',
             context={
                 'form_defaults': form_defaults,
-                'picker_query': _character_form_query_string(form_defaults),
+                'picker_query': _world_picker_query(request),
+                'character_id': character_id,
+                'fulfills': fulfills,
+                'back_url': (
+                    f'/ui/characters/{character_id}/wizard'
+                    if character_id and fulfills
+                    else (f'/ui/characters/new?{form_query}' if form_query else '/ui/characters/new')
+                ),
             },
         )
 
     @router.get('/worlds/sectors/search', response_class=HTMLResponse)
     def sector_search(request: Request, q: str = '') -> Any:
-        form_defaults = _character_form_defaults_from_request(request)
         matches = search_sectors(q)
         return templates.TemplateResponse(
             request=request,
@@ -201,14 +224,21 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
             context={
                 'matches': matches,
                 'query': q,
-                'picker_query': _character_form_query_string(form_defaults),
+                'picker_query': _world_picker_query(request),
             },
         )
 
     @router.get('/worlds/sectors/{sector_abbreviation}', response_class=HTMLResponse)
     def sector_filters(request: Request, sector_abbreviation: str) -> Any:
         form_defaults = _character_form_defaults_from_request(request)
+        character_id = request.query_params.get('character_id', '').strip()
+        fulfills = request.query_params.get('fulfills', '').strip()
         sector = SectorWorldFilters.from_travellermap(sector_abbreviation)
+        reference_hex = request.query_params.get('reference_hex', '').strip()
+        if not reference_hex and character_id:
+            projection = backend.get_projection(int(character_id))
+            if projection is not None and projection.summary.homeworld.sector_abbreviation == sector_abbreviation:
+                reference_hex = projection.summary.homeworld.hex
         selected_strings, selected_ints, filters_active = _selected_world_filters(request)
         applied_strings, applied_ints = _normalize_world_filters_for_matching(selected_strings, selected_ints, sector)
         world_query = request.query_params.get('world_query', '').strip()
@@ -225,9 +255,15 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
             law_levels=applied_ints.get('law_levels'),
             tech_levels=applied_ints.get('tech_levels'),
             world_query=world_query,
+            reference_hex=reference_hex or None,
+        )
+        world_distances = (
+            {world.hex: sector.world_distance_parsecs(reference_hex, world) for world in filtered_worlds}
+            if reference_hex
+            else {}
         )
         selected: dict[str, set[str]] = {**selected_strings, **selected_ints}
-        picker_query = _character_form_query_string(form_defaults)
+        picker_query = _world_picker_query(request)
         return templates.TemplateResponse(
             request=request,
             name='sector_filters.html',
@@ -240,9 +276,13 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
                 'selected': selected,
                 'filters_active': filters_active,
                 'world_query': world_query,
+                'reference_hex': reference_hex,
+                'world_distances': world_distances,
                 'form_defaults': form_defaults,
                 'picker_query': picker_query,
                 'select_homeworld_base': f'/ui/characters/new?{picker_query}' if picker_query else '/ui/characters/new',
+                'select_homeworld_character_id': character_id,
+                'select_homeworld_fulfills': fulfills,
                 'back_to_picker_url': f'/ui/worlds/sectors?{picker_query}' if picker_query else '/ui/worlds/sectors',
                 'reset_filters_url': (
                     f'/ui/worlds/sectors/{sector.sector_abbreviation}?{picker_query}'
@@ -336,6 +376,25 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
             return Response(status_code=404)
         ctx = {**_projection_context(projection, character_id), 'is_htmx': False}
         return templates.TemplateResponse(request=request, name='wizard.html', context=ctx)
+
+    @router.post('/characters/{character_id}/homeworld')
+    async def select_homeworld_for_character(request: Request, character_id: int) -> Any:
+        projection = backend.get_projection(character_id)
+        if projection is None:
+            return HTMLResponse('<p class="text-red-400">Character not found</p>', status_code=404)
+
+        form = await request.form()
+        fulfills = str(form.get('fulfills', ''))
+
+        try:
+            event = _build_event_from_form(fulfills, form, projection)
+            backend.append_event(character_id, event)
+        except Exception as exc:
+            projection = backend.get_projection(character_id) or projection
+            ctx = {**_projection_context(projection, character_id), 'error': str(exc), 'changes': [], 'is_htmx': False}
+            return templates.TemplateResponse(request=request, name='wizard.html', context=ctx, status_code=422)
+
+        return RedirectResponse(url=f'/ui/characters/{character_id}/wizard', status_code=303)
 
     @router.post('/characters/delete')
     async def delete_characters(request: Request) -> Any:

@@ -6,8 +6,8 @@ import pytest
 from ceres.character.app import build_app
 from ceres.character.sophonts import HUMANITI, VILANI
 from ceres.character.store import SqliteCharacterBackend
-from ceres.worlds import DEFAULT_MILIEU
-from tests.character.helpers import MOCK_WORLD
+from ceres.worlds import DEFAULT_MILIEU, SectorWorldFilters
+from tests.character.helpers import MOCK_WORLD, MOCK_WORLD_2
 
 
 @pytest.fixture
@@ -303,6 +303,66 @@ def test_sector_filter_page_treats_all_checked_as_unconstrained(client, monkeypa
     assert 'Drift' in r.text
 
 
+def test_sector_filter_page_prefills_reference_hex_from_current_homeworld(client_with_backend, monkeypatch):
+    from ceres.worlds import SectorWorldFilters
+    from tests.worlds.test_sector_filters import _entry
+
+    client, backend = client_with_backend
+    row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Ada')
+    worlds = [
+        _entry(name='Far', hex_code='2916', uwp='A867A99-D', bases='N', allegiance='ImDd', remarks='Hi In'),
+        _entry(name='Near', hex_code='2614', uwp='C433567-A', bases='W', allegiance='ImAp', remarks='Ni Po'),
+        _entry(name='Middle', hex_code='2715', uwp='E100200-7', bases='', allegiance='NaHu', remarks='Ba Va'),
+    ]
+    filters = SectorWorldFilters(
+        worlds=worlds,
+        sector_abbreviation='Troj',
+        sector_name='Trojan Reach',
+        allegiance_names={'ImDd': 'Third Imperium, Domain of Deneb'},
+    )
+    monkeypatch.setattr('ceres.character.web.routes.SectorWorldFilters.from_travellermap', lambda _: filters)
+
+    r = client.get('/ui/worlds/sectors/Troj', params={'character_id': row['id'], 'fulfills': '1.0'})
+    assert r.status_code == 200
+    assert 'name="reference_hex"' in r.text
+    assert 'value="2715"' in r.text
+    assert '>Dist<' in r.text
+
+    ordered = sorted(worlds, key=lambda world: (filters.world_distance_parsecs('2715', world), world.hex, world.name))
+    positions = [r.text.index(world.name) for world in ordered]
+    assert positions == sorted(positions)
+
+
+def test_sector_filter_page_sorts_by_manual_reference_hex(client, monkeypatch):
+    from ceres.worlds import SectorWorldFilters
+    from tests.worlds.test_sector_filters import _entry
+
+    worlds = [
+        _entry(name='Far', hex_code='2916', uwp='A867A99-D', bases='N', allegiance='ImDd', remarks='Hi In'),
+        _entry(name='Near', hex_code='2614', uwp='C433567-A', bases='W', allegiance='ImAp', remarks='Ni Po'),
+        _entry(name='Middle', hex_code='2715', uwp='E100200-7', bases='', allegiance='NaHu', remarks='Ba Va'),
+    ]
+    filters = SectorWorldFilters(
+        worlds=worlds,
+        sector_abbreviation='Troj',
+        sector_name='Trojan Reach',
+        allegiance_names={'ImDd': 'Third Imperium, Domain of Deneb'},
+    )
+    monkeypatch.setattr('ceres.character.web.routes.SectorWorldFilters.from_travellermap', lambda _: filters)
+
+    r = client.get('/ui/worlds/sectors/Troj', params={'reference_hex': '2513'})
+    assert r.status_code == 200
+    assert 'value="2513"' in r.text
+    assert '>Dist<' in r.text
+    assert '>2<' in r.text
+    assert '>3<' in r.text
+    assert '>5<' in r.text
+
+    ordered = sorted(worlds, key=lambda world: (filters.world_distance_parsecs('2513', world), world.hex, world.name))
+    positions = [r.text.index(world.name) for world in ordered]
+    assert positions == sorted(positions)
+
+
 def test_create_character_redirects_to_wizard(client):
     r = client.post(
         '/ui/characters/new',
@@ -455,6 +515,93 @@ def test_wizard_404_for_missing_character(client):
     assert r.status_code == 404
 
 
+def test_wizard_homeworld_change_pending_links_to_sector_picker(client_with_backend):
+    from ceres.character.events import (
+        BackgroundSkillsEvent,
+        FinishCreationEvent,
+        HomeworldChangeRequiredEvent,
+        UcpEvent,
+    )
+    from ceres.character.skills import Admin, Athletics, Carouse, Drive
+
+    client, backend = client_with_backend
+    row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Clio')
+    backend.append_event(row['id'], UcpEvent(fulfills='1.0', ucp='7869A5'))
+    backend.append_event(
+        row['id'],
+        BackgroundSkillsEvent(fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Drive()]),
+    )
+    backend.append_event(row['id'], FinishCreationEvent(fulfills='3.0'))
+    backend.append_event(
+        row['id'],
+        HomeworldChangeRequiredEvent(
+            reason='Citizen mishap 5: forcing you to leave the planet.',
+            source_kind='career_mishap',
+            source_career='Citizen',
+        ),
+    )
+
+    r = client.get(f'/ui/characters/{row["id"]}/wizard')
+    assert r.status_code == 200
+    assert 'Choose New Homeworld' in r.text
+    assert f'/ui/worlds/sectors?character_id={row["id"]}&fulfills=5.0' in r.text
+
+
+def test_selecting_homeworld_from_wizard_picker_updates_character(client_with_backend, monkeypatch):
+    from ceres.character.events import (
+        BackgroundSkillsEvent,
+        FinishCreationEvent,
+        HomeworldChangeRequiredEvent,
+        UcpEvent,
+    )
+    from ceres.character.skills import Admin, Athletics, Carouse, Drive
+    from tests.worlds.test_sector_filters import _sample_worlds
+
+    client, backend = client_with_backend
+    row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Clio')
+    backend.append_event(row['id'], UcpEvent(fulfills='1.0', ucp='7869A5'))
+    backend.append_event(
+        row['id'],
+        BackgroundSkillsEvent(fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Drive()]),
+    )
+    backend.append_event(row['id'], FinishCreationEvent(fulfills='3.0'))
+    backend.append_event(
+        row['id'],
+        HomeworldChangeRequiredEvent(
+            reason='Citizen mishap 5: forcing you to leave the planet.',
+            source_kind='career_mishap',
+            source_career='Citizen',
+        ),
+    )
+
+    sample_worlds = _sample_worlds()
+    monkeypatch.setattr(
+        'ceres.character.web.routes.SectorWorldFilters.from_travellermap',
+        lambda sector_abbreviation: SectorWorldFilters(
+            worlds=sample_worlds,
+            sector_abbreviation=sector_abbreviation,
+            sector_name='Trojan Reach',
+            allegiance_names={'ImDd': 'Third Imperium, Domain of Deneb'},
+        ),
+    )
+    monkeypatch.setattr('ceres.adapters.travellermap.fetch_world', lambda sector, hex_code: MOCK_WORLD_2)
+
+    sector_page = client.get('/ui/worlds/sectors/Troj', params={'character_id': row['id'], 'fulfills': '5.0'})
+    assert sector_page.status_code == 200
+    assert f'action="/ui/characters/{row["id"]}/homeworld"' in sector_page.text
+
+    r = client.post(
+        f'/ui/characters/{row["id"]}/homeworld',
+        data={'fulfills': '5.0', 'sector': 'Troj', 'hex_code': '0103'},
+    )
+    assert r.status_code == 200
+
+    projection = backend.get_projection(row['id'])
+    assert projection is not None
+    assert projection.summary.homeworld == MOCK_WORLD_2
+    assert not any(p.kind == 'homeworld_change_required' for p in projection.pending_inputs)
+
+
 # ── event submission (HTMX) ───────────────────────────────────────────────────
 
 
@@ -599,6 +746,17 @@ def test_event_from_form_career_choice():
     assert event.career == 'Scout'
     assert event.assignment == 'Courier'
     assert event.qualification_roll == 8
+
+
+def test_event_from_form_career_choice_missing_assignment_raises():
+    from starlette.datastructures import FormData
+
+    from ceres.character.events import PendingCareerChoice
+
+    pi = PendingCareerChoice(id='3.0', instruction='')
+    form = FormData({'career': 'Citizen', 'assignment': '', 'roll': '8'})
+    with pytest.raises(ValueError, match="Missing assignment for career 'Citizen'"):
+        pi.event_from_form(form)
 
 
 def test_event_from_form_reenlist_true():

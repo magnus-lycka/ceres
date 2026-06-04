@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Annotated, Any, Literal, cast, overload
 
-from pydantic import BaseModel, Field, SerializeAsAny
+from pydantic import BaseModel, Field, SerializeAsAny, model_validator
 
 from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.benefits import ItemBenefit
@@ -156,6 +156,14 @@ class CharacterSummary(BaseModel):
     age: int = 18
     sophont: Sophont
     homeworld: TravellerMapWorld
+    birthworld: TravellerMapWorld | None = None
+
+    @model_validator(mode='after')
+    def _default_birthworld(self) -> CharacterSummary:
+        if self.birthworld is None:
+            self.birthworld = self.homeworld
+        return self
+
     characteristics: dict[Chars, int] = Field(default_factory=dict)
     current_career: Career | None = None
     current_assignment: str | None = None

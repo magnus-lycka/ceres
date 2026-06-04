@@ -1202,9 +1202,17 @@ class LifeEventEvent(EventBase):
                     effect={'type': EffectType.DM, 'amount': 2},
                 )
             )
+            projection.pending_inputs.append(
+                PendingHomeworldChangeRequired(
+                    id=f'{self.id}.0',
+                    instruction='You move to another world. Select your new homeworld.',
+                    reason='Life Event 9: You move to another world.',
+                    source_kind='life_event',
+                )
+            )
             if in_career and career is not None:
                 projection.pending_inputs.append(
-                    _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id)
+                    _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id, 1)
                 )
         elif roll == 10:
             projection.scheduled_effects.append(
@@ -1631,6 +1639,64 @@ class ParoleRollEvent(EventBase):
         projection.summary.narrative.append(f'Prisoner: Parole Threshold set to {pt} (rolled {self.roll}+2)')
 
 
+class HomeworldChangeRequiredEvent(EventBase):
+    """Records that a mandatory homeworld change was triggered. Adds a blocking pending."""
+
+    kind: Literal['homeworld_change_required'] = 'homeworld_change_required'
+    reason: str
+    source_kind: str = ''
+    source_career: str | None = None
+    source_assignment: str | None = None
+    target_constraints: str | None = None
+
+    def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
+        projection.pending_inputs.append(
+            PendingHomeworldChangeRequired(
+                id=f'{self.id}.0',
+                instruction=self.reason,
+                reason=self.reason,
+                source_kind=self.source_kind,
+                source_career=self.source_career,
+                source_assignment=self.source_assignment,
+                target_constraints=self.target_constraints,
+            )
+        )
+
+
+class HomeworldChangeOfferedEvent(EventBase):
+    """Records that an optional homeworld change was offered. Adds a non-blocking pending."""
+
+    kind: Literal['homeworld_change_offered'] = 'homeworld_change_offered'
+    reason: str
+    source_kind: str = ''
+    source_career: str | None = None
+    source_assignment: str | None = None
+    target_constraints: str | None = None
+
+    def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
+        projection.pending_inputs.append(
+            PendingHomeworldChangeOffered(
+                id=f'{self.id}.0',
+                instruction=self.reason,
+                reason=self.reason,
+                source_kind=self.source_kind,
+                source_career=self.source_career,
+                source_assignment=self.source_assignment,
+                target_constraints=self.target_constraints,
+            )
+        )
+
+
+class HomeworldChangedEvent(EventBase):
+    """Fulfils a homeworld change pending and updates the character's homeworld."""
+
+    kind: Literal['homeworld_changed'] = 'homeworld_changed'
+    new_homeworld: TravellerMapWorld
+
+    def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
+        projection.summary.homeworld = self.new_homeworld
+
+
 # ── Free functions (formerly CharacterProjection methods) ─────────────────────
 
 
@@ -1928,6 +1994,8 @@ class PendingCareerChoice(PendingInputBase):
             return PreCareerEntryEvent(precareer=precareer, roll=roll, fulfills=self.id)
         career = form_str(form, 'career')
         assignment = form_str(form, 'assignment')
+        if not assignment:
+            raise ValueError(f'Missing assignment for career {career!r}')
         roll = form_int(form, 'roll', 2)
         return CareerEvent(career=career, assignment=assignment, qualification_roll=roll, fulfills=self.id)
 
@@ -2458,6 +2526,60 @@ class PendingParoleRoll(PendingInputBase):
         return [NumberEntry(name='roll', label='1D roll (1–6)', default=3, min=1, max=6)]
 
 
+class PendingHomeworldChangeRequired(PendingInputBase):
+    """A forced homeworld change is pending. Character cannot progress until resolved."""
+
+    kind: Literal['homeworld_change_required'] = 'homeworld_change_required'
+    blocking: bool = True
+    reason: str
+    source_kind: str = ''
+    source_career: str | None = None
+    source_assignment: str | None = None
+    target_constraints: str | None = None
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        from ceres.adapters.travellermap import fetch_world
+
+        sector = form_str(form, 'sector', '').strip()
+        hex_code = form_str(form, 'hex_code', '').strip()
+        if not sector or not hex_code:
+            raise ValueError('Sector and hex code are required to select a new homeworld')
+        world = fetch_world(sector, hex_code)
+        return HomeworldChangedEvent(fulfills=self.id, new_homeworld=world)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        from ceres.character.input_specs import InfoText
+
+        return [InfoText(text=self.reason)]
+
+
+class PendingHomeworldChangeOffered(PendingInputBase):
+    """An optional homeworld change opportunity. Character may proceed without acting on it."""
+
+    kind: Literal['homeworld_change_offered'] = 'homeworld_change_offered'
+    blocking: bool = False
+    reason: str
+    source_kind: str = ''
+    source_career: str | None = None
+    source_assignment: str | None = None
+    target_constraints: str | None = None
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        from ceres.adapters.travellermap import fetch_world
+
+        sector = form_str(form, 'sector', '').strip()
+        hex_code = form_str(form, 'hex_code', '').strip()
+        if not sector or not hex_code:
+            raise ValueError('Sector and hex code are required to select a new homeworld')
+        world = fetch_world(sector, hex_code)
+        return HomeworldChangedEvent(fulfills=self.id, new_homeworld=world)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        from ceres.character.input_specs import InfoText
+
+        return [InfoText(text=self.reason)]
+
+
 _CAREER_PHASE_PENDING_TYPES = (
     PendingSurvive,
     PendingTermEvent,
@@ -2505,7 +2627,9 @@ type AnyPending = Annotated[
     | PendingPreCareerSkillChoice
     | PendingPreCareerEvent
     | PendingPreCareerGraduation
-    | PendingParoleRoll,
+    | PendingParoleRoll
+    | PendingHomeworldChangeRequired
+    | PendingHomeworldChangeOffered,
     Field(discriminator='kind'),
 ]
 
@@ -2545,7 +2669,10 @@ type AnyEvent = Annotated[
     | PreCareerSkillChoiceEvent
     | PreCareerEventEvent
     | PreCareerGraduationEvent
-    | ParoleRollEvent,
+    | ParoleRollEvent
+    | HomeworldChangeRequiredEvent
+    | HomeworldChangeOfferedEvent
+    | HomeworldChangedEvent,
     Field(discriminator='kind'),
 ]
 
@@ -2576,6 +2703,9 @@ __all__ = [
     'DraftEvent',
     'EventBase',
     'FinishCreationEvent',
+    'HomeworldChangeOfferedEvent',
+    'HomeworldChangeRequiredEvent',
+    'HomeworldChangedEvent',
     'InjuryTableEvent',
     'LifeEventEvent',
     'LifeEventUnusualEvent',
@@ -2597,6 +2727,8 @@ __all__ = [
     'PendingDoubleInjuryRoll',
     'PendingDraftAssignmentChoice',
     'PendingDraftChoice',
+    'PendingHomeworldChangeOffered',
+    'PendingHomeworldChangeRequired',
     'PendingInitialTrainingChoice',
     'PendingInjuryTable',
     'PendingInputBase',

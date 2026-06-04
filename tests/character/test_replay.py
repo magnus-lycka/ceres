@@ -131,6 +131,16 @@ class TestCharacterStarted:
         assert projection.summary.sophont == VILANI
         assert projection.summary.homeworld == MOCK_WORLD
 
+    def test_sets_birthworld_equal_to_homeworld_on_start(self):
+        projection = replay(1, [_started()])
+
+        assert projection.summary.birthworld == MOCK_WORLD
+
+    def test_birthworld_is_immutable_starting_world(self):
+        projection = replay(1, [_started()])
+
+        assert projection.summary.birthworld == projection.summary.homeworld
+
     def test_first_pending_input_is_ucp(self):
         projection = replay(1, [_started()])
 

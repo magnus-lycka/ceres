@@ -205,6 +205,51 @@ class TestSectorWorldFiltering:
         assert [world.name for world in by_name] == ['Beryl']
         assert [world.name for world in by_hex] == ['Cinder']
 
+    def test_hex_distance_parsecs_uses_traveller_hex_geometry(self) -> None:
+        assert SectorWorldFilters.hex_distance_parsecs('1317', '1417') == 1
+        assert SectorWorldFilters.hex_distance_parsecs('1319', '1417') == 2
+        assert SectorWorldFilters.hex_distance_parsecs('1417', '1719') == 3
+        assert SectorWorldFilters.hex_distance_parsecs('1417', '1613') == 5
+        assert SectorWorldFilters.hex_distance_parsecs('1317', '1517') == 2
+        assert SectorWorldFilters.hex_distance_parsecs('1317', '1518') == 2
+        assert SectorWorldFilters.hex_distance_parsecs('1319', '1518') == 2
+        assert SectorWorldFilters.hex_distance_parsecs('1417', '1518') == 1
+        assert SectorWorldFilters.hex_distance_parsecs('1417', '1715') == 4
+
+    def test_filter_can_sort_by_distance_from_reference_hex(self) -> None:
+        worlds = [
+            _entry(
+                name='Far',
+                hex_code='2916',
+                uwp='A867A99-D',
+                bases='N',
+                allegiance='ImDd',
+                remarks='Hi In',
+            ),
+            _entry(
+                name='Near',
+                hex_code='2614',
+                uwp='C433567-A',
+                bases='W',
+                allegiance='ImAp',
+                remarks='Ni Po',
+            ),
+            _entry(
+                name='Middle',
+                hex_code='2715',
+                uwp='E100200-7',
+                bases='',
+                allegiance='NaHu',
+                remarks='Ba Va',
+            ),
+        ]
+        filters = SectorWorldFilters(worlds=worlds)
+
+        selected = filters.filter_worlds(reference_hex='2513')
+
+        assert [world.name for world in selected] == ['Near', 'Middle', 'Far']
+        assert [filters.world_distance_parsecs('2513', world) for world in selected] == [2, 3, 5]
+
 
 class TestSectorFromTravellerMap:
     def test_loads_sector_worlds_from_adapter_without_fetching_each_world(self, monkeypatch) -> None:

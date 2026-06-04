@@ -328,6 +328,19 @@ include:
   annual pension (not Scout, Rogue, Prisoner, or Drifter).
 - **End-of-creation marker** — no pending inputs and no active career should
   produce a "complete" state recording final cash, pension, and medical debt.
+- **Character-state changes should be visible in the event log** — important
+  character changes such as gaining skills, basic training results, rank
+  bonuses, characteristic changes, homeworld changes, and similar stateful
+  outcomes should not be hidden as replay-only side effects. The event log
+  should make it possible to see what actually happened to the character and in
+  what order. In particular, first-term basic training is currently applied
+  implicitly during career start instead of appearing as explicit logged events.
+
+- **Skill/characteristic roll events should preserve raw roll and system-known
+  DM state** — for rolls such as `SkillRollEvent`, Ceres should record enough
+  information to distinguish the raw dice result from the computed modifiers
+  known to the system. The current `modified_roll`-only shape leaves too much
+  ambiguity in the event log and makes the UI guess at why a result happened.
 
 ### Draft, career switching, and assignment changes
 
@@ -349,6 +362,27 @@ include:
 The career YAML migration removed string-based skill/characteristic fields from
 career data. Several string-based patterns remain and should be eliminated in
 follow-up work packages.
+
+### Replace `PendingInputBase.options: list[str]` with typed option objects
+
+`PendingInputBase` currently declares:
+
+- `options: list[str] = Field(default_factory=list)`
+
+This is far too weak to act as the contract between career/event logic and the
+frontend/client. Pending inputs should carry proper typed option objects that
+make the intended interaction explicit: labels, submitted values, semantic
+meaning, and any structured payload should be part of the model instead of
+being improvised from arbitrary strings.
+
+This should become a real domain/API contract between:
+
+- event/career/pre-career logic that creates pending inputs
+- the UI/client that renders and fulfills them
+
+The current stringly-typed foundation is one source of bugs such as empty or
+ambiguous `career_decision` submissions and special-case rendering drift across
+different pending-input kinds.
 
 ### Replace remaining `CareerDispatchEffect` registry dispatch with effect subclasses
 

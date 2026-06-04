@@ -18,6 +18,7 @@ def replay(character_id: int, events: Sequence[AnyEvent]) -> CharacterProjection
             name=first.name,
             sophont=first.sophont,
             homeworld=first.homeworld,
+            birthworld=first.homeworld,
         ),
     )
     stat_names = (

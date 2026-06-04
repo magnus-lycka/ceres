@@ -113,7 +113,7 @@ class PendingCitizenMishap5SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['citizen_mishap_5_skill_roll'] = 'citizen_mishap_5_skill_roll'
 
     def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
-        from ceres.character.events import _apply_mishap_ejection
+        from ceres.character.events import PendingHomeworldChangeRequired, _apply_mishap_ejection
 
         career = projection.get_current_career()
         if event.modified_roll >= 8:
@@ -124,9 +124,18 @@ class PendingCitizenMishap5SkillRoll(CareerSkillRollPendingBase):
                     options=[type(s)() for s in projection.summary.skills],
                 )
             )
-            _apply_mishap_ejection(projection, career, event.id, 1, lose_current_term=True)
+            next_idx = _apply_mishap_ejection(projection, career, event.id, 1, lose_current_term=True)
         else:
-            _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+            next_idx = _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+        projection.pending_inputs.append(
+            PendingHomeworldChangeRequired(
+                id=f'{event.id}.{next_idx}',
+                instruction='Forced to leave the planet. Select your new homeworld.',
+                reason='Citizen mishap 5: forcing you to leave the planet.',
+                source_kind='career_mishap',
+                source_career='Citizen',
+            )
+        )
 
 
 class PendingCitizenEvent8(CareerChoicePendingBase):
