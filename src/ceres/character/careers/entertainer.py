@@ -33,9 +33,10 @@ from ceres.character.careers.career_data import (
     SkillChoiceEffect,
     SkillTable,
 )
-from ceres.character.careers.common_pending import CareerChoicePendingBase, CareerSkillRollPendingBase
+from ceres.character.careers.common_pending import CareerSkillRollPendingBase
 from ceres.character.characteristics import Chars, ConnectionKind, characteristic_dm
 from ceres.character.events import (
+    PendingChoices,
     SkillRollEvent,
     career_progress_pending,
 )
@@ -69,6 +70,7 @@ from ceres.character.skills import (
 )
 from ceres.character.state import (
     CharacterProjection,
+    ChoiceBase,
     EffectTrigger,
     EffectType,
     Enemy,
@@ -97,21 +99,27 @@ class PendingEntertainerEvent3SkillRoll(CareerSkillRollPendingBase):
         # no pending added — _apply_skill_roll auto-queues advancement
 
 
-class PendingEntertainerEvent8(CareerChoicePendingBase):
-    kind: Literal['entertainer_event_8'] = 'entertainer_event_8'
+class EntertainerEvent8Accept(ChoiceBase):
+    kind: Literal['entertainer_event_8_accept'] = 'entertainer_event_8_accept'
+    label: str = 'Criticise (roll Art or Investigate 8+: success = DM+2 advancement; fail = powerful Enemy)'
 
-    def on_choice(self, projection: CharacterProjection, event) -> None:
-        career = projection.get_current_career()
-        if event.choice == 'refuse':
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
-        else:
-            projection.pending_inputs.append(
-                PendingEntertainerEvent8SkillRoll(
-                    id=f'{event.id}.0',
-                    instruction='Roll Art or Investigate 8+: success = DM+2 to next advancement; fail = gain powerful Enemy',
-                    options=[*skill_instances(ArtSkill), Investigate()],
-                )
+    def handle(self, projection: CharacterProjection, event) -> None:
+        projection.pending_inputs.append(
+            PendingEntertainerEvent8SkillRoll(
+                id=f'{event.id}.0',
+                instruction='Roll Art or Investigate 8+: success = DM+2 to next advancement; fail = gain powerful Enemy',
+                options=[*skill_instances(ArtSkill), Investigate()],
             )
+        )
+
+
+class EntertainerEvent8Refuse(ChoiceBase):
+    kind: Literal['entertainer_event_8_refuse'] = 'entertainer_event_8_refuse'
+    label: str = 'Refuse (no action)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        career = projection.get_current_career()
+        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 
 
 class PendingEntertainerEvent8SkillRoll(CareerSkillRollPendingBase):
@@ -127,7 +135,9 @@ class PendingEntertainerEvent8SkillRoll(CareerSkillRollPendingBase):
                 )
             )
         else:
-            projection.summary.connections.append(Enemy(source='Powerful politician (Entertainer event 8)'))
+            projection.summary.connections.append(
+                Enemy(source='A powerful politician who became your enemy after your public criticism')
+            )
         # no pending added — _apply_skill_roll auto-queues advancement
 
 
@@ -158,13 +168,13 @@ class EntertainerEvent8Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingEntertainerEvent8(
+            PendingChoices(
                 id=f'{event_id}.{pending_idx}',
                 instruction=(
                     'Criticise the political leader (roll Art or Investigate 8+: '
                     'success = DM+2 to next advancement, fail = gain powerful Enemy) or refuse?'
                 ),
-                options=['accept', 'refuse'],
+                choices=[EntertainerEvent8Accept(), EntertainerEvent8Refuse()],
             )
         )
         return pending_idx + 1

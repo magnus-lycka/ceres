@@ -30,42 +30,42 @@ class ShipOccupantBase(BaseModel):
 
 
 class HighPassage(ShipOccupantBase):
-    kind: Literal['high'] = 'high'
+    kind: Literal['high_p'] = 'high_p'
     demand: ClassVar[ResidenceDemand] = ResidenceDemand.PASSENGER_STATEROOM
 
 
 class MiddlePassage(ShipOccupantBase):
-    kind: Literal['middle'] = 'middle'
+    kind: Literal['middle_p'] = 'middle_p'
     demand: ClassVar[ResidenceDemand] = ResidenceDemand.PASSENGER_STATEROOM_BED
 
 
 class BasicPassage(ShipOccupantBase):
-    kind: Literal['basic'] = 'basic'
+    kind: Literal['basic_p'] = 'basic_p'
     demand: ClassVar[ResidenceDemand] = ResidenceDemand.ANYTHING
 
 
 class LowPassage(ShipOccupantBase):
-    kind: Literal['low'] = 'low'
+    kind: Literal['low_p'] = 'low_p'
     demand: ClassVar[ResidenceDemand] = ResidenceDemand.LOW_BERTH
 
 
 class Owner(ShipOccupantBase):
-    kind: Literal['owner'] = 'owner'
+    kind: Literal['owner_occ'] = 'owner_occ'
     demand: ClassVar[ResidenceDemand] = ResidenceDemand.PASSENGER_STATEROOM
 
 
 class Guest(ShipOccupantBase):
-    kind: Literal['guest'] = 'guest'
+    kind: Literal['guest_occ'] = 'guest_occ'
     demand: ClassVar[ResidenceDemand] = ResidenceDemand.PASSENGER_STATEROOM_BED
 
 
 class Officer(ShipOccupantBase):
-    kind: Literal['officer'] = 'officer'
+    kind: Literal['officer_occ'] = 'officer_occ'
     demand: ClassVar[ResidenceDemand] = ResidenceDemand.CREW_STATEROOM
 
 
 class Crew(ShipOccupantBase):
-    kind: Literal['crew'] = 'crew'
+    kind: Literal['crew_occ'] = 'crew_occ'
     demand: ClassVar[ResidenceDemand] = ResidenceDemand.CREW_STATEROOM_BED
 
 
@@ -75,7 +75,7 @@ class FrozenWatch(ShipOccupantBase):
 
 
 class Troop(ShipOccupantBase):
-    kind: Literal['troop'] = 'troop'
+    kind: Literal['troop_occ'] = 'troop_occ'
     demand: ClassVar[ResidenceDemand] = ResidenceDemand.ANY_CREW_BED
 
 

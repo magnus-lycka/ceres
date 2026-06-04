@@ -74,7 +74,7 @@ class CrewIntensiveAutomation(Automation):
 
 
 class LowAutomation(Automation):
-    level: Literal['low'] = 'low'
+    level: Literal['low_auto'] = 'low_auto'
     description: ClassVar[str] = 'Low Automation'
     cost_percent: ClassVar[float] = -0.20
     crew_factor: ClassVar[float] = 1.4
@@ -82,7 +82,7 @@ class LowAutomation(Automation):
 
 
 class StandardAutomation(Automation):
-    level: Literal['standard'] = 'standard'
+    level: Literal['standard_auto'] = 'standard_auto'
     description: ClassVar[str] = 'Standard Automation'
     cost_percent: ClassVar[float] = 0.0
     crew_factor: ClassVar[float] = 1.0

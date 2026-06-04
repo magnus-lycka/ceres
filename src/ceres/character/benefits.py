@@ -8,7 +8,7 @@ from ceres.character.characteristics import Chars
 
 
 class CharacteristicIncrease(BaseModel):
-    type: Literal['characteristic'] = 'characteristic'
+    type: Literal['stat_benefit'] = 'stat_benefit'
     char: Chars
     amount: int
 
@@ -22,7 +22,7 @@ class CharacteristicIncrease(BaseModel):
 
 
 class ItemBenefit(BaseModel):
-    type: Literal['item'] = 'item'
+    type: Literal['item_benefit'] = 'item_benefit'
     key: str
     label: str
     exceptional: bool = False
@@ -35,7 +35,7 @@ class ItemBenefit(BaseModel):
 class ChoiceBenefit(BaseModel):
     """A benefit where the player picks one of several options (e.g. 'SOC +1 or Cybernetic Implant')."""
 
-    type: Literal['choice'] = 'choice'
+    type: Literal['option_benefit'] = 'option_benefit'
     options: list[CharacteristicIncrease | ItemBenefit]
 
     @property
@@ -100,12 +100,12 @@ CONTACT = ItemBenefit(key='contact', label='Contact')
 ALLY = ItemBenefit(key='ally', label='Ally')
 
 # Prisoner career skill benefits
-DECEPTION = ItemBenefit(key='deception', label='Deception')
-PERSUADE = ItemBenefit(key='persuade', label='Persuade')
-STEALTH = ItemBenefit(key='stealth', label='Stealth')
-MELEE = ItemBenefit(key='melee', label='Melee')
-RECON = ItemBenefit(key='recon', label='Recon')
-STREETWISE = ItemBenefit(key='streetwise', label='Streetwise')
+DECEPTION_ITEM = ItemBenefit(key='deception', label='Deception')
+PERSUADE_ITEM = ItemBenefit(key='persuade', label='Persuade')
+STEALTH_ITEM = ItemBenefit(key='stealth', label='Stealth')
+MELEE_ITEM = ItemBenefit(key='melee', label='Melee')
+RECON_ITEM = ItemBenefit(key='recon', label='Recon')
+STREETWISE_ITEM = ItemBenefit(key='streetwise', label='Streetwise')
 
 __all__ = [
     # Item benefit constants
@@ -115,22 +115,22 @@ __all__ = [
     'COMBAT_IMPLANT',
     'CONTACT',
     'CYBERNETIC_IMPLANT',
-    'DECEPTION',
+    'DECEPTION_ITEM',
     'FAR_TRADER',
     'FREE_TRADER',
     'GUN',
     'LAB_SHIP',
-    'MELEE',
+    'MELEE_ITEM',
     'PERSONAL_VEHICLE',
-    'PERSUADE',
-    'RECON',
+    'PERSUADE_ITEM',
+    'RECON_ITEM',
     'SAFARI_SHIP',
     'SCIENTIFIC_EQUIPMENT',
     'SCOUT_SHIP',
     'SHIPS_BOAT',
     'SHIP_SHARE',
-    'STEALTH',
-    'STREETWISE',
+    'STEALTH_ITEM',
+    'STREETWISE_ITEM',
     'SUBSIDISED_MERCHANT',
     'TAS_MEMBERSHIP',
     'WEAPON',

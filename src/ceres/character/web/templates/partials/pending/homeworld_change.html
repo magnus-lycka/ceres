@@ -1,0 +1,10 @@
+{% if pi.target_constraints %}
+<p class="text-xs text-gray-600 mb-3">Constraints: {{ pi.target_constraints | replace('_', ' ') }}</p>
+{% endif %}
+<div class="space-y-3">
+  <p class="text-sm text-gray-400">Choose a sector, then pick a world by filters, name, or hex.</p>
+  <a href="/ui/worlds/sectors?character_id={{ character_id }}&fulfills={{ pi.id }}"
+     class="inline-flex items-center bg-amber-600 hover:bg-amber-500 text-black font-bold px-6 py-3 text-sm uppercase tracking-wide">
+    Choose New Homeworld
+  </a>
+</div>

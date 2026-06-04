@@ -2,9 +2,11 @@
 
 from ceres.character.careers.common_pending import PendingAdvancedTrainingSkillRoll
 from ceres.character.careers.marines import (
+    MarinesEvent9Protect,
+    MarinesEvent9Report,
+    MarinesMishap4Accept,
+    MarinesMishap4Refuse,
     PendingMarinesEvent6SkillRoll,
-    PendingMarinesEvent9,
-    PendingMarinesMishap4,
     PendingMarinesMishap4SkillRoll,
 )
 from ceres.character.events import (
@@ -14,6 +16,7 @@ from ceres.character.events import (
     CharacterStartedEvent,
     MishapEvent,
     PendingAdvancement,
+    PendingChoices,
     PendingCommissionChoice,
     PendingMusterOut,
     PendingSkillChoice,
@@ -87,15 +90,15 @@ class TestMarinesMishap4:
     def test_mishap_4_creates_choice_pending(self):
         events = [*self._setup_to_mishap(), MishapEvent(id=6, fulfills='5.0', roll=4)]
         projection = replay(1, events)
-        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingMarinesMishap4)), None)
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingChoices)), None)
         assert pending is not None
-        assert set(pending.options) == {'refuse', 'accept'}
+        assert {type(c) for c in pending.choices} == {MarinesMishap4Refuse, MarinesMishap4Accept}
 
     def test_refuse_adds_contact(self):
         events = [
             *self._setup_to_mishap(),
             MishapEvent(id=6, fulfills='5.0', roll=4),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='refuse'),
+            CareerChoiceEvent.for_choice(MarinesMishap4Refuse, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
         contacts = [c for c in projection.summary.connections if isinstance(c, Contact)]
@@ -105,7 +108,7 @@ class TestMarinesMishap4:
         events = [
             *self._setup_to_mishap(),
             MishapEvent(id=6, fulfills='5.0', roll=4),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='refuse'),
+            CareerChoiceEvent.for_choice(MarinesMishap4Refuse, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
         assert projection.summary.current_career is None
@@ -115,7 +118,7 @@ class TestMarinesMishap4:
         events = [
             *self._setup_to_mishap(),
             MishapEvent(id=6, fulfills='5.0', roll=4),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='accept'),
+            CareerChoiceEvent.for_choice(MarinesMishap4Accept, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingMarinesMishap4SkillRoll)), None)
@@ -126,7 +129,7 @@ class TestMarinesMishap4:
         events = [
             *self._setup_to_mishap(),
             MishapEvent(id=6, fulfills='5.0', roll=4),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='accept'),
+            CareerChoiceEvent.for_choice(MarinesMishap4Accept, id=7, fulfills='6.0'),
             SkillRollEvent(id=8, fulfills='7.0', skill=Admin(), modified_roll=9),
         ]
         projection = replay(1, events)
@@ -137,7 +140,7 @@ class TestMarinesMishap4:
         events = [
             *self._setup_to_mishap(),
             MishapEvent(id=6, fulfills='5.0', roll=4),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='accept'),
+            CareerChoiceEvent.for_choice(MarinesMishap4Accept, id=7, fulfills='6.0'),
             SkillRollEvent(id=8, fulfills='7.0', skill=Admin(), modified_roll=7),
         ]
         projection = replay(1, events)
@@ -247,16 +250,16 @@ class TestMarinesEvent9:
     def test_creates_event_pending_with_options(self):
         projection = replay(1, self._setup_to_event())
         pending = next(
-            (p for p in projection.pending_inputs if isinstance(p, PendingMarinesEvent9)),
+            (p for p in projection.pending_inputs if isinstance(p, PendingChoices)),
             None,
         )
         assert pending is not None
-        assert set(pending.options) == {'report', 'protect'}
+        assert {type(c) for c in pending.choices} == {MarinesEvent9Report, MarinesEvent9Protect}
 
     def test_report_adds_enemy(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='report'),
+            CareerChoiceEvent.for_choice(MarinesEvent9Report, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
         enemies = [c for c in projection.summary.connections if isinstance(c, Enemy)]
@@ -265,7 +268,7 @@ class TestMarinesEvent9:
     def test_report_schedules_advancement_dm_2(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='report'),
+            CareerChoiceEvent.for_choice(MarinesEvent9Report, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
         dm_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.ADVANCEMENT]
@@ -274,7 +277,7 @@ class TestMarinesEvent9:
     def test_protect_adds_ally(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='protect'),
+            CareerChoiceEvent.for_choice(MarinesEvent9Protect, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
         allies = [c for c in projection.summary.connections if isinstance(c, Ally)]
@@ -283,21 +286,21 @@ class TestMarinesEvent9:
     def test_protect_schedules_advancement_dm_1(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='protect'),
+            CareerChoiceEvent.for_choice(MarinesEvent9Protect, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
         dm_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.ADVANCEMENT]
         assert any(se.effect.get('amount') == 1 for se in dm_effects)
 
     def test_both_choices_queue_career_progress(self):
-        for choice in ('report', 'protect'):
+        for choice_cls in (MarinesEvent9Report, MarinesEvent9Protect):
             events = [
                 *self._setup_to_event(),
-                CareerChoiceEvent(id=7, fulfills='6.0', choice=choice),
+                CareerChoiceEvent.for_choice(choice_cls, id=7, fulfills='6.0'),
             ]
             projection = replay(1, events)
             # Marines at rank 0 can attempt commission → PendingCommissionChoice; otherwise PendingAdvancement
             has_progress = any(
                 isinstance(p, (PendingAdvancement, PendingCommissionChoice)) for p in projection.pending_inputs
             )
-            assert has_progress, choice
+            assert has_progress, choice_cls

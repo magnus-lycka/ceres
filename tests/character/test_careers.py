@@ -725,7 +725,7 @@ class TestTermEventAutoAdvance:
             (
                 p
                 for p in projection.pending_inputs
-                if p.kind.startswith('rank_bonus_choice') and {type(s) for s in p.options} == science_classes
+                if isinstance(p, PendingRankBonusChoice) and {type(s) for s in p.options} == science_classes
             ),
             None,
         )
@@ -1056,7 +1056,7 @@ class TestLifeEvents:
             (p for p in projection.pending_inputs if isinstance(p, PendingLifeEventChoice) and p.roll == 4), None
         )
         assert pending is not None
-        assert set(pending.options) == {'rival', 'enemy'}
+        assert set(pending.options) == {'connection_rival', 'connection_enemy'}
 
     def test_roll_4_choose_rival_adds_rival(self):
         events = [
@@ -1096,7 +1096,7 @@ class TestLifeEvents:
             (p for p in projection.pending_inputs if isinstance(p, PendingLifeEventChoice) and p.roll == 8), None
         )
         assert pending is not None
-        assert 'rival' in pending.options and 'enemy' in pending.options
+        assert ConnectionKind.RIVAL in pending.options and ConnectionKind.ENEMY in pending.options
 
     def test_roll_8_choose_rival_adds_rival(self):
         events = [

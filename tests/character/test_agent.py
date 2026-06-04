@@ -3,12 +3,15 @@
 import pytest
 
 from ceres.character.careers.agent import (
+    AgentMishap2Accept,
+    AgentMishap2Refuse,
+    AgentMishap5Ally,
+    AgentMishap5Contact,
+    AgentMishap5Family,
     PendingAgentEvent3SkillRoll,
     PendingAgentEvent8SkillRoll,
     PendingAgentEvent11SkillChoice,
-    PendingAgentMishap2,
     PendingAgentMishap3SkillRoll,
-    PendingAgentMishap5,
 )
 from ceres.character.careers.career_data import AdvancementDmOption
 from ceres.character.careers.common_pending import PendingAdvancedTrainingSkillRoll
@@ -24,6 +27,7 @@ from ceres.character.events import (
     PendingAdvancement,
     PendingBenefitChoice,
     PendingCareerChoice,
+    PendingChoices,
     PendingDoubleInjuryRoll,
     PendingInjuryTable,
     PendingMishap,
@@ -402,14 +406,14 @@ class TestAgentMishap2:
 
     def test_creates_accept_refuse_pending(self):
         projection = replay(1, self._setup_to_mishap())
-        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingAgentMishap2)), None)
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingChoices)), None)
         assert pending is not None
-        assert set(pending.options) == {'accept', 'refuse'}
+        assert {type(c) for c in pending.choices} == {AgentMishap2Accept, AgentMishap2Refuse}
 
     def test_accept_leaves_career_without_injury(self):
         events = [
             *self._setup_to_mishap(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='accept'),
+            CareerChoiceEvent.for_choice(AgentMishap2Accept, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
         assert projection.summary.current_career is None
@@ -418,7 +422,7 @@ class TestAgentMishap2:
     def test_refuse_adds_enemy(self):
         events = [
             *self._setup_to_mishap(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='refuse'),
+            CareerChoiceEvent.for_choice(AgentMishap2Refuse, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
         assert any(isinstance(c, Enemy) for c in projection.summary.connections)
@@ -426,7 +430,7 @@ class TestAgentMishap2:
     def test_refuse_creates_double_injury_roll_pending(self):
         events = [
             *self._setup_to_mishap(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='refuse'),
+            CareerChoiceEvent.for_choice(AgentMishap2Refuse, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingDoubleInjuryRoll) for p in projection.pending_inputs)
@@ -434,7 +438,7 @@ class TestAgentMishap2:
     def test_refuse_creates_skill_choice_pending(self):
         events = [
             *self._setup_to_mishap(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='refuse'),
+            CareerChoiceEvent.for_choice(AgentMishap2Refuse, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
@@ -511,18 +515,25 @@ class TestAgentMishap5:
 
     def test_creates_choice_pending_with_three_options(self):
         projection = replay(1, self._setup_to_mishap())
-        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingAgentMishap5)), None)
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingChoices)), None)
         assert pending is not None
-        assert set(pending.options) == {'contact', 'ally', 'family'}
+        assert {type(c) for c in pending.choices} == {AgentMishap5Contact, AgentMishap5Ally, AgentMishap5Family}
 
-    @pytest.mark.parametrize('choice', ['contact', 'ally', 'family'])
-    def test_choice_adds_problem_note(self, choice):
+    @pytest.mark.parametrize(
+        ('choice_cls', 'keyword'),
+        [
+            (AgentMishap5Contact, 'contact'),
+            (AgentMishap5Ally, 'ally'),
+            (AgentMishap5Family, 'family'),
+        ],
+    )
+    def test_choice_adds_problem_note(self, choice_cls, keyword):
         events = [
             *self._setup_to_mishap(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice=choice),
+            CareerChoiceEvent.for_choice(choice_cls, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
-        assert any(choice in p.lower() for p in projection.summary.problems)
+        assert any(keyword in p.lower() for p in projection.summary.problems)
 
 
 # ── muster-out: choice benefit ────────────────────────────────────────────────

@@ -33,9 +33,10 @@ from ceres.character.careers.career_data import (
     SkillTable,
 )
 from ceres.character.careers.common import handle_advanced_training
-from ceres.character.careers.common_pending import CareerChoicePendingBase, CareerSkillRollPendingBase
+from ceres.character.careers.common_pending import CareerSkillRollPendingBase
 from ceres.character.characteristics import Chars
 from ceres.character.events import (
+    PendingChoices,
     PendingSkillChoice,
     SkillRollEvent,
     career_progress_pending,
@@ -70,6 +71,7 @@ from ceres.character.skills import (
 )
 from ceres.character.state import (
     CharacterProjection,
+    ChoiceBase,
     EffectTrigger,
     EffectType,
     Enemy,
@@ -89,25 +91,7 @@ MERCHANT = Career(
 # ── event 3: smuggling opportunity ───────────────────────────────────────────
 
 
-class PendingMerchantEvent3(CareerChoicePendingBase):
-    kind: Literal['merchant_event_3'] = 'merchant_event_3'
-
-    def on_choice(self, projection: CharacterProjection, event) -> None:
-        career = projection.get_current_career()
-        if event.choice == 'refuse':
-            projection.summary.connections.append(Rival(source='Merchant who offered smuggling job (Merchant event 3)'))
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
-        else:
-            projection.pending_inputs.append(
-                PendingMerchantEvent3SkillRoll(
-                    id=f'{event.id}.0',
-                    instruction='Roll Deception or Persuade 8+: success = extra Benefit roll; fail = ejected, gain Enemy',
-                    options=[Deception(), Persuade()],
-                )
-            )
-
-
-class PendingMerchantEvent3SkillRoll(CareerSkillRollPendingBase):
+class MerchantEvent3SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['merchant_event_3_skill_roll'] = 'merchant_event_3_skill_roll'
 
     def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
@@ -124,8 +108,32 @@ class PendingMerchantEvent3SkillRoll(CareerSkillRollPendingBase):
             # no pending added — _apply_skill_roll auto-queues advancement
         else:
             career = projection.get_current_career()
-            projection.summary.connections.append(Enemy(source='Smuggling job failed (Merchant event 3)'))
+            projection.summary.connections.append(Enemy(source='Someone who caught you running contraband'))
             _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+
+
+class MerchantEvent3Accept(ChoiceBase):
+    kind: Literal['merchant_event_3_accept'] = 'merchant_event_3_accept'
+    label: str = 'Accept (roll Deception or Persuade 8+)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        projection.pending_inputs.append(
+            MerchantEvent3SkillRoll(
+                id=f'{event.id}.0',
+                instruction='Roll Deception or Persuade 8+: success = extra Benefit roll; fail = ejected, gain Enemy',
+                options=[Deception(), Persuade()],
+            )
+        )
+
+
+class MerchantEvent3Refuse(ChoiceBase):
+    kind: Literal['merchant_event_3_refuse'] = 'merchant_event_3_refuse'
+    label: str = 'Refuse (gain Rival)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        career = projection.get_current_career()
+        projection.summary.connections.append(Rival(source='A merchant contact who wanted you to run contraband'))
+        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 
 
 class MerchantEvent3Handler(CareerHandlerBase):
@@ -134,14 +142,14 @@ class MerchantEvent3Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingMerchantEvent3(
+            PendingChoices(
                 id=f'{event_id}.{pending_idx}',
                 instruction=(
                     'Accept the smuggling job (roll Deception or Persuade 8+: '
                     'success = extra Benefit roll, fail = ejected with Enemy) '
                     'or refuse (gain a Rival)?'
                 ),
-                options=['accept', 'refuse'],
+                choices=[MerchantEvent3Accept(), MerchantEvent3Refuse()],
             )
         )
         return pending_idx + 1
@@ -210,7 +218,7 @@ class MerchantEvent9Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        return handle_advanced_training('Merchant', 9, 'merchant_event_9', projection, event_id, pending_idx)
+        return handle_advanced_training(projection, event_id, pending_idx)
 
 
 class MerchantCareerData(CareerData):

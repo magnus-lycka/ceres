@@ -224,7 +224,7 @@ def test_allocator_mixed_crew_and_passenger_demands_keep_existing_priority():
 def test_ship_occupants_are_individual_objects():
     middle_passengers = [MiddlePassage(), MiddlePassage(), MiddlePassage()]
     assert len(middle_passengers) == 3
-    assert [passenger.kind for passenger in middle_passengers] == ['middle', 'middle', 'middle']
+    assert all(passenger.kind == MiddlePassage.model_fields['kind'].default for passenger in middle_passengers)
     assert all(not hasattr(passenger, 'count') for passenger in middle_passengers)
 
 

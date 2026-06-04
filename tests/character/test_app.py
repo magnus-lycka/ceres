@@ -2,6 +2,32 @@ from fastapi.testclient import TestClient
 import pytest
 
 from ceres.character.app import build_app
+from ceres.character.events import (
+    BackgroundSkillsEvent,
+    CareerEvent,
+    CharacterStartedEvent,
+    PendingBackgroundSkills,
+    PendingCareerChoice,
+    PendingInitialTrainingChoice,
+    PendingSurvive,
+    SkillChoiceEvent,
+    UcpEvent,
+)
+from ceres.character.skills import (
+    Admin,
+    Animals,
+    Athletics,
+    Carouse,
+    CreativeArt,
+    Drive,
+    Flyer,
+    LifeScience,
+    PhysicalScience,
+    RoboticScience,
+    SocialScience,
+    SpaceScience,
+    WorkerProfession,
+)
 from ceres.character.store import SqliteCharacterBackend
 
 
@@ -28,16 +54,17 @@ def test_api_lists_skills(memory_client):
     assert response.status_code == 200
     skills = response.json()['skills']
     skill_types = [skill['type'] for skill in skills]
-    assert 'Admin' in skill_types
-    assert 'Animals' in skill_types
+    assert Admin.model_fields['type'].default in skill_types
+    assert Animals.model_fields['type'].default in skill_types
     assert 'Art' not in skill_types
-    assert 'Creative Art' in skill_types
+    assert CreativeArt.model_fields['type'].default in skill_types
     assert 'Profession' not in skill_types
-    assert 'Worker Profession' in skill_types
+    assert WorkerProfession.model_fields['type'].default in skill_types
     assert 'Science' not in skill_types
-    assert 'Space Science' in skill_types
-    assert next(skill for skill in skills if skill['type'] == 'Space Science') == {
-        'type': 'Space Science',
+    _ss_type = SpaceScience.model_fields['type'].default
+    assert _ss_type in skill_types
+    assert next(skill for skill in skills if skill['type'] == _ss_type) == {
+        'type': _ss_type,
         'specialities': ['Astronomy', 'Cosmology', 'Planetology'],
     }
 
@@ -116,14 +143,11 @@ def test_api_creation_produces_pending_input_for_ucp(memory_client):
     assert projection.status_code == 200
     data = projection.json()
     assert len(data['pending_inputs']) == 1
-    assert data['pending_inputs'][0] == {
-        'id': '1.0',
-        'kind': 'ucp',
-        'instruction': 'Provide characteristics (UCP)',
-        'options': [],
-        'blocking': True,
-        'stat_names': ['STR', 'DEX', 'END', 'INT', 'EDU', 'SOC'],
-    }
+    pending = data['pending_inputs'][0]
+    assert pending['id'] == '1.0'
+    assert pending['instruction'] == 'Provide characteristics (UCP)'
+    assert pending['blocking'] is True
+    assert pending['stat_names'] == ['STR', 'DEX', 'END', 'INT', 'EDU', 'SOC']
 
 
 def test_api_post_event_resolves_pending_ucp(memory_client):
@@ -131,13 +155,13 @@ def test_api_post_event_resolves_pending_ucp(memory_client):
 
     response = memory_client.post(
         '/characters/1/events',
-        json={'kind': 'ucp', 'ucp': '7869A5', 'fulfills': '1.0'},
+        json={'kind': UcpEvent.model_fields['kind'].default, 'ucp': '7869A5', 'fulfills': '1.0'},
     )
 
     assert response.status_code == 200
     data = response.json()
     assert len(data['pending_inputs']) == 1
-    assert data['pending_inputs'][0]['kind'] == 'background_skills'
+    assert data['pending_inputs'][0]['kind'] == PendingBackgroundSkills.model_fields['kind'].default
     assert data['pending_inputs'][0]['blocking'] is True
     assert data['summary']['characteristics'] == {
         'STR': 7,
@@ -151,13 +175,21 @@ def test_api_post_event_resolves_pending_ucp(memory_client):
 
 def test_api_post_background_skills_resolves_pending(memory_client):
     memory_client.post('/characters', json={'sophont': 'Vilani', 'name': 'Boss'})
-    memory_client.post('/characters/1/events', json={'kind': 'ucp', 'ucp': '7869A5', 'fulfills': '1.0'})
+    memory_client.post(
+        '/characters/1/events',
+        json={'kind': UcpEvent.model_fields['kind'].default, 'ucp': '7869A5', 'fulfills': '1.0'},
+    )
 
     response = memory_client.post(
         '/characters/1/events',
         json={
-            'kind': 'background_skills',
-            'skills': [{'type': 'Admin'}, {'type': 'Athletics'}, {'type': 'Carouse'}, {'type': 'Drive'}],
+            'kind': BackgroundSkillsEvent.model_fields['kind'].default,
+            'skills': [
+                {'type': Admin.model_fields['type'].default},
+                {'type': Athletics.model_fields['type'].default},
+                {'type': Carouse.model_fields['type'].default},
+                {'type': Drive.model_fields['type'].default},
+            ],
             'fulfills': '2.0',
         },
     )
@@ -165,18 +197,33 @@ def test_api_post_background_skills_resolves_pending(memory_client):
     assert response.status_code == 200
     data = response.json()
     assert len(data['pending_inputs']) == 1
-    assert data['pending_inputs'][0]['kind'] == 'career_choice'
+    assert data['pending_inputs'][0]['kind'] == PendingCareerChoice.model_fields['kind'].default
     assert len(data['summary']['skills']) == 4
-    assert {s['type'] for s in data['summary']['skills']} == {'Admin', 'Athletics', 'Carouse', 'Drive'}
+    assert {s['type'] for s in data['summary']['skills']} == {
+        Admin.model_fields['type'].default,
+        Athletics.model_fields['type'].default,
+        Carouse.model_fields['type'].default,
+        Drive.model_fields['type'].default,
+    }
 
 
 def test_api_post_background_skills_rejects_wrong_count(memory_client):
     memory_client.post('/characters', json={'sophont': 'Vilani', 'name': 'Boss'})
-    memory_client.post('/characters/1/events', json={'kind': 'ucp', 'ucp': '7869A5', 'fulfills': '1.0'})
+    memory_client.post(
+        '/characters/1/events',
+        json={'kind': UcpEvent.model_fields['kind'].default, 'ucp': '7869A5', 'fulfills': '1.0'},
+    )
 
     response = memory_client.post(
         '/characters/1/events',
-        json={'kind': 'background_skills', 'skills': [{'type': 'Admin'}, {'type': 'Athletics'}], 'fulfills': '2.0'},
+        json={
+            'kind': BackgroundSkillsEvent.model_fields['kind'].default,
+            'skills': [
+                {'type': Admin.model_fields['type'].default},
+                {'type': Athletics.model_fields['type'].default},
+            ],
+            'fulfills': '2.0',
+        },
     )
 
     assert response.status_code == 400
@@ -184,13 +231,21 @@ def test_api_post_background_skills_rejects_wrong_count(memory_client):
 
 def test_api_post_background_skills_rejects_invalid_skill(memory_client):
     memory_client.post('/characters', json={'sophont': 'Vilani', 'name': 'Boss'})
-    memory_client.post('/characters/1/events', json={'kind': 'ucp', 'ucp': '7869A5', 'fulfills': '1.0'})
+    memory_client.post(
+        '/characters/1/events',
+        json={'kind': UcpEvent.model_fields['kind'].default, 'ucp': '7869A5', 'fulfills': '1.0'},
+    )
 
     response = memory_client.post(
         '/characters/1/events',
         json={
-            'kind': 'background_skills',
-            'skills': [{'type': 'Admin'}, {'type': 'FakeSkill'}, {'type': 'Carouse'}, {'type': 'Drive'}],
+            'kind': BackgroundSkillsEvent.model_fields['kind'].default,
+            'skills': [
+                {'type': Admin.model_fields['type'].default},
+                {'type': 'FakeSkill'},
+                {'type': Carouse.model_fields['type'].default},
+                {'type': Drive.model_fields['type'].default},
+            ],
             'fulfills': '2.0',
         },
     )
@@ -203,7 +258,7 @@ def test_api_post_event_rejects_unknown_fulfills(memory_client):
 
     response = memory_client.post(
         '/characters/1/events',
-        json={'kind': 'ucp', 'ucp': '7869A5', 'fulfills': '99.0'},
+        json={'kind': UcpEvent.model_fields['kind'].default, 'ucp': '7869A5', 'fulfills': '99.0'},
     )
 
     assert response.status_code == 400
@@ -214,7 +269,7 @@ def test_api_post_event_rejects_unrelated_event_while_blocking(memory_client):
 
     response = memory_client.post(
         '/characters/1/events',
-        json={'kind': 'ucp', 'ucp': '7869A5'},
+        json={'kind': UcpEvent.model_fields['kind'].default, 'ucp': '7869A5'},
     )
 
     assert response.status_code == 400
@@ -228,7 +283,10 @@ def test_api_projection_404_for_unknown_character(memory_client):
 
 def test_api_events_records_typed_events(memory_client):
     memory_client.post('/characters', json={'sophont': 'Vilani', 'name': 'Boss'})
-    memory_client.post('/characters/1/events', json={'kind': 'ucp', 'ucp': '7869A5', 'fulfills': '1.0'})
+    memory_client.post(
+        '/characters/1/events',
+        json={'kind': UcpEvent.model_fields['kind'].default, 'ucp': '7869A5', 'fulfills': '1.0'},
+    )
 
     events = memory_client.get('/characters/1/events')
 
@@ -236,13 +294,18 @@ def test_api_events_records_typed_events(memory_client):
     event_list = events.json()['events']
     e0 = event_list[0]
     assert e0['id'] == 1
-    assert e0['kind'] == 'character_started'
+    assert e0['kind'] == CharacterStartedEvent.model_fields['kind'].default
     assert e0['sophont'] == 'Vilani'
     assert e0['player'] == 'NPC'
     assert e0['name'] == 'Boss'
     assert e0['fulfills'] is None
     assert e0['homeworld']['name'] == 'Terra'
-    assert event_list[1] == {'id': 2, 'kind': 'ucp', 'ucp': '7869A5', 'fulfills': '1.0'}
+    assert event_list[1] == {
+        'id': 2,
+        'kind': UcpEvent.model_fields['kind'].default,
+        'ucp': '7869A5',
+        'fulfills': '1.0',
+    }
 
 
 def test_api_deletes_character(memory_client):
@@ -265,12 +328,20 @@ def test_api_delete_returns_404_for_unknown(memory_client):
 
 def _setup_through_background_skills(client) -> None:
     client.post('/characters', json={'sophont': 'Vilani', 'name': 'Boss'})
-    client.post('/characters/1/events', json={'kind': 'ucp', 'ucp': '7869A5', 'fulfills': '1.0'})
+    client.post(
+        '/characters/1/events',
+        json={'kind': UcpEvent.model_fields['kind'].default, 'ucp': '7869A5', 'fulfills': '1.0'},
+    )
     client.post(
         '/characters/1/events',
         json={
-            'kind': 'background_skills',
-            'skills': [{'type': 'Admin'}, {'type': 'Athletics'}, {'type': 'Carouse'}, {'type': 'Drive'}],
+            'kind': BackgroundSkillsEvent.model_fields['kind'].default,
+            'skills': [
+                {'type': Admin.model_fields['type'].default},
+                {'type': Athletics.model_fields['type'].default},
+                {'type': Carouse.model_fields['type'].default},
+                {'type': Drive.model_fields['type'].default},
+            ],
             'fulfills': '2.0',
         },
     )
@@ -284,7 +355,7 @@ def test_api_scholar_initial_training_creates_one_choice_pending(memory_client):
     response = memory_client.post(
         '/characters/1/events',
         json={
-            'kind': 'career',
+            'kind': CareerEvent.model_fields['kind'].default,
             'career': 'Scholar',
             'assignment': 'Field Researcher',
             'qualification_roll': 5,
@@ -294,14 +365,25 @@ def test_api_scholar_initial_training_creates_one_choice_pending(memory_client):
 
     assert response.status_code == 200
     data = response.json()
-    choice_pendings = [p for p in data['pending_inputs'] if p['kind'] == 'initial_training_choice']
+    _it_kind = PendingInitialTrainingChoice.model_fields['kind'].default
+    _survive_kind = PendingSurvive.model_fields['kind'].default
+    choice_pendings = [p for p in data['pending_inputs'] if p['kind'] == _it_kind]
     assert len(choice_pendings) == 1
-    assert not any(p['kind'] == 'survive' for p in data['pending_inputs'])
-    _sciences = sorted(['Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science'])
+    assert not any(p['kind'] == _survive_kind for p in data['pending_inputs'])
+    _science_display_names = sorted(
+        ['Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science']
+    )
+    _science_types = {
+        LifeScience.model_fields['type'].default,
+        PhysicalScience.model_fields['type'].default,
+        RoboticScience.model_fields['type'].default,
+        SocialScience.model_fields['type'].default,
+        SpaceScience.model_fields['type'].default,
+    }
     assert choice_pendings[0]['id'] == '4.0'
-    assert choice_pendings[0]['kind'] == 'initial_training_choice'
-    assert choice_pendings[0]['instruction'] == f'Initial training: choose one of {", ".join(_sciences)}'
-    assert {o['type'] for o in choice_pendings[0]['options']} == set(_sciences)
+    assert choice_pendings[0]['kind'] == _it_kind
+    assert choice_pendings[0]['instruction'] == f'Initial training: choose one of {", ".join(_science_display_names)}'
+    assert {o['type'] for o in choice_pendings[0]['options']} == _science_types
 
 
 def test_api_scholar_initial_training_choices_unlock_survive(memory_client):
@@ -311,7 +393,7 @@ def test_api_scholar_initial_training_choices_unlock_survive(memory_client):
     memory_client.post(
         '/characters/1/events',
         json={
-            'kind': 'career',
+            'kind': CareerEvent.model_fields['kind'].default,
             'career': 'Scholar',
             'assignment': 'Field Researcher',
             'qualification_roll': 5,
@@ -321,13 +403,19 @@ def test_api_scholar_initial_training_choices_unlock_survive(memory_client):
 
     after_science = memory_client.post(
         '/characters/1/events',
-        json={'kind': 'skill_choice', 'skill': {'type': 'Space Science'}, 'fulfills': '4.0'},
+        json={
+            'kind': SkillChoiceEvent.model_fields['kind'].default,
+            'skill': {'type': SpaceScience.model_fields['type'].default},
+            'fulfills': '4.0',
+        },
     )
 
     assert after_science.status_code == 200
     data = after_science.json()
-    assert not any(p['kind'] == 'initial_training_choice' for p in data['pending_inputs'])
-    assert any(p['kind'] == 'survive' for p in data['pending_inputs'])
+    _it_kind = PendingInitialTrainingChoice.model_fields['kind'].default
+    _survive_kind = PendingSurvive.model_fields['kind'].default
+    assert not any(p['kind'] == _it_kind for p in data['pending_inputs'])
+    assert any(p['kind'] == _survive_kind for p in data['pending_inputs'])
     skill_types = {s['type'] for s in data['summary']['skills']}
-    assert 'Flyer' in skill_types
-    assert 'Space Science' in skill_types
+    assert Flyer.model_fields['type'].default in skill_types
+    assert SpaceScience.model_fields['type'].default in skill_types

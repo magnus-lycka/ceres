@@ -1,0 +1,135 @@
+{% if summary.career_terms %}
+<form hx-post="/ui/characters/{{ character_id }}/events"
+      hx-target="#pending-panel"
+      hx-swap="innerHTML"
+      hx-indicator="#spinner"
+      class="mb-4">
+  <input type="hidden" name="kind" value="finish_creation">
+  <input type="hidden" name="fulfills" value="{{ pi.id }}">
+  <button type="submit"
+          class="bg-gray-700 hover:bg-gray-600 text-gray-300 font-bold px-4 py-2 text-sm uppercase tracking-wide">
+    Finish character creation
+  </button>
+</form>
+{% endif %}
+
+{% if summary.term_count < 3 and summary.precareer_completed is none %}
+<div class="mb-4 border border-gray-700/50 bg-gray-800/20 p-3">
+  <p class="text-xs text-gray-500 mb-2 uppercase tracking-widest">Pre-career education (terms 1–3)</p>
+  <form hx-post="/ui/characters/{{ character_id }}/events"
+        hx-target="#pending-panel"
+        hx-swap="innerHTML"
+        hx-indicator="#spinner">
+    <input type="hidden" name="kind" value="precareer_entry">
+    <input type="hidden" name="fulfills" value="{{ pi.id }}">
+    <div class="flex flex-wrap items-end gap-3">
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Pre-career</label>
+        <select name="precareer" id="precareer-select"
+                onchange="updatePrecareerDetails(this)"
+                class="bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500">
+          {% for pc in precareers.values() %}
+          <option value="{{ pc.name }}"
+                  data-entry="{{ pc.entry.characteristic ~ ' ' ~ pc.entry.target ~ '+' if pc.entry else (pc.entry_requirement or 'Automatic') }}"
+                  data-curricula="{{ pc.curricula | join(',') }}">
+            {{ pc.name }}{% if pc.entry %} ({{ pc.entry.characteristic }} {{ pc.entry.target }}+){% elif pc.entry_requirement %} ({{ pc.entry_requirement[:30] }}{% if pc.entry_requirement|length > 30 %}…{% endif %}){% else %} (automatic){% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div id="curriculum-panel" class="hidden">
+        <label class="block text-xs text-gray-500 mb-1">Curriculum</label>
+        <select name="curriculum" id="curriculum-select"
+                class="bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500">
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Entry roll (2D)</label>
+        <input type="number" name="roll" value="7" min="2" max="12"
+               class="w-24 bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 text-center font-bold focus:outline-none focus:border-amber-500">
+      </div>
+      <button type="submit"
+              class="bg-cyan-800 hover:bg-cyan-700 text-white font-bold px-4 py-2 text-sm uppercase tracking-wide">
+        Attempt Entry →
+      </button>
+    </div>
+  </form>
+  <script>
+  function updatePrecareerDetails(select) {
+    var opt = select.options[select.selectedIndex];
+    var curricula = (opt.dataset.curricula || '').split(',').filter(Boolean);
+    var panel = document.getElementById('curriculum-panel');
+    var sel = document.getElementById('curriculum-select');
+    if (curricula.length > 0) {
+      sel.innerHTML = curricula.map(function(c) {
+        return '<option value="' + c + '">' + c + '</option>';
+      }).join('');
+      panel.classList.remove('hidden');
+    } else {
+      panel.classList.add('hidden');
+    }
+  }
+  document.addEventListener('DOMContentLoaded', function() {
+    var s = document.getElementById('precareer-select');
+    if (s) updatePrecareerDetails(s);
+  });
+  </script>
+</div>
+{% endif %}
+
+<form hx-post="/ui/characters/{{ character_id }}/events"
+      hx-target="#pending-panel"
+      hx-swap="innerHTML"
+      hx-indicator="#spinner">
+  <input type="hidden" name="fulfills" value="{{ pi.id }}">
+  <div class="space-y-3 mb-4">
+    <div>
+      <label class="block text-xs text-gray-500 mb-1">Career</label>
+      <select name="career" id="career-select-{{ pi.id | replace('.', '-') }}"
+              class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500"
+              onchange="updateAssignments(this, '{{ pi.id | replace('.', '-') }}')">
+        {% for opt in pi.options %}
+        <option value="{{ opt }}">{{ opt }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs text-gray-500 mb-1">Assignment</label>
+      <select name="assignment" id="assignments-{{ pi.id | replace('.', '-') }}"
+              class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500">
+        {% if item.extra.get('careers') and pi.options %}
+        {% set first = item.extra.careers.get(pi.options[0]) %}
+        {% if first %}
+        {% for a in first.assignments %}<option value="{{ a.name }}">{{ a.name }}</option>{% endfor %}
+        {% endif %}
+        {% endif %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs text-gray-500 mb-1">Qualification Roll (2D, before DMs)</label>
+      <input type="number" name="roll" value="7" min="2" max="12"
+             class="w-32 bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500">
+    </div>
+  </div>
+  <div class="flex items-center gap-3">
+    <button type="submit"
+            class="bg-amber-600 hover:bg-amber-500 text-black font-bold px-6 py-2 text-sm uppercase tracking-wide">
+      Confirm →
+    </button>
+    <span id="spinner" class="htmx-indicator text-gray-500 text-xs">Working…</span>
+  </div>
+</form>
+<script>
+function updateAssignments(select, uid) {
+  fetch('/ui/careers/' + encodeURIComponent(select.value) + '/assignments')
+    .then(r => r.text())
+    .then(html => {
+      var el = document.getElementById('assignments-' + uid);
+      if (el) el.innerHTML = html;
+    });
+}
+document.addEventListener('DOMContentLoaded', function() {
+  var s = document.getElementById("career-select-{{ pi.id | replace('.', '-') }}");
+  if (s) updateAssignments(s, "{{ pi.id | replace('.', '-') }}");
+});
+</script>

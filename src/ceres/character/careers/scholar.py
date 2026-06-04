@@ -32,12 +32,12 @@ from ceres.character.careers.career_data import (
     SkillTable,
 )
 from ceres.character.careers.common_pending import (
-    CareerChoicePendingBase,
     CareerSkillChoicePendingBase,
     CareerSkillRollPendingBase,
 )
 from ceres.character.characteristics import Chars
 from ceres.character.events import (
+    PendingChoices,
     PendingSkillChoice,
     SkillRollEvent,
     muster_out_setup,
@@ -66,6 +66,7 @@ from ceres.character.skills import (
 )
 from ceres.character.state import (
     CharacterProjection,
+    ChoiceBase,
     Enemy,
 )
 
@@ -83,28 +84,38 @@ SCHOLAR = Career(
 # ── mishap 3: planetary interference ─────────────────────────────────────────
 
 
-class PendingScholarMishap3(CareerChoicePendingBase):
-    kind: Literal['scholar_mishap_3'] = 'scholar_mishap_3'
-
-    def on_choice(self, projection: CharacterProjection, event) -> None:
-        if event.choice == 'openly':
-            projection.summary.connections.append(Enemy(source='Planetary government interference'))
-        else:
-            soc = projection.summary.characteristics.get(Chars.SOC, 0)
-            projection.summary.characteristics[Chars.SOC] = max(0, soc - 2)
-        projection.pending_inputs.append(
-            PendingScholarScienceChoice(
-                id=f'{event.id}.0',
-                instruction='Increase Science by one level: choose which broad science',
-                options=cast(list[AnySkill | AdvancementDmOption], skill_instances(ScienceSkill)),
-                advancement_precreated=True,
-            )
-        )
-        # advancement was already created by _apply_mishap (stay_in_career=True)
-
-
 class PendingScholarScienceChoice(CareerSkillChoicePendingBase):
     kind: Literal['scholar_science_choice'] = 'scholar_science_choice'
+
+
+def _append_scholar_science_choice(projection: CharacterProjection, event_id: int, idx: int = 0) -> None:
+    projection.pending_inputs.append(
+        PendingScholarScienceChoice(
+            id=f'{event_id}.{idx}',
+            instruction='Increase Science by one level: choose which broad science',
+            options=cast(list[AnySkill | AdvancementDmOption], skill_instances(ScienceSkill)),
+            advancement_precreated=True,
+        )
+    )
+
+
+class ScholarMishap3Openly(ChoiceBase):
+    kind: Literal['scholar_mishap_3_openly'] = 'scholar_mishap_3_openly'
+    label: str = 'Continue openly (Science +1, gain Enemy)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        projection.summary.connections.append(Enemy(source='Government officials who interfered with your research'))
+        _append_scholar_science_choice(projection, event.id)
+
+
+class ScholarMishap3Secretly(ChoiceBase):
+    kind: Literal['scholar_mishap_3_secretly'] = 'scholar_mishap_3_secretly'
+    label: str = 'Continue secretly (Science +1, SOC −2)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        soc = projection.summary.characteristics.get(Chars.SOC, 0)
+        projection.summary.characteristics[Chars.SOC] = max(0, soc - 2)
+        _append_scholar_science_choice(projection, event.id)
 
 
 class ScholarMishap3Handler(CareerHandlerBase):
@@ -113,10 +124,10 @@ class ScholarMishap3Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingScholarMishap3(
+            PendingChoices(
                 id=f'{event_id}.{pending_idx}',
                 instruction='Continue openly (Science +1, Enemy) or secretly (Science +1, SOC -2)?',
-                options=['openly', 'secretly'],
+                choices=[ScholarMishap3Openly(), ScholarMishap3Secretly()],
             )
         )
         return pending_idx + 1
@@ -125,25 +136,30 @@ class ScholarMishap3Handler(CareerHandlerBase):
 # ── mishap 5: work sabotaged ──────────────────────────────────────────────────
 
 
-class PendingScholarMishap5(CareerChoicePendingBase):
-    kind: Literal['scholar_mishap_5'] = 'scholar_mishap_5'
+class ScholarMishap5GiveUp(ChoiceBase):
+    kind: Literal['scholar_mishap_5_give_up'] = 'scholar_mishap_5_give_up'
+    label: str = 'Give up (leave career)'
 
-    def on_choice(self, projection: CharacterProjection, event) -> None:
+    def handle(self, projection: CharacterProjection, event) -> None:
         from ceres.character.events import PendingAdvancement, PendingAgingRoll
 
-        if event.choice == 'give_up':
-            career = projection.get_current_career()
-            projection.pending_inputs = [p for p in projection.pending_inputs if not isinstance(p, PendingAdvancement)]
-            projection.summary.age += 4
-            if projection.summary.age >= 34:
-                projection.muster_out_career = career.career
-                projection.clear_current_career()
-                projection.pending_inputs.append(
-                    PendingAgingRoll(id=f'{event.id}.0', instruction='Roll 2D on Aging table')
-                )
-            else:
-                muster_out_setup(projection, career, event.id, 0, lose_current_term=True)
-        # 'start_again': advancement is already there from _apply_mishap, career stays
+        career = projection.get_current_career()
+        projection.pending_inputs = [p for p in projection.pending_inputs if not isinstance(p, PendingAdvancement)]
+        projection.summary.age += 4
+        if projection.summary.age >= 34:
+            projection.muster_out_career = career.career
+            projection.clear_current_career()
+            projection.pending_inputs.append(PendingAgingRoll(id=f'{event.id}.0', instruction='Roll 2D on Aging table'))
+        else:
+            muster_out_setup(projection, career, event.id, 0, lose_current_term=True)
+
+
+class ScholarMishap5StartAgain(ChoiceBase):
+    kind: Literal['scholar_mishap_5_start_again'] = 'scholar_mishap_5_start_again'
+    label: str = 'Start again (stay, lose benefit rolls)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        pass  # advancement already queued by _apply_mishap (stay_in_career=True)
 
 
 class ScholarMishap5Handler(CareerHandlerBase):
@@ -152,10 +168,10 @@ class ScholarMishap5Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingScholarMishap5(
+            PendingChoices(
                 id=f'{event_id}.{pending_idx}',
                 instruction='Give up (leave career) or start again (stay, lose benefit rolls)?',
-                options=['give_up', 'start_again'],
+                choices=[ScholarMishap5GiveUp(), ScholarMishap5StartAgain()],
             )
         )
         return pending_idx + 1
@@ -164,51 +180,60 @@ class ScholarMishap5Handler(CareerHandlerBase):
 # ── event 3: research against conscience ─────────────────────────────────────
 
 
-class PendingScholarEvent3(CareerChoicePendingBase):
-    kind: Literal['scholar_event_3'] = 'scholar_event_3'
+class PendingScholarScienceChoicePreCreated(CareerSkillChoicePendingBase):
+    kind: Literal['scholar_science_choice_precreated'] = 'scholar_science_choice_precreated'
 
-    def on_choice(self, projection: CharacterProjection, event) -> None:
+
+class ScholarEvent3Accept(ChoiceBase):
+    kind: Literal['scholar_event_3_accept'] = 'scholar_event_3_accept'
+    label: str = 'Accept (2 Science specialties + D3 Enemies + extra Benefit roll)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
         from ceres.character.events import PendingConnectionsRoll, PendingMusterOut, _advancement_pending
 
-        if event.choice == 'accept':
+        projection.pending_inputs.append(
+            PendingConnectionsRoll(
+                id=f'{event.id}.0',
+                instruction='Roll D3 for number of Enemies gained',
+                options=['1', '2', '3'],
+            )
+        )
+        for i, label in enumerate(['first', 'second'], start=1):
             projection.pending_inputs.append(
-                PendingConnectionsRoll(
-                    id=f'{event.id}.0',
-                    instruction='Roll D3 for number of Enemies gained',
-                    options=['1', '2', '3'],
+                PendingScholarScienceChoicePreCreated(
+                    id=f'{event.id}.{i}',
+                    instruction=f'Choose {label} Science specialty to increase by one level',
+                    options=cast(list[AnySkill | AdvancementDmOption], skill_instances(ScienceSkill)),
+                    advancement_precreated=True,
                 )
             )
-            for i, label in enumerate(['first', 'second'], start=1):
-                projection.pending_inputs.append(
-                    PendingScholarScienceChoicePreCreated(
-                        id=f'{event.id}.{i}',
-                        instruction=f'Choose {label} Science specialty to increase by one level',
-                        options=cast(list[AnySkill | AdvancementDmOption], skill_instances(ScienceSkill)),
-                        advancement_precreated=True,
-                    )
-                )
-            if projection.summary.current_career is not None:
-                career = projection.get_current_career()
-                projection.pending_inputs.append(
-                    _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id, 3)
-                )
-            projection.muster_out_career = projection.summary.current_career
+        if projection.summary.current_career is not None:
+            career = projection.get_current_career()
             projection.pending_inputs.append(
-                PendingMusterOut(
-                    id=f'{event.id}.4',
-                    instruction='Extra Benefit roll (accepted research against conscience)',
-                    options=['cash', 'benefits'],
-                )
+                _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id, 3)
             )
-        elif projection.summary.current_career is not None:
+        projection.muster_out_career = projection.summary.current_career
+        projection.pending_inputs.append(
+            PendingMusterOut(
+                id=f'{event.id}.4',
+                instruction='Extra Benefit roll (accepted research against conscience)',
+                options=['cash', 'benefits'],
+            )
+        )
+
+
+class ScholarEvent3Decline(ChoiceBase):
+    kind: Literal['scholar_event_3_decline'] = 'scholar_event_3_decline'
+    label: str = 'Decline'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        from ceres.character.events import _advancement_pending
+
+        if projection.summary.current_career is not None:
             career = projection.get_current_career()
             projection.pending_inputs.append(
                 _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id)
             )
-
-
-class PendingScholarScienceChoicePreCreated(CareerSkillChoicePendingBase):
-    kind: Literal['scholar_science_choice_precreated'] = 'scholar_science_choice_precreated'
 
 
 class ScholarEvent3Handler(CareerHandlerBase):
@@ -217,10 +242,10 @@ class ScholarEvent3Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingScholarEvent3(
+            PendingChoices(
                 id=f'{event_id}.{pending_idx}',
                 instruction='Accept (2 Science specialties + D3 Enemies + extra Benefit roll) or Decline?',
-                options=['accept', 'decline'],
+                choices=[ScholarEvent3Accept(), ScholarEvent3Decline()],
             )
         )
         return pending_idx + 1
@@ -262,34 +287,12 @@ class ScholarEvent6Handler(CareerHandlerBase):
 # ── event 8: opportunity to cheat ────────────────────────────────────────────
 
 
-class PendingScholarEvent8(CareerChoicePendingBase):
-    kind: Literal['scholar_event_8'] = 'scholar_event_8'
-
-    def on_choice(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.events import _advancement_pending
-
-        if event.choice == 'refuse':
-            if projection.summary.current_career is not None:
-                career = projection.get_current_career()
-                projection.pending_inputs.append(
-                    _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id)
-                )
-        else:
-            projection.pending_inputs.append(
-                PendingScholarEvent8SkillRoll(
-                    id=f'{event.id}.0',
-                    instruction='Roll Deception 8+ or Admin 8+ to cheat successfully',
-                    options=[Deception(), Admin()],
-                )
-            )
-
-
-class PendingScholarEvent8SkillRoll(CareerSkillRollPendingBase):
+class ScholarEvent8SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['scholar_event_8_skill_roll'] = 'scholar_event_8_skill_roll'
 
     def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
         if event.modified_roll >= 8:
-            projection.summary.connections.append(Enemy(source='Cheating in the field'))
+            projection.summary.connections.append(Enemy(source='A colleague who knows you cheated your way to results'))
             projection.pending_inputs.append(
                 PendingSkillChoice(
                     id=f'{event.id}.0',
@@ -298,8 +301,36 @@ class PendingScholarEvent8SkillRoll(CareerSkillRollPendingBase):
                 )
             )
         else:
-            projection.summary.connections.append(Enemy(source='Cheating discovered'))
+            projection.summary.connections.append(Enemy(source='Someone who caught you falsifying research'))
         # _apply_skill_roll creates advancement if no new pending (failure), or after skill_choice (success)
+
+
+class ScholarEvent8Accept(ChoiceBase):
+    kind: Literal['scholar_event_8_accept'] = 'scholar_event_8_accept'
+    label: str = 'Accept (roll Deception/Admin 8+)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        projection.pending_inputs.append(
+            ScholarEvent8SkillRoll(
+                id=f'{event.id}.0',
+                instruction='Roll Deception 8+ or Admin 8+ to cheat successfully',
+                options=[Deception(), Admin()],
+            )
+        )
+
+
+class ScholarEvent8Refuse(ChoiceBase):
+    kind: Literal['scholar_event_8_refuse'] = 'scholar_event_8_refuse'
+    label: str = 'Refuse'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        from ceres.character.events import _advancement_pending
+
+        if projection.summary.current_career is not None:
+            career = projection.get_current_career()
+            projection.pending_inputs.append(
+                _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id)
+            )
 
 
 class ScholarEvent8Handler(CareerHandlerBase):
@@ -308,10 +339,10 @@ class ScholarEvent8Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingScholarEvent8(
+            PendingChoices(
                 id=f'{event_id}.{pending_idx}',
                 instruction='Refuse (nothing) or Accept (roll Deception/Admin 8+)?',
-                options=['accept', 'refuse'],
+                choices=[ScholarEvent8Accept(), ScholarEvent8Refuse()],
             )
         )
         return pending_idx + 1

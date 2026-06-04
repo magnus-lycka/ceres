@@ -6,9 +6,6 @@ from ceres.character.state import CharacterProjection
 
 
 def handle_advanced_training(
-    career: str,
-    roll: int,
-    context: str,
     projection: CharacterProjection,
     event_id: int,
     pending_idx: int,

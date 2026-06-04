@@ -30,10 +30,10 @@ from ceres.character.careers.career_data import (
     SkillChoiceEffect,
     SkillTable,
 )
-from ceres.character.careers.common_pending import CareerChoicePendingBase, CareerSkillRollPendingBase
+from ceres.character.careers.common_pending import CareerSkillRollPendingBase
 from ceres.character.characteristics import Chars
 from ceres.character.events import (
-    CareerChoiceEvent,
+    PendingChoices,
     SkillRollEvent,
     career_progress_pending,
     muster_out_setup,
@@ -69,6 +69,7 @@ from ceres.character.skills import (
 from ceres.character.state import (
     Ally,
     CharacterProjection,
+    ChoiceBase,
     Contact,
     EffectTrigger,
     EffectType,
@@ -100,15 +101,28 @@ class RogueMishap2Handler(CareerHandlerBase):
 # ── mishap 3: betrayed by a friend ───────────────────────────────────────────
 
 
-class PendingRogueMishap3(CareerChoicePendingBase):
-    kind: Literal['rogue_mishap_3'] = 'rogue_mishap_3'
+class RogueMishap3RollTwo(ChoiceBase):
+    kind: Literal['rogue_mishap_3_roll_two'] = 'rogue_mishap_3_roll_two'
+    label: str = '2 (sent to Prisoner career next term)'
 
-    def on_choice(self, projection: CharacterProjection, event: CareerChoiceEvent) -> None:
+    def handle(self, projection: CharacterProjection, event) -> None:
         from ceres.character.careers.loader import load_careers
         from ceres.character.careers.prisoner import PRISONER
 
-        if event.choice == '2':
-            projection.forced_next_career = PRISONER
+        projection.forced_next_career = PRISONER
+        career_obj = projection.summary.current_career
+        career = load_careers().get(career_obj.name if career_obj else '')
+        if career is None:
+            return
+        muster_out_setup(projection, career, event.id, 0, lose_current_term=True)
+
+
+class RogueMishap3RollOther(ChoiceBase):
+    kind: Literal['rogue_mishap_3_roll_other'] = 'rogue_mishap_3_roll_other'
+    label: str = '3–12'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        from ceres.character.careers.loader import load_careers
 
         career_obj = projection.summary.current_career
         career = load_careers().get(career_obj.name if career_obj else '')
@@ -126,15 +140,17 @@ class RogueMishap3Handler(CareerHandlerBase):
         if friends:
             betrayer = friends[-1]
             projection.summary.connections.remove(betrayer)
-            projection.summary.connections.append(Rival(source=f'Betrayed you (was {betrayer.kind}, Rogue mishap 3)'))
+            projection.summary.connections.append(
+                Rival(source=f'A friend who turned on you (formerly {betrayer.display_name})')
+            )
         else:
-            projection.summary.connections.append(Rival(source='Betrayal by unknown (Rogue mishap 3)'))
+            projection.summary.connections.append(Rival(source='An unknown betrayer'))
 
         projection.pending_inputs.append(
-            PendingRogueMishap3(
+            PendingChoices(
                 id=f'{event_id}.{pending_idx}',
                 instruction='Roll 2D: on a result of exactly 2, you must take the Prisoner career next term',
-                options=[str(i) for i in range(2, 13)],
+                choices=[RogueMishap3RollTwo(), RogueMishap3RollOther()],
             )
         )
         return pending_idx + 1
@@ -143,34 +159,7 @@ class RogueMishap3Handler(CareerHandlerBase):
 # ── event 3: arrested and charged ────────────────────────────────────────────
 
 
-class PendingRogueEvent3(CareerChoicePendingBase):
-    kind: Literal['rogue_event_3'] = 'rogue_event_3'
-
-    def on_choice(self, projection: CharacterProjection, event) -> None:
-        career = projection.get_current_career()
-        if event.choice == 'lawyer':
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger=EffectTrigger.MUSTER_OUT_REDUCE,
-                    source_event_id=event.id,
-                    effect={'type': EffectType.REDUCE, 'value': 1},
-                )
-            )
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
-        else:
-            projection.pending_inputs.append(
-                PendingRogueEvent3SkillRoll(
-                    id=f'{event.id}.0',
-                    instruction=(
-                        'Roll Advocate 8+: success = cleared, career continues; '
-                        'fail = ejected, must take Prisoner next term'
-                    ),
-                    options=[Advocate()],
-                )
-            )
-
-
-class PendingRogueEvent3SkillRoll(CareerSkillRollPendingBase):
+class RogueEvent3SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['rogue_event_3_skill_roll'] = 'rogue_event_3_skill_roll'
 
     def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
@@ -185,19 +174,52 @@ class PendingRogueEvent3SkillRoll(CareerSkillRollPendingBase):
             _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
 
 
+class RogueEvent3Defend(ChoiceBase):
+    kind: Literal['rogue_event_3_defend'] = 'rogue_event_3_defend'
+    label: str = 'Defend yourself (roll Advocate 8+)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        projection.pending_inputs.append(
+            RogueEvent3SkillRoll(
+                id=f'{event.id}.0',
+                instruction=(
+                    'Roll Advocate 8+: success = cleared, career continues; '
+                    'fail = ejected, must take Prisoner next term'
+                ),
+                options=[Advocate()],
+            )
+        )
+
+
+class RogueEvent3Lawyer(ChoiceBase):
+    kind: Literal['rogue_event_3_lawyer'] = 'rogue_event_3_lawyer'
+    label: str = 'Hire a lawyer (lose one Benefit roll)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        career = projection.get_current_career()
+        projection.scheduled_effects.append(
+            ScheduledEffect(
+                trigger=EffectTrigger.MUSTER_OUT_REDUCE,
+                source_event_id=event.id,
+                effect={'type': EffectType.REDUCE, 'value': 1},
+            )
+        )
+        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+
+
 class RogueEvent3Handler(CareerHandlerBase):
     type: Literal['rogue_event_3'] = 'rogue_event_3'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingRogueEvent3(
+            PendingChoices(
                 id=f'{event_id}.{pending_idx}',
                 instruction=(
                     'Defend yourself (roll Advocate 8+: success = cleared, fail = ejected + must take Prisoner next term) '
                     'or hire a lawyer (lose one Benefit roll, career continues)?'
                 ),
-                options=['defend', 'lawyer'],
+                choices=[RogueEvent3Defend(), RogueEvent3Lawyer()],
             )
         )
         return pending_idx + 1
@@ -206,22 +228,30 @@ class RogueEvent3Handler(CareerHandlerBase):
 # ── event 6: backstab fellow rogue ───────────────────────────────────────────
 
 
-class PendingRogueEvent6(CareerChoicePendingBase):
-    kind: Literal['rogue_event_6'] = 'rogue_event_6'
+class RogueEvent6Backstab(ChoiceBase):
+    kind: Literal['rogue_event_6_backstab'] = 'rogue_event_6_backstab'
+    label: str = 'Backstab (DM+2 advancement, gain Enemy)'
 
-    def on_choice(self, projection: CharacterProjection, event) -> None:
+    def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
-        if event.choice == 'backstab':
-            projection.summary.connections.append(Enemy(source='Backstabbed rogue (Rogue event 6)'))
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger=EffectTrigger.ADVANCEMENT,
-                    source_event_id=event.id,
-                    effect={'type': EffectType.DM, 'amount': 2},
-                )
+        projection.summary.connections.append(Enemy(source='A fellow rogue you betrayed'))
+        projection.scheduled_effects.append(
+            ScheduledEffect(
+                trigger=EffectTrigger.ADVANCEMENT,
+                source_event_id=event.id,
+                effect={'type': EffectType.DM, 'amount': 2},
             )
-        else:
-            projection.summary.connections.append(Contact(source='Fellow rogue (Rogue event 6)'))
+        )
+        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+
+
+class RogueEvent6Refuse(ChoiceBase):
+    kind: Literal['rogue_event_6_refuse'] = 'rogue_event_6_refuse'
+    label: str = 'Refuse (gain Contact)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        career = projection.get_current_career()
+        projection.summary.connections.append(Contact(source='A fellow rogue you worked alongside'))
         projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 
 
@@ -231,10 +261,10 @@ class RogueEvent6Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingRogueEvent6(
+            PendingChoices(
                 id=f'{event_id}.{pending_idx}',
                 instruction='Backstab the fellow rogue (DM+2 to next advancement, gain Enemy) or refuse (gain a Contact instead)?',
-                options=['backstab', 'refuse'],
+                choices=[RogueEvent6Backstab(), RogueEvent6Refuse()],
             )
         )
         return pending_idx + 1

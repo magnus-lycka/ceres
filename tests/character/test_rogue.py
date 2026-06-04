@@ -1,11 +1,14 @@
 """Tests for the Rogue career — thief, enforcer, and pirate assignments."""
 
 from ceres.character.careers.rogue import (
-    PendingRogueEvent3,
-    PendingRogueEvent3SkillRoll,
-    PendingRogueEvent6,
     PendingRogueEvent9SkillRoll,
-    PendingRogueMishap3,
+    RogueEvent3Defend,
+    RogueEvent3Lawyer,
+    RogueEvent3SkillRoll,
+    RogueEvent6Backstab,
+    RogueEvent6Refuse,
+    RogueMishap3RollOther,
+    RogueMishap3RollTwo,
 )
 from ceres.character.events import (
     BackgroundSkillsEvent,
@@ -15,6 +18,7 @@ from ceres.character.events import (
     MishapEvent,
     PendingAdvancement,
     PendingCareerChoice,
+    PendingChoices,
     PendingMishap,
     PendingMusterOut,
     SkillRollEvent,
@@ -108,7 +112,7 @@ class TestRogueMishap3:
         events = [*self._setup_to_mishap(), MishapEvent(id=6, fulfills='5.0', roll=3)]
         projection = replay(1, events)
         pending = next(
-            (p for p in projection.pending_inputs if isinstance(p, PendingRogueMishap3)),
+            (p for p in projection.pending_inputs if isinstance(p, PendingChoices)),
             None,
         )
         assert pending is not None
@@ -123,7 +127,7 @@ class TestRogueMishap3:
         events = [
             *self._setup_to_mishap(),
             MishapEvent(id=6, fulfills='5.0', roll=3),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='2'),
+            CareerChoiceEvent.for_choice(RogueMishap3RollTwo, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerChoice)), None)
@@ -134,7 +138,7 @@ class TestRogueMishap3:
         events = [
             *self._setup_to_mishap(),
             MishapEvent(id=6, fulfills='5.0', roll=3),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='5'),
+            CareerChoiceEvent.for_choice(RogueMishap3RollOther, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
         prisoner_pending = next(
@@ -147,7 +151,7 @@ class TestRogueMishap3:
         events = [
             *self._setup_to_mishap(),
             MishapEvent(id=6, fulfills='5.0', roll=3),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='5'),
+            CareerChoiceEvent.for_choice(RogueMishap3RollOther, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
         assert projection.summary.current_career is None
@@ -182,16 +186,16 @@ class TestRogueEvent3:
     def test_creates_event_pending_with_options(self):
         projection = replay(1, self._setup_to_event())
         pending = next(
-            (p for p in projection.pending_inputs if isinstance(p, PendingRogueEvent3)),
+            (p for p in projection.pending_inputs if isinstance(p, PendingChoices)),
             None,
         )
         assert pending is not None
-        assert set(pending.options) == {'defend', 'lawyer'}
+        assert {type(c) for c in pending.choices} == {RogueEvent3Defend, RogueEvent3Lawyer}
 
     def test_lawyer_queues_advancement_and_schedules_benefit_reduction(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='lawyer'),
+            CareerChoiceEvent.for_choice(RogueEvent3Lawyer, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
@@ -201,7 +205,7 @@ class TestRogueEvent3:
     def test_lawyer_queues_advancement(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='lawyer'),
+            CareerChoiceEvent.for_choice(RogueEvent3Lawyer, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
@@ -209,11 +213,11 @@ class TestRogueEvent3:
     def test_defend_creates_advocate_skill_roll(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='defend'),
+            CareerChoiceEvent.for_choice(RogueEvent3Defend, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
         pending = next(
-            (p for p in projection.pending_inputs if isinstance(p, PendingRogueEvent3SkillRoll)),
+            (p for p in projection.pending_inputs if isinstance(p, RogueEvent3SkillRoll)),
             None,
         )
         assert pending is not None
@@ -222,7 +226,7 @@ class TestRogueEvent3:
     def test_defend_success_continues_career(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='defend'),
+            CareerChoiceEvent.for_choice(RogueEvent3Defend, id=7, fulfills='6.0'),
             SkillRollEvent(id=8, fulfills='7.0', skill=Streetwise(), modified_roll=9),
         ]
         projection = replay(1, events)
@@ -232,7 +236,7 @@ class TestRogueEvent3:
     def test_defend_success_creates_advancement_pending(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='defend'),
+            CareerChoiceEvent.for_choice(RogueEvent3Defend, id=7, fulfills='6.0'),
             SkillRollEvent(id=8, fulfills='7.0', skill=Streetwise(), modified_roll=9),
         ]
         projection = replay(1, events)
@@ -241,7 +245,7 @@ class TestRogueEvent3:
     def test_defend_failure_ends_career(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='defend'),
+            CareerChoiceEvent.for_choice(RogueEvent3Defend, id=7, fulfills='6.0'),
             SkillRollEvent(id=8, fulfills='7.0', skill=Streetwise(), modified_roll=7),
         ]
         projection = replay(1, events)
@@ -250,7 +254,7 @@ class TestRogueEvent3:
     def test_defend_failure_forces_prisoner_as_only_career_choice(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='defend'),
+            CareerChoiceEvent.for_choice(RogueEvent3Defend, id=7, fulfills='6.0'),
             SkillRollEvent(id=8, fulfills='7.0', skill=Streetwise(), modified_roll=7),
         ]
         projection = replay(1, events)
@@ -270,16 +274,16 @@ class TestRogueEvent6:
     def test_creates_event_pending_with_options(self):
         projection = replay(1, self._setup_to_event())
         pending = next(
-            (p for p in projection.pending_inputs if isinstance(p, PendingRogueEvent6)),
+            (p for p in projection.pending_inputs if isinstance(p, PendingChoices)),
             None,
         )
         assert pending is not None
-        assert set(pending.options) == {'backstab', 'refuse'}
+        assert {type(c) for c in pending.choices} == {RogueEvent6Backstab, RogueEvent6Refuse}
 
     def test_backstab_adds_enemy(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='backstab'),
+            CareerChoiceEvent.for_choice(RogueEvent6Backstab, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
         enemies = [c for c in projection.summary.connections if isinstance(c, Enemy)]
@@ -288,7 +292,7 @@ class TestRogueEvent6:
     def test_backstab_schedules_advancement_dm(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='backstab'),
+            CareerChoiceEvent.for_choice(RogueEvent6Backstab, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
         dm_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.ADVANCEMENT]
@@ -297,7 +301,7 @@ class TestRogueEvent6:
     def test_refuse_adds_contact(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='refuse'),
+            CareerChoiceEvent.for_choice(RogueEvent6Refuse, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
         contacts = [c for c in projection.summary.connections if isinstance(c, Contact)]
@@ -306,20 +310,20 @@ class TestRogueEvent6:
     def test_refuse_no_enemy(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='refuse'),
+            CareerChoiceEvent.for_choice(RogueEvent6Refuse, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
         enemies = [c for c in projection.summary.connections if isinstance(c, Enemy)]
         assert len(enemies) == 0
 
     def test_both_choices_queue_advancement(self):
-        for choice in ('backstab', 'refuse'):
+        for choice_cls in (RogueEvent6Backstab, RogueEvent6Refuse):
             events = [
                 *self._setup_to_event(),
-                CareerChoiceEvent(id=7, fulfills='6.0', choice=choice),
+                CareerChoiceEvent.for_choice(choice_cls, id=7, fulfills='6.0'),
             ]
             projection = replay(1, events)
-            assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs), choice
+            assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs), choice_cls
 
 
 # ── event 9: feud with rival organisation ────────────────────────────────────

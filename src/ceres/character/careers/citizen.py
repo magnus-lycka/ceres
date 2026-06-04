@@ -33,9 +33,10 @@ from ceres.character.careers.career_data import (
     SkillTable,
 )
 from ceres.character.careers.common import handle_advanced_training
-from ceres.character.careers.common_pending import CareerChoicePendingBase, CareerSkillRollPendingBase
+from ceres.character.careers.common_pending import CareerSkillRollPendingBase
 from ceres.character.characteristics import Chars
 from ceres.character.events import (
+    PendingChoices,
     PendingSkillChoice,
     SkillRollEvent,
     career_progress_pending,
@@ -48,6 +49,7 @@ from ceres.character.skills import (
     Athletics,
     Broker,
     Carouse,
+    Deception,
     Diplomat,
     Drive,
     Electronics,
@@ -75,6 +77,7 @@ from ceres.character.skills import (
 )
 from ceres.character.state import (
     CharacterProjection,
+    ChoiceBase,
     Contact,
     EffectTrigger,
     EffectType,
@@ -91,22 +94,31 @@ CITIZEN = Career(
 )
 
 
-# ── Career-specific pending input types ──────────────────────────────────────
+# ── Career-specific choice and pending types ──────────────────────────────────
 
 
-class PendingCitizenMishap4(CareerChoicePendingBase):
-    kind: Literal['citizen_mishap_4'] = 'citizen_mishap_4'
+class CitizenMishap4Cooperate(ChoiceBase):
+    kind: Literal['citizen_mishap_4_cooperate'] = 'citizen_mishap_4_cooperate'
+    label: str = 'Co-operate (gain Contact, keep Benefit roll)'
 
-    def on_choice(self, projection: CharacterProjection, event) -> None:
+    def handle(self, projection: CharacterProjection, event) -> None:
         from ceres.character.events import _apply_mishap_ejection
 
         career = projection.get_current_career()
-        if event.choice == 'cooperate':
-            projection.summary.connections.append(Contact(source='Investigator (Citizen mishap 4)'))
-            _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=False)
-        else:
-            projection.summary.connections.append(Rival(source='Investigator (Citizen mishap 4)'))
-            _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+        projection.summary.connections.append(Contact(source='The investigator who questioned you'))
+        _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=False)
+
+
+class CitizenMishap4Resist(ChoiceBase):
+    kind: Literal['citizen_mishap_4_resist'] = 'citizen_mishap_4_resist'
+    label: str = 'Resist (gain Rival, lose Benefit roll)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        from ceres.character.events import _apply_mishap_ejection
+
+        career = projection.get_current_career()
+        projection.summary.connections.append(Rival(source='The investigator who came after you'))
+        _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
 
 
 class PendingCitizenMishap5SkillRoll(CareerSkillRollPendingBase):
@@ -138,49 +150,73 @@ class PendingCitizenMishap5SkillRoll(CareerSkillRollPendingBase):
         )
 
 
-class PendingCitizenEvent8(CareerChoicePendingBase):
-    kind: Literal['citizen_event_8'] = 'citizen_event_8'
+class CitizenEvent8GainStreetwise(ChoiceBase):
+    kind: Literal['citizen_event_8_gain_streetwise'] = 'citizen_event_8_gain_streetwise'
+    label: str = 'Streetwise 1'
 
-    def on_choice(self, projection: CharacterProjection, event) -> None:
+    def handle(self, projection: CharacterProjection, event) -> None:
+        projection.grant_skill(Streetwise(level=Level(value=1)))
+
+
+class CitizenEvent8GainDeception(ChoiceBase):
+    kind: Literal['citizen_event_8_gain_deception'] = 'citizen_event_8_gain_deception'
+    label: str = 'Deception 1'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        projection.grant_skill(Deception(level=Level(value=1)))
+
+
+class CitizenEvent8GainContact(ChoiceBase):
+    kind: Literal['citizen_event_8_gain_contact'] = 'citizen_event_8_gain_contact'
+    label: str = 'Criminal contact'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        projection.summary.connections.append(Contact(source='A shady contact from your time working in the city'))
+
+
+class CitizenEvent8DoSo(ChoiceBase):
+    kind: Literal['citizen_event_8_do_so'] = 'citizen_event_8_do_so'
+    label: str = 'Use it (gain DM+1 Benefit roll + choose a reward)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        projection.scheduled_effects.append(
+            ScheduledEffect(
+                trigger=EffectTrigger.MUSTER_OUT_ADD,
+                source_event_id=event.id,
+                effect={'type': EffectType.ADD, 'value': 1},
+            )
+        )
+        choices = []
+        if (projection.summary.skill_level(Streetwise) or 0) < 1:
+            choices.append(CitizenEvent8GainStreetwise())
+        if (projection.summary.skill_level(Deception) or 0) < 1:
+            choices.append(CitizenEvent8GainDeception())
+        choices.append(CitizenEvent8GainContact())
+        projection.pending_inputs.append(
+            PendingChoices(
+                id=f'{event.id}.0',
+                instruction='Choose your reward',
+                choices=choices,
+            )
+        )
         career = projection.get_current_career()
-        if event.choice == 'refuse':
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger=EffectTrigger.ADVANCEMENT,
-                    source_event_id=event.id,
-                    effect={'type': EffectType.DM, 'amount': 2},
-                )
+        projection.pending_inputs.append(career_progress_pending(projection, career, event.id, 1))
+
+
+class CitizenEvent8Refuse(ChoiceBase):
+    kind: Literal['citizen_event_8_refuse'] = 'citizen_event_8_refuse'
+    label: str = 'Refuse'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        projection.scheduled_effects.append(
+            ScheduledEffect(
+                trigger=EffectTrigger.ADVANCEMENT,
+                source_event_id=event.id,
+                effect={'type': EffectType.DM, 'amount': 2},
             )
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
-        else:
-            projection.pending_inputs.append(
-                PendingCitizenEvent8SkillRoll(
-                    id=f'{event.id}.0',
-                    instruction='Roll Streetwise 8+: success = extra Benefit roll; fail = ejected, gain Rival',
-                    options=[Streetwise()],
-                )
-            )
-
-
-class PendingCitizenEvent8SkillRoll(CareerSkillRollPendingBase):
-    kind: Literal['citizen_event_8_skill_roll'] = 'citizen_event_8_skill_roll'
-
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
-        from ceres.character.events import _apply_mishap_ejection
-
-        if event.modified_roll >= 8:
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger=EffectTrigger.MUSTER_OUT_ADD,
-                    source_event_id=event.id,
-                    effect={'type': EffectType.ADD, 'value': 1},
-                )
-            )
-            # no pending added — _apply_skill_roll auto-queues advancement
-        else:
-            career = projection.get_current_career()
-            projection.summary.connections.append(Rival(source='Illegal information leak (Citizen event 8)'))
-            _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+        )
+        career = projection.get_current_career()
+        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 
 
 # ── mishap 4: investigation by authorities ────────────────────────────────────
@@ -192,13 +228,13 @@ class CitizenMishap4Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingCitizenMishap4(
+            PendingChoices(
                 id=f'{event_id}.{pending_idx}',
                 instruction=(
                     'Co-operate with the investigation (gain investigators as a Contact, keep Benefit roll) '
                     'or resist (gain a Rival, lose Benefit roll)?'
                 ),
-                options=['cooperate', 'resist'],
+                choices=[CitizenMishap4Cooperate(), CitizenMishap4Resist()],
             )
         )
         return pending_idx + 1
@@ -230,9 +266,7 @@ class CitizenEvent6Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        return handle_advanced_training(
-            'Citizen', 6, 'citizen_event_6', projection, event_id, pending_idx, threshold=10
-        )
+        return handle_advanced_training(projection, event_id, pending_idx, threshold=10)
 
 
 # ── event 8: illegal information ─────────────────────────────────────────────
@@ -244,13 +278,15 @@ class CitizenEvent8Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingCitizenEvent8(
+            PendingChoices(
                 id=f'{event_id}.{pending_idx}',
                 instruction=(
-                    'Use the illegal information (roll Streetwise 8+: success = extra Benefit roll, '
-                    'fail = ejected, gain Rival) or refuse (DM+2 to next advancement)?'
+                    'You learn something you should not have – a corporate secret, a political scandal – '
+                    'which you can profit from illegally. If you choose to do so, you gain DM+1 to a '
+                    'Benefit roll from this career and gain Streetwise 1, Deception 1 or a criminal Contact. '
+                    'If you refuse, you gain nothing.'
                 ),
-                options=['use_it', 'refuse'],
+                choices=[CitizenEvent8DoSo(), CitizenEvent8Refuse()],
             )
         )
         return pending_idx + 1

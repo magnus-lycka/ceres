@@ -9,7 +9,7 @@ import typer
 from ceres import settings
 from ceres.adapters.travellermap import fetch_world
 from ceres.character.characteristics import UCP_STATS, Chars
-from ceres.character.events import AnyEvent, UcpEvent
+from ceres.character.events import AnyEvent, PendingUcp, UcpEvent
 from ceres.character.replay import ReplayError
 from ceres.character.skills import AnySkill, Skill, SkillInfo, _level_fields, _skill_classes, skill_list
 from ceres.character.sophonts import SOPHONT_NAMES, get_sophont
@@ -111,9 +111,10 @@ def _format_skill(skill: AnySkill) -> list[str]:
 
 
 def render_skill(skill: SkillInfo) -> str:
+    display = skill.type.replace('_', ' ').title()
     if skill.specialities:
-        return f'{skill.type}: {", ".join(skill.specialities)}'
-    return skill.type
+        return f'{display}: {", ".join(skill.specialities)}'
+    return display
 
 
 def render_projection_summary(projection: CharacterProjection) -> list[str]:
@@ -140,7 +141,7 @@ def render_projection_summary(projection: CharacterProjection) -> list[str]:
             parts.extend(_format_skill(skill))
         lines.append(f'Skills  {"  ".join(parts)}')
     if s.connections:
-        conn_str = '  '.join(f'{c.kind}({c.source or "?"})' for c in s.connections)
+        conn_str = '  '.join(f'{c.display_name}({c.source or "?"})' for c in s.connections)
         lines.append(f'Connections  {conn_str}')
     if s.problems:
         lines.extend(f'Problem  {prob}' for prob in s.problems)
@@ -157,7 +158,7 @@ def render_pending_inputs(projection: CharacterProjection) -> list[str]:
     lines = ['Pending:']
     for p in projection.pending_inputs:
         blocking = ' [blocking]' if p.blocking else ''
-        lines.append(f'  {p.id}  {p.kind}{blocking}  — {p.instruction}')
+        lines.append(f'  {p.id}  {type(p).__name__}{blocking}  — {p.instruction}')
     return lines
 
 
@@ -288,7 +289,7 @@ def build_app(backend: SqliteCharacterBackend | None = None, current_path: Path 
             raise typer.Exit(1) from error
         new_ucp = ''.join(f'{current.get(stat, 0):X}' for stat in UCP_STATS)
         ucp_pending = next(
-            (p for p in projection.pending_inputs if p.kind == 'ucp' and p.blocking),
+            (p for p in projection.pending_inputs if isinstance(p, PendingUcp) and p.blocking),
             None,
         )
         try:

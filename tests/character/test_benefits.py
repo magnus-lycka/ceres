@@ -9,22 +9,22 @@ from ceres.character.benefits import (
     COMBAT_IMPLANT,
     CONTACT,
     CYBERNETIC_IMPLANT,
-    DECEPTION,
+    DECEPTION_ITEM,
     FAR_TRADER,
     FREE_TRADER,
     GUN,
     LAB_SHIP,
-    MELEE,
+    MELEE_ITEM,
     PERSONAL_VEHICLE,
-    PERSUADE,
-    RECON,
+    PERSUADE_ITEM,
+    RECON_ITEM,
     SAFARI_SHIP,
     SCIENTIFIC_EQUIPMENT,
     SCOUT_SHIP,
     SHIP_SHARE,
     SHIPS_BOAT,
-    STEALTH,
-    STREETWISE,
+    STEALTH_ITEM,
+    STREETWISE_ITEM,
     SUBSIDISED_MERCHANT,
     TAS_MEMBERSHIP,
     WEAPON,
@@ -79,22 +79,22 @@ class TestItemBenefitConstants:
             COMBAT_IMPLANT,
             CONTACT,
             CYBERNETIC_IMPLANT,
-            DECEPTION,
+            DECEPTION_ITEM,
             FAR_TRADER,
             FREE_TRADER,
             GUN,
             LAB_SHIP,
-            MELEE,
+            MELEE_ITEM,
             PERSONAL_VEHICLE,
-            PERSUADE,
-            RECON,
+            PERSUADE_ITEM,
+            RECON_ITEM,
             SAFARI_SHIP,
             SCIENTIFIC_EQUIPMENT,
             SCOUT_SHIP,
             SHIP_SHARE,
             SHIPS_BOAT,
-            STEALTH,
-            STREETWISE,
+            STEALTH_ITEM,
+            STREETWISE_ITEM,
             SUBSIDISED_MERCHANT,
             TAS_MEMBERSHIP,
             WEAPON,
@@ -114,7 +114,7 @@ class TestCombinedBenefit:
         assert combined.display_label == 'SOC +1 and Yacht'
 
     def test_display_label_three_items(self):
-        combined = CombinedBenefit(benefits=[DECEPTION, PERSUADE, STEALTH])
+        combined = CombinedBenefit(benefits=[DECEPTION_ITEM, PERSUADE_ITEM, STEALTH_ITEM])
         assert combined.display_label == 'Deception and Persuade and Stealth'
 
     def test_exceptional_when_any_item_exceptional(self):
@@ -137,7 +137,7 @@ class TestCombinedBenefit:
 
     def test_type_discriminator(self):
         combined = CombinedBenefit(benefits=[SHIP_SHARE])
-        assert combined.type == 'combined'
+        assert isinstance(combined, CombinedBenefit)
 
     def test_apply_increments_all_characteristics(self):
         from ceres.character.events import _apply_muster_out_benefit
@@ -202,6 +202,11 @@ class TestCombinedBenefit:
         from ceres.character.benefits import AnyBenefit
 
         ta = TypeAdapter(AnyBenefit)
-        data = {'type': 'combined', 'benefits': [{'type': 'item', 'key': 'ship_share', 'label': 'Ship Share'}]}
+        data = {
+            'type': CombinedBenefit.model_fields['type'].default,
+            'benefits': [
+                {'type': ItemBenefit.model_fields['type'].default, 'key': 'ship_share', 'label': 'Ship Share'}
+            ],
+        }
         result = ta.validate_python(data)
         assert isinstance(result, CombinedBenefit)

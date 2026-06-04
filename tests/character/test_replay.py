@@ -22,7 +22,17 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.replay import ReplayError, replay
-from ceres.character.skills import Admin, Advocate, Athletics, Carouse, Drive, SpaceScience, VaccSuit, skill_list
+from ceres.character.skills import (
+    Admin,
+    Advocate,
+    AnySkill,
+    Athletics,
+    Carouse,
+    Drive,
+    SpaceScience,
+    VaccSuit,
+    _skill_classes,
+)
 from ceres.character.sophonts import VILANI, Sophont
 from ceres.character.state import (
     Ally,
@@ -271,10 +281,9 @@ class TestBackgroundSkillsEvent:
             replay(1, [_started(), _ucp(), invalid])
 
     def test_all_background_skills_are_known_skill_types(self):
-        known_types = {cls.name() for cls in BACKGROUND_SKILLS}
-        all_types = {info.type for info in skill_list()}
-        unknown = known_types - all_types
-        assert unknown == set(), f'Unknown skill types in BACKGROUND_SKILLS: {unknown}'
+        all_classes = set(_skill_classes(AnySkill))
+        unknown = BACKGROUND_SKILLS - all_classes
+        assert unknown == set(), f'Unknown classes in BACKGROUND_SKILLS: {unknown}'
 
     def test_background_skills_blocked_by_no_pending(self):
         # Cannot submit background_skills when no such pending exists (EDU=0)

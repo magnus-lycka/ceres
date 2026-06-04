@@ -105,6 +105,12 @@ lives in the test suite, and nothing is deployed. Therefore:
 ## Ways of Working
 
 - **TDD** - Write tests first, then implement. Tests live in `tests/`.
+- **Test Design** - Tests should verify that the code under test does what it is supposed to do.
+  Tests written to verify that the code under test does what it does are of much less value.
+- **Code Design** - Before writing code, always consider whether this is the right place for
+  this particular code. Assume that one module, class or function is always responsible for
+  anything in the system. That's where code should go. If there isn't a good place for some
+  code, the structure needs to be modified.
 - **pytest**
   - `uv run pytest` for the quick default suite
   - `uv run pytest --with-slow` to include slow tests

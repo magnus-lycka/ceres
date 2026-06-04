@@ -35,9 +35,10 @@ from ceres.character.careers.career_data import (
     SkillChoiceEffect,
     SkillTable,
 )
-from ceres.character.careers.common_pending import CareerChoicePendingBase, CareerSkillRollPendingBase
+from ceres.character.careers.common_pending import CareerSkillRollPendingBase
 from ceres.character.characteristics import Chars
 from ceres.character.events import (
+    PendingChoices,
     SkillRollEvent,
     career_progress_pending,
 )
@@ -69,6 +70,7 @@ from ceres.character.skills import (
 )
 from ceres.character.state import (
     CharacterProjection,
+    ChoiceBase,
     EffectTrigger,
     EffectType,
     Enemy,
@@ -154,25 +156,7 @@ class NobleMishap5Handler(CareerHandlerBase):
 # ── event 8: conspiracy recruitment ──────────────────────────────────────────
 
 
-class PendingNobleEvent8(CareerChoicePendingBase):
-    kind: Literal['noble_event_8'] = 'noble_event_8'
-
-    def on_choice(self, projection: CharacterProjection, event) -> None:
-        career = projection.get_current_career()
-        if event.choice == 'refuse':
-            projection.summary.connections.append(Rival(source='Conspiracy leader (Noble event 8)'))
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
-        else:
-            projection.pending_inputs.append(
-                PendingNobleEvent8SkillRoll(
-                    id=f'{event.id}.0',
-                    instruction='Roll Deception or Persuade 8+: success = extra Benefit roll; fail = ejected, gain Enemy',
-                    options=[Deception(), Persuade()],
-                )
-            )
-
-
-class PendingNobleEvent8SkillRoll(CareerSkillRollPendingBase):
+class NobleEvent8SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['noble_event_8_skill_roll'] = 'noble_event_8_skill_roll'
 
     def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
@@ -189,8 +173,32 @@ class PendingNobleEvent8SkillRoll(CareerSkillRollPendingBase):
             # no pending added — _apply_skill_roll auto-queues advancement
         else:
             career = projection.get_current_career()
-            projection.summary.connections.append(Enemy(source='Noble conspiracy (Noble event 8)'))
+            projection.summary.connections.append(Enemy(source='A noble who caught you in a conspiracy'))
             _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+
+
+class NobleEvent8Accept(ChoiceBase):
+    kind: Literal['noble_event_8_accept'] = 'noble_event_8_accept'
+    label: str = 'Join (roll Deception or Persuade 8+)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        projection.pending_inputs.append(
+            NobleEvent8SkillRoll(
+                id=f'{event.id}.0',
+                instruction='Roll Deception or Persuade 8+: success = extra Benefit roll; fail = ejected, gain Enemy',
+                options=[Deception(), Persuade()],
+            )
+        )
+
+
+class NobleEvent8Refuse(ChoiceBase):
+    kind: Literal['noble_event_8_refuse'] = 'noble_event_8_refuse'
+    label: str = 'Refuse (gain Rival)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        career = projection.get_current_career()
+        projection.summary.connections.append(Rival(source='A noble conspirator you declined to join'))
+        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 
 
 class NobleEvent8Handler(CareerHandlerBase):
@@ -199,14 +207,14 @@ class NobleEvent8Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingNobleEvent8(
+            PendingChoices(
                 id=f'{event_id}.{pending_idx}',
                 instruction=(
                     'Join the noble conspiracy (roll Deception or Persuade 8+: '
                     'success = extra Benefit roll, fail = ejected with Enemy) '
                     'or refuse (gain a Rival)?'
                 ),
-                options=['accept', 'refuse'],
+                choices=[NobleEvent8Accept(), NobleEvent8Refuse()],
             )
         )
         return pending_idx + 1

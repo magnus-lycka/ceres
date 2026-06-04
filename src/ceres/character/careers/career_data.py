@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal, cast
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from ceres.character.benefits import AnyBenefit
 from ceres.character.characteristics import Chars, ConnectionKind, characteristic_dm
@@ -123,7 +123,7 @@ class SkillChoiceEffect(BaseModel):
 
 class InjuryEffect(BaseModel):
     type: Literal['injury'] = 'injury'
-    severity: Literal['normal', 'severe', 'from_table'] = 'normal'
+    severity: Literal['normal', 'severe', 'from_table'] = Field(default='normal')
 
 
 class RollMishapEffect(BaseModel):

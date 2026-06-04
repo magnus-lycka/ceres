@@ -4,12 +4,12 @@ from ceres.character.benefits import (
     ALLY,
     BLADE,
     CONTACT,
-    DECEPTION,
-    MELEE,
-    PERSUADE,
-    RECON,
-    STEALTH,
-    STREETWISE,
+    DECEPTION_ITEM,
+    MELEE_ITEM,
+    PERSUADE_ITEM,
+    RECON_ITEM,
+    STEALTH_ITEM,
+    STREETWISE_ITEM,
     CharacteristicIncrease,
     ChoiceBenefit,
     CombinedBenefit,
@@ -35,9 +35,10 @@ from ceres.character.careers.career_data import (
     SkillChoiceEffect,
     SkillTable,
 )
-from ceres.character.careers.common_pending import CareerChoicePendingBase, CareerSkillRollPendingBase
+from ceres.character.careers.common_pending import CareerSkillRollPendingBase
 from ceres.character.characteristics import Chars
 from ceres.character.events import (
+    PendingChoices,
     PendingDoubleInjuryRoll,
     PendingInjuryTable,
     PendingParoleRoll,
@@ -69,6 +70,7 @@ from ceres.character.skills import (
 from ceres.character.state import (
     Ally,
     CharacterProjection,
+    ChoiceBase,
     Enemy,
 )
 
@@ -84,28 +86,34 @@ PRISONER = Career(
 # ── mishap 3: prison gang ─────────────────────────────────────────────────────
 
 
-class PendingPrisonerMishap3(CareerChoicePendingBase):
-    kind: Literal['prisoner_mishap_3'] = 'prisoner_mishap_3'
+class PrisonerMishap3Submit(ChoiceBase):
+    kind: Literal['prisoner_mishap_3_submit'] = 'prisoner_mishap_3_submit'
+    label: str = 'Submit (lose Benefit roll)'
 
-    def on_choice(self, projection: CharacterProjection, event) -> None:
+    def handle(self, projection: CharacterProjection, event) -> None:
         from ceres.character.events import _advancement_pending
 
         career = projection.get_current_career()
-        if event.choice == 'submit':
-            projection.summary.problems.append(
-                'Prison gang (Prisoner mishap 3): submitted — lose your Benefit roll for this term.'
+        projection.summary.problems.append(
+            'Prison gang (Prisoner mishap 3): submitted — lose your Benefit roll for this term.'
+        )
+        projection.pending_inputs.append(
+            _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id)
+        )
+
+
+class PrisonerMishap3Fight(ChoiceBase):
+    kind: Literal['prisoner_mishap_3_fight'] = 'prisoner_mishap_3_fight'
+    label: str = 'Fight back (roll Melee 8+: success = Enemy + PT+1; fail = double injury)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        projection.pending_inputs.append(
+            PendingPrisonerMishap3FightSkillRoll(
+                id=f'{event.id}.0',
+                instruction='Roll Melee 8+: success = gain Enemy + PT+1; fail = roll twice on Injury table',
+                options=[Melee()],
             )
-            projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id)
-            )
-        else:
-            projection.pending_inputs.append(
-                PendingPrisonerMishap3FightSkillRoll(
-                    id=f'{event.id}.0',
-                    instruction='Roll Melee 8+: success = gain Enemy + PT+1; fail = roll twice on Injury table',
-                    options=[Melee()],
-                )
-            )
+        )
 
 
 class PendingPrisonerMishap3FightSkillRoll(CareerSkillRollPendingBase):
@@ -116,7 +124,7 @@ class PendingPrisonerMishap3FightSkillRoll(CareerSkillRollPendingBase):
 
         career = projection.get_current_career()
         if event.modified_roll >= 8:
-            projection.summary.connections.append(Enemy(source='Prison gang leader (Prisoner mishap 3)'))
+            projection.summary.connections.append(Enemy(source='The prison gang leader you stood up to'))
             projection.summary.parole_threshold = min(12, (projection.summary.parole_threshold or 0) + 1)
             projection.pending_inputs.append(
                 _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id)
@@ -140,10 +148,10 @@ class PrisonerMishap3Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingPrisonerMishap3(
+            PendingChoices(
                 id=f'{event_id}.{pending_idx}',
                 instruction='Prison gang attack: fight back (roll Melee 8+) or submit (lose Benefit roll)?',
-                options=['fight', 'submit'],
+                choices=[PrisonerMishap3Fight(), PrisonerMishap3Submit()],
             )
         )
         return pending_idx + 1
@@ -152,21 +160,27 @@ class PrisonerMishap3Handler(CareerHandlerBase):
 # ── event 3: escape opportunity ───────────────────────────────────────────────
 
 
-class PendingPrisonerEvent3(CareerChoicePendingBase):
-    kind: Literal['prisoner_event_3'] = 'prisoner_event_3'
+class PrisonerEvent3Stay(ChoiceBase):
+    kind: Literal['prisoner_event_3_stay'] = 'prisoner_event_3_stay'
+    label: str = 'Stay (no action)'
 
-    def on_choice(self, projection: CharacterProjection, event) -> None:
+    def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
-        if event.choice == 'stay':
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
-        else:
-            projection.pending_inputs.append(
-                PendingPrisonerEvent3EscapeSkillRoll(
-                    id=f'{event.id}.0',
-                    instruction='Roll Stealth or Deception 10+: success = escape (freed); fail = PT+2',
-                    options=[Stealth(), Deception()],
-                )
+        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+
+
+class PrisonerEvent3Attempt(ChoiceBase):
+    kind: Literal['prisoner_event_3_attempt'] = 'prisoner_event_3_attempt'
+    label: str = 'Attempt escape (Stealth or Deception 10+)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        projection.pending_inputs.append(
+            PendingPrisonerEvent3EscapeSkillRoll(
+                id=f'{event.id}.0',
+                instruction='Roll Stealth or Deception 10+: success = escape (freed); fail = PT+2',
+                options=[Stealth(), Deception()],
             )
+        )
 
 
 class PendingPrisonerEvent3EscapeSkillRoll(CareerSkillRollPendingBase):
@@ -189,10 +203,10 @@ class PrisonerEvent3Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingPrisonerEvent3(
+            PendingChoices(
                 id=f'{event_id}.{pending_idx}',
                 instruction='Attempt to escape the prison (Stealth or Deception 10+) or stay?',
-                options=['attempt', 'stay'],
+                choices=[PrisonerEvent3Attempt(), PrisonerEvent3Stay()],
             )
         )
         return pending_idx + 1
@@ -255,7 +269,7 @@ class PendingPrisonerEvent5SkillRoll(CareerSkillRollPendingBase):
                 )
             )
         else:
-            projection.summary.connections.append(Enemy(source='Prison gang (Prisoner event 5)'))
+            projection.summary.connections.append(Enemy(source='The prison gang you refused to join'))
         # Fail: _apply_skill_roll auto-queues advancement (no pending added)
         # Success: skill choice queued; advancement queued after it resolves
 
@@ -288,11 +302,7 @@ class PendingPrisonerEvent6SkillRoll(CareerSkillRollPendingBase):
             all_skills: list[AnySkill] = cast(
                 list[AnySkill],
                 sorted(
-                    [
-                        cls()
-                        for cls in _skill_classes(AnySkill)
-                        if cls.name() not in {'Jack-of-all-Trades', 'Jack-of-All-Trades'}
-                    ],
+                    [cls() for cls in _skill_classes(AnySkill) if cls is not JackOfAllTrades],
                     key=lambda s: type(s).name(),
                 ),
             )
@@ -324,38 +334,73 @@ class PrisonerEvent6Handler(CareerHandlerBase):
 # ── event 7: prison event sub-table ──────────────────────────────────────────
 
 
-class PendingPrisonerEvent7(CareerChoicePendingBase):
-    kind: Literal['prisoner_event_7'] = 'prisoner_event_7'
+class PrisonerEvent7Riot(ChoiceBase):
+    kind: Literal['prisoner_event_7_riot'] = 'prisoner_event_7_riot'
+    label: str = '1 — Prison Riot'
 
-    def on_choice(self, projection: CharacterProjection, event) -> None:
+    def handle(self, projection: CharacterProjection, event) -> None:
+        projection.pending_inputs.append(
+            PendingPrisonerEvent7RiotSkillRoll(
+                id=f'{event.id}.0',
+                instruction='Riot: roll END 8+: success = survive unhurt; fail = roll on Injury table',
+                options=[Chars.END],
+            )
+        )
+
+
+class PrisonerEvent7Gang(ChoiceBase):
+    kind: Literal['prisoner_event_7_gang'] = 'prisoner_event_7_gang'
+    label: str = '2 — Gang Attack (PT+1, gain Enemy)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
-        sub = event.choice
-        if sub == '1':
-            projection.pending_inputs.append(
-                PendingPrisonerEvent7RiotSkillRoll(
-                    id=f'{event.id}.0',
-                    instruction='Riot: roll END 8+: success = survive unhurt; fail = roll on Injury table',
-                    options=[Chars.END],
-                )
-            )
-        elif sub == '2':
-            projection.summary.parole_threshold = min(12, (projection.summary.parole_threshold or 0) + 1)
-            projection.summary.connections.append(Enemy(source='Prison gang (Prisoner event 7, forced)'))
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
-        elif sub == '3':
-            projection.summary.problems.append(
-                'Prisoner event 7: transferred to another prison — no mechanical effect. Apply manually if needed.'
-            )
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
-        elif sub == '4':
-            projection.summary.connections.append(Ally(source='Visitor (Prisoner event 7)'))
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
-        elif sub == '5':
-            projection.summary.parole_threshold = max(0, (projection.summary.parole_threshold or 0) - 1)
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
-        else:  # '6'
-            projection.summary.parole_threshold = max(0, (projection.summary.parole_threshold or 0) - 1)
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+        projection.summary.parole_threshold = min(12, (projection.summary.parole_threshold or 0) + 1)
+        projection.summary.connections.append(Enemy(source='A prison gang that forced itself on you'))
+        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+
+
+class PrisonerEvent7Transfer(ChoiceBase):
+    kind: Literal['prisoner_event_7_transfer'] = 'prisoner_event_7_transfer'
+    label: str = '3 — Transferred to Another Prison'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        career = projection.get_current_career()
+        projection.summary.problems.append(
+            'Prisoner event 7: transferred to another prison — no mechanical effect. Apply manually if needed.'
+        )
+        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+
+
+class PrisonerEvent7Visitation(ChoiceBase):
+    kind: Literal['prisoner_event_7_visitation'] = 'prisoner_event_7_visitation'
+    label: str = '4 — Visitation (gain Ally)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        career = projection.get_current_career()
+        projection.summary.connections.append(
+            Ally(source='A visitor who became a loyal friend during your imprisonment')
+        )
+        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+
+
+class PrisonerEvent7ParoleHearing(ChoiceBase):
+    kind: Literal['prisoner_event_7_parole_hearing'] = 'prisoner_event_7_parole_hearing'
+    label: str = '5 — Parole Hearing (PT-1)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        career = projection.get_current_career()
+        projection.summary.parole_threshold = max(0, (projection.summary.parole_threshold or 0) - 1)
+        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+
+
+class PrisonerEvent7GoodBehaviour(ChoiceBase):
+    kind: Literal['prisoner_event_7_good_behaviour'] = 'prisoner_event_7_good_behaviour'
+    label: str = '6 — Good Behaviour (PT-1)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        career = projection.get_current_career()
+        projection.summary.parole_threshold = max(0, (projection.summary.parole_threshold or 0) - 1)
+        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 
 
 class PendingPrisonerEvent7RiotSkillRoll(CareerSkillRollPendingBase):
@@ -385,10 +430,17 @@ class PrisonerEvent7Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingPrisonerEvent7(
+            PendingChoices(
                 id=f'{event_id}.{pending_idx}',
-                instruction='Prison Event: roll 1D (1=Riot, 2=Gang, 3=Transfer, 4=Visitation, 5=Parole Hearing, 6=Good Behaviour)',
-                options=['1', '2', '3', '4', '5', '6'],
+                instruction='Prison Event: roll 1D and select the matching result',
+                choices=[
+                    PrisonerEvent7Riot(),
+                    PrisonerEvent7Gang(),
+                    PrisonerEvent7Transfer(),
+                    PrisonerEvent7Visitation(),
+                    PrisonerEvent7ParoleHearing(),
+                    PrisonerEvent7GoodBehaviour(),
+                ],
             )
         )
         return pending_idx + 1
@@ -397,26 +449,67 @@ class PrisonerEvent7Handler(CareerHandlerBase):
 # ── event 9: hire lawyer ──────────────────────────────────────────────────────
 
 
-class PendingPrisonerEvent9(CareerChoicePendingBase):
-    kind: Literal['prisoner_event_9'] = 'prisoner_event_9'
+class PrisonerEvent9Level1(ChoiceBase):
+    kind: Literal['prisoner_event_9_level_1'] = 'prisoner_event_9_level_1'
+    label: str = 'Hire level 1 lawyer (Cr1000)'
 
-    def on_choice(self, projection: CharacterProjection, event) -> None:
-        career = projection.get_current_career()
-        if event.choice == 'decline':
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
-            return
-        level = int(event.choice[-1])
+    def handle(self, projection: CharacterProjection, event) -> None:
         projection.summary.problems.append(
-            f'Prisoner event 9: lawyer level {level} hired — deduct Cr{level * 1000} from cash. Apply manually.'
+            'Prisoner event 9: lawyer level 1 hired — deduct Cr1000 from cash. Apply manually.'
         )
         projection.pending_inputs.append(
             PendingPrisonerEvent9LawyerSkillRoll(
                 id=f'{event.id}.0',
-                instruction=f'Roll 2D + {level} vs 8+: success = PT-1',
+                instruction='Roll 2D + 1 vs 8+: success = PT-1',
                 options=[],
-                lawyer_level=level,
+                lawyer_level=1,
             )
         )
+
+
+class PrisonerEvent9Level2(ChoiceBase):
+    kind: Literal['prisoner_event_9_level_2'] = 'prisoner_event_9_level_2'
+    label: str = 'Hire level 2 lawyer (Cr2000)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        projection.summary.problems.append(
+            'Prisoner event 9: lawyer level 2 hired — deduct Cr2000 from cash. Apply manually.'
+        )
+        projection.pending_inputs.append(
+            PendingPrisonerEvent9LawyerSkillRoll(
+                id=f'{event.id}.0',
+                instruction='Roll 2D + 2 vs 8+: success = PT-1',
+                options=[],
+                lawyer_level=2,
+            )
+        )
+
+
+class PrisonerEvent9Level3(ChoiceBase):
+    kind: Literal['prisoner_event_9_level_3'] = 'prisoner_event_9_level_3'
+    label: str = 'Hire level 3 lawyer (Cr3000)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        projection.summary.problems.append(
+            'Prisoner event 9: lawyer level 3 hired — deduct Cr3000 from cash. Apply manually.'
+        )
+        projection.pending_inputs.append(
+            PendingPrisonerEvent9LawyerSkillRoll(
+                id=f'{event.id}.0',
+                instruction='Roll 2D + 3 vs 8+: success = PT-1',
+                options=[],
+                lawyer_level=3,
+            )
+        )
+
+
+class PrisonerEvent9Decline(ChoiceBase):
+    kind: Literal['prisoner_event_9_decline'] = 'prisoner_event_9_decline'
+    label: str = 'Decline (no action)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        career = projection.get_current_career()
+        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 
 
 class PendingPrisonerEvent9LawyerSkillRoll(CareerSkillRollPendingBase):
@@ -435,13 +528,18 @@ class PrisonerEvent9Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingPrisonerEvent9(
+            PendingChoices(
                 id=f'{event_id}.{pending_idx}',
                 instruction=(
                     'Hire a lawyer? Level 1 (Cr1000), Level 2 (Cr2000), Level 3 (Cr3000), or decline? '
                     'Success (2D + level vs 8+) = PT-1.'
                 ),
-                options=['level_1', 'level_2', 'level_3', 'decline'],
+                choices=[
+                    PrisonerEvent9Level1(),
+                    PrisonerEvent9Level2(),
+                    PrisonerEvent9Level3(),
+                    PrisonerEvent9Decline(),
+                ],
             )
         )
         return pending_idx + 1
@@ -450,21 +548,27 @@ class PrisonerEvent9Handler(CareerHandlerBase):
 # ── event 12: heroism ─────────────────────────────────────────────────────────
 
 
-class PendingPrisonerEvent12(CareerChoicePendingBase):
-    kind: Literal['prisoner_event_12'] = 'prisoner_event_12'
+class PrisonerEvent12TakeRisk(ChoiceBase):
+    kind: Literal['prisoner_event_12_take_risk'] = 'prisoner_event_12_take_risk'
+    label: str = 'Take the risk (roll 2D — 7-: injury; 8+: Ally + PT-2)'
 
-    def on_choice(self, projection: CharacterProjection, event) -> None:
-        career = projection.get_current_career()
-        if event.choice == 'refuse':
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
-        else:
-            projection.pending_inputs.append(
-                PendingPrisonerEvent12HeroismSkillRoll(
-                    id=f'{event.id}.0',
-                    instruction='Roll 2D: 8+ = Ally + PT-2; 7 or less = roll on Injury table',
-                    options=[],
-                )
+    def handle(self, projection: CharacterProjection, event) -> None:
+        projection.pending_inputs.append(
+            PendingPrisonerEvent12HeroismSkillRoll(
+                id=f'{event.id}.0',
+                instruction='Roll 2D: 8+ = Ally + PT-2; 7 or less = roll on Injury table',
+                options=[],
             )
+        )
+
+
+class PrisonerEvent12Refuse(ChoiceBase):
+    kind: Literal['prisoner_event_12_refuse'] = 'prisoner_event_12_refuse'
+    label: str = 'Refuse (no action)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        career = projection.get_current_career()
+        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 
 
 class PendingPrisonerEvent12HeroismSkillRoll(CareerSkillRollPendingBase):
@@ -475,7 +579,7 @@ class PendingPrisonerEvent12HeroismSkillRoll(CareerSkillRollPendingBase):
 
         career = projection.get_current_career()
         if event.modified_roll >= 8:
-            projection.summary.connections.append(Ally(source='Saved fellow prisoner (Prisoner event 12)'))
+            projection.summary.connections.append(Ally(source='A fellow prisoner whose life you saved'))
             projection.summary.parole_threshold = max(0, (projection.summary.parole_threshold or 0) - 2)
             # _apply_skill_roll auto-queues advancement (no pending added)
         else:
@@ -497,10 +601,10 @@ class PrisonerEvent12Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingPrisonerEvent12(
+            PendingChoices(
                 id=f'{event_id}.{pending_idx}',
                 instruction='An act of heroism: take the risk (roll 2D — 7-: injury; 8+: Ally + PT-2) or refuse?',
-                options=['take_risk', 'refuse'],
+                choices=[PrisonerEvent12TakeRisk(), PrisonerEvent12Refuse()],
             )
         )
         return pending_idx + 1
@@ -622,9 +726,9 @@ CAREER_DATA = PrisonerCareerData(
         rows={
             1: MusterOutRow(cash=0, benefit=CONTACT),
             2: MusterOutRow(cash=0, benefit=BLADE),
-            3: MusterOutRow(cash=100, benefit=ChoiceBenefit(options=[DECEPTION, PERSUADE, STEALTH])),
+            3: MusterOutRow(cash=100, benefit=ChoiceBenefit(options=[DECEPTION_ITEM, PERSUADE_ITEM, STEALTH_ITEM])),
             4: MusterOutRow(cash=200, benefit=ALLY),
-            5: MusterOutRow(cash=500, benefit=ChoiceBenefit(options=[MELEE, RECON, STREETWISE])),
+            5: MusterOutRow(cash=500, benefit=ChoiceBenefit(options=[MELEE_ITEM, RECON_ITEM, STREETWISE_ITEM])),
             6: MusterOutRow(
                 cash=1000,
                 benefit=ChoiceBenefit(
@@ -634,7 +738,7 @@ CAREER_DATA = PrisonerCareerData(
                     ]
                 ),
             ),
-            7: MusterOutRow(cash=2500, benefit=CombinedBenefit(benefits=[DECEPTION, PERSUADE, STEALTH])),
+            7: MusterOutRow(cash=2500, benefit=CombinedBenefit(benefits=[DECEPTION_ITEM, PERSUADE_ITEM, STEALTH_ITEM])),
         }
     ),
     mishaps={

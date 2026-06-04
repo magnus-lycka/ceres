@@ -10,7 +10,7 @@ from fastapi.templating import Jinja2Templates
 
 from ceres.adapters.travellermap import TravellerMapWorld, fetch_world
 from ceres.character.careers.loader import load_careers
-from ceres.character.events import AnyEvent
+from ceres.character.events import AnyEvent, PendingCareerChoice
 from ceres.character.precareers import load_precareers
 from ceres.character.replay import ReplayError
 from ceres.character.report import render_npc_gallery_pdf
@@ -95,7 +95,7 @@ def _projection_context(projection: CharacterProjection, character_id: int) -> d
     enriched_inputs = []
     for pi in projection.pending_inputs[:1]:
         input_specs = pi.input_specs(projection)
-        extra: dict[str, Any] = {'careers': careers} if pi.kind == 'career_choice' else {}
+        extra: dict[str, Any] = {'careers': careers} if isinstance(pi, PendingCareerChoice) else {}
         enriched_inputs.append({'input': pi, 'input_specs': input_specs, 'extra': extra})
 
     return {

@@ -1,4 +1,4 @@
-from ceres.character.careers.career_data import CharCheck
+from ceres.character.careers.career_data import CharCheck, GainSkillEffect, LifeEventEffect
 from ceres.character.characteristics import Chars
 from ceres.character.events import PreCareerEntryEvent, PreCareerGraduationEvent
 from ceres.character.precareers import load_precareers
@@ -80,8 +80,8 @@ def test_precareer_events_are_loaded_once_for_all_precareers():
     university = load_precareers()['University']
 
     assert set(university.events) == set(range(2, 13))
-    assert university.events[5].effects[0].type == 'gain_skill'
-    assert university.events[7].effects[0].type == 'life_event'
+    assert isinstance(university.events[5].effects[0], GainSkillEffect)
+    assert isinstance(university.events[7].effects[0], LifeEventEffect)
 
 
 def test_companion_precareers_are_loaded():

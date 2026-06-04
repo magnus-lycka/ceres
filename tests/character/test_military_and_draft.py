@@ -6,6 +6,7 @@ from ceres.character.events import (
     CommissionEvent,
     DraftAssignmentEvent,
     DraftEvent,
+    PendingAdvancement,
     PendingCommissionChoice,
     PendingDraftAssignmentChoice,
     PendingDraftChoice,
@@ -150,7 +151,7 @@ def test_successful_commission_sets_officer_rank_and_skips_advancement():
     assert projection.summary.rank == 1
     assert projection.summary.career_terms[-1].commission
     assert projection.summary.skill_level(Leadership) == 1
-    assert not any(p.kind == 'advancement' for p in projection.pending_inputs)
+    assert not any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
 
 def test_qualification_dm_scheduled_effect_is_consumed_on_career_entry():

@@ -56,7 +56,11 @@ def test_ship_accepts_typed_occupants_from_json_shape():
             'tl': 12,
             'displacement': 100,
             'hull': hull.Hull(configuration=hull.sphere),
-            'occupants': [{'kind': 'high'}, {'kind': 'middle'}, {'kind': 'middle'}],
+            'occupants': [
+                {'kind': HighPassage.model_fields['kind'].default},
+                {'kind': MiddlePassage.model_fields['kind'].default},
+                {'kind': MiddlePassage.model_fields['kind'].default},
+            ],
         }
     )
 

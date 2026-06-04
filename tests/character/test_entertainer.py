@@ -1,8 +1,9 @@
 """Tests for the Entertainer career — artist, journalist, and performer assignments."""
 
 from ceres.character.careers.entertainer import (
+    EntertainerEvent8Accept,
+    EntertainerEvent8Refuse,
     PendingEntertainerEvent3SkillRoll,
-    PendingEntertainerEvent8,
     PendingEntertainerEvent8SkillRoll,
 )
 from ceres.character.events import (
@@ -11,6 +12,7 @@ from ceres.character.events import (
     CareerEvent,
     CharacterStartedEvent,
     PendingAdvancement,
+    PendingChoices,
     SkillChoiceEvent,
     SkillRollEvent,
     SurviveEvent,
@@ -119,16 +121,16 @@ class TestEntertainerEvent8:
     def test_creates_event_pending_with_options(self):
         projection = replay(1, self._setup_to_event())
         pending = next(
-            (p for p in projection.pending_inputs if isinstance(p, PendingEntertainerEvent8)),
+            (p for p in projection.pending_inputs if isinstance(p, PendingChoices)),
             None,
         )
         assert pending is not None
-        assert set(pending.options) == {'accept', 'refuse'}
+        assert {type(c) for c in pending.choices} == {EntertainerEvent8Accept, EntertainerEvent8Refuse}
 
     def test_refuse_queues_advancement(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=8, fulfills='7.0', choice='refuse'),
+            CareerChoiceEvent.for_choice(EntertainerEvent8Refuse, id=8, fulfills='7.0'),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
@@ -136,7 +138,7 @@ class TestEntertainerEvent8:
     def test_accept_creates_art_or_investigate_roll(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=8, fulfills='7.0', choice='accept'),
+            CareerChoiceEvent.for_choice(EntertainerEvent8Accept, id=8, fulfills='7.0'),
         ]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingEntertainerEvent8SkillRoll)), None)
@@ -146,7 +148,7 @@ class TestEntertainerEvent8:
     def test_accept_success_schedules_advancement_dm_2(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=8, fulfills='7.0', choice='accept'),
+            CareerChoiceEvent.for_choice(EntertainerEvent8Accept, id=8, fulfills='7.0'),
             SkillRollEvent(id=9, fulfills='8.0', skill=Admin(), modified_roll=9),
         ]
         projection = replay(1, events)
@@ -156,7 +158,7 @@ class TestEntertainerEvent8:
     def test_accept_failure_adds_enemy(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=8, fulfills='7.0', choice='accept'),
+            CareerChoiceEvent.for_choice(EntertainerEvent8Accept, id=8, fulfills='7.0'),
             SkillRollEvent(id=9, fulfills='8.0', skill=Admin(), modified_roll=7),
         ]
         projection = replay(1, events)
@@ -167,7 +169,7 @@ class TestEntertainerEvent8:
         for roll in (9, 7):
             events = [
                 *self._setup_to_event(),
-                CareerChoiceEvent(id=8, fulfills='7.0', choice='accept'),
+                CareerChoiceEvent.for_choice(EntertainerEvent8Accept, id=8, fulfills='7.0'),
                 SkillRollEvent(id=9, fulfills='8.0', skill=Admin(), modified_roll=roll),
             ]
             projection = replay(1, events)

@@ -36,6 +36,7 @@ from ceres.make.ship.computer import Computer5, ComputerSection
 from ceres.make.ship.crafts import CraftSection, InternalDockingSpace, Vehicle
 from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive2, MDrive2, PowerSection
 from ceres.make.ship.habitation import HabitationSection, Stateroom
+from ceres.make.ship.occupants import MiddlePassage
 from ceres.make.ship.sensors import MilitarySensors, SensorsSection
 from ceres.make.ship.software import JumpControl
 from ceres.make.ship.storage import CargoSection, FuelProcessor, FuelSection, JumpFuel, OperationFuel
@@ -161,7 +162,7 @@ _expected = SimpleNamespace(
         ('ENGINEER', None, 4_000),
         ('GUNNER', None, 2_000),
     ],
-    spec_passengers=[('MIDDLE', 4)],
+    spec_passengers=[(MiddlePassage.model_fields['kind'].default.upper(), 4)],
 )
 
 # Ceres gives op_fuel_tons=2.0 per RIS-007 (rounds up to whole dTon for ≥100t ships), not 1.2 as in ref

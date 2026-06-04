@@ -37,9 +37,10 @@ from ceres.character.careers.career_data import (
     SkillTable,
 )
 from ceres.character.careers.common import handle_advanced_training
-from ceres.character.careers.common_pending import CareerChoicePendingBase, CareerSkillRollPendingBase
+from ceres.character.careers.common_pending import CareerSkillRollPendingBase
 from ceres.character.characteristics import Chars
 from ceres.character.events import (
+    PendingChoices,
     SkillRollEvent,
     career_progress_pending,
 )
@@ -68,6 +69,7 @@ from ceres.character.skills import (
 )
 from ceres.character.state import (
     CharacterProjection,
+    ChoiceBase,
     EffectTrigger,
     EffectType,
     Enemy,
@@ -103,45 +105,62 @@ class PendingNavyMishap3SkillRoll(CareerSkillRollPendingBase):
         _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=lose)
 
 
-class PendingNavyMishap4(CareerChoicePendingBase):
-    kind: Literal['navy_mishap_4'] = 'navy_mishap_4'
+class NavyMishap4Responsible(ChoiceBase):
+    kind: Literal['navy_mishap_4_responsible'] = 'navy_mishap_4_responsible'
+    label: str = 'Accept responsibility (gain one free skill roll, ejected, lose Benefit)'
 
-    def on_choice(self, projection: CharacterProjection, event) -> None:
+    def handle(self, projection: CharacterProjection, event) -> None:
         from ceres.character.events import _apply_mishap_ejection
 
         career = projection.get_current_career()
-        if event.choice == 'responsible':
-            projection.summary.problems.append(
-                'Navy mishap 4 (responsible): you gain one free roll on the Skills and Training tables '
-                'before ejection — apply a skill table roll manually to this character.'
-            )
-            _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
-        else:
-            projection.summary.connections.append(Enemy(source='Officer who blamed you (Navy mishap 4)'))
-            _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=False)
+        projection.summary.problems.append(
+            'Navy mishap 4 (responsible): you gain one free roll on the Skills and Training tables '
+            'before ejection — apply a skill table roll manually to this character.'
+        )
+        _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
 
 
-class PendingNavyEvent10(CareerChoicePendingBase):
-    kind: Literal['navy_event_10'] = 'navy_event_10'
+class NavyMishap4NotResponsible(ChoiceBase):
+    kind: Literal['navy_mishap_4_not_responsible'] = 'navy_mishap_4_not_responsible'
+    label: str = 'Deny blame (gain Enemy, keep Benefit)'
 
-    def on_choice(self, projection: CharacterProjection, event) -> None:
+    def handle(self, projection: CharacterProjection, event) -> None:
+        from ceres.character.events import _apply_mishap_ejection
+
         career = projection.get_current_career()
-        if event.choice == 'profit':
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger=EffectTrigger.MUSTER_OUT_ADD,
-                    source_event_id=event.id,
-                    effect={'type': EffectType.ADD, 'value': 1},
-                )
+        projection.summary.connections.append(Enemy(source='The officer who falsely blamed you for the accident'))
+        _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=False)
+
+
+class NavyEvent10Profit(ChoiceBase):
+    kind: Literal['navy_event_10_profit'] = 'navy_event_10_profit'
+    label: str = 'Take the profit (gain extra Benefit roll)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        career = projection.get_current_career()
+        projection.scheduled_effects.append(
+            ScheduledEffect(
+                trigger=EffectTrigger.MUSTER_OUT_ADD,
+                source_event_id=event.id,
+                effect={'type': EffectType.ADD, 'value': 1},
             )
-        else:
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger=EffectTrigger.ADVANCEMENT,
-                    source_event_id=event.id,
-                    effect={'type': EffectType.DM, 'amount': 2},
-                )
+        )
+        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+
+
+class NavyEvent10Refuse(ChoiceBase):
+    kind: Literal['navy_event_10_refuse'] = 'navy_event_10_refuse'
+    label: str = 'Refuse (gain DM+2 to next advancement)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        career = projection.get_current_career()
+        projection.scheduled_effects.append(
+            ScheduledEffect(
+                trigger=EffectTrigger.ADVANCEMENT,
+                source_event_id=event.id,
+                effect={'type': EffectType.DM, 'amount': 2},
             )
+        )
         projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 
 
@@ -177,14 +196,14 @@ class NavyMishap4Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingNavyMishap4(
+            PendingChoices(
                 id=f'{event_id}.{pending_idx}',
                 instruction=(
                     'Were you responsible for the accident? '
-                    'Responsible: gain one free skill table roll before ejection. '
-                    'Not responsible: gain the officer who blamed you as an Enemy, but keep your Benefit roll.'
+                    'Accept responsibility (gain one free skill roll, lose Benefit) '
+                    'or deny blame (gain Enemy officer, keep Benefit)?'
                 ),
-                options=['responsible', 'not_responsible'],
+                choices=[NavyMishap4Responsible(), NavyMishap4NotResponsible()],
             )
         )
         return pending_idx + 1
@@ -198,7 +217,7 @@ class NavyEvent5Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        return handle_advanced_training('Navy', 5, 'navy_event_5', projection, event_id, pending_idx)
+        return handle_advanced_training(projection, event_id, pending_idx)
 
 
 # ── event 10: abuse position for profit ──────────────────────────────────────
@@ -210,10 +229,10 @@ class NavyEvent10Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingNavyEvent10(
+            PendingChoices(
                 id=f'{event_id}.{pending_idx}',
                 instruction='Abuse your position for profit (gain extra Benefit roll) or refuse (DM+2 to next advancement)?',
-                options=['profit', 'refuse'],
+                choices=[NavyEvent10Profit(), NavyEvent10Refuse()],
             )
         )
         return pending_idx + 1

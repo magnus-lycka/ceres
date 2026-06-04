@@ -152,7 +152,7 @@ class Security(RatedSoftwarePackage):
 
 
 class Agent(RatedSoftwarePackage):
-    package: Literal['agent'] = 'agent'
+    package: Literal['agent_sw'] = 'agent_sw'
     _label = 'Agent'
     _specs: ClassVar[dict[int, dict[str, int | float]]] = {
         0: {'bandwidth': 0, 'tl': 11, 'cost': 500.0},

@@ -20,7 +20,7 @@ from ceres.make.ship.habitation import (
     Stable,
     Stateroom,
 )
-from ceres.make.ship.occupants import ResidenceDemand
+from ceres.make.ship.occupants import HighPassage, LowPassage, MiddlePassage, ResidenceDemand
 from ceres.make.ship.systems import CommonArea, SwimmingPool
 from tests.make.ship.helpers import passengers
 
@@ -191,7 +191,7 @@ def test_emergency_low_berths_count_toward_default_low_passengers():
 
     assert my_ship.habitation is not None
     assert my_ship.habitation.low_passage_capacity() == 6
-    assert my_ship.habitation.passenger_counts(my_ship) == {'low': 6}
+    assert my_ship.habitation.passenger_counts(my_ship) == {LowPassage.model_fields['kind'].default: 6}
 
 
 def test_stable_values_and_capacity():
@@ -431,7 +431,10 @@ def test_habitation_default_passengers_use_unused_staterooms_and_low_berths():
     )
 
     assert my_ship.habitation is not None
-    assert my_ship.habitation.passenger_counts(my_ship) == {'middle': 12, 'low': 4}
+    assert my_ship.habitation.passenger_counts(my_ship) == {
+        MiddlePassage.model_fields['kind'].default: 12,
+        LowPassage.model_fields['kind'].default: 4,
+    }
 
 
 def test_habitation_default_middle_passengers_include_cabin_space_capacity():
@@ -444,7 +447,7 @@ def test_habitation_default_middle_passengers_include_cabin_space_capacity():
     )
 
     assert my_ship.habitation is not None
-    assert my_ship.habitation.passenger_counts(my_ship) == {'middle': 16}
+    assert my_ship.habitation.passenger_counts(my_ship) == {MiddlePassage.model_fields['kind'].default: 16}
 
 
 def test_habitation_explicit_occupants_override_default_passengers():
@@ -461,7 +464,7 @@ def test_habitation_explicit_occupants_override_default_passengers():
     )
 
     assert my_ship.habitation is not None
-    assert my_ship.habitation.passenger_counts(my_ship) == {'high': 1}
+    assert my_ship.habitation.passenger_counts(my_ship) == {HighPassage.model_fields['kind'].default: 1}
 
 
 def test_expenses_life_support_separates_facilities_and_people_costs():

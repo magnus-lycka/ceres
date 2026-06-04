@@ -18,9 +18,15 @@ def _format_range(range_km: int) -> str:
 class TransceiverPart(CeresPart):
     """Generic transceiver part, independent of where it is installed."""
 
-    medium: Literal['radio', 'laser', 'meson'] = 'radio'
+    medium: Literal['radio_comm', 'laser', 'meson'] = 'radio_comm'
     range_km: int
     mass_kg: float = 0.0
+
+    _MEDIUM_DISPLAY: ClassVar[dict[str, str]] = {
+        'radio_comm': 'Radio',
+        'laser': 'Laser',
+        'meson': 'Meson',
+    }
 
     @property
     def integrated_computer_processing(self) -> int | None:
@@ -32,11 +38,11 @@ class TransceiverPart(CeresPart):
 
     @property
     def description(self) -> str:
-        return f'{self.medium.title()} Transceiver {_format_range(self.range_km)}'
+        return f'{self._MEDIUM_DISPLAY[self.medium]} Transceiver {_format_range(self.range_km)}'
 
 
 class RadioTransceiverPart(TransceiverPart):
-    medium: Literal['radio'] = 'radio'
+    medium: Literal['radio_comm'] = 'radio_comm'
 
 
 class LaserTransceiverPart(TransceiverPart):
@@ -116,7 +122,7 @@ class TransceiverEquipment(Equipment):
 
         satellite_uplink = cls._normalise_satellite_uplink(data.get('satellite_uplink', 'none'))
         if satellite_uplink != 'none':
-            if part.medium != 'radio':
+            if part.medium != 'radio_comm':
                 raise ValueError('Satellite uplinks are only available for radio transceivers')
             if part.range_km < SATELLITE_UPLINK_MIN_RANGE_KM:
                 raise ValueError('Satellite uplink requires a radio transceiver with at least 500km range')

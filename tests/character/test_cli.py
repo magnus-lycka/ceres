@@ -20,14 +20,13 @@ from ceres.character.cli import (
     render_ucp_short,
     write_current_id,
 )
-from ceres.character.events import AnyEvent
+from ceres.character.events import AnyEvent, PendingBackgroundSkills, PendingUcp
 from ceres.character.replay import ReplayError
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     CharacterProjection,
     CharacterSummary,
     Contact,
-    PendingInputBase,
 )
 from ceres.character.store import CharacterRow, SqliteCharacterBackend
 from tests.character.helpers import MOCK_WORLD
@@ -194,7 +193,7 @@ def test_render_projection_summary_shows_active_character_state():
         'Test  (Vilani)  |  Scout / Courier  rank 1  term 2',
         'UCP  7869A5    STR 7  DEX 8  END 6  INT 9  EDU 10  SOC 5',
         'Skills  Admin 1  Electronics (Sensors)-2',
-        'Connections  contact(mentor)',
+        'Connections  Contact(mentor)',
         'Problem  Enemy made',
         'Cash  Cr50,000',
         'Benefits  Lab Ship  Ship Share',
@@ -204,14 +203,14 @@ def test_render_projection_summary_shows_active_character_state():
 def test_render_pending_inputs_marks_blocking_inputs():
     projection = _projection()
     projection.pending_inputs = [
-        PendingInputBase(id='1.0', kind='ucp', instruction='Set UCP'),
-        PendingInputBase(id='1.1', kind='note', instruction='Optional note', blocking=False),
+        PendingUcp(id='1.0', instruction='Set UCP'),
+        PendingBackgroundSkills(id='1.1', instruction='Optional note', blocking=False),
     ]
 
     assert render_pending_inputs(projection) == [
         'Pending:',
-        '  1.0  ucp [blocking]  — Set UCP',
-        '  1.1  note  — Optional note',
+        '  1.0  PendingUcp [blocking]  — Set UCP',
+        '  1.1  PendingBackgroundSkills  — Optional note',
     ]
 
 
@@ -246,7 +245,7 @@ def test_cli_starts_character_creation(memory_app):
     assert result.exit_code == 0
     assert result.stdout.splitlines()[0] == 'Started character creation: Boss'
     assert 'Pending:' in result.stdout
-    assert 'ucp' in result.stdout
+    assert 'Provide characteristics' in result.stdout
 
 
 def test_cli_rejects_unknown_sophont(memory_app):
@@ -437,7 +436,7 @@ def test_cli_sets_and_shows_current_ucp(memory_app):
 
     assert changed.exit_code == 0
     assert changed.stdout.splitlines()[0] == 'STR 7 DEX 8 END 6 INT 9 EDU 10 SOC 5'
-    assert 'background_skills' in changed.stdout
+    assert 'background skill' in changed.stdout
     assert shown.exit_code == 0
     assert shown.stdout.splitlines() == ['STR 7 DEX 8 END 6 INT 9 EDU 10 SOC 5']
 
@@ -452,7 +451,7 @@ def test_cli_sets_current_ucp_from_short_form(memory_app):
 
     assert changed.exit_code == 0
     assert changed.stdout.splitlines()[0] == 'STR 7 DEX 7 END 8 INT 8 EDU 11 SOC 4'
-    assert 'background_skills' in changed.stdout
+    assert 'background skill' in changed.stdout
     assert shown.exit_code == 0
     assert shown.stdout.splitlines() == ['STR 7 DEX 7 END 8 INT 8 EDU 11 SOC 4']
     assert listed.exit_code == 0
@@ -639,7 +638,7 @@ def test_cli_shows_status_for_current_character(memory_app):
     assert result.exit_code == 0
     assert 'Boss  (Vilani)' in result.stdout
     assert 'Pending:' in result.stdout
-    assert 'ucp [blocking]' in result.stdout
+    assert 'PendingUcp [blocking]' in result.stdout
 
 
 def test_cli_rejects_event_without_current_character(memory_app):
@@ -673,7 +672,7 @@ def test_cli_reports_event_replay_error(memory_app):
     runner = CliRunner()
 
     _start_vilani(runner, memory_app)
-    result = runner.invoke(memory_app, ['create', 'event', '{"kind": "ucp", "ucp": "777777"}'])
+    result = runner.invoke(memory_app, ['create', 'event', '{"kind": "ucp_event", "ucp": "777777"}'])
 
     assert result.exit_code != 0
     assert 'Replay error:' in result.output
@@ -683,7 +682,7 @@ def test_cli_appends_event_and_shows_updated_status(memory_app):
     runner = CliRunner()
 
     _start_vilani(runner, memory_app)
-    result = runner.invoke(memory_app, ['create', 'event', '{"kind": "ucp", "ucp": "777777", "fulfills": "1.0"}'])
+    result = runner.invoke(memory_app, ['create', 'event', '{"kind": "ucp_event", "ucp": "777777", "fulfills": "1.0"}'])
 
     assert result.exit_code == 0
     assert 'UCP  777777' in result.stdout

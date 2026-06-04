@@ -1,6 +1,6 @@
 """Tests for precareer entry and graduation (core University and Mongoose Traveller Companion precareers)."""
 
-from ceres.character.characteristics import Chars, ConnectionKind
+from ceres.character.characteristics import Chars
 from ceres.character.events import (
     CharacterStartedEvent,
     PendingCareerChoice,
@@ -31,7 +31,7 @@ from ceres.character.skills import (
     _level_fields,
 )
 from ceres.character.sophonts import HUMANITI
-from ceres.character.state import EffectTrigger
+from ceres.character.state import EffectTrigger, Enemy, Rival
 from tests.character.helpers import MOCK_WORLD
 
 
@@ -432,9 +432,8 @@ class TestPsionicCommunity:
         ]
         projection = replay(1, events)
 
-        kinds = [c.kind for c in projection.summary.connections]
-        assert ConnectionKind.RIVAL in kinds
-        assert ConnectionKind.ENEMY not in kinds
+        assert any(isinstance(c, Rival) for c in projection.summary.connections)
+        assert not any(isinstance(c, Enemy) for c in projection.summary.connections)
 
     def test_honours_graduation_adds_enemy_not_rival(self):
         events = [
@@ -447,9 +446,8 @@ class TestPsionicCommunity:
         ]
         projection = replay(1, events)
 
-        kinds = [c.kind for c in projection.summary.connections]
-        assert ConnectionKind.ENEMY in kinds
-        assert ConnectionKind.RIVAL not in kinds
+        assert any(isinstance(c, Enemy) for c in projection.summary.connections)
+        assert not any(isinstance(c, Rival) for c in projection.summary.connections)
 
     def test_graduation_adds_psi_problem_message(self):
         events = [

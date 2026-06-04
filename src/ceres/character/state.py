@@ -20,6 +20,16 @@ class ReplayError(Exception):
     pass
 
 
+class ChoiceBase(BaseModel):
+    """A self-addressed envelope: one option in a PendingChoices list, carries its own handler."""
+
+    kind: str
+    label: str = ''
+
+    def handle(self, projection: Any, event: Any) -> None:
+        raise NotImplementedError(f'{type(self).__name__}.handle() not implemented')
+
+
 class PendingInputBase(BaseModel):
     id: str
     kind: str
@@ -41,6 +51,14 @@ class PendingInputBase(BaseModel):
     def resolve(self, projection: Any, event: Any) -> None:
         """Called by SkillRollEvent.apply() when this pending is fulfilled. Override in career-specific subclasses."""
 
+    @property
+    def template_fragment(self) -> str:
+        """Name of the Jinja2 partial template to render this pending input.
+        Defaults to the kind discriminator value; falls back to 'generic' if no default exists.
+        Override only when the template name differs from the kind (e.g. two classes share one template)."""
+        default = type(self).model_fields['kind'].default
+        return default if isinstance(default, str) else 'generic'
+
 
 class ScheduledEffect(BaseModel):
     trigger: EffectTrigger
@@ -58,21 +76,61 @@ class Connection(CeresModel):
     affinity: int | None = None  # 0-6: degree of affinity towards the Traveller
     enmity: int | None = None  # 0 to -6: degree of enmity towards the Traveller
 
+    @property
+    def display_name(self) -> str:
+        return type(self).__name__
+
+    @property
+    def color_class(self) -> str:
+        return 'text-gray-400'
+
 
 class Contact(Connection):
-    kind: Literal['contact'] = 'contact'
+    kind: Literal[ConnectionKind.CONTACT] = ConnectionKind.CONTACT
+
+    @property
+    def display_name(self) -> str:
+        return 'Contact'
+
+    @property
+    def color_class(self) -> str:
+        return 'text-cyan-400'
 
 
 class Ally(Connection):
-    kind: Literal['ally'] = 'ally'
+    kind: Literal[ConnectionKind.ALLY] = ConnectionKind.ALLY
+
+    @property
+    def display_name(self) -> str:
+        return 'Ally'
+
+    @property
+    def color_class(self) -> str:
+        return 'text-green-400'
 
 
 class Rival(Connection):
-    kind: Literal['rival'] = 'rival'
+    kind: Literal[ConnectionKind.RIVAL] = ConnectionKind.RIVAL
+
+    @property
+    def display_name(self) -> str:
+        return 'Rival'
+
+    @property
+    def color_class(self) -> str:
+        return 'text-yellow-400'
 
 
 class Enemy(Connection):
-    kind: Literal['enemy'] = 'enemy'
+    kind: Literal[ConnectionKind.ENEMY] = ConnectionKind.ENEMY
+
+    @property
+    def display_name(self) -> str:
+        return 'Enemy'
+
+    @property
+    def color_class(self) -> str:
+        return 'text-red-400'
 
 
 type AnyConnection = Annotated[
@@ -361,7 +419,9 @@ def diff_summaries(before: CharacterSummary, after: CharacterSummary) -> list[st
         changes.append(f'Cash {sign}Cr{delta:,}')
 
     changes.extend(f'Benefit: {b.display_label}' for b in after.benefits[len(before.benefits) :])
-    changes.extend(f'New {c.kind}: {c.source or "unknown"}' for c in after.connections[len(before.connections) :])
+    changes.extend(
+        f'New {c.display_name}: {c.source or "unknown"}' for c in after.connections[len(before.connections) :]
+    )
     changes.extend(f'Problem: {p}' for p in after.problems[len(before.problems) :])
 
     return changes
@@ -373,6 +433,7 @@ __all__ = [
     'CareerTerm',
     'CharacterProjection',
     'CharacterSummary',
+    'ChoiceBase',
     'Connection',
     'Contact',
     'EffectTrigger',

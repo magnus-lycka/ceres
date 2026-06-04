@@ -15,6 +15,7 @@ from ceres.character.input_specs import InputSpec, NumberEntry, Reference, Selec
 from ceres.character.skills import (
     AnySkill,
     BackgroundSkill,
+    JackOfAllTrades,
     Level,
     Skill,
     SpaceScience,
@@ -27,6 +28,7 @@ from ceres.character.state import (
     CareerTerm,
     CharacterProjection,
     CharacterSummary,
+    ChoiceBase,
     Contact,
     EffectTrigger,
     EffectType,
@@ -368,7 +370,7 @@ class CharacterStartedEvent(EventBase):
 
 
 class UcpEvent(EventBase):
-    kind: Literal['ucp'] = 'ucp'
+    kind: Literal['ucp_event'] = 'ucp_event'
     ucp: str
 
     def _parse_characteristics(self, sophont: Any) -> dict[Chars, int]:
@@ -414,7 +416,7 @@ class BackgroundSkillsEvent(EventBase):
 
 
 class CareerEvent(EventBase):
-    kind: Literal['career'] = 'career'
+    kind: Literal['career_event'] = 'career_event'
     career: str
     assignment: str
     qualification_roll: int  # 2D result before characteristic DM
@@ -433,7 +435,7 @@ class CareerEvent(EventBase):
 
 
 class DraftEvent(EventBase):
-    kind: Literal['draft'] = 'draft'
+    kind: Literal['draft_event'] = 'draft_event'
     career: str
     assignment: str | None = None
 
@@ -704,12 +706,12 @@ class ConnectionKindChoiceEvent(EventBase):
         projection.summary.connections.append(make_connection(self.connection_kind, source=f'Life event: {source}'))
         _CHOICE_NARRATIVE = {
             4: {
-                'rival': 'Life event: relationship ended, gained a rival',
-                'enemy': 'Life event: relationship ended, gained an enemy',
+                ConnectionKind.RIVAL: 'Life event: relationship ended, gained a rival',
+                ConnectionKind.ENEMY: 'Life event: relationship ended, gained an enemy',
             },
             8: {
-                'rival': 'Life event: betrayal, gained a rival',
-                'enemy': 'Life event: betrayal, gained an enemy',
+                ConnectionKind.RIVAL: 'Life event: betrayal, gained a rival',
+                ConnectionKind.ENEMY: 'Life event: betrayal, gained an enemy',
             },
         }
         if isinstance(fulfilled_pending, PendingLifeEventChoice):
@@ -722,21 +724,31 @@ class ConnectionKindChoiceEvent(EventBase):
 
 
 class CareerChoiceEvent(EventBase):
-    """Career-specific choice; dispatches to the fulfilled pending input's on_choice()."""
+    """Career-specific choice; dispatches to the selected ChoiceBase.handle()."""
 
     kind: Literal['career_decision'] = 'career_decision'
     choice: str
 
+    @classmethod
+    def for_choice(cls, choice_cls: type[ChoiceBase], **kwargs: Any) -> CareerChoiceEvent:
+        """Construct without repeating the choice kind literal: CareerChoiceEvent.for_choice(SomeChoice, id=n, fulfills='x.0')"""
+        return cls(choice=choice_cls.model_fields['kind'].default, **kwargs)
+
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        if projection.summary.current_career is None:
-            raise ReplayError('CareerChoiceEvent submitted with no active career')
         if fulfilled_pending is None:
             raise ReplayError('CareerChoiceEvent has no matching pending input')
-        fulfilled_pending.on_choice(projection, self)
+        if not isinstance(fulfilled_pending, PendingChoices):
+            raise ReplayError(
+                f'CareerChoiceEvent fulfilled by unexpected pending type {type(fulfilled_pending).__name__!r}'
+            )
+        selected = next((c for c in fulfilled_pending.choices if c.kind == self.choice), None)
+        if selected is None:
+            raise ReplayError(f'Unknown choice {self.choice!r}')
+        selected.handle(projection, self)
 
 
 class AdvancementEvent(EventBase):
-    kind: Literal['advancement'] = 'advancement'
+    kind: Literal['advancement_event'] = 'advancement_event'
     roll: int  # sum of 2D, before characteristic DM
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
@@ -852,7 +864,7 @@ class CommissionEvent(EventBase):
 
 
 class ReenlistEvent(EventBase):
-    kind: Literal['reenlist'] = 'reenlist'
+    kind: Literal['reenlist_event'] = 'reenlist_event'
     reenlist: bool
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
@@ -1156,7 +1168,7 @@ class LifeEventEvent(EventBase):
                     id=f'{self.id}.0',
                     roll=4,
                     instruction='Ending relationship: gain a rival or enemy?',
-                    options=['rival', 'enemy'],
+                    options=[ConnectionKind.RIVAL, ConnectionKind.ENEMY],
                 )
             )
             if in_career and career is not None:
@@ -1187,7 +1199,7 @@ class LifeEventEvent(EventBase):
                     id=f'{self.id}.0',
                     roll=8,
                     instruction='Betrayal: gain a rival or enemy?',
-                    options=['rival', 'enemy'],
+                    options=[ConnectionKind.RIVAL, ConnectionKind.ENEMY],
                 )
             )
             if in_career and career is not None:
@@ -1207,7 +1219,7 @@ class LifeEventEvent(EventBase):
                     id=f'{self.id}.0',
                     instruction='You move to another world. Select your new homeworld.',
                     reason='Life Event 9: You move to another world.',
-                    source_kind='life_event',
+                    source_kind='life_event_move',
                 )
             )
             if in_career and career is not None:
@@ -1275,7 +1287,7 @@ class LifeEventUnusualEvent(EventBase):
 
 
 class MusterOutEvent(EventBase):
-    kind: Literal['muster_out'] = 'muster_out'
+    kind: Literal['muster_roll'] = 'muster_roll'
     table: Literal['cash', 'benefits']
     roll: int  # 1D result (1-6), DMs already applied by player
 
@@ -1406,7 +1418,7 @@ class AssignmentChangeChoiceEvent(EventBase):
 class FinishCreationEvent(EventBase):
     """Player chooses to end character creation after completing muster out."""
 
-    kind: Literal['finish_creation'] = 'finish_creation'
+    kind: Literal['finish_career_creation'] = 'finish_career_creation'
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
         pass  # fulfills the pending career choice; no further state change needed
@@ -1415,7 +1427,7 @@ class FinishCreationEvent(EventBase):
 class PreCareerEntryEvent(EventBase):
     """Attempt to enter pre-career education (university or military academy)."""
 
-    kind: Literal['precareer_entry'] = 'precareer_entry'
+    kind: Literal['precareer_entry_event'] = 'precareer_entry_event'
     precareer: str
     roll: int  # 2D result for entry check (before characteristic DM)
 
@@ -1540,7 +1552,7 @@ class PreCareerEventEvent(EventBase):
                 pending_idx += 1
             elif isinstance(effect, SkillChoiceEffect):
                 all_skills: list[AnySkill] = sorted(
-                    [cast(AnySkill, cls()) for cls in _skill_classes(AnySkill) if cls.name() != 'Jack-of-All-Trades'],
+                    [cast(AnySkill, cls()) for cls in _skill_classes(AnySkill) if cls is not JackOfAllTrades],
                     key=lambda s: type(s).name(),
                 )
                 opts: list[AnySkill] = cast(list[AnySkill], effect.options) if effect.options else all_skills
@@ -1939,7 +1951,7 @@ def _build_skill_select_options(
 
 
 class PendingUcp(PendingInputBase):
-    kind: Literal['ucp'] = 'ucp'
+    kind: Literal['ucp_pending'] = 'ucp_pending'
     stat_names: list[str] = Field(default_factory=lambda: [s.value for s in UCP_STATS])
 
     def event_from_form(self, form: Any) -> AnyEvent:
@@ -2077,7 +2089,7 @@ class PendingMishap(PendingInputBase):
 
 
 class PendingAdvancement(PendingInputBase):
-    kind: Literal['advancement'] = 'advancement'
+    kind: Literal['advancement_pending'] = 'advancement_pending'
 
     def event_from_form(self, form: Any) -> AnyEvent:
         return AdvancementEvent(roll=form_int(form, 'roll', 2), fulfills=self.id)
@@ -2125,7 +2137,11 @@ class PendingSkillTable(PendingInputBase):
 
 
 class PendingReenlist(PendingInputBase):
-    kind: Literal['reenlist'] = 'reenlist'
+    kind: Literal['reenlist_pending'] = 'reenlist_pending'
+
+    @property
+    def template_fragment(self) -> str:
+        return 'reenlist'
 
     def event_from_form(self, form: Any) -> AnyEvent:
         reenlist = form_str(form, 'reenlist', 'false').lower() in ('true', '1', 'yes')
@@ -2162,7 +2178,7 @@ class PendingAssignmentChangeChoice(PendingInputBase):
 
 
 class PendingMusterOut(PendingInputBase):
-    kind: Literal['muster_out'] = 'muster_out'
+    kind: Literal['muster_roll_pending'] = 'muster_roll_pending'
 
     def event_from_form(self, form: Any) -> AnyEvent:
         from typing import Literal as _Literal, cast as _cast
@@ -2419,12 +2435,27 @@ class PendingLifeEventChoice(PendingInputBase):
     roll: int
 
     def event_from_form(self, form: Any) -> AnyEvent:
-        raw_ck = literal(form_str(form, 'connection_kind', 'rival'), tuple(ConnectionKind), 'rival')
+        raw_ck = literal(
+            form_str(form, 'connection_kind', ConnectionKind.RIVAL), tuple(ConnectionKind), ConnectionKind.RIVAL
+        )
         return ConnectionKindChoiceEvent(connection_kind=ConnectionKind(raw_ck), fulfills=self.id)
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
-        options = [('Rival', 'rival'), ('Enemy', 'enemy')]
+        options = [('Rival', ConnectionKind.RIVAL.value), ('Enemy', ConnectionKind.ENEMY.value)]
         return [Select(name='connection_kind', label='Connection type', options=options)]
+
+
+class PendingChoices(PendingInputBase):
+    """Generic pending: presents a list of ChoiceBase options; selected choice handles itself."""
+
+    kind: Literal['choices'] = 'choices'
+    choices: list[Any] = Field(default_factory=list)
+
+    def event_from_form(self, form: Any) -> AnyEvent:
+        return CareerChoiceEvent(choice=form_str(form, 'choice', ''), fulfills=self.id)
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [Select(name='choice', label=self.instruction, options=[(c.label, c.kind) for c in self.choices])]
 
 
 class PendingLifeEventUnusual(PendingInputBase):
@@ -2442,7 +2473,9 @@ class PendingConnectionsRoll(PendingInputBase):
     connection_type: ConnectionKind = ConnectionKind.CONTACT
 
     def event_from_form(self, form: Any) -> AnyEvent:
-        raw_ct = literal(form_str(form, 'connection_type', 'contact'), tuple(ConnectionKind), 'contact')
+        raw_ct = literal(
+            form_str(form, 'connection_type', ConnectionKind.CONTACT), tuple(ConnectionKind), ConnectionKind.CONTACT
+        )
         count = form_int(form, 'count', 1)
         return ConnectionsRollEvent(connection_type=ConnectionKind(raw_ct), count=count, fulfills=self.id)
 
@@ -2537,6 +2570,10 @@ class PendingHomeworldChangeRequired(PendingInputBase):
     source_assignment: str | None = None
     target_constraints: str | None = None
 
+    @property
+    def template_fragment(self) -> str:
+        return 'homeworld_change'
+
     def event_from_form(self, form: Any) -> AnyEvent:
         from ceres.adapters.travellermap import fetch_world
 
@@ -2563,6 +2600,10 @@ class PendingHomeworldChangeOffered(PendingInputBase):
     source_career: str | None = None
     source_assignment: str | None = None
     target_constraints: str | None = None
+
+    @property
+    def template_fragment(self) -> str:
+        return 'homeworld_change'
 
     def event_from_form(self, form: Any) -> AnyEvent:
         from ceres.adapters.travellermap import fetch_world
@@ -2629,7 +2670,8 @@ type AnyPending = Annotated[
     | PendingPreCareerGraduation
     | PendingParoleRoll
     | PendingHomeworldChangeRequired
-    | PendingHomeworldChangeOffered,
+    | PendingHomeworldChangeOffered
+    | PendingChoices,
     Field(discriminator='kind'),
 ]
 
@@ -2694,6 +2736,7 @@ __all__ = [
     'CharacterStartedEvent',
     'CharacterSummary',
     'CharacteristicChoiceEvent',
+    'ChoiceBase',
     'CommissionEvent',
     'ConnectionKind',
     'ConnectionKindChoiceEvent',
@@ -2722,6 +2765,7 @@ __all__ = [
     'PendingBenefitChoice',
     'PendingCareerChoice',
     'PendingCharacteristicChoice',
+    'PendingChoices',
     'PendingCommissionChoice',
     'PendingConnectionsRoll',
     'PendingDoubleInjuryRoll',

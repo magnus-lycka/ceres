@@ -1,6 +1,6 @@
 """Tests for the Army career — support, infantry, and cavalry assignments."""
 
-from ceres.character.careers.army import PendingArmyEvent6SkillRoll, PendingArmyMishap4
+from ceres.character.careers.army import ArmyMishap4Cooperate, ArmyMishap4JoinRing, PendingArmyEvent6SkillRoll
 from ceres.character.careers.common_pending import PendingAdvancedTrainingSkillRoll
 from ceres.character.events import (
     BackgroundSkillsEvent,
@@ -9,6 +9,7 @@ from ceres.character.events import (
     CharacterStartedEvent,
     MishapEvent,
     PendingAdvancement,
+    PendingChoices,
     PendingMusterOut,
     PendingSkillChoice,
     SkillChoiceEvent,
@@ -93,15 +94,15 @@ class TestArmyMishap4:
     def test_mishap_4_creates_choice_pending(self):
         events = [*self._setup_to_mishap(), MishapEvent(id=7, fulfills='6.0', roll=4)]
         projection = replay(1, events)
-        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingArmyMishap4)), None)
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingChoices)), None)
         assert pending is not None
-        assert set(pending.options) == {'join_ring', 'cooperate'}
+        assert {type(c) for c in pending.choices} == {ArmyMishap4JoinRing, ArmyMishap4Cooperate}
 
     def test_join_ring_adds_ally(self):
         events = [
             *self._setup_to_mishap(),
             MishapEvent(id=7, fulfills='6.0', roll=4),
-            CareerChoiceEvent(id=8, fulfills='7.0', choice='join_ring'),
+            CareerChoiceEvent.for_choice(ArmyMishap4JoinRing, id=8, fulfills='7.0'),
         ]
         projection = replay(1, events)
         allies = [c for c in projection.summary.connections if isinstance(c, Ally)]
@@ -111,7 +112,7 @@ class TestArmyMishap4:
         events = [
             *self._setup_to_mishap(),
             MishapEvent(id=7, fulfills='6.0', roll=4),
-            CareerChoiceEvent(id=8, fulfills='7.0', choice='join_ring'),
+            CareerChoiceEvent.for_choice(ArmyMishap4JoinRing, id=8, fulfills='7.0'),
         ]
         projection = replay(1, events)
         assert projection.summary.current_career is None
@@ -121,7 +122,7 @@ class TestArmyMishap4:
         events = [
             *self._setup_to_mishap(),
             MishapEvent(id=7, fulfills='6.0', roll=4),
-            CareerChoiceEvent(id=8, fulfills='7.0', choice='join_ring'),
+            CareerChoiceEvent.for_choice(ArmyMishap4JoinRing, id=8, fulfills='7.0'),
         ]
         projection = replay(1, events)
         assert not any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
@@ -130,7 +131,7 @@ class TestArmyMishap4:
         events = [
             *self._setup_to_mishap(),
             MishapEvent(id=7, fulfills='6.0', roll=4),
-            CareerChoiceEvent(id=8, fulfills='7.0', choice='cooperate'),
+            CareerChoiceEvent.for_choice(ArmyMishap4Cooperate, id=8, fulfills='7.0'),
         ]
         projection = replay(1, events)
         allies = [c for c in projection.summary.connections if isinstance(c, Ally)]
@@ -141,7 +142,7 @@ class TestArmyMishap4:
         events = [
             *self._setup_to_mishap(),
             MishapEvent(id=7, fulfills='6.0', roll=4),
-            CareerChoiceEvent(id=8, fulfills='7.0', choice='cooperate'),
+            CareerChoiceEvent.for_choice(ArmyMishap4Cooperate, id=8, fulfills='7.0'),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
@@ -150,7 +151,7 @@ class TestArmyMishap4:
         events = [
             *self._setup_to_mishap(),
             MishapEvent(id=7, fulfills='6.0', roll=4),
-            CareerChoiceEvent(id=8, fulfills='7.0', choice='cooperate'),
+            CareerChoiceEvent.for_choice(ArmyMishap4Cooperate, id=8, fulfills='7.0'),
         ]
         projection = replay(1, events)
         assert projection.summary.current_career is None

@@ -54,7 +54,7 @@
     <div class="text-xs uppercase tracking-widest text-gray-600 mb-2">Connections</div>
     <div class="text-xs text-gray-400 space-y-0.5">
       {% for c in summary.connections %}
-      <div class="capitalize">{{ c.kind }}{% if c.source %}: {{ c.source }}{% endif %}</div>
+      <div>{{ c.display_name }}{% if c.source %}: {{ c.source }}{% endif %}</div>
       {% endfor %}
     </div>
   </div>

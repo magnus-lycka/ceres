@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 import pytest
 
 from ceres.character.app import build_app
+from ceres.character.events import PendingHomeworldChangeRequired, PendingUcp, UcpEvent
 from ceres.character.sophonts import HUMANITI, VILANI
 from ceres.character.store import SqliteCharacterBackend
 from ceres.worlds import DEFAULT_MILIEU, SectorWorldFilters
@@ -464,7 +465,7 @@ def test_wizard_shows_ucp_pending(client_with_backend):
     row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Clio')
     r = client.get(f'/ui/characters/{row["id"]}/wizard')
     assert r.status_code == 200
-    assert 'ucp' in r.text
+    assert 'UCP' in r.text
     assert 'Humaniti' in r.text
     assert 'Hexx (Trojan Reach 2715)' in r.text
     assert 'Career(name=' not in r.text
@@ -599,7 +600,7 @@ def test_selecting_homeworld_from_wizard_picker_updates_character(client_with_ba
     projection = backend.get_projection(row['id'])
     assert projection is not None
     assert projection.summary.homeworld == MOCK_WORLD_2
-    assert not any(p.kind == 'homeworld_change_required' for p in projection.pending_inputs)
+    assert not any(isinstance(p, PendingHomeworldChangeRequired) for p in projection.pending_inputs)
 
 
 # ── event submission (HTMX) ───────────────────────────────────────────────────
@@ -612,12 +613,12 @@ def test_submit_ucp_event(client_with_backend):
     projection = backend.get_projection(cid)
     assert projection is not None
     pi = projection.pending_inputs[0]
-    assert pi.kind == 'ucp'
+    assert isinstance(pi, PendingUcp)
 
     r = client.post(
         f'/ui/characters/{cid}/events',
         data={
-            'kind': 'ucp',
+            'kind': UcpEvent.model_fields['kind'].default,
             'fulfills': pi.id,
             'STR': '7',
             'DEX': '7',
@@ -629,7 +630,7 @@ def test_submit_ucp_event(client_with_backend):
     )
     assert r.status_code == 200
     # Should now show background_skills pending
-    assert 'background_skills' in r.text or 'background' in r.text.lower()
+    assert 'background' in r.text.lower()
 
 
 def test_submit_nonexistent_fulfills_shows_error(client_with_backend):
@@ -885,7 +886,7 @@ def test_post_event_response_includes_char_summary_oob(client_with_backend):
     r = client.post(
         f'/ui/characters/{cid}/events',
         data={
-            'kind': 'ucp',
+            'kind': UcpEvent.model_fields['kind'].default,
             'fulfills': pi.id,
             'STR': '7',
             'DEX': '8',

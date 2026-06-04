@@ -260,6 +260,23 @@ include:
 - a new UI for picking the replacement world
 - current-location tracking
 
+### Cross-sector world distance for homeworld relocation and world filtering
+
+Current world filtering can sort by distance only within a single sector, using
+same-sector hex geometry. Add proper cross-sector distance support based on the
+Traveller Map sector grid:
+
+- derive absolute hex coordinates from sector and world positions
+- use something like:
+  - `hex_x = column + sector_x * 32`
+  - `hex_y = row - sector_y * 40`
+- confirm the sign convention for `sector_y` against Traveller Map world/sector
+  coordinates before locking the formula
+
+This should be used wherever we sort relocation candidates by distance from a
+reference world, so inter-sector moves can be ranked correctly instead of only
+same-sector moves.
+
 ### Scout career: homeworld trigger at term start (RIC-006)
 
 See [docs/RULE_INTERPRETATIONS.md](docs/RULE_INTERPRETATIONS.md) — RIC-006.

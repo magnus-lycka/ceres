@@ -33,9 +33,10 @@ from ceres.character.careers.career_data import (
     SkillTable,
 )
 from ceres.character.careers.common import handle_advanced_training
-from ceres.character.careers.common_pending import CareerChoicePendingBase, CareerSkillRollPendingBase
+from ceres.character.careers.common_pending import CareerSkillRollPendingBase
 from ceres.character.characteristics import Chars
 from ceres.character.events import (
+    PendingChoices,
     PendingSkillChoice,
     SkillRollEvent,
     career_progress_pending,
@@ -72,6 +73,7 @@ from ceres.character.skills import (
 from ceres.character.state import (
     Ally,
     CharacterProjection,
+    ChoiceBase,
     Contact,
     EffectTrigger,
     EffectType,
@@ -91,24 +93,30 @@ MARINES = Career(
 # ── Career-specific pending input types ──────────────────────────────────────
 
 
-class PendingMarinesMishap4(CareerChoicePendingBase):
-    kind: Literal['marines_mishap_4'] = 'marines_mishap_4'
+class MarinesMishap4Refuse(ChoiceBase):
+    kind: Literal['marines_mishap_4_refuse'] = 'marines_mishap_4_refuse'
+    label: str = 'Refuse (ejected, lose Benefit, gain Contact)'
 
-    def on_choice(self, projection: CharacterProjection, event) -> None:
+    def handle(self, projection: CharacterProjection, event) -> None:
         from ceres.character.events import _apply_mishap_ejection
 
         career = projection.get_current_career()
-        if event.choice == 'refuse':
-            projection.summary.connections.append(Contact(source='Soldier from black ops mission (Marines mishap 4)'))
-            _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
-        else:
-            projection.pending_inputs.append(
-                PendingMarinesMishap4SkillRoll(
-                    id=f'{event.id}.0',
-                    instruction='Roll Deception or Persuade 8+: success = stay in career; fail = ejected, lose Benefit',
-                    options=[Deception(), Persuade()],
-                )
+        projection.summary.connections.append(Contact(source='A fellow soldier who was part of that black ops mission'))
+        _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+
+
+class MarinesMishap4Accept(ChoiceBase):
+    kind: Literal['marines_mishap_4_accept'] = 'marines_mishap_4_accept'
+    label: str = 'Accept (roll Deception or Persuade 8+: success = stay, fail = ejected, lose Benefit)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        projection.pending_inputs.append(
+            PendingMarinesMishap4SkillRoll(
+                id=f'{event.id}.0',
+                instruction='Roll Deception or Persuade 8+: success = stay in career; fail = ejected, lose Benefit',
+                options=[Deception(), Persuade()],
             )
+        )
 
 
 class PendingMarinesMishap4SkillRoll(CareerSkillRollPendingBase):
@@ -141,29 +149,41 @@ class PendingMarinesEvent6SkillRoll(CareerSkillRollPendingBase):
             )
 
 
-class PendingMarinesEvent9(CareerChoicePendingBase):
-    kind: Literal['marines_event_9'] = 'marines_event_9'
+class MarinesEvent9Report(ChoiceBase):
+    kind: Literal['marines_event_9_report'] = 'marines_event_9_report'
+    label: str = 'Report the commander (DM+2 to next advancement, commander becomes Enemy)'
 
-    def on_choice(self, projection: CharacterProjection, event) -> None:
+    def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
-        if event.choice == 'report':
-            projection.summary.connections.append(Enemy(source='Commander (Marines event 9)'))
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger=EffectTrigger.ADVANCEMENT,
-                    source_event_id=event.id,
-                    effect={'type': EffectType.DM, 'amount': 2},
-                )
+        projection.summary.connections.append(
+            Enemy(source='Your commanding officer, whom you reported for the mission failure')
+        )
+        projection.scheduled_effects.append(
+            ScheduledEffect(
+                trigger=EffectTrigger.ADVANCEMENT,
+                source_event_id=event.id,
+                effect={'type': EffectType.DM, 'amount': 2},
             )
-        else:
-            projection.summary.connections.append(Ally(source='Commander (Marines event 9)'))
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger=EffectTrigger.ADVANCEMENT,
-                    source_event_id=event.id,
-                    effect={'type': EffectType.DM, 'amount': 1},
-                )
+        )
+        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+
+
+class MarinesEvent9Protect(ChoiceBase):
+    kind: Literal['marines_event_9_protect'] = 'marines_event_9_protect'
+    label: str = 'Protect the commander (DM+1 to next advancement, commander becomes Ally)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        career = projection.get_current_career()
+        projection.summary.connections.append(
+            Ally(source='Your commanding officer, whom you protected from the fallout')
+        )
+        projection.scheduled_effects.append(
+            ScheduledEffect(
+                trigger=EffectTrigger.ADVANCEMENT,
+                source_event_id=event.id,
+                effect={'type': EffectType.DM, 'amount': 1},
             )
+        )
         projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 
 
@@ -176,13 +196,13 @@ class MarinesMishap4Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingMarinesMishap4(
+            PendingChoices(
                 id=f'{event_id}.{pending_idx}',
                 instruction=(
-                    'Refuse (ejected, no Benefit, gain Contact among other soldiers) '
-                    'or accept (roll Deception or Persuade 8+: success = stay, fail = ejected, no Benefit)?'
+                    'Refuse (ejected, lose Benefit, gain Contact among other soldiers) '
+                    'or accept (roll Deception or Persuade 8+: success = stay, fail = ejected, lose Benefit)?'
                 ),
-                options=['refuse', 'accept'],
+                choices=[MarinesMishap4Refuse(), MarinesMishap4Accept()],
             )
         )
         return pending_idx + 1
@@ -196,7 +216,7 @@ class MarinesEvent5Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        return handle_advanced_training('Marines', 5, 'marines_event_5', projection, event_id, pending_idx)
+        return handle_advanced_training(projection, event_id, pending_idx)
 
 
 # ── event 6: assault on an enemy fortress ────────────────────────────────────
@@ -226,13 +246,13 @@ class MarinesEvent9Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingMarinesEvent9(
+            PendingChoices(
                 id=f'{event_id}.{pending_idx}',
                 instruction=(
                     'Report the commander (DM+2 to next advancement, commander becomes Enemy) '
                     'or protect them (DM+1 to next advancement, commander becomes Ally)?'
                 ),
-                options=['report', 'protect'],
+                choices=[MarinesEvent9Report(), MarinesEvent9Protect()],
             )
         )
         return pending_idx + 1

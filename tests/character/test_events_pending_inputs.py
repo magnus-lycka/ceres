@@ -214,7 +214,12 @@ def test_event_helpers_apply_simple_effects_and_skill_entries():
     _apply_skill_table_entry(projection, character_skills.Electronics(comms=character_skills.Level(value=1)))
 
     assert projection.summary.characteristics[Chars.STR] == 0
-    assert [connection.kind for connection in projection.summary.connections] == ['contact', 'ally', 'rival', 'enemy']
+    assert [connection.kind for connection in projection.summary.connections] == [
+        'connection_contact',
+        'connection_ally',
+        'connection_rival',
+        'connection_enemy',
+    ]
     assert projection.summary.parole_threshold == 0
     assert projection.summary.skill_level(character_skills.Admin) == 0
     assert projection.summary.skill_level(character_skills.Electronics) == 1
@@ -561,7 +566,9 @@ def test_pending_background_skills_builds_form_and_specs():
         instruction='Choose 2 background skills',
         options=[character_skills.Admin(), character_skills.Medic()],
     )
-    form = Form(skill='{"type":"Admin","level":{"value":0}}|{"type":"Medic","level":{"value":0}}')
+    admin_json = character_skills.Admin().model_dump_json()
+    medic_json = character_skills.Medic().model_dump_json()
+    form = Form(skill=f'{admin_json}|{medic_json}')
 
     form_event = pending.event_from_form(form)
     specs = pending.input_specs(_projection())
@@ -758,7 +765,7 @@ def test_characteristic_benefit_life_and_connection_pending_inputs():
     assert len(crisis.input_specs(_projection())) == 2
 
     life_choice = PendingLifeEventChoice(id='3.0', instruction='Life choice', roll=4)
-    assert life_choice.event_from_form(Form(connection_kind='enemy')) == ConnectionKindChoiceEvent(
+    assert life_choice.event_from_form(Form(connection_kind='connection_enemy')) == ConnectionKindChoiceEvent(
         connection_kind=ConnectionKind.ENEMY, fulfills='3.0'
     )
     assert isinstance(life_choice.input_specs(_projection())[0], Select)
@@ -766,7 +773,7 @@ def test_characteristic_benefit_life_and_connection_pending_inputs():
     connections = PendingConnectionsRoll(
         id='4.0', instruction='Connections', connection_type=ConnectionKind.RIVAL, options=['1', '2', '3']
     )
-    assert connections.event_from_form(Form(connection_type='enemy', count='3')) == ConnectionsRollEvent(
+    assert connections.event_from_form(Form(connection_type='connection_enemy', count='3')) == ConnectionsRollEvent(
         connection_type=ConnectionKind.ENEMY, count=3, fulfills='4.0'
     )
     assert isinstance(connections.input_specs(_projection())[0], Reference)
@@ -803,17 +810,32 @@ def test_precareer_specific_pending_inputs():
 # ── common_pending base class event_from_form / input_specs ──────────────────
 
 
-def test_career_choice_pending_base_event_from_form_and_input_specs():
-    from ceres.character.careers.navy import PendingNavyMishap4
+def test_pending_choices_event_from_form_and_input_specs():
+    from ceres.character.events import PendingChoices
+    from ceres.character.state import ChoiceBase
 
-    pending = PendingNavyMishap4(id='6.0', instruction='Choose', options=['responsible', 'not_responsible'])
+    class _FakeChoice(ChoiceBase):
+        kind: str = 'test_opt_a'
+        label: str = 'Option A'
 
-    event = pending.event_from_form(Form(choice='responsible'))
+        def handle(self, projection, event):
+            pass
+
+    choice_a = _FakeChoice()
+    choice_b = _FakeChoice(kind='test_opt_b', label='Option B')
+    pending = PendingChoices(id='6.0', instruction='Choose', choices=[choice_a, choice_b])
+
+    event = pending.event_from_form(Form(choice='test_opt_a'))
     assert isinstance(event, CareerChoiceEvent)
-    assert event.choice == 'responsible'
+    assert event.choice == 'test_opt_a'
     assert event.fulfills == '6.0'
 
-    assert pending.input_specs(_projection()) == []
+    specs = pending.input_specs(_projection())
+    assert len(specs) == 1
+    assert isinstance(specs[0], Select)
+    option_values = [value for _, value in specs[0].options]
+    assert 'test_opt_a' in option_values
+    assert 'test_opt_b' in option_values
 
 
 def test_career_skill_roll_pending_base_event_from_form_char_and_skill():
@@ -839,8 +861,8 @@ def test_career_skill_roll_pending_base_event_from_form_char_and_skill():
     assert edu_event.modified_roll == 9
     assert edu_event.fulfills == '8.0'
 
-    # Skill option
-    skill_event = pending.event_from_form(Form(skill='Electronics', modified_roll='8'))
+    # Skill option — form value is the discriminator (ELECTRONICS), not the display name
+    skill_event = pending.event_from_form(Form(skill=character_skills.Electronics().type, modified_roll='8'))
     assert isinstance(skill_event, SkillRollEvent)
     assert isinstance(skill_event.skill, character_skills.Electronics)
     assert skill_event.modified_roll == 8

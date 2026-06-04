@@ -50,7 +50,7 @@ class TestHomeworldChangeRequiredEvent:
             HomeworldChangeRequiredEvent(
                 id=3,
                 reason='You must leave your world.',
-                source_kind='life_event',
+                source_kind='life_event_move',
             ),
         ]
         return events, 4
@@ -87,7 +87,7 @@ class TestHomeworldChangeRequiredEvent:
         projection = replay(1, events)
 
         pending = next(p for p in projection.pending_inputs if isinstance(p, PendingHomeworldChangeRequired))
-        assert pending.source_kind == 'life_event'
+        assert pending.source_kind == 'life_event_move'
 
     def test_pending_id_derived_from_event_id(self):
         events, _ = self._events_with_required()
@@ -158,7 +158,7 @@ class TestHomeworldChangedEvent:
             HomeworldChangeRequiredEvent(
                 id=3,
                 reason='You move to another world.',
-                source_kind='life_event',
+                source_kind='life_event_move',
             ),
             HomeworldChangedEvent(id=4, fulfills='3.0', new_homeworld=MOCK_WORLD_2),
         ]
@@ -198,9 +198,9 @@ class TestHomeworldChangedEvent:
         events = [
             _started(1),
             _ucp_no_edu(2),
-            HomeworldChangeRequiredEvent(id=3, reason='First move.', source_kind='life_event'),
+            HomeworldChangeRequiredEvent(id=3, reason='First move.', source_kind='life_event_move'),
             HomeworldChangedEvent(id=4, fulfills='3.0', new_homeworld=MOCK_WORLD_2),
-            HomeworldChangeRequiredEvent(id=5, reason='Second move.', source_kind='life_event'),
+            HomeworldChangeRequiredEvent(id=5, reason='Second move.', source_kind='life_event_move'),
             HomeworldChangedEvent(id=6, fulfills='5.0', new_homeworld=MOCK_WORLD),
         ]
         projection = replay(1, events)
@@ -243,7 +243,7 @@ class TestLifeEvent9HomeworldTrigger:
         projection = replay(1, _drifter_at_life_event_9())
 
         pending = next(p for p in projection.pending_inputs if isinstance(p, PendingHomeworldChangeRequired))
-        assert pending.source_kind == 'life_event'
+        assert pending.source_kind == 'life_event_move'
 
     def test_roll_9_homeworld_unchanged_until_resolved(self):
         projection = replay(1, _drifter_at_life_event_9())

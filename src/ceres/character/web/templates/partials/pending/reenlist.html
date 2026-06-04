@@ -1,0 +1,16 @@
+<form hx-post="/ui/characters/{{ character_id }}/events"
+      hx-target="#pending-panel"
+      hx-swap="innerHTML"
+      hx-indicator="#spinner">
+  <input type="hidden" name="fulfills" value="{{ pi.id }}">
+  <div class="flex gap-3 mb-4">
+    <button type="submit" name="reenlist" value="true"
+            class="bg-cyan-700 hover:bg-cyan-600 text-white font-bold px-6 py-3 text-sm uppercase tracking-wide">
+      Reenlist
+    </button>
+    <button type="submit" name="reenlist" value="false"
+            class="bg-gray-700 hover:bg-gray-600 text-white font-bold px-6 py-3 text-sm uppercase tracking-wide">
+      Muster Out
+    </button>
+  </div>
+</form>

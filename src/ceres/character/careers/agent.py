@@ -37,12 +37,12 @@ from ceres.character.careers.career_data import (
 )
 from ceres.character.careers.common import handle_advanced_training
 from ceres.character.careers.common_pending import (
-    CareerChoicePendingBase,
     CareerSkillChoicePendingBase,
     CareerSkillRollPendingBase,
 )
 from ceres.character.characteristics import Chars, ConnectionKind
 from ceres.character.events import (
+    PendingChoices,
     PendingDoubleInjuryRoll,
     PendingMishap,
     PendingSkillChoice,
@@ -78,6 +78,7 @@ from ceres.character.skills import (
 )
 from ceres.character.state import (
     CharacterProjection,
+    ChoiceBase,
     Enemy,
 )
 
@@ -90,32 +91,45 @@ AGENT = Career(
 # ── Career-specific pending input types ──────────────────────────────────────
 
 
-class PendingAgentMishap2(CareerChoicePendingBase):
-    kind: Literal['agent_mishap_2'] = 'agent_mishap_2'
+class AgentMishap2Accept(ChoiceBase):
+    kind: Literal['agent_mishap_2_accept'] = 'agent_mishap_2_accept'
+    label: str = 'Accept (leave without further penalty, lose Benefit roll)'
 
-    def on_choice(self, projection: CharacterProjection, event) -> None:
+    def handle(self, projection: CharacterProjection, event) -> None:
+        from ceres.character.events import _apply_mishap_ejection
+
+        career = projection.get_current_career()
+        _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+
+
+class AgentMishap2Refuse(ChoiceBase):
+    kind: Literal['agent_mishap_2_refuse'] = 'agent_mishap_2_refuse'
+    label: str = 'Refuse (roll twice on Injury table, gain Enemy, choose any skill)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
         from ceres.character.events import _apply_mishap_ejection
 
         career = projection.get_current_career()
         pending_idx = 0
-        if event.choice == 'refuse':
-            projection.summary.connections.append(Enemy(source='Refused criminal deal (Agent mishap)'))
-            projection.pending_inputs.append(
-                PendingDoubleInjuryRoll(
-                    id=f'{event.id}.{pending_idx}',
-                    instruction='Refused: roll twice on the Injury table and provide both results — lower applies',
-                    options=['1', '2', '3', '4', '5', '6'],
-                )
+        projection.summary.connections.append(
+            Enemy(source="The criminal figure who offered you a deal and didn't take kindly to your refusal")
+        )
+        projection.pending_inputs.append(
+            PendingDoubleInjuryRoll(
+                id=f'{event.id}.{pending_idx}',
+                instruction='Refused: roll twice on the Injury table and provide both results — lower applies',
+                options=['1', '2', '3', '4', '5', '6'],
             )
-            pending_idx += 1
-            projection.pending_inputs.append(
-                PendingSkillChoice(
-                    id=f'{event.id}.{pending_idx}',
-                    instruction='Refused criminal deal: choose any skill to gain at level 1',
-                    options=[],
-                )
+        )
+        pending_idx += 1
+        projection.pending_inputs.append(
+            PendingSkillChoice(
+                id=f'{event.id}.{pending_idx}',
+                instruction='Refused criminal deal: choose any skill to gain at level 1',
+                options=[],
             )
-            pending_idx += 1
+        )
+        pending_idx += 1
         _apply_mishap_ejection(projection, career, event.id, pending_idx, lose_current_term=True)
 
 
@@ -138,15 +152,46 @@ class PendingAgentMishap3SkillRoll(CareerSkillRollPendingBase):
         muster_out_setup(projection, career, event.id, 0, lose_current_term=not succeed)
 
 
-class PendingAgentMishap5(CareerChoicePendingBase):
-    kind: Literal['agent_mishap_5'] = 'agent_mishap_5'
+class AgentMishap5Contact(ChoiceBase):
+    kind: Literal['agent_mishap_5_contact'] = 'agent_mishap_5_contact'
+    label: str = 'A Contact was hurt'
 
-    def on_choice(self, projection: CharacterProjection, event) -> None:
+    def handle(self, projection: CharacterProjection, event) -> None:
         from ceres.character.events import _apply_mishap_ejection
 
         career = projection.get_current_career()
         projection.summary.problems.append(
-            f'Agent mishap 5: your {event.choice} was hurt — roll twice on the Injury table for them '
+            'Agent mishap 5: a Contact was hurt — roll twice on the Injury table for them '
+            'and apply the lower result (NPC injury; no mechanical effect on your character).'
+        )
+        _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+
+
+class AgentMishap5Ally(ChoiceBase):
+    kind: Literal['agent_mishap_5_ally'] = 'agent_mishap_5_ally'
+    label: str = 'An Ally was hurt'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        from ceres.character.events import _apply_mishap_ejection
+
+        career = projection.get_current_career()
+        projection.summary.problems.append(
+            'Agent mishap 5: an Ally was hurt — roll twice on the Injury table for them '
+            'and apply the lower result (NPC injury; no mechanical effect on your character).'
+        )
+        _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+
+
+class AgentMishap5Family(ChoiceBase):
+    kind: Literal['agent_mishap_5_family'] = 'agent_mishap_5_family'
+    label: str = 'A family member was hurt'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        from ceres.character.events import _apply_mishap_ejection
+
+        career = projection.get_current_career()
+        projection.summary.problems.append(
+            'Agent mishap 5: a family member was hurt — roll twice on the Injury table for them '
             'and apply the lower result (NPC injury; no mechanical effect on your character).'
         )
         _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
@@ -207,13 +252,13 @@ class AgentMishap2Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingAgentMishap2(
+            PendingChoices(
                 id=f'{event_id}.{pending_idx}',
                 instruction=(
                     'Accept (leave without further penalty, lose Benefit roll as normal) or Refuse '
                     '(roll twice on Injury table take lower, gain Enemy, choose skill)?'
                 ),
-                options=['accept', 'refuse'],
+                choices=[AgentMishap2Accept(), AgentMishap2Refuse()],
             )
         )
         return pending_idx + 1
@@ -246,10 +291,10 @@ class AgentMishap5Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingAgentMishap5(
+            PendingChoices(
                 id=f'{event_id}.{pending_idx}',
                 instruction='Choose who was hurt: a Contact, an Ally, or a family member?',
-                options=['contact', 'ally', 'family'],
+                choices=[AgentMishap5Contact(), AgentMishap5Ally(), AgentMishap5Family()],
             )
         )
         return pending_idx + 1
@@ -281,7 +326,7 @@ class AgentEvent6Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        return handle_advanced_training('Agent', 6, 'agent_event_6', projection, event_id, pending_idx)
+        return handle_advanced_training(projection, event_id, pending_idx)
 
 
 # ── event 8: undercover mission ──────────────────────────────────────────────

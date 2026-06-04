@@ -13,10 +13,10 @@ class Chars(StrEnum):
 
 
 class ConnectionKind(StrEnum):
-    CONTACT = 'contact'
-    ALLY = 'ally'
-    RIVAL = 'rival'
-    ENEMY = 'enemy'
+    CONTACT = 'connection_contact'
+    ALLY = 'connection_ally'
+    RIVAL = 'connection_rival'
+    ENEMY = 'connection_enemy'
 
 
 # Default UCP order for Humaniti/Vilani. Per-sophont order is defined in the sophont object.

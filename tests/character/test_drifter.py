@@ -1,10 +1,13 @@
 """Tests for the Drifter career — barbarian, wanderer, and scavenger assignments."""
 
 from ceres.character.careers.drifter import (
-    PendingDrifterEvent3,
+    DrifterEvent3Accept,
+    DrifterEvent3Decline,
+    DrifterEvent9Accept,
+    DrifterEvent9Decline,
+    DrifterEvent9Injury,
+    DrifterEvent9Prison,
     PendingDrifterEvent8SkillRoll,
-    PendingDrifterEvent9,
-    PendingDrifterEvent9Choice2,
     PendingDrifterEvent9RollSkillRoll,
     PendingDrifterMishap5SkillRoll,
 )
@@ -17,6 +20,7 @@ from ceres.character.events import (
     MishapEvent,
     PendingAdvancement,
     PendingCareerChoice,
+    PendingChoices,
     PendingInitialTrainingChoice,
     PendingInjuryTable,
     PendingMusterOut,
@@ -180,16 +184,16 @@ class TestDrifterEvent3:
     def test_creates_event_pending_with_options(self):
         projection = replay(1, self._setup_to_event())
         pending = next(
-            (p for p in projection.pending_inputs if isinstance(p, PendingDrifterEvent3)),
+            (p for p in projection.pending_inputs if isinstance(p, PendingChoices)),
             None,
         )
         assert pending is not None
-        assert set(pending.options) == {'accept', 'decline'}
+        assert {type(c) for c in pending.choices} == {DrifterEvent3Accept, DrifterEvent3Decline}
 
     def test_accept_schedules_qualification_dm_4(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='accept'),
+            CareerChoiceEvent.for_choice(DrifterEvent3Accept, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
         qual_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.QUALIFICATION]
@@ -198,20 +202,20 @@ class TestDrifterEvent3:
     def test_decline_no_qualification_dm(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='decline'),
+            CareerChoiceEvent.for_choice(DrifterEvent3Decline, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
         qual_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.QUALIFICATION]
         assert len(qual_effects) == 0
 
     def test_both_choices_queue_advancement(self):
-        for choice in ('accept', 'decline'):
+        for choice_cls in (DrifterEvent3Accept, DrifterEvent3Decline):
             events = [
                 *self._setup_to_event(),
-                CareerChoiceEvent(id=7, fulfills='6.0', choice=choice),
+                CareerChoiceEvent.for_choice(choice_cls, id=7, fulfills='6.0'),
             ]
             projection = replay(1, events)
-            assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs), choice
+            assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs), choice_cls
 
 
 # ── event 8: attacked by enemies ─────────────────────────────────────────────
@@ -272,16 +276,16 @@ class TestDrifterEvent9:
     def test_creates_event_pending_with_options(self):
         projection = replay(1, self._setup_to_event())
         pending = next(
-            (p for p in projection.pending_inputs if isinstance(p, PendingDrifterEvent9)),
+            (p for p in projection.pending_inputs if isinstance(p, PendingChoices)),
             None,
         )
         assert pending is not None
-        assert set(pending.options) == {'accept', 'decline'}
+        assert {type(c) for c in pending.choices} == {DrifterEvent9Accept, DrifterEvent9Decline}
 
     def test_decline_queues_advancement(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='decline'),
+            CareerChoiceEvent.for_choice(DrifterEvent9Decline, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
@@ -289,7 +293,7 @@ class TestDrifterEvent9:
     def test_accept_creates_1d_roll_pending(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='accept'),
+            CareerChoiceEvent.for_choice(DrifterEvent9Accept, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingDrifterEvent9RollSkillRoll)), None)
@@ -299,21 +303,21 @@ class TestDrifterEvent9:
     def test_1d_roll_low_creates_injury_or_prison_choice(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='accept'),
+            CareerChoiceEvent.for_choice(DrifterEvent9Accept, id=7, fulfills='6.0'),
             SkillRollEvent(id=8, fulfills='7.0', skill=Admin(), modified_roll=1),
         ]
         projection = replay(1, events)
         pending = next(
-            (p for p in projection.pending_inputs if isinstance(p, PendingDrifterEvent9Choice2)),
+            (p for p in projection.pending_inputs if isinstance(p, PendingChoices)),
             None,
         )
         assert pending is not None
-        assert set(pending.options) == {'injury', 'prison'}
+        assert {type(c) for c in pending.choices} == {DrifterEvent9Injury, DrifterEvent9Prison}
 
     def test_1d_roll_low_also_queues_advancement(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='accept'),
+            CareerChoiceEvent.for_choice(DrifterEvent9Accept, id=7, fulfills='6.0'),
             SkillRollEvent(id=8, fulfills='7.0', skill=Admin(), modified_roll=2),
         ]
         projection = replay(1, events)
@@ -322,9 +326,9 @@ class TestDrifterEvent9:
     def test_injury_choice_creates_injury_table_pending(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='accept'),
+            CareerChoiceEvent.for_choice(DrifterEvent9Accept, id=7, fulfills='6.0'),
             SkillRollEvent(id=8, fulfills='7.0', skill=Admin(), modified_roll=1),
-            CareerChoiceEvent(id=9, fulfills='8.0', choice='injury'),
+            CareerChoiceEvent.for_choice(DrifterEvent9Injury, id=9, fulfills='8.0'),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingInjuryTable) for p in projection.pending_inputs)
@@ -332,9 +336,9 @@ class TestDrifterEvent9:
     def test_prison_choice_forces_prisoner_next_career(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='accept'),
+            CareerChoiceEvent.for_choice(DrifterEvent9Accept, id=7, fulfills='6.0'),
             SkillRollEvent(id=8, fulfills='7.0', skill=Admin(), modified_roll=2),
-            CareerChoiceEvent(id=9, fulfills='8.0', choice='prison'),
+            CareerChoiceEvent.for_choice(DrifterEvent9Prison, id=9, fulfills='8.0'),
         ]
         projection = replay(1, events)
         assert projection.forced_next_career is not None
@@ -343,7 +347,7 @@ class TestDrifterEvent9:
     def test_1d_roll_3_creates_injury_table(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='accept'),
+            CareerChoiceEvent.for_choice(DrifterEvent9Accept, id=7, fulfills='6.0'),
             SkillRollEvent(id=8, fulfills='7.0', skill=Admin(), modified_roll=3),
         ]
         projection = replay(1, events)
@@ -352,7 +356,7 @@ class TestDrifterEvent9:
     def test_1d_roll_high_schedules_extra_benefit_roll(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='accept'),
+            CareerChoiceEvent.for_choice(DrifterEvent9Accept, id=7, fulfills='6.0'),
             SkillRollEvent(id=8, fulfills='7.0', skill=Admin(), modified_roll=5),
         ]
         projection = replay(1, events)
@@ -362,7 +366,7 @@ class TestDrifterEvent9:
     def test_1d_roll_high_queues_advancement(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent(id=7, fulfills='6.0', choice='accept'),
+            CareerChoiceEvent.for_choice(DrifterEvent9Accept, id=7, fulfills='6.0'),
             SkillRollEvent(id=8, fulfills='7.0', skill=Admin(), modified_roll=4),
         ]
         projection = replay(1, events)

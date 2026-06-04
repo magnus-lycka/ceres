@@ -123,11 +123,7 @@
   <div class="text-sm space-y-1">
     {% for conn in summary.connections %}
     <div>
-      <span class="text-xs uppercase tracking-wide font-bold
-        {% if conn.kind == 'ally' %}text-green-400
-        {% elif conn.kind == 'contact' %}text-cyan-400
-        {% elif conn.kind == 'rival' %}text-yellow-400
-        {% else %}text-red-400{% endif %}">{{ conn.kind }}</span>
+      <span class="text-xs uppercase tracking-wide font-bold {{ conn.color_class }}">{{ conn.display_name }}</span>
       {% if conn.source %}
         <span class="text-gray-500 ml-2 text-xs">{{ conn.source }}</span>
       {% endif %}

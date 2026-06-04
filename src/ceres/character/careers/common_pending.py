@@ -20,7 +20,7 @@ def _build_career_skill_select_options(
     return [
         (
             opt.value if isinstance(opt, Chars) else type(opt).name(),
-            opt.value if isinstance(opt, Chars) else type(opt).name(),
+            opt.value if isinstance(opt, Chars) else type(opt).model_fields['type'].default,
         )
         for opt in options
     ]
