@@ -456,91 +456,90 @@ be separate:
 The important design goal is **not** to make `replay.py` smarter. Replay should
 stay stupid too.
 
-Replay's job should be limited to things like:
+Replay's job should be limited to:
 
 - read the ordered event log
 - find the fulfilled pending input, if any
 - hand the event and current projection to the responsible component
-- enforce only generic sequencing/integrity rules that are independent of
-  Traveller domain rules
-
-Replay should **not** need to understand much about careers, aging, injury,
-medical, draft, or other Traveller lifecycle rules.
-
-Instead, the system should move toward:
-
-- `events.py` as a set of standard envelopes / parcels / delivery rates:
-  pure event schemas and maybe a few generic helper types
-- domain modules owning their own lifecycle logic:
-  - pre-careers and careers own their own parts of the career lifecycle
-  - some non-career module owns the 0-18 / background phase
-  - some non-career module owns aging / injury / medical
-  - some higher-level lifecycle component owns birth-to-retirement flow
-- pending-input models split cleanly away from event schemas once the circular
-  dependency is removed
+- enforce only generic sequencing/integrity rules independent of Traveller rules
 
 In this picture:
 
 - replay is the mailman
 - events are envelopes
-- career / pre-career / lifecycle modules decide what messages mean
+- the fulfilled pending input IS the routing mechanism: it knows what kind of
+  handler to call, the same way a self-addressed envelope knows where it goes
+- domain modules (careers, pre-careers, TermData) decide what messages mean
 
-That implies a larger refactor:
+#### Lifecycle structure
 
-- remove `apply()` bodies from event classes
-- stop treating event objects as little command objects
-- route event handling to the responsible lifecycle component rather than
-  centralizing Traveller rule knowledge in replay
-- move pending-input classes out of `events.py` once events no longer depend on
-  them for replay behavior
+The character lifecycle is not complex enough to need an overarching lifecycle
+manager. It is just:
 
-Why this would pay off:
+1. Start character (`CharacterStartedEvent` seeds the UCP pending input)
+2. Select background skills
+3. Cycle around terms (career events → term handling → new pending inputs)
+4. Finish (near no-op)
 
-- `events.py` can become much smaller and more declarative
+Aging, mishap, life events, and injury all happen within terms. `TermData` (or
+the career term handling module) is the natural owner of that logic.
+
+The only events that arrive without a fulfilled pending input — `CareerEvent`,
+`MishapEvent`, `AgingEvent` — need a small dispatch registry from event kind to
+the module that handles them. Everything else is routed via the fulfilled
+pending.
+
+#### DB schema change
+
+Replace the current single-blob `character_events` column with two tables:
+
+- `events(id INTEGER PK, character_id FK, payload JSONB)` — one row per event,
+  `id` is the sequence number within the character's log
+- `pending_inputs(event_id INTEGER, seq INTEGER, character_id FK, payload JSONB,
+  PRIMARY KEY (event_id, seq))` — composite PK is exactly the identity used
+  today as the dotted string `"event_id.seq"`, just stored as two integers
+
+An event that fulfills a pending input stores `(fulfills_event_id, fulfills_seq)`
+— two integer columns — instead of the current `fulfills: str` field.
+
+The pending input table is still fully derived state: `(event_id, seq)` is
+deterministic across replays because the event log is immutable and replay is
+deterministic. The event log remains the source of truth. No authoritative
+pending-input storage is required; the table can be rebuilt by replaying.
+
+#### Decoupling events from pending inputs
+
+This schema change is the key to removing the circular Python dependency. Once
+events and pending inputs reference each other only by `(int, int)` — two
+columns in a DB row — neither class hierarchy needs to import the other at the
+Python level. Events are plain Pydantic models carrying a `fulfills` tuple.
+Pending inputs are plain Pydantic models carrying their `(event_id, seq)`
+identity. The relationship lives in the DB schema, not in Python types.
+
+#### What this would pay off
+
+- `events.py` becomes much smaller and more declarative
 - replay stays simple and auditable
-- domain knowledge lives with the components responsible for that phase of the
-  character lifecycle
+- domain knowledge lives with the components responsible for that phase
 - pending inputs can become their own module with a cleaner contract to the UI
-- tests can assert intended lifecycle behavior at the responsible module
-  boundary instead of validating `Event.apply()` blobs
+- tests assert lifecycle behaviour at the responsible module boundary instead of
+  inside `Event.apply()` blobs
 
-This is closely related to
-[docs/plan-event-and-pending-input-rethink.md](/Users/magnuslycka/work/ceres/docs/plan-event-and-pending-input-rethink.md),
-but it is a larger structural concern than that plan by itself.
+#### Relationship to the self-addressed envelope plan
 
-That plan focuses mainly on one important slice:
+[docs/plan-event-and-pending-input-rethink.md](plan-event-and-pending-input-rethink.md)
+is a good incremental first slice: it replaces stringly `PendingXxxChoice` /
+`on_choice()` dispatch with self-addressed envelopes. This todo describes the
+broader end state those changes are growing toward.
 
-- replacing stringly `PendingXxxChoice` / `on_choice()` branching with
-  self-addressed envelopes and a cleaner pending-input contract
+#### Migration slices
 
-This todo is about the wider architecture those changes are trying to grow
-toward:
-
-- events as standard message shapes
-- replay as transport only
-- lifecycle/domain modules as the owners of Traveller rules
-
-So the relationship is:
-
-- the pending-input rethink is a good incremental move within the current
-  system
-- this todo describes the broader end state that should make that rethink feel
-  native instead of transitional
-
-This probably wants to happen in slices:
-
-1. Identify lifecycle ownership boundaries first:
-   - 0-18/background
-   - pre-careers / careers
-   - aging / injury / medical
-   - overall creation lifecycle
-2. Introduce domain-owned handlers for a small event family while keeping
-   replay dumb
-3. Move pending-input models out of `events.py` once the circular dependency is
-   gone
-4. Delete `apply()` bodies incrementally
-5. Remove dead transitional abstractions left over from the old command-object
-   model
+1. Introduce domain-owned handlers for one small event family while keeping
+   replay dumb (careers are the natural first target via the fulfilled pending)
+2. Move pending-input classes out of `events.py` using identity-based
+   decoupling instead of import tricks
+3. Delete `apply()` bodies incrementally
+4. Remove dead transitional abstractions
 
 ### Replace remaining `CareerDispatchEffect` registry dispatch with effect subclasses
 
