@@ -105,5 +105,3 @@ class Manipulator(RobotPart):
 
 
 LegOrManipulator = Annotated[Leg | Manipulator, Field(discriminator='type')]
-
-__all__ = ['Leg', 'LegOrManipulator', 'Manipulator']

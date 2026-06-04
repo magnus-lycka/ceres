@@ -443,6 +443,105 @@ The current stringly-typed foundation is one source of bugs such as empty or
 ambiguous `career_decision` submissions and special-case rendering drift across
 different pending-input kinds.
 
+### Make replay a dumb mailman; move lifecycle rules out of `Event.apply()`
+
+`ceres.character.events` currently mixes several responsibilities that should
+be separate:
+
+- event schemas ("what message was sent")
+- state mutation / Traveller rule handling
+- pending-input definitions
+- generic lifecycle orchestration
+
+The important design goal is **not** to make `replay.py` smarter. Replay should
+stay stupid too.
+
+Replay's job should be limited to things like:
+
+- read the ordered event log
+- find the fulfilled pending input, if any
+- hand the event and current projection to the responsible component
+- enforce only generic sequencing/integrity rules that are independent of
+  Traveller domain rules
+
+Replay should **not** need to understand much about careers, aging, injury,
+medical, draft, or other Traveller lifecycle rules.
+
+Instead, the system should move toward:
+
+- `events.py` as a set of standard envelopes / parcels / delivery rates:
+  pure event schemas and maybe a few generic helper types
+- domain modules owning their own lifecycle logic:
+  - pre-careers and careers own their own parts of the career lifecycle
+  - some non-career module owns the 0-18 / background phase
+  - some non-career module owns aging / injury / medical
+  - some higher-level lifecycle component owns birth-to-retirement flow
+- pending-input models split cleanly away from event schemas once the circular
+  dependency is removed
+
+In this picture:
+
+- replay is the mailman
+- events are envelopes
+- career / pre-career / lifecycle modules decide what messages mean
+
+That implies a larger refactor:
+
+- remove `apply()` bodies from event classes
+- stop treating event objects as little command objects
+- route event handling to the responsible lifecycle component rather than
+  centralizing Traveller rule knowledge in replay
+- move pending-input classes out of `events.py` once events no longer depend on
+  them for replay behavior
+
+Why this would pay off:
+
+- `events.py` can become much smaller and more declarative
+- replay stays simple and auditable
+- domain knowledge lives with the components responsible for that phase of the
+  character lifecycle
+- pending inputs can become their own module with a cleaner contract to the UI
+- tests can assert intended lifecycle behavior at the responsible module
+  boundary instead of validating `Event.apply()` blobs
+
+This is closely related to
+[docs/plan-event-and-pending-input-rethink.md](/Users/magnuslycka/work/ceres/docs/plan-event-and-pending-input-rethink.md),
+but it is a larger structural concern than that plan by itself.
+
+That plan focuses mainly on one important slice:
+
+- replacing stringly `PendingXxxChoice` / `on_choice()` branching with
+  self-addressed envelopes and a cleaner pending-input contract
+
+This todo is about the wider architecture those changes are trying to grow
+toward:
+
+- events as standard message shapes
+- replay as transport only
+- lifecycle/domain modules as the owners of Traveller rules
+
+So the relationship is:
+
+- the pending-input rethink is a good incremental move within the current
+  system
+- this todo describes the broader end state that should make that rethink feel
+  native instead of transitional
+
+This probably wants to happen in slices:
+
+1. Identify lifecycle ownership boundaries first:
+   - 0-18/background
+   - pre-careers / careers
+   - aging / injury / medical
+   - overall creation lifecycle
+2. Introduce domain-owned handlers for a small event family while keeping
+   replay dumb
+3. Move pending-input models out of `events.py` once the circular dependency is
+   gone
+4. Delete `apply()` bodies incrementally
+5. Remove dead transitional abstractions left over from the old command-object
+   model
+
 ### Replace remaining `CareerDispatchEffect` registry dispatch with effect subclasses
 
 The `CareerHandlerBase` self-registration pattern is intentional and clean for

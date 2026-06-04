@@ -62,22 +62,6 @@ def _build_skill_choice_select_options(
     return results
 
 
-class CareerChoicePendingBase(PendingInputBase):
-    """Base for career event/mishap choice pendings.
-
-    Subclass and set kind, instruction, options, and override on_choice().
-    """
-
-    def event_from_form(self, form: Any) -> Any:
-        from ceres.character.events import CareerChoiceEvent
-        from ceres.character.input_specs import form_str
-
-        return CareerChoiceEvent(choice=form_str(form, 'choice', ''), fulfills=self.id)
-
-    def input_specs(self, projection: CharacterProjection) -> list[Any]:
-        return []
-
-
 class CareerSkillRollPendingBase(PendingInputBase):
     """Base for career skill roll pendings.
 

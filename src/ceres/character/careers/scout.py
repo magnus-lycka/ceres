@@ -35,6 +35,7 @@ from ceres.character.careers.career_data import (
 )
 from ceres.character.careers.common_pending import CareerSkillChoicePendingBase, CareerSkillRollPendingBase
 from ceres.character.characteristics import Chars, ConnectionKind
+from ceres.character.effect_enums import EffectType
 from ceres.character.events import (
     PendingMishap,
     PendingSkillChoice,
@@ -74,7 +75,6 @@ from ceres.character.state import (
     CharacterProjection,
     Contact,
     EffectTrigger,
-    EffectType,
     Enemy,
     ScheduledEffect,
 )

@@ -95,6 +95,3 @@ class RobotPart(CeresPart, RobotPartMixin):
 
     def model_post_init(self, __context: Any) -> None:
         super().model_post_init(__context)
-
-
-__all__ = ['RobotPart', 'RobotPartMixin']

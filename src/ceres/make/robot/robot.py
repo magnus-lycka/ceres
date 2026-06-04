@@ -616,6 +616,3 @@ class Robot(RobotBase):
         )
         spec.detail_sections = self._build_detail_sections()
         return spec
-
-
-__all__ = ['Robot']

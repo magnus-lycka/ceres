@@ -106,38 +106,3 @@ STEALTH_ITEM = ItemBenefit(key='stealth', label='Stealth')
 MELEE_ITEM = ItemBenefit(key='melee', label='Melee')
 RECON_ITEM = ItemBenefit(key='recon', label='Recon')
 STREETWISE_ITEM = ItemBenefit(key='streetwise', label='Streetwise')
-
-__all__ = [
-    # Item benefit constants
-    'ALLY',
-    'ARMOR',
-    'BLADE',
-    'COMBAT_IMPLANT',
-    'CONTACT',
-    'CYBERNETIC_IMPLANT',
-    'DECEPTION_ITEM',
-    'FAR_TRADER',
-    'FREE_TRADER',
-    'GUN',
-    'LAB_SHIP',
-    'MELEE_ITEM',
-    'PERSONAL_VEHICLE',
-    'PERSUADE_ITEM',
-    'RECON_ITEM',
-    'SAFARI_SHIP',
-    'SCIENTIFIC_EQUIPMENT',
-    'SCOUT_SHIP',
-    'SHIPS_BOAT',
-    'SHIP_SHARE',
-    'STEALTH_ITEM',
-    'STREETWISE_ITEM',
-    'SUBSIDISED_MERCHANT',
-    'TAS_MEMBERSHIP',
-    'WEAPON',
-    'YACHT',
-    'AnyBenefit',
-    'CharacteristicIncrease',
-    'ChoiceBenefit',
-    'CombinedBenefit',
-    'ItemBenefit',
-]

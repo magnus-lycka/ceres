@@ -29,6 +29,10 @@ from ceres.character.skills import (
     WorkerProfession,
 )
 from ceres.character.store import SqliteCharacterBackend
+from tests.character.helpers import MOCK_WORLD
+
+_MOCK_WORLD = MOCK_WORLD.model_dump()
+_BOSS = {'sophont': 'Vilani', 'name': 'Boss', 'homeworld': _MOCK_WORLD}
 
 
 @pytest.fixture
@@ -70,8 +74,10 @@ def test_api_lists_skills(memory_client):
 
 
 def test_api_creates_and_lists_characters(memory_client):
-    first = memory_client.post('/characters', json={'sophont': 'Vilani', 'name': 'Boss'})
-    second = memory_client.post('/characters', json={'sophont': 'Humaniti', 'player': 'Anders', 'name': 'Lynn Rashid'})
+    first = memory_client.post('/characters', json=_BOSS)
+    second = memory_client.post(
+        '/characters', json={'sophont': 'Humaniti', 'player': 'Anders', 'name': 'Lynn Rashid', 'homeworld': _MOCK_WORLD}
+    )
     listed = memory_client.get('/characters')
 
     assert first.status_code == 200
@@ -88,7 +94,7 @@ def test_api_creates_and_lists_characters(memory_client):
 
 
 def test_api_gets_character_by_id(memory_client):
-    memory_client.post('/characters', json={'sophont': 'Vilani', 'name': 'Boss'})
+    memory_client.post('/characters', json=_BOSS)
 
     response = memory_client.get('/characters/1')
 
@@ -104,7 +110,7 @@ def test_api_rejects_get_for_unknown_character(memory_client):
 
 
 def test_api_renames_character(memory_client):
-    memory_client.post('/characters', json={'sophont': 'Vilani', 'name': 'Boss'})
+    memory_client.post('/characters', json=_BOSS)
 
     renamed = memory_client.patch('/characters/1', json={'name': 'Flavius Rupert'})
     listed = memory_client.get('/characters')
@@ -127,7 +133,7 @@ def test_api_rejects_rename_for_unknown_character(memory_client):
 
 
 def test_api_rejects_empty_rename(memory_client):
-    memory_client.post('/characters', json={'sophont': 'Vilani', 'name': 'Boss'})
+    memory_client.post('/characters', json=_BOSS)
 
     renamed = memory_client.patch('/characters/1', json={'name': ''})
 
@@ -136,7 +142,7 @@ def test_api_rejects_empty_rename(memory_client):
 
 
 def test_api_creation_produces_pending_input_for_ucp(memory_client):
-    memory_client.post('/characters', json={'sophont': 'Vilani', 'name': 'Boss'})
+    memory_client.post('/characters', json=_BOSS)
 
     projection = memory_client.get('/characters/1/projection')
 
@@ -151,7 +157,7 @@ def test_api_creation_produces_pending_input_for_ucp(memory_client):
 
 
 def test_api_post_event_resolves_pending_ucp(memory_client):
-    memory_client.post('/characters', json={'sophont': 'Vilani', 'name': 'Boss'})
+    memory_client.post('/characters', json=_BOSS)
 
     response = memory_client.post(
         '/characters/1/events',
@@ -174,7 +180,7 @@ def test_api_post_event_resolves_pending_ucp(memory_client):
 
 
 def test_api_post_background_skills_resolves_pending(memory_client):
-    memory_client.post('/characters', json={'sophont': 'Vilani', 'name': 'Boss'})
+    memory_client.post('/characters', json=_BOSS)
     memory_client.post(
         '/characters/1/events',
         json={'kind': UcpEvent.model_fields['kind'].default, 'ucp': '7869A5', 'fulfills': '1.0'},
@@ -208,7 +214,7 @@ def test_api_post_background_skills_resolves_pending(memory_client):
 
 
 def test_api_post_background_skills_rejects_wrong_count(memory_client):
-    memory_client.post('/characters', json={'sophont': 'Vilani', 'name': 'Boss'})
+    memory_client.post('/characters', json=_BOSS)
     memory_client.post(
         '/characters/1/events',
         json={'kind': UcpEvent.model_fields['kind'].default, 'ucp': '7869A5', 'fulfills': '1.0'},
@@ -230,7 +236,7 @@ def test_api_post_background_skills_rejects_wrong_count(memory_client):
 
 
 def test_api_post_background_skills_rejects_invalid_skill(memory_client):
-    memory_client.post('/characters', json={'sophont': 'Vilani', 'name': 'Boss'})
+    memory_client.post('/characters', json=_BOSS)
     memory_client.post(
         '/characters/1/events',
         json={'kind': UcpEvent.model_fields['kind'].default, 'ucp': '7869A5', 'fulfills': '1.0'},
@@ -254,7 +260,7 @@ def test_api_post_background_skills_rejects_invalid_skill(memory_client):
 
 
 def test_api_post_event_rejects_unknown_fulfills(memory_client):
-    memory_client.post('/characters', json={'sophont': 'Vilani', 'name': 'Boss'})
+    memory_client.post('/characters', json=_BOSS)
 
     response = memory_client.post(
         '/characters/1/events',
@@ -265,7 +271,7 @@ def test_api_post_event_rejects_unknown_fulfills(memory_client):
 
 
 def test_api_post_event_rejects_unrelated_event_while_blocking(memory_client):
-    memory_client.post('/characters', json={'sophont': 'Vilani', 'name': 'Boss'})
+    memory_client.post('/characters', json=_BOSS)
 
     response = memory_client.post(
         '/characters/1/events',
@@ -282,7 +288,7 @@ def test_api_projection_404_for_unknown_character(memory_client):
 
 
 def test_api_events_records_typed_events(memory_client):
-    memory_client.post('/characters', json={'sophont': 'Vilani', 'name': 'Boss'})
+    memory_client.post('/characters', json=_BOSS)
     memory_client.post(
         '/characters/1/events',
         json={'kind': UcpEvent.model_fields['kind'].default, 'ucp': '7869A5', 'fulfills': '1.0'},
@@ -299,7 +305,7 @@ def test_api_events_records_typed_events(memory_client):
     assert e0['player'] == 'NPC'
     assert e0['name'] == 'Boss'
     assert e0['fulfills'] is None
-    assert e0['homeworld']['name'] == 'Terra'
+    assert e0['homeworld']['name'] == MOCK_WORLD.name
     assert event_list[1] == {
         'id': 2,
         'kind': UcpEvent.model_fields['kind'].default,
@@ -309,8 +315,8 @@ def test_api_events_records_typed_events(memory_client):
 
 
 def test_api_deletes_character(memory_client):
-    memory_client.post('/characters', json={'sophont': 'Vilani', 'name': 'Boss'})
-    memory_client.post('/characters', json={'sophont': 'Humaniti', 'name': 'Lynn'})
+    memory_client.post('/characters', json=_BOSS)
+    memory_client.post('/characters', json={'sophont': 'Humaniti', 'name': 'Lynn', 'homeworld': _MOCK_WORLD})
 
     deleted = memory_client.delete('/characters/1')
     listed = memory_client.get('/characters')
@@ -327,7 +333,7 @@ def test_api_delete_returns_404_for_unknown(memory_client):
 
 
 def _setup_through_background_skills(client) -> None:
-    client.post('/characters', json={'sophont': 'Vilani', 'name': 'Boss'})
+    client.post('/characters', json=_BOSS)
     client.post(
         '/characters/1/events',
         json={'kind': UcpEvent.model_fields['kind'].default, 'ucp': '7869A5', 'fulfills': '1.0'},

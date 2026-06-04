@@ -438,14 +438,3 @@ def UniversalTranslator() -> BrainSoftware:
     Bandwidth 3, TL12, Cr25,000. Installed in a robot brain's software suite.
     """
     return BrainSoftware(name='Universal Translator', bandwidth=3, tl=12, cost=25_000.0)
-
-
-__all__ = [
-    'AdvancedBrain',
-    'BasicBrain',
-    'PrimitiveBrain',
-    'RobotBrainUnion',
-    'SelfAwareBrain',
-    'UniversalTranslator',
-    'VeryAdvancedBrain',
-]

@@ -282,18 +282,3 @@ LocomotionUnion = Annotated[
     | ThrusterLocomotion,
     Field(discriminator='type'),
 ]
-
-__all__ = [
-    'AeroplaneLocomotion',
-    'AquaticLocomotion',
-    'GravLocomotion',
-    'HovercraftLocomotion',
-    'LocomotionUnion',
-    'NoneLocomotion',
-    'ThrusterLocomotion',
-    'TracksLocomotion',
-    'VtolLocomotion',
-    'WalkerLocomotion',
-    'WheelsAtvLocomotion',
-    'WheelsLocomotion',
-]

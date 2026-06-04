@@ -58,12 +58,3 @@ class RobotSpec:
 
     def rows_for_section(self, section: RobotSpecSection) -> list[RobotSpecRow]:
         return [r for r in self._rows if r.section is section]
-
-
-__all__ = [
-    'RobotDetailRow',
-    'RobotDetailSection',
-    'RobotSpec',
-    'RobotSpecRow',
-    'RobotSpecSection',
-]

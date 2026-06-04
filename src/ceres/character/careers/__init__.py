@@ -14,24 +14,6 @@ _CAREER_MODULE_NAMES: dict[str, str] = {
     'SCOUT': 'scout',
 }
 
-__all__ = [
-    'AGENT',
-    'ARMY',
-    'CITIZEN',
-    'DRIFTER',
-    'ENTERTAINER',
-    'MARINES',
-    'MERCHANT',
-    'NAVY',
-    'NOBLE',
-    'PRISONER',
-    'ROGUE',
-    'SCHOLAR',
-    'SCOUT',
-    'load_careers',
-    'selectable_careers',
-]
-
 
 def __getattr__(name: str):
     if name in _CAREER_MODULE_NAMES:

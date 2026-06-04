@@ -24,6 +24,7 @@ from ceres.character.careers.career_data import (
 )
 from ceres.character.careers.loader import load_careers
 from ceres.character.characteristics import Chars, ConnectionKind
+from ceres.character.effect_enums import EffectType
 from ceres.character.events import (
     AdvancementDmChoiceEvent,
     AdvancementEvent,
@@ -116,7 +117,6 @@ from ceres.character.state import (
     CharacterProjection,
     CharacterSummary,
     EffectTrigger,
-    EffectType,
     ScheduledEffect,
 )
 from tests.character.helpers import MOCK_WORLD

@@ -101,15 +101,3 @@ def base_available_slots(size: RobotSize, *, none_locomotion: bool) -> int:
     if none_locomotion:
         return ceil(base * 1.25)
     return base
-
-
-__all__ = [
-    'RobotSize',
-    'Trait',
-    'base_armour',
-    'base_available_slots',
-    'base_endurance_multiplier',
-    'chassis_entry',
-    'size_label',
-    'size_trait',
-]

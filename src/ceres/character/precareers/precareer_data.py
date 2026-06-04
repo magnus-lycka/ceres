@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from pydantic import BaseModel, ConfigDict
 
-from ceres.character.careers.career_data import AnyEffect, CharCheck, TermData
+from ceres.character.careers.career_data import CharCheck, TermData
 from ceres.character.events import PendingPreCareerSkillChoice
 from ceres.character.skills import AnySkill, Level, _level_fields
 from ceres.character.state import (
@@ -166,6 +166,3 @@ class PreCareerData(TermData):
         event: PreCareerGraduationEvent,
     ) -> None:
         """Default: no effects on failed graduation."""
-
-
-__all__ = ['AnyEffect', 'PreCareerData', 'PrecareerSkillEntry']

@@ -13,6 +13,3 @@ class RobotBase(Assembly):
 
     def parts_of_type(self, part_cls: type) -> list:
         return []
-
-
-__all__ = ['RobotBase']

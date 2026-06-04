@@ -249,6 +249,3 @@ def load_precareers() -> dict[str, PreCareerData]:
         ),
     ]
     return {precareer.name: precareer for precareer in precareers}
-
-
-__all__ = ['load_precareers']

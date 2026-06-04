@@ -276,6 +276,3 @@ class SectorWorldFilters:
             )
 
         return matches
-
-
-__all__ = ['DEFAULT_MILIEU', 'SectorWorldFilters', 'SectorWorldOptions', 'search_sectors']

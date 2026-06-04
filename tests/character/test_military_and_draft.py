@@ -156,7 +156,8 @@ def test_successful_commission_sets_officer_rank_and_skips_advancement():
 
 def test_qualification_dm_scheduled_effect_is_consumed_on_career_entry():
     from ceres.character.characteristics import Chars
-    from ceres.character.state import CharacterProjection, CharacterSummary, EffectTrigger, EffectType, ScheduledEffect
+    from ceres.character.effect_enums import EffectTrigger, EffectType
+    from ceres.character.state import CharacterProjection, CharacterSummary, ScheduledEffect
 
     careers = load_careers()
     army = careers['Army']

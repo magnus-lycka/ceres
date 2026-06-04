@@ -9,42 +9,13 @@ from ceres.character.sophonts import SOPHONT_NAMES, get_sophont
 from ceres.character.state import CharacterProjection
 from ceres.character.store import CharacterRow, SqliteCharacterBackend
 
-_DEFAULT_HOMEWORLD = TravellerMapWorld.model_validate(
-    {
-        'Name': 'Terra',
-        'Hex': '1827',
-        'UWP': 'A867A69-F',
-        'PBG': '700',
-        'Zone': '',
-        'Bases': 'N',
-        'Allegiance': 'ImSy',
-        'Stellar': 'G2 V',
-        'SS': 'C',
-        'Ix': '{ 5 }',
-        'Ex': '(H9G+5)',
-        'Cx': '[DC8F]',
-        'Nobility': 'BcCeEfFGH',
-        'Worlds': 12,
-        'ResourceUnits': 6050,
-        'Subsector': 6,
-        'Quadrant': 1,
-        'WorldX': 0,
-        'WorldY': 0,
-        'Remarks': 'Hi In Cx Cs',
-        'LegacyBaseCode': 'N',
-        'Sector': 'Solomani Rim',
-        'SubsectorName': 'Sol',
-        'SectorAbbreviation': 'Solo',
-        'AllegianceName': 'Third Imperium, Solomani Autonomous Region',
-    }
-)
-
 _event_adapter: TypeAdapter[AnyEvent] = TypeAdapter(AnyEvent)
 
 
 class CharacterCreate(BaseModel):
     sophont: str
     name: str
+    homeworld: TravellerMapWorld
     player: str = 'NPC'
 
 
@@ -99,7 +70,7 @@ def build_app(backend: SqliteCharacterBackend | None = None) -> FastAPI:
             raise HTTPException(status_code=400, detail=f'Unknown sophont: {character.sophont}')
         return backend.start(
             sophont=sophont,
-            homeworld=_DEFAULT_HOMEWORLD,
+            homeworld=character.homeworld,
             player=character.player,
             name=character.name,
         )

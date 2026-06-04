@@ -17,7 +17,6 @@ dependencies = [
     "platformdirs>=4.5.1",
     "pydantic>=2.12.5",
     "pydantic-core>=2.41.5",
-    "typer>=0.20.0",
     "typst>=0.14.8",
 ]
 [build-system]

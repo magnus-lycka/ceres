@@ -11,6 +11,3 @@ def format_credits(amount: float) -> str:
     if amount >= MCR:
         return f'MCr{amount / MCR:g}'
     return f'Cr{int(amount):,}'
-
-
-__all__ = ['format_credits', 'format_traits']

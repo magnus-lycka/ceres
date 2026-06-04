@@ -71,6 +71,3 @@ def _format_npc_skill(skill: AnySkill) -> list[str]:
     if len(set(levels)) == 1:
         return [f'{name} (all){_NBSP}{levels[0]}']
     return [f'{name} ({sname}){_NBSP}{lvl}' for sname, lvl in non_zero]
-
-
-__all__ = ['NpcSpec', 'format_npc_skills', 'spec_from_summary']

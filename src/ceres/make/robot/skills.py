@@ -335,14 +335,3 @@ class BrainSoftware(CeresModel):
     bandwidth: int
     tl: int = 0
     cost: float = 0.0
-
-
-__all__ = [
-    '_DEX_SKILLS',
-    'BrainSoftware',
-    'RobotProfession',
-    'SkillGrant',
-    'SkillPackage',
-    'Weapon',
-    'primitive_package_skills',
-]

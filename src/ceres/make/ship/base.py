@@ -24,6 +24,3 @@ class ShipBase(Assembly):
 
     def remaining_usable_tonnage(self) -> float:
         return 0.0
-
-
-__all__ = ['ShipBase']

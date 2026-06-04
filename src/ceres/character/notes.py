@@ -200,6 +200,3 @@ def generate_notes(
 def clear_notes_cache(path: Path = _DEFAULT_CACHE) -> None:
     """Delete the notes cache file. Equivalent to: rm ~/.cache/ceres/npc_notes.db"""
     path.unlink(missing_ok=True)
-
-
-__all__ = ['NpcNotesCache', 'build_prompt', 'clear_notes_cache', 'generate_notes']

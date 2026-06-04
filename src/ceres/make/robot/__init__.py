@@ -1,80 +1,39 @@
 from .brain import (
-    AdvancedBrain,
-    BasicBrain,
-    PrimitiveBrain,
-    RobotBrainUnion,
-    SelfAwareBrain,
-    UniversalTranslator,
-    VeryAdvancedBrain,
+    AdvancedBrain as AdvancedBrain,
+    BasicBrain as BasicBrain,
+    PrimitiveBrain as PrimitiveBrain,
+    RobotBrainUnion as RobotBrainUnion,
+    SelfAwareBrain as SelfAwareBrain,
+    UniversalTranslator as UniversalTranslator,
+    VeryAdvancedBrain as VeryAdvancedBrain,
 )
-from .chassis import RobotSize, Trait
+from .chassis import RobotSize as RobotSize, Trait as Trait
 from .locomotion import (
-    AeroplaneLocomotion,
-    AquaticLocomotion,
-    GravLocomotion,
-    HovercraftLocomotion,
-    LocomotionUnion,
-    NoneLocomotion,
-    ThrusterLocomotion,
-    TracksLocomotion,
-    VtolLocomotion,
-    WalkerLocomotion,
-    WheelsAtvLocomotion,
-    WheelsLocomotion,
+    AeroplaneLocomotion as AeroplaneLocomotion,
+    AquaticLocomotion as AquaticLocomotion,
+    GravLocomotion as GravLocomotion,
+    HovercraftLocomotion as HovercraftLocomotion,
+    LocomotionUnion as LocomotionUnion,
+    NoneLocomotion as NoneLocomotion,
+    ThrusterLocomotion as ThrusterLocomotion,
+    TracksLocomotion as TracksLocomotion,
+    VtolLocomotion as VtolLocomotion,
+    WalkerLocomotion as WalkerLocomotion,
+    WheelsAtvLocomotion as WheelsAtvLocomotion,
+    WheelsLocomotion as WheelsLocomotion,
 )
-from .manipulators import Leg, Manipulator
+from .manipulators import Leg as Leg, Manipulator as Manipulator
 from .options import (
-    AuditorySensor,
-    DroneInterface,
-    RobotTransceiver,
-    VideoScreen,
-    VisualSpectrumSensor,
-    VoderSpeaker,
-    WirelessDataLink,
-    default_suite,
+    AuditorySensor as AuditorySensor,
+    DroneInterface as DroneInterface,
+    RobotTransceiver as RobotTransceiver,
+    VideoScreen as VideoScreen,
+    VisualSpectrumSensor as VisualSpectrumSensor,
+    VoderSpeaker as VoderSpeaker,
+    WirelessDataLink as WirelessDataLink,
+    default_suite as default_suite,
 )
-from .parts import RobotPart, RobotPartMixin
-from .robot import Robot
-from .skills import BrainSoftware
-from .spec import RobotSpec, RobotSpecRow, RobotSpecSection
-
-__all__ = [
-    'AdvancedBrain',
-    'AeroplaneLocomotion',
-    'AquaticLocomotion',
-    'AuditorySensor',
-    'BasicBrain',
-    'BrainSoftware',
-    'DroneInterface',
-    'GravLocomotion',
-    'HovercraftLocomotion',
-    'Leg',
-    'LocomotionUnion',
-    'Manipulator',
-    'NoneLocomotion',
-    'PrimitiveBrain',
-    'Robot',
-    'RobotBrainUnion',
-    'RobotPart',
-    'RobotPartMixin',
-    'RobotSize',
-    'RobotSpec',
-    'RobotSpecRow',
-    'RobotSpecSection',
-    'RobotTransceiver',
-    'SelfAwareBrain',
-    'ThrusterLocomotion',
-    'TracksLocomotion',
-    'Trait',
-    'UniversalTranslator',
-    'VeryAdvancedBrain',
-    'VideoScreen',
-    'VisualSpectrumSensor',
-    'VoderSpeaker',
-    'VtolLocomotion',
-    'WalkerLocomotion',
-    'WheelsAtvLocomotion',
-    'WheelsLocomotion',
-    'WirelessDataLink',
-    'default_suite',
-]
+from .parts import RobotPart as RobotPart, RobotPartMixin as RobotPartMixin
+from .robot import Robot as Robot
+from .skills import BrainSoftware as BrainSoftware
+from .spec import RobotSpec as RobotSpec, RobotSpecRow as RobotSpecRow, RobotSpecSection as RobotSpecSection

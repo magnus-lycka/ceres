@@ -1,11 +1,11 @@
 from ceres.character.characteristics import Chars
+from ceres.character.effect_enums import EffectType
 from ceres.character.events import PendingPreCareerSkillChoice, PreCareerGraduationEvent
 from ceres.character.precareers.precareer_data import PreCareerData
 from ceres.character.skills import AnySkill, JackOfAllTrades, Level, Pilot
 from ceres.character.state import (
     CharacterProjection,
     EffectTrigger,
-    EffectType,
     ScheduledEffect,
 )
 
