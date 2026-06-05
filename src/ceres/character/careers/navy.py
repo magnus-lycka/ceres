@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import ClassVar, Literal
 
 from ceres.character.benefits import (
     PERSONAL_VEHICLE,
@@ -74,14 +74,6 @@ from ceres.character.state import (
     EffectTrigger,
     Enemy,
     ScheduledEffect,
-)
-
-NAVY = Career(
-    name='Navy',
-    description=(
-        'Members of the interstellar navy that patrols space between the stars. The navy has the responsibility '
-        'for the protection of society from foreign powers and lawless elements in the interstellar trade channels.'
-    ),
 )
 
 _MISHAP_3_SKILLS: dict[str, list] = {
@@ -238,16 +230,22 @@ class NavyEvent10Handler(CareerHandlerBase):
         return pending_idx + 1
 
 
-class NavyCareerData(CareerData):
-    pass
+class Navy(CareerData):
+    type: Literal['NAVY_CAREER'] = 'NAVY_CAREER'
 
+    career: ClassVar[Career] = Career(
+        name='Navy',
+        description=(
+            'Members of the interstellar navy that patrols space between the stars. The navy has the responsibility '
+            'for the protection of society from foreign powers and lawless elements in the interstellar trade channels.'
+        ),
+    )
+    qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.INT, target=6)
+    allows_assignment_change: ClassVar[bool] = True
+    commission: ClassVar[CharCheck | None] = CharCheck(characteristic=Chars.SOC, target=8)
+    draft_assignments: ClassVar[list[str]] = ['Line/Crew', 'Engineer/Gunner', 'Flight']
 
-CAREER_DATA = NavyCareerData(
-    career=NAVY,
-    allows_assignment_change=True,
-    qualification=CharCheck(characteristic=Chars.INT, target=6),
-    commission=CharCheck(characteristic=Chars.SOC, target=8),
-    assignments=[
+    assignments: ClassVar[list[AssignmentData]] = [
         AssignmentData(
             name='Line/Crew',
             description='You serve as a general crewman or officer on a ship of the line.',
@@ -266,8 +264,9 @@ CAREER_DATA = NavyCareerData(
             survival=CharCheck(characteristic=Chars.DEX, target=7),
             advancement=CharCheck(characteristic=Chars.EDU, target=5),
         ),
-    ],
-    skill_tables=CareerSkillTables(
+    ]
+
+    skill_tables: ClassVar[CareerSkillTables] = CareerSkillTables(
         personal_development=SkillTable(
             [
                 Chars.STR,
@@ -339,8 +338,9 @@ CAREER_DATA = NavyCareerData(
                 Electronics(),
             ]
         ),
-    ),
-    ranks={
+    )
+
+    ranks: ClassVar[dict[int, RankEntry]] = {
         0: RankEntry(rank=0, title='Crewman'),
         1: RankEntry(rank=1, title='Able Spacehand', bonus=RankBonus(skill=Mechanic(), level=1)),
         2: RankEntry(rank=2, title='Petty Officer, 3rd class', bonus=RankBonus(skill=VaccSuit(), level=1)),
@@ -348,16 +348,18 @@ CAREER_DATA = NavyCareerData(
         4: RankEntry(rank=4, title='Petty Officer, 1st class', bonus=RankBonus(characteristic=Chars.END, level=1)),
         5: RankEntry(rank=5, title='Chief Petty Officer'),
         6: RankEntry(rank=6, title='Master Chief'),
-    },
-    officer_ranks={
+    }
+
+    officer_ranks: ClassVar[dict[int, RankEntry]] = {
         1: RankEntry(rank=1, title='Ensign', bonus=RankBonus(skill=Melee(), level=1)),
         2: RankEntry(rank=2, title='Sublieutenant', bonus=RankBonus(skill=Leadership(), level=1)),
         3: RankEntry(rank=3, title='Lieutenant'),
         4: RankEntry(rank=4, title='Commander', bonus=RankBonus(skill=Tactics(), level=1)),
         5: RankEntry(rank=5, title='Captain', bonus=RankBonus(characteristic=Chars.SOC, level=1)),
         6: RankEntry(rank=6, title='Admiral', bonus=RankBonus(characteristic=Chars.SOC, level=1)),
-    },
-    muster_out=MusterOutData(
+    }
+
+    muster_out: ClassVar[MusterOutData] = MusterOutData(
         rows={
             1: MusterOutRow(cash=1000, benefit=ChoiceBenefit(options=[PERSONAL_VEHICLE, SHIP_SHARE])),
             2: MusterOutRow(cash=5000, benefit=CharacteristicIncrease(char=Chars.INT, amount=1)),
@@ -369,8 +371,9 @@ CAREER_DATA = NavyCareerData(
             6: MusterOutRow(cash=50000, benefit=ChoiceBenefit(options=[SHIPS_BOAT, SHIP_SHARE])),
             7: MusterOutRow(cash=50000, benefit=CharacteristicIncrease(char=Chars.SOC, amount=2)),
         }
-    ),
-    mishaps={
+    )
+
+    mishaps: ClassVar[dict[int, MishapEntry]] = {
         1: MishapEntry(
             text='Severely injured in action.',
             effects=[InjuryEffect(severity='severe')],
@@ -398,8 +401,9 @@ CAREER_DATA = NavyCareerData(
             text='Injured. Roll on the Injury table.',
             effects=[InjuryEffect(severity='from_table')],
         ),
-    },
-    events={
+    }
+
+    events: ClassVar[dict[int, CareerEventEntry]] = {
         2: CareerEventEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
             effects=[RollMishapEffect(leave=False)],
@@ -444,6 +448,7 @@ CAREER_DATA = NavyCareerData(
             text='You display heroism in battle, saving the whole ship.',
             effects=[AutoAdvanceEffect()],
         ),
-    },
-    draft_assignments=['Line/Crew', 'Engineer/Gunner', 'Flight'],
-)
+    }
+
+
+NAVY = Navy()

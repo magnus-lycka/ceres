@@ -2,6 +2,30 @@
 
 Moved from `docs/todo_maybe.md` once fully implemented.
 
+## Character creation: make career classes real rule-owning objects; unify with Career identity
+
+All 14 career modules converted from the `CAREER_DATA = XCareerData(...)` singleton
+pattern to `ClassVar`-based rule ownership. Each career module now declares one
+`CareerData` subclass with a `type: Literal['X_CAREER']` discriminator; all
+Traveller rules (qualification, assignments, skill tables, ranks, mishaps, events,
+muster-out) live as `ClassVar` attributes on the class.
+
+`CareerData._registry` and `__init_subclass__` registration replace the old
+`CAREER_DATA` module-attribute scan. `model_validator(mode='before')` enables
+round-trip deserialization of stored career references via the registry.
+
+`CharacterSummary.current_career`, `CharacterSummary.last_career`,
+`CareerTerm.career`, and `CharacterProjection.muster_out_career` /
+`forced_next_career` all changed from `Career` to `CareerData`. Module-level
+constants (`SCOUT`, `AGENT`, etc.) are now `CareerData` instances. All
+`term.career == self.career` comparisons replaced with `type(term.career) is
+type(self)` (or Pydantic equality for module-constant comparisons).
+
+The tiny `Career` frozen dataclass is no longer part of the public API or state
+model. It still exists as an internal `ClassVar[Career]` wrapper used for
+`name`/`source`/`description` in each career module — that final removal is
+tracked as a separate small cleanup item in `todo_maybe.md`.
+
 ## Character creation: typed skill instances in pending events
 
 `PendingCareerSkillRoll`, `PendingSkillChoice`, `PendingCareerSkillChoice`, and

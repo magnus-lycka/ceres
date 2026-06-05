@@ -1,15 +1,12 @@
-from typing import TYPE_CHECKING, Annotated, Any, Literal, cast, overload
+from typing import Annotated, Any, Literal, cast, overload
 
 from pydantic import BaseModel, Field, SerializeAsAny, model_validator
 
 from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.benefits import ItemBenefit
+from ceres.character.careers.career_data import CareerData
 from ceres.character.characteristics import Chars, ConnectionKind
 from ceres.character.effect_enums import EffectTrigger
-
-if TYPE_CHECKING:
-    from ceres.character.careers.career_data import CareerData
-from ceres.character.careers.career_data import Career
 from ceres.character.input_specs import InputSpec
 from ceres.character.skills import AnySkill, Level, Skill, _level_fields
 from ceres.character.sophonts import Sophont
@@ -208,7 +205,7 @@ class MusterOut(BaseModel):
 
 
 class CareerTerm(BaseModel):
-    career: Career
+    career: CareerData
     assignment: str
     assignment_index: int = 0
     commission: bool = False
@@ -245,10 +242,10 @@ class CharacterSummary(BaseModel):
         return self
 
     characteristics: dict[Chars, int] = Field(default_factory=dict)
-    current_career: Career | None = None
+    current_career: CareerData | None = None
     current_assignment: str | None = None
     current_assignment_index: int | None = None
-    last_career: Career | None = None
+    last_career: CareerData | None = None
     last_assignment: str | None = None  # assignment name after muster-out
     last_assignment_index: int | None = None
     rank: int | None = None
@@ -267,7 +264,7 @@ class CharacterSummary(BaseModel):
     )  # skills chosen during university (for graduation boost)
     parole_threshold: int | None = None  # Prisoner career: current Parole Threshold (3-12)
 
-    def latest_career_run_terms(self, career: Career) -> list[CareerTerm]:
+    def latest_career_run_terms(self, career: CareerData) -> list[CareerTerm]:
         terms: list[CareerTerm] = []
         for term in reversed(self.career_terms):
             if term.career != career:
@@ -336,8 +333,8 @@ class CharacterProjection(BaseModel):
     pending_inputs: list[SerializeAsAny[PendingInputBase]] = Field(default_factory=list)
     scheduled_effects: list[ScheduledEffect] = Field(default_factory=list)
     pending_reenlist: bool | None = None  # stores reenlist decision during aging chain
-    muster_out_career: Career | None = None
-    forced_next_career: Career | None = None  # set by prison-sending events; consumed by next career choice
+    muster_out_career: CareerData | None = None
+    forced_next_career: CareerData | None = None  # set by prison-sending events; consumed by next career choice
     prisoner_freed: bool = False  # set by _apply_prisoner_advancement when parole granted
 
     def has_blocking_pending(self) -> bool:
@@ -353,16 +350,10 @@ class CharacterProjection(BaseModel):
         self.summary.current_assignment_index = None
 
     def get_current_career(self) -> CareerData:
-        from ceres.character.careers.loader import load_careers
-
         current = self.summary.current_career
         if current is None:
             raise ReplayError('No active career')
-        careers = load_careers()
-        career = careers.get(current.name)
-        if career is None:
-            raise ReplayError(f'Unknown career: {current.name!r}')
-        return career
+        return current
 
     def fulfill_pending(self, event: Any) -> None:
         fulfills = event.fulfills

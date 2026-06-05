@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import ClassVar, Literal
 
 from ceres.character.benefits import (
     CYBERNETIC_IMPLANT,
@@ -81,12 +81,6 @@ from ceres.character.state import (
     ChoiceBase,
     Enemy,
 )
-
-AGENT = Career(
-    name='Agent',
-    description=('Law enforcement agencies, corporate operatives, spies and others who work in the shadows.'),
-)
-
 
 # ── Career-specific pending input types ──────────────────────────────────────
 
@@ -365,17 +359,18 @@ class AgentEvent11Handler(CareerHandlerBase):
         return pending_idx + 1
 
 
-class AgentCareerData(CareerData):
-    def prior_terms(self, terms, assignment: AssignmentData) -> list:
-        idx = self.assignment_index(assignment)
-        return [term for term in terms if term.career == self.career and term.assignment_index == idx]
+class Agent(CareerData):
+    type: Literal['AGENT_CAREER'] = 'AGENT_CAREER'
 
+    career: ClassVar[Career] = Career(
+        name='Agent',
+        description='Law enforcement agencies, corporate operatives, spies and others who work in the shadows.',
+    )
+    qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.INT, target=6)
+    allows_assignment_change: ClassVar[bool] = False
+    draft_assignments: ClassVar[list[str]] = ['Law Enforcement']
 
-CAREER_DATA = AgentCareerData(
-    career=AGENT,
-    allows_assignment_change=False,
-    qualification=CharCheck(characteristic=Chars.INT, target=6),
-    assignments=[
+    assignments: ClassVar[list[AssignmentData]] = [
         AssignmentData(
             name='Law Enforcement',
             description='You are a police officer or detective.',
@@ -394,8 +389,9 @@ CAREER_DATA = AgentCareerData(
             survival=CharCheck(characteristic=Chars.INT, target=5),
             advancement=CharCheck(characteristic=Chars.INT, target=7),
         ),
-    ],
-    skill_tables=CareerSkillTables(
+    ]
+
+    skill_tables: ClassVar[CareerSkillTables] = CareerSkillTables(
         personal_development=SkillTable(
             [
                 GunCombat(),
@@ -457,8 +453,9 @@ CAREER_DATA = AgentCareerData(
                 Streetwise(),
             ]
         ),
-    ),
-    ranks={
+    )
+
+    ranks: ClassVar[dict[int, RankEntry]] = {
         0: RankEntry(rank=0),
         1: RankEntry(rank=1, title='Agent', bonus=RankBonus(skill=Deception(), level=1)),
         2: RankEntry(rank=2, title='Field Agent', bonus=RankBonus(skill=Investigate(), level=1)),
@@ -466,8 +463,9 @@ CAREER_DATA = AgentCareerData(
         4: RankEntry(rank=4, title='Special Agent', bonus=RankBonus(skill=GunCombat(), level=1)),
         5: RankEntry(rank=5, title='Assistant Director'),
         6: RankEntry(rank=6, title='Director'),
-    },
-    ranks_by_assignment={
+    }
+
+    ranks_by_assignment: ClassVar[dict[int, dict[int, RankEntry]]] = {
         1: {  # Law Enforcement
             0: RankEntry(rank=0, title='Rookie'),
             1: RankEntry(rank=1, title='Corporal', bonus=RankBonus(skill=Streetwise(), level=1)),
@@ -477,8 +475,9 @@ CAREER_DATA = AgentCareerData(
             5: RankEntry(rank=5, title='Chief', bonus=RankBonus(skill=Admin(), level=1)),
             6: RankEntry(rank=6, title='Commissioner', bonus=RankBonus(characteristic=Chars.SOC, level=1)),
         },
-    },
-    muster_out=MusterOutData(
+    }
+
+    muster_out: ClassVar[MusterOutData] = MusterOutData(
         rows={
             1: MusterOutRow(cash=1000, benefit=SCIENTIFIC_EQUIPMENT),
             2: MusterOutRow(cash=2000, benefit=CharacteristicIncrease(char=Chars.INT, amount=1)),
@@ -491,8 +490,9 @@ CAREER_DATA = AgentCareerData(
             ),
             7: MusterOutRow(cash=50000, benefit=TAS_MEMBERSHIP),
         }
-    ),
-    mishaps={
+    )
+
+    mishaps: ClassVar[dict[int, MishapEntry]] = {
         1: MishapEntry(
             text='Severely injured. Alternatively, roll twice on the Injury table and take the lower result.',
             effects=[InjuryEffect(severity='severe')],
@@ -532,8 +532,9 @@ CAREER_DATA = AgentCareerData(
             text='Injured. Roll on the Injury table.',
             effects=[InjuryEffect(severity='from_table')],
         ),
-    },
-    events={
+    }
+
+    events: ClassVar[dict[int, CareerEventEntry]] = {
         2: CareerEventEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
             effects=[RollMishapEffect(leave=False)],
@@ -586,6 +587,11 @@ CAREER_DATA = AgentCareerData(
             text='Your efforts uncover a major conspiracy against your employers. You are automatically promoted.',
             effects=[AutoAdvanceEffect()],
         ),
-    },
-    draft_assignments=['Law Enforcement'],
-)
+    }
+
+    def prior_terms(self, terms, assignment: AssignmentData) -> list:
+        idx = self.assignment_index(assignment)
+        return [term for term in terms if type(term.career) is type(self) and term.assignment_index == idx]
+
+
+AGENT = Agent()

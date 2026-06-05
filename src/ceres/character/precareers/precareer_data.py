@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from pydantic import BaseModel, ConfigDict
 
-from ceres.character.careers.career_data import CharCheck, TermData
+from ceres.character.careers.career_data import CareerEventEntry, CharCheck, TermData
 from ceres.character.events import PendingPreCareerSkillChoice
 from ceres.character.skills import AnySkill, Level, _level_fields
 from ceres.character.state import (
@@ -64,6 +64,7 @@ def _skill_at_level(skill: AnySkill, level: int) -> AnySkill:
 
 
 class PreCareerData(TermData):
+    events: dict[int, CareerEventEntry]
     name: str
     source: str
     duration_years: int = 4

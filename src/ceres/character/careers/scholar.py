@@ -1,4 +1,4 @@
-from typing import Literal, cast
+from typing import ClassVar, Literal, cast
 
 from ceres.character.benefits import (
     LAB_SHIP,
@@ -72,14 +72,6 @@ from ceres.character.state import (
 
 _SCIENCES = skill_instances(ScienceSkill)
 
-SCHOLAR = Career(
-    name='Scholar',
-    description=(
-        'Individuals trained in technological or research sciences who conduct scientific '
-        'investigations into materials, situations and phenomena, or who practise medicine.'
-    ),
-)
-
 
 # ── mishap 3: planetary interference ─────────────────────────────────────────
 
@@ -147,7 +139,7 @@ class ScholarMishap5GiveUp(ChoiceBase):
         projection.pending_inputs = [p for p in projection.pending_inputs if not isinstance(p, PendingAdvancement)]
         projection.summary.age += 4
         if projection.summary.age >= 34:
-            projection.muster_out_career = career.career
+            projection.muster_out_career = career
             projection.clear_current_career()
             projection.pending_inputs.append(PendingAgingRoll(id=f'{event.id}.0', instruction='Roll 2D on Aging table'))
         else:
@@ -371,15 +363,20 @@ class ScholarEvent11Handler(CareerHandlerBase):
         return pending_idx + 1
 
 
-class ScholarCareerData(CareerData):
-    pass
+class Scholar(CareerData):
+    type: Literal['SCHOLAR_CAREER'] = 'SCHOLAR_CAREER'
 
+    career: ClassVar[Career] = Career(
+        name='Scholar',
+        description=(
+            'Individuals trained in technological or research sciences who conduct scientific '
+            'investigations into materials, situations and phenomena, or who practise medicine.'
+        ),
+    )
+    qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.INT, target=6)
+    allows_assignment_change: ClassVar[bool] = True
 
-CAREER_DATA = ScholarCareerData(
-    career=SCHOLAR,
-    allows_assignment_change=True,
-    qualification=CharCheck(characteristic=Chars.INT, target=6),
-    assignments=[
+    assignments: ClassVar[list[AssignmentData]] = [
         AssignmentData(
             name='Field Researcher',
             description='You are an explorer or field researcher, equally at home in the laboratory or wilderness.',
@@ -401,8 +398,9 @@ CAREER_DATA = ScholarCareerData(
             survival=CharCheck(characteristic=Chars.EDU, target=4),
             advancement=CharCheck(characteristic=Chars.EDU, target=8),
         ),
-    ],
-    skill_tables=CareerSkillTables(
+    ]
+
+    skill_tables: ClassVar[CareerSkillTables] = CareerSkillTables(
         personal_development=SkillTable(
             [
                 Chars.INT,
@@ -464,8 +462,9 @@ CAREER_DATA = ScholarCareerData(
                 skill_instances(ScienceSkill),
             ]
         ),
-    ),
-    ranks={
+    )
+
+    ranks: ClassVar[dict[int, RankEntry]] = {
         0: RankEntry(rank=0),
         1: RankEntry(rank=1, bonus=RankBonus(choices=_SCIENCES, level=1)),
         2: RankEntry(rank=2, bonus=RankBonus(skill=Electronics(), level=1)),
@@ -473,8 +472,9 @@ CAREER_DATA = ScholarCareerData(
         4: RankEntry(rank=4),
         5: RankEntry(rank=5, bonus=RankBonus(choices=_SCIENCES, level=2)),
         6: RankEntry(rank=6),
-    },
-    ranks_by_assignment={
+    }
+
+    ranks_by_assignment: ClassVar[dict[int, dict[int, RankEntry]]] = {
         3: {  # Physician
             0: RankEntry(rank=0),
             1: RankEntry(rank=1, bonus=RankBonus(skill=Medic(), level=1)),
@@ -484,8 +484,9 @@ CAREER_DATA = ScholarCareerData(
             5: RankEntry(rank=5, bonus=RankBonus(choices=_SCIENCES, level=2)),
             6: RankEntry(rank=6),
         },
-    },
-    muster_out=MusterOutData(
+    }
+
+    muster_out: ClassVar[MusterOutData] = MusterOutData(
         rows={
             1: MusterOutRow(cash=5000, benefit=CharacteristicIncrease(char=Chars.INT, amount=1)),
             2: MusterOutRow(cash=10000, benefit=CharacteristicIncrease(char=Chars.EDU, amount=1)),
@@ -495,8 +496,9 @@ CAREER_DATA = ScholarCareerData(
             6: MusterOutRow(cash=60000, benefit=LAB_SHIP),
             7: MusterOutRow(cash=100000, benefit=LAB_SHIP),
         }
-    ),
-    mishaps={
+    )
+
+    mishaps: ClassVar[dict[int, MishapEntry]] = {
         1: MishapEntry(
             text='Severely injured.',
             effects=[InjuryEffect(severity='severe')],
@@ -527,8 +529,9 @@ CAREER_DATA = ScholarCareerData(
             stay_in_career=True,
             effects=[GainRivalEffect()],
         ),
-    },
-    events={
+    }
+
+    events: ClassVar[dict[int, CareerEventEntry]] = {
         2: CareerEventEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
             effects=[RollMishapEffect(leave=False)],
@@ -578,5 +581,7 @@ CAREER_DATA = ScholarCareerData(
             text='Your work leads to a considerable breakthrough. You are automatically promoted.',
             effects=[AutoAdvanceEffect()],
         ),
-    },
-)
+    }
+
+
+SCHOLAR = Scholar()

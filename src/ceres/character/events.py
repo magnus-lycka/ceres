@@ -271,7 +271,7 @@ def _apply_mishap_ejection(
 
     projection.summary.age += 4
     if projection.summary.age >= 34:
-        projection.muster_out_career = career.career
+        projection.muster_out_career = career
         projection.clear_current_career()
         projection.pending_inputs.append(
             PendingAgingRoll(id=f'{source_event_id}.{pending_idx}', instruction='Roll 2D on Aging table')
@@ -581,7 +581,7 @@ class MishapEvent(EventBase):
             purge_career_pendings(projection)
             projection.summary.age += 4
             if projection.summary.age >= 34:
-                projection.muster_out_career = career.career
+                projection.muster_out_career = career
                 projection.clear_current_career()
                 projection.pending_inputs.append(
                     PendingAgingRoll(id=f'{self.id}.{pending_idx}', instruction='Roll 2D on Aging table')
@@ -886,13 +886,7 @@ class SkillTableEvent(EventBase):
         if projection.summary.current_career is not None:
             career = projection.get_current_career()
         elif projection.muster_out_career is not None:
-            from ceres.character.careers.loader import load_careers
-
-            careers = load_careers()
-            career_name = projection.muster_out_career.name
-            career = careers.get(career_name)
-            if career is None:
-                raise ReplayError(f'Career {career_name!r} not found after muster-out')
+            career = projection.muster_out_career
         else:
             raise ReplayError('No active career')
         table = career.skill_table(self.table)
@@ -908,7 +902,7 @@ class SkillTableEvent(EventBase):
         assignment_index = projection.summary.current_assignment_index or 0
         choices: list[AnySkill] | None = None
         if isinstance(entry, list):
-            choices = list(entry)
+            choices = cast(list[AnySkill], list(entry))
         elif not isinstance(entry, _Chars):
             skill_cls = type(entry)
             fields = _level_fields(skill_cls)
@@ -1289,15 +1283,10 @@ class MusterOutEvent(EventBase):
     roll: int  # 1D result (1-6), DMs already applied by player
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.careers.loader import load_careers
-
         muster_out_career = projection.muster_out_career
         if muster_out_career is None:
             raise ReplayError('No muster out career set')
-        careers = load_careers()
-        career = careers.get(muster_out_career.name)
-        if career is None or career.muster_out is None:
-            raise ReplayError(f'Career {muster_out_career.name!r} has no muster out table')
+        career = muster_out_career
         effective_roll = max(1, min(7, self.roll))
         row = career.muster_out.rows.get(effective_roll)
         if row is None:
@@ -1339,11 +1328,7 @@ class AgingCrisisEvent(EventBase):
     medical_roll: int = 0  # 1D result for medical cost; 0 if not paying
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.careers.loader import load_careers
-
-        career_obj = projection.summary.current_career or projection.muster_out_career
-        careers = load_careers()
-        career = careers.get(career_obj.name) if career_obj else None
+        career = projection.summary.current_career or projection.muster_out_career
         if self.paid:
             for char in list(projection.summary.characteristics.keys()):
                 if projection.summary.characteristics[char] == 0:
@@ -1749,17 +1734,13 @@ def queue_career_choice(projection: CharacterProjection, event_id: int, instruct
 
 
 def queue_reenlist_or_aging(projection: CharacterProjection, event_id: int, idx: int) -> None:
-    from ceres.character.careers.loader import load_careers
-
     if projection.prisoner_freed:
         projection.prisoner_freed = False
         projection.summary.age += 4
-        current_career = projection.summary.current_career
-        careers = load_careers()
-        career = careers.get(current_career.name) if current_career else None
+        career = projection.summary.current_career
         if projection.summary.age >= 34:
             if career:
-                projection.muster_out_career = career.career
+                projection.muster_out_career = career
             projection.pending_reenlist = False
             projection.clear_current_career()
             projection.pending_inputs.append(
@@ -1825,7 +1806,7 @@ def muster_out_setup(
     if clear_career:
         projection.clear_current_career()
     if roll_count > 0:
-        projection.muster_out_career = career.career
+        projection.muster_out_career = career
         for _ in range(roll_count):
             projection.pending_inputs.append(
                 PendingMusterOut(
@@ -1842,15 +1823,11 @@ def muster_out_setup(
 
 
 def complete_aging(projection: CharacterProjection, source_event_id: int) -> None:
-    from ceres.character.careers.loader import load_careers
-
     if projection.muster_out_career is not None:
-        careers = load_careers()
-        career = careers.get(projection.muster_out_career.name)
+        career = projection.muster_out_career
         lose = projection.pending_reenlist is None
         projection.muster_out_career = None
-        if career:
-            muster_out_setup(projection, career, source_event_id, 0, lose_current_term=lose, clear_career=False)
+        muster_out_setup(projection, career, source_event_id, 0, lose_current_term=lose, clear_career=False)
     else:
         career = projection.get_current_career() if projection.summary.current_career else None
         if career and career.allows_assignment_change and len(career.assignments) > 1:

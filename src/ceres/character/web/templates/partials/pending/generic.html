@@ -57,6 +57,14 @@
   {% elif spec.__class__.__name__ == 'InfoText' %}
   <p class="text-xs text-gray-500 mb-4">{{ spec.text }}</p>
 
+  {% elif spec.__class__.__name__ == 'SelectWorld' %}
+  <div class="mb-4">
+    <a href="{{ select_world_url(spec, character_id, pi.id) }}"
+       class="inline-flex items-center bg-amber-600 hover:bg-amber-500 text-black font-bold px-4 py-2 text-sm uppercase tracking-wide">
+      {{ spec.label }}
+    </a>
+  </div>
+
   {% endif %}
   {% endfor %}
 

@@ -301,13 +301,6 @@ def test_muster_out_and_benefit_choice_error_branches():
     with pytest.raises(ReplayError, match='No muster out career set'):
         MusterOutEvent(table='cash', roll=1).apply(_projection())
 
-    from ceres.character.careers.career_data import Career
-
-    projection = _projection()
-    projection.muster_out_career = Career(name='Nope')
-    with pytest.raises(ReplayError, match="Career 'Nope' has no muster out table"):
-        MusterOutEvent(table='cash', roll=1).apply(projection)
-
     with pytest.raises(ReplayError, match='must fulfill a PendingBenefitChoice'):
         BenefitChoiceEvent(choice_index=0).apply(_projection())
 
@@ -935,8 +928,8 @@ def test_career_skill_choice_pending_base_event_from_form_and_input_specs():
 def test_career_skill_choice_pending_base_on_skill_chosen_grants_skill_and_queues_progress():
     from typing import Literal
 
-    from ceres.character.careers.career_data import Career
     from ceres.character.careers.common_pending import CareerSkillChoicePendingBase
+    from ceres.character.careers.loader import load_careers
     from ceres.character.careers.scholar import PendingScholarScienceChoice
 
     class _PendingSkillChoice(CareerSkillChoicePendingBase):
@@ -946,12 +939,14 @@ def test_career_skill_choice_pending_base_on_skill_chosen_grants_skill_and_queue
         id = 10
         skill = character_skills.Admin()
 
+    scout = load_careers()['Scout']
+
     # Without advancement_precreated — should queue career progress
     pending = _PendingSkillChoice(id='1.0', instruction='Choose', options=[], advancement_precreated=False)
     proj = _projection(
         characteristics={Chars.STR: 7, Chars.DEX: 8, Chars.END: 6, Chars.INT: 9, Chars.EDU: 10, Chars.SOC: 5}
     )
-    proj.summary.current_career = Career(name='Scout')
+    proj.summary.current_career = scout
     proj.summary.current_assignment = 'Courier'
     proj.summary.current_assignment_index = 1
     before_count = len(proj.pending_inputs)
@@ -962,7 +957,7 @@ def test_career_skill_choice_pending_base_on_skill_chosen_grants_skill_and_queue
     # With advancement_precreated — should NOT queue career progress
     pending2 = PendingScholarScienceChoice(id='2.0', instruction='Choose', options=[], advancement_precreated=True)
     proj2 = _projection()
-    proj2.summary.current_career = Career(name='Scout')
+    proj2.summary.current_career = scout
     proj2.summary.current_assignment = 'Courier'
     proj2.summary.current_assignment_index = 1
     before2 = len(proj2.pending_inputs)

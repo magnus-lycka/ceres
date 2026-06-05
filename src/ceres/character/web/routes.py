@@ -2,7 +2,7 @@
 
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 from fastapi import APIRouter, Form, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -11,6 +11,7 @@ from fastapi.templating import Jinja2Templates
 from ceres.adapters.travellermap import TravellerMapWorld, fetch_world
 from ceres.character.careers.loader import load_careers
 from ceres.character.events import AnyEvent, PendingCareerChoice
+from ceres.character.input_specs import SelectWorld, WorldFilterCriteria
 from ceres.character.precareers import load_precareers
 from ceres.character.replay import ReplayError
 from ceres.character.report import render_npc_gallery_pdf
@@ -68,7 +69,7 @@ def _character_form_query_string(form_defaults: dict[str, str]) -> str:
     return urlencode({key: value for key, value in form_defaults.items() if value})
 
 
-def _world_picker_query(request: Request) -> str:
+def _world_picker_state(request: Request, *, include_filters: bool = True) -> list[tuple[str, str]]:
     keys = (
         'name',
         'sophont',
@@ -77,9 +78,57 @@ def _world_picker_query(request: Request) -> str:
         'homeworld_hex',
         'character_id',
         'fulfills',
+        'reference_sector',
         'reference_hex',
     )
-    return urlencode({key: value for key in keys if (value := request.query_params.get(key, '').strip())})
+    state = [(key, value) for key in keys if (value := request.query_params.get(key, '').strip())]
+    if include_filters:
+        if filters_active := request.query_params.get('filters', '').strip():
+            state.append(('filters', filters_active))
+        for group in (*_STRING_FILTER_GROUPS, *_INT_FILTER_GROUPS):
+            state.extend((group, value.strip()) for value in request.query_params.getlist(group) if value.strip())
+    return state
+
+
+def _world_picker_query(request: Request, *, include_filters: bool = True) -> str:
+    return urlencode(_world_picker_state(request, include_filters=include_filters))
+
+
+def _world_filter_pairs(filters: WorldFilterCriteria) -> list[tuple[str, str]]:
+    pairs: list[tuple[str, str]] = []
+    for group in (*_STRING_FILTER_GROUPS, *_INT_FILTER_GROUPS):
+        pairs.extend((group, value) for value in getattr(filters, group))
+    return pairs
+
+
+def _select_world_url(spec: SelectWorld, character_id: int, fulfills: str) -> str:
+    path = '/ui/worlds/sectors'
+    if spec.sector_abbreviation:
+        path = f'{path}/{quote(spec.sector_abbreviation)}'
+
+    query_pairs = [
+        ('character_id', str(character_id)),
+        ('fulfills', fulfills),
+    ]
+    if spec.reference_world is not None:
+        query_pairs.append(('reference_sector', spec.reference_world.sector_abbreviation))
+        query_pairs.append(('reference_hex', spec.reference_world.hex))
+    filter_pairs = _world_filter_pairs(spec.filters)
+    if filter_pairs:
+        query_pairs.append(('filters', '1'))
+        query_pairs.extend(filter_pairs)
+
+    return f'{path}?{urlencode(query_pairs)}'
+
+
+def _sector_coordinates(sector_abbreviation: str) -> tuple[int, int] | None:
+    abbreviation = sector_abbreviation.strip().lower()
+    if not abbreviation:
+        return None
+    for sector in search_sectors(sector_abbreviation):
+        if sector.abbreviation.lower() == abbreviation:
+            return sector.x, sector.y
+    return None
 
 
 def _selected_homeworld(form_defaults: dict[str, str]) -> TravellerMapWorld | None:
@@ -105,6 +154,7 @@ def _projection_context(projection: CharacterProjection, character_id: int) -> d
         'enriched_inputs': enriched_inputs,
         'careers': careers,
         'precareers': {name: pc for name, pc in load_precareers().items() if pc.is_available(projection.summary)},
+        'select_world_url': _select_world_url,
     }
 
 
@@ -205,6 +255,7 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
             context={
                 'form_defaults': form_defaults,
                 'picker_query': _world_picker_query(request),
+                'picker_state': _world_picker_state(request),
                 'character_id': character_id,
                 'fulfills': fulfills,
                 'back_url': (
@@ -234,11 +285,20 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
         character_id = request.query_params.get('character_id', '').strip()
         fulfills = request.query_params.get('fulfills', '').strip()
         sector = SectorWorldFilters.from_travellermap(sector_abbreviation)
+        reference_sector = request.query_params.get('reference_sector', '').strip()
         reference_hex = request.query_params.get('reference_hex', '').strip()
+        reference_sector_coordinates: tuple[int, int] | None = None
         if not reference_hex and character_id:
             projection = backend.get_projection(int(character_id))
             if projection is not None and projection.summary.homeworld.sector_abbreviation == sector_abbreviation:
                 reference_hex = projection.summary.homeworld.hex
+        if reference_hex:
+            if reference_sector and reference_sector != sector_abbreviation:
+                reference_sector_coordinates = _sector_coordinates(reference_sector)
+                if reference_sector_coordinates is None:
+                    reference_hex = ''
+            else:
+                reference_sector_coordinates = (sector.sector_x, sector.sector_y)
         selected_strings, selected_ints, filters_active = _selected_world_filters(request)
         applied_strings, applied_ints = _normalize_world_filters_for_matching(selected_strings, selected_ints, sector)
         world_query = request.query_params.get('world_query', '').strip()
@@ -256,14 +316,25 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
             tech_levels=applied_ints.get('tech_levels'),
             world_query=world_query,
             reference_hex=reference_hex or None,
+            reference_sector_x=reference_sector_coordinates[0] if reference_sector_coordinates is not None else None,
+            reference_sector_y=reference_sector_coordinates[1] if reference_sector_coordinates is not None else None,
         )
         world_distances = (
-            {world.hex: sector.world_distance_parsecs(reference_hex, world) for world in filtered_worlds}
-            if reference_hex
+            {
+                world.hex: sector.world_distance_parsecs(
+                    reference_hex,
+                    world,
+                    reference_sector_x=reference_sector_coordinates[0],
+                    reference_sector_y=reference_sector_coordinates[1],
+                )
+                for world in filtered_worlds
+            }
+            if reference_hex and reference_sector_coordinates is not None
             else {}
         )
         selected: dict[str, set[str]] = {**selected_strings, **selected_ints}
         picker_query = _world_picker_query(request)
+        reset_query = _world_picker_query(request, include_filters=False)
         return templates.TemplateResponse(
             request=request,
             name='sector_filters.html',
@@ -276,6 +347,7 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
                 'selected': selected,
                 'filters_active': filters_active,
                 'world_query': world_query,
+                'reference_sector': reference_sector,
                 'reference_hex': reference_hex,
                 'world_distances': world_distances,
                 'form_defaults': form_defaults,
@@ -285,8 +357,8 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
                 'select_homeworld_fulfills': fulfills,
                 'back_to_picker_url': f'/ui/worlds/sectors?{picker_query}' if picker_query else '/ui/worlds/sectors',
                 'reset_filters_url': (
-                    f'/ui/worlds/sectors/{sector.sector_abbreviation}?{picker_query}'
-                    if picker_query
+                    f'/ui/worlds/sectors/{sector.sector_abbreviation}?{reset_query}'
+                    if reset_query
                     else f'/ui/worlds/sectors/{sector.sector_abbreviation}'
                 ),
             },

@@ -17,7 +17,7 @@ from ceres.character.careers import (
     SCHOLAR,
     SCOUT,
 )
-from ceres.character.careers.career_data import Career
+from ceres.character.careers.career_data import CareerData
 from ceres.character.careers.loader import load_careers
 from ceres.character.events import (
     BackgroundSkillsEvent,
@@ -43,25 +43,11 @@ def _full_setup():
 
 
 class TestCareerClass:
-    def test_career_equality_by_value(self):
-        assert Career(name='Scout', source='Core') == Career(name='Scout', source='Core')
+    def test_career_equality_by_type(self):
+        assert load_careers()['Scout'] == SCOUT
 
     def test_career_inequality_different_name(self):
-        assert Career(name='Scout', source='Core') != Career(name='Army', source='Core')
-
-    def test_career_inequality_different_source(self):
-        assert Career(name='Scout', source='Core') != Career(name='Scout', source='Other')
-
-    def test_career_hashable(self):
-        c = Career(name='Scout', source='Core')
-        assert hash(c) == hash(Career(name='Scout', source='Core'))
-        s = {c}
-        assert Career(name='Scout', source='Core') in s
-
-    def test_career_immutable(self):
-        c = Career(name='Scout', source='Core')
-        with pytest.raises((TypeError, AttributeError)):
-            c.name = 'Army'  # type: ignore
+        assert SCOUT != ARMY
 
     def test_career_has_description(self):
         assert SCOUT.description != ''
@@ -135,42 +121,31 @@ class TestCareerConstants:
 
 
 class TestCareerDataCareerField:
-    def test_career_data_has_career_attribute(self):
+    def test_career_data_name_matches(self):
         careers = load_careers()
-        scout = careers['Scout']
-        assert hasattr(scout, 'career')
-        assert isinstance(scout.career, Career)
+        assert careers['Scout'].name == 'Scout'
+        assert careers['Prisoner'].name == 'Prisoner'
 
-    def test_career_data_career_name_matches(self):
-        careers = load_careers()
-        assert careers['Scout'].career.name == 'Scout'
-        assert careers['Prisoner'].career.name == 'Prisoner'
-
-    def test_career_data_career_source_is_core(self):
+    def test_career_data_source_is_core(self):
         careers = load_careers()
         for career_data in careers.values():
-            assert career_data.career.source == 'Core'
+            assert career_data.source == 'Core'
 
-    def test_career_data_name_property_delegates(self):
+    def test_career_data_equals_constant(self):
         careers = load_careers()
-        for career_data in careers.values():
-            assert career_data.name == career_data.career.name
-
-    def test_career_data_career_equals_constant(self):
-        careers = load_careers()
-        assert careers['Scout'].career == SCOUT
-        assert careers['Prisoner'].career == PRISONER
-        assert careers['Marines'].career == MARINES
+        assert careers['Scout'] == SCOUT
+        assert careers['Prisoner'] == PRISONER
+        assert careers['Marines'] == MARINES
 
 
 class TestCareerInState:
-    def test_current_career_is_career_object_after_joining(self):
+    def test_current_career_is_career_data_after_joining(self):
         events = [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
         ]
         projection = replay(1, events)
-        assert isinstance(projection.summary.current_career, Career)
+        assert isinstance(projection.summary.current_career, CareerData)
         assert projection.summary.current_career is not None
         assert projection.summary.current_career.name == 'Scout'
 
@@ -182,14 +157,14 @@ class TestCareerInState:
         projection = replay(1, events)
         assert projection.summary.current_career == SCOUT
 
-    def test_career_term_career_is_career_object(self):
+    def test_career_term_career_is_career_data(self):
         events = [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
         ]
         projection = replay(1, events)
         term = projection.summary.career_terms[0]
-        assert isinstance(term.career, Career)
+        assert isinstance(term.career, CareerData)
         assert term.career.name == 'Scout'
 
     def test_career_term_career_equals_constant(self):
@@ -200,14 +175,14 @@ class TestCareerInState:
         projection = replay(1, events)
         assert projection.summary.career_terms[0].career == SCOUT
 
-    def test_survive_keeps_current_career_as_career_object(self):
+    def test_survive_keeps_current_career_as_career_data(self):
         events = [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
             SurviveEvent(id=5, fulfills='4.0', roll=8),
         ]
         projection = replay(1, events)
-        assert isinstance(projection.summary.current_career, Career)
+        assert isinstance(projection.summary.current_career, CareerData)
         assert projection.summary.current_career == SCOUT
 
     def test_after_term_advancement_still_career_object(self):
@@ -272,7 +247,7 @@ class TestCareerDataCoverageGaps:
             character_id=1,
             summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD),
         )
-        proj.summary.career_terms.append(CareerTerm(career=army.career, assignment='Infantry', commission=True))
+        proj.summary.career_terms.append(CareerTerm(career=army, assignment='Infantry', commission=True))
         assert army.can_attempt_commission(proj) is False
 
     def test_can_attempt_commission_soc_check_after_two_terms(self):
@@ -291,8 +266,8 @@ class TestCareerDataCoverageGaps:
         )
         proj.summary.career_terms.extend(
             [
-                CareerTerm(career=army.career, assignment='Infantry'),
-                CareerTerm(career=army.career, assignment='Infantry'),
+                CareerTerm(career=army, assignment='Infantry'),
+                CareerTerm(career=army, assignment='Infantry'),
             ]
         )
         assert army.can_attempt_commission(proj) is False
@@ -308,7 +283,7 @@ class TestCareerDataCoverageGaps:
                 name='Test',
                 sophont=VILANI,
                 homeworld=MOCK_WORLD,
-                current_career=merchant.career,
+                current_career=merchant,
                 current_assignment='Merchant Marine',
                 current_assignment_index=1,
                 rank=4,

@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import ClassVar, Literal
 
 from ceres.character.benefits import (
     BLADE,
@@ -78,15 +78,6 @@ from ceres.character.state import (
     Rival,
     ScheduledEffect,
 )
-
-MERCHANT = Career(
-    name='Merchant',
-    description=(
-        'Members of a commercial enterprise. Merchants may crew the ships of the huge trading corporations '
-        'or they may work for independent free traders who carry chance cargoes and passengers between worlds.'
-    ),
-)
-
 
 # ── event 3: smuggling opportunity ───────────────────────────────────────────
 
@@ -221,15 +212,21 @@ class MerchantEvent9Handler(CareerHandlerBase):
         return handle_advanced_training(projection, event_id, pending_idx)
 
 
-class MerchantCareerData(CareerData):
-    pass
+class Merchant(CareerData):
+    type: Literal['MERCHANT_CAREER'] = 'MERCHANT_CAREER'
 
+    career: ClassVar[Career] = Career(
+        name='Merchant',
+        description=(
+            'Members of a commercial enterprise. Merchants may crew the ships of the huge trading corporations '
+            'or they may work for independent free traders who carry chance cargoes and passengers between worlds.'
+        ),
+    )
+    qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.INT, target=4)
+    allows_assignment_change: ClassVar[bool] = False
+    draft_assignments: ClassVar[list[str]] = ['Merchant Marine']
 
-CAREER_DATA = MerchantCareerData(
-    career=MERCHANT,
-    allows_assignment_change=False,
-    qualification=CharCheck(characteristic=Chars.INT, target=4),
-    assignments=[
+    assignments: ClassVar[list[AssignmentData]] = [
         AssignmentData(
             name='Merchant Marine',
             description='You work on one of the massive cargo haulers run by the Imperium or a megacorporation.',
@@ -248,8 +245,9 @@ CAREER_DATA = MerchantCareerData(
             survival=CharCheck(characteristic=Chars.EDU, target=5),
             advancement=CharCheck(characteristic=Chars.INT, target=7),
         ),
-    ],
-    skill_tables=CareerSkillTables(
+    ]
+
+    skill_tables: ClassVar[CareerSkillTables] = CareerSkillTables(
         personal_development=SkillTable(
             [
                 Chars.STR,
@@ -311,8 +309,9 @@ CAREER_DATA = MerchantCareerData(
                 Persuade(),
             ]
         ),
-    ),
-    ranks={
+    )
+
+    ranks: ClassVar[dict[int, RankEntry]] = {
         0: RankEntry(rank=0),
         1: RankEntry(rank=1, title='Senior Crewman', bonus=RankBonus(skill=Mechanic(), level=1)),
         2: RankEntry(rank=2, title='4th Officer'),
@@ -320,8 +319,9 @@ CAREER_DATA = MerchantCareerData(
         4: RankEntry(rank=4, title='2nd Officer', bonus=RankBonus(skill=Pilot(), level=1)),
         5: RankEntry(rank=5, title='1st Officer', bonus=RankBonus(characteristic=Chars.SOC, level=1)),
         6: RankEntry(rank=6, title='Captain'),
-    },
-    ranks_by_assignment={
+    }
+
+    ranks_by_assignment: ClassVar[dict[int, dict[int, RankEntry]]] = {
         2: {  # Free Trader
             0: RankEntry(rank=0),
             1: RankEntry(rank=1, bonus=RankBonus(skill=Persuade(), level=1)),
@@ -340,8 +340,9 @@ CAREER_DATA = MerchantCareerData(
             5: RankEntry(rank=5),
             6: RankEntry(rank=6),
         },
-    },
-    muster_out=MusterOutData(
+    }
+
+    muster_out: ClassVar[MusterOutData] = MusterOutData(
         rows={
             1: MusterOutRow(cash=1000, benefit=BLADE),
             2: MusterOutRow(cash=5000, benefit=CharacteristicIncrease(char=Chars.INT, amount=1)),
@@ -351,8 +352,9 @@ CAREER_DATA = MerchantCareerData(
             6: MusterOutRow(cash=40000, benefit=FREE_TRADER),
             7: MusterOutRow(cash=40000, benefit=FREE_TRADER),
         }
-    ),
-    mishaps={
+    )
+
+    mishaps: ClassVar[dict[int, MishapEntry]] = {
         1: MishapEntry(
             text='Severely injured.',
             effects=[InjuryEffect(severity='severe')],
@@ -377,8 +379,9 @@ CAREER_DATA = MerchantCareerData(
             text='Injured. Roll on the Injury table.',
             effects=[InjuryEffect(severity='from_table')],
         ),
-    },
-    events={
+    }
+
+    events: ClassVar[dict[int, CareerEventEntry]] = {
         2: CareerEventEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
             effects=[RollMishapEffect(leave=False)],
@@ -434,6 +437,7 @@ CAREER_DATA = MerchantCareerData(
             text='Your business or ship thrives. You are automatically promoted.',
             effects=[AutoAdvanceEffect()],
         ),
-    },
-    draft_assignments=['Merchant Marine'],
-)
+    }
+
+
+MERCHANT = Merchant()

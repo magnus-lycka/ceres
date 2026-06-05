@@ -584,7 +584,7 @@ class TestScholarMishap5:
                 sophont=VILANI,
                 homeworld=MOCK_WORLD,
                 age=30,
-                current_career=scholar.career,
+                current_career=scholar,
                 rank=1,
             ),
         )

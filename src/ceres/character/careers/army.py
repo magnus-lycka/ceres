@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import ClassVar, Literal
 
 from ceres.character.benefits import (
     ARMOR,
@@ -77,15 +77,6 @@ from ceres.character.state import (
     CharacterProjection,
     ChoiceBase,
 )
-
-ARMY = Career(
-    name='Army',
-    description=(
-        'Members of the planetary armed fighting forces. Soldiers deal with planetary '
-        'surface actions, battles and campaigns. Such individuals may also be mercenaries for hire.'
-    ),
-)
-
 
 # ── Career-specific pending input types ──────────────────────────────────────
 
@@ -181,16 +172,22 @@ class ArmyEvent8Handler(CareerHandlerBase):
         return handle_advanced_training(projection, event_id, pending_idx)
 
 
-class ArmyCareerData(CareerData):
-    pass
+class Army(CareerData):
+    type: Literal['ARMY_CAREER'] = 'ARMY_CAREER'
 
+    career: ClassVar[Career] = Career(
+        name='Army',
+        description=(
+            'Members of the planetary armed fighting forces. Soldiers deal with planetary '
+            'surface actions, battles and campaigns. Such individuals may also be mercenaries for hire.'
+        ),
+    )
+    qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.END, target=5)
+    allows_assignment_change: ClassVar[bool] = True
+    commission: ClassVar[CharCheck | None] = CharCheck(characteristic=Chars.SOC, target=8)
+    draft_assignments: ClassVar[list[str]] = ['Support', 'Infantry', 'Cavalry']
 
-CAREER_DATA = ArmyCareerData(
-    career=ARMY,
-    allows_assignment_change=True,
-    qualification=CharCheck(characteristic=Chars.END, target=5),
-    commission=CharCheck(characteristic=Chars.SOC, target=8),
-    assignments=[
+    assignments: ClassVar[list[AssignmentData]] = [
         AssignmentData(
             name='Support',
             description='You are an engineer, cook or in some other role behind the front lines.',
@@ -209,8 +206,9 @@ CAREER_DATA = ArmyCareerData(
             survival=CharCheck(characteristic=Chars.DEX, target=7),
             advancement=CharCheck(characteristic=Chars.INT, target=5),
         ),
-    ],
-    skill_tables=CareerSkillTables(
+    ]
+
+    skill_tables: ClassVar[CareerSkillTables] = CareerSkillTables(
         personal_development=SkillTable(
             [
                 Chars.STR,
@@ -282,8 +280,9 @@ CAREER_DATA = ArmyCareerData(
                 Electronics(sensors=Level(value=1)),
             ]
         ),
-    ),
-    ranks={
+    )
+
+    ranks: ClassVar[dict[int, RankEntry]] = {
         0: RankEntry(rank=0, title='Private', bonus=RankBonus(skill=GunCombat(), level=1)),
         1: RankEntry(rank=1, title='Lance Corporal', bonus=RankBonus(skill=Recon(), level=1)),
         2: RankEntry(rank=2, title='Corporal'),
@@ -291,16 +290,18 @@ CAREER_DATA = ArmyCareerData(
         4: RankEntry(rank=4, title='Sergeant'),
         5: RankEntry(rank=5, title='Gunnery Sergeant'),
         6: RankEntry(rank=6, title='Sergeant Major'),
-    },
-    officer_ranks={
+    }
+
+    officer_ranks: ClassVar[dict[int, RankEntry]] = {
         1: RankEntry(rank=1, title='Lieutenant', bonus=RankBonus(skill=Leadership(), level=1)),
         2: RankEntry(rank=2, title='Captain'),
         3: RankEntry(rank=3, title='Major', bonus=RankBonus(skill=Tactics(), level=1)),
         4: RankEntry(rank=4, title='Lieutenant Colonel'),
         5: RankEntry(rank=5, title='Colonel'),
         6: RankEntry(rank=6, title='General', bonus=RankBonus(characteristic=Chars.SOC, level=1)),
-    },
-    muster_out=MusterOutData(
+    }
+
+    muster_out: ClassVar[MusterOutData] = MusterOutData(
         rows={
             1: MusterOutRow(cash=2000, benefit=CYBERNETIC_IMPLANT),
             2: MusterOutRow(cash=5000, benefit=CharacteristicIncrease(char=Chars.INT, amount=1)),
@@ -313,8 +314,9 @@ CAREER_DATA = ArmyCareerData(
             ),
             7: MusterOutRow(cash=30000, benefit=CharacteristicIncrease(char=Chars.SOC, amount=1)),
         }
-    ),
-    mishaps={
+    )
+
+    mishaps: ClassVar[dict[int, MishapEntry]] = {
         1: MishapEntry(
             text='Severely injured in action.',
             effects=[InjuryEffect(severity='severe')],
@@ -340,8 +342,9 @@ CAREER_DATA = ArmyCareerData(
             text='Injured. Roll on the Injury table.',
             effects=[InjuryEffect(severity='from_table')],
         ),
-    },
-    events={
+    }
+
+    events: ClassVar[dict[int, CareerEventEntry]] = {
         2: CareerEventEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
             effects=[RollMishapEffect(leave=False)],
@@ -386,6 +389,7 @@ CAREER_DATA = ArmyCareerData(
             text='You display heroism in battle. You may gain a promotion or a commission automatically.',
             effects=[AutoAdvanceEffect()],
         ),
-    },
-    draft_assignments=['Support', 'Infantry', 'Cavalry'],
-)
+    }
+
+
+ARMY = Army()

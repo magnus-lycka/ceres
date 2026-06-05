@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import ClassVar, Literal
 
 from ceres.character.benefits import (
     ALLY,
@@ -84,15 +84,6 @@ from ceres.character.state import (
     Rival,
     ScheduledEffect,
 )
-
-CITIZEN = Career(
-    name='Citizen',
-    description=(
-        'Individuals serving in a corporation, bureaucracy or '
-        'industry, or who are making a new life on an untamed planet.'
-    ),
-)
-
 
 # ── Career-specific choice and pending types ──────────────────────────────────
 
@@ -292,16 +283,20 @@ class CitizenEvent8Handler(CareerHandlerBase):
         return pending_idx + 1
 
 
-class CitizenCareerData(CareerData):
-    def _basic_training_table_name(self, assignment) -> str:
-        return assignment.name.lower()
+class Citizen(CareerData):
+    type: Literal['CITIZEN_CAREER'] = 'CITIZEN_CAREER'
 
+    career: ClassVar[Career] = Career(
+        name='Citizen',
+        description=(
+            'Individuals serving in a corporation, bureaucracy or '
+            'industry, or who are making a new life on an untamed planet.'
+        ),
+    )
+    qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.EDU, target=5)
+    allows_assignment_change: ClassVar[bool] = False
 
-CAREER_DATA = CitizenCareerData(
-    career=CITIZEN,
-    allows_assignment_change=False,
-    qualification=CharCheck(characteristic=Chars.EDU, target=5),
-    assignments=[
+    assignments: ClassVar[list[AssignmentData]] = [
         AssignmentData(
             name='Corporate',
             description='You are an executive or manager in a large corporation.',
@@ -320,8 +315,9 @@ CAREER_DATA = CitizenCareerData(
             survival=CharCheck(characteristic=Chars.INT, target=7),
             advancement=CharCheck(characteristic=Chars.END, target=5),
         ),
-    ],
-    skill_tables=CareerSkillTables(
+    ]
+
+    skill_tables: ClassVar[CareerSkillTables] = CareerSkillTables(
         personal_development=SkillTable(
             [
                 Chars.EDU,
@@ -383,8 +379,9 @@ CAREER_DATA = CitizenCareerData(
                 Recon(),
             ]
         ),
-    ),
-    ranks={
+    )
+
+    ranks: ClassVar[dict[int, RankEntry]] = {
         0: RankEntry(rank=0),
         1: RankEntry(rank=1),
         2: RankEntry(rank=2),
@@ -392,8 +389,9 @@ CAREER_DATA = CitizenCareerData(
         4: RankEntry(rank=4),
         5: RankEntry(rank=5),
         6: RankEntry(rank=6),
-    },
-    ranks_by_assignment={
+    }
+
+    ranks_by_assignment: ClassVar[dict[int, dict[int, RankEntry]]] = {
         1: {  # Corporate
             0: RankEntry(rank=0),
             1: RankEntry(rank=1),
@@ -423,8 +421,9 @@ CAREER_DATA = CitizenCareerData(
             5: RankEntry(rank=5),
             6: RankEntry(rank=6, bonus=RankBonus(skill=GunCombat(), level=1)),
         },
-    },
-    muster_out=MusterOutData(
+    }
+
+    muster_out: ClassVar[MusterOutData] = MusterOutData(
         rows={
             1: MusterOutRow(cash=2000, benefit=SHIP_SHARE),
             2: MusterOutRow(cash=5000, benefit=ALLY),
@@ -434,8 +433,9 @@ CAREER_DATA = CitizenCareerData(
             6: MusterOutRow(cash=50000, benefit=SHIP_SHARE, count=2),
             7: MusterOutRow(cash=100000, benefit=TAS_MEMBERSHIP),
         }
-    ),
-    mishaps={
+    )
+
+    mishaps: ClassVar[dict[int, MishapEntry]] = {
         1: MishapEntry(
             text='Severely injured.',
             effects=[InjuryEffect(severity='severe')],
@@ -462,8 +462,9 @@ CAREER_DATA = CitizenCareerData(
             text='Injured. Roll on the Injury table.',
             effects=[InjuryEffect(severity='from_table')],
         ),
-    },
-    events={
+    }
+
+    events: ClassVar[dict[int, CareerEventEntry]] = {
         2: CareerEventEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
             effects=[RollMishapEffect(leave=False)],
@@ -508,5 +509,10 @@ CAREER_DATA = CitizenCareerData(
             text='You rise to a position of power. You are automatically promoted.',
             effects=[AutoAdvanceEffect()],
         ),
-    },
-)
+    }
+
+    def _basic_training_table_name(self, assignment) -> str:
+        return assignment.name.lower()
+
+
+CITIZEN = Citizen()

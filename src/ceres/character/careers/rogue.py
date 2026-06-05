@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import ClassVar, Literal
 
 from ceres.character.benefits import (
     ARMOR,
@@ -77,12 +77,6 @@ from ceres.character.state import (
     Rival,
     ScheduledEffect,
 )
-
-ROGUE = Career(
-    name='Rogue',
-    description=('Criminal elements familiar with the rougher or more illegal methods of attaining goals.'),
-)
-
 
 # ── mishap 2: arrested ────────────────────────────────────────────────────────
 
@@ -307,15 +301,17 @@ class RogueEvent9Handler(CareerHandlerBase):
         return pending_idx + 1
 
 
-class RogueCareerData(CareerData):
-    pass
+class Rogue(CareerData):
+    type: Literal['ROGUE_CAREER'] = 'ROGUE_CAREER'
 
+    career: ClassVar[Career] = Career(
+        name='Rogue',
+        description='Criminal elements familiar with the rougher or more illegal methods of attaining goals.',
+    )
+    qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.DEX, target=6)
+    allows_assignment_change: ClassVar[bool] = True
 
-CAREER_DATA = RogueCareerData(
-    career=ROGUE,
-    allows_assignment_change=True,
-    qualification=CharCheck(characteristic=Chars.DEX, target=6),
-    assignments=[
+    assignments: ClassVar[list[AssignmentData]] = [
         AssignmentData(
             name='Thief',
             description='You steal from the rich and give to… well, yourself, actually.',
@@ -334,8 +330,9 @@ CAREER_DATA = RogueCareerData(
             survival=CharCheck(characteristic=Chars.DEX, target=6),
             advancement=CharCheck(characteristic=Chars.INT, target=6),
         ),
-    ],
-    skill_tables=CareerSkillTables(
+    ]
+
+    skill_tables: ClassVar[CareerSkillTables] = CareerSkillTables(
         personal_development=SkillTable(
             [
                 Carouse(),
@@ -397,8 +394,9 @@ CAREER_DATA = RogueCareerData(
                 Melee(),
             ]
         ),
-    ),
-    ranks={
+    )
+
+    ranks: ClassVar[dict[int, RankEntry]] = {
         0: RankEntry(rank=0),
         1: RankEntry(rank=1, bonus=RankBonus(skill=Stealth(), level=1)),
         2: RankEntry(rank=2),
@@ -406,8 +404,9 @@ CAREER_DATA = RogueCareerData(
         4: RankEntry(rank=4),
         5: RankEntry(rank=5, bonus=RankBonus(skill=Recon(), level=1)),
         6: RankEntry(rank=6),
-    },
-    ranks_by_assignment={
+    }
+
+    ranks_by_assignment: ClassVar[dict[int, dict[int, RankEntry]]] = {
         1: {  # Thief
             0: RankEntry(rank=0),
             1: RankEntry(rank=1, bonus=RankBonus(skill=Stealth(), level=1)),
@@ -435,8 +434,9 @@ CAREER_DATA = RogueCareerData(
             5: RankEntry(rank=5, title='Leader', bonus=RankBonus(skill=Leadership(), level=1)),
             6: RankEntry(rank=6, title='Captain'),
         },
-    },
-    muster_out=MusterOutData(
+    }
+
+    muster_out: ClassVar[MusterOutData] = MusterOutData(
         rows={
             1: MusterOutRow(cash=0, benefit=SHIP_SHARE),
             2: MusterOutRow(cash=0, benefit=WEAPON),
@@ -446,8 +446,9 @@ CAREER_DATA = RogueCareerData(
             6: MusterOutRow(cash=100000, benefit=CharacteristicIncrease(char=Chars.DEX, amount=1)),
             7: MusterOutRow(cash=100000, benefit=SHIP_SHARE, count=2),
         }
-    ),
-    mishaps={
+    )
+
+    mishaps: ClassVar[dict[int, MishapEntry]] = {
         1: MishapEntry(
             text='Severely injured.',
             effects=[InjuryEffect(severity='severe')],
@@ -477,8 +478,9 @@ CAREER_DATA = RogueCareerData(
             text='Injured. Roll on the Injury table.',
             effects=[InjuryEffect(severity='from_table')],
         ),
-    },
-    events={
+    }
+
+    events: ClassVar[dict[int, CareerEventEntry]] = {
         2: CareerEventEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
             effects=[RollMishapEffect(leave=False)],
@@ -523,5 +525,7 @@ CAREER_DATA = RogueCareerData(
             text='You commit a legendary crime. You are automatically promoted.',
             effects=[AutoAdvanceEffect()],
         ),
-    },
-)
+    }
+
+
+ROGUE = Rogue()

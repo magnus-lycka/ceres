@@ -18,14 +18,11 @@ class TestTermDataStructure:
     def test_precareer_data_is_subclass_of_term_data(self):
         assert issubclass(PreCareerData, TermData)
 
-    def test_term_data_declares_events_field(self):
-        assert 'events' in TermData.__annotations__
+    def test_career_data_declares_events(self):
+        assert 'events' in CareerData.__annotations__
 
-    def test_career_data_does_not_redeclare_events(self):
-        assert 'events' not in CareerData.__annotations__
-
-    def test_precareer_data_does_not_redeclare_events(self):
-        assert 'events' not in PreCareerData.__annotations__
+    def test_precareer_data_declares_events(self):
+        assert 'events' in PreCareerData.__annotations__
 
     def test_career_data_instances_have_events(self):
         careers = load_careers()
@@ -85,12 +82,14 @@ class TestCareerDataSubclassPattern:
                 f'{name!r} career uses CareerData directly; convert it to a named subclass'
             )
 
-    def test_career_subclass_names_include_career_data(self):
-        """Each career's class name should follow the XxxCareerData convention."""
+    def test_career_subclass_names_do_not_include_career_data(self):
+        """Career class names should be clean career names, not XxxCareerData."""
         careers = load_careers()
         for name, career in careers.items():
             cls_name = type(career).__name__
-            assert 'CareerData' in cls_name, f'{name!r} career class {cls_name!r} should include CareerData in its name'
+            assert 'CareerData' not in cls_name, (
+                f'{name!r} career class {cls_name!r} still uses the old XxxCareerData naming; rename to {name!r}'
+            )
 
     def test_all_precareer_data_are_subclasses_of_precareer_data(self):
         """Precareer instances should be PreCareerData subclasses (existing pattern)."""

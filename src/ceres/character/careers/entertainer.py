@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import ClassVar, Literal
 
 from ceres.character.benefits import (
     CONTACT,
@@ -76,12 +76,6 @@ from ceres.character.state import (
     Enemy,
     ScheduledEffect,
 )
-
-ENTERTAINER = Career(
-    name='Entertainer',
-    description=('Individuals who are involved with the media, whether as reporters, artists or celebrities.'),
-)
-
 
 # ── Career-specific pending input types ──────────────────────────────────────
 
@@ -180,18 +174,17 @@ class EntertainerEvent8Handler(CareerHandlerBase):
         return pending_idx + 1
 
 
-class EntertainerCareerData(CareerData):
-    def qualification_dm(self, projection) -> int:
-        dex_dm = characteristic_dm(projection.summary.characteristics.get(Chars.DEX, 0))
-        int_dm = characteristic_dm(projection.summary.characteristics.get(Chars.INT, 0))
-        return max(dex_dm, int_dm)
+class Entertainer(CareerData):
+    type: Literal['ENTERTAINER_CAREER'] = 'ENTERTAINER_CAREER'
 
+    career: ClassVar[Career] = Career(
+        name='Entertainer',
+        description='Individuals who are involved with the media, whether as reporters, artists or celebrities.',
+    )
+    qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.INT, target=5)
+    allows_assignment_change: ClassVar[bool] = False
 
-CAREER_DATA = EntertainerCareerData(
-    career=ENTERTAINER,
-    allows_assignment_change=False,
-    qualification=CharCheck(characteristic=Chars.INT, target=5),
-    assignments=[
+    assignments: ClassVar[list[AssignmentData]] = [
         AssignmentData(
             name='Artist',
             description='You are a writer, holographer or other creative.',
@@ -210,8 +203,9 @@ CAREER_DATA = EntertainerCareerData(
             survival=CharCheck(characteristic=Chars.INT, target=5),
             advancement=CharCheck(characteristic=Chars.DEX, target=7),
         ),
-    ],
-    skill_tables=CareerSkillTables(
+    ]
+
+    skill_tables: ClassVar[CareerSkillTables] = CareerSkillTables(
         personal_development=SkillTable(
             [
                 Chars.DEX,
@@ -273,8 +267,9 @@ CAREER_DATA = EntertainerCareerData(
                 Streetwise(),
             ]
         ),
-    ),
-    ranks={
+    )
+
+    ranks: ClassVar[dict[int, RankEntry]] = {
         0: RankEntry(rank=0),
         1: RankEntry(rank=1, bonus=RankBonus(choices=skill_instances(ArtSkill), level=1)),
         2: RankEntry(rank=2),
@@ -282,8 +277,9 @@ CAREER_DATA = EntertainerCareerData(
         4: RankEntry(rank=4),
         5: RankEntry(rank=5, title='Famous Artist', bonus=RankBonus(characteristic=Chars.SOC, level=1)),
         6: RankEntry(rank=6),
-    },
-    ranks_by_assignment={
+    }
+
+    ranks_by_assignment: ClassVar[dict[int, dict[int, RankEntry]]] = {
         1: {  # Artist
             0: RankEntry(rank=0),
             1: RankEntry(rank=1, bonus=RankBonus(choices=skill_instances(ArtSkill), level=1)),
@@ -311,8 +307,9 @@ CAREER_DATA = EntertainerCareerData(
             5: RankEntry(rank=5, title='Famous Performer', bonus=RankBonus(characteristic=Chars.SOC, level=1)),
             6: RankEntry(rank=6),
         },
-    },
-    muster_out=MusterOutData(
+    }
+
+    muster_out: ClassVar[MusterOutData] = MusterOutData(
         rows={
             1: MusterOutRow(cash=0, benefit=CONTACT),
             2: MusterOutRow(cash=0, benefit=CharacteristicIncrease(char=Chars.SOC, amount=1)),
@@ -330,8 +327,9 @@ CAREER_DATA = EntertainerCareerData(
                 ),
             ),
         }
-    ),
-    mishaps={
+    )
+
+    mishaps: ClassVar[dict[int, MishapEntry]] = {
         1: MishapEntry(
             text='Severely injured.',
             effects=[InjuryEffect(severity='severe')],
@@ -356,8 +354,9 @@ CAREER_DATA = EntertainerCareerData(
             text='You are forced out because of censorship or controversy.',
             effects=[AdvancementDmEffect(amount=2)],
         ),
-    },
-    events={
+    }
+
+    events: ClassVar[dict[int, CareerEventEntry]] = {
         2: CareerEventEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
             effects=[RollMishapEffect(leave=False)],
@@ -402,5 +401,12 @@ CAREER_DATA = EntertainerCareerData(
             text='You win a prestigious prize. You are automatically promoted.',
             effects=[AutoAdvanceEffect()],
         ),
-    },
-)
+    }
+
+    def qualification_dm(self, projection) -> int:
+        dex_dm = characteristic_dm(projection.summary.characteristics.get(Chars.DEX, 0))
+        int_dm = characteristic_dm(projection.summary.characteristics.get(Chars.INT, 0))
+        return max(dex_dm, int_dm)
+
+
+ENTERTAINER = Entertainer()

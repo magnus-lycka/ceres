@@ -1,5 +1,8 @@
 """Integration tests for the character web UI routes."""
 
+from html import unescape
+from typing import Any, Literal
+
 from fastapi.testclient import TestClient
 import pytest
 
@@ -113,6 +116,46 @@ def test_sector_search_preserves_character_form_query(client, monkeypatch):
     )
     assert r.status_code == 200
     assert '/ui/worlds/sectors/Troj?name=Ada&amp;sophont=Humaniti&amp;player=NPC' in r.text
+
+
+def test_sector_search_preserves_world_filter_query(client, monkeypatch):
+    from ceres.adapters.travellermap import SectorInfo
+
+    monkeypatch.setattr(
+        'ceres.character.web.routes.search_sectors',
+        lambda query, milieu=DEFAULT_MILIEU: [
+            SectorInfo(x=0, y=0, milieu=DEFAULT_MILIEU, abbreviation='Troj', tags='OTU', names=['Trojan Reach'])
+        ],
+    )
+
+    r = client.get(
+        '/ui/worlds/sectors/search',
+        params=[
+            ('q', 'troj'),
+            ('character_id', '7'),
+            ('fulfills', '12.0'),
+            ('reference_sector', 'Troj'),
+            ('reference_hex', '2513'),
+            ('filters', '1'),
+            ('bases', 'S'),
+            ('bases', 'W'),
+            ('tech_levels', '8'),
+            ('tech_levels', 'A'),
+        ],
+    )
+
+    assert r.status_code == 200
+    link = unescape(r.text)
+    assert '/ui/worlds/sectors/Troj?' in link
+    assert 'character_id=7' in link
+    assert 'fulfills=12.0' in link
+    assert 'reference_sector=Troj' in link
+    assert 'reference_hex=2513' in link
+    assert 'filters=1' in link
+    assert 'bases=S' in link
+    assert 'bases=W' in link
+    assert 'tech_levels=8' in link
+    assert 'tech_levels=A' in link
 
 
 def test_sector_search_blank_query_returns_empty_results(client):
@@ -364,6 +407,40 @@ def test_sector_filter_page_sorts_by_manual_reference_hex(client, monkeypatch):
     assert positions == sorted(positions)
 
 
+def test_sector_filter_page_sorts_by_reference_hex_in_another_sector(client, monkeypatch):
+    from ceres.adapters.travellermap import SectorInfo
+    from ceres.worlds import SectorWorldFilters
+    from tests.worlds.test_sector_filters import _entry
+
+    worlds = [
+        _entry(name='Further', hex_code='0301', uwp='C433567-A', bases='W', allegiance='ImAp', remarks='Ni Po'),
+        _entry(name='Border', hex_code='0101', uwp='A867A99-D', bases='N', allegiance='ImDd', remarks='Hi In'),
+    ]
+    filters = SectorWorldFilters(
+        worlds=worlds,
+        sector_abbreviation='Dene',
+        sector_name='Deneb',
+        sector_x=1,
+        sector_y=0,
+        allegiance_names={'ImDd': 'Third Imperium, Domain of Deneb'},
+    )
+    monkeypatch.setattr('ceres.character.web.routes.SectorWorldFilters.from_travellermap', lambda _: filters)
+    monkeypatch.setattr(
+        'ceres.character.web.routes.search_sectors',
+        lambda query, milieu=DEFAULT_MILIEU: [
+            SectorInfo(x=0, y=0, milieu=DEFAULT_MILIEU, abbreviation='Troj', tags='OTU', names=['Trojan Reach'])
+        ],
+    )
+
+    r = client.get('/ui/worlds/sectors/Dene', params={'reference_sector': 'Troj', 'reference_hex': '3201'})
+
+    assert r.status_code == 200
+    assert 'name="reference_sector" value="Troj"' in r.text
+    assert '>1<' in r.text
+    assert '>3<' in r.text
+    assert r.text.index('Border') < r.text.index('Further')
+
+
 def test_create_character_redirects_to_wizard(client):
     r = client.post(
         '/ui/characters/new',
@@ -472,10 +549,11 @@ def test_wizard_shows_ucp_pending(client_with_backend):
 
 
 def test_wizard_shows_career_name_not_repr(client_with_backend, monkeypatch):
-    from ceres.character.careers.career_data import Career
+    from ceres.character.careers.loader import load_careers
     from ceres.character.state import CareerTerm, CharacterProjection, CharacterSummary
 
     client, backend = client_with_backend
+    citizen = load_careers()['Citizen']
     monkeypatch.setattr(
         backend,
         'get_projection',
@@ -486,23 +564,12 @@ def test_wizard_shows_career_name_not_repr(client_with_backend, monkeypatch):
                 age=30,
                 sophont=HUMANITI,
                 homeworld=MOCK_WORLD,
-                current_career=Career(
-                    name='Citizen',
-                    source='Core',
-                    description=(
-                        'Individuals serving in a corporation, bureaucracy or industry, '
-                        'or who are making a new life on an untamed planet.'
-                    ),
-                ),
+                current_career=citizen,
                 current_assignment='Colonist',
                 rank=3,
                 career_terms=[
                     CareerTerm(
-                        career=Career(
-                            name='Citizen',
-                            source='Core',
-                            description='Individuals serving in a corporation, bureaucracy or industry.',
-                        ),
+                        career=citizen,
                         assignment='Colonist',
                     )
                     for _ in range(3)
@@ -556,6 +623,63 @@ def test_wizard_homeworld_change_pending_links_to_sector_picker(client_with_back
     assert r.status_code == 200
     assert 'Choose New Homeworld' in r.text
     assert f'/ui/worlds/sectors?character_id={row["id"]}&fulfills=5.0' in r.text
+
+
+def test_wizard_select_world_input_links_to_filtered_sector_picker(client_with_backend, monkeypatch):
+    from ceres.character.input_specs import SelectWorld, WorldFilterCriteria, WorldRef
+    from ceres.character.state import CharacterProjection, CharacterSummary, PendingInputBase
+
+    class PendingWorldSelection(PendingInputBase):
+        kind: Literal['test_world_selection'] = 'test_world_selection'
+
+        def event_from_form(self, form: Any) -> Any:
+            raise NotImplementedError
+
+        def input_specs(self, projection: CharacterProjection):
+            return [
+                SelectWorld(
+                    name='homeworld',
+                    label='Choose Scout world',
+                    sector_abbreviation='Troj',
+                    reference_world=WorldRef(sector_abbreviation='Troj', hex='2513'),
+                    filters=WorldFilterCriteria(
+                        bases=('S', 'W'),
+                        tech_levels=('8', '9', 'A', 'B', 'C'),
+                    ),
+                )
+            ]
+
+    client, backend = client_with_backend
+    monkeypatch.setattr(
+        backend,
+        'get_projection',
+        lambda character_id: CharacterProjection(
+            character_id=character_id,
+            summary=CharacterSummary(name='Clio', sophont=HUMANITI, homeworld=MOCK_WORLD),
+            pending_inputs=[
+                PendingWorldSelection(
+                    id='12.0',
+                    instruction='Pick a suitable world',
+                )
+            ],
+        ),
+    )
+
+    r = client.get('/ui/characters/7/wizard')
+
+    assert r.status_code == 200
+    page = unescape(r.text)
+    assert 'Choose Scout world' in page
+    assert '/ui/worlds/sectors/Troj?' in page
+    assert 'character_id=7' in page
+    assert 'fulfills=12.0' in page
+    assert 'reference_sector=Troj' in page
+    assert 'reference_hex=2513' in page
+    assert 'filters=1' in page
+    assert 'bases=S' in page
+    assert 'bases=W' in page
+    assert 'tech_levels=8' in page
+    assert 'tech_levels=A' in page
 
 
 def test_selecting_homeworld_from_wizard_picker_updates_character(client_with_backend, monkeypatch):
@@ -670,10 +794,11 @@ def test_character_sheet_shows_name(client_with_backend):
 
 
 def test_character_sheet_shows_career_name_not_repr(client_with_backend, monkeypatch):
-    from ceres.character.careers.career_data import Career
+    from ceres.character.careers.loader import load_careers
     from ceres.character.state import CareerTerm, CharacterProjection, CharacterSummary
 
     client, backend = client_with_backend
+    citizen = load_careers()['Citizen']
     monkeypatch.setattr(
         backend,
         'get_projection',
@@ -684,23 +809,12 @@ def test_character_sheet_shows_career_name_not_repr(client_with_backend, monkeyp
                 age=30,
                 sophont=HUMANITI,
                 homeworld=MOCK_WORLD,
-                current_career=Career(
-                    name='Citizen',
-                    source='Core',
-                    description=(
-                        'Individuals serving in a corporation, bureaucracy or industry, '
-                        'or who are making a new life on an untamed planet.'
-                    ),
-                ),
+                current_career=citizen,
                 current_assignment='Colonist',
                 rank=3,
                 career_terms=[
                     CareerTerm(
-                        career=Career(
-                            name='Citizen',
-                            source='Core',
-                            description='Individuals serving in a corporation, bureaucracy or industry.',
-                        ),
+                        career=citizen,
                         assignment='Colonist',
                     )
                     for _ in range(3)

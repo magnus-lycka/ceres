@@ -24,14 +24,9 @@
            hx-swap="innerHTML"
            class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-4 py-3 focus:outline-none focus:border-amber-500">
     <div id="sector-picker-state" class="hidden">
-      <input type="hidden" name="name" value="{{ form_defaults.name }}">
-      <input type="hidden" name="sophont" value="{{ form_defaults.sophont }}">
-      <input type="hidden" name="player" value="{{ form_defaults.player }}">
-      <input type="hidden" name="homeworld_sector" value="{{ form_defaults.homeworld_sector }}">
-      <input type="hidden" name="homeworld_hex" value="{{ form_defaults.homeworld_hex }}">
-      <input type="hidden" name="character_id" value="{{ character_id }}">
-      <input type="hidden" name="fulfills" value="{{ fulfills }}">
-      <input type="hidden" name="reference_hex" value="{{ request.query_params.get('reference_hex', '') }}">
+      {% for name, value in picker_state %}
+      <input type="hidden" name="{{ name }}" value="{{ value }}">
+      {% endfor %}
     </div>
     <div id="sector-search-results" class="space-y-2"></div>
   </div>

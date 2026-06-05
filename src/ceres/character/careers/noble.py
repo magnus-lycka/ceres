@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import ClassVar, Literal
 
 from ceres.character.benefits import (
     BLADE,
@@ -77,15 +77,6 @@ from ceres.character.state import (
     Rival,
     ScheduledEffect,
 )
-
-NOBLE = Career(
-    name='Noble',
-    description=(
-        'Individuals of the upper class who perform little '
-        'consistent function but often have large amounts of ready money.'
-    ),
-)
-
 
 # ── mishap 3: disaster or war ─────────────────────────────────────────────────
 
@@ -220,15 +211,20 @@ class NobleEvent8Handler(CareerHandlerBase):
         return pending_idx + 1
 
 
-class NobleCareerData(CareerData):
-    pass
+class Noble(CareerData):
+    type: Literal['NOBLE_CAREER'] = 'NOBLE_CAREER'
 
+    career: ClassVar[Career] = Career(
+        name='Noble',
+        description=(
+            'Individuals of the upper class who perform little '
+            'consistent function but often have large amounts of ready money.'
+        ),
+    )
+    qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.SOC, target=10)
+    allows_assignment_change: ClassVar[bool] = True
 
-CAREER_DATA = NobleCareerData(
-    career=NOBLE,
-    allows_assignment_change=True,
-    qualification=CharCheck(characteristic=Chars.SOC, target=10),
-    assignments=[
+    assignments: ClassVar[list[AssignmentData]] = [
         AssignmentData(
             name='Administrator',
             description='You serve in the planetary government or even ruled over a fiefdom or other domain.',
@@ -247,8 +243,9 @@ CAREER_DATA = NobleCareerData(
             survival=CharCheck(characteristic=Chars.SOC, target=5),
             advancement=CharCheck(characteristic=Chars.INT, target=7),
         ),
-    ],
-    skill_tables=CareerSkillTables(
+    ]
+
+    skill_tables: ClassVar[CareerSkillTables] = CareerSkillTables(
         personal_development=SkillTable(
             [
                 Chars.STR,
@@ -310,8 +307,9 @@ CAREER_DATA = NobleCareerData(
                 JackOfAllTrades(),
             ]
         ),
-    ),
-    ranks={
+    )
+
+    ranks: ClassVar[dict[int, RankEntry]] = {
         0: RankEntry(rank=0),
         1: RankEntry(rank=1, bonus=RankBonus(skill=Admin(), level=1)),
         2: RankEntry(rank=2),
@@ -319,8 +317,9 @@ CAREER_DATA = NobleCareerData(
         4: RankEntry(rank=4),
         5: RankEntry(rank=5, bonus=RankBonus(skill=Leadership(), level=1)),
         6: RankEntry(rank=6),
-    },
-    ranks_by_assignment={
+    }
+
+    ranks_by_assignment: ClassVar[dict[int, dict[int, RankEntry]]] = {
         1: {  # Administrator
             0: RankEntry(rank=0, title='Assistant'),
             1: RankEntry(rank=1, title='Clerk', bonus=RankBonus(skill=Admin(), level=1)),
@@ -348,8 +347,9 @@ CAREER_DATA = NobleCareerData(
             5: RankEntry(rank=5),
             6: RankEntry(rank=6, title='Scoundrel', bonus=RankBonus(skill=JackOfAllTrades(), level=1)),
         },
-    },
-    muster_out=MusterOutData(
+    }
+
+    muster_out: ClassVar[MusterOutData] = MusterOutData(
         rows={
             1: MusterOutRow(cash=10000, benefit=SHIP_SHARE),
             2: MusterOutRow(cash=10000, benefit=SHIP_SHARE, count=2),
@@ -361,8 +361,9 @@ CAREER_DATA = NobleCareerData(
                 cash=200000, benefit=CombinedBenefit(benefits=[CharacteristicIncrease(char=Chars.SOC, amount=1), YACHT])
             ),
         }
-    ),
-    mishaps={
+    )
+
+    mishaps: ClassVar[dict[int, MishapEntry]] = {
         1: MishapEntry(
             text='Severely injured.',
             effects=[InjuryEffect(severity='severe')],
@@ -389,8 +390,9 @@ CAREER_DATA = NobleCareerData(
             text='Injured. Roll on the Injury table.',
             effects=[InjuryEffect(severity='from_table')],
         ),
-    },
-    events={
+    }
+
+    events: ClassVar[dict[int, CareerEventEntry]] = {
         2: CareerEventEntry(
             text='Disaster! Roll on the Mishap table, but you are not ejected from this career.',
             effects=[RollMishapEffect(leave=False)],
@@ -444,5 +446,7 @@ CAREER_DATA = NobleCareerData(
             text='Your efforts do not go unnoticed by the Imperium. You are automatically promoted.',
             effects=[AutoAdvanceEffect()],
         ),
-    },
-)
+    }
+
+
+NOBLE = Noble()

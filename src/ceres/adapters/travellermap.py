@@ -139,6 +139,8 @@ class SectorWorldEntry(BaseModel):
 class SectorData(BaseModel):
     abbreviation: str
     name: str
+    sector_x: int = 0
+    sector_y: int = 0
     allegiance_names: dict[str, str] = Field(default_factory=dict)
     worlds: list[SectorWorldEntry]
 
@@ -287,6 +289,13 @@ def _sector_name_from_directory(sector_abbreviation: str, fallback: str) -> str:
         if sector.abbreviation.lower() == sector_abbreviation.lower() and sector.names:
             return sector.names[0]
     return fallback
+
+
+def fetch_sector_coordinates(sector_abbreviation: str) -> tuple[int, int]:
+    for sector in fetch_sectors():
+        if sector.abbreviation.lower() == sector_abbreviation.lower():
+            return sector.x, sector.y
+    return 0, 0
 
 
 def _parse_allegiance_names(text: str) -> dict[str, str]:

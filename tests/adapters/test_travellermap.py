@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pytest
@@ -352,6 +353,37 @@ class TestFetchSector:
         sector = travellermap.fetch_sector('Troj')
 
         assert sector.name == 'Trojan Reach'
+
+    def test_loads_sector_coordinates_from_directory(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        response = _FakeResponse(
+            text=json.dumps(
+                {
+                    'Sectors': [
+                        {
+                            'X': -4,
+                            'Y': 1,
+                            'Milieu': 'M1105',
+                            'Abbreviation': 'Troj',
+                            'Tags': 'OTU',
+                            'Names': [{'Text': 'Trojan Reach'}],
+                        }
+                    ]
+                }
+            )
+        )
+        requests: list[tuple[str, dict | None]] = []
+
+        def client_factory() -> _FakeClient:
+            client = _FakeClient()
+            client.response = response
+            client.requests = requests
+            return client
+
+        monkeypatch.setattr(travellermap.httpx, 'Client', client_factory)
+
+        sector_x, sector_y = travellermap.fetch_sector_coordinates('Troj')
+
+        assert (sector_x, sector_y) == (-4, 1)
 
 
 class _FakeResponse:

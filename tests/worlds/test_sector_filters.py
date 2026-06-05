@@ -216,6 +216,41 @@ class TestSectorWorldFiltering:
         assert SectorWorldFilters.hex_distance_parsecs('1417', '1518') == 1
         assert SectorWorldFilters.hex_distance_parsecs('1417', '1715') == 4
 
+    def test_sector_hex_distance_parsecs_uses_real_spin_dene_troj_reft_layout(self) -> None:
+        assert (
+            SectorWorldFilters.sector_hex_distance_parsecs(
+                origin_sector_x=-3,
+                origin_sector_y=0,
+                origin_hex='0102',
+                destination_sector_x=-3,
+                destination_sector_y=-1,
+                destination_hex='0440',
+            )
+            == 3
+        )
+        assert (
+            SectorWorldFilters.sector_hex_distance_parsecs(
+                origin_sector_x=-3,
+                origin_sector_y=0,
+                origin_hex='0102',
+                destination_sector_x=-4,
+                destination_sector_y=-1,
+                destination_hex='3040',
+            )
+            == 3
+        )
+        assert (
+            SectorWorldFilters.sector_hex_distance_parsecs(
+                origin_sector_x=-3,
+                origin_sector_y=0,
+                origin_hex='0102',
+                destination_sector_x=-4,
+                destination_sector_y=0,
+                destination_hex='3003',
+            )
+            == 3
+        )
+
     def test_filter_can_sort_by_distance_from_reference_hex(self) -> None:
         worlds = [
             _entry(
@@ -250,6 +285,39 @@ class TestSectorWorldFiltering:
         assert [world.name for world in selected] == ['Near', 'Middle', 'Far']
         assert [filters.world_distance_parsecs('2513', world) for world in selected] == [2, 3, 5]
 
+    def test_filter_can_sort_by_distance_from_reference_hex_in_another_sector(self) -> None:
+        worlds = [
+            _entry(
+                name='Border',
+                hex_code='0101',
+                uwp='A867A99-D',
+                bases='N',
+                allegiance='ImDd',
+                remarks='Hi In',
+            ),
+            _entry(
+                name='Further',
+                hex_code='0301',
+                uwp='C433567-A',
+                bases='W',
+                allegiance='ImAp',
+                remarks='Ni Po',
+            ),
+        ]
+        filters = SectorWorldFilters(worlds=worlds, sector_x=-3, sector_y=0)
+
+        selected = filters.filter_worlds(reference_hex='3201', reference_sector_x=-4, reference_sector_y=0)
+
+        assert [world.name for world in selected] == ['Border', 'Further']
+        distances = [
+            filters.world_distance_parsecs('3201', world, reference_sector_x=-4, reference_sector_y=0)
+            for world in selected
+        ]
+        assert distances == [
+            1,
+            3,
+        ]
+
 
 class TestSectorFromTravellerMap:
     def test_loads_sector_worlds_from_adapter_without_fetching_each_world(self, monkeypatch) -> None:
@@ -263,17 +331,22 @@ class TestSectorFromTravellerMap:
             return SectorData(
                 abbreviation=sector_abbreviation,
                 name='Trojan Reach',
+                sector_x=-4,
+                sector_y=1,
                 allegiance_names={'ImDd': 'Third Imperium, Domain of Deneb'},
                 worlds=sample_worlds,
             )
 
         monkeypatch.setattr('ceres.worlds.sector_filters.fetch_sector', fake_fetch_sector)
+        monkeypatch.setattr('ceres.worlds.sector_filters.fetch_sector_coordinates', lambda _: (-4, 1))
 
         filters = SectorWorldFilters.from_travellermap('Troj')
 
         assert called_sectors == ['Troj']
         assert filters.sector_abbreviation == 'Troj'
         assert filters.sector_name == 'Trojan Reach'
+        assert filters.sector_x == -4
+        assert filters.sector_y == 1
         assert filters.allegiance_names == {'ImDd': 'Third Imperium, Domain of Deneb'}
         assert [world.name for world in filters.worlds] == ['Aster', 'Beryl', 'Cinder']
 

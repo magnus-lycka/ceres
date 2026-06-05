@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ceres.character.benefits import AnyBenefit
 from ceres.character.characteristics import Chars, ConnectionKind, characteristic_dm
@@ -199,8 +199,6 @@ class TermData(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    events: dict[int, CareerEventEntry]
-
 
 class MishapEntry(BaseModel):
     text: str
@@ -232,8 +230,42 @@ class BasicTrainingPlan(BaseModel):
 
 
 class CareerData(TermData):
-    career: Career
-    qualification: CharCheck
+    type: str = ''  # discriminator; set in concrete subclasses as Literal['X_CAREER']
+
+    _registry: ClassVar[dict[str, type[CareerData]]] = {}
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+        type_val = cls.__dict__.get('type')
+        if isinstance(type_val, str) and type_val:
+            CareerData._registry[type_val] = cls
+
+    @model_validator(mode='before')
+    @classmethod
+    def _from_registry(cls, data: Any) -> Any:
+        if isinstance(data, dict) and 'type' in data:
+            from ceres.character.careers.loader import load_careers
+
+            load_careers()
+            concrete = CareerData._registry.get(data['type'])
+            if concrete is not None:
+                return concrete()
+        return data
+
+    events: ClassVar[dict[int, CareerEventEntry]]
+    career: ClassVar[Career]
+    qualification: ClassVar[CharCheck]
+    assignments: ClassVar[list[AssignmentData]]
+    skill_tables: ClassVar[CareerSkillTables]
+    ranks: ClassVar[dict[int, RankEntry]]
+    ranks_by_assignment: ClassVar[dict[int, dict[int, RankEntry]]] = {}
+    commission: ClassVar[CharCheck | None] = None
+    officer_ranks: ClassVar[dict[int, RankEntry]] = {}
+    mishaps: ClassVar[dict[int, MishapEntry]]
+    muster_out: ClassVar[MusterOutData]
+    allows_assignment_change: ClassVar[bool]
+    selectable: ClassVar[bool] = True
+    draft_assignments: ClassVar[list[str]] = []
 
     @property
     def name(self) -> str:
@@ -246,18 +278,6 @@ class CareerData(TermData):
     @property
     def source(self) -> str:
         return self.career.source
-
-    assignments: list[AssignmentData]
-    skill_tables: CareerSkillTables
-    ranks: dict[int, RankEntry]  # default rank table (used when no per-assignment override)
-    ranks_by_assignment: dict[int, dict[int, RankEntry]] = {}  # assignment index → rank table override
-    commission: CharCheck | None = None
-    officer_ranks: dict[int, RankEntry] = {}
-    mishaps: dict[int, MishapEntry]  # 1D roll → mishap
-    muster_out: MusterOutData
-    allows_assignment_change: bool
-    selectable: bool = True
-    draft_assignments: list[str] = []
 
     def advancement_is_special(self) -> bool:
         return False
@@ -322,16 +342,16 @@ class CareerData(TermData):
             raise ValueError(f'Unknown draft assignment {selected!r} for {self.name}')
 
         projection.summary.drafted = True
-        projection.summary.current_career = self.career
+        projection.summary.current_career = self
         projection.summary.current_assignment = assignment.name
         projection.summary.current_assignment_index = self.assignment_index(assignment)
         self.start_new_term(projection, assignment, event_id)
 
     def prior_terms(self, terms, assignment: AssignmentData) -> list:
-        return [term for term in terms if term.career == self.career]
+        return [term for term in terms if type(term.career) is type(self)]
 
     def is_commissioned(self, terms) -> bool:
-        prior = [term for term in terms if term.career == self.career]
+        prior = [term for term in terms if type(term.career) is type(self)]
         return bool(prior and prior[-1].commission)
 
     def current_rank(self, terms, assignment: AssignmentData) -> int:
@@ -346,7 +366,7 @@ class CareerData(TermData):
         from ceres.character.state import CareerTerm
 
         term = CareerTerm(
-            career=self.career,
+            career=self,
             assignment=assignment.name,
             assignment_index=self.assignment_index(assignment),
             commission=self.is_commissioned(projection.summary.career_terms),
@@ -400,7 +420,7 @@ class CareerData(TermData):
         if auto_effects:
             for se in auto_effects:
                 projection.scheduled_effects.remove(se)
-            projection.summary.current_career = self.career
+            projection.summary.current_career = self
             projection.summary.current_assignment = assignment.name
             projection.summary.current_assignment_index = self.assignment_index(assignment)
             self.start_new_term(projection, assignment, event_id)
@@ -428,7 +448,7 @@ class CareerData(TermData):
             )
             return
 
-        projection.summary.current_career = self.career
+        projection.summary.current_career = self
         projection.summary.current_assignment = assignment.name
         projection.summary.current_assignment_index = self.assignment_index(assignment)
         self.start_new_term(projection, assignment, event_id)

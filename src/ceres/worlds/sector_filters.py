@@ -1,7 +1,13 @@
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 
-from ceres.adapters.travellermap import SectorInfo, SectorWorldEntry, fetch_sector, fetch_sectors
+from ceres.adapters.travellermap import (
+    SectorInfo,
+    SectorWorldEntry,
+    fetch_sector,
+    fetch_sector_coordinates,
+    fetch_sectors,
+)
 
 NO_ALLEGIANCE = 'No Allegiance'
 UNKNOWN_UWP = '?'
@@ -15,6 +21,8 @@ UWP_POPULATION_INDEX = 4
 UWP_GOVERNMENT_INDEX = 5
 UWP_LAW_LEVEL_INDEX = 6
 UWP_TECH_LEVEL_INDEX = 8
+SECTOR_COLUMNS = 32
+SECTOR_ROWS = 40
 
 
 @dataclass(frozen=True)
@@ -69,15 +77,20 @@ class SectorWorldFilters:
     worlds: list[SectorWorldEntry] = field(default_factory=list)
     sector_abbreviation: str | None = None
     sector_name: str | None = None
+    sector_x: int = 0
+    sector_y: int = 0
     allegiance_names: dict[str, str] = field(default_factory=dict)
 
     @classmethod
     def from_travellermap(cls, sector_abbreviation: str) -> SectorWorldFilters:
         sector = fetch_sector(sector_abbreviation)
+        sector_x, sector_y = fetch_sector_coordinates(sector_abbreviation)
         return cls(
             worlds=sector.worlds,
             sector_abbreviation=sector.abbreviation,
             sector_name=sector.name,
+            sector_x=sector_x,
+            sector_y=sector_y,
             allegiance_names=sector.allegiance_names,
         )
 
@@ -129,7 +142,7 @@ class SectorWorldFilters:
         return int(hex_code[:2]), int(hex_code[2:])
 
     @classmethod
-    def hex_distance_parsecs(cls, origin_hex: str, destination_hex: str) -> int:
+    def _hex_distance_from_coordinates(cls, origin: tuple[int, int], destination: tuple[int, int]) -> int:
         # Even-Q vertical layout hex grid, coordinates down and right
         def even_q_to_cube(col, row):
             x = col
@@ -137,14 +150,60 @@ class SectorWorldFilters:
             y = -x - z
             return x, y, z
 
-        col1, row1 = cls._hex_coordinates(origin_hex)
-        col2, row2 = cls._hex_coordinates(destination_hex)
+        col1, row1 = origin
+        col2, row2 = destination
         x1, y1, z1 = even_q_to_cube(col1, row1)
         x2, y2, z2 = even_q_to_cube(col2, row2)
         return max(abs(x2 - x1), abs(y2 - y1), abs(z2 - z1))
 
-    def world_distance_parsecs(self, reference_hex: str, world: SectorWorldEntry) -> int:
-        return self.hex_distance_parsecs(reference_hex, world.hex)
+    @classmethod
+    def hex_distance_parsecs(cls, origin_hex: str, destination_hex: str) -> int:
+        return cls._hex_distance_from_coordinates(
+            cls._hex_coordinates(origin_hex),
+            cls._hex_coordinates(destination_hex),
+        )
+
+    @classmethod
+    def absolute_hex_coordinates(cls, *, sector_x: int, sector_y: int, hex_code: str) -> tuple[int, int]:
+        column, row = cls._hex_coordinates(hex_code)
+        return column + sector_x * SECTOR_COLUMNS, row + sector_y * SECTOR_ROWS
+
+    @classmethod
+    def sector_hex_distance_parsecs(
+        cls,
+        *,
+        origin_sector_x: int,
+        origin_sector_y: int,
+        origin_hex: str,
+        destination_sector_x: int,
+        destination_sector_y: int,
+        destination_hex: str,
+    ) -> int:
+        return cls._hex_distance_from_coordinates(
+            cls.absolute_hex_coordinates(sector_x=origin_sector_x, sector_y=origin_sector_y, hex_code=origin_hex),
+            cls.absolute_hex_coordinates(
+                sector_x=destination_sector_x,
+                sector_y=destination_sector_y,
+                hex_code=destination_hex,
+            ),
+        )
+
+    def world_distance_parsecs(
+        self,
+        reference_hex: str,
+        world: SectorWorldEntry,
+        *,
+        reference_sector_x: int | None = None,
+        reference_sector_y: int | None = None,
+    ) -> int:
+        return self.sector_hex_distance_parsecs(
+            origin_sector_x=self.sector_x if reference_sector_x is None else reference_sector_x,
+            origin_sector_y=self.sector_y if reference_sector_y is None else reference_sector_y,
+            origin_hex=reference_hex,
+            destination_sector_x=self.sector_x,
+            destination_sector_y=self.sector_y,
+            destination_hex=world.hex,
+        )
 
     @staticmethod
     def _matches_world_query(world: SectorWorldEntry, world_query: str | None) -> bool:
@@ -232,6 +291,8 @@ class SectorWorldFilters:
         tech_levels: Iterable[str] | None = None,
         world_query: str | None = None,
         reference_hex: str | None = None,
+        reference_sector_x: int | None = None,
+        reference_sector_y: int | None = None,
     ) -> list[SectorWorldEntry]:
         selected_allegiances = self._normalize_selection(allegiances)
         selected_remarks = self._normalize_selection(remarks)
@@ -269,7 +330,12 @@ class SectorWorldFilters:
             return sorted(
                 matches,
                 key=lambda world: (
-                    self.world_distance_parsecs(reference_hex, world),
+                    self.world_distance_parsecs(
+                        reference_hex,
+                        world,
+                        reference_sector_x=reference_sector_x,
+                        reference_sector_y=reference_sector_y,
+                    ),
                     world.hex,
                     world.name,
                 ),

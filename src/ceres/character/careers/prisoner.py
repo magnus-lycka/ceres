@@ -1,4 +1,4 @@
-from typing import Literal, cast
+from typing import ClassVar, Literal, cast
 
 from ceres.character.benefits import (
     ALLY,
@@ -73,15 +73,6 @@ from ceres.character.state import (
     ChoiceBase,
     Enemy,
 )
-
-PRISONER = Career(
-    name='Prisoner',
-    description=(
-        'Every society has its bad apples and even in the far future punishments usually '
-        'take place within faceless institutions where criminals can be conveniently forgotten.'
-    ),
-)
-
 
 # ── mishap 3: prison gang ─────────────────────────────────────────────────────
 
@@ -610,38 +601,21 @@ class PrisonerEvent12Handler(CareerHandlerBase):
         return pending_idx + 1
 
 
-class PrisonerCareerData(CareerData):
-    def advancement_is_special(self) -> bool:
-        return True
+class Prisoner(CareerData):
+    type: Literal['PRISONER_CAREER'] = 'PRISONER_CAREER'
 
-    def start_career(
-        self,
-        projection: CharacterProjection,
-        assignment: AssignmentData,
-        event_id: int,
-        qualification_roll: int,
-    ) -> None:
-        projection.summary.current_career = self.career
-        projection.summary.current_assignment = assignment.name
-        projection.summary.current_assignment_index = self.assignment_index(assignment)
-        count_before = len(projection.pending_inputs)
-        self.start_new_term(projection, assignment, event_id)
-        pending_added = len(projection.pending_inputs) - count_before
-        projection.pending_inputs.append(
-            PendingParoleRoll(
-                id=f'{event_id}.{pending_added}',
-                instruction='Roll 1D to determine your Parole Threshold (result + 2)',
-                options=['1', '2', '3', '4', '5', '6'],
-            )
-        )
+    career: ClassVar[Career] = Career(
+        name='Prisoner',
+        description=(
+            'Every society has its bad apples and even in the far future punishments usually '
+            'take place within faceless institutions where criminals can be conveniently forgotten.'
+        ),
+    )
+    qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.END, target=0)
+    allows_assignment_change: ClassVar[bool] = True
+    selectable: ClassVar[bool] = False
 
-
-CAREER_DATA = PrisonerCareerData(
-    career=PRISONER,
-    selectable=False,
-    allows_assignment_change=True,
-    qualification=CharCheck(characteristic=Chars.END, target=0),
-    assignments=[
+    assignments: ClassVar[list[AssignmentData]] = [
         AssignmentData(
             name='Inmate',
             description='You just try to get through your time in prison without getting into trouble.',
@@ -660,8 +634,9 @@ CAREER_DATA = PrisonerCareerData(
             survival=CharCheck(characteristic=Chars.INT, target=9),
             advancement=CharCheck(characteristic=Chars.END, target=5),
         ),
-    ],
-    skill_tables=CareerSkillTables(
+    ]
+
+    skill_tables: ClassVar[CareerSkillTables] = CareerSkillTables(
         personal_development=SkillTable(
             [
                 Chars.STR,
@@ -712,8 +687,9 @@ CAREER_DATA = PrisonerCareerData(
                 Admin(),
             ]
         ),
-    ),
-    ranks={
+    )
+
+    ranks: ClassVar[dict[int, RankEntry]] = {
         0: RankEntry(rank=0, bonus=RankBonus(skill=Melee(), level=1)),
         1: RankEntry(rank=1),
         2: RankEntry(rank=2, bonus=RankBonus(skill=Athletics(), level=1)),
@@ -721,8 +697,9 @@ CAREER_DATA = PrisonerCareerData(
         4: RankEntry(rank=4, bonus=RankBonus(skill=Advocate(), level=1)),
         5: RankEntry(rank=5),
         6: RankEntry(rank=6, bonus=RankBonus(characteristic=Chars.END, level=1)),
-    },
-    muster_out=MusterOutData(
+    }
+
+    muster_out: ClassVar[MusterOutData] = MusterOutData(
         rows={
             1: MusterOutRow(cash=0, benefit=CONTACT),
             2: MusterOutRow(cash=0, benefit=BLADE),
@@ -740,8 +717,9 @@ CAREER_DATA = PrisonerCareerData(
             ),
             7: MusterOutRow(cash=2500, benefit=CombinedBenefit(benefits=[DECEPTION_ITEM, PERSUADE_ITEM, STEALTH_ITEM])),
         }
-    ),
-    mishaps={
+    )
+
+    mishaps: ClassVar[dict[int, MishapEntry]] = {
         1: MishapEntry(
             text='Severely injured.',
             stay_in_career=True,
@@ -773,8 +751,9 @@ CAREER_DATA = PrisonerCareerData(
             stay_in_career=True,
             effects=[InjuryEffect(severity='from_table')],
         ),
-    },
-    events={
+    }
+
+    events: ClassVar[dict[int, CareerEventEntry]] = {
         2: CareerEventEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
             effects=[RollMishapEffect(leave=False)],
@@ -819,5 +798,31 @@ CAREER_DATA = PrisonerCareerData(
             text='Heroism.',
             effects=[PrisonerEvent12Handler()],
         ),
-    },
-)
+    }
+
+    def advancement_is_special(self) -> bool:
+        return True
+
+    def start_career(
+        self,
+        projection: CharacterProjection,
+        assignment: AssignmentData,
+        event_id: int,
+        qualification_roll: int,
+    ) -> None:
+        projection.summary.current_career = self
+        projection.summary.current_assignment = assignment.name
+        projection.summary.current_assignment_index = self.assignment_index(assignment)
+        count_before = len(projection.pending_inputs)
+        self.start_new_term(projection, assignment, event_id)
+        pending_added = len(projection.pending_inputs) - count_before
+        projection.pending_inputs.append(
+            PendingParoleRoll(
+                id=f'{event_id}.{pending_added}',
+                instruction='Roll 1D to determine your Parole Threshold (result + 2)',
+                options=['1', '2', '3', '4', '5', '6'],
+            )
+        )
+
+
+PRISONER = Prisoner()

@@ -48,7 +48,47 @@ class InfoText:
     text: str
 
 
-InputSpec = NumberEntry | Select | Reference | InfoText
+@dataclass
+class WorldRef:
+    """A Traveller Map world location used as a reference point."""
+
+    sector_abbreviation: str
+    hex: str
+
+
+@dataclass
+class WorldFilterCriteria:
+    """Initial world-picker filter values.
+
+    Values are literal UI/domain codes. For example, TL 8-12 is represented as
+    ("8", "9", "A", "B", "C"), not as a range.
+    """
+
+    allegiances: tuple[str, ...] = ()
+    remarks: tuple[str, ...] = ()
+    bases: tuple[str, ...] = ()
+    starports: tuple[str, ...] = ()
+    sizes: tuple[str, ...] = ()
+    atmospheres: tuple[str, ...] = ()
+    hydrographics: tuple[str, ...] = ()
+    populations: tuple[str, ...] = ()
+    governments: tuple[str, ...] = ()
+    law_levels: tuple[str, ...] = ()
+    tech_levels: tuple[str, ...] = ()
+
+
+@dataclass
+class SelectWorld:
+    """A request for the client to let the user choose a Traveller Map world."""
+
+    name: str
+    label: str
+    sector_abbreviation: str | None = None
+    reference_world: WorldRef | None = None
+    filters: WorldFilterCriteria = field(default_factory=WorldFilterCriteria)
+
+
+InputSpec = NumberEntry | Select | Reference | InfoText | SelectWorld
 
 
 def form_str(form: Any, key: str, default: str = '') -> str:
