@@ -443,40 +443,145 @@ The current stringly-typed foundation is one source of bugs such as empty or
 ambiguous `career_decision` submissions and special-case rendering drift across
 different pending-input kinds.
 
-### Pause career-term/muster-out migration until career classes are real classes
+### Make career classes real rule-owning objects; unify with Career identity
 
-The `CareerTerm` / `MusterOut` refactor should pause before it goes further.
-It is exposing a larger design problem: the current `CareerData` subclasses are
-not really subclasses in the useful object-oriented sense.
+Each of the 14 career modules currently follows an anti-pattern: a nearly-empty
+`XCareerData(CareerData)` subclass plus one large `CAREER_DATA = XCareerData(...)`
+constructor call that injects every Traveller rule for that career as instance
+data. Rules describing the behaviour of a career kind — qualification check,
+assignments, survival/advancement, skill tables, rank tables, mishap and event
+entries, muster-out rows, career-run continuity logic — belong on the class as
+class-level structure and methods, not on a singleton instance created by a
+1,200-argument constructor.
 
-Today each career module mostly defines a tiny subclass plus one large
-`CAREER_DATA = XCareerData(...)` object. The huge constructor call contains the
-actual Traveller rules for that career: qualification, assignments, survival,
-advancement, ranks, skill tables, mishaps, events, muster-out tables, and
-career-specific overrides. That data describes the behaviour of the career
-kind. It should be class-level structure and methods on the career subclass,
-not instance data passed to one singleton object.
+Additionally, there is an awkward split between `Career` (a tiny frozen dataclass
+used for identity in `summary.current_career`, `CareerTerm.career`, and the event
+log) and `CareerData` (the full rules object, always looked up by name via
+`load_careers()`). These should be one thing. A stored `Agent()` instance should
+carry all the rules for Agent, and any code with a reference to it can call
+methods on it directly instead of performing a name-based lookup.
 
-This shape blocks the cleaner term model. It is hard to decide whether
-`CareerData` and `CareerTerm` should merge, or whether `CareerData` should be a
-rules/helper class used by `CareerTerm`, while `CareerData` itself is still
-encoded as configurable singleton instances.
+#### Target structure for each career module
 
-Before continuing the `CareerTerm.muster_out`, `CareerTerm.rank`, and
-`TermChoices` migration, refactor the 14 career modules so the career classes
-are the real rule owners:
+Each career module declares one `CareerData` subclass. Static Traveller rules
+live as `ClassVar` attributes in the class body, in the same order as the
+corresponding rules-book page, so the code can be compared directly with the
+source text. Career-specific behavioural rules live as overriding instance
+methods on the same class.
 
-- remove the `CAREER_DATA = XCareerData(...)` singleton pattern
-- move constructor-provided career rules into class attributes/properties or
-  class/instance methods on the career subclass
-- make the loader return the career classes/objects produced by that real
-  subclass model, not data blobs configured after class definition
-- make each career module own its assignment-change/career-run continuity rules
-- then decide whether the corrected career subclass replaces `Career`, replaces
-  `CareerTerm`, or acts as the rule object used by a separate `CareerTerm`
+Pydantic fields keep the discriminator:
 
-This is a prerequisite for making career-term state sane. Otherwise we will
-keep moving responsibilities between objects that are themselves shaped wrong.
+```python
+class Agent(CareerData):
+    type: Literal['AGENT_CAREER'] = 'AGENT_CAREER'
+
+    # Static rules — in book order for easy comparison with the source text
+    name: ClassVar[str] = 'Agent'
+    source: ClassVar[str] = 'Core'
+    description: ClassVar[str] = '...'
+
+    qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.INT, target=6)
+    allows_assignment_change: ClassVar[bool] = False
+    draft_assignments: ClassVar[list[str]] = ['Law Enforcement']
+
+    assignments: ClassVar[list[AssignmentData]] = [
+        AssignmentData('Law Enforcement', ...),
+        AssignmentData('Intelligence', ...),
+        AssignmentData('Corporate', ...),
+    ]
+    skill_tables: ClassVar[CareerSkillTables] = CareerSkillTables(
+        personal_development=SkillTable([...]),
+        service_skills=SkillTable([...]),
+        ...
+    )
+    ranks: ClassVar[dict[int, RankEntry]] = { 0: ..., 1: RankEntry(title='Agent', ...), ... }
+    ranks_by_assignment: ClassVar[dict[int, dict[int, RankEntry]]] = { 1: { 0: RankEntry(title='Rookie'), ... } }
+
+    mishaps: ClassVar[dict[int, MishapEntry]] = {
+        1: MishapEntry(text='Severely injured...', effects=[InjuryEffect(severity='severe')]),
+        2: MishapEntry(text='A criminal offers you a deal...', effects=[AgentMishap2Handler()]),
+        ...
+    }
+    events: ClassVar[dict[int, CareerEventEntry]] = {
+        2: CareerEventEntry(text='Disaster!...', effects=[RollMishapEffect(leave=False)]),
+        ...
+    }
+    muster_out: ClassVar[MusterOutData] = MusterOutData(rows={ 1: ..., ... })
+
+    # Career-specific behavioural overrides
+    def prior_terms(self, terms, assignment):
+        idx = self.assignment_index(assignment)
+        return [t for t in terms if isinstance(t.career, Agent) and t.assignment_index == idx]
+```
+
+The handler classes (`AgentMishap2Handler`, `PendingAgentEvent3SkillRoll`, etc.)
+are defined above the career class in the same module, exactly as now.
+
+`ClassVar` fields are ignored by Pydantic for validation and serialization; they
+are accessible on instances through normal Python attribute lookup, so all
+existing `self.qualification`, `self.assignments`, etc. calls continue to work
+without modification.
+
+#### Discriminator naming convention
+
+Discriminator values must differ from human-readable career names, following the
+existing codebase convention (`'gain_skill'`, `'agent_mishap_2'`, etc.).
+Use `'AGENT_CAREER'`, `'ARMY_CAREER'`, etc. — never bare career names like
+`'Agent'`. The project has a scanner that flags `Literal['X'] = 'X'` patterns
+where the literal value matches a meaningful external name; discriminator tags
+must be distinct enough to avoid that.
+
+#### Serialization via registry (avoids circular imports)
+
+Career modules import `CharacterProjection` from `state.py`, so `state.py`
+cannot import career modules to build a `type AnyCareer = Agent | Army | ...`
+union. Use a registry instead:
+
+- `CareerData` declares `_registry: ClassVar[dict[str, type[CareerData]]] = {}`
+- `__init_subclass__` registers each concrete subclass under its `type` value
+- A `model_validator(mode='before')` on `CareerData` checks for a `str` or
+  `{'type': str}` input and looks up the registry to reconstruct the instance
+- A `model_serializer` on `CareerData` outputs the `type` string only, not the
+  full object (since all rules live on the class, the instance has no data to
+  serialize)
+
+`state.py` types `summary.current_career: CareerData | None` and
+`CareerTerm.career: CareerData`. At runtime, the stored value is always a
+concrete subclass instance (`Agent()`, etc.) retrieved from the registry.
+
+The tiny `Career` frozen dataclass is deleted once this is complete. All
+identity comparisons that currently do `term.career == self.career` (comparing
+`Career` instances) switch to `isinstance(term.career, Agent)` or
+`type(term.career) is type(self)`.
+
+#### Loader changes
+
+The loader stops looking for a `CAREER_DATA` module attribute. It scans each
+career module for a `CareerData` subclass, calls `__init_subclass__` registration
+as a side-effect of import, and builds the dict from the registry. Career objects
+are instantiated as `Agent()` (no constructor arguments; all data is on the
+class).
+
+`__init_subclass__` should validate that every required `ClassVar` attribute is
+defined, so a half-complete career class fails loudly at import time rather than
+silently at runtime.
+
+#### Migration order
+
+1. Add `type: str` discriminator base, `_registry`, `__init_subclass__`
+   validation, and `model_serializer`/`model_validator` to `CareerData`.
+2. Pilot one career module (Drifter is the simplest — fewest handler overrides).
+   Verify the full test suite passes.
+3. Convert the remaining 13 career modules one at a time, running tests after
+   each.
+4. Update the loader.
+5. Update `CharacterSummary.current_career`, `CharacterSummary.last_career`, and
+   `CareerTerm.career` to use `CareerData` instead of the `Career` dataclass.
+   Delete the `Career` dataclass.
+6. Replace `term.career == self.career` equality checks with `isinstance` or
+   `type(...)` comparisons throughout.
+7. With career classes now real rule owners, resume the `CareerTerm.muster_out`,
+   `CareerTerm.rank`, and `TermChoices` migration.
 
 ### Replace `ScheduledEffect` with domain-owned term state
 
