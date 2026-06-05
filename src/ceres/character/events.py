@@ -2,7 +2,7 @@ from collections.abc import Sequence
 import re
 from typing import TYPE_CHECKING, Annotated, Any, Literal, cast
 
-from pydantic import BaseModel, Field, TypeAdapter, field_serializer, field_validator
+from pydantic import BaseModel, Field, SerializeAsAny, TypeAdapter, field_serializer, field_validator
 
 from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.benefits import AnyBenefit, ItemBenefit
@@ -2423,7 +2423,7 @@ class PendingChoices(PendingInputBase):
     """Generic pending: presents a list of ChoiceBase options; selected choice handles itself."""
 
     kind: Literal['choices'] = 'choices'
-    choices: list[Any] = Field(default_factory=list)
+    choices: list[SerializeAsAny[ChoiceBase]] = Field(default_factory=list)
 
     def event_from_form(self, form: Any) -> AnyEvent:
         return CareerChoiceEvent(choice=form_str(form, 'choice', ''), fulfills=self.id)

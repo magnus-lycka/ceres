@@ -176,7 +176,7 @@ class CitizenEvent8DoSo(ChoiceBase):
                 effect={'type': EffectType.ADD, 'value': 1},
             )
         )
-        choices = []
+        choices: list[ChoiceBase] = []
         if (projection.summary.skill_level(Streetwise) or 0) < 1:
             choices.append(CitizenEvent8GainStreetwise())
         if (projection.summary.skill_level(Deception) or 0) < 1:

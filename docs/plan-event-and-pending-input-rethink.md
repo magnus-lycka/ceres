@@ -1,5 +1,9 @@
 # Plan: Self-Addressed Envelopes for Career Choices
 
+## Status
+
+Complete. All three migration steps are done.
+
 ## Problem
 
 The current "choose A or B" pattern requires a separate `PendingXxxChoice` class for every
