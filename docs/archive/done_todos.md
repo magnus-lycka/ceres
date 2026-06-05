@@ -21,10 +21,10 @@ constants (`SCOUT`, `AGENT`, etc.) are now `CareerData` instances. All
 `term.career == self.career` comparisons replaced with `type(term.career) is
 type(self)` (or Pydantic equality for module-constant comparisons).
 
-The tiny `Career` frozen dataclass is no longer part of the public API or state
-model. It still exists as an internal `ClassVar[Career]` wrapper used for
-`name`/`source`/`description` in each career module — that final removal is
-tracked as a separate small cleanup item in `todo_maybe.md`.
+The tiny `Career` frozen dataclass is fully deleted. Each career module now
+declares `name`, `source`, and `description` as direct `ClassVar[str]` attributes.
+`CareerData` base class declares `name: ClassVar[str]`, `description: ClassVar[str]`,
+and `source: ClassVar[str] = 'Core'` (default covers all 13 Core careers).
 
 ## Character creation: typed skill instances in pending events
 

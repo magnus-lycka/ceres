@@ -14,7 +14,6 @@ from ceres.character.careers.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
     BenefitDmEffect,
-    Career,
     CareerData,
     CareerEventEntry,
     CareerHandlerBase,
@@ -214,12 +213,9 @@ class NobleEvent8Handler(CareerHandlerBase):
 class Noble(CareerData):
     type: Literal['NOBLE_CAREER'] = 'NOBLE_CAREER'
 
-    career: ClassVar[Career] = Career(
-        name='Noble',
-        description=(
-            'Individuals of the upper class who perform little '
-            'consistent function but often have large amounts of ready money.'
-        ),
+    name: ClassVar[str] = 'Noble'
+    description: ClassVar[str] = (
+        'Individuals of the upper class who perform little consistent function but often have large amounts of ready money.'
     )
     qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.SOC, target=10)
     allows_assignment_change: ClassVar[bool] = True

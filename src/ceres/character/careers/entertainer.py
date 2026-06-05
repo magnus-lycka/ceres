@@ -11,7 +11,6 @@ from ceres.character.careers.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
     BenefitDmEffect,
-    Career,
     CareerData,
     CareerEventEntry,
     CareerHandlerBase,
@@ -177,9 +176,9 @@ class EntertainerEvent8Handler(CareerHandlerBase):
 class Entertainer(CareerData):
     type: Literal['ENTERTAINER_CAREER'] = 'ENTERTAINER_CAREER'
 
-    career: ClassVar[Career] = Career(
-        name='Entertainer',
-        description='Individuals who are involved with the media, whether as reporters, artists or celebrities.',
+    name: ClassVar[str] = 'Entertainer'
+    description: ClassVar[str] = (
+        'Individuals who are involved with the media, whether as reporters, artists or celebrities.'
     )
     qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.INT, target=5)
     allows_assignment_change: ClassVar[bool] = False

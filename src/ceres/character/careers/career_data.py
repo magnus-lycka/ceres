@@ -12,13 +12,6 @@ if TYPE_CHECKING:
     from ceres.character.state import CharacterProjection
 
 
-@dataclass(frozen=True)
-class Career:
-    name: str
-    source: str = 'Core'
-    description: str = ''
-
-
 type SkillTableEntry = AnySkill | Chars | list[AnySkill]
 
 
@@ -253,7 +246,9 @@ class CareerData(TermData):
         return data
 
     events: ClassVar[dict[int, CareerEventEntry]]
-    career: ClassVar[Career]
+    name: ClassVar[str]
+    source: ClassVar[str] = 'Core'
+    description: ClassVar[str]
     qualification: ClassVar[CharCheck]
     assignments: ClassVar[list[AssignmentData]]
     skill_tables: ClassVar[CareerSkillTables]
@@ -266,18 +261,6 @@ class CareerData(TermData):
     allows_assignment_change: ClassVar[bool]
     selectable: ClassVar[bool] = True
     draft_assignments: ClassVar[list[str]] = []
-
-    @property
-    def name(self) -> str:
-        return self.career.name
-
-    @property
-    def description(self) -> str:
-        return self.career.description
-
-    @property
-    def source(self) -> str:
-        return self.career.source
 
     def advancement_is_special(self) -> bool:
         return False

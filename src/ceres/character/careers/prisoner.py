@@ -16,7 +16,6 @@ from ceres.character.benefits import (
 )
 from ceres.character.careers.career_data import (
     AssignmentData,
-    Career,
     CareerData,
     CareerEventEntry,
     CareerHandlerBase,
@@ -604,12 +603,9 @@ class PrisonerEvent12Handler(CareerHandlerBase):
 class Prisoner(CareerData):
     type: Literal['PRISONER_CAREER'] = 'PRISONER_CAREER'
 
-    career: ClassVar[Career] = Career(
-        name='Prisoner',
-        description=(
-            'Every society has its bad apples and even in the far future punishments usually '
-            'take place within faceless institutions where criminals can be conveniently forgotten.'
-        ),
+    name: ClassVar[str] = 'Prisoner'
+    description: ClassVar[str] = (
+        'Every society has its bad apples and even in the far future punishments usually take place within faceless institutions where criminals can be conveniently forgotten.'
     )
     qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.END, target=0)
     allows_assignment_change: ClassVar[bool] = True

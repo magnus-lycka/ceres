@@ -11,7 +11,6 @@ from ceres.character.careers.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
     BenefitDmEffect,
-    Career,
     CareerData,
     CareerEventEntry,
     CareerHandlerBase,
@@ -304,9 +303,9 @@ class RogueEvent9Handler(CareerHandlerBase):
 class Rogue(CareerData):
     type: Literal['ROGUE_CAREER'] = 'ROGUE_CAREER'
 
-    career: ClassVar[Career] = Career(
-        name='Rogue',
-        description='Criminal elements familiar with the rougher or more illegal methods of attaining goals.',
+    name: ClassVar[str] = 'Rogue'
+    description: ClassVar[str] = (
+        'Criminal elements familiar with the rougher or more illegal methods of attaining goals.'
     )
     qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.DEX, target=6)
     allows_assignment_change: ClassVar[bool] = True

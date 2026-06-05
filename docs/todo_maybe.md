@@ -300,7 +300,7 @@ career term lifecycle hooks.
 careers (their RIC-006 entries are TBD). The UI for picking a replacement
 world.
 
-### Known implementation gaps (rules not yet enforced)
+## Character creation: known implementation gaps (rules not yet enforced)
 
 - **Advancement forced-leave** — if the advancement roll ≤ terms served in the
   current career, the Traveller must leave. Needs a per-career term counter and
@@ -382,7 +382,7 @@ world.
   known to the system. The current `modified_roll`-only shape leaves too much
   ambiguity in the event log and makes the UI guess at why a result happened.
 
-### Draft, career switching, and assignment changes
+## Character creation: draft, career switching, and assignment changes
 
 - **Draft domain logic** — the draft mechanic should live in the event engine
   (career-owned `is_in_draft` / `is_draft_alternative` predicates, per RIC-003),
@@ -423,30 +423,6 @@ This should become a real domain/API contract between:
 The current stringly-typed foundation is one source of bugs such as empty or
 ambiguous `career_decision` submissions and special-case rendering drift across
 different pending-input kinds.
-
-### Delete the `Career` frozen dataclass (internal ClassVar cleanup)
-
-The `Career` frozen dataclass still exists in `career_data.py` and is used as an
-internal `ClassVar[Career]` in all 14 career modules. Each module has:
-
-```python
-career: ClassVar[Career] = Career(name='Agent', source='Core', description='...')
-```
-
-and `CareerData` delegates `name`, `source`, `description` properties to
-`self.career.name` etc.
-
-This can be replaced with direct string ClassVars on each career class:
-
-```python
-name: ClassVar[str] = 'Agent'
-source: ClassVar[str] = 'Core'
-description: ClassVar[str] = '...'
-```
-
-Then remove `career: ClassVar[Career]` from all 14 career files, remove the
-`career: ClassVar[Career]` declaration and the three `@property` delegates from
-`CareerData`, and delete the `Career` dataclass itself.
 
 ### Replace `ScheduledEffect` with domain-owned term state
 
@@ -989,7 +965,7 @@ This needs a row-by-row comparison of `MishapEntry.text` / `CareerEventEntry.tex
 and handler behavior against the Core Rulebook, with any text drift and
 behavioral mismatches turned into concrete follow-up items.
 
-### Replace sophont string-name lookup with typed objects
+## Replace sophont string-name lookup with typed objects
 
 `sophonts/__init__.py` finds sophonts by string name. Sophonts should be
 referenced as typed objects or an enum rather than matched by string.

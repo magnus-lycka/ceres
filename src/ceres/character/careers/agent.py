@@ -15,7 +15,6 @@ from ceres.character.careers.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
     BenefitDmEffect,
-    Career,
     CareerData,
     CareerEventEntry,
     CareerHandlerBase,
@@ -362,9 +361,9 @@ class AgentEvent11Handler(CareerHandlerBase):
 class Agent(CareerData):
     type: Literal['AGENT_CAREER'] = 'AGENT_CAREER'
 
-    career: ClassVar[Career] = Career(
-        name='Agent',
-        description='Law enforcement agencies, corporate operatives, spies and others who work in the shadows.',
+    name: ClassVar[str] = 'Agent'
+    description: ClassVar[str] = (
+        'Law enforcement agencies, corporate operatives, spies and others who work in the shadows.'
     )
     qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.INT, target=6)
     allows_assignment_change: ClassVar[bool] = False

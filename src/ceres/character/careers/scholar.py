@@ -12,7 +12,6 @@ from ceres.character.careers.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
     BenefitDmEffect,
-    Career,
     CareerData,
     CareerEventEntry,
     CareerHandlerBase,
@@ -366,12 +365,9 @@ class ScholarEvent11Handler(CareerHandlerBase):
 class Scholar(CareerData):
     type: Literal['SCHOLAR_CAREER'] = 'SCHOLAR_CAREER'
 
-    career: ClassVar[Career] = Career(
-        name='Scholar',
-        description=(
-            'Individuals trained in technological or research sciences who conduct scientific '
-            'investigations into materials, situations and phenomena, or who practise medicine.'
-        ),
+    name: ClassVar[str] = 'Scholar'
+    description: ClassVar[str] = (
+        'Individuals trained in technological or research sciences who conduct scientific investigations into materials, situations and phenomena, or who practise medicine.'
     )
     qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.INT, target=6)
     allows_assignment_change: ClassVar[bool] = True

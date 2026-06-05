@@ -11,7 +11,6 @@ from ceres.character.careers.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
     BenefitDmEffect,
-    Career,
     CareerData,
     CareerEventEntry,
     CareerHandlerBase,
@@ -310,9 +309,9 @@ class DrifterEvent11Handler(CareerHandlerBase):
 class Drifter(CareerData):
     type: Literal['DRIFTER_CAREER'] = 'DRIFTER_CAREER'
 
-    career: ClassVar[Career] = Career(
-        name='Drifter',
-        description='Wanderers, hitchhikers and travellers, drifters are those who roam the stars without obvious purpose or direction.',
+    name: ClassVar[str] = 'Drifter'
+    description: ClassVar[str] = (
+        'Wanderers, hitchhikers and travellers, drifters are those who roam the stars without obvious purpose or direction.'
     )
 
     qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.END, target=0)

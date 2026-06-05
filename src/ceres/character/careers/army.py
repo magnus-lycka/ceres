@@ -13,7 +13,6 @@ from ceres.character.careers.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
     BenefitDmEffect,
-    Career,
     CareerData,
     CareerEventEntry,
     CareerHandlerBase,
@@ -175,12 +174,9 @@ class ArmyEvent8Handler(CareerHandlerBase):
 class Army(CareerData):
     type: Literal['ARMY_CAREER'] = 'ARMY_CAREER'
 
-    career: ClassVar[Career] = Career(
-        name='Army',
-        description=(
-            'Members of the planetary armed fighting forces. Soldiers deal with planetary '
-            'surface actions, battles and campaigns. Such individuals may also be mercenaries for hire.'
-        ),
+    name: ClassVar[str] = 'Army'
+    description: ClassVar[str] = (
+        'Members of the planetary armed fighting forces. Soldiers deal with planetary surface actions, battles and campaigns. Such individuals may also be mercenaries for hire.'
     )
     qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.END, target=5)
     allows_assignment_change: ClassVar[bool] = True

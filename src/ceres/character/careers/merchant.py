@@ -11,7 +11,6 @@ from ceres.character.careers.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
     BenefitDmEffect,
-    Career,
     CareerData,
     CareerEventEntry,
     CareerHandlerBase,
@@ -215,12 +214,9 @@ class MerchantEvent9Handler(CareerHandlerBase):
 class Merchant(CareerData):
     type: Literal['MERCHANT_CAREER'] = 'MERCHANT_CAREER'
 
-    career: ClassVar[Career] = Career(
-        name='Merchant',
-        description=(
-            'Members of a commercial enterprise. Merchants may crew the ships of the huge trading corporations '
-            'or they may work for independent free traders who carry chance cargoes and passengers between worlds.'
-        ),
+    name: ClassVar[str] = 'Merchant'
+    description: ClassVar[str] = (
+        'Members of a commercial enterprise. Merchants may crew the ships of the huge trading corporations or they may work for independent free traders who carry chance cargoes and passengers between worlds.'
     )
     qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.INT, target=4)
     allows_assignment_change: ClassVar[bool] = False

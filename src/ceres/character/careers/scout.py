@@ -11,7 +11,6 @@ from ceres.character.careers.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
     BenefitDmEffect,
-    Career,
     CareerData,
     CareerEventEntry,
     CareerHandlerBase,
@@ -260,12 +259,9 @@ class ScoutEvent11Handler(CareerHandlerBase):
 class Scout(CareerData):
     type: Literal['SCOUT_CAREER'] = 'SCOUT_CAREER'
 
-    career: ClassVar[Career] = Career(
-        name='Scout',
-        description=(
-            'Members of the exploratory service. Scouts explore new areas, map and survey known or newly discovered '
-            'areas and maintain communication ships which carry information and messages between the worlds of the galaxy.'
-        ),
+    name: ClassVar[str] = 'Scout'
+    description: ClassVar[str] = (
+        'Members of the exploratory service. Scouts explore new areas, map and survey known or newly discovered areas and maintain communication ships which carry information and messages between the worlds of the galaxy.'
     )
     qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.INT, target=5)
     allows_assignment_change: ClassVar[bool] = True

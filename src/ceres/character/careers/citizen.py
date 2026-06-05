@@ -12,7 +12,6 @@ from ceres.character.careers.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
     BenefitDmEffect,
-    Career,
     CareerData,
     CareerEventEntry,
     CareerHandlerBase,
@@ -286,12 +285,9 @@ class CitizenEvent8Handler(CareerHandlerBase):
 class Citizen(CareerData):
     type: Literal['CITIZEN_CAREER'] = 'CITIZEN_CAREER'
 
-    career: ClassVar[Career] = Career(
-        name='Citizen',
-        description=(
-            'Individuals serving in a corporation, bureaucracy or '
-            'industry, or who are making a new life on an untamed planet.'
-        ),
+    name: ClassVar[str] = 'Citizen'
+    description: ClassVar[str] = (
+        'Individuals serving in a corporation, bureaucracy or industry, or who are making a new life on an untamed planet.'
     )
     qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.EDU, target=5)
     allows_assignment_change: ClassVar[bool] = False

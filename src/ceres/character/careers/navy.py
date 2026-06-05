@@ -15,7 +15,6 @@ from ceres.character.careers.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
     BenefitDmEffect,
-    Career,
     CareerData,
     CareerEventEntry,
     CareerHandlerBase,
@@ -233,12 +232,9 @@ class NavyEvent10Handler(CareerHandlerBase):
 class Navy(CareerData):
     type: Literal['NAVY_CAREER'] = 'NAVY_CAREER'
 
-    career: ClassVar[Career] = Career(
-        name='Navy',
-        description=(
-            'Members of the interstellar navy that patrols space between the stars. The navy has the responsibility '
-            'for the protection of society from foreign powers and lawless elements in the interstellar trade channels.'
-        ),
+    name: ClassVar[str] = 'Navy'
+    description: ClassVar[str] = (
+        'Members of the interstellar navy that patrols space between the stars. The navy has the responsibility for the protection of society from foreign powers and lawless elements in the interstellar trade channels.'
     )
     qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.INT, target=6)
     allows_assignment_change: ClassVar[bool] = True

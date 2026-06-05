@@ -12,7 +12,6 @@ from ceres.character.careers.career_data import (
     AdvancementDmOption,
     AssignmentData,
     AutoAdvanceEffect,
-    Career,
     CareerData,
     CareerEventEntry,
     CareerHandlerBase,
@@ -252,12 +251,9 @@ class MarinesEvent9Handler(CareerHandlerBase):
 class Marines(CareerData):
     type: Literal['MARINES_CAREER'] = 'MARINES_CAREER'
 
-    career: ClassVar[Career] = Career(
-        name='Marines',
-        description=(
-            'Members of the armed fighting forces carried aboard starships, marines deal with piracy and boarding actions '
-            'in space, defend the starports and bases belonging to the navy and supplement ground forces such as the army.'
-        ),
+    name: ClassVar[str] = 'Marines'
+    description: ClassVar[str] = (
+        'Members of the armed fighting forces carried aboard starships, marines deal with piracy and boarding actions in space, defend the starports and bases belonging to the navy and supplement ground forces such as the army.'
     )
     qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.END, target=6)
     allows_assignment_change: ClassVar[bool] = True
