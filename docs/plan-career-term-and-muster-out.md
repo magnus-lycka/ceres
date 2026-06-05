@@ -1,5 +1,12 @@
 # Career Term and Muster-Out Ownership Plan
 
+## Status
+
+Paused. This plan should not proceed until the career modules stop using the
+`CAREER_DATA = XCareerData(...)` singleton/data-blob pattern. The career
+subclasses themselves need to become the real owners of career rules first; see
+the corresponding todo in `docs/todo_maybe.md`.
+
 ## Problem
 
 The current character-creation state still stores several career lifecycle

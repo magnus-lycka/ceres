@@ -354,8 +354,8 @@ class CareerData(TermData):
         )
         if projection.summary.career_terms:
             previous = projection.summary.career_terms[-1]
-            if term.continues_career_run_from(previous):
-                term.muster_out = previous.muster_out.next_term()
+            if term.continue_career_run_from(previous):
+                pass
         projection.summary.career_terms.append(term)
 
     def update_current_term_rank(self, projection) -> None:

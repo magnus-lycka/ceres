@@ -184,7 +184,7 @@ class TestCombinedBenefit:
         _apply_muster_out_benefit(projection, combined)
         assert SHIP_SHARE in projection.summary.benefits
         assert WEAPON in projection.summary.benefits
-        assert projection.summary.career_terms[-1].muster_out.benefits == [SHIP_SHARE, WEAPON]
+        assert projection.summary.career_terms[-1].require_muster_out().benefits == [SHIP_SHARE, WEAPON]
 
     def test_apply_handles_mixed_sub_benefits(self):
         from ceres.character.events import _apply_muster_out_benefit
@@ -199,7 +199,7 @@ class TestCombinedBenefit:
         _apply_muster_out_benefit(projection, combined)
         assert projection.summary.characteristics[Chars.SOC] == 6
         assert YACHT in projection.summary.benefits
-        assert projection.summary.career_terms[-1].muster_out.benefits == [YACHT]
+        assert projection.summary.career_terms[-1].require_muster_out().benefits == [YACHT]
 
     def test_choice_benefit_option_can_be_combined(self):
         # ChoiceBenefit itself can reference combined as an option? No —

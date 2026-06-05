@@ -242,7 +242,7 @@ class TestMusterOut:
 
         muster_out_pendings = [p for p in projection.pending_inputs if isinstance(p, PendingMusterOut)]
         assert len(muster_out_pendings) == 2
-        assert projection.summary.career_terms[-1].muster_out.terms == 2
+        assert projection.summary.career_terms[-1].require_muster_out().terms == 2
 
     def test_roll_count_includes_rank_bonus(self):
         # 1 term, rank 1 → 1 + 1//2 = 1 + 0 = 1. rank 2 → 1 + 2//2 = 2 rolls
@@ -310,7 +310,7 @@ class TestMusterOut:
 
         assert projection.summary.cash == 60000
         assert projection.summary.muster_out_cash_count == 3
-        assert projection.summary.career_terms[-1].muster_out.cash_count == 3
+        assert projection.summary.career_terms[-1].require_muster_out().cash_count == 3
 
     def test_muster_out_from_multiple_careers_accumulates_cash_and_benefits(self):
         events = [
@@ -330,10 +330,12 @@ class TestMusterOut:
         assert [term.career.name for term in projection.summary.career_terms] == ['Scout', 'Citizen']
         assert projection.summary.cash == 20000
         assert projection.summary.muster_out_cash_count == 1
-        assert projection.summary.career_terms[0].muster_out.cash_count == 1
-        assert projection.summary.career_terms[1].muster_out.cash_count == 0
+        assert projection.summary.career_terms[0].require_muster_out().cash_count == 1
+        assert projection.summary.career_terms[1].require_muster_out().cash_count == 0
         assert [benefit.key for benefit in projection.summary.benefits] == ['weapon']
-        assert [benefit.key for benefit in projection.summary.career_terms[1].muster_out.benefits] == ['weapon']
+        assert [benefit.key for benefit in projection.summary.career_terms[1].require_muster_out().benefits] == [
+            'weapon'
+        ]
 
     def test_muster_out_counts_only_current_career_run_when_reentering_same_career(self):
         events = [
@@ -357,7 +359,7 @@ class TestMusterOut:
         projection = replay(1, events)
 
         assert [term.career.name for term in projection.summary.career_terms] == ['Scout', 'Citizen', 'Scout']
-        assert projection.summary.career_terms[-1].muster_out.terms == 1
+        assert projection.summary.career_terms[-1].require_muster_out().terms == 1
         assert len([p for p in projection.pending_inputs if isinstance(p, PendingMusterOut)]) == 1
 
     def test_cash_4th_time_raises_error(self):

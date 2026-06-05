@@ -443,6 +443,41 @@ The current stringly-typed foundation is one source of bugs such as empty or
 ambiguous `career_decision` submissions and special-case rendering drift across
 different pending-input kinds.
 
+### Pause career-term/muster-out migration until career classes are real classes
+
+The `CareerTerm` / `MusterOut` refactor should pause before it goes further.
+It is exposing a larger design problem: the current `CareerData` subclasses are
+not really subclasses in the useful object-oriented sense.
+
+Today each career module mostly defines a tiny subclass plus one large
+`CAREER_DATA = XCareerData(...)` object. The huge constructor call contains the
+actual Traveller rules for that career: qualification, assignments, survival,
+advancement, ranks, skill tables, mishaps, events, muster-out tables, and
+career-specific overrides. That data describes the behaviour of the career
+kind. It should be class-level structure and methods on the career subclass,
+not instance data passed to one singleton object.
+
+This shape blocks the cleaner term model. It is hard to decide whether
+`CareerData` and `CareerTerm` should merge, or whether `CareerData` should be a
+rules/helper class used by `CareerTerm`, while `CareerData` itself is still
+encoded as configurable singleton instances.
+
+Before continuing the `CareerTerm.muster_out`, `CareerTerm.rank`, and
+`TermChoices` migration, refactor the 14 career modules so the career classes
+are the real rule owners:
+
+- remove the `CAREER_DATA = XCareerData(...)` singleton pattern
+- move constructor-provided career rules into class attributes/properties or
+  class/instance methods on the career subclass
+- make the loader return the career classes/objects produced by that real
+  subclass model, not data blobs configured after class definition
+- make each career module own its assignment-change/career-run continuity rules
+- then decide whether the corrected career subclass replaces `Career`, replaces
+  `CareerTerm`, or acts as the rule object used by a separate `CareerTerm`
+
+This is a prerequisite for making career-term state sane. Otherwise we will
+keep moving responsibilities between objects that are themselves shaped wrong.
+
 ### Replace `ScheduledEffect` with domain-owned term state
 
 `CharacterProjection.scheduled_effects` is currently a generic queue for several

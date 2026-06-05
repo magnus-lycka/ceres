@@ -206,9 +206,6 @@ class MusterOut(BaseModel):
     cash_count: int = 0
     benefits: list[ItemBenefit] = Field(default_factory=list)
 
-    def next_term(self) -> MusterOut:
-        return self.model_copy(update={'terms': self.terms + 1}, deep=True)
-
 
 class CareerTerm(BaseModel):
     career: Career
@@ -216,10 +213,22 @@ class CareerTerm(BaseModel):
     assignment_index: int = 0
     commission: bool = False
     rank_after_term: int = 0
-    muster_out: MusterOut = Field(default_factory=MusterOut)
+    muster_out: MusterOut | None = Field(default_factory=MusterOut)
 
-    def continues_career_run_from(self, previous: CareerTerm) -> bool:
-        return self.career == previous.career
+    def continue_career_run_from(self, previous: CareerTerm) -> bool:
+        if self.career == previous.career:
+            if not previous.muster_out:
+                raise ValueError('Previous career should have Muster Out information.')
+            self.muster_out = previous.muster_out
+            self.muster_out.terms += 1
+            previous.muster_out = None
+            return True
+        return False
+
+    def require_muster_out(self) -> MusterOut:
+        if self.muster_out is None:
+            raise ReplayError('Career term has no active muster-out state')
+        return self.muster_out
 
 
 class CharacterSummary(BaseModel):
@@ -273,17 +282,17 @@ class CharacterSummary(BaseModel):
 
     @property
     def benefits(self) -> list[ItemBenefit]:
-        return [benefit for term in self.career_terms for benefit in term.muster_out.benefits]
+        return [benefit for term in self.career_terms if term.muster_out for benefit in term.muster_out.benefits]
 
     @property
     def muster_out_cash_count(self) -> int:
-        return sum(term.muster_out.cash_count for term in self.career_terms)
+        return sum(term.muster_out.cash_count for term in self.career_terms if term.muster_out)
 
     def add_muster_out_benefit(self, benefit: ItemBenefit) -> None:
-        self.current_term().muster_out.benefits.append(benefit)
+        self.current_term().require_muster_out().benefits.append(benefit)
 
     def record_muster_out_cash_roll(self) -> None:
-        self.current_term().muster_out.cash_count += 1
+        self.current_term().require_muster_out().cash_count += 1
 
     def terms_started(self, *, only_current_career: bool, include_precareer: bool) -> int:
         terms = self.career_terms
