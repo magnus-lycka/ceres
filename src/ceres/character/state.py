@@ -230,7 +230,6 @@ class CharacterSummary(BaseModel):
     last_assignment: str | None = None  # assignment name after muster-out
     last_assignment_index: int | None = None
     rank: int | None = None
-    term_count: int = 0
     career_terms: list[CareerTerm] = Field(default_factory=list)
     drafted: bool = False
     skills: list[AnySkill] = Field(default_factory=list)
@@ -247,6 +246,36 @@ class CharacterSummary(BaseModel):
         default_factory=list
     )  # skills chosen during university (for graduation boost)
     parole_threshold: int | None = None  # Prisoner career: current Parole Threshold (3-12)
+
+    def latest_career_run_terms(self, career: Career) -> list[CareerTerm]:
+        terms: list[CareerTerm] = []
+        for term in reversed(self.career_terms):
+            if term.career != career:
+                break
+            terms.append(term)
+        return list(reversed(terms))
+
+    def terms_started(self, *, only_current_career: bool, include_precareer: bool) -> int:
+        terms = self.career_terms
+        if only_current_career:
+            career = self.current_career
+            terms = self.latest_career_run_terms(career) if career is not None else []
+        count = len(terms)
+        if include_precareer and (self.precareer is not None or self.precareer_completed is not None):
+            count += 1
+        return count
+
+    @property
+    def terms_started_in_current_career(self) -> int:
+        return self.terms_started(only_current_career=True, include_precareer=False)
+
+    @property
+    def terms_started_in_all_careers(self) -> int:
+        return self.terms_started(only_current_career=False, include_precareer=False)
+
+    @property
+    def terms_started_in_pre_and_careers(self) -> int:
+        return self.terms_started(only_current_career=False, include_precareer=True)
 
     @overload
     def skill_level(self, skill_cls: type[Skill], default: int) -> int: ...

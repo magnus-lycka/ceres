@@ -435,7 +435,6 @@ class CareerData(TermData):
         projection.summary.rank = self.current_rank(projection.summary.career_terms, assignment)
         if not self.prior_terms(projection.summary.career_terms, assignment):
             self._apply_fixed_rank_bonus(projection, 0)
-        projection.summary.term_count += 1
         self.append_term(projection, assignment)
 
         if training is not None:

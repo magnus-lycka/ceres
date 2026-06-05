@@ -6,11 +6,12 @@ from unittest.mock import MagicMock, patch
 from ceres.character.careers import SCOUT
 from ceres.character.notes import NpcNotesCache, build_prompt, generate_notes
 from ceres.character.sophonts import VILANI
-from ceres.character.state import CharacterSummary
+from ceres.character.state import CareerTerm, CharacterSummary
 from tests.character.helpers import MOCK_WORLD
 
 
 def _summary(**kwargs) -> CharacterSummary:
+    term_count = kwargs.pop('term_count', 2)
     defaults = {
         'name': 'Test Character',
         'sophont': VILANI,
@@ -20,7 +21,9 @@ def _summary(**kwargs) -> CharacterSummary:
         'current_career': SCOUT,
         'current_assignment': 'Explorer',
         'rank': 1,
-        'term_count': 2,
+        'career_terms': [
+            CareerTerm(career=SCOUT, assignment='Explorer', assignment_index=3) for _ in range(term_count)
+        ],
     }
     return CharacterSummary.model_validate({**defaults, **kwargs})
 

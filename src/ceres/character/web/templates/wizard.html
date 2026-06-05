@@ -11,7 +11,7 @@
       · {{ summary.homeworld.name }} ({{ summary.homeworld.sector }} {{ summary.homeworld.hex }})
       {% if summary.birthworld != summary.homeworld %}· born {{ summary.birthworld.name }} ({{ summary.birthworld.sector }} {{ summary.birthworld.hex }}){% endif %}
       {% if displayed_career %}· {{ displayed_career.name }}{% if summary.current_assignment %} ({{ summary.current_assignment }}){% elif summary.last_assignment %} ({{ summary.last_assignment }}){% endif %}{% endif %}
-      {% if summary.term_count > 0 %} · {{ summary.term_count }} term{% if summary.term_count != 1 %}s{% endif %}{% endif %}
+      {% if summary.terms_started_in_all_careers > 0 %} · {{ summary.terms_started_in_all_careers }} term{% if summary.terms_started_in_all_careers != 1 %}s{% endif %}{% endif %}
       · Age {{ summary.age }}
     </p>
   </div>

@@ -473,7 +473,7 @@ def test_wizard_shows_ucp_pending(client_with_backend):
 
 def test_wizard_shows_career_name_not_repr(client_with_backend, monkeypatch):
     from ceres.character.careers.career_data import Career
-    from ceres.character.state import CharacterProjection, CharacterSummary
+    from ceres.character.state import CareerTerm, CharacterProjection, CharacterSummary
 
     client, backend = client_with_backend
     monkeypatch.setattr(
@@ -496,7 +496,17 @@ def test_wizard_shows_career_name_not_repr(client_with_backend, monkeypatch):
                 ),
                 current_assignment='Colonist',
                 rank=3,
-                term_count=3,
+                career_terms=[
+                    CareerTerm(
+                        career=Career(
+                            name='Citizen',
+                            source='Core',
+                            description='Individuals serving in a corporation, bureaucracy or industry.',
+                        ),
+                        assignment='Colonist',
+                    )
+                    for _ in range(3)
+                ],
             ),
         ),
     )
@@ -661,7 +671,7 @@ def test_character_sheet_shows_name(client_with_backend):
 
 def test_character_sheet_shows_career_name_not_repr(client_with_backend, monkeypatch):
     from ceres.character.careers.career_data import Career
-    from ceres.character.state import CharacterProjection, CharacterSummary
+    from ceres.character.state import CareerTerm, CharacterProjection, CharacterSummary
 
     client, backend = client_with_backend
     monkeypatch.setattr(
@@ -684,7 +694,17 @@ def test_character_sheet_shows_career_name_not_repr(client_with_backend, monkeyp
                 ),
                 current_assignment='Colonist',
                 rank=3,
-                term_count=3,
+                career_terms=[
+                    CareerTerm(
+                        career=Career(
+                            name='Citizen',
+                            source='Core',
+                            description='Individuals serving in a corporation, bureaucracy or industry.',
+                        ),
+                        assignment='Colonist',
+                    )
+                    for _ in range(3)
+                ],
             ),
         ),
     )

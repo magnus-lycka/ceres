@@ -69,7 +69,7 @@ def build_prompt(summary: CharacterSummary) -> str:
 
     # Career advancement pace
     rank = summary.rank or 0
-    terms = summary.term_count
+    terms = summary.terms_started_in_all_careers
     if terms >= 2:
         ratio = rank / terms
         if ratio >= 1.0:
@@ -98,7 +98,8 @@ def build_prompt(summary: CharacterSummary) -> str:
     mishap_section = f'\nMishaps:\n{problems_block}' if problems_block else ''
     career_context = _career_context_lines(summary)
     career_context_section = f'\nCareer context:\n{career_context}' if career_context else ''
-    n_sentences = summary.term_count + 2
+    terms = summary.terms_started_in_all_careers
+    n_sentences = terms + 2
     return (
         f'You are writing flavour notes for a Mongoose Traveller 2nd Edition NPC stat block.\n'
         f'Setting: Third Imperium (ca. 1105). '
@@ -107,7 +108,7 @@ def build_prompt(summary: CharacterSummary) -> str:
         f'not called "Vilani Scouts".\n\n'
         f'Name: {summary.name or "Unknown"}\n'
         f'Species: {summary.sophont.name}\n'
-        f'Career: {career_label} — Rank {summary.rank}, {summary.term_count} terms\n'
+        f'Career: {career_label} — Rank {summary.rank}, {terms} terms\n'
         f'Age: {summary.age}\n'
         f'Characteristics: {char_lines}\n\n'
         f'Career history:\n{narrative_block}'

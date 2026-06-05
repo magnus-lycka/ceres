@@ -129,6 +129,19 @@ class Form(dict[str, str]):
 
 
 def _projection(**summary_kwargs: Any) -> CharacterProjection:
+    term_count = summary_kwargs.pop('term_count', None)
+    if term_count is not None and 'career_terms' not in summary_kwargs:
+        current_career = summary_kwargs.get('current_career') or SCOUT
+        current_assignment = summary_kwargs.get('current_assignment') or 'Courier'
+        current_assignment_index = summary_kwargs.get('current_assignment_index') or 1
+        summary_kwargs['career_terms'] = [
+            CareerTerm(
+                career=current_career,
+                assignment=current_assignment,
+                assignment_index=current_assignment_index,
+            )
+            for _ in range(term_count)
+        ]
     return CharacterProjection(
         character_id=1,
         summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD, **summary_kwargs),

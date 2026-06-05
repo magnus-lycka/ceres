@@ -480,7 +480,7 @@ class SurviveEvent(EventBase):
         else:
             if self.roll == 2:
                 projection.summary.narrative.append(
-                    f'Automatic mishap (rolled natural 2) in term {projection.summary.term_count}'
+                    f'Automatic mishap (rolled natural 2) in term {projection.summary.terms_started_in_current_career}'
                 )
             projection.pending_inputs.append(PendingMishap(id=f'{self.id}.0', instruction='Roll 1D on Mishap table'))
 
@@ -612,7 +612,7 @@ class TermEventEvent(EventBase):
         career_handler_invoked = False
         if term_event:
             projection.summary.narrative.append(
-                f'Term {projection.summary.term_count} event ({career.name}): {term_event.text}'
+                f'Term {projection.summary.terms_started_in_current_career} event ({career.name}): {term_event.text}'
             )
             for effect in term_event.effects:
                 if isinstance(effect, SkillChoiceEffect):
@@ -1006,13 +1006,13 @@ class SkillRollEvent(EventBase):
 
 class AgingRollEvent(EventBase):
     kind: Literal['aging_roll'] = 'aging_roll'
-    roll: int  # 2D result (2-12) before the -term_count DM
+    roll: int  # 2D result (2-12) before the term-count DM
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
 
         if not (2 <= self.roll <= 12):
             raise ReplayError(f'Aging roll must be 2-12, got {self.roll}')
-        effective = self.roll - projection.summary.term_count
+        effective = self.roll - projection.summary.terms_started_in_pre_and_careers
         pending_idx = 0
         if effective >= 1:
             complete_aging(projection, self.id)
@@ -1348,8 +1348,6 @@ class AgingCrisisEvent(EventBase):
             for char in list(projection.summary.characteristics.keys()):
                 if projection.summary.characteristics[char] == 0:
                     projection.summary.characteristics[char] = 1
-            if projection.pending_reenlist is True:
-                projection.summary.term_count += 1
             projection.pending_reenlist = None
             projection.muster_out_career = None
             if career:
@@ -1434,7 +1432,8 @@ class PreCareerEntryEvent(EventBase):
         precareer = load_precareers().get(self.precareer)
         if precareer is None:
             raise ReplayError(f'Unknown pre-career: {self.precareer!r}')
-        if projection.summary.term_count >= 3:
+        terms_started = projection.summary.terms_started_in_pre_and_careers
+        if terms_started >= 3:
             raise ReplayError('Pre-career education is only available in terms 1–3')
         if projection.summary.precareer_completed is not None:
             raise ReplayError('A character may only attend one pre-career')
@@ -1442,7 +1441,7 @@ class PreCareerEntryEvent(EventBase):
         if precareer.entry is not None:
             char_val = projection.summary.characteristics.get(precareer.entry.characteristic, 0)
             dm += characteristic_dm(char_val)
-            term_dm = precareer.entry_term_dms.get(projection.summary.term_count + 1, 0)
+            term_dm = precareer.entry_term_dms.get(terms_started + 1, 0)
             dm += term_dm
             if precareer.entry_soc_bonus_min is not None:
                 soc = projection.summary.characteristics.get(Chars.SOC, 0)
@@ -1452,7 +1451,6 @@ class PreCareerEntryEvent(EventBase):
                 queue_career_choice(projection, self.id, 'Pre-career entry failed — choose a career')
                 return
         projection.summary.precareer = self.precareer
-        projection.summary.term_count += 1
         projection.summary.age += 4
         pending_idx = 0
         pending_idx = precareer.apply_entry(projection, self, pending_idx)
@@ -1807,7 +1805,8 @@ def muster_out_setup(
     lose_current_term: bool = False,
     clear_career: bool = True,
 ) -> int:
-    roll_count = projection.summary.term_count + (projection.summary.rank or 0) // 2
+    career_terms = projection.summary.latest_career_run_terms(career.career)
+    roll_count = len(career_terms) + (projection.summary.rank or 0) // 2
     if lose_current_term:
         roll_count = max(0, roll_count - 1)
     reduce_effects = [

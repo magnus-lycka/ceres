@@ -20,7 +20,7 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.replay import ReplayError, replay
-from ceres.character.skills import Admin, Athletics, Carouse, Drive, Medic, SpaceScience
+from ceres.character.skills import Admin, Athletics, Carouse, Drive, JackOfAllTrades, Medic, SpaceScience
 from ceres.character.sophonts import VILANI
 from ceres.character.state import EffectTrigger
 from tests.character.helpers import MOCK_WORLD
@@ -289,6 +289,50 @@ class TestMusterOut:
 
         assert projection.summary.cash == 60000
         assert projection.summary.muster_out_cash_count == 3
+
+    def test_muster_out_from_multiple_careers_accumulates_cash_and_benefits(self):
+        events = [
+            *_setup_through_reenlist_false(),
+            MusterOutEvent(id=9, fulfills='8.0', table='cash', roll=1),  # Scout cash: Cr20000
+            CareerEvent(id=10, fulfills='9.0', career='Citizen', assignment='Colonist', qualification_roll=12),
+            SkillChoiceEvent(id=11, fulfills='10.0', skill=JackOfAllTrades()),
+            SurviveEvent(id=12, fulfills='11.0', roll=7),
+            TermEventEvent(id=13, fulfills='12.0', roll=5),
+            AdvancementEvent(id=14, fulfills='13.0', roll=3),
+            ReenlistEvent(id=15, fulfills='14.0', reenlist=False),
+            MusterOutEvent(id=16, fulfills='15.0', table='benefits', roll=4),  # Citizen benefits: Weapon
+        ]
+
+        projection = replay(1, events)
+
+        assert [term.career.name for term in projection.summary.career_terms] == ['Scout', 'Citizen']
+        assert projection.summary.cash == 20000
+        assert projection.summary.muster_out_cash_count == 1
+        assert [benefit.key for benefit in projection.summary.benefits] == ['weapon']
+
+    def test_muster_out_counts_only_current_career_run_when_reentering_same_career(self):
+        events = [
+            *_setup_through_reenlist_false(),
+            MusterOutEvent(id=9, fulfills='8.0', table='cash', roll=1),  # first Scout run
+            CareerEvent(id=10, fulfills='9.0', career='Citizen', assignment='Colonist', qualification_roll=12),
+            SkillChoiceEvent(id=11, fulfills='10.0', skill=JackOfAllTrades()),
+            SurviveEvent(id=12, fulfills='11.0', roll=7),
+            TermEventEvent(id=13, fulfills='12.0', roll=5),
+            AdvancementEvent(id=14, fulfills='13.0', roll=3),
+            ReenlistEvent(id=15, fulfills='14.0', reenlist=False),
+            MusterOutEvent(id=16, fulfills='15.0', table='benefits', roll=4),  # intervening Citizen run
+            CareerEvent(id=17, fulfills='16.0', career='Scout', assignment='Courier', qualification_roll=7),
+            SkillTableEvent(id=18, fulfills='17.0', table='service_skills', roll=1),
+            SurviveEvent(id=19, fulfills='18.0', roll=7),
+            TermEventEvent(id=20, fulfills='19.0', roll=5),
+            AdvancementEvent(id=21, fulfills='20.0', roll=3),
+            ReenlistEvent(id=22, fulfills='21.0', reenlist=False),
+        ]
+
+        projection = replay(1, events)
+
+        assert [term.career.name for term in projection.summary.career_terms] == ['Scout', 'Citizen', 'Scout']
+        assert len([p for p in projection.pending_inputs if isinstance(p, PendingMusterOut)]) == 1
 
     def test_cash_4th_time_raises_error(self):
         # 3 terms, rank 2 → 3 + 1 = 4 rolls; cash max 3 → 4th raises error

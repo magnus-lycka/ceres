@@ -490,12 +490,12 @@ class TestReenlist:
             AdvancementEvent(id=7, fulfills='6.0', roll=advancement_roll),
         ]
 
-    def test_same_assignment_increments_term_count(self):
+    def test_same_assignment_starts_another_term(self):
         events = [*self._setup_through_advancement(), AssignmentChangeChoiceEvent(id=8, fulfills='7.0', choice='same')]
 
         projection = replay(1, events)
 
-        assert projection.summary.term_count == 2
+        assert projection.summary.terms_started_in_current_career == 2
 
     def test_same_assignment_creates_skill_table_pending(self):
         events = [*self._setup_through_advancement(), AssignmentChangeChoiceEvent(id=8, fulfills='7.0', choice='same')]
@@ -1486,7 +1486,7 @@ class TestAssignmentChange:
         assert projection.summary.current_career is not None
         assert projection.summary.current_career.name == 'Scout'
 
-    def test_successful_change_increments_term_count(self):
+    def test_successful_change_starts_another_term(self):
         """Successful assignment change starts a new term."""
         events = [
             *self._through_advancement(),
@@ -1494,7 +1494,7 @@ class TestAssignmentChange:
         ]
         projection = replay(1, events)
 
-        assert projection.summary.term_count == 2
+        assert projection.summary.terms_started_in_current_career == 2
 
     def test_successful_change_creates_skill_table_pending(self):
         """After successful assignment change, a skill table choice is presented."""

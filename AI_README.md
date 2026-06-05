@@ -107,6 +107,10 @@ lives in the test suite, and nothing is deployed. Therefore:
 - **TDD** - Write tests first, then implement. Tests live in `tests/`.
 - **Test Design** - Tests should verify that the code under test does what it is supposed to do.
   Tests written to verify that the code under test does what it does are of much less value.
+  If code is broken with respect to the behaviour under test, the test must go red. Never
+  route around, weaken, skip, or narrowly assert past a known bug just to keep the suite
+  green. Red tests are useful evidence of required work; green tests that tolerate known
+  broken behaviour make correctness harder to achieve.
 - **Code Design** - Before writing code, always consider whether this is the right place for
   this particular code. Assume that one module, class or function is always responsible for
   anything in the system. That's where code should go. If there isn't a good place for some
