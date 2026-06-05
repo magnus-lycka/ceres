@@ -237,7 +237,7 @@ def _apply_muster_out_benefit(projection: Any, benefit: object, event_id: int = 
         current = projection.summary.characteristics.get(benefit.char, 0)
         projection.summary.characteristics[benefit.char] = min(15, current + benefit.amount)
     elif isinstance(benefit, ItemBenefit):
-        projection.summary.benefits.append(benefit)
+        projection.summary.add_muster_out_benefit(benefit)
     elif isinstance(benefit, ChoiceBenefit):
         projection.pending_inputs.append(
             PendingBenefitChoice(
@@ -1306,7 +1306,7 @@ class MusterOutEvent(EventBase):
             if projection.summary.muster_out_cash_count >= 3:
                 raise ReplayError('Cash may only be taken a maximum of 3 times')
             projection.summary.cash += row.cash
-            projection.summary.muster_out_cash_count += 1
+            projection.summary.record_muster_out_cash_roll()
         else:
             for _ in range(row.count):
                 _apply_muster_out_benefit(projection, row.benefit, self.id)

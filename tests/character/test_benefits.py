@@ -33,7 +33,24 @@ from ceres.character.benefits import (
     CombinedBenefit,
     ItemBenefit,
 )
+from ceres.character.careers import SCOUT
 from ceres.character.characteristics import Chars
+from ceres.character.sophonts import VILANI
+from ceres.character.state import CareerTerm, CharacterProjection, CharacterSummary
+from tests.character.helpers import MOCK_WORLD
+
+
+def _projection_with_term(characteristics: dict[Chars, int] | None = None) -> CharacterProjection:
+    return CharacterProjection(
+        character_id=1,
+        summary=CharacterSummary(
+            name='Test',
+            sophont=VILANI,
+            homeworld=MOCK_WORLD,
+            characteristics=characteristics or {},
+            career_terms=[CareerTerm(career=SCOUT, assignment='Courier', assignment_index=1)],
+        ),
+    )
 
 
 class TestItemBenefitConstants:
@@ -162,28 +179,17 @@ class TestCombinedBenefit:
     def test_apply_appends_all_item_benefits(self):
         from ceres.character.events import _apply_muster_out_benefit
 
-        projection = SimpleNamespace(
-            summary=SimpleNamespace(
-                characteristics={},
-                benefits=[],
-            ),
-            pending_inputs=[],
-        )
+        projection = _projection_with_term()
         combined = CombinedBenefit(benefits=[SHIP_SHARE, WEAPON])
         _apply_muster_out_benefit(projection, combined)
         assert SHIP_SHARE in projection.summary.benefits
         assert WEAPON in projection.summary.benefits
+        assert projection.summary.career_terms[-1].muster_out.benefits == [SHIP_SHARE, WEAPON]
 
     def test_apply_handles_mixed_sub_benefits(self):
         from ceres.character.events import _apply_muster_out_benefit
 
-        projection = SimpleNamespace(
-            summary=SimpleNamespace(
-                characteristics={Chars.SOC: 5},
-                benefits=[],
-            ),
-            pending_inputs=[],
-        )
+        projection = _projection_with_term({Chars.SOC: 5})
         combined = CombinedBenefit(
             benefits=[
                 CharacteristicIncrease(char=Chars.SOC, amount=1),
@@ -193,6 +199,7 @@ class TestCombinedBenefit:
         _apply_muster_out_benefit(projection, combined)
         assert projection.summary.characteristics[Chars.SOC] == 6
         assert YACHT in projection.summary.benefits
+        assert projection.summary.career_terms[-1].muster_out.benefits == [YACHT]
 
     def test_choice_benefit_option_can_be_combined(self):
         # ChoiceBenefit itself can reference combined as an option? No —

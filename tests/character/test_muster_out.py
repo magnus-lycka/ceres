@@ -194,6 +194,26 @@ class TestMusterOut:
 
         assert any(b.key == 'scout_ship' for b in projection.summary.benefits)
 
+    def test_benefit_from_continued_career_run_is_counted_once(self):
+        events = [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=5),
+            AdvancementEvent(id=7, fulfills='6.0', roll=3),
+            ReenlistEvent(id=8, fulfills='7.0', reenlist=True),
+            SkillTableEvent(id=9, fulfills='8.0', table='service_skills', roll=1),
+            SurviveEvent(id=10, fulfills='9.0', roll=7),
+            TermEventEvent(id=11, fulfills='10.0', roll=5),
+            AdvancementEvent(id=12, fulfills='11.0', roll=3),
+            ReenlistEvent(id=13, fulfills='12.0', reenlist=False),
+            MusterOutEvent(id=14, fulfills='13.0', table='benefits', roll=6),
+        ]
+
+        projection = replay(1, events)
+
+        assert [benefit.key for benefit in projection.summary.benefits] == ['scout_ship']
+
     def test_muster_out_career_cleared_after_all_rolls(self):
         events = [
             *_setup_through_reenlist_false(),
@@ -290,6 +310,7 @@ class TestMusterOut:
 
         assert projection.summary.cash == 60000
         assert projection.summary.muster_out_cash_count == 3
+        assert projection.summary.career_terms[-1].muster_out.cash_count == 3
 
     def test_muster_out_from_multiple_careers_accumulates_cash_and_benefits(self):
         events = [
@@ -309,7 +330,10 @@ class TestMusterOut:
         assert [term.career.name for term in projection.summary.career_terms] == ['Scout', 'Citizen']
         assert projection.summary.cash == 20000
         assert projection.summary.muster_out_cash_count == 1
+        assert projection.summary.career_terms[0].muster_out.cash_count == 1
+        assert projection.summary.career_terms[1].muster_out.cash_count == 0
         assert [benefit.key for benefit in projection.summary.benefits] == ['weapon']
+        assert [benefit.key for benefit in projection.summary.career_terms[1].muster_out.benefits] == ['weapon']
 
     def test_muster_out_counts_only_current_career_run_when_reentering_same_career(self):
         events = [

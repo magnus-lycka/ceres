@@ -207,7 +207,7 @@ class MusterOut(BaseModel):
     benefits: list[ItemBenefit] = Field(default_factory=list)
 
     def next_term(self) -> MusterOut:
-        return self.model_copy(update={'terms': self.terms + 1})
+        return self.model_copy(update={'terms': self.terms + 1}, deep=True)
 
 
 class CareerTerm(BaseModel):
@@ -250,8 +250,6 @@ class CharacterSummary(BaseModel):
     problems: list[str] = Field(default_factory=list)
     narrative: list[str] = Field(default_factory=list)
     cash: int = 0
-    benefits: list[ItemBenefit] = Field(default_factory=list)
-    muster_out_cash_count: int = 0
     dead: bool = False
     precareer: str | None = None  # pre-career currently in progress
     precareer_completed: str | None = None  # pre-career that was attended (whether graduated or not)
@@ -267,6 +265,25 @@ class CharacterSummary(BaseModel):
                 break
             terms.append(term)
         return list(reversed(terms))
+
+    def current_term(self) -> CareerTerm:
+        if not self.career_terms:
+            raise ReplayError('No current career term')
+        return self.career_terms[-1]
+
+    @property
+    def benefits(self) -> list[ItemBenefit]:
+        return [benefit for term in self.career_terms for benefit in term.muster_out.benefits]
+
+    @property
+    def muster_out_cash_count(self) -> int:
+        return sum(term.muster_out.cash_count for term in self.career_terms)
+
+    def add_muster_out_benefit(self, benefit: ItemBenefit) -> None:
+        self.current_term().muster_out.benefits.append(benefit)
+
+    def record_muster_out_cash_roll(self) -> None:
+        self.current_term().muster_out.cash_count += 1
 
     def terms_started(self, *, only_current_career: bool, include_precareer: bool) -> int:
         terms = self.career_terms
