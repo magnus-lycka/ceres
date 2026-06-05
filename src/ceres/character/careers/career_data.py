@@ -345,15 +345,18 @@ class CareerData(TermData):
     def append_term(self, projection, assignment: AssignmentData) -> None:
         from ceres.character.state import CareerTerm
 
-        projection.summary.career_terms.append(
-            CareerTerm(
-                career=self.career,
-                assignment=assignment.name,
-                assignment_index=self.assignment_index(assignment),
-                commission=self.is_commissioned(projection.summary.career_terms),
-                rank_after_term=projection.summary.rank or 0,
-            )
+        term = CareerTerm(
+            career=self.career,
+            assignment=assignment.name,
+            assignment_index=self.assignment_index(assignment),
+            commission=self.is_commissioned(projection.summary.career_terms),
+            rank_after_term=projection.summary.rank or 0,
         )
+        if projection.summary.career_terms:
+            previous = projection.summary.career_terms[-1]
+            if term.continues_career_run_from(previous):
+                term.muster_out = previous.muster_out.next_term()
+        projection.summary.career_terms.append(term)
 
     def update_current_term_rank(self, projection) -> None:
         if projection.summary.career_terms:

@@ -222,6 +222,7 @@ class TestMusterOut:
 
         muster_out_pendings = [p for p in projection.pending_inputs if isinstance(p, PendingMusterOut)]
         assert len(muster_out_pendings) == 2
+        assert projection.summary.career_terms[-1].muster_out.terms == 2
 
     def test_roll_count_includes_rank_bonus(self):
         # 1 term, rank 1 → 1 + 1//2 = 1 + 0 = 1. rank 2 → 1 + 2//2 = 2 rolls
@@ -332,6 +333,7 @@ class TestMusterOut:
         projection = replay(1, events)
 
         assert [term.career.name for term in projection.summary.career_terms] == ['Scout', 'Citizen', 'Scout']
+        assert projection.summary.career_terms[-1].muster_out.terms == 1
         assert len([p for p in projection.pending_inputs if isinstance(p, PendingMusterOut)]) == 1
 
     def test_cash_4th_time_raises_error(self):

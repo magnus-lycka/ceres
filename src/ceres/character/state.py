@@ -201,12 +201,25 @@ def make_connection(
             return Enemy(source=source, power=power, affinity=affinity, enmity=enmity)
 
 
+class MusterOut(BaseModel):
+    terms: int = 1
+    cash_count: int = 0
+    benefits: list[ItemBenefit] = Field(default_factory=list)
+
+    def next_term(self) -> MusterOut:
+        return self.model_copy(update={'terms': self.terms + 1})
+
+
 class CareerTerm(BaseModel):
     career: Career
     assignment: str
     assignment_index: int = 0
     commission: bool = False
     rank_after_term: int = 0
+    muster_out: MusterOut = Field(default_factory=MusterOut)
+
+    def continues_career_run_from(self, previous: CareerTerm) -> bool:
+        return self.career == previous.career
 
 
 class CharacterSummary(BaseModel):

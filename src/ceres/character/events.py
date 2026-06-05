@@ -1805,8 +1805,9 @@ def muster_out_setup(
     lose_current_term: bool = False,
     clear_career: bool = True,
 ) -> int:
-    career_terms = projection.summary.latest_career_run_terms(career.career)
-    roll_count = len(career_terms) + (projection.summary.rank or 0) // 2
+    current_term = projection.summary.career_terms[-1] if projection.summary.career_terms else None
+    run_terms = current_term.muster_out.terms if current_term is not None else 0
+    roll_count = run_terms + (projection.summary.rank or 0) // 2
     if lose_current_term:
         roll_count = max(0, roll_count - 1)
     reduce_effects = [
