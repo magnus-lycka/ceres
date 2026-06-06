@@ -82,9 +82,9 @@ class RogueMishap2Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        from ceres.character.careers.prisoner import PRISONER
+        from ceres.character.events import _set_forced_prison_career
 
-        projection.forced_next_career = PRISONER
+        _set_forced_prison_career(projection, 'Arrested. You must take the Prisoner career in your next term.')
         return pending_idx
 
 
@@ -97,9 +97,12 @@ class RogueMishap3RollTwo(ChoiceBase):
 
     def handle(self, projection: CharacterProjection, event) -> None:
         from ceres.character.careers.loader import load_careers
-        from ceres.character.careers.prisoner import PRISONER
+        from ceres.character.events import _set_forced_prison_career
 
-        projection.forced_next_career = PRISONER
+        _set_forced_prison_career(
+            projection,
+            'Betrayed by a friend. Rolled 2 — must take the Prisoner career next term.',
+        )
         career_obj = projection.summary.current_career
         career = load_careers().get(career_obj.name if career_obj else '')
         if career is None:
@@ -153,14 +156,15 @@ class RogueEvent3SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['rogue_event_3_skill_roll'] = 'rogue_event_3_skill_roll'
 
     def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
-        from ceres.character.careers.prisoner import PRISONER
-        from ceres.character.events import _apply_mishap_ejection
+        from ceres.character.events import _apply_mishap_ejection, _set_forced_prison_career
 
         if event.modified_roll >= 8:
             pass  # cleared — _apply_skill_roll auto-queues advancement
         else:
             career = projection.get_current_career()
-            projection.forced_next_career = PRISONER
+            _set_forced_prison_career(
+                projection, 'Arrested and charged. Failed to avoid conviction — sent to Prisoner career.'
+            )
             _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
 
 

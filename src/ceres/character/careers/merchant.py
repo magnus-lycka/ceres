@@ -162,10 +162,10 @@ class PendingMerchantEvent8Roll(CareerSkillRollPendingBase):
     kind: Literal['merchant_event_8_roll'] = 'merchant_event_8_roll'
 
     def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
-        from ceres.character.careers.prisoner import PRISONER
+        from ceres.character.events import _set_forced_prison_career
 
         if event.modified_roll == 2:
-            projection.forced_next_career = PRISONER
+            _set_forced_prison_career(projection, 'Legal trouble — rolled 2, sent to Prisoner career.')
 
 
 class MerchantEvent8Handler(CareerHandlerBase):

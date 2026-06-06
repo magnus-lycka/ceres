@@ -372,6 +372,11 @@ world.
 
 ## Character creation: draft, career switching, and assignment changes
 
+IMPORTANT: Whatever is done in the scope of this todo has to donsider the
+overarching goal in todo "Character creation: eliminate remaining semantic
+strings" to move all Traveller rules knowledge out of events.py and into
+pure domain modules susch as the career modules.
+
 - **Draft domain logic** — the draft mechanic should live in the event engine
   (career-owned `is_in_draft` / `is_draft_alternative` predicates, per RIC-003),
   not in the web package. Any draft logic currently in `ceres.character.web`

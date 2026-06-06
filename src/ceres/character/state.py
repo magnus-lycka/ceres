@@ -207,6 +207,9 @@ class CareerTerm(BaseModel):
     commission: bool = False
     rank_after_term: int = 0
     muster_out: MusterOut | None = Field(default_factory=MusterOut)
+    event: str | None = None
+    mishap: str | None = None
+    prison: str | None = None
 
     def continue_career_run_from(self, previous: CareerTerm) -> bool:
         if not previous.muster_out:

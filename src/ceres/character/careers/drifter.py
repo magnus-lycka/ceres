@@ -75,13 +75,12 @@ class PendingDrifterMishap5SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['drifter_mishap_5_skill_roll'] = 'drifter_mishap_5_skill_roll'
 
     def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
-        from ceres.character.careers.prisoner import PRISONER
-        from ceres.character.events import _apply_mishap_ejection
+        from ceres.character.events import _apply_mishap_ejection, _set_forced_prison_career
 
         career = projection.get_current_career()
         projection.summary.connections.append(Rival(source='A friend who turned on you'))
         if event.modified_roll == 2:
-            projection.forced_next_career = PRISONER
+            _set_forced_prison_career(projection, 'Betrayed — rolled 2, sent to Prisoner career.')
         _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
 
 
@@ -141,9 +140,9 @@ class DrifterEvent9Prison(ChoiceBase):
     label: str = 'Be sent to Prisoner career'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.careers.prisoner import PRISONER
+        from ceres.character.events import _set_forced_prison_career
 
-        projection.forced_next_career = PRISONER
+        _set_forced_prison_career(projection, 'Sent to Prisoner career after a risky adventure.')
 
 
 class PendingDrifterEvent9RollSkillRoll(CareerSkillRollPendingBase):

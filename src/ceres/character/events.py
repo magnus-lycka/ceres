@@ -252,6 +252,14 @@ def _apply_skill_table_entry(projection: Any, entry: Any) -> None:
         projection.increment_skill(entry)
 
 
+def _set_forced_prison_career(projection: Any, description: str) -> None:
+    from ceres.character.careers.prisoner import PRISONER
+
+    projection.forced_next_career = PRISONER
+    if projection.summary.career_terms:
+        projection.summary.career_terms[-1].prison = description
+
+
 def _apply_mishap_ejection(
     projection: Any,
     career: Any,
@@ -569,6 +577,8 @@ class MishapEvent(EventBase):
                 _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id, pending_idx)
             )
         else:
+            if mishap and projection.summary.career_terms:
+                projection.summary.career_terms[-1].mishap = mishap.text
             purge_career_pendings(projection)
             projection.summary.age += 4
             if projection.summary.age >= 34:
@@ -605,6 +615,8 @@ class TermEventEvent(EventBase):
             projection.summary.narrative.append(
                 f'Term {projection.summary.terms_started_in_current_career} event ({career.name}): {term_event.text}'
             )
+            if projection.summary.career_terms:
+                projection.summary.career_terms[-1].event = term_event.text
             for effect in term_event.effects:
                 if isinstance(effect, SkillChoiceEffect):
                     skill_choice_effect = effect
@@ -1108,9 +1120,7 @@ class LifeEventCrimeTakePrisoner(ChoiceBase):
     label: str = 'Take the Prisoner career next term'
 
     def handle(self, projection: Any, event: Any) -> None:
-        from ceres.character.careers.prisoner import PRISONER
-
-        projection.forced_next_career = PRISONER
+        _set_forced_prison_career(projection, 'Crime life event — chose to take the Prisoner career next term.')
 
 
 class LifeEventEvent(EventBase):
