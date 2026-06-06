@@ -110,7 +110,7 @@ class PendingArmyEvent6SkillRoll(CareerSkillRollPendingBase):
         if event.modified_roll >= 8:
             projection.pending_inputs.append(
                 PendingSkillChoice(
-                    id=f'{event.id}.0',
+                    pending_id=(event.id, 0),
                     instruction='Ground war success: gain one level in Gun Combat or Leadership',
                     options=[GunCombat(), Leadership()],
                 )
@@ -131,7 +131,7 @@ class ArmyMishap4Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingChoices(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction=(
                     'Join their ring (gain commanding officer as Ally, lose Benefit roll) '
                     'or co-operate with MPs (keep Benefit roll from this term)?'
@@ -152,7 +152,7 @@ class ArmyEvent6Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingArmyEvent6SkillRoll(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Roll EDU 8+ to avoid injury in the brutal ground war',
                 options=[Chars.EDU],
             )

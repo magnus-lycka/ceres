@@ -99,7 +99,7 @@ class PrisonerMishap3Fight(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         projection.pending_inputs.append(
             PendingPrisonerMishap3FightSkillRoll(
-                id=f'{event.id}.0',
+                pending_id=(event.id, 0),
                 instruction='Roll Melee 8+: success = gain Enemy + PT+1; fail = roll twice on Injury table',
                 options=[Melee()],
             )
@@ -122,7 +122,7 @@ class PendingPrisonerMishap3FightSkillRoll(CareerSkillRollPendingBase):
         else:
             projection.pending_inputs.append(
                 PendingDoubleInjuryRoll(
-                    id=f'{event.id}.0',
+                    pending_id=(event.id, 0),
                     instruction='Gang fight: roll twice on the Injury table, apply lower result',
                     options=['1', '2', '3', '4', '5', '6'],
                 )
@@ -139,7 +139,7 @@ class PrisonerMishap3Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingChoices(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Prison gang attack: fight back (roll Melee 8+) or submit (lose Benefit roll)?',
                 choices=[PrisonerMishap3Fight(), PrisonerMishap3Submit()],
             )
@@ -166,7 +166,7 @@ class PrisonerEvent3Attempt(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         projection.pending_inputs.append(
             PendingPrisonerEvent3EscapeSkillRoll(
-                id=f'{event.id}.0',
+                pending_id=(event.id, 0),
                 instruction='Roll Stealth or Deception 10+: success = escape (freed); fail = PT+2',
                 options=[Stealth(), Deception()],
             )
@@ -194,7 +194,7 @@ class PrisonerEvent3Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingChoices(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Attempt to escape the prison (Stealth or Deception 10+) or stay?',
                 choices=[PrisonerEvent3Attempt(), PrisonerEvent3Stay()],
             )
@@ -213,7 +213,7 @@ class PendingPrisonerEvent4SkillRoll(CareerSkillRollPendingBase):
             projection.summary.parole_threshold = max(0, (projection.summary.parole_threshold or 0) - 1)
             projection.pending_inputs.append(
                 PendingSkillChoice(
-                    id=f'{event.id}.0',
+                    pending_id=(event.id, 0),
                     instruction='Hard labour endured: choose Athletics, Mechanic, or Melee (unarmed)',
                     options=[Athletics(), Mechanic(), Melee()],
                 )
@@ -231,7 +231,7 @@ class PrisonerEvent4Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingPrisonerEvent4SkillRoll(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Roll END 8+: success = PT-1 + skill choice; fail = PT+1',
                 options=[Chars.END],
             )
@@ -253,7 +253,7 @@ class PendingPrisonerEvent5SkillRoll(CareerSkillRollPendingBase):
             )
             projection.pending_inputs.append(
                 PendingSkillChoice(
-                    id=f'{event.id}.0',
+                    pending_id=(event.id, 0),
                     instruction='Joined gang: choose Persuade, Melee, or Stealth',
                     options=[Persuade(), Melee(), Stealth()],
                 )
@@ -271,7 +271,7 @@ class PrisonerEvent5Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingPrisonerEvent5SkillRoll(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Roll Persuade or Melee 8+ to join the gang: success = PT+1 + skill; fail = gain Enemy',
                 options=[Persuade(), Melee()],
             )
@@ -298,7 +298,7 @@ class PendingPrisonerEvent6SkillRoll(CareerSkillRollPendingBase):
             )
             projection.pending_inputs.append(
                 PendingSkillChoice(
-                    id=f'{event.id}.0',
+                    pending_id=(event.id, 0),
                     instruction='Vocational training: choose any skill at level 1',
                     options=all_skills,
                 )
@@ -313,7 +313,7 @@ class PrisonerEvent6Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingPrisonerEvent6SkillRoll(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Roll EDU 8+ to gain any skill at level 1',
                 options=[Chars.EDU],
             )
@@ -331,7 +331,7 @@ class PrisonerEvent7Riot(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         projection.pending_inputs.append(
             PendingPrisonerEvent7RiotSkillRoll(
-                id=f'{event.id}.0',
+                pending_id=(event.id, 0),
                 instruction='Riot: roll END 8+: success = survive unhurt; fail = roll on Injury table',
                 options=[Chars.END],
             )
@@ -403,7 +403,7 @@ class PendingPrisonerEvent7RiotSkillRoll(CareerSkillRollPendingBase):
         if event.modified_roll < 8:
             projection.pending_inputs.append(
                 PendingInjuryTable(
-                    id=f'{event.id}.0',
+                    pending_id=(event.id, 0),
                     instruction='Riot injury: roll 1D on Injury table',
                     options=['1', '2', '3', '4', '5', '6'],
                 )
@@ -421,7 +421,7 @@ class PrisonerEvent7Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingChoices(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Prison Event: roll 1D and select the matching result',
                 choices=[
                     PrisonerEvent7Riot(),
@@ -449,7 +449,7 @@ class PrisonerEvent9Level1(ChoiceBase):
         )
         projection.pending_inputs.append(
             PendingPrisonerEvent9LawyerSkillRoll(
-                id=f'{event.id}.0',
+                pending_id=(event.id, 0),
                 instruction='Roll 2D + 1 vs 8+: success = PT-1',
                 options=[],
                 lawyer_level=1,
@@ -467,7 +467,7 @@ class PrisonerEvent9Level2(ChoiceBase):
         )
         projection.pending_inputs.append(
             PendingPrisonerEvent9LawyerSkillRoll(
-                id=f'{event.id}.0',
+                pending_id=(event.id, 0),
                 instruction='Roll 2D + 2 vs 8+: success = PT-1',
                 options=[],
                 lawyer_level=2,
@@ -485,7 +485,7 @@ class PrisonerEvent9Level3(ChoiceBase):
         )
         projection.pending_inputs.append(
             PendingPrisonerEvent9LawyerSkillRoll(
-                id=f'{event.id}.0',
+                pending_id=(event.id, 0),
                 instruction='Roll 2D + 3 vs 8+: success = PT-1',
                 options=[],
                 lawyer_level=3,
@@ -519,7 +519,7 @@ class PrisonerEvent9Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingChoices(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction=(
                     'Hire a lawyer? Level 1 (Cr1000), Level 2 (Cr2000), Level 3 (Cr3000), or decline? '
                     'Success (2D + level vs 8+) = PT-1.'
@@ -545,7 +545,7 @@ class PrisonerEvent12TakeRisk(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         projection.pending_inputs.append(
             PendingPrisonerEvent12HeroismSkillRoll(
-                id=f'{event.id}.0',
+                pending_id=(event.id, 0),
                 instruction='Roll 2D: 8+ = Ally + PT-2; 7 or less = roll on Injury table',
                 options=[],
             )
@@ -575,7 +575,7 @@ class PendingPrisonerEvent12HeroismSkillRoll(CareerSkillRollPendingBase):
         else:
             projection.pending_inputs.append(
                 PendingInjuryTable(
-                    id=f'{event.id}.0',
+                    pending_id=(event.id, 0),
                     instruction='Heroism failed: roll 1D on Injury table',
                     options=['1', '2', '3', '4', '5', '6'],
                 )
@@ -592,7 +592,7 @@ class PrisonerEvent12Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingChoices(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='An act of heroism: take the risk (roll 2D — 7-: injury; 8+: Ally + PT-2) or refuse?',
                 choices=[PrisonerEvent12TakeRisk(), PrisonerEvent12Refuse()],
             )
@@ -814,7 +814,7 @@ class Prisoner(CareerData):
         pending_added = len(projection.pending_inputs) - count_before
         projection.pending_inputs.append(
             PendingParoleRoll(
-                id=f'{event_id}.{pending_added}',
+                pending_id=(event_id, pending_added),
                 instruction='Roll 1D to determine your Parole Threshold (result + 2)',
                 options=['1', '2', '3', '4', '5', '6'],
             )

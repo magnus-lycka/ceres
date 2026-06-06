@@ -25,7 +25,7 @@ def replay(character_id: int, events: Sequence[AnyEvent]) -> CharacterProjection
         [s.value for s in first.sophont.ucp_stats] if first.sophont else ['STR', 'DEX', 'END', 'INT', 'EDU', 'SOC']
     )
     projection.pending_inputs.append(
-        PendingUcp(id=f'{first.id}.0', instruction='Provide characteristics (UCP)', stat_names=stat_names)
+        PendingUcp(pending_id=(first.id, 0), instruction='Provide characteristics (UCP)', stat_names=stat_names)
     )
     for event in events[1:]:
         _apply(projection, event)
@@ -37,7 +37,7 @@ def _apply(projection: CharacterProjection, event: AnyEvent) -> None:
 
     fulfilled_pending: PendingInputBase | None = None
     if event.fulfills is not None:
-        fulfilled_pending = next((p for p in projection.pending_inputs if p.id == event.fulfills), None)
+        fulfilled_pending = next((p for p in projection.pending_inputs if p.pending_id == event.fulfills), None)
         projection.fulfill_pending(event)
     elif projection.has_blocking_pending():
         raise ReplayError(

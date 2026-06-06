@@ -310,7 +310,7 @@ class CareerData(TermData):
         if assignment_name is None and len(self.draft_assignments) > 1:
             projection.pending_inputs.append(
                 PendingDraftAssignmentChoice(
-                    id=f'{event_id}.0',
+                    pending_id=(event_id, 0),
                     career=self.name,
                     instruction=f'Choose your {self.name} assignment',
                     options=list(self.draft_assignments),
@@ -423,7 +423,7 @@ class CareerData(TermData):
             options = ['drifter'] if projection.summary.drafted else ['draft', 'drifter']
             projection.pending_inputs.append(
                 PendingDraftChoice(
-                    id=f'{event_id}.0',
+                    pending_id=(event_id, 0),
                     instruction='Qualification failed — submit to the draft or become a Drifter',
                     options=options,
                 )
@@ -510,7 +510,7 @@ class CareerData(TermData):
                 if len(choices) > 1:
                     projection.pending_inputs.append(
                         PendingInitialTrainingChoice(
-                            id=f'{event_id}.{choice_idx}',
+                            pending_id=(event_id, choice_idx),
                             instruction=f'Initial training: choose one of {", ".join(type(s).name() for s in choices)}',
                             options=cast(list[AnySkill | AdvancementDmOption], choices),
                         )
@@ -534,7 +534,7 @@ class CareerData(TermData):
         if deduped:
             projection.pending_inputs.append(
                 PendingInitialTrainingChoice(
-                    id=f'{event_id}.0',
+                    pending_id=(event_id, 0),
                     instruction=f'Basic training: choose one skill at level 0 from {table_name}',
                     options=cast(list[AnySkill | AdvancementDmOption], deduped),
                 )
@@ -587,7 +587,7 @@ class CareerData(TermData):
         edu = projection.summary.characteristics.get(Chars.EDU, 0)
         tables = self.available_tables(edu, self.assignment_index(assignment))
         projection.pending_inputs.append(
-            PendingSkillTable(id=f'{event_id}.0', instruction='Choose a skill table and roll 1D', options=tables)
+            PendingSkillTable(pending_id=(event_id, 0), instruction='Choose a skill table and roll 1D', options=tables)
         )
 
     def survival_pending(self, assignment: AssignmentData, event_id: int, pending_idx: int = 0):
@@ -595,7 +595,7 @@ class CareerData(TermData):
 
         char = assignment.survival.characteristic
         target = assignment.survival.target
-        return PendingSurvive(id=f'{event_id}.{pending_idx}', instruction=f'Survive: {char} {target}+')
+        return PendingSurvive(pending_id=(event_id, pending_idx), instruction=f'Survive: {char} {target}+')
 
     def available_tables(self, edu: int, assignment_index: int) -> list[str]:
         result = ['personal_development', 'service_skills']

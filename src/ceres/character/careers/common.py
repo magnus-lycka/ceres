@@ -14,7 +14,7 @@ def handle_advanced_training(
     instruction = f'Roll EDU {threshold}+ to increase any one skill you already have by one level'
     projection.pending_inputs.append(
         PendingAdvancedTrainingSkillRoll(
-            id=f'{event_id}.{pending_idx}',
+            pending_id=(event_id, pending_idx),
             instruction=instruction,
             options=[Chars.EDU],
             threshold=threshold,

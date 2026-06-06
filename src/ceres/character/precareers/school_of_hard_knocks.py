@@ -19,7 +19,7 @@ class SchoolOfHardKnocksPreCareer(PreCareerData):
         for i in range(3):
             projection.pending_inputs.append(
                 PendingPreCareerSkillChoice(
-                    id=f'{event.id}.{pending_idx}',
+                    pending_id=(event.id, pending_idx),
                     level=0,
                     instruction=f'School of Hard Knocks graduation: choose skill {i + 1} of 3 at level 0',
                     options=choice_pool,
@@ -31,7 +31,7 @@ class SchoolOfHardKnocksPreCareer(PreCareerData):
             projection.grant_skill(Carouse(level=Level(value=1)))
             projection.pending_inputs.append(
                 PendingPreCareerSkillChoice(
-                    id=f'{event.id}.{pending_idx}',
+                    pending_id=(event.id, pending_idx),
                     level=1,
                     instruction='School of Hard Knocks graduation (honours): raise one listed skill to level 1',
                     options=choice_pool,

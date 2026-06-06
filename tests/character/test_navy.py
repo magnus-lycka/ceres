@@ -46,8 +46,8 @@ def _setup() -> list:
     """STR=7 DEX=8 END=6 INT=9 EDU=10 SOC=5 — INT DM+1, EDU DM+2."""
     return [
         CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Ens'),
-        UcpEvent(id=2, fulfills='1.0', ucp='7869A5'),
-        BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Drive()]),
+        UcpEvent(id=2, fulfills=(1, 0), ucp='7869A5'),
+        BackgroundSkillsEvent(id=3, fulfills=(2, 0), skills=[Admin(), Athletics(), Carouse(), Drive()]),
     ]
 
 
@@ -55,7 +55,7 @@ def _enter_navy(assignment: str = 'Line/Crew', qual_roll: int = 5) -> list:
     """Through qualification — INT 6+, INT=9 DM+1, roll 5 → 6 ≥ 6."""
     return [
         *_setup(),
-        CareerEvent(id=4, fulfills='3.0', career='Navy', assignment=assignment, qualification_roll=qual_roll),
+        CareerEvent(id=4, fulfills=(3, 0), career='Navy', assignment=assignment, qualification_roll=qual_roll),
     ]
 
 
@@ -64,11 +64,11 @@ def _through_survive(assignment: str = 'Line/Crew', survive_roll: int = 4) -> li
 
     Line/Crew survival: INT 5+, DM+1, roll 4 → 5 ≥ 5 (pass).
     """
-    return [*_enter_navy(assignment), SurviveEvent(id=5, fulfills='4.0', roll=survive_roll)]
+    return [*_enter_navy(assignment), SurviveEvent(id=5, fulfills=(4, 0), roll=survive_roll)]
 
 
 def _through_term_event(event_roll: int, assignment: str = 'Line/Crew') -> list:
-    return [*_through_survive(assignment), TermEventEvent(id=6, fulfills='5.0', roll=event_roll)]
+    return [*_through_survive(assignment), TermEventEvent(id=6, fulfills=(5, 0), roll=event_roll)]
 
 
 # ── mishap 3: battle skill check (assignment-specific) ───────────────────────
@@ -78,11 +78,11 @@ class TestNavyMishap3:
     def _setup_to_mishap(self) -> list:
         return [
             *_enter_navy('Line/Crew'),
-            SurviveEvent(id=5, fulfills='4.0', roll=3),  # INT 5+, DM+1, 3 → 4 < 5 — fail
+            SurviveEvent(id=5, fulfills=(4, 0), roll=3),  # INT 5+, DM+1, 3 → 4 < 5 — fail
         ]
 
     def test_line_crew_mishap_3_options_are_electronics_or_gunner(self):
-        events = [*self._setup_to_mishap(), MishapEvent(id=6, fulfills='5.0', roll=3)]
+        events = [*self._setup_to_mishap(), MishapEvent(id=6, fulfills=(5, 0), roll=3)]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingNavyMishap3SkillRoll)), None)
         assert pending is not None
@@ -91,9 +91,9 @@ class TestNavyMishap3:
     def test_engineer_gunner_mishap_3_options_are_mechanic_or_vacc_suit(self):
         events = [
             *_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Navy', assignment='Engineer/Gunner', qualification_roll=5),
-            SurviveEvent(id=5, fulfills='4.0', roll=4),  # INT 6+, DM+1, fail with roll 4
-            MishapEvent(id=6, fulfills='5.0', roll=3),
+            CareerEvent(id=4, fulfills=(3, 0), career='Navy', assignment='Engineer/Gunner', qualification_roll=5),
+            SurviveEvent(id=5, fulfills=(4, 0), roll=4),  # INT 6+, DM+1, fail with roll 4
+            MishapEvent(id=6, fulfills=(5, 0), roll=3),
         ]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingNavyMishap3SkillRoll)), None)
@@ -103,16 +103,16 @@ class TestNavyMishap3:
     def test_flight_mishap_3_options_are_pilot_or_tactics(self):
         events = [
             *_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Navy', assignment='Flight', qualification_roll=5),
-            SurviveEvent(id=5, fulfills='4.0', roll=6),  # DEX 7+, DM+1, fail with roll 6 → 7 ≥ 7 — pass, need fail
+            CareerEvent(id=4, fulfills=(3, 0), career='Navy', assignment='Flight', qualification_roll=5),
+            SurviveEvent(id=5, fulfills=(4, 0), roll=6),  # DEX 7+, DM+1, fail with roll 6 → 7 ≥ 7 — pass, need fail
             # Actually DEX 7+, DEX=8, DM+1, need roll 6+ to pass; roll 5 → 6 < 7 fails
         ]
         # Reset: Flight survival DEX 7+, DEX=8, DM+1, roll 5 → 6 < 7 — fail
         events = [
             *_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Navy', assignment='Flight', qualification_roll=5),
-            SurviveEvent(id=5, fulfills='4.0', roll=5),  # DEX 7+, DM+1, 5 → 6 < 7 — fail
-            MishapEvent(id=6, fulfills='5.0', roll=3),
+            CareerEvent(id=4, fulfills=(3, 0), career='Navy', assignment='Flight', qualification_roll=5),
+            SurviveEvent(id=5, fulfills=(4, 0), roll=5),  # DEX 7+, DM+1, 5 → 6 < 7 — fail
+            MishapEvent(id=6, fulfills=(5, 0), roll=3),
         ]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingNavyMishap3SkillRoll)), None)
@@ -122,8 +122,8 @@ class TestNavyMishap3:
     def test_success_keeps_benefit_roll(self):
         events = [
             *self._setup_to_mishap(),
-            MishapEvent(id=6, fulfills='5.0', roll=3),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Admin(), modified_roll=9),
+            MishapEvent(id=6, fulfills=(5, 0), roll=3),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Admin(), modified_roll=9),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
@@ -131,8 +131,8 @@ class TestNavyMishap3:
     def test_failure_loses_benefit_roll(self):
         events = [
             *self._setup_to_mishap(),
-            MishapEvent(id=6, fulfills='5.0', roll=3),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Admin(), modified_roll=7),
+            MishapEvent(id=6, fulfills=(5, 0), roll=3),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Admin(), modified_roll=7),
         ]
         projection = replay(1, events)
         assert not any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
@@ -141,8 +141,8 @@ class TestNavyMishap3:
         for roll in (9, 7):
             events = [
                 *self._setup_to_mishap(),
-                MishapEvent(id=6, fulfills='5.0', roll=3),
-                SkillRollEvent(id=7, fulfills='6.0', skill=Admin(), modified_roll=roll),
+                MishapEvent(id=6, fulfills=(5, 0), roll=3),
+                SkillRollEvent(id=7, fulfills=(6, 0), skill=Admin(), modified_roll=roll),
             ]
             projection = replay(1, events)
             assert projection.summary.current_career is None, f'roll={roll}'
@@ -155,11 +155,11 @@ class TestNavyMishap4:
     def _setup_to_mishap(self) -> list:
         return [
             *_enter_navy('Line/Crew'),
-            SurviveEvent(id=5, fulfills='4.0', roll=3),
+            SurviveEvent(id=5, fulfills=(4, 0), roll=3),
         ]
 
     def test_mishap_4_creates_choice_pending(self):
-        events = [*self._setup_to_mishap(), MishapEvent(id=6, fulfills='5.0', roll=4)]
+        events = [*self._setup_to_mishap(), MishapEvent(id=6, fulfills=(5, 0), roll=4)]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingChoices)), None)
         assert pending is not None
@@ -168,8 +168,8 @@ class TestNavyMishap4:
     def test_responsible_adds_problem_note(self):
         events = [
             *self._setup_to_mishap(),
-            MishapEvent(id=6, fulfills='5.0', roll=4),
-            CareerChoiceEvent.for_choice(NavyMishap4Responsible, id=7, fulfills='6.0'),
+            MishapEvent(id=6, fulfills=(5, 0), roll=4),
+            CareerChoiceEvent.for_choice(NavyMishap4Responsible, id=7, fulfills=(6, 0)),
         ]
         projection = replay(1, events)
         assert any('free' in p.lower() or 'skill' in p.lower() for p in projection.summary.problems)
@@ -177,8 +177,8 @@ class TestNavyMishap4:
     def test_responsible_loses_benefit_roll(self):
         events = [
             *self._setup_to_mishap(),
-            MishapEvent(id=6, fulfills='5.0', roll=4),
-            CareerChoiceEvent.for_choice(NavyMishap4Responsible, id=7, fulfills='6.0'),
+            MishapEvent(id=6, fulfills=(5, 0), roll=4),
+            CareerChoiceEvent.for_choice(NavyMishap4Responsible, id=7, fulfills=(6, 0)),
         ]
         projection = replay(1, events)
         assert not any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
@@ -186,8 +186,8 @@ class TestNavyMishap4:
     def test_not_responsible_adds_enemy(self):
         events = [
             *self._setup_to_mishap(),
-            MishapEvent(id=6, fulfills='5.0', roll=4),
-            CareerChoiceEvent.for_choice(NavyMishap4NotResponsible, id=7, fulfills='6.0'),
+            MishapEvent(id=6, fulfills=(5, 0), roll=4),
+            CareerChoiceEvent.for_choice(NavyMishap4NotResponsible, id=7, fulfills=(6, 0)),
         ]
         projection = replay(1, events)
         enemies = [c for c in projection.summary.connections if isinstance(c, Enemy)]
@@ -196,8 +196,8 @@ class TestNavyMishap4:
     def test_not_responsible_keeps_benefit_roll(self):
         events = [
             *self._setup_to_mishap(),
-            MishapEvent(id=6, fulfills='5.0', roll=4),
-            CareerChoiceEvent.for_choice(NavyMishap4NotResponsible, id=7, fulfills='6.0'),
+            MishapEvent(id=6, fulfills=(5, 0), roll=4),
+            CareerChoiceEvent.for_choice(NavyMishap4NotResponsible, id=7, fulfills=(6, 0)),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
@@ -206,8 +206,8 @@ class TestNavyMishap4:
         for choice_cls in (NavyMishap4Responsible, NavyMishap4NotResponsible):
             events = [
                 *self._setup_to_mishap(),
-                MishapEvent(id=6, fulfills='5.0', roll=4),
-                CareerChoiceEvent.for_choice(choice_cls, id=7, fulfills='6.0'),
+                MishapEvent(id=6, fulfills=(5, 0), roll=4),
+                CareerChoiceEvent.for_choice(choice_cls, id=7, fulfills=(6, 0)),
             ]
             projection = replay(1, events)
             assert projection.summary.current_career is None, choice_cls
@@ -232,7 +232,7 @@ class TestNavyEvent5:
     def test_success_creates_skill_choice_from_existing_skills(self):
         events = [
             *self._setup_to_event(),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Admin(), modified_roll=9),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Admin(), modified_roll=9),
         ]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
@@ -243,7 +243,7 @@ class TestNavyEvent5:
     def test_failure_no_skill_choice(self):
         events = [
             *self._setup_to_event(),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Admin(), modified_roll=7),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Admin(), modified_roll=7),
         ]
         projection = replay(1, events)
         assert not any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
@@ -251,7 +251,7 @@ class TestNavyEvent5:
     def test_failure_queues_career_progress(self):
         events = [
             *self._setup_to_event(),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Admin(), modified_roll=7),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Admin(), modified_roll=7),
         ]
         projection = replay(1, events)
         # On failure no skill choice created; _apply_skill_roll auto-queues advancement
@@ -281,7 +281,7 @@ class TestNavyEvent10:
     def test_profit_schedules_extra_benefit_roll(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent.for_choice(NavyEvent10Profit, id=7, fulfills='6.0'),
+            CareerChoiceEvent.for_choice(NavyEvent10Profit, id=7, fulfills=(6, 0)),
         ]
         projection = replay(1, events)
         assert projection.summary.career_terms[-1].require_muster_out().extra_rolls == 1
@@ -289,7 +289,7 @@ class TestNavyEvent10:
     def test_refuse_schedules_advancement_dm_2(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent.for_choice(NavyEvent10Refuse, id=7, fulfills='6.0'),
+            CareerChoiceEvent.for_choice(NavyEvent10Refuse, id=7, fulfills=(6, 0)),
         ]
         projection = replay(1, events)
         assert projection.pending_advancement_dm == 2
@@ -297,7 +297,7 @@ class TestNavyEvent10:
     def test_profit_no_advancement_dm(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent.for_choice(NavyEvent10Profit, id=7, fulfills='6.0'),
+            CareerChoiceEvent.for_choice(NavyEvent10Profit, id=7, fulfills=(6, 0)),
         ]
         projection = replay(1, events)
         assert projection.pending_advancement_dm == 0
@@ -306,7 +306,7 @@ class TestNavyEvent10:
         for choice_cls in (NavyEvent10Profit, NavyEvent10Refuse):
             events = [
                 *self._setup_to_event(),
-                CareerChoiceEvent.for_choice(choice_cls, id=7, fulfills='6.0'),
+                CareerChoiceEvent.for_choice(choice_cls, id=7, fulfills=(6, 0)),
             ]
             projection = replay(1, events)
             # Navy at rank 0 can attempt commission → PendingCommissionChoice; otherwise PendingAdvancement

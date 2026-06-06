@@ -44,25 +44,25 @@ _expected = SimpleNamespace(
 def _events() -> list:
     return [
         CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Kasimir Yuen'),
-        UcpEvent(id=2, fulfills='1.0', ucp='7869A5'),
-        BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Drive()]),
+        UcpEvent(id=2, fulfills=(1, 0), ucp='7869A5'),
+        BackgroundSkillsEvent(id=3, fulfills=(2, 0), skills=[Admin(), Athletics(), Carouse(), Drive()]),
         # Term 1: qualify Scout Courier, survive, event 5 (benefit_dm), advancement fails, reenlist same
-        CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
-        SurviveEvent(id=5, fulfills='4.0', roll=7),
-        TermEventEvent(id=6, fulfills='5.0', roll=5),  # benefit_dm +1 to muster out roll
-        AdvancementEvent(id=7, fulfills='6.0', roll=5),  # EDU 9+ with DM+1 → 6, fails
-        AssignmentChangeChoiceEvent(id=8, fulfills='7.0', choice='same'),
+        CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Courier', qualification_roll=7),
+        SurviveEvent(id=5, fulfills=(4, 0), roll=7),
+        TermEventEvent(id=6, fulfills=(5, 0), roll=5),  # benefit_dm +1 to muster out roll
+        AdvancementEvent(id=7, fulfills=(6, 0), roll=5),  # EDU 9+ with DM+1 → 6, fails
+        AssignmentChangeChoiceEvent(id=8, fulfills=(7, 0), choice='same'),
         # Term 2: service skill roll (Pilot, specialised → choose small_craft), survive, event 5, advancement fails
-        SkillTableEvent(id=9, fulfills='8.0', table='service_skills', roll=1),  # Pilot → choice pending
-        SkillChoiceEvent(id=10, fulfills='9.0', skill=Pilot(small_craft=Level(value=1))),  # → small_craft 1
-        SurviveEvent(id=11, fulfills='10.0', roll=7),
-        TermEventEvent(id=12, fulfills='11.0', roll=5),  # benefit_dm +1 to muster out roll
-        AdvancementEvent(id=13, fulfills='12.0', roll=5),  # fails
-        AssignmentChangeChoiceEvent(id=14, fulfills='13.0', choice='muster_out'),
+        SkillTableEvent(id=9, fulfills=(8, 0), table='service_skills', roll=1),  # Pilot → choice pending
+        SkillChoiceEvent(id=10, fulfills=(9, 0), skill=Pilot(small_craft=Level(value=1))),  # → small_craft 1
+        SurviveEvent(id=11, fulfills=(10, 0), roll=7),
+        TermEventEvent(id=12, fulfills=(11, 0), roll=5),  # benefit_dm +1 to muster out roll
+        AdvancementEvent(id=13, fulfills=(12, 0), roll=5),  # fails
+        AssignmentChangeChoiceEvent(id=14, fulfills=(13, 0), choice='muster_out'),
         # Muster out: 2 rolls (term_count=2, rank=0)
-        MusterOutEvent(id=15, fulfills='14.0', table='benefits', roll=6),  # scout_ship
-        MusterOutEvent(id=16, fulfills='14.1', table='cash', roll=1),  # Cr20,000
-        FinishCreationEvent(id=17, fulfills='16.0'),
+        MusterOutEvent(id=15, fulfills=(14, 0), table='benefits', roll=6),  # scout_ship
+        MusterOutEvent(id=16, fulfills=(14, 1), table='cash', roll=1),  # Cr20,000
+        FinishCreationEvent(id=17, fulfills=(16, 0)),
     ]
 
 

@@ -96,7 +96,7 @@ class EntertainerEvent8Accept(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         projection.pending_inputs.append(
             PendingEntertainerEvent8SkillRoll(
-                id=f'{event.id}.0',
+                pending_id=(event.id, 0),
                 instruction='Roll Art or Investigate 8+: success = DM+2 to next advancement; fail = gain powerful Enemy',
                 options=[*skill_instances(ArtSkill), Investigate()],
             )
@@ -135,7 +135,7 @@ class EntertainerEvent3Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingEntertainerEvent3SkillRoll(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Roll Art or Investigate 8+: success = SOC +1; fail = SOC -1',
                 options=[*skill_instances(ArtSkill), Investigate()],
             )
@@ -153,7 +153,7 @@ class EntertainerEvent8Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingChoices(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction=(
                     'Criticise the political leader (roll Art or Investigate 8+: '
                     'success = DM+2 to next advancement, fail = gain powerful Enemy) or refuse?'

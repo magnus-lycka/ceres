@@ -303,7 +303,7 @@ def test_muster_out_and_benefit_choice_error_branches():
         BenefitChoiceEvent(choice_index=0).apply(_projection())
 
     pending = PendingBenefitChoice(
-        id='1.0',
+        pending_id=(1, 0),
         instruction='Benefit',
         options=['Ship Share'],
         benefit_options=[SHIP_SHARE],
@@ -420,7 +420,7 @@ def test_precareer_event_error_manual_note_and_ending_branches():
         assert any(problem_text in problem for problem in projection.summary.problems)
 
     ended = _projection(precareer='University')
-    ended.pending_inputs.append(PendingPreCareerGraduation(id='11.0', instruction='Graduation'))
+    ended.pending_inputs.append(PendingPreCareerGraduation(pending_id=(11, 0), instruction='Graduation'))
     PreCareerEventEvent(id=11, roll=11).apply(ended)
     assert ended.summary.precareer is None
     assert ended.summary.precareer_completed == 'University'
@@ -555,7 +555,7 @@ def test_career_progress_pending_reports_invalid_career_shape():
 
 def test_pending_background_skills_builds_form_and_specs():
     pending = PendingBackgroundSkills(
-        id='2.0',
+        pending_id=(2, 0),
         instruction='Choose 2 background skills',
         options=[character_skills.Admin(), character_skills.Medic()],
     )
@@ -576,7 +576,7 @@ def test_pending_background_skills_builds_form_and_specs():
 
 def test_pending_career_choice_form_and_specs():
     projection = _projection(term_count=4)
-    pending = PendingCareerChoice(id='3.0', instruction='Choose career', options=['Scout'])
+    pending = PendingCareerChoice(pending_id=(3, 0), instruction='Choose career', options=['Scout'])
 
     assert isinstance(pending.event_from_form(Form(kind='finish_creation')), FinishCreationEvent)
 
@@ -595,7 +595,7 @@ def test_pending_career_choice_form_and_specs():
 
 
 def test_pending_draft_choices_build_expected_events_and_specs():
-    draft = PendingDraftChoice(id='3.0', instruction='Draft or drift')
+    draft = PendingDraftChoice(pending_id=(3, 0), instruction='Draft or drift')
     draft_event = draft.event_from_form(Form(choice='draft', roll='2'))
     drifter_event = draft.event_from_form(Form(choice='drifter', assignment='Scavenger'))
 
@@ -606,7 +606,9 @@ def test_pending_draft_choices_build_expected_events_and_specs():
     assert drifter_event.assignment == 'Scavenger'
     assert draft.input_specs(_projection()) == []
 
-    assignment = PendingDraftAssignmentChoice(id='4.0', instruction='Assignment', career='Army', options=['Support'])
+    assignment = PendingDraftAssignmentChoice(
+        pending_id=(4, 0), instruction='Assignment', career='Army', options=['Support']
+    )
     form_event = assignment.event_from_form(Form(assignment='Support'))
     specs = assignment.input_specs(_projection())
 
@@ -621,43 +623,49 @@ def test_pending_draft_choices_build_expected_events_and_specs():
 @pytest.mark.parametrize(
     ('pending', 'form', 'event_type', 'field', 'expected'),
     [
-        (PendingSurvive(id='1.0', instruction='Survive'), Form(roll='9'), SurviveEvent, 'roll', 9),
-        (PendingTermEvent(id='1.0', instruction='Event'), Form(roll='8'), TermEventEvent, 'roll', 8),
-        (PendingMishap(id='1.0', instruction='Mishap'), Form(roll='4'), MishapEvent, 'roll', 4),
-        (PendingAdvancement(id='1.0', instruction='Advance'), Form(roll='10'), AdvancementEvent, 'roll', 10),
+        (PendingSurvive(pending_id=(1, 0), instruction='Survive'), Form(roll='9'), SurviveEvent, 'roll', 9),
+        (PendingTermEvent(pending_id=(1, 0), instruction='Event'), Form(roll='8'), TermEventEvent, 'roll', 8),
+        (PendingMishap(pending_id=(1, 0), instruction='Mishap'), Form(roll='4'), MishapEvent, 'roll', 4),
+        (PendingAdvancement(pending_id=(1, 0), instruction='Advance'), Form(roll='10'), AdvancementEvent, 'roll', 10),
         (
-            PendingSkillTable(id='1.0', instruction='Skill table', options=['service_skills']),
+            PendingSkillTable(pending_id=(1, 0), instruction='Skill table', options=['service_skills']),
             Form(table='service_skills', roll='5'),
             SkillTableEvent,
             'roll',
             5,
         ),
-        (PendingNearlyKilled(id='1.0', instruction='Nearly killed'), Form(roll='3'), InjuryTableEvent, 'roll', 3),
-        (PendingInjuryTable(id='1.0', instruction='Injury'), Form(roll='2'), InjuryTableEvent, 'roll', 2),
-        (PendingAgingRoll(id='1.0', instruction='Aging'), Form(roll='7'), AgingRollEvent, 'roll', 7),
-        (PendingLifeEvent(id='1.0', instruction='Life event'), Form(roll='6'), LifeEventEvent, 'roll', 6),
         (
-            PendingLifeEventUnusual(id='1.0', instruction='Unusual'),
+            PendingNearlyKilled(pending_id=(1, 0), instruction='Nearly killed'),
+            Form(roll='3'),
+            InjuryTableEvent,
+            'roll',
+            3,
+        ),
+        (PendingInjuryTable(pending_id=(1, 0), instruction='Injury'), Form(roll='2'), InjuryTableEvent, 'roll', 2),
+        (PendingAgingRoll(pending_id=(1, 0), instruction='Aging'), Form(roll='7'), AgingRollEvent, 'roll', 7),
+        (PendingLifeEvent(pending_id=(1, 0), instruction='Life event'), Form(roll='6'), LifeEventEvent, 'roll', 6),
+        (
+            PendingLifeEventUnusual(pending_id=(1, 0), instruction='Unusual'),
             Form(roll='5'),
             LifeEventUnusualEvent,
             'roll',
             5,
         ),
         (
-            PendingPreCareerEvent(id='1.0', instruction='Precareer event'),
+            PendingPreCareerEvent(pending_id=(1, 0), instruction='Precareer event'),
             Form(roll='9'),
             PreCareerEventEvent,
             'roll',
             9,
         ),
         (
-            PendingPreCareerGraduation(id='1.0', instruction='Graduation'),
+            PendingPreCareerGraduation(pending_id=(1, 0), instruction='Graduation'),
             Form(roll='10'),
             PreCareerGraduationEvent,
             'roll',
             10,
         ),
-        (PendingParoleRoll(id='1.0', instruction='Parole'), Form(roll='4'), ParoleRollEvent, 'roll', 4),
+        (PendingParoleRoll(pending_id=(1, 0), instruction='Parole'), Form(roll='4'), ParoleRollEvent, 'roll', 4),
     ],
 )
 def test_roll_pending_inputs_build_events_and_number_specs(pending, form, event_type, field, expected):
@@ -666,12 +674,12 @@ def test_roll_pending_inputs_build_events_and_number_specs(pending, form, event_
 
     assert isinstance(form_event, event_type)
     assert getattr(form_event, field) == expected
-    assert form_event.fulfills == pending.id
+    assert form_event.fulfills == pending.pending_id
     assert any(isinstance(spec, NumberEntry) for spec in specs)
 
 
 def test_double_injury_pending_builds_two_roll_event_and_specs():
-    pending = PendingDoubleInjuryRoll(id='1.0', instruction='Double injury')
+    pending = PendingDoubleInjuryRoll(pending_id=(1, 0), instruction='Double injury')
     event = pending.event_from_form(Form(roll1='4', roll2='2'))
 
     assert isinstance(event, DoubleInjuryTableEvent)
@@ -681,31 +689,31 @@ def test_double_injury_pending_builds_two_roll_event_and_specs():
 
 
 def test_decision_pending_inputs_build_events_and_specs():
-    commission = PendingCommissionChoice(id='1.0', instruction='Commission')
+    commission = PendingCommissionChoice(pending_id=(1, 0), instruction='Commission')
     assert commission.event_from_form(Form(choice='attempt', roll='9')) == CommissionEvent(
-        attempt=True, roll=9, fulfills='1.0'
+        attempt=True, roll=9, fulfills=(1, 0)
     )
-    assert commission.event_from_form(Form(choice='skip')) == CommissionEvent(attempt=False, fulfills='1.0')
+    assert commission.event_from_form(Form(choice='skip')) == CommissionEvent(attempt=False, fulfills=(1, 0))
     assert len(commission.input_specs(_projection())) == 2
 
-    reenlist = PendingReenlist(id='2.0', instruction='Reenlist')
-    assert reenlist.event_from_form(Form(reenlist='yes')) == ReenlistEvent(reenlist=True, fulfills='2.0')
+    reenlist = PendingReenlist(pending_id=(2, 0), instruction='Reenlist')
+    assert reenlist.event_from_form(Form(reenlist='yes')) == ReenlistEvent(reenlist=True, fulfills=(2, 0))
     assert reenlist.input_specs(_projection()) == []
 
     assignment = PendingAssignmentChangeChoice(
-        id='3.0', instruction='Assignment', options=['same', 'Surveyor', 'muster_out']
+        pending_id=(3, 0), instruction='Assignment', options=['same', 'Surveyor', 'muster_out']
     )
     assert assignment.event_from_form(Form(choice='Surveyor', roll='11')) == AssignmentChangeChoiceEvent(
-        choice='Surveyor', qualification_roll=11, fulfills='3.0'
+        choice='Surveyor', qualification_roll=11, fulfills=(3, 0)
     )
     assert assignment.event_from_form(Form(choice='same')) == AssignmentChangeChoiceEvent(
-        choice='same', qualification_roll=None, fulfills='3.0'
+        choice='same', qualification_roll=None, fulfills=(3, 0)
     )
     assert isinstance(assignment.input_specs(_projection())[0], Select)
 
-    muster = PendingMusterOut(id='4.0', instruction='Muster', options=['cash', 'benefits'])
+    muster = PendingMusterOut(pending_id=(4, 0), instruction='Muster', options=['cash', 'benefits'])
     assert muster.event_from_form(Form(table='not-valid', roll='7')) == MusterOutEvent(
-        table='benefits', roll=7, fulfills='4.0'
+        table='benefits', roll=7, fulfills=(4, 0)
     )
     assert len(muster.input_specs(_projection())) == 2
 
@@ -718,9 +726,9 @@ def test_skill_choice_pending_inputs_parse_skills_and_advancement_dm():
     adv_dm = AdvancementDmOption()
     opts: list[character_skills.AnySkill | AdvancementDmOption] = [character_skills.Admin(), adv_dm]
     for pending in (
-        PendingInitialTrainingChoice(id='1.0', instruction='Skill', options=opts),
-        PendingSkillTableChoice(id='1.0', instruction='Skill', options=opts),
-        PendingRankBonusChoice(id='1.0', instruction='Skill', options=opts, level=1),
+        PendingInitialTrainingChoice(pending_id=(1, 0), instruction='Skill', options=opts),
+        PendingSkillTableChoice(pending_id=(1, 0), instruction='Skill', options=opts),
+        PendingRankBonusChoice(pending_id=(1, 0), instruction='Skill', options=opts, level=1),
     ):
         skill_event = pending.event_from_form(Form(skill=admin_json))
         dm_event = pending.event_from_form(Form(skill=adv_dm.model_dump_json()))
@@ -732,7 +740,7 @@ def test_skill_choice_pending_inputs_parse_skills_and_advancement_dm():
         assert isinstance(specs[0], Select)
 
     # PendingSkillChoice uses typed AnySkill options only (no advancement_dm_4)
-    skill_pending = PendingSkillChoice(id='1.0', instruction='Skill', options=[character_skills.Admin()])
+    skill_pending = PendingSkillChoice(pending_id=(1, 0), instruction='Skill', options=[character_skills.Admin()])
     skill_event = skill_pending.event_from_form(Form(skill=admin_json))
     specs = skill_pending.input_specs(projection)
     assert isinstance(skill_event, SkillChoiceEvent)
@@ -742,55 +750,55 @@ def test_skill_choice_pending_inputs_parse_skills_and_advancement_dm():
 
 def test_characteristic_benefit_life_and_connection_pending_inputs():
     for pending in (
-        PendingCharacteristicChoice(id='1.0', instruction='Characteristic', options=['STR', 'DEX']),
-        PendingAgingChoice(id='1.0', instruction='Aging', options=['STR', 'DEX']),
-        PendingAgingChoiceMental(id='1.0', instruction='Mental aging', options=['INT', 'SOC']),
+        PendingCharacteristicChoice(pending_id=(1, 0), instruction='Characteristic', options=['STR', 'DEX']),
+        PendingAgingChoice(pending_id=(1, 0), instruction='Aging', options=['STR', 'DEX']),
+        PendingAgingChoiceMental(pending_id=(1, 0), instruction='Mental aging', options=['INT', 'SOC']),
     ):
         event = pending.event_from_form(Form(characteristic='DEX'))
         assert isinstance(event, CharacteristicChoiceEvent)
         assert event.characteristic == Chars.DEX
         assert isinstance(pending.input_specs(_projection())[0], Select)
 
-    crisis = PendingAgingCrisis(id='2.0', instruction='Crisis')
+    crisis = PendingAgingCrisis(pending_id=(2, 0), instruction='Crisis')
     assert crisis.event_from_form(Form(paid='true', medical_roll='4')) == AgingCrisisEvent(
-        paid=True, medical_roll=4, fulfills='2.0'
+        paid=True, medical_roll=4, fulfills=(2, 0)
     )
     assert len(crisis.input_specs(_projection())) == 2
 
-    life_choice = PendingLifeEventChoice(id='3.0', instruction='Life choice', roll=4)
+    life_choice = PendingLifeEventChoice(pending_id=(3, 0), instruction='Life choice', roll=4)
     assert life_choice.event_from_form(Form(connection_kind='connection_enemy')) == ConnectionKindChoiceEvent(
-        connection_kind=ConnectionKind.ENEMY, fulfills='3.0'
+        connection_kind=ConnectionKind.ENEMY, fulfills=(3, 0)
     )
     assert isinstance(life_choice.input_specs(_projection())[0], Select)
 
     connections = PendingConnectionsRoll(
-        id='4.0', instruction='Connections', connection_type=ConnectionKind.RIVAL, options=['1', '2', '3']
+        pending_id=(4, 0), instruction='Connections', connection_type=ConnectionKind.RIVAL, options=['1', '2', '3']
     )
     assert connections.event_from_form(Form(connection_type='connection_enemy', count='3')) == ConnectionsRollEvent(
-        connection_type=ConnectionKind.ENEMY, count=3, fulfills='4.0'
+        connection_type=ConnectionKind.ENEMY, count=3, fulfills=(4, 0)
     )
     assert isinstance(connections.input_specs(_projection())[0], Reference)
 
     benefit = PendingBenefitChoice(
-        id='5.0',
+        pending_id=(5, 0),
         instruction='Benefit',
         options=['Ship Share', 'Weapon'],
         benefit_options=[SHIP_SHARE, WEAPON],
     )
-    assert benefit.event_from_form(Form(choice_index='1')) == BenefitChoiceEvent(choice_index=1, fulfills='5.0')
+    assert benefit.event_from_form(Form(choice_index='1')) == BenefitChoiceEvent(choice_index=1, fulfills=(5, 0))
     assert isinstance(benefit.input_specs(_projection())[0], Select)
 
 
 def test_precareer_specific_pending_inputs():
     precareer_skill_0 = PendingPreCareerSkillChoice(
-        id='4.0', instruction='Precareer skill', options=[character_skills.LifeScience()], level=0
+        pending_id=(4, 0), instruction='Precareer skill', options=[character_skills.LifeScience()], level=0
     )
     precareer_skill_1 = PendingPreCareerSkillChoice(
-        id='5.0', instruction='Precareer skill', options=[character_skills.LifeScience()], level=1
+        pending_id=(5, 0), instruction='Precareer skill', options=[character_skills.LifeScience()], level=1
     )
     life_science_json = character_skills.LifeScience().model_dump_json()
     assert precareer_skill_0.event_from_form(Form(skill=life_science_json)) == PreCareerSkillChoiceEvent(
-        skill=character_skills.LifeScience(), fulfills='4.0'
+        skill=character_skills.LifeScience(), fulfills=(4, 0)
     )
     level_0_specs = precareer_skill_0.input_specs(_projection())
     level_1_specs = precareer_skill_1.input_specs(_projection())
@@ -816,12 +824,12 @@ def test_pending_choices_event_from_form_and_input_specs():
 
     choice_a = _FakeChoice()
     choice_b = _FakeChoice(kind='test_opt_b', label='Option B')
-    pending = PendingChoices(id='6.0', instruction='Choose', choices=[choice_a, choice_b])
+    pending = PendingChoices(pending_id=(6, 0), instruction='Choose', choices=[choice_a, choice_b])
 
     event = pending.event_from_form(Form(choice='test_opt_a'))
     assert isinstance(event, CareerChoiceEvent)
     assert event.choice == 'test_opt_a'
-    assert event.fulfills == '6.0'
+    assert event.fulfills == (6, 0)
 
     specs = pending.input_specs(_projection())
     assert len(specs) == 1
@@ -838,7 +846,7 @@ def test_career_skill_roll_pending_base_event_from_form_char_and_skill():
     from ceres.character.careers.navy import PendingNavyMishap3SkillRoll
 
     pending = PendingNavyMishap3SkillRoll(
-        id='7.0',
+        pending_id=(7, 0),
         instruction='Roll',
         options=[character_skills.Electronics(), character_skills.Gunner()],
     )
@@ -847,12 +855,12 @@ def test_career_skill_roll_pending_base_event_from_form_char_and_skill():
     class _PendingWithChar(CareerSkillRollPendingBase):
         kind: Literal['_test_char_roll'] = '_test_char_roll'
 
-    char_pending = _PendingWithChar(id='8.0', instruction='Roll', options=[Chars.EDU])
+    char_pending = _PendingWithChar(pending_id=(8, 0), instruction='Roll', options=[Chars.EDU])
     edu_event = char_pending.event_from_form(Form(skill='EDU', modified_roll='9'))
     assert isinstance(edu_event, SkillRollEvent)
     assert edu_event.skill == Chars.EDU
     assert edu_event.modified_roll == 9
-    assert edu_event.fulfills == '8.0'
+    assert edu_event.fulfills == (8, 0)
 
     # Skill option — form value is the discriminator (ELECTRONICS), not the display name
     skill_event = pending.event_from_form(Form(skill=character_skills.Electronics().type, modified_roll='8'))
@@ -877,7 +885,7 @@ def test_career_skill_roll_pending_base_input_specs_includes_char_options():
     class _PendingEduRoll(CareerSkillRollPendingBase):
         kind: Literal['_test_edu_roll'] = '_test_edu_roll'
 
-    pending = _PendingEduRoll(id='1.0', instruction='Roll', options=[Chars.EDU])
+    pending = _PendingEduRoll(pending_id=(1, 0), instruction='Roll', options=[Chars.EDU])
     specs = pending.input_specs(_projection())
     assert isinstance(specs[0], Select)
     labels = [lbl for lbl, _ in specs[0].options]
@@ -894,7 +902,7 @@ def test_career_skill_choice_pending_base_event_from_form_and_input_specs():
     science_json = science.model_dump_json()
 
     pending = PendingScholarScienceChoice(
-        id='9.0', instruction='Choose science', options=[science, adv_dm], advancement_precreated=True
+        pending_id=(9, 0), instruction='Choose science', options=[science, adv_dm], advancement_precreated=True
     )
 
     # Skill choice
@@ -904,7 +912,7 @@ def test_career_skill_choice_pending_base_event_from_form_and_input_specs():
     # AdvancementDmOption choice
     dm_event = pending.event_from_form(Form(skill=adv_dm.model_dump_json()))
     assert isinstance(dm_event, AdvancementDmChoiceEvent)
-    assert dm_event.fulfills == '9.0'
+    assert dm_event.fulfills == (9, 0)
 
     specs = pending.input_specs(_projection())
     assert isinstance(specs[0], Select)
@@ -929,7 +937,7 @@ def test_career_skill_choice_pending_base_on_skill_chosen_grants_skill_and_queue
     scout = load_careers()['Scout']
 
     # Without advancement_precreated — should queue career progress
-    pending = _PendingSkillChoice(id='1.0', instruction='Choose', options=[], advancement_precreated=False)
+    pending = _PendingSkillChoice(pending_id=(1, 0), instruction='Choose', options=[], advancement_precreated=False)
     proj = _projection(
         characteristics={Chars.STR: 7, Chars.DEX: 8, Chars.END: 6, Chars.INT: 9, Chars.EDU: 10, Chars.SOC: 5}
     )
@@ -942,7 +950,9 @@ def test_career_skill_choice_pending_base_on_skill_chosen_grants_skill_and_queue
     assert len(proj.pending_inputs) > before_count
 
     # With advancement_precreated — should NOT queue career progress
-    pending2 = PendingScholarScienceChoice(id='2.0', instruction='Choose', options=[], advancement_precreated=True)
+    pending2 = PendingScholarScienceChoice(
+        pending_id=(2, 0), instruction='Choose', options=[], advancement_precreated=True
+    )
     proj2 = _projection()
     proj2.summary.current_career = scout
     proj2.summary.current_assignment = 'Courier'

@@ -108,7 +108,7 @@ class PreCareerData(TermData):
                     instr = f'{self.name}: choose one {entry.category_label} specialisation at level {entry.level}'
                     projection.pending_inputs.append(
                         PendingPreCareerSkillChoice(
-                            id=f'{event.id}.{pending_idx}',
+                            pending_id=(event.id, pending_idx),
                             level=entry.level,
                             instruction=instr,
                             options=options,
@@ -128,7 +128,7 @@ class PreCareerData(TermData):
                         instr = f'{self.name}: choose one {entry.category_label} specialisation at level {entry.level}'
                         projection.pending_inputs.append(
                             PendingPreCareerSkillChoice(
-                                id=f'{event.id}.{pending_idx}',
+                                pending_id=(event.id, pending_idx),
                                 level=entry.level,
                                 instruction=instr,
                                 options=options,
@@ -143,7 +143,7 @@ class PreCareerData(TermData):
                 instr = f'{self.name}: choose skill {i + 1} of {self.entry_pick_count} at level 0'
                 projection.pending_inputs.append(
                     PendingPreCareerSkillChoice(
-                        id=f'{event.id}.{pending_idx}',
+                        pending_id=(event.id, pending_idx),
                         level=0,
                         instruction=instr,
                         options=choice_pool,

@@ -107,7 +107,7 @@ class ScoutEvent3Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingScoutEvent3SkillRoll(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Roll Pilot 8+ to escape or Persuade 10+ to bargain',
                 options=[Pilot(), Persuade()],
             )
@@ -128,7 +128,7 @@ class PendingScoutEvent8SkillRoll(CareerSkillRollPendingBase):
         else:
             projection.pending_inputs.append(
                 PendingMishap(
-                    id=f'{event.id}.0',
+                    pending_id=(event.id, 0),
                     instruction='Roll 1D Mishap (you are not ejected from this career)',
                 )
             )
@@ -141,7 +141,7 @@ class ScoutEvent8Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingScoutEvent8SkillRoll(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Roll Electronics 8+ or Deception 8+',
                 options=[Electronics(), Deception()],
             )
@@ -170,7 +170,7 @@ class ScoutEvent9Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingScoutEvent9SkillRoll(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Roll Medic 8+ or Engineer 8+',
                 options=[Medic(), Engineer()],
             )
@@ -189,7 +189,7 @@ class PendingScoutEvent10SkillRoll(CareerSkillRollPendingBase):
             projection.summary.connections.append(Contact(source='Alien contact from the fringes of Charted Space'))
             projection.pending_inputs.append(
                 PendingSkillChoice(
-                    id=f'{event.id}.0',
+                    pending_id=(event.id, 0),
                     instruction='Choose any skill +1 (alien contact)',
                     options=[],
                 )
@@ -197,7 +197,7 @@ class PendingScoutEvent10SkillRoll(CareerSkillRollPendingBase):
         else:
             projection.pending_inputs.append(
                 PendingMishap(
-                    id=f'{event.id}.0',
+                    pending_id=(event.id, 0),
                     instruction='Roll 1D Mishap (you are not ejected from this career)',
                 )
             )
@@ -210,7 +210,7 @@ class ScoutEvent10Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingScoutEvent10SkillRoll(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Roll Survival 8+ or Pilot 8+',
                 options=[Survival(), Pilot()],
             )
@@ -232,7 +232,7 @@ class ScoutEvent11Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingScoutEvent11(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Gain Diplomat 1, or DM+4 to your next advancement roll',
                 options=[Diplomat(), AdvancementDmOption()],
                 advancement_precreated=False,

@@ -33,7 +33,7 @@ class MerchantAcademyPreCareer(PreCareerData):
                 service_skills = _skill_instances_from_table(service_table)
                 projection.pending_inputs.append(
                     PendingPreCareerSkillChoice(
-                        id=f'{event.id}.{pending_idx}',
+                        pending_id=(event.id, pending_idx),
                         level=1,
                         instruction=f'{self.name}: choose one Service Skill at level 1',
                         options=service_skills,
@@ -60,7 +60,7 @@ class MerchantAcademyPreCareer(PreCareerData):
         if skill_pool:
             projection.pending_inputs.append(
                 PendingPreCareerSkillChoice(
-                    id=f'{event.id}.{pending_idx}',
+                    pending_id=(event.id, pending_idx),
                     level=1,
                     instruction=f'{self.name} graduation: raise one curriculum skill to level 1',
                     options=skill_pool,

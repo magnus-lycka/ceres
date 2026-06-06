@@ -24,8 +24,8 @@ from tests.character.helpers import MOCK_WORLD
 def _setup(ucp: str = '7869A5') -> list:
     return [
         CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'),
-        UcpEvent(id=2, fulfills='1.0', ucp=ucp),
-        BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Drive()]),
+        UcpEvent(id=2, fulfills=(1, 0), ucp=ucp),
+        BackgroundSkillsEvent(id=3, fulfills=(2, 0), skills=[Admin(), Athletics(), Carouse(), Drive()]),
     ]
 
 
@@ -41,7 +41,7 @@ def test_new_core_careers_load():
 def test_failed_qualification_creates_draft_choice():
     events = [
         *_setup(),
-        CareerEvent(id=4, fulfills='3.0', career='Merchant', assignment='Merchant Marine', qualification_roll=2),
+        CareerEvent(id=4, fulfills=(3, 0), career='Merchant', assignment='Merchant Marine', qualification_roll=2),
     ]
 
     projection = replay(1, events)
@@ -64,8 +64,8 @@ def test_draftable_careers_tell_whether_this_character_can_be_drafted():
 def test_draft_event_records_selected_career_and_assignment():
     events = [
         *_setup(),
-        CareerEvent(id=4, fulfills='3.0', career='Army', assignment='Infantry', qualification_roll=2),
-        DraftEvent(id=5, fulfills='4.0', career='Merchant', assignment='Merchant Marine'),
+        CareerEvent(id=4, fulfills=(3, 0), career='Army', assignment='Infantry', qualification_roll=2),
+        DraftEvent(id=5, fulfills=(4, 0), career='Merchant', assignment='Merchant Marine'),
     ]
 
     projection = replay(1, events)
@@ -79,8 +79,8 @@ def test_draft_event_records_selected_career_and_assignment():
 def test_draft_to_career_with_multiple_assignments_asks_player_to_choose_assignment():
     events = [
         *_setup(),
-        CareerEvent(id=4, fulfills='3.0', career='Merchant', assignment='Merchant Marine', qualification_roll=2),
-        DraftEvent(id=5, fulfills='4.0', career='Army'),
+        CareerEvent(id=4, fulfills=(3, 0), career='Merchant', assignment='Merchant Marine', qualification_roll=2),
+        DraftEvent(id=5, fulfills=(4, 0), career='Army'),
     ]
 
     projection = replay(1, events)
@@ -94,9 +94,9 @@ def test_draft_to_career_with_multiple_assignments_asks_player_to_choose_assignm
 def test_draft_assignment_choice_starts_selected_assignment():
     events = [
         *_setup(),
-        CareerEvent(id=4, fulfills='3.0', career='Merchant', assignment='Merchant Marine', qualification_roll=2),
-        DraftEvent(id=5, fulfills='4.0', career='Army'),
-        DraftAssignmentEvent(id=6, fulfills='5.0', career='Army', assignment='Cavalry'),
+        CareerEvent(id=4, fulfills=(3, 0), career='Merchant', assignment='Merchant Marine', qualification_roll=2),
+        DraftEvent(id=5, fulfills=(4, 0), career='Army'),
+        DraftAssignmentEvent(id=6, fulfills=(5, 0), career='Army', assignment='Cavalry'),
     ]
 
     projection = replay(1, events)
@@ -110,10 +110,10 @@ def test_draft_assignment_choice_starts_selected_assignment():
 def test_merchant_does_not_offer_commission_before_advancement():
     events = [
         *_setup(),
-        CareerEvent(id=4, fulfills='3.0', career='Merchant', assignment='Merchant Marine', qualification_roll=8),
-        SkillChoiceEvent(id=5, fulfills='4.0', skill=VaccSuit()),
-        SurviveEvent(id=6, fulfills='5.0', roll=8),
-        TermEventEvent(id=7, fulfills='6.0', roll=9),
+        CareerEvent(id=4, fulfills=(3, 0), career='Merchant', assignment='Merchant Marine', qualification_roll=8),
+        SkillChoiceEvent(id=5, fulfills=(4, 0), skill=VaccSuit()),
+        SurviveEvent(id=6, fulfills=(5, 0), roll=8),
+        TermEventEvent(id=7, fulfills=(6, 0), roll=9),
     ]
 
     projection = replay(1, events)
@@ -124,10 +124,10 @@ def test_merchant_does_not_offer_commission_before_advancement():
 def test_army_first_term_offers_commission_before_advancement():
     events = [
         *_setup(ucp='7869A9'),
-        CareerEvent(id=4, fulfills='3.0', career='Army', assignment='Infantry', qualification_roll=8),
-        SkillChoiceEvent(id=5, fulfills='4.0', skill=VaccSuit()),
-        SurviveEvent(id=6, fulfills='5.0', roll=8),
-        TermEventEvent(id=7, fulfills='6.0', roll=9),
+        CareerEvent(id=4, fulfills=(3, 0), career='Army', assignment='Infantry', qualification_roll=8),
+        SkillChoiceEvent(id=5, fulfills=(4, 0), skill=VaccSuit()),
+        SurviveEvent(id=6, fulfills=(5, 0), roll=8),
+        TermEventEvent(id=7, fulfills=(6, 0), roll=9),
     ]
 
     projection = replay(1, events)
@@ -139,11 +139,11 @@ def test_army_first_term_offers_commission_before_advancement():
 def test_successful_commission_sets_officer_rank_and_skips_advancement():
     events = [
         *_setup(ucp='7869A9'),
-        CareerEvent(id=4, fulfills='3.0', career='Army', assignment='Infantry', qualification_roll=8),
-        SkillChoiceEvent(id=5, fulfills='4.0', skill=VaccSuit()),
-        SurviveEvent(id=6, fulfills='5.0', roll=8),
-        TermEventEvent(id=7, fulfills='6.0', roll=10),
-        CommissionEvent(id=8, fulfills='7.0', attempt=True, roll=8),
+        CareerEvent(id=4, fulfills=(3, 0), career='Army', assignment='Infantry', qualification_roll=8),
+        SkillChoiceEvent(id=5, fulfills=(4, 0), skill=VaccSuit()),
+        SurviveEvent(id=6, fulfills=(5, 0), roll=8),
+        TermEventEvent(id=7, fulfills=(6, 0), roll=10),
+        CommissionEvent(id=8, fulfills=(7, 0), attempt=True, roll=8),
     ]
 
     projection = replay(1, events)

@@ -110,7 +110,7 @@ class PendingDrifterEvent8SkillRoll(CareerSkillRollPendingBase):
         if event.modified_roll >= 8:
             projection.pending_inputs.append(
                 PendingSkillChoice(
-                    id=f'{event.id}.0',
+                    pending_id=(event.id, 0),
                     instruction='Attack survived: increase Melee or Gun Combat by one level',
                     options=[Melee(), GunCombat()],
                 )
@@ -128,7 +128,7 @@ class DrifterEvent9Injury(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         projection.pending_inputs.append(
             PendingInjuryTable(
-                id=f'{event.id}.0',
+                pending_id=(event.id, 0),
                 instruction='Risky adventure outcome: roll 1D on Injury table',
                 options=['1', '2', '3', '4', '5', '6'],
             )
@@ -154,7 +154,7 @@ class PendingDrifterEvent9RollSkillRoll(CareerSkillRollPendingBase):
         if roll <= 2:
             projection.pending_inputs.append(
                 PendingChoices(
-                    id=f'{event.id}.0',
+                    pending_id=(event.id, 0),
                     instruction='Risky adventure (1-2): choose — roll on Injury table, or be sent to Prisoner career?',
                     choices=[DrifterEvent9Injury(), DrifterEvent9Prison()],
                 )
@@ -163,7 +163,7 @@ class PendingDrifterEvent9RollSkillRoll(CareerSkillRollPendingBase):
         elif roll == 3:
             projection.pending_inputs.append(
                 PendingInjuryTable(
-                    id=f'{event.id}.0',
+                    pending_id=(event.id, 0),
                     instruction='Risky adventure (3): roll 1D on Injury table',
                     options=['1', '2', '3', '4', '5', '6'],
                 )
@@ -181,7 +181,7 @@ class DrifterEvent9Accept(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         projection.pending_inputs.append(
             PendingDrifterEvent9RollSkillRoll(
-                id=f'{event.id}.0',
+                pending_id=(event.id, 0),
                 instruction='Risky adventure: roll 1D (1-2: injured or arrested, 3: injured, 4-6: bonus Benefit roll)',
                 options=[],
             )
@@ -207,7 +207,7 @@ class DrifterMishap5Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingDrifterMishap5SkillRoll(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Betrayed by a friend: gain a Rival. Roll 2D — on a natural 2, must take Prisoner next term',
                 options=[],
             )
@@ -225,7 +225,7 @@ class DrifterEvent3Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingChoices(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction="Accept the patron's job offer (DM+4 to next Qualification roll) or decline?",
                 choices=[DrifterEvent3Accept(), DrifterEvent3Decline()],
             )
@@ -244,7 +244,7 @@ class DrifterEvent8Handler(CareerHandlerBase):
         projection.summary.connections.append(Enemy(source='Someone who attacked you on your travels'))
         projection.pending_inputs.append(
             PendingDrifterEvent8SkillRoll(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Roll Melee or Gun Combat 8+: success = increase that skill; fail = injured',
                 options=[Melee(), GunCombat()],
             )
@@ -262,7 +262,7 @@ class DrifterEvent9Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingChoices(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Accept the risky adventure (roll 1D for outcome) or decline?',
                 choices=[DrifterEvent9Accept(), DrifterEvent9Decline()],
             )

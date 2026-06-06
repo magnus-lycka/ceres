@@ -85,7 +85,7 @@ class CareerSkillRollPendingBase(PendingInputBase):
 
             adapter: TypeAdapter[AnySkill] = TypeAdapter(AnySkill)
             skill = adapter.validate_python({'type': skill_str})
-        return SkillRollEvent(skill=skill, modified_roll=modified_roll, fulfills=self.id)
+        return SkillRollEvent(skill=skill, modified_roll=modified_roll, fulfills=self.pending_id)
 
     def input_specs(self, projection: CharacterProjection) -> list[Any]:
         skill_options = _build_career_skill_select_options(self.options)
@@ -113,7 +113,7 @@ class PendingAdvancedTrainingSkillRoll(CareerSkillRollPendingBase):
 
             projection.pending_inputs.append(
                 PendingSkillChoice(
-                    id=f'{event.id}.0',
+                    pending_id=(event.id, 0),
                     instruction='Advanced training: increase any existing skill by one level',
                     options=list(projection.summary.skills),
                 )
@@ -147,8 +147,8 @@ class CareerSkillChoicePendingBase(PendingInputBase):
         )
         parsed = adv_dm_or_skill_adapter.validate_json(form_str(form, 'skill', '{}'))
         if isinstance(parsed, AdvancementDmOption):
-            return AdvancementDmChoiceEvent(fulfills=self.id)
-        return SkillChoiceEvent(skill=cast(_AnySkill, parsed), fulfills=self.id)
+            return AdvancementDmChoiceEvent(fulfills=self.pending_id)
+        return SkillChoiceEvent(skill=cast(_AnySkill, parsed), fulfills=self.pending_id)
 
     def input_specs(self, projection: CharacterProjection) -> list[Any]:
         opts = _build_skill_choice_select_options(projection, self.options, None)

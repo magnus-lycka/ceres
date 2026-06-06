@@ -100,7 +100,7 @@ class MerchantEvent3Accept(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         projection.pending_inputs.append(
             MerchantEvent3SkillRoll(
-                id=f'{event.id}.0',
+                pending_id=(event.id, 0),
                 instruction='Roll Deception or Persuade 8+: success = extra Benefit roll; fail = ejected, gain Enemy',
                 options=[Deception(), Persuade()],
             )
@@ -124,7 +124,7 @@ class MerchantEvent3Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingChoices(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction=(
                     'Accept the smuggling job (roll Deception or Persuade 8+: '
                     'success = extra Benefit roll, fail = ejected with Enemy) '
@@ -175,7 +175,7 @@ class MerchantEvent8Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingSkillChoice(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Legal trouble: gain one of Advocate, Admin, Diplomat or Investigate at level 1',
                 options=[Advocate(), Admin(), Diplomat(), Investigate()],
             )
@@ -183,7 +183,7 @@ class MerchantEvent8Handler(CareerHandlerBase):
         pending_idx += 1
         projection.pending_inputs.append(
             PendingMerchantEvent8Roll(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Legal trouble: roll 2D — on a natural 2 you must take the Prisoner career next term',
                 options=[],
             )

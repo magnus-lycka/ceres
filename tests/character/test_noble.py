@@ -36,8 +36,8 @@ def _setup() -> list:
     """STR=7 DEX=8 END=6 INT=9 EDU=10 SOC=5 — INT DM+1."""
     return [
         CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Lord'),
-        UcpEvent(id=2, fulfills='1.0', ucp='7869A5'),
-        BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Drive()]),
+        UcpEvent(id=2, fulfills=(1, 0), ucp='7869A5'),
+        BackgroundSkillsEvent(id=3, fulfills=(2, 0), skills=[Admin(), Athletics(), Carouse(), Drive()]),
     ]
 
 
@@ -45,17 +45,17 @@ def _enter_noble(assignment: str = 'Administrator', qual_roll: int = 11) -> list
     """SOC 10+, SOC=5, DM−1 → need roll 11 (11+(−1)=10 ≥ 10)."""
     return [
         *_setup(),
-        CareerEvent(id=4, fulfills='3.0', career='Noble', assignment=assignment, qualification_roll=qual_roll),
+        CareerEvent(id=4, fulfills=(3, 0), career='Noble', assignment=assignment, qualification_roll=qual_roll),
     ]
 
 
 def _through_survive(assignment: str = 'Administrator', survive_roll: int = 3) -> list:
     """Administrator: INT 4+, INT=9, DM+1 → need roll 3 (3+1=4 ≥ 4)."""
-    return [*_enter_noble(assignment), SurviveEvent(id=5, fulfills='4.0', roll=survive_roll)]
+    return [*_enter_noble(assignment), SurviveEvent(id=5, fulfills=(4, 0), roll=survive_roll)]
 
 
 def _through_term_event(event_roll: int, assignment: str = 'Administrator') -> list:
-    return [*_through_survive(assignment), TermEventEvent(id=6, fulfills='5.0', roll=event_roll)]
+    return [*_through_survive(assignment), TermEventEvent(id=6, fulfills=(5, 0), roll=event_roll)]
 
 
 # ── mishap 3: disaster or war ─────────────────────────────────────────────────
@@ -65,11 +65,11 @@ class TestNobleMishap3:
     def _setup_to_mishap(self) -> list:
         return [
             *_enter_noble(),
-            SurviveEvent(id=5, fulfills='4.0', roll=2),  # natural 2 — auto-mishap
+            SurviveEvent(id=5, fulfills=(4, 0), roll=2),  # natural 2 — auto-mishap
         ]
 
     def test_mishap_3_creates_skill_roll_pending(self):
-        events = [*self._setup_to_mishap(), MishapEvent(id=6, fulfills='5.0', roll=3)]
+        events = [*self._setup_to_mishap(), MishapEvent(id=6, fulfills=(5, 0), roll=3)]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingNobleMishap3SkillRoll)), None)
         assert pending is not None
@@ -78,8 +78,8 @@ class TestNobleMishap3:
     def test_success_keeps_benefit_roll(self):
         events = [
             *self._setup_to_mishap(),
-            MishapEvent(id=6, fulfills='5.0', roll=3),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Admin(), modified_roll=9),
+            MishapEvent(id=6, fulfills=(5, 0), roll=3),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Admin(), modified_roll=9),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
@@ -87,8 +87,8 @@ class TestNobleMishap3:
     def test_failure_loses_benefit_roll(self):
         events = [
             *self._setup_to_mishap(),
-            MishapEvent(id=6, fulfills='5.0', roll=3),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Admin(), modified_roll=7),
+            MishapEvent(id=6, fulfills=(5, 0), roll=3),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Admin(), modified_roll=7),
         ]
         projection = replay(1, events)
         assert not any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
@@ -96,8 +96,8 @@ class TestNobleMishap3:
     def test_failure_adds_injury_problem(self):
         events = [
             *self._setup_to_mishap(),
-            MishapEvent(id=6, fulfills='5.0', roll=3),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Admin(), modified_roll=7),
+            MishapEvent(id=6, fulfills=(5, 0), roll=3),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Admin(), modified_roll=7),
         ]
         projection = replay(1, events)
         assert any('injur' in p.lower() or 'escape' in p.lower() for p in projection.summary.problems)
@@ -106,8 +106,8 @@ class TestNobleMishap3:
         for roll in (9, 7):
             events = [
                 *self._setup_to_mishap(),
-                MishapEvent(id=6, fulfills='5.0', roll=3),
-                SkillRollEvent(id=7, fulfills='6.0', skill=Admin(), modified_roll=roll),
+                MishapEvent(id=6, fulfills=(5, 0), roll=3),
+                SkillRollEvent(id=7, fulfills=(6, 0), skill=Admin(), modified_roll=roll),
             ]
             projection = replay(1, events)
             assert projection.summary.current_career is None, f'roll={roll}'
@@ -120,11 +120,11 @@ class TestNobleMishap5:
     def _setup_to_mishap(self) -> list:
         return [
             *_enter_noble(),
-            SurviveEvent(id=5, fulfills='4.0', roll=2),
+            SurviveEvent(id=5, fulfills=(4, 0), roll=2),
         ]
 
     def test_mishap_5_creates_end_roll_pending(self):
-        events = [*self._setup_to_mishap(), MishapEvent(id=6, fulfills='5.0', roll=5)]
+        events = [*self._setup_to_mishap(), MishapEvent(id=6, fulfills=(5, 0), roll=5)]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingNobleMishap5SkillRoll)), None)
         assert pending is not None
@@ -134,8 +134,8 @@ class TestNobleMishap5:
         # Handler adds a specific "apply the result" problem only on failure
         events = [
             *self._setup_to_mishap(),
-            MishapEvent(id=6, fulfills='5.0', roll=5),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Chars.END, modified_roll=7),
+            MishapEvent(id=6, fulfills=(5, 0), roll=5),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Chars.END, modified_roll=7),
         ]
         projection = replay(1, events)
         assert any('apply the result' in p.lower() for p in projection.summary.problems)
@@ -144,8 +144,8 @@ class TestNobleMishap5:
         # On success, handler does NOT add an extra problem (only standard mishap text is in problems)
         events = [
             *self._setup_to_mishap(),
-            MishapEvent(id=6, fulfills='5.0', roll=5),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Chars.END, modified_roll=9),
+            MishapEvent(id=6, fulfills=(5, 0), roll=5),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Chars.END, modified_roll=9),
         ]
         projection = replay(1, events)
         assert not any('apply the result' in p.lower() for p in projection.summary.problems)
@@ -154,8 +154,8 @@ class TestNobleMishap5:
         for roll in (9, 7):
             events = [
                 *self._setup_to_mishap(),
-                MishapEvent(id=6, fulfills='5.0', roll=5),
-                SkillRollEvent(id=7, fulfills='6.0', skill=Chars.END, modified_roll=roll),
+                MishapEvent(id=6, fulfills=(5, 0), roll=5),
+                SkillRollEvent(id=7, fulfills=(6, 0), skill=Chars.END, modified_roll=roll),
             ]
             projection = replay(1, events)
             assert projection.summary.current_career is None, f'roll={roll}'
@@ -180,7 +180,7 @@ class TestNobleEvent8:
     def test_refuse_adds_rival(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent.for_choice(NobleEvent8Refuse, id=7, fulfills='6.0'),
+            CareerChoiceEvent.for_choice(NobleEvent8Refuse, id=7, fulfills=(6, 0)),
         ]
         projection = replay(1, events)
         rivals = [c for c in projection.summary.connections if isinstance(c, Rival)]
@@ -189,7 +189,7 @@ class TestNobleEvent8:
     def test_refuse_queues_advancement(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent.for_choice(NobleEvent8Refuse, id=7, fulfills='6.0'),
+            CareerChoiceEvent.for_choice(NobleEvent8Refuse, id=7, fulfills=(6, 0)),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
@@ -197,7 +197,7 @@ class TestNobleEvent8:
     def test_accept_creates_skill_roll(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent.for_choice(NobleEvent8Accept, id=7, fulfills='6.0'),
+            CareerChoiceEvent.for_choice(NobleEvent8Accept, id=7, fulfills=(6, 0)),
         ]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, NobleEvent8SkillRoll)), None)
@@ -207,8 +207,8 @@ class TestNobleEvent8:
     def test_accept_success_adds_extra_benefit_roll(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent.for_choice(NobleEvent8Accept, id=7, fulfills='6.0'),
-            SkillRollEvent(id=8, fulfills='7.0', skill=Admin(), modified_roll=9),
+            CareerChoiceEvent.for_choice(NobleEvent8Accept, id=7, fulfills=(6, 0)),
+            SkillRollEvent(id=8, fulfills=(7, 0), skill=Admin(), modified_roll=9),
         ]
         projection = replay(1, events)
         assert projection.summary.career_terms[-1].require_muster_out().extra_rolls == 1
@@ -216,8 +216,8 @@ class TestNobleEvent8:
     def test_accept_success_continues_career(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent.for_choice(NobleEvent8Accept, id=7, fulfills='6.0'),
-            SkillRollEvent(id=8, fulfills='7.0', skill=Admin(), modified_roll=9),
+            CareerChoiceEvent.for_choice(NobleEvent8Accept, id=7, fulfills=(6, 0)),
+            SkillRollEvent(id=8, fulfills=(7, 0), skill=Admin(), modified_roll=9),
         ]
         projection = replay(1, events)
         assert projection.summary.current_career is not None
@@ -226,8 +226,8 @@ class TestNobleEvent8:
     def test_accept_failure_adds_enemy_and_ends_career(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent.for_choice(NobleEvent8Accept, id=7, fulfills='6.0'),
-            SkillRollEvent(id=8, fulfills='7.0', skill=Admin(), modified_roll=7),
+            CareerChoiceEvent.for_choice(NobleEvent8Accept, id=7, fulfills=(6, 0)),
+            SkillRollEvent(id=8, fulfills=(7, 0), skill=Admin(), modified_roll=7),
         ]
         projection = replay(1, events)
         enemies = [c for c in projection.summary.connections if isinstance(c, Enemy)]

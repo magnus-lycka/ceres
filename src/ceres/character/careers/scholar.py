@@ -82,7 +82,7 @@ class PendingScholarScienceChoice(CareerSkillChoicePendingBase):
 def _append_scholar_science_choice(projection: CharacterProjection, event_id: int, idx: int = 0) -> None:
     projection.pending_inputs.append(
         PendingScholarScienceChoice(
-            id=f'{event_id}.{idx}',
+            pending_id=(event_id, idx),
             instruction='Increase Science by one level: choose which broad science',
             options=cast(list[AnySkill | AdvancementDmOption], skill_instances(ScienceSkill)),
             advancement_precreated=True,
@@ -116,7 +116,7 @@ class ScholarMishap3Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingChoices(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Continue openly (Science +1, Enemy) or secretly (Science +1, SOC -2)?',
                 choices=[ScholarMishap3Openly(), ScholarMishap3Secretly()],
             )
@@ -140,7 +140,9 @@ class ScholarMishap5GiveUp(ChoiceBase):
         if projection.summary.age >= 34:
             projection.muster_out_career = career
             projection.clear_current_career()
-            projection.pending_inputs.append(PendingAgingRoll(id=f'{event.id}.0', instruction='Roll 2D on Aging table'))
+            projection.pending_inputs.append(
+                PendingAgingRoll(pending_id=(event.id, 0), instruction='Roll 2D on Aging table')
+            )
         else:
             muster_out_setup(projection, career, event.id, 0, lose_current_term=True)
 
@@ -160,7 +162,7 @@ class ScholarMishap5Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingChoices(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Give up (leave career) or start again (stay, lose benefit rolls)?',
                 choices=[ScholarMishap5GiveUp(), ScholarMishap5StartAgain()],
             )
@@ -184,7 +186,7 @@ class ScholarEvent3Accept(ChoiceBase):
 
         projection.pending_inputs.append(
             PendingConnectionsRoll(
-                id=f'{event.id}.0',
+                pending_id=(event.id, 0),
                 instruction='Roll D3 for number of Enemies gained',
                 options=['1', '2', '3'],
             )
@@ -192,7 +194,7 @@ class ScholarEvent3Accept(ChoiceBase):
         for i, label in enumerate(['first', 'second'], start=1):
             projection.pending_inputs.append(
                 PendingScholarScienceChoicePreCreated(
-                    id=f'{event.id}.{i}',
+                    pending_id=(event.id, i),
                     instruction=f'Choose {label} Science specialty to increase by one level',
                     options=cast(list[AnySkill | AdvancementDmOption], skill_instances(ScienceSkill)),
                     advancement_precreated=True,
@@ -206,7 +208,7 @@ class ScholarEvent3Accept(ChoiceBase):
         projection.muster_out_career = projection.summary.current_career
         projection.pending_inputs.append(
             PendingMusterOut(
-                id=f'{event.id}.4',
+                pending_id=(event.id, 4),
                 instruction='Extra Benefit roll (accepted research against conscience)',
                 options=['cash', 'benefits'],
             )
@@ -234,7 +236,7 @@ class ScholarEvent3Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingChoices(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Accept (2 Science specialties + D3 Enemies + extra Benefit roll) or Decline?',
                 choices=[ScholarEvent3Accept(), ScholarEvent3Decline()],
             )
@@ -252,7 +254,7 @@ class PendingScholarEvent6SkillRoll(CareerSkillRollPendingBase):
         if event.modified_roll >= 8:
             projection.pending_inputs.append(
                 PendingSkillChoice(
-                    id=f'{event.id}.0',
+                    pending_id=(event.id, 0),
                     instruction='Choose any skill to gain at level 1',
                     options=[],
                 )
@@ -267,7 +269,7 @@ class ScholarEvent6Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingScholarEvent6SkillRoll(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Roll EDU 8+ to gain any skill of your choice at level 1',
                 options=[Chars.EDU],
             )
@@ -286,7 +288,7 @@ class ScholarEvent8SkillRoll(CareerSkillRollPendingBase):
             projection.summary.connections.append(Enemy(source='A colleague who knows you cheated your way to results'))
             projection.pending_inputs.append(
                 PendingSkillChoice(
-                    id=f'{event.id}.0',
+                    pending_id=(event.id, 0),
                     instruction='Cheat succeeded: choose any skill to gain +1',
                     options=[],
                 )
@@ -303,7 +305,7 @@ class ScholarEvent8Accept(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         projection.pending_inputs.append(
             ScholarEvent8SkillRoll(
-                id=f'{event.id}.0',
+                pending_id=(event.id, 0),
                 instruction='Roll Deception 8+ or Admin 8+ to cheat successfully',
                 options=[Deception(), Admin()],
             )
@@ -331,7 +333,7 @@ class ScholarEvent8Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingChoices(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Refuse (nothing) or Accept (roll Deception/Admin 8+)?',
                 choices=[ScholarEvent8Accept(), ScholarEvent8Refuse()],
             )
@@ -353,7 +355,7 @@ class ScholarEvent11Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingScholarEvent11(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Increase Science by one level (choose which), or DM+4 to your next advancement roll',
                 options=[*_SCIENCES, AdvancementDmOption()],
                 advancement_precreated=False,

@@ -554,7 +554,9 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
 
 
 def _build_event_from_form(fulfills: str, form: Any, projection: CharacterProjection) -> AnyEvent:
-    pending = next((p for p in projection.pending_inputs if p.id == fulfills), None)
+    parts = fulfills.split('.')
+    pending_id: tuple[int, int] | None = (int(parts[0]), int(parts[1])) if len(parts) == 2 else None
+    pending = next((p for p in projection.pending_inputs if p.pending_id == pending_id), None)
     if pending is None:
         raise ValueError(f'No pending input with id={fulfills!r}')
     return pending.event_from_form(form)

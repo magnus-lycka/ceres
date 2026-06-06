@@ -70,8 +70,8 @@ def _full_setup(character_id: int = 1) -> list:
     # STR=7 DEX=8 END=6 INT=9 EDU=10 SOC=5 → 4 background skills
     return [
         CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'),
-        UcpEvent(id=2, fulfills='1.0', ucp='7869A5'),
-        BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Drive()]),
+        UcpEvent(id=2, fulfills=(1, 0), ucp='7869A5'),
+        BackgroundSkillsEvent(id=3, fulfills=(2, 0), skills=[Admin(), Athletics(), Carouse(), Drive()]),
     ]
 
 
@@ -81,9 +81,9 @@ class TestScoutAmbush:
     def _setup_to_ambush(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=3),
+            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills=(4, 0), roll=7),
+            TermEventEvent(id=6, fulfills=(5, 0), roll=3),
         ]
 
     def test_creates_ambush_pending_with_skill_options(self):
@@ -106,7 +106,7 @@ class TestScoutAmbush:
         # Pilot 8+, roll 9 → success
         events = [
             *self._setup_to_ambush(),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Pilot(), modified_roll=9),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Pilot(), modified_roll=9),
         ]
         projection = replay(1, events)
 
@@ -116,7 +116,7 @@ class TestScoutAmbush:
         # Persuade 10+, roll 11 → success
         events = [
             *self._setup_to_ambush(),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Persuade(), modified_roll=11),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Persuade(), modified_roll=11),
         ]
         projection = replay(1, events)
 
@@ -126,7 +126,7 @@ class TestScoutAmbush:
         # Pilot 8+, roll 6 → failure
         events = [
             *self._setup_to_ambush(),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Pilot(), modified_roll=6),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Pilot(), modified_roll=6),
         ]
         projection = replay(1, events)
 
@@ -136,7 +136,7 @@ class TestScoutAmbush:
         # Persuade 10+, roll 8 → failure
         events = [
             *self._setup_to_ambush(),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Persuade(), modified_roll=8),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Persuade(), modified_roll=8),
         ]
         projection = replay(1, events)
 
@@ -145,7 +145,7 @@ class TestScoutAmbush:
     def test_skill_roll_creates_advancement_pending(self):
         events = [
             *self._setup_to_ambush(),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Pilot(), modified_roll=9),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Pilot(), modified_roll=9),
         ]
         projection = replay(1, events)
 
@@ -158,9 +158,9 @@ class TestScoutEvent8:
     def _setup(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=8),
+            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills=(4, 0), roll=7),
+            TermEventEvent(id=6, fulfills=(5, 0), roll=8),
         ]
 
     def test_creates_pending_with_electronics_and_deception_options(self):
@@ -170,19 +170,19 @@ class TestScoutEvent8:
         assert pending.options == [Electronics(), Deception()]
 
     def test_success_gains_ally(self):
-        roll = SkillRollEvent(id=7, fulfills='6.0', skill=Electronics(), modified_roll=9)
+        roll = SkillRollEvent(id=7, fulfills=(6, 0), skill=Electronics(), modified_roll=9)
         projection = replay(1, [*self._setup(), roll])
 
         assert any(isinstance(c, Ally) for c in projection.summary.connections)
 
     def test_success_creates_advancement_pending(self):
-        roll = SkillRollEvent(id=7, fulfills='6.0', skill=Electronics(), modified_roll=9)
+        roll = SkillRollEvent(id=7, fulfills=(6, 0), skill=Electronics(), modified_roll=9)
         projection = replay(1, [*self._setup(), roll])
 
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
     def test_failure_creates_mishap_pending(self):
-        roll = SkillRollEvent(id=7, fulfills='6.0', skill=Electronics(), modified_roll=5)
+        roll = SkillRollEvent(id=7, fulfills=(6, 0), skill=Electronics(), modified_roll=5)
         events = [*self._setup(), roll]
         projection = replay(1, events)
 
@@ -191,8 +191,8 @@ class TestScoutEvent8:
     def test_failure_mishap_stay_keeps_career_active(self):
         events = [
             *self._setup(),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Electronics(), modified_roll=5),
-            MishapEvent(id=8, fulfills='7.0', roll=5, stay_in_career=True),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Electronics(), modified_roll=5),
+            MishapEvent(id=8, fulfills=(7, 0), roll=5, stay_in_career=True),
         ]
 
         projection = replay(1, events)
@@ -208,9 +208,9 @@ class TestScoutEvent9:
     def _setup(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=9),
+            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills=(4, 0), roll=7),
+            TermEventEvent(id=6, fulfills=(5, 0), roll=9),
         ]
 
     def test_creates_pending_with_medic_and_engineer_options(self):
@@ -220,25 +220,25 @@ class TestScoutEvent9:
         assert pending.options == [Medic(), Engineer()]
 
     def test_success_gains_contact(self):
-        roll = SkillRollEvent(id=7, fulfills='6.0', skill=Medic(), modified_roll=9)
+        roll = SkillRollEvent(id=7, fulfills=(6, 0), skill=Medic(), modified_roll=9)
         projection = replay(1, [*self._setup(), roll])
 
         assert any(isinstance(c, Contact) for c in projection.summary.connections)
 
     def test_failure_gains_enemy(self):
-        roll = SkillRollEvent(id=7, fulfills='6.0', skill=Medic(), modified_roll=5)
+        roll = SkillRollEvent(id=7, fulfills=(6, 0), skill=Medic(), modified_roll=5)
         projection = replay(1, [*self._setup(), roll])
 
         assert any(isinstance(c, Enemy) for c in projection.summary.connections)
 
     def test_success_creates_advancement_pending(self):
-        roll = SkillRollEvent(id=7, fulfills='6.0', skill=Medic(), modified_roll=9)
+        roll = SkillRollEvent(id=7, fulfills=(6, 0), skill=Medic(), modified_roll=9)
         projection = replay(1, [*self._setup(), roll])
 
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
     def test_failure_creates_advancement_pending(self):
-        roll = SkillRollEvent(id=7, fulfills='6.0', skill=Medic(), modified_roll=5)
+        roll = SkillRollEvent(id=7, fulfills=(6, 0), skill=Medic(), modified_roll=5)
         projection = replay(1, [*self._setup(), roll])
 
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
@@ -250,9 +250,9 @@ class TestScoutEvent10:
     def _setup(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=10),
+            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills=(4, 0), roll=7),
+            TermEventEvent(id=6, fulfills=(5, 0), roll=10),
         ]
 
     def test_creates_pending_with_survival_and_pilot_options(self):
@@ -262,13 +262,13 @@ class TestScoutEvent10:
         assert pending.options == [Survival(), Pilot()]
 
     def test_success_gains_contact(self):
-        roll = SkillRollEvent(id=7, fulfills='6.0', skill=Pilot(), modified_roll=9)
+        roll = SkillRollEvent(id=7, fulfills=(6, 0), skill=Pilot(), modified_roll=9)
         projection = replay(1, [*self._setup(), roll])
 
         assert any(isinstance(c, Contact) for c in projection.summary.connections)
 
     def test_success_creates_skill_choice_pending(self):
-        roll = SkillRollEvent(id=7, fulfills='6.0', skill=Pilot(), modified_roll=9)
+        roll = SkillRollEvent(id=7, fulfills=(6, 0), skill=Pilot(), modified_roll=9)
         projection = replay(1, [*self._setup(), roll])
 
         assert any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
@@ -276,8 +276,8 @@ class TestScoutEvent10:
     def test_success_skill_choice_grants_skill_and_creates_advancement(self):
         events = [
             *self._setup(),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Pilot(), modified_roll=9),
-            SkillChoiceEvent(id=8, fulfills='7.0', skill=Navigation(level=Level(value=1))),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Pilot(), modified_roll=9),
+            SkillChoiceEvent(id=8, fulfills=(7, 0), skill=Navigation(level=Level(value=1))),
         ]
 
         projection = replay(1, events)
@@ -286,7 +286,7 @@ class TestScoutEvent10:
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
     def test_failure_creates_mishap_pending(self):
-        roll = SkillRollEvent(id=7, fulfills='6.0', skill=Pilot(), modified_roll=5)
+        roll = SkillRollEvent(id=7, fulfills=(6, 0), skill=Pilot(), modified_roll=5)
         projection = replay(1, [*self._setup(), roll])
 
         assert any(isinstance(p, PendingMishap) for p in projection.pending_inputs)
@@ -294,8 +294,8 @@ class TestScoutEvent10:
     def test_failure_mishap_stay_keeps_career_active(self):
         events = [
             *self._setup(),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Pilot(), modified_roll=5),
-            MishapEvent(id=8, fulfills='7.0', roll=5, stay_in_career=True),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Pilot(), modified_roll=5),
+            MishapEvent(id=8, fulfills=(7, 0), roll=5, stay_in_career=True),
         ]
 
         projection = replay(1, events)
@@ -311,13 +311,13 @@ class TestConnections:
     def _setup_through_failed_survive(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
-            SurviveEvent(id=5, fulfills='4.0', roll=3),  # fail
+            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills=(4, 0), roll=3),  # fail
         ]
 
     def test_mishap_4_adds_rival_immediately(self):
         # Mishap 4: gain Diplomat 1 + Rival
-        events = [*self._setup_through_failed_survive(), MishapEvent(id=6, fulfills='5.0', roll=4)]
+        events = [*self._setup_through_failed_survive(), MishapEvent(id=6, fulfills=(5, 0), roll=4)]
 
         projection = replay(1, events)
 
@@ -325,7 +325,7 @@ class TestConnections:
         assert len(rivals) == 1
 
     def test_mishap_4_rival_source_is_mishap_text(self):
-        events = [*self._setup_through_failed_survive(), MishapEvent(id=6, fulfills='5.0', roll=4)]
+        events = [*self._setup_through_failed_survive(), MishapEvent(id=6, fulfills=(5, 0), roll=4)]
 
         projection = replay(1, events)
 
@@ -334,7 +334,7 @@ class TestConnections:
 
     def test_mishap_3_creates_pending_for_contacts_roll(self):
         # Mishap 3: Gain 1D Contacts and D3 Enemies
-        events = [*self._setup_through_failed_survive(), MishapEvent(id=6, fulfills='5.0', roll=3)]
+        events = [*self._setup_through_failed_survive(), MishapEvent(id=6, fulfills=(5, 0), roll=3)]
 
         projection = replay(1, events)
 
@@ -343,9 +343,9 @@ class TestConnections:
     def test_mishap_3_connections_roll_contact_adds_connections(self):
         events = [
             *self._setup_through_failed_survive(),
-            MishapEvent(id=6, fulfills='5.0', roll=3),
-            ConnectionsRollEvent(id=7, fulfills='6.0', connection_type=ConnectionKind.CONTACT, count=3),
-            ConnectionsRollEvent(id=8, fulfills='6.1', connection_type=ConnectionKind.ENEMY, count=1),
+            MishapEvent(id=6, fulfills=(5, 0), roll=3),
+            ConnectionsRollEvent(id=7, fulfills=(6, 0), connection_type=ConnectionKind.CONTACT, count=3),
+            ConnectionsRollEvent(id=8, fulfills=(6, 1), connection_type=ConnectionKind.ENEMY, count=1),
         ]
 
         projection = replay(1, events)
@@ -359,9 +359,9 @@ class TestConnections:
         # Scout event 3: ambush, always gain an Enemy regardless of skill roll outcome
         setup = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=3),
+            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills=(4, 0), roll=7),
+            TermEventEvent(id=6, fulfills=(5, 0), roll=3),
         ]
 
         projection = replay(1, setup)
@@ -376,12 +376,12 @@ class TestMishapWithChoice:
     def _setup_through_failed_survive(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
-            SurviveEvent(id=5, fulfills='4.0', roll=3),  # fail
+            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills=(4, 0), roll=3),  # fail
         ]
 
     def test_mishap_2_creates_characteristic_choice_pending(self):
-        events = [*self._setup_through_failed_survive(), MishapEvent(id=6, fulfills='5.0', roll=2)]
+        events = [*self._setup_through_failed_survive(), MishapEvent(id=6, fulfills=(5, 0), roll=2)]
 
         projection = replay(1, events)
 
@@ -394,8 +394,8 @@ class TestMishapWithChoice:
     def test_mishap_2_characteristic_choice_int_decreases_int(self):
         events = [
             *self._setup_through_failed_survive(),
-            MishapEvent(id=6, fulfills='5.0', roll=2),
-            CharacteristicChoiceEvent(id=7, fulfills='6.0', characteristic=Chars.INT),
+            MishapEvent(id=6, fulfills=(5, 0), roll=2),
+            CharacteristicChoiceEvent(id=7, fulfills=(6, 0), characteristic=Chars.INT),
         ]
 
         projection = replay(1, events)
@@ -406,8 +406,8 @@ class TestMishapWithChoice:
     def test_mishap_2_characteristic_choice_soc_decreases_soc(self):
         events = [
             *self._setup_through_failed_survive(),
-            MishapEvent(id=6, fulfills='5.0', roll=2),
-            CharacteristicChoiceEvent(id=7, fulfills='6.0', characteristic=Chars.SOC),
+            MishapEvent(id=6, fulfills=(5, 0), roll=2),
+            CharacteristicChoiceEvent(id=7, fulfills=(6, 0), characteristic=Chars.SOC),
         ]
 
         projection = replay(1, events)
@@ -423,9 +423,9 @@ class TestScoutEvent11:
     def _setup_to_event_11(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=11),
+            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills=(4, 0), roll=7),
+            TermEventEvent(id=6, fulfills=(5, 0), roll=11),
         ]
 
     def test_creates_scout_event_11_pending_with_two_options(self):
@@ -435,27 +435,27 @@ class TestScoutEvent11:
         assert pending.options == [Diplomat(), AdvancementDmOption()]
 
     def test_choose_diplomat_grants_diplomat_1(self):
-        diplomat_choice = SkillChoiceEvent(id=7, fulfills='6.0', skill=Diplomat(level=Level(value=1)))
+        diplomat_choice = SkillChoiceEvent(id=7, fulfills=(6, 0), skill=Diplomat(level=Level(value=1)))
         events = [*self._setup_to_event_11(), diplomat_choice]
         projection = replay(1, events)
 
         assert projection.summary.skill_level(Diplomat, -1) >= 1
 
     def test_choose_advancement_dm_adds_pending_advancement_dm(self):
-        events = [*self._setup_to_event_11(), AdvancementDmChoiceEvent(id=7, fulfills='6.0')]
+        events = [*self._setup_to_event_11(), AdvancementDmChoiceEvent(id=7, fulfills=(6, 0))]
         projection = replay(1, events)
 
         assert projection.pending_advancement_dm == 4
 
     def test_diplomat_choice_creates_advancement_pending(self):
-        diplomat_choice = SkillChoiceEvent(id=7, fulfills='6.0', skill=Diplomat(level=Level(value=1)))
+        diplomat_choice = SkillChoiceEvent(id=7, fulfills=(6, 0), skill=Diplomat(level=Level(value=1)))
         events = [*self._setup_to_event_11(), diplomat_choice]
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
     def test_advancement_dm_choice_creates_advancement_pending(self):
-        events = [*self._setup_to_event_11(), AdvancementDmChoiceEvent(id=7, fulfills='6.0')]
+        events = [*self._setup_to_event_11(), AdvancementDmChoiceEvent(id=7, fulfills=(6, 0))]
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
@@ -467,18 +467,18 @@ class TestNormalInjury:
     def _setup_through_failed_survive(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
-            SurviveEvent(id=5, fulfills='4.0', roll=3),  # fail
+            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills=(4, 0), roll=3),  # fail
         ]
 
     def test_mishap_6_creates_injury_table_pending(self):
-        events = [*self._setup_through_failed_survive(), MishapEvent(id=6, fulfills='5.0', roll=6)]
+        events = [*self._setup_through_failed_survive(), MishapEvent(id=6, fulfills=(5, 0), roll=6)]
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingInjuryTable) for p in projection.pending_inputs)
 
     def test_mishap_6_still_ends_career(self):
-        events = [*self._setup_through_failed_survive(), MishapEvent(id=6, fulfills='5.0', roll=6)]
+        events = [*self._setup_through_failed_survive(), MishapEvent(id=6, fulfills=(5, 0), roll=6)]
         projection = replay(1, events)
 
         assert projection.summary.current_career is None
@@ -490,18 +490,18 @@ class TestScoutMishap6InjuryTable:
     def _setup_to_mishap(self) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
-            SurviveEvent(id=5, fulfills='4.0', roll=3),  # fail survive
+            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills=(4, 0), roll=3),  # fail survive
         ]
 
     def test_mishap_6_creates_injury_table_pending(self):
-        events = [*self._setup_to_mishap(), MishapEvent(id=6, fulfills='5.0', roll=6)]
+        events = [*self._setup_to_mishap(), MishapEvent(id=6, fulfills=(5, 0), roll=6)]
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingInjuryTable) for p in projection.pending_inputs)
 
     def test_mishap_6_does_not_create_characteristic_choice_directly(self):
-        events = [*self._setup_to_mishap(), MishapEvent(id=6, fulfills='5.0', roll=6)]
+        events = [*self._setup_to_mishap(), MishapEvent(id=6, fulfills=(5, 0), roll=6)]
         projection = replay(1, events)
 
         assert not any(isinstance(p, PendingCharacteristicChoice) for p in projection.pending_inputs)
@@ -513,16 +513,16 @@ class TestScoutAssignmentTableCorrections:
     def _setup_in_term_2(self, assignment: str) -> list:
         return [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment=assignment, qualification_roll=7),
-            SurviveEvent(id=5, fulfills='4.0', roll=7),
-            TermEventEvent(id=6, fulfills='5.0', roll=5),
-            AdvancementEvent(id=7, fulfills='6.0', roll=9),
-            ReenlistEvent(id=8, fulfills='7.0', reenlist=True),
+            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment=assignment, qualification_roll=7),
+            SurviveEvent(id=5, fulfills=(4, 0), roll=7),
+            TermEventEvent(id=6, fulfills=(5, 0), roll=5),
+            AdvancementEvent(id=7, fulfills=(6, 0), roll=9),
+            ReenlistEvent(id=8, fulfills=(7, 0), reenlist=True),
         ]
 
     def test_courier_roll_2_offers_flyer(self):
         # Courier roll 2 is Flyer (specialised) — player must choose a specialisation
-        events = [*self._setup_in_term_2('Courier'), SkillTableEvent(id=9, fulfills='8.0', table='courier', roll=2)]
+        events = [*self._setup_in_term_2('Courier'), SkillTableEvent(id=9, fulfills=(8, 0), table='courier', roll=2)]
         projection = replay(1, events)
 
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
@@ -530,20 +530,20 @@ class TestScoutAssignmentTableCorrections:
         assert Flyer() in pending.options
 
     def test_surveyor_roll_2_gives_persuade(self):
-        events = [*self._setup_in_term_2('Surveyor'), SkillTableEvent(id=9, fulfills='8.0', table='surveyor', roll=2)]
+        events = [*self._setup_in_term_2('Surveyor'), SkillTableEvent(id=9, fulfills=(8, 0), table='surveyor', roll=2)]
         projection = replay(1, events)
 
         assert projection.summary.skill_level(Persuade) is not None
 
     def test_surveyor_roll_4_gives_navigation(self):
-        events = [*self._setup_in_term_2('Surveyor'), SkillTableEvent(id=9, fulfills='8.0', table='surveyor', roll=4)]
+        events = [*self._setup_in_term_2('Surveyor'), SkillTableEvent(id=9, fulfills=(8, 0), table='surveyor', roll=4)]
         projection = replay(1, events)
 
         assert projection.summary.skill_level(Navigation) is not None
 
     def test_explorer_roll_2_offers_pilot(self):
         # Explorer roll 2 is Pilot (specialised) — player must choose a specialisation
-        events = [*self._setup_in_term_2('Explorer'), SkillTableEvent(id=9, fulfills='8.0', table='explorer', roll=2)]
+        events = [*self._setup_in_term_2('Explorer'), SkillTableEvent(id=9, fulfills=(8, 0), table='explorer', roll=2)]
         projection = replay(1, events)
 
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
@@ -551,7 +551,7 @@ class TestScoutAssignmentTableCorrections:
         assert Pilot() in pending.options
 
     def test_explorer_roll_4_creates_science_choice_pending(self):
-        events = [*self._setup_in_term_2('Explorer'), SkillTableEvent(id=9, fulfills='8.0', table='explorer', roll=4)]
+        events = [*self._setup_in_term_2('Explorer'), SkillTableEvent(id=9, fulfills=(8, 0), table='explorer', roll=4)]
         projection = replay(1, events)
 
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
@@ -562,7 +562,7 @@ class TestScoutAssignmentTableCorrections:
         # EDU=10 ≥ 8 → can access advanced_education table
         events = [
             *self._setup_in_term_2('Courier'),
-            SkillTableEvent(id=9, fulfills='8.0', table='advanced_education', roll=5),
+            SkillTableEvent(id=9, fulfills=(8, 0), table='advanced_education', roll=5),
         ]
         projection = replay(1, events)
 

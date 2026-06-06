@@ -72,8 +72,8 @@ def _setup() -> list:
     """STR=7 DEX=8 END=6 INT=9 EDU=10 SOC=5 — INT DM+1, END DM+0."""
     return [
         CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Sven'),
-        UcpEvent(id=2, fulfills='1.0', ucp='7869A5'),
-        BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Drive()]),
+        UcpEvent(id=2, fulfills=(1, 0), ucp='7869A5'),
+        BackgroundSkillsEvent(id=3, fulfills=(2, 0), skills=[Admin(), Athletics(), Carouse(), Drive()]),
     ]
 
 
@@ -81,7 +81,7 @@ def _enter_agent(assignment: str = 'Law Enforcement', qual_roll: int = 5) -> lis
     """Events through qualification (qual_roll=5 → INT DM+1 → modified 6 ≥ 6, pass)."""
     return [
         *_setup(),
-        CareerEvent(id=4, fulfills='3.0', career='Agent', assignment=assignment, qualification_roll=qual_roll),
+        CareerEvent(id=4, fulfills=(3, 0), career='Agent', assignment=assignment, qualification_roll=qual_roll),
     ]
 
 
@@ -89,7 +89,7 @@ def _through_survive(assignment: str = 'Law Enforcement', survive_roll: int = 6)
     """Through qualification and survival (survive_roll=6 → END 6+, pass)."""
     return [
         *_enter_agent(assignment),
-        SurviveEvent(id=5, fulfills='4.0', roll=survive_roll),
+        SurviveEvent(id=5, fulfills=(4, 0), roll=survive_roll),
     ]
 
 
@@ -97,7 +97,7 @@ def _through_term_event(assignment: str = 'Law Enforcement', event_roll: int = 5
     """Through survive and term event (event_roll=5 → benefit_dm, simple effect, advances)."""
     return [
         *_through_survive(assignment),
-        TermEventEvent(id=6, fulfills='5.0', roll=event_roll),
+        TermEventEvent(id=6, fulfills=(5, 0), roll=event_roll),
     ]
 
 
@@ -146,12 +146,12 @@ class TestAgentInitialTraining:
 class TestAgentSurvival:
     def test_law_enforcement_survival_end_6plus(self):
         # END=6 (DM+0), roll 6 → 6 ≥ 6, survive
-        projection = replay(1, [*_enter_agent('Law Enforcement'), SurviveEvent(id=5, fulfills='4.0', roll=6)])
+        projection = replay(1, [*_enter_agent('Law Enforcement'), SurviveEvent(id=5, fulfills=(4, 0), roll=6)])
         assert any(p for p in projection.pending_inputs if not isinstance(p, PendingSurvive))
 
     def test_law_enforcement_survival_failure_creates_mishap_pending(self):
         # END=6 (DM+0), roll 5 → 5 < 6, mishap pending created
-        projection = replay(1, [*_enter_agent('Law Enforcement'), SurviveEvent(id=5, fulfills='4.0', roll=5)])
+        projection = replay(1, [*_enter_agent('Law Enforcement'), SurviveEvent(id=5, fulfills=(4, 0), roll=5)])
         from ceres.character.events import PendingMishap
 
         assert any(isinstance(p, PendingMishap) for p in projection.pending_inputs)
@@ -162,28 +162,28 @@ class TestAgentSurvival:
             1,
             [
                 *_enter_agent('Law Enforcement'),
-                SurviveEvent(id=5, fulfills='4.0', roll=5),
-                MishapEvent(id=6, fulfills='5.0', roll=6),
+                SurviveEvent(id=5, fulfills=(4, 0), roll=5),
+                MishapEvent(id=6, fulfills=(5, 0), roll=6),
             ],
         )
         assert projection.summary.current_career is None
 
     def test_intelligence_survival_int_7plus_pass(self):
         # INT=9 (DM+1), roll 6 → 7 ≥ 7, survive
-        projection = replay(1, [*_enter_agent('Intelligence'), SurviveEvent(id=5, fulfills='4.0', roll=6)])
+        projection = replay(1, [*_enter_agent('Intelligence'), SurviveEvent(id=5, fulfills=(4, 0), roll=6)])
         assert projection.summary.current_career is not None
         assert projection.summary.current_career.name == 'Agent'
 
     def test_intelligence_survival_int_7plus_fail_creates_mishap_pending(self):
         # INT=9 (DM+1), roll 5 → 6 < 7, mishap pending
-        projection = replay(1, [*_enter_agent('Intelligence'), SurviveEvent(id=5, fulfills='4.0', roll=5)])
+        projection = replay(1, [*_enter_agent('Intelligence'), SurviveEvent(id=5, fulfills=(4, 0), roll=5)])
         from ceres.character.events import PendingMishap
 
         assert any(isinstance(p, PendingMishap) for p in projection.pending_inputs)
 
     def test_corporate_survival_int_5plus_pass(self):
         # INT=9 (DM+1), roll 4 → 5 ≥ 5, survive
-        projection = replay(1, [*_enter_agent('Corporate'), SurviveEvent(id=5, fulfills='4.0', roll=4)])
+        projection = replay(1, [*_enter_agent('Corporate'), SurviveEvent(id=5, fulfills=(4, 0), roll=4)])
         assert projection.summary.current_career is not None
         assert projection.summary.current_career.name == 'Agent'
 
@@ -195,7 +195,7 @@ class TestAgentRanks:
     def _advance_once(self, assignment: str, adv_roll: int = 7) -> CharacterProjection:
         events = [
             *_through_term_event(assignment),
-            AdvancementEvent(id=7, fulfills='6.0', roll=adv_roll),
+            AdvancementEvent(id=7, fulfills=(6, 0), roll=adv_roll),
         ]
         return replay(1, events)
 
@@ -225,7 +225,7 @@ class TestAgentEvent3:
     def _setup_to_event(self) -> list:
         return [
             *_through_survive(),
-            TermEventEvent(id=6, fulfills='5.0', roll=3),
+            TermEventEvent(id=6, fulfills=(5, 0), roll=3),
         ]
 
     def test_creates_skill_roll_pending(self):
@@ -240,7 +240,7 @@ class TestAgentEvent3:
     def test_success_creates_skill_choice(self):
         events = [
             *self._setup_to_event(),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Investigate(), modified_roll=9),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Investigate(), modified_roll=9),
         ]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
@@ -250,8 +250,8 @@ class TestAgentEvent3:
     def test_success_creates_advancement_pending_after_skill_choice(self):
         events = [
             *self._setup_to_event(),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Investigate(), modified_roll=9),
-            SkillChoiceEvent(id=8, fulfills='7.0', skill=Deception()),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Investigate(), modified_roll=9),
+            SkillChoiceEvent(id=8, fulfills=(7, 0), skill=Deception()),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
@@ -259,7 +259,7 @@ class TestAgentEvent3:
     def test_failure_creates_mishap_pending(self):
         events = [
             *self._setup_to_event(),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Investigate(), modified_roll=6),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Investigate(), modified_roll=6),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingMishap) for p in projection.pending_inputs)
@@ -267,8 +267,8 @@ class TestAgentEvent3:
     def test_failure_mishap_does_not_eject(self):
         events = [
             *self._setup_to_event(),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Investigate(), modified_roll=6),
-            MishapEvent(id=8, fulfills='7.0', roll=6, stay_in_career=True),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Investigate(), modified_roll=6),
+            MishapEvent(id=8, fulfills=(7, 0), roll=6, stay_in_career=True),
         ]
         projection = replay(1, events)
         assert projection.summary.current_career is not None
@@ -282,7 +282,7 @@ class TestAgentEvent6:
     def _setup_to_event(self) -> list:
         return [
             *_through_survive(),
-            TermEventEvent(id=6, fulfills='5.0', roll=6),
+            TermEventEvent(id=6, fulfills=(5, 0), roll=6),
         ]
 
     def test_creates_edu_skill_roll_pending(self):
@@ -297,7 +297,7 @@ class TestAgentEvent6:
     def test_success_creates_skill_choice_pending(self):
         events = [
             *self._setup_to_event(),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Chars.EDU, modified_roll=9),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Chars.EDU, modified_roll=9),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
@@ -305,7 +305,7 @@ class TestAgentEvent6:
     def test_failure_creates_advancement_pending(self):
         events = [
             *self._setup_to_event(),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Chars.EDU, modified_roll=7),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Chars.EDU, modified_roll=7),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
@@ -318,7 +318,7 @@ class TestAgentEvent8:
     def _setup_to_event(self) -> list:
         return [
             *_through_survive(),
-            TermEventEvent(id=6, fulfills='5.0', roll=8),
+            TermEventEvent(id=6, fulfills=(5, 0), roll=8),
         ]
 
     def test_creates_deception_roll_pending(self):
@@ -333,7 +333,7 @@ class TestAgentEvent8:
     def test_success_adds_problem_about_cross_career_tables(self):
         events = [
             *self._setup_to_event(),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Deception(), modified_roll=9),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Deception(), modified_roll=9),
         ]
         projection = replay(1, events)
         assert any('Rogue or Citizen' in p for p in projection.summary.problems)
@@ -341,7 +341,7 @@ class TestAgentEvent8:
     def test_failure_adds_problem_about_cross_career_mishap(self):
         events = [
             *self._setup_to_event(),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Deception(), modified_roll=6),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Deception(), modified_roll=6),
         ]
         projection = replay(1, events)
         assert any('Rogue or Citizen' in p for p in projection.summary.problems)
@@ -349,7 +349,7 @@ class TestAgentEvent8:
     def test_creates_advancement_pending_after_roll(self):
         events = [
             *self._setup_to_event(),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Deception(), modified_roll=9),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Deception(), modified_roll=9),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
@@ -362,7 +362,7 @@ class TestAgentEvent11:
     def _setup_to_event(self) -> list:
         return [
             *_through_survive(),
-            TermEventEvent(id=6, fulfills='5.0', roll=11),
+            TermEventEvent(id=6, fulfills=(5, 0), roll=11),
         ]
 
     def test_creates_career_skill_choice_pending(self):
@@ -377,7 +377,7 @@ class TestAgentEvent11:
     def test_choose_investigate_grants_investigate_level_1(self):
         events = [
             *self._setup_to_event(),
-            SkillChoiceEvent(id=7, fulfills='6.0', skill=Investigate(level=Level(value=1))),
+            SkillChoiceEvent(id=7, fulfills=(6, 0), skill=Investigate(level=Level(value=1))),
         ]
         projection = replay(1, events)
         assert (projection.summary.skill_level(Investigate) or 0) >= 1
@@ -387,7 +387,7 @@ class TestAgentEvent11:
 
         events = [
             *self._setup_to_event(),
-            AdvancementDmChoiceEvent(id=7, fulfills='6.0'),
+            AdvancementDmChoiceEvent(id=7, fulfills=(6, 0)),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
@@ -400,8 +400,8 @@ class TestAgentMishap2:
     def _setup_to_mishap(self) -> list:
         return [
             *_enter_agent(),
-            SurviveEvent(id=5, fulfills='4.0', roll=5),  # fail END 6+
-            MishapEvent(id=6, fulfills='5.0', roll=2),
+            SurviveEvent(id=5, fulfills=(4, 0), roll=5),  # fail END 6+
+            MishapEvent(id=6, fulfills=(5, 0), roll=2),
         ]
 
     def test_creates_accept_refuse_pending(self):
@@ -413,7 +413,7 @@ class TestAgentMishap2:
     def test_accept_leaves_career_without_injury(self):
         events = [
             *self._setup_to_mishap(),
-            CareerChoiceEvent.for_choice(AgentMishap2Accept, id=7, fulfills='6.0'),
+            CareerChoiceEvent.for_choice(AgentMishap2Accept, id=7, fulfills=(6, 0)),
         ]
         projection = replay(1, events)
         assert projection.summary.current_career is None
@@ -422,7 +422,7 @@ class TestAgentMishap2:
     def test_refuse_adds_enemy(self):
         events = [
             *self._setup_to_mishap(),
-            CareerChoiceEvent.for_choice(AgentMishap2Refuse, id=7, fulfills='6.0'),
+            CareerChoiceEvent.for_choice(AgentMishap2Refuse, id=7, fulfills=(6, 0)),
         ]
         projection = replay(1, events)
         assert any(isinstance(c, Enemy) for c in projection.summary.connections)
@@ -430,7 +430,7 @@ class TestAgentMishap2:
     def test_refuse_creates_double_injury_roll_pending(self):
         events = [
             *self._setup_to_mishap(),
-            CareerChoiceEvent.for_choice(AgentMishap2Refuse, id=7, fulfills='6.0'),
+            CareerChoiceEvent.for_choice(AgentMishap2Refuse, id=7, fulfills=(6, 0)),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingDoubleInjuryRoll) for p in projection.pending_inputs)
@@ -438,7 +438,7 @@ class TestAgentMishap2:
     def test_refuse_creates_skill_choice_pending(self):
         events = [
             *self._setup_to_mishap(),
-            CareerChoiceEvent.for_choice(AgentMishap2Refuse, id=7, fulfills='6.0'),
+            CareerChoiceEvent.for_choice(AgentMishap2Refuse, id=7, fulfills=(6, 0)),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
@@ -451,8 +451,8 @@ class TestAgentMishap3:
     def _setup_to_mishap(self) -> list:
         return [
             *_enter_agent(),
-            SurviveEvent(id=5, fulfills='4.0', roll=5),  # fail END 6+
-            MishapEvent(id=6, fulfills='5.0', roll=3),
+            SurviveEvent(id=5, fulfills=(4, 0), roll=5),  # fail END 6+
+            MishapEvent(id=6, fulfills=(5, 0), roll=3),
         ]
 
     def test_creates_advocate_skill_roll_pending(self):
@@ -468,7 +468,7 @@ class TestAgentMishap3:
         # term_count=1, rank=0 → roll_count=1; success → lose_current_term=False → 1 muster-out pending
         events = [
             *self._setup_to_mishap(),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Medic(), modified_roll=8),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Medic(), modified_roll=8),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
@@ -477,7 +477,7 @@ class TestAgentMishap3:
         # term_count=1, rank=0 → roll_count=1; failure → lose_current_term=True → 0 muster-out pending
         events = [
             *self._setup_to_mishap(),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Medic(), modified_roll=7),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Medic(), modified_roll=7),
         ]
         projection = replay(1, events)
         assert not any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
@@ -486,7 +486,7 @@ class TestAgentMishap3:
         for roll in (8, 7):
             events = [
                 *self._setup_to_mishap(),
-                SkillRollEvent(id=7, fulfills='6.0', skill=Medic(), modified_roll=roll),
+                SkillRollEvent(id=7, fulfills=(6, 0), skill=Medic(), modified_roll=roll),
             ]
             projection = replay(1, events)
             assert projection.summary.current_career is None
@@ -494,7 +494,7 @@ class TestAgentMishap3:
     def test_roll_2_forces_prisoner_next(self):
         events = [
             *self._setup_to_mishap(),
-            SkillRollEvent(id=7, fulfills='6.0', skill=Medic(), modified_roll=2),
+            SkillRollEvent(id=7, fulfills=(6, 0), skill=Medic(), modified_roll=2),
         ]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerChoice)), None)
@@ -509,8 +509,8 @@ class TestAgentMishap5:
     def _setup_to_mishap(self) -> list:
         return [
             *_enter_agent(),
-            SurviveEvent(id=5, fulfills='4.0', roll=5),
-            MishapEvent(id=6, fulfills='5.0', roll=5),
+            SurviveEvent(id=5, fulfills=(4, 0), roll=5),
+            MishapEvent(id=6, fulfills=(5, 0), roll=5),
         ]
 
     def test_creates_choice_pending_with_three_options(self):
@@ -530,7 +530,7 @@ class TestAgentMishap5:
     def test_choice_adds_problem_note(self, choice_cls, keyword):
         events = [
             *self._setup_to_mishap(),
-            CareerChoiceEvent.for_choice(choice_cls, id=7, fulfills='6.0'),
+            CareerChoiceEvent.for_choice(choice_cls, id=7, fulfills=(6, 0)),
         ]
         projection = replay(1, events)
         assert any(keyword in p.lower() for p in projection.summary.problems)
@@ -546,15 +546,15 @@ class TestAgentMusterOut:
 
         return [
             *_through_term_event(),
-            AdvancementEvent(id=7, fulfills='6.0', roll=3),  # fail INT 6+; just get skill table
-            SkillTableEvent(id=8, fulfills='7.0', table='service_skills', roll=3),  # Investigate
-            ReenlistEvent(id=9, fulfills='8.0', reenlist=False),
+            AdvancementEvent(id=7, fulfills=(6, 0), roll=3),  # fail INT 6+; just get skill table
+            SkillTableEvent(id=8, fulfills=(7, 0), table='service_skills', roll=3),  # Investigate
+            ReenlistEvent(id=9, fulfills=(8, 0), reenlist=False),
         ]
 
     def test_muster_out_row6_choice_benefit_creates_pending(self):
         events = [
             *self._muster_out_setup(),
-            MusterOutEvent(id=10, fulfills='9.0', table='benefits', roll=6),
+            MusterOutEvent(id=10, fulfills=(9, 0), table='benefits', roll=6),
         ]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingBenefitChoice)), None)

@@ -100,7 +100,7 @@ class NobleMishap3Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingNobleMishap3SkillRoll(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Roll Stealth or Deception 8+: success = escape unhurt (keep Benefit); fail = injury + lose Benefit',
                 options=[Stealth(), Deception()],
             )
@@ -132,7 +132,7 @@ class NobleMishap5Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingNobleMishap5SkillRoll(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Roll END 8+: success = escape unhurt (ejected); fail = roll on Injury table (ejected)',
                 options=[Chars.END],
             )
@@ -165,7 +165,7 @@ class NobleEvent8Accept(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         projection.pending_inputs.append(
             NobleEvent8SkillRoll(
-                id=f'{event.id}.0',
+                pending_id=(event.id, 0),
                 instruction='Roll Deception or Persuade 8+: success = extra Benefit roll; fail = ejected, gain Enemy',
                 options=[Deception(), Persuade()],
             )
@@ -189,7 +189,7 @@ class NobleEvent8Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingChoices(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction=(
                     'Join the noble conspiracy (roll Deception or Persuade 8+: '
                     'success = extra Benefit roll, fail = ejected with Enemy) '

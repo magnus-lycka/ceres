@@ -17,7 +17,7 @@ class UniversityPreCareer(PreCareerData):
         skill_opts_1 = _precareer_skill_options_level1(self)
         projection.pending_inputs.append(
             PendingPreCareerSkillChoice(
-                id=f'{event.id}.{pending_idx}',
+                pending_id=(event.id, pending_idx),
                 level=0,
                 instruction='University: choose one skill at level 0',
                 options=skill_opts_0,
@@ -26,7 +26,7 @@ class UniversityPreCareer(PreCareerData):
         pending_idx += 1
         projection.pending_inputs.append(
             PendingPreCareerSkillChoice(
-                id=f'{event.id}.{pending_idx}',
+                pending_id=(event.id, pending_idx),
                 level=1,
                 instruction='University: choose one skill at level 1',
                 options=skill_opts_1,

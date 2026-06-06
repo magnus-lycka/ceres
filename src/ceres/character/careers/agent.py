@@ -109,7 +109,7 @@ class AgentMishap2Refuse(ChoiceBase):
         )
         projection.pending_inputs.append(
             PendingDoubleInjuryRoll(
-                id=f'{event.id}.{pending_idx}',
+                pending_id=(event.id, pending_idx),
                 instruction='Refused: roll twice on the Injury table and provide both results — lower applies',
                 options=['1', '2', '3', '4', '5', '6'],
             )
@@ -117,7 +117,7 @@ class AgentMishap2Refuse(ChoiceBase):
         pending_idx += 1
         projection.pending_inputs.append(
             PendingSkillChoice(
-                id=f'{event.id}.{pending_idx}',
+                pending_id=(event.id, pending_idx),
                 instruction='Refused criminal deal: choose any skill to gain at level 1',
                 options=[],
             )
@@ -197,7 +197,7 @@ class PendingAgentEvent3SkillRoll(CareerSkillRollPendingBase):
         if event.modified_roll >= 8:
             projection.pending_inputs.append(
                 PendingSkillChoice(
-                    id=f'{event.id}.0',
+                    pending_id=(event.id, 0),
                     instruction=(
                         'Investigation success: increase one skill by one level — Deception, '
                         'Jack-of-all-Trades, Persuade or Tactics'
@@ -208,7 +208,7 @@ class PendingAgentEvent3SkillRoll(CareerSkillRollPendingBase):
         else:
             projection.pending_inputs.append(
                 PendingMishap(
-                    id=f'{event.id}.0',
+                    pending_id=(event.id, 0),
                     instruction='Investigation went wrong: roll 1D on Mishap table (you are not ejected from this career)',
                 )
             )
@@ -246,7 +246,7 @@ class AgentMishap2Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingChoices(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction=(
                     'Accept (leave without further penalty, lose Benefit roll as normal) or Refuse '
                     '(roll twice on Injury table take lower, gain Enemy, choose skill)?'
@@ -267,7 +267,7 @@ class AgentMishap3Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingAgentMishap3SkillRoll(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Roll Advocate 8+ to keep the Benefit roll from this term',
                 options=[Advocate()],
             )
@@ -285,7 +285,7 @@ class AgentMishap5Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingChoices(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Choose who was hurt: a Contact, an Ally, or a family member?',
                 choices=[AgentMishap5Contact(), AgentMishap5Ally(), AgentMishap5Family()],
             )
@@ -303,7 +303,7 @@ class AgentEvent3Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingAgentEvent3SkillRoll(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Roll Investigate 8+ or Streetwise 8+',
                 options=[Investigate(), Streetwise()],
             )
@@ -332,7 +332,7 @@ class AgentEvent8Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingAgentEvent8SkillRoll(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Roll Deception 8+ for the undercover mission',
                 options=[Deception()],
             )
@@ -350,7 +350,7 @@ class AgentEvent11Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingAgentEvent11SkillChoice(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Senior agent mentor: increase Investigate by one level or DM+4 to your next advancement roll',
                 options=[Investigate(), AdvancementDmOption()],
             )

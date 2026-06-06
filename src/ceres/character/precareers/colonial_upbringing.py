@@ -20,7 +20,7 @@ class ColonialUprbringingPreCareer(PreCareerData):
         for i in range(3):
             projection.pending_inputs.append(
                 PendingPreCareerSkillChoice(
-                    id=f'{event.id}.{pending_idx}',
+                    pending_id=(event.id, pending_idx),
                     level=1,
                     instruction=f'Colonial graduation: choose skill {i + 1} of 3 at level 1',
                     options=skill_pool,
@@ -32,7 +32,7 @@ class ColonialUprbringingPreCareer(PreCareerData):
             projection.grant_skill(Leadership(level=Level(value=1)))
             projection.pending_inputs.append(
                 PendingPreCareerSkillChoice(
-                    id=f'{event.id}.{pending_idx}',
+                    pending_id=(event.id, pending_idx),
                     level=1,
                     instruction='Colonial graduation (honours): choose one additional skill at level 1',
                     options=skill_pool,

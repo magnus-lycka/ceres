@@ -20,7 +20,7 @@ class SpacerCommunityPreCareer(PreCareerData):
         for i in range(2):
             projection.pending_inputs.append(
                 PendingPreCareerSkillChoice(
-                    id=f'{event.id}.{pending_idx}',
+                    pending_id=(event.id, pending_idx),
                     level=0,
                     instruction=f'Spacer Community graduation: choose skill {i + 1} of 2 at level 0',
                     options=choice_pool,
@@ -29,7 +29,7 @@ class SpacerCommunityPreCareer(PreCareerData):
             pending_idx += 1
         projection.pending_inputs.append(
             PendingPreCareerSkillChoice(
-                id=f'{event.id}.{pending_idx}',
+                pending_id=(event.id, pending_idx),
                 level=1,
                 instruction='Spacer Community graduation: choose one listed skill at level 1',
                 options=choice_pool,

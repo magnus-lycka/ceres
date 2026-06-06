@@ -118,7 +118,7 @@ class PendingCitizenMishap5SkillRoll(CareerSkillRollPendingBase):
         if event.modified_roll >= 8:
             projection.pending_inputs.append(
                 PendingSkillChoice(
-                    id=f'{event.id}.0',
+                    pending_id=(event.id, 0),
                     instruction='Forced to flee: increase any existing skill by one level',
                     options=[type(s)() for s in projection.summary.skills],
                 )
@@ -128,7 +128,7 @@ class PendingCitizenMishap5SkillRoll(CareerSkillRollPendingBase):
             next_idx = _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
         projection.pending_inputs.append(
             PendingHomeworldChangeRequired(
-                id=f'{event.id}.{next_idx}',
+                pending_id=(event.id, next_idx),
                 instruction='Forced to leave the planet. Select your new homeworld.',
                 reason='Citizen mishap 5: forcing you to leave the planet.',
                 source_kind='career_mishap',
@@ -175,7 +175,7 @@ class CitizenEvent8DoSo(ChoiceBase):
         choices.append(CitizenEvent8GainContact())
         projection.pending_inputs.append(
             PendingChoices(
-                id=f'{event.id}.0',
+                pending_id=(event.id, 0),
                 instruction='Choose your reward',
                 choices=choices,
             )
@@ -204,7 +204,7 @@ class CitizenMishap4Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingChoices(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction=(
                     'Co-operate with the investigation (gain investigators as a Contact, keep Benefit roll) '
                     'or resist (gain a Rival, lose Benefit roll)?'
@@ -225,7 +225,7 @@ class CitizenMishap5Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingCitizenMishap5SkillRoll(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Roll Streetwise 8+: success = increase any existing skill by one level (ejected either way)',
                 options=[Streetwise()],
             )
@@ -254,7 +254,7 @@ class CitizenEvent8Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingChoices(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction=(
                     'You learn something you should not have – a corporate secret, a political scandal – '
                     'which you can profit from illegally. If you choose to do so, you gain DM+1 to a '

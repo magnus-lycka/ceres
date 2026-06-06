@@ -37,8 +37,8 @@ def _full_setup():
 
     return [
         CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Test'),
-        UcpEvent(id=2, fulfills='1.0', ucp='7869A5'),
-        BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics(), Drive(), Electronics()]),
+        UcpEvent(id=2, fulfills=(1, 0), ucp='7869A5'),
+        BackgroundSkillsEvent(id=3, fulfills=(2, 0), skills=[Admin(), Athletics(), Drive(), Electronics()]),
     ]
 
 
@@ -142,7 +142,7 @@ class TestCareerInState:
     def test_current_career_is_career_data_after_joining(self):
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Courier', qualification_roll=7),
         ]
         projection = replay(1, events)
         assert isinstance(projection.summary.current_career, CareerData)
@@ -152,7 +152,7 @@ class TestCareerInState:
     def test_current_career_equals_constant(self):
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Courier', qualification_roll=7),
         ]
         projection = replay(1, events)
         assert projection.summary.current_career == SCOUT
@@ -160,7 +160,7 @@ class TestCareerInState:
     def test_career_term_career_is_career_data(self):
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Courier', qualification_roll=7),
         ]
         projection = replay(1, events)
         term = projection.summary.career_terms[0]
@@ -170,7 +170,7 @@ class TestCareerInState:
     def test_career_term_career_equals_constant(self):
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Courier', qualification_roll=7),
         ]
         projection = replay(1, events)
         assert projection.summary.career_terms[0].career == SCOUT
@@ -178,8 +178,8 @@ class TestCareerInState:
     def test_survive_keeps_current_career_as_career_data(self):
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
-            SurviveEvent(id=5, fulfills='4.0', roll=8),
+            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills=(4, 0), roll=8),
         ]
         projection = replay(1, events)
         assert isinstance(projection.summary.current_career, CareerData)
@@ -190,10 +190,10 @@ class TestCareerInState:
 
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
-            SurviveEvent(id=5, fulfills='4.0', roll=8),
-            TermEventEvent(id=6, fulfills='5.0', roll=5),
-            AdvancementEvent(id=7, fulfills='6.0', roll=9),
+            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills=(4, 0), roll=8),
+            TermEventEvent(id=6, fulfills=(5, 0), roll=5),
+            AdvancementEvent(id=7, fulfills=(6, 0), roll=9),
         ]
         projection = replay(1, events)
         assert projection.summary.current_career == SCOUT

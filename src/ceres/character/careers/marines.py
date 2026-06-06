@@ -99,7 +99,7 @@ class MarinesMishap4Accept(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         projection.pending_inputs.append(
             PendingMarinesMishap4SkillRoll(
-                id=f'{event.id}.0',
+                pending_id=(event.id, 0),
                 instruction='Roll Deception or Persuade 8+: success = stay in career; fail = ejected, lose Benefit',
                 options=[Deception(), Persuade()],
             )
@@ -125,7 +125,7 @@ class PendingMarinesEvent6SkillRoll(CareerSkillRollPendingBase):
         if event.modified_roll >= 8:
             projection.pending_inputs.append(
                 PendingSkillChoice(
-                    id=f'{event.id}.0',
+                    pending_id=(event.id, 0),
                     instruction='Fortress assault success: gain one level in Tactics or Leadership',
                     options=[Tactics(), Leadership()],
                 )
@@ -172,7 +172,7 @@ class MarinesMishap4Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingChoices(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction=(
                     'Refuse (ejected, lose Benefit, gain Contact among other soldiers) '
                     'or accept (roll Deception or Persuade 8+: success = stay, fail = ejected, lose Benefit)?'
@@ -204,7 +204,7 @@ class MarinesEvent6Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingMarinesEvent6SkillRoll(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Roll Melee or Gun Combat 8+: success = gain Tactics or Leadership; fail = injured',
                 options=[Melee(), GunCombat()],
             )
@@ -222,7 +222,7 @@ class MarinesEvent9Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingChoices(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction=(
                     'Report the commander (DM+2 to next advancement, commander becomes Enemy) '
                     'or protect them (DM+1 to next advancement, commander becomes Ally)?'

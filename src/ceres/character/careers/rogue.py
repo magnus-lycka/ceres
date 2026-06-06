@@ -141,7 +141,7 @@ class RogueMishap3Handler(CareerHandlerBase):
 
         projection.pending_inputs.append(
             PendingChoices(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Roll 2D: on a result of exactly 2, you must take the Prisoner career next term',
                 choices=[RogueMishap3RollTwo(), RogueMishap3RollOther()],
             )
@@ -175,7 +175,7 @@ class RogueEvent3Defend(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         projection.pending_inputs.append(
             RogueEvent3SkillRoll(
-                id=f'{event.id}.0',
+                pending_id=(event.id, 0),
                 instruction=(
                     'Roll Advocate 8+: success = cleared, career continues; '
                     'fail = ejected, must take Prisoner next term'
@@ -202,7 +202,7 @@ class RogueEvent3Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingChoices(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction=(
                     'Defend yourself (roll Advocate 8+: success = cleared, fail = ejected + must take Prisoner next term) '
                     'or hire a lawyer (lose one Benefit roll, career continues)?'
@@ -244,7 +244,7 @@ class RogueEvent6Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingChoices(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Backstab the fellow rogue (DM+2 to next advancement, gain Enemy) or refuse (gain a Contact instead)?',
                 choices=[RogueEvent6Backstab(), RogueEvent6Refuse()],
             )
@@ -275,7 +275,7 @@ class RogueEvent9Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingRogueEvent9SkillRoll(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Roll Stealth or Gun Combat 8+: success = extra Benefit roll; fail = injured',
                 options=[Stealth(), GunCombat()],
             )

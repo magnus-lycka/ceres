@@ -604,12 +604,12 @@ def test_wizard_homeworld_change_pending_links_to_sector_picker(client_with_back
 
     client, backend = client_with_backend
     row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Clio')
-    backend.append_event(row['id'], UcpEvent(fulfills='1.0', ucp='7869A5'))
+    backend.append_event(row['id'], UcpEvent(fulfills=(1, 0), ucp='7869A5'))
     backend.append_event(
         row['id'],
-        BackgroundSkillsEvent(fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Drive()]),
+        BackgroundSkillsEvent(fulfills=(2, 0), skills=[Admin(), Athletics(), Carouse(), Drive()]),
     )
-    backend.append_event(row['id'], FinishCreationEvent(fulfills='3.0'))
+    backend.append_event(row['id'], FinishCreationEvent(fulfills=(3, 0)))
     backend.append_event(
         row['id'],
         HomeworldChangeRequiredEvent(
@@ -658,7 +658,7 @@ def test_wizard_select_world_input_links_to_filtered_sector_picker(client_with_b
             summary=CharacterSummary(name='Clio', sophont=HUMANITI, homeworld=MOCK_WORLD),
             pending_inputs=[
                 PendingWorldSelection(
-                    id='12.0',
+                    pending_id=(12, 0),
                     instruction='Pick a suitable world',
                 )
             ],
@@ -694,12 +694,12 @@ def test_selecting_homeworld_from_wizard_picker_updates_character(client_with_ba
 
     client, backend = client_with_backend
     row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Clio')
-    backend.append_event(row['id'], UcpEvent(fulfills='1.0', ucp='7869A5'))
+    backend.append_event(row['id'], UcpEvent(fulfills=(1, 0), ucp='7869A5'))
     backend.append_event(
         row['id'],
-        BackgroundSkillsEvent(fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Drive()]),
+        BackgroundSkillsEvent(fulfills=(2, 0), skills=[Admin(), Athletics(), Carouse(), Drive()]),
     )
-    backend.append_event(row['id'], FinishCreationEvent(fulfills='3.0'))
+    backend.append_event(row['id'], FinishCreationEvent(fulfills=(3, 0)))
     backend.append_event(
         row['id'],
         HomeworldChangeRequiredEvent(
@@ -861,12 +861,12 @@ def test_event_from_form_ucp():
 
     from ceres.character.events import PendingUcp, UcpEvent
 
-    pi = PendingUcp(id='1.0', instruction='')
+    pi = PendingUcp(pending_id=(1, 0), instruction='')
     form = FormData({'STR': '7', 'DEX': '8', 'END': '6', 'INT': '9', 'EDU': '10', 'SOC': '5'})
     event = pi.event_from_form(form)
     assert isinstance(event, UcpEvent)
     assert event.ucp == '7869A5'
-    assert event.fulfills == '1.0'
+    assert event.fulfills == (1, 0)
 
 
 def test_event_from_form_career_choice():
@@ -874,7 +874,7 @@ def test_event_from_form_career_choice():
 
     from ceres.character.events import CareerEvent, PendingCareerChoice
 
-    pi = PendingCareerChoice(id='3.0', instruction='')
+    pi = PendingCareerChoice(pending_id=(3, 0), instruction='')
     form = FormData({'career': 'Scout', 'assignment': 'Courier', 'roll': '8'})
     event = pi.event_from_form(form)
     assert isinstance(event, CareerEvent)
@@ -888,7 +888,7 @@ def test_event_from_form_career_choice_missing_assignment_raises():
 
     from ceres.character.events import PendingCareerChoice
 
-    pi = PendingCareerChoice(id='3.0', instruction='')
+    pi = PendingCareerChoice(pending_id=(3, 0), instruction='')
     form = FormData({'career': 'Citizen', 'assignment': '', 'roll': '8'})
     with pytest.raises(ValueError, match="Missing assignment for career 'Citizen'"):
         pi.event_from_form(form)
@@ -899,7 +899,7 @@ def test_event_from_form_reenlist_true():
 
     from ceres.character.events import PendingReenlist, ReenlistEvent
 
-    pi = PendingReenlist(id='5.1', instruction='')
+    pi = PendingReenlist(pending_id=(5, 1), instruction='')
     form = FormData({'reenlist': 'true'})
     event = pi.event_from_form(form)
     assert isinstance(event, ReenlistEvent)
@@ -911,7 +911,7 @@ def test_event_from_form_reenlist_false():
 
     from ceres.character.events import PendingReenlist, ReenlistEvent
 
-    pi = PendingReenlist(id='5.1', instruction='')
+    pi = PendingReenlist(pending_id=(5, 1), instruction='')
     form = FormData({'reenlist': 'false'})
     event = pi.event_from_form(form)
     assert isinstance(event, ReenlistEvent)

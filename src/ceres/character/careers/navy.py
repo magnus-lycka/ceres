@@ -152,7 +152,7 @@ class NavyMishap3Handler(CareerHandlerBase):
         options = _MISHAP_3_SKILLS.get(assignment, [Electronics(), Gunner()])
         projection.pending_inputs.append(
             PendingNavyMishap3SkillRoll(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction=(
                     f'Roll {" or ".join(type(o).name() for o in options)} 8+ — success: honourable discharge (keep Benefit); '
                     'fail: court-martialled (lose Benefit)'
@@ -173,7 +173,7 @@ class NavyMishap4Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingChoices(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction=(
                     'Were you responsible for the accident? '
                     'Accept responsibility (gain one free skill roll, lose Benefit) '
@@ -206,7 +206,7 @@ class NavyEvent10Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
             PendingChoices(
-                id=f'{event_id}.{pending_idx}',
+                pending_id=(event_id, pending_idx),
                 instruction='Abuse your position for profit (gain extra Benefit roll) or refuse (DM+2 to next advancement)?',
                 choices=[NavyEvent10Profit(), NavyEvent10Refuse()],
             )

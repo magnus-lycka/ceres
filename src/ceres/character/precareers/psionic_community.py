@@ -29,7 +29,7 @@ class PsionicCommunityPreCareer(PreCareerData):
         if science_options:
             projection.pending_inputs.append(
                 PendingPreCareerSkillChoice(
-                    id=f'{event.id}.{pending_idx}',
+                    pending_id=(event.id, pending_idx),
                     level=1,
                     instruction='Psionic Community graduation: choose one Science specialisation at level 1',
                     options=science_options,

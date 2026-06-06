@@ -27,11 +27,16 @@ class ChoiceBase(BaseModel):
 
 
 class PendingInputBase(BaseModel):
-    id: str
+    pending_id: tuple[int, int]
     kind: str
     instruction: str
     options: list[str] = Field(default_factory=list)
     blocking: bool = True
+
+    @property
+    def id(self) -> str:
+        """String representation of pending_id for templates and backward-compatible access."""
+        return f'{self.pending_id[0]}.{self.pending_id[1]}'
 
     def event_from_form(self, form: Any) -> Any:
         """Construct the appropriate AnyEvent from submitted form data. All subclasses must implement."""
@@ -372,7 +377,7 @@ class CharacterProjection(BaseModel):
 
     def fulfill_pending(self, event: Any) -> None:
         fulfills = event.fulfills
-        matched = next((p for p in self.pending_inputs if p.id == fulfills), None)
+        matched = next((p for p in self.pending_inputs if p.pending_id == fulfills), None)
         if matched is None:
             raise ReplayError(f'Event {event.id} ({event.kind!r}) references unknown pending input {fulfills!r}')
         self.pending_inputs.remove(matched)

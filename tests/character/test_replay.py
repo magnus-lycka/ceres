@@ -49,7 +49,7 @@ def _drifter_wanderer_setup() -> list:
     """
     return [
         CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Test'),
-        UcpEvent(id=2, fulfills='1.0', ucp='786000'),  # EDU=0 → no pending created
+        UcpEvent(id=2, fulfills=(1, 0), ucp='786000'),  # EDU=0 → no pending created
         CareerEvent(id=3, career='Drifter', assignment='Wanderer', qualification_roll=10),
         # all service skills auto-granted → PendingSurvive('3.0')
     ]
@@ -57,22 +57,22 @@ def _drifter_wanderer_setup() -> list:
 
 def _drifter_after_survive_success() -> list:
     """Extend _drifter_wanderer_setup with a successful SurviveEvent → PendingTermEvent('4.0')."""
-    return [*_drifter_wanderer_setup(), SurviveEvent(id=4, fulfills='3.0', roll=10)]
+    return [*_drifter_wanderer_setup(), SurviveEvent(id=4, fulfills=(3, 0), roll=10)]
 
 
 def _drifter_at_life_event() -> list:
     """Extend to a PendingLifeEvent('5.0') via Drifter event 7 (Life Event)."""
-    return [*_drifter_after_survive_success(), TermEventEvent(id=5, fulfills='4.0', roll=7)]
+    return [*_drifter_after_survive_success(), TermEventEvent(id=5, fulfills=(4, 0), roll=7)]
 
 
 def _drifter_at_unusual_event() -> list:
     """Extend to PendingLifeEventUnusual('6.0') + PendingAdvancement('6.1')."""
-    return [*_drifter_at_life_event(), LifeEventEvent(id=6, fulfills='5.0', roll=12)]
+    return [*_drifter_at_life_event(), LifeEventEvent(id=6, fulfills=(5, 0), roll=12)]
 
 
 def _drifter_at_mishap() -> list:
     """Extend _drifter_wanderer_setup with auto-mishap (roll=2) → PendingMishap('4.0')."""
-    return [*_drifter_wanderer_setup(), SurviveEvent(id=4, fulfills='3.0', roll=2)]
+    return [*_drifter_wanderer_setup(), SurviveEvent(id=4, fulfills=(3, 0), roll=2)]
 
 
 def _scout_at_skill_table() -> list:
@@ -83,18 +83,18 @@ def _scout_at_skill_table() -> list:
     """
     return [
         CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Test'),
-        UcpEvent(id=2, fulfills='1.0', ucp='786000'),  # EDU=0, INT=0 → no pending created
+        UcpEvent(id=2, fulfills=(1, 0), ucp='786000'),  # EDU=0, INT=0 → no pending created
         CareerEvent(id=3, career='Scout', assignment='Courier', qualification_roll=10),
-        SurviveEvent(id=4, fulfills='3.0', roll=10),  # END=6, target=5 → success
-        TermEventEvent(id=5, fulfills='4.0', roll=5),  # benefit_dm → PendingAdvancement('5.0')
-        AdvancementEvent(id=6, fulfills='5.0', roll=12),  # EDU 9+, DM-3 → 9≥9 success
+        SurviveEvent(id=4, fulfills=(3, 0), roll=10),  # END=6, target=5 → success
+        TermEventEvent(id=5, fulfills=(4, 0), roll=5),  # benefit_dm → PendingAdvancement('5.0')
+        AdvancementEvent(id=6, fulfills=(5, 0), roll=12),  # EDU 9+, DM-3 → 9≥9 success
         # rank 1 bonus (Vacc Suit 1) auto-granted → PendingSkillTable('6.0') + PendingAssignmentChangeChoice('6.1')
     ]
 
 
 def _drifter_at_injury_table() -> list:
     """Extend to PendingInjuryTable('5.0') via Drifter mishap 2 (from_table)."""
-    return [*_drifter_at_mishap(), MishapEvent(id=5, fulfills='4.0', roll=2)]
+    return [*_drifter_at_mishap(), MishapEvent(id=5, fulfills=(4, 0), roll=2)]
 
 
 def _started(id: int = 1, sophont: Sophont = VILANI) -> CharacterStartedEvent:
@@ -102,18 +102,18 @@ def _started(id: int = 1, sophont: Sophont = VILANI) -> CharacterStartedEvent:
 
 
 def _ucp(id: int = 2, ucp: str = '7869A5') -> UcpEvent:
-    return UcpEvent(id=id, fulfills='1.0', ucp=ucp)
+    return UcpEvent(id=id, fulfills=(1, 0), ucp=ucp)
 
 
 def _ucp_low_edu(id: int = 2) -> UcpEvent:
     """UCP with EDU=0 → 0 background skills, no pending created."""
-    return UcpEvent(id=id, fulfills='1.0', ucp='786000')
+    return UcpEvent(id=id, fulfills=(1, 0), ucp='786000')
 
 
 def _bg_skills(id: int = 3, skills: list | None = None) -> BackgroundSkillsEvent:
     if skills is None:
         skills = [Admin(), Athletics(), Carouse(), Drive()]  # 4 skills for EDU=10
-    return BackgroundSkillsEvent(id=id, fulfills='2.0', skills=skills)
+    return BackgroundSkillsEvent(id=id, fulfills=(2, 0), skills=skills)
 
 
 class TestCharacterStarted:
@@ -268,14 +268,14 @@ class TestBackgroundSkillsEvent:
         assert len(projection.summary.skills) == 4
 
     def test_rejects_wrong_number_of_skills(self):
-        too_few = BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics()])
+        too_few = BackgroundSkillsEvent(id=3, fulfills=(2, 0), skills=[Admin(), Athletics()])
 
         with pytest.raises(ReplayError):
             replay(1, [_started(), _ucp(), too_few])
 
     def test_rejects_non_background_skill(self):
         # Advocate is not in BackgroundSkills
-        invalid = BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Advocate(), Carouse(), Drive()])
+        invalid = BackgroundSkillsEvent(id=3, fulfills=(2, 0), skills=[Admin(), Advocate(), Carouse(), Drive()])
 
         with pytest.raises(ReplayError):
             replay(1, [_started(), _ucp(), invalid])
@@ -287,7 +287,7 @@ class TestBackgroundSkillsEvent:
 
     def test_background_skills_blocked_by_no_pending(self):
         # Cannot submit background_skills when no such pending exists (EDU=0)
-        event = BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[])
+        event = BackgroundSkillsEvent(id=3, fulfills=(2, 0), skills=[])
 
         with pytest.raises(ReplayError):
             replay(1, [_started(), _ucp_low_edu(), event])
@@ -299,11 +299,11 @@ class TestReplayFromPersistedEventLog:
         try:
             row = backend.start(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')
             character_id = row['id']
-            backend.append_event(character_id, UcpEvent(fulfills='1.0', ucp='7869A5'))
+            backend.append_event(character_id, UcpEvent(fulfills=(1, 0), ucp='7869A5'))
             backend.append_event(
                 character_id,
                 BackgroundSkillsEvent(
-                    fulfills='2.0',
+                    fulfills=(2, 0),
                     skills=[Admin(), Athletics(), Carouse(), Drive()],
                 ),
             )
@@ -327,7 +327,7 @@ class TestReplayBlocking:
             replay(1, [_started(), unrelated])
 
     def test_rejects_event_with_unknown_fulfills(self):
-        wrong = UcpEvent(id=2, fulfills='99.0', ucp='7869A5')
+        wrong = UcpEvent(id=2, fulfills=(99, 0), ucp='7869A5')
 
         with pytest.raises(ReplayError):
             replay(1, [_started(), wrong])
@@ -383,50 +383,50 @@ class TestCharacterStartedEventJsonRoundTrip:
 class TestLifeEventValidation:
     def test_roll_too_low_raises(self):
         with pytest.raises(ReplayError, match='2-12'):
-            replay(1, [*_drifter_at_life_event(), LifeEventEvent(id=6, fulfills='5.0', roll=1)])
+            replay(1, [*_drifter_at_life_event(), LifeEventEvent(id=6, fulfills=(5, 0), roll=1)])
 
     def test_roll_too_high_raises(self):
         with pytest.raises(ReplayError, match='2-12'):
-            replay(1, [*_drifter_at_life_event(), LifeEventEvent(id=6, fulfills='5.0', roll=13)])
+            replay(1, [*_drifter_at_life_event(), LifeEventEvent(id=6, fulfills=(5, 0), roll=13)])
 
 
 class TestLifeEventUnusualBranches:
     def test_roll_out_of_range_raises(self):
         with pytest.raises(ReplayError, match='1-6'):
-            replay(1, [*_drifter_at_unusual_event(), LifeEventUnusualEvent(id=7, fulfills='6.0', roll=7)])
+            replay(1, [*_drifter_at_unusual_event(), LifeEventUnusualEvent(id=7, fulfills=(6, 0), roll=7)])
 
     def test_roll_1_gains_ally(self):
-        projection = replay(1, [*_drifter_at_unusual_event(), LifeEventUnusualEvent(id=7, fulfills='6.0', roll=1)])
+        projection = replay(1, [*_drifter_at_unusual_event(), LifeEventUnusualEvent(id=7, fulfills=(6, 0), roll=1)])
         assert any(isinstance(c, Ally) for c in projection.summary.connections)
 
     def test_roll_2_gains_contact_and_space_science(self):
-        projection = replay(1, [*_drifter_at_unusual_event(), LifeEventUnusualEvent(id=7, fulfills='6.0', roll=2)])
+        projection = replay(1, [*_drifter_at_unusual_event(), LifeEventUnusualEvent(id=7, fulfills=(6, 0), roll=2)])
         assert any(isinstance(c, Contact) for c in projection.summary.connections)
         assert projection.summary.skill_level(SpaceScience) == 1
 
     def test_roll_3_no_mechanical_effect(self):
-        projection = replay(1, [*_drifter_at_unusual_event(), LifeEventUnusualEvent(id=7, fulfills='6.0', roll=3)])
+        projection = replay(1, [*_drifter_at_unusual_event(), LifeEventUnusualEvent(id=7, fulfills=(6, 0), roll=3)])
         assert not projection.summary.connections
 
     def test_roll_6_no_mechanical_effect(self):
-        projection = replay(1, [*_drifter_at_unusual_event(), LifeEventUnusualEvent(id=7, fulfills='6.0', roll=6)])
+        projection = replay(1, [*_drifter_at_unusual_event(), LifeEventUnusualEvent(id=7, fulfills=(6, 0), roll=6)])
         assert not projection.summary.connections
 
 
 class TestInjuryTableValidation:
     def test_roll_zero_raises(self):
         with pytest.raises(ReplayError, match='1-6'):
-            replay(1, [*_drifter_at_injury_table(), InjuryTableEvent(id=6, fulfills='5.0', roll=0)])
+            replay(1, [*_drifter_at_injury_table(), InjuryTableEvent(id=6, fulfills=(5, 0), roll=0)])
 
     def test_roll_seven_raises(self):
         with pytest.raises(ReplayError, match='1-6'):
-            replay(1, [*_drifter_at_injury_table(), InjuryTableEvent(id=6, fulfills='5.0', roll=7)])
+            replay(1, [*_drifter_at_injury_table(), InjuryTableEvent(id=6, fulfills=(5, 0), roll=7)])
 
 
 class TestMishapInjuryEffects:
     def test_severe_injury_creates_characteristic_choice(self):
         # Drifter mishap 1: severity=severe → choose STR/DEX/END to reduce by 2
-        events = [*_drifter_at_mishap(), MishapEvent(id=5, fulfills='4.0', roll=1)]
+        events = [*_drifter_at_mishap(), MishapEvent(id=5, fulfills=(4, 0), roll=1)]
         projection = replay(1, events)
         char_choices = [p for p in projection.pending_inputs if isinstance(p, PendingCharacteristicChoice)]
         assert len(char_choices) == 1
@@ -434,30 +434,30 @@ class TestMishapInjuryEffects:
 
     def test_from_table_injury_creates_injury_table_pending(self):
         # Drifter mishap 2: severity=from_table → roll on injury table
-        events = [*_drifter_at_mishap(), MishapEvent(id=5, fulfills='4.0', roll=2)]
+        events = [*_drifter_at_mishap(), MishapEvent(id=5, fulfills=(4, 0), roll=2)]
         projection = replay(1, events)
         assert any(isinstance(p, PendingInjuryTable) for p in projection.pending_inputs)
 
 
 class TestSkillTableErrors:
     def test_unknown_table_raises(self):
-        events = [*_scout_at_skill_table(), SkillTableEvent(id=7, fulfills='6.0', table='bogus_table', roll=3)]
+        events = [*_scout_at_skill_table(), SkillTableEvent(id=7, fulfills=(6, 0), table='bogus_table', roll=3)]
         with pytest.raises(ReplayError, match='Unknown skill table'):
             replay(1, events)
 
     def test_min_edu_not_met_raises(self):
         # EDU=0 < advanced_education min_edu=8
-        events = [*_scout_at_skill_table(), SkillTableEvent(id=7, fulfills='6.0', table='advanced_education', roll=3)]
+        events = [*_scout_at_skill_table(), SkillTableEvent(id=7, fulfills=(6, 0), table='advanced_education', roll=3)]
         with pytest.raises(ReplayError, match='requires EDU'):
             replay(1, events)
 
     def test_roll_zero_raises(self):
-        events = [*_scout_at_skill_table(), SkillTableEvent(id=7, fulfills='6.0', table='service_skills', roll=0)]
+        events = [*_scout_at_skill_table(), SkillTableEvent(id=7, fulfills=(6, 0), table='service_skills', roll=0)]
         with pytest.raises(ReplayError, match='1-6'):
             replay(1, events)
 
     def test_roll_seven_raises(self):
-        events = [*_scout_at_skill_table(), SkillTableEvent(id=7, fulfills='6.0', table='service_skills', roll=7)]
+        events = [*_scout_at_skill_table(), SkillTableEvent(id=7, fulfills=(6, 0), table='service_skills', roll=7)]
         with pytest.raises(ReplayError, match='1-6'):
             replay(1, events)
 
@@ -467,12 +467,12 @@ class TestDraftErrors:
         """Citizen qualification fails (EDU 5+, EDU=0) → PendingDraftChoice('3.0')."""
         return [
             CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Test'),
-            UcpEvent(id=2, fulfills='1.0', ucp='786000'),  # EDU=0 → no pending created
+            UcpEvent(id=2, fulfills=(1, 0), ucp='786000'),  # EDU=0 → no pending created
             CareerEvent(id=3, career='Citizen', assignment='Corporate', qualification_roll=1),
             # EDU 5+, DM-3: 1-3=-2 < 5 → fails → PendingDraftChoice('3.0')
         ]
 
     def test_unknown_career_draft_raises(self):
-        events = [*self._events_with_draft_choice(), DraftEvent(id=4, fulfills='3.0', career='NoSuchCareer')]
+        events = [*self._events_with_draft_choice(), DraftEvent(id=4, fulfills=(3, 0), career='NoSuchCareer')]
         with pytest.raises(ReplayError, match='Unknown career'):
             replay(1, events)

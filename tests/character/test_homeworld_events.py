@@ -27,15 +27,15 @@ def _started(id: int = 1) -> CharacterStartedEvent:
 
 
 def _ucp_no_edu(id: int = 2) -> UcpEvent:
-    return UcpEvent(id=id, fulfills='1.0', ucp='786000')
+    return UcpEvent(id=id, fulfills=(1, 0), ucp='786000')
 
 
 def _ucp(id: int = 2) -> UcpEvent:
-    return UcpEvent(id=id, fulfills='1.0', ucp='7869A5')
+    return UcpEvent(id=id, fulfills=(1, 0), ucp='7869A5')
 
 
 def _bg_skills(id: int = 3) -> BackgroundSkillsEvent:
-    return BackgroundSkillsEvent(id=id, fulfills='2.0', skills=[Admin(), Athletics(), Carouse(), Drive()])
+    return BackgroundSkillsEvent(id=id, fulfills=(2, 0), skills=[Admin(), Athletics(), Carouse(), Drive()])
 
 
 # ── HomeworldChangeRequiredEvent ──────────────────────────────────────────────
@@ -160,7 +160,7 @@ class TestHomeworldChangedEvent:
                 reason='You move to another world.',
                 source_kind='life_event_move',
             ),
-            HomeworldChangedEvent(id=4, fulfills='3.0', new_homeworld=MOCK_WORLD_2),
+            HomeworldChangedEvent(id=4, fulfills=(3, 0), new_homeworld=MOCK_WORLD_2),
         ]
 
     def test_apply_updates_homeworld(self):
@@ -187,7 +187,7 @@ class TestHomeworldChangedEvent:
                 reason='You may relocate.',
                 source_kind='career_term_end',
             ),
-            HomeworldChangedEvent(id=4, fulfills='3.0', new_homeworld=MOCK_WORLD_2),
+            HomeworldChangedEvent(id=4, fulfills=(3, 0), new_homeworld=MOCK_WORLD_2),
         ]
         projection = replay(1, events)
 
@@ -199,9 +199,9 @@ class TestHomeworldChangedEvent:
             _started(1),
             _ucp_no_edu(2),
             HomeworldChangeRequiredEvent(id=3, reason='First move.', source_kind='life_event_move'),
-            HomeworldChangedEvent(id=4, fulfills='3.0', new_homeworld=MOCK_WORLD_2),
+            HomeworldChangedEvent(id=4, fulfills=(3, 0), new_homeworld=MOCK_WORLD_2),
             HomeworldChangeRequiredEvent(id=5, reason='Second move.', source_kind='life_event_move'),
-            HomeworldChangedEvent(id=6, fulfills='5.0', new_homeworld=MOCK_WORLD),
+            HomeworldChangedEvent(id=6, fulfills=(5, 0), new_homeworld=MOCK_WORLD),
         ]
         projection = replay(1, events)
 
@@ -219,11 +219,11 @@ def _drifter_at_life_event_9() -> list:
     """
     return [
         CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'),
-        UcpEvent(id=2, fulfills='1.0', ucp='786000'),
+        UcpEvent(id=2, fulfills=(1, 0), ucp='786000'),
         CareerEvent(id=3, career='Drifter', assignment='Wanderer', qualification_roll=10),
-        SurviveEvent(id=4, fulfills='3.0', roll=10),
-        TermEventEvent(id=5, fulfills='4.0', roll=7),  # life event
-        LifeEventEvent(id=6, fulfills='5.0', roll=9),  # You move to another world.
+        SurviveEvent(id=4, fulfills=(3, 0), roll=10),
+        TermEventEvent(id=5, fulfills=(4, 0), roll=7),  # life event
+        LifeEventEvent(id=6, fulfills=(5, 0), roll=9),  # You move to another world.
     ]
 
 
@@ -253,7 +253,7 @@ class TestLifeEvent9HomeworldTrigger:
     def test_roll_9_homeworld_changes_after_HomeworldChangedEvent(self):
         events = [
             *_drifter_at_life_event_9(),
-            HomeworldChangedEvent(id=7, fulfills='6.0', new_homeworld=MOCK_WORLD_2),
+            HomeworldChangedEvent(id=7, fulfills=(6, 0), new_homeworld=MOCK_WORLD_2),
         ]
         projection = replay(1, events)
 
@@ -275,10 +275,10 @@ def _citizen_to_mishap5_skill_roll() -> list:
     """Events up to PendingCitizenMishap5SkillRoll for a Citizen/Worker."""
     return [
         CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'),
-        UcpEvent(id=2, fulfills='1.0', ucp='786000'),
+        UcpEvent(id=2, fulfills=(1, 0), ucp='786000'),
         CareerEvent(id=3, career='Citizen', assignment='Worker', qualification_roll=10),
-        SurviveEvent(id=4, fulfills='3.0', roll=6),  # triggers mishap (survive target=5, roll=6<target→mishap... wait)
-        MishapEvent(id=5, fulfills='4.0', roll=5),
+        SurviveEvent(id=4, fulfills=(3, 0), roll=6),  # triggers mishap (survive target=5, roll=6<target→mishap... wait)
+        MishapEvent(id=5, fulfills=(4, 0), roll=5),
     ]
 
 
@@ -286,16 +286,16 @@ class TestCitizenMishap5HomeworldTrigger:
     def _events_to_streetwise_roll(self) -> list:
         return [
             CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'),
-            UcpEvent(id=2, fulfills='1.0', ucp='786000'),
+            UcpEvent(id=2, fulfills=(1, 0), ucp='786000'),
             CareerEvent(id=3, career='Citizen', assignment='Worker', qualification_roll=10),
-            SurviveEvent(id=4, fulfills='3.0', roll=2),  # roll=2 → mishap
-            MishapEvent(id=5, fulfills='4.0', roll=5),
+            SurviveEvent(id=4, fulfills=(3, 0), roll=2),  # roll=2 → mishap
+            MishapEvent(id=5, fulfills=(4, 0), roll=5),
         ]
 
     def test_mishap5_success_adds_homeworld_change_required(self):
         events = [
             *self._events_to_streetwise_roll(),
-            SkillRollEvent(id=6, fulfills='5.0', skill=Streetwise(), modified_roll=9),
+            SkillRollEvent(id=6, fulfills=(5, 0), skill=Streetwise(), modified_roll=9),
         ]
         projection = replay(1, events)
 
@@ -304,7 +304,7 @@ class TestCitizenMishap5HomeworldTrigger:
     def test_mishap5_failure_adds_homeworld_change_required(self):
         events = [
             *self._events_to_streetwise_roll(),
-            SkillRollEvent(id=6, fulfills='5.0', skill=Streetwise(), modified_roll=5),
+            SkillRollEvent(id=6, fulfills=(5, 0), skill=Streetwise(), modified_roll=5),
         ]
         projection = replay(1, events)
 
@@ -313,7 +313,7 @@ class TestCitizenMishap5HomeworldTrigger:
     def test_mishap5_homeworld_unchanged_until_resolved(self):
         events = [
             *self._events_to_streetwise_roll(),
-            SkillRollEvent(id=6, fulfills='5.0', skill=Streetwise(), modified_roll=5),
+            SkillRollEvent(id=6, fulfills=(5, 0), skill=Streetwise(), modified_roll=5),
         ]
         projection = replay(1, events)
 
@@ -323,11 +323,11 @@ class TestCitizenMishap5HomeworldTrigger:
 
         events = [
             *self._events_to_streetwise_roll(),
-            SkillRollEvent(id=6, fulfills='5.0', skill=Streetwise(), modified_roll=9),
+            SkillRollEvent(id=6, fulfills=(5, 0), skill=Streetwise(), modified_roll=9),
         ]
         projection = replay(1, events)
         hw_pending = next(p for p in projection.pending_inputs if isinstance(p, PendingHomeworldChangeRequired))
-        events.append(HomeworldChangedEvent(id=7, fulfills=hw_pending.id, new_homeworld=MOCK_WORLD_2))
+        events.append(HomeworldChangedEvent(id=7, fulfills=hw_pending.pending_id, new_homeworld=MOCK_WORLD_2))
         projection = replay(1, events)
 
         assert projection.summary.homeworld == MOCK_WORLD_2
