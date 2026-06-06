@@ -195,12 +195,17 @@ def make_connection(
             return Enemy(source=source, power=power, affinity=affinity, enmity=enmity)
 
 
+class BenefitRollDm(BaseModel):
+    amount: int
+
+
 class MusterOut(BaseModel):
     terms: int = 1
     cash_count: int = 0
     benefits: list[ItemBenefit] = Field(default_factory=list)
     extra_rolls: int = 0
     lost_rolls: int = 0
+    benefit_roll_dms: list[BenefitRollDm] = Field(default_factory=list)
     used: bool = False
 
 

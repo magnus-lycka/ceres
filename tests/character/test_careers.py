@@ -66,6 +66,7 @@ from ceres.character.skills import (
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Ally,
+    BenefitRollDm,
     Contact,
     EffectTrigger,
     Enemy,
@@ -1217,12 +1218,10 @@ class TestLifeEventGoodFortune:
             LifeEventEvent(id=7, fulfills='6.0', roll=10),  # Good Fortune
         ]
 
-    def test_good_fortune_creates_muster_out_dm_scheduled_effect(self):
+    def test_good_fortune_stores_benefit_dm_on_muster_out(self):
         projection = replay(1, self._setup_through_life_event_10())
 
-        dm_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.MUSTER_OUT]
-        assert len(dm_effects) == 1
-        assert dm_effects[0].effect.get('amount') == 2
+        assert projection.summary.career_terms[-1].require_muster_out().benefit_roll_dms == [BenefitRollDm(amount=2)]
 
     def test_good_fortune_also_creates_advancement_pending(self):
         projection = replay(1, self._setup_through_life_event_10())

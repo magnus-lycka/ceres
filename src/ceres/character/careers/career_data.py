@@ -396,8 +396,13 @@ class CareerData(TermData):
         from ceres.character.replay import ReplayError
 
         last = projection.summary.last_career
-        if last is not None and type(last) is type(self) and projection.summary.last_career_ejected:
-            raise ReplayError(f'Cannot re-enter {self.name} — ejected from this career last term')
+        if last is not None and type(last) is type(self):
+            if projection.summary.last_career_ejected:
+                raise ReplayError(f'Cannot re-enter {self.name} — ejected from this career last term')
+            if last.allows_assignment_change:
+                raise ReplayError(f'Cannot re-enter {self.name} — voluntary departure last term')
+            if projection.summary.last_assignment == assignment.name:
+                raise ReplayError(f'Cannot re-enter {self.name}/{assignment.name} — voluntary departure last term')
 
         # Check for auto-qualify from pre-career graduation
         auto_effects = [

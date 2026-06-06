@@ -23,7 +23,7 @@ from ceres.character.events import (
 from ceres.character.replay import ReplayError, replay
 from ceres.character.skills import Admin, Athletics, Carouse, Drive, JackOfAllTrades, Medic, SpaceScience
 from ceres.character.sophonts import VILANI
-from ceres.character.state import EffectTrigger
+from ceres.character.state import BenefitRollDm
 from tests.character.helpers import MOCK_WORLD
 
 
@@ -422,8 +422,8 @@ class TestMusterOut:
         muster_out_pendings = [p for p in projection.pending_inputs if isinstance(p, PendingMusterOut)]
         assert len(muster_out_pendings) == 1
 
-    def test_benefit_dm_tracked_as_scheduled_effect(self):
-        # Scout event 5 grants benefit_dm+1 — tracked as a muster_out ScheduledEffect.
+    def test_benefit_dm_tracked_on_muster_out(self):
+        # Scholar event 5 grants benefit_dm+1 — stored on MusterOut.benefit_roll_dms.
         # The player includes the DM in their roll value (MusterOutEvent.roll already includes DMs).
         # Scholar cash row 1=Cr5000, row 2=Cr10000. Player rolls 1 and applies DM+1 → submits roll=2.
         events = [
@@ -438,10 +438,7 @@ class TestMusterOut:
         ]
         projection = replay(1, events)
 
-        # benefit_dm tracked as a scheduled effect
-        muster_out_dms = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.MUSTER_OUT]
-        assert len(muster_out_dms) == 1
-        assert muster_out_dms[0].effect.get('amount') == 1
+        assert projection.summary.career_terms[-1].require_muster_out().benefit_roll_dms == [BenefitRollDm(amount=1)]
 
     def test_scholar_soc_plus_1_benefit(self):
         # Scholar benefits roll 4 → SOC +1 (SOC was 5)
@@ -569,19 +566,16 @@ class TestCareerRunContinuity:
         assert [t.career.name for t in projection.summary.career_terms] == ['Agent', 'Agent']
         assert projection.summary.career_terms[-1].require_muster_out().terms == 1
 
-    def test_scout_direct_reentry_after_muster_out_starts_new_run(self):
-        """Scout → muster out → Scout re-entry must start a fresh run (terms=1).
-
-        Currently fails: MusterOut.used is never set to True after rolls complete,
-        so continue_career_run_from() incorrectly continues the previous run.
-        """
+    def test_new_career_after_muster_out_starts_fresh_run(self):
+        """Scout → muster out → different career: fresh run (terms=1)."""
         events = [
             *_setup_through_reenlist_false(),
             MusterOutEvent(id=9, fulfills='8.0', table='benefits', roll=1),
-            CareerEvent(id=10, fulfills='9.0', career='Scout', assignment='Courier', qualification_roll=7),
+            CareerEvent(id=10, fulfills='9.0', career='Army', assignment='Support', qualification_roll=7),
         ]
         projection = replay(1, events)
 
+        assert projection.summary.career_terms[-1].career.name == 'Army'
         assert projection.summary.career_terms[-1].require_muster_out().terms == 1
 
     def test_failed_qualification_after_muster_out_falls_to_draft(self):
@@ -589,8 +583,8 @@ class TestCareerRunContinuity:
         events = [
             *_setup_through_reenlist_false(),
             MusterOutEvent(id=9, fulfills='8.0', table='benefits', roll=1),
-            # Scout qualification: INT 5+, INT=9 (DM+1). Roll=1 → 1+1=2 < 5 → fail.
-            CareerEvent(id=10, fulfills='9.0', career='Scout', assignment='Courier', qualification_roll=1),
+            # Army qualification: STR 5+, STR=7 (DM+1). Roll=1 → 1+1=2 < 5 → fail.
+            CareerEvent(id=10, fulfills='9.0', career='Army', assignment='Support', qualification_roll=1),
         ]
         projection = replay(1, events)
 
@@ -614,11 +608,7 @@ class TestCareerRunContinuity:
             replay(1, events)
 
     def test_ejection_blocks_same_career_different_assignment_reentry(self):
-        """A character ejected from Agent may not re-enter any Agent assignment the following term.
-
-        Currently fails: start_career() does not enforce this restriction.
-        Requires tracking whether the previous departure was a mishap ejection.
-        """
+        """A character ejected from Agent may not re-enter any Agent assignment the following term."""
         events = [
             *_full_setup(),
             CareerEvent(id=4, fulfills='3.0', career='Agent', assignment='Intelligence', qualification_roll=5),
@@ -628,3 +618,48 @@ class TestCareerRunContinuity:
         ]
         with pytest.raises(ReplayError, match='ejected'):
             replay(1, events)
+
+    def _scout_one_term_muster_out(self) -> list:
+        return [
+            *_setup_through_reenlist_false(),
+            MusterOutEvent(id=9, fulfills='8.0', table='benefits', roll=1),
+        ]
+
+    def test_voluntary_departure_blocks_same_assignment_in_assignment_change_career(self):
+        """Scout voluntary muster-out → cannot re-enter Scout Courier the following term."""
+        events = [
+            *self._scout_one_term_muster_out(),
+            CareerEvent(id=10, fulfills='9.0', career='Scout', assignment='Courier', qualification_roll=7),
+        ]
+        with pytest.raises(ReplayError, match='voluntary'):
+            replay(1, events)
+
+    def test_voluntary_departure_blocks_any_assignment_in_assignment_change_career(self):
+        """Scout voluntary muster-out → cannot re-enter Scout (any assignment) the following term."""
+        events = [
+            *self._scout_one_term_muster_out(),
+            CareerEvent(id=10, fulfills='9.0', career='Scout', assignment='Surveyor', qualification_roll=7),
+        ]
+        with pytest.raises(ReplayError, match='voluntary'):
+            replay(1, events)
+
+    def test_voluntary_departure_blocks_same_assignment_in_non_assignment_change_career(self):
+        """Agent/Intelligence voluntary muster-out → cannot re-enter Agent/Intelligence the following term."""
+        events = [
+            *_agent_one_term_muster_out(),
+            CareerEvent(id=10, fulfills='9.0', career='Agent', assignment='Intelligence', qualification_roll=5),
+        ]
+        with pytest.raises(ReplayError, match='voluntary'):
+            replay(1, events)
+
+    def test_voluntary_departure_allows_different_assignment_in_non_assignment_change_career(self):
+        """Agent/Intelligence voluntary muster-out → Agent/Corporate is allowed (new career run)."""
+        events = [
+            *_agent_one_term_muster_out(),
+            CareerEvent(id=10, fulfills='9.0', career='Agent', assignment='Corporate', qualification_roll=5),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.career_terms[-1].career.name == 'Agent'
+        assert projection.summary.career_terms[-1].assignment == 'Corporate'
+        assert projection.summary.career_terms[-1].require_muster_out().terms == 1

@@ -211,7 +211,7 @@ def test_ucp_event_rejects_wrong_length():
 
 
 def test_event_helpers_apply_simple_effects_and_skill_entries():
-    projection = _projection(characteristics={Chars.STR: 1, Chars.SOC: 7})
+    projection = _projection(characteristics={Chars.STR: 1, Chars.SOC: 7}, term_count=1)
 
     _apply_simple_effect(projection, DecreaseCharacteristicEffect(characteristic=Chars.STR, amount=3))
     _apply_simple_effect(projection, GainContactEffect(), source='contact source')
@@ -236,7 +236,8 @@ def test_event_helpers_apply_simple_effects_and_skill_entries():
     assert projection.summary.parole_threshold == 0
     assert projection.summary.skill_level(character_skills.Admin) == 0
     assert projection.summary.skill_level(character_skills.Electronics) == 1
-    assert [effect.trigger for effect in projection.scheduled_effects] == ['advancement', 'muster_out']
+    assert [effect.trigger for effect in projection.scheduled_effects] == ['advancement']
+    assert projection.summary.career_terms[-1].require_muster_out().benefit_roll_dms[0].amount == 1
 
 
 def test_auto_advance_can_apply_characteristic_rank_bonus():

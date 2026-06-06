@@ -109,13 +109,12 @@ def _apply_simple_effect(projection: Any, effect: Any, source: str = '', source_
             )
         )
     elif isinstance(effect, BenefitDmEffect):
-        projection.scheduled_effects.append(
-            ScheduledEffect(
-                trigger=EffectTrigger.MUSTER_OUT,
-                source_event_id=source_event_id,
-                effect={'type': EffectType.DM, 'amount': effect.amount},
+        if projection.summary.career_terms:
+            from ceres.character.state import BenefitRollDm
+
+            projection.summary.career_terms[-1].require_muster_out().benefit_roll_dms.append(
+                BenefitRollDm(amount=effect.amount)
             )
-        )
     elif isinstance(effect, ParoleThresholdChangeEffect) and projection.summary.parole_threshold is not None:
         new_pt = projection.summary.parole_threshold + effect.amount
         projection.summary.parole_threshold = max(0, min(12, new_pt))
@@ -1220,13 +1219,12 @@ class LifeEventEvent(EventBase):
                     _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id, 1)
                 )
         elif roll == 10:
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger=EffectTrigger.MUSTER_OUT,
-                    source_event_id=self.id,
-                    effect={'type': EffectType.DM, 'amount': 2},
+            if projection.summary.career_terms:
+                from ceres.character.state import BenefitRollDm
+
+                projection.summary.career_terms[-1].require_muster_out().benefit_roll_dms.append(
+                    BenefitRollDm(amount=2)
                 )
-            )
             if in_career and career is not None:
                 projection.pending_inputs.append(
                     _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id)
@@ -2156,9 +2154,18 @@ class PendingMusterOut(PendingInputBase):
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
         table_options = [(opt.title(), opt) for opt in self.options]
+        total_dm = 0
+        if projection.summary.career_terms:
+            mo = projection.summary.career_terms[-1].muster_out
+            if mo is not None:
+                total_dm = sum(dm.amount for dm in mo.benefit_roll_dms)
+        if total_dm:
+            roll_label = f'1D roll (1–6); DM+{total_dm} available on benefits table'
+        else:
+            roll_label = '1D roll (1–6, apply DMs first)'
         return [
             Select(name='table', label='Table', options=table_options),
-            NumberEntry(name='roll', label='1D roll (1–6, apply DMs first)', default=3, min=1, max=7),
+            NumberEntry(name='roll', label=roll_label, default=3, min=1, max=7),
         ]
 
 
