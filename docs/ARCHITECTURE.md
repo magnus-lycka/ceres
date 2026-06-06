@@ -387,7 +387,164 @@ sources, but cross-cutting decisions such as unsupported drive cost reduction
 labels and unsupported retro starship computer pricing should now be recorded
 in `RULE_INTERPRETATIONS.md` rather than duplicated here.
 
-## Character creation: career encapsulation rule
+## Character creation, the ceres.character package
+
+Architecture notes specific for ceres.character
+
+### Character creation: event sourcing
+
+Character creation is modelled as an event-sourced projection. An event log is
+replayed from the beginning to produce the current `CharacterProjection`. Events
+are immutable records of what happened; the projection is rebuilt on every
+replay.
+
+#### Event and handler
+
+The mechanism layer owns two thin container types:
+
+```python
+class Event(BaseModel):
+    id: int = 0                            # assigned by store on append
+    fulfills: tuple[int, int] | None = None
+    handler: EventHandlerBase
+
+class EventHandlerBase(BaseModel):
+    def apply(self, projection, event, fulfilled_pending=None): ...
+```
+
+**The handler is the payload.** There is no separate payload dict. Every
+concrete event type is a subclass of `EventHandlerBase` that carries typed
+fields *and* implements `apply()`. These subclasses live exclusively in the
+relevant domain module — never in the mechanism layer.
+
+```python
+# In career_data.py (domain)
+class SurviveHandler(EventHandlerBase):
+    kind: Literal['survive'] = 'survive'   # Pydantic discriminator only
+    roll: int
+
+    def apply(self, projection, event, fulfilled_pending=None):
+        if fulfilled_pending is not None:
+            fulfilled_pending.handler.resolve(projection, event)
+```
+
+Creating an event:
+
+```python
+Event(handler=SurviveHandler(roll=5), fulfills=(4, 0))
+```
+
+The `kind` literal exists solely as a Pydantic discriminator for
+serialisation. No application code ever references it as a string.
+
+#### PendingInput and pending handler
+
+The same pattern governs pending inputs:
+
+```python
+class PendingInput(BaseModel):
+    pending_id: tuple[int, int]
+    blocking: bool = True
+    handler: PendingHandlerBase
+
+class PendingHandlerBase(BaseModel):
+    def resolve(self, projection, event): ...
+    def input_specs(self) -> list[InputSpec]: ...
+    def event_from_form(self, form, pending_id) -> Event: ...
+```
+
+Concrete `PendingHandlerBase` subclasses live in domain modules. The pending
+handler knows how to present its input form *and* how to turn the submitted
+form data into the next event — so `event_from_form` always produces the
+correctly typed event with the right `fulfills` value.
+
+#### Lifecycle of a pending input
+
+1. **Creation** — an event handler's `apply()` appends a pending to the
+   projection:
+
+   ```python
+   projection.pending_inputs.append(
+       PendingInput(
+           pending_id=(event.id, 0),
+           handler=SurvivePendingHandler(instruction='Roll 2D survival'),
+       )
+   )
+   ```
+
+2. **Presentation** — the web layer calls `pending.handler.input_specs()` for
+   every pending input and renders the resulting form fields. No type
+   inspection; pure polymorphism.
+
+3. **Submission** — the user submits form data. The web layer calls:
+
+   ```python
+   event = pending.handler.event_from_form(form_data, pending.pending_id)
+   ```
+
+   This returns a fully constructed `Event` with `fulfills` already set.
+
+4. **Replay** — `replay()` matches `event.fulfills` to `pending.pending_id`,
+   removes the pending, then calls:
+
+   ```python
+   event.handler.apply(projection, event, fulfilled_pending=pending)
+   ```
+
+5. **Resolution** — the event handler delegates back to the pending handler:
+
+   ```python
+   fulfilled_pending.handler.resolve(projection, event)
+   ```
+
+   `resolve()` runs the domain logic and typically appends the next pending
+   input to start the cycle again.
+
+#### No isinstance in the call chain
+
+Because every step calls a method on whatever object it holds, `isinstance`
+checks never appear in production code. The web layer does not need to know
+whether the current pending is a survive check or a skill choice — it calls
+`input_specs()` and gets the right form either way.
+
+The test helper `CharacterDriver` follows the same principle. When the test
+calls `d.survive(5)`, the driver takes the next blocking pending and delegates:
+
+```python
+def survive(self, roll: int) -> CharacterDriver:
+    pending = self._next_blocking_pending()
+    return self._add(pending.handler.event_from_form({'roll': str(roll)}, pending.pending_id))
+```
+
+No type inspection; no knowledge of which handler class is present. If the
+wrong pending is present, `event_from_form` or the subsequent replay will fail
+— which is the correct and visible signal.
+
+#### Module layout
+
+```text
+src/ceres/character/mechanism/
+  event_base.py      — Event, EventHandlerBase, PendingInput, PendingHandlerBase
+  replay.py          — replay(); no domain imports
+  state.py           — CharacterProjection, CharacterSummary; no domain event imports
+
+src/ceres/character/domain/
+  career/            — one module per career (army.py, navy.py, …, prisoner.py)
+                       plus shared career data (career_data.py)
+  health/            — AgingHandler, InjuryHandler, … and their pending handlers
+  homeworld/         — HomeworldChangedHandler, … and their pending handlers
+  precareer/         — PreCareerEntryHandler, … and their pending handlers
+
+src/ceres/character/aggregation/
+  event_types.py     — AnyEventHandler, AnyPendingHandler (discriminated unions only)
+                       rebuilt onto Event and PendingInput for Pydantic deserialisation
+```
+
+`event_types.py` is the one module that imports from all domain modules. Nothing
+imports from it except `replay.py` and the web routes. This keeps the
+dependency graph a strict DAG: mechanism ← domain ← aggregation ← replay.
+
+### Career encapsulation rule
 
 **No code outside the career, precareer, and sophont packages may hardcode
 anything career-specific, precareer-specific, or sophont/species-specific.**
@@ -397,19 +554,20 @@ those packages.
 What this means in practice:
 
 - Career names, roll numbers, and event/mishap option sets are owned by the
-  career package (`src/ceres/character/careers/`). External code — routes,
+  career package (`src/ceres/character/domain/career/`). External code — routes,
   templates, projection, bulk generation — treats careers generically.
-- `PendingCareerEvent` and `PendingCareerMishap` carry `options: list[str]` set
-  by the career handler. The UI renders those options as buttons; it has no
-  knowledge of which career produced them.
-- Per-career event/mishap logic lives in `src/ceres/character/careers/<name>.py`
-  and is registered via that career's `CHOICE_HANDLERS`. The replay engine
-  dispatches through `CareerChoiceEvent.context` without knowing the career.
+- Per-career event and mishap logic lives in
+  `src/ceres/character/domain/career/<name>.py` as `EventHandlerBase` and
+  `PendingHandlerBase` subclasses. The mechanism layer never imports these
+  classes; they are aggregated only in `event_types.py` for Pydantic
+  deserialisation. The web layer and replay engine interact through the handler
+  interface without knowing which career produced the pending or event.
 - `CareerData` is the right place to add any data that generic infrastructure
   needs to query about a career (e.g., available tables, rank bonus rules). Do
   not let those queries leak out as hardcoded conditionals elsewhere.
 - The same principle applies to precareers: entry conditions, curricula, event
-  tables, and graduation effects belong entirely within the precareer modules.
+  tables, and graduation effects belong entirely within
+  `src/ceres/character/domain/precareer/`.
 - Sophont/species data — characteristic arrays, UCP stat names, homeworld
   defaults — belongs in the sophont package. No external module may hardcode
   which characteristics a sophont has or what their labels are.
@@ -420,8 +578,10 @@ These are only acceptable when `CareerData` fields cannot carry the information
 instead. Any such exception must be documented and approved before being
 introduced; an unapproved hardcoded reference is a rule violation.
 
-**Group-play mechanics are out of scope.** The Connections Rule (linking two
-Travellers' histories for a free skill), skill packages (collectively chosen
-after creation and distributed round-robin), and similar mechanics that operate
-across multiple characters are not planned for `ceres.character`. They require a
-group session concept that is outside the current single-character model.
+### Group-play mechanics are out of scope
+
+The Connections Rule (linking two Travellers' histories for a free skill), 
+skill packages (collectively chosen after creation and distributed round-robin),
+and similar mechanics that operate across multiple characters are not planned
+for `ceres.character`. They require a group session concept that is outside the
+current single-character model.
