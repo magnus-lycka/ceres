@@ -1,7 +1,7 @@
 from ceres.character.characteristics import Chars
 from ceres.character.events import PendingPreCareerSkillChoice, PreCareerEntryEvent, PreCareerGraduationEvent
 from ceres.character.precareers.precareer_data import PreCareerData
-from ceres.character.skills import AnySkill, _level_fields
+from ceres.character.skills import AnySkill
 from ceres.character.state import CharacterProjection
 
 
@@ -13,14 +13,13 @@ class UniversityPreCareer(PreCareerData):
         pending_idx: int,
     ) -> int:
         projection.summary.characteristics[Chars.EDU] = projection.summary.characteristics.get(Chars.EDU, 0) + 1
-        skill_opts_0 = _precareer_skill_options(self)
-        skill_opts_1 = _precareer_skill_options_level1(self)
+        skill_opts = _precareer_skill_options(self)
         projection.pending_inputs.append(
             PendingPreCareerSkillChoice(
                 pending_id=(event.id, pending_idx),
                 level=0,
                 instruction='University: choose one skill at level 0',
-                options=skill_opts_0,
+                options=skill_opts,
             )
         )
         pending_idx += 1
@@ -29,7 +28,7 @@ class UniversityPreCareer(PreCareerData):
                 pending_id=(event.id, pending_idx),
                 level=1,
                 instruction='University: choose one skill at level 1',
-                options=skill_opts_1,
+                options=skill_opts,
             )
         )
         pending_idx += 1
@@ -64,30 +63,3 @@ def _precareer_skill_options(precareer: PreCareerData) -> list[AnySkill]:
                 seen.add(key)
                 result.append(skill)
     return sorted(result, key=lambda s: type(s).name())
-
-
-def _precareer_skill_options_level1(precareer: PreCareerData) -> list[AnySkill]:
-    """Like _precareer_skill_options but expands specialised skills to per-spec instances at Level(1)."""
-    from ceres.character.events import _expand_skill_to_spec_instances
-
-    seen: set[str] = set()
-    result: list[AnySkill] = []
-    for skill in _precareer_skill_options(precareer):
-        for expanded in _expand_skill_to_spec_instances(skill):
-            key = _skill_instance_key(expanded)
-            if key not in seen:
-                seen.add(key)
-                result.append(expanded)
-    return sorted(result, key=_skill_instance_key)
-
-
-def _skill_instance_key(skill: AnySkill) -> str:
-    skill_cls = type(skill)
-    fields = _level_fields(skill_cls)
-    active = next((f for f in fields if getattr(skill, f).value > 0), None)
-    base = skill_cls.name()
-    if active is None:
-        return base
-    extra = skill_cls.model_fields[active].json_schema_extra or {}
-    spec_label = str(extra.get('name') or active.replace('_', ' ').title())
-    return f'{base} ({spec_label})'

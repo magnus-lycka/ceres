@@ -34,15 +34,15 @@ class SqliteCharacterBackend:
             'id integer primary key, '
             'sophont text not null, '
             'player text not null, '
-            'name text not null, '
-            "events_json text not null default '[]')"
+            'name text not null)'
         )
-        self._ensure_column('events_json', "text not null default '[]'")
-
-    def _ensure_column(self, column: str, definition: str) -> None:
-        columns = {row[1] for row in self.connection.execute('pragma table_info(characters)')}
-        if column not in columns:
-            self.connection.execute(f'alter table characters add column {column} {definition}')
+        self.connection.execute(
+            'create table if not exists character_events ('
+            'character_id integer not null references characters(id), '
+            'id integer not null, '
+            'payload text not null, '
+            'primary key (character_id, id))'
+        )
 
     def start(self, *, sophont: Sophont, homeworld: TravellerMapWorld, player: str, name: str) -> CharacterRow:
         cursor = self.connection.execute(
@@ -91,16 +91,22 @@ class SqliteCharacterBackend:
         event = event.model_copy(update={'id': len(events) + 1})
         candidate = [*events, event]
         projection = replay(character_id, candidate)  # raises ReplayError if invalid; do not save
-        self._save_events(character_id, candidate)
+        self.connection.execute(
+            'insert into character_events (character_id, id, payload) values (?, ?, ?)',
+            (character_id, event.id, json.dumps(event.model_dump())),
+        )
+        self.connection.commit()
         return event, projection
 
     def load_typed_events(self, character_id: int) -> list[AnyEvent] | None:
-        cursor = self.connection.execute('select events_json from characters where id = ?', (character_id,))
-        row = cursor.fetchone()
-        if row is None:
+        cursor = self.connection.execute(
+            'select payload from character_events where character_id = ? order by id',
+            (character_id,),
+        )
+        rows = cursor.fetchall()
+        if not rows:
             return None
-        data = json.loads(row[0])
-        return [_event_adapter.validate_python(e) for e in data]
+        return [_event_adapter.validate_python(json.loads(r[0])) for r in rows]
 
     def get_projection(self, character_id: int) -> CharacterProjection | None:
         events = self.load_typed_events(character_id)
@@ -108,15 +114,11 @@ class SqliteCharacterBackend:
             return None
         return replay(character_id, events)
 
-    def _save_events(self, character_id: int, events: list[AnyEvent]) -> None:
-        serialized = json.dumps([e.model_dump() for e in events])
-        self.connection.execute('update characters set events_json = ? where id = ?', (serialized, character_id))
-        self.connection.commit()
-
     def delete_character(self, character_id: int) -> CharacterRow | None:
         character = self.get_character(character_id)
         if character is None:
             return None
+        self.connection.execute('delete from character_events where character_id = ?', (character_id,))
         self.connection.execute('delete from characters where id = ?', (character_id,))
         self.connection.commit()
         return character

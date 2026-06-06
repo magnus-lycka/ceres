@@ -758,8 +758,8 @@ class TestUniversity:
             p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice) and p.level == 1
         ]
         assert len(level1_picks) == 1
-        opts = level1_picks[0].options
-        # Specialised Science skills must be expanded to per-spec instances, not bare base skills
+        # Check what the user actually sees: _expanded_options() handles specialisation expansion
+        opts = level1_picks[0]._expanded_options()
         ps_opts = [o for o in opts if isinstance(o, PhysicalScience)]
         assert not any(
             all(getattr(o, f).value == 0 for f in ('chemistry', 'physics', 'jumpspace_physics')) for o in ps_opts
