@@ -446,8 +446,14 @@ class CareerData(TermData):
         projection.summary.current_assignment_index = self.assignment_index(assignment)
         self.start_new_term(projection, assignment, event_id)
 
-    def start_new_term(self, projection, assignment: AssignmentData, event_id: int) -> None:
-        training = self._basic_training_plan(projection, assignment)
+    def start_new_term(
+        self,
+        projection,
+        assignment: AssignmentData,
+        event_id: int,
+        is_continuation: bool = False,
+    ) -> None:
+        training = self._basic_training_plan(projection, assignment, is_continuation)
         projection.summary.rank = self.current_rank(projection.summary.career_terms, assignment)
         if not self.prior_terms(projection.summary.career_terms, assignment):
             self._apply_fixed_rank_bonus(projection, 0)
@@ -481,8 +487,13 @@ class CareerData(TermData):
             current = projection.summary.characteristics.get(bonus.characteristic, 0)
             projection.summary.characteristics[bonus.characteristic] = current + bonus.level
 
-    def _basic_training_plan(self, projection, assignment: AssignmentData) -> BasicTrainingPlan | None:
-        if self.prior_terms(projection.summary.career_terms, assignment):
+    def _basic_training_plan(
+        self,
+        projection,
+        assignment: AssignmentData,
+        is_continuation: bool = False,
+    ) -> BasicTrainingPlan | None:
+        if is_continuation:
             return None
         return BasicTrainingPlan(
             table_name=self._basic_training_table_name(assignment),

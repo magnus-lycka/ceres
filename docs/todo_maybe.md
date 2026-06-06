@@ -302,11 +302,6 @@ world.
 
 ## Character creation: known implementation gaps (rules not yet enforced)
 
-- **Advancement forced-leave** — if the advancement roll ≤ terms served in the
-  current career, the Traveller must leave. Needs a per-career term counter and
-  the pre-DM raw roll on `AdvancementEvent`.
-- **Advancement natural-12-stay** — a natural 12 on the advancement dice forces
-  the Traveller to stay. Same preconditions as forced-leave above.
 - **Aging row ≤ −6: mental reduction after crisis** — if an aging crisis fires,
   the mental characteristic −1 from that aging row is never applied to a
   character who survives the crisis.
@@ -315,8 +310,6 @@ world.
   result rather than always using 1.
 - **Skill level cap** — skills may not exceed level 4 during creation; total
   skill levels may not exceed 3 × (INT + EDU).
-- **Subsequent basic training** — from term 2 onward the Traveller picks one
-  Service Skill at level 0 (not all service skills at 0 as in term 1).
 - **Benefit roll bonus at rank 5–6 and "any one Benefit roll" events** — neither
   is implemented; see RIC-004.
 - **Generic Life Events table must match Core literally** — the generic
@@ -327,8 +320,6 @@ world.
   - roll 8 Betrayal does not clearly implement "convert one Contact or Ally"
     before falling back to gaining a Rival or Enemy
   - roll 9 Travel does not currently model "You move to another world"
-  - roll 11 Crime does not currently offer the "lose one Benefit roll or take
-    the Prisoner career in your next term" choice
   - roll 12 Unusual Event is substantially altered from core
   This should be fixed from the rulebook text itself, with tests asserting the
   core outcomes rather than current implementation behavior.

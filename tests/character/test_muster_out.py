@@ -339,6 +339,7 @@ class TestMusterOut:
         ]
 
     def test_muster_out_counts_only_current_career_run_when_reentering_same_career(self):
+        # All Scout service skills already known from first run → re-entry gives survival directly (no skill table)
         events = [
             *_setup_through_reenlist_false(),
             MusterOutEvent(id=9, fulfills='8.0', table='cash', roll=1),  # first Scout run
@@ -350,11 +351,10 @@ class TestMusterOut:
             ReenlistEvent(id=15, fulfills='14.0', reenlist=False),
             MusterOutEvent(id=16, fulfills='15.0', table='benefits', roll=4),  # intervening Citizen run
             CareerEvent(id=17, fulfills='16.0', career='Scout', assignment='Courier', qualification_roll=7),
-            SkillTableEvent(id=18, fulfills='17.0', table='service_skills', roll=1),
-            SurviveEvent(id=19, fulfills='18.0', roll=7),
-            TermEventEvent(id=20, fulfills='19.0', roll=5),
-            AdvancementEvent(id=21, fulfills='20.0', roll=3),
-            ReenlistEvent(id=22, fulfills='21.0', reenlist=False),
+            SurviveEvent(id=18, fulfills='17.0', roll=7),
+            TermEventEvent(id=19, fulfills='18.0', roll=5),
+            AdvancementEvent(id=20, fulfills='19.0', roll=3),
+            ReenlistEvent(id=21, fulfills='20.0', reenlist=False),
         ]
 
         projection = replay(1, events)

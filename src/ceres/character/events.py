@@ -159,7 +159,7 @@ def _start_new_career_term(projection: Any, career: Any, event_id: int) -> None:
     assignment = career.assignment_by_index(assignment_index)
     if assignment is None:
         raise ReplayError(f'Unknown assignment index {assignment_index!r} in career {career.name!r}')
-    career.start_new_term(projection, assignment, event_id)
+    career.start_new_term(projection, assignment, event_id, is_continuation=True)
 
 
 def _survive_pending(career: Any, assignment_index: int, event_id: int) -> Any:

@@ -230,6 +230,58 @@ class TestQualification:
         assert projection.summary.current_career.name == 'Scholar'
 
 
+class TestSubsequentBasicTraining:
+    """Re-entering a career gets basic training (one service skill pick), not a skill roll."""
+
+    def _setup_scout_then_agent_muster_out(self) -> list:
+        """Scout term 1 → muster out → Agent/Intelligence term 1 → muster out.
+
+        Uses Scout event roll=5 (BenefitDm, no pending) and Agent event roll=4 (BenefitDm, no pending).
+        Agent qualification: INT 5+, INT=9 DM+1, roll=4 → 5 >= 5 → pass.
+        Agent advancement: INT 5+, roll=3 → 4 < 5 → fail.
+        """
+        return [
+            *_full_setup(),
+            # Scout term 1
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=5),
+            AdvancementEvent(id=7, fulfills='6.0', roll=3),
+            ReenlistEvent(id=8, fulfills='7.0', reenlist=False),
+            MusterOutEvent(id=9, fulfills='8.0', table='cash', roll=1),
+            # Agent/Intelligence term 1 (2nd career → basic training: one service skill pick)
+            CareerEvent(id=10, fulfills='9.0', career='Agent', assignment='Intelligence', qualification_roll=5),
+            SkillChoiceEvent(id=11, fulfills='10.0', skill=Investigate()),
+            SurviveEvent(id=12, fulfills='11.0', roll=9),
+            TermEventEvent(id=13, fulfills='12.0', roll=4),
+            AdvancementEvent(id=14, fulfills='13.0', roll=3),
+            ReenlistEvent(id=15, fulfills='14.0', reenlist=False),
+            MusterOutEvent(id=16, fulfills='15.0', table='cash', roll=1),
+        ]
+
+    def test_scout_reentry_creates_survive_not_skill_table(self):
+        """Re-entering Scout (all service skills already known) gives survival pending, not skill roll."""
+        events = [
+            *self._setup_scout_then_agent_muster_out(),
+            CareerEvent(id=17, fulfills='16.0', career='Scout', assignment='Courier', qualification_roll=7),
+        ]
+        projection = replay(1, events)
+
+        assert any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
+        assert not any(isinstance(p, PendingSkillTable) for p in projection.pending_inputs)
+
+    def test_scout_reentry_survival_id_from_career_event(self):
+        """Survival pending ID is career_event.id.0 — no skill table interleaved."""
+        events = [
+            *self._setup_scout_then_agent_muster_out(),
+            CareerEvent(id=17, fulfills='16.0', career='Scout', assignment='Courier', qualification_roll=7),
+        ]
+        projection = replay(1, events)
+
+        survive_pending = next(p for p in projection.pending_inputs if isinstance(p, PendingSurvive))
+        assert survive_pending.id == '17.0'
+
+
 class TestCareerEntry:
     def test_career_event_creates_survive_pending(self):
         events = [
