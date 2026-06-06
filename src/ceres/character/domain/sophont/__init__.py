@@ -1,4 +1,4 @@
-from ceres.character.sophonts.humaniti import HUMANITI, VILANI, Sophont
+from ceres.character.domain.sophont.humaniti import HUMANITI, VILANI, Sophont
 
 SOPHONTS: list[Sophont] = [VILANI, HUMANITI]
 

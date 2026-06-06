@@ -4,8 +4,8 @@ from ceres.character.domain import skills as character_skills
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.precareer.loader import load_precareers
 from ceres.character.domain.precareer.military_academy import MilitaryAcademyPreCareer
+from ceres.character.domain.sophont import VILANI
 from ceres.character.events import PreCareerEntryEvent, PreCareerGraduationEvent
-from ceres.character.sophonts import VILANI
 from ceres.character.state import CharacterProjection, CharacterSummary
 from tests.character.helpers import MOCK_WORLD
 

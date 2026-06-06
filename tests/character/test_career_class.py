@@ -19,6 +19,7 @@ from ceres.character.domain.career import (
 )
 from ceres.character.domain.career.career_data import CareerData
 from ceres.character.domain.career.loader import load_careers
+from ceres.character.domain.sophont import VILANI
 from ceres.character.events import (
     BackgroundSkillsEvent,
     CareerEvent,
@@ -28,7 +29,6 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.mechanism.replay import replay
-from ceres.character.sophonts import VILANI
 from tests.character.helpers import MOCK_WORLD
 
 

@@ -35,7 +35,7 @@ from ceres.character.domain.benefits import (
 )
 from ceres.character.domain.career import SCOUT
 from ceres.character.domain.characteristics import Chars
-from ceres.character.sophonts import VILANI
+from ceres.character.domain.sophont import VILANI
 from ceres.character.state import CareerTerm, CharacterProjection, CharacterSummary
 from tests.character.helpers import MOCK_WORLD
 

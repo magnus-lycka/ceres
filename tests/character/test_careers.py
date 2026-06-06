@@ -26,6 +26,7 @@ from ceres.character.domain.skills import (
     Survival,
     VaccSuit,
 )
+from ceres.character.domain.sophont import VILANI
 from ceres.character.events import (
     AdvancementEvent,
     AssignmentChangeChoiceEvent,
@@ -69,7 +70,6 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.mechanism.replay import ReplayError, replay
-from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Ally,
     BenefitRollDm,

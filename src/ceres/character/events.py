@@ -21,8 +21,8 @@ from ceres.character.domain.skills import (
     _level_fields,
     _skill_classes,
 )
+from ceres.character.domain.sophont import Sophont, get_sophont
 from ceres.character.input_specs import InputSpec, NumberEntry, Reference, Select, form_int, form_str, literal
-from ceres.character.sophonts import Sophont, get_sophont
 from ceres.character.state import (
     Ally,
     CharacterProjection,

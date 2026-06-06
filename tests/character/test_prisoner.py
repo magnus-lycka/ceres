@@ -38,6 +38,7 @@ from ceres.character.domain.skills import (
     Stealth,
     WorkerProfession,
 )
+from ceres.character.domain.sophont import VILANI
 from ceres.character.events import (
     AdvancementEvent,
     BackgroundSkillsEvent,
@@ -63,7 +64,6 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.mechanism.replay import replay
-from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Ally,
     Enemy,

@@ -6,6 +6,7 @@ from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.skills import AnySkill
+from ceres.character.domain.sophont import Sophont
 from ceres.character.events import (
     AdvancementEvent,
     AgingCrisisEvent,
@@ -43,7 +44,6 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.mechanism.replay import replay
-from ceres.character.sophonts import Sophont
 from ceres.character.state import CharacterProjection, ChoiceBase
 
 

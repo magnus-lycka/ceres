@@ -28,6 +28,7 @@ from ceres.character.domain.skills import (
     Survival,
     _skill_classes,
 )
+from ceres.character.domain.sophont import VILANI
 from ceres.character.events import (
     AdvancementDmChoiceEvent,
     AdvancementEvent,
@@ -53,7 +54,6 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.mechanism.replay import replay
-from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Ally,
     Contact,

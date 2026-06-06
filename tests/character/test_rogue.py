@@ -11,6 +11,7 @@ from ceres.character.domain.career.rogue import (
     RogueMishap3RollTwo,
 )
 from ceres.character.domain.skills import Admin, Advocate, Athletics, Carouse, Drive, GunCombat, Stealth, Streetwise
+from ceres.character.domain.sophont import VILANI
 from ceres.character.events import (
     BackgroundSkillsEvent,
     CareerChoiceEvent,
@@ -28,7 +29,6 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.mechanism.replay import replay
-from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Contact,
     Enemy,
@@ -157,7 +157,7 @@ class TestRogueMishap3:
 
     def test_mishap_3_existing_contact_is_converted_to_rival(self):
         from ceres.character.domain.career.rogue import RogueMishap3Handler
-        from ceres.character.sophonts import VILANI
+        from ceres.character.domain.sophont import VILANI
         from ceres.character.state import CharacterProjection, CharacterSummary, Contact
         from tests.character.helpers import MOCK_WORLD
 

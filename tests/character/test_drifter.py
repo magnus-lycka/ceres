@@ -13,6 +13,7 @@ from ceres.character.domain.career.drifter import (
 )
 from ceres.character.domain.career.loader import load_careers, selectable_careers
 from ceres.character.domain.skills import Admin, Athletics, Carouse, Deception, Drive, GunCombat, Melee, Survival
+from ceres.character.domain.sophont import VILANI
 from ceres.character.events import (
     BackgroundSkillsEvent,
     CareerChoiceEvent,
@@ -33,7 +34,6 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.mechanism.replay import replay
-from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Enemy,
     Rival,

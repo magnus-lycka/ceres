@@ -1,6 +1,6 @@
 from ceres import settings
+from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.store import SqliteCharacterBackend
-from ceres.character.sophonts import VILANI
 from tests.character.helpers import MOCK_WORLD
 
 

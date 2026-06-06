@@ -6,9 +6,9 @@ from typing import Any, Literal
 from fastapi.testclient import TestClient
 import pytest
 
+from ceres.character.domain.sophont import HUMANITI, VILANI
 from ceres.character.events import PendingHomeworldChangeRequired, PendingUcp, UcpEvent
 from ceres.character.mechanism.store import SqliteCharacterBackend
-from ceres.character.sophonts import HUMANITI, VILANI
 from ceres.character.web.app import build_app
 from ceres.worlds import DEFAULT_MILIEU, SectorWorldFilters
 from tests.character.helpers import MOCK_WORLD, MOCK_WORLD_2

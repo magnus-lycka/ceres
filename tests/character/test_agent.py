@@ -34,6 +34,7 @@ from ceres.character.domain.skills import (
     Streetwise,
     Tactics,
 )
+from ceres.character.domain.sophont import VILANI
 from ceres.character.events import (
     AdvancementEvent,
     BackgroundSkillsEvent,
@@ -60,7 +61,6 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.mechanism.replay import ReplayError, replay
-from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     CharacterProjection,
     Enemy,

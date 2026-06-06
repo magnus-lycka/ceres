@@ -11,13 +11,13 @@ from fastapi.templating import Jinja2Templates
 from ceres.adapters.travellermap import TravellerMapWorld, fetch_world
 from ceres.character.domain.career.loader import load_careers
 from ceres.character.domain.precareer import load_precareers
+from ceres.character.domain.sophont import SOPHONT_NAMES, get_sophont
 from ceres.character.domain.spec import spec_from_summary
 from ceres.character.events import AnyEvent, PendingCareerChoice
 from ceres.character.input_specs import SelectWorld, WorldFilterCriteria
 from ceres.character.mechanism.replay import ReplayError
 from ceres.character.mechanism.store import SqliteCharacterBackend
 from ceres.character.report import render_npc_gallery_pdf
-from ceres.character.sophonts import SOPHONT_NAMES, get_sophont
 from ceres.character.state import (
     CharacterProjection,
     diff_summaries,

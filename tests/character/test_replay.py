@@ -11,6 +11,7 @@ from ceres.character.domain.skills import (
     VaccSuit,
     _skill_classes,
 )
+from ceres.character.domain.sophont import VILANI, Sophont
 from ceres.character.events import (
     BACKGROUND_SKILLS,
     AdvancementEvent,
@@ -34,7 +35,6 @@ from ceres.character.events import (
 )
 from ceres.character.mechanism.replay import ReplayError, replay
 from ceres.character.mechanism.store import SqliteCharacterBackend
-from ceres.character.sophonts import VILANI, Sophont
 from ceres.character.state import (
     Ally,
     Contact,

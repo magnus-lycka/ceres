@@ -12,7 +12,7 @@ from ceres.character.domain.skills import (
     SocialScience,
     SpaceScience,
 )
-from ceres.character.sophonts import VILANI
+from ceres.character.domain.sophont import VILANI
 from ceres.character.state import (
     CharacterProjection,
     CharacterSummary,

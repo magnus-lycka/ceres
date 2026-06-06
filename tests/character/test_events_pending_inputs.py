@@ -24,6 +24,7 @@ from ceres.character.domain.career.career_data import (
 )
 from ceres.character.domain.career.loader import load_careers
 from ceres.character.domain.characteristics import Chars, ConnectionKind
+from ceres.character.domain.sophont import VILANI
 from ceres.character.events import (
     AdvancementDmChoiceEvent,
     AdvancementEvent,
@@ -110,7 +111,6 @@ from ceres.character.events import (
     queue_reenlist_or_aging,
 )
 from ceres.character.input_specs import NumberEntry, Reference, Select
-from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     CareerTerm,
     CharacterProjection,
