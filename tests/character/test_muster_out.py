@@ -52,7 +52,10 @@ def _scholar_setup(character_id: int = 1) -> list:
 
 
 def _setup_through_3_terms_reenlist() -> list:
-    """Complete setup and 3 Scout Courier terms. Age=30 after. Skill_table pending at '18.0'."""
+    """Complete setup and 3 Scout Courier terms. Age=30 after. Skill_table pending at '18.0'.
+
+    Uses service_skills roll=5 (a non-specialized skill) to avoid PendingSkillTableChoice.
+    """
     return [
         CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'),
         UcpEvent(id=2, fulfills=(1, 0), ucp='7869A5'),
@@ -64,13 +67,13 @@ def _setup_through_3_terms_reenlist() -> list:
         AdvancementEvent(id=7, fulfills=(6, 0), roll=3),
         ReenlistEvent(id=8, fulfills=(7, 0), reenlist=True),  # age=22
         # Term 2
-        SkillTableEvent(id=9, fulfills=(8, 0), table='service_skills', roll=1),
+        SkillTableEvent(id=9, fulfills=(8, 0), table='service_skills', roll=5),
         SurviveEvent(id=10, fulfills=(9, 0), roll=7),
         TermEventEvent(id=11, fulfills=(10, 0), roll=5),
         AdvancementEvent(id=12, fulfills=(11, 0), roll=3),
         ReenlistEvent(id=13, fulfills=(12, 0), reenlist=True),  # age=26
         # Term 3
-        SkillTableEvent(id=14, fulfills=(13, 0), table='service_skills', roll=1),
+        SkillTableEvent(id=14, fulfills=(13, 0), table='service_skills', roll=5),
         SurviveEvent(id=15, fulfills=(14, 0), roll=7),
         TermEventEvent(id=16, fulfills=(15, 0), roll=5),
         AdvancementEvent(id=17, fulfills=(16, 0), roll=4),
@@ -84,7 +87,7 @@ def _setup_through_4_terms_advancement() -> list:
     return [
         *_setup_through_3_terms_reenlist(),
         # Term 4
-        SkillTableEvent(id=19, fulfills=(18, 0), table='service_skills', roll=1),
+        SkillTableEvent(id=19, fulfills=(18, 0), table='service_skills', roll=5),
         SurviveEvent(id=20, fulfills=(19, 0), roll=7),
         TermEventEvent(id=21, fulfills=(20, 0), roll=5),
         AdvancementEvent(id=22, fulfills=(21, 0), roll=5),
@@ -203,7 +206,7 @@ class TestMusterOut:
             TermEventEvent(id=6, fulfills=(5, 0), roll=5),
             AdvancementEvent(id=7, fulfills=(6, 0), roll=3),
             ReenlistEvent(id=8, fulfills=(7, 0), reenlist=True),
-            SkillTableEvent(id=9, fulfills=(8, 0), table='service_skills', roll=1),
+            SkillTableEvent(id=9, fulfills=(8, 0), table='service_skills', roll=5),
             SurviveEvent(id=10, fulfills=(9, 0), roll=7),
             TermEventEvent(id=11, fulfills=(10, 0), roll=5),
             AdvancementEvent(id=12, fulfills=(11, 0), roll=3),
@@ -233,7 +236,7 @@ class TestMusterOut:
             TermEventEvent(id=6, fulfills=(5, 0), roll=5),
             AdvancementEvent(id=7, fulfills=(6, 0), roll=3),  # fail — rank=0
             ReenlistEvent(id=8, fulfills=(7, 0), reenlist=True),  # age=22
-            SkillTableEvent(id=9, fulfills=(8, 0), table='service_skills', roll=1),
+            SkillTableEvent(id=9, fulfills=(8, 0), table='service_skills', roll=5),
             SurviveEvent(id=10, fulfills=(9, 0), roll=7),
             TermEventEvent(id=11, fulfills=(10, 0), roll=5),
             AdvancementEvent(id=12, fulfills=(11, 0), roll=3),  # fail — rank=0
@@ -273,7 +276,7 @@ class TestMusterOut:
             TermEventEvent(id=6, fulfills=(5, 0), roll=5),
             AdvancementEvent(id=7, fulfills=(6, 0), roll=8),  # rank 1
             ReenlistEvent(id=8, fulfills=(7, 0), reenlist=True),
-            SkillTableEvent(id=9, fulfills=(8, 0), table='service_skills', roll=1),
+            SkillTableEvent(id=9, fulfills=(8, 0), table='service_skills', roll=5),
             SurviveEvent(id=10, fulfills=(9, 0), roll=7),
             TermEventEvent(id=11, fulfills=(10, 0), roll=5),
             AdvancementEvent(id=12, fulfills=(11, 0), roll=8),  # rank 2
@@ -293,12 +296,12 @@ class TestMusterOut:
             TermEventEvent(id=6, fulfills=(5, 0), roll=5),
             AdvancementEvent(id=7, fulfills=(6, 0), roll=3),
             ReenlistEvent(id=8, fulfills=(7, 0), reenlist=True),
-            SkillTableEvent(id=9, fulfills=(8, 0), table='service_skills', roll=1),
+            SkillTableEvent(id=9, fulfills=(8, 0), table='service_skills', roll=5),
             SurviveEvent(id=10, fulfills=(9, 0), roll=7),
             TermEventEvent(id=11, fulfills=(10, 0), roll=5),
             AdvancementEvent(id=12, fulfills=(11, 0), roll=3),
             ReenlistEvent(id=13, fulfills=(12, 0), reenlist=True),
-            SkillTableEvent(id=14, fulfills=(13, 0), table='service_skills', roll=1),
+            SkillTableEvent(id=14, fulfills=(13, 0), table='service_skills', roll=5),
             SurviveEvent(id=15, fulfills=(14, 0), roll=7),
             TermEventEvent(id=16, fulfills=(15, 0), roll=5),
             AdvancementEvent(id=17, fulfills=(16, 0), roll=4),
@@ -373,12 +376,12 @@ class TestMusterOut:
             TermEventEvent(id=6, fulfills=(5, 0), roll=5),
             AdvancementEvent(id=7, fulfills=(6, 0), roll=8),  # rank 1
             ReenlistEvent(id=8, fulfills=(7, 0), reenlist=True),  # age=22
-            SkillTableEvent(id=9, fulfills=(8, 0), table='service_skills', roll=1),
+            SkillTableEvent(id=9, fulfills=(8, 0), table='service_skills', roll=5),
             SurviveEvent(id=10, fulfills=(9, 0), roll=7),
             TermEventEvent(id=11, fulfills=(10, 0), roll=5),
             AdvancementEvent(id=12, fulfills=(11, 0), roll=8),  # rank 2
             ReenlistEvent(id=13, fulfills=(12, 0), reenlist=True),  # age=26
-            SkillTableEvent(id=14, fulfills=(13, 0), table='service_skills', roll=1),
+            SkillTableEvent(id=14, fulfills=(13, 0), table='service_skills', roll=5),
             SurviveEvent(id=15, fulfills=(14, 0), roll=7),
             TermEventEvent(id=16, fulfills=(15, 0), roll=5),
             AdvancementEvent(id=17, fulfills=(16, 0), roll=4),  # fail
@@ -413,7 +416,7 @@ class TestMusterOut:
             TermEventEvent(id=6, fulfills=(5, 0), roll=5),
             AdvancementEvent(id=7, fulfills=(6, 0), roll=3),
             ReenlistEvent(id=8, fulfills=(7, 0), reenlist=True),
-            SkillTableEvent(id=9, fulfills=(8, 0), table='service_skills', roll=1),
+            SkillTableEvent(id=9, fulfills=(8, 0), table='service_skills', roll=5),
             SurviveEvent(id=10, fulfills=(9, 0), roll=3),  # fail survive
             MishapEvent(id=11, fulfills=(10, 0), roll=5),  # ejected, lose current term → 1 roll
         ]
@@ -519,7 +522,7 @@ class TestMusterOut:
         # 4th term mishap ejection with aging → 3 rolls (4-1=3 terms, rank 0)
         events = [
             *_setup_through_3_terms_reenlist(),
-            SkillTableEvent(id=19, fulfills=(18, 0), table='service_skills', roll=1),
+            SkillTableEvent(id=19, fulfills=(18, 0), table='service_skills', roll=5),
             SurviveEvent(id=20, fulfills=(19, 0), roll=3),  # fail
             MishapEvent(id=21, fulfills=(20, 0), roll=5),  # ejected, age=34
             AgingRollEvent(id=22, fulfills=(21, 0), roll=5),  # no effect

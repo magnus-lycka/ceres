@@ -134,6 +134,53 @@ lives in the test suite, and nothing is deployed. Therefore:
 The usual full local gate is `./pre-commit.sh`, which also runs `deptry` and
 `bandit`.
 
+## Code and Test Structure
+
+The guiding principles are **SRP** (Single Responsibility Principle), **DRY**
+(Don't Repeat Yourself), and **KISS** (Keep It Simple, Stupid). Each
+module, class, and function has one reason to change. Shared setup and
+assertion patterns belong in helpers, not copy-pasted across test files. The
+simplest test that expresses the intent is the right test.
+
+**Tests must mirror the structure of the code.** When a subsystem changes, it
+should be obvious which tests are affected and why. A test that breaks because
+an internal implementation detail changed — but observable behaviour did not —
+is at the wrong abstraction level.
+
+**Abstraction levels must not be crossed.** Tests written for code at one level
+of abstraction must not rely on lower levels, and vice versa:
+
+- **Career rule tests** (`tests/character/test_army.py`, `test_careers.py`,
+  etc.) verify Traveller rules: "does Army survival with END 5 and a roll of 4
+  produce a mishap?" These tests use `CharacterDriver`
+  (`tests/character/helpers.py`) exclusively. They must not reference event
+  class names, pending type names, event IDs, or fulfillment order — those are
+  implementation details of the event/pending layer.
+
+- **Event and pending mechanics tests** (`test_events_pending_inputs.py`)
+  verify the event sourcing machinery: `apply()`, `resolve()`,
+  `event_from_form()`. These tests work directly with event and pending objects
+  and may reference their internals.
+
+- **Form and web-layer tests** verify `input_specs()` and form parsing. They
+  test the web boundary only.
+
+`CharacterDriver` is the single point of contact for career rule tests. It
+finds pending inputs by *type*, not by ID, and submits the correct event type
+automatically. Adding or reordering implementation steps inside a career should
+not break a `CharacterDriver`-based test unless the observable career behaviour
+changed.
+
+When you find yourself writing a career rule test that imports `SurviveEvent`,
+`PendingSurvive`, or any other event/pending type, stop: use `CharacterDriver`
+instead. When you find yourself writing an event mechanics test that calls
+`CharacterDriver`, stop: test `apply()` or `resolve()` directly.
+
+Likewise in production code: event internals belong in `events.py` and
+`state.py`; career rule logic belongs in `career_data.py` and assignment
+classes. Code that mixes the two creates coupling that forces changes across
+multiple concerns when only one should need to change.
+
 ## Examples
 
 The main source-derived reference cases live in `tests/ships/` and

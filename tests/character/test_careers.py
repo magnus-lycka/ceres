@@ -1105,9 +1105,13 @@ class TestSevereInjury:
         assert projection.summary.characteristics[Chars.STR] == 5
 
     def test_scholar_mishap_1_also_creates_characteristic_choice(self):
+        # Scholar Field Researcher (with Drive in background) has one initial training choice before survive.
         events = [
-            *self._setup_through_failed_survive('Scholar', 'Field Researcher', qualification_roll=5),
-            MishapEvent(id=6, fulfills=(5, 0), roll=1),
+            *_full_setup(),
+            CareerEvent(id=4, fulfills=(3, 0), career='Scholar', assignment='Field Researcher', qualification_roll=5),
+            SkillChoiceEvent(id=5, fulfills=(4, 0), skill=LifeScience()),
+            SurviveEvent(id=6, fulfills=(5, 0), roll=3),  # fail
+            MishapEvent(id=7, fulfills=(6, 0), roll=1),
         ]
         projection = replay(1, events)
 
@@ -1410,7 +1414,7 @@ class TestLifeEventCrime:
             CareerChoiceEvent.for_choice(LifeEventCrimeLoseBenefitRoll, id=8, fulfills=(7, 0)),
             AdvancementEvent(id=9, fulfills=(7, 1), roll=3),
             ReenlistEvent(id=10, fulfills=(9, 0), reenlist=True),
-            SkillTableEvent(id=11, fulfills=(10, 0), table='service_skills', roll=1),
+            SkillTableEvent(id=11, fulfills=(10, 0), table='service_skills', roll=5),
             SurviveEvent(id=12, fulfills=(11, 0), roll=7),
             TermEventEvent(id=13, fulfills=(12, 0), roll=5),
             AdvancementEvent(id=14, fulfills=(13, 0), roll=3),

@@ -5,7 +5,6 @@ from ceres.character.events import (
     CareerEvent,
     CharacterStartedEvent,
     MishapEvent,
-    SkillChoiceEvent,
     SurviveEvent,
     TermEventEvent,
     UcpEvent,
@@ -30,7 +29,6 @@ def _enter_army() -> list:
     return [
         *_setup(),
         CareerEvent(id=4, fulfills=(3, 0), career='Army', assignment='Support', qualification_roll=5),
-        SkillChoiceEvent(id=5, fulfills=(4, 0), skill=Drive()),
     ]
 
 
@@ -51,8 +49,8 @@ def test_term_event_sets_event_narrative():
     # Army event roll=5: "You are given a special assignment or duty in your unit."
     events = [
         *_enter_army(),
-        SurviveEvent(id=6, fulfills=(5, 0), roll=5),
-        TermEventEvent(id=7, fulfills=(6, 0), roll=5),
+        SurviveEvent(id=5, fulfills=(4, 0), roll=5),
+        TermEventEvent(id=6, fulfills=(5, 0), roll=5),
     ]
     projection = replay(1, events)
     assert projection.summary.career_terms[-1].event == ('You are given a special assignment or duty in your unit.')
@@ -62,8 +60,8 @@ def test_term_event_without_known_roll_leaves_event_none():
     # Roll=99 is not a valid Army event entry; field should stay None.
     events = [
         *_enter_army(),
-        SurviveEvent(id=6, fulfills=(5, 0), roll=5),
-        TermEventEvent(id=7, fulfills=(6, 0), roll=99),
+        SurviveEvent(id=5, fulfills=(4, 0), roll=5),
+        TermEventEvent(id=6, fulfills=(5, 0), roll=99),
     ]
     projection = replay(1, events)
     assert projection.summary.career_terms[-1].event is None
@@ -79,8 +77,8 @@ def test_mishap_ejection_sets_mishap_narrative():
     # Army Support survival: END 5+, DM+0, roll=4 — fail.
     events = [
         *_enter_army(),
-        SurviveEvent(id=6, fulfills=(5, 0), roll=4),
-        MishapEvent(id=7, fulfills=(6, 0), roll=2),
+        SurviveEvent(id=5, fulfills=(4, 0), roll=4),
+        MishapEvent(id=6, fulfills=(5, 0), roll=2),
     ]
     projection = replay(1, events)
     assert projection.summary.career_terms[-1].mishap == (
@@ -93,9 +91,9 @@ def test_stay_in_career_mishap_does_not_set_mishap_narrative():
     # Army mishap roll=5: "You quarrel with an officer or fellow soldier. Gain a Rival."
     events = [
         *_enter_army(),
-        SurviveEvent(id=6, fulfills=(5, 0), roll=5),
-        TermEventEvent(id=7, fulfills=(6, 0), roll=2),
-        MishapEvent(id=8, fulfills=(7, 0), roll=5, stay_in_career=True),
+        SurviveEvent(id=5, fulfills=(4, 0), roll=5),
+        TermEventEvent(id=6, fulfills=(5, 0), roll=2),
+        MishapEvent(id=7, fulfills=(6, 0), roll=5, stay_in_career=True),
     ]
     projection = replay(1, events)
     assert projection.summary.career_terms[-1].mishap is None

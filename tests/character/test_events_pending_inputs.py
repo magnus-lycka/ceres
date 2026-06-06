@@ -287,7 +287,7 @@ def test_basic_event_error_branches():
 
     active = _projection(current_career=SCOUT, current_assignment='Courier', current_assignment_index=99)
     with pytest.raises(ReplayError, match='Unknown assignment index 99'):
-        SurviveEvent(roll=8).apply(active)
+        PendingSurvive(pending_id=(1, 0), instruction='Survive').resolve(active, SurviveEvent(roll=8))
 
     with pytest.raises(ReplayError, match='Injury table roll must be 1-6'):
         InjuryTableEvent(roll=0).apply(_projection())

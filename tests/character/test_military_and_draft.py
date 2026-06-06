@@ -10,13 +10,12 @@ from ceres.character.events import (
     PendingCommissionChoice,
     PendingDraftAssignmentChoice,
     PendingDraftChoice,
-    SkillChoiceEvent,
     SurviveEvent,
     TermEventEvent,
     UcpEvent,
 )
 from ceres.character.replay import replay
-from ceres.character.skills import Admin, Athletics, Carouse, Drive, Leadership, VaccSuit
+from ceres.character.skills import Admin, Athletics, Carouse, Drive, Leadership
 from ceres.character.sophonts import VILANI
 from tests.character.helpers import MOCK_WORLD
 
@@ -111,9 +110,8 @@ def test_merchant_does_not_offer_commission_before_advancement():
     events = [
         *_setup(),
         CareerEvent(id=4, fulfills=(3, 0), career='Merchant', assignment='Merchant Marine', qualification_roll=8),
-        SkillChoiceEvent(id=5, fulfills=(4, 0), skill=VaccSuit()),
-        SurviveEvent(id=6, fulfills=(5, 0), roll=8),
-        TermEventEvent(id=7, fulfills=(6, 0), roll=9),
+        SurviveEvent(id=5, fulfills=(4, 0), roll=8),
+        TermEventEvent(id=6, fulfills=(5, 0), roll=9),
     ]
 
     projection = replay(1, events)
@@ -125,9 +123,8 @@ def test_army_first_term_offers_commission_before_advancement():
     events = [
         *_setup(ucp='7869A9'),
         CareerEvent(id=4, fulfills=(3, 0), career='Army', assignment='Infantry', qualification_roll=8),
-        SkillChoiceEvent(id=5, fulfills=(4, 0), skill=VaccSuit()),
-        SurviveEvent(id=6, fulfills=(5, 0), roll=8),
-        TermEventEvent(id=7, fulfills=(6, 0), roll=9),
+        SurviveEvent(id=5, fulfills=(4, 0), roll=8),
+        TermEventEvent(id=6, fulfills=(5, 0), roll=9),
     ]
 
     projection = replay(1, events)
@@ -140,10 +137,9 @@ def test_successful_commission_sets_officer_rank_and_skips_advancement():
     events = [
         *_setup(ucp='7869A9'),
         CareerEvent(id=4, fulfills=(3, 0), career='Army', assignment='Infantry', qualification_roll=8),
-        SkillChoiceEvent(id=5, fulfills=(4, 0), skill=VaccSuit()),
-        SurviveEvent(id=6, fulfills=(5, 0), roll=8),
-        TermEventEvent(id=7, fulfills=(6, 0), roll=10),
-        CommissionEvent(id=8, fulfills=(7, 0), attempt=True, roll=8),
+        SurviveEvent(id=5, fulfills=(4, 0), roll=8),
+        TermEventEvent(id=6, fulfills=(5, 0), roll=10),
+        CommissionEvent(id=7, fulfills=(6, 0), attempt=True, roll=8),
     ]
 
     projection = replay(1, events)

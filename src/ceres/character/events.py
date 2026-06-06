@@ -465,27 +465,8 @@ class SurviveEvent(EventBase):
     roll: int  # sum of 2D, before characteristic DM
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-
-        career = projection.get_current_career()
-        assignment = career.assignment_by_index(projection.summary.current_assignment_index or 0)
-        if assignment is None:
-            raise ReplayError(f'Unknown assignment index {projection.summary.current_assignment_index!r}')
-        char = assignment.survival.characteristic
-        target = assignment.survival.target
-        dm = characteristic_dm(projection.summary.characteristics.get(char, 0))
-        success = self.roll != 2 and (self.roll + dm) >= target
-        if success:
-            projection.pending_inputs.append(
-                PendingTermEvent(pending_id=(self.id, 0), instruction='Roll 2D on Events table')
-            )
-        else:
-            if self.roll == 2:
-                projection.summary.narrative.append(
-                    f'Automatic mishap (rolled natural 2) in term {projection.summary.terms_started_in_current_career}'
-                )
-            projection.pending_inputs.append(
-                PendingMishap(pending_id=(self.id, 0), instruction='Roll 1D on Mishap table')
-            )
+        if fulfilled_pending is not None:
+            fulfilled_pending.resolve(projection, self)
 
 
 class MishapEvent(EventBase):
@@ -2069,6 +2050,28 @@ class PendingSurvive(PendingInputBase):
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
         return [NumberEntry(name='roll', label='2D roll (2–12)', default=7, min=2, max=12)]
+
+    def resolve(self, projection: Any, event: Any) -> None:
+        career = projection.get_current_career()
+        assignment = career.assignment_by_index(projection.summary.current_assignment_index or 0)
+        if assignment is None:
+            raise ReplayError(f'Unknown assignment index {projection.summary.current_assignment_index!r}')
+        char = assignment.survival.characteristic
+        target = assignment.survival.target
+        dm = characteristic_dm(projection.summary.characteristics.get(char, 0))
+        success = event.roll != 2 and (event.roll + dm) >= target
+        if success:
+            projection.pending_inputs.append(
+                PendingTermEvent(pending_id=(event.id, 0), instruction='Roll 2D on Events table')
+            )
+        else:
+            if event.roll == 2:
+                projection.summary.narrative.append(
+                    f'Automatic mishap (rolled natural 2) in term {projection.summary.terms_started_in_current_career}'
+                )
+            projection.pending_inputs.append(
+                PendingMishap(pending_id=(event.id, 0), instruction='Roll 1D on Mishap table')
+            )
 
 
 class PendingTermEvent(PendingInputBase):
