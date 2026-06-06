@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from ceres.character.characteristics import Chars
+from ceres.character.domain.characteristics import Chars
 
 
 @dataclass(frozen=True)

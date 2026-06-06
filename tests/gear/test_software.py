@@ -3,7 +3,7 @@ from typing import Any
 from pydantic import ValidationError
 import pytest
 
-from ceres.character.skills import (
+from ceres.character.domain.skills import (
     Admin,
     CreativeArt,
     Electronics,

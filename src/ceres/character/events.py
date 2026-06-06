@@ -5,14 +5,13 @@ from typing import TYPE_CHECKING, Annotated, Any, Literal, cast
 from pydantic import BaseModel, Field, SerializeAsAny, TypeAdapter, field_serializer, field_validator
 
 from ceres.adapters.travellermap import TravellerMapWorld
-from ceres.character.benefits import AnyBenefit, ItemBenefit
-from ceres.character.characteristics import UCP_STATS, Chars, ConnectionKind, characteristic_dm
+from ceres.character.domain.benefits import AnyBenefit, ItemBenefit
+from ceres.character.domain.characteristics import UCP_STATS, Chars, ConnectionKind, characteristic_dm
 
 if TYPE_CHECKING:
     from ceres.character.domain.career.career_data import CareerData
 from ceres.character.domain.career.career_data import AdvancementDmOption
-from ceres.character.input_specs import InputSpec, NumberEntry, Reference, Select, form_int, form_str, literal
-from ceres.character.skills import (
+from ceres.character.domain.skills import (
     AnySkill,
     BackgroundSkill,
     JackOfAllTrades,
@@ -22,6 +21,7 @@ from ceres.character.skills import (
     _level_fields,
     _skill_classes,
 )
+from ceres.character.input_specs import InputSpec, NumberEntry, Reference, Select, form_int, form_str, literal
 from ceres.character.sophonts import Sophont, get_sophont
 from ceres.character.state import (
     Ally,
@@ -63,7 +63,7 @@ def _skill_option_label(opt: AnySkill | AdvancementDmOption) -> str:
 
 def _rank_bonus_skill(bonus: Any) -> AnySkill:
     """Return an AnySkill instance at the bonus level, derived from a RankBonus.skill instance."""
-    from ceres.character.skills import Level as _Level
+    from ceres.character.domain.skills import Level as _Level
 
     skill_cls = type(bonus.skill)
     fields = _level_fields(skill_cls)
@@ -222,7 +222,7 @@ def _apply_injury_table_result(projection: Any, roll: int, event_id: int) -> Non
 
 
 def _apply_muster_out_benefit(projection: Any, benefit: object, event_id: int = 0) -> None:
-    from ceres.character.benefits import CharacteristicIncrease, ChoiceBenefit, CombinedBenefit
+    from ceres.character.domain.benefits import CharacteristicIncrease, ChoiceBenefit, CombinedBenefit
 
     if isinstance(benefit, CharacteristicIncrease):
         current = projection.summary.characteristics.get(benefit.char, 0)
@@ -244,7 +244,7 @@ def _apply_muster_out_benefit(projection: Any, benefit: object, event_id: int = 
 
 
 def _apply_skill_table_entry(projection: Any, entry: Any) -> None:
-    from ceres.character.characteristics import Chars as _Chars
+    from ceres.character.domain.characteristics import Chars as _Chars
 
     if isinstance(entry, _Chars):
         projection.summary.characteristics[entry] = projection.summary.characteristics.get(entry, 0) + 1
@@ -862,7 +862,7 @@ class SkillTableEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
 
-        from ceres.character.characteristics import Chars as _Chars
+        from ceres.character.domain.characteristics import Chars as _Chars
 
         if projection.summary.current_career is not None:
             career = projection.get_current_career()

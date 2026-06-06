@@ -52,7 +52,7 @@ def _career_context_lines(summary: CharacterSummary) -> str:
 
 
 def build_prompt(summary: CharacterSummary) -> str:
-    from ceres.character.characteristics import UCP_STATS
+    from ceres.character.domain.characteristics import UCP_STATS
 
     char_lines = ', '.join(f'{stat} {summary.characteristics.get(stat, 0)}' for stat in UCP_STATS)
     career = summary.current_career or summary.last_career or 'Unknown'

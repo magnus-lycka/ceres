@@ -2,7 +2,6 @@
 
 import pytest
 
-from ceres.character.characteristics import Chars
 from ceres.character.domain.career.agent import (
     AgentMishap2Accept,
     AgentMishap2Refuse,
@@ -16,6 +15,25 @@ from ceres.character.domain.career.agent import (
 )
 from ceres.character.domain.career.career_data import AdvancementDmOption
 from ceres.character.domain.career.common_pending import PendingAdvancedTrainingSkillRoll
+from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.skills import (
+    Admin,
+    Advocate,
+    Athletics,
+    Carouse,
+    Deception,
+    Drive,
+    Flyer,
+    GunCombat,
+    Investigate,
+    JackOfAllTrades,
+    Level,
+    Medic,
+    Persuade,
+    Recon,
+    Streetwise,
+    Tactics,
+)
 from ceres.character.events import (
     AdvancementEvent,
     BackgroundSkillsEvent,
@@ -42,24 +60,6 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.mechanism.replay import ReplayError, replay
-from ceres.character.skills import (
-    Admin,
-    Advocate,
-    Athletics,
-    Carouse,
-    Deception,
-    Drive,
-    Flyer,
-    GunCombat,
-    Investigate,
-    JackOfAllTrades,
-    Level,
-    Medic,
-    Persuade,
-    Recon,
-    Streetwise,
-    Tactics,
-)
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     CharacterProjection,

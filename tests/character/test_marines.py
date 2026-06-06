@@ -9,6 +9,18 @@ from ceres.character.domain.career.marines import (
     PendingMarinesEvent6SkillRoll,
     PendingMarinesMishap4SkillRoll,
 )
+from ceres.character.domain.skills import (
+    Admin,
+    Athletics,
+    Carouse,
+    Deception,
+    Drive,
+    GunCombat,
+    Leadership,
+    Melee,
+    Persuade,
+    Tactics,
+)
 from ceres.character.events import (
     BackgroundSkillsEvent,
     CareerChoiceEvent,
@@ -26,18 +38,6 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.mechanism.replay import replay
-from ceres.character.skills import (
-    Admin,
-    Athletics,
-    Carouse,
-    Deception,
-    Drive,
-    GunCombat,
-    Leadership,
-    Melee,
-    Persuade,
-    Tactics,
-)
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Ally,

@@ -1,7 +1,7 @@
 """Tests for CharacterProjection.skill_choices and check_skill_choice."""
 
-from ceres.character.characteristics import ConnectionKind
-from ceres.character.skills import (
+from ceres.character.domain.characteristics import ConnectionKind
+from ceres.character.domain.skills import (
     Admin,
     Animals,
     Electronics,

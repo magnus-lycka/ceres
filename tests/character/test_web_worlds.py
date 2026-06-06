@@ -1,8 +1,8 @@
 from fastapi.testclient import TestClient
 import pytest
 
-from ceres.character.app import build_app
-from ceres.character.store import SqliteCharacterBackend
+from ceres.character.mechanism.store import SqliteCharacterBackend
+from ceres.character.web.app import build_app
 from ceres.worlds import SectorWorldFilters
 from tests.worlds.test_sector_filters import _sample_worlds
 

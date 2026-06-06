@@ -2,7 +2,30 @@
 
 import pytest
 
-from ceres.character.characteristics import Chars, ConnectionKind
+from ceres.character.domain.characteristics import Chars, ConnectionKind
+from ceres.character.domain.skills import (
+    Admin,
+    Astrogation,
+    Athletics,
+    Carouse,
+    Diplomat,
+    Drive,
+    Electronics,
+    Flyer,
+    GunCombat,
+    Investigate,
+    Level,
+    LifeScience,
+    Mechanic,
+    Medic,
+    PhysicalScience,
+    Pilot,
+    RoboticScience,
+    SocialScience,
+    SpaceScience,
+    Survival,
+    VaccSuit,
+)
 from ceres.character.events import (
     AdvancementEvent,
     AssignmentChangeChoiceEvent,
@@ -46,29 +69,6 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.mechanism.replay import ReplayError, replay
-from ceres.character.skills import (
-    Admin,
-    Astrogation,
-    Athletics,
-    Carouse,
-    Diplomat,
-    Drive,
-    Electronics,
-    Flyer,
-    GunCombat,
-    Investigate,
-    Level,
-    LifeScience,
-    Mechanic,
-    Medic,
-    PhysicalScience,
-    Pilot,
-    RoboticScience,
-    SocialScience,
-    SpaceScience,
-    Survival,
-    VaccSuit,
-)
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Ally,
@@ -845,7 +845,7 @@ class TestTermEventAutoAdvance:
         ]
         projection = replay(1, events)
 
-        from ceres.character.skills import Sciences, _skill_classes
+        from ceres.character.domain.skills import Sciences, _skill_classes
 
         assert projection.summary.rank == 1
         science_classes = set(_skill_classes(Sciences))
@@ -943,7 +943,7 @@ class TestSkillTableChoice:
 
     def test_language_entry_creates_skill_table_choice_with_all_languages(self):
         # Scholar personal_development roll 6: Language → choice from all Language skills in skills.py
-        from ceres.character.skills import Languages, _skill_classes
+        from ceres.character.domain.skills import Languages, _skill_classes
 
         events = [
             *self._setup_scholar_term_2(),
@@ -957,7 +957,7 @@ class TestSkillTableChoice:
 
     def test_science_entry_creates_skill_table_choice_with_all_sciences(self):
         # Scholar service_skills roll 6: Science → choice from all Science skills in skills.py
-        from ceres.character.skills import Sciences, _skill_classes
+        from ceres.character.domain.skills import Sciences, _skill_classes
 
         events = [
             *self._setup_scholar_term_2(),
@@ -971,7 +971,7 @@ class TestSkillTableChoice:
 
     def test_art_entry_creates_skill_table_choice_with_all_arts(self):
         # Scholar advanced_education roll 1: Art → choice from all Art skills in skills.py
-        from ceres.character.skills import Arts, _skill_classes
+        from ceres.character.domain.skills import Arts, _skill_classes
 
         events = [
             *self._setup_scholar_term_2(),
@@ -985,7 +985,7 @@ class TestSkillTableChoice:
 
     def test_rank_bonus_science_creates_rank_bonus_choice_with_all_sciences(self):
         # Scholar/Scientist advances to rank 1 → rank bonus = Science choice from skills.py
-        from ceres.character.skills import Sciences, _skill_classes
+        from ceres.character.domain.skills import Sciences, _skill_classes
 
         events = [
             *_scholar_setup(),
@@ -1523,7 +1523,7 @@ class TestNoSpuriousSurviveAfterEndOfTermSkillTableChoice:
         assert not any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
 
         # Fulfill the choice — still no spurious survive
-        from ceres.character.skills import LanguageGalanglic
+        from ceres.character.domain.skills import LanguageGalanglic
 
         events2 = [*events, SkillChoiceEvent(id=9, fulfills=(8, 0), skill=LanguageGalanglic())]
         projection2 = replay(1, events2)

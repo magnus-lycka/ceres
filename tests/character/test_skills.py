@@ -1,6 +1,6 @@
 import pytest
 
-from ceres.character.skills import (
+from ceres.character.domain.skills import (
     EXISTING_SKILLS,
     Admin,
     AnySkill,

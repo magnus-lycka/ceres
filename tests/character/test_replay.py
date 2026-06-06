@@ -1,5 +1,16 @@
 import pytest
 
+from ceres.character.domain.skills import (
+    Admin,
+    Advocate,
+    AnySkill,
+    Athletics,
+    Carouse,
+    Drive,
+    SpaceScience,
+    VaccSuit,
+    _skill_classes,
+)
 from ceres.character.events import (
     BACKGROUND_SKILLS,
     AdvancementEvent,
@@ -22,23 +33,12 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.mechanism.replay import ReplayError, replay
-from ceres.character.skills import (
-    Admin,
-    Advocate,
-    AnySkill,
-    Athletics,
-    Carouse,
-    Drive,
-    SpaceScience,
-    VaccSuit,
-    _skill_classes,
-)
+from ceres.character.mechanism.store import SqliteCharacterBackend
 from ceres.character.sophonts import VILANI, Sophont
 from ceres.character.state import (
     Ally,
     Contact,
 )
-from ceres.character.store import SqliteCharacterBackend
 from tests.character.helpers import MOCK_WORLD
 
 

@@ -1,13 +1,12 @@
 from typing import ClassVar, Literal
 
-from ceres.character.benefits import (
+from ceres.character.domain.benefits import (
     ARMOR,
     CYBERNETIC_IMPLANT,
     WEAPON,
     CharacteristicIncrease,
     ChoiceBenefit,
 )
-from ceres.character.characteristics import Chars
 from ceres.character.domain.career.career_data import (
     AdvancementDmEffect,
     AdvancementDmOption,
@@ -34,12 +33,8 @@ from ceres.character.domain.career.career_data import (
 )
 from ceres.character.domain.career.common import handle_advanced_training
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
-from ceres.character.events import (
-    PendingChoices,
-    PendingSkillChoice,
-    SkillRollEvent,
-)
-from ceres.character.skills import (
+from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.skills import (
     Admin,
     Advocate,
     Animals,
@@ -70,6 +65,11 @@ from ceres.character.skills import (
     Tactics,
     VaccSuit,
     skill_instances,
+)
+from ceres.character.events import (
+    PendingChoices,
+    PendingSkillChoice,
+    SkillRollEvent,
 )
 from ceres.character.state import (
     Ally,

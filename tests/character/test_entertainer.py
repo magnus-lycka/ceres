@@ -6,6 +6,16 @@ from ceres.character.domain.career.entertainer import (
     PendingEntertainerEvent3SkillRoll,
     PendingEntertainerEvent8SkillRoll,
 )
+from ceres.character.domain.skills import (
+    Admin,
+    Athletics,
+    Carouse,
+    CreativeArt,
+    Drive,
+    Investigate,
+    PerformingArt,
+    PresentationArt,
+)
 from ceres.character.events import (
     BackgroundSkillsEvent,
     CareerChoiceEvent,
@@ -20,16 +30,6 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.mechanism.replay import replay
-from ceres.character.skills import (
-    Admin,
-    Athletics,
-    Carouse,
-    CreativeArt,
-    Drive,
-    Investigate,
-    PerformingArt,
-    PresentationArt,
-)
 from ceres.character.sophonts import VILANI
 from ceres.character.state import Enemy
 from tests.character.helpers import MOCK_WORLD
@@ -87,7 +87,7 @@ class TestEntertainerEvent3:
             SkillRollEvent(id=8, fulfills=(7, 0), skill=Admin(), modified_roll=9),
         ]
         projection = replay(1, events)
-        from ceres.character.characteristics import Chars
+        from ceres.character.domain.characteristics import Chars
 
         assert projection.summary.characteristics[Chars.SOC] == 6  # SOC was 5; +1 = 6
 
@@ -97,7 +97,7 @@ class TestEntertainerEvent3:
             SkillRollEvent(id=8, fulfills=(7, 0), skill=Admin(), modified_roll=7),
         ]
         projection = replay(1, events)
-        from ceres.character.characteristics import Chars
+        from ceres.character.domain.characteristics import Chars
 
         assert projection.summary.characteristics[Chars.SOC] == 4  # SOC was 5; −1 = 4
 

@@ -1,4 +1,5 @@
 from ceres.character.domain.career.loader import load_careers
+from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive, Leadership
 from ceres.character.events import (
     BackgroundSkillsEvent,
     CareerEvent,
@@ -15,7 +16,6 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.mechanism.replay import replay
-from ceres.character.skills import Admin, Athletics, Carouse, Drive, Leadership
 from ceres.character.sophonts import VILANI
 from tests.character.helpers import MOCK_WORLD
 
@@ -151,7 +151,7 @@ def test_successful_commission_sets_officer_rank_and_skips_advancement():
 
 
 def test_qualification_dm_is_consumed_on_career_entry():
-    from ceres.character.characteristics import Chars
+    from ceres.character.domain.characteristics import Chars
     from ceres.character.state import CharacterProjection, CharacterSummary
 
     careers = load_careers()

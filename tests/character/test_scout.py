@@ -1,6 +1,5 @@
 """Tests for Scout career events, mishaps, and assignment table corrections."""
 
-from ceres.character.characteristics import Chars, ConnectionKind
 from ceres.character.domain.career.career_data import AdvancementDmOption
 from ceres.character.domain.career.scout import (
     PendingScoutEvent3SkillRoll,
@@ -8,6 +7,26 @@ from ceres.character.domain.career.scout import (
     PendingScoutEvent9SkillRoll,
     PendingScoutEvent10SkillRoll,
     PendingScoutEvent11,
+)
+from ceres.character.domain.characteristics import Chars, ConnectionKind
+from ceres.character.domain.skills import (
+    Admin,
+    Athletics,
+    Carouse,
+    Deception,
+    Diplomat,
+    Drive,
+    Electronics,
+    Engineer,
+    Flyer,
+    Level,
+    Medic,
+    Navigation,
+    Persuade,
+    Pilot,
+    Sciences,
+    Survival,
+    _skill_classes,
 )
 from ceres.character.events import (
     AdvancementDmChoiceEvent,
@@ -34,25 +53,6 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.mechanism.replay import replay
-from ceres.character.skills import (
-    Admin,
-    Athletics,
-    Carouse,
-    Deception,
-    Diplomat,
-    Drive,
-    Electronics,
-    Engineer,
-    Flyer,
-    Level,
-    Medic,
-    Navigation,
-    Persuade,
-    Pilot,
-    Sciences,
-    Survival,
-    _skill_classes,
-)
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Ally,

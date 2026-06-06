@@ -1,6 +1,6 @@
 from typing import Annotated, get_args, get_origin
 
-from ceres.character.skills import Skill
+from ceres.character.domain.skills import Skill
 
 type SkillCostKey = object
 

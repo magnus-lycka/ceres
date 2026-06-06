@@ -1,4 +1,3 @@
-from ceres.character.characteristics import Chars
 from ceres.character.domain.career.citizen import (
     CitizenEvent8DoSo,
     CitizenEvent8GainContact,
@@ -11,6 +10,8 @@ from ceres.character.domain.career.citizen import (
 )
 from ceres.character.domain.career.common_pending import PendingAdvancedTrainingSkillRoll
 from ceres.character.domain.career.loader import load_careers
+from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive, Engineer, Mechanic, Steward, Streetwise
 from ceres.character.events import (
     AdvancementEvent,
     BackgroundSkillsEvent,
@@ -32,7 +33,6 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.mechanism.replay import replay
-from ceres.character.skills import Admin, Athletics, Carouse, Drive, Engineer, Mechanic, Steward, Streetwise
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Contact,

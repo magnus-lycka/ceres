@@ -1,20 +1,7 @@
 """Tests for precareer entry and graduation (core University and Mongoose Traveller Companion precareers)."""
 
-from ceres.character.characteristics import Chars
-from ceres.character.events import (
-    CharacterStartedEvent,
-    PendingCareerChoice,
-    PendingPreCareerEvent,
-    PendingPreCareerGraduation,
-    PendingPreCareerSkillChoice,
-    PreCareerEntryEvent,
-    PreCareerEventEvent,
-    PreCareerGraduationEvent,
-    PreCareerSkillChoiceEvent,
-    UcpEvent,
-)
-from ceres.character.mechanism.replay import replay
-from ceres.character.skills import (
+from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.skills import (
     Admin,
     Astrogation,
     Athletics,
@@ -30,6 +17,19 @@ from ceres.character.skills import (
     Streetwise,
     _level_fields,
 )
+from ceres.character.events import (
+    CharacterStartedEvent,
+    PendingCareerChoice,
+    PendingPreCareerEvent,
+    PendingPreCareerGraduation,
+    PendingPreCareerSkillChoice,
+    PreCareerEntryEvent,
+    PreCareerEventEvent,
+    PreCareerGraduationEvent,
+    PreCareerSkillChoiceEvent,
+    UcpEvent,
+)
+from ceres.character.mechanism.replay import replay
 from ceres.character.sophonts import HUMANITI
 from ceres.character.state import Enemy, Rival
 from tests.character.helpers import MOCK_WORLD

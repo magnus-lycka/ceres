@@ -534,15 +534,14 @@ src/ceres/character/domain/
   health/            — AgingHandler, InjuryHandler, … and their pending handlers
   homeworld/         — HomeworldChangedHandler, … and their pending handlers
   precareer/         — PreCareerEntryHandler, … and their pending handlers
-
-src/ceres/character/aggregation/
-  event_types.py     — AnyEventHandler, AnyPendingHandler (discriminated unions only)
-                       rebuilt onto Event and PendingInput for Pydantic deserialisation
 ```
 
-`event_types.py` is the one module that imports from all domain modules. Nothing
-imports from it except `replay.py` and the web routes. This keeps the
-dependency graph a strict DAG: mechanism ← domain ← aggregation ← replay.
+There is no central aggregation module. Each `EventHandlerBase` and
+`PendingHandlerBase` subclass registers itself into a mechanism-level registry
+at class-definition time. `Event.handler` and `PendingInput.handler` are
+deserialised using that registry. Domain modules push themselves in; the
+mechanism never imports from domain. The dependency graph is a strict DAG:
+mechanism ← domain ← replay.
 
 ### Career encapsulation rule
 

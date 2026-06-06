@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from ceres.character.store import SqliteCharacterBackend
+from ceres.character.mechanism.store import SqliteCharacterBackend
 
 
 def build_app(backend: SqliteCharacterBackend | None = None) -> FastAPI:

@@ -2,7 +2,7 @@
 
 from types import SimpleNamespace
 
-from ceres.character.benefits import (
+from ceres.character.domain.benefits import (
     ALLY,
     ARMOR,
     BLADE,
@@ -33,8 +33,8 @@ from ceres.character.benefits import (
     CombinedBenefit,
     ItemBenefit,
 )
-from ceres.character.characteristics import Chars
 from ceres.character.domain.career import SCOUT
+from ceres.character.domain.characteristics import Chars
 from ceres.character.sophonts import VILANI
 from ceres.character.state import CareerTerm, CharacterProjection, CharacterSummary
 from tests.character.helpers import MOCK_WORLD
@@ -206,7 +206,7 @@ class TestCombinedBenefit:
         # verify CombinedBenefit is part of AnyBenefit discriminated union.
         from pydantic import TypeAdapter
 
-        from ceres.character.benefits import AnyBenefit
+        from ceres.character.domain.benefits import AnyBenefit
 
         ta = TypeAdapter(AnyBenefit)
         data = {

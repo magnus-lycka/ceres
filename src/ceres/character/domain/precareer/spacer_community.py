@@ -1,7 +1,7 @@
-from ceres.character.characteristics import Chars
+from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.precareer.precareer_data import PreCareerData
+from ceres.character.domain.skills import AnySkill, JackOfAllTrades, Level, Pilot
 from ceres.character.events import PendingPreCareerSkillChoice, PreCareerGraduationEvent
-from ceres.character.skills import AnySkill, JackOfAllTrades, Level, Pilot
 from ceres.character.state import CharacterProjection
 
 

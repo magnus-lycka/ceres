@@ -1,12 +1,11 @@
 from typing import ClassVar, Literal
 
-from ceres.character.benefits import (
+from ceres.character.domain.benefits import (
     CONTACT,
     SHIP_SHARE,
     CharacteristicIncrease,
     CombinedBenefit,
 )
-from ceres.character.characteristics import Chars, ConnectionKind, characteristic_dm
 from ceres.character.domain.career.career_data import (
     AdvancementDmEffect,
     AssignmentData,
@@ -34,12 +33,8 @@ from ceres.character.domain.career.career_data import (
     SkillTable,
 )
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
-from ceres.character.events import (
-    PendingChoices,
-    SkillRollEvent,
-    career_progress_pending,
-)
-from ceres.character.skills import (
+from ceres.character.domain.characteristics import Chars, ConnectionKind, characteristic_dm
+from ceres.character.domain.skills import (
     Advocate,
     ArtSkill,
     Athletics,
@@ -66,6 +61,11 @@ from ceres.character.skills import (
     Streetwise,
     Survival,
     skill_instances,
+)
+from ceres.character.events import (
+    PendingChoices,
+    SkillRollEvent,
+    career_progress_pending,
 )
 from ceres.character.state import (
     CharacterProjection,

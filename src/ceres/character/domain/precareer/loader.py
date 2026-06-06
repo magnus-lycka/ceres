@@ -1,7 +1,6 @@
 from functools import cache
 
-from ceres.character import skills as character_skills
-from ceres.character.characteristics import Chars, ConnectionKind
+from ceres.character.domain import skills as character_skills
 from ceres.character.domain.career.career_data import (
     CareerEventEntry,
     CharCheck,
@@ -13,6 +12,7 @@ from ceres.character.domain.career.career_data import (
     LifeEventEffect,
     SkillChoiceEffect,
 )
+from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.precareer.colonial_upbringing import ColonialUprbringingPreCareer
 from ceres.character.domain.precareer.merchant_academy import MerchantAcademyPreCareer
 from ceres.character.domain.precareer.military_academy import MilitaryAcademyPreCareer
@@ -21,7 +21,14 @@ from ceres.character.domain.precareer.psionic_community import PsionicCommunityP
 from ceres.character.domain.precareer.school_of_hard_knocks import SchoolOfHardKnocksPreCareer
 from ceres.character.domain.precareer.spacer_community import SpacerCommunityPreCareer
 from ceres.character.domain.precareer.university import UniversityPreCareer
-from ceres.character.skills import ArtSkill, Carouse, LanguageSkill, ProfessionSkill, ScienceSkill, skill_instances
+from ceres.character.domain.skills import (
+    ArtSkill,
+    Carouse,
+    LanguageSkill,
+    ProfessionSkill,
+    ScienceSkill,
+    skill_instances,
+)
 
 _PRECAREER_EVENTS = {
     2: CareerEventEntry(text='Approached by an illegal psionic group.', effects=[]),

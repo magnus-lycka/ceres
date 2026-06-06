@@ -8,6 +8,18 @@ from ceres.character.domain.career.navy import (
     NavyMishap4Responsible,
     PendingNavyMishap3SkillRoll,
 )
+from ceres.character.domain.skills import (
+    Admin,
+    Athletics,
+    Carouse,
+    Drive,
+    Electronics,
+    Gunner,
+    Mechanic,
+    Pilot,
+    Tactics,
+    VaccSuit,
+)
 from ceres.character.events import (
     BackgroundSkillsEvent,
     CareerChoiceEvent,
@@ -25,18 +37,6 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.mechanism.replay import replay
-from ceres.character.skills import (
-    Admin,
-    Athletics,
-    Carouse,
-    Drive,
-    Electronics,
-    Gunner,
-    Mechanic,
-    Pilot,
-    Tactics,
-    VaccSuit,
-)
 from ceres.character.sophonts import VILANI
 from ceres.character.state import Enemy
 from tests.character.helpers import MOCK_WORLD

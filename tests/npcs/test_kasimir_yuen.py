@@ -4,7 +4,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from ceres.character.benefits import SCOUT_SHIP
+from ceres.character.domain.benefits import SCOUT_SHIP
+from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive, Level, Pilot
+from ceres.character.domain.spec import NpcSpec, spec_from_summary
 from ceres.character.events import (
     AdvancementEvent,
     AssignmentChangeChoiceEvent,
@@ -20,9 +22,7 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.mechanism.replay import replay
-from ceres.character.skills import Admin, Athletics, Carouse, Drive, Level, Pilot
 from ceres.character.sophonts import VILANI
-from ceres.character.spec import NpcSpec, spec_from_summary
 from tests.character.helpers import MOCK_WORLD
 
 _expected = SimpleNamespace(

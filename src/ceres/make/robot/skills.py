@@ -5,8 +5,8 @@ from typing import Annotated, ClassVar, Literal, cast
 
 from pydantic import ConfigDict, Field
 
-from ceres.character import skills as character_skills
-from ceres.character.skills import AnySkill, Level, Skill, active_speciality_field, active_speciality_label
+from ceres.character.domain import skills as character_skills
+from ceres.character.domain.skills import AnySkill, Level, Skill, active_speciality_field, active_speciality_label
 from ceres.gear.skill_keys import SkillCostKey, key_matches_skill
 from ceres.shared import CeresModel
 

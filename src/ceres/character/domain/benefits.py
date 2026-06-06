@@ -4,7 +4,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
-from ceres.character.characteristics import Chars
+from ceres.character.domain.characteristics import Chars
 
 
 class CharacteristicIncrease(BaseModel):

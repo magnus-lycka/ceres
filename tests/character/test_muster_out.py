@@ -2,7 +2,8 @@
 
 import pytest
 
-from ceres.character.characteristics import Chars
+from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive, JackOfAllTrades, Medic, SpaceScience
 from ceres.character.events import (
     AdvancementEvent,
     AgingRollEvent,
@@ -21,7 +22,6 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.mechanism.replay import ReplayError, replay
-from ceres.character.skills import Admin, Athletics, Carouse, Drive, JackOfAllTrades, Medic, SpaceScience
 from ceres.character.sophonts import VILANI
 from ceres.character.state import BenefitRollDm
 from tests.character.helpers import MOCK_WORLD

@@ -1,5 +1,6 @@
 """Tests for homeworld change events, pending inputs, and triggers."""
 
+from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive, LifeScience, Streetwise, WorkerProfession
 from ceres.character.events import (
     BackgroundSkillsEvent,
     CareerEvent,
@@ -18,7 +19,6 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.mechanism.replay import replay
-from ceres.character.skills import Admin, Athletics, Carouse, Drive, LifeScience, Streetwise, WorkerProfession
 from ceres.character.sophonts import VILANI
 from tests.character.helpers import MOCK_WORLD, MOCK_WORLD_2
 

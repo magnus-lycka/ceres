@@ -7,6 +7,18 @@ from ceres.character.domain.career.merchant import (
     MerchantEvent3SkillRoll,
     PendingMerchantEvent8Roll,
 )
+from ceres.character.domain.skills import (
+    Admin,
+    Advocate,
+    Athletics,
+    Broker,
+    Carouse,
+    Deception,
+    Diplomat,
+    Drive,
+    Investigate,
+    Persuade,
+)
 from ceres.character.events import (
     BackgroundSkillsEvent,
     CareerChoiceEvent,
@@ -22,18 +34,6 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.mechanism.replay import replay
-from ceres.character.skills import (
-    Admin,
-    Advocate,
-    Athletics,
-    Broker,
-    Carouse,
-    Deception,
-    Diplomat,
-    Drive,
-    Investigate,
-    Persuade,
-)
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Enemy,

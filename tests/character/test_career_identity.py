@@ -16,7 +16,7 @@ from tests.character.helpers import MOCK_WORLD
 
 
 def _full_setup():
-    from ceres.character.skills import Admin, Athletics, Drive, Electronics
+    from ceres.character.domain.skills import Admin, Athletics, Drive, Electronics
 
     return [
         CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Test'),

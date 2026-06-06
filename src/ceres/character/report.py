@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from ceres.character.spec import NpcSpec, format_npc_skills
+from ceres.character.domain.spec import NpcSpec, format_npc_skills
 
 _TEMPLATES = Path(__file__).parent / 'templates'
 

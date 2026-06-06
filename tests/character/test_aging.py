@@ -2,7 +2,8 @@
 
 import pytest
 
-from ceres.character.characteristics import Chars
+from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive, Pilot
 from ceres.character.events import (
     PendingAgingChoice,
     PendingAgingChoiceMental,
@@ -12,7 +13,6 @@ from ceres.character.events import (
     PendingSkillTable,
 )
 from ceres.character.mechanism.replay import ReplayError
-from ceres.character.skills import Admin, Athletics, Carouse, Drive, Pilot
 from ceres.character.sophonts import VILANI
 from tests.character.helpers import MOCK_WORLD, CharacterDriver
 

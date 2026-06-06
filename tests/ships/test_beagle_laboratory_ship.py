@@ -25,7 +25,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from ceres.character.skills import Level, SpaceScience
+from ceres.character.domain.skills import Level, SpaceScience
 from ceres.gear.software import Expert
 from ceres.make.ship import hull, ship
 from ceres.make.ship.bridge import Bridge, CommandSection

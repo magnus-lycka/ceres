@@ -1,5 +1,6 @@
 """Tests for CareerTerm narrative fields: event, mishap, prison."""
 
+from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive
 from ceres.character.events import (
     BackgroundSkillsEvent,
     CareerEvent,
@@ -10,7 +11,6 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.mechanism.replay import replay
-from ceres.character.skills import Admin, Athletics, Carouse, Drive
 from ceres.character.sophonts import VILANI
 from tests.character.helpers import MOCK_WORLD
 

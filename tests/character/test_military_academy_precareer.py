@@ -1,7 +1,7 @@
 from typing import Any
 
-from ceres.character import skills as character_skills
-from ceres.character.characteristics import Chars
+from ceres.character.domain import skills as character_skills
+from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.precareer.loader import load_precareers
 from ceres.character.domain.precareer.military_academy import MilitaryAcademyPreCareer
 from ceres.character.events import PreCareerEntryEvent, PreCareerGraduationEvent

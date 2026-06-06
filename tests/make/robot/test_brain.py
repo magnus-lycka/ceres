@@ -6,8 +6,8 @@ All values derived from refs/robot/33_brain.md (Robot Brains table).
 from pydantic import TypeAdapter, ValidationError
 import pytest
 
-from ceres.character import skills as character_skills
-from ceres.character.skills import Level
+from ceres.character.domain import skills as character_skills
+from ceres.character.domain.skills import Level
 from ceres.make.robot.brain import (
     AdvancedBrain,
     BasicBrain,

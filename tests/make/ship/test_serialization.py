@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from ceres.character.skills import Level, SpaceScience
+from ceres.character.domain.skills import Level, SpaceScience
 from ceres.gear.software import Expert
 from ceres.make.ship import armour, hull
 from ceres.make.ship.bridge import Cockpit, CommandSection

@@ -33,7 +33,7 @@ from tests.character.helpers import MOCK_WORLD
 
 
 def _full_setup():
-    from ceres.character.skills import Admin, Athletics, Drive, Electronics
+    from ceres.character.domain.skills import Admin, Athletics, Drive, Electronics
 
     return [
         CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Test'),
@@ -251,7 +251,7 @@ class TestCareerDataCoverageGaps:
         assert army.can_attempt_commission(proj) is False
 
     def test_can_attempt_commission_soc_check_after_two_terms(self):
-        from ceres.character.characteristics import Chars
+        from ceres.character.domain.characteristics import Chars
         from ceres.character.state import CareerTerm, CharacterProjection, CharacterSummary
 
         army = load_careers()['Army']
@@ -273,7 +273,7 @@ class TestCareerDataCoverageGaps:
         assert army.can_attempt_commission(proj) is False
 
     def test_apply_rank_bonus_characteristic_increase(self):
-        from ceres.character.characteristics import Chars
+        from ceres.character.domain.characteristics import Chars
         from ceres.character.state import CharacterProjection, CharacterSummary
 
         merchant = load_careers()['Merchant']

@@ -6,10 +6,10 @@ from typing import Any, Literal
 from fastapi.testclient import TestClient
 import pytest
 
-from ceres.character.app import build_app
 from ceres.character.events import PendingHomeworldChangeRequired, PendingUcp, UcpEvent
+from ceres.character.mechanism.store import SqliteCharacterBackend
 from ceres.character.sophonts import HUMANITI, VILANI
-from ceres.character.store import SqliteCharacterBackend
+from ceres.character.web.app import build_app
 from ceres.worlds import DEFAULT_MILIEU, SectorWorldFilters
 from tests.character.helpers import MOCK_WORLD, MOCK_WORLD_2
 
@@ -594,13 +594,13 @@ def test_wizard_404_for_missing_character(client):
 
 
 def test_wizard_homeworld_change_pending_links_to_sector_picker(client_with_backend):
+    from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive
     from ceres.character.events import (
         BackgroundSkillsEvent,
         FinishCreationEvent,
         HomeworldChangeRequiredEvent,
         UcpEvent,
     )
-    from ceres.character.skills import Admin, Athletics, Carouse, Drive
 
     client, backend = client_with_backend
     row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Clio')
@@ -683,13 +683,13 @@ def test_wizard_select_world_input_links_to_filtered_sector_picker(client_with_b
 
 
 def test_selecting_homeworld_from_wizard_picker_updates_character(client_with_backend, monkeypatch):
+    from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive
     from ceres.character.events import (
         BackgroundSkillsEvent,
         FinishCreationEvent,
         HomeworldChangeRequiredEvent,
         UcpEvent,
     )
-    from ceres.character.skills import Admin, Athletics, Carouse, Drive
     from tests.worlds.test_sector_filters import _sample_worlds
 
     client, backend = client_with_backend
@@ -946,7 +946,7 @@ def _make_summary(**kwargs):
 
 
 def test_diff_shows_characteristic_change():
-    from ceres.character.characteristics import Chars
+    from ceres.character.domain.characteristics import Chars
     from ceres.character.state import diff_summaries as _diff_summaries
 
     before = _make_summary(characteristics={Chars.STR: 7, Chars.DEX: 8})
@@ -956,7 +956,7 @@ def test_diff_shows_characteristic_change():
 
 
 def test_diff_shows_new_skill():
-    from ceres.character.skills import Admin
+    from ceres.character.domain.skills import Admin
     from ceres.character.state import diff_summaries as _diff_summaries
 
     before = _make_summary()
@@ -966,7 +966,7 @@ def test_diff_shows_new_skill():
 
 
 def test_diff_shows_skill_level_up():
-    from ceres.character.skills import Admin, Level
+    from ceres.character.domain.skills import Admin, Level
     from ceres.character.state import diff_summaries as _diff_summaries
 
     before = _make_summary(skills=[Admin()])

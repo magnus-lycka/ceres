@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING, Any, cast
 from pydantic import BaseModel, ConfigDict
 
 from ceres.character.domain.career.career_data import CareerEventEntry, CharCheck, TermData
+from ceres.character.domain.skills import AnySkill, Level, _level_fields
 from ceres.character.events import PendingPreCareerSkillChoice
-from ceres.character.skills import AnySkill, Level, _level_fields
 from ceres.character.state import (
     CharacterProjection,
     CharacterSummary,

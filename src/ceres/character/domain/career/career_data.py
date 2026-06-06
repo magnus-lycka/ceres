@@ -3,9 +3,9 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from ceres.character.benefits import AnyBenefit
-from ceres.character.characteristics import Chars, ConnectionKind, characteristic_dm
-from ceres.character.skills import AnySkill, Level, _level_fields
+from ceres.character.domain.benefits import AnyBenefit
+from ceres.character.domain.characteristics import Chars, ConnectionKind, characteristic_dm
+from ceres.character.domain.skills import AnySkill, Level, _level_fields
 
 if TYPE_CHECKING:
     from ceres.character.state import CharacterProjection

@@ -1,6 +1,6 @@
 from typing import ClassVar, Literal, cast
 
-from ceres.character.benefits import (
+from ceres.character.domain.benefits import (
     ALLY,
     BLADE,
     CONTACT,
@@ -14,7 +14,6 @@ from ceres.character.benefits import (
     ChoiceBenefit,
     CombinedBenefit,
 )
-from ceres.character.characteristics import Chars
 from ceres.character.domain.career.career_data import (
     AssignmentData,
     CareerData,
@@ -36,17 +35,8 @@ from ceres.character.domain.career.career_data import (
     SkillTable,
 )
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
-from ceres.character.events import (
-    PendingChoices,
-    PendingDoubleInjuryRoll,
-    PendingInjuryTable,
-    PendingParoleRoll,
-    PendingSkillChoice,
-    SkillRollEvent,
-    career_progress_pending,
-    muster_out_setup,
-)
-from ceres.character.skills import (
+from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.skills import (
     Admin,
     Advocate,
     Athletics,
@@ -65,6 +55,16 @@ from ceres.character.skills import (
     Streetwise,
     Survival,
     skill_instances,
+)
+from ceres.character.events import (
+    PendingChoices,
+    PendingDoubleInjuryRoll,
+    PendingInjuryTable,
+    PendingParoleRoll,
+    PendingSkillChoice,
+    SkillRollEvent,
+    career_progress_pending,
+    muster_out_setup,
 )
 from ceres.character.state import (
     Ally,
@@ -287,7 +287,7 @@ class PendingPrisonerEvent6SkillRoll(CareerSkillRollPendingBase):
 
     def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
         if event.modified_roll >= 8:
-            from ceres.character.skills import AnySkill, _skill_classes
+            from ceres.character.domain.skills import AnySkill, _skill_classes
 
             all_skills: list[AnySkill] = cast(
                 list[AnySkill],

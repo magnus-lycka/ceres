@@ -1,6 +1,5 @@
 """Tests for Scholar career events, mishaps, qualification, and rank bonuses."""
 
-from ceres.character.characteristics import Chars
 from ceres.character.domain.career.career_data import AdvancementDmOption
 from ceres.character.domain.career.scholar import (
     PendingScholarEvent6SkillRoll,
@@ -16,6 +15,35 @@ from ceres.character.domain.career.scholar import (
     ScholarMishap3Secretly,
     ScholarMishap5GiveUp,
     ScholarMishap5StartAgain,
+)
+from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.skills import (
+    Admin,
+    Advocate,
+    Athletics,
+    Carouse,
+    CreativeArt,
+    Deception,
+    Diplomat,
+    Drive,
+    Electronics,
+    Engineer,
+    Flyer,
+    Investigate,
+    Level,
+    LifeScience,
+    Medic,
+    Navigation,
+    PerformingArt,
+    Persuade,
+    PhysicalScience,
+    PresentationArt,
+    RoboticScience,
+    Sciences,
+    SocialScience,
+    SpaceScience,
+    Survival,
+    _skill_classes,
 )
 from ceres.character.events import (
     AdvancementDmChoiceEvent,
@@ -48,34 +76,6 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.mechanism.replay import replay
-from ceres.character.skills import (
-    Admin,
-    Advocate,
-    Athletics,
-    Carouse,
-    CreativeArt,
-    Deception,
-    Diplomat,
-    Drive,
-    Electronics,
-    Engineer,
-    Flyer,
-    Investigate,
-    Level,
-    LifeScience,
-    Medic,
-    Navigation,
-    PerformingArt,
-    Persuade,
-    PhysicalScience,
-    PresentationArt,
-    RoboticScience,
-    Sciences,
-    SocialScience,
-    SpaceScience,
-    Survival,
-    _skill_classes,
-)
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Ally,

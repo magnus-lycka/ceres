@@ -1,9 +1,9 @@
-from ceres.character.characteristics import Chars
 from ceres.character.domain.career.career_data import CharCheck, GainSkillEffect, LifeEventEffect
+from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.precareer import load_precareers
 from ceres.character.domain.precareer.precareer_data import PreCareerData, PrecareerSkillEntry
+from ceres.character.domain.skills import Admin, Electronics, Pilot, ScienceSkill, skill_instances
 from ceres.character.events import PreCareerEntryEvent, PreCareerGraduationEvent
-from ceres.character.skills import Admin, Electronics, Pilot, ScienceSkill, skill_instances
 
 
 def _entry(name: str) -> CharCheck:

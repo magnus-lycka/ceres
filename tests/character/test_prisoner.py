@@ -1,4 +1,3 @@
-from ceres.character.characteristics import Chars
 from ceres.character.domain.career.loader import load_careers, selectable_careers
 from ceres.character.domain.career.prisoner import (
     PendingPrisonerEvent3EscapeSkillRoll,
@@ -26,6 +25,19 @@ from ceres.character.domain.career.prisoner import (
     PrisonerMishap3Fight,
     PrisonerMishap3Submit,
 )
+from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.skills import (
+    Admin,
+    Athletics,
+    Carouse,
+    Deception,
+    Drive,
+    Mechanic,
+    Melee,
+    Persuade,
+    Stealth,
+    WorkerProfession,
+)
 from ceres.character.events import (
     AdvancementEvent,
     BackgroundSkillsEvent,
@@ -51,18 +63,6 @@ from ceres.character.events import (
     UcpEvent,
 )
 from ceres.character.mechanism.replay import replay
-from ceres.character.skills import (
-    Admin,
-    Athletics,
-    Carouse,
-    Deception,
-    Drive,
-    Mechanic,
-    Melee,
-    Persuade,
-    Stealth,
-    WorkerProfession,
-)
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Ally,

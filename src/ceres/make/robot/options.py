@@ -28,8 +28,8 @@ Rule sources:
 from math import ceil
 from typing import Any
 
-from ceres.character import skills as character_skills
-from ceres.character.skills import Level
+from ceres.character.domain import skills as character_skills
+from ceres.character.domain.skills import Level
 from ceres.gear.comm import RadioTransceiverPart
 
 from .chassis import Trait, chassis_entry

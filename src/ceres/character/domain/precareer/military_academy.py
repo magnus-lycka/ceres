@@ -1,4 +1,4 @@
-from ceres.character.characteristics import Chars
+from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.precareer.precareer_data import PreCareerData
 from ceres.character.events import PreCareerEntryEvent, PreCareerGraduationEvent
 from ceres.character.state import CharacterProjection

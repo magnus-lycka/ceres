@@ -7,9 +7,9 @@ from typing import Any, Literal
 
 from pydantic import Field
 
-from ceres.character.characteristics import Chars
+from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.skills import AnySkill, _level_fields
 from ceres.character.input_specs import NumberEntry, Select
-from ceres.character.skills import AnySkill, _level_fields
 from ceres.character.state import CharacterProjection, PendingInputBase
 
 
@@ -138,9 +138,9 @@ class CareerSkillChoicePendingBase(PendingInputBase):
         from pydantic import Field as _Field, TypeAdapter
 
         from ceres.character.domain.career.career_data import AdvancementDmOption
+        from ceres.character.domain.skills import AnySkill as _AnySkill
         from ceres.character.events import AdvancementDmChoiceEvent, SkillChoiceEvent
         from ceres.character.input_specs import form_str
-        from ceres.character.skills import AnySkill as _AnySkill
 
         adv_dm_or_skill_adapter: TypeAdapter[AdvancementDmOption | _AnySkill] = TypeAdapter(
             Annotated[AdvancementDmOption | _AnySkill, _Field(union_mode='left_to_right')]

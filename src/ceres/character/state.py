@@ -3,11 +3,11 @@ from typing import Annotated, Any, Literal, cast, overload
 from pydantic import BaseModel, Field, SerializeAsAny, model_validator
 
 from ceres.adapters.travellermap import TravellerMapWorld
-from ceres.character.benefits import ItemBenefit
-from ceres.character.characteristics import Chars, ConnectionKind
+from ceres.character.domain.benefits import ItemBenefit
 from ceres.character.domain.career.career_data import CareerData
+from ceres.character.domain.characteristics import Chars, ConnectionKind
+from ceres.character.domain.skills import AnySkill, Level, Skill, _level_fields
 from ceres.character.input_specs import InputSpec
-from ceres.character.skills import AnySkill, Level, Skill, _level_fields
 from ceres.character.sophonts import Sophont
 from ceres.shared import CeresModel
 

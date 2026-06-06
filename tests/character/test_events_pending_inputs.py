@@ -3,9 +3,8 @@ from typing import Any, cast
 from pydantic import TypeAdapter, ValidationError
 import pytest
 
-from ceres.character import skills as character_skills
-from ceres.character.benefits import SHIP_SHARE, WEAPON
-from ceres.character.characteristics import Chars, ConnectionKind
+from ceres.character.domain import skills as character_skills
+from ceres.character.domain.benefits import SHIP_SHARE, WEAPON
 from ceres.character.domain.career import ARMY, PRISONER, SCOUT
 from ceres.character.domain.career.career_data import (
     AdvancementDmEffect,
@@ -24,6 +23,7 @@ from ceres.character.domain.career.career_data import (
     RankEntry,
 )
 from ceres.character.domain.career.loader import load_careers
+from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.events import (
     AdvancementDmChoiceEvent,
     AdvancementEvent,
@@ -895,7 +895,7 @@ def test_career_skill_roll_pending_base_input_specs_includes_char_options():
 def test_career_skill_choice_pending_base_event_from_form_and_input_specs():
     from ceres.character.domain.career.career_data import AdvancementDmOption
     from ceres.character.domain.career.scholar import PendingScholarScienceChoice
-    from ceres.character.skills import LifeScience
+    from ceres.character.domain.skills import LifeScience
 
     adv_dm = AdvancementDmOption()
     science = LifeScience()

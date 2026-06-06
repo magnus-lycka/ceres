@@ -1,7 +1,7 @@
 from typing import cast
 
-from ceres.character import skills as character_skills
-from ceres.character.skills import Level, Skill
+from ceres.character.domain import skills as character_skills
+from ceres.character.domain.skills import Level, Skill
 from ceres.make.robot.skills import RobotProfession, RobotSkill, SkillPackage
 
 

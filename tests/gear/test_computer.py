@@ -1,6 +1,6 @@
 import pytest
 
-from ceres.character.skills import Admin, Astrogation, Broker, Level, Medic, Steward
+from ceres.character.domain.skills import Admin, Astrogation, Broker, Level, Medic, Steward
 from ceres.gear.computer import (
     CameraOption,
     CommsOption,

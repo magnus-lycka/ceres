@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Literal
 
-from ceres.character.skills import Admin, Astrogation, Broker, Engineer, Level, Medic, Steward
+from ceres.character.domain.skills import Admin, Astrogation, Broker, Engineer, Level, Medic, Steward
 from ceres.report.render import render_html, render_pdf, render_typst_source
 from ceres.shared import NoteList
 

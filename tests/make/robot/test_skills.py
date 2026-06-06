@@ -6,8 +6,8 @@ refs/robot/35_skill_packages.md — Primitive brain package table.
 from pydantic import ValidationError
 import pytest
 
-from ceres.character import skills as character_skills
-from ceres.character.skills import Electronics, Level, Recon, Steward
+from ceres.character.domain import skills as character_skills
+from ceres.character.domain.skills import Electronics, Level, Recon, Steward
 from ceres.make.robot.skills import (
     _DEX_SKILLS,
     BrainSoftware,

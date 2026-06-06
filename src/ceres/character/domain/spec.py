@@ -1,8 +1,8 @@
 from pydantic import BaseModel, Field
 
-from ceres.character.benefits import ItemBenefit
-from ceres.character.characteristics import Chars
-from ceres.character.skills import AnySkill, _level_fields
+from ceres.character.domain.benefits import ItemBenefit
+from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.skills import AnySkill, _level_fields
 from ceres.character.state import CharacterSummary
 
 
@@ -23,7 +23,7 @@ class NpcSpec(BaseModel):
 
 
 def spec_from_summary(summary: CharacterSummary, notes: str | None = None) -> NpcSpec:
-    from ceres.character.characteristics import UCP_STATS
+    from ceres.character.domain.characteristics import UCP_STATS
 
     ucp = ''.join(f'{summary.characteristics.get(stat, 0):X}' for stat in UCP_STATS)
     career_obj = summary.current_career or summary.last_career

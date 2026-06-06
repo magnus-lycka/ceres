@@ -3,8 +3,8 @@ from typing import Annotated, Any, ClassVar, Literal
 
 from pydantic import ConfigDict, Field
 
-from ceres.character import skills as character_skills
-from ceres.character.skills import Level, Skill
+from ceres.character.domain import skills as character_skills
+from ceres.character.domain.skills import Level, Skill
 from ceres.shared import CeresModel
 
 from .chassis import Trait

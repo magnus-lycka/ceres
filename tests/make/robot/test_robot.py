@@ -11,8 +11,8 @@ from typing import Any, ClassVar, Literal
 
 import pytest
 
-from ceres.character import skills as character_skills
-from ceres.character.skills import Level
+from ceres.character.domain import skills as character_skills
+from ceres.character.domain.skills import Level
 from ceres.make.robot.chassis import Trait
 from ceres.make.robot.parts import RobotPart
 from ceres.make.robot.skills import SkillGrant

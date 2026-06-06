@@ -10,8 +10,8 @@ All rule data from:
 
 import pytest
 
-from ceres.character import skills as character_skills
-from ceres.character.skills import Level
+from ceres.character.domain import skills as character_skills
+from ceres.character.domain.skills import Level
 from ceres.make.robot import (
     AquaticLocomotion,
     GravLocomotion,

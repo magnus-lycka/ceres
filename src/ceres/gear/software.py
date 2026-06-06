@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING, Annotated, ClassVar, Literal
 
 from pydantic import ConfigDict, Field, PrivateAttr, field_validator
 
-from ceres.character import skills as character_skills
-from ceres.character.skills import AnySkill, Skill, active_speciality_field, active_speciality_label
+from ceres.character.domain import skills as character_skills
+from ceres.character.domain.skills import AnySkill, Skill, active_speciality_field, active_speciality_label
 from ceres.gear.skill_keys import SkillCostKey, key_matches_skill
 from ceres.shared import CeresModel, NoteList, _Note
 
