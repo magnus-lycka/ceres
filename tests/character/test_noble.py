@@ -1,13 +1,13 @@
 """Tests for the Noble career — administrator, diplomat, and dilettante assignments."""
 
-from ceres.character.careers.noble import (
+from ceres.character.characteristics import Chars
+from ceres.character.domain.career.noble import (
     NobleEvent8Accept,
     NobleEvent8Refuse,
     NobleEvent8SkillRoll,
     PendingNobleMishap3SkillRoll,
     PendingNobleMishap5SkillRoll,
 )
-from ceres.character.characteristics import Chars
 from ceres.character.events import (
     BackgroundSkillsEvent,
     CareerChoiceEvent,
@@ -22,7 +22,7 @@ from ceres.character.events import (
     TermEventEvent,
     UcpEvent,
 )
-from ceres.character.replay import replay
+from ceres.character.mechanism.replay import replay
 from ceres.character.skills import Admin, Athletics, Carouse, Deception, Drive, Persuade, Stealth
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (

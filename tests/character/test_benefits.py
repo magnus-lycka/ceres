@@ -33,8 +33,8 @@ from ceres.character.benefits import (
     CombinedBenefit,
     ItemBenefit,
 )
-from ceres.character.careers import SCOUT
 from ceres.character.characteristics import Chars
+from ceres.character.domain.career import SCOUT
 from ceres.character.sophonts import VILANI
 from ceres.character.state import CareerTerm, CharacterProjection, CharacterSummary
 from tests.character.helpers import MOCK_WORLD

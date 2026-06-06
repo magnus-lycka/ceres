@@ -1,7 +1,7 @@
 """Tests for the Marines career — support, ground assault, and star marine assignments."""
 
-from ceres.character.careers.common_pending import PendingAdvancedTrainingSkillRoll
-from ceres.character.careers.marines import (
+from ceres.character.domain.career.common_pending import PendingAdvancedTrainingSkillRoll
+from ceres.character.domain.career.marines import (
     MarinesEvent9Protect,
     MarinesEvent9Report,
     MarinesMishap4Accept,
@@ -25,7 +25,7 @@ from ceres.character.events import (
     TermEventEvent,
     UcpEvent,
 )
-from ceres.character.replay import replay
+from ceres.character.mechanism.replay import replay
 from ceres.character.skills import (
     Admin,
     Athletics,

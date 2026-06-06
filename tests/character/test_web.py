@@ -549,7 +549,7 @@ def test_wizard_shows_ucp_pending(client_with_backend):
 
 
 def test_wizard_shows_career_name_not_repr(client_with_backend, monkeypatch):
-    from ceres.character.careers.loader import load_careers
+    from ceres.character.domain.career.loader import load_careers
     from ceres.character.state import CareerTerm, CharacterProjection, CharacterSummary
 
     client, backend = client_with_backend
@@ -794,7 +794,7 @@ def test_character_sheet_shows_name(client_with_backend):
 
 
 def test_character_sheet_shows_career_name_not_repr(client_with_backend, monkeypatch):
-    from ceres.character.careers.loader import load_careers
+    from ceres.character.domain.career.loader import load_careers
     from ceres.character.state import CareerTerm, CharacterProjection, CharacterSummary
 
     client, backend = client_with_backend

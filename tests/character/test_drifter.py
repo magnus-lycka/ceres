@@ -1,6 +1,6 @@
 """Tests for the Drifter career — barbarian, wanderer, and scavenger assignments."""
 
-from ceres.character.careers.drifter import (
+from ceres.character.domain.career.drifter import (
     DrifterEvent3Accept,
     DrifterEvent3Decline,
     DrifterEvent9Accept,
@@ -11,7 +11,7 @@ from ceres.character.careers.drifter import (
     PendingDrifterEvent9RollSkillRoll,
     PendingDrifterMishap5SkillRoll,
 )
-from ceres.character.careers.loader import load_careers, selectable_careers
+from ceres.character.domain.career.loader import load_careers, selectable_careers
 from ceres.character.events import (
     BackgroundSkillsEvent,
     CareerChoiceEvent,
@@ -31,7 +31,7 @@ from ceres.character.events import (
     TermEventEvent,
     UcpEvent,
 )
-from ceres.character.replay import replay
+from ceres.character.mechanism.replay import replay
 from ceres.character.skills import Admin, Athletics, Carouse, Deception, Drive, GunCombat, Melee, Survival
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (

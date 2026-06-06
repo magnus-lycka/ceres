@@ -20,7 +20,7 @@ from ceres.character.events import (
     TermEventEvent,
     UcpEvent,
 )
-from ceres.character.replay import ReplayError, replay
+from ceres.character.mechanism.replay import ReplayError, replay
 from ceres.character.skills import Admin, Athletics, Carouse, Drive, JackOfAllTrades, Medic, SpaceScience
 from ceres.character.sophonts import VILANI
 from ceres.character.state import BenefitRollDm

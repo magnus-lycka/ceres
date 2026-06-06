@@ -8,7 +8,7 @@ from pydantic import TypeAdapter
 from ceres import settings
 from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.events import AnyEvent, CharacterStartedEvent
-from ceres.character.replay import replay
+from ceres.character.mechanism.replay import replay
 from ceres.character.sophonts import Sophont
 from ceres.character.state import CharacterProjection
 

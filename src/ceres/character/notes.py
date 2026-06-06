@@ -16,7 +16,7 @@ _DEFAULT_HOST = 'http://localhost:11434'
 
 def _career_context_lines(summary: CharacterSummary) -> str:
     """Build career/assignment description lines for all distinct (career, assignment) pairs in history."""
-    from ceres.character.careers.loader import load_careers
+    from ceres.character.domain.career.loader import load_careers
 
     careers_data = load_careers()
     seen: set[tuple[str, str | None]] = set()

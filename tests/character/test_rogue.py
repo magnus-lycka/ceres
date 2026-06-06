@@ -1,6 +1,6 @@
 """Tests for the Rogue career — thief, enforcer, and pirate assignments."""
 
-from ceres.character.careers.rogue import (
+from ceres.character.domain.career.rogue import (
     PendingRogueEvent9SkillRoll,
     RogueEvent3Defend,
     RogueEvent3Lawyer,
@@ -26,7 +26,7 @@ from ceres.character.events import (
     TermEventEvent,
     UcpEvent,
 )
-from ceres.character.replay import replay
+from ceres.character.mechanism.replay import replay
 from ceres.character.skills import Admin, Advocate, Athletics, Carouse, Drive, GunCombat, Stealth, Streetwise
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
@@ -156,7 +156,7 @@ class TestRogueMishap3:
         assert projection.summary.current_career is None
 
     def test_mishap_3_existing_contact_is_converted_to_rival(self):
-        from ceres.character.careers.rogue import RogueMishap3Handler
+        from ceres.character.domain.career.rogue import RogueMishap3Handler
         from ceres.character.sophonts import VILANI
         from ceres.character.state import CharacterProjection, CharacterSummary, Contact
         from tests.character.helpers import MOCK_WORLD

@@ -11,7 +11,7 @@ from ceres.character.events import (
     PendingMusterOut,
     PendingSkillTable,
 )
-from ceres.character.replay import ReplayError
+from ceres.character.mechanism.replay import ReplayError
 from ceres.character.skills import Admin, Athletics, Carouse, Drive, Pilot
 from ceres.character.sophonts import VILANI
 from tests.character.helpers import MOCK_WORLD, CharacterDriver

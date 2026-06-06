@@ -1,7 +1,7 @@
 """Tests for the Navy career — line/crew, engineer/gunner, and flight assignments."""
 
-from ceres.character.careers.common_pending import PendingAdvancedTrainingSkillRoll
-from ceres.character.careers.navy import (
+from ceres.character.domain.career.common_pending import PendingAdvancedTrainingSkillRoll
+from ceres.character.domain.career.navy import (
     NavyEvent10Profit,
     NavyEvent10Refuse,
     NavyMishap4NotResponsible,
@@ -24,7 +24,7 @@ from ceres.character.events import (
     TermEventEvent,
     UcpEvent,
 )
-from ceres.character.replay import replay
+from ceres.character.mechanism.replay import replay
 from ceres.character.skills import (
     Admin,
     Athletics,

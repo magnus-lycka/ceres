@@ -1,5 +1,6 @@
-from ceres.character.careers.loader import load_careers, selectable_careers
-from ceres.character.careers.prisoner import (
+from ceres.character.characteristics import Chars
+from ceres.character.domain.career.loader import load_careers, selectable_careers
+from ceres.character.domain.career.prisoner import (
     PendingPrisonerEvent3EscapeSkillRoll,
     PendingPrisonerEvent4SkillRoll,
     PendingPrisonerEvent5SkillRoll,
@@ -25,7 +26,6 @@ from ceres.character.careers.prisoner import (
     PrisonerMishap3Fight,
     PrisonerMishap3Submit,
 )
-from ceres.character.characteristics import Chars
 from ceres.character.events import (
     AdvancementEvent,
     BackgroundSkillsEvent,
@@ -50,7 +50,7 @@ from ceres.character.events import (
     TermEventEvent,
     UcpEvent,
 )
-from ceres.character.replay import replay
+from ceres.character.mechanism.replay import replay
 from ceres.character.skills import (
     Admin,
     Athletics,

@@ -21,7 +21,7 @@ from ceres.character.events import (
     TermEventEvent,
     UcpEvent,
 )
-from ceres.character.replay import ReplayError, replay
+from ceres.character.mechanism.replay import ReplayError, replay
 from ceres.character.skills import (
     Admin,
     Advocate,

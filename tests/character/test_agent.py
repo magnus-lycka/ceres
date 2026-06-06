@@ -2,7 +2,8 @@
 
 import pytest
 
-from ceres.character.careers.agent import (
+from ceres.character.characteristics import Chars
+from ceres.character.domain.career.agent import (
     AgentMishap2Accept,
     AgentMishap2Refuse,
     AgentMishap5Ally,
@@ -13,9 +14,8 @@ from ceres.character.careers.agent import (
     PendingAgentEvent11SkillChoice,
     PendingAgentMishap3SkillRoll,
 )
-from ceres.character.careers.career_data import AdvancementDmOption
-from ceres.character.careers.common_pending import PendingAdvancedTrainingSkillRoll
-from ceres.character.characteristics import Chars
+from ceres.character.domain.career.career_data import AdvancementDmOption
+from ceres.character.domain.career.common_pending import PendingAdvancedTrainingSkillRoll
 from ceres.character.events import (
     AdvancementEvent,
     BackgroundSkillsEvent,
@@ -41,7 +41,7 @@ from ceres.character.events import (
     TermEventEvent,
     UcpEvent,
 )
-from ceres.character.replay import ReplayError, replay
+from ceres.character.mechanism.replay import ReplayError, replay
 from ceres.character.skills import (
     Admin,
     Advocate,

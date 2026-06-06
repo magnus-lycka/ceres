@@ -2,7 +2,7 @@
 
 import pytest
 
-from ceres.character.careers import (
+from ceres.character.domain.career import (
     AGENT,
     ARMY,
     CITIZEN,
@@ -17,8 +17,8 @@ from ceres.character.careers import (
     SCHOLAR,
     SCOUT,
 )
-from ceres.character.careers.career_data import CareerData
-from ceres.character.careers.loader import load_careers
+from ceres.character.domain.career.career_data import CareerData
+from ceres.character.domain.career.loader import load_careers
 from ceres.character.events import (
     BackgroundSkillsEvent,
     CareerEvent,
@@ -27,7 +27,7 @@ from ceres.character.events import (
     TermEventEvent,
     UcpEvent,
 )
-from ceres.character.replay import replay
+from ceres.character.mechanism.replay import replay
 from ceres.character.sophonts import VILANI
 from tests.character.helpers import MOCK_WORLD
 
@@ -201,19 +201,19 @@ class TestCareerInState:
 
 class TestCareersInit:
     def test_load_careers_accessible_via_package(self):
-        import ceres.character.careers as careers_pkg
+        import ceres.character.domain.career as careers_pkg
 
         fn = careers_pkg.load_careers
         assert callable(fn)
 
     def test_selectable_careers_accessible_via_package(self):
-        import ceres.character.careers as careers_pkg
+        import ceres.character.domain.career as careers_pkg
 
         fn = careers_pkg.selectable_careers
         assert callable(fn)
 
     def test_unknown_attribute_raises(self):
-        import ceres.character.careers as careers_pkg
+        import ceres.character.domain.career as careers_pkg
 
         with pytest.raises(AttributeError):
             _ = careers_pkg.NonExistentCareer
@@ -221,7 +221,7 @@ class TestCareersInit:
 
 class TestCareerDataCoverageGaps:
     def test_handler_base_default_handle_returns_pending_idx(self):
-        from ceres.character.careers.career_data import CareerHandlerBase
+        from ceres.character.domain.career.career_data import CareerHandlerBase
         from ceres.character.state import CharacterProjection, CharacterSummary
 
         class MinimalHandler(CareerHandlerBase):

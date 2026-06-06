@@ -1,7 +1,8 @@
 """Tests for Scholar career events, mishaps, qualification, and rank bonuses."""
 
-from ceres.character.careers.career_data import AdvancementDmOption
-from ceres.character.careers.scholar import (
+from ceres.character.characteristics import Chars
+from ceres.character.domain.career.career_data import AdvancementDmOption
+from ceres.character.domain.career.scholar import (
     PendingScholarEvent6SkillRoll,
     PendingScholarEvent11,
     PendingScholarScienceChoice,
@@ -16,7 +17,6 @@ from ceres.character.careers.scholar import (
     ScholarMishap5GiveUp,
     ScholarMishap5StartAgain,
 )
-from ceres.character.characteristics import Chars
 from ceres.character.events import (
     AdvancementDmChoiceEvent,
     AdvancementEvent,
@@ -47,7 +47,7 @@ from ceres.character.events import (
     TermEventEvent,
     UcpEvent,
 )
-from ceres.character.replay import replay
+from ceres.character.mechanism.replay import replay
 from ceres.character.skills import (
     Admin,
     Advocate,
@@ -569,7 +569,7 @@ class TestScholarMishap5:
     def test_give_up_at_age_30_creates_aging_roll(self):
         from types import SimpleNamespace
 
-        from ceres.character.careers.loader import load_careers
+        from ceres.character.domain.career.loader import load_careers
         from ceres.character.events import PendingAgingRoll
         from ceres.character.state import CharacterProjection, CharacterSummary
 

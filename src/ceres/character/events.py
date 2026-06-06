@@ -9,8 +9,8 @@ from ceres.character.benefits import AnyBenefit, ItemBenefit
 from ceres.character.characteristics import UCP_STATS, Chars, ConnectionKind, characteristic_dm
 
 if TYPE_CHECKING:
-    from ceres.character.careers.career_data import CareerData
-from ceres.character.careers.career_data import AdvancementDmOption
+    from ceres.character.domain.career.career_data import CareerData
+from ceres.character.domain.career.career_data import AdvancementDmOption
 from ceres.character.input_specs import InputSpec, NumberEntry, Reference, Select, form_int, form_str, literal
 from ceres.character.skills import (
     AnySkill,
@@ -73,7 +73,7 @@ def _rank_bonus_skill(bonus: Any) -> AnySkill:
 
 
 def _apply_simple_effect(projection: Any, effect: Any, source: str = '', source_event_id: int = 0) -> None:
-    from ceres.character.careers.career_data import (
+    from ceres.character.domain.career.career_data import (
         AdvancementDmEffect,
         BenefitDmEffect,
         DecreaseCharacteristicEffect,
@@ -253,7 +253,7 @@ def _apply_skill_table_entry(projection: Any, entry: Any) -> None:
 
 
 def _set_forced_prison_career(projection: Any, description: str) -> None:
-    from ceres.character.careers.prisoner import PRISONER
+    from ceres.character.domain.career.prisoner import PRISONER
 
     projection.forced_next_career = PRISONER
     if projection.summary.career_terms:
@@ -418,7 +418,7 @@ class CareerEvent(EventBase):
     qualification_roll: int  # 2D result before characteristic DM
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.careers.loader import load_careers
+        from ceres.character.domain.career.loader import load_careers
 
         careers = load_careers()
         career = careers.get(self.career)
@@ -436,7 +436,7 @@ class DraftEvent(EventBase):
     assignment: str | None = None
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.careers.loader import load_careers
+        from ceres.character.domain.career.loader import load_careers
 
         if projection.summary.drafted:
             raise ReplayError('A character may only enter the draft once')
@@ -452,7 +452,7 @@ class DraftAssignmentEvent(EventBase):
     assignment: str
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.careers.loader import load_careers
+        from ceres.character.domain.career.loader import load_careers
 
         career = load_careers().get(self.career)
         if career is None:
@@ -475,7 +475,7 @@ class MishapEvent(EventBase):
     stay_in_career: bool = False  # True when the event says "mishap but you are not ejected"
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.careers.career_data import (
+        from ceres.character.domain.career.career_data import (
             DecreaseCharacteristicChoiceEffect,
             GainConnectionsRolledEffect,
             InjuryEffect,
@@ -548,7 +548,7 @@ class MishapEvent(EventBase):
                         )
                         pending_idx += 1
                 else:
-                    from ceres.character.careers.career_data import CareerHandlerBase
+                    from ceres.character.domain.career.career_data import CareerHandlerBase
 
                     if isinstance(effect, CareerHandlerBase):
                         pending_idx = effect.handle(projection, self.id, pending_idx)
@@ -581,7 +581,7 @@ class TermEventEvent(EventBase):
     roll: int  # sum of 2D
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.careers.career_data import (
+        from ceres.character.domain.career.career_data import (
             AutoAdvanceEffect,
             LifeEventEffect,
             RollMishapEffect,
@@ -612,7 +612,7 @@ class TermEventEvent(EventBase):
                 elif isinstance(effect, LifeEventEffect):
                     life_event_pending = True
                 else:
-                    from ceres.character.careers.career_data import CareerHandlerBase
+                    from ceres.character.domain.career.career_data import CareerHandlerBase
 
                     if isinstance(effect, CareerHandlerBase):
                         pending_idx = effect.handle(projection, self.id, pending_idx)
@@ -1405,7 +1405,7 @@ class PreCareerEntryEvent(EventBase):
     roll: int  # 2D result for entry check (before characteristic DM)
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.precareers.loader import load_precareers
+        from ceres.character.domain.precareer.loader import load_precareers
 
         precareer = load_precareers().get(self.precareer)
         if precareer is None:
@@ -1483,8 +1483,12 @@ class PreCareerEventEvent(EventBase):
     roll: int  # 2D result (2-12)
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.careers.career_data import GainConnectionsRolledEffect, LifeEventEffect, SkillChoiceEffect
-        from ceres.character.precareers.loader import load_precareers
+        from ceres.character.domain.career.career_data import (
+            GainConnectionsRolledEffect,
+            LifeEventEffect,
+            SkillChoiceEffect,
+        )
+        from ceres.character.domain.precareer.loader import load_precareers
 
         precareer_name = projection.summary.precareer
         if precareer_name is None:
@@ -1568,7 +1572,7 @@ class PreCareerGraduationEvent(EventBase):
     roll: int  # 2D result for graduation check (before characteristic DM)
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
-        from ceres.character.precareers.loader import load_precareers
+        from ceres.character.domain.precareer.loader import load_precareers
 
         precareer_name = projection.summary.precareer
         if precareer_name is None:
@@ -1699,7 +1703,7 @@ def purge_career_pendings(projection: CharacterProjection) -> None:
 def queue_career_choice_indexed(
     projection: CharacterProjection, event_id: int, idx: int, instruction: str = 'Choose a career'
 ) -> None:
-    from ceres.character.careers.loader import selectable_careers
+    from ceres.character.domain.career.loader import selectable_careers
 
     if projection.forced_next_career:
         forced = projection.forced_next_career
@@ -2006,7 +2010,7 @@ class PendingDraftChoice(PendingInputBase):
     def event_from_form(self, form: Any) -> AnyEvent:
         choice = form_str(form, 'choice', 'drifter')
         if choice == 'draft':
-            from ceres.character.careers.loader import load_careers
+            from ceres.character.domain.career.loader import load_careers
 
             roll = form_int(form, 'roll', 1)
             draft_careers = sorted(

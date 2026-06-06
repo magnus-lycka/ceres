@@ -45,7 +45,7 @@ from ceres.character.events import (
     TermEventEvent,
     UcpEvent,
 )
-from ceres.character.replay import ReplayError, replay
+from ceres.character.mechanism.replay import ReplayError, replay
 from ceres.character.skills import (
     Admin,
     Astrogation,
@@ -82,7 +82,7 @@ from tests.character.helpers import MOCK_WORLD
 
 class TestCoreCareerCoverage:
     def test_all_core_careers_are_loaded(self):
-        from ceres.character.careers.loader import load_careers
+        from ceres.character.domain.career.loader import load_careers
 
         assert {
             'Agent',
@@ -109,7 +109,7 @@ class TestCoreCareerCoverage:
         ],
     )
     def test_remaining_core_careers_have_assignments(self, career_name, assignments):
-        from ceres.character.careers.loader import load_careers
+        from ceres.character.domain.career.loader import load_careers
 
         career = load_careers()[career_name]
 

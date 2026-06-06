@@ -19,7 +19,7 @@ from ceres.character.events import (
     TermEventEvent,
     UcpEvent,
 )
-from ceres.character.replay import replay
+from ceres.character.mechanism.replay import replay
 from ceres.character.skills import Admin, Athletics, Carouse, Drive, Level, Pilot
 from ceres.character.sophonts import VILANI
 from ceres.character.spec import NpcSpec, spec_from_summary

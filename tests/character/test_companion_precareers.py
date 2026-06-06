@@ -13,7 +13,7 @@ from ceres.character.events import (
     PreCareerSkillChoiceEvent,
     UcpEvent,
 )
-from ceres.character.replay import replay
+from ceres.character.mechanism.replay import replay
 from ceres.character.skills import (
     Admin,
     Astrogation,

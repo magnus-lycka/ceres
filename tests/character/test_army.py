@@ -1,8 +1,8 @@
 """Tests for the Army career — support, infantry, and cavalry assignments."""
 
-from ceres.character.careers.army import ArmyMishap4Cooperate, ArmyMishap4JoinRing, PendingArmyEvent6SkillRoll
-from ceres.character.careers.common_pending import PendingAdvancedTrainingSkillRoll
 from ceres.character.characteristics import Chars
+from ceres.character.domain.career.army import ArmyMishap4Cooperate, ArmyMishap4JoinRing, PendingArmyEvent6SkillRoll
+from ceres.character.domain.career.common_pending import PendingAdvancedTrainingSkillRoll
 from ceres.character.events import (
     PendingAdvancement,
     PendingChoices,

@@ -5,8 +5,9 @@ import pytest
 
 from ceres.character import skills as character_skills
 from ceres.character.benefits import SHIP_SHARE, WEAPON
-from ceres.character.careers import ARMY, PRISONER, SCOUT
-from ceres.character.careers.career_data import (
+from ceres.character.characteristics import Chars, ConnectionKind
+from ceres.character.domain.career import ARMY, PRISONER, SCOUT
+from ceres.character.domain.career.career_data import (
     AdvancementDmEffect,
     AdvancementDmOption,
     AssignmentData,
@@ -22,8 +23,7 @@ from ceres.character.careers.career_data import (
     RankBonus,
     RankEntry,
 )
-from ceres.character.careers.loader import load_careers
-from ceres.character.characteristics import Chars, ConnectionKind
+from ceres.character.domain.career.loader import load_careers
 from ceres.character.events import (
     AdvancementDmChoiceEvent,
     AdvancementEvent,
@@ -842,8 +842,8 @@ def test_pending_choices_event_from_form_and_input_specs():
 def test_career_skill_roll_pending_base_event_from_form_char_and_skill():
     from typing import Literal
 
-    from ceres.character.careers.common_pending import CareerSkillRollPendingBase
-    from ceres.character.careers.navy import PendingNavyMishap3SkillRoll
+    from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
+    from ceres.character.domain.career.navy import PendingNavyMishap3SkillRoll
 
     pending = PendingNavyMishap3SkillRoll(
         pending_id=(7, 0),
@@ -880,7 +880,7 @@ def test_career_skill_roll_pending_base_event_from_form_char_and_skill():
 def test_career_skill_roll_pending_base_input_specs_includes_char_options():
     from typing import Literal
 
-    from ceres.character.careers.common_pending import CareerSkillRollPendingBase
+    from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 
     class _PendingEduRoll(CareerSkillRollPendingBase):
         kind: Literal['_test_edu_roll'] = '_test_edu_roll'
@@ -893,8 +893,8 @@ def test_career_skill_roll_pending_base_input_specs_includes_char_options():
 
 
 def test_career_skill_choice_pending_base_event_from_form_and_input_specs():
-    from ceres.character.careers.career_data import AdvancementDmOption
-    from ceres.character.careers.scholar import PendingScholarScienceChoice
+    from ceres.character.domain.career.career_data import AdvancementDmOption
+    from ceres.character.domain.career.scholar import PendingScholarScienceChoice
     from ceres.character.skills import LifeScience
 
     adv_dm = AdvancementDmOption()
@@ -923,9 +923,9 @@ def test_career_skill_choice_pending_base_event_from_form_and_input_specs():
 def test_career_skill_choice_pending_base_on_skill_chosen_grants_skill_and_queues_progress():
     from typing import Literal
 
-    from ceres.character.careers.common_pending import CareerSkillChoicePendingBase
-    from ceres.character.careers.loader import load_careers
-    from ceres.character.careers.scholar import PendingScholarScienceChoice
+    from ceres.character.domain.career.common_pending import CareerSkillChoicePendingBase
+    from ceres.character.domain.career.loader import load_careers
+    from ceres.character.domain.career.scholar import PendingScholarScienceChoice
 
     class _PendingSkillChoice(CareerSkillChoicePendingBase):
         kind: Literal['_test_skill_choice'] = '_test_skill_choice'

@@ -154,7 +154,7 @@ class MarineEvent:
 
 def test_audit_real_source_code_scans_marines_file() -> None:
     repo_root = Path(__file__).resolve().parents[2]
-    marines_path = repo_root / 'src' / 'ceres' / 'character' / 'careers' / 'marines.py'
+    marines_path = repo_root / 'src' / 'ceres' / 'character' / 'domain' / 'career' / 'marines.py'
 
     declarations = collect_discriminator_declarations([marines_path])
     result = audit_discriminator_literals(

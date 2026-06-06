@@ -4,18 +4,18 @@ from typing import Annotated
 
 from pydantic import Field
 
-from ceres.character.careers.agent import (
+from ceres.character.domain.career.agent import (
     AgentMishap2Accept,
     AgentMishap2Refuse,
     AgentMishap5Ally,
     AgentMishap5Contact,
     AgentMishap5Family,
 )
-from ceres.character.careers.army import (
+from ceres.character.domain.career.army import (
     ArmyMishap4Cooperate,
     ArmyMishap4JoinRing,
 )
-from ceres.character.careers.citizen import (
+from ceres.character.domain.career.citizen import (
     CitizenEvent8DoSo,
     CitizenEvent8GainContact,
     CitizenEvent8GainDeception,
@@ -24,7 +24,7 @@ from ceres.character.careers.citizen import (
     CitizenMishap4Cooperate,
     CitizenMishap4Resist,
 )
-from ceres.character.careers.drifter import (
+from ceres.character.domain.career.drifter import (
     DrifterEvent3Accept,
     DrifterEvent3Decline,
     DrifterEvent9Accept,
@@ -32,31 +32,31 @@ from ceres.character.careers.drifter import (
     DrifterEvent9Injury,
     DrifterEvent9Prison,
 )
-from ceres.character.careers.entertainer import (
+from ceres.character.domain.career.entertainer import (
     EntertainerEvent8Accept,
     EntertainerEvent8Refuse,
 )
-from ceres.character.careers.marines import (
+from ceres.character.domain.career.marines import (
     MarinesEvent9Protect,
     MarinesEvent9Report,
     MarinesMishap4Accept,
     MarinesMishap4Refuse,
 )
-from ceres.character.careers.merchant import (
+from ceres.character.domain.career.merchant import (
     MerchantEvent3Accept,
     MerchantEvent3Refuse,
 )
-from ceres.character.careers.navy import (
+from ceres.character.domain.career.navy import (
     NavyEvent10Profit,
     NavyEvent10Refuse,
     NavyMishap4NotResponsible,
     NavyMishap4Responsible,
 )
-from ceres.character.careers.noble import (
+from ceres.character.domain.career.noble import (
     NobleEvent8Accept,
     NobleEvent8Refuse,
 )
-from ceres.character.careers.prisoner import (
+from ceres.character.domain.career.prisoner import (
     PrisonerEvent3Attempt,
     PrisonerEvent3Stay,
     PrisonerEvent7Gang,
@@ -74,7 +74,7 @@ from ceres.character.careers.prisoner import (
     PrisonerMishap3Fight,
     PrisonerMishap3Submit,
 )
-from ceres.character.careers.rogue import (
+from ceres.character.domain.career.rogue import (
     RogueEvent3Defend,
     RogueEvent3Lawyer,
     RogueEvent6Backstab,
@@ -82,7 +82,7 @@ from ceres.character.careers.rogue import (
     RogueMishap3RollOther,
     RogueMishap3RollTwo,
 )
-from ceres.character.careers.scholar import (
+from ceres.character.domain.career.scholar import (
     ScholarEvent3Accept,
     ScholarEvent3Decline,
     ScholarEvent8Accept,

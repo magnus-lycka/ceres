@@ -9,11 +9,11 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from ceres.adapters.travellermap import TravellerMapWorld, fetch_world
-from ceres.character.careers.loader import load_careers
+from ceres.character.domain.career.loader import load_careers
+from ceres.character.domain.precareer import load_precareers
 from ceres.character.events import AnyEvent, PendingCareerChoice
 from ceres.character.input_specs import SelectWorld, WorldFilterCriteria
-from ceres.character.precareers import load_precareers
-from ceres.character.replay import ReplayError
+from ceres.character.mechanism.replay import ReplayError
 from ceres.character.report import render_npc_gallery_pdf
 from ceres.character.sophonts import SOPHONT_NAMES, get_sophont
 from ceres.character.spec import spec_from_summary

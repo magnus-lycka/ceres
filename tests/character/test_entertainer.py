@@ -1,6 +1,6 @@
 """Tests for the Entertainer career — artist, journalist, and performer assignments."""
 
-from ceres.character.careers.entertainer import (
+from ceres.character.domain.career.entertainer import (
     EntertainerEvent8Accept,
     EntertainerEvent8Refuse,
     PendingEntertainerEvent3SkillRoll,
@@ -19,7 +19,7 @@ from ceres.character.events import (
     TermEventEvent,
     UcpEvent,
 )
-from ceres.character.replay import replay
+from ceres.character.mechanism.replay import replay
 from ceres.character.skills import (
     Admin,
     Athletics,

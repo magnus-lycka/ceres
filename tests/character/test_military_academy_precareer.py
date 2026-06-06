@@ -2,9 +2,9 @@ from typing import Any
 
 from ceres.character import skills as character_skills
 from ceres.character.characteristics import Chars
+from ceres.character.domain.precareer.loader import load_precareers
+from ceres.character.domain.precareer.military_academy import MilitaryAcademyPreCareer
 from ceres.character.events import PreCareerEntryEvent, PreCareerGraduationEvent
-from ceres.character.precareers.loader import load_precareers
-from ceres.character.precareers.military_academy import MilitaryAcademyPreCareer
 from ceres.character.sophonts import VILANI
 from ceres.character.state import CharacterProjection, CharacterSummary
 from tests.character.helpers import MOCK_WORLD
@@ -40,7 +40,7 @@ def test_entry_grants_direct_tied_career_service_skills_and_skips_choice_lists(m
                 },
             )()
 
-    monkeypatch.setattr('ceres.character.careers.loader.load_careers', lambda: {'Army': FakeCareer()})
+    monkeypatch.setattr('ceres.character.domain.career.loader.load_careers', lambda: {'Army': FakeCareer()})
     projection = _projection()
     academy = load_precareers()['Army Academy']
 
@@ -63,7 +63,7 @@ def test_entry_grants_direct_tied_career_service_skills_and_skips_choice_lists(m
 
 
 def test_entry_is_noop_when_tied_career_is_unknown(monkeypatch):
-    monkeypatch.setattr('ceres.character.careers.loader.load_careers', lambda: {})
+    monkeypatch.setattr('ceres.character.domain.career.loader.load_careers', lambda: {})
     projection = _projection()
     academy = MilitaryAcademyPreCareer(
         name='Ghost Academy',

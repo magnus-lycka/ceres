@@ -2,10 +2,10 @@
 
 from pydantic import BaseModel
 
-from ceres.character.careers.career_data import CareerData, TermData
-from ceres.character.careers.loader import load_careers
-from ceres.character.precareers.loader import load_precareers
-from ceres.character.precareers.precareer_data import PreCareerData
+from ceres.character.domain.career.career_data import CareerData, TermData
+from ceres.character.domain.career.loader import load_careers
+from ceres.character.domain.precareer.loader import load_precareers
+from ceres.character.domain.precareer.precareer_data import PreCareerData
 
 
 class TestTermDataStructure:

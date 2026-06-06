@@ -3,8 +3,8 @@
 from typing import Any, Literal
 
 from ceres.adapters.travellermap import TravellerMapWorld
-from ceres.character.careers.common_pending import CareerSkillRollPendingBase
 from ceres.character.characteristics import Chars
+from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 from ceres.character.events import (
     AdvancementEvent,
     AgingCrisisEvent,
@@ -41,7 +41,7 @@ from ceres.character.events import (
     TermEventEvent,
     UcpEvent,
 )
-from ceres.character.replay import replay
+from ceres.character.mechanism.replay import replay
 from ceres.character.skills import AnySkill
 from ceres.character.sophonts import Sophont
 from ceres.character.state import CharacterProjection, ChoiceBase

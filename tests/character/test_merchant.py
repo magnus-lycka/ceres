@@ -1,7 +1,7 @@
 """Tests for the Merchant career — merchant marine, free trader, and broker assignments."""
 
-from ceres.character.careers.common_pending import PendingAdvancedTrainingSkillRoll
-from ceres.character.careers.merchant import (
+from ceres.character.domain.career.common_pending import PendingAdvancedTrainingSkillRoll
+from ceres.character.domain.career.merchant import (
     MerchantEvent3Accept,
     MerchantEvent3Refuse,
     MerchantEvent3SkillRoll,
@@ -21,7 +21,7 @@ from ceres.character.events import (
     TermEventEvent,
     UcpEvent,
 )
-from ceres.character.replay import replay
+from ceres.character.mechanism.replay import replay
 from ceres.character.skills import (
     Admin,
     Advocate,

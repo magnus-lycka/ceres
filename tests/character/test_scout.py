@@ -1,14 +1,14 @@
 """Tests for Scout career events, mishaps, and assignment table corrections."""
 
-from ceres.character.careers.career_data import AdvancementDmOption
-from ceres.character.careers.scout import (
+from ceres.character.characteristics import Chars, ConnectionKind
+from ceres.character.domain.career.career_data import AdvancementDmOption
+from ceres.character.domain.career.scout import (
     PendingScoutEvent3SkillRoll,
     PendingScoutEvent8SkillRoll,
     PendingScoutEvent9SkillRoll,
     PendingScoutEvent10SkillRoll,
     PendingScoutEvent11,
 )
-from ceres.character.characteristics import Chars, ConnectionKind
 from ceres.character.events import (
     AdvancementDmChoiceEvent,
     AdvancementEvent,
@@ -33,7 +33,7 @@ from ceres.character.events import (
     TermEventEvent,
     UcpEvent,
 )
-from ceres.character.replay import replay
+from ceres.character.mechanism.replay import replay
 from ceres.character.skills import (
     Admin,
     Athletics,

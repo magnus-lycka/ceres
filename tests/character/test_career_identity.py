@@ -1,6 +1,6 @@
 """Tests for index-based career/assignment identity (replacing string identity checks)."""
 
-from ceres.character.careers.loader import load_careers
+from ceres.character.domain.career.loader import load_careers
 from ceres.character.events import (
     AdvancementEvent,
     BackgroundSkillsEvent,
@@ -10,7 +10,7 @@ from ceres.character.events import (
     TermEventEvent,
     UcpEvent,
 )
-from ceres.character.replay import replay
+from ceres.character.mechanism.replay import replay
 from ceres.character.sophonts import VILANI
 from tests.character.helpers import MOCK_WORLD
 
