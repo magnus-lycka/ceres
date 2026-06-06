@@ -302,9 +302,6 @@ world.
 
 ## Character creation: known implementation gaps (rules not yet enforced)
 
-- **Aging row ≤ −6: mental reduction after crisis** — if an aging crisis fires,
-  the mental characteristic −1 from that aging row is never applied to a
-  character who survives the crisis.
 - **Injury table 1D damage** — rows 1 and 2 reduce a physical characteristic by
   1D. The form and auto-fill paths should be verified to record the actual die
   result rather than always using 1.

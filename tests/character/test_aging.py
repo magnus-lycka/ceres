@@ -13,6 +13,7 @@ from ceres.character.events import (
     CharacterStartedEvent,
     MishapEvent,
     PendingAgingChoice,
+    PendingAgingChoiceMental,
     PendingAgingCrisis,
     PendingAgingRoll,
     PendingMusterOut,
@@ -557,3 +558,100 @@ class TestAgingEffectiveMinus3:
             p for p in projection.pending_inputs if isinstance(p, PendingAgingChoice) and 'reduce by 1' in p.instruction
         ]
         assert len(by_1) == 2
+
+
+def _setup_through_8_terms_advancement(ucp: str) -> list:
+    """Character through 8 Scout Courier terms to advancement, ready for final AgingRollEvent.
+
+    Uses UCP with EDU=3 (DM −1) so advancement always fails (EDU 9+, max 9−1=8 < 9).
+    Advancement rolls increase each term to avoid forced leave (roll > terms_in_career).
+    Aging rolls at terms 5–8 use effective=1 (no effect) to avoid any characteristic loss.
+    Ends with PendingAgingRoll('46.0'): terms_started=8, age=50 ≥ 34.
+    Roll 2 on the next AgingRollEvent gives effective 2−8=−6 (≤ −6 branch).
+    """
+    return [
+        CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Test'),
+        UcpEvent(id=2, fulfills='1.0', ucp=ucp),
+        BackgroundSkillsEvent(id=3, fulfills='2.0', skills=[Admin(), Athletics()]),
+        # Term 1 (age 18→22, no aging)
+        CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+        SurviveEvent(id=5, fulfills='4.0', roll=7),
+        TermEventEvent(id=6, fulfills='5.0', roll=5),
+        AdvancementEvent(id=7, fulfills='6.0', roll=3),  # terms_in_career=1, 3>1 no forced leave
+        ReenlistEvent(id=8, fulfills='7.0', reenlist=True),
+        # Term 2 (age 22→26, no aging)
+        SkillTableEvent(id=9, fulfills='8.0', table='service_skills', roll=1),
+        SurviveEvent(id=10, fulfills='9.0', roll=7),
+        TermEventEvent(id=11, fulfills='10.0', roll=5),
+        AdvancementEvent(id=12, fulfills='11.0', roll=3),  # terms_in_career=2, 3>2
+        ReenlistEvent(id=13, fulfills='12.0', reenlist=True),
+        # Term 3 (age 26→30, no aging)
+        SkillTableEvent(id=14, fulfills='13.0', table='service_skills', roll=1),
+        SurviveEvent(id=15, fulfills='14.0', roll=7),
+        TermEventEvent(id=16, fulfills='15.0', roll=5),
+        AdvancementEvent(id=17, fulfills='16.0', roll=4),  # terms_in_career=3, 4>3
+        ReenlistEvent(id=18, fulfills='17.0', reenlist=True),
+        # Term 4 (age 30→34 via queue_reenlist_or_aging)
+        SkillTableEvent(id=19, fulfills='18.0', table='service_skills', roll=1),
+        SurviveEvent(id=20, fulfills='19.0', roll=7),
+        TermEventEvent(id=21, fulfills='20.0', roll=5),
+        AdvancementEvent(id=22, fulfills='21.0', roll=5),  # terms_in_career=4, 5>4; age→34, PendingAgingRoll('22.0')
+        # Aging at terms_started=4, roll=5 → effective 5−4=1 → no effect
+        AgingRollEvent(id=23, fulfills='22.0', roll=5),  # complete_aging → PendingAssignmentChangeChoice('23.0')
+        ReenlistEvent(id=24, fulfills='23.0', reenlist=True),  # starts term 5, PendingSkillTable('24.0')
+        # Term 5 (age 34→38)
+        SkillTableEvent(id=25, fulfills='24.0', table='service_skills', roll=1),
+        SurviveEvent(id=26, fulfills='25.0', roll=7),
+        TermEventEvent(id=27, fulfills='26.0', roll=5),
+        AdvancementEvent(id=28, fulfills='27.0', roll=6),  # terms_in_career=5, 6>5; age→38, PendingAgingRoll('28.0')
+        # Aging at terms_started=5, roll=6 → effective 6−5=1 → no effect
+        AgingRollEvent(id=29, fulfills='28.0', roll=6),
+        ReenlistEvent(id=30, fulfills='29.0', reenlist=True),
+        # Term 6 (age 38→42)
+        SkillTableEvent(id=31, fulfills='30.0', table='service_skills', roll=1),
+        SurviveEvent(id=32, fulfills='31.0', roll=7),
+        TermEventEvent(id=33, fulfills='32.0', roll=5),
+        AdvancementEvent(id=34, fulfills='33.0', roll=7),  # terms_in_career=6, 7>6; age→42, PendingAgingRoll('34.0')
+        # Aging at terms_started=6, roll=7 → effective 7−6=1 → no effect
+        AgingRollEvent(id=35, fulfills='34.0', roll=7),
+        ReenlistEvent(id=36, fulfills='35.0', reenlist=True),
+        # Term 7 (age 42→46)
+        SkillTableEvent(id=37, fulfills='36.0', table='service_skills', roll=1),
+        SurviveEvent(id=38, fulfills='37.0', roll=7),
+        TermEventEvent(id=39, fulfills='38.0', roll=5),
+        AdvancementEvent(id=40, fulfills='39.0', roll=8),  # terms_in_career=7, 8>7; age→46, PendingAgingRoll('40.0')
+        # Aging at terms_started=7, roll=8 → effective 8−7=1 → no effect
+        AgingRollEvent(id=41, fulfills='40.0', roll=8),
+        ReenlistEvent(id=42, fulfills='41.0', reenlist=True),
+        # Term 8 (age 46→50)
+        SkillTableEvent(id=43, fulfills='42.0', table='service_skills', roll=1),
+        SurviveEvent(id=44, fulfills='43.0', roll=7),
+        TermEventEvent(id=45, fulfills='44.0', roll=5),
+        AdvancementEvent(id=46, fulfills='45.0', roll=9),  # terms_in_career=8, 9>8; age→50, PendingAgingRoll('46.0')
+        # Next: AgingRollEvent(id=47, fulfills='46.0', roll=2) → effective 2−8=−6 → else branch
+    ]
+
+
+class TestAgingEffectiveMinus6:
+    """Effective ≤ −6: each physical −2, then INT or SOC −1 (unless a crisis fires first)."""
+
+    def test_no_crisis_queues_mental_choice(self):
+        # STR=7: after −2 → STR=5, DEX=6, END=4 — no zeros, no crisis → PendingAgingChoiceMental queued
+        events = [*_setup_through_8_terms_advancement('786935'), AgingRollEvent(id=47, fulfills='46.0', roll=2)]
+        projection = replay(1, events)
+
+        assert any(isinstance(p, PendingAgingChoiceMental) for p in projection.pending_inputs)
+
+    def test_crisis_suppresses_mental_choice(self):
+        # STR=2: after −2 → STR=0 — crisis fires, mental choice must not be queued
+        events = [*_setup_through_8_terms_advancement('286935'), AgingRollEvent(id=47, fulfills='46.0', roll=2)]
+        projection = replay(1, events)
+
+        assert not any(isinstance(p, PendingAgingChoiceMental) for p in projection.pending_inputs)
+
+    def test_crisis_queued_when_str_zero(self):
+        # Verify PendingAgingCrisis is present (not just absence of mental choice)
+        events = [*_setup_through_8_terms_advancement('286935'), AgingRollEvent(id=47, fulfills='46.0', roll=2)]
+        projection = replay(1, events)
+
+        assert any(isinstance(p, PendingAgingCrisis) for p in projection.pending_inputs)
