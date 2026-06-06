@@ -129,13 +129,7 @@ class NavyEvent10Profit(ChoiceBase):
 
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
-        projection.scheduled_effects.append(
-            ScheduledEffect(
-                trigger=EffectTrigger.MUSTER_OUT_ADD,
-                source_event_id=event.id,
-                effect={'type': EffectType.ADD, 'value': 1},
-            )
-        )
+        projection.summary.career_terms[-1].require_muster_out().extra_rolls += 1
         projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 
 

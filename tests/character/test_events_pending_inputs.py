@@ -533,15 +533,12 @@ def test_muster_out_setup_and_complete_aging_helper_branches():
         term_count=1,
         rank=2,
     )
-    projection.scheduled_effects = [
-        ScheduledEffect(trigger=EffectTrigger.MUSTER_OUT_REDUCE, source_event_id=1, effect={'value': 1}),
-        ScheduledEffect(trigger=EffectTrigger.MUSTER_OUT_ADD, source_event_id=2, effect={'value': 2}),
-    ]
+    projection.summary.career_terms[-1].require_muster_out().lost_rolls = 1
+    projection.summary.career_terms[-1].require_muster_out().extra_rolls = 2
 
     next_idx = muster_out_setup(projection, career, source_event_id=6, pending_idx=0)
 
     assert next_idx == 3
-    assert projection.scheduled_effects == []
     assert projection.summary.current_career is None
     assert len([p for p in projection.pending_inputs if isinstance(p, PendingMusterOut)]) == 3
 

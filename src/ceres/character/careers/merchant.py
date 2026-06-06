@@ -34,7 +34,6 @@ from ceres.character.careers.career_data import (
 from ceres.character.careers.common import handle_advanced_training
 from ceres.character.careers.common_pending import CareerSkillRollPendingBase
 from ceres.character.characteristics import Chars
-from ceres.character.effect_enums import EffectType
 from ceres.character.events import (
     PendingChoices,
     PendingSkillChoice,
@@ -72,10 +71,8 @@ from ceres.character.skills import (
 from ceres.character.state import (
     CharacterProjection,
     ChoiceBase,
-    EffectTrigger,
     Enemy,
     Rival,
-    ScheduledEffect,
 )
 
 # ── event 3: smuggling opportunity ───────────────────────────────────────────
@@ -88,13 +85,7 @@ class MerchantEvent3SkillRoll(CareerSkillRollPendingBase):
         from ceres.character.events import _apply_mishap_ejection
 
         if event.modified_roll >= 8:
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger=EffectTrigger.MUSTER_OUT_ADD,
-                    source_event_id=event.id,
-                    effect={'type': EffectType.ADD, 'value': 1},
-                )
-            )
+            projection.summary.career_terms[-1].require_muster_out().extra_rolls += 1
             # no pending added — _apply_skill_roll auto-queues advancement
         else:
             career = projection.get_current_career()

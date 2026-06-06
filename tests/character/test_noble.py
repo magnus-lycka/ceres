@@ -26,7 +26,6 @@ from ceres.character.replay import replay
 from ceres.character.skills import Admin, Athletics, Carouse, Deception, Drive, Persuade, Stealth
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
-    EffectTrigger,
     Enemy,
     Rival,
 )
@@ -212,8 +211,7 @@ class TestNobleEvent8:
             SkillRollEvent(id=8, fulfills='7.0', skill=Admin(), modified_roll=9),
         ]
         projection = replay(1, events)
-        add_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.MUSTER_OUT_ADD]
-        assert len(add_effects) == 1
+        assert projection.summary.career_terms[-1].require_muster_out().extra_rolls == 1
 
     def test_accept_success_continues_career(self):
         events = [

@@ -199,8 +199,7 @@ class TestRogueEvent3:
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
-        reduce_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.MUSTER_OUT_REDUCE]
-        assert len(reduce_effects) == 1
+        assert projection.summary.career_terms[-1].require_muster_out().lost_rolls == 1
 
     def test_lawyer_queues_advancement(self):
         events = [
@@ -348,8 +347,7 @@ class TestRogueEvent9:
             SkillRollEvent(id=7, fulfills='6.0', skill=Streetwise(), modified_roll=9),
         ]
         projection = replay(1, events)
-        add_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.MUSTER_OUT_ADD]
-        assert len(add_effects) == 1
+        assert projection.summary.career_terms[-1].require_muster_out().extra_rolls == 1
 
     def test_failure_adds_injury_problem(self):
         events = [

@@ -180,13 +180,7 @@ class PendingDrifterEvent9RollSkillRoll(CareerSkillRollPendingBase):
             )
             projection.pending_inputs.append(career_progress_pending(projection, career, event.id, 1))
         else:  # 4-6
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger=EffectTrigger.MUSTER_OUT_ADD,
-                    source_event_id=event.id,
-                    effect={'type': EffectType.ADD, 'value': 1},
-                )
-            )
+            projection.summary.career_terms[-1].require_muster_out().extra_rolls += 1
             # _apply_skill_roll auto-queues advancement
 
 

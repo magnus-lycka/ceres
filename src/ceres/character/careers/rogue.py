@@ -190,13 +190,7 @@ class RogueEvent3Lawyer(ChoiceBase):
 
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
-        projection.scheduled_effects.append(
-            ScheduledEffect(
-                trigger=EffectTrigger.MUSTER_OUT_REDUCE,
-                source_event_id=event.id,
-                effect={'type': EffectType.REDUCE, 'value': 1},
-            )
-        )
+        projection.summary.career_terms[-1].require_muster_out().lost_rolls += 1
         projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 
 
@@ -271,13 +265,7 @@ class PendingRogueEvent9SkillRoll(CareerSkillRollPendingBase):
 
     def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
         if event.modified_roll >= 8:
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger=EffectTrigger.MUSTER_OUT_ADD,
-                    source_event_id=event.id,
-                    effect={'type': EffectType.ADD, 'value': 1},
-                )
-            )
+            projection.summary.career_terms[-1].require_muster_out().extra_rolls += 1
             # no pending added — _apply_skill_roll auto-queues advancement
         else:
             projection.summary.problems.append(

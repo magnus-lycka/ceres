@@ -393,6 +393,11 @@ class CareerData(TermData):
         event_id: int,
         qualification_roll: int,
     ) -> None:
+        from ceres.character.replay import ReplayError
+
+        last = projection.summary.last_career
+        if last is not None and type(last) is type(self) and projection.summary.last_career_ejected:
+            raise ReplayError(f'Cannot re-enter {self.name} — ejected from this career last term')
 
         # Check for auto-qualify from pre-career graduation
         auto_effects = [

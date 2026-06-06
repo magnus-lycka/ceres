@@ -397,6 +397,148 @@ world.
   Agent/Citizen/Entertainer/Merchant: treated as a new career with full muster
   out.
 
+### CareerTerm narrative fields
+
+`CareerTerm` should carry the narrative state from the term so background text
+generators and the UI can describe what happened:
+
+- `mishap: str | None = None` — the mishap description if the character was
+  ejected; `None` means the term was completed normally
+- `event: str | None = None` — the life event description for the term; only
+  set when `mishap is None`
+- `prison: str | None = None` — the prison-sending description if the character
+  was sent to the Prisoner career during this term
+
+These fields serve two purposes beyond narrative:
+
+- A background text generator can read them directly without re-interpreting
+  event IDs or replaying history
+- `mishap is not None` on the last term of a career run is the signal that the
+  character was ejected, which drives career re-entry restrictions (see below)
+
+### Career re-entry restrictions
+
+The Core Rulebook qualification section states (paraphrased):
+
+> If you leave a career you cannot return to it in the next term. Exceptions:
+> the draft (you can be drafted back into a career you left or were ejected
+> from) and the Drifter career (always open). Assignment changes on page 20 add
+> a further exception.
+
+The page-20 exception is that Agent/Citizen/Entertainer/Merchant may leave
+their current assignment and enter a different assignment in the same career,
+treated as a new career, when leaving voluntarily. That is an explicit
+exception; the restriction still applies to re-entering the same assignment.
+
+Rules that need to be enforced in `start_career()`:
+
+- **Ejected last term (mishap on last term of career run)**: cannot re-enter
+  the same career the following term regardless of assignment. Exception: draft.
+- **Voluntarily mustered out from an `allows_assignment_change=True` career**
+  (Scout/Army/Marines/Navy/Noble/Rogue/Scholar): cannot re-enter that career
+  the following term. Exception: draft.
+- **Voluntarily mustered out from an `allows_assignment_change=False` career**
+  (Agent/Citizen/Entertainer/Merchant): cannot re-enter the same assignment the
+  following term, but may enter a different assignment in the same career (which
+  starts a new career run). Exception: same-assignment re-entry via draft is
+  allowed.
+
+`MusterOut.used` (already added) prevents `continue_career_run_from()`
+treating a post-muster re-entry as a run continuation.
+
+What still needs to be implemented:
+
+- `CharacterSummary` (or the projection) needs to track whether the most recent
+  departure from each career was ejection or voluntary, so `start_career()` can
+  enforce the correct restriction. Currently only `last_career` is recorded with
+  no ejection flag. The simplest approach: a field
+  `last_career_ejected: bool = False` set alongside `last_career` in
+  `clear_current_career()` — `True` when exiting via mishap, `False` for
+  voluntary muster-out.
+- `start_career()` checks these restrictions before qualifying, raises
+  `ReplayError` if violated (with a clear message). The draft bypass goes
+  through a separate code path that skips the restriction check.
+
+### Career transition choice model
+
+When a term ends (or muster-out completes), the player's valid next choices
+are not just "reenlist or leave." They include every available
+career/assignment combination. These should be modelled as a first-class domain
+concept rather than scattered across several pending-input types.
+
+#### Pull-based discovery
+
+A central coordinator (e.g. `collect_career_transitions(summary)`) broadcasts
+to every registered career:
+
+```text
+"What assignments do you offer this character for their next term?"
+```
+
+Each career receives the full `CharacterSummary` and is solely responsible for
+deciding what it offers and why. It returns a list of typed option objects —
+possibly empty if it has nothing to offer. The coordinator collects all
+responses into one flat list and hands it to the pending-input machinery.
+
+This is a pull model, not a push model. The career owns all the logic: it
+looks at whatever parts of the summary matter to it and filters accordingly.
+A career might care about any combination of:
+
+- whether the character was ejected from this career last term
+- whether the character left voluntarily last term (blocking same-career/
+  same-assignment re-entry)
+- how many prior terms the character has in this career
+- age (some careers have age limits)
+- characteristics (qualification DM)
+- homeworld (Scout requires a Scout/Way Station base — RIC-006)
+- whether a forced next career is active (e.g. sent to Prisoner)
+- whether the character is already in this career and which assignment
+- whether `allows_assignment_change` applies
+
+No external code should re-implement these concerns. The coordinator just
+aggregates; the career decides.
+
+#### Option shape
+
+Each option carries:
+
+- Target career and assignment
+- Whether it requires muster-out from the current career first (e.g.
+  `allows_assignment_change=False` assignment switches, or any career change)
+- Qualification requirement (`CharCheck | None`, where `None` = auto-qualify)
+- Pre-computed DM from current characteristics
+- A human-readable label
+
+The qualification target and DM are visible in the option so the player can
+see what they need to roll before committing. The player should never have
+to pick a career, then an assignment, only to find the combination is
+unavailable.
+
+#### Restrictions each career encodes
+
+- **Current assignment**: `qualification=None` (automatic reenlist)
+- **Other assignments in same career** (for `allows_assignment_change=True`
+  careers): normal qualification roll for the new assignment
+- **Other assignments in same career** (for `allows_assignment_change=False`
+  careers): counts as a new career, marked `requires_muster_out=True`; blocked
+  if ejected last term or if the character is re-entering the same assignment
+- **Other careers**: all selectable careers that pass this career's own filter
+- **Muster out / end career**: always available (unless currently in no career)
+- **Draft**: always available; no roll (career randomised by draft table)
+- **Drifter**: always available; no roll
+- **Prison**: if `career.prison is not None`, the only option the career
+  returns is the prison transition; no qualification roll; forced
+
+#### End state
+
+This unified list will eventually replace the current patchwork of
+`PendingReenlist`, `PendingAssignmentChangeChoice`, and `PendingDraftChoice`
+with a single `PendingCareerTransition` carrying structured
+`CareerTransitionOption` objects.
+
+The UI renders the flat list directly — one picker, all options visible at
+once, qualification requirements and DMs shown alongside each choice.
+
 ## Character creation: eliminate remaining semantic strings
 
 The career YAML migration removed string-based skill/characteristic fields from
@@ -982,9 +1124,11 @@ The proper fix is to make `ShipPart` generic over the assembly type, e.g.
 `ShipPart[TAssembly: ShipBase]`, so that a part can declare exactly what it
 needs:
 
-    class Automation(ShipPart[Ship]):
-        def _basis(self) -> float:
-            return self.assembly.hull ...   # ty now knows assembly is Ship
+```python
+class Automation(ShipPart[Ship]):
+    def _basis(self) -> float:
+        return self.assembly.hull ...   # ty now knows assembly is Ship
+```
 
 Parts that genuinely work with any `ShipBase` stay as `ShipPart[ShipBase]`.
 This is a non-trivial refactor because Pydantic generics interact with

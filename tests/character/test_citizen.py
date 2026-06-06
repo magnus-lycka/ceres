@@ -335,8 +335,7 @@ class TestCitizenEvent8:
             CareerChoiceEvent.for_choice(CitizenEvent8DoSo, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
-        add_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.MUSTER_OUT_ADD]
-        assert len(add_effects) == 1
+        assert projection.summary.career_terms[-1].require_muster_out().extra_rolls == 1
 
     def test_use_it_continues_career(self):
         events = [

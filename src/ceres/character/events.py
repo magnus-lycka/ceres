@@ -272,12 +272,14 @@ def _apply_mishap_ejection(
     projection.summary.age += 4
     if projection.summary.age >= 34:
         projection.muster_out_career = career
-        projection.clear_current_career()
+        projection.clear_current_career(ejected=True)
         projection.pending_inputs.append(
             PendingAgingRoll(id=f'{source_event_id}.{pending_idx}', instruction='Roll 2D on Aging table')
         )
         return pending_idx + 1
-    return muster_out_setup(projection, career, source_event_id, pending_idx, lose_current_term=lose_current_term)
+    return muster_out_setup(
+        projection, career, source_event_id, pending_idx, lose_current_term=lose_current_term, ejected=True
+    )
 
 
 def _apply_prisoner_advancement(projection: Any, event: Any, career: Any) -> None:
@@ -582,12 +584,12 @@ class MishapEvent(EventBase):
             projection.summary.age += 4
             if projection.summary.age >= 34:
                 projection.muster_out_career = career
-                projection.clear_current_career()
+                projection.clear_current_career(ejected=True)
                 projection.pending_inputs.append(
                     PendingAgingRoll(id=f'{self.id}.{pending_idx}', instruction='Roll 2D on Aging table')
                 )
             else:
-                muster_out_setup(projection, career, self.id, pending_idx, lose_current_term=True)
+                muster_out_setup(projection, career, self.id, pending_idx, lose_current_term=True, ejected=True)
 
 
 class TermEventEvent(EventBase):
@@ -1230,13 +1232,8 @@ class LifeEventEvent(EventBase):
                     _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id)
                 )
         elif roll == 11:
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger=EffectTrigger.MUSTER_OUT_REDUCE,
-                    source_event_id=self.id,
-                    effect={'type': EffectType.REDUCE, 'value': 1},
-                )
-            )
+            if projection.summary.career_terms:
+                projection.summary.career_terms[-1].require_muster_out().lost_rolls += 1
             if in_career and career is not None:
                 projection.pending_inputs.append(
                     _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id, 0)
@@ -1301,6 +1298,8 @@ class MusterOutEvent(EventBase):
                 _apply_muster_out_benefit(projection, row.benefit, self.id)
         remaining = [p for p in projection.pending_inputs if isinstance(p, PendingMusterOut)]
         if not remaining:
+            if projection.summary.career_terms:
+                projection.summary.career_terms[-1].require_muster_out().used = True
             projection.muster_out_career = None
             if not projection.summary.dead:
                 queue_career_choice_indexed(projection, self.id, 0, 'Start a new career, or finish character creation')
@@ -1785,26 +1784,18 @@ def muster_out_setup(
     pending_idx: int = 0,
     lose_current_term: bool = False,
     clear_career: bool = True,
+    ejected: bool = False,
 ) -> int:
     current_term = projection.summary.career_terms[-1] if projection.summary.career_terms else None
-    run_terms = current_term.muster_out.terms if current_term is not None else 0
+    muster_out = current_term.muster_out if current_term is not None else None
+    run_terms = muster_out.terms if muster_out is not None else 0
     roll_count = run_terms + (projection.summary.rank or 0) // 2
     if lose_current_term:
         roll_count = max(0, roll_count - 1)
-    reduce_effects = [
-        se for se in projection.scheduled_effects if se.trigger == EffectTrigger.MUSTER_OUT_REDUCE and se.consume
-    ]
-    for se in reduce_effects:
-        roll_count = max(0, roll_count - se.effect.get('value', 1))
-        projection.scheduled_effects.remove(se)
-    add_effects = [
-        se for se in projection.scheduled_effects if se.trigger == EffectTrigger.MUSTER_OUT_ADD and se.consume
-    ]
-    for se in add_effects:
-        roll_count += se.effect.get('value', 1)
-        projection.scheduled_effects.remove(se)
+    if muster_out is not None:
+        roll_count = max(0, roll_count - muster_out.lost_rolls) + muster_out.extra_rolls
     if clear_career:
-        projection.clear_current_career()
+        projection.clear_current_career(ejected=ejected)
     if roll_count > 0:
         projection.muster_out_career = career
         for _ in range(roll_count):

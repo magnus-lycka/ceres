@@ -199,6 +199,9 @@ class MusterOut(BaseModel):
     terms: int = 1
     cash_count: int = 0
     benefits: list[ItemBenefit] = Field(default_factory=list)
+    extra_rolls: int = 0
+    lost_rolls: int = 0
+    used: bool = False
 
 
 class CareerTerm(BaseModel):
@@ -210,7 +213,17 @@ class CareerTerm(BaseModel):
     muster_out: MusterOut | None = Field(default_factory=MusterOut)
 
     def continue_career_run_from(self, previous: CareerTerm) -> bool:
-        if self.career == previous.career:
+        if not previous.muster_out:
+            return False
+        if previous.muster_out.used:
+            return False
+        career_continue = self.career.allows_assignment_change and (self.career == previous.career)
+        assignment_continue = (
+            not self.career.allows_assignment_change
+            and self.career == previous.career
+            and self.assignment == previous.assignment
+        )
+        if career_continue or assignment_continue:
             if not previous.muster_out:
                 raise ValueError('Previous career should have Muster Out information.')
             self.muster_out = previous.muster_out
@@ -243,6 +256,7 @@ class CharacterSummary(BaseModel):
     current_assignment: str | None = None
     current_assignment_index: int | None = None
     last_career: CareerData | None = None
+    last_career_ejected: bool = False  # True when last_career ended via mishap ejection
     last_assignment: str | None = None  # assignment name after muster-out
     last_assignment_index: int | None = None
     rank: int | None = None
@@ -337,9 +351,10 @@ class CharacterProjection(BaseModel):
     def has_blocking_pending(self) -> bool:
         return any(p.blocking for p in self.pending_inputs)
 
-    def clear_current_career(self) -> None:
+    def clear_current_career(self, ejected: bool = False) -> None:
         if self.summary.current_career is not None:
             self.summary.last_career = self.summary.current_career
+            self.summary.last_career_ejected = ejected
             self.summary.last_assignment = self.summary.current_assignment
             self.summary.last_assignment_index = self.summary.current_assignment_index
         self.summary.current_career = None

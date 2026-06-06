@@ -169,13 +169,7 @@ class CitizenEvent8DoSo(ChoiceBase):
     label: str = 'Use it (gain DM+1 Benefit roll + choose a reward)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        projection.scheduled_effects.append(
-            ScheduledEffect(
-                trigger=EffectTrigger.MUSTER_OUT_ADD,
-                source_event_id=event.id,
-                effect={'type': EffectType.ADD, 'value': 1},
-            )
-        )
+        projection.summary.career_terms[-1].require_muster_out().extra_rolls += 1
         choices: list[ChoiceBase] = []
         if (projection.summary.skill_level(Streetwise) or 0) < 1:
             choices.append(CitizenEvent8GainStreetwise())

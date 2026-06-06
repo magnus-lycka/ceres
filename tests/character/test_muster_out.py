@@ -11,6 +11,7 @@ from ceres.character.events import (
     CharacterStartedEvent,
     MishapEvent,
     MusterOutEvent,
+    PendingDraftChoice,
     PendingMusterOut,
     ReenlistEvent,
     SkillChoiceEvent,
@@ -530,3 +531,100 @@ class TestMusterOut:
 
         muster_out_pendings = [p for p in projection.pending_inputs if isinstance(p, PendingMusterOut)]
         assert len(muster_out_pendings) == 3
+
+
+# ── Career run continuity ──────────────────────────────────────────────────────
+
+
+def _agent_one_term_muster_out() -> list:
+    """Agent/Intelligence one term, then muster out.
+    STR=7 DEX=8 END=6 INT=9 EDU=10 SOC=5. Age=22 after one term.
+    Event 4: BenefitDmEffect — no pending input created.
+    Advancement: INT 5+, DM+1, roll=3 → 4 < 5 → fail.
+    1 term rank 0 → 1 muster-out roll at '8.0'.
+    Career choice pending at '9.0' after roll.
+    """
+    return [
+        *_full_setup(),
+        CareerEvent(id=4, fulfills='3.0', career='Agent', assignment='Intelligence', qualification_roll=5),
+        SurviveEvent(id=5, fulfills='4.0', roll=6),
+        TermEventEvent(id=6, fulfills='5.0', roll=4),
+        AdvancementEvent(id=7, fulfills='6.0', roll=3),
+        ReenlistEvent(id=8, fulfills='7.0', reenlist=False),
+        MusterOutEvent(id=9, fulfills='8.0', table='benefits', roll=1),
+    ]
+
+
+class TestCareerRunContinuity:
+    """Run-continuity semantics: which transitions extend a run vs. start a new one."""
+
+    def test_agent_different_assignment_reentry_starts_new_run(self):
+        """Agent/Intelligence → muster out → Agent/Corporate: new run (terms=1), not continuation."""
+        events = [
+            *_agent_one_term_muster_out(),
+            CareerEvent(id=10, fulfills='9.0', career='Agent', assignment='Corporate', qualification_roll=5),
+        ]
+        projection = replay(1, events)
+
+        assert [t.career.name for t in projection.summary.career_terms] == ['Agent', 'Agent']
+        assert projection.summary.career_terms[-1].require_muster_out().terms == 1
+
+    def test_scout_direct_reentry_after_muster_out_starts_new_run(self):
+        """Scout → muster out → Scout re-entry must start a fresh run (terms=1).
+
+        Currently fails: MusterOut.used is never set to True after rolls complete,
+        so continue_career_run_from() incorrectly continues the previous run.
+        """
+        events = [
+            *_setup_through_reenlist_false(),
+            MusterOutEvent(id=9, fulfills='8.0', table='benefits', roll=1),
+            CareerEvent(id=10, fulfills='9.0', career='Scout', assignment='Courier', qualification_roll=7),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.career_terms[-1].require_muster_out().terms == 1
+
+    def test_failed_qualification_after_muster_out_falls_to_draft(self):
+        """After muster-out, a failed qualification roll for a new career produces a draft/Drifter choice."""
+        events = [
+            *_setup_through_reenlist_false(),
+            MusterOutEvent(id=9, fulfills='8.0', table='benefits', roll=1),
+            # Scout qualification: INT 5+, INT=9 (DM+1). Roll=1 → 1+1=2 < 5 → fail.
+            CareerEvent(id=10, fulfills='9.0', career='Scout', assignment='Courier', qualification_roll=1),
+        ]
+        projection = replay(1, events)
+
+        assert any(isinstance(p, PendingDraftChoice) for p in projection.pending_inputs)
+        assert projection.summary.current_career is None
+
+    def test_ejection_blocks_immediate_same_career_reentry(self):
+        """A character ejected from Scout may not re-enter Scout the following term.
+
+        Currently fails: start_career() does not enforce this restriction.
+        Requires tracking whether the previous departure was a mishap ejection.
+        """
+        events = [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills='4.0', roll=3),  # fail END 7+
+            MishapEvent(id=6, fulfills='5.0', roll=5),  # Scout mishap 5: no effects, ejected
+            CareerEvent(id=7, fulfills='6.0', career='Scout', assignment='Courier', qualification_roll=7),
+        ]
+        with pytest.raises(ReplayError, match='ejected'):
+            replay(1, events)
+
+    def test_ejection_blocks_same_career_different_assignment_reentry(self):
+        """A character ejected from Agent may not re-enter any Agent assignment the following term.
+
+        Currently fails: start_career() does not enforce this restriction.
+        Requires tracking whether the previous departure was a mishap ejection.
+        """
+        events = [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Agent', assignment='Intelligence', qualification_roll=5),
+            SurviveEvent(id=5, fulfills='4.0', roll=3),  # fail END 6+
+            MishapEvent(id=6, fulfills='5.0', roll=4),  # Agent mishap 4: Enemy + Deception 1, ejected
+            CareerEvent(id=7, fulfills='6.0', career='Agent', assignment='Corporate', qualification_roll=5),
+        ]
+        with pytest.raises(ReplayError, match='ejected'):
+            replay(1, events)
