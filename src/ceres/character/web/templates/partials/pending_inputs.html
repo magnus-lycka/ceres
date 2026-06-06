@@ -1,4 +1,7 @@
-{% if is_htmx %}{% with oob=true %}{% include 'partials/char_summary.html' %}{% endwith %}{% endif %}
+{% if is_htmx %}
+{% with oob=true %}{% include 'partials/wizard_header.html' %}{% endwith %}
+{% with oob=true %}{% include 'partials/char_summary.html' %}{% endwith %}
+{% endif %}
 
 {% if error is defined and error %}
 <div class="bg-red-900/40 border border-red-700 text-red-300 px-4 py-3 mb-4 text-sm">{{ error }}</div>

@@ -1009,8 +1009,8 @@ def test_diff_empty_when_nothing_changed():
     assert _diff_summaries(s, s) == []
 
 
-def test_post_event_response_includes_char_summary_oob(client_with_backend):
-    """HTMX response should include an OOB char-summary div after event submission."""
+def test_post_event_response_updates_all_summary_displays_oob(client_with_backend):
+    """HTMX response should update both the page header and detailed summary."""
     client, backend = client_with_backend
     row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Oryn')
     cid = row['id']
@@ -1031,7 +1031,9 @@ def test_post_event_response_includes_char_summary_oob(client_with_backend):
         },
     )
     assert r.status_code == 200
-    assert 'char-summary' in r.text
+    assert 'id="wizard-header"' in r.text
+    assert 'id="char-summary"' in r.text
+    assert r.text.count('hx-swap-oob="true"') == 2
 
 
 # ── connection_type_from_instruction ─────────────────────────────────────────
