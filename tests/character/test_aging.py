@@ -61,7 +61,7 @@ def _setup_through_3_terms_reenlist() -> list:
         SkillTableEvent(id=14, fulfills='13.0', table='service_skills', roll=1),
         SurviveEvent(id=15, fulfills='14.0', roll=7),
         TermEventEvent(id=16, fulfills='15.0', roll=5),
-        AdvancementEvent(id=17, fulfills='16.0', roll=3),
+        AdvancementEvent(id=17, fulfills='16.0', roll=4),
         ReenlistEvent(id=18, fulfills='17.0', reenlist=True),  # age=30
     ]
 
@@ -75,7 +75,7 @@ def _setup_through_4_terms_advancement() -> list:
         SkillTableEvent(id=19, fulfills='18.0', table='service_skills', roll=1),
         SurviveEvent(id=20, fulfills='19.0', roll=7),
         TermEventEvent(id=21, fulfills='20.0', roll=5),
-        AdvancementEvent(id=22, fulfills='21.0', roll=3),
+        AdvancementEvent(id=22, fulfills='21.0', roll=5),
     ]
 
 
@@ -109,13 +109,13 @@ def _setup_low_str_through_4_terms_advancement() -> list:
         SkillTableEvent(id=14, fulfills='13.0', table='service_skills', roll=1),
         SurviveEvent(id=15, fulfills='14.0', roll=7),
         TermEventEvent(id=16, fulfills='15.0', roll=5),
-        AdvancementEvent(id=17, fulfills='16.0', roll=3),
+        AdvancementEvent(id=17, fulfills='16.0', roll=4),
         ReenlistEvent(id=18, fulfills='17.0', reenlist=True),  # age=30
         # Term 4
         SkillTableEvent(id=19, fulfills='18.0', table='service_skills', roll=1),
         SurviveEvent(id=20, fulfills='19.0', roll=7),
         TermEventEvent(id=21, fulfills='20.0', roll=5),
-        AdvancementEvent(id=22, fulfills='21.0', roll=3),
+        AdvancementEvent(id=22, fulfills='21.0', roll=5),
     ]
 
 
@@ -512,7 +512,7 @@ def _setup_through_5_terms_advancement() -> list:
         SkillTableEvent(id=25, fulfills='24.0', table='service_skills', roll=2),  # Survival → PendingSurvive
         SurviveEvent(id=26, fulfills='25.0', roll=10),
         TermEventEvent(id=27, fulfills='26.0', roll=5),  # benefit_dm → PendingAdvancement
-        AdvancementEvent(id=28, fulfills='27.0', roll=3),  # EDU 9+, DM+1 → 4<9 → fail → age=38
+        AdvancementEvent(id=28, fulfills='27.0', roll=6),  # EDU 9+, DM+1 → 7<9 → fail → age=38
         # term_count=5, age=38 → PendingAgingRoll('28.0')
     ]
 

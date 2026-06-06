@@ -73,7 +73,7 @@ def _setup_through_3_terms_reenlist() -> list:
         SkillTableEvent(id=14, fulfills='13.0', table='service_skills', roll=1),
         SurviveEvent(id=15, fulfills='14.0', roll=7),
         TermEventEvent(id=16, fulfills='15.0', roll=5),
-        AdvancementEvent(id=17, fulfills='16.0', roll=3),
+        AdvancementEvent(id=17, fulfills='16.0', roll=4),
         ReenlistEvent(id=18, fulfills='17.0', reenlist=True),  # age=30
     ]
 
@@ -87,7 +87,7 @@ def _setup_through_4_terms_advancement() -> list:
         SkillTableEvent(id=19, fulfills='18.0', table='service_skills', roll=1),
         SurviveEvent(id=20, fulfills='19.0', roll=7),
         TermEventEvent(id=21, fulfills='20.0', roll=5),
-        AdvancementEvent(id=22, fulfills='21.0', roll=3),
+        AdvancementEvent(id=22, fulfills='21.0', roll=5),
     ]
 
 
@@ -301,7 +301,7 @@ class TestMusterOut:
             SkillTableEvent(id=14, fulfills='13.0', table='service_skills', roll=1),
             SurviveEvent(id=15, fulfills='14.0', roll=7),
             TermEventEvent(id=16, fulfills='15.0', roll=5),
-            AdvancementEvent(id=17, fulfills='16.0', roll=3),
+            AdvancementEvent(id=17, fulfills='16.0', roll=4),
             ReenlistEvent(id=18, fulfills='17.0', reenlist=False),  # 3 terms, rank 0 → 3 rolls
             MusterOutEvent(id=19, fulfills='18.0', table='cash', roll=1),
             MusterOutEvent(id=20, fulfills='18.1', table='cash', roll=1),
@@ -381,7 +381,7 @@ class TestMusterOut:
             SkillTableEvent(id=14, fulfills='13.0', table='service_skills', roll=1),
             SurviveEvent(id=15, fulfills='14.0', roll=7),
             TermEventEvent(id=16, fulfills='15.0', roll=5),
-            AdvancementEvent(id=17, fulfills='16.0', roll=3),  # fail
+            AdvancementEvent(id=17, fulfills='16.0', roll=4),  # fail
             ReenlistEvent(id=18, fulfills='17.0', reenlist=False),  # age=30, 3 terms rank 2 → 4 rolls
             MusterOutEvent(id=19, fulfills='18.0', table='cash', roll=1),
             MusterOutEvent(id=20, fulfills='18.1', table='cash', roll=1),

@@ -487,6 +487,76 @@ class TestAdvancement:
         assert '9' in adv_pending.instruction
 
 
+class TestAdvancementForcedLeave:
+    """Advancement roll ≤ terms in career → character must leave (Core p.24)."""
+
+    def _setup_scout_through_term_event(self) -> list:
+        return [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=5),  # BenefitDm → PendingAdvancement
+        ]
+
+    def test_roll_1_in_term_1_removes_reenlist_choice(self):
+        # roll=1 ≤ 1 term → forced leave; no reenlist or assignment-change choice
+        events = [*self._setup_scout_through_term_event(), AdvancementEvent(id=7, fulfills='6.0', roll=1)]
+        projection = replay(1, events)
+
+        assert not any(
+            isinstance(p, (PendingReenlist, PendingAssignmentChangeChoice)) for p in projection.pending_inputs
+        )
+
+    def test_roll_1_in_term_1_queues_muster_out(self):
+        events = [*self._setup_scout_through_term_event(), AdvancementEvent(id=7, fulfills='6.0', roll=1)]
+        projection = replay(1, events)
+
+        assert any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
+
+    def test_roll_2_in_term_1_is_normal_path(self):
+        # roll=2 > 1 term → normal assignment-change choice (Scout has allows_assignment_change)
+        events = [*self._setup_scout_through_term_event(), AdvancementEvent(id=7, fulfills='6.0', roll=2)]
+        projection = replay(1, events)
+
+        assert any(isinstance(p, PendingAssignmentChangeChoice) for p in projection.pending_inputs)
+
+
+class TestAdvancementNatural12Stay:
+    """Natural 12 on advancement dice forces the character to stay (Core p.24)."""
+
+    def test_natural_12_scout_removes_muster_out_option(self):
+        # Scout Courier advancement roll=12 → success + forced stay
+        # Scout allows_assignment_change → PendingAssignmentChangeChoice without 'muster_out'
+        events = [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Scout', assignment='Courier', qualification_roll=7),
+            SurviveEvent(id=5, fulfills='4.0', roll=7),
+            TermEventEvent(id=6, fulfills='5.0', roll=5),
+            AdvancementEvent(id=7, fulfills='6.0', roll=12),
+        ]
+        projection = replay(1, events)
+
+        asc = next((p for p in projection.pending_inputs if isinstance(p, PendingAssignmentChangeChoice)), None)
+        assert asc is not None
+        assert 'muster_out' not in asc.options
+
+    def test_natural_12_merchant_forces_reenlist_true_only(self):
+        # Merchant Marine advancement roll=12 → success + forced stay
+        # Merchant has no allows_assignment_change → PendingReenlist with options=['true']
+        events = [
+            *_full_setup(),
+            CareerEvent(id=4, fulfills='3.0', career='Merchant', assignment='Merchant Marine', qualification_roll=3),
+            SurviveEvent(id=5, fulfills='4.0', roll=4),
+            TermEventEvent(id=6, fulfills='5.0', roll=10),  # BenefitDm → PendingAdvancement
+            AdvancementEvent(id=7, fulfills='6.0', roll=12),
+        ]
+        projection = replay(1, events)
+
+        reenlist = next((p for p in projection.pending_inputs if isinstance(p, PendingReenlist)), None)
+        assert reenlist is not None
+        assert reenlist.options == ['true']
+
+
 class TestReenlist:
     def _setup_through_advancement(self, advancement_roll: int = 9) -> list:
         return [

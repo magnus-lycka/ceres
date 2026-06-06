@@ -352,6 +352,8 @@ class CharacterProjection(BaseModel):
     muster_out_career: CareerData | None = None
     forced_next_career: CareerData | None = None  # set by prison-sending events; consumed by next career choice
     prisoner_freed: bool = False  # set by _apply_prisoner_advancement when parole granted
+    forced_stay: bool = False  # natural 12 on advancement: character must stay this term
+    forced_leave: bool = False  # advancement roll ≤ terms: character must leave this term
 
     def has_blocking_pending(self) -> bool:
         return any(p.blocking for p in self.pending_inputs)

@@ -768,6 +768,11 @@ class AdvancementEvent(EventBase):
             dm += se.effect.get('amount', 0)
             projection.scheduled_effects.remove(se)
         success = (self.roll + dm) >= target
+        terms_in_career = len(career.prior_terms(projection.summary.career_terms, assignment))
+        if self.roll == 12:
+            projection.forced_stay = True
+        elif self.roll <= terms_in_career:
+            projection.forced_leave = True
         if success:
             new_rank = (projection.summary.rank or 0) + 1
             projection.summary.rank = new_rank
@@ -1772,6 +1777,20 @@ def queue_reenlist_or_aging(projection: CharacterProjection, event_id: int, idx:
         return
 
     projection.summary.age += 4
+    if projection.forced_leave:
+        projection.forced_leave = False
+        career = projection.get_current_career() if projection.summary.current_career else None
+        if career:
+            if projection.summary.age >= 34:
+                projection.muster_out_career = career
+                projection.pending_reenlist = False
+                projection.clear_current_career()
+                projection.pending_inputs.append(
+                    PendingAgingRoll(id=f'{event_id}.{idx}', instruction='Roll 2D on Aging table')
+                )
+            else:
+                muster_out_setup(projection, career, event_id, idx, lose_current_term=False)
+        return
     if projection.summary.age >= 34:
         projection.pending_inputs.append(PendingAgingRoll(id=f'{event_id}.{idx}', instruction='Roll 2D on Aging table'))
     else:
@@ -1780,8 +1799,9 @@ def queue_reenlist_or_aging(projection: CharacterProjection, event_id: int, idx:
             current_index = projection.summary.current_assignment_index or 0
             others = [a.name for i, a in enumerate(career.assignments, 1) if i != current_index]
             options = ['same', *others]
-            if not career.advancement_is_special():
+            if not career.advancement_is_special() and not projection.forced_stay:
                 options.append('muster_out')
+            projection.forced_stay = False
             projection.pending_inputs.append(
                 PendingAssignmentChangeChoice(
                     id=f'{event_id}.{idx}',
@@ -1790,11 +1810,13 @@ def queue_reenlist_or_aging(projection: CharacterProjection, event_id: int, idx:
                 )
             )
         else:
+            options = ['true'] if projection.forced_stay else ['true', 'false']
+            projection.forced_stay = False
             projection.pending_inputs.append(
                 PendingReenlist(
                     id=f'{event_id}.{idx}',
                     instruction='Reenlist or muster out?',
-                    options=['true', 'false'],
+                    options=options,
                 )
             )
 
@@ -1846,19 +1868,25 @@ def complete_aging(projection: CharacterProjection, source_event_id: int) -> Non
         if career and career.allows_assignment_change and len(career.assignments) > 1:
             current_index = projection.summary.current_assignment_index or 0
             others = [a.name for i, a in enumerate(career.assignments, 1) if i != current_index]
+            options = ['same', *others]
+            if not projection.forced_stay:
+                options.append('muster_out')
+            projection.forced_stay = False
             projection.pending_inputs.append(
                 PendingAssignmentChangeChoice(
                     id=f'{source_event_id}.0',
                     instruction='Reenlist same assignment, switch assignment, or muster out?',
-                    options=['same', *others, 'muster_out'],
+                    options=options,
                 )
             )
         else:
+            options = ['true'] if projection.forced_stay else ['true', 'false']
+            projection.forced_stay = False
             projection.pending_inputs.append(
                 PendingReenlist(
                     id=f'{source_event_id}.0',
                     instruction='Reenlist or muster out?',
-                    options=['true', 'false'],
+                    options=options,
                 )
             )
     projection.pending_reenlist = None
