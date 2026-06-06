@@ -92,6 +92,7 @@ from ceres.character.careers.scholar import (
     ScholarMishap5GiveUp,
     ScholarMishap5StartAgain,
 )
+from ceres.character.events import LifeEventCrimeLoseBenefitRoll, LifeEventCrimeTakePrisoner
 
 type AnyChoice = Annotated[
     AgentMishap2Accept
@@ -150,6 +151,8 @@ type AnyChoice = Annotated[
     | RogueEvent6Refuse
     | RogueMishap3RollOther
     | RogueMishap3RollTwo
+    | LifeEventCrimeLoseBenefitRoll
+    | LifeEventCrimeTakePrisoner
     | ScholarEvent3Accept
     | ScholarEvent3Decline
     | ScholarEvent8Accept

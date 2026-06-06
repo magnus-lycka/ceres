@@ -7,18 +7,24 @@ from ceres.character.events import (
     AdvancementEvent,
     AssignmentChangeChoiceEvent,
     BackgroundSkillsEvent,
+    CareerChoiceEvent,
     CareerEvent,
     CharacteristicChoiceEvent,
     CharacterStartedEvent,
     ConnectionKindChoiceEvent,
     InjuryTableEvent,
+    LifeEventCrimeLoseBenefitRoll,
+    LifeEventCrimeTakePrisoner,
     LifeEventEvent,
     LifeEventUnusualEvent,
     MishapEvent,
+    MusterOutEvent,
     PendingAdvancement,
     PendingAgingRoll,
     PendingAssignmentChangeChoice,
+    PendingCareerChoice,
     PendingCharacteristicChoice,
+    PendingChoices,
     PendingInjuryTable,
     PendingLifeEvent,
     PendingLifeEventChoice,
@@ -1230,7 +1236,7 @@ class TestLifeEventGoodFortune:
 
 
 class TestLifeEventCrime:
-    """Life event roll=11: Crime — lose one Benefit roll."""
+    """Life event roll=11: Crime — choose between losing a Benefit roll or taking Prisoner next term."""
 
     def _setup_through_life_event_11(self) -> list:
         return [
@@ -1241,12 +1247,25 @@ class TestLifeEventCrime:
             LifeEventEvent(id=7, fulfills='6.0', roll=11),  # Crime
         ]
 
+    def test_crime_creates_pending_choices_with_two_options(self):
+        projection = replay(1, self._setup_through_life_event_11())
+
+        choices_pending = next((p for p in projection.pending_inputs if isinstance(p, PendingChoices)), None)
+        assert choices_pending is not None
+        assert len(choices_pending.choices) == 2
+        kinds = {c.kind for c in choices_pending.choices}
+        assert kinds == {
+            LifeEventCrimeLoseBenefitRoll.model_fields['kind'].default,
+            LifeEventCrimeTakePrisoner.model_fields['kind'].default,
+        }
+
     def test_crime_reduces_muster_out_roll_count_by_1(self):
-        # 1 term, rank 0 → normally 1 roll; crime reduces by 1 → 0 rolls
+        # 1 term, rank 0 → normally 1 roll; lose-benefit-roll choice reduces by 1 → 0 rolls
         events = [
             *self._setup_through_life_event_11(),
-            AdvancementEvent(id=8, fulfills='7.0', roll=3),
-            ReenlistEvent(id=9, fulfills='8.0', reenlist=False),
+            CareerChoiceEvent.for_choice(LifeEventCrimeLoseBenefitRoll, id=8, fulfills='7.0'),
+            AdvancementEvent(id=9, fulfills='7.1', roll=3),
+            ReenlistEvent(id=10, fulfills='9.0', reenlist=False),
         ]
         projection = replay(1, events)
 
@@ -1254,11 +1273,12 @@ class TestLifeEventCrime:
         assert len(muster_out_pendings) == 0
 
     def test_crime_roll_count_cannot_go_negative(self):
-        # 1 term, rank 0, crime → would be -1 rolls → clamped to 0
+        # 1 term, rank 0, lose-benefit-roll → would be -1 rolls → clamped to 0
         events = [
             *self._setup_through_life_event_11(),
-            AdvancementEvent(id=8, fulfills='7.0', roll=3),
-            ReenlistEvent(id=9, fulfills='8.0', reenlist=False),
+            CareerChoiceEvent.for_choice(LifeEventCrimeLoseBenefitRoll, id=8, fulfills='7.0'),
+            AdvancementEvent(id=9, fulfills='7.1', roll=3),
+            ReenlistEvent(id=10, fulfills='9.0', reenlist=False),
         ]
         projection = replay(1, events)
 
@@ -1266,16 +1286,17 @@ class TestLifeEventCrime:
         assert len(muster_out_pendings) == 0
 
     def test_crime_with_2_terms_gives_1_roll(self):
-        # 2 terms rank 0 → 2 - 1 = 1 roll
+        # 2 terms rank 0 → lose-benefit-roll reduces 2 → 1 roll
         events = [
             *self._setup_through_life_event_11(),
-            AdvancementEvent(id=8, fulfills='7.0', roll=3),
-            ReenlistEvent(id=9, fulfills='8.0', reenlist=True),
-            SkillTableEvent(id=10, fulfills='9.0', table='service_skills', roll=1),
-            SurviveEvent(id=11, fulfills='10.0', roll=7),
-            TermEventEvent(id=12, fulfills='11.0', roll=5),
-            AdvancementEvent(id=13, fulfills='12.0', roll=3),
-            ReenlistEvent(id=14, fulfills='13.0', reenlist=False),
+            CareerChoiceEvent.for_choice(LifeEventCrimeLoseBenefitRoll, id=8, fulfills='7.0'),
+            AdvancementEvent(id=9, fulfills='7.1', roll=3),
+            ReenlistEvent(id=10, fulfills='9.0', reenlist=True),
+            SkillTableEvent(id=11, fulfills='10.0', table='service_skills', roll=1),
+            SurviveEvent(id=12, fulfills='11.0', roll=7),
+            TermEventEvent(id=13, fulfills='12.0', roll=5),
+            AdvancementEvent(id=14, fulfills='13.0', roll=3),
+            ReenlistEvent(id=15, fulfills='14.0', reenlist=False),
         ]
         projection = replay(1, events)
 
@@ -1286,6 +1307,21 @@ class TestLifeEventCrime:
         projection = replay(1, self._setup_through_life_event_11())
 
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+
+    def test_crime_take_prisoner_forces_prisoner_career_choice(self):
+        # choosing take-prisoner sets forced_next_career; after muster-out, only Prisoner is offered
+        events = [
+            *self._setup_through_life_event_11(),
+            CareerChoiceEvent.for_choice(LifeEventCrimeTakePrisoner, id=8, fulfills='7.0'),
+            AdvancementEvent(id=9, fulfills='7.1', roll=3),
+            ReenlistEvent(id=10, fulfills='9.0', reenlist=False),
+            MusterOutEvent(id=11, fulfills='10.0', table='benefits', roll=3),
+        ]
+        projection = replay(1, events)
+
+        career_choice = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerChoice)), None)
+        assert career_choice is not None
+        assert career_choice.options == ['Prisoner']
 
 
 class TestAgentAssignmentTableFiltering:

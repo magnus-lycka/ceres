@@ -1113,6 +1113,25 @@ class DoubleInjuryTableEvent(EventBase):
         _apply_injury_table_result(projection, min(self.roll1, self.roll2), self.id)
 
 
+class LifeEventCrimeLoseBenefitRoll(ChoiceBase):
+    kind: Literal['life_event_crime_lose_benefit_roll'] = 'life_event_crime_lose_benefit_roll'
+    label: str = 'Lose one Benefit roll'
+
+    def handle(self, projection: Any, event: Any) -> None:
+        if projection.summary.career_terms:
+            projection.summary.career_terms[-1].require_muster_out().lost_rolls += 1
+
+
+class LifeEventCrimeTakePrisoner(ChoiceBase):
+    kind: Literal['life_event_crime_take_prisoner'] = 'life_event_crime_take_prisoner'
+    label: str = 'Take the Prisoner career next term'
+
+    def handle(self, projection: Any, event: Any) -> None:
+        from ceres.character.careers.prisoner import PRISONER
+
+        projection.forced_next_career = PRISONER
+
+
 class LifeEventEvent(EventBase):
     kind: Literal['life_event'] = 'life_event'
     roll: int  # 2D result (2-12) on the Life Events table
@@ -1230,11 +1249,16 @@ class LifeEventEvent(EventBase):
                     _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id)
                 )
         elif roll == 11:
-            if projection.summary.career_terms:
-                projection.summary.career_terms[-1].require_muster_out().lost_rolls += 1
+            projection.pending_inputs.append(
+                PendingChoices(
+                    id=f'{self.id}.0',
+                    instruction='Crime: choose a consequence',
+                    choices=[LifeEventCrimeLoseBenefitRoll(), LifeEventCrimeTakePrisoner()],
+                )
+            )
             if in_career and career is not None:
                 projection.pending_inputs.append(
-                    _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id, 0)
+                    _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id, 1)
                 )
         elif roll == 12:
             projection.pending_inputs.append(
