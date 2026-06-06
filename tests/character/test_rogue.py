@@ -31,7 +31,6 @@ from ceres.character.skills import Admin, Advocate, Athletics, Carouse, Drive, G
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Contact,
-    EffectTrigger,
     Enemy,
     Rival,
 )
@@ -294,8 +293,7 @@ class TestRogueEvent6:
             CareerChoiceEvent.for_choice(RogueEvent6Backstab, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
-        dm_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.ADVANCEMENT]
-        assert any(se.effect.get('amount') == 2 for se in dm_effects)
+        assert projection.pending_advancement_dm == 2
 
     def test_refuse_adds_contact(self):
         events = [

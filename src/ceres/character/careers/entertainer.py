@@ -34,7 +34,6 @@ from ceres.character.careers.career_data import (
 )
 from ceres.character.careers.common_pending import CareerSkillRollPendingBase
 from ceres.character.characteristics import Chars, ConnectionKind, characteristic_dm
-from ceres.character.effect_enums import EffectType
 from ceres.character.events import (
     PendingChoices,
     SkillRollEvent,
@@ -71,9 +70,7 @@ from ceres.character.skills import (
 from ceres.character.state import (
     CharacterProjection,
     ChoiceBase,
-    EffectTrigger,
     Enemy,
-    ScheduledEffect,
 )
 
 # ── Career-specific pending input types ──────────────────────────────────────
@@ -120,13 +117,7 @@ class PendingEntertainerEvent8SkillRoll(CareerSkillRollPendingBase):
 
     def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
         if event.modified_roll >= 8:
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger=EffectTrigger.ADVANCEMENT,
-                    source_event_id=event.id,
-                    effect={'type': EffectType.DM, 'amount': 2},
-                )
-            )
+            projection.pending_advancement_dm += 2
         else:
             projection.summary.connections.append(
                 Enemy(source='A powerful politician who became your enemy after your public criticism')

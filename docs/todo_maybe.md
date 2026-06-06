@@ -554,45 +554,13 @@ The current stringly-typed foundation is one source of bugs such as empty or
 ambiguous `career_decision` submissions and special-case rendering drift across
 different pending-input kinds.
 
-### Replace `ScheduledEffect` with domain-owned term state
+### Consolidate career-entry state into a `TermChoices` object
 
-`CharacterProjection.scheduled_effects` is currently a generic queue for several
-unrelated Traveller concepts:
-
-- qualification bonuses and automatic career-entry rights
-- advancement/commission DMs
-- extra or lost muster-out rolls
-- benefit-roll DMs
-
-These are not one generic concept. They are state owned by different parts of
-the character-creation lifecycle, and the generic `ScheduledEffect(effect: dict)`
-shape hides the rule contract that should be explicit.
-
-Introduce domain-owned state objects and migrate scheduled effects into them:
-
-- `CharacterProjection.term_choices: TermChoices`
-  - owns current career-entry/qualification state
-  - tracks qualification DMs, auto-qualify rights, forced next career, draft-like
-    constraints, and later species/homeworld/career availability rules
-- `CareerTerm.muster_out: MusterOut`
-  - owns benefits, cash-roll count, extra/lost rolls, optional benefit-roll DMs,
-    and the state of the current muster-out sequence
-  - should replace `CharacterSummary.muster_out_cash_count` and any
-    muster-out-related scheduled effects
-- `CareerTerm.rank: Rank`
-  - owns commission state, rank, rank-at-end-of-term, advancement DMs,
-    auto-advance handling, and unresolved rank bonus state
-
-This can be done before the larger event/pending-input rethink. It gives the
-existing event and career code better places to put state, while replay can
-remain dumb. As each owner is introduced, migrate the matching
-`ScheduledEffect` creation/consumption sites to explicit methods such as
-`term_choices.add_qualification_dm(...)`,
-`current_term.muster_out.add_benefit_dm(...)`, and
-`current_term.rank.add_advancement_dm(...)`.
-
-Once those responsibilities have moved, delete `ScheduledEffect`, including its
-currently opaque `effect` dict and unused/inert `expires` field.
+`CharacterProjection` now holds three flat fields for career-entry state:
+`pending_qualification_dm`, `auto_qualify_careers`, and `forced_next_career`.
+These could be gathered into a `TermChoices` domain object that also tracks
+draft constraints and future career-availability rules. Not urgent — the flat
+fields are clear enough for now.
 
 ### Make replay a dumb mailman; move lifecycle rules out of `Event.apply()`
 

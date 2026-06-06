@@ -6,7 +6,7 @@ from ceres.character.events import PreCareerEntryEvent, PreCareerGraduationEvent
 from ceres.character.precareers.loader import load_precareers
 from ceres.character.precareers.military_academy import MilitaryAcademyPreCareer
 from ceres.character.sophonts import VILANI
-from ceres.character.state import CharacterProjection, CharacterSummary, EffectTrigger
+from ceres.character.state import CharacterProjection, CharacterSummary
 from tests.character.helpers import MOCK_WORLD
 
 
@@ -95,10 +95,7 @@ def test_graduation_increases_edu_queues_auto_qualification_and_notes_manual_ben
     assert next_pending_idx == 0
     assert projection.summary.characteristics[Chars.EDU] == 8
     assert projection.summary.characteristics[Chars.SOC] == 6
-    assert projection.scheduled_effects[0].trigger == EffectTrigger.AUTO_QUALIFY
-    assert projection.scheduled_effects[0].source_event_id == 9
-    assert projection.scheduled_effects[0].consume is True
-    assert projection.scheduled_effects[0].effect == {'career': 'Navy'}
+    assert projection.auto_qualify_careers == ['Navy']
     assert projection.summary.problems == [
         'Navy Academy graduation: if entering Navy, select any three Service Skills and increase them to level 1. '
         'Apply manually.',
@@ -119,7 +116,7 @@ def test_graduation_with_honours_also_increases_soc_and_marks_automatic_commissi
 
     assert projection.summary.characteristics[Chars.EDU] == 8
     assert projection.summary.characteristics[Chars.SOC] == 7
-    assert projection.scheduled_effects[0].effect == {'career': 'Marines'}
+    assert projection.auto_qualify_careers == ['Marines']
     assert projection.summary.problems[-1].endswith('with DM+2 (automatic with honours). Apply manually.')
 
 
@@ -132,10 +129,7 @@ def test_failed_graduation_above_natural_two_allows_auto_entry_without_commissio
         PreCareerGraduationEvent(id=11, roll=3),
     )
 
-    assert projection.scheduled_effects[0].trigger == EffectTrigger.AUTO_QUALIFY
-    assert projection.scheduled_effects[0].source_event_id == 11
-    assert projection.scheduled_effects[0].consume is True
-    assert projection.scheduled_effects[0].effect == {'career': 'Army', 'no_commission': True}
+    assert projection.auto_qualify_careers == ['Army']
     assert projection.summary.problems == [
         'Army Academy: failed graduation (roll > 2) — may still enter Army automatically, '
         'but no commission roll in first term.'
@@ -151,24 +145,17 @@ def test_failed_graduation_on_natural_two_has_no_auto_entry_effect():
         PreCareerGraduationEvent(id=12, roll=2),
     )
 
-    assert projection.scheduled_effects == []
+    assert projection.auto_qualify_careers == []
     assert projection.summary.problems == []
 
 
 def test_auto_qualify_effect_bypasses_qualification_roll():
     from ceres.character.events import CareerEvent
-    from ceres.character.state import ScheduledEffect
 
     projection = _projection(characteristics={Chars.END: 5})
-    projection.scheduled_effects.append(
-        ScheduledEffect(
-            trigger=EffectTrigger.AUTO_QUALIFY,
-            source_event_id=5,
-            effect={'career': 'Army'},
-        )
-    )
+    projection.auto_qualify_careers.append('Army')
     CareerEvent(id=6, career='Army', assignment='Infantry', qualification_roll=0).apply(projection)
 
     assert projection.summary.current_career is not None
     assert projection.summary.current_career.name == 'Army'
-    assert projection.scheduled_effects == []
+    assert projection.auto_qualify_careers == []

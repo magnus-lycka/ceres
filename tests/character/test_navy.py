@@ -38,7 +38,7 @@ from ceres.character.skills import (
     VaccSuit,
 )
 from ceres.character.sophonts import VILANI
-from ceres.character.state import EffectTrigger, Enemy
+from ceres.character.state import Enemy
 from tests.character.helpers import MOCK_WORLD
 
 
@@ -292,8 +292,7 @@ class TestNavyEvent10:
             CareerChoiceEvent.for_choice(NavyEvent10Refuse, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
-        dm_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.ADVANCEMENT]
-        assert any(se.effect.get('amount') == 2 for se in dm_effects)
+        assert projection.pending_advancement_dm == 2
 
     def test_profit_no_advancement_dm(self):
         events = [
@@ -301,8 +300,7 @@ class TestNavyEvent10:
             CareerChoiceEvent.for_choice(NavyEvent10Profit, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
-        dm_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.ADVANCEMENT]
-        assert len(dm_effects) == 0
+        assert projection.pending_advancement_dm == 0
 
     def test_both_choices_queue_career_progress(self):
         for choice_cls in (NavyEvent10Profit, NavyEvent10Refuse):

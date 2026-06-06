@@ -1,13 +1,8 @@
 from ceres.character.characteristics import Chars
-from ceres.character.effect_enums import EffectType
 from ceres.character.events import PendingPreCareerSkillChoice, PreCareerEntryEvent, PreCareerGraduationEvent
 from ceres.character.precareers.precareer_data import PreCareerData
 from ceres.character.skills import AnySkill, _level_fields
-from ceres.character.state import (
-    CharacterProjection,
-    EffectTrigger,
-    ScheduledEffect,
-)
+from ceres.character.state import CharacterProjection
 
 
 class UniversityPreCareer(PreCareerData):
@@ -50,14 +45,7 @@ class UniversityPreCareer(PreCareerData):
             projection.increment_skill(skill)
         projection.summary.characteristics[Chars.EDU] = projection.summary.characteristics.get(Chars.EDU, 0) + 1
         dm_amount = 2 if honours else 1
-        projection.scheduled_effects.append(
-            ScheduledEffect(
-                trigger=EffectTrigger.QUALIFICATION,
-                source_event_id=event.id,
-                effect={'type': EffectType.DM, 'amount': dm_amount},
-                consume=True,
-            )
-        )
+        projection.pending_qualification_dm += dm_amount
         projection.summary.problems.append(
             'University graduation: entitled to a commission roll before first military career'
             + (' (DM+2 with honours)' if honours else '')

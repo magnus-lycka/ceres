@@ -11,7 +11,6 @@ from ceres.character.characteristics import UCP_STATS, Chars, ConnectionKind, ch
 if TYPE_CHECKING:
     from ceres.character.careers.career_data import CareerData
 from ceres.character.careers.career_data import AdvancementDmOption
-from ceres.character.effect_enums import EffectTrigger, EffectType
 from ceres.character.input_specs import InputSpec, NumberEntry, Reference, Select, form_int, form_str, literal
 from ceres.character.skills import (
     AnySkill,
@@ -31,7 +30,6 @@ from ceres.character.state import (
     Contact,
     PendingInputBase,
     ReplayError,
-    ScheduledEffect,
     make_connection,
 )
 
@@ -101,13 +99,7 @@ def _apply_simple_effect(projection: Any, effect: Any, source: str = '', source_
     elif isinstance(effect, GainEnemyEffect):
         projection.summary.connections.append(make_connection(ConnectionKind.ENEMY, source=source))
     elif isinstance(effect, AdvancementDmEffect):
-        projection.scheduled_effects.append(
-            ScheduledEffect(
-                trigger=EffectTrigger.ADVANCEMENT,
-                source_event_id=source_event_id,
-                effect={'type': EffectType.DM, 'amount': effect.amount},
-            )
-        )
+        projection.pending_advancement_dm += effect.amount
     elif isinstance(effect, BenefitDmEffect):
         if projection.summary.career_terms:
             from ceres.character.state import BenefitRollDm
@@ -289,10 +281,8 @@ def _apply_prisoner_advancement(projection: Any, event: Any, career: Any) -> Non
     char = assignment.advancement.characteristic
     target = assignment.advancement.target
     dm = characteristic_dm(projection.summary.characteristics.get(char, 0))
-    to_consume = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.ADVANCEMENT and se.consume]
-    for se in to_consume:
-        dm += se.effect.get('amount', 0)
-        projection.scheduled_effects.remove(se)
+    dm += projection.pending_advancement_dm
+    projection.pending_advancement_dm = 0
     effective = event.roll + dm
     pt = projection.summary.parole_threshold or 0
     freed = effective > pt
@@ -676,13 +666,7 @@ class AdvancementDmChoiceEvent(EventBase):
 
     def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
 
-        projection.scheduled_effects.append(
-            ScheduledEffect(
-                trigger=EffectTrigger.ADVANCEMENT,
-                source_event_id=self.id,
-                effect={'type': EffectType.DM, 'amount': 4},
-            )
-        )
+        projection.pending_advancement_dm += 4
         if projection.summary.current_career is not None:
             career = projection.get_current_career()
             projection.pending_inputs.append(
@@ -761,12 +745,8 @@ class AdvancementEvent(EventBase):
         char = assignment.advancement.characteristic
         target = assignment.advancement.target
         dm = characteristic_dm(projection.summary.characteristics.get(char, 0))
-        to_consume = [
-            se for se in projection.scheduled_effects if se.trigger == EffectTrigger.ADVANCEMENT and se.consume
-        ]
-        for se in to_consume:
-            dm += se.effect.get('amount', 0)
-            projection.scheduled_effects.remove(se)
+        dm += projection.pending_advancement_dm
+        projection.pending_advancement_dm = 0
         success = (self.roll + dm) >= target
         terms_in_career = len(career.prior_terms(projection.summary.career_terms, assignment))
         if self.roll == 12:
@@ -824,12 +804,8 @@ class CommissionEvent(EventBase):
         if career.commission is None:
             raise ReplayError(f'{career.name} does not support commission')
         dm = career.commission_dm(projection)
-        to_consume = [
-            se for se in projection.scheduled_effects if se.trigger == EffectTrigger.ADVANCEMENT and se.consume
-        ]
-        for se in to_consume:
-            dm += se.effect.get('amount', 0)
-            projection.scheduled_effects.remove(se)
+        dm += projection.pending_advancement_dm
+        projection.pending_advancement_dm = 0
         if self.roll + dm < career.commission.target:
             projection.pending_inputs.append(
                 _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id)
@@ -1223,13 +1199,7 @@ class LifeEventEvent(EventBase):
                     _advancement_pending(career, projection.summary.current_assignment_index or 0, self.id, 1)
                 )
         elif roll == 9:
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger=EffectTrigger.QUALIFICATION,
-                    source_event_id=self.id,
-                    effect={'type': EffectType.DM, 'amount': 2},
-                )
-            )
+            projection.pending_qualification_dm += 2
             projection.pending_inputs.append(
                 PendingHomeworldChangeRequired(
                     id=f'{self.id}.0',

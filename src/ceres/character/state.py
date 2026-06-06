@@ -6,7 +6,6 @@ from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.benefits import ItemBenefit
 from ceres.character.careers.career_data import CareerData
 from ceres.character.characteristics import Chars, ConnectionKind
-from ceres.character.effect_enums import EffectTrigger
 from ceres.character.input_specs import InputSpec
 from ceres.character.skills import AnySkill, Level, Skill, _level_fields
 from ceres.character.sophonts import Sophont
@@ -52,14 +51,6 @@ class PendingInputBase(BaseModel):
         Override only when the template name differs from the kind (e.g. two classes share one template)."""
         default = type(self).model_fields['kind'].default
         return default if isinstance(default, str) else 'generic'
-
-
-class ScheduledEffect(BaseModel):
-    trigger: EffectTrigger
-    source_event_id: int
-    effect: dict = Field(default_factory=dict)
-    expires: str | None = None
-    consume: bool = True
 
 
 class Connection(CeresModel):
@@ -347,7 +338,9 @@ class CharacterProjection(BaseModel):
     character_id: int
     summary: CharacterSummary
     pending_inputs: list[SerializeAsAny[PendingInputBase]] = Field(default_factory=list)
-    scheduled_effects: list[ScheduledEffect] = Field(default_factory=list)
+    pending_advancement_dm: int = 0
+    pending_qualification_dm: int = 0
+    auto_qualify_careers: list[str] = Field(default_factory=list)
     pending_reenlist: bool | None = None  # stores reenlist decision during aging chain
     muster_out_career: CareerData | None = None
     forced_next_career: CareerData | None = None  # set by prison-sending events; consumed by next career choice

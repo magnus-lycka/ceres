@@ -35,7 +35,6 @@ from ceres.character.replay import replay
 from ceres.character.skills import Admin, Athletics, Carouse, Deception, Drive, GunCombat, Melee, Survival
 from ceres.character.sophonts import VILANI
 from ceres.character.state import (
-    EffectTrigger,
     Enemy,
     Rival,
 )
@@ -196,8 +195,7 @@ class TestDrifterEvent3:
             CareerChoiceEvent.for_choice(DrifterEvent3Accept, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
-        qual_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.QUALIFICATION]
-        assert any(se.effect.get('amount') == 4 for se in qual_effects)
+        assert projection.pending_qualification_dm == 4
 
     def test_decline_no_qualification_dm(self):
         events = [
@@ -205,8 +203,7 @@ class TestDrifterEvent3:
             CareerChoiceEvent.for_choice(DrifterEvent3Decline, id=7, fulfills='6.0'),
         ]
         projection = replay(1, events)
-        qual_effects = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.QUALIFICATION]
-        assert len(qual_effects) == 0
+        assert projection.pending_qualification_dm == 0
 
     def test_both_choices_queue_advancement(self):
         for choice_cls in (DrifterEvent3Accept, DrifterEvent3Decline):

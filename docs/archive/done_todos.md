@@ -1326,3 +1326,29 @@ Implemented and covered:
   Inefficient
 
 Operational planetary-use details remain out of scope for `ceres.make.ship`.
+
+## Replace `ScheduledEffect` with domain-owned term state
+
+`CharacterProjection.scheduled_effects` was a generic queue for unrelated
+Traveller concepts. All uses have been migrated to explicit domain fields and
+the mechanism deleted.
+
+Implemented across `docs/plan-career-term-and-muster-out.md` (now archived):
+
+- `MusterOut` model on `CareerTerm` owns extra/lost rolls, benefit-roll DMs,
+  cash-roll count, and benefits. `CharacterSummary.benefits` and
+  `muster_out_cash_count` became read-only aggregate properties.
+- `allows_assignment_change: ClassVar[bool]` on `CareerData` replaced the
+  CAREER_CATEGORY scheduled effect and drives `CareerTerm.continue_career_run_from()`.
+- `CharacterProjection.pending_advancement_dm: int` replaced all
+  `EffectTrigger.ADVANCEMENT` scheduled effects (career events, precareer
+  graduation, AdvancementDmChoiceEvent). Consumed and reset to 0 in
+  `AdvancementEvent`, `CommissionEvent`, and `_apply_prisoner_advancement`.
+- `CharacterProjection.pending_qualification_dm: int` replaced all
+  `EffectTrigger.QUALIFICATION` scheduled effects (University/Spacer Community
+  graduation, Drifter event 3, Life Event roll 9).
+- `CharacterProjection.auto_qualify_careers: list[str]` replaced all
+  `EffectTrigger.AUTO_QUALIFY` scheduled effects (Military Academy graduation
+  and failed graduation above natural 2).
+- `ScheduledEffect`, `EffectTrigger`, `EffectType`, and
+  `src/ceres/character/effect_enums.py` deleted.

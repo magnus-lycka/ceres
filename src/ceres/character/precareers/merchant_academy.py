@@ -1,13 +1,8 @@
 from ceres.character.characteristics import Chars
-from ceres.character.effect_enums import EffectType
 from ceres.character.events import PendingPreCareerSkillChoice, PreCareerEntryEvent, PreCareerGraduationEvent
 from ceres.character.precareers.precareer_data import PreCareerData
 from ceres.character.skills import AnySkill
-from ceres.character.state import (
-    CharacterProjection,
-    EffectTrigger,
-    ScheduledEffect,
-)
+from ceres.character.state import CharacterProjection
 
 
 def _skill_instances_from_table(table) -> list[AnySkill]:
@@ -74,14 +69,6 @@ class MerchantAcademyPreCareer(PreCareerData):
             pending_idx += 1
         projection.summary.characteristics[Chars.EDU] = projection.summary.characteristics.get(Chars.EDU, 0) + 1
         adv_dm = 2 if honours else 1
-        projection.scheduled_effects.append(
-            ScheduledEffect(
-                trigger=EffectTrigger.ADVANCEMENT,
-                source_event_id=event.id,
-                effect={'type': EffectType.DM, 'amount': adv_dm},
-                consume=False,
-            )
-        )
         rank_entry = 2 if honours else 1
         projection.summary.problems.append(
             f'{self.name} graduation: may enter Merchant (correct branch) or Citizen automatically at rank {rank_entry}'

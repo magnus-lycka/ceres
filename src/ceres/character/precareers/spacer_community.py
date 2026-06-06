@@ -1,13 +1,8 @@
 from ceres.character.characteristics import Chars
-from ceres.character.effect_enums import EffectType
 from ceres.character.events import PendingPreCareerSkillChoice, PreCareerGraduationEvent
 from ceres.character.precareers.precareer_data import PreCareerData
 from ceres.character.skills import AnySkill, JackOfAllTrades, Level, Pilot
-from ceres.character.state import (
-    CharacterProjection,
-    EffectTrigger,
-    ScheduledEffect,
-)
+from ceres.character.state import CharacterProjection
 
 
 class SpacerCommunityPreCareer(PreCareerData):
@@ -46,14 +41,7 @@ class SpacerCommunityPreCareer(PreCareerData):
             projection.grant_skill(JackOfAllTrades(level=Level(value=1)))
         projection.summary.characteristics[Chars.DEX] = projection.summary.characteristics.get(Chars.DEX, 0) + 1
         projection.summary.characteristics[Chars.SOC] = max(0, projection.summary.characteristics.get(Chars.SOC, 0) - 2)
-        projection.scheduled_effects.append(
-            ScheduledEffect(
-                trigger=EffectTrigger.QUALIFICATION,
-                source_event_id=event.id,
-                effect={'type': EffectType.DM, 'amount': 1, 'career': 'Merchant', 'assignment': 'Free Trader'},
-                consume=True,
-            )
-        )
+        projection.pending_qualification_dm += 1
         projection.summary.problems.append(
             'Spacer Community graduation: DM+1 to enlist, commission, and promotion '
             'in Merchant (Free Trader). Apply manually.'

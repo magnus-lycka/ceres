@@ -5,7 +5,6 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ceres.character.benefits import AnyBenefit
 from ceres.character.characteristics import Chars, ConnectionKind, characteristic_dm
-from ceres.character.effect_enums import EffectTrigger
 from ceres.character.skills import AnySkill, Level, _level_fields
 
 if TYPE_CHECKING:
@@ -405,14 +404,8 @@ class CareerData(TermData):
                 raise ReplayError(f'Cannot re-enter {self.name}/{assignment.name} — voluntary departure last term')
 
         # Check for auto-qualify from pre-career graduation
-        auto_effects = [
-            se
-            for se in projection.scheduled_effects
-            if se.trigger == EffectTrigger.AUTO_QUALIFY and se.effect.get('career') == self.name
-        ]
-        if auto_effects:
-            for se in auto_effects:
-                projection.scheduled_effects.remove(se)
+        if self.name in projection.auto_qualify_careers:
+            projection.auto_qualify_careers.remove(self.name)
             projection.summary.current_career = self
             projection.summary.current_assignment = assignment.name
             projection.summary.current_assignment_index = self.assignment_index(assignment)
@@ -421,12 +414,8 @@ class CareerData(TermData):
 
         target = self.qualification.target
         dm = self.qualification_dm(projection)
-        qual_effects = [
-            se for se in projection.scheduled_effects if se.trigger == EffectTrigger.QUALIFICATION and se.consume
-        ]
-        for se in qual_effects:
-            dm += se.effect.get('amount', 0)
-            projection.scheduled_effects.remove(se)
+        dm += projection.pending_qualification_dm
+        projection.pending_qualification_dm = 0
         if qualification_roll + dm < target:
             from ceres.character.events import PendingDraftChoice
 

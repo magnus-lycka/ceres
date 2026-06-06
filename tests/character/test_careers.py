@@ -74,7 +74,6 @@ from ceres.character.state import (
     Ally,
     BenefitRollDm,
     Contact,
-    EffectTrigger,
     Enemy,
     Rival,
 )
@@ -1016,7 +1015,7 @@ class TestSkillTableChoice:
 
 
 class TestAdvancementDmFromScheduledEffects:
-    """Scheduled advancement DMs are consumed and applied during the advancement check."""
+    """Pending advancement DMs are consumed and applied during the advancement check."""
 
     def test_breakthrough_dm_helps_marginal_roll_succeed(self):
         # Scholar Scientist: INT 9 (DM+1) needs INT 8+
@@ -1062,8 +1061,7 @@ class TestAdvancementDmFromScheduledEffects:
         ]
         projection = replay(1, events)
 
-        adv_dms = [se for se in projection.scheduled_effects if se.trigger == EffectTrigger.ADVANCEMENT]
-        assert len(adv_dms) == 0
+        assert projection.pending_advancement_dm == 0
 
 
 class TestSevereInjury:
@@ -1241,9 +1239,7 @@ class TestLifeEvents:
         events = [*self._setup_to_life_event(), LifeEventEvent(id=7, fulfills='6.0', roll=9)]
         projection = replay(1, events)
 
-        qual_dm = next((se for se in projection.scheduled_effects if se.trigger == EffectTrigger.QUALIFICATION), None)
-        assert qual_dm is not None
-        assert qual_dm.effect.get('amount') == 2
+        assert projection.pending_qualification_dm == 2
 
     def test_roll_9_creates_advancement_pending(self):
         events = [*self._setup_to_life_event(), LifeEventEvent(id=7, fulfills='6.0', roll=9)]

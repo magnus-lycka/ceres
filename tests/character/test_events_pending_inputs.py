@@ -24,7 +24,6 @@ from ceres.character.careers.career_data import (
 )
 from ceres.character.careers.loader import load_careers
 from ceres.character.characteristics import Chars, ConnectionKind
-from ceres.character.effect_enums import EffectType
 from ceres.character.events import (
     AdvancementDmChoiceEvent,
     AdvancementEvent,
@@ -116,8 +115,6 @@ from ceres.character.state import (
     CareerTerm,
     CharacterProjection,
     CharacterSummary,
-    EffectTrigger,
-    ScheduledEffect,
 )
 from tests.character.helpers import MOCK_WORLD
 
@@ -236,7 +233,7 @@ def test_event_helpers_apply_simple_effects_and_skill_entries():
     assert projection.summary.parole_threshold == 0
     assert projection.summary.skill_level(character_skills.Admin) == 0
     assert projection.summary.skill_level(character_skills.Electronics) == 1
-    assert [effect.trigger for effect in projection.scheduled_effects] == ['advancement']
+    assert projection.pending_advancement_dm == 2
     assert projection.summary.career_terms[-1].require_muster_out().benefit_roll_dms[0].amount == 1
 
 
@@ -357,13 +354,9 @@ def test_commission_event_skip_failure_success_and_unsupported_career():
         current_assignment_index=1,
         characteristics={Chars.SOC: 2},
     )
-    failed.scheduled_effects.append(
-        ScheduledEffect(
-            trigger=EffectTrigger.ADVANCEMENT, source_event_id=99, effect={'type': EffectType.DM, 'amount': 1}
-        )
-    )
+    failed.pending_advancement_dm = 1
     CommissionEvent(id=2, attempt=True, roll=2).apply(failed)
-    assert failed.scheduled_effects == []
+    assert failed.pending_advancement_dm == 0
     assert any(isinstance(p, PendingAdvancement) and p.id == '2.0' for p in failed.pending_inputs)
 
     succeeded = _projection(
@@ -464,17 +457,13 @@ def test_prisoner_advancement_special_cases():
         characteristics={Chars.INT: 12, Chars.EDU: 10},
         parole_threshold=6,
     )
-    choice_bonus.scheduled_effects.append(
-        ScheduledEffect(
-            trigger=EffectTrigger.ADVANCEMENT, source_event_id=1, effect={'type': EffectType.DM, 'amount': 1}
-        )
-    )
+    choice_bonus.pending_advancement_dm = 1
     _apply_prisoner_advancement(
         choice_bonus,
         AdvancementEvent(id=2, roll=12),
         FakePrisonerCareer(RankBonus(choices=[character_skills.Admin()], level=1)),
     )
-    assert choice_bonus.scheduled_effects == []
+    assert choice_bonus.pending_advancement_dm == 0
     assert choice_bonus.prisoner_freed is True
     assert any(
         isinstance(p, PendingRankBonusChoice) and p.options == [character_skills.Admin()]

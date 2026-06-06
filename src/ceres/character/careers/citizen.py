@@ -34,7 +34,6 @@ from ceres.character.careers.career_data import (
 from ceres.character.careers.common import handle_advanced_training
 from ceres.character.careers.common_pending import CareerSkillRollPendingBase
 from ceres.character.characteristics import Chars
-from ceres.character.effect_enums import EffectType
 from ceres.character.events import (
     PendingChoices,
     PendingSkillChoice,
@@ -79,9 +78,7 @@ from ceres.character.state import (
     CharacterProjection,
     ChoiceBase,
     Contact,
-    EffectTrigger,
     Rival,
-    ScheduledEffect,
 )
 
 # ── Career-specific choice and pending types ──────────────────────────────────
@@ -192,13 +189,7 @@ class CitizenEvent8Refuse(ChoiceBase):
     label: str = 'Refuse'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        projection.scheduled_effects.append(
-            ScheduledEffect(
-                trigger=EffectTrigger.ADVANCEMENT,
-                source_event_id=event.id,
-                effect={'type': EffectType.DM, 'amount': 2},
-            )
-        )
+        projection.pending_advancement_dm += 2
         career = projection.get_current_career()
         projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 

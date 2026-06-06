@@ -31,7 +31,6 @@ from ceres.character.careers.career_data import (
 )
 from ceres.character.careers.common_pending import CareerSkillRollPendingBase
 from ceres.character.characteristics import Chars
-from ceres.character.effect_enums import EffectType
 from ceres.character.events import (
     PendingChoices,
     SkillRollEvent,
@@ -71,10 +70,8 @@ from ceres.character.state import (
     CharacterProjection,
     ChoiceBase,
     Contact,
-    EffectTrigger,
     Enemy,
     Rival,
-    ScheduledEffect,
 )
 
 # ── mishap 2: arrested ────────────────────────────────────────────────────────
@@ -222,13 +219,7 @@ class RogueEvent6Backstab(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
         projection.summary.connections.append(Enemy(source='A fellow rogue you betrayed'))
-        projection.scheduled_effects.append(
-            ScheduledEffect(
-                trigger=EffectTrigger.ADVANCEMENT,
-                source_event_id=event.id,
-                effect={'type': EffectType.DM, 'amount': 2},
-            )
-        )
+        projection.pending_advancement_dm += 2
         projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 
 

@@ -34,7 +34,6 @@ from ceres.character.careers.career_data import (
 )
 from ceres.character.careers.common_pending import CareerSkillChoicePendingBase, CareerSkillRollPendingBase
 from ceres.character.characteristics import Chars, ConnectionKind
-from ceres.character.effect_enums import EffectType
 from ceres.character.events import (
     PendingMishap,
     PendingSkillChoice,
@@ -73,9 +72,7 @@ from ceres.character.state import (
     Ally,
     CharacterProjection,
     Contact,
-    EffectTrigger,
     Enemy,
-    ScheduledEffect,
 )
 
 _AMBUSH_TARGETS: dict[str, int] = {'Pilot': 8, 'Persuade': 10}
@@ -127,13 +124,7 @@ class PendingScoutEvent8SkillRoll(CareerSkillRollPendingBase):
     def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
         if event.modified_roll >= 8:
             projection.summary.connections.append(Ally(source='Alien intelligence contact'))
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger=EffectTrigger.ADVANCEMENT,
-                    source_event_id=event.id,
-                    effect={'type': EffectType.DM, 'amount': 2},
-                )
-            )
+            projection.pending_advancement_dm += 2
         else:
             projection.pending_inputs.append(
                 PendingMishap(
@@ -167,13 +158,7 @@ class PendingScoutEvent9SkillRoll(CareerSkillRollPendingBase):
     def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
         if event.modified_roll >= 8:
             projection.summary.connections.append(Contact(source='Disaster survivor'))
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger=EffectTrigger.ADVANCEMENT,
-                    source_event_id=event.id,
-                    effect={'type': EffectType.DM, 'amount': 2},
-                )
-            )
+            projection.pending_advancement_dm += 2
         else:
             projection.summary.connections.append(Enemy(source='Disaster relief gone wrong'))
 

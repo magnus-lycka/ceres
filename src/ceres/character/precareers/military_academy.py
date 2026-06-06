@@ -1,11 +1,7 @@
 from ceres.character.characteristics import Chars
 from ceres.character.events import PreCareerEntryEvent, PreCareerGraduationEvent
 from ceres.character.precareers.precareer_data import PreCareerData
-from ceres.character.state import (
-    CharacterProjection,
-    EffectTrigger,
-    ScheduledEffect,
-)
+from ceres.character.state import CharacterProjection
 
 
 class MilitaryAcademyPreCareer(PreCareerData):
@@ -35,14 +31,8 @@ class MilitaryAcademyPreCareer(PreCareerData):
         projection.summary.characteristics[Chars.EDU] = projection.summary.characteristics.get(Chars.EDU, 0) + 1
         if honours:
             projection.summary.characteristics[Chars.SOC] = projection.summary.characteristics.get(Chars.SOC, 0) + 1
-        projection.scheduled_effects.append(
-            ScheduledEffect(
-                trigger=EffectTrigger.AUTO_QUALIFY,
-                source_event_id=event.id,
-                effect={'career': self.service_skills_from},
-                consume=True,
-            )
-        )
+        if self.service_skills_from:
+            projection.auto_qualify_careers.append(self.service_skills_from)
         projection.summary.problems.append(
             f'{self.name} graduation: if entering {self.service_skills_from}, '
             'select any three Service Skills and increase them to level 1. Apply manually.'
@@ -61,14 +51,8 @@ class MilitaryAcademyPreCareer(PreCareerData):
         event: PreCareerGraduationEvent,
     ) -> None:
         if event.roll > 2:
-            projection.scheduled_effects.append(
-                ScheduledEffect(
-                    trigger=EffectTrigger.AUTO_QUALIFY,
-                    source_event_id=event.id,
-                    effect={'career': self.service_skills_from, 'no_commission': True},
-                    consume=True,
-                )
-            )
+            if self.service_skills_from:
+                projection.auto_qualify_careers.append(self.service_skills_from)
             projection.summary.problems.append(
                 f'{self.name}: failed graduation (roll > 2) — may still enter '
                 f'{self.service_skills_from} automatically, but no commission roll in first term.'

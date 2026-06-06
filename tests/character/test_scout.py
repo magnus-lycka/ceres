@@ -57,7 +57,6 @@ from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Ally,
     Contact,
-    EffectTrigger,
     Enemy,
     Rival,
 )
@@ -442,13 +441,11 @@ class TestScoutEvent11:
 
         assert projection.summary.skill_level(Diplomat, -1) >= 1
 
-    def test_choose_advancement_dm_adds_scheduled_effect(self):
+    def test_choose_advancement_dm_adds_pending_advancement_dm(self):
         events = [*self._setup_to_event_11(), AdvancementDmChoiceEvent(id=7, fulfills='6.0')]
         projection = replay(1, events)
 
-        adv_dm = next((se for se in projection.scheduled_effects if se.trigger == EffectTrigger.ADVANCEMENT), None)
-        assert adv_dm is not None
-        assert adv_dm.effect.get('amount') == 4
+        assert projection.pending_advancement_dm == 4
 
     def test_diplomat_choice_creates_advancement_pending(self):
         diplomat_choice = SkillChoiceEvent(id=7, fulfills='6.0', skill=Diplomat(level=Level(value=1)))

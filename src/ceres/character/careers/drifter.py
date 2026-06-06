@@ -31,7 +31,6 @@ from ceres.character.careers.career_data import (
 )
 from ceres.character.careers.common_pending import CareerSkillRollPendingBase
 from ceres.character.characteristics import Chars
-from ceres.character.effect_enums import EffectType
 from ceres.character.events import (
     PendingChoices,
     PendingInjuryTable,
@@ -65,10 +64,8 @@ from ceres.character.skills import (
 from ceres.character.state import (
     CharacterProjection,
     ChoiceBase,
-    EffectTrigger,
     Enemy,
     Rival,
-    ScheduledEffect,
 )
 
 # ── Career-specific pending input types ──────────────────────────────────────
@@ -94,13 +91,7 @@ class DrifterEvent3Accept(ChoiceBase):
 
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
-        projection.scheduled_effects.append(
-            ScheduledEffect(
-                trigger=EffectTrigger.QUALIFICATION,
-                source_event_id=event.id,
-                effect={'type': EffectType.DM, 'amount': 4},
-            )
-        )
+        projection.pending_qualification_dm += 4
         projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 
 

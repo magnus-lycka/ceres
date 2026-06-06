@@ -34,7 +34,6 @@ from ceres.character.careers.career_data import (
 from ceres.character.careers.common import handle_advanced_training
 from ceres.character.careers.common_pending import CareerSkillRollPendingBase
 from ceres.character.characteristics import Chars
-from ceres.character.effect_enums import EffectType
 from ceres.character.events import (
     PendingChoices,
     PendingSkillChoice,
@@ -75,9 +74,7 @@ from ceres.character.state import (
     CharacterProjection,
     ChoiceBase,
     Contact,
-    EffectTrigger,
     Enemy,
-    ScheduledEffect,
 )
 
 # ── Career-specific pending input types ──────────────────────────────────────
@@ -148,13 +145,7 @@ class MarinesEvent9Report(ChoiceBase):
         projection.summary.connections.append(
             Enemy(source='Your commanding officer, whom you reported for the mission failure')
         )
-        projection.scheduled_effects.append(
-            ScheduledEffect(
-                trigger=EffectTrigger.ADVANCEMENT,
-                source_event_id=event.id,
-                effect={'type': EffectType.DM, 'amount': 2},
-            )
-        )
+        projection.pending_advancement_dm += 2
         projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 
 
@@ -167,13 +158,7 @@ class MarinesEvent9Protect(ChoiceBase):
         projection.summary.connections.append(
             Ally(source='Your commanding officer, whom you protected from the fallout')
         )
-        projection.scheduled_effects.append(
-            ScheduledEffect(
-                trigger=EffectTrigger.ADVANCEMENT,
-                source_event_id=event.id,
-                effect={'type': EffectType.DM, 'amount': 1},
-            )
-        )
+        projection.pending_advancement_dm += 1
         projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 
 

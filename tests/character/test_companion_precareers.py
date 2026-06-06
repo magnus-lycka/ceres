@@ -31,7 +31,7 @@ from ceres.character.skills import (
     _level_fields,
 )
 from ceres.character.sophonts import HUMANITI
-from ceres.character.state import EffectTrigger, Enemy, Rival
+from ceres.character.state import Enemy, Rival
 from tests.character.helpers import MOCK_WORLD
 
 
@@ -315,7 +315,7 @@ class TestMerchantAcademy:
         assert len(picks) == 1
         assert picks[0].level == 1
 
-    def test_graduation_adds_advancement_dm_plus_one(self):
+    def test_graduation_adds_advancement_dm_plus_one_note(self):
         events = [
             *_base(),
             PreCareerEntryEvent(id=3, precareer='Merchant Academy (Business)', roll=12),
@@ -325,9 +325,7 @@ class TestMerchantAcademy:
         ]
         projection = replay(1, events)
 
-        adv_effects = [e for e in projection.scheduled_effects if e.trigger == EffectTrigger.ADVANCEMENT]
-        assert len(adv_effects) == 1
-        assert adv_effects[0].effect['amount'] == 1
+        assert any('DM+1' in p for p in projection.summary.problems)
 
     def test_graduation_queues_career_choice_with_distinct_id(self):
         events = [
@@ -344,7 +342,7 @@ class TestMerchantAcademy:
         pick_ids = {p.id for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)}
         assert career_choices[0].id not in pick_ids
 
-    def test_honours_graduation_gives_advancement_dm_plus_two(self):
+    def test_honours_graduation_gives_advancement_dm_plus_two_note(self):
         events = [
             *_base(),
             PreCareerEntryEvent(id=3, precareer='Merchant Academy (Business)', roll=12),
@@ -354,9 +352,7 @@ class TestMerchantAcademy:
         ]
         projection = replay(1, events)
 
-        adv_effects = [e for e in projection.scheduled_effects if e.trigger == EffectTrigger.ADVANCEMENT]
-        assert len(adv_effects) == 1
-        assert adv_effects[0].effect['amount'] == 2
+        assert any('DM+2' in p for p in projection.summary.problems)
 
     def test_honours_graduation_adds_rank_two_problem_message(self):
         events = [
@@ -699,7 +695,7 @@ class TestSpacerCommunity:
         assert sum(1 for p in picks if p.level == 0) == 2
         assert sum(1 for p in picks if p.level == 1) == 1
 
-    def test_graduation_adds_qualification_scheduled_effect(self):
+    def test_graduation_adds_qualification_dm(self):
         events = [
             *_base(),
             PreCareerEntryEvent(id=3, precareer='Spacer Community', roll=5),
@@ -710,8 +706,7 @@ class TestSpacerCommunity:
         ]
         projection = replay(1, events)
 
-        qual_effects = [e for e in projection.scheduled_effects if e.trigger == EffectTrigger.QUALIFICATION]
-        assert len(qual_effects) == 1
+        assert projection.pending_qualification_dm == 1
 
     def test_graduation_queues_career_choice_with_distinct_id(self):
         events = [

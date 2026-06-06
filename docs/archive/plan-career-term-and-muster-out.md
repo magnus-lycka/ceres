@@ -2,10 +2,11 @@
 
 ## Status
 
-Paused. This plan should not proceed until the career modules stop using the
-`CAREER_DATA = XCareerData(...)` singleton/data-blob pattern. The career
-subclasses themselves need to become the real owners of career rules first; see
-the corresponding todo in `docs/todo_maybe.md`.
+Complete. All 9 migration steps are done:
+
+- Steps 1–6, 9: Implemented in earlier sessions.
+- Step 7: Implemented via `allows_assignment_change` flag on `CareerData`.
+- Step 8: Muster-out parts implemented; remaining `ScheduledEffect` uses (ADVANCEMENT, QUALIFICATION, AUTO_QUALIFY) replaced with `pending_advancement_dm`, `pending_qualification_dm`, and `auto_qualify_careers` fields on `CharacterProjection`. `ScheduledEffect`, `EffectTrigger`, `EffectType`, and `effect_enums.py` deleted.
 
 ## Problem
 

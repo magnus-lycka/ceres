@@ -80,7 +80,6 @@ from ceres.character.sophonts import VILANI
 from ceres.character.state import (
     Ally,
     ChoiceBase,
-    EffectTrigger,
     Enemy,
     Rival,
 )
@@ -271,7 +270,7 @@ class TestScholarTerm:
             Investigate(),
         ]
 
-    def test_event_9_stores_advancement_dm_in_scheduled_effects(self):
+    def test_event_9_stores_advancement_dm(self):
         events = [
             *self._setup_with_scholar(),
             SurviveEvent(id=7, fulfills='6.0', roll=7),
@@ -279,9 +278,7 @@ class TestScholarTerm:
         ]
         projection = replay(1, events)
 
-        adv_dm = next((se for se in projection.scheduled_effects if se.trigger == EffectTrigger.ADVANCEMENT), None)
-        assert adv_dm is not None
-        assert adv_dm.effect.get('amount') == 2
+        assert projection.pending_advancement_dm == 2
 
     def test_event_9_still_creates_advancement_pending(self):
         events = [
@@ -793,13 +790,11 @@ class TestScholarEvent11:
 
         assert projection.summary.skill_level(SpaceScience, -1) >= 1
 
-    def test_choose_advancement_dm_adds_scheduled_effect(self):
+    def test_choose_advancement_dm_adds_pending_advancement_dm(self):
         events = [*self._setup(), AdvancementDmChoiceEvent(id=9, fulfills='8.0')]
         projection = replay(1, events)
 
-        adv_dm = next((se for se in projection.scheduled_effects if se.trigger == EffectTrigger.ADVANCEMENT), None)
-        assert adv_dm is not None
-        assert adv_dm.effect.get('amount') == 4
+        assert projection.pending_advancement_dm == 4
 
     def test_skill_choice_creates_advancement_pending(self):
         events = [*self._setup(), SkillChoiceEvent(id=9, fulfills='8.0', skill=LifeScience(biology=Level(value=1)))]
