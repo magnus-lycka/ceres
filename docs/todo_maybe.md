@@ -537,26 +537,29 @@ The career YAML migration removed string-based skill/characteristic fields from
 career data. Several string-based patterns remain and should be eliminated in
 follow-up work packages.
 
-### Replace `PendingInputBase.options: list[str]` with typed option objects
+### Replace remaining `list[str]` options with typed option objects
 
-`PendingInputBase` currently declares:
+`PendingInputBase` base class no longer has a generic `options: list[str]` field.
+Most pending types now carry typed options (`list[AnySkill]`,
+`list[AnySkill | Chars]`, `list[AnyBenefit]`, `list[SerializeAsAny[ChoiceBase]]`,
+etc.). Five instances remain:
 
-- `options: list[str] = Field(default_factory=list)`
+- `PendingSkillTable.options: list[str]` — table-name strings such as
+  `'personal_development'`, `'service_skills'`. Should become a typed enum or
+  `SkillTable` references.
+- `PendingConnectionsRoll.options: list[str]` — count strings `'1'`–`'6'`.
+  Should become `list[int]` or a typed count object.
+- `PendingSwitchAssignment.options: list[str]` — assignment names. Should become
+  typed assignment references.
+- `PendingBenefitChoice.options: list[str]` — display labels rendered alongside
+  the typed `benefit_options: list[AnyBenefit]`. Should be dropped; the label can
+  come from the benefit objects themselves.
+- `DecreaseCharacteristicChoiceEffect.options: list[str]` in `career_data.py` —
+  characteristic abbreviations. Should become `list[Chars]`.
 
-This is far too weak to act as the contract between career/event logic and the
-frontend/client. Pending inputs should carry proper typed option objects that
-make the intended interaction explicit: labels, submitted values, semantic
-meaning, and any structured payload should be part of the model instead of
-being improvised from arbitrary strings.
-
-This should become a real domain/API contract between:
-
-- event/career/pre-career logic that creates pending inputs
-- the UI/client that renders and fulfills them
-
-The current stringly-typed foundation is one source of bugs such as empty or
-ambiguous `career_decision` submissions and special-case rendering drift across
-different pending-input kinds.
+These are the remaining raw-string contracts between career/event logic and the
+frontend/client. Resolving them makes the API self-documenting and eliminates
+special-case rendering drift.
 
 ### Consolidate career-entry state into a `TermChoices` object
 
@@ -661,11 +664,10 @@ type-level coupling.
 #### Relationship to the self-addressed envelope plan
 
 [docs/plan-event-and-pending-input-rethink.md](plan-event-and-pending-input-rethink.md)
-is a good incremental first slice: it replaces stringly `PendingXxxChoice` /
-`on_choice()` dispatch with self-addressed envelopes.
+is complete. `ChoiceBase` / `PendingChoices` replaced `PendingXxxChoice` / `on_choice()`
+dispatch across all career modules.
 
-That plan still uses `Event.apply()` as transitional scaffolding for choice
-dispatch. That is fine as an incremental move.
+`Event.apply()` remains as transitional scaffolding for non-choice dispatch.
 
 This todo describes the broader end state those changes are growing toward:
 
@@ -678,52 +680,16 @@ This todo describes the broader end state those changes are growing toward:
 
 1. Introduce domain-owned handlers for one small event family while keeping
    replay dumb (careers are the natural first target via the fulfilled pending)
-2. Move pending-input classes out of `events.py` using identity-based
-   decoupling instead of import tricks
+2. ~~Move pending-input classes out of `events.py` using identity-based
+   decoupling instead of import tricks~~ **Done.** `events.py` deleted; all
+   pending classes live in their owning domain modules. `PendingInputBase` uses
+   a `_registry` + `__init_subclass__` pattern for deserialization — no
+   discriminated union.
 3. Delete `apply()` bodies incrementally
-4. Remove dead transitional abstractions
-
-### Replace remaining `CareerDispatchEffect` registry dispatch with effect subclasses
-
-The `CareerHandlerBase` self-registration pattern is intentional and clean for
-**single-phase handlers**: the string `type: Literal['citizen_mishap_4'] =
-'citizen_mishap_4'` appears only in the class definition; dispatch to
-`effect.handle()` is via `isinstance`, so there are no free-floating string
-references that could drift.
-
-The actual smell is **multi-phase handlers**, where the primary handler's
-`handle()` method creates a `PendingCareerChoice(context='secondary_key')` or
-`PendingCareerSkillRoll(context='secondary_key')` referencing another handler's
-key as a bare string. Affected pairs (primary → secondary):
-
-- `prisoner_mishap_3` → `prisoner_mishap_3_fight`
-- `prisoner_event_3` → `prisoner_event_3_escape`
-- `prisoner_event_9` → `prisoner_event_9_level_{1,2,3}` (f-string, not bare string)
-- `prisoner_event_12` → `prisoner_event_12_heroism`
-- `prisoner_event_7` → `prisoner_event_7_riot`
-- `drifter_event_9` → `drifter_event_9_roll`
-- `scholar_event_8` → `scholar_event_8_roll`
-- `merchant_event_3` → `merchant_event_3_skill`
-- `merchant_event_8` → `merchant_event_8_roll`
-- `rogue_event_3` → `rogue_event_3_skill`
-- `noble_event_8` → `noble_event_8_skill`
-- `citizen_event_8` → `citizen_event_8_skill`
-- `entertainer_event_8` → `entertainer_event_8_skill`
-- `marines_mishap_4` → `marines_mishap_4_skill`
-- `scout_event_9` (creates `PendingCareerSkillRoll(context='scout_event_9')`,
-  self-referential — the same handler resolves the roll)
-
-These cross-handler string references also appear in the corresponding tests
-(`SkillRollEvent(context='scholar_event_8_roll', ...)`, etc.).
-
-The minimal fix is to replace `context='secondary_key'` literals with
-`SecondaryHandlerClass.type` in the primary handler's `handle()` method.
-This eliminates the raw string references in production code while keeping
-the overall pattern intact.
-
-A fuller refactor would make pending inputs carry the handler class directly
-rather than a string key, eliminating `get_career_handler(context: str)` and
-the registry lookup entirely.
+4. ~~Remove dead transitional abstractions~~ **Largely done.** `events.py`,
+   `state.py`, and `mechanism/pending.py` deleted; `state.py` content split
+   across `mechanism/errors.py`, `mechanism/pending_input.py`,
+   `mechanism/character_state.py`, and `domain/career/career_data.py`.
 
 ## Agent career tables: bring Ceres fully in line with Core
 

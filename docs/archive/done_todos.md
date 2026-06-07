@@ -1352,3 +1352,62 @@ Implemented across `docs/plan-career-term-and-muster-out.md` (now archived):
   and failed graduation above natural 2).
 - `ScheduledEffect`, `EffectTrigger`, `EffectType`, and
   `src/ceres/character/effect_enums.py` deleted.
+
+## Character creation: eliminate remaining semantic strings — multi-phase handler context strings
+
+Sub-section "Replace remaining `CareerDispatchEffect` registry dispatch with effect subclasses"
+from the "eliminate remaining semantic strings" todo.
+
+The `context='secondary_key'` string pattern that linked multi-phase handlers
+(`PendingCareerChoice(context='prisoner_mishap_3_fight')`,
+`PendingCareerSkillRoll(context='scholar_event_8_roll')`, etc.) has been fully
+replaced with typed `ChoiceBase` subclasses and `PendingChoices`. Every previously
+named affected pair (prisoner, drifter, scholar, merchant, rogue, noble, citizen,
+entertainer, marines, scout) now expresses its multi-phase logic via:
+
+- A typed `ChoiceBase` subclass whose `handle()` creates the follow-on pending input
+- A typed `PendingXxxSkillRoll(CareerSkillRollPendingBase)` subclass for the
+  second-phase roll, with its own `Literal` kind and `resolve()` logic
+
+`PendingCareerChoice(context=...)` and `PendingCareerSkillRoll(context=...)` with
+bare string cross-references no longer exist. `get_career_handler(context: str)`
+registry lookup is gone. All test assertions use the typed pending/choice classes.
+
+`PendingChoices.choices: list[SerializeAsAny[ChoiceBase]]` uses the registry pattern
+(each `ChoiceBase` subclass registers its `kind: Literal[...]`) so no discriminated
+union needs to be maintained.
+
+## Character creation: eliminate remaining semantic strings — events.py, state.py, pending.py decomposition
+
+Sub-sections "Make replay a dumb mailman — migration slice 2 (move pending-input
+classes out of events.py)" and related structural decomposition from the "eliminate
+remaining semantic strings" todo.
+
+`src/ceres/character/events.py` deleted. All 70+ event handler classes and pending
+input classes moved to their owning domain modules:
+
+- Career events and pending types → `domain/career/career_events.py`
+- Career shared pending bases → `domain/career/common_pending.py`
+- Health/injury events and pendings → `domain/health/health_events.py`
+- Homeworld events and pendings → `domain/homeworld/homeworld_events.py`
+- Pre-career events and pendings → `domain/precareer/precareer_events.py`
+- Character-start events and pendings → `domain/character_start.py`
+
+`src/ceres/character/mechanism/pending.py` (the `AnyPending` discriminated union)
+deleted. `PendingInputBase` gained a `_registry: ClassVar[dict[str, type]]` and
+`__init_subclass__` auto-registration (same pattern as `EventHandlerBase`). The
+`CharacterProjection.pending_inputs` field uses `BeforeValidator(_deserialise_pending_input)`
+for round-trip deserialization without a maintained discriminated union.
+
+`src/ceres/character/state.py` decomposed into:
+
+- `mechanism/errors.py` — `ReplayError`
+- `mechanism/pending_input.py` — `ChoiceBase`, `PendingInputBase`, `_deserialise_pending_input`
+- `mechanism/character_state.py` — `CharacterSummary`, `CharacterProjection`, `diff_summaries`
+- `domain/career/career_data.py` — `BenefitRollDm`, `MusterOut`, `CareerTerm` appended
+
+All ~55 files importing from `state.py` or `events.py` migrated to the new locations.
+`state.py` deleted after migration.
+
+Dedicated unit tests for `mechanism/event_base.py` and the `PendingInputBase` registry
+added to `tests/character/test_event_base.py`.
