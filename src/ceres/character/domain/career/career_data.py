@@ -21,6 +21,11 @@ class SkillTable:
     min_edu: int | None = None
 
 
+class SkillTableOption(BaseModel):
+    label: str
+    key: str
+
+
 @dataclass
 class CareerSkillTables:
     personal_development: SkillTable
@@ -77,7 +82,7 @@ class DecreaseCharacteristicEffect(BaseModel):
 
 class DecreaseCharacteristicChoiceEffect(BaseModel):
     type: Literal['decrease_characteristic_choice'] = 'decrease_characteristic_choice'
-    options: list[str]
+    options: list[Chars]
     amount: int = 1
 
 
@@ -331,9 +336,8 @@ class CareerData(TermData):
                 return self.skill_tables.advanced_education
             case 'officer':
                 return self.skill_tables.officer
-        for i, a in enumerate(self.assignments, 1):
-            if a.name.lower() == name.lower():
-                return getattr(self.skill_tables, f'assignment{i}')
+            case 'assignment1' | 'assignment2' | 'assignment3':
+                return getattr(self.skill_tables, name, None)
         return None
 
     def assignment_ranks(self, index: int) -> dict[int, RankEntry]:
@@ -342,7 +346,9 @@ class CareerData(TermData):
     def current_ranks(self, projection) -> dict[int, RankEntry]:
         if projection.summary.career_terms and projection.summary.career_terms[-1].commission:
             return self.officer_ranks
-        return self.assignment_ranks(projection.summary.current_assignment_index or 0)
+        assignment = projection.summary.current_assignment
+        index = self.assignment_index(assignment) if assignment is not None else 0
+        return self.assignment_ranks(index)
 
     def is_selectable(self, projection=None) -> bool:
         return self.selectable
@@ -370,8 +376,7 @@ class CareerData(TermData):
 
         projection.summary.drafted = True
         projection.summary.current_career = self
-        projection.summary.current_assignment = assignment.name
-        projection.summary.current_assignment_index = self.assignment_index(assignment)
+        projection.summary.current_assignment = assignment
         self.start_new_term(projection, assignment, event_id)
 
     def prior_terms(self, terms, assignment: AssignmentData) -> list:
@@ -443,15 +448,14 @@ class CareerData(TermData):
                 raise ReplayError(f'Cannot re-enter {self.name} — ejected from this career last term')
             if last.allows_assignment_change:
                 raise ReplayError(f'Cannot re-enter {self.name} — voluntary departure last term')
-            if projection.summary.last_assignment == assignment.name:
+            if projection.summary.last_assignment == assignment:
                 raise ReplayError(f'Cannot re-enter {self.name}/{assignment.name} — voluntary departure last term')
 
         # Check for auto-qualify from pre-career graduation
         if self.name in projection.auto_qualify_careers:
             projection.auto_qualify_careers.remove(self.name)
             projection.summary.current_career = self
-            projection.summary.current_assignment = assignment.name
-            projection.summary.current_assignment_index = self.assignment_index(assignment)
+            projection.summary.current_assignment = assignment
             self.start_new_term(projection, assignment, event_id)
             return
 
@@ -473,8 +477,7 @@ class CareerData(TermData):
             return
 
         projection.summary.current_career = self
-        projection.summary.current_assignment = assignment.name
-        projection.summary.current_assignment_index = self.assignment_index(assignment)
+        projection.summary.current_assignment = assignment
         self.start_new_term(projection, assignment, event_id)
 
     def start_new_term(
@@ -627,7 +630,7 @@ class CareerData(TermData):
         from ceres.character.domain.career.career_events import PendingSkillTable
 
         edu = projection.summary.characteristics.get(Chars.EDU, 0)
-        tables = self.available_tables(edu, self.assignment_index(assignment))
+        tables = self.available_tables(edu, assignment)
         projection.pending_inputs.append(
             PendingSkillTable(pending_id=(event_id, 0), instruction='Choose a skill table and roll 1D', options=tables)
         )
@@ -639,17 +642,20 @@ class CareerData(TermData):
         target = assignment.survival.target
         return PendingSurvive(pending_id=(event_id, pending_idx), instruction=f'Survive: {char} {target}+')
 
-    def available_tables(self, edu: int, assignment_index: int) -> list[str]:
-        result = ['personal_development', 'service_skills']
+    def available_tables(self, edu: int, assignment: AssignmentData | None) -> list[SkillTableOption]:
+        result = [
+            SkillTableOption(label='Personal Development', key='personal_development'),
+            SkillTableOption(label='Service Skills', key='service_skills'),
+        ]
         adv_edu = self.skill_tables.advanced_education
         if adv_edu is not None and edu >= (adv_edu.min_edu or 0):
-            result.append('advanced_education')
+            result.append(SkillTableOption(label='Advanced Education', key='advanced_education'))
         if self.skill_tables.officer is not None:
-            result.append('officer')
-        assignment = self.assignment_by_index(assignment_index)
+            result.append(SkillTableOption(label='Officer', key='officer'))
         if assignment is not None:
-            result.append(assignment.name.lower())
-        return sorted(result)
+            idx = self.assignment_index(assignment)
+            result.append(SkillTableOption(label=assignment.name, key=f'assignment{idx}'))
+        return sorted(result, key=lambda o: o.key)
 
 
 # ── Muster-out and career term state ────────────────────────────────────────

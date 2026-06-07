@@ -194,8 +194,8 @@ def load_precareers() -> dict[str, PreCareerData]:
             ],
             events=_PRECAREER_EVENTS,
         ),
-        _merchant_academy('Merchant Academy (Business)', 'broker'),
-        _merchant_academy('Merchant Academy (Shipboard)', 'merchant marine'),
+        _merchant_academy('Merchant Academy (Business)', 'assignment3'),
+        _merchant_academy('Merchant Academy (Shipboard)', 'assignment1'),
         PsionicCommunityPreCareer(
             name='Psionic Community',
             source='Companion',

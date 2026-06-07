@@ -81,7 +81,8 @@ def test_draft_event_records_selected_career_and_assignment():
     assert projection.summary.drafted
     assert projection.summary.current_career is not None
     assert projection.summary.current_career.name == 'Merchant'
-    assert projection.summary.current_assignment == 'Merchant Marine'
+    assert projection.summary.current_assignment is not None
+    assert projection.summary.current_assignment.name == 'Merchant Marine'
 
 
 def test_draft_to_career_with_multiple_assignments_asks_player_to_choose_assignment():
@@ -120,7 +121,8 @@ def test_draft_assignment_choice_starts_selected_assignment():
     assert projection.summary.drafted
     assert projection.summary.current_career is not None
     assert projection.summary.current_career.name == 'Army'
-    assert projection.summary.current_assignment == 'Cavalry'
+    assert projection.summary.current_assignment is not None
+    assert projection.summary.current_assignment.name == 'Cavalry'
 
 
 def test_merchant_does_not_offer_commission_before_advancement():

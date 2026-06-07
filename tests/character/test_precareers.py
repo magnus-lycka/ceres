@@ -94,10 +94,10 @@ def test_companion_precareers_are_loaded():
 
     assert _entry('Merchant Academy (Business)').characteristic == Chars.INT
     assert _entry('Merchant Academy (Business)').target == 9
-    assert precareers['Merchant Academy (Business)'].curriculum_table == 'broker'
+    assert precareers['Merchant Academy (Business)'].curriculum_table == 'assignment3'
     assert _entry('Merchant Academy (Shipboard)').characteristic == Chars.INT
     assert _entry('Merchant Academy (Shipboard)').target == 9
-    assert precareers['Merchant Academy (Shipboard)'].curriculum_table == 'merchant marine'
+    assert precareers['Merchant Academy (Shipboard)'].curriculum_table == 'assignment1'
 
     assert precareers['Psionic Community'].entry_requirement == 'PSI 8+, DM+1 if INT 8+'
     assert precareers['Psionic Community'].graduation_requirement == 'PSI 6+, DM+1 if INT 8+'

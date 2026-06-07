@@ -573,7 +573,7 @@ class TestScoutAssignmentTableCorrections:
         # Courier roll 2 is Flyer (specialised) — player must choose a specialisation
         events = [
             *self._setup_in_term_2('Courier'),
-            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='courier', roll=2)),
+            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='assignment1', roll=2)),
         ]
         projection = replay(1, events)
 
@@ -584,7 +584,7 @@ class TestScoutAssignmentTableCorrections:
     def test_surveyor_roll_2_gives_persuade(self):
         events = [
             *self._setup_in_term_2('Surveyor'),
-            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='surveyor', roll=2)),
+            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='assignment2', roll=2)),
         ]
         projection = replay(1, events)
 
@@ -593,7 +593,7 @@ class TestScoutAssignmentTableCorrections:
     def test_surveyor_roll_4_gives_navigation(self):
         events = [
             *self._setup_in_term_2('Surveyor'),
-            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='surveyor', roll=4)),
+            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='assignment2', roll=4)),
         ]
         projection = replay(1, events)
 
@@ -603,7 +603,7 @@ class TestScoutAssignmentTableCorrections:
         # Explorer roll 2 is Pilot (specialised) — player must choose a specialisation
         events = [
             *self._setup_in_term_2('Explorer'),
-            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='explorer', roll=2)),
+            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='assignment3', roll=2)),
         ]
         projection = replay(1, events)
 
@@ -614,7 +614,7 @@ class TestScoutAssignmentTableCorrections:
     def test_explorer_roll_4_creates_science_choice_pending(self):
         events = [
             *self._setup_in_term_2('Explorer'),
-            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='explorer', roll=4)),
+            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='assignment3', roll=4)),
         ]
         projection = replay(1, events)
 

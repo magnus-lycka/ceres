@@ -369,7 +369,8 @@ class TestCareerEntry:
 
         assert projection.summary.current_career is not None
         assert projection.summary.current_career.name == 'Scout'
-        assert projection.summary.current_assignment == 'Courier'
+        assert projection.summary.current_assignment is not None
+        assert projection.summary.current_assignment.name == 'Courier'
 
     def test_career_event_grants_initial_training_service_skills(self):
         events = [
@@ -801,8 +802,8 @@ class TestReenlist:
         ]
         projection2 = replay(1, events)
         switch_pending = next(p for p in projection2.pending_inputs if isinstance(p, PendingSwitchAssignment))
-        assert 'Surveyor' in switch_pending.options
-        assert 'Explorer' in switch_pending.options
+        assert any(a.name == 'Surveyor' for a in switch_pending.options)
+        assert any(a.name == 'Explorer' for a in switch_pending.options)
 
 
 class TestSkillTable:
@@ -824,7 +825,7 @@ class TestSkillTable:
         # Courier table roll 1: Electronics (specialised) → PendingSkillTableChoice, not auto-granted
         events = [
             *self._setup_in_term_2(),
-            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='courier', roll=1)),
+            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='assignment1', roll=1)),
         ]
 
         projection = replay(1, events)
@@ -837,7 +838,7 @@ class TestSkillTable:
         # Choose Electronics (Comms) → Electronics (Comms) 1 granted
         events = [
             *self._setup_in_term_2(),
-            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='courier', roll=1)),
+            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='assignment1', roll=1)),
             Event(id=10, fulfills=(9, 0), handler=SkillChoiceHandler(skill=Electronics(comms=Level(value=1)))),
         ]
 
@@ -871,7 +872,7 @@ class TestSkillTable:
         # Electronics (specialised) → survive only appears after the specialisation choice
         events = [
             *self._setup_in_term_2(),
-            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='courier', roll=1)),
+            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='assignment1', roll=1)),
         ]
         projection = replay(1, events)
         assert not any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
@@ -1071,7 +1072,7 @@ class TestSkillTableIncrement:
         # Courier table roll 2: Flyer (specialised) → choice pending, then Flyer 1 after picking spec
         events = [
             *self._setup_in_term_2(),
-            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='courier', roll=2)),
+            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='assignment1', roll=2)),
             Event(id=10, fulfills=(9, 0), handler=SkillChoiceHandler(skill=Flyer(grav=Level(value=1)))),
         ]
         projection = replay(1, events)
@@ -1082,7 +1083,7 @@ class TestSkillTableIncrement:
         # Courier table roll 3: Pilot (specialised, existing at 0) → choice pending, then Pilot 1
         events = [
             *self._setup_in_term_2(),
-            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='courier', roll=3)),
+            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='assignment1', roll=3)),
             Event(id=10, fulfills=(9, 0), handler=SkillChoiceHandler(skill=Pilot(spacecraft=Level(value=1)))),
         ]
         projection = replay(1, events)
@@ -1719,10 +1720,10 @@ class TestAgentAssignmentTableFiltering:
 
         skill_table_pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTable)), None)
         assert skill_table_pending is not None
-        options = set(skill_table_pending.options)
-        assert 'intelligence' in options
-        assert 'corporate' not in options
-        assert 'law enforcement' not in options
+        labels = {o.label.lower() for o in skill_table_pending.options}
+        assert 'intelligence' in labels
+        assert 'corporate' not in labels
+        assert 'law enforcement' not in labels
 
     def test_corporate_assignment_excludes_intelligence_and_law_enforcement_tables(self):
         events = self._setup_in_term_2('Corporate')
@@ -1730,10 +1731,10 @@ class TestAgentAssignmentTableFiltering:
 
         skill_table_pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTable)), None)
         assert skill_table_pending is not None
-        options = set(skill_table_pending.options)
-        assert 'corporate' in options
-        assert 'intelligence' not in options
-        assert 'law enforcement' not in options
+        labels = {o.label.lower() for o in skill_table_pending.options}
+        assert 'corporate' in labels
+        assert 'intelligence' not in labels
+        assert 'law enforcement' not in labels
 
     def test_law_enforcement_assignment_excludes_intelligence_and_corporate_tables(self):
         events = self._setup_in_term_2('Law Enforcement')
@@ -1741,10 +1742,10 @@ class TestAgentAssignmentTableFiltering:
 
         skill_table_pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTable)), None)
         assert skill_table_pending is not None
-        options = set(skill_table_pending.options)
-        assert 'law enforcement' in options
-        assert 'intelligence' not in options
-        assert 'corporate' not in options
+        labels = {o.label.lower() for o in skill_table_pending.options}
+        assert 'law enforcement' in labels
+        assert 'intelligence' not in labels
+        assert 'corporate' not in labels
 
 
 # ── regression: no spurious survive after end-of-term skill-table choice ─────
@@ -1884,7 +1885,8 @@ class TestAssignmentChange:
         # Scout: INT 5+, INT=9 (DM+1), roll 5 → 5+1=6 >= 5 (success)
         d = self._scout_driver()
         d.switch_assignment('Surveyor', roll=5)
-        assert d.projection.summary.current_assignment == 'Surveyor'
+        assert d.projection.summary.current_assignment is not None
+        assert d.projection.summary.current_assignment.name == 'Surveyor'
 
     def test_successful_change_keeps_career(self):
         """Successful assignment change keeps character in the same career."""
@@ -1910,7 +1912,7 @@ class TestAssignmentChange:
         d = self._scout_driver()
         d.switch_assignment('Surveyor', roll=5)
         pending = next(p for p in d.projection.pending_inputs if isinstance(p, PendingSkillTable))
-        assert 'surveyor' in pending.options
+        assert any(o.label.lower() == 'surveyor' for o in pending.options)
 
     # ── failed assignment change ───────────────────────────────────────────────
 
@@ -1919,7 +1921,8 @@ class TestAssignmentChange:
         # Scout: INT 5+, INT=9 (DM+1), roll 3 → 3+1=4 < 5 (fail)
         d = self._scout_driver()
         d.switch_assignment('Surveyor', roll=3)
-        assert d.projection.summary.current_assignment == 'Courier'
+        assert d.projection.summary.current_assignment is not None
+        assert d.projection.summary.current_assignment.name == 'Courier'
 
     def test_failed_change_creates_reenlist_pending(self):
         """Failed qualification for assignment change creates PendingReenlist (same or muster out)."""
@@ -1932,7 +1935,8 @@ class TestAssignmentChange:
         d = self._scout_driver()
         d.switch_assignment('Surveyor', roll=3)
         d.reenlist(True)
-        assert d.projection.summary.current_assignment == 'Courier'
+        assert d.projection.summary.current_assignment is not None
+        assert d.projection.summary.current_assignment.name == 'Courier'
         assert d.projection.summary.current_career is not None
         assert d.projection.summary.current_career.name == 'Scout'
         assert any(isinstance(p, PendingSkillTable) for p in d.projection.pending_inputs)

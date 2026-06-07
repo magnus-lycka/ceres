@@ -62,7 +62,8 @@ class TestArmyQualification:
     def test_all_three_assignments_accepted(self):
         for assignment in ('Support', 'Infantry', 'Cavalry'):
             d = _enter_army(assignment=assignment)
-            assert d.projection.summary.current_assignment == assignment
+            assert d.projection.summary.current_assignment is not None
+            assert d.projection.summary.current_assignment.name == assignment
 
 
 # ── mishap 4: illegal activity ────────────────────────────────────────────────

@@ -192,7 +192,7 @@ class ScholarEvent3Accept(ChoiceBase):
             PendingConnectionsRoll(
                 pending_id=(event.id, 0),
                 instruction='Roll D3 for number of Enemies gained',
-                options=['1', '2', '3'],
+                options=[1, 2, 3],
             )
         )
         for i, label in enumerate(['first', 'second'], start=1):
@@ -207,7 +207,7 @@ class ScholarEvent3Accept(ChoiceBase):
         if projection.summary.current_career is not None:
             career = projection.get_current_career()
             projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id, 3)
+                _advancement_pending(career, projection.summary.current_assignment, event.id, 3)
             )
         projection.muster_out_career = projection.summary.current_career
         projection.pending_inputs.append(
@@ -228,7 +228,7 @@ class ScholarEvent3Decline(ChoiceBase):
         if projection.summary.current_career is not None:
             career = projection.get_current_career()
             projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id)
+                _advancement_pending(career, projection.summary.current_assignment, event.id)
             )
 
 
@@ -325,7 +325,7 @@ class ScholarEvent8Refuse(ChoiceBase):
         if projection.summary.current_career is not None:
             career = projection.get_current_career()
             projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id)
+                _advancement_pending(career, projection.summary.current_assignment, event.id)
             )
 
 

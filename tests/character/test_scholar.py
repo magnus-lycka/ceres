@@ -715,7 +715,7 @@ class TestScholarEvent3:
 
         conn = next((p for p in projection.pending_inputs if isinstance(p, PendingConnectionsRoll)), None)
         assert conn is not None
-        assert conn.options == ['1', '2', '3']
+        assert conn.options == [1, 2, 3]
 
     def test_accept_creates_two_science_choice_pendings(self):
         events = [
@@ -1243,7 +1243,7 @@ class TestScholarScienceChoicesInTables:
     def test_field_researcher_roll_6_creates_science_choice(self):
         events = [
             *self._setup_in_term_2('Field Researcher'),
-            Event(id=11, fulfills=(10, 0), handler=SkillTableHandler(table='field researcher', roll=6)),
+            Event(id=11, fulfills=(10, 0), handler=SkillTableHandler(table='assignment1', roll=6)),
         ]
         projection = replay(1, events)
 
@@ -1254,7 +1254,7 @@ class TestScholarScienceChoicesInTables:
     def test_scientist_roll_3_creates_science_choice(self):
         events = [
             *self._setup_in_term_2('Scientist'),
-            Event(id=11, fulfills=(10, 0), handler=SkillTableHandler(table='scientist', roll=3)),
+            Event(id=11, fulfills=(10, 0), handler=SkillTableHandler(table='assignment2', roll=3)),
         ]
         projection = replay(1, events)
 
@@ -1265,7 +1265,7 @@ class TestScholarScienceChoicesInTables:
     def test_physician_roll_6_creates_science_choice(self):
         events = [
             *self._setup_in_term_2('Physician'),
-            Event(id=11, fulfills=(10, 0), handler=SkillTableHandler(table='physician', roll=6)),
+            Event(id=11, fulfills=(10, 0), handler=SkillTableHandler(table='assignment3', roll=6)),
         ]
         projection = replay(1, events)
 

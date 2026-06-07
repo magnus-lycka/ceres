@@ -159,7 +159,7 @@ class PreCareerEventHandler(EventHandlerBase):
                         pending_id=(event.id, pending_idx),
                         connection_type=effect.connection_type,
                         instruction=f'Roll {effect.dice.upper()} for number of {effect.connection_type}s gained',
-                        options=[str(i) for i in range(1, max_count + 1)],
+                        options=list(range(1, max_count + 1)),
                     )
                 )
                 pending_idx += 1

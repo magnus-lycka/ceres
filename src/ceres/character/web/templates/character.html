@@ -14,7 +14,7 @@
       {% if displayed_career %}
         · {{ displayed_career.name }}
         {% if displayed_assignment %}
-          ({{ displayed_assignment }})
+          ({{ displayed_assignment.name }})
         {% endif %}
         {% if summary.rank is not none %}· Rank {{ summary.rank }}{% endif %}
         · {{ summary.terms_started_in_all_careers }} term{% if summary.terms_started_in_all_careers != 1 %}s{% endif %}

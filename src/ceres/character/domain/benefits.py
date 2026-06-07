@@ -60,7 +60,6 @@ class ChoiceBenefit(BaseModel):
             PendingBenefitChoice(
                 pending_id=(event_id, 0),
                 instruction=f'Choose one benefit: {self.display_label}',
-                options=[b.display_label for b in self.options],
                 benefit_options=list(self.options),
             )
         )

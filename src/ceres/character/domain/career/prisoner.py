@@ -88,9 +88,7 @@ class PrisonerMishap3Submit(ChoiceBase):
         projection.summary.problems.append(
             'Prison gang (Prisoner mishap 3): submitted — lose your Benefit roll for this term.'
         )
-        projection.pending_inputs.append(
-            _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id)
-        )
+        projection.pending_inputs.append(_advancement_pending(career, projection.summary.current_assignment, event.id))
 
 
 class PrisonerMishap3Fight(ChoiceBase):
@@ -118,7 +116,7 @@ class PendingPrisonerMishap3FightSkillRoll(CareerSkillRollPendingBase):
             projection.summary.connections.append(Enemy(source='The prison gang leader you stood up to'))
             projection.summary.parole_threshold = min(12, (projection.summary.parole_threshold or 0) + 1)
             projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id)
+                _advancement_pending(career, projection.summary.current_assignment, event.id)
             )
         else:
             projection.pending_inputs.append(
@@ -128,7 +126,7 @@ class PendingPrisonerMishap3FightSkillRoll(CareerSkillRollPendingBase):
                 )
             )
             projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id, 1)
+                _advancement_pending(career, projection.summary.current_assignment, event.id, 1)
             )
 
 
@@ -408,7 +406,7 @@ class PendingPrisonerEvent7RiotSkillRoll(CareerSkillRollPendingBase):
                 )
             )
             projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id, 1)
+                _advancement_pending(career, projection.summary.current_assignment, event.id, 1)
             )
         # Success: _apply_skill_roll auto-queues advancement
 
@@ -579,7 +577,7 @@ class PendingPrisonerEvent12HeroismSkillRoll(CareerSkillRollPendingBase):
                 )
             )
             projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment_index or 0, event.id, 1)
+                _advancement_pending(career, projection.summary.current_assignment, event.id, 1)
             )
 
 
@@ -805,8 +803,7 @@ class Prisoner(CareerData):
         qualification_roll: int,
     ) -> None:
         projection.summary.current_career = self
-        projection.summary.current_assignment = assignment.name
-        projection.summary.current_assignment_index = self.assignment_index(assignment)
+        projection.summary.current_assignment = assignment
         count_before = len(projection.pending_inputs)
         self.start_new_term(projection, assignment, event_id)
         pending_added = len(projection.pending_inputs) - count_before

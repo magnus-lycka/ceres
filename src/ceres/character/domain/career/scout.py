@@ -365,7 +365,7 @@ class Scout(CareerData):
         ),
         2: MishapEntry(
             text='Psychologically damaged by your time in the scouts. Reduce your INT or SOC by 1.',
-            effects=[DecreaseCharacteristicChoiceEffect(options=['INT', 'SOC'], amount=1)],
+            effects=[DecreaseCharacteristicChoiceEffect(options=[Chars.INT, Chars.SOC], amount=1)],
         ),
         3: MishapEntry(
             text=(

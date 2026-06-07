@@ -577,7 +577,7 @@ def test_wizard_shows_career_name_not_repr(client_with_backend, monkeypatch):
                 sophont=HUMANITI,
                 homeworld=MOCK_WORLD,
                 current_career=citizen,
-                current_assignment='Colonist',
+                current_assignment=citizen.assignment('Colonist'),
                 rank=3,
                 career_terms=[
                     CareerTerm(
@@ -816,7 +816,7 @@ def test_character_sheet_shows_career_name_not_repr(client_with_backend, monkeyp
                 sophont=HUMANITI,
                 homeworld=MOCK_WORLD,
                 current_career=citizen,
-                current_assignment='Colonist',
+                current_assignment=citizen.assignment('Colonist'),
                 rank=3,
                 career_terms=[
                     CareerTerm(

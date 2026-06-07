@@ -27,7 +27,8 @@ def _career_context_lines(summary: CharacterSummary) -> str:
             seen.add(key)
             pairs.append(key)
     current = summary.current_career or summary.last_career
-    current_assignment = summary.current_assignment or summary.last_assignment
+    current_assignment_obj = summary.current_assignment or summary.last_assignment
+    current_assignment = current_assignment_obj.name if current_assignment_obj else None
     if current:
         key = (current.name, current_assignment)
         if key not in seen:
@@ -56,7 +57,8 @@ def build_prompt(summary: CharacterSummary) -> str:
 
     char_lines = ', '.join(f'{stat} {summary.characteristics.get(stat, 0)}' for stat in UCP_STATS)
     career = summary.current_career or summary.last_career or 'Unknown'
-    assignment = summary.current_assignment or summary.last_assignment
+    assignment_obj = summary.current_assignment or summary.last_assignment
+    assignment = assignment_obj.name if assignment_obj else None
     career_label = f'{career} ({assignment})' if assignment else career
     narrative_events = list(summary.narrative)
 

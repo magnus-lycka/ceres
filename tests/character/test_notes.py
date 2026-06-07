@@ -20,7 +20,7 @@ def _summary(**kwargs) -> CharacterSummary:
         'age': 26,
         'characteristics': {'STR': 7, 'DEX': 8, 'END': 6, 'INT': 9, 'EDU': 7, 'SOC': 5},
         'current_career': SCOUT,
-        'current_assignment': 'Explorer',
+        'current_assignment': SCOUT.assignment('Explorer'),
         'rank': 1,
         'career_terms': [
             CareerTerm(career=SCOUT, assignment='Explorer', assignment_index=3) for _ in range(term_count)

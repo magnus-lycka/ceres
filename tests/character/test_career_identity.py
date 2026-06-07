@@ -121,25 +121,32 @@ class TestAssignmentRanksByIndex:
         result = scout.assignment_ranks(1)
         assert result is scout.ranks
 
-    def test_available_tables_uses_int_assignment_index(self):
+    def test_available_tables_uses_assignment_object(self):
         careers = load_careers()
         scout = careers['Scout']
+        courier = scout.assignment_by_index(1)
         edu = 7
-        # Courier is assignment index 1
-        tables = scout.available_tables(edu, 1)
-        assert 'courier' in tables
-        assert 'service_skills' in tables
-        assert 'personal_development' in tables
+        tables = scout.available_tables(edu, courier)
+        keys = [t.key for t in tables]
+        assert 'assignment1' in keys
+        assert 'service_skills' in keys
+        assert 'personal_development' in keys
+        labels = [t.label for t in tables]
+        assert 'Courier' in labels
 
     def test_available_tables_different_assignments_return_different_tables(self):
         careers = load_careers()
         scout = careers['Scout']
-        tables_courier = scout.available_tables(7, 1)
-        tables_surveyor = scout.available_tables(7, 2)
-        assert 'courier' in tables_courier
-        assert 'surveyor' in tables_surveyor
-        assert 'courier' not in tables_surveyor
-        assert 'surveyor' not in tables_courier
+        courier = scout.assignment_by_index(1)
+        surveyor = scout.assignment_by_index(2)
+        tables_courier = scout.available_tables(7, courier)
+        tables_surveyor = scout.available_tables(7, surveyor)
+        labels_courier = [t.label for t in tables_courier]
+        labels_surveyor = [t.label for t in tables_surveyor]
+        assert 'Courier' in labels_courier
+        assert 'Surveyor' in labels_surveyor
+        assert 'Courier' not in labels_surveyor
+        assert 'Surveyor' not in labels_courier
 
 
 class TestCareerTermIndex:
@@ -181,8 +188,8 @@ class TestCareerTermIndex:
         assert projection.summary.career_terms[0].assignment_index == 3  # Explorer is index 3
 
 
-class TestCurrentAssignmentIndex:
-    def test_current_assignment_index_set_after_courier(self):
+class TestCurrentAssignment:
+    def test_current_assignment_set_after_courier(self):
         events = [
             *_full_setup(),
             Event(
@@ -192,10 +199,10 @@ class TestCurrentAssignmentIndex:
             ),
         ]
         projection = replay(1, events)
-        assert projection.summary.current_assignment_index == 1
-        assert projection.summary.current_assignment == 'Courier'  # string still present for display
+        assert projection.summary.current_assignment is not None
+        assert projection.summary.current_assignment.name == 'Courier'
 
-    def test_current_assignment_index_set_after_surveyor(self):
+    def test_current_assignment_set_after_surveyor(self):
         events = [
             *_full_setup(),
             Event(
@@ -205,9 +212,10 @@ class TestCurrentAssignmentIndex:
             ),
         ]
         projection = replay(1, events)
-        assert projection.summary.current_assignment_index == 2
+        assert projection.summary.current_assignment is not None
+        assert projection.summary.current_assignment.name == 'Surveyor'
 
-    def test_current_assignment_index_for_noble_administrator(self):
+    def test_current_assignment_for_noble_administrator(self):
         # Noble requires SOC 10+; with SOC=5 (DM=-1) need roll >= 11
         events = [
             *_full_setup(),
@@ -218,9 +226,10 @@ class TestCurrentAssignmentIndex:
             ),
         ]
         projection = replay(1, events)
-        assert projection.summary.current_assignment_index == 1
+        assert projection.summary.current_assignment is not None
+        assert projection.summary.current_assignment.name == 'Administrator'
 
-    def test_current_assignment_index_for_noble_dilettante(self):
+    def test_current_assignment_for_noble_dilettante(self):
         # Noble requires SOC 10+; with SOC=5 (DM=-1) need roll >= 11
         events = [
             *_full_setup(),
@@ -231,9 +240,10 @@ class TestCurrentAssignmentIndex:
             ),
         ]
         projection = replay(1, events)
-        assert projection.summary.current_assignment_index == 3
+        assert projection.summary.current_assignment is not None
+        assert projection.summary.current_assignment.name == 'Dilettante'
 
-    def test_assignment_change_updates_index(self):
+    def test_assignment_change_updates_current_assignment(self):
         from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive
 
         d = CharacterDriver()
@@ -241,13 +251,14 @@ class TestCurrentAssignmentIndex:
         d.ucp('7869A5')
         d.background_skills([Admin(), Athletics(), Carouse(), Drive()])
         d.career('Scout', 'Courier', roll=7)
-        assert d.projection.summary.current_assignment_index == 1
+        assert d.projection.summary.current_assignment is not None
+        assert d.projection.summary.current_assignment.name == 'Courier'
         d.survive(roll=7)
         d.term_event(roll=5)
         d.advancement(roll=9)
         d.switch_assignment('Surveyor', roll=5)
-        assert d.projection.summary.current_assignment == 'Surveyor'
-        assert d.projection.summary.current_assignment_index == 2
+        assert d.projection.summary.current_assignment is not None
+        assert d.projection.summary.current_assignment.name == 'Surveyor'
 
 
 class TestAdvancementEventUsesSpecialMethod:

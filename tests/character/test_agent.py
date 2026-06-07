@@ -128,7 +128,8 @@ class TestAgentQualification:
     def test_all_three_assignments_accepted(self):
         for assignment in ('Law Enforcement', 'Intelligence', 'Corporate'):
             projection = replay(1, _enter_agent(assignment=assignment))
-            assert projection.summary.current_assignment == assignment
+            assert projection.summary.current_assignment is not None
+            assert projection.summary.current_assignment.name == assignment
 
     def test_unknown_assignment_raises(self):
         with pytest.raises(ReplayError):
@@ -592,6 +593,6 @@ class TestAgentMusterOut:
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingBenefitChoice)), None)
         assert pending is not None
-        labels = pending.options
+        labels = [b.display_label for b in pending.benefit_options]
         assert any('SOC' in lbl for lbl in labels)
         assert any('Cybernetic' in lbl for lbl in labels)

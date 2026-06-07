@@ -161,7 +161,7 @@ class CharacterDriver:
     def available_switch_assignments(self) -> list[str]:
         """Return the assignment names offered in the current PendingSwitchAssignment."""
         pending = self._find(PendingSwitchAssignment)
-        return list(pending.options)
+        return [a.name for a in pending.options]
 
     def switch_assignment(self, assignment: str, roll: int) -> CharacterDriver:
         self.choose_switch()
@@ -175,7 +175,9 @@ class CharacterDriver:
 
     def skill_table(self, table: str, roll: int) -> CharacterDriver:
         pending = self._find(PendingSkillTable)
-        return self._add(Event(fulfills=pending.pending_id, handler=SkillTableHandler(table=table, roll=roll)))
+        option = next((o for o in pending.options if o.key == table or o.label.lower() == table.lower()), None)
+        key = option.key if option else table
+        return self._add(Event(fulfills=pending.pending_id, handler=SkillTableHandler(table=key, roll=roll)))
 
     def skill_table_choice(self, skill: AnySkill) -> CharacterDriver:
         pending = self._find(PendingSkillTableChoice)

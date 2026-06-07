@@ -503,7 +503,7 @@ class Drifter(CareerData):
     )
 
     def _basic_training_table_name(self, assignment) -> str:
-        return assignment.name.lower()
+        return f'assignment{self.assignment_index(assignment)}'
 
 
 DRIFTER = Drifter()

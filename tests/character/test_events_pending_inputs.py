@@ -21,6 +21,7 @@ from ceres.character.domain.career.career_data import (
     ParoleThresholdChangeEffect,
     RankBonus,
     RankEntry,
+    SkillTableOption,
 )
 from ceres.character.domain.career.career_events import (
     AdvancementDmChoiceHandler,
@@ -127,16 +128,17 @@ class Form(dict[str, str]):
 
 def _projection(**summary_kwargs: Any) -> CharacterProjection:
     term_count = summary_kwargs.pop('term_count', None)
+    current_assignment = summary_kwargs.get('current_assignment')
+    if isinstance(current_assignment, str):
+        current_career = summary_kwargs.get('current_career') or SCOUT
+        summary_kwargs['current_assignment'] = current_career.assignment(current_assignment)
     if term_count is not None and 'career_terms' not in summary_kwargs:
         current_career = summary_kwargs.get('current_career') or SCOUT
-        current_assignment = summary_kwargs.get('current_assignment') or 'Courier'
-        current_assignment_index = summary_kwargs.get('current_assignment_index') or 1
+        assignment_obj = summary_kwargs.get('current_assignment')
+        assignment_name = assignment_obj.name if assignment_obj else 'Courier'
+        assignment_index = current_career.assignment_index(assignment_obj) if assignment_obj else 1
         summary_kwargs['career_terms'] = [
-            CareerTerm(
-                career=current_career,
-                assignment=current_assignment,
-                assignment_index=current_assignment_index,
-            )
+            CareerTerm(career=current_career, assignment=assignment_name, assignment_index=assignment_index)
             for _ in range(term_count)
         ]
     return CharacterProjection(
@@ -161,8 +163,10 @@ class FakeCareer:
             return {}
         return {1: RankEntry(rank=1, bonus=self.rank_bonus)}
 
-    def available_tables(self, edu: int, assignment_index: int) -> list[str]:
-        return ['service_skills']
+    def available_tables(self, edu: int, assignment) -> list:
+        from ceres.character.domain.career.career_data import SkillTableOption
+
+        return [SkillTableOption(label='Service Skills', key='service_skills')]
 
     def assignment_by_index(self, index: int):
         return None
@@ -223,7 +227,7 @@ def test_effect_apply_methods_and_skill_entries():
 
 
 def test_auto_advance_can_apply_characteristic_rank_bonus():
-    projection = _projection(characteristics={Chars.SOC: 7}, current_assignment_index=1)
+    projection = _projection(characteristics={Chars.SOC: 7})
     career = FakeCareer(RankBonus(characteristic=Chars.SOC, level=2))
 
     _apply_auto_advance(projection, career, 5)
@@ -235,19 +239,19 @@ def test_auto_advance_can_apply_characteristic_rank_bonus():
 
 
 def test_assignment_helper_errors_are_reported():
-    projection = _projection(current_assignment_index=99)
+    projection = _projection()  # current_assignment=None
     career = FakeCareer()
 
-    with pytest.raises(ReplayError, match='Unknown assignment index 99 in career'):
+    with pytest.raises(ReplayError, match='No current assignment'):
         _start_new_career_term(projection, career, 1)
-    with pytest.raises(ReplayError, match='Unknown assignment index 99 in career'):
-        _survive_pending(career, 99, 1)
-    with pytest.raises(ReplayError, match='Unknown assignment index 99'):
-        _advancement_pending(career, 99, 1)
+    with pytest.raises(ReplayError, match='No current assignment'):
+        _survive_pending(career, None, 1)
+    with pytest.raises(ReplayError, match='No current assignment'):
+        _advancement_pending(career, None, 1)
 
 
 def test_mishap_ejection_queues_aging_for_older_character():
-    projection = _projection(age=30, current_career=SCOUT, current_assignment='Courier', current_assignment_index=1)
+    projection = _projection(age=30, current_career=SCOUT, current_assignment='Courier')
     career = load_careers()['Scout']
 
     next_idx = _apply_mishap_ejection(projection, career, source_event_id=7, pending_idx=2)
@@ -270,9 +274,11 @@ def test_basic_event_error_branches():
     with pytest.raises(ReplayError, match="Unknown career: 'Nope'"):
         Event(handler=DraftAssignmentHandler(career='Nope', assignment='Infantry')).apply(_projection())
 
-    active = _projection(current_career=SCOUT, current_assignment='Courier', current_assignment_index=99)
-    with pytest.raises(ReplayError, match='Unknown assignment index 99'):
-        PendingSurvive(pending_id=(1, 0), instruction='Survive').resolve(active, Event(handler=SurviveHandler(roll=8)))
+    no_assignment = _projection(current_career=SCOUT)
+    with pytest.raises(ReplayError, match='No current assignment'):
+        PendingSurvive(pending_id=(1, 0), instruction='Survive').resolve(
+            no_assignment, Event(handler=SurviveHandler(roll=8))
+        )
 
     with pytest.raises(ReplayError, match='Injury table roll must be 1-6'):
         Event(handler=InjuryTableHandler(roll=0)).apply(_projection())
@@ -290,7 +296,6 @@ def test_muster_out_and_benefit_choice_error_branches():
     pending = PendingBenefitChoice(
         pending_id=(1, 0),
         instruction='Benefit',
-        options=['Ship Share'],
         benefit_options=[SHIP_SHARE],
     )
     with pytest.raises(ReplayError, match='choice_index 2 out of range'):
@@ -325,18 +330,17 @@ def test_aging_roll_extreme_results():
 
 
 def test_commission_event_skip_failure_success_and_unsupported_career():
-    scout = _projection(current_career=SCOUT, current_assignment='Courier', current_assignment_index=1)
+    scout = _projection(current_career=SCOUT, current_assignment='Courier')
     with pytest.raises(ReplayError, match='Scout does not support commission'):
         Event(handler=CommissionHandler(attempt=True, roll=12)).apply(scout)
 
-    skipped = _projection(current_career=ARMY, current_assignment='Support', current_assignment_index=1)
+    skipped = _projection(current_career=ARMY, current_assignment='Support')
     Event(id=1, handler=CommissionHandler(attempt=False)).apply(skipped)
     assert any(isinstance(p, PendingAdvancement) and p.id == '1.0' for p in skipped.pending_inputs)
 
     failed = _projection(
         current_career=ARMY,
         current_assignment='Support',
-        current_assignment_index=1,
         characteristics={Chars.SOC: 2},
     )
     failed.pending_advancement_dm = 1
@@ -347,7 +351,6 @@ def test_commission_event_skip_failure_success_and_unsupported_career():
     succeeded = _projection(
         current_career=ARMY,
         current_assignment='Support',
-        current_assignment_index=1,
         characteristics={Chars.SOC: 12, Chars.EDU: 10},
         career_terms=[CareerTerm(career=ARMY, assignment='Support', assignment_index=1)],
     )
@@ -435,14 +438,15 @@ def test_precareer_graduation_error_and_failure_branches():
 
 
 def test_prisoner_advancement_special_cases():
-    missing_assignment = _projection(current_assignment_index=99)
-    with pytest.raises(ReplayError, match='Unknown assignment index 99'):
+    missing_assignment = _projection()
+    with pytest.raises(ReplayError, match='No current assignment'):
         _apply_prisoner_advancement(
             missing_assignment, Event(id=1, handler=AdvancementHandler(roll=12)), FakePrisonerCareer()
         )
 
     choice_bonus = _projection(
-        current_assignment_index=1,
+        current_career=PRISONER,
+        current_assignment='Inmate',
         characteristics={Chars.INT: 12, Chars.EDU: 10},
         parole_threshold=6,
     )
@@ -460,7 +464,8 @@ def test_prisoner_advancement_special_cases():
     )
 
     characteristic_bonus = _projection(
-        current_assignment_index=1,
+        current_career=PRISONER,
+        current_assignment='Inmate',
         characteristics={Chars.INT: 12, Chars.SOC: 7, Chars.EDU: 10},
         parole_threshold=20,
     )
@@ -478,7 +483,6 @@ def test_queue_reenlist_or_aging_handles_freed_prisoner_paths():
         age=30,
         current_career=PRISONER,
         current_assignment='Inmate',
-        current_assignment_index=1,
     )
     older.prisoner_freed = True
     queue_reenlist_or_aging(older, event_id=4, idx=0)
@@ -492,7 +496,6 @@ def test_queue_reenlist_or_aging_handles_freed_prisoner_paths():
         age=22,
         current_career=PRISONER,
         current_assignment='Inmate',
-        current_assignment_index=1,
         term_count=1,
     )
     younger.prisoner_freed = True
@@ -508,7 +511,6 @@ def test_muster_out_setup_and_complete_aging_helper_branches():
     projection = _projection(
         current_career=SCOUT,
         current_assignment='Courier',
-        current_assignment_index=1,
         term_count=1,
         rank=2,
     )
@@ -524,7 +526,6 @@ def test_muster_out_setup_and_complete_aging_helper_branches():
     assignment_change = _projection(
         current_career=SCOUT,
         current_assignment='Courier',
-        current_assignment_index=1,
     )
     complete_aging(assignment_change, source_event_id=7)
     pending = next(p for p in assignment_change.pending_inputs if isinstance(p, PendingAssignmentChangeChoice))
@@ -617,7 +618,11 @@ def test_pending_draft_choices_build_expected_events_and_specs():
         (PendingMishap(pending_id=(1, 0), instruction='Mishap'), Form(roll='4'), MishapHandler, 'roll', 4),
         (PendingAdvancement(pending_id=(1, 0), instruction='Advance'), Form(roll='10'), AdvancementHandler, 'roll', 10),
         (
-            PendingSkillTable(pending_id=(1, 0), instruction='Skill table', options=['service_skills']),
+            PendingSkillTable(
+                pending_id=(1, 0),
+                instruction='Skill table',
+                options=[SkillTableOption(label='Service Skills', key='service_skills')],
+            ),
             Form(table='service_skills', roll='5'),
             SkillTableHandler,
             'roll',
@@ -772,7 +777,7 @@ def test_characteristic_benefit_life_and_connection_pending_inputs():
     assert isinstance(life_choice.input_specs(_projection())[0], Select)
 
     connections = PendingConnectionsRoll(
-        pending_id=(4, 0), instruction='Connections', connection_type=ConnectionKind.RIVAL, options=['1', '2', '3']
+        pending_id=(4, 0), instruction='Connections', connection_type=ConnectionKind.RIVAL, options=[1, 2, 3]
     )
     assert connections.event_from_form(Form(connection_type='connection_enemy', count='3')) == Event(
         fulfills=(4, 0), handler=ConnectionsRollHandler(connection_type=ConnectionKind.ENEMY, count=3)
@@ -782,7 +787,6 @@ def test_characteristic_benefit_life_and_connection_pending_inputs():
     benefit = PendingBenefitChoice(
         pending_id=(5, 0),
         instruction='Benefit',
-        options=['Ship Share', 'Weapon'],
         benefit_options=[SHIP_SHARE, WEAPON],
     )
     assert benefit.event_from_form(Form(choice_index='1')) == Event(
@@ -944,8 +948,7 @@ def test_career_skill_choice_pending_base_on_skill_chosen_grants_skill_and_queue
         characteristics={Chars.STR: 7, Chars.DEX: 8, Chars.END: 6, Chars.INT: 9, Chars.EDU: 10, Chars.SOC: 5}
     )
     proj.summary.current_career = scout
-    proj.summary.current_assignment = 'Courier'
-    proj.summary.current_assignment_index = 1
+    proj.summary.current_assignment = scout.assignment('Courier')
     before_count = len(proj.pending_inputs)
     pending.on_skill_chosen(proj, _FakeEvent())
     assert proj.summary.skill_level(character_skills.Admin) is not None
@@ -957,8 +960,7 @@ def test_career_skill_choice_pending_base_on_skill_chosen_grants_skill_and_queue
     )
     proj2 = _projection()
     proj2.summary.current_career = scout
-    proj2.summary.current_assignment = 'Courier'
-    proj2.summary.current_assignment_index = 1
+    proj2.summary.current_assignment = scout.assignment('Courier')
     before2 = len(proj2.pending_inputs)
     pending2.on_skill_chosen(proj2, _FakeEvent())
     assert len(proj2.pending_inputs) == before2

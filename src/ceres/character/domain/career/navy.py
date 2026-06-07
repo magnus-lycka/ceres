@@ -147,7 +147,8 @@ class NavyMishap3Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        assignment = projection.summary.current_assignment or 'Line/Crew'
+        assignment_obj = projection.summary.current_assignment
+        assignment = assignment_obj.name if assignment_obj else 'Line/Crew'
         options = _MISHAP_3_SKILLS.get(assignment, [Electronics(), Gunner()])
         projection.pending_inputs.append(
             PendingNavyMishap3SkillRoll(
@@ -361,7 +362,7 @@ class Navy(CareerData):
         2: MishapEntry(
             text='Placed in the frozen watch and revived improperly. Reduce STR, DEX or END. You are not ejected.',
             stay_in_career=True,
-            effects=[DecreaseCharacteristicChoiceEffect(options=['STR', 'DEX', 'END'], amount=1)],
+            effects=[DecreaseCharacteristicChoiceEffect(options=[Chars.STR, Chars.DEX, Chars.END], amount=1)],
         ),
         3: MishapEntry(
             text='During a battle, defeat or victory depends on your actions.',

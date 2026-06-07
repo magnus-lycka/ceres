@@ -4,7 +4,7 @@ from pydantic import BaseModel, BeforeValidator, Field, SerializeAsAny, model_va
 
 from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.domain.benefits import ItemBenefit
-from ceres.character.domain.career.career_data import CareerData, CareerTerm
+from ceres.character.domain.career.career_data import AssignmentData, CareerData, CareerTerm
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.connection import AnyConnection
 from ceres.character.domain.skills import AnySkill, Level, Skill, _level_fields
@@ -28,12 +28,10 @@ class CharacterSummary(BaseModel):
 
     characteristics: dict[Chars, int] = Field(default_factory=dict)
     current_career: CareerData | None = None
-    current_assignment: str | None = None
-    current_assignment_index: int | None = None
+    current_assignment: AssignmentData | None = None
     last_career: CareerData | None = None
     last_career_ejected: bool = False  # True when last_career ended via mishap ejection
-    last_assignment: str | None = None  # assignment name after muster-out
-    last_assignment_index: int | None = None
+    last_assignment: AssignmentData | None = None
     rank: int | None = None
     career_terms: list[CareerTerm] = Field(default_factory=list)
     drafted: bool = False
@@ -137,10 +135,8 @@ class CharacterProjection(BaseModel):
             self.summary.last_career = self.summary.current_career
             self.summary.last_career_ejected = ejected
             self.summary.last_assignment = self.summary.current_assignment
-            self.summary.last_assignment_index = self.summary.current_assignment_index
         self.summary.current_career = None
         self.summary.current_assignment = None
-        self.summary.current_assignment_index = None
 
     def get_current_career(self) -> CareerData:
         current = self.summary.current_career
@@ -241,7 +237,7 @@ def diff_summaries(before: CharacterSummary, after: CharacterSummary) -> list[st
     if after.current_career != before.current_career and after.current_career:
         line = f'Joined {after.current_career.name}'
         if after.current_assignment:
-            line += f' ({after.current_assignment})'
+            line += f' ({after.current_assignment.name})'
         changes.append(line)
 
     if after.rank is not None and after.rank != before.rank:
