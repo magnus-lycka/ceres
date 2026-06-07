@@ -63,7 +63,9 @@ def test_term_event_sets_event_narrative():
         Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),
     ]
     projection = replay(1, events)
-    assert projection.summary.career_terms[-1].event == ('You are given a special assignment or duty in your unit.')
+    assert projection.summary.career_terms[-1].event == (
+        'You are given a special assignment or duty in your unit. Gain DM+1 to any one Benefit roll.'
+    )
 
 
 def test_term_event_without_known_roll_leaves_event_none():
@@ -83,7 +85,7 @@ def test_career_term_mishap_is_none_before_mishap():
 
 
 def test_mishap_ejection_sets_mishap_narrative():
-    # Army mishap roll=2: "Your unit is slaughtered in a disastrous battle. Gain the commander as an Enemy."
+    # Army mishap roll=2: full blame/enemy/removed text
     # Army Support survival: END 5+, DM+0, roll=4 — fail.
     events = [
         *_enter_army(),
@@ -92,7 +94,8 @@ def test_mishap_ejection_sets_mishap_narrative():
     ]
     projection = replay(1, events)
     assert projection.summary.career_terms[-1].mishap == (
-        'Your unit is slaughtered in a disastrous battle. Gain the commander as an Enemy.'
+        'Your unit is slaughtered in a disastrous battle, for which you blame your commander.'
+        ' Gain them as an Enemy as they have you removed from the service.'
     )
 
 

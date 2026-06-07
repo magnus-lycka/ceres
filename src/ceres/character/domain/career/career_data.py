@@ -353,6 +353,15 @@ class CareerData(TermData):
         index = self.assignment_index(assignment) if assignment is not None else 0
         return self.assignment_ranks(index)
 
+    def rank_title(self, commissioned: bool, rank: int) -> tuple[str, str]:
+        if commissioned and self.officer_ranks:
+            entry = self.officer_ranks.get(rank)
+            return (f'O{rank}', entry.title or '' if entry else '')
+        entry = self.ranks.get(rank)
+        title = entry.title if entry else ''
+        code = f'E{rank}' if self.commission is not None else str(rank)
+        return (code, title or '')
+
     def is_selectable(self, projection=None) -> bool:
         return self.selectable
 
@@ -710,3 +719,7 @@ class CareerTerm(BaseModel):
         if self.muster_out is None:
             raise ReplayError('Career term has no active muster-out state')
         return self.muster_out
+
+    @property
+    def rank_title(self) -> tuple[str, str]:
+        return self.career.rank_title(self.commission, self.rank_after_term)

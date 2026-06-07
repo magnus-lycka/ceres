@@ -26,7 +26,7 @@
       {% set career = summary.current_career or summary.last_career %}
       {% set assignment = summary.current_assignment or summary.last_assignment %}
       <div>{{ career.name }}{% if assignment %} · {{ assignment.name }}{% endif %}</div>
-      {% if summary.rank is not none %}<div>Rank {{ summary.rank }}</div>{% endif %}
+      {% if summary.rank is not none %}{% set rt = summary.rank_title %}<div>Rank {{ rt[0] }}{% if rt[1] %} · {{ rt[1] }}{% endif %}</div>{% endif %}
       {% if summary.terms_started_in_all_careers %}<div>{{ summary.terms_started_in_all_careers }} term{% if summary.terms_started_in_all_careers != 1 %}s{% endif %} · Age {{ summary.age }}</div>{% endif %}
     </div>
   </div>

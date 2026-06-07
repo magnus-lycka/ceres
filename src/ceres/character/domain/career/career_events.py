@@ -477,35 +477,39 @@ class CommissionHandler(EventHandlerBase):
                 _advancement_pending(career, projection.summary.current_assignment, event.id)
             )
             return
-        projection.summary.rank = 1
-        if projection.summary.career_terms:
-            projection.summary.career_terms[-1].commission = True
-            projection.summary.career_terms[-1].rank_after_term = 1
-        rank_entry = career.current_ranks(projection).get(1)
-        if rank_entry and rank_entry.bonus:
-            bonus = rank_entry.bonus
-            choices = bonus.resolve_choices()
-            if choices:
-                projection.pending_inputs.append(
-                    PendingRankBonusChoice(
-                        pending_id=(event.id, 0),
-                        level=bonus.level,
-                        instruction=f'Rank 1 bonus: choose skill at level {bonus.level}',
-                        options=choices,
-                    )
+        _apply_forced_commission(projection, career, event.id)
+
+
+def _apply_forced_commission(projection: Any, career: Any, event_id: int) -> None:
+    projection.summary.rank = 1
+    if projection.summary.career_terms:
+        projection.summary.career_terms[-1].commission = True
+        projection.summary.career_terms[-1].rank_after_term = 1
+    rank_entry = career.current_ranks(projection).get(1)
+    if rank_entry and rank_entry.bonus:
+        bonus = rank_entry.bonus
+        choices = bonus.resolve_choices()
+        if choices:
+            projection.pending_inputs.append(
+                PendingRankBonusChoice(
+                    pending_id=(event_id, 0),
+                    level=bonus.level,
+                    instruction=f'Rank 1 bonus: choose skill at level {bonus.level}',
+                    options=choices,
                 )
-                return
-            if bonus.skill:
-                projection.grant_skill(_rank_bonus_skill(bonus))
-            elif bonus.characteristic:
-                char = bonus.characteristic
-                projection.summary.characteristics[char] = projection.summary.characteristics.get(char, 0) + bonus.level
-        edu = projection.summary.characteristics.get(Chars.EDU, 0)
-        tables = career.available_tables(edu, projection.summary.current_assignment)
-        projection.pending_inputs.append(
-            PendingSkillTable(pending_id=(event.id, 0), instruction='Choose a skill table and roll 1D', options=tables)
-        )
-        queue_reenlist_or_aging(projection, event.id, 1)
+            )
+            return
+        if bonus.skill:
+            projection.grant_skill(_rank_bonus_skill(bonus))
+        elif bonus.characteristic:
+            char = bonus.characteristic
+            projection.summary.characteristics[char] = projection.summary.characteristics.get(char, 0) + bonus.level
+    edu = projection.summary.characteristics.get(Chars.EDU, 0)
+    tables = career.available_tables(edu, projection.summary.current_assignment)
+    projection.pending_inputs.append(
+        PendingSkillTable(pending_id=(event_id, 0), instruction='Choose a skill table and roll 1D', options=tables)
+    )
+    queue_reenlist_or_aging(projection, event_id, 1)
 
 
 # ── Reenlist ───────────────────────────────────────────────────────────────────

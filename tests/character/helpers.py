@@ -33,7 +33,7 @@ from ceres.character.domain.career.career_events import (
     SwitchAssignmentHandler,
     TermEventHandler,
 )
-from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
+from ceres.character.domain.career.common_pending import CareerSkillChoicePendingBase, CareerSkillRollPendingBase
 from ceres.character.domain.character_start import (
     BackgroundSkillsHandler,
     CharacterStartedHandler,
@@ -222,6 +222,10 @@ class CharacterDriver:
         pending = self._find(PendingChoices)
         choice_kind = choice_cls.model_fields['kind'].default
         return self._add(Event(fulfills=pending.pending_id, handler=CareerChoiceHandler(choice=choice_kind)))
+
+    def choose_career_skill(self, skill: AnySkill) -> CharacterDriver:
+        pending = self._find(CareerSkillChoicePendingBase)
+        return self._add(Event(fulfills=pending.pending_id, handler=SkillChoiceHandler(skill=skill)))
 
     def skill_roll(self, skill: Any, modified_roll: int) -> CharacterDriver:
         pending = self._find(CareerSkillRollPendingBase)

@@ -736,10 +736,10 @@ Known differences:
 - Graduation choices should enforce "other" skills where Companion requires
   them, rather than allowing repeated selections from the same pool.
 
-## Agent career tables: bring Ceres fully in line with Core
+## Agent career tables: remaining blocked items
 
-The `Agent` career is close to the Core Rulebook, but it still has a few
-fidelity gaps in event/mishap text and handler behavior.
+The `Agent` career now matches Core for all text and behavior that can be
+implemented. The remaining items are blocked on other infrastructure work.
 
 References:
 
@@ -747,18 +747,11 @@ References:
 - `src/ceres/character/domain/career/agent.py`
 - `tests/character/test_agent.py`
 
-Known differences:
+Remaining differences (blocked):
 
-- **Mishap 1** — Core gives a choice between the severe-injury result and
-  rolling twice on the Injury table and taking the lower result. Ceres applies
-  only `InjuryEffect(severity='severe')`, with no choice. The current generic
-  severe-injury handling also does not fully represent the Core Injury-table
-  result and should be fixed through the generic injury work.
-- **Mishap 5** — Ceres now asks whether a Contact, Ally, or family member was
-  hurt, but does not select an actual represented person or resolve the
-  "roll twice on the Injury table for them, taking the lower result" outcome.
-  Each choice only adds a manual problem note. Decide on an NPC-facing injury
-  representation, then replace the note with the represented outcome.
+- **Mishap 5** — Ceres asks whether a Contact, Ally, or family member was hurt,
+  but each choice only adds a manual problem note. Decide on an NPC-facing
+  injury representation, then replace the note with the represented outcome.
 - **Event 8** — text matches Core, but the handler does not actually perform
   the immediate Rogue/Citizen Event or Mishap roll, nor the Specialist skill
   table roll on success; it only records a manual problem note. The current
@@ -766,47 +759,17 @@ Known differences:
   of the Core outcomes when cross-career table execution is implemented.
 - **Event 7** — inherits the generic Life Events correctness gap; once the
   generic Life Events todo is fixed, re-check Agent event 7 against Core.
-- **Literal text drift** — Mishap 1 omits the explanation that severe injury is
-  the same as result 2 on the Injury table; Mishap 6 omits the page reference;
-  Event 3 uses an em dash instead of Core's colon; and Event 7 omits the page
-  reference. Make all Agent mishap/event entry text match Core word for word.
 
-## Army career tables: bring Ceres fully in line with Core
+## Army career tables: remaining blocked items
 
-The `Army` career has several places where the event/mishap text has been
-shortened relative to the Core Rulebook, and a few places where handler
-behavior does not fully match the rules.
+Most Army career gaps have been fixed (mishap 1 choice, event 6 injury table,
+event 11 Tactics (military) specialty, event 12 commission/promote choice,
+all mishap/event text updated to match Core, page refs excluded).
 
-References:
+Remaining blocked:
 
-- `refs/core/02_traveller_creation.md` (Army mishaps/events)
-- `src/ceres/character/domain/career/army.py`
-- `tests/character/test_army.py`
-
-Known differences:
-
-- **Mishap 1** — Core gives a choice between the severe-injury result and
-  rolling twice on the Injury table and taking the lower result. Ceres applies
-  only `InjuryEffect(severity='severe')`, with no choice. This also depends on
-  the generic injury work representing the Core Injury table correctly.
-- **Event 6** — text implies "Roll EDU 8+ to avoid injury; if you succeed, you
-  gain one level in Gun Combat or Leadership". Ceres implements the success
-  branch, but on failure it only records a manual note to roll on the Injury
-  table instead of actually applying the injury outcome. The current tests
-  explicitly assert that manual note and must be replaced with a test of the
-  represented injury outcome.
-- **Event 11** — Core explicitly grants `Tactics (military) 1` or `DM+4` to the
-  next advancement roll. Ceres currently offers generic `Tactics()` rather than
-  clearly preserving the required `military` specialty.
-- **Event 12** — Core says "You may gain a promotion or a commission
-  automatically." Ceres currently uses `AutoAdvanceEffect()`, which performs
-  automatic rank advancement but does not model the "or a commission"
-  alternative.
 - **Event 7** — inherits the generic Life Events correctness gap; once the
   generic Life Events todo is fixed, re-check Army event 7 against Core.
-- **Literal text drift** — Army mishap/event entry text is substantially
-  shortened across the tables, including omitted page references. Make all Army
-  mishap/event entry text match Core word for word.
 
 ## Citizen career tables: bring Ceres fully in line with Core
 
@@ -844,8 +807,9 @@ Known differences:
 - **Event 7** — inherits the generic Life Events correctness gap; once the
   generic Life Events todo is fixed, re-check Citizen event 7 against Core.
 - **Literal text drift** — Citizen mishap/event entry text is shortened across
-  multiple rows and omits Core details and page references. Make all Citizen
-  mishap/event entry text match Core word for word.
+  multiple rows and omits Core details. Make all Citizen mishap/event entry
+  text match Core word for word, excluding page references (which are
+  intentionally omitted).
 
 ## Drifter career tables: bring Ceres fully in line with Core
 
@@ -891,7 +855,7 @@ Known differences:
   generic Life Events todo is fixed, re-check Drifter event 7 against Core.
 - **Literal text drift** — Drifter mishap/event entry text is shortened across
   most of the tables. Make all Drifter mishap/event entry text match Core word
-  for word.
+  for word, excluding page references (which are intentionally omitted).
 
 ## Entertainer career tables: bring Ceres fully in line with Core
 
@@ -933,7 +897,7 @@ Known differences:
   Core.
 - **Literal text drift** — Entertainer mishap/event entry text is shortened
   across multiple rows. Make all Entertainer mishap/event entry text match Core
-  word for word.
+  word for word, excluding page references (which are intentionally omitted).
 
 ## Marines career tables: bring Ceres fully in line with Core
 
@@ -977,7 +941,7 @@ Known differences:
   generic Life Events todo is fixed, re-check Marines event 7 against Core.
 - **Literal text drift** — Marines mishap/event entry text is shortened across
   most of the tables. Make all Marines mishap/event entry text match Core word
-  for word.
+  for word, excluding page references (which are intentionally omitted).
 
 ## Merchant career tables: bring Ceres fully in line with Core
 
@@ -1019,7 +983,7 @@ Known differences:
   generic Life Events todo is fixed, re-check Merchant event 7 against Core.
 - **Literal text drift** — Merchant mishap/event entry text is shortened across
   multiple rows. Make all Merchant mishap/event entry text match Core word for
-  word.
+  word, excluding page references (which are intentionally omitted).
 
 ## Navy career tables: bring Ceres fully in line with Core
 
@@ -1046,7 +1010,7 @@ Known differences:
 - **Event 3** — Ceres grants the initial Gambler or Deception increase but
   omits the optional `Gambler 8+` wager that can gain or lose a Benefit roll.
 - **Event 8** — Core grants one of Recon 1, Diplomat 1, Steward 1, or a
-  Contact. Ceres grants both a skill choice and a Contact.
+  Contact. Ceres grants both a skill choice and a Contact, and e.g. 1->2 for skill, not 1.
 - **Event 11** — Core requires `Tactics (naval) 1` or `DM+4` to the next
   advancement roll. Ceres offers generic `Tactics()`.
 - **Event 12** — Core grants automatic success on the next promotion or
@@ -1056,7 +1020,7 @@ Known differences:
   generic Life Events todo is fixed, re-check Navy event 7 against Core.
 - **Literal text drift** — Navy mishap/event entry text is shortened across
   most of the tables. Make all Navy mishap/event entry text match Core word for
-  word.
+  word, excluding page references (which are intentionally omitted).
 
 ## Noble career tables: bring Ceres fully in line with Core
 
@@ -1091,7 +1055,7 @@ Known differences:
   generic Life Events todo is fixed, re-check Noble event 7 against Core.
 - **Literal text drift** — Noble mishap/event entry text is shortened across
   most of the tables. Make all Noble mishap/event entry text match Core word
-  for word.
+  for word, excluding page references (which are intentionally omitted).
 
 ## Prisoner career tables: bring Ceres fully in line with Core
 
@@ -1126,7 +1090,8 @@ Known differences:
   loses the specialty.
 - **Literal text drift** — Prisoner mishap/event entry text and the Event 7
   subtable text are substantially shortened or rewritten. Make all Prisoner
-  mishap/event entry text match Core word for word.
+  mishap/event entry text match Core word for word, excluding page references
+  (which are intentionally omitted).
 
 ## Rogue career tables: bring Ceres fully in line with Core
 
@@ -1163,7 +1128,7 @@ Known differences:
   generic Life Events todo is fixed, re-check Rogue event 7 against Core.
 - **Literal text drift** — Rogue mishap/event entry text is shortened across
   most of the tables. Make all Rogue mishap/event entry text match Core word
-  for word.
+  for word, excluding page references (which are intentionally omitted).
 
 ## Scholar career tables: bring Ceres fully in line with Core
 
@@ -1196,7 +1161,7 @@ Known differences:
   generic Life Events todo is fixed, re-check Scholar event 7 against Core.
 - **Literal text drift** — Scholar mishap/event entry text is shortened across
   most of the tables. Make all Scholar mishap/event entry text match Core word
-  for word.
+  for word, excluding page references (which are intentionally omitted).
 
 ## Scout career tables: bring Ceres fully in line with Core
 
@@ -1229,7 +1194,7 @@ Known differences:
   generic Life Events todo is fixed, re-check Scout event 7 against Core.
 - **Literal text drift** — Scout mishap/event entry text is shortened across
   most of the tables. Make all Scout mishap/event entry text match Core word
-  for word.
+  for word, excluding page references (which are intentionally omitted).
 
 ## Replace sophont string-name lookup with typed objects
 

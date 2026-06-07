@@ -4,6 +4,8 @@ import pytest
 
 from ceres.character.domain.career import AGENT
 from ceres.character.domain.career.agent import (
+    AgentMishap1DoubleRoll,
+    AgentMishap1Severe,
     AgentMishap2Accept,
     AgentMishap2Refuse,
     AgentMishap5Ally,
@@ -45,6 +47,7 @@ from ceres.character.domain.connection import (
     Enemy,
 )
 from ceres.character.domain.health.health_events import (
+    PendingCharacteristicChoice,
     PendingDoubleInjuryRoll,
     PendingInjuryTable,
 )
@@ -415,6 +418,60 @@ class TestAgentEvent11:
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+
+
+# ── mishap 1: severe injury or double roll ────────────────────────────────────
+
+
+class TestAgentMishap1:
+    def _setup_to_mishap(self) -> list:
+        return [
+            *_enter_agent(),
+            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=5)),  # fail END 6+
+            Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=1)),
+        ]
+
+    def test_creates_choice_pending(self):
+        projection = replay(1, self._setup_to_mishap())
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingChoices)), None)
+        assert pending is not None
+        assert {type(c) for c in pending.choices} == {AgentMishap1Severe, AgentMishap1DoubleRoll}
+
+    def test_severe_choice_queues_characteristic_reduction(self):
+        severe_kind = AgentMishap1Severe.model_fields['kind'].default
+        events = [
+            *self._setup_to_mishap(),
+            Event(id=7, fulfills=(6, 0), handler=CareerChoiceHandler(choice=severe_kind)),
+        ]
+        projection = replay(1, events)
+        assert any(isinstance(p, PendingCharacteristicChoice) for p in projection.pending_inputs)
+
+    def test_severe_choice_ejects_from_career(self):
+        severe_kind = AgentMishap1Severe.model_fields['kind'].default
+        events = [
+            *self._setup_to_mishap(),
+            Event(id=7, fulfills=(6, 0), handler=CareerChoiceHandler(choice=severe_kind)),
+        ]
+        projection = replay(1, events)
+        assert projection.summary.current_career is None
+
+    def test_double_roll_choice_queues_double_injury_roll(self):
+        double_kind = AgentMishap1DoubleRoll.model_fields['kind'].default
+        events = [
+            *self._setup_to_mishap(),
+            Event(id=7, fulfills=(6, 0), handler=CareerChoiceHandler(choice=double_kind)),
+        ]
+        projection = replay(1, events)
+        assert any(isinstance(p, PendingDoubleInjuryRoll) for p in projection.pending_inputs)
+
+    def test_double_roll_choice_ejects_from_career(self):
+        double_kind = AgentMishap1DoubleRoll.model_fields['kind'].default
+        events = [
+            *self._setup_to_mishap(),
+            Event(id=7, fulfills=(6, 0), handler=CareerChoiceHandler(choice=double_kind)),
+        ]
+        projection = replay(1, events)
+        assert projection.summary.current_career is None
 
 
 # ── mishap 2: criminal deal ───────────────────────────────────────────────────

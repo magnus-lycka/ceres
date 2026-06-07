@@ -9,7 +9,7 @@ from pydantic import Field
 
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.skills import AnySkill, _level_fields
+from ceres.character.domain.skills import AnySkill, Level, _level_fields
 from ceres.character.input_specs import NumberEntry, Select
 from ceres.character.mechanism.pending_input import PendingInputBase
 
@@ -34,10 +34,14 @@ def _build_skill_choice_select_options(
 ) -> list[tuple[str, str]]:
     """Build (display_label, form_value) pairs for career skill-choice pending inputs.
 
-    Replicates the logic of events._build_skill_select_options without importing private names.
+    If an option has preset specialty fields (non-zero values), only those specialties
+    are offered at the preset level (or the given level if provided).
     """
+    from pydantic import TypeAdapter as _TA
+
     from ceres.character.domain.career.career_data import AdvancementDmOption
 
+    _adapter: _TA[AnySkill] = _TA(AnySkill)
     results: list[tuple[str, str]] = []
     for opt in options:
         if isinstance(opt, AdvancementDmOption):
@@ -45,21 +49,33 @@ def _build_skill_choice_select_options(
             continue
         skill_cls = type(opt)
         skill_name = skill_cls.name()
-        choices = projection.skill_choices([skill_cls], level)
-        for skill in choices:
-            label = skill_name
-            fields = _level_fields(skill_cls)
-            if len(fields) > 1:
-                spec_names = skill_cls.specialities() if hasattr(skill_cls, 'specialities') else fields
-                for fname, sname in zip(fields, spec_names, strict=False):
-                    given = getattr(skill, fname).value
-                    if given > 0:
-                        label = f'{skill_name} ({sname})'
-                        break
-            from pydantic import TypeAdapter as _TA
-
-            _adapter: _TA[AnySkill] = _TA(AnySkill)
-            results.append((label, _adapter.dump_json(skill).decode()))
+        fields = _level_fields(skill_cls)
+        active_fields = [f for f in fields if getattr(opt, f).value > 0]
+        if active_fields:
+            existing = next((s for s in projection.summary.skills if type(s) is skill_cls), None)
+            spec_names = skill_cls.specialities() if hasattr(skill_cls, 'specialities') else fields
+            for fname, sname in zip(fields, spec_names, strict=False):
+                if fname not in active_fields:
+                    continue
+                preset_level = getattr(opt, fname).value
+                current = getattr(existing, fname).value if existing else 0
+                target = level if level is not None else preset_level
+                if current < target:
+                    skill = skill_cls(**{fname: Level(value=target)})
+                    label = f'{skill_name} ({sname})' if len(fields) > 1 else skill_name
+                    results.append((label, _adapter.dump_json(skill).decode()))
+        else:
+            choices = projection.skill_choices([skill_cls], level)
+            for skill in choices:
+                label = skill_name
+                if len(fields) > 1:
+                    spec_names = skill_cls.specialities() if hasattr(skill_cls, 'specialities') else fields
+                    for fname, sname in zip(fields, spec_names, strict=False):
+                        given = getattr(skill, fname).value
+                        if given > 0:
+                            label = f'{skill_name} ({sname})'
+                            break
+                results.append((label, _adapter.dump_json(skill).decode()))
     return results
 
 

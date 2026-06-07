@@ -11,7 +11,6 @@ from ceres.character.domain.career.career_data import (
     AdvancementDmEffect,
     AdvancementDmOption,
     AssignmentData,
-    AutoAdvanceEffect,
     BenefitDmEffect,
     CareerData,
     CareerEventEntry,
@@ -34,15 +33,21 @@ from ceres.character.domain.career.career_data import (
 from ceres.character.domain.career.career_events import (
     PendingChoices,
     PendingSkillChoice,
+    _apply_auto_advance,
+    _apply_forced_commission,
     _apply_mishap_ejection,
 )
 from ceres.character.domain.career.common import handle_advanced_training
-from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
+from ceres.character.domain.career.common_pending import (
+    CareerSkillChoicePendingBase,
+    CareerSkillRollPendingBase,
+)
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.connection import (
     Ally,
 )
+from ceres.character.domain.health.health_events import PendingDoubleInjuryRoll
 from ceres.character.domain.skills import (
     Admin,
     Advocate,
@@ -80,12 +85,63 @@ from ceres.character.mechanism.pending_input import ChoiceBase
 # ── Career-specific pending input types ──────────────────────────────────────
 
 
+class ArmyMishap1Severe(ChoiceBase):
+    kind: Literal['army_mishap_1_severe'] = 'army_mishap_1_severe'
+    label: str = 'Severely injured (same as result 2 on Injury table: choose a physical characteristic to reduce by 2)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        from ceres.character.domain.health.health_events import PendingCharacteristicChoice
+
+        career = projection.get_current_career()
+        projection.pending_inputs.append(
+            PendingCharacteristicChoice(
+                pending_id=(event.id, 0),
+                instruction='Severely injured: choose STR, DEX, or END to reduce by 2',
+                options=[Chars.STR, Chars.DEX, Chars.END],
+                amount=2,
+            )
+        )
+        _apply_mishap_ejection(projection, career, event.id, 1, lose_current_term=True)
+
+
+class ArmyMishap1DoubleRoll(ChoiceBase):
+    kind: Literal['army_mishap_1_double_roll'] = 'army_mishap_1_double_roll'
+    label: str = 'Roll twice on Injury table and take the lower result'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        career = projection.get_current_career()
+        projection.pending_inputs.append(
+            PendingDoubleInjuryRoll(
+                pending_id=(event.id, 0),
+                instruction='Roll twice on the Injury table and apply the lower result',
+            )
+        )
+        _apply_mishap_ejection(projection, career, event.id, 1, lose_current_term=True)
+
+
+class ArmyMishap1Handler(CareerHandlerBase):
+    type: Literal['army_mishap_1'] = 'army_mishap_1'
+
+    @staticmethod
+    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
+        projection.pending_inputs.append(
+            PendingChoices(
+                pending_id=(event_id, pending_idx),
+                instruction=(
+                    'Severely injured in action: take severe injury (reduce a physical characteristic by 2) '
+                    'or roll twice on the Injury table and take the lower result?'
+                ),
+                choices=[ArmyMishap1Severe(), ArmyMishap1DoubleRoll()],
+            )
+        )
+        return pending_idx + 1
+
+
 class ArmyMishap4JoinRing(ChoiceBase):
     kind: Literal['army_mishap_4_join_ring'] = 'army_mishap_4_join_ring'
     label: str = 'Join their ring (Ally, lose Benefit roll)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-
         career = projection.get_current_career()
         projection.summary.connections.append(Ally(source='Your commanding officer who brought you into the ring'))
         _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
@@ -96,7 +152,6 @@ class ArmyMishap4Cooperate(ChoiceBase):
     label: str = 'Co-operate with MPs (keep Benefit roll)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-
         career = projection.get_current_career()
         _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=False)
 
@@ -114,12 +169,47 @@ class PendingArmyEvent6SkillRoll(CareerSkillRollPendingBase):
                 )
             )
         else:
-            projection.summary.problems.append(
-                'Brutal ground war: you are injured — roll on the Injury table and apply the result.'
+            from ceres.character.domain.career.career_events import _advancement_pending
+            from ceres.character.domain.health.health_events import PendingInjuryTable
+
+            career = projection.get_current_career()
+            projection.pending_inputs.append(
+                PendingInjuryTable(
+                    pending_id=(event.id, 0),
+                    instruction='Brutal ground war: roll on the Injury table',
+                )
+            )
+            projection.pending_inputs.append(
+                _advancement_pending(career, projection.summary.current_assignment, event.id, 1)
             )
 
 
-# ── mishap 4: illegal activity ────────────────────────────────────────────────
+class PendingArmyEvent11SkillChoice(CareerSkillChoicePendingBase):
+    kind: Literal['army_event_11_skill_choice'] = 'army_event_11_skill_choice'
+
+
+# ── event 12: heroism in battle — commission or promotion ─────────────────────
+
+
+class ArmyEvent12CommissionChoice(ChoiceBase):
+    kind: Literal['army_event_12_commission'] = 'army_event_12_commission'
+    label: str = 'Commission (become an officer, rank reset to O1)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        career = projection.get_current_career()
+        _apply_forced_commission(projection, career, event.id)
+
+
+class ArmyEvent12PromoteChoice(ChoiceBase):
+    kind: Literal['army_event_12_promote'] = 'army_event_12_promote'
+    label: str = 'Promotion (automatic rank increase)'
+
+    def handle(self, projection: CharacterProjection, event) -> None:
+        career = projection.get_current_career()
+        _apply_auto_advance(projection, career, event.id)
+
+
+# ── mishap 1: severely injured ────────────────────────────────────────────────
 
 
 class ArmyMishap4Handler(CareerHandlerBase):
@@ -167,6 +257,46 @@ class ArmyEvent8Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         return handle_advanced_training(projection, event_id, pending_idx)
+
+
+# ── event 11: commanding officer interest ────────────────────────────────────
+
+
+class ArmyEvent11Handler(CareerHandlerBase):
+    type: Literal['army_event_11'] = 'army_event_11'
+
+    @staticmethod
+    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
+        projection.pending_inputs.append(
+            PendingArmyEvent11SkillChoice(
+                pending_id=(event_id, pending_idx),
+                instruction='Commanding officer interest: gain Tactics (military) 1 or DM+4 to next advancement roll',
+                options=[Tactics(military=Level(value=1)), AdvancementDmOption()],
+            )
+        )
+        return pending_idx + 1
+
+
+# ── event 12: heroism ────────────────────────────────────────────────────────
+
+
+class ArmyEvent12Handler(CareerHandlerBase):
+    type: Literal['army_event_12'] = 'army_event_12'
+
+    @staticmethod
+    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
+        career = projection.get_current_career()
+        if career.can_attempt_commission(projection):
+            projection.pending_inputs.append(
+                PendingChoices(
+                    pending_id=(event_id, pending_idx),
+                    instruction='Heroism in battle: take a commission (O1) or an automatic promotion?',
+                    choices=[ArmyEvent12CommissionChoice(), ArmyEvent12PromoteChoice()],
+                )
+            )
+            return pending_idx + 1
+        _apply_auto_advance(projection, career, event_id)
+        return pending_idx
 
 
 class Army(CareerData):
@@ -312,24 +442,25 @@ class Army(CareerData):
 
     mishaps: ClassVar[dict[int, MishapEntry]] = {
         1: MishapEntry(
-            text='Severely injured in action.',
-            effects=[InjuryEffect(severity='severe')],
+            text='Severely injured in action (this is the same as a result of 2 on the Injury table). Alternatively, roll twice on the Injury table and take the lower result.',
+            defer_ejection=True,
+            effects=[ArmyMishap1Handler()],
         ),
         2: MishapEntry(
-            text='Your unit is slaughtered in a disastrous battle. Gain the commander as an Enemy.',
+            text='Your unit is slaughtered in a disastrous battle, for which you blame your commander. Gain them as an Enemy as they have you removed from the service.',
             effects=[GainEnemyEffect()],
         ),
         3: MishapEntry(
-            text='You are discharged after a brutal campaign. Increase Recon or Survival and gain an Enemy.',
+            text='You are sent to a very unpleasant region (jungle, swamp, desert, icecap, urban) to battle against guerrilla fighters and rebels. You are discharged because of stress, injury or because the government wishes to bury the whole incident. Increase Recon or Survival by one level but also gain the rebels as an Enemy.',
             effects=[GainEnemyEffect(), SkillChoiceEffect(options=[Recon(), Survival()], level=1)],
         ),
         4: MishapEntry(
-            text='You uncover illegal activity by your commanding officer.',
+            text='You discover that your commanding officer is engaged in some illegal activity, such as weapon smuggling. You can join their ring and gain them as an Ally before the inevitable investigation gets you discharged or you can co-operate with the military police – the official whitewash gets you discharged anyway but you may keep your Benefit roll from this term of service.',
             defer_ejection=True,
             effects=[ArmyMishap4Handler()],
         ),
         5: MishapEntry(
-            text='You quarrel with an officer or fellow soldier. Gain a Rival.',
+            text='You are tormented by or quarrel with an officer or fellow soldier. Gain that officer as a Rival as they drive you out of the service.',
             effects=[GainRivalEffect()],
         ),
         6: MishapEntry(
@@ -344,44 +475,44 @@ class Army(CareerData):
             effects=[RollMishapEffect(leave=False)],
         ),
         3: CareerEventEntry(
-            text='You are assigned to a hostile or wild environment.',
+            text='You are assigned to a planet with a hostile or wild environment. Gain one of Vacc Suit 1, Engineer 1, Animals (riding or training) 1 or Recon 1.',
             effects=[SkillChoiceEffect(options=[VaccSuit(), Engineer(), Animals(), Recon()], level=1)],
         ),
         4: CareerEventEntry(
-            text='You are assigned to an urbanised planet torn by war.',
+            text='You are assigned to an urbanised planet torn by war. Gain one of Stealth 1, Streetwise 1, Persuade 1 or Recon 1.',
             effects=[SkillChoiceEffect(options=[Stealth(), Streetwise(), Persuade(), Recon()], level=1)],
         ),
         5: CareerEventEntry(
-            text='You are given a special assignment or duty in your unit.',
+            text='You are given a special assignment or duty in your unit. Gain DM+1 to any one Benefit roll.',
             effects=[BenefitDmEffect(amount=1)],
         ),
         6: CareerEventEntry(
-            text='You are thrown into a brutal ground war.',
+            text='You are thrown into a brutal ground war. Roll EDU 8+ to avoid injury; if you succeed, you gain one level in Gun Combat or Leadership.',
             effects=[ArmyEvent6Handler()],
         ),
         7: CareerEventEntry(
-            text='Life Event.',
+            text='Life Event. Roll on the Life Events table.',
             effects=[LifeEventEffect()],
         ),
         8: CareerEventEntry(
-            text='You are given advanced training in a specialist field.',
+            text='You are given advanced training in a specialist field. Roll EDU 8+ to increase any one skill you already have by one level.',
             effects=[ArmyEvent8Handler()],
         ),
         9: CareerEventEntry(
-            text='Surrounded and outnumbered, you hold out until relief arrives.',
+            text='Surrounded and outnumbered by the enemy, you hold out until relief arrives. Gain DM+2 to your next advancement roll.',
             effects=[AdvancementDmEffect(amount=2)],
         ),
         10: CareerEventEntry(
-            text='You are assigned to a peacekeeping role.',
+            text='You are assigned to a peacekeeping role. Gain one of Admin 1, Investigate 1, Deception 1 or Recon 1.',
             effects=[SkillChoiceEffect(options=[Admin(), Investigate(), Deception(), Recon()], level=1)],
         ),
         11: CareerEventEntry(
-            text='Your commanding officer takes an interest in your career.',
-            effects=[SkillChoiceEffect(options=[Tactics(), AdvancementDmOption()], level=1)],
+            text='Your commanding officer takes an interest in your career. Either gain Tactics (military) 1 or DM+4 to your next advancement roll thanks to their aid.',
+            effects=[ArmyEvent11Handler()],
         ),
         12: CareerEventEntry(
             text='You display heroism in battle. You may gain a promotion or a commission automatically.',
-            effects=[AutoAdvanceEffect()],
+            effects=[ArmyEvent12Handler()],
         ),
     }
 

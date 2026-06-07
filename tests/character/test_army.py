@@ -1,6 +1,15 @@
 """Tests for the Army career — support, infantry, and cavalry assignments."""
 
-from ceres.character.domain.career.army import ArmyMishap4Cooperate, ArmyMishap4JoinRing, PendingArmyEvent6SkillRoll
+from ceres.character.domain.career.army import (
+    ArmyEvent12CommissionChoice,
+    ArmyEvent12PromoteChoice,
+    ArmyMishap1DoubleRoll,
+    ArmyMishap1Severe,
+    ArmyMishap4Cooperate,
+    ArmyMishap4JoinRing,
+    PendingArmyEvent6SkillRoll,
+    PendingArmyEvent11SkillChoice,
+)
 from ceres.character.domain.career.career_events import (
     PendingAdvancement,
     PendingChoices,
@@ -10,7 +19,12 @@ from ceres.character.domain.career.career_events import (
 from ceres.character.domain.career.common_pending import PendingAdvancedTrainingSkillRoll
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.connection import Ally
-from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive, GunCombat, Leadership
+from ceres.character.domain.health.health_events import (
+    PendingCharacteristicChoice,
+    PendingDoubleInjuryRoll,
+    PendingInjuryTable,
+)
+from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive, GunCombat, Leadership, Level, Tactics
 from ceres.character.domain.sophont import VILANI
 from tests.character.helpers import MOCK_WORLD, CharacterDriver
 
@@ -64,6 +78,52 @@ class TestArmyQualification:
             d = _enter_army(assignment=assignment)
             assert d.projection.summary.current_assignment is not None
             assert d.projection.summary.current_assignment.name == assignment
+
+
+# ── mishap 1: severely injured ────────────────────────────────────────────────
+
+
+class TestArmyMishap1:
+    def _setup_to_mishap(self) -> CharacterDriver:
+        d = _enter_army()
+        d.survive(4)  # END 5+, DM+0, 4 < 5 — fail
+        return d
+
+    def test_mishap_1_creates_choice_pending(self):
+        d = self._setup_to_mishap()
+        d.mishap(1)
+        pending = next((p for p in d.projection.pending_inputs if isinstance(p, PendingChoices)), None)
+        assert pending is not None
+        assert {type(c) for c in pending.choices} == {ArmyMishap1Severe, ArmyMishap1DoubleRoll}
+
+    def test_severe_branch_queues_characteristic_choice(self):
+        d = self._setup_to_mishap()
+        d.mishap(1)
+        d.career_choice(ArmyMishap1Severe)
+        pending = next((p for p in d.projection.pending_inputs if isinstance(p, PendingCharacteristicChoice)), None)
+        assert pending is not None
+        assert Chars.STR in pending.options
+        assert Chars.DEX in pending.options
+        assert Chars.END in pending.options
+
+    def test_severe_branch_ends_career(self):
+        d = self._setup_to_mishap()
+        d.mishap(1)
+        d.career_choice(ArmyMishap1Severe)
+        assert d.projection.summary.current_career is None
+
+    def test_double_roll_branch_queues_injury_roll(self):
+        d = self._setup_to_mishap()
+        d.mishap(1)
+        d.career_choice(ArmyMishap1DoubleRoll)
+        pending = next((p for p in d.projection.pending_inputs if isinstance(p, PendingDoubleInjuryRoll)), None)
+        assert pending is not None
+
+    def test_double_roll_branch_ends_career(self):
+        d = self._setup_to_mishap()
+        d.mishap(1)
+        d.career_choice(ArmyMishap1DoubleRoll)
+        assert d.projection.summary.current_career is None
 
 
 # ── mishap 4: illegal activity ────────────────────────────────────────────────
@@ -148,10 +208,10 @@ class TestArmyEvent6:
         d.skill_roll(Admin(), modified_roll=9)
         assert not any('injur' in p.lower() for p in d.projection.summary.problems)
 
-    def test_failure_adds_injury_problem(self):
+    def test_failure_queues_injury_table(self):
         d = self._setup_to_event()
         d.skill_roll(Admin(), modified_roll=7)
-        assert any('injur' in p.lower() for p in d.projection.summary.problems)
+        assert any(isinstance(p, PendingInjuryTable) for p in d.projection.pending_inputs)
 
     def test_failure_creates_advancement_pending(self):
         d = self._setup_to_event()
@@ -192,3 +252,87 @@ class TestArmyEvent8:
         d = self._setup_to_event()
         d.skill_roll(Admin(), modified_roll=7)
         assert any(isinstance(p, PendingAdvancement) for p in d.projection.pending_inputs)
+
+
+# ── event 11: commanding officer interest ─────────────────────────────────────
+
+
+class TestArmyEvent11:
+    def _setup_to_event(self) -> CharacterDriver:
+        return _through_term_event(event_roll=11)
+
+    def test_creates_skill_choice_pending(self):
+        d = self._setup_to_event()
+        pending = next((p for p in d.projection.pending_inputs if isinstance(p, PendingArmyEvent11SkillChoice)), None)
+        assert pending is not None
+
+    def test_skill_choice_includes_tactics_military(self):
+        d = self._setup_to_event()
+        pending = next((p for p in d.projection.pending_inputs if isinstance(p, PendingArmyEvent11SkillChoice)), None)
+        assert pending is not None
+        assert any(isinstance(o, Tactics) for o in pending.options)
+
+    def test_choosing_tactics_military_grants_specialty(self):
+        d = self._setup_to_event()
+        d.choose_career_skill(Tactics(military=Level(value=1)))
+        tac = next((s for s in d.projection.summary.skills if isinstance(s, Tactics)), None)
+        assert tac is not None
+        assert tac.military.value == 1
+
+    def test_tactics_military_not_offered_if_already_at_level_1(self):
+        d = _through_survive()
+        d.term_event(11)
+        # Grant Tactics(military) 1 first, then check options
+        d.projection.summary.skills.append(Tactics(military=Level(value=1)))
+        pending = next((p for p in d.projection.pending_inputs if isinstance(p, PendingArmyEvent11SkillChoice)), None)
+        assert pending is not None
+        opts = pending.input_specs(d.projection)
+        # Only AdvancementDmOption should remain (Tactics(military) already at 1)
+        assert len(opts[0].options) == 1
+        assert 'Tactics' not in opts[0].options[0][0]
+
+
+# ── event 12: heroism in battle ───────────────────────────────────────────────
+
+
+class TestArmyEvent12:
+    def _setup_to_event(self) -> CharacterDriver:
+        return _through_term_event(event_roll=12)
+
+    def test_first_term_offers_commission_choice(self):
+        d = self._setup_to_event()
+        pending = next((p for p in d.projection.pending_inputs if isinstance(p, PendingChoices)), None)
+        assert pending is not None
+        assert {type(c) for c in pending.choices} == {ArmyEvent12CommissionChoice, ArmyEvent12PromoteChoice}
+
+    def test_commission_choice_sets_officer_rank(self):
+        d = self._setup_to_event()
+        d.career_choice(ArmyEvent12CommissionChoice)
+        assert d.projection.summary.rank == 1
+        assert d.projection.summary.career_terms[-1].commission is True
+
+    def test_promote_choice_increments_rank(self):
+        d = self._setup_to_event()
+        rank_before = d.projection.summary.rank or 0
+        d.career_choice(ArmyEvent12PromoteChoice)
+        # Rank should have increased (auto-advance queues more pendings, just check rank changed)
+        assert d.projection.summary.rank == rank_before + 1
+
+    def test_already_commissioned_auto_promotes(self):
+        # First term: commission via event 12
+        d = _through_survive()
+        d.term_event(12)
+        d.career_choice(ArmyEvent12CommissionChoice)
+        # After commission: Leadership 1 auto-granted, PendingSkillTable queued
+        # + PendingAssignmentChangeChoice (age<34, allows_assignment_change)
+        d.skill_table('service_skills', 3)  # GunCombat: no choice, reenlist already queued
+        d.reenlist(True)  # same assignment → new term starts, queues PendingSkillTable
+        # Second term: needs skill table before survival
+        d.skill_table('service_skills', 4)  # Recon → PendingSurvive queued
+        d.survive(5)
+        d.term_event(12)
+        # Already commissioned → no commission choice
+        assert not any(
+            isinstance(p, PendingChoices) and any(isinstance(c, ArmyEvent12CommissionChoice) for c in p.choices)
+            for p in d.projection.pending_inputs
+        )

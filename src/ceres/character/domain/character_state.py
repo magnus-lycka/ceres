@@ -62,6 +62,15 @@ class CharacterSummary(BaseModel):
         return self.career_terms[-1]
 
     @property
+    def rank_title(self) -> tuple[str, str]:
+        if self.rank is None:
+            return ('0', '')
+        if not self.career_terms:
+            return (str(self.rank), '')
+        term = self.career_terms[-1]
+        return term.career.rank_title(term.commission, self.rank)
+
+    @property
     def benefits(self) -> list[ItemBenefit]:
         return [benefit for term in self.career_terms if term.muster_out for benefit in term.muster_out.benefits]
 
@@ -240,8 +249,14 @@ def diff_summaries(before: CharacterSummary, after: CharacterSummary) -> list[st
             line += f' ({after.current_assignment.name})'
         changes.append(line)
 
-    if after.rank is not None and after.rank != before.rank:
-        changes.append(f'Rank {before.rank or 0} → {after.rank}')
+    before_rt = before.rank_title
+    after_rt = after.rank_title
+    if after.rank is not None and after_rt != before_rt:
+        b_code, b_title = before_rt
+        a_code, a_title = after_rt
+        b_display = f'{b_code} {b_title}'.strip() if b_title else b_code
+        a_display = f'{a_code} {a_title}'.strip() if a_title else a_code
+        changes.append(f'Rank {b_display} → {a_display}')
 
     all_chars = set(before.characteristics) | set(after.characteristics)
     for char in sorted(all_chars, key=lambda c: c.value):
