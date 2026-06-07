@@ -8,6 +8,7 @@ from urllib.parse import quote, urlencode
 from fastapi import APIRouter, Form, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+import httpx
 
 from ceres.adapters.travellermap import TravellerMapWorld, fetch_world
 from ceres.character.domain.career.career_events import PendingCareerChoice
@@ -284,7 +285,21 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
         form_defaults = _character_form_defaults_from_request(request)
         character_id = request.query_params.get('character_id', '').strip()
         fulfills = request.query_params.get('fulfills', '').strip()
-        sector = SectorWorldFilters.from_travellermap(sector_abbreviation)
+        try:
+            sector = SectorWorldFilters.from_travellermap(sector_abbreviation)
+        except httpx.TimeoutException, httpx.NetworkError:
+            picker_query = _world_picker_query(request)
+            back_url = f'/ui/worlds/sectors?{picker_query}' if picker_query else '/ui/worlds/sectors'
+            return templates.TemplateResponse(
+                request=request,
+                name='sector_picker.html',
+                context={
+                    'error': f'Could not load sector "{sector_abbreviation}": TravellerMap did not respond in time. Please try again.',
+                    'back_url': back_url,
+                    'picker_state': [],
+                },
+                status_code=503,
+            )
         reference_sector = request.query_params.get('reference_sector', '').strip()
         reference_hex = request.query_params.get('reference_hex', '').strip()
         combined_match = _COMBINED_REF_RE.match(reference_hex)

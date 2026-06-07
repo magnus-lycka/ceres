@@ -455,6 +455,7 @@ class TestMishapInjuryEffects:
         char_choices = [p for p in projection.pending_inputs if isinstance(p, PendingCharacteristicChoice)]
         assert len(char_choices) == 1
         assert 'reduce by 2' in char_choices[0].instruction
+        assert char_choices[0].amount == 2
 
     def test_from_table_injury_creates_injury_table_pending(self):
         # Drifter mishap 2: severity=from_table → roll on injury table

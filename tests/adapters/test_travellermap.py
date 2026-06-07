@@ -308,14 +308,10 @@ class TestFetchSector:
     def test_parses_sector_name_and_allegiance_labels_from_sec_text(self, monkeypatch: pytest.MonkeyPatch) -> None:
         response = _FakeResponse(text=_SAMPLE_SEC_TEXT)
         requests: list[tuple[str, dict | None]] = []
-
-        def client_factory() -> _FakeClient:
-            client = _FakeClient()
-            client.response = response
-            client.requests = requests
-            return client
-
-        monkeypatch.setattr(travellermap.httpx, 'Client', client_factory)
+        client = _FakeClient()
+        client.response = response
+        client.requests = requests
+        monkeypatch.setattr(travellermap.httpx, 'Client', client)
 
         sector = travellermap.fetch_sector('Troj')
 
@@ -334,14 +330,10 @@ class TestFetchSector:
     ) -> None:
         response = _FakeResponse(text=_SAMPLE_SEC_TEXT.replace('# Sector: Trojan Reach\n', ''))
         requests: list[tuple[str, dict | None]] = []
-
-        def client_factory() -> _FakeClient:
-            client = _FakeClient()
-            client.response = response
-            client.requests = requests
-            return client
-
-        monkeypatch.setattr(travellermap.httpx, 'Client', client_factory)
+        client = _FakeClient()
+        client.response = response
+        client.requests = requests
+        monkeypatch.setattr(travellermap.httpx, 'Client', client)
         monkeypatch.setattr(
             travellermap,
             'fetch_sectors',
@@ -372,14 +364,10 @@ class TestFetchSector:
             )
         )
         requests: list[tuple[str, dict | None]] = []
-
-        def client_factory() -> _FakeClient:
-            client = _FakeClient()
-            client.response = response
-            client.requests = requests
-            return client
-
-        monkeypatch.setattr(travellermap.httpx, 'Client', client_factory)
+        client = _FakeClient()
+        client.response = response
+        client.requests = requests
+        monkeypatch.setattr(travellermap.httpx, 'Client', client)
 
         sector_x, sector_y = travellermap.fetch_sector_coordinates('Troj')
 
@@ -403,6 +391,9 @@ class _FakeClient:
     requests: list[tuple[str, dict | None]]
     response: _FakeResponse
 
+    def __call__(self, **_kwargs: object) -> _FakeClient:
+        return self
+
     def __enter__(self) -> _FakeClient:
         return self
 
@@ -421,14 +412,10 @@ class TestFetchSectors:
     def test_fetches_sector_info_from_travellermap_data_endpoint(self, monkeypatch: pytest.MonkeyPatch) -> None:
         response = _FakeResponse(json_data={'Sectors': [_SAMPLE_SECTOR_JSON]})
         requests: list[tuple[str, dict | None]] = []
-
-        def client_factory() -> _FakeClient:
-            client = _FakeClient()
-            client.response = response
-            client.requests = requests
-            return client
-
-        monkeypatch.setattr(travellermap.httpx, 'Client', client_factory)
+        client = _FakeClient()
+        client.response = response
+        client.requests = requests
+        monkeypatch.setattr(travellermap.httpx, 'Client', client)
 
         sectors = fetch_sectors('M1120')
 
@@ -439,14 +426,10 @@ class TestFetchSectors:
     def test_reuses_cached_sector_list(self, monkeypatch: pytest.MonkeyPatch) -> None:
         response = _FakeResponse(json_data={'Sectors': [_SAMPLE_SECTOR_JSON]})
         requests: list[tuple[str, dict | None]] = []
-
-        def client_factory() -> _FakeClient:
-            client = _FakeClient()
-            client.response = response
-            client.requests = requests
-            return client
-
-        monkeypatch.setattr(travellermap.httpx, 'Client', client_factory)
+        client = _FakeClient()
+        client.response = response
+        client.requests = requests
+        monkeypatch.setattr(travellermap.httpx, 'Client', client)
 
         first = fetch_sectors('M1120')
         second = fetch_sectors('M1120')
@@ -458,14 +441,10 @@ class TestFetchSectors:
         clear_travellermap_cache()
         response = _FakeResponse(json_data={'Sectors': [_SAMPLE_SECTOR_JSON]})
         requests: list[tuple[str, dict | None]] = []
-
-        def client_factory() -> _FakeClient:
-            client = _FakeClient()
-            client.response = response
-            client.requests = requests
-            return client
-
-        monkeypatch.setattr(travellermap.httpx, 'Client', client_factory)
+        client = _FakeClient()
+        client.response = response
+        client.requests = requests
+        monkeypatch.setattr(travellermap.httpx, 'Client', client)
         monkeypatch.setattr(travellermap.settings, 'cache_dir', lambda: tmp_path)
 
         first = fetch_sectors('M1120')
@@ -483,14 +462,10 @@ class TestFetchSectorWorlds:
     def test_fetches_and_parses_sector_sec_text(self, monkeypatch: pytest.MonkeyPatch) -> None:
         response = _FakeResponse(text=_SAMPLE_SEC_TEXT)
         requests: list[tuple[str, dict | None]] = []
-
-        def client_factory() -> _FakeClient:
-            client = _FakeClient()
-            client.response = response
-            client.requests = requests
-            return client
-
-        monkeypatch.setattr(travellermap.httpx, 'Client', client_factory)
+        client = _FakeClient()
+        client.response = response
+        client.requests = requests
+        monkeypatch.setattr(travellermap.httpx, 'Client', client)
 
         worlds = fetch_sector_worlds('Troj')
 
@@ -516,14 +491,10 @@ class TestFetchSectorWorlds:
     def test_reuses_cached_sector_data(self, monkeypatch: pytest.MonkeyPatch) -> None:
         response = _FakeResponse(text=_SAMPLE_SEC_TEXT)
         requests: list[tuple[str, dict | None]] = []
-
-        def client_factory() -> _FakeClient:
-            client = _FakeClient()
-            client.response = response
-            client.requests = requests
-            return client
-
-        monkeypatch.setattr(travellermap.httpx, 'Client', client_factory)
+        client = _FakeClient()
+        client.response = response
+        client.requests = requests
+        monkeypatch.setattr(travellermap.httpx, 'Client', client)
 
         sector = fetch_sector('Troj')
         worlds = fetch_sector_worlds('Troj')
@@ -538,14 +509,10 @@ class TestFetchSectorWorlds:
         clear_travellermap_cache()
         response = _FakeResponse(text=_SAMPLE_SEC_TEXT)
         requests: list[tuple[str, dict | None]] = []
-
-        def client_factory() -> _FakeClient:
-            client = _FakeClient()
-            client.response = response
-            client.requests = requests
-            return client
-
-        monkeypatch.setattr(travellermap.httpx, 'Client', client_factory)
+        client = _FakeClient()
+        client.response = response
+        client.requests = requests
+        monkeypatch.setattr(travellermap.httpx, 'Client', client)
         monkeypatch.setattr(travellermap.settings, 'cache_dir', lambda: tmp_path)
 
         first = fetch_sector('Troj')
@@ -560,14 +527,10 @@ class TestFetchWorld:
     def test_fetches_world_from_travellermap_data_endpoint(self, monkeypatch: pytest.MonkeyPatch) -> None:
         response = _FakeResponse(json_data={'Worlds': [_SAMPLE_WORLD_JSON]})
         requests: list[tuple[str, dict | None]] = []
-
-        def client_factory() -> _FakeClient:
-            client = _FakeClient()
-            client.response = response
-            client.requests = requests
-            return client
-
-        monkeypatch.setattr(travellermap.httpx, 'Client', client_factory)
+        client = _FakeClient()
+        client.response = response
+        client.requests = requests
+        monkeypatch.setattr(travellermap.httpx, 'Client', client)
 
         world = fetch_world('Troj', '2715')
 
@@ -577,14 +540,10 @@ class TestFetchWorld:
 
     def test_missing_world_raises_value_error(self, monkeypatch: pytest.MonkeyPatch) -> None:
         response = _FakeResponse(json_data={'Worlds': []})
-
-        def client_factory() -> _FakeClient:
-            client = _FakeClient()
-            client.response = response
-            client.requests = []
-            return client
-
-        monkeypatch.setattr(travellermap.httpx, 'Client', client_factory)
+        client = _FakeClient()
+        client.response = response
+        client.requests = []
+        monkeypatch.setattr(travellermap.httpx, 'Client', client)
 
         with pytest.raises(ValueError, match='No world at Troj/9999'):
             fetch_world('Troj', '9999')

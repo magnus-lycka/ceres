@@ -55,7 +55,7 @@ def _fetch_text(url: str, *, params: dict | None = None) -> str:
     cached = _read_cached_payload(url, params)
     if cached is not None:
         return cached
-    with httpx.Client() as client:
+    with httpx.Client(timeout=60.0) as client:
         response = client.get(url, params=params)
         response.raise_for_status()
         payload = response.text or json.dumps(response.json())

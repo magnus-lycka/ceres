@@ -152,48 +152,66 @@ class AgingCrisisHandler(EventHandlerBase):
 def _apply_injury_table_result(projection: Any, roll: int, event_id: int) -> None:
     if roll == 6:
         return
-    if roll == 5:
-        projection.pending_inputs.append(
-            PendingCharacteristicChoice(
-                pending_id=(event_id, 0),
-                instruction='Injured: choose STR, DEX, or END to reduce by 1',
-                options=[Chars.STR, Chars.DEX, Chars.END],
-            )
-        )
-    elif roll == 4:
-        projection.pending_inputs.append(
-            PendingCharacteristicChoice(
-                pending_id=(event_id, 0),
-                instruction='Scarred: choose STR, DEX, or END to reduce by 2',
-                options=[Chars.STR, Chars.DEX, Chars.END],
-            )
-        )
-    elif roll == 3:
-        projection.pending_inputs.append(
-            PendingCharacteristicChoice(
-                pending_id=(event_id, 0),
-                instruction='Missing Eye or Limb: choose STR or DEX to reduce by 2',
-                options=[Chars.STR, Chars.DEX],
-            )
-        )
-    elif roll == 2:
-        projection.pending_inputs.append(
-            PendingCharacteristicChoice(
-                pending_id=(event_id, 0),
-                instruction='Severely injured: roll 1D — choose STR, DEX, or END to reduce by that amount',
-                options=[Chars.STR, Chars.DEX, Chars.END],
-            )
-        )
-    elif roll == 1:
-        projection.pending_inputs.append(
-            PendingNearlyKilled(
-                pending_id=(event_id, 0),
-                instruction=(
-                    'Nearly killed: roll 1D — choose STR, DEX, or END to reduce by that amount; '
-                    'the other two physical characteristics are each reduced by 2'
+    from ceres.character.domain.career.career_events import (
+        PendingAdvancement,
+        PendingAssignmentChangeChoice,
+        PendingCommissionChoice,
+        PendingMusterOut,
+        PendingReenlist,
+    )
+
+    insert_at = next(
+        (
+            i
+            for i, p in enumerate(projection.pending_inputs)
+            if isinstance(
+                p,
+                (
+                    PendingAdvancement,
+                    PendingCommissionChoice,
+                    PendingMusterOut,
+                    PendingReenlist,
+                    PendingAssignmentChangeChoice,
                 ),
             )
+        ),
+        len(projection.pending_inputs),
+    )
+    if roll == 5:
+        pending: Any = PendingCharacteristicChoice(
+            pending_id=(event_id, 0),
+            instruction='Injured: choose STR, DEX, or END to reduce by 1',
+            options=[Chars.STR, Chars.DEX, Chars.END],
+            amount=1,
         )
+    elif roll == 4:
+        pending = PendingCharacteristicChoice(
+            pending_id=(event_id, 0),
+            instruction='Scarred: choose STR, DEX, or END to reduce by 2',
+            options=[Chars.STR, Chars.DEX, Chars.END],
+            amount=2,
+        )
+    elif roll == 3:
+        pending = PendingCharacteristicChoice(
+            pending_id=(event_id, 0),
+            instruction='Missing Eye or Limb: choose STR or DEX to reduce by 2',
+            options=[Chars.STR, Chars.DEX],
+            amount=2,
+        )
+    elif roll == 2:
+        pending = PendingSeverelyInjured(
+            pending_id=(event_id, 0),
+            instruction='Severely injured: roll 1D — choose STR, DEX, or END to reduce by that amount',
+        )
+    else:  # roll == 1
+        pending = PendingNearlyKilled(
+            pending_id=(event_id, 0),
+            instruction=(
+                'Nearly killed: roll 1D — choose STR, DEX, or END to reduce by that amount; '
+                'the other two physical characteristics are each reduced by 2'
+            ),
+        )
+    projection.pending_inputs.insert(insert_at, pending)
 
 
 def complete_aging(projection: CharacterProjection, source_event_id: int) -> None:
@@ -251,6 +269,7 @@ def check_aging_crisis(projection: CharacterProjection, source_event_id: int) ->
 class PendingCharacteristicChoice(PendingInputBase):
     kind: Literal['characteristic_choice'] = 'characteristic_choice'
     options: list[Chars] = Field(default_factory=list)
+    amount: int = 1
 
     def event_from_form(self, form: Any) -> Any:
         from ceres.character.domain.career.career_events import CharacteristicChoiceHandler
@@ -258,12 +277,38 @@ class PendingCharacteristicChoice(PendingInputBase):
 
         return Event(
             fulfills=self.pending_id,
-            handler=CharacteristicChoiceHandler(characteristic=Chars(form_str(form, 'characteristic', Chars.STR))),
+            handler=CharacteristicChoiceHandler(
+                characteristic=Chars(form_str(form, 'characteristic', Chars.STR)),
+                amount=self.amount,
+            ),
         )
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
         options: list[tuple[str, str]] = [(opt, opt) for opt in self.options]
         return [Select(name='characteristic', label='Characteristic', options=options)]
+
+
+class PendingSeverelyInjured(PendingInputBase):
+    kind: Literal['severely_injured'] = 'severely_injured'
+
+    def event_from_form(self, form: Any) -> Any:
+        from ceres.character.domain.career.career_events import CharacteristicChoiceHandler
+        from ceres.character.mechanism.event_base import Event
+
+        return Event(
+            fulfills=self.pending_id,
+            handler=CharacteristicChoiceHandler(
+                characteristic=Chars(form_str(form, 'characteristic', Chars.STR)),
+                amount=form_int(form, 'roll', 1),
+            ),
+        )
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        char_options: list[tuple[str, str]] = [(c, c) for c in (Chars.STR, Chars.DEX, Chars.END)]
+        return [
+            Select(name='characteristic', label='Characteristic to reduce', options=char_options),
+            NumberEntry(name='roll', label='1D roll (1–6)', min=1, max=6),
+        ]
 
 
 class PendingNearlyKilled(PendingInputBase):

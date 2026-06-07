@@ -36,6 +36,8 @@ from ceres.character.domain.career.career_events import (
     ConnectionsRollHandler,
     DraftAssignmentHandler,
     DraftHandler,
+    LifeEventCrimeLoseBenefitRoll,
+    LifeEventCrimeTakePrisoner,
     LifeEventHandler,
     LifeEventUnusualHandler,
     MishapHandler,
@@ -45,6 +47,7 @@ from ceres.character.domain.career.career_events import (
     PendingAssignmentChangeChoice,
     PendingBenefitChoice,
     PendingCareerChoice,
+    PendingChoices,
     PendingCommissionChoice,
     PendingConnectionsRoll,
     PendingDraftAssignmentChoice,
@@ -62,12 +65,14 @@ from ceres.character.domain.career.career_events import (
     PendingSkillTable,
     PendingSkillTableChoice,
     PendingSurvive,
+    PendingSwitchAssignment,
     PendingTermEvent,
     ReenlistHandler,
     SkillChoiceHandler,
     SkillRollHandler,
     SkillTableHandler,
     SurviveHandler,
+    SwitchAssignmentHandler,
     TermEventHandler,
     _advancement_pending,
     _apply_auto_advance,
@@ -102,6 +107,7 @@ from ceres.character.domain.health.health_events import (
     PendingDoubleInjuryRoll,
     PendingInjuryTable,
     PendingNearlyKilled,
+    PendingSeverelyInjured,
     complete_aging,
 )
 from ceres.character.domain.precareer.precareer_events import (
@@ -691,6 +697,64 @@ def test_nearly_killed_pending_asks_for_characteristic_and_roll():
     assert {v for _, v in select.options} == {Chars.STR, Chars.DEX, Chars.END}
 
 
+@pytest.mark.parametrize(
+    ('roll', 'expected_amount', 'pending_type'),
+    [
+        (5, 1, PendingCharacteristicChoice),
+        (4, 2, PendingCharacteristicChoice),
+        (3, 2, PendingCharacteristicChoice),
+    ],
+)
+def test_injury_table_fixed_reductions_carry_correct_amount(roll, expected_amount, pending_type):
+    projection = _projection()
+    Event(id=5, handler=InjuryTableHandler(roll=roll)).apply(projection)
+    pending = next(p for p in projection.pending_inputs if isinstance(p, pending_type))
+    assert pending.amount == expected_amount
+    event = pending.event_from_form(Form(characteristic='STR'))
+    assert event.amount == expected_amount
+
+
+def test_injury_table_roll_2_creates_severely_injured_pending():
+    projection = _projection()
+    Event(id=5, handler=InjuryTableHandler(roll=2)).apply(projection)
+    assert any(isinstance(p, PendingSeverelyInjured) for p in projection.pending_inputs)
+
+
+def test_severely_injured_pending_uses_roll_as_amount():
+    pending = PendingSeverelyInjured(pending_id=(1, 0), instruction='Severely injured')
+    event = pending.event_from_form(Form(characteristic='DEX', roll='4'))
+    assert isinstance(event.handler, CharacteristicChoiceHandler)
+    assert event.characteristic == Chars.DEX
+    assert event.amount == 4
+
+
+def test_injury_table_roll_2_reduces_single_characteristic_by_rolled_amount():
+    projection = _projection(characteristics={Chars.STR: 8, Chars.DEX: 8, Chars.END: 8})
+    Event(id=5, handler=InjuryTableHandler(roll=2)).apply(projection)
+    Event(id=6, handler=CharacteristicChoiceHandler(characteristic=Chars.DEX, amount=3)).apply(projection)
+    assert projection.summary.characteristics[Chars.DEX] == 5
+    assert projection.summary.characteristics[Chars.STR] == 8
+    assert projection.summary.characteristics[Chars.END] == 8
+
+
+def test_injury_table_result_ordered_before_advancement():
+    """
+    Injury characteristic choice must appear before advancement after a stay_in_career mishap with from_table injury.
+    """
+    projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=1)
+    Event(id=5, handler=MishapHandler(roll=6, stay_in_career=True)).apply(projection)
+
+    assert isinstance(projection.pending_inputs[0], PendingInjuryTable)
+    assert isinstance(projection.pending_inputs[1], PendingAdvancement)
+
+    Event(id=6, fulfills=(5, 0), handler=InjuryTableHandler(roll=5)).apply(projection)
+
+    inputs = projection.pending_inputs
+    char_idx = next(i for i, p in enumerate(inputs) if isinstance(p, PendingCharacteristicChoice))
+    adv_idx = next(i for i, p in enumerate(inputs) if isinstance(p, PendingAdvancement))
+    assert char_idx < adv_idx
+
+
 def test_decision_pending_inputs_build_events_and_specs():
     commission = PendingCommissionChoice(pending_id=(1, 0), instruction='Commission')
     assert commission.event_from_form(Form(choice='attempt', roll='9')) == Event(
@@ -964,3 +1028,315 @@ def test_career_skill_choice_pending_base_on_skill_chosen_grants_skill_and_queue
     before2 = len(proj2.pending_inputs)
     pending2.on_skill_chosen(proj2, _FakeEvent())
     assert len(proj2.pending_inputs) == before2
+
+
+# ── CareerChoiceHandler error branches ────────────────────────────────────────
+
+
+def test_career_choice_handler_error_branches():
+    with pytest.raises(ReplayError, match='no matching pending input'):
+        Event(handler=CareerChoiceHandler(choice='some_choice')).apply(_projection())
+
+    wrong_pending = PendingSurvive(pending_id=(1, 0), instruction='Survive')
+    with pytest.raises(ReplayError, match='unexpected pending type'):
+        Event(handler=CareerChoiceHandler(choice='some_choice')).apply(_projection(), wrong_pending)
+
+    empty_choices = PendingChoices(pending_id=(1, 0), instruction='Choose', choices=[])
+    with pytest.raises(ReplayError, match='Unknown choice'):
+        Event(handler=CareerChoiceHandler(choice='no_such')).apply(_projection(), empty_choices)
+
+
+# ── ReenlistHandler paths ─────────────────────────────────────────────────────
+
+
+def test_reenlist_handler_reenlist_true_queues_skill_table_for_new_term():
+    projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=1)
+    Event(id=7, handler=ReenlistHandler(reenlist=True)).apply(projection)
+
+    assert len(projection.summary.career_terms) == 2
+    assert any(isinstance(p, PendingSkillTable) for p in projection.pending_inputs)
+
+
+def test_reenlist_handler_reenlist_false_sets_up_muster_out():
+    projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=1)
+    Event(id=7, handler=ReenlistHandler(reenlist=False)).apply(projection)
+
+    assert projection.summary.current_career is None
+    assert any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
+
+
+# ── AdvancementHandler forced flags ───────────────────────────────────────────
+
+
+def test_advancement_handler_roll_12_prevents_muster_out():
+    projection = _projection(
+        current_career=SCOUT,
+        current_assignment='Courier',
+        term_count=1,
+        characteristics={Chars.EDU: 0},
+    )
+    Event(id=7, handler=AdvancementHandler(roll=12)).apply(projection)
+
+    assignment_change = next(
+        (p for p in projection.pending_inputs if isinstance(p, PendingAssignmentChangeChoice)), None
+    )
+    reenlist = next((p for p in projection.pending_inputs if isinstance(p, PendingReenlist)), None)
+    if assignment_change:
+        assert assignment_change.muster_out is False
+    elif reenlist:
+        assert reenlist.can_muster_out is False
+    else:
+        pytest.fail('Expected PendingAssignmentChangeChoice or PendingReenlist')
+
+
+def test_advancement_handler_roll_low_triggers_forced_leave():
+    projection = _projection(
+        current_career=SCOUT,
+        current_assignment='Courier',
+        term_count=2,
+        characteristics={Chars.EDU: 0},
+    )
+    Event(id=7, handler=AdvancementHandler(roll=2)).apply(projection)
+
+    # 2 prior terms + roll=2 → forced_leave → muster_out_setup
+    assert any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
+
+
+# ── AssignmentChangeChoiceHandler switch branch ───────────────────────────────
+
+
+def test_assignment_change_choice_handler_switch_creates_pending_switch():
+    projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=1)
+    Event(id=7, handler=AssignmentChangeChoiceHandler(choice='switch')).apply(projection)
+
+    assert any(isinstance(p, PendingSwitchAssignment) for p in projection.pending_inputs)
+
+
+def test_pending_switch_assignment_unknown_assignment_raises():
+    courier = SCOUT.assignment('Courier')
+    assert courier is not None
+    pending = PendingSwitchAssignment(pending_id=(1, 0), instruction='Switch', options=[courier])
+    with pytest.raises(ReplayError, match="Unknown assignment 'Bogus'"):
+        pending.event_from_form(Form(assignment='Bogus', roll='8'))
+
+
+# ── SwitchAssignmentHandler success and failure ───────────────────────────────
+
+
+def test_switch_assignment_handler_success_sets_assignment_and_starts_term():
+    explorer = SCOUT.assignment('Explorer')
+    assert explorer is not None
+    projection = _projection(
+        current_career=SCOUT,
+        current_assignment='Courier',
+        term_count=1,
+        characteristics={Chars.INT: 7},
+    )
+    Event(id=7, handler=SwitchAssignmentHandler(assignment=explorer, qualification_roll=8)).apply(projection)
+
+    assert projection.summary.current_assignment == explorer
+    assert any(isinstance(p, PendingSkillTable) for p in projection.pending_inputs)
+
+
+def test_switch_assignment_handler_failure_queues_reenlist_with_current_name():
+    explorer = SCOUT.assignment('Explorer')
+    assert explorer is not None
+    projection = _projection(
+        current_career=SCOUT,
+        current_assignment='Courier',
+        term_count=1,
+        characteristics={Chars.INT: 0},
+    )
+    Event(id=7, handler=SwitchAssignmentHandler(assignment=explorer, qualification_roll=2)).apply(projection)
+
+    reenlist = next((p for p in projection.pending_inputs if isinstance(p, PendingReenlist)), None)
+    assert reenlist is not None
+    assert 'Courier' in reenlist.instruction
+    assert 'AssignmentData' not in reenlist.instruction
+
+
+# ── TermEventHandler effects ──────────────────────────────────────────────────
+
+
+def test_term_event_handler_life_event_effect_queues_life_event_pending():
+    projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=1)
+    Event(id=5, handler=TermEventHandler(roll=7)).apply(projection)  # Scout event 7: LifeEventEffect
+
+    assert any(isinstance(p, PendingLifeEvent) for p in projection.pending_inputs)
+
+
+def test_term_event_handler_auto_advance_queues_skill_table_and_bumps_rank():
+    projection = _projection(
+        current_career=SCOUT,
+        current_assignment='Courier',
+        term_count=1,
+        characteristics={Chars.EDU: 10},
+    )
+    Event(id=5, handler=TermEventHandler(roll=12)).apply(projection)  # Scout event 12: AutoAdvanceEffect
+
+    assert projection.summary.rank == 1
+    assert any(isinstance(p, PendingSkillTable) for p in projection.pending_inputs)
+
+
+def test_term_event_handler_roll_mishap_stay_in_career_queues_mishap_with_flag():
+    projection = _projection(current_career=ARMY, current_assignment='Infantry', term_count=1)
+    Event(id=5, handler=TermEventHandler(roll=2)).apply(projection)  # Army event 2: RollMishapEffect(leave=False)
+
+    mishap_pendings = [p for p in projection.pending_inputs if isinstance(p, PendingMishap)]
+    assert len(mishap_pendings) == 1
+    assert mishap_pendings[0].stay_in_career is True
+
+
+def test_term_event_handler_skill_choice_effect_queues_skill_choice():
+    projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=1)
+    Event(id=5, handler=TermEventHandler(roll=6)).apply(projection)  # Scout event 6: SkillChoiceEffect
+
+    assert any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
+    assert not any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+
+
+# ── MishapHandler effects not yet covered ─────────────────────────────────────
+
+
+def test_mishap_handler_gain_connections_effect_queues_two_connection_rolls():
+    projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=1)
+    Event(id=5, handler=MishapHandler(roll=3)).apply(projection)  # Scout mishap 3: two GainConnectionsRolledEffect
+
+    rolls = [p for p in projection.pending_inputs if isinstance(p, PendingConnectionsRoll)]
+    assert len(rolls) == 2
+
+
+def test_mishap_handler_skill_choice_effect_queues_pending_skill_choice():
+    projection = _projection(current_career=ARMY, current_assignment='Infantry', term_count=1)
+    Event(id=5, handler=MishapHandler(roll=3)).apply(projection)  # Army mishap 3: SkillChoiceEffect + GainEnemyEffect
+
+    assert any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
+    assert any(c.kind == 'connection_enemy' for c in projection.summary.connections)
+
+
+# ── ConnectionKindChoiceHandler narrative ─────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    ('roll', 'connection_kind', 'expected_fragment'),
+    [
+        (4, ConnectionKind.RIVAL, 'rival'),
+        (4, ConnectionKind.ENEMY, 'enemy'),
+        (8, ConnectionKind.RIVAL, 'rival'),
+        (8, ConnectionKind.ENEMY, 'enemy'),
+    ],
+)
+def test_connection_kind_choice_handler_adds_narrative_for_life_event_rolls(roll, connection_kind, expected_fragment):
+    projection = _projection()
+    life_event_choice = PendingLifeEventChoice(pending_id=(1, 0), instruction='Choice', roll=roll)
+    Event(id=2, handler=ConnectionKindChoiceHandler(connection_kind=connection_kind)).apply(
+        projection, life_event_choice
+    )
+
+    assert any(expected_fragment in line.lower() for line in projection.summary.narrative)
+
+
+# ── LifeEventCrime choice handlers ────────────────────────────────────────────
+
+
+def test_life_event_crime_lose_benefit_roll_increments_lost_rolls():
+    projection = _projection(term_count=1)
+    LifeEventCrimeLoseBenefitRoll().handle(projection, Event(handler=CareerChoiceHandler(choice='x')))
+
+    assert projection.summary.career_terms[-1].require_muster_out().lost_rolls == 1
+
+
+def test_life_event_crime_take_prisoner_sets_forced_next_career():
+    from ceres.character.domain.career.prisoner import PRISONER
+
+    projection = _projection()
+    LifeEventCrimeTakePrisoner().handle(projection, Event(handler=CareerChoiceHandler(choice='x')))
+
+    assert projection.forced_next_career == PRISONER
+
+
+# ── muster_out_setup with zero rolls ─────────────────────────────────────────
+
+
+def test_muster_out_setup_zero_rolls_queues_career_choice():
+    career = load_careers()['Scout']
+    # term_count=0 and rank=0 → roll_count = 0 → career choice directly
+    projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=0, rank=0)
+    muster_out_setup(projection, career, source_event_id=9, pending_idx=0)
+
+    assert any(isinstance(p, PendingCareerChoice) for p in projection.pending_inputs)
+    assert not any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
+
+
+# ── queue_reenlist_or_aging forced_leave ──────────────────────────────────────
+
+
+def test_queue_reenlist_or_aging_forced_leave_triggers_muster_out():
+    projection = _projection(
+        current_career=SCOUT,
+        current_assignment='Courier',
+        term_count=1,
+        age=26,
+    )
+    projection.forced_leave = True
+    queue_reenlist_or_aging(projection, event_id=7, idx=0)
+
+    assert projection.forced_leave is False
+    assert any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
+
+
+# ── on_skill_chosen methods ───────────────────────────────────────────────────
+
+
+def test_pending_initial_training_choice_on_skill_chosen_queues_survive():
+    projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=1)
+
+    class _FakeEvent:
+        id = 5
+        skill = character_skills.Admin()
+
+    pending = PendingInitialTrainingChoice(
+        pending_id=(1, 0), instruction='Training', options=[character_skills.Admin()]
+    )
+    pending.on_skill_chosen(projection, _FakeEvent())
+
+    assert projection.summary.skill_level(character_skills.Admin) is not None
+    assert any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
+
+
+def test_pending_skill_table_choice_on_skill_chosen_without_reenlist_queues_survive():
+    projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=1)
+
+    class _FakeEvent:
+        id = 5
+        skill = character_skills.Admin()
+
+    pending = PendingSkillTableChoice(
+        pending_id=(1, 0), instruction='Choose skill', reenlist_queued=False, options=[character_skills.Admin()]
+    )
+    pending.on_skill_chosen(projection, _FakeEvent())
+
+    assert projection.summary.skill_level(character_skills.Admin) is not None
+    assert any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
+
+
+def test_pending_rank_bonus_choice_on_skill_chosen_queues_skill_table_and_reenlist():
+    projection = _projection(
+        current_career=SCOUT,
+        current_assignment='Courier',
+        term_count=1,
+        characteristics={Chars.EDU: 10},
+        rank=1,
+    )
+
+    class _FakeEvent:
+        id = 5
+        skill = character_skills.Admin()
+
+    pending = PendingRankBonusChoice(
+        pending_id=(1, 0), instruction='Rank bonus', level=1, options=[character_skills.Admin()]
+    )
+    pending.on_skill_chosen(projection, _FakeEvent())
+
+    assert any(isinstance(p, PendingSkillTable) for p in projection.pending_inputs)
+    assert any(isinstance(p, (PendingAssignmentChangeChoice, PendingReenlist)) for p in projection.pending_inputs)

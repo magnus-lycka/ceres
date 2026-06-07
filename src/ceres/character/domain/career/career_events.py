@@ -124,6 +124,7 @@ class MishapHandler(EventHandlerBase):
                                 f'Choose characteristic to decrease by {effect.amount}: {", ".join(c.value for c in effect.options)}'
                             ),
                             options=effect.options,
+                            amount=effect.amount,
                         )
                     )
                     pending_idx += 1
@@ -153,6 +154,7 @@ class MishapHandler(EventHandlerBase):
                                 pending_id=(event.id, pending_idx),
                                 instruction='Injured: choose STR, DEX, or END to reduce by 1',
                                 options=[Chars.STR, Chars.DEX, Chars.END],
+                                amount=1,
                             )
                         )
                         pending_idx += 1
@@ -162,6 +164,7 @@ class MishapHandler(EventHandlerBase):
                                 pending_id=(event.id, pending_idx),
                                 instruction='Severely injured: choose STR, DEX, or END to reduce by 2',
                                 options=[Chars.STR, Chars.DEX, Chars.END],
+                                amount=2,
                             )
                         )
                         pending_idx += 1
@@ -932,7 +935,7 @@ class SwitchAssignmentHandler(EventHandlerBase):
                     pending_id=(event.id, 0),
                     instruction=(
                         f'Assignment change to {self.assignment.name!r} failed — reenlist with '
-                        f'{projection.summary.current_assignment!r} or muster out?'
+                        f'{projection.summary.current_assignment.name!r} or muster out?'
                     ),
                 )
             )

@@ -500,6 +500,68 @@ correctly typed event with the right `fulfills` value.
    `resolve()` runs the domain logic and typically appends the next pending
    input to start the cycle again.
 
+#### Main flow vs. diversions: an identified tension
+
+The `pending_inputs` list mixes two kinds of work:
+
+- **Main flow** — the expected linear sequence of a term: survive, term event,
+  advancement, re-enlistment, muster-out.
+- **Diversions** — side-steps triggered mid-flow that must be resolved before
+  the main flow continues: homeworld relocation, injury table rolls,
+  characteristic reductions, nearly-killed handling, aging crises, medical
+  treatment.
+
+Concrete examples where this distinction matters today:
+
+- A stay-in-career mishap with a "roll on injury table" effect appends both
+  `PendingInjuryTable` and `PendingAdvancement`. When the injury table resolves
+  and creates a `PendingCharacteristicChoice`, that choice must appear *before*
+  advancement, not after.
+- Scout career entry inserts a homeworld relocation pending *before* survival,
+  even though the homeworld pending is created after `super().start_new_term()`
+  has already pushed the survival pending.
+
+**Current approach — ordered flat list with strategic inserts.**
+Diversions are inserted at an explicit position rather than appended. The
+insertion point is found by scanning for the first "career-progress" pending
+already in the list. Code that creates diversion pendings is responsible for
+placing them correctly.
+
+*Pros:* simple data structure; no change to the replay or serialisation model;
+works well for single-level diversions.
+
+*Cons:* every diversion site must enumerate "career-progress" types to find
+the insertion point; deeper nesting (diversion-within-a-diversion) requires
+careful handling at each level; the invariant is implicit — it is not enforced
+by the data structure itself.
+
+**Alternative — explicit stack of pending lists.**
+`CharacterProjection` would hold `pending_stack: list[list[PendingInputBase]]`
+instead of a flat list. The UI always works from the top frame; a diversion
+pushes a new frame; when a frame empties it is popped.
+
+*Pros:* nesting is natural and self-enforcing; no enumeration of "main-flow"
+types; deeply nested diversions (e.g. injury → medical treatment → payment
+choice) fall out cleanly.
+
+*Cons:* significant change to the projection model and replay; every handler
+must know whether it is starting a new diversion frame or continuing the
+current one; more complex serialisation.
+
+**Alternative — priority or group field on pending inputs.**
+Each pending carries a `group: Literal['main', 'diversion']` (or an integer
+priority). Insertion and retrieval sort or filter by group.
+
+*Pros:* explicit metadata without a stack; relatively small change.
+
+*Cons:* still requires each site to declare the correct group; does not
+naturally handle more than two nesting levels; ordering within a group remains
+implicit.
+
+The current approach is sufficient for the existing cases. If diversions gain
+sub-steps of their own (e.g. multi-step medical treatment), the flat-list
+approach should be revisited in favour of the stack.
+
 #### No isinstance in the call chain
 
 Because every step calls a method on whatever object it holds, `isinstance`

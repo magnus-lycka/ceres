@@ -52,6 +52,7 @@ from ceres.character.domain.health.health_events import (
     PendingCharacteristicChoice,
     PendingInjuryTable,
     PendingNearlyKilled,
+    PendingSeverelyInjured,
 )
 from ceres.character.domain.skills import (
     Admin,
@@ -1075,13 +1076,11 @@ class TestFromTableInjury:
 
         assert projection.summary.characteristics[Chars.DEX] == 6  # 8 - 2
 
-    def test_roll_2_creates_characteristic_choice_for_1d_reduction(self):
+    def test_roll_2_creates_severely_injured_pending_for_1d_reduction(self):
         events = [*self._setup_to_mishap_2(), Event(id=9, fulfills=(8, 0), handler=InjuryTableHandler(roll=2))]
         projection = replay(1, events)
 
-        choice = next((p for p in projection.pending_inputs if isinstance(p, PendingCharacteristicChoice)), None)
-        assert choice is not None
-        assert set(choice.options) == {'STR', 'DEX', 'END'}
+        assert any(isinstance(p, PendingSeverelyInjured) for p in projection.pending_inputs)
 
     def test_roll_2_choice_reduces_by_player_supplied_amount(self):
         # Player rolled 1D=4 for the reduction
