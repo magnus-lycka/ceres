@@ -560,12 +560,15 @@ def test_wizard_shows_ucp_pending(client_with_backend):
 
 
 def test_wizard_shows_career_name_not_repr(client_with_backend, monkeypatch):
-    from ceres.character.domain.career.career_data import CareerTerm
+    from ceres.character.domain.career.career_data import AssignmentData, CareerTerm
     from ceres.character.domain.career.loader import load_careers
     from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 
     client, backend = client_with_backend
     citizen = load_careers()['Citizen']
+    _colonist = citizen.assignment('Colonist')
+    assert _colonist is not None
+    colonist: AssignmentData = _colonist
     monkeypatch.setattr(
         backend,
         'get_projection',
@@ -577,12 +580,12 @@ def test_wizard_shows_career_name_not_repr(client_with_backend, monkeypatch):
                 sophont=HUMANITI,
                 homeworld=MOCK_WORLD,
                 current_career=citizen,
-                current_assignment=citizen.assignment('Colonist'),
+                current_assignment=colonist,
                 rank=3,
                 career_terms=[
                     CareerTerm(
                         career=citizen,
-                        assignment='Colonist',
+                        assignment=colonist,
                     )
                     for _ in range(3)
                 ],
@@ -799,12 +802,15 @@ def test_character_sheet_shows_name(client_with_backend):
 
 
 def test_character_sheet_shows_career_name_not_repr(client_with_backend, monkeypatch):
-    from ceres.character.domain.career.career_data import CareerTerm
+    from ceres.character.domain.career.career_data import AssignmentData, CareerTerm
     from ceres.character.domain.career.loader import load_careers
     from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 
     client, backend = client_with_backend
     citizen = load_careers()['Citizen']
+    _colonist = citizen.assignment('Colonist')
+    assert _colonist is not None
+    colonist: AssignmentData = _colonist
     monkeypatch.setattr(
         backend,
         'get_projection',
@@ -816,12 +822,12 @@ def test_character_sheet_shows_career_name_not_repr(client_with_backend, monkeyp
                 sophont=HUMANITI,
                 homeworld=MOCK_WORLD,
                 current_career=citizen,
-                current_assignment=citizen.assignment('Colonist'),
+                current_assignment=colonist,
                 rank=3,
                 career_terms=[
                     CareerTerm(
                         career=citizen,
-                        assignment='Colonist',
+                        assignment=colonist,
                     )
                     for _ in range(3)
                 ],

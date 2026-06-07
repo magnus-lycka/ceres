@@ -814,5 +814,5 @@ class TestCareerRunContinuity:
         projection = replay(1, events)
 
         assert projection.summary.career_terms[-1].career.name == 'Agent'
-        assert projection.summary.career_terms[-1].assignment == 'Corporate'
+        assert projection.summary.career_terms[-1].assignment.name == 'Corporate'
         assert projection.summary.career_terms[-1].require_muster_out().terms == 1

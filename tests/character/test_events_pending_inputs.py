@@ -134,12 +134,10 @@ def _projection(**summary_kwargs: Any) -> CharacterProjection:
         summary_kwargs['current_assignment'] = current_career.assignment(current_assignment)
     if term_count is not None and 'career_terms' not in summary_kwargs:
         current_career = summary_kwargs.get('current_career') or SCOUT
-        assignment_obj = summary_kwargs.get('current_assignment')
-        assignment_name = assignment_obj.name if assignment_obj else 'Courier'
-        assignment_index = current_career.assignment_index(assignment_obj) if assignment_obj else 1
+        assignment_obj = summary_kwargs.get('current_assignment') or current_career.assignment('Courier')
+        assert assignment_obj is not None
         summary_kwargs['career_terms'] = [
-            CareerTerm(career=current_career, assignment=assignment_name, assignment_index=assignment_index)
-            for _ in range(term_count)
+            CareerTerm(career=current_career, assignment=assignment_obj) for _ in range(term_count)
         ]
     return CharacterProjection(
         character_id=1,
@@ -354,7 +352,7 @@ def test_commission_event_skip_failure_success_and_unsupported_career():
         current_career=ARMY,
         current_assignment='Support',
         characteristics={Chars.SOC: 12, Chars.EDU: 10},
-        career_terms=[CareerTerm(career=ARMY, assignment='Support', assignment_index=1)],
+        career_terms=[CareerTerm(career=ARMY, assignment=ARMY.assignment('Support'))],
     )
     Event(id=3, handler=CommissionHandler(attempt=True, roll=12)).apply(succeeded)
     assert succeeded.summary.rank == 1

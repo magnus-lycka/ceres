@@ -151,7 +151,7 @@ class TestAssignmentRanksByIndex:
 
 
 class TestCareerTermIndex:
-    def test_career_term_has_assignment_index_after_career_start(self):
+    def test_career_term_has_assignment_after_career_start(self):
         events = [
             *_full_setup(),
             Event(
@@ -162,9 +162,9 @@ class TestCareerTermIndex:
         ]
         projection = replay(1, events)
         assert len(projection.summary.career_terms) == 1
-        assert projection.summary.career_terms[0].assignment_index == 1  # Courier is index 1
+        assert projection.summary.career_terms[0].assignment.name == 'Courier'
 
-    def test_career_term_assignment_index_for_second_assignment(self):
+    def test_career_term_assignment_for_second_assignment(self):
         events = [
             *_full_setup(),
             Event(
@@ -174,9 +174,9 @@ class TestCareerTermIndex:
             ),
         ]
         projection = replay(1, events)
-        assert projection.summary.career_terms[0].assignment_index == 2  # Surveyor is index 2
+        assert projection.summary.career_terms[0].assignment.name == 'Surveyor'
 
-    def test_career_term_assignment_index_for_third_assignment(self):
+    def test_career_term_assignment_for_third_assignment(self):
         events = [
             *_full_setup(),
             Event(
@@ -186,7 +186,7 @@ class TestCareerTermIndex:
             ),
         ]
         projection = replay(1, events)
-        assert projection.summary.career_terms[0].assignment_index == 3  # Explorer is index 3
+        assert projection.summary.career_terms[0].assignment.name == 'Explorer'
 
 
 class TestCurrentAssignment:

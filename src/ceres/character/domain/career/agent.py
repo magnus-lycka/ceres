@@ -587,8 +587,7 @@ class Agent(CareerData):
     }
 
     def prior_terms(self, terms, assignment: AssignmentData) -> list:
-        idx = self.assignment_index(assignment)
-        return [term for term in terms if type(term.career) is type(self) and term.assignment_index == idx]
+        return [term for term in terms if type(term.career) is type(self) and term.assignment == assignment]
 
 
 AGENT = Agent()

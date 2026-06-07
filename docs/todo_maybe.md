@@ -348,11 +348,6 @@ world.
   The current tests explicitly assert manual notes for rolls 2 and 4 and
   unconditional termination for roll 11. Replace those with tests of the Core
   outcomes, and make every Pre-Career Event entry match Core word for word.
-- **Muster-out benefits are string-key encoded** — career data currently writes
-  benefits as string keys passed through `parse_benefit(...)`, e.g.
-  `parse_benefit('ship_share')` or `parse_benefit(['soc_plus_1',
-  'cybernetic_implant'])`. These should be proper benefit objects with typed
-  semantics, not stringly-typed identifiers.
 - **Medical debt** — unpaid injury costs should accumulate as debt when cash
   benefits are insufficient.
 - **Pension** — Travellers leaving a qualifying career after 5+ terms earn an
@@ -536,34 +531,6 @@ The UI renders the flat list directly — one picker, all options visible at
 once, qualification requirements and DMs shown alongside each choice.
 
 ## Character creation: eliminate remaining semantic strings
-
-The career YAML migration removed string-based skill/characteristic fields from
-career data. Several string-based patterns remain and should be eliminated in
-follow-up work packages.
-
-### Replace remaining `list[str]` options with typed option objects
-
-`PendingInputBase` base class no longer has a generic `options: list[str]` field.
-Most pending types now carry typed options (`list[AnySkill]`,
-`list[AnySkill | Chars]`, `list[AnyBenefit]`, `list[SerializeAsAny[ChoiceBase]]`,
-etc.). Five instances remain:
-
-- `PendingSkillTable.options: list[str]` — table-name strings such as
-  `'personal_development'`, `'service_skills'`. Should become a typed enum or
-  `SkillTable` references.
-- `PendingConnectionsRoll.options: list[str]` — count strings `'1'`–`'6'`.
-  Should become `list[int]` or a typed count object.
-- `PendingSwitchAssignment.options: list[str]` — assignment names. Should become
-  typed assignment references.
-- `PendingBenefitChoice.options: list[str]` — display labels rendered alongside
-  the typed `benefit_options: list[AnyBenefit]`. Should be dropped; the label can
-  come from the benefit objects themselves.
-- `DecreaseCharacteristicChoiceEffect.options: list[str]` in `career_data.py` —
-  characteristic abbreviations. Should become `list[Chars]`.
-
-These are the remaining raw-string contracts between career/event logic and the
-frontend/client. Resolving them makes the API self-documenting and eliminates
-special-case rendering drift.
 
 ### Consolidate career-entry state into a `TermChoices` object
 

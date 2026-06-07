@@ -42,6 +42,8 @@ from tests.character.helpers import MOCK_WORLD
 
 
 def _projection_with_term(characteristics: dict[Chars, int] | None = None) -> CharacterProjection:
+    courier = SCOUT.assignment('Courier')
+    assert courier is not None
     return CharacterProjection(
         character_id=1,
         summary=CharacterSummary(
@@ -49,7 +51,7 @@ def _projection_with_term(characteristics: dict[Chars, int] | None = None) -> Ch
             sophont=VILANI,
             homeworld=MOCK_WORLD,
             characteristics=characteristics or {},
-            career_terms=[CareerTerm(career=SCOUT, assignment='Courier', assignment_index=1)],
+            career_terms=[CareerTerm(career=SCOUT, assignment=courier)],
         ),
     )
 

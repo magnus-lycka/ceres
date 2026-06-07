@@ -13,6 +13,8 @@ from tests.character.helpers import MOCK_WORLD
 
 def _summary(**kwargs) -> CharacterSummary:
     term_count = kwargs.pop('term_count', 2)
+    explorer = SCOUT.assignment('Explorer')
+    assert explorer is not None
     defaults = {
         'name': 'Test Character',
         'sophont': VILANI,
@@ -20,11 +22,9 @@ def _summary(**kwargs) -> CharacterSummary:
         'age': 26,
         'characteristics': {'STR': 7, 'DEX': 8, 'END': 6, 'INT': 9, 'EDU': 7, 'SOC': 5},
         'current_career': SCOUT,
-        'current_assignment': SCOUT.assignment('Explorer'),
+        'current_assignment': explorer,
         'rank': 1,
-        'career_terms': [
-            CareerTerm(career=SCOUT, assignment='Explorer', assignment_index=3) for _ in range(term_count)
-        ],
+        'career_terms': [CareerTerm(career=SCOUT, assignment=explorer) for _ in range(term_count)],
     }
     return CharacterSummary.model_validate({**defaults, **kwargs})
 

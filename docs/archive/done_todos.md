@@ -147,6 +147,33 @@ Move substantial parts of Ship.build_spec() out to the
 sections that own the rows, such as storage, computer,
 habitation and systems.
 
+## Character creation: replace remaining `list[str]` options with typed option objects
+
+All five remaining raw-string option contracts replaced with typed equivalents:
+
+- `PendingSkillTable.options` → `list[SkillTableOption]`
+- `PendingConnectionsRoll.options` → `list[int]`
+- `PendingSwitchAssignment.options` → `list[AssignmentData]`
+- `PendingBenefitChoice.options: list[str]` → dropped entirely; `benefit_options: list[AnyBenefit]` was already the typed field
+- `DecreaseCharacteristicChoiceEffect.options` → `list[Chars]`
+
+## Character creation: typed career and assignment fields in handlers and CareerTerm
+
+Replaced all `career: str` and `assignment: str` fields in event handlers and summary
+state with domain objects throughout:
+
+- `CareerEntryHandler`, `DraftHandler`, `DraftAssignmentHandler`, `SwitchAssignmentHandler`
+  — `career: CareerData`, `assignment: AssignmentData`. No string-to-domain lookups
+  anywhere; callers must supply real objects.
+- `CareerTerm.assignment: AssignmentData` — removed `assignment: str` and
+  `assignment_index: int = 0`. Index is derivable via `career.assignment_index(assignment)`.
+- `CharacterSummary.current_assignment` / `last_assignment` — changed from `str | None` to
+  `AssignmentData | None`; `current_assignment_index` and `last_assignment_index` fields
+  deleted entirely.
+- `_from_registry` model validator changed from `mode='before'` to `mode='wrap'` so
+  `CareerData` instances short-circuit cleanly without Pydantic re-validating the returned
+  subclass instance.
+
 Current status:
 
 - done for hull

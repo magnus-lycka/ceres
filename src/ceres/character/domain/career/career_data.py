@@ -399,8 +399,7 @@ class CareerData(TermData):
     def append_term(self, projection, assignment: AssignmentData) -> None:
         term = CareerTerm(
             career=self,
-            assignment=assignment.name,
-            assignment_index=self.assignment_index(assignment),
+            assignment=assignment,
             commission=self.is_commissioned(projection.summary.career_terms),
             rank_after_term=projection.summary.rank or 0,
         )
@@ -679,8 +678,7 @@ class MusterOut(BaseModel):
 
 class CareerTerm(BaseModel):
     career: CareerData
-    assignment: str
-    assignment_index: int = 0
+    assignment: AssignmentData
     commission: bool = False
     rank_after_term: int = 0
     muster_out: MusterOut | None = Field(default_factory=MusterOut)

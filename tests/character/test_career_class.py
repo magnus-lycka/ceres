@@ -271,11 +271,13 @@ class TestCareerDataCoverageGaps:
         from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 
         army = load_careers()['Army']
+        infantry = army.assignment('Infantry')
+        assert infantry is not None
         proj = CharacterProjection(
             character_id=1,
             summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD),
         )
-        proj.summary.career_terms.append(CareerTerm(career=army, assignment='Infantry', commission=True))
+        proj.summary.career_terms.append(CareerTerm(career=army, assignment=infantry, commission=True))
         assert army.can_attempt_commission(proj) is False
 
     def test_can_attempt_commission_soc_check_after_two_terms(self):
@@ -284,6 +286,8 @@ class TestCareerDataCoverageGaps:
         from ceres.character.domain.characteristics import Chars
 
         army = load_careers()['Army']
+        infantry = army.assignment('Infantry')
+        assert infantry is not None
         proj = CharacterProjection(
             character_id=1,
             summary=CharacterSummary(
@@ -295,8 +299,8 @@ class TestCareerDataCoverageGaps:
         )
         proj.summary.career_terms.extend(
             [
-                CareerTerm(career=army, assignment='Infantry'),
-                CareerTerm(career=army, assignment='Infantry'),
+                CareerTerm(career=army, assignment=infantry),
+                CareerTerm(career=army, assignment=infantry),
             ]
         )
         assert army.can_attempt_commission(proj) is False
