@@ -1,3 +1,4 @@
+from ceres.character.domain.career import PRISONER
 from ceres.character.domain.career.career_events import (
     AdvancementHandler,
     CareerChoiceHandler,
@@ -102,7 +103,7 @@ def test_prisoner_can_be_entered_when_event_log_sends_character_there():
         Event(
             id=4,
             fulfills=(3, 0),
-            handler=CareerEntryHandler(career='Prisoner', assignment='Inmate', qualification_roll=0),
+            handler=CareerEntryHandler(career=PRISONER, assignment=PRISONER.assignment('Inmate'), qualification_roll=0),
         ),
     ]
 
@@ -129,7 +130,7 @@ def _enter_prisoner() -> list:
         Event(
             id=4,
             fulfills=(3, 0),
-            handler=CareerEntryHandler(career='Prisoner', assignment='Inmate', qualification_roll=0),
+            handler=CareerEntryHandler(career=PRISONER, assignment=PRISONER.assignment('Inmate'), qualification_roll=0),
         ),
         Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=WorkerProfession())),
         Event(id=6, fulfills=(4, 1), handler=ParoleRollHandler(roll=3)),  # PT = 5

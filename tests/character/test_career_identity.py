@@ -1,5 +1,6 @@
 """Tests for index-based career/assignment identity (replacing string identity checks)."""
 
+from ceres.character.domain.career import NOBLE, SCOUT
 from ceres.character.domain.career.career_events import (
     AdvancementHandler,
     CareerEntryHandler,
@@ -156,7 +157,7 @@ class TestCareerTermIndex:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
         ]
         projection = replay(1, events)
@@ -169,7 +170,7 @@ class TestCareerTermIndex:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Surveyor', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Surveyor'), qualification_roll=7),
             ),
         ]
         projection = replay(1, events)
@@ -181,7 +182,7 @@ class TestCareerTermIndex:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Explorer', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Explorer'), qualification_roll=7),
             ),
         ]
         projection = replay(1, events)
@@ -195,7 +196,7 @@ class TestCurrentAssignment:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
         ]
         projection = replay(1, events)
@@ -208,7 +209,7 @@ class TestCurrentAssignment:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Surveyor', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Surveyor'), qualification_roll=7),
             ),
         ]
         projection = replay(1, events)
@@ -222,7 +223,9 @@ class TestCurrentAssignment:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Noble', assignment='Administrator', qualification_roll=11),
+                handler=CareerEntryHandler(
+                    career=NOBLE, assignment=NOBLE.assignment('Administrator'), qualification_roll=11
+                ),
             ),
         ]
         projection = replay(1, events)
@@ -236,7 +239,9 @@ class TestCurrentAssignment:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Noble', assignment='Dilettante', qualification_roll=11),
+                handler=CareerEntryHandler(
+                    career=NOBLE, assignment=NOBLE.assignment('Dilettante'), qualification_roll=11
+                ),
             ),
         ]
         projection = replay(1, events)
@@ -272,7 +277,7 @@ class TestAdvancementEventUsesSpecialMethod:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=8)),
             Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),

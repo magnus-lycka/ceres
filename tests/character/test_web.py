@@ -878,25 +878,28 @@ def test_event_from_form_ucp():
 def test_event_from_form_career_choice():
     from starlette.datastructures import FormData
 
+    from ceres.character.domain.career import SCOUT
     from ceres.character.domain.career.career_events import PendingCareerChoice
 
-    pi = PendingCareerChoice(pending_id=(3, 0), instruction='')
+    pi = PendingCareerChoice(pending_id=(3, 0), instruction='', options=[SCOUT])
     form = FormData({'career': 'Scout', 'assignment': 'Courier', 'roll': '8'})
     event = pi.event_from_form(form)
     assert isinstance(event.handler, CareerEntryHandler)
-    assert event.career == 'Scout'
-    assert event.assignment == 'Courier'
+    assert event.career.name == 'Scout'
+    assert event.assignment.name == 'Courier'
     assert event.qualification_roll == 8
 
 
 def test_event_from_form_career_choice_missing_assignment_raises():
     from starlette.datastructures import FormData
 
+    from ceres.character.domain.career import CITIZEN
     from ceres.character.domain.career.career_events import PendingCareerChoice
+    from ceres.character.mechanism.errors import ReplayError
 
-    pi = PendingCareerChoice(pending_id=(3, 0), instruction='')
+    pi = PendingCareerChoice(pending_id=(3, 0), instruction='', options=[CITIZEN])
     form = FormData({'career': 'Citizen', 'assignment': '', 'roll': '8'})
-    with pytest.raises(ValueError, match="Missing assignment for career 'Citizen'"):
+    with pytest.raises(ReplayError, match='Unknown assignment'):
         pi.event_from_form(form)
 
 

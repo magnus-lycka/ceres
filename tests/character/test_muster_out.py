@@ -2,6 +2,7 @@
 
 import pytest
 
+from ceres.character.domain.career import AGENT, ARMY, CITIZEN, SCHOLAR, SCOUT
 from ceres.character.domain.career.career_data import BenefitRollDm
 from ceres.character.domain.career.career_events import (
     AdvancementHandler,
@@ -69,7 +70,7 @@ def _setup_through_3_terms_reenlist() -> list:
         Event(
             id=4,
             fulfills=(3, 0),
-            handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+            handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
         ),
         Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
         Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),
@@ -111,7 +112,7 @@ def _setup_through_reenlist_false() -> list:
         Event(
             id=4,
             fulfills=(3, 0),
-            handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+            handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
         ),
         Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
         Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),
@@ -217,7 +218,7 @@ class TestMusterOut:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
             Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),
@@ -251,7 +252,7 @@ class TestMusterOut:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
             Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),
@@ -280,7 +281,7 @@ class TestMusterOut:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
             Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),
@@ -301,7 +302,7 @@ class TestMusterOut:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
             Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),
@@ -325,7 +326,7 @@ class TestMusterOut:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
             Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),
@@ -358,7 +359,9 @@ class TestMusterOut:
             Event(
                 id=10,
                 fulfills=(9, 0),
-                handler=CareerEntryHandler(career='Citizen', assignment='Colonist', qualification_roll=12),
+                handler=CareerEntryHandler(
+                    career=CITIZEN, assignment=CITIZEN.assignment('Colonist'), qualification_roll=12
+                ),
             ),
             Event(id=11, fulfills=(10, 0), handler=SkillChoiceHandler(skill=JackOfAllTrades())),
             Event(id=12, fulfills=(11, 0), handler=SurviveHandler(roll=7)),
@@ -390,7 +393,9 @@ class TestMusterOut:
             Event(
                 id=10,
                 fulfills=(9, 0),
-                handler=CareerEntryHandler(career='Citizen', assignment='Colonist', qualification_roll=12),
+                handler=CareerEntryHandler(
+                    career=CITIZEN, assignment=CITIZEN.assignment('Colonist'), qualification_roll=12
+                ),
             ),
             Event(id=11, fulfills=(10, 0), handler=SkillChoiceHandler(skill=JackOfAllTrades())),
             Event(id=12, fulfills=(11, 0), handler=SurviveHandler(roll=7)),
@@ -403,7 +408,7 @@ class TestMusterOut:
             Event(
                 id=17,
                 fulfills=(16, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
             Event(id=18, fulfills=(17, 0), handler=SurviveHandler(roll=7)),
             Event(id=19, fulfills=(18, 0), handler=TermEventHandler(roll=5)),
@@ -425,7 +430,7 @@ class TestMusterOut:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
             Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),
@@ -456,7 +461,7 @@ class TestMusterOut:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=3)),  # fail survive
             Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=5)),  # Scout mishap 5: no effects, ejected
@@ -473,7 +478,7 @@ class TestMusterOut:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
             Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),
@@ -497,7 +502,9 @@ class TestMusterOut:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scholar', assignment='Field Researcher', qualification_roll=5),
+                handler=CareerEntryHandler(
+                    career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
+                ),
             ),
             Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
@@ -517,7 +524,9 @@ class TestMusterOut:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scholar', assignment='Field Researcher', qualification_roll=5),
+                handler=CareerEntryHandler(
+                    career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
+                ),
             ),
             Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
@@ -538,7 +547,9 @@ class TestMusterOut:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scholar', assignment='Field Researcher', qualification_roll=5),
+                handler=CareerEntryHandler(
+                    career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
+                ),
             ),
             Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
@@ -559,7 +570,9 @@ class TestMusterOut:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scholar', assignment='Field Researcher', qualification_roll=5),
+                handler=CareerEntryHandler(
+                    career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
+                ),
             ),
             Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
@@ -628,7 +641,7 @@ def _agent_one_term_muster_out() -> list:
         Event(
             id=4,
             fulfills=(3, 0),
-            handler=CareerEntryHandler(career='Agent', assignment='Intelligence', qualification_roll=5),
+            handler=CareerEntryHandler(career=AGENT, assignment=AGENT.assignment('Intelligence'), qualification_roll=5),
         ),
         Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=6)),
         Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=4)),
@@ -648,7 +661,9 @@ class TestCareerRunContinuity:
             Event(
                 id=10,
                 fulfills=(9, 0),
-                handler=CareerEntryHandler(career='Agent', assignment='Corporate', qualification_roll=5),
+                handler=CareerEntryHandler(
+                    career=AGENT, assignment=AGENT.assignment('Corporate'), qualification_roll=5
+                ),
             ),
         ]
         projection = replay(1, events)
@@ -664,7 +679,7 @@ class TestCareerRunContinuity:
             Event(
                 id=10,
                 fulfills=(9, 0),
-                handler=CareerEntryHandler(career='Army', assignment='Support', qualification_roll=7),
+                handler=CareerEntryHandler(career=ARMY, assignment=ARMY.assignment('Support'), qualification_roll=7),
             ),
         ]
         projection = replay(1, events)
@@ -681,7 +696,7 @@ class TestCareerRunContinuity:
             Event(
                 id=10,
                 fulfills=(9, 0),
-                handler=CareerEntryHandler(career='Army', assignment='Support', qualification_roll=1),
+                handler=CareerEntryHandler(career=ARMY, assignment=ARMY.assignment('Support'), qualification_roll=1),
             ),
         ]
         projection = replay(1, events)
@@ -700,14 +715,14 @@ class TestCareerRunContinuity:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=3)),  # fail END 7+
             Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=5)),  # Scout mishap 5: no effects, ejected
             Event(
                 id=7,
                 fulfills=(6, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
         ]
         with pytest.raises(ReplayError, match='ejected'):
@@ -720,14 +735,18 @@ class TestCareerRunContinuity:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Agent', assignment='Intelligence', qualification_roll=5),
+                handler=CareerEntryHandler(
+                    career=AGENT, assignment=AGENT.assignment('Intelligence'), qualification_roll=5
+                ),
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=3)),  # fail END 6+
             Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=4)),  # Agent mishap 4: Enemy + Deception 1, ejected
             Event(
                 id=7,
                 fulfills=(6, 0),
-                handler=CareerEntryHandler(career='Agent', assignment='Corporate', qualification_roll=5),
+                handler=CareerEntryHandler(
+                    career=AGENT, assignment=AGENT.assignment('Corporate'), qualification_roll=5
+                ),
             ),
         ]
         with pytest.raises(ReplayError, match='ejected'):
@@ -746,7 +765,7 @@ class TestCareerRunContinuity:
             Event(
                 id=10,
                 fulfills=(9, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
         ]
         with pytest.raises(ReplayError, match='voluntary'):
@@ -759,7 +778,7 @@ class TestCareerRunContinuity:
             Event(
                 id=10,
                 fulfills=(9, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Surveyor', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Surveyor'), qualification_roll=7),
             ),
         ]
         with pytest.raises(ReplayError, match='voluntary'):
@@ -772,7 +791,9 @@ class TestCareerRunContinuity:
             Event(
                 id=10,
                 fulfills=(9, 0),
-                handler=CareerEntryHandler(career='Agent', assignment='Intelligence', qualification_roll=5),
+                handler=CareerEntryHandler(
+                    career=AGENT, assignment=AGENT.assignment('Intelligence'), qualification_roll=5
+                ),
             ),
         ]
         with pytest.raises(ReplayError, match='voluntary'):
@@ -785,7 +806,9 @@ class TestCareerRunContinuity:
             Event(
                 id=10,
                 fulfills=(9, 0),
-                handler=CareerEntryHandler(career='Agent', assignment='Corporate', qualification_roll=5),
+                handler=CareerEntryHandler(
+                    career=AGENT, assignment=AGENT.assignment('Corporate'), qualification_roll=5
+                ),
             ),
         ]
         projection = replay(1, events)

@@ -1,5 +1,6 @@
 """Tests for the Navy career — line/crew, engineer/gunner, and flight assignments."""
 
+from ceres.character.domain.career import NAVY
 from ceres.character.domain.career.career_events import (
     CareerChoiceHandler,
     CareerEntryHandler,
@@ -59,7 +60,9 @@ def _enter_navy(assignment: str = 'Line/Crew', qual_roll: int = 5) -> list:
         Event(
             id=4,
             fulfills=(3, 0),
-            handler=CareerEntryHandler(career='Navy', assignment=assignment, qualification_roll=qual_roll),
+            handler=CareerEntryHandler(
+                career=NAVY, assignment=NAVY.assignment(assignment), qualification_roll=qual_roll
+            ),
         ),
     ]
 
@@ -99,7 +102,9 @@ class TestNavyMishap3:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Navy', assignment='Engineer/Gunner', qualification_roll=5),
+                handler=CareerEntryHandler(
+                    career=NAVY, assignment=NAVY.assignment('Engineer/Gunner'), qualification_roll=5
+                ),
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=4)),  # INT 6+, DM+1, fail with roll 4
             Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=3)),
@@ -115,7 +120,7 @@ class TestNavyMishap3:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Navy', assignment='Flight', qualification_roll=5),
+                handler=CareerEntryHandler(career=NAVY, assignment=NAVY.assignment('Flight'), qualification_roll=5),
             ),
             Event(
                 id=5, fulfills=(4, 0), handler=SurviveHandler(roll=6)
@@ -128,7 +133,7 @@ class TestNavyMishap3:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Navy', assignment='Flight', qualification_roll=5),
+                handler=CareerEntryHandler(career=NAVY, assignment=NAVY.assignment('Flight'), qualification_roll=5),
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=5)),  # DEX 7+, DM+1, 5 → 6 < 7 — fail
             Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=3)),

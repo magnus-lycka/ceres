@@ -1,5 +1,6 @@
 """Tests for the Marines career — support, ground assault, and star marine assignments."""
 
+from ceres.character.domain.career import MARINES
 from ceres.character.domain.career.career_events import (
     CareerChoiceHandler,
     CareerEntryHandler,
@@ -64,7 +65,9 @@ def _enter_marines(assignment: str = 'Support', qual_roll: int = 6) -> list:
         Event(
             id=4,
             fulfills=(3, 0),
-            handler=CareerEntryHandler(career='Marines', assignment=assignment, qualification_roll=qual_roll),
+            handler=CareerEntryHandler(
+                career=MARINES, assignment=MARINES.assignment(assignment), qualification_roll=qual_roll
+            ),
         ),
     ]
 

@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import pytest
 
 from ceres.character.domain.benefits import SCOUT_SHIP
+from ceres.character.domain.career import SCOUT
 from ceres.character.domain.career.career_events import (
     AdvancementHandler,
     AssignmentChangeChoiceHandler,
@@ -58,7 +59,7 @@ def _events() -> list:
         Event(
             id=4,
             fulfills=(3, 0),
-            handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+            handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
         ),
         Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
         Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),  # benefit_dm +1 to muster out roll

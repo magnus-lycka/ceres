@@ -1,6 +1,7 @@
 from typing import Any
 
 from ceres.character.domain import skills as character_skills
+from ceres.character.domain.career import ARMY
 from ceres.character.domain.career.career_events import CareerEntryHandler
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.characteristics import Chars
@@ -155,9 +156,9 @@ def test_auto_qualify_effect_bypasses_qualification_roll():
 
     projection = _projection(characteristics={Chars.END: 5})
     projection.auto_qualify_careers.append('Army')
-    Event(id=6, handler=CareerEntryHandler(career='Army', assignment='Infantry', qualification_roll=0)).apply(
-        projection
-    )
+    Event(
+        id=6, handler=CareerEntryHandler(career=ARMY, assignment=ARMY.assignment('Infantry'), qualification_roll=0)
+    ).apply(projection)
 
     assert projection.summary.current_career is not None
     assert projection.summary.current_career.name == 'Army'

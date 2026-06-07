@@ -1,5 +1,6 @@
 """Tests for the Rogue career — thief, enforcer, and pirate assignments."""
 
+from ceres.character.domain.career import ROGUE
 from ceres.character.domain.career.career_events import (
     CareerChoiceHandler,
     CareerEntryHandler,
@@ -51,7 +52,9 @@ def _enter_rogue(assignment: str = 'Thief', qual_roll: int = 6) -> list:
         Event(
             id=4,
             fulfills=(3, 0),
-            handler=CareerEntryHandler(career='Rogue', assignment=assignment, qualification_roll=qual_roll),
+            handler=CareerEntryHandler(
+                career=ROGUE, assignment=ROGUE.assignment(assignment), qualification_roll=qual_roll
+            ),
         ),
     ]
 

@@ -1,5 +1,6 @@
 """Tests for the Noble career — administrator, diplomat, and dilettante assignments."""
 
+from ceres.character.domain.career import NOBLE
 from ceres.character.domain.career.career_events import (
     CareerChoiceHandler,
     CareerEntryHandler,
@@ -49,7 +50,9 @@ def _enter_noble(assignment: str = 'Administrator', qual_roll: int = 11) -> list
         Event(
             id=4,
             fulfills=(3, 0),
-            handler=CareerEntryHandler(career='Noble', assignment=assignment, qualification_roll=qual_roll),
+            handler=CareerEntryHandler(
+                career=NOBLE, assignment=NOBLE.assignment(assignment), qualification_roll=qual_roll
+            ),
         ),
     ]
 

@@ -48,51 +48,32 @@ def _skill_option_label(opt: Any) -> str:
 
 class CareerEntryHandler(EventHandlerBase):
     kind: Literal['career_event'] = 'career_event'
-    career: str
-    assignment: str
+    career: CareerData
+    assignment: AssignmentData
     qualification_roll: int  # 2D result before characteristic DM
 
     def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
-        from ceres.character.domain.career.loader import load_careers
-
-        careers = load_careers()
-        career = careers.get(self.career)
-        if career is None:
-            raise ReplayError(f'Unknown career: {self.career!r}')
-        assignment = career.assignment(self.assignment)
-        if assignment is None:
-            raise ReplayError(f'Unknown assignment {self.assignment!r} for career {self.career!r}')
-        career.start_career(projection, assignment, event.id, self.qualification_roll)
+        self.career.start_career(projection, self.assignment, event.id, self.qualification_roll)
 
 
 class DraftHandler(EventHandlerBase):
     kind: Literal['draft_event'] = 'draft_event'
-    career: str
-    assignment: str | None = None
+    career: CareerData
+    assignment: AssignmentData | None = None
 
     def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
-        from ceres.character.domain.career.loader import load_careers
-
         if projection.summary.drafted:
             raise ReplayError('A character may only enter the draft once')
-        career = load_careers().get(self.career)
-        if career is None:
-            raise ReplayError(f'Unknown career: {self.career!r}')
-        career.start_draft(projection, event.id, self.assignment)
+        self.career.start_draft(projection, event.id, self.assignment)
 
 
 class DraftAssignmentHandler(EventHandlerBase):
     kind: Literal['draft_assignment'] = 'draft_assignment'
-    career: str
-    assignment: str
+    career: CareerData
+    assignment: AssignmentData
 
     def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
-        from ceres.character.domain.career.loader import load_careers
-
-        career = load_careers().get(self.career)
-        if career is None:
-            raise ReplayError(f'Unknown career: {self.career!r}')
-        career.start_draft(projection, event.id, self.assignment)
+        self.career.start_draft(projection, event.id, self.assignment)
 
 
 # ── Survive ────────────────────────────────────────────────────────────────────
@@ -927,27 +908,24 @@ class AssignmentChangeChoiceHandler(EventHandlerBase):
 
 class SwitchAssignmentHandler(EventHandlerBase):
     kind: Literal['switch_assignment'] = 'switch_assignment'
-    assignment: str
+    assignment: AssignmentData
     qualification_roll: int
 
     def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
 
         career = projection.get_current_career()
-        new_assignment = career.assignment(self.assignment)
-        if new_assignment is None:
-            raise ReplayError(f'Unknown assignment {self.assignment!r} in career {career.name!r}')
         char = career.qualification.characteristic
         target = career.qualification.target
         dm = characteristic_dm(projection.summary.characteristics.get(char, 0))
         if self.qualification_roll + dm >= target:
-            projection.summary.current_assignment = new_assignment
+            projection.summary.current_assignment = self.assignment
             _start_new_career_term(projection, career, event.id)
         else:
             projection.pending_inputs.append(
                 PendingReenlist(
                     pending_id=(event.id, 0),
                     instruction=(
-                        f'Assignment change to {self.assignment!r} failed — reenlist with '
+                        f'Assignment change to {self.assignment.name!r} failed — reenlist with '
                         f'{projection.summary.current_assignment!r} or muster out?'
                     ),
                 )
@@ -1369,10 +1347,14 @@ class PendingCareerChoice(PendingInputBase):
             precareer = form_str(form, 'precareer', 'University')
             roll = form_int(form, 'roll', 7)
             return Event(fulfills=self.pending_id, handler=PreCareerEntryHandler(precareer=precareer, roll=roll))
-        career = form_str(form, 'career')
-        assignment = form_str(form, 'assignment')
-        if not assignment:
-            raise ValueError(f'Missing assignment for career {career!r}')
+        career_name = form_str(form, 'career')
+        assignment_name = form_str(form, 'assignment')
+        career = next((c for c in self.options if c.name == career_name), None)
+        if career is None:
+            raise ReplayError(f'Unknown career {career_name!r}')
+        assignment = career.assignment(assignment_name)
+        if assignment is None:
+            raise ReplayError(f'Unknown assignment {assignment_name!r} for career {career_name!r}')
         roll = form_int(form, 'roll', 2)
         return Event(
             fulfills=self.pending_id,
@@ -1400,11 +1382,16 @@ class PendingDraftChoice(PendingInputBase):
                 key=lambda c: c.name,
             )
             career = draft_careers[max(0, min(roll, len(draft_careers)) - 1)]
-            return Event(fulfills=self.pending_id, handler=DraftHandler(career=career.name))
-        assignment = form_str(form, 'assignment', 'Wanderer')
+            return Event(fulfills=self.pending_id, handler=DraftHandler(career=career))
+        from ceres.character.domain.career.drifter import DRIFTER
+
+        assignment_name = form_str(form, 'assignment', 'Wanderer')
+        assignment = DRIFTER.assignment(assignment_name)
+        if assignment is None:
+            raise ReplayError(f'Unknown Drifter assignment {assignment_name!r}')
         return Event(
             fulfills=self.pending_id,
-            handler=CareerEntryHandler(career='Drifter', assignment=assignment, qualification_roll=2),
+            handler=CareerEntryHandler(career=DRIFTER, assignment=assignment, qualification_roll=2),
         )
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
@@ -1420,9 +1407,13 @@ class PendingDraftAssignmentChoice(PendingInputBase):
     def event_from_form(self, form: Any) -> Any:
         from ceres.character.mechanism.event_base import Event
 
+        assignment_name = form_str(form, 'assignment')
+        assignment = self.career.assignment(assignment_name)
+        if assignment is None:
+            raise ReplayError(f'Unknown assignment {assignment_name!r} for {self.career.name!r}')
         return Event(
             fulfills=self.pending_id,
-            handler=DraftAssignmentHandler(career=self.career.name, assignment=form_str(form, 'assignment')),
+            handler=DraftAssignmentHandler(career=self.career, assignment=assignment),
         )
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
@@ -1602,7 +1593,10 @@ class PendingSwitchAssignment(PendingInputBase):
     def event_from_form(self, form: Any) -> Any:
         from ceres.character.mechanism.event_base import Event
 
-        assignment = form_str(form, 'assignment', self.options[0].name if self.options else '')
+        name = form_str(form, 'assignment', self.options[0].name if self.options else '')
+        assignment = next((a for a in self.options if a.name == name), None)
+        if assignment is None:
+            raise ReplayError(f'Unknown assignment {name!r}')
         roll = form_int(form, 'roll', 2)
         return Event(
             fulfills=self.pending_id,

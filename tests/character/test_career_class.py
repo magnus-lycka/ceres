@@ -149,7 +149,7 @@ class TestCareerInState:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
         ]
         projection = replay(1, events)
@@ -163,7 +163,7 @@ class TestCareerInState:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
         ]
         projection = replay(1, events)
@@ -175,7 +175,7 @@ class TestCareerInState:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
         ]
         projection = replay(1, events)
@@ -189,7 +189,7 @@ class TestCareerInState:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
         ]
         projection = replay(1, events)
@@ -201,7 +201,7 @@ class TestCareerInState:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=8)),
         ]
@@ -216,7 +216,7 @@ class TestCareerInState:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=8)),
             Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),

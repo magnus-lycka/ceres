@@ -1,5 +1,6 @@
 """Tests for homeworld change events, pending inputs, and triggers."""
 
+from ceres.character.domain.career import CITIZEN, DRIFTER
 from ceres.character.domain.career.career_events import (
     CareerEntryHandler,
     LifeEventHandler,
@@ -229,7 +230,12 @@ def _drifter_at_life_event_9() -> list:
     return [
         Event(id=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')),
         Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='786000')),
-        Event(id=3, handler=CareerEntryHandler(career='Drifter', assignment='Wanderer', qualification_roll=10)),
+        Event(
+            id=3,
+            handler=CareerEntryHandler(
+                career=DRIFTER, assignment=DRIFTER.assignment('Wanderer'), qualification_roll=10
+            ),
+        ),
         Event(id=4, fulfills=(3, 0), handler=SurviveHandler(roll=10)),
         Event(id=5, fulfills=(4, 0), handler=TermEventHandler(roll=7)),  # life event
         Event(id=6, fulfills=(5, 0), handler=LifeEventHandler(roll=9)),  # You move to another world.
@@ -290,7 +296,10 @@ def _citizen_worker_to_survive() -> list:
     return [
         Event(id=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')),
         Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='786000')),
-        Event(id=3, handler=CareerEntryHandler(career='Citizen', assignment='Worker', qualification_roll=10)),
+        Event(
+            id=3,
+            handler=CareerEntryHandler(career=CITIZEN, assignment=CITIZEN.assignment('Worker'), qualification_roll=10),
+        ),
         Event(id=4, fulfills=(3, 0), handler=SkillChoiceHandler(skill=WorkerProfession())),
         Event(id=5, fulfills=(3, 1), handler=SkillChoiceHandler(skill=LifeScience())),
     ]

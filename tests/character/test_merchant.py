@@ -1,5 +1,6 @@
 """Tests for the Merchant career — merchant marine, free trader, and broker assignments."""
 
+from ceres.character.domain.career import MERCHANT
 from ceres.character.domain.career.career_events import (
     CareerChoiceHandler,
     CareerEntryHandler,
@@ -59,7 +60,9 @@ def _enter_merchant(assignment: str = 'Merchant Marine', qual_roll: int = 3) -> 
         Event(
             id=4,
             fulfills=(3, 0),
-            handler=CareerEntryHandler(career='Merchant', assignment=assignment, qualification_roll=qual_roll),
+            handler=CareerEntryHandler(
+                career=MERCHANT, assignment=MERCHANT.assignment(assignment), qualification_roll=qual_roll
+            ),
         ),
     ]
 

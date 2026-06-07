@@ -1,5 +1,6 @@
 """Tests for CareerTerm narrative fields: event, mishap, prison."""
 
+from ceres.character.domain.career import ARMY, ROGUE
 from ceres.character.domain.career.career_events import (
     CareerEntryHandler,
     MishapHandler,
@@ -30,7 +31,9 @@ def _enter_army() -> list:
     return [
         *_setup(),
         Event(
-            id=4, fulfills=(3, 0), handler=CareerEntryHandler(career='Army', assignment='Support', qualification_roll=5)
+            id=4,
+            fulfills=(3, 0),
+            handler=CareerEntryHandler(career=ARMY, assignment=ARMY.assignment('Support'), qualification_roll=5),
         ),
     ]
 
@@ -40,7 +43,9 @@ def _enter_rogue() -> list:
     return [
         *_setup(),
         Event(
-            id=4, fulfills=(3, 0), handler=CareerEntryHandler(career='Rogue', assignment='Thief', qualification_roll=6)
+            id=4,
+            fulfills=(3, 0),
+            handler=CareerEntryHandler(career=ROGUE, assignment=ROGUE.assignment('Thief'), qualification_roll=6),
         ),
     ]
 

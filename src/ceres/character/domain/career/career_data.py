@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic.functional_validators import ModelWrapValidatorHandler
 
 from ceres.character.domain.benefits import AnyBenefit, ItemBenefit
 from ceres.character.domain.characteristics import Chars, ConnectionKind, characteristic_dm
@@ -283,9 +284,11 @@ class CareerData(TermData):
         if isinstance(type_val, str) and type_val:
             CareerData._registry[type_val] = cls
 
-    @model_validator(mode='before')
+    @model_validator(mode='wrap')
     @classmethod
-    def _from_registry(cls, data: Any) -> Any:
+    def _from_registry(cls, data: Any, handler: ModelWrapValidatorHandler) -> CareerData:
+        if isinstance(data, CareerData):
+            return data
         if isinstance(data, dict) and 'type' in data:
             from ceres.character.domain.career.loader import load_careers
 
@@ -293,7 +296,7 @@ class CareerData(TermData):
             concrete = CareerData._registry.get(data['type'])
             if concrete is not None:
                 return concrete()
-        return data
+        return handler(data)
 
     events: ClassVar[dict[int, CareerEventEntry]]
     name: ClassVar[str]
@@ -356,10 +359,10 @@ class CareerData(TermData):
     def does_draft(self) -> bool:
         return bool(self.draft_assignments)
 
-    def start_draft(self, projection, event_id: int, assignment_name: str | None = None) -> None:
+    def start_draft(self, projection, event_id: int, assignment: AssignmentData | None = None) -> None:
         from ceres.character.domain.career.career_events import PendingDraftAssignmentChoice
 
-        if assignment_name is None and len(self.draft_assignments) > 1:
+        if assignment is None and len(self.draft_assignments) > 1:
             projection.pending_inputs.append(
                 PendingDraftAssignmentChoice(
                     pending_id=(event_id, 0),
@@ -369,15 +372,14 @@ class CareerData(TermData):
             )
             return
 
-        selected = assignment_name or self.draft_assignments[0]
-        assignment = self.assignment(selected)
-        if assignment is None:
-            raise ValueError(f'Unknown draft assignment {selected!r} for {self.name}')
+        resolved = assignment or self.assignment(self.draft_assignments[0])
+        if resolved is None:
+            raise ValueError(f'Unknown draft assignment for {self.name}')
 
         projection.summary.drafted = True
         projection.summary.current_career = self
-        projection.summary.current_assignment = assignment
-        self.start_new_term(projection, assignment, event_id)
+        projection.summary.current_assignment = resolved
+        self.start_new_term(projection, resolved, event_id)
 
     def prior_terms(self, terms, assignment: AssignmentData) -> list:
         return [term for term in terms if type(term.career) is type(self)]

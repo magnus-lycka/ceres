@@ -1,5 +1,6 @@
 """Tests for Scout career events, mishaps, and assignment table corrections."""
 
+from ceres.character.domain.career import SCOUT
 from ceres.character.domain.career.career_data import AdvancementDmOption
 from ceres.character.domain.career.career_events import (
     AdvancementDmChoiceHandler,
@@ -87,7 +88,7 @@ class TestScoutAmbush:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
             Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=3)),
@@ -168,7 +169,7 @@ class TestScoutEvent8:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
             Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=8)),
@@ -222,7 +223,7 @@ class TestScoutEvent9:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
             Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=9)),
@@ -268,7 +269,7 @@ class TestScoutEvent10:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
             Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=10)),
@@ -333,7 +334,7 @@ class TestConnections:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=3)),  # fail
         ]
@@ -387,7 +388,7 @@ class TestConnections:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
             Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=3)),
@@ -408,7 +409,7 @@ class TestMishapWithChoice:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=3)),  # fail
         ]
@@ -459,7 +460,7 @@ class TestScoutEvent11:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
             Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=11)),
@@ -507,7 +508,7 @@ class TestNormalInjury:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=3)),  # fail
         ]
@@ -534,7 +535,7 @@ class TestScoutMishap6InjuryTable:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=3)),  # fail survive
         ]
@@ -561,7 +562,7 @@ class TestScoutAssignmentTableCorrections:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment=assignment, qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment(assignment), qualification_roll=7),
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
             Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),

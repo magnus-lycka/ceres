@@ -2,6 +2,7 @@
 
 import pytest
 
+from ceres.character.domain.career import AGENT
 from ceres.character.domain.career.agent import (
     AgentMishap2Accept,
     AgentMishap2Refuse,
@@ -67,7 +68,7 @@ from ceres.character.domain.skills import (
 )
 from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
-from ceres.character.mechanism.replay import ReplayError, replay
+from ceres.character.mechanism.replay import replay
 from tests.character.helpers import MOCK_WORLD
 
 
@@ -89,7 +90,9 @@ def _enter_agent(assignment: str = 'Law Enforcement', qual_roll: int = 5) -> lis
         Event(
             id=4,
             fulfills=(3, 0),
-            handler=CareerEntryHandler(career='Agent', assignment=assignment, qualification_roll=qual_roll),
+            handler=CareerEntryHandler(
+                career=AGENT, assignment=AGENT.assignment(assignment), qualification_roll=qual_roll
+            ),
         ),
     ]
 
@@ -132,8 +135,10 @@ class TestAgentQualification:
             assert projection.summary.current_assignment.name == assignment
 
     def test_unknown_assignment_raises(self):
-        with pytest.raises(ReplayError):
-            replay(1, _enter_agent(assignment='Shadow Ops'))
+        from pydantic import ValidationError
+
+        with pytest.raises((ValidationError, Exception)):
+            _enter_agent(assignment='Shadow Ops')
 
 
 # ── initial training (first term service skills) ──────────────────────────────

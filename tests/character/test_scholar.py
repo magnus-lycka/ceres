@@ -1,5 +1,6 @@
 """Tests for Scholar career events, mishaps, qualification, and rank bonuses."""
 
+from ceres.character.domain.career import SCHOLAR, SCOUT
 from ceres.character.domain.career.career_data import AdvancementDmOption
 from ceres.character.domain.career.career_events import (
     AdvancementDmChoiceHandler,
@@ -124,7 +125,9 @@ class TestScholarInitialTraining:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scholar', assignment='Field Researcher', qualification_roll=5),
+                handler=CareerEntryHandler(
+                    career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
+                ),
             ),
         ]
 
@@ -215,7 +218,7 @@ class TestScholarInitialTraining:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
         ]
         projection = replay(1, events)
@@ -232,7 +235,9 @@ class TestScholarTerm:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scholar', assignment='Field Researcher', qualification_roll=5),
+                handler=CareerEntryHandler(
+                    career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
+                ),
             ),
             Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
@@ -400,7 +405,9 @@ class TestScholarEvent6:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scholar', assignment='Field Researcher', qualification_roll=5),
+                handler=CareerEntryHandler(
+                    career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
+                ),
             ),
             Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
@@ -464,7 +471,9 @@ class TestScholarMishap3:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scholar', assignment='Field Researcher', qualification_roll=5),
+                handler=CareerEntryHandler(
+                    career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
+                ),
             ),
             Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
@@ -558,7 +567,9 @@ class TestScholarMishap5:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scholar', assignment='Field Researcher', qualification_roll=5),
+                handler=CareerEntryHandler(
+                    career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
+                ),
             ),
             Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
@@ -671,7 +682,9 @@ class TestScholarEvent3:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scholar', assignment='Field Researcher', qualification_roll=5),
+                handler=CareerEntryHandler(
+                    career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
+                ),
             ),
             Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
@@ -785,7 +798,9 @@ class TestScholarEvent8:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scholar', assignment='Field Researcher', qualification_roll=5),
+                handler=CareerEntryHandler(
+                    career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
+                ),
             ),
             Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
@@ -900,7 +915,9 @@ class TestScholarEvent11:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scholar', assignment='Field Researcher', qualification_roll=5),
+                handler=CareerEntryHandler(
+                    career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
+                ),
             ),
             Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
@@ -969,7 +986,9 @@ class TestFromTableInjury:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scholar', assignment='Field Researcher', qualification_roll=5),
+                handler=CareerEntryHandler(
+                    career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
+                ),
             ),
             Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
@@ -1114,7 +1133,9 @@ class TestScholarQualificationInt:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scholar', assignment='Field Researcher', qualification_roll=5),
+                handler=CareerEntryHandler(
+                    career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
+                ),
             ),
         ]
         projection = replay(1, events)
@@ -1138,7 +1159,9 @@ class TestScholarQualificationInt:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scholar', assignment='Field Researcher', qualification_roll=5),
+                handler=CareerEntryHandler(
+                    career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
+                ),
             ),
         ]
         projection = replay(1, events)
@@ -1155,7 +1178,9 @@ class TestScholarLabShip:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scholar', assignment='Field Researcher', qualification_roll=5),
+                handler=CareerEntryHandler(
+                    career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
+                ),
             ),
             Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
@@ -1195,7 +1220,9 @@ class TestScholarScienceChoicesInTables:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scholar', assignment=assignment, qualification_roll=5),
+                handler=CareerEntryHandler(
+                    career=SCHOLAR, assignment=SCHOLAR.assignment(assignment), qualification_roll=5
+                ),
             ),
             Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
@@ -1283,7 +1310,9 @@ class TestScholarMishap3ScienceChoice:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scholar', assignment='Field Researcher', qualification_roll=5),
+                handler=CareerEntryHandler(
+                    career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
+                ),
             ),
             Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
@@ -1332,7 +1361,9 @@ class TestPhysicianRankBonuses:
             Event(
                 id=4,
                 fulfills=(3, 0),
-                handler=CareerEntryHandler(career='Scholar', assignment=assignment, qualification_roll=5),
+                handler=CareerEntryHandler(
+                    career=SCHOLAR, assignment=SCHOLAR.assignment(assignment), qualification_roll=5
+                ),
             ),
             Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),

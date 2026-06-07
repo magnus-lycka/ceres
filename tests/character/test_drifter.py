@@ -1,5 +1,6 @@
 """Tests for the Drifter career — barbarian, wanderer, and scavenger assignments."""
 
+from ceres.character.domain.career import DRIFTER
 from ceres.character.domain.career.career_events import (
     CareerChoiceHandler,
     CareerEntryHandler,
@@ -58,7 +59,9 @@ def _enter_drifter(assignment: str = 'Wanderer', qual_roll: int = 1) -> list:
         Event(
             id=4,
             fulfills=(3, 0),
-            handler=CareerEntryHandler(career='Drifter', assignment=assignment, qualification_roll=qual_roll),
+            handler=CareerEntryHandler(
+                career=DRIFTER, assignment=DRIFTER.assignment(assignment), qualification_roll=qual_roll
+            ),
         ),
     ]
 
@@ -88,7 +91,7 @@ def test_drifter_first_career_basic_training_uses_assignment_skills():
         Event(
             id=4,
             fulfills=(3, 0),
-            handler=CareerEntryHandler(career='Drifter', assignment='Wanderer', qualification_roll=0),
+            handler=CareerEntryHandler(career=DRIFTER, assignment=DRIFTER.assignment('Wanderer'), qualification_roll=0),
         ),
     ]
 
@@ -105,7 +108,9 @@ def test_drifter_basic_training_defers_survival_for_assignment_skill_choices():
         Event(
             id=4,
             fulfills=(3, 0),
-            handler=CareerEntryHandler(career='Drifter', assignment='Scavenger', qualification_roll=0),
+            handler=CareerEntryHandler(
+                career=DRIFTER, assignment=DRIFTER.assignment('Scavenger'), qualification_roll=0
+            ),
         ),
     ]
 

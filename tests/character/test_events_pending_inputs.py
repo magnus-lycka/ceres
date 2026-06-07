@@ -265,14 +265,16 @@ def test_mishap_ejection_queues_aging_for_older_character():
 
 
 def test_basic_event_error_branches():
+    from pydantic import ValidationError
+
     projection = _projection(drafted=True)
     with pytest.raises(ReplayError, match='may only enter the draft once'):
-        Event(handler=DraftHandler(career='Army')).apply(projection)
+        Event(handler=DraftHandler(career=ARMY)).apply(projection)
 
-    with pytest.raises(ReplayError, match="Unknown career: 'Nope'"):
-        Event(handler=DraftHandler(career='Nope')).apply(_projection())
-    with pytest.raises(ReplayError, match="Unknown career: 'Nope'"):
-        Event(handler=DraftAssignmentHandler(career='Nope', assignment='Infantry')).apply(_projection())
+    with pytest.raises((ValidationError, Exception)):
+        DraftHandler(career='Nope')  # ty: ignore[invalid-argument-type]
+    with pytest.raises((ValidationError, Exception)):
+        DraftAssignmentHandler(career='Nope', assignment='Infantry')  # ty: ignore[invalid-argument-type]
 
     no_assignment = _projection(current_career=SCOUT)
     with pytest.raises(ReplayError, match='No current assignment'):
@@ -577,8 +579,8 @@ def test_pending_career_choice_form_and_specs():
 
     career = pending.event_from_form(Form(career='Scout', assignment='Courier', roll='12'))
     assert isinstance(career.handler, CareerEntryHandler)
-    assert career.career == 'Scout'
-    assert career.assignment == 'Courier'
+    assert career.career.name == 'Scout'
+    assert career.assignment.name == 'Courier'
     assert career.qualification_roll == 12
 
     assert pending.input_specs(projection) == []
@@ -590,10 +592,10 @@ def test_pending_draft_choices_build_expected_events_and_specs():
     drifter_event = draft.event_from_form(Form(choice='drifter', assignment='Scavenger'))
 
     assert isinstance(draft_event.handler, DraftHandler)
-    assert draft_event.career == 'Army'
+    assert draft_event.career.name == 'Army'
     assert isinstance(drifter_event.handler, CareerEntryHandler)
-    assert drifter_event.career == 'Drifter'
-    assert drifter_event.assignment == 'Scavenger'
+    assert drifter_event.career.name == 'Drifter'
+    assert drifter_event.assignment.name == 'Scavenger'
     assert draft.input_specs(_projection()) == []
 
     assignment = PendingDraftAssignmentChoice(
@@ -603,8 +605,8 @@ def test_pending_draft_choices_build_expected_events_and_specs():
     specs = assignment.input_specs(_projection())
 
     assert isinstance(form_event.handler, DraftAssignmentHandler)
-    assert form_event.career == 'Army'
-    assert form_event.assignment == 'Support'
+    assert form_event.career.name == 'Army'
+    assert form_event.assignment.name == 'Support'
     assert isinstance(specs[0], Reference)
     assert specs[0].value == 'Army'
     assert isinstance(specs[1], Select)

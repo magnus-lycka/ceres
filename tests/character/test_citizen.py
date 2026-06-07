@@ -1,3 +1,4 @@
+from ceres.character.domain.career import CITIZEN, SCOUT
 from ceres.character.domain.career.career_events import (
     AdvancementHandler,
     CareerChoiceHandler,
@@ -68,7 +69,7 @@ def test_citizen_first_career_basic_training_uses_assignment_skills():
         Event(
             id=4,
             fulfills=(3, 0),
-            handler=CareerEntryHandler(career='Citizen', assignment='Worker', qualification_roll=5),
+            handler=CareerEntryHandler(career=CITIZEN, assignment=CITIZEN.assignment('Worker'), qualification_roll=5),
         ),
     ]
 
@@ -84,7 +85,7 @@ def test_citizen_subsequent_career_basic_training_chooses_one_assignment_skill()
         Event(
             id=4,
             fulfills=(3, 0),
-            handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+            handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
         ),
         Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=8)),
         Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),
@@ -93,7 +94,7 @@ def test_citizen_subsequent_career_basic_training_chooses_one_assignment_skill()
         Event(
             id=9,
             fulfills=(8, 0),
-            handler=CareerEntryHandler(career='Citizen', assignment='Worker', qualification_roll=5),
+            handler=CareerEntryHandler(career=CITIZEN, assignment=CITIZEN.assignment('Worker'), qualification_roll=5),
         ),
     ]
 
@@ -112,7 +113,7 @@ def test_citizen_subsequent_career_basic_training_choice_unlocks_survival():
         Event(
             id=4,
             fulfills=(3, 0),
-            handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+            handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
         ),
         Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=8)),
         Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),
@@ -121,7 +122,7 @@ def test_citizen_subsequent_career_basic_training_choice_unlocks_survival():
         Event(
             id=9,
             fulfills=(8, 0),
-            handler=CareerEntryHandler(career='Citizen', assignment='Worker', qualification_roll=5),
+            handler=CareerEntryHandler(career=CITIZEN, assignment=CITIZEN.assignment('Worker'), qualification_roll=5),
         ),
         Event(id=10, fulfills=(9, 0), handler=SkillChoiceHandler(skill=Mechanic())),
     ]
@@ -145,7 +146,9 @@ def _enter_citizen(assignment: str = 'Corporate', qual_roll: int = 4) -> list:
         Event(
             id=4,
             fulfills=(3, 0),
-            handler=CareerEntryHandler(career='Citizen', assignment=assignment, qualification_roll=qual_roll),
+            handler=CareerEntryHandler(
+                career=CITIZEN, assignment=CITIZEN.assignment(assignment), qualification_roll=qual_roll
+            ),
         ),
     ]
 

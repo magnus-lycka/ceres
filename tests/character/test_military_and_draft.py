@@ -1,3 +1,4 @@
+from ceres.character.domain.career import ARMY, MERCHANT
 from ceres.character.domain.career.career_events import (
     CareerEntryHandler,
     CommissionHandler,
@@ -44,7 +45,9 @@ def test_failed_qualification_creates_draft_choice():
         Event(
             id=4,
             fulfills=(3, 0),
-            handler=CareerEntryHandler(career='Merchant', assignment='Merchant Marine', qualification_roll=2),
+            handler=CareerEntryHandler(
+                career=MERCHANT, assignment=MERCHANT.assignment('Merchant Marine'), qualification_roll=2
+            ),
         ),
     ]
 
@@ -71,9 +74,13 @@ def test_draft_event_records_selected_career_and_assignment():
         Event(
             id=4,
             fulfills=(3, 0),
-            handler=CareerEntryHandler(career='Army', assignment='Infantry', qualification_roll=2),
+            handler=CareerEntryHandler(career=ARMY, assignment=ARMY.assignment('Infantry'), qualification_roll=2),
         ),
-        Event(id=5, fulfills=(4, 0), handler=DraftHandler(career='Merchant', assignment='Merchant Marine')),
+        Event(
+            id=5,
+            fulfills=(4, 0),
+            handler=DraftHandler(career=MERCHANT, assignment=MERCHANT.assignment('Merchant Marine')),
+        ),
     ]
 
     projection = replay(1, events)
@@ -91,9 +98,11 @@ def test_draft_to_career_with_multiple_assignments_asks_player_to_choose_assignm
         Event(
             id=4,
             fulfills=(3, 0),
-            handler=CareerEntryHandler(career='Merchant', assignment='Merchant Marine', qualification_roll=2),
+            handler=CareerEntryHandler(
+                career=MERCHANT, assignment=MERCHANT.assignment('Merchant Marine'), qualification_roll=2
+            ),
         ),
-        Event(id=5, fulfills=(4, 0), handler=DraftHandler(career='Army')),
+        Event(id=5, fulfills=(4, 0), handler=DraftHandler(career=ARMY)),
     ]
 
     projection = replay(1, events)
@@ -110,10 +119,14 @@ def test_draft_assignment_choice_starts_selected_assignment():
         Event(
             id=4,
             fulfills=(3, 0),
-            handler=CareerEntryHandler(career='Merchant', assignment='Merchant Marine', qualification_roll=2),
+            handler=CareerEntryHandler(
+                career=MERCHANT, assignment=MERCHANT.assignment('Merchant Marine'), qualification_roll=2
+            ),
         ),
-        Event(id=5, fulfills=(4, 0), handler=DraftHandler(career='Army')),
-        Event(id=6, fulfills=(5, 0), handler=DraftAssignmentHandler(career='Army', assignment='Cavalry')),
+        Event(id=5, fulfills=(4, 0), handler=DraftHandler(career=ARMY)),
+        Event(
+            id=6, fulfills=(5, 0), handler=DraftAssignmentHandler(career=ARMY, assignment=ARMY.assignment('Cavalry'))
+        ),
     ]
 
     projection = replay(1, events)
@@ -131,7 +144,9 @@ def test_merchant_does_not_offer_commission_before_advancement():
         Event(
             id=4,
             fulfills=(3, 0),
-            handler=CareerEntryHandler(career='Merchant', assignment='Merchant Marine', qualification_roll=8),
+            handler=CareerEntryHandler(
+                career=MERCHANT, assignment=MERCHANT.assignment('Merchant Marine'), qualification_roll=8
+            ),
         ),
         Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=8)),
         Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=9)),
@@ -148,7 +163,7 @@ def test_army_first_term_offers_commission_before_advancement():
         Event(
             id=4,
             fulfills=(3, 0),
-            handler=CareerEntryHandler(career='Army', assignment='Infantry', qualification_roll=8),
+            handler=CareerEntryHandler(career=ARMY, assignment=ARMY.assignment('Infantry'), qualification_roll=8),
         ),
         Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=8)),
         Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=9)),
@@ -166,7 +181,7 @@ def test_successful_commission_sets_officer_rank_and_skips_advancement():
         Event(
             id=4,
             fulfills=(3, 0),
-            handler=CareerEntryHandler(career='Army', assignment='Infantry', qualification_roll=8),
+            handler=CareerEntryHandler(career=ARMY, assignment=ARMY.assignment('Infantry'), qualification_roll=8),
         ),
         Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=8)),
         Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=10)),

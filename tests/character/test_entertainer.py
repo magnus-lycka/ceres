@@ -1,5 +1,6 @@
 """Tests for the Entertainer career — artist, journalist, and performer assignments."""
 
+from ceres.character.domain.career import ENTERTAINER
 from ceres.character.domain.career.career_events import (
     CareerChoiceHandler,
     CareerEntryHandler,
@@ -55,7 +56,9 @@ def _enter_entertainer(assignment: str = 'Artist', qual_roll: int = 4) -> list:
         Event(
             id=4,
             fulfills=(3, 0),
-            handler=CareerEntryHandler(career='Entertainer', assignment=assignment, qualification_roll=qual_roll),
+            handler=CareerEntryHandler(
+                career=ENTERTAINER, assignment=ENTERTAINER.assignment(assignment), qualification_roll=qual_roll
+            ),
         ),
         Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=PerformingArt())),
     ]

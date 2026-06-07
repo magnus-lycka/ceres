@@ -52,6 +52,7 @@ from ceres.character.domain.health.health_events import (
 )
 from ceres.character.domain.skills import AnySkill
 from ceres.character.domain.sophont import Sophont
+from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.pending_input import ChoiceBase
 from ceres.character.mechanism.replay import replay
@@ -111,11 +112,17 @@ class CharacterDriver:
         return self._add(Event(fulfills=pending.pending_id, handler=BackgroundSkillsHandler(skills=skills)))
 
     def career(self, career_name: str, assignment: str, roll: int = 7) -> CharacterDriver:
+        from ceres.character.domain.career.loader import load_careers
+
         pending = self._find(PendingCareerChoice)
+        career_obj = next((c for c in pending.options if c.name == career_name), None) or load_careers()[career_name]
+        assignment_obj = career_obj.assignment(assignment)
+        if assignment_obj is None:
+            raise ValueError(f'Unknown assignment {assignment!r} for career {career_name!r}')
         return self._add(
             Event(
                 fulfills=pending.pending_id,
-                handler=CareerEntryHandler(career=career_name, assignment=assignment, qualification_roll=roll),
+                handler=CareerEntryHandler(career=career_obj, assignment=assignment_obj, qualification_roll=roll),
             )
         )
 
@@ -166,10 +173,15 @@ class CharacterDriver:
     def switch_assignment(self, assignment: str, roll: int) -> CharacterDriver:
         self.choose_switch()
         switch_pending = self._find(PendingSwitchAssignment)
+        assignment_obj = next((a for a in switch_pending.options if a.name == assignment), None)
+        if assignment_obj is None:
+            raise ReplayError(
+                f'Unknown assignment {assignment!r} in switch options: {[a.name for a in switch_pending.options]}'
+            )
         return self._add(
             Event(
                 fulfills=switch_pending.pending_id,
-                handler=SwitchAssignmentHandler(assignment=assignment, qualification_roll=roll),
+                handler=SwitchAssignmentHandler(assignment=assignment_obj, qualification_roll=roll),
             )
         )
 
