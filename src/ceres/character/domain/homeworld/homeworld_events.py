@@ -1,8 +1,8 @@
 from typing import Any, Literal
 
-from ceres.adapters.travellermap import TravellerMapWorld
+from ceres.adapters.travellermap import TravellerMapWorld, fetch_world
 from ceres.character.domain.character_state import CharacterProjection
-from ceres.character.input_specs import InputSpec, form_str
+from ceres.character.input_specs import InfoText, InputSpec, form_str
 from ceres.character.mechanism.event_base import Event, EventHandlerBase
 from ceres.character.mechanism.pending_input import PendingInputBase
 
@@ -59,6 +59,13 @@ class HomeworldChangedHandler(EventHandlerBase):
         projection.summary.homeworld = self.new_homeworld
 
 
+class HomeworldChangeKeptHandler(EventHandlerBase):
+    kind: Literal['homeworld_change_kept'] = 'homeworld_change_kept'
+
+    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+        pass
+
+
 # ── Homeworld Pending Input Types ─────────────────────────────────────────────
 
 
@@ -76,19 +83,18 @@ class PendingHomeworldChangeRequired(PendingInputBase):
         return 'homeworld_change'
 
     def event_from_form(self, form: Any) -> Any:
-        from ceres.adapters.travellermap import fetch_world
-        from ceres.character.mechanism.event_base import Event
-
         sector = form_str(form, 'sector', '').strip()
         hex_code = form_str(form, 'hex_code', '').strip()
         if not sector or not hex_code:
             raise ValueError('Sector and hex code are required to select a new homeworld')
         world = fetch_world(sector, hex_code)
+        if self.target_constraints == 'world_with_scout_base' and 'S' not in world.bases and 'W' not in world.bases:
+            raise ValueError(
+                f'{world.name} ({world.sector} {world.hex}) has no Imperial Scout Base (S) or Way Station (W)'
+            )
         return Event(fulfills=self.pending_id, handler=HomeworldChangedHandler(new_homeworld=world))
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
-        from ceres.character.input_specs import InfoText
-
         return [InfoText(text=self.reason)]
 
 
@@ -106,9 +112,8 @@ class PendingHomeworldChangeOffered(PendingInputBase):
         return 'homeworld_change'
 
     def event_from_form(self, form: Any) -> Any:
-        from ceres.adapters.travellermap import fetch_world
-        from ceres.character.mechanism.event_base import Event
-
+        if form_str(form, 'keep', '').strip() == '1':
+            return Event(fulfills=self.pending_id, handler=HomeworldChangeKeptHandler())
         sector = form_str(form, 'sector', '').strip()
         hex_code = form_str(form, 'hex_code', '').strip()
         if not sector or not hex_code:
@@ -117,6 +122,4 @@ class PendingHomeworldChangeOffered(PendingInputBase):
         return Event(fulfills=self.pending_id, handler=HomeworldChangedHandler(new_homeworld=world))
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
-        from ceres.character.input_specs import InfoText
-
         return [InfoText(text=self.reason)]

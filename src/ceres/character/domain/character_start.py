@@ -120,7 +120,11 @@ class FinishCreationHandler(EventHandlerBase):
     kind: Literal['finish_career_creation'] = 'finish_career_creation'
 
     def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
-        pass  # fulfills the pending career choice; no further state change needed
+        from ceres.character.domain.homeworld.homeworld_events import PendingHomeworldChangeOffered
+
+        projection.pending_inputs = [
+            p for p in projection.pending_inputs if not isinstance(p, PendingHomeworldChangeOffered)
+        ]
 
 
 # ── Character-start Pending Input Types ───────────────────────────────────────
@@ -131,8 +135,6 @@ class PendingUcp(PendingInputBase):
     stat_names: list[str] = Field(default_factory=lambda: [s.value for s in UCP_STATS])
 
     def event_from_form(self, form: Any) -> Any:
-        from ceres.character.mechanism.event_base import Event
-
         ucp = ''.join(f'{form_int(form, stat, 0):X}' for stat in self.stat_names)
         return Event(fulfills=self.pending_id, handler=UcpHandler(ucp=ucp))
 
@@ -147,8 +149,6 @@ class PendingBackgroundSkills(PendingInputBase):
     model_config = {'arbitrary_types_allowed': True}
 
     def event_from_form(self, form: Any) -> Any:
-        from ceres.character.mechanism.event_base import Event
-
         raw = form.getlist('skill')
         skills = [_skill_adapter.validate_json(j) for j in raw]
         return Event(fulfills=self.pending_id, handler=BackgroundSkillsHandler(skills=skills))

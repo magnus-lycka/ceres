@@ -34,6 +34,7 @@ from ceres.character.domain.career.career_data import (
 from ceres.character.domain.career.career_events import (
     PendingChoices,
     PendingSkillChoice,
+    _apply_mishap_ejection,
 )
 from ceres.character.domain.career.common import handle_advanced_training
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
@@ -84,7 +85,6 @@ class ArmyMishap4JoinRing(ChoiceBase):
     label: str = 'Join their ring (Ally, lose Benefit roll)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
         career = projection.get_current_career()
         projection.summary.connections.append(Ally(source='Your commanding officer who brought you into the ring'))
@@ -96,7 +96,6 @@ class ArmyMishap4Cooperate(ChoiceBase):
     label: str = 'Co-operate with MPs (keep Benefit roll)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
         career = projection.get_current_career()
         _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=False)

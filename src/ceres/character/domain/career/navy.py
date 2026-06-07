@@ -37,6 +37,7 @@ from ceres.character.domain.career.career_data import (
 )
 from ceres.character.domain.career.career_events import (
     PendingChoices,
+    _apply_mishap_ejection,
     career_progress_pending,
 )
 from ceres.character.domain.career.common import handle_advanced_training
@@ -85,7 +86,6 @@ class PendingNavyMishap3SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['navy_mishap_3_skill_roll'] = 'navy_mishap_3_skill_roll'
 
     def resolve(self, projection: CharacterProjection, event: Any) -> None:
-        from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
         career = projection.get_current_career()
         lose = event.modified_roll < 8
@@ -97,7 +97,6 @@ class NavyMishap4Responsible(ChoiceBase):
     label: str = 'Accept responsibility (gain one free skill roll, ejected, lose Benefit)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
         career = projection.get_current_career()
         projection.summary.problems.append(
@@ -112,7 +111,6 @@ class NavyMishap4NotResponsible(ChoiceBase):
     label: str = 'Deny blame (gain Enemy, keep Benefit)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
         career = projection.get_current_career()
         projection.summary.connections.append(Enemy(source='The officer who falsely blamed you for the accident'))

@@ -633,7 +633,10 @@ def test_wizard_homeworld_change_pending_links_to_sector_picker(client_with_back
     r = client.get(f'/ui/characters/{row["id"]}/wizard')
     assert r.status_code == 200
     assert 'Choose New Homeworld' in r.text
-    assert f'/ui/worlds/sectors?character_id={row["id"]}&fulfills=5.0' in r.text
+    assert (
+        f'/ui/worlds/sectors/Troj?character_id={row["id"]}&fulfills=5.0&reference_sector=Troj&reference_hex=2715'
+        in r.text
+    )
 
 
 def test_wizard_select_world_input_links_to_filtered_sector_picker(client_with_backend, monkeypatch):
@@ -727,7 +730,9 @@ def test_selecting_homeworld_from_wizard_picker_updates_character(client_with_ba
             allegiance_names={'ImDd': 'Third Imperium, Domain of Deneb'},
         ),
     )
-    monkeypatch.setattr('ceres.adapters.travellermap.fetch_world', lambda sector, hex_code: MOCK_WORLD_2)
+    monkeypatch.setattr(
+        'ceres.character.domain.homeworld.homeworld_events.fetch_world', lambda sector, hex_code: MOCK_WORLD_2
+    )
 
     sector_page = client.get('/ui/worlds/sectors/Troj', params={'character_id': row['id'], 'fulfills': '5.0'})
     assert sector_page.status_code == 200

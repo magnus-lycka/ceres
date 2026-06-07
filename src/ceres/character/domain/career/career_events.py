@@ -266,7 +266,13 @@ class TermEventHandler(EventHandlerBase):
                 if not roll_mishap_effect.leave
                 else 'Roll 1D on Mishap table'
             )
-            projection.pending_inputs.append(PendingMishap(pending_id=(event.id, pending_idx), instruction=instruction))
+            projection.pending_inputs.append(
+                PendingMishap(
+                    pending_id=(event.id, pending_idx),
+                    instruction=instruction,
+                    stay_in_career=not roll_mishap_effect.leave,
+                )
+            )
         elif auto_advance:
             _apply_auto_advance(projection, career, event.id)
         elif life_event_pending:
@@ -1471,11 +1477,15 @@ class PendingTermEvent(PendingInputBase):
 
 class PendingMishap(PendingInputBase):
     kind: Literal['mishap'] = 'mishap'
+    stay_in_career: bool = False
 
     def event_from_form(self, form: Any) -> Any:
         from ceres.character.mechanism.event_base import Event
 
-        return Event(fulfills=self.pending_id, handler=MishapHandler(roll=form_int(form, 'roll', 1)))
+        return Event(
+            fulfills=self.pending_id,
+            handler=MishapHandler(roll=form_int(form, 'roll', 1), stay_in_career=self.stay_in_career),
+        )
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
         return [NumberEntry(name='roll', label='1D roll (1–6)', min=1, max=6)]

@@ -1,5 +1,6 @@
 """Tests for Scout career events, mishaps, and assignment table corrections."""
 
+from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.domain.career import SCOUT
 from ceres.character.domain.career.career_data import AdvancementDmOption
 from ceres.character.domain.career.career_events import (
@@ -634,3 +635,122 @@ class TestScoutAssignmentTableCorrections:
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
         assert pending is not None
         assert {type(s) for s in pending.options} == _SCIENCE_CLASSES
+
+
+# ── Homeworld trigger (RIC-006) ───────────────────────────────────────────────
+
+_WORLD_NO_SCOUT_BASE = TravellerMapWorld.model_validate(
+    {**MOCK_WORLD.model_dump(), 'Bases': 'N', 'LegacyBaseCode': 'N'}
+)
+_WORLD_WITH_SCOUT_BASE = TravellerMapWorld.model_validate(
+    {**MOCK_WORLD.model_dump(), 'Bases': 'S', 'LegacyBaseCode': 'S'}
+)
+_WORLD_WITH_WAY_STATION = TravellerMapWorld.model_validate(
+    {**MOCK_WORLD.model_dump(), 'Bases': 'W', 'LegacyBaseCode': 'W'}
+)
+
+
+def _scout_entry_events(homeworld: TravellerMapWorld) -> list:
+    return [
+        Event(id=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=homeworld, player='NPC', name='X')),
+        Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='7869A5')),
+        Event(
+            id=3, fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()])
+        ),
+        Event(
+            id=4,
+            fulfills=(3, 0),
+            handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
+        ),
+    ]
+
+
+class TestScoutHomeworldTrigger:
+    def test_non_scout_base_homeworld_produces_blocking_required_pending(self):
+        from ceres.character.domain.homeworld.homeworld_events import PendingHomeworldChangeRequired
+
+        projection = replay(1, _scout_entry_events(_WORLD_NO_SCOUT_BASE))
+
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingHomeworldChangeRequired)), None)
+        assert pending is not None
+        assert pending.blocking is True
+        assert pending.source_career == 'Scout'
+        assert pending.target_constraints == 'world_with_scout_base'
+
+    def test_scout_base_homeworld_produces_non_blocking_offered_pending(self):
+        from ceres.character.domain.homeworld.homeworld_events import PendingHomeworldChangeOffered
+
+        projection = replay(1, _scout_entry_events(_WORLD_WITH_SCOUT_BASE))
+
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingHomeworldChangeOffered)), None)
+        assert pending is not None
+        assert pending.blocking is False
+        assert pending.source_career == 'Scout'
+
+    def test_way_station_homeworld_produces_non_blocking_offered_pending(self):
+        from ceres.character.domain.homeworld.homeworld_events import PendingHomeworldChangeOffered
+
+        projection = replay(1, _scout_entry_events(_WORLD_WITH_WAY_STATION))
+
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingHomeworldChangeOffered)), None)
+        assert pending is not None
+        assert pending.blocking is False
+
+    def test_homeworld_not_mutated_until_fulfilled(self):
+
+        projection = replay(1, _scout_entry_events(_WORLD_NO_SCOUT_BASE))
+
+        assert projection.summary.homeworld == _WORLD_NO_SCOUT_BASE
+
+    def test_fulfilling_required_pending_updates_homeworld_not_birthworld(self):
+        from ceres.character.domain.homeworld.homeworld_events import (
+            HomeworldChangedHandler,
+            PendingHomeworldChangeRequired,
+        )
+
+        events = _scout_entry_events(_WORLD_NO_SCOUT_BASE)
+        projection = replay(1, events)
+        pending = next(p for p in projection.pending_inputs if isinstance(p, PendingHomeworldChangeRequired))
+
+        events = [
+            *events,
+            Event(
+                id=5, fulfills=pending.pending_id, handler=HomeworldChangedHandler(new_homeworld=_WORLD_WITH_SCOUT_BASE)
+            ),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.homeworld == _WORLD_WITH_SCOUT_BASE
+        assert projection.summary.birthworld == _WORLD_NO_SCOUT_BASE
+
+    def test_reenlistment_triggers_homeworld_check_again(self):
+        """After changing to a Scout base world and reenlisting, a new homeworld check fires."""
+        from ceres.character.domain.homeworld.homeworld_events import (
+            HomeworldChangedHandler,
+            PendingHomeworldChangeOffered,
+            PendingHomeworldChangeRequired,
+        )
+
+        events = _scout_entry_events(_WORLD_NO_SCOUT_BASE)
+        projection = replay(1, events)
+        hw_pending = next(p for p in projection.pending_inputs if isinstance(p, PendingHomeworldChangeRequired))
+
+        # Resolve term 1: change homeworld then proceed through term
+        events = [
+            *events,
+            Event(
+                id=5,
+                fulfills=hw_pending.pending_id,
+                handler=HomeworldChangedHandler(new_homeworld=_WORLD_WITH_SCOUT_BASE),
+            ),
+            Event(id=6, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
+            Event(id=7, fulfills=(6, 0), handler=TermEventHandler(roll=5)),
+            Event(id=8, fulfills=(7, 0), handler=AdvancementHandler(roll=3)),
+            Event(id=9, fulfills=(8, 0), handler=ReenlistHandler(reenlist=True)),
+        ]
+        projection = replay(1, events)
+
+        # Homeworld is now a Scout base world → second term produces offered (non-blocking)
+        hw_pendings = [p for p in projection.pending_inputs if isinstance(p, PendingHomeworldChangeOffered)]
+        assert len(hw_pendings) == 1
+        assert hw_pendings[0].source_career == 'Scout'

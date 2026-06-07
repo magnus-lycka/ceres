@@ -1,6 +1,7 @@
 """HTML routes for the character web UI."""
 
 from pathlib import Path
+import re
 from typing import Any
 from urllib.parse import quote, urlencode
 
@@ -22,6 +23,7 @@ from ceres.character.mechanism.store import SqliteCharacterBackend
 from ceres.character.report import render_npc_gallery_pdf
 from ceres.worlds import SectorWorldFilters, search_sectors
 
+_COMBINED_REF_RE = re.compile(r'^([A-Za-z]+)(\d{4})$')
 _TEMPLATES_DIR = Path(__file__).parent / 'templates'
 _STRING_FILTER_GROUPS = ('allegiances', 'remarks', 'bases', 'starports')
 _INT_FILTER_GROUPS = (
@@ -285,6 +287,11 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
         sector = SectorWorldFilters.from_travellermap(sector_abbreviation)
         reference_sector = request.query_params.get('reference_sector', '').strip()
         reference_hex = request.query_params.get('reference_hex', '').strip()
+        combined_match = _COMBINED_REF_RE.match(reference_hex)
+        if combined_match:
+            if not reference_sector:
+                reference_sector = combined_match.group(1)
+            reference_hex = combined_match.group(2)
         reference_sector_coordinates: tuple[int, int] | None = None
         if not reference_hex and character_id:
             projection = backend.get_projection(int(character_id))

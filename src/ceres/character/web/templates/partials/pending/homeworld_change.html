@@ -3,8 +3,18 @@
 {% endif %}
 <div class="space-y-3">
   <p class="text-sm text-gray-400">Choose a sector, then pick a world by filters, name, or hex.</p>
-  <a href="/ui/worlds/sectors?character_id={{ character_id }}&fulfills={{ pi.id }}"
+  <a href="/ui/worlds/sectors/{{ summary.homeworld.sector_abbreviation }}?character_id={{ character_id }}&fulfills={{ pi.id }}&reference_sector={{ summary.homeworld.sector_abbreviation }}&reference_hex={{ summary.homeworld.hex }}{% if pi.target_constraints == 'world_with_scout_base' %}&filters=1&bases=S&bases=W{% endif %}"
      class="inline-flex items-center bg-amber-600 hover:bg-amber-500 text-black font-bold px-6 py-3 text-sm uppercase tracking-wide">
     Choose New Homeworld
   </a>
+  {% if not pi.blocking %}
+  <form method="post" action="/ui/characters/{{ character_id }}/homeworld">
+    <input type="hidden" name="fulfills" value="{{ pi.id }}">
+    <input type="hidden" name="keep" value="1">
+    <button type="submit"
+            class="inline-flex items-center bg-gray-700 hover:bg-gray-600 text-gray-200 font-bold px-6 py-3 text-sm uppercase tracking-wide">
+      Stay on {{ summary.homeworld.name }}
+    </button>
+  </form>
+  {% endif %}
 </div>

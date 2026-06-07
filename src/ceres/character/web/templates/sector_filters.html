@@ -39,8 +39,8 @@
       <input type="hidden" name="reference_sector" value="{{ reference_sector }}">
       <input type="text"
              name="reference_hex"
-             value="{{ reference_hex }}"
-             placeholder="Hex for distance sorting, e.g. 2715"
+             value="{{ (reference_sector|upper ~ reference_hex) if (reference_sector and reference_hex) else reference_hex }}"
+             placeholder="Hex for distance sorting, e.g. 2715 or TROJ2715"
              class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-4 py-3 focus:outline-none focus:border-amber-500">
       <p class="text-xs text-gray-500">When set, worlds are sorted by distance from this hex and distance is shown in parsecs.</p>
     </section>

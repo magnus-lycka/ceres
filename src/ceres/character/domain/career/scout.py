@@ -44,6 +44,10 @@ from ceres.character.domain.connection import (
     Contact,
     Enemy,
 )
+from ceres.character.domain.homeworld.homeworld_events import (
+    PendingHomeworldChangeOffered,
+    PendingHomeworldChangeRequired,
+)
 from ceres.character.domain.skills import (
     Animals,
     Astrogation,
@@ -129,6 +133,7 @@ class PendingScoutEvent8SkillRoll(CareerSkillRollPendingBase):
                 PendingMishap(
                     pending_id=(event.id, 0),
                     instruction='Roll 1D Mishap (you are not ejected from this career)',
+                    stay_in_career=True,
                 )
             )
 
@@ -198,6 +203,7 @@ class PendingScoutEvent10SkillRoll(CareerSkillRollPendingBase):
                 PendingMishap(
                     pending_id=(event.id, 0),
                     instruction='Roll 1D Mishap (you are not ejected from this career)',
+                    stay_in_career=True,
                 )
             )
 
@@ -242,6 +248,38 @@ class ScoutEvent11Handler(CareerHandlerBase):
 
 class Scout(CareerData):
     type: Literal['SCOUT_CAREER'] = 'SCOUT_CAREER'
+
+    def start_new_term(
+        self,
+        projection: CharacterProjection,
+        assignment: AssignmentData,
+        event_id: int,
+        is_continuation: bool = False,
+    ) -> None:
+        insert_at = len(projection.pending_inputs)
+        super().start_new_term(projection, assignment, event_id, is_continuation)
+        homeworld = projection.summary.homeworld
+        used_sub_ids = {p.pending_id[1] for p in projection.pending_inputs if p.pending_id[0] == event_id}
+        homeworld_idx = max(used_sub_ids, default=-1) + 1
+        if 'S' in homeworld.bases or 'W' in homeworld.bases:
+            homeworld_pending = PendingHomeworldChangeOffered(
+                pending_id=(event_id, homeworld_idx),
+                instruction='You may relocate to a Scout base world. Select a new homeworld (optional).',
+                reason='Scout career: you may choose a world with an Imperial Scout Base (S) or Way Station (W) as your homeworld.',
+                source_kind='career_entry',
+                source_career='Scout',
+                target_constraints='world_with_scout_base',
+            )
+        else:
+            homeworld_pending = PendingHomeworldChangeRequired(
+                pending_id=(event_id, homeworld_idx),
+                instruction='Your career requires a Scout base world. Select your new homeworld.',
+                reason='Scout career: your homeworld must have an Imperial Scout Base (S) or Way Station (W).',
+                source_kind='career_entry',
+                source_career='Scout',
+                target_constraints='world_with_scout_base',
+            )
+        projection.pending_inputs.insert(insert_at, homeworld_pending)
 
     name: ClassVar[str] = 'Scout'
     description: ClassVar[str] = (
