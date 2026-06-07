@@ -1,6 +1,6 @@
 """Muster-out benefit types."""
 
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -20,6 +20,10 @@ class CharacteristicIncrease(BaseModel):
     def exceptional(self) -> bool:
         return False
 
+    def apply(self, projection: Any, event_id: int = 0) -> None:
+        current = projection.summary.characteristics.get(self.char, 0)
+        projection.summary.characteristics[self.char] = min(15, current + self.amount)
+
 
 class ItemBenefit(BaseModel):
     type: Literal['item_benefit'] = 'item_benefit'
@@ -30,6 +34,9 @@ class ItemBenefit(BaseModel):
     @property
     def display_label(self) -> str:
         return self.label
+
+    def apply(self, projection: Any, event_id: int = 0) -> None:
+        projection.summary.add_muster_out_benefit(self)
 
 
 class ChoiceBenefit(BaseModel):
@@ -46,6 +53,18 @@ class ChoiceBenefit(BaseModel):
     def exceptional(self) -> bool:
         return any(b.exceptional for b in self.options)
 
+    def apply(self, projection: Any, event_id: int = 0) -> None:
+        from ceres.character.domain.career.career_events import PendingBenefitChoice
+
+        projection.pending_inputs.append(
+            PendingBenefitChoice(
+                pending_id=(event_id, 0),
+                instruction=f'Choose one benefit: {self.display_label}',
+                options=[b.display_label for b in self.options],
+                benefit_options=list(self.options),
+            )
+        )
+
 
 class CombinedBenefit(BaseModel):
     """Multiple benefits all granted together (e.g. 'SOC +1 and Yacht')."""
@@ -60,6 +79,10 @@ class CombinedBenefit(BaseModel):
     @property
     def exceptional(self) -> bool:
         return any(b.exceptional for b in self.benefits)
+
+    def apply(self, projection: Any, event_id: int = 0) -> None:
+        for sub_benefit in self.benefits:
+            sub_benefit.apply(projection, event_id)
 
 
 AnyBenefit = Annotated[

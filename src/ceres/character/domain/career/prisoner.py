@@ -1,4 +1,4 @@
-from typing import ClassVar, Literal, cast
+from typing import Any, ClassVar, Literal, cast
 
 from ceres.character.domain.benefits import (
     ALLY,
@@ -34,8 +34,23 @@ from ceres.character.domain.career.career_data import (
     SkillChoiceEffect,
     SkillTable,
 )
+from ceres.character.domain.career.career_events import (
+    PendingChoices,
+    PendingParoleRoll,
+    PendingSkillChoice,
+    career_progress_pending,
+    muster_out_setup,
+)
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.connection import (
+    Ally,
+    Enemy,
+)
+from ceres.character.domain.health.health_events import (
+    PendingDoubleInjuryRoll,
+    PendingInjuryTable,
+)
 from ceres.character.domain.skills import (
     Admin,
     Advocate,
@@ -56,22 +71,8 @@ from ceres.character.domain.skills import (
     Survival,
     skill_instances,
 )
-from ceres.character.events import (
-    PendingChoices,
-    PendingDoubleInjuryRoll,
-    PendingInjuryTable,
-    PendingParoleRoll,
-    PendingSkillChoice,
-    SkillRollEvent,
-    career_progress_pending,
-    muster_out_setup,
-)
-from ceres.character.state import (
-    Ally,
-    CharacterProjection,
-    ChoiceBase,
-    Enemy,
-)
+from ceres.character.mechanism.character_state import CharacterProjection
+from ceres.character.mechanism.pending_input import ChoiceBase
 
 # ── mishap 3: prison gang ─────────────────────────────────────────────────────
 
@@ -81,7 +82,7 @@ class PrisonerMishap3Submit(ChoiceBase):
     label: str = 'Submit (lose Benefit roll)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.events import _advancement_pending
+        from ceres.character.domain.career.career_events import _advancement_pending
 
         career = projection.get_current_career()
         projection.summary.problems.append(
@@ -109,8 +110,8 @@ class PrisonerMishap3Fight(ChoiceBase):
 class PendingPrisonerMishap3FightSkillRoll(CareerSkillRollPendingBase):
     kind: Literal['prisoner_mishap_3_fight_skill_roll'] = 'prisoner_mishap_3_fight_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
-        from ceres.character.events import _advancement_pending
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+        from ceres.character.domain.career.career_events import _advancement_pending
 
         career = projection.get_current_career()
         if event.modified_roll >= 8:
@@ -124,7 +125,6 @@ class PendingPrisonerMishap3FightSkillRoll(CareerSkillRollPendingBase):
                 PendingDoubleInjuryRoll(
                     pending_id=(event.id, 0),
                     instruction='Gang fight: roll twice on the Injury table, apply lower result',
-                    options=['1', '2', '3', '4', '5', '6'],
                 )
             )
             projection.pending_inputs.append(
@@ -176,7 +176,7 @@ class PrisonerEvent3Attempt(ChoiceBase):
 class PendingPrisonerEvent3EscapeSkillRoll(CareerSkillRollPendingBase):
     kind: Literal['prisoner_event_3_escape_skill_roll'] = 'prisoner_event_3_escape_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
         career = projection.get_current_career()
         if event.modified_roll >= 10:
             projection.summary.narrative.append('Prisoner event 3: escaped from prison — career ends.')
@@ -208,7 +208,7 @@ class PrisonerEvent3Handler(CareerHandlerBase):
 class PendingPrisonerEvent4SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['prisoner_event_4_skill_roll'] = 'prisoner_event_4_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
         if event.modified_roll >= 8:
             projection.summary.parole_threshold = max(0, (projection.summary.parole_threshold or 0) - 1)
             projection.pending_inputs.append(
@@ -245,7 +245,7 @@ class PrisonerEvent4Handler(CareerHandlerBase):
 class PendingPrisonerEvent5SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['prisoner_event_5_skill_roll'] = 'prisoner_event_5_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
         if event.modified_roll >= 8:
             projection.summary.parole_threshold = min(12, (projection.summary.parole_threshold or 0) + 1)
             projection.summary.problems.append(
@@ -285,7 +285,7 @@ class PrisonerEvent5Handler(CareerHandlerBase):
 class PendingPrisonerEvent6SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['prisoner_event_6_skill_roll'] = 'prisoner_event_6_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
         if event.modified_roll >= 8:
             from ceres.character.domain.skills import AnySkill, _skill_classes
 
@@ -396,8 +396,8 @@ class PrisonerEvent7GoodBehaviour(ChoiceBase):
 class PendingPrisonerEvent7RiotSkillRoll(CareerSkillRollPendingBase):
     kind: Literal['prisoner_event_7_riot_skill_roll'] = 'prisoner_event_7_riot_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
-        from ceres.character.events import _advancement_pending
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+        from ceres.character.domain.career.career_events import _advancement_pending
 
         career = projection.get_current_career()
         if event.modified_roll < 8:
@@ -405,7 +405,6 @@ class PendingPrisonerEvent7RiotSkillRoll(CareerSkillRollPendingBase):
                 PendingInjuryTable(
                     pending_id=(event.id, 0),
                     instruction='Riot injury: roll 1D on Injury table',
-                    options=['1', '2', '3', '4', '5', '6'],
                 )
             )
             projection.pending_inputs.append(
@@ -506,7 +505,7 @@ class PendingPrisonerEvent9LawyerSkillRoll(CareerSkillRollPendingBase):
     kind: Literal['prisoner_event_9_lawyer_skill_roll'] = 'prisoner_event_9_lawyer_skill_roll'
     lawyer_level: int = 1
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
         if event.modified_roll + self.lawyer_level >= 8:
             projection.summary.parole_threshold = max(0, (projection.summary.parole_threshold or 0) - 1)
         # _apply_skill_roll auto-queues advancement
@@ -564,8 +563,8 @@ class PrisonerEvent12Refuse(ChoiceBase):
 class PendingPrisonerEvent12HeroismSkillRoll(CareerSkillRollPendingBase):
     kind: Literal['prisoner_event_12_heroism_skill_roll'] = 'prisoner_event_12_heroism_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
-        from ceres.character.events import _advancement_pending
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+        from ceres.character.domain.career.career_events import _advancement_pending
 
         career = projection.get_current_career()
         if event.modified_roll >= 8:
@@ -577,7 +576,6 @@ class PendingPrisonerEvent12HeroismSkillRoll(CareerSkillRollPendingBase):
                 PendingInjuryTable(
                     pending_id=(event.id, 0),
                     instruction='Heroism failed: roll 1D on Injury table',
-                    options=['1', '2', '3', '4', '5', '6'],
                 )
             )
             projection.pending_inputs.append(
@@ -816,7 +814,6 @@ class Prisoner(CareerData):
             PendingParoleRoll(
                 pending_id=(event_id, pending_added),
                 instruction='Roll 1D to determine your Parole Threshold (result + 2)',
-                options=['1', '2', '3', '4', '5', '6'],
             )
         )
 

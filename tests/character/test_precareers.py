@@ -1,9 +1,10 @@
 from ceres.character.domain.career.career_data import CharCheck, GainSkillEffect, LifeEventEffect
 from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.precareer import load_precareers
+from ceres.character.domain.precareer.loader import load_precareers
 from ceres.character.domain.precareer.precareer_data import PreCareerData, PrecareerSkillEntry
+from ceres.character.domain.precareer.precareer_events import PreCareerEntryHandler, PreCareerGraduationHandler
 from ceres.character.domain.skills import Admin, Electronics, Pilot, ScienceSkill, skill_instances
-from ceres.character.events import PreCareerEntryEvent, PreCareerGraduationEvent
+from ceres.character.mechanism.event_base import Event
 
 
 def _entry(name: str) -> CharCheck:
@@ -144,9 +145,9 @@ def test_precareer_skill_entry_grant_skill_specialised():
 
 
 def test_precareer_apply_entry_pick_count_0_list_skill_queues_choice():
+    from ceres.character.domain.precareer.precareer_events import PendingPreCareerSkillChoice
     from ceres.character.domain.sophont import VILANI
-    from ceres.character.events import PendingPreCareerSkillChoice
-    from ceres.character.state import CharacterProjection, CharacterSummary
+    from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
     from tests.character.helpers import MOCK_WORLD
 
     sciences = skill_instances(ScienceSkill)
@@ -164,7 +165,7 @@ def test_precareer_apply_entry_pick_count_0_list_skill_queues_choice():
         character_id=1,
         summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD),
     )
-    event = PreCareerEntryEvent(id=5, precareer='TestPrecareer', roll=9)
+    event = Event(id=5, handler=PreCareerEntryHandler(precareer='TestPrecareer', roll=9))
     pending_idx = precareer.apply_entry(proj, event, 0)
 
     assert proj.summary.skill_level(Admin) == 1
@@ -178,9 +179,9 @@ def test_precareer_apply_entry_pick_count_0_list_skill_queues_choice():
 
 
 def test_precareer_apply_entry_pick_count_nonzero_with_list_and_pool():
+    from ceres.character.domain.precareer.precareer_events import PendingPreCareerSkillChoice
     from ceres.character.domain.sophont import VILANI
-    from ceres.character.events import PendingPreCareerSkillChoice
-    from ceres.character.state import CharacterProjection, CharacterSummary
+    from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
     from tests.character.helpers import MOCK_WORLD
 
     sciences = skill_instances(ScienceSkill)
@@ -200,7 +201,7 @@ def test_precareer_apply_entry_pick_count_nonzero_with_list_and_pool():
         character_id=1,
         summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD),
     )
-    event = PreCareerEntryEvent(id=5, precareer='TestPrecareer2', roll=9)
+    event = Event(id=5, handler=PreCareerEntryHandler(precareer='TestPrecareer2', roll=9))
     precareer.apply_entry(proj, event, 0)
 
     assert proj.summary.skill_level(Admin) == 1
@@ -217,7 +218,7 @@ def test_precareer_apply_entry_pick_count_nonzero_with_list_and_pool():
 
 def test_precareer_apply_entry_skips_none_skill_entries():
     from ceres.character.domain.sophont import VILANI
-    from ceres.character.state import CharacterProjection, CharacterSummary
+    from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
     from tests.character.helpers import MOCK_WORLD
 
     precareer = PreCareerData(
@@ -234,13 +235,13 @@ def test_precareer_apply_entry_skips_none_skill_entries():
         character_id=1,
         summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD),
     )
-    precareer.apply_entry(proj, PreCareerEntryEvent(id=5, precareer='TestNoneSkill', roll=9), 0)
+    precareer.apply_entry(proj, Event(id=5, handler=PreCareerEntryHandler(precareer='TestNoneSkill', roll=9)), 0)
     assert proj.summary.skill_level(Admin) == 1
 
 
 def test_precareer_apply_entry_pick_count_nonzero_skips_none_skill():
     from ceres.character.domain.sophont import VILANI
-    from ceres.character.state import CharacterProjection, CharacterSummary
+    from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
     from tests.character.helpers import MOCK_WORLD
 
     precareer = PreCareerData(
@@ -257,7 +258,7 @@ def test_precareer_apply_entry_pick_count_nonzero_skips_none_skill():
         character_id=1,
         summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD),
     )
-    precareer.apply_entry(proj, PreCareerEntryEvent(id=5, precareer='TestNoneSkill2', roll=9), 0)
+    precareer.apply_entry(proj, Event(id=5, handler=PreCareerEntryHandler(precareer='TestNoneSkill2', roll=9)), 0)
     assert len(proj.pending_inputs) == 1
 
 
@@ -266,7 +267,7 @@ def test_precareer_apply_entry_pick_count_nonzero_skips_none_skill():
 
 def test_precareer_apply_graduation_base_returns_zero():
     from ceres.character.domain.sophont import VILANI
-    from ceres.character.state import CharacterProjection, CharacterSummary
+    from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
     from tests.character.helpers import MOCK_WORLD
 
     precareer = PreCareerData(name='TestGrad', source='test', events={})
@@ -274,7 +275,7 @@ def test_precareer_apply_graduation_base_returns_zero():
         character_id=1,
         summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD),
     )
-    result = precareer.apply_graduation(proj, PreCareerGraduationEvent(id=7, roll=9), honours=False)
+    result = precareer.apply_graduation(proj, Event(id=7, handler=PreCareerGraduationHandler(roll=9)), honours=False)
     assert result == 0
 
 
@@ -283,7 +284,7 @@ def test_precareer_apply_graduation_base_returns_zero():
 
 def test_precareer_apply_failed_graduation_base_is_noop():
     from ceres.character.domain.sophont import VILANI
-    from ceres.character.state import CharacterProjection, CharacterSummary
+    from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
     from tests.character.helpers import MOCK_WORLD
 
     precareer = PreCareerData(name='TestPrecareer3', source='test', events={})
@@ -291,7 +292,7 @@ def test_precareer_apply_failed_graduation_base_is_noop():
         character_id=1,
         summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD),
     )
-    event = PreCareerGraduationEvent(id=6, roll=3)
+    event = Event(id=6, handler=PreCareerGraduationHandler(roll=3))
     before_pendings = len(proj.pending_inputs)
     precareer.apply_failed_graduation(proj, event)
     assert len(proj.pending_inputs) == before_pendings

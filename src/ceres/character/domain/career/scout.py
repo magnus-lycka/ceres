@@ -1,4 +1,4 @@
-from typing import ClassVar, Literal
+from typing import Any, ClassVar, Literal
 
 from ceres.character.domain.benefits import (
     SCOUT_SHIP,
@@ -32,8 +32,17 @@ from ceres.character.domain.career.career_data import (
     SkillChoiceEffect,
     SkillTable,
 )
+from ceres.character.domain.career.career_events import (
+    PendingMishap,
+    PendingSkillChoice,
+)
 from ceres.character.domain.career.common_pending import CareerSkillChoicePendingBase, CareerSkillRollPendingBase
 from ceres.character.domain.characteristics import Chars, ConnectionKind
+from ceres.character.domain.connection import (
+    Ally,
+    Contact,
+    Enemy,
+)
 from ceres.character.domain.skills import (
     Animals,
     Astrogation,
@@ -63,17 +72,7 @@ from ceres.character.domain.skills import (
     VaccSuit,
     skill_instances,
 )
-from ceres.character.events import (
-    PendingMishap,
-    PendingSkillChoice,
-    SkillRollEvent,
-)
-from ceres.character.state import (
-    Ally,
-    CharacterProjection,
-    Contact,
-    Enemy,
-)
+from ceres.character.mechanism.character_state import CharacterProjection
 
 _AMBUSH_TARGETS: dict[str, int] = {'Pilot': 8, 'Persuade': 10}
 
@@ -84,7 +83,7 @@ _AMBUSH_TARGETS: dict[str, int] = {'Pilot': 8, 'Persuade': 10}
 class PendingScoutEvent3SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['scout_event_3_skill_roll'] = 'scout_event_3_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
         skill_name = event.skill if isinstance(event.skill, str) else type(event.skill).name()
         target = _AMBUSH_TARGETS[skill_name]
         if event.modified_roll >= target:
@@ -121,7 +120,7 @@ class ScoutEvent3Handler(CareerHandlerBase):
 class PendingScoutEvent8SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['scout_event_8_skill_roll'] = 'scout_event_8_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
         if event.modified_roll >= 8:
             projection.summary.connections.append(Ally(source='Alien intelligence contact'))
             projection.pending_advancement_dm += 2
@@ -155,7 +154,7 @@ class ScoutEvent8Handler(CareerHandlerBase):
 class PendingScoutEvent9SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['scout_event_9_skill_roll'] = 'scout_event_9_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
         if event.modified_roll >= 8:
             projection.summary.connections.append(Contact(source='Disaster survivor'))
             projection.pending_advancement_dm += 2
@@ -184,7 +183,7 @@ class ScoutEvent9Handler(CareerHandlerBase):
 class PendingScoutEvent10SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['scout_event_10_skill_roll'] = 'scout_event_10_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
         if event.modified_roll >= 8:
             projection.summary.connections.append(Contact(source='Alien contact from the fringes of Charted Space'))
             projection.pending_inputs.append(

@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 from ceres.character.domain.benefits import ItemBenefit
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.skills import AnySkill, _level_fields
-from ceres.character.state import CharacterSummary
+from ceres.character.mechanism.character_state import CharacterSummary
 
 
 class NpcSpec(BaseModel):

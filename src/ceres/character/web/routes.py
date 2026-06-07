@@ -9,19 +9,17 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from ceres.adapters.travellermap import TravellerMapWorld, fetch_world
+from ceres.character.domain.career.career_events import PendingCareerChoice
 from ceres.character.domain.career.loader import load_careers
-from ceres.character.domain.precareer import load_precareers
+from ceres.character.domain.precareer.loader import load_precareers
 from ceres.character.domain.sophont import SOPHONT_NAMES, get_sophont
 from ceres.character.domain.spec import spec_from_summary
-from ceres.character.events import AnyEvent, PendingCareerChoice
 from ceres.character.input_specs import SelectWorld, WorldFilterCriteria
+from ceres.character.mechanism.character_state import CharacterProjection, diff_summaries
+from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import ReplayError
 from ceres.character.mechanism.store import SqliteCharacterBackend
 from ceres.character.report import render_npc_gallery_pdf
-from ceres.character.state import (
-    CharacterProjection,
-    diff_summaries,
-)
 from ceres.worlds import SectorWorldFilters, search_sectors
 
 _TEMPLATES_DIR = Path(__file__).parent / 'templates'
@@ -553,7 +551,7 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
     return router
 
 
-def _build_event_from_form(fulfills: str, form: Any, projection: CharacterProjection) -> AnyEvent:
+def _build_event_from_form(fulfills: str, form: Any, projection: CharacterProjection) -> Event:
     parts = fulfills.split('.')
     pending_id: tuple[int, int] | None = (int(parts[0]), int(parts[1])) if len(parts) == 2 else None
     pending = next((p for p in projection.pending_inputs if p.pending_id == pending_id), None)

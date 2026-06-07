@@ -45,7 +45,7 @@
       </div>
       <div>
         <label class="block text-xs text-gray-500 mb-1">Entry roll (2D)</label>
-        <input type="number" name="roll" value="7" min="2" max="12"
+        <input type="number" name="roll" min="2" max="12" required
                class="w-24 bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 text-center font-bold focus:outline-none focus:border-amber-500">
       </div>
       <button type="submit"
@@ -89,7 +89,7 @@
               class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500"
               onchange="updateAssignments(this, '{{ pi.id | replace('.', '-') }}')">
         {% for opt in pi.options %}
-        <option value="{{ opt }}">{{ opt }}</option>
+        <option value="{{ opt.name }}">{{ opt.name }}</option>
         {% endfor %}
       </select>
     </div>
@@ -98,7 +98,7 @@
       <select name="assignment" id="assignments-{{ pi.id | replace('.', '-') }}"
               class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500">
         {% if item.extra.get('careers') and pi.options %}
-        {% set first = item.extra.careers.get(pi.options[0]) %}
+        {% set first = item.extra.careers.get(pi.options[0].name) %}
         {% if first %}
         {% for a in first.assignments %}<option value="{{ a.name }}">{{ a.name }}</option>{% endfor %}
         {% endif %}
@@ -107,7 +107,7 @@
     </div>
     <div>
       <label class="block text-xs text-gray-500 mb-1">Qualification Roll (2D, before DMs)</label>
-      <input type="number" name="roll" value="7" min="2" max="12"
+      <input type="number" name="roll" min="2" max="12" required
              class="w-32 bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500">
     </div>
   </div>

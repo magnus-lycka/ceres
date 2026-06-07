@@ -1,11 +1,23 @@
 """Tests for the Entertainer career — artist, journalist, and performer assignments."""
 
+from ceres.character.domain.career.career_events import (
+    CareerChoiceHandler,
+    CareerEntryHandler,
+    PendingAdvancement,
+    PendingChoices,
+    SkillChoiceHandler,
+    SkillRollHandler,
+    SurviveHandler,
+    TermEventHandler,
+)
 from ceres.character.domain.career.entertainer import (
     EntertainerEvent8Accept,
     EntertainerEvent8Refuse,
     PendingEntertainerEvent3SkillRoll,
     PendingEntertainerEvent8SkillRoll,
 )
+from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
+from ceres.character.domain.connection import Enemy
 from ceres.character.domain.skills import (
     Admin,
     Athletics,
@@ -17,30 +29,19 @@ from ceres.character.domain.skills import (
     PresentationArt,
 )
 from ceres.character.domain.sophont import VILANI
-from ceres.character.events import (
-    BackgroundSkillsEvent,
-    CareerChoiceEvent,
-    CareerEvent,
-    CharacterStartedEvent,
-    PendingAdvancement,
-    PendingChoices,
-    SkillChoiceEvent,
-    SkillRollEvent,
-    SurviveEvent,
-    TermEventEvent,
-    UcpEvent,
-)
+from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
-from ceres.character.state import Enemy
 from tests.character.helpers import MOCK_WORLD
 
 
 def _setup() -> list:
     """STR=7 DEX=8 END=6 INT=9 EDU=10 SOC=5."""
     return [
-        CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Star'),
-        UcpEvent(id=2, fulfills=(1, 0), ucp='7869A5'),
-        BackgroundSkillsEvent(id=3, fulfills=(2, 0), skills=[Admin(), Athletics(), Carouse(), Drive()]),
+        Event(id=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Star')),
+        Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='7869A5')),
+        Event(
+            id=3, fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()])
+        ),
     ]
 
 
@@ -51,18 +52,22 @@ def _enter_entertainer(assignment: str = 'Artist', qual_roll: int = 4) -> list:
     """
     return [
         *_setup(),
-        CareerEvent(id=4, fulfills=(3, 0), career='Entertainer', assignment=assignment, qualification_roll=qual_roll),
-        SkillChoiceEvent(id=5, fulfills=(4, 0), skill=PerformingArt()),
+        Event(
+            id=4,
+            fulfills=(3, 0),
+            handler=CareerEntryHandler(career='Entertainer', assignment=assignment, qualification_roll=qual_roll),
+        ),
+        Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=PerformingArt())),
     ]
 
 
 def _through_survive(assignment: str = 'Artist', survive_roll: int = 7) -> list:
     """Artist: SOC 6+, SOC=5, DM−1 → need roll 7 (7+(−1)=6 ≥ 6)."""
-    return [*_enter_entertainer(assignment), SurviveEvent(id=6, fulfills=(5, 0), roll=survive_roll)]
+    return [*_enter_entertainer(assignment), Event(id=6, fulfills=(5, 0), handler=SurviveHandler(roll=survive_roll))]
 
 
 def _through_term_event(event_roll: int, assignment: str = 'Artist') -> list:
-    return [*_through_survive(assignment), TermEventEvent(id=7, fulfills=(6, 0), roll=event_roll)]
+    return [*_through_survive(assignment), Event(id=7, fulfills=(6, 0), handler=TermEventHandler(roll=event_roll))]
 
 
 # ── event 3: controversial exhibition ────────────────────────────────────────
@@ -84,7 +89,7 @@ class TestEntertainerEvent3:
     def test_success_increases_soc(self):
         events = [
             *self._setup_to_event(),
-            SkillRollEvent(id=8, fulfills=(7, 0), skill=Admin(), modified_roll=9),
+            Event(id=8, fulfills=(7, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=9)),
         ]
         projection = replay(1, events)
         from ceres.character.domain.characteristics import Chars
@@ -94,7 +99,7 @@ class TestEntertainerEvent3:
     def test_failure_decreases_soc(self):
         events = [
             *self._setup_to_event(),
-            SkillRollEvent(id=8, fulfills=(7, 0), skill=Admin(), modified_roll=7),
+            Event(id=8, fulfills=(7, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
         ]
         projection = replay(1, events)
         from ceres.character.domain.characteristics import Chars
@@ -105,7 +110,7 @@ class TestEntertainerEvent3:
         for roll in (9, 7):
             events = [
                 *self._setup_to_event(),
-                SkillRollEvent(id=8, fulfills=(7, 0), skill=Admin(), modified_roll=roll),
+                Event(id=8, fulfills=(7, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=roll)),
             ]
             projection = replay(1, events)
             assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs), f'roll={roll}'
@@ -130,7 +135,11 @@ class TestEntertainerEvent8:
     def test_refuse_queues_advancement(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent.for_choice(EntertainerEvent8Refuse, id=8, fulfills=(7, 0)),
+            Event(
+                id=8,
+                fulfills=(7, 0),
+                handler=CareerChoiceHandler(choice=EntertainerEvent8Refuse.model_fields['kind'].default),
+            ),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
@@ -138,7 +147,11 @@ class TestEntertainerEvent8:
     def test_accept_creates_art_or_investigate_roll(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent.for_choice(EntertainerEvent8Accept, id=8, fulfills=(7, 0)),
+            Event(
+                id=8,
+                fulfills=(7, 0),
+                handler=CareerChoiceHandler(choice=EntertainerEvent8Accept.model_fields['kind'].default),
+            ),
         ]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingEntertainerEvent8SkillRoll)), None)
@@ -148,8 +161,12 @@ class TestEntertainerEvent8:
     def test_accept_success_schedules_advancement_dm_2(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent.for_choice(EntertainerEvent8Accept, id=8, fulfills=(7, 0)),
-            SkillRollEvent(id=9, fulfills=(8, 0), skill=Admin(), modified_roll=9),
+            Event(
+                id=8,
+                fulfills=(7, 0),
+                handler=CareerChoiceHandler(choice=EntertainerEvent8Accept.model_fields['kind'].default),
+            ),
+            Event(id=9, fulfills=(8, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=9)),
         ]
         projection = replay(1, events)
         assert projection.pending_advancement_dm == 2
@@ -157,8 +174,12 @@ class TestEntertainerEvent8:
     def test_accept_failure_adds_enemy(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent.for_choice(EntertainerEvent8Accept, id=8, fulfills=(7, 0)),
-            SkillRollEvent(id=9, fulfills=(8, 0), skill=Admin(), modified_roll=7),
+            Event(
+                id=8,
+                fulfills=(7, 0),
+                handler=CareerChoiceHandler(choice=EntertainerEvent8Accept.model_fields['kind'].default),
+            ),
+            Event(id=9, fulfills=(8, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
         ]
         projection = replay(1, events)
         enemies = [c for c in projection.summary.connections if isinstance(c, Enemy)]
@@ -168,8 +189,12 @@ class TestEntertainerEvent8:
         for roll in (9, 7):
             events = [
                 *self._setup_to_event(),
-                CareerChoiceEvent.for_choice(EntertainerEvent8Accept, id=8, fulfills=(7, 0)),
-                SkillRollEvent(id=9, fulfills=(8, 0), skill=Admin(), modified_roll=roll),
+                Event(
+                    id=8,
+                    fulfills=(7, 0),
+                    handler=CareerChoiceHandler(choice=EntertainerEvent8Accept.model_fields['kind'].default),
+                ),
+                Event(id=9, fulfills=(8, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=roll)),
             ]
             projection = replay(1, events)
             assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs), f'roll={roll}'

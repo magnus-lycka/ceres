@@ -7,7 +7,7 @@ import sqlite3
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ceres.character.state import CharacterSummary
+    from ceres.character.mechanism.character_state import CharacterSummary
 
 _DEFAULT_CACHE = Path.home() / '.cache' / 'ceres' / 'npc_notes.db'
 _DEFAULT_MODEL = 'llama3.2:3b'

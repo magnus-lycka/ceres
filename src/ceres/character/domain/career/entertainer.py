@@ -1,4 +1,4 @@
-from typing import ClassVar, Literal
+from typing import Any, ClassVar, Literal
 
 from ceres.character.domain.benefits import (
     CONTACT,
@@ -32,8 +32,15 @@ from ceres.character.domain.career.career_data import (
     SkillChoiceEffect,
     SkillTable,
 )
+from ceres.character.domain.career.career_events import (
+    PendingChoices,
+    career_progress_pending,
+)
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 from ceres.character.domain.characteristics import Chars, ConnectionKind, characteristic_dm
+from ceres.character.domain.connection import (
+    Enemy,
+)
 from ceres.character.domain.skills import (
     Advocate,
     ArtSkill,
@@ -62,16 +69,8 @@ from ceres.character.domain.skills import (
     Survival,
     skill_instances,
 )
-from ceres.character.events import (
-    PendingChoices,
-    SkillRollEvent,
-    career_progress_pending,
-)
-from ceres.character.state import (
-    CharacterProjection,
-    ChoiceBase,
-    Enemy,
-)
+from ceres.character.mechanism.character_state import CharacterProjection
+from ceres.character.mechanism.pending_input import ChoiceBase
 
 # ── Career-specific pending input types ──────────────────────────────────────
 
@@ -79,7 +78,7 @@ from ceres.character.state import (
 class PendingEntertainerEvent3SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['entertainer_event_3_skill_roll'] = 'entertainer_event_3_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
         if event.modified_roll >= 8:
             projection.summary.characteristics[Chars.SOC] = projection.summary.characteristics.get(Chars.SOC, 0) + 1
         else:
@@ -115,7 +114,7 @@ class EntertainerEvent8Refuse(ChoiceBase):
 class PendingEntertainerEvent8SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['entertainer_event_8_skill_roll'] = 'entertainer_event_8_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
         if event.modified_roll >= 8:
             projection.pending_advancement_dm += 2
         else:

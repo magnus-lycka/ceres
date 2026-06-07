@@ -1,4 +1,4 @@
-from typing import ClassVar, Literal
+from typing import Any, ClassVar, Literal
 
 from ceres.character.domain.benefits import (
     ALLY,
@@ -29,8 +29,18 @@ from ceres.character.domain.career.career_data import (
     SkillChoiceEffect,
     SkillTable,
 )
+from ceres.character.domain.career.career_events import (
+    PendingChoices,
+    PendingSkillChoice,
+    career_progress_pending,
+)
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.connection import (
+    Enemy,
+    Rival,
+)
+from ceres.character.domain.health.health_events import PendingInjuryTable
 from ceres.character.domain.skills import (
     Animals,
     Astrogation,
@@ -54,19 +64,8 @@ from ceres.character.domain.skills import (
     VaccSuit,
     skill_instances,
 )
-from ceres.character.events import (
-    PendingChoices,
-    PendingInjuryTable,
-    PendingSkillChoice,
-    SkillRollEvent,
-    career_progress_pending,
-)
-from ceres.character.state import (
-    CharacterProjection,
-    ChoiceBase,
-    Enemy,
-    Rival,
-)
+from ceres.character.mechanism.character_state import CharacterProjection
+from ceres.character.mechanism.pending_input import ChoiceBase
 
 # ── Career-specific pending input types ──────────────────────────────────────
 
@@ -74,8 +73,11 @@ from ceres.character.state import (
 class PendingDrifterMishap5SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['drifter_mishap_5_skill_roll'] = 'drifter_mishap_5_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
-        from ceres.character.events import _apply_mishap_ejection, _set_forced_prison_career
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+        from ceres.character.domain.career.career_events import (
+            _apply_mishap_ejection,
+            _set_forced_prison_career,
+        )
 
         career = projection.get_current_career()
         projection.summary.connections.append(Rival(source='A friend who turned on you'))
@@ -106,7 +108,7 @@ class DrifterEvent3Decline(ChoiceBase):
 class PendingDrifterEvent8SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['drifter_event_8_skill_roll'] = 'drifter_event_8_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
         if event.modified_roll >= 8:
             projection.pending_inputs.append(
                 PendingSkillChoice(
@@ -130,7 +132,6 @@ class DrifterEvent9Injury(ChoiceBase):
             PendingInjuryTable(
                 pending_id=(event.id, 0),
                 instruction='Risky adventure outcome: roll 1D on Injury table',
-                options=['1', '2', '3', '4', '5', '6'],
             )
         )
 
@@ -140,7 +141,7 @@ class DrifterEvent9Prison(ChoiceBase):
     label: str = 'Be sent to Prisoner career'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.events import _set_forced_prison_career
+        from ceres.character.domain.career.career_events import _set_forced_prison_career
 
         _set_forced_prison_career(projection, 'Sent to Prisoner career after a risky adventure.')
 
@@ -148,7 +149,7 @@ class DrifterEvent9Prison(ChoiceBase):
 class PendingDrifterEvent9RollSkillRoll(CareerSkillRollPendingBase):
     kind: Literal['drifter_event_9_roll_skill_roll'] = 'drifter_event_9_roll_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
         career = projection.get_current_career()
         roll = event.modified_roll
         if roll <= 2:
@@ -165,7 +166,6 @@ class PendingDrifterEvent9RollSkillRoll(CareerSkillRollPendingBase):
                 PendingInjuryTable(
                     pending_id=(event.id, 0),
                     instruction='Risky adventure (3): roll 1D on Injury table',
-                    options=['1', '2', '3', '4', '5', '6'],
                 )
             )
             projection.pending_inputs.append(career_progress_pending(projection, career, event.id, 1))

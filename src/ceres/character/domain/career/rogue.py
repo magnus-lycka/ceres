@@ -1,4 +1,4 @@
-from typing import ClassVar, Literal
+from typing import Any, ClassVar, Literal
 
 from ceres.character.domain.benefits import (
     ARMOR,
@@ -29,8 +29,19 @@ from ceres.character.domain.career.career_data import (
     SkillChoiceEffect,
     SkillTable,
 )
+from ceres.character.domain.career.career_events import (
+    PendingChoices,
+    career_progress_pending,
+    muster_out_setup,
+)
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.connection import (
+    Ally,
+    Contact,
+    Enemy,
+    Rival,
+)
 from ceres.character.domain.skills import (
     Advocate,
     Astrogation,
@@ -59,20 +70,8 @@ from ceres.character.domain.skills import (
     Tactics,
     VaccSuit,
 )
-from ceres.character.events import (
-    PendingChoices,
-    SkillRollEvent,
-    career_progress_pending,
-    muster_out_setup,
-)
-from ceres.character.state import (
-    Ally,
-    CharacterProjection,
-    ChoiceBase,
-    Contact,
-    Enemy,
-    Rival,
-)
+from ceres.character.mechanism.character_state import CharacterProjection
+from ceres.character.mechanism.pending_input import ChoiceBase
 
 # ── mishap 2: arrested ────────────────────────────────────────────────────────
 
@@ -82,7 +81,7 @@ class RogueMishap2Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        from ceres.character.events import _set_forced_prison_career
+        from ceres.character.domain.career.career_events import _set_forced_prison_career
 
         _set_forced_prison_career(projection, 'Arrested. You must take the Prisoner career in your next term.')
         return pending_idx
@@ -96,8 +95,8 @@ class RogueMishap3RollTwo(ChoiceBase):
     label: str = '2 (sent to Prisoner career next term)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
+        from ceres.character.domain.career.career_events import _set_forced_prison_career
         from ceres.character.domain.career.loader import load_careers
-        from ceres.character.events import _set_forced_prison_career
 
         _set_forced_prison_career(
             projection,
@@ -155,8 +154,11 @@ class RogueMishap3Handler(CareerHandlerBase):
 class RogueEvent3SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['rogue_event_3_skill_roll'] = 'rogue_event_3_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
-        from ceres.character.events import _apply_mishap_ejection, _set_forced_prison_career
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+        from ceres.character.domain.career.career_events import (
+            _apply_mishap_ejection,
+            _set_forced_prison_career,
+        )
 
         if event.modified_roll >= 8:
             pass  # cleared — _apply_skill_roll auto-queues advancement
@@ -258,7 +260,7 @@ class RogueEvent6Handler(CareerHandlerBase):
 class PendingRogueEvent9SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['rogue_event_9_skill_roll'] = 'rogue_event_9_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
         if event.modified_roll >= 8:
             projection.summary.career_terms[-1].require_muster_out().extra_rolls += 1
             # no pending added — _apply_skill_roll auto-queues advancement

@@ -1,11 +1,27 @@
 """Tests for the Merchant career — merchant marine, free trader, and broker assignments."""
 
+from ceres.character.domain.career.career_events import (
+    CareerChoiceHandler,
+    CareerEntryHandler,
+    PendingAdvancement,
+    PendingChoices,
+    PendingSkillChoice,
+    SkillChoiceHandler,
+    SkillRollHandler,
+    SurviveHandler,
+    TermEventHandler,
+)
 from ceres.character.domain.career.common_pending import PendingAdvancedTrainingSkillRoll
 from ceres.character.domain.career.merchant import (
     MerchantEvent3Accept,
     MerchantEvent3Refuse,
     MerchantEvent3SkillRoll,
     PendingMerchantEvent8Roll,
+)
+from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
+from ceres.character.domain.connection import (
+    Enemy,
+    Rival,
 )
 from ceres.character.domain.skills import (
     Admin,
@@ -20,34 +36,19 @@ from ceres.character.domain.skills import (
     Persuade,
 )
 from ceres.character.domain.sophont import VILANI
-from ceres.character.events import (
-    BackgroundSkillsEvent,
-    CareerChoiceEvent,
-    CareerEvent,
-    CharacterStartedEvent,
-    PendingAdvancement,
-    PendingChoices,
-    PendingSkillChoice,
-    SkillChoiceEvent,
-    SkillRollEvent,
-    SurviveEvent,
-    TermEventEvent,
-    UcpEvent,
-)
+from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
-from ceres.character.state import (
-    Enemy,
-    Rival,
-)
 from tests.character.helpers import MOCK_WORLD
 
 
 def _setup() -> list:
     """STR=7 DEX=8 END=6 INT=9 EDU=10 SOC=5 — INT DM+1, EDU DM+2."""
     return [
-        CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Mer'),
-        UcpEvent(id=2, fulfills=(1, 0), ucp='7869A5'),
-        BackgroundSkillsEvent(id=3, fulfills=(2, 0), skills=[Admin(), Athletics(), Carouse(), Drive()]),
+        Event(id=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Mer')),
+        Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='7869A5')),
+        Event(
+            id=3, fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()])
+        ),
     ]
 
 
@@ -55,7 +56,11 @@ def _enter_merchant(assignment: str = 'Merchant Marine', qual_roll: int = 3) -> 
     """Through qualification — INT 4+, INT=9 DM+1, roll 3 → 4 ≥ 4."""
     return [
         *_setup(),
-        CareerEvent(id=4, fulfills=(3, 0), career='Merchant', assignment=assignment, qualification_roll=qual_roll),
+        Event(
+            id=4,
+            fulfills=(3, 0),
+            handler=CareerEntryHandler(career='Merchant', assignment=assignment, qualification_roll=qual_roll),
+        ),
     ]
 
 
@@ -64,11 +69,11 @@ def _through_survive(assignment: str = 'Merchant Marine', survive_roll: int = 3)
 
     Merchant Marine survival: EDU 5+, EDU=10 DM+2, roll 3 → 5 ≥ 5 (pass).
     """
-    return [*_enter_merchant(assignment), SurviveEvent(id=5, fulfills=(4, 0), roll=survive_roll)]
+    return [*_enter_merchant(assignment), Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=survive_roll))]
 
 
 def _through_term_event(event_roll: int, assignment: str = 'Merchant Marine') -> list:
-    return [*_through_survive(assignment), TermEventEvent(id=6, fulfills=(5, 0), roll=event_roll)]
+    return [*_through_survive(assignment), Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=event_roll))]
 
 
 # ── event 3: smuggling opportunity ───────────────────────────────────────────
@@ -90,7 +95,11 @@ class TestMerchantEvent3:
     def test_refuse_adds_rival(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent.for_choice(MerchantEvent3Refuse, id=7, fulfills=(6, 0)),
+            Event(
+                id=7,
+                fulfills=(6, 0),
+                handler=CareerChoiceHandler(choice=MerchantEvent3Refuse.model_fields['kind'].default),
+            ),
         ]
         projection = replay(1, events)
         rivals = [c for c in projection.summary.connections if isinstance(c, Rival)]
@@ -99,7 +108,11 @@ class TestMerchantEvent3:
     def test_refuse_queues_advancement(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent.for_choice(MerchantEvent3Refuse, id=7, fulfills=(6, 0)),
+            Event(
+                id=7,
+                fulfills=(6, 0),
+                handler=CareerChoiceHandler(choice=MerchantEvent3Refuse.model_fields['kind'].default),
+            ),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
@@ -107,7 +120,11 @@ class TestMerchantEvent3:
     def test_accept_creates_skill_roll(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent.for_choice(MerchantEvent3Accept, id=7, fulfills=(6, 0)),
+            Event(
+                id=7,
+                fulfills=(6, 0),
+                handler=CareerChoiceHandler(choice=MerchantEvent3Accept.model_fields['kind'].default),
+            ),
         ]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, MerchantEvent3SkillRoll)), None)
@@ -117,8 +134,12 @@ class TestMerchantEvent3:
     def test_accept_success_adds_benefit_roll(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent.for_choice(MerchantEvent3Accept, id=7, fulfills=(6, 0)),
-            SkillRollEvent(id=8, fulfills=(7, 0), skill=Admin(), modified_roll=9),
+            Event(
+                id=7,
+                fulfills=(6, 0),
+                handler=CareerChoiceHandler(choice=MerchantEvent3Accept.model_fields['kind'].default),
+            ),
+            Event(id=8, fulfills=(7, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=9)),
         ]
         projection = replay(1, events)
         assert projection.summary.career_terms[-1].require_muster_out().extra_rolls == 1
@@ -126,8 +147,12 @@ class TestMerchantEvent3:
     def test_accept_success_continues_career(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent.for_choice(MerchantEvent3Accept, id=7, fulfills=(6, 0)),
-            SkillRollEvent(id=8, fulfills=(7, 0), skill=Admin(), modified_roll=9),
+            Event(
+                id=7,
+                fulfills=(6, 0),
+                handler=CareerChoiceHandler(choice=MerchantEvent3Accept.model_fields['kind'].default),
+            ),
+            Event(id=8, fulfills=(7, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=9)),
         ]
         projection = replay(1, events)
         assert projection.summary.current_career is not None
@@ -136,8 +161,12 @@ class TestMerchantEvent3:
     def test_accept_failure_adds_enemy_and_ends_career(self):
         events = [
             *self._setup_to_event(),
-            CareerChoiceEvent.for_choice(MerchantEvent3Accept, id=7, fulfills=(6, 0)),
-            SkillRollEvent(id=8, fulfills=(7, 0), skill=Admin(), modified_roll=7),
+            Event(
+                id=7,
+                fulfills=(6, 0),
+                handler=CareerChoiceHandler(choice=MerchantEvent3Accept.model_fields['kind'].default),
+            ),
+            Event(id=8, fulfills=(7, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
         ]
         projection = replay(1, events)
         enemies = [c for c in projection.summary.connections if isinstance(c, Enemy)]
@@ -175,7 +204,7 @@ class TestMerchantEvent8:
     def test_skill_choice_grants_chosen_skill(self):
         events = [
             *self._setup_to_event(),
-            SkillChoiceEvent(id=7, fulfills=(6, 0), skill=Admin()),
+            Event(id=7, fulfills=(6, 0), handler=SkillChoiceHandler(skill=Admin())),
         ]
         projection = replay(1, events)
         # Admin was already at level 0 from background; should now be higher
@@ -184,8 +213,8 @@ class TestMerchantEvent8:
     def test_natural_2_sets_forced_next_career_prisoner(self):
         events = [
             *self._setup_to_event(),
-            SkillChoiceEvent(id=7, fulfills=(6, 0), skill=Admin()),
-            SkillRollEvent(id=8, fulfills=(6, 1), skill=Admin(), modified_roll=2),
+            Event(id=7, fulfills=(6, 0), handler=SkillChoiceHandler(skill=Admin())),
+            Event(id=8, fulfills=(6, 1), handler=SkillRollHandler(skill=Admin(), modified_roll=2)),
         ]
         projection = replay(1, events)
         assert projection.forced_next_career is not None
@@ -194,8 +223,8 @@ class TestMerchantEvent8:
     def test_roll_above_2_does_not_force_prisoner(self):
         events = [
             *self._setup_to_event(),
-            SkillChoiceEvent(id=7, fulfills=(6, 0), skill=Admin()),
-            SkillRollEvent(id=8, fulfills=(6, 1), skill=Admin(), modified_roll=3),
+            Event(id=7, fulfills=(6, 0), handler=SkillChoiceHandler(skill=Admin())),
+            Event(id=8, fulfills=(6, 1), handler=SkillRollHandler(skill=Admin(), modified_roll=3)),
         ]
         projection = replay(1, events)
         assert projection.forced_next_career is None
@@ -203,8 +232,8 @@ class TestMerchantEvent8:
     def test_2d_roll_creates_advancement_pending(self):
         events = [
             *self._setup_to_event(),
-            SkillChoiceEvent(id=7, fulfills=(6, 0), skill=Admin()),
-            SkillRollEvent(id=8, fulfills=(6, 1), skill=Admin(), modified_roll=7),
+            Event(id=7, fulfills=(6, 0), handler=SkillChoiceHandler(skill=Admin())),
+            Event(id=8, fulfills=(6, 1), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
@@ -229,7 +258,7 @@ class TestMerchantEvent9:
     def test_success_creates_skill_choice_with_existing_skills(self):
         events = [
             *self._setup_to_event(),
-            SkillRollEvent(id=7, fulfills=(6, 0), skill=Admin(), modified_roll=9),
+            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=9)),
         ]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
@@ -240,7 +269,7 @@ class TestMerchantEvent9:
     def test_failure_no_skill_choice(self):
         events = [
             *self._setup_to_event(),
-            SkillRollEvent(id=7, fulfills=(6, 0), skill=Admin(), modified_roll=7),
+            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
         ]
         projection = replay(1, events)
         assert not any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
@@ -248,7 +277,7 @@ class TestMerchantEvent9:
     def test_failure_queues_advancement(self):
         events = [
             *self._setup_to_event(),
-            SkillRollEvent(id=7, fulfills=(6, 0), skill=Admin(), modified_roll=7),
+            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
         ]
         projection = replay(1, events)
         # On failure no skill choice created; _apply_skill_roll auto-queues advancement

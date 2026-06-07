@@ -1,4 +1,4 @@
-from typing import ClassVar, Literal
+from typing import Any, ClassVar, Literal
 
 from ceres.character.domain.benefits import (
     BLADE,
@@ -34,8 +34,16 @@ from ceres.character.domain.career.career_data import (
     SkillChoiceEffect,
     SkillTable,
 )
+from ceres.character.domain.career.career_events import (
+    PendingChoices,
+    career_progress_pending,
+)
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.connection import (
+    Enemy,
+    Rival,
+)
 from ceres.character.domain.skills import (
     Admin,
     Advocate,
@@ -62,17 +70,8 @@ from ceres.character.domain.skills import (
     Tactics,
     skill_instances,
 )
-from ceres.character.events import (
-    PendingChoices,
-    SkillRollEvent,
-    career_progress_pending,
-)
-from ceres.character.state import (
-    CharacterProjection,
-    ChoiceBase,
-    Enemy,
-    Rival,
-)
+from ceres.character.mechanism.character_state import CharacterProjection
+from ceres.character.mechanism.pending_input import ChoiceBase
 
 # ── mishap 3: disaster or war ─────────────────────────────────────────────────
 
@@ -80,8 +79,8 @@ from ceres.character.state import (
 class PendingNobleMishap3SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['noble_mishap_3_skill_roll'] = 'noble_mishap_3_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
-        from ceres.character.events import _apply_mishap_ejection
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+        from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
         career = projection.get_current_career()
         if event.modified_roll >= 8:
@@ -114,8 +113,8 @@ class NobleMishap3Handler(CareerHandlerBase):
 class PendingNobleMishap5SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['noble_mishap_5_skill_roll'] = 'noble_mishap_5_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
-        from ceres.character.events import _apply_mishap_ejection
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+        from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
         career = projection.get_current_career()
         if event.modified_roll < 8:
@@ -146,8 +145,8 @@ class NobleMishap5Handler(CareerHandlerBase):
 class NobleEvent8SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['noble_event_8_skill_roll'] = 'noble_event_8_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
-        from ceres.character.events import _apply_mishap_ejection
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+        from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
         if event.modified_roll >= 8:
             projection.summary.career_terms[-1].require_muster_out().extra_rolls += 1

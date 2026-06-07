@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, Any, Final, Literal, NamedTuple, Self, cast, get_args, get_origin
 
 if TYPE_CHECKING:
-    from ceres.character.state import CharacterSummary
+    from ceres.character.mechanism.character_state import CharacterSummary
 
 from pydantic import Field
 

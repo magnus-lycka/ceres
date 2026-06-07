@@ -1,4 +1,4 @@
-from typing import ClassVar, Literal
+from typing import Any, ClassVar, Literal
 
 from ceres.character.domain.benefits import (
     BLADE,
@@ -31,9 +31,18 @@ from ceres.character.domain.career.career_data import (
     SkillChoiceEffect,
     SkillTable,
 )
+from ceres.character.domain.career.career_events import (
+    PendingChoices,
+    PendingSkillChoice,
+    career_progress_pending,
+)
 from ceres.character.domain.career.common import handle_advanced_training
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.connection import (
+    Enemy,
+    Rival,
+)
 from ceres.character.domain.skills import (
     Admin,
     Advocate,
@@ -62,18 +71,8 @@ from ceres.character.domain.skills import (
     VaccSuit,
     skill_instances,
 )
-from ceres.character.events import (
-    PendingChoices,
-    PendingSkillChoice,
-    SkillRollEvent,
-    career_progress_pending,
-)
-from ceres.character.state import (
-    CharacterProjection,
-    ChoiceBase,
-    Enemy,
-    Rival,
-)
+from ceres.character.mechanism.character_state import CharacterProjection
+from ceres.character.mechanism.pending_input import ChoiceBase
 
 # ── event 3: smuggling opportunity ───────────────────────────────────────────
 
@@ -81,8 +80,8 @@ from ceres.character.state import (
 class MerchantEvent3SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['merchant_event_3_skill_roll'] = 'merchant_event_3_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
-        from ceres.character.events import _apply_mishap_ejection
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+        from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
         if event.modified_roll >= 8:
             projection.summary.career_terms[-1].require_muster_out().extra_rolls += 1
@@ -161,8 +160,8 @@ class MerchantEvent5Handler(CareerHandlerBase):
 class PendingMerchantEvent8Roll(CareerSkillRollPendingBase):
     kind: Literal['merchant_event_8_roll'] = 'merchant_event_8_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
-        from ceres.character.events import _set_forced_prison_career
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+        from ceres.character.domain.career.career_events import _set_forced_prison_career
 
         if event.modified_roll == 2:
             _set_forced_prison_career(projection, 'Legal trouble — rolled 2, sent to Prisoner career.')

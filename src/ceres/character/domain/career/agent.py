@@ -1,4 +1,4 @@
-from typing import ClassVar, Literal
+from typing import Any, ClassVar, Literal
 
 from ceres.character.domain.benefits import (
     CYBERNETIC_IMPLANT,
@@ -34,12 +34,22 @@ from ceres.character.domain.career.career_data import (
     SkillChoiceEffect,
     SkillTable,
 )
+from ceres.character.domain.career.career_events import (
+    PendingChoices,
+    PendingMishap,
+    PendingSkillChoice,
+    muster_out_setup,
+)
 from ceres.character.domain.career.common import handle_advanced_training
 from ceres.character.domain.career.common_pending import (
     CareerSkillChoicePendingBase,
     CareerSkillRollPendingBase,
 )
 from ceres.character.domain.characteristics import Chars, ConnectionKind
+from ceres.character.domain.connection import (
+    Enemy,
+)
+from ceres.character.domain.health.health_events import PendingDoubleInjuryRoll
 from ceres.character.domain.skills import (
     Admin,
     Advocate,
@@ -67,19 +77,8 @@ from ceres.character.domain.skills import (
     VaccSuit,
     skill_instances,
 )
-from ceres.character.events import (
-    PendingChoices,
-    PendingDoubleInjuryRoll,
-    PendingMishap,
-    PendingSkillChoice,
-    SkillRollEvent,
-    muster_out_setup,
-)
-from ceres.character.state import (
-    CharacterProjection,
-    ChoiceBase,
-    Enemy,
-)
+from ceres.character.mechanism.character_state import CharacterProjection
+from ceres.character.mechanism.pending_input import ChoiceBase
 
 # ── Career-specific pending input types ──────────────────────────────────────
 
@@ -89,7 +88,7 @@ class AgentMishap2Accept(ChoiceBase):
     label: str = 'Accept (leave without further penalty, lose Benefit roll)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.events import _apply_mishap_ejection
+        from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
         career = projection.get_current_career()
         _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
@@ -100,7 +99,7 @@ class AgentMishap2Refuse(ChoiceBase):
     label: str = 'Refuse (roll twice on Injury table, gain Enemy, choose any skill)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.events import _apply_mishap_ejection
+        from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
         career = projection.get_current_career()
         pending_idx = 0
@@ -111,7 +110,6 @@ class AgentMishap2Refuse(ChoiceBase):
             PendingDoubleInjuryRoll(
                 pending_id=(event.id, pending_idx),
                 instruction='Refused: roll twice on the Injury table and provide both results — lower applies',
-                options=['1', '2', '3', '4', '5', '6'],
             )
         )
         pending_idx += 1
@@ -129,7 +127,7 @@ class AgentMishap2Refuse(ChoiceBase):
 class PendingAgentMishap3SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['agent_mishap_3_skill_roll'] = 'agent_mishap_3_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
         from ceres.character.domain.career.loader import load_careers
 
         career_obj = projection.summary.current_career
@@ -137,7 +135,7 @@ class PendingAgentMishap3SkillRoll(CareerSkillRollPendingBase):
         if career is None:
             return
 
-        from ceres.character.events import _set_forced_prison_career
+        from ceres.character.domain.career.career_events import _set_forced_prison_career
 
         succeed = event.modified_roll >= 8
         if event.modified_roll <= 2:
@@ -150,7 +148,7 @@ class AgentMishap5Contact(ChoiceBase):
     label: str = 'A Contact was hurt'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.events import _apply_mishap_ejection
+        from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
         career = projection.get_current_career()
         projection.summary.problems.append(
@@ -165,7 +163,7 @@ class AgentMishap5Ally(ChoiceBase):
     label: str = 'An Ally was hurt'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.events import _apply_mishap_ejection
+        from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
         career = projection.get_current_career()
         projection.summary.problems.append(
@@ -180,7 +178,7 @@ class AgentMishap5Family(ChoiceBase):
     label: str = 'A family member was hurt'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.events import _apply_mishap_ejection
+        from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
         career = projection.get_current_career()
         projection.summary.problems.append(
@@ -193,7 +191,7 @@ class AgentMishap5Family(ChoiceBase):
 class PendingAgentEvent3SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['agent_event_3_skill_roll'] = 'agent_event_3_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
         if event.modified_roll >= 8:
             projection.pending_inputs.append(
                 PendingSkillChoice(
@@ -217,7 +215,7 @@ class PendingAgentEvent3SkillRoll(CareerSkillRollPendingBase):
 class PendingAgentEvent8SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['agent_event_8_skill_roll'] = 'agent_event_8_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
         if event.modified_roll >= 8:
             projection.summary.problems.append(
                 'Undercover mission success: roll on Rogue or Citizen Events table and '

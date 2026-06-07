@@ -1,12 +1,11 @@
+from typing import Any
+
 from ceres.character.domain.characteristics import Chars, ConnectionKind
+from ceres.character.domain.connection import make_connection
 from ceres.character.domain.precareer.precareer_data import PreCareerData
+from ceres.character.domain.precareer.precareer_events import PendingPreCareerSkillChoice
 from ceres.character.domain.skills import ScienceSkill, skill_instances
-from ceres.character.events import PendingPreCareerSkillChoice, PreCareerGraduationEvent
-from ceres.character.state import (
-    CharacterProjection,
-    CharacterSummary,
-    make_connection,
-)
+from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
 
 
 class PsionicCommunityPreCareer(PreCareerData):
@@ -16,7 +15,7 @@ class PsionicCommunityPreCareer(PreCareerData):
     def apply_graduation(
         self,
         projection: CharacterProjection,
-        event: PreCareerGraduationEvent,
+        event: Any,
         honours: bool,
     ) -> int:
 

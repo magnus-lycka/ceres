@@ -1,27 +1,30 @@
 """Tests for index-based career/assignment identity (replacing string identity checks)."""
 
-from ceres.character.domain.career.loader import load_careers
-from ceres.character.domain.sophont import VILANI
-from ceres.character.events import (
-    AdvancementEvent,
-    BackgroundSkillsEvent,
-    CareerEvent,
-    CharacterStartedEvent,
-    SurviveEvent,
-    TermEventEvent,
-    UcpEvent,
+from ceres.character.domain.career.career_events import (
+    AdvancementHandler,
+    CareerEntryHandler,
+    SurviveHandler,
+    TermEventHandler,
 )
+from ceres.character.domain.career.loader import load_careers
+from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
+from ceres.character.domain.sophont import VILANI
+from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
-from tests.character.helpers import MOCK_WORLD
+from tests.character.helpers import MOCK_WORLD, CharacterDriver
 
 
 def _full_setup():
     from ceres.character.domain.skills import Admin, Athletics, Drive, Electronics
 
     return [
-        CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Test'),
-        UcpEvent(id=2, fulfills=(1, 0), ucp='7869A5'),  # INT=9 EDU=10 → 4 background skills
-        BackgroundSkillsEvent(id=3, fulfills=(2, 0), skills=[Admin(), Athletics(), Drive(), Electronics()]),
+        Event(id=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Test')),
+        Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='7869A5')),  # INT=9 EDU=10 → 4 background skills
+        Event(
+            id=3,
+            fulfills=(2, 0),
+            handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Drive(), Electronics()]),
+        ),
     ]
 
 
@@ -143,7 +146,11 @@ class TestCareerTermIndex:
     def test_career_term_has_assignment_index_after_career_start(self):
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Courier', qualification_roll=7),
+            Event(
+                id=4,
+                fulfills=(3, 0),
+                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+            ),
         ]
         projection = replay(1, events)
         assert len(projection.summary.career_terms) == 1
@@ -152,7 +159,11 @@ class TestCareerTermIndex:
     def test_career_term_assignment_index_for_second_assignment(self):
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Surveyor', qualification_roll=7),
+            Event(
+                id=4,
+                fulfills=(3, 0),
+                handler=CareerEntryHandler(career='Scout', assignment='Surveyor', qualification_roll=7),
+            ),
         ]
         projection = replay(1, events)
         assert projection.summary.career_terms[0].assignment_index == 2  # Surveyor is index 2
@@ -160,7 +171,11 @@ class TestCareerTermIndex:
     def test_career_term_assignment_index_for_third_assignment(self):
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Explorer', qualification_roll=7),
+            Event(
+                id=4,
+                fulfills=(3, 0),
+                handler=CareerEntryHandler(career='Scout', assignment='Explorer', qualification_roll=7),
+            ),
         ]
         projection = replay(1, events)
         assert projection.summary.career_terms[0].assignment_index == 3  # Explorer is index 3
@@ -170,7 +185,11 @@ class TestCurrentAssignmentIndex:
     def test_current_assignment_index_set_after_courier(self):
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Courier', qualification_roll=7),
+            Event(
+                id=4,
+                fulfills=(3, 0),
+                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+            ),
         ]
         projection = replay(1, events)
         assert projection.summary.current_assignment_index == 1
@@ -179,7 +198,11 @@ class TestCurrentAssignmentIndex:
     def test_current_assignment_index_set_after_surveyor(self):
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Surveyor', qualification_roll=7),
+            Event(
+                id=4,
+                fulfills=(3, 0),
+                handler=CareerEntryHandler(career='Scout', assignment='Surveyor', qualification_roll=7),
+            ),
         ]
         projection = replay(1, events)
         assert projection.summary.current_assignment_index == 2
@@ -188,7 +211,11 @@ class TestCurrentAssignmentIndex:
         # Noble requires SOC 10+; with SOC=5 (DM=-1) need roll >= 11
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills=(3, 0), career='Noble', assignment='Administrator', qualification_roll=11),
+            Event(
+                id=4,
+                fulfills=(3, 0),
+                handler=CareerEntryHandler(career='Noble', assignment='Administrator', qualification_roll=11),
+            ),
         ]
         projection = replay(1, events)
         assert projection.summary.current_assignment_index == 1
@@ -197,39 +224,30 @@ class TestCurrentAssignmentIndex:
         # Noble requires SOC 10+; with SOC=5 (DM=-1) need roll >= 11
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills=(3, 0), career='Noble', assignment='Dilettante', qualification_roll=11),
+            Event(
+                id=4,
+                fulfills=(3, 0),
+                handler=CareerEntryHandler(career='Noble', assignment='Dilettante', qualification_roll=11),
+            ),
         ]
         projection = replay(1, events)
         assert projection.summary.current_assignment_index == 3
 
     def test_assignment_change_updates_index(self):
-        from ceres.character.events import AssignmentChangeChoiceEvent
+        from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive
 
-        # Noble requires SOC 10+; with SOC=5 (DM=-1) need roll >= 11
-        events = [
-            *_full_setup(),
-            CareerEvent(id=4, fulfills=(3, 0), career='Noble', assignment='Administrator', qualification_roll=11),
-        ]
-        projection = replay(1, events)
-        assert projection.summary.current_assignment_index == 1
-        # Noble allows assignment changes; simulate it
-        from ceres.character.events import PendingAssignmentChangeChoice
-
-        # Find if there's a pending assignment change (there won't be mid-term, but we test the event directly)
-        # We'll apply an AssignmentChangeChoiceEvent directly
-        projection2 = projection.model_copy(deep=True)
-        projection2.pending_inputs.append(
-            PendingAssignmentChangeChoice(
-                pending_id=(99, 0),
-                instruction='Change assignment',
-                options=['Administrator', 'Diplomat', 'Dilettante'],
-            )
-        )
-
-        event = AssignmentChangeChoiceEvent(id=100, fulfills=(99, 0), choice='Diplomat', qualification_roll=12)
-        event.apply(projection2)
-        assert projection2.summary.current_assignment == 'Diplomat'
-        assert projection2.summary.current_assignment_index == 2
+        d = CharacterDriver()
+        d.start(VILANI, MOCK_WORLD)
+        d.ucp('7869A5')
+        d.background_skills([Admin(), Athletics(), Carouse(), Drive()])
+        d.career('Scout', 'Courier', roll=7)
+        assert d.projection.summary.current_assignment_index == 1
+        d.survive(roll=7)
+        d.term_event(roll=5)
+        d.advancement(roll=9)
+        d.switch_assignment('Surveyor', roll=5)
+        assert d.projection.summary.current_assignment == 'Surveyor'
+        assert d.projection.summary.current_assignment_index == 2
 
 
 class TestAdvancementEventUsesSpecialMethod:
@@ -240,10 +258,14 @@ class TestAdvancementEventUsesSpecialMethod:
         # Survive pending is 4.0, term event 5.0, advancement 6.0 (from career_progress_pending).
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Courier', qualification_roll=7),
-            SurviveEvent(id=5, fulfills=(4, 0), roll=8),
-            TermEventEvent(id=6, fulfills=(5, 0), roll=5),
-            AdvancementEvent(id=7, fulfills=(6, 0), roll=9),
+            Event(
+                id=4,
+                fulfills=(3, 0),
+                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+            ),
+            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=8)),
+            Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),
+            Event(id=7, fulfills=(6, 0), handler=AdvancementHandler(roll=9)),
         ]
         projection = replay(1, events)
         # Should not crash and should still be in Scout career

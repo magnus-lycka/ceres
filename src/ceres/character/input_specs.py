@@ -13,7 +13,6 @@ class NumberEntry:
 
     name: str
     label: str
-    default: int
     min: int
     max: int
 
@@ -24,6 +23,7 @@ class Select:
 
     min_select == max_select == 1 → radio buttons.
     max_select > min_select → checkbox group with enforced limits.
+    default: pre-selected value; None means no pre-selection.
     """
 
     name: str
@@ -31,6 +31,7 @@ class Select:
     options: list[tuple[str, str]] = field(default_factory=list)  # (display_label, value)
     min_select: int = 1
     max_select: int = 1
+    default: str | None = None
 
 
 @dataclass
@@ -88,7 +89,37 @@ class SelectWorld:
     filters: WorldFilterCriteria = field(default_factory=WorldFilterCriteria)
 
 
-InputSpec = NumberEntry | Select | Reference | InfoText | SelectWorld
+@dataclass
+class CareerOption:
+    """A selectable career with its available assignments."""
+
+    name: str
+    assignments: list[str]
+
+
+@dataclass
+class PrecareerOption:
+    """A selectable pre-career education option."""
+
+    name: str
+    entry_requirement: str  # e.g. "EDU 8+" or "Automatic"
+    curricula: list[str]
+
+
+@dataclass
+class CareerChoice:
+    """Fully declarative career/pre-career selection widget.
+
+    Carries all data needed to render the combined career and pre-career
+    chooser without additional server calls.
+    """
+
+    career_options: list[CareerOption]
+    precareer_options: list[PrecareerOption] = field(default_factory=list)
+    can_finish: bool = False
+
+
+InputSpec = NumberEntry | Select | Reference | InfoText | SelectWorld | CareerChoice
 
 
 def form_str(form: Any, key: str, default: str = '') -> str:

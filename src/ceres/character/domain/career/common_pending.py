@@ -10,7 +10,8 @@ from pydantic import Field
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.skills import AnySkill, _level_fields
 from ceres.character.input_specs import NumberEntry, Select
-from ceres.character.state import CharacterProjection, PendingInputBase
+from ceres.character.mechanism.character_state import CharacterProjection
+from ceres.character.mechanism.pending_input import PendingInputBase
 
 
 def _build_career_skill_select_options(
@@ -68,13 +69,14 @@ class CareerSkillRollPendingBase(PendingInputBase):
     Subclass and set kind, instruction, options (AnySkill | Chars), and override resolve().
     """
 
-    options: list[AnySkill | Chars] = Field(default_factory=list)  # type: ignore[assignment]
+    options: list[AnySkill | Chars] = Field(default_factory=list)
 
     model_config = {'arbitrary_types_allowed': True}
 
     def event_from_form(self, form: Any) -> Any:
-        from ceres.character.events import SkillRollEvent
+        from ceres.character.domain.career.career_events import SkillRollHandler
         from ceres.character.input_specs import form_int, form_str
+        from ceres.character.mechanism.event_base import Event
 
         skill_str = form_str(form, 'skill')
         modified_roll = form_int(form, 'modified_roll', 8)
@@ -85,7 +87,7 @@ class CareerSkillRollPendingBase(PendingInputBase):
 
             adapter: TypeAdapter[AnySkill] = TypeAdapter(AnySkill)
             skill = adapter.validate_python({'type': skill_str})
-        return SkillRollEvent(skill=skill, modified_roll=modified_roll, fulfills=self.pending_id)
+        return Event(fulfills=self.pending_id, handler=SkillRollHandler(skill=skill, modified_roll=modified_roll))
 
     def input_specs(self, projection: CharacterProjection) -> list[Any]:
         skill_options = _build_career_skill_select_options(self.options)
@@ -94,7 +96,6 @@ class CareerSkillRollPendingBase(PendingInputBase):
             NumberEntry(
                 name='modified_roll',
                 label='Modified roll (2D + skill level + DMs)',
-                default=8,
                 min=2,
                 max=20,
             ),
@@ -109,7 +110,7 @@ class PendingAdvancedTrainingSkillRoll(CareerSkillRollPendingBase):
 
     def resolve(self, projection: CharacterProjection, event: Any) -> None:
         if event.modified_roll >= self.threshold:
-            from ceres.character.events import PendingSkillChoice
+            from ceres.character.domain.career.career_events import PendingSkillChoice
 
             projection.pending_inputs.append(
                 PendingSkillChoice(
@@ -138,17 +139,18 @@ class CareerSkillChoicePendingBase(PendingInputBase):
         from pydantic import Field as _Field, TypeAdapter
 
         from ceres.character.domain.career.career_data import AdvancementDmOption
+        from ceres.character.domain.career.career_events import AdvancementDmChoiceHandler, SkillChoiceHandler
         from ceres.character.domain.skills import AnySkill as _AnySkill
-        from ceres.character.events import AdvancementDmChoiceEvent, SkillChoiceEvent
         from ceres.character.input_specs import form_str
+        from ceres.character.mechanism.event_base import Event
 
         adv_dm_or_skill_adapter: TypeAdapter[AdvancementDmOption | _AnySkill] = TypeAdapter(
             Annotated[AdvancementDmOption | _AnySkill, _Field(union_mode='left_to_right')]
         )
         parsed = adv_dm_or_skill_adapter.validate_json(form_str(form, 'skill', '{}'))
         if isinstance(parsed, AdvancementDmOption):
-            return AdvancementDmChoiceEvent(fulfills=self.pending_id)
-        return SkillChoiceEvent(skill=cast(_AnySkill, parsed), fulfills=self.pending_id)
+            return Event(fulfills=self.pending_id, handler=AdvancementDmChoiceHandler())
+        return Event(fulfills=self.pending_id, handler=SkillChoiceHandler(skill=cast(_AnySkill, parsed)))
 
     def input_specs(self, projection: CharacterProjection) -> list[Any]:
         opts = _build_skill_choice_select_options(projection, self.options, None)
@@ -158,7 +160,7 @@ class CareerSkillChoicePendingBase(PendingInputBase):
         """Called when a SkillChoiceEvent fulfills this pending input."""
         projection.grant_skill(event.skill)
         if not self.advancement_precreated and projection.summary.current_career is not None:
-            from ceres.character.events import career_progress_pending
+            from ceres.character.domain.career.career_events import career_progress_pending
 
             career = projection.get_current_career()
             projection.pending_inputs.append(career_progress_pending(projection, career, event.id))

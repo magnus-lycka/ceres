@@ -4,9 +4,10 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from ceres.character.domain.career import SCOUT
+from ceres.character.domain.career.career_data import CareerTerm
 from ceres.character.domain.sophont import VILANI
+from ceres.character.mechanism.character_state import CharacterSummary
 from ceres.character.notes import NpcNotesCache, build_prompt, generate_notes
-from ceres.character.state import CareerTerm, CharacterSummary
 from tests.character.helpers import MOCK_WORLD
 
 

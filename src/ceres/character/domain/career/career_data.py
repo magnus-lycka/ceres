@@ -3,12 +3,13 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from ceres.character.domain.benefits import AnyBenefit
+from ceres.character.domain.benefits import AnyBenefit, ItemBenefit
 from ceres.character.domain.characteristics import Chars, ConnectionKind, characteristic_dm
 from ceres.character.domain.skills import AnySkill, Level, _level_fields
+from ceres.character.mechanism.errors import ReplayError
 
 if TYPE_CHECKING:
-    from ceres.character.state import CharacterProjection
+    from ceres.character.mechanism.character_state import CharacterProjection
 
 
 type SkillTableEntry = AnySkill | Chars | list[AnySkill]
@@ -60,11 +61,18 @@ class GainSkillEffect(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
+    def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
+        projection.grant_skill(self.skill)
+
 
 class DecreaseCharacteristicEffect(BaseModel):
     type: Literal['decrease_characteristic'] = 'decrease_characteristic'
     characteristic: Chars
     amount: int = 1
+
+    def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
+        current = projection.summary.characteristics.get(self.characteristic, 0)
+        projection.summary.characteristics[self.characteristic] = max(0, current - self.amount)
 
 
 class DecreaseCharacteristicChoiceEffect(BaseModel):
@@ -76,17 +84,41 @@ class DecreaseCharacteristicChoiceEffect(BaseModel):
 class GainContactEffect(BaseModel):
     type: Literal['gain_contact'] = 'gain_contact'
 
+    def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
+        from ceres.character.domain.characteristics import ConnectionKind
+        from ceres.character.domain.connection import make_connection
+
+        projection.summary.connections.append(make_connection(ConnectionKind.CONTACT, source=source))
+
 
 class GainAllyEffect(BaseModel):
     type: Literal['gain_ally'] = 'gain_ally'
+
+    def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
+        from ceres.character.domain.characteristics import ConnectionKind
+        from ceres.character.domain.connection import make_connection
+
+        projection.summary.connections.append(make_connection(ConnectionKind.ALLY, source=source))
 
 
 class GainRivalEffect(BaseModel):
     type: Literal['gain_rival'] = 'gain_rival'
 
+    def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
+        from ceres.character.domain.characteristics import ConnectionKind
+        from ceres.character.domain.connection import make_connection
+
+        projection.summary.connections.append(make_connection(ConnectionKind.RIVAL, source=source))
+
 
 class GainEnemyEffect(BaseModel):
     type: Literal['gain_enemy'] = 'gain_enemy'
+
+    def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
+        from ceres.character.domain.characteristics import ConnectionKind
+        from ceres.character.domain.connection import make_connection
+
+        projection.summary.connections.append(make_connection(ConnectionKind.ENEMY, source=source))
 
 
 class GainConnectionsRolledEffect(BaseModel):
@@ -135,15 +167,29 @@ class AdvancementDmEffect(BaseModel):
     type: Literal['advancement_dm'] = 'advancement_dm'
     amount: int
 
+    def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
+        projection.pending_advancement_dm += self.amount
+
 
 class BenefitDmEffect(BaseModel):
     type: Literal['benefit_dm'] = 'benefit_dm'
     amount: int
 
+    def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
+        if projection.summary.career_terms:
+            projection.summary.career_terms[-1].require_muster_out().benefit_roll_dms.append(
+                BenefitRollDm(amount=self.amount)
+            )
+
 
 class ParoleThresholdChangeEffect(BaseModel):
     type: Literal['parole_threshold_change'] = 'parole_threshold_change'
     amount: int  # positive = increase PT, negative = decrease PT
+
+    def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
+        if projection.summary.parole_threshold is not None:
+            new_pt = projection.summary.parole_threshold + self.amount
+            projection.summary.parole_threshold = max(0, min(12, new_pt))
 
 
 class CareerHandlerBase(BaseModel):
@@ -305,15 +351,14 @@ class CareerData(TermData):
         return bool(self.draft_assignments)
 
     def start_draft(self, projection, event_id: int, assignment_name: str | None = None) -> None:
-        from ceres.character.events import PendingDraftAssignmentChoice
+        from ceres.character.domain.career.career_events import PendingDraftAssignmentChoice
 
         if assignment_name is None and len(self.draft_assignments) > 1:
             projection.pending_inputs.append(
                 PendingDraftAssignmentChoice(
                     pending_id=(event_id, 0),
-                    career=self.name,
+                    career=self,
                     instruction=f'Choose your {self.name} assignment',
-                    options=list(self.draft_assignments),
                 )
             )
             return
@@ -345,8 +390,6 @@ class CareerData(TermData):
         return same_track[-1].rank_after_term if same_track else 0
 
     def append_term(self, projection, assignment: AssignmentData) -> None:
-        from ceres.character.state import CareerTerm
-
         term = CareerTerm(
             career=self,
             assignment=assignment.name,
@@ -417,15 +460,14 @@ class CareerData(TermData):
         dm += projection.pending_qualification_dm
         projection.pending_qualification_dm = 0
         if qualification_roll + dm < target:
-            from ceres.character.events import PendingDraftChoice
+            from ceres.character.domain.career.career_events import PendingDraftChoice
 
             projection.summary.problems.append(f'Failed to qualify for {self.name}.')
-            options = ['drifter'] if projection.summary.drafted else ['draft', 'drifter']
             projection.pending_inputs.append(
                 PendingDraftChoice(
                     pending_id=(event_id, 0),
                     instruction='Qualification failed — submit to the draft or become a Drifter',
-                    options=options,
+                    can_draft=not projection.summary.drafted,
                 )
             )
             return
@@ -502,7 +544,7 @@ class CareerData(TermData):
         if table is None:
             raise ValueError(f'Unknown skill table: {table_name!r}')
         if grant_all:
-            from ceres.character.events import PendingInitialTrainingChoice
+            from ceres.character.domain.career.career_events import PendingInitialTrainingChoice
 
             choice_idx = 0
             for entry in table.entries:
@@ -522,7 +564,7 @@ class CareerData(TermData):
                 projection.pending_inputs.append(self.survival_pending(assignment, event_id))
             return
 
-        from ceres.character.events import PendingInitialTrainingChoice
+        from ceres.character.domain.career.career_events import PendingInitialTrainingChoice
 
         raw: list[AnySkill] = []
         for entry in table.entries:
@@ -582,7 +624,7 @@ class CareerData(TermData):
         return []
 
     def _queue_skill_table_before_survival(self, projection, assignment: AssignmentData, event_id: int) -> None:
-        from ceres.character.events import PendingSkillTable
+        from ceres.character.domain.career.career_events import PendingSkillTable
 
         edu = projection.summary.characteristics.get(Chars.EDU, 0)
         tables = self.available_tables(edu, self.assignment_index(assignment))
@@ -591,7 +633,7 @@ class CareerData(TermData):
         )
 
     def survival_pending(self, assignment: AssignmentData, event_id: int, pending_idx: int = 0):
-        from ceres.character.events import PendingSurvive
+        from ceres.character.domain.career.career_events import PendingSurvive
 
         char = assignment.survival.characteristic
         target = assignment.survival.target
@@ -608,3 +650,57 @@ class CareerData(TermData):
         if assignment is not None:
             result.append(assignment.name.lower())
         return sorted(result)
+
+
+# ── Muster-out and career term state ────────────────────────────────────────
+
+
+class BenefitRollDm(BaseModel):
+    amount: int
+
+
+class MusterOut(BaseModel):
+    terms: int = 1
+    cash_count: int = 0
+    benefits: list[ItemBenefit] = Field(default_factory=list)
+    extra_rolls: int = 0
+    lost_rolls: int = 0
+    benefit_roll_dms: list[BenefitRollDm] = Field(default_factory=list)
+    used: bool = False
+
+
+class CareerTerm(BaseModel):
+    career: CareerData
+    assignment: str
+    assignment_index: int = 0
+    commission: bool = False
+    rank_after_term: int = 0
+    muster_out: MusterOut | None = Field(default_factory=MusterOut)
+    event: str | None = None
+    mishap: str | None = None
+    prison: str | None = None
+
+    def continue_career_run_from(self, previous: CareerTerm) -> bool:
+        if not previous.muster_out:
+            return False
+        if previous.muster_out.used:
+            return False
+        career_continue = self.career.allows_assignment_change and (self.career == previous.career)
+        assignment_continue = (
+            not self.career.allows_assignment_change
+            and self.career == previous.career
+            and self.assignment == previous.assignment
+        )
+        if career_continue or assignment_continue:
+            if not previous.muster_out:
+                raise ValueError('Previous career should have Muster Out information.')
+            self.muster_out = previous.muster_out
+            self.muster_out.terms += 1
+            previous.muster_out = None
+            return True
+        return False
+
+    def require_muster_out(self) -> MusterOut:
+        if self.muster_out is None:
+            raise ReplayError('Career term has no active muster-out state')
+        return self.muster_out

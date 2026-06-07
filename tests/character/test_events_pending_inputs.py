@@ -1,6 +1,5 @@
 from typing import Any, cast
 
-from pydantic import TypeAdapter, ValidationError
 import pytest
 
 from ceres.character.domain import skills as character_skills
@@ -11,6 +10,7 @@ from ceres.character.domain.career.career_data import (
     AdvancementDmOption,
     AssignmentData,
     BenefitDmEffect,
+    CareerTerm,
     CharCheck,
     DecreaseCharacteristicEffect,
     GainAllyEffect,
@@ -22,62 +22,39 @@ from ceres.character.domain.career.career_data import (
     RankBonus,
     RankEntry,
 )
-from ceres.character.domain.career.loader import load_careers
-from ceres.character.domain.characteristics import Chars, ConnectionKind
-from ceres.character.domain.sophont import VILANI
-from ceres.character.events import (
-    AdvancementDmChoiceEvent,
-    AdvancementEvent,
-    AgingCrisisEvent,
-    AgingRollEvent,
-    AssignmentChangeChoiceEvent,
-    BackgroundSkillsEvent,
-    BenefitChoiceEvent,
-    CareerChoiceEvent,
-    CareerEvent,
-    CharacteristicChoiceEvent,
-    CharacterStartedEvent,
-    CommissionEvent,
-    ConnectionKindChoiceEvent,
-    ConnectionsRollEvent,
-    DoubleInjuryTableEvent,
-    DraftAssignmentEvent,
-    DraftEvent,
-    EventBase,
-    FinishCreationEvent,
-    InjuryTableEvent,
-    LifeEventEvent,
-    LifeEventUnusualEvent,
-    MishapEvent,
-    MusterOutEvent,
-    ParoleRollEvent,
+from ceres.character.domain.career.career_events import (
+    AdvancementDmChoiceHandler,
+    AdvancementHandler,
+    AssignmentChangeChoiceHandler,
+    BenefitChoiceHandler,
+    CareerChoiceHandler,
+    CareerEntryHandler,
+    CharacteristicChoiceHandler,
+    CommissionHandler,
+    ConnectionKindChoiceHandler,
+    ConnectionsRollHandler,
+    DraftAssignmentHandler,
+    DraftHandler,
+    LifeEventHandler,
+    LifeEventUnusualHandler,
+    MishapHandler,
+    MusterOutHandler,
+    ParoleRollHandler,
     PendingAdvancement,
-    PendingAgingChoice,
-    PendingAgingChoiceMental,
-    PendingAgingCrisis,
-    PendingAgingRoll,
     PendingAssignmentChangeChoice,
-    PendingBackgroundSkills,
     PendingBenefitChoice,
     PendingCareerChoice,
-    PendingCharacteristicChoice,
     PendingCommissionChoice,
     PendingConnectionsRoll,
-    PendingDoubleInjuryRoll,
     PendingDraftAssignmentChoice,
     PendingDraftChoice,
     PendingInitialTrainingChoice,
-    PendingInjuryTable,
     PendingLifeEvent,
     PendingLifeEventChoice,
     PendingLifeEventUnusual,
     PendingMishap,
     PendingMusterOut,
-    PendingNearlyKilled,
     PendingParoleRoll,
-    PendingPreCareerEvent,
-    PendingPreCareerGraduation,
-    PendingPreCareerSkillChoice,
     PendingRankBonusChoice,
     PendingReenlist,
     PendingSkillChoice,
@@ -85,37 +62,60 @@ from ceres.character.events import (
     PendingSkillTableChoice,
     PendingSurvive,
     PendingTermEvent,
-    PreCareerEntryEvent,
-    PreCareerEventEvent,
-    PreCareerGraduationEvent,
-    PreCareerSkillChoiceEvent,
-    ReenlistEvent,
-    ReplayError,
-    SkillChoiceEvent,
-    SkillRollEvent,
-    SkillTableEvent,
-    SurviveEvent,
-    TermEventEvent,
-    UcpEvent,
+    ReenlistHandler,
+    SkillChoiceHandler,
+    SkillRollHandler,
+    SkillTableHandler,
+    SurviveHandler,
+    TermEventHandler,
     _advancement_pending,
     _apply_auto_advance,
     _apply_mishap_ejection,
     _apply_prisoner_advancement,
-    _apply_simple_effect,
     _apply_skill_table_entry,
     _start_new_career_term,
     _survive_pending,
     career_progress_pending,
-    complete_aging,
     muster_out_setup,
     queue_reenlist_or_aging,
 )
-from ceres.character.input_specs import NumberEntry, Reference, Select
-from ceres.character.state import (
-    CareerTerm,
-    CharacterProjection,
-    CharacterSummary,
+from ceres.character.domain.career.loader import load_careers
+from ceres.character.domain.character_start import (
+    BackgroundSkillsHandler,
+    FinishCreationHandler,
+    PendingBackgroundSkills,
+    UcpHandler,
 )
+from ceres.character.domain.characteristics import Chars, ConnectionKind
+from ceres.character.domain.health.health_events import (
+    AgingCrisisHandler,
+    AgingRollHandler,
+    DoubleInjuryTableHandler,
+    InjuryTableHandler,
+    PendingAgingChoice,
+    PendingAgingChoiceMental,
+    PendingAgingCrisis,
+    PendingAgingRoll,
+    PendingCharacteristicChoice,
+    PendingDoubleInjuryRoll,
+    PendingInjuryTable,
+    PendingNearlyKilled,
+    complete_aging,
+)
+from ceres.character.domain.precareer.precareer_events import (
+    PendingPreCareerEvent,
+    PendingPreCareerGraduation,
+    PendingPreCareerSkillChoice,
+    PreCareerEntryHandler,
+    PreCareerEventHandler,
+    PreCareerGraduationHandler,
+    PreCareerSkillChoiceHandler,
+)
+from ceres.character.domain.sophont import VILANI
+from ceres.character.input_specs import NumberEntry, Reference, Select
+from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
+from ceres.character.mechanism.errors import ReplayError
+from ceres.character.mechanism.event_base import Event
 from tests.character.helpers import MOCK_WORLD
 
 
@@ -187,40 +187,25 @@ class FakePrisonerCareer(FakeCareer):
         return self.assignment if index == 1 else None
 
 
-def test_base_event_and_character_started_validation():
-    with pytest.raises(NotImplementedError):
-        EventBase().apply(_projection())
-
-    adapter = TypeAdapter(CharacterStartedEvent)
-    event = adapter.validate_python({'sophont': 'Vilani', 'homeworld': MOCK_WORLD, 'name': 'Test'})
-
-    assert event.sophont is VILANI
-    assert event.model_dump()['sophont'] == 'Vilani'
-    with pytest.raises(ValidationError, match='Unknown sophont'):
-        adapter.validate_python({'sophont': 'Unknown', 'homeworld': MOCK_WORLD, 'name': 'Test'})
-    with pytest.raises(ValidationError, match='Expected Sophont or sophont name'):
-        adapter.validate_python({'sophont': object(), 'homeworld': MOCK_WORLD, 'name': 'Test'})
-
-
 def test_ucp_event_rejects_wrong_length():
     with pytest.raises(ReplayError, match='expected 6 hex digits'):
-        UcpEvent(ucp='77777').apply(_projection())
+        Event(handler=UcpHandler(ucp='77777')).apply(_projection())
 
 
-def test_event_helpers_apply_simple_effects_and_skill_entries():
+def test_effect_apply_methods_and_skill_entries():
     projection = _projection(characteristics={Chars.STR: 1, Chars.SOC: 7}, term_count=1)
 
-    _apply_simple_effect(projection, DecreaseCharacteristicEffect(characteristic=Chars.STR, amount=3))
-    _apply_simple_effect(projection, GainContactEffect(), source='contact source')
-    _apply_simple_effect(projection, GainAllyEffect(), source='ally source')
-    _apply_simple_effect(projection, GainRivalEffect(), source='rival source')
-    _apply_simple_effect(projection, GainEnemyEffect(), source='enemy source')
-    _apply_simple_effect(projection, GainSkillEffect(skill=character_skills.Admin()))
-    _apply_simple_effect(projection, AdvancementDmEffect(amount=2), source_event_id=10)
-    _apply_simple_effect(projection, BenefitDmEffect(amount=1), source_event_id=11)
+    DecreaseCharacteristicEffect(characteristic=Chars.STR, amount=3).apply(projection)
+    GainContactEffect().apply(projection, source='contact source')
+    GainAllyEffect().apply(projection, source='ally source')
+    GainRivalEffect().apply(projection, source='rival source')
+    GainEnemyEffect().apply(projection, source='enemy source')
+    GainSkillEffect(skill=character_skills.Admin()).apply(projection)
+    AdvancementDmEffect(amount=2).apply(projection, source_event_id=10)
+    BenefitDmEffect(amount=1).apply(projection, source_event_id=11)
     projection.summary.parole_threshold = 11
-    _apply_simple_effect(projection, ParoleThresholdChangeEffect(amount=5))
-    _apply_simple_effect(projection, ParoleThresholdChangeEffect(amount=-20))
+    ParoleThresholdChangeEffect(amount=5).apply(projection)
+    ParoleThresholdChangeEffect(amount=-20).apply(projection)
     _apply_skill_table_entry(projection, character_skills.Electronics(comms=character_skills.Level(value=1)))
 
     assert projection.summary.characteristics[Chars.STR] == 0
@@ -278,29 +263,29 @@ def test_mishap_ejection_queues_aging_for_older_character():
 def test_basic_event_error_branches():
     projection = _projection(drafted=True)
     with pytest.raises(ReplayError, match='may only enter the draft once'):
-        DraftEvent(career='Army').apply(projection)
+        Event(handler=DraftHandler(career='Army')).apply(projection)
 
     with pytest.raises(ReplayError, match="Unknown career: 'Nope'"):
-        DraftEvent(career='Nope').apply(_projection())
+        Event(handler=DraftHandler(career='Nope')).apply(_projection())
     with pytest.raises(ReplayError, match="Unknown career: 'Nope'"):
-        DraftAssignmentEvent(career='Nope', assignment='Infantry').apply(_projection())
+        Event(handler=DraftAssignmentHandler(career='Nope', assignment='Infantry')).apply(_projection())
 
     active = _projection(current_career=SCOUT, current_assignment='Courier', current_assignment_index=99)
     with pytest.raises(ReplayError, match='Unknown assignment index 99'):
-        PendingSurvive(pending_id=(1, 0), instruction='Survive').resolve(active, SurviveEvent(roll=8))
+        PendingSurvive(pending_id=(1, 0), instruction='Survive').resolve(active, Event(handler=SurviveHandler(roll=8)))
 
     with pytest.raises(ReplayError, match='Injury table roll must be 1-6'):
-        InjuryTableEvent(roll=0).apply(_projection())
+        Event(handler=InjuryTableHandler(roll=0)).apply(_projection())
     with pytest.raises(ReplayError, match='Double injury roll must be 1-6'):
-        DoubleInjuryTableEvent(roll1=1, roll2=7).apply(_projection())
+        Event(handler=DoubleInjuryTableHandler(roll1=1, roll2=7)).apply(_projection())
 
 
 def test_muster_out_and_benefit_choice_error_branches():
     with pytest.raises(ReplayError, match='No muster out career set'):
-        MusterOutEvent(table='cash', roll=1).apply(_projection())
+        Event(handler=MusterOutHandler(table='cash', roll=1)).apply(_projection())
 
     with pytest.raises(ReplayError, match='must fulfill a PendingBenefitChoice'):
-        BenefitChoiceEvent(choice_index=0).apply(_projection())
+        Event(handler=BenefitChoiceHandler(choice_index=0)).apply(_projection())
 
     pending = PendingBenefitChoice(
         pending_id=(1, 0),
@@ -309,12 +294,12 @@ def test_muster_out_and_benefit_choice_error_branches():
         benefit_options=[SHIP_SHARE],
     )
     with pytest.raises(ReplayError, match='choice_index 2 out of range'):
-        BenefitChoiceEvent(choice_index=2).apply(_projection(), pending)
+        Event(handler=BenefitChoiceHandler(choice_index=2)).apply(_projection(), pending)
 
 
 def test_aging_roll_extreme_results():
     effective_minus_4 = _projection(term_count=6, characteristics={Chars.STR: 7, Chars.DEX: 7, Chars.END: 7})
-    AgingRollEvent(id=1, roll=2).apply(effective_minus_4)
+    Event(id=1, handler=AgingRollHandler(roll=2)).apply(effective_minus_4)
     minus_4_choices = [p for p in effective_minus_4.pending_inputs if isinstance(p, PendingAgingChoice)]
     assert [p.instruction for p in minus_4_choices] == [
         'Aging: choose STR, DEX, or END to reduce by 2',
@@ -323,7 +308,7 @@ def test_aging_roll_extreme_results():
     ]
 
     effective_minus_5 = _projection(term_count=7, characteristics={Chars.STR: 7, Chars.DEX: 7, Chars.END: 7})
-    AgingRollEvent(id=2, roll=2).apply(effective_minus_5)
+    Event(id=2, handler=AgingRollHandler(roll=2)).apply(effective_minus_5)
     assert {char: effective_minus_5.summary.characteristics[char] for char in (Chars.STR, Chars.DEX, Chars.END)} == {
         Chars.STR: 5,
         Chars.DEX: 5,
@@ -335,17 +320,17 @@ def test_aging_roll_extreme_results():
         term_count=8,
         characteristics={Chars.STR: 7, Chars.DEX: 7, Chars.END: 7, Chars.INT: 7, Chars.SOC: 7},
     )
-    AgingRollEvent(id=3, roll=2).apply(effective_minus_6)
+    Event(id=3, handler=AgingRollHandler(roll=2)).apply(effective_minus_6)
     assert any(isinstance(p, PendingAgingChoiceMental) for p in effective_minus_6.pending_inputs)
 
 
 def test_commission_event_skip_failure_success_and_unsupported_career():
     scout = _projection(current_career=SCOUT, current_assignment='Courier', current_assignment_index=1)
     with pytest.raises(ReplayError, match='Scout does not support commission'):
-        CommissionEvent(attempt=True, roll=12).apply(scout)
+        Event(handler=CommissionHandler(attempt=True, roll=12)).apply(scout)
 
     skipped = _projection(current_career=ARMY, current_assignment='Support', current_assignment_index=1)
-    CommissionEvent(id=1, attempt=False).apply(skipped)
+    Event(id=1, handler=CommissionHandler(attempt=False)).apply(skipped)
     assert any(isinstance(p, PendingAdvancement) and p.id == '1.0' for p in skipped.pending_inputs)
 
     failed = _projection(
@@ -355,7 +340,7 @@ def test_commission_event_skip_failure_success_and_unsupported_career():
         characteristics={Chars.SOC: 2},
     )
     failed.pending_advancement_dm = 1
-    CommissionEvent(id=2, attempt=True, roll=2).apply(failed)
+    Event(id=2, handler=CommissionHandler(attempt=True, roll=2)).apply(failed)
     assert failed.pending_advancement_dm == 0
     assert any(isinstance(p, PendingAdvancement) and p.id == '2.0' for p in failed.pending_inputs)
 
@@ -366,7 +351,7 @@ def test_commission_event_skip_failure_success_and_unsupported_career():
         characteristics={Chars.SOC: 12, Chars.EDU: 10},
         career_terms=[CareerTerm(career=ARMY, assignment='Support', assignment_index=1)],
     )
-    CommissionEvent(id=3, attempt=True, roll=12).apply(succeeded)
+    Event(id=3, handler=CommissionHandler(attempt=True, roll=12)).apply(succeeded)
     assert succeeded.summary.rank == 1
     assert succeeded.summary.career_terms[-1].commission is True
     assert succeeded.summary.skill_level(character_skills.Leadership) == 1
@@ -375,19 +360,21 @@ def test_commission_event_skip_failure_success_and_unsupported_career():
 
 def test_precareer_entry_error_and_failure_branches():
     with pytest.raises(ReplayError, match="Unknown pre-career: 'Nope'"):
-        PreCareerEntryEvent(precareer='Nope', roll=7).apply(_projection())
+        Event(handler=PreCareerEntryHandler(precareer='Nope', roll=7)).apply(_projection())
     with pytest.raises(ReplayError, match='only available in terms'):
-        PreCareerEntryEvent(precareer='University', roll=7).apply(_projection(term_count=3))
+        Event(handler=PreCareerEntryHandler(precareer='University', roll=7)).apply(_projection(term_count=3))
     with pytest.raises(ReplayError, match='may only attend one pre-career'):
-        PreCareerEntryEvent(precareer='University', roll=7).apply(_projection(precareer_completed='University'))
+        Event(handler=PreCareerEntryHandler(precareer='University', roll=7)).apply(
+            _projection(precareer_completed='University')
+        )
 
     failed = _projection(characteristics={Chars.EDU: 0})
-    PreCareerEntryEvent(id=4, precareer='University', roll=2).apply(failed)
+    Event(id=4, handler=PreCareerEntryHandler(precareer='University', roll=2)).apply(failed)
     assert any(isinstance(p, PendingCareerChoice) for p in failed.pending_inputs)
     assert failed.summary.precareer is None
 
     soc_bonus = _projection(characteristics={Chars.INT: 12, Chars.SOC: 12})
-    PreCareerEntryEvent(id=5, precareer='Merchant Academy (Business)', roll=7).apply(soc_bonus)
+    Event(id=5, handler=PreCareerEntryHandler(precareer='Merchant Academy (Business)', roll=7)).apply(soc_bonus)
     assert soc_bonus.summary.precareer == 'Merchant Academy (Business)'
     assert any(isinstance(p, PendingPreCareerEvent) for p in soc_bonus.pending_inputs)
 
@@ -402,44 +389,44 @@ def test_precareer_entry_error_and_failure_branches():
 )
 def test_precareer_event_effects_create_expected_pending_inputs(roll, pending_type):
     projection = _projection(precareer='University')
-    PreCareerEventEvent(id=roll, roll=roll).apply(projection)
+    Event(id=roll, handler=PreCareerEventHandler(roll=roll)).apply(projection)
     assert any(isinstance(p, pending_type) for p in projection.pending_inputs)
 
 
 def test_precareer_event_error_manual_note_and_ending_branches():
     with pytest.raises(ReplayError, match='No active pre-career'):
-        PreCareerEventEvent(roll=7).apply(_projection())
+        Event(handler=PreCareerEventHandler(roll=7)).apply(_projection())
     with pytest.raises(ReplayError, match="Unknown pre-career: 'Nope'"):
-        PreCareerEventEvent(roll=7).apply(_projection(precareer='Nope'))
+        Event(handler=PreCareerEventHandler(roll=7)).apply(_projection(precareer='Nope'))
     with pytest.raises(ReplayError, match='No pre-career event entry for roll 13'):
-        PreCareerEventEvent(roll=13).apply(_projection(precareer='University'))
+        Event(handler=PreCareerEventHandler(roll=13)).apply(_projection(precareer='University'))
 
     for roll, problem_text in ((2, 'attempt to enter the Psion career'), (4, 'Prisoner career next term')):
         projection = _projection(precareer='University')
-        PreCareerEventEvent(id=roll, roll=roll).apply(projection)
+        Event(id=roll, handler=PreCareerEventHandler(roll=roll)).apply(projection)
         assert any(problem_text in problem for problem in projection.summary.problems)
 
     ended = _projection(precareer='University')
     ended.pending_inputs.append(PendingPreCareerGraduation(pending_id=(11, 0), instruction='Graduation'))
-    PreCareerEventEvent(id=11, roll=11).apply(ended)
+    Event(id=11, handler=PreCareerEventHandler(roll=11)).apply(ended)
     assert ended.summary.precareer is None
     assert ended.summary.precareer_completed == 'University'
     assert not any(isinstance(p, PendingPreCareerGraduation) for p in ended.pending_inputs)
     assert any(isinstance(p, PendingCareerChoice) for p in ended.pending_inputs)
 
     recognised = _projection(precareer='University', characteristics={Chars.SOC: 7})
-    PreCareerEventEvent(id=12, roll=12).apply(recognised)
+    Event(id=12, handler=PreCareerEventHandler(roll=12)).apply(recognised)
     assert recognised.summary.characteristics[Chars.SOC] == 8
 
 
 def test_precareer_graduation_error_and_failure_branches():
     with pytest.raises(ReplayError, match='No active pre-career for graduation'):
-        PreCareerGraduationEvent(roll=7).apply(_projection())
+        Event(handler=PreCareerGraduationHandler(roll=7)).apply(_projection())
     with pytest.raises(ReplayError, match="Unknown pre-career: 'Nope'"):
-        PreCareerGraduationEvent(roll=7).apply(_projection(precareer='Nope'))
+        Event(handler=PreCareerGraduationHandler(roll=7)).apply(_projection(precareer='Nope'))
 
     failed = _projection(precareer='University', characteristics={Chars.INT: 2})
-    PreCareerGraduationEvent(id=1, roll=2).apply(failed)
+    Event(id=1, handler=PreCareerGraduationHandler(roll=2)).apply(failed)
     assert failed.summary.precareer is None
     assert failed.summary.precareer_completed == 'University'
     assert failed.summary.precareer_skills == []
@@ -450,7 +437,9 @@ def test_precareer_graduation_error_and_failure_branches():
 def test_prisoner_advancement_special_cases():
     missing_assignment = _projection(current_assignment_index=99)
     with pytest.raises(ReplayError, match='Unknown assignment index 99'):
-        _apply_prisoner_advancement(missing_assignment, AdvancementEvent(id=1, roll=12), FakePrisonerCareer())
+        _apply_prisoner_advancement(
+            missing_assignment, Event(id=1, handler=AdvancementHandler(roll=12)), FakePrisonerCareer()
+        )
 
     choice_bonus = _projection(
         current_assignment_index=1,
@@ -460,7 +449,7 @@ def test_prisoner_advancement_special_cases():
     choice_bonus.pending_advancement_dm = 1
     _apply_prisoner_advancement(
         choice_bonus,
-        AdvancementEvent(id=2, roll=12),
+        Event(id=2, handler=AdvancementHandler(roll=12)),
         FakePrisonerCareer(RankBonus(choices=[character_skills.Admin()], level=1)),
     )
     assert choice_bonus.pending_advancement_dm == 0
@@ -477,7 +466,7 @@ def test_prisoner_advancement_special_cases():
     )
     _apply_prisoner_advancement(
         characteristic_bonus,
-        AdvancementEvent(id=3, roll=12),
+        Event(id=3, handler=AdvancementHandler(roll=12)),
         FakePrisonerCareer(RankBonus(characteristic=Chars.SOC, level=2)),
     )
     assert characteristic_bonus.summary.characteristics[Chars.SOC] == 9
@@ -539,7 +528,7 @@ def test_muster_out_setup_and_complete_aging_helper_branches():
     )
     complete_aging(assignment_change, source_event_id=7)
     pending = next(p for p in assignment_change.pending_inputs if isinstance(p, PendingAssignmentChangeChoice))
-    assert pending.options == ['same', 'Surveyor', 'Explorer', 'muster_out']
+    assert pending.muster_out is True
 
 
 def test_career_progress_pending_reports_invalid_career_shape():
@@ -566,7 +555,7 @@ def test_pending_background_skills_builds_form_and_specs():
     form_event = pending.event_from_form(form)
     specs = pending.input_specs(_projection())
 
-    assert isinstance(form_event, BackgroundSkillsEvent)
+    assert isinstance(form_event.handler, BackgroundSkillsHandler)
     assert [skill.name() for skill in form_event.skills] == ['Admin', 'Medic']
     assert isinstance(specs[0], Select)
     assert specs[0].min_select == 2
@@ -576,17 +565,17 @@ def test_pending_background_skills_builds_form_and_specs():
 
 def test_pending_career_choice_form_and_specs():
     projection = _projection(term_count=4)
-    pending = PendingCareerChoice(pending_id=(3, 0), instruction='Choose career', options=['Scout'])
+    pending = PendingCareerChoice(pending_id=(3, 0), instruction='Choose career', options=[load_careers()['Scout']])
 
-    assert isinstance(pending.event_from_form(Form(kind='finish_creation')), FinishCreationEvent)
+    assert isinstance(pending.event_from_form(Form(kind='finish_creation')).handler, FinishCreationHandler)
 
     pre_career = pending.event_from_form(Form(kind='precareer_entry', precareer='University', roll='9'))
-    assert isinstance(pre_career, PreCareerEntryEvent)
+    assert isinstance(pre_career.handler, PreCareerEntryHandler)
     assert pre_career.precareer == 'University'
     assert pre_career.roll == 9
 
     career = pending.event_from_form(Form(career='Scout', assignment='Courier', roll='12'))
-    assert isinstance(career, CareerEvent)
+    assert isinstance(career.handler, CareerEntryHandler)
     assert career.career == 'Scout'
     assert career.assignment == 'Courier'
     assert career.qualification_roll == 12
@@ -599,20 +588,20 @@ def test_pending_draft_choices_build_expected_events_and_specs():
     draft_event = draft.event_from_form(Form(choice='draft', roll='2'))
     drifter_event = draft.event_from_form(Form(choice='drifter', assignment='Scavenger'))
 
-    assert isinstance(draft_event, DraftEvent)
+    assert isinstance(draft_event.handler, DraftHandler)
     assert draft_event.career == 'Army'
-    assert isinstance(drifter_event, CareerEvent)
+    assert isinstance(drifter_event.handler, CareerEntryHandler)
     assert drifter_event.career == 'Drifter'
     assert drifter_event.assignment == 'Scavenger'
     assert draft.input_specs(_projection()) == []
 
     assignment = PendingDraftAssignmentChoice(
-        pending_id=(4, 0), instruction='Assignment', career='Army', options=['Support']
+        pending_id=(4, 0), instruction='Assignment', career=load_careers()['Army']
     )
     form_event = assignment.event_from_form(Form(assignment='Support'))
     specs = assignment.input_specs(_projection())
 
-    assert isinstance(form_event, DraftAssignmentEvent)
+    assert isinstance(form_event.handler, DraftAssignmentHandler)
     assert form_event.career == 'Army'
     assert form_event.assignment == 'Support'
     assert isinstance(specs[0], Reference)
@@ -621,58 +610,51 @@ def test_pending_draft_choices_build_expected_events_and_specs():
 
 
 @pytest.mark.parametrize(
-    ('pending', 'form', 'event_type', 'field', 'expected'),
+    ('pending', 'form', 'handler_type', 'field', 'expected'),
     [
-        (PendingSurvive(pending_id=(1, 0), instruction='Survive'), Form(roll='9'), SurviveEvent, 'roll', 9),
-        (PendingTermEvent(pending_id=(1, 0), instruction='Event'), Form(roll='8'), TermEventEvent, 'roll', 8),
-        (PendingMishap(pending_id=(1, 0), instruction='Mishap'), Form(roll='4'), MishapEvent, 'roll', 4),
-        (PendingAdvancement(pending_id=(1, 0), instruction='Advance'), Form(roll='10'), AdvancementEvent, 'roll', 10),
+        (PendingSurvive(pending_id=(1, 0), instruction='Survive'), Form(roll='9'), SurviveHandler, 'roll', 9),
+        (PendingTermEvent(pending_id=(1, 0), instruction='Event'), Form(roll='8'), TermEventHandler, 'roll', 8),
+        (PendingMishap(pending_id=(1, 0), instruction='Mishap'), Form(roll='4'), MishapHandler, 'roll', 4),
+        (PendingAdvancement(pending_id=(1, 0), instruction='Advance'), Form(roll='10'), AdvancementHandler, 'roll', 10),
         (
             PendingSkillTable(pending_id=(1, 0), instruction='Skill table', options=['service_skills']),
             Form(table='service_skills', roll='5'),
-            SkillTableEvent,
+            SkillTableHandler,
             'roll',
             5,
         ),
-        (
-            PendingNearlyKilled(pending_id=(1, 0), instruction='Nearly killed'),
-            Form(roll='3'),
-            InjuryTableEvent,
-            'roll',
-            3,
-        ),
-        (PendingInjuryTable(pending_id=(1, 0), instruction='Injury'), Form(roll='2'), InjuryTableEvent, 'roll', 2),
-        (PendingAgingRoll(pending_id=(1, 0), instruction='Aging'), Form(roll='7'), AgingRollEvent, 'roll', 7),
-        (PendingLifeEvent(pending_id=(1, 0), instruction='Life event'), Form(roll='6'), LifeEventEvent, 'roll', 6),
+        (PendingInjuryTable(pending_id=(1, 0), instruction='Injury'), Form(roll='2'), InjuryTableHandler, 'roll', 2),
+        (PendingAgingRoll(pending_id=(1, 0), instruction='Aging'), Form(roll='7'), AgingRollHandler, 'roll', 7),
+        (PendingLifeEvent(pending_id=(1, 0), instruction='Life event'), Form(roll='6'), LifeEventHandler, 'roll', 6),
         (
             PendingLifeEventUnusual(pending_id=(1, 0), instruction='Unusual'),
             Form(roll='5'),
-            LifeEventUnusualEvent,
+            LifeEventUnusualHandler,
             'roll',
             5,
         ),
         (
             PendingPreCareerEvent(pending_id=(1, 0), instruction='Precareer event'),
             Form(roll='9'),
-            PreCareerEventEvent,
+            PreCareerEventHandler,
             'roll',
             9,
         ),
         (
             PendingPreCareerGraduation(pending_id=(1, 0), instruction='Graduation'),
             Form(roll='10'),
-            PreCareerGraduationEvent,
+            PreCareerGraduationHandler,
             'roll',
             10,
         ),
-        (PendingParoleRoll(pending_id=(1, 0), instruction='Parole'), Form(roll='4'), ParoleRollEvent, 'roll', 4),
+        (PendingParoleRoll(pending_id=(1, 0), instruction='Parole'), Form(roll='4'), ParoleRollHandler, 'roll', 4),
     ],
 )
-def test_roll_pending_inputs_build_events_and_number_specs(pending, form, event_type, field, expected):
+def test_roll_pending_inputs_build_events_and_number_specs(pending, form, handler_type, field, expected):
     form_event = pending.event_from_form(form)
     specs = pending.input_specs(_projection())
 
-    assert isinstance(form_event, event_type)
+    assert isinstance(form_event.handler, handler_type)
     assert getattr(form_event, field) == expected
     assert form_event.fulfills == pending.pending_id
     assert any(isinstance(spec, NumberEntry) for spec in specs)
@@ -682,38 +664,56 @@ def test_double_injury_pending_builds_two_roll_event_and_specs():
     pending = PendingDoubleInjuryRoll(pending_id=(1, 0), instruction='Double injury')
     event = pending.event_from_form(Form(roll1='4', roll2='2'))
 
-    assert isinstance(event, DoubleInjuryTableEvent)
+    assert isinstance(event.handler, DoubleInjuryTableHandler)
     assert event.roll1 == 4
     assert event.roll2 == 2
     assert len(pending.input_specs(_projection())) == 2
 
 
+def test_nearly_killed_pending_asks_for_characteristic_and_roll():
+    pending = PendingNearlyKilled(pending_id=(1, 0), instruction='Nearly killed')
+    event = pending.event_from_form(Form(characteristic='DEX', roll='4'))
+
+    assert isinstance(event.handler, CharacteristicChoiceHandler)
+    assert event.characteristic == Chars.DEX
+    assert event.amount == 4
+    assert event.fulfills == (1, 0)
+
+    specs = pending.input_specs(_projection())
+    assert any(isinstance(s, Select) for s in specs)
+    assert any(isinstance(s, NumberEntry) for s in specs)
+    select = next(s for s in specs if isinstance(s, Select))
+    assert {v for _, v in select.options} == {Chars.STR, Chars.DEX, Chars.END}
+
+
 def test_decision_pending_inputs_build_events_and_specs():
     commission = PendingCommissionChoice(pending_id=(1, 0), instruction='Commission')
-    assert commission.event_from_form(Form(choice='attempt', roll='9')) == CommissionEvent(
-        attempt=True, roll=9, fulfills=(1, 0)
+    assert commission.event_from_form(Form(choice='attempt', roll='9')) == Event(
+        fulfills=(1, 0), handler=CommissionHandler(attempt=True, roll=9)
     )
-    assert commission.event_from_form(Form(choice='skip')) == CommissionEvent(attempt=False, fulfills=(1, 0))
+    assert commission.event_from_form(Form(choice='skip')) == Event(
+        fulfills=(1, 0), handler=CommissionHandler(attempt=False)
+    )
     assert len(commission.input_specs(_projection())) == 2
 
     reenlist = PendingReenlist(pending_id=(2, 0), instruction='Reenlist')
-    assert reenlist.event_from_form(Form(reenlist='yes')) == ReenlistEvent(reenlist=True, fulfills=(2, 0))
+    assert reenlist.event_from_form(Form(reenlist='yes')) == Event(
+        fulfills=(2, 0), handler=ReenlistHandler(reenlist=True)
+    )
     assert reenlist.input_specs(_projection()) == []
 
-    assignment = PendingAssignmentChangeChoice(
-        pending_id=(3, 0), instruction='Assignment', options=['same', 'Surveyor', 'muster_out']
+    assignment = PendingAssignmentChangeChoice(pending_id=(3, 0), muster_out=True)
+    assert assignment.event_from_form(Form(choice='switch')) == Event(
+        fulfills=(3, 0), handler=AssignmentChangeChoiceHandler(choice='switch')
     )
-    assert assignment.event_from_form(Form(choice='Surveyor', roll='11')) == AssignmentChangeChoiceEvent(
-        choice='Surveyor', qualification_roll=11, fulfills=(3, 0)
-    )
-    assert assignment.event_from_form(Form(choice='same')) == AssignmentChangeChoiceEvent(
-        choice='same', qualification_roll=None, fulfills=(3, 0)
+    assert assignment.event_from_form(Form(choice='same')) == Event(
+        fulfills=(3, 0), handler=AssignmentChangeChoiceHandler(choice='same')
     )
     assert isinstance(assignment.input_specs(_projection())[0], Select)
 
-    muster = PendingMusterOut(pending_id=(4, 0), instruction='Muster', options=['cash', 'benefits'])
-    assert muster.event_from_form(Form(table='not-valid', roll='7')) == MusterOutEvent(
-        table='benefits', roll=7, fulfills=(4, 0)
+    muster = PendingMusterOut(pending_id=(4, 0))
+    assert muster.event_from_form(Form(table='not-valid', roll='7')) == Event(
+        fulfills=(4, 0), handler=MusterOutHandler(table='benefits', roll=7)
     )
     assert len(muster.input_specs(_projection())) == 2
 
@@ -734,48 +734,48 @@ def test_skill_choice_pending_inputs_parse_skills_and_advancement_dm():
         dm_event = pending.event_from_form(Form(skill=adv_dm.model_dump_json()))
         specs = pending.input_specs(projection)
 
-        assert isinstance(skill_event, SkillChoiceEvent)
+        assert isinstance(skill_event.handler, SkillChoiceHandler)
         assert isinstance(skill_event.skill, character_skills.Admin)
-        assert isinstance(dm_event, AdvancementDmChoiceEvent)
+        assert isinstance(dm_event.handler, AdvancementDmChoiceHandler)
         assert isinstance(specs[0], Select)
 
     # PendingSkillChoice uses typed AnySkill options only (no advancement_dm_4)
     skill_pending = PendingSkillChoice(pending_id=(1, 0), instruction='Skill', options=[character_skills.Admin()])
     skill_event = skill_pending.event_from_form(Form(skill=admin_json))
     specs = skill_pending.input_specs(projection)
-    assert isinstance(skill_event, SkillChoiceEvent)
+    assert isinstance(skill_event.handler, SkillChoiceHandler)
     assert isinstance(skill_event.skill, character_skills.Admin)
     assert isinstance(specs[0], Select)
 
 
 def test_characteristic_benefit_life_and_connection_pending_inputs():
     for pending in (
-        PendingCharacteristicChoice(pending_id=(1, 0), instruction='Characteristic', options=['STR', 'DEX']),
-        PendingAgingChoice(pending_id=(1, 0), instruction='Aging', options=['STR', 'DEX']),
-        PendingAgingChoiceMental(pending_id=(1, 0), instruction='Mental aging', options=['INT', 'SOC']),
+        PendingCharacteristicChoice(pending_id=(1, 0), instruction='Characteristic', options=[Chars.STR, Chars.DEX]),
+        PendingAgingChoice(pending_id=(1, 0), instruction='Aging', options=[Chars.STR, Chars.DEX]),
+        PendingAgingChoiceMental(pending_id=(1, 0), instruction='Mental aging', options=[Chars.INT, Chars.SOC]),
     ):
         event = pending.event_from_form(Form(characteristic='DEX'))
-        assert isinstance(event, CharacteristicChoiceEvent)
+        assert isinstance(event.handler, CharacteristicChoiceHandler)
         assert event.characteristic == Chars.DEX
         assert isinstance(pending.input_specs(_projection())[0], Select)
 
     crisis = PendingAgingCrisis(pending_id=(2, 0), instruction='Crisis')
-    assert crisis.event_from_form(Form(paid='true', medical_roll='4')) == AgingCrisisEvent(
-        paid=True, medical_roll=4, fulfills=(2, 0)
+    assert crisis.event_from_form(Form(paid='true', medical_roll='4')) == Event(
+        fulfills=(2, 0), handler=AgingCrisisHandler(paid=True, medical_roll=4)
     )
     assert len(crisis.input_specs(_projection())) == 2
 
     life_choice = PendingLifeEventChoice(pending_id=(3, 0), instruction='Life choice', roll=4)
-    assert life_choice.event_from_form(Form(connection_kind='connection_enemy')) == ConnectionKindChoiceEvent(
-        connection_kind=ConnectionKind.ENEMY, fulfills=(3, 0)
+    assert life_choice.event_from_form(Form(connection_kind='connection_enemy')) == Event(
+        fulfills=(3, 0), handler=ConnectionKindChoiceHandler(connection_kind=ConnectionKind.ENEMY)
     )
     assert isinstance(life_choice.input_specs(_projection())[0], Select)
 
     connections = PendingConnectionsRoll(
         pending_id=(4, 0), instruction='Connections', connection_type=ConnectionKind.RIVAL, options=['1', '2', '3']
     )
-    assert connections.event_from_form(Form(connection_type='connection_enemy', count='3')) == ConnectionsRollEvent(
-        connection_type=ConnectionKind.ENEMY, count=3, fulfills=(4, 0)
+    assert connections.event_from_form(Form(connection_type='connection_enemy', count='3')) == Event(
+        fulfills=(4, 0), handler=ConnectionsRollHandler(connection_type=ConnectionKind.ENEMY, count=3)
     )
     assert isinstance(connections.input_specs(_projection())[0], Reference)
 
@@ -785,7 +785,9 @@ def test_characteristic_benefit_life_and_connection_pending_inputs():
         options=['Ship Share', 'Weapon'],
         benefit_options=[SHIP_SHARE, WEAPON],
     )
-    assert benefit.event_from_form(Form(choice_index='1')) == BenefitChoiceEvent(choice_index=1, fulfills=(5, 0))
+    assert benefit.event_from_form(Form(choice_index='1')) == Event(
+        fulfills=(5, 0), handler=BenefitChoiceHandler(choice_index=1)
+    )
     assert isinstance(benefit.input_specs(_projection())[0], Select)
 
 
@@ -797,8 +799,8 @@ def test_precareer_specific_pending_inputs():
         pending_id=(5, 0), instruction='Precareer skill', options=[character_skills.LifeScience()], level=1
     )
     life_science_json = character_skills.LifeScience().model_dump_json()
-    assert precareer_skill_0.event_from_form(Form(skill=life_science_json)) == PreCareerSkillChoiceEvent(
-        skill=character_skills.LifeScience(), fulfills=(4, 0)
+    assert precareer_skill_0.event_from_form(Form(skill=life_science_json)) == Event(
+        fulfills=(4, 0), handler=PreCareerSkillChoiceHandler(skill=character_skills.LifeScience())
     )
     level_0_specs = precareer_skill_0.input_specs(_projection())
     level_1_specs = precareer_skill_1.input_specs(_projection())
@@ -812,8 +814,8 @@ def test_precareer_specific_pending_inputs():
 
 
 def test_pending_choices_event_from_form_and_input_specs():
-    from ceres.character.events import PendingChoices
-    from ceres.character.state import ChoiceBase
+    from ceres.character.domain.career.career_events import PendingChoices
+    from ceres.character.mechanism.pending_input import ChoiceBase
 
     class _FakeChoice(ChoiceBase):
         kind: str = 'test_opt_a'
@@ -827,7 +829,7 @@ def test_pending_choices_event_from_form_and_input_specs():
     pending = PendingChoices(pending_id=(6, 0), instruction='Choose', choices=[choice_a, choice_b])
 
     event = pending.event_from_form(Form(choice='test_opt_a'))
-    assert isinstance(event, CareerChoiceEvent)
+    assert isinstance(event.handler, CareerChoiceHandler)
     assert event.choice == 'test_opt_a'
     assert event.fulfills == (6, 0)
 
@@ -857,14 +859,14 @@ def test_career_skill_roll_pending_base_event_from_form_char_and_skill():
 
     char_pending = _PendingWithChar(pending_id=(8, 0), instruction='Roll', options=[Chars.EDU])
     edu_event = char_pending.event_from_form(Form(skill='EDU', modified_roll='9'))
-    assert isinstance(edu_event, SkillRollEvent)
+    assert isinstance(edu_event.handler, SkillRollHandler)
     assert edu_event.skill == Chars.EDU
     assert edu_event.modified_roll == 9
     assert edu_event.fulfills == (8, 0)
 
     # Skill option — form value is the discriminator (ELECTRONICS), not the display name
     skill_event = pending.event_from_form(Form(skill=character_skills.Electronics().type, modified_roll='8'))
-    assert isinstance(skill_event, SkillRollEvent)
+    assert isinstance(skill_event.handler, SkillRollHandler)
     assert isinstance(skill_event.skill, character_skills.Electronics)
     assert skill_event.modified_roll == 8
 
@@ -907,11 +909,11 @@ def test_career_skill_choice_pending_base_event_from_form_and_input_specs():
 
     # Skill choice
     skill_event = pending.event_from_form(Form(skill=science_json))
-    assert isinstance(skill_event, SkillChoiceEvent)
+    assert isinstance(skill_event.handler, SkillChoiceHandler)
 
     # AdvancementDmOption choice
     dm_event = pending.event_from_form(Form(skill=adv_dm.model_dump_json()))
-    assert isinstance(dm_event, AdvancementDmChoiceEvent)
+    assert isinstance(dm_event.handler, AdvancementDmChoiceHandler)
     assert dm_event.fulfills == (9, 0)
 
     specs = pending.input_specs(_projection())

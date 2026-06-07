@@ -1,4 +1,4 @@
-from typing import ClassVar, Literal
+from typing import Any, ClassVar, Literal
 
 from ceres.character.domain.benefits import (
     ARMOR,
@@ -31,9 +31,19 @@ from ceres.character.domain.career.career_data import (
     SkillChoiceEffect,
     SkillTable,
 )
+from ceres.character.domain.career.career_events import (
+    PendingChoices,
+    PendingSkillChoice,
+    career_progress_pending,
+)
 from ceres.character.domain.career.common import handle_advanced_training
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.connection import (
+    Ally,
+    Contact,
+    Enemy,
+)
 from ceres.character.domain.skills import (
     Admin,
     Advocate,
@@ -63,19 +73,8 @@ from ceres.character.domain.skills import (
     Tactics,
     VaccSuit,
 )
-from ceres.character.events import (
-    PendingChoices,
-    PendingSkillChoice,
-    SkillRollEvent,
-    career_progress_pending,
-)
-from ceres.character.state import (
-    Ally,
-    CharacterProjection,
-    ChoiceBase,
-    Contact,
-    Enemy,
-)
+from ceres.character.mechanism.character_state import CharacterProjection
+from ceres.character.mechanism.pending_input import ChoiceBase
 
 # ── Career-specific pending input types ──────────────────────────────────────
 
@@ -85,7 +84,7 @@ class MarinesMishap4Refuse(ChoiceBase):
     label: str = 'Refuse (ejected, lose Benefit, gain Contact)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.events import _apply_mishap_ejection
+        from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
         career = projection.get_current_career()
         projection.summary.connections.append(Contact(source='A fellow soldier who was part of that black ops mission'))
@@ -109,8 +108,8 @@ class MarinesMishap4Accept(ChoiceBase):
 class PendingMarinesMishap4SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['marines_mishap_4_skill_roll'] = 'marines_mishap_4_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
-        from ceres.character.events import _apply_mishap_ejection
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+        from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
         career = projection.get_current_career()
         if event.modified_roll < 8:
@@ -121,7 +120,7 @@ class PendingMarinesMishap4SkillRoll(CareerSkillRollPendingBase):
 class PendingMarinesEvent6SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['marines_event_6_skill_roll'] = 'marines_event_6_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
         if event.modified_roll >= 8:
             projection.pending_inputs.append(
                 PendingSkillChoice(

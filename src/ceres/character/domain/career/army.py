@@ -1,4 +1,4 @@
-from typing import ClassVar, Literal
+from typing import Any, ClassVar, Literal
 
 from ceres.character.domain.benefits import (
     ARMOR,
@@ -31,9 +31,16 @@ from ceres.character.domain.career.career_data import (
     SkillChoiceEffect,
     SkillTable,
 )
+from ceres.character.domain.career.career_events import (
+    PendingChoices,
+    PendingSkillChoice,
+)
 from ceres.character.domain.career.common import handle_advanced_training
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.connection import (
+    Ally,
+)
 from ceres.character.domain.skills import (
     Admin,
     Advocate,
@@ -66,16 +73,8 @@ from ceres.character.domain.skills import (
     VaccSuit,
     skill_instances,
 )
-from ceres.character.events import (
-    PendingChoices,
-    PendingSkillChoice,
-    SkillRollEvent,
-)
-from ceres.character.state import (
-    Ally,
-    CharacterProjection,
-    ChoiceBase,
-)
+from ceres.character.mechanism.character_state import CharacterProjection
+from ceres.character.mechanism.pending_input import ChoiceBase
 
 # ── Career-specific pending input types ──────────────────────────────────────
 
@@ -85,7 +84,7 @@ class ArmyMishap4JoinRing(ChoiceBase):
     label: str = 'Join their ring (Ally, lose Benefit roll)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.events import _apply_mishap_ejection
+        from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
         career = projection.get_current_career()
         projection.summary.connections.append(Ally(source='Your commanding officer who brought you into the ring'))
@@ -97,7 +96,7 @@ class ArmyMishap4Cooperate(ChoiceBase):
     label: str = 'Co-operate with MPs (keep Benefit roll)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.events import _apply_mishap_ejection
+        from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
         career = projection.get_current_career()
         _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=False)
@@ -106,7 +105,7 @@ class ArmyMishap4Cooperate(ChoiceBase):
 class PendingArmyEvent6SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['army_event_6_skill_roll'] = 'army_event_6_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
         if event.modified_roll >= 8:
             projection.pending_inputs.append(
                 PendingSkillChoice(

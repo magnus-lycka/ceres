@@ -1,245 +1,16 @@
-from typing import Annotated, Any, Literal, cast, overload
+from typing import Annotated, Any, cast, overload
 
-from pydantic import BaseModel, Field, SerializeAsAny, model_validator
+from pydantic import BaseModel, BeforeValidator, Field, SerializeAsAny, model_validator
 
 from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.domain.benefits import ItemBenefit
-from ceres.character.domain.career.career_data import CareerData
-from ceres.character.domain.characteristics import Chars, ConnectionKind
+from ceres.character.domain.career.career_data import CareerData, CareerTerm
+from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.connection import AnyConnection
 from ceres.character.domain.skills import AnySkill, Level, Skill, _level_fields
 from ceres.character.domain.sophont import Sophont
-from ceres.character.input_specs import InputSpec
-from ceres.shared import CeresModel
-
-
-class ReplayError(Exception):
-    pass
-
-
-class ChoiceBase(BaseModel):
-    """A self-addressed envelope: one option in a PendingChoices list, carries its own handler."""
-
-    kind: str
-    label: str = ''
-
-    def handle(self, projection: Any, event: Any) -> None:
-        raise NotImplementedError(f'{type(self).__name__}.handle() not implemented')
-
-
-class PendingInputBase(BaseModel):
-    pending_id: tuple[int, int]
-    kind: str
-    instruction: str
-    options: list[str] = Field(default_factory=list)
-    blocking: bool = True
-
-    @property
-    def id(self) -> str:
-        """String representation of pending_id for templates and backward-compatible access."""
-        return f'{self.pending_id[0]}.{self.pending_id[1]}'
-
-    def event_from_form(self, form: Any) -> Any:
-        """Construct the appropriate AnyEvent from submitted form data. All subclasses must implement."""
-        raise NotImplementedError(f'{type(self).__name__}.event_from_form() not implemented')
-
-    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
-        """Return web-agnostic InputSpec descriptors for rendering this pending input. All subclasses must implement."""
-        raise NotImplementedError(f'{type(self).__name__}.input_specs() not implemented')
-
-    def resolve(self, projection: Any, event: Any) -> None:
-        """Called by SkillRollEvent.apply() when this pending is fulfilled. Override in career-specific subclasses."""
-
-    @property
-    def template_fragment(self) -> str:
-        """Name of the Jinja2 partial template to render this pending input.
-        Defaults to the kind discriminator value; falls back to 'generic' if no default exists.
-        Override only when the template name differs from the kind (e.g. two classes share one template)."""
-        default = type(self).model_fields['kind'].default
-        return default if isinstance(default, str) else 'generic'
-
-
-class Connection(CeresModel):
-    """Base class for character connections (contacts, allies, rivals, enemies)."""
-
-    source: str = ''  # how/when this person entered the character's life
-    power: int | None = None  # 1-6: degree of power or influence
-    affinity: int | None = None  # 0-6: degree of affinity towards the Traveller
-    enmity: int | None = None  # 0 to -6: degree of enmity towards the Traveller
-
-    @property
-    def display_name(self) -> str:
-        return type(self).__name__
-
-    @property
-    def color_class(self) -> str:
-        return 'text-gray-400'
-
-
-class Contact(Connection):
-    kind: Literal[ConnectionKind.CONTACT] = ConnectionKind.CONTACT
-
-    @property
-    def display_name(self) -> str:
-        return 'Contact'
-
-    @property
-    def color_class(self) -> str:
-        return 'text-cyan-400'
-
-
-class Ally(Connection):
-    kind: Literal[ConnectionKind.ALLY] = ConnectionKind.ALLY
-
-    @property
-    def display_name(self) -> str:
-        return 'Ally'
-
-    @property
-    def color_class(self) -> str:
-        return 'text-green-400'
-
-
-class Rival(Connection):
-    kind: Literal[ConnectionKind.RIVAL] = ConnectionKind.RIVAL
-
-    @property
-    def display_name(self) -> str:
-        return 'Rival'
-
-    @property
-    def color_class(self) -> str:
-        return 'text-yellow-400'
-
-
-class Enemy(Connection):
-    kind: Literal[ConnectionKind.ENEMY] = ConnectionKind.ENEMY
-
-    @property
-    def display_name(self) -> str:
-        return 'Enemy'
-
-    @property
-    def color_class(self) -> str:
-        return 'text-red-400'
-
-
-type AnyConnection = Annotated[
-    Contact | Ally | Rival | Enemy,
-    Field(discriminator='kind'),
-]
-
-
-def _affinity_enmity_value(roll: int, *, enmity: bool = False) -> int:
-    if roll <= 2:
-        value = 0
-    elif roll <= 4:
-        value = 1
-    elif roll <= 6:
-        value = 2
-    elif roll <= 8:
-        value = 3
-    elif roll <= 10:
-        value = 4
-    elif roll == 11:
-        value = 5
-    else:
-        value = 6
-    return -value if enmity else value
-
-
-def _connection_affinity_enmity(
-    kind: ConnectionKind,
-    affinity_roll: int | None,
-    enmity_roll: int | None,
-) -> tuple[int | None, int | None]:
-    if affinity_roll is None and enmity_roll is None:
-        return None, None
-
-    match kind:
-        case ConnectionKind.ALLY:
-            affinity = _affinity_enmity_value(affinity_roll) if affinity_roll is not None else None
-            return affinity, 0
-        case ConnectionKind.CONTACT:
-            affinity = _affinity_enmity_value(affinity_roll) if affinity_roll is not None else None
-            enmity = _affinity_enmity_value(enmity_roll, enmity=True) if enmity_roll is not None else None
-            return affinity, enmity
-        case ConnectionKind.RIVAL:
-            affinity = _affinity_enmity_value(affinity_roll) if affinity_roll is not None else None
-            enmity = _affinity_enmity_value(enmity_roll, enmity=True) if enmity_roll is not None else None
-            return affinity, enmity
-        case ConnectionKind.ENEMY:
-            enmity = _affinity_enmity_value(enmity_roll, enmity=True) if enmity_roll is not None else None
-            return 0, enmity
-
-
-def make_connection(
-    kind: ConnectionKind,
-    source: str = '',
-    power: int | None = None,
-    affinity_roll: int | None = None,
-    enmity_roll: int | None = None,
-) -> AnyConnection:
-    affinity, enmity = _connection_affinity_enmity(kind, affinity_roll, enmity_roll)
-    match kind:
-        case ConnectionKind.CONTACT:
-            return Contact(source=source, power=power, affinity=affinity, enmity=enmity)
-        case ConnectionKind.ALLY:
-            return Ally(source=source, power=power, affinity=affinity, enmity=enmity)
-        case ConnectionKind.RIVAL:
-            return Rival(source=source, power=power, affinity=affinity, enmity=enmity)
-        case ConnectionKind.ENEMY:
-            return Enemy(source=source, power=power, affinity=affinity, enmity=enmity)
-
-
-class BenefitRollDm(BaseModel):
-    amount: int
-
-
-class MusterOut(BaseModel):
-    terms: int = 1
-    cash_count: int = 0
-    benefits: list[ItemBenefit] = Field(default_factory=list)
-    extra_rolls: int = 0
-    lost_rolls: int = 0
-    benefit_roll_dms: list[BenefitRollDm] = Field(default_factory=list)
-    used: bool = False
-
-
-class CareerTerm(BaseModel):
-    career: CareerData
-    assignment: str
-    assignment_index: int = 0
-    commission: bool = False
-    rank_after_term: int = 0
-    muster_out: MusterOut | None = Field(default_factory=MusterOut)
-    event: str | None = None
-    mishap: str | None = None
-    prison: str | None = None
-
-    def continue_career_run_from(self, previous: CareerTerm) -> bool:
-        if not previous.muster_out:
-            return False
-        if previous.muster_out.used:
-            return False
-        career_continue = self.career.allows_assignment_change and (self.career == previous.career)
-        assignment_continue = (
-            not self.career.allows_assignment_change
-            and self.career == previous.career
-            and self.assignment == previous.assignment
-        )
-        if career_continue or assignment_continue:
-            if not previous.muster_out:
-                raise ValueError('Previous career should have Muster Out information.')
-            self.muster_out = previous.muster_out
-            self.muster_out.terms += 1
-            previous.muster_out = None
-            return True
-        return False
-
-    def require_muster_out(self) -> MusterOut:
-        if self.muster_out is None:
-            raise ReplayError('Career term has no active muster-out state')
-        return self.muster_out
+from ceres.character.mechanism.errors import ReplayError
+from ceres.character.mechanism.pending_input import PendingInputBase, _deserialise_pending_input
 
 
 class CharacterSummary(BaseModel):
@@ -345,7 +116,9 @@ class CharacterSummary(BaseModel):
 class CharacterProjection(BaseModel):
     character_id: int
     summary: CharacterSummary
-    pending_inputs: list[SerializeAsAny[PendingInputBase]] = Field(default_factory=list)
+    pending_inputs: list[SerializeAsAny[Annotated[PendingInputBase, BeforeValidator(_deserialise_pending_input)]]] = (
+        Field(default_factory=list)
+    )
     pending_advancement_dm: int = 0
     pending_qualification_dm: int = 0
     auto_qualify_careers: list[str] = Field(default_factory=list)
@@ -461,7 +234,6 @@ class CharacterProjection(BaseModel):
 
 
 def diff_summaries(before: CharacterSummary, after: CharacterSummary) -> list[str]:
-    """Human-readable strings describing mechanical changes between two summaries."""
     changes: list[str] = []
 
     changes.extend(after.narrative[len(before.narrative) :])

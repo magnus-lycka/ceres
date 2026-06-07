@@ -7,12 +7,13 @@ from pydantic import TypeAdapter
 
 from ceres import settings
 from ceres.adapters.travellermap import TravellerMapWorld
+from ceres.character.domain.character_start import CharacterStartedHandler
 from ceres.character.domain.sophont import Sophont
-from ceres.character.events import AnyEvent, CharacterStartedEvent
+from ceres.character.mechanism.character_state import CharacterProjection
+from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
-from ceres.character.state import CharacterProjection
 
-_event_adapter: TypeAdapter[AnyEvent] = TypeAdapter(AnyEvent)
+_event_adapter: TypeAdapter[Event] = TypeAdapter(Event)
 
 
 class CharacterRow(TypedDict):
@@ -55,7 +56,8 @@ class SqliteCharacterBackend:
             raise RuntimeError('SQLite did not return a character id')
         row: CharacterRow = {'id': character_id, 'sophont': sophont.name, 'player': player, 'name': name}
         self.append_event(
-            character_id, CharacterStartedEvent(sophont=sophont, homeworld=homeworld, player=player, name=name)
+            character_id,
+            Event(handler=CharacterStartedHandler(sophont=sophont, homeworld=homeworld, player=player, name=name)),
         )
         return row
 
@@ -82,11 +84,11 @@ class SqliteCharacterBackend:
         character['name'] = name
         return character
 
-    def append_event(self, character_id: int, event: AnyEvent) -> AnyEvent:
+    def append_event(self, character_id: int, event: Event) -> Event:
         event, _projection = self.append_event_with_projection(character_id, event)
         return event
 
-    def append_event_with_projection(self, character_id: int, event: AnyEvent) -> tuple[AnyEvent, CharacterProjection]:
+    def append_event_with_projection(self, character_id: int, event: Event) -> tuple[Event, CharacterProjection]:
         events = self.load_typed_events(character_id) or []
         event = event.model_copy(update={'id': len(events) + 1})
         candidate = [*events, event]
@@ -98,7 +100,7 @@ class SqliteCharacterBackend:
         self.connection.commit()
         return event, projection
 
-    def load_typed_events(self, character_id: int) -> list[AnyEvent] | None:
+    def load_typed_events(self, character_id: int) -> list[Event] | None:
         cursor = self.connection.execute(
             'select payload from character_events where character_id = ? order by id',
             (character_id,),

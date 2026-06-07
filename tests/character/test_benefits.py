@@ -34,9 +34,10 @@ from ceres.character.domain.benefits import (
     ItemBenefit,
 )
 from ceres.character.domain.career import SCOUT
+from ceres.character.domain.career.career_data import CareerTerm
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.sophont import VILANI
-from ceres.character.state import CareerTerm, CharacterProjection, CharacterSummary
+from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
 from tests.character.helpers import MOCK_WORLD
 
 
@@ -157,8 +158,6 @@ class TestCombinedBenefit:
         assert isinstance(combined, CombinedBenefit)
 
     def test_apply_increments_all_characteristics(self):
-        from ceres.character.events import _apply_muster_out_benefit
-
         projection = SimpleNamespace(
             summary=SimpleNamespace(
                 characteristics={Chars.SOC: 5, Chars.EDU: 10},
@@ -172,23 +171,19 @@ class TestCombinedBenefit:
                 CharacteristicIncrease(char=Chars.EDU, amount=1),
             ]
         )
-        _apply_muster_out_benefit(projection, combined)
+        combined.apply(projection)
         assert projection.summary.characteristics[Chars.SOC] == 6
         assert projection.summary.characteristics[Chars.EDU] == 11
 
     def test_apply_appends_all_item_benefits(self):
-        from ceres.character.events import _apply_muster_out_benefit
-
         projection = _projection_with_term()
         combined = CombinedBenefit(benefits=[SHIP_SHARE, WEAPON])
-        _apply_muster_out_benefit(projection, combined)
+        combined.apply(projection)
         assert SHIP_SHARE in projection.summary.benefits
         assert WEAPON in projection.summary.benefits
         assert projection.summary.career_terms[-1].require_muster_out().benefits == [SHIP_SHARE, WEAPON]
 
     def test_apply_handles_mixed_sub_benefits(self):
-        from ceres.character.events import _apply_muster_out_benefit
-
         projection = _projection_with_term({Chars.SOC: 5})
         combined = CombinedBenefit(
             benefits=[
@@ -196,7 +191,7 @@ class TestCombinedBenefit:
                 YACHT,
             ]
         )
-        _apply_muster_out_benefit(projection, combined)
+        combined.apply(projection)
         assert projection.summary.characteristics[Chars.SOC] == 6
         assert YACHT in projection.summary.benefits
         assert projection.summary.career_terms[-1].require_muster_out().benefits == [YACHT]

@@ -1,8 +1,7 @@
 # List of potential things to do
 
 Update todo items in this document as progress is made.
-When todo items are done, please move them
-to docs/archive/done_todos.md
+When todo items are done, please move them to docs/archive/done_todos.md
 
 ## Google Sheet fuel mismatch
 
@@ -734,23 +733,32 @@ fidelity gaps in event/mishap text and handler behavior.
 References:
 
 - `refs/core/02_traveller_creation.md` (Agent mishaps/events)
-- `src/ceres/character/careers/agent.py`
+- `src/ceres/character/domain/career/agent.py`
+- `tests/character/test_agent.py`
 
 Known differences:
 
-- **Mishap 5** — text matches Core, but the handler only records a manual note
-  for the harmed Contact/Ally/family-member injury instead of actually
-  resolving the "roll twice on the Injury table for them, taking the lower
-  result" outcome in whatever NPC-facing form Ceres decides to support.
+- **Mishap 1** — Core gives a choice between the severe-injury result and
+  rolling twice on the Injury table and taking the lower result. Ceres applies
+  only `InjuryEffect(severity='severe')`, with no choice. The current generic
+  severe-injury handling also does not fully represent the Core Injury-table
+  result and should be fixed through the generic injury work.
+- **Mishap 5** — Ceres now asks whether a Contact, Ally, or family member was
+  hurt, but does not select an actual represented person or resolve the
+  "roll twice on the Injury table for them, taking the lower result" outcome.
+  Each choice only adds a manual problem note. Decide on an NPC-facing injury
+  representation, then replace the note with the represented outcome.
 - **Event 8** — text matches Core, but the handler does not actually perform
   the immediate Rogue/Citizen Event or Mishap roll, nor the Specialist skill
-  table roll on success; it only records a manual note.
+  table roll on success; it only records a manual problem note. The current
+  tests explicitly assert these manual notes and must be replaced with tests
+  of the Core outcomes when cross-career table execution is implemented.
 - **Event 7** — inherits the generic Life Events correctness gap; once the
   generic Life Events todo is fixed, re-check Agent event 7 against Core.
-- **Minor text drift** — Mishap 1, Mishap 6, and Event 7 omit some Core
-  wording/page-reference detail. Once behavior is correct, decide whether these
-  strings should match Core literally as part of the broader text-fidelity
-  policy.
+- **Literal text drift** — Mishap 1 omits the explanation that severe injury is
+  the same as result 2 on the Injury table; Mishap 6 omits the page reference;
+  Event 3 uses an em dash instead of Core's colon; and Event 7 omits the page
+  reference. Make all Agent mishap/event entry text match Core word for word.
 
 ## Army career tables: bring Ceres fully in line with Core
 
@@ -761,19 +769,21 @@ behavior does not fully match the rules.
 References:
 
 - `refs/core/02_traveller_creation.md` (Army mishaps/events)
-- `src/ceres/character/careers/army.py`
+- `src/ceres/character/domain/career/army.py`
+- `tests/character/test_army.py`
 
 Known differences:
 
-- **Text drift across multiple rows** — Mishaps 1-6 and Events 3-11 are often
-  substantially shortened compared with Core, even where the mechanical effect
-  is mostly present. Review these strings against the rulebook and decide
-  whether the project's text-fidelity policy means they should match Core
-  literally.
+- **Mishap 1** — Core gives a choice between the severe-injury result and
+  rolling twice on the Injury table and taking the lower result. Ceres applies
+  only `InjuryEffect(severity='severe')`, with no choice. This also depends on
+  the generic injury work representing the Core Injury table correctly.
 - **Event 6** — text implies "Roll EDU 8+ to avoid injury; if you succeed, you
   gain one level in Gun Combat or Leadership". Ceres implements the success
   branch, but on failure it only records a manual note to roll on the Injury
-  table instead of actually applying the injury outcome.
+  table instead of actually applying the injury outcome. The current tests
+  explicitly assert that manual note and must be replaced with a test of the
+  represented injury outcome.
 - **Event 11** — Core explicitly grants `Tactics (military) 1` or `DM+4` to the
   next advancement roll. Ceres currently offers generic `Tactics()` rather than
   clearly preserving the required `military` specialty.
@@ -783,6 +793,9 @@ Known differences:
   alternative.
 - **Event 7** — inherits the generic Life Events correctness gap; once the
   generic Life Events todo is fixed, re-check Army event 7 against Core.
+- **Literal text drift** — Army mishap/event entry text is substantially
+  shortened across the tables, including omitted page references. Make all Army
+  mishap/event entry text match Core word for word.
 
 ## Citizen career tables: bring Ceres fully in line with Core
 
@@ -792,10 +805,14 @@ text and handler behavior compared with the Core Rulebook.
 References:
 
 - `refs/core/02_traveller_creation.md` (Citizen mishaps/events)
-- `src/ceres/character/careers/citizen.py`
+- `src/ceres/character/domain/career/citizen.py`
+- `tests/character/test_citizen.py`
 
 Known differences:
 
+- **Mishap 1** — Core gives a choice between the severe-injury result and
+  rolling twice on the Injury table and taking the lower result. Ceres applies
+  only the severe-injury effect, with no choice.
 - **Mishap 4** — both text and behavior diverge sharply from Core. Core says
   co-operating gains `DM+2` to the next career qualification roll and refusing
   gains an `Ally`; Ceres instead shortens the text and models cooperate/resist
@@ -807,19 +824,17 @@ Known differences:
 - **Event 6** — Core says `EDU 10+` grants any one skill of your choice at
   level 1. Ceres currently reuses the generic advanced-training helper, which
   instead increases an existing skill by one level.
-- **Event 8** — this is a major rewrite in Ceres. Core gives a simple
-  illegal-profit choice leading to `DM+1` to a Benefit roll plus `Streetwise
-  1`, `Deception 1`, or a criminal `Contact`, or nothing if refused. Ceres
-  instead adds a `Streetwise 8+` roll, an extra Benefit roll on success,
-  ejection and a `Rival` on failure, and `DM+2` to next advancement on refusal.
+- **Event 8** — the reward choice is now represented, but accepting incorrectly
+  grants an extra Benefit roll instead of `DM+1` to one Benefit roll. Refusing
+  incorrectly grants `DM+2` to the next advancement roll, while Core says it
+  gains nothing.
 - **Event 11** — Core grants an `Ally` and either `Diplomat 1` or `DM+4` to
   the next advancement roll. Ceres currently grants only the `Ally`.
 - **Event 7** — inherits the generic Life Events correctness gap; once the
   generic Life Events todo is fixed, re-check Citizen event 7 against Core.
-- **Text drift across multiple rows** — Mishap 1, Mishap 5, Mishap 6, and
-  Events 4, 5, 7, 9, 10, and 12 are shortened relative to Core even where the
-  mechanical intent is closer. Review these strings against the project's
-  text-fidelity policy after the behavioral gaps are fixed.
+- **Literal text drift** — Citizen mishap/event entry text is shortened across
+  multiple rows and omits Core details and page references. Make all Citizen
+  mishap/event entry text match Core word for word.
 
 ## Drifter career tables: bring Ceres fully in line with Core
 
@@ -829,10 +844,14 @@ text and handler behavior compared with the Core Rulebook.
 References:
 
 - `refs/core/02_traveller_creation.md` (Drifter mishaps/events)
-- `src/ceres/character/careers/drifter.py`
+- `src/ceres/character/domain/career/drifter.py`
+- `tests/character/test_drifter.py`
 
 Known differences:
 
+- **Mishap 1** — Core gives a choice between the severe-injury result and
+  rolling twice on the Injury table and taking the lower result. Ceres applies
+  only the severe-injury effect, with no choice.
 - **Mishap 5** — Core says an existing `Contact` or `Ally` betrays the
   Traveller and becomes a `Rival` or `Enemy`, with a fallback `Rival` or
   `Enemy` if none exist. Ceres currently shortens the text and always creates a
@@ -845,7 +864,7 @@ Known differences:
   then roll `Melee 8+`, `Gun Combat 8+`, or `Stealth 8+` to avoid an injury
   roll. Ceres always adds an `Enemy`, omits `Stealth`, adds a skill-increase
   reward on success that Core does not specify, and leaves the injury outcome
-  as a manual note on failure.
+  as a manual note on failure. The current tests explicitly assert that note.
 - **Event 9** — Core's risky-adventure outcome table is materially different
   from Ceres. In particular, Ceres turns the successful outcome into an extra
   Benefit roll instead of `DM+4` to one Benefit roll, and changes the middle
@@ -859,11 +878,9 @@ Known differences:
   instead of reusing whatever proper draft handling exists elsewhere.
 - **Event 7** — inherits the generic Life Events correctness gap; once the
   generic Life Events todo is fixed, re-check Drifter event 7 against Core.
-- **Text drift across multiple rows** — Mishap 1, Mishap 2, Event 3, Event 4,
-  Event 5, Event 6, Event 7, Event 8, Event 9, Event 10, and Event 11 are all
-  shortened relative to Core even where the mechanical intent is closer.
-  Review these strings against the project's text-fidelity policy after the
-  behavioral gaps are fixed.
+- **Literal text drift** — Drifter mishap/event entry text is shortened across
+  most of the tables. Make all Drifter mishap/event entry text match Core word
+  for word.
 
 ## Entertainer career tables: bring Ceres fully in line with Core
 
@@ -873,10 +890,14 @@ event/mishap text and handler behavior compared with the Core Rulebook.
 References:
 
 - `refs/core/02_traveller_creation.md` (Entertainer mishaps/events)
-- `src/ceres/character/careers/entertainer.py`
+- `src/ceres/character/domain/career/entertainer.py`
+- `tests/character/test_entertainer.py`
 
 Known differences:
 
+- **Mishap 1** — Core gives a choice between the severe-injury result and
+  rolling twice on the Injury table and taking the lower result. Ceres applies
+  only the severe-injury effect, with no choice.
 - **Mishap 4** — Core says an existing `Contact` or `Ally` betrays the
   Traveller and becomes a `Rival` or `Enemy`, with a fallback `Rival` or
   `Enemy` if none exist. Ceres currently shortens the text and always applies
@@ -899,10 +920,9 @@ Known differences:
 - **Event 7** — inherits the generic Life Events correctness gap; once the
   generic Life Events todo is fixed, re-check Entertainer event 7 against
   Core.
-- **Text drift across multiple rows** — Mishap 1, Mishap 3, Mishap 5, Mishap
-  6, and Events 3, 4, 5, 6, 7, and 11 are shortened relative to Core even
-  where the mechanical intent is closer. Review these strings against the
-  project's text-fidelity policy after the behavioral gaps are fixed.
+- **Literal text drift** — Entertainer mishap/event entry text is shortened
+  across multiple rows. Make all Entertainer mishap/event entry text match Core
+  word for word.
 
 ## Marines career tables: bring Ceres fully in line with Core
 
@@ -912,10 +932,14 @@ event/mishap text and handler behavior compared with the Core Rulebook.
 References:
 
 - `refs/core/02_traveller_creation.md` (Marines mishaps/events)
-- `src/ceres/character/careers/marines.py`
+- `src/ceres/character/domain/career/marines.py`
+- `tests/character/test_marines.py`
 
 Known differences:
 
+- **Mishap 1** — Core gives a choice between the severe-injury result and
+  rolling twice on the Injury table and taking the lower result. Ceres applies
+  only the severe-injury effect, with no choice.
 - **Mishap 4** — both branches are rewritten in Ceres. Core says refusing
   ejects the Traveller, while accepting lets them stay but gain the lone
   survivor as an `Enemy`. Ceres instead gives a `Contact` on refusal and adds a
@@ -927,7 +951,7 @@ Known differences:
   while failure causes injury and a loss of `1` point from any physical
   characteristic. Ceres currently uses generic `Tactics()`, leaves the injury
   outcome as a manual note, and does not apply the required characteristic
-  loss.
+  loss. The current tests explicitly assert the manual note.
 - **Event 8** — Core explicitly grants `Electronics (comms) 1` as one option.
   Ceres currently uses generic `Electronics()`, losing the specialty.
 - **Event 9** — Core says reporting the commander grants `DM+2` to the next
@@ -940,11 +964,9 @@ Known differences:
   alternative.
 - **Event 7** — inherits the generic Life Events correctness gap; once the
   generic Life Events todo is fixed, re-check Marines event 7 against Core.
-- **Text drift across multiple rows** — Mishap 1, Mishap 2, Mishap 3, Mishap
-  5, Mishap 6, and Events 3, 4, 5, 6, 7, 8, 9, and 10 are shortened relative
-  to Core even where the mechanical intent is closer. Review these strings
-  against the project's text-fidelity policy after the behavioral gaps are
-  fixed.
+- **Literal text drift** — Marines mishap/event entry text is shortened across
+  most of the tables. Make all Marines mishap/event entry text match Core word
+  for word.
 
 ## Merchant career tables: bring Ceres fully in line with Core
 
@@ -954,10 +976,14 @@ text and handler behavior compared with the Core Rulebook.
 References:
 
 - `refs/core/02_traveller_creation.md` (Merchant mishaps/events)
-- `src/ceres/character/careers/merchant.py`
+- `src/ceres/character/domain/career/merchant.py`
+- `tests/character/test_merchant.py`
 
 Known differences:
 
+- **Mishap 1** — Core gives a choice between the severe-injury result and
+  rolling twice on the Injury table and taking the lower result. Ceres applies
+  only the severe-injury effect, with no choice.
 - **Mishap 2** — text matches Core, but Ceres appears to implement only the
   `Rival` part and not the required "lose all Benefits from this career"
   consequence.
@@ -975,98 +1001,224 @@ Known differences:
   `Gambler 8+` or `Broker 8+`, then gain or lose Benefit rolls accordingly and
   gain one level in whichever skill was used. Ceres currently leaves the whole
   process as a manual problem note and does not automate the skill increase.
+  The current tests explicitly assert that manual note.
 - **Event 11** — Core grants an `Ally` and either `Carouse 1` or `DM+4` to the
   next advancement roll. Ceres currently grants only the `Ally`.
 - **Event 7** — inherits the generic Life Events correctness gap; once the
   generic Life Events todo is fixed, re-check Merchant event 7 against Core.
-- **Text drift across multiple rows** — Mishap 1, Mishap 5, Event 3, Event 4,
-  Event 5, Event 7, Event 8, Event 9, and Event 11 are shortened relative to
-  Core even where the mechanical intent is closer. Review these strings against
-  the project's text-fidelity policy after the behavioral gaps are fixed.
+- **Literal text drift** — Merchant mishap/event entry text is shortened across
+  multiple rows. Make all Merchant mishap/event entry text match Core word for
+  word.
 
 ## Navy career tables: bring Ceres fully in line with Core
 
-The `Navy` career still needs the same kind of strict Core-vs-Ceres audit that
-has now been done for several other careers.
+The `Navy` career has several remaining fidelity gaps in its mishap/event
+handlers and skill specialties.
 
 References:
 
 - `refs/core/02_traveller_creation.md` (Navy mishaps/events)
-- `src/ceres/character/careers/navy.py`
+- `src/ceres/character/domain/career/navy.py`
+- `tests/character/test_navy.py`
 
-This needs a row-by-row comparison of `MishapEntry.text` / `CareerEventEntry.text`
-and handler behavior against the Core Rulebook, with any text drift and
-behavioral mismatches turned into concrete follow-up items.
+Known differences:
+
+- **Mishap 1** — Core gives a choice between the severe-injury result and
+  rolling twice on the Injury table and taking the lower result. Ceres applies
+  only the severe-injury effect, with no choice.
+- **Mishap 3** — several assignment-specific Core skill specialties are lost:
+  Electronics (sensors), Pilot (small craft or spacecraft), and Tactics
+  (naval) are represented by generic skill objects.
+- **Mishap 4** — accepting responsibility should grant a free Skills and
+  Training table roll before ejection. Ceres records a manual problem note
+  instead, and the current tests explicitly assert that note.
+- **Event 3** — Ceres grants the initial Gambler or Deception increase but
+  omits the optional `Gambler 8+` wager that can gain or lose a Benefit roll.
+- **Event 8** — Core grants one of Recon 1, Diplomat 1, Steward 1, or a
+  Contact. Ceres grants both a skill choice and a Contact.
+- **Event 11** — Core requires `Tactics (naval) 1` or `DM+4` to the next
+  advancement roll. Ceres offers generic `Tactics()`.
+- **Event 12** — Core grants automatic success on the next promotion or
+  commission roll. Ceres applies `AutoAdvanceEffect()` immediately and does not
+  represent the choice or its timing.
+- **Event 7** — inherits the generic Life Events correctness gap; once the
+  generic Life Events todo is fixed, re-check Navy event 7 against Core.
+- **Literal text drift** — Navy mishap/event entry text is shortened across
+  most of the tables. Make all Navy mishap/event entry text match Core word for
+  word.
 
 ## Noble career tables: bring Ceres fully in line with Core
 
-The `Noble` career still needs the same kind of strict Core-vs-Ceres audit that
-has now been done for several other careers.
+The `Noble` career has several major event-handler substitutions and unresolved
+injury outcomes.
 
 References:
 
 - `refs/core/02_traveller_creation.md` (Noble mishaps/events)
-- `src/ceres/character/careers/noble.py`
+- `src/ceres/character/domain/career/noble.py`
+- `tests/character/test_noble.py`
 
-This needs a row-by-row comparison of `MishapEntry.text` / `CareerEventEntry.text`
-and handler behavior against the Core Rulebook, with any text drift and
-behavioral mismatches turned into concrete follow-up items.
+Known differences:
+
+- **Mishap 1** — Core gives a choice between the severe-injury result and
+  rolling twice on the Injury table and taking the lower result. Ceres applies
+  only the severe-injury effect, with no choice.
+- **Mishaps 3 and 5** — failed rolls leave the Injury-table result as a manual
+  problem note. The current tests explicitly assert those notes instead of a
+  represented injury outcome.
+- **Event 3** — Core offers a choice to refuse a duel or accept it, followed by
+  SOC effects, a blade-skill roll, and possible injury. Ceres only grants a
+  skill choice and omits the duel entirely.
+- **Event 4** — Core specifically offers Animals (handling); Ceres offers
+  generic `Animals()`, losing the specialty.
+- **Event 8** — Ceres substantially rewrites the conspiracy. Refusal gives a
+  Rival instead of Core's Enemy; success gives an extra Benefit roll instead
+  of a Deception/Persuade/Tactics/Carouse skill increase; and failure ejects
+  the Traveller instead of rolling on the Mishap table as the conspiracy
+  collapses.
+- **Event 7** — inherits the generic Life Events correctness gap; once the
+  generic Life Events todo is fixed, re-check Noble event 7 against Core.
+- **Literal text drift** — Noble mishap/event entry text is shortened across
+  most of the tables. Make all Noble mishap/event entry text match Core word
+  for word.
 
 ## Prisoner career tables: bring Ceres fully in line with Core
 
-The `Prisoner` career still needs the same kind of strict Core-vs-Ceres audit
-that has now been done for several other careers.
+The `Prisoner` career has a particularly large mismatch in its Event 7
+subtable, plus several incomplete consequences elsewhere.
 
 References:
 
 - `refs/core/02_traveller_creation.md` (Prisoner mishaps/events)
-- `src/ceres/character/careers/prisoner.py`
+- `src/ceres/character/domain/career/prisoner.py`
+- `tests/character/test_prisoner.py`
 
-This needs a row-by-row comparison of `MishapEntry.text` / `CareerEventEntry.text`
-and handler behavior against the Core Rulebook, with any text drift and
-behavioral mismatches turned into concrete follow-up items.
+Known differences:
+
+- **Mishap 1** — Core gives a choice between the severe-injury result and
+  rolling twice on the Injury table and taking the lower result. Ceres applies
+  only the severe-injury effect, with no choice.
+- **Mishap 3** — submitting to the prison gang records the lost Benefit roll as
+  a manual problem note instead of changing muster-out state.
+- **Event 5** — Core permits Deception, Persuade, Melee, or Stealth after
+  joining the gang. Ceres omits Deception. The `DM+1` to Survival rolls is only
+  recorded as a manual problem note rather than enforced.
+- **Event 7** — Ceres' entire 1D Prison Event subtable differs from Core. Core's
+  rows are Riot, New Contact, New Rival, Transfer and reroll parole threshold,
+  Good Behaviour reducing parole threshold by 2, and an attack resolved with
+  Melee (unarmed) 8+. Ceres instead provides a different set of labels and
+  effects, including Gang Attack, Visitation, and Parole Hearing.
+- **Event 9** — lawyer cost should be `Cr1000 × level²`; Ceres uses Cr1000,
+  Cr2000, and Cr3000 and records payment as manual notes. On success Core
+  reduces parole threshold by `1D`, while Ceres reduces it by only 1.
+- **Event 10** — Core specifically grants Electronics (computers) 1; Ceres
+  loses the specialty.
+- **Literal text drift** — Prisoner mishap/event entry text and the Event 7
+  subtable text are substantially shortened or rewritten. Make all Prisoner
+  mishap/event entry text match Core word for word.
 
 ## Rogue career tables: bring Ceres fully in line with Core
 
-The `Rogue` career still needs the same kind of strict Core-vs-Ceres audit that
-has now been done for several other careers.
+The `Rogue` career implements several of its branching events, but still loses
+important specialties and leaves some outcomes unresolved.
 
 References:
 
 - `refs/core/02_traveller_creation.md` (Rogue mishaps/events)
-- `src/ceres/character/careers/rogue.py`
+- `src/ceres/character/domain/career/rogue.py`
+- `tests/character/test_rogue.py`
 
-This needs a row-by-row comparison of `MishapEntry.text` / `CareerEventEntry.text`
-and handler behavior against the Core Rulebook, with any text drift and
-behavioral mismatches turned into concrete follow-up items.
+Known differences:
+
+- **Mishap 1** — Core gives a choice between the severe-injury result and
+  rolling twice on the Injury table and taking the lower result. Ceres applies
+  only the severe-injury effect, with no choice.
+- **Mishap 4** — Core specifies Pilot (small craft or spacecraft) and Athletics
+  (dexterity); Ceres offers generic `Pilot()` and `Athletics()`.
+- **Event 3** — on a failed defence Core also grants an Enemy, and hiring a
+  lawyer grants that lawyer as a Contact. Ceres implements the other
+  consequences but omits both relationships.
+- **Event 6** — Core grants `DM+4` to advancement for backstabbing and an Ally
+  for refusing. Ceres instead grants only `DM+2` plus an Enemy for
+  backstabbing, and a Contact for refusing.
+- **Event 9** — failure should resolve an Injury-table roll. Ceres records a
+  manual problem note instead, and the current tests explicitly assert it.
+- **Event 10** — Core allows the Traveller to wager a Benefit roll with
+  `Gambler 8+`, gaining or losing a Benefit roll. Ceres only grants Gambler 1
+  and omits the wager.
+- **Event 11** — Core requires `Tactics (military) 1` or `DM+4` to the next
+  advancement roll. Ceres offers generic `Tactics()`.
+- **Event 7** — inherits the generic Life Events correctness gap; once the
+  generic Life Events todo is fixed, re-check Rogue event 7 against Core.
+- **Literal text drift** — Rogue mishap/event entry text is shortened across
+  most of the tables. Make all Rogue mishap/event entry text match Core word
+  for word.
 
 ## Scholar career tables: bring Ceres fully in line with Core
 
-The `Scholar` career still needs the same kind of strict Core-vs-Ceres audit
-that has now been done for several other careers.
+The `Scholar` career's more complicated events are largely represented, but its
+injury handling and some skill specialties still differ from Core.
 
 References:
 
 - `refs/core/02_traveller_creation.md` (Scholar mishaps/events)
-- `src/ceres/character/careers/scholar.py`
+- `src/ceres/character/domain/career/scholar.py`
+- `tests/character/test_scholar.py`
 
-This needs a row-by-row comparison of `MishapEntry.text` / `CareerEventEntry.text`
-and handler behavior against the Core Rulebook, with any text drift and
-behavioral mismatches turned into concrete follow-up items.
+Known differences:
+
+- **Mishap 1** — Core gives a choice between the severe-injury result and
+  rolling twice on the Injury table and taking the lower result. Ceres applies
+  only the severe-injury effect, with no choice.
+- **Mishap 2** — Core requires rolling twice on the Injury table and taking the
+  higher result. Ceres applies a single generic Injury-table effect.
+- **Mishap 4** — Core specifically offers Athletics (dexterity or endurance);
+  Ceres offers generic `Athletics()`.
+- **Mishap 5** — giving up should retain the current term's Benefit roll, while
+  starting again should lose all Benefit rolls from the career. Ceres calls
+  muster-out with the current term lost on give-up, while the start-again
+  branch does not remove the career's Benefit rolls.
+- **Event 8** — on success Core grants `DM+2` to a Benefit roll as well as a
+  skill increase and an Enemy; on failure it grants an Enemy and loses one
+  Benefit roll. Ceres omits the Benefit-roll modifier/loss in both branches.
+- **Event 7** — inherits the generic Life Events correctness gap; once the
+  generic Life Events todo is fixed, re-check Scholar event 7 against Core.
+- **Literal text drift** — Scholar mishap/event entry text is shortened across
+  most of the tables. Make all Scholar mishap/event entry text match Core word
+  for word.
 
 ## Scout career tables: bring Ceres fully in line with Core
 
-The `Scout` career still needs the same kind of strict Core-vs-Ceres audit that
-has now been done for several other careers.
+The `Scout` career implements most of its branching events, but several skill
+choices lose the specialties or breadth required by Core.
 
 References:
 
 - `refs/core/02_traveller_creation.md` (Scout mishaps/events)
-- `src/ceres/character/careers/scout.py`
+- `src/ceres/character/domain/career/scout.py`
+- `tests/character/test_scout.py`
 
-This needs a row-by-row comparison of `MishapEntry.text` / `CareerEventEntry.text`
-and handler behavior against the Core Rulebook, with any text drift and
-behavioral mismatches turned into concrete follow-up items.
+Known differences:
+
+- **Mishap 1** — Core gives a choice between the severe-injury result and
+  rolling twice on the Injury table and taking the lower result. Ceres applies
+  only the severe-injury effect, with no choice.
+- **Event 3** — success should grant only Electronics (sensors) 1, but Ceres
+  grants level 1 in every Electronics specialty. Failure records the ban on
+  re-enlisting as a manual problem note rather than enforcing it.
+- **Event 4** — Core offers Animals (riding or training), Survival, Recon, or
+  any Science at level 1. Ceres offers generic `Animals()` and only
+  `SpaceScience()` rather than the full Science choice.
+- **Event 6** — Core specifically offers Pilot (small craft) among the skill
+  choices. Ceres offers generic `Pilot()`.
+- **Event 12** — Core automatically promotes the Traveller. Ceres instead
+  applies `DecreaseCharacteristicEffect(characteristic=Chars.SOC, amount=1)`,
+  which is unrelated and harmful.
+- **Event 7** — inherits the generic Life Events correctness gap; once the
+  generic Life Events todo is fixed, re-check Scout event 7 against Core.
+- **Literal text drift** — Scout mishap/event entry text is shortened across
+  most of the tables. Make all Scout mishap/event entry text match Core word
+  for word.
 
 ## Replace sophont string-name lookup with typed objects
 

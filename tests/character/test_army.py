@@ -1,17 +1,17 @@
 """Tests for the Army career — support, infantry, and cavalry assignments."""
 
 from ceres.character.domain.career.army import ArmyMishap4Cooperate, ArmyMishap4JoinRing, PendingArmyEvent6SkillRoll
-from ceres.character.domain.career.common_pending import PendingAdvancedTrainingSkillRoll
-from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive, GunCombat, Leadership
-from ceres.character.domain.sophont import VILANI
-from ceres.character.events import (
+from ceres.character.domain.career.career_events import (
     PendingAdvancement,
     PendingChoices,
     PendingMusterOut,
     PendingSkillChoice,
 )
-from ceres.character.state import Ally
+from ceres.character.domain.career.common_pending import PendingAdvancedTrainingSkillRoll
+from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.connection import Ally
+from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive, GunCombat, Leadership
+from ceres.character.domain.sophont import VILANI
 from tests.character.helpers import MOCK_WORLD, CharacterDriver
 
 

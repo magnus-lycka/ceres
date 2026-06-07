@@ -1,17 +1,10 @@
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any, cast
 
 from pydantic import BaseModel, ConfigDict
 
 from ceres.character.domain.career.career_data import CareerEventEntry, CharCheck, TermData
 from ceres.character.domain.skills import AnySkill, Level, _level_fields
-from ceres.character.events import PendingPreCareerSkillChoice
-from ceres.character.state import (
-    CharacterProjection,
-    CharacterSummary,
-)
-
-if TYPE_CHECKING:
-    from ceres.character.events import PreCareerEntryEvent, PreCareerGraduationEvent
+from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
 
 
 class PrecareerSkillEntry(BaseModel):
@@ -94,10 +87,11 @@ class PreCareerData(TermData):
     def apply_entry(
         self,
         projection: CharacterProjection,
-        event: PreCareerEntryEvent,
+        event: Any,
         pending_idx: int,
     ) -> int:
         """Default: generic companion entry — auto-grant fixed skills, queue picks for categories."""
+        from ceres.character.domain.precareer.precareer_events import PendingPreCareerSkillChoice
 
         if self.entry_pick_count == 0:
             for entry in self.skill_choices:
@@ -155,7 +149,7 @@ class PreCareerData(TermData):
     def apply_graduation(
         self,
         projection: CharacterProjection,
-        event: PreCareerGraduationEvent,
+        event: Any,
         honours: bool,
     ) -> int:
         """Default: no graduation effects. Returns pending_idx (0)."""
@@ -164,6 +158,6 @@ class PreCareerData(TermData):
     def apply_failed_graduation(
         self,
         projection: CharacterProjection,
-        event: PreCareerGraduationEvent,
+        event: Any,
     ) -> None:
         """Default: no effects on failed graduation."""

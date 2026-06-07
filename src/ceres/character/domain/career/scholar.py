@@ -1,4 +1,4 @@
-from typing import ClassVar, Literal, cast
+from typing import Any, ClassVar, Literal, cast
 
 from ceres.character.domain.benefits import (
     LAB_SHIP,
@@ -30,11 +30,19 @@ from ceres.character.domain.career.career_data import (
     SkillChoiceEffect,
     SkillTable,
 )
+from ceres.character.domain.career.career_events import (
+    PendingChoices,
+    PendingSkillChoice,
+    muster_out_setup,
+)
 from ceres.character.domain.career.common_pending import (
     CareerSkillChoicePendingBase,
     CareerSkillRollPendingBase,
 )
 from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.connection import (
+    Enemy,
+)
 from ceres.character.domain.skills import (
     Admin,
     Advocate,
@@ -57,17 +65,8 @@ from ceres.character.domain.skills import (
     VaccSuit,
     skill_instances,
 )
-from ceres.character.events import (
-    PendingChoices,
-    PendingSkillChoice,
-    SkillRollEvent,
-    muster_out_setup,
-)
-from ceres.character.state import (
-    CharacterProjection,
-    ChoiceBase,
-    Enemy,
-)
+from ceres.character.mechanism.character_state import CharacterProjection
+from ceres.character.mechanism.pending_input import ChoiceBase
 
 _SCIENCES = skill_instances(ScienceSkill)
 
@@ -132,7 +131,8 @@ class ScholarMishap5GiveUp(ChoiceBase):
     label: str = 'Give up (leave career)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.events import PendingAdvancement, PendingAgingRoll
+        from ceres.character.domain.career.career_events import PendingAdvancement
+        from ceres.character.domain.health.health_events import PendingAgingRoll
 
         career = projection.get_current_career()
         projection.pending_inputs = [p for p in projection.pending_inputs if not isinstance(p, PendingAdvancement)]
@@ -182,7 +182,11 @@ class ScholarEvent3Accept(ChoiceBase):
     label: str = 'Accept (2 Science specialties + D3 Enemies + extra Benefit roll)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.events import PendingConnectionsRoll, PendingMusterOut, _advancement_pending
+        from ceres.character.domain.career.career_events import (
+            PendingConnectionsRoll,
+            PendingMusterOut,
+            _advancement_pending,
+        )
 
         projection.pending_inputs.append(
             PendingConnectionsRoll(
@@ -210,7 +214,6 @@ class ScholarEvent3Accept(ChoiceBase):
             PendingMusterOut(
                 pending_id=(event.id, 4),
                 instruction='Extra Benefit roll (accepted research against conscience)',
-                options=['cash', 'benefits'],
             )
         )
 
@@ -220,7 +223,7 @@ class ScholarEvent3Decline(ChoiceBase):
     label: str = 'Decline'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.events import _advancement_pending
+        from ceres.character.domain.career.career_events import _advancement_pending
 
         if projection.summary.current_career is not None:
             career = projection.get_current_career()
@@ -250,7 +253,7 @@ class ScholarEvent3Handler(CareerHandlerBase):
 class PendingScholarEvent6SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['scholar_event_6_skill_roll'] = 'scholar_event_6_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
         if event.modified_roll >= 8:
             projection.pending_inputs.append(
                 PendingSkillChoice(
@@ -283,7 +286,7 @@ class ScholarEvent6Handler(CareerHandlerBase):
 class ScholarEvent8SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['scholar_event_8_skill_roll'] = 'scholar_event_8_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
         if event.modified_roll >= 8:
             projection.summary.connections.append(Enemy(source='A colleague who knows you cheated your way to results'))
             projection.pending_inputs.append(
@@ -317,7 +320,7 @@ class ScholarEvent8Refuse(ChoiceBase):
     label: str = 'Refuse'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.events import _advancement_pending
+        from ceres.character.domain.career.career_events import _advancement_pending
 
         if projection.summary.current_career is not None:
             career = projection.get_current_career()

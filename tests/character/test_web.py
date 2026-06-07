@@ -6,8 +6,19 @@ from typing import Any, Literal
 from fastapi.testclient import TestClient
 import pytest
 
+from ceres.character.domain.career.career_events import CareerEntryHandler, ReenlistHandler
+from ceres.character.domain.character_start import (
+    BackgroundSkillsHandler,
+    FinishCreationHandler,
+    PendingUcp,
+    UcpHandler,
+)
+from ceres.character.domain.homeworld.homeworld_events import (
+    HomeworldChangeRequiredHandler,
+    PendingHomeworldChangeRequired,
+)
 from ceres.character.domain.sophont import HUMANITI, VILANI
-from ceres.character.events import PendingHomeworldChangeRequired, PendingUcp, UcpEvent
+from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.store import SqliteCharacterBackend
 from ceres.character.web.app import build_app
 from ceres.worlds import DEFAULT_MILIEU, SectorWorldFilters
@@ -549,8 +560,9 @@ def test_wizard_shows_ucp_pending(client_with_backend):
 
 
 def test_wizard_shows_career_name_not_repr(client_with_backend, monkeypatch):
+    from ceres.character.domain.career.career_data import CareerTerm
     from ceres.character.domain.career.loader import load_careers
-    from ceres.character.state import CareerTerm, CharacterProjection, CharacterSummary
+    from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
 
     client, backend = client_with_backend
     citizen = load_careers()['Citizen']
@@ -595,27 +607,23 @@ def test_wizard_404_for_missing_character(client):
 
 def test_wizard_homeworld_change_pending_links_to_sector_picker(client_with_backend):
     from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive
-    from ceres.character.events import (
-        BackgroundSkillsEvent,
-        FinishCreationEvent,
-        HomeworldChangeRequiredEvent,
-        UcpEvent,
-    )
 
     client, backend = client_with_backend
     row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Clio')
-    backend.append_event(row['id'], UcpEvent(fulfills=(1, 0), ucp='7869A5'))
+    backend.append_event(row['id'], Event(fulfills=(1, 0), handler=UcpHandler(ucp='7869A5')))
     backend.append_event(
         row['id'],
-        BackgroundSkillsEvent(fulfills=(2, 0), skills=[Admin(), Athletics(), Carouse(), Drive()]),
+        Event(fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()])),
     )
-    backend.append_event(row['id'], FinishCreationEvent(fulfills=(3, 0)))
+    backend.append_event(row['id'], Event(fulfills=(3, 0), handler=FinishCreationHandler()))
     backend.append_event(
         row['id'],
-        HomeworldChangeRequiredEvent(
-            reason='Citizen mishap 5: forcing you to leave the planet.',
-            source_kind='career_mishap',
-            source_career='Citizen',
+        Event(
+            handler=HomeworldChangeRequiredHandler(
+                reason='Citizen mishap 5: forcing you to leave the planet.',
+                source_kind='career_mishap',
+                source_career='Citizen',
+            )
         ),
     )
 
@@ -627,7 +635,8 @@ def test_wizard_homeworld_change_pending_links_to_sector_picker(client_with_back
 
 def test_wizard_select_world_input_links_to_filtered_sector_picker(client_with_backend, monkeypatch):
     from ceres.character.input_specs import SelectWorld, WorldFilterCriteria, WorldRef
-    from ceres.character.state import CharacterProjection, CharacterSummary, PendingInputBase
+    from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
+    from ceres.character.mechanism.pending_input import PendingInputBase
 
     class PendingWorldSelection(PendingInputBase):
         kind: Literal['test_world_selection'] = 'test_world_selection'
@@ -684,28 +693,24 @@ def test_wizard_select_world_input_links_to_filtered_sector_picker(client_with_b
 
 def test_selecting_homeworld_from_wizard_picker_updates_character(client_with_backend, monkeypatch):
     from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive
-    from ceres.character.events import (
-        BackgroundSkillsEvent,
-        FinishCreationEvent,
-        HomeworldChangeRequiredEvent,
-        UcpEvent,
-    )
     from tests.worlds.test_sector_filters import _sample_worlds
 
     client, backend = client_with_backend
     row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Clio')
-    backend.append_event(row['id'], UcpEvent(fulfills=(1, 0), ucp='7869A5'))
+    backend.append_event(row['id'], Event(fulfills=(1, 0), handler=UcpHandler(ucp='7869A5')))
     backend.append_event(
         row['id'],
-        BackgroundSkillsEvent(fulfills=(2, 0), skills=[Admin(), Athletics(), Carouse(), Drive()]),
+        Event(fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()])),
     )
-    backend.append_event(row['id'], FinishCreationEvent(fulfills=(3, 0)))
+    backend.append_event(row['id'], Event(fulfills=(3, 0), handler=FinishCreationHandler()))
     backend.append_event(
         row['id'],
-        HomeworldChangeRequiredEvent(
-            reason='Citizen mishap 5: forcing you to leave the planet.',
-            source_kind='career_mishap',
-            source_career='Citizen',
+        Event(
+            handler=HomeworldChangeRequiredHandler(
+                reason='Citizen mishap 5: forcing you to leave the planet.',
+                source_kind='career_mishap',
+                source_career='Citizen',
+            )
         ),
     )
 
@@ -752,7 +757,7 @@ def test_submit_ucp_event(client_with_backend):
     r = client.post(
         f'/ui/characters/{cid}/events',
         data={
-            'kind': UcpEvent.model_fields['kind'].default,
+            'kind': 'ucp',
             'fulfills': pi.id,
             'STR': '7',
             'DEX': '7',
@@ -794,8 +799,9 @@ def test_character_sheet_shows_name(client_with_backend):
 
 
 def test_character_sheet_shows_career_name_not_repr(client_with_backend, monkeypatch):
+    from ceres.character.domain.career.career_data import CareerTerm
     from ceres.character.domain.career.loader import load_careers
-    from ceres.character.state import CareerTerm, CharacterProjection, CharacterSummary
+    from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
 
     client, backend = client_with_backend
     citizen = load_careers()['Citizen']
@@ -859,12 +865,12 @@ def test_career_assignments_unknown_career(client):
 def test_event_from_form_ucp():
     from starlette.datastructures import FormData
 
-    from ceres.character.events import PendingUcp, UcpEvent
+    from ceres.character.domain.character_start import PendingUcp
 
     pi = PendingUcp(pending_id=(1, 0), instruction='')
     form = FormData({'STR': '7', 'DEX': '8', 'END': '6', 'INT': '9', 'EDU': '10', 'SOC': '5'})
     event = pi.event_from_form(form)
-    assert isinstance(event, UcpEvent)
+    assert isinstance(event.handler, UcpHandler)
     assert event.ucp == '7869A5'
     assert event.fulfills == (1, 0)
 
@@ -872,12 +878,12 @@ def test_event_from_form_ucp():
 def test_event_from_form_career_choice():
     from starlette.datastructures import FormData
 
-    from ceres.character.events import CareerEvent, PendingCareerChoice
+    from ceres.character.domain.career.career_events import PendingCareerChoice
 
     pi = PendingCareerChoice(pending_id=(3, 0), instruction='')
     form = FormData({'career': 'Scout', 'assignment': 'Courier', 'roll': '8'})
     event = pi.event_from_form(form)
-    assert isinstance(event, CareerEvent)
+    assert isinstance(event.handler, CareerEntryHandler)
     assert event.career == 'Scout'
     assert event.assignment == 'Courier'
     assert event.qualification_roll == 8
@@ -886,7 +892,7 @@ def test_event_from_form_career_choice():
 def test_event_from_form_career_choice_missing_assignment_raises():
     from starlette.datastructures import FormData
 
-    from ceres.character.events import PendingCareerChoice
+    from ceres.character.domain.career.career_events import PendingCareerChoice
 
     pi = PendingCareerChoice(pending_id=(3, 0), instruction='')
     form = FormData({'career': 'Citizen', 'assignment': '', 'roll': '8'})
@@ -897,31 +903,31 @@ def test_event_from_form_career_choice_missing_assignment_raises():
 def test_event_from_form_reenlist_true():
     from starlette.datastructures import FormData
 
-    from ceres.character.events import PendingReenlist, ReenlistEvent
+    from ceres.character.domain.career.career_events import PendingReenlist
 
     pi = PendingReenlist(pending_id=(5, 1), instruction='')
     form = FormData({'reenlist': 'true'})
     event = pi.event_from_form(form)
-    assert isinstance(event, ReenlistEvent)
+    assert isinstance(event.handler, ReenlistHandler)
     assert event.reenlist is True
 
 
 def test_event_from_form_reenlist_false():
     from starlette.datastructures import FormData
 
-    from ceres.character.events import PendingReenlist, ReenlistEvent
+    from ceres.character.domain.career.career_events import PendingReenlist
 
     pi = PendingReenlist(pending_id=(5, 1), instruction='')
     form = FormData({'reenlist': 'false'})
     event = pi.event_from_form(form)
-    assert isinstance(event, ReenlistEvent)
+    assert isinstance(event.handler, ReenlistHandler)
     assert event.reenlist is False
 
 
 def test_build_event_unknown_raises():
     from starlette.datastructures import FormData
 
-    from ceres.character.state import CharacterProjection, CharacterSummary
+    from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
     from ceres.character.web.routes import _build_event_from_form
 
     projection = CharacterProjection(
@@ -937,7 +943,7 @@ def test_build_event_unknown_raises():
 
 
 def _make_summary(**kwargs):
-    from ceres.character.state import CharacterSummary
+    from ceres.character.mechanism.character_state import CharacterSummary
 
     kwargs.setdefault('name', 'Test')
     kwargs.setdefault('sophont', VILANI)
@@ -947,7 +953,7 @@ def _make_summary(**kwargs):
 
 def test_diff_shows_characteristic_change():
     from ceres.character.domain.characteristics import Chars
-    from ceres.character.state import diff_summaries as _diff_summaries
+    from ceres.character.mechanism.character_state import diff_summaries as _diff_summaries
 
     before = _make_summary(characteristics={Chars.STR: 7, Chars.DEX: 8})
     after = _make_summary(characteristics={Chars.STR: 8, Chars.DEX: 8})
@@ -957,7 +963,7 @@ def test_diff_shows_characteristic_change():
 
 def test_diff_shows_new_skill():
     from ceres.character.domain.skills import Admin
-    from ceres.character.state import diff_summaries as _diff_summaries
+    from ceres.character.mechanism.character_state import diff_summaries as _diff_summaries
 
     before = _make_summary()
     after = _make_summary(skills=[Admin()])
@@ -967,7 +973,7 @@ def test_diff_shows_new_skill():
 
 def test_diff_shows_skill_level_up():
     from ceres.character.domain.skills import Admin, Level
-    from ceres.character.state import diff_summaries as _diff_summaries
+    from ceres.character.mechanism.character_state import diff_summaries as _diff_summaries
 
     before = _make_summary(skills=[Admin()])
     after = _make_summary(skills=[Admin(level=Level(value=1))])
@@ -976,7 +982,7 @@ def test_diff_shows_skill_level_up():
 
 
 def test_diff_shows_rank_change():
-    from ceres.character.state import diff_summaries as _diff_summaries
+    from ceres.character.mechanism.character_state import diff_summaries as _diff_summaries
 
     before = _make_summary(rank=0)
     after = _make_summary(rank=1)
@@ -985,7 +991,7 @@ def test_diff_shows_rank_change():
 
 
 def test_diff_shows_cash_gain():
-    from ceres.character.state import diff_summaries as _diff_summaries
+    from ceres.character.mechanism.character_state import diff_summaries as _diff_summaries
 
     before = _make_summary(cash=0)
     after = _make_summary(cash=5000)
@@ -994,7 +1000,7 @@ def test_diff_shows_cash_gain():
 
 
 def test_diff_shows_new_narrative():
-    from ceres.character.state import diff_summaries as _diff_summaries
+    from ceres.character.mechanism.character_state import diff_summaries as _diff_summaries
 
     before = _make_summary(narrative=['Term 1'])
     after = _make_summary(narrative=['Term 1', 'Survived the storm'])
@@ -1003,7 +1009,7 @@ def test_diff_shows_new_narrative():
 
 
 def test_diff_empty_when_nothing_changed():
-    from ceres.character.state import diff_summaries as _diff_summaries
+    from ceres.character.mechanism.character_state import diff_summaries as _diff_summaries
 
     s = _make_summary(characteristics={}, skills=[])
     assert _diff_summaries(s, s) == []
@@ -1020,7 +1026,7 @@ def test_post_event_response_updates_all_summary_displays_oob(client_with_backen
     r = client.post(
         f'/ui/characters/{cid}/events',
         data={
-            'kind': UcpEvent.model_fields['kind'].default,
+            'kind': 'ucp',
             'fulfills': pi.id,
             'STR': '7',
             'DEX': '8',

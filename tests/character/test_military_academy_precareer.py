@@ -1,12 +1,14 @@
 from typing import Any
 
 from ceres.character.domain import skills as character_skills
+from ceres.character.domain.career.career_events import CareerEntryHandler
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.precareer.loader import load_precareers
 from ceres.character.domain.precareer.military_academy import MilitaryAcademyPreCareer
+from ceres.character.domain.precareer.precareer_events import PreCareerEntryHandler, PreCareerGraduationHandler
 from ceres.character.domain.sophont import VILANI
-from ceres.character.events import PreCareerEntryEvent, PreCareerGraduationEvent
-from ceres.character.state import CharacterProjection, CharacterSummary
+from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
+from ceres.character.mechanism.event_base import Event
 from tests.character.helpers import MOCK_WORLD
 
 
@@ -46,7 +48,7 @@ def test_entry_grants_direct_tied_career_service_skills_and_skips_choice_lists(m
 
     next_pending_idx = academy.apply_entry(
         projection,
-        PreCareerEntryEvent(id=7, precareer='Army Academy', roll=9),
+        Event(id=7, handler=PreCareerEntryHandler(precareer='Army Academy', roll=9)),
         pending_idx=3,
     )
 
@@ -74,7 +76,7 @@ def test_entry_is_noop_when_tied_career_is_unknown(monkeypatch):
 
     next_pending_idx = academy.apply_entry(
         projection,
-        PreCareerEntryEvent(id=8, precareer='Ghost Academy', roll=9),
+        Event(id=8, handler=PreCareerEntryHandler(precareer='Ghost Academy', roll=9)),
         pending_idx=2,
     )
 
@@ -88,7 +90,7 @@ def test_graduation_increases_edu_queues_auto_qualification_and_notes_manual_ben
 
     next_pending_idx = academy.apply_graduation(
         projection,
-        PreCareerGraduationEvent(id=9, roll=10),
+        Event(id=9, handler=PreCareerGraduationHandler(roll=10)),
         honours=False,
     )
 
@@ -110,7 +112,7 @@ def test_graduation_with_honours_also_increases_soc_and_marks_automatic_commissi
 
     academy.apply_graduation(
         projection,
-        PreCareerGraduationEvent(id=10, roll=12),
+        Event(id=10, handler=PreCareerGraduationHandler(roll=12)),
         honours=True,
     )
 
@@ -126,7 +128,7 @@ def test_failed_graduation_above_natural_two_allows_auto_entry_without_commissio
 
     academy.apply_failed_graduation(
         projection,
-        PreCareerGraduationEvent(id=11, roll=3),
+        Event(id=11, handler=PreCareerGraduationHandler(roll=3)),
     )
 
     assert projection.auto_qualify_careers == ['Army']
@@ -142,7 +144,7 @@ def test_failed_graduation_on_natural_two_has_no_auto_entry_effect():
 
     academy.apply_failed_graduation(
         projection,
-        PreCareerGraduationEvent(id=12, roll=2),
+        Event(id=12, handler=PreCareerGraduationHandler(roll=2)),
     )
 
     assert projection.auto_qualify_careers == []
@@ -150,11 +152,12 @@ def test_failed_graduation_on_natural_two_has_no_auto_entry_effect():
 
 
 def test_auto_qualify_effect_bypasses_qualification_roll():
-    from ceres.character.events import CareerEvent
 
     projection = _projection(characteristics={Chars.END: 5})
     projection.auto_qualify_careers.append('Army')
-    CareerEvent(id=6, career='Army', assignment='Infantry', qualification_roll=0).apply(projection)
+    Event(id=6, handler=CareerEntryHandler(career='Army', assignment='Infantry', qualification_roll=0)).apply(
+        projection
+    )
 
     assert projection.summary.current_career is not None
     assert projection.summary.current_career.name == 'Army'

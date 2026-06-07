@@ -18,16 +18,16 @@ from ceres.character.domain.career import (
     SCOUT,
 )
 from ceres.character.domain.career.career_data import CareerData
-from ceres.character.domain.career.loader import load_careers
-from ceres.character.domain.sophont import VILANI
-from ceres.character.events import (
-    BackgroundSkillsEvent,
-    CareerEvent,
-    CharacterStartedEvent,
-    SurviveEvent,
-    TermEventEvent,
-    UcpEvent,
+from ceres.character.domain.career.career_events import (
+    AdvancementHandler,
+    CareerEntryHandler,
+    SurviveHandler,
+    TermEventHandler,
 )
+from ceres.character.domain.career.loader import load_careers
+from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
+from ceres.character.domain.sophont import VILANI
+from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
 from tests.character.helpers import MOCK_WORLD
 
@@ -36,9 +36,13 @@ def _full_setup():
     from ceres.character.domain.skills import Admin, Athletics, Drive, Electronics
 
     return [
-        CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Test'),
-        UcpEvent(id=2, fulfills=(1, 0), ucp='7869A5'),
-        BackgroundSkillsEvent(id=3, fulfills=(2, 0), skills=[Admin(), Athletics(), Drive(), Electronics()]),
+        Event(id=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Test')),
+        Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='7869A5')),
+        Event(
+            id=3,
+            fulfills=(2, 0),
+            handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Drive(), Electronics()]),
+        ),
     ]
 
 
@@ -142,7 +146,11 @@ class TestCareerInState:
     def test_current_career_is_career_data_after_joining(self):
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Courier', qualification_roll=7),
+            Event(
+                id=4,
+                fulfills=(3, 0),
+                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+            ),
         ]
         projection = replay(1, events)
         assert isinstance(projection.summary.current_career, CareerData)
@@ -152,7 +160,11 @@ class TestCareerInState:
     def test_current_career_equals_constant(self):
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Courier', qualification_roll=7),
+            Event(
+                id=4,
+                fulfills=(3, 0),
+                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+            ),
         ]
         projection = replay(1, events)
         assert projection.summary.current_career == SCOUT
@@ -160,7 +172,11 @@ class TestCareerInState:
     def test_career_term_career_is_career_data(self):
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Courier', qualification_roll=7),
+            Event(
+                id=4,
+                fulfills=(3, 0),
+                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+            ),
         ]
         projection = replay(1, events)
         term = projection.summary.career_terms[0]
@@ -170,7 +186,11 @@ class TestCareerInState:
     def test_career_term_career_equals_constant(self):
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Courier', qualification_roll=7),
+            Event(
+                id=4,
+                fulfills=(3, 0),
+                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+            ),
         ]
         projection = replay(1, events)
         assert projection.summary.career_terms[0].career == SCOUT
@@ -178,22 +198,29 @@ class TestCareerInState:
     def test_survive_keeps_current_career_as_career_data(self):
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Courier', qualification_roll=7),
-            SurviveEvent(id=5, fulfills=(4, 0), roll=8),
+            Event(
+                id=4,
+                fulfills=(3, 0),
+                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+            ),
+            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=8)),
         ]
         projection = replay(1, events)
         assert isinstance(projection.summary.current_career, CareerData)
         assert projection.summary.current_career == SCOUT
 
     def test_after_term_advancement_still_career_object(self):
-        from ceres.character.events import AdvancementEvent
 
         events = [
             *_full_setup(),
-            CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Courier', qualification_roll=7),
-            SurviveEvent(id=5, fulfills=(4, 0), roll=8),
-            TermEventEvent(id=6, fulfills=(5, 0), roll=5),
-            AdvancementEvent(id=7, fulfills=(6, 0), roll=9),
+            Event(
+                id=4,
+                fulfills=(3, 0),
+                handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+            ),
+            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=8)),
+            Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),
+            Event(id=7, fulfills=(6, 0), handler=AdvancementHandler(roll=9)),
         ]
         projection = replay(1, events)
         assert projection.summary.current_career == SCOUT
@@ -222,7 +249,7 @@ class TestCareersInit:
 class TestCareerDataCoverageGaps:
     def test_handler_base_default_handle_returns_pending_idx(self):
         from ceres.character.domain.career.career_data import CareerHandlerBase
-        from ceres.character.state import CharacterProjection, CharacterSummary
+        from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
 
         class MinimalHandler(CareerHandlerBase):
             type: str = 'test'
@@ -240,7 +267,8 @@ class TestCareerDataCoverageGaps:
         assert table is not None
 
     def test_can_attempt_commission_returns_false_when_already_commissioned(self):
-        from ceres.character.state import CareerTerm, CharacterProjection, CharacterSummary
+        from ceres.character.domain.career.career_data import CareerTerm
+        from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
 
         army = load_careers()['Army']
         proj = CharacterProjection(
@@ -251,8 +279,9 @@ class TestCareerDataCoverageGaps:
         assert army.can_attempt_commission(proj) is False
 
     def test_can_attempt_commission_soc_check_after_two_terms(self):
+        from ceres.character.domain.career.career_data import CareerTerm
         from ceres.character.domain.characteristics import Chars
-        from ceres.character.state import CareerTerm, CharacterProjection, CharacterSummary
+        from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
 
         army = load_careers()['Army']
         proj = CharacterProjection(
@@ -274,7 +303,7 @@ class TestCareerDataCoverageGaps:
 
     def test_apply_rank_bonus_characteristic_increase(self):
         from ceres.character.domain.characteristics import Chars
-        from ceres.character.state import CharacterProjection, CharacterSummary
+        from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
 
         merchant = load_careers()['Merchant']
         proj = CharacterProjection(

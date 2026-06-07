@@ -1,4 +1,4 @@
-from typing import ClassVar, Literal
+from typing import Any, ClassVar, Literal
 
 from ceres.character.domain.benefits import (
     ALLY,
@@ -31,9 +31,18 @@ from ceres.character.domain.career.career_data import (
     SkillChoiceEffect,
     SkillTable,
 )
+from ceres.character.domain.career.career_events import (
+    PendingChoices,
+    PendingSkillChoice,
+    career_progress_pending,
+)
 from ceres.character.domain.career.common import handle_advanced_training
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.connection import (
+    Contact,
+    Rival,
+)
 from ceres.character.domain.skills import (
     Admin,
     Advocate,
@@ -68,18 +77,8 @@ from ceres.character.domain.skills import (
     Survival,
     skill_instances,
 )
-from ceres.character.events import (
-    PendingChoices,
-    PendingSkillChoice,
-    SkillRollEvent,
-    career_progress_pending,
-)
-from ceres.character.state import (
-    CharacterProjection,
-    ChoiceBase,
-    Contact,
-    Rival,
-)
+from ceres.character.mechanism.character_state import CharacterProjection
+from ceres.character.mechanism.pending_input import ChoiceBase
 
 # ── Career-specific choice and pending types ──────────────────────────────────
 
@@ -89,7 +88,7 @@ class CitizenMishap4Cooperate(ChoiceBase):
     label: str = 'Co-operate (gain Contact, keep Benefit roll)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.events import _apply_mishap_ejection
+        from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
         career = projection.get_current_career()
         projection.summary.connections.append(Contact(source='The investigator who questioned you'))
@@ -101,7 +100,7 @@ class CitizenMishap4Resist(ChoiceBase):
     label: str = 'Resist (gain Rival, lose Benefit roll)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.events import _apply_mishap_ejection
+        from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
         career = projection.get_current_career()
         projection.summary.connections.append(Rival(source='The investigator who came after you'))
@@ -111,8 +110,9 @@ class CitizenMishap4Resist(ChoiceBase):
 class PendingCitizenMishap5SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['citizen_mishap_5_skill_roll'] = 'citizen_mishap_5_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: SkillRollEvent) -> None:
-        from ceres.character.events import PendingHomeworldChangeRequired, _apply_mishap_ejection
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+        from ceres.character.domain.career.career_events import _apply_mishap_ejection
+        from ceres.character.domain.homeworld.homeworld_events import PendingHomeworldChangeRequired
 
         career = projection.get_current_career()
         if event.modified_roll >= 8:

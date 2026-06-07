@@ -3,48 +3,58 @@
 from typing import Any, Literal
 
 from ceres.adapters.travellermap import TravellerMapWorld
-from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
-from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.skills import AnySkill
-from ceres.character.domain.sophont import Sophont
-from ceres.character.events import (
-    AdvancementEvent,
-    AgingCrisisEvent,
-    AgingRollEvent,
-    AssignmentChangeChoiceEvent,
-    BackgroundSkillsEvent,
-    CareerChoiceEvent,
-    CareerEvent,
-    CharacteristicChoiceEvent,
-    CharacterStartedEvent,
-    MishapEvent,
-    MusterOutEvent,
+from ceres.character.domain.career.career_events import (
+    AdvancementHandler,
+    AssignmentChangeChoiceHandler,
+    CareerChoiceHandler,
+    CareerEntryHandler,
+    CharacteristicChoiceHandler,
+    MishapHandler,
+    MusterOutHandler,
     PendingAdvancement,
-    PendingAgingChoice,
-    PendingAgingCrisis,
-    PendingAgingRoll,
     PendingAssignmentChangeChoice,
-    PendingBackgroundSkills,
     PendingCareerChoice,
     PendingChoices,
+    PendingInitialTrainingChoice,
     PendingMishap,
     PendingMusterOut,
+    PendingRankBonusChoice,
     PendingReenlist,
     PendingSkillTable,
     PendingSkillTableChoice,
     PendingSurvive,
+    PendingSwitchAssignment,
     PendingTermEvent,
-    PendingUcp,
-    ReenlistEvent,
-    SkillChoiceEvent,
-    SkillRollEvent,
-    SkillTableEvent,
-    SurviveEvent,
-    TermEventEvent,
-    UcpEvent,
+    ReenlistHandler,
+    SkillChoiceHandler,
+    SkillRollHandler,
+    SkillTableHandler,
+    SurviveHandler,
+    SwitchAssignmentHandler,
+    TermEventHandler,
 )
+from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
+from ceres.character.domain.character_start import (
+    BackgroundSkillsHandler,
+    CharacterStartedHandler,
+    PendingBackgroundSkills,
+    PendingUcp,
+    UcpHandler,
+)
+from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.health.health_events import (
+    AgingCrisisHandler,
+    AgingRollHandler,
+    PendingAgingChoice,
+    PendingAgingCrisis,
+    PendingAgingRoll,
+)
+from ceres.character.domain.skills import AnySkill
+from ceres.character.domain.sophont import Sophont
+from ceres.character.mechanism.character_state import CharacterProjection
+from ceres.character.mechanism.event_base import Event
+from ceres.character.mechanism.pending_input import ChoiceBase
 from ceres.character.mechanism.replay import replay
-from ceres.character.state import CharacterProjection, ChoiceBase
 
 
 class CharacterDriver:
@@ -88,79 +98,122 @@ class CharacterDriver:
         player: str = 'NPC',
         name: str = 'Test',
     ) -> CharacterDriver:
-        return self._add(CharacterStartedEvent(sophont=sophont, homeworld=homeworld, player=player, name=name))
+        return self._add(
+            Event(handler=CharacterStartedHandler(sophont=sophont, homeworld=homeworld, player=player, name=name))
+        )
 
     def ucp(self, ucp_string: str) -> CharacterDriver:
         pending = self._find(PendingUcp)
-        return self._add(UcpEvent(ucp=ucp_string, fulfills=pending.pending_id))
+        return self._add(Event(fulfills=pending.pending_id, handler=UcpHandler(ucp=ucp_string)))
 
     def background_skills(self, skills: list[AnySkill]) -> CharacterDriver:
         pending = self._find(PendingBackgroundSkills)
-        return self._add(BackgroundSkillsEvent(skills=skills, fulfills=pending.pending_id))
+        return self._add(Event(fulfills=pending.pending_id, handler=BackgroundSkillsHandler(skills=skills)))
 
     def career(self, career_name: str, assignment: str, roll: int = 7) -> CharacterDriver:
         pending = self._find(PendingCareerChoice)
         return self._add(
-            CareerEvent(career=career_name, assignment=assignment, qualification_roll=roll, fulfills=pending.pending_id)
+            Event(
+                fulfills=pending.pending_id,
+                handler=CareerEntryHandler(career=career_name, assignment=assignment, qualification_roll=roll),
+            )
         )
 
     def survive(self, roll: int) -> CharacterDriver:
         pending = self._find(PendingSurvive)
-        return self._add(SurviveEvent(roll=roll, fulfills=pending.pending_id))
+        return self._add(Event(fulfills=pending.pending_id, handler=SurviveHandler(roll=roll)))
 
     def mishap(self, roll: int) -> CharacterDriver:
         pending = self._find(PendingMishap)
-        return self._add(MishapEvent(roll=roll, fulfills=pending.pending_id))
+        return self._add(Event(fulfills=pending.pending_id, handler=MishapHandler(roll=roll)))
 
     def term_event(self, roll: int) -> CharacterDriver:
         pending = self._find(PendingTermEvent)
-        return self._add(TermEventEvent(roll=roll, fulfills=pending.pending_id))
+        return self._add(Event(fulfills=pending.pending_id, handler=TermEventHandler(roll=roll)))
 
     def advancement(self, roll: int) -> CharacterDriver:
         pending = self._find(PendingAdvancement)
-        return self._add(AdvancementEvent(roll=roll, fulfills=pending.pending_id))
+        return self._add(Event(fulfills=pending.pending_id, handler=AdvancementHandler(roll=roll)))
 
     def reenlist(self, reenlist: bool) -> CharacterDriver:
         assignment_pending = self._find_opt(PendingAssignmentChangeChoice)
         if assignment_pending is not None:
             choice = 'same' if reenlist else 'muster_out'
-            return self._add(AssignmentChangeChoiceEvent(choice=choice, fulfills=assignment_pending.pending_id))
+            return self._add(
+                Event(fulfills=assignment_pending.pending_id, handler=AssignmentChangeChoiceHandler(choice=choice))
+            )
         reenlist_pending = self._find(PendingReenlist)
-        return self._add(ReenlistEvent(reenlist=reenlist, fulfills=reenlist_pending.pending_id))
+        return self._add(Event(fulfills=reenlist_pending.pending_id, handler=ReenlistHandler(reenlist=reenlist)))
+
+    def initial_training(self, skill: AnySkill) -> CharacterDriver:
+        pending = self._find(PendingInitialTrainingChoice)
+        return self._add(Event(fulfills=pending.pending_id, handler=SkillChoiceHandler(skill=skill)))
+
+    def rank_bonus_choice(self, skill: AnySkill) -> CharacterDriver:
+        pending = self._find(PendingRankBonusChoice)
+        return self._add(Event(fulfills=pending.pending_id, handler=SkillChoiceHandler(skill=skill)))
+
+    def choose_switch(self) -> CharacterDriver:
+        """Resolve the assignment-change step 1 with 'switch', leaving step 2 pending."""
+        pending = self._find(PendingAssignmentChangeChoice)
+        return self._add(Event(fulfills=pending.pending_id, handler=AssignmentChangeChoiceHandler(choice='switch')))
+
+    def available_switch_assignments(self) -> list[str]:
+        """Return the assignment names offered in the current PendingSwitchAssignment."""
+        pending = self._find(PendingSwitchAssignment)
+        return list(pending.options)
+
+    def switch_assignment(self, assignment: str, roll: int) -> CharacterDriver:
+        self.choose_switch()
+        switch_pending = self._find(PendingSwitchAssignment)
+        return self._add(
+            Event(
+                fulfills=switch_pending.pending_id,
+                handler=SwitchAssignmentHandler(assignment=assignment, qualification_roll=roll),
+            )
+        )
 
     def skill_table(self, table: str, roll: int) -> CharacterDriver:
         pending = self._find(PendingSkillTable)
-        return self._add(SkillTableEvent(table=table, roll=roll, fulfills=pending.pending_id))
+        return self._add(Event(fulfills=pending.pending_id, handler=SkillTableHandler(table=table, roll=roll)))
 
     def skill_table_choice(self, skill: AnySkill) -> CharacterDriver:
         pending = self._find(PendingSkillTableChoice)
-        return self._add(SkillChoiceEvent(skill=skill, fulfills=pending.pending_id))
+        return self._add(Event(fulfills=pending.pending_id, handler=SkillChoiceHandler(skill=skill)))
 
     def aging_roll(self, roll: int) -> CharacterDriver:
         pending = self._find(PendingAgingRoll)
-        return self._add(AgingRollEvent(roll=roll, fulfills=pending.pending_id))
+        return self._add(Event(fulfills=pending.pending_id, handler=AgingRollHandler(roll=roll)))
 
     def aging_choice(self, characteristic: Chars, amount: int = 1) -> CharacterDriver:
         pending = self._find(PendingAgingChoice)
         return self._add(
-            CharacteristicChoiceEvent(characteristic=characteristic, amount=amount, fulfills=pending.pending_id)
+            Event(
+                fulfills=pending.pending_id,
+                handler=CharacteristicChoiceHandler(characteristic=characteristic, amount=amount),
+            )
         )
 
     def aging_crisis(self, paid: bool, medical_roll: int) -> CharacterDriver:
         pending = self._find(PendingAgingCrisis)
-        return self._add(AgingCrisisEvent(paid=paid, medical_roll=medical_roll, fulfills=pending.pending_id))
+        return self._add(
+            Event(fulfills=pending.pending_id, handler=AgingCrisisHandler(paid=paid, medical_roll=medical_roll))
+        )
 
     def muster_out(self, table: Literal['cash', 'benefits'], roll: int) -> CharacterDriver:
         pending = self._find(PendingMusterOut)
-        return self._add(MusterOutEvent(table=table, roll=roll, fulfills=pending.pending_id))
+        return self._add(Event(fulfills=pending.pending_id, handler=MusterOutHandler(table=table, roll=roll)))
 
     def career_choice(self, choice_cls: type[ChoiceBase]) -> CharacterDriver:
         pending = self._find(PendingChoices)
-        return self._add(CareerChoiceEvent.for_choice(choice_cls, fulfills=pending.pending_id))
+        choice_kind = choice_cls.model_fields['kind'].default
+        return self._add(Event(fulfills=pending.pending_id, handler=CareerChoiceHandler(choice=choice_kind)))
 
     def skill_roll(self, skill: Any, modified_roll: int) -> CharacterDriver:
         pending = self._find(CareerSkillRollPendingBase)
-        return self._add(SkillRollEvent(skill=skill, modified_roll=modified_roll, fulfills=pending.pending_id))
+        return self._add(
+            Event(fulfills=pending.pending_id, handler=SkillRollHandler(skill=skill, modified_roll=modified_roll))
+        )
 
 
 MOCK_WORLD_2 = TravellerMapWorld.model_validate(

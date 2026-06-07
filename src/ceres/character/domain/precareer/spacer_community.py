@@ -1,15 +1,17 @@
+from typing import Any
+
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.precareer.precareer_data import PreCareerData
+from ceres.character.domain.precareer.precareer_events import PendingPreCareerSkillChoice
 from ceres.character.domain.skills import AnySkill, JackOfAllTrades, Level, Pilot
-from ceres.character.events import PendingPreCareerSkillChoice, PreCareerGraduationEvent
-from ceres.character.state import CharacterProjection
+from ceres.character.mechanism.character_state import CharacterProjection
 
 
 class SpacerCommunityPreCareer(PreCareerData):
     def apply_graduation(
         self,
         projection: CharacterProjection,
-        event: PreCareerGraduationEvent,
+        event: Any,
         honours: bool,
     ) -> int:
         pending_idx = 0

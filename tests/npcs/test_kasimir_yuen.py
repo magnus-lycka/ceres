@@ -5,23 +5,26 @@ from types import SimpleNamespace
 import pytest
 
 from ceres.character.domain.benefits import SCOUT_SHIP
+from ceres.character.domain.career.career_events import (
+    AdvancementHandler,
+    AssignmentChangeChoiceHandler,
+    CareerEntryHandler,
+    MusterOutHandler,
+    SkillChoiceHandler,
+    SkillTableHandler,
+    SurviveHandler,
+    TermEventHandler,
+)
+from ceres.character.domain.character_start import (
+    BackgroundSkillsHandler,
+    CharacterStartedHandler,
+    FinishCreationHandler,
+    UcpHandler,
+)
 from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive, Level, Pilot
 from ceres.character.domain.sophont import VILANI
 from ceres.character.domain.spec import NpcSpec, spec_from_summary
-from ceres.character.events import (
-    AdvancementEvent,
-    AssignmentChangeChoiceEvent,
-    BackgroundSkillsEvent,
-    CareerEvent,
-    CharacterStartedEvent,
-    FinishCreationEvent,
-    MusterOutEvent,
-    SkillChoiceEvent,
-    SkillTableEvent,
-    SurviveEvent,
-    TermEventEvent,
-    UcpEvent,
-)
+from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
 from tests.character.helpers import MOCK_WORLD
 
@@ -43,26 +46,39 @@ _expected = SimpleNamespace(
 
 def _events() -> list:
     return [
-        CharacterStartedEvent(id=1, sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Kasimir Yuen'),
-        UcpEvent(id=2, fulfills=(1, 0), ucp='7869A5'),
-        BackgroundSkillsEvent(id=3, fulfills=(2, 0), skills=[Admin(), Athletics(), Carouse(), Drive()]),
+        Event(
+            id=1,
+            handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Kasimir Yuen'),
+        ),
+        Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='7869A5')),
+        Event(
+            id=3, fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()])
+        ),
         # Term 1: qualify Scout Courier, survive, event 5 (benefit_dm), advancement fails, reenlist same
-        CareerEvent(id=4, fulfills=(3, 0), career='Scout', assignment='Courier', qualification_roll=7),
-        SurviveEvent(id=5, fulfills=(4, 0), roll=7),
-        TermEventEvent(id=6, fulfills=(5, 0), roll=5),  # benefit_dm +1 to muster out roll
-        AdvancementEvent(id=7, fulfills=(6, 0), roll=5),  # EDU 9+ with DM+1 → 6, fails
-        AssignmentChangeChoiceEvent(id=8, fulfills=(7, 0), choice='same'),
+        Event(
+            id=4,
+            fulfills=(3, 0),
+            handler=CareerEntryHandler(career='Scout', assignment='Courier', qualification_roll=7),
+        ),
+        Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
+        Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),  # benefit_dm +1 to muster out roll
+        Event(id=7, fulfills=(6, 0), handler=AdvancementHandler(roll=5)),  # EDU 9+ with DM+1 → 6, fails
+        Event(id=8, fulfills=(7, 0), handler=AssignmentChangeChoiceHandler(choice='same')),
         # Term 2: service skill roll (Pilot, specialised → choose small_craft), survive, event 5, advancement fails
-        SkillTableEvent(id=9, fulfills=(8, 0), table='service_skills', roll=1),  # Pilot → choice pending
-        SkillChoiceEvent(id=10, fulfills=(9, 0), skill=Pilot(small_craft=Level(value=1))),  # → small_craft 1
-        SurviveEvent(id=11, fulfills=(10, 0), roll=7),
-        TermEventEvent(id=12, fulfills=(11, 0), roll=5),  # benefit_dm +1 to muster out roll
-        AdvancementEvent(id=13, fulfills=(12, 0), roll=5),  # fails
-        AssignmentChangeChoiceEvent(id=14, fulfills=(13, 0), choice='muster_out'),
+        Event(
+            id=9, fulfills=(8, 0), handler=SkillTableHandler(table='service_skills', roll=1)
+        ),  # Pilot → choice pending
+        Event(
+            id=10, fulfills=(9, 0), handler=SkillChoiceHandler(skill=Pilot(small_craft=Level(value=1)))
+        ),  # → small_craft 1
+        Event(id=11, fulfills=(10, 0), handler=SurviveHandler(roll=7)),
+        Event(id=12, fulfills=(11, 0), handler=TermEventHandler(roll=5)),  # benefit_dm +1 to muster out roll
+        Event(id=13, fulfills=(12, 0), handler=AdvancementHandler(roll=5)),  # fails
+        Event(id=14, fulfills=(13, 0), handler=AssignmentChangeChoiceHandler(choice='muster_out')),
         # Muster out: 2 rolls (term_count=2, rank=0)
-        MusterOutEvent(id=15, fulfills=(14, 0), table='benefits', roll=6),  # scout_ship
-        MusterOutEvent(id=16, fulfills=(14, 1), table='cash', roll=1),  # Cr20,000
-        FinishCreationEvent(id=17, fulfills=(16, 0)),
+        Event(id=15, fulfills=(14, 0), handler=MusterOutHandler(table='benefits', roll=6)),  # scout_ship
+        Event(id=16, fulfills=(14, 1), handler=MusterOutHandler(table='cash', roll=1)),  # Cr20,000
+        Event(id=17, fulfills=(16, 0), handler=FinishCreationHandler()),
     ]
 
 
