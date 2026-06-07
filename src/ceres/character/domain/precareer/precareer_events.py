@@ -2,9 +2,9 @@ from typing import Any, Literal, cast
 
 from pydantic import Field
 
+from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.skills import AnySkill, _level_fields
 from ceres.character.input_specs import InputSpec, NumberEntry, Select, form_int, form_str
-from ceres.character.mechanism.character_state import CharacterProjection
 from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event, EventHandlerBase
 from ceres.character.mechanism.pending_input import PendingInputBase

@@ -562,7 +562,7 @@ def test_wizard_shows_ucp_pending(client_with_backend):
 def test_wizard_shows_career_name_not_repr(client_with_backend, monkeypatch):
     from ceres.character.domain.career.career_data import CareerTerm
     from ceres.character.domain.career.loader import load_careers
-    from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
+    from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 
     client, backend = client_with_backend
     citizen = load_careers()['Citizen']
@@ -634,8 +634,8 @@ def test_wizard_homeworld_change_pending_links_to_sector_picker(client_with_back
 
 
 def test_wizard_select_world_input_links_to_filtered_sector_picker(client_with_backend, monkeypatch):
+    from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
     from ceres.character.input_specs import SelectWorld, WorldFilterCriteria, WorldRef
-    from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
     from ceres.character.mechanism.pending_input import PendingInputBase
 
     class PendingWorldSelection(PendingInputBase):
@@ -801,7 +801,7 @@ def test_character_sheet_shows_name(client_with_backend):
 def test_character_sheet_shows_career_name_not_repr(client_with_backend, monkeypatch):
     from ceres.character.domain.career.career_data import CareerTerm
     from ceres.character.domain.career.loader import load_careers
-    from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
+    from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 
     client, backend = client_with_backend
     citizen = load_careers()['Citizen']
@@ -927,7 +927,7 @@ def test_event_from_form_reenlist_false():
 def test_build_event_unknown_raises():
     from starlette.datastructures import FormData
 
-    from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
+    from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
     from ceres.character.web.routes import _build_event_from_form
 
     projection = CharacterProjection(
@@ -943,7 +943,7 @@ def test_build_event_unknown_raises():
 
 
 def _make_summary(**kwargs):
-    from ceres.character.mechanism.character_state import CharacterSummary
+    from ceres.character.domain.character_state import CharacterSummary
 
     kwargs.setdefault('name', 'Test')
     kwargs.setdefault('sophont', VILANI)
@@ -952,8 +952,8 @@ def _make_summary(**kwargs):
 
 
 def test_diff_shows_characteristic_change():
+    from ceres.character.domain.character_state import diff_summaries as _diff_summaries
     from ceres.character.domain.characteristics import Chars
-    from ceres.character.mechanism.character_state import diff_summaries as _diff_summaries
 
     before = _make_summary(characteristics={Chars.STR: 7, Chars.DEX: 8})
     after = _make_summary(characteristics={Chars.STR: 8, Chars.DEX: 8})
@@ -962,8 +962,8 @@ def test_diff_shows_characteristic_change():
 
 
 def test_diff_shows_new_skill():
+    from ceres.character.domain.character_state import diff_summaries as _diff_summaries
     from ceres.character.domain.skills import Admin
-    from ceres.character.mechanism.character_state import diff_summaries as _diff_summaries
 
     before = _make_summary()
     after = _make_summary(skills=[Admin()])
@@ -972,8 +972,8 @@ def test_diff_shows_new_skill():
 
 
 def test_diff_shows_skill_level_up():
+    from ceres.character.domain.character_state import diff_summaries as _diff_summaries
     from ceres.character.domain.skills import Admin, Level
-    from ceres.character.mechanism.character_state import diff_summaries as _diff_summaries
 
     before = _make_summary(skills=[Admin()])
     after = _make_summary(skills=[Admin(level=Level(value=1))])
@@ -982,7 +982,7 @@ def test_diff_shows_skill_level_up():
 
 
 def test_diff_shows_rank_change():
-    from ceres.character.mechanism.character_state import diff_summaries as _diff_summaries
+    from ceres.character.domain.character_state import diff_summaries as _diff_summaries
 
     before = _make_summary(rank=0)
     after = _make_summary(rank=1)
@@ -991,7 +991,7 @@ def test_diff_shows_rank_change():
 
 
 def test_diff_shows_cash_gain():
-    from ceres.character.mechanism.character_state import diff_summaries as _diff_summaries
+    from ceres.character.domain.character_state import diff_summaries as _diff_summaries
 
     before = _make_summary(cash=0)
     after = _make_summary(cash=5000)
@@ -1000,7 +1000,7 @@ def test_diff_shows_cash_gain():
 
 
 def test_diff_shows_new_narrative():
-    from ceres.character.mechanism.character_state import diff_summaries as _diff_summaries
+    from ceres.character.domain.character_state import diff_summaries as _diff_summaries
 
     before = _make_summary(narrative=['Term 1'])
     after = _make_summary(narrative=['Term 1', 'Survived the storm'])
@@ -1009,7 +1009,7 @@ def test_diff_shows_new_narrative():
 
 
 def test_diff_empty_when_nothing_changed():
-    from ceres.character.mechanism.character_state import diff_summaries as _diff_summaries
+    from ceres.character.domain.character_state import diff_summaries as _diff_summaries
 
     s = _make_summary(characteristics={}, skills=[])
     assert _diff_summaries(s, s) == []

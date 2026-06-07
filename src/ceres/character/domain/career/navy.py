@@ -41,6 +41,7 @@ from ceres.character.domain.career.career_events import (
 )
 from ceres.character.domain.career.common import handle_advanced_training
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
+from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.connection import (
     Enemy,
@@ -68,7 +69,6 @@ from ceres.character.domain.skills import (
     Tactics,
     VaccSuit,
 )
-from ceres.character.mechanism.character_state import CharacterProjection
 from ceres.character.mechanism.pending_input import ChoiceBase
 
 _MISHAP_3_SKILLS: dict[str, list] = {

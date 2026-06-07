@@ -1,5 +1,6 @@
 import pytest
 
+from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.skills import (
     EXISTING_SKILLS,
     Admin,
@@ -29,7 +30,6 @@ from ceres.character.domain.skills import (
     skill_spec,
 )
 from ceres.character.domain.sophont import VILANI
-from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
 from tests.character.helpers import MOCK_WORLD
 
 

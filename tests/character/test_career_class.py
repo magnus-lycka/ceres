@@ -249,7 +249,7 @@ class TestCareersInit:
 class TestCareerDataCoverageGaps:
     def test_handler_base_default_handle_returns_pending_idx(self):
         from ceres.character.domain.career.career_data import CareerHandlerBase
-        from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
+        from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 
         class MinimalHandler(CareerHandlerBase):
             type: str = 'test'
@@ -268,7 +268,7 @@ class TestCareerDataCoverageGaps:
 
     def test_can_attempt_commission_returns_false_when_already_commissioned(self):
         from ceres.character.domain.career.career_data import CareerTerm
-        from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
+        from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 
         army = load_careers()['Army']
         proj = CharacterProjection(
@@ -280,8 +280,8 @@ class TestCareerDataCoverageGaps:
 
     def test_can_attempt_commission_soc_check_after_two_terms(self):
         from ceres.character.domain.career.career_data import CareerTerm
+        from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
         from ceres.character.domain.characteristics import Chars
-        from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
 
         army = load_careers()['Army']
         proj = CharacterProjection(
@@ -302,8 +302,8 @@ class TestCareerDataCoverageGaps:
         assert army.can_attempt_commission(proj) is False
 
     def test_apply_rank_bonus_characteristic_increase(self):
+        from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
         from ceres.character.domain.characteristics import Chars
-        from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
 
         merchant = load_careers()['Merchant']
         proj = CharacterProjection(

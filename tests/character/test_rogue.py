@@ -24,10 +24,10 @@ from ceres.character.domain.career.rogue import (
     RogueMishap3RollTwo,
 )
 from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
+from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.connection import Contact, Enemy, Rival
 from ceres.character.domain.skills import Admin, Advocate, Athletics, Carouse, Drive, GunCombat, Stealth, Streetwise
 from ceres.character.domain.sophont import VILANI
-from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
 from tests.character.helpers import MOCK_WORLD

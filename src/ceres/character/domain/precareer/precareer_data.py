@@ -3,8 +3,8 @@ from typing import Any, cast
 from pydantic import BaseModel, ConfigDict
 
 from ceres.character.domain.career.career_data import CareerEventEntry, CharCheck, TermData
+from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.skills import AnySkill, Level, _level_fields
-from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
 
 
 class PrecareerSkillEntry(BaseModel):

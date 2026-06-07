@@ -9,7 +9,7 @@ from ceres.character.domain.skills import AnySkill, Level, _level_fields
 from ceres.character.mechanism.errors import ReplayError
 
 if TYPE_CHECKING:
-    from ceres.character.mechanism.character_state import CharacterProjection
+    from ceres.character.domain.character_state import CharacterProjection
 
 
 type SkillTableEntry = AnySkill | Chars | list[AnySkill]

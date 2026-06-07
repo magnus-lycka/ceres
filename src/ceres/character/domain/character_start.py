@@ -4,6 +4,7 @@ from typing import Any, Literal, cast
 from pydantic import Field, TypeAdapter, field_serializer, field_validator
 
 from ceres.adapters.travellermap import TravellerMapWorld
+from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.characteristics import UCP_STATS, Chars, characteristic_dm
 from ceres.character.domain.skills import (
     AnySkill,
@@ -12,7 +13,6 @@ from ceres.character.domain.skills import (
 )
 from ceres.character.domain.sophont import Sophont, get_sophont
 from ceres.character.input_specs import InputSpec, NumberEntry, Select, form_int
-from ceres.character.mechanism.character_state import CharacterProjection
 from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event, EventHandlerBase
 from ceres.character.mechanism.pending_input import PendingInputBase
@@ -50,9 +50,23 @@ class CharacterStartedHandler(EventHandlerBase):
     def _serialize_sophont(self, v: Sophont) -> str:
         return v.name
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
-        # CharacterStartedHandler.apply() is never called — handled specially in replay()
-        pass
+    def init_replay(self, character_id: int, event_id: int) -> CharacterProjection:
+        projection = CharacterProjection(
+            character_id=character_id,
+            summary=CharacterSummary(
+                name=self.name,
+                sophont=self.sophont,
+                homeworld=self.homeworld,
+                birthworld=self.homeworld,
+            ),
+        )
+        stat_names = (
+            [s.value for s in self.sophont.ucp_stats] if self.sophont else ['STR', 'DEX', 'END', 'INT', 'EDU', 'SOC']
+        )
+        projection.pending_inputs.append(
+            PendingUcp(pending_id=(event_id, 0), instruction='Provide characteristics (UCP)', stat_names=stat_names)
+        )
+        return projection
 
 
 class UcpHandler(EventHandlerBase):

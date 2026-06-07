@@ -1,8 +1,8 @@
 from typing import Any, Literal
 
 from ceres.adapters.travellermap import TravellerMapWorld
+from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.input_specs import InputSpec, form_str
-from ceres.character.mechanism.character_state import CharacterProjection
 from ceres.character.mechanism.event_base import Event, EventHandlerBase
 from ceres.character.mechanism.pending_input import PendingInputBase
 

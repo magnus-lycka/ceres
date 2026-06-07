@@ -86,6 +86,7 @@ from ceres.character.domain.character_start import (
     PendingBackgroundSkills,
     UcpHandler,
 )
+from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.health.health_events import (
     AgingCrisisHandler,
@@ -113,7 +114,6 @@ from ceres.character.domain.precareer.precareer_events import (
 )
 from ceres.character.domain.sophont import VILANI
 from ceres.character.input_specs import NumberEntry, Reference, Select
-from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
 from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event
 from tests.character.helpers import MOCK_WORLD

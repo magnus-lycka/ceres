@@ -319,31 +319,35 @@ world.
   - roll 12 Unusual Event is substantially altered from core
   This should be fixed from the rulebook text itself, with tests asserting the
   core outcomes rather than current implementation behavior.
-- **PSI characteristic support** — add explicit support for the PSI
-  characteristic in `ceres.character`. This is needed both generally for core
-  psionics rules and specifically so Life Event unusual subtable roll 1
-  (encountering a Psionic institute and testing Psionic Strength) can be
-  implemented correctly.
+- **PSI characteristic support** — `Chars.PSI` now exists, but complete the
+  surrounding psionics model: testing Psionic Strength, talents, training, and
+  the resulting career choices and modifiers. This is needed both generally
+  and specifically for Life Event unusual subtable roll 1 and the Psionic
+  Community pre-career.
 - **Generic Pre-Career Events table must match Core literally** — the generic
-  pre-career events in `ceres.character.precareers.loader` and
-  `PreCareerEvent` handling in `ceres.character.events` should match the
-  Traveller Core Rulebook Pre-Career Events table word-for-word in meaning and
-  behavior, not merely approximate the same outcomes. Current known deviations
-  include:
-  - roll 2 psionic-group approach is only recorded as a manual note because PSI
-    support is missing
+  pre-career events in `ceres.character.domain.precareer.loader` and
+  `PreCareerEventHandler` in
+  `ceres.character.domain.precareer.precareer_events` should match the
+  Traveller Core Rulebook Pre-Career Events table word-for-word in text and
+  behavior. Current known deviations include:
+  - roll 2 psionic-group approach is only recorded as a manual problem note;
+    testing PSI and the resulting future Psion-career availability are not
+    represented
   - roll 4 prank-gone-wrong is not implemented; SOC 8+, Rival/Enemy, and
     natural-2 -> Prisoner handling are all left manual
   - roll 8 political movement wrongly grants Ally + Enemy automatically instead
     of requiring SOC 8+ and only then becoming a leading figure
   - roll 10 tutor conflict drops the required 9+ skill roll and the possible
-    skill increase, leaving only a Rival
-  - roll 11 wartime draft is mostly a manual note instead of modeled flee /
-    draft / SOC 9+ avoidance behavior
+    skill increase, and grants the Rival unconditionally
+  - roll 11 wartime draft always ends education and leaves the flee/draft
+    decision as a manual note; it does not allow SOC 9+ to avoid the draft and
+    proceed to graduation
   - roll 7 depends on the generic Life Events table, which already has its own
     correctness todo above
-  This should be fixed from the rulebook text itself, with tests asserting core
-  table outcomes rather than current implementation behavior.
+  - all `_PRECAREER_EVENTS` text is shortened rather than matching Core
+  The current tests explicitly assert manual notes for rolls 2 and 4 and
+  unconditional termination for roll 11. Replace those with tests of the Core
+  outcomes, and make every Pre-Career Event entry match Core word for word.
 - **Muster-out benefits are string-key encoded** — career data currently writes
   benefits as string keys passed through `parse_benefit(...)`, e.g.
   `parse_benefit('ship_share')` or `parse_benefit(['soc_plus_1',
@@ -569,127 +573,201 @@ These could be gathered into a `TermChoices` domain object that also tracks
 draft constraints and future career-availability rules. Not urgent — the flat
 fields are clear enough for now.
 
-### Make replay a dumb mailman; move lifecycle rules out of `Event.apply()`
+## University pre-career: bring Ceres fully in line with Core
 
-`ceres.character.events` currently mixes several responsibilities that should
-be separate:
+University implements its basic skill choices and characteristic increases, but
+its career-entry benefits are not represented with the restrictions required by
+Core.
 
-- event schemas ("what message was sent")
-- state mutation / Traveller rule handling
-- pending-input definitions
-- generic lifecycle orchestration
+References:
 
-The important design goal is **not** to make `replay.py` smarter. Replay should
-stay stupid too.
+- `refs/core/02_traveller_creation.md` (Pre-Career Education: University)
+- `src/ceres/character/domain/precareer/university.py`
+- `src/ceres/character/domain/precareer/loader.py`
+- `tests/character/test_companion_precareers.py`
 
-Replay's job should be limited to:
+Known differences:
 
-- read the ordered event log
-- find the fulfilled pending input, if any
-- hand the event and current projection to the responsible component
-- enforce only generic sequencing/integrity rules independent of Traveller rules
+- **Animals skill choice** — Core permits Animals (training or veterinary).
+  Ceres offers generic `Animals()`, which also exposes Animals (handling).
+- **Qualification bonus** — Core grants `DM+1`, or `DM+2` with honours, only
+  when qualifying for its listed careers. Ceres puts the bonus in the generic
+  `pending_qualification_dm`, so it applies to whichever career is attempted
+  next and is then consumed.
+- **Commission opportunity** — Core permits a commission roll before the first
+  term of a military career only when that military career is the first career
+  chosen after university, with honours granting `DM+2`. Ceres records this as
+  a manual problem note rather than representing the opportunity and its
+  conditions.
+- Replace tests of the manual commission note with tests of the actual
+  restricted qualification and commission benefits.
 
-In this picture:
+## Military Academy pre-careers: bring Ceres fully in line with Core
 
-- replay is the mailman
-- events are envelopes
-- domain modules decide what messages mean
+Army, Marine, and Navy Academy share one implementation. Entry and basic direct
+skill grants are present, but several graduation benefits remain manual or lose
+their required lifetime.
 
-There are two routing modes:
+References:
 
-- **fulfilled-pending routing** — most continuation events are routed through
-  the pending input they fulfil; the pending acts like a self-addressed
-  envelope and identifies the responsible handler
-- **root-event routing** — events that arrive without a fulfilled pending input
-  (for example phase-start or term-root events) need a small registry from
-  event kind to the lifecycle component that owns them
+- `refs/core/02_traveller_creation.md` (Pre-Career Education: Military Academy)
+- `src/ceres/character/domain/precareer/military_academy.py`
+- `src/ceres/character/domain/precareer/loader.py`
+- `tests/character/test_military_academy_precareer.py`
 
-#### Lifecycle structure
+Known differences:
 
-The character lifecycle is not complex enough to need an overarching lifecycle
-manager. It is just:
+- **Army Academy service skills** — the Army Service Skills table contains a
+  Drive-or-Vacc-Suit choice. Ceres deliberately skips list entries when
+  granting academy service skills, so the Traveller receives neither. The
+  current test explicitly asserts that choice lists are skipped.
+- **Three level-1 Service Skills** — successful graduation should allow the
+  Traveller to select any three Service Skills and increase them to level 1
+  when entering the tied military career. Ceres leaves this as a manual problem
+  note.
+- **Automatic entry lifetime** — successful graduation, and failed graduation
+  on a roll above 2, permit automatic entry only if the tied military career is
+  the first career attempted after the academy. `auto_qualify_careers` remains
+  available after attempting another career.
+- **Commission opportunity** — the first tied military career should offer a
+  commission roll with `DM+2`, automatically passed with honours. Failed
+  graduates who use automatic entry may not make that first-term commission
+  roll. Ceres records these rules as manual problem notes.
+- Replace the tests that assert manual notes and skipped list entries with
+  tests of the represented Core outcomes.
 
-1. Start character (`CharacterStartedEvent` seeds the UCP pending input)
-2. Select background skills
-3. Cycle around terms (career events → term handling → new pending inputs)
-4. Finish (near no-op)
+## Colonial Upbringing pre-career: bring Ceres fully in line with Companion
 
-Aging, mishap, life events, and injury all happen within terms. A plausible
-ownership boundary is that `TermData` (or the career term handling module)
-owns that logic, but this is still a proposed split, not a settled fact.
+Colonial Upbringing grants most of its immediate skills, but eligibility,
+graduation choices, age, and career modifiers are incomplete.
 
-Under that proposed split, the only events that arrive without a fulfilled
-pending input — `CareerEvent`, `MishapEvent`, `AgingEvent` — would use the
-small root-event registry described above. Everything else would be routed via
-the fulfilled pending.
+References:
 
-#### DB schema change
+- `refs/companion/07_pre_career_options.md` (Colonial Upbringing)
+- `src/ceres/character/domain/precareer/colonial_upbringing.py`
+- `src/ceres/character/domain/precareer/loader.py`
+- `tests/character/test_companion_precareers.py`
 
-Replace the current single-blob `character_events` column with two tables:
+Known differences:
 
-- `events(id INTEGER PK, character_id FK, payload JSONB)` — one row per event,
-  `id` is the sequence number within the character's log
-- `pending_inputs(event_id INTEGER, seq INTEGER, character_id FK, payload JSONB,
-  PRIMARY KEY (event_id, seq))` — composite PK is exactly the identity used
-  today as the dotted string `"event_id.seq"`, just stored as two integers
+- **Entry eligibility** — entry is automatic only for a homeworld of TL8 or
+  lower. Ceres stores this as an `entry_requirement` string but does not enforce
+  it; Colonial Upbringing is available to every character.
+- **Career modifiers** — Ceres does not represent `DM+1` to qualify for Rogue
+  or Scout, `DM-2` to qualify for all other careers, or the lifelong `DM-1` to
+  commission and promotion checks.
+- **Graduation skill choices** — Companion first increases one level-0
+  pre-career skill, then grants either two other listed skills at level 1 or one
+  increase to any already-possessed skill. Ceres always queues three level-1
+  choices from the listed skill pool, allowing repeated or otherwise invalid
+  selections and omitting the alternative existing-skill increase.
+- **Honours skill choice** — the additional honours increase should apply to a
+  listed skill gained at level 0; Ceres offers the whole skill pool.
+- **EDU and age** — the `-D3 EDU` result and starting age of `22+2D3` are only
+  manual problem notes. The current tests explicitly assert those notes.
 
-An event that fulfills a pending input stores `(fulfills_event_id, fulfills_seq)`
-— two integer columns — instead of the current `fulfills: str` field.
+## Merchant Academy pre-careers: bring Ceres fully in line with Companion
 
-The pending input table is still fully derived state: `(event_id, seq)` is
-deterministic across replays because the event log is immutable and replay is
-deterministic. The event log remains the source of truth. No authoritative
-pending-input storage is required; the table can be rebuilt by replaying.
+The Business and Shipboard curricula correctly select their broad skill tables,
+but the random service skill and career-entry benefits are not faithfully
+represented.
 
-#### Decoupling events from pending inputs
+References:
 
-The important idea is **identity-based decoupling**, not the schema change by
-itself. If events and pending inputs reference each other only by `(int, int)`
-identity — whether as two DB columns or as a tuple in the model layer —
-neither class hierarchy needs to import the other at the Python level. Events
-can become plain Pydantic models carrying a `fulfills` identity. Pending inputs
-can become plain Pydantic models carrying their own `(event_id, seq)` identity.
-The relationship is then expressed by stable identifiers instead of Python
-type-level coupling.
+- `refs/companion/07_pre_career_options.md` (Merchant Academy)
+- `src/ceres/character/domain/precareer/merchant_academy.py`
+- `src/ceres/character/domain/precareer/loader.py`
+- `tests/character/test_companion_precareers.py`
 
-#### What this would pay off
+Known differences:
 
-- `events.py` becomes much smaller and more declarative
-- replay stays simple and auditable
-- domain knowledge lives with the components responsible for that phase
-- pending inputs can become their own module with a cleaner contract to the UI
-- tests assert lifecycle behaviour at the responsible module boundary instead of
-  inside `Event.apply()` blobs
+- **Random Service Skill** — Companion says to roll randomly on the Merchant
+  Service Skills table for a level-1 skill. Ceres lets the user choose one.
+- **Automatic career entry and rank** — graduates may enter the appropriate
+  Merchant or Citizen branch automatically at rank 1, or rank 2 with honours,
+  only when it is their first career after the academy. Ceres records this as a
+  manual problem note.
+- **Advancement bonus** — `DM+1`, or `DM+2` with honours, on all advancement
+  checks in Merchant or Citizen is only a manual problem note.
+- The current tests explicitly assert the manual rank and advancement notes;
+  replace them with tests of the represented benefits and their restrictions.
 
-#### Relationship to the self-addressed envelope plan
+## Psionic Community pre-career: bring Ceres fully in line with Companion
 
-[docs/plan-event-and-pending-input-rethink.md](plan-event-and-pending-input-rethink.md)
-is complete. `ChoiceBase` / `PendingChoices` replaced `PendingXxxChoice` / `on_choice()`
-dispatch across all career modules.
+Psionic Community currently grants ordinary skills and the final Rival/Enemy,
+but most psionic rules and both entry and graduation checks are absent.
 
-`Event.apply()` remains as transitional scaffolding for non-choice dispatch.
+References:
 
-This todo describes the broader end state those changes are growing toward:
+- `refs/companion/07_pre_career_options.md` (Psionic Community)
+- `src/ceres/character/domain/precareer/psionic_community.py`
+- `src/ceres/character/domain/precareer/loader.py`
+- `tests/character/test_companion_precareers.py`
 
-- self-addressed envelopes remain a good routing mechanism
-- but event classes should eventually stop being little executors
-- and the meaning of events should live with the lifecycle/domain component
-  responsible for that phase
+Known differences:
 
-#### Migration slices
+- **Entry check** — Companion requires `PSI 8+`, with `DM+1` for INT 8+.
+  Ceres' UI availability check merely requires that PSI exist, while direct
+  entry does not enforce even that; no entry roll is resolved.
+- **Psionic testing and talents** — testing, acquired talents, and level 0 in
+  every acquired talent are not represented.
+- **Graduation check** — Companion requires `PSI 6+`, with `DM+1` for INT 8+.
+  Because this is stored only as `graduation_requirement` text, Ceres treats
+  every graduation attempt as successful and uses the unmodified raw roll only
+  to determine honours.
+- **Graduation benefits** — PSI +1, one talent at level 1, honours talent
+  increases, and permanent automatic Psion enlistment are all manual problem
+  notes. The current tests explicitly assert the PSI note.
+- **Science benefit** — Companion grants exactly Science (psionicology) 1.
+  Ceres instead queues a choice among all Science specialisations.
 
-1. Introduce domain-owned handlers for one small event family while keeping
-   replay dumb (careers are the natural first target via the fulfilled pending)
-2. ~~Move pending-input classes out of `events.py` using identity-based
-   decoupling instead of import tricks~~ **Done.** `events.py` deleted; all
-   pending classes live in their owning domain modules. `PendingInputBase` uses
-   a `_registry` + `__init_subclass__` pattern for deserialization — no
-   discriminated union.
-3. Delete `apply()` bodies incrementally
-4. ~~Remove dead transitional abstractions~~ **Largely done.** `events.py`,
-   `state.py`, and `mechanism/pending.py` deleted; `state.py` content split
-   across `mechanism/errors.py`, `mechanism/pending_input.py`,
-   `mechanism/character_state.py`, and `domain/career/career_data.py`.
+## School of Hard Knocks pre-career: bring Ceres fully in line with Companion
+
+School of Hard Knocks implements its immediate skills and characteristic
+change, but eligibility and the first-career penalty are not enforced.
+
+References:
+
+- `refs/companion/07_pre_career_options.md` (School of Hard Knocks)
+- `src/ceres/character/domain/precareer/school_of_hard_knocks.py`
+- `src/ceres/character/domain/precareer/loader.py`
+- `tests/character/test_companion_precareers.py`
+
+Known differences:
+
+- **Entry eligibility** — entry is automatic only for SOC 6 or lower. Ceres
+  stores this as an `entry_requirement` string but makes the option available
+  to every character.
+- **First-career penalty** — `DM-2` on promotion and commission checks in the
+  first career, ending only after voluntarily leaving it, is a manual problem
+  note. The current tests explicitly assert that note.
+- Graduation choices should also enforce the word "other", preventing the same
+  entry choices from being selected again where Companion requires other
+  listed skills.
+
+## Spacer Community pre-career: bring Ceres fully in line with Companion
+
+Spacer Community implements most immediate graduation rewards, but eligibility
+and its narrowly scoped Merchant benefit are incorrect.
+
+References:
+
+- `refs/companion/07_pre_career_options.md` (Spacer Community)
+- `src/ceres/character/domain/precareer/spacer_community.py`
+- `src/ceres/character/domain/precareer/loader.py`
+- `tests/character/test_companion_precareers.py`
+
+Known differences:
+
+- **Entry eligibility** — entry is automatic for a size-0 homeworld; otherwise
+  it requires `INT 4+`, with `DM+1` for DEX 8+. Ceres stores this as an
+  `entry_requirement` string and allows automatic entry for every character.
+- **Merchant Free Trader bonus** — Companion grants `DM+1` to enlist,
+  commission, and promotion checks specifically in Merchant (Free Trader).
+  Ceres adds `pending_qualification_dm += 1`, which applies once to whichever
+  career is attempted next, and records the rest as a manual problem note.
+- Graduation choices should enforce "other" skills where Companion requires
+  them, rather than allowing repeated selections from the same pool.
 
 ## Agent career tables: bring Ceres fully in line with Core
 

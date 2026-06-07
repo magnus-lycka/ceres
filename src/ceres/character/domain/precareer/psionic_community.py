@@ -1,11 +1,11 @@
 from typing import Any
 
+from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.connection import make_connection
 from ceres.character.domain.precareer.precareer_data import PreCareerData
 from ceres.character.domain.precareer.precareer_events import PendingPreCareerSkillChoice
 from ceres.character.domain.skills import ScienceSkill, skill_instances
-from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
 
 
 class PsionicCommunityPreCareer(PreCareerData):

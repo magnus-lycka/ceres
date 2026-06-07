@@ -11,6 +11,7 @@ from pydantic import Field, SerializeAsAny, TypeAdapter
 
 from ceres.character.domain.benefits import AnyBenefit
 from ceres.character.domain.career.career_data import AdvancementDmOption, CareerData
+from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind, characteristic_dm
 from ceres.character.domain.skills import (
     AnySkill,
@@ -19,7 +20,6 @@ from ceres.character.domain.skills import (
     _level_fields,
 )
 from ceres.character.input_specs import InputSpec, NumberEntry, Reference, Select, form_int, form_str, literal
-from ceres.character.mechanism.character_state import CharacterProjection
 from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event, EventHandlerBase
 from ceres.character.mechanism.pending_input import ChoiceBase, PendingInputBase

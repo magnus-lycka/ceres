@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from ceres.character.input_specs import InputSpec
 
 if TYPE_CHECKING:
-    from ceres.character.mechanism.character_state import CharacterProjection
+    from ceres.character.domain.character_state import CharacterProjection
 
 
 class ChoiceBase(BaseModel):

@@ -1,8 +1,8 @@
 """Shared helpers for career event and mishap handlers."""
 
 from ceres.character.domain.career.common_pending import PendingAdvancedTrainingSkillRoll
+from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
-from ceres.character.mechanism.character_state import CharacterProjection
 
 
 def handle_advanced_training(

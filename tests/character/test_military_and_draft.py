@@ -180,8 +180,8 @@ def test_successful_commission_sets_officer_rank_and_skips_advancement():
 
 
 def test_qualification_dm_is_consumed_on_career_entry():
+    from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
     from ceres.character.domain.characteristics import Chars
-    from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
 
     careers = load_careers()
     army = careers['Army']

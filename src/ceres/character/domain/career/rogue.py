@@ -35,6 +35,7 @@ from ceres.character.domain.career.career_events import (
     muster_out_setup,
 )
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
+from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.connection import (
     Ally,
@@ -70,7 +71,6 @@ from ceres.character.domain.skills import (
     Tactics,
     VaccSuit,
 )
-from ceres.character.mechanism.character_state import CharacterProjection
 from ceres.character.mechanism.pending_input import ChoiceBase
 
 # ── mishap 2: arrested ────────────────────────────────────────────────────────

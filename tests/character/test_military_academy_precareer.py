@@ -2,12 +2,12 @@ from typing import Any
 
 from ceres.character.domain import skills as character_skills
 from ceres.character.domain.career.career_events import CareerEntryHandler
+from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.precareer.loader import load_precareers
 from ceres.character.domain.precareer.military_academy import MilitaryAcademyPreCareer
 from ceres.character.domain.precareer.precareer_events import PreCareerEntryHandler, PreCareerGraduationHandler
 from ceres.character.domain.sophont import VILANI
-from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
 from ceres.character.mechanism.event_base import Event
 from tests.character.helpers import MOCK_WORLD
 

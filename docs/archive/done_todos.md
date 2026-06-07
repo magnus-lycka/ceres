@@ -1411,3 +1411,29 @@ All ~55 files importing from `state.py` or `events.py` migrated to the new locat
 
 Dedicated unit tests for `mechanism/event_base.py` and the `PendingInputBase` registry
 added to `tests/character/test_event_base.py`.
+
+## Character creation: make replay a dumb mailman
+
+Sub-section "Make replay a dumb mailman; move lifecycle rules out of `Event.apply()`"
+from "Character creation: eliminate remaining semantic strings".
+
+**Root-event routing via `init_replay()`:**
+
+`EventHandlerBase` gained `init_replay(self, character_id: int, event_id: int) -> Any`
+returning `None` by default. `CharacterStartedHandler` overrides it to build and return
+the initial `CharacterProjection` with `CharacterSummary` populated from its own fields
+and `PendingUcp` appended. `replay.py` now calls `events[0].handler.init_replay(...)` and
+raises `ReplayError` if `None` is returned — no more `isinstance(events[0].handler,
+CharacterStartedHandler)` checks and no domain imports in `replay.py`.
+
+Migration slice 1 (domain-owned root handler) and slices 2 and 4 (from the previous
+session) are all complete. All four slices done.
+
+**DB schema change:**
+
+`character_events` table renamed to `events`. Two new integer columns added alongside
+the JSON payload: `fulfills_event_id INTEGER` and `fulfills_seq INTEGER`, storing the
+`(event_id, seq)` identity of the pending input fulfilled by each event. The
+`pending_inputs` table described in the original plan was omitted — pending inputs
+remain fully derived state rebuilt by replay, so no authoritative storage is needed.
+All SQL in `store.py` updated accordingly.

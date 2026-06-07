@@ -1,5 +1,6 @@
 """Tests for CharacterProjection.skill_choices and check_skill_choice."""
 
+from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.characteristics import ConnectionKind
 from ceres.character.domain.connection import make_connection
 from ceres.character.domain.skills import (
@@ -14,7 +15,6 @@ from ceres.character.domain.skills import (
     SpaceScience,
 )
 from ceres.character.domain.sophont import VILANI
-from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
 from tests.character.helpers import MOCK_WORLD
 
 

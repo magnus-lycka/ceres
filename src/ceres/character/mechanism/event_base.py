@@ -22,6 +22,9 @@ class EventHandlerBase(BaseModel):
     def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
         raise NotImplementedError(f'{type(self).__name__}.apply() not implemented')
 
+    def init_replay(self, character_id: int, event_id: int) -> Any:
+        return None
+
 
 def _deserialise_event_handler(v: Any) -> EventHandlerBase:
     if isinstance(v, EventHandlerBase):

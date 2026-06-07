@@ -38,6 +38,7 @@ from ceres.character.domain.career.career_events import (
 )
 from ceres.character.domain.career.common_pending import PendingAdvancedTrainingSkillRoll
 from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
+from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.connection import (
     Enemy,
@@ -65,7 +66,6 @@ from ceres.character.domain.skills import (
     Tactics,
 )
 from ceres.character.domain.sophont import VILANI
-from ceres.character.mechanism.character_state import CharacterProjection
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import ReplayError, replay
 from tests.character.helpers import MOCK_WORLD

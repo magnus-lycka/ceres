@@ -37,6 +37,7 @@ from ceres.character.domain.career.career_events import (
     PendingSkillChoice,
 )
 from ceres.character.domain.career.common_pending import CareerSkillChoicePendingBase, CareerSkillRollPendingBase
+from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.connection import (
     Ally,
@@ -72,7 +73,6 @@ from ceres.character.domain.skills import (
     VaccSuit,
     skill_instances,
 )
-from ceres.character.mechanism.character_state import CharacterProjection
 
 _AMBUSH_TARGETS: dict[str, int] = {'Pilot': 8, 'Persuade': 10}
 

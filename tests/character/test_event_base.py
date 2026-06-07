@@ -9,8 +9,8 @@ from typing import Any, Literal
 
 import pytest
 
+from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.sophont import VILANI
-from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
 from ceres.character.mechanism.event_base import (
     Event,
     EventHandlerBase,
@@ -164,6 +164,10 @@ class TestEventHandlerBaseApply:
         handler = _NoApply()
         with pytest.raises(NotImplementedError, match='apply\\(\\) not implemented'):
             handler.apply({}, Event(handler=handler))
+
+    def test_base_init_replay_returns_none(self):
+        handler = _BetaHandler()
+        assert handler.init_replay(1, 1) is None
 
 
 # ── PendingHandlerBase registration ─────────────────────────────────────────

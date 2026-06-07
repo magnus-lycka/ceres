@@ -637,8 +637,8 @@ class TestScholarMishap5:
         from types import SimpleNamespace
 
         from ceres.character.domain.career.loader import load_careers
+        from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
         from ceres.character.domain.health.health_events import PendingAgingRoll
-        from ceres.character.mechanism.character_state import CharacterProjection, CharacterSummary
 
         scholar = load_careers()['Scholar']
         proj = CharacterProjection(

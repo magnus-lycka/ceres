@@ -8,8 +8,8 @@ from pydantic import TypeAdapter
 from ceres import settings
 from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.domain.character_start import CharacterStartedHandler
+from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.sophont import Sophont
-from ceres.character.mechanism.character_state import CharacterProjection
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
 
@@ -38,9 +38,11 @@ class SqliteCharacterBackend:
             'name text not null)'
         )
         self.connection.execute(
-            'create table if not exists character_events ('
+            'create table if not exists events ('
             'character_id integer not null references characters(id), '
             'id integer not null, '
+            'fulfills_event_id integer, '
+            'fulfills_seq integer, '
             'payload text not null, '
             'primary key (character_id, id))'
         )
@@ -93,16 +95,18 @@ class SqliteCharacterBackend:
         event = event.model_copy(update={'id': len(events) + 1})
         candidate = [*events, event]
         projection = replay(character_id, candidate)  # raises ReplayError if invalid; do not save
+        fulfills_event_id = event.fulfills[0] if event.fulfills is not None else None
+        fulfills_seq = event.fulfills[1] if event.fulfills is not None else None
         self.connection.execute(
-            'insert into character_events (character_id, id, payload) values (?, ?, ?)',
-            (character_id, event.id, json.dumps(event.model_dump())),
+            'insert into events (character_id, id, fulfills_event_id, fulfills_seq, payload) values (?, ?, ?, ?, ?)',
+            (character_id, event.id, fulfills_event_id, fulfills_seq, json.dumps(event.model_dump())),
         )
         self.connection.commit()
         return event, projection
 
     def load_typed_events(self, character_id: int) -> list[Event] | None:
         cursor = self.connection.execute(
-            'select payload from character_events where character_id = ? order by id',
+            'select payload from events where character_id = ? order by id',
             (character_id,),
         )
         rows = cursor.fetchall()
@@ -120,7 +124,7 @@ class SqliteCharacterBackend:
         character = self.get_character(character_id)
         if character is None:
             return None
-        self.connection.execute('delete from character_events where character_id = ?', (character_id,))
+        self.connection.execute('delete from events where character_id = ?', (character_id,))
         self.connection.execute('delete from characters where id = ?', (character_id,))
         self.connection.commit()
         return character

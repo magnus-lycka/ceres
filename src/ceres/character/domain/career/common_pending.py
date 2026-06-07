@@ -7,10 +7,10 @@ from typing import Any, Literal
 
 from pydantic import Field
 
+from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.skills import AnySkill, _level_fields
 from ceres.character.input_specs import NumberEntry, Select
-from ceres.character.mechanism.character_state import CharacterProjection
 from ceres.character.mechanism.pending_input import PendingInputBase
 
 

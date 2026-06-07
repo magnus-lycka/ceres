@@ -41,6 +41,7 @@ from ceres.character.domain.character_start import (
     PendingUcp,
     UcpHandler,
 )
+from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.health.health_events import (
     AgingCrisisHandler,
@@ -51,7 +52,6 @@ from ceres.character.domain.health.health_events import (
 )
 from ceres.character.domain.skills import AnySkill
 from ceres.character.domain.sophont import Sophont
-from ceres.character.mechanism.character_state import CharacterProjection
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.pending_input import ChoiceBase
 from ceres.character.mechanism.replay import replay
