@@ -13,6 +13,7 @@ from ceres.character.domain.career import (
     NAVY,
     NOBLE,
     PRISONER,
+    PSION,
     ROGUE,
     SCHOLAR,
     SCOUT,
@@ -59,7 +60,7 @@ class TestCareerClass:
 
 
 class TestCareerConstants:
-    def test_all_thirteen_constants_exist(self):
+    def test_all_fourteen_constants_exist(self):
         constants = [
             AGENT,
             ARMY,
@@ -71,11 +72,12 @@ class TestCareerConstants:
             NAVY,
             NOBLE,
             PRISONER,
+            PSION,
             ROGUE,
             SCHOLAR,
             SCOUT,
         ]
-        assert len(constants) == 13
+        assert len(constants) == 14
 
     def test_all_constants_source_is_core(self):
         constants = [
@@ -89,6 +91,7 @@ class TestCareerConstants:
             NAVY,
             NOBLE,
             PRISONER,
+            PSION,
             ROGUE,
             SCHOLAR,
             SCOUT,
@@ -115,6 +118,7 @@ class TestCareerConstants:
             NAVY,
             NOBLE,
             PRISONER,
+            PSION,
             ROGUE,
             SCHOLAR,
             SCOUT,

@@ -208,7 +208,8 @@ class DrifterMishap5Handler(CareerHandlerBase):
         projection.pending_inputs.append(
             PendingDrifterMishap5SkillRoll(
                 pending_id=(event_id, pending_idx),
-                instruction='Betrayed by a friend: gain a Rival. Roll 2D — on a natural 2, must take Prisoner next term',
+                instruction='Betrayed by a friend: gain a Rival. '
+                'Roll 2D — on a natural 2, must take Prisoner next term',
                 options=[],
             )
         )
@@ -295,7 +296,8 @@ class Drifter(CareerData):
 
     name: ClassVar[str] = 'Drifter'
     description: ClassVar[str] = (
-        'Wanderers, hitchhikers and travellers, drifters are those who roam the stars without obvious purpose or direction.'
+        'Wanderers, hitchhikers and travellers, drifters are those '
+        'who roam the stars without obvious purpose or direction.'
     )
 
     qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.END, target=0)
@@ -433,7 +435,8 @@ class Drifter(CareerData):
             effects=[DecreaseCharacteristicEffect(characteristic=Chars.END, amount=1)],
         ),
         5: MishapEntry(
-            text='Betrayed by a friend. Gain a Rival. Roll 2D — on a natural 2, you must take the Prisoner career next term.',
+            text='Betrayed by a friend. Gain a Rival. Roll 2D — on a natural 2, '
+            'you must take the Prisoner career next term.',
             defer_ejection=True,
             effects=[DrifterMishap5Handler()],
         ),

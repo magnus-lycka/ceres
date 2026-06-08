@@ -96,7 +96,8 @@ class EntertainerEvent8Accept(ChoiceBase):
         projection.pending_inputs.append(
             PendingEntertainerEvent8SkillRoll(
                 pending_id=(event.id, 0),
-                instruction='Roll Art or Investigate 8+: success = DM+2 to next advancement; fail = gain powerful Enemy',
+                instruction='Roll Art or Investigate 8+: success = DM+2 '
+                'to next advancement; fail = gain powerful Enemy',
                 options=[*skill_instances(ArtSkill), Investigate()],
             )
         )

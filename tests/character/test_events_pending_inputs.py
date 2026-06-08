@@ -120,7 +120,7 @@ from ceres.character.domain.precareer.precareer_events import (
     PreCareerSkillChoiceHandler,
 )
 from ceres.character.domain.sophont import VILANI
-from ceres.character.input_specs import NumberEntry, Reference, Select
+from ceres.character.input_specs import CareerChoice, NumberEntry, Reference, Select
 from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event
 from tests.character.helpers import MOCK_WORLD
@@ -588,7 +588,16 @@ def test_pending_career_choice_form_and_specs():
     assert career.assignment.name == 'Courier'
     assert career.qualification_roll == 12
 
-    assert pending.input_specs(projection) == []
+    specs = pending.input_specs(projection)
+    assert len(specs) == 1
+    spec = specs[0]
+    assert isinstance(spec, CareerChoice)
+    assert spec.career_options[0].name == 'Scout'
+    assert spec.career_options[0].description.startswith('Members of the exploratory service.')
+    assert spec.career_options[0].qualification.characteristic == 'INT'
+    assert spec.career_options[0].qualification.target == 5
+    assert spec.career_options[0].assignments[0].name == 'Courier'
+    assert spec.career_options[0].assignments[0].description.startswith('You are responsible for shuttling messages')
 
 
 def test_pending_draft_choices_build_expected_events_and_specs():

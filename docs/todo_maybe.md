@@ -267,14 +267,9 @@ This should fire at the start of **every** Scout term (first entry and all
 re-enlistments).
 
 
-### Marine career: homeworld trigger at term start (RIC-006)
+### Homeworld handling for other careers
 
 See [docs/RULE_INTERPRETATIONS.md](docs/RULE_INTERPRETATIONS.md) — RIC-006.
-
-The Scout career (IISS) requires the character to be based at a world with an
-Imperial Scout Base (`S`) or Way Station (`W`) in `TravellerMapWorld.bases`.
-This should fire at the start of **every** Scout term (first entry and all
-re-enlistments).
 
 
 
@@ -307,9 +302,6 @@ career term lifecycle hooks.
   `birthworld` is unchanged.
 - Re-enlistment into a second Scout term produces the same check again.
 
-**Out of scope for this item:** Navy, Marines, Merchant, Noble, and other
-careers (their RIC-006 entries are TBD). The UI for picking a replacement
-world.
 
 ## Character creation: known implementation gaps (rules not yet enforced)
 
@@ -661,8 +653,8 @@ Known differences:
 
 ## Psionic Community pre-career: bring Ceres fully in line with Companion
 
-Psionic Community currently grants ordinary skills and the final Rival/Enemy,
-but most psionic rules and both entry and graduation checks are absent.
+Psionic Community entry, training, graduation checks, and graduation benefits
+are now represented.
 
 References:
 
@@ -671,22 +663,16 @@ References:
 - `src/ceres/character/domain/precareer/loader.py`
 - `tests/character/test_companion_precareers.py`
 
-Known differences:
+Implemented:
 
-- **Entry check** — Companion requires `PSI 8+`, with `DM+1` for INT 8+.
-  Ceres' UI availability check merely requires that PSI exist, while direct
-  entry does not enforce even that; no entry roll is resolved.
-- **Psionic testing and talents** — testing, acquired talents, and level 0 in
-  every acquired talent are not represented.
-- **Graduation check** — Companion requires `PSI 6+`, with `DM+1` for INT 8+.
-  Because this is stored only as `graduation_requirement` text, Ceres treats
-  every graduation attempt as successful and uses the unmodified raw roll only
-  to determine honours.
-- **Graduation benefits** — PSI +1, one talent at level 1, honours talent
-  increases, and permanent automatic Psion enlistment are all manual problem
-  notes. The current tests explicitly assert the PSI note.
-- **Science benefit** — Companion grants exactly Science (psionicology) 1.
-  Ceres instead queues a choice among all Science specialisations.
+- Entry requires established PSI and resolves the `PSI 8+` check with
+  `DM+1` for INT 8+.
+- Entry starts psionic institute training for an untrained psion.
+- Graduation resolves the `PSI 6+` check with `DM+1` for INT 8+.
+- Graduation grants PSI +1, Science (psionicology) 1, one possessed talent at
+  level 1, and permanent automatic Psion enlistment.
+- Honours raises all possessed talents to level 1 and offers one at level 2.
+- Graduation grants the required Rival, or Enemy with honours.
 
 ## School of Hard Knocks pre-career: bring Ceres fully in line with Companion
 
@@ -1196,41 +1182,28 @@ Known differences:
   most of the tables. Make all Scout mishap/event entry text match Core word
   for word, excluding page references (which are intentionally omitted).
 
-## Psion career: implement from Core Rulebook
+## Psionics: implement talent acquisition and powers
 
 Reference: `refs/core/10_psionics.md`
 
-Implement the Psion career (Core Rulebook chapter 10) as a proper `CareerData`
-subclass alongside the other Core careers.
+The Core Psion career, its typed talents, eligibility, tables, events/mishaps,
+Psionic Community auto-qualification, and RIC-006 homeworld offer are
+implemented.
 
-Prerequisites (blocking Psion entry):
+Remaining broader psionics work:
 
-- **Psionic Strength test** — `PendingLifeEventPsionicsRoll` and
-  `PsiStrengthTestHandler` exist and compute PSI correctly. The pending is
-  queued by Life Event unusual roll 1 and by the Psionic Community pre-career.
-  What is missing is the mechanic to offer the Psion career after a successful
-  test (PSI ≥ 9 or per the testing rules).
-- **PSI characteristic ongoing** — PSI is set by the test handler. Talents,
-  talent-level progression, and their interaction with the skill system need
-  definition before the career can be fully represented.
+- Model and implement the individual powers under each psionic talent,
+  including PSI costs, reach, checks, and PSI recovery.
 
-Career structure (from Core):
+Implemented:
 
-- Qualification: PSI 6+ (no draft; if not admitted, cannot take Psion this term)
-- Assignments: Aware, Wild Talent, Adept
-- Ranks use titles from the Psion rank table
-- Survival, advancement, mishaps, and events differ per assignment
-- Special rule: may not take this career unless PSI has been tested and is ≥ 9
-
-Implementation checklist:
-
-1. Add `Psion` career data to `src/ceres/character/domain/career/` following the
-   existing `CareerData` subclass pattern.
-2. Register it in `loader.py`.
-3. After Life Event unusual 1 or Psionic Community pre-career grants PSI, wire up
-   an offer for the Psion career when PSI ≥ 9.
-4. Write tests in `tests/character/test_psion.py` covering qualification, survival,
-   mishap and event handlers for all three assignments.
+- Psionic testing establishes PSI and typed `Psionics` state.
+- Entering Psionic Community or the Psion career starts institute training
+  when the character has not previously attempted talent acquisition.
+- Talent-acquisition attempts track their cumulative DM penalty and acquired
+  talents separately from ordinary skills.
+- Psion skill-table results improve possessed talents or allow an acquisition
+  attempt for an unpossessed talent.
 
 ## Replace sophont string-name lookup with typed objects
 

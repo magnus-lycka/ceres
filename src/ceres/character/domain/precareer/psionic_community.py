@@ -4,13 +4,19 @@ from ceres.character.domain.character_state import CharacterProjection, Characte
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.connection import make_connection
 from ceres.character.domain.precareer.precareer_data import PreCareerData
-from ceres.character.domain.precareer.precareer_events import PendingPreCareerSkillChoice
-from ceres.character.domain.skills import ScienceSkill, skill_instances
+from ceres.character.domain.psionics import PendingPsionicTalentLevelChoice, queue_psionic_institute_training
+from ceres.character.domain.skills import Level, LifeScience
 
 
 class PsionicCommunityPreCareer(PreCareerData):
     def is_available(self, summary: CharacterSummary) -> bool:
-        return Chars.PSI in summary.characteristics
+        return summary.psionics is not None
+
+    def apply_entry(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        pending_idx = super().apply_entry(projection, event, pending_idx)
+        if queue_psionic_institute_training(projection, event.id, pending_idx):
+            pending_idx += 1
+        return pending_idx
 
     def apply_graduation(
         self,
@@ -20,30 +26,28 @@ class PsionicCommunityPreCareer(PreCareerData):
     ) -> int:
 
         pending_idx = 0
-        projection.summary.problems.append('Psionic Community graduation: increase PSI by +1. Apply manually.')
-        projection.summary.problems.append(
-            'Psionic Community graduation: gain level 1 in any one psionic talent possessed. Apply manually.'
-        )
-        science_options = skill_instances(ScienceSkill)
-        if science_options:
+        if projection.summary.psionics is None:
+            raise ValueError('Psionic Community graduation requires Psionic Strength')
+        projection.summary.characteristics[Chars.PSI] = projection.summary.characteristics.get(Chars.PSI, 0) + 1
+        psionics = projection.summary.psionics
+        if honours:
+            for talent in psionics.psionic_talent_skills:
+                psionics.raise_talent_to(type(talent), 1)
+            target_level = 2
+        else:
+            target_level = 1
+        if any(talent.level.value < target_level for talent in psionics.psionic_talent_skills):
             projection.pending_inputs.append(
-                PendingPreCareerSkillChoice(
+                PendingPsionicTalentLevelChoice(
                     pending_id=(event.id, pending_idx),
-                    level=1,
-                    instruction='Psionic Community graduation: choose one Science specialisation at level 1',
-                    options=science_options,
+                    level=target_level,
+                    instruction=f'Psionic Community graduation: choose one possessed talent at level {target_level}',
                 )
             )
             pending_idx += 1
-        if honours:
-            projection.summary.problems.append(
-                'Psionic Community graduation (honours): all acquired talents at level 1; '
-                'advance one to level 2. Apply manually.'
-            )
-        projection.summary.problems.append(
-            'Psionic Community graduation: automatic enlistment in Psion career '
-            '(even after other careers). Apply manually.'
-        )
+        projection.grant_skill(LifeScience(psionicology=Level(value=1)))
+        if 'Psion' not in projection.auto_qualify_careers:
+            projection.auto_qualify_careers.append('Psion')
         source = 'Psionic Community graduation'
         if honours:
             projection.summary.connections.append(make_connection(ConnectionKind.ENEMY, source=source))

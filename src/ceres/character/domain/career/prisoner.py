@@ -601,7 +601,8 @@ class Prisoner(CareerData):
 
     name: ClassVar[str] = 'Prisoner'
     description: ClassVar[str] = (
-        'Every society has its bad apples and even in the far future punishments usually take place within faceless institutions where criminals can be conveniently forgotten.'
+        'Every society has its bad apples and even in the far future punishments usually take place within faceless '
+        'institutions where criminals can be conveniently forgotten.'
     )
     qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.END, target=0)
     allows_assignment_change: ClassVar[bool] = True

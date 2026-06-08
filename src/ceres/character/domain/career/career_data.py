@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
@@ -6,14 +7,16 @@ from pydantic.functional_validators import ModelWrapValidatorHandler
 
 from ceres.character.domain.benefits import AnyBenefit, ItemBenefit
 from ceres.character.domain.characteristics import Chars, ConnectionKind, characteristic_dm
-from ceres.character.domain.skills import AnySkill, Level, _level_fields
+from ceres.character.domain.psionics import Psi
+from ceres.character.domain.skills import AnySkill, _level_fields
 from ceres.character.mechanism.errors import ReplayError
 
 if TYPE_CHECKING:
     from ceres.character.domain.character_state import CharacterProjection
 
 
-type SkillTableEntry = AnySkill | Chars | list[AnySkill]
+type CareerSkillOption = AnySkill | Psi
+type SkillTableEntry = CareerSkillOption | Chars | list[AnySkill] | list[Psi]
 
 
 @dataclass
@@ -47,12 +50,18 @@ class RankBonus(BaseModel):
     skill: AnySkill | None = None
     characteristic: Chars | None = None
     level: int = 1
-    choices: list[AnySkill] | None = None
+    choices: Sequence[CareerSkillOption] | None = None
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def resolve_choices(self) -> list[AnySkill] | None:
-        return self.choices or None
+    def resolve_choices(self) -> Sequence[CareerSkillOption] | None:
+        if self.choices:
+            return self.choices
+        if self.skill:
+            fields = _level_fields(type(self.skill))
+            if len(fields) > 1 and not any(getattr(self.skill, field).value > 0 for field in fields):
+                return [self.skill]
+        return None
 
 
 class RankEntry(BaseModel):
@@ -78,7 +87,12 @@ class DecreaseCharacteristicEffect(BaseModel):
 
     def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
         current = projection.summary.characteristics.get(self.characteristic, 0)
-        projection.summary.characteristics[self.characteristic] = max(0, current - self.amount)
+        new_value = max(0, current - self.amount)
+        if self.characteristic is Chars.PSI and new_value == 0:
+            projection.summary.characteristics.pop(Chars.PSI, None)
+            projection.summary.psionics = None
+        else:
+            projection.summary.characteristics[self.characteristic] = new_value
 
 
 class DecreaseCharacteristicChoiceEffect(BaseModel):
@@ -474,21 +488,24 @@ class CareerData(TermData):
         dm += projection.pending_qualification_dm
         projection.pending_qualification_dm = 0
         if qualification_roll + dm < target:
-            from ceres.character.domain.career.career_events import PendingDraftChoice
-
-            projection.summary.problems.append(f'Failed to qualify for {self.name}.')
-            projection.pending_inputs.append(
-                PendingDraftChoice(
-                    pending_id=(event_id, 0),
-                    instruction='Qualification failed — submit to the draft or become a Drifter',
-                    can_draft=not projection.summary.drafted,
-                )
-            )
+            self.qualification_failed(projection, event_id)
             return
 
         projection.summary.current_career = self
         projection.summary.current_assignment = assignment
         self.start_new_term(projection, assignment, event_id)
+
+    def qualification_failed(self, projection, event_id: int) -> None:
+        from ceres.character.domain.career.career_events import PendingDraftChoice
+
+        projection.summary.problems.append(f'Failed to qualify for {self.name}.')
+        projection.pending_inputs.append(
+            PendingDraftChoice(
+                pending_id=(event_id, 0),
+                instruction='Qualification failed — submit to the draft or become a Drifter',
+                can_draft=not projection.summary.drafted,
+            )
+        )
 
     def start_new_term(
         self,
@@ -499,34 +516,49 @@ class CareerData(TermData):
     ) -> None:
         training = self._basic_training_plan(projection, assignment, is_continuation)
         projection.summary.rank = self.current_rank(projection.summary.career_terms, assignment)
-        if not self.prior_terms(projection.summary.career_terms, assignment):
-            self._apply_fixed_rank_bonus(projection, 0)
+        first_term_in_run = not self.prior_terms(projection.summary.career_terms, assignment)
         self.append_term(projection, assignment)
 
         if training is not None:
             self._apply_basic_training(projection, assignment, training.table_name, training.grant_all, event_id)
         else:
             self._queue_skill_table_before_survival(projection, assignment, event_id)
+        if first_term_in_run:
+            self._apply_fixed_rank_bonus(projection, 0, event_id)
 
     def _basic_training_table_name(self, assignment: AssignmentData) -> str:
         return 'service_skills'
 
-    def _apply_fixed_rank_bonus(self, projection, rank: int) -> None:
+    def _apply_fixed_rank_bonus(self, projection, rank: int, event_id: int = 0) -> None:
         rank_entry = self.current_ranks(projection).get(rank)
         if not rank_entry or not rank_entry.bonus:
             return
         bonus = rank_entry.bonus
+        choices = bonus.resolve_choices()
+        if choices:
+            from ceres.character.domain.career.career_events import PendingRankBonusChoice
+
+            valid_choices = [
+                choice
+                for choice in choices
+                if (isinstance(choice, Psi) or projection.skill_choices([type(choice)], bonus.level))
+            ]
+            if valid_choices:
+                used_sub_ids = {p.pending_id[1] for p in projection.pending_inputs if p.pending_id[0] == event_id}
+                projection.pending_inputs.append(
+                    PendingRankBonusChoice(
+                        pending_id=(event_id, max(used_sub_ids, default=-1) + 1),
+                        level=bonus.level,
+                        instruction=f'Rank {rank} bonus: choose skill at level {bonus.level}',
+                        options=cast(list[CareerSkillOption | AdvancementDmOption], valid_choices),
+                        continue_career_progress=False,
+                    )
+                )
+            return
         if bonus.skill:
-            skill_cls = type(bonus.skill)
-            fields = _level_fields(skill_cls)
-            existing = next((s for s in projection.summary.skills if type(s) is skill_cls), None)
-            if existing is None:
-                existing = skill_cls()
-                projection.summary.skills.append(existing)
-            for field in fields:
-                level = getattr(existing, field)
-                if isinstance(level, Level):
-                    level.set(max(level.value, bonus.level))
+            from ceres.character.domain.career.career_events import _rank_bonus_skill
+
+            projection.grant_skill(_rank_bonus_skill(bonus))
         elif bonus.characteristic:
             current = projection.summary.characteristics.get(bonus.characteristic, 0)
             projection.summary.characteristics[bonus.characteristic] = current + bonus.level
@@ -562,12 +594,15 @@ class CareerData(TermData):
             choice_idx = 0
             for entry in table.entries:
                 choices = self._training_pending_choices(projection, entry)
-                if len(choices) > 1:
+                if not choices and isinstance(entry, Psi):
+                    continue
+                if len(choices) > 1 or isinstance(entry, Psi):
+                    skills = ', '.join(self._training_option_name(s) for s in choices)
                     projection.pending_inputs.append(
                         PendingInitialTrainingChoice(
                             pending_id=(event_id, choice_idx),
-                            instruction=f'Initial training: choose one of {", ".join(type(s).name() for s in choices)}',
-                            options=cast(list[AnySkill | AdvancementDmOption], choices),
+                            instruction=f'Initial training: choose one of {skills}',
+                            options=cast(list[CareerSkillOption | AdvancementDmOption], choices),
                         )
                     )
                     choice_idx += 1
@@ -579,19 +614,19 @@ class CareerData(TermData):
 
         from ceres.character.domain.career.career_events import PendingInitialTrainingChoice
 
-        raw: list[AnySkill] = []
+        raw: list[CareerSkillOption] = []
         for entry in table.entries:
             raw.extend(self._training_selectable_skills(projection, entry))
-        by_name: dict[str, AnySkill] = {}
+        by_name: dict[str, CareerSkillOption] = {}
         for s in raw:
-            by_name.setdefault(type(s).name(), s)
-        deduped: list[AnySkill] = sorted(by_name.values(), key=lambda s: type(s).name())
+            by_name.setdefault(self._training_option_name(s), s)
+        deduped: list[CareerSkillOption] = sorted(by_name.values(), key=self._training_option_name)
         if deduped:
             projection.pending_inputs.append(
                 PendingInitialTrainingChoice(
                     pending_id=(event_id, 0),
                     instruction=f'Basic training: choose one skill at level 0 from {table_name}',
-                    options=cast(list[AnySkill | AdvancementDmOption], deduped),
+                    options=cast(list[CareerSkillOption | AdvancementDmOption], deduped),
                 )
             )
         else:
@@ -600,9 +635,13 @@ class CareerData(TermData):
     def _apply_initial_training_entry(self, projection, entry: SkillTableEntry) -> None:
         if isinstance(entry, Chars):
             return  # characteristic boosts are not granted during basic training
+        if isinstance(entry, Psi):
+            raise ReplayError('Psionic talent training requires a pending acquisition check')
         if isinstance(entry, list):
             # Choice entry: add all unknown skills at level 0
             for skill in entry:
+                if isinstance(skill, Psi):
+                    raise ReplayError('Psionic talent training requires a pending acquisition check')
                 skill_cls = type(skill)
                 if projection.summary.skill_level(skill_cls) is None:
                     projection.summary.skills.append(skill_cls())
@@ -612,11 +651,13 @@ class CareerData(TermData):
             if projection.summary.skill_level(skill_cls) is None:
                 projection.summary.skills.append(skill_cls())
 
-    def _training_pending_choices(self, projection, entry: SkillTableEntry) -> list[AnySkill]:
+    def _training_pending_choices(self, projection, entry: SkillTableEntry) -> list[CareerSkillOption]:
         if isinstance(entry, Chars):
             return []
+        if isinstance(entry, Psi):
+            return [entry] if self._psi_talent_is_unknown(projection, entry) else []
         if isinstance(entry, list):
-            return [s for s in entry if projection.summary.skill_level(type(s)) is None]
+            return [s for s in entry if self._training_option_is_unknown(projection, s)]
         skill_cls = type(entry)
         fields = _level_fields(skill_cls)
         spec_field = next((f for f in fields if getattr(entry, f).value > 0), None)
@@ -626,15 +667,33 @@ class CareerData(TermData):
             return [skill_cls()]
         return []
 
-    def _training_selectable_skills(self, projection, entry: SkillTableEntry) -> list[AnySkill]:
+    def _training_selectable_skills(self, projection, entry: SkillTableEntry) -> list[CareerSkillOption]:
         if isinstance(entry, Chars):
             return []
+        if isinstance(entry, Psi):
+            return [entry] if self._psi_talent_is_unknown(projection, entry) else []
         if isinstance(entry, list):
-            return [s for s in entry if projection.summary.skill_level(type(s)) is None]
+            return [s for s in entry if self._training_option_is_unknown(projection, s)]
         skill_cls = type(entry)
         if projection.summary.skill_level(skill_cls) is None:
             return [skill_cls()]
         return []
+
+    @staticmethod
+    def _training_option_name(option: CareerSkillOption) -> str:
+        return type(option.talent).name() if isinstance(option, Psi) else type(option).name()
+
+    @staticmethod
+    def _psi_talent_is_unknown(projection, option: Psi) -> bool:
+        return (
+            projection.summary.psionics is not None
+            and projection.summary.psionics.talent_level(type(option.talent)) is None
+        )
+
+    def _training_option_is_unknown(self, projection, option: CareerSkillOption) -> bool:
+        if isinstance(option, Psi):
+            return self._psi_talent_is_unknown(projection, option)
+        return projection.summary.skill_level(type(option)) is None
 
     def _queue_skill_table_before_survival(self, projection, assignment: AssignmentData, event_id: int) -> None:
         from ceres.character.domain.career.career_events import PendingSkillTable

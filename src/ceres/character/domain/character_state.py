@@ -7,6 +7,7 @@ from ceres.character.domain.benefits import ItemBenefit
 from ceres.character.domain.career.career_data import AssignmentData, CareerData, CareerTerm
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.connection import AnyConnection
+from ceres.character.domain.psionics import Psionics
 from ceres.character.domain.skills import AnySkill, Level, Skill, _level_fields
 from ceres.character.domain.sophont import Sophont
 from ceres.character.mechanism.errors import ReplayError
@@ -27,6 +28,7 @@ class CharacterSummary(BaseModel):
         return self
 
     characteristics: dict[Chars, int] = Field(default_factory=dict)
+    psionics: Psionics | None = None
     current_career: CareerData | None = None
     current_assignment: AssignmentData | None = None
     last_career: CareerData | None = None
@@ -60,6 +62,16 @@ class CharacterSummary(BaseModel):
         if not self.career_terms:
             raise ReplayError('No current career term')
         return self.career_terms[-1]
+
+    def test_psionic_strength(self, *, raw_roll: int, terms_served: int) -> int:
+        psi, psionics = Psionics.from_strength_test(raw_roll=raw_roll, terms_served=terms_served)
+        if psi == 0:
+            self.characteristics.pop(Chars.PSI, None)
+            self.psionics = None
+            return 0
+        self.characteristics[Chars.PSI] = psi
+        self.psionics = psionics
+        return psi
 
     @property
     def rank_title(self) -> tuple[str, str]:

@@ -100,7 +100,8 @@ class NobleMishap3Handler(CareerHandlerBase):
         projection.pending_inputs.append(
             PendingNobleMishap3SkillRoll(
                 pending_id=(event_id, pending_idx),
-                instruction='Roll Stealth or Deception 8+: success = escape unhurt (keep Benefit); fail = injury + lose Benefit',
+                instruction='Roll Stealth or Deception 8+: success = escape unhurt '
+                '(keep Benefit); fail = injury + lose Benefit',
                 options=[Stealth(), Deception()],
             )
         )
@@ -203,7 +204,8 @@ class Noble(CareerData):
 
     name: ClassVar[str] = 'Noble'
     description: ClassVar[str] = (
-        'Individuals of the upper class who perform little consistent function but often have large amounts of ready money.'
+        'Individuals of the upper class who perform little consistent '
+        'function but often have large amounts of ready money.'
     )
     qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.SOC, target=10)
     allows_assignment_change: ClassVar[bool] = True

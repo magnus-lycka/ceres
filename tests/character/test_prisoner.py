@@ -11,6 +11,7 @@ from ceres.character.domain.career.career_events import (
     PendingChoices,
     PendingInitialTrainingChoice,
     PendingMusterOut,
+    PendingRankBonusChoice,
     PendingSkillChoice,
     PendingSkillTable,
     SkillChoiceHandler,
@@ -113,7 +114,9 @@ def test_prisoner_can_be_entered_when_event_log_sends_character_there():
     assert projection.summary.current_career.name == 'Prisoner'
     assert projection.summary.current_assignment is not None
     assert projection.summary.current_assignment.name == 'Inmate'
-    assert projection.summary.skill_level(Melee) == 1
+    assert projection.summary.skill_level(Melee) == 0
+    rank_bonus = next(p for p in projection.pending_inputs if isinstance(p, PendingRankBonusChoice))
+    assert rank_bonus.options == [Melee()]
     assert any(isinstance(p, PendingInitialTrainingChoice) for p in projection.pending_inputs)
 
 

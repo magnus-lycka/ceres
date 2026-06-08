@@ -10,6 +10,33 @@ from ceres.character.mechanism.event_base import Event, EventHandlerBase
 from ceres.character.mechanism.pending_input import PendingInputBase
 
 
+class CharacteristicChoiceHandler(EventHandlerBase):
+    kind: Literal['characteristic_choice'] = 'characteristic_choice'
+    characteristic: Chars
+    amount: int = 1
+
+    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+        char = self.characteristic
+        current = projection.summary.characteristics.get(char, 0)
+        projection.summary.characteristics[char] = max(0, current - self.amount)
+        if isinstance(fulfilled_pending, PendingNearlyKilled):
+            for other in (Chars.STR, Chars.DEX, Chars.END):
+                if other != char:
+                    projection.summary.characteristics[other] = max(
+                        0, projection.summary.characteristics.get(other, 0) - 2
+                    )
+        elif isinstance(fulfilled_pending, (PendingAgingChoice, PendingAgingChoiceMental)) and not (
+            check_aging_crisis(projection, event.id)
+        ):
+            remaining = [
+                pending
+                for pending in projection.pending_inputs
+                if isinstance(pending, (PendingAgingChoice, PendingAgingChoiceMental))
+            ]
+            if not remaining:
+                complete_aging(projection, event.id)
+
+
 class AgingRollHandler(EventHandlerBase):
     kind: Literal['aging_roll'] = 'aging_roll'
     roll: int  # 2D result (2-12) before the term-count DM
@@ -272,7 +299,6 @@ class PendingCharacteristicChoice(PendingInputBase):
     amount: int = 1
 
     def event_from_form(self, form: Any) -> Any:
-        from ceres.character.domain.career.career_events import CharacteristicChoiceHandler
         from ceres.character.mechanism.event_base import Event
 
         return Event(
@@ -292,7 +318,6 @@ class PendingSeverelyInjured(PendingInputBase):
     kind: Literal['severely_injured'] = 'severely_injured'
 
     def event_from_form(self, form: Any) -> Any:
-        from ceres.character.domain.career.career_events import CharacteristicChoiceHandler
         from ceres.character.mechanism.event_base import Event
 
         return Event(
@@ -315,7 +340,6 @@ class PendingNearlyKilled(PendingInputBase):
     kind: Literal['nearly_killed'] = 'nearly_killed'
 
     def event_from_form(self, form: Any) -> Any:
-        from ceres.character.domain.career.career_events import CharacteristicChoiceHandler
         from ceres.character.mechanism.event_base import Event
 
         return Event(
@@ -381,7 +405,6 @@ class PendingAgingChoice(PendingInputBase):
     options: list[Chars] = Field(default_factory=list)
 
     def event_from_form(self, form: Any) -> Any:
-        from ceres.character.domain.career.career_events import CharacteristicChoiceHandler
         from ceres.character.mechanism.event_base import Event
 
         return Event(
@@ -399,7 +422,6 @@ class PendingAgingChoiceMental(PendingInputBase):
     options: list[Chars] = Field(default_factory=list)
 
     def event_from_form(self, form: Any) -> Any:
-        from ceres.character.domain.career.career_events import CharacteristicChoiceHandler
         from ceres.character.mechanism.event_base import Event
 
         return Event(

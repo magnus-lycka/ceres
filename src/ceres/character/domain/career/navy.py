@@ -152,7 +152,8 @@ class NavyMishap3Handler(CareerHandlerBase):
             PendingNavyMishap3SkillRoll(
                 pending_id=(event_id, pending_idx),
                 instruction=(
-                    f'Roll {" or ".join(type(o).name() for o in options)} 8+ — success: honourable discharge (keep Benefit); '
+                    f'Roll {" or ".join(type(o).name() for o in options)} '
+                    '8+ — success: honourable discharge (keep Benefit); '
                     'fail: court-martialled (lose Benefit)'
                 ),
                 options=options,
@@ -205,7 +206,8 @@ class NavyEvent10Handler(CareerHandlerBase):
         projection.pending_inputs.append(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
-                instruction='Abuse your position for profit (gain extra Benefit roll) or refuse (DM+2 to next advancement)?',
+                instruction='Abuse your position for profit (gain extra Benefit roll) '
+                'or refuse (DM+2 to next advancement)?',
                 choices=[NavyEvent10Profit(), NavyEvent10Refuse()],
             )
         )
@@ -217,7 +219,8 @@ class Navy(CareerData):
 
     name: ClassVar[str] = 'Navy'
     description: ClassVar[str] = (
-        'Members of the interstellar navy that patrols space between the stars. The navy has the responsibility for the protection of society from foreign powers and lawless elements in the interstellar trade channels.'
+        'Members of the interstellar navy that patrols space between the stars. The navy has the responsibility for '
+        'the protection of society from foreign powers and lawless elements in the interstellar trade channels.'
     )
     qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.INT, target=6)
     allows_assignment_change: ClassVar[bool] = True

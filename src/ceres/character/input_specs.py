@@ -90,11 +90,29 @@ class SelectWorld:
 
 
 @dataclass
-class CareerOption:
-    """A selectable career with its available assignments."""
+class QualificationTarget:
+    """The unmodified characteristic target for entering a career."""
+
+    characteristic: str
+    target: int
+
+
+@dataclass
+class AssignmentOption:
+    """A selectable assignment and its player-facing description."""
 
     name: str
-    assignments: list[str]
+    description: str
+
+
+@dataclass
+class CareerOption:
+    """A selectable career and the information needed to choose it."""
+
+    name: str
+    description: str
+    qualification: QualificationTarget
+    assignments: list[AssignmentOption]
 
 
 @dataclass

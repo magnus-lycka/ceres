@@ -10,6 +10,22 @@ from ceres.character.mechanism.event_base import Event, EventHandlerBase
 from ceres.character.mechanism.pending_input import PendingInputBase
 
 
+def _conditional_characteristic_dms(summary: Any, dms: dict[str, int]) -> int:
+    from ceres.character.domain.characteristics import Chars
+
+    total = 0
+    for key, dm in dms.items():
+        try:
+            char_name, threshold_str = key.split('_', 1)
+            threshold = int(threshold_str.rstrip('+'))
+            characteristic = Chars(char_name)
+        except ValueError, KeyError:
+            continue
+        if summary.characteristics.get(characteristic, 0) >= threshold:
+            total += dm
+    return total
+
+
 def _expand_skill_to_spec_instances(skill: AnySkill) -> list[AnySkill]:
     """Return one instance per spec at Level(1) for specialised skills, or [skill] for unspecialised."""
     from ceres.character.domain.skills import Level
@@ -35,15 +51,21 @@ class PreCareerEntryHandler(EventHandlerBase):
         precareer = load_precareers().get(self.precareer)
         if precareer is None:
             raise ReplayError(f'Unknown pre-career: {self.precareer!r}')
+        if not precareer.is_available(projection.summary):
+            raise ReplayError(f'Pre-career {self.precareer!r} is not available to this character')
         terms_started = projection.summary.terms_started_in_pre_and_careers
         if terms_started >= 3:
             raise ReplayError('Pre-career education is only available in terms 1–3')
         if projection.summary.precareer_completed is not None:
             raise ReplayError('A character may only attend one pre-career')
+        if not precareer.prepare_entry(projection, self.roll, terms_started):
+            queue_career_choice(projection, event.id, 'Pre-career entry failed — choose a career')
+            return
         dm = 0
         if precareer.entry is not None:
             char_val = projection.summary.characteristics.get(precareer.entry.characteristic, 0)
             dm += characteristic_dm(char_val)
+            dm += _conditional_characteristic_dms(projection.summary, precareer.entry_dms)
             term_dm = precareer.entry_term_dms.get(terms_started + 1, 0)
             dm += term_dm
             if precareer.entry_soc_bonus_min is not None:
@@ -227,21 +249,13 @@ class PreCareerGraduationHandler(EventHandlerBase):
         if precareer is None:
             raise ReplayError(f'Unknown pre-career: {precareer_name!r}')
 
-        from ceres.character.domain.characteristics import Chars, characteristic_dm
+        from ceres.character.domain.characteristics import characteristic_dm
 
         graduated = True
         honours = False
         if precareer.graduation is not None:
             dm = characteristic_dm(projection.summary.characteristics.get(precareer.graduation.characteristic, 0))
-            for key, dm_val in precareer.graduation_dms.items():
-                try:
-                    char_name, threshold_str = key.split('_', 1)
-                    threshold = int(threshold_str.rstrip('+'))
-                    char = Chars(char_name)
-                    if projection.summary.characteristics.get(char, 0) >= threshold:
-                        dm += dm_val
-                except ValueError, KeyError:
-                    pass
+            dm += _conditional_characteristic_dms(projection.summary, precareer.graduation_dms)
             effective = self.roll + dm
             graduated = self.roll != 2 and effective >= precareer.graduation.target
             if precareer.honours_target is not None:

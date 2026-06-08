@@ -199,13 +199,17 @@ def load_precareers() -> dict[str, PreCareerData]:
         PsionicCommunityPreCareer(
             name='Psionic Community',
             source='Companion',
+            entry=CharCheck(characteristic=Chars.PSI, target=8),
             entry_requirement='PSI 8+, DM+1 if INT 8+',
+            entry_dms={'INT_8+': 1},
             skill_choices=[
                 PrecareerSkillEntry(skill=skill_instances(ProfessionSkill), level=0),
                 PrecareerSkillEntry(skill=skill_instances(ScienceSkill), level=0),
                 PrecareerSkillEntry(skill=character_skills.Streetwise(), level=0),
             ],
+            graduation=CharCheck(characteristic=Chars.PSI, target=6),
             graduation_requirement='PSI 6+, DM+1 if INT 8+',
+            graduation_dms={'INT_8+': 1},
             honours_target=12,
             graduation_benefits=[
                 'Increase PSI by +1',

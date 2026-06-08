@@ -226,7 +226,8 @@ class CitizenMishap5Handler(CareerHandlerBase):
         projection.pending_inputs.append(
             PendingCitizenMishap5SkillRoll(
                 pending_id=(event_id, pending_idx),
-                instruction='Roll Streetwise 8+: success = increase any existing skill by one level (ejected either way)',
+                instruction='Roll Streetwise 8+: success = increase any '
+                'existing skill by one level (ejected either way)',
                 options=[Streetwise()],
             )
         )
@@ -272,7 +273,8 @@ class Citizen(CareerData):
 
     name: ClassVar[str] = 'Citizen'
     description: ClassVar[str] = (
-        'Individuals serving in a corporation, bureaucracy or industry, or who are making a new life on an untamed planet.'
+        'Individuals serving in a corporation, bureaucracy or industry, '
+        'or who are making a new life on an untamed planet.'
     )
     qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.EDU, target=5)
     allows_assignment_change: ClassVar[bool] = False

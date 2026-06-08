@@ -9,6 +9,7 @@ _CAREER_MODULE_NAMES: dict[str, str] = {
     'NAVY': 'navy',
     'NOBLE': 'noble',
     'PRISONER': 'prisoner',
+    'PSION': 'psion',
     'ROGUE': 'rogue',
     'SCHOLAR': 'scholar',
     'SCOUT': 'scout',

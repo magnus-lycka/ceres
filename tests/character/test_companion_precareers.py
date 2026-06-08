@@ -1,9 +1,13 @@
 """Tests for precareer entry and graduation (core University and Mongoose Traveller Companion precareers)."""
 
+from typing import Literal
+
+from ceres.character.domain.career.career_data import CharCheck
 from ceres.character.domain.career.career_events import PendingCareerChoice
 from ceres.character.domain.character_start import CharacterStartedHandler, UcpHandler
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.connection import Enemy, Rival
+from ceres.character.domain.precareer.loader import load_precareers
 from ceres.character.domain.precareer.precareer_events import (
     PendingPreCareerEvent,
     PendingPreCareerGraduation,
@@ -12,6 +16,13 @@ from ceres.character.domain.precareer.precareer_events import (
     PreCareerEventHandler,
     PreCareerGraduationHandler,
     PreCareerSkillChoiceHandler,
+)
+from ceres.character.domain.psionics import (
+    Clairvoyance,
+    PendingPsionicTalentLevelChoice,
+    Psionics,
+    PsionicTalentLevelHandler,
+    Telepathy,
 )
 from ceres.character.domain.skills import (
     Admin,
@@ -30,7 +41,7 @@ from ceres.character.domain.skills import (
     _level_fields,
 )
 from ceres.character.domain.sophont import HUMANITI
-from ceres.character.mechanism.event_base import Event
+from ceres.character.mechanism.event_base import Event, EventHandlerBase
 from ceres.character.mechanism.replay import replay
 from tests.character.helpers import MOCK_WORLD
 
@@ -43,6 +54,33 @@ def _base():
         ),
         Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='777707')),  # STR=7 DEX=7 END=7 INT=7 EDU=0 SOC=7
     ]
+
+
+class _EstablishPsiForTest(EventHandlerBase):
+    kind: Literal['test_establish_psi_for_precareer'] = 'test_establish_psi_for_precareer'
+
+    def apply(self, projection, event, fulfilled_pending=None) -> None:
+        projection.summary.characteristics[Chars.PSI] = 9
+        projection.summary.psionics = Psionics(talent_acquisition_checks=1)
+
+
+def _psionic_base():
+    return [*_base(), Event(id=0, handler=_EstablishPsiForTest())]
+
+
+class _EstablishTrainedPsiForTest(EventHandlerBase):
+    kind: Literal['test_establish_trained_psi_for_precareer'] = 'test_establish_trained_psi_for_precareer'
+
+    def apply(self, projection, event, fulfilled_pending=None) -> None:
+        projection.summary.characteristics[Chars.PSI] = 9
+        projection.summary.psionics = Psionics(
+            psionic_talent_skills=[Telepathy(), Clairvoyance()],
+            talent_acquisition_checks=5,
+        )
+
+
+def _trained_psionic_base():
+    return [*_base(), Event(id=0, handler=_EstablishTrainedPsiForTest())]
 
 
 def _skill_level(projection, name: str) -> int:
@@ -374,16 +412,32 @@ class TestMerchantAcademy:
 
 
 class TestPsionicCommunity:
+    def test_entry_and_graduation_use_psi_checks_with_int_bonus(self):
+        precareer = load_precareers()['Psionic Community']
+
+        assert precareer.entry == CharCheck(characteristic=Chars.PSI, target=8)
+        assert precareer.entry_dms == {'INT_8+': 1}
+        assert precareer.graduation == CharCheck(characteristic=Chars.PSI, target=6)
+        assert precareer.graduation_dms == {'INT_8+': 1}
+
+    def test_failed_entry_returns_to_career_choice(self):
+        events = [*_psionic_base(), Event(id=3, handler=PreCareerEntryHandler(precareer='Psionic Community', roll=2))]
+
+        projection = replay(1, events)
+
+        assert projection.summary.precareer is None
+        assert any(isinstance(p, PendingCareerChoice) for p in projection.pending_inputs)
+
     def test_entry_auto_grants_streetwise(self):
         # 'Profession' and 'Science' are broad skill categories — they become pending picks, not auto-granted
-        events = [*_base(), Event(id=3, handler=PreCareerEntryHandler(precareer='Psionic Community', roll=5))]
+        events = [*_psionic_base(), Event(id=3, handler=PreCareerEntryHandler(precareer='Psionic Community', roll=7))]
         projection = replay(1, events)
 
         assert _skill_level(projection, 'Streetwise') >= 0, 'Streetwise should be auto-granted at entry'
 
     def test_entry_queues_two_picks_for_profession_and_science_categories(self):
         # 'Profession' and 'Science' in skill_choices are categories; player picks a specialisation each
-        events = [*_base(), Event(id=3, handler=PreCareerEntryHandler(precareer='Psionic Community', roll=5))]
+        events = [*_psionic_base(), Event(id=3, handler=PreCareerEntryHandler(precareer='Psionic Community', roll=7))]
         projection = replay(1, events)
 
         picks = [p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)]
@@ -394,18 +448,35 @@ class TestPsionicCommunity:
         assert any('Profession' in type(o).name() for o in all_options)
         assert any('Science' in type(o).name() for o in all_options)
 
-    def test_entry_queues_graduation_pending_for_text_based_requirement(self):
-        events = [*_base(), Event(id=3, handler=PreCareerEntryHandler(precareer='Psionic Community', roll=5))]
+    def test_entry_queues_graduation_pending(self):
+        events = [*_psionic_base(), Event(id=3, handler=PreCareerEntryHandler(precareer='Psionic Community', roll=7))]
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingPreCareerGraduation) for p in projection.pending_inputs)
 
-    def test_graduation_queues_science_skill_pick_at_level_one(self):
-        # Rules award Science (psionicology) 1; system queues a pick since no Psionicology exists
+    def test_failed_graduation_does_not_grant_graduation_benefits(self):
+        events = [
+            *_trained_psionic_base(),
+            Event(id=3, handler=PreCareerEntryHandler(precareer='Psionic Community', roll=7)),
+            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
+            Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=LifeScience())),
+            Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
+            Event(id=7, fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=2)),
+        ]
+
+        projection = replay(1, events)
+
+        assert projection.summary.characteristics[Chars.PSI] == 9
+        life_science = next(skill for skill in projection.summary.skills if isinstance(skill, LifeScience))
+        assert life_science.psionicology.value == 0
+        assert not any(isinstance(p, PendingPsionicTalentLevelChoice) for p in projection.pending_inputs)
+        assert 'Did not graduate from Psionic Community.' in projection.summary.narrative
+
+    def test_graduation_grants_psionicology_and_queues_possessed_talent_at_level_one(self):
         # Pending IDs: '3.0'=Profession pick, '3.1'=Science pick, '3.2'=event, '3.3'=graduation
         events = [
-            *_base(),
-            Event(id=3, handler=PreCareerEntryHandler(precareer='Psionic Community', roll=5)),
+            *_trained_psionic_base(),
+            Event(id=3, handler=PreCareerEntryHandler(precareer='Psionic Community', roll=7)),
             Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
             Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=LifeScience())),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
@@ -413,16 +484,45 @@ class TestPsionicCommunity:
         ]
         projection = replay(1, events)
 
-        science_picks = [
-            p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice) and p.level == 1
+        life_science = next(skill for skill in projection.summary.skills if isinstance(skill, LifeScience))
+        assert life_science.psionicology.value == 1
+        talent_pick = next(p for p in projection.pending_inputs if isinstance(p, PendingPsionicTalentLevelChoice))
+        assert talent_pick.level == 1
+
+    def test_honours_graduation_raises_all_talents_to_one_and_offers_one_at_level_two(self):
+        events = [
+            *_trained_psionic_base(),
+            Event(id=3, handler=PreCareerEntryHandler(precareer='Psionic Community', roll=7)),
+            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
+            Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=LifeScience())),
+            Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
+            Event(id=7, fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=12)),
         ]
-        assert len(science_picks) == 1
-        assert any(isinstance(o, SpaceScience) for o in science_picks[0].options)
+
+        projection = replay(1, events)
+
+        assert projection.summary.psionics is not None
+        assert projection.summary.psionics.talent_level(Telepathy) == 1
+        assert projection.summary.psionics.talent_level(Clairvoyance) == 1
+        talent_pick = next(p for p in projection.pending_inputs if isinstance(p, PendingPsionicTalentLevelChoice))
+        assert talent_pick.level == 2
+
+        events.append(
+            Event(
+                id=8,
+                fulfills=talent_pick.pending_id,
+                handler=PsionicTalentLevelHandler(talent=Telepathy(), level=2),
+            )
+        )
+        projection = replay(1, events)
+
+        assert projection.summary.psionics is not None
+        assert projection.summary.psionics.talent_level(Telepathy) == 2
 
     def test_graduation_adds_rival_connection(self):
         events = [
-            *_base(),
-            Event(id=3, handler=PreCareerEntryHandler(precareer='Psionic Community', roll=5)),
+            *_psionic_base(),
+            Event(id=3, handler=PreCareerEntryHandler(precareer='Psionic Community', roll=7)),
             Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
             Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=SpaceScience())),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
@@ -435,8 +535,8 @@ class TestPsionicCommunity:
 
     def test_honours_graduation_adds_enemy_not_rival(self):
         events = [
-            *_base(),
-            Event(id=3, handler=PreCareerEntryHandler(precareer='Psionic Community', roll=5)),
+            *_psionic_base(),
+            Event(id=3, handler=PreCareerEntryHandler(precareer='Psionic Community', roll=7)),
             Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
             Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=SpaceScience())),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
@@ -447,10 +547,10 @@ class TestPsionicCommunity:
         assert any(isinstance(c, Enemy) for c in projection.summary.connections)
         assert not any(isinstance(c, Rival) for c in projection.summary.connections)
 
-    def test_graduation_adds_psi_problem_message(self):
+    def test_graduation_increases_psi_and_auto_qualifies_for_psion(self):
         events = [
-            *_base(),
-            Event(id=3, handler=PreCareerEntryHandler(precareer='Psionic Community', roll=5)),
+            *_psionic_base(),
+            Event(id=3, handler=PreCareerEntryHandler(precareer='Psionic Community', roll=7)),
             Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
             Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=SpaceScience())),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
@@ -458,12 +558,13 @@ class TestPsionicCommunity:
         ]
         projection = replay(1, events)
 
-        assert any('PSI' in p for p in projection.summary.problems)
+        assert projection.summary.characteristics[Chars.PSI] == 10
+        assert 'Psion' in projection.auto_qualify_careers
 
     def test_graduation_queues_career_choice(self):
         events = [
-            *_base(),
-            Event(id=3, handler=PreCareerEntryHandler(precareer='Psionic Community', roll=5)),
+            *_psionic_base(),
+            Event(id=3, handler=PreCareerEntryHandler(precareer='Psionic Community', roll=7)),
             Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
             Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=SpaceScience())),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),

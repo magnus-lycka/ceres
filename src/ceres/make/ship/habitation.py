@@ -90,7 +90,7 @@ class LuxuryStateroom(Stateroom):
 
 
 class PsionStateroom(Stateroom):
-    kind: Literal['psion'] = 'psion'
+    kind: Literal['psion_stateroom'] = 'psion_stateroom'
     description: ClassVar[str] = 'Psion Stateroom'
     plural_label: ClassVar[str] = 'Psion Staterooms'
     tl: int = 12

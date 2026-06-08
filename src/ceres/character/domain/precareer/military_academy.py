@@ -3,6 +3,7 @@ from typing import Any
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.precareer.precareer_data import PreCareerData
+from ceres.character.domain.psionics import Psi
 
 
 class MilitaryAcademyPreCareer(PreCareerData):
@@ -19,7 +20,7 @@ class MilitaryAcademyPreCareer(PreCareerData):
             service_table = tied_career.skill_table('service_skills')
             if service_table:
                 for entry in service_table.entries:
-                    if not isinstance(entry, (Chars, list)):
+                    if not isinstance(entry, (Chars, Psi, list)):
                         projection.grant_skill(entry)
         return pending_idx
 

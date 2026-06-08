@@ -265,7 +265,8 @@ class Scout(CareerData):
             homeworld_pending = PendingHomeworldChangeOffered(
                 pending_id=(event_id, homeworld_idx),
                 instruction='You may relocate to a Scout base world. Select a new homeworld (optional).',
-                reason='Scout career: you may choose a world with an Imperial Scout Base (S) or Way Station (W) as your homeworld.',
+                reason='Scout career: you may choose a world with an Imperial Scout Base (S) '
+                'or Way Station (W) as your homeworld.',
                 source_kind='career_entry',
                 source_career='Scout',
                 target_constraints='world_with_scout_base',
@@ -283,7 +284,8 @@ class Scout(CareerData):
 
     name: ClassVar[str] = 'Scout'
     description: ClassVar[str] = (
-        'Members of the exploratory service. Scouts explore new areas, map and survey known or newly discovered areas and maintain communication ships which carry information and messages between the worlds of the galaxy.'
+        'Members of the exploratory service. Scouts explore new areas, map and survey known or newly discovered areas '
+        'and maintain communication ships which carry information and messages between the worlds of the galaxy.'
     )
     qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.INT, target=5)
     allows_assignment_change: ClassVar[bool] = True
@@ -426,7 +428,8 @@ class Scout(CareerData):
             ],
         ),
         5: MishapEntry(
-            text='You have no idea what happened to you — they found your ship drifting on the fringes of friendly space.',
+            text='You have no idea what happened to you — they found '
+            'your ship drifting on the fringes of friendly space.',
             effects=[],
         ),
         6: MishapEntry(

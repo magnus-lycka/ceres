@@ -304,7 +304,8 @@ class Army(CareerData):
 
     name: ClassVar[str] = 'Army'
     description: ClassVar[str] = (
-        'Members of the planetary armed fighting forces. Soldiers deal with planetary surface actions, battles and campaigns. Such individuals may also be mercenaries for hire.'
+        'Members of the planetary armed fighting forces. Soldiers deal with planetary surface actions, '
+        'battles and campaigns. Such individuals may also be mercenaries for hire.'
     )
     qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.END, target=5)
     allows_assignment_change: ClassVar[bool] = True
@@ -442,25 +443,34 @@ class Army(CareerData):
 
     mishaps: ClassVar[dict[int, MishapEntry]] = {
         1: MishapEntry(
-            text='Severely injured in action (this is the same as a result of 2 on the Injury table). Alternatively, roll twice on the Injury table and take the lower result.',
+            text='Severely injured in action (this is the same as a result of 2 on the Injury table). '
+            'Alternatively, roll twice on the Injury table and take the lower result.',
             defer_ejection=True,
             effects=[ArmyMishap1Handler()],
         ),
         2: MishapEntry(
-            text='Your unit is slaughtered in a disastrous battle, for which you blame your commander. Gain them as an Enemy as they have you removed from the service.',
+            text='Your unit is slaughtered in a disastrous battle, for which you blame your commander. '
+            'Gain them as an Enemy as they have you removed from the service.',
             effects=[GainEnemyEffect()],
         ),
         3: MishapEntry(
-            text='You are sent to a very unpleasant region (jungle, swamp, desert, icecap, urban) to battle against guerrilla fighters and rebels. You are discharged because of stress, injury or because the government wishes to bury the whole incident. Increase Recon or Survival by one level but also gain the rebels as an Enemy.',
+            text='You are sent to a very unpleasant region (jungle, swamp, desert, icecap, urban) to battle against '
+            'guerrilla fighters and rebels. You are discharged because of stress, injury or because the '
+            'government wishes to bury the whole incident. Increase Recon or Survival by one level but also gain '
+            'the rebels as an Enemy.',
             effects=[GainEnemyEffect(), SkillChoiceEffect(options=[Recon(), Survival()], level=1)],
         ),
         4: MishapEntry(
-            text='You discover that your commanding officer is engaged in some illegal activity, such as weapon smuggling. You can join their ring and gain them as an Ally before the inevitable investigation gets you discharged or you can co-operate with the military police – the official whitewash gets you discharged anyway but you may keep your Benefit roll from this term of service.',
+            text='You discover that your commanding officer is engaged in some illegal activity, such as weapon '
+            'smuggling. You can join their ring and gain them as an Ally before the inevitable investigation '
+            'gets you discharged or you can co-operate with the military police – the official whitewash gets '
+            'you discharged anyway but you may keep your Benefit roll from this term of service.',
             defer_ejection=True,
             effects=[ArmyMishap4Handler()],
         ),
         5: MishapEntry(
-            text='You are tormented by or quarrel with an officer or fellow soldier. Gain that officer as a Rival as they drive you out of the service.',
+            text='You are tormented by or quarrel with an officer or fellow soldier. '
+            'Gain that officer as a Rival as they drive you out of the service.',
             effects=[GainRivalEffect()],
         ),
         6: MishapEntry(
@@ -475,11 +485,13 @@ class Army(CareerData):
             effects=[RollMishapEffect(leave=False)],
         ),
         3: CareerEventEntry(
-            text='You are assigned to a planet with a hostile or wild environment. Gain one of Vacc Suit 1, Engineer 1, Animals (riding or training) 1 or Recon 1.',
+            text='You are assigned to a planet with a hostile or wild environment. '
+            'Gain one of Vacc Suit 1, Engineer 1, Animals (riding or training) 1 or Recon 1.',
             effects=[SkillChoiceEffect(options=[VaccSuit(), Engineer(), Animals(), Recon()], level=1)],
         ),
         4: CareerEventEntry(
-            text='You are assigned to an urbanised planet torn by war. Gain one of Stealth 1, Streetwise 1, Persuade 1 or Recon 1.',
+            text='You are assigned to an urbanised planet torn by war. '
+            'Gain one of Stealth 1, Streetwise 1, Persuade 1 or Recon 1.',
             effects=[SkillChoiceEffect(options=[Stealth(), Streetwise(), Persuade(), Recon()], level=1)],
         ),
         5: CareerEventEntry(
@@ -487,7 +499,8 @@ class Army(CareerData):
             effects=[BenefitDmEffect(amount=1)],
         ),
         6: CareerEventEntry(
-            text='You are thrown into a brutal ground war. Roll EDU 8+ to avoid injury; if you succeed, you gain one level in Gun Combat or Leadership.',
+            text='You are thrown into a brutal ground war. Roll EDU 8+ to avoid injury; '
+            'if you succeed, you gain one level in Gun Combat or Leadership.',
             effects=[ArmyEvent6Handler()],
         ),
         7: CareerEventEntry(
@@ -495,11 +508,13 @@ class Army(CareerData):
             effects=[LifeEventEffect()],
         ),
         8: CareerEventEntry(
-            text='You are given advanced training in a specialist field. Roll EDU 8+ to increase any one skill you already have by one level.',
+            text='You are given advanced training in a specialist field. '
+            'Roll EDU 8+ to increase any one skill you already have by one level.',
             effects=[ArmyEvent8Handler()],
         ),
         9: CareerEventEntry(
-            text='Surrounded and outnumbered by the enemy, you hold out until relief arrives. Gain DM+2 to your next advancement roll.',
+            text='Surrounded and outnumbered by the enemy, you hold out until relief arrives. '
+            'Gain DM+2 to your next advancement roll.',
             effects=[AdvancementDmEffect(amount=2)],
         ),
         10: CareerEventEntry(
@@ -507,7 +522,8 @@ class Army(CareerData):
             effects=[SkillChoiceEffect(options=[Admin(), Investigate(), Deception(), Recon()], level=1)],
         ),
         11: CareerEventEntry(
-            text='Your commanding officer takes an interest in your career. Either gain Tactics (military) 1 or DM+4 to your next advancement roll thanks to their aid.',
+            text='Your commanding officer takes an interest in your career. Either gain Tactics (military) 1 or '
+            'DM+4 to your next advancement roll thanks to their aid.',
             effects=[ArmyEvent11Handler()],
         ),
         12: CareerEventEntry(

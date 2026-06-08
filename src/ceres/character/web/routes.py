@@ -11,7 +11,6 @@ from fastapi.templating import Jinja2Templates
 import httpx
 
 from ceres.adapters.travellermap import TravellerMapWorld, fetch_world
-from ceres.character.domain.career.career_events import PendingCareerChoice
 from ceres.character.domain.career.loader import load_careers
 from ceres.character.domain.character_state import CharacterProjection, diff_summaries
 from ceres.character.domain.precareer.loader import load_precareers
@@ -145,8 +144,7 @@ def _projection_context(projection: CharacterProjection, character_id: int) -> d
     enriched_inputs = []
     for pi in projection.pending_inputs[:1]:
         input_specs = pi.input_specs(projection)
-        extra: dict[str, Any] = {'careers': careers} if isinstance(pi, PendingCareerChoice) else {}
-        enriched_inputs.append({'input': pi, 'input_specs': input_specs, 'extra': extra})
+        enriched_inputs.append({'input': pi, 'input_specs': input_specs, 'extra': {}})
 
     return {
         'projection': projection,
@@ -294,7 +292,8 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
                 request=request,
                 name='sector_picker.html',
                 context={
-                    'error': f'Could not load sector "{sector_abbreviation}": TravellerMap did not respond in time. Please try again.',
+                    'error': f'Could not load sector "{sector_abbreviation}": TravellerMap '
+                    'did not respond in time. Please try again.',
                     'back_url': back_url,
                     'picker_state': [],
                 },

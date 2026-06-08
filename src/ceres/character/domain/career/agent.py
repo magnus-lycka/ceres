@@ -244,7 +244,8 @@ class PendingAgentEvent3SkillRoll(CareerSkillRollPendingBase):
             projection.pending_inputs.append(
                 PendingMishap(
                     pending_id=(event.id, 0),
-                    instruction='Investigation went wrong: roll 1D on Mishap table (you are not ejected from this career)',
+                    instruction='Investigation went wrong: roll 1D on Mishap table '
+                    '(you are not ejected from this career)',
                 )
             )
 
@@ -407,7 +408,8 @@ class AgentEvent11Handler(CareerHandlerBase):
         projection.pending_inputs.append(
             PendingAgentEvent11SkillChoice(
                 pending_id=(event_id, pending_idx),
-                instruction='Senior agent mentor: increase Investigate by one level or DM+4 to your next advancement roll',
+                instruction='Senior agent mentor: increase Investigate by one '
+                'level or DM+4 to your next advancement roll',
                 options=[Investigate(), AdvancementDmOption()],
             )
         )
@@ -549,7 +551,8 @@ class Agent(CareerData):
 
     mishaps: ClassVar[dict[int, MishapEntry]] = {
         1: MishapEntry(
-            text='Severely injured (this is the same as a result of 2 on the Injury table). Alternatively, roll twice on the Injury table and take the lower result.',
+            text='Severely injured (this is the same as a result of 2 on the Injury table). '
+            'Alternatively, roll twice on the Injury table and take the lower result.',
             defer_ejection=True,
             effects=[AgentMishap1Handler()],
         ),
@@ -573,7 +576,8 @@ class Agent(CareerData):
             effects=[AgentMishap3Handler()],
         ),
         4: MishapEntry(
-            text='You learn something you should not know and people want to kill you for it. Gain an Enemy and Deception 1.',
+            text='You learn something you should not know and people want to kill you for it. '
+            'Gain an Enemy and Deception 1.',
             effects=[GainEnemyEffect(), GainSkillEffect(skill=Deception(level=Level(value=1)))],
         ),
         5: MishapEntry(
@@ -604,7 +608,8 @@ class Agent(CareerData):
             effects=[AgentEvent3Handler()],
         ),
         4: CareerEventEntry(
-            text='You complete a mission for your superiors and are suitably rewarded. Gain DM+1 to any one Benefit roll from this career.',
+            text='You complete a mission for your superiors and are suitably rewarded. '
+            'Gain DM+1 to any one Benefit roll from this career.',
             effects=[BenefitDmEffect(amount=1)],
         ),
         5: CareerEventEntry(
@@ -612,7 +617,8 @@ class Agent(CareerData):
             effects=[GainConnectionsRolledEffect(connection_type=ConnectionKind.CONTACT, dice='d3')],
         ),
         6: CareerEventEntry(
-            text='You are given advanced training in a specialist field. Roll EDU 8+ to increase any one skill you already have by one level.',
+            text='You are given advanced training in a specialist field. '
+            'Roll EDU 8+ to increase any one skill you already have by one level.',
             effects=[AgentEvent6Handler()],
         ),
         7: CareerEventEntry(
@@ -636,7 +642,8 @@ class Agent(CareerData):
             effects=[SkillChoiceEffect(options=[Drive(), Flyer(), Pilot(), Gunner()], level=1)],
         ),
         11: CareerEventEntry(
-            text='You are befriended by a senior agent. Either increase Investigate by one level or DM+4 to an advancement roll thanks to their aid.',
+            text='You are befriended by a senior agent. Either increase Investigate by one level or DM+4 to an '
+            'advancement roll thanks to their aid.',
             effects=[AgentEvent11Handler()],
         ),
         12: CareerEventEntry(

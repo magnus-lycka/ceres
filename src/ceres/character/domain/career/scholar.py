@@ -364,7 +364,8 @@ class Scholar(CareerData):
 
     name: ClassVar[str] = 'Scholar'
     description: ClassVar[str] = (
-        'Individuals trained in technological or research sciences who conduct scientific investigations into materials, situations and phenomena, or who practise medicine.'
+        'Individuals trained in technological or research sciences who conduct scientific '
+        'investigations into materials, situations and phenomena, or who practise medicine.'
     )
     qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.INT, target=6)
     allows_assignment_change: ClassVar[bool] = True
@@ -497,7 +498,8 @@ class Scholar(CareerData):
             effects=[InjuryEffect(severity='severe')],
         ),
         2: MishapEntry(
-            text='A disaster leaves several injured and others blame you, forcing you to leave your career. Gain a Rival.',
+            text='A disaster leaves several injured and others blame you, '
+            'forcing you to leave your career. Gain a Rival.',
             effects=[InjuryEffect(severity='from_table'), GainRivalEffect()],
         ),
         3: MishapEntry(

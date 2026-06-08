@@ -63,6 +63,7 @@ class PreCareerData(TermData):
     duration_years: int = 4
     entry: CharCheck | None = None
     entry_requirement: str | None = None
+    entry_dms: dict[str, int] = {}
     entry_term_dms: dict[int, int] = {}
     entry_soc_bonus_min: int | None = None
     entry_soc_bonus: int = 0
@@ -82,6 +83,10 @@ class PreCareerData(TermData):
 
     def is_available(self, summary: CharacterSummary) -> bool:
         """Return True if this precareer is available for the given character."""
+        return True
+
+    def prepare_entry(self, projection: CharacterProjection, roll: int, terms_started: int) -> bool:
+        """Apply pre-career-specific entry preparation and return whether entry succeeds."""
         return True
 
     def apply_entry(

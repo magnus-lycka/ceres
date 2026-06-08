@@ -134,6 +134,13 @@
 </div>
 {% endif %}
 
+{% if summary.psionics and summary.psionics.psionic_talent_skills %}
+<div class="mb-6">
+  <h2 class="text-xs uppercase tracking-widest text-gray-600 mb-3">Psionic Talents</h2>
+  <p class="text-sm text-gray-300 leading-relaxed">{{ summary.psionics.psionic_talent_skills | format_skills }}</p>
+</div>
+{% endif %}
+
 {# Benefits & Cash #}
 {% if summary.cash or summary.benefits %}
 <div class="mb-6">

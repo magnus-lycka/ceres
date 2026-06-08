@@ -740,7 +740,7 @@ Event 7 - 4, tranferred, escape implies forced homeworld change if starport
 
 #### Psion
 
-Changing Homeworld allowed every term if starport
+Changing Homeworld allowed every term if starport (I.e. starport class not X)
 
 ---
 

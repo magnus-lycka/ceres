@@ -206,7 +206,8 @@ class Merchant(CareerData):
 
     name: ClassVar[str] = 'Merchant'
     description: ClassVar[str] = (
-        'Members of a commercial enterprise. Merchants may crew the ships of the huge trading corporations or they may work for independent free traders who carry chance cargoes and passengers between worlds.'
+        'Members of a commercial enterprise. Merchants may crew the ships of the huge trading corporations or they '
+        'may work for independent free traders who carry chance cargoes and passengers between worlds.'
     )
     qualification: ClassVar[CharCheck] = CharCheck(characteristic=Chars.INT, target=4)
     allows_assignment_change: ClassVar[bool] = False
@@ -346,11 +347,13 @@ class Merchant(CareerData):
             effects=[InjuryEffect(severity='severe')],
         ),
         2: MishapEntry(
-            text='You are bankrupted by a rival. You lose all Benefits from this career and gain the other trader as a Rival.',
+            text='You are bankrupted by a rival. You lose all Benefits from '
+            'this career and gain the other trader as a Rival.',
             effects=[GainRivalEffect()],
         ),
         3: MishapEntry(
-            text='A sudden war destroys your trade routes and contacts, forcing you to flee that region of space. Gain Gun Combat 1 or Pilot 1.',
+            text='A sudden war destroys your trade routes and contacts, forcing you to '
+            'flee that region of space. Gain Gun Combat 1 or Pilot 1.',
             effects=[SkillChoiceEffect(options=[GunCombat(), Pilot()], level=1)],
         ),
         4: MishapEntry(
@@ -404,7 +407,8 @@ class Merchant(CareerData):
             effects=[LifeEventEffect()],
         ),
         8: CareerEventEntry(
-            text='You are embroiled in legal trouble. Gain a skill; roll 2D — on a natural 2 you must take Prisoner next term.',
+            text='You are embroiled in legal trouble. Gain a skill; roll 2D — '
+            'on a natural 2 you must take Prisoner next term.',
             effects=[MerchantEvent8Handler()],
         ),
         9: CareerEventEntry(

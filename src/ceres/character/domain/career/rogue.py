@@ -206,7 +206,8 @@ class RogueEvent3Handler(CareerHandlerBase):
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction=(
-                    'Defend yourself (roll Advocate 8+: success = cleared, fail = ejected + must take Prisoner next term) '
+                    'Defend yourself (roll Advocate 8+: success = cleared, '
+                    'fail = ejected + must take Prisoner next term) '
                     'or hire a lawyer (lose one Benefit roll, career continues)?'
                 ),
                 choices=[RogueEvent3Defend(), RogueEvent3Lawyer()],
@@ -247,7 +248,8 @@ class RogueEvent6Handler(CareerHandlerBase):
         projection.pending_inputs.append(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
-                instruction='Backstab the fellow rogue (DM+2 to next advancement, gain Enemy) or refuse (gain a Contact instead)?',
+                instruction='Backstab the fellow rogue (DM+2 to next advancement, gain Enemy) '
+                'or refuse (gain a Contact instead)?',
                 choices=[RogueEvent6Backstab(), RogueEvent6Refuse()],
             )
         )

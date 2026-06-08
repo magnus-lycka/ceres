@@ -10,15 +10,34 @@ from typing import Annotated, Any, ClassVar, Literal, cast
 from pydantic import Field, SerializeAsAny, TypeAdapter
 
 from ceres.character.domain.benefits import AnyBenefit
-from ceres.character.domain.career.career_data import AdvancementDmOption, AssignmentData, CareerData, SkillTableOption
+from ceres.character.domain.career.career_data import (
+    AdvancementDmOption,
+    AssignmentData,
+    CareerData,
+    CareerSkillOption,
+    SkillTableOption,
+)
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind, characteristic_dm
+from ceres.character.domain.psionics import PendingLifeEventPsionicsRoll, Psi, PsionicTalentTrainingHandler
 from ceres.character.domain.skills import (
     AnySkill,
     SpaceScience,
     _level_fields,
 )
-from ceres.character.input_specs import InputSpec, NumberEntry, Reference, Select, form_int, form_str, literal
+from ceres.character.input_specs import (
+    AssignmentOption,
+    CareerChoice,
+    CareerOption,
+    InputSpec,
+    NumberEntry,
+    QualificationTarget,
+    Reference,
+    Select,
+    form_int,
+    form_str,
+    literal,
+)
 from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event, EventHandlerBase
 from ceres.character.mechanism.pending_input import ChoiceBase, PendingInputBase
@@ -31,6 +50,8 @@ def _skill_option_label(opt: Any) -> str:
 
     if isinstance(opt, AdvancementDmOption):
         return opt.label()
+    if isinstance(opt, Psi):
+        return type(opt.talent).name()
     skill_cls = type(opt)
     fields = _level_fields(skill_cls)
     if len(fields) > 1:
@@ -116,12 +137,11 @@ class MishapHandler(EventHandlerBase):
             projection.summary.narrative.append(f'Mishap ({career.name}): {mishap.text}')
             for effect in mishap.effects:
                 if isinstance(effect, DecreaseCharacteristicChoiceEffect):
+                    characteristic = ', '.join(c.value for c in effect.options)
                     projection.pending_inputs.append(
                         PendingCharacteristicChoice(
                             pending_id=(event.id, pending_idx),
-                            instruction=(
-                                f'Choose characteristic to decrease by {effect.amount}: {", ".join(c.value for c in effect.options)}'
-                            ),
+                            instruction=(f'Choose characteristic to decrease by {effect.amount}: {characteristic}'),
                             options=effect.options,
                             amount=effect.amount,
                         )
@@ -138,10 +158,11 @@ class MishapHandler(EventHandlerBase):
                     )
                     pending_idx += 1
                 elif isinstance(effect, SkillChoiceEffect):
+                    skills = ', '.join(_skill_option_label(o) for o in effect.options)
                     projection.pending_inputs.append(
                         PendingSkillChoice(
                             pending_id=(event.id, pending_idx),
-                            instruction=f'Choose one skill: {", ".join(_skill_option_label(o) for o in effect.options)}',
+                            instruction=f'Choose one skill: {skills}',
                             options=effect.options,
                         )
                     )
@@ -282,10 +303,11 @@ class TermEventHandler(EventHandlerBase):
                 PendingLifeEvent(pending_id=(event.id, pending_idx), instruction='Roll 2D on Life Events table')
             )
         elif skill_choice_effect is not None:
+            skills = ', '.join(_skill_option_label(o) for o in skill_choice_effect.options)
             projection.pending_inputs.append(
                 PendingSkillChoice(
                     pending_id=(event.id, pending_idx),
-                    instruction=f'Choose one skill: {", ".join(_skill_option_label(o) for o in skill_choice_effect.options)}',
+                    instruction=f'Choose one skill: {skills}',
                     options=skill_choice_effect.options,
                 )
             )
@@ -559,9 +581,11 @@ class SkillTableHandler(EventHandlerBase):
             raise ReplayError(f'Skill table roll must be 1-6, got {self.roll}')
         entry = table.entries[self.roll - 1]
         assignment_index = projection.summary.current_assignment
-        choices: list[AnySkill] | None = None
+        choices: list[CareerSkillOption] | None = None
         if isinstance(entry, list):
-            choices = cast(list[AnySkill], list(entry))
+            choices = cast(list[CareerSkillOption], list(entry))
+        elif isinstance(entry, Psi):
+            choices = [entry]
         elif not isinstance(entry, _Chars):
             skill_cls = type(entry)
             fields = _level_fields(skill_cls)
@@ -575,8 +599,8 @@ class SkillTableHandler(EventHandlerBase):
         if choices:
             new_pending = PendingSkillTableChoice(
                 pending_id=(event.id, 0),
-                instruction=f'Choose one skill: {", ".join(type(s).name() for s in choices)}',
-                options=cast(list[AnySkill | AdvancementDmOption], choices),
+                instruction=f'Choose one skill: {", ".join(_skill_option_label(s) for s in choices)}',
+                options=cast(list[CareerSkillOption | AdvancementDmOption], choices),
                 reenlist_queued=reenlist_queued,
             )
             if reenlist_queued:
@@ -598,42 +622,6 @@ class SkillTableHandler(EventHandlerBase):
             _apply_skill_table_entry(projection, entry)
             if not reenlist_queued:
                 projection.pending_inputs.append(_survive_pending(career, assignment_index, event.id))
-
-
-# ── Characteristic Choice ──────────────────────────────────────────────────────
-
-
-class CharacteristicChoiceHandler(EventHandlerBase):
-    kind: Literal['characteristic_choice'] = 'characteristic_choice'
-    characteristic: Chars
-    amount: int = 1
-
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
-        from ceres.character.domain.health.health_events import (
-            PendingAgingChoice,
-            PendingAgingChoiceMental,
-            PendingNearlyKilled,
-            check_aging_crisis,
-            complete_aging,
-        )
-
-        char = self.characteristic
-        current = projection.summary.characteristics.get(char, 0)
-        projection.summary.characteristics[char] = max(0, current - self.amount)
-        if isinstance(fulfilled_pending, PendingNearlyKilled):
-            for other in (Chars.STR, Chars.DEX, Chars.END):
-                if other != char:
-                    projection.summary.characteristics[other] = max(
-                        0, projection.summary.characteristics.get(other, 0) - 2
-                    )
-        elif isinstance(fulfilled_pending, (PendingAgingChoice, PendingAgingChoiceMental)) and not (
-            check_aging_crisis(projection, event.id)
-        ):
-            remaining = [
-                p for p in projection.pending_inputs if isinstance(p, (PendingAgingChoice, PendingAgingChoiceMental))
-            ]
-            if not remaining:
-                complete_aging(projection, event.id)
 
 
 # ── Connections Roll ───────────────────────────────────────────────────────────
@@ -888,22 +876,6 @@ class BetrayalConvertHandler(EventHandlerBase):
         connections[self.connection_index] = make_connection(self.new_kind, source=f'Betrayal: {old.source}')
 
 
-class PsiStrengthTestHandler(EventHandlerBase):
-    kind: Literal['psi_strength_test'] = 'psi_strength_test'
-    roll: int  # 2D6 roll
-
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
-        age = projection.summary.age
-        psi = max(0, self.roll - max(0, (age - 18) // 4))
-        projection.summary.characteristics[Chars.PSI] = psi
-        if psi >= 9:
-            projection.summary.narrative.append(
-                f'Psionic experience: PSI {psi} — qualifies to take the Psion career (not yet implemented)'
-            )
-        else:
-            projection.summary.narrative.append(f'Psionic experience: PSI {psi} — no significant psionic talent')
-
-
 # ── Muster Out ─────────────────────────────────────────────────────────────────
 
 
@@ -1064,8 +1036,8 @@ class ParoleRollHandler(EventHandlerBase):
 # ── TypeAdapters for skill serialization ──────────────────────────────────────
 
 _skill_adapter: TypeAdapter[AnySkill] = TypeAdapter(AnySkill)
-_adv_dm_or_skill_adapter: TypeAdapter[AdvancementDmOption | AnySkill] = TypeAdapter(
-    Annotated[AdvancementDmOption | AnySkill, Field(union_mode='left_to_right')]
+_adv_dm_or_skill_adapter: TypeAdapter[AdvancementDmOption | Psi | AnySkill] = TypeAdapter(
+    Annotated[AdvancementDmOption | Psi | AnySkill, Field(union_mode='left_to_right')]
 )
 
 # ── Skill-choice option builder ───────────────────────────────────────────────
@@ -1073,13 +1045,16 @@ _adv_dm_or_skill_adapter: TypeAdapter[AdvancementDmOption | AnySkill] = TypeAdap
 
 def _build_skill_select_options(
     projection: CharacterProjection,
-    options: Sequence[AnySkill | AdvancementDmOption],
+    options: Sequence[CareerSkillOption | AdvancementDmOption],
     level: int | None,
 ) -> list[tuple[str, str]]:
     results: list[tuple[str, str]] = []
     for opt in options:
         if isinstance(opt, AdvancementDmOption):
             results.append((opt.label(), opt.model_dump_json()))
+            continue
+        if isinstance(opt, Psi):
+            results.append((type(opt.talent).name(), opt.model_dump_json()))
             continue
         skill_cls = type(opt)
         skill_name = skill_cls.name()
@@ -1111,7 +1086,10 @@ def _rank_bonus_skill(bonus: Any) -> AnySkill:
     fields = _level_fields(skill_cls)
     if len(fields) == 1:
         return skill_cls(**{fields[0]: _Level(value=bonus.level)})
-    return skill_cls(**{f: _Level(value=bonus.level) for f in fields})
+    active_fields = [field for field in fields if getattr(bonus.skill, field).value > 0]
+    if len(active_fields) != 1:
+        raise ReplayError(f'Specialised rank bonus {skill_cls.name()} requires one chosen specialisation')
+    return skill_cls(**{active_fields[0]: _Level(value=bonus.level)})
 
 
 def _apply_auto_advance(projection: Any, career: Any, event_id: int) -> None:
@@ -1172,6 +1150,8 @@ def _apply_skill_table_entry(projection: Any, entry: Any) -> None:
 
     if isinstance(entry, _Chars):
         projection.summary.characteristics[entry] = projection.summary.characteristics.get(entry, 0) + 1
+    elif isinstance(entry, Psi):
+        raise ReplayError('Psionic talent table entries require a training check')
     else:
         projection.increment_skill(entry)
 
@@ -1465,7 +1445,26 @@ class PendingCareerChoice(PendingInputBase):
         )
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
-        return []
+        return [
+            CareerChoice(
+                career_options=[
+                    CareerOption(
+                        name=career.name,
+                        description=career.description,
+                        qualification=QualificationTarget(
+                            characteristic=career.qualification.characteristic.value,
+                            target=career.qualification.target,
+                        ),
+                        assignments=[
+                            AssignmentOption(name=assignment.name, description=assignment.description)
+                            for assignment in career.assignments
+                        ],
+                    )
+                    for career in self.options
+                ],
+                can_finish=bool(projection.summary.career_terms),
+            )
+        ]
 
 
 class PendingDraftChoice(PendingInputBase):
@@ -1771,7 +1770,7 @@ class PendingSkillChoice(PendingInputBase):
 
 class PendingInitialTrainingChoice(PendingInputBase):
     kind: Literal['initial_training_choice'] = 'initial_training_choice'
-    options: list[AnySkill | AdvancementDmOption] = Field(default_factory=list)
+    options: Sequence[CareerSkillOption | AdvancementDmOption] = Field(default_factory=list)
 
     model_config = {'arbitrary_types_allowed': True}
 
@@ -1781,14 +1780,38 @@ class PendingInitialTrainingChoice(PendingInputBase):
         parsed = _adv_dm_or_skill_adapter.validate_json(form_str(form, 'skill', '{}'))
         if isinstance(parsed, AdvancementDmOption):
             return Event(fulfills=self.pending_id, handler=AdvancementDmChoiceHandler())
+        if isinstance(parsed, Psi):
+            return Event(
+                fulfills=self.pending_id,
+                handler=PsionicTalentTrainingHandler(talent=parsed.talent, roll=form_int(form, 'roll', 2)),
+            )
         return Event(fulfills=self.pending_id, handler=SkillChoiceHandler(skill=cast(AnySkill, parsed)))
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
         options = _build_skill_select_options(projection, self.options, 0)
-        return [Select(name='skill', label='Choose a skill', options=options)]
+        specs: list[InputSpec] = [Select(name='skill', label='Choose a skill', options=options)]
+        if any(isinstance(option, Psi) for option in self.options):
+            specs.append(
+                NumberEntry(
+                    name='roll',
+                    label='Psionic talent acquisition roll (2D, only for an untrained talent)',
+                    min=2,
+                    max=12,
+                )
+            )
+        return specs
 
     def on_skill_chosen(self, projection: Any, event: Any) -> None:
         projection.grant_skill(event.skill)
+        remaining = [p for p in projection.pending_inputs if isinstance(p, PendingInitialTrainingChoice)]
+        if not remaining and projection.summary.current_career is not None:
+            career = projection.get_current_career()
+            projection.pending_inputs.append(_survive_pending(career, projection.summary.current_assignment, event.id))
+
+    def on_psi_chosen(self, projection: Any, event: Any) -> None:
+        self._complete_training(projection, event)
+
+    def _complete_training(self, projection: Any, event: Any) -> None:
         remaining = [p for p in projection.pending_inputs if isinstance(p, PendingInitialTrainingChoice)]
         if not remaining and projection.summary.current_career is not None:
             career = projection.get_current_career()
@@ -1798,7 +1821,7 @@ class PendingInitialTrainingChoice(PendingInputBase):
 class PendingSkillTableChoice(PendingInputBase):
     kind: Literal['skill_table_choice'] = 'skill_table_choice'
     reenlist_queued: bool = False
-    options: list[AnySkill | AdvancementDmOption] = Field(default_factory=list)
+    options: Sequence[CareerSkillOption | AdvancementDmOption] = Field(default_factory=list)
 
     model_config = {'arbitrary_types_allowed': True}
 
@@ -1808,14 +1831,34 @@ class PendingSkillTableChoice(PendingInputBase):
         parsed = _adv_dm_or_skill_adapter.validate_json(form_str(form, 'skill', '{}'))
         if isinstance(parsed, AdvancementDmOption):
             return Event(fulfills=self.pending_id, handler=AdvancementDmChoiceHandler())
+        if isinstance(parsed, Psi):
+            return Event(
+                fulfills=self.pending_id,
+                handler=PsionicTalentTrainingHandler(talent=parsed.talent, roll=form_int(form, 'roll', 2)),
+            )
         return Event(fulfills=self.pending_id, handler=SkillChoiceHandler(skill=cast(AnySkill, parsed)))
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
         options = _build_skill_select_options(projection, self.options, None)
-        return [Select(name='skill', label='Choose a skill', options=options)]
+        specs: list[InputSpec] = [Select(name='skill', label='Choose a skill', options=options)]
+        if any(isinstance(option, Psi) for option in self.options):
+            specs.append(
+                NumberEntry(
+                    name='roll',
+                    label='Psionic talent acquisition roll (2D, only for an untrained talent)',
+                    min=2,
+                    max=12,
+                )
+            )
+        return specs
 
     def on_skill_chosen(self, projection: Any, event: Any) -> None:
         projection.grant_skill(event.skill)
+        if projection.summary.current_career is not None and not self.reenlist_queued:
+            career = projection.get_current_career()
+            projection.pending_inputs.append(_survive_pending(career, projection.summary.current_assignment, event.id))
+
+    def on_psi_chosen(self, projection: Any, event: Any) -> None:
         if projection.summary.current_career is not None and not self.reenlist_queued:
             career = projection.get_current_career()
             projection.pending_inputs.append(_survive_pending(career, projection.summary.current_assignment, event.id))
@@ -1824,7 +1867,8 @@ class PendingSkillTableChoice(PendingInputBase):
 class PendingRankBonusChoice(PendingInputBase):
     kind: Literal['rank_bonus_choice'] = 'rank_bonus_choice'
     level: int
-    options: list[AnySkill | AdvancementDmOption] = Field(default_factory=list)
+    options: Sequence[CareerSkillOption | AdvancementDmOption] = Field(default_factory=list)
+    continue_career_progress: bool = True
 
     model_config = {'arbitrary_types_allowed': True}
 
@@ -1834,14 +1878,42 @@ class PendingRankBonusChoice(PendingInputBase):
         parsed = _adv_dm_or_skill_adapter.validate_json(form_str(form, 'skill', '{}'))
         if isinstance(parsed, AdvancementDmOption):
             return Event(fulfills=self.pending_id, handler=AdvancementDmChoiceHandler())
+        if isinstance(parsed, Psi):
+            return Event(
+                fulfills=self.pending_id,
+                handler=PsionicTalentTrainingHandler(talent=parsed.talent, roll=form_int(form, 'roll', 2)),
+            )
         return Event(fulfills=self.pending_id, handler=SkillChoiceHandler(skill=cast(AnySkill, parsed)))
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
         options = _build_skill_select_options(projection, self.options, self.level)
-        return [Select(name='skill', label='Choose a skill', options=options)]
+        specs: list[InputSpec] = [Select(name='skill', label='Choose a skill', options=options)]
+        if any(isinstance(option, Psi) for option in self.options):
+            specs.append(
+                NumberEntry(
+                    name='roll',
+                    label='Psionic talent acquisition roll (2D, only for an untrained talent)',
+                    min=2,
+                    max=12,
+                )
+            )
+        return specs
 
     def on_skill_chosen(self, projection: Any, event: Any) -> None:
         projection.grant_skill(event.skill)
+        if not self.continue_career_progress:
+            return
+        career = projection.get_current_career()
+        edu = projection.summary.characteristics.get(Chars.EDU, 0)
+        tables = career.available_tables(edu, projection.summary.current_assignment)
+        projection.pending_inputs.append(
+            PendingSkillTable(pending_id=(event.id, 0), instruction='Choose a skill table and roll 1D', options=tables)
+        )
+        queue_reenlist_or_aging(projection, event.id, 1)
+
+    def on_psi_chosen(self, projection: Any, event: Any) -> None:
+        if not self.continue_career_progress:
+            return
         career = projection.get_current_career()
         edu = projection.summary.characteristics.get(Chars.EDU, 0)
         tables = career.available_tables(edu, projection.summary.current_assignment)
@@ -1954,18 +2026,6 @@ class PendingLifeEventBetrayalConvert(PendingInputBase):
         if not options:
             options = [('Gain Rival', f'0|{ConnectionKind.RIVAL.value}')]
         return [Select(name='betrayal_choice', label='Convert connection', options=options)]
-
-
-class PendingLifeEventPsionicsRoll(PendingInputBase):
-    kind: Literal['life_event_psionics_roll'] = 'life_event_psionics_roll'
-
-    def event_from_form(self, form: Any) -> Any:
-        from ceres.character.mechanism.event_base import Event
-
-        return Event(fulfills=self.pending_id, handler=PsiStrengthTestHandler(roll=form_int(form, 'roll', 2)))
-
-    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
-        return [NumberEntry(name='roll', label='2D roll for Psionic Strength test (minus age penalty)', min=2, max=12)]
 
 
 class PendingLifeEventAlienScience(PendingInputBase):

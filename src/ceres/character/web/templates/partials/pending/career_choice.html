@@ -1,4 +1,6 @@
-{% if summary.career_terms %}
+{% set choice_spec = item.input_specs[0] %}
+
+{% if choice_spec.can_finish %}
 <form hx-post="/ui/characters/{{ character_id }}/events"
       hx-target="#pending-panel"
       hx-swap="innerHTML"
@@ -87,23 +89,30 @@
       <label class="block text-xs text-gray-500 mb-1">Career</label>
       <select name="career" id="career-select-{{ pi.id | replace('.', '-') }}"
               class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500"
-              onchange="updateAssignments(this, '{{ pi.id | replace('.', '-') }}')">
-        {% for opt in pi.options %}
-        <option value="{{ opt.name }}">{{ opt.name }}</option>
+              onchange="updateCareerChoice(this, '{{ pi.id | replace('.', '-') }}')">
+        {% for opt in choice_spec.career_options %}
+        <option value="{{ opt.name }}"
+                data-index="{{ loop.index0 }}"
+                data-description="{{ opt.description }}"
+                data-qualification="{{ opt.qualification.characteristic }} {{ opt.qualification.target }}+">
+          {{ opt.name }}
+        </option>
         {% endfor %}
       </select>
+      <p id="career-description-{{ pi.id | replace('.', '-') }}"
+         class="mt-2 text-sm text-gray-400"></p>
+      <p class="mt-1 text-xs text-gray-500">
+        Qualification: <span id="career-qualification-{{ pi.id | replace('.', '-') }}" class="text-amber-400"></span>
+      </p>
     </div>
     <div>
       <label class="block text-xs text-gray-500 mb-1">Assignment</label>
       <select name="assignment" id="assignments-{{ pi.id | replace('.', '-') }}"
+              onchange="updateAssignmentDescription(this, '{{ pi.id | replace('.', '-') }}')"
               class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500">
-        {% if item.extra.get('careers') and pi.options %}
-        {% set first = item.extra.careers.get(pi.options[0].name) %}
-        {% if first %}
-        {% for a in first.assignments %}<option value="{{ a.name }}">{{ a.name }}</option>{% endfor %}
-        {% endif %}
-        {% endif %}
       </select>
+      <p id="assignment-description-{{ pi.id | replace('.', '-') }}"
+         class="mt-2 text-sm text-gray-400"></p>
     </div>
     <div>
       <label class="block text-xs text-gray-500 mb-1">Qualification Roll (2D, before DMs)</label>
@@ -119,17 +128,36 @@
     <span id="spinner" class="htmx-indicator text-gray-500 text-xs">Working…</span>
   </div>
 </form>
+
+{% for career in choice_spec.career_options %}
+<template id="assignment-options-{{ pi.id | replace('.', '-') }}-{{ loop.index0 }}">
+  {% for assignment in career.assignments %}
+  <option value="{{ assignment.name }}" data-description="{{ assignment.description }}">{{ assignment.name }}</option>
+  {% endfor %}
+</template>
+{% endfor %}
+
 <script>
-function updateAssignments(select, uid) {
-  fetch('/ui/careers/' + encodeURIComponent(select.value) + '/assignments')
-    .then(r => r.text())
-    .then(html => {
-      var el = document.getElementById('assignments-' + uid);
-      if (el) el.innerHTML = html;
-    });
+function updateAssignmentDescription(select, uid) {
+  var description = document.getElementById('assignment-description-' + uid);
+  var option = select.options[select.selectedIndex];
+  if (description) description.textContent = option ? option.dataset.description : '';
 }
-document.addEventListener('DOMContentLoaded', function() {
-  var s = document.getElementById("career-select-{{ pi.id | replace('.', '-') }}");
-  if (s) updateAssignments(s, "{{ pi.id | replace('.', '-') }}");
-});
+function updateCareerChoice(select, uid) {
+  var option = select.options[select.selectedIndex];
+  var description = document.getElementById('career-description-' + uid);
+  var qualification = document.getElementById('career-qualification-' + uid);
+  if (description) description.textContent = option ? option.dataset.description : '';
+  if (qualification) qualification.textContent = option ? option.dataset.qualification : '';
+
+  var assignments = document.getElementById('assignments-' + uid);
+  var template = option ? document.getElementById('assignment-options-' + uid + '-' + option.dataset.index) : null;
+  if (assignments) {
+    assignments.replaceChildren();
+    if (template) assignments.appendChild(template.content.cloneNode(true));
+    updateAssignmentDescription(assignments, uid);
+  }
+}
+var initialCareerSelect = document.getElementById("career-select-{{ pi.id | replace('.', '-') }}");
+if (initialCareerSelect) updateCareerChoice(initialCareerSelect, "{{ pi.id | replace('.', '-') }}");
 </script>

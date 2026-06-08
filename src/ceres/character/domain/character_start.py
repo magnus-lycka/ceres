@@ -93,6 +93,10 @@ class UcpHandler(EventHandlerBase):
                     ),
                 )
             )
+        else:
+            from ceres.character.domain.psionics import queue_initial_psi_test_if_available
+
+            queue_initial_psi_test_if_available(projection, event.id)
 
 
 class BackgroundSkillsHandler(EventHandlerBase):
@@ -102,7 +106,7 @@ class BackgroundSkillsHandler(EventHandlerBase):
     model_config = {'arbitrary_types_allowed': True}
 
     def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
-        from ceres.character.domain.career.career_events import queue_career_choice
+        from ceres.character.domain.psionics import queue_initial_psi_test_or_career_choice
 
         edu = projection.summary.characteristics.get(Chars.EDU, 0)
         expected = _background_skill_count(edu)
@@ -113,7 +117,7 @@ class BackgroundSkillsHandler(EventHandlerBase):
             raise ReplayError(f'Invalid background skill(s): {", ".join(sorted(type(s).__name__ for s in invalid))}')
         for skill in self.skills:
             projection.grant_skill(skill)
-        queue_career_choice(projection, event.id, 'Choose a career')
+        queue_initial_psi_test_or_career_choice(projection, event.id)
 
 
 class FinishCreationHandler(EventHandlerBase):

@@ -870,6 +870,26 @@ def test_career_assignments_unknown_career(client):
     assert r.text == ''
 
 
+def test_choose_career_shows_career_qualification_and_assignment_descriptions(client_with_backend):
+    from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive
+
+    client, backend = client_with_backend
+    character_id = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Aria')['id']
+    backend.append_event(character_id, Event(fulfills=(1, 0), handler=UcpHandler(ucp='7869A5')))
+    backend.append_event(
+        character_id,
+        Event(fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()])),
+    )
+
+    r = client.get(f'/ui/characters/{character_id}/wizard')
+
+    assert r.status_code == 200
+    assert 'Members of the exploratory service.' in r.text
+    assert 'INT 5+' in r.text
+    assert 'You are responsible for shuttling messages and high value packages around the galaxy.' in r.text
+    assert '/ui/careers/' not in r.text
+
+
 # ── event_from_form unit tests ────────────────────────────────────────────────
 
 
