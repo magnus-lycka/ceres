@@ -22,7 +22,6 @@ from ceres.character.domain.character_start import (
     UcpHandler,
 )
 from ceres.character.domain.connection import (
-    Ally,
     Contact,
 )
 from ceres.character.domain.health.health_events import (
@@ -411,18 +410,24 @@ class TestLifeEventUnusualBranches:
                 1, [*_drifter_at_unusual_event(), Event(id=7, fulfills=(6, 0), handler=LifeEventUnusualHandler(roll=7))]
             )
 
-    def test_roll_1_gains_ally(self):
+    def test_roll_1_queues_psionics_roll_pending(self):
+        from ceres.character.domain.career.career_events import PendingLifeEventPsionicsRoll
+
         projection = replay(
             1, [*_drifter_at_unusual_event(), Event(id=7, fulfills=(6, 0), handler=LifeEventUnusualHandler(roll=1))]
         )
-        assert any(isinstance(c, Ally) for c in projection.summary.connections)
+        assert not projection.summary.connections
+        assert any(isinstance(p, PendingLifeEventPsionicsRoll) for p in projection.pending_inputs)
 
-    def test_roll_2_gains_contact_and_space_science(self):
+    def test_roll_2_gains_contact_and_queues_science_choice(self):
+        from ceres.character.domain.career.career_events import PendingLifeEventAlienScience
+
         projection = replay(
             1, [*_drifter_at_unusual_event(), Event(id=7, fulfills=(6, 0), handler=LifeEventUnusualHandler(roll=2))]
         )
         assert any(isinstance(c, Contact) for c in projection.summary.connections)
-        assert projection.summary.skill_level(SpaceScience) == 1
+        assert any(isinstance(p, PendingLifeEventAlienScience) for p in projection.pending_inputs)
+        assert projection.summary.skill_level(SpaceScience) is None
 
     def test_roll_3_no_mechanical_effect(self):
         projection = replay(

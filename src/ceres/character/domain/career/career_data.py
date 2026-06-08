@@ -683,6 +683,7 @@ class MusterOut(BaseModel):
     lost_rolls: int = 0
     benefit_roll_dms: list[BenefitRollDm] = Field(default_factory=list)
     used: bool = False
+    rolls_remaining: int = 0
 
 
 class CareerTerm(BaseModel):
@@ -694,6 +695,10 @@ class CareerTerm(BaseModel):
     event: str | None = None
     mishap: str | None = None
     prison: str | None = None
+
+    @property
+    def rank_title(self) -> tuple[str, str]:
+        return self.career.rank_title(self.commission, self.rank_after_term)
 
     def continue_career_run_from(self, previous: CareerTerm) -> bool:
         if not previous.muster_out:

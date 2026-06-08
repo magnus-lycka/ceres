@@ -6,15 +6,19 @@ from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.domain.career.career_events import (
     AdvancementHandler,
     AssignmentChangeChoiceHandler,
+    BenefitChoiceHandler,
     CareerChoiceHandler,
     CareerEntryHandler,
     CharacteristicChoiceHandler,
+    CommissionHandler,
     MishapHandler,
     MusterOutHandler,
     PendingAdvancement,
     PendingAssignmentChangeChoice,
+    PendingBenefitChoice,
     PendingCareerChoice,
     PendingChoices,
+    PendingCommissionChoice,
     PendingInitialTrainingChoice,
     PendingMishap,
     PendingMusterOut,
@@ -138,6 +142,10 @@ class CharacterDriver:
         pending = self._find(PendingTermEvent)
         return self._add(Event(fulfills=pending.pending_id, handler=TermEventHandler(roll=roll)))
 
+    def commission(self, attempt: bool, roll: int = 0) -> CharacterDriver:
+        pending = self._find(PendingCommissionChoice)
+        return self._add(Event(fulfills=pending.pending_id, handler=CommissionHandler(attempt=attempt, roll=roll)))
+
     def advancement(self, roll: int) -> CharacterDriver:
         pending = self._find(PendingAdvancement)
         return self._add(Event(fulfills=pending.pending_id, handler=AdvancementHandler(roll=roll)))
@@ -217,6 +225,10 @@ class CharacterDriver:
     def muster_out(self, table: Literal['cash', 'benefits'], roll: int) -> CharacterDriver:
         pending = self._find(PendingMusterOut)
         return self._add(Event(fulfills=pending.pending_id, handler=MusterOutHandler(table=table, roll=roll)))
+
+    def benefit_choice(self, choice_index: int) -> CharacterDriver:
+        pending = self._find(PendingBenefitChoice)
+        return self._add(Event(fulfills=pending.pending_id, handler=BenefitChoiceHandler(choice_index=choice_index)))
 
     def career_choice(self, choice_cls: type[ChoiceBase]) -> CharacterDriver:
         pending = self._find(PendingChoices)

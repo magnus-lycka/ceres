@@ -267,7 +267,8 @@ class TestMusterOut:
         projection = replay(1, events)
 
         muster_out_pendings = [p for p in projection.pending_inputs if isinstance(p, PendingMusterOut)]
-        assert len(muster_out_pendings) == 2
+        assert len(muster_out_pendings) == 1
+        assert projection.summary.career_terms[-1].require_muster_out().rolls_remaining == 2
         assert projection.summary.career_terms[-1].require_muster_out().terms == 2
 
     def test_roll_count_includes_rank_bonus(self):
@@ -317,7 +318,8 @@ class TestMusterOut:
         projection = replay(1, events)
 
         muster_out_pendings = [p for p in projection.pending_inputs if isinstance(p, PendingMusterOut)]
-        assert len(muster_out_pendings) == 3
+        assert len(muster_out_pendings) == 1
+        assert projection.summary.career_terms[-1].require_muster_out().rolls_remaining == 3
 
     def test_cash_max_3_times(self):
         # 3 terms, rank 0 → 3 rolls. Take cash 3 times: ok
@@ -343,8 +345,8 @@ class TestMusterOut:
             Event(id=17, fulfills=(16, 0), handler=AdvancementHandler(roll=4)),
             Event(id=18, fulfills=(17, 0), handler=ReenlistHandler(reenlist=False)),  # 3 terms, rank 0 → 3 rolls
             Event(id=19, fulfills=(18, 0), handler=MusterOutHandler(table='cash', roll=1)),
-            Event(id=20, fulfills=(18, 1), handler=MusterOutHandler(table='cash', roll=1)),
-            Event(id=21, fulfills=(18, 2), handler=MusterOutHandler(table='cash', roll=1)),
+            Event(id=20, fulfills=(19, 0), handler=MusterOutHandler(table='cash', roll=1)),
+            Event(id=21, fulfills=(20, 0), handler=MusterOutHandler(table='cash', roll=1)),
         ]
         projection = replay(1, events)
 
@@ -447,9 +449,9 @@ class TestMusterOut:
             Event(id=17, fulfills=(16, 0), handler=AdvancementHandler(roll=4)),  # fail
             Event(id=18, fulfills=(17, 0), handler=ReenlistHandler(reenlist=False)),  # age=30, 3 terms rank 2 → 4 rolls
             Event(id=19, fulfills=(18, 0), handler=MusterOutHandler(table='cash', roll=1)),
-            Event(id=20, fulfills=(18, 1), handler=MusterOutHandler(table='cash', roll=1)),
-            Event(id=21, fulfills=(18, 2), handler=MusterOutHandler(table='cash', roll=1)),
-            Event(id=22, fulfills=(18, 3), handler=MusterOutHandler(table='cash', roll=1)),  # 4th cash → error
+            Event(id=20, fulfills=(19, 0), handler=MusterOutHandler(table='cash', roll=1)),
+            Event(id=21, fulfills=(20, 0), handler=MusterOutHandler(table='cash', roll=1)),
+            Event(id=22, fulfills=(21, 0), handler=MusterOutHandler(table='cash', roll=1)),  # 4th cash → error
         ]
         with pytest.raises(ReplayError, match='Cash'):
             replay(1, events)
@@ -608,7 +610,8 @@ class TestMusterOut:
         projection = replay(1, events)
 
         muster_out_pendings = [p for p in projection.pending_inputs if isinstance(p, PendingMusterOut)]
-        assert len(muster_out_pendings) == 4
+        assert len(muster_out_pendings) == 1
+        assert projection.summary.career_terms[-1].require_muster_out().rolls_remaining == 4
 
     def test_mishap_aging_muster_out_loses_current_term(self):
         # 4th term mishap ejection with aging → 3 rolls (4-1=3 terms, rank 0)
@@ -622,7 +625,8 @@ class TestMusterOut:
         projection = replay(1, events)
 
         muster_out_pendings = [p for p in projection.pending_inputs if isinstance(p, PendingMusterOut)]
-        assert len(muster_out_pendings) == 3
+        assert len(muster_out_pendings) == 1
+        assert projection.summary.career_terms[-1].require_muster_out().rolls_remaining == 3
 
 
 # ── Career run continuity ──────────────────────────────────────────────────────

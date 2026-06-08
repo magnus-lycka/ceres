@@ -120,6 +120,21 @@ class SqliteCharacterBackend:
             return None
         return replay(character_id, events)
 
+    def rollback_last_event(self, character_id: int) -> bool:
+        cursor = self.connection.execute(
+            'select id from events where character_id = ? order by id desc limit 1',
+            (character_id,),
+        )
+        row = cursor.fetchone()
+        if row is None:
+            return False
+        self.connection.execute(
+            'delete from events where character_id = ? and id = ?',
+            (character_id, row[0]),
+        )
+        self.connection.commit()
+        return True
+
     def delete_character(self, character_id: int) -> CharacterRow | None:
         character = self.get_character(character_id)
         if character is None:

@@ -266,6 +266,18 @@ Imperial Scout Base (`S`) or Way Station (`W`) in `TravellerMapWorld.bases`.
 This should fire at the start of **every** Scout term (first entry and all
 re-enlistments).
 
+
+### Marine career: homeworld trigger at term start (RIC-006)
+
+See [docs/RULE_INTERPRETATIONS.md](docs/RULE_INTERPRETATIONS.md) — RIC-006.
+
+The Scout career (IISS) requires the character to be based at a world with an
+Imperial Scout Base (`S`) or Way Station (`W`) in `TravellerMapWorld.bases`.
+This should fire at the start of **every** Scout term (first entry and all
+re-enlistments).
+
+
+
 **Logic:**
 
 - If `'S' not in homeworld.bases and 'W' not in homeworld.bases`:
@@ -308,22 +320,10 @@ world.
   skill levels may not exceed 3 × (INT + EDU).
 - **Benefit roll bonus at rank 5–6 and "any one Benefit roll" events** — neither
   is implemented; see RIC-004.
-- **Generic Life Events table must match Core literally** — the generic
-  `LifeEventEvent` / `LifeEventUnusualEvent` implementation in
-  `ceres.character.events` should match the Traveller Core Rulebook Life Events
-  table word-for-word in meaning and behavior, not merely approximate the same
-  mechanics. Current known deviations include:
-  - roll 8 Betrayal does not clearly implement "convert one Contact or Ally"
-    before falling back to gaining a Rival or Enemy
-  - roll 9 Travel does not currently model "You move to another world"
-  - roll 12 Unusual Event is substantially altered from core
-  This should be fixed from the rulebook text itself, with tests asserting the
-  core outcomes rather than current implementation behavior.
-- **PSI characteristic support** — `Chars.PSI` now exists, but complete the
-  surrounding psionics model: testing Psionic Strength, talents, training, and
-  the resulting career choices and modifiers. This is needed both generally
-  and specifically for Life Event unusual subtable roll 1 and the Psionic
-  Community pre-career.
+- **PSI characteristic support** — `Chars.PSI` exists. Life Events unusual
+  roll 1 now queues `PendingLifeEventPsionicsRoll` and computes
+  `PSI = max(0, 2D6 − max(0, (age−18)//4))`. Still needed: psionic talents,
+  training, and the Psion career itself (see the Psion career todo below).
 - **Generic Pre-Career Events table must match Core literally** — the generic
   pre-career events in `ceres.character.domain.precareer.loader` and
   `PreCareerEventHandler` in
@@ -1195,6 +1195,42 @@ Known differences:
 - **Literal text drift** — Scout mishap/event entry text is shortened across
   most of the tables. Make all Scout mishap/event entry text match Core word
   for word, excluding page references (which are intentionally omitted).
+
+## Psion career: implement from Core Rulebook
+
+Reference: `refs/core/10_psionics.md`
+
+Implement the Psion career (Core Rulebook chapter 10) as a proper `CareerData`
+subclass alongside the other Core careers.
+
+Prerequisites (blocking Psion entry):
+
+- **Psionic Strength test** — `PendingLifeEventPsionicsRoll` and
+  `PsiStrengthTestHandler` exist and compute PSI correctly. The pending is
+  queued by Life Event unusual roll 1 and by the Psionic Community pre-career.
+  What is missing is the mechanic to offer the Psion career after a successful
+  test (PSI ≥ 9 or per the testing rules).
+- **PSI characteristic ongoing** — PSI is set by the test handler. Talents,
+  talent-level progression, and their interaction with the skill system need
+  definition before the career can be fully represented.
+
+Career structure (from Core):
+
+- Qualification: PSI 6+ (no draft; if not admitted, cannot take Psion this term)
+- Assignments: Aware, Wild Talent, Adept
+- Ranks use titles from the Psion rank table
+- Survival, advancement, mishaps, and events differ per assignment
+- Special rule: may not take this career unless PSI has been tested and is ≥ 9
+
+Implementation checklist:
+
+1. Add `Psion` career data to `src/ceres/character/domain/career/` following the
+   existing `CareerData` subclass pattern.
+2. Register it in `loader.py`.
+3. After Life Event unusual 1 or Psionic Community pre-career grants PSI, wire up
+   an offer for the Psion career when PSI ≥ 9.
+4. Write tests in `tests/character/test_psion.py` covering qualification, survival,
+   mishap and event handlers for all three assignments.
 
 ## Replace sophont string-name lookup with typed objects
 

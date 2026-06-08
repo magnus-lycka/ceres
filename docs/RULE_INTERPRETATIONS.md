@@ -681,9 +681,66 @@ world with an Imperial Scout Base (S) or Way Station (W)."`
 facilities. A non-Imperial Scout career (e.g. Zhodani, Darrian) would need
 its own base-code set and this rule would not apply; that is TBD.
 
-**Scope**: This interpretation covers the Scout career only. Requirements or
-options for Navy, Marines, Merchant, Noble, and other careers are TBD.
+#### Agent: Corporate and Intelligence if Starport
 
+Law Enforcement stays put. Corporate and Intelligence get
+HomeworldChangeOfferedEvent at term start if Starport A-D.
+No world constraints.
+
+#### Army: Stay put
+
+No offers about homeworld change while serving in planetary army.
+
+#### Citizen:
+
+Corporate: Changing Homeworld allowed every term if starport
+Worker: Changing to Industrial (remark In) Homeworld allowed every term if starport
+Colonist: Must move to Agricultural or Garden world (remark: Ag, Ga)
+
+#### Drifter: Dependent on assignment
+
+Barbarian: No change of Homeworld
+
+Wanderer: Changing Homeworld required every term
+
+Scavenger: Changing Homeworld allowed every term if starport
+
+#### Entertainer:
+
+Changing Homeworld allowed every term if starport
+
+#### Marine: Imperial Navy Base (N) or Navy Depot (D)
+
+Same as Scout service, but Navy Base (N) or Navy Depot (D)
+
+#### Merchant:
+
+Changing Homeworld allowed every term if starport
+
+#### Navy: Imperial Navy Base (N) or Navy Depot (D)
+
+Same as Scout service, but Navy Base (N) or Navy Depot (D)
+
+#### Noble:
+
+Changing Homeworld allowed every term
+
+#### Rogue:
+
+Changing Homeworld allowed every term if starport
+
+#### Scholar:
+
+Changing Homeworld allowed every term if starport
+
+#### Prisoner: Can escape and be transferred
+
+Success with Event 3, escape implies forced homeworld change if starport
+Event 7 - 4, tranferred, escape implies forced homeworld change if starport
+
+#### Psion
+
+Changing Homeworld allowed every term if starport
 
 ---
 

@@ -4,7 +4,7 @@
   {% if chars %}
   <div class="mb-4">
     <div class="text-xs uppercase tracking-widest text-gray-600 mb-2">Characteristics</div>
-    {% set stats = ['STR', 'DEX', 'END', 'INT', 'EDU', 'SOC'] %}
+    {% set stats = ['STR', 'DEX', 'END', 'INT', 'EDU', 'SOC'] + (['PSI'] if 'PSI' in chars else []) %}
     <div class="grid grid-cols-3 gap-1 text-center text-xs">
       {% for stat in stats %}
       {% set val = chars.get(stat, 0) %}

@@ -52,11 +52,15 @@ def _build_npc_context(spec: NpcSpec, *, notes: str | None = None) -> dict:
     if spec.cash:
         equipment.append(f'Cr{spec.cash:,}')
     equipment.extend(b.display_label for b in spec.equipment)
+    from ceres.character.domain.characteristics import Chars
+
+    psi = spec.characteristics.get(Chars.PSI)
+    ucp_display = spec.ucp + (f' PSI {psi}' if psi is not None else '')
     return {
         'name': spec.name,
         'career_rank': _career_rank_line(spec),
         'sophont': spec.sophont,
-        'ucp': spec.ucp,
+        'ucp': ucp_display,
         'age': spec.age,
         'skills': format_npc_skills(spec.skills),
         'equipment': equipment,

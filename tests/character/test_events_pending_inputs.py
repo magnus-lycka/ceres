@@ -525,9 +525,10 @@ def test_muster_out_setup_and_complete_aging_helper_branches():
 
     next_idx = muster_out_setup(projection, career, source_event_id=6, pending_idx=0)
 
-    assert next_idx == 3
+    assert next_idx == 1
     assert projection.summary.current_career is None
-    assert len([p for p in projection.pending_inputs if isinstance(p, PendingMusterOut)]) == 3
+    assert len([p for p in projection.pending_inputs if isinstance(p, PendingMusterOut)]) == 1
+    assert projection.summary.career_terms[-1].require_muster_out().rolls_remaining == 3
 
     assignment_change = _projection(
         current_career=SCOUT,

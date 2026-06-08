@@ -7,6 +7,7 @@ from ceres.character.domain.career.career_data import BenefitRollDm
 from ceres.character.domain.career.career_events import (
     AdvancementHandler,
     AssignmentChangeChoiceHandler,
+    BetrayalConvertHandler,
     CareerChoiceHandler,
     CareerEntryHandler,
     CharacteristicChoiceHandler,
@@ -22,7 +23,10 @@ from ceres.character.domain.career.career_events import (
     PendingCareerChoice,
     PendingChoices,
     PendingLifeEvent,
+    PendingLifeEventAlienScience,
+    PendingLifeEventBetrayalConvert,
     PendingLifeEventChoice,
+    PendingLifeEventPsionicsRoll,
     PendingLifeEventUnusual,
     PendingMishap,
     PendingMusterOut,
@@ -1533,7 +1537,7 @@ class TestLifeEvents:
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingLifeEventUnusual)), None)
         assert pending is not None
 
-    def test_roll_12_unusual_1_useful_ally_adds_ally(self):
+    def test_roll_12_unusual_1_psionics_queues_roll_pending(self):
         events = [
             *self._setup_to_life_event(),
             Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=12)),
@@ -1541,9 +1545,10 @@ class TestLifeEvents:
         ]
         projection = replay(1, events)
 
-        assert any(isinstance(c, Ally) for c in projection.summary.connections)
+        assert not projection.summary.connections
+        assert any(isinstance(p, PendingLifeEventPsionicsRoll) for p in projection.pending_inputs)
 
-    def test_roll_12_unusual_2_aliens_adds_contact_and_science_skill(self):
+    def test_roll_12_unusual_2_aliens_adds_contact_and_queues_science_choice(self):
         events = [
             *self._setup_to_life_event(),
             Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=12)),
@@ -1552,9 +1557,21 @@ class TestLifeEvents:
         projection = replay(1, events)
 
         assert any(isinstance(c, Contact) for c in projection.summary.connections)
-        # Any science skill gained at level 1
+        assert any(isinstance(p, PendingLifeEventAlienScience) for p in projection.pending_inputs)
+        # Skill not yet granted — choice pending
         science_skills = (LifeScience, PhysicalScience, RoboticScience, SocialScience, SpaceScience)
-        assert any(projection.summary.skill_level(cls, -1) >= 1 for cls in science_skills)
+        assert not any(projection.summary.skill_level(cls, -1) >= 1 for cls in science_skills)
+
+    def test_roll_12_unusual_2_aliens_science_choice_grants_skill(self):
+        events = [
+            *self._setup_to_life_event(),
+            Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=12)),
+            Event(id=8, fulfills=(7, 0), handler=LifeEventUnusualHandler(roll=2)),
+            Event(id=9, fulfills=(8, 0), handler=SkillChoiceHandler(skill=LifeScience(biology=Level(value=1)))),
+        ]
+        projection = replay(1, events)
+
+        assert projection.summary.skill_level(LifeScience, -1) >= 1
 
     def test_roll_12_unusual_3_to_6_no_connections_or_skills(self):
         for roll in [3, 4, 5, 6]:
@@ -1575,6 +1592,60 @@ class TestLifeEvents:
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+
+    def _setup_to_life_event_two_terms(self) -> list:
+        """Two-term setup: first term gains a Contact via roll=7 life event, then term 2 queues life event."""
+        return [
+            *_full_setup(),
+            Event(
+                id=4,
+                fulfills=(3, 0),
+                handler=CareerEntryHandler(
+                    career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7
+                ),
+            ),
+            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
+            Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=7)),
+            Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=7)),  # Contact gained → advancement queued
+            Event(id=8, fulfills=(7, 0), handler=AdvancementHandler(roll=3)),  # Fails (5 < 9), no forced-leave
+            Event(id=9, fulfills=(8, 0), handler=AssignmentChangeChoiceHandler(choice='same')),  # SkillTable queued
+            Event(id=10, fulfills=(9, 0), handler=SkillTableHandler(table='service_skills', roll=2)),  # Survival
+            Event(id=11, fulfills=(10, 0), handler=SurviveHandler(roll=7)),
+            Event(id=12, fulfills=(11, 0), handler=TermEventHandler(roll=7)),
+        ]
+
+    def test_roll_8_with_contact_creates_betrayal_convert_pending(self):
+        events = [
+            *self._setup_to_life_event_two_terms(),
+            Event(id=13, fulfills=(12, 0), handler=LifeEventHandler(roll=8)),
+        ]
+        projection = replay(1, events)
+
+        assert any(isinstance(p, PendingLifeEventBetrayalConvert) for p in projection.pending_inputs)
+
+    def test_roll_8_betrayal_convert_contact_to_rival(self):
+        rival_kind = ConnectionKind.RIVAL
+        events = [
+            *self._setup_to_life_event_two_terms(),
+            Event(id=13, fulfills=(12, 0), handler=LifeEventHandler(roll=8)),
+            Event(id=14, fulfills=(13, 0), handler=BetrayalConvertHandler(connection_index=0, new_kind=rival_kind)),
+        ]
+        projection = replay(1, events)
+
+        assert any(isinstance(c, Rival) for c in projection.summary.connections)
+        assert not any(isinstance(c, Contact) for c in projection.summary.connections)
+
+    def test_roll_8_betrayal_convert_contact_to_enemy(self):
+        enemy_kind = ConnectionKind.ENEMY
+        events = [
+            *self._setup_to_life_event_two_terms(),
+            Event(id=13, fulfills=(12, 0), handler=LifeEventHandler(roll=8)),
+            Event(id=14, fulfills=(13, 0), handler=BetrayalConvertHandler(connection_index=0, new_kind=enemy_kind)),
+        ]
+        projection = replay(1, events)
+
+        assert any(isinstance(c, Enemy) for c in projection.summary.connections)
+        assert not any(isinstance(c, Contact) for c in projection.summary.connections)
 
 
 # ── Life event roll=10 and roll=11 ─────────────────────────────────────────

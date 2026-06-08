@@ -494,6 +494,14 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
             status_code=303,
         )
 
+    @router.post('/characters/{character_id}/undo')
+    def undo_last_event(request: Request, character_id: int) -> Any:
+        backend.rollback_last_event(character_id)
+        return RedirectResponse(
+            url=str(request.url_for('character_wizard', character_id=str(character_id))),
+            status_code=303,
+        )
+
     @router.post('/characters/delete')
     async def delete_characters(request: Request) -> Any:
         form = await request.form()

@@ -13,5 +13,14 @@
       · Age {{ summary.age }}
     </p>
   </div>
-  <a href="/ui/characters/{{ character_id }}" class="text-gray-600 hover:text-gray-400 text-xs uppercase">View Sheet →</a>
+  <div class="flex items-center gap-4">
+    <form method="POST" action="/ui/characters/{{ character_id }}/undo">
+      <button type="submit"
+              onclick="return confirm('Undo the last step?')"
+              class="text-gray-700 hover:text-gray-400 text-xs uppercase tracking-wide">
+        ← Undo
+      </button>
+    </form>
+    <a href="/ui/characters/{{ character_id }}" class="text-gray-600 hover:text-gray-400 text-xs uppercase">View Sheet →</a>
+  </div>
 </div>

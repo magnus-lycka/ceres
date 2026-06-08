@@ -46,8 +46,8 @@
 
 {# UCP / Characteristics #}
 <div class="mb-8">
-  {% set stat_order = ['STR', 'DEX', 'END', 'INT', 'EDU', 'SOC'] %}
   {% set chars = summary.characteristics %}
+  {% set stat_order = ['STR', 'DEX', 'END', 'INT', 'EDU', 'SOC'] + (['PSI'] if 'PSI' in chars else []) %}
   <div class="inline-block border border-gray-700">
     <table class="text-center text-sm">
       <thead>
@@ -90,6 +90,39 @@
       {{ summary.precareer }} <span class="text-gray-600">(in progress)</span>
     {% endif %}
   </p>
+</div>
+{% endif %}
+
+{# Career History #}
+{% set completed_terms = summary.career_terms | selectattr('muster_out') | list %}
+{% if completed_terms %}
+<div class="mb-6">
+  <h2 class="text-xs uppercase tracking-widest text-gray-600 mb-3">Career History</h2>
+  <table class="text-sm w-full border-collapse">
+    <thead>
+      <tr class="text-gray-600 text-xs uppercase tracking-wide border-b border-gray-800">
+        <th class="text-left py-1 pr-4 font-normal">Career</th>
+        <th class="text-left py-1 pr-4 font-normal">Assignment</th>
+        <th class="text-left py-1 pr-4 font-normal">Terms</th>
+        <th class="text-left py-1 font-normal">Rank</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for term in completed_terms %}
+      {% set is_current = not term.muster_out.used %}
+      <tr class="border-b border-gray-800/50 {% if is_current %}text-gray-200{% else %}text-gray-500{% endif %}">
+        <td class="py-1 pr-4">{{ term.career.name }}</td>
+        <td class="py-1 pr-4">{{ term.assignment.name }}</td>
+        <td class="py-1 pr-4">{{ term.muster_out.terms }}</td>
+        <td class="py-1">
+          {% set rt = term.rank_title %}
+          {{ rt[0] }}{% if rt[1] %} · {{ rt[1] }}{% endif %}
+          {% if is_current %}<span class="text-gray-600 text-xs ml-1">(current)</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 {% endif %}
 

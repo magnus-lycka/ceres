@@ -22,6 +22,7 @@ from ceres.character.domain.career.navy import (
     NavyMishap4Responsible,
     PendingNavyMishap3SkillRoll,
 )
+from ceres.character.domain.career.career_events import PendingBenefitChoice, PendingCareerChoice
 from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
 from ceres.character.domain.connection import Enemy
 from ceres.character.domain.skills import (
@@ -39,7 +40,7 @@ from ceres.character.domain.skills import (
 from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
-from tests.character.helpers import MOCK_WORLD
+from tests.character.helpers import MOCK_WORLD, CharacterDriver
 
 
 def _setup() -> list:
@@ -370,3 +371,50 @@ class TestNavyEvent10:
                 isinstance(p, (PendingAdvancement, PendingCommissionChoice)) for p in projection.pending_inputs
             )
             assert has_progress, choice_cls
+
+
+# ── muster out: choice benefit on last roll ───────────────────────────────────
+
+
+class TestNavyMusterOutChoiceBenefit:
+    """Navy muster out: when the last roll is a ChoiceBenefit, both PendingBenefitChoice
+    and PendingCareerChoice must have distinct pending_ids so neither overwrites the other."""
+
+    def _driver_through_muster_out(self) -> CharacterDriver:
+        """Navy Line/Crew (SOC=5, can't commission), one term, muster out."""
+        from ceres.character.domain.sophont import VILANI
+
+        d = (
+            CharacterDriver()
+            .start(VILANI, MOCK_WORLD)
+            .ucp('7869A5')  # SOC=5 → commission impossible; INT=9 DM+1 for qualif/survival
+            .background_skills([Admin(), Athletics(), Carouse(), Drive()])
+            .career('Navy', 'Line/Crew', roll=5)  # INT 6+, DM+1, roll 5 → 6 ≥ 6 ✓
+            .survive(roll=4)  # INT 5+, DM+1, 4 → 5 ≥ 5 ✓
+            .term_event(roll=4)  # BenefitDm: no extra pending, just queues commission/advancement
+            .commission(attempt=False)  # skip commission (SOC=5 < 8, would fail anyway)
+            .advancement(roll=2)  # fail (Navy advancement varies; roll 2 always fails at SOC 5)
+            .reenlist(reenlist=False)  # muster out
+            .muster_out(table='benefits', roll=6)  # row 6 = ChoiceBenefit([Ship's Boat, Ship Share])
+        )
+        return d
+
+    def test_last_muster_roll_choice_benefit_queues_benefit_pending(self):
+        d = self._driver_through_muster_out()
+        assert any(isinstance(p, PendingBenefitChoice) for p in d.projection.pending_inputs)
+
+    def test_last_muster_roll_choice_benefit_does_not_yet_queue_career_choice(self):
+        # Career choice is deferred until the benefit choice is resolved
+        d = self._driver_through_muster_out()
+        assert not any(isinstance(p, PendingCareerChoice) for p in d.projection.pending_inputs)
+
+    def test_career_choice_queued_after_benefit_choice_resolved(self):
+        d = self._driver_through_muster_out().benefit_choice(choice_index=0)
+        career_choices = [p for p in d.projection.pending_inputs if isinstance(p, PendingCareerChoice)]
+        assert len(career_choices) == 1
+        assert career_choices[0].pending_id is not None
+
+    def test_benefit_choice_resolves_without_affecting_career_choice(self):
+        d = self._driver_through_muster_out().benefit_choice(choice_index=0)
+        assert any(isinstance(p, PendingCareerChoice) for p in d.projection.pending_inputs)
+        assert not any(isinstance(p, PendingBenefitChoice) for p in d.projection.pending_inputs)
