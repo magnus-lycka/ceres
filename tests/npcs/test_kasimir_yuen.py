@@ -76,9 +76,9 @@ def _events() -> list:
         Event(id=12, fulfills=(11, 0), handler=TermEventHandler(roll=5)),  # benefit_dm +1 to muster out roll
         Event(id=13, fulfills=(12, 0), handler=AdvancementHandler(roll=5)),  # fails
         Event(id=14, fulfills=(13, 0), handler=AssignmentChangeChoiceHandler(choice='muster_out')),
-        # Muster out: 2 rolls (term_count=2, rank=0)
+        # Muster out: 2 rolls (term_count=2, rank=0), sequential
         Event(id=15, fulfills=(14, 0), handler=MusterOutHandler(table='benefits', roll=6)),  # scout_ship
-        Event(id=16, fulfills=(14, 1), handler=MusterOutHandler(table='cash', roll=1)),  # Cr20,000
+        Event(id=16, fulfills=(15, 0), handler=MusterOutHandler(table='cash', roll=1)),  # Cr20,000
         Event(id=17, fulfills=(16, 0), handler=FinishCreationHandler()),
     ]
 

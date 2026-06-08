@@ -6,6 +6,8 @@ from ceres.character.domain.career.career_events import (
     CareerEntryHandler,
     MishapHandler,
     PendingAdvancement,
+    PendingBenefitChoice,
+    PendingCareerChoice,
     PendingChoices,
     PendingCommissionChoice,
     PendingMusterOut,
@@ -22,7 +24,6 @@ from ceres.character.domain.career.navy import (
     NavyMishap4Responsible,
     PendingNavyMishap3SkillRoll,
 )
-from ceres.character.domain.career.career_events import PendingBenefitChoice, PendingCareerChoice
 from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
 from ceres.character.domain.connection import Enemy
 from ceres.character.domain.skills import (
@@ -384,7 +385,7 @@ class TestNavyMusterOutChoiceBenefit:
         """Navy Line/Crew (SOC=5, can't commission), one term, muster out."""
         from ceres.character.domain.sophont import VILANI
 
-        d = (
+        return (
             CharacterDriver()
             .start(VILANI, MOCK_WORLD)
             .ucp('7869A5')  # SOC=5 → commission impossible; INT=9 DM+1 for qualif/survival
@@ -397,7 +398,6 @@ class TestNavyMusterOutChoiceBenefit:
             .reenlist(reenlist=False)  # muster out
             .muster_out(table='benefits', roll=6)  # row 6 = ChoiceBenefit([Ship's Boat, Ship Share])
         )
-        return d
 
     def test_last_muster_roll_choice_benefit_queues_benefit_pending(self):
         d = self._driver_through_muster_out()

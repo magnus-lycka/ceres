@@ -843,9 +843,7 @@ class LifeEventUnusualHandler(EventHandlerBase):
                 )
             )
             if in_career:
-                projection.pending_inputs.append(
-                    _advancement_pending(career, assignment, event.id, 1)
-                )
+                projection.pending_inputs.append(_advancement_pending(career, assignment, event.id, 1))
         elif self.roll == 2:
             projection.summary.connections.append(Contact(source='Unusual event: alien contact'))
             projection.summary.narrative.append('Unusual event: alien encounter — gained contact and a science skill')
@@ -856,33 +854,23 @@ class LifeEventUnusualHandler(EventHandlerBase):
                 )
             )
             if in_career:
-                projection.pending_inputs.append(
-                    _advancement_pending(career, assignment, event.id, 1)
-                )
+                projection.pending_inputs.append(_advancement_pending(career, assignment, event.id, 1))
         elif self.roll == 3:
             projection.summary.narrative.append('Unusual event: alien artefact found')
             if in_career:
-                projection.pending_inputs.append(
-                    _advancement_pending(career, assignment, event.id, 0)
-                )
+                projection.pending_inputs.append(_advancement_pending(career, assignment, event.id, 0))
         elif self.roll == 4:
             projection.summary.narrative.append('Unusual event: amnesia')
             if in_career:
-                projection.pending_inputs.append(
-                    _advancement_pending(career, assignment, event.id, 0)
-                )
+                projection.pending_inputs.append(_advancement_pending(career, assignment, event.id, 0))
         elif self.roll == 5:
             projection.summary.narrative.append('Unusual event: contacted by shadowy government agency')
             if in_career:
-                projection.pending_inputs.append(
-                    _advancement_pending(career, assignment, event.id, 0)
-                )
+                projection.pending_inputs.append(_advancement_pending(career, assignment, event.id, 0))
         elif self.roll == 6:
             projection.summary.narrative.append('Unusual event: encountered Ancient technology')
             if in_career:
-                projection.pending_inputs.append(
-                    _advancement_pending(career, assignment, event.id, 0)
-                )
+                projection.pending_inputs.append(_advancement_pending(career, assignment, event.id, 0))
 
 
 class BetrayalConvertHandler(EventHandlerBase):
@@ -944,7 +932,9 @@ class MusterOutHandler(EventHandlerBase):
             benefit_count_before = sum(1 for p in projection.pending_inputs if isinstance(p, PendingBenefitChoice))
             for _ in range(row.count):
                 row.benefit.apply(projection, event.id)
-            benefit_choice_added = sum(1 for p in projection.pending_inputs if isinstance(p, PendingBenefitChoice)) > benefit_count_before
+            benefit_choice_added = (
+                sum(1 for p in projection.pending_inputs if isinstance(p, PendingBenefitChoice)) > benefit_count_before
+            )
         muster_out = projection.summary.career_terms[-1].require_muster_out()
         muster_out.rolls_remaining -= 1
         if muster_out.rolls_remaining == 0:
@@ -954,13 +944,12 @@ class MusterOutHandler(EventHandlerBase):
                 )
             else:
                 _finalize_muster_out(projection, event.id)
+        elif benefit_choice_added:
+            projection.pending_inputs[-1] = projection.pending_inputs[-1].model_copy(
+                update={'is_muster_out': True, 'muster_out_remaining': muster_out.rolls_remaining}
+            )
         else:
-            if benefit_choice_added:
-                projection.pending_inputs[-1] = projection.pending_inputs[-1].model_copy(
-                    update={'is_muster_out': True, 'muster_out_remaining': muster_out.rolls_remaining}
-                )
-            else:
-                projection.pending_inputs.append(PendingMusterOut(pending_id=(event.id, 0)))
+            projection.pending_inputs.append(PendingMusterOut(pending_id=(event.id, 0)))
 
 
 # ── Benefit Choice ─────────────────────────────────────────────────────────────
@@ -1384,7 +1373,8 @@ def muster_out_setup(
     if clear_career:
         projection.clear_current_career(ejected=ejected)
     if roll_count > 0:
-        muster_out.rolls_remaining = roll_count
+        if muster_out is not None:
+            muster_out.rolls_remaining = roll_count
         projection.muster_out_career = career
         projection.pending_inputs.append(PendingMusterOut(pending_id=(source_event_id, pending_idx)))
         pending_idx += 1
@@ -1985,7 +1975,7 @@ class PendingLifeEventAlienScience(PendingInputBase):
         from ceres.character.mechanism.event_base import Event
 
         parsed = _skill_adapter.validate_json(form_str(form, 'skill', '{}'))
-        return Event(fulfills=self.pending_id, handler=SkillChoiceHandler(skill=cast(AnySkill, parsed)))
+        return Event(fulfills=self.pending_id, handler=SkillChoiceHandler(skill=parsed))
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
         from ceres.character.domain.skills import LifeScience, PhysicalScience, SocialScience

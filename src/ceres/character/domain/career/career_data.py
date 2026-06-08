@@ -724,7 +724,3 @@ class CareerTerm(BaseModel):
         if self.muster_out is None:
             raise ReplayError('Career term has no active muster-out state')
         return self.muster_out
-
-    @property
-    def rank_title(self) -> tuple[str, str]:
-        return self.career.rank_title(self.commission, self.rank_after_term)
