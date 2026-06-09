@@ -8,9 +8,10 @@ from pydantic import TypeAdapter
 from ceres import settings
 from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.domain.character_start import CharacterStartedHandler
-from ceres.character.domain.character_state import CharacterProjection
+from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.event_handlers import register_event_handlers
 from ceres.character.domain.sophont import Sophont
+from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
 
@@ -36,8 +37,12 @@ class SqliteCharacterBackend:
             'id integer primary key, '
             'sophont text not null, '
             'player text not null, '
-            'name text not null)'
+            'name text not null, '
+            'summary text)'
         )
+        character_columns = {row[1] for row in self.connection.execute('pragma table_info(characters)')}
+        if 'summary' not in character_columns:
+            self.connection.execute('alter table characters add column summary text')
         self.connection.execute(
             'create table if not exists events ('
             'character_id integer not null references characters(id), '
@@ -47,6 +52,7 @@ class SqliteCharacterBackend:
             'payload text not null, '
             'primary key (character_id, id))'
         )
+        self._backfill_missing_summaries()
 
     def start(self, *, sophont: Sophont, homeworld: TravellerMapWorld, player: str, name: str) -> CharacterRow:
         cursor = self.connection.execute(
@@ -78,11 +84,23 @@ class SqliteCharacterBackend:
             return None
         return {'id': row[0], 'sophont': row[1], 'player': row[2], 'name': row[3]}
 
+    def get_summary(self, character_id: int) -> CharacterSummary | None:
+        cursor = self.connection.execute('select summary from characters where id = ?', (character_id,))
+        row = cursor.fetchone()
+        if row is None or row[0] is None:
+            return None
+        register_event_handlers()
+        return CharacterSummary.model_validate_json(row[0])
+
     def rename_character(self, character_id: int, name: str) -> CharacterRow | None:
         character = self.get_character(character_id)
         if character is None:
             return None
         self.connection.execute('update characters set name = ? where id = ?', (name, character_id))
+        summary = self.get_summary(character_id)
+        if summary is not None:
+            summary.name = name
+            self._store_summary(character_id, summary)
         self.connection.commit()
         character['name'] = name
         return character
@@ -102,8 +120,28 @@ class SqliteCharacterBackend:
             'insert into events (character_id, id, fulfills_event_id, fulfills_seq, payload) values (?, ?, ?, ?, ?)',
             (character_id, event.id, fulfills_event_id, fulfills_seq, json.dumps(event.model_dump())),
         )
+        self._store_summary(character_id, projection.summary)
         self.connection.commit()
         return event, projection
+
+    def _store_summary(self, character_id: int, summary: CharacterSummary | None) -> None:
+        payload = summary.model_dump_json() if summary is not None else None
+        self.connection.execute('update characters set summary = ? where id = ?', (payload, character_id))
+
+    def _backfill_missing_summaries(self) -> None:
+        character_ids = [row[0] for row in self.connection.execute('select id from characters where summary is null')]
+        changed = False
+        for character_id in character_ids:
+            try:
+                events = self.load_typed_events(character_id)
+                projection = replay(character_id, events) if events else None
+            except ReplayError, ValueError:
+                continue
+            if projection is not None:
+                self._store_summary(character_id, projection.summary)
+                changed = True
+        if changed:
+            self.connection.commit()
 
     def load_typed_events(self, character_id: int) -> list[Event] | None:
         register_event_handlers()
@@ -130,11 +168,18 @@ class SqliteCharacterBackend:
         row = cursor.fetchone()
         if row is None:
             return False
-        self.connection.execute(
-            'delete from events where character_id = ? and id = ?',
-            (character_id, row[0]),
-        )
-        self.connection.commit()
+        try:
+            self.connection.execute(
+                'delete from events where character_id = ? and id = ?',
+                (character_id, row[0]),
+            )
+            events = self.load_typed_events(character_id)
+            projection = replay(character_id, events) if events else None
+            self._store_summary(character_id, projection.summary if projection is not None else None)
+            self.connection.commit()
+        except Exception:
+            self.connection.rollback()
+            raise
         return True
 
     def delete_character(self, character_id: int) -> CharacterRow | None:

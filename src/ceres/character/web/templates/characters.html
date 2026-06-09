@@ -28,6 +28,9 @@
           <span class="sr-only">Select</span>
         </th>
         <th class="pb-2 pr-4">Name</th>
+        <th class="pb-2 pr-4">UCP</th>
+        <th class="pb-2 pr-4">Latest Career</th>
+        <th class="pb-2 pr-4">Rank</th>
         <th class="pb-2 pr-4">Sophont</th>
         <th class="pb-2 pr-4">Player</th>
         <th class="pb-2"></th>
@@ -44,6 +47,15 @@
                  class="h-4 w-4 rounded border-gray-600 bg-gray-900 text-red-600 focus:ring-red-500">
         </td>
         <td class="py-3 pr-4 font-semibold text-gray-100">{{ c.name }}</td>
+        <td class="py-3 pr-4 font-mono text-gray-300">{{ c.ucp or '—' }}</td>
+        <td class="py-3 pr-4 text-gray-300">{{ c.career or '—' }}</td>
+        <td class="py-3 pr-4 text-gray-400">
+          {% if c.rank %}
+            {{ c.rank[0] }}{% if c.rank[1] %} · {{ c.rank[1] }}{% endif %}
+          {% else %}
+            —
+          {% endif %}
+        </td>
         <td class="py-3 pr-4 text-gray-400">{{ c.sophont }}</td>
         <td class="py-3 pr-4">
           {% if c.player == 'NPC' %}

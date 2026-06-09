@@ -261,47 +261,29 @@ include:
 
 See [docs/RULE_INTERPRETATIONS.md](docs/RULE_INTERPRETATIONS.md) — RIC-006.
 
-The Scout career (IISS) requires the character to be based at a world with an
-Imperial Scout Base (`S`) or Way Station (`W`) in `TravellerMapWorld.bases`.
-This should fire at the start of **every** Scout term (first entry and all
-re-enlistments).
+Implemented in `Scout.start_new_term()` and covered in
+`tests/character/test_scout.py`: the check runs for first and subsequent terms,
+offers relocation from qualifying worlds, requires it from non-qualifying
+worlds, and preserves `birthworld` when the pending input is fulfilled.
 
+Remaining before archiving:
+
+- Align `target_constraints='world_with_scout_base'` with the RIC-006 contract
+  name `world_with_imperial_scout_base`, or update RIC-006 deliberately.
+- Align the required and optional reason text with RIC-006, or update RIC-006
+  deliberately.
 
 ### Homeworld handling for other careers
 
 See [docs/RULE_INTERPRETATIONS.md](docs/RULE_INTERPRETATIONS.md) — RIC-006.
 
+Current status:
 
-
-**Logic:**
-
-- If `'S' not in homeworld.bases and 'W' not in homeworld.bases`:
-  emit `HomeworldChangeRequiredEvent` with `source_kind='career_entry'`,
-  `source_career='Scout'`,
-  `target_constraints='world_with_imperial_scout_base'`, and reason text from
+- **Implemented:** Psion offers a homeworld change at the start of each term
+  when the current world has a non-X starport.
+- **Still needed:** Agent, Army, Citizen, Drifter, Entertainer, Marines,
+  Merchant, Navy, Noble, Rogue, Scholar, and Prisoner handling described in
   RIC-006.
-- Otherwise (homeworld already qualifies):
-  emit `HomeworldChangeOfferedEvent` with the same fields and the optional
-  reason text from RIC-006.
-
-**Where to hook it:** The trigger belongs in Scout career domain logic, not in
-the web layer. The right hook point is at the beginning of each Scout term —
-equivalent to where other per-term career logic fires (survival, events, etc.).
-
-**Dependency:** Another session is reworking the event-handling internals.
-Implement this only after that work lands, to avoid merge conflicts around
-career term lifecycle hooks.
-
-**Tests to write first:**
-
-- A character with a Scout-base homeworld: `HomeworldChangeOfferedEvent` appears
-  in the projection; `homeworld` is not mutated.
-- A character with a non-Scout-base homeworld: `HomeworldChangeRequiredEvent`
-  appears and is blocking; `homeworld` is not mutated.
-- After `HomeworldChangedEvent` fulfils the pending: `homeworld` is updated,
-  `birthworld` is unchanged.
-- Re-enlistment into a second Scout term produces the same check again.
-
 
 ## Character creation: known implementation gaps (rules not yet enforced)
 
@@ -312,10 +294,6 @@ career term lifecycle hooks.
   skill levels may not exceed 3 × (INT + EDU).
 - **Benefit roll bonus at rank 5–6 and "any one Benefit roll" events** — neither
   is implemented; see RIC-004.
-- **PSI characteristic support** — `Chars.PSI` exists. Life Events unusual
-  roll 1 now queues `PendingLifeEventPsionicsRoll` and computes
-  `PSI = max(0, 2D6 − max(0, (age−18)//4))`. Still needed: psionic talents,
-  training, and the Psion career itself (see the Psion career todo below).
 - **Generic Pre-Career Events table must match Core literally** — the generic
   pre-career events in `ceres.character.domain.precareer.loader` and
   `PreCareerEventHandler` in
@@ -362,85 +340,23 @@ career term lifecycle hooks.
 
 ## Character creation: draft, career switching, and assignment changes
 
-IMPORTANT: Whatever is done in the scope of this todo has to donsider the
+IMPORTANT: Whatever is done in the scope of this todo has to consider the
 overarching goal in todo "Character creation: eliminate remaining semantic
-strings" to move all Traveller rules knowledge out of events.py and into
-pure domain modules susch as the career modules.
+strings" to keep Traveller rules knowledge in pure domain modules such as the
+career modules.
 
-- **Draft domain logic** — the draft mechanic should live in the event engine
-  (career-owned `is_in_draft` / `is_draft_alternative` predicates, per RIC-003),
-  not in the web package. Any draft logic currently in `ceres.character.web`
-  violates the career encapsulation rule and must be moved into `events.py` /
-  the career package.
+- **Draft domain logic** — the active draft flow now lives in
+  `ceres.character.domain.career.entry` and career-owned `draft_assignments`;
+  the web layer only renders typed pending input. Still verify the full flow
+  against RIC-003 and replace remaining bespoke draft behavior, such as Drifter
+  event 11, with the shared mechanism.
 - **Changing careers** — normal qualification roll for new career; failure →
-  draft or Drifter; cannot return to a career in the term immediately following
-  departure.
+  draft or Drifter. Immediate re-entry restrictions are implemented and
+  archived in `docs/archive/done_todos.md`.
 - **Assignment changes** — within Army/Marines/Navy/Nobility/Rogue/Scholar/Scout:
   qualification roll, failure = continue same assignment. Within
   Agent/Citizen/Entertainer/Merchant: treated as a new career with full muster
   out.
-
-### CareerTerm narrative fields
-
-`CareerTerm` should carry the narrative state from the term so background text
-generators and the UI can describe what happened:
-
-- `mishap: str | None = None` — the mishap description if the character was
-  ejected; `None` means the term was completed normally
-- `event: str | None = None` — the life event description for the term; only
-  set when `mishap is None`
-- `prison: str | None = None` — the prison-sending description if the character
-  was sent to the Prisoner career during this term
-
-These fields serve two purposes beyond narrative:
-
-- A background text generator can read them directly without re-interpreting
-  event IDs or replaying history
-- `mishap is not None` on the last term of a career run is the signal that the
-  character was ejected, which drives career re-entry restrictions (see below)
-
-### Career re-entry restrictions
-
-The Core Rulebook qualification section states (paraphrased):
-
-> If you leave a career you cannot return to it in the next term. Exceptions:
-> the draft (you can be drafted back into a career you left or were ejected
-> from) and the Drifter career (always open). Assignment changes on page 20 add
-> a further exception.
-
-The page-20 exception is that Agent/Citizen/Entertainer/Merchant may leave
-their current assignment and enter a different assignment in the same career,
-treated as a new career, when leaving voluntarily. That is an explicit
-exception; the restriction still applies to re-entering the same assignment.
-
-Rules that need to be enforced in `start_career()`:
-
-- **Ejected last term (mishap on last term of career run)**: cannot re-enter
-  the same career the following term regardless of assignment. Exception: draft.
-- **Voluntarily mustered out from an `allows_assignment_change=True` career**
-  (Scout/Army/Marines/Navy/Noble/Rogue/Scholar): cannot re-enter that career
-  the following term. Exception: draft.
-- **Voluntarily mustered out from an `allows_assignment_change=False` career**
-  (Agent/Citizen/Entertainer/Merchant): cannot re-enter the same assignment the
-  following term, but may enter a different assignment in the same career (which
-  starts a new career run). Exception: same-assignment re-entry via draft is
-  allowed.
-
-`MusterOut.used` (already added) prevents `continue_career_run_from()`
-treating a post-muster re-entry as a run continuation.
-
-What still needs to be implemented:
-
-- `CharacterSummary` (or the projection) needs to track whether the most recent
-  departure from each career was ejection or voluntary, so `start_career()` can
-  enforce the correct restriction. Currently only `last_career` is recorded with
-  no ejection flag. The simplest approach: a field
-  `last_career_ejected: bool = False` set alongside `last_career` in
-  `clear_current_career()` — `True` when exiting via mishap, `False` for
-  voluntary muster-out.
-- `start_career()` checks these restrictions before qualifying, raises
-  `ReplayError` if violated (with a clear message). The draft bypass goes
-  through a separate code path that skips the restriction check.
 
 ### Career transition choice model
 
@@ -650,29 +566,6 @@ Known differences:
   checks in Merchant or Citizen is only a manual problem note.
 - The current tests explicitly assert the manual rank and advancement notes;
   replace them with tests of the represented benefits and their restrictions.
-
-## Psionic Community pre-career: bring Ceres fully in line with Companion
-
-Psionic Community entry, training, graduation checks, and graduation benefits
-are now represented.
-
-References:
-
-- `refs/companion/07_pre_career_options.md` (Psionic Community)
-- `src/ceres/character/domain/precareer/psionic_community.py`
-- `src/ceres/character/domain/precareer/loader.py`
-- `tests/character/test_companion_precareers.py`
-
-Implemented:
-
-- Entry requires established PSI and resolves the `PSI 8+` check with
-  `DM+1` for INT 8+.
-- Entry starts psionic institute training for an untrained psion.
-- Graduation resolves the `PSI 6+` check with `DM+1` for INT 8+.
-- Graduation grants PSI +1, Science (psionicology) 1, one possessed talent at
-  level 1, and permanent automatic Psion enlistment.
-- Honours raises all possessed talents to level 1 and offers one at level 2.
-- Graduation grants the required Rival, or Enemy with honours.
 
 ## School of Hard Knocks pre-career: bring Ceres fully in line with Companion
 
@@ -1182,28 +1075,12 @@ Known differences:
   most of the tables. Make all Scout mishap/event entry text match Core word
   for word, excluding page references (which are intentionally omitted).
 
-## Psionics: implement talent acquisition and powers
+## Psionics: implement individual powers
 
 Reference: `refs/core/10_psionics.md`
 
-The Core Psion career, its typed talents, eligibility, tables, events/mishaps,
-Psionic Community auto-qualification, and RIC-006 homeworld offer are
-implemented.
-
-Remaining broader psionics work:
-
 - Model and implement the individual powers under each psionic talent,
   including PSI costs, reach, checks, and PSI recovery.
-
-Implemented:
-
-- Psionic testing establishes PSI and typed `Psionics` state.
-- Entering Psionic Community or the Psion career starts institute training
-  when the character has not previously attempted talent acquisition.
-- Talent-acquisition attempts track their cumulative DM penalty and acquired
-  talents separately from ordinary skills.
-- Psion skill-table results improve possessed talents or allow an acquisition
-  attempt for an unpossessed talent.
 
 ## Replace sophont string-name lookup with typed objects
 

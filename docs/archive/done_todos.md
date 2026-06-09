@@ -2,6 +2,73 @@
 
 Moved from `docs/todo_maybe.md` once fully implemented.
 
+## Psion career and talent-acquisition foundation
+
+The Core Psion career, typed psionic talents, eligibility, career tables,
+events and mishaps, Psionic Community auto-qualification, and RIC-006
+homeworld offer are implemented.
+
+Implemented:
+
+- Psionic testing establishes PSI and typed `Psionics` state.
+- Entering Psionic Community or the Psion career starts institute training
+  when the character has not previously attempted talent acquisition.
+- Talent-acquisition attempts track their cumulative DM penalty and acquired
+  talents separately from ordinary skills.
+- Psion skill-table results improve possessed talents or allow an acquisition
+  attempt for an unpossessed talent.
+
+Individual psionic powers remain tracked separately in `docs/todo_maybe.md`.
+
+## Character creation: CareerTerm narrative fields
+
+`CareerTerm` carries `event`, `mishap`, and `prison` narrative fields.
+Career event, mishap, life-event prison, and Prisoner-transition handlers
+populate them so consumers can describe a term without interpreting event IDs.
+
+Covered by `tests/character/test_career_term_narrative.py`.
+
+## Character creation: career re-entry restrictions
+
+Immediate career re-entry restrictions are enforced:
+
+- Mishap ejection blocks the same career in the following term, regardless of
+  assignment.
+- Voluntarily leaving an assignment-change career blocks every assignment in
+  that career in the following term.
+- Voluntarily leaving Agent, Citizen, Entertainer, or Merchant blocks the same
+  assignment but permits a different assignment as a new career run.
+- Draft entry uses its separate path and bypasses normal re-entry restrictions.
+- `MusterOut.used` prevents a post-muster re-entry from continuing the prior
+  career run.
+
+`CharacterSummary.last_career_ejected` records whether the most recent
+departure was an ejection. Covered by the re-entry tests in
+`tests/character/test_muster_out.py`.
+
+## Psionic Community pre-career: bring Ceres fully in line with Companion
+
+Psionic Community entry, training, graduation checks, and graduation benefits
+are represented.
+
+References:
+
+- `refs/companion/07_pre_career_options.md` (Psionic Community)
+- `src/ceres/character/domain/precareer/psionic_community.py`
+- `src/ceres/character/domain/precareer/loader.py`
+- `tests/character/test_companion_precareers.py`
+
+Implemented:
+
+- Entry requires established PSI and resolves the `PSI 8+` check with
+  `DM+1` for INT 8+.
+- Entry starts psionic institute training for an untrained psion.
+- Graduation resolves the `PSI 6+` check with `DM+1` for INT 8+.
+- Graduation grants PSI +1, Science (psionicology) 1, one possessed talent at
+  level 1, and permanent automatic Psion enlistment.
+- Honours raises all possessed talents to level 1 and offers one at level 2.
+- Graduation grants the required Rival, or Enemy with honours.
+
 ## Character creation: make career classes real rule-owning objects; unify with Career identity
 
 All 14 career modules converted from the `CAREER_DATA = XCareerData(...)` singleton

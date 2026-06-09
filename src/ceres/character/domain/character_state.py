@@ -12,6 +12,7 @@ from ceres.character.domain.skills import AnySkill, Level, Skill, _level_fields
 from ceres.character.domain.sophont import Sophont
 from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.pending_input import PendingInputBase, _deserialise_pending_input
+from ceres.shared import int_to_ehex
 
 
 class CharacterSummary(BaseModel):
@@ -50,6 +51,16 @@ class CharacterSummary(BaseModel):
     )  # skills chosen during university (for graduation boost)
     parole_threshold: int | None = None  # Prisoner career: current Parole Threshold (3-12)
 
+    @property
+    def ucp(self) -> str | None:
+        if any(stat not in self.characteristics for stat in self.sophont.ucp_stats):
+            return None
+        return ''.join(int_to_ehex(self.characteristics[stat]) for stat in self.sophont.ucp_stats)
+
+    @property
+    def latest_career(self) -> CareerData | None:
+        return self.current_career or self.last_career
+
     def latest_career_run_terms(self, career: CareerData) -> list[CareerTerm]:
         terms: list[CareerTerm] = []
         for term in reversed(self.career_terms):
@@ -80,7 +91,7 @@ class CharacterSummary(BaseModel):
         if not self.career_terms:
             return (str(self.rank), '')
         term = self.career_terms[-1]
-        return term.career.rank_title(term.commission, self.rank)
+        return term.career.rank_title(term.commission, self.rank, term.assignment)
 
     @property
     def benefits(self) -> list[ItemBenefit]:

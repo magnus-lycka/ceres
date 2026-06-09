@@ -122,6 +122,24 @@ class TestAssignmentRanksByIndex:
         result = scout.assignment_ranks(1)
         assert result is scout.ranks
 
+    def test_rank_title_retains_latest_assignment_title_until_replaced(self):
+        psion = load_careers()['Psion']
+        adept = psion.assignment('Adept')
+        assert adept is not None
+
+        assert psion.rank_title(False, 1, adept) == ('1', 'Initiate')
+        assert psion.rank_title(False, 2, adept) == ('2', 'Initiate')
+        assert psion.rank_title(False, 3, adept) == ('3', 'Acolyte')
+        assert psion.rank_title(False, 5, adept) == ('5', 'Acolyte')
+        assert psion.rank_title(False, 6, adept) == ('6', 'Master')
+
+    def test_rank_title_before_first_assignment_title_is_empty(self):
+        psion = load_careers()['Psion']
+        wild_talent = psion.assignment('Wild Talent')
+        assert wild_talent is not None
+
+        assert psion.rank_title(False, 0, wild_talent) == ('0', '')
+
     def test_available_tables_uses_assignment_object(self):
         careers = load_careers()
         scout = careers['Scout']

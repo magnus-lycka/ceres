@@ -742,6 +742,19 @@ Event 7 - 4, tranferred, escape implies forced homeworld change if starport
 
 Changing Homeworld allowed every term if starport (I.e. starport class not X)
 
+### RIC-007 Career Rank Titles Persist Until Replaced
+
+A blank title at a career rank means that rank grants no new title. It does not
+remove the title earned at an earlier rank.
+
+Ceres therefore displays the latest non-empty title at or below the Traveller's
+current rank on the applicable assignment or officer rank table. For example,
+an Adept with the titles `Initiate` at rank 1, `Acolyte` at rank 3, and `Master`
+at rank 6 remains an `Initiate` at rank 2 and an `Acolyte` at ranks 4 and 5.
+
+This interpretation affects title presentation only. Rank bonuses and other
+effects still apply solely at the exact rank where they are listed.
+
 ---
 
 ## Robot Interpretations

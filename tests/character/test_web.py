@@ -1,6 +1,7 @@
 """Integration tests for the character web UI routes."""
 
 from html import unescape
+import re
 from typing import Any, Literal
 
 from fastapi.testclient import TestClient
@@ -18,6 +19,7 @@ from ceres.character.domain.homeworld.homeworld_events import (
     PendingHomeworldChangeRequired,
 )
 from ceres.character.domain.sophont import HUMANITI, VILANI
+from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.store import SqliteCharacterBackend
 from ceres.character.web.app import build_app
@@ -54,6 +56,100 @@ def test_character_list_shows_characters(client_with_backend):
     assert 'Aria' in r.text
     assert 'Delete Selected' in r.text
     assert 'name="character_ids"' in r.text
+
+
+def test_character_list_shows_ucp_latest_career_and_rank(client_with_backend, monkeypatch):
+    from ceres.character.domain.career.career_data import CareerTerm
+    from ceres.character.domain.career.loader import load_careers
+    from ceres.character.domain.character_state import CharacterSummary
+    from ceres.character.domain.characteristics import Chars
+
+    client, backend = client_with_backend
+    row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Aria')
+    citizen = load_careers()['Citizen']
+    assignment = citizen.assignment('Colonist')
+    assert assignment is not None
+    monkeypatch.setattr(
+        backend,
+        'get_summary',
+        lambda character_id: CharacterSummary(
+            name='Aria',
+            sophont=HUMANITI,
+            homeworld=MOCK_WORLD,
+            characteristics={
+                Chars.STR: 8,
+                Chars.DEX: 9,
+                Chars.END: 10,
+                Chars.INT: 6,
+                Chars.EDU: 7,
+                Chars.SOC: 11,
+            },
+            current_career=citizen,
+            current_assignment=assignment,
+            rank=3,
+            career_terms=[CareerTerm(career=citizen, assignment=assignment)],
+        ),
+    )
+
+    r = client.get('/ui/')
+
+    assert r.status_code == 200
+    assert '89A67B' in r.text
+    assert 'Citizen' in r.text
+    assert '3 · Settler' in r.text
+    assert 'Rank 3' not in r.text
+    assert f'/ui/characters/{row["id"]}' in r.text
+
+
+def test_character_list_shows_last_career_after_leaving_it(client_with_backend, monkeypatch):
+    from ceres.character.domain.career.loader import load_careers
+    from ceres.character.domain.character_state import CharacterSummary
+
+    client, backend = client_with_backend
+    backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Retired')
+    scout = load_careers()['Scout']
+    monkeypatch.setattr(
+        backend,
+        'get_summary',
+        lambda character_id: CharacterSummary(
+            name='Retired',
+            sophont=HUMANITI,
+            homeworld=MOCK_WORLD,
+            last_career=scout,
+            rank=2,
+        ),
+    )
+
+    r = client.get('/ui/')
+
+    assert 'Scout' in r.text
+    assert re.search(r'>\s*2\s*<', r.text)
+    assert 'Rank 2' not in r.text
+
+
+def test_character_list_reads_stored_summaries_without_replaying(client_with_backend, monkeypatch):
+    client, backend = client_with_backend
+    backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Stored')
+    monkeypatch.setattr(
+        backend,
+        'get_projection',
+        lambda character_id: pytest.fail('Character list must not replay event logs'),
+    )
+
+    r = client.get('/ui/')
+
+    assert r.status_code == 200
+    assert 'Stored' in r.text
+
+
+def test_character_list_reads_updated_persisted_summary(client_with_backend):
+    client, backend = client_with_backend
+    row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Stored')
+    backend.append_event(row['id'], Event(fulfills=(1, 0), handler=UcpHandler(ucp='89A67B')))
+
+    r = client.get('/ui/')
+
+    assert '89A67B' in r.text
 
 
 # ── character creation ────────────────────────────────────────────────────────
@@ -926,7 +1022,6 @@ def test_event_from_form_career_choice_missing_assignment_raises():
 
     from ceres.character.domain.career import CITIZEN
     from ceres.character.domain.career.career_events import PendingCareerChoice
-    from ceres.character.mechanism.errors import ReplayError
 
     pi = PendingCareerChoice(pending_id=(3, 0), instruction='', options=[CITIZEN])
     form = FormData({'career': 'Citizen', 'assignment': '', 'roll': '8'})

@@ -206,7 +206,19 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
 
     @router.get('/', response_class=HTMLResponse)
     def list_characters(request: Request) -> Any:
-        characters = backend.list_characters()
+        characters: list[dict[str, Any]] = []
+        for row in backend.list_characters():
+            summary = backend.get_summary(row['id'])
+            career = summary.latest_career if summary is not None else None
+            rank = summary.rank_title if summary is not None and summary.rank is not None else None
+            characters.append(
+                {
+                    **row,
+                    'ucp': summary.ucp if summary is not None else None,
+                    'career': career.name if career is not None else None,
+                    'rank': rank,
+                }
+            )
         return templates.TemplateResponse(
             request=request,
             name='characters.html',
