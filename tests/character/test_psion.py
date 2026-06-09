@@ -18,9 +18,11 @@ from ceres.character.domain.career.career_events import (
     PendingRankBonusChoice,
     PendingSkillChoice,
     PendingSkillTable,
+    PendingSkillTableChoice,
     PendingSurvive,
     PendingTermEvent,
     SkillChoiceHandler,
+    SkillTableHandler,
 )
 from ceres.character.domain.career.loader import load_careers, selectable_careers
 from ceres.character.domain.career.psion import (
@@ -44,11 +46,10 @@ from ceres.character.domain.health.health_events import (
 )
 from ceres.character.domain.homeworld.homeworld_events import PendingHomeworldChangeOffered
 from ceres.character.domain.psionics import (
-    Awareness,
-    Clairvoyance,
+    PendingPsionicInstituteTraining,
     Psi,
     Psionics,
-    Telekinesis,
+    Telepathy,
     psionic_talent_instances,
 )
 from ceres.character.domain.skills import (
@@ -187,11 +188,7 @@ class TestPsionCareer:
         assert projection.summary.current_career is None
 
     def test_each_assignment_uses_its_specialist_table_for_basic_training(self):
-        for assignment, expected in (
-            ('Wild Talent', Telekinesis),
-            ('Adept', Clairvoyance),
-            ('Psi-Warrior', Awareness),
-        ):
+        for assignment in ('Wild Talent', 'Adept', 'Psi-Warrior'):
             projection = replay(1, _enter_psion(assignment))
 
             talent_choices = [
@@ -201,10 +198,15 @@ class TestPsionCareer:
                 for option in pending.options
                 if isinstance(option, Psi)
             ]
-            assert any(isinstance(option.talent, expected) for option in talent_choices)
-            assert not any(isinstance(skill, expected) for skill in projection.summary.skills)
-            assert projection.summary.psionics is not None
-            assert projection.summary.psionics.talent_level(expected) is None
+            assert talent_choices == []
+
+    def test_basic_training_does_not_improve_possessed_talents(self):
+        driver = PsionDriver()
+        driver.start(VILANI, MOCK_WORLD).ucp('7869A5').background_skills([Admin(), Athletics(), Carouse(), Drive()])
+        driver.establish_trained_psi().enter_psion('Adept')
+
+        assert driver.projection.summary.psionics is not None
+        assert all(talent.level.value == 0 for talent in driver.projection.summary.psionics.psionic_talent_skills)
 
     def test_mishap_two_loses_one_psi(self):
         driver = _psion_driver()
@@ -281,6 +283,11 @@ class TestPsionCareer:
 
 
 class TestPsionHomeworldRule:
+    def test_institute_training_precedes_relocation_and_basic_training(self):
+        projection = replay(1, _enter_psion())
+
+        assert isinstance(projection.pending_inputs[0], PendingPsionicInstituteTraining)
+
     def test_non_x_starport_offers_optional_relocation(self):
         projection = replay(1, _enter_psion())
 
@@ -338,6 +345,38 @@ class TestPsionValidLifecycle:
 
 
 class TestPsionCoreTables:
+    def test_service_skills_may_offer_acquisition_of_an_unpossessed_talent(self):
+        driver = _psion_driver('Adept')
+        assert driver.projection.summary.psionics is not None
+        driver.projection.summary.psionics.psionic_talent_skills = [
+            talent
+            for talent in driver.projection.summary.psionics.psionic_talent_skills
+            if not isinstance(talent, Telepathy)
+        ]
+        driver.projection.pending_inputs.clear()
+
+        Event(id=20, handler=SkillTableHandler(table='service_skills', roll=1)).apply(driver.projection)
+
+        pending = driver._find(PendingSkillTableChoice)
+        assert len(pending.options) == 1
+        assert isinstance(pending.options[0], Psi)
+        assert isinstance(pending.options[0].talent, Telepathy)
+
+    def test_assignment_table_cannot_offer_acquisition_of_an_unpossessed_talent(self):
+        driver = _psion_driver('Adept')
+        assert driver.projection.summary.psionics is not None
+        driver.projection.summary.psionics.psionic_talent_skills = [
+            talent
+            for talent in driver.projection.summary.psionics.psionic_talent_skills
+            if not isinstance(talent, Telepathy)
+        ]
+        driver.projection.pending_inputs.clear()
+
+        Event(id=20, handler=SkillTableHandler(table='assignment2', roll=1)).apply(driver.projection)
+
+        assert not any(isinstance(pending, PendingSkillTableChoice) for pending in driver.projection.pending_inputs)
+        assert driver._find(PendingSurvive)
+
     def test_assignment_progress_checks_match_core(self):
         psion = load_careers()['Psion']
 

@@ -443,6 +443,18 @@ class Psion(CareerData):
     def _basic_training_table_name(self, assignment: AssignmentData) -> str:
         return f'assignment{self.assignment_index(assignment)}'
 
+    def skill_table_option_is_available(
+        self,
+        projection: CharacterProjection,
+        table_name: str,
+        option: CareerSkillOption,
+    ) -> bool:
+        if not isinstance(option, Psi):
+            return True
+        psionics = projection.summary.psionics
+        possessed = psionics is not None and psionics.talent_level(type(option.talent)) is not None
+        return possessed or table_name == 'service_skills'
+
     def start_new_term(
         self,
         projection: CharacterProjection,
@@ -452,7 +464,9 @@ class Psion(CareerData):
     ) -> None:
         insert_at = len(projection.pending_inputs)
         super().start_new_term(projection, assignment, event_id, is_continuation)
-        queue_psionic_institute_training(projection, event_id, len(projection.pending_inputs))
+        training_queued = queue_psionic_institute_training(projection, event_id, len(projection.pending_inputs))
+        if training_queued:
+            insert_at = 1
         if projection.summary.homeworld.uwp.startswith('X'):
             return
         used_sub_ids = {p.pending_id[1] for p in projection.pending_inputs if p.pending_id[0] == event_id}

@@ -1,7 +1,12 @@
 from pydantic import TypeAdapter, ValidationError
 import pytest
 
-from ceres.character.domain.career.career_events import PendingCareerChoice
+from ceres.character.domain.career.advancement import PendingRankBonusChoice
+from ceres.character.domain.career.career_events import (
+    PendingCareerChoice,
+    PendingInitialTrainingChoice,
+    PendingSkillTableChoice,
+)
 from ceres.character.domain.character_start import CharacterStartedHandler, UcpHandler
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.characteristics import Chars
@@ -33,7 +38,7 @@ from ceres.character.domain.psionics import (
 )
 from ceres.character.domain.skills import AnySkill, Level, _skill_classes
 from ceres.character.domain.sophont import VILANI, Sophont
-from ceres.character.input_specs import Select
+from ceres.character.input_specs import NumberEntry, Select
 from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
@@ -125,6 +130,48 @@ def test_acquired_talent_is_kept_out_of_character_skills() -> None:
 
     assert summary.psionics.talent_level(Telepathy) == 0
     assert summary.skills == []
+
+
+@pytest.mark.parametrize(
+    'pending',
+    [
+        PendingInitialTrainingChoice(pending_id=(1, 0), instruction='Choose', options=[Psi(Telepathy())]),
+        PendingSkillTableChoice(pending_id=(1, 0), instruction='Choose', options=[Psi(Telepathy())]),
+        PendingRankBonusChoice(pending_id=(1, 0), instruction='Choose', options=[Psi(Telepathy())], level=1),
+    ],
+)
+def test_possessed_psionic_talent_choice_does_not_request_an_acquisition_roll(pending) -> None:
+    projection = _psionic_projection(psionics=Psionics(psionic_talent_skills=[Telepathy()]))
+
+    specs = pending.input_specs(projection)
+
+    assert not any(isinstance(spec, NumberEntry) for spec in specs)
+
+
+@pytest.mark.parametrize(
+    'pending',
+    [
+        PendingInitialTrainingChoice(pending_id=(1, 0), instruction='Choose', options=[Psi(Telepathy())]),
+        PendingSkillTableChoice(pending_id=(1, 0), instruction='Choose', options=[Psi(Telepathy())]),
+        PendingRankBonusChoice(pending_id=(1, 0), instruction='Choose', options=[Psi(Telepathy())], level=1),
+    ],
+)
+def test_untrained_psionic_talent_choice_requests_an_acquisition_roll(pending) -> None:
+    specs = pending.input_specs(_psionic_projection())
+
+    assert any(isinstance(spec, NumberEntry) for spec in specs)
+
+
+def test_possessed_psionic_talent_choice_improves_without_a_submitted_roll() -> None:
+    projection = _psionic_projection(psionics=Psionics(psionic_talent_skills=[Telepathy()]))
+    pending = PendingInitialTrainingChoice(pending_id=(1, 0), instruction='Choose', options=[Psi(Telepathy())])
+
+    event = pending.event_from_form({'skill': Psi(Telepathy()).model_dump_json()})
+    event.apply(projection, pending)
+
+    assert projection.summary.psionics is not None
+    assert projection.summary.psionics.talent_level(Telepathy) == 1
+    assert projection.summary.psionics.talent_acquisition_checks == 0
 
 
 def test_talent_level_reward_raises_possessed_talent_to_requested_level() -> None:
@@ -282,7 +329,7 @@ def test_psionic_community_starts_institute_training_for_an_untrained_psion() ->
 
     handler.apply(projection, Event(id=1, handler=handler))
 
-    assert any(isinstance(pending, PendingPsionicInstituteTraining) for pending in projection.pending_inputs)
+    assert isinstance(projection.pending_inputs[0], PendingPsionicInstituteTraining)
 
 
 class TestPsionicTalentDefinition:
@@ -502,6 +549,48 @@ class TestInstituteTraining:
 
         next_pending = next(p for p in projection.pending_inputs if isinstance(p, PendingPsionicInstituteTraining))
         assert [type(talent) for talent in next_pending.remaining_talents] == [Telepathy, Awareness]
+
+    def test_training_attempt_keeps_the_remaining_training_before_other_pending_work(self) -> None:
+        projection = _psionic_projection()
+        pending = PendingPsionicInstituteTraining(
+            pending_id=(1, 0),
+            instruction='Train',
+            remaining_talents=[Telepathy(), Telekinesis()],
+        )
+        career_choice = PendingCareerChoice(pending_id=(1, 1), instruction='Choose a career')
+        projection.pending_inputs.extend([pending, career_choice])
+        event = Event(
+            id=2,
+            fulfills=pending.pending_id,
+            handler=PsionicTalentTrainingHandler(talent=Telepathy(), roll=2),
+        )
+
+        projection.fulfill_pending(event)
+        event.apply(projection, pending)
+
+        assert isinstance(projection.pending_inputs[0], PendingPsionicInstituteTraining)
+        assert projection.pending_inputs[1] is career_choice
+
+        next_training = projection.pending_inputs[0]
+        final_event = Event(
+            id=3,
+            fulfills=next_training.pending_id,
+            handler=PsionicTalentTrainingHandler(talent=Telekinesis(), roll=2),
+        )
+        projection.fulfill_pending(final_event)
+        final_event.apply(projection, next_training)
+
+        assert projection.pending_inputs == [career_choice]
+
+    def test_queued_training_precedes_work_already_pending(self) -> None:
+        projection = _psionic_projection()
+        career_choice = PendingCareerChoice(pending_id=(1, 0), instruction='Choose a career')
+        projection.pending_inputs.append(career_choice)
+
+        assert queue_psionic_institute_training(projection, event_id=1, pending_idx=1)
+
+        assert isinstance(projection.pending_inputs[0], PendingPsionicInstituteTraining)
+        assert projection.pending_inputs[1] is career_choice
 
     def test_attempting_final_talent_finishes_sequence_without_another_pending(self) -> None:
         projection = _psionic_projection()

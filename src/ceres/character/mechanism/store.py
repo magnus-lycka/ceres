@@ -9,6 +9,7 @@ from ceres import settings
 from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.domain.character_start import CharacterStartedHandler
 from ceres.character.domain.character_state import CharacterProjection
+from ceres.character.domain.event_handlers import register_event_handlers
 from ceres.character.domain.sophont import Sophont
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
@@ -105,6 +106,7 @@ class SqliteCharacterBackend:
         return event, projection
 
     def load_typed_events(self, character_id: int) -> list[Event] | None:
+        register_event_handlers()
         cursor = self.connection.execute(
             'select payload from events where character_id = ? order by id',
             (character_id,),

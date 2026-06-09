@@ -69,7 +69,12 @@ from ceres.character.domain.life_events import (
     PendingLifeEventChoice,
     PendingLifeEventUnusual,
 )
-from ceres.character.domain.psionics import PendingLifeEventPsionicsRoll, Psi, PsionicTalentTrainingHandler
+from ceres.character.domain.psionics import (
+    PendingLifeEventPsionicsRoll,
+    Psi,
+    PsionicTalentTrainingHandler,
+    talent_acquisition_roll_required,
+)
 from ceres.character.domain.skill_events import (
     PendingSkillChoice,
     SkillChoiceHandler,
@@ -412,9 +417,13 @@ class SkillTableHandler(EventHandlerBase):
         assignment_index = projection.summary.current_assignment
         choices: list[CareerSkillOption] | None = None
         if isinstance(entry, list):
-            choices = cast(list[CareerSkillOption], list(entry))
+            choices = [
+                option
+                for option in cast(list[CareerSkillOption], list(entry))
+                if career.skill_table_option_is_available(projection, self.table, option)
+            ]
         elif isinstance(entry, Psi):
-            choices = [entry]
+            choices = [entry] if career.skill_table_option_is_available(projection, self.table, entry) else []
         elif not isinstance(entry, _Chars):
             skill_cls = type(entry)
             fields = _level_fields(skill_cls)
@@ -447,10 +456,12 @@ class SkillTableHandler(EventHandlerBase):
                 projection.pending_inputs.insert(idx, new_pending)
             else:
                 projection.pending_inputs.append(new_pending)
-        else:
+        elif not isinstance(entry, (list, Psi)):
             _apply_skill_table_entry(projection, entry)
             if not reenlist_queued:
                 projection.pending_inputs.append(_survive_pending(career, assignment_index, event.id))
+        elif not reenlist_queued:
+            projection.pending_inputs.append(_survive_pending(career, assignment_index, event.id))
 
 
 # ── Skill Roll ─────────────────────────────────────────────────────────────────
@@ -909,7 +920,7 @@ class PendingInitialTrainingChoice(PendingInputBase):
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
         options = _build_skill_select_options(projection, self.options, 0)
         specs: list[InputSpec] = [Select(name='skill', label='Choose a skill', options=options)]
-        if any(isinstance(option, Psi) for option in self.options):
+        if talent_acquisition_roll_required(projection, self.options):
             specs.append(
                 NumberEntry(
                     name='roll',
@@ -960,7 +971,7 @@ class PendingSkillTableChoice(PendingInputBase):
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
         options = _build_skill_select_options(projection, self.options, None)
         specs: list[InputSpec] = [Select(name='skill', label='Choose a skill', options=options)]
-        if any(isinstance(option, Psi) for option in self.options):
+        if talent_acquisition_roll_required(projection, self.options):
             specs.append(
                 NumberEntry(
                     name='roll',

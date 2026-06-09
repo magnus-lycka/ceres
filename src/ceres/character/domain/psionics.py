@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Annotated, Any, Literal, cast, get_args, get_origin
 
 from pydantic import BaseModel, Field, RootModel, TypeAdapter
@@ -73,6 +74,14 @@ def psionic_talent_classes() -> tuple[PsionicTalentSkillClass, ...]:
 
 def psionic_talent_instances() -> list[PsionicTalentSkills]:
     return [cls() for cls in psionic_talent_classes()]
+
+
+def talent_acquisition_roll_required(projection: CharacterProjection, options: Sequence[Any]) -> bool:
+    psionics = projection.summary.psionics
+    return any(
+        isinstance(option, Psi) and (psionics is None or psionics.talent_level(type(option.talent)) is None)
+        for option in options
+    )
 
 
 class TalentAcquisitionResult(BaseModel):
@@ -186,12 +195,13 @@ class PendingPsionicInstituteTraining(PendingInputBase):
         attempted_cls = type(event.talent)
         remaining = [talent for talent in self.remaining_talents if type(talent) is not attempted_cls]
         if remaining:
-            projection.pending_inputs.append(
+            projection.pending_inputs.insert(
+                0,
                 PendingPsionicInstituteTraining(
                     pending_id=(event.id, 0),
                     instruction='Choose a psionic talent to attempt, or finish institute training',
                     remaining_talents=remaining,
-                )
+                ),
             )
 
 
@@ -309,12 +319,13 @@ def queue_psionic_institute_training(
         return False
     if all(psionics.talent_level(talent_cls) is not None for talent_cls in psionic_talent_classes()):
         return False
-    projection.pending_inputs.append(
+    projection.pending_inputs.insert(
+        0,
         PendingPsionicInstituteTraining(
             pending_id=(event_id, pending_idx),
             instruction='Choose a psionic talent to attempt, or finish institute training',
             remaining_talents=psionic_talent_instances(),
-        )
+        ),
     )
     return True
 

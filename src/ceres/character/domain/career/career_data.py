@@ -636,12 +636,12 @@ class CareerData(TermData):
         if isinstance(entry, Chars):
             return  # characteristic boosts are not granted during basic training
         if isinstance(entry, Psi):
-            raise ReplayError('Psionic talent training requires a pending acquisition check')
+            return  # basic training neither acquires nor improves psionic talents
         if isinstance(entry, list):
             # Choice entry: add all unknown skills at level 0
             for skill in entry:
                 if isinstance(skill, Psi):
-                    raise ReplayError('Psionic talent training requires a pending acquisition check')
+                    continue
                 skill_cls = type(skill)
                 if projection.summary.skill_level(skill_cls) is None:
                     projection.summary.skills.append(skill_cls())
@@ -655,9 +655,9 @@ class CareerData(TermData):
         if isinstance(entry, Chars):
             return []
         if isinstance(entry, Psi):
-            return [entry] if self._psi_talent_is_unknown(projection, entry) else []
+            return []
         if isinstance(entry, list):
-            return [s for s in entry if self._training_option_is_unknown(projection, s)]
+            return [s for s in entry if not isinstance(s, Psi) and self._training_option_is_unknown(projection, s)]
         skill_cls = type(entry)
         fields = _level_fields(skill_cls)
         spec_field = next((f for f in fields if getattr(entry, f).value > 0), None)
@@ -671,9 +671,9 @@ class CareerData(TermData):
         if isinstance(entry, Chars):
             return []
         if isinstance(entry, Psi):
-            return [entry] if self._psi_talent_is_unknown(projection, entry) else []
+            return []
         if isinstance(entry, list):
-            return [s for s in entry if self._training_option_is_unknown(projection, s)]
+            return [s for s in entry if not isinstance(s, Psi) and self._training_option_is_unknown(projection, s)]
         skill_cls = type(entry)
         if projection.summary.skill_level(skill_cls) is None:
             return [skill_cls()]
@@ -683,16 +683,9 @@ class CareerData(TermData):
     def _training_option_name(option: CareerSkillOption) -> str:
         return type(option.talent).name() if isinstance(option, Psi) else type(option).name()
 
-    @staticmethod
-    def _psi_talent_is_unknown(projection, option: Psi) -> bool:
-        return (
-            projection.summary.psionics is not None
-            and projection.summary.psionics.talent_level(type(option.talent)) is None
-        )
-
     def _training_option_is_unknown(self, projection, option: CareerSkillOption) -> bool:
         if isinstance(option, Psi):
-            return self._psi_talent_is_unknown(projection, option)
+            return False
         return projection.summary.skill_level(type(option)) is None
 
     def _queue_skill_table_before_survival(self, projection, assignment: AssignmentData, event_id: int) -> None:
@@ -725,6 +718,14 @@ class CareerData(TermData):
             idx = self.assignment_index(assignment)
             result.append(SkillTableOption(label=assignment.name, key=f'assignment{idx}'))
         return sorted(result, key=lambda o: o.key)
+
+    def skill_table_option_is_available(
+        self,
+        projection: CharacterProjection,
+        table_name: str,
+        option: CareerSkillOption,
+    ) -> bool:
+        return True
 
 
 # ── Muster-out and career term state ────────────────────────────────────────

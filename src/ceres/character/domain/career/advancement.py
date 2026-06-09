@@ -148,7 +148,9 @@ class PendingRankBonusChoice(PendingInputBase):
                 options=_build_skill_select_options(projection, self.options, self.level),
             )
         ]
-        if any(isinstance(option, Psi) for option in self.options):
+        from ceres.character.domain.psionics import talent_acquisition_roll_required
+
+        if talent_acquisition_roll_required(projection, self.options):
             specs.append(
                 NumberEntry(
                     name='roll',
