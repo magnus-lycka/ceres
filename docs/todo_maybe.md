@@ -1075,13 +1075,6 @@ Known differences:
   most of the tables. Make all Scout mishap/event entry text match Core word
   for word, excluding page references (which are intentionally omitted).
 
-## Psionics: implement individual powers
-
-Reference: `refs/core/10_psionics.md`
-
-- Model and implement the individual powers under each psionic talent,
-  including PSI costs, reach, checks, and PSI recovery.
-
 ## Replace sophont string-name lookup with typed objects
 
 `sophonts/__init__.py` finds sophonts by string name. Sophonts should be

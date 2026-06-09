@@ -755,6 +755,16 @@ at rank 6 remains an `Initiate` at rank 2 and an `Acolyte` at ranks 4 and 5.
 This interpretation affects title presentation only. Rank bonuses and other
 effects still apply solely at the exact rank where they are listed.
 
+### RIC-008 Individual Psionic Powers Are Out Of Scope For ceres.character
+
+`ceres.character` models the Psion career and the PSI characteristic (including
+the initial PSI test, talent selection, and PSI strength). It does not model the
+individual powers within each talent — their PSI costs, range, duration, checks,
+or PSI recovery rules.
+
+Psionic powers are operational gameplay mechanics that belong in a future
+play/encounter model, not in the character-creation domain.
+
 ---
 
 ## Robot Interpretations
