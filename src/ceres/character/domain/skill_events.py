@@ -52,9 +52,12 @@ def build_skill_select_options(
         if level == 0:
             results.append((skill_name, _skill_adapter.dump_json(skill_cls()).decode()))
             continue
+        fields = _level_fields(skill_cls)
+        restricted_fields = {field for field in fields if getattr(option, field).value > 0}
         for skill in projection.skill_choices([skill_cls], level):
+            if restricted_fields and not any(getattr(skill, field).value > 0 for field in restricted_fields):
+                continue
             label = skill_name
-            fields = _level_fields(skill_cls)
             if len(fields) > 1:
                 for field, specialisation in zip(fields, skill_cls.specialities(), strict=False):
                     if getattr(skill, field).value > 0:
@@ -86,6 +89,7 @@ class SkillChoiceHandler(EventHandlerBase):
 class PendingSkillChoice(PendingInputBase):
     kind: Literal['skill_choice'] = 'skill_choice'
     options: list[AnySkill] = Field(default_factory=list)
+    level: int | None = None
 
     model_config = {'arbitrary_types_allowed': True}
 
@@ -96,5 +100,5 @@ class PendingSkillChoice(PendingInputBase):
         return Event(fulfills=self.pending_id, handler=SkillChoiceHandler(skill=cast(AnySkill, parsed)))
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
-        options = build_skill_select_options(projection, self.options, None)
+        options = build_skill_select_options(projection, self.options, self.level)
         return [Select(name='skill', label='Choose a skill', options=options)]

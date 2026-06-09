@@ -101,6 +101,7 @@ class PendingScoutEvent3SkillRoll(CareerSkillRollPendingBase):
             )
         else:
             projection.summary.problems.append('Ship destroyed; may not re-enlist in Scouts at the end of this term.')
+            projection.forced_leave = True
 
 
 class ScoutEvent3Handler(CareerHandlerBase):
@@ -325,7 +326,10 @@ class Scout(CareerData):
         ),
         service_skills=SkillTable(
             [
-                Pilot(),
+                [
+                    Pilot(small_craft=Level(value=1)),
+                    Pilot(spacecraft=Level(value=1)),
+                ],
                 Survival(),
                 Mechanic(),
                 Astrogation(),
@@ -461,9 +465,21 @@ class Scout(CareerData):
             effects=[BenefitDmEffect(amount=1)],
         ),
         6: CareerEventEntry(
-            text='You spend several years jumping from world to world in your scout ship.',
+            text=(
+                'You spend several years jumping from world to world in your scout ship. Gain one of Astrogation 1, '
+                'Electronics 1, Navigation 1, Pilot (small craft) 1 or Mechanic 1.'
+            ),
             effects=[
-                SkillChoiceEffect(options=[Astrogation(), Electronics(), Navigation(), Pilot(), Mechanic()], level=1)
+                SkillChoiceEffect(
+                    options=[
+                        Astrogation(),
+                        Electronics(),
+                        Navigation(),
+                        Pilot(small_craft=Level(value=1)),
+                        Mechanic(),
+                    ],
+                    level=1,
+                )
             ],
         ),
         7: CareerEventEntry(

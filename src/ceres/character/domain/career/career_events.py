@@ -206,12 +206,12 @@ class MishapHandler(EventHandlerBase):
                     )
                     pending_idx += 1
                 elif isinstance(effect, SkillChoiceEffect):
-                    skills = ', '.join(_skill_option_label(o) for o in effect.options)
                     projection.pending_inputs.append(
                         PendingSkillChoice(
                             pending_id=(event.id, pending_idx),
-                            instruction=f'Choose one skill: {skills}',
+                            instruction=f'Choose one skill at level {effect.level}',
                             options=effect.options,
+                            level=effect.level,
                         )
                     )
                     pending_idx += 1
@@ -351,12 +351,12 @@ class TermEventHandler(EventHandlerBase):
                 PendingLifeEvent(pending_id=(event.id, pending_idx), instruction='Roll 2D on Life Events table')
             )
         elif skill_choice_effect is not None:
-            skills = ', '.join(_skill_option_label(o) for o in skill_choice_effect.options)
             projection.pending_inputs.append(
                 PendingSkillChoice(
                     pending_id=(event.id, pending_idx),
-                    instruction=f'Choose one skill: {skills}',
+                    instruction=f'Choose one skill at level {skill_choice_effect.level}',
                     options=skill_choice_effect.options,
+                    level=skill_choice_effect.level,
                 )
             )
         elif not career_handler_invoked:
@@ -701,6 +701,9 @@ def queue_reenlist_or_aging(projection: CharacterProjection, event_id: int, idx:
                 PendingAssignmentChangeChoice(
                     pending_id=(event_id, idx),
                     muster_out=can_muster_out,
+                    instruction='Stay, switch assignment, or muster out?'
+                    if can_muster_out
+                    else 'Stay or switch assignment?',
                 )
             )
         else:
@@ -847,7 +850,6 @@ class PendingReenlist(PendingInputBase):
 
 class PendingAssignmentChangeChoice(PendingInputBase):
     kind: Literal['assignment_change_choice'] = 'assignment_change_choice'
-    instruction: str = 'Stay, switch assignment, or muster out?'
     muster_out: bool
 
     _LABELS: ClassVar[dict[str, str]] = {

@@ -666,7 +666,7 @@ class CareerData(TermData):
         if isinstance(entry, Psi):
             return []
         if isinstance(entry, list):
-            return [s for s in entry if not isinstance(s, Psi) and self._training_option_is_unknown(projection, s)]
+            return self._unknown_training_skills(projection, entry)
         skill_cls = type(entry)
         fields = _level_fields(skill_cls)
         spec_field = next((f for f in fields if getattr(entry, f).value > 0), None)
@@ -682,7 +682,7 @@ class CareerData(TermData):
         if isinstance(entry, Psi):
             return []
         if isinstance(entry, list):
-            return [s for s in entry if not isinstance(s, Psi) and self._training_option_is_unknown(projection, s)]
+            return self._unknown_training_skills(projection, entry)
         skill_cls = type(entry)
         if projection.summary.skill_level(skill_cls) is None:
             return [skill_cls()]
@@ -696,6 +696,15 @@ class CareerData(TermData):
         if isinstance(option, Psi):
             return False
         return projection.summary.skill_level(type(option)) is None
+
+    def _unknown_training_skills(self, projection, options: list[AnySkill] | list[Psi]) -> list[CareerSkillOption]:
+        by_type: dict[type[Any], CareerSkillOption] = {}
+        for option in options:
+            if isinstance(option, Psi) or not self._training_option_is_unknown(projection, option):
+                continue
+            skill_cls = type(option)
+            by_type.setdefault(skill_cls, skill_cls())
+        return list(by_type.values())
 
     def _queue_skill_table_before_survival(self, projection, assignment: AssignmentData, event_id: int) -> None:
         from ceres.character.domain.career.career_events import PendingSkillTable

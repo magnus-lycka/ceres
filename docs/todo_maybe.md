@@ -1058,9 +1058,9 @@ Known differences:
 - **Mishap 1** — Core gives a choice between the severe-injury result and
   rolling twice on the Injury table and taking the lower result. Ceres applies
   only the severe-injury effect, with no choice.
-- **Event 3** — success should grant only Electronics (sensors) 1, but Ceres
-  grants level 1 in every Electronics specialty. Failure records the ban on
-  re-enlisting as a manual problem note rather than enforcing it.
+- **Event 3** — failure now prevents re-enlisting in Scouts at the end of the
+  term. Success should grant only Electronics (sensors) 1, but Ceres grants
+  level 1 in every Electronics specialty.
 - **Event 4** — Core offers Animals (riding or training), Survival, Recon, or
   any Science at level 1. Ceres offers generic `Animals()` and only
   `SpaceScience()` rather than the full Science choice.

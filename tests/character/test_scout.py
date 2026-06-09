@@ -11,8 +11,11 @@ from ceres.character.domain.career.career_events import (
     ConnectionsRollHandler,
     MishapHandler,
     PendingAdvancement,
+    PendingAssignmentChangeChoice,
     PendingConnectionsRoll,
     PendingMishap,
+    PendingMusterOut,
+    PendingReenlist,
     PendingSkillChoice,
     PendingSkillTableChoice,
     ReenlistHandler,
@@ -43,6 +46,7 @@ from ceres.character.domain.health.health_events import (
 )
 from ceres.character.domain.skills import (
     Admin,
+    Astrogation,
     Athletics,
     Carouse,
     Deception,
@@ -61,6 +65,7 @@ from ceres.character.domain.skills import (
     _skill_classes,
 )
 from ceres.character.domain.sophont import VILANI
+from ceres.character.input_specs import Select
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
 from tests.character.helpers import MOCK_WORLD
@@ -151,6 +156,21 @@ class TestScoutAmbush:
 
         assert any('re-enlist' in p.lower() or 'destroyed' in p.lower() for p in projection.summary.problems)
 
+    def test_failure_forces_scout_career_to_end_after_advancement(self):
+        events = [
+            *self._setup_to_ambush(),
+            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Pilot(), modified_roll=6)),
+            Event(id=8, fulfills=(7, 0), handler=AdvancementHandler(roll=3)),
+        ]
+
+        projection = replay(1, events)
+
+        assert projection.summary.current_career is None
+        assert any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
+        assert not any(
+            isinstance(p, (PendingReenlist, PendingAssignmentChangeChoice)) for p in projection.pending_inputs
+        )
+
     def test_skill_roll_creates_advancement_pending(self):
         events = [
             *self._setup_to_ambush(),
@@ -159,6 +179,59 @@ class TestScoutAmbush:
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+
+
+class TestScoutEvent6:
+    def _setup(self) -> list:
+        return [
+            *_full_setup(),
+            Event(
+                id=4,
+                fulfills=(3, 0),
+                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
+            ),
+            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
+            Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=6)),
+        ]
+
+    def test_text_matches_core(self):
+        assert SCOUT.events[6].text == (
+            'You spend several years jumping from world to world in your scout ship. Gain one of Astrogation 1, '
+            'Electronics 1, Navigation 1, Pilot (small craft) 1 or Mechanic 1.'
+        )
+
+    def test_offers_level_1_choices_with_only_pilot_small_craft(self):
+        projection = replay(1, self._setup())
+        pending = next(p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice))
+
+        assert pending.instruction == 'Choose one skill at level 1'
+        assert pending.level == 1
+        [spec] = pending.input_specs(projection)
+        assert isinstance(spec, Select)
+        assert [label for label, _ in spec.options] == [
+            'Astrogation',
+            'Electronics (Comms)',
+            'Electronics (Computers)',
+            'Electronics (Remote Ops)',
+            'Electronics (Sensors)',
+            'Navigation',
+            'Pilot (Small Craft)',
+            'Mechanic',
+        ]
+
+    def test_does_not_offer_choices_already_at_level_1(self):
+        projection = replay(1, self._setup())
+        projection.grant_skill(Astrogation(level=Level(value=1)))
+        projection.grant_skill(Electronics(sensors=Level(value=1)))
+        projection.grant_skill(Pilot(small_craft=Level(value=1)))
+        pending = next(p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice))
+
+        [spec] = pending.input_specs(projection)
+        assert isinstance(spec, Select)
+        labels = [label for label, _ in spec.options]
+        assert 'Astrogation' not in labels
+        assert 'Electronics (Sensors)' not in labels
+        assert not any(label.startswith('Pilot') for label in labels)
 
 
 class TestScoutEvent8:
@@ -569,6 +642,20 @@ class TestScoutAssignmentTableCorrections:
             Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),
             Event(id=7, fulfills=(6, 0), handler=AdvancementHandler(roll=9)),
             Event(id=8, fulfills=(7, 0), handler=ReenlistHandler(reenlist=True)),
+        ]
+
+    def test_service_skills_roll_1_offers_only_small_craft_or_spacecraft_pilot(self):
+        events = [
+            *self._setup_in_term_2('Courier'),
+            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='service_skills', roll=1)),
+        ]
+
+        projection = replay(1, events)
+
+        pending = next(p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice))
+        assert pending.options == [
+            Pilot(small_craft=Level(value=1)),
+            Pilot(spacecraft=Level(value=1)),
         ]
 
     def test_courier_roll_2_offers_flyer(self):

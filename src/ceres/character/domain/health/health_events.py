@@ -256,10 +256,14 @@ def complete_aging(projection: CharacterProjection, source_event_id: int) -> Non
     else:
         career = projection.get_current_career() if projection.summary.current_career else None
         if career and career.allows_assignment_change and len(career.assignments) > 1:
+            can_muster_out_ac = not projection.forced_stay
             projection.pending_inputs.append(
                 PendingAssignmentChangeChoice(
                     pending_id=(source_event_id, 0),
-                    muster_out=not projection.forced_stay,
+                    muster_out=can_muster_out_ac,
+                    instruction='Stay, switch assignment, or muster out?'
+                    if can_muster_out_ac
+                    else 'Stay or switch assignment?',
                 )
             )
             projection.forced_stay = False

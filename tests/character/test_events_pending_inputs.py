@@ -781,7 +781,9 @@ def test_decision_pending_inputs_build_events_and_specs():
     )
     assert reenlist.input_specs(_projection()) == []
 
-    assignment = PendingAssignmentChangeChoice(pending_id=(3, 0), muster_out=True)
+    assignment = PendingAssignmentChangeChoice(
+        pending_id=(3, 0), muster_out=True, instruction='Stay, switch assignment, or muster out?'
+    )
     assert assignment.event_from_form(Form(choice='switch')) == Event(
         fulfills=(3, 0), handler=AssignmentChangeChoiceHandler(choice='switch')
     )
