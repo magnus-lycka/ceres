@@ -4,8 +4,6 @@ import pytest
 
 from ceres.character.domain.career import AGENT
 from ceres.character.domain.career.agent import (
-    AgentMishap1DoubleRoll,
-    AgentMishap1Severe,
     AgentMishap2Accept,
     AgentMishap2Refuse,
     AgentMishap5Ally,
@@ -39,6 +37,7 @@ from ceres.character.domain.career.career_events import (
     SurviveHandler,
     TermEventHandler,
 )
+from ceres.character.domain.career.common import CommonMishap1DoubleRoll, CommonMishap1Severe
 from ceres.character.domain.career.common_pending import PendingAdvancedTrainingSkillRoll
 from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
 from ceres.character.domain.character_state import CharacterProjection
@@ -47,7 +46,6 @@ from ceres.character.domain.connection import (
     Enemy,
 )
 from ceres.character.domain.health.health_events import (
-    PendingCharacteristicChoice,
     PendingDoubleInjuryRoll,
     PendingInjuryTable,
 )
@@ -72,7 +70,7 @@ from ceres.character.domain.skills import (
 from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
-from tests.character.helpers import MOCK_WORLD
+from tests.character.helpers import MOCK_WORLD, CharacterDriver
 
 
 def _setup() -> list:
@@ -424,54 +422,17 @@ class TestAgentEvent11:
 
 
 class TestAgentMishap1:
-    def _setup_to_mishap(self) -> list:
-        return [
-            *_enter_agent(),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=5)),  # fail END 6+
-            Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=1)),
-        ]
-
-    def test_creates_choice_pending(self):
-        projection = replay(1, self._setup_to_mishap())
-        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingChoices)), None)
+    def test_uses_common_handler(self):
+        d = CharacterDriver()
+        d.start(VILANI, MOCK_WORLD)
+        d.ucp('7869A5')
+        d.background_skills([Admin(), Athletics(), Carouse(), Drive()])
+        d.career('Agent', 'Law Enforcement', roll=5)
+        d.survive(2)
+        d.mishap(1)
+        pending = next((p for p in d.projection.pending_inputs if isinstance(p, PendingChoices)), None)
         assert pending is not None
-        assert {type(c) for c in pending.choices} == {AgentMishap1Severe, AgentMishap1DoubleRoll}
-
-    def test_severe_choice_queues_characteristic_reduction(self):
-        severe_kind = AgentMishap1Severe.model_fields['kind'].default
-        events = [
-            *self._setup_to_mishap(),
-            Event(id=7, fulfills=(6, 0), handler=CareerChoiceHandler(choice=severe_kind)),
-        ]
-        projection = replay(1, events)
-        assert any(isinstance(p, PendingCharacteristicChoice) for p in projection.pending_inputs)
-
-    def test_severe_choice_ejects_from_career(self):
-        severe_kind = AgentMishap1Severe.model_fields['kind'].default
-        events = [
-            *self._setup_to_mishap(),
-            Event(id=7, fulfills=(6, 0), handler=CareerChoiceHandler(choice=severe_kind)),
-        ]
-        projection = replay(1, events)
-        assert projection.summary.current_career is None
-
-    def test_double_roll_choice_queues_double_injury_roll(self):
-        double_kind = AgentMishap1DoubleRoll.model_fields['kind'].default
-        events = [
-            *self._setup_to_mishap(),
-            Event(id=7, fulfills=(6, 0), handler=CareerChoiceHandler(choice=double_kind)),
-        ]
-        projection = replay(1, events)
-        assert any(isinstance(p, PendingDoubleInjuryRoll) for p in projection.pending_inputs)
-
-    def test_double_roll_choice_ejects_from_career(self):
-        double_kind = AgentMishap1DoubleRoll.model_fields['kind'].default
-        events = [
-            *self._setup_to_mishap(),
-            Event(id=7, fulfills=(6, 0), handler=CareerChoiceHandler(choice=double_kind)),
-        ]
-        projection = replay(1, events)
-        assert projection.summary.current_career is None
+        assert {type(c) for c in pending.choices} == {CommonMishap1Severe, CommonMishap1DoubleRoll}
 
 
 # ── mishap 2: criminal deal ───────────────────────────────────────────────────

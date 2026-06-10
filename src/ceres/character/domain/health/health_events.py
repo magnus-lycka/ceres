@@ -182,6 +182,7 @@ def _apply_injury_table_result(projection: Any, roll: int, event_id: int) -> Non
     from ceres.character.domain.career.career_events import (
         PendingAdvancement,
         PendingAssignmentChangeChoice,
+        PendingCareerChoice,
         PendingCommissionChoice,
         PendingMusterOut,
         PendingReenlist,
@@ -195,6 +196,7 @@ def _apply_injury_table_result(projection: Any, roll: int, event_id: int) -> Non
                 p,
                 (
                     PendingAdvancement,
+                    PendingCareerChoice,
                     PendingCommissionChoice,
                     PendingMusterOut,
                     PendingReenlist,

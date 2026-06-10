@@ -3,8 +3,6 @@
 from ceres.character.domain.career.army import (
     ArmyEvent12CommissionChoice,
     ArmyEvent12PromoteChoice,
-    ArmyMishap1DoubleRoll,
-    ArmyMishap1Severe,
     ArmyMishap4Cooperate,
     ArmyMishap4JoinRing,
     PendingArmyEvent6SkillRoll,
@@ -16,12 +14,11 @@ from ceres.character.domain.career.career_events import (
     PendingMusterOut,
     PendingSkillChoice,
 )
+from ceres.character.domain.career.common import CommonMishap1DoubleRoll, CommonMishap1Severe
 from ceres.character.domain.career.common_pending import PendingAdvancedTrainingSkillRoll
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.connection import Ally
 from ceres.character.domain.health.health_events import (
-    PendingCharacteristicChoice,
-    PendingDoubleInjuryRoll,
     PendingInjuryTable,
 )
 from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive, GunCombat, Leadership, Level, Tactics
@@ -84,46 +81,13 @@ class TestArmyQualification:
 
 
 class TestArmyMishap1:
-    def _setup_to_mishap(self) -> CharacterDriver:
+    def test_uses_common_handler(self):
         d = _enter_army()
         d.survive(4)  # END 5+, DM+0, 4 < 5 — fail
-        return d
-
-    def test_mishap_1_creates_choice_pending(self):
-        d = self._setup_to_mishap()
         d.mishap(1)
         pending = next((p for p in d.projection.pending_inputs if isinstance(p, PendingChoices)), None)
         assert pending is not None
-        assert {type(c) for c in pending.choices} == {ArmyMishap1Severe, ArmyMishap1DoubleRoll}
-
-    def test_severe_branch_queues_characteristic_choice(self):
-        d = self._setup_to_mishap()
-        d.mishap(1)
-        d.career_choice(ArmyMishap1Severe)
-        pending = next((p for p in d.projection.pending_inputs if isinstance(p, PendingCharacteristicChoice)), None)
-        assert pending is not None
-        assert Chars.STR in pending.options
-        assert Chars.DEX in pending.options
-        assert Chars.END in pending.options
-
-    def test_severe_branch_ends_career(self):
-        d = self._setup_to_mishap()
-        d.mishap(1)
-        d.career_choice(ArmyMishap1Severe)
-        assert d.projection.summary.current_career is None
-
-    def test_double_roll_branch_queues_injury_roll(self):
-        d = self._setup_to_mishap()
-        d.mishap(1)
-        d.career_choice(ArmyMishap1DoubleRoll)
-        pending = next((p for p in d.projection.pending_inputs if isinstance(p, PendingDoubleInjuryRoll)), None)
-        assert pending is not None
-
-    def test_double_roll_branch_ends_career(self):
-        d = self._setup_to_mishap()
-        d.mishap(1)
-        d.career_choice(ArmyMishap1DoubleRoll)
-        assert d.projection.summary.current_career is None
+        assert {type(c) for c in pending.choices} == {CommonMishap1Severe, CommonMishap1DoubleRoll}
 
 
 # ── mishap 4: illegal activity ────────────────────────────────────────────────

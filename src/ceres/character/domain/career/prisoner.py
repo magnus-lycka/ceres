@@ -41,6 +41,7 @@ from ceres.character.domain.career.career_events import (
     career_progress_pending,
     muster_out_setup,
 )
+from ceres.character.domain.career.common import CommonMishap1Handler
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
@@ -716,7 +717,7 @@ class Prisoner(CareerData):
         1: MishapEntry(
             text='Severely injured.',
             stay_in_career=True,
-            effects=[InjuryEffect(severity='severe')],
+            effects=[CommonMishap1Handler(stay_in_career=True)],
         ),
         2: MishapEntry(
             text='You are accused of assaulting a prison guard. Parole Threshold +2.',

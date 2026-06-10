@@ -24,6 +24,7 @@ from ceres.character.domain.career.career_events import (
     SkillChoiceHandler,
     SkillTableHandler,
 )
+from ceres.character.domain.career.common import CommonMishap1DoubleRoll, CommonMishap1Severe
 from ceres.character.domain.career.loader import load_careers, selectable_careers
 from ceres.character.domain.career.psion import (
     PendingPsionConnectionConversion,
@@ -31,8 +32,6 @@ from ceres.character.domain.career.psion import (
     PsionEvent5Accept,
     PsionEvent5Benefit,
     PsionEvent5Soc,
-    PsionMishap1DoubleRoll,
-    PsionMishap1Severe,
     PsionMishap4Accept,
     PsionMishap4Refuse,
 )
@@ -40,8 +39,6 @@ from ceres.character.domain.character_start import BackgroundSkillsHandler, Char
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.connection import Ally, Contact, Enemy
 from ceres.character.domain.health.health_events import (
-    PendingCharacteristicChoice,
-    PendingDoubleInjuryRoll,
     PendingInjuryTable,
 )
 from ceres.character.domain.homeworld.homeworld_events import PendingHomeworldChangeOffered
@@ -449,26 +446,12 @@ class TestPsionMishaps:
         driver.survive(6)
         return driver
 
-    def test_mishap_one_offers_both_core_injury_choices(self):
+    def test_mishap_one_uses_common_handler(self):
         driver = self._failed_survival()
         driver.mishap(1)
 
         pending = driver._find(PendingChoices)
-        assert {type(choice) for choice in pending.choices} == {PsionMishap1Severe, PsionMishap1DoubleRoll}
-
-    @pytest.mark.parametrize(
-        ('choice', 'pending_type'),
-        [
-            (PsionMishap1Severe, PendingCharacteristicChoice),
-            (PsionMishap1DoubleRoll, PendingDoubleInjuryRoll),
-        ],
-    )
-    def test_mishap_one_choices_eject_and_queue_chosen_injury(self, choice, pending_type):
-        driver = self._failed_survival()
-        driver.mishap(1).career_choice(choice)
-
-        assert driver.projection.summary.current_career is None
-        assert driver._find(pending_type)
+        assert {type(choice) for choice in pending.choices} == {CommonMishap1Severe, CommonMishap1DoubleRoll}
 
     @pytest.mark.parametrize(
         ('result', 'injured', 'soc_loss'),

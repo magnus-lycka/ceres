@@ -37,13 +37,12 @@ from ceres.character.domain.career.career_events import (
     _advancement_pending,
     _apply_mishap_ejection,
 )
+from ceres.character.domain.career.common import CommonMishap1Handler
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.connection import Ally, Contact, Enemy, make_connection
 from ceres.character.domain.health.health_events import (
-    PendingCharacteristicChoice,
-    PendingDoubleInjuryRoll,
     PendingInjuryTable,
 )
 from ceres.character.domain.homeworld.homeworld_events import PendingHomeworldChangeOffered
@@ -151,51 +150,6 @@ class PsionMishap4Refuse(ChoiceBase):
 
     def handle(self, projection: CharacterProjection, event: Any) -> None:
         _apply_mishap_ejection(projection, projection.get_current_career(), event.id, 0, lose_current_term=True)
-
-
-class PsionMishap1Severe(ChoiceBase):
-    kind: Literal['psion_mishap_1_severe'] = 'psion_mishap_1_severe'
-    label: str = 'Severely injured'
-
-    def handle(self, projection: CharacterProjection, event: Any) -> None:
-        projection.pending_inputs.append(
-            PendingCharacteristicChoice(
-                pending_id=(event.id, 0),
-                instruction='Severely injured: choose STR, DEX, or END to reduce by 2',
-                options=[Chars.STR, Chars.DEX, Chars.END],
-                amount=2,
-            )
-        )
-        _apply_mishap_ejection(projection, projection.get_current_career(), event.id, 1, lose_current_term=True)
-
-
-class PsionMishap1DoubleRoll(ChoiceBase):
-    kind: Literal['psion_mishap_1_double_roll'] = 'psion_mishap_1_double_roll'
-    label: str = 'Roll twice on the Injury table and take the lower result'
-
-    def handle(self, projection: CharacterProjection, event: Any) -> None:
-        projection.pending_inputs.append(
-            PendingDoubleInjuryRoll(
-                pending_id=(event.id, 0),
-                instruction='Roll twice on the Injury table and apply the lower result',
-            )
-        )
-        _apply_mishap_ejection(projection, projection.get_current_career(), event.id, 1, lose_current_term=True)
-
-
-class PsionMishap1Handler(CareerHandlerBase):
-    type: Literal['psion_mishap_1'] = 'psion_mishap_1'
-
-    @staticmethod
-    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
-            PendingChoices(
-                pending_id=(event_id, pending_idx),
-                instruction='Choose severe injury or roll twice on the Injury table and take the lower result',
-                choices=[PsionMishap1Severe(), PsionMishap1DoubleRoll()],
-            )
-        )
-        return pending_idx + 1
 
 
 class PsionMishap4Handler(CareerHandlerBase):
@@ -613,7 +567,7 @@ class Psion(CareerData):
             text='Severely injured (this is the same as a result of 2 on the Injury table). '
             'Alternatively, roll twice on the Injury table and take the lower result.',
             defer_ejection=True,
-            effects=[PsionMishap1Handler()],
+            effects=[CommonMishap1Handler()],
         ),
         2: MishapEntry(
             text='You telepathically contact something dangerous. Lose one PSI. '

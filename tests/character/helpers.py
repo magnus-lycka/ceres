@@ -50,9 +50,11 @@ from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.health.health_events import (
     AgingCrisisHandler,
     AgingRollHandler,
+    DoubleInjuryTableHandler,
     PendingAgingChoice,
     PendingAgingCrisis,
     PendingAgingRoll,
+    PendingDoubleInjuryRoll,
 )
 from ceres.character.domain.skills import AnySkill
 from ceres.character.domain.sophont import Sophont
@@ -221,6 +223,10 @@ class CharacterDriver:
         return self._add(
             Event(fulfills=pending.pending_id, handler=AgingCrisisHandler(paid=paid, medical_roll=medical_roll))
         )
+
+    def double_injury_roll(self, roll1: int, roll2: int) -> CharacterDriver:
+        pending = self._find(PendingDoubleInjuryRoll)
+        return self._add(Event(fulfills=pending.pending_id, handler=DoubleInjuryTableHandler(roll1=roll1, roll2=roll2)))
 
     def muster_out(self, table: Literal['cash', 'benefits'], roll: int) -> CharacterDriver:
         pending = self._find(PendingMusterOut)

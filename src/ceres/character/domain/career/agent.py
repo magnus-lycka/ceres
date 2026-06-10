@@ -40,7 +40,7 @@ from ceres.character.domain.career.career_events import (
     PendingSkillChoice,
     muster_out_setup,
 )
-from ceres.character.domain.career.common import handle_advanced_training
+from ceres.character.domain.career.common import CommonMishap1Handler, handle_advanced_training
 from ceres.character.domain.career.common_pending import (
     CareerSkillChoicePendingBase,
     CareerSkillRollPendingBase,
@@ -81,43 +81,6 @@ from ceres.character.domain.skills import (
 from ceres.character.mechanism.pending_input import ChoiceBase
 
 # ── Career-specific pending input types ──────────────────────────────────────
-
-
-class AgentMishap1Severe(ChoiceBase):
-    kind: Literal['agent_mishap_1_severe'] = 'agent_mishap_1_severe'
-    label: str = 'Severely injured (same as result 2 on Injury table: choose a physical characteristic to reduce by 2)'
-
-    def handle(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.domain.career.career_events import _apply_mishap_ejection
-        from ceres.character.domain.health.health_events import PendingCharacteristicChoice
-
-        career = projection.get_current_career()
-        projection.pending_inputs.append(
-            PendingCharacteristicChoice(
-                pending_id=(event.id, 0),
-                instruction='Severely injured: choose STR, DEX, or END to reduce by 2',
-                options=[Chars.STR, Chars.DEX, Chars.END],
-                amount=2,
-            )
-        )
-        _apply_mishap_ejection(projection, career, event.id, 1, lose_current_term=True)
-
-
-class AgentMishap1DoubleRoll(ChoiceBase):
-    kind: Literal['agent_mishap_1_double_roll'] = 'agent_mishap_1_double_roll'
-    label: str = 'Roll twice on Injury table and take the lower result'
-
-    def handle(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.domain.career.career_events import _apply_mishap_ejection
-
-        career = projection.get_current_career()
-        projection.pending_inputs.append(
-            PendingDoubleInjuryRoll(
-                pending_id=(event.id, 0),
-                instruction='Roll twice on the Injury table and apply the lower result',
-            )
-        )
-        _apply_mishap_ejection(projection, career, event.id, 1, lose_current_term=True)
 
 
 class AgentMishap2Accept(ChoiceBase):
@@ -270,27 +233,6 @@ class PendingAgentEvent8SkillRoll(CareerSkillRollPendingBase):
 class PendingAgentEvent11SkillChoice(CareerSkillChoicePendingBase):
     kind: Literal['agent_event_11_skill_choice'] = 'agent_event_11_skill_choice'
     advancement_precreated: bool = False
-
-
-# ── mishap 1: severe injury or double roll ───────────────────────────────────
-
-
-class AgentMishap1Handler(CareerHandlerBase):
-    type: Literal['agent_mishap_1'] = 'agent_mishap_1'
-
-    @staticmethod
-    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
-            PendingChoices(
-                pending_id=(event_id, pending_idx),
-                instruction=(
-                    'Severely injured (same as result 2 on Injury table) or roll twice on Injury table '
-                    'and take the lower result?'
-                ),
-                choices=[AgentMishap1Severe(), AgentMishap1DoubleRoll()],
-            )
-        )
-        return pending_idx + 1
 
 
 # ── mishap 2: criminal deal ───────────────────────────────────────────────────
@@ -554,7 +496,7 @@ class Agent(CareerData):
             text='Severely injured (this is the same as a result of 2 on the Injury table). '
             'Alternatively, roll twice on the Injury table and take the lower result.',
             defer_ejection=True,
-            effects=[AgentMishap1Handler()],
+            effects=[CommonMishap1Handler()],
         ),
         2: MishapEntry(
             text=(
