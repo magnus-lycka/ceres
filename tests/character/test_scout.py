@@ -12,6 +12,7 @@ from ceres.character.domain.career.career_events import (
     MishapHandler,
     PendingAdvancement,
     PendingAssignmentChangeChoice,
+    PendingChoices,
     PendingConnectionsRoll,
     PendingMishap,
     PendingMusterOut,
@@ -25,6 +26,7 @@ from ceres.character.domain.career.career_events import (
     SurviveHandler,
     TermEventHandler,
 )
+from ceres.character.domain.career.common import CommonMishap1DoubleRoll, CommonMishap1Severe
 from ceres.character.domain.career.scout import (
     PendingScoutEvent3SkillRoll,
     PendingScoutEvent8SkillRoll,
@@ -68,7 +70,7 @@ from ceres.character.domain.sophont import VILANI
 from ceres.character.input_specs import Select
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
-from tests.character.helpers import MOCK_WORLD
+from tests.character.helpers import MOCK_WORLD, CharacterDriver
 
 _SCIENCE_CLASSES = set(_skill_classes(Sciences))
 
@@ -841,3 +843,20 @@ class TestScoutHomeworldTrigger:
         hw_pendings = [p for p in projection.pending_inputs if isinstance(p, PendingHomeworldChangeOffered)]
         assert len(hw_pendings) == 1
         assert hw_pendings[0].source_career == 'Scout'
+
+
+# ── mishap 1: severely injured ────────────────────────────────────────────────
+
+
+class TestScoutMishap1:
+    def test_uses_common_handler(self):
+        d = CharacterDriver()
+        d.start(VILANI, MOCK_WORLD)
+        d.ucp('7869A5')
+        d.background_skills([Admin(), Athletics(), Carouse(), Drive()])
+        d.career('Scout', 'Courier', roll=7)
+        d.survive(2)
+        d.mishap(1)
+        pending = next((p for p in d.projection.pending_inputs if isinstance(p, PendingChoices)), None)
+        assert pending is not None
+        assert {type(c) for c in pending.choices} == {CommonMishap1Severe, CommonMishap1DoubleRoll}

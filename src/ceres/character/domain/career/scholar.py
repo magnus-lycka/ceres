@@ -39,6 +39,7 @@ from ceres.character.domain.career.career_events import (
     _advancement_pending,
     muster_out_setup,
 )
+from ceres.character.domain.career.common import CommonMishap1Handler
 from ceres.character.domain.career.common_pending import (
     CareerSkillChoicePendingBase,
     CareerSkillRollPendingBase,
@@ -495,7 +496,8 @@ class Scholar(CareerData):
     mishaps: ClassVar[dict[int, MishapEntry]] = {
         1: MishapEntry(
             text='Severely injured.',
-            effects=[InjuryEffect(severity='severe')],
+            effects=[CommonMishap1Handler()],
+            defer_ejection=True,
         ),
         2: MishapEntry(
             text='A disaster leaves several injured and others blame you, '

@@ -26,7 +26,6 @@ from ceres.character.domain.connection import (
 )
 from ceres.character.domain.health.health_events import (
     InjuryTableHandler,
-    PendingCharacteristicChoice,
     PendingInjuryTable,
 )
 from ceres.character.domain.skills import (
@@ -453,15 +452,6 @@ class TestInjuryTableValidation:
 
 
 class TestMishapInjuryEffects:
-    def test_severe_injury_creates_characteristic_choice(self):
-        # Drifter mishap 1: severity=severe → choose STR/DEX/END to reduce by 2
-        events = [*_drifter_at_mishap(), Event(id=5, fulfills=(4, 0), handler=MishapHandler(roll=1))]
-        projection = replay(1, events)
-        char_choices = [p for p in projection.pending_inputs if isinstance(p, PendingCharacteristicChoice)]
-        assert len(char_choices) == 1
-        assert 'reduce by 2' in char_choices[0].instruction
-        assert char_choices[0].amount == 2
-
     def test_from_table_injury_creates_injury_table_pending(self):
         # Drifter mishap 2: severity=from_table → roll on injury table
         events = [*_drifter_at_mishap(), Event(id=5, fulfills=(4, 0), handler=MishapHandler(roll=2))]

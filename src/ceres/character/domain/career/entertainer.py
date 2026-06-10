@@ -21,7 +21,6 @@ from ceres.character.domain.career.career_data import (
     GainConnectionsRolledEffect,
     GainContactEffect,
     GainRivalEffect,
-    InjuryEffect,
     LifeEventEffect,
     MishapEntry,
     MusterOutData,
@@ -36,6 +35,7 @@ from ceres.character.domain.career.career_events import (
     PendingChoices,
     career_progress_pending,
 )
+from ceres.character.domain.career.common import CommonMishap1Handler
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind, characteristic_dm
@@ -322,7 +322,8 @@ class Entertainer(CareerData):
     mishaps: ClassVar[dict[int, MishapEntry]] = {
         1: MishapEntry(
             text='Severely injured.',
-            effects=[InjuryEffect(severity='severe')],
+            effects=[CommonMishap1Handler()],
+            defer_ejection=True,
         ),
         2: MishapEntry(
             text='You expose or are involved in a scandal of some sort.',

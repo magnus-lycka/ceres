@@ -16,6 +16,7 @@ from ceres.character.domain.career.career_events import (
     SurviveHandler,
     TermEventHandler,
 )
+from ceres.character.domain.career.common import CommonMishap1DoubleRoll, CommonMishap1Severe
 from ceres.character.domain.career.common_pending import PendingAdvancedTrainingSkillRoll
 from ceres.character.domain.career.navy import (
     NavyEvent10Profit,
@@ -418,3 +419,20 @@ class TestNavyMusterOutChoiceBenefit:
         d = self._driver_through_muster_out().benefit_choice(choice_index=0)
         assert any(isinstance(p, PendingCareerChoice) for p in d.projection.pending_inputs)
         assert not any(isinstance(p, PendingBenefitChoice) for p in d.projection.pending_inputs)
+
+
+# ── mishap 1: severely injured in action ─────────────────────────────────────
+
+
+class TestNavyMishap1:
+    def test_uses_common_handler(self):
+        d = CharacterDriver()
+        d.start(VILANI, MOCK_WORLD)
+        d.ucp('7869A5')
+        d.background_skills([Admin(), Athletics(), Carouse(), Drive()])
+        d.career('Navy', 'Line/Crew', roll=5)
+        d.survive(2)
+        d.mishap(1)
+        pending = next((p for p in d.projection.pending_inputs if isinstance(p, PendingChoices)), None)
+        assert pending is not None
+        assert {type(c) for c in pending.choices} == {CommonMishap1Severe, CommonMishap1DoubleRoll}

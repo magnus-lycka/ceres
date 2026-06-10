@@ -25,6 +25,7 @@ from ceres.character.domain.career.career_events import (
     SurviveHandler,
     TermEventHandler,
 )
+from ceres.character.domain.career.common import CommonMishap1DoubleRoll, CommonMishap1Severe
 from ceres.character.domain.career.scholar import (
     PendingScholarEvent6SkillRoll,
     PendingScholarEvent11,
@@ -86,7 +87,7 @@ from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.pending_input import ChoiceBase
 from ceres.character.mechanism.replay import replay
-from tests.character.helpers import MOCK_WORLD
+from tests.character.helpers import MOCK_WORLD, CharacterDriver
 
 _SCIENCES = sorted(['Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science'])
 _SCIENCE_CLASSES = set(_skill_classes(Sciences))
@@ -1400,3 +1401,21 @@ class TestPhysicianRankBonuses:
             None,
         )
         assert science_pending is not None
+
+
+# ── mishap 1: severely injured ────────────────────────────────────────────────
+
+
+class TestScholarMishap1:
+    def test_uses_common_handler(self):
+        d = CharacterDriver()
+        d.start(VILANI, MOCK_WORLD)
+        d.ucp('7869A5')
+        d.background_skills([Admin(), Athletics(), Carouse(), Drive()])
+        d.career('Scholar', 'Field Researcher', roll=5)
+        d.initial_training(LifeScience())
+        d.survive(2)
+        d.mishap(1)
+        pending = next((p for p in d.projection.pending_inputs if isinstance(p, PendingChoices)), None)
+        assert pending is not None
+        assert {type(c) for c in pending.choices} == {CommonMishap1Severe, CommonMishap1DoubleRoll}

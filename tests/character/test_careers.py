@@ -55,7 +55,6 @@ from ceres.character.domain.connection import (
 from ceres.character.domain.health.health_events import (
     InjuryTableHandler,
     PendingAgingRoll,
-    PendingCharacteristicChoice,
     PendingInjuryTable,
 )
 from ceres.character.domain.skills import (
@@ -1318,53 +1317,6 @@ class TestSevereInjury:
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=3)),  # fail
         ]
-
-    def test_scout_mishap_1_creates_characteristic_choice_for_physical_stats(self):
-        events = [*self._setup_through_failed_survive(), Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=1))]
-        projection = replay(1, events)
-
-        choice = next((p for p in projection.pending_inputs if isinstance(p, PendingCharacteristicChoice)), None)
-        assert choice is not None
-        assert set(choice.options) == {'STR', 'DEX', 'END'}
-
-    def test_scout_mishap_1_instruction_mentions_reduction_of_2(self):
-        events = [*self._setup_through_failed_survive(), Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=1))]
-        projection = replay(1, events)
-
-        choice = next(p for p in projection.pending_inputs if isinstance(p, PendingCharacteristicChoice))
-        assert '2' in choice.instruction
-
-    def test_scout_mishap_1_choice_reduces_characteristic_by_2(self):
-        events = [
-            *self._setup_through_failed_survive(),
-            Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=1)),
-            Event(id=7, fulfills=(6, 0), handler=CharacteristicChoiceHandler(characteristic=Chars.STR, amount=2)),
-        ]
-        projection = replay(1, events)
-
-        # STR was 7 from UCP '7869A5'
-        assert projection.summary.characteristics[Chars.STR] == 5
-
-    def test_scholar_mishap_1_also_creates_characteristic_choice(self):
-        # Scholar Field Researcher (with Drive in background) has one initial training choice before survive.
-        events = [
-            *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
-                handler=CareerEntryHandler(
-                    career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
-                ),
-            ),
-            Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=LifeScience())),
-            Event(id=6, fulfills=(5, 0), handler=SurviveHandler(roll=3)),  # fail
-            Event(id=7, fulfills=(6, 0), handler=MishapHandler(roll=1)),
-        ]
-        projection = replay(1, events)
-
-        choice = next((p for p in projection.pending_inputs if isinstance(p, PendingCharacteristicChoice)), None)
-        assert choice is not None
-        assert set(choice.options) == {'STR', 'DEX', 'END'}
 
     def test_normal_injury_still_reduces_by_1(self):
         # Scout mishap 6: normal injury should still only reduce by 1

@@ -36,7 +36,7 @@ from ceres.character.domain.career.career_events import (
     PendingSkillChoice,
     career_progress_pending,
 )
-from ceres.character.domain.career.common import handle_advanced_training
+from ceres.character.domain.career.common import CommonMishap1Handler, handle_advanced_training
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
@@ -376,7 +376,8 @@ class Marines(CareerData):
     mishaps: ClassVar[dict[int, MishapEntry]] = {
         1: MishapEntry(
             text='Severely injured.',
-            effects=[InjuryEffect(severity='severe')],
+            effects=[CommonMishap1Handler()],
+            defer_ejection=True,
         ),
         2: MishapEntry(
             text='Captured and mistreated by the enemy. Gain your jailer as an Enemy and reduce STR and DEX by one.',
