@@ -9,7 +9,7 @@ from pydantic import Field
 
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.skills import AnySkill, Level, _level_fields
+from ceres.character.domain.skills import AnySkill, Level, level_fields
 from ceres.character.input_specs import NumberEntry, Select
 from ceres.character.mechanism.pending_input import PendingInputBase
 
@@ -49,7 +49,7 @@ def _build_skill_choice_select_options(
             continue
         skill_cls = type(opt)
         skill_name = skill_cls.name()
-        fields = _level_fields(skill_cls)
+        fields = level_fields(skill_cls)
         active_fields = [f for f in fields if getattr(opt, f).value > 0]
         if active_fields:
             existing = next((s for s in projection.summary.skills if type(s) is skill_cls), None)

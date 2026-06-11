@@ -3,6 +3,7 @@ from typing import Any, cast
 
 from pydantic import Field
 
+from ceres.character.domain.characteristics import Chars
 from ceres.shared import _Note
 
 from .base import RobotBase
@@ -24,25 +25,6 @@ from .parts import RobotPartMixin
 from .skills import RobotSkill, SkillGrant
 from .spec import RobotDetailRow, RobotDetailSection, RobotSpec, RobotSpecRow, RobotSpecSection
 from .text import format_credits, format_traits
-
-DM_MINUS_1_MAX_CHARACTERISTIC = 5
-DM_ZERO_MAX_CHARACTERISTIC = 8
-DM_PLUS_1_MAX_CHARACTERISTIC = 11
-DM_PLUS_2_MAX_CHARACTERISTIC = 14
-
-
-def _characteristic_dm(char: int) -> int:
-    if char <= 1:
-        return -2
-    if char <= DM_MINUS_1_MAX_CHARACTERISTIC:
-        return -1
-    if char <= DM_ZERO_MAX_CHARACTERISTIC:
-        return 0
-    if char <= DM_PLUS_1_MAX_CHARACTERISTIC:
-        return 1
-    if char <= DM_PLUS_2_MAX_CHARACTERISTIC:
-        return 2
-    return 3
 
 
 def _robot_dex(tl: int) -> int:
@@ -249,18 +231,17 @@ class Robot(RobotBase):
 
     @property
     def skills_display(self) -> str:
-        dex_dm = _characteristic_dm(_robot_dex(self.tl))
         base_str = _robot_str(int(self.size))
-        if self.manipulators:
-            max_manip_str = max(m.effective_str(self.size) for m in self.manipulators)
-            str_for_dm = max(base_str, max_manip_str)
-        else:
-            str_for_dm = base_str
-        str_dm = _characteristic_dm(str_for_dm)
-        grants: list[SkillGrant] = list(self.brain.skill_grants_for_robot(dex_dm, str_dm))
+        str_for_dm = max(
+            base_str,
+            max((m.effective_str(self.size) for m in self.manipulators), default=base_str),
+        )
+        characteristics = {Chars.DEX: _robot_dex(self.tl), Chars.STR: str_for_dm}
+        merged = self.brain.display_labels(characteristics)
         for opt in self.options:
             if isinstance(opt, RobotPartMixin):
-                grants.extend(opt.skill_grants)
+                for grant in opt.skill_grants:
+                    merged[grant.name_text] = max(merged.get(grant.name_text, 0), grant.level)
         # Basic/Primitive (locomotion) grants Vehicle (type) X where X = agility (locomotion base + enhancement).
         # refs/robot/35_skill_packages.md — Basic (locomotion) skill table.
         if isinstance(self.brain, (BasicBrain, PrimitiveBrain)) and self.brain.function == 'locomotion':
@@ -268,12 +249,8 @@ class Robot(RobotBase):
             effective_agility = (self.locomotion.agility or 0) + agility_enh
             vehicle_skill = self.locomotion.vehicle_skill
             if vehicle_skill is not None:
-                grants.append(SkillGrant(cast(RobotSkill, vehicle_skill), effective_agility))
-        merged: dict[str, int] = {}
-        for g in grants:
-            name = g.name_text
-            if name not in merged or g.level > merged[name]:
-                merged[name] = g.level
+                vg = SkillGrant(cast(RobotSkill, vehicle_skill), effective_agility)
+                merged[vg.name_text] = max(merged.get(vg.name_text, 0), vg.level)
         parts = sorted(f'{name} {level}' for name, level in merged.items())
         rem = self.brain.remaining_bandwidth
         if rem is not None and rem > 0:
@@ -407,7 +384,7 @@ class Robot(RobotBase):
             for pkg in self.brain.installed_skills:
                 ss.rows.append(
                     RobotDetailRow(
-                        name=f'{pkg.name} {pkg.level}',
+                        name=f'{pkg.name_text} {pkg.level}',
                         col3=f'−{pkg.bandwidth}',
                         cost=format_credits(pkg.cost),
                     )

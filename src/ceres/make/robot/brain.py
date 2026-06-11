@@ -8,6 +8,7 @@ from typing import Annotated, Any, ClassVar, Literal, cast
 
 from pydantic import ConfigDict, Field, model_validator
 
+from ceres.character.domain.characteristics import Chars
 from ceres.shared import CeresModel
 
 from .chassis import Trait
@@ -15,6 +16,7 @@ from .skills import (
     BrainSoftware,
     SkillGrant,
     SkillPackage,
+    _specs_to_display_dict,
     primitive_package_skills,
 )
 
@@ -86,6 +88,21 @@ _SELF_AWARE_BW_UPGRADES: tuple[_BwUpgradeEntry, ...] = (
 )
 
 
+def _skill_dm_to_int(dm: int) -> int:
+    """Canonical characteristic value yielding the given DM (Traveller standard table)."""
+    if dm <= -2:  # noqa: PLR2004
+        return 1
+    if dm == -1:
+        return 3
+    if dm == 0:
+        return 6
+    if dm == 1:
+        return 9
+    if dm == 2:  # noqa: PLR2004
+        return 12
+    return 15
+
+
 def _lookup(table: tuple[_BrainEntry, ...], tl: int) -> _BrainEntry:
     """Return the highest table entry whose TL is ≤ tl; fall back to lowest."""
     entry = table[0]
@@ -119,8 +136,11 @@ class _BrainBase(CeresModel):
     def skill_grants(self) -> tuple[SkillGrant, ...]:
         return ()
 
-    def skill_grants_for_robot(self, dex_dm: int, str_dm: int = 0) -> tuple[SkillGrant, ...]:
-        return self.skill_grants
+    def display_labels(self, characteristics: dict[Chars, int]) -> dict[str, int]:
+        result: dict[str, int] = {}
+        for grant in self.skill_grants:
+            result[grant.name_text] = max(result.get(grant.name_text, 0), grant.level)
+        return result
 
     @property
     def hardware_cost(self) -> float:
@@ -277,28 +297,15 @@ class _AdvancedBrainBase(_BrainBase):
     def skill_dm(self) -> int:
         return self._entry().skill_dm + self.int_upgrade
 
-    @property
-    def skill_grants(self) -> tuple[SkillGrant, ...]:
-        dm = self.skill_dm
-        return tuple(pkg.skill_grant(max(0, pkg.level + dm)) for pkg in self.installed_skills)
-
-    def skill_grants_for_robot(self, dex_dm: int, str_dm: int = 0) -> tuple[SkillGrant, ...]:
-        int_dm = self.skill_dm
-        result = []
+    def display_labels(self, characteristics: dict[Chars, int]) -> dict[str, int]:
+        int_val = _skill_dm_to_int(self.skill_dm)
+        effective_chars = {**characteristics, Chars.INT: int_val}
+        per_spec: dict[tuple, int] = {}
         for pkg in self.installed_skills:
-            if pkg.uses_str_dm:
-                dm = str_dm
-            elif pkg.uses_dex_dm:
-                dm = dex_dm
-            else:
-                dm = int_dm
-            result.append(
-                pkg.skill_grant(
-                    max(0, pkg.level + dm),
-                    exact_speciality=pkg.uses_exact_speciality_dm,
-                )
-            )
-        return tuple(result)
+            for skill_cls, spec, lvl in pkg._per_spec_entries(effective_chars):
+                key = (skill_cls, spec)
+                per_spec[key] = max(per_spec.get(key, 0), lvl)
+        return _specs_to_display_dict(per_spec)
 
     @property
     def used_bandwidth(self) -> int:

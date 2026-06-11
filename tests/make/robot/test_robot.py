@@ -436,9 +436,9 @@ class TestOptions:
         brain = AdvancedBrain(
             brain_tl=12,
             installed_skills=(
-                SkillPackage(name=character_skills.Recon(), level=1, bandwidth=1),
-                SkillPackage(name=character_skills.Mechanic(), level=1, bandwidth=1),
-                SkillPackage(name=character_skills.Medic(), level=1, bandwidth=1),
+                SkillPackage(skill=character_skills.Recon(level=Level(value=1))),
+                SkillPackage(skill=character_skills.Mechanic(level=Level(value=1))),
+                SkillPackage(skill=character_skills.Medic(level=Level(value=1))),
             ),
         )
         robot = make_robot(brain=brain)
@@ -619,9 +619,7 @@ class TestBuildSpec:
 
         brain = AdvancedBrain(
             brain_tl=12,
-            installed_skills=(
-                SkillPackage(name=character_skills.Electronics(remote_ops=Level(value=1)), level=1, bandwidth=1),
-            ),
+            installed_skills=(SkillPackage(skill=character_skills.Electronics(remote_ops=Level(value=1))),),
         )
         robot = make_robot(brain=brain)
         rows = robot.build_spec().rows_for_section(RobotSpecSection.SKILLS)
@@ -647,9 +645,7 @@ class TestSkillsDisplay:
 
         brain = AdvancedBrain(
             brain_tl=12,
-            installed_skills=(
-                SkillPackage(name=character_skills.Electronics(remote_ops=Level(value=1)), level=1, bandwidth=1),
-            ),
+            installed_skills=(SkillPackage(skill=character_skills.Electronics(remote_ops=Level(value=1))),),
         )
         robot = make_robot(brain=brain)
         display = robot.skills_display
@@ -667,8 +663,8 @@ class TestSkillsDisplay:
         brain = AdvancedBrain(
             brain_tl=12,
             installed_skills=(
-                SkillPackage(name=character_skills.Steward(), level=1, bandwidth=1),
-                SkillPackage(name=character_skills.Admin(), level=1, bandwidth=0),
+                SkillPackage(skill=character_skills.Steward(level=Level(value=1))),
+                SkillPackage(skill=character_skills.Admin(level=Level(value=1))),
             ),
         )
         robot = make_robot(brain=brain)
@@ -682,7 +678,7 @@ class TestSkillsDisplay:
 
         brain = AdvancedBrain(
             brain_tl=12,
-            installed_skills=(SkillPackage(name=character_skills.Recon(), level=1, bandwidth=1),),
+            installed_skills=(SkillPackage(skill=character_skills.Recon(level=Level(value=1))),),
         )
         robot = make_robot(brain=brain, options=[_SkillPart()])  # _SkillPart grants Recon 1 too
         display = robot.skills_display
@@ -696,7 +692,7 @@ class TestSkillsDisplay:
 
         brain = AdvancedBrain(
             brain_tl=12,
-            installed_skills=(SkillPackage(name=character_skills.Recon(), level=0, bandwidth=0),),
+            installed_skills=(SkillPackage(skill=character_skills.Recon()),),
         )
 
         class _HighReconPart(_SkillPart):
@@ -717,7 +713,7 @@ class TestSkillsDisplay:
 
         brain = AdvancedBrain(
             brain_tl=12,
-            installed_skills=(SkillPackage(name=character_skills.Recon(), level=1, bandwidth=1),),
+            installed_skills=(SkillPackage(skill=character_skills.Recon(level=Level(value=1))),),
         )
         robot = make_robot(brain=brain)
         display = robot.skills_display
@@ -732,7 +728,7 @@ class TestSkillsDisplay:
         from ceres.make.robot.skills import SkillPackage
 
         brain = SelfAwareBrain(
-            installed_skills=(SkillPackage(name=character_skills.Flyer(grav=Level(value=1)), level=0, bandwidth=0),),
+            installed_skills=(SkillPackage(skill=character_skills.Flyer()),),
         )
         robot = make_robot(tl=15, brain=brain, size=RobotSize.SIZE_1, locomotion=NoneLocomotion())
         assert 'Flyer (All) 1' in robot.skills_display
@@ -744,7 +740,7 @@ class TestSkillsDisplay:
         from ceres.make.robot.skills import SkillPackage
 
         brain = SelfAwareBrain(
-            installed_skills=(SkillPackage(name=character_skills.Admin(), level=1, bandwidth=1),),
+            installed_skills=(SkillPackage(skill=character_skills.Admin(level=Level(value=1))),),
         )
         robot = make_robot(tl=15, brain=brain, size=RobotSize.SIZE_1, locomotion=NoneLocomotion())
         assert 'Admin 3' in robot.skills_display
@@ -760,10 +756,110 @@ class TestSkillsDisplay:
             int_upgrade=1,
             bandwidth=4,
             installed_skills=(
-                SkillPackage(name=character_skills.Admin(), level=1, bandwidth=1),
-                SkillPackage(name=character_skills.Flyer(), level=0, bandwidth=0, all_specialities=True),
+                SkillPackage(skill=character_skills.Admin(level=Level(value=1))),
+                SkillPackage(skill=character_skills.Flyer()),
             ),
         )
         robot = make_robot(tl=15, brain=brain)
         assert 'Admin 2' in robot.skills_display  # Admin 1 + INT DM+1 = 2
         assert 'Flyer (All) 1' in robot.skills_display  # Flyer 0 + DEX DM+1 = 1
+
+    def test_all_specialities_expands_when_levels_differ(self):
+        # When specialisations of the same skill are at different levels (All) cannot be used.
+        # Each specialisation must be listed individually with its actual level.
+        from ceres.make.robot import AdvancedBrain
+        from ceres.make.robot.skills import SkillPackage
+
+        brain = AdvancedBrain(
+            brain_tl=12,
+            bandwidth=6,
+            installed_skills=(
+                SkillPackage(skill=character_skills.Electronics(comms=Level(value=1))),
+                SkillPackage(skill=character_skills.Electronics(computers=Level(value=1))),
+                SkillPackage(skill=character_skills.Electronics(remote_ops=Level(value=3))),
+                SkillPackage(skill=character_skills.Electronics(sensors=Level(value=1))),
+            ),
+        )
+        robot = make_robot(brain=brain)
+        display = robot.skills_display
+        assert 'Electronics (All)' not in display
+        assert 'Electronics (Comms) 1' in display
+        assert 'Electronics (Computers) 1' in display
+        assert 'Electronics (Remote Ops) 3' in display
+        assert 'Electronics (Sensors) 1' in display
+
+    # ── Compaction to (All) ────────────────────────────────────────────────────
+    # tl=10: DEX=ceil(10/2)+1=6 → DM 0. AdvancedBrain(brain_tl=12): INT DM 0.
+    # All DMs zero so grant level == package level, no noise from characteristic mods.
+
+    def test_specialised_skill_at_level_0_grants_all(self):
+        # Pilot() installed at level 0 with DM=0: all specs equal at 0 → compact as 'Pilot 0'.
+        from ceres.make.robot import AdvancedBrain
+        from ceres.make.robot.skills import SkillPackage
+
+        brain = AdvancedBrain(
+            brain_tl=12,
+            installed_skills=(SkillPackage(skill=character_skills.Pilot()),),
+        )
+        robot = make_robot(tl=10, brain=brain)
+        display = robot.skills_display
+        assert 'Pilot 0' in display
+
+    def test_pilot_all_three_specs_at_same_level_compacted(self):
+        # Pilot (Small Craft) 1, Pilot (Spacecraft) 1, Pilot (Capital Ships) 1
+        # → all three specialisations present at the same level → Pilot (All) 1.
+        from ceres.make.robot import AdvancedBrain
+        from ceres.make.robot.skills import SkillPackage
+
+        brain = AdvancedBrain(
+            brain_tl=12,
+            bandwidth=4,
+            installed_skills=(
+                SkillPackage(skill=character_skills.Pilot(small_craft=Level(value=1))),
+                SkillPackage(skill=character_skills.Pilot(spacecraft=Level(value=1))),
+                SkillPackage(skill=character_skills.Pilot(capital_ships=Level(value=1))),
+            ),
+        )
+        robot = make_robot(tl=10, brain=brain)
+        display = robot.skills_display
+        assert 'Pilot (All) 1' in display
+        assert 'Pilot (Small Craft)' not in display
+        assert 'Pilot (Spacecraft)' not in display
+        assert 'Pilot (Capital Ships)' not in display
+
+    def test_pilot_different_levels_not_compacted(self):
+        # Pilot (Spacecraft) 2, Pilot (Small Craft) 1 → different levels, list individually.
+        from ceres.make.robot import AdvancedBrain
+        from ceres.make.robot.skills import SkillPackage
+
+        brain = AdvancedBrain(
+            brain_tl=12,
+            bandwidth=4,
+            installed_skills=(
+                SkillPackage(skill=character_skills.Pilot(spacecraft=Level(value=2))),
+                SkillPackage(skill=character_skills.Pilot(small_craft=Level(value=1))),
+            ),
+        )
+        robot = make_robot(tl=10, brain=brain)
+        display = robot.skills_display
+        assert 'Pilot (All)' not in display
+        assert 'Pilot (Spacecraft) 2' in display
+        assert 'Pilot (Small Craft) 1' in display
+
+    def test_pilot_partial_specialisations_not_compacted(self):
+        # Only two of three Pilot specialisations present → cannot use (All).
+        from ceres.make.robot import AdvancedBrain
+        from ceres.make.robot.skills import SkillPackage
+
+        brain = AdvancedBrain(
+            brain_tl=12,
+            installed_skills=(
+                SkillPackage(skill=character_skills.Pilot(spacecraft=Level(value=1))),
+                SkillPackage(skill=character_skills.Pilot(capital_ships=Level(value=1))),
+            ),
+        )
+        robot = make_robot(tl=10, brain=brain)
+        display = robot.skills_display
+        assert 'Pilot (All)' not in display
+        assert 'Pilot (Spacecraft) 1' in display
+        assert 'Pilot (Capital Ships) 1' in display

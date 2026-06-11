@@ -44,7 +44,7 @@ class Skill(CeresModel):
         return tuple(names)
 
     def __str__(self) -> str:
-        fields = _level_fields(type(self))
+        fields = level_fields(type(self))
         if len(fields) == 1 and fields[0] == 'level':
             lvl = cast(Level, getattr(self, fields[0]))
             return f'{type(self).name()}-{lvl.value}'
@@ -148,8 +148,8 @@ class Electronics(Skill):
 
 class Engineer(Skill):
     type: Literal['ENGINEER'] = 'ENGINEER'
-    m_drive: Level = _level('M-drive')
-    j_drive: Level = _level('J-drive')
+    m_drive: Level = _level('M-Drive')
+    j_drive: Level = _level('J-Drive')
     life_support: Level = _level('Life Support')
     power: Level = _level('Power')
 
@@ -524,7 +524,7 @@ def skill_instances(skill_union: object) -> list[AnySkill]:
     return [cast(AnySkill, cls()) for cls in _skill_classes(skill_union)]
 
 
-def _level_fields(skill_cls: type[Skill]) -> list[str]:
+def level_fields(skill_cls: type[Skill]) -> list[str]:
     return [
         name
         for name, field in skill_cls.model_fields.items()
@@ -607,7 +607,7 @@ def _gain_from_class(
     level: int | None,
     existing: AnySkill | None,
 ) -> list[AnySkill]:
-    fields = _level_fields(cls)
+    fields = level_fields(cls)
     is_specialised = not (len(fields) == 1 and fields[0] == 'level')
     _cls: Any = cls
 

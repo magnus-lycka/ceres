@@ -3,7 +3,7 @@ from typing import Any, Literal, cast
 from pydantic import Field
 
 from ceres.character.domain.character_state import CharacterProjection
-from ceres.character.domain.skills import AnySkill, _level_fields
+from ceres.character.domain.skills import AnySkill, level_fields
 from ceres.character.input_specs import InputSpec, NumberEntry, Select, form_int, form_str
 from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event, EventHandlerBase
@@ -31,7 +31,7 @@ def _expand_skill_to_spec_instances(skill: AnySkill) -> list[AnySkill]:
     from ceres.character.domain.skills import Level
 
     skill_cls = type(skill)
-    fields = _level_fields(skill_cls)
+    fields = level_fields(skill_cls)
     if len(fields) <= 1:
         return [skill]
     cls: Any = skill_cls

@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict
 
 from ceres.character.domain.career.career_data import CareerEventEntry, CharCheck, TermData
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
-from ceres.character.domain.skills import AnySkill, Level, _level_fields
+from ceres.character.domain.skills import AnySkill, Level, level_fields
 
 
 class PrecareerSkillEntry(BaseModel):
@@ -45,7 +45,7 @@ class PrecareerSkillEntry(BaseModel):
 def _skill_at_level(skill: AnySkill, level: int) -> AnySkill:
     skill_cls = type(skill)
     cls = cast(type[Any], skill_cls)
-    fields = _level_fields(skill_cls)
+    fields = level_fields(skill_cls)
     if level == 0:
         return cast(AnySkill, cls())
     if len(fields) == 1 and fields[0] == 'level':

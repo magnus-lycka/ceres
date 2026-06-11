@@ -7,7 +7,7 @@ from ceres.character.domain.career.career_data import AdvancementDmOption, Caree
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, characteristic_dm
 from ceres.character.domain.psionics import Psi, PsionicTalentTrainingHandler
-from ceres.character.domain.skills import AnySkill, _level_fields
+from ceres.character.domain.skills import AnySkill, level_fields
 from ceres.character.input_specs import InputSpec, NumberEntry, Select, form_int, form_str
 from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event, EventHandlerBase
@@ -188,7 +188,7 @@ def rank_bonus_skill(bonus: Any) -> AnySkill:
     from ceres.character.domain.skills import Level
 
     skill_cls = type(bonus.skill)
-    fields = _level_fields(skill_cls)
+    fields = level_fields(skill_cls)
     if len(fields) == 1:
         return skill_cls(**{fields[0]: Level(value=bonus.level)})
     active_fields = [field for field in fields if getattr(bonus.skill, field).value > 0]

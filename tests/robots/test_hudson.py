@@ -39,7 +39,15 @@ _expected = SimpleNamespace(
     armour=4,
     traits='Armour (+4), ATV, Heightened Senses, Small (-1)',
     programming='Advanced (INT 9)',
-    skills='Admin 2, Drive (All) 1, Flyer (All) 1, Pilot (Small Craft) 2, Steward 2',
+    # Source stat block shows only the installed speciality (Pilot (Small Craft) 2).
+    # Ceres now shows all effective speciality levels including implied familiarity boosted
+    # by the robot's DEX DM+1 (TL15: DEX 9) — Pilot (Spacecraft) and (Capital Ships) both
+    # reach level 1 (raw 0 + DM+1). This is correct per the new display_labels design;
+    # the source stat block simply omits the implied-familiarity entries.
+    skills=(
+        'Admin 2, Drive (All) 1, Flyer (All) 1, Pilot (Capital Ships) 1, Pilot (Small Craft) 2, '
+        'Pilot (Spacecraft) 1, Steward 2'
+    ),
     endurance_hours=144,
     attacks='—',
     manipulators='(STR 7 DEX 9) × 2',

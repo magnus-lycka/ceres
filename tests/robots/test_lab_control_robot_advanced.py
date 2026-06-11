@@ -24,7 +24,15 @@ _expected = SimpleNamespace(
     # source: "Advanced (INT 9)". Advanced TL12 has base INT 8; the robot uses
     # an INT upgrade to 9 per refs/robot/34_retrotech.md (1 BW, Cr9,000). ✓
     programming='Advanced (INT 9)',
-    skills='Electronics (Remote Ops) 3, Robotic Science (Robotics) 2',
+    # Source stat block shows only the installed specialities (Remote Ops 3, Robotics 2).
+    # Ceres now shows all effective speciality levels including implied familiarity boosted
+    # by the brain's INT DM+1 (AdvancedBrain int_upgrade=1, skill_dm=1): all other
+    # Electronics and Robotic Science specs reach level 1 (raw 0 + DM+1). The source
+    # stat block omits these implied-familiarity entries.
+    skills=(
+        'Electronics (Comms) 1, Electronics (Computers) 1, Electronics (Remote Ops) 3, '
+        'Electronics (Sensors) 1, Robotic Science (Cybernetics) 1, Robotic Science (Robotics) 2'
+    ),
     endurance_hours=324,
     attacks='—',
     manipulators='—',

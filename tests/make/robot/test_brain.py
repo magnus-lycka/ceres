@@ -7,6 +7,7 @@ from pydantic import TypeAdapter, ValidationError
 import pytest
 
 from ceres.character.domain import skills as character_skills
+from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.skills import Level
 from ceres.make.robot.brain import (
     AdvancedBrain,
@@ -136,7 +137,7 @@ class TestAdvancedBrainInstalledSkills:
 
     def test_no_installed_skills(self):
         brain = AdvancedBrain(brain_tl=12)
-        assert brain.skill_grants == ()
+        assert brain.display_labels({}) == {}
         assert brain.used_bandwidth == 0
         assert brain.remaining_bandwidth == 2
 
@@ -145,20 +146,17 @@ class TestAdvancedBrainInstalledSkills:
 
         brain = AdvancedBrain(
             brain_tl=12,
-            installed_skills=(
-                SkillPackage(name=character_skills.Electronics(remote_ops=Level(value=1)), level=1, bandwidth=1),
-            ),
+            installed_skills=(SkillPackage(skill=character_skills.Electronics(remote_ops=Level(value=1))),),
         )
-        assert SkillGrant(character_skills.Electronics(remote_ops=Level(value=1)), 1) in brain.skill_grants
+        # AdvancedBrain TL12 skill_dm=0; Electronics (Remote Ops) level 1 + INT DM 0 = 1
+        assert brain.display_labels({}).get('Electronics (Remote Ops)') == 1
 
     def test_bandwidth_accounting(self):
         from ceres.make.robot.skills import SkillPackage
 
         brain = AdvancedBrain(
             brain_tl=12,
-            installed_skills=(
-                SkillPackage(name=character_skills.Electronics(remote_ops=Level(value=1)), level=1, bandwidth=1),
-            ),
+            installed_skills=(SkillPackage(skill=character_skills.Electronics(remote_ops=Level(value=1))),),
         )
         assert brain.used_bandwidth == 1
         assert brain.remaining_bandwidth == 1  # 2 - 1
@@ -208,9 +206,7 @@ class TestAdvancedBrainBandwidthUpgrade:
         brain = AdvancedBrain(
             brain_tl=12,
             bandwidth=4,
-            installed_skills=(
-                SkillPackage(name=character_skills.Electronics(remote_ops=Level(value=1)), level=1, bandwidth=1),
-            ),
+            installed_skills=(SkillPackage(skill=character_skills.Electronics(remote_ops=Level(value=1))),),
         )
         assert brain.hardware_cost == 10_000.0 + 5_000.0
 
@@ -259,15 +255,15 @@ class TestBrainDiscriminatedUnion:
 
         brain = AdvancedBrain(
             brain_tl=12,
-            installed_skills=(
-                SkillPackage(name=character_skills.Electronics(remote_ops=Level(value=1)), level=1, bandwidth=1),
-            ),
+            installed_skills=(SkillPackage(skill=character_skills.Electronics(remote_ops=Level(value=1))),),
         )
         adapter: TypeAdapter[RobotBrainUnion] = TypeAdapter(RobotBrainUnion)
         restored = adapter.validate_json(brain.model_dump_json())
         assert isinstance(restored, AdvancedBrain)
         assert len(restored.installed_skills) == 1
-        assert restored.installed_skills[0].name == character_skills.Electronics(remote_ops=Level(value=1))
+        pkg = restored.installed_skills[0]
+        assert pkg.name_text == 'Electronics (Remote Ops)'
+        assert pkg.level == 1
 
     def test_function_field_roundtrip(self):
         brain = PrimitiveBrain(function='clean')
@@ -317,12 +313,12 @@ class TestVeryAdvancedBrainTable:
     def test_very_advanced_skill_dm_applies_to_grants(self):
         from ceres.make.robot.skills import SkillPackage
 
-        # skill_dm=1 even without int_upgrade → package level 1 becomes grant level 2
+        # skill_dm=1 even without int_upgrade → package level 1 + INT DM 1 = 2
         brain = VeryAdvancedBrain(
             brain_tl=12,
-            installed_skills=(SkillPackage(name=character_skills.Mechanic(), level=1, bandwidth=1),),
+            installed_skills=(SkillPackage(skill=character_skills.Mechanic(level=Level(value=1))),),
         )
-        assert SkillGrant(character_skills.Mechanic(), 2) in brain.skill_grants
+        assert brain.display_labels({}).get('Mechanic') == 2
 
     def test_very_advanced_programming_label(self):
         assert VeryAdvancedBrain(brain_tl=12).programming_label() == 'Very Advanced (INT 9)'
@@ -425,9 +421,10 @@ class TestAdvancedBrainIntUpgrade:
         brain = AdvancedBrain(
             brain_tl=12,
             int_upgrade=1,
-            installed_skills=(SkillPackage(name=character_skills.Mechanic(), level=1, bandwidth=1),),
+            installed_skills=(SkillPackage(skill=character_skills.Mechanic(level=Level(value=1))),),
         )
-        assert SkillGrant(character_skills.Mechanic(), 2) in brain.skill_grants  # level 1 + DM 1
+        # skill_dm=1 (0 base + 1 upgrade); Mechanic level 1 + DM 1 = 2
+        assert brain.display_labels({}).get('Mechanic') == 2
 
     def test_int_upgrade_included_in_hardware_cost(self):
         brain = AdvancedBrain(brain_tl=12, int_upgrade=1)
@@ -601,7 +598,7 @@ class TestSelfAwareBrainHardened:
         # Skills are software and are not part of hardware_cost
         brain = SelfAwareBrain(
             hardened=True,
-            installed_skills=(SkillPackage(name=character_skills.Admin(), level=1, bandwidth=1),),
+            installed_skills=(SkillPackage(skill=character_skills.Admin(level=Level(value=1))),),
         )
         # Admin level 1 cost = 100 × 10 = 1000; not ×1.5
         assert brain.brain_cost == 1_500_000.0 + 1_000.0
@@ -665,7 +662,7 @@ class TestSelfAwareBrainBandwidthUpgrade:
     def test_hardware_cost_excludes_skill_packages(self):
         brain = SelfAwareBrain(
             bandwidth=20,
-            installed_skills=(SkillPackage(name=character_skills.Admin(), level=1, bandwidth=1),),
+            installed_skills=(SkillPackage(skill=character_skills.Admin(level=Level(value=1))),),
         )
         # hardware_cost = base + BW upgrade; skill package cost not included
         assert brain.hardware_cost == 1_000_000.0 + 500_000.0
@@ -710,10 +707,10 @@ class TestSelfAwareBrainIntUpgrade:
     def test_int_upgrade_applies_to_skill_grants(self):
         brain = SelfAwareBrain(
             int_upgrade=1,  # skill_dm=3
-            installed_skills=(SkillPackage(name=character_skills.Admin(), level=1, bandwidth=1),),
+            installed_skills=(SkillPackage(skill=character_skills.Admin(level=Level(value=1))),),
         )
-        # level 1 + DM 3 = level 4
-        assert SkillGrant(character_skills.Admin(), 4) in brain.skill_grants
+        # skill_dm=3 (2 base + 1 upgrade); Admin level 1 + DM 3 = 4
+        assert brain.display_labels({}).get('Admin') == 4
 
     def test_int_upgrade_above_max_raises(self):
         with pytest.raises(ValidationError):
@@ -736,7 +733,7 @@ class TestSelfAwareBrainSkillsAndBandwidth:
     """Installed skills, skill_dm (+2 base), and bandwidth accounting."""
 
     def test_no_skills_empty_grants(self):
-        assert SelfAwareBrain().skill_grants == ()
+        assert SelfAwareBrain().display_labels({}) == {}
 
     def test_no_skills_remaining_bandwidth_is_full(self):
         assert SelfAwareBrain().remaining_bandwidth == 10
@@ -746,20 +743,21 @@ class TestSelfAwareBrainSkillsAndBandwidth:
 
     def test_installed_skill_grant_uses_dm(self):
         brain = SelfAwareBrain(
-            installed_skills=(SkillPackage(name=character_skills.Admin(), level=1, bandwidth=1),),
+            installed_skills=(SkillPackage(skill=character_skills.Admin(level=Level(value=1))),),
         )
-        # DM+2: level 1 + 2 = level 3
-        assert SkillGrant(character_skills.Admin(), 3) in brain.skill_grants
+        # skill_dm=2; Admin level 1 + DM 2 = 3
+        assert brain.display_labels({}).get('Admin') == 3
 
     def test_level0_skill_with_dm2_grants_level2(self):
         brain = SelfAwareBrain(
-            installed_skills=(SkillPackage(name=character_skills.Broker(), level=0, bandwidth=1),),
+            installed_skills=(SkillPackage(skill=character_skills.Broker()),),
         )
-        assert SkillGrant(character_skills.Broker(), 2) in brain.skill_grants
+        # skill_dm=2; Broker level 0 + DM 2 = 2
+        assert brain.display_labels({}).get('Broker') == 2
 
     def test_bandwidth_accounting(self):
         brain = SelfAwareBrain(
-            installed_skills=(SkillPackage(name=character_skills.Admin(), level=1, bandwidth=3),),
+            installed_skills=(SkillPackage(skill=character_skills.Admin(level=Level(value=3))),),
         )
         assert brain.used_bandwidth == 3
         assert brain.remaining_bandwidth == 7  # 10 - 3
@@ -767,9 +765,9 @@ class TestSelfAwareBrainSkillsAndBandwidth:
     def test_multiple_skills_bw_summed(self):
         brain = SelfAwareBrain(
             installed_skills=(
-                SkillPackage(name=character_skills.Admin(), level=1, bandwidth=1),
-                SkillPackage(name=character_skills.Advocate(), level=1, bandwidth=1),
-                SkillPackage(name=character_skills.Broker(), level=3, bandwidth=3),
+                SkillPackage(skill=character_skills.Admin(level=Level(value=1))),
+                SkillPackage(skill=character_skills.Advocate(level=Level(value=1))),
+                SkillPackage(skill=character_skills.Broker(level=Level(value=3))),
             ),
         )
         assert brain.used_bandwidth == 5
@@ -777,33 +775,30 @@ class TestSelfAwareBrainSkillsAndBandwidth:
 
     def test_skill_cost_added_to_brain_cost(self):
         brain = SelfAwareBrain(
-            installed_skills=(SkillPackage(name=character_skills.Admin(), level=1, bandwidth=1),),
+            installed_skills=(SkillPackage(skill=character_skills.Admin(level=Level(value=1))),),
         )
         # Admin level 1 cost = 100 × 10^1 = 1000
         assert brain.brain_cost == 1_000_000.0 + 1_000.0
 
     def test_skill_cost_not_in_hardware_cost(self):
         brain = SelfAwareBrain(
-            installed_skills=(SkillPackage(name=character_skills.Admin(), level=1, bandwidth=1),),
+            installed_skills=(SkillPackage(skill=character_skills.Admin(level=Level(value=1))),),
         )
         assert brain.hardware_cost == 1_000_000.0
 
     def test_level0_specialty_grant_uses_all(self):
-        # Level 0 package: speciality in name → "(All)" in grant (unspecialized)
+        # Level 0 package with no active speciality: all specs at DM 2 → Electronics (All) 2
         brain = SelfAwareBrain(
-            installed_skills=(
-                SkillPackage(name=character_skills.Electronics(remote_ops=Level(value=1)), level=0, bandwidth=0),
-            ),
+            installed_skills=(SkillPackage(skill=character_skills.Electronics()),),
         )
-        assert SkillGrant(character_skills.Electronics(), 2, all_specialities=True) in brain.skill_grants
+        assert brain.display_labels({}).get('Electronics (All)') == 2
 
     def test_level1_specialty_grant_preserved(self):
         brain = SelfAwareBrain(
-            installed_skills=(
-                SkillPackage(name=character_skills.Engineer(j_drive=Level(value=1)), level=1, bandwidth=1),
-            ),
+            installed_skills=(SkillPackage(skill=character_skills.Engineer(j_drive=Level(value=1))),),
         )
-        assert SkillGrant(character_skills.Engineer(j_drive=Level(value=1)), 3) in brain.skill_grants
+        # skill_dm=2; Engineer (J-Drive) level 1 + DM 2 = 3
+        assert brain.display_labels({}).get('Engineer (J-Drive)') == 3
 
 
 class TestSelfAwareBrainSlots:
@@ -875,13 +870,15 @@ class TestSelfAwareBrainRoundtrip:
 
     def test_installed_skills_preserved(self):
         brain = SelfAwareBrain(
-            installed_skills=(SkillPackage(name=character_skills.Admin(), level=1, bandwidth=1),),
+            installed_skills=(SkillPackage(skill=character_skills.Admin(level=Level(value=1))),),
         )
         adapter: TypeAdapter[RobotBrainUnion] = TypeAdapter(RobotBrainUnion)
         restored = adapter.validate_json(brain.model_dump_json())
         assert isinstance(restored, SelfAwareBrain)
         assert len(restored.installed_skills) == 1
-        assert restored.installed_skills[0].name == character_skills.Admin()
+        pkg = restored.installed_skills[0]
+        assert pkg.name_text == 'Admin'
+        assert pkg.level == 1
 
     def test_int_upgrade_preserved(self):
         brain = SelfAwareBrain(int_upgrade=2)
@@ -938,7 +935,7 @@ class TestSelfAwareBrainInRobot:
         from ceres.make.robot import NoneLocomotion, Robot, RobotSize
 
         brain = SelfAwareBrain(
-            installed_skills=(SkillPackage(name=character_skills.Admin(), level=1, bandwidth=1),),
+            installed_skills=(SkillPackage(skill=character_skills.Admin(level=Level(value=1))),),
         )
         robot = Robot(
             name='T',
@@ -1001,99 +998,97 @@ class TestSelfAwareBrainInstalledSoftware:
         assert restored.installed_software[0].name == 'Universal Translator'
 
 
-class TestAdvancedBrainSkillGrantsForRobot:
-    """skill_grants_for_robot applies DEX DM for DEX skills, INT DM for others."""
+class TestAdvancedBrainDisplayLabels:
+    """display_labels applies DEX DM for DEX skills, INT DM for others."""
 
     def test_int_skill_uses_int_dm(self):
-        # Admin is INT: level 1 + INT DM 0 (AdvancedBrain TL12) = 1
+        # Admin is INT; AdvancedBrain TL12 skill_dm=0; high DEX should not affect result
         brain = AdvancedBrain(
             brain_tl=12,
-            installed_skills=(SkillPackage(name=character_skills.Admin(), level=1, bandwidth=1),),
+            installed_skills=(SkillPackage(skill=character_skills.Admin(level=Level(value=1))),),
         )
-        grants = brain.skill_grants_for_robot(dex_dm=5)
-        assert SkillGrant(character_skills.Admin(), 1) in grants  # INT DM=0, not dex_dm=5
+        labels = brain.display_labels({Chars.DEX: 14})  # DEX DM=2, must not apply to Admin
+        assert labels.get('Admin') == 1
 
     def test_dex_skill_uses_dex_dm(self):
-        # Flyer is DEX: level 0 + dex_dm=1 = 1
+        # Flyer is DEX; level 0 + DEX DM=1 = 1
         brain = AdvancedBrain(
             brain_tl=12,
-            installed_skills=(SkillPackage(name=character_skills.Flyer(grav=Level(value=1)), level=0, bandwidth=0),),
+            installed_skills=(SkillPackage(skill=character_skills.Flyer()),),
         )
-        grants = brain.skill_grants_for_robot(dex_dm=1)
-        assert SkillGrant(character_skills.Flyer(), 1, all_specialities=True) in grants
+        labels = brain.display_labels({Chars.DEX: 9})  # DEX=9 → DM+1
+        assert labels.get('Flyer (All)') == 1
 
     def test_dex_skill_does_not_use_int_dm(self):
-        # Stealth level 1, INT DM=0 would give Stealth 1; DEX DM=2 gives Stealth 3
+        # Stealth level 1; INT DM=0 would give 1; DEX DM=2 gives 3
         brain = AdvancedBrain(
             brain_tl=12,
-            installed_skills=(SkillPackage(name=character_skills.Stealth(), level=1, bandwidth=1),),
+            installed_skills=(SkillPackage(skill=character_skills.Stealth(level=Level(value=1))),),
         )
-        grants = brain.skill_grants_for_robot(dex_dm=2)
-        assert SkillGrant(character_skills.Stealth(), 3) in grants  # level 1 + dex_dm 2 = 3
+        labels = brain.display_labels({Chars.DEX: 14})  # DEX=14 → DM+2
+        assert labels.get('Stealth') == 3
 
     def test_self_aware_brain_dex_skill_uses_dex_dm(self):
-        # SelfAwareBrain INT DM=2; DEX DM=1 for TL15 robot
+        # SelfAwareBrain skill_dm=2; Flyer DEX level 0 + DEX DM=1 = 1 (not INT DM=2)
         brain = SelfAwareBrain(
-            installed_skills=(SkillPackage(name=character_skills.Flyer(grav=Level(value=1)), level=0, bandwidth=0),),
+            installed_skills=(SkillPackage(skill=character_skills.Flyer()),),
         )
-        grants = brain.skill_grants_for_robot(dex_dm=1)
-        assert SkillGrant(character_skills.Flyer(), 1, all_specialities=True) in grants  # level 0 + dex_dm 1 = 1
+        labels = brain.display_labels({Chars.DEX: 9})  # DEX=9 → DM+1
+        assert labels.get('Flyer (All)') == 1
 
     def test_self_aware_brain_int_skill_uses_int_dm(self):
-        # SelfAwareBrain INT DM=2; Admin uses INT
+        # SelfAwareBrain skill_dm=2; Admin level 1 + INT DM=2 = 3
         brain = SelfAwareBrain(
-            installed_skills=(SkillPackage(name=character_skills.Admin(), level=1, bandwidth=1),),
+            installed_skills=(SkillPackage(skill=character_skills.Admin(level=Level(value=1))),),
         )
-        grants = brain.skill_grants_for_robot(dex_dm=1)
-        assert SkillGrant(character_skills.Admin(), 3) in grants  # level 1 + INT DM 2 = 3
+        labels = brain.display_labels({Chars.DEX: 9})  # DEX DM should not affect Admin
+        assert labels.get('Admin') == 3
 
     def test_animals_handling_uses_dex_dm(self):
         brain = AdvancedBrain(
             brain_tl=12,
-            installed_skills=(
-                SkillPackage(name=character_skills.Animals(handling=Level(value=1)), level=1, bandwidth=1),
-            ),
+            installed_skills=(SkillPackage(skill=character_skills.Animals(handling=Level(value=1))),),
         )
-        grants = brain.skill_grants_for_robot(dex_dm=2)
-        assert SkillGrant(character_skills.Animals(handling=Level(value=1)), 3) in grants
+        labels = brain.display_labels({Chars.DEX: 14})  # DEX=14 → DM+2
+        assert labels.get('Animals (Handling)') == 3
 
-    @pytest.mark.parametrize('field_name', ['training', 'veterinary'])
-    def test_animals_training_and_veterinary_use_int_dm(self, field_name):
+    @pytest.mark.parametrize('field_name,spec', [('training', 'Training'), ('veterinary', 'Veterinary')])
+    def test_animals_training_and_veterinary_use_int_dm(self, field_name, spec):
         skill = _skill(character_skills.Animals, field_name)
-        brain = AdvancedBrain(brain_tl=12, installed_skills=(SkillPackage(name=skill, level=1, bandwidth=1),))
-        grants = brain.skill_grants_for_robot(dex_dm=2)
-        assert SkillGrant(skill, 1) in grants
+        brain = AdvancedBrain(brain_tl=12, installed_skills=(SkillPackage(skill=skill),))
+        labels = brain.display_labels({Chars.DEX: 14})  # high DEX must not affect training/vet
+        assert labels.get(f'Animals ({spec})') == 1
 
-    @pytest.mark.parametrize('field_name', ['turret', 'screen'])
-    def test_gunner_turret_and_screen_use_dex_dm(self, field_name):
+    @pytest.mark.parametrize('field_name,spec', [('turret', 'Turret'), ('screen', 'Screen')])
+    def test_gunner_turret_and_screen_use_dex_dm(self, field_name, spec):
         skill = _skill(character_skills.Gunner, field_name)
-        brain = AdvancedBrain(brain_tl=12, installed_skills=(SkillPackage(name=skill, level=1, bandwidth=1),))
-        grants = brain.skill_grants_for_robot(dex_dm=2)
-        assert SkillGrant(skill, 3) in grants
+        brain = AdvancedBrain(brain_tl=12, installed_skills=(SkillPackage(skill=skill),))
+        labels = brain.display_labels({Chars.DEX: 14})
+        assert labels.get(f'Gunner ({spec})') == 3
 
-    @pytest.mark.parametrize('field_name', ['ortillery', 'capital'])
-    def test_gunner_ortillery_and_capital_use_int_dm(self, field_name):
+    @pytest.mark.parametrize('field_name,spec', [('ortillery', 'Ortillery'), ('capital', 'Capital')])
+    def test_gunner_ortillery_and_capital_use_int_dm(self, field_name, spec):
         skill = _skill(character_skills.Gunner, field_name)
-        brain = AdvancedBrain(brain_tl=12, installed_skills=(SkillPackage(name=skill, level=1, bandwidth=1),))
-        grants = brain.skill_grants_for_robot(dex_dm=2)
-        assert SkillGrant(skill, 1) in grants
+        brain = AdvancedBrain(brain_tl=12, installed_skills=(SkillPackage(skill=skill),))
+        labels = brain.display_labels({Chars.DEX: 14})  # high DEX must not affect ortillery/capital
+        assert labels.get(f'Gunner ({spec})') == 1
 
-    @pytest.mark.parametrize('field_name', ['small_craft', 'spacecraft'])
-    def test_pilot_small_craft_and_spacecraft_use_dex_dm(self, field_name):
+    @pytest.mark.parametrize('field_name,spec', [('small_craft', 'Small Craft'), ('spacecraft', 'Spacecraft')])
+    def test_pilot_small_craft_and_spacecraft_use_dex_dm(self, field_name, spec):
         skill = _skill(character_skills.Pilot, field_name)
-        brain = AdvancedBrain(brain_tl=12, installed_skills=(SkillPackage(name=skill, level=1, bandwidth=1),))
-        grants = brain.skill_grants_for_robot(dex_dm=2)
-        assert SkillGrant(skill, 3) in grants
+        brain = AdvancedBrain(brain_tl=12, installed_skills=(SkillPackage(skill=skill),))
+        labels = brain.display_labels({Chars.DEX: 14})
+        assert labels.get(f'Pilot ({spec})') == 3
 
     def test_pilot_capital_ships_uses_int_dm(self):
         skill = character_skills.Pilot(capital_ships=Level(value=1))
-        brain = AdvancedBrain(brain_tl=12, installed_skills=(SkillPackage(name=skill, level=1, bandwidth=1),))
-        grants = brain.skill_grants_for_robot(dex_dm=2)
-        assert SkillGrant(skill, 1) in grants
+        brain = AdvancedBrain(brain_tl=12, installed_skills=(SkillPackage(skill=skill),))
+        labels = brain.display_labels({Chars.DEX: 14})  # high DEX must not affect capital_ships
+        assert labels.get('Pilot (Capital Ships)') == 1
 
-    @pytest.mark.parametrize('field_name', ['ocean_ships', 'submarine'])
-    def test_seafarer_ocean_ships_and_submarine_use_int_dm(self, field_name):
+    @pytest.mark.parametrize('field_name,spec', [('ocean_ships', 'Ocean Ships'), ('submarine', 'Submarine')])
+    def test_seafarer_ocean_ships_and_submarine_use_int_dm(self, field_name, spec):
         skill = _skill(character_skills.Seafarer, field_name)
-        brain = AdvancedBrain(brain_tl=12, installed_skills=(SkillPackage(name=skill, level=1, bandwidth=1),))
-        grants = brain.skill_grants_for_robot(dex_dm=2)
-        assert SkillGrant(skill, 1) in grants
+        brain = AdvancedBrain(brain_tl=12, installed_skills=(SkillPackage(skill=skill),))
+        labels = brain.display_labels({Chars.DEX: 14})  # high DEX must not affect these
+        assert labels.get(f'Seafarer ({spec})') == 1

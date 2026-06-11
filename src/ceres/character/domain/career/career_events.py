@@ -83,7 +83,7 @@ from ceres.character.domain.skill_events import (
 )
 from ceres.character.domain.skills import (
     AnySkill,
-    _level_fields,
+    level_fields,
 )
 from ceres.character.input_specs import (
     InputSpec,
@@ -426,7 +426,7 @@ class SkillTableHandler(EventHandlerBase):
             choices = [entry] if career.skill_table_option_is_available(projection, self.table, entry) else []
         elif not isinstance(entry, _Chars):
             skill_cls = type(entry)
-            fields = _level_fields(skill_cls)
+            fields = level_fields(skill_cls)
             spec_field = next((f for f in fields if getattr(entry, f).value > 0), None)
             if spec_field is None and len(fields) > 1:
                 choices = [skill_cls()]

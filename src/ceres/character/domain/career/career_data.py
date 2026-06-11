@@ -8,7 +8,7 @@ from pydantic.functional_validators import ModelWrapValidatorHandler
 from ceres.character.domain.benefits import AnyBenefit, ItemBenefit
 from ceres.character.domain.characteristics import Chars, ConnectionKind, characteristic_dm
 from ceres.character.domain.psionics import Psi
-from ceres.character.domain.skills import AnySkill, _level_fields
+from ceres.character.domain.skills import AnySkill, level_fields
 from ceres.character.mechanism.errors import ReplayError
 
 if TYPE_CHECKING:
@@ -58,7 +58,7 @@ class RankBonus(BaseModel):
         if self.choices:
             return self.choices
         if self.skill:
-            fields = _level_fields(type(self.skill))
+            fields = level_fields(type(self.skill))
             if len(fields) > 1 and not any(getattr(self.skill, field).value > 0 for field in fields):
                 return [self.skill]
         return None
@@ -668,7 +668,7 @@ class CareerData(TermData):
         if isinstance(entry, list):
             return self._unknown_training_skills(projection, entry)
         skill_cls = type(entry)
-        fields = _level_fields(skill_cls)
+        fields = level_fields(skill_cls)
         spec_field = next((f for f in fields if getattr(entry, f).value > 0), None)
         if spec_field is not None:
             return []

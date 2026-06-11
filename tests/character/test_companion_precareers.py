@@ -38,7 +38,7 @@ from ceres.character.domain.skills import (
     PhysicalScience,
     SpaceScience,
     Streetwise,
-    _level_fields,
+    level_fields,
 )
 from ceres.character.domain.sophont import HUMANITI
 from ceres.character.mechanism.event_base import Event, EventHandlerBase
@@ -88,7 +88,7 @@ def _skill_level(projection, name: str) -> int:
     skill = next((s for s in projection.summary.skills if type(s).name() == name), None)
     if skill is None:
         return -1
-    fields = _level_fields(type(skill))
+    fields = level_fields(type(skill))
     return max((getattr(skill, f).value for f in fields), default=0)
 
 

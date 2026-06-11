@@ -8,7 +8,7 @@ from ceres.character.domain.career.career_data import AssignmentData, CareerData
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.connection import AnyConnection
 from ceres.character.domain.psionics import Psionics
-from ceres.character.domain.skills import AnySkill, Level, Skill, _level_fields
+from ceres.character.domain.skills import AnySkill, Level, Skill, level_fields
 from ceres.character.domain.sophont import Sophont
 from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.pending_input import PendingInputBase, _deserialise_pending_input
@@ -136,11 +136,61 @@ class CharacterSummary(BaseModel):
     def skill_level(self, skill_cls: type[Skill], default: int | None = None) -> int | None:
         for skill in self.skills:
             if type(skill) is skill_cls:
-                fields = _level_fields(skill_cls)
+                fields = level_fields(skill_cls)
                 if not fields:
                     return 0
                 return max(getattr(skill, f).value for f in fields)
         return default
+
+    def diff(self, other: CharacterSummary) -> list[str]:
+        changes: list[str] = []
+
+        changes.extend(other.narrative[len(self.narrative) :])
+
+        if other.current_career != self.current_career and other.current_career:
+            line = f'Joined {other.current_career.name}'
+            if other.current_assignment:
+                line += f' ({other.current_assignment.name})'
+            changes.append(line)
+
+        before_rt = self.rank_title
+        after_rt = other.rank_title
+        if other.rank is not None and after_rt != before_rt:
+            b_code, b_title = before_rt
+            a_code, a_title = after_rt
+            b_display = f'{b_code} {b_title}'.strip() if b_title else b_code
+            a_display = f'{a_code} {a_title}'.strip() if a_title else a_code
+            changes.append(f'Rank {b_display} → {a_display}')
+
+        all_chars = set(self.characteristics) | set(other.characteristics)
+        for char in sorted(all_chars, key=lambda c: c.value):
+            b_val = self.characteristics.get(char, 0)
+            a_val = other.characteristics.get(char, 0)
+            if a_val != b_val:
+                changes.append(f'{char.value} {b_val} → {a_val}')
+
+        before_by_type = {type(s): s for s in self.skills}
+        after_by_type = {type(s): s for s in other.skills}
+        new_types = sorted(set(after_by_type) - set(before_by_type), key=lambda cls: cls.name())
+        changes.extend(f'Gained {cls.name()} {other.skill_level(cls, 0)}' for cls in new_types)
+        for cls in sorted(set(after_by_type) & set(before_by_type), key=lambda cls: cls.name()):
+            b_lvl = self.skill_level(cls, 0)
+            a_lvl = other.skill_level(cls, 0)
+            if a_lvl != b_lvl:
+                changes.append(f'{cls.name()} {b_lvl} → {a_lvl}')
+
+        if other.cash != self.cash:
+            delta = other.cash - self.cash
+            sign = '+' if delta > 0 else ''
+            changes.append(f'Cash {sign}Cr{delta:,}')
+
+        changes.extend(f'Benefit: {b.display_label}' for b in other.benefits[len(self.benefits) :])
+        changes.extend(
+            f'New {c.display_name}: {c.source or "unknown"}' for c in other.connections[len(self.connections) :]
+        )
+        changes.extend(f'Problem: {p}' for p in other.problems[len(self.problems) :])
+
+        return changes
 
 
 class CharacterProjection(BaseModel):
@@ -191,7 +241,7 @@ class CharacterProjection(BaseModel):
         choices: list[AnySkill] = []
         for skill_cls in skill_types:
             existing = next((s for s in self.summary.skills if type(s) is skill_cls), None)
-            fields = _level_fields(skill_cls)
+            fields = level_fields(skill_cls)
             _cls: Any = skill_cls
             if len(fields) == 1 and fields[0] == 'level':
                 # Non-specialised skill
@@ -229,7 +279,7 @@ class CharacterProjection(BaseModel):
         if existing is None:
             self.summary.skills.append(skill_cls())
             existing = self.summary.skills[-1]
-        for field in _level_fields(skill_cls):
+        for field in level_fields(skill_cls):
             given = getattr(skill, field).value
             if given > 0:
                 current = getattr(existing, field).value
@@ -238,7 +288,7 @@ class CharacterProjection(BaseModel):
     def increment_skill(self, skill: AnySkill) -> None:
         skill_cls = type(skill)
         existing = next((s for s in self.summary.skills if type(s) is skill_cls), None)
-        fields = _level_fields(skill_cls)
+        fields = level_fields(skill_cls)
         active_field = next((f for f in fields if getattr(skill, f).value > 0), None)
         target_field = active_field or (fields[0] if fields else None)
         if existing is None:
@@ -262,51 +312,4 @@ class CharacterProjection(BaseModel):
 
 
 def diff_summaries(before: CharacterSummary, after: CharacterSummary) -> list[str]:
-    changes: list[str] = []
-
-    changes.extend(after.narrative[len(before.narrative) :])
-
-    if after.current_career != before.current_career and after.current_career:
-        line = f'Joined {after.current_career.name}'
-        if after.current_assignment:
-            line += f' ({after.current_assignment.name})'
-        changes.append(line)
-
-    before_rt = before.rank_title
-    after_rt = after.rank_title
-    if after.rank is not None and after_rt != before_rt:
-        b_code, b_title = before_rt
-        a_code, a_title = after_rt
-        b_display = f'{b_code} {b_title}'.strip() if b_title else b_code
-        a_display = f'{a_code} {a_title}'.strip() if a_title else a_code
-        changes.append(f'Rank {b_display} → {a_display}')
-
-    all_chars = set(before.characteristics) | set(after.characteristics)
-    for char in sorted(all_chars, key=lambda c: c.value):
-        b_val = before.characteristics.get(char, 0)
-        a_val = after.characteristics.get(char, 0)
-        if a_val != b_val:
-            changes.append(f'{char.value} {b_val} → {a_val}')
-
-    before_by_type = {type(s): s for s in before.skills}
-    after_by_type = {type(s): s for s in after.skills}
-    new_types = sorted(set(after_by_type) - set(before_by_type), key=lambda cls: cls.name())
-    changes.extend(f'Gained {cls.name()} {after.skill_level(cls, 0)}' for cls in new_types)
-    for cls in sorted(set(after_by_type) & set(before_by_type), key=lambda cls: cls.name()):
-        b_lvl = before.skill_level(cls, 0)
-        a_lvl = after.skill_level(cls, 0)
-        if a_lvl != b_lvl:
-            changes.append(f'{cls.name()} {b_lvl} → {a_lvl}')
-
-    if after.cash != before.cash:
-        delta = after.cash - before.cash
-        sign = '+' if delta > 0 else ''
-        changes.append(f'Cash {sign}Cr{delta:,}')
-
-    changes.extend(f'Benefit: {b.display_label}' for b in after.benefits[len(before.benefits) :])
-    changes.extend(
-        f'New {c.display_name}: {c.source or "unknown"}' for c in after.connections[len(before.connections) :]
-    )
-    changes.extend(f'Problem: {p}' for p in after.problems[len(before.problems) :])
-
-    return changes
+    return before.diff(after)

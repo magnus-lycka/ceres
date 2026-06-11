@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 from ceres.character.domain.benefits import ItemBenefit
 from ceres.character.domain.character_state import CharacterSummary
 from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.skills import AnySkill, _level_fields
+from ceres.character.domain.skills import AnySkill, level_fields
 
 
 class NpcSpec(BaseModel):
@@ -56,7 +56,7 @@ _NBSP = ' '  # non-breaking space — keeps level number with preceding word/pa
 
 
 def _format_npc_skill(skill: AnySkill) -> list[str]:
-    fields = _level_fields(type(skill))
+    fields = level_fields(type(skill))
     if not fields:
         return []
     name = type(skill).name()

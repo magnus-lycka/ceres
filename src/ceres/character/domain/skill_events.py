@@ -7,7 +7,7 @@ from ceres.character.domain.career.advancement import AdvancementDmChoiceHandler
 from ceres.character.domain.career.career_data import AdvancementDmOption, CareerSkillOption
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.psionics import Psi
-from ceres.character.domain.skills import AnySkill, _level_fields
+from ceres.character.domain.skills import AnySkill, level_fields
 from ceres.character.input_specs import InputSpec, Select, form_str
 from ceres.character.mechanism.event_base import Event, EventHandlerBase
 from ceres.character.mechanism.pending_input import PendingInputBase
@@ -24,7 +24,7 @@ def skill_option_label(option: Any) -> str:
     if isinstance(option, Psi):
         return type(option.talent).name()
     skill_cls = type(option)
-    fields = _level_fields(skill_cls)
+    fields = level_fields(skill_cls)
     if len(fields) > 1:
         active = next((field for field in fields if getattr(option, field).value > 0), None)
         if active is not None:
@@ -52,7 +52,7 @@ def build_skill_select_options(
         if level == 0:
             results.append((skill_name, _skill_adapter.dump_json(skill_cls()).decode()))
             continue
-        fields = _level_fields(skill_cls)
+        fields = level_fields(skill_cls)
         restricted_fields = {field for field in fields if getattr(option, field).value > 0}
         for skill in projection.skill_choices([skill_cls], level):
             if restricted_fields and not any(getattr(skill, field).value > 0 for field in restricted_fields):
