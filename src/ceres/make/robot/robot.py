@@ -3,7 +3,7 @@ from typing import Any, cast
 
 from pydantic import Field
 
-from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.characteristics import Chars, characteristic_dm
 from ceres.shared import _Note
 
 from .base import RobotBase
@@ -236,8 +236,8 @@ class Robot(RobotBase):
             base_str,
             max((m.effective_str(self.size) for m in self.manipulators), default=base_str),
         )
-        characteristics = {Chars.DEX: _robot_dex(self.tl), Chars.STR: str_for_dm}
-        merged = self.brain.display_labels(characteristics)
+        dms = {Chars.DEX: characteristic_dm(_robot_dex(self.tl)), Chars.STR: characteristic_dm(str_for_dm)}
+        merged = self.brain.display_labels(dms)
         for opt in self.options:
             if isinstance(opt, RobotPartMixin):
                 for grant in opt.skill_grants:

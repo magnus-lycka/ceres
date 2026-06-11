@@ -6,7 +6,7 @@ from typing import Annotated, ClassVar, Literal, cast
 from pydantic import ConfigDict, Field
 
 from ceres.character.domain import skills as character_skills
-from ceres.character.domain.characteristics import Chars, characteristic_dm
+from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.skills import (
     AnySkill,
     Level,
@@ -312,9 +312,10 @@ class SkillPackage(CeresModel):
             return False
         return active_speciality_field(self.skill) is None
 
-    def _per_spec_entries(self, characteristics: dict[Chars, int]) -> list[tuple[type[Skill], str | None, int]]:
+    def _per_spec_entries(self, dms: dict[Chars, int]) -> list[tuple[type[Skill], str | None, int]]:
         """Raw per-field data: [(skill_cls, spec_label|None, effective_level)].
 
+        dms maps each characteristic to its already-computed DM (0 if absent).
         spec_label is None for simple skills and expand_specialities=False packages.
         Used internally and by brain.display_labels for multi-package merging.
         For specific-speciality packages (active field is not None, no package_level),
@@ -323,12 +324,10 @@ class SkillPackage(CeresModel):
         skill_cls = type(self.skill)
         if not skill_cls.specialities():
             char = Chars.STR if _is_str_skill(self.skill) else (Chars.DEX if _is_dex_skill(self.skill) else Chars.INT)
-            dm = characteristic_dm(characteristics.get(char, 7))
-            return [(skill_cls, None, max(0, self.level + dm))]
+            return [(skill_cls, None, max(0, self.level + dms.get(char, 0)))]
         if not self.expand_specialities:
             char = Chars.DEX if _is_dex_skill(self.skill) else Chars.INT
-            dm = characteristic_dm(characteristics.get(char, 7))
-            return [(skill_cls, None, max(0, self.level + dm))]
+            return [(skill_cls, None, max(0, self.level + dms.get(char, 0)))]
         pkg_level = self.package_level
         active_field = active_speciality_field(self.skill)
         result: list[tuple[type[Skill], str | None, int]] = []
@@ -341,13 +340,12 @@ class SkillPackage(CeresModel):
             else:
                 raw = getattr(self.skill, field_name).value
             spec = speciality_label(self.skill, field_name)
-            dm = characteristic_dm(characteristics.get(char, 7))
-            result.append((skill_cls, spec, max(0, raw + dm)))
+            result.append((skill_cls, spec, max(0, raw + dms.get(char, 0))))
         return result
 
-    def display_labels(self, characteristics: dict[Chars, int]) -> list[str]:
-        """Effective skill labels given the robot's characteristics dict."""
-        entries = self._per_spec_entries(characteristics)
+    def display_labels(self, dms: dict[Chars, int]) -> list[str]:
+        """Effective skill labels given the robot's characteristic DMs."""
+        entries = self._per_spec_entries(dms)
         if not entries:
             return []
         per_spec = {(cls, spec): lvl for cls, spec, lvl in entries}

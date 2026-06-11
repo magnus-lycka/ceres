@@ -109,9 +109,7 @@ def _skill(skill_cls, field_name: str = 'level', value: int = 1):
     return skill
 
 
-class StubBot:
-    def __init__(self) -> None:
-        self.characteristics: dict[Chars, int] = {Chars.STR: 7, Chars.DEX: 7, Chars.INT: 7}
+_DM0: dict[Chars, int] = {}  # all DMs zero — used where no characteristic bonus applies
 
 
 class TestStandardSkills:
@@ -122,17 +120,17 @@ class TestStandardSkills:
             assert pkg.tl == tl
             assert pkg.bandwidth == bw
             assert pkg.cost == cost
-            assert pkg.display_labels(StubBot().characteristics) == [f'{skill_cls.name()} 0']
+            assert pkg.display_labels(_DM0) == [f'{skill_cls.name()} 0']
 
     def test_skills_no_specialisation_1(self):
-        better = {Chars.STR: 9, Chars.DEX: 9, Chars.INT: 9}
+        all_plus1 = {Chars.STR: 1, Chars.DEX: 1, Chars.INT: 1}
         for skill_cls in _SIMPLE_SKILLS:
             tl, bw, _, cost = _STANDARD_SKILL_PACKAGE_DICT[skill_cls]
             pkg = SkillPackage(skill=_skill(skill_cls, 'level', 1))
             assert pkg.tl == tl
             assert pkg.bandwidth == bw + 1
             assert pkg.cost == cost * 10
-            assert pkg.display_labels(better) == [f'{skill_cls.name()} 2']
+            assert pkg.display_labels(all_plus1) == [f'{skill_cls.name()} 2']
 
     def test_skills_specialisation(self):
         for skill_cls in _SPECIALISATION_SKILLS:
@@ -142,17 +140,17 @@ class TestStandardSkills:
                 if spec_char is None:
                     continue
                 pkg = SkillPackage(skill=_skill(skill_cls, field_for_spec(skill_cls, speci), 1))
-                assert pkg.display_labels(StubBot().characteristics) == [f'{skill_cls.name()} ({speci}) 1']
+                assert pkg.display_labels(_DM0) == [f'{skill_cls.name()} ({speci}) 1']
 
     def test_broad_skills_no_specialisation_2(self):
         tl, bw, _, cost = _STANDARD_SKILL_PACKAGE_DICT[character_skills.LanguageSkill]
-        better = {Chars.STR: 9, Chars.DEX: 9, Chars.INT: 9}
+        all_plus1 = {Chars.STR: 1, Chars.DEX: 1, Chars.INT: 1}
         for skill_cls in _BROAD_SIMPLE_SKILLS:
             pkg = SkillPackage(skill=_skill(skill_cls, 'level', 2))
             assert pkg.tl == tl
             assert pkg.bandwidth == bw + 2
             assert pkg.cost == cost * 100
-            assert pkg.display_labels(better) == [f'{skill_cls.name()} 3']
+            assert pkg.display_labels(all_plus1) == [f'{skill_cls.name()} 3']
 
     def test_broad_skills_specialisation(self):
         for broad, skills in _BROAD_SPECIALISATION_SKILLS.items():
@@ -163,29 +161,29 @@ class TestStandardSkills:
                     if spec_char is None:
                         continue
                     pkg = SkillPackage(skill=_skill(skill_cls, field_for_spec(skill_cls, speci), 1))
-                    assert pkg.display_labels(StubBot().characteristics) == [f'{skill_cls.name()} ({speci}) 1']
+                    assert pkg.display_labels(_DM0) == [f'{skill_cls.name()} ({speci}) 1']
 
     def test_smart_engineer_all_specs_at_same_level(self):
-        # INT=9 → DM+1; Engineer() level-0 all specs → effective 0+1=1 each → compact to (All) 1
+        # INT DM+1; Engineer() level-0 all specs → effective 0+1=1 each → compact to (All) 1
         pkg = SkillPackage(skill=character_skills.Engineer())
-        assert pkg.display_labels({Chars.INT: 9}) == ['Engineer (All) 1']
+        assert pkg.display_labels({Chars.INT: 1}) == ['Engineer (All) 1']
 
     def test_smart_power_engineer_specs_differ(self):
         # Power spec at level 1 + INT DM+1 = 2; others at 0+1=1 → not all equal → list individually
         pkg = SkillPackage(skill=character_skills.Engineer(power=Level(value=1)))
-        assert sorted(pkg.display_labels({Chars.INT: 9})) == sorted(
+        assert sorted(pkg.display_labels({Chars.INT: 1})) == sorted(
             ['Engineer (Power) 2', 'Engineer (J-Drive) 1', 'Engineer (M-Drive) 1', 'Engineer (Life Support) 1']
         )
 
     def test_animals_all_implied_familiarity_neutral_dm(self):
         # All Animals specialities at 0, all DMs 0 → all equal → 'Animals 0' not '(All) 0'
         pkg = SkillPackage(skill=character_skills.Animals())
-        assert pkg.display_labels(StubBot().characteristics) == ['Animals 0']
+        assert pkg.display_labels(_DM0) == ['Animals 0']
 
     def test_animals_all_implied_familiarity_high_dms(self):
-        # Animals level-0: Handling DEX12→DM+2=2, Training INT9→DM+1=1, Veterinary INT9→DM+1=1
+        # Animals level-0: Handling DEX DM+2=2, Training INT DM+1=1, Veterinary INT DM+1=1
         pkg = SkillPackage(skill=character_skills.Animals())
-        assert sorted(pkg.display_labels({Chars.STR: 7, Chars.DEX: 12, Chars.INT: 9})) == sorted(
+        assert sorted(pkg.display_labels({Chars.DEX: 2, Chars.INT: 1})) == sorted(
             ['Animals (Handling) 2', 'Animals (Training) 1', 'Animals (Veterinary) 1']
         )
 

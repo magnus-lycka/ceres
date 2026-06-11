@@ -1002,46 +1002,46 @@ class TestAdvancedBrainDisplayLabels:
     """display_labels applies DEX DM for DEX skills, INT DM for others."""
 
     def test_int_skill_uses_int_dm(self):
-        # Admin is INT; AdvancedBrain TL12 skill_dm=0; high DEX should not affect result
+        # Admin is INT; AdvancedBrain TL12 skill_dm=0; high DEX DM must not apply
         brain = AdvancedBrain(
             brain_tl=12,
             installed_skills=(SkillPackage(skill=character_skills.Admin(level=Level(value=1))),),
         )
-        labels = brain.display_labels({Chars.DEX: 14})  # DEX DM=2, must not apply to Admin
+        labels = brain.display_labels({Chars.DEX: 2})  # DEX DM+2, must not apply to Admin
         assert labels.get('Admin') == 1
 
     def test_dex_skill_uses_dex_dm(self):
-        # Flyer is DEX; level 0 + DEX DM=1 = 1
+        # Flyer is DEX; level 0 + DEX DM+1 = 1
         brain = AdvancedBrain(
             brain_tl=12,
             installed_skills=(SkillPackage(skill=character_skills.Flyer()),),
         )
-        labels = brain.display_labels({Chars.DEX: 9})  # DEX=9 → DM+1
+        labels = brain.display_labels({Chars.DEX: 1})  # DEX DM+1
         assert labels.get('Flyer (All)') == 1
 
     def test_dex_skill_does_not_use_int_dm(self):
-        # Stealth level 1; INT DM=0 would give 1; DEX DM=2 gives 3
+        # Stealth level 1; INT DM=0 would give 1; DEX DM+2 gives 3
         brain = AdvancedBrain(
             brain_tl=12,
             installed_skills=(SkillPackage(skill=character_skills.Stealth(level=Level(value=1))),),
         )
-        labels = brain.display_labels({Chars.DEX: 14})  # DEX=14 → DM+2
+        labels = brain.display_labels({Chars.DEX: 2})  # DEX DM+2
         assert labels.get('Stealth') == 3
 
     def test_self_aware_brain_dex_skill_uses_dex_dm(self):
-        # SelfAwareBrain skill_dm=2; Flyer DEX level 0 + DEX DM=1 = 1 (not INT DM=2)
+        # SelfAwareBrain skill_dm=2; Flyer DEX level 0 + DEX DM+1 = 1 (not INT DM+2)
         brain = SelfAwareBrain(
             installed_skills=(SkillPackage(skill=character_skills.Flyer()),),
         )
-        labels = brain.display_labels({Chars.DEX: 9})  # DEX=9 → DM+1
+        labels = brain.display_labels({Chars.DEX: 1})  # DEX DM+1
         assert labels.get('Flyer (All)') == 1
 
     def test_self_aware_brain_int_skill_uses_int_dm(self):
-        # SelfAwareBrain skill_dm=2; Admin level 1 + INT DM=2 = 3
+        # SelfAwareBrain skill_dm=2; Admin level 1 + INT DM+2 = 3
         brain = SelfAwareBrain(
             installed_skills=(SkillPackage(skill=character_skills.Admin(level=Level(value=1))),),
         )
-        labels = brain.display_labels({Chars.DEX: 9})  # DEX DM should not affect Admin
+        labels = brain.display_labels({Chars.DEX: 1})  # DEX DM must not affect Admin
         assert labels.get('Admin') == 3
 
     def test_animals_handling_uses_dex_dm(self):
@@ -1049,46 +1049,46 @@ class TestAdvancedBrainDisplayLabels:
             brain_tl=12,
             installed_skills=(SkillPackage(skill=character_skills.Animals(handling=Level(value=1))),),
         )
-        labels = brain.display_labels({Chars.DEX: 14})  # DEX=14 → DM+2
+        labels = brain.display_labels({Chars.DEX: 2})  # DEX DM+2
         assert labels.get('Animals (Handling)') == 3
 
     @pytest.mark.parametrize('field_name,spec', [('training', 'Training'), ('veterinary', 'Veterinary')])
     def test_animals_training_and_veterinary_use_int_dm(self, field_name, spec):
         skill = _skill(character_skills.Animals, field_name)
         brain = AdvancedBrain(brain_tl=12, installed_skills=(SkillPackage(skill=skill),))
-        labels = brain.display_labels({Chars.DEX: 14})  # high DEX must not affect training/vet
+        labels = brain.display_labels({Chars.DEX: 2})  # high DEX DM must not affect training/vet
         assert labels.get(f'Animals ({spec})') == 1
 
     @pytest.mark.parametrize('field_name,spec', [('turret', 'Turret'), ('screen', 'Screen')])
     def test_gunner_turret_and_screen_use_dex_dm(self, field_name, spec):
         skill = _skill(character_skills.Gunner, field_name)
         brain = AdvancedBrain(brain_tl=12, installed_skills=(SkillPackage(skill=skill),))
-        labels = brain.display_labels({Chars.DEX: 14})
+        labels = brain.display_labels({Chars.DEX: 2})  # DEX DM+2
         assert labels.get(f'Gunner ({spec})') == 3
 
     @pytest.mark.parametrize('field_name,spec', [('ortillery', 'Ortillery'), ('capital', 'Capital')])
     def test_gunner_ortillery_and_capital_use_int_dm(self, field_name, spec):
         skill = _skill(character_skills.Gunner, field_name)
         brain = AdvancedBrain(brain_tl=12, installed_skills=(SkillPackage(skill=skill),))
-        labels = brain.display_labels({Chars.DEX: 14})  # high DEX must not affect ortillery/capital
+        labels = brain.display_labels({Chars.DEX: 2})  # high DEX DM must not affect ortillery/capital
         assert labels.get(f'Gunner ({spec})') == 1
 
     @pytest.mark.parametrize('field_name,spec', [('small_craft', 'Small Craft'), ('spacecraft', 'Spacecraft')])
     def test_pilot_small_craft_and_spacecraft_use_dex_dm(self, field_name, spec):
         skill = _skill(character_skills.Pilot, field_name)
         brain = AdvancedBrain(brain_tl=12, installed_skills=(SkillPackage(skill=skill),))
-        labels = brain.display_labels({Chars.DEX: 14})
+        labels = brain.display_labels({Chars.DEX: 2})  # DEX DM+2
         assert labels.get(f'Pilot ({spec})') == 3
 
     def test_pilot_capital_ships_uses_int_dm(self):
         skill = character_skills.Pilot(capital_ships=Level(value=1))
         brain = AdvancedBrain(brain_tl=12, installed_skills=(SkillPackage(skill=skill),))
-        labels = brain.display_labels({Chars.DEX: 14})  # high DEX must not affect capital_ships
+        labels = brain.display_labels({Chars.DEX: 2})  # high DEX DM must not affect capital_ships
         assert labels.get('Pilot (Capital Ships)') == 1
 
     @pytest.mark.parametrize('field_name,spec', [('ocean_ships', 'Ocean Ships'), ('submarine', 'Submarine')])
     def test_seafarer_ocean_ships_and_submarine_use_int_dm(self, field_name, spec):
         skill = _skill(character_skills.Seafarer, field_name)
         brain = AdvancedBrain(brain_tl=12, installed_skills=(SkillPackage(skill=skill),))
-        labels = brain.display_labels({Chars.DEX: 14})  # high DEX must not affect these
+        labels = brain.display_labels({Chars.DEX: 2})  # high DEX DM must not affect these
         assert labels.get(f'Seafarer ({spec})') == 1

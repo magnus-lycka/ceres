@@ -88,21 +88,6 @@ _SELF_AWARE_BW_UPGRADES: tuple[_BwUpgradeEntry, ...] = (
 )
 
 
-def _skill_dm_to_int(dm: int) -> int:
-    """Canonical characteristic value yielding the given DM (Traveller standard table)."""
-    if dm <= -2:  # noqa: PLR2004
-        return 1
-    if dm == -1:
-        return 3
-    if dm == 0:
-        return 6
-    if dm == 1:
-        return 9
-    if dm == 2:  # noqa: PLR2004
-        return 12
-    return 15
-
-
 def _lookup(table: tuple[_BrainEntry, ...], tl: int) -> _BrainEntry:
     """Return the highest table entry whose TL is ≤ tl; fall back to lowest."""
     entry = table[0]
@@ -136,7 +121,7 @@ class _BrainBase(CeresModel):
     def skill_grants(self) -> tuple[SkillGrant, ...]:
         return ()
 
-    def display_labels(self, characteristics: dict[Chars, int]) -> dict[str, int]:
+    def display_labels(self, dms: dict[Chars, int]) -> dict[str, int]:
         result: dict[str, int] = {}
         for grant in self.skill_grants:
             result[grant.name_text] = max(result.get(grant.name_text, 0), grant.level)
@@ -297,12 +282,11 @@ class _AdvancedBrainBase(_BrainBase):
     def skill_dm(self) -> int:
         return self._entry().skill_dm + self.int_upgrade
 
-    def display_labels(self, characteristics: dict[Chars, int]) -> dict[str, int]:
-        int_val = _skill_dm_to_int(self.skill_dm)
-        effective_chars = {**characteristics, Chars.INT: int_val}
+    def display_labels(self, dms: dict[Chars, int]) -> dict[str, int]:
+        effective_dms = {**dms, Chars.INT: self.skill_dm}
         per_spec: dict[tuple, int] = {}
         for pkg in self.installed_skills:
-            for skill_cls, spec, lvl in pkg._per_spec_entries(effective_chars):
+            for skill_cls, spec, lvl in pkg._per_spec_entries(effective_dms):
                 key = (skill_cls, spec)
                 per_spec[key] = max(per_spec.get(key, 0), lvl)
         return _specs_to_display_dict(per_spec)
