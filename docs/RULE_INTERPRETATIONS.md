@@ -912,3 +912,36 @@ Current robot skill package characteristic interpretations:
 
 Robot brains do not model EDU for ordinary skill package DMs, so specialities
 that would be EDU-based for sophonts are treated as INT-based robot tasks.
+
+### RIR-012 Skill (All) is a pure display artifact, nothing you can buy.
+
+Robot Handbook says:
+
+"Finally, for skills with many specialities, the Referee
+may rule that selecting a given skill package four
+times at a certain level provides a broad enough
+exposure so that the skill can be in all specialities.
+Optionally, extremely broad skills such as Science
+may require eight packages for full coverage."
+
+Ceres gives no such concessions. Robot specifications can
+have listings like "Engineer (All) 2", but that's not because
+anyone bought an all-package. No such thing exists. It's just
+a compact way of writing that skill level including DM from
+impacting characteristic happened to cause all specialisations
+to land on the same level, in this case probably because it's
+an INT 12 brain and an Engineer 0 package.
+
+It is of course possible to buy as many specializations as
+one wants for skills with specializations, but note that this
+is rarely the case when we see e.g. "Electronics (All) 1" in
+a robot spec, and skill package APIs for skills with
+specialisations must explicitly list all awarded specialisations
+as soon as level is above 0. I.e. Something like Pilot() could
+award Pilot 0, but to get Pilot (All) 1 without INT and DEX DMs,
+the API call must look something like
+Pilot(small_craft=1, starships=1, capital_ships=1) with all awarded
+specialisations given. Note that the cost and bandwidth requirement
+for this is the same as for three entirely separate skills with
+the same price and bandwith, e.g. Admin(level=1), Mechanics(level=1)
+and Steward(level=1)
