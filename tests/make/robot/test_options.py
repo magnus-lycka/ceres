@@ -10,8 +10,6 @@ All rule data from:
 
 import pytest
 
-from ceres.character.domain import skills as character_skills
-from ceres.character.domain.skills import Level
 from ceres.make.robot import (
     AquaticLocomotion,
     GravLocomotion,
@@ -68,7 +66,6 @@ from ceres.make.robot.options import (
     VacuumEnvironmentProtection,
     VehicleSpeedModification,
 )
-from ceres.make.robot.skills import SkillGrant
 
 
 def _robot(size=RobotSize.SIZE_3, tl=8, locomotion=None, options=None) -> Robot:
@@ -183,9 +180,7 @@ class TestReconSensor:
         assert opt.tl == expected_tl
         assert opt.slots == expected_slots
         assert opt.cost == expected_cost
-        grants = opt.skill_grants
-        assert len(grants) == 1
-        assert grants[0] == SkillGrant(character_skills.Recon(level=Level(value=expected_level)), expected_level)
+        assert opt.skill_grants == {'Recon': expected_level}
 
     def test_default_quality_is_improved(self):
         assert ReconSensor().quality == 'improved'
@@ -200,7 +195,7 @@ class TestReconSensor:
         # Recon Sensor skills are hardware-based, not subject to INT DM.
         # Skill grant is always the table value regardless of brain INT.
         opt = ReconSensor(quality='improved')
-        assert opt.skill_grants == (SkillGrant(character_skills.Recon(level=Level(value=1)), 1),)
+        assert opt.skill_grants == {'Recon': 1}
 
 
 # ──────────────────────────────────────────────────────
@@ -391,8 +386,7 @@ class TestEnvironmentProcessor:
         assert traits[0].name == 'Heightened Senses'
 
     def test_skill_grants_recon_0(self):
-        grants = EnvironmentProcessor().skill_grants
-        assert grants == (SkillGrant(character_skills.Recon(), 0),)
+        assert EnvironmentProcessor().skill_grants == {'Recon': 0}
 
     def test_label(self):
         opt = EnvironmentProcessor()
@@ -432,7 +426,7 @@ class TestParasiticLink:
         assert ParasiticLink().robot_traits == ()
 
     def test_no_skill_grants(self):
-        assert ParasiticLink().skill_grants == ()
+        assert ParasiticLink().skill_grants == {}
 
 
 # ── InjectorNeedle ─────────────────────────────────────────────────────────────
@@ -758,12 +752,7 @@ class TestCamouflageVisual:
     def test_tl_and_stealth_grant(self, quality, expected_tl, expected_stealth_level):
         opt = CamouflageVisual(quality=quality)
         assert opt.tl == expected_tl
-        grants = opt.skill_grants
-        assert len(grants) == 1
-        assert grants[0] == SkillGrant(
-            character_skills.Stealth(level=Level(value=expected_stealth_level)),
-            expected_stealth_level,
-        )
+        assert opt.skill_grants == {'Stealth': expected_stealth_level}
 
     @pytest.mark.parametrize(
         'quality, size, expected_cost',
@@ -831,7 +820,7 @@ class TestCamouflageAudible:
         assert CamouflageAudible().robot_traits == ()
 
     def test_no_skill_grants(self):
-        assert CamouflageAudible().skill_grants == ()
+        assert CamouflageAudible().skill_grants == {}
 
 
 # ── CamouflageOlfactory ───────────────────────────────────────────────────────
@@ -888,8 +877,7 @@ class TestNavigationSystem:
         assert NavigationSystem(quality='basic').cost == 2000.0
 
     def test_skill_grant_navigation_1(self):
-        grants = NavigationSystem(quality='basic').skill_grants
-        assert grants == (SkillGrant(character_skills.Navigation(level=Level(value=1)), 1),)
+        assert NavigationSystem(quality='basic').skill_grants == {'Navigation': 1}
 
     def test_label(self):
         opt = NavigationSystem(quality='basic')
@@ -956,7 +944,7 @@ class TestAutochef:
         assert opt.notes.item_message == 'Autochef (basic)'
 
     def test_no_skill_grants(self):
-        assert Autochef().skill_grants == ()
+        assert Autochef().skill_grants == {}
 
 
 # ── StylistToolkit ────────────────────────────────────────────────────────────
@@ -980,7 +968,7 @@ class TestStylistToolkit:
         assert opt.notes.item_message == 'Stylist Toolkit'
 
     def test_no_skill_grants(self):
-        assert StylistToolkit().skill_grants == ()
+        assert StylistToolkit().skill_grants == {}
 
 
 # ── AvatarController ──────────────────────────────────────────────────────────
@@ -1638,10 +1626,7 @@ class TestAgilityEnhancement:
         assert AgilityEnhancement(level=2).speed_bonus == 2
 
     def test_skill_grant(self):
-        grants = AgilityEnhancement(level=2).skill_grants
-        assert len(grants) == 1
-        assert grants[0] == SkillGrant(character_skills.Athletics(dexterity=Level(value=2)), 2)
-        assert grants[0].level == 2
+        assert AgilityEnhancement(level=2).skill_grants == {'Athletics (Dexterity)': 2}
 
     def test_cost_level_1(self):
         # 100% BCC; SIZE_3 WheelsLocomotion BCC = 400×2 = 800

@@ -1,5 +1,5 @@
 from math import ceil
-from typing import Any, cast
+from typing import Any
 
 from pydantic import Field
 
@@ -22,7 +22,7 @@ from .locomotion import LocomotionUnion, ThrusterLocomotion, WalkerLocomotion
 from .manipulators import LegOrManipulator, Manipulator
 from .options import AgilityEnhancement, Efficiency, VehicleSpeedModification, default_suite
 from .parts import RobotPartMixin
-from .skills import RobotSkill, SkillGrant
+from .skills import skill_name
 from .spec import RobotDetailRow, RobotDetailSection, RobotSpec, RobotSpecRow, RobotSpecSection
 from .text import format_credits, format_traits
 
@@ -240,8 +240,8 @@ class Robot(RobotBase):
         merged = self.brain.display_labels(dms)
         for opt in self.options:
             if isinstance(opt, RobotPartMixin):
-                for grant in opt.skill_grants:
-                    merged[grant.name_text] = max(merged.get(grant.name_text, 0), grant.level)
+                for name, lvl in opt.skill_grants.items():
+                    merged[name] = max(merged.get(name, 0), lvl)
         # Basic/Primitive (locomotion) grants Vehicle (type) X where X = agility (locomotion base + enhancement).
         # refs/robot/35_skill_packages.md — Basic (locomotion) skill table.
         if isinstance(self.brain, (BasicBrain, PrimitiveBrain)) and self.brain.function == 'locomotion':
@@ -249,8 +249,8 @@ class Robot(RobotBase):
             effective_agility = (self.locomotion.agility or 0) + agility_enh
             vehicle_skill = self.locomotion.vehicle_skill
             if vehicle_skill is not None:
-                vg = SkillGrant(cast(RobotSkill, vehicle_skill), effective_agility)
-                merged[vg.name_text] = max(merged.get(vg.name_text, 0), vg.level)
+                vehicle_name = skill_name(vehicle_skill)
+                merged[vehicle_name] = max(merged.get(vehicle_name, 0), effective_agility)
         parts = sorted(f'{name} {level}' for name, level in merged.items())
         rem = self.brain.remaining_bandwidth
         if rem is not None and rem > 0:
@@ -382,9 +382,11 @@ class Robot(RobotBase):
         if has_skills and (self.brain.installed_skills or has_software):
             ss = RobotDetailSection(title='Skills')
             for pkg in self.brain.installed_skills:
+                entries = pkg.display_entries({})
+                pkg_name = ', '.join(f'{k} {v}' for k, v in entries.items()) or type(pkg).skill_name()
                 ss.rows.append(
                     RobotDetailRow(
-                        name=f'{pkg.name_text} {pkg.level}',
+                        name=pkg_name,
                         col3=f'−{pkg.bandwidth}',
                         cost=format_credits(pkg.cost),
                     )

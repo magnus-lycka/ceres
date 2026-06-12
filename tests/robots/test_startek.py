@@ -23,9 +23,9 @@ from ceres.make.robot.options import (
     VacuumEnvironmentProtection,
     WeaponMount,
 )
+from ceres.make.robot.skills import Athletics, Electronics, Engineer, Explosives, GunCombat, Mechanic, Medic
 from ceres.make.robot.spec import RobotSpecSection
 from ceres.make.robot.text import format_traits
-from tests.robots import skill_packages as sp
 
 # SIZE_5 TL14: STR = 2×5−1 = 9, DEX = ceil(14/2)+1 = 8
 # SIZE_3 TL14: STR = 2×3−1 = 5, DEX = ceil(14/2)+1 = 8
@@ -225,13 +225,13 @@ def build_startek_fuller() -> Robot:
             brain_tl=14,
             int_upgrade=1,
             installed_skills=(
-                sp.athletics_strength(level=0, bandwidth=0),
-                sp.electronics_all(level=1, bandwidth=1),
-                sp.engineer_all(level=1, bandwidth=1),
-                sp.explosives(level=0, bandwidth=0),
-                sp.gun_combat(level=0, bandwidth=0),
-                sp.mechanic(level=1, bandwidth=1),
-                sp.medic(level=0, bandwidth=0),
+                Athletics(strength=0),
+                Electronics(level=1),
+                Engineer(level=1),
+                Explosives(),
+                GunCombat(),
+                Mechanic(level=1),
+                Medic(),
             ),
         ),
         manipulators=[

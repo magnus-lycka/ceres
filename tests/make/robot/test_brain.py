@@ -6,9 +6,7 @@ All values derived from refs/robot/33_brain.md (Robot Brains table).
 from pydantic import TypeAdapter, ValidationError
 import pytest
 
-from ceres.character.domain import skills as character_skills
 from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.skills import Level
 from ceres.make.robot.brain import (
     AdvancedBrain,
     BasicBrain,
@@ -17,13 +15,21 @@ from ceres.make.robot.brain import (
     SelfAwareBrain,
     VeryAdvancedBrain,
 )
-from ceres.make.robot.skills import BrainSoftware, RobotProfession, SkillGrant, SkillPackage
-
-
-def _skill(skill_cls, field_name: str):
-    skill = skill_cls()
-    getattr(skill, field_name).set(1)
-    return skill
+from ceres.make.robot.skills import (
+    Admin,
+    Advocate,
+    Animals,
+    BrainSoftware,
+    Broker,
+    Electronics,
+    Engineer,
+    Flyer,
+    Gunner,
+    Mechanic,
+    Pilot,
+    Seafarer,
+    Stealth,
+)
 
 
 class TestPrimitiveBrainTable:
@@ -117,19 +123,19 @@ class TestProgrammingLabels:
         assert AdvancedBrain(brain_tl=10).programming_label() == 'Advanced (INT 6)'
 
 
-class TestPrimitiveBrainSkillGrants:
+class TestPrimitiveBrainDisplayLabels:
     """refs/robot/35_skill_packages.md — Primitive package skill table."""
 
     def test_clean_gives_profession(self):
         brain = PrimitiveBrain(function='clean')
-        assert SkillGrant(RobotProfession(domestic_cleaner=Level(value=1)), 2) in brain.skill_grants
+        assert brain.display_labels({}).get('Profession (domestic cleaner)') == 2
 
     def test_alert_gives_recon(self):
         brain = PrimitiveBrain(function='alert')
-        assert SkillGrant(character_skills.Recon(), 0) in brain.skill_grants
+        assert brain.display_labels({}).get('Recon') == 0
 
     def test_no_function_gives_no_skills(self):
-        assert PrimitiveBrain().skill_grants == ()
+        assert PrimitiveBrain().display_labels({}) == {}
 
 
 class TestAdvancedBrainInstalledSkills:
@@ -142,22 +148,12 @@ class TestAdvancedBrainInstalledSkills:
         assert brain.remaining_bandwidth == 2
 
     def test_installed_skill_grant(self):
-        from ceres.make.robot.skills import SkillPackage
-
-        brain = AdvancedBrain(
-            brain_tl=12,
-            installed_skills=(SkillPackage(skill=character_skills.Electronics(remote_ops=Level(value=1))),),
-        )
+        brain = AdvancedBrain(brain_tl=12, installed_skills=(Electronics(remote_ops=1),))
         # AdvancedBrain TL12 skill_dm=0; Electronics (Remote Ops) level 1 + INT DM 0 = 1
         assert brain.display_labels({}).get('Electronics (Remote Ops)') == 1
 
     def test_bandwidth_accounting(self):
-        from ceres.make.robot.skills import SkillPackage
-
-        brain = AdvancedBrain(
-            brain_tl=12,
-            installed_skills=(SkillPackage(skill=character_skills.Electronics(remote_ops=Level(value=1))),),
-        )
+        brain = AdvancedBrain(brain_tl=12, installed_skills=(Electronics(remote_ops=1),))
         assert brain.used_bandwidth == 1
         assert brain.remaining_bandwidth == 1  # 2 - 1
 
@@ -201,12 +197,10 @@ class TestAdvancedBrainBandwidthUpgrade:
             AdvancedBrain(brain_tl=9, bandwidth=4)  # TL9 Advanced brain can't get +2 upgrade
 
     def test_hardware_cost_excludes_skill_packages(self):
-        from ceres.make.robot.skills import SkillPackage
-
         brain = AdvancedBrain(
             brain_tl=12,
             bandwidth=4,
-            installed_skills=(SkillPackage(skill=character_skills.Electronics(remote_ops=Level(value=1))),),
+            installed_skills=(Electronics(remote_ops=1),),
         )
         assert brain.hardware_cost == 10_000.0 + 5_000.0
 
@@ -251,19 +245,14 @@ class TestBrainDiscriminatedUnion:
         assert restored.type == expected_type
 
     def test_installed_skills_roundtrip(self):
-        from ceres.make.robot.skills import SkillPackage
-
-        brain = AdvancedBrain(
-            brain_tl=12,
-            installed_skills=(SkillPackage(skill=character_skills.Electronics(remote_ops=Level(value=1))),),
-        )
+        brain = AdvancedBrain(brain_tl=12, installed_skills=(Electronics(remote_ops=1),))
         adapter: TypeAdapter[RobotBrainUnion] = TypeAdapter(RobotBrainUnion)
         restored = adapter.validate_json(brain.model_dump_json())
         assert isinstance(restored, AdvancedBrain)
         assert len(restored.installed_skills) == 1
         pkg = restored.installed_skills[0]
-        assert pkg.name_text == 'Electronics (Remote Ops)'
-        assert pkg.level == 1
+        assert isinstance(pkg, Electronics)
+        assert pkg.remote_ops == 1
 
     def test_function_field_roundtrip(self):
         brain = PrimitiveBrain(function='clean')
@@ -286,9 +275,9 @@ class TestBrainDiscriminatedUnion:
         assert restored.hardened is True
 
 
-class TestBasicBrainSkillGrants:
+class TestBasicBrainDisplayLabels:
     def test_no_function_gives_no_skills(self):
-        assert BasicBrain().skill_grants == ()
+        assert BasicBrain().display_labels({}) == {}
 
 
 class TestVeryAdvancedBrainTable:
@@ -311,13 +300,8 @@ class TestVeryAdvancedBrainTable:
         assert brain.skill_dm == expected_dm
 
     def test_very_advanced_skill_dm_applies_to_grants(self):
-        from ceres.make.robot.skills import SkillPackage
-
         # skill_dm=1 even without int_upgrade → package level 1 + INT DM 1 = 2
-        brain = VeryAdvancedBrain(
-            brain_tl=12,
-            installed_skills=(SkillPackage(skill=character_skills.Mechanic(level=Level(value=1))),),
-        )
+        brain = VeryAdvancedBrain(brain_tl=12, installed_skills=(Mechanic(level=1),))
         assert brain.display_labels({}).get('Mechanic') == 2
 
     def test_very_advanced_programming_label(self):
@@ -416,13 +400,7 @@ class TestAdvancedBrainIntUpgrade:
         assert AdvancedBrain(brain_tl=12, int_upgrade=2).skill_dm == 2  # 0 base + 2
 
     def test_int_upgrade_applies_dm_to_skill_grants(self):
-        from ceres.make.robot.skills import SkillPackage
-
-        brain = AdvancedBrain(
-            brain_tl=12,
-            int_upgrade=1,
-            installed_skills=(SkillPackage(skill=character_skills.Mechanic(level=Level(value=1))),),
-        )
+        brain = AdvancedBrain(brain_tl=12, int_upgrade=1, installed_skills=(Mechanic(level=1),))
         # skill_dm=1 (0 base + 1 upgrade); Mechanic level 1 + DM 1 = 2
         assert brain.display_labels({}).get('Mechanic') == 2
 
@@ -596,10 +574,7 @@ class TestSelfAwareBrainHardened:
 
     def test_skills_cost_not_multiplied_by_hardening(self):
         # Skills are software and are not part of hardware_cost
-        brain = SelfAwareBrain(
-            hardened=True,
-            installed_skills=(SkillPackage(skill=character_skills.Admin(level=Level(value=1))),),
-        )
+        brain = SelfAwareBrain(hardened=True, installed_skills=(Admin(level=1),))
         # Admin level 1 cost = 100 × 10 = 1000; not ×1.5
         assert brain.brain_cost == 1_500_000.0 + 1_000.0
 
@@ -660,10 +635,7 @@ class TestSelfAwareBrainBandwidthUpgrade:
         assert restored.bandwidth == 25
 
     def test_hardware_cost_excludes_skill_packages(self):
-        brain = SelfAwareBrain(
-            bandwidth=20,
-            installed_skills=(SkillPackage(skill=character_skills.Admin(level=Level(value=1))),),
-        )
+        brain = SelfAwareBrain(bandwidth=20, installed_skills=(Admin(level=1),))
         # hardware_cost = base + BW upgrade; skill package cost not included
         assert brain.hardware_cost == 1_000_000.0 + 500_000.0
 
@@ -705,11 +677,8 @@ class TestSelfAwareBrainIntUpgrade:
         assert SelfAwareBrain(int_upgrade=2).skill_dm == 4
 
     def test_int_upgrade_applies_to_skill_grants(self):
-        brain = SelfAwareBrain(
-            int_upgrade=1,  # skill_dm=3
-            installed_skills=(SkillPackage(skill=character_skills.Admin(level=Level(value=1))),),
-        )
         # skill_dm=3 (2 base + 1 upgrade); Admin level 1 + DM 3 = 4
+        brain = SelfAwareBrain(int_upgrade=1, installed_skills=(Admin(level=1),))
         assert brain.display_labels({}).get('Admin') == 4
 
     def test_int_upgrade_above_max_raises(self):
@@ -742,62 +711,48 @@ class TestSelfAwareBrainSkillsAndBandwidth:
         assert SelfAwareBrain().skill_dm == 2
 
     def test_installed_skill_grant_uses_dm(self):
-        brain = SelfAwareBrain(
-            installed_skills=(SkillPackage(skill=character_skills.Admin(level=Level(value=1))),),
-        )
         # skill_dm=2; Admin level 1 + DM 2 = 3
+        brain = SelfAwareBrain(installed_skills=(Admin(level=1),))
         assert brain.display_labels({}).get('Admin') == 3
 
     def test_level0_skill_with_dm2_grants_level2(self):
-        brain = SelfAwareBrain(
-            installed_skills=(SkillPackage(skill=character_skills.Broker()),),
-        )
         # skill_dm=2; Broker level 0 + DM 2 = 2
+        brain = SelfAwareBrain(installed_skills=(Broker(),))
         assert brain.display_labels({}).get('Broker') == 2
 
     def test_bandwidth_accounting(self):
-        brain = SelfAwareBrain(
-            installed_skills=(SkillPackage(skill=character_skills.Admin(level=Level(value=3))),),
-        )
+        brain = SelfAwareBrain(installed_skills=(Admin(level=3),))
         assert brain.used_bandwidth == 3
         assert brain.remaining_bandwidth == 7  # 10 - 3
 
     def test_multiple_skills_bw_summed(self):
         brain = SelfAwareBrain(
             installed_skills=(
-                SkillPackage(skill=character_skills.Admin(level=Level(value=1))),
-                SkillPackage(skill=character_skills.Advocate(level=Level(value=1))),
-                SkillPackage(skill=character_skills.Broker(level=Level(value=3))),
+                Admin(level=1),
+                Advocate(level=1),
+                Broker(level=3),
             ),
         )
         assert brain.used_bandwidth == 5
         assert brain.remaining_bandwidth == 5
 
     def test_skill_cost_added_to_brain_cost(self):
-        brain = SelfAwareBrain(
-            installed_skills=(SkillPackage(skill=character_skills.Admin(level=Level(value=1))),),
-        )
         # Admin level 1 cost = 100 × 10^1 = 1000
+        brain = SelfAwareBrain(installed_skills=(Admin(level=1),))
         assert brain.brain_cost == 1_000_000.0 + 1_000.0
 
     def test_skill_cost_not_in_hardware_cost(self):
-        brain = SelfAwareBrain(
-            installed_skills=(SkillPackage(skill=character_skills.Admin(level=Level(value=1))),),
-        )
+        brain = SelfAwareBrain(installed_skills=(Admin(level=1),))
         assert brain.hardware_cost == 1_000_000.0
 
     def test_level0_specialty_grant_uses_all(self):
-        # Level 0 package with no active speciality: all specs at DM 2 → Electronics (All) 2
-        brain = SelfAwareBrain(
-            installed_skills=(SkillPackage(skill=character_skills.Electronics()),),
-        )
+        # All Electronics specs at DM 2 (level 0 + skill_dm 2) → Electronics (All) 2
+        brain = SelfAwareBrain(installed_skills=(Electronics(),))
         assert brain.display_labels({}).get('Electronics (All)') == 2
 
     def test_level1_specialty_grant_preserved(self):
-        brain = SelfAwareBrain(
-            installed_skills=(SkillPackage(skill=character_skills.Engineer(j_drive=Level(value=1))),),
-        )
         # skill_dm=2; Engineer (J-Drive) level 1 + DM 2 = 3
+        brain = SelfAwareBrain(installed_skills=(Engineer(j_drive=1),))
         assert brain.display_labels({}).get('Engineer (J-Drive)') == 3
 
 
@@ -869,15 +824,13 @@ class TestSelfAwareBrainRoundtrip:
         assert restored.bandwidth == 20
 
     def test_installed_skills_preserved(self):
-        brain = SelfAwareBrain(
-            installed_skills=(SkillPackage(skill=character_skills.Admin(level=Level(value=1))),),
-        )
+        brain = SelfAwareBrain(installed_skills=(Admin(level=1),))
         adapter: TypeAdapter[RobotBrainUnion] = TypeAdapter(RobotBrainUnion)
         restored = adapter.validate_json(brain.model_dump_json())
         assert isinstance(restored, SelfAwareBrain)
         assert len(restored.installed_skills) == 1
         pkg = restored.installed_skills[0]
-        assert pkg.name_text == 'Admin'
+        assert isinstance(pkg, Admin)
         assert pkg.level == 1
 
     def test_int_upgrade_preserved(self):
@@ -934,9 +887,8 @@ class TestSelfAwareBrainInRobot:
     def test_installed_skill_appears_in_skills_display_with_dm(self):
         from ceres.make.robot import NoneLocomotion, Robot, RobotSize
 
-        brain = SelfAwareBrain(
-            installed_skills=(SkillPackage(skill=character_skills.Admin(level=Level(value=1))),),
-        )
+        # DM+2: Admin 1 + 2 = Admin 3
+        brain = SelfAwareBrain(installed_skills=(Admin(level=1),))
         robot = Robot(
             name='T',
             tl=15,
@@ -944,7 +896,6 @@ class TestSelfAwareBrainInRobot:
             locomotion=NoneLocomotion(),
             brain=brain,
         )
-        # DM+2: Admin 1 + 2 = Admin 3
         assert 'Admin 3' in robot.skills_display
 
 
@@ -998,97 +949,108 @@ class TestSelfAwareBrainInstalledSoftware:
         assert restored.installed_software[0].name == 'Universal Translator'
 
 
+class TestAdvancedBrainFacadeSkills:
+    """Brain installed_skills accepts facade _RobotSkill objects directly."""
+
+    def test_accepts_facade_admin(self):
+        from ceres.make.robot.skills import Admin
+
+        brain = AdvancedBrain(brain_tl=12, installed_skills=(Admin(level=1),))
+        assert brain.used_bandwidth == 1
+        assert brain.remaining_bandwidth == 1  # 2 - 1
+
+    def test_brain_cost_includes_facade_skill_cost(self):
+        from ceres.make.robot.skills import Admin
+
+        brain = AdvancedBrain(brain_tl=12, installed_skills=(Admin(level=1),))
+        assert brain.brain_cost == 10_000.0 + 1_000.0  # base + Admin level 1
+
+    def test_display_labels_with_facade_skill(self):
+        from ceres.make.robot.skills import Admin
+
+        # AdvancedBrain TL12 skill_dm=0; Admin level 1 + INT DM 0 = 1
+        brain = AdvancedBrain(brain_tl=12, installed_skills=(Admin(level=1),))
+        assert brain.display_labels({}).get('Admin') == 1
+
+    def test_display_labels_with_speciality_facade_and_dm(self):
+        # AdvancedBrain TL12 skill_dm=0; all Electronics at 0 + INT DM=0 = 0 → not (All)
+        # With INT DM from SelfAwareBrain: all at 0 + 2 = 2 → Electronics (All) 2
+        from ceres.make.robot.brain import SelfAwareBrain
+        from ceres.make.robot.skills import Electronics
+
+        brain = SelfAwareBrain(installed_skills=(Electronics(),))
+        assert brain.display_labels({}).get('Electronics (All)') == 2
+
+
 class TestAdvancedBrainDisplayLabels:
     """display_labels applies DEX DM for DEX skills, INT DM for others."""
 
     def test_int_skill_uses_int_dm(self):
         # Admin is INT; AdvancedBrain TL12 skill_dm=0; high DEX DM must not apply
-        brain = AdvancedBrain(
-            brain_tl=12,
-            installed_skills=(SkillPackage(skill=character_skills.Admin(level=Level(value=1))),),
-        )
+        brain = AdvancedBrain(brain_tl=12, installed_skills=(Admin(level=1),))
         labels = brain.display_labels({Chars.DEX: 2})  # DEX DM+2, must not apply to Admin
         assert labels.get('Admin') == 1
 
     def test_dex_skill_uses_dex_dm(self):
         # Flyer is DEX; level 0 + DEX DM+1 = 1
-        brain = AdvancedBrain(
-            brain_tl=12,
-            installed_skills=(SkillPackage(skill=character_skills.Flyer()),),
-        )
+        brain = AdvancedBrain(brain_tl=12, installed_skills=(Flyer(),))
         labels = brain.display_labels({Chars.DEX: 1})  # DEX DM+1
         assert labels.get('Flyer (All)') == 1
 
     def test_dex_skill_does_not_use_int_dm(self):
         # Stealth level 1; INT DM=0 would give 1; DEX DM+2 gives 3
-        brain = AdvancedBrain(
-            brain_tl=12,
-            installed_skills=(SkillPackage(skill=character_skills.Stealth(level=Level(value=1))),),
-        )
+        brain = AdvancedBrain(brain_tl=12, installed_skills=(Stealth(level=1),))
         labels = brain.display_labels({Chars.DEX: 2})  # DEX DM+2
         assert labels.get('Stealth') == 3
 
     def test_self_aware_brain_dex_skill_uses_dex_dm(self):
         # SelfAwareBrain skill_dm=2; Flyer DEX level 0 + DEX DM+1 = 1 (not INT DM+2)
-        brain = SelfAwareBrain(
-            installed_skills=(SkillPackage(skill=character_skills.Flyer()),),
-        )
+        brain = SelfAwareBrain(installed_skills=(Flyer(),))
         labels = brain.display_labels({Chars.DEX: 1})  # DEX DM+1
         assert labels.get('Flyer (All)') == 1
 
     def test_self_aware_brain_int_skill_uses_int_dm(self):
         # SelfAwareBrain skill_dm=2; Admin level 1 + INT DM+2 = 3
-        brain = SelfAwareBrain(
-            installed_skills=(SkillPackage(skill=character_skills.Admin(level=Level(value=1))),),
-        )
+        brain = SelfAwareBrain(installed_skills=(Admin(level=1),))
         labels = brain.display_labels({Chars.DEX: 1})  # DEX DM must not affect Admin
         assert labels.get('Admin') == 3
 
     def test_animals_handling_uses_dex_dm(self):
-        brain = AdvancedBrain(
-            brain_tl=12,
-            installed_skills=(SkillPackage(skill=character_skills.Animals(handling=Level(value=1))),),
-        )
+        brain = AdvancedBrain(brain_tl=12, installed_skills=(Animals(handling=1),))
         labels = brain.display_labels({Chars.DEX: 2})  # DEX DM+2
         assert labels.get('Animals (Handling)') == 3
 
     @pytest.mark.parametrize('field_name,spec', [('training', 'Training'), ('veterinary', 'Veterinary')])
     def test_animals_training_and_veterinary_use_int_dm(self, field_name, spec):
-        skill = _skill(character_skills.Animals, field_name)
-        brain = AdvancedBrain(brain_tl=12, installed_skills=(SkillPackage(skill=skill),))
+        brain = AdvancedBrain(brain_tl=12, installed_skills=(Animals(**{field_name: 1}),))  # ty: ignore[invalid-argument-type]
         labels = brain.display_labels({Chars.DEX: 2})  # high DEX DM must not affect training/vet
         assert labels.get(f'Animals ({spec})') == 1
 
     @pytest.mark.parametrize('field_name,spec', [('turret', 'Turret'), ('screen', 'Screen')])
     def test_gunner_turret_and_screen_use_dex_dm(self, field_name, spec):
-        skill = _skill(character_skills.Gunner, field_name)
-        brain = AdvancedBrain(brain_tl=12, installed_skills=(SkillPackage(skill=skill),))
+        brain = AdvancedBrain(brain_tl=12, installed_skills=(Gunner(**{field_name: 1}),))  # ty: ignore[invalid-argument-type]
         labels = brain.display_labels({Chars.DEX: 2})  # DEX DM+2
         assert labels.get(f'Gunner ({spec})') == 3
 
     @pytest.mark.parametrize('field_name,spec', [('ortillery', 'Ortillery'), ('capital', 'Capital')])
     def test_gunner_ortillery_and_capital_use_int_dm(self, field_name, spec):
-        skill = _skill(character_skills.Gunner, field_name)
-        brain = AdvancedBrain(brain_tl=12, installed_skills=(SkillPackage(skill=skill),))
+        brain = AdvancedBrain(brain_tl=12, installed_skills=(Gunner(**{field_name: 1}),))  # ty: ignore[invalid-argument-type]
         labels = brain.display_labels({Chars.DEX: 2})  # high DEX DM must not affect ortillery/capital
         assert labels.get(f'Gunner ({spec})') == 1
 
     @pytest.mark.parametrize('field_name,spec', [('small_craft', 'Small Craft'), ('spacecraft', 'Spacecraft')])
     def test_pilot_small_craft_and_spacecraft_use_dex_dm(self, field_name, spec):
-        skill = _skill(character_skills.Pilot, field_name)
-        brain = AdvancedBrain(brain_tl=12, installed_skills=(SkillPackage(skill=skill),))
+        brain = AdvancedBrain(brain_tl=12, installed_skills=(Pilot(**{field_name: 1}),))  # ty: ignore[invalid-argument-type]
         labels = brain.display_labels({Chars.DEX: 2})  # DEX DM+2
         assert labels.get(f'Pilot ({spec})') == 3
 
     def test_pilot_capital_ships_uses_int_dm(self):
-        skill = character_skills.Pilot(capital_ships=Level(value=1))
-        brain = AdvancedBrain(brain_tl=12, installed_skills=(SkillPackage(skill=skill),))
+        brain = AdvancedBrain(brain_tl=12, installed_skills=(Pilot(capital_ships=1),))
         labels = brain.display_labels({Chars.DEX: 2})  # high DEX DM must not affect capital_ships
         assert labels.get('Pilot (Capital Ships)') == 1
 
     @pytest.mark.parametrize('field_name,spec', [('ocean_ships', 'Ocean Ships'), ('submarine', 'Submarine')])
     def test_seafarer_ocean_ships_and_submarine_use_int_dm(self, field_name, spec):
-        skill = _skill(character_skills.Seafarer, field_name)
-        brain = AdvancedBrain(brain_tl=12, installed_skills=(SkillPackage(skill=skill),))
+        brain = AdvancedBrain(brain_tl=12, installed_skills=(Seafarer(**{field_name: 1}),))  # ty: ignore[invalid-argument-type]
         labels = brain.display_labels({Chars.DEX: 2})  # high DEX DM must not affect these
         assert labels.get(f'Seafarer ({spec})') == 1

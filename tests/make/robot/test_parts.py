@@ -95,7 +95,7 @@ class TestDefaultProperties:
 
     def test_skill_grants_empty_by_default(self):
         part = _SamplePart()
-        assert part.skill_grants == ()
+        assert part.skill_grants == {}
 
     def test_default_slots_zero(self):
         part = _SamplePart()

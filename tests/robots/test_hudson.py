@@ -27,9 +27,9 @@ from ceres.make.robot.options import (
     StylistToolkit,
     VideoScreen,
 )
+from ceres.make.robot.skills import Admin, Drive, Flyer, Pilot, Steward
 from ceres.make.robot.spec import RobotSpecSection
 from ceres.make.robot.text import format_traits
-from tests.robots import skill_packages as sp
 
 _expected = SimpleNamespace(
     hits=12,
@@ -72,11 +72,11 @@ def build_hudson() -> Robot:
             int_upgrade=1,
             bandwidth=4,
             installed_skills=(
-                sp.admin(level=1, bandwidth=1),
-                sp.drive_all(level=0, bandwidth=0),
-                sp.flyer_all(level=0, bandwidth=0),
-                sp.pilot_small_craft(level=1, bandwidth=1),
-                sp.steward(level=1, bandwidth=1),
+                Admin(level=1),
+                Drive(),
+                Flyer(),
+                Pilot(small_craft=1),
+                Steward(level=1),
             ),
         ),
         manipulators=[Manipulator(), Manipulator()],

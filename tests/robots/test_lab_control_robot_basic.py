@@ -11,8 +11,8 @@ from ceres.make.robot.options import (
     RobotTransceiver,
     VideoScreen,
 )
+from ceres.make.robot.skills import Electronics
 from ceres.make.robot.spec import RobotSpecSection
-from tests.robots import skill_packages as sp
 
 _expected = SimpleNamespace(
     hits=1,
@@ -52,7 +52,7 @@ def build_basic_lab_control_robot() -> Robot:
         locomotion=NoneLocomotion(),
         brain=AdvancedBrain(
             brain_tl=12,
-            installed_skills=(sp.electronics_remote_ops(level=1, bandwidth=1),),
+            installed_skills=(Electronics(remote_ops=1),),
         ),
         manipulators=[],
         # Default suite substitutes Visual Spectrum Sensor → Video Screen (improved) (Cr500)

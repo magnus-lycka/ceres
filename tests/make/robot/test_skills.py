@@ -1,28 +1,22 @@
-"""Tests for SkillGrant and skill package helpers.
+"""Tests for skill package helpers.
 
 refs/robot/35_skill_packages.md — Primitive brain package table.
 """
 
 from inspect import isclass
+from typing import get_args
 
 from pydantic import ValidationError
 import pytest
 
 from ceres.character.domain import skills as character_skills
 from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.skills import (
-    Electronics,
-    Level,
-    Recon,
-    Steward,
-    field_for_spec,
-)
+from ceres.character.domain.skills import level_fields, speciality_label
 from ceres.make.robot.skills import (
+    Animals,
+    AnyRobotSkill,
     BrainSoftware,
-    RobotProfession,
-    SkillGrant,
-    SkillPackage,
-    Weapon,
+    Engineer,
     primitive_package_skills,
 )
 
@@ -74,7 +68,7 @@ _STANDARD_SKILL_PACKAGE_DICT = {
     skill_class: (tl, bw, char, cost) for (skill_class, tl, bw, char, cost) in _STANDARD_SKILL_PACKAGES
 }
 
-# Per-speciality characteristic overrides for variable-char skills (None = no robot char).
+# Per-speciality characteristic overrides for variable-char skills (None = no robot characteristic).
 _STANDARD_SKILL_VARYING_CHAR: dict[object, dict[str, Chars | None]] = {
     character_skills.Animals: {'Handling': Chars.DEX, 'Training': Chars.INT, 'Veterinary': Chars.INT},
     character_skills.Athletics: {'Strength': Chars.STR, 'Dexterity': Chars.DEX, 'Endurance': None},
@@ -103,10 +97,12 @@ _BROAD_SPECIALISATION_SKILLS = {
 }
 
 
-def _skill(skill_cls, field_name: str = 'level', value: int = 1):
-    skill = skill_cls()
-    getattr(skill, field_name).set(value)
-    return skill
+def _build_char_to_facade() -> dict[type, type]:
+    facade_types = get_args(get_args(AnyRobotSkill)[0])
+    return {cls._char_cls: cls for cls in facade_types if getattr(cls, '_char_cls', None) is not None}
+
+
+_CHAR_TO_FACADE = _build_char_to_facade()
 
 
 _DM0: dict[Chars, int] = {}  # all DMs zero — used where no characteristic bonus applies
@@ -116,144 +112,86 @@ class TestStandardSkills:
     def test_skills_no_specialisation_0(self):
         for skill_cls in _SIMPLE_SKILLS:
             tl, bw, _, cost = _STANDARD_SKILL_PACKAGE_DICT[skill_cls]
-            pkg = SkillPackage(skill=_skill(skill_cls, 'level', 0))
+            facade_cls = _CHAR_TO_FACADE[skill_cls]
+            pkg = facade_cls(level=0)
             assert pkg.tl == tl
             assert pkg.bandwidth == bw
             assert pkg.cost == cost
-            assert pkg.display_labels(_DM0) == [f'{skill_cls.name()} 0']
+            assert pkg.display_entries(_DM0) == {skill_cls.name(): 0}
 
     def test_skills_no_specialisation_1(self):
         all_plus1 = {Chars.STR: 1, Chars.DEX: 1, Chars.INT: 1}
         for skill_cls in _SIMPLE_SKILLS:
             tl, bw, _, cost = _STANDARD_SKILL_PACKAGE_DICT[skill_cls]
-            pkg = SkillPackage(skill=_skill(skill_cls, 'level', 1))
+            facade_cls = _CHAR_TO_FACADE[skill_cls]
+            pkg = facade_cls(level=1)
             assert pkg.tl == tl
             assert pkg.bandwidth == bw + 1
             assert pkg.cost == cost * 10
-            assert pkg.display_labels(all_plus1) == [f'{skill_cls.name()} 2']
+            assert pkg.display_entries(all_plus1) == {skill_cls.name(): 2}
 
     def test_skills_specialisation(self):
         for skill_cls in _SPECIALISATION_SKILLS:
             _, _, char, _ = _STANDARD_SKILL_PACKAGE_DICT[skill_cls]
-            for speci in skill_cls.specialities():
-                spec_char = char if char is not None else _STANDARD_SKILL_VARYING_CHAR[skill_cls][speci]
+            facade_cls = _CHAR_TO_FACADE[skill_cls]
+            instance = skill_cls()
+            for field in level_fields(skill_cls):
+                speci = speciality_label(instance, field)
+                spec_char = char if char is not None else _STANDARD_SKILL_VARYING_CHAR[skill_cls].get(speci)
                 if spec_char is None:
                     continue
-                pkg = SkillPackage(skill=_skill(skill_cls, field_for_spec(skill_cls, speci), 1))
-                assert pkg.display_labels(_DM0) == [f'{skill_cls.name()} ({speci}) 1']
+                pkg = facade_cls(**{field: 1})
+                assert pkg.display_entries(_DM0) == {f'{skill_cls.name()} ({speci})': 1}
 
     def test_broad_skills_no_specialisation_2(self):
         tl, bw, _, cost = _STANDARD_SKILL_PACKAGE_DICT[character_skills.LanguageSkill]
         all_plus1 = {Chars.STR: 1, Chars.DEX: 1, Chars.INT: 1}
         for skill_cls in _BROAD_SIMPLE_SKILLS:
-            pkg = SkillPackage(skill=_skill(skill_cls, 'level', 2))
+            facade_cls = _CHAR_TO_FACADE[skill_cls]
+            pkg = facade_cls(level=2)
             assert pkg.tl == tl
             assert pkg.bandwidth == bw + 2
             assert pkg.cost == cost * 100
-            assert pkg.display_labels(all_plus1) == [f'{skill_cls.name()} 3']
+            assert pkg.display_entries(all_plus1) == {skill_cls.name(): 3}
 
     def test_broad_skills_specialisation(self):
-        for broad, skills in _BROAD_SPECIALISATION_SKILLS.items():
-            _, _, char, _ = _STANDARD_SKILL_PACKAGE_DICT[broad]
+        for skills in _BROAD_SPECIALISATION_SKILLS.values():
             for skill_cls in skills:
-                for speci in skill_cls.specialities():
-                    spec_char = char if char is not None else _STANDARD_SKILL_VARYING_CHAR[skill_cls][speci]
-                    if spec_char is None:
-                        continue
-                    pkg = SkillPackage(skill=_skill(skill_cls, field_for_spec(skill_cls, speci), 1))
-                    assert pkg.display_labels(_DM0) == [f'{skill_cls.name()} ({speci}) 1']
+                facade_cls = _CHAR_TO_FACADE[skill_cls]
+                instance = skill_cls()
+                for field in level_fields(skill_cls):
+                    speci = speciality_label(instance, field)
+                    pkg = facade_cls(**{field: 1})
+                    assert pkg.display_entries(_DM0) == {f'{skill_cls.name()} ({speci})': 1}
 
     def test_smart_engineer_all_specs_at_same_level(self):
-        # INT DM+1; Engineer() level-0 all specs → effective 0+1=1 each → compact to (All) 1
-        pkg = SkillPackage(skill=character_skills.Engineer())
-        assert pkg.display_labels({Chars.INT: 1}) == ['Engineer (All) 1']
+        # Engineer() level-0 all specs; INT DM+1 → each spec at 1 → compact to (All) 1
+        pkg = Engineer()
+        assert pkg.display_entries({Chars.INT: 1}) == {'Engineer (All)': 1}
 
     def test_smart_power_engineer_specs_differ(self):
-        # Power spec at level 1 + INT DM+1 = 2; others at 0+1=1 → not all equal → list individually
-        pkg = SkillPackage(skill=character_skills.Engineer(power=Level(value=1)))
-        assert sorted(pkg.display_labels({Chars.INT: 1})) == sorted(
-            ['Engineer (Power) 2', 'Engineer (J-Drive) 1', 'Engineer (M-Drive) 1', 'Engineer (Life Support) 1']
-        )
+        # Power at 1 + INT DM+1 = 2; others at 0+1=1 → not all equal → list individually
+        pkg = Engineer(power=1)
+        assert pkg.display_entries({Chars.INT: 1}) == {
+            'Engineer (Power)': 2,
+            'Engineer (J-Drive)': 1,
+            'Engineer (M-Drive)': 1,
+            'Engineer (Life Support)': 1,
+        }
 
     def test_animals_all_implied_familiarity_neutral_dm(self):
-        # All Animals specialities at 0, all DMs 0 → all equal → 'Animals 0' not '(All) 0'
-        pkg = SkillPackage(skill=character_skills.Animals())
-        assert pkg.display_labels(_DM0) == ['Animals 0']
+        # All Animals specialities at 0, all DMs 0 → all equal → 'Animals 0'
+        pkg = Animals()
+        assert pkg.display_entries(_DM0) == {'Animals': 0}
 
     def test_animals_all_implied_familiarity_high_dms(self):
-        # Animals level-0: Handling DEX DM+2=2, Training INT DM+1=1, Veterinary INT DM+1=1
-        pkg = SkillPackage(skill=character_skills.Animals())
-        assert sorted(pkg.display_labels({Chars.DEX: 2, Chars.INT: 1})) == sorted(
-            ['Animals (Handling) 2', 'Animals (Training) 1', 'Animals (Veterinary) 1']
-        )
-
-
-class TestSkillPackage:
-    def test_level_0_simple_skill(self):
-        pkg = SkillPackage(skill=Steward())
-        assert pkg.level == 0
-        assert pkg.bandwidth == 0
-        assert pkg.name_text == 'Steward'
-
-    def test_level_2_simple_skill(self):
-        pkg = SkillPackage(skill=Steward(level=Level(value=2)))
-        assert pkg.level == 2
-        assert pkg.bandwidth == 2
-        assert pkg.cost == 100.0 * 100
-
-    def test_speciality_skill_level_derived_from_active_field(self):
-        pkg = SkillPackage(skill=Electronics(remote_ops=Level(value=1)))
-        assert pkg.level == 1
-        assert pkg.bandwidth == 1
-        assert pkg.name_text == 'Electronics (Remote Ops)'
-
-    def test_level_0_speciality_skill_grants_all(self):
-        pkg = SkillPackage(skill=Electronics(remote_ops=Level(value=1)))
-        # level is 1, so grants_all_specialities is False
-        assert not pkg.grants_all_specialities()
-        assert pkg.name_text == 'Electronics (Remote Ops)'
-
-    def test_level_0_speciality_no_active_field_grants_all(self):
-        pkg = SkillPackage(skill=Electronics())
-        assert pkg.level == 0
-        assert pkg.grants_all_specialities()
-        assert pkg.name_text == 'Electronics (All)'
-
-    def test_roundtrip_json(self):
-        pkg = SkillPackage(skill=Steward(level=Level(value=2)))
-        restored = SkillPackage.model_validate_json(pkg.model_dump_json())
-        assert restored == pkg
-        assert restored.name_text == 'Steward'
-
-    def test_group_skill_cost_uses_union_key(self):
-        # RoboticScience is a subskill of ScienceSkill; base cost Cr200 (via group key).
-        pkg = SkillPackage(skill=character_skills.RoboticScience(robotics=Level(value=2)))
-        assert pkg.cost == 20_000.0  # 200 × 10²
-
-    def test_robot_specific_profession_cost_uses_class_key(self):
-        pkg = SkillPackage(skill=RobotProfession(domestic_cleaner=Level(value=2)))
-        assert pkg.cost == 20_000.0  # 200 × 10²
-
-
-class TestSkillGrant:
-    def test_str_with_level(self):
-        assert str(SkillGrant(Electronics(remote_ops=Level(value=1)), 1)) == 'Electronics (Remote Ops) 1'
-
-    def test_str_zero_level(self):
-        assert str(SkillGrant(Recon(), 0)) == 'Recon 0'
-
-    def test_equality(self):
-        assert SkillGrant(Recon(), 1) == SkillGrant(Recon(), 1)
-
-    def test_inequality_level(self):
-        assert SkillGrant(Recon(), 0) != SkillGrant(Recon(), 1)
-
-    def test_inequality_name(self):
-        assert SkillGrant(Recon(), 0) != SkillGrant(Electronics(), 0)
-
-    def test_character_skill_str_uses_speciality(self):
-        grant = SkillGrant(Electronics(remote_ops=Level(value=1)), 1)
-        assert str(grant) == 'Electronics (Remote Ops) 1'
+        # Animals: Handling DEX DM+2=2, Training INT DM+1=1, Veterinary INT DM+1=1
+        pkg = Animals()
+        assert pkg.display_entries({Chars.DEX: 2, Chars.INT: 1}) == {
+            'Animals (Handling)': 2,
+            'Animals (Training)': 1,
+            'Animals (Veterinary)': 1,
+        }
 
 
 class TestBrainSoftware:
@@ -288,18 +226,18 @@ class TestPrimitivePackageSkills:
     """refs/robot/35_skill_packages.md — Primitive brain package skill table."""
 
     @pytest.mark.parametrize(
-        'function, expected_grants',
+        'function, expected',
         [
-            ('clean', (SkillGrant(_skill(RobotProfession, 'domestic_cleaner'), 2),)),
-            ('alert', (SkillGrant(Recon(), 0),)),
-            ('homing', (SkillGrant(Weapon(), 1),)),
-            ('none', ()),
+            ('clean', {'Profession (domestic cleaner)': 2}),
+            ('alert', {'Recon': 0}),
+            ('homing', {'Weapon': 1}),
+            ('none', {}),
         ],
     )
-    def test_primitive_package_skills(self, function, expected_grants):
-        assert primitive_package_skills(function) == expected_grants
+    def test_primitive_package_skills(self, function, expected):
+        assert primitive_package_skills(function) == expected
 
     def test_evade_has_two_skills(self):
         skills = primitive_package_skills('evade')
-        assert SkillGrant(character_skills.Athletics(dexterity=Level(value=1)), 1) in skills
-        assert SkillGrant(character_skills.Stealth(), 2) in skills
+        assert skills.get('Athletics (Dexterity)') == 1
+        assert skills.get('Stealth') == 2

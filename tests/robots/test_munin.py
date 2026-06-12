@@ -42,9 +42,9 @@ from ceres.make.robot.options import (
     VoderSpeaker,
     WirelessDataLink,
 )
+from ceres.make.robot.skills import Recon
 from ceres.make.robot.spec import RobotSpecSection
 from ceres.make.robot.text import format_traits
-from tests.robots import skill_packages as sp
 
 _expected = SimpleNamespace(
     hits=1,
@@ -82,7 +82,7 @@ def build_munin() -> Robot:
         brain=AdvancedBrain(
             brain_tl=15,
             hardened=True,
-            installed_skills=(sp.recon(level=1, bandwidth=1),),
+            installed_skills=(Recon(level=1),),
         ),
         options=[
             AgilityEnhancement(level=4),

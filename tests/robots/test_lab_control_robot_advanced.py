@@ -11,8 +11,8 @@ from ceres.make.robot.options import (
     SwarmController,
     VideoScreen,
 )
+from ceres.make.robot.skills import Electronics, RoboticScience
 from ceres.make.robot.spec import RobotSpecSection
-from tests.robots import skill_packages as sp
 
 _expected = SimpleNamespace(
     hits=8,
@@ -57,8 +57,8 @@ def build_advanced_lab_control_robot() -> Robot:
             int_upgrade=1,
             bandwidth=4,
             installed_skills=(
-                sp.electronics_remote_ops(level=2, bandwidth=2),
-                sp.science_robotics(level=1, bandwidth=1),
+                Electronics(remote_ops=2),
+                RoboticScience(robotics=1),
             ),
         ),
         manipulators=[],

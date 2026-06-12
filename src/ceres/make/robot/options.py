@@ -28,14 +28,11 @@ Rule sources:
 from math import ceil
 from typing import Any
 
-from ceres.character.domain import skills as character_skills
-from ceres.character.domain.skills import Level
 from ceres.gear.comm import RadioTransceiverPart
 
 from .chassis import Trait, chassis_entry
 from .locomotion import LocomotionUnion
 from .parts import RobotBase, RobotPart, RobotPartMixin
-from .skills import SkillGrant
 
 _CLEANING_TABLE: dict[str, dict[str, int | float]] = {
     'small': {'slots': 1, 'cost': 100.0},
@@ -120,9 +117,9 @@ class ReconSensor(RobotPart):
         return int(_RECON_SENSOR_TABLE[self.quality]['slots'])
 
     @property
-    def skill_grants(self) -> tuple[SkillGrant, ...]:
+    def skill_grants(self) -> dict[str, int]:
         level = int(_RECON_SENSOR_TABLE[self.quality]['level'])
-        return (SkillGrant(character_skills.Recon(level=Level(value=level)), level),)
+        return {'Recon': level}
 
     def model_post_init(self, __context: Any) -> None:
         super().model_post_init(__context)
@@ -210,9 +207,9 @@ class NavigationSystem(RobotPart):
         return int(_NAVIGATION_TABLE[self.quality]['slots'])
 
     @property
-    def skill_grants(self) -> tuple[SkillGrant, ...]:
+    def skill_grants(self) -> dict[str, int]:
         level = int(_NAVIGATION_TABLE[self.quality]['level'])
-        return (SkillGrant(character_skills.Navigation(level=Level(value=level)), level),)
+        return {'Navigation': level}
 
     def model_post_init(self, __context: Any) -> None:
         super().model_post_init(__context)
@@ -375,10 +372,9 @@ class CamouflageVisual(RobotPart):
     quality: str = 'enhanced'
 
     @property
-    def skill_grants(self) -> tuple[SkillGrant, ...]:
+    def skill_grants(self) -> dict[str, int]:
         _tl, dm, _rate = _CAMOUFLAGE_VISUAL_TABLE[self.quality]
-        level = abs(dm)
-        return (SkillGrant(character_skills.Stealth(level=Level(value=level)), level),)
+        return {'Stealth': abs(dm)}
 
     def model_post_init(self, __context: Any) -> None:
         super().model_post_init(__context)
@@ -596,8 +592,8 @@ class ActiveCamouflage(RobotPart):
         return 1
 
     @property
-    def skill_grants(self) -> tuple[SkillGrant, ...]:
-        return (SkillGrant(character_skills.Stealth(level=Level(value=4)), 4),)
+    def skill_grants(self) -> dict[str, int]:
+        return {'Stealth': 4}
 
     @property
     def robot_traits(self) -> tuple[Trait, ...]:
@@ -831,8 +827,8 @@ class EnvironmentProcessor(RobotPart):
         return (Trait('Heightened Senses'),)
 
     @property
-    def skill_grants(self) -> tuple[SkillGrant, ...]:
-        return (SkillGrant(character_skills.Recon(), 0),)
+    def skill_grants(self) -> dict[str, int]:
+        return {'Recon': 0}
 
     def model_post_init(self, __context: Any) -> None:
         super().model_post_init(__context)
@@ -1274,13 +1270,8 @@ class AgilityEnhancement(RobotPart):
         return self.level
 
     @property
-    def skill_grants(self) -> tuple[SkillGrant, ...]:
-        return (
-            SkillGrant(
-                character_skills.Athletics(dexterity=Level(value=self.level)),
-                self.level,
-            ),
-        )
+    def skill_grants(self) -> dict[str, int]:
+        return {'Athletics (Dexterity)': self.level}
 
     def bind(self, assembly: RobotBase) -> None:
         super().bind(assembly)

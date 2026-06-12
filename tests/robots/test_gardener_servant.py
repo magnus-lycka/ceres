@@ -28,9 +28,9 @@ from ceres.make.robot.options import (
     PrisSensor,
     StorageCompartment,
 )
+from ceres.make.robot.skills import Animals, Medic, RobotProfession, Steward
 from ceres.make.robot.spec import RobotSpecSection
 from ceres.make.robot.text import format_traits
-from tests.robots import skill_packages as sp
 
 _expected = SimpleNamespace(
     hits=20,
@@ -61,11 +61,11 @@ def build_gardener_servant() -> Robot:
             int_upgrade=1,
             bandwidth=6,
             installed_skills=(
-                sp.animals_veterinary(level=1, bandwidth=1),
-                sp.medic(level=1, bandwidth=1),
-                sp.profession_cleaning(level=1, bandwidth=1),
-                sp.profession_gardening(level=1, bandwidth=1),
-                sp.steward(level=1, bandwidth=1),
+                Animals(veterinary=1),
+                Medic(level=1),
+                RobotProfession(cleaning=1),
+                RobotProfession(gardening=1),
+                Steward(level=1),
             ),
         ),
         manipulators=[Manipulator(), Manipulator(), Manipulator(), Manipulator()],

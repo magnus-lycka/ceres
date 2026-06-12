@@ -11,12 +11,11 @@ from pydantic import ConfigDict, Field, model_validator
 from ceres.character.domain.characteristics import Chars
 from ceres.shared import CeresModel
 
+from ._robot_skill_base import _specs_to_display_dict
 from .chassis import Trait
 from .skills import (
+    AnyRobotSkill,
     BrainSoftware,
-    SkillGrant,
-    SkillPackage,
-    _specs_to_display_dict,
     primitive_package_skills,
 )
 
@@ -117,15 +116,8 @@ class _BrainBase(CeresModel):
     def skill_dm(self) -> int:
         raise NotImplementedError
 
-    @property
-    def skill_grants(self) -> tuple[SkillGrant, ...]:
-        return ()
-
     def display_labels(self, dms: dict[Chars, int]) -> dict[str, int]:
-        result: dict[str, int] = {}
-        for grant in self.skill_grants:
-            result[grant.name_text] = max(result.get(grant.name_text, 0), grant.level)
-        return result
+        return {}
 
     @property
     def hardware_cost(self) -> float:
@@ -173,9 +165,8 @@ class _SimpleBrain(_BrainBase):
     def skill_dm(self) -> int:
         return self._entry().skill_dm
 
-    @property
-    def skill_grants(self) -> tuple[SkillGrant, ...]:
-        return primitive_package_skills(self.function)
+    def display_labels(self, dms: dict[Chars, int]) -> dict[str, int]:
+        return dict(primitive_package_skills(self.function))
 
     def brain_slots(self, robot_tl: int, robot_size: int) -> int:
         entry = self._entry()
@@ -209,7 +200,7 @@ class _AdvancedBrainBase(_BrainBase):
     _table: ClassVar[tuple[_BrainEntry, ...]]
     _bw_upgrades: ClassVar[tuple[_BwUpgradeEntry, ...]]
 
-    installed_skills: tuple[SkillPackage, ...] = ()
+    installed_skills: tuple[AnyRobotSkill, ...] = ()
     # refs/robot/34_retrotech.md — INT upgrade: INT+n costs n(n+1)/2 BW and
     # product(base_int+1 … base_int+n) × Cr1000. Max INT+3 per rules.
     int_upgrade: int = Field(default=0, ge=0, le=3)
@@ -284,12 +275,20 @@ class _AdvancedBrainBase(_BrainBase):
 
     def display_labels(self, dms: dict[Chars, int]) -> dict[str, int]:
         effective_dms = {**dms, Chars.INT: self.skill_dm}
-        per_spec: dict[tuple, int] = {}
+        typed: dict[tuple, int] = {}
+        preformatted: dict[str, int] = {}
         for pkg in self.installed_skills:
-            for skill_cls, spec, lvl in pkg._per_spec_entries(effective_dms):
-                key = (skill_cls, spec)
-                per_spec[key] = max(per_spec.get(key, 0), lvl)
-        return _specs_to_display_dict(per_spec)
+            raw = pkg._per_spec_raw(effective_dms)
+            if raw is None:
+                for name, lvl in pkg.display_entries(effective_dms).items():
+                    preformatted[name] = max(preformatted.get(name, 0), lvl)
+            else:
+                for key, lvl in raw.items():
+                    typed[key] = max(typed.get(key, 0), lvl)
+        result = _specs_to_display_dict(typed)
+        for name, lvl in preformatted.items():
+            result[name] = max(result.get(name, 0), lvl)
+        return result
 
     @property
     def used_bandwidth(self) -> int:

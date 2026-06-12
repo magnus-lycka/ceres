@@ -5,7 +5,6 @@ from ceres.shared import CeresPart, NoteList
 
 from .base import RobotBase
 from .chassis import Trait
-from .skills import SkillGrant
 
 
 class RobotPartMixin(ABC):
@@ -64,8 +63,8 @@ class RobotPartMixin(ABC):
         return ()
 
     @property
-    def skill_grants(self) -> tuple[SkillGrant, ...]:
-        return ()
+    def skill_grants(self) -> dict[str, int]:
+        return {}
 
     @property
     def endurance_multiplier(self) -> float:

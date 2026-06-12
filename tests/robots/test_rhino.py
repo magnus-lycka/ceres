@@ -60,10 +60,26 @@ from ceres.make.robot.options import (
     VacuumEnvironmentProtection,
     VideoScreen,
 )
-from ceres.make.robot.skills import BrainSoftware
+from ceres.make.robot.skills import (
+    Athletics,
+    BrainSoftware,
+    Electronics,
+    Engineer,
+    Investigate,
+    LifeScience,
+    Mechanic,
+    Medic,
+    Melee,
+    PhysicalScience,
+    Recon,
+    RoboticScience,
+    RobotProfession,
+    SpacerProfession,
+    Survival,
+    Tactics,
+)
 from ceres.make.robot.spec import RobotSpecSection
 from ceres.make.robot.text import format_traits
-from tests.robots import skill_packages as sp
 
 _expected = SimpleNamespace(
     hits=72,
@@ -90,28 +106,28 @@ def build_rhino() -> Robot:
             bandwidth=18,
             installed_skills=(
                 # STR skill: pkg 0 + STR DM+3 = 3
-                sp.athletics_strength(level=0, bandwidth=0),
+                Athletics(strength=0),
                 # DEX skill: pkg 0 + DEX DM+1 = 1
-                sp.athletics_dexterity(level=0, bandwidth=0),
+                Athletics(dexterity=0),
                 # INT skills: pkg 2 + DM+2 = 4
-                sp.medic(level=2, bandwidth=2),
+                Medic(level=2),
                 # Investigate base BW=1; pkg 2 + DM+2 = 4
-                sp.investigate(level=2, bandwidth=3),
-                sp.science_biology(level=2, bandwidth=2),
-                sp.science_chemistry(level=2, bandwidth=2),
-                sp.science_robotics(level=2, bandwidth=2),
-                sp.profession_fabricator(level=2, bandwidth=2),
-                sp.profession_robotics(level=2, bandwidth=2),
+                Investigate(level=2),
+                LifeScience(biology=2),
+                PhysicalScience(chemistry=2),
+                RoboticScience(robotics=2),
+                RobotProfession(fabricator=2),
+                RobotProfession(robotics=2),
                 # INT skills, level 0 → (All) in Ceres; source shows individual speciality
-                sp.electronics_comms(level=0, bandwidth=0),
-                sp.engineer_j_drive(level=0, bandwidth=0),
-                sp.mechanic(level=0, bandwidth=0),
-                sp.tactics_military(level=0, bandwidth=0),
-                sp.profession_belter(level=0, bandwidth=0),
+                Electronics(),
+                Engineer(),
+                Mechanic(),
+                Tactics(),
+                SpacerProfession(belter=0),
                 # DEX skill at level 0; collapse to "Melee (All)"; pkg 0 + DEX DM+1 = 1
-                sp.melee_unarmed(level=0, bandwidth=0),
-                sp.recon(level=0, bandwidth=0),
-                sp.survival(level=0, bandwidth=0),
+                Melee(),
+                Recon(),
+                Survival(),
             ),
             installed_software=(
                 BrainSoftware(name='Fab Creator/3', bandwidth=3, tl=13, cost=20_000.0),
