@@ -47,6 +47,11 @@ def _apply(summary: CharacterSummary, skill: AnySkill) -> None:
     CharacterProjection(character_id=0, summary=summary).grant_skill(skill)
 
 
+def _has(skills: list, cls: type, **field_values: int) -> bool:
+    """True if any skill in list is an instance of cls with the given Level field values."""
+    return any(isinstance(s, cls) and all(getattr(s, f).value == v for f, v in field_values.items()) for s in skills)
+
+
 def test_level_can_be_set_and_incremented():
     level = Admin().level
 
@@ -128,31 +133,6 @@ def test_skill_group_unions_can_be_listed_separately():
     )
 
 
-def test_skill_str_nonspecialised():
-    assert str(Admin()) == 'Admin-0'
-
-    a = Admin()
-    a.level.set(3)
-    assert str(a) == 'Admin-3'
-
-
-def test_skill_str_specialised_all_zero():
-    assert str(GunCombat()) == 'Gun Combat-0'
-
-
-def test_skill_str_specialised_single_active():
-    gc = GunCombat()
-    gc.slug.set(1)
-    assert str(gc) == 'Gun Combat (Slug)-1'
-
-
-def test_skill_str_specialised_multiple_active():
-    gc = GunCombat()
-    gc.energy.set(1)
-    gc.slug.set(2)
-    assert str(gc) == 'Gun Combat (Energy)-1, Gun Combat (Slug)-2'
-
-
 # ---------------------------------------------------------------------------
 # gain_skills tests — groups A through J
 # ---------------------------------------------------------------------------
@@ -165,7 +145,7 @@ def test_gain_A1_nonspec_absent_level0():
     summary = _empty()
     result = gain_skills(summary, Admin, 0)
     assert len(result) == 1
-    assert str(result[0]) == 'Admin-0'
+    assert isinstance(result[0], Admin) and result[0].level.value == 0
     _apply(summary, result[0])
     assert summary.skill_level(Admin) == 0
 
@@ -187,7 +167,7 @@ def test_gain_B1_nonspec_absent_level_N():
     summary = _empty()
     result = gain_skills(summary, Admin, 2)
     assert len(result) == 1
-    assert str(result[0]) == 'Admin-2'
+    assert isinstance(result[0], Admin) and result[0].level.value == 2
     _apply(summary, result[0])
     assert summary.skill_level(Admin) == 2
 
@@ -198,7 +178,7 @@ def test_gain_B2_nonspec_present_below_N():
     summary = _summary(s)
     result = gain_skills(summary, Admin, 2)
     assert len(result) == 1
-    assert str(result[0]) == 'Admin-2'
+    assert isinstance(result[0], Admin) and result[0].level.value == 2
     _apply(summary, result[0])
     assert summary.skill_level(Admin) == 2
 
@@ -222,7 +202,7 @@ def test_gain_C1_nonspec_absent_increment():
     summary = _empty()
     result = gain_skills(summary, Admin, None)
     assert len(result) == 1
-    assert str(result[0]) == 'Admin-1'
+    assert isinstance(result[0], Admin) and result[0].level.value == 1
     _apply(summary, result[0])
     assert summary.skill_level(Admin) == 1
 
@@ -233,7 +213,7 @@ def test_gain_C2_nonspec_present_increment():
     summary = _summary(s)
     result = gain_skills(summary, Admin, None)
     assert len(result) == 1
-    assert str(result[0]) == 'Admin-2'
+    assert isinstance(result[0], Admin) and result[0].level.value == 2
     _apply(summary, result[0])
     assert summary.skill_level(Admin) == 2
 
@@ -251,7 +231,7 @@ def test_gain_D1_spec_absent_level0():
     summary = _empty()
     result = gain_skills(summary, GunCombat, 0)
     assert len(result) == 1
-    assert str(result[0]) == 'Gun Combat-0'
+    assert isinstance(result[0], GunCombat)
     _apply(summary, result[0])
     assert summary.skill_level(GunCombat) == 0
 
@@ -272,8 +252,9 @@ def test_gain_D3_spec_present_all_zero_level0():
 def test_gain_E1_spec_absent_level1():
     result = gain_skills(_empty(), GunCombat, 1)
     assert len(result) == 3
-    labels = {str(s) for s in result}
-    assert labels == {'Gun Combat (Archaic)-1', 'Gun Combat (Energy)-1', 'Gun Combat (Slug)-1'}
+    assert _has(result, GunCombat, archaic=1)
+    assert _has(result, GunCombat, energy=1)
+    assert _has(result, GunCombat, slug=1)
 
 
 def test_gain_E2_spec_slug_present_level1():
@@ -281,8 +262,8 @@ def test_gain_E2_spec_slug_present_level1():
     gc.slug.set(1)
     result = gain_skills(_summary(gc), GunCombat, 1)
     assert len(result) == 2
-    labels = {str(s) for s in result}
-    assert labels == {'Gun Combat (Archaic)-1', 'Gun Combat (Energy)-1'}
+    assert _has(result, GunCombat, archaic=1)
+    assert _has(result, GunCombat, energy=1)
 
 
 def test_gain_E3_spec_all_at_N_level_N():
@@ -299,16 +280,18 @@ def test_gain_E3_spec_all_at_N_level_N():
 def test_gain_F1_spec_absent_increment():
     result = gain_skills(_empty(), GunCombat, None)
     assert len(result) == 3
-    labels = {str(s) for s in result}
-    assert labels == {'Gun Combat (Archaic)-1', 'Gun Combat (Energy)-1', 'Gun Combat (Slug)-1'}
+    assert _has(result, GunCombat, archaic=1)
+    assert _has(result, GunCombat, energy=1)
+    assert _has(result, GunCombat, slug=1)
 
 
 def test_gain_F2_spec_slug1_increment():
     gc = GunCombat()
     gc.slug.set(1)
     result = gain_skills(_summary(gc), GunCombat, None)
-    labels = {str(s) for s in result}
-    assert labels == {'Gun Combat (Slug)-2', 'Gun Combat (Energy)-1', 'Gun Combat (Archaic)-1'}
+    assert _has(result, GunCombat, slug=2)
+    assert _has(result, GunCombat, energy=1)
+    assert _has(result, GunCombat, archaic=1)
 
 
 def test_gain_F3_spec_all_at_cap_increment():
@@ -323,8 +306,9 @@ def test_gain_F4_spec_one_at_cap_increment():
     gc = GunCombat()
     gc.slug.set(4)
     result = gain_skills(_summary(gc), GunCombat, None)
-    labels = {str(s) for s in result}
-    assert labels == {'Gun Combat (Energy)-1', 'Gun Combat (Archaic)-1'}
+    assert len(result) == 2
+    assert _has(result, GunCombat, energy=1)
+    assert _has(result, GunCombat, archaic=1)
 
 
 # G: SkillSpecialization input
@@ -335,7 +319,7 @@ def test_gain_G1_skill_spec_absent_increment():
     summary = _empty()
     result = gain_skills(summary, slug, None)
     assert len(result) == 1
-    assert str(result[0]) == 'Gun Combat (Slug)-1'
+    assert _has(result, GunCombat, slug=1)
     _apply(summary, result[0])
     assert summary.skill_level(GunCombat) == 1
 
@@ -346,7 +330,7 @@ def test_gain_G2_skill_spec_present_increment():
     gc.slug.set(1)
     result = gain_skills(_summary(gc), slug, None)
     assert len(result) == 1
-    assert str(result[0]) == 'Gun Combat (Slug)-2'
+    assert _has(result, GunCombat, slug=2)
 
 
 def test_gain_G3_skill_spec_at_cap_increment():
@@ -362,14 +346,14 @@ def test_gain_G4_skill_spec_other_spec_present_increment():
     gc.energy.set(2)
     result = gain_skills(_summary(gc), slug, None)
     assert len(result) == 1
-    assert str(result[0]) == 'Gun Combat (Slug)-1'
+    assert _has(result, GunCombat, slug=1)
 
 
 def test_gain_G5_skill_spec_absent_level0():
     slug = skill_spec(GunCombat, 'Slug')
     result = gain_skills(_empty(), slug, 0)
     assert len(result) == 1
-    assert str(result[0]) == 'Gun Combat-0'
+    assert isinstance(result[0], GunCombat)
 
 
 def test_gain_G6_skill_spec_present_level0():
@@ -401,8 +385,8 @@ def test_gain_H3_science_all_absent_level1():
     # LifeScience=4, PhysicalScience=3, RoboticScience=2, SocialScience=7, SpaceScience=3 = 19
     result = gain_skills(_empty(), ScienceSkill, 1)
     assert len(result) == 19
-    assert 'Life Science (Biology)-1' in {str(s) for s in result}
-    assert 'Space Science (Planetology)-1' in {str(s) for s in result}
+    assert _has(result, LifeScience, biology=1)
+    assert _has(result, SpaceScience, planetology=1)
 
 
 def test_gain_H4_background_level0_empty():
@@ -434,14 +418,13 @@ def test_gain_I2_existing_full_example():
     ls.biology.set(2)
     summary = _summary(admin, drive, Flyer(), ls)
     result = gain_skills(summary, EXISTING_SKILLS, None)
-    labels = {str(s) for s in result}
 
-    assert 'Admin-2' in labels
-    assert 'Drive (Wheel)-2' in labels
-    assert 'Drive (Hovercraft)-1' in labels
-    assert 'Flyer (Airship)-1' in labels
-    assert 'Life Science (Biology)-3' in labels
-    assert 'Life Science (Genetics)-1' in labels
+    assert _has(result, Admin, level=2)
+    assert _has(result, Drive, wheel=2)
+    assert _has(result, Drive, hovercraft=1)
+    assert _has(result, Flyer, airship=1)
+    assert _has(result, LifeScience, biology=3)
+    assert _has(result, LifeScience, genetics=1)
 
 
 def test_gain_I3_existing_skill_at_cap_excluded():

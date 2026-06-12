@@ -268,8 +268,8 @@ class TestMimer:
         assert 'Tactics (All) 2' in build_mimer().skills_display
 
     def test_skills_language_all_2(self):
-        # TCR-001 maps Language (Vilani) to the concrete Language Vilani skill.
-        assert 'Language Vilani 2' in build_mimer().skills_display
+        # TCR-001 maps Language (Vilani) to the concrete Language Bilanidin skill.
+        assert 'Language Bilanidin 2' in build_mimer().skills_display
 
     def test_skills_remaining_bandwidth_shown(self):
         # 20 − 15(skill BW) − 3(Universal Translator BW) = 2

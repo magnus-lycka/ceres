@@ -43,24 +43,6 @@ class Skill(CeresModel):
             names.append(str(extra.get('name') or field_name.replace('_', ' ').title()))
         return tuple(names)
 
-    def __str__(self) -> str:
-        fields = level_fields(type(self))
-        if len(fields) == 1 and fields[0] == 'level':
-            lvl = cast(Level, getattr(self, fields[0]))
-            return f'{type(self).name()}-{lvl.value}'
-        active: list[str] = []
-        for field_name, field in type(self).model_fields.items():
-            if field_name in {'display_label', 'type'} or field.annotation is not Level:
-                continue
-            lvl = getattr(self, field_name)
-            if isinstance(lvl, Level) and lvl.value > 0:
-                extra = field.json_schema_extra or {}
-                label = str(extra.get('name') or field_name.replace('_', ' ').title())
-                active.append(f'{type(self).name()} ({label})-{lvl.value}')
-        if active:
-            return ', '.join(active)
-        return f'{type(self).name()}-0'
-
 
 class Admin(Skill):
     type: Literal['ADMIN'] = 'ADMIN'
@@ -218,6 +200,10 @@ class LanguageVilani(Skill):
     type: Literal['LANGUAGE_VILANI'] = 'LANGUAGE_VILANI'
     level: Level = _level()
 
+    @classmethod
+    def name(cls) -> str:
+        return 'Language Bilanidin'
+
 
 class LanguageZdetl(Skill):
     type: Literal['LANGUAGE_ZDETL'] = 'LANGUAGE_ZDETL'
@@ -237,6 +223,59 @@ class LanguageTrokh(Skill):
 class LanguageGvegh(Skill):
     type: Literal['LANGUAGE_GVEGH'] = 'LANGUAGE_GVEGH'
     level: Level = _level()
+
+
+class LanguageAekhu(Skill):
+    type: Literal['LANGUAGE_AEKHU'] = 'LANGUAGE_AEKHU'
+    level: Level = _level()
+
+
+class LanguageArrghoun(Skill):
+    type: Literal['LANGUAGE_ARRGHOUN'] = 'LANGUAGE_ARRGHOUN'
+    level: Level = _level()
+
+
+class LanguageIrilitok(Skill):
+    type: Literal['LANGUAGE_IRILITOK'] = 'LANGUAGE_IRILITOK'
+    level: Level = _level()
+
+
+class LanguageLogaksu(Skill):
+    type: Literal['LANGUAGE_LOGAKSU'] = 'LANGUAGE_LOGAKSU'
+    level: Level = _level()
+
+
+class LanguageOvaghoun(Skill):
+    type: Literal['LANGUAGE_OVAGHOUN'] = 'LANGUAGE_OVAGHOUN'
+    level: Level = _level()
+
+
+class LanguageSuedzuk(Skill):
+    type: Literal['LANGUAGE_SUEDZUK'] = 'LANGUAGE_SUEDZUK'
+    level: Level = _level()
+
+
+class LanguageVuakedh(Skill):
+    type: Literal['LANGUAGE_VUAKEDH'] = 'LANGUAGE_VUAKEDH'
+    level: Level = _level()
+
+
+class LanguageSagamaal(Skill):
+    type: Literal['LANGUAGE_SAGAMAAL'] = 'LANGUAGE_SAGAMAAL'
+    level: Level = _level()
+
+    @classmethod
+    def name(cls) -> str:
+        return 'Language Sagamål'
+
+
+class LanguageDarrian(Skill):
+    type: Literal['LANGUAGE_DARRIAN'] = 'LANGUAGE_DARRIAN'
+    level: Level = _level()
+
+    @classmethod
+    def name(cls) -> str:
+        return 'Language Te-Zlodh'
 
 
 class Leadership(Skill):
@@ -432,7 +471,23 @@ Sciences = LifeScience | PhysicalScience | RoboticScience | SocialScience | Spac
 type ScienceSkill = Annotated[Sciences, Field(discriminator='type')]
 
 # Please Claude, don't be a fool and try to make this a type. It's not a type.
-Languages = LanguageGalanglic | LanguageVilani | LanguageZdetl | LanguageOynprith | LanguageTrokh | LanguageGvegh
+Languages = (
+    LanguageGalanglic
+    | LanguageVilani
+    | LanguageZdetl
+    | LanguageOynprith
+    | LanguageTrokh
+    | LanguageGvegh
+    | LanguageAekhu
+    | LanguageArrghoun
+    | LanguageIrilitok
+    | LanguageLogaksu
+    | LanguageOvaghoun
+    | LanguageSuedzuk
+    | LanguageVuakedh
+    | LanguageSagamaal
+    | LanguageDarrian
+)
 type LanguageSkill = Annotated[Languages, Field(discriminator='type')]
 
 # Please Claude, don't be a fool and try to make this a type. It's not a type.

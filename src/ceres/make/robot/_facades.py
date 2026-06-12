@@ -228,6 +228,60 @@ class LanguageGvegh(_RobotSkill):
     level: int = 0
 
 
+class LanguageAekhu(_RobotSkill):
+    type: Literal['robot_pkg.LanguageAekhu'] = 'robot_pkg.LanguageAekhu'
+    _char_cls: ClassVar = _char.LanguageAekhu
+    level: int = 0
+
+
+class LanguageArrghoun(_RobotSkill):
+    type: Literal['robot_pkg.LanguageArrghoun'] = 'robot_pkg.LanguageArrghoun'
+    _char_cls: ClassVar = _char.LanguageArrghoun
+    level: int = 0
+
+
+class LanguageIrilitok(_RobotSkill):
+    type: Literal['robot_pkg.LanguageIrilitok'] = 'robot_pkg.LanguageIrilitok'
+    _char_cls: ClassVar = _char.LanguageIrilitok
+    level: int = 0
+
+
+class LanguageLogaksu(_RobotSkill):
+    type: Literal['robot_pkg.LanguageLogaksu'] = 'robot_pkg.LanguageLogaksu'
+    _char_cls: ClassVar = _char.LanguageLogaksu
+    level: int = 0
+
+
+class LanguageOvaghoun(_RobotSkill):
+    type: Literal['robot_pkg.LanguageOvaghoun'] = 'robot_pkg.LanguageOvaghoun'
+    _char_cls: ClassVar = _char.LanguageOvaghoun
+    level: int = 0
+
+
+class LanguageSuedzuk(_RobotSkill):
+    type: Literal['robot_pkg.LanguageSuedzuk'] = 'robot_pkg.LanguageSuedzuk'
+    _char_cls: ClassVar = _char.LanguageSuedzuk
+    level: int = 0
+
+
+class LanguageVuakedh(_RobotSkill):
+    type: Literal['robot_pkg.LanguageVuakedh'] = 'robot_pkg.LanguageVuakedh'
+    _char_cls: ClassVar = _char.LanguageVuakedh
+    level: int = 0
+
+
+class LanguageSagamaal(_RobotSkill):
+    type: Literal['robot_pkg.LanguageSagamaal'] = 'robot_pkg.LanguageSagamaal'
+    _char_cls: ClassVar = _char.LanguageSagamaal
+    level: int = 0
+
+
+class LanguageDarrian(_RobotSkill):
+    type: Literal['robot_pkg.LanguageDarrian'] = 'robot_pkg.LanguageDarrian'
+    _char_cls: ClassVar = _char.LanguageDarrian
+    level: int = 0
+
+
 class Leadership(_RobotSkill):
     type: Literal['robot_pkg.Leadership'] = 'robot_pkg.Leadership'
     _char_cls: ClassVar = _char.Leadership
@@ -526,6 +580,15 @@ AnyRobotSkill = Annotated[
     | LanguageOynprith
     | LanguageTrokh
     | LanguageGvegh
+    | LanguageAekhu
+    | LanguageArrghoun
+    | LanguageIrilitok
+    | LanguageLogaksu
+    | LanguageOvaghoun
+    | LanguageSuedzuk
+    | LanguageVuakedh
+    | LanguageSagamaal
+    | LanguageDarrian
     | Leadership
     | Mechanic
     | Medic

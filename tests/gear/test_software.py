@@ -132,7 +132,7 @@ def test_expert_known_skill_uses_skill_lookup_without_active_speciality_when_all
 
 def test_expert_language_vilani_uses_languages_union_lookup():
     package = Expert(rating=1, skill=LanguageVilani(level=Level(value=1)))
-    assert package.description == 'Expert (Language Vilani)/1'
+    assert package.description == 'Expert (Language Bilanidin)/1'
     assert package.tl == 9
     assert package.cost == 200.0
     assert package.bandwidth == 1
