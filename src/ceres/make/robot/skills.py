@@ -23,14 +23,14 @@ def skill_name(skill: Skill) -> str:
 
 _PRIMITIVE_SKILLS: dict[str, dict[str, int]] = {
     'alert': {'Recon': 0},
-    'clean': {'Profession (domestic cleaner)': 2},
+    'clean': {'Profession (Domestic Cleaner)': 2},
     'evade': {'Athletics (Dexterity)': 1, 'Stealth': 2},
     'homing': {'Weapon': 1},
-    'labourer': {'Profession (labourer)': 2},
+    'labourer': {'Profession (Labourer)': 2},
     'locomotion': {'Athletics (Dexterity)': 1},
     'none': {},
     'recon': {'Recon': 2, 'Athletics (Dexterity)': 1},
-    'servant': {'Profession (domestic servant)': 2},
+    'servant': {'Profession (Domestic Servant)': 2},
 }
 
 

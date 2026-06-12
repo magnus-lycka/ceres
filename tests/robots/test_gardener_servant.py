@@ -118,10 +118,10 @@ class TestGardenerServant:
         assert 'Medic 2' in build_gardener_servant().skills_display
 
     def test_skills_profession_cleaning_2(self):
-        assert 'Profession (cleaning) 2' in build_gardener_servant().skills_display
+        assert 'Profession (Cleaning) 2' in build_gardener_servant().skills_display
 
     def test_skills_profession_gardening_2(self):
-        assert 'Profession (gardening) 2' in build_gardener_servant().skills_display
+        assert 'Profession (Gardening) 2' in build_gardener_servant().skills_display
 
     def test_skills_steward_2(self):
         assert 'Steward 2' in build_gardener_servant().skills_display

@@ -158,7 +158,7 @@ class TestWush:
 
     def test_profession_domestic_cleaner_2(self):
         robot = build_wush()
-        assert 'Profession (domestic cleaner) 2' in robot.skills_display
+        assert 'Profession (Domestic Cleaner) 2' in robot.skills_display
 
     def test_manipulator_str_3(self):
         robot = build_wush()

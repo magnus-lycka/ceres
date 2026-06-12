@@ -616,7 +616,7 @@ class TestBuildSpec:
 
         robot = make_robot(brain=PrimitiveBrain(function='clean'))
         rows = robot.build_spec().rows_for_section(RobotSpecSection.SKILLS)
-        assert 'Profession (domestic cleaner) 2' in rows[0].value
+        assert 'Profession (Domestic Cleaner) 2' in rows[0].value
 
     def test_spec_skills_row_advanced_with_bandwidth(self):
         from ceres.make.robot import AdvancedBrain
@@ -642,7 +642,7 @@ class TestSkillsDisplay:
         from ceres.make.robot import PrimitiveBrain
 
         robot = make_robot(brain=PrimitiveBrain(function='clean'))
-        assert 'Profession (domestic cleaner) 2' in robot.skills_display
+        assert 'Profession (Domestic Cleaner) 2' in robot.skills_display
 
     def test_advanced_with_remaining_bandwidth(self):
         from ceres.make.robot import AdvancedBrain

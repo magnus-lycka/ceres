@@ -17,7 +17,7 @@ _expected = SimpleNamespace(
     speed='4m',
     tl=8,
     cost=500,
-    skills='Profession (domestic cleaner) 2, Recon 1',
+    skills='Profession (Domestic Cleaner) 2, Recon 1',
     attacks='—',
     manipulators='—',
     endurance_hours=79,
@@ -79,7 +79,7 @@ class TestDomesticServant:
         assert build_domestic_servant().brain.programming_label() == _expected.programming
 
     def test_skills_display_cleaner(self):
-        assert 'Profession (domestic cleaner) 2' in build_domestic_servant().skills_display
+        assert 'Profession (Domestic Cleaner) 2' in build_domestic_servant().skills_display
 
     def test_skills_display_recon(self):
         assert 'Recon 1' in build_domestic_servant().skills_display

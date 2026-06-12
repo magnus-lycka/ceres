@@ -53,12 +53,12 @@ _STATIC_ROBOT_PROFESSION = '''
 
 _ROBOT_PROFESSION_SPEC_LABELS: dict[str, str] = {
     'belter': 'Belter',
-    'cleaning': 'cleaning',
-    'domestic_cleaner': 'domestic cleaner',
-    'domestic_servant': 'domestic servant',
+    'cleaning': 'Cleaning',
+    'domestic_cleaner': 'Domestic Cleaner',
+    'domestic_servant': 'Domestic Servant',
     'fabricator': 'Fabricator',
-    'gardening': 'gardening',
-    'labourer': 'labourer',
+    'gardening': 'Gardening',
+    'labourer': 'Labourer',
     'robotics': 'Robotics',
 }
 

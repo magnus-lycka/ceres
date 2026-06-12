@@ -228,7 +228,7 @@ class TestPrimitivePackageSkills:
     @pytest.mark.parametrize(
         'function, expected',
         [
-            ('clean', {'Profession (domestic cleaner)': 2}),
+            ('clean', {'Profession (Domestic Cleaner)': 2}),
             ('alert', {'Recon': 0}),
             ('homing', {'Weapon': 1}),
             ('none', {}),

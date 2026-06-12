@@ -90,7 +90,7 @@ class TestAG300:
         assert 'Navigation 1' in build_ag300().skills_display
 
     def test_skills_labourer(self):
-        assert 'Profession (labourer) 2' in build_ag300().skills_display
+        assert 'Profession (Labourer) 2' in build_ag300().skills_display
 
     def test_endurance(self):
         assert round(build_ag300().base_endurance) == _expected.endurance_hours

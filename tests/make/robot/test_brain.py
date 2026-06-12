@@ -128,7 +128,7 @@ class TestPrimitiveBrainDisplayLabels:
 
     def test_clean_gives_profession(self):
         brain = PrimitiveBrain(function='clean')
-        assert brain.display_labels({}).get('Profession (domestic cleaner)') == 2
+        assert brain.display_labels({}).get('Profession (Domestic Cleaner)') == 2
 
     def test_alert_gives_recon(self):
         brain = PrimitiveBrain(function='alert')
