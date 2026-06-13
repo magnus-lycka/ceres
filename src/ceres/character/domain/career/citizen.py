@@ -90,9 +90,9 @@ class CitizenMishap4Cooperate(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
-        career = projection.get_current_career()
+        projection.get_current_career()
         projection.summary.connections.append(Contact(source='The investigator who questioned you'))
-        _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=False)
+        _apply_mishap_ejection(projection, event.id, 0, lose_current_term=False)
 
 
 class CitizenMishap4Resist(ChoiceBase):
@@ -102,9 +102,9 @@ class CitizenMishap4Resist(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
-        career = projection.get_current_career()
+        projection.get_current_career()
         projection.summary.connections.append(Rival(source='The investigator who came after you'))
-        _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+        _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
 
 
 class PendingCitizenMishap5SkillRoll(CareerSkillRollPendingBase):
@@ -114,7 +114,7 @@ class PendingCitizenMishap5SkillRoll(CareerSkillRollPendingBase):
         from ceres.character.domain.career.career_events import _apply_mishap_ejection
         from ceres.character.domain.homeworld.homeworld_events import PendingHomeworldChangeRequired
 
-        career = projection.get_current_career()
+        projection.get_current_career()
         if event.modified_roll >= 8:
             projection.pending_inputs.append(
                 PendingSkillChoice(
@@ -123,9 +123,9 @@ class PendingCitizenMishap5SkillRoll(CareerSkillRollPendingBase):
                     options=[type(s)() for s in projection.summary.skills],
                 )
             )
-            next_idx = _apply_mishap_ejection(projection, career, event.id, 1, lose_current_term=True)
+            next_idx = _apply_mishap_ejection(projection, event.id, 1, lose_current_term=True)
         else:
-            next_idx = _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+            next_idx = _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
         projection.pending_inputs.append(
             PendingHomeworldChangeRequired(
                 pending_id=(event.id, next_idx),

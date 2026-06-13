@@ -45,11 +45,13 @@ def test_ucp_is_absent_until_every_ucp_characteristic_exists() -> None:
 
 
 def test_latest_career_prefers_current_career_then_last_career() -> None:
+    citizen_assignment = CITIZEN.assignment('Corporate')
+    assert citizen_assignment is not None
     current = CharacterSummary(
         name='Aria',
         sophont=HUMANITI,
         homeworld=MOCK_WORLD,
-        current_career=CITIZEN,
+        career_terms=[CareerTerm(career=CITIZEN, assignment=citizen_assignment)],
         last_career=SCOUT,
     )
     former = CharacterSummary(
@@ -71,8 +73,6 @@ def test_rank_title_retains_title_from_previous_rank() -> None:
         name='Aria',
         sophont=HUMANITI,
         homeworld=MOCK_WORLD,
-        current_career=psion,
-        current_assignment=adept,
         rank=2,
         career_terms=[CareerTerm(career=psion, assignment=adept, rank_after_term=2)],
     )

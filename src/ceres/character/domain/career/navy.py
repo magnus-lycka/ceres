@@ -87,9 +87,9 @@ class PendingNavyMishap3SkillRoll(CareerSkillRollPendingBase):
 
     def resolve(self, projection: CharacterProjection, event: Any) -> None:
 
-        career = projection.get_current_career()
+        projection.get_current_career()
         lose = event.modified_roll < 8
-        _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=lose)
+        _apply_mishap_ejection(projection, event.id, 0, lose_current_term=lose)
 
 
 class NavyMishap4Responsible(ChoiceBase):
@@ -98,12 +98,12 @@ class NavyMishap4Responsible(ChoiceBase):
 
     def handle(self, projection: CharacterProjection, event) -> None:
 
-        career = projection.get_current_career()
+        projection.get_current_career()
         projection.summary.problems.append(
             'Navy mishap 4 (responsible): you gain one free roll on the Skills and Training tables '
             'before ejection — apply a skill table roll manually to this character.'
         )
-        _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+        _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
 
 
 class NavyMishap4NotResponsible(ChoiceBase):
@@ -112,9 +112,9 @@ class NavyMishap4NotResponsible(ChoiceBase):
 
     def handle(self, projection: CharacterProjection, event) -> None:
 
-        career = projection.get_current_career()
+        projection.get_current_career()
         projection.summary.connections.append(Enemy(source='The officer who falsely blamed you for the accident'))
-        _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=False)
+        _apply_mishap_ejection(projection, event.id, 0, lose_current_term=False)
 
 
 class NavyEvent10Profit(ChoiceBase):

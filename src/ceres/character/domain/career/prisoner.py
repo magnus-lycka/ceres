@@ -176,10 +176,9 @@ class PendingPrisonerEvent3EscapeSkillRoll(CareerSkillRollPendingBase):
     kind: Literal['prisoner_event_3_escape_skill_roll'] = 'prisoner_event_3_escape_skill_roll'
 
     def resolve(self, projection: CharacterProjection, event: Any) -> None:
-        career = projection.get_current_career()
         if event.modified_roll >= 10:
             projection.summary.narrative.append('Prisoner event 3: escaped from prison — career ends.')
-            muster_out_setup(projection, career, event.id, 0, lose_current_term=False)
+            muster_out_setup(projection, event.id, 0)
         else:
             projection.summary.parole_threshold = min(12, (projection.summary.parole_threshold or 0) + 2)
             projection.summary.narrative.append('Prisoner event 3: escape failed — Parole Threshold +2.')
@@ -804,8 +803,6 @@ class Prisoner(CareerData):
         event_id: int,
         qualification_roll: int,
     ) -> None:
-        projection.summary.current_career = self
-        projection.summary.current_assignment = assignment
         count_before = len(projection.pending_inputs)
         self.start_new_term(projection, assignment, event_id)
         pending_added = len(projection.pending_inputs) - count_before

@@ -310,20 +310,22 @@ class TestCareerDataCoverageGaps:
         assert army.can_attempt_commission(proj) is False
 
     def test_apply_rank_bonus_characteristic_increase(self):
+        from ceres.character.domain.career.career_data import CareerTerm
         from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
         from ceres.character.domain.characteristics import Chars
 
         merchant = load_careers()['Merchant']
+        merchant_marine = merchant.assignment('Merchant Marine')
+        assert merchant_marine is not None
         proj = CharacterProjection(
             character_id=1,
             summary=CharacterSummary(
                 name='Test',
                 sophont=VILANI,
                 homeworld=MOCK_WORLD,
-                current_career=merchant,
-                current_assignment=merchant.assignment('Merchant Marine'),
                 rank=4,
                 characteristics={Chars.INT: 9, Chars.SOC: 5},
+                career_terms=[CareerTerm(career=merchant, assignment=merchant_marine, rank_after_term=4)],
             ),
         )
         merchant._apply_fixed_rank_bonus(proj, 5)

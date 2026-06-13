@@ -30,8 +30,6 @@ class CharacterSummary(BaseModel):
 
     characteristics: dict[Chars, int] = Field(default_factory=dict)
     psionics: Psionics | None = None
-    current_career: CareerData | None = None
-    current_assignment: AssignmentData | None = None
     last_career: CareerData | None = None
     last_career_ejected: bool = False  # True when last_career ended via mishap ejection
     last_assignment: AssignmentData | None = None
@@ -50,6 +48,26 @@ class CharacterSummary(BaseModel):
         default_factory=list
     )  # skills chosen during university (for graduation boost)
     parole_threshold: int | None = None  # Prisoner career: current Parole Threshold (3-12)
+
+    @property
+    def current_career(self) -> CareerData | None:
+        if self.dead or not self.career_terms:
+            return None
+        last = self.career_terms[-1]
+        mo = last.muster_out
+        if mo is None or mo.used or mo.pending_setup or mo.rolls_remaining > 0:
+            return None
+        return last.career
+
+    @property
+    def current_assignment(self) -> AssignmentData | None:
+        if self.dead or not self.career_terms:
+            return None
+        last = self.career_terms[-1]
+        mo = last.muster_out
+        if mo is None or mo.used or mo.pending_setup or mo.rolls_remaining > 0:
+            return None
+        return last.assignment
 
     @property
     def ucp(self) -> str | None:
@@ -203,7 +221,6 @@ class CharacterProjection(BaseModel):
     pending_qualification_dm: int = 0
     auto_qualify_careers: list[str] = Field(default_factory=list)
     pending_reenlist: bool | None = None  # stores reenlist decision during aging chain
-    muster_out_career: CareerData | None = None
     forced_next_career: CareerData | None = None  # set by prison-sending events; consumed by next career choice
     prisoner_freed: bool = False  # set by _apply_prisoner_advancement when parole granted
     forced_stay: bool = False  # natural 12 on advancement: character must stay this term
@@ -217,8 +234,6 @@ class CharacterProjection(BaseModel):
             self.summary.last_career = self.summary.current_career
             self.summary.last_career_ejected = ejected
             self.summary.last_assignment = self.summary.current_assignment
-        self.summary.current_career = None
-        self.summary.current_assignment = None
 
     def get_current_career(self) -> CareerData:
         current = self.summary.current_career

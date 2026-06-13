@@ -409,8 +409,6 @@ class CareerData(TermData):
             raise ValueError(f'Unknown draft assignment for {self.name}')
 
         projection.summary.drafted = True
-        projection.summary.current_career = self
-        projection.summary.current_assignment = resolved
         self.start_new_term(projection, resolved, event_id)
 
     def prior_terms(self, terms, assignment: AssignmentData) -> list:
@@ -487,8 +485,6 @@ class CareerData(TermData):
         # Check for auto-qualify from pre-career graduation
         if self.name in projection.auto_qualify_careers:
             projection.auto_qualify_careers.remove(self.name)
-            projection.summary.current_career = self
-            projection.summary.current_assignment = assignment
             self.start_new_term(projection, assignment, event_id)
             return
 
@@ -500,8 +496,6 @@ class CareerData(TermData):
             self.qualification_failed(projection, event_id)
             return
 
-        projection.summary.current_career = self
-        projection.summary.current_assignment = assignment
         self.start_new_term(projection, assignment, event_id)
 
     def qualification_failed(self, projection, event_id: int) -> None:
@@ -762,6 +756,13 @@ class MusterOut(BaseModel):
     benefit_roll_dms: list[BenefitRollDm] = Field(default_factory=list)
     used: bool = False
     rolls_remaining: int = 0
+    pending_setup: bool = False
+
+    def setup(self, rank: int) -> None:
+        self.pending_setup = False
+        self.rolls_remaining = max(0, self.terms + (rank + 1) // 2 + self.extra_rolls - self.lost_rolls)
+        if self.rolls_remaining == 0:
+            self.used = True
 
 
 class CareerTerm(BaseModel):

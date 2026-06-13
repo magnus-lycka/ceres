@@ -84,8 +84,6 @@ def test_character_list_shows_ucp_latest_career_and_rank(client_with_backend, mo
                 Chars.EDU: 7,
                 Chars.SOC: 11,
             },
-            current_career=citizen,
-            current_assignment=assignment,
             rank=3,
             career_terms=[CareerTerm(career=citizen, assignment=assignment)],
         ),
@@ -675,8 +673,6 @@ def test_wizard_shows_career_name_not_repr(client_with_backend, monkeypatch):
                 age=30,
                 sophont=HUMANITI,
                 homeworld=MOCK_WORLD,
-                current_career=citizen,
-                current_assignment=colonist,
                 rank=3,
                 career_terms=[
                     CareerTerm(
@@ -922,8 +918,6 @@ def test_character_sheet_shows_career_name_not_repr(client_with_backend, monkeyp
                 age=30,
                 sophont=HUMANITI,
                 homeworld=MOCK_WORLD,
-                current_career=citizen,
-                current_assignment=colonist,
                 rank=3,
                 career_terms=[
                     CareerTerm(

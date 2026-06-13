@@ -86,9 +86,9 @@ class MarinesMishap4Refuse(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
-        career = projection.get_current_career()
+        projection.get_current_career()
         projection.summary.connections.append(Contact(source='A fellow soldier who was part of that black ops mission'))
-        _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+        _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
 
 
 class MarinesMishap4Accept(ChoiceBase):
@@ -111,9 +111,9 @@ class PendingMarinesMishap4SkillRoll(CareerSkillRollPendingBase):
     def resolve(self, projection: CharacterProjection, event: Any) -> None:
         from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
-        career = projection.get_current_career()
+        projection.get_current_career()
         if event.modified_roll < 8:
-            _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+            _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
         # success: do nothing — _apply_skill_roll auto-queues advancement
 
 

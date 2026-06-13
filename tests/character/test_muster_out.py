@@ -137,11 +137,12 @@ class TestMusterOut:
         p = next(p for p in projection.pending_inputs if isinstance(p, PendingMusterOut))
         assert set(p.options) == {'cash', 'benefits'}
 
-    def test_muster_out_career_set_while_pendings_remain(self):
+    def test_career_recorded_on_term_while_muster_out_pending(self):
         projection = replay(1, _setup_through_reenlist_false())
 
-        assert projection.muster_out_career is not None
-        assert projection.muster_out_career.name == 'Scout'
+        assert projection.summary.career_terms[-1].career.name == 'Scout'
+        assert projection.summary.career_terms[-1].muster_out is not None
+        assert projection.summary.career_terms[-1].muster_out.rolls_remaining > 0
 
     def test_cash_roll_adds_to_summary_cash(self):
         # Scout roll 1 on cash table → Cr20000
@@ -236,14 +237,15 @@ class TestMusterOut:
 
         assert [benefit.key for benefit in projection.summary.benefits] == ['scout_ship']
 
-    def test_muster_out_career_cleared_after_all_rolls(self):
+    def test_muster_out_marked_used_after_all_rolls(self):
         events = [
             *_setup_through_reenlist_false(),
             Event(id=9, fulfills=(8, 0), handler=MusterOutHandler(table='cash', roll=1)),
         ]
         projection = replay(1, events)
 
-        assert projection.muster_out_career is None
+        assert projection.summary.career_terms[-1].muster_out is not None
+        assert projection.summary.career_terms[-1].muster_out.used is True
 
     def test_roll_count_two_terms_rank_0(self):
         # 2 terms, rank 0 → 2 + 0//2 = 2 rolls
@@ -272,11 +274,9 @@ class TestMusterOut:
         assert projection.summary.career_terms[-1].require_muster_out().terms == 2
 
     def test_roll_count_includes_rank_bonus(self):
-        # 1 term, rank 1 → 1 + 1//2 = 1 + 0 = 1. rank 2 → 1 + 2//2 = 2 rolls
-        # Use 2 terms + advance to rank 1 in first term → 2 + 0 = 2
-        # Use 1 term with rank 2 → 1 + 1 = 2 rolls
-        # Simplest: setup_through_3_terms_reenlist has rank 0 (advancement rolls 3 always fail)
-        # Advance in term 1: Scout Courier EDU 9+, EDU=10 DM+1, roll=8 → 8+1=9 ≥ 9 ✓
+        # Rules: rank 1-2 → +1 roll, rank 3-4 → +2, rank 5-6 → +3
+        # 1 term, rank 1 → 1 + 1 = 2 rolls
+        # Scout Courier advancement: EDU 9+, EDU=10 DM+1, roll=8 → 8+1=9 ≥ 9 ✓ → rank 1
         events = [
             *_full_setup(),
             Event(
@@ -286,18 +286,15 @@ class TestMusterOut:
             ),
             Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
             Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),
-            Event(id=7, fulfills=(6, 0), handler=AdvancementHandler(roll=8)),  # 8+1=9>=9 → rank 1
-            Event(
-                id=8, fulfills=(7, 0), handler=ReenlistHandler(reenlist=False)
-            ),  # 1 term, rank 1 → 1 + 1//2 = 1 + 0 = 1
+            Event(id=7, fulfills=(6, 0), handler=AdvancementHandler(roll=8)),  # rank 1
+            Event(id=8, fulfills=(7, 0), handler=ReenlistHandler(reenlist=False)),  # 1 term, rank 1 → 2 rolls
         ]
         projection = replay(1, events)
 
-        muster_out_pendings = [p for p in projection.pending_inputs if isinstance(p, PendingMusterOut)]
-        assert len(muster_out_pendings) == 1
+        assert projection.summary.career_terms[-1].require_muster_out().rolls_remaining == 2
 
     def test_roll_count_rank_2_gives_extra_roll(self):
-        # rank 2 → rank//2 = 1 extra roll. With 1 term: 1+1=2 rolls
+        # rank 2 → +1 extra roll (rules: rank 1-2 gives +1). 2 terms + rank 2 = 3 rolls.
         events = [
             *_full_setup(),
             Event(
@@ -589,11 +586,11 @@ class TestMusterOut:
         assert any(b.key == 'scientific_equipment' for b in projection.summary.benefits)
 
     def test_aging_reenlist_false_gets_muster_out_after_aging(self):
-        # 4 terms, reenlist=False, age=34 → aging required → muster out after aging resolves
+        # 4 terms, age=34 → aging roll first (no effect), then reenlist=False → muster out
         events = [
             *_setup_through_4_terms_advancement(),
-            Event(id=23, fulfills=(22, 0), handler=ReenlistHandler(reenlist=False)),
-            Event(id=24, fulfills=(23, 0), handler=AgingRollHandler(roll=5)),  # no effect (5-4=1)
+            Event(id=23, fulfills=(22, 0), handler=AgingRollHandler(roll=5)),  # no effect (5-4=1)
+            Event(id=24, fulfills=(23, 0), handler=ReenlistHandler(reenlist=False)),
         ]
         projection = replay(1, events)
 

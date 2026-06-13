@@ -11,7 +11,7 @@ run() {
     "$@" || failures=$((failures + 1))
 }
 
-run "pytest (--all-tests)"          uv run pytest --all-tests
+run "pytest (--all-tests)"          uv run pytest -n auto --maxprocesses=3 --all-tests
 #run "pylint (duplicate-code)"      uvx pylint --disable=all --enable=duplicate-code src tests
 run "ruff check"                    uvx ruff check --no-fix src tests
 run "ruff format --check"           uvx ruff format --check src tests

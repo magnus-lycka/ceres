@@ -34,7 +34,6 @@ from ceres.character.domain.career.career_events import (
     PendingAdvancement,
     PendingChoices,
     PendingConnectionsRoll,
-    PendingMusterOut,
     PendingSkillChoice,
     _advancement_pending,
     muster_out_setup,
@@ -137,17 +136,18 @@ class ScholarMishap5GiveUp(ChoiceBase):
     label: str = 'Give up (leave career)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        career = projection.get_current_career()
         projection.pending_inputs = [p for p in projection.pending_inputs if not isinstance(p, PendingAdvancement)]
+        if projection.summary.career_terms:
+            projection.summary.career_terms[-1].require_muster_out().lost_rolls += 1
         projection.summary.age += 4
         if projection.summary.age >= 34:
-            projection.muster_out_career = career
             projection.clear_current_career()
+            projection.summary.career_terms[-1].require_muster_out().pending_setup = True
             projection.pending_inputs.append(
                 PendingAgingRoll(pending_id=(event.id, 0), instruction='Roll 2D on Aging table')
             )
         else:
-            muster_out_setup(projection, career, event.id, 0, lose_current_term=True)
+            muster_out_setup(projection, event.id, 0)
 
 
 class ScholarMishap5StartAgain(ChoiceBase):
@@ -201,18 +201,15 @@ class ScholarEvent3Accept(ChoiceBase):
                     advancement_precreated=True,
                 )
             )
+        projection.summary.career_terms[-1].require_muster_out().extra_rolls += 1
+        projection.summary.narrative.append(
+            'You gain an extra benefit roll at muster out (accepted research against your conscience).'
+        )
         if projection.summary.current_career is not None:
             career = projection.get_current_career()
             projection.pending_inputs.append(
                 _advancement_pending(career, projection.summary.current_assignment, event.id, 3)
             )
-        projection.muster_out_career = projection.summary.current_career
-        projection.pending_inputs.append(
-            PendingMusterOut(
-                pending_id=(event.id, 4),
-                instruction='Extra Benefit roll (accepted research against conscience)',
-            )
-        )
 
 
 class ScholarEvent3Decline(ChoiceBase):

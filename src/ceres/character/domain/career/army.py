@@ -89,9 +89,9 @@ class ArmyMishap4JoinRing(ChoiceBase):
     label: str = 'Join their ring (Ally, lose Benefit roll)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        career = projection.get_current_career()
+        projection.get_current_career()
         projection.summary.connections.append(Ally(source='Your commanding officer who brought you into the ring'))
-        _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+        _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
 
 
 class ArmyMishap4Cooperate(ChoiceBase):
@@ -99,8 +99,8 @@ class ArmyMishap4Cooperate(ChoiceBase):
     label: str = 'Co-operate with MPs (keep Benefit roll)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        career = projection.get_current_career()
-        _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=False)
+        projection.get_current_career()
+        _apply_mishap_ejection(projection, event.id, 0, lose_current_term=False)
 
 
 class PendingArmyEvent6SkillRoll(CareerSkillRollPendingBase):

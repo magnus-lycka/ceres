@@ -4,7 +4,6 @@ import argparse
 import ast
 from dataclasses import dataclass
 from pathlib import Path
-import re
 
 
 @dataclass(frozen=True)
@@ -160,9 +159,8 @@ def _find_text_literal_occurrences(path: Path, literals: set[str]) -> list[Liter
     occurrences: list[LiteralOccurrence] = []
     text = path.read_text(encoding='utf-8')
     for literal in literals:
-        pattern = re.compile(re.escape(literal))
-        for match in pattern.finditer(text):
-            start = match.start()
+        start = text.find(literal)
+        while start != -1:
             lineno = text.count('\n', 0, start) + 1
             line_start = text.rfind('\n', 0, start)
             col_offset = start if line_start == -1 else start - line_start - 1
@@ -174,6 +172,7 @@ def _find_text_literal_occurrences(path: Path, literals: set[str]) -> list[Liter
                     col_offset=col_offset,
                 )
             )
+            start = text.find(literal, start + max(1, len(literal)))
     return occurrences
 
 

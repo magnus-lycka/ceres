@@ -97,17 +97,14 @@ class RogueMishap3RollTwo(ChoiceBase):
 
     def handle(self, projection: CharacterProjection, event) -> None:
         from ceres.character.domain.career.career_events import _set_forced_prison_career
-        from ceres.character.domain.career.loader import load_careers
 
         _set_forced_prison_career(
             projection,
             'Betrayed by a friend. Rolled 2 — must take the Prisoner career next term.',
         )
-        career_obj = projection.summary.current_career
-        career = load_careers().get(career_obj.name if career_obj else '')
-        if career is None:
-            return
-        muster_out_setup(projection, career, event.id, 0, lose_current_term=True)
+        if projection.summary.career_terms:
+            projection.summary.career_terms[-1].require_muster_out().lost_rolls += 1
+        muster_out_setup(projection, event.id, 0)
 
 
 class RogueMishap3RollOther(ChoiceBase):
@@ -115,13 +112,9 @@ class RogueMishap3RollOther(ChoiceBase):
     label: str = '3–12'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.domain.career.loader import load_careers
-
-        career_obj = projection.summary.current_career
-        career = load_careers().get(career_obj.name if career_obj else '')
-        if career is None:
-            return
-        muster_out_setup(projection, career, event.id, 0, lose_current_term=True)
+        if projection.summary.career_terms:
+            projection.summary.career_terms[-1].require_muster_out().lost_rolls += 1
+        muster_out_setup(projection, event.id, 0)
 
 
 class RogueMishap3Handler(CareerHandlerBase):
@@ -164,11 +157,11 @@ class RogueEvent3SkillRoll(CareerSkillRollPendingBase):
         if event.modified_roll >= 8:
             pass  # cleared — _apply_skill_roll auto-queues advancement
         else:
-            career = projection.get_current_career()
+            projection.get_current_career()
             _set_forced_prison_career(
                 projection, 'Arrested and charged. Failed to avoid conviction — sent to Prisoner career.'
             )
-            _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+            _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
 
 
 class RogueEvent3Defend(ChoiceBase):

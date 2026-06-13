@@ -90,8 +90,8 @@ class AgentMishap2Accept(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
-        career = projection.get_current_career()
-        _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+        projection.get_current_career()
+        _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
 
 
 class AgentMishap2Refuse(ChoiceBase):
@@ -101,7 +101,7 @@ class AgentMishap2Refuse(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
-        career = projection.get_current_career()
+        projection.get_current_career()
         pending_idx = 0
         projection.summary.connections.append(
             Enemy(source="The criminal figure who offered you a deal and didn't take kindly to your refusal")
@@ -121,7 +121,7 @@ class AgentMishap2Refuse(ChoiceBase):
             )
         )
         pending_idx += 1
-        _apply_mishap_ejection(projection, career, event.id, pending_idx, lose_current_term=True)
+        _apply_mishap_ejection(projection, event.id, pending_idx, lose_current_term=True)
 
 
 class PendingAgentMishap3SkillRoll(CareerSkillRollPendingBase):
@@ -140,7 +140,9 @@ class PendingAgentMishap3SkillRoll(CareerSkillRollPendingBase):
         succeed = event.modified_roll >= 8
         if event.modified_roll <= 2:
             _set_forced_prison_career(projection, 'Exposed as an agent — sent to Prisoner career.')
-        muster_out_setup(projection, career, event.id, 0, lose_current_term=not succeed)
+        if not succeed and projection.summary.career_terms:
+            projection.summary.career_terms[-1].require_muster_out().lost_rolls += 1
+        muster_out_setup(projection, event.id, 0)
 
 
 class AgentMishap5Contact(ChoiceBase):
@@ -150,12 +152,12 @@ class AgentMishap5Contact(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
-        career = projection.get_current_career()
+        projection.get_current_career()
         projection.summary.problems.append(
             'Agent mishap 5: a Contact was hurt — roll twice on the Injury table for them '
             'and apply the lower result (NPC injury; no mechanical effect on your character).'
         )
-        _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+        _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
 
 
 class AgentMishap5Ally(ChoiceBase):
@@ -165,12 +167,12 @@ class AgentMishap5Ally(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
-        career = projection.get_current_career()
+        projection.get_current_career()
         projection.summary.problems.append(
             'Agent mishap 5: an Ally was hurt — roll twice on the Injury table for them '
             'and apply the lower result (NPC injury; no mechanical effect on your character).'
         )
-        _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+        _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
 
 
 class AgentMishap5Family(ChoiceBase):
@@ -180,12 +182,12 @@ class AgentMishap5Family(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
-        career = projection.get_current_career()
+        projection.get_current_career()
         projection.summary.problems.append(
             'Agent mishap 5: a family member was hurt — roll twice on the Injury table for them '
             'and apply the lower result (NPC injury; no mechanical effect on your character).'
         )
-        _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+        _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
 
 
 class PendingAgentEvent3SkillRoll(CareerSkillRollPendingBase):

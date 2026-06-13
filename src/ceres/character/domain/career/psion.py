@@ -149,7 +149,7 @@ class PsionMishap4Refuse(ChoiceBase):
     label: str = 'Refuse (leave Psion career)'
 
     def handle(self, projection: CharacterProjection, event: Any) -> None:
-        _apply_mishap_ejection(projection, projection.get_current_career(), event.id, 0, lose_current_term=True)
+        _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
 
 
 class PsionMishap4Handler(CareerHandlerBase):
@@ -182,9 +182,7 @@ class PsionMishap3RollHandler(EventHandlerBase):
             projection.summary.characteristics[Chars.SOC] = max(
                 0, projection.summary.characteristics.get(Chars.SOC, 0) - 1
             )
-        _apply_mishap_ejection(
-            projection, projection.get_current_career(), event.id, pending_idx, lose_current_term=True
-        )
+        _apply_mishap_ejection(projection, event.id, pending_idx, lose_current_term=True)
 
 
 class PendingPsionMishap3Roll(PendingInputBase):

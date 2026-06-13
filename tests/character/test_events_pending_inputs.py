@@ -134,17 +134,19 @@ class Form(dict[str, str]):
 
 def _projection(**summary_kwargs: Any) -> CharacterProjection:
     term_count = summary_kwargs.pop('term_count', None)
-    current_assignment = summary_kwargs.get('current_assignment')
-    if isinstance(current_assignment, str):
-        current_career = summary_kwargs.get('current_career') or SCOUT
-        summary_kwargs['current_assignment'] = current_career.assignment(current_assignment)
-    if term_count is not None and 'career_terms' not in summary_kwargs:
-        current_career = summary_kwargs.get('current_career') or SCOUT
-        assignment_obj = summary_kwargs.get('current_assignment') or current_career.assignment('Courier')
-        assert assignment_obj is not None
-        summary_kwargs['career_terms'] = [
-            CareerTerm(career=current_career, assignment=assignment_obj) for _ in range(term_count)
-        ]
+    current_career_arg = summary_kwargs.pop('current_career', None)
+    current_assignment_arg = summary_kwargs.pop('current_assignment', None)
+    if isinstance(current_assignment_arg, str):
+        current_assignment_arg = (current_career_arg or SCOUT).assignment(current_assignment_arg)
+    if 'career_terms' not in summary_kwargs:
+        effective_count = term_count if term_count is not None else (1 if current_assignment_arg is not None else 0)
+        if effective_count > 0:
+            career = current_career_arg or SCOUT
+            assignment = current_assignment_arg or career.assignment('Courier')
+            assert assignment is not None
+            summary_kwargs['career_terms'] = [
+                CareerTerm(career=career, assignment=assignment) for _ in range(effective_count)
+            ]
     return CharacterProjection(
         character_id=1,
         summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD, **summary_kwargs),
@@ -255,15 +257,16 @@ def test_assignment_helper_errors_are_reported():
 
 
 def test_mishap_ejection_queues_aging_for_older_character():
-    projection = _projection(age=30, current_career=SCOUT, current_assignment='Courier')
-    career = load_careers()['Scout']
+    projection = _projection(age=30, current_career=SCOUT, current_assignment='Courier', term_count=1)
+    load_careers()['Scout']
 
-    next_idx = _apply_mishap_ejection(projection, career, source_event_id=7, pending_idx=2)
+    next_idx = _apply_mishap_ejection(projection, source_event_id=7, pending_idx=2)
 
     assert next_idx == 3
     assert projection.summary.age == 34
-    assert projection.muster_out_career is not None
-    assert projection.muster_out_career.name == 'Scout'
+    assert projection.summary.career_terms[-1].muster_out is not None
+    assert projection.summary.career_terms[-1].muster_out.pending_setup is True
+    assert projection.summary.career_terms[-1].career.name == 'Scout'
     assert projection.summary.current_career is None
     assert any(isinstance(pending, PendingAgingRoll) and pending.id == '7.2' for pending in projection.pending_inputs)
 
@@ -325,7 +328,8 @@ def test_aging_roll_extreme_results():
         Chars.DEX: 5,
         Chars.END: 5,
     }
-    assert any(isinstance(p, PendingReenlist) for p in effective_minus_5.pending_inputs)
+    pending_types = (PendingAssignmentChangeChoice, PendingReenlist)
+    assert any(isinstance(p, pending_types) for p in effective_minus_5.pending_inputs)
 
     effective_minus_6 = _projection(
         term_count=8,
@@ -489,13 +493,15 @@ def test_queue_reenlist_or_aging_handles_freed_prisoner_paths():
         age=30,
         current_career=PRISONER,
         current_assignment='Inmate',
+        term_count=1,
     )
     older.prisoner_freed = True
     queue_reenlist_or_aging(older, event_id=4, idx=0)
     assert older.prisoner_freed is False
     assert older.pending_reenlist is False
-    assert older.muster_out_career is not None
-    assert older.muster_out_career.name == 'Prisoner'
+    assert older.summary.career_terms[-1].muster_out is not None
+    assert older.summary.career_terms[-1].muster_out.pending_setup is True
+    assert older.summary.career_terms[-1].career.name == 'Prisoner'
     assert any(isinstance(p, PendingAgingRoll) for p in older.pending_inputs)
 
     younger = _projection(
@@ -507,13 +513,12 @@ def test_queue_reenlist_or_aging_handles_freed_prisoner_paths():
     younger.prisoner_freed = True
     queue_reenlist_or_aging(younger, event_id=5, idx=1)
     assert younger.prisoner_freed is False
-    assert younger.muster_out_career is not None
-    assert younger.muster_out_career.name == 'Prisoner'
+    assert younger.summary.career_terms[-1].career.name == 'Prisoner'
     assert any(isinstance(p, PendingMusterOut) for p in younger.pending_inputs)
 
 
 def test_muster_out_setup_and_complete_aging_helper_branches():
-    career = load_careers()['Scout']
+    load_careers()['Scout']
     projection = _projection(
         current_career=SCOUT,
         current_assignment='Courier',
@@ -523,7 +528,7 @@ def test_muster_out_setup_and_complete_aging_helper_branches():
     projection.summary.career_terms[-1].require_muster_out().lost_rolls = 1
     projection.summary.career_terms[-1].require_muster_out().extra_rolls = 2
 
-    next_idx = muster_out_setup(projection, career, source_event_id=6, pending_idx=0)
+    next_idx = muster_out_setup(projection, source_event_id=6, pending_idx=0)
 
     assert next_idx == 1
     assert projection.summary.current_career is None
@@ -1021,10 +1026,10 @@ def test_career_skill_choice_pending_base_on_skill_chosen_grants_skill_and_queue
     # Without advancement_precreated — should queue career progress
     pending = _PendingSkillChoice(pending_id=(1, 0), instruction='Choose', options=[], advancement_precreated=False)
     proj = _projection(
-        characteristics={Chars.STR: 7, Chars.DEX: 8, Chars.END: 6, Chars.INT: 9, Chars.EDU: 10, Chars.SOC: 5}
+        characteristics={Chars.STR: 7, Chars.DEX: 8, Chars.END: 6, Chars.INT: 9, Chars.EDU: 10, Chars.SOC: 5},
+        current_career=scout,
+        current_assignment='Courier',
     )
-    proj.summary.current_career = scout
-    proj.summary.current_assignment = scout.assignment('Courier')
     before_count = len(proj.pending_inputs)
     pending.on_skill_chosen(proj, _FakeEvent())
     assert proj.summary.skill_level(character_skills.Admin) is not None
@@ -1034,9 +1039,7 @@ def test_career_skill_choice_pending_base_on_skill_chosen_grants_skill_and_queue
     pending2 = PendingScholarScienceChoice(
         pending_id=(2, 0), instruction='Choose', options=[], advancement_precreated=True
     )
-    proj2 = _projection()
-    proj2.summary.current_career = scout
-    proj2.summary.current_assignment = scout.assignment('Courier')
+    proj2 = _projection(current_career=scout, current_assignment='Courier')
     before2 = len(proj2.pending_inputs)
     pending2.on_skill_chosen(proj2, _FakeEvent())
     assert len(proj2.pending_inputs) == before2
@@ -1271,10 +1274,10 @@ def test_life_event_crime_take_prisoner_sets_forced_next_career():
 
 
 def test_muster_out_setup_zero_rolls_queues_career_choice():
-    career = load_careers()['Scout']
+    load_careers()['Scout']
     # term_count=0 and rank=0 → roll_count = 0 → career choice directly
     projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=0, rank=0)
-    muster_out_setup(projection, career, source_event_id=9, pending_idx=0)
+    muster_out_setup(projection, source_event_id=9, pending_idx=0)
 
     assert any(isinstance(p, PendingCareerChoice) for p in projection.pending_inputs)
     assert not any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)

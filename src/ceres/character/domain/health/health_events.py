@@ -155,21 +155,25 @@ class AgingCrisisHandler(EventHandlerBase):
     def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
         from ceres.character.domain.career.career_events import muster_out_setup
 
-        career = projection.summary.current_career or projection.muster_out_career
+        career = projection.summary.current_career
+        last_term = projection.summary.career_terms[-1] if projection.summary.career_terms else None
+        deferred_mo = last_term.muster_out if last_term is not None else None
+        if career is None and last_term is not None and deferred_mo is not None and deferred_mo.pending_setup:
+            career = last_term.career
         if self.paid:
             for char in list(projection.summary.characteristics.keys()):
                 if projection.summary.characteristics[char] == 0:
                     projection.summary.characteristics[char] = 1
             projection.pending_reenlist = None
-            projection.muster_out_career = None
             if career:
-                muster_out_setup(projection, career, event.id, 0, clear_career=True)
+                muster_out_setup(projection, event.id, 0, clear_career=True)
             else:
                 projection.clear_current_career()
         else:
             projection.summary.dead = True
             projection.clear_current_career()
-            projection.muster_out_career = None
+            if deferred_mo is not None:
+                deferred_mo.pending_setup = False
             projection.pending_reenlist = None
 
 
@@ -250,11 +254,10 @@ def complete_aging(projection: CharacterProjection, source_event_id: int) -> Non
         muster_out_setup,
     )
 
-    if projection.muster_out_career is not None:
-        career = projection.muster_out_career
-        lose = projection.pending_reenlist is None
-        projection.muster_out_career = None
-        muster_out_setup(projection, career, source_event_id, 0, lose_current_term=lose, clear_career=False)
+    last_term = projection.summary.career_terms[-1] if projection.summary.career_terms else None
+    deferred_mo = last_term.muster_out if last_term is not None else None
+    if deferred_mo is not None and deferred_mo.pending_setup:
+        muster_out_setup(projection, source_event_id, 0, clear_career=False)
     else:
         career = projection.get_current_career() if projection.summary.current_career else None
         if career and career.allows_assignment_change and len(career.assignments) > 1:

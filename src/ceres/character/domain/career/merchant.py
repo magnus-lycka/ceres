@@ -88,9 +88,9 @@ class MerchantEvent3SkillRoll(CareerSkillRollPendingBase):
             projection.summary.career_terms[-1].require_muster_out().extra_rolls += 1
             # no pending added — _apply_skill_roll auto-queues advancement
         else:
-            career = projection.get_current_career()
+            projection.get_current_career()
             projection.summary.connections.append(Enemy(source='Someone who caught you running contraband'))
-            _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+            _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
 
 
 class MerchantEvent3Accept(ChoiceBase):

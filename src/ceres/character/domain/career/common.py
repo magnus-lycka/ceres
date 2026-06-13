@@ -37,7 +37,7 @@ class CommonMishap1Severe(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         from ceres.character.domain.health.health_events import PendingSeverelyInjured
 
-        career = projection.get_current_career()
+        projection.get_current_career()
         projection.pending_inputs.append(
             PendingSeverelyInjured(
                 pending_id=(event.id, 0),
@@ -45,7 +45,7 @@ class CommonMishap1Severe(ChoiceBase):
             )
         )
         if not self.stay_in_career:
-            _apply_mishap_ejection(projection, career, event.id, 1, lose_current_term=True)
+            _apply_mishap_ejection(projection, event.id, 1, lose_current_term=True)
 
 
 class CommonMishap1DoubleRoll(ChoiceBase):
@@ -54,7 +54,7 @@ class CommonMishap1DoubleRoll(ChoiceBase):
     stay_in_career: bool = False
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        career = projection.get_current_career()
+        projection.get_current_career()
         projection.pending_inputs.append(
             PendingDoubleInjuryRoll(
                 pending_id=(event.id, 0),
@@ -62,7 +62,7 @@ class CommonMishap1DoubleRoll(ChoiceBase):
             )
         )
         if not self.stay_in_career:
-            _apply_mishap_ejection(projection, career, event.id, 1, lose_current_term=True)
+            _apply_mishap_ejection(projection, event.id, 1, lose_current_term=True)
 
 
 class CommonMishap1Handler(CareerHandlerBase):

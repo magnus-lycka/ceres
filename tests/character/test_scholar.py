@@ -14,6 +14,7 @@ from ceres.character.domain.career.career_events import (
     PendingChoices,
     PendingConnectionsRoll,
     PendingInitialTrainingChoice,
+    PendingMusterOut,
     PendingRankBonusChoice,
     PendingSkillChoice,
     PendingSkillTableChoice,
@@ -87,7 +88,7 @@ from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.pending_input import ChoiceBase
 from ceres.character.mechanism.replay import replay
-from tests.character.helpers import MOCK_WORLD, CharacterDriver
+from tests.character.helpers import MOCK_WORLD, CharacterDriver, projection_diff
 
 _SCIENCES = sorted(['Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science'])
 _SCIENCE_CLASSES = set(_skill_classes(Sciences))
@@ -649,11 +650,14 @@ class TestScholarMishap5:
     def test_give_up_at_age_30_creates_aging_roll(self):
         from types import SimpleNamespace
 
+        from ceres.character.domain.career.career_data import CareerTerm
         from ceres.character.domain.career.loader import load_careers
         from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
         from ceres.character.domain.health.health_events import PendingAgingRoll
 
         scholar = load_careers()['Scholar']
+        field_researcher = scholar.assignment('Field Researcher')
+        assert field_researcher is not None
         proj = CharacterProjection(
             character_id=1,
             summary=CharacterSummary(
@@ -661,8 +665,8 @@ class TestScholarMishap5:
                 sophont=VILANI,
                 homeworld=MOCK_WORLD,
                 age=30,
-                current_career=scholar,
                 rank=1,
+                career_terms=[CareerTerm(career=scholar, assignment=field_researcher, rank_after_term=1)],
             ),
         )
         proj.pending_inputs.append(PendingAdvancement(pending_id=(99, 0), instruction='Advance'))
@@ -675,120 +679,107 @@ class TestScholarMishap5:
         assert any(isinstance(p, PendingAgingRoll) for p in proj.pending_inputs)
 
 
+def _setup_to_event_3_choice() -> CharacterDriver:
+    """Set up a Scholar Field Researcher through survive and term event 3 (research against conscience)."""
+    d = CharacterDriver()
+    d.start(VILANI, MOCK_WORLD)
+    d.ucp('7869A5')
+    d.background_skills([Admin(), Athletics(), Carouse(), Medic()])
+    d.career('Scholar', 'Field Researcher', roll=5)
+    d.initial_training(Drive())
+    d.initial_training(SpaceScience())
+    d.survive(7)
+    d.term_event(3)
+    return d
+
+
 class TestScholarEvent3:
-    """Event 3: research against conscience. Accept (2 Sciences, D3 Enemies) or Decline (nothing)."""
+    """Event 3: research against conscience.
 
-    def _setup(self) -> list:
-        return [
-            *_scholar_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
-                handler=CareerEntryHandler(
-                    career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
-                ),
-            ),
-            Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
-            Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
-            Event(id=7, fulfills=(6, 0), handler=SurviveHandler(roll=7)),
-            Event(id=8, fulfills=(7, 0), handler=TermEventHandler(roll=3)),
-        ]
+    Accept: 2 Science specialties, D3 Enemies, extra benefit roll deferred to muster out.
+    Decline: nothing happens.
 
-    def test_creates_accept_decline_pending(self):
-        projection = replay(1, self._setup())
+    Tests use CharacterDriver and projection_diff to verify the full state delta — both that
+    expected things changed and that nothing else changed unexpectedly.
+    """
 
-        pending = next(
-            (p for p in projection.pending_inputs if isinstance(p, PendingChoices)),
-            None,
-        )
-        assert pending is not None
-        assert {type(c) for c in pending.choices} == {ScholarEvent3Accept, ScholarEvent3Decline}
+    def test_accept_increments_extra_rolls_at_muster_out(self):
+        """Accepting queues an extra benefit roll for muster out, not an immediate roll."""
+        d = _setup_to_event_3_choice()
+        before_extra = d.projection.summary.career_terms[-1].require_muster_out().extra_rolls
+        d.career_choice(ScholarEvent3Accept)
+        assert d.projection.summary.career_terms[-1].require_muster_out().extra_rolls == before_extra + 1
 
-    def test_decline_creates_advancement_pending(self):
-        events = [
-            *self._setup(),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=ScholarEvent3Decline.model_fields['kind'].default),
-            ),
-        ]
-        projection = replay(1, events)
+    def test_accept_does_not_create_pending_muster_out_during_career(self):
+        """No PendingMusterOut during an active career term — the benefit is paid at muster-out time."""
+        d = _setup_to_event_3_choice()
+        d.career_choice(ScholarEvent3Accept)
+        assert not any(isinstance(p, PendingMusterOut) for p in d.projection.pending_inputs)
 
-        assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+    def test_accept_adds_narrative_about_extra_muster_out_benefit(self):
+        d = _setup_to_event_3_choice()
+        before_len = len(d.projection.summary.narrative)
+        d.career_choice(ScholarEvent3Accept)
+        new_msgs = d.projection.summary.narrative[before_len:]
+        assert any('muster' in m.lower() for m in new_msgs)
 
-    def test_accept_creates_connections_roll_pending_for_d3_enemies(self):
-        events = [
-            *self._setup(),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=ScholarEvent3Accept.model_fields['kind'].default),
-            ),
-        ]
-        projection = replay(1, events)
-
-        conn = next((p for p in projection.pending_inputs if isinstance(p, PendingConnectionsRoll)), None)
+    def test_accept_queues_connections_roll_for_d3_enemies(self):
+        d = _setup_to_event_3_choice()
+        d.career_choice(ScholarEvent3Accept)
+        conn = next((p for p in d.projection.pending_inputs if isinstance(p, PendingConnectionsRoll)), None)
         assert conn is not None
         assert conn.options == [1, 2, 3]
 
-    def test_accept_creates_two_science_choice_pendings(self):
-        events = [
-            *self._setup(),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=ScholarEvent3Accept.model_fields['kind'].default),
-            ),
-        ]
-        projection = replay(1, events)
-
-        sciences = [p for p in projection.pending_inputs if isinstance(p, PendingScholarScienceChoicePreCreated)]
+    def test_accept_queues_two_science_choice_pendings(self):
+        d = _setup_to_event_3_choice()
+        d.career_choice(ScholarEvent3Accept)
+        sciences = [p for p in d.projection.pending_inputs if isinstance(p, PendingScholarScienceChoicePreCreated)]
         assert len(sciences) == 2
+        assert all(SpaceScience() in p.options and LifeScience() in p.options for p in sciences)
 
-    def test_accept_science_choice_options_contain_sciences(self):
-        events = [
-            *self._setup(),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=ScholarEvent3Accept.model_fields['kind'].default),
-            ),
-        ]
-        projection = replay(1, events)
+    def test_accept_queues_advancement(self):
+        d = _setup_to_event_3_choice()
+        d.career_choice(ScholarEvent3Accept)
+        assert any(isinstance(p, PendingAdvancement) for p in d.projection.pending_inputs)
 
-        pending = next(p for p in projection.pending_inputs if isinstance(p, PendingScholarScienceChoicePreCreated))
-        assert SpaceScience() in pending.options
-        assert LifeScience() in pending.options
+    def test_accept_no_unexpected_projection_changes(self):
+        """Accept changes only extra_rolls, narrative, and pending_inputs — nothing else."""
+        d = _setup_to_event_3_choice()
+        before = d.snapshot()
+        d.career_choice(ScholarEvent3Accept)
+        diff = projection_diff(before, d.projection)
+
+        all_changed_paths = {str(k) for cat in diff.values() for k in cat}
+        unexpected = {
+            p for p in all_changed_paths if not any(t in p for t in ('extra_rolls', 'narrative', 'pending_inputs'))
+        }
+        assert unexpected == set(), f'Unexpected projection changes: {unexpected}'
 
     def test_accept_resolving_science_choices_grants_skills(self):
-        events = [
-            *self._setup(),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=ScholarEvent3Accept.model_fields['kind'].default),
-            ),
-            Event(id=10, fulfills=(9, 1), handler=SkillChoiceHandler(skill=SpaceScience(planetology=Level(value=1)))),
-            Event(id=11, fulfills=(9, 2), handler=SkillChoiceHandler(skill=LifeScience(biology=Level(value=1)))),
-        ]
-        projection = replay(1, events)
+        d = _setup_to_event_3_choice()
+        d.career_choice(ScholarEvent3Accept)
+        d.choose_career_skill(SpaceScience(planetology=Level(value=1)))
+        d.choose_career_skill(LifeScience(biology=Level(value=1)))
+        assert d.projection.summary.skill_level(SpaceScience, -1) >= 1
+        assert d.projection.summary.skill_level(LifeScience, -1) >= 1
 
-        assert projection.summary.skill_level(SpaceScience, -1) >= 1
-        assert projection.summary.skill_level(LifeScience, -1) >= 1
+    def test_decline_only_adds_advancement_to_pending(self):
+        """Decline adds only PendingAdvancement — no connections, science choices, or extra rolls."""
+        d = _setup_to_event_3_choice()
+        before = d.snapshot()
+        d.career_choice(ScholarEvent3Decline)
+        diff = projection_diff(before, d.projection)
 
-    def test_accept_creates_advancement_pending(self):
-        events = [
-            *self._setup(),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=ScholarEvent3Accept.model_fields['kind'].default),
-            ),
-        ]
-        projection = replay(1, events)
+        all_changed_paths = {str(k) for cat in diff.values() for k in cat}
+        unexpected = {p for p in all_changed_paths if 'pending_inputs' not in p}
+        assert unexpected == set(), f'Unexpected projection changes on decline: {unexpected}'
 
-        assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+        assert any(isinstance(p, PendingAdvancement) for p in d.projection.pending_inputs)
+        assert not any(isinstance(p, PendingConnectionsRoll) for p in d.projection.pending_inputs)
+        assert (
+            d.projection.summary.career_terms[-1].require_muster_out().extra_rolls
+            == before.summary.career_terms[-1].require_muster_out().extra_rolls
+        )
 
 
 class TestScholarEvent8:

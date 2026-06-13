@@ -1,6 +1,9 @@
 """Shared test helpers for character tests."""
 
+import copy
 from typing import Any, Literal
+
+from deepdiff import DeepDiff
 
 from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.domain.career.career_events import (
@@ -245,11 +248,29 @@ class CharacterDriver:
         pending = self._find(CareerSkillChoicePendingBase)
         return self._add(Event(fulfills=pending.pending_id, handler=SkillChoiceHandler(skill=skill)))
 
+    def snapshot(self) -> CharacterProjection:
+        """Deep copy the current projection for before/after comparison."""
+        return copy.deepcopy(self.projection)
+
     def skill_roll(self, skill: Any, modified_roll: int) -> CharacterDriver:
         pending = self._find(CareerSkillRollPendingBase)
         return self._add(
             Event(fulfills=pending.pending_id, handler=SkillRollHandler(skill=skill, modified_roll=modified_roll))
         )
+
+
+def projection_diff(before: CharacterProjection, after: CharacterProjection) -> DeepDiff:
+    """Compare two projection states using DeepDiff on their JSON representations.
+
+    Use to verify both that expected changes occurred and that nothing unexpected changed.
+    All paths in the diff contain the changed key names, so you can check for unexpected
+    changes with: ``{p for cat in diff.values() for p in cat} - expected_path_tokens``.
+    """
+    return DeepDiff(
+        before.model_dump(mode='json'),
+        after.model_dump(mode='json'),
+        ignore_order=True,
+    )
 
 
 MOCK_WORLD_2 = TravellerMapWorld.model_validate(

@@ -1,7 +1,6 @@
 from typing import Any, Literal, cast
 
 from ceres.character.domain.benefits import AnyBenefit
-from ceres.character.domain.career.career_data import CareerData
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.input_specs import InputSpec, NumberEntry, Select, form_int, form_str, literal
 from ceres.character.mechanism.errors import ReplayError
@@ -15,9 +14,9 @@ class MusterOutHandler(EventHandlerBase):
     roll: int
 
     def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
-        career = projection.muster_out_career
-        if career is None:
+        if not projection.summary.career_terms:
             raise ReplayError('No muster out career set')
+        career = projection.summary.career_terms[-1].career
         effective_roll = max(1, min(7, self.roll))
         row = career.muster_out.rows.get(effective_roll)
         if row is None:
@@ -126,36 +125,25 @@ def finalize_muster_out(projection: Any, event_id: int) -> None:
 
     if projection.summary.career_terms:
         projection.summary.career_terms[-1].require_muster_out().used = True
-    projection.muster_out_career = None
     if not projection.summary.dead:
         queue_career_choice_indexed(projection, event_id, 0, 'Start a new career, or finish character creation')
 
 
 def setup_muster_out(
     projection: Any,
-    career: CareerData,
     source_event_id: int,
     pending_idx: int = 0,
-    lose_current_term: bool = False,
     clear_career: bool = True,
     ejected: bool = False,
 ) -> int:
     from ceres.character.domain.career.career_events import queue_career_choice_indexed
 
-    current_term = projection.summary.career_terms[-1] if projection.summary.career_terms else None
-    muster_out = current_term.muster_out if current_term is not None else None
-    run_terms = muster_out.terms if muster_out is not None else 0
-    roll_count = run_terms + (projection.summary.rank or 0) // 2
-    if lose_current_term:
-        roll_count = max(0, roll_count - 1)
-    if muster_out is not None:
-        roll_count = max(0, roll_count - muster_out.lost_rolls) + muster_out.extra_rolls
     if clear_career:
         projection.clear_current_career(ejected=ejected)
-    if roll_count > 0:
-        if muster_out is not None:
-            muster_out.rolls_remaining = roll_count
-        projection.muster_out_career = career
+    muster_out = projection.summary.career_terms[-1].muster_out if projection.summary.career_terms else None
+    if muster_out is not None:
+        muster_out.setup(projection.summary.rank or 0)
+    if muster_out is not None and muster_out.rolls_remaining > 0:
         projection.pending_inputs.append(PendingMusterOut(pending_id=(source_event_id, pending_idx)))
     else:
         queue_career_choice_indexed(projection, source_event_id, pending_idx)

@@ -262,15 +262,17 @@ class MishapHandler(EventHandlerBase):
             if mishap and projection.summary.career_terms:
                 projection.summary.career_terms[-1].mishap = mishap.text
             purge_career_pendings(projection)
+            if projection.summary.career_terms:
+                projection.summary.career_terms[-1].require_muster_out().lost_rolls += 1
             projection.summary.age += 4
             if projection.summary.age >= 34:
-                projection.muster_out_career = career
                 projection.clear_current_career(ejected=True)
+                projection.summary.career_terms[-1].require_muster_out().pending_setup = True
                 projection.pending_inputs.append(
                     PendingAgingRoll(pending_id=(event.id, pending_idx), instruction='Roll 2D on Aging table')
                 )
             else:
-                muster_out_setup(projection, career, event.id, pending_idx, lose_current_term=True, ejected=True)
+                muster_out_setup(projection, event.id, pending_idx, ejected=True)
 
 
 # ── Term Event ─────────────────────────────────────────────────────────────────
@@ -381,8 +383,7 @@ class ReenlistHandler(EventHandlerBase):
             _start_new_career_term(projection, career, event.id)
         else:
             purge_career_pendings(projection)
-            career = projection.get_current_career()
-            muster_out_setup(projection, career, event.id, 0, lose_current_term=False)
+            muster_out_setup(projection, event.id, 0)
 
 
 # ── Skill Table ────────────────────────────────────────────────────────────────
@@ -400,8 +401,8 @@ class SkillTableHandler(EventHandlerBase):
 
         if projection.summary.current_career is not None:
             career = projection.get_current_career()
-        elif projection.muster_out_career is not None:
-            career = projection.muster_out_career
+        elif projection.summary.career_terms and projection.summary.career_terms[-1].muster_out is not None:
+            career = projection.summary.career_terms[-1].career
         else:
             raise ReplayError('No active career')
         table = career.skill_table(self.table)
@@ -504,7 +505,7 @@ class AssignmentChangeChoiceHandler(EventHandlerBase):
             _start_new_career_term(projection, career, event.id)
         elif self.choice == 'muster_out':
             purge_career_pendings(projection)
-            muster_out_setup(projection, career, event.id, 0, lose_current_term=False)
+            muster_out_setup(projection, event.id, 0)
         else:
             current_assignment = projection.summary.current_assignment
             others = [a for a in career.assignments if a != current_assignment]
@@ -532,8 +533,8 @@ class SwitchAssignmentHandler(EventHandlerBase):
         target = career.qualification.target
         dm = characteristic_dm(projection.summary.characteristics.get(char, 0))
         if self.qualification_roll + dm >= target:
-            projection.summary.current_assignment = self.assignment
-            _start_new_career_term(projection, career, event.id)
+            purge_career_pendings(projection)
+            career.start_new_term(projection, self.assignment, event.id, is_continuation=True)
         else:
             projection.pending_inputs.append(
                 PendingReenlist(
@@ -628,24 +629,23 @@ def _apply_prisoner_advancement(projection: Any, event: Any, career: Any) -> Non
 
 def _apply_mishap_ejection(
     projection: Any,
-    career: Any,
     source_event_id: int,
     pending_idx: int,
     lose_current_term: bool = True,
 ) -> int:
     from ceres.character.domain.health.health_events import PendingAgingRoll
 
+    if lose_current_term and projection.summary.career_terms:
+        projection.summary.career_terms[-1].require_muster_out().lost_rolls += 1
     projection.summary.age += 4
     if projection.summary.age >= 34:
-        projection.muster_out_career = career
         projection.clear_current_career(ejected=True)
+        projection.summary.career_terms[-1].require_muster_out().pending_setup = True
         projection.pending_inputs.append(
             PendingAgingRoll(pending_id=(source_event_id, pending_idx), instruction='Roll 2D on Aging table')
         )
         return pending_idx + 1
-    return muster_out_setup(
-        projection, career, source_event_id, pending_idx, lose_current_term=lose_current_term, ejected=True
-    )
+    return muster_out_setup(projection, source_event_id, pending_idx, ejected=True)
 
 
 def purge_career_pendings(projection: CharacterProjection) -> None:
@@ -662,15 +662,15 @@ def queue_reenlist_or_aging(projection: CharacterProjection, event_id: int, idx:
         projection.summary.age += 4
         career = projection.summary.current_career
         if projection.summary.age >= 34:
-            if career:
-                projection.muster_out_career = career
-            projection.pending_reenlist = False
             projection.clear_current_career()
+            if projection.summary.career_terms:
+                projection.summary.career_terms[-1].require_muster_out().pending_setup = True
+            projection.pending_reenlist = False
             projection.pending_inputs.append(
                 PendingAgingRoll(pending_id=(event_id, idx), instruction='Roll 2D on Aging table')
             )
         elif career:
-            muster_out_setup(projection, career, event_id, idx, lose_current_term=False)
+            muster_out_setup(projection, event_id, idx)
         return
 
     projection.summary.age += 4
@@ -679,14 +679,14 @@ def queue_reenlist_or_aging(projection: CharacterProjection, event_id: int, idx:
         career = projection.get_current_career() if projection.summary.current_career else None
         if career:
             if projection.summary.age >= 34:
-                projection.muster_out_career = career
-                projection.pending_reenlist = False
                 projection.clear_current_career()
+                projection.summary.career_terms[-1].require_muster_out().pending_setup = True
+                projection.pending_reenlist = False
                 projection.pending_inputs.append(
                     PendingAgingRoll(pending_id=(event_id, idx), instruction='Roll 2D on Aging table')
                 )
             else:
-                muster_out_setup(projection, career, event_id, idx, lose_current_term=False)
+                muster_out_setup(projection, event_id, idx)
         return
     if projection.summary.age >= 34:
         projection.pending_inputs.append(
@@ -719,22 +719,12 @@ def queue_reenlist_or_aging(projection: CharacterProjection, event_id: int, idx:
 
 def muster_out_setup(
     projection: Any,
-    career: CareerData,
     source_event_id: int,
     pending_idx: int = 0,
-    lose_current_term: bool = False,
     clear_career: bool = True,
     ejected: bool = False,
 ) -> int:
-    return setup_muster_out(
-        projection,
-        career,
-        source_event_id,
-        pending_idx,
-        lose_current_term=lose_current_term,
-        clear_career=clear_career,
-        ejected=ejected,
-    )
+    return setup_muster_out(projection, source_event_id, pending_idx, clear_career=clear_career, ejected=ejected)
 
 
 def career_progress_pending(

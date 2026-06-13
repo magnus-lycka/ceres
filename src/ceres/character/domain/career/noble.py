@@ -83,14 +83,14 @@ class PendingNobleMishap3SkillRoll(CareerSkillRollPendingBase):
 
     def resolve(self, projection: CharacterProjection, event: Any) -> None:
 
-        career = projection.get_current_career()
+        projection.get_current_career()
         if event.modified_roll >= 8:
-            _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=False)
+            _apply_mishap_ejection(projection, event.id, 0, lose_current_term=False)
         else:
             projection.summary.problems.append(
                 'Noble mishap 3: failed to escape — roll on the Injury table and apply the result.'
             )
-            _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+            _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
 
 
 class NobleMishap3Handler(CareerHandlerBase):
@@ -117,12 +117,12 @@ class PendingNobleMishap5SkillRoll(CareerSkillRollPendingBase):
 
     def resolve(self, projection: CharacterProjection, event: Any) -> None:
 
-        career = projection.get_current_career()
+        projection.get_current_career()
         if event.modified_roll < 8:
             projection.summary.problems.append(
                 'Noble mishap 5: assassin — roll on the Injury table and apply the result.'
             )
-        _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+        _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
 
 
 class NobleMishap5Handler(CareerHandlerBase):
@@ -152,9 +152,9 @@ class NobleEvent8SkillRoll(CareerSkillRollPendingBase):
             projection.summary.career_terms[-1].require_muster_out().extra_rolls += 1
             # no pending added — _apply_skill_roll auto-queues advancement
         else:
-            career = projection.get_current_career()
+            projection.get_current_career()
             projection.summary.connections.append(Enemy(source='A noble who caught you in a conspiracy'))
-            _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+            _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
 
 
 class NobleEvent8Accept(ChoiceBase):

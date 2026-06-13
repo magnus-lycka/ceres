@@ -152,6 +152,31 @@ class MarineEvent:
     )
 
 
+def test_audit_reports_each_illegal_reuse_in_html_templates(tmp_path: Path) -> None:
+    _write(
+        tmp_path / 'src' / 'ceres' / 'models.py',
+        """
+from typing import Literal
+
+
+class MarineEvent:
+    type: Literal['marines_event_5'] = 'marines_event_5'
+""",
+    )
+    template_path = tmp_path / 'src' / 'ceres' / 'templates' / 'bad.html'
+    _write(template_path, '<div>marines_event_5</div><div>marines_event_5</div>')
+
+    result = audit_discriminator_literals(
+        declaration_paths=[tmp_path / 'src' / 'ceres'],
+        scan_paths=[tmp_path / 'src' / 'ceres'],
+    )
+
+    assert [(violation.path, violation.col_offset) for violation in result.violations] == [
+        (template_path, 5),
+        (template_path, 31),
+    ]
+
+
 def test_audit_real_source_code_scans_marines_file() -> None:
     repo_root = Path(__file__).resolve().parents[2]
     marines_path = repo_root / 'src' / 'ceres' / 'character' / 'domain' / 'career' / 'marines.py'

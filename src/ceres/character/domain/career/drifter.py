@@ -80,11 +80,11 @@ class PendingDrifterMishap5SkillRoll(CareerSkillRollPendingBase):
             _set_forced_prison_career,
         )
 
-        career = projection.get_current_career()
+        projection.get_current_career()
         projection.summary.connections.append(Rival(source='A friend who turned on you'))
         if event.modified_roll == 2:
             _set_forced_prison_career(projection, 'Betrayed — rolled 2, sent to Prisoner career.')
-        _apply_mishap_ejection(projection, career, event.id, 0, lose_current_term=True)
+        _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
 
 
 class DrifterEvent3Accept(ChoiceBase):
