@@ -47,9 +47,6 @@ from ceres.character.domain.career.common_pending import (
 )
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind
-from ceres.character.domain.connection import (
-    Enemy,
-)
 from ceres.character.domain.health.health_events import PendingDoubleInjuryRoll
 from ceres.character.domain.skills import (
     Admin,
@@ -103,8 +100,9 @@ class AgentMishap2Refuse(ChoiceBase):
 
         projection.get_current_career()
         pending_idx = 0
-        projection.summary.connections.append(
-            Enemy(source="The criminal figure who offered you a deal and didn't take kindly to your refusal")
+        projection.add_connection(
+            ConnectionKind.ENEMY,
+            origin="The criminal figure who offered you a deal and didn't take kindly to your refusal",
         )
         projection.pending_inputs.append(
             PendingDoubleInjuryRoll(

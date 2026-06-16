@@ -43,10 +43,7 @@ from ceres.character.domain.career.common_pending import (
     CareerSkillRollPendingBase,
 )
 from ceres.character.domain.character_state import CharacterProjection
-from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.connection import (
-    Ally,
-)
+from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.skills import (
     Admin,
     Advocate,
@@ -90,7 +87,7 @@ class ArmyMishap4JoinRing(ChoiceBase):
 
     def handle(self, projection: CharacterProjection, event) -> None:
         projection.get_current_career()
-        projection.summary.connections.append(Ally(source='Your commanding officer who brought you into the ring'))
+        projection.add_connection(ConnectionKind.ALLY, origin='Your commanding officer who brought you into the ring')
         _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
 
 

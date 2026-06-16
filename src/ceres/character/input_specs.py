@@ -43,6 +43,17 @@ class Reference:
 
 
 @dataclass
+class TextEntry:
+    """A free-text string value (name, note, description)."""
+
+    name: str
+    label: str
+    value: str = ''
+    placeholder: str = ''
+    multiline: bool = False
+
+
+@dataclass
 class InfoText:
     """Supplementary explanatory text — no input required."""
 
@@ -137,7 +148,7 @@ class CareerChoice:
     can_finish: bool = False
 
 
-InputSpec = NumberEntry | Select | Reference | InfoText | SelectWorld | CareerChoice
+InputSpec = NumberEntry | Select | Reference | TextEntry | InfoText | SelectWorld | CareerChoice
 
 
 def form_str(form: Any, key: str, default: str = '') -> str:

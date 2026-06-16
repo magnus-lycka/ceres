@@ -182,14 +182,14 @@ class TestRogueMishap3:
             character_id=1,
             summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD),
         )
-        proj.summary.connections.append(Contact(source='Old friend'))
+        proj.summary.connections.append(Contact(origin='Old friend'))
         RogueMishap3Handler.handle(proj, event_id=5, pending_idx=0)
 
         contacts = [c for c in proj.summary.connections if isinstance(c, Contact)]
         rivals = [c for c in proj.summary.connections if isinstance(c, Rival)]
         assert len(contacts) == 0
         assert len(rivals) == 1
-        assert 'contact' in rivals[0].source.lower()
+        assert 'contact' in rivals[0].origin.lower()
 
 
 # ── event 3: arrested and charged ────────────────────────────────────────────

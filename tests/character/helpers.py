@@ -50,6 +50,12 @@ from ceres.character.domain.character_start import (
 )
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.connection_events import (
+    ConnectionNameHandler,
+    ConnectionsRollHandler,
+    PendingConnectionName,
+    PendingConnectionsRoll,
+)
 from ceres.character.domain.health.health_events import (
     AgingCrisisHandler,
     AgingRollHandler,
@@ -238,6 +244,32 @@ class CharacterDriver:
     def benefit_choice(self, choice_index: int) -> CharacterDriver:
         pending = self._find(PendingBenefitChoice)
         return self._add(Event(fulfills=pending.pending_id, handler=BenefitChoiceHandler(choice_index=choice_index)))
+
+    def name_connection(self, name: str = '', note: str = '') -> CharacterDriver:
+        pending = self._find(PendingConnectionName)
+        return self._add(
+            Event(
+                fulfills=pending.pending_id,
+                handler=ConnectionNameHandler(
+                    connection_index=pending.connection_index,
+                    name=name,
+                    note=note,
+                ),
+            )
+        )
+
+    def connections_roll(self, count: int) -> CharacterDriver:
+        pending = self._find(PendingConnectionsRoll)
+        return self._add(
+            Event(
+                fulfills=pending.pending_id,
+                handler=ConnectionsRollHandler(
+                    connection_type=pending.connection_type,
+                    count=count,
+                    origin=pending.origin,
+                ),
+            )
+        )
 
     def career_choice(self, choice_cls: type[ChoiceBase]) -> CharacterDriver:
         pending = self._find(PendingChoices)

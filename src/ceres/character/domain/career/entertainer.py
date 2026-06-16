@@ -39,9 +39,6 @@ from ceres.character.domain.career.common import CommonMishap1Handler
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind, characteristic_dm
-from ceres.character.domain.connection import (
-    Enemy,
-)
 from ceres.character.domain.skills import (
     Advocate,
     ArtSkill,
@@ -119,8 +116,8 @@ class PendingEntertainerEvent8SkillRoll(CareerSkillRollPendingBase):
         if event.modified_roll >= 8:
             projection.pending_advancement_dm += 2
         else:
-            projection.summary.connections.append(
-                Enemy(source='A powerful politician who became your enemy after your public criticism')
+            projection.add_connection(
+                ConnectionKind.ENEMY, origin='A powerful politician who became your enemy after your public criticism'
             )
         # no pending added — _apply_skill_roll auto-queues advancement
 

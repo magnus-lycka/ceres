@@ -12,9 +12,7 @@ from ceres.character.domain.career.career_events import (
     MusterOutHandler,
     PendingAdvancement,
     PendingChoices,
-    PendingConnectionsRoll,
     PendingInitialTrainingChoice,
-    PendingMusterOut,
     PendingRankBonusChoice,
     PendingSkillChoice,
     PendingSkillTableChoice,
@@ -31,7 +29,6 @@ from ceres.character.domain.career.scholar import (
     PendingScholarEvent6SkillRoll,
     PendingScholarEvent11,
     PendingScholarScienceChoice,
-    PendingScholarScienceChoicePreCreated,
     ScholarEvent3Accept,
     ScholarEvent3Decline,
     ScholarEvent8Accept,
@@ -699,87 +696,94 @@ class TestScholarEvent3:
     Accept: 2 Science specialties, D3 Enemies, extra benefit roll deferred to muster out.
     Decline: nothing happens.
 
-    Tests use CharacterDriver and projection_diff to verify the full state delta — both that
-    expected things changed and that nothing else changed unexpectedly.
+    Tests verify the complete state delta using projection_diff — both that expected things
+    changed and that nothing else changed unexpectedly — in a single assertion per case.
     """
 
-    def test_accept_increments_extra_rolls_at_muster_out(self):
-        """Accepting queues an extra benefit roll for muster out, not an immediate roll."""
-        d = _setup_to_event_3_choice()
-        before_extra = d.projection.summary.career_terms[-1].require_muster_out().extra_rolls
-        d.career_choice(ScholarEvent3Accept)
-        assert d.projection.summary.career_terms[-1].require_muster_out().extra_rolls == before_extra + 1
-
-    def test_accept_does_not_create_pending_muster_out_during_career(self):
-        """No PendingMusterOut during an active career term — the benefit is paid at muster-out time."""
-        d = _setup_to_event_3_choice()
-        d.career_choice(ScholarEvent3Accept)
-        assert not any(isinstance(p, PendingMusterOut) for p in d.projection.pending_inputs)
-
-    def test_accept_adds_narrative_about_extra_muster_out_benefit(self):
-        d = _setup_to_event_3_choice()
-        before_len = len(d.projection.summary.narrative)
-        d.career_choice(ScholarEvent3Accept)
-        new_msgs = d.projection.summary.narrative[before_len:]
-        assert any('muster' in m.lower() for m in new_msgs)
-
-    def test_accept_queues_connections_roll_for_d3_enemies(self):
-        d = _setup_to_event_3_choice()
-        d.career_choice(ScholarEvent3Accept)
-        conn = next((p for p in d.projection.pending_inputs if isinstance(p, PendingConnectionsRoll)), None)
-        assert conn is not None
-        assert conn.options == [1, 2, 3]
-
-    def test_accept_queues_two_science_choice_pendings(self):
-        d = _setup_to_event_3_choice()
-        d.career_choice(ScholarEvent3Accept)
-        sciences = [p for p in d.projection.pending_inputs if isinstance(p, PendingScholarScienceChoicePreCreated)]
-        assert len(sciences) == 2
-        assert all(SpaceScience() in p.options and LifeScience() in p.options for p in sciences)
-
-    def test_accept_queues_advancement(self):
-        d = _setup_to_event_3_choice()
-        d.career_choice(ScholarEvent3Accept)
-        assert any(isinstance(p, PendingAdvancement) for p in d.projection.pending_inputs)
-
-    def test_accept_no_unexpected_projection_changes(self):
-        """Accept changes only extra_rolls, narrative, and pending_inputs — nothing else."""
+    def test_accept_full_state_delta(self):
+        """Accepting and resolving all consequences (D3=1 enemy, SpaceScience+LifeScience chosen)
+        ends with PendingAdvancement only — same shape as decline — plus skills, enemy, extra_rolls."""
         d = _setup_to_event_3_choice()
         before = d.snapshot()
         d.career_choice(ScholarEvent3Accept)
-        diff = projection_diff(before, d.projection)
-
-        all_changed_paths = {str(k) for cat in diff.values() for k in cat}
-        unexpected = {
-            p for p in all_changed_paths if not any(t in p for t in ('extra_rolls', 'narrative', 'pending_inputs'))
-        }
-        assert unexpected == set(), f'Unexpected projection changes: {unexpected}'
-
-    def test_accept_resolving_science_choices_grants_skills(self):
-        d = _setup_to_event_3_choice()
-        d.career_choice(ScholarEvent3Accept)
+        d.connections_roll(1)
         d.choose_career_skill(SpaceScience(planetology=Level(value=1)))
         d.choose_career_skill(LifeScience(biology=Level(value=1)))
-        assert d.projection.summary.skill_level(SpaceScience, -1) >= 1
-        assert d.projection.summary.skill_level(LifeScience, -1) >= 1
+        d.name_connection()
+        diff = projection_diff(before, d.projection)
 
-    def test_decline_only_adds_advancement_to_pending(self):
-        """Decline adds only PendingAdvancement — no connections, science choices, or extra rolls."""
+        choices_kind = PendingChoices.model_fields['kind'].default
+        advancement_kind = PendingAdvancement.model_fields['kind'].default
+        life_science_type = LifeScience.model_fields['type'].default
+        extra_benefit_txt = 'You gain an extra benefit roll at muster out (accepted research against your conscience).'
+        expected_diff = {
+            'dictionary_item_removed': ["root['pending_inputs'][0]['choices']"],
+            'iterable_item_added': {
+                "root['summary']['connections'][0]": {
+                    'display_label': None,
+                    'kind': 'connection_enemy',
+                    'name': '',
+                    'note': '',
+                    'origin': 'Scholar event 3',
+                    'term': 1,
+                },
+                "root['summary']['narrative'][1]": extra_benefit_txt,
+                "root['summary']['skills'][9]": {
+                    'biology': {'display_label': None, 'value': 1},
+                    'display_label': None,
+                    'genetics': {'display_label': None, 'value': 0},
+                    'psionicology': {'display_label': None, 'value': 0},
+                    'type': life_science_type,
+                    'xenology': {'display_label': None, 'value': 0},
+                },
+            },
+            'values_changed': {
+                "root['pending_inputs'][0]['instruction']": {
+                    'old_value': 'Accept (2 Science specialties + D3 Enemies + extra Benefit roll) or Decline?',
+                    'new_value': 'Advancement: INT 6+',
+                },
+                "root['pending_inputs'][0]['kind']": {
+                    'old_value': choices_kind,
+                    'new_value': advancement_kind,
+                },
+                "root['pending_inputs'][0]['pending_id'][0]": {'old_value': 8, 'new_value': 9},
+                "root['pending_inputs'][0]['pending_id'][1]": {'old_value': 0, 'new_value': 3},
+                "root['summary']['career_terms'][0]['muster_out']['extra_rolls']": {
+                    'old_value': 0,
+                    'new_value': 1,
+                },
+                "root['summary']['skills'][8]['planetology']['value']": {'old_value': 0, 'new_value': 1},
+            },
+        }
+        assert diff == expected_diff
+
+    def test_decline_state_delta(self):
+        """Declining only replaces PendingChoices with PendingAdvancement — nothing else changes."""
         d = _setup_to_event_3_choice()
         before = d.snapshot()
         d.career_choice(ScholarEvent3Decline)
         diff = projection_diff(before, d.projection)
 
-        all_changed_paths = {str(k) for cat in diff.values() for k in cat}
-        unexpected = {p for p in all_changed_paths if 'pending_inputs' not in p}
-        assert unexpected == set(), f'Unexpected projection changes on decline: {unexpected}'
-
-        assert any(isinstance(p, PendingAdvancement) for p in d.projection.pending_inputs)
-        assert not any(isinstance(p, PendingConnectionsRoll) for p in d.projection.pending_inputs)
-        assert (
-            d.projection.summary.career_terms[-1].require_muster_out().extra_rolls
-            == before.summary.career_terms[-1].require_muster_out().extra_rolls
-        )
+        choices_kind = PendingChoices.model_fields['kind'].default
+        advancement_kind = PendingAdvancement.model_fields['kind'].default
+        expected_diff = {
+            'dictionary_item_removed': ["root['pending_inputs'][0]['choices']"],
+            'values_changed': {
+                "root['pending_inputs'][0]['instruction']": {
+                    'old_value': 'Accept (2 Science specialties + D3 Enemies + extra Benefit roll) or Decline?',
+                    'new_value': 'Advancement: INT 6+',
+                },
+                "root['pending_inputs'][0]['kind']": {
+                    'old_value': choices_kind,
+                    'new_value': advancement_kind,
+                },
+                "root['pending_inputs'][0]['pending_id'][0]": {
+                    'old_value': 8,
+                    'new_value': 9,
+                },
+            },
+        }
+        assert diff == expected_diff
 
 
 class TestScholarEvent8:

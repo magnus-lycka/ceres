@@ -37,11 +37,7 @@ from ceres.character.domain.career.career_events import (
 from ceres.character.domain.career.common import CommonMishap1Handler
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 from ceres.character.domain.character_state import CharacterProjection
-from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.connection import (
-    Enemy,
-    Rival,
-)
+from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.health.health_events import PendingInjuryTable
 from ceres.character.domain.skills import (
     Animals,
@@ -81,7 +77,7 @@ class PendingDrifterMishap5SkillRoll(CareerSkillRollPendingBase):
         )
 
         projection.get_current_career()
-        projection.summary.connections.append(Rival(source='A friend who turned on you'))
+        projection.add_connection(ConnectionKind.RIVAL, origin='A friend who turned on you')
         if event.modified_roll == 2:
             _set_forced_prison_career(projection, 'Betrayed — rolled 2, sent to Prisoner career.')
         _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
@@ -243,7 +239,7 @@ class DrifterEvent8Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.summary.connections.append(Enemy(source='Someone who attacked you on your travels'))
+        projection.add_connection(ConnectionKind.ENEMY, origin='Someone who attacked you on your travels')
         projection.pending_inputs.append(
             PendingDrifterEvent8SkillRoll(
                 pending_id=(event_id, pending_idx),

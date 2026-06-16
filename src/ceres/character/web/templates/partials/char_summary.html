@@ -61,7 +61,10 @@
     <div class="text-xs uppercase tracking-widest text-gray-600 mb-2">Connections</div>
     <div class="text-xs text-gray-400 space-y-0.5">
       {% for c in summary.connections %}
-      <div>{{ c.display_name }}{% if c.source %}: {{ c.source }}{% endif %}</div>
+      <div>
+        <span class="text-gray-300">{{ c.display_name }}</span>{% if c.name %} <span class="text-gray-200">{{ c.name }}</span>{% endif %}{% if c.term is not none %} <span class="text-gray-600">(T{{ c.term }})</span>{% endif %}
+        {% if c.note %}<span class="text-gray-500"> — {{ c.note }}</span>{% elif c.origin %}<span class="text-gray-600"> — {{ c.origin }}</span>{% endif %}
+      </div>
       {% endfor %}
     </div>
   </div>

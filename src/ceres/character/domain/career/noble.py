@@ -42,11 +42,7 @@ from ceres.character.domain.career.career_events import (
 from ceres.character.domain.career.common import CommonMishap1Handler
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 from ceres.character.domain.character_state import CharacterProjection
-from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.connection import (
-    Enemy,
-    Rival,
-)
+from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.skills import (
     Admin,
     Advocate,
@@ -153,7 +149,7 @@ class NobleEvent8SkillRoll(CareerSkillRollPendingBase):
             # no pending added — _apply_skill_roll auto-queues advancement
         else:
             projection.get_current_career()
-            projection.summary.connections.append(Enemy(source='A noble who caught you in a conspiracy'))
+            projection.add_connection(ConnectionKind.ENEMY, origin='A noble who caught you in a conspiracy')
             _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
 
 
@@ -177,7 +173,7 @@ class NobleEvent8Refuse(ChoiceBase):
 
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
-        projection.summary.connections.append(Rival(source='A noble conspirator you declined to join'))
+        projection.add_connection(ConnectionKind.RIVAL, origin='A noble conspirator you declined to join')
         projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 
 

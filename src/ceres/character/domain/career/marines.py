@@ -39,12 +39,7 @@ from ceres.character.domain.career.career_events import (
 from ceres.character.domain.career.common import CommonMishap1Handler, handle_advanced_training
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 from ceres.character.domain.character_state import CharacterProjection
-from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.connection import (
-    Ally,
-    Contact,
-    Enemy,
-)
+from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.skills import (
     Admin,
     Advocate,
@@ -87,7 +82,9 @@ class MarinesMishap4Refuse(ChoiceBase):
         from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
         projection.get_current_career()
-        projection.summary.connections.append(Contact(source='A fellow soldier who was part of that black ops mission'))
+        projection.add_connection(
+            ConnectionKind.CONTACT, origin='A fellow soldier who was part of that black ops mission'
+        )
         _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
 
 
@@ -141,8 +138,8 @@ class MarinesEvent9Report(ChoiceBase):
 
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
-        projection.summary.connections.append(
-            Enemy(source='Your commanding officer, whom you reported for the mission failure')
+        projection.add_connection(
+            ConnectionKind.ENEMY, origin='Your commanding officer, whom you reported for the mission failure'
         )
         projection.pending_advancement_dm += 2
         projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
@@ -154,8 +151,8 @@ class MarinesEvent9Protect(ChoiceBase):
 
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
-        projection.summary.connections.append(
-            Ally(source='Your commanding officer, whom you protected from the fallout')
+        projection.add_connection(
+            ConnectionKind.ALLY, origin='Your commanding officer, whom you protected from the fallout'
         )
         projection.pending_advancement_dm += 1
         projection.pending_inputs.append(career_progress_pending(projection, career, event.id))

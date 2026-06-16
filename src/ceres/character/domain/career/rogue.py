@@ -37,12 +37,10 @@ from ceres.character.domain.career.career_events import (
 from ceres.character.domain.career.common import CommonMishap1Handler
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 from ceres.character.domain.character_state import CharacterProjection
-from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.connection import (
     Ally,
     Contact,
-    Enemy,
-    Rival,
 )
 from ceres.character.domain.skills import (
     Advocate,
@@ -126,11 +124,11 @@ class RogueMishap3Handler(CareerHandlerBase):
         if friends:
             betrayer = friends[-1]
             projection.summary.connections.remove(betrayer)
-            projection.summary.connections.append(
-                Rival(source=f'A friend who turned on you (formerly {betrayer.display_name})')
+            projection.add_connection(
+                ConnectionKind.RIVAL, origin=f'A friend who turned on you (formerly {betrayer.display_name})'
             )
         else:
-            projection.summary.connections.append(Rival(source='An unknown betrayer'))
+            projection.add_connection(ConnectionKind.RIVAL, origin='An unknown betrayer')
 
         projection.pending_inputs.append(
             PendingChoices(
@@ -219,7 +217,7 @@ class RogueEvent6Backstab(ChoiceBase):
 
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
-        projection.summary.connections.append(Enemy(source='A fellow rogue you betrayed'))
+        projection.add_connection(ConnectionKind.ENEMY, origin='A fellow rogue you betrayed')
         projection.pending_advancement_dm += 2
         projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 
@@ -230,7 +228,7 @@ class RogueEvent6Refuse(ChoiceBase):
 
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
-        projection.summary.connections.append(Contact(source='A fellow rogue you worked alongside'))
+        projection.add_connection(ConnectionKind.CONTACT, origin='A fellow rogue you worked alongside')
         projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 
 

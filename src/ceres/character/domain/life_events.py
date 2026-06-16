@@ -25,13 +25,12 @@ class ConnectionKindChoiceHandler(EventHandlerBase):
     connection_kind: ConnectionKind
 
     def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
-        from ceres.character.domain.connection import make_connection
 
         if isinstance(fulfilled_pending, PendingLifeEventChoice):
             source = f'Life event roll {fulfilled_pending.roll}'
         else:
             source = 'unknown'
-        projection.summary.connections.append(make_connection(self.connection_kind, source=f'Life event: {source}'))
+        projection.add_connection(self.connection_kind, origin=f'Life event: {source}')
         narratives = {
             4: {
                 ConnectionKind.RIVAL: 'Life event: relationship ended, gained a rival',
@@ -102,11 +101,11 @@ class LifeEventHandler(EventHandlerBase):
                     _queue_advancement(projection, career, event.id, 1)
             case 5 | 6:
                 source = 'Life event: improved relationship' if self.roll == 5 else 'Life event: new relationship'
-                projection.summary.connections.append(Ally(source=source))
+                projection.add_connection(ConnectionKind.ALLY, origin=source)
                 if career is not None:
                     _queue_advancement(projection, career, event.id)
             case 7:
-                projection.summary.connections.append(Contact(source='Life event: new contact'))
+                projection.add_connection(ConnectionKind.CONTACT, origin='Life event: new contact')
                 if career is not None:
                     _queue_advancement(projection, career, event.id)
             case 8:
@@ -171,7 +170,6 @@ class LifeEventUnusualHandler(EventHandlerBase):
     roll: int
 
     def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
-        from ceres.character.domain.connection import Contact
 
         if not (1 <= self.roll <= 6):
             raise ReplayError(f'Life event unusual roll must be 1-6, got {self.roll}')
@@ -184,7 +182,7 @@ class LifeEventUnusualHandler(EventHandlerBase):
             if career is not None:
                 _queue_advancement(projection, career, event.id, 1)
         elif self.roll == 2:
-            projection.summary.connections.append(Contact(source='Unusual event: alien contact'))
+            projection.add_connection(ConnectionKind.CONTACT, origin='Unusual event: alien contact')
             projection.summary.narrative.append('Unusual event: alien encounter — gained contact and a science skill')
             projection.pending_inputs.append(
                 PendingLifeEventAlienScience(
@@ -219,7 +217,7 @@ class BetrayalConvertHandler(EventHandlerBase):
         old = projection.summary.connections[self.connection_index]
         projection.summary.connections[self.connection_index] = make_connection(
             self.new_kind,
-            source=f'Betrayal: {old.source}',
+            origin=f'Betrayal: {old.origin}',
         )
 
 
@@ -310,7 +308,7 @@ class PendingLifeEventBetrayalConvert(PendingInputBase):
         options: list[tuple[str, str]] = []
         for index, connection in enumerate(projection.summary.connections):
             if isinstance(connection, (Contact, Ally)):
-                label = f'{connection.kind.value.replace("connection_", "").title()} ({connection.source})'
+                label = f'{connection.kind.value.replace("connection_", "").title()} ({connection.origin})'
                 options.append((f'{label} → Rival', f'{index}|{ConnectionKind.RIVAL.value}'))
                 options.append((f'{label} → Enemy', f'{index}|{ConnectionKind.ENEMY.value}'))
         if not options:

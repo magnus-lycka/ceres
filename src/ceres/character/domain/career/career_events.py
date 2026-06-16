@@ -478,11 +478,11 @@ class SkillRollHandler(EventHandlerBase):
     def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
 
         career = projection.get_current_career()
-        pending_count_before = len(projection.pending_inputs)
+        blocking_count_before = sum(1 for p in projection.pending_inputs if p.blocking)
         if fulfilled_pending is not None:
             fulfilled_pending.resolve(projection, event)
         if (
-            len(projection.pending_inputs) == pending_count_before
+            sum(1 for p in projection.pending_inputs if p.blocking) == blocking_count_before
             and projection.summary.current_career is not None
             and not any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
         ):

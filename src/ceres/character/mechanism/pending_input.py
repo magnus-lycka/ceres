@@ -39,13 +39,15 @@ class PendingInputBase(BaseModel):
             if args and isinstance(args[0], str):
                 PendingInputBase._registry[args[0]] = cls
 
-    pending_id: tuple[int, int]
+    pending_id: tuple[int, int] | str
     kind: str
     instruction: str
     blocking: bool = True
 
     @property
     def id(self) -> str:
+        if isinstance(self.pending_id, str):
+            return self.pending_id
         return f'{self.pending_id[0]}.{self.pending_id[1]}'
 
     def event_from_form(self, form: Any) -> Any:

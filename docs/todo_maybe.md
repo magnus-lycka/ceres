@@ -988,6 +988,8 @@ Known differences:
 - **Mishap 1** — Core gives a choice between the severe-injury result and
   rolling twice on the Injury table and taking the lower result. Ceres applies
   only the severe-injury effect, with no choice.
+- **Mishap 3** - Ceres makes an arbitrary decision concerning which friend becomes
+  a rival, instead of letting the player decide.
 - **Mishap 4** — Core specifies Pilot (small craft or spacecraft) and Athletics
   (dexterity); Ceres offers generic `Pilot()` and `Athletics()`.
 - **Event 3** — on a failed defence Core also grants an Enemy, and hiring a
@@ -1103,3 +1105,4 @@ This is a non-trivial refactor because Pydantic generics interact with
 discriminated unions, but it would let us replace all the defensive `getattr`
 calls in `automation.py`, `storage.py`, `habitation.py`, and `power.py` with
 direct attribute access.
+

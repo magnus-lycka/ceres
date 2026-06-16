@@ -44,10 +44,7 @@ from ceres.character.domain.career.common_pending import (
     CareerSkillRollPendingBase,
 )
 from ceres.character.domain.character_state import CharacterProjection
-from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.connection import (
-    Enemy,
-)
+from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.health.health_events import PendingAgingRoll
 from ceres.character.domain.skills import (
     Admin,
@@ -99,7 +96,7 @@ class ScholarMishap3Openly(ChoiceBase):
     label: str = 'Continue openly (Science +1, gain Enemy)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        projection.summary.connections.append(Enemy(source='Government officials who interfered with your research'))
+        projection.add_connection(ConnectionKind.ENEMY, origin='Government officials who interfered with your research')
         _append_scholar_science_choice(projection, event.id)
 
 
@@ -188,8 +185,10 @@ class ScholarEvent3Accept(ChoiceBase):
         projection.pending_inputs.append(
             PendingConnectionsRoll(
                 pending_id=(event.id, 0),
+                connection_type=ConnectionKind.ENEMY,
                 instruction='Roll D3 for number of Enemies gained',
                 options=[1, 2, 3],
+                origin='Scholar event 3',
             )
         )
         for i, label in enumerate(['first', 'second'], start=1):
@@ -280,7 +279,9 @@ class ScholarEvent8SkillRoll(CareerSkillRollPendingBase):
 
     def resolve(self, projection: CharacterProjection, event: Any) -> None:
         if event.modified_roll >= 8:
-            projection.summary.connections.append(Enemy(source='A colleague who knows you cheated your way to results'))
+            projection.add_connection(
+                ConnectionKind.ENEMY, origin='A colleague who knows you cheated your way to results'
+            )
             projection.pending_inputs.append(
                 PendingSkillChoice(
                     pending_id=(event.id, 0),
@@ -289,7 +290,7 @@ class ScholarEvent8SkillRoll(CareerSkillRollPendingBase):
                 )
             )
         else:
-            projection.summary.connections.append(Enemy(source='Someone who caught you falsifying research'))
+            projection.add_connection(ConnectionKind.ENEMY, origin='Someone who caught you falsifying research')
         # _apply_skill_roll creates advancement if no new pending (failure), or after skill_choice (success)
 
 

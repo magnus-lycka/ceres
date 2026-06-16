@@ -40,7 +40,7 @@ def _deserialise_event_handler(v: Any) -> EventHandlerBase:
 
 class Event(BaseModel):
     id: int = 0
-    fulfills: tuple[int, int] | None = None
+    fulfills: tuple[int, int] | str | None = None
     handler: Annotated[SerializeAsAny[EventHandlerBase], BeforeValidator(_deserialise_event_handler)]
 
     @property

@@ -430,7 +430,7 @@ class TestConnections:
         projection = replay(1, events)
 
         rival = next(c for c in projection.summary.connections if isinstance(c, Rival))
-        assert 'conflict' in rival.source.lower() or 'rival' in rival.source.lower()
+        assert 'conflict' in rival.origin.lower() or 'rival' in rival.origin.lower()
 
     def test_mishap_3_creates_pending_for_contacts_roll(self):
         # Mishap 3: Gain 1D Contacts and D3 Enemies

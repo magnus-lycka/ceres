@@ -40,11 +40,6 @@ from ceres.character.domain.career.common import CommonMishap1Handler
 from ceres.character.domain.career.common_pending import CareerSkillChoicePendingBase, CareerSkillRollPendingBase
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind
-from ceres.character.domain.connection import (
-    Ally,
-    Contact,
-    Enemy,
-)
 from ceres.character.domain.homeworld.homeworld_events import (
     PendingHomeworldChangeOffered,
     PendingHomeworldChangeRequired,
@@ -128,7 +123,7 @@ class PendingScoutEvent8SkillRoll(CareerSkillRollPendingBase):
 
     def resolve(self, projection: CharacterProjection, event: Any) -> None:
         if event.modified_roll >= 8:
-            projection.summary.connections.append(Ally(source='Alien intelligence contact'))
+            projection.add_connection(ConnectionKind.ALLY, origin='Alien intelligence contact')
             projection.pending_advancement_dm += 2
         else:
             projection.pending_inputs.append(
@@ -163,10 +158,10 @@ class PendingScoutEvent9SkillRoll(CareerSkillRollPendingBase):
 
     def resolve(self, projection: CharacterProjection, event: Any) -> None:
         if event.modified_roll >= 8:
-            projection.summary.connections.append(Contact(source='Disaster survivor'))
+            projection.add_connection(ConnectionKind.CONTACT, origin='Disaster survivor')
             projection.pending_advancement_dm += 2
         else:
-            projection.summary.connections.append(Enemy(source='Disaster relief gone wrong'))
+            projection.add_connection(ConnectionKind.ENEMY, origin='Disaster relief gone wrong')
 
 
 class ScoutEvent9Handler(CareerHandlerBase):
@@ -192,7 +187,7 @@ class PendingScoutEvent10SkillRoll(CareerSkillRollPendingBase):
 
     def resolve(self, projection: CharacterProjection, event: Any) -> None:
         if event.modified_roll >= 8:
-            projection.summary.connections.append(Contact(source='Alien contact from the fringes of Charted Space'))
+            projection.add_connection(ConnectionKind.CONTACT, origin='Alien contact from the fringes of Charted Space')
             projection.pending_inputs.append(
                 PendingSkillChoice(
                     pending_id=(event.id, 0),
@@ -261,7 +256,7 @@ class Scout(CareerData):
         insert_at = len(projection.pending_inputs)
         super().start_new_term(projection, assignment, event_id, is_continuation)
         homeworld = projection.summary.homeworld
-        used_sub_ids = {p.pending_id[1] for p in projection.pending_inputs if p.pending_id[0] == event_id}
+        used_sub_ids = {int(p.pending_id[1]) for p in projection.pending_inputs if p.pending_id[0] == event_id}
         homeworld_idx = max(used_sub_ids, default=-1) + 1
         if 'S' in homeworld.bases or 'W' in homeworld.bases:
             homeworld_pending = PendingHomeworldChangeOffered(

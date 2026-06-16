@@ -44,11 +44,7 @@ from ceres.character.domain.career.career_events import (
 from ceres.character.domain.career.common import CommonMishap1Handler
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 from ceres.character.domain.character_state import CharacterProjection
-from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.connection import (
-    Ally,
-    Enemy,
-)
+from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.health.health_events import (
     PendingDoubleInjuryRoll,
     PendingInjuryTable,
@@ -114,7 +110,7 @@ class PendingPrisonerMishap3FightSkillRoll(CareerSkillRollPendingBase):
 
         career = projection.get_current_career()
         if event.modified_roll >= 8:
-            projection.summary.connections.append(Enemy(source='The prison gang leader you stood up to'))
+            projection.add_connection(ConnectionKind.ENEMY, origin='The prison gang leader you stood up to')
             projection.summary.parole_threshold = min(12, (projection.summary.parole_threshold or 0) + 1)
             projection.pending_inputs.append(
                 _advancement_pending(career, projection.summary.current_assignment, event.id)
@@ -257,7 +253,7 @@ class PendingPrisonerEvent5SkillRoll(CareerSkillRollPendingBase):
                 )
             )
         else:
-            projection.summary.connections.append(Enemy(source='The prison gang you refused to join'))
+            projection.add_connection(ConnectionKind.ENEMY, origin='The prison gang you refused to join')
         # Fail: _apply_skill_roll auto-queues advancement (no pending added)
         # Success: skill choice queued; advancement queued after it resolves
 
@@ -343,7 +339,7 @@ class PrisonerEvent7Gang(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
         projection.summary.parole_threshold = min(12, (projection.summary.parole_threshold or 0) + 1)
-        projection.summary.connections.append(Enemy(source='A prison gang that forced itself on you'))
+        projection.add_connection(ConnectionKind.ENEMY, origin='A prison gang that forced itself on you')
         projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 
 
@@ -365,8 +361,8 @@ class PrisonerEvent7Visitation(ChoiceBase):
 
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
-        projection.summary.connections.append(
-            Ally(source='A visitor who became a loyal friend during your imprisonment')
+        projection.add_connection(
+            ConnectionKind.ALLY, origin='A visitor who became a loyal friend during your imprisonment'
         )
         projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 
@@ -566,7 +562,7 @@ class PendingPrisonerEvent12HeroismSkillRoll(CareerSkillRollPendingBase):
 
         career = projection.get_current_career()
         if event.modified_roll >= 8:
-            projection.summary.connections.append(Ally(source='A fellow prisoner whose life you saved'))
+            projection.add_connection(ConnectionKind.ALLY, origin='A fellow prisoner whose life you saved')
             projection.summary.parole_threshold = max(0, (projection.summary.parole_threshold or 0) - 2)
             # _apply_skill_roll auto-queues advancement (no pending added)
         else:

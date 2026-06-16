@@ -39,11 +39,7 @@ from ceres.character.domain.career.career_events import (
 from ceres.character.domain.career.common import CommonMishap1Handler, handle_advanced_training
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 from ceres.character.domain.character_state import CharacterProjection
-from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.connection import (
-    Contact,
-    Rival,
-)
+from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.skills import (
     Admin,
     Advocate,
@@ -91,7 +87,7 @@ class CitizenMishap4Cooperate(ChoiceBase):
         from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
         projection.get_current_career()
-        projection.summary.connections.append(Contact(source='The investigator who questioned you'))
+        projection.add_connection(ConnectionKind.CONTACT, origin='The investigator who questioned you')
         _apply_mishap_ejection(projection, event.id, 0, lose_current_term=False)
 
 
@@ -103,7 +99,7 @@ class CitizenMishap4Resist(ChoiceBase):
         from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
         projection.get_current_career()
-        projection.summary.connections.append(Rival(source='The investigator who came after you'))
+        projection.add_connection(ConnectionKind.RIVAL, origin='The investigator who came after you')
         _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
 
 
@@ -158,7 +154,7 @@ class CitizenEvent8GainContact(ChoiceBase):
     label: str = 'Criminal contact'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        projection.summary.connections.append(Contact(source='A shady contact from your time working in the city'))
+        projection.add_connection(ConnectionKind.CONTACT, origin='A shady contact from your time working in the city')
 
 
 class CitizenEvent8DoSo(ChoiceBase):

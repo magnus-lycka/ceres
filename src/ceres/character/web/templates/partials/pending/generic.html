@@ -54,6 +54,22 @@
   {% elif spec.__class__.__name__ == 'Reference' %}
   <input type="hidden" name="{{ spec.name }}" value="{{ spec.value }}">
 
+  {% elif spec.__class__.__name__ == 'TextEntry' %}
+  <div class="mb-4">
+    <label class="block text-xs text-gray-500 mb-1">{{ spec.label }}</label>
+    {% if spec.multiline %}
+    <textarea name="{{ spec.name }}"
+              placeholder="{{ spec.placeholder }}"
+              rows="3"
+              class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 text-sm focus:outline-none focus:border-amber-500">{{ spec.value }}</textarea>
+    {% else %}
+    <input type="text" name="{{ spec.name }}"
+           value="{{ spec.value }}"
+           placeholder="{{ spec.placeholder }}"
+           class="w-full bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
+    {% endif %}
+  </div>
+
   {% elif spec.__class__.__name__ == 'InfoText' %}
   <p class="text-xs text-gray-500 mb-4">{{ spec.text }}</p>
 

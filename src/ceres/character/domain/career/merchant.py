@@ -41,11 +41,7 @@ from ceres.character.domain.career.career_events import (
 from ceres.character.domain.career.common import CommonMishap1Handler, handle_advanced_training
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 from ceres.character.domain.character_state import CharacterProjection
-from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.connection import (
-    Enemy,
-    Rival,
-)
+from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.skills import (
     Admin,
     Advocate,
@@ -89,7 +85,7 @@ class MerchantEvent3SkillRoll(CareerSkillRollPendingBase):
             # no pending added — _apply_skill_roll auto-queues advancement
         else:
             projection.get_current_career()
-            projection.summary.connections.append(Enemy(source='Someone who caught you running contraband'))
+            projection.add_connection(ConnectionKind.ENEMY, origin='Someone who caught you running contraband')
             _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
 
 
@@ -113,7 +109,7 @@ class MerchantEvent3Refuse(ChoiceBase):
 
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
-        projection.summary.connections.append(Rival(source='A merchant contact who wanted you to run contraband'))
+        projection.add_connection(ConnectionKind.RIVAL, origin='A merchant contact who wanted you to run contraband')
         projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
 
 

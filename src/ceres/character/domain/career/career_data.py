@@ -106,9 +106,8 @@ class GainContactEffect(BaseModel):
 
     def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
         from ceres.character.domain.characteristics import ConnectionKind
-        from ceres.character.domain.connection import make_connection
 
-        projection.summary.connections.append(make_connection(ConnectionKind.CONTACT, source=source))
+        projection.add_connection(ConnectionKind.CONTACT, origin=source)
 
 
 class GainAllyEffect(BaseModel):
@@ -116,9 +115,8 @@ class GainAllyEffect(BaseModel):
 
     def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
         from ceres.character.domain.characteristics import ConnectionKind
-        from ceres.character.domain.connection import make_connection
 
-        projection.summary.connections.append(make_connection(ConnectionKind.ALLY, source=source))
+        projection.add_connection(ConnectionKind.ALLY, origin=source)
 
 
 class GainRivalEffect(BaseModel):
@@ -126,9 +124,8 @@ class GainRivalEffect(BaseModel):
 
     def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
         from ceres.character.domain.characteristics import ConnectionKind
-        from ceres.character.domain.connection import make_connection
 
-        projection.summary.connections.append(make_connection(ConnectionKind.RIVAL, source=source))
+        projection.add_connection(ConnectionKind.RIVAL, origin=source)
 
 
 class GainEnemyEffect(BaseModel):
@@ -136,9 +133,8 @@ class GainEnemyEffect(BaseModel):
 
     def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
         from ceres.character.domain.characteristics import ConnectionKind
-        from ceres.character.domain.connection import make_connection
 
-        projection.summary.connections.append(make_connection(ConnectionKind.ENEMY, source=source))
+        projection.add_connection(ConnectionKind.ENEMY, origin=source)
 
 
 class GainConnectionsRolledEffect(BaseModel):

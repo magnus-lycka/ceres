@@ -204,7 +204,7 @@ class CharacterSummary(BaseModel):
 
         changes.extend(f'Benefit: {b.display_label}' for b in other.benefits[len(self.benefits) :])
         changes.extend(
-            f'New {c.display_name}: {c.source or "unknown"}' for c in other.connections[len(self.connections) :]
+            f'New {c.display_name}: {c.origin or "unknown"}' for c in other.connections[len(self.connections) :]
         )
         changes.extend(f'Problem: {p}' for p in other.problems[len(self.problems) :])
 
@@ -225,6 +225,25 @@ class CharacterProjection(BaseModel):
     prisoner_freed: bool = False  # set by _apply_prisoner_advancement when parole granted
     forced_stay: bool = False  # natural 12 on advancement: character must stay this term
     forced_leave: bool = False  # advancement roll ≤ terms: character must leave this term
+
+    def add_connection(self, kind: Any, *, origin: str = '') -> None:
+        from ceres.character.domain.connection import make_connection
+        from ceres.character.domain.connection_events import PendingConnectionName
+
+        self.summary.connections.append(
+            make_connection(kind, term=self.summary.terms_started_in_pre_and_careers, origin=origin)
+        )
+        conn_idx = len(self.summary.connections) - 1
+        kind_label = kind.value.replace('connection_', '').title()
+        self.pending_inputs.append(
+            PendingConnectionName(
+                pending_id=f'connection_name_{conn_idx}',
+                connection_index=conn_idx,
+                connection_kind=kind,
+                note_prefill=origin,
+                instruction=f'Name this {kind_label} ({origin})',
+            )
+        )
 
     def has_blocking_pending(self) -> bool:
         return any(p.blocking for p in self.pending_inputs)

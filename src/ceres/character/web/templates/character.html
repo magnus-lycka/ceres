@@ -161,11 +161,22 @@
 <div class="mb-6">
   <h2 class="text-xs uppercase tracking-widest text-gray-600 mb-3">Connections</h2>
   <div class="text-sm space-y-1">
+    {% set conn_colors = {'connection_contact': 'text-cyan-400', 'connection_ally': 'text-green-400', 'connection_rival': 'text-yellow-400', 'connection_enemy': 'text-red-400'} %}
     {% for conn in summary.connections %}
-    <div>
-      <span class="text-xs uppercase tracking-wide font-bold {{ conn.color_class }}">{{ conn.display_name }}</span>
-      {% if conn.source %}
-        <span class="text-gray-500 ml-2 text-xs">{{ conn.source }}</span>
+    <div class="py-1">
+      <div class="flex items-baseline gap-2">
+        <span class="text-xs uppercase tracking-wide font-bold {{ conn_colors.get(conn.kind, 'text-gray-400') }}">{{ conn.display_name }}</span>
+        {% if conn.name %}
+          <span class="text-gray-200">{{ conn.name }}</span>
+        {% endif %}
+        {% if conn.term is not none %}
+          <span class="text-gray-600 text-xs ml-auto">Term {{ conn.term }}</span>
+        {% endif %}
+      </div>
+      {% if conn.note %}
+        <div class="text-gray-400 text-xs mt-0.5">{{ conn.note }}</div>
+      {% elif conn.origin %}
+        <div class="text-gray-600 text-xs mt-0.5 italic">{{ conn.origin }}</div>
       {% endif %}
     </div>
     {% endfor %}

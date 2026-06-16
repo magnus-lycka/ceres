@@ -41,7 +41,7 @@ from ceres.character.domain.career.common import CommonMishap1Handler
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind
-from ceres.character.domain.connection import Ally, Contact, Enemy, make_connection
+from ceres.character.domain.connection import Ally, Contact, make_connection
 from ceres.character.domain.health.health_events import (
     PendingInjuryTable,
 )
@@ -139,7 +139,7 @@ class PsionMishap4Accept(ChoiceBase):
     label: str = 'Accept (continue in Psion career and gain an Enemy)'
 
     def handle(self, projection: CharacterProjection, event: Any) -> None:
-        projection.summary.connections.append(Enemy(source='Unethical psionic work'))
+        projection.add_connection(ConnectionKind.ENEMY, origin='Unethical psionic work')
         career = projection.get_current_career()
         projection.pending_inputs.append(_advancement_pending(career, projection.summary.current_assignment, event.id))
 
@@ -221,9 +221,11 @@ class PsionConnectionConvertedHandler(EventHandlerBase):
             connections[self.connection_index], (Contact, Ally)
         ):
             old = connections[self.connection_index]
-            connections[self.connection_index] = make_connection(self.new_kind, source=old.source)
+            connections[self.connection_index] = make_connection(
+                self.new_kind, term=old.term, origin=old.origin, name=old.name, note=old.note
+            )
         else:
-            connections.append(make_connection(self.new_kind, source='Psion career'))
+            projection.add_connection(self.new_kind, origin='Psion career')
         if self.continue_term and projection.summary.current_career is not None:
             career = projection.get_current_career()
             projection.pending_inputs.append(
@@ -248,7 +250,7 @@ class PendingPsionConnectionConversion(PendingInputBase):
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
         options = [
-            (f'{connection.display_name}: {connection.source}', str(index))
+            (f'{connection.display_name}: {connection.origin}', str(index))
             for index, connection in enumerate(projection.summary.connections)
             if isinstance(connection, (Contact, Ally))
         ]
@@ -421,7 +423,7 @@ class Psion(CareerData):
             insert_at = 1
         if projection.summary.homeworld.uwp.startswith('X'):
             return
-        used_sub_ids = {p.pending_id[1] for p in projection.pending_inputs if p.pending_id[0] == event_id}
+        used_sub_ids = {int(p.pending_id[1]) for p in projection.pending_inputs if p.pending_id[0] == event_id}
         homeworld_idx = max(used_sub_ids, default=-1) + 1
         projection.pending_inputs.insert(
             insert_at,
