@@ -66,7 +66,7 @@ Current Ceres status: only `Humaniti` and `Vilani` are defined in
 | Vargr | Major | AoCS 1 | — | SOC → CHA | — | CHA gain/loss mechanic |
 | Vegan | Alien | Sol/AoCS | EDU+2, SOC-2 | — | — | First career must be Drifter; 200+ year lifespan |
 | Vilani | Major | Core | — | — | — | No mechanical differences |
-| Virushi | Alien | JTAS 5 | STR=1D+10, END=1D+10, DEX+2, SOC-2 | — | — | SOC career gains → EDU; no Army/Navy/Marines |
+| Virushi | Alien | JTAS 5 / Deepdark | STR=1D+10, END=1D+10, DEX+2, SOC-2 | — | — | SOC career gains → EDU; no Army/Navy/Marines; 8-ton staterooms |
 | Za'tachk | Alien | AoCS 4 | STR+1; Matriarchs INT+1 EDU+1 BOL-1; Scouts INT-1 EDU-1 BOL+1 | — | BOL (1D+1) | Three sexes; age 10/15 start; Coward trait |
 | Zhodani | Major | AoCS 1 / BTC | EDU min 8 if SOC 10+ | — | PSI (rolled first) | Social class tiers gate careers |
 
@@ -804,7 +804,7 @@ within the Third Imperium.
   (double all high-gravity penalties; can never acclimatise).
 
 #### Virushi
-*Source: JTAS Vol. 5 (`refs/jtas/5/07_alien.md`)*
+*Source: JTAS Vol. 5 (`refs/jtas/5/07_alien.md`); also The Deep Dark (`refs/deepdark/03_aliens_of_the_buffer.md`) — same mechanics, adds explicit stateroom sizes*
 
 Enormous pacifist herbivores from Reaver's Deep.
 
