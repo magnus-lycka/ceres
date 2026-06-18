@@ -12,62 +12,61 @@ Current Ceres status: only `Humaniti` and `Vilani` are defined in
 
 ## Quick-reference table
 
-| Species | Source | Characteristic changes | Replacement char | New char | Special |
-|---|---|---|---|---|---|
-| Solomani | AoCS 2 | — | — | — | Race roll; party patronage; SolSec monitor |
-| Vilani | Core | — | — | — | No mechanical differences |
-| Zhodani | AoCS 1 / BTC | EDU min 8 if SOC 10+ | — | PSI (rolled first) | Social class tiers gate careers |
-| Vargr | AoCS 1 | — | SOC → CHA | — | CHA gain/loss mechanic |
-| Aslan | AoCS 1 | STR+2 DEX-2 END+1 (m); STR+1 DEX-1 END+2 (f) | SOC → TER | — | Rite of Passage; Clan Shares; gender-locked assignments |
-| Hiver | AoCS 2 | STR-2 | SOC → RES | — | RES=1D+6; no survival checks; aging from 38 |
-| Ithklur | JTAS 7 | EDU-1 | SOC → RES | — | EDU=1D+1, RES=1D+1; Fourfold Way path system |
-| K'kree | AoCS 1 | STR+6, INT+2, EDU+2 (patriarch) | — | — | Creates whole household; Patriarchy skill; Claustrophobic; Gregarious |
-| Girug'kagh | JTAS 1 | STR=1D+2, END=1D+2, DEX=1D+7 | — | — | Translator-only; serve K'kree for life |
-| Droyne | AoCS 2 | STR/DEX/END/INT/EDU=1D+1; PSI=2D; caste mods | SOC → PSI | — | Caste-based careers; no standard career flow |
-| Darrian | AoCS 3 / BTC | STR-1 DEX+1 END-1 INT+1 EDU+1 | — | — | Restricted career list; first term forced |
-| Geonee | AoCS 3 | STR+2 DEX-1 END+2 SOC-1 | — | — | Extra background skill |
-| Happrhani | Deepdark | END+1 | — | — | Human Minor Race; Barbarian only if nomad |
-| Iltharans | Deepdark | END+1 | — | — | Human Minor Race; Longevity +6 aging |
-| Jonkeereen | BTC | END+1, EDU-1 | — | — | Heat resistance |
-| Sword Worlders | Sword | — | — | — | Patrol career (max age 30 to join) |
-| Caprisaps (Alpine) | JTAS 12 | STR-2, DEX+2 | — | — | Terran goat uplifts; Improved Digestion |
-| Caprisaps (Boar) | JTAS 12 | STR-1, DEX+1 | — | — | Terran goat uplifts; Improved Digestion |
-| Foelen Dolphins | BTC | END+1, SOC-1 | — | — | Ancient uplifts near Foelen; all Core careers |
-| Dolphin | AoCS 3 | STR+4 END+2 SOC-4 | — | — | Solomani uplifts; age 12 start; restricted careers |
-| Orca | AoCS 3 | STR+8 END+4 SOC-4 | — | — | Solomani uplifts; 12× ship space; restricted careers |
-| Bwap | AoCS 3 | STR-4 END-4 | — | — | Faster aging; no Rogue; Structured Mind trait |
-| Suerrat | AoCS 4 | STR+1 DEX+2 SOC-1 | — | — | Cold/radiation resistance |
-| Za'tachk | AoCS 4 | STR+1; Matriarchs INT+1 EDU+1 BOL-1; Scouts INT-1 EDU-1 BOL+1 | — | BOL (1D+1) | Three sexes; age 10/15 start; Coward trait |
-| Gurvin | AoCS 4 | Females INT+1 EDU+1; Males STR-1 DEX+1 | — | — | Male INT/EDU=1D+1; age 16 start |
-| Tezcat | AoCS 4 | DEX+1 END-1 | — | — | No Noble; mandatory combat background skills |
-| Ascondi | Great Rift 1 | END+1; caste mods at age ~20 | — | — | Caste replaces background; SOC starts at 1 |
-| Virushi | JTAS 5 | STR=1D+10, END=1D+10, DEX+2, SOC-2 | — | — | SOC career gains → EDU; no Army/Navy/Marines |
-| Tlinzha | Sector 8 | END=3D | — | — | 8-year terms; age 8 start; no psionics |
-| Amindii | JTAS 9 | STR=3D (+2 Activator; +END 1 Bearer) | — | — | Three genders; age 14 start; Perception ability |
-| Dynchia | JTAS 1 | STR=1D+3, DEX+1, EDU+1 | — | — | DM-2 enlistment outside Comitia |
-| Hlanssai | JTAS 4 | STR-2 DEX+2 EDU-2, SOC=1D+4 / fixed 5 | — | — | Bypasses standard career system entirely |
-| Ael Yael | JTAS 3 | STR-1 | — | — | No Noble; 90% cash donated; DM-2 enlistment |
-| Aezorgh | JTAS 11 | STR=1D, DEX=2D+3, END=1D+1, INT=2D+2, EDU=1D, SOC=1D | — | — | DM+4 aging until term 16 |
-| Bosaki | JTAS 17 | STR=1D+1, DEX=2D+2, END=1D+1, INT=2D+1, EDU=2D, SOC=4 | — | — | Age 24 start; Combat Aversion |
-| Hhkar | JTAS 12 | STR+3 END+3; reset per gender transformation | — | — | Serial hermaphroditism reverses aging |
-| Girug'kagh | JTAS 1 | STR=1D+2, END=1D+2, DEX=1D+7 | — | — | Translator-only; serve K'kree for life |
-| Githiaskio | JTAS 2 | — | — | — | Zero-g/aquatic specialist; gravity injures without suit |
-| Halkans | JTAS 8 | END+1, EDU-1 | — | — | Pacifism; reroll combat skills during creation |
-| Krotan | JTAS 15 | END=3D, DEX-2, SOC=2D (age indicator) | — | — | Merchant/Citizen only; no survival checks |
-| Lhshana | JTAS 16 | DEX+1, INT+1, SOC-2 | — | — | Standard careers; trilateral physiology |
-| Mewey | JTAS 13 | STR-2, INT+1, EDU+1 | — | — | Heightened Senses; Empathetic; limited Navy |
-| Nenlat | JTAS 10 | STR+1, EDU-2 (assimilated); STR+1, EDU=1D (traditional); gender mods | — | — | Amphibious; age 14 start; trilateral |
-| Bruhre | Deepdark | STR=3D(max 18), DEX=1D, END=3D+2(max 20), SOC=1D | — | — | No Drifter/Entertainer/Rogue |
-| J'aadje | Deepdark | STR-2, DEX+2 | — | — | All careers |
-| Ormine | Deepdark | DEX-2, END+2 | — | — | 28-year terms; start at 30; aging at 254 |
-| Tlyetrai | Deepdark | STR-2, DEX+1, INT+1 | — | — | No Army/Navy/Marine/Rogue unless emigrated |
-| Ulane | Deepdark | DEX+2; STR/END=1D+1 | — | — | Fast Metabolism; Multi-limbed; Small (-1) |
-| Kemlae | Spinext | DEX+1, END+1, EDU-1, SOC-1 | — | — | Age 8 start; Kuftu transformation/death after term 7 |
-| Ktiauao | Spinext | STR+1, DEX+2 | SOC → TER (Aslan-style) | — | Uses Aslan careers; three genders |
-| Aniyun | Spinext | STR=1D, EDU-2 | — | — | Citizen/Drifter only; natural flight |
-| Gmina | Spinext | STR=2D+4, EDU=1D, SOC=2 (fixed), DEX-1 | — | — | Drifter only; four arms |
-| Mal'Gnar | Spinext | EDU=1D+1 | — | — | Drifter only; cannot speak Galanglic |
-| Vegan | Sol/AoCS | EDU+2, SOC-2 | — | — | First career must be Drifter; 200+ year lifespan |
+| Species | Category | Source | Characteristic changes | Replacement char | New char | Special |
+|---|---|---|---|---|---|---|
+| Ael Yael | Alien (minor) | JTAS 3 | STR-1 | — | — | No Noble; 90% cash donated; DM-2 enlistment |
+| Aezorgh | Alien (minor) | JTAS 11 | STR=1D, DEX=2D+3, END=1D+1, INT=2D+2, EDU=1D, SOC=1D | — | — | DM+4 aging until term 16 |
+| Amindii | Alien (minor) | JTAS 9 | STR=3D (+2 Activator; +END 1 Bearer) | — | — | Three genders; age 14 start; Perception ability |
+| Aniyun | Alien (minor) | Spinext | STR=1D, EDU-2 | — | — | Citizen/Drifter only; natural flight |
+| Ascondi | Alien (minor) | Great Rift 1 | END+1; caste mods at age ~20 | — | — | Caste replaces background; SOC starts at 1 |
+| Aslan | Major | AoCS 1 | STR+2 DEX-2 END+1 (m); STR+1 DEX-1 END+2 (f) | SOC → TER | — | Rite of Passage; Clan Shares; gender-locked assignments |
+| Bosaki | Alien (minor) | JTAS 17 | STR=1D+1, DEX=2D+2, END=1D+1, INT=2D+1, EDU=2D, SOC=4 | — | — | Age 24 start; Combat Aversion |
+| Bruhre | Alien (minor) | Deepdark | STR=3D(max 18), DEX=1D, END=3D+2(max 20), SOC=1D | — | — | No Drifter/Entertainer/Rogue |
+| Bwap | Alien (minor) | AoCS 3 | STR-4 END-4 | — | — | Faster aging; no Rogue; Structured Mind trait |
+| Caprisaps (Alpine) | Terran uplift | JTAS 12 | STR-2, DEX+2 | — | — | Goat uplift; Improved Digestion |
+| Caprisaps (Boar) | Terran uplift | JTAS 12 | STR-1, DEX+1 | — | — | Goat uplift; Improved Digestion |
+| Darrian | Human (minor) | AoCS 3 / BTC | STR-1 DEX+1 END-1 INT+1 EDU+1 | — | — | Restricted career list; first term forced |
+| Dolphin (Foelen) | Terran uplift | BTC | END+1, SOC-1 | — | — | Ancient uplift near Foelen; all Core careers |
+| Dolphin (Solomani) | Terran uplift | AoCS 3 | STR+4 END+2 SOC-4 | — | — | Solomani uplift; age 12 start; restricted careers |
+| Droyne | Major | AoCS 2 | STR/DEX/END/INT/EDU=1D+1; PSI=2D; caste mods | SOC → PSI | — | Caste-based careers; no standard career flow |
+| Dynchia | Alien (minor) | JTAS 1 | STR=1D+3, DEX+1, EDU+1 | — | — | DM-2 enlistment outside Comitia |
+| Geonee | Human (minor) | AoCS 3 | STR+2 DEX-1 END+2 SOC-1 | — | — | Extra background skill |
+| Girug'kagh | Alien (minor) | JTAS 1 | STR=1D+2, END=1D+2, DEX=1D+7 | — | — | Translator-only; serve K'kree for life |
+| Githiaskio | Alien (minor) | JTAS 2 | — | — | — | Zero-g/aquatic specialist; gravity injures without suit |
+| Gmina | Alien (minor) | Spinext | STR=2D+4, EDU=1D, SOC=2 (fixed), DEX-1 | — | — | Drifter only; four arms |
+| Gurvin | Alien (minor) | AoCS 4 | Females INT+1 EDU+1; Males STR-1 DEX+1 | — | — | Male INT/EDU=1D+1; age 16 start |
+| Halkans | Alien (minor) | JTAS 8 | END+1, EDU-1 | — | — | Pacifism; reroll combat skills during creation |
+| Happrhani | Human (minor) | Deepdark | END+1 | — | — | Barbarian only if steppe/desert nomad |
+| Hhkar | Alien (minor) | JTAS 12 | STR+3 END+3; reset per gender transformation | — | — | Serial hermaphroditism reverses aging |
+| Hiver | Major | AoCS 2 | STR-2 | SOC → RES | — | RES=1D+6; no survival checks; aging from 38 |
+| Hlanssai | Alien (minor) | JTAS 4 | STR-2 DEX+2 EDU-2, SOC=1D+4 / fixed 5 | — | — | Bypasses standard career system entirely |
+| Iltharans | Human (minor) | Deepdark | END+1 | — | — | Longevity +6 aging |
+| Ithklur | Alien (minor) | JTAS 7 | EDU-1 | SOC → RES | — | EDU=1D+1, RES=1D+1; Fourfold Way path system |
+| J'aadje | Alien (minor) | Deepdark | STR-2, DEX+2 | — | — | All careers |
+| Jonkeereen | Human (minor) | BTC | END+1, EDU-1 | — | — | Heat resistance |
+| K'kree | Major | AoCS 1 | STR+6, INT+2, EDU+2 (patriarch) | — | — | Creates whole household; Patriarchy skill; Claustrophobic; Gregarious |
+| Kemlae | Alien (minor) | Spinext | DEX+1, END+1, EDU-1, SOC-1 | — | — | Age 8 start; Kuftu transformation/death after term 7 |
+| Krotan | Alien (minor) | JTAS 15 | END=3D, DEX-2, SOC=2D (age indicator) | — | — | Merchant/Citizen only; no survival checks |
+| Ktiauao | Alien (minor) | Spinext | STR+1, DEX+2 | SOC → TER (Aslan-style) | — | Uses Aslan careers; three genders |
+| Lhshana | Alien (minor) | JTAS 16 | DEX+1, INT+1, SOC-2 | — | — | Standard careers; trilateral physiology |
+| Mal'Gnar | Alien (minor) | Spinext | EDU=1D+1 | — | — | Drifter only; cannot speak Galanglic |
+| Mewey | Alien (minor) | JTAS 13 | STR-2, INT+1, EDU+1 | — | — | Heightened Senses; Empathetic; limited Navy |
+| Nenlat | Alien (minor) | JTAS 10 | STR+1, EDU-2 (assim.); STR+1, EDU=1D (trad.); gender mods | — | — | Amphibious; age 14 start; trilateral |
+| Orca | Terran uplift | AoCS 3 | STR+8 END+4 SOC-4 | — | — | Solomani uplift; 12× ship space; restricted careers |
+| Ormine | Alien (minor) | Deepdark | DEX-2, END+2 | — | — | 28-year terms; start at 30; aging at 254 |
+| Solomani | Major | AoCS 2 | — | — | — | Race roll; party patronage; SolSec monitor |
+| Suerrat | Alien (minor) | AoCS 4 | STR+1 DEX+2 SOC-1 | — | — | Cold/radiation resistance |
+| Sword Worlders | Human (minor) | Sword | — | — | — | Patrol career (max age 30 to join) |
+| Tezcat | Alien (minor) | AoCS 4 | DEX+1 END-1 | — | — | No Noble; mandatory combat background skills |
+| Tlinzha | Alien (minor) | Sector 8 | END=3D | — | — | 8-year terms; age 8 start; no psionics |
+| Tlyetrai | Alien (minor) | Deepdark | STR-2, DEX+1, INT+1 | — | — | No Army/Navy/Marine/Rogue unless emigrated |
+| Ulane | Alien (minor) | Deepdark | DEX+2; STR/END=1D+1 | — | — | Fast Metabolism; Multi-limbed; Small (-1) |
+| Vargr | Major | AoCS 1 | — | SOC → CHA | — | CHA gain/loss mechanic |
+| Vegan | Alien (minor) | Sol/AoCS | EDU+2, SOC-2 | — | — | First career must be Drifter; 200+ year lifespan |
+| Vilani | Major | Core | — | — | — | No mechanical differences |
+| Virushi | Alien (minor) | JTAS 5 | STR=1D+10, END=1D+10, DEX+2, SOC-2 | — | — | SOC career gains → EDU; no Army/Navy/Marines |
+| Za'tachk | Alien (minor) | AoCS 4 | STR+1; Matriarchs INT+1 EDU+1 BOL-1; Scouts INT-1 EDU-1 BOL+1 | — | BOL (1D+1) | Three sexes; age 10/15 start; Coward trait |
+| Zhodani | Major | AoCS 1 / BTC | EDU min 8 if SOC 10+ | — | PSI (rolled first) | Social class tiers gate careers |
 
 ---
 
