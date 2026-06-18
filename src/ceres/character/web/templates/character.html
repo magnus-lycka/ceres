@@ -85,9 +85,9 @@
   <h2 class="text-xs uppercase tracking-widest text-gray-600 mb-3">Education</h2>
   <p class="text-sm text-gray-300">
     {% if summary.precareer_completed %}
-      {{ summary.precareer_completed }}
+      {{ summary.precareer_completed.name }}
     {% else %}
-      {{ summary.precareer }} <span class="text-gray-600">(in progress)</span>
+      {{ summary.precareer.name }} <span class="text-gray-600">(in progress)</span>
     {% endif %}
   </p>
 </div>

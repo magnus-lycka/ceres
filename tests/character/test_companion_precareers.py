@@ -8,6 +8,7 @@ from ceres.character.domain.character_start import CharacterStartedHandler, UcpH
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.connection import Enemy, Rival
 from ceres.character.domain.precareer.loader import load_precareers
+from ceres.character.domain.precareer.precareer_data import PreCareerData
 from ceres.character.domain.precareer.precareer_events import (
     PendingPreCareerEvent,
     PendingPreCareerGraduation,
@@ -931,3 +932,31 @@ class TestUniversity:
         assert ps_skill.chemistry.value == 2
         assert ps_skill.physics.value == 0
         assert ps_skill.jumpspace_physics.value == 0
+
+
+# ── precareer field typing ────────────────────────────────────────────────────
+
+
+def test_precareer_in_progress_is_typed_object():
+    events = [
+        *_base(),
+        Event(id=3, handler=PreCareerEntryHandler(precareer='University', roll=9)),
+    ]
+    projection = replay(1, events)
+    assert isinstance(projection.summary.precareer, PreCareerData)
+    assert projection.summary.precareer.name == 'University'
+
+
+def test_precareer_completed_is_typed_object():
+    events = [
+        *_base(),
+        Event(id=3, handler=PreCareerEntryHandler(precareer='University', roll=9)),
+        Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Admin())),
+        Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Electronics())),
+        Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
+        Event(id=7, fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=9)),
+    ]
+    projection = replay(1, events)
+    assert isinstance(projection.summary.precareer_completed, PreCareerData)
+    assert projection.summary.precareer_completed.name == 'University'
+    assert projection.summary.precareer is None

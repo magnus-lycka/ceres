@@ -126,12 +126,7 @@ class PendingAgentMishap3SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['agent_mishap_3_skill_roll'] = 'agent_mishap_3_skill_roll'
 
     def resolve(self, projection: CharacterProjection, event: Any) -> None:
-        from ceres.character.domain.career.loader import load_careers
-
-        career_obj = projection.summary.current_career
-        career = load_careers().get(career_obj.name if career_obj else '')
-        if career is None:
-            return
+        projection.get_current_career()
 
         from ceres.character.domain.career.career_events import _set_forced_prison_career
 

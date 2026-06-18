@@ -9,7 +9,6 @@ from ceres.character.domain.career.navy import Navy
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.precareer.loader import load_precareers
-from ceres.character.domain.precareer.military_academy import MilitaryAcademyPreCareer
 from ceres.character.domain.precareer.precareer_events import PreCareerEntryHandler, PreCareerGraduationHandler
 from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
@@ -66,25 +65,6 @@ def test_entry_grants_direct_tied_career_service_skills_and_skips_choice_lists(m
     }
     assert character_skills.Drive not in _skill_types(projection)
     assert character_skills.VaccSuit not in _skill_types(projection)
-
-
-def test_entry_is_noop_when_no_tied_career():
-    projection = _projection()
-    academy = MilitaryAcademyPreCareer(
-        name='Ghost Academy',
-        source='Test',
-        service_skills_from=None,
-        events={},
-    )
-
-    next_pending_idx = academy.apply_entry(
-        projection,
-        Event(id=8, handler=PreCareerEntryHandler(precareer='Ghost Academy', roll=9)),
-        pending_idx=2,
-    )
-
-    assert next_pending_idx == 2
-    assert projection.summary.skills == []
 
 
 def test_graduation_increases_edu_queues_auto_qualification_and_notes_manual_benefits():

@@ -1,6 +1,7 @@
 from ceres.character.domain.career.career_data import CharCheck, GainSkillEffect, LifeEventEffect
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.precareer.loader import load_precareers
+from ceres.character.domain.precareer.military_academy import MilitaryAcademyPreCareer
 from ceres.character.domain.precareer.precareer_data import PreCareerData, PrecareerSkillEntry
 from ceres.character.domain.precareer.precareer_events import PreCareerEntryHandler, PreCareerGraduationHandler
 from ceres.character.domain.skills import Admin, Electronics, Pilot, ScienceSkill, skill_instances
@@ -70,11 +71,11 @@ def test_military_academies_have_distinct_entry_and_same_graduation():
 
     for name in ('Army Academy', 'Marine Academy', 'Navy Academy'):
         academy = precareers[name]
+        assert isinstance(academy, MilitaryAcademyPreCareer)
         assert _graduation(name).characteristic == Chars.INT
         assert _graduation(name).target == 7
         assert academy.honours_target == 11
         assert academy.tied_career is not None
-        assert academy.service_skills_from is not None
         assert academy.service_skills_from.name == academy.tied_career
 
 

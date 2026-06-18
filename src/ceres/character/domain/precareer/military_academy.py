@@ -1,5 +1,6 @@
 from typing import Any
 
+from ceres.character.domain.career.career_data import CareerData
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.precareer.precareer_data import PreCareerData
@@ -7,18 +8,19 @@ from ceres.character.domain.psionics import Psi
 
 
 class MilitaryAcademyPreCareer(PreCareerData):
+    service_skills_from: type[CareerData]
+
     def apply_entry(
         self,
         projection: CharacterProjection,
         event: Any,
         pending_idx: int,
     ) -> int:
-        if self.service_skills_from:
-            service_table = self.service_skills_from().skill_table('service_skills')
-            if service_table:
-                for entry in service_table.entries:
-                    if not isinstance(entry, (Chars, Psi, list)):
-                        projection.grant_skill(entry)
+        service_table = self.service_skills_from().skill_table('service_skills')
+        if service_table:
+            for entry in service_table.entries:
+                if not isinstance(entry, (Chars, Psi, list)):
+                    projection.grant_skill(entry)
         return pending_idx
 
     def apply_graduation(
@@ -30,19 +32,18 @@ class MilitaryAcademyPreCareer(PreCareerData):
         projection.summary.characteristics[Chars.EDU] = projection.summary.characteristics.get(Chars.EDU, 0) + 1
         if honours:
             projection.summary.characteristics[Chars.SOC] = projection.summary.characteristics.get(Chars.SOC, 0) + 1
-        if self.service_skills_from:
-            career_name = self.service_skills_from.name
-            projection.auto_qualify_careers.append(self.service_skills_from)
-            projection.summary.problems.append(
-                f'{self.name} graduation: if entering {career_name}, '
-                'select any three Service Skills and increase them to level 1. Apply manually.'
-            )
-            projection.summary.problems.append(
-                f'{self.name} graduation: entitled to a commission roll at the start of '
-                f'your first {career_name} career term with DM+2'
-                + (' (automatic with honours).' if honours else '.')
-                + ' Apply manually.'
-            )
+        career_name = self.service_skills_from.name
+        projection.auto_qualify_careers.append(self.service_skills_from)
+        projection.summary.problems.append(
+            f'{self.name} graduation: if entering {career_name}, '
+            'select any three Service Skills and increase them to level 1. Apply manually.'
+        )
+        projection.summary.problems.append(
+            f'{self.name} graduation: entitled to a commission roll at the start of '
+            f'your first {career_name} career term with DM+2'
+            + (' (automatic with honours).' if honours else '.')
+            + ' Apply manually.'
+        )
         return 0
 
     def apply_failed_graduation(
@@ -50,7 +51,7 @@ class MilitaryAcademyPreCareer(PreCareerData):
         projection: CharacterProjection,
         event: Any,
     ) -> None:
-        if event.roll > 2 and self.service_skills_from:
+        if event.roll > 2:
             projection.auto_qualify_careers.append(self.service_skills_from)
             projection.summary.problems.append(
                 f'{self.name}: failed graduation (roll > 2) — may still enter '

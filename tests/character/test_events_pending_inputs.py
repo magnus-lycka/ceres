@@ -388,7 +388,8 @@ def test_precareer_entry_error_and_failure_branches():
 
     soc_bonus = _projection(characteristics={Chars.INT: 12, Chars.SOC: 12})
     Event(id=5, handler=PreCareerEntryHandler(precareer='Merchant Academy (Business)', roll=7)).apply(soc_bonus)
-    assert soc_bonus.summary.precareer == 'Merchant Academy (Business)'
+    assert soc_bonus.summary.precareer is not None
+    assert soc_bonus.summary.precareer.name == 'Merchant Academy (Business)'
     assert any(isinstance(p, PendingPreCareerEvent) for p in soc_bonus.pending_inputs)
 
 
@@ -409,8 +410,6 @@ def test_precareer_event_effects_create_expected_pending_inputs(roll, pending_ty
 def test_precareer_event_error_manual_note_and_ending_branches():
     with pytest.raises(ReplayError, match='No active pre-career'):
         Event(handler=PreCareerEventHandler(roll=7)).apply(_projection())
-    with pytest.raises(ReplayError, match="Unknown pre-career: 'Nope'"):
-        Event(handler=PreCareerEventHandler(roll=7)).apply(_projection(precareer='Nope'))
     with pytest.raises(ReplayError, match='No pre-career event entry for roll 13'):
         Event(handler=PreCareerEventHandler(roll=13)).apply(_projection(precareer='University'))
 
@@ -423,7 +422,8 @@ def test_precareer_event_error_manual_note_and_ending_branches():
     ended.pending_inputs.append(PendingPreCareerGraduation(pending_id=(11, 0), instruction='Graduation'))
     Event(id=11, handler=PreCareerEventHandler(roll=11)).apply(ended)
     assert ended.summary.precareer is None
-    assert ended.summary.precareer_completed == 'University'
+    assert ended.summary.precareer_completed is not None
+    assert ended.summary.precareer_completed.name == 'University'
     assert not any(isinstance(p, PendingPreCareerGraduation) for p in ended.pending_inputs)
     assert any(isinstance(p, PendingCareerChoice) for p in ended.pending_inputs)
 
@@ -435,13 +435,12 @@ def test_precareer_event_error_manual_note_and_ending_branches():
 def test_precareer_graduation_error_and_failure_branches():
     with pytest.raises(ReplayError, match='No active pre-career for graduation'):
         Event(handler=PreCareerGraduationHandler(roll=7)).apply(_projection())
-    with pytest.raises(ReplayError, match="Unknown pre-career: 'Nope'"):
-        Event(handler=PreCareerGraduationHandler(roll=7)).apply(_projection(precareer='Nope'))
 
     failed = _projection(precareer='University', characteristics={Chars.INT: 2})
     Event(id=1, handler=PreCareerGraduationHandler(roll=2)).apply(failed)
     assert failed.summary.precareer is None
-    assert failed.summary.precareer_completed == 'University'
+    assert failed.summary.precareer_completed is not None
+    assert failed.summary.precareer_completed.name == 'University'
     assert failed.summary.precareer_skills == []
     assert any('Did not graduate from University.' in line for line in failed.summary.narrative)
     assert any(isinstance(p, PendingCareerChoice) for p in failed.pending_inputs)

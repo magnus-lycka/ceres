@@ -2,7 +2,7 @@ from typing import Any, cast
 
 from pydantic import BaseModel, ConfigDict
 
-from ceres.character.domain.career.career_data import CareerData, CareerEventEntry, CharCheck, TermData
+from ceres.character.domain.career.career_data import CareerEventEntry, CharCheck, TermData
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.skills import AnySkill, Level, level_fields
 
@@ -73,7 +73,6 @@ class PreCareerData(TermData):
     # picks entry_pick_count from the level==0 skills. If 0, all skill_choices are auto-granted.
     # University and military academies handle their own entry logic separately.
     entry_pick_count: int = 0
-    service_skills_from: type[CareerData] | None = None
     tied_career: str | None = None
     graduation: CharCheck | None = None
     graduation_requirement: str | None = None

@@ -1,6 +1,6 @@
 from typing import Annotated, Any, cast, overload
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, SerializeAsAny, model_validator
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, PlainSerializer, SerializeAsAny, model_validator
 
 from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.domain.benefits import ItemBenefit
@@ -13,6 +13,22 @@ from ceres.character.domain.sophont import Sophont
 from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.pending_input import PendingInputBase, _deserialise_pending_input
 from ceres.shared import int_to_ehex
+
+
+def _deserialise_precareer(v: Any) -> Any:
+    from ceres.character.domain.precareer.precareer_data import PreCareerData
+
+    if isinstance(v, PreCareerData):
+        return v
+    from ceres.character.domain.precareer.loader import load_precareers
+
+    pc = load_precareers().get(str(v))
+    if pc is None:
+        raise ValueError(f'Unknown pre-career: {v!r}')
+    return pc
+
+
+_PreCareerField = Annotated[Any, BeforeValidator(_deserialise_precareer), PlainSerializer(lambda pc: pc.name)]
 
 
 class CharacterSummary(BaseModel):
@@ -42,8 +58,8 @@ class CharacterSummary(BaseModel):
     narrative: list[str] = Field(default_factory=list)
     cash: int = 0
     dead: bool = False
-    precareer: str | None = None  # pre-career currently in progress
-    precareer_completed: str | None = None  # pre-career that was attended (whether graduated or not)
+    precareer: _PreCareerField | None = None  # pre-career currently in progress
+    precareer_completed: _PreCareerField | None = None  # pre-career that was attended (whether graduated or not)
     precareer_skills: list[SerializeAsAny[AnySkill]] = Field(
         default_factory=list
     )  # skills chosen during university (for graduation boost)

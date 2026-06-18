@@ -1,5 +1,6 @@
 from typing import Any
 
+from ceres.character.domain.career.merchant import Merchant
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.precareer.precareer_data import PreCareerData
@@ -22,10 +23,8 @@ class MerchantAcademyPreCareer(PreCareerData):
         event: Any,
         pending_idx: int,
     ) -> int:
-        from ceres.character.domain.career.loader import load_careers
-
-        merchant = load_careers().get('Merchant')
-        if merchant and self.curriculum_table:
+        merchant = Merchant()
+        if self.curriculum_table:
             table = merchant.skill_table(self.curriculum_table)
             if table:
                 for entry in table.entries:
@@ -51,12 +50,10 @@ class MerchantAcademyPreCareer(PreCareerData):
         event: Any,
         honours: bool,
     ) -> int:
-        from ceres.character.domain.career.loader import load_careers
-
         pending_idx = 0
-        merchant = load_careers().get('Merchant')
+        merchant = Merchant()
         skill_pool: list[AnySkill] = []
-        if merchant and self.curriculum_table:
+        if self.curriculum_table:
             table = merchant.skill_table(self.curriculum_table)
             if table:
                 skill_pool = _skill_instances_from_table(table)
