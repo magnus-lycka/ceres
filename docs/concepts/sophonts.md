@@ -242,18 +242,6 @@ with loneliness but imposes equal DM-penalty when interacting with 'real' K'kree
 enter any career a human could (referee's discretion for very enclosed roles). Outsider K'kree
 have SOC 0 in K'kree society.
 
-#### Girug'kagh
-*Source: JTAS Vol. 1 (`refs/jtas/1/19_alien.md`)*
-
-Servitor species of the K'kree. The only form encountered by outsiders is the Translator,
-a permanent hereditary servant of K'kree masters.
-
-- **Characteristics:** STR=1D+2, END=1D+2, DEX=1D+7.
-- No rank structure, no mustering-out benefits; serve for life.
-- Kr'rrir trait: DM-6 on any check that conflicts with K'kree loyalty.
-- As Travellers, Girug'kagh operate only as translators in K'kree service. Independent
-  career play would require significant referee interpretation.
-
 ### Droyne
 *Source: AoCS Vol. 2 (`refs/alien2/23_chapter_twenty_one.md`, `refs/alien2/24_droyne_as_travellers.md`)*
 
@@ -569,6 +557,18 @@ Tentacled aquatic sophonts from Antares Sector.
 - Cannot operate in gravity without a sealed support suit (Cr300,000); standard gravity
   causes internal injuries.
 - Custom equipment +10–60%.
+
+#### Girug'kagh
+*Source: JTAS Vol. 1 (`refs/jtas/1/19_alien.md`)*
+
+Servitor species of the K'kree. The only form encountered by outsiders is the Translator,
+a permanent hereditary servant of K'kree masters.
+
+- **Characteristics:** STR=1D+2, END=1D+2, DEX=1D+7.
+- No rank structure, no mustering-out benefits; serve for life.
+- Kr'rrir trait: DM-6 on any check that conflicts with K'kree loyalty.
+- As Travellers, Girug'kagh operate only as translators in K'kree service. Independent
+  career play would require significant referee interpretation.
 
 #### Gmina
 *Source: Spinward Extents (`refs/spinext/11_aliens_of_the_beyond.md`)*
