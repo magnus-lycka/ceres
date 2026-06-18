@@ -27,6 +27,7 @@ from ceres.character.domain.career.career_events import (
     PendingMusterOut,
     PendingRankBonusChoice,
     PendingReenlist,
+    PendingSkillChoice,
     PendingSkillTable,
     PendingSkillTableChoice,
     PendingSurvive,
@@ -40,7 +41,11 @@ from ceres.character.domain.career.career_events import (
     SwitchAssignmentHandler,
     TermEventHandler,
 )
-from ceres.character.domain.career.common_pending import CareerSkillChoicePendingBase, CareerSkillRollPendingBase
+from ceres.character.domain.career.common_pending import (
+    CareerSkillChoicePendingBase,
+    CareerSkillRollPendingBase,
+    PendingAdvancedTrainingSkillRoll,
+)
 from ceres.character.domain.character_start import (
     BackgroundSkillsHandler,
     CharacterStartedHandler,
@@ -65,12 +70,83 @@ from ceres.character.domain.health.health_events import (
     PendingAgingRoll,
     PendingDoubleInjuryRoll,
 )
-from ceres.character.domain.skills import AnySkill
-from ceres.character.domain.sophont import Sophont
+from ceres.character.domain.skills import Admin, AnySkill, Athletics, Carouse, Medic
+from ceres.character.domain.sophont import VILANI, Sophont
 from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.pending_input import ChoiceBase
 from ceres.character.mechanism.replay import replay
+
+
+class AdvancedTrainingTestMixin:
+    """Shared tests for career advanced training events (EDU skill roll → existing skill choice).
+
+    Subclasses must provide _setup_to_event() returning 6 events ending at the term event.
+    Override _existing_service_skill_type() and _failure_queues_commission() as needed.
+    """
+
+    def _setup_to_event(self) -> list:
+        raise NotImplementedError
+
+    def _existing_service_skill_type(self) -> type:
+        """A skill type guaranteed to appear in the success skill-choice options."""
+        raise NotImplementedError
+
+    def _failure_queues_commission(self) -> bool:
+        return False
+
+    def test_creates_edu_skill_roll_pending(self) -> None:
+        projection = replay(1, self._setup_to_event())
+        pending = next(
+            (p for p in projection.pending_inputs if isinstance(p, PendingAdvancedTrainingSkillRoll)),
+            None,
+        )
+        assert pending is not None
+        assert pending.options == ['EDU']
+
+    def test_success_creates_skill_choice_with_existing_skills(self) -> None:
+        events = [
+            *self._setup_to_event(),
+            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=9)),
+        ]
+        projection = replay(1, events)
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
+        assert pending is not None
+        assert any(isinstance(o, self._existing_service_skill_type()) for o in pending.options)
+
+    def test_failure_no_skill_choice(self) -> None:
+        events = [
+            *self._setup_to_event(),
+            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
+        ]
+        projection = replay(1, events)
+        assert not any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
+
+    def test_failure_queues_advancement(self) -> None:
+        events = [
+            *self._setup_to_event(),
+            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
+        ]
+        projection = replay(1, events)
+        if self._failure_queues_commission():
+            assert any(isinstance(p, (PendingAdvancement, PendingCommissionChoice)) for p in projection.pending_inputs)
+        else:
+            assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+
+
+def _scholar_setup() -> list:
+    """Return start→ucp→background events suited for Scholar tests.
+
+    Uses Medic instead of Drive so Scholar service_skills row 1 (Drive/Flyer) keeps both options
+    open, producing two initial-training choice pendings: Drive/Flyer (.0) and Science (.1).
+    """
+    return [
+        Event(id=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')),
+        Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='7869A5')),
+        Event(
+            id=3, fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Medic()])
+        ),
+    ]
 
 
 class CharacterDriver:

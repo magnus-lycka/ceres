@@ -20,11 +20,11 @@ from ceres.character.domain.career.career_events import (
 from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.health.health_events import AgingRollHandler
-from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive, JackOfAllTrades, Medic, SpaceScience
+from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive, JackOfAllTrades, SpaceScience
 from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import ReplayError, replay
-from tests.character.helpers import MOCK_WORLD
+from tests.character.helpers import MOCK_WORLD, _scholar_setup
 
 
 def _full_setup(character_id: int = 1) -> list:
@@ -38,21 +38,6 @@ def _full_setup(character_id: int = 1) -> list:
         ),
     ]
 
-
-def _scholar_setup(character_id: int = 1) -> list:
-    """Like _full_setup() but with Medic instead of Drive.
-
-    Scholar service_skills row 1 offers Drive/Flyer. Using Drive in background causes Flyer to be
-    auto-granted (only 1 option left). This setup preserves both options so Scholar initial training
-    creates two choice pendings: Drive/Flyer (id .0) and Science (id .1).
-    """
-    return [
-        Event(id=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')),
-        Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='7869A5')),
-        Event(
-            id=3, fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Medic()])
-        ),
-    ]
 
 
 def _setup_through_3_terms_reenlist() -> list:

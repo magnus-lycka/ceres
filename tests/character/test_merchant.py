@@ -13,7 +13,6 @@ from ceres.character.domain.career.career_events import (
     TermEventHandler,
 )
 from ceres.character.domain.career.common import CommonMishap1DoubleRoll, CommonMishap1Severe
-from ceres.character.domain.career.common_pending import PendingAdvancedTrainingSkillRoll
 from ceres.character.domain.career.merchant import (
     MerchantEvent3Accept,
     MerchantEvent3Refuse,
@@ -40,7 +39,7 @@ from ceres.character.domain.skills import (
 from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
-from tests.character.helpers import MOCK_WORLD, CharacterDriver
+from tests.character.helpers import MOCK_WORLD, AdvancedTrainingTestMixin, CharacterDriver
 
 
 def _setup() -> list:
@@ -246,46 +245,12 @@ class TestMerchantEvent8:
 # ── event 9: advanced training ────────────────────────────────────────────────
 
 
-class TestMerchantEvent9:
+class TestMerchantEvent9(AdvancedTrainingTestMixin):
     def _setup_to_event(self) -> list:
         return _through_term_event(event_roll=9)
 
-    def test_creates_edu_skill_roll_pending(self):
-        projection = replay(1, self._setup_to_event())
-        pending = next(
-            (p for p in projection.pending_inputs if isinstance(p, PendingAdvancedTrainingSkillRoll)),
-            None,
-        )
-        assert pending is not None
-        assert pending.options == ['EDU']
-
-    def test_success_creates_skill_choice_with_existing_skills(self):
-        events = [
-            *self._setup_to_event(),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=9)),
-        ]
-        projection = replay(1, events)
-        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
-        assert pending is not None
-        # Merchant service skills auto-applied: Drive, Vacc Suit, Broker, Steward, Electronics, Persuade
-        assert any(isinstance(o, Broker) for o in pending.options)
-
-    def test_failure_no_skill_choice(self):
-        events = [
-            *self._setup_to_event(),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
-        ]
-        projection = replay(1, events)
-        assert not any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
-
-    def test_failure_queues_advancement(self):
-        events = [
-            *self._setup_to_event(),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
-        ]
-        projection = replay(1, events)
-        # On failure no skill choice created; _apply_skill_roll auto-queues advancement
-        assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+    def _existing_service_skill_type(self) -> type:
+        return Broker  # auto-applied first career: Drive, Vacc Suit, Broker, Steward, Electronics, Persuade
 
 
 # ── event 5: gambling opportunity ────────────────────────────────────────────

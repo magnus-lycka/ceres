@@ -85,26 +85,11 @@ from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.pending_input import ChoiceBase
 from ceres.character.mechanism.replay import replay
-from tests.character.helpers import MOCK_WORLD, CharacterDriver, projection_diff
+from tests.character.helpers import MOCK_WORLD, CharacterDriver, _scholar_setup, projection_diff
 
 _SCIENCES = sorted(['Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science'])
 _SCIENCE_CLASSES = set(_skill_classes(Sciences))
 
-
-def _scholar_setup(character_id: int = 1) -> list:
-    """Like _full_setup() but with Medic instead of Drive.
-
-    Scholar service_skills row 1 offers Drive/Flyer. Using Drive in background causes Flyer to be
-    auto-granted (only 1 option left). This setup preserves both options so Scholar initial training
-    creates two choice pendings: Drive/Flyer (id .0) and Science (id .1).
-    """
-    return [
-        Event(id=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')),
-        Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='7869A5')),
-        Event(
-            id=3, fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Medic()])
-        ),
-    ]
 
 
 class TestScholarInitialTraining:

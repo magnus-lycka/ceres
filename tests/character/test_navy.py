@@ -11,13 +11,11 @@ from ceres.character.domain.career.career_events import (
     PendingChoices,
     PendingCommissionChoice,
     PendingMusterOut,
-    PendingSkillChoice,
     SkillRollHandler,
     SurviveHandler,
     TermEventHandler,
 )
 from ceres.character.domain.career.common import CommonMishap1DoubleRoll, CommonMishap1Severe
-from ceres.character.domain.career.common_pending import PendingAdvancedTrainingSkillRoll
 from ceres.character.domain.career.navy import (
     NavyEvent10Profit,
     NavyEvent10Refuse,
@@ -42,7 +40,7 @@ from ceres.character.domain.skills import (
 from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
-from tests.character.helpers import MOCK_WORLD, CharacterDriver
+from tests.character.helpers import MOCK_WORLD, AdvancedTrainingTestMixin, CharacterDriver
 
 
 def _setup() -> list:
@@ -261,50 +259,15 @@ class TestNavyMishap4:
 # ── event 5: advanced training ────────────────────────────────────────────────
 
 
-class TestNavyEvent5:
+class TestNavyEvent5(AdvancedTrainingTestMixin):
     def _setup_to_event(self) -> list:
         return _through_term_event(event_roll=5)
 
-    def test_creates_edu_skill_roll_pending(self):
-        projection = replay(1, self._setup_to_event())
-        pending = next(
-            (p for p in projection.pending_inputs if isinstance(p, PendingAdvancedTrainingSkillRoll)),
-            None,
-        )
-        assert pending is not None
-        assert pending.options == ['EDU']
+    def _existing_service_skill_type(self) -> type:
+        return Athletics  # auto-applied first career: Pilot, Vacc Suit, Athletics, Gunner, Mechanic, Gun Combat
 
-    def test_success_creates_skill_choice_from_existing_skills(self):
-        events = [
-            *self._setup_to_event(),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=9)),
-        ]
-        projection = replay(1, events)
-        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
-        assert pending is not None
-        # Navy service skills auto-applied first career: Pilot, Vacc Suit, Athletics, Gunner, Mechanic, Gun Combat
-        assert any(isinstance(o, Athletics) for o in pending.options)
-
-    def test_failure_no_skill_choice(self):
-        events = [
-            *self._setup_to_event(),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
-        ]
-        projection = replay(1, events)
-        assert not any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
-
-    def test_failure_queues_career_progress(self):
-        events = [
-            *self._setup_to_event(),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
-        ]
-        projection = replay(1, events)
-        # On failure no skill choice created; _apply_skill_roll auto-queues advancement
-        # (Navy at rank 0 can attempt commission, so may be PendingCommissionChoice)
-        has_progress = any(
-            isinstance(p, (PendingAdvancement, PendingCommissionChoice)) for p in projection.pending_inputs
-        )
-        assert has_progress
+    def _failure_queues_commission(self) -> bool:
+        return True  # Navy rank 0 can attempt commission
 
 
 # ── event 10: abuse position for profit ──────────────────────────────────────

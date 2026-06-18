@@ -70,6 +70,11 @@ class RankEntry(BaseModel):
     bonus: RankBonus | None = None
 
 
+def _blank_ranks() -> dict[int, RankEntry]:
+    """Ranks 0–6 with no titles or bonuses, for careers that track rank but grant nothing for it."""
+    return {i: RankEntry(rank=i) for i in range(7)}
+
+
 class GainSkillEffect(BaseModel):
     type: Literal['gain_skill'] = 'gain_skill'
     skill: AnySkill

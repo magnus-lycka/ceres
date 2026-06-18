@@ -30,6 +30,7 @@ from ceres.character.domain.career.career_data import (
     RollMishapEffect,
     SkillChoiceEffect,
     SkillTable,
+    _blank_ranks,
 )
 from ceres.character.domain.career.career_events import (
     PendingChoices,
@@ -499,15 +500,7 @@ class Psion(CareerData):
         ),
     )
 
-    ranks: ClassVar[dict[int, RankEntry]] = {
-        0: RankEntry(rank=0),
-        1: RankEntry(rank=1),
-        2: RankEntry(rank=2),
-        3: RankEntry(rank=3),
-        4: RankEntry(rank=4),
-        5: RankEntry(rank=5),
-        6: RankEntry(rank=6),
-    }
+    ranks: ClassVar[dict[int, RankEntry]] = _blank_ranks()
     ranks_by_assignment: ClassVar[dict[int, dict[int, RankEntry]]] = {
         1: {
             0: RankEntry(rank=0),
