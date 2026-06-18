@@ -39,7 +39,6 @@ def _full_setup(character_id: int = 1) -> list:
     ]
 
 
-
 def _setup_through_3_terms_reenlist() -> list:
     """Complete setup and 3 Scout Courier terms. Age=30 after. Skill_table pending at '18.0'.
 

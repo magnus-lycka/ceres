@@ -91,7 +91,6 @@ _SCIENCES = sorted(['Life Science', 'Physical Science', 'Robotic Science', 'Soci
 _SCIENCE_CLASSES = set(_skill_classes(Sciences))
 
 
-
 class TestScholarInitialTraining:
     """Scholar service_skills roll 1 (Drive/Flyer) and roll 6 (Science) require a player choice."""
 
