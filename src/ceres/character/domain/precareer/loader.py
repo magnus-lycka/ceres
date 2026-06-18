@@ -1,7 +1,9 @@
 from functools import cache
 
 from ceres.character.domain import skills as character_skills
+from ceres.character.domain.career.army import Army
 from ceres.character.domain.career.career_data import (
+    CareerData,
     CareerEventEntry,
     CharCheck,
     GainAllyEffect,
@@ -12,6 +14,8 @@ from ceres.character.domain.career.career_data import (
     LifeEventEffect,
     SkillChoiceEffect,
 )
+from ceres.character.domain.career.marines import Marines
+from ceres.character.domain.career.navy import Navy
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.precareer.colonial_upbringing import ColonialUprbringingPreCareer
 from ceres.character.domain.precareer.merchant_academy import MerchantAcademyPreCareer
@@ -130,14 +134,14 @@ def _merchant_academy(name: str, curriculum_table: str) -> MerchantAcademyPreCar
     )
 
 
-def _military_academy(name: str, tied_career: str, entry: CharCheck) -> MilitaryAcademyPreCareer:
+def _military_academy(name: str, tied_career: type[CareerData], entry: CharCheck) -> MilitaryAcademyPreCareer:
     return MilitaryAcademyPreCareer(
         name=name,
         source='Core',
         entry=entry,
         entry_term_dms={2: -2, 3: -4},
         service_skills_from=tied_career,
-        tied_career=tied_career,
+        tied_career=tied_career.name,
         graduation=CharCheck(characteristic=Chars.INT, target=7),
         graduation_dms={'END_8+': 1, 'SOC_8+': 1},
         honours_target=11,
@@ -173,9 +177,9 @@ def load_precareers() -> dict[str, PreCareerData]:
             ],
             events=_PRECAREER_EVENTS,
         ),
-        _military_academy('Army Academy', 'Army', CharCheck(characteristic=Chars.END, target=7)),
-        _military_academy('Marine Academy', 'Marines', CharCheck(characteristic=Chars.END, target=8)),
-        _military_academy('Navy Academy', 'Navy', CharCheck(characteristic=Chars.INT, target=8)),
+        _military_academy('Army Academy', Army, CharCheck(characteristic=Chars.END, target=7)),
+        _military_academy('Marine Academy', Marines, CharCheck(characteristic=Chars.END, target=8)),
+        _military_academy('Navy Academy', Navy, CharCheck(characteristic=Chars.INT, target=8)),
         ColonialUprbringingPreCareer(
             name='Colonial Upbringing',
             source='Companion',

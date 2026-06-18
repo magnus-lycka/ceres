@@ -45,6 +45,7 @@ from ceres.character.domain.career.common_pending import (
     CareerSkillChoicePendingBase,
     CareerSkillRollPendingBase,
     PendingAdvancedTrainingSkillRoll,
+    PendingAnySkillAtLevelOnSuccessRoll,
 )
 from ceres.character.domain.character_start import (
     BackgroundSkillsHandler,
@@ -113,6 +114,84 @@ class AdvancedTrainingTestMixin:
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
         assert pending is not None
         assert any(isinstance(o, self._existing_service_skill_type()) for o in pending.options)
+
+    def test_failure_no_skill_choice(self) -> None:
+        events = [
+            *self._setup_to_event(),
+            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
+        ]
+        projection = replay(1, events)
+        assert not any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
+
+    def test_failure_queues_advancement(self) -> None:
+        events = [
+            *self._setup_to_event(),
+            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
+        ]
+        projection = replay(1, events)
+        if self._failure_queues_commission():
+            assert any(isinstance(p, (PendingAdvancement, PendingCommissionChoice)) for p in projection.pending_inputs)
+        else:
+            assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+
+
+class AnySkillAtLevelTestMixin:
+    """Shared tests for 'roll EDU N+ to gain any one skill at level 1' events.
+
+    Subclasses must provide _setup_to_event(), _absent_skill_type() (a skill the
+    character definitely does not have at the time of the event), and
+    _absent_skill_instance() (a level-1 instance of that skill).
+    Override _threshold() and _failure_queues_commission() as needed.
+    """
+
+    def _setup_to_event(self) -> list:
+        raise NotImplementedError
+
+    def _absent_skill_type(self) -> type:
+        """A skill type guaranteed to be absent from the character's skills at event time."""
+        raise NotImplementedError
+
+    def _absent_skill_instance(self) -> Any:
+        """A level-1 instance of the absent skill, for the fulfillment test."""
+        raise NotImplementedError
+
+    def _threshold(self) -> int:
+        return 8
+
+    def _failure_queues_commission(self) -> bool:
+        return False
+
+    def test_creates_edu_skill_roll_pending(self) -> None:
+        projection = replay(1, self._setup_to_event())
+        pending = next(
+            (p for p in projection.pending_inputs if isinstance(p, PendingAnySkillAtLevelOnSuccessRoll)),
+            None,
+        )
+        assert pending is not None
+        assert pending.options == ['EDU']
+        assert pending.threshold == self._threshold()
+
+    def test_success_offers_any_skill_including_absent_ones(self) -> None:
+        passing_roll = self._threshold() + 1
+        events = [
+            *self._setup_to_event(),
+            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=passing_roll)),
+        ]
+        projection = replay(1, events)
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
+        assert pending is not None
+        assert any(isinstance(o, self._absent_skill_type()) for o in pending.options)
+
+    def test_success_chosen_skill_granted_at_level_1(self) -> None:
+        passing_roll = self._threshold() + 1
+        skill = self._absent_skill_instance()
+        events = [
+            *self._setup_to_event(),
+            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=passing_roll)),
+            Event(id=8, fulfills=(7, 0), handler=SkillChoiceHandler(skill=skill)),
+        ]
+        projection = replay(1, events)
+        assert projection.summary.skill_level(type(skill)) == 1
 
     def test_failure_no_skill_choice(self) -> None:
         events = [

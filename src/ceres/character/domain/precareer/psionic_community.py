@@ -1,5 +1,6 @@
 from typing import Any
 
+from ceres.character.domain.career.psion import Psion
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.precareer.precareer_data import PreCareerData
@@ -45,8 +46,8 @@ class PsionicCommunityPreCareer(PreCareerData):
             )
             pending_idx += 1
         projection.grant_skill(LifeScience(psionicology=Level(value=1)))
-        if 'Psion' not in projection.auto_qualify_careers:
-            projection.auto_qualify_careers.append('Psion')
+        if Psion not in projection.auto_qualify_careers:
+            projection.auto_qualify_careers.append(Psion)
         source = 'Psionic Community graduation'
         if honours:
             projection.add_connection(ConnectionKind.ENEMY, origin=source)

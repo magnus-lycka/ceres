@@ -25,6 +25,7 @@ from ceres.character.domain.career.career_data import (
     MishapEntry,
     MusterOutData,
     MusterOutRow,
+    QualificationDmEffect,
     RankBonus,
     RankEntry,
     RollMishapEffect,
@@ -339,8 +340,8 @@ class Entertainer(CareerData):
             effects=[SkillChoiceEffect(options=[Survival(), Pilot(), Persuade(), Streetwise()], level=1)],
         ),
         6: MishapEntry(
-            text='You are forced out because of censorship or controversy.',
-            effects=[AdvancementDmEffect(amount=2)],
+            text='You are forced out because of censorship or controversy. What truth did you get too close to?',
+            effects=[QualificationDmEffect(amount=2)],
         ),
     }
 

@@ -63,6 +63,7 @@ from ceres.character.domain.skills import (
     Carouse,
     Deception,
     Drive,
+    Electronics,
     Mechanic,
     Melee,
     Persuade,
@@ -573,6 +574,19 @@ class TestPrisonerEvent9:
         ]
         projection = replay(1, events)
         assert projection.summary.parole_threshold == 5  # unchanged
+
+
+# ── event 10: special duty ───────────────────────────────────────────────────
+
+
+class TestPrisonerEvent10:
+    def test_electronics_option_is_computers_specialty(self):
+        projection = replay(1, _through_term_event(event_roll=10))
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
+        assert pending is not None
+        electronics_opt = next((o for o in pending.options if isinstance(o, Electronics)), None)
+        assert electronics_opt is not None
+        assert electronics_opt.computers.value > 0
 
 
 # ── event 12: heroism ─────────────────────────────────────────────────────────

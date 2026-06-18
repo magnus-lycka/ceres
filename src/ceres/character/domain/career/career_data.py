@@ -192,6 +192,14 @@ class AdvancementDmEffect(BaseModel):
         projection.pending_advancement_dm += self.amount
 
 
+class QualificationDmEffect(BaseModel):
+    type: Literal['qualification_dm'] = 'qualification_dm'
+    amount: int
+
+    def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
+        projection.pending_qualification_dm += self.amount
+
+
 class BenefitDmEffect(BaseModel):
     type: Literal['benefit_dm'] = 'benefit_dm'
     amount: int
@@ -211,6 +219,27 @@ class ParoleThresholdChangeEffect(BaseModel):
         if projection.summary.parole_threshold is not None:
             new_pt = projection.summary.parole_threshold + self.amount
             projection.summary.parole_threshold = max(0, min(12, new_pt))
+
+
+class AutoQualifyCareerEffect(BaseModel):
+    type: Literal['auto_qualify_career'] = 'auto_qualify_career'
+    # Pydantic cannot use `type[CareerData]` here: the field named `type` shadows the builtin
+    # during annotation evaluation. Any is used; the value is always a CareerData subclass.
+    career: Any
+
+    def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
+        if self.career not in projection.auto_qualify_careers:
+            projection.auto_qualify_careers.append(self.career)
+
+
+class LoseAllCareerBenefitsEffect(BaseModel):
+    type: Literal['lose_all_career_benefits'] = 'lose_all_career_benefits'
+
+    def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
+        career_name = projection.get_current_career().name
+        for ct in projection.summary.career_terms:
+            if ct.career.name == career_name and ct.muster_out is not None:
+                ct.muster_out.forfeit_all_rolls()
 
 
 class CareerHandlerBase(BaseModel):
@@ -242,8 +271,11 @@ type AnyEffect = (
     | AutoAdvanceEffect
     | LifeEventEffect
     | AdvancementDmEffect
+    | QualificationDmEffect
     | BenefitDmEffect
     | ParoleThresholdChangeEffect
+    | AutoQualifyCareerEffect
+    | LoseAllCareerBenefitsEffect
     | CareerHandlerBase
 )
 
@@ -483,9 +515,9 @@ class CareerData(TermData):
             if projection.summary.last_assignment == assignment:
                 raise ReplayError(f'Cannot re-enter {self.name}/{assignment.name} — voluntary departure last term')
 
-        # Check for auto-qualify from pre-career graduation
-        if self.name in projection.auto_qualify_careers:
-            projection.auto_qualify_careers.remove(self.name)
+        # Check for auto-qualify from pre-career graduation or career mishap
+        if type(self) in projection.auto_qualify_careers:
+            projection.auto_qualify_careers.remove(type(self))
             self.start_new_term(projection, assignment, event_id)
             return
 
@@ -764,6 +796,9 @@ class MusterOut(BaseModel):
         self.rolls_remaining = max(0, self.terms + (rank + 1) // 2 + self.extra_rolls - self.lost_rolls)
         if self.rolls_remaining == 0:
             self.used = True
+
+    def forfeit_all_rolls(self) -> None:
+        self.lost_rolls = 9999
 
 
 class CareerTerm(BaseModel):

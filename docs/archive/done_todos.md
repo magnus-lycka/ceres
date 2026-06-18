@@ -1543,9 +1543,62 @@ Marines, Merchant, Navy, Noble, Prisoner, Rogue, Scholar, Scout).
 
 Core automatically promotes the Traveller. Implemented with `AutoAdvanceEffect()`.
 
+## Prisoner Event 10: Electronics (computers) specialty
+
+Core grants Electronics (computers) 1 specifically. Ceres was using generic `Electronics()`,
+losing the specialty. Fixed by passing `Electronics(computers=Level(value=1))` in the
+`SkillChoiceEffect` options.
+
+## Entertainer Mishap 6: qualification DM, not advancement DM
+
+Core grants `DM+2` to the qualification roll for the next career. Ceres was
+using `AdvancementDmEffect(amount=2)`, setting `pending_advancement_dm`
+instead of `pending_qualification_dm`.
+
+Fixed by adding `QualificationDmEffect` to `career_data.py` (parallel to
+`AdvancementDmEffect`) and updating Mishap 6 to use it. Also updated the
+mishap text to match Core word for word.
+
+## Marines Event 5 and Citizen Event 6: any skill at level 1
+
+Core says both events grant any one skill of your choice at level 1 on a
+successful EDU roll (8+ for Marines, 10+ for Citizen). Both were incorrectly
+using `handle_advanced_training`, which increases an existing skill by one
+level instead.
+
+Fixed by introducing `PendingAnySkillAtLevelOnSuccessRoll` in `common_pending.py`
+— a `CareerSkillRollPendingBase` subclass whose `resolve()` on success queues a
+`PendingSkillChoice` with all skills at level 1. Both career handlers were
+rewired to use it directly. `AnySkillAtLevelTestMixin` added to `helpers.py`
+to share the new-behaviour test structure across both careers.
+
 ## Drifter Event 10: increase any existing skill by one level
 
 Core says "increase any skill you already have by one level." Previous implementation used
 `SkillChoiceEffect(options=[], level=1)` which produced an empty select with no choices.
 Fixed with `DrifterEvent10Handler` that builds `PendingSkillChoice` from the character's
 current skills with `level=None` (increment mode).
+
+## Merchant Mishap 2: lose all benefits from this career
+
+Core says "lose all Benefits from this career". Previous implementation applied
+only `GainRivalEffect`, omitting the benefit forfeiture entirely.
+
+Fixed by introducing `LoseAllCareerBenefitsEffect` in `career_data.py`. It
+iterates over all `CareerTerm`s for the current career, calling `forfeit_all_rolls()`
+on each active `MusterOut` (consecutive terms share one `MusterOut` object with
+the previous term's set to `None`). `MusterOut.forfeit_all_rolls()` sets
+`lost_rolls = 9999`, ensuring `setup()` always yields `rolls_remaining = 0`.
+Applied as the first effect in Merchant Mishap 2 alongside `GainRivalEffect`.
+
+## Merchant Mishap 5: may take Rogue without qualification
+
+Core says "You may take the Rogue career for your next term without needing to
+roll for qualification." Previous implementation had `effects=[]` and dropped
+the rule entirely.
+
+Fixed by introducing `AutoQualifyCareerEffect(career_name='Rogue')` in
+`career_data.py`. Its `apply()` appends the career name to
+`projection.auto_qualify_careers` if not already present — reusing the same
+mechanism used by pre-career military academy graduation. Applied to
+Merchant Mishap 5.

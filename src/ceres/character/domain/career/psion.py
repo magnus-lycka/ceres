@@ -385,7 +385,7 @@ class Psion(CareerData):
             return False
         if projection.summary.psionics is None:
             return False
-        if self.name in projection.auto_qualify_careers:
+        if type(self) in projection.auto_qualify_careers:
             return True
         return projection.summary.characteristics.get(Chars.PSI, 0) >= 9
 

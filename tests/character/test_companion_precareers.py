@@ -559,7 +559,9 @@ class TestPsionicCommunity:
         projection = replay(1, events)
 
         assert projection.summary.characteristics[Chars.PSI] == 10
-        assert 'Psion' in projection.auto_qualify_careers
+        from ceres.character.domain.career.psion import Psion
+
+        assert Psion in projection.auto_qualify_careers
 
     def test_graduation_queues_career_choice(self):
         events = [

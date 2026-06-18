@@ -32,11 +32,13 @@ from ceres.character.domain.connection import (
 from ceres.character.domain.skills import (
     Admin,
     Athletics,
+    Broker,
     Carouse,
     Deception,
     Drive,
     GunCombat,
     Leadership,
+    Level,
     Melee,
     Persuade,
     Tactics,
@@ -44,7 +46,7 @@ from ceres.character.domain.skills import (
 from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
-from tests.character.helpers import MOCK_WORLD, AdvancedTrainingTestMixin, CharacterDriver
+from tests.character.helpers import MOCK_WORLD, AnySkillAtLevelTestMixin, CharacterDriver
 
 
 def _setup() -> list:
@@ -178,12 +180,15 @@ class TestMarinesMishap4:
 # ── event 5: advanced training ────────────────────────────────────────────────
 
 
-class TestMarinesEvent5(AdvancedTrainingTestMixin):
+class TestMarinesEvent5(AnySkillAtLevelTestMixin):
     def _setup_to_event(self) -> list:
         return _through_term_event(event_roll=5)
 
-    def _existing_service_skill_type(self) -> type:
-        return Athletics  # auto-applied first career: Athletics, Vacc Suit, Tactics, etc.
+    def _absent_skill_type(self) -> type:
+        return Broker  # not in Marines service skills or standard background skills
+
+    def _absent_skill_instance(self) -> Broker:
+        return Broker(level=Level(value=1))
 
     def _failure_queues_commission(self) -> bool:
         return True  # Marines rank 0 can attempt commission

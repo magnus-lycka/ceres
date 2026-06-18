@@ -2,7 +2,10 @@ from typing import Any
 
 from ceres.character.domain import skills as character_skills
 from ceres.character.domain.career import ARMY
+from ceres.character.domain.career.army import Army
 from ceres.character.domain.career.career_events import CareerEntryHandler
+from ceres.character.domain.career.marines import Marines
+from ceres.character.domain.career.navy import Navy
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.precareer.loader import load_precareers
@@ -65,13 +68,12 @@ def test_entry_grants_direct_tied_career_service_skills_and_skips_choice_lists(m
     assert character_skills.VaccSuit not in _skill_types(projection)
 
 
-def test_entry_is_noop_when_tied_career_is_unknown(monkeypatch):
-    monkeypatch.setattr('ceres.character.domain.career.loader.load_careers', lambda: {})
+def test_entry_is_noop_when_no_tied_career():
     projection = _projection()
     academy = MilitaryAcademyPreCareer(
         name='Ghost Academy',
         source='Test',
-        service_skills_from='No Such Career',
+        service_skills_from=None,
         events={},
     )
 
@@ -98,7 +100,7 @@ def test_graduation_increases_edu_queues_auto_qualification_and_notes_manual_ben
     assert next_pending_idx == 0
     assert projection.summary.characteristics[Chars.EDU] == 8
     assert projection.summary.characteristics[Chars.SOC] == 6
-    assert projection.auto_qualify_careers == ['Navy']
+    assert projection.auto_qualify_careers == [Navy]
     assert projection.summary.problems == [
         'Navy Academy graduation: if entering Navy, select any three Service Skills and increase them to level 1. '
         'Apply manually.',
@@ -119,7 +121,7 @@ def test_graduation_with_honours_also_increases_soc_and_marks_automatic_commissi
 
     assert projection.summary.characteristics[Chars.EDU] == 8
     assert projection.summary.characteristics[Chars.SOC] == 7
-    assert projection.auto_qualify_careers == ['Marines']
+    assert projection.auto_qualify_careers == [Marines]
     assert projection.summary.problems[-1].endswith('with DM+2 (automatic with honours). Apply manually.')
 
 
@@ -132,7 +134,7 @@ def test_failed_graduation_above_natural_two_allows_auto_entry_without_commissio
         Event(id=11, handler=PreCareerGraduationHandler(roll=3)),
     )
 
-    assert projection.auto_qualify_careers == ['Army']
+    assert projection.auto_qualify_careers == [Army]
     assert projection.summary.problems == [
         'Army Academy: failed graduation (roll > 2) — may still enter Army automatically, '
         'but no commission roll in first term.'
@@ -155,7 +157,7 @@ def test_failed_graduation_on_natural_two_has_no_auto_entry_effect():
 def test_auto_qualify_effect_bypasses_qualification_roll():
 
     projection = _projection(characteristics={Chars.END: 5})
-    projection.auto_qualify_careers.append('Army')
+    projection.auto_qualify_careers.append(Army)
     Event(
         id=6, handler=CareerEntryHandler(career=ARMY, assignment=ARMY.assignment('Infantry'), qualification_roll=0)
     ).apply(projection)

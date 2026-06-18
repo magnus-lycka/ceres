@@ -26,28 +26,37 @@ from ceres.character.domain.career.citizen import (
     CitizenMishap4Resist,
     PendingCitizenMishap5SkillRoll,
 )
-from ceres.character.domain.career.common_pending import PendingAdvancedTrainingSkillRoll
 from ceres.character.domain.career.loader import load_careers
 from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
-from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.connection import (
     Contact,
     Rival,
 )
-from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive, Engineer, Mechanic, Steward, Streetwise
+from ceres.character.domain.skills import (
+    Admin,
+    AnySkill,
+    Athletics,
+    Carouse,
+    Drive,
+    Engineer,
+    GunCombat,
+    Level,
+    Mechanic,
+    Steward,
+    Streetwise,
+)
 from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
-from tests.character.helpers import MOCK_WORLD
+from tests.character.helpers import MOCK_WORLD, AnySkillAtLevelTestMixin
 
 
-def _setup() -> list:
+def _setup(skills: list[AnySkill] | None = None) -> list:
+    chosen = skills if skills is not None else [Admin(), Athletics(), Carouse(), Drive()]
     return [
         Event(id=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')),
         Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='7869A5')),
-        Event(
-            id=3, fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()])
-        ),
+        Event(id=3, fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=chosen)),
     ]
 
 
@@ -140,9 +149,9 @@ def test_citizen_subsequent_career_basic_training_choice_unlocks_survival():
 # Corporate survival: SOC 6+, SOC=5, DM−1 → need roll 7 (7+DM-1=6 ≥ 6 ✓).
 
 
-def _enter_citizen(assignment: str = 'Corporate', qual_roll: int = 4) -> list:
+def _enter_citizen(assignment: str = 'Corporate', qual_roll: int = 4, skills: list[AnySkill] | None = None) -> list:
     return [
-        *_setup(),
+        *_setup(skills=skills),
         Event(
             id=4,
             fulfills=(3, 0),
@@ -261,6 +270,23 @@ class TestCitizenMishap5:
         projection = replay(1, events)
         assert any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
 
+    def test_success_skill_choice_uses_existing_instances_not_fresh(self):
+        # Drive(wheel=1): options must carry the existing instance so that
+        # build_skill_select_options restricts choices to the wheel specialty only.
+        custom_skills: list[AnySkill] = [Admin(), Athletics(), Carouse(), Drive(wheel=Level(value=1))]
+        events = [
+            *_enter_citizen(skills=custom_skills),
+            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=6)),  # fail → mishap
+            Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=5)),
+            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Streetwise(), modified_roll=9)),
+        ]
+        projection = replay(1, events)
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
+        assert pending is not None
+        drive_option = next((o for o in pending.options if isinstance(o, Drive)), None)
+        assert drive_option is not None
+        assert drive_option.wheel.value == 1  # existing instance, not a fresh Drive()
+
     def test_failure_no_skill_choice(self):
         events = [
             *self._setup_to_mishap(),
@@ -284,41 +310,18 @@ class TestCitizenMishap5:
 # ── event 6: advanced training ────────────────────────────────────────────────
 
 
-class TestCitizenEvent6:
+class TestCitizenEvent6(AnySkillAtLevelTestMixin):
     def _setup_to_event(self) -> list:
         return _through_term_event(event_roll=6)
 
-    def test_creates_edu_skill_roll_pending(self):
-        projection = replay(1, self._setup_to_event())
-        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingAdvancedTrainingSkillRoll)), None)
-        assert pending is not None
-        assert pending.options == [Chars.EDU]
+    def _absent_skill_type(self) -> type:
+        return GunCombat  # not in Citizen Corporate service skills or standard background skills
 
-    def test_success_creates_skill_choice_from_existing_skills(self):
-        events = [
-            *self._setup_to_event(),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Chars.EDU, modified_roll=11)),
-        ]
-        projection = replay(1, events)
-        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
-        assert pending is not None
-        assert any(isinstance(o, Admin) for o in pending.options)
+    def _absent_skill_instance(self) -> GunCombat:
+        return GunCombat(slug=Level(value=1))
 
-    def test_failure_no_skill_choice(self):
-        events = [
-            *self._setup_to_event(),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Chars.EDU, modified_roll=9)),
-        ]
-        projection = replay(1, events)
-        assert not any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
-
-    def test_failure_queues_advancement(self):
-        events = [
-            *self._setup_to_event(),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Chars.EDU, modified_roll=9)),
-        ]
-        projection = replay(1, events)
-        assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+    def _threshold(self) -> int:
+        return 10
 
 
 # ── event 8: illegal information ─────────────────────────────────────────────

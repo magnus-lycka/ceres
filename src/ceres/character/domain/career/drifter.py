@@ -36,7 +36,10 @@ from ceres.character.domain.career.career_events import (
     career_progress_pending,
 )
 from ceres.character.domain.career.common import CommonMishap1Handler
-from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
+from ceres.character.domain.career.common_pending import (
+    CareerSkillRollPendingBase,
+    append_increment_existing_skill_pending,
+)
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.health.health_events import PendingInjuryTable
@@ -277,13 +280,10 @@ class DrifterEvent10Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
-            PendingSkillChoice(
-                pending_id=(event_id, pending_idx),
-                instruction='Increase any skill you already have by one level',
-                options=list(projection.summary.skills),
-                level=None,
-            )
+        append_increment_existing_skill_pending(
+            projection,
+            (event_id, pending_idx),
+            'Increase any skill you already have by one level',
         )
         return pending_idx + 1
 

@@ -34,11 +34,14 @@ from ceres.character.domain.career.career_data import (
 )
 from ceres.character.domain.career.career_events import (
     PendingChoices,
-    PendingSkillChoice,
     career_progress_pending,
 )
-from ceres.character.domain.career.common import CommonMishap1Handler, handle_advanced_training
-from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
+from ceres.character.domain.career.common import CommonMishap1Handler
+from ceres.character.domain.career.common_pending import (
+    CareerSkillRollPendingBase,
+    PendingAnySkillAtLevelOnSuccessRoll,
+    append_increment_existing_skill_pending,
+)
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.skills import (
@@ -113,12 +116,10 @@ class PendingCitizenMishap5SkillRoll(CareerSkillRollPendingBase):
 
         projection.get_current_career()
         if event.modified_roll >= 8:
-            projection.pending_inputs.append(
-                PendingSkillChoice(
-                    pending_id=(event.id, 0),
-                    instruction='Forced to flee: increase any existing skill by one level',
-                    options=[type(s)() for s in projection.summary.skills],
-                )
+            append_increment_existing_skill_pending(
+                projection,
+                (event.id, 0),
+                'Forced to flee: increase any existing skill by one level',
             )
             next_idx = _apply_mishap_ejection(projection, event.id, 1, lose_current_term=True)
         else:
@@ -239,7 +240,16 @@ class CitizenEvent6Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        return handle_advanced_training(projection, event_id, pending_idx, threshold=10)
+        projection.pending_inputs.append(
+            PendingAnySkillAtLevelOnSuccessRoll(
+                pending_id=(event_id, pending_idx),
+                instruction='Roll EDU 10+ to gain any one skill of your choice at level 1',
+                options=[Chars.EDU],
+                threshold=10,
+                success_instruction='Advanced training: gain any one skill of your choice at level 1',
+            )
+        )
+        return pending_idx + 1
 
 
 # ── event 8: illegal information ─────────────────────────────────────────────

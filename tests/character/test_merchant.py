@@ -6,6 +6,7 @@ from ceres.character.domain.career.career_events import (
     CareerEntryHandler,
     PendingAdvancement,
     PendingChoices,
+    PendingMusterOut,
     PendingSkillChoice,
     SkillChoiceHandler,
     SkillRollHandler,
@@ -281,3 +282,63 @@ class TestMerchantMishap1:
         pending = next((p for p in d.projection.pending_inputs if isinstance(p, PendingChoices)), None)
         assert pending is not None
         assert {type(c) for c in pending.choices} == {CommonMishap1Severe, CommonMishap1DoubleRoll}
+
+
+# ── mishap 2: bankrupted by rival ────────────────────────────────────────────
+
+
+class TestMerchantMishap2:
+    def _setup_to_mishap(self) -> CharacterDriver:
+        d = CharacterDriver()
+        d.start(VILANI, MOCK_WORLD)
+        d.ucp('7869A5')
+        d.background_skills([Admin(), Athletics(), Carouse(), Drive()])
+        d.career('Merchant', 'Merchant Marine', roll=3)  # INT 4+, DM+1, roll 3 → 4 ✓
+        d.survive(2)  # EDU 5+, DM+2, roll 2 → 4 < 5 — fail
+        d.mishap(2)
+        return d
+
+    def test_gains_rival(self):
+        d = self._setup_to_mishap()
+        rivals = [c for c in d.projection.summary.connections if isinstance(c, Rival)]
+        assert len(rivals) == 1
+
+    def test_all_benefit_rolls_forfeited_after_promotion(self):
+        # After rank 1, standard ejection alone leaves 1 roll remaining (rank bonus).
+        # Mishap 2 must forfeit ALL benefits — not just the current term's ejection penalty.
+        # EDU=10 → DM+1 (9-11 bracket per MgT2 table)
+        d = CharacterDriver()
+        d.start(VILANI, MOCK_WORLD)
+        d.ucp('7869A5')
+        d.background_skills([Admin(), Athletics(), Carouse(), Drive()])
+        d.career('Merchant', 'Merchant Marine', roll=3)
+        d.survive(4)  # EDU 5+, DM+1, roll 4 → 5 ≥ 5 ✓
+        d.term_event(6)  # event 6 = contact → PendingAdvancement
+        d.advancement(6)  # EDU 7+, DM+1, roll 6 → 7 ≥ 7 → rank 1; Mechanic auto-granted
+        d.skill_table('service_skills', 6)  # row 6 = Persuade (non-specialized, auto-applies); PendingReenlist remains
+        d.reenlist(True)  # → term 2 → PendingSkillTable (per-term skill roll before survival)
+        d.skill_table('service_skills', 6)  # term 2 skill roll → Persuade → PendingSurvive queued
+        d.survive(3)  # EDU 5+, DM+1, roll 3 → 4 < 5 — fail → PendingMishap
+        d.mishap(2)
+        assert not any(isinstance(p, PendingMusterOut) for p in d.projection.pending_inputs)
+
+
+# ── mishap 5: trade restrictions → Rogue qualification ───────────────────────
+
+
+class TestMerchantMishap5:
+    def _setup_to_mishap(self) -> CharacterDriver:
+        d = CharacterDriver()
+        d.start(VILANI, MOCK_WORLD)
+        d.ucp('7869A5')
+        d.background_skills([Admin(), Athletics(), Carouse(), Drive()])
+        d.career('Merchant', 'Merchant Marine', roll=3)
+        d.survive(2)  # fail → mishap
+        d.mishap(5)
+        return d
+
+    def test_rogue_in_auto_qualify_careers(self):
+        from ceres.character.domain.career.rogue import Rogue
+
+        d = self._setup_to_mishap()
+        assert Rogue in d.projection.auto_qualify_careers

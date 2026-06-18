@@ -59,6 +59,7 @@ from ceres.character.domain.skills import (
     Gambler,
     Investigate,
     JackOfAllTrades,
+    Level,
     Mechanic,
     Melee,
     Persuade,
@@ -777,7 +778,12 @@ class Prisoner(CareerData):
         ),
         10: CareerEventEntry(
             text='Special Duty.',
-            effects=[SkillChoiceEffect(options=[Admin(), Advocate(), Electronics(), Steward()], level=1)],
+            effects=[
+                SkillChoiceEffect(
+                    options=[Admin(), Advocate(), Electronics(computers=Level(value=1)), Steward()],
+                    level=1,
+                )
+            ],
         ),
         11: CareerEventEntry(
             text='The warden takes an interest in your case. Reduce your Parole Threshold by -2.',

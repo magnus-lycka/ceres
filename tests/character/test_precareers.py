@@ -74,7 +74,8 @@ def test_military_academies_have_distinct_entry_and_same_graduation():
         assert _graduation(name).target == 7
         assert academy.honours_target == 11
         assert academy.tied_career is not None
-        assert academy.service_skills_from == academy.tied_career
+        assert academy.service_skills_from is not None
+        assert academy.service_skills_from.name == academy.tied_career
 
 
 def test_precareer_events_are_loaded_once_for_all_precareers():

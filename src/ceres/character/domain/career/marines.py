@@ -36,8 +36,8 @@ from ceres.character.domain.career.career_events import (
     PendingSkillChoice,
     career_progress_pending,
 )
-from ceres.character.domain.career.common import CommonMishap1Handler, handle_advanced_training
-from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
+from ceres.character.domain.career.common import CommonMishap1Handler
+from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase, PendingAnySkillAtLevelOnSuccessRoll
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.skills import (
@@ -187,7 +187,15 @@ class MarinesEvent5Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        return handle_advanced_training(projection, event_id, pending_idx)
+        projection.pending_inputs.append(
+            PendingAnySkillAtLevelOnSuccessRoll(
+                pending_id=(event_id, pending_idx),
+                instruction='Roll EDU 8+ to gain any one skill of your choice at level 1',
+                options=[Chars.EDU],
+                success_instruction='Advanced training: gain any one skill of your choice at level 1',
+            )
+        )
+        return pending_idx + 1
 
 
 # ── event 6: assault on an enemy fortress ────────────────────────────────────

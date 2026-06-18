@@ -10,6 +10,7 @@ from ceres.character.domain.benefits import (
 from ceres.character.domain.career.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
+    AutoQualifyCareerEffect,
     BenefitDmEffect,
     CareerData,
     CareerEventEntry,
@@ -22,6 +23,7 @@ from ceres.character.domain.career.career_data import (
     GainRivalEffect,
     InjuryEffect,
     LifeEventEffect,
+    LoseAllCareerBenefitsEffect,
     MishapEntry,
     MusterOutData,
     MusterOutRow,
@@ -40,6 +42,7 @@ from ceres.character.domain.career.career_events import (
 )
 from ceres.character.domain.career.common import CommonMishap1Handler, handle_advanced_training
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
+from ceres.character.domain.career.rogue import Rogue
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.skills import (
@@ -346,7 +349,7 @@ class Merchant(CareerData):
         2: MishapEntry(
             text='You are bankrupted by a rival. You lose all Benefits from '
             'this career and gain the other trader as a Rival.',
-            effects=[GainRivalEffect()],
+            effects=[LoseAllCareerBenefitsEffect(), GainRivalEffect()],
         ),
         3: MishapEntry(
             text='A sudden war destroys your trade routes and contacts, forcing you to '
@@ -358,8 +361,9 @@ class Merchant(CareerData):
             effects=[GainEnemyEffect()],
         ),
         5: MishapEntry(
-            text='Imperial trade restrictions force you out of business.',
-            effects=[],
+            text='Imperial trade restrictions force you out of business. '
+            'You may take the Rogue career for your next term without needing to roll for qualification.',
+            effects=[AutoQualifyCareerEffect(career=Rogue)],
         ),
         6: MishapEntry(
             text='Injured. Roll on the Injury table.',

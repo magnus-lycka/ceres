@@ -1,6 +1,6 @@
 from typing import Annotated, Any, cast, overload
 
-from pydantic import BaseModel, BeforeValidator, Field, SerializeAsAny, model_validator
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, SerializeAsAny, model_validator
 
 from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.domain.benefits import ItemBenefit
@@ -212,6 +212,8 @@ class CharacterSummary(BaseModel):
 
 
 class CharacterProjection(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     character_id: int
     summary: CharacterSummary
     pending_inputs: list[SerializeAsAny[Annotated[PendingInputBase, BeforeValidator(_deserialise_pending_input)]]] = (
@@ -219,7 +221,7 @@ class CharacterProjection(BaseModel):
     )
     pending_advancement_dm: int = 0
     pending_qualification_dm: int = 0
-    auto_qualify_careers: list[str] = Field(default_factory=list)
+    auto_qualify_careers: list[type[CareerData]] = Field(default_factory=list)
     pending_reenlist: bool | None = None  # stores reenlist decision during aging chain
     forced_next_career: CareerData | None = None  # set by prison-sending events; consumed by next career choice
     prisoner_freed: bool = False  # set by _apply_prisoner_advancement when parole granted

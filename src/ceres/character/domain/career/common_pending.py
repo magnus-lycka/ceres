@@ -9,9 +9,24 @@ from pydantic import Field
 
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.skills import AnySkill, Level, level_fields
+from ceres.character.domain.skill_events import PendingSkillChoice
+from ceres.character.domain.skills import AnySkill, Level, level_fields, skill_instances
 from ceres.character.input_specs import NumberEntry, Select
 from ceres.character.mechanism.pending_input import PendingInputBase
+
+
+def append_increment_existing_skill_pending(
+    projection: CharacterProjection,
+    pending_id: tuple[int, int],
+    instruction: str,
+) -> None:
+    projection.pending_inputs.append(
+        PendingSkillChoice(
+            pending_id=pending_id,
+            instruction=instruction,
+            options=list(projection.summary.skills),
+        )
+    )
 
 
 def _build_career_skill_select_options(
@@ -126,13 +141,28 @@ class PendingAdvancedTrainingSkillRoll(CareerSkillRollPendingBase):
 
     def resolve(self, projection: CharacterProjection, event: Any) -> None:
         if event.modified_roll >= self.threshold:
-            from ceres.character.domain.career.career_events import PendingSkillChoice
+            append_increment_existing_skill_pending(
+                projection,
+                (event.id, 0),
+                'Advanced training: increase any existing skill by one level',
+            )
 
+
+class PendingAnySkillAtLevelOnSuccessRoll(CareerSkillRollPendingBase):
+    """Shared pending for 'roll EDU N+ to gain any one skill of your choice at level 1' events."""
+
+    kind: Literal['any_skill_at_level_on_success_roll'] = 'any_skill_at_level_on_success_roll'
+    threshold: int = 8
+    success_instruction: str
+
+    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+        if event.modified_roll >= self.threshold:
             projection.pending_inputs.append(
                 PendingSkillChoice(
                     pending_id=(event.id, 0),
-                    instruction='Advanced training: increase any existing skill by one level',
-                    options=list(projection.summary.skills),
+                    instruction=self.success_instruction,
+                    options=skill_instances(AnySkill),
+                    level=1,
                 )
             )
 

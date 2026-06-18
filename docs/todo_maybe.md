@@ -671,9 +671,6 @@ Known differences:
   skill with `DM+2` to the next advancement roll on success or `DM-2` to the
   next Survival roll on failure. Ceres currently only gives the initial skill
   choice.
-- **Event 6** — Core says `EDU 10+` grants any one skill of your choice at
-  level 1. Ceres currently reuses the generic advanced-training helper, which
-  instead increases an existing skill by one level.
 - **Event 8** — the reward choice is now represented, but accepting incorrectly
   grants an extra Benefit roll instead of `DM+1` to one Benefit roll. Refusing
   incorrectly grants `DM+2` to the next advancement roll, while Core says it
@@ -744,9 +741,6 @@ Known differences:
   `Enemy` if none exist. Ceres currently shortens the text and always applies
   `GainRivalEffect()`, never converting an existing relationship and never
   producing an `Enemy`.
-- **Mishap 6** — Core grants `DM+2` to the next **qualification** roll for the
-  next career. Ceres currently uses `AdvancementDmEffect(amount=2)`, which is
-  the wrong domain entirely.
 - **Event 4** — Core says gain **one of** `Carouse 1`, `Persuade 1`, `Steward
   1`, or a `Contact`. Ceres currently grants both a skill choice and a
   `Contact`.
@@ -782,9 +776,6 @@ Known differences:
   ejects the Traveller, while accepting lets them stay but gain the lone
   survivor as an `Enemy`. Ceres instead gives a `Contact` on refusal and adds a
   `Deception or Persuade 8+` gate to staying after acceptance.
-- **Event 5** — Core says `EDU 8+` grants any one skill of your choice at
-  level 1. Ceres currently reuses the generic advanced-training helper, which
-  instead increases an existing skill by one level.
 - **Event 6** — Core says success grants `Tactics (military)` or `Leadership`,
   while failure causes injury and a loss of `1` point from any physical
   characteristic. Ceres currently uses generic `Tactics()`, leaves the injury
@@ -819,11 +810,6 @@ References:
 
 Known differences:
 
-- **Mishap 2** — text matches Core, but Ceres appears to implement only the
-  `Rival` part and not the required "lose all Benefits from this career"
-  consequence.
-- **Mishap 5** — Core says the Traveller may take the `Rogue` career next term
-  without a qualification roll. Ceres currently drops that rule entirely.
 - **Mishap 6** — Core says bankruptcy still allows a Benefit roll for the term.
   Ceres currently has an unrelated injury mishap here instead, so this row
   appears to be outright wrong.
@@ -937,8 +923,6 @@ Known differences:
 - **Event 9** — lawyer cost should be `Cr1000 × level²`; Ceres uses Cr1000,
   Cr2000, and Cr3000 and records payment as manual notes. On success Core
   reduces parole threshold by `1D`, while Ceres reduces it by only 1.
-- **Event 10** — Core specifically grants Electronics (computers) 1; Ceres
-  loses the specialty.
 - **Literal text drift** — Prisoner mishap/event entry text and the Event 7
   subtable text are substantially shortened or rewritten. Make all Prisoner
   mishap/event entry text match Core word for word, excluding page references

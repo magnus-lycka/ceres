@@ -220,3 +220,27 @@ class TestEntertainerMishap1:
         pending = next((p for p in d.projection.pending_inputs if isinstance(p, PendingChoices)), None)
         assert pending is not None
         assert {type(c) for c in pending.choices} == {CommonMishap1Severe, CommonMishap1DoubleRoll}
+
+
+# ── mishap 6: censorship or controversy ──────────────────────────────────────
+
+
+class TestEntertainerMishap6:
+    def _setup_to_mishap(self) -> CharacterDriver:
+        d = CharacterDriver()
+        d.start(VILANI, MOCK_WORLD)
+        d.ucp('7869A5')
+        d.background_skills([Admin(), Athletics(), Carouse(), Drive()])
+        d.career('Entertainer', 'Artist', roll=4)
+        d.initial_training(PerformingArt())
+        d.survive(2)  # Artist SOC 6+, DM−1; roll 2 → 1 < 6 — fail
+        d.mishap(6)
+        return d
+
+    def test_grants_qualification_dm_plus_2(self):
+        d = self._setup_to_mishap()
+        assert d.projection.pending_qualification_dm == 2
+
+    def test_does_not_set_advancement_dm(self):
+        d = self._setup_to_mishap()
+        assert d.projection.pending_advancement_dm == 0
