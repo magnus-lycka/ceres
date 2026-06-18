@@ -20,6 +20,7 @@ Current Ceres status: only `Humaniti` and `Vilani` are defined in
 | Aniyun | Alien | Spinext | STR=1D, EDU-2 | — | — | Citizen/Drifter only; natural flight |
 | Ascondi | Alien | Great Rift 1 | END+1; caste mods at age ~20 | — | — | Caste replaces background; SOC starts at 1 |
 | Aslan | Major | AoCS 1 | STR+2 DEX-2 END+1 (m); STR+1 DEX-1 END+2 (f) | SOC → TER | — | Rite of Passage; Clan Shares; gender-locked assignments |
+| Aslan (Darrian) | Alien | AoCS 3 | STR+1, DEX+1, EDU+1 | SOC → TER | — | Any Darrian career; gender preferences softened; Roget Aslan may also use AoCS 1 options |
 | Bosaki | Alien | JTAS 17 | STR=1D+1, DEX=2D+2, END=1D+1, INT=2D+1, EDU=2D, SOC=4 | — | — | Age 24 start; Combat Aversion |
 | Bruhre | Alien | Deepdark | STR=3D(max 18), DEX=1D, END=3D+2(max 20), SOC=1D | — | — | No Drifter/Entertainer/Rogue |
 | Bwap | Alien | AoCS 3 | STR-4 END-4 | — | — | Faster aging; no Rogue; Structured Mind trait |
