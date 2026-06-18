@@ -62,6 +62,7 @@ Current Ceres status: only `Humaniti` and `Vilani` are defined in
 | Tlinzha | Alien | Sector 8 | END=3D | — | — | 8-year terms; age 8 start; no psionics |
 | Tlyetrai | Alien | Deepdark | STR-2, DEX+1, INT+1 | — | — | No Army/Navy/Marine/Rogue unless emigrated |
 | Ulane | Alien | Deepdark | DEX+2; STR/END=1D+1 | — | — | Fast Metabolism; Multi-limbed; Small (-1) |
+| Yn-tsai | Alien | Deepdark | STR-2, INT+2 | — | — | All Core careers; Low Pressure trait |
 | Vargr | Major | AoCS 1 | — | SOC → CHA | — | CHA gain/loss mechanic |
 | Vegan | Alien | Sol/AoCS | EDU+2, SOC-2 | — | — | First career must be Drifter; 200+ year lifespan |
 | Vilani | Major | Core | — | — | — | No mechanical differences |
@@ -813,6 +814,15 @@ Enormous pacifist herbivores from Reaver's Deep.
 - Weapons Aversion: first combat skill always acquired at level 0.
 - Natural armor Protection +4. Two natural weapon attacks (tail/stomp) per round, 2D each.
 - Require 8-ton staterooms.
+
+#### Yn-tsai
+*Source: The Deep Dark (`refs/deepdark/03_aliens_of_the_buffer.md`)*
+
+Bipedal, fur-covered sophonts transplanted to Tsanesi (Reaver's Deep) by the Saie; descended from carnivores but culturally pacifistic.
+
+- **Characteristics:** STR-2, INT+2.
+- All Core careers available.
+- **Low Pressure:** DM-1 on checks in high-pressure atmospheres (types 8, 9, 13).
 
 #### Za'tachk
 *Source: AoCS Vol. 4 (`refs/alien4/30_za_tachk_travellers.md`)*
