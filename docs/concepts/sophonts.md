@@ -26,6 +26,7 @@ Current Ceres status: only `Humaniti` and `Vilani` are defined in
 | Bwap | Alien | AoCS 3 | STR-4 END-4 | — | — | Faster aging; no Rogue; Structured Mind trait |
 | Caprisaps (Alpine) | Uplift | JTAS 12 | STR-2, DEX+2 | — | — | Goat uplift; Improved Digestion |
 | Caprisaps (Boar) | Uplift | JTAS 12 | STR-1, DEX+1 | — | — | Goat uplift; Improved Digestion |
+| Chokari | Uplift | BTC | END+1, SOC-1 | — | PSI (2D) | Ancient uplift (Foelen); psionic training before career; Deep Diver (100m); Swimmer (6m) |
 | Darrian | Human | AoCS 3 / BTC | STR-1 DEX+1 END-1 INT+1 EDU+1 | — | — | Restricted career list; first term forced |
 | Dolphin (Foelen) | Uplift | BTC | END+1, SOC-1 | — | — | Ancient uplift near Foelen; all Core careers |
 | Dolphin (Solomani) | Uplift | AoCS 3 | STR+4 END+2 SOC-4 | — | — | Solomani uplift; age 12 start; restricted careers |
@@ -401,6 +402,18 @@ the Vilani–Vargr border, working as miners and astrogators.
   Astrogation 0 as background skill).
 - All Core careers available.
 - Caprisap ships must have an Arena (4 tons, MCr0.5) per full 10,000 tons.
+
+#### Chokari
+*Source: BTC (`refs/btc/05_jewell.md`)*
+
+Humanoids Ancient-engineered from the same stock as the Foelen Dolphins; share their world
+and get along well with them. Adapted for aquatic life but comfortable on land. Strong
+psionic tendencies; under Zhodani occupation of Foelen but taking the long view.
+
+- **Characteristics:** END+1, SOC-1; PSI = 2D.
+- Psionic training may be taken before the first career term.
+- **Traits:** Deep Diver (100m without risk; 10-minute breath hold); Swimmer (6m speed).
+- All Core careers available.
 
 #### Foelen Dolphins
 *Source: BTC (`refs/btc/05_jewell.md`)*
