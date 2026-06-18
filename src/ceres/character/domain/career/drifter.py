@@ -269,6 +269,25 @@ class DrifterEvent9Handler(CareerHandlerBase):
         return pending_idx + 1
 
 
+# ── event 10: honed abilities ────────────────────────────────────────────────
+
+
+class DrifterEvent10Handler(CareerHandlerBase):
+    type: Literal['drifter_event_10'] = 'drifter_event_10'
+
+    @staticmethod
+    def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
+        projection.pending_inputs.append(
+            PendingSkillChoice(
+                pending_id=(event_id, pending_idx),
+                instruction='Increase any skill you already have by one level',
+                options=list(projection.summary.skills),
+                level=None,
+            )
+        )
+        return pending_idx + 1
+
+
 # ── event 11: forcibly drafted ────────────────────────────────────────────────
 
 
@@ -471,8 +490,8 @@ class Drifter(CareerData):
             effects=[DrifterEvent9Handler()],
         ),
         10: CareerEventEntry(
-            text='Life on the edge hones your abilities.',
-            effects=[SkillChoiceEffect(options=[], level=1)],
+            text='Life on the edge hones your abilities. Increase any skill you already have by one level.',
+            effects=[DrifterEvent10Handler()],
         ),
         11: CareerEventEntry(
             text='You are forcibly drafted.',

@@ -1531,3 +1531,21 @@ the JSON payload: `fulfills_event_id INTEGER` and `fulfills_seq INTEGER`, storin
 `pending_inputs` table described in the original plan was omitted — pending inputs
 remain fully derived state rebuilt by replay, so no authoritative storage is needed.
 All SQL in `store.py` updated accordingly.
+
+## Mishap 1 choice (all careers)
+
+Core gives a choice between the severe-injury result and rolling twice on the
+Injury table and taking the lower result. Implemented via `CommonMishap1Handler`
+in `common.py`, used by all careers (Agent, Army, Citizen, Drifter, Entertainer,
+Marines, Merchant, Navy, Noble, Prisoner, Rogue, Scholar, Scout).
+
+## Scout Event 12: automatic promotion
+
+Core automatically promotes the Traveller. Implemented with `AutoAdvanceEffect()`.
+
+## Drifter Event 10: increase any existing skill by one level
+
+Core says "increase any skill you already have by one level." Previous implementation used
+`SkillChoiceEffect(options=[], level=1)` which produced an empty select with no choices.
+Fixed with `DrifterEvent10Handler` that builds `PendingSkillChoice` from the character's
+current skills with `level=None` (increment mode).

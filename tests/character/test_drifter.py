@@ -12,6 +12,7 @@ from ceres.character.domain.career.career_events import (
     PendingMusterOut,
     PendingSkillChoice,
     PendingSurvive,
+    SkillChoiceHandler,
     SkillRollHandler,
     SurviveHandler,
     TermEventHandler,
@@ -35,7 +36,7 @@ from ceres.character.domain.connection import (
     Rival,
 )
 from ceres.character.domain.health.health_events import PendingInjuryTable
-from ceres.character.domain.skills import Admin, Athletics, Carouse, Deception, Drive, GunCombat, Melee, Survival
+from ceres.character.domain.skills import Admin, Athletics, Carouse, Deception, Drive, GunCombat, Level, Melee, Survival
 from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
@@ -440,6 +441,31 @@ class TestDrifterEvent9:
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+
+
+# ── event 10: honed abilities ────────────────────────────────────────────────
+
+
+class TestDrifterEvent10:
+    def _setup_to_event(self) -> list:
+        return _through_term_event(event_roll=10)
+
+    def test_presents_existing_skills_as_options(self):
+        projection = replay(1, self._setup_to_event())
+        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
+        assert pending is not None
+        option_types = {type(o) for o in pending.options}
+        current_skill_types = {type(s) for s in projection.summary.skills}
+        assert option_types == current_skill_types
+
+    def test_chosen_skill_is_incremented(self):
+        # Admin starts at 0 from background skills; choosing it at level 1 should increment it
+        events = [
+            *self._setup_to_event(),
+            Event(id=7, fulfills=(6, 0), handler=SkillChoiceHandler(skill=Admin(level=Level(value=1)))),
+        ]
+        projection = replay(1, events)
+        assert projection.summary.skill_level(Admin) == 1
 
 
 # ── event 11: forcibly drafted ────────────────────────────────────────────────

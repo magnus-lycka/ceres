@@ -663,9 +663,6 @@ References:
 
 Known differences:
 
-- **Mishap 1** — Core gives a choice between the severe-injury result and
-  rolling twice on the Injury table and taking the lower result. Ceres applies
-  only the severe-injury effect, with no choice.
 - **Mishap 4** — both text and behavior diverge sharply from Core. Core says
   co-operating gains `DM+2` to the next career qualification roll and refusing
   gains an `Ally`; Ceres instead shortens the text and models cooperate/resist
@@ -703,9 +700,6 @@ References:
 
 Known differences:
 
-- **Mishap 1** — Core gives a choice between the severe-injury result and
-  rolling twice on the Injury table and taking the lower result. Ceres applies
-  only the severe-injury effect, with no choice.
 - **Mishap 5** — Core says an existing `Contact` or `Ally` betrays the
   Traveller and becomes a `Rival` or `Enemy`, with a fallback `Rival` or
   `Enemy` if none exist. Ceres currently shortens the text and always creates a
@@ -723,10 +717,6 @@ Known differences:
   from Ceres. In particular, Ceres turns the successful outcome into an extra
   Benefit roll instead of `DM+4` to one Benefit roll, and changes the middle
   outcome bands.
-- **Event 10** — Core says to increase any skill the Traveller already has by
-  one level. Ceres currently uses `SkillChoiceEffect(options=[], level=1)`,
-  which does not obviously implement this correctly and should be treated as a
-  likely bug until verified/fixed.
 - **Event 11** — Core says "Roll for the Draft next term." Ceres currently
   replaces this with a manual problem note and bespoke 1D service mapping
   instead of reusing whatever proper draft handling exists elsewhere.
@@ -749,9 +739,6 @@ References:
 
 Known differences:
 
-- **Mishap 1** — Core gives a choice between the severe-injury result and
-  rolling twice on the Injury table and taking the lower result. Ceres applies
-  only the severe-injury effect, with no choice.
 - **Mishap 4** — Core says an existing `Contact` or `Ally` betrays the
   Traveller and becomes a `Rival` or `Enemy`, with a fallback `Rival` or
   `Enemy` if none exist. Ceres currently shortens the text and always applies
@@ -791,9 +778,6 @@ References:
 
 Known differences:
 
-- **Mishap 1** — Core gives a choice between the severe-injury result and
-  rolling twice on the Injury table and taking the lower result. Ceres applies
-  only the severe-injury effect, with no choice.
 - **Mishap 4** — both branches are rewritten in Ceres. Core says refusing
   ejects the Traveller, while accepting lets them stay but gain the lone
   survivor as an `Enemy`. Ceres instead gives a `Contact` on refusal and adds a
@@ -835,9 +819,6 @@ References:
 
 Known differences:
 
-- **Mishap 1** — Core gives a choice between the severe-injury result and
-  rolling twice on the Injury table and taking the lower result. Ceres applies
-  only the severe-injury effect, with no choice.
 - **Mishap 2** — text matches Core, but Ceres appears to implement only the
   `Rival` part and not the required "lose all Benefits from this career"
   consequence.
@@ -877,9 +858,6 @@ References:
 
 Known differences:
 
-- **Mishap 1** — Core gives a choice between the severe-injury result and
-  rolling twice on the Injury table and taking the lower result. Ceres applies
-  only the severe-injury effect, with no choice.
 - **Mishap 3** — several assignment-specific Core skill specialties are lost:
   Electronics (sensors), Pilot (small craft or spacecraft), and Tactics
   (naval) are represented by generic skill objects.
@@ -914,9 +892,6 @@ References:
 
 Known differences:
 
-- **Mishap 1** — Core gives a choice between the severe-injury result and
-  rolling twice on the Injury table and taking the lower result. Ceres applies
-  only the severe-injury effect, with no choice.
 - **Mishaps 3 and 5** — failed rolls leave the Injury-table result as a manual
   problem note. The current tests explicitly assert those notes instead of a
   represented injury outcome.
@@ -949,9 +924,6 @@ References:
 
 Known differences:
 
-- **Mishap 1** — Core gives a choice between the severe-injury result and
-  rolling twice on the Injury table and taking the lower result. Ceres applies
-  only the severe-injury effect, with no choice.
 - **Mishap 3** — submitting to the prison gang records the lost Benefit roll as
   a manual problem note instead of changing muster-out state.
 - **Event 5** — Core permits Deception, Persuade, Melee, or Stealth after
@@ -985,9 +957,6 @@ References:
 
 Known differences:
 
-- **Mishap 1** — Core gives a choice between the severe-injury result and
-  rolling twice on the Injury table and taking the lower result. Ceres applies
-  only the severe-injury effect, with no choice.
 - **Mishap 3** - Ceres makes an arbitrary decision concerning which friend becomes
   a rival, instead of letting the player decide.
 - **Mishap 4** — Core specifies Pilot (small craft or spacecraft) and Athletics
@@ -1024,9 +993,6 @@ References:
 
 Known differences:
 
-- **Mishap 1** — Core gives a choice between the severe-injury result and
-  rolling twice on the Injury table and taking the lower result. Ceres applies
-  only the severe-injury effect, with no choice.
 - **Mishap 2** — Core requires rolling twice on the Injury table and taking the
   higher result. Ceres applies a single generic Injury-table effect.
 - **Mishap 4** — Core specifically offers Athletics (dexterity or endurance);
@@ -1057,9 +1023,6 @@ References:
 
 Known differences:
 
-- **Mishap 1** — Core gives a choice between the severe-injury result and
-  rolling twice on the Injury table and taking the lower result. Ceres applies
-  only the severe-injury effect, with no choice.
 - **Event 3** — failure now prevents re-enlisting in Scouts at the end of the
   term. Success should grant only Electronics (sensors) 1, but Ceres grants
   level 1 in every Electronics specialty.
@@ -1068,9 +1031,6 @@ Known differences:
   `SpaceScience()` rather than the full Science choice.
 - **Event 6** — Core specifically offers Pilot (small craft) among the skill
   choices. Ceres offers generic `Pilot()`.
-- **Event 12** — Core automatically promotes the Traveller. Ceres instead
-  applies `DecreaseCharacteristicEffect(characteristic=Chars.SOC, amount=1)`,
-  which is unrelated and harmful.
 - **Event 7** — inherits the generic Life Events correctness gap; once the
   generic Life Events todo is fixed, re-check Scout event 7 against Core.
 - **Literal text drift** — Scout mishap/event entry text is shortened across
@@ -1105,4 +1065,3 @@ This is a non-trivial refactor because Pydantic generics interact with
 discriminated unions, but it would let us replace all the defensive `getattr`
 calls in `automation.py`, `storage.py`, `habitation.py`, and `power.py` with
 direct attribute access.
-
