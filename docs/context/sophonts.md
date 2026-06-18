@@ -158,19 +158,6 @@ Manipulative, star-faring species from the Hive Federation.
 - Physical Coward trait: must check RES/BOL when physically threatened within 25m.
 - Natural armor 2; regeneration; dormancy ability.
 
-#### Ithklur
-*Source: JTAS Vol. 7 (`refs/jtas/7/07_ithklur.md`)*
-
-Aggressive humanoids, client species of the Hive Federation.
-
-- **SOC replaced by RES (Resolve) = 1D+1. EDU = 1D+1** (not 2D).
-- **Fourfold Way path system:** Facilitator (INT 5+), Guardian (STR 5+), Explorer (END 6+),
-  Seeker (INT 6+). Characters choose a path (Holists stay on one; Radialists sample all four).
-  Path replaces career qualification.
-- RES gains +1 per successful advancement term.
-- Claws (1D+2); Club tail (2D, DM-2); infrared sense DM+1 Recon/Survival.
-- Extended aging resistance: DM+4 until age 82 (term 16).
-
 ### K'kree
 *Source: AoCS Vol. 1 (`refs/alien1/07_chapter_seven.md`; lore in `refs/alien1/06_chapter_six.md`)*
 
@@ -635,6 +622,19 @@ Slender, philosophical sophonts found throughout Charted Space.
   oriented). Within Hlanssai society, path bypasses the standard career system entirely: no
   survival/commission/promotion/re-enlistment checks; 1 skill per term.
 - DM-6 military career enlistment/advancement; DM-3 major corporate careers.
+
+#### Ithklur
+*Source: JTAS Vol. 7 (`refs/jtas/7/07_ithklur.md`)*
+
+Aggressive humanoids, client species of the Hive Federation.
+
+- **SOC replaced by RES (Resolve) = 1D+1. EDU = 1D+1** (not 2D).
+- **Fourfold Way path system:** Facilitator (INT 5+), Guardian (STR 5+), Explorer (END 6+),
+  Seeker (INT 6+). Characters choose a path (Holists stay on one; Radialists sample all four).
+  Path replaces career qualification.
+- RES gains +1 per successful advancement term.
+- Claws (1D+2); Club tail (2D, DM-2); infrared sense DM+1 Recon/Survival.
+- Extended aging resistance: DM+4 until age 82 (term 16).
 
 #### J'aadje
 *Source: Deep and the Dark (`refs/deepdark/03_aliens_of_the_buffer.md`)*
