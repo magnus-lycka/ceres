@@ -91,6 +91,37 @@
 - Solo (Solomani Rim): 31
 - **Total: 31**
 
+### Client state, Third Imperium (CsIm)
+
+- Ley (Ley): 33
+- Spin (Spinward Marches): 24
+- Corr (Corridor): 18
+- Vlan (Vland): 15
+- Dene (Deneb): 14
+- Reav (Reaver's Deep): 14
+- Delp (Delphi): 12
+- Anta (Antares): 11
+- Troj (Trojan Reach): 11
+- Hint (Hinterworlds): 10
+- Beyo (The Beyond): 8
+- Empt (Empty Quarter): 8
+- Zaru (Zarushagar): 8
+- Lish (Lishun): 7
+- Olde (Old Expanses): 5
+- Fore (Foreven): 3
+- Glim (Glimmerdrift Reaches): 2
+- Gvur (Gvurrdon): 2
+- Cruc (Crucis Margin): 1
+- Gate (Gateway): 1
+- Gush (Gushemege): 1
+- Ilel (Ilelish): 1
+- Magy (Magyar): 1
+- Mend (Mendan): 1
+- Reft (Reft): 1
+- Thet (Theta Borealis): 1
+- Verg (Verge): 1
+- **Total: 214**
+
 ## Solomani Confederation
 
 ### Solomani Confederation (SoCf)
@@ -692,17 +723,17 @@
 
 ## Zhodani Consulate
 
-### Zhodani Consulate (ZhCo)
-
-- Zhie (Zhiensh): 28
-- **Total: 28**
-
 ### Zhodani Consulate (Zh)
 
 - Chti (Chtierabl): 448
 - Tsad (Tsadra): 3
 - Stia (Stiatlchepr): 2
 - **Total: 453**
+
+### Zhodani Consulate (ZhCo)
+
+- Zhie (Zhiensh): 28
+- **Total: 28**
 
 ### Zhodani Consulate, Addaxur Reserve (ZhAx)
 
@@ -752,23 +783,19 @@
 - Knoe (Knoellighz): 102
 - **Total: 102**
 
+### Client state, Zhodani Consulate (CsZh)
+
+- Fula (Fulani): 27
+- Sidi (Sidiadl): 23
+- Zdie (Zdiedeiant): 23
+- Eiap (Eiaplial): 4
+- Farf (Far Frontiers): 4
+- Spin (Spinward Marches): 2
+- Vang (Vanguard Reaches): 2
+- Troj (Trojan Reach): 1
+- **Total: 86**
+
 ## K'kree Two Thousand Worlds
-
-### Client state, Two Thousand Worlds (CsTw)
-
-- Star (Star's End): 48
-- Kxtr (K'trekreer): 5
-- Gzir (Gzirr!k'l): 4
-- **Total: 57**
-
-### Client state, Two Thousand Worlds (KC)
-
-- Xaag (Xaagr): 48
-- Lure (Luretiir!girr): 7
-- Gur (Gur): 4
-- Leon (Leonidae): 4
-- Unxk (Un'k!!k'ng): 3
-- **Total: 66**
 
 ### K'kree Outpost (KO)
 
@@ -793,26 +820,23 @@
 - Kxtr (K'trekreer): 141
 - **Total: 543**
 
+### Client state, Two Thousand Worlds (CsTw)
+
+- Star (Star's End): 48
+- Kxtr (K'trekreer): 5
+- Gzir (Gzirr!k'l): 4
+- **Total: 57**
+
+### Client state, Two Thousand Worlds (KC)
+
+- Xaag (Xaagr): 48
+- Lure (Luretiir!girr): 7
+- Gur (Gur): 4
+- Leon (Leonidae): 4
+- Unxk (Un'k!!k'ng): 3
+- **Total: 66**
+
 ## Hive Federation
-
-### Client state, Hive Federation (CsHv)
-
-- Gzir (Gzirr!k'l): 14
-- Kxtr (K'trekreer): 14
-- Porl (Porlock): 11
-- Cent (Centrax): 9
-- Kidu (Kidunal): 9
-- Rice (Ricenden): 9
-- Aver (Avereguar): 8
-- Cruc (Crucis Margin): 6
-- Lors (Lorspane): 5
-- Lang (Langere): 4
-- Exto (Extolian): 3
-- Nooq (Nooq): 3
-- Stor (Storr): 2
-- Blas (Blaskon): 1
-- Folg (Folgore): 1
-- **Total: 99**
 
 ### Hive FDA Uplift/Observation Site (Hf)
 
@@ -864,6 +888,25 @@
 
 - Beyo (The Beyond): 7
 - **Total: 7**
+
+### Client state, Hive Federation (CsHv)
+
+- Gzir (Gzirr!k'l): 14
+- Kxtr (K'trekreer): 14
+- Porl (Porlock): 11
+- Cent (Centrax): 9
+- Kidu (Kidunal): 9
+- Rice (Ricenden): 9
+- Aver (Avereguar): 8
+- Cruc (Crucis Margin): 6
+- Lors (Lorspane): 5
+- Lang (Langere): 4
+- Exto (Extolian): 3
+- Nooq (Nooq): 3
+- Stor (Storr): 2
+- Blas (Blaskon): 1
+- Folg (Folgore): 1
+- **Total: 99**
 
 ## Julian Protectorate
 
@@ -1058,11 +1101,6 @@
 - Tugl (Tuglikki): 8
 - **Total: 8**
 
-### Non-Aligned, Vargr-dominated (Va)
-
-- Grik (Grikr!ng): 14
-- **Total: 14**
-
 ### Non-Aligned, Vargr-dominated (NaVa)
 
 - Knoe (Knoellighz): 142
@@ -1084,15 +1122,20 @@
 - Beyo (The Beyond): 3
 - **Total: 746**
 
-### Opposition Alliance (VOpA)
+### Non-Aligned, Vargr-dominated (Va)
 
-- Knoe (Knoellighz): 6
-- **Total: 6**
+- Grik (Grikr!ng): 14
+- **Total: 14**
 
 ### Opposition Alliance (VOpp)
 
 - Mesh (Meshan): 173
 - **Total: 173**
+
+### Opposition Alliance (VOpA)
+
+- Knoe (Knoellighz): 6
+- **Total: 6**
 
 ### Ouzvothon (VOuz)
 
@@ -1217,6 +1260,51 @@
 - Troj (Trojan Reach): 1
 - **Total: 11**
 
+### Non-Aligned, Human-dominated (Na)
+
+- Hadj (Hadji): 420
+- Malo (Malorn): 384
+- Xaag (Xaagr): 257
+- Krin (Kring Noor): 241
+- Uuk (Uuk): 234
+- Hans (Hanstone): 192
+- Nooq (Nooq): 185
+- Barx (Bar'kakr): 163
+- Rimr (RimReach): 158
+- Amde (Amderstun): 145
+- Lure (Luretiir!girr): 125
+- Leon (Leonidae): 94
+- Mbil (Mbil!!gh): 84
+- Chti (Chtierabl): 62
+- Aver (Avereguar): 38
+- Exto (Extolian): 38
+- Kxtr (K'trekreer): 38
+- Fahr (Fahreahluis): 35
+- Unxk (Un'k!!k'ng): 32
+- Blas (Blaskon): 31
+- Grik (Grikr!ng): 30
+- Lors (Lorspane): 30
+- Drak (Drakken): 27
+- Phla (Phlask): 27
+- Raak (Raakaan): 26
+- Chie (Chiep Zhez): 24
+- Xuan (Xuanzang): 16
+- Hfiy (Hfiywitir): 15
+- Porl (Porlock): 15
+- Ahki (Ahkiweahi'): 9
+- Lubb (Lubbock): 9
+- Span (Spangele): 7
+- Tsad (Tsadra): 7
+- Cent (Centrax): 5
+- Irla (Irlaftalea): 5
+- Kidu (Kidunal): 5
+- Rice (Ricenden): 4
+- Teah (Teahloarifu): 4
+- Yahe (Yahehwe): 3
+- Folg (Folgore): 2
+- Ukaa (Ukaarriit!!b): 1
+- **Total: 3227**
+
 ### Non-Aligned, Human-dominated (NaHu)
 
 - Thet (Theta Borealis): 313
@@ -1280,51 +1368,6 @@
 - Hkak (Hkakhaeaw): 1
 - Solo (Solomani Rim): 1
 - **Total: 3723**
-
-### Non-Aligned, Human-dominated (Na)
-
-- Hadj (Hadji): 420
-- Malo (Malorn): 384
-- Xaag (Xaagr): 257
-- Krin (Kring Noor): 241
-- Uuk (Uuk): 234
-- Hans (Hanstone): 192
-- Nooq (Nooq): 185
-- Barx (Bar'kakr): 163
-- Rimr (RimReach): 158
-- Amde (Amderstun): 145
-- Lure (Luretiir!girr): 125
-- Leon (Leonidae): 94
-- Mbil (Mbil!!gh): 84
-- Chti (Chtierabl): 62
-- Aver (Avereguar): 38
-- Exto (Extolian): 38
-- Kxtr (K'trekreer): 38
-- Fahr (Fahreahluis): 35
-- Unxk (Un'k!!k'ng): 32
-- Blas (Blaskon): 31
-- Grik (Grikr!ng): 30
-- Lors (Lorspane): 30
-- Drak (Drakken): 27
-- Phla (Phlask): 27
-- Raak (Raakaan): 26
-- Chie (Chiep Zhez): 24
-- Xuan (Xuanzang): 16
-- Hfiy (Hfiywitir): 15
-- Porl (Porlock): 15
-- Ahki (Ahkiweahi'): 9
-- Lubb (Lubbock): 9
-- Span (Spangele): 7
-- Tsad (Tsadra): 7
-- Cent (Centrax): 5
-- Irla (Irlaftalea): 5
-- Kidu (Kidunal): 5
-- Rice (Ricenden): 4
-- Teah (Teahloarifu): 4
-- Yahe (Yahehwe): 3
-- Folg (Folgore): 2
-- Ukaa (Ukaarriit!!b): 1
-- **Total: 3227**
 
 ### Non-Aligned, TBD (NaCh)
 
@@ -1435,67 +1478,6 @@
 - Fore (Foreven): 213
 - Nadi (Nadir): 40
 - **Total: 253**
-
-## Client States
-
-### Client state, Principality of Caledon (CsCa)
-
-- Reav (Reaver's Deep): 5
-- **Total: 5**
-
-### Client state, The Protectorate (CsPt)
-
-- Farf (Far Frontiers): 11
-- **Total: 11**
-
-### Client state, Third Imperium (CsIm)
-
-- Ley (Ley): 33
-- Spin (Spinward Marches): 24
-- Corr (Corridor): 18
-- Vlan (Vland): 15
-- Dene (Deneb): 14
-- Reav (Reaver's Deep): 14
-- Delp (Delphi): 12
-- Anta (Antares): 11
-- Troj (Trojan Reach): 11
-- Hint (Hinterworlds): 10
-- Beyo (The Beyond): 8
-- Empt (Empty Quarter): 8
-- Zaru (Zarushagar): 8
-- Lish (Lishun): 7
-- Olde (Old Expanses): 5
-- Fore (Foreven): 3
-- Glim (Glimmerdrift Reaches): 2
-- Gvur (Gvurrdon): 2
-- Cruc (Crucis Margin): 1
-- Gate (Gateway): 1
-- Gush (Gushemege): 1
-- Ilel (Ilelish): 1
-- Magy (Magyar): 1
-- Mend (Mendan): 1
-- Reft (Reft): 1
-- Thet (Theta Borealis): 1
-- Verg (Verge): 1
-- **Total: 214**
-
-### Client state, Third Imperium (Cs)
-
-- Uuk (Uuk): 27
-- Lanc (Lancask): 3
-- **Total: 30**
-
-### Client state, Zhodani Consulate (CsZh)
-
-- Fula (Fulani): 27
-- Sidi (Sidiadl): 23
-- Zdie (Zdiedeiant): 23
-- Eiap (Eiaplial): 4
-- Farf (Far Frontiers): 4
-- Spin (Spinward Marches): 2
-- Vang (Vanguard Reaches): 2
-- Troj (Trojan Reach): 1
-- **Total: 86**
 
 ## Droyne
 
@@ -1671,6 +1653,16 @@
 
 - Amde (Amderstun): 21
 - **Total: 21**
+
+### Client state, Principality of Caledon (CsCa)
+
+- Reav (Reaver's Deep): 5
+- **Total: 5**
+
+### Client state, The Protectorate (CsPt)
+
+- Farf (Far Frontiers): 11
+- **Total: 11**
 
 ### Confederation of Bammesuka (CoBa)
 
@@ -2052,15 +2044,15 @@
 - Lanc (Lancask): 6
 - **Total: 6**
 
-### Korsumug Empire (KoEm)
-
-- Thet (Theta Borealis): 32
-- **Total: 32**
-
 ### Korsumug Empire (Ko)
 
 - Hfiy (Hfiywitir): 73
 - **Total: 73**
+
+### Korsumug Empire (KoEm)
+
+- Thet (Theta Borealis): 32
+- **Total: 32**
 
 ### Kr!ghuugna Coalition (Kx)
 
@@ -2243,15 +2235,15 @@
 - Beyo (The Beyond): 9
 - **Total: 9**
 
-### Principality of Caledon (CaPr)
-
-- Reav (Reaver's Deep): 22
-- **Total: 22**
-
 ### Principality of Caledon (Ca)
 
 - Exto (Extolian): 2
 - **Total: 2**
+
+### Principality of Caledon (CaPr)
+
+- Reav (Reaver's Deep): 22
+- **Total: 22**
 
 ### Queendom Remnants (Hq)
 
@@ -2467,16 +2459,16 @@
 - Gate (Gateway): 25
 - **Total: 25**
 
-### Winston Democracy (Wd)
-
-- Hadj (Hadji): 9
-- **Total: 9**
-
 ### Winston Democracy (WiDe)
 
 - Alde (Aldebaran): 5
 - Newo (Neworld): 2
 - **Total: 7**
+
+### Winston Democracy (Wd)
+
+- Hadj (Hadji): 9
+- **Total: 9**
 
 ### Yeskoth Corporate (Yc)
 
