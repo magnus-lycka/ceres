@@ -33,6 +33,7 @@ Current Ceres status: only `Humaniti` and `Vilani` are defined in
 | Capry                       | Alien    | —    | —                 | Trail             | Female: STR-3 DEX+2 END-2 INT+1; Big Male: STR-1 END+1; Small Male: STR-4 DEX+3 END-3 EDU+2 | 3 sexes; Liberating Fatalism; Third Hand; endangered species                                                       |
 | Chokari                     | Uplift   | —    | —                 | BTC               | END+1, SOC-1; new PSI (2D)                                                                  | Ancient uplift (Foelen); psionic training before career; Deep Diver (100m); Swimmer (6m)                           |
 | Crenduthaar                 | Alien    | —    | —                 | BTC               | STR=3D, END=3D, DEX=1D                                                                      | Army/Citizen/Drifter/Marine/Rogue; Armour +3; IR Vision; Slasher 2D; dark phobia; kill Vargr on sight              |
+| Darmine                     | Human    | Darm | Zaru              | DeepDark          | —                                                                                           | Core careers                                                                                                       |
 | Darrian                     | Human    | Dary | Spin              | AoCS 3 / BTC      | STR-1 DEX+1 END-1 INT+1 EDU+1                                                               | Restricted career list; first term forced                                                                          |
 | Dolphin (Foelen)            | Uplift   | Dolp | Imperial/Solomani | BTC               | END+1, SOC-1                                                                                | Ancient uplift near Foelen; all Core careers                                                                       |
 | Dolphin (Solomani)          | Uplift   | Dolp | Imperial/Solomani | AoCS 3            | STR+4 END+2 SOC-4                                                                           | Solomani uplift; age 12 start; restricted careers                                                                  |
@@ -68,7 +69,9 @@ Current Ceres status: only `Humaniti` and `Vilani` are defined in
 | Krotan                      | Alien    | —    | —                 | JTAS 15           | END=3D, DEX-2, SOC=2D (age indicator)                                                       | Merchant/Citizen only; no survival checks                                                                          |
 | Ktiauao                     | Alien    | —    | —                 | Spinext           | STR+1, DEX+2; SOC → TER (Aslan-style)                                                       | Uses Aslan careers; three genders                                                                                  |
 | Ladybug                     | Alien    | —    | —                 | Sol               | STR/END/SOC=1D+2; INT/EDU=2D3; DEX=2D+3                                                     | Gentle Soul DM-2 combat/confrontation; Beautiful DM+2 help; DM-2 military careers                                  |
+| Lancians                    | Human    | Lanc | Dagu/Gush         | GR / 3i           | —                                                                                           | Core careers; Ancients transplant                                                                                  |
 | Lhshana                     | Alien    | —    | —                 | JTAS 16           | DEX+1, INT+1, SOC-2                                                                         | Standard careers; trilateral physiology                                                                            |
+| Liberts                     | Human    | Libe | Daib/Dias         | DeepDark          | —                                                                                           | Core careers                                                                                                       |
 | Llellewyloly                | Alien    | Llel | Spin              | BTC               | STR=2D3, END=2D3                                                                            | Alien Digits DM-2 non-adapted devices; Atmosphere (thin); careers not listed in source                             |
 | Lurent                      | Alien    | —    | —                 | BTC               | STR=2D+4, END=2D+4                                                                          | Drifter/Merchant/Noble/Rogue/Scout/Scholar; Tentacle Bash 2D; Wanderlust compulsion cycles                         |
 | Luriani                     | Human    | Luri | Forn/Ley          | Trail             | DEX+1, END+1, SOC-2                                                                         | Aquatic Adaptation (genetically Luriani); Histrionics; Ancient-modified humans                                     |
@@ -76,6 +79,7 @@ Current Ceres status: only `Humaniti` and `Vilani` are defined in
 | Martian                     | Alien    | —    | —                 | BTC               | STR-1, END-1, DEX+1; EDU=1D (max 7)                                                         | Most Core careers; Adaptability; immune to telepathy                                                               |
 | Mewey                       | Alien    | —    | —                 | JTAS 13           | STR-2, INT+1, EDU+1                                                                         | Heightened Senses; Empathetic; limited Navy                                                                        |
 | Murian                      | Alien    | Muri | Vang              | Spinext           | STR+1, DEX-2, END+2; SOC=2D3+4                                                              | All Core; Armour +1; Claw 1D+2; Short Limbs 4m speed; IR vision                                                    |
+| Murrissi                    | Human    | Murr | Hlak              | DeepDark          | —                                                                                           | Core careers                                                                                                       |
 | Nenlat                      | Alien    | —    | —                 | JTAS 10           | STR+1, EDU-2 (assim.); STR+1, EDU=1D (trad.); gender mods                                   | Amphibious; age 14 start; trilateral                                                                               |
 | Oo-ne-beto-pon-tee          | Alien    | —    | —                 | 3i                | STR=D3, END=D3, SOC=D3; DEX=1D+4; INT=2D-1; EDU=2D                                          | (Whistler) neuter sex recommended; Sticky Feet; Stealth 2 innate; High-freq Communication                          |
 | Orca                        | Uplift   | Orca | Imperial/Solomani | AoCS 3            | STR+8 END+4 SOC-4                                                                           | Solomani uplift; 12× ship space; restricted careers                                                                |
@@ -90,6 +94,7 @@ Current Ceres status: only `Humaniti` and `Vilani` are defined in
 | Souggvuez                   | Alien    | —    | —                 | BTC               | DEX+1, INT-1, EDU+1; caste mods                                                             | All Core careers; Armour +1; Bite 1D+2; four gender castes                                                         |
 | Ssienjhiovla                | Alien    | —    | —                 | 3i                | STR-2, DEX+1                                                                                | Carapace +6; Composite Imaging (olfactory); Non-verbal Communication 5km; Scout/Navy preferred                     |
 | Suerrat                     | Alien    | Suer | Ilel              | AoCS 4            | STR+1 DEX+2 SOC-1                                                                           | Cold/radiation resistance                                                                                          |
+| Swanfei                     | Human    | Swan | Gate              | Trail             | —                                                                                           | Core careers                                                                                                       |
 | Sword Worlders              | Human    | Huma | Imperial/Solomani | Sword             | —                                                                                           | Patrol career (max age 30 to join)                                                                                 |
 | Sydites                     | Human    | Sydi | Ley               | Trail             | STR+2, END+2, DEX-2, INT-3, EDU-3                                                           | Resilient +1; Plodding Along (DM-4 Leadership/Tactics, DM+4 morale); 4-armed                                       |
 | Sylean                      | Human    | Syle | Core              | 3i                | STR-1, EDU+1                                                                                | All Core; Cooperation DM+2 Admin/Diplomat/Streetwise on Sylean worlds; DM+1 cash benefits                          |
@@ -100,6 +105,7 @@ Current Ceres status: only `Humaniti` and `Vilani` are defined in
 | Tlyetrai                    | Alien    | Tlye | Reav              | Deepdark          | STR-2, DEX+1, INT+1                                                                         | No Army/Navy/Marine/Rogue unless emigrated                                                                         |
 | Ulane                       | Alien    | Ulan | Dark              | Deepdark          | DEX+2; STR/END=1D+1                                                                         | Fast Metabolism; Multi-limbed; Small (-1)                                                                          |
 | Ursa                        | Uplift   | Ursa | Forn/Ley          | Trail             | STR+4, END+2                                                                                | Uplifted bears; Claws & Teeth 1D+3; Sore Head (DM-2 social with humans)                                            |
+| Urunishani                  | Human    | Urun | Anta              | 3i                | —                                                                                           | Core careers                                                                                                       |
 | Vargr (Extents)             | Major    | Varg | Vargr space       | AoCS 1            | STR-2, DEX+1, END-1; SOC → CHA (1D+2)                                                       | Vargr careers; CHA gain/loss mechanic; Bite (1D+1); Heightened Senses                                              |
 | Vargr (Humaniti)            | Major    | Varg | Imperial/Solomani | Core              | STR-1, DEX+1, END-1                                                                         | Core careers; Bite (1D+1); Heightened Senses (DM-1 sight in dark)                                                  |
 | Vegan                       | Alien    | Vega | Solo              | Sol/AoCS          | EDU+2, SOC-2                                                                                | First career must be Drifter; 200+ year lifespan                                                                   |
@@ -399,6 +405,14 @@ Genetically modified humans adapted for aquatic environments via gill/lung appar
 - **Aquatic Adaptation:** breathe underwater indefinitely via gill/lung apparatus; safe to 30m unaided, can push to ~100m with risk. Gill-lungs must be kept wet on land (periodic immersion or gel-impregnated clothing).
 - All Core careers available.
 
+#### Darmine
+
+*Source: Deep Dark (`refs/deepdark/09_sconfederation_territory_olomani.md`)*
+
+Human Minor Race from Zarushagar sector. Intermingled with Vilani and Solomani populations
+during the Long Night in the Lion's Mane region. No characteristic differences from
+standard Humaniti; Core careers.
+
 #### Darrian
 
 *Source: AoCS Vol. 3 (`refs/alien3/04_darrian_travellers.md`); BTC (`refs/btc/17_creating_darrian_travellers.md`)*
@@ -487,6 +501,23 @@ Humans native to the heavy-gravity world of Katanga (Foreven sector), part of th
 - **Heavy Worlder:** DM-1 to aging rolls.
 - **Katangan Culture:** DM+1 to social and cultural checks in familiar Katangan contexts; DM-1 in unfamiliar situations.
 
+#### Lancians
+
+*Source: Great Rift Book 1 (`refs/great-rift/book1/43_sashrakusha.md`); 3i (`refs/3i/02_imperial_society_and_culture.md`)*
+
+Human Minor Race transplanted to Khukun (Gushemege sector) by the Ancients. Founded the
+Lancian Movement — a cultural philosophy centred on creativity and aversion to pointless
+destruction. The Lancian Cultural Region spans Gushemege, Corridor, and Dagudashaag.
+Resisted Imperial integration during the early Third Imperium and were brought in by force.
+No characteristic differences from standard Humaniti; Core careers.
+
+#### Liberts
+
+*Source: Deep Dark (`refs/deepdark/09_sconfederation_territory_olomani.md`)*
+
+Human Minor Race from the Daibei/Diaspora region (Lion's Mane). No characteristic
+differences from standard Humaniti; Core careers.
+
 #### Luriani
 
 *Source: The Trailing Frontier (`refs/trail/03_pthe_trailing_frontier_eople_of.md`)*
@@ -496,6 +527,13 @@ Humans modified by the Ancients for aquatic environments, now with an extensive 
 - **Characteristics:** DEX+1, END+1, SOC-2.
 - **Aquatic Adaptation (genetically Luriani only):** safe dives to 500m unaided; breathe without air for up to 1 hour; DM+2 Survival and swimming/underwater checks.
 - **Histrionics (all Luriani culture members):** DM-2 concealing feelings; DM+2 drawing attention to themselves.
+
+#### Murrissi
+
+*Source: Deep Dark (`refs/deepdark/09_sconfederation_territory_olomani.md`)*
+
+Human Minor Race from Hlakhoi sector (Lion's Mane region). No characteristic differences
+from standard Humaniti; Core careers.
 
 #### Selenite
 
@@ -529,6 +567,16 @@ Very large (~2.5m) four-armed humans engineered by the Ancients as workers or ex
 - **Resilient:** Protection +1; DM+2 vs electric shocks, heat, and cold damage.
 - **Plodding Along (most Sydites):** DM-4 on Leadership or Tactics checks; DM+4 on morale checks to avoid discouragement. Travellers may lack this trait at Referee's discretion.
 
+#### Swanfei
+
+*Source: The Trailing Frontier (`refs/trail/06_local_powers.md`)*
+
+Human Minor Race who migrated into the Gateway sector during the Long Night (~-2000).
+Settled Carlton and spread across ~30 worlds as a starfaring culture before losing
+technology over subsequent centuries. Their worlds were later dominated by pirates and
+other opportunists. The Swanfei Independency is now a recognised interstellar polity.
+No characteristic differences from standard Humaniti; Core careers.
+
 #### Sword Worlders
 
 *Source: Sword Worlds (`refs/sword/09_sword_worlds_travellers.md`)*
@@ -544,6 +592,14 @@ unique Patrol career.
 - First term is training (Basic qualification END 9+; Advanced qualification per arm); no
   mustering-out from the training term.
 - Otherwise all standard Core careers are accessible.
+
+#### Urunishani
+
+*Source: 3i (`refs/3i/13_history_of_the_third_imperium.md`)*
+
+Human Minor Race from Antares sector. Mentioned in the Solomani Hypothesis research
+(their world Urunishu was eliminated as a candidate for the origin of Humaniti). No
+characteristic differences from standard Humaniti; Core careers.
 
 ---
 
@@ -1420,7 +1476,6 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | Buru | Burugdi | Dagu/Thet | |
 | Chir | Chirpers | major | Not player-characters |
 | Clot | Clotho | Tien | |
-| Darm | Darmine | Zaru | Human Minor Race (Lion's Mane region) |
 | Flor | Floriani | Beyo/Troj | Not player-characters |
 | Gnii | Gniivi | Hint | |
 | Gray | Graytch | Dagu/Gush/Ilel | |
@@ -1433,19 +1488,14 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | Karh | Karhyri | Cruc | |
 | Kiak | Kiakh'iee | Dagu | |
 | Lamu | Lamura Gav/Teg | Hint | |
-| Lanc | Lancians | Dagu/Gush | Human Minor Race; Ancients transplant; Lancian Cultural Region spans Gushemege/Corridor/Dagudashaag |
-| Libe | Liberts | Daib/Dias | Human Minor Race (Lion's Mane region) |
 | Mask | Maskai | Glim | |
 | Mitz | Mitzene | Thet | |
-| Murr | Murrissi | Hlak | Human Minor Race (Lion's Mane region) |
 | S'mr | S'mrii | Dagu | |
 | Scan | Scanians | Dagu | |
 | Stal | Stalkers | Hint | |
 | Sull | Sulliji | Dene | |
-| Swan | Swanfei | Gate | Human Minor Race; settled Swanfei Independency c. -2000 during Long Night |
 | Tapa | Tapazmal | Reft | |
 | Taur | Taureans | Alde | |
 | Tent | Tentrassi | Zaru | |
-| Urun | Urunishani | Anta | |
 | Yile | Yileans | Gash | |
 | Ziad | Ziadd | Dagu | |
