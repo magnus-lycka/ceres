@@ -1,0 +1,1898 @@
+{
+  "codes": {
+    "Adda": {
+      "count": 4,
+      "official_name": "Addaxur",
+      "official": true,
+      "confirmed": false
+    },
+    "Afty": {
+      "count": 6,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Airo": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Akee": {
+      "count": 8,
+      "official_name": "Akeed",
+      "official": true,
+      "confirmed": false
+    },
+    "Albl": {
+      "count": 2,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Anak": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Anpa": {
+      "count": 7,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Aoao": {
+      "count": 4,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Aqar": {
+      "count": 4,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Aqua": {
+      "count": 3,
+      "official_name": "Aquans (Daga)/Aquamorphs (Alph)",
+      "official": true,
+      "confirmed": false
+    },
+    "Arix": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Asla": {
+      "count": 189,
+      "official_name": "Aslan",
+      "official": true,
+      "confirmed": false
+    },
+    "Atan": {
+      "count": 13,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Atna": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Bhun": {
+      "count": 1,
+      "official_name": "Brunj",
+      "official": true,
+      "confirmed": false
+    },
+    "Borh": {
+      "count": 7,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Bori": {
+      "count": 3,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Bruh": {
+      "count": 1,
+      "official_name": "Bruhre",
+      "official": true,
+      "confirmed": false
+    },
+    "Buru": {
+      "count": 3,
+      "official_name": "Burugdi",
+      "official": true,
+      "confirmed": false
+    },
+    "Bwap": {
+      "count": 52,
+      "official_name": "Bwaps",
+      "official": true,
+      "confirmed": false
+    },
+    "Cale": {
+      "count": 15,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Chac": {
+      "count": 8,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Chir": {
+      "count": 106,
+      "official_name": "Chirpers",
+      "official": true,
+      "confirmed": false
+    },
+    "Ciia": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Ciru": {
+      "count": 15,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Clal": {
+      "count": 6,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Daga": {
+      "count": 3,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Darm": {
+      "count": 27,
+      "official_name": "Darmine",
+      "official": true,
+      "confirmed": false
+    },
+    "Dary": {
+      "count": 16,
+      "official_name": "Daryen",
+      "official": true,
+      "confirmed": false
+    },
+    "Dolp": {
+      "count": 40,
+      "official_name": "Dolphins",
+      "official": true,
+      "confirmed": false
+    },
+    "Dosa": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Drad": {
+      "count": 11,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Drak": {
+      "count": 21,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Droy": {
+      "count": 105,
+      "official_name": "Droyne",
+      "official": true,
+      "confirmed": false
+    },
+    "Dync": {
+      "count": 2,
+      "official_name": "Dynchia",
+      "official": true,
+      "confirmed": false
+    },
+    "Eide": {
+      "count": 12,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Eikh": {
+      "count": 42,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Epuk": {
+      "count": 4,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Etak": {
+      "count": 11,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Etga": {
+      "count": 2,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Etra": {
+      "count": 21,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Etre": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Famo": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Flor": {
+      "count": 33,
+      "official_name": "Floriani",
+      "official": true,
+      "confirmed": false
+    },
+    "Fury": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Gahu": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Gand": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Gask": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Geen": {
+      "count": 4,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Geka": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Geon": {
+      "count": 11,
+      "official_name": "Geonee",
+      "official": true,
+      "confirmed": false
+    },
+    "Gila": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Giru": {
+      "count": 63,
+      "official_name": "Girug'kagh",
+      "official": false,
+      "confirmed": true
+    },
+    "Gnii": {
+      "count": 16,
+      "official_name": "Gniivi",
+      "official": true,
+      "confirmed": false
+    },
+    "Gone": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Gray": {
+      "count": 15,
+      "official_name": "Graytch",
+      "official": true,
+      "confirmed": false
+    },
+    "Gugo": {
+      "count": 3,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Guin": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Guru": {
+      "count": 1,
+      "official_name": "Gurungan",
+      "official": true,
+      "confirmed": false
+    },
+    "Gurv": {
+      "count": 46,
+      "official_name": "Gurvin",
+      "official": true,
+      "confirmed": false
+    },
+    "Guua": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Hagh": {
+      "count": 29,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Hagk": {
+      "count": 2,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Hak": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Hama": {
+      "count": 4,
+      "official_name": "Hamaran",
+      "official": true,
+      "confirmed": false
+    },
+    "Hana": {
+      "count": 4,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Hasp": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Hhka": {
+      "count": 1,
+      "official_name": "Hhkar",
+      "official": false,
+      "confirmed": true
+    },
+    "Hive": {
+      "count": 36,
+      "official_name": "Hiver",
+      "official": true,
+      "confirmed": false
+    },
+    "Hrea": {
+      "count": 14,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Huma": {
+      "count": 304,
+      "official_name": "Human",
+      "official": true,
+      "confirmed": false
+    },
+    "Icaa": {
+      "count": 2,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Icko": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Ilia": {
+      "count": 6,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Iluk": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Inyx": {
+      "count": 18,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Irka": {
+      "count": 3,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Ithk": {
+      "count": 118,
+      "official_name": "Ithklur",
+      "official": true,
+      "confirmed": false
+    },
+    "Ixua": {
+      "count": 2,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Ixual": {
+      "count": 2,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Iyuok": {
+      "count": 2,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Izli": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Jaib": {
+      "count": 99,
+      "official_name": "Jaibok",
+      "official": true,
+      "confirmed": false
+    },
+    "Jala": {
+      "count": 1,
+      "official_name": "Jala'lak",
+      "official": true,
+      "confirmed": false
+    },
+    "Jans": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Jend": {
+      "count": 23,
+      "official_name": "Jenda",
+      "official": true,
+      "confirmed": false
+    },
+    "Jonk": {
+      "count": 10,
+      "official_name": "Jonkeereen",
+      "official": true,
+      "confirmed": false
+    },
+    "Kafo": {
+      "count": 1,
+      "official_name": "Kafoe",
+      "official": true,
+      "confirmed": false
+    },
+    "Kagg": {
+      "count": 6,
+      "official_name": "Kaggushus",
+      "official": true,
+      "confirmed": false
+    },
+    "Kamu": {
+      "count": 21,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Karh": {
+      "count": 7,
+      "official_name": "Karhyri",
+      "official": true,
+      "confirmed": false
+    },
+    "Kavo": {
+      "count": 2,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Kedr": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Khiy": {
+      "count": 34,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Kiak": {
+      "count": 12,
+      "official_name": "Kiakh'iee",
+      "official": true,
+      "confirmed": false
+    },
+    "Kigg": {
+      "count": 7,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Klah": {
+      "count": 4,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Klat": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Koli": {
+      "count": 10,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Kooi": {
+      "count": 9,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Lacd": {
+      "count": 5,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Lamu": {
+      "count": 24,
+      "official_name": "Lamura Gav/Teg",
+      "official": true,
+      "confirmed": false
+    },
+    "Lanc": {
+      "count": 23,
+      "official_name": "Lancians",
+      "official": true,
+      "confirmed": false
+    },
+    "Lant": {
+      "count": 10,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Lasi": {
+      "count": 11,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Ldoo": {
+      "count": 3,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Lear": {
+      "count": 4,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Libe": {
+      "count": 2,
+      "official_name": "Liberts",
+      "official": true,
+      "confirmed": false
+    },
+    "Llel": {
+      "count": 1,
+      "official_name": "Llellewyloly",
+      "official": true,
+      "confirmed": false
+    },
+    "Luri": {
+      "count": 60,
+      "official_name": "Luriani",
+      "official": true,
+      "confirmed": false
+    },
+    "Luxu": {
+      "count": 4,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Mask": {
+      "count": 3,
+      "official_name": "Maskai",
+      "official": true,
+      "confirmed": false
+    },
+    "Mavu": {
+      "count": 27,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Medr": {
+      "count": 8,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Mitz": {
+      "count": 1,
+      "official_name": "Mitzene",
+      "official": true,
+      "confirmed": false
+    },
+    "Muri": {
+      "count": 6,
+      "official_name": "Murians",
+      "official": true,
+      "confirmed": false
+    },
+    "Murr": {
+      "count": 3,
+      "official_name": "Murrissi",
+      "official": true,
+      "confirmed": false
+    },
+    "Nain": {
+      "count": 5,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Nald": {
+      "count": 3,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Nuns": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Onkk": {
+      "count": 3,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Ootp": {
+      "count": 2,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Orar": {
+      "count": 39,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Orca": {
+      "count": 2,
+      "official_name": "Orca",
+      "official": true,
+      "confirmed": false
+    },
+    "Ormi": {
+      "count": 16,
+      "official_name": "Ormine",
+      "official": true,
+      "confirmed": false
+    },
+    "Paca": {
+      "count": 2,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Pale": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Phle": {
+      "count": 4,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Phli": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Pily": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Piri": {
+      "count": 7,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Poca": {
+      "count": 6,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Poxi": {
+      "count": 3,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Rahn": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Rakk": {
+      "count": 2,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Ramm": {
+      "count": 6,
+      "official_name": "Rammak",
+      "official": true,
+      "confirmed": false
+    },
+    "Rega": {
+      "count": 7,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Ropa": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Rrar": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "RyXb": {
+      "count": 59,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "S'mr": {
+      "count": 19,
+      "official_name": "S'mrii",
+      "official": true,
+      "confirmed": false
+    },
+    "Sarl": {
+      "count": 75,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Scan": {
+      "count": 3,
+      "official_name": "Scanians",
+      "official": true,
+      "confirmed": false
+    },
+    "SeaX": {
+      "count": 7,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Sele": {
+      "count": 9,
+      "official_name": "Selenites",
+      "official": true,
+      "confirmed": false
+    },
+    "Sixa": {
+      "count": 6,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Smoe": {
+      "count": 5,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Spua": {
+      "count": 7,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Sred": {
+      "count": 6,
+      "official_name": "Sred*Ni",
+      "official": true,
+      "confirmed": false
+    },
+    "Stal": {
+      "count": 6,
+      "official_name": "Stalkers",
+      "official": true,
+      "confirmed": false
+    },
+    "Suer": {
+      "count": 26,
+      "official_name": "Suerrat",
+      "official": true,
+      "confirmed": false
+    },
+    "Sull": {
+      "count": 3,
+      "official_name": "Sulliji",
+      "official": true,
+      "confirmed": false
+    },
+    "Swan": {
+      "count": 8,
+      "official_name": "Swanfei",
+      "official": true,
+      "confirmed": false
+    },
+    "Sydi": {
+      "count": 13,
+      "official_name": "Sydites",
+      "official": true,
+      "confirmed": false
+    },
+    "Syia": {
+      "count": 9,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Syle": {
+      "count": 24,
+      "official_name": "Syleans",
+      "official": true,
+      "confirmed": false
+    },
+    "Tapa": {
+      "count": 7,
+      "official_name": "Tapazmal",
+      "official": true,
+      "confirmed": false
+    },
+    "Taur": {
+      "count": 5,
+      "official_name": "Taureans",
+      "official": true,
+      "confirmed": false
+    },
+    "Tayu": {
+      "count": 4,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Tent": {
+      "count": 2,
+      "official_name": "Tentrassi",
+      "official": true,
+      "confirmed": false
+    },
+    "Tewi": {
+      "count": 2,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Thac": {
+      "count": 7,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Tilp": {
+      "count": 13,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Tlye": {
+      "count": 2,
+      "official_name": "Tlyetrai",
+      "official": true,
+      "confirmed": false
+    },
+    "Tria": {
+      "count": 2,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Triu": {
+      "count": 4,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Troi": {
+      "count": 4,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "UApe": {
+      "count": 8,
+      "official_name": "Uplifted Apes",
+      "official": true,
+      "confirmed": false
+    },
+    "Uapd": {
+      "count": 5,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Ulan": {
+      "count": 1,
+      "official_name": "Ulane",
+      "official": true,
+      "confirmed": false
+    },
+    "Umva": {
+      "count": 2,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Ursa": {
+      "count": 5,
+      "official_name": "Ursa",
+      "official": true,
+      "confirmed": false
+    },
+    "Urun": {
+      "count": 1,
+      "official_name": "Urunishani",
+      "official": true,
+      "confirmed": false
+    },
+    "Uxri": {
+      "count": 4,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Vard": {
+      "count": 6,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Varg": {
+      "count": 810,
+      "official_name": "Vargr",
+      "official": true,
+      "confirmed": false
+    },
+    "Vdkn": {
+      "count": 2,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Vega": {
+      "count": 32,
+      "official_name": "Vegans",
+      "official": true,
+      "confirmed": false
+    },
+    "Virk": {
+      "count": 3,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Viru": {
+      "count": 6,
+      "official_name": "Virushi",
+      "official": false,
+      "confirmed": true
+    },
+    "Viss": {
+      "count": 3,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Wame": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Weqb": {
+      "count": 2,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Wroa": {
+      "count": 9,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Wuic": {
+      "count": 2,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "X!tk": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Xaru": {
+      "count": 4,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Yara": {
+      "count": 1,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Yask": {
+      "count": 4,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Yeas": {
+      "count": 4,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "ZXkr": {
+      "count": 4,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Za't": {
+      "count": 54,
+      "official_name": "Za'tachk",
+      "official": true,
+      "confirmed": false
+    },
+    "Zaru": {
+      "count": 21,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    },
+    "Zhod": {
+      "count": 2,
+      "official_name": "Zhodani",
+      "official": true,
+      "confirmed": false
+    },
+    "Ziad": {
+      "count": 11,
+      "official_name": "Ziadd",
+      "official": true,
+      "confirmed": false
+    },
+    "Zker": {
+      "count": 3,
+      "official_name": null,
+      "official": false,
+      "confirmed": false
+    }
+  },
+  "parenthesized": {
+    "A'Ach'En": 1,
+    "Aaika": 1,
+    "Aakrali": 1,
+    "Aceran": 1,
+    "Acheron": 1,
+    "Adau": 1,
+    "Addaxur": 1,
+    "Ael Yael": 1,
+    "Aezorgh": 1,
+    "Afrani": 1,
+    "Afreet": 1,
+    "Aftydrelder": 1,
+    "Aggavo": 1,
+    "Agryxani": 1,
+    "Ahetaowa": 1,
+    "Airochan": 1,
+    "Aisa": 1,
+    "Ajert": 1,
+    "Akeed": 1,
+    "Akop": 1,
+    "Albla": 1,
+    "Albula": 1,
+    "Alejia": 1,
+    "Alktatre": 1,
+    "Ambele": 1,
+    "Amindii": 1,
+    "Amujati": 1,
+    "Anakundu": 1,
+    "Angneear": 1,
+    "Anixii": 1,
+    "Aniyun": 1,
+    "Anlisleans": 1,
+    "Anpaan": 1,
+    "Answerin": 1,
+    "Aoao": 1,
+    "Aoo": 1,
+    "Aqaroo": 1,
+    "Aqigi": 1,
+    "Aqku": 1,
+    "Aquamorphs": 1,
+    "Aquan": 1,
+    "Arixk": 1,
+    "Arktu": 1,
+    "Aroonmar": 1,
+    "Ascondi": 1,
+    "Ashdak Meshukiiba": 1,
+    "Ashiin": 1,
+    "Asoon": 1,
+    "At'ts'tii": 1,
+    "Ataark": 1,
+    "Atane": 1,
+    "Ateskmosk": 1,
+    "Athar": 1,
+    "Atin": 1,
+    "Atnaeld": 1,
+    "Atoka": 1,
+    "Atrephari": 1,
+    "Attorn": 1,
+    "Auhnto": 1,
+    "Avocaa": 1,
+    "Ayansh'i": 1,
+    "Azhanti": 1,
+    "Bahku": 1,
+    "Baju": 1,
+    "Barsam": 1,
+    "Basachshe": 1,
+    "Beree": 1,
+    "Beroda": 1,
+    "Bhu'oovaakaylaa": 1,
+    "Bhunj": 1,
+    "Bilpid": 1,
+    "Blimps": 1,
+    "Blixonlan": 1,
+    "Blotches": 1,
+    "Borhians": 1,
+    "Borin": 1,
+    "Bosak": 1,
+    "Bose": 1,
+    "Bouecse": 1,
+    "Brinn": 1,
+    "Bruhre": 1,
+    "Burotu": 1,
+    "Bwampbs": 1,
+    "Bwaps": 1,
+    "Bzruellokh": 1,
+    "Cafadians": 1,
+    "Caleuche": 1,
+    "Calipha": 1,
+    "Captutians": 1,
+    "Cassilldans": 1,
+    "Castenen": 1,
+    "Cataukii": 1,
+    "Cenoogo": 1,
+    "Chacinti": 1,
+    "Chamru": 1,
+    "Chinmaya": 1,
+    "Chips": 1,
+    "Chokari": 1,
+    "Chowwar": 1,
+    "Ciiaoa": 1,
+    "Ciruwar": 1,
+    "Clalovir": 1,
+    "Cleashitar": 1,
+    "Clotho": 1,
+    "Cooano": 1,
+    "Crawni": 1,
+    "Crenduthaar": 1,
+    "Cua": 1,
+    "Cygmo": 1,
+    "Daari": 1,
+    "Dacuoc": 1,
+    "Dadwrec": 1,
+    "Daee": 1,
+    "Dagaut": 1,
+    "Dahlitian": 1,
+    "Darmine": 1,
+    "Daryen": 1,
+    "Dastri": 1,
+    "Delrias": 1,
+    "Denaar": 1,
+    "Dertuf": 1,
+    "Dirapnack": 1,
+    "Dishaan": 1,
+    "Ditha": 1,
+    "Domination": 1,
+    "Dosanu": 1,
+    "Douhe": 1,
+    "Dphone": 1,
+    "Draauaai": 1,
+    "Dradrip": 1,
+    "Drakarans": 1,
+    "Drangka": 1,
+    "Droashav": 1,
+    "Dudix": 1,
+    "Dugail": 1,
+    "Duiars": 1,
+    "Dynchia": 1,
+    "Eaie": 1,
+    "Eattayr": 1,
+    "Ebokin": 1,
+    "Echium": 1,
+    "Edlun": 1,
+    "Eemakin": 1,
+    "Eershe'yaat": 1,
+    "Efacen": 1,
+    "Efren": 1,
+    "Eikhui\u2019": 1,
+    "Eliyoh": 1,
+    "Enale": 1,
+    "Enchai": 1,
+    "Eoa": 1,
+    "Eolou": 1,
+    "Eprahux": 1,
+    "Epukish": 1,
+    "Ergarip": 1,
+    "Ergosians": 1,
+    "Eroahyeli": 1,
+    "Eshaar Ashah": 1,
+    "Esishiai": 1,
+    "Eslyat": 1,
+    "Etak'auhew": 1,
+    "Etgaglyut": 1,
+    "Etra": 1,
+    "Etrigele": 1,
+    "Evantha": 1,
+    "Ewurmer": 1,
+    "Exinosk": 1,
+    "Exlyaxan": 1,
+    "Exoslin": 1,
+    "Faar": 1,
+    "Famoono": 1,
+    "Fatum": 1,
+    "Feime": 1,
+    "Fervoriani": 1,
+    "Floriani": 1,
+    "Freni": 1,
+    "Froyte": 1,
+    "Fugharurz": 1,
+    "Fupiqisk": 1,
+    "Furys": 1,
+    "Gahuloo": 1,
+    "Galasu": 1,
+    "Galliph": 1,
+    "Gamopedes": 1,
+    "Gandans": 1,
+    "Ganmeids": 1,
+    "Garoo": 1,
+    "Gask": 1,
+    "Gastell": 1,
+    "Geehrtahe": 1,
+    "Geen": 1,
+    "Geernu": 1,
+    "Gek-Cheb": 1,
+    "Gekausa": 1,
+    "Gelanan": 1,
+    "Gelepa": 1,
+    "Genfert": 1,
+    "Geonee": 1,
+    "Geringer": 1,
+    "Ghenani": 1,
+    "Ghidfalli": 1,
+    "Giiguuglum": 1,
+    "Gilanox": 1,
+    "Giooskan": 1,
+    "Girug'kagh": 1,
+    "Githiaskio": 1,
+    "Gl'lu": 1,
+    "Glooxaasta": 1,
+    "Gmina": 1,
+    "Gniivi": 1,
+    "Goblin": 1,
+    "Goegarakh": 1,
+    "Gonem": 1,
+    "Gonzans": 1,
+    "Graytch": 1,
+    "Grendels": 1,
+    "Grumm": 1,
+    "Guaslanoon": 1,
+    "Gugoso": 1,
+    "Guinuc": 1,
+    "Guixi": 1,
+    "Gumahl": 1,
+    "Gurungan": 1,
+    "Gurvin": 1,
+    "Guuaron": 1,
+    "Gzi": 1,
+    "Hagh'hg'k": 1,
+    "Hak": 1,
+    "Halkans": 1,
+    "Hamaran": 1,
+    "Hana Saka": 1,
+    "Hanaosk": 1,
+    "Hanen": 1,
+    "Happrhani": 1,
+    "Haspana": 1,
+    "Heann": 1,
+    "Hhkar": 1,
+    "Hhrachddrumm": 1,
+    "Hicroa": 1,
+    "Hiidamo": 1,
+    "Hiko": 1,
+    "Hiver": 1,
+    "Hlaia": 1,
+    "Hlatoi": 1,
+    "Hloan": 1,
+    "Hoolar": 1,
+    "Hreahi": 1,
+    "Hufo": 1,
+    "Human Minor": 1,
+    "Huosua": 1,
+    "Hursuuun": 1,
+    "Huucot": 1,
+    "Huuran": 1,
+    "Hyracoth": 1,
+    "Hyumian": 1,
+    "Hzille": 1,
+    "Iasza": 1,
+    "Icaan": 1,
+    "Ichachi": 1,
+    "Icham": 1,
+    "Ickoodun": 1,
+    "Ickoul": 1,
+    "Idilos": 1,
+    "Iftaouh": 1,
+    "Igikur": 1,
+    "Iliani": 1,
+    "Ilraiki": 1,
+    "Iltharans": 1,
+    "Iluk'uu": 1,
+    "Imirici": 1,
+    "Inasko": 1,
+    "Inchok": 1,
+    "Ingyrm": 1,
+    "Inheritors": 1,
+    "Inx": 1,
+    "Iooua": 1,
+    "Ipabloo": 1,
+    "Irba": 1,
+    "Irdu": 1,
+    "Irhadre": 1,
+    "Irkan": 1,
+    "Ishumi": 1,
+    "Iswacka": 1,
+    "Ithklur": 1,
+    "Ithuxo": 1,
+    "Ixualald": 1,
+    "Iytkike": 1,
+    "Iyuok": 1,
+    "Izdev": 1,
+    "Iziri": 1,
+    "Izli": 1,
+    "J'aadje": 1,
+    "J'sia": 1,
+    "Jaibok": 1,
+    "Jala'Lak": 1,
+    "Jansa": 1,
+    "Jaylay-yay": 1,
+    "Je Jel": 1,
+    "Jebbeni": 1,
+    "Jenda": 1,
+    "Jerrbole": 1,
+    "Jessa": 1,
+    "Jgd-il-Jagd": 1,
+    "Jin": 1,
+    "Jinnat": 1,
+    "Jonkeereen": 1,
+    "Jorlik": 1,
+    "K'kree": 1,
+    "Ka Kelaree": 1,
+    "Kaargh": 1,
+    "Kafoe": 1,
+    "Kaggushus": 1,
+    "Kalgakrr'": 1,
+    "Kalingna": 1,
+    "Kallilku": 1,
+    "Kalsha": 1,
+    "Kamgik": 1,
+    "Kamuke": 1,
+    "Kanuwail": 1,
+    "Kaooa": 1,
+    "Kargol": 1,
+    "Karhyri": 1,
+    "Kariti": 1,
+    "Karushin": 1,
+    "Katl*lalt": 1,
+    "Kavoofi": 1,
+    "Kebkh": 1,
+    "Kedaoud": 1,
+    "Kedrokiv": 1,
+    "Keetamarur": 1,
+    "Kemlae": 1,
+    "Kepaat": 1,
+    "Kerlyputar": 1,
+    "Kerrez": 1,
+    "Khethss": 1,
+    "Khiabodlam": 1,
+    "Khiyrl": 1,
+    "Khorth": 1,
+    "Kiakh'iee": 1,
+    "Kidulan": 1,
+    "Kiggugloaf": 1,
+    "Kiki": 1,
+    "Kingrua": 1,
+    "Kirissukyoya": 1,
+    "Kisiro": 1,
+    "Kiwvik": 1,
+    "Klath": 1,
+    "Klethfoline": 1,
+    "Koatra": 1,
+    "Kohudo": 1,
+    "Kolipians": 1,
+    "Kolire": 1,
+    "Kooithet": 1,
+    "Koomalnoki": 1,
+    "Koos": 1,
+    "Koou": 1,
+    "Koseg": 1,
+    "Kousalent": 1,
+    "Kragnab'": 1,
+    "Krotan": 1,
+    "Ktiauao": 1,
+    "Kunodu": 1,
+    "Kwaz": 1,
+    "Lacduskmukap": 1,
+    "Ladybugs": 1,
+    "Lalendri": 1,
+    "Lamura Gav/Teg": 1,
+    "Lanash": 1,
+    "Lancians": 1,
+    "Languljigee": 1,
+    "Lanthusandr": 1,
+    "Larianz": 1,
+    "Lasat": 1,
+    "Lasiir": 1,
+    "Lass-lumminm": 1,
+    "Latkoora": 1,
+    "Ldoocox": 1,
+    "Learas": 1,
+    "Leavixu": 1,
+    "Lhshana": 1,
+    "Liberts": 1,
+    "Lithkind": 1,
+    "Llaekharu": 1,
+    "Llayag": 1,
+    "Llellewyloly": 1,
+    "Llyrnian": 1,
+    "Loeskalth": 1,
+    "Lokoosun": 1,
+    "Loubau": 1,
+    "Lumu": 1,
+    "Lurent": 1,
+    "Luriani/Roryniar": 1,
+    "Luupim": 1,
+    "Luxuua": 1,
+    "Lyanawro": 1,
+    "Lyeeiou": 1,
+    "M'nengi": 1,
+    "Maarap": 1,
+    "Mahkahraik": 1,
+    "Makochar": 1,
+    "MalG": 1,
+    "Marzians": 1,
+    "Maskai": 1,
+    "Mavuzo": 1,
+    "Mazjaru": 1,
+    "Meckparo": 1,
+    "Medrarust": 1,
+    "Melorr": 1,
+    "Meuxu": 1,
+    "Mewey": 1,
+    "Me\u2019kax": 1,
+    "Miiminri": 1,
+    "Mikhidians": 1,
+    "Minaurians": 1,
+    "Minlad": 1,
+    "Minor": 13,
+    "Mirani": 1,
+    "Mitrai": 1,
+    "Moaftspi": 1,
+    "Morlocks": 1,
+    "Mosanthi": 1,
+    "Muadem": 1,
+    "Mucalin": 1,
+    "Mulok": 1,
+    "Murian": 1,
+    "Murrissi": 1,
+    "Muu": 1,
+    "Naeaoo": 1,
+    "Nagad": 1,
+    "Nainur": 1,
+    "Nakaenaval": 1,
+    "Naldatlan": 1,
+    "Namri": 1,
+    "Nan-E-Grux": 1,
+    "Nanaphlan": 1,
+    "Nanarin": 1,
+    "Naoou": 1,
+    "Nebie": 1,
+    "Neiikhi": 1,
+    "Nenlat": 1,
+    "Nenu": 1,
+    "Neozinga": 1,
+    "Nesya": 1,
+    "Nexxies": 1,
+    "Nibammer": 1,
+    "Nikang": 1,
+    "Nind": 1,
+    "Ninege": 1,
+    "Ningho": 1,
+    "Ninir": 1,
+    "Noqarar": 1,
+    "Noqlooruth": 1,
+    "Novilath": 1,
+    "Nullians": 1,
+    "Numnill": 1,
+    "Nunskdrif": 1,
+    "Nuphlooyc": 1,
+    "Obeyery": 1,
+    "Obix": 1,
+    "Obopebel": 1,
+    "Oetkle": 1,
+    "Oiskee": 1,
+    "Ojehshodu": 1,
+    "Okoma": 1,
+    "Okyar": 1,
+    "Olre": 1,
+    "Onaqav": 1,
+    "Ongodala": 1,
+    "Onkken": 1,
+    "Oo-ne-beto-pon-tee": 1,
+    "Oom Kha": 1,
+    "Oonuoa": 1,
+    "Oooponoo": 1,
+    "Oophlare": 1,
+    "Ooqin": 1,
+    "Ootpevoo": 1,
+    "Ooumou": 1,
+    "Opedia": 1,
+    "Opliaraz": 1,
+    "Orarnak": 1,
+    "Ormine": 1,
+    "Orogh": 1,
+    "Orpheides": 1,
+    "Oskac": 1,
+    "Osp": 1,
+    "Otarri": 1,
+    "Otauna": 1,
+    "Otior": 1,
+    "Otrai": 1,
+    "Owruaf": 1,
+    "Oxdrildax": 1,
+    "Oxnarnat": 1,
+    "Pacawri": 1,
+    "Padada": 1,
+    "Paleqeka": 1,
+    "Parmasian": 1,
+    "Peth": 1,
+    "Phleeo": 1,
+    "Phlinskwal": 1,
+    "Phloeuoo": 1,
+    "Phloftkiqan": 1,
+    "Pianax": 1,
+    "Pilynoo": 1,
+    "Piri": 1,
+    "Pocaanir": 1,
+    "Polari": 1,
+    "Poxiutt": 1,
+    "Prostyskem": 1,
+    "Prt'": 1,
+    "Pua": 1,
+    "Pumiai": 1,
+    "Puskuna": 1,
+    "Pviri": 1,
+    "Q'ekzle": 1,
+    "Qanaren": 1,
+    "Qelf": 1,
+    "Qizzuekzi": 1,
+    "Quamish": 1,
+    "Qutrien": 1,
+    "Raasko": 1,
+    "Raeaokh": 1,
+    "Raekhsva": 1,
+    "Ragamar": 1,
+    "Rahnha": 1,
+    "Rammak": 1,
+    "Regawrat": 1,
+    "Resavolk": 1,
+    "Rirooawhii": 1,
+    "Roapa": 1,
+    "Roche": 1,
+    "Ronnin": 1,
+    "Roolickk": 1,
+    "Ropadran": 1,
+    "Rorfanki": 1,
+    "Rrarpaut": 1,
+    "Rrugrkrooii": 1,
+    "Rruporo": 1,
+    "Ruorrii": 1,
+    "Rusalkan": 1,
+    "Ry'Bryn": 1,
+    "Rynkatropa": 1,
+    "S'geth": 1,
+    "S'mrii": 1,
+    "Saanshakase": 1,
+    "Sahib": 1,
+    "Sakasa-Siro": 1,
+    "Sappil": 1,
+    "Sarliyh": 1,
+    "Sasnak": 1,
+    "Satha": 1,
+    "Satt": 1,
+    "Saurians": 1,
+    "Saxai": 1,
+    "Scanian": 1,
+    "Schalli": 1,
+    "Sciapods": 1,
+    "Sedas": 1,
+    "Segani": 1,
+    "Selenite": 1,
+    "Seoesse": 1,
+    "Sestan": 1,
+    "Shela": 1,
+    "Sheol": 1,
+    "Shi'awei": 1,
+    "Shrashee": 1,
+    "Shriekers": 1,
+    "Sickata": 1,
+    "Sidurii": 1,
+    "Sielienzhia": 1,
+    "Sigka": 1,
+    "Sixaa": 1,
+    "Sixex": 1,
+    "Slabeck": 1,
+    "Slungill": 1,
+    "Smoenn": 1,
+    "Sonraki": 1,
+    "Sonroroo": 1,
+    "Sooluk": 1,
+    "Souggvuez": 1,
+    "Spakevo": 1,
+    "Spatharo": 1,
+    "Spuanaa": 1,
+    "Sred!Ni": 1,
+    "Ssienjhiovla": 1,
+    "Sst'ankh'rii": 1,
+    "Stalkers": 1,
+    "Subol": 1,
+    "Suerrat": 1,
+    "Sulliji": 1,
+    "Sundowners": 1,
+    "Suru-Oto": 1,
+    "Susmata": 1,
+    "Swanfeh": 1,
+    "Sydites": 1,
+    "Syia": 1,
+    "Syleans": 1,
+    "T'yeh": 1,
+    "Tadonga": 1,
+    "Tagaar": 1,
+    "Tagi": 1,
+    "Tahavi": 1,
+    "Taixat": 1,
+    "Tapax": 1,
+    "Tapazmal": 1,
+    "Tashaki": 1,
+    "Taureans": 1,
+    "Tayuho": 1,
+    "Teakhea": 1,
+    "Tethmari": 1,
+    "Tewihah": 1,
+    "Tezcat": 1,
+    "Thacullyan": 1,
+    "Thaggeshi": 1,
+    "Thonane": 1,
+    "Thorellians": 1,
+    "Thotrazef": 1,
+    "Thovala": 1,
+    "Threep": 1,
+    "Tikareen": 1,
+    "Tilpish": 1,
+    "Tirril": 1,
+    "Tlenk": 1,
+    "Tlyetrai": 1,
+    "Toaba": 1,
+    "Tobai": 1,
+    "Todriwa": 1,
+    "Tothpre": 1,
+    "Treefe": 1,
+    "Triartoockoot": 1,
+    "Trist": 1,
+    "Triul": 1,
+    "Troicka": 1,
+    "Truarinixpanax": 1,
+    "Tshini": 1,
+    "Twaro": 1,
+    "Tydere": 1,
+    "Uapdranu": 1,
+    "Uckcekilyn": 1,
+    "Uhnuphe": 1,
+    "Ulane": 1,
+    "Ulothyes": 1,
+    "Umvaol": 1,
+    "Ungrest": 1,
+    "Uostoor": 1,
+    "Uphlocki": 1,
+    "Uqqapin": 1,
+    "Uquilar": 1,
+    "Urpayans": 1,
+    "Urpurret": 1,
+    "Ursa": 1,
+    "Ursty": 1,
+    "Urunishani": 1,
+    "Uulip": 1,
+    "Uutra": 1,
+    "Uxoron": 1,
+    "Uxril": 1,
+    "Vapethi": 1,
+    "Varaha": 1,
+    "Vardin": 1,
+    "Vegans": 1,
+    "Veghu": 1,
+    "Vexx": 1,
+    "Vicarii": 1,
+    "Viji": 1,
+    "Virkesh": 1,
+    "Virushi": 1,
+    "Vissekti": 1,
+    "Vozkell": 1,
+    "Vu Medach": 1,
+    "Wamenual": 1,
+    "Wen": 1,
+    "Weqbleft": 1,
+    "Wesh": 1,
+    "Whaiz": 1,
+    "Whessann": 1,
+    "Whirooa": 1,
+    "Woosian": 1,
+    "Wroae": 1,
+    "Wrur": 1,
+    "Wuans": 1,
+    "Wuaye": 1,
+    "Wuiche": 1,
+    "Wuroo": 1,
+    "X!tkak!": 1,
+    "Xabulamanti": 1,
+    "Xapoqi": 1,
+    "Xienner": 1,
+    "Xu'rokotani": 1,
+    "Xubux": 1,
+    "Yafizethe": 1,
+    "Yaitlat": 1,
+    "Yand": 1,
+    "Yarah-Dak": 1,
+    "Yeasaol": 1,
+    "Yegha": 1,
+    "Yelelk": 1,
+    "Yileans": 1,
+    "Ykoro": 1,
+    "Yn-tsai": 1,
+    "Yont": 1,
+    "Yrogonomi": 1,
+    "Z'Kr": 1,
+    "Z'krall": 1,
+    "Za'tachk": 1,
+    "Zakhsoukh": 1,
+    "Zarn": 1,
+    "Zarodysh": 1,
+    "Zaru": 1,
+    "Zevaqe": 1,
+    "Zhdianshe": 1,
+    "Zhurphani": 1,
+    "Ziadd": 1,
+    "Zirduluush": 1,
+    "Zithari": 1,
+    "exotic minor": 1,
+    "minor": 54
+  }
+}
