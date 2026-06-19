@@ -22,8 +22,9 @@ Current Ceres status: only `Humaniti` and `Vilani` are defined in
 | Ape                         | Uplift   | UApe | Imperial/Solomani | Sol               | STR+1, END+1, SOC-1                                                                         | Chimp: Small (-1); Gorilla: Athletics(str) 2; Heightened Senses; all Core careers                                  |
 | Aquamorph                   | Human    | Aqua | Alph              | Sol               | STR halved when out of water                                                                | Amphibious; gill/lung; indefinite underwater breathing; all Core careers                                           |
 | Ascondi                     | Alien    | —    | —                 | Great Rift 1      | END+1; caste mods at age ~20                                                                | Caste replaces background; SOC starts at 1                                                                         |
-| Aslan                       | Major    | Asla | major             | AoCS 1            | STR+2 DEX-2 END+1 (m); STR+1 DEX-1 END+2 (f); SOC → TER                                     | Rite of Passage; Clan Shares; gender-locked assignments                                                            |
-| Aslan (Darrian)             | Alien    | Asla | major             | AoCS 3            | STR+1, DEX+1, EDU+1; SOC → TER                                                              | Any Darrian career; gender preferences softened; Roget Aslan may also use AoCS 1 options                           |
+| Aslan (Darrian)             | Alien    | Asla | major             | AoCS 3            | STR+1, DEX+1, EDU+1                                                                         | Any Darrian career; gender preferences softened; Roget Aslan may also use AoCS 1 options                           |
+| Aslan (Hierate)             | Major    | Asla | major             | AoCS 1            | (m) STR+2 DEX-2 END+1; SOC → TER; (f) STR+1 DEX-1 END+2                                     | Rite of Passage; Clan Shares; gender-locked assignments                                                            |
+| Aslan (Humaniti)            | Major    | Asla | major             | Core              | STR+2, DEX-2                                                                                | Core careers; Dewclaw (1D+2); Heightened Senses                                                                    |
 | Bosaki                      | Alien    | —    | —                 | JTAS 17           | STR=1D+1, DEX=2D+2, END=1D+1, INT=2D+1, EDU=2D, SOC=4                                       | Age 24 start; Combat Aversion                                                                                      |
 | Bruhre                      | Alien    | Bruh | Daib/Reav         | Deepdark          | STR=3D(max 18), DEX=1D, END=3D+2(max 20), SOC=1D                                            | No Drifter/Entertainer/Rogue                                                                                       |
 | Bwap                        | Alien    | Bwap | Imperial/Vilani   | AoCS 3            | STR-4 END-4                                                                                 | Faster aging; no Rogue; Structured Mind trait                                                                      |
@@ -99,7 +100,8 @@ Current Ceres status: only `Humaniti` and `Vilani` are defined in
 | Tlyetrai                    | Alien    | Tlye | Reav              | Deepdark          | STR-2, DEX+1, INT+1                                                                         | No Army/Navy/Marine/Rogue unless emigrated                                                                         |
 | Ulane                       | Alien    | Ulan | Dark              | Deepdark          | DEX+2; STR/END=1D+1                                                                         | Fast Metabolism; Multi-limbed; Small (-1)                                                                          |
 | Ursa                        | Uplift   | Ursa | Forn/Ley          | Trail             | STR+4, END+2                                                                                | Uplifted bears; Claws & Teeth 1D+3; Sore Head (DM-2 social with humans)                                            |
-| Vargr                       | Major    | Varg | Vargr space       | AoCS 1            | SOC → CHA                                                                                   | CHA gain/loss mechanic                                                                                             |
+| Vargr (Extents)             | Major    | Varg | Vargr space       | AoCS 1            | STR-2, DEX+1, END-1; SOC → CHA (1D+2)                                                       | Vargr careers; CHA gain/loss mechanic; Bite (1D+1); Heightened Senses                                              |
+| Vargr (Humaniti)            | Major    | Varg | Imperial/Solomani | Core              | STR-1, DEX+1, END-1                                                                         | Core careers; Bite (1D+1); Heightened Senses (DM-1 sight in dark)                                                  |
 | Vegan                       | Alien    | Vega | Solo              | Sol/AoCS          | EDU+2, SOC-2                                                                                | First career must be Drifter; 200+ year lifespan                                                                   |
 | Vilani                      | Major    | Huma | Imperial/Solomani | Core              | —                                                                                           | No mechanical differences                                                                                          |
 | Virushi                     | Alien    | —    | —                 | JTAS 5 / Deepdark | STR=1D+10, END=1D+10, DEX+2, SOC-2                                                          | SOC career gains → EDU; no Army/Navy/Marines; 8-ton staterooms                                                     |
@@ -158,31 +160,41 @@ Standard human characteristics. Key creation mechanics:
 - Full Zhodani career list: Agent, Army, Entertainer, Merchant, Navy, Noble, Scholar, and
   Zhodani-specific assignments. BTC simplified version uses Core careers.
 
-### Vargr
+### Vargr (Extents)
 
 *Source: AoCS Vol. 1 (`refs/alien1/12_vargr_travellers.md`)*
 
 Uplifted wolves. Genetically engineered by the Ancients from Earth canines. A Major Race
-by virtue of their independent development of jump drive.
+by virtue of their independent development of jump drive. These rules cover Vargr born and
+raised in the Vargr Extents.
 
-- **SOC replaced by CHA (Charisma).** When a SOC check is required in a non-Vargr context,
-  increase difficulty one step and use SOC.
+- **SOC replaced by CHA (Charisma).** CHA starts at 1D+2. When a SOC check is required in
+  a non-Vargr context, increase difficulty one step and use CHA.
 - CHA changes during play via a 2D+CHA DM vs current CHA check (Ceres: this is a
   career-term mechanic, not just mid-campaign).
-- In the Vargr Extents, CHA replaces SOC throughout; outside Vargr space, both characteristics
-  may apply depending on context.
 - **Additional careers:** Emissary, Corsair, Scientist, Psion.
 - Pack Events table added to Life Events.
 - **Ship benefits:** Corsair career can muster out a Ruguelka-class ship (25% mortgage).
 
-### Aslan
+### Vargr (Humaniti)
+
+*Source: Core (`refs/core/02_traveller_creation.md`)*
+
+Vargr who have grown up in human space use the Core rules. Characteristic mods and traits
+are biologically the same species, but STR modifier is -1 (not -2 as for Extents Vargr),
+SOC is retained, and all Core careers are available.
+
+- **Traits:** Bite (1D+1, Melee natural); Heightened Senses (DM+1 Recon/Survival; DM-1
+  sight in dark conditions).
+
+### Aslan (Hierate)
 
 *Source: AoCS Vol. 1 (`refs/alien1/02_aslan_travellers_chapter_two.md`)*
 
 Feline species from the Aslan Hierate.
 
 - **Characteristics:** STR+2, DEX-2, END+1 (male); STR+1, DEX-1, END+2 (female).
-- **SOC replaced by TER (Territorial Imperative).**
+- **SOC replaced by TER (Territorial Imperative) for males only.** Females retain SOC.
 - **Rite of Passage** (roll 10+) replaces qualification for the first career.
 - **Clan Shares** replace pensions (tradeable for cash, land, ship shares, favours).
 - **Gender-locked assignments:** Commander (male only), Shipmaster and Navigator (female only);
@@ -190,6 +202,15 @@ Feline species from the Aslan Hierate.
 - Male cash mustering out limited to rolls equal to Independence skill level; cash at half value.
   Females have unlimited cash rolls.
 - Aslan-specific Life Events table.
+
+### Aslan (Humaniti)
+
+*Source: Core (`refs/core/02_traveller_creation.md`)*
+
+Aslan integrated into human space use the Core rules. No gender-split characteristics, no
+TER, no Rite of Passage or Clan mechanics. All Core careers are available.
+
+- **Traits:** Dewclaw (1D+2, Melee natural); Heightened Senses (DM+1 Recon/Survival).
 
 ### Hivers
 
