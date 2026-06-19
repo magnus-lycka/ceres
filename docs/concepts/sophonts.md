@@ -12,121 +12,125 @@ Current Ceres status: only `Humaniti` and `Vilani` are defined in
 
 ## Quick-reference table
 
-| Species | Category | Source | Characteristic changes | Replacement char | New char | Special |
-|---|---|---|---|---|---|---|
-| Ael Yael | Alien | JTAS 3 | STR-1 | — | — | No Noble; 90% cash donated; DM-2 enlistment |
-| Aezorgh | Alien | JTAS 11 | STR=1D, DEX=2D+3, END=1D+1, INT=2D+2, EDU=1D, SOC=1D | — | — | DM+4 aging until term 16 |
-| Akeed | Alien | Trail | STR-2, END-2, INT+1 | — | — | Akeed Debate DM+2; Akeed Friendship bond; slug-like; careers not listed |
-| Amindii | Alien | JTAS 9 | STR=3D (+2 Activator; +END 1 Bearer) | — | — | Three genders; age 14 start; Perception ability |
-| Aniyun | Alien | Spinext | STR=1D, EDU-2 | — | — | Citizen/Drifter only; natural flight |
-| Ape | Uplift | Sol | STR+1, END+1, SOC-1 | — | — | Chimp: Small (-1); Gorilla: Athletics(str) 2; Heightened Senses; all Core careers |
-| Aquamorph | Human | Sol | STR halved when out of water | — | — | Amphibious; gill/lung; indefinite underwater breathing; all Core careers |
-| Ascondi | Alien | Great Rift 1 | END+1; caste mods at age ~20 | — | — | Caste replaces background; SOC starts at 1 |
-| Aslan | Major | AoCS 1 | STR+2 DEX-2 END+1 (m); STR+1 DEX-1 END+2 (f) | SOC → TER | — | Rite of Passage; Clan Shares; gender-locked assignments |
-| Aslan (Darrian) | Alien | AoCS 3 | STR+1, DEX+1, EDU+1 | SOC → TER | — | Any Darrian career; gender preferences softened; Roget Aslan may also use AoCS 1 options |
-| Bosaki | Alien | JTAS 17 | STR=1D+1, DEX=2D+2, END=1D+1, INT=2D+1, EDU=2D, SOC=4 | — | — | Age 24 start; Combat Aversion |
-| Bruhre | Alien | Deepdark | STR=3D(max 18), DEX=1D, END=3D+2(max 20), SOC=1D | — | — | No Drifter/Entertainer/Rogue |
-| Bwap | Alien | AoCS 3 | STR-4 END-4 | — | — | Faster aging; no Rogue; Structured Mind trait |
-| Caprisaps (Alpine) | Uplift | JTAS 12 | STR-2, DEX+2 | — | — | Goat uplift; Improved Digestion |
-| Caprisaps (Boar) | Uplift | JTAS 12 | STR-1, DEX+1 | — | — | Goat uplift; Improved Digestion |
-| Capry | Alien | Trail | Female: STR-3 DEX+2 END-2 INT+1; Big Male: STR-1 END+1; Small Male: STR-4 DEX+3 END-3 EDU+2 | — | — | 3 sexes; Liberating Fatalism; Third Hand; endangered species |
-| Chokari | Uplift | BTC | END+1, SOC-1 | — | PSI (2D) | Ancient uplift (Foelen); psionic training before career; Deep Diver (100m); Swimmer (6m) |
-| Crenduthaar | Alien | BTC | STR=3D, END=3D, DEX=1D | — | — | Army/Citizen/Drifter/Marine/Rogue; Armour +3; IR Vision; Slasher 2D; dark phobia; kill Vargr on sight |
-| Darrian | Human | AoCS 3 / BTC | STR-1 DEX+1 END-1 INT+1 EDU+1 | — | — | Restricted career list; first term forced |
-| Dolphin (Foelen) | Uplift | BTC | END+1, SOC-1 | — | — | Ancient uplift near Foelen; all Core careers |
-| Dolphin (Solomani) | Uplift | AoCS 3 | STR+4 END+2 SOC-4 | — | — | Solomani uplift; age 12 start; restricted careers |
-| Droashav | Alien | Trail | STR+2, DEX-1, END+3, INT-1 | — | — | Natural Defences +1 + claws 1D+2; six-limbed pseudoreptilians; careers not listed |
-| Droyne | Major | AoCS 2 | STR/DEX/END/INT/EDU=1D+1; PSI=2D; caste mods | SOC → PSI | — | Caste-based careers; no standard career flow |
-| Dynchia | Alien | JTAS 1 | STR=1D+3, DEX+1, EDU+1 | — | — | DM-2 enlistment outside Comitia |
-| Ebokin | Alien | BTC | DEX-2, END+3 | — | — | Methane breather; UV Vision; Armour +3; limited career list |
-| Eslyat | Alien | Spinext | Three sub-races (Selyin/Chutin/Magsin) by SOC; males STR+1 | — | — | Amphibious; Heightened Hearing; caste-limited careers |
-| Faar | Alien | Trail | STR+1, END+1, DEX-1 | — | — | Closed Book (DM-2 reading Faar); Homesickness (END check every 2D days off-world) |
-| Freni | Alien | Spinext | 6 subspecies, various; SOC=EDU | — | — | Flexible Digits; Reputation as Cook; Steward 1/Profession(freeloading)1/Survival 0 start |
-| Geonee | Human | AoCS 3 | STR+2 DEX-1 END+2 SOC-1 | — | — | Extra background skill |
-| Ghenani | Human | Spinext | STR+2, DEX-2 | — | — | STR max 17; DM-1 aging; no cyber/psionics; career-restricted until emigrated |
-| Girug'kagh | Alien | JTAS 1 | STR=1D+2, END=1D+2, DEX=1D+7 | — | — | Translator-only; serve K'kree for life |
-| Githiaskio | Alien | JTAS 2 | — | — | — | Zero-g/aquatic specialist; gravity injures without suit |
-| Gl'lu | Alien | BTC | END-1, DEX+1, EDU-2 | — | — | Ammonia breather; IR Vision; Heightened Senses; all Core careers; tiny staterooms (8 per cabin) |
-| Gmina | Alien | Spinext | STR=2D+4, EDU=1D, SOC=2 (fixed), DEX-1 | — | — | Drifter only; four arms |
-| Gurungan | Alien | Sol | DEX+2 | — | — | Fully aquatic; Sonar 120m; Bite 1D; Deep Diver 1000m; Swimmer 8m; all Core careers |
-| Gurvin | Alien | AoCS 4 | Females INT+1 EDU+1; Males STR-1 DEX+1 | — | — | Male INT/EDU=1D+1; age 16 start |
-| Halkans | Alien | JTAS 8 | END+1, EDU-1 | — | — | Pacifism; reroll combat skills during creation |
-| Happrhani | Human | Deepdark | END+1 | — | — | Barbarian only if steppe/desert nomad |
-| Hhkar | Alien | JTAS 12 | STR+3 END+3; reset per gender transformation | — | — | Serial hermaphroditism reverses aging |
-| Hiver | Major | AoCS 2 | STR-2 | SOC → RES | — | RES=1D+6; no survival checks; aging from 38 |
-| Hlanssai | Alien | JTAS 4 | STR-2 DEX+2 EDU-2, SOC=1D+4 / fixed 5 | — | — | Bypasses standard career system entirely |
-| Iltharans | Human | Deepdark | END+1 | — | — | Longevity +6 aging |
-| Ithklur | Alien | JTAS 7 | EDU-1 | SOC → RES | — | EDU=1D+1, RES=1D+1; Fourfold Way path system |
-| J'aadje | Alien | Deepdark | STR-2, DEX+2 | — | — | All careers |
-| Jonkeereen | Human | BTC / Trail | BTC: END+1, EDU-1; Trail: END+2 only | — | — | Heat resistance; Desert Survival DM+3; ⚠ discrepancy between sources |
-| K'kree | Major | AoCS 1 | STR+6, INT+2, EDU+2 (patriarch) | — | — | Creates whole household; Patriarchy skill; Claustrophobic; Gregarious |
-| Katangan | Human | Spinext | STR+1, DEX-1, END+1 | — | — | Fully human; heavy worlder; draft first term; DM-1 aging; Katangan Culture modifier |
-| Kemlae | Alien | Spinext | DEX+1, END+1, EDU-1, SOC-1 | — | — | Age 8 start; Kuftu transformation/death after term 7 |
-| Kirissukyoya | Alien | BTC | STR-1 | — | — | All Core careers; Eidetic Sense (hearing); Claws 1D; Mechanic 1 innate |
-| Krotan | Alien | JTAS 15 | END=3D, DEX-2, SOC=2D (age indicator) | — | — | Merchant/Citizen only; no survival checks |
-| Ktiauao | Alien | Spinext | STR+1, DEX+2 | SOC → TER (Aslan-style) | — | Uses Aslan careers; three genders |
-| Ladybug | Alien | Sol | STR/END/SOC=1D+2; INT/EDU=2D3; DEX=2D+3 | — | — | Gentle Soul DM-2 combat/confrontation; Beautiful DM+2 help; DM-2 military careers |
-| Lhshana | Alien | JTAS 16 | DEX+1, INT+1, SOC-2 | — | — | Standard careers; trilateral physiology |
-| Llellewyloly | Alien | BTC | STR=2D3, END=2D3 | — | — | Alien Digits DM-2 non-adapted devices; Atmosphere (thin); careers not listed in source |
-| Lurent | Alien | BTC | STR=2D+4, END=2D+4 | — | — | Drifter/Merchant/Noble/Rogue/Scout/Scholar; Tentacle Bash 2D; Wanderlust compulsion cycles |
-| Luriani | Human | Trail | DEX+1, END+1, SOC-2 | — | — | Aquatic Adaptation (genetically Luriani); Histrionics; Ancient-modified humans |
-| Mal'Gnar | Alien | Spinext | EDU=1D+1 | — | — | Drifter only; cannot speak Galanglic |
-| Martian | Alien | BTC | STR-1, END-1, DEX+1; EDU=1D (max 7) | — | — | Most Core careers; Adaptability; immune to telepathy |
-| Mewey | Alien | JTAS 13 | STR-2, INT+1, EDU+1 | — | — | Heightened Senses; Empathetic; limited Navy |
-| Murian | Alien | Spinext | STR+1, DEX-2, END+2; SOC=2D3+4 | — | — | All Core; Armour +1; Claw 1D+2; Short Limbs 4m speed; IR vision |
-| Nenlat | Alien | JTAS 10 | STR+1, EDU-2 (assim.); STR+1, EDU=1D (trad.); gender mods | — | — | Amphibious; age 14 start; trilateral |
-| Oo-ne-beto-pon-tee | Alien | 3i | STR=D3, END=D3, SOC=D3; DEX=1D+4; INT=2D-1; EDU=2D | — | — | (Whistler) neuter sex recommended; Sticky Feet; Stealth 2 innate; High-freq Communication |
-| Orca | Uplift | AoCS 3 | STR+8 END+4 SOC-4 | — | — | Solomani uplift; 12× ship space; restricted careers |
-| Ormine | Alien | Deepdark | DEX-2, END+2 | — | — | 28-year terms; start at 30; aging at 254 |
-| Rammak | Alien | Rimexp | DEX=1D+8 | — | — | All-round Perception; Specialised Limbs (DM+2 climbing, DM-2 strength); careers not listed |
-| Resavolk | Alien | Spinext | SOC=D3+5 | — | — | Drifter (barbarian) first term, then any except Noble unless SOC 10+; no exceptional traits |
-| Saurus | Alien | BTC | STR+2, END+2; INT=2D3; EDU=1D | — | — | Citizen (worker)/Drifter only; Armour +2 |
-| Segani | Alien | BTC | END=1D+2 (max 10); all others 2D | — | — | Army/Citizen/Entertainer/Rogue/Scholar; jump travel causes madness |
-| Selenite | Human | Sol | DEX+2; STR=2D3+1; END=1D+1 | — | — | Low-G adapted humans; Great Indoors (uneasy outdoors); Low-G DM+2; all Core careers |
-| Shi'awei | Alien | BTC | STR=3D, END=3D, DEX=1D; males also STR-1 END+1 | — | — | Drifter/Entertainer/Noble/Rogue; aquatic; Echolocation (30m); Grippers 2D |
-| Solomani | Major | AoCS 2 | — | — | — | Race roll; party patronage; SolSec monitor |
-| Souggvuez | Alien | BTC | DEX+1, INT-1, EDU+1; caste mods | — | — | All Core careers; Armour +1; Bite 1D+2; four gender castes |
-| Ssienjhiovla | Alien | 3i | STR-2, DEX+1 | — | — | Carapace +6; Composite Imaging (olfactory); Non-verbal Communication 5km; Scout/Navy preferred |
-| Suerrat | Alien | AoCS 4 | STR+1 DEX+2 SOC-1 | — | — | Cold/radiation resistance |
-| Sword Worlders | Human | Sword | — | — | — | Patrol career (max age 30 to join) |
-| Sydites | Human | Trail | STR+2, END+2, DEX-2, INT-3, EDU-3 | — | — | Resilient +1; Plodding Along (DM-4 Leadership/Tactics, DM+4 morale); 4-armed |
-| Sylean | Human | 3i | STR-1, EDU+1 | — | — | All Core; Cooperation DM+2 Admin/Diplomat/Streetwise on Sylean worlds; DM+1 cash benefits |
-| Teakhea | Alien | Spinext | STR+1, DEX-1, END+1, SOC-2 | — | — | Aslan careers (exc. Ceremonial/Envoy/Space Officer); Amphibious; Large +2; Shell +3; gender-changing career system |
-| Tezcat | Alien | AoCS 4 | DEX+1 END-1 | — | — | No Noble; mandatory combat background skills |
-| Thonane | Alien | Spinext | STR=1D, DEX=3D, END=2D, INT=2D, EDU=D3, SOC=D3 | — | — | Drifter (barbarian) only; Flyer; Hunter innate skills |
-| Tlinzha | Alien | Sector 8 | END=3D | — | — | 8-year terms; age 8 start; no psionics |
-| Tlyetrai | Alien | Deepdark | STR-2, DEX+1, INT+1 | — | — | No Army/Navy/Marine/Rogue unless emigrated |
-| Ulane | Alien | Deepdark | DEX+2; STR/END=1D+1 | — | — | Fast Metabolism; Multi-limbed; Small (-1) |
-| Ursa | Uplift | Trail | STR+4, END+2 | — | — | Uplifted bears; Claws & Teeth 1D+3; Sore Head (DM-2 social with humans) |
-| Vargr | Major | AoCS 1 | — | SOC → CHA | — | CHA gain/loss mechanic |
-| Vegan | Alien | Sol/AoCS | EDU+2, SOC-2 | — | — | First career must be Drifter; 200+ year lifespan |
-| Vilani | Major | Core | — | — | — | No mechanical differences |
-| Virushi | Alien | JTAS 5 / Deepdark | STR=1D+10, END=1D+10, DEX+2, SOC-2 | — | — | SOC career gains → EDU; no Army/Navy/Marines; 8-ton staterooms |
-| Wanderer (Wandering People) | Alien | Trail | DEX+2, STR-1, END-1 | — | — | Carapace +1; Weird Movement; insectoid |
-| Yafizethe | Alien | BTC | STR=1D, END=1D, DEX=3D, INT+1 | — | — | Careers not listed in source; Enhanced Vision (EM fields); Small (-1) |
-| Yn-tsai | Alien | Deepdark | STR-2, INT+2 | — | — | All Core careers; Low Pressure trait |
-| Za'tachk | Alien | AoCS 4 | STR+1; Matriarchs INT+1 EDU+1 BOL-1; Scouts INT-1 EDU-1 BOL+1 | — | BOL (1D+1) | Three sexes; age 10/15 start; Coward trait |
-| Zhdianshe | Alien | Spinext | STR=1 (fixed), DEX=2D+2 | — | PSI=2D (min 2); SOC=PSI | All Core + Psion; no aging until term 8; Echolocation; Flyer; Telepathy 2 + Clairvoyance 1 innate |
-| Zhodani | Major | AoCS 1 / BTC | EDU min 8 if SOC 10+ | — | PSI (rolled first) | Social class tiers gate careers |
+| Sophont                     | Category | Source            | Characteristic changes                                                                      | Replacement char        | New char                | Special                                                                                                            |
+| --------------------------- | -------- | ----------------- | ------------------------------------------------------------------------------------------- | ----------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Ael Yael                    | Alien    | JTAS 3            | STR-1                                                                                       | —                       | —                       | No Noble; 90% cash donated; DM-2 enlistment                                                                        |
+| Aezorgh                     | Alien    | JTAS 11           | STR=1D, DEX=2D+3, END=1D+1, INT=2D+2, EDU=1D, SOC=1D                                        | —                       | —                       | DM+4 aging until term 16                                                                                           |
+| Akeed                       | Alien    | Trail             | STR-2, END-2, INT+1                                                                         | —                       | —                       | Akeed Debate DM+2; Akeed Friendship bond; slug-like; careers not listed                                            |
+| Amindii                     | Alien    | JTAS 9            | STR=3D (+2 Activator; +END 1 Bearer)                                                        | —                       | —                       | Three genders; age 14 start; Perception ability                                                                    |
+| Aniyun                      | Alien    | Spinext           | STR=1D, EDU-2                                                                               | —                       | —                       | Citizen/Drifter only; natural flight                                                                               |
+| Ape                         | Uplift   | Sol               | STR+1, END+1, SOC-1                                                                         | —                       | —                       | Chimp: Small (-1); Gorilla: Athletics(str) 2; Heightened Senses; all Core careers                                  |
+| Aquamorph                   | Human    | Sol               | STR halved when out of water                                                                | —                       | —                       | Amphibious; gill/lung; indefinite underwater breathing; all Core careers                                           |
+| Ascondi                     | Alien    | Great Rift 1      | END+1; caste mods at age ~20                                                                | —                       | —                       | Caste replaces background; SOC starts at 1                                                                         |
+| Aslan                       | Major    | AoCS 1            | STR+2 DEX-2 END+1 (m); STR+1 DEX-1 END+2 (f)                                                | SOC → TER               | —                       | Rite of Passage; Clan Shares; gender-locked assignments                                                            |
+| Aslan (Darrian)             | Alien    | AoCS 3            | STR+1, DEX+1, EDU+1                                                                         | SOC → TER               | —                       | Any Darrian career; gender preferences softened; Roget Aslan may also use AoCS 1 options                           |
+| Bosaki                      | Alien    | JTAS 17           | STR=1D+1, DEX=2D+2, END=1D+1, INT=2D+1, EDU=2D, SOC=4                                       | —                       | —                       | Age 24 start; Combat Aversion                                                                                      |
+| Bruhre                      | Alien    | Deepdark          | STR=3D(max 18), DEX=1D, END=3D+2(max 20), SOC=1D                                            | —                       | —                       | No Drifter/Entertainer/Rogue                                                                                       |
+| Bwap                        | Alien    | AoCS 3            | STR-4 END-4                                                                                 | —                       | —                       | Faster aging; no Rogue; Structured Mind trait                                                                      |
+| Caprisaps (Alpine)          | Uplift   | JTAS 12           | STR-2, DEX+2                                                                                | —                       | —                       | Goat uplift; Improved Digestion                                                                                    |
+| Caprisaps (Boar)            | Uplift   | JTAS 12           | STR-1, DEX+1                                                                                | —                       | —                       | Goat uplift; Improved Digestion                                                                                    |
+| Capry                       | Alien    | Trail             | Female: STR-3 DEX+2 END-2 INT+1; Big Male: STR-1 END+1; Small Male: STR-4 DEX+3 END-3 EDU+2 | —                       | —                       | 3 sexes; Liberating Fatalism; Third Hand; endangered species                                                       |
+| Chokari                     | Uplift   | BTC               | END+1, SOC-1                                                                                | —                       | PSI (2D)                | Ancient uplift (Foelen); psionic training before career; Deep Diver (100m); Swimmer (6m)                           |
+| Crenduthaar                 | Alien    | BTC               | STR=3D, END=3D, DEX=1D                                                                      | —                       | —                       | Army/Citizen/Drifter/Marine/Rogue; Armour +3; IR Vision; Slasher 2D; dark phobia; kill Vargr on sight              |
+| Darrian                     | Human    | AoCS 3 / BTC      | STR-1 DEX+1 END-1 INT+1 EDU+1                                                               | —                       | —                       | Restricted career list; first term forced                                                                          |
+| Dolphin (Foelen)            | Uplift   | BTC               | END+1, SOC-1                                                                                | —                       | —                       | Ancient uplift near Foelen; all Core careers                                                                       |
+| Dolphin (Solomani)          | Uplift   | AoCS 3            | STR+4 END+2 SOC-4                                                                           | —                       | —                       | Solomani uplift; age 12 start; restricted careers                                                                  |
+| Droashav                    | Alien    | Trail             | STR+2, DEX-1, END+3, INT-1                                                                  | —                       | —                       | Natural Defences +1 + claws 1D+2; six-limbed pseudoreptilians; careers not listed                                  |
+| Droyne                      | Major    | AoCS 2            | STR/DEX/END/INT/EDU=1D+1; PSI=2D; caste mods                                                | SOC → PSI               | —                       | Caste-based careers; no standard career flow                                                                       |
+| Dynchia                     | Alien    | JTAS 1            | STR=1D+3, DEX+1, EDU+1                                                                      | —                       | —                       | DM-2 enlistment outside Comitia                                                                                    |
+| Ebokin                      | Alien    | BTC               | DEX-2, END+3                                                                                | —                       | —                       | Methane breather; UV Vision; Armour +3; limited career list                                                        |
+| Eslyat                      | Alien    | Spinext           | Three sub-races (Selyin/Chutin/Magsin) by SOC; males STR+1                                  | —                       | —                       | Amphibious; Heightened Hearing; caste-limited careers                                                              |
+| Faar                        | Alien    | Trail             | STR+1, END+1, DEX-1                                                                         | —                       | —                       | Closed Book (DM-2 reading Faar); Homesickness (END check every 2D days off-world)                                  |
+| Freni                       | Alien    | Spinext           | 6 subspecies, various; SOC=EDU                                                              | —                       | —                       | Flexible Digits; Reputation as Cook; Steward 1/Profession(freeloading)1/Survival 0 start                           |
+| Geonee                      | Human    | AoCS 3            | STR+2 DEX-1 END+2 SOC-1                                                                     | —                       | —                       | Extra background skill                                                                                             |
+| Ghenani                     | Human    | Spinext           | STR+2, DEX-2                                                                                | —                       | —                       | STR max 17; DM-1 aging; no cyber/psionics; career-restricted until emigrated                                       |
+| Girug'kagh                  | Alien    | JTAS 1            | STR=1D+2, END=1D+2, DEX=1D+7                                                                | —                       | —                       | Translator-only; serve K'kree for life                                                                             |
+| Githiaskio                  | Alien    | JTAS 2            | —                                                                                           | —                       | —                       | Zero-g/aquatic specialist; gravity injures without suit                                                            |
+| Gl'lu                       | Alien    | BTC               | END-1, DEX+1, EDU-2                                                                         | —                       | —                       | Ammonia breather; IR Vision; Heightened Senses; all Core careers; tiny staterooms (8 per cabin)                    |
+| Gmina                       | Alien    | Spinext           | STR=2D+4, EDU=1D, SOC=2 (fixed), DEX-1                                                      | —                       | —                       | Drifter only; four arms                                                                                            |
+| Gurungan                    | Alien    | Sol               | DEX+2                                                                                       | —                       | —                       | Fully aquatic; Sonar 120m; Bite 1D; Deep Diver 1000m; Swimmer 8m; all Core careers                                 |
+| Gurvin                      | Alien    | AoCS 4            | Females INT+1 EDU+1; Males STR-1 DEX+1                                                      | —                       | —                       | Male INT/EDU=1D+1; age 16 start                                                                                    |
+| Halkans                     | Alien    | JTAS 8            | END+1, EDU-1                                                                                | —                       | —                       | Pacifism; reroll combat skills during creation                                                                     |
+| Happrhani                   | Human    | Deepdark          | END+1                                                                                       | —                       | —                       | Barbarian only if steppe/desert nomad                                                                              |
+| Hhkar                       | Alien    | JTAS 12           | STR+3 END+3; reset per gender transformation                                                | —                       | —                       | Serial hermaphroditism reverses aging                                                                              |
+| Hiver                       | Major    | AoCS 2            | STR-2                                                                                       | SOC → RES               | —                       | RES=1D+6; no survival checks; aging from 38                                                                        |
+| Hlanssai                    | Alien    | JTAS 4            | STR-2 DEX+2 EDU-2, SOC=1D+4 / fixed 5                                                       | —                       | —                       | Bypasses standard career system entirely                                                                           |
+| Humaniti                    | Human    | Core              | —                                                                                           | —                       | —                       | Catch-all for standard humans not fitting a specific minor race                                                    |
+| Iltharans                   | Human    | Deepdark          | END+1                                                                                       | —                       | —                       | Longevity +6 aging                                                                                                 |
+| Ithklur                     | Alien    | JTAS 7            | EDU-1                                                                                       | SOC → RES               | —                       | EDU=1D+1, RES=1D+1; Fourfold Way path system                                                                       |
+| J'aadje                     | Alien    | Deepdark          | STR-2, DEX+2                                                                                | —                       | —                       | All careers                                                                                                        |
+| Jonkeereen                  | Human    | BTC / Trail       | BTC: END+1, EDU-1; Trail: END+2 only                                                        | —                       | —                       | Heat resistance; Desert Survival DM+3; ⚠ discrepancy between sources                                               |
+| K'kree                      | Major    | AoCS 1            | STR+6, INT+2, EDU+2 (patriarch)                                                             | —                       | —                       | Creates whole household; Patriarchy skill; Claustrophobic; Gregarious                                              |
+| Katangan                    | Human    | Spinext           | STR+1, DEX-1, END+1                                                                         | —                       | —                       | Fully human; heavy worlder; draft first term; DM-1 aging; Katangan Culture modifier                                |
+| Kemlae                      | Alien    | Spinext           | DEX+1, END+1, EDU-1, SOC-1                                                                  | —                       | —                       | Age 8 start; Kuftu transformation/death after term 7                                                               |
+| Kirissukyoya                | Alien    | BTC               | STR-1                                                                                       | —                       | —                       | All Core careers; Eidetic Sense (hearing); Claws 1D; Mechanic 1 innate                                             |
+| Krotan                      | Alien    | JTAS 15           | END=3D, DEX-2, SOC=2D (age indicator)                                                       | —                       | —                       | Merchant/Citizen only; no survival checks                                                                          |
+| Ktiauao                     | Alien    | Spinext           | STR+1, DEX+2                                                                                | SOC → TER (Aslan-style) | —                       | Uses Aslan careers; three genders                                                                                  |
+| Ladybug                     | Alien    | Sol               | STR/END/SOC=1D+2; INT/EDU=2D3; DEX=2D+3                                                     | —                       | —                       | Gentle Soul DM-2 combat/confrontation; Beautiful DM+2 help; DM-2 military careers                                  |
+| Lhshana                     | Alien    | JTAS 16           | DEX+1, INT+1, SOC-2                                                                         | —                       | —                       | Standard careers; trilateral physiology                                                                            |
+| Llellewyloly                | Alien    | BTC               | STR=2D3, END=2D3                                                                            | —                       | —                       | Alien Digits DM-2 non-adapted devices; Atmosphere (thin); careers not listed in source                             |
+| Lurent                      | Alien    | BTC               | STR=2D+4, END=2D+4                                                                          | —                       | —                       | Drifter/Merchant/Noble/Rogue/Scout/Scholar; Tentacle Bash 2D; Wanderlust compulsion cycles                         |
+| Luriani                     | Human    | Trail             | DEX+1, END+1, SOC-2                                                                         | —                       | —                       | Aquatic Adaptation (genetically Luriani); Histrionics; Ancient-modified humans                                     |
+| Mal'Gnar                    | Alien    | Spinext           | EDU=1D+1                                                                                    | —                       | —                       | Drifter only; cannot speak Galanglic                                                                               |
+| Martian                     | Alien    | BTC               | STR-1, END-1, DEX+1; EDU=1D (max 7)                                                         | —                       | —                       | Most Core careers; Adaptability; immune to telepathy                                                               |
+| Mewey                       | Alien    | JTAS 13           | STR-2, INT+1, EDU+1                                                                         | —                       | —                       | Heightened Senses; Empathetic; limited Navy                                                                        |
+| Murian                      | Alien    | Spinext           | STR+1, DEX-2, END+2; SOC=2D3+4                                                              | —                       | —                       | All Core; Armour +1; Claw 1D+2; Short Limbs 4m speed; IR vision                                                    |
+| Nenlat                      | Alien    | JTAS 10           | STR+1, EDU-2 (assim.); STR+1, EDU=1D (trad.); gender mods                                   | —                       | —                       | Amphibious; age 14 start; trilateral                                                                               |
+| Oo-ne-beto-pon-tee          | Alien    | 3i                | STR=D3, END=D3, SOC=D3; DEX=1D+4; INT=2D-1; EDU=2D                                          | —                       | —                       | (Whistler) neuter sex recommended; Sticky Feet; Stealth 2 innate; High-freq Communication                          |
+| Orca                        | Uplift   | AoCS 3            | STR+8 END+4 SOC-4                                                                           | —                       | —                       | Solomani uplift; 12× ship space; restricted careers                                                                |
+| Ormine                      | Alien    | Deepdark          | DEX-2, END+2                                                                                | —                       | —                       | 28-year terms; start at 30; aging at 254                                                                           |
+| Rammak                      | Alien    | Rimexp            | DEX=1D+8                                                                                    | —                       | —                       | All-round Perception; Specialised Limbs (DM+2 climbing, DM-2 strength); careers not listed                         |
+| Resavolk                    | Alien    | Spinext           | SOC=D3+5                                                                                    | —                       | —                       | Drifter (barbarian) first term, then any except Noble unless SOC 10+; no exceptional traits                        |
+| Saurus                      | Alien    | BTC               | STR+2, END+2; INT=2D3; EDU=1D                                                               | —                       | —                       | Citizen (worker)/Drifter only; Armour +2                                                                           |
+| Segani                      | Alien    | BTC               | END=1D+2 (max 10); all others 2D                                                            | —                       | —                       | Army/Citizen/Entertainer/Rogue/Scholar; jump travel causes madness                                                 |
+| Selenite                    | Human    | Sol               | DEX+2; STR=2D3+1; END=1D+1                                                                  | —                       | —                       | Low-G adapted humans; Great Indoors (uneasy outdoors); Low-G DM+2; all Core careers                                |
+| Shi'awei                    | Alien    | BTC               | STR=3D, END=3D, DEX=1D; males also STR-1 END+1                                              | —                       | —                       | Drifter/Entertainer/Noble/Rogue; aquatic; Echolocation (30m); Grippers 2D                                          |
+| Solomani                    | Major    | AoCS 2            | —                                                                                           | —                       | —                       | Race roll; party patronage; SolSec monitor                                                                         |
+| Souggvuez                   | Alien    | BTC               | DEX+1, INT-1, EDU+1; caste mods                                                             | —                       | —                       | All Core careers; Armour +1; Bite 1D+2; four gender castes                                                         |
+| Ssienjhiovla                | Alien    | 3i                | STR-2, DEX+1                                                                                | —                       | —                       | Carapace +6; Composite Imaging (olfactory); Non-verbal Communication 5km; Scout/Navy preferred                     |
+| Suerrat                     | Alien    | AoCS 4            | STR+1 DEX+2 SOC-1                                                                           | —                       | —                       | Cold/radiation resistance                                                                                          |
+| Sword Worlders              | Human    | Sword             | —                                                                                           | —                       | —                       | Patrol career (max age 30 to join)                                                                                 |
+| Sydites                     | Human    | Trail             | STR+2, END+2, DEX-2, INT-3, EDU-3                                                           | —                       | —                       | Resilient +1; Plodding Along (DM-4 Leadership/Tactics, DM+4 morale); 4-armed                                       |
+| Sylean                      | Human    | 3i                | STR-1, EDU+1                                                                                | —                       | —                       | All Core; Cooperation DM+2 Admin/Diplomat/Streetwise on Sylean worlds; DM+1 cash benefits                          |
+| Teakhea                     | Alien    | Spinext           | STR+1, DEX-1, END+1, SOC-2                                                                  | —                       | —                       | Aslan careers (exc. Ceremonial/Envoy/Space Officer); Amphibious; Large +2; Shell +3; gender-changing career system |
+| Tezcat                      | Alien    | AoCS 4            | DEX+1 END-1                                                                                 | —                       | —                       | No Noble; mandatory combat background skills                                                                       |
+| Thonane                     | Alien    | Spinext           | STR=1D, DEX=3D, END=2D, INT=2D, EDU=D3, SOC=D3                                              | —                       | —                       | Drifter (barbarian) only; Flyer; Hunter innate skills                                                              |
+| Tlinzha                     | Alien    | Sector 8          | END=3D                                                                                      | —                       | —                       | 8-year terms; age 8 start; no psionics                                                                             |
+| Tlyetrai                    | Alien    | Deepdark          | STR-2, DEX+1, INT+1                                                                         | —                       | —                       | No Army/Navy/Marine/Rogue unless emigrated                                                                         |
+| Ulane                       | Alien    | Deepdark          | DEX+2; STR/END=1D+1                                                                         | —                       | —                       | Fast Metabolism; Multi-limbed; Small (-1)                                                                          |
+| Ursa                        | Uplift   | Trail             | STR+4, END+2                                                                                | —                       | —                       | Uplifted bears; Claws & Teeth 1D+3; Sore Head (DM-2 social with humans)                                            |
+| Vargr                       | Major    | AoCS 1            | —                                                                                           | SOC → CHA               | —                       | CHA gain/loss mechanic                                                                                             |
+| Vegan                       | Alien    | Sol/AoCS          | EDU+2, SOC-2                                                                                | —                       | —                       | First career must be Drifter; 200+ year lifespan                                                                   |
+| Vilani                      | Major    | Core              | —                                                                                           | —                       | —                       | No mechanical differences                                                                                          |
+| Virushi                     | Alien    | JTAS 5 / Deepdark | STR=1D+10, END=1D+10, DEX+2, SOC-2                                                          | —                       | —                       | SOC career gains → EDU; no Army/Navy/Marines; 8-ton staterooms                                                     |
+| Wanderer (Wandering People) | Alien    | Trail             | DEX+2, STR-1, END-1                                                                         | —                       | —                       | Carapace +1; Weird Movement; insectoid                                                                             |
+| Yafizethe                   | Alien    | BTC               | STR=1D, END=1D, DEX=3D, INT+1                                                               | —                       | —                       | Careers not listed in source; Enhanced Vision (EM fields); Small (-1)                                              |
+| Yn-tsai                     | Alien    | Deepdark          | STR-2, INT+2                                                                                | —                       | —                       | All Core careers; Low Pressure trait                                                                               |
+| Za'tachk                    | Alien    | AoCS 4            | STR+1; Matriarchs INT+1 EDU+1 BOL-1; Scouts INT-1 EDU-1 BOL+1                               | —                       | BOL (1D+1)              | Three sexes; age 10/15 start; Coward trait                                                                         |
+| Zhdianshe                   | Alien    | Spinext           | STR=1 (fixed), DEX=2D+2                                                                     | —                       | PSI=2D (min 2); SOC=PSI | All Core + Psion; no aging until term 8; Echolocation; Flyer; Telepathy 2 + Clairvoyance 1 innate                  |
+| Zhodani                     | Major    | AoCS 1 / BTC      | EDU min 8 if SOC 10+                                                                        | —                       | PSI (rolled first)      | Social class tiers gate careers                                                                                    |
 
 ---
 
-## Major Races
+## Major Sophonts
 
 The eight species that independently discovered jump drive. They are the dominant political
 and cultural powers of Charted Space.
 
 ### Vilani
-*Source: core (no separate creation chapter in refs)*
 
-Standard human characteristics and career access. No mechanical differences from Core
-character creation. Vilani cultural traits (conservative, specialist-focused) are roleplaying
-flavour rather than mechanical rules.
+*Source: Core rules default (`refs/core/02_traveller_creation.md`)*
+
+Standard human characteristics and career access. Same as `Humaniti` but indicating a
+Vilani cultural context. The cultural traits (conservative, specialist-focused) are 
+roleplaying flavour rather than mechanical rules.
 
 ### Solomani
+
 *Source: AoCS Vol. 2 (`refs/alien2/13_solomani_travellers.md`)*
 
 Standard human characteristics. Key creation mechanics:
+
 - **Race roll:** After generating characteristics, roll 2D+SOC DM. Non-Solomani suffer DM-2
   enlistment in SolSec, Navy, and Marines, and DM-2 advancement in all careers except Drifter,
   Rogue, and Citizen (worker). Mixed race is slightly less penalised.
@@ -142,6 +146,7 @@ Standard human characteristics. Key creation mechanics:
 - **Anagathics:** Confederation cannot manufacture them; SOC 11+ needed to acquire imported ones.
 
 ### Zhodani
+
 *Source: AoCS Vol. 1 (`refs/alien1/15_the_zhodani.md`); BTC (`refs/btc/04_creating_zhodani_travellers.md`)*
 
 - **PSI rolled first** (2D) before other characteristics.
@@ -154,6 +159,7 @@ Standard human characteristics. Key creation mechanics:
   Zhodani-specific assignments. BTC simplified version uses Core careers.
 
 ### Vargr
+
 *Source: AoCS Vol. 1 (`refs/alien1/12_vargr_travellers.md`)*
 
 Uplifted wolves. Genetically engineered by the Ancients from Earth canines. A Major Race
@@ -170,6 +176,7 @@ by virtue of their independent development of jump drive.
 - **Ship benefits:** Corsair career can muster out a Ruguelka-class ship (25% mortgage).
 
 ### Aslan
+
 *Source: AoCS Vol. 1 (`refs/alien1/02_aslan_travellers_chapter_two.md`)*
 
 Feline species from the Aslan Hierate.
@@ -185,6 +192,7 @@ Feline species from the Aslan Hierate.
 - Aslan-specific Life Events table.
 
 ### Hivers
+
 *Source: AoCS Vol. 2 (`refs/alien2/36_chapter_thirty_four.md`)*
 
 Manipulative, star-faring species from the Hive Federation.
@@ -199,6 +207,7 @@ Manipulative, star-faring species from the Hive Federation.
 - Natural armor 2; regeneration; dormancy ability.
 
 ### K'kree
+
 *Source: AoCS Vol. 1 (`refs/alien1/07_chapter_seven.md`; lore in `refs/alien1/06_chapter_six.md`)*
 
 Large centauroid herbivores from the Two Thousand Worlds. Militant herbivores who view
@@ -215,17 +224,17 @@ household**, not just an individual.
 
 #### SOC / Caste
 
-| SOC | Caste |
-|---|---|
-| 0 | Outcast / casteless |
-| 1–3 | Lowest Value Servant |
-| 4–6 | Servant |
-| 7–10 | Merchant |
-| 11 | Noble (Small Family Patriarch) |
-| 12 | Noble (Big Family Patriarch) |
-| 13 | Herdlord |
-| 14 | Clanlord |
-| 15 | Steppelord |
+| SOC  | Caste                          |
+| ---- | ------------------------------ |
+| 0    | Outcast / casteless            |
+| 1–3  | Lowest Value Servant           |
+| 4–6  | Servant                        |
+| 7–10 | Merchant                       |
+| 11   | Noble (Small Family Patriarch) |
+| 12   | Noble (Big Family Patriarch)   |
+| 13   | Herdlord                       |
+| 14   | Clanlord                       |
+| 15   | Steppelord                     |
 
 Within each rank there are three degrees: Servant-of-Rankholder → Kinsman-of-Rankholder
 → Rankholder, advanced by Patriarchy checks.
@@ -254,12 +263,12 @@ three minor actions are movement, gain a fourth movement action.
 
 All K'kree spend their **first term as warriors** regardless of intended career.
 
-| Career | Qualification |
-|---|---|
-| K'kree (pastoral/traditional) | Automatic |
-| Servant | SOC 1–6 |
-| Merchant | SOC 7–10 |
-| Noble | SOC 11+ |
+| Career                        | Qualification |
+| ----------------------------- | ------------- |
+| K'kree (pastoral/traditional) | Automatic     |
+| Servant                       | SOC 1–6       |
+| Merchant                      | SOC 7–10      |
+| Noble                         | SOC 11+       |
 
 Promotion is based on SOC and Patriarchy skill. Gaining wives (via Patriarchy checks
 of increasing difficulty each term) adds D3 family members. K'kree Life Events table
@@ -282,6 +291,7 @@ enter any career a human could (referee's discretion for very enclosed roles). O
 have SOC 0 in K'kree society.
 
 ### Droyne
+
 *Source: AoCS Vol. 2 (`refs/alien2/23_chapter_twenty_one.md`, `refs/alien2/24_droyne_as_travellers.md`)*
 
 Ancient, widespread caste-based species. Playing a Droyne is demanding; they are
@@ -302,14 +312,14 @@ At age 12 the casting ceremony determines caste (roll 1D or choose):
 All casted Droyne immediately gain **+1 to STR, DEX, END, INT, and EDU**. Then apply
 caste modifiers:
 
-| Caste | Modifiers |
-|---|---|
-| Worker | STR+2, END+4 |
-| Warrior | STR+3, DEX+1, END+2 |
-| Drone | DEX+1, INT+3, EDU+2 |
-| Technician | DEX+2, INT+3, EDU+1 |
-| Sport | DEX+1, END+1, INT+2, EDU+2 |
-| Leader | INT+4, EDU+2 |
+| Caste      | Modifiers                  |
+| ---------- | -------------------------- |
+| Worker     | STR+2, END+4               |
+| Warrior    | STR+3, DEX+1, END+2        |
+| Drone      | DEX+1, INT+3, EDU+2        |
+| Technician | DEX+2, INT+3, EDU+1        |
+| Sport      | DEX+1, END+1, INT+2, EDU+2 |
+| Leader     | INT+4, EDU+2               |
 
 All Droyne receive psionic testing (see CRB p.196) upon casting, before their first term.
 
@@ -348,9 +358,9 @@ higher on 2D each term or be ejected.
 
 ---
 
-## Minor Races
+## Minor Sophonts
 
-All species that did not independently develop jump drive technology.
+Sophont populations that did not independently develop jump drive technology.
 
 ---
 
@@ -359,6 +369,7 @@ All species that did not independently develop jump drive technology.
 Branches of Humaniti, or groups of human descent, with their own distinct mechanics.
 
 #### Aquamorph
+
 *Source: Solomani Front (`refs/sol/02_overview_of_the_solomani_front.md`)*
 
 Genetically modified humans adapted for aquatic environments via gill/lung apparatus. Resemble humans but with webbed hands/feet, longer limbs, and dense insulating body fat. Can breathe underwater indefinitely; safe to 30m, can push to 100m with risk. Required to keep gill-lungs wet when on land (periodic immersion in water or gel-impregnated clothing).
@@ -368,6 +379,7 @@ Genetically modified humans adapted for aquatic environments via gill/lung appar
 - All Core careers available.
 
 #### Darrian
+
 *Source: AoCS Vol. 3 (`refs/alien3/04_darrian_travellers.md`); BTC (`refs/btc/17_creating_darrian_travellers.md`)*
 
 - **Characteristics:** STR-1, DEX+1, END-1, INT+1, EDU+1 from standard roll.
@@ -380,6 +392,7 @@ Genetically modified humans adapted for aquatic environments via gill/lung appar
 - **Aging:** first check after 4th term (age 34) with DM = -(terms÷2); less severe than humans.
 
 #### Geonee
+
 *Source: AoCS Vol. 3 (`refs/alien3/10_geonee_travellers.md`)*
 
 - **Characteristics:** STR+2, DEX-1, END+2, SOC-1.
@@ -389,6 +402,7 @@ Genetically modified humans adapted for aquatic environments via gill/lung appar
 - Hyper-acclimatisation: adapts quickly to new gravity.
 
 #### Happrhani
+
 *Source: Deep and the Dark (`refs/deepdark/03_aliens_of_the_buffer.md`)*
 
 Human Minor Race from Rejhappur (Reaver's Deep). Harsh desert environment has produced
@@ -397,7 +411,19 @@ a leathery-skinned, tough people known for honour and courage.
 - **Characteristics:** END+1.
 - All Core careers available. Steppe/desert nomads limited to Barbarian assignment.
 
+#### Humaniti
+
+*Source: Core rules default (`refs/core/02_traveller_creation.md`)*
+
+Standard human characteristics and career access. Used as default / catch-all e.g. for
+most humans in non-aligned worlds, or in polities which are not associated to a certain
+major or minor race. Technically the same as `Vilani` but without that cultural context.
+
+Humaniti can be used for humans with origins in Vilani, Solomani, minor races or mixes
+of these which don't clearly fit elsewhere.
+
 #### Iltharans
+
 *Source: Deep and the Dark (`refs/deepdark/03_aliens_of_the_buffer.md`)*
 
 Human Minor Race from Drexilthar (Reaver's Deep). Unusually long-lived and militaristic;
@@ -408,6 +434,7 @@ once ruled an interstellar empire destroyed by the Imperium in 268.
 - All Core careers available.
 
 #### Ghenani
+
 *Source: Spinward Extents (`refs/spinext/43_freni_language.md`)*
 
 Descendants of humans transplanted to a heavy-gravity world by the Ancients. Extremely powerful, with a strict social structure that limits access to technology.
@@ -418,6 +445,7 @@ Descendants of humans transplanted to a heavy-gravity world by the Ancients. Ext
 - Career access is limited while on the homeworld; after emigrating, most Core careers become available.
 
 #### Jonkeereen
+
 *Source: BTC (`refs/btc/20_creating_jonkeereen_travellers.md`); also Trail (`refs/trail/03_pthe_trailing_frontier_eople_of.md`)*
 
 Genetically engineered desert-adapted humans, first settled on Jonkeer (Deneb sector). Live on ~20% normal water intake; excellent digestion; UV-filtering membrane over eyes.
@@ -428,6 +456,7 @@ Genetically engineered desert-adapted humans, first settled on Jonkeer (Deneb se
 - Standard Core career access and aging.
 
 #### Katangan
+
 *Source: Spinward Extents (`refs/spinext/16_balleau.md`)*
 
 Humans native to the heavy-gravity world of Katanga (Foreven sector), part of the former Sindalian Empire region. Physically identical to standard humans but physiologically adapted.
@@ -438,6 +467,7 @@ Humans native to the heavy-gravity world of Katanga (Foreven sector), part of th
 - **Katangan Culture:** DM+1 to social and cultural checks in familiar Katangan contexts; DM-1 in unfamiliar situations.
 
 #### Luriani
+
 *Source: The Trailing Frontier (`refs/trail/03_pthe_trailing_frontier_eople_of.md`)*
 
 Humans modified by the Ancients for aquatic environments, now with an extensive interstellar culture in the Gateway/Ley region. About 35% of Luriani society are non-Luriani humans absorbed culturally (Verasti Dtareen and Mmarislusant).
@@ -447,6 +477,7 @@ Humans modified by the Ancients for aquatic environments, now with an extensive 
 - **Histrionics (all Luriani culture members):** DM-2 concealing feelings; DM+2 drawing attention to themselves.
 
 #### Selenite
+
 *Source: Solomani Front (`refs/sol/02_overview_of_the_solomani_front.md`)*
 
 Long-limbed, lightly-built humans engineered for low-gravity environments during early Sol system colonisation. Homeworld is Velscur (Alpha Crucis); enclaves across many paraterraformed worlds.
@@ -457,6 +488,7 @@ Long-limbed, lightly-built humans engineered for low-gravity environments during
 - All Core careers available; space-related careers preferred.
 
 #### Sylean
+
 *Source: Third Imperium (`refs/3i/39_khiinra_ash.md`)*
 
 Human Minor Race created by the Ancients, native to Sylea. Taller than average with pale skin and dark hair. Culturally focused and spiritually driven; played a key role in the establishment of the Third Imperium. Billions of genetically pure Syleans remain despite centuries of interbreeding.
@@ -467,6 +499,7 @@ Human Minor Race created by the Ancients, native to Sylea. Taller than average w
 - Almost all Core careers available. Drifter (barbarian/wanderer) is very rare; Rogue requires extenuating circumstances. Psion/Believer (from Companion) suitable for religiously-inclined Syleans.
 
 #### Sydites
+
 *Source: The Trailing Frontier (`refs/trail/03_pthe_trailing_frontier_eople_of.md`)*
 
 Very large (~2.5m) four-armed humans engineered by the Ancients as workers or expendable warriors. Upper arms handle power, lower arms fine work — but the muscle groups are interlinked, making simultaneous use awkward. Cannot interbreed with other humans. Once ruled the Khuur League.
@@ -476,6 +509,7 @@ Very large (~2.5m) four-armed humans engineered by the Ancients as workers or ex
 - **Plodding Along (most Sydites):** DM-4 on Leadership or Tactics checks; DM+4 on morale checks to avoid discouragement. Travellers may lack this trait at Referee's discretion.
 
 #### Sword Worlders
+
 *Source: Sword Worlds (`refs/sword/09_sword_worlds_travellers.md`)*
 
 Humans of Scandinavian/North European cultural heritage in the Spinward Marches. No
@@ -497,6 +531,7 @@ unique Patrol career.
 Species of Terran origin uplifted to sophonce (other than Vargr, who are a Major Race).
 
 #### Caprisaps
+
 *Source: JTAS Vol. 12 (`refs/jtas/12/03_high_guard.md`)*
 
 Nomadic sophonts uplifted from Terran goats by Solomani scientists. Two subspecies
@@ -512,6 +547,7 @@ the Vilani–Vargr border, working as miners and astrogators.
 - Caprisap ships must have an Arena (4 tons, MCr0.5) per full 10,000 tons.
 
 #### Chokari
+
 *Source: BTC (`refs/btc/05_jewell.md`)*
 
 Humanoids Ancient-engineered from the same stock as the Foelen Dolphins; share their world
@@ -524,6 +560,7 @@ psionic tendencies; under Zhodani occupation of Foelen but taking the long view.
 - All Core careers available.
 
 #### Foelen Dolphins
+
 *Source: BTC (`refs/btc/05_jewell.md`)*
 
 Dolphins apparently uplifted to full sentience by the Ancients, found on Foelen in the
@@ -537,6 +574,7 @@ adapted for unusually deep diving. Get along well with the Chokari (also on Foel
 - All Core careers available.
 
 #### Dolphin (Solomani-uplifted)
+
 *Source: AoCS Vol. 3 (`refs/alien3/15_dolphin_travellers.md`)*
 
 Earth dolphins uplifted by Solomani scientists.
@@ -552,6 +590,7 @@ Earth dolphins uplifted by Solomani scientists.
   drop to 0.
 
 #### Orca
+
 *Source: AoCS Vol. 3 (`refs/alien3/21_orca_travellers.md`)*
 
 Uplifted Earth orcas (killer whales).
@@ -566,6 +605,7 @@ Uplifted Earth orcas (killer whales).
 - Require 12× normal ship space.
 
 #### Ape
+
 *Source: Solomani Front (`refs/sol/02_overview_of_the_solomani_front.md`)*
 
 Uplifted Terran apes (gorilla and chimpanzee hybrid) engineered by Old Earth Union scientists late in the Interstellar Wars period. Two interfertile subtypes: chimpanzee-types are small and agile; gorilla-types are massively strong. Small scattered communities exist on Solomani worlds; legally treated as people by both the Imperium and Confederation, though often second-class citizens in practice.
@@ -577,6 +617,7 @@ Uplifted Terran apes (gorilla and chimpanzee hybrid) engineered by Old Earth Uni
 - All Core careers available; in the Confederation, Army/Marine/Navy are most common.
 
 #### Ursa
+
 *Source: The Trailing Frontier (`refs/trail/03_pthe_trailing_frontier_eople_of.md`)*
 
 Uplifted Terran brown bears, adapted by Solomani scientists for colonisation of high-gravity worlds. Most were killed in a Solomani corporate termination programme; the survivors are few and deeply scarred by this history. Live in small rural communities; loyal and jovial once trust is earned, despite a surly exterior with strangers. Great craftspeople who hate to destroy things.
@@ -592,6 +633,7 @@ Uplifted Terran brown bears, adapted by Solomani scientists for colonisation of 
 Non-human, non-Terran species. Listed alphabetically.
 
 #### Ael Yael
+
 *Source: JTAS Vol. 3 (`refs/jtas/3/09_alien.md`)*
 
 Winged avian sophonts from Jaeyelya.
@@ -603,6 +645,7 @@ Winged avian sophonts from Jaeyelya.
 - Dense atmosphere flight on Size 6- worlds; glide on Size 7-8.
 
 #### Aezorgh
+
 *Source: JTAS Vol. 11 (`refs/jtas/11/10_aezorgh_by_geir_lanesskog.md`)*
 
 Gecko-like sophonts from Vargr/Imperial border regions.
@@ -615,6 +658,7 @@ Gecko-like sophonts from Vargr/Imperial border regions.
 - Gecko climbing (walls at full speed, ceilings at half speed).
 
 #### Amindii
+
 *Source: JTAS Vol. 9 (`refs/jtas/9/08_amindii.md`)*
 
 Four-armed sophonts from the Regina system.
@@ -628,6 +672,7 @@ Four-armed sophonts from the Regina system.
 - DM+1 psionic Telepathy and Awareness talent checks.
 
 #### Ascondi
+
 *Source: Great Rift Book 1 (`refs/great-rift/book1/06_peoples_of_the_great_rift.md`)*
 
 Communal sophonts with complex life-phase aging from the Great Rift area.
@@ -641,6 +686,7 @@ Communal sophonts with complex life-phase aging from the Great Rift area.
 - SOC 11+ (late life, ~age 80–120): STR/DEX/END each -1, INT/EDU each +1D3.
 
 #### Bosaki
+
 *Source: JTAS Vol. 17 (`refs/jtas/17/20_bosaki_by_geir_lanesskog.md`)*
 
 Four-armed pacifist sophonts from Far Frontiers.
@@ -654,6 +700,7 @@ Four-armed pacifist sophonts from Far Frontiers.
 - Aging checks begin after 5th term (age 44); DM+2 unless any characteristic already at 1.
 
 #### Bruhre
+
 *Source: Deep and the Dark (`refs/deepdark/03_aliens_of_the_buffer.md`)*
 
 Massive hexapedal omnivore/scavengers from Corve (Daibei sector).
@@ -665,6 +712,7 @@ Massive hexapedal omnivore/scavengers from Corve (Daibei sector).
 - Cannot enter Drifter, Entertainer, or Rogue careers.
 
 #### Bwap
+
 *Source: AoCS Vol. 3 (`refs/alien3/25_bwap_travellers.md`)*
 
 Bureaucratic amphibious species within the Third Imperium.
@@ -678,6 +726,7 @@ Bureaucratic amphibious species within the Third Imperium.
 - PSI = 2D-3 minus terms served.
 
 #### Crenduthaar
+
 *Source: BTC (`refs/btc/31_trin.md`)*
 
 Enormous hexapedal sophonts from Kretikaa (Lamas subsector, Deneb). Covered in thick armoured hide; two trunk-like appendages serve as arms. Despite fearsome appearance, have an advanced industrial civilisation and form the core of the Crenduthaar Hierarchy. Harbour deep hostility towards Vargr (rumoured genocidal history); may attack Vargr on sight. Terrified of darkness — never willingly enter unlit spaces.
@@ -687,6 +736,7 @@ Enormous hexapedal sophonts from Kretikaa (Lamas subsector, Deneb). Covered in t
 - Careers: Army, Citizen, Drifter, Marine, Rogue.
 
 #### Dynchia
+
 *Source: JTAS Vol. 1 (`refs/jtas/1/07_alien.md`)*
 
 Humanoid traders from the trailing Old Expanses.
@@ -697,6 +747,7 @@ Humanoid traders from the trailing Old Expanses.
 - Mature Technology trait: can modify TL12 or lower devices 10% better in one area.
 
 #### Ebokin
+
 *Source: BTC (`refs/btc/09_spinwards_marches_subsctor_d.md`)*
 
 Large arthropod-descended sophonts from Aramanx (Aramis subsector). Originally ammonia-breathing methane-worlders now adapted to a standard atmosphere via biological engineering. Patient, methodical, and surprisingly social for a species evolved in toxic isolation.
@@ -706,6 +757,7 @@ Large arthropod-descended sophonts from Aramanx (Aramis subsector). Originally a
 - Careers: Agent, Army, Citizen, Drifter, Merchant, Noble, Scholar, Scout.
 
 #### Githiaskio
+
 *Source: JTAS Vol. 2 (`refs/jtas/2/05_alien.md`)*
 
 Tentacled aquatic sophonts from Antares Sector.
@@ -718,6 +770,7 @@ Tentacled aquatic sophonts from Antares Sector.
 - Custom equipment +10–60%.
 
 #### Girug'kagh
+
 *Source: JTAS Vol. 1 (`refs/jtas/1/19_alien.md`)*
 
 Servitor species of the K'kree. The only form encountered by outsiders is the Translator,
@@ -730,6 +783,7 @@ a permanent hereditary servant of K'kree masters.
   career play would require significant referee interpretation.
 
 #### Gl'lu
+
 *Source: BTC (`refs/btc/31_trin.md`)*
 
 Asymmetric insectoid sophonts from Kubishush (Magash subsector, Deneb) — a world with a corrosive ammonia atmosphere. Friendly and cultured despite nightmarish appearance. Hermaphroditic single gender. Obsessed with redundancy in starship design; their staterooms are tiny, fitting 8 per standard cabin.
@@ -739,12 +793,14 @@ Asymmetric insectoid sophonts from Kubishush (Magash subsector, Deneb) — a wor
 - All Core careers available.
 
 #### Gmina
+
 *Source: Spinward Extents (`refs/spinext/11_aliens_of_the_beyond.md`)*
 
 - **Characteristics:** STR=2D+4, EDU=1D, SOC=2 (fixed), DEX-1. Four arms.
 - Drifter (barbarian) only. Infrared vision.
 
 #### Gurvin
+
 *Source: AoCS Vol. 4 (`refs/alien4/40_gurvin_travellers.md`)*
 
 Six-limbed species from the Hive Federation.
@@ -757,6 +813,7 @@ Six-limbed species from the Hive Federation.
 - Extra Limbs: intermediate pair usable as arms or legs; move 8m as legs.
 
 #### Halkans
+
 *Source: JTAS Vol. 8 (`refs/jtas/8/10_halkans.md`)*
 
 Gentle humanoids from the Florian League.
@@ -767,6 +824,7 @@ Gentle humanoids from the Florian League.
 - Reduced light vision: DM+1 perception except in total darkness; DM-1 bright light.
 
 #### Hhkar
+
 *Source: JTAS Vol. 12 (`refs/jtas/12/11_hhkar.md`)*
 
 Reptilian serial hermaphrodites from the Julian Protectorate.
@@ -781,6 +839,7 @@ Reptilian serial hermaphrodites from the Julian Protectorate.
 - Will not accept psionic testing.
 
 #### Hlanssai
+
 *Source: JTAS Vol. 4 (`refs/jtas/4/09_alien.md`)*
 
 Slender, philosophical sophonts found throughout Charted Space.
@@ -793,6 +852,7 @@ Slender, philosophical sophonts found throughout Charted Space.
 - DM-6 military career enlistment/advancement; DM-3 major corporate careers.
 
 #### Ithklur
+
 *Source: JTAS Vol. 7 (`refs/jtas/7/07_ithklur.md`)*
 
 Aggressive humanoids, client species of the Hive Federation.
@@ -806,6 +866,7 @@ Aggressive humanoids, client species of the Hive Federation.
 - Extended aging resistance: DM+4 until age 82 (term 16).
 
 #### J'aadje
+
 *Source: Deep and the Dark (`refs/deepdark/03_aliens_of_the_buffer.md`)*
 
 Small humanoids with unusual arm articulation and two opposable thumbs, from Gaajpadje
@@ -816,6 +877,7 @@ Small humanoids with unusual arm articulation and two opposable thumbs, from Gaa
 - All Core careers available.
 
 #### Kemlae
+
 *Source: Spinward Extents (`refs/spinext/11_aliens_of_the_beyond.md`)*
 
 - **Characteristics:** DEX+1, END+1, EDU-1, SOC-1. **Starting age 8.**
@@ -823,6 +885,7 @@ Small humanoids with unusual arm articulation and two opposable thumbs, from Gaa
   (Noble career: annual 11+ roll or Kuftu). No aging until term 7.
 
 #### Kirissukyoya
+
 *Source: BTC (`refs/btc/31_trin.md`)*
 
 Trilateral sophonts from Giikusu (Dunmag subsector, Deneb). Three arms and three legs; brain in torso rather than head. Nearly destroyed themselves in a TL7 global war around -2000; saved by Droyne intervention. Innate mechanical aptitude.
@@ -832,6 +895,7 @@ Trilateral sophonts from Giikusu (Dunmag subsector, Deneb). Three arms and three
 - All Core careers available.
 
 #### Krotan
+
 *Source: JTAS Vol. 15 (`refs/jtas/15/01_the_krotan.md`)*
 
 Sessile carapace sophonts between the Hive Federation and Two Thousand Worlds.
@@ -843,6 +907,7 @@ Sessile carapace sophonts between the Hive Federation and Two Thousand Worlds.
 - Movement 3m only. Natural armor Protection +10. Require 5× normal passenger space.
 
 #### Ktiauao
+
 *Source: Spinward Extents (`refs/spinext/11_aliens_of_the_beyond.md`)*
 
 - **Characteristics:** STR+1, DEX+2. **SOC replaced by TER** (Aslan-style Territorial
@@ -851,6 +916,7 @@ Sessile carapace sophonts between the Hive Federation and Two Thousand Worlds.
 - Aging: gendered after 7 terms DM+2 (STR/DEX/END only); neuter after 10 terms.
 
 #### Lhshana
+
 *Source: JTAS Vol. 16 (`refs/jtas/16/05_the_lhshana_by_randy_dorman.md`)*
 
 Trilaterally symmetrical sophonts from Reaver's Deep.
@@ -859,6 +925,7 @@ Trilaterally symmetrical sophonts from Reaver's Deep.
 - All Core careers available. Small (-1): ranged attacks vs them DM-1.
 
 #### Llellewyloly
+
 *Source: BTC (`refs/btc/09_spinwards_marches_subsctor_d.md`)*
 
 Five-limbed spherical sophonts native to Junidy (Aramis subsector). All five limbs function interchangeably as arms or legs. Highly complex social hierarchy where an individual's rank can shift minute to minute; using the wrong form of address is a serious gaffe. Share their world with humans, with recurring tensions.
@@ -868,6 +935,7 @@ Five-limbed spherical sophonts native to Junidy (Aramis subsector). All five lim
 - Careers not listed in source.
 
 #### Lurent
+
 *Source: BTC (`refs/btc/31_trin.md`)*
 
 Large headless sophonts from Borlund (Lamas subsector, Deneb). Thorax carries sense organs and two manipulation tentacles; abdomen has two legs and vestigial tail. Covered in pale blue or green fur. Subject to compulsion cycles — wandering, homeward-bound, or sedentary — that override rational choice.
@@ -877,12 +945,14 @@ Large headless sophonts from Borlund (Lamas subsector, Deneb). Thorax carries se
 - Careers: Drifter, Merchant, Noble, Rogue, Scout, Scholar.
 
 #### Mal'Gnar
+
 *Source: Spinward Extents (`refs/spinext/11_aliens_of_the_beyond.md`)*
 
 - **Characteristics:** EDU=1D+1. Cannot speak Galanglic.
 - Drifter (barbarian) only.
 
 #### Martian
+
 *Source: BTC (`refs/btc/31_trin.md`)*
 
 Lightly built humanoids from Marz (Pretoria subsector, Deneb), living in warm spindly forests. No concept of themselves as a species — each village is simply "us," everywhere else is "not home." Will happily combine stone-age techniques with high technology in bizarre but effective ways.
@@ -892,6 +962,7 @@ Lightly built humanoids from Marz (Pretoria subsector, Deneb), living in warm sp
 - Most Core careers suitable; gravitate to frontiersman/infantry roles.
 
 #### Mewey
+
 *Source: JTAS Vol. 13 (`refs/jtas/13/02_the_star_angel_ambulance_pinnace.md`)*
 
 Humanoid sophonts possibly sharing ancestry with both Aslan and Humaniti; in the Five
@@ -905,6 +976,7 @@ from Aslan corporation). Their Mewey Empire is built on cooperative city-states.
   rather than wandering). Navy requires INT 8+ to qualify.
 
 #### Nenlat
+
 *Source: JTAS Vol. 10 (`refs/jtas/10/08_professor_dania_jereua.md`)*
 
 Trilateral amphibious sophonts from Deneb (Usani subsector). Thought to have been
@@ -923,6 +995,7 @@ the rest maintain traditional village life. Three genders (Activator, Bearer, Eg
 - Require specialised filter suit in tainted atmospheres.
 
 #### Ormine
+
 *Source: Deep and the Dark (`refs/deepdark/03_aliens_of_the_buffer.md`)*
 
 Slow-metabolising bipedal pseudo-reptiles from Akhlare (Dark Nebula). Extremely long-lived,
@@ -936,6 +1009,7 @@ cooperative history with humanity.
 - All Core careers available.
 
 #### Saurus
+
 *Source: BTC (`refs/btc/12_saurus.md`)*
 
 Reptilian sophonts native to Saurus (Sword Worlds subsector). Heavily built, warm-blooded, peaceable hunters. Primitive when humans arrived; some now work in human settlements but most still live traditionally. Quite accepting of strangers.
@@ -945,6 +1019,7 @@ Reptilian sophonts native to Saurus (Sword Worlds subsector). Heavily built, war
 - Careers: Citizen (worker), Drifter (barbarian, wanderer) only.
 
 #### Segani
+
 *Source: BTC (`refs/btc/31_trin.md`)*
 
 Tall, leathery-skinned sophonts from Segan (Deneb), probably transplanted there by unknown entities — not native to their world. Aggressive desert-adapted fighters. Jump travel causes progressive madness; Segani who venture interstellar typically use low berths.
@@ -954,6 +1029,7 @@ Tall, leathery-skinned sophonts from Segan (Deneb), probably transplanted there 
 - Careers: Army, Citizen, Entertainer, Rogue, Scholar.
 
 #### Shi'awei
+
 *Source: BTC (`refs/btc/31_trin.md`)*
 
 Bullet-shaped aquatic sophonts from Chaosheo (Star Lane subsector, Deneb). Highly fragmented society — some communities are friendly, others lethal to visitors; the pattern is unpredictable even between visits to the same group.
@@ -963,6 +1039,7 @@ Bullet-shaped aquatic sophonts from Chaosheo (Star Lane subsector, Deneb). Highl
 - Careers: Drifter, Entertainer, Noble, Rogue.
 
 #### Souggvuez
+
 *Source: BTC (`refs/btc/31_trin.md`)*
 
 Indigenous people of Talon (Million subsector, Deneb), now intermingled with Vargr migrants who arrived around -300. Three-section asymmetric torso, eight legs, four dual-thumbed arms. Four gender castes: Designer, Explorer, Hunter, Worker.
@@ -972,6 +1049,7 @@ Indigenous people of Talon (Million subsector, Deneb), now intermingled with Var
 - All Core careers available.
 
 #### Suerrat
+
 *Source: AoCS Vol. 4 (`refs/alien4/12_suerrat_travellers.md`)*
 
 Mammalian sophonts from the Trojan Reach / Hive Federation sphere.
@@ -982,6 +1060,7 @@ Mammalian sophonts from the Trojan Reach / Hive Federation sphere.
 - Must include Athletics 0 in background skills.
 
 #### Tezcat
+
 *Source: AoCS Vol. 4 (`refs/alien4/55_tezcat_travellers.md`)*
 
 Chameleon-like sophonts.
@@ -994,6 +1073,7 @@ Chameleon-like sophonts.
 - Unique careers: Soulhunter (military), Shaper (priest).
 
 #### Tlinzha
+
 *Source: Sector Construction Guide (`refs/sector/08_creating_tlinzha_travellers.md`)*
 
 Multi-armed xenophobic sophonts from Foreven Sector.
@@ -1006,6 +1086,7 @@ Multi-armed xenophobic sophonts from Foreven Sector.
 - Natural weapons: beak (1D+1) and palm nails (1D+2) from each end.
 
 #### Tlyetrai
+
 *Source: Deep and the Dark (`refs/deepdark/03_aliens_of_the_buffer.md`)*
 
 Gentle, cooperative three-sexed bipeds from Hoa (Reaver's Deep). Long peaceful; only
@@ -1017,6 +1098,7 @@ recently encountered interstellar travel (via Aslan contact around -1000).
   has emigrated from their homeworld.
 
 #### Ulane
+
 *Source: Deep and the Dark (`refs/deepdark/03_aliens_of_the_buffer.md`)*
 
 Small six-limbed arboreal sophonts from Ul (Dark Nebula, Union of Harmony). Originally
@@ -1028,6 +1110,7 @@ contacted by Aslan; adopted and adapted Aslan cultural forms enthusiastically.
   Small (-1: ranged attacks vs them DM-1).
 
 #### Vegan
+
 *Source: Solomani Front (`refs/sol/06_the_vegan_autonomous_district.md`)*
 
 Tall (~2.2m) bipeds from Muan Gwi in the Vega subsector. The Tyui (self-name) are an
@@ -1044,6 +1127,7 @@ within the Third Imperium.
   (double all high-gravity penalties; can never acclimatise).
 
 #### Virushi
+
 *Source: JTAS Vol. 5 (`refs/jtas/5/07_alien.md`); also The Deep Dark (`refs/deepdark/03_aliens_of_the_buffer.md`) — same mechanics, adds explicit stateroom sizes*
 
 Enormous pacifist herbivores from Reaver's Deep.
@@ -1056,6 +1140,7 @@ Enormous pacifist herbivores from Reaver's Deep.
 - Require 8-ton staterooms.
 
 #### Yafizethe
+
 *Source: BTC (`refs/btc/31_trin.md`)*
 
 Multi-legged sophonts from Kernal (Star Lane subsector, Deneb). Rear body is carried low on eight pairs of walking legs; front pair held upright serves as arms. Able to perceive electromagnetic fields. Renowned negotiators and diplomats.
@@ -1065,6 +1150,7 @@ Multi-legged sophonts from Kernal (Star Lane subsector, Deneb). Rear body is car
 - Careers not listed in source.
 
 #### Yn-tsai
+
 *Source: The Deep Dark (`refs/deepdark/03_aliens_of_the_buffer.md`)*
 
 Bipedal, fur-covered sophonts transplanted to Tsanesi (Reaver's Deep) by the Saie; descended from carnivores but culturally pacifistic.
@@ -1074,6 +1160,7 @@ Bipedal, fur-covered sophonts transplanted to Tsanesi (Reaver's Deep) by the Sai
 - **Low Pressure:** DM-1 on checks in high-pressure atmospheres (types 8, 9, 13).
 
 #### Za'tachk
+
 *Source: AoCS Vol. 4 (`refs/alien4/30_za_tachk_travellers.md`)*
 
 Three-sexed arboreal sophonts.
@@ -1089,6 +1176,7 @@ Three-sexed arboreal sophonts.
 - Brachiator (DM+2 climbing); infrared vision (DM+2 Recon/Survival in dark; DM-2 bright light).
 
 #### Akeed
+
 *Source: The Trailing Frontier (`refs/trail/03_pthe_trailing_frontier_eople_of.md`)*
 
 Slug-like sophonts from Akeen (Gateway sector), ruling a multi-world state where humans live as willing partners. Upper body has four pairs of tentacles; lower body is a boneless locomotion pad. Blind in the visual spectrum — navigate by sonar and chemical sense. No mouth; breathe through a hole that can produce speech and even singing. Feed by drawing minerals from soil through foot openings.
@@ -1099,6 +1187,7 @@ Slug-like sophonts from Akeen (Gateway sector), ruling a multi-world state where
 - Movement 4m; can traverse slopes up to 70° at 1m/round. Careers not listed in source.
 
 #### Capry
+
 *Source: The Trailing Frontier (`refs/trail/03_pthe_trailing_frontier_eople_of.md`)*
 
 Feathered bipeds from Basternevis (Gateway sector), now nearly extinct following ecological collapse of their homeworld. Three sexes: females (technical), big males (physical), small males (abstract intellect). All have a prehensile tail ending in a cluster of feather-fingers for delicate manipulation. Wiry build, ~1.4–1.6m tall. Deeply fatalistic but liberated by their species' doom.
@@ -1111,6 +1200,7 @@ Feathered bipeds from Basternevis (Gateway sector), now nearly extinct following
 - Careers not listed in source.
 
 #### Droashav
+
 *Source: The Trailing Frontier (`refs/trail/03_pthe_trailing_frontier_eople_of.md`)*
 
 Six-limbed pseudoreptilians from Trevannic (Gateway sector). Two pairs of arms, clawed feet useful in combat. Greeny-brown hide provides natural armour. Most live as TL1 desert nomads; a small TL4 civilisation exists. Possibly related to the K'kree — a contested theory that would make them the ancient G'naak the K'kree tried to exterminate.
@@ -1120,6 +1210,7 @@ Six-limbed pseudoreptilians from Trevannic (Gateway sector). Two pairs of arms, 
 - Careers not listed in source.
 
 #### Eslyat
+
 *Source: Spinward Extents (`refs/spinext/42_portmanteau_shipping_services.md`)*
 
 Three-caste aquatic sophonts of the Spinward Extents, divided by SOC into sub-races: Selyin (high SOC), Chutin (mid SOC), Magsin (low SOC). Males of all castes have STR+1 but suffer DM-1 advancement at Rank 4+; females receive DM+1 advancement. Well adapted to underwater environments.
@@ -1130,6 +1221,7 @@ Three-caste aquatic sophonts of the Spinward Extents, divided by SOC into sub-ra
 - Careers limited by caste.
 
 #### Faar
+
 *Source: The Trailing Frontier (`refs/trail/03_pthe_trailing_frontier_eople_of.md`)*
 
 Squat, powerfully built humanoids from the high-gravity world of Alphaaric (Gateway sector). Pale skin, no body hair, pale eyes. Advanced technology but no interest in interstellar expansion — most visitors meet Faar representatives at the orbital station Faarview. Appear fearful of something "out there" and desperately want to stay home.
@@ -1140,6 +1232,7 @@ Squat, powerfully built humanoids from the high-gravity world of Alphaaric (Gate
 - Careers not listed in source.
 
 #### Freni
+
 *Source: Spinward Extents (`refs/spinext/42_portmanteau_shipping_services.md`)*
 
 Six-subspecies sophonts of the Spinward Extents, with SOC equal to EDU rather than social standing. Renowned throughout the region as exceptional cooks and freeloaders. All start with Steward 1, Profession (freeloading) 1, and Survival 0 as innate skills. Flexible, prehensile digit structure.
@@ -1150,6 +1243,7 @@ Six-subspecies sophonts of the Spinward Extents, with SOC equal to EDU rather th
 - All Core careers available; DM+1 Entertainer and Merchant; DM-1 Agent and Scholar.
 
 #### Gurungan
+
 *Source: Solomani Front (`refs/sol/02_overview_of_the_solomani_front.md`)*
 
 Blind deep-sea octopoid sophonts from Ugarup (Ultima subsector, Solomani Rim). Six tentacles, no eyes — primary sense is sonar. Males are tiny parasites absorbed during mating; only females are sophonts. Strong sense of community identity over self; infuriating habit of refusing to address aliens directly, yet excellent negotiators. Allied with the Terran Confederation historically, now within the Third Imperium.
@@ -1163,6 +1257,7 @@ Blind deep-sea octopoid sophonts from Ugarup (Ultima subsector, Solomani Rim). S
 - All Core careers available.
 
 #### Ladybug
+
 *Source: Solomani Front (`refs/sol/02_overview_of_the_solomani_front.md`)*
 
 Slender humanoids with multifaceted eyes, feathery ears, and shimmering blue-violet skin, native to Amiens (Alpha Crucis). Serial hermaphrodites; spend most time as female or neuter. Gentle, docile, and widely considered beautiful by most sentient species. Commonly employed as domestic workers and servants throughout the Confederation of Turin. Whether their apparent intellectual limitations are innate or socially conditioned is debated.
@@ -1173,6 +1268,7 @@ Slender humanoids with multifaceted eyes, feathery ears, and shimmering blue-vio
 - All careers in theory; DM-2 to qualify for and advance in military or confrontational careers.
 
 #### Murian
+
 *Source: Spinward Extents (`refs/spinext/43_freni_language.md`)*
 
 Short-limbed, heavily built sophonts of the Spinward Extents. SOC is generated on 2D3+4. STR and END have a racial maximum of 18. Move at 4m (Short Limbs). Cannot see green, blue, or violet wavelengths; see into infrared.
@@ -1182,6 +1278,7 @@ Short-limbed, heavily built sophonts of the Spinward Extents. SOC is generated o
 - All Core careers available.
 
 #### Oo-ne-beto-pon-tee
+
 *Source: Third Imperium (`refs/3i/48_creating_oo_ne_beto_pon_tee_whistler_travellers.md`)*
 
 Four-sexed insectoid sophonts from Night (Third Imperium region), commonly called Whistlers by humans. Matchers, males, and females are extremely focused/specialised and poorly suited as Travellers; neuters are recommended for play. Groups of Whistlers aboard a ship gradually affect the crew with a calming, community-building influence after 4–6 weeks — effective on most Major Races except half of Hivers.
@@ -1193,6 +1290,7 @@ Four-sexed insectoid sophonts from Night (Third Imperium region), commonly calle
 - Careers not listed in source; neuter sex recommended.
 
 #### Rammak
+
 *Source: Rimward Expeditions (`refs/rimexp/23_ivy_subsector.md`)*
 
 Humanoid-ish sophonts from the Rammak system (Ivy subsector, close rimward). Two legs and two arms with an extra joint, creating unsettling fluid movement. Two sets of eyes: forward-facing for detail, side-mounted large ones for low-light/infrared peripheral and all-round awareness. Egg-layers; young raised communally in "nests" — attacking nests causes lasting enmity. Developed jump drive by reverse-engineering a derelict Rule of Man colony ship.
@@ -1203,6 +1301,7 @@ Humanoid-ish sophonts from the Rammak system (Ivy subsector, close rimward). Two
 - Careers not listed in source.
 
 #### Resavolk
+
 *Source: Spinward Extents (`refs/spinext/43_freni_language.md`)*
 
 Multi-stage sophonts of the Spinward Extents with unusually low SOC (generated on D3+5). No notable physical traits beyond their life cycle. After a mandatory Drifter (barbarian) first career, may enter almost any career except Noble (unless SOC reaches 10+).
@@ -1212,6 +1311,7 @@ Multi-stage sophonts of the Spinward Extents with unusually low SOC (generated o
 - **Careers:** Drifter (barbarian) mandatory for first term; thereafter any Core career except Noble unless SOC 10+.
 
 #### Ssienjhiovla
+
 *Source: Third Imperium (`refs/3i/55_dinenruum.md`)*
 
 Shelled mollusc-like sophonts from Shimaraak (Third Imperium), native to a thin-atmosphere high-gravity world. Two squat dextrous feet with suckers; four arm-like appendages each with six malleable fingers; brain and senses in the torso rather than a head. Asexual, bearing immediately independent live young. Decorate their dorsal carapace using natural acids. Communicate via gas/pheromone excretion and arm gestures; human-interface devices required for verbal speech.
@@ -1223,6 +1323,7 @@ Shelled mollusc-like sophonts from Shimaraak (Third Imperium), native to a thin-
 - Most common career choices: Scout Service and Navy (Imperial or planetary).
 
 #### Teakhea
+
 *Source: Spinward Extents (`refs/spinext/13_outstanding_questions.md`)*
 
 Serially hermaphroditic snail-like sophonts of the Spinward Extents, culturally integrated into Aslan space. Shell provides significant natural protection. Move via a large muscular foot (snail locomotion) but can also move on land or water. Can change biological sex, which affects career path. Gender-changing career system governs advancement.
@@ -1232,6 +1333,7 @@ Serially hermaphroditic snail-like sophonts of the Spinward Extents, culturally 
 - Careers: Aslan career list, excluding Ceremonial, Envoy, and Military Space Officer.
 
 #### Thonane
+
 *Source: Spinward Extents (`refs/spinext/43_freni_language.md`)*
 
 Tiny avian sophonts of the Spinward Extents with extremely variable characteristics. EDU and SOC are rolled on D3, reflecting their primitive barbarian culture. Natural hunters; several hunter-related skills come innate. Natural flyers.
@@ -1242,6 +1344,7 @@ Tiny avian sophonts of the Spinward Extents with extremely variable characterist
 - Careers: Drifter (barbarian) only.
 
 #### Wanderer (Wandering People)
+
 *Source: The Trailing Frontier (`refs/trail/03_pthe_trailing_frontier_eople_of.md`)*
 
 Insectoid sophonts originating in the Trailing Frontier, now spread across Gateway and Ley sectors on worldships (huge non-jump vessels) with jump-capable scouts ranging from them. Mysterious and secretive about culture and religion. Their jump drive is derived from a captured/reverse-engineered Vilani type; they are sometimes misidentified as a Major Race but are not — they did not independently develop jump technology. Most have an overwhelming sense of community; "rogue Wanderers" who travel independently are rare and poorly understood.
@@ -1252,6 +1355,7 @@ Insectoid sophonts originating in the Trailing Frontier, now spread across Gatew
 - Careers not listed in source.
 
 #### Zhdianshe
+
 *Source: Spinward Extents (`refs/spinext/43_freni_language.md`)*
 
 Tiny psionic flyers of the Spinward Extents. STR is fixed at 1; all physical strength comes from psionics. SOC equals PSI (social standing derived from psionic power). Extraordinarily long-lived — no aging rolls until term 8, with DM+6 thereafter. Echolocate and fly naturally. Born with Telepathy 2 and Clairvoyance 1; must train Psion career to develop further.
