@@ -20,7 +20,7 @@ Current Ceres status: only `Humaniti` and `Vilani` are defined in
 | Amindii | Alien | JTAS 9 | STR=3D (+2 Activator; +END 1 Bearer) | — | — | Three genders; age 14 start; Perception ability |
 | Aniyun | Alien | Spinext | STR=1D, EDU-2 | — | — | Citizen/Drifter only; natural flight |
 | Ape | Uplift | Sol | STR+1, END+1, SOC-1 | — | — | Chimp: Small (-1); Gorilla: Athletics(str) 2; Heightened Senses; all Core careers |
-| Aquamorph | Human | Sol | ⚠ creation table in PDF figure — not extracted | — | — | Gills; amphibious; all Core careers |
+| Aquamorph | Human | Sol | STR halved when out of water | — | — | Amphibious; gill/lung; indefinite underwater breathing; all Core careers |
 | Ascondi | Alien | Great Rift 1 | END+1; caste mods at age ~20 | — | — | Caste replaces background; SOC starts at 1 |
 | Aslan | Major | AoCS 1 | STR+2 DEX-2 END+1 (m); STR+1 DEX-1 END+2 (f) | SOC → TER | — | Rite of Passage; Clan Shares; gender-locked assignments |
 | Aslan (Darrian) | Alien | AoCS 3 | STR+1, DEX+1, EDU+1 | SOC → TER | — | Any Darrian career; gender preferences softened; Roget Aslan may also use AoCS 1 options |
@@ -363,7 +363,8 @@ Branches of Humaniti, or groups of human descent, with their own distinct mechan
 
 Genetically modified humans adapted for aquatic environments via gill/lung apparatus. Resemble humans but with webbed hands/feet, longer limbs, and dense insulating body fat. Can breathe underwater indefinitely; safe to 30m, can push to 100m with risk. Required to keep gill-lungs wet when on land (periodic immersion in water or gel-impregnated clothing).
 
-- **Characteristics:** ⚠ creation table rendered as PDF figure — not extracted from source.
+- **Characteristics:** Standard roll. STR is considered halved when operating out of water.
+- **Aquatic Adaptation:** breathe underwater indefinitely via gill/lung apparatus; safe to 30m unaided, can push to ~100m with risk. Gill-lungs must be kept wet on land (periodic immersion or gel-impregnated clothing).
 - All Core careers available.
 
 #### Darrian
