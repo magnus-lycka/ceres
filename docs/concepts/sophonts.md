@@ -29,13 +29,13 @@ Current Ceres status: only `Humaniti` and `Vilani` are defined in
 | Bwap | Alien | AoCS 3 | STR-4 END-4 | — | — | Faster aging; no Rogue; Structured Mind trait |
 | Caprisaps (Alpine) | Uplift | JTAS 12 | STR-2, DEX+2 | — | — | Goat uplift; Improved Digestion |
 | Caprisaps (Boar) | Uplift | JTAS 12 | STR-1, DEX+1 | — | — | Goat uplift; Improved Digestion |
+| Capry | Alien | Trail | Female: STR-3 DEX+2 END-2 INT+1; Big Male: STR-1 END+1; Small Male: STR-4 DEX+3 END-3 EDU+2 | — | — | 3 sexes; Liberating Fatalism; Third Hand; endangered species |
 | Chokari | Uplift | BTC | END+1, SOC-1 | — | PSI (2D) | Ancient uplift (Foelen); psionic training before career; Deep Diver (100m); Swimmer (6m) |
 | Crenduthaar | Alien | BTC | STR=3D, END=3D, DEX=1D | — | — | Army/Citizen/Drifter/Marine/Rogue; Armour +3; IR Vision; Slasher 2D; dark phobia; kill Vargr on sight |
-| Capry | Alien | Trail | Female: STR-3 DEX+2 END-2 INT+1; Big Male: STR-1 END+1; Small Male: STR-4 DEX+3 END-3 EDU+2 | — | — | 3 sexes; Liberating Fatalism; Third Hand; endangered species |
 | Darrian | Human | AoCS 3 / BTC | STR-1 DEX+1 END-1 INT+1 EDU+1 | — | — | Restricted career list; first term forced |
 | Dolphin (Foelen) | Uplift | BTC | END+1, SOC-1 | — | — | Ancient uplift near Foelen; all Core careers |
-| Droashav | Alien | Trail | STR+2, DEX-1, END+3, INT-1 | — | — | Natural Defences +1 + claws 1D+2; six-limbed pseudoreptilians; careers not listed |
 | Dolphin (Solomani) | Uplift | AoCS 3 | STR+4 END+2 SOC-4 | — | — | Solomani uplift; age 12 start; restricted careers |
+| Droashav | Alien | Trail | STR+2, DEX-1, END+3, INT-1 | — | — | Natural Defences +1 + claws 1D+2; six-limbed pseudoreptilians; careers not listed |
 | Droyne | Major | AoCS 2 | STR/DEX/END/INT/EDU=1D+1; PSI=2D; caste mods | SOC → PSI | — | Caste-based careers; no standard career flow |
 | Dynchia | Alien | JTAS 1 | STR=1D+3, DEX+1, EDU+1 | — | — | DM-2 enlistment outside Comitia |
 | Ebokin | Alien | BTC | DEX-2, END+3 | — | — | Methane breather; UV Vision; Armour +3; limited career list |
@@ -43,10 +43,10 @@ Current Ceres status: only `Humaniti` and `Vilani` are defined in
 | Faar | Alien | Trail | STR+1, END+1, DEX-1 | — | — | Closed Book (DM-2 reading Faar); Homesickness (END check every 2D days off-world) |
 | Freni | Alien | Spinext | 6 subspecies, various; SOC=EDU | — | — | Flexible Digits; Reputation as Cook; Steward 1/Profession(freeloading)1/Survival 0 start |
 | Geonee | Human | AoCS 3 | STR+2 DEX-1 END+2 SOC-1 | — | — | Extra background skill |
+| Ghenani | Human | Spinext | STR+2, DEX-2 | — | — | STR max 17; DM-1 aging; no cyber/psionics; career-restricted until emigrated |
 | Girug'kagh | Alien | JTAS 1 | STR=1D+2, END=1D+2, DEX=1D+7 | — | — | Translator-only; serve K'kree for life |
 | Githiaskio | Alien | JTAS 2 | — | — | — | Zero-g/aquatic specialist; gravity injures without suit |
 | Gl'lu | Alien | BTC | END-1, DEX+1, EDU-2 | — | — | Ammonia breather; IR Vision; Heightened Senses; all Core careers; tiny staterooms (8 per cabin) |
-| Ghenani | Human | Spinext | STR+2, DEX-2 | — | — | STR max 17; DM-1 aging; no cyber/psionics; career-restricted until emigrated |
 | Gmina | Alien | Spinext | STR=2D+4, EDU=1D, SOC=2 (fixed), DEX-1 | — | — | Drifter only; four arms |
 | Gurungan | Alien | Sol | DEX+2 | — | — | Fully aquatic; Sonar 120m; Bite 1D; Deep Diver 1000m; Swimmer 8m; all Core careers |
 | Gurvin | Alien | AoCS 4 | Females INT+1 EDU+1; Males STR-1 DEX+1 | — | — | Male INT/EDU=1D+1; age 16 start |
