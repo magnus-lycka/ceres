@@ -1420,8 +1420,8 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | Buru | Burugdi | Dagu/Thet | |
 | Chir | Chirpers | major | Not player-characters |
 | Clot | Clotho | Tien | |
-| Darm | Darmine | Zaru | |
-| Flor | Floriani | Beyo/Troj | |
+| Darm | Darmine | Zaru | Human Minor Race (Lion's Mane region) |
+| Flor | Floriani | Beyo/Troj | Not player-characters |
 | Gnii | Gniivi | Hint | |
 | Gray | Graytch | Dagu/Gush/Ilel | |
 | Hama | Hamaran | Dagu | |
@@ -1433,16 +1433,16 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | Karh | Karhyri | Cruc | |
 | Kiak | Kiakh'iee | Dagu | |
 | Lamu | Lamura Gav/Teg | Hint | |
-| Lanc | Lancians | Dagu/Gush | |
-| Libe | Liberts | Daib/Dias | |
+| Lanc | Lancians | Dagu/Gush | Human Minor Race; Ancients transplant; Lancian Cultural Region spans Gushemege/Corridor/Dagudashaag |
+| Libe | Liberts | Daib/Dias | Human Minor Race (Lion's Mane region) |
 | Mask | Maskai | Glim | |
 | Mitz | Mitzene | Thet | |
-| Murr | Murrissi | Hlak | |
+| Murr | Murrissi | Hlak | Human Minor Race (Lion's Mane region) |
 | S'mr | S'mrii | Dagu | |
 | Scan | Scanians | Dagu | |
 | Stal | Stalkers | Hint | |
 | Sull | Sulliji | Dene | |
-| Swan | Swanfei | Gate | |
+| Swan | Swanfei | Gate | Human Minor Race; settled Swanfei Independency c. -2000 during Long Night |
 | Tapa | Tapazmal | Reft | |
 | Taur | Taureans | Alde | |
 | Tent | Tentrassi | Zaru | |
