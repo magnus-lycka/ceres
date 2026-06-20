@@ -116,7 +116,7 @@ Current Ceres status: only `Humaniti` and `Vilani` are defined in
 | Yn-tsai                     | Alien    | —    | Re:(Yn-tsai)            | Deepdark          | STR-2, INT+2                                                                                | All Core careers; Low Pressure trait                                                                            |
 | Za'tachk                    | Alien    | Za't | Re:Za't                 | AoCS 4            | STR+1; Matriarchs INT+1 EDU+1 BOL-1; Scouts INT-1 EDU-1 BOL+1; new BOL (1D+1)               | Three sexes; age 10/15 start; Coward trait                                                                      |
 | Zhdianshe                   | Alien    | —    | Re:(Zhdianshe)          | Spinext           | STR=1 (fixed), DEX=2D+2; new PSI=2D (min 2); SOC=PSI                                        | All Core + Psion; no aging until term 8; Echolocation; Flyer; Telepathy 2 + Clairvoyance 1 innate               |
-| Zhodani                     | Major    | Zhod | A:Zh*,CsZh;Re:Zhod           | AoCS 1 / BTC      | EDU min 8 if SOC 10+; new PSI (rolled first)                                                | Social class tiers gate careers                                                                                 |
+| Zhodani                     | Major    | Zhod | A:Zh*,CsZh;Re:Zhod      | AoCS 1 / BTC      | EDU min 8 if SOC 10+; new PSI (rolled first)                                                | Social class tiers gate careers                                                                                 |
 
 ---
 
@@ -1476,34 +1476,748 @@ These sophonts appear in the [T5SS sophont list](https://travellermap.com/t5ss/s
 but are not yet covered by published creation rules in `refs/`. Notes column is for
 future tracking (rule sources found, refs added, creation rules status, etc.).
 
-| Code | Sophont        | Location (sector abbrev.) | Notes                 |
-| ---- | -------------- | ------------------------- | --------------------- |
-| Adda | Addaxur        | Zhodani space             |                       |
-| Bhun | Brunj          | Forn                      |                       |
-| Brin | Brinn          | Corr                      |                       |
-| Buru | Burugdi        | Dagu/Thet                 |                       |
-| Chir | Chirpers       | major                     | Not player-characters |
-| Clot | Clotho         | Tien                      |                       |
-| Flor | Floriani       | Beyo/Troj                 | Not player-characters |
-| Gnii | Gniivi         | Hint                      |                       |
-| Gray | Graytch        | Dagu/Gush/Ilel            |                       |
-| Hama | Hamaran        | Dagu                      |                       |
-| Jaib | Jaibok         | Thet                      |                       |
-| Jala | Jala'lak       | Dagu                      |                       |
-| Jend | Jenda          | Hint/Leon                 |                       |
-| Kafo | Kafoe          | Cruc                      |                       |
-| Kagg | Kaggushus      | Mass                      |                       |
-| Karh | Karhyri        | Cruc                      |                       |
-| Kiak | Kiakh'iee      | Dagu                      |                       |
-| Lamu | Lamura Gav/Teg | Hint                      |                       |
-| Mask | Maskai         | Glim                      |                       |
-| Mitz | Mitzene        | Thet                      |                       |
-| S'mr | S'mrii         | Dagu                      |                       |
-| Scan | Scanians       | Dagu                      |                       |
-| Stal | Stalkers       | Hint                      |                       |
-| Sull | Sulliji        | Dene                      |                       |
-| Tapa | Tapazmal       | Reft                      |                       |
-| Taur | Taureans       | Alde                      |                       |
-| Tent | Tentrassi      | Zaru                      |                       |
-| Yile | Yileans        | Gash                      |                       |
-| Ziad | Ziadd          | Dagu                      |                       |
+| Code | Sophont            | Location (sector abbrev.) | Notes                 |
+| ---- | ------------------ | ------------------------- | --------------------- |
+| Adda | Addaxur            | Zhodani space             |                       |
+| Bhun | Brunj              | Forn                      |                       |
+| Brin | Brinn              | Corr                      |                       |
+| Buru | Burugdi            | Dagu/Thet                 |                       |
+| Chir | Chirpers           | major                     | Not player-characters |
+| Clot | Clotho             | Tien                      |                       |
+| Flor | Floriani           | Beyo/Troj                 | Not player-characters |
+| Gnii | Gniivi             | Hint                      |                       |
+| Gray | Graytch            | Dagu/Gush/Ilel            |                       |
+| Hama | Hamaran            | Dagu                      |                       |
+| Jaib | Jaibok             | Thet                      |                       |
+| Jala | Jala'lak           | Dagu                      |                       |
+| Jend | Jenda              | Hint/Leon                 |                       |
+| Kafo | Kafoe              | Cruc                      |                       |
+| Kagg | Kaggushus          | Mass                      |                       |
+| Karh | Karhyri            | Cruc                      |                       |
+| Kiak | Kiakh'iee          | Dagu                      |                       |
+| Lamu | Lamura Gav/Teg     | Hint                      |                       |
+| Mask | Maskai             | Glim                      |                       |
+| Mitz | Mitzene            | Thet                      |                       |
+| S'mr | S'mrii             | Dagu                      |                       |
+| Scan | Scanians           | Dagu                      |                       |
+| Stal | Stalkers           | Hint                      |                       |
+| Sull | Sulliji            | Dene                      |                       |
+| Tapa | Tapazmal           | Reft                      |                       |
+| Taur | Taureans           | Alde                      |                       |
+| Tent | Tentrassi          | Zaru                      |                       |
+| Yile | Yileans            | Gash                      |                       |
+| Ziad | Ziadd              | Dagu                      |                       |
+| ---- | A'Ach'En           |                           |                       |
+| ---- | Aaika              |                           |                       |
+| ---- | Aakrali            |                           |                       |
+| ---- | Aceran             |                           |                       |
+| ---- | Acheron            |                           |                       |
+| ---- | Adau               |                           |                       |
+| ---- | Addaxur            |                           |                       |
+| ---- | Ael Yael           |                           |                       |
+| ---- | Aezorgh            |                           |                       |
+| ---- | Afrani             |                           |                       |
+| ---- | Afreet             |                           |                       |
+| ---- | Aftydrelder        |                           |                       |
+| ---- | Aggavo             |                           |                       |
+| ---- | Agryxani           |                           |                       |
+| ---- | Ahetaowa           |                           |                       |
+| ---- | Airochan           |                           |                       |
+| ---- | Aisa               |                           |                       |
+| ---- | Ajert              |                           |                       |
+| ---- | Akeed              |                           |                       |
+| ---- | Akop               |                           |                       |
+| ---- | Albla              |                           |                       |
+| ---- | Albula             |                           |                       |
+| ---- | Alejia             |                           |                       |
+| ---- | Alktatre           |                           |                       |
+| ---- | Ambele             |                           |                       |
+| ---- | Amindii            |                           |                       |
+| ---- | Amujati            |                           |                       |
+| ---- | Anakundu           |                           |                       |
+| ---- | Angneear           |                           |                       |
+| ---- | Anixii             |                           |                       |
+| ---- | Aniyun             |                           |                       |
+| ---- | Anlisleans         |                           |                       |
+| ---- | Anpaan             |                           |                       |
+| ---- | Answerin           |                           |                       |
+| ---- | Aoao               |                           |                       |
+| ---- | Aoo                |                           |                       |
+| ---- | Aqaroo             |                           |                       |
+| ---- | Aqigi              |                           |                       |
+| ---- | Aqku               |                           |                       |
+| ---- | Aquamorphs         |                           |                       |
+| ---- | Aquan              |                           |                       |
+| ---- | Arixk              |                           |                       |
+| ---- | Arktu              |                           |                       |
+| ---- | Aroonmar           |                           |                       |
+| ---- | Ascondi            |                           |                       |
+| ---- | Ashdak Meshukiiba  |                           |                       |
+| ---- | Ashiin             |                           |                       |
+| ---- | Asoon              |                           |                       |
+| ---- | At'ts'tii          |                           |                       |
+| ---- | Ataark             |                           |                       |
+| ---- | Atane              |                           |                       |
+| ---- | Ateskmosk          |                           |                       |
+| ---- | Athar              |                           |                       |
+| ---- | Atin               |                           |                       |
+| ---- | Atnaeld            |                           |                       |
+| ---- | Atoka              |                           |                       |
+| ---- | Atrephari          |                           |                       |
+| ---- | Attorn             |                           |                       |
+| ---- | Auhnto             |                           |                       |
+| ---- | Avocaa             |                           |                       |
+| ---- | Ayansh'i           |                           |                       |
+| ---- | Azhanti            |                           |                       |
+| ---- | Bahku              |                           |                       |
+| ---- | Baju               |                           |                       |
+| ---- | Barsam             |                           |                       |
+| ---- | Basachshe          |                           |                       |
+| ---- | Beree              |                           |                       |
+| ---- | Beroda             |                           |                       |
+| ---- | Bhu'oovaakaylaa    |                           |                       |
+| ---- | Bhunj              |                           |                       |
+| ---- | Bilpid             |                           |                       |
+| ---- | Blimps             |                           |                       |
+| ---- | Blixonlan          |                           |                       |
+| ---- | Blotches           |                           |                       |
+| ---- | Borhians           |                           |                       |
+| ---- | Borin              |                           |                       |
+| ---- | Bosak              |                           |                       |
+| ---- | Bose               |                           |                       |
+| ---- | Bouecse            |                           |                       |
+| ---- | Brinn              |                           |                       |
+| ---- | Bruhre             |                           |                       |
+| ---- | Burotu             |                           |                       |
+| ---- | Bwampbs            |                           |                       |
+| ---- | Bwaps              |                           |                       |
+| ---- | Bzruellokh         |                           |                       |
+| ---- | Cafadians          |                           |                       |
+| ---- | Caleuche           |                           |                       |
+| ---- | Calipha            |                           |                       |
+| ---- | Captutians         |                           |                       |
+| ---- | Cassilldans        |                           |                       |
+| ---- | Castenen           |                           |                       |
+| ---- | Cataukii           |                           |                       |
+| ---- | Cenoogo            |                           |                       |
+| ---- | Chacinti           |                           |                       |
+| ---- | Chamru             |                           |                       |
+| ---- | Chinmaya           |                           |                       |
+| ---- | Chips              |                           |                       |
+| ---- | Chokari            |                           |                       |
+| ---- | Chowwar            |                           |                       |
+| ---- | Ciiaoa             |                           |                       |
+| ---- | Ciruwar            |                           |                       |
+| ---- | Clalovir           |                           |                       |
+| ---- | Cleashitar         |                           |                       |
+| ---- | Clotho             |                           |                       |
+| ---- | Cooano             |                           |                       |
+| ---- | Crawni             |                           |                       |
+| ---- | Crenduthaar        |                           |                       |
+| ---- | Cua                |                           |                       |
+| ---- | Cygmo              |                           |                       |
+| ---- | Daari              |                           |                       |
+| ---- | Dacuoc             |                           |                       |
+| ---- | Dadwrec            |                           |                       |
+| ---- | Daee               |                           |                       |
+| ---- | Dagaut             |                           |                       |
+| ---- | Dahlitian          |                           |                       |
+| ---- | Darmine            |                           |                       |
+| ---- | Daryen             |                           |                       |
+| ---- | Dastri             |                           |                       |
+| ---- | Delrias            |                           |                       |
+| ---- | Denaar             |                           |                       |
+| ---- | Dertuf             |                           |                       |
+| ---- | Dirapnack          |                           |                       |
+| ---- | Dishaan            |                           |                       |
+| ---- | Ditha              |                           |                       |
+| ---- | Domination         |                           |                       |
+| ---- | Dosanu             |                           |                       |
+| ---- | Douhe              |                           |                       |
+| ---- | Dphone             |                           |                       |
+| ---- | Draauaai           |                           |                       |
+| ---- | Dradrip            |                           |                       |
+| ---- | Drakarans          |                           |                       |
+| ---- | Drangka            |                           |                       |
+| ---- | Droashav           |                           |                       |
+| ---- | Dudix              |                           |                       |
+| ---- | Dugail             |                           |                       |
+| ---- | Duiars             |                           |                       |
+| ---- | Dynchia            |                           |                       |
+| ---- | Eaie               |                           |                       |
+| ---- | Eattayr            |                           |                       |
+| ---- | Ebokin             |                           |                       |
+| ---- | Echium             |                           |                       |
+| ---- | Edlun              |                           |                       |
+| ---- | Eemakin            |                           |                       |
+| ---- | Eershe'yaat        |                           |                       |
+| ---- | Efacen             |                           |                       |
+| ---- | Efren              |                           |                       |
+| ---- | Eikhui’            |                           |                       |
+| ---- | Eliyoh             |                           |                       |
+| ---- | Enale              |                           |                       |
+| ---- | Enchai             |                           |                       |
+| ---- | Eoa                |                           |                       |
+| ---- | Eolou              |                           |                       |
+| ---- | Eprahux            |                           |                       |
+| ---- | Epukish            |                           |                       |
+| ---- | Ergarip            |                           |                       |
+| ---- | Ergosians          |                           |                       |
+| ---- | Eroahyeli          |                           |                       |
+| ---- | Eshaar Ashah       |                           |                       |
+| ---- | Esishiai           |                           |                       |
+| ---- | Eslyat             |                           |                       |
+| ---- | Etak'auhew         |                           |                       |
+| ---- | Etgaglyut          |                           |                       |
+| ---- | Etra               |                           |                       |
+| ---- | Etrigele           |                           |                       |
+| ---- | Evantha            |                           |                       |
+| ---- | Ewurmer            |                           |                       |
+| ---- | Exinosk            |                           |                       |
+| ---- | Exlyaxan           |                           |                       |
+| ---- | Exoslin            |                           |                       |
+| ---- | Faar               |                           |                       |
+| ---- | Famoono            |                           |                       |
+| ---- | Fatum              |                           |                       |
+| ---- | Feime              |                           |                       |
+| ---- | Fervoriani         |                           |                       |
+| ---- | Floriani           |                           |                       |
+| ---- | Freni              |                           |                       |
+| ---- | Froyte             |                           |                       |
+| ---- | Fugharurz          |                           |                       |
+| ---- | Fupiqisk           |                           |                       |
+| ---- | Furys              |                           |                       |
+| ---- | Gahuloo            |                           |                       |
+| ---- | Galasu             |                           |                       |
+| ---- | Galliph            |                           |                       |
+| ---- | Gamopedes          |                           |                       |
+| ---- | Gandans            |                           |                       |
+| ---- | Ganmeids           |                           |                       |
+| ---- | Garoo              |                           |                       |
+| ---- | Gask               |                           |                       |
+| ---- | Gastell            |                           |                       |
+| ---- | Geehrtahe          |                           |                       |
+| ---- | Geen               |                           |                       |
+| ---- | Geernu             |                           |                       |
+| ---- | Gek-Cheb           |                           |                       |
+| ---- | Gekausa            |                           |                       |
+| ---- | Gelanan            |                           |                       |
+| ---- | Gelepa             |                           |                       |
+| ---- | Genfert            |                           |                       |
+| ---- | Geonee             |                           |                       |
+| ---- | Geringer           |                           |                       |
+| ---- | Ghenani            |                           |                       |
+| ---- | Ghidfalli          |                           |                       |
+| ---- | Giiguuglum         |                           |                       |
+| ---- | Gilanox            |                           |                       |
+| ---- | Giooskan           |                           |                       |
+| ---- | Girug'kagh         |                           |                       |
+| ---- | Githiaskio         |                           |                       |
+| ---- | Gl'lu              |                           |                       |
+| ---- | Glooxaasta         |                           |                       |
+| ---- | Gmina              |                           |                       |
+| ---- | Gniivi             |                           |                       |
+| ---- | Goblin             |                           |                       |
+| ---- | Goegarakh          |                           |                       |
+| ---- | Gonem              |                           |                       |
+| ---- | Gonzans            |                           |                       |
+| ---- | Graytch            |                           |                       |
+| ---- | Grendels           |                           |                       |
+| ---- | Grumm              |                           |                       |
+| ---- | Guaslanoon         |                           |                       |
+| ---- | Gugoso             |                           |                       |
+| ---- | Guinuc             |                           |                       |
+| ---- | Guixi              |                           |                       |
+| ---- | Gumahl             |                           |                       |
+| ---- | Gurungan           |                           |                       |
+| ---- | Gurvin             |                           |                       |
+| ---- | Guuaron            |                           |                       |
+| ---- | Gzi                |                           |                       |
+| ---- | Hagh'hg'k          |                           |                       |
+| ---- | Hak                |                           |                       |
+| ---- | Halkans            |                           |                       |
+| ---- | Hamaran            |                           |                       |
+| ---- | Hana Saka          |                           |                       |
+| ---- | Hanaosk            |                           |                       |
+| ---- | Hanen              |                           |                       |
+| ---- | Happrhani          |                           |                       |
+| ---- | Haspana            |                           |                       |
+| ---- | Heann              |                           |                       |
+| ---- | Hhkar              |                           |                       |
+| ---- | Hhrachddrumm       |                           |                       |
+| ---- | Hicroa             |                           |                       |
+| ---- | Hiidamo            |                           |                       |
+| ---- | Hiko               |                           |                       |
+| ---- | Hiver              |                           |                       |
+| ---- | Hlaia              |                           |                       |
+| ---- | Hlatoi             |                           |                       |
+| ---- | Hloan              |                           |                       |
+| ---- | Hoolar             |                           |                       |
+| ---- | Hreahi             |                           |                       |
+| ---- | Hufo               |                           |                       |
+| ---- | Human Minor        |                           |                       |
+| ---- | Huosua             |                           |                       |
+| ---- | Hursuuun           |                           |                       |
+| ---- | Huucot             |                           |                       |
+| ---- | Huuran             |                           |                       |
+| ---- | Hyracoth           |                           |                       |
+| ---- | Hyumian            |                           |                       |
+| ---- | Hzille             |                           |                       |
+| ---- | Iasza              |                           |                       |
+| ---- | Icaan              |                           |                       |
+| ---- | Ichachi            |                           |                       |
+| ---- | Icham              |                           |                       |
+| ---- | Ickoodun           |                           |                       |
+| ---- | Ickoul             |                           |                       |
+| ---- | Idilos             |                           |                       |
+| ---- | Iftaouh            |                           |                       |
+| ---- | Igikur             |                           |                       |
+| ---- | Iliani             |                           |                       |
+| ---- | Ilraiki            |                           |                       |
+| ---- | Iltharans          |                           |                       |
+| ---- | Iluk'uu            |                           |                       |
+| ---- | Imirici            |                           |                       |
+| ---- | Inasko             |                           |                       |
+| ---- | Inchok             |                           |                       |
+| ---- | Ingyrm             |                           |                       |
+| ---- | Inheritors         |                           |                       |
+| ---- | Inx                |                           |                       |
+| ---- | Iooua              |                           |                       |
+| ---- | Ipabloo            |                           |                       |
+| ---- | Irba               |                           |                       |
+| ---- | Irdu               |                           |                       |
+| ---- | Irhadre            |                           |                       |
+| ---- | Irkan              |                           |                       |
+| ---- | Ishumi             |                           |                       |
+| ---- | Iswacka            |                           |                       |
+| ---- | Ithklur            |                           |                       |
+| ---- | Ithuxo             |                           |                       |
+| ---- | Ixualald           |                           |                       |
+| ---- | Iytkike            |                           |                       |
+| ---- | Iyuok              |                           |                       |
+| ---- | Izdev              |                           |                       |
+| ---- | Iziri              |                           |                       |
+| ---- | Izli               |                           |                       |
+| ---- | J'aadje            |                           |                       |
+| ---- | J'sia              |                           |                       |
+| ---- | Jaibok             |                           |                       |
+| ---- | Jala'Lak           |                           |                       |
+| ---- | Jansa              |                           |                       |
+| ---- | Jaylay-yay         |                           |                       |
+| ---- | Je Jel             |                           |                       |
+| ---- | Jebbeni            |                           |                       |
+| ---- | Jenda              |                           |                       |
+| ---- | Jerrbole           |                           |                       |
+| ---- | Jessa              |                           |                       |
+| ---- | Jgd-il-Jagd        |                           |                       |
+| ---- | Jin                |                           |                       |
+| ---- | Jinnat             |                           |                       |
+| ---- | Jonkeereen         |                           |                       |
+| ---- | Jorlik             |                           |                       |
+| ---- | K'kree             |                           |                       |
+| ---- | Ka Kelaree         |                           |                       |
+| ---- | Kaargh             |                           |                       |
+| ---- | Kafoe              |                           |                       |
+| ---- | Kaggushus          |                           |                       |
+| ---- | Kalgakrr'          |                           |                       |
+| ---- | Kalingna           |                           |                       |
+| ---- | Kallilku           |                           |                       |
+| ---- | Kalsha             |                           |                       |
+| ---- | Kamgik             |                           |                       |
+| ---- | Kamuke             |                           |                       |
+| ---- | Kanuwail           |                           |                       |
+| ---- | Kaooa              |                           |                       |
+| ---- | Kargol             |                           |                       |
+| ---- | Karhyri            |                           |                       |
+| ---- | Kariti             |                           |                       |
+| ---- | Karushin           |                           |                       |
+| ---- | Katl*lalt          |                           |                       |
+| ---- | Kavoofi            |                           |                       |
+| ---- | Kebkh              |                           |                       |
+| ---- | Kedaoud            |                           |                       |
+| ---- | Kedrokiv           |                           |                       |
+| ---- | Keetamarur         |                           |                       |
+| ---- | Kemlae             |                           |                       |
+| ---- | Kepaat             |                           |                       |
+| ---- | Kerlyputar         |                           |                       |
+| ---- | Kerrez             |                           |                       |
+| ---- | Khethss            |                           |                       |
+| ---- | Khiabodlam         |                           |                       |
+| ---- | Khiyrl             |                           |                       |
+| ---- | Khorth             |                           |                       |
+| ---- | Kiakh'iee          |                           |                       |
+| ---- | Kidulan            |                           |                       |
+| ---- | Kiggugloaf         |                           |                       |
+| ---- | Kiki               |                           |                       |
+| ---- | Kingrua            |                           |                       |
+| ---- | Kirissukyoya       |                           |                       |
+| ---- | Kisiro             |                           |                       |
+| ---- | Kiwvik             |                           |                       |
+| ---- | Klath              |                           |                       |
+| ---- | Klethfoline        |                           |                       |
+| ---- | Koatra             |                           |                       |
+| ---- | Kohudo             |                           |                       |
+| ---- | Kolipians          |                           |                       |
+| ---- | Kolire             |                           |                       |
+| ---- | Kooithet           |                           |                       |
+| ---- | Koomalnoki         |                           |                       |
+| ---- | Koos               |                           |                       |
+| ---- | Koou               |                           |                       |
+| ---- | Koseg              |                           |                       |
+| ---- | Kousalent          |                           |                       |
+| ---- | Kragnab'           |                           |                       |
+| ---- | Krotan             |                           |                       |
+| ---- | Ktiauao            |                           |                       |
+| ---- | Kunodu             |                           |                       |
+| ---- | Kwaz               |                           |                       |
+| ---- | Lacduskmukap       |                           |                       |
+| ---- | Ladybugs           |                           |                       |
+| ---- | Lalendri           |                           |                       |
+| ---- | Lamura Gav/Teg     |                           |                       |
+| ---- | Lanash             |                           |                       |
+| ---- | Lancians           |                           |                       |
+| ---- | Languljigee        |                           |                       |
+| ---- | Lanthusandr        |                           |                       |
+| ---- | Larianz            |                           |                       |
+| ---- | Lasat              |                           |                       |
+| ---- | Lasiir             |                           |                       |
+| ---- | Lass-lumminm       |                           |                       |
+| ---- | Latkoora           |                           |                       |
+| ---- | Ldoocox            |                           |                       |
+| ---- | Learas             |                           |                       |
+| ---- | Leavixu            |                           |                       |
+| ---- | Lhshana            |                           |                       |
+| ---- | Liberts            |                           |                       |
+| ---- | Lithkind           |                           |                       |
+| ---- | Llaekharu          |                           |                       |
+| ---- | Llayag             |                           |                       |
+| ---- | Llellewyloly       |                           |                       |
+| ---- | Llyrnian           |                           |                       |
+| ---- | Loeskalth          |                           |                       |
+| ---- | Lokoosun           |                           |                       |
+| ---- | Loubau             |                           |                       |
+| ---- | Lumu               |                           |                       |
+| ---- | Lurent             |                           |                       |
+| ---- | Luriani/Roryniar   |                           |                       |
+| ---- | Luupim             |                           |                       |
+| ---- | Luxuua             |                           |                       |
+| ---- | Lyanawro           |                           |                       |
+| ---- | Lyeeiou            |                           |                       |
+| ---- | M'nengi            |                           |                       |
+| ---- | Maarap             |                           |                       |
+| ---- | Mahkahraik         |                           |                       |
+| ---- | Makochar           |                           |                       |
+| ---- | MalG               |                           |                       |
+| ---- | Marzians           |                           |                       |
+| ---- | Maskai             |                           |                       |
+| ---- | Mavuzo             |                           |                       |
+| ---- | Mazjaru            |                           |                       |
+| ---- | Meckparo           |                           |                       |
+| ---- | Medrarust          |                           |                       |
+| ---- | Melorr             |                           |                       |
+| ---- | Meuxu              |                           |                       |
+| ---- | Mewey              |                           |                       |
+| ---- | Me’kax             |                           |                       |
+| ---- | Miiminri           |                           |                       |
+| ---- | Mikhidians         |                           |                       |
+| ---- | Minaurians         |                           |                       |
+| ---- | Minlad             |                           |                       |
+| ---- | Minor              |                           |                       |
+| ---- | Mirani             |                           |                       |
+| ---- | Mitrai             |                           |                       |
+| ---- | Moaftspi           |                           |                       |
+| ---- | Morlocks           |                           |                       |
+| ---- | Mosanthi           |                           |                       |
+| ---- | Muadem             |                           |                       |
+| ---- | Mucalin            |                           |                       |
+| ---- | Mulok              |                           |                       |
+| ---- | Murian             |                           |                       |
+| ---- | Murrissi           |                           |                       |
+| ---- | Muu                |                           |                       |
+| ---- | Naeaoo             |                           |                       |
+| ---- | Nagad              |                           |                       |
+| ---- | Nainur             |                           |                       |
+| ---- | Nakaenaval         |                           |                       |
+| ---- | Naldatlan          |                           |                       |
+| ---- | Namri              |                           |                       |
+| ---- | Nan-E-Grux         |                           |                       |
+| ---- | Nanaphlan          |                           |                       |
+| ---- | Nanarin            |                           |                       |
+| ---- | Naoou              |                           |                       |
+| ---- | Nebie              |                           |                       |
+| ---- | Neiikhi            |                           |                       |
+| ---- | Nenlat             |                           |                       |
+| ---- | Nenu               |                           |                       |
+| ---- | Neozinga           |                           |                       |
+| ---- | Nesya              |                           |                       |
+| ---- | Nexxies            |                           |                       |
+| ---- | Nibammer           |                           |                       |
+| ---- | Nikang             |                           |                       |
+| ---- | Nind               |                           |                       |
+| ---- | Ninege             |                           |                       |
+| ---- | Ningho             |                           |                       |
+| ---- | Ninir              |                           |                       |
+| ---- | Noqarar            |                           |                       |
+| ---- | Noqlooruth         |                           |                       |
+| ---- | Novilath           |                           |                       |
+| ---- | Nullians           |                           |                       |
+| ---- | Numnill            |                           |                       |
+| ---- | Nunskdrif          |                           |                       |
+| ---- | Nuphlooyc          |                           |                       |
+| ---- | Obeyery            |                           |                       |
+| ---- | Obix               |                           |                       |
+| ---- | Obopebel           |                           |                       |
+| ---- | Oetkle             |                           |                       |
+| ---- | Oiskee             |                           |                       |
+| ---- | Ojehshodu          |                           |                       |
+| ---- | Okoma              |                           |                       |
+| ---- | Okyar              |                           |                       |
+| ---- | Olre               |                           |                       |
+| ---- | Onaqav             |                           |                       |
+| ---- | Ongodala           |                           |                       |
+| ---- | Onkken             |                           |                       |
+| ---- | Oo-ne-beto-pon-tee |                           |                       |
+| ---- | Oom Kha            |                           |                       |
+| ---- | Oonuoa             |                           |                       |
+| ---- | Oooponoo           |                           |                       |
+| ---- | Oophlare           |                           |                       |
+| ---- | Ooqin              |                           |                       |
+| ---- | Ootpevoo           |                           |                       |
+| ---- | Ooumou             |                           |                       |
+| ---- | Opedia             |                           |                       |
+| ---- | Opliaraz           |                           |                       |
+| ---- | Orarnak            |                           |                       |
+| ---- | Ormine             |                           |                       |
+| ---- | Orogh              |                           |                       |
+| ---- | Orpheides          |                           |                       |
+| ---- | Oskac              |                           |                       |
+| ---- | Osp                |                           |                       |
+| ---- | Otarri             |                           |                       |
+| ---- | Otauna             |                           |                       |
+| ---- | Otior              |                           |                       |
+| ---- | Otrai              |                           |                       |
+| ---- | Owruaf             |                           |                       |
+| ---- | Oxdrildax          |                           |                       |
+| ---- | Oxnarnat           |                           |                       |
+| ---- | Pacawri            |                           |                       |
+| ---- | Padada             |                           |                       |
+| ---- | Paleqeka           |                           |                       |
+| ---- | Parmasian          |                           |                       |
+| ---- | Peth               |                           |                       |
+| ---- | Phleeo             |                           |                       |
+| ---- | Phlinskwal         |                           |                       |
+| ---- | Phloeuoo           |                           |                       |
+| ---- | Phloftkiqan        |                           |                       |
+| ---- | Pianax             |                           |                       |
+| ---- | Pilynoo            |                           |                       |
+| ---- | Piri               |                           |                       |
+| ---- | Pocaanir           |                           |                       |
+| ---- | Polari             |                           |                       |
+| ---- | Poxiutt            |                           |                       |
+| ---- | Prostyskem         |                           |                       |
+| ---- | Prt'               |                           |                       |
+| ---- | Pua                |                           |                       |
+| ---- | Pumiai             |                           |                       |
+| ---- | Puskuna            |                           |                       |
+| ---- | Pviri              |                           |                       |
+| ---- | Q'ekzle            |                           |                       |
+| ---- | Qanaren            |                           |                       |
+| ---- | Qelf               |                           |                       |
+| ---- | Qizzuekzi          |                           |                       |
+| ---- | Quamish            |                           |                       |
+| ---- | Qutrien            |                           |                       |
+| ---- | Raasko             |                           |                       |
+| ---- | Raeaokh            |                           |                       |
+| ---- | Raekhsva           |                           |                       |
+| ---- | Ragamar            |                           |                       |
+| ---- | Rahnha             |                           |                       |
+| ---- | Rammak             |                           |                       |
+| ---- | Regawrat           |                           |                       |
+| ---- | Resavolk           |                           |                       |
+| ---- | Rirooawhii         |                           |                       |
+| ---- | Roapa              |                           |                       |
+| ---- | Roche              |                           |                       |
+| ---- | Ronnin             |                           |                       |
+| ---- | Roolickk           |                           |                       |
+| ---- | Ropadran           |                           |                       |
+| ---- | Rorfanki           |                           |                       |
+| ---- | Rrarpaut           |                           |                       |
+| ---- | Rrugrkrooii        |                           |                       |
+| ---- | Rruporo            |                           |                       |
+| ---- | Ruorrii            |                           |                       |
+| ---- | Rusalkan           |                           |                       |
+| ---- | Ry'Bryn            |                           |                       |
+| ---- | Rynkatropa         |                           |                       |
+| ---- | S'geth             |                           |                       |
+| ---- | S'mrii             |                           |                       |
+| ---- | Saanshakase        |                           |                       |
+| ---- | Sahib              |                           |                       |
+| ---- | Sakasa-Siro        |                           |                       |
+| ---- | Sappil             |                           |                       |
+| ---- | Sarliyh            |                           |                       |
+| ---- | Sasnak             |                           |                       |
+| ---- | Satha              |                           |                       |
+| ---- | Satt               |                           |                       |
+| ---- | Saurians           |                           |                       |
+| ---- | Saxai              |                           |                       |
+| ---- | Scanian            |                           |                       |
+| ---- | Schalli            |                           |                       |
+| ---- | Sciapods           |                           |                       |
+| ---- | Sedas              |                           |                       |
+| ---- | Segani             |                           |                       |
+| ---- | Selenite           |                           |                       |
+| ---- | Seoesse            |                           |                       |
+| ---- | Sestan             |                           |                       |
+| ---- | Shela              |                           |                       |
+| ---- | Sheol              |                           |                       |
+| ---- | Shi'awei           |                           |                       |
+| ---- | Shrashee           |                           |                       |
+| ---- | Shriekers          |                           |                       |
+| ---- | Sickata            |                           |                       |
+| ---- | Sidurii            |                           |                       |
+| ---- | Sielienzhia        |                           |                       |
+| ---- | Sigka              |                           |                       |
+| ---- | Sixaa              |                           |                       |
+| ---- | Sixex              |                           |                       |
+| ---- | Slabeck            |                           |                       |
+| ---- | Slungill           |                           |                       |
+| ---- | Smoenn             |                           |                       |
+| ---- | Sonraki            |                           |                       |
+| ---- | Sonroroo           |                           |                       |
+| ---- | Sooluk             |                           |                       |
+| ---- | Souggvuez          |                           |                       |
+| ---- | Spakevo            |                           |                       |
+| ---- | Spatharo           |                           |                       |
+| ---- | Spuanaa            |                           |                       |
+| ---- | Sred!Ni            |                           |                       |
+| ---- | Ssienjhiovla       |                           |                       |
+| ---- | Sst'ankh'rii       |                           |                       |
+| ---- | Stalkers           |                           |                       |
+| ---- | Subol              |                           |                       |
+| ---- | Suerrat            |                           |                       |
+| ---- | Sulliji            |                           |                       |
+| ---- | Sundowners         |                           |                       |
+| ---- | Suru-Oto           |                           |                       |
+| ---- | Susmata            |                           |                       |
+| ---- | Swanfeh            |                           |                       |
+| ---- | Sydites            |                           |                       |
+| ---- | Syia               |                           |                       |
+| ---- | Syleans            |                           |                       |
+| ---- | T'yeh              |                           |                       |
+| ---- | Tadonga            |                           |                       |
+| ---- | Tagaar             |                           |                       |
+| ---- | Tagi               |                           |                       |
+| ---- | Tahavi             |                           |                       |
+| ---- | Taixat             |                           |                       |
+| ---- | Tapax              |                           |                       |
+| ---- | Tapazmal           |                           |                       |
+| ---- | Tashaki            |                           |                       |
+| ---- | Taureans           |                           |                       |
+| ---- | Tayuho             |                           |                       |
+| ---- | Teakhea            |                           |                       |
+| ---- | Tethmari           |                           |                       |
+| ---- | Tewihah            |                           |                       |
+| ---- | Tezcat             |                           |                       |
+| ---- | Thacullyan         |                           |                       |
+| ---- | Thaggeshi          |                           |                       |
+| ---- | Thonane            |                           |                       |
+| ---- | Thorellians        |                           |                       |
+| ---- | Thotrazef          |                           |                       |
+| ---- | Thovala            |                           |                       |
+| ---- | Threep             |                           |                       |
+| ---- | Tikareen           |                           |                       |
+| ---- | Tilpish            |                           |                       |
+| ---- | Tirril             |                           |                       |
+| ---- | Tlenk              |                           |                       |
+| ---- | Tlyetrai           |                           |                       |
+| ---- | Toaba              |                           |                       |
+| ---- | Tobai              |                           |                       |
+| ---- | Todriwa            |                           |                       |
+| ---- | Tothpre            |                           |                       |
+| ---- | Treefe             |                           |                       |
+| ---- | Triartoockoot      |                           |                       |
+| ---- | Trist              |                           |                       |
+| ---- | Triul              |                           |                       |
+| ---- | Troicka            |                           |                       |
+| ---- | Truarinixpanax     |                           |                       |
+| ---- | Tshini             |                           |                       |
+| ---- | Twaro              |                           |                       |
+| ---- | Tydere             |                           |                       |
+| ---- | Uapdranu           |                           |                       |
+| ---- | Uckcekilyn         |                           |                       |
+| ---- | Uhnuphe            |                           |                       |
+| ---- | Ulane              |                           |                       |
+| ---- | Ulothyes           |                           |                       |
+| ---- | Umvaol             |                           |                       |
+| ---- | Ungrest            |                           |                       |
+| ---- | Uostoor            |                           |                       |
+| ---- | Uphlocki           |                           |                       |
+| ---- | Uqqapin            |                           |                       |
+| ---- | Uquilar            |                           |                       |
+| ---- | Urpayans           |                           |                       |
+| ---- | Urpurret           |                           |                       |
+| ---- | Ursa               |                           |                       |
+| ---- | Ursty              |                           |                       |
+| ---- | Urunishani         |                           |                       |
+| ---- | Uulip              |                           |                       |
+| ---- | Uutra              |                           |                       |
+| ---- | Uxoron             |                           |                       |
+| ---- | Uxril              |                           |                       |
+| ---- | Vapethi            |                           |                       |
+| ---- | Varaha             |                           |                       |
+| ---- | Vardin             |                           |                       |
+| ---- | Vegans             |                           |                       |
+| ---- | Veghu              |                           |                       |
+| ---- | Vexx               |                           |                       |
+| ---- | Vicarii            |                           |                       |
+| ---- | Viji               |                           |                       |
+| ---- | Virkesh            |                           |                       |
+| ---- | Virushi            |                           |                       |
+| ---- | Vissekti           |                           |                       |
+| ---- | Vozkell            |                           |                       |
+| ---- | Vu Medach          |                           |                       |
+| ---- | Wamenual           |                           |                       |
+| ---- | Wen                |                           |                       |
+| ---- | Weqbleft           |                           |                       |
+| ---- | Wesh               |                           |                       |
+| ---- | Whaiz              |                           |                       |
+| ---- | Whessann           |                           |                       |
+| ---- | Whirooa            |                           |                       |
+| ---- | Woosian            |                           |                       |
+| ---- | Wroae              |                           |                       |
+| ---- | Wrur               |                           |                       |
+| ---- | Wuans              |                           |                       |
+| ---- | Wuaye              |                           |                       |
+| ---- | Wuiche             |                           |                       |
+| ---- | Wuroo              |                           |                       |
+| ---- | X!tkak!            |                           |                       |
+| ---- | Xabulamanti        |                           |                       |
+| ---- | Xapoqi             |                           |                       |
+| ---- | Xienner            |                           |                       |
+| ---- | Xu'rokotani        |                           |                       |
+| ---- | Xubux              |                           |                       |
+| ---- | Yafizethe          |                           |                       |
+| ---- | Yaitlat            |                           |                       |
+| ---- | Yand               |                           |                       |
+| ---- | Yarah-Dak          |                           |                       |
+| ---- | Yeasaol            |                           |                       |
+| ---- | Yegha              |                           |                       |
+| ---- | Yelelk             |                           |                       |
+| ---- | Yileans            |                           |                       |
+| ---- | Ykoro              |                           |                       |
+| ---- | Yn-tsai            |                           |                       |
+| ---- | Yont               |                           |                       |
+| ---- | Yrogonomi          |                           |                       |
+| ---- | Z'Kr               |                           |                       |
+| ---- | Z'krall            |                           |                       |
+| ---- | Za'tachk           |                           |                       |
+| ---- | Zakhsoukh          |                           |                       |
+| ---- | Zarn               |                           |                       |
+| ---- | Zarodysh           |                           |                       |
+| ---- | Zaru               |                           |                       |
+| ---- | Zevaqe             |                           |                       |
+| ---- | Zhdianshe          |                           |                       |
+| ---- | Zhurphani          |                           |                       |
+| ---- | Ziadd              |                           |                       |
+| ---- | Zirduluush         |                           |                       |
+| ---- | Zithari            |                           |                       |
