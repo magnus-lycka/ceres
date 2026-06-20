@@ -19,7 +19,6 @@ Current Ceres status: only `Humaniti` and `Vilani` are defined in
 | Akeed                       | Alien    | Akee | Re:Akee,(Akeed)         | Trail             | STR-2, END-2, INT+1                                                                         | Akeed Debate DM+2; Akeed Friendship bond; slug-like; careers not listed                                         |
 | Amindii                     | Alien    | —    | Re:(Amindii)            | JTAS 9            | STR=3D (+2 Activator; +END 1 Bearer)                                                        | Three sexes; age 14 start; Perception ability                                                                   |
 | Aniyun                      | Alien    | —    | Re:(Aniyun)             | Spinext           | STR=1D, EDU-2                                                                               | Citizen/Drifter only; natural flight                                                                            |
-| Ape                         | Uplift   | UApe | Re:UApe                 | Sol               | STR+1, END+1, SOC-1                                                                         | Chimp: Small (-1); Gorilla: Athletics(str) 2; Heightened Senses; all Core careers                               |
 | Aquamorph                   | Human    | Aqua | Re:Aqua,(Aquan),(Aquamorphs) | Sol               | STR halved when out of water                                                                | Amphibious; gill/lung; indefinite underwater breathing; all Core careers                                        |
 | Ascondi                     | Alien    | —    | Re:(Ascondi)            | Great Rift 1      | END+1; caste mods at age ~20                                                                | Caste replaces background; SOC starts at 1                                                                      |
 | Aslan (in Darrian)          | Alien    | Asla | A:DaCf&S<6              | AoCS 3            | STR+1, DEX+1, EDU+1                                                                         | Any Darrian career; sex-role preferences softened; Roget Aslan may also use AoCS 1 options                      |
@@ -31,6 +30,7 @@ Current Ceres status: only `Humaniti` and `Vilani` are defined in
 | Caprisaps (Alpine)          | Uplift   | —    | —                       | JTAS 12           | STR-2, DEX+2                                                                                | Goat uplift; Improved Digestion                                                                                 |
 | Caprisaps (Boar)            | Uplift   | —    | —                       | JTAS 12           | STR-1, DEX+1                                                                                | Goat uplift; Improved Digestion                                                                                 |
 | Capry                       | Alien    | —    | —                       | Trail             | Female: STR-3 DEX+2 END-2 INT+1; Big Male: STR-1 END+1; Small Male: STR-4 DEX+3 END-3 EDU+2 | 3 sexes; Liberating Fatalism; Third Hand; endangered species                                                    |
+| Chimp                       | Uplift   | UApe | Re:UApe                 | Sol               | STR+1, END+1, SOC-1                                                                         | Small (-1); Heightened Senses; all Core careers                                                                 |
 | Chokari                     | Uplift   | —    | Re:(Chokari)            | BTC               | END+1, SOC-1; new PSI (2D)                                                                  | Ancient uplift (Foelen); psionic training before career; Deep Diver (100m); Swimmer (6m)                        |
 | Crenduthaar                 | Alien    | —    | Re:(Crenduthaar)        | BTC               | STR=3D, END=3D, DEX=1D                                                                      | Army/Citizen/Drifter/Marine/Rogue; Armour +3; IR Vision; Slasher 2D; dark phobia; kill Vargr on sight           |
 | Darmine                     | Human    | Darm | Re:Darm,(Darmine)       | DeepDark          | —                                                                                           | Core careers                                                                                                    |
@@ -50,6 +50,7 @@ Current Ceres status: only `Humaniti` and `Vilani` are defined in
 | Githiaskio                  | Alien    | —    | Re:(Githiaskio)         | JTAS 2            | —                                                                                           | Zero-g/aquatic specialist; gravity injures without suit                                                         |
 | Gl'lu                       | Alien    | —    | Re:(Gl'lu)              | BTC               | END-1, DEX+1, EDU-2                                                                         | Ammonia breather; IR Vision; Heightened Senses; all Core careers; tiny staterooms (8 per cabin)                 |
 | Gmina                       | Alien    | —    | Re:(Gmina)              | Spinext           | STR=2D+4, EDU=1D, SOC=2 (fixed), DEX-1                                                      | Drifter only; four arms                                                                                         |
+| Gorilla                     | Uplift   | UApe | Re:UApe                 | Sol               | STR+1, END+1, SOC-1                                                                         | Athletics(str) 2; Heightened Senses; all Core careers                                                           |
 | Gurungan                    | Alien    | Guru | Re:Guru,(Gurungan)      | Sol               | DEX+2                                                                                       | Fully aquatic; Sonar 120m; Bite 1D; Deep Diver 1000m; Swimmer 8m; all Core careers                              |
 | Gurvin                      | Alien    | Gurv | Re:Gurv,(Gurvin)        | AoCS 4            | Females INT+1 EDU+1; Males STR-1 DEX+1                                                      | Male INT/EDU=1D+1; age 16 start                                                                                 |
 | Halkans                     | Alien    | —    | Re:(Halkans)            | JTAS 8            | END+1, EDU-1                                                                                | Pacifism; reroll combat skills during creation                                                                  |
@@ -693,13 +694,21 @@ Uplifted Earth orcas (killer whales).
 
 *Source: Solomani Front (`refs/sol/02_overview_of_the_solomani_front.md`)*
 
-Uplifted Terran apes (gorilla and chimpanzee hybrid) engineered by Old Earth Union scientists late in the Interstellar Wars period. Two interfertile subtypes: chimpanzee-types are small and agile; gorilla-types are massively strong. Small scattered communities exist on Solomani worlds; legally treated as people by both the Imperium and Confederation, though often second-class citizens in practice.
+An Ape is either a **Chimp** (chimpanzee-type) or a **Gorilla** (gorilla-type). Uplifted Terran apes engineered by Old Earth Union scientists late in the Interstellar Wars period. Two interfertile subtypes: chimpanzee-types are small and agile; gorilla-types are massively strong. Small scattered communities exist on Solomani worlds; legally treated as people by both the Imperium and Confederation, though often second-class citizens in practice.
 
 - **Characteristics:** STR+1, END+1, SOC-1.
 - **Heightened Senses:** DM+1 Recon and Survival checks.
 - **Chimpanzee subtype:** Small (-1, DM-1 against them with ranged attacks).
 - **Gorilla subtype:** Athletics (strength) 2 innate.
 - All Core careers available; in the Confederation, Army/Marine/Navy are most common.
+
+### Chimp
+
+See [Ape](#ape).
+
+### Gorilla
+
+See [Ape](#ape).
 
 ### Ursa
 
