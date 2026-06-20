@@ -38,7 +38,7 @@ relocation opportunities.
 
 Examples from alien material:
 
-- Aslan in the Hierate use gender and clan heavily; males have Territory (TER),
+- Aslan in the Hierate use sex and clan heavily; males have Territory (TER),
   and starting age differs from humans.
 - Vargr from the Extents use Charisma (CHA) instead of SOC.
 - Za'tachk use Boldness (BOL), have sex-based starting ages, and have career
