@@ -14,7 +14,7 @@ from ceres.adapters.travellermap import TravellerMapWorld, fetch_world
 from ceres.character.domain.career.loader import load_careers
 from ceres.character.domain.character_state import CharacterProjection, diff_summaries
 from ceres.character.domain.precareer.loader import load_precareers
-from ceres.character.domain.sophont import SOPHONT_NAMES, get_sophont
+from ceres.character.domain.sophont import SOPHONT_NAMES, available_sophont_names, get_sophont
 from ceres.character.domain.spec import spec_from_summary
 from ceres.character.input_specs import SelectWorld, WorldFilterCriteria
 from ceres.character.mechanism.event_base import Event
@@ -247,7 +247,7 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
             request=request,
             name='character_new.html',
             context={
-                'sophonts': SOPHONT_NAMES,
+                'sophonts': available_sophont_names(homeworld) if homeworld else SOPHONT_NAMES,
                 'form_defaults': form_defaults,
                 'homeworld': homeworld,
                 'homeworld_picker_query': _character_form_query_string(form_defaults),
