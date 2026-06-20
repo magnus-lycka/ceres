@@ -15,53 +15,53 @@ Current Ceres status: only `Humaniti` and `Vilani` are defined in
 | Sophont                     | Category | Code | Location                | Source            | Characteristic changes                                                                      | Special                                                                                                         |
 | --------------------------- | -------- | ---- | ----------------------- | ----------------- | ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | Ael Yael                    | Alien    | —    | Re:(Ael Yael)           | JTAS 3            | STR-1                                                                                       | No Noble; 90% cash donated; DM-2 enlistment                                                                     |
-| Aezorgh                     | Alien    | Aezo | Re:Aezo                 | JTAS 11           | STR=1D, DEX=2D+3, END=1D+1, INT=2D+2, EDU=1D, SOC=1D                                        | DM+4 aging until term 16                                                                                        |
-| Akeed                       | Alien    | Akee | Re:Akee                 | Trail             | STR-2, END-2, INT+1                                                                         | Akeed Debate DM+2; Akeed Friendship bond; slug-like; careers not listed                                         |
+| Aezorgh                     | Alien    | Aezo | Re:(Aezorgh)            | JTAS 11           | STR=1D, DEX=2D+3, END=1D+1, INT=2D+2, EDU=1D, SOC=1D                                        | DM+4 aging until term 16                                                                                        |
+| Akeed                       | Alien    | Akee | Re:Akee,(Akeed)         | Trail             | STR-2, END-2, INT+1                                                                         | Akeed Debate DM+2; Akeed Friendship bond; slug-like; careers not listed                                         |
 | Amindii                     | Alien    | —    | Re:(Amindii)            | JTAS 9            | STR=3D (+2 Activator; +END 1 Bearer)                                                        | Three sexes; age 14 start; Perception ability                                                                   |
 | Aniyun                      | Alien    | —    | Re:(Aniyun)             | Spinext           | STR=1D, EDU-2                                                                               | Citizen/Drifter only; natural flight                                                                            |
 | Ape                         | Uplift   | UApe | Re:UApe                 | Sol               | STR+1, END+1, SOC-1                                                                         | Chimp: Small (-1); Gorilla: Athletics(str) 2; Heightened Senses; all Core careers                               |
-| Aquamorph                   | Human    | Aqua | Re:Aqua                 | Sol               | STR halved when out of water                                                                | Amphibious; gill/lung; indefinite underwater breathing; all Core careers                                        |
+| Aquamorph                   | Human    | Aqua | Re:Aqua,(Aquan),(Aquamorphs) | Sol               | STR halved when out of water                                                                | Amphibious; gill/lung; indefinite underwater breathing; all Core careers                                        |
 | Ascondi                     | Alien    | —    | Re:(Ascondi)            | Great Rift 1      | END+1; caste mods at age ~20                                                                | Caste replaces background; SOC starts at 1                                                                      |
 | Aslan (in Darrian)          | Alien    | Asla | A:DaCf&S<6              | AoCS 3            | STR+1, DEX+1, EDU+1                                                                         | Any Darrian career; sex-role preferences softened; Roget Aslan may also use AoCS 1 options                      |
 | Aslan (in Hierate)          | Major    | Asla | A:As*                   | AoCS 1            | (m) STR+2 DEX-2 END+1; SOC → TER; (f) STR+1 DEX-1 END+2                                     | Rite of Passage; Clan Shares; sex-locked assignments                                                            |
 | Aslan (in Humaniti)         | Major    | Asla | A:Im*,CsIm,NaHu         | Core              | STR+2, DEX-2                                                                                | Core careers; Dewclaw (1D+2); Heightened Senses                                                                 |
 | Bosaki                      | Alien    | —    | Re:(Bosak)              | JTAS 17           | STR=1D+1, DEX=2D+2, END=1D+1, INT=2D+1, EDU=2D, SOC=4                                       | Age 24 start; Combat Aversion                                                                                   |
-| Bruhre                      | Alien    | Bruh | Re:Bruh                 | Deepdark          | STR=3D(max 18), DEX=1D, END=3D+2(max 20), SOC=1D                                            | No Drifter/Entertainer/Rogue                                                                                    |
+| Bruhre                      | Alien    | Bruh | Re:Bruh,(Bruhre)        | Deepdark          | STR=3D(max 18), DEX=1D, END=3D+2(max 20), SOC=1D                                            | No Drifter/Entertainer/Rogue                                                                                    |
 | Bwap                        | Alien    | Bwap | A:*                     | AoCS 3            | STR-4 END-4                                                                                 | Faster aging; no Rogue; Structured Mind trait                                                                   |
 | Caprisaps (Alpine)          | Uplift   | —    | —                       | JTAS 12           | STR-2, DEX+2                                                                                | Goat uplift; Improved Digestion                                                                                 |
 | Caprisaps (Boar)            | Uplift   | —    | —                       | JTAS 12           | STR-1, DEX+1                                                                                | Goat uplift; Improved Digestion                                                                                 |
 | Capry                       | Alien    | —    | —                       | Trail             | Female: STR-3 DEX+2 END-2 INT+1; Big Male: STR-1 END+1; Small Male: STR-4 DEX+3 END-3 EDU+2 | 3 sexes; Liberating Fatalism; Third Hand; endangered species                                                    |
 | Chokari                     | Uplift   | —    | Re:(Chokari)            | BTC               | END+1, SOC-1; new PSI (2D)                                                                  | Ancient uplift (Foelen); psionic training before career; Deep Diver (100m); Swimmer (6m)                        |
 | Crenduthaar                 | Alien    | —    | Re:(Crenduthaar)        | BTC               | STR=3D, END=3D, DEX=1D                                                                      | Army/Citizen/Drifter/Marine/Rogue; Armour +3; IR Vision; Slasher 2D; dark phobia; kill Vargr on sight           |
-| Darmine                     | Human    | Darm | Re:Darm                 | DeepDark          | —                                                                                           | Core careers                                                                                                    |
+| Darmine                     | Human    | Darm | Re:Darm,(Darmine)       | DeepDark          | —                                                                                           | Core careers                                                                                                    |
 | Daryen                      | Human    | Dary | A:DaCf                  | AoCS 3 / BTC      | STR-1 DEX+1 END-1 INT+1 EDU+1                                                               | Restricted career list; first term forced                                                                       |
 | Dolphin (Foelen)            | Uplift   | Dolp | Re:Dolp&Sec:Spin        | BTC               | END+1, SOC-1                                                                                | Ancient uplift near Foelen; all Core careers                                                                    |
 | Dolphin (Solomani)          | Uplift   | Dolp | Re:Dolp&!Sec:Spin       | AoCS 3            | STR+4 END+2 SOC-4                                                                           | Solomani uplift; age 12 start; restricted careers                                                               |
 | Droashav                    | Alien    | —    | Re:(Droashav)           | Trail             | STR+2, DEX-1, END+3, INT-1                                                                  | Natural Defences +1 + claws 1D+2; six-limbed pseudoreptilians; careers not listed                               |
 | Droyne                      | Major    | Droy | A:Dr,NaDr;Re:Droy       | AoCS 2            | STR/DEX/END/INT/EDU=1D+1; PSI=2D; caste mods; SOC → PSI                                     | Caste-based careers; no standard career flow                                                                    |
-| Dynchia                     | Alien    | Dync | Re:Dync                 | JTAS 1            | STR=1D+3, DEX+1, EDU+1                                                                      | DM-2 enlistment outside Comitia                                                                                 |
+| Dynchia                     | Alien    | Dync | Re:Dync,(Dynchia)       | JTAS 1            | STR=1D+3, DEX+1, EDU+1                                                                      | DM-2 enlistment outside Comitia                                                                                 |
 | Ebokin                      | Alien    | —    | Re:(Ebokin)             | BTC               | DEX-2, END+3                                                                                | Methane breather; UV Vision; Armour +3; limited career list                                                     |
-| Eslyat                      | Alien    | Esly | Re:Esly                 | Spinext           | Three sub-races (Selyin/Chutin/Magsin) by SOC; males STR+1                                  | Amphibious; Heightened Hearing; caste-limited careers                                                           |
+| Eslyat                      | Alien    | Esly | A:EsMa                  | Spinext           | Three sub-races (Selyin/Chutin/Magsin) by SOC; males STR+1                                  | Amphibious; Heightened Hearing; caste-limited careers                                                           |
 | Faar                        | Alien    | —    | Re:(Faar)               | Trail             | STR+1, END+1, DEX-1                                                                         | Closed Book (DM-2 reading Faar); Homesickness (END check every 2D days off-world)                               |
 | Freni                       | Alien    | —    | Re:(Freni)              | Spinext           | 6 subspecies, various; SOC=EDU                                                              | Flexible Digits; Reputation as Cook; Steward 1/Profession(freeloading)1/Survival 0 start                        |
-| Geonee                      | Human    | Geon | Re:Geon                 | AoCS 3            | STR+2 DEX-1 END+2 SOC-1                                                                     | Extra background skill                                                                                          |
+| Geonee                      | Human    | Geon | Re:Geon,(Geonee)        | AoCS 3            | STR+2 DEX-1 END+2 SOC-1                                                                     | Extra background skill                                                                                          |
 | Ghenani                     | Human    | —    | Re:(Ghenani)            | Spinext           | STR+2, DEX-2                                                                                | STR max 17; DM-1 aging; no cyber/psionics; career-restricted until emigrated                                    |
-| Girug'kagh                  | Alien    | Giru | A:Kk*&Re:Giru           | JTAS 1            | STR=1D+2, END=1D+2, DEX=1D+7                                                                | Translator-only; serve K'kree for life                                                                          |
+| Girug'kagh                  | Alien    | Giru | A:Kk*&Re:Giru,(Girug'kagh) | JTAS 1            | STR=1D+2, END=1D+2, DEX=1D+7                                                                | Translator-only; serve K'kree for life                                                                          |
 | Githiaskio                  | Alien    | —    | Re:(Githiaskio)         | JTAS 2            | —                                                                                           | Zero-g/aquatic specialist; gravity injures without suit                                                         |
 | Gl'lu                       | Alien    | —    | Re:(Gl'lu)              | BTC               | END-1, DEX+1, EDU-2                                                                         | Ammonia breather; IR Vision; Heightened Senses; all Core careers; tiny staterooms (8 per cabin)                 |
 | Gmina                       | Alien    | —    | Re:(Gmina)              | Spinext           | STR=2D+4, EDU=1D, SOC=2 (fixed), DEX-1                                                      | Drifter only; four arms                                                                                         |
-| Gurungan                    | Alien    | Guru | Re:Guru                 | Sol               | DEX+2                                                                                       | Fully aquatic; Sonar 120m; Bite 1D; Deep Diver 1000m; Swimmer 8m; all Core careers                              |
-| Gurvin                      | Alien    | Gurv | Re:Gurv                 | AoCS 4            | Females INT+1 EDU+1; Males STR-1 DEX+1                                                      | Male INT/EDU=1D+1; age 16 start                                                                                 |
+| Gurungan                    | Alien    | Guru | Re:Guru,(Gurungan)      | Sol               | DEX+2                                                                                       | Fully aquatic; Sonar 120m; Bite 1D; Deep Diver 1000m; Swimmer 8m; all Core careers                              |
+| Gurvin                      | Alien    | Gurv | Re:Gurv,(Gurvin)        | AoCS 4            | Females INT+1 EDU+1; Males STR-1 DEX+1                                                      | Male INT/EDU=1D+1; age 16 start                                                                                 |
 | Halkans                     | Alien    | —    | Re:(Halkans)            | JTAS 8            | END+1, EDU-1                                                                                | Pacifism; reroll combat skills during creation                                                                  |
 | Happrhani                   | Human    | —    | Re:(Happrhani)          | Deepdark          | END+1                                                                                       | Barbarian only if steppe/desert nomad                                                                           |
-| Hhkar                       | Alien    | Hhka | Re:Hhka                 | JTAS 12           | STR+3 END+3; reset per sex change                                                           | Serial hermaphroditism reverses aging                                                                           |
-| Hiver                       | Major    | Hive | A:Hi*                   | AoCS 2            | STR-2; SOC → RES                                                                            | RES=1D+6; no survival checks; aging from 38                                                                     |
+| Hhkar                       | Alien    | Hhka | Re:Hhka,(Hhkar)         | JTAS 12           | STR+3 END+3; reset per sex change                                                           | Serial hermaphroditism reverses aging                                                                           |
+| Hiver                       | Major    | Hive | A:HvFd,CsHv             | AoCS 2            | STR-2; SOC → RES                                                                            | RES=1D+6; no survival checks; aging from 38                                                                     |
 | Hlanssai                    | Alien    | —    | A:Im*,CsIm,NaHu         | JTAS 4            | STR-2 DEX+2 EDU-2, SOC=1D+4 / fixed 5                                                       | Bypasses standard career system entirely                                                                        |
 | Humaniti                    | Human    | Huma | A:*                     | Core              | —                                                                                           | Catch-all for standard humans not fitting a specific minor race                                                 |
 | Iltharans                   | Human    | —    | Re:(Iltharans)          | Deepdark          | END+1                                                                                       | Longevity +6 aging                                                                                              |
-| Ithklur                     | Alien    | Ithk | Re:Ithk                 | JTAS 7            | EDU-1; SOC → RES                                                                            | EDU=1D+1, RES=1D+1; Fourfold Way path system                                                                    |
+| Ithklur                     | Alien    | Ithk | Re:Ithk,(Ithklur)       | JTAS 7            | EDU-1; SOC → RES                                                                            | EDU=1D+1, RES=1D+1; Fourfold Way path system                                                                    |
 | J'aadje                     | Alien    | —    | Re:(J'aadje)            | Deepdark          | STR-2, DEX+2                                                                                | All careers                                                                                                     |
-| Jonkeereen                  | Human    | Jonk | Re:Jonk                 | BTC / Trail       | BTC: END+1, EDU-1; Trail: END+2 only                                                        | Heat resistance; Desert Survival DM+3; ⚠ discrepancy between sources                                            |
+| Jonkeereen                  | Human    | Jonk | Re:Jonk,(Jonkeereen)    | BTC / Trail       | BTC: END+1, EDU-1; Trail: END+2 only                                                        | Heat resistance; Desert Survival DM+3; ⚠ discrepancy between sources                                            |
 | K'kree                      | Major    | K'kr | A:Kk*                   | AoCS 1            | STR+6, INT+2, EDU+2 (patriarch)                                                             | Creates whole household; Patriarchy skill; Claustrophobic; Gregarious                                           |
 | Katangan                    | Human    | —    | A:KaEm                  | Spinext           | STR+1, DEX-1, END+1                                                                         | Fully human; heavy worlder; draft first term; DM-1 aging; Katangan Culture modifier                             |
 | Kemlae                      | Alien    | —    | Re:(Kemlae)             | Spinext           | DEX+1, END+1, EDU-1, SOC-1                                                                  | Age 8 start; Kuftu transformation/death after term 7                                                            |
@@ -69,52 +69,52 @@ Current Ceres status: only `Humaniti` and `Vilani` are defined in
 | Krotan                      | Alien    | —    | Re:(Krotan)             | JTAS 15           | END=3D, DEX-2, SOC=2D (age indicator)                                                       | Merchant/Citizen only; no survival checks                                                                       |
 | Ktiauao                     | Alien    | —    | Re:(Ktiauao)            | Spinext           | STR+1, DEX+2; SOC → TER (Aslan-style)                                                       | Uses Aslan careers; three sexes                                                                                 |
 | Ladybug                     | Alien    | —    | Re:(Ladybugs)           | Sol               | STR/END/SOC=1D+2; INT/EDU=2D3; DEX=2D+3                                                     | Gentle Soul DM-2 combat/confrontation; Beautiful DM+2 help; DM-2 military careers                               |
-| Lancians                    | Human    | Lanc | Re:Lanc                 | GR / 3i           | —                                                                                           | Core careers; Ancients transplant                                                                               |
+| Lancians                    | Human    | Lanc | Re:Lanc,(Lancians)      | GR / 3i           | —                                                                                           | Core careers; Ancients transplant                                                                               |
 | Lhshana                     | Alien    | —    | Re:(Lhshana)            | JTAS 16           | DEX+1, INT+1, SOC-2                                                                         | Standard careers; trilateral physiology                                                                         |
-| Liberts                     | Human    | Libe | Re:Libe                 | DeepDark          | —                                                                                           | Core careers                                                                                                    |
-| Llellewyloly                | Alien    | Llel | Re:Llel                 | BTC               | STR=2D3, END=2D3                                                                            | Alien Digits DM-2 non-adapted devices; Atmosphere (thin); careers not listed in source                          |
+| Liberts                     | Human    | Libe | Re:Libe,(Liberts)       | DeepDark          | —                                                                                           | Core careers                                                                                                    |
+| Llellewyloly                | Alien    | Llel | Re:Llel,(Llellewyloly)  | BTC               | STR=2D3, END=2D3                                                                            | Alien Digits DM-2 non-adapted devices; Atmosphere (thin); careers not listed in source                          |
 | Lurent                      | Alien    | —    | Re:(Lurent)             | BTC               | STR=2D+4, END=2D+4                                                                          | Drifter/Merchant/Noble/Rogue/Scout/Scholar; Tentacle Bash 2D; Wanderlust compulsion cycles                      |
-| Luriani                     | Human    | Luri | Re:Luri                 | Trail             | DEX+1, END+1, SOC-2                                                                         | Aquatic Adaptation (genetically Luriani); Histrionics; Ancient-modified humans                                  |
+| Luriani                     | Human    | Luri | A:ImLu                  | Trail             | DEX+1, END+1, SOC-2                                                                         | Aquatic Adaptation (genetically Luriani); Histrionics; Ancient-modified humans                                  |
 | Mal'Gnar                    | Alien    | Mal' | Re:Mal'                 | Spinext           | EDU=1D+1                                                                                    | Drifter only; cannot speak Galanglic                                                                            |
 | Martian                     | Alien    | —    | —                       | BTC               | STR-1, END-1, DEX+1; EDU=1D (max 7)                                                         | Most Core careers; Adaptability; immune to telepathy                                                            |
 | Mewey                       | Alien    | —    | Re:(Mewey)              | JTAS 13           | STR-2, INT+1, EDU+1                                                                         | Heightened Senses; Empathetic; limited Navy                                                                     |
-| Murian                      | Alien    | Muri | Re:Muri                 | Spinext           | STR+1, DEX-2, END+2; SOC=2D3+4                                                              | All Core; Armour +1; Claw 1D+2; Short Limbs 4m speed; IR vision                                                 |
-| Murrissi                    | Human    | Murr | Re:Murr                 | DeepDark          | —                                                                                           | Core careers                                                                                                    |
+| Murian                      | Alien    | Muri | Re:Muri,(Murian)        | Spinext           | STR+1, DEX-2, END+2; SOC=2D3+4                                                              | All Core; Armour +1; Claw 1D+2; Short Limbs 4m speed; IR vision                                                 |
+| Murrissi                    | Human    | Murr | Re:Murr,(Murrissi)      | DeepDark          | —                                                                                           | Core careers                                                                                                    |
 | Nenlat                      | Alien    | —    | Re:(Nenlat)             | JTAS 10           | STR+1, EDU-2 (assim.); STR+1, EDU=1D (trad.); sex mods                                      | Amphibious; age 14 start; trilateral                                                                            |
 | Oo-ne-beto-pon-tee          | Alien    | —    | Re:(Oo-ne-beto-pon-tee) | 3i                | STR=D3, END=D3, SOC=D3; DEX=1D+4; INT=2D-1; EDU=2D                                          | (Whistler) neuter sex recommended; Sticky Feet; Stealth 2 innate; High-freq Communication                       |
 | Orca                        | Uplift   | Orca | Re:Orca                 | AoCS 3            | STR+8 END+4 SOC-4                                                                           | Solomani uplift; 12× ship space; restricted careers                                                             |
-| Ormine                      | Alien    | Ormi | Re:Ormi                 | Deepdark          | DEX-2, END+2                                                                                | 28-year terms; start at 30; aging at 254                                                                        |
-| Rammak                      | Alien    | Ramm | Re:Ramm                 | Rimexp            | DEX=1D+8                                                                                    | All-round Perception; Specialised Limbs (DM+2 climbing, DM-2 strength); careers not listed                      |
+| Ormine                      | Alien    | Ormi | Re:Ormi,(Ormine)        | Deepdark          | DEX-2, END+2                                                                                | 28-year terms; start at 30; aging at 254                                                                        |
+| Rammak                      | Alien    | Ramm | Re:Ramm,(Rammak)        | Rimexp            | DEX=1D+8                                                                                    | All-round Perception; Specialised Limbs (DM+2 climbing, DM-2 strength); careers not listed                      |
 | Resavolk                    | Alien    | —    | Re:(Resavolk)           | Spinext           | SOC=D3+5                                                                                    | Drifter (barbarian) first term, then any except Noble unless SOC 10+; no exceptional traits                     |
 | Saurus                      | Alien    | —    | Re:(Saurians)           | BTC               | STR+2, END+2; INT=2D3; EDU=1D                                                               | Citizen (worker)/Drifter only; Armour +2                                                                        |
 | Segani                      | Alien    | —    | Re:(Segani)             | BTC               | END=1D+2 (max 10); all others 2D                                                            | Army/Citizen/Entertainer/Rogue/Scholar; jump travel causes madness                                              |
-| Selenite                    | Human    | Sele | Re:Sele                 | Sol               | DEX+2; STR=2D3+1; END=1D+1                                                                  | Low-G adapted humans; Great Indoors (uneasy outdoors); Low-G DM+2; all Core careers                             |
+| Selenite                    | Human    | Sele | Re:Sele,(Selenite)      | Sol               | DEX+2; STR=2D3+1; END=1D+1                                                                  | Low-G adapted humans; Great Indoors (uneasy outdoors); Low-G DM+2; all Core careers                             |
 | Shi'awei                    | Alien    | —    | Re:(Shi'awei)           | BTC               | STR=3D, END=3D, DEX=1D; males also STR-1 END+1                                              | Drifter/Entertainer/Noble/Rogue; aquatic; Echolocation (30m); Grippers 2D                                       |
 | Solomani                    | Major    | Huma | A:So*                   | AoCS 2            | —                                                                                           | Race roll; party patronage; SolSec monitor                                                                      |
 | Souggvuez                   | Alien    | —    | Re:(Souggvuez)          | BTC               | DEX+1, INT-1, EDU+1; caste mods                                                             | All Core careers; Armour +1; Bite 1D+2; four sex castes                                                         |
 | Ssienjhiovla                | Alien    | —    | Re:(Ssienjhiovla)       | 3i                | STR-2, DEX+1                                                                                | Carapace +6; Composite Imaging (olfactory); Non-verbal Communication 5km; Scout/Navy preferred                  |
-| Suerrat                     | Alien    | Suer | Re:Suer                 | AoCS 4            | STR+1 DEX+2 SOC-1                                                                           | Cold/radiation resistance                                                                                       |
-| Swanfei                     | Human    | Swan | Re:Swan                 | Trail             | —                                                                                           | Core careers                                                                                                    |
+| Suerrat                     | Alien    | Suer | Re:Suer,(Suerrat)       | AoCS 4            | STR+1 DEX+2 SOC-1                                                                           | Cold/radiation resistance                                                                                       |
+| Swanfei                     | Human    | Swan | Re:Swan,(Swanfeh)       | Trail             | —                                                                                           | Core careers                                                                                                    |
 | Sword Worlders              | Human    | Huma | A:SwCf                  | Sword             | —                                                                                           | Patrol career (max age 30 to join)                                                                              |
-| Sydites                     | Human    | Sydi | Re:Sydi                 | Trail             | STR+2, END+2, DEX-2, INT-3, EDU-3                                                           | Resilient +1; Plodding Along (DM-4 Leadership/Tactics, DM+4 morale); 4-armed                                    |
-| Sylean                      | Human    | Syle | Re:Syle                 | 3i                | STR-1, EDU+1                                                                                | All Core; Cooperation DM+2 Admin/Diplomat/Streetwise on Sylean worlds; DM+1 cash benefits                       |
+| Sydites                     | Human    | Sydi | Re:Sydi,(Sydites)       | Trail             | STR+2, END+2, DEX-2, INT-3, EDU-3                                                           | Resilient +1; Plodding Along (DM-4 Leadership/Tactics, DM+4 morale); 4-armed                                    |
+| Sylean                      | Human    | Syle | Re:Syle,(Syleans)       | 3i                | STR-1, EDU+1                                                                                | All Core; Cooperation DM+2 Admin/Diplomat/Streetwise on Sylean worlds; DM+1 cash benefits                       |
 | Teakhea                     | Alien    | —    | Re:(Teakhea)            | Spinext           | STR+1, DEX-1, END+1, SOC-2                                                                  | Aslan careers (exc. Ceremonial/Envoy/Space Officer); Amphibious; Large +2; Shell +3; sex-changing career system |
 | Tezcat                      | Alien    | —    | Re:(Tezcat)             | AoCS 4            | DEX+1 END-1                                                                                 | No Noble; mandatory combat background skills                                                                    |
 | Thonane                     | Alien    | —    | Re:(Thonane)            | Spinext           | STR=1D, DEX=3D, END=2D, INT=2D, EDU=D3, SOC=D3                                              | Drifter (barbarian) only; Flyer; Hunter innate skills                                                           |
 | Tlinzha                     | Alien    | —    | —                       | Sector 8          | END=3D                                                                                      | 8-year terms; age 8 start; no psionics                                                                          |
-| Tlyetrai                    | Alien    | Tlye | Re:Tlye                 | Deepdark          | STR-2, DEX+1, INT+1                                                                         | No Army/Navy/Marine/Rogue unless emigrated                                                                      |
-| Ulane                       | Alien    | Ulan | Re:Ulan                 | Deepdark          | DEX+2; STR/END=1D+1                                                                         | Fast Metabolism; Multi-limbed; Small (-1)                                                                       |
-| Ursa                        | Uplift   | Ursa | Re:Ursa                 | Trail             | STR+4, END+2                                                                                | Uplifted bears; Claws & Teeth 1D+3; Sore Head (DM-2 social with humans)                                         |
-| Urunishani                  | Human    | Urun | Re:Urun                 | 3i                | —                                                                                           | Core careers                                                                                                    |
+| Tlyetrai                    | Alien    | Tlye | Re:Tlye,(Tlyetrai)      | Deepdark          | STR-2, DEX+1, INT+1                                                                         | No Army/Navy/Marine/Rogue unless emigrated                                                                      |
+| Ulane                       | Alien    | Ulan | Re:Ulan,(Ulane)         | Deepdark          | DEX+2; STR/END=1D+1                                                                         | Fast Metabolism; Multi-limbed; Small (-1)                                                                       |
+| Ursa                        | Uplift   | Ursa | Re:Ursa,(Ursa)          | Trail             | STR+4, END+2                                                                                | Uplifted bears; Claws & Teeth 1D+3; Sore Head (DM-2 social with humans)                                         |
+| Urunishani                  | Human    | Urun | Re:Urun,(Urunishani)    | 3i                | —                                                                                           | Core careers                                                                                                    |
 | Vargr (in Extents)          | Major    | Varg | A:V*                    | AoCS 1            | STR-2, DEX+1, END-1; SOC → CHA (1D+2)                                                       | Vargr careers; CHA gain/loss mechanic; Bite (1D+1); Heightened Senses                                           |
 | Vargr (in Humaniti)         | Major    | Varg | A:Im*,CsIm,NaHu         | Core              | STR-1, DEX+1, END-1                                                                         | Core careers; Bite (1D+1); Heightened Senses (DM-1 sight in dark)                                               |
-| Vegan                       | Alien    | Vega | Re:Vega                 | Sol/AoCS          | EDU+2, SOC-2                                                                                | First career must be Drifter; 200+ year lifespan                                                                |
+| Vegan                       | Alien    | Vega | Re:Vega,(Vegans)        | Sol/AoCS          | EDU+2, SOC-2                                                                                | First career must be Drifter; 200+ year lifespan                                                                |
 | Vilani                      | Major    | Huma | A:Im*                   | Core              | —                                                                                           | No mechanical differences                                                                                       |
-| Virushi                     | Alien    | Viru | Re:Viru                 | JTAS 5 / Deepdark | STR=1D+10, END=1D+10, DEX+2, SOC-2                                                          | SOC career gains → EDU; no Army/Navy/Marines; 8-ton staterooms                                                  |
+| Virushi                     | Alien    | Viru | Re:Viru,(Virushi)       | JTAS 5 / Deepdark | STR=1D+10, END=1D+10, DEX+2, SOC-2                                                          | SOC career gains → EDU; no Army/Navy/Marines; 8-ton staterooms                                                  |
 | Wanderer (Wandering People) | Alien    | —    | —                       | Trail             | DEX+2, STR-1, END-1                                                                         | Carapace +1; Weird Movement; insectoid                                                                          |
 | Yafizethe                   | Alien    | —    | Re:(Yafizethe)          | BTC               | STR=1D, END=1D, DEX=3D, INT+1                                                               | Careers not listed in source; Enhanced Vision (EM fields); Small (-1)                                           |
 | Yn-tsai                     | Alien    | —    | Re:(Yn-tsai)            | Deepdark          | STR-2, INT+2                                                                                | All Core careers; Low Pressure trait                                                                            |
-| Za'tachk                    | Alien    | Za't | Re:Za't                 | AoCS 4            | STR+1; Matriarchs INT+1 EDU+1 BOL-1; Scouts INT-1 EDU-1 BOL+1; new BOL (1D+1)               | Three sexes; age 10/15 start; Coward trait                                                                      |
+| Za'tachk                    | Alien    | Za't | Re:Za't,(Za'tachk)      | AoCS 4            | STR+1; Matriarchs INT+1 EDU+1 BOL-1; Scouts INT-1 EDU-1 BOL+1; new BOL (1D+1)               | Three sexes; age 10/15 start; Coward trait                                                                      |
 | Zhdianshe                   | Alien    | —    | Re:(Zhdianshe)          | Spinext           | STR=1 (fixed), DEX=2D+2; new PSI=2D (min 2); SOC=PSI                                        | All Core + Psion; no aging until term 8; Echolocation; Flyer; Telepathy 2 + Clairvoyance 1 innate               |
 | Zhodani                     | Major    | Zhod | A:Zh*,CsZh;Re:Zhod      | AoCS 1 / BTC      | EDU min 8 if SOC 10+; new PSI (rolled first)                                                | Social class tiers gate careers                                                                                 |
 
@@ -1513,9 +1513,9 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Aceran             |                           |                       |
 | ---- | Acheron            |                           |                       |
 | ---- | Adau               |                           |                       |
-| ---- | Addaxur            |                           |                       |
-| ---- | Ael Yael           |                           |                       |
-| ---- | Aezorgh            |                           |                       |
+| ---- | Addaxur            |                           | coded above (Adda)    |
+| ---- | Ael Yael           |                           | in listing above      |
+| ---- | Aezorgh            |                           | in listing above      |
 | ---- | Afrani             |                           |                       |
 | ---- | Afreet             |                           |                       |
 | ---- | Aftydrelder        |                           |                       |
@@ -1525,19 +1525,19 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Airochan           |                           |                       |
 | ---- | Aisa               |                           |                       |
 | ---- | Ajert              |                           |                       |
-| ---- | Akeed              |                           |                       |
+| ---- | Akeed              |                           | in listing above      |
 | ---- | Akop               |                           |                       |
 | ---- | Albla              |                           |                       |
 | ---- | Albula             |                           |                       |
 | ---- | Alejia             |                           |                       |
 | ---- | Alktatre           |                           |                       |
 | ---- | Ambele             |                           |                       |
-| ---- | Amindii            |                           |                       |
+| ---- | Amindii            |                           | in listing above      |
 | ---- | Amujati            |                           |                       |
 | ---- | Anakundu           |                           |                       |
 | ---- | Angneear           |                           |                       |
 | ---- | Anixii             |                           |                       |
-| ---- | Aniyun             |                           |                       |
+| ---- | Aniyun             |                           | in listing above      |
 | ---- | Anlisleans         |                           |                       |
 | ---- | Anpaan             |                           |                       |
 | ---- | Answerin           |                           |                       |
@@ -1546,12 +1546,12 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Aqaroo             |                           |                       |
 | ---- | Aqigi              |                           |                       |
 | ---- | Aqku               |                           |                       |
-| ---- | Aquamorphs         |                           |                       |
-| ---- | Aquan              |                           |                       |
+| ---- | Aquamorphs         |                           | in listing above      |
+| ---- | Aquan              |                           | in listing above      |
 | ---- | Arixk              |                           |                       |
 | ---- | Arktu              |                           |                       |
 | ---- | Aroonmar           |                           |                       |
-| ---- | Ascondi            |                           |                       |
+| ---- | Ascondi            |                           | in listing above      |
 | ---- | Ashdak Meshukiiba  |                           |                       |
 | ---- | Ashiin             |                           |                       |
 | ---- | Asoon              |                           |                       |
@@ -1567,7 +1567,7 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Attorn             |                           |                       |
 | ---- | Auhnto             |                           |                       |
 | ---- | Avocaa             |                           |                       |
-| ---- | Ayansh'i           |                           |                       |
+| ---- | Ayansh'i           |                           | no rules; see above   |
 | ---- | Azhanti            |                           |                       |
 | ---- | Bahku              |                           |                       |
 | ---- | Baju               |                           |                       |
@@ -1583,14 +1583,14 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Blotches           |                           |                       |
 | ---- | Borhians           |                           |                       |
 | ---- | Borin              |                           |                       |
-| ---- | Bosak              |                           |                       |
+| ---- | Bosak              |                           | in listing above      |
 | ---- | Bose               |                           |                       |
 | ---- | Bouecse            |                           |                       |
-| ---- | Brinn              |                           |                       |
-| ---- | Bruhre             |                           |                       |
+| ---- | Brinn              |                           | coded above (Brin)    |
+| ---- | Bruhre             |                           | in listing above      |
 | ---- | Burotu             |                           |                       |
 | ---- | Bwampbs            |                           |                       |
-| ---- | Bwaps              |                           |                       |
+| ---- | Bwaps              |                           | in listing above      |
 | ---- | Bzruellokh         |                           |                       |
 | ---- | Cafadians          |                           |                       |
 | ---- | Caleuche           |                           |                       |
@@ -1604,16 +1604,16 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Chamru             |                           |                       |
 | ---- | Chinmaya           |                           |                       |
 | ---- | Chips              |                           |                       |
-| ---- | Chokari            |                           |                       |
+| ---- | Chokari            |                           | in listing above      |
 | ---- | Chowwar            |                           |                       |
 | ---- | Ciiaoa             |                           |                       |
 | ---- | Ciruwar            |                           |                       |
 | ---- | Clalovir           |                           |                       |
 | ---- | Cleashitar         |                           |                       |
-| ---- | Clotho             |                           |                       |
+| ---- | Clotho             |                           | coded above (Clot)    |
 | ---- | Cooano             |                           |                       |
 | ---- | Crawni             |                           |                       |
-| ---- | Crenduthaar        |                           |                       |
+| ---- | Crenduthaar        |                           | in listing above      |
 | ---- | Cua                |                           |                       |
 | ---- | Cygmo              |                           |                       |
 | ---- | Daari              |                           |                       |
@@ -1622,8 +1622,8 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Daee               |                           |                       |
 | ---- | Dagaut             |                           |                       |
 | ---- | Dahlitian          |                           |                       |
-| ---- | Darmine            |                           |                       |
-| ---- | Daryen             |                           |                       |
+| ---- | Darmine            |                           | in listing above      |
+| ---- | Daryen             |                           | in listing above      |
 | ---- | Dastri             |                           |                       |
 | ---- | Delrias            |                           |                       |
 | ---- | Denaar             |                           |                       |
@@ -1639,14 +1639,14 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Dradrip            |                           |                       |
 | ---- | Drakarans          |                           |                       |
 | ---- | Drangka            |                           |                       |
-| ---- | Droashav           |                           |                       |
+| ---- | Droashav           |                           | in listing above      |
 | ---- | Dudix              |                           |                       |
 | ---- | Dugail             |                           |                       |
 | ---- | Duiars             |                           |                       |
-| ---- | Dynchia            |                           |                       |
+| ---- | Dynchia            |                           | in listing above      |
 | ---- | Eaie               |                           |                       |
 | ---- | Eattayr            |                           |                       |
-| ---- | Ebokin             |                           |                       |
+| ---- | Ebokin             |                           | in listing above      |
 | ---- | Echium             |                           |                       |
 | ---- | Edlun              |                           |                       |
 | ---- | Eemakin            |                           |                       |
@@ -1666,23 +1666,23 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Eroahyeli          |                           |                       |
 | ---- | Eshaar Ashah       |                           |                       |
 | ---- | Esishiai           |                           |                       |
-| ---- | Eslyat             |                           |                       |
+| ---- | Eslyat             |                           | in listing above      |
 | ---- | Etak'auhew         |                           |                       |
 | ---- | Etgaglyut          |                           |                       |
 | ---- | Etra               |                           |                       |
 | ---- | Etrigele           |                           |                       |
 | ---- | Evantha            |                           |                       |
-| ---- | Ewurmer            |                           |                       |
+| ---- | Ewurmer            |                           | no rules; see above   |
 | ---- | Exinosk            |                           |                       |
 | ---- | Exlyaxan           |                           |                       |
 | ---- | Exoslin            |                           |                       |
-| ---- | Faar               |                           |                       |
+| ---- | Faar               |                           | in listing above      |
 | ---- | Famoono            |                           |                       |
 | ---- | Fatum              |                           |                       |
 | ---- | Feime              |                           |                       |
 | ---- | Fervoriani         |                           |                       |
-| ---- | Floriani           |                           |                       |
-| ---- | Freni              |                           |                       |
+| ---- | Floriani           |                           | coded above (Flor)    |
+| ---- | Freni              |                           | in listing above      |
 | ---- | Froyte             |                           |                       |
 | ---- | Fugharurz          |                           |                       |
 | ---- | Fupiqisk           |                           |                       |
@@ -1704,24 +1704,24 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Gelanan            |                           |                       |
 | ---- | Gelepa             |                           |                       |
 | ---- | Genfert            |                           |                       |
-| ---- | Geonee             |                           |                       |
+| ---- | Geonee             |                           | in listing above      |
 | ---- | Geringer           |                           |                       |
-| ---- | Ghenani            |                           |                       |
+| ---- | Ghenani            |                           | in listing above      |
 | ---- | Ghidfalli          |                           |                       |
 | ---- | Giiguuglum         |                           |                       |
 | ---- | Gilanox            |                           |                       |
 | ---- | Giooskan           |                           |                       |
-| ---- | Girug'kagh         |                           |                       |
-| ---- | Githiaskio         |                           |                       |
-| ---- | Gl'lu              |                           |                       |
+| ---- | Girug'kagh         |                           | in listing above      |
+| ---- | Githiaskio         |                           | in listing above      |
+| ---- | Gl'lu              |                           | in listing above      |
 | ---- | Glooxaasta         |                           |                       |
-| ---- | Gmina              |                           |                       |
-| ---- | Gniivi             |                           |                       |
+| ---- | Gmina              |                           | in listing above      |
+| ---- | Gniivi             |                           | coded above (Gnii)    |
 | ---- | Goblin             |                           |                       |
 | ---- | Goegarakh          |                           |                       |
 | ---- | Gonem              |                           |                       |
 | ---- | Gonzans            |                           |                       |
-| ---- | Graytch            |                           |                       |
+| ---- | Graytch            |                           | coded above (Gray)    |
 | ---- | Grendels           |                           |                       |
 | ---- | Grumm              |                           |                       |
 | ---- | Guaslanoon         |                           |                       |
@@ -1729,29 +1729,29 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Guinuc             |                           |                       |
 | ---- | Guixi              |                           |                       |
 | ---- | Gumahl             |                           |                       |
-| ---- | Gurungan           |                           |                       |
-| ---- | Gurvin             |                           |                       |
+| ---- | Gurungan           |                           | in listing above      |
+| ---- | Gurvin             |                           | in listing above      |
 | ---- | Guuaron            |                           |                       |
 | ---- | Gzi                |                           |                       |
 | ---- | Hagh'hg'k          |                           |                       |
 | ---- | Hak                |                           |                       |
-| ---- | Halkans            |                           |                       |
-| ---- | Hamaran            |                           |                       |
+| ---- | Halkans            |                           | in listing above      |
+| ---- | Hamaran            |                           | coded above (Hama)    |
 | ---- | Hana Saka          |                           |                       |
 | ---- | Hanaosk            |                           |                       |
 | ---- | Hanen              |                           |                       |
-| ---- | Happrhani          |                           |                       |
+| ---- | Happrhani          |                           | in listing above      |
 | ---- | Haspana            |                           |                       |
 | ---- | Heann              |                           |                       |
-| ---- | Hhkar              |                           |                       |
+| ---- | Hhkar              |                           | in listing above      |
 | ---- | Hhrachddrumm       |                           |                       |
 | ---- | Hicroa             |                           |                       |
 | ---- | Hiidamo            |                           |                       |
 | ---- | Hiko               |                           |                       |
-| ---- | Hiver              |                           |                       |
+| ---- | Hiver              |                           | in listing above      |
 | ---- | Hlaia              |                           |                       |
 | ---- | Hlatoi             |                           |                       |
-| ---- | Hloan              |                           |                       |
+| ---- | Hloan              |                           | no rules; see above   |
 | ---- | Hoolar             |                           |                       |
 | ---- | Hreahi             |                           |                       |
 | ---- | Hufo               |                           |                       |
@@ -1774,7 +1774,7 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Igikur             |                           |                       |
 | ---- | Iliani             |                           |                       |
 | ---- | Ilraiki            |                           |                       |
-| ---- | Iltharans          |                           |                       |
+| ---- | Iltharans          |                           | in listing above      |
 | ---- | Iluk'uu            |                           |                       |
 | ---- | Imirici            |                           |                       |
 | ---- | Inasko             |                           |                       |
@@ -1790,7 +1790,7 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Irkan              |                           |                       |
 | ---- | Ishumi             |                           |                       |
 | ---- | Iswacka            |                           |                       |
-| ---- | Ithklur            |                           |                       |
+| ---- | Ithklur            |                           | in listing above      |
 | ---- | Ithuxo             |                           |                       |
 | ---- | Ixualald           |                           |                       |
 | ---- | Iytkike            |                           |                       |
@@ -1798,27 +1798,27 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Izdev              |                           |                       |
 | ---- | Iziri              |                           |                       |
 | ---- | Izli               |                           |                       |
-| ---- | J'aadje            |                           |                       |
+| ---- | J'aadje            |                           | in listing above      |
 | ---- | J'sia              |                           |                       |
-| ---- | Jaibok             |                           |                       |
-| ---- | Jala'Lak           |                           |                       |
+| ---- | Jaibok             |                           | coded above (Jaib)    |
+| ---- | Jala'Lak           |                           | coded above (Jala)    |
 | ---- | Jansa              |                           |                       |
 | ---- | Jaylay-yay         |                           |                       |
 | ---- | Je Jel             |                           |                       |
 | ---- | Jebbeni            |                           |                       |
-| ---- | Jenda              |                           |                       |
+| ---- | Jenda              |                           | coded above (Jend)    |
 | ---- | Jerrbole           |                           |                       |
 | ---- | Jessa              |                           |                       |
 | ---- | Jgd-il-Jagd        |                           |                       |
 | ---- | Jin                |                           |                       |
 | ---- | Jinnat             |                           |                       |
-| ---- | Jonkeereen         |                           |                       |
+| ---- | Jonkeereen         |                           | in listing above      |
 | ---- | Jorlik             |                           |                       |
-| ---- | K'kree             |                           |                       |
+| ---- | K'kree             |                           | in listing above      |
 | ---- | Ka Kelaree         |                           |                       |
 | ---- | Kaargh             |                           |                       |
-| ---- | Kafoe              |                           |                       |
-| ---- | Kaggushus          |                           |                       |
+| ---- | Kafoe              |                           | coded above (Kafo)    |
+| ---- | Kaggushus          |                           | coded above (Kagg)    |
 | ---- | Kalgakrr'          |                           |                       |
 | ---- | Kalingna           |                           |                       |
 | ---- | Kallilku           |                           |                       |
@@ -1828,7 +1828,7 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Kanuwail           |                           |                       |
 | ---- | Kaooa              |                           |                       |
 | ---- | Kargol             |                           |                       |
-| ---- | Karhyri            |                           |                       |
+| ---- | Karhyri            |                           | coded above (Karh)    |
 | ---- | Kariti             |                           |                       |
 | ---- | Karushin           |                           |                       |
 | ---- | Katl*lalt          |                           |                       |
@@ -1837,7 +1837,7 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Kedaoud            |                           |                       |
 | ---- | Kedrokiv           |                           |                       |
 | ---- | Keetamarur         |                           |                       |
-| ---- | Kemlae             |                           |                       |
+| ---- | Kemlae             |                           | in listing above      |
 | ---- | Kepaat             |                           |                       |
 | ---- | Kerlyputar         |                           |                       |
 | ---- | Kerrez             |                           |                       |
@@ -1845,12 +1845,12 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Khiabodlam         |                           |                       |
 | ---- | Khiyrl             |                           |                       |
 | ---- | Khorth             |                           |                       |
-| ---- | Kiakh'iee          |                           |                       |
+| ---- | Kiakh'iee          |                           | coded above (Kiak)    |
 | ---- | Kidulan            |                           |                       |
 | ---- | Kiggugloaf         |                           |                       |
 | ---- | Kiki               |                           |                       |
 | ---- | Kingrua            |                           |                       |
-| ---- | Kirissukyoya       |                           |                       |
+| ---- | Kirissukyoya       |                           | in listing above      |
 | ---- | Kisiro             |                           |                       |
 | ---- | Kiwvik             |                           |                       |
 | ---- | Klath              |                           |                       |
@@ -1866,16 +1866,16 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Koseg              |                           |                       |
 | ---- | Kousalent          |                           |                       |
 | ---- | Kragnab'           |                           |                       |
-| ---- | Krotan             |                           |                       |
-| ---- | Ktiauao            |                           |                       |
+| ---- | Krotan             |                           | in listing above      |
+| ---- | Ktiauao            |                           | in listing above      |
 | ---- | Kunodu             |                           |                       |
 | ---- | Kwaz               |                           |                       |
 | ---- | Lacduskmukap       |                           |                       |
-| ---- | Ladybugs           |                           |                       |
+| ---- | Ladybugs           |                           | in listing above      |
 | ---- | Lalendri           |                           |                       |
-| ---- | Lamura Gav/Teg     |                           |                       |
+| ---- | Lamura Gav/Teg     |                           | coded above (Lamu)    |
 | ---- | Lanash             |                           |                       |
-| ---- | Lancians           |                           |                       |
+| ---- | Lancians           |                           | in listing above      |
 | ---- | Languljigee        |                           |                       |
 | ---- | Lanthusandr        |                           |                       |
 | ---- | Larianz            |                           |                       |
@@ -1886,19 +1886,19 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Ldoocox            |                           |                       |
 | ---- | Learas             |                           |                       |
 | ---- | Leavixu            |                           |                       |
-| ---- | Lhshana            |                           |                       |
-| ---- | Liberts            |                           |                       |
+| ---- | Lhshana            |                           | in listing above      |
+| ---- | Liberts            |                           | in listing above      |
 | ---- | Lithkind           |                           |                       |
 | ---- | Llaekharu          |                           |                       |
 | ---- | Llayag             |                           |                       |
-| ---- | Llellewyloly       |                           |                       |
+| ---- | Llellewyloly       |                           | in listing above      |
 | ---- | Llyrnian           |                           |                       |
 | ---- | Loeskalth          |                           |                       |
 | ---- | Lokoosun           |                           |                       |
 | ---- | Loubau             |                           |                       |
 | ---- | Lumu               |                           |                       |
-| ---- | Lurent             |                           |                       |
-| ---- | Luriani/Roryniar   |                           |                       |
+| ---- | Lurent             |                           | in listing above      |
+| ---- | Luriani/Roryniar   |                           | in listing above      |
 | ---- | Luupim             |                           |                       |
 | ---- | Luxuua             |                           |                       |
 | ---- | Lyanawro           |                           |                       |
@@ -1907,16 +1907,16 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Maarap             |                           |                       |
 | ---- | Mahkahraik         |                           |                       |
 | ---- | Makochar           |                           |                       |
-| ---- | MalG               |                           |                       |
-| ---- | Marzians           |                           |                       |
-| ---- | Maskai             |                           |                       |
+| ---- | MalG               |                           | in listing above      |
+| ---- | Marzians           |                           | in listing above      |
+| ---- | Maskai             |                           | coded above (Mask)    |
 | ---- | Mavuzo             |                           |                       |
 | ---- | Mazjaru            |                           |                       |
 | ---- | Meckparo           |                           |                       |
 | ---- | Medrarust          |                           |                       |
 | ---- | Melorr             |                           |                       |
 | ---- | Meuxu              |                           |                       |
-| ---- | Mewey              |                           |                       |
+| ---- | Mewey              |                           | in listing above      |
 | ---- | Me’kax             |                           |                       |
 | ---- | Miiminri           |                           |                       |
 | ---- | Mikhidians         |                           |                       |
@@ -1931,8 +1931,8 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Muadem             |                           |                       |
 | ---- | Mucalin            |                           |                       |
 | ---- | Mulok              |                           |                       |
-| ---- | Murian             |                           |                       |
-| ---- | Murrissi           |                           |                       |
+| ---- | Murian             |                           | in listing above      |
+| ---- | Murrissi           |                           | in listing above      |
 | ---- | Muu                |                           |                       |
 | ---- | Naeaoo             |                           |                       |
 | ---- | Nagad              |                           |                       |
@@ -1946,7 +1946,7 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Naoou              |                           |                       |
 | ---- | Nebie              |                           |                       |
 | ---- | Neiikhi            |                           |                       |
-| ---- | Nenlat             |                           |                       |
+| ---- | Nenlat             |                           | in listing above      |
 | ---- | Nenu               |                           |                       |
 | ---- | Neozinga           |                           |                       |
 | ---- | Nesya              |                           |                       |
@@ -1976,7 +1976,7 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Onaqav             |                           |                       |
 | ---- | Ongodala           |                           |                       |
 | ---- | Onkken             |                           |                       |
-| ---- | Oo-ne-beto-pon-tee |                           |                       |
+| ---- | Oo-ne-beto-pon-tee |                           | in listing above      |
 | ---- | Oom Kha            |                           |                       |
 | ---- | Oonuoa             |                           |                       |
 | ---- | Oooponoo           |                           |                       |
@@ -1987,7 +1987,7 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Opedia             |                           |                       |
 | ---- | Opliaraz           |                           |                       |
 | ---- | Orarnak            |                           |                       |
-| ---- | Ormine             |                           |                       |
+| ---- | Ormine             |                           | in listing above      |
 | ---- | Orogh              |                           |                       |
 | ---- | Orpheides          |                           |                       |
 | ---- | Oskac              |                           |                       |
@@ -2031,9 +2031,9 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Raekhsva           |                           |                       |
 | ---- | Ragamar            |                           |                       |
 | ---- | Rahnha             |                           |                       |
-| ---- | Rammak             |                           |                       |
+| ---- | Rammak             |                           | in listing above      |
 | ---- | Regawrat           |                           |                       |
-| ---- | Resavolk           |                           |                       |
+| ---- | Resavolk           |                           | in listing above      |
 | ---- | Rirooawhii         |                           |                       |
 | ---- | Roapa              |                           |                       |
 | ---- | Roche              |                           |                       |
@@ -2049,7 +2049,7 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Ry'Bryn            |                           |                       |
 | ---- | Rynkatropa         |                           |                       |
 | ---- | S'geth             |                           |                       |
-| ---- | S'mrii             |                           |                       |
+| ---- | S'mrii             |                           | coded above (S'mr)    |
 | ---- | Saanshakase        |                           |                       |
 | ---- | Sahib              |                           |                       |
 | ---- | Sakasa-Siro        |                           |                       |
@@ -2058,19 +2058,19 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Sasnak             |                           |                       |
 | ---- | Satha              |                           |                       |
 | ---- | Satt               |                           |                       |
-| ---- | Saurians           |                           |                       |
+| ---- | Saurians           |                           | in listing above      |
 | ---- | Saxai              |                           |                       |
-| ---- | Scanian            |                           |                       |
+| ---- | Scanian            |                           | coded above (Scan)    |
 | ---- | Schalli            |                           |                       |
 | ---- | Sciapods           |                           |                       |
 | ---- | Sedas              |                           |                       |
-| ---- | Segani             |                           |                       |
-| ---- | Selenite           |                           |                       |
+| ---- | Segani             |                           | in listing above      |
+| ---- | Selenite           |                           | in listing above      |
 | ---- | Seoesse            |                           |                       |
 | ---- | Sestan             |                           |                       |
 | ---- | Shela              |                           |                       |
 | ---- | Sheol              |                           |                       |
-| ---- | Shi'awei           |                           |                       |
+| ---- | Shi'awei           |                           | in listing above      |
 | ---- | Shrashee           |                           |                       |
 | ---- | Shriekers          |                           |                       |
 | ---- | Sickata            |                           |                       |
@@ -2085,24 +2085,24 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Sonraki            |                           |                       |
 | ---- | Sonroroo           |                           |                       |
 | ---- | Sooluk             |                           |                       |
-| ---- | Souggvuez          |                           |                       |
+| ---- | Souggvuez          |                           | in listing above      |
 | ---- | Spakevo            |                           |                       |
 | ---- | Spatharo           |                           |                       |
 | ---- | Spuanaa            |                           |                       |
-| ---- | Sred!Ni            |                           |                       |
-| ---- | Ssienjhiovla       |                           |                       |
+| ---- | Sred!Ni            |                           | no rules; see above   |
+| ---- | Ssienjhiovla       |                           | in listing above      |
 | ---- | Sst'ankh'rii       |                           |                       |
-| ---- | Stalkers           |                           |                       |
+| ---- | Stalkers           |                           | coded above (Stal)    |
 | ---- | Subol              |                           |                       |
-| ---- | Suerrat            |                           |                       |
-| ---- | Sulliji            |                           |                       |
+| ---- | Suerrat            |                           | in listing above      |
+| ---- | Sulliji            |                           | coded above (Sull)    |
 | ---- | Sundowners         |                           |                       |
 | ---- | Suru-Oto           |                           |                       |
 | ---- | Susmata            |                           |                       |
-| ---- | Swanfeh            |                           |                       |
-| ---- | Sydites            |                           |                       |
+| ---- | Swanfeh            |                           | in listing above      |
+| ---- | Sydites            |                           | in listing above      |
 | ---- | Syia               |                           |                       |
-| ---- | Syleans            |                           |                       |
+| ---- | Syleans            |                           | in listing above      |
 | ---- | T'yeh              |                           |                       |
 | ---- | Tadonga            |                           |                       |
 | ---- | Tagaar             |                           |                       |
@@ -2110,17 +2110,17 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Tahavi             |                           |                       |
 | ---- | Taixat             |                           |                       |
 | ---- | Tapax              |                           |                       |
-| ---- | Tapazmal           |                           |                       |
+| ---- | Tapazmal           |                           | coded above (Tapa)    |
 | ---- | Tashaki            |                           |                       |
-| ---- | Taureans           |                           |                       |
+| ---- | Taureans           |                           | coded above (Taur)    |
 | ---- | Tayuho             |                           |                       |
-| ---- | Teakhea            |                           |                       |
+| ---- | Teakhea            |                           | in listing above      |
 | ---- | Tethmari           |                           |                       |
 | ---- | Tewihah            |                           |                       |
-| ---- | Tezcat             |                           |                       |
+| ---- | Tezcat             |                           | in listing above      |
 | ---- | Thacullyan         |                           |                       |
 | ---- | Thaggeshi          |                           |                       |
-| ---- | Thonane            |                           |                       |
+| ---- | Thonane            |                           | in listing above      |
 | ---- | Thorellians        |                           |                       |
 | ---- | Thotrazef          |                           |                       |
 | ---- | Thovala            |                           |                       |
@@ -2129,7 +2129,7 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Tilpish            |                           |                       |
 | ---- | Tirril             |                           |                       |
 | ---- | Tlenk              |                           |                       |
-| ---- | Tlyetrai           |                           |                       |
+| ---- | Tlyetrai           |                           | in listing above      |
 | ---- | Toaba              |                           |                       |
 | ---- | Tobai              |                           |                       |
 | ---- | Todriwa            |                           |                       |
@@ -2146,7 +2146,7 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Uapdranu           |                           |                       |
 | ---- | Uckcekilyn         |                           |                       |
 | ---- | Uhnuphe            |                           |                       |
-| ---- | Ulane              |                           |                       |
+| ---- | Ulane              |                           | in listing above      |
 | ---- | Ulothyes           |                           |                       |
 | ---- | Umvaol             |                           |                       |
 | ---- | Ungrest            |                           |                       |
@@ -2156,9 +2156,9 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Uquilar            |                           |                       |
 | ---- | Urpayans           |                           |                       |
 | ---- | Urpurret           |                           |                       |
-| ---- | Ursa               |                           |                       |
+| ---- | Ursa               |                           | in listing above      |
 | ---- | Ursty              |                           |                       |
-| ---- | Urunishani         |                           |                       |
+| ---- | Urunishani         |                           | in listing above      |
 | ---- | Uulip              |                           |                       |
 | ---- | Uutra              |                           |                       |
 | ---- | Uxoron             |                           |                       |
@@ -2166,13 +2166,13 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Vapethi            |                           |                       |
 | ---- | Varaha             |                           |                       |
 | ---- | Vardin             |                           |                       |
-| ---- | Vegans             |                           |                       |
-| ---- | Veghu              |                           |                       |
+| ---- | Vegans             |                           | in listing above      |
+| ---- | Veghu              |                           | no rules; see above   |
 | ---- | Vexx               |                           |                       |
 | ---- | Vicarii            |                           |                       |
 | ---- | Viji               |                           |                       |
 | ---- | Virkesh            |                           |                       |
-| ---- | Virushi            |                           |                       |
+| ---- | Virushi            |                           | in listing above      |
 | ---- | Vissekti           |                           |                       |
 | ---- | Vozkell            |                           |                       |
 | ---- | Vu Medach          |                           |                       |
@@ -2196,28 +2196,28 @@ future tracking (rule sources found, refs added, creation rules status, etc.).
 | ---- | Xienner            |                           |                       |
 | ---- | Xu'rokotani        |                           |                       |
 | ---- | Xubux              |                           |                       |
-| ---- | Yafizethe          |                           |                       |
+| ---- | Yafizethe          |                           | in listing above      |
 | ---- | Yaitlat            |                           |                       |
 | ---- | Yand               |                           |                       |
 | ---- | Yarah-Dak          |                           |                       |
 | ---- | Yeasaol            |                           |                       |
 | ---- | Yegha              |                           |                       |
 | ---- | Yelelk             |                           |                       |
-| ---- | Yileans            |                           |                       |
+| ---- | Yileans            |                           | coded above (Yile)    |
 | ---- | Ykoro              |                           |                       |
-| ---- | Yn-tsai            |                           |                       |
+| ---- | Yn-tsai            |                           | in listing above      |
 | ---- | Yont               |                           |                       |
 | ---- | Yrogonomi          |                           |                       |
 | ---- | Z'Kr               |                           |                       |
 | ---- | Z'krall            |                           |                       |
-| ---- | Za'tachk           |                           |                       |
+| ---- | Za'tachk           |                           | in listing above      |
 | ---- | Zakhsoukh          |                           |                       |
 | ---- | Zarn               |                           |                       |
 | ---- | Zarodysh           |                           |                       |
 | ---- | Zaru               |                           |                       |
 | ---- | Zevaqe             |                           |                       |
-| ---- | Zhdianshe          |                           |                       |
+| ---- | Zhdianshe          |                           | in listing above      |
 | ---- | Zhurphani          |                           |                       |
-| ---- | Ziadd              |                           |                       |
+| ---- | Ziadd              |                           | coded above (Ziad)    |
 | ---- | Zirduluush         |                           |                       |
 | ---- | Zithari            |                           |                       |
