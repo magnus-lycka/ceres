@@ -33,3 +33,8 @@ class Sophont:
 HUMANITI = Sophont(name='Humaniti', allegiance_pattern='*')
 VILANI = Sophont(name='Vilani', allegiance_pattern='Im*')
 DARMINE = Sophont(name='Darmine', remarks_codes=('Darm', '(Darmine)'))
+LIBERTS = Sophont(name='Liberts', remarks_codes=('Libe', '(Liberts)'))
+MURRISSI = Sophont(name='Murrissi', remarks_codes=('Murr', '(Murrissi)'))
+LANCIANS = Sophont(name='Lancians', remarks_codes=('Lanc', '(Lancians)'))
+SWANFEI = Sophont(name='Swanfei', remarks_codes=('Swan', '(Swanfeh)'))
+URUNISHANI = Sophont(name='Urunishani', remarks_codes=('Urun', '(Urunishani)'))

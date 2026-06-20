@@ -1,37 +1,102 @@
-from ceres.character.domain.sophont.humaniti import DARMINE, HUMANITI, VILANI
+from ceres.character.domain.sophont import available_sophont_names
+from ceres.character.domain.sophont.humaniti import (
+    DARMINE,
+    HUMANITI,
+    LANCIANS,
+    LIBERTS,
+    MURRISSI,
+    SWANFEI,
+    URUNISHANI,
+    VILANI,
+    Sophont,
+)
 from tests.character.helpers import MOCK_WORLD_2
 
-_IMPERIAL_WORLD = MOCK_WORLD_2  # allegiance 'ImDd'
-_NON_IMPERIAL_WORLD = MOCK_WORLD_2.model_copy(update={'allegiance': 'DaCf'})
+_IMPERIAL = MOCK_WORLD_2  # allegiance 'ImDd'
+_NON_IMPERIAL = MOCK_WORLD_2.model_copy(update={'allegiance': 'DaCf'})
 
 
-class TestVilaniAvailability:
-    def test_available_on_imperial_world(self):
-        assert VILANI.available_at(_IMPERIAL_WORLD) is True
+class SophontAvailabilityTests:
+    sophont: Sophont = Sophont(name='Base Class')
+    true_worlds: tuple = ()
+    false_worlds: tuple = ()
 
-    def test_not_available_outside_imperium(self):
-        assert VILANI.available_at(_NON_IMPERIAL_WORLD) is False
+    def test_available_at_true_worlds(self):
+        for world in self.true_worlds:
+            assert self.sophont.available_at(world)
 
+    def test_not_available_at_false_worlds(self):
+        for world in self.false_worlds:
+            assert not self.sophont.available_at(world)
 
-_DARMINE_WORLD = MOCK_WORLD_2.model_copy(update={'remarks': 'Ni Darm5'})
-_DARMINE_WORLD_NAMED = MOCK_WORLD_2.model_copy(update={'remarks': 'Hi In (Darmine)'})
-_NON_DARMINE_WORLD = MOCK_WORLD_2  # remarks: 'Ri Pa Ph An Cp (Spinward Marches) Sa'
-
-
-class TestDarmineAvailability:
-    def test_available_on_world_with_darm_remark(self):
-        assert DARMINE.available_at(_DARMINE_WORLD) is True
-
-    def test_available_on_world_with_parenthesized_darmine(self):
-        assert DARMINE.available_at(_DARMINE_WORLD_NAMED) is True
-
-    def test_not_available_on_world_without_darm_remark(self):
-        assert DARMINE.available_at(_NON_DARMINE_WORLD) is False
+    def test_in_available_sophont_names(self):
+        for world in self.true_worlds:
+            assert self.sophont.name in available_sophont_names(world)
+        for world in self.false_worlds:
+            assert self.sophont.name not in available_sophont_names(world)
 
 
-class TestHumanitiAvailability:
-    def test_available_on_imperial_world(self):
-        assert HUMANITI.available_at(_IMPERIAL_WORLD) is True
+class TestHumanitiAvailability(SophontAvailabilityTests):
+    sophont = HUMANITI
+    true_worlds = (_IMPERIAL, _NON_IMPERIAL)
+    false_worlds = ()
 
-    def test_available_outside_imperium(self):
-        assert HUMANITI.available_at(_NON_IMPERIAL_WORLD) is True
+
+class TestVilaniAvailability(SophontAvailabilityTests):
+    sophont = VILANI
+    true_worlds = (_IMPERIAL,)
+    false_worlds = (_NON_IMPERIAL,)
+
+
+class TestDarmineAvailability(SophontAvailabilityTests):
+    sophont = DARMINE
+    true_worlds = (
+        MOCK_WORLD_2.model_copy(update={'remarks': 'Ni Darm5'}),
+        MOCK_WORLD_2.model_copy(update={'remarks': 'Hi In (Darmine)'}),
+    )
+    false_worlds = (MOCK_WORLD_2,)
+
+
+class TestLibertsAvailability(SophontAvailabilityTests):
+    sophont = LIBERTS
+    true_worlds = (
+        MOCK_WORLD_2.model_copy(update={'remarks': 'Ni Libe3'}),
+        MOCK_WORLD_2.model_copy(update={'remarks': 'Hi In (Liberts)'}),
+    )
+    false_worlds = (MOCK_WORLD_2,)
+
+
+class TestMurrissiAvailability(SophontAvailabilityTests):
+    sophont = MURRISSI
+    true_worlds = (
+        MOCK_WORLD_2.model_copy(update={'remarks': 'Ni MurrW'}),
+        MOCK_WORLD_2.model_copy(update={'remarks': 'Hi In (Murrissi)'}),
+    )
+    false_worlds = (MOCK_WORLD_2,)
+
+
+class TestUrunishaniAvailability(SophontAvailabilityTests):
+    sophont = URUNISHANI
+    true_worlds = (
+        MOCK_WORLD_2.model_copy(update={'remarks': 'Ni Urun5'}),
+        MOCK_WORLD_2.model_copy(update={'remarks': 'Hi In (Urunishani)'}),
+    )
+    false_worlds = (MOCK_WORLD_2,)
+
+
+class TestSwanfeiAvailability(SophontAvailabilityTests):
+    sophont = SWANFEI
+    true_worlds = (
+        MOCK_WORLD_2.model_copy(update={'remarks': 'Ni Swan3'}),
+        MOCK_WORLD_2.model_copy(update={'remarks': 'Hi In (Swanfeh)'}),
+    )
+    false_worlds = (MOCK_WORLD_2,)
+
+
+class TestLanciansAvailability(SophontAvailabilityTests):
+    sophont = LANCIANS
+    true_worlds = (
+        MOCK_WORLD_2.model_copy(update={'remarks': 'Ni Lanc4'}),
+        MOCK_WORLD_2.model_copy(update={'remarks': 'Hi In (Lancians)'}),
+    )
+    false_worlds = (MOCK_WORLD_2,)

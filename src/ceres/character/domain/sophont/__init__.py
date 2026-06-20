@@ -1,7 +1,17 @@
 from ceres.adapters.travellermap import TravellerMapWorld
-from ceres.character.domain.sophont.humaniti import HUMANITI, VILANI, Sophont
+from ceres.character.domain.sophont.humaniti import (
+    DARMINE,
+    HUMANITI,
+    LANCIANS,
+    LIBERTS,
+    MURRISSI,
+    SWANFEI,
+    URUNISHANI,
+    VILANI,
+    Sophont,
+)
 
-SOPHONTS: list[Sophont] = [VILANI, HUMANITI]
+SOPHONTS: list[Sophont] = [VILANI, DARMINE, LANCIANS, LIBERTS, MURRISSI, SWANFEI, URUNISHANI, HUMANITI]
 
 SOPHONT_NAMES: list[str] = [s.name for s in SOPHONTS]
 
