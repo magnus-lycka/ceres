@@ -300,7 +300,7 @@ def test_initial_psi_test_establishes_psionics_then_offers_career_choice() -> No
         _started_on(non_imperial),
         Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='777707')),
         Event(id=3, fulfills=(2, 0), handler=InitialPsiTestAcceptedHandler()),
-        Event(id=4, fulfills=(3, 0), handler=InitialPsiTestHandler(roll=9)),
+        Event(fulfills=(3, 0), handler=InitialPsiTestHandler(roll=9)),
     ]
 
     projection = replay(1, events)

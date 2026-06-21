@@ -611,7 +611,7 @@ class TestAgentMusterOut:
     def test_muster_out_row6_choice_benefit_creates_pending(self):
         events = [
             *self._muster_out_setup(),
-            Event(id=10, fulfills=(9, 0), handler=MusterOutHandler(table='benefits', roll=6)),
+            Event(fulfills=(9, 0), handler=MusterOutHandler(table='benefits', roll=6)),
         ]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingBenefitChoice)), None)

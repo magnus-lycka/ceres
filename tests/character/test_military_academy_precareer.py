@@ -51,7 +51,7 @@ def test_entry_grants_direct_tied_career_service_skills_and_skips_choice_lists(m
 
     next_pending_idx = academy.apply_entry(
         projection,
-        Event(id=7, handler=PreCareerEntryHandler(precareer='Army Academy', roll=9)),
+        Event(handler=PreCareerEntryHandler(precareer='Army Academy', roll=9)),
         pending_idx=3,
     )
 
@@ -73,7 +73,7 @@ def test_graduation_increases_edu_queues_auto_qualification_and_notes_manual_ben
 
     next_pending_idx = academy.apply_graduation(
         projection,
-        Event(id=9, handler=PreCareerGraduationHandler(roll=10)),
+        Event(handler=PreCareerGraduationHandler(roll=10)),
         honours=False,
     )
 
@@ -95,7 +95,7 @@ def test_graduation_with_honours_also_increases_soc_and_marks_automatic_commissi
 
     academy.apply_graduation(
         projection,
-        Event(id=10, handler=PreCareerGraduationHandler(roll=12)),
+        Event(handler=PreCareerGraduationHandler(roll=12)),
         honours=True,
     )
 
@@ -111,7 +111,7 @@ def test_failed_graduation_above_natural_two_allows_auto_entry_without_commissio
 
     academy.apply_failed_graduation(
         projection,
-        Event(id=11, handler=PreCareerGraduationHandler(roll=3)),
+        Event(handler=PreCareerGraduationHandler(roll=3)),
     )
 
     assert projection.auto_qualify_careers == [Army]
@@ -127,7 +127,7 @@ def test_failed_graduation_on_natural_two_has_no_auto_entry_effect():
 
     academy.apply_failed_graduation(
         projection,
-        Event(id=12, handler=PreCareerGraduationHandler(roll=2)),
+        Event(handler=PreCareerGraduationHandler(roll=2)),
     )
 
     assert projection.auto_qualify_careers == []

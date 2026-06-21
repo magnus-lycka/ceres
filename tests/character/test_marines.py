@@ -51,22 +51,22 @@ from tests.character.helpers import MOCK_WORLD, AnySkillAtLevelTestMixin, Charac
 
 def _setup() -> list:
     """STR=7 DEX=8 END=6 INT=9 EDU=10 SOC=5 — EDU DM+2."""
+    ev1 = Event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Cpl'))
+    ev2 = Event(fulfills=(ev1.id, 0), handler=UcpHandler(ucp='7869A5'))
     return [
-        Event(id=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Cpl')),
-        Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='7869A5')),
-        Event(
-            id=3, fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()])
-        ),
+        ev1,
+        ev2,
+        Event(fulfills=(ev2.id, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()])),
     ]
 
 
 def _enter_marines(assignment: str = 'Support', qual_roll: int = 6) -> list:
     """Through qualification — END 6+, END=6 DM+0, roll 6 → 6 ≥ 6."""
+    _s = _setup()
     return [
-        *_setup(),
+        *_s,
         Event(
-            id=4,
-            fulfills=(3, 0),
+            fulfills=(_s[-1].id, 0),
             handler=CareerEntryHandler(
                 career=MARINES, assignment=MARINES.assignment(assignment), qualification_roll=qual_roll
             ),
@@ -79,11 +79,13 @@ def _through_survive(assignment: str = 'Support', survive_roll: int = 5) -> list
 
     Support survival: END 5+, DM+0, roll 5 → 5 ≥ 5 (pass).
     """
-    return [*_enter_marines(assignment), Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=survive_roll))]
+    _ent = _enter_marines(assignment)
+    return [*_ent, Event(fulfills=(_ent[-1].id, 0), handler=SurviveHandler(roll=survive_roll))]
 
 
 def _through_term_event(event_roll: int, assignment: str = 'Support') -> list:
-    return [*_through_survive(assignment), Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=event_roll))]
+    _surv = _through_survive(assignment)
+    return [*_surv, Event(fulfills=(_surv[-1].id, 0), handler=TermEventHandler(roll=event_roll))]
 
 
 # ── mishap 4: black ops mission ───────────────────────────────────────────────
@@ -91,25 +93,28 @@ def _through_term_event(event_roll: int, assignment: str = 'Support') -> list:
 
 class TestMarinesMishap4:
     def _setup_to_mishap(self) -> list:
+        _ent = _enter_marines()
         return [
-            *_enter_marines(),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=4)),  # END 5+, DM+0, 4 < 5 — fail
+            *_ent,
+            Event(fulfills=(_ent[-1].id, 0), handler=SurviveHandler(roll=4)),  # END 5+, DM+0, 4 < 5 — fail
         ]
 
     def test_mishap_4_creates_choice_pending(self):
-        events = [*self._setup_to_mishap(), Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=4))]
+        _mish = self._setup_to_mishap()
+        events = [*_mish, Event(fulfills=(_mish[-1].id, 0), handler=MishapHandler(roll=4))]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingChoices)), None)
         assert pending is not None
         assert {type(c) for c in pending.choices} == {MarinesMishap4Refuse, MarinesMishap4Accept}
 
     def test_refuse_adds_contact(self):
+        _base = self._setup_to_mishap()
+        ev6 = Event(fulfills=(_base[-1].id, 0), handler=MishapHandler(roll=4))
         events = [
-            *self._setup_to_mishap(),
-            Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=4)),
+            *_base,
+            ev6,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(ev6.id, 0),
                 handler=CareerChoiceHandler(choice=MarinesMishap4Refuse.model_fields['kind'].default),
             ),
         ]
@@ -118,12 +123,13 @@ class TestMarinesMishap4:
         assert len(contacts) == 1
 
     def test_refuse_ends_career_and_loses_benefit(self):
+        _base = self._setup_to_mishap()
+        ev6 = Event(fulfills=(_base[-1].id, 0), handler=MishapHandler(roll=4))
         events = [
-            *self._setup_to_mishap(),
-            Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=4)),
+            *_base,
+            ev6,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(ev6.id, 0),
                 handler=CareerChoiceHandler(choice=MarinesMishap4Refuse.model_fields['kind'].default),
             ),
         ]
@@ -132,12 +138,13 @@ class TestMarinesMishap4:
         assert not any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
 
     def test_accept_creates_skill_roll(self):
+        _base = self._setup_to_mishap()
+        ev6 = Event(fulfills=(_base[-1].id, 0), handler=MishapHandler(roll=4))
         events = [
-            *self._setup_to_mishap(),
-            Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=4)),
+            *_base,
+            ev6,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(ev6.id, 0),
                 handler=CareerChoiceHandler(choice=MarinesMishap4Accept.model_fields['kind'].default),
             ),
         ]
@@ -147,30 +154,34 @@ class TestMarinesMishap4:
         assert pending.options == [Deception(), Persuade()]
 
     def test_accept_success_continues_career(self):
+        _base = self._setup_to_mishap()
+        ev6 = Event(fulfills=(_base[-1].id, 0), handler=MishapHandler(roll=4))
+        ev7 = Event(
+            fulfills=(ev6.id, 0),
+            handler=CareerChoiceHandler(choice=MarinesMishap4Accept.model_fields['kind'].default),
+        )
         events = [
-            *self._setup_to_mishap(),
-            Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=4)),
-            Event(
-                id=7,
-                fulfills=(6, 0),
-                handler=CareerChoiceHandler(choice=MarinesMishap4Accept.model_fields['kind'].default),
-            ),
-            Event(id=8, fulfills=(7, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=9)),
+            *_base,
+            ev6,
+            ev7,
+            Event(fulfills=(ev7.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=9)),
         ]
         projection = replay(1, events)
         assert projection.summary.current_career is not None
         assert projection.summary.current_career.name == 'Marines'
 
     def test_accept_failure_ends_career_and_loses_benefit(self):
+        _base = self._setup_to_mishap()
+        ev6 = Event(fulfills=(_base[-1].id, 0), handler=MishapHandler(roll=4))
+        ev7 = Event(
+            fulfills=(ev6.id, 0),
+            handler=CareerChoiceHandler(choice=MarinesMishap4Accept.model_fields['kind'].default),
+        )
         events = [
-            *self._setup_to_mishap(),
-            Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=4)),
-            Event(
-                id=7,
-                fulfills=(6, 0),
-                handler=CareerChoiceHandler(choice=MarinesMishap4Accept.model_fields['kind'].default),
-            ),
-            Event(id=8, fulfills=(7, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
+            *_base,
+            ev6,
+            ev7,
+            Event(fulfills=(ev7.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
         ]
         projection = replay(1, events)
         assert projection.summary.current_career is None
@@ -211,9 +222,10 @@ class TestMarinesEvent6:
         assert pending.options == [Melee(), GunCombat()]
 
     def test_success_creates_tactics_or_leadership_choice(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=9)),
+            *base,
+            Event(fulfills=(base[-1].id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=9)),
         ]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
@@ -221,17 +233,19 @@ class TestMarinesEvent6:
         assert pending.options == [Tactics(), Leadership()]
 
     def test_failure_adds_injury_problem(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
+            *base,
+            Event(fulfills=(base[-1].id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
         ]
         projection = replay(1, events)
         assert any('injur' in p.lower() for p in projection.summary.problems)
 
     def test_failure_creates_advancement_pending(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
+            *base,
+            Event(fulfills=(base[-1].id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
@@ -254,11 +268,11 @@ class TestMarinesEvent9:
         assert {type(c) for c in pending.choices} == {MarinesEvent9Report, MarinesEvent9Protect}
 
     def test_report_adds_enemy(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
+            *base,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(base[-1].id, 0),
                 handler=CareerChoiceHandler(choice=MarinesEvent9Report.model_fields['kind'].default),
             ),
         ]
@@ -267,11 +281,11 @@ class TestMarinesEvent9:
         assert len(enemies) == 1
 
     def test_report_schedules_advancement_dm_2(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
+            *base,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(base[-1].id, 0),
                 handler=CareerChoiceHandler(choice=MarinesEvent9Report.model_fields['kind'].default),
             ),
         ]
@@ -279,11 +293,11 @@ class TestMarinesEvent9:
         assert projection.pending_advancement_dm == 2
 
     def test_protect_adds_ally(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
+            *base,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(base[-1].id, 0),
                 handler=CareerChoiceHandler(choice=MarinesEvent9Protect.model_fields['kind'].default),
             ),
         ]
@@ -292,11 +306,11 @@ class TestMarinesEvent9:
         assert len(allies) == 1
 
     def test_protect_schedules_advancement_dm_1(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
+            *base,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(base[-1].id, 0),
                 handler=CareerChoiceHandler(choice=MarinesEvent9Protect.model_fields['kind'].default),
             ),
         ]
@@ -305,10 +319,12 @@ class TestMarinesEvent9:
 
     def test_both_choices_queue_career_progress(self):
         for choice_cls in (MarinesEvent9Report, MarinesEvent9Protect):
+            base = self._setup_to_event()
             events = [
-                *self._setup_to_event(),
+                *base,
                 Event(
-                    id=7, fulfills=(6, 0), handler=CareerChoiceHandler(choice=choice_cls.model_fields['kind'].default)
+                    fulfills=(base[-1].id, 0),
+                    handler=CareerChoiceHandler(choice=choice_cls.model_fields['kind'].default),
                 ),
             ]
             projection = replay(1, events)

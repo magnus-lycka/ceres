@@ -79,7 +79,7 @@ def _events() -> list:
         # Muster out: 2 rolls (term_count=2, rank=0), sequential
         Event(id=15, fulfills=(14, 0), handler=MusterOutHandler(table='benefits', roll=6)),  # scout_ship
         Event(id=16, fulfills=(15, 0), handler=MusterOutHandler(table='cash', roll=1)),  # Cr20,000
-        Event(id=17, fulfills=(16, 0), handler=FinishCreationHandler()),
+        Event(fulfills=(16, 0), handler=FinishCreationHandler()),
     ]
 
 

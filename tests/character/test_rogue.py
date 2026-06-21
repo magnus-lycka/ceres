@@ -37,36 +37,37 @@ from tests.character.helpers import MOCK_WORLD, CharacterDriver
 
 def _setup() -> list:
     """STR=7 DEX=8 END=6 INT=9 EDU=10 SOC=5 — DEX DM+1."""
-    return [
-        Event(id=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Riv')),
-        Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='7869A5')),
-        Event(
-            id=3, fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()])
-        ),
-    ]
+    started = Event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Riv'))
+    ucp = Event(fulfills=(started.id, 0), handler=UcpHandler(ucp='7869A5'))
+    background = Event(
+        fulfills=(ucp.id, 0),
+        handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()]),
+    )
+    return [started, ucp, background]
 
 
 def _enter_rogue(assignment: str = 'Thief', qual_roll: int = 6) -> list:
     """Through qualification — DEX 6+, DEX=8 DM+0, roll 6 → 6 ≥ 6."""
+    base = _setup()
+    entry = Event(
+        fulfills=(base[-1].id, 0),
+        handler=CareerEntryHandler(career=ROGUE, assignment=ROGUE.assignment(assignment), qualification_roll=qual_roll),
+    )
     return [
-        *_setup(),
-        Event(
-            id=4,
-            fulfills=(3, 0),
-            handler=CareerEntryHandler(
-                career=ROGUE, assignment=ROGUE.assignment(assignment), qualification_roll=qual_roll
-            ),
-        ),
+        *base,
+        entry,
     ]
 
 
 def _through_survive(assignment: str = 'Thief', survive_roll: int = 5) -> list:
     """Through survival — Thief DEX 6+, DM+1, roll 5 → 6 ≥ 6."""
-    return [*_enter_rogue(assignment), Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=survive_roll))]
+    base = _enter_rogue(assignment)
+    return [*base, Event(fulfills=(base[-1].id, 0), handler=SurviveHandler(roll=survive_roll))]
 
 
 def _through_term_event(event_roll: int) -> list:
-    return [*_through_survive(), Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=event_roll))]
+    base = _through_survive()
+    return [*base, Event(fulfills=(base[-1].id, 0), handler=TermEventHandler(roll=event_roll))]
 
 
 # ── mishap 2: arrested → Prisoner ────────────────────────────────────────────
@@ -74,17 +75,16 @@ def _through_term_event(event_roll: int) -> list:
 
 class TestRogueMishap2:
     def _setup_to_mishap(self) -> list:
-        return [
-            *_enter_rogue(),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=4)),  # DEX 6+, DM+1, 4 → 5 < 6 — fail
-        ]
+        base = _enter_rogue()
+        return [*base, Event(fulfills=(base[-1].id, 0), handler=SurviveHandler(roll=4))]
 
     def test_mishap_2_creates_mishap_pending(self):
         projection = replay(1, self._setup_to_mishap())
         assert any(isinstance(p, PendingMishap) for p in projection.pending_inputs)
 
     def test_mishap_2_forces_prisoner_as_only_career_choice(self):
-        events = [*self._setup_to_mishap(), Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=2))]
+        base = self._setup_to_mishap()
+        events = [*base, Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=2))]
         projection = replay(1, events)
         # forced_next_career is immediately consumed into PendingCareerChoice with Prisoner as only option
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerChoice)), None)
@@ -92,13 +92,15 @@ class TestRogueMishap2:
         assert [c.name for c in pending.options] == ['Prisoner']
 
     def test_mishap_2_ends_career(self):
-        events = [*self._setup_to_mishap(), Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=2))]
+        base = self._setup_to_mishap()
+        events = [*base, Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=2))]
         projection = replay(1, events)
         assert projection.summary.current_career is None
 
     def test_mishap_2_no_muster_out_in_first_term(self):
         # Mishap in first term with lose_current_term=True → term_count(1) + rank(0) - 1 = 0 rolls
-        events = [*self._setup_to_mishap(), Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=2))]
+        base = self._setup_to_mishap()
+        events = [*base, Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=2))]
         projection = replay(1, events)
         assert not any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
 
@@ -108,13 +110,12 @@ class TestRogueMishap2:
 
 class TestRogueMishap3:
     def _setup_to_mishap(self) -> list:
-        return [
-            *_enter_rogue(),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=4)),  # Thief INT 6+, DM+1, 4→5 < 6 — fail
-        ]
+        base = _enter_rogue()
+        return [*base, Event(fulfills=(base[-1].id, 0), handler=SurviveHandler(roll=4))]
 
     def test_mishap_3_queues_prisoner_roll_pending(self):
-        events = [*self._setup_to_mishap(), Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=3))]
+        base = self._setup_to_mishap()
+        events = [*base, Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=3))]
         projection = replay(1, events)
         pending = next(
             (p for p in projection.pending_inputs if isinstance(p, PendingChoices)),
@@ -123,18 +124,20 @@ class TestRogueMishap3:
         assert pending is not None
 
     def test_mishap_3_no_contacts_adds_rival(self):
-        events = [*self._setup_to_mishap(), Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=3))]
+        base = self._setup_to_mishap()
+        events = [*base, Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=3))]
         projection = replay(1, events)
         rivals = [c for c in projection.summary.connections if isinstance(c, Rival)]
         assert len(rivals) == 1
 
     def test_mishap_3_prisoner_roll_2_forces_prisoner(self):
+        base = self._setup_to_mishap()
+        mishap = Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=3))
         events = [
-            *self._setup_to_mishap(),
-            Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=3)),
+            *base,
+            mishap,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(mishap.id, 0),
                 handler=CareerChoiceHandler(choice=RogueMishap3RollTwo.model_fields['kind'].default),
             ),
         ]
@@ -144,12 +147,13 @@ class TestRogueMishap3:
         assert [c.name for c in pending.options] == ['Prisoner']
 
     def test_mishap_3_prisoner_roll_other_no_forced_prisoner(self):
+        base = self._setup_to_mishap()
+        mishap = Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=3))
         events = [
-            *self._setup_to_mishap(),
-            Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=3)),
+            *base,
+            mishap,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(mishap.id, 0),
                 handler=CareerChoiceHandler(choice=RogueMishap3RollOther.model_fields['kind'].default),
             ),
         ]
@@ -161,12 +165,13 @@ class TestRogueMishap3:
         assert prisoner_pending is None
 
     def test_mishap_3_ends_career(self):
+        base = self._setup_to_mishap()
+        mishap = Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=3))
         events = [
-            *self._setup_to_mishap(),
-            Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=3)),
+            *base,
+            mishap,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(mishap.id, 0),
                 handler=CareerChoiceHandler(choice=RogueMishap3RollOther.model_fields['kind'].default),
             ),
         ]
@@ -197,7 +202,7 @@ class TestRogueMishap3:
 
 class TestRogueEvent3:
     def _setup_to_event(self) -> list:
-        return [*_through_survive(), Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=3))]
+        return _through_term_event(3)
 
     def test_creates_event_pending_with_options(self):
         projection = replay(1, self._setup_to_event())
@@ -209,11 +214,11 @@ class TestRogueEvent3:
         assert {type(c) for c in pending.choices} == {RogueEvent3Defend, RogueEvent3Lawyer}
 
     def test_lawyer_queues_advancement_and_schedules_benefit_reduction(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
+            *base,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(base[-1].id, 0),
                 handler=CareerChoiceHandler(choice=RogueEvent3Lawyer.model_fields['kind'].default),
             ),
         ]
@@ -222,11 +227,11 @@ class TestRogueEvent3:
         assert projection.summary.career_terms[-1].require_muster_out().lost_rolls == 1
 
     def test_lawyer_queues_advancement(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
+            *base,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(base[-1].id, 0),
                 handler=CareerChoiceHandler(choice=RogueEvent3Lawyer.model_fields['kind'].default),
             ),
         ]
@@ -234,11 +239,11 @@ class TestRogueEvent3:
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
     def test_defend_creates_advocate_skill_roll(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
+            *base,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(base[-1].id, 0),
                 handler=CareerChoiceHandler(choice=RogueEvent3Defend.model_fields['kind'].default),
             ),
         ]
@@ -251,54 +256,58 @@ class TestRogueEvent3:
         assert Advocate() in pending.options
 
     def test_defend_success_continues_career(self):
+        base = self._setup_to_event()
+        choice = Event(
+            fulfills=(base[-1].id, 0),
+            handler=CareerChoiceHandler(choice=RogueEvent3Defend.model_fields['kind'].default),
+        )
         events = [
-            *self._setup_to_event(),
-            Event(
-                id=7,
-                fulfills=(6, 0),
-                handler=CareerChoiceHandler(choice=RogueEvent3Defend.model_fields['kind'].default),
-            ),
-            Event(id=8, fulfills=(7, 0), handler=SkillRollHandler(skill=Streetwise(), modified_roll=9)),
+            *base,
+            choice,
+            Event(fulfills=(choice.id, 0), handler=SkillRollHandler(skill=Streetwise(), modified_roll=9)),
         ]
         projection = replay(1, events)
         assert projection.summary.current_career is not None
         assert projection.summary.current_career.name == 'Rogue'
 
     def test_defend_success_creates_advancement_pending(self):
+        base = self._setup_to_event()
+        choice = Event(
+            fulfills=(base[-1].id, 0),
+            handler=CareerChoiceHandler(choice=RogueEvent3Defend.model_fields['kind'].default),
+        )
         events = [
-            *self._setup_to_event(),
-            Event(
-                id=7,
-                fulfills=(6, 0),
-                handler=CareerChoiceHandler(choice=RogueEvent3Defend.model_fields['kind'].default),
-            ),
-            Event(id=8, fulfills=(7, 0), handler=SkillRollHandler(skill=Streetwise(), modified_roll=9)),
+            *base,
+            choice,
+            Event(fulfills=(choice.id, 0), handler=SkillRollHandler(skill=Streetwise(), modified_roll=9)),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
     def test_defend_failure_ends_career(self):
+        base = self._setup_to_event()
+        choice = Event(
+            fulfills=(base[-1].id, 0),
+            handler=CareerChoiceHandler(choice=RogueEvent3Defend.model_fields['kind'].default),
+        )
         events = [
-            *self._setup_to_event(),
-            Event(
-                id=7,
-                fulfills=(6, 0),
-                handler=CareerChoiceHandler(choice=RogueEvent3Defend.model_fields['kind'].default),
-            ),
-            Event(id=8, fulfills=(7, 0), handler=SkillRollHandler(skill=Streetwise(), modified_roll=7)),
+            *base,
+            choice,
+            Event(fulfills=(choice.id, 0), handler=SkillRollHandler(skill=Streetwise(), modified_roll=7)),
         ]
         projection = replay(1, events)
         assert projection.summary.current_career is None
 
     def test_defend_failure_forces_prisoner_as_only_career_choice(self):
+        base = self._setup_to_event()
+        choice = Event(
+            fulfills=(base[-1].id, 0),
+            handler=CareerChoiceHandler(choice=RogueEvent3Defend.model_fields['kind'].default),
+        )
         events = [
-            *self._setup_to_event(),
-            Event(
-                id=7,
-                fulfills=(6, 0),
-                handler=CareerChoiceHandler(choice=RogueEvent3Defend.model_fields['kind'].default),
-            ),
-            Event(id=8, fulfills=(7, 0), handler=SkillRollHandler(skill=Streetwise(), modified_roll=7)),
+            *base,
+            choice,
+            Event(fulfills=(choice.id, 0), handler=SkillRollHandler(skill=Streetwise(), modified_roll=7)),
         ]
         projection = replay(1, events)
         # forced_next_career is consumed into PendingCareerChoice(options=['Prisoner'])
@@ -312,7 +321,7 @@ class TestRogueEvent3:
 
 class TestRogueEvent6:
     def _setup_to_event(self) -> list:
-        return [*_through_survive(), Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=6))]
+        return _through_term_event(6)
 
     def test_creates_event_pending_with_options(self):
         projection = replay(1, self._setup_to_event())
@@ -324,11 +333,11 @@ class TestRogueEvent6:
         assert {type(c) for c in pending.choices} == {RogueEvent6Backstab, RogueEvent6Refuse}
 
     def test_backstab_adds_enemy(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
+            *base,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(base[-1].id, 0),
                 handler=CareerChoiceHandler(choice=RogueEvent6Backstab.model_fields['kind'].default),
             ),
         ]
@@ -337,11 +346,11 @@ class TestRogueEvent6:
         assert len(enemies) == 1
 
     def test_backstab_schedules_advancement_dm(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
+            *base,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(base[-1].id, 0),
                 handler=CareerChoiceHandler(choice=RogueEvent6Backstab.model_fields['kind'].default),
             ),
         ]
@@ -349,11 +358,11 @@ class TestRogueEvent6:
         assert projection.pending_advancement_dm == 2
 
     def test_refuse_adds_contact(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
+            *base,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(base[-1].id, 0),
                 handler=CareerChoiceHandler(choice=RogueEvent6Refuse.model_fields['kind'].default),
             ),
         ]
@@ -362,11 +371,11 @@ class TestRogueEvent6:
         assert len(contacts) >= 1
 
     def test_refuse_no_enemy(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
+            *base,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(base[-1].id, 0),
                 handler=CareerChoiceHandler(choice=RogueEvent6Refuse.model_fields['kind'].default),
             ),
         ]
@@ -376,10 +385,12 @@ class TestRogueEvent6:
 
     def test_both_choices_queue_advancement(self):
         for choice_cls in (RogueEvent6Backstab, RogueEvent6Refuse):
+            base = self._setup_to_event()
             events = [
-                *self._setup_to_event(),
+                *base,
                 Event(
-                    id=7, fulfills=(6, 0), handler=CareerChoiceHandler(choice=choice_cls.model_fields['kind'].default)
+                    fulfills=(base[-1].id, 0),
+                    handler=CareerChoiceHandler(choice=choice_cls.model_fields['kind'].default),
                 ),
             ]
             projection = replay(1, events)
@@ -391,7 +402,7 @@ class TestRogueEvent6:
 
 class TestRogueEvent9:
     def _setup_to_event(self) -> list:
-        return [*_through_survive(), Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=9))]
+        return _through_term_event(9)
 
     def test_creates_skill_roll_pending(self):
         projection = replay(1, self._setup_to_event())
@@ -403,33 +414,37 @@ class TestRogueEvent9:
         assert pending.options == [Stealth(), GunCombat()]
 
     def test_success_schedules_extra_benefit_roll(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Streetwise(), modified_roll=9)),
+            *base,
+            Event(fulfills=(base[-1].id, 0), handler=SkillRollHandler(skill=Streetwise(), modified_roll=9)),
         ]
         projection = replay(1, events)
         assert projection.summary.career_terms[-1].require_muster_out().extra_rolls == 1
 
     def test_failure_adds_injury_problem(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Streetwise(), modified_roll=7)),
+            *base,
+            Event(fulfills=(base[-1].id, 0), handler=SkillRollHandler(skill=Streetwise(), modified_roll=7)),
         ]
         projection = replay(1, events)
         assert any('injur' in p.lower() for p in projection.summary.problems)
 
     def test_success_creates_advancement_pending(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Streetwise(), modified_roll=9)),
+            *base,
+            Event(fulfills=(base[-1].id, 0), handler=SkillRollHandler(skill=Streetwise(), modified_roll=9)),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
     def test_failure_creates_advancement_pending(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Streetwise(), modified_roll=7)),
+            *base,
+            Event(fulfills=(base[-1].id, 0), handler=SkillRollHandler(skill=Streetwise(), modified_roll=7)),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)

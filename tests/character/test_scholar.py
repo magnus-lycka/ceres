@@ -162,7 +162,7 @@ class TestScholarInitialTraining:
         assert not any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
 
     def test_drive_choice_grants_drive_at_level_0(self):
-        events = [*self._setup(), Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive()))]
+        events = [*self._setup(), Event(fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive()))]
         projection = replay(1, events)
 
         assert projection.summary.skill_level(Drive) == 0
@@ -170,7 +170,7 @@ class TestScholarInitialTraining:
     def test_survive_pending_appears_after_both_choices_resolved(self):
         events = [
             *self._setup(),
-            Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
+            Event(fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
         ]
         projection = replay(1, events)
@@ -180,7 +180,7 @@ class TestScholarInitialTraining:
     def test_survive_pending_id_from_last_choice_event(self):
         events = [
             *self._setup(),
-            Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
+            Event(fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
         ]
         projection = replay(1, events)
@@ -214,16 +214,17 @@ class TestScholarTerm:
     """Basic Scholar Field Researcher term: survival, events, advancement, reenlist."""
 
     def _setup_with_scholar(self) -> list:
+        _base = _scholar_setup()
         return [
-            *_scholar_setup(),
+            *_base,
             Event(
                 id=4,
-                fulfills=(3, 0),
+                fulfills=(_base[-1].id, 0),
                 handler=CareerEntryHandler(
                     career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
                 ),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
+            Event(fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
         ]
 
@@ -384,16 +385,17 @@ class TestScholarEvent6:
     """Scholar event 6: roll EDU 8+ to gain any one skill at level 1."""
 
     def _setup_to_event_6(self) -> list:
+        _base = _scholar_setup()
         return [
-            *_scholar_setup(),
+            *_base,
             Event(
                 id=4,
-                fulfills=(3, 0),
+                fulfills=(_base[-1].id, 0),
                 handler=CareerEntryHandler(
                     career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
                 ),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
+            Event(fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
             Event(id=7, fulfills=(6, 0), handler=SurviveHandler(roll=7)),
             Event(id=8, fulfills=(7, 0), handler=TermEventHandler(roll=6)),
@@ -450,16 +452,17 @@ class TestScholarMishap3:
     """Mishap 3: planetary government interference. Player chooses openly or secretly. Career continues."""
 
     def _setup(self) -> list:
+        _base = _scholar_setup()
         return [
-            *_scholar_setup(),
+            *_base,
             Event(
                 id=4,
-                fulfills=(3, 0),
+                fulfills=(_base[-1].id, 0),
                 handler=CareerEntryHandler(
                     career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
                 ),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
+            Event(fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
             Event(id=7, fulfills=(6, 0), handler=SurviveHandler(roll=3)),  # fail
         ]
@@ -546,16 +549,17 @@ class TestScholarMishap5:
     """Mishap 5: work sabotaged. Give up (leave) or start again (stay, lose benefit rolls)."""
 
     def _setup(self) -> list:
+        _base = _scholar_setup()
         return [
-            *_scholar_setup(),
+            *_base,
             Event(
                 id=4,
-                fulfills=(3, 0),
+                fulfills=(_base[-1].id, 0),
                 handler=CareerEntryHandler(
                     career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
                 ),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
+            Event(fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
             Event(id=7, fulfills=(6, 0), handler=SurviveHandler(roll=3)),  # fail
         ]
@@ -700,6 +704,9 @@ class TestScholarEvent3:
         advancement_kind = PendingAdvancement.model_fields['kind'].default
         life_science_type = LifeScience.model_fields['type'].default
         extra_benefit_txt = 'You gain an extra benefit roll at muster out (accepted research against your conscience).'
+        # pending_id[0] is an auto-generated event ID — assert it changed without asserting the value
+        pending_id_0_change = diff.get('values_changed', {}).pop("root['pending_inputs'][0]['pending_id'][0]", None)
+        assert pending_id_0_change is not None and pending_id_0_change['old_value'] != pending_id_0_change['new_value']
         expected_diff = {
             'dictionary_item_removed': ["root['pending_inputs'][0]['choices']"],
             'iterable_item_added': {
@@ -730,7 +737,6 @@ class TestScholarEvent3:
                     'old_value': choices_kind,
                     'new_value': advancement_kind,
                 },
-                "root['pending_inputs'][0]['pending_id'][0]": {'old_value': 8, 'new_value': 9},
                 "root['pending_inputs'][0]['pending_id'][1]": {'old_value': 0, 'new_value': 3},
                 "root['summary']['career_terms'][0]['muster_out']['extra_rolls']": {
                     'old_value': 0,
@@ -750,6 +756,9 @@ class TestScholarEvent3:
 
         choices_kind = PendingChoices.model_fields['kind'].default
         advancement_kind = PendingAdvancement.model_fields['kind'].default
+        # pending_id[0] is an auto-generated event ID — assert it changed without asserting the value
+        pending_id_0_change = diff.get('values_changed', {}).pop("root['pending_inputs'][0]['pending_id'][0]", None)
+        assert pending_id_0_change is not None and pending_id_0_change['old_value'] != pending_id_0_change['new_value']
         expected_diff = {
             'dictionary_item_removed': ["root['pending_inputs'][0]['choices']"],
             'values_changed': {
@@ -761,10 +770,6 @@ class TestScholarEvent3:
                     'old_value': choices_kind,
                     'new_value': advancement_kind,
                 },
-                "root['pending_inputs'][0]['pending_id'][0]": {
-                    'old_value': 8,
-                    'new_value': 9,
-                },
             },
         }
         assert diff == expected_diff
@@ -774,16 +779,17 @@ class TestScholarEvent8:
     """Event 8: opportunity to cheat. Refuse (nothing) or Accept (Deception/Admin 8+)."""
 
     def _setup(self) -> list:
+        _base = _scholar_setup()
         return [
-            *_scholar_setup(),
+            *_base,
             Event(
                 id=4,
-                fulfills=(3, 0),
+                fulfills=(_base[-1].id, 0),
                 handler=CareerEntryHandler(
                     career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
                 ),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
+            Event(fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
             Event(id=7, fulfills=(6, 0), handler=SurviveHandler(roll=7)),
             Event(id=8, fulfills=(7, 0), handler=TermEventHandler(roll=8)),
@@ -891,16 +897,17 @@ class TestScholarEvent11:
     """Event 11: brilliant mentor (Ally already handled). Space Science +1 OR DM+4 to advancement."""
 
     def _setup(self) -> list:
+        _base = _scholar_setup()
         return [
-            *_scholar_setup(),
+            *_base,
             Event(
                 id=4,
-                fulfills=(3, 0),
+                fulfills=(_base[-1].id, 0),
                 handler=CareerEntryHandler(
                     career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
                 ),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
+            Event(fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
             Event(id=7, fulfills=(6, 0), handler=SurviveHandler(roll=7)),
             Event(id=8, fulfills=(7, 0), handler=TermEventHandler(roll=11)),
@@ -962,16 +969,17 @@ class TestFromTableInjury:
     """Scholar mishap 2: injury roll on the Injury table (1D). All six outcomes."""
 
     def _setup_to_mishap_2(self) -> list:
+        _base = _scholar_setup()
         return [
-            *_scholar_setup(),
+            *_base,
             Event(
                 id=4,
-                fulfills=(3, 0),
+                fulfills=(_base[-1].id, 0),
                 handler=CareerEntryHandler(
                     career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
                 ),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
+            Event(fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
             Event(id=7, fulfills=(6, 0), handler=SurviveHandler(roll=3)),  # fail
             Event(id=8, fulfills=(7, 0), handler=MishapHandler(roll=2)),  # Scholar mishap 2: from_table injury + rival
@@ -1152,16 +1160,17 @@ class TestScholarLabShip:
     """Scholar muster out rows 6-7 give lab_ship (Core p.42), not scout_ship."""
 
     def _setup_through_reenlist_false_scholar(self) -> list:
+        _base = _scholar_setup()
         return [
-            *_scholar_setup(),
+            *_base,
             Event(
                 id=4,
-                fulfills=(3, 0),
+                fulfills=(_base[-1].id, 0),
                 handler=CareerEntryHandler(
                     career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
                 ),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
+            Event(fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
             Event(id=7, fulfills=(6, 0), handler=SurviveHandler(roll=7)),
             Event(id=8, fulfills=(7, 0), handler=TermEventHandler(roll=5)),
@@ -1172,7 +1181,7 @@ class TestScholarLabShip:
     def test_benefits_roll_6_gives_lab_ship(self):
         events = [
             *self._setup_through_reenlist_false_scholar(),
-            Event(id=11, fulfills=(10, 0), handler=MusterOutHandler(table='benefits', roll=6)),
+            Event(fulfills=(10, 0), handler=MusterOutHandler(table='benefits', roll=6)),
         ]
         projection = replay(1, events)
 
@@ -1182,7 +1191,7 @@ class TestScholarLabShip:
         # Row 7 (capped at 7 in table) also gives lab_ship
         events = [
             *self._setup_through_reenlist_false_scholar(),
-            Event(id=11, fulfills=(10, 0), handler=MusterOutHandler(table='benefits', roll=6)),
+            Event(fulfills=(10, 0), handler=MusterOutHandler(table='benefits', roll=6)),
         ]
         projection = replay(1, events)
 
@@ -1194,16 +1203,17 @@ class TestScholarScienceChoicesInTables:
     """Scholar skill table entries that are 'Science' offer all broad sciences (Core p.43)."""
 
     def _setup_in_term_2(self, assignment: str = 'Field Researcher') -> list:
+        _base = _scholar_setup()
         return [
-            *_scholar_setup(),
+            *_base,
             Event(
                 id=4,
-                fulfills=(3, 0),
+                fulfills=(_base[-1].id, 0),
                 handler=CareerEntryHandler(
                     career=SCHOLAR, assignment=SCHOLAR.assignment(assignment), qualification_roll=5
                 ),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
+            Event(fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
             Event(id=7, fulfills=(6, 0), handler=SurviveHandler(roll=7)),
             Event(id=8, fulfills=(7, 0), handler=TermEventHandler(roll=5)),
@@ -1214,7 +1224,7 @@ class TestScholarScienceChoicesInTables:
     def test_service_skills_roll_6_creates_science_choice(self):
         events = [
             *self._setup_in_term_2(),
-            Event(id=11, fulfills=(10, 0), handler=SkillTableHandler(table='service_skills', roll=6)),
+            Event(fulfills=(10, 0), handler=SkillTableHandler(table='service_skills', roll=6)),
         ]
         projection = replay(1, events)
 
@@ -1226,7 +1236,7 @@ class TestScholarScienceChoicesInTables:
         # EDU=10 ≥ 10 → can access Scholar advanced_education table
         events = [
             *self._setup_in_term_2(),
-            Event(id=11, fulfills=(10, 0), handler=SkillTableHandler(table='advanced_education', roll=6)),
+            Event(fulfills=(10, 0), handler=SkillTableHandler(table='advanced_education', roll=6)),
         ]
         projection = replay(1, events)
 
@@ -1238,7 +1248,7 @@ class TestScholarScienceChoicesInTables:
         # Core advanced_education row 1: Art (any broad art type)
         events = [
             *self._setup_in_term_2(),
-            Event(id=11, fulfills=(10, 0), handler=SkillTableHandler(table='advanced_education', roll=1)),
+            Event(fulfills=(10, 0), handler=SkillTableHandler(table='advanced_education', roll=1)),
         ]
         projection = replay(1, events)
 
@@ -1249,7 +1259,7 @@ class TestScholarScienceChoicesInTables:
     def test_field_researcher_roll_6_creates_science_choice(self):
         events = [
             *self._setup_in_term_2('Field Researcher'),
-            Event(id=11, fulfills=(10, 0), handler=SkillTableHandler(table='assignment1', roll=6)),
+            Event(fulfills=(10, 0), handler=SkillTableHandler(table='assignment1', roll=6)),
         ]
         projection = replay(1, events)
 
@@ -1260,7 +1270,7 @@ class TestScholarScienceChoicesInTables:
     def test_scientist_roll_3_creates_science_choice(self):
         events = [
             *self._setup_in_term_2('Scientist'),
-            Event(id=11, fulfills=(10, 0), handler=SkillTableHandler(table='assignment2', roll=3)),
+            Event(fulfills=(10, 0), handler=SkillTableHandler(table='assignment2', roll=3)),
         ]
         projection = replay(1, events)
 
@@ -1271,7 +1281,7 @@ class TestScholarScienceChoicesInTables:
     def test_physician_roll_6_creates_science_choice(self):
         events = [
             *self._setup_in_term_2('Physician'),
-            Event(id=11, fulfills=(10, 0), handler=SkillTableHandler(table='assignment3', roll=6)),
+            Event(fulfills=(10, 0), handler=SkillTableHandler(table='assignment3', roll=6)),
         ]
         projection = replay(1, events)
 
@@ -1284,16 +1294,17 @@ class TestScholarMishap3ScienceChoice:
     """Mishap 3 Science +1 is deferred until player chooses which broad science (Core p.44)."""
 
     def _setup_to_choice(self, choice_cls: type[ChoiceBase]) -> list:
+        _base = _scholar_setup()
         return [
-            *_scholar_setup(),
+            *_base,
             Event(
                 id=4,
-                fulfills=(3, 0),
+                fulfills=(_base[-1].id, 0),
                 handler=CareerEntryHandler(
                     career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
                 ),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
+            Event(fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
             Event(id=7, fulfills=(6, 0), handler=SurviveHandler(roll=3)),
             Event(id=8, fulfills=(7, 0), handler=MishapHandler(roll=3)),
@@ -1335,16 +1346,17 @@ class TestPhysicianRankBonuses:
     """Physician rank 1 grants Medic 1 (not Science); Field Researcher rank 1 grants Science (choice)."""
 
     def _setup_to_advancement(self, assignment: str) -> list:
+        _base = _scholar_setup()
         return [
-            *_scholar_setup(),
+            *_base,
             Event(
                 id=4,
-                fulfills=(3, 0),
+                fulfills=(_base[-1].id, 0),
                 handler=CareerEntryHandler(
                     career=SCHOLAR, assignment=SCHOLAR.assignment(assignment), qualification_roll=5
                 ),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
+            Event(fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
             Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
             Event(id=7, fulfills=(6, 0), handler=SurviveHandler(roll=7)),
             Event(id=8, fulfills=(7, 0), handler=TermEventHandler(roll=5)),

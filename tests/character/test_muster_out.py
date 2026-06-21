@@ -480,11 +480,12 @@ class TestMusterOut:
         # Scholar event 5 grants benefit_dm+1 — stored on MusterOut.benefit_roll_dms.
         # The player includes the DM in their roll value (MusterOutEvent.roll already includes DMs).
         # Scholar cash row 1=Cr5000, row 2=Cr10000. Player rolls 1 and applies DM+1 → submits roll=2.
+        _base = _scholar_setup()
         events = [
-            *_scholar_setup(),
+            *_base,
             Event(
                 id=4,
-                fulfills=(3, 0),
+                fulfills=(_base[-1].id, 0),
                 handler=CareerEntryHandler(
                     career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
                 ),
@@ -502,11 +503,12 @@ class TestMusterOut:
 
     def test_scholar_soc_plus_1_benefit(self):
         # Scholar benefits roll 4 → SOC +1 (SOC was 5)
+        _base = _scholar_setup()
         events = [
-            *_scholar_setup(),
+            *_base,
             Event(
                 id=4,
-                fulfills=(3, 0),
+                fulfills=(_base[-1].id, 0),
                 handler=CareerEntryHandler(
                     career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
                 ),
@@ -525,11 +527,12 @@ class TestMusterOut:
 
     def test_scholar_two_ship_shares_benefit(self):
         # Scholar benefits roll 3 → Two Ship Shares → 2 ship_share entries
+        _base = _scholar_setup()
         events = [
-            *_scholar_setup(),
+            *_base,
             Event(
                 id=4,
-                fulfills=(3, 0),
+                fulfills=(_base[-1].id, 0),
                 handler=CareerEntryHandler(
                     career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
                 ),
@@ -548,11 +551,12 @@ class TestMusterOut:
 
     def test_scholar_scientific_equipment_benefit(self):
         # Scholar benefits roll 5 → scientific_equipment
+        _base = _scholar_setup()
         events = [
-            *_scholar_setup(),
+            *_base,
             Event(
                 id=4,
-                fulfills=(3, 0),
+                fulfills=(_base[-1].id, 0),
                 handler=CareerEntryHandler(
                     career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
                 ),
@@ -574,7 +578,7 @@ class TestMusterOut:
         events = [
             *_setup_through_4_terms_advancement(),
             Event(id=23, fulfills=(22, 0), handler=AgingRollHandler(roll=5)),  # no effect (5-4=1)
-            Event(id=24, fulfills=(23, 0), handler=ReenlistHandler(reenlist=False)),
+            Event(fulfills=(23, 0), handler=ReenlistHandler(reenlist=False)),
         ]
         projection = replay(1, events)
 
@@ -586,7 +590,7 @@ class TestMusterOut:
         events = [
             *_setup_through_4_terms_advancement(),
             Event(id=23, fulfills=(22, 0), handler=AgingRollHandler(roll=5)),  # no effect → reenlist pending
-            Event(id=24, fulfills=(23, 0), handler=ReenlistHandler(reenlist=False)),
+            Event(fulfills=(23, 0), handler=ReenlistHandler(reenlist=False)),
         ]
         projection = replay(1, events)
 

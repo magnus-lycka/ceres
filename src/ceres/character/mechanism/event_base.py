@@ -1,6 +1,9 @@
+import itertools
 from typing import Annotated, Any, ClassVar, Literal, get_args, get_origin
 
-from pydantic import BaseModel, BeforeValidator, SerializeAsAny
+from pydantic import BaseModel, BeforeValidator, Field, SerializeAsAny
+
+_id_counter = itertools.count(1_000_000)
 
 
 class EventHandlerBase(BaseModel):
@@ -39,7 +42,7 @@ def _deserialise_event_handler(v: Any) -> EventHandlerBase:
 
 
 class Event(BaseModel):
-    id: int = 0
+    id: int = Field(default_factory=lambda: next(_id_counter))
     fulfills: tuple[int, int] | str | None = None
     handler: Annotated[SerializeAsAny[EventHandlerBase], BeforeValidator(_deserialise_event_handler)]
 

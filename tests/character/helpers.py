@@ -106,28 +106,22 @@ class AdvancedTrainingTestMixin:
         assert pending.options == ['EDU']
 
     def test_success_creates_skill_choice_with_existing_skills(self) -> None:
-        events = [
-            *self._setup_to_event(),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=9)),
-        ]
+        setup = self._setup_to_event()
+        events = [*setup, Event(fulfills=(setup[-1].id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=9))]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
         assert pending is not None
         assert any(isinstance(o, self._existing_service_skill_type()) for o in pending.options)
 
     def test_failure_no_skill_choice(self) -> None:
-        events = [
-            *self._setup_to_event(),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
-        ]
+        setup = self._setup_to_event()
+        events = [*setup, Event(fulfills=(setup[-1].id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7))]
         projection = replay(1, events)
         assert not any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
 
     def test_failure_queues_advancement(self) -> None:
-        events = [
-            *self._setup_to_event(),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
-        ]
+        setup = self._setup_to_event()
+        events = [*setup, Event(fulfills=(setup[-1].id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7))]
         projection = replay(1, events)
         if self._failure_queues_commission():
             assert any(isinstance(p, (PendingAdvancement, PendingCommissionChoice)) for p in projection.pending_inputs)
@@ -173,9 +167,10 @@ class AnySkillAtLevelTestMixin:
 
     def test_success_offers_any_skill_including_absent_ones(self) -> None:
         passing_roll = self._threshold() + 1
+        setup = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=passing_roll)),
+            *setup,
+            Event(fulfills=(setup[-1].id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=passing_roll)),
         ]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
@@ -185,27 +180,22 @@ class AnySkillAtLevelTestMixin:
     def test_success_chosen_skill_granted_at_level_1(self) -> None:
         passing_roll = self._threshold() + 1
         skill = self._absent_skill_instance()
-        events = [
-            *self._setup_to_event(),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=passing_roll)),
-            Event(id=8, fulfills=(7, 0), handler=SkillChoiceHandler(skill=skill)),
-        ]
+        setup = self._setup_to_event()
+        ev7 = Event(fulfills=(setup[-1].id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=passing_roll))
+        ev8 = Event(fulfills=(ev7.id, 0), handler=SkillChoiceHandler(skill=skill))
+        events = [*setup, ev7, ev8]
         projection = replay(1, events)
         assert projection.summary.skill_level(type(skill)) == 1
 
     def test_failure_no_skill_choice(self) -> None:
-        events = [
-            *self._setup_to_event(),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
-        ]
+        setup = self._setup_to_event()
+        events = [*setup, Event(fulfills=(setup[-1].id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7))]
         projection = replay(1, events)
         assert not any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
 
     def test_failure_queues_advancement(self) -> None:
-        events = [
-            *self._setup_to_event(),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
-        ]
+        setup = self._setup_to_event()
+        events = [*setup, Event(fulfills=(setup[-1].id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7))]
         projection = replay(1, events)
         if self._failure_queues_commission():
             assert any(isinstance(p, (PendingAdvancement, PendingCommissionChoice)) for p in projection.pending_inputs)
@@ -219,13 +209,13 @@ def _scholar_setup() -> list:
     Uses Medic instead of Drive so Scholar service_skills row 1 (Drive/Flyer) keeps both options
     open, producing two initial-training choice pendings: Drive/Flyer (.0) and Science (.1).
     """
-    return [
-        Event(id=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')),
-        Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='7869A5')),
-        Event(
-            id=3, fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Medic()])
-        ),
-    ]
+    ev1 = Event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'))
+    ev2 = Event(fulfills=(ev1.id, 0), handler=UcpHandler(ucp='7869A5'))
+    ev3 = Event(
+        fulfills=(ev2.id, 0),
+        handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Medic()]),
+    )
+    return [ev1, ev2, ev3]
 
 
 class CharacterDriver:
@@ -247,7 +237,6 @@ class CharacterDriver:
         return self._projection
 
     def _add(self, event: Any) -> CharacterDriver:
-        event = event.model_copy(update={'id': len(self._events) + 1})
         self._events.append(event)
         self._projection = replay(self._character_id, self._events)
         return self
@@ -300,9 +289,11 @@ class CharacterDriver:
         pending = self._find(PendingSurvive)
         return self._add(Event(fulfills=pending.pending_id, handler=SurviveHandler(roll=roll)))
 
-    def mishap(self, roll: int) -> CharacterDriver:
+    def mishap(self, roll: int, stay_in_career: bool = False) -> CharacterDriver:
         pending = self._find(PendingMishap)
-        return self._add(Event(fulfills=pending.pending_id, handler=MishapHandler(roll=roll)))
+        return self._add(
+            Event(fulfills=pending.pending_id, handler=MishapHandler(roll=roll, stay_in_career=stay_in_career))
+        )
 
     def term_event(self, roll: int) -> CharacterDriver:
         pending = self._find(PendingTermEvent)
@@ -444,6 +435,10 @@ class CharacterDriver:
         return self._add(
             Event(fulfills=pending.pending_id, handler=SkillRollHandler(skill=skill, modified_roll=modified_roll))
         )
+
+    def available_skill_roll_options(self) -> list[Any]:
+        pending = self._find(CareerSkillRollPendingBase)
+        return pending.options
 
 
 def projection_diff(before: CharacterProjection, after: CharacterProjection) -> DeepDiff:

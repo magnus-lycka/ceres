@@ -133,7 +133,7 @@ def test_citizen_subsequent_career_basic_training_choice_unlocks_survival():
             fulfills=(8, 0),
             handler=CareerEntryHandler(career=CITIZEN, assignment=CITIZEN.assignment('Worker'), qualification_roll=5),
         ),
-        Event(id=10, fulfills=(9, 0), handler=SkillChoiceHandler(skill=Mechanic())),
+        Event(fulfills=(9, 0), handler=SkillChoiceHandler(skill=Mechanic())),
     ]
 
     projection = replay(1, events)

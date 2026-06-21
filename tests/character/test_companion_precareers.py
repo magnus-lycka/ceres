@@ -53,7 +53,7 @@ def _base():
         Event(
             id=1, handler=CharacterStartedHandler(sophont=HUMANITI, homeworld=MOCK_WORLD, player='Test', name='Tester')
         ),
-        Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='777707')),  # STR=7 DEX=7 END=7 INT=7 EDU=0 SOC=7
+        Event(fulfills=(1, 0), handler=UcpHandler(ucp='777707')),  # STR=7 DEX=7 END=7 INT=7 EDU=0 SOC=7
     ]
 
 
@@ -66,7 +66,7 @@ class _EstablishPsiForTest(EventHandlerBase):
 
 
 def _psionic_base():
-    return [*_base(), Event(id=0, handler=_EstablishPsiForTest())]
+    return [*_base(), Event(handler=_EstablishPsiForTest())]
 
 
 class _EstablishTrainedPsiForTest(EventHandlerBase):
@@ -81,7 +81,7 @@ class _EstablishTrainedPsiForTest(EventHandlerBase):
 
 
 def _trained_psionic_base():
-    return [*_base(), Event(id=0, handler=_EstablishTrainedPsiForTest())]
+    return [*_base(), Event(handler=_EstablishTrainedPsiForTest())]
 
 
 def _skill_level(projection, name: str) -> int:
@@ -143,8 +143,8 @@ class TestColonialUpbringing:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Colonial Upbringing', roll=5)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
+            Event(fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
             Event(id=6, fulfills=(3, 2), handler=PreCareerGraduationHandler(roll=10)),  # effective=10>=8, no honours
         ]
         projection = replay(1, events)
@@ -155,8 +155,8 @@ class TestColonialUpbringing:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Colonial Upbringing', roll=5)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
+            Event(fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
             Event(id=6, fulfills=(3, 2), handler=PreCareerGraduationHandler(roll=10)),
         ]
         projection = replay(1, events)
@@ -167,8 +167,8 @@ class TestColonialUpbringing:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Colonial Upbringing', roll=5)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
+            Event(fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
             Event(id=6, fulfills=(3, 2), handler=PreCareerGraduationHandler(roll=10)),
         ]
         projection = replay(1, events)
@@ -181,8 +181,8 @@ class TestColonialUpbringing:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Colonial Upbringing', roll=5)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
+            Event(fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
             Event(id=6, fulfills=(3, 2), handler=PreCareerGraduationHandler(roll=10)),
         ]
         projection = replay(1, events)
@@ -196,8 +196,8 @@ class TestColonialUpbringing:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Colonial Upbringing', roll=5)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
+            Event(fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
             Event(id=6, fulfills=(3, 2), handler=PreCareerGraduationHandler(roll=10)),
         ]
         projection = replay(1, events)
@@ -210,8 +210,8 @@ class TestColonialUpbringing:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Colonial Upbringing', roll=5)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
+            Event(fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
             Event(id=6, fulfills=(3, 2), handler=PreCareerGraduationHandler(roll=12)),  # effective=12>=12, honours
         ]
         projection = replay(1, events)
@@ -226,8 +226,8 @@ class TestColonialUpbringing:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Colonial Upbringing', roll=5)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
+            Event(fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
             Event(id=6, fulfills=(3, 2), handler=PreCareerGraduationHandler(roll=10)),
         ]
         projection = replay(1, events)
@@ -247,10 +247,10 @@ class TestColonialUpbringing:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Colonial Upbringing', roll=5)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
+            Event(fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
             Event(id=6, fulfills=(3, 2), handler=PreCareerGraduationHandler(roll=10)),
-            Event(id=7, fulfills=(6, 0), handler=PreCareerSkillChoiceHandler(skill=GunCombat(slug=Level(value=1)))),
+            Event(fulfills=(6, 0), handler=PreCareerSkillChoiceHandler(skill=GunCombat(slug=Level(value=1)))),
         ]
         projection = replay(1, events)
         gc = next((s for s in projection.summary.skills if isinstance(s, GunCombat)), None)
@@ -263,8 +263,8 @@ class TestColonialUpbringing:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Colonial Upbringing', roll=5)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
+            Event(fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
             Event(id=6, fulfills=(3, 2), handler=PreCareerGraduationHandler(roll=12)),
         ]
         projection = replay(1, events)
@@ -334,8 +334,8 @@ class TestMerchantAcademy:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Merchant Academy (Business)', roll=12)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Drive())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Drive())),
+            Event(fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
             Event(id=6, fulfills=(3, 2), handler=PreCareerGraduationHandler(roll=9)),  # effective=9>=7, no honours
         ]
         projection = replay(1, events)
@@ -346,8 +346,8 @@ class TestMerchantAcademy:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Merchant Academy (Business)', roll=12)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Drive())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Drive())),
+            Event(fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
             Event(id=6, fulfills=(3, 2), handler=PreCareerGraduationHandler(roll=9)),
         ]
         projection = replay(1, events)
@@ -360,8 +360,8 @@ class TestMerchantAcademy:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Merchant Academy (Business)', roll=12)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Drive())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Drive())),
+            Event(fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
             Event(id=6, fulfills=(3, 2), handler=PreCareerGraduationHandler(roll=9)),
         ]
         projection = replay(1, events)
@@ -372,8 +372,8 @@ class TestMerchantAcademy:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Merchant Academy (Business)', roll=12)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Drive())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Drive())),
+            Event(fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
             Event(id=6, fulfills=(3, 2), handler=PreCareerGraduationHandler(roll=9)),
         ]
         projection = replay(1, events)
@@ -387,8 +387,8 @@ class TestMerchantAcademy:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Merchant Academy (Business)', roll=12)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Drive())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Drive())),
+            Event(fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
             Event(id=6, fulfills=(3, 2), handler=PreCareerGraduationHandler(roll=11)),  # effective=11>=11, honours
         ]
         projection = replay(1, events)
@@ -399,8 +399,8 @@ class TestMerchantAcademy:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Merchant Academy (Business)', roll=12)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Drive())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Drive())),
+            Event(fulfills=(3, 1), handler=PreCareerEventHandler(roll=5)),
             Event(id=6, fulfills=(3, 2), handler=PreCareerGraduationHandler(roll=11)),
         ]
         projection = replay(1, events)
@@ -459,10 +459,10 @@ class TestPsionicCommunity:
         events = [
             *_trained_psionic_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Psionic Community', roll=7)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=LifeScience())),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
+            Event(fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=LifeScience())),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
-            Event(id=7, fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=2)),
+            Event(fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=2)),
         ]
 
         projection = replay(1, events)
@@ -478,10 +478,10 @@ class TestPsionicCommunity:
         events = [
             *_trained_psionic_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Psionic Community', roll=7)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=LifeScience())),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
+            Event(fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=LifeScience())),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
-            Event(id=7, fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=10)),  # no honours (10<12)
+            Event(fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=10)),  # no honours (10<12)
         ]
         projection = replay(1, events)
 
@@ -494,10 +494,10 @@ class TestPsionicCommunity:
         events = [
             *_trained_psionic_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Psionic Community', roll=7)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=LifeScience())),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
+            Event(fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=LifeScience())),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
-            Event(id=7, fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=12)),
+            Event(fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=12)),
         ]
 
         projection = replay(1, events)
@@ -524,10 +524,10 @@ class TestPsionicCommunity:
         events = [
             *_psionic_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Psionic Community', roll=7)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=SpaceScience())),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
+            Event(fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=SpaceScience())),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
-            Event(id=7, fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=10)),
+            Event(fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=10)),
         ]
         projection = replay(1, events)
 
@@ -538,10 +538,10 @@ class TestPsionicCommunity:
         events = [
             *_psionic_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Psionic Community', roll=7)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=SpaceScience())),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
+            Event(fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=SpaceScience())),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
-            Event(id=7, fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=12)),  # honours (12>=12)
+            Event(fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=12)),  # honours (12>=12)
         ]
         projection = replay(1, events)
 
@@ -552,10 +552,10 @@ class TestPsionicCommunity:
         events = [
             *_psionic_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Psionic Community', roll=7)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=SpaceScience())),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
+            Event(fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=SpaceScience())),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
-            Event(id=7, fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=10)),
+            Event(fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=10)),
         ]
         projection = replay(1, events)
 
@@ -568,10 +568,10 @@ class TestPsionicCommunity:
         events = [
             *_psionic_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Psionic Community', roll=7)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=SpaceScience())),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=ColonistProfession())),
+            Event(fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=SpaceScience())),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
-            Event(id=7, fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=10)),
+            Event(fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=10)),
         ]
         projection = replay(1, events)
 
@@ -608,10 +608,10 @@ class TestSchoolOfHardKnocks:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='School of Hard Knocks', roll=5)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Athletics())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Deception())),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Athletics())),
+            Event(fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Deception())),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
-            Event(id=7, fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=9)),  # effective=9>=7, no honours
+            Event(fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=9)),  # effective=9>=7, no honours
         ]
         projection = replay(1, events)
 
@@ -621,10 +621,10 @@ class TestSchoolOfHardKnocks:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='School of Hard Knocks', roll=5)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Athletics())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Deception())),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Athletics())),
+            Event(fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Deception())),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
-            Event(id=7, fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=9)),
+            Event(fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=9)),
         ]
         projection = replay(1, events)
 
@@ -634,10 +634,10 @@ class TestSchoolOfHardKnocks:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='School of Hard Knocks', roll=5)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Athletics())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Deception())),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Athletics())),
+            Event(fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Deception())),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
-            Event(id=7, fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=9)),
+            Event(fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=9)),
         ]
         projection = replay(1, events)
 
@@ -649,10 +649,10 @@ class TestSchoolOfHardKnocks:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='School of Hard Knocks', roll=5)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Athletics())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Deception())),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Athletics())),
+            Event(fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Deception())),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
-            Event(id=7, fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=9)),
+            Event(fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=9)),
         ]
         projection = replay(1, events)
 
@@ -665,10 +665,10 @@ class TestSchoolOfHardKnocks:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='School of Hard Knocks', roll=5)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Athletics())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Deception())),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Athletics())),
+            Event(fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Deception())),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
-            Event(id=7, fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=9)),
+            Event(fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=9)),
         ]
         projection = replay(1, events)
 
@@ -678,10 +678,10 @@ class TestSchoolOfHardKnocks:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='School of Hard Knocks', roll=5)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Athletics())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Deception())),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Athletics())),
+            Event(fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Deception())),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
-            Event(id=7, fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=11)),  # effective=11>=11, honours
+            Event(fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=11)),  # effective=11>=11, honours
         ]
         projection = replay(1, events)
 
@@ -691,10 +691,10 @@ class TestSchoolOfHardKnocks:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='School of Hard Knocks', roll=5)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Athletics())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Deception())),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Athletics())),
+            Event(fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Deception())),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
-            Event(id=7, fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=11)),
+            Event(fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=11)),
         ]
         projection = replay(1, events)
 
@@ -706,10 +706,10 @@ class TestSchoolOfHardKnocks:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='School of Hard Knocks', roll=5)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Athletics())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Deception())),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Athletics())),
+            Event(fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Deception())),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
-            Event(id=7, fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=11)),
+            Event(fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=11)),
         ]
         projection = replay(1, events)
 
@@ -750,10 +750,10 @@ class TestSpacerCommunity:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Spacer Community', roll=5)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Astrogation())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Electronics())),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Astrogation())),
+            Event(fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Electronics())),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
-            Event(id=7, fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=9)),  # effective=10>=8, no honours
+            Event(fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=9)),  # effective=10>=8, no honours
         ]
         projection = replay(1, events)
 
@@ -763,10 +763,10 @@ class TestSpacerCommunity:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Spacer Community', roll=5)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Astrogation())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Electronics())),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Astrogation())),
+            Event(fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Electronics())),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
-            Event(id=7, fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=9)),
+            Event(fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=9)),
         ]
         projection = replay(1, events)
 
@@ -776,10 +776,10 @@ class TestSpacerCommunity:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Spacer Community', roll=5)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Astrogation())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Electronics())),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Astrogation())),
+            Event(fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Electronics())),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
-            Event(id=7, fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=9)),
+            Event(fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=9)),
         ]
         projection = replay(1, events)
 
@@ -789,10 +789,10 @@ class TestSpacerCommunity:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Spacer Community', roll=5)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Astrogation())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Electronics())),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Astrogation())),
+            Event(fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Electronics())),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
-            Event(id=7, fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=9)),
+            Event(fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=9)),
         ]
         projection = replay(1, events)
 
@@ -805,10 +805,10 @@ class TestSpacerCommunity:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Spacer Community', roll=5)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Astrogation())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Electronics())),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Astrogation())),
+            Event(fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Electronics())),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
-            Event(id=7, fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=9)),
+            Event(fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=9)),
         ]
         projection = replay(1, events)
 
@@ -818,10 +818,10 @@ class TestSpacerCommunity:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Spacer Community', roll=5)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Astrogation())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Electronics())),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Astrogation())),
+            Event(fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Electronics())),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
-            Event(id=7, fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=9)),
+            Event(fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=9)),
         ]
         projection = replay(1, events)
 
@@ -834,10 +834,10 @@ class TestSpacerCommunity:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='Spacer Community', roll=5)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Astrogation())),
-            Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Electronics())),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Astrogation())),
+            Event(fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Electronics())),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
-            Event(id=7, fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=11)),  # effective=12>=12, honours
+            Event(fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=11)),  # effective=12>=12, honours
         ]
         projection = replay(1, events)
 
@@ -894,7 +894,7 @@ class TestUniversity:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='University', roll=9)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Admin())),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Admin())),
             Event(
                 id=5,
                 fulfills=(3, 1),
@@ -915,14 +915,14 @@ class TestUniversity:
         events = [
             *_base(),
             Event(id=3, handler=PreCareerEntryHandler(precareer='University', roll=9)),
-            Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Admin())),
+            Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Admin())),
             Event(
                 id=5,
                 fulfills=(3, 1),
                 handler=PreCareerSkillChoiceHandler(skill=PhysicalScience(chemistry=Level(value=1))),
             ),
             Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
-            Event(id=7, fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=8)),  # INT=7, DM+0, effective=8 >= 6
+            Event(fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=8)),  # INT=7, DM+0, effective=8 >= 6
         ]
         projection = replay(1, events)
 
@@ -951,10 +951,10 @@ def test_precareer_completed_is_typed_object():
     events = [
         *_base(),
         Event(id=3, handler=PreCareerEntryHandler(precareer='University', roll=9)),
-        Event(id=4, fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Admin())),
-        Event(id=5, fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Electronics())),
+        Event(fulfills=(3, 0), handler=PreCareerSkillChoiceHandler(skill=Admin())),
+        Event(fulfills=(3, 1), handler=PreCareerSkillChoiceHandler(skill=Electronics())),
         Event(id=6, fulfills=(3, 2), handler=PreCareerEventHandler(roll=5)),
-        Event(id=7, fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=9)),
+        Event(fulfills=(3, 3), handler=PreCareerGraduationHandler(roll=9)),
     ]
     projection = replay(1, events)
     assert isinstance(projection.summary.precareer_completed, PreCareerData)

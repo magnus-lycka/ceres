@@ -71,15 +71,17 @@ from tests.character.helpers import MOCK_WORLD, CharacterDriver
 
 
 def _setup(homeworld: TravellerMapWorld = MOCK_WORLD, psi: int = 9) -> list[Event]:
+    ev1 = Event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=homeworld, player='NPC', name='Psi'))
+    ev2 = Event(fulfills=(ev1.id, 0), handler=UcpHandler(ucp='7869A5'))
+    ev3 = Event(
+        fulfills=(ev2.id, 0),
+        handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()]),
+    )
     return [
-        Event(id=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=homeworld, player='NPC', name='Psi')),
-        Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='7869A5')),
-        Event(
-            id=3,
-            fulfills=(2, 0),
-            handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()]),
-        ),
-        Event(id=4, fulfills=(3, 0), handler=_SetPsiForTest(psi=psi)),
+        ev1,
+        ev2,
+        ev3,
+        Event(fulfills=(ev3.id, 0), handler=_SetPsiForTest(psi=psi)),
     ]
 
 
@@ -149,7 +151,6 @@ def _enter_psion(
     return [
         *_setup(homeworld, psi),
         Event(
-            id=5,
             handler=CareerEntryHandler(
                 career=psion,
                 assignment=resolved_assignment,
@@ -254,7 +255,7 @@ class TestPsionCareer:
         assert infantry is not None
         events = [
             *_setup(),
-            Event(id=5, handler=CareerEntryHandler(career=army, assignment=infantry, qualification_roll=7)),
+            Event(handler=CareerEntryHandler(career=army, assignment=infantry, qualification_roll=7)),
         ]
 
         projection = replay(1, events)
@@ -352,7 +353,7 @@ class TestPsionCoreTables:
         ]
         driver.projection.pending_inputs.clear()
 
-        Event(id=20, handler=SkillTableHandler(table='service_skills', roll=1)).apply(driver.projection)
+        Event(handler=SkillTableHandler(table='service_skills', roll=1)).apply(driver.projection)
 
         pending = driver._find(PendingSkillTableChoice)
         assert len(pending.options) == 1
@@ -369,7 +370,7 @@ class TestPsionCoreTables:
         ]
         driver.projection.pending_inputs.clear()
 
-        Event(id=20, handler=SkillTableHandler(table='assignment2', roll=1)).apply(driver.projection)
+        Event(handler=SkillTableHandler(table='assignment2', roll=1)).apply(driver.projection)
 
         assert not any(isinstance(pending, PendingSkillTableChoice) for pending in driver.projection.pending_inputs)
         assert driver._find(PendingSurvive)

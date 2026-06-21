@@ -167,7 +167,7 @@ def test_precareer_apply_entry_pick_count_0_list_skill_queues_choice():
         character_id=1,
         summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD),
     )
-    event = Event(id=5, handler=PreCareerEntryHandler(precareer='TestPrecareer', roll=9))
+    event = Event(handler=PreCareerEntryHandler(precareer='TestPrecareer', roll=9))
     pending_idx = precareer.apply_entry(proj, event, 0)
 
     assert proj.summary.skill_level(Admin) == 1
@@ -203,7 +203,7 @@ def test_precareer_apply_entry_pick_count_nonzero_with_list_and_pool():
         character_id=1,
         summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD),
     )
-    event = Event(id=5, handler=PreCareerEntryHandler(precareer='TestPrecareer2', roll=9))
+    event = Event(handler=PreCareerEntryHandler(precareer='TestPrecareer2', roll=9))
     precareer.apply_entry(proj, event, 0)
 
     assert proj.summary.skill_level(Admin) == 1
@@ -237,7 +237,7 @@ def test_precareer_apply_entry_skips_none_skill_entries():
         character_id=1,
         summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD),
     )
-    precareer.apply_entry(proj, Event(id=5, handler=PreCareerEntryHandler(precareer='TestNoneSkill', roll=9)), 0)
+    precareer.apply_entry(proj, Event(handler=PreCareerEntryHandler(precareer='TestNoneSkill', roll=9)), 0)
     assert proj.summary.skill_level(Admin) == 1
 
 
@@ -260,7 +260,7 @@ def test_precareer_apply_entry_pick_count_nonzero_skips_none_skill():
         character_id=1,
         summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD),
     )
-    precareer.apply_entry(proj, Event(id=5, handler=PreCareerEntryHandler(precareer='TestNoneSkill2', roll=9)), 0)
+    precareer.apply_entry(proj, Event(handler=PreCareerEntryHandler(precareer='TestNoneSkill2', roll=9)), 0)
     assert len(proj.pending_inputs) == 1
 
 
@@ -277,7 +277,7 @@ def test_precareer_apply_graduation_base_returns_zero():
         character_id=1,
         summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD),
     )
-    result = precareer.apply_graduation(proj, Event(id=7, handler=PreCareerGraduationHandler(roll=9)), honours=False)
+    result = precareer.apply_graduation(proj, Event(handler=PreCareerGraduationHandler(roll=9)), honours=False)
     assert result == 0
 
 
@@ -294,7 +294,7 @@ def test_precareer_apply_failed_graduation_base_is_noop():
         character_id=1,
         summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD),
     )
-    event = Event(id=6, handler=PreCareerGraduationHandler(roll=3))
+    event = Event(handler=PreCareerGraduationHandler(roll=3))
     before_pendings = len(proj.pending_inputs)
     precareer.apply_failed_graduation(proj, event)
     assert len(proj.pending_inputs) == before_pendings

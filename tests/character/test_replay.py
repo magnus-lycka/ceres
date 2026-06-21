@@ -47,95 +47,90 @@ from tests.character.helpers import MOCK_WORLD
 
 
 def _drifter_wanderer_setup() -> list:
-    """Three events placing a Drifter/Wanderer character at PendingSurvive('3.0').
-
-    Uses EDU=0 UCP to skip background skills. Drifter always qualifies (target END 0).
-    """
-    return [
-        Event(id=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Test')),
-        Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='786000')),  # EDU=0 → no pending created
-        Event(
-            id=3,
-            handler=CareerEntryHandler(
-                career=DRIFTER, assignment=DRIFTER.assignment('Wanderer'), qualification_roll=10
-            ),
-        ),
-        # all service skills auto-granted → PendingSurvive('3.0')
-    ]
+    """Three events placing a Drifter/Wanderer character at PendingSurvive."""
+    ev1 = Event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Test'))
+    ev2 = Event(fulfills=(ev1.id, 0), handler=UcpHandler(ucp='786000'))  # EDU=0 → no pending created
+    ev3 = Event(
+        fulfills=None,
+        handler=CareerEntryHandler(career=DRIFTER, assignment=DRIFTER.assignment('Wanderer'), qualification_roll=10),
+    )
+    return [ev1, ev2, ev3]
 
 
 def _drifter_after_survive_success() -> list:
-    """Extend _drifter_wanderer_setup with a successful SurviveEvent → PendingTermEvent('4.0')."""
-    return [*_drifter_wanderer_setup(), Event(id=4, fulfills=(3, 0), handler=SurviveHandler(roll=10))]
+    """Extend _drifter_wanderer_setup with a successful SurviveEvent."""
+    base = _drifter_wanderer_setup()
+    return [*base, Event(fulfills=(base[-1].id, 0), handler=SurviveHandler(roll=10))]
 
 
 def _drifter_at_life_event() -> list:
-    """Extend to a PendingLifeEvent('5.0') via Drifter event 7 (Life Event)."""
-    return [*_drifter_after_survive_success(), Event(id=5, fulfills=(4, 0), handler=TermEventHandler(roll=7))]
+    """Extend to a PendingLifeEvent via Drifter event 7 (Life Event)."""
+    base = _drifter_after_survive_success()
+    return [*base, Event(fulfills=(base[-1].id, 0), handler=TermEventHandler(roll=7))]
 
 
 def _drifter_at_unusual_event() -> list:
-    """Extend to PendingLifeEventUnusual('6.0') + PendingAdvancement('6.1')."""
-    return [*_drifter_at_life_event(), Event(id=6, fulfills=(5, 0), handler=LifeEventHandler(roll=12))]
+    """Extend to PendingLifeEventUnusual + PendingAdvancement."""
+    base = _drifter_at_life_event()
+    return [*base, Event(fulfills=(base[-1].id, 0), handler=LifeEventHandler(roll=12))]
 
 
 def _drifter_at_mishap() -> list:
-    """Extend _drifter_wanderer_setup with auto-mishap (roll=2) → PendingMishap('4.0')."""
-    return [*_drifter_wanderer_setup(), Event(id=4, fulfills=(3, 0), handler=SurviveHandler(roll=2))]
+    """Extend _drifter_wanderer_setup with auto-mishap (roll=2)."""
+    base = _drifter_wanderer_setup()
+    return [*base, Event(fulfills=(base[-1].id, 0), handler=SurviveHandler(roll=2))]
 
 
 def _scout_at_skill_table() -> list:
-    """Events placing a Scout/Courier character with PendingSkillTable('6.0') pending.
-
-    Uses EDU=0 UCP. Qualifies (INT 5+, DM-3, roll=10 → 7≥5). Advances via EDU 9+
-    (DM-3, roll=12 → 9≥9). Rank 1 bonus (Vacc Suit 1) granted automatically.
-    """
-    return [
-        Event(id=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Test')),
-        Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='786000')),  # EDU=0, INT=0 → no pending created
-        Event(
-            id=3,
-            handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=10),
-        ),
-        Event(id=4, fulfills=(3, 0), handler=SurviveHandler(roll=10)),  # END=6, target=5 → success
-        Event(id=5, fulfills=(4, 0), handler=TermEventHandler(roll=5)),  # benefit_dm → PendingAdvancement('5.0')
-        Event(id=6, fulfills=(5, 0), handler=AdvancementHandler(roll=12)),  # EDU 9+, DM-3 → 9≥9 success
-        # rank 1 bonus (Vacc Suit 1) auto-granted → PendingSkillTable('6.0') + PendingAssignmentChangeChoice('6.1')
-    ]
+    """Events placing a Scout/Courier character with PendingSkillTable pending."""
+    ev1 = Event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Test'))
+    ev2 = Event(fulfills=(ev1.id, 0), handler=UcpHandler(ucp='786000'))  # EDU=0, INT=0 → no pending created
+    ev3 = Event(
+        fulfills=None,
+        handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=10),
+    )
+    ev4 = Event(fulfills=(ev3.id, 0), handler=SurviveHandler(roll=10))  # END=6, target=5 → success
+    ev5 = Event(fulfills=(ev4.id, 0), handler=TermEventHandler(roll=5))  # benefit_dm → PendingAdvancement
+    ev6 = Event(fulfills=(ev5.id, 0), handler=AdvancementHandler(roll=12))  # EDU 9+, DM-3 → 9≥9 success
+    # rank 1 bonus (Vacc Suit 1) auto-granted → PendingSkillTable + PendingAssignmentChangeChoice
+    return [ev1, ev2, ev3, ev4, ev5, ev6]
 
 
 def _drifter_at_injury_table() -> list:
-    """Extend to PendingInjuryTable('5.0') via Drifter mishap 2 (from_table)."""
-    return [*_drifter_at_mishap(), Event(id=5, fulfills=(4, 0), handler=MishapHandler(roll=2))]
+    """Extend to PendingInjuryTable via Drifter mishap 2 (from_table)."""
+    base = _drifter_at_mishap()
+    return [*base, Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=2))]
 
 
-def _started(id: int = 1, sophont: Sophont = VILANI) -> Event:
-    return Event(
-        id=id, handler=CharacterStartedHandler(sophont=sophont, homeworld=MOCK_WORLD, player='NPC', name='Boss')
-    )
+def _started(sophont: Sophont = VILANI) -> Event:
+    return Event(handler=CharacterStartedHandler(sophont=sophont, homeworld=MOCK_WORLD, player='NPC', name='Boss'))
 
 
-def _ucp(id: int = 2, ucp: str = '7869A5') -> Event:
-    return Event(id=id, fulfills=(1, 0), handler=UcpHandler(ucp=ucp))
+def _ucp(started: Event | None = None, ucp: str = '7869A5') -> Event:
+    fulfills = (started.id, 0) if started is not None else None
+    return Event(fulfills=fulfills, handler=UcpHandler(ucp=ucp))
 
 
-def _ucp_low_edu(id: int = 2) -> Event:
+def _ucp_low_edu(started: Event | None = None) -> Event:
     """UCP with EDU=0 → 0 background skills, no pending created."""
-    return Event(id=id, fulfills=(1, 0), handler=UcpHandler(ucp='786000'))
+    fulfills = (started.id, 0) if started is not None else None
+    return Event(fulfills=fulfills, handler=UcpHandler(ucp='786000'))
 
 
-def _bg_skills(id: int = 3, skills: list | None = None) -> Event:
+def _bg_skills(ucp: Event | None = None, skills: list | None = None) -> Event:
     if skills is None:
         skills = [Admin(), Athletics(), Carouse(), Drive()]  # 4 skills for EDU=10
-    return Event(id=id, fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=skills))
+    fulfills = (ucp.id, 0) if ucp is not None else None
+    return Event(fulfills=fulfills, handler=BackgroundSkillsHandler(skills=skills))
 
 
 class TestCharacterStarted:
     def test_creates_ucp_pending_input(self):
-        projection = replay(1, [_started()])
+        ev = _started()
+        projection = replay(1, [ev])
 
         assert len(projection.pending_inputs) == 1
-        assert projection.pending_inputs[0].id == '1.0'
+        assert projection.pending_inputs[0].id == f'{ev.id}.0'
         assert isinstance(projection.pending_inputs[0], PendingUcp)
 
     def test_ucp_pending_is_blocking(self):
@@ -173,31 +168,37 @@ class TestCharacterStarted:
 
 class TestUcpEvent:
     def test_ucp_pending_removed_after_ucp_event(self):
-        projection = replay(1, [_started(), _ucp_low_edu()])
+        ev1 = _started()
+        projection = replay(1, [ev1, _ucp_low_edu(ev1)])
 
         assert not any(isinstance(p, PendingUcp) for p in projection.pending_inputs)
 
     def test_creates_background_skills_pending_when_edu_has_positive_dm(self):
         # EDU=10 → DM+1 → 4 background skills
-        projection = replay(1, [_started(), _ucp(ucp='7869A5')])
+        ev1 = _started()
+        projection = replay(1, [ev1, _ucp(ev1, ucp='7869A5')])
 
         assert len(projection.pending_inputs) == 1
         assert isinstance(projection.pending_inputs[0], PendingBackgroundSkills)
         assert projection.pending_inputs[0].blocking is True
 
     def test_background_skills_pending_id_derived_from_ucp_event_id(self):
-        projection = replay(1, [_started(), _ucp(id=2, ucp='7869A5')])
+        ev1 = _started()
+        ev2 = _ucp(ev1, ucp='7869A5')
+        projection = replay(1, [ev1, ev2])
 
-        assert projection.pending_inputs[0].id == '2.0'
+        assert projection.pending_inputs[0].id == f'{ev2.id}.0'
 
     def test_background_skills_pending_count_in_instruction(self):
         # EDU=10 → DM+1 → 4 skills
-        projection = replay(1, [_started(), _ucp(ucp='7869A5')])
+        ev1 = _started()
+        projection = replay(1, [ev1, _ucp(ev1, ucp='7869A5')])
 
         assert '4' in projection.pending_inputs[0].instruction
 
     def test_background_skills_pending_has_options_list(self):
-        projection = replay(1, [_started(), _ucp(ucp='7869A5')])
+        ev1 = _started()
+        projection = replay(1, [ev1, _ucp(ev1, ucp='7869A5')])
 
         assert isinstance(projection.pending_inputs[0], PendingBackgroundSkills)
         options = projection.pending_inputs[0].options
@@ -207,33 +208,38 @@ class TestUcpEvent:
 
     def test_no_background_skills_pending_when_edu_zero(self):
         # EDU=0 → DM-3 → max(0, -3+3)=0 background skills
-        projection = replay(1, [_started(), _ucp(ucp='786000')])
+        ev1 = _started()
+        projection = replay(1, [ev1, _ucp(ev1, ucp='786000')])
 
         assert projection.pending_inputs == []
 
     def test_background_skill_count_for_edu_6_to_8(self):
         # UCP: STR=7 DEX=8 END=6 INT=0 EDU=7 SOC=0 → EDU=7, DM+0 → 3 background skills
-        projection = replay(1, [_started(), _ucp(ucp='786070')])
+        ev1 = _started()
+        projection = replay(1, [ev1, _ucp(ev1, ucp='786070')])
 
         pending = next(p for p in projection.pending_inputs if isinstance(p, PendingBackgroundSkills))
         assert '3' in pending.instruction
 
     def test_background_skill_count_for_edu_9_to_11(self):
         # UCP: STR=7 DEX=8 END=6 INT=0 EDU=9 SOC=0 → EDU=9, DM+1 → 4 background skills
-        projection = replay(1, [_started(), _ucp(ucp='786090')])
+        ev1 = _started()
+        projection = replay(1, [ev1, _ucp(ev1, ucp='786090')])
 
         pending = next(p for p in projection.pending_inputs if isinstance(p, PendingBackgroundSkills))
         assert '4' in pending.instruction
 
     def test_background_skill_count_for_edu_12_to_14(self):
         # UCP: STR=7 DEX=8 END=6 INT=0 EDU=12=C SOC=0 → EDU=12, DM+2 → 5 background skills
-        projection = replay(1, [_started(), _ucp(ucp='7860C0')])
+        ev1 = _started()
+        projection = replay(1, [ev1, _ucp(ev1, ucp='7860C0')])
 
         pending = next(p for p in projection.pending_inputs if isinstance(p, PendingBackgroundSkills))
         assert '5' in pending.instruction
 
     def test_sets_characteristics_from_short_form(self):
-        projection = replay(1, [_started(), _ucp(ucp='7869A5')])
+        ev1 = _started()
+        projection = replay(1, [ev1, _ucp(ev1, ucp='7869A5')])
 
         assert projection.summary.characteristics == {
             'STR': 7,
@@ -245,7 +251,8 @@ class TestUcpEvent:
         }
 
     def test_sets_characteristics_from_max_values(self):
-        projection = replay(1, [_started(), _ucp(ucp='FFFFFF')])
+        ev1 = _started()
+        projection = replay(1, [ev1, _ucp(ev1, ucp='FFFFFF')])
 
         assert projection.summary.characteristics == {
             'STR': 15,
@@ -257,14 +264,17 @@ class TestUcpEvent:
         }
 
     def test_no_pending_ucp_after_ucp_provided(self):
-        projection = replay(1, [_started(), _ucp_low_edu()])
+        ev1 = _started()
+        projection = replay(1, [ev1, _ucp_low_edu(ev1)])
 
         assert not any(isinstance(p, PendingUcp) for p in projection.pending_inputs)
 
 
 class TestBackgroundSkillsEvent:
     def test_resolves_background_skills_pending(self):
-        events = [_started(), _ucp(), _bg_skills()]
+        ev1 = _started()
+        ev2 = _ucp(ev1)
+        events = [ev1, ev2, _bg_skills(ev2)]
 
         projection = replay(1, events)
 
@@ -272,7 +282,9 @@ class TestBackgroundSkillsEvent:
         assert isinstance(projection.pending_inputs[0], PendingCareerChoice)
 
     def test_grants_skills_at_level_0_in_summary(self):
-        events = [_started(), _ucp(), _bg_skills(skills=[Admin(), Athletics(), Carouse(), Drive()])]
+        ev1 = _started()
+        ev2 = _ucp(ev1)
+        events = [ev1, ev2, _bg_skills(ev2, skills=[Admin(), Athletics(), Carouse(), Drive()])]
 
         projection = replay(1, events)
 
@@ -283,19 +295,23 @@ class TestBackgroundSkillsEvent:
         assert len(projection.summary.skills) == 4
 
     def test_rejects_wrong_number_of_skills(self):
-        too_few = Event(id=3, fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics()]))
+        ev1 = _started()
+        ev2 = _ucp(ev1)
+        too_few = Event(fulfills=(ev2.id, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics()]))
 
         with pytest.raises(ReplayError):
-            replay(1, [_started(), _ucp(), too_few])
+            replay(1, [ev1, ev2, too_few])
 
     def test_rejects_non_background_skill(self):
         # Advocate is not in BackgroundSkills
+        ev1 = _started()
+        ev2 = _ucp(ev1)
         invalid = Event(
-            id=3, fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Advocate(), Carouse(), Drive()])
+            fulfills=(ev2.id, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Advocate(), Carouse(), Drive()])
         )
 
         with pytest.raises(ReplayError):
-            replay(1, [_started(), _ucp(), invalid])
+            replay(1, [ev1, ev2, invalid])
 
     def test_all_background_skills_are_known_skill_types(self):
         all_classes = set(_skill_classes(AnySkill))
@@ -304,10 +320,12 @@ class TestBackgroundSkillsEvent:
 
     def test_background_skills_blocked_by_no_pending(self):
         # Cannot submit background_skills when no such pending exists (EDU=0)
-        event = Event(id=3, fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=[]))
+        ev1 = _started()
+        ev2 = _ucp_low_edu(ev1)
+        event = Event(fulfills=(ev2.id, 0), handler=BackgroundSkillsHandler(skills=[]))
 
         with pytest.raises(ReplayError):
-            replay(1, [_started(), _ucp_low_edu(), event])
+            replay(1, [ev1, ev2, event])
 
 
 class TestReplayFromPersistedEventLog:
@@ -337,13 +355,13 @@ class TestReplayFromPersistedEventLog:
 
 class TestReplayBlocking:
     def test_rejects_unrelated_event_while_ucp_pending(self):
-        unrelated = Event(id=2, fulfills=None, handler=UcpHandler(ucp='7869A5'))
+        unrelated = Event(fulfills=None, handler=UcpHandler(ucp='7869A5'))
 
         with pytest.raises(ReplayError):
             replay(1, [_started(), unrelated])
 
     def test_rejects_event_with_unknown_fulfills(self):
-        wrong = Event(id=2, fulfills=(99, 0), handler=UcpHandler(ucp='7869A5'))
+        wrong = Event(fulfills=(99, 0), handler=UcpHandler(ucp='7869A5'))
 
         with pytest.raises(ReplayError):
             replay(1, [_started(), wrong])
@@ -351,7 +369,8 @@ class TestReplayBlocking:
 
 class TestDeterminism:
     def test_same_events_produce_same_projection(self):
-        events = [_started(), _ucp_low_edu()]
+        ev1 = _started()
+        events = [ev1, _ucp_low_edu(ev1)]
 
         first = replay(1, events)
         second = replay(1, events)
@@ -394,122 +413,115 @@ class TestCharacterStartedEventJsonRoundTrip:
 
 class TestLifeEventValidation:
     def test_roll_too_low_raises(self):
+        base = _drifter_at_life_event()
         with pytest.raises(ReplayError, match='2-12'):
-            replay(1, [*_drifter_at_life_event(), Event(id=6, fulfills=(5, 0), handler=LifeEventHandler(roll=1))])
+            replay(1, [*base, Event(fulfills=(base[-1].id, 0), handler=LifeEventHandler(roll=1))])
 
     def test_roll_too_high_raises(self):
+        base = _drifter_at_life_event()
         with pytest.raises(ReplayError, match='2-12'):
-            replay(1, [*_drifter_at_life_event(), Event(id=6, fulfills=(5, 0), handler=LifeEventHandler(roll=13))])
+            replay(1, [*base, Event(fulfills=(base[-1].id, 0), handler=LifeEventHandler(roll=13))])
 
 
 class TestLifeEventUnusualBranches:
     def test_roll_out_of_range_raises(self):
+        base = _drifter_at_unusual_event()
         with pytest.raises(ReplayError, match='1-6'):
-            replay(
-                1, [*_drifter_at_unusual_event(), Event(id=7, fulfills=(6, 0), handler=LifeEventUnusualHandler(roll=7))]
-            )
+            replay(1, [*base, Event(fulfills=(base[-1].id, 0), handler=LifeEventUnusualHandler(roll=7))])
 
     def test_roll_1_queues_psionics_roll_pending(self):
         from ceres.character.domain.career.career_events import PendingLifeEventPsionicsRoll
 
-        projection = replay(
-            1, [*_drifter_at_unusual_event(), Event(id=7, fulfills=(6, 0), handler=LifeEventUnusualHandler(roll=1))]
-        )
+        base = _drifter_at_unusual_event()
+        projection = replay(1, [*base, Event(fulfills=(base[-1].id, 0), handler=LifeEventUnusualHandler(roll=1))])
         assert not projection.summary.connections
         assert any(isinstance(p, PendingLifeEventPsionicsRoll) for p in projection.pending_inputs)
 
     def test_roll_2_gains_contact_and_queues_science_choice(self):
         from ceres.character.domain.career.career_events import PendingLifeEventAlienScience
 
-        projection = replay(
-            1, [*_drifter_at_unusual_event(), Event(id=7, fulfills=(6, 0), handler=LifeEventUnusualHandler(roll=2))]
-        )
+        base = _drifter_at_unusual_event()
+        projection = replay(1, [*base, Event(fulfills=(base[-1].id, 0), handler=LifeEventUnusualHandler(roll=2))])
         assert any(isinstance(c, Contact) for c in projection.summary.connections)
         assert any(isinstance(p, PendingLifeEventAlienScience) for p in projection.pending_inputs)
         assert projection.summary.skill_level(SpaceScience) is None
 
     def test_roll_3_no_mechanical_effect(self):
-        projection = replay(
-            1, [*_drifter_at_unusual_event(), Event(id=7, fulfills=(6, 0), handler=LifeEventUnusualHandler(roll=3))]
-        )
+        base = _drifter_at_unusual_event()
+        projection = replay(1, [*base, Event(fulfills=(base[-1].id, 0), handler=LifeEventUnusualHandler(roll=3))])
         assert not projection.summary.connections
 
     def test_roll_6_no_mechanical_effect(self):
-        projection = replay(
-            1, [*_drifter_at_unusual_event(), Event(id=7, fulfills=(6, 0), handler=LifeEventUnusualHandler(roll=6))]
-        )
+        base = _drifter_at_unusual_event()
+        projection = replay(1, [*base, Event(fulfills=(base[-1].id, 0), handler=LifeEventUnusualHandler(roll=6))])
         assert not projection.summary.connections
 
 
 class TestInjuryTableValidation:
     def test_roll_zero_raises(self):
+        base = _drifter_at_injury_table()
         with pytest.raises(ReplayError, match='1-6'):
-            replay(1, [*_drifter_at_injury_table(), Event(id=6, fulfills=(5, 0), handler=InjuryTableHandler(roll=0))])
+            replay(1, [*base, Event(fulfills=(base[-1].id, 0), handler=InjuryTableHandler(roll=0))])
 
     def test_roll_seven_raises(self):
+        base = _drifter_at_injury_table()
         with pytest.raises(ReplayError, match='1-6'):
-            replay(1, [*_drifter_at_injury_table(), Event(id=6, fulfills=(5, 0), handler=InjuryTableHandler(roll=7))])
+            replay(1, [*base, Event(fulfills=(base[-1].id, 0), handler=InjuryTableHandler(roll=7))])
 
 
 class TestMishapInjuryEffects:
     def test_from_table_injury_creates_injury_table_pending(self):
         # Drifter mishap 2: severity=from_table → roll on injury table
-        events = [*_drifter_at_mishap(), Event(id=5, fulfills=(4, 0), handler=MishapHandler(roll=2))]
+        base = _drifter_at_mishap()
+        events = [*base, Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=2))]
         projection = replay(1, events)
         assert any(isinstance(p, PendingInjuryTable) for p in projection.pending_inputs)
 
 
 class TestSkillTableErrors:
     def test_unknown_table_raises(self):
-        events = [
-            *_scout_at_skill_table(),
-            Event(id=7, fulfills=(6, 0), handler=SkillTableHandler(table='bogus_table', roll=3)),
-        ]
+        base = _scout_at_skill_table()
+        events = [*base, Event(fulfills=(base[-1].id, 0), handler=SkillTableHandler(table='bogus_table', roll=3))]
         with pytest.raises(ReplayError, match='Unknown skill table'):
             replay(1, events)
 
     def test_min_edu_not_met_raises(self):
         # EDU=0 < advanced_education min_edu=8
+        base = _scout_at_skill_table()
         events = [
-            *_scout_at_skill_table(),
-            Event(id=7, fulfills=(6, 0), handler=SkillTableHandler(table='advanced_education', roll=3)),
+            *base,
+            Event(fulfills=(base[-1].id, 0), handler=SkillTableHandler(table='advanced_education', roll=3)),
         ]
         with pytest.raises(ReplayError, match='requires EDU'):
             replay(1, events)
 
     def test_roll_zero_raises(self):
-        events = [
-            *_scout_at_skill_table(),
-            Event(id=7, fulfills=(6, 0), handler=SkillTableHandler(table='service_skills', roll=0)),
-        ]
+        base = _scout_at_skill_table()
+        events = [*base, Event(fulfills=(base[-1].id, 0), handler=SkillTableHandler(table='service_skills', roll=0))]
         with pytest.raises(ReplayError, match='1-6'):
             replay(1, events)
 
     def test_roll_seven_raises(self):
-        events = [
-            *_scout_at_skill_table(),
-            Event(id=7, fulfills=(6, 0), handler=SkillTableHandler(table='service_skills', roll=7)),
-        ]
+        base = _scout_at_skill_table()
+        events = [*base, Event(fulfills=(base[-1].id, 0), handler=SkillTableHandler(table='service_skills', roll=7))]
         with pytest.raises(ReplayError, match='1-6'):
             replay(1, events)
 
 
 class TestDraftErrors:
     def _events_with_draft_choice(self) -> list:
-        """Citizen qualification fails (EDU 5+, EDU=0) → PendingDraftChoice('3.0')."""
-        return [
-            Event(
-                id=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Test')
+        """Citizen qualification fails (EDU 5+, EDU=0) → PendingDraftChoice."""
+        ev1 = Event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Test'))
+        ev2 = Event(fulfills=(ev1.id, 0), handler=UcpHandler(ucp='786000'))  # EDU=0 → no pending created
+        ev3 = Event(
+            handler=CareerEntryHandler(
+                career=CITIZEN,
+                assignment=CITIZEN.assignment('Corporate'),
+                qualification_roll=1,
             ),
-            Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='786000')),  # EDU=0 → no pending created
-            Event(
-                id=3,
-                handler=CareerEntryHandler(
-                    career=CITIZEN, assignment=CITIZEN.assignment('Corporate'), qualification_roll=1
-                ),
-            ),
-            # EDU 5+, DM-3: 1-3=-2 < 5 → fails → PendingDraftChoice('3.0')
-        ]
+        )
+        # EDU 5+, DM-3: 1-3=-2 < 5 → fails → PendingDraftChoice
+        return [ev1, ev2, ev3]
 
     def test_unknown_career_draft_raises(self):
         from pydantic import ValidationError

@@ -138,7 +138,7 @@ def _enter_prisoner() -> list:
             handler=CareerEntryHandler(career=PRISONER, assignment=PRISONER.assignment('Inmate'), qualification_roll=0),
         ),
         Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=WorkerProfession())),
-        Event(id=6, fulfills=(4, 1), handler=ParoleRollHandler(roll=3)),  # PT = 5
+        Event(fulfills=(4, 1), handler=ParoleRollHandler(roll=3)),  # PT = 5
     ]
 
 
@@ -217,7 +217,7 @@ class TestPrisonerMishap3:
                 fulfills=(8, 0),
                 handler=CareerChoiceHandler(choice=PrisonerMishap3Fight.model_fields['kind'].default),
             ),
-            Event(id=10, fulfills=(9, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=9)),
+            Event(fulfills=(9, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=9)),
         ]
         projection = replay(1, events)
         enemies = [c for c in projection.summary.connections if isinstance(c, Enemy)]
@@ -233,7 +233,7 @@ class TestPrisonerMishap3:
                 fulfills=(8, 0),
                 handler=CareerChoiceHandler(choice=PrisonerMishap3Fight.model_fields['kind'].default),
             ),
-            Event(id=10, fulfills=(9, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
+            Event(fulfills=(9, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingDoubleInjuryRoll) for p in projection.pending_inputs)
@@ -285,7 +285,7 @@ class TestPrisonerEvent3:
                 fulfills=(8, 0),
                 handler=CareerChoiceHandler(choice=PrisonerEvent3Attempt.model_fields['kind'].default),
             ),
-            Event(id=10, fulfills=(9, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=11)),
+            Event(fulfills=(9, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=11)),
         ]
         projection = replay(1, events)
         assert projection.summary.current_career is None
@@ -299,7 +299,7 @@ class TestPrisonerEvent3:
                 fulfills=(8, 0),
                 handler=CareerChoiceHandler(choice=PrisonerEvent3Attempt.model_fields['kind'].default),
             ),
-            Event(id=10, fulfills=(9, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=9)),
+            Event(fulfills=(9, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=9)),
         ]
         projection = replay(1, events)
         assert projection.summary.parole_threshold == 7  # PT was 5; +2 = 7
@@ -436,7 +436,7 @@ class TestPrisonerEvent7:
                 fulfills=(8, 0),
                 handler=CareerChoiceHandler(choice=PrisonerEvent7Riot.model_fields['kind'].default),
             ),
-            Event(id=10, fulfills=(9, 0), handler=SkillRollHandler(skill=Chars.END, modified_roll=7)),
+            Event(fulfills=(9, 0), handler=SkillRollHandler(skill=Chars.END, modified_roll=7)),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingInjuryTable) for p in projection.pending_inputs)
@@ -556,7 +556,7 @@ class TestPrisonerEvent9:
                 fulfills=(8, 0),
                 handler=CareerChoiceHandler(choice=PrisonerEvent9Level1.model_fields['kind'].default),
             ),
-            Event(id=10, fulfills=(9, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=8)),
+            Event(fulfills=(9, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=8)),
         ]
         projection = replay(1, events)
         assert projection.summary.parole_threshold == 4  # PT was 5; −1 = 4
@@ -570,7 +570,7 @@ class TestPrisonerEvent9:
                 fulfills=(8, 0),
                 handler=CareerChoiceHandler(choice=PrisonerEvent9Level1.model_fields['kind'].default),
             ),
-            Event(id=10, fulfills=(9, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=6)),
+            Event(fulfills=(9, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=6)),
         ]
         projection = replay(1, events)
         assert projection.summary.parole_threshold == 5  # unchanged
@@ -631,7 +631,7 @@ class TestPrisonerEvent12:
                 fulfills=(8, 0),
                 handler=CareerChoiceHandler(choice=PrisonerEvent12TakeRisk.model_fields['kind'].default),
             ),
-            Event(id=10, fulfills=(9, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=9)),
+            Event(fulfills=(9, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=9)),
         ]
         projection = replay(1, events)
         allies = [c for c in projection.summary.connections if isinstance(c, Ally)]
@@ -646,7 +646,7 @@ class TestPrisonerEvent12:
                 fulfills=(8, 0),
                 handler=CareerChoiceHandler(choice=PrisonerEvent12TakeRisk.model_fields['kind'].default),
             ),
-            Event(id=10, fulfills=(9, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
+            Event(fulfills=(9, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingInjuryTable) for p in projection.pending_inputs)

@@ -21,12 +21,12 @@ from tests.character.helpers import MOCK_WORLD
 
 
 def _setup(ucp: str = '7869A5') -> list:
+    ev1 = Event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'))
+    ev2 = Event(fulfills=(ev1.id, 0), handler=UcpHandler(ucp=ucp))
     return [
-        Event(id=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')),
-        Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp=ucp)),
-        Event(
-            id=3, fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()])
-        ),
+        ev1,
+        ev2,
+        Event(fulfills=(ev2.id, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()])),
     ]
 
 
@@ -40,11 +40,11 @@ def test_new_core_careers_load():
 
 
 def test_failed_qualification_creates_draft_choice():
+    _s = _setup()
     events = [
-        *_setup(),
+        *_s,
         Event(
-            id=4,
-            fulfills=(3, 0),
+            fulfills=(_s[-1].id, 0),
             handler=CareerEntryHandler(
                 career=MERCHANT, assignment=MERCHANT.assignment('Merchant Marine'), qualification_roll=2
             ),
@@ -69,16 +69,16 @@ def test_draftable_careers_tell_whether_this_character_can_be_drafted():
 
 
 def test_draft_event_records_selected_career_and_assignment():
+    _base = _setup()
+    ev4 = Event(
+        fulfills=(_base[-1].id, 0),
+        handler=CareerEntryHandler(career=ARMY, assignment=ARMY.assignment('Infantry'), qualification_roll=2),
+    )
     events = [
-        *_setup(),
+        *_base,
+        ev4,
         Event(
-            id=4,
-            fulfills=(3, 0),
-            handler=CareerEntryHandler(career=ARMY, assignment=ARMY.assignment('Infantry'), qualification_roll=2),
-        ),
-        Event(
-            id=5,
-            fulfills=(4, 0),
+            fulfills=(ev4.id, 0),
             handler=DraftHandler(career=MERCHANT, assignment=MERCHANT.assignment('Merchant Marine')),
         ),
     ]
@@ -93,16 +93,17 @@ def test_draft_event_records_selected_career_and_assignment():
 
 
 def test_draft_to_career_with_multiple_assignments_asks_player_to_choose_assignment():
-    events = [
-        *_setup(),
-        Event(
-            id=4,
-            fulfills=(3, 0),
-            handler=CareerEntryHandler(
-                career=MERCHANT, assignment=MERCHANT.assignment('Merchant Marine'), qualification_roll=2
-            ),
+    _base = _setup()
+    ev4 = Event(
+        fulfills=(_base[-1].id, 0),
+        handler=CareerEntryHandler(
+            career=MERCHANT, assignment=MERCHANT.assignment('Merchant Marine'), qualification_roll=2
         ),
-        Event(id=5, fulfills=(4, 0), handler=DraftHandler(career=ARMY)),
+    )
+    events = [
+        *_base,
+        ev4,
+        Event(fulfills=(ev4.id, 0), handler=DraftHandler(career=ARMY)),
     ]
 
     projection = replay(1, events)
@@ -114,19 +115,19 @@ def test_draft_to_career_with_multiple_assignments_asks_player_to_choose_assignm
 
 
 def test_draft_assignment_choice_starts_selected_assignment():
+    _base = _setup()
+    ev4 = Event(
+        fulfills=(_base[-1].id, 0),
+        handler=CareerEntryHandler(
+            career=MERCHANT, assignment=MERCHANT.assignment('Merchant Marine'), qualification_roll=2
+        ),
+    )
+    ev5 = Event(fulfills=(ev4.id, 0), handler=DraftHandler(career=ARMY))
     events = [
-        *_setup(),
-        Event(
-            id=4,
-            fulfills=(3, 0),
-            handler=CareerEntryHandler(
-                career=MERCHANT, assignment=MERCHANT.assignment('Merchant Marine'), qualification_roll=2
-            ),
-        ),
-        Event(id=5, fulfills=(4, 0), handler=DraftHandler(career=ARMY)),
-        Event(
-            id=6, fulfills=(5, 0), handler=DraftAssignmentHandler(career=ARMY, assignment=ARMY.assignment('Cavalry'))
-        ),
+        *_base,
+        ev4,
+        ev5,
+        Event(fulfills=(ev5.id, 0), handler=DraftAssignmentHandler(career=ARMY, assignment=ARMY.assignment('Cavalry'))),
     ]
 
     projection = replay(1, events)
@@ -139,17 +140,19 @@ def test_draft_assignment_choice_starts_selected_assignment():
 
 
 def test_merchant_does_not_offer_commission_before_advancement():
-    events = [
-        *_setup(),
-        Event(
-            id=4,
-            fulfills=(3, 0),
-            handler=CareerEntryHandler(
-                career=MERCHANT, assignment=MERCHANT.assignment('Merchant Marine'), qualification_roll=8
-            ),
+    _base = _setup()
+    ev4 = Event(
+        fulfills=(_base[-1].id, 0),
+        handler=CareerEntryHandler(
+            career=MERCHANT, assignment=MERCHANT.assignment('Merchant Marine'), qualification_roll=8
         ),
-        Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=8)),
-        Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=9)),
+    )
+    ev5 = Event(fulfills=(ev4.id, 0), handler=SurviveHandler(roll=8))
+    events = [
+        *_base,
+        ev4,
+        ev5,
+        Event(fulfills=(ev5.id, 0), handler=TermEventHandler(roll=9)),
     ]
 
     projection = replay(1, events)
@@ -158,15 +161,17 @@ def test_merchant_does_not_offer_commission_before_advancement():
 
 
 def test_army_first_term_offers_commission_before_advancement():
+    _base = _setup(ucp='7869A9')
+    ev4 = Event(
+        fulfills=(_base[-1].id, 0),
+        handler=CareerEntryHandler(career=ARMY, assignment=ARMY.assignment('Infantry'), qualification_roll=8),
+    )
+    ev5 = Event(fulfills=(ev4.id, 0), handler=SurviveHandler(roll=8))
     events = [
-        *_setup(ucp='7869A9'),
-        Event(
-            id=4,
-            fulfills=(3, 0),
-            handler=CareerEntryHandler(career=ARMY, assignment=ARMY.assignment('Infantry'), qualification_roll=8),
-        ),
-        Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=8)),
-        Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=9)),
+        *_base,
+        ev4,
+        ev5,
+        Event(fulfills=(ev5.id, 0), handler=TermEventHandler(roll=9)),
     ]
 
     projection = replay(1, events)
@@ -176,16 +181,19 @@ def test_army_first_term_offers_commission_before_advancement():
 
 
 def test_successful_commission_sets_officer_rank_and_skips_advancement():
+    _base = _setup(ucp='7869A9')
+    ev4 = Event(
+        fulfills=(_base[-1].id, 0),
+        handler=CareerEntryHandler(career=ARMY, assignment=ARMY.assignment('Infantry'), qualification_roll=8),
+    )
+    ev5 = Event(fulfills=(ev4.id, 0), handler=SurviveHandler(roll=8))
+    ev6 = Event(fulfills=(ev5.id, 0), handler=TermEventHandler(roll=10))
     events = [
-        *_setup(ucp='7869A9'),
-        Event(
-            id=4,
-            fulfills=(3, 0),
-            handler=CareerEntryHandler(career=ARMY, assignment=ARMY.assignment('Infantry'), qualification_roll=8),
-        ),
-        Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=8)),
-        Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=10)),
-        Event(id=7, fulfills=(6, 0), handler=CommissionHandler(attempt=True, roll=8)),
+        *_base,
+        ev4,
+        ev5,
+        ev6,
+        Event(fulfills=(ev6.id, 0), handler=CommissionHandler(attempt=True, roll=8)),
     ]
 
     projection = replay(1, events)

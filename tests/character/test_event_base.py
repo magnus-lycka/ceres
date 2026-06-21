@@ -102,9 +102,14 @@ class TestEvent:
         event = Event(handler=_AlphaHandler())
         assert event.kind == '_test_alpha'
 
-    def test_id_defaults_to_zero(self):
-        event = Event(handler=_AlphaHandler())
-        assert event.id == 0
+    def test_id_is_auto_generated_when_not_specified(self):
+        event_a = Event(handler=_AlphaHandler())
+        event_b = Event(handler=_AlphaHandler())
+        assert event_a.id != event_b.id
+
+    def test_explicit_id_overrides_auto_generated(self):
+        event = Event(id=42, handler=_AlphaHandler())
+        assert event.id == 42
 
     def test_fulfills_defaults_to_none(self):
         event = Event(handler=_AlphaHandler())
