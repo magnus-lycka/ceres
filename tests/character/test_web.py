@@ -27,6 +27,22 @@ from ceres.worlds import DEFAULT_MILIEU, SectorWorldFilters
 from tests.character.helpers import MOCK_WORLD, MOCK_WORLD_2
 
 
+def _append_pending_event(
+    backend: SqliteCharacterBackend,
+    character_id: int,
+    handler: Any,
+    pending_type: type | None = None,
+) -> Event:
+    projection = backend.get_projection(character_id)
+    assert projection is not None
+    pending = next(
+        (p for p in projection.pending_inputs if pending_type is None or isinstance(p, pending_type)),
+        None,
+    )
+    assert pending is not None
+    return backend.append_event(character_id, Event(fulfills=pending.pending_id, handler=handler))
+
+
 @pytest.fixture
 def client():
     with SqliteCharacterBackend(':memory:') as backend:
@@ -143,7 +159,7 @@ def test_character_list_reads_stored_summaries_without_replaying(client_with_bac
 def test_character_list_reads_updated_persisted_summary(client_with_backend):
     client, backend = client_with_backend
     row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Stored')
-    backend.append_event(row['id'], Event(fulfills=(1, 0), handler=UcpHandler(ucp='89A67B')))
+    _append_pending_event(backend, row['id'], UcpHandler(ucp='89A67B'), PendingUcp)
 
     r = client.get('/ui/')
 
@@ -705,12 +721,13 @@ def test_wizard_homeworld_change_pending_links_to_sector_picker(client_with_back
 
     client, backend = client_with_backend
     row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Clio')
-    backend.append_event(row['id'], Event(fulfills=(1, 0), handler=UcpHandler(ucp='7869A5')))
-    backend.append_event(
+    _append_pending_event(backend, row['id'], UcpHandler(ucp='7869A5'), PendingUcp)
+    _append_pending_event(
+        backend,
         row['id'],
-        Event(fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()])),
+        BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()]),
     )
-    backend.append_event(row['id'], Event(fulfills=(3, 0), handler=FinishCreationHandler()))
+    _append_pending_event(backend, row['id'], FinishCreationHandler())
     backend.append_event(
         row['id'],
         Event(
@@ -795,12 +812,13 @@ def test_selecting_homeworld_from_wizard_picker_updates_character(client_with_ba
 
     client, backend = client_with_backend
     row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Clio')
-    backend.append_event(row['id'], Event(fulfills=(1, 0), handler=UcpHandler(ucp='7869A5')))
-    backend.append_event(
+    _append_pending_event(backend, row['id'], UcpHandler(ucp='7869A5'), PendingUcp)
+    _append_pending_event(
+        backend,
         row['id'],
-        Event(fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()])),
+        BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()]),
     )
-    backend.append_event(row['id'], Event(fulfills=(3, 0), handler=FinishCreationHandler()))
+    _append_pending_event(backend, row['id'], FinishCreationHandler())
     backend.append_event(
         row['id'],
         Event(
@@ -965,10 +983,11 @@ def test_choose_career_shows_career_qualification_and_assignment_descriptions(cl
 
     client, backend = client_with_backend
     character_id = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Aria')['id']
-    backend.append_event(character_id, Event(fulfills=(1, 0), handler=UcpHandler(ucp='7869A5')))
-    backend.append_event(
+    _append_pending_event(backend, character_id, UcpHandler(ucp='7869A5'), PendingUcp)
+    _append_pending_event(
+        backend,
         character_id,
-        Event(fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()])),
+        BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()]),
     )
 
     r = client.get(f'/ui/characters/{character_id}/wizard')

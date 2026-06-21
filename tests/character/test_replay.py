@@ -334,11 +334,18 @@ class TestReplayFromPersistedEventLog:
         try:
             row = backend.start(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')
             character_id = row['id']
-            backend.append_event(character_id, Event(fulfills=(1, 0), handler=UcpHandler(ucp='7869A5')))
+            projection = backend.get_projection(character_id)
+            assert projection is not None
+            ucp_pending = next(p for p in projection.pending_inputs if isinstance(p, PendingUcp))
+            backend.append_event(character_id, Event(fulfills=ucp_pending.pending_id, handler=UcpHandler(ucp='7869A5')))
+            projection = backend.get_projection(character_id)
+            assert projection is not None
+            background_pending = next(p for p in projection.pending_inputs if isinstance(p, PendingBackgroundSkills))
             backend.append_event(
                 character_id,
                 Event(
-                    fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()])
+                    fulfills=background_pending.pending_id,
+                    handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()]),
                 ),
             )
 
@@ -361,7 +368,8 @@ class TestReplayBlocking:
             replay(1, [_started(), unrelated])
 
     def test_rejects_event_with_unknown_fulfills(self):
-        wrong = Event(fulfills=(99, 0), handler=UcpHandler(ucp='7869A5'))
+        unknown_pending = (99, 0)
+        wrong = Event(fulfills=unknown_pending, handler=UcpHandler(ucp='7869A5'))
 
         with pytest.raises(ReplayError):
             replay(1, [_started(), wrong])

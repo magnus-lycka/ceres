@@ -86,6 +86,14 @@ from ceres.character.mechanism.replay import ReplayError, replay
 from tests.character.helpers import MOCK_WORLD, CharacterDriver
 
 
+def _event(*, id_, handler, fulfills=None) -> Event:
+    return Event.model_validate({'id': id_, 'fulfills': fulfills, 'handler': handler})
+
+
+def _pending(event_id, pending_index):
+    return (event_id, pending_index)
+
+
 class TestCoreCareerCoverage:
     def test_all_core_careers_are_loaded(self):
         from ceres.character.domain.career.loader import load_careers
@@ -126,18 +134,18 @@ class TestCoreCareerCoverage:
 
     def test_entertainer_qualification_accepts_dex_or_int(self):
         events = [
-            Event(
-                id=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')
+            _event(
+                id_=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')
             ),
-            Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='7833A5')),
-            Event(
-                id=3,
-                fulfills=(2, 0),
+            _event(id_=2, fulfills=_pending(1, 0), handler=UcpHandler(ucp='7833A5')),
+            _event(
+                id_=3,
+                fulfills=_pending(2, 0),
                 handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()]),
             ),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(
                     career=ENTERTAINER, assignment=ENTERTAINER.assignment('Performer'), qualification_roll=5
                 ),
@@ -154,10 +162,12 @@ def _full_setup(character_id: int = 1) -> list:
     """Return events that get a character through setup: started → ucp → background skills."""
     # STR=7 DEX=8 END=6 INT=9 EDU=10 SOC=5 → 4 background skills
     return [
-        Event(id=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')),
-        Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='7869A5')),
-        Event(
-            id=3, fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()])
+        _event(id_=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')),
+        _event(id_=2, fulfills=_pending(1, 0), handler=UcpHandler(ucp='7869A5')),
+        _event(
+            id_=3,
+            fulfills=_pending(2, 0),
+            handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()]),
         ),
     ]
 
@@ -170,10 +180,12 @@ def _scholar_setup(character_id: int = 1) -> list:
     creates two choice pendings: Drive/Flyer (id .0) and Science (id .1).
     """
     return [
-        Event(id=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')),
-        Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='7869A5')),
-        Event(
-            id=3, fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Medic()])
+        _event(id_=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')),
+        _event(id_=2, fulfills=_pending(1, 0), handler=UcpHandler(ucp='7869A5')),
+        _event(
+            id_=3,
+            fulfills=_pending(2, 0),
+            handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Medic()]),
         ),
     ]
 
@@ -185,9 +197,9 @@ class TestQualification:
         # Scout: INT 5+, character has INT=9 (DM+1), roll 5 → 5+1=6 >= 5
         events = [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=5),
             ),
         ]
@@ -201,9 +213,9 @@ class TestQualification:
         # Scout: INT 5+, INT=9 (DM+1), roll 3 → 3+1=4 < 5
         events = [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=3),
             ),
         ]
@@ -218,9 +230,9 @@ class TestQualification:
     def test_failure_adds_problem_with_career_name(self):
         events = [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=3),
             ),
         ]
@@ -232,9 +244,9 @@ class TestQualification:
         # Scholar: INT 6+, INT=9 (DM+1), roll 4 → 4+1=5 < 6
         events = [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(
                     career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=4
                 ),
@@ -248,9 +260,9 @@ class TestQualification:
         # EDU=10 (DM+1), roll 5 → 5+1=6 >= 6
         events = [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(
                     career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
                 ),
@@ -265,14 +277,14 @@ class TestQualification:
         # Fail Scout, then succeed Scholar
         events = [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=3),
             ),
-            Event(
-                id=5,
-                fulfills=(4, 0),
+            _event(
+                id_=5,
+                fulfills=_pending(4, 0),
                 handler=CareerEntryHandler(
                     career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
                 ),
@@ -297,39 +309,39 @@ class TestSubsequentBasicTraining:
         return [
             *_full_setup(),
             # Scout term 1
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
-            Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),
-            Event(id=7, fulfills=(6, 0), handler=AdvancementHandler(roll=3)),
-            Event(id=8, fulfills=(7, 0), handler=ReenlistHandler(reenlist=False)),
-            Event(id=9, fulfills=(8, 0), handler=MusterOutHandler(table='cash', roll=1)),
+            _event(id_=5, fulfills=_pending(4, 0), handler=SurviveHandler(roll=7)),
+            _event(id_=6, fulfills=_pending(5, 0), handler=TermEventHandler(roll=5)),
+            _event(id_=7, fulfills=_pending(6, 0), handler=AdvancementHandler(roll=3)),
+            _event(id_=8, fulfills=_pending(7, 0), handler=ReenlistHandler(reenlist=False)),
+            _event(id_=9, fulfills=_pending(8, 0), handler=MusterOutHandler(table='cash', roll=1)),
             # Agent/Intelligence term 1 (2nd career → basic training: one service skill pick)
-            Event(
-                id=10,
-                fulfills=(9, 0),
+            _event(
+                id_=10,
+                fulfills=_pending(9, 0),
                 handler=CareerEntryHandler(
                     career=AGENT, assignment=AGENT.assignment('Intelligence'), qualification_roll=5
                 ),
             ),
-            Event(id=11, fulfills=(10, 0), handler=SkillChoiceHandler(skill=Investigate())),
-            Event(id=12, fulfills=(11, 0), handler=SurviveHandler(roll=9)),
-            Event(id=13, fulfills=(12, 0), handler=TermEventHandler(roll=4)),
-            Event(id=14, fulfills=(13, 0), handler=AdvancementHandler(roll=3)),
-            Event(id=15, fulfills=(14, 0), handler=ReenlistHandler(reenlist=False)),
-            Event(id=16, fulfills=(15, 0), handler=MusterOutHandler(table='cash', roll=1)),
+            _event(id_=11, fulfills=_pending(10, 0), handler=SkillChoiceHandler(skill=Investigate())),
+            _event(id_=12, fulfills=_pending(11, 0), handler=SurviveHandler(roll=9)),
+            _event(id_=13, fulfills=_pending(12, 0), handler=TermEventHandler(roll=4)),
+            _event(id_=14, fulfills=_pending(13, 0), handler=AdvancementHandler(roll=3)),
+            _event(id_=15, fulfills=_pending(14, 0), handler=ReenlistHandler(reenlist=False)),
+            _event(id_=16, fulfills=_pending(15, 0), handler=MusterOutHandler(table='cash', roll=1)),
         ]
 
     def test_scout_reentry_creates_survive_not_skill_table(self):
         """Re-entering Scout (all service skills already known) gives survival pending, not skill roll."""
         events = [
             *self._setup_scout_then_agent_muster_out(),
-            Event(
-                id=17,
-                fulfills=(16, 0),
+            _event(
+                id_=17,
+                fulfills=_pending(16, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
         ]
@@ -342,9 +354,9 @@ class TestSubsequentBasicTraining:
         """Survival pending ID is career_event.id.0 — no skill table interleaved."""
         events = [
             *self._setup_scout_then_agent_muster_out(),
-            Event(
-                id=17,
-                fulfills=(16, 0),
+            _event(
+                id_=17,
+                fulfills=_pending(16, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
         ]
@@ -358,9 +370,9 @@ class TestCareerEntry:
     def test_career_event_creates_survive_pending(self):
         events = [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
         ]
@@ -372,9 +384,9 @@ class TestCareerEntry:
     def test_career_event_sets_current_career_in_summary(self):
         events = [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
         ]
@@ -389,9 +401,9 @@ class TestCareerEntry:
     def test_career_event_grants_initial_training_service_skills(self):
         events = [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
         ]
@@ -421,9 +433,9 @@ class TestCareerEntry:
     def test_career_pending_id_derived_from_background_skills_event_id(self):
         events = [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
         ]
@@ -437,9 +449,9 @@ class TestCareerEntry:
     def test_survive_pending_instruction_mentions_target(self):
         events = [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
         ]
@@ -454,9 +466,9 @@ class TestCareerEntry:
     def test_scholar_career_event_grants_non_choice_service_skills(self):
         events = [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(
                     career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
                 ),
@@ -480,16 +492,16 @@ class TestSurvive:
     def _setup_with_career(self) -> list:
         return [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
         ]
 
     def test_survive_success_creates_term_event_pending(self):
         # END=6 (DM+0), need 5+, roll 7 → success
-        events = [*self._setup_with_career(), Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7))]
+        events = [*self._setup_with_career(), _event(id_=5, fulfills=_pending(4, 0), handler=SurviveHandler(roll=7))]
 
         projection = replay(1, events)
 
@@ -497,7 +509,7 @@ class TestSurvive:
 
     def test_survive_failure_creates_mishap_pending(self):
         # END=6 (DM+0), need 5+, roll 3 → failure
-        events = [*self._setup_with_career(), Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=3))]
+        events = [*self._setup_with_career(), _event(id_=5, fulfills=_pending(4, 0), handler=SurviveHandler(roll=3))]
 
         projection = replay(1, events)
 
@@ -505,7 +517,7 @@ class TestSurvive:
 
     def test_natural_2_always_fails(self):
         # Natural 2 always fails regardless of characteristic DMs
-        events = [*self._setup_with_career(), Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=2))]
+        events = [*self._setup_with_career(), _event(id_=5, fulfills=_pending(4, 0), handler=SurviveHandler(roll=2))]
 
         projection = replay(1, events)
 
@@ -513,7 +525,7 @@ class TestSurvive:
 
     def test_survive_success_at_exact_target(self):
         # END=6 (DM+0), need 5+, roll 5 → success
-        events = [*self._setup_with_career(), Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=5))]
+        events = [*self._setup_with_career(), _event(id_=5, fulfills=_pending(4, 0), handler=SurviveHandler(roll=5))]
 
         projection = replay(1, events)
 
@@ -524,30 +536,39 @@ class TestMishap:
     def _setup_through_failed_survive(self) -> list:
         return [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=3)),  # fail
+            _event(id_=5, fulfills=_pending(4, 0), handler=SurviveHandler(roll=3)),  # fail
         ]
 
     def test_mishap_resolves_mishap_pending(self):
-        events = [*self._setup_through_failed_survive(), Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=5))]
+        events = [
+            *self._setup_through_failed_survive(),
+            _event(id_=6, fulfills=_pending(5, 0), handler=MishapHandler(roll=5)),
+        ]
 
         projection = replay(1, events)
 
         assert not any(isinstance(p, PendingMishap) for p in projection.pending_inputs)
 
     def test_mishap_ends_career(self):
-        events = [*self._setup_through_failed_survive(), Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=5))]
+        events = [
+            *self._setup_through_failed_survive(),
+            _event(id_=6, fulfills=_pending(5, 0), handler=MishapHandler(roll=5)),
+        ]
 
         projection = replay(1, events)
 
         assert projection.summary.current_career is None
 
     def test_mishap_records_mishap_text_in_problems(self):
-        events = [*self._setup_through_failed_survive(), Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=5))]
+        events = [
+            *self._setup_through_failed_survive(),
+            _event(id_=6, fulfills=_pending(5, 0), handler=MishapHandler(roll=5)),
+        ]
 
         projection = replay(1, events)
 
@@ -558,16 +579,19 @@ class TestTermEvent:
     def _setup_through_survive(self) -> list:
         return [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),  # success
+            _event(id_=5, fulfills=_pending(4, 0), handler=SurviveHandler(roll=7)),  # success
         ]
 
     def test_term_event_resolves_pending_creates_life_event_pending(self):
-        events = [*self._setup_through_survive(), Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=7))]
+        events = [
+            *self._setup_through_survive(),
+            _event(id_=6, fulfills=_pending(5, 0), handler=TermEventHandler(roll=7)),
+        ]
 
         projection = replay(1, events)
 
@@ -576,7 +600,10 @@ class TestTermEvent:
 
     def test_event_7_life_event_blocks_advancement_until_resolved(self):
         # Life event (7) creates life_event pending; advancement is not visible until life event resolves
-        events = [*self._setup_through_survive(), Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=7))]
+        events = [
+            *self._setup_through_survive(),
+            _event(id_=6, fulfills=_pending(5, 0), handler=TermEventHandler(roll=7)),
+        ]
 
         projection = replay(1, events)
 
@@ -585,7 +612,10 @@ class TestTermEvent:
 
     def test_event_4_skill_choice_creates_skill_choice_pending(self):
         # Event 4 for Scout: gain one of Animals, Survival, Recon, Science
-        events = [*self._setup_through_survive(), Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=4))]
+        events = [
+            *self._setup_through_survive(),
+            _event(id_=6, fulfills=_pending(5, 0), handler=TermEventHandler(roll=4)),
+        ]
 
         projection = replay(1, events)
 
@@ -597,18 +627,21 @@ class TestAdvancement:
     def _setup_through_term_event(self) -> list:
         return [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
-            Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),  # benefit_dm → direct advancement
+            _event(id_=5, fulfills=_pending(4, 0), handler=SurviveHandler(roll=7)),
+            _event(id_=6, fulfills=_pending(5, 0), handler=TermEventHandler(roll=5)),  # benefit_dm → direct advancement
         ]
 
     def test_advancement_success_increases_rank(self):
         # EDU=10 (DM+1), need 9+, roll 9 → success (9+1=10 >= 9)
-        events = [*self._setup_through_term_event(), Event(id=7, fulfills=(6, 0), handler=AdvancementHandler(roll=9))]
+        events = [
+            *self._setup_through_term_event(),
+            _event(id_=7, fulfills=_pending(6, 0), handler=AdvancementHandler(roll=9)),
+        ]
 
         projection = replay(1, events)
 
@@ -616,21 +649,30 @@ class TestAdvancement:
 
     def test_advancement_success_grants_rank_bonus_skill(self):
         # Rank 1 Scout gets Vacc Suit 1
-        events = [*self._setup_through_term_event(), Event(id=7, fulfills=(6, 0), handler=AdvancementHandler(roll=9))]
+        events = [
+            *self._setup_through_term_event(),
+            _event(id_=7, fulfills=_pending(6, 0), handler=AdvancementHandler(roll=9)),
+        ]
 
         projection = replay(1, events)
 
         assert projection.summary.skill_level(VaccSuit) == 1
 
     def test_advancement_failure_keeps_rank(self):
-        events = [*self._setup_through_term_event(), Event(id=7, fulfills=(6, 0), handler=AdvancementHandler(roll=5))]
+        events = [
+            *self._setup_through_term_event(),
+            _event(id_=7, fulfills=_pending(6, 0), handler=AdvancementHandler(roll=5)),
+        ]
 
         projection = replay(1, events)
 
         assert projection.summary.rank == 0
 
     def test_advancement_creates_assignment_change_pending(self):
-        events = [*self._setup_through_term_event(), Event(id=7, fulfills=(6, 0), handler=AdvancementHandler(roll=9))]
+        events = [
+            *self._setup_through_term_event(),
+            _event(id_=7, fulfills=_pending(6, 0), handler=AdvancementHandler(roll=9)),
+        ]
 
         projection = replay(1, events)
 
@@ -652,20 +694,20 @@ class TestAdvancementForcedLeave:
     def _setup_scout_through_term_event(self) -> list:
         return [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
-            Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),  # BenefitDm → PendingAdvancement
+            _event(id_=5, fulfills=_pending(4, 0), handler=SurviveHandler(roll=7)),
+            _event(id_=6, fulfills=_pending(5, 0), handler=TermEventHandler(roll=5)),  # BenefitDm → PendingAdvancement
         ]
 
     def test_roll_1_in_term_1_removes_reenlist_choice(self):
         # roll=1 ≤ 1 term → forced leave; no reenlist or assignment-change choice
         events = [
             *self._setup_scout_through_term_event(),
-            Event(id=7, fulfills=(6, 0), handler=AdvancementHandler(roll=1)),
+            _event(id_=7, fulfills=_pending(6, 0), handler=AdvancementHandler(roll=1)),
         ]
         projection = replay(1, events)
 
@@ -676,7 +718,7 @@ class TestAdvancementForcedLeave:
     def test_roll_1_in_term_1_queues_muster_out(self):
         events = [
             *self._setup_scout_through_term_event(),
-            Event(id=7, fulfills=(6, 0), handler=AdvancementHandler(roll=1)),
+            _event(id_=7, fulfills=_pending(6, 0), handler=AdvancementHandler(roll=1)),
         ]
         projection = replay(1, events)
 
@@ -686,7 +728,7 @@ class TestAdvancementForcedLeave:
         # roll=2 > 1 term → normal assignment-change choice (Scout has allows_assignment_change)
         events = [
             *self._setup_scout_through_term_event(),
-            Event(id=7, fulfills=(6, 0), handler=AdvancementHandler(roll=2)),
+            _event(id_=7, fulfills=_pending(6, 0), handler=AdvancementHandler(roll=2)),
         ]
         projection = replay(1, events)
 
@@ -701,14 +743,14 @@ class TestAdvancementNatural12Stay:
         # Scout allows_assignment_change → PendingAssignmentChangeChoice without 'muster_out'
         events = [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
-            Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),
-            Event(id=7, fulfills=(6, 0), handler=AdvancementHandler(roll=12)),
+            _event(id_=5, fulfills=_pending(4, 0), handler=SurviveHandler(roll=7)),
+            _event(id_=6, fulfills=_pending(5, 0), handler=TermEventHandler(roll=5)),
+            _event(id_=7, fulfills=_pending(6, 0), handler=AdvancementHandler(roll=12)),
         ]
         projection = replay(1, events)
 
@@ -721,16 +763,16 @@ class TestAdvancementNatural12Stay:
         # Merchant has no allows_assignment_change → PendingReenlist with options=['true']
         events = [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(
                     career=MERCHANT, assignment=MERCHANT.assignment('Merchant Marine'), qualification_roll=3
                 ),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=4)),
-            Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=10)),  # BenefitDm → PendingAdvancement
-            Event(id=7, fulfills=(6, 0), handler=AdvancementHandler(roll=12)),
+            _event(id_=5, fulfills=_pending(4, 0), handler=SurviveHandler(roll=4)),
+            _event(id_=6, fulfills=_pending(5, 0), handler=TermEventHandler(roll=10)),  # BenefitDm → PendingAdvancement
+            _event(id_=7, fulfills=_pending(6, 0), handler=AdvancementHandler(roll=12)),
         ]
         projection = replay(1, events)
 
@@ -743,20 +785,20 @@ class TestReenlist:
     def _setup_through_advancement(self, advancement_roll: int = 9) -> list:
         return [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
-            Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),  # benefit_dm → direct advancement
-            Event(id=7, fulfills=(6, 0), handler=AdvancementHandler(roll=advancement_roll)),
+            _event(id_=5, fulfills=_pending(4, 0), handler=SurviveHandler(roll=7)),
+            _event(id_=6, fulfills=_pending(5, 0), handler=TermEventHandler(roll=5)),  # benefit_dm → direct advancement
+            _event(id_=7, fulfills=_pending(6, 0), handler=AdvancementHandler(roll=advancement_roll)),
         ]
 
     def test_same_assignment_starts_another_term(self):
         events = [
             *self._setup_through_advancement(),
-            Event(id=8, fulfills=(7, 0), handler=AssignmentChangeChoiceHandler(choice='same')),
+            _event(id_=8, fulfills=_pending(7, 0), handler=AssignmentChangeChoiceHandler(choice='same')),
         ]
 
         projection = replay(1, events)
@@ -766,7 +808,7 @@ class TestReenlist:
     def test_same_assignment_creates_skill_table_pending(self):
         events = [
             *self._setup_through_advancement(),
-            Event(id=8, fulfills=(7, 0), handler=AssignmentChangeChoiceHandler(choice='same')),
+            _event(id_=8, fulfills=_pending(7, 0), handler=AssignmentChangeChoiceHandler(choice='same')),
         ]
 
         projection = replay(1, events)
@@ -776,7 +818,7 @@ class TestReenlist:
     def test_muster_out_ends_career(self):
         events = [
             *self._setup_through_advancement(),
-            Event(id=8, fulfills=(7, 0), handler=AssignmentChangeChoiceHandler(choice='muster_out')),
+            _event(id_=8, fulfills=_pending(7, 0), handler=AssignmentChangeChoiceHandler(choice='muster_out')),
         ]
 
         projection = replay(1, events)
@@ -794,12 +836,11 @@ class TestReenlist:
 
         # After choosing switch, step 2 should offer the other Scout assignments
         from ceres.character.domain.career.career_events import AssignmentChangeChoiceHandler
-        from ceres.character.mechanism.event_base import Event
 
         events = [
             *setup,
-            Event(
-                id=len(setup) + 1, fulfills=pending.pending_id, handler=AssignmentChangeChoiceHandler(choice='switch')
+            _event(
+                id_=len(setup) + 1, fulfills=pending.pending_id, handler=AssignmentChangeChoiceHandler(choice='switch')
             ),
         ]
         projection2 = replay(1, events)
@@ -812,22 +853,22 @@ class TestSkillTable:
     def _setup_in_term_2(self) -> list:
         return [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
-            Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),  # benefit_dm → direct advancement
-            Event(id=7, fulfills=(6, 0), handler=AdvancementHandler(roll=9)),
-            Event(id=8, fulfills=(7, 0), handler=AssignmentChangeChoiceHandler(choice='same')),
+            _event(id_=5, fulfills=_pending(4, 0), handler=SurviveHandler(roll=7)),
+            _event(id_=6, fulfills=_pending(5, 0), handler=TermEventHandler(roll=5)),  # benefit_dm → direct advancement
+            _event(id_=7, fulfills=_pending(6, 0), handler=AdvancementHandler(roll=9)),
+            _event(id_=8, fulfills=_pending(7, 0), handler=AssignmentChangeChoiceHandler(choice='same')),
         ]
 
     def test_skill_table_courier_roll_specialised_creates_choice_pending(self):
         # Courier table roll 1: Electronics (specialised) → PendingSkillTableChoice, not auto-granted
         events = [
             *self._setup_in_term_2(),
-            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='assignment1', roll=1)),
+            _event(id_=9, fulfills=_pending(8, 0), handler=SkillTableHandler(table='assignment1', roll=1)),
         ]
 
         projection = replay(1, events)
@@ -840,8 +881,10 @@ class TestSkillTable:
         # Choose Electronics (Comms) → Electronics (Comms) 1 granted
         events = [
             *self._setup_in_term_2(),
-            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='assignment1', roll=1)),
-            Event(id=10, fulfills=(9, 0), handler=SkillChoiceHandler(skill=Electronics(comms=Level(value=1)))),
+            _event(id_=9, fulfills=_pending(8, 0), handler=SkillTableHandler(table='assignment1', roll=1)),
+            _event(
+                id_=10, fulfills=_pending(9, 0), handler=SkillChoiceHandler(skill=Electronics(comms=Level(value=1)))
+            ),
         ]
 
         projection = replay(1, events)
@@ -852,7 +895,7 @@ class TestSkillTable:
         # Personal development roll 1: STR +1 (STR was 7, should be 8)
         events = [
             *self._setup_in_term_2(),
-            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='personal_development', roll=1)),
+            _event(id_=9, fulfills=_pending(8, 0), handler=SkillTableHandler(table='personal_development', roll=1)),
         ]
 
         projection = replay(1, events)
@@ -863,7 +906,7 @@ class TestSkillTable:
         # Personal development roll 1 (STR) — non-specialised → survive appears immediately
         events = [
             *self._setup_in_term_2(),
-            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='personal_development', roll=1)),
+            _event(id_=9, fulfills=_pending(8, 0), handler=SkillTableHandler(table='personal_development', roll=1)),
         ]
 
         projection = replay(1, events)
@@ -874,13 +917,13 @@ class TestSkillTable:
         # Electronics (specialised) → survive only appears after the specialisation choice
         events = [
             *self._setup_in_term_2(),
-            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='assignment1', roll=1)),
+            _event(id_=9, fulfills=_pending(8, 0), handler=SkillTableHandler(table='assignment1', roll=1)),
         ]
         projection = replay(1, events)
         assert not any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
 
         events.append(
-            Event(id=10, fulfills=(9, 0), handler=SkillChoiceHandler(skill=Electronics(comms=Level(value=1))))
+            _event(id_=10, fulfills=_pending(9, 0), handler=SkillChoiceHandler(skill=Electronics(comms=Level(value=1))))
         )
         projection = replay(1, events)
         assert any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
@@ -889,27 +932,31 @@ class TestSkillTable:
         # EDU=10 meets Scout advanced education min EDU 8
         # Make a character with EDU=6 to fail the advanced education requirement
         low_edu_events = [
-            Event(
-                id=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')
+            _event(
+                id_=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')
             ),
-            Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='786600')),  # EDU=6
-            Event(id=3, fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Drive()])),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(id_=2, fulfills=_pending(1, 0), handler=UcpHandler(ucp='786600')),  # EDU=6
+            _event(
+                id_=3, fulfills=_pending(2, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Drive()])
+            ),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
-            Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),  # benefit_dm → direct advancement
-            Event(id=7, fulfills=(6, 0), handler=AdvancementHandler(roll=9)),
-            Event(id=8, fulfills=(7, 0), handler=ReenlistHandler(reenlist=True)),
+            _event(id_=5, fulfills=_pending(4, 0), handler=SurviveHandler(roll=7)),
+            _event(id_=6, fulfills=_pending(5, 0), handler=TermEventHandler(roll=5)),  # benefit_dm → direct advancement
+            _event(id_=7, fulfills=_pending(6, 0), handler=AdvancementHandler(roll=9)),
+            _event(id_=8, fulfills=_pending(7, 0), handler=ReenlistHandler(reenlist=True)),
         ]
         with pytest.raises(ReplayError):
             replay(
                 1,
                 [
                     *low_edu_events,
-                    Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='advanced_education', roll=1)),
+                    _event(
+                        id_=9, fulfills=_pending(8, 0), handler=SkillTableHandler(table='advanced_education', roll=1)
+                    ),
                 ],
             )
 
@@ -924,13 +971,13 @@ class TestTermEventRollMishap:
             assignment = SCOUT.assignment('Courier')
         return [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=career, assignment=assignment, qualification_roll=qualification_roll),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
-            Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=2)),
+            _event(id_=5, fulfills=_pending(4, 0), handler=SurviveHandler(roll=7)),
+            _event(id_=6, fulfills=_pending(5, 0), handler=TermEventHandler(roll=2)),
         ]
 
     def test_creates_mishap_pending(self):
@@ -941,7 +988,7 @@ class TestTermEventRollMishap:
     def test_mishap_stay_keeps_career(self):
         events = [
             *self._setup_to_disaster(),
-            Event(id=7, fulfills=(6, 0), handler=MishapHandler(roll=5, stay_in_career=True)),
+            _event(id_=7, fulfills=_pending(6, 0), handler=MishapHandler(roll=5, stay_in_career=True)),
         ]
         projection = replay(1, events)
 
@@ -951,7 +998,7 @@ class TestTermEventRollMishap:
     def test_mishap_stay_creates_advancement_pending(self):
         events = [
             *self._setup_to_disaster(),
-            Event(id=7, fulfills=(6, 0), handler=MishapHandler(roll=5, stay_in_career=True)),
+            _event(id_=7, fulfills=_pending(6, 0), handler=MishapHandler(roll=5, stay_in_career=True)),
         ]
         projection = replay(1, events)
 
@@ -961,16 +1008,16 @@ class TestTermEventRollMishap:
         # _full_setup includes Drive, so Drive/Flyer row auto-grants Flyer; only Science needs a choice.
         events = [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(
                     career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
                 ),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=SpaceScience())),
-            Event(id=6, fulfills=(5, 0), handler=SurviveHandler(roll=7)),
-            Event(id=7, fulfills=(6, 0), handler=TermEventHandler(roll=2)),
+            _event(id_=5, fulfills=_pending(4, 0), handler=SkillChoiceHandler(skill=SpaceScience())),
+            _event(id_=6, fulfills=_pending(5, 0), handler=SurviveHandler(roll=7)),
+            _event(id_=7, fulfills=_pending(6, 0), handler=TermEventHandler(roll=2)),
         ]
         projection = replay(1, events)
 
@@ -983,13 +1030,13 @@ class TestTermEventAutoAdvance:
     def test_scout_event_12_promotes_rank(self):
         events = [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
-            Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=12)),
+            _event(id_=5, fulfills=_pending(4, 0), handler=SurviveHandler(roll=7)),
+            _event(id_=6, fulfills=_pending(5, 0), handler=TermEventHandler(roll=12)),
         ]
         projection = replay(1, events)
 
@@ -998,13 +1045,13 @@ class TestTermEventAutoAdvance:
     def test_scout_event_12_applies_rank_1_vacc_suit_bonus(self):
         events = [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
-            Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=12)),
+            _event(id_=5, fulfills=_pending(4, 0), handler=SurviveHandler(roll=7)),
+            _event(id_=6, fulfills=_pending(5, 0), handler=TermEventHandler(roll=12)),
         ]
         projection = replay(1, events)
 
@@ -1013,13 +1060,13 @@ class TestTermEventAutoAdvance:
     def test_creates_assignment_change_pending_not_advancement(self):
         events = [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
-            Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=12)),
+            _event(id_=5, fulfills=_pending(4, 0), handler=SurviveHandler(roll=7)),
+            _event(id_=6, fulfills=_pending(5, 0), handler=TermEventHandler(roll=12)),
         ]
         projection = replay(1, events)
 
@@ -1030,17 +1077,17 @@ class TestTermEventAutoAdvance:
         # Rank 1 bonus is Science 1 (player chooses which broad science) — Core p.43
         events = [
             *_scholar_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(
                     career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
                 ),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
-            Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
-            Event(id=7, fulfills=(6, 0), handler=SurviveHandler(roll=7)),
-            Event(id=8, fulfills=(7, 0), handler=TermEventHandler(roll=12)),
+            _event(id_=5, fulfills=_pending(4, 0), handler=SkillChoiceHandler(skill=Drive())),
+            _event(id_=6, fulfills=_pending(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
+            _event(id_=7, fulfills=_pending(6, 0), handler=SurviveHandler(roll=7)),
+            _event(id_=8, fulfills=_pending(7, 0), handler=TermEventHandler(roll=12)),
         ]
         projection = replay(1, events)
 
@@ -1065,23 +1112,23 @@ class TestSkillTableIncrement:
     def _setup_in_term_2(self) -> list:
         return [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
-            Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),  # benefit_dm → direct advancement
-            Event(id=7, fulfills=(6, 0), handler=AdvancementHandler(roll=9)),
-            Event(id=8, fulfills=(7, 0), handler=ReenlistHandler(reenlist=True)),
+            _event(id_=5, fulfills=_pending(4, 0), handler=SurviveHandler(roll=7)),
+            _event(id_=6, fulfills=_pending(5, 0), handler=TermEventHandler(roll=5)),  # benefit_dm → direct advancement
+            _event(id_=7, fulfills=_pending(6, 0), handler=AdvancementHandler(roll=9)),
+            _event(id_=8, fulfills=_pending(7, 0), handler=ReenlistHandler(reenlist=True)),
         ]
 
     def test_new_skill_gains_level_1(self):
         # Courier table roll 2: Flyer (specialised) → choice pending, then Flyer 1 after picking spec
         events = [
             *self._setup_in_term_2(),
-            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='assignment1', roll=2)),
-            Event(id=10, fulfills=(9, 0), handler=SkillChoiceHandler(skill=Flyer(grav=Level(value=1)))),
+            _event(id_=9, fulfills=_pending(8, 0), handler=SkillTableHandler(table='assignment1', roll=2)),
+            _event(id_=10, fulfills=_pending(9, 0), handler=SkillChoiceHandler(skill=Flyer(grav=Level(value=1)))),
         ]
         projection = replay(1, events)
 
@@ -1091,8 +1138,8 @@ class TestSkillTableIncrement:
         # Courier table roll 3: Pilot (specialised, existing at 0) → choice pending, then Pilot 1
         events = [
             *self._setup_in_term_2(),
-            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='assignment1', roll=3)),
-            Event(id=10, fulfills=(9, 0), handler=SkillChoiceHandler(skill=Pilot(spacecraft=Level(value=1)))),
+            _event(id_=9, fulfills=_pending(8, 0), handler=SkillTableHandler(table='assignment1', roll=3)),
+            _event(id_=10, fulfills=_pending(9, 0), handler=SkillChoiceHandler(skill=Pilot(spacecraft=Level(value=1)))),
         ]
         projection = replay(1, events)
 
@@ -1102,7 +1149,7 @@ class TestSkillTableIncrement:
         # Scout rank 1 bonus: Vacc Suit 1. Roll service_skills 5 (Vacc Suit) in term 2 → 2
         events = [
             *self._setup_in_term_2(),
-            Event(id=9, fulfills=(8, 0), handler=SkillTableHandler(table='service_skills', roll=5)),
+            _event(id_=9, fulfills=_pending(8, 0), handler=SkillTableHandler(table='service_skills', roll=5)),
         ]
         projection = replay(1, events)
 
@@ -1115,26 +1162,26 @@ class TestSkillTableChoice:
     def _setup_scholar_term_2(self) -> list:
         return [
             *_scholar_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(
                     career=SCHOLAR, assignment=SCHOLAR.assignment('Scientist'), qualification_roll=5
                 ),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
-            Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
-            Event(id=7, fulfills=(6, 0), handler=SurviveHandler(roll=7)),
-            Event(id=8, fulfills=(7, 0), handler=TermEventHandler(roll=5)),  # benefit_dm → direct advancement
-            Event(id=9, fulfills=(8, 0), handler=AdvancementHandler(roll=7)),
-            Event(id=10, fulfills=(9, 0), handler=ReenlistHandler(reenlist=True)),
+            _event(id_=5, fulfills=_pending(4, 0), handler=SkillChoiceHandler(skill=Drive())),
+            _event(id_=6, fulfills=_pending(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
+            _event(id_=7, fulfills=_pending(6, 0), handler=SurviveHandler(roll=7)),
+            _event(id_=8, fulfills=_pending(7, 0), handler=TermEventHandler(roll=5)),  # benefit_dm → direct advancement
+            _event(id_=9, fulfills=_pending(8, 0), handler=AdvancementHandler(roll=7)),
+            _event(id_=10, fulfills=_pending(9, 0), handler=ReenlistHandler(reenlist=True)),
         ]
 
     def test_choice_entry_creates_skill_table_choice_pending(self):
         # Scholar service_skills roll 1: Drive/Flyer choice
         events = [
             *self._setup_scholar_term_2(),
-            Event(id=11, fulfills=(10, 0), handler=SkillTableHandler(table='service_skills', roll=1)),
+            _event(id_=11, fulfills=_pending(10, 0), handler=SkillTableHandler(table='service_skills', roll=1)),
         ]
         projection = replay(1, events)
 
@@ -1146,8 +1193,8 @@ class TestSkillTableChoice:
         # Scholar has Drive 0 from initial training → choose Drive → Drive 1
         events = [
             *self._setup_scholar_term_2(),
-            Event(id=11, fulfills=(10, 0), handler=SkillTableHandler(table='service_skills', roll=1)),
-            Event(id=12, fulfills=(11, 0), handler=SkillChoiceHandler(skill=Drive(wheel=Level(value=1)))),
+            _event(id_=11, fulfills=_pending(10, 0), handler=SkillTableHandler(table='service_skills', roll=1)),
+            _event(id_=12, fulfills=_pending(11, 0), handler=SkillChoiceHandler(skill=Drive(wheel=Level(value=1)))),
         ]
         projection = replay(1, events)
 
@@ -1159,7 +1206,7 @@ class TestSkillTableChoice:
 
         events = [
             *self._setup_scholar_term_2(),
-            Event(id=11, fulfills=(10, 0), handler=SkillTableHandler(table='personal_development', roll=6)),
+            _event(id_=11, fulfills=_pending(10, 0), handler=SkillTableHandler(table='personal_development', roll=6)),
         ]
         projection = replay(1, events)
 
@@ -1173,7 +1220,7 @@ class TestSkillTableChoice:
 
         events = [
             *self._setup_scholar_term_2(),
-            Event(id=11, fulfills=(10, 0), handler=SkillTableHandler(table='service_skills', roll=6)),
+            _event(id_=11, fulfills=_pending(10, 0), handler=SkillTableHandler(table='service_skills', roll=6)),
         ]
         projection = replay(1, events)
 
@@ -1187,7 +1234,7 @@ class TestSkillTableChoice:
 
         events = [
             *self._setup_scholar_term_2(),
-            Event(id=11, fulfills=(10, 0), handler=SkillTableHandler(table='advanced_education', roll=1)),
+            _event(id_=11, fulfills=_pending(10, 0), handler=SkillTableHandler(table='advanced_education', roll=1)),
         ]
         projection = replay(1, events)
 
@@ -1201,18 +1248,18 @@ class TestSkillTableChoice:
 
         events = [
             *_scholar_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(
                     career=SCHOLAR, assignment=SCHOLAR.assignment('Scientist'), qualification_roll=5
                 ),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
-            Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
-            Event(id=7, fulfills=(6, 0), handler=SurviveHandler(roll=7)),
-            Event(id=8, fulfills=(7, 0), handler=TermEventHandler(roll=5)),
-            Event(id=9, fulfills=(8, 0), handler=AdvancementHandler(roll=7)),
+            _event(id_=5, fulfills=_pending(4, 0), handler=SkillChoiceHandler(skill=Drive())),
+            _event(id_=6, fulfills=_pending(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
+            _event(id_=7, fulfills=_pending(6, 0), handler=SurviveHandler(roll=7)),
+            _event(id_=8, fulfills=_pending(7, 0), handler=TermEventHandler(roll=5)),
+            _event(id_=9, fulfills=_pending(8, 0), handler=AdvancementHandler(roll=7)),
         ]
         projection = replay(1, events)
 
@@ -1223,8 +1270,8 @@ class TestSkillTableChoice:
     def test_choice_creates_survive_pending_not_advancement(self):
         events = [
             *self._setup_scholar_term_2(),
-            Event(id=11, fulfills=(10, 0), handler=SkillTableHandler(table='service_skills', roll=1)),
-            Event(id=12, fulfills=(11, 0), handler=SkillChoiceHandler(skill=Flyer(grav=Level(value=1)))),
+            _event(id_=11, fulfills=_pending(10, 0), handler=SkillTableHandler(table='service_skills', roll=1)),
+            _event(id_=12, fulfills=_pending(11, 0), handler=SkillChoiceHandler(skill=Flyer(grav=Level(value=1)))),
         ]
         projection = replay(1, events)
 
@@ -1241,18 +1288,18 @@ class TestAdvancementDmFromScheduledEffects:
         # With Scholar event 9 DM+2: roll 6 + DM+1 + DM+2 = 9 >= 8 → success
         events = [
             *_scholar_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(
                     career=SCHOLAR, assignment=SCHOLAR.assignment('Scientist'), qualification_roll=5
                 ),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
-            Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
-            Event(id=7, fulfills=(6, 0), handler=SurviveHandler(roll=7)),
-            Event(id=8, fulfills=(7, 0), handler=TermEventHandler(roll=9)),  # breakthrough → DM+2
-            Event(id=9, fulfills=(8, 0), handler=AdvancementHandler(roll=6)),
+            _event(id_=5, fulfills=_pending(4, 0), handler=SkillChoiceHandler(skill=Drive())),
+            _event(id_=6, fulfills=_pending(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
+            _event(id_=7, fulfills=_pending(6, 0), handler=SurviveHandler(roll=7)),
+            _event(id_=8, fulfills=_pending(7, 0), handler=TermEventHandler(roll=9)),  # breakthrough → DM+2
+            _event(id_=9, fulfills=_pending(8, 0), handler=AdvancementHandler(roll=6)),
         ]
         projection = replay(1, events)
 
@@ -1262,18 +1309,18 @@ class TestAdvancementDmFromScheduledEffects:
         # Same roll (6) without the breakthrough DM → 7 < 8 → fail
         events = [
             *_scholar_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(
                     career=SCHOLAR, assignment=SCHOLAR.assignment('Scientist'), qualification_roll=5
                 ),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
-            Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
-            Event(id=7, fulfills=(6, 0), handler=SurviveHandler(roll=7)),
-            Event(id=8, fulfills=(7, 0), handler=TermEventHandler(roll=5)),  # benefit_dm (no advancement DM)
-            Event(id=9, fulfills=(8, 0), handler=AdvancementHandler(roll=6)),
+            _event(id_=5, fulfills=_pending(4, 0), handler=SkillChoiceHandler(skill=Drive())),
+            _event(id_=6, fulfills=_pending(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
+            _event(id_=7, fulfills=_pending(6, 0), handler=SurviveHandler(roll=7)),
+            _event(id_=8, fulfills=_pending(7, 0), handler=TermEventHandler(roll=5)),  # benefit_dm (no advancement DM)
+            _event(id_=9, fulfills=_pending(8, 0), handler=AdvancementHandler(roll=6)),
         ]
         projection = replay(1, events)
 
@@ -1282,18 +1329,18 @@ class TestAdvancementDmFromScheduledEffects:
     def test_breakthrough_dm_is_consumed_after_advancement(self):
         events = [
             *_scholar_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(
                     career=SCHOLAR, assignment=SCHOLAR.assignment('Scientist'), qualification_roll=5
                 ),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=Drive())),
-            Event(id=6, fulfills=(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
-            Event(id=7, fulfills=(6, 0), handler=SurviveHandler(roll=7)),
-            Event(id=8, fulfills=(7, 0), handler=TermEventHandler(roll=9)),
-            Event(id=9, fulfills=(8, 0), handler=AdvancementHandler(roll=6)),
+            _event(id_=5, fulfills=_pending(4, 0), handler=SkillChoiceHandler(skill=Drive())),
+            _event(id_=6, fulfills=_pending(4, 1), handler=SkillChoiceHandler(skill=SpaceScience())),
+            _event(id_=7, fulfills=_pending(6, 0), handler=SurviveHandler(roll=7)),
+            _event(id_=8, fulfills=_pending(7, 0), handler=TermEventHandler(roll=9)),
+            _event(id_=9, fulfills=_pending(8, 0), handler=AdvancementHandler(roll=6)),
         ]
         projection = replay(1, events)
 
@@ -1310,20 +1357,20 @@ class TestSevereInjury:
             assignment = SCOUT.assignment('Courier')
         return [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=career, assignment=assignment, qualification_roll=qualification_roll),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=3)),  # fail
+            _event(id_=5, fulfills=_pending(4, 0), handler=SurviveHandler(roll=3)),  # fail
         ]
 
     def test_normal_injury_still_reduces_by_1(self):
         # Scout mishap 6: normal injury should still only reduce by 1
         events = [
             *self._setup_through_failed_survive(),
-            Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=6)),
-            Event(id=7, fulfills=(6, 0), handler=CharacteristicChoiceHandler(characteristic=Chars.STR)),
+            _event(id_=6, fulfills=_pending(5, 0), handler=MishapHandler(roll=6)),
+            _event(id_=7, fulfills=_pending(6, 0), handler=CharacteristicChoiceHandler(characteristic=Chars.STR)),
         ]
         projection = replay(1, events)
 
@@ -1336,13 +1383,13 @@ class TestLifeEvents:
     def _setup_to_life_event(self) -> list:
         return [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
-            Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=7)),
+            _event(id_=5, fulfills=_pending(4, 0), handler=SurviveHandler(roll=7)),
+            _event(id_=6, fulfills=_pending(5, 0), handler=TermEventHandler(roll=7)),
         ]
 
     def test_creates_life_event_pending(self):
@@ -1351,31 +1398,46 @@ class TestLifeEvents:
         assert any(isinstance(p, PendingLifeEvent) for p in projection.pending_inputs)
 
     def test_roll_7_new_contact_adds_contact(self):
-        events = [*self._setup_to_life_event(), Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=7))]
+        events = [
+            *self._setup_to_life_event(),
+            _event(id_=7, fulfills=_pending(6, 0), handler=LifeEventHandler(roll=7)),
+        ]
         projection = replay(1, events)
 
         assert any(isinstance(c, Contact) for c in projection.summary.connections)
 
     def test_roll_7_creates_advancement_pending(self):
-        events = [*self._setup_to_life_event(), Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=7))]
+        events = [
+            *self._setup_to_life_event(),
+            _event(id_=7, fulfills=_pending(6, 0), handler=LifeEventHandler(roll=7)),
+        ]
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
     def test_roll_5_improved_relationship_adds_ally(self):
-        events = [*self._setup_to_life_event(), Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=5))]
+        events = [
+            *self._setup_to_life_event(),
+            _event(id_=7, fulfills=_pending(6, 0), handler=LifeEventHandler(roll=5)),
+        ]
         projection = replay(1, events)
 
         assert any(isinstance(c, Ally) for c in projection.summary.connections)
 
     def test_roll_6_new_relationship_adds_ally(self):
-        events = [*self._setup_to_life_event(), Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=6))]
+        events = [
+            *self._setup_to_life_event(),
+            _event(id_=7, fulfills=_pending(6, 0), handler=LifeEventHandler(roll=6)),
+        ]
         projection = replay(1, events)
 
         assert any(isinstance(c, Ally) for c in projection.summary.connections)
 
     def test_roll_3_birth_or_death_creates_advancement_no_mechanical_effect(self):
-        events = [*self._setup_to_life_event(), Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=3))]
+        events = [
+            *self._setup_to_life_event(),
+            _event(id_=7, fulfills=_pending(6, 0), handler=LifeEventHandler(roll=3)),
+        ]
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
@@ -1383,7 +1445,10 @@ class TestLifeEvents:
         assert not projection.summary.connections
 
     def test_roll_4_ending_relationship_creates_choice_pending(self):
-        events = [*self._setup_to_life_event(), Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=4))]
+        events = [
+            *self._setup_to_life_event(),
+            _event(id_=7, fulfills=_pending(6, 0), handler=LifeEventHandler(roll=4)),
+        ]
         projection = replay(1, events)
 
         pending = next(
@@ -1395,8 +1460,12 @@ class TestLifeEvents:
     def test_roll_4_choose_rival_adds_rival(self):
         events = [
             *self._setup_to_life_event(),
-            Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=4)),
-            Event(id=8, fulfills=(7, 0), handler=ConnectionKindChoiceHandler(connection_kind=ConnectionKind.RIVAL)),
+            _event(id_=7, fulfills=_pending(6, 0), handler=LifeEventHandler(roll=4)),
+            _event(
+                id_=8,
+                fulfills=_pending(7, 0),
+                handler=ConnectionKindChoiceHandler(connection_kind=ConnectionKind.RIVAL),
+            ),
         ]
         projection = replay(1, events)
 
@@ -1405,8 +1474,12 @@ class TestLifeEvents:
     def test_roll_4_choose_enemy_adds_enemy(self):
         events = [
             *self._setup_to_life_event(),
-            Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=4)),
-            Event(id=8, fulfills=(7, 0), handler=ConnectionKindChoiceHandler(connection_kind=ConnectionKind.ENEMY)),
+            _event(id_=7, fulfills=_pending(6, 0), handler=LifeEventHandler(roll=4)),
+            _event(
+                id_=8,
+                fulfills=_pending(7, 0),
+                handler=ConnectionKindChoiceHandler(connection_kind=ConnectionKind.ENEMY),
+            ),
         ]
         projection = replay(1, events)
 
@@ -1415,15 +1488,22 @@ class TestLifeEvents:
     def test_roll_4_choice_resolves_to_advancement(self):
         events = [
             *self._setup_to_life_event(),
-            Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=4)),
-            Event(id=8, fulfills=(7, 0), handler=ConnectionKindChoiceHandler(connection_kind=ConnectionKind.RIVAL)),
+            _event(id_=7, fulfills=_pending(6, 0), handler=LifeEventHandler(roll=4)),
+            _event(
+                id_=8,
+                fulfills=_pending(7, 0),
+                handler=ConnectionKindChoiceHandler(connection_kind=ConnectionKind.RIVAL),
+            ),
         ]
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
     def test_roll_8_betrayal_creates_choice_pending(self):
-        events = [*self._setup_to_life_event(), Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=8))]
+        events = [
+            *self._setup_to_life_event(),
+            _event(id_=7, fulfills=_pending(6, 0), handler=LifeEventHandler(roll=8)),
+        ]
         projection = replay(1, events)
 
         pending = next(
@@ -1435,39 +1515,58 @@ class TestLifeEvents:
     def test_roll_8_choose_rival_adds_rival(self):
         events = [
             *self._setup_to_life_event(),
-            Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=8)),
-            Event(id=8, fulfills=(7, 0), handler=ConnectionKindChoiceHandler(connection_kind=ConnectionKind.RIVAL)),
+            _event(id_=7, fulfills=_pending(6, 0), handler=LifeEventHandler(roll=8)),
+            _event(
+                id_=8,
+                fulfills=_pending(7, 0),
+                handler=ConnectionKindChoiceHandler(connection_kind=ConnectionKind.RIVAL),
+            ),
         ]
         projection = replay(1, events)
 
         assert any(isinstance(c, Rival) for c in projection.summary.connections)
 
     def test_roll_9_travel_creates_qualification_dm_scheduled_effect(self):
-        events = [*self._setup_to_life_event(), Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=9))]
+        events = [
+            *self._setup_to_life_event(),
+            _event(id_=7, fulfills=_pending(6, 0), handler=LifeEventHandler(roll=9)),
+        ]
         projection = replay(1, events)
 
         assert projection.pending_qualification_dm == 2
 
     def test_roll_9_creates_advancement_pending(self):
-        events = [*self._setup_to_life_event(), Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=9))]
+        events = [
+            *self._setup_to_life_event(),
+            _event(id_=7, fulfills=_pending(6, 0), handler=LifeEventHandler(roll=9)),
+        ]
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
     def test_roll_10_good_fortune_creates_advancement_pending(self):
-        events = [*self._setup_to_life_event(), Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=10))]
+        events = [
+            *self._setup_to_life_event(),
+            _event(id_=7, fulfills=_pending(6, 0), handler=LifeEventHandler(roll=10)),
+        ]
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
     def test_roll_11_crime_creates_advancement_pending(self):
-        events = [*self._setup_to_life_event(), Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=11))]
+        events = [
+            *self._setup_to_life_event(),
+            _event(id_=7, fulfills=_pending(6, 0), handler=LifeEventHandler(roll=11)),
+        ]
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
     def test_roll_2_sickness_creates_injury_table_pending(self):
-        events = [*self._setup_to_life_event(), Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=2))]
+        events = [
+            *self._setup_to_life_event(),
+            _event(id_=7, fulfills=_pending(6, 0), handler=LifeEventHandler(roll=2)),
+        ]
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingInjuryTable) for p in projection.pending_inputs)
@@ -1475,15 +1574,18 @@ class TestLifeEvents:
     def test_roll_2_after_light_injury_advancement_pending_exists(self):
         events = [
             *self._setup_to_life_event(),
-            Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=2)),
-            Event(id=8, fulfills=(7, 0), handler=InjuryTableHandler(roll=6)),  # lightly injured — no effect
+            _event(id_=7, fulfills=_pending(6, 0), handler=LifeEventHandler(roll=2)),
+            _event(id_=8, fulfills=_pending(7, 0), handler=InjuryTableHandler(roll=6)),  # lightly injured — no effect
         ]
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
     def test_roll_12_unusual_creates_life_event_unusual_pending(self):
-        events = [*self._setup_to_life_event(), Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=12))]
+        events = [
+            *self._setup_to_life_event(),
+            _event(id_=7, fulfills=_pending(6, 0), handler=LifeEventHandler(roll=12)),
+        ]
         projection = replay(1, events)
 
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingLifeEventUnusual)), None)
@@ -1492,8 +1594,8 @@ class TestLifeEvents:
     def test_roll_12_unusual_1_psionics_queues_roll_pending(self):
         events = [
             *self._setup_to_life_event(),
-            Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=12)),
-            Event(id=8, fulfills=(7, 0), handler=LifeEventUnusualHandler(roll=1)),
+            _event(id_=7, fulfills=_pending(6, 0), handler=LifeEventHandler(roll=12)),
+            _event(id_=8, fulfills=_pending(7, 0), handler=LifeEventUnusualHandler(roll=1)),
         ]
         projection = replay(1, events)
 
@@ -1503,8 +1605,8 @@ class TestLifeEvents:
     def test_roll_12_unusual_2_aliens_adds_contact_and_queues_science_choice(self):
         events = [
             *self._setup_to_life_event(),
-            Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=12)),
-            Event(id=8, fulfills=(7, 0), handler=LifeEventUnusualHandler(roll=2)),
+            _event(id_=7, fulfills=_pending(6, 0), handler=LifeEventHandler(roll=12)),
+            _event(id_=8, fulfills=_pending(7, 0), handler=LifeEventUnusualHandler(roll=2)),
         ]
         projection = replay(1, events)
 
@@ -1517,9 +1619,11 @@ class TestLifeEvents:
     def test_roll_12_unusual_2_aliens_science_choice_grants_skill(self):
         events = [
             *self._setup_to_life_event(),
-            Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=12)),
-            Event(id=8, fulfills=(7, 0), handler=LifeEventUnusualHandler(roll=2)),
-            Event(id=9, fulfills=(8, 0), handler=SkillChoiceHandler(skill=LifeScience(biology=Level(value=1)))),
+            _event(id_=7, fulfills=_pending(6, 0), handler=LifeEventHandler(roll=12)),
+            _event(id_=8, fulfills=_pending(7, 0), handler=LifeEventUnusualHandler(roll=2)),
+            _event(
+                id_=9, fulfills=_pending(8, 0), handler=SkillChoiceHandler(skill=LifeScience(biology=Level(value=1)))
+            ),
         ]
         projection = replay(1, events)
 
@@ -1529,8 +1633,8 @@ class TestLifeEvents:
         for roll in [3, 4, 5, 6]:
             events = [
                 *self._setup_to_life_event(),
-                Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=12)),
-                Event(id=8, fulfills=(7, 0), handler=LifeEventUnusualHandler(roll=roll)),
+                _event(id_=7, fulfills=_pending(6, 0), handler=LifeEventHandler(roll=12)),
+                _event(id_=8, fulfills=_pending(7, 0), handler=LifeEventUnusualHandler(roll=roll)),
             ]
             projection = replay(1, events)
             assert not projection.summary.connections, f'roll={roll} should have no connections'
@@ -1538,8 +1642,8 @@ class TestLifeEvents:
     def test_roll_12_unusual_creates_advancement_pending(self):
         events = [
             *self._setup_to_life_event(),
-            Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=12)),
-            Event(id=8, fulfills=(7, 0), handler=LifeEventUnusualHandler(roll=1)),
+            _event(id_=7, fulfills=_pending(6, 0), handler=LifeEventHandler(roll=12)),
+            _event(id_=8, fulfills=_pending(7, 0), handler=LifeEventUnusualHandler(roll=1)),
         ]
         projection = replay(1, events)
 
@@ -1549,25 +1653,33 @@ class TestLifeEvents:
         """Two-term setup: first term gains a Contact via roll=7 life event, then term 2 queues life event."""
         return [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
-            Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=7)),
-            Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=7)),  # Contact gained → advancement queued
-            Event(id=8, fulfills=(7, 0), handler=AdvancementHandler(roll=3)),  # Fails (5 < 9), no forced-leave
-            Event(id=9, fulfills=(8, 0), handler=AssignmentChangeChoiceHandler(choice='same')),  # SkillTable queued
-            Event(id=10, fulfills=(9, 0), handler=SkillTableHandler(table='service_skills', roll=2)),  # Survival
-            Event(id=11, fulfills=(10, 0), handler=SurviveHandler(roll=7)),
-            Event(id=12, fulfills=(11, 0), handler=TermEventHandler(roll=7)),
+            _event(id_=5, fulfills=_pending(4, 0), handler=SurviveHandler(roll=7)),
+            _event(id_=6, fulfills=_pending(5, 0), handler=TermEventHandler(roll=7)),
+            _event(
+                id_=7, fulfills=_pending(6, 0), handler=LifeEventHandler(roll=7)
+            ),  # Contact gained → advancement queued
+            _event(
+                id_=8, fulfills=_pending(7, 0), handler=AdvancementHandler(roll=3)
+            ),  # Fails (5 < 9), no forced-leave
+            _event(
+                id_=9, fulfills=_pending(8, 0), handler=AssignmentChangeChoiceHandler(choice='same')
+            ),  # SkillTable queued
+            _event(
+                id_=10, fulfills=_pending(9, 0), handler=SkillTableHandler(table='service_skills', roll=2)
+            ),  # Survival
+            _event(id_=11, fulfills=_pending(10, 0), handler=SurviveHandler(roll=7)),
+            _event(id_=12, fulfills=_pending(11, 0), handler=TermEventHandler(roll=7)),
         ]
 
     def test_roll_8_with_contact_creates_betrayal_convert_pending(self):
         events = [
             *self._setup_to_life_event_two_terms(),
-            Event(id=13, fulfills=(12, 0), handler=LifeEventHandler(roll=8)),
+            _event(id_=13, fulfills=_pending(12, 0), handler=LifeEventHandler(roll=8)),
         ]
         projection = replay(1, events)
 
@@ -1577,8 +1689,12 @@ class TestLifeEvents:
         rival_kind = ConnectionKind.RIVAL
         events = [
             *self._setup_to_life_event_two_terms(),
-            Event(id=13, fulfills=(12, 0), handler=LifeEventHandler(roll=8)),
-            Event(id=14, fulfills=(13, 0), handler=BetrayalConvertHandler(connection_index=0, new_kind=rival_kind)),
+            _event(id_=13, fulfills=_pending(12, 0), handler=LifeEventHandler(roll=8)),
+            _event(
+                id_=14,
+                fulfills=_pending(13, 0),
+                handler=BetrayalConvertHandler(connection_index=0, new_kind=rival_kind),
+            ),
         ]
         projection = replay(1, events)
 
@@ -1589,8 +1705,12 @@ class TestLifeEvents:
         enemy_kind = ConnectionKind.ENEMY
         events = [
             *self._setup_to_life_event_two_terms(),
-            Event(id=13, fulfills=(12, 0), handler=LifeEventHandler(roll=8)),
-            Event(id=14, fulfills=(13, 0), handler=BetrayalConvertHandler(connection_index=0, new_kind=enemy_kind)),
+            _event(id_=13, fulfills=_pending(12, 0), handler=LifeEventHandler(roll=8)),
+            _event(
+                id_=14,
+                fulfills=_pending(13, 0),
+                handler=BetrayalConvertHandler(connection_index=0, new_kind=enemy_kind),
+            ),
         ]
         projection = replay(1, events)
 
@@ -1607,14 +1727,14 @@ class TestLifeEventGoodFortune:
     def _setup_through_life_event_10(self) -> list:
         return [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
-            Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=7)),  # life_event pending
-            Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=10)),  # Good Fortune
+            _event(id_=5, fulfills=_pending(4, 0), handler=SurviveHandler(roll=7)),
+            _event(id_=6, fulfills=_pending(5, 0), handler=TermEventHandler(roll=7)),  # life_event pending
+            _event(id_=7, fulfills=_pending(6, 0), handler=LifeEventHandler(roll=10)),  # Good Fortune
         ]
 
     def test_good_fortune_stores_benefit_dm_on_muster_out(self):
@@ -1634,14 +1754,14 @@ class TestLifeEventCrime:
     def _setup_through_life_event_11(self) -> list:
         return [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
-            Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=7)),  # life_event pending
-            Event(id=7, fulfills=(6, 0), handler=LifeEventHandler(roll=11)),  # Crime
+            _event(id_=5, fulfills=_pending(4, 0), handler=SurviveHandler(roll=7)),
+            _event(id_=6, fulfills=_pending(5, 0), handler=TermEventHandler(roll=7)),  # life_event pending
+            _event(id_=7, fulfills=_pending(6, 0), handler=LifeEventHandler(roll=11)),  # Crime
         ]
 
     def test_crime_creates_pending_choices_with_two_options(self):
@@ -1660,13 +1780,13 @@ class TestLifeEventCrime:
         # 1 term, rank 0 → normally 1 roll; lose-benefit-roll choice reduces by 1 → 0 rolls
         events = [
             *self._setup_through_life_event_11(),
-            Event(
-                id=8,
-                fulfills=(7, 0),
+            _event(
+                id_=8,
+                fulfills=_pending(7, 0),
                 handler=CareerChoiceHandler(choice=LifeEventCrimeLoseBenefitRoll.model_fields['kind'].default),
             ),
-            Event(id=9, fulfills=(7, 1), handler=AdvancementHandler(roll=3)),
-            Event(id=10, fulfills=(9, 0), handler=ReenlistHandler(reenlist=False)),
+            _event(id_=9, fulfills=_pending(7, 1), handler=AdvancementHandler(roll=3)),
+            _event(id_=10, fulfills=_pending(9, 0), handler=ReenlistHandler(reenlist=False)),
         ]
         projection = replay(1, events)
 
@@ -1677,13 +1797,13 @@ class TestLifeEventCrime:
         # 1 term, rank 0, lose-benefit-roll → would be -1 rolls → clamped to 0
         events = [
             *self._setup_through_life_event_11(),
-            Event(
-                id=8,
-                fulfills=(7, 0),
+            _event(
+                id_=8,
+                fulfills=_pending(7, 0),
                 handler=CareerChoiceHandler(choice=LifeEventCrimeLoseBenefitRoll.model_fields['kind'].default),
             ),
-            Event(id=9, fulfills=(7, 1), handler=AdvancementHandler(roll=3)),
-            Event(id=10, fulfills=(9, 0), handler=ReenlistHandler(reenlist=False)),
+            _event(id_=9, fulfills=_pending(7, 1), handler=AdvancementHandler(roll=3)),
+            _event(id_=10, fulfills=_pending(9, 0), handler=ReenlistHandler(reenlist=False)),
         ]
         projection = replay(1, events)
 
@@ -1694,18 +1814,18 @@ class TestLifeEventCrime:
         # 2 terms rank 0 → lose-benefit-roll reduces 2 → 1 roll
         events = [
             *self._setup_through_life_event_11(),
-            Event(
-                id=8,
-                fulfills=(7, 0),
+            _event(
+                id_=8,
+                fulfills=_pending(7, 0),
                 handler=CareerChoiceHandler(choice=LifeEventCrimeLoseBenefitRoll.model_fields['kind'].default),
             ),
-            Event(id=9, fulfills=(7, 1), handler=AdvancementHandler(roll=3)),
-            Event(id=10, fulfills=(9, 0), handler=ReenlistHandler(reenlist=True)),
-            Event(id=11, fulfills=(10, 0), handler=SkillTableHandler(table='service_skills', roll=5)),
-            Event(id=12, fulfills=(11, 0), handler=SurviveHandler(roll=7)),
-            Event(id=13, fulfills=(12, 0), handler=TermEventHandler(roll=5)),
-            Event(id=14, fulfills=(13, 0), handler=AdvancementHandler(roll=3)),
-            Event(id=15, fulfills=(14, 0), handler=ReenlistHandler(reenlist=False)),
+            _event(id_=9, fulfills=_pending(7, 1), handler=AdvancementHandler(roll=3)),
+            _event(id_=10, fulfills=_pending(9, 0), handler=ReenlistHandler(reenlist=True)),
+            _event(id_=11, fulfills=_pending(10, 0), handler=SkillTableHandler(table='service_skills', roll=5)),
+            _event(id_=12, fulfills=_pending(11, 0), handler=SurviveHandler(roll=7)),
+            _event(id_=13, fulfills=_pending(12, 0), handler=TermEventHandler(roll=5)),
+            _event(id_=14, fulfills=_pending(13, 0), handler=AdvancementHandler(roll=3)),
+            _event(id_=15, fulfills=_pending(14, 0), handler=ReenlistHandler(reenlist=False)),
         ]
         projection = replay(1, events)
 
@@ -1721,14 +1841,14 @@ class TestLifeEventCrime:
         # choosing take-prisoner sets forced_next_career; after muster-out, only Prisoner is offered
         events = [
             *self._setup_through_life_event_11(),
-            Event(
-                id=8,
-                fulfills=(7, 0),
+            _event(
+                id_=8,
+                fulfills=_pending(7, 0),
                 handler=CareerChoiceHandler(choice=LifeEventCrimeTakePrisoner.model_fields['kind'].default),
             ),
-            Event(id=9, fulfills=(7, 1), handler=AdvancementHandler(roll=3)),
-            Event(id=10, fulfills=(9, 0), handler=ReenlistHandler(reenlist=False)),
-            Event(id=11, fulfills=(10, 0), handler=MusterOutHandler(table='benefits', roll=3)),
+            _event(id_=9, fulfills=_pending(7, 1), handler=AdvancementHandler(roll=3)),
+            _event(id_=10, fulfills=_pending(9, 0), handler=ReenlistHandler(reenlist=False)),
+            _event(id_=11, fulfills=_pending(10, 0), handler=MusterOutHandler(table='benefits', roll=3)),
         ]
         projection = replay(1, events)
 
@@ -1743,15 +1863,15 @@ class TestAgentAssignmentTableFiltering:
     def _setup_in_term_2(self, assignment: str) -> list:
         return [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=AGENT, assignment=AGENT.assignment(assignment), qualification_roll=8),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
-            Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),
-            Event(id=7, fulfills=(6, 0), handler=AdvancementHandler(roll=9)),
-            Event(id=8, fulfills=(7, 0), handler=ReenlistHandler(reenlist=True)),
+            _event(id_=5, fulfills=_pending(4, 0), handler=SurviveHandler(roll=7)),
+            _event(id_=6, fulfills=_pending(5, 0), handler=TermEventHandler(roll=5)),
+            _event(id_=7, fulfills=_pending(6, 0), handler=AdvancementHandler(roll=9)),
+            _event(id_=8, fulfills=_pending(7, 0), handler=ReenlistHandler(reenlist=True)),
         ]
 
     def test_intelligence_assignment_excludes_corporate_and_law_enforcement_tables(self):
@@ -1801,22 +1921,22 @@ class TestNoSpuriousSurviveAfterEndOfTermSkillTableChoice:
         # Scout/Courier: survive END 5+, advancement EDU 9+ (EDU=10, DM+1, roll 8 → 9 ≥ 9)
         return [
             *_full_setup(),
-            Event(
-                id=4,
-                fulfills=(3, 0),
+            _event(
+                id_=4,
+                fulfills=_pending(3, 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=7)),
-            Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),  # simple event, no extra effects
-            Event(id=7, fulfills=(6, 0), handler=AdvancementHandler(roll=8)),  # EDU 9+; EDU=10, DM+1 → 9 ≥ 9
+            _event(id_=5, fulfills=_pending(4, 0), handler=SurviveHandler(roll=7)),
+            _event(id_=6, fulfills=_pending(5, 0), handler=TermEventHandler(roll=5)),  # simple event, no extra effects
+            _event(id_=7, fulfills=_pending(6, 0), handler=AdvancementHandler(roll=8)),  # EDU 9+; EDU=10, DM+1 → 9 ≥ 9
         ]
 
     def test_no_survive_after_choice_path_advanced_edu_language(self):
         """Choosing Language from advanced_education must not produce a spurious survive."""
         events = [
             *self._through_advancement(),
-            Event(
-                id=8, fulfills=(7, 0), handler=SkillTableHandler(table='advanced_education', roll=2)
+            _event(
+                id_=8, fulfills=_pending(7, 0), handler=SkillTableHandler(table='advanced_education', roll=2)
             ),  # Language → choice
         ]
         projection = replay(1, events)
@@ -1826,7 +1946,10 @@ class TestNoSpuriousSurviveAfterEndOfTermSkillTableChoice:
         # Fulfill the choice — still no spurious survive
         from ceres.character.domain.skills import LanguageGalanglic
 
-        events2 = [*events, Event(id=9, fulfills=(8, 0), handler=SkillChoiceHandler(skill=LanguageGalanglic()))]
+        events2 = [
+            *events,
+            _event(id_=9, fulfills=_pending(8, 0), handler=SkillChoiceHandler(skill=LanguageGalanglic())),
+        ]
         projection2 = replay(1, events2)
         assert not any(isinstance(p, PendingSurvive) for p in projection2.pending_inputs)
         assert any(
@@ -1838,8 +1961,8 @@ class TestNoSpuriousSurviveAfterEndOfTermSkillTableChoice:
         """A non-choice skill table roll at end-of-term must also not add survive."""
         events = [
             *self._through_advancement(),
-            Event(
-                id=8, fulfills=(7, 0), handler=SkillTableHandler(table='service_skills', roll=1)
+            _event(
+                id_=8, fulfills=_pending(7, 0), handler=SkillTableHandler(table='service_skills', roll=1)
             ),  # Pilot — no choice
         ]
         projection = replay(1, events)

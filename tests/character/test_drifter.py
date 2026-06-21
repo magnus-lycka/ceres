@@ -45,36 +45,39 @@ from tests.character.helpers import MOCK_WORLD, CharacterDriver
 
 def _setup() -> list:
     """STR=7 DEX=8 END=6 INT=9 EDU=10 SOC=5 — END DM+0."""
-    return [
-        Event(id=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')),
-        Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='7869A5')),
-        Event(
-            id=3, fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()])
-        ),
-    ]
+    started = Event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'))
+    ucp = Event(fulfills=(started.id, 0), handler=UcpHandler(ucp='7869A5'))
+    background = Event(
+        fulfills=(ucp.id, 0),
+        handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()]),
+    )
+    return [started, ucp, background]
 
 
 def _enter_drifter(assignment: str = 'Wanderer', qual_roll: int = 1) -> list:
     """Through qualification — END 0+, always passes."""
-    return [
-        *_setup(),
-        Event(
-            id=4,
-            fulfills=(3, 0),
-            handler=CareerEntryHandler(
-                career=DRIFTER, assignment=DRIFTER.assignment(assignment), qualification_roll=qual_roll
-            ),
+    base = _setup()
+    entry = Event(
+        fulfills=(base[-1].id, 0),
+        handler=CareerEntryHandler(
+            career=DRIFTER, assignment=DRIFTER.assignment(assignment), qualification_roll=qual_roll
         ),
+    )
+    return [
+        *base,
+        entry,
     ]
 
 
 def _through_survive(assignment: str = 'Wanderer', survive_roll: int = 7) -> list:
     """Through survival — Wanderer END 7+, END=6 DM+0, roll 7 → 7 ≥ 7 (pass)."""
-    return [*_enter_drifter(assignment), Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=survive_roll))]
+    base = _enter_drifter(assignment)
+    return [*base, Event(fulfills=(base[-1].id, 0), handler=SurviveHandler(roll=survive_roll))]
 
 
 def _through_term_event(event_roll: int, assignment: str = 'Wanderer') -> list:
-    return [*_through_survive(assignment), Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=event_roll))]
+    base = _through_survive(assignment)
+    return [*base, Event(fulfills=(base[-1].id, 0), handler=TermEventHandler(roll=event_roll))]
 
 
 # ── basic career entry ────────────────────────────────────────────────────────
@@ -88,11 +91,11 @@ def test_drifter_career_loads_and_is_selectable():
 
 
 def test_drifter_first_career_basic_training_uses_assignment_skills():
+    base = _setup()
     events = [
-        *_setup(),
+        *base,
         Event(
-            id=4,
-            fulfills=(3, 0),
+            fulfills=(base[-1].id, 0),
             handler=CareerEntryHandler(career=DRIFTER, assignment=DRIFTER.assignment('Wanderer'), qualification_roll=0),
         ),
     ]
@@ -105,11 +108,11 @@ def test_drifter_first_career_basic_training_uses_assignment_skills():
 
 
 def test_drifter_basic_training_defers_survival_for_assignment_skill_choices():
+    base = _setup()
     events = [
-        *_setup(),
+        *base,
         Event(
-            id=4,
-            fulfills=(3, 0),
+            fulfills=(base[-1].id, 0),
             handler=CareerEntryHandler(
                 career=DRIFTER, assignment=DRIFTER.assignment('Scavenger'), qualification_roll=0
             ),
@@ -127,13 +130,12 @@ def test_drifter_basic_training_defers_survival_for_assignment_skill_choices():
 
 class TestDrifterMishap5:
     def _setup_to_mishap(self) -> list:
-        return [
-            *_enter_drifter('Wanderer'),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=6)),  # END 7+, DM+0, 6 < 7 — fail
-        ]
+        base = _enter_drifter('Wanderer')
+        return [*base, Event(fulfills=(base[-1].id, 0), handler=SurviveHandler(roll=6))]
 
     def test_mishap_5_creates_2d_roll_pending(self):
-        events = [*self._setup_to_mishap(), Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=5))]
+        base = self._setup_to_mishap()
+        events = [*base, Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=5))]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingDrifterMishap5SkillRoll)), None)
         assert pending is not None
@@ -141,20 +143,24 @@ class TestDrifterMishap5:
 
     def test_mishap_5_adds_rival_on_any_roll(self):
         for roll in (2, 7):
+            base = self._setup_to_mishap()
+            mishap = Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=5))
             events = [
-                *self._setup_to_mishap(),
-                Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=5)),
-                Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=roll)),
+                *base,
+                mishap,
+                Event(fulfills=(mishap.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=roll)),
             ]
             projection = replay(1, events)
             rivals = [c for c in projection.summary.connections if isinstance(c, Rival)]
             assert len(rivals) == 1, f'roll={roll}'
 
     def test_natural_2_forces_prisoner_as_next_career_choice(self):
+        base = self._setup_to_mishap()
+        mishap = Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=5))
         events = [
-            *self._setup_to_mishap(),
-            Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=5)),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=2)),
+            *base,
+            mishap,
+            Event(fulfills=(mishap.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=2)),
         ]
         projection = replay(1, events)
         # No muster-out rolls (lose_current_term=True, 1 term, rank 0), so forced_next_career
@@ -164,10 +170,12 @@ class TestDrifterMishap5:
         assert [c.name for c in pending.options] == ['Prisoner']
 
     def test_other_rolls_allow_free_career_choice(self):
+        base = self._setup_to_mishap()
+        mishap = Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=5))
         events = [
-            *self._setup_to_mishap(),
-            Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=5)),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
+            *base,
+            mishap,
+            Event(fulfills=(mishap.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
         ]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerChoice)), None)
@@ -175,19 +183,23 @@ class TestDrifterMishap5:
         assert 'Prisoner' not in {c.name for c in pending.options}
 
     def test_mishap_5_ends_career(self):
+        base = self._setup_to_mishap()
+        mishap = Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=5))
         events = [
-            *self._setup_to_mishap(),
-            Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=5)),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
+            *base,
+            mishap,
+            Event(fulfills=(mishap.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
         ]
         projection = replay(1, events)
         assert projection.summary.current_career is None
 
     def test_mishap_5_loses_muster_out(self):
+        base = self._setup_to_mishap()
+        mishap = Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=5))
         events = [
-            *self._setup_to_mishap(),
-            Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=5)),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
+            *base,
+            mishap,
+            Event(fulfills=(mishap.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
         ]
         projection = replay(1, events)
         assert not any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
@@ -210,11 +222,11 @@ class TestDrifterEvent3:
         assert {type(c) for c in pending.choices} == {DrifterEvent3Accept, DrifterEvent3Decline}
 
     def test_accept_schedules_qualification_dm_4(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
+            *base,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(base[-1].id, 0),
                 handler=CareerChoiceHandler(choice=DrifterEvent3Accept.model_fields['kind'].default),
             ),
         ]
@@ -222,11 +234,11 @@ class TestDrifterEvent3:
         assert projection.pending_qualification_dm == 4
 
     def test_decline_no_qualification_dm(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
+            *base,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(base[-1].id, 0),
                 handler=CareerChoiceHandler(choice=DrifterEvent3Decline.model_fields['kind'].default),
             ),
         ]
@@ -235,10 +247,12 @@ class TestDrifterEvent3:
 
     def test_both_choices_queue_advancement(self):
         for choice_cls in (DrifterEvent3Accept, DrifterEvent3Decline):
+            base = self._setup_to_event()
             events = [
-                *self._setup_to_event(),
+                *base,
                 Event(
-                    id=7, fulfills=(6, 0), handler=CareerChoiceHandler(choice=choice_cls.model_fields['kind'].default)
+                    fulfills=(base[-1].id, 0),
+                    handler=CareerChoiceHandler(choice=choice_cls.model_fields['kind'].default),
                 ),
             ]
             projection = replay(1, events)
@@ -267,9 +281,10 @@ class TestDrifterEvent8:
         assert pending.options == [Melee(), GunCombat()]
 
     def test_success_creates_skill_choice(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=9)),
+            *base,
+            Event(fulfills=(base[-1].id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=9)),
         ]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
@@ -277,17 +292,19 @@ class TestDrifterEvent8:
         assert pending.options == [Melee(), GunCombat()]
 
     def test_failure_adds_injury_problem(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=5)),
+            *base,
+            Event(fulfills=(base[-1].id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=5)),
         ]
         projection = replay(1, events)
         assert any('injur' in p.lower() for p in projection.summary.problems)
 
     def test_failure_queues_advancement(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=5)),
+            *base,
+            Event(fulfills=(base[-1].id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=5)),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
@@ -310,11 +327,11 @@ class TestDrifterEvent9:
         assert {type(c) for c in pending.choices} == {DrifterEvent9Accept, DrifterEvent9Decline}
 
     def test_decline_queues_advancement(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
+            *base,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(base[-1].id, 0),
                 handler=CareerChoiceHandler(choice=DrifterEvent9Decline.model_fields['kind'].default),
             ),
         ]
@@ -322,11 +339,11 @@ class TestDrifterEvent9:
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
     def test_accept_creates_1d_roll_pending(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
+            *base,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(base[-1].id, 0),
                 handler=CareerChoiceHandler(choice=DrifterEvent9Accept.model_fields['kind'].default),
             ),
         ]
@@ -336,14 +353,15 @@ class TestDrifterEvent9:
         assert pending.options == []
 
     def test_1d_roll_low_creates_injury_or_prison_choice(self):
+        base = self._setup_to_event()
+        choice = Event(
+            fulfills=(base[-1].id, 0),
+            handler=CareerChoiceHandler(choice=DrifterEvent9Accept.model_fields['kind'].default),
+        )
         events = [
-            *self._setup_to_event(),
-            Event(
-                id=7,
-                fulfills=(6, 0),
-                handler=CareerChoiceHandler(choice=DrifterEvent9Accept.model_fields['kind'].default),
-            ),
-            Event(id=8, fulfills=(7, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=1)),
+            *base,
+            choice,
+            Event(fulfills=(choice.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=1)),
         ]
         projection = replay(1, events)
         pending = next(
@@ -354,30 +372,32 @@ class TestDrifterEvent9:
         assert {type(c) for c in pending.choices} == {DrifterEvent9Injury, DrifterEvent9Prison}
 
     def test_1d_roll_low_also_queues_advancement(self):
+        base = self._setup_to_event()
+        choice = Event(
+            fulfills=(base[-1].id, 0),
+            handler=CareerChoiceHandler(choice=DrifterEvent9Accept.model_fields['kind'].default),
+        )
         events = [
-            *self._setup_to_event(),
-            Event(
-                id=7,
-                fulfills=(6, 0),
-                handler=CareerChoiceHandler(choice=DrifterEvent9Accept.model_fields['kind'].default),
-            ),
-            Event(id=8, fulfills=(7, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=2)),
+            *base,
+            choice,
+            Event(fulfills=(choice.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=2)),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
     def test_injury_choice_creates_injury_table_pending(self):
+        base = self._setup_to_event()
+        choice = Event(
+            fulfills=(base[-1].id, 0),
+            handler=CareerChoiceHandler(choice=DrifterEvent9Accept.model_fields['kind'].default),
+        )
+        roll_event = Event(fulfills=(choice.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=1))
         events = [
-            *self._setup_to_event(),
+            *base,
+            choice,
+            roll_event,
             Event(
-                id=7,
-                fulfills=(6, 0),
-                handler=CareerChoiceHandler(choice=DrifterEvent9Accept.model_fields['kind'].default),
-            ),
-            Event(id=8, fulfills=(7, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=1)),
-            Event(
-                id=9,
-                fulfills=(8, 0),
+                fulfills=(roll_event.id, 0),
                 handler=CareerChoiceHandler(choice=DrifterEvent9Injury.model_fields['kind'].default),
             ),
         ]
@@ -385,17 +405,18 @@ class TestDrifterEvent9:
         assert any(isinstance(p, PendingInjuryTable) for p in projection.pending_inputs)
 
     def test_prison_choice_forces_prisoner_next_career(self):
+        base = self._setup_to_event()
+        choice = Event(
+            fulfills=(base[-1].id, 0),
+            handler=CareerChoiceHandler(choice=DrifterEvent9Accept.model_fields['kind'].default),
+        )
+        roll_event = Event(fulfills=(choice.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=2))
         events = [
-            *self._setup_to_event(),
+            *base,
+            choice,
+            roll_event,
             Event(
-                id=7,
-                fulfills=(6, 0),
-                handler=CareerChoiceHandler(choice=DrifterEvent9Accept.model_fields['kind'].default),
-            ),
-            Event(id=8, fulfills=(7, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=2)),
-            Event(
-                id=9,
-                fulfills=(8, 0),
+                fulfills=(roll_event.id, 0),
                 handler=CareerChoiceHandler(choice=DrifterEvent9Prison.model_fields['kind'].default),
             ),
         ]
@@ -404,40 +425,43 @@ class TestDrifterEvent9:
         assert projection.forced_next_career.name == 'Prisoner'
 
     def test_1d_roll_3_creates_injury_table(self):
+        base = self._setup_to_event()
+        choice = Event(
+            fulfills=(base[-1].id, 0),
+            handler=CareerChoiceHandler(choice=DrifterEvent9Accept.model_fields['kind'].default),
+        )
         events = [
-            *self._setup_to_event(),
-            Event(
-                id=7,
-                fulfills=(6, 0),
-                handler=CareerChoiceHandler(choice=DrifterEvent9Accept.model_fields['kind'].default),
-            ),
-            Event(id=8, fulfills=(7, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=3)),
+            *base,
+            choice,
+            Event(fulfills=(choice.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=3)),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingInjuryTable) for p in projection.pending_inputs)
 
     def test_1d_roll_high_schedules_extra_benefit_roll(self):
+        base = self._setup_to_event()
+        choice = Event(
+            fulfills=(base[-1].id, 0),
+            handler=CareerChoiceHandler(choice=DrifterEvent9Accept.model_fields['kind'].default),
+        )
         events = [
-            *self._setup_to_event(),
-            Event(
-                id=7,
-                fulfills=(6, 0),
-                handler=CareerChoiceHandler(choice=DrifterEvent9Accept.model_fields['kind'].default),
-            ),
-            Event(id=8, fulfills=(7, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=5)),
+            *base,
+            choice,
+            Event(fulfills=(choice.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=5)),
         ]
         projection = replay(1, events)
         assert projection.summary.career_terms[-1].require_muster_out().extra_rolls == 1
 
     def test_1d_roll_high_queues_advancement(self):
+        base = self._setup_to_event()
+        choice = Event(
+            fulfills=(base[-1].id, 0),
+            handler=CareerChoiceHandler(choice=DrifterEvent9Accept.model_fields['kind'].default),
+        )
         events = [
-            *self._setup_to_event(),
-            Event(
-                id=7,
-                fulfills=(6, 0),
-                handler=CareerChoiceHandler(choice=DrifterEvent9Accept.model_fields['kind'].default),
-            ),
-            Event(id=8, fulfills=(7, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=4)),
+            *base,
+            choice,
+            Event(fulfills=(choice.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=4)),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
@@ -460,9 +484,10 @@ class TestDrifterEvent10:
 
     def test_chosen_skill_is_incremented(self):
         # Admin starts at 0 from background skills; choosing it at level 1 should increment it
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
-            Event(id=7, fulfills=(6, 0), handler=SkillChoiceHandler(skill=Admin(level=Level(value=1)))),
+            *base,
+            Event(fulfills=(base[-1].id, 0), handler=SkillChoiceHandler(skill=Admin(level=Level(value=1)))),
         ]
         projection = replay(1, events)
         assert projection.summary.skill_level(Admin) == 1

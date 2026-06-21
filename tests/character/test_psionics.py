@@ -181,7 +181,7 @@ def test_talent_level_reward_raises_possessed_talent_to_requested_level() -> Non
     projection = CharacterProjection(character_id=1, summary=summary)
     handler = PsionicTalentLevelHandler(talent=Telepathy(), level=2)
 
-    handler.apply(projection, Event(id=1, handler=handler))
+    handler.apply(projection, Event(handler=handler))
 
     assert summary.psionics.talent_level(Telepathy) == 2
 
@@ -208,7 +208,7 @@ def test_psi_strength_test_establishes_psionics_without_starting_training() -> N
     projection = CharacterProjection(character_id=1, summary=_summary())
     handler = PsiStrengthTestHandler(roll=10)
 
-    handler.apply(projection, Event(id=1, handler=handler))
+    handler.apply(projection, Event(handler=handler))
 
     assert projection.summary.characteristics[Chars.PSI] == 10
     assert projection.summary.psionics == Psionics()
@@ -225,7 +225,7 @@ def test_institute_training_offers_each_talent_only_once_even_after_failure() ->
         remaining_talents=[Telekinesis(), Clairvoyance()],
     )
     projection.pending_inputs.append(pending)
-    event = Event(id=2, fulfills=(1, 0), handler=PsionicTalentTrainingHandler(talent=Telekinesis(), roll=2))
+    event = Event(fulfills=pending.pending_id, handler=PsionicTalentTrainingHandler(talent=Telekinesis(), roll=2))
 
     projection.fulfill_pending(event)
     event.apply(projection, pending)
@@ -237,11 +237,12 @@ def test_institute_training_offers_each_talent_only_once_even_after_failure() ->
 
 
 def _started_on(world) -> Event:
-    return Event(id=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=world, player='NPC', name='Psi'))
+    return Event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=world, player='NPC', name='Psi'))
 
 
 def test_initial_psi_test_is_not_offered_on_an_imperial_birthworld() -> None:
-    projection = replay(1, [_started_on(MOCK_WORLD), Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='777707'))])
+    started = _started_on(MOCK_WORLD)
+    projection = replay(1, [started, Event(fulfills=(started.id, 0), handler=UcpHandler(ucp='777707'))])
 
     assert not any(isinstance(pending, PendingInitialPsiTest) for pending in projection.pending_inputs)
 
@@ -249,7 +250,8 @@ def test_initial_psi_test_is_not_offered_on_an_imperial_birthworld() -> None:
 def test_initial_psi_test_is_offered_on_a_non_imperial_birthworld() -> None:
     non_imperial = MOCK_WORLD.model_copy(update={'allegiance': 'NaHu'})
 
-    projection = replay(1, [_started_on(non_imperial), Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='777707'))])
+    started = _started_on(non_imperial)
+    projection = replay(1, [started, Event(fulfills=(started.id, 0), handler=UcpHandler(ucp='777707'))])
 
     assert any(isinstance(pending, PendingInitialPsiTest) for pending in projection.pending_inputs)
     assert not any(isinstance(pending, PendingCareerChoice) for pending in projection.pending_inputs)
@@ -268,10 +270,12 @@ def test_initial_psi_test_offer_only_asks_whether_to_test() -> None:
 
 def test_accepting_initial_psi_test_asks_for_roll_before_career_choice() -> None:
     non_imperial = MOCK_WORLD.model_copy(update={'allegiance': 'NaHu'})
+    started = _started_on(non_imperial)
+    ucp = Event(fulfills=(started.id, 0), handler=UcpHandler(ucp='777707'))
     events = [
-        _started_on(non_imperial),
-        Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='777707')),
-        Event(id=3, fulfills=(2, 0), handler=InitialPsiTestAcceptedHandler()),
+        started,
+        ucp,
+        Event(fulfills=(ucp.id, 0), handler=InitialPsiTestAcceptedHandler()),
     ]
 
     projection = replay(1, events)
@@ -282,10 +286,12 @@ def test_accepting_initial_psi_test_asks_for_roll_before_career_choice() -> None
 
 def test_declining_initial_psi_test_offers_career_choice_without_a_roll() -> None:
     non_imperial = MOCK_WORLD.model_copy(update={'allegiance': 'NaHu'})
+    started = _started_on(non_imperial)
+    ucp = Event(fulfills=(started.id, 0), handler=UcpHandler(ucp='777707'))
     events = [
-        _started_on(non_imperial),
-        Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='777707')),
-        Event(id=3, fulfills=(2, 0), handler=InitialPsiTestDeclinedHandler()),
+        started,
+        ucp,
+        Event(fulfills=(ucp.id, 0), handler=InitialPsiTestDeclinedHandler()),
     ]
 
     projection = replay(1, events)
@@ -296,11 +302,14 @@ def test_declining_initial_psi_test_offers_career_choice_without_a_roll() -> Non
 
 def test_initial_psi_test_establishes_psionics_then_offers_career_choice() -> None:
     non_imperial = MOCK_WORLD.model_copy(update={'allegiance': 'NaHu'})
+    started = _started_on(non_imperial)
+    ucp = Event(fulfills=(started.id, 0), handler=UcpHandler(ucp='777707'))
+    accepted = Event(fulfills=(ucp.id, 0), handler=InitialPsiTestAcceptedHandler())
     events = [
-        _started_on(non_imperial),
-        Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='777707')),
-        Event(id=3, fulfills=(2, 0), handler=InitialPsiTestAcceptedHandler()),
-        Event(fulfills=(3, 0), handler=InitialPsiTestHandler(roll=9)),
+        started,
+        ucp,
+        accepted,
+        Event(fulfills=(accepted.id, 0), handler=InitialPsiTestHandler(roll=9)),
     ]
 
     projection = replay(1, events)
@@ -312,9 +321,9 @@ def test_initial_psi_test_establishes_psionics_then_offers_career_choice() -> No
 
 def test_psionic_community_requires_established_psionic_strength() -> None:
     events = [
-        _started_on(MOCK_WORLD),
-        Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='777707')),
-        Event(id=3, handler=PreCareerEntryHandler(precareer='Psionic Community', roll=12)),
+        (started := _started_on(MOCK_WORLD)),
+        Event(fulfills=(started.id, 0), handler=UcpHandler(ucp='777707')),
+        Event(handler=PreCareerEntryHandler(precareer='Psionic Community', roll=12)),
     ]
 
     with pytest.raises(ReplayError, match='not available'):
@@ -327,7 +336,7 @@ def test_psionic_community_starts_institute_training_for_an_untrained_psion() ->
     projection.summary.psionics = Psionics()
     handler = PreCareerEntryHandler(precareer='Psionic Community', roll=12)
 
-    handler.apply(projection, Event(id=1, handler=handler))
+    handler.apply(projection, Event(handler=handler))
 
     assert isinstance(projection.pending_inputs[0], PendingPsionicInstituteTraining)
 
@@ -484,7 +493,7 @@ class TestPsionicHandlers:
         projection = _psionic_projection(psi=9)
         handler = PsionicTalentTrainingHandler(talent=Telekinesis(), roll=5)
 
-        handler.apply(projection, Event(id=1, handler=handler))
+        handler.apply(projection, Event(handler=handler))
 
         assert projection.summary.psionics is not None
         assert projection.summary.psionics.talent_level(Telekinesis) == 0
@@ -495,7 +504,7 @@ class TestPsionicHandlers:
         projection = _psionic_projection(psionics=Psionics(psionic_talent_skills=[Telepathy()]))
         handler = PsionicTalentTrainingHandler(talent=Telepathy(), roll=2)
 
-        handler.apply(projection, Event(id=1, handler=handler))
+        handler.apply(projection, Event(handler=handler))
 
         assert projection.summary.psionics is not None
         assert projection.summary.psionics.talent_level(Telepathy) == 1
@@ -513,7 +522,7 @@ class TestPsionicHandlers:
         projection = CharacterProjection(character_id=1, summary=_summary())
 
         with pytest.raises(ReplayError, match='without Psionic Strength'):
-            handler.apply(projection, Event(id=1, handler=handler))
+            handler.apply(projection, Event(handler=handler))
 
 
 class TestInstituteTraining:
@@ -620,7 +629,7 @@ class TestInstituteTraining:
         )
         projection.pending_inputs.append(pending)
         handler = FinishPsionicInstituteTrainingHandler()
-        event = Event(id=2, fulfills=pending.pending_id, handler=handler)
+        event = Event(fulfills=pending.pending_id, handler=handler)
 
         projection.fulfill_pending(event)
         event.apply(projection, pending)

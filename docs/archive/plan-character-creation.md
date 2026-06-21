@@ -403,9 +403,10 @@ not hidden callbacks.
 from ceres.character.events import CharacterStartedEvent, UcpEvent
 from ceres.character.replay import replay
 
+started = CharacterStartedEvent(sophont='Vilani', player='NPC', name='Boss')
 events = [
-    CharacterStartedEvent(id=1, sophont='Vilani', player='NPC', name='Boss'),
-    UcpEvent(id=2, fulfills='1.0', ucp='7869A5'),
+    started,
+    UcpEvent(fulfills=f'{started.id}.0', ucp='7869A5'),
 ]
 projection = replay(character_id=1, events=events)
 ```

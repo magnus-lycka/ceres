@@ -53,11 +53,23 @@ from tests.character.helpers import MOCK_WORLD, AnySkillAtLevelTestMixin
 
 def _setup(skills: list[AnySkill] | None = None) -> list:
     chosen = skills if skills is not None else [Admin(), Athletics(), Carouse(), Drive()]
-    return [
-        Event(id=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')),
-        Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='7869A5')),
-        Event(id=3, fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=chosen)),
-    ]
+    started = Event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'))
+    ucp = Event(fulfills=(started.id, 0), handler=UcpHandler(ucp='7869A5'))
+    background = Event(fulfills=(ucp.id, 0), handler=BackgroundSkillsHandler(skills=chosen))
+    return [started, ucp, background]
+
+
+def _after_scout_term() -> list:
+    base = _setup()
+    scout = Event(
+        fulfills=(base[-1].id, 0),
+        handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
+    )
+    survive = Event(fulfills=(scout.id, 0), handler=SurviveHandler(roll=8))
+    term_event = Event(fulfills=(survive.id, 0), handler=TermEventHandler(roll=5))
+    advancement = Event(fulfills=(term_event.id, 0), handler=AdvancementHandler(roll=3))
+    leave = Event(fulfills=(advancement.id, 0), handler=ReenlistHandler(reenlist=False))
+    return [*base, scout, survive, term_event, advancement, leave]
 
 
 def test_citizen_career_loads_from_yaml():
@@ -73,11 +85,11 @@ def test_citizen_career_loads_from_yaml():
 
 
 def test_citizen_first_career_basic_training_uses_assignment_skills():
+    base = _setup()
     events = [
-        *_setup(),
+        *base,
         Event(
-            id=4,
-            fulfills=(3, 0),
+            fulfills=(base[-1].id, 0),
             handler=CareerEntryHandler(career=CITIZEN, assignment=CITIZEN.assignment('Worker'), qualification_roll=5),
         ),
     ]
@@ -89,20 +101,11 @@ def test_citizen_first_career_basic_training_uses_assignment_skills():
 
 
 def test_citizen_subsequent_career_basic_training_chooses_one_assignment_skill():
+    base = _after_scout_term()
     events = [
-        *_setup(),
+        *base,
         Event(
-            id=4,
-            fulfills=(3, 0),
-            handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
-        ),
-        Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=8)),
-        Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),
-        Event(id=7, fulfills=(6, 0), handler=AdvancementHandler(roll=3)),
-        Event(id=8, fulfills=(7, 0), handler=ReenlistHandler(reenlist=False)),
-        Event(
-            id=9,
-            fulfills=(8, 0),
+            fulfills=(base[-1].id, 0),
             handler=CareerEntryHandler(career=CITIZEN, assignment=CITIZEN.assignment('Worker'), qualification_roll=5),
         ),
     ]
@@ -117,23 +120,15 @@ def test_citizen_subsequent_career_basic_training_chooses_one_assignment_skill()
 
 
 def test_citizen_subsequent_career_basic_training_choice_unlocks_survival():
+    base = _after_scout_term()
+    citizen = Event(
+        fulfills=(base[-1].id, 0),
+        handler=CareerEntryHandler(career=CITIZEN, assignment=CITIZEN.assignment('Worker'), qualification_roll=5),
+    )
     events = [
-        *_setup(),
-        Event(
-            id=4,
-            fulfills=(3, 0),
-            handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
-        ),
-        Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=8)),
-        Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=5)),
-        Event(id=7, fulfills=(6, 0), handler=AdvancementHandler(roll=3)),
-        Event(id=8, fulfills=(7, 0), handler=ReenlistHandler(reenlist=False)),
-        Event(
-            id=9,
-            fulfills=(8, 0),
-            handler=CareerEntryHandler(career=CITIZEN, assignment=CITIZEN.assignment('Worker'), qualification_roll=5),
-        ),
-        Event(fulfills=(9, 0), handler=SkillChoiceHandler(skill=Mechanic())),
+        *base,
+        citizen,
+        Event(fulfills=(citizen.id, 0), handler=SkillChoiceHandler(skill=Mechanic())),
     ]
 
     projection = replay(1, events)
@@ -150,24 +145,27 @@ def test_citizen_subsequent_career_basic_training_choice_unlocks_survival():
 
 
 def _enter_citizen(assignment: str = 'Corporate', qual_roll: int = 4, skills: list[AnySkill] | None = None) -> list:
-    return [
-        *_setup(skills=skills),
-        Event(
-            id=4,
-            fulfills=(3, 0),
-            handler=CareerEntryHandler(
-                career=CITIZEN, assignment=CITIZEN.assignment(assignment), qualification_roll=qual_roll
-            ),
+    base = _setup(skills=skills)
+    entry = Event(
+        fulfills=(base[-1].id, 0),
+        handler=CareerEntryHandler(
+            career=CITIZEN, assignment=CITIZEN.assignment(assignment), qualification_roll=qual_roll
         ),
+    )
+    return [
+        *base,
+        entry,
     ]
 
 
 def _through_survive(assignment: str = 'Corporate', survive_roll: int = 7) -> list:
-    return [*_enter_citizen(assignment), Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=survive_roll))]
+    base = _enter_citizen(assignment)
+    return [*base, Event(fulfills=(base[-1].id, 0), handler=SurviveHandler(roll=survive_roll))]
 
 
 def _through_term_event(event_roll: int, assignment: str = 'Corporate') -> list:
-    return [*_through_survive(assignment), Event(id=6, fulfills=(5, 0), handler=TermEventHandler(roll=event_roll))]
+    base = _through_survive(assignment)
+    return [*base, Event(fulfills=(base[-1].id, 0), handler=TermEventHandler(roll=event_roll))]
 
 
 # ── mishap 4: investigation by authorities ────────────────────────────────────
@@ -175,25 +173,25 @@ def _through_term_event(event_roll: int, assignment: str = 'Corporate') -> list:
 
 class TestCitizenMishap4:
     def _setup_to_mishap(self) -> list:
-        return [
-            *_enter_citizen(),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=6)),  # SOC 6+, DM−1, 6 → 5 < 6 — fail
-        ]
+        base = _enter_citizen()
+        return [*base, Event(fulfills=(base[-1].id, 0), handler=SurviveHandler(roll=6))]
 
     def test_mishap_4_creates_choice_pending(self):
-        events = [*self._setup_to_mishap(), Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=4))]
+        base = self._setup_to_mishap()
+        events = [*base, Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=4))]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingChoices)), None)
         assert pending is not None
         assert {type(c) for c in pending.choices} == {CitizenMishap4Cooperate, CitizenMishap4Resist}
 
     def test_cooperate_adds_contact(self):
+        base = self._setup_to_mishap()
+        mishap = Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=4))
         events = [
-            *self._setup_to_mishap(),
-            Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=4)),
+            *base,
+            mishap,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(mishap.id, 0),
                 handler=CareerChoiceHandler(choice=CitizenMishap4Cooperate.model_fields['kind'].default),
             ),
         ]
@@ -202,12 +200,13 @@ class TestCitizenMishap4:
         assert len(contacts) == 1
 
     def test_cooperate_ends_career_and_keeps_benefit_roll(self):
+        base = self._setup_to_mishap()
+        mishap = Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=4))
         events = [
-            *self._setup_to_mishap(),
-            Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=4)),
+            *base,
+            mishap,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(mishap.id, 0),
                 handler=CareerChoiceHandler(choice=CitizenMishap4Cooperate.model_fields['kind'].default),
             ),
         ]
@@ -216,12 +215,13 @@ class TestCitizenMishap4:
         assert any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
 
     def test_resist_adds_rival(self):
+        base = self._setup_to_mishap()
+        mishap = Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=4))
         events = [
-            *self._setup_to_mishap(),
-            Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=4)),
+            *base,
+            mishap,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(mishap.id, 0),
                 handler=CareerChoiceHandler(choice=CitizenMishap4Resist.model_fields['kind'].default),
             ),
         ]
@@ -230,12 +230,13 @@ class TestCitizenMishap4:
         assert len(rivals) == 1
 
     def test_resist_ends_career_and_loses_benefit_roll(self):
+        base = self._setup_to_mishap()
+        mishap = Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=4))
         events = [
-            *self._setup_to_mishap(),
-            Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=4)),
+            *base,
+            mishap,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(mishap.id, 0),
                 handler=CareerChoiceHandler(choice=CitizenMishap4Resist.model_fields['kind'].default),
             ),
         ]
@@ -249,23 +250,24 @@ class TestCitizenMishap4:
 
 class TestCitizenMishap5:
     def _setup_to_mishap(self) -> list:
-        return [
-            *_enter_citizen(),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=6)),
-        ]
+        base = _enter_citizen()
+        return [*base, Event(fulfills=(base[-1].id, 0), handler=SurviveHandler(roll=6))]
 
     def test_mishap_5_creates_streetwise_roll_pending(self):
-        events = [*self._setup_to_mishap(), Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=5))]
+        base = self._setup_to_mishap()
+        events = [*base, Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=5))]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCitizenMishap5SkillRoll)), None)
         assert pending is not None
         assert pending.options == [Streetwise()]
 
     def test_success_creates_skill_choice_from_existing_skills(self):
+        base = self._setup_to_mishap()
+        mishap = Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=5))
         events = [
-            *self._setup_to_mishap(),
-            Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=5)),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Streetwise(), modified_roll=9)),
+            *base,
+            mishap,
+            Event(fulfills=(mishap.id, 0), handler=SkillRollHandler(skill=Streetwise(), modified_roll=9)),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
@@ -274,11 +276,14 @@ class TestCitizenMishap5:
         # Drive(wheel=1): options must carry the existing instance so that
         # build_skill_select_options restricts choices to the wheel specialty only.
         custom_skills: list[AnySkill] = [Admin(), Athletics(), Carouse(), Drive(wheel=Level(value=1))]
+        base = _enter_citizen(skills=custom_skills)
+        survive = Event(fulfills=(base[-1].id, 0), handler=SurviveHandler(roll=6))
+        mishap = Event(fulfills=(survive.id, 0), handler=MishapHandler(roll=5))
         events = [
-            *_enter_citizen(skills=custom_skills),
-            Event(id=5, fulfills=(4, 0), handler=SurviveHandler(roll=6)),  # fail → mishap
-            Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=5)),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Streetwise(), modified_roll=9)),
+            *base,
+            survive,
+            mishap,
+            Event(fulfills=(mishap.id, 0), handler=SkillRollHandler(skill=Streetwise(), modified_roll=9)),
         ]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
@@ -288,20 +293,24 @@ class TestCitizenMishap5:
         assert drive_option.wheel.value == 1  # existing instance, not a fresh Drive()
 
     def test_failure_no_skill_choice(self):
+        base = self._setup_to_mishap()
+        mishap = Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=5))
         events = [
-            *self._setup_to_mishap(),
-            Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=5)),
-            Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Streetwise(), modified_roll=7)),
+            *base,
+            mishap,
+            Event(fulfills=(mishap.id, 0), handler=SkillRollHandler(skill=Streetwise(), modified_roll=7)),
         ]
         projection = replay(1, events)
         assert not any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
 
     def test_both_outcomes_end_career(self):
         for roll in (9, 7):
+            base = self._setup_to_mishap()
+            mishap = Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=5))
             events = [
-                *self._setup_to_mishap(),
-                Event(id=6, fulfills=(5, 0), handler=MishapHandler(roll=5)),
-                Event(id=7, fulfills=(6, 0), handler=SkillRollHandler(skill=Streetwise(), modified_roll=roll)),
+                *base,
+                mishap,
+                Event(fulfills=(mishap.id, 0), handler=SkillRollHandler(skill=Streetwise(), modified_roll=roll)),
             ]
             projection = replay(1, events)
             assert projection.summary.current_career is None, f'roll={roll}'
@@ -338,11 +347,11 @@ class TestCitizenEvent8:
         assert {type(c) for c in pending.choices} == {CitizenEvent8DoSo, CitizenEvent8Refuse}
 
     def test_refuse_schedules_advancement_dm_2(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
+            *base,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(base[-1].id, 0),
                 handler=CareerChoiceHandler(choice=CitizenEvent8Refuse.model_fields['kind'].default),
             ),
         ]
@@ -350,11 +359,11 @@ class TestCitizenEvent8:
         assert projection.pending_advancement_dm == 2
 
     def test_refuse_queues_advancement(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
+            *base,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(base[-1].id, 0),
                 handler=CareerChoiceHandler(choice=CitizenEvent8Refuse.model_fields['kind'].default),
             ),
         ]
@@ -362,11 +371,11 @@ class TestCitizenEvent8:
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
     def test_use_it_creates_reward_choice_pending(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
+            *base,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(base[-1].id, 0),
                 handler=CareerChoiceHandler(choice=CitizenEvent8DoSo.model_fields['kind'].default),
             ),
         ]
@@ -387,11 +396,11 @@ class TestCitizenEvent8:
         assert any(isinstance(c, CitizenEvent8GainContact) for c in reward_pending.choices)
 
     def test_use_it_immediately_adds_extra_benefit_roll(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
+            *base,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(base[-1].id, 0),
                 handler=CareerChoiceHandler(choice=CitizenEvent8DoSo.model_fields['kind'].default),
             ),
         ]
@@ -399,11 +408,11 @@ class TestCitizenEvent8:
         assert projection.summary.career_terms[-1].require_muster_out().extra_rolls == 1
 
     def test_use_it_continues_career(self):
+        base = self._setup_to_event()
         events = [
-            *self._setup_to_event(),
+            *base,
             Event(
-                id=7,
-                fulfills=(6, 0),
+                fulfills=(base[-1].id, 0),
                 handler=CareerChoiceHandler(choice=CitizenEvent8DoSo.model_fields['kind'].default),
             ),
         ]

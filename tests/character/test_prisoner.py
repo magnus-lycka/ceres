@@ -59,6 +59,7 @@ from ceres.character.domain.health.health_events import (
 )
 from ceres.character.domain.skills import (
     Admin,
+    AnySkill,
     Athletics,
     Carouse,
     Deception,
@@ -72,18 +73,19 @@ from ceres.character.domain.skills import (
 )
 from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
+from ceres.character.mechanism.pending_input import ChoiceBase
 from ceres.character.mechanism.replay import replay
 from tests.character.helpers import MOCK_WORLD, CharacterDriver
 
 
 def _setup() -> list:
-    return [
-        Event(id=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')),
-        Event(id=2, fulfills=(1, 0), handler=UcpHandler(ucp='7869A5')),
-        Event(
-            id=3, fulfills=(2, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()])
-        ),
-    ]
+    started = Event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'))
+    ucp = Event(fulfills=(started.id, 0), handler=UcpHandler(ucp='7869A5'))
+    background = Event(
+        fulfills=(ucp.id, 0),
+        handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()]),
+    )
+    return [started, ucp, background]
 
 
 def test_prisoner_career_loads_but_is_not_selectable():
@@ -101,11 +103,11 @@ def test_prisoner_is_not_listed_after_background_skills():
 
 
 def test_prisoner_can_be_entered_when_event_log_sends_character_there():
+    base = _setup()
     events = [
-        *_setup(),
+        *base,
         Event(
-            id=4,
-            fulfills=(3, 0),
+            fulfills=(base[-1].id, 0),
             handler=CareerEntryHandler(career=PRISONER, assignment=PRISONER.assignment('Inmate'), qualification_roll=0),
         ),
     ]
@@ -130,31 +132,36 @@ def test_prisoner_can_be_entered_when_event_log_sends_character_there():
 
 
 def _enter_prisoner() -> list:
+    base = _setup()
+    entry = Event(
+        fulfills=(base[-1].id, 0),
+        handler=CareerEntryHandler(career=PRISONER, assignment=PRISONER.assignment('Inmate'), qualification_roll=0),
+    )
+    training = Event(fulfills=(entry.id, 0), handler=SkillChoiceHandler(skill=WorkerProfession()))
+    parole = Event(fulfills=(entry.id, 1), handler=ParoleRollHandler(roll=3))  # PT = 5
     return [
-        *_setup(),
-        Event(
-            id=4,
-            fulfills=(3, 0),
-            handler=CareerEntryHandler(career=PRISONER, assignment=PRISONER.assignment('Inmate'), qualification_roll=0),
-        ),
-        Event(id=5, fulfills=(4, 0), handler=SkillChoiceHandler(skill=WorkerProfession())),
-        Event(fulfills=(4, 1), handler=ParoleRollHandler(roll=3)),  # PT = 5
+        *base,
+        entry,
+        training,
+        parole,
     ]
 
 
 def _through_survive(survive_roll: int = 8) -> list:
-    return [*_enter_prisoner(), Event(id=7, fulfills=(5, 0), handler=SurviveHandler(roll=survive_roll))]
+    base = _enter_prisoner()
+    training = next(event for event in base if isinstance(event.handler, SkillChoiceHandler))
+    return [*base, Event(fulfills=(training.id, 0), handler=SurviveHandler(roll=survive_roll))]
 
 
 def _through_term_event(event_roll: int) -> list:
-    return [*_through_survive(), Event(id=8, fulfills=(7, 0), handler=TermEventHandler(roll=event_roll))]
+    base = _through_survive()
+    return [*base, Event(fulfills=(base[-1].id, 0), handler=TermEventHandler(roll=event_roll))]
 
 
 def _setup_to_mishap() -> list:
-    return [
-        *_enter_prisoner(),
-        Event(id=7, fulfills=(5, 0), handler=SurviveHandler(roll=6)),  # END 7+, DM+0, 6 < 7 — fail
-    ]
+    base = _enter_prisoner()
+    training = next(event for event in base if isinstance(event.handler, SkillChoiceHandler))
+    return [*base, Event(fulfills=(training.id, 0), handler=SurviveHandler(roll=6))]
 
 
 def _prisoner_at_advancement() -> list:
@@ -166,40 +173,52 @@ def _prisoner_at_advancement() -> list:
     return _through_term_event(event_roll=8)
 
 
+def _career_choice_event(source: Event, choice_cls: type[ChoiceBase]) -> Event:
+    return Event(
+        fulfills=(source.id, 0),
+        handler=CareerChoiceHandler(choice=choice_cls.model_fields['kind'].default),
+    )
+
+
+def _skill_roll_event(source: Event, skill: AnySkill | Chars, modified_roll: int) -> Event:
+    return Event(fulfills=(source.id, 0), handler=SkillRollHandler(skill=skill, modified_roll=modified_roll))
+
+
+def _advancement_event(source: Event, roll: int) -> Event:
+    return Event(fulfills=(source.id, 0), handler=AdvancementHandler(roll=roll))
+
+
 # ── mishap 3: prison gang ─────────────────────────────────────────────────────
 
 
 class TestPrisonerMishap3:
     def test_mishap_3_creates_choice_pending(self):
-        events = [*_setup_to_mishap(), Event(id=8, fulfills=(7, 0), handler=MishapHandler(roll=3))]
+        base = _setup_to_mishap()
+        events = [*base, Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=3))]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingChoices)), None)
         assert pending is not None
         assert {type(c) for c in pending.choices} == {PrisonerMishap3Fight, PrisonerMishap3Submit}
 
     def test_submit_adds_problem_and_queues_advancement(self):
+        base = _setup_to_mishap()
+        mishap = Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=3))
         events = [
-            *_setup_to_mishap(),
-            Event(id=8, fulfills=(7, 0), handler=MishapHandler(roll=3)),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=PrisonerMishap3Submit.model_fields['kind'].default),
-            ),
+            *base,
+            mishap,
+            _career_choice_event(mishap, PrisonerMishap3Submit),
         ]
         projection = replay(1, events)
         assert any('submit' in p.lower() or 'gang' in p.lower() for p in projection.summary.problems)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
     def test_fight_creates_melee_roll(self):
+        base = _setup_to_mishap()
+        mishap = Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=3))
         events = [
-            *_setup_to_mishap(),
-            Event(id=8, fulfills=(7, 0), handler=MishapHandler(roll=3)),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=PrisonerMishap3Fight.model_fields['kind'].default),
-            ),
+            *base,
+            mishap,
+            _career_choice_event(mishap, PrisonerMishap3Fight),
         ]
         projection = replay(1, events)
         pending = next(
@@ -209,15 +228,14 @@ class TestPrisonerMishap3:
         assert pending.options == [Melee()]
 
     def test_fight_success_adds_enemy_and_increases_pt(self):
+        base = _setup_to_mishap()
+        mishap = Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=3))
+        fight = _career_choice_event(mishap, PrisonerMishap3Fight)
         events = [
-            *_setup_to_mishap(),
-            Event(id=8, fulfills=(7, 0), handler=MishapHandler(roll=3)),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=PrisonerMishap3Fight.model_fields['kind'].default),
-            ),
-            Event(fulfills=(9, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=9)),
+            *base,
+            mishap,
+            fight,
+            _skill_roll_event(fight, Admin(), 9),
         ]
         projection = replay(1, events)
         enemies = [c for c in projection.summary.connections if isinstance(c, Enemy)]
@@ -225,15 +243,14 @@ class TestPrisonerMishap3:
         assert projection.summary.parole_threshold == 6  # PT was 5; +1 = 6
 
     def test_fight_failure_creates_double_injury(self):
+        base = _setup_to_mishap()
+        mishap = Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=3))
+        fight = _career_choice_event(mishap, PrisonerMishap3Fight)
         events = [
-            *_setup_to_mishap(),
-            Event(id=8, fulfills=(7, 0), handler=MishapHandler(roll=3)),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=PrisonerMishap3Fight.model_fields['kind'].default),
-            ),
-            Event(fulfills=(9, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
+            *base,
+            mishap,
+            fight,
+            _skill_roll_event(fight, Admin(), 7),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingDoubleInjuryRoll) for p in projection.pending_inputs)
@@ -250,25 +267,19 @@ class TestPrisonerEvent3:
         assert {type(c) for c in pending.choices} == {PrisonerEvent3Attempt, PrisonerEvent3Stay}
 
     def test_stay_queues_advancement(self):
+        base = _through_term_event(event_roll=3)
         events = [
-            *_through_term_event(event_roll=3),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=PrisonerEvent3Stay.model_fields['kind'].default),
-            ),
+            *base,
+            _career_choice_event(base[-1], PrisonerEvent3Stay),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
     def test_attempt_creates_skill_roll(self):
+        base = _through_term_event(event_roll=3)
         events = [
-            *_through_term_event(event_roll=3),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=PrisonerEvent3Attempt.model_fields['kind'].default),
-            ),
+            *base,
+            _career_choice_event(base[-1], PrisonerEvent3Attempt),
         ]
         projection = replay(1, events)
         pending = next(
@@ -278,28 +289,24 @@ class TestPrisonerEvent3:
         assert pending.options == [Stealth(), Deception()]
 
     def test_escape_success_ends_career_with_muster_out(self):
+        base = _through_term_event(event_roll=3)
+        attempt = _career_choice_event(base[-1], PrisonerEvent3Attempt)
         events = [
-            *_through_term_event(event_roll=3),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=PrisonerEvent3Attempt.model_fields['kind'].default),
-            ),
-            Event(fulfills=(9, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=11)),
+            *base,
+            attempt,
+            _skill_roll_event(attempt, Admin(), 11),
         ]
         projection = replay(1, events)
         assert projection.summary.current_career is None
         assert any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
 
     def test_escape_failure_increases_pt(self):
+        base = _through_term_event(event_roll=3)
+        attempt = _career_choice_event(base[-1], PrisonerEvent3Attempt)
         events = [
-            *_through_term_event(event_roll=3),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=PrisonerEvent3Attempt.model_fields['kind'].default),
-            ),
-            Event(fulfills=(9, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=9)),
+            *base,
+            attempt,
+            _skill_roll_event(attempt, Admin(), 9),
         ]
         projection = replay(1, events)
         assert projection.summary.parole_threshold == 7  # PT was 5; +2 = 7
@@ -316,9 +323,10 @@ class TestPrisonerEvent4:
         assert pending.options == [Chars.END]
 
     def test_success_decreases_pt_and_creates_skill_choice(self):
+        base = _through_term_event(event_roll=4)
         events = [
-            *_through_term_event(event_roll=4),
-            Event(id=9, fulfills=(8, 0), handler=SkillRollHandler(skill=Chars.END, modified_roll=9)),
+            *base,
+            _skill_roll_event(base[-1], Chars.END, 9),
         ]
         projection = replay(1, events)
         assert projection.summary.parole_threshold == 4  # PT was 5; −1 = 4
@@ -327,9 +335,10 @@ class TestPrisonerEvent4:
         assert pending.options == [Athletics(), Mechanic(), Melee()]
 
     def test_failure_increases_pt_and_queues_advancement(self):
+        base = _through_term_event(event_roll=4)
         events = [
-            *_through_term_event(event_roll=4),
-            Event(id=9, fulfills=(8, 0), handler=SkillRollHandler(skill=Chars.END, modified_roll=7)),
+            *base,
+            _skill_roll_event(base[-1], Chars.END, 7),
         ]
         projection = replay(1, events)
         assert projection.summary.parole_threshold == 6  # PT was 5; +1 = 6
@@ -347,18 +356,20 @@ class TestPrisonerEvent5:
         assert pending.options == [Persuade(), Melee()]
 
     def test_success_increases_pt_and_creates_skill_choice(self):
+        base = _through_term_event(event_roll=5)
         events = [
-            *_through_term_event(event_roll=5),
-            Event(id=9, fulfills=(8, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=9)),
+            *base,
+            _skill_roll_event(base[-1], Admin(), 9),
         ]
         projection = replay(1, events)
         assert projection.summary.parole_threshold == 6  # PT was 5; +1 = 6
         assert any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
 
     def test_failure_adds_enemy_and_queues_advancement(self):
+        base = _through_term_event(event_roll=5)
         events = [
-            *_through_term_event(event_roll=5),
-            Event(id=9, fulfills=(8, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
+            *base,
+            _skill_roll_event(base[-1], Admin(), 7),
         ]
         projection = replay(1, events)
         enemies = [c for c in projection.summary.connections if isinstance(c, Enemy)]
@@ -377,9 +388,10 @@ class TestPrisonerEvent6:
         assert pending.options == [Chars.EDU]
 
     def test_success_creates_any_skill_choice(self):
+        base = _through_term_event(event_roll=6)
         events = [
-            *_through_term_event(event_roll=6),
-            Event(id=9, fulfills=(8, 0), handler=SkillRollHandler(skill=Chars.EDU, modified_roll=9)),
+            *base,
+            _skill_roll_event(base[-1], Chars.EDU, 9),
         ]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
@@ -387,9 +399,10 @@ class TestPrisonerEvent6:
         assert any(isinstance(o, Admin) for o in pending.options)
 
     def test_failure_queues_advancement(self):
+        base = _through_term_event(event_roll=6)
         events = [
-            *_through_term_event(event_roll=6),
-            Event(id=9, fulfills=(8, 0), handler=SkillRollHandler(skill=Chars.EDU, modified_roll=7)),
+            *base,
+            _skill_roll_event(base[-1], Chars.EDU, 7),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
@@ -413,13 +426,10 @@ class TestPrisonerEvent7:
         }
 
     def test_sub_1_riot_creates_end_roll(self):
+        base = _through_term_event(event_roll=7)
         events = [
-            *_through_term_event(event_roll=7),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=PrisonerEvent7Riot.model_fields['kind'].default),
-            ),
+            *base,
+            _career_choice_event(base[-1], PrisonerEvent7Riot),
         ]
         projection = replay(1, events)
         pending = next(
@@ -429,26 +439,21 @@ class TestPrisonerEvent7:
         assert pending.options == [Chars.END]
 
     def test_sub_1_riot_failure_creates_injury_table(self):
+        base = _through_term_event(event_roll=7)
+        riot = _career_choice_event(base[-1], PrisonerEvent7Riot)
         events = [
-            *_through_term_event(event_roll=7),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=PrisonerEvent7Riot.model_fields['kind'].default),
-            ),
-            Event(fulfills=(9, 0), handler=SkillRollHandler(skill=Chars.END, modified_roll=7)),
+            *base,
+            riot,
+            _skill_roll_event(riot, Chars.END, 7),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingInjuryTable) for p in projection.pending_inputs)
 
     def test_sub_2_gang_increases_pt_and_adds_enemy(self):
+        base = _through_term_event(event_roll=7)
         events = [
-            *_through_term_event(event_roll=7),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=PrisonerEvent7Gang.model_fields['kind'].default),
-            ),
+            *base,
+            _career_choice_event(base[-1], PrisonerEvent7Gang),
         ]
         projection = replay(1, events)
         assert projection.summary.parole_threshold == 6  # PT was 5; +1 = 6
@@ -456,50 +461,38 @@ class TestPrisonerEvent7:
         assert len(enemies) == 1
 
     def test_sub_3_transfer_adds_problem(self):
+        base = _through_term_event(event_roll=7)
         events = [
-            *_through_term_event(event_roll=7),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=PrisonerEvent7Transfer.model_fields['kind'].default),
-            ),
+            *base,
+            _career_choice_event(base[-1], PrisonerEvent7Transfer),
         ]
         projection = replay(1, events)
         assert any('transfer' in p.lower() for p in projection.summary.problems)
 
     def test_sub_4_visitation_adds_ally(self):
+        base = _through_term_event(event_roll=7)
         events = [
-            *_through_term_event(event_roll=7),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=PrisonerEvent7Visitation.model_fields['kind'].default),
-            ),
+            *base,
+            _career_choice_event(base[-1], PrisonerEvent7Visitation),
         ]
         projection = replay(1, events)
         allies = [c for c in projection.summary.connections if isinstance(c, Ally)]
         assert len(allies) == 1
 
     def test_sub_5_parole_hearing_decreases_pt(self):
+        base = _through_term_event(event_roll=7)
         events = [
-            *_through_term_event(event_roll=7),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=PrisonerEvent7ParoleHearing.model_fields['kind'].default),
-            ),
+            *base,
+            _career_choice_event(base[-1], PrisonerEvent7ParoleHearing),
         ]
         projection = replay(1, events)
         assert projection.summary.parole_threshold == 4  # PT was 5; −1 = 4
 
     def test_sub_6_good_behaviour_decreases_pt(self):
+        base = _through_term_event(event_roll=7)
         events = [
-            *_through_term_event(event_roll=7),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=PrisonerEvent7GoodBehaviour.model_fields['kind'].default),
-            ),
+            *base,
+            _career_choice_event(base[-1], PrisonerEvent7GoodBehaviour),
         ]
         projection = replay(1, events)
         assert projection.summary.parole_threshold == 4  # PT was 5; −1 = 4
@@ -521,25 +514,19 @@ class TestPrisonerEvent9:
         }
 
     def test_decline_queues_advancement(self):
+        base = _through_term_event(event_roll=9)
         events = [
-            *_through_term_event(event_roll=9),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=PrisonerEvent9Decline.model_fields['kind'].default),
-            ),
+            *base,
+            _career_choice_event(base[-1], PrisonerEvent9Decline),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
     def test_hire_level_1_creates_skill_roll(self):
+        base = _through_term_event(event_roll=9)
         events = [
-            *_through_term_event(event_roll=9),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=PrisonerEvent9Level1.model_fields['kind'].default),
-            ),
+            *base,
+            _career_choice_event(base[-1], PrisonerEvent9Level1),
         ]
         projection = replay(1, events)
         pending = next(
@@ -549,28 +536,24 @@ class TestPrisonerEvent9:
 
     def test_level_1_success_decreases_pt(self):
         # roll + level (1) >= 8 → roll 8: 8 + 1 = 9 >= 8 → success → PT−1
+        base = _through_term_event(event_roll=9)
+        level_1 = _career_choice_event(base[-1], PrisonerEvent9Level1)
         events = [
-            *_through_term_event(event_roll=9),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=PrisonerEvent9Level1.model_fields['kind'].default),
-            ),
-            Event(fulfills=(9, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=8)),
+            *base,
+            level_1,
+            _skill_roll_event(level_1, Admin(), 8),
         ]
         projection = replay(1, events)
         assert projection.summary.parole_threshold == 4  # PT was 5; −1 = 4
 
     def test_level_1_failure_keeps_pt(self):
         # roll + level (1) < 8 → roll 6: 6 + 1 = 7 < 8 → fail → PT unchanged
+        base = _through_term_event(event_roll=9)
+        level_1 = _career_choice_event(base[-1], PrisonerEvent9Level1)
         events = [
-            *_through_term_event(event_roll=9),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=PrisonerEvent9Level1.model_fields['kind'].default),
-            ),
-            Event(fulfills=(9, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=6)),
+            *base,
+            level_1,
+            _skill_roll_event(level_1, Admin(), 6),
         ]
         projection = replay(1, events)
         assert projection.summary.parole_threshold == 5  # unchanged
@@ -600,38 +583,30 @@ class TestPrisonerEvent12:
         assert {type(c) for c in pending.choices} == {PrisonerEvent12TakeRisk, PrisonerEvent12Refuse}
 
     def test_refuse_queues_advancement(self):
+        base = _through_term_event(event_roll=12)
         events = [
-            *_through_term_event(event_roll=12),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=PrisonerEvent12Refuse.model_fields['kind'].default),
-            ),
+            *base,
+            _career_choice_event(base[-1], PrisonerEvent12Refuse),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
     def test_take_risk_creates_skill_roll(self):
+        base = _through_term_event(event_roll=12)
         events = [
-            *_through_term_event(event_roll=12),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=PrisonerEvent12TakeRisk.model_fields['kind'].default),
-            ),
+            *base,
+            _career_choice_event(base[-1], PrisonerEvent12TakeRisk),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingPrisonerEvent12HeroismSkillRoll) for p in projection.pending_inputs)
 
     def test_heroism_success_adds_ally_and_decreases_pt(self):
+        base = _through_term_event(event_roll=12)
+        risk = _career_choice_event(base[-1], PrisonerEvent12TakeRisk)
         events = [
-            *_through_term_event(event_roll=12),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=PrisonerEvent12TakeRisk.model_fields['kind'].default),
-            ),
-            Event(fulfills=(9, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=9)),
+            *base,
+            risk,
+            _skill_roll_event(risk, Admin(), 9),
         ]
         projection = replay(1, events)
         allies = [c for c in projection.summary.connections if isinstance(c, Ally)]
@@ -639,14 +614,12 @@ class TestPrisonerEvent12:
         assert projection.summary.parole_threshold == 3  # PT was 5; −2 = 3
 
     def test_heroism_failure_creates_injury_table(self):
+        base = _through_term_event(event_roll=12)
+        risk = _career_choice_event(base[-1], PrisonerEvent12TakeRisk)
         events = [
-            *_through_term_event(event_roll=12),
-            Event(
-                id=9,
-                fulfills=(8, 0),
-                handler=CareerChoiceHandler(choice=PrisonerEvent12TakeRisk.model_fields['kind'].default),
-            ),
-            Event(fulfills=(9, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
+            *base,
+            risk,
+            _skill_roll_event(risk, Admin(), 7),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingInjuryTable) for p in projection.pending_inputs)
@@ -663,40 +636,47 @@ class TestPrisonerEvent12:
 
 class TestPrisonerAdvancement:
     def test_advancement_failure_creates_assignment_change_choice(self):
-        events = [*_prisoner_at_advancement(), Event(id=9, fulfills=(8, 0), handler=AdvancementHandler(roll=4))]
+        base = _prisoner_at_advancement()
+        events = [*base, _advancement_event(base[-1], 4)]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAssignmentChangeChoice) for p in projection.pending_inputs)
 
     def test_assignment_change_options_exclude_muster_out_for_prisoner(self):
-        events = [*_prisoner_at_advancement(), Event(id=9, fulfills=(8, 0), handler=AdvancementHandler(roll=4))]
+        base = _prisoner_at_advancement()
+        events = [*base, _advancement_event(base[-1], 4)]
         projection = replay(1, events)
         choice = next(p for p in projection.pending_inputs if isinstance(p, PendingAssignmentChangeChoice))
         assert choice.muster_out is False
 
     def test_parole_granted_clears_career(self):
-        events = [*_prisoner_at_advancement(), Event(id=9, fulfills=(8, 0), handler=AdvancementHandler(roll=5))]
+        base = _prisoner_at_advancement()
+        events = [*base, _advancement_event(base[-1], 5)]
         projection = replay(1, events)
         assert projection.summary.current_career is None
 
     def test_parole_granted_creates_muster_out_pending(self):
-        events = [*_prisoner_at_advancement(), Event(id=9, fulfills=(8, 0), handler=AdvancementHandler(roll=5))]
+        base = _prisoner_at_advancement()
+        events = [*base, _advancement_event(base[-1], 5)]
         projection = replay(1, events)
         assert any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
 
     def test_parole_narrative_recorded(self):
-        events = [*_prisoner_at_advancement(), Event(id=9, fulfills=(8, 0), handler=AdvancementHandler(roll=5))]
+        base = _prisoner_at_advancement()
+        events = [*base, _advancement_event(base[-1], 5)]
         projection = replay(1, events)
         assert any('Parole' in n for n in projection.summary.narrative)
 
     def test_advancement_success_with_parole_grants_skill_table(self):
         # roll=7: success (rank 0→1) and freed → skill table + muster out both pending
-        events = [*_prisoner_at_advancement(), Event(id=9, fulfills=(8, 0), handler=AdvancementHandler(roll=7))]
+        base = _prisoner_at_advancement()
+        events = [*base, _advancement_event(base[-1], 7)]
         projection = replay(1, events)
         assert any(isinstance(p, PendingSkillTable) for p in projection.pending_inputs)
         assert any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
 
     def test_advancement_success_with_parole_increments_rank(self):
-        events = [*_prisoner_at_advancement(), Event(id=9, fulfills=(8, 0), handler=AdvancementHandler(roll=7))]
+        base = _prisoner_at_advancement()
+        events = [*base, _advancement_event(base[-1], 7)]
         projection = replay(1, events)
         assert projection.summary.rank == 1
 

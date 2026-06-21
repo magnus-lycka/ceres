@@ -318,7 +318,7 @@ def test_muster_out_and_benefit_choice_error_branches():
 
 def test_aging_roll_extreme_results():
     effective_minus_4 = _projection(term_count=6, characteristics={Chars.STR: 7, Chars.DEX: 7, Chars.END: 7})
-    Event(id=1, handler=AgingRollHandler(roll=2)).apply(effective_minus_4)
+    Event(handler=AgingRollHandler(roll=2)).apply(effective_minus_4)
     minus_4_choices = [p for p in effective_minus_4.pending_inputs if isinstance(p, PendingAgingChoice)]
     assert [p.instruction for p in minus_4_choices] == [
         'Aging: choose STR, DEX, or END to reduce by 2',
@@ -327,7 +327,7 @@ def test_aging_roll_extreme_results():
     ]
 
     effective_minus_5 = _projection(term_count=7, characteristics={Chars.STR: 7, Chars.DEX: 7, Chars.END: 7})
-    Event(id=2, handler=AgingRollHandler(roll=2)).apply(effective_minus_5)
+    Event(handler=AgingRollHandler(roll=2)).apply(effective_minus_5)
     assert {char: effective_minus_5.summary.characteristics[char] for char in (Chars.STR, Chars.DEX, Chars.END)} == {
         Chars.STR: 5,
         Chars.DEX: 5,
@@ -340,7 +340,7 @@ def test_aging_roll_extreme_results():
         term_count=8,
         characteristics={Chars.STR: 7, Chars.DEX: 7, Chars.END: 7, Chars.INT: 7, Chars.SOC: 7},
     )
-    Event(id=3, handler=AgingRollHandler(roll=2)).apply(effective_minus_6)
+    Event(handler=AgingRollHandler(roll=2)).apply(effective_minus_6)
     assert any(isinstance(p, PendingAgingChoiceMental) for p in effective_minus_6.pending_inputs)
 
 
@@ -350,8 +350,9 @@ def test_commission_event_skip_failure_success_and_unsupported_career():
         Event(handler=CommissionHandler(attempt=True, roll=12)).apply(scout)
 
     skipped = _projection(current_career=ARMY, current_assignment='Support')
-    Event(id=1, handler=CommissionHandler(attempt=False)).apply(skipped)
-    assert any(isinstance(p, PendingAdvancement) and p.id == '1.0' for p in skipped.pending_inputs)
+    skipped_event = Event(handler=CommissionHandler(attempt=False))
+    skipped_event.apply(skipped)
+    assert any(isinstance(p, PendingAdvancement) and p.id == f'{skipped_event.id}.0' for p in skipped.pending_inputs)
 
     failed = _projection(
         current_career=ARMY,
@@ -359,9 +360,10 @@ def test_commission_event_skip_failure_success_and_unsupported_career():
         characteristics={Chars.SOC: 2},
     )
     failed.pending_advancement_dm = 1
-    Event(id=2, handler=CommissionHandler(attempt=True, roll=2)).apply(failed)
+    failed_event = Event(handler=CommissionHandler(attempt=True, roll=2))
+    failed_event.apply(failed)
     assert failed.pending_advancement_dm == 0
-    assert any(isinstance(p, PendingAdvancement) and p.id == '2.0' for p in failed.pending_inputs)
+    assert any(isinstance(p, PendingAdvancement) and p.id == f'{failed_event.id}.0' for p in failed.pending_inputs)
 
     succeeded = _projection(
         current_career=ARMY,
@@ -369,11 +371,12 @@ def test_commission_event_skip_failure_success_and_unsupported_career():
         characteristics={Chars.SOC: 12, Chars.EDU: 10},
         career_terms=[CareerTerm(career=ARMY, assignment=ARMY.assignment('Support'))],
     )
-    Event(id=3, handler=CommissionHandler(attempt=True, roll=12)).apply(succeeded)
+    succeeded_event = Event(handler=CommissionHandler(attempt=True, roll=12))
+    succeeded_event.apply(succeeded)
     assert succeeded.summary.rank == 1
     assert succeeded.summary.career_terms[-1].commission is True
     assert succeeded.summary.skill_level(character_skills.Leadership) == 1
-    assert any(isinstance(p, PendingSkillTable) and p.id == '3.0' for p in succeeded.pending_inputs)
+    assert any(isinstance(p, PendingSkillTable) and p.id == f'{succeeded_event.id}.0' for p in succeeded.pending_inputs)
 
 
 def test_precareer_entry_error_and_failure_branches():
@@ -387,12 +390,12 @@ def test_precareer_entry_error_and_failure_branches():
         )
 
     failed = _projection(characteristics={Chars.EDU: 0})
-    Event(id=4, handler=PreCareerEntryHandler(precareer='University', roll=2)).apply(failed)
+    Event(handler=PreCareerEntryHandler(precareer='University', roll=2)).apply(failed)
     assert any(isinstance(p, PendingCareerChoice) for p in failed.pending_inputs)
     assert failed.summary.precareer is None
 
     soc_bonus = _projection(characteristics={Chars.INT: 12, Chars.SOC: 12})
-    Event(id=5, handler=PreCareerEntryHandler(precareer='Merchant Academy (Business)', roll=7)).apply(soc_bonus)
+    Event(handler=PreCareerEntryHandler(precareer='Merchant Academy (Business)', roll=7)).apply(soc_bonus)
     assert soc_bonus.summary.precareer is not None
     assert soc_bonus.summary.precareer.name == 'Merchant Academy (Business)'
     assert any(isinstance(p, PendingPreCareerEvent) for p in soc_bonus.pending_inputs)
@@ -408,7 +411,7 @@ def test_precareer_entry_error_and_failure_branches():
 )
 def test_precareer_event_effects_create_expected_pending_inputs(roll, pending_type):
     projection = _projection(precareer='University')
-    Event(id=roll, handler=PreCareerEventHandler(roll=roll)).apply(projection)
+    Event(handler=PreCareerEventHandler(roll=roll)).apply(projection)
     assert any(isinstance(p, pending_type) for p in projection.pending_inputs)
 
 
@@ -420,7 +423,7 @@ def test_precareer_event_error_manual_note_and_ending_branches():
 
     for roll, problem_text in ((2, 'attempt to enter the Psion career'), (4, 'Prisoner career next term')):
         projection = _projection(precareer='University')
-        Event(id=roll, handler=PreCareerEventHandler(roll=roll)).apply(projection)
+        Event(handler=PreCareerEventHandler(roll=roll)).apply(projection)
         assert any(problem_text in problem for problem in projection.summary.problems)
 
     ended = _projection(precareer='University')
@@ -442,7 +445,7 @@ def test_precareer_graduation_error_and_failure_branches():
         Event(handler=PreCareerGraduationHandler(roll=7)).apply(_projection())
 
     failed = _projection(precareer='University', characteristics={Chars.INT: 2})
-    Event(id=1, handler=PreCareerGraduationHandler(roll=2)).apply(failed)
+    Event(handler=PreCareerGraduationHandler(roll=2)).apply(failed)
     assert failed.summary.precareer is None
     assert failed.summary.precareer_completed is not None
     assert failed.summary.precareer_completed.name == 'University'
@@ -455,7 +458,7 @@ def test_prisoner_advancement_special_cases():
     missing_assignment = _projection()
     with pytest.raises(ReplayError, match='No current assignment'):
         _apply_prisoner_advancement(
-            missing_assignment, Event(id=1, handler=AdvancementHandler(roll=12)), FakePrisonerCareer()
+            missing_assignment, Event(handler=AdvancementHandler(roll=12)), FakePrisonerCareer()
         )
 
     choice_bonus = _projection(
@@ -467,7 +470,7 @@ def test_prisoner_advancement_special_cases():
     choice_bonus.pending_advancement_dm = 1
     _apply_prisoner_advancement(
         choice_bonus,
-        Event(id=2, handler=AdvancementHandler(roll=12)),
+        Event(handler=AdvancementHandler(roll=12)),
         FakePrisonerCareer(RankBonus(choices=[character_skills.Admin()], level=1)),
     )
     assert choice_bonus.pending_advancement_dm == 0
@@ -485,7 +488,7 @@ def test_prisoner_advancement_special_cases():
     )
     _apply_prisoner_advancement(
         characteristic_bonus,
-        Event(id=3, handler=AdvancementHandler(roll=12)),
+        Event(handler=AdvancementHandler(roll=12)),
         FakePrisonerCareer(RankBonus(characteristic=Chars.SOC, level=2)),
     )
     assert characteristic_bonus.summary.characteristics[Chars.SOC] == 9
@@ -726,7 +729,7 @@ def test_nearly_killed_pending_asks_for_characteristic_and_roll():
 )
 def test_injury_table_fixed_reductions_carry_correct_amount(roll, expected_amount, pending_type):
     projection = _projection()
-    Event(id=5, handler=InjuryTableHandler(roll=roll)).apply(projection)
+    Event(handler=InjuryTableHandler(roll=roll)).apply(projection)
     pending = next(p for p in projection.pending_inputs if isinstance(p, pending_type))
     assert pending.amount == expected_amount
     event = pending.event_from_form(Form(characteristic='STR'))
@@ -735,7 +738,7 @@ def test_injury_table_fixed_reductions_carry_correct_amount(roll, expected_amoun
 
 def test_injury_table_roll_2_creates_severely_injured_pending():
     projection = _projection()
-    Event(id=5, handler=InjuryTableHandler(roll=2)).apply(projection)
+    Event(handler=InjuryTableHandler(roll=2)).apply(projection)
     assert any(isinstance(p, PendingSeverelyInjured) for p in projection.pending_inputs)
 
 
@@ -749,7 +752,7 @@ def test_severely_injured_pending_uses_roll_as_amount():
 
 def test_injury_table_roll_2_reduces_single_characteristic_by_rolled_amount():
     projection = _projection(characteristics={Chars.STR: 8, Chars.DEX: 8, Chars.END: 8})
-    Event(id=5, handler=InjuryTableHandler(roll=2)).apply(projection)
+    Event(handler=InjuryTableHandler(roll=2)).apply(projection)
     Event(handler=CharacteristicChoiceHandler(characteristic=Chars.DEX, amount=3)).apply(projection)
     assert projection.summary.characteristics[Chars.DEX] == 5
     assert projection.summary.characteristics[Chars.STR] == 8
@@ -761,12 +764,13 @@ def test_injury_table_result_ordered_before_advancement():
     Injury characteristic choice must appear before advancement after a stay_in_career mishap with from_table injury.
     """
     projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=1)
-    Event(id=5, handler=MishapHandler(roll=6, stay_in_career=True)).apply(projection)
+    mishap = Event(handler=MishapHandler(roll=6, stay_in_career=True))
+    mishap.apply(projection)
 
     assert isinstance(projection.pending_inputs[0], PendingInjuryTable)
     assert isinstance(projection.pending_inputs[1], PendingAdvancement)
 
-    Event(fulfills=(5, 0), handler=InjuryTableHandler(roll=5)).apply(projection)
+    Event(fulfills=(mishap.id, 0), handler=InjuryTableHandler(roll=5)).apply(projection)
 
     inputs = projection.pending_inputs
     char_idx = next(i for i, p in enumerate(inputs) if isinstance(p, PendingCharacteristicChoice))
@@ -778,17 +782,21 @@ def test_decision_pending_inputs_build_events_and_specs():
     commission = PendingCommissionChoice(pending_id=(1, 0), instruction='Commission')
     assert _form_event_matches(
         commission.event_from_form(Form(choice='attempt', roll='9')),
-        fulfills=(1, 0),
+        fulfills=commission.pending_id,
         handler=CommissionHandler(attempt=True, roll=9),
     )
     assert _form_event_matches(
-        commission.event_from_form(Form(choice='skip')), fulfills=(1, 0), handler=CommissionHandler(attempt=False)
+        commission.event_from_form(Form(choice='skip')),
+        fulfills=commission.pending_id,
+        handler=CommissionHandler(attempt=False),
     )
     assert len(commission.input_specs(_projection())) == 2
 
     reenlist = PendingReenlist(pending_id=(2, 0), instruction='Reenlist')
     assert _form_event_matches(
-        reenlist.event_from_form(Form(reenlist='yes')), fulfills=(2, 0), handler=ReenlistHandler(reenlist=True)
+        reenlist.event_from_form(Form(reenlist='yes')),
+        fulfills=reenlist.pending_id,
+        handler=ReenlistHandler(reenlist=True),
     )
     assert reenlist.input_specs(_projection()) == []
 
@@ -797,12 +805,12 @@ def test_decision_pending_inputs_build_events_and_specs():
     )
     assert _form_event_matches(
         assignment.event_from_form(Form(choice='switch')),
-        fulfills=(3, 0),
+        fulfills=assignment.pending_id,
         handler=AssignmentChangeChoiceHandler(choice='switch'),
     )
     assert _form_event_matches(
         assignment.event_from_form(Form(choice='same')),
-        fulfills=(3, 0),
+        fulfills=assignment.pending_id,
         handler=AssignmentChangeChoiceHandler(choice='same'),
     )
     assert isinstance(assignment.input_specs(_projection())[0], Select)
@@ -810,7 +818,7 @@ def test_decision_pending_inputs_build_events_and_specs():
     muster = PendingMusterOut(pending_id=(4, 0))
     assert _form_event_matches(
         muster.event_from_form(Form(table='not-valid', roll='7')),
-        fulfills=(4, 0),
+        fulfills=muster.pending_id,
         handler=MusterOutHandler(table='benefits', roll=7),
     )
     assert len(muster.input_specs(_projection())) == 2
@@ -860,7 +868,7 @@ def test_characteristic_benefit_life_and_connection_pending_inputs():
     crisis = PendingAgingCrisis(pending_id=(2, 0), instruction='Crisis')
     assert _form_event_matches(
         crisis.event_from_form(Form(paid='true', medical_roll='4')),
-        fulfills=(2, 0),
+        fulfills=crisis.pending_id,
         handler=AgingCrisisHandler(paid=True, medical_roll=4),
     )
     assert len(crisis.input_specs(_projection())) == 2
@@ -868,7 +876,7 @@ def test_characteristic_benefit_life_and_connection_pending_inputs():
     life_choice = PendingLifeEventChoice(pending_id=(3, 0), instruction='Life choice', roll=4)
     assert _form_event_matches(
         life_choice.event_from_form(Form(connection_kind='connection_enemy')),
-        fulfills=(3, 0),
+        fulfills=life_choice.pending_id,
         handler=ConnectionKindChoiceHandler(connection_kind=ConnectionKind.ENEMY),
     )
     assert isinstance(life_choice.input_specs(_projection())[0], Select)
@@ -878,7 +886,7 @@ def test_characteristic_benefit_life_and_connection_pending_inputs():
     )
     assert _form_event_matches(
         connections.event_from_form(Form(connection_type='connection_enemy', count='3')),
-        fulfills=(4, 0),
+        fulfills=connections.pending_id,
         handler=ConnectionsRollHandler(connection_type=ConnectionKind.ENEMY, count=3),
     )
     assert isinstance(connections.input_specs(_projection())[0], Reference)
@@ -889,7 +897,9 @@ def test_characteristic_benefit_life_and_connection_pending_inputs():
         benefit_options=[SHIP_SHARE, WEAPON],
     )
     assert _form_event_matches(
-        benefit.event_from_form(Form(choice_index='1')), fulfills=(5, 0), handler=BenefitChoiceHandler(choice_index=1)
+        benefit.event_from_form(Form(choice_index='1')),
+        fulfills=benefit.pending_id,
+        handler=BenefitChoiceHandler(choice_index=1),
     )
     assert isinstance(benefit.input_specs(_projection())[0], Select)
 
@@ -904,7 +914,7 @@ def test_precareer_specific_pending_inputs():
     life_science_json = character_skills.LifeScience().model_dump_json()
     assert _form_event_matches(
         precareer_skill_0.event_from_form(Form(skill=life_science_json)),
-        fulfills=(4, 0),
+        fulfills=precareer_skill_0.pending_id,
         handler=PreCareerSkillChoiceHandler(skill=character_skills.LifeScience()),
     )
     level_0_specs = precareer_skill_0.input_specs(_projection())
@@ -1086,7 +1096,7 @@ def test_career_choice_handler_error_branches():
 
 def test_reenlist_handler_reenlist_true_queues_skill_table_for_new_term():
     projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=1)
-    Event(id=7, handler=ReenlistHandler(reenlist=True)).apply(projection)
+    Event(handler=ReenlistHandler(reenlist=True)).apply(projection)
 
     assert len(projection.summary.career_terms) == 2
     assert any(isinstance(p, PendingSkillTable) for p in projection.pending_inputs)
@@ -1094,7 +1104,7 @@ def test_reenlist_handler_reenlist_true_queues_skill_table_for_new_term():
 
 def test_reenlist_handler_reenlist_false_sets_up_muster_out():
     projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=1)
-    Event(id=7, handler=ReenlistHandler(reenlist=False)).apply(projection)
+    Event(handler=ReenlistHandler(reenlist=False)).apply(projection)
 
     assert projection.summary.current_career is None
     assert any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
@@ -1110,7 +1120,7 @@ def test_advancement_handler_roll_12_prevents_muster_out():
         term_count=1,
         characteristics={Chars.EDU: 0},
     )
-    Event(id=7, handler=AdvancementHandler(roll=12)).apply(projection)
+    Event(handler=AdvancementHandler(roll=12)).apply(projection)
 
     assignment_change = next(
         (p for p in projection.pending_inputs if isinstance(p, PendingAssignmentChangeChoice)), None
@@ -1131,7 +1141,7 @@ def test_advancement_handler_roll_low_triggers_forced_leave():
         term_count=2,
         characteristics={Chars.EDU: 0},
     )
-    Event(id=7, handler=AdvancementHandler(roll=2)).apply(projection)
+    Event(handler=AdvancementHandler(roll=2)).apply(projection)
 
     # 2 prior terms + roll=2 → forced_leave → muster_out_setup
     assert any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
@@ -1142,7 +1152,7 @@ def test_advancement_handler_roll_low_triggers_forced_leave():
 
 def test_assignment_change_choice_handler_switch_creates_pending_switch():
     projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=1)
-    Event(id=7, handler=AssignmentChangeChoiceHandler(choice='switch')).apply(projection)
+    Event(handler=AssignmentChangeChoiceHandler(choice='switch')).apply(projection)
 
     assert any(isinstance(p, PendingSwitchAssignment) for p in projection.pending_inputs)
 
@@ -1167,7 +1177,7 @@ def test_switch_assignment_handler_success_sets_assignment_and_starts_term():
         term_count=1,
         characteristics={Chars.INT: 7},
     )
-    Event(id=7, handler=SwitchAssignmentHandler(assignment=explorer, qualification_roll=8)).apply(projection)
+    Event(handler=SwitchAssignmentHandler(assignment=explorer, qualification_roll=8)).apply(projection)
 
     assert projection.summary.current_assignment == explorer
     assert any(isinstance(p, PendingSkillTable) for p in projection.pending_inputs)
@@ -1182,7 +1192,7 @@ def test_switch_assignment_handler_failure_queues_reenlist_with_current_name():
         term_count=1,
         characteristics={Chars.INT: 0},
     )
-    Event(id=7, handler=SwitchAssignmentHandler(assignment=explorer, qualification_roll=2)).apply(projection)
+    Event(handler=SwitchAssignmentHandler(assignment=explorer, qualification_roll=2)).apply(projection)
 
     reenlist = next((p for p in projection.pending_inputs if isinstance(p, PendingReenlist)), None)
     assert reenlist is not None
@@ -1195,7 +1205,7 @@ def test_switch_assignment_handler_failure_queues_reenlist_with_current_name():
 
 def test_term_event_handler_life_event_effect_queues_life_event_pending():
     projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=1)
-    Event(id=5, handler=TermEventHandler(roll=7)).apply(projection)  # Scout event 7: LifeEventEffect
+    Event(handler=TermEventHandler(roll=7)).apply(projection)  # Scout event 7: LifeEventEffect
 
     assert any(isinstance(p, PendingLifeEvent) for p in projection.pending_inputs)
 
@@ -1207,7 +1217,7 @@ def test_term_event_handler_auto_advance_queues_skill_table_and_bumps_rank():
         term_count=1,
         characteristics={Chars.EDU: 10},
     )
-    Event(id=5, handler=TermEventHandler(roll=12)).apply(projection)  # Scout event 12: AutoAdvanceEffect
+    Event(handler=TermEventHandler(roll=12)).apply(projection)  # Scout event 12: AutoAdvanceEffect
 
     assert projection.summary.rank == 1
     assert any(isinstance(p, PendingSkillTable) for p in projection.pending_inputs)
@@ -1215,7 +1225,7 @@ def test_term_event_handler_auto_advance_queues_skill_table_and_bumps_rank():
 
 def test_term_event_handler_roll_mishap_stay_in_career_queues_mishap_with_flag():
     projection = _projection(current_career=ARMY, current_assignment='Infantry', term_count=1)
-    Event(id=5, handler=TermEventHandler(roll=2)).apply(projection)  # Army event 2: RollMishapEffect(leave=False)
+    Event(handler=TermEventHandler(roll=2)).apply(projection)  # Army event 2: RollMishapEffect(leave=False)
 
     mishap_pendings = [p for p in projection.pending_inputs if isinstance(p, PendingMishap)]
     assert len(mishap_pendings) == 1
@@ -1224,7 +1234,7 @@ def test_term_event_handler_roll_mishap_stay_in_career_queues_mishap_with_flag()
 
 def test_term_event_handler_skill_choice_effect_queues_skill_choice():
     projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=1)
-    Event(id=5, handler=TermEventHandler(roll=6)).apply(projection)  # Scout event 6: SkillChoiceEffect
+    Event(handler=TermEventHandler(roll=6)).apply(projection)  # Scout event 6: SkillChoiceEffect
 
     assert any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
     assert not any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
@@ -1235,7 +1245,7 @@ def test_term_event_handler_skill_choice_effect_queues_skill_choice():
 
 def test_mishap_handler_gain_connections_effect_queues_two_connection_rolls():
     projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=1)
-    Event(id=5, handler=MishapHandler(roll=3)).apply(projection)  # Scout mishap 3: two GainConnectionsRolledEffect
+    Event(handler=MishapHandler(roll=3)).apply(projection)  # Scout mishap 3: two GainConnectionsRolledEffect
 
     rolls = [p for p in projection.pending_inputs if isinstance(p, PendingConnectionsRoll)]
     assert len(rolls) == 2
@@ -1243,7 +1253,7 @@ def test_mishap_handler_gain_connections_effect_queues_two_connection_rolls():
 
 def test_mishap_handler_skill_choice_effect_queues_pending_skill_choice():
     projection = _projection(current_career=ARMY, current_assignment='Infantry', term_count=1)
-    Event(id=5, handler=MishapHandler(roll=3)).apply(projection)  # Army mishap 3: SkillChoiceEffect + GainEnemyEffect
+    Event(handler=MishapHandler(roll=3)).apply(projection)  # Army mishap 3: SkillChoiceEffect + GainEnemyEffect
 
     assert any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
     assert any(c.kind == 'connection_enemy' for c in projection.summary.connections)
@@ -1264,9 +1274,7 @@ def test_mishap_handler_skill_choice_effect_queues_pending_skill_choice():
 def test_connection_kind_choice_handler_adds_narrative_for_life_event_rolls(roll, connection_kind, expected_fragment):
     projection = _projection()
     life_event_choice = PendingLifeEventChoice(pending_id=(1, 0), instruction='Choice', roll=roll)
-    Event(id=2, handler=ConnectionKindChoiceHandler(connection_kind=connection_kind)).apply(
-        projection, life_event_choice
-    )
+    Event(handler=ConnectionKindChoiceHandler(connection_kind=connection_kind)).apply(projection, life_event_choice)
 
     assert any(expected_fragment in line.lower() for line in projection.summary.narrative)
 

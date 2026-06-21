@@ -108,16 +108,18 @@ class TestEvent:
         assert event_a.id != event_b.id
 
     def test_explicit_id_overrides_auto_generated(self):
-        event = Event(id=42, handler=_AlphaHandler())
-        assert event.id == 42
+        explicit_id = 42
+        event = Event.model_validate({'id': explicit_id, 'handler': _AlphaHandler()})
+        assert event.id == explicit_id
 
     def test_fulfills_defaults_to_none(self):
         event = Event(handler=_AlphaHandler())
         assert event.fulfills is None
 
     def test_fulfills_stored_correctly(self):
-        event = Event(fulfills=(3, 1), handler=_AlphaHandler())
-        assert event.fulfills == (3, 1)
+        pending_id = (3, 1)
+        event = Event(fulfills=pending_id, handler=_AlphaHandler())
+        assert event.fulfills == pending_id
 
     def test_apply_calls_handler_apply(self):
         projection: dict[str, Any] = {}
@@ -149,8 +151,9 @@ class TestEvent:
             _ = event.no_such_attribute  # type: ignore[attr-defined]
 
     def test_getattr_does_not_shadow_event_own_id(self):
-        event = Event(id=5, handler=_AlphaHandler(value=1))
-        assert event.id == 5
+        explicit_id = 5
+        event = Event.model_validate({'id': explicit_id, 'handler': _AlphaHandler(value=1)})
+        assert event.id == explicit_id
 
     def test_handler_deserialised_from_dict_via_before_validator(self):
         event = Event.model_validate({'id': 1, 'handler': {'kind': '_test_alpha', 'value': 11}})

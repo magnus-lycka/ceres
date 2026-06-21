@@ -6,17 +6,24 @@ import textwrap
 
 from ceres.character.domain.career import CITIZEN
 from ceres.character.domain.career.entry import CareerEntryHandler
-from ceres.character.domain.character_start import UcpHandler
+from ceres.character.domain.character_start import PendingUcp, UcpHandler
 from ceres.character.domain.sophont import HUMANITI
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.store import SqliteCharacterBackend
 from tests.character.helpers import MOCK_WORLD
 
 
+def _append_ucp(backend: SqliteCharacterBackend, character_id: int, ucp: str) -> None:
+    projection = backend.get_projection(character_id)
+    assert projection is not None
+    pending = next(p for p in projection.pending_inputs if isinstance(p, PendingUcp))
+    backend.append_event(character_id, Event(fulfills=pending.pending_id, handler=UcpHandler(ucp=ucp)))
+
+
 def test_store_persists_latest_character_summary() -> None:
     with SqliteCharacterBackend(':memory:') as backend:
         row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Stored')
-        backend.append_event(row['id'], Event(fulfills=(1, 0), handler=UcpHandler(ucp='89A67B')))
+        _append_ucp(backend, row['id'], '89A67B')
 
         summary = backend.get_summary(row['id'])
 
@@ -28,7 +35,7 @@ def test_store_persists_latest_character_summary() -> None:
 def test_rollback_updates_persisted_character_summary() -> None:
     with SqliteCharacterBackend(':memory:') as backend:
         row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Stored')
-        backend.append_event(row['id'], Event(fulfills=(1, 0), handler=UcpHandler(ucp='89A67B')))
+        _append_ucp(backend, row['id'], '89A67B')
 
         assert backend.rollback_last_event(row['id'])
 
@@ -69,7 +76,6 @@ def test_store_backfills_missing_legacy_summary(tmp_path: Path) -> None:
 
 def test_store_loads_career_event_in_a_fresh_process(tmp_path: Path) -> None:
     payload = Event(
-        id=1,
         handler=CareerEntryHandler(
             career=CITIZEN,
             assignment=CITIZEN.assignment('Corporate'),

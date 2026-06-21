@@ -431,7 +431,8 @@ class SurviveHandler(EventHandlerBase):
 Creating an event:
 
 ```python
-Event(handler=SurviveHandler(roll=5), fulfills=(4, 0))
+survive_pending_id = (career_entry_event.id, 0)
+Event(handler=SurviveHandler(roll=5), fulfills=survive_pending_id)
 ```
 
 The `kind` literal exists solely as a Pydantic discriminator for
