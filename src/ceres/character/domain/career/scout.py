@@ -40,6 +40,7 @@ from ceres.character.domain.career.common import CommonMishap1Handler
 from ceres.character.domain.career.common_pending import CareerSkillChoicePendingBase, CareerSkillRollPendingBase
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind
+from ceres.character.domain.dice import DiceRoll
 from ceres.character.domain.homeworld.homeworld_events import (
     PendingHomeworldChangeOffered,
     PendingHomeworldChangeRequired,
@@ -414,8 +415,8 @@ class Scout(CareerData):
                 'Gain 1D Contacts and D3 Enemies.'
             ),
             effects=[
-                GainConnectionsRolledEffect(connection_type=ConnectionKind.CONTACT, dice='1d6'),
-                GainConnectionsRolledEffect(connection_type=ConnectionKind.ENEMY, dice='d3'),
+                GainConnectionsRolledEffect(connection_type=ConnectionKind.CONTACT, dice=DiceRoll.parse('1d6')),
+                GainConnectionsRolledEffect(connection_type=ConnectionKind.ENEMY, dice=DiceRoll.parse('d3')),
             ],
         ),
         4: MishapEntry(

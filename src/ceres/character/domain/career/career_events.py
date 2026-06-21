@@ -200,8 +200,8 @@ class MishapHandler(EventHandlerBase):
                         PendingConnectionsRoll(
                             pending_id=(event.id, pending_idx),
                             connection_type=effect.connection_type,
-                            instruction=f'Roll {effect.dice.upper()} for number of {effect.connection_type}s',
-                            options=effect.roll_options(),
+                            instruction=f'Roll {effect.dice} for number of {effect.connection_type}s',
+                            options=effect.dice.roll_options(),
                         )
                     )
                     pending_idx += 1
@@ -319,8 +319,8 @@ class TermEventHandler(EventHandlerBase):
                         PendingConnectionsRoll(
                             pending_id=(event.id, pending_idx),
                             connection_type=effect.connection_type,
-                            instruction=f'Roll {effect.dice.upper()} for number of {effect.connection_type}s',
-                            options=effect.roll_options(),
+                            instruction=f'Roll {effect.dice} for number of {effect.connection_type}s',
+                            options=effect.dice.roll_options(),
                         )
                     )
                     pending_idx += 1

@@ -171,13 +171,12 @@ class PreCareerEventHandler(EventHandlerBase):
             return
         for effect in term_event.effects:
             if isinstance(effect, GainConnectionsRolledEffect):
-                max_count = {'d3': 3, '1d3': 3, 'd6': 6}.get(effect.dice.lower(), 3)
                 projection.pending_inputs.append(
                     PendingConnectionsRoll(
                         pending_id=(event.id, pending_idx),
                         connection_type=effect.connection_type,
-                        instruction=f'Roll {effect.dice.upper()} for number of {effect.connection_type}s gained',
-                        options=list(range(1, max_count + 1)),
+                        instruction=f'Roll {effect.dice} for number of {effect.connection_type}s gained',
+                        options=effect.dice.roll_options(),
                     )
                 )
                 pending_idx += 1

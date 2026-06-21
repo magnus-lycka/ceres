@@ -7,6 +7,7 @@ from pydantic.functional_validators import ModelWrapValidatorHandler
 
 from ceres.character.domain.benefits import AnyBenefit, ItemBenefit
 from ceres.character.domain.characteristics import Chars, ConnectionKind, characteristic_dm
+from ceres.character.domain.dice import DiceRoll
 from ceres.character.domain.psionics import Psi
 from ceres.character.domain.skills import AnySkill, level_fields
 from ceres.character.mechanism.errors import ReplayError
@@ -145,12 +146,7 @@ class GainEnemyEffect(BaseModel):
 class GainConnectionsRolledEffect(BaseModel):
     type: Literal['gain_connections_rolled'] = 'gain_connections_rolled'
     connection_type: ConnectionKind
-    dice: str
-
-    def roll_options(self) -> list[int]:
-        """Return the valid roll outcomes for this dice expression (e.g. 'd3' → [1,2,3])."""
-        face = int(self.dice.lower().split('d')[1])
-        return list(range(1, face + 1))
+    dice: DiceRoll
 
 
 class AdvancementDmOption(BaseModel):

@@ -40,6 +40,7 @@ from ceres.character.domain.career.common import CommonMishap1Handler
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind, characteristic_dm
+from ceres.character.domain.dice import DiceRoll
 from ceres.character.domain.skills import (
     Advocate,
     ArtSkill,
@@ -376,7 +377,7 @@ class Entertainer(CareerData):
         ),
         9: CareerEventEntry(
             text='You go on a tour of the sector, visiting several worlds.',
-            effects=[GainConnectionsRolledEffect(connection_type=ConnectionKind.CONTACT, dice='d3')],
+            effects=[GainConnectionsRolledEffect(connection_type=ConnectionKind.CONTACT, dice=DiceRoll.parse('d3'))],
         ),
         10: CareerEventEntry(
             text='One of your pieces of art is stolen and the investigation brings you into the criminal underworld.',

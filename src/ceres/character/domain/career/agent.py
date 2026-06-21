@@ -47,6 +47,7 @@ from ceres.character.domain.career.common_pending import (
 )
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind
+from ceres.character.domain.dice import DiceRoll
 from ceres.character.domain.health.health_events import PendingDoubleInjuryRoll
 from ceres.character.domain.skills import (
     Admin,
@@ -551,7 +552,7 @@ class Agent(CareerData):
         ),
         5: CareerEventEntry(
             text='You establish a network of contacts. Gain D3 Contacts.',
-            effects=[GainConnectionsRolledEffect(connection_type=ConnectionKind.CONTACT, dice='d3')],
+            effects=[GainConnectionsRolledEffect(connection_type=ConnectionKind.CONTACT, dice=DiceRoll.parse('d3'))],
         ),
         6: CareerEventEntry(
             text='You are given advanced training in a specialist field. '

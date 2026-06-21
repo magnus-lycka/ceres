@@ -17,6 +17,7 @@ from ceres.character.domain.career.career_data import (
 from ceres.character.domain.career.marines import Marines
 from ceres.character.domain.career.navy import Navy
 from ceres.character.domain.characteristics import Chars, ConnectionKind
+from ceres.character.domain.dice import DiceRoll
 from ceres.character.domain.precareer.colonial_upbringing import ColonialUprbringingPreCareer
 from ceres.character.domain.precareer.merchant_academy import MerchantAcademyPreCareer
 from ceres.character.domain.precareer.military_academy import MilitaryAcademyPreCareer
@@ -44,7 +45,7 @@ _PRECAREER_EVENTS = {
     ),
     6: CareerEventEntry(
         text='You become involved in a tightly knit clique or group.',
-        effects=[GainConnectionsRolledEffect(connection_type=ConnectionKind.ALLY, dice='d3')],
+        effects=[GainConnectionsRolledEffect(connection_type=ConnectionKind.ALLY, dice=DiceRoll.parse('d3'))],
     ),
     7: CareerEventEntry(text='Life Event.', effects=[LifeEventEffect()]),
     8: CareerEventEntry(
