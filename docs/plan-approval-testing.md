@@ -102,15 +102,68 @@ Evaluation criteria:
   normalisation.
 - Compare review ergonomics against the current inline expected-dict style.
 
-### Option B: Custom approval fixtures
+### Option B: Syrupy snapshots
+
+Evaluate [`syrupy`](https://syrupy-project.github.io/syrupy/) if inline
+snapshots make test files too bulky or if separate reviewed fixture files feel
+better for large character deltas.
+
+Syrupy is a pytest snapshot plugin. It stores approved values in snapshot files
+under `__snapshots__` and updates them with `pytest --snapshot-update`.
+
+Example shape:
+
+```python
+from syrupy.extensions.json import JSONSnapshotExtension
+
+
+def test_scholar_event3_accept_full_delta(snapshot):
+    d = _setup_to_event_3_choice()
+    before = d.snapshot()
+
+    d.career_choice(ScholarEvent3Accept)
+    d.connections_roll(1)
+    d.choose_career_skill(SpaceScience(planetology=Level(value=1)))
+    d.choose_career_skill(LifeScience(biology=Level(value=1)))
+    d.name_connection()
+
+    assert stable_projection_diff(before, d.projection) == snapshot(
+        extension_class=JSONSnapshotExtension
+    )
+```
+
+Advantages:
+
+- no custom approval fixture or review tool needed for basic snapshot workflow
+- snapshots live outside test files, which may be better for large diffs
+- built-in snapshot update command
+- supports matchers and excludes for dynamic values
+- JSON snapshot extension may suit `projection_diff(...).to_dict()` output
+
+Risks:
+
+- confirm compatibility with the project's pytest version before adopting
+- review requires jumping between test and snapshot file
+- snapshot files add another artifact type to maintain
+- matchers/excludes may be less readable than explicit normalisation helpers
+
+Evaluation criteria:
+
+- Verify Syrupy works with the current pytest version used by the project.
+- Convert the same candidate test used for the inline-snapshot experiment.
+- Compare generated snapshot readability against the inline snapshot version.
+- Confirm update workflow with `pytest --snapshot-update`.
+- Check how unused/orphaned snapshots are reported.
+
+### Option C: Custom approval fixtures
 
 The custom fixture/review-tool approach below remains a fallback if inline
-snapshots are too noisy or too large. It gives more control over fixture file
-layout, volatile path metadata, and interactive review, but it also creates
-project-specific infrastructure to maintain.
+snapshots and Syrupy are both too noisy or too limited. It gives more control
+over fixture file layout, volatile path metadata, and interactive review, but it
+also creates project-specific infrastructure to maintain.
 
-Do not implement Option B until Option A has been tried on at least one complex
-state-delta test.
+Do not implement Option C until Options A and B have each been tried on at least
+one complex state-delta test.
 
 ## Custom Approval Architecture
 
