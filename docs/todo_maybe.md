@@ -3,6 +3,31 @@
 Update todo items in this document as progress is made.
 When todo items are done, please move them to docs/archive/done_todos.md
 
+## Projection diff testing helper
+
+Improve and document the `projection_diff` / DeepDiff-based test helper used in
+character tests.
+
+Current thought:
+
+- keep it as a focused tool for complex state-transition tests where "nothing
+  else changed" is part of the behaviour under test
+- avoid turning it into broad snapshot testing or replacing simple domain
+  assertions such as cash totals, skill levels, or pending presence
+- make the helper less brittle before wider use, especially around volatile
+  paths such as generated event IDs, pending IDs, list indexes, and serialized
+  implementation details
+
+Possible work:
+
+- add coding-guideline notes explaining when to prefer `projection_diff` and
+  when ordinary assertions or `CharacterDriver` tests are clearer
+- provide a higher-level assertion helper that supports expected changes plus
+  allowed volatile paths
+- consider narrower helpers for summary-only or pending-only diffs
+- look for more complex character state transitions where it would improve
+  coverage of unexpected side effects
+
 ## Google Sheet fuel mismatch
 
 We should keep an eye out for any remaining Google Sheet / export-based fuel

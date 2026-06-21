@@ -74,9 +74,26 @@ from ceres.character.domain.health.health_events import (
 from ceres.character.domain.skills import Admin, AnySkill, Athletics, Carouse, Medic
 from ceres.character.domain.sophont import VILANI, Sophont
 from ceres.character.mechanism.errors import ReplayError
-from ceres.character.mechanism.event_base import Event
+from ceres.character.mechanism.event_base import Event, EventHandlerBase
 from ceres.character.mechanism.pending_input import ChoiceBase
 from ceres.character.mechanism.replay import replay
+
+
+def scripted_event(
+    *,
+    handler: EventHandlerBase,
+    id_: int | None = None,
+    fulfills: tuple[int, int] | str | None = None,
+) -> Event:
+    """Build replay-script events while keeping explicit ids out of test bodies."""
+    if id_ is None:
+        return Event(handler=handler, fulfills=fulfills)
+    return Event.model_validate({'id': id_, 'fulfills': fulfills, 'handler': handler})
+
+
+def pending_id(source: Event | int, pending_index: int) -> tuple[int, int]:
+    event_id = source.id if isinstance(source, Event) else source
+    return (event_id, pending_index)
 
 
 class AdvancedTrainingTestMixin:
