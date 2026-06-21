@@ -253,14 +253,15 @@ class CharacterProjection(BaseModel):
         )
         conn_idx = len(self.summary.connections) - 1
         kind_label = kind.value.replace('connection_', '').title()
-        self.pending_inputs.append(
+        self.pending_inputs.insert(
+            0,
             PendingConnectionName(
                 pending_id=f'connection_name_{conn_idx}',
                 connection_index=conn_idx,
                 connection_kind=kind,
                 note_prefill=origin,
                 instruction=f'Name this {kind_label} ({origin})',
-            )
+            ),
         )
 
     def has_blocking_pending(self) -> bool:

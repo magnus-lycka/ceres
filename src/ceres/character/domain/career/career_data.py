@@ -147,6 +147,11 @@ class GainConnectionsRolledEffect(BaseModel):
     connection_type: ConnectionKind
     dice: str
 
+    def roll_options(self) -> list[int]:
+        """Return the valid roll outcomes for this dice expression (e.g. 'd3' → [1,2,3])."""
+        face = int(self.dice.lower().split('d')[1])
+        return list(range(1, face + 1))
+
 
 class AdvancementDmOption(BaseModel):
     model_config = ConfigDict(extra='forbid')
@@ -421,8 +426,20 @@ class CareerData(TermData):
     def is_selectable(self, projection=None) -> bool:
         return self.selectable
 
+    def is_in_draft(self, summary) -> int:
+        """Return positive weight if this career is in the draft table, 0 otherwise.
+
+        Default: non-empty draft_assignments → weight 1.  Override to return a
+        different weight (e.g. for sophont-specific draft tables per RIC-003).
+        """
+        return 1 if self.draft_assignments else 0
+
+    def is_draft_alternative(self, summary) -> bool:
+        """Return True if this career is offered as an alternative to the draft."""
+        return False
+
     def does_draft(self) -> bool:
-        return bool(self.draft_assignments)
+        return self.is_in_draft(None) > 0
 
     def start_draft(self, projection, event_id: int, assignment: AssignmentData | None = None) -> None:
         from ceres.character.domain.career.career_events import PendingDraftAssignmentChoice

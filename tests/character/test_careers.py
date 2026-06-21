@@ -2,7 +2,7 @@
 
 import pytest
 
-from ceres.character.domain.career import AGENT, ENTERTAINER, MERCHANT, SCHOLAR, SCOUT
+from ceres.character.domain.career import AGENT, MERCHANT, SCHOLAR, SCOUT
 from ceres.character.domain.career.career_data import BenefitRollDm
 from ceres.character.domain.career.career_events import (
     AdvancementHandler,
@@ -124,39 +124,22 @@ class TestCoreCareerCoverage:
         assert career.skill_table('advanced_education') is not None
 
     def test_entertainer_qualification_accepts_dex_or_int(self):
-        started = _event(
-            id_=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')
-        )
-        ucp = _event(id_=2, fulfills=_pending(started, 0), handler=UcpHandler(ucp='7833A5'))
-        background = _event(
-            id_=3,
-            fulfills=_pending(ucp, 0),
-            handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()]),
-        )
-        career = _event(
-            id_=4,
-            fulfills=_pending(background, 0),
-            handler=CareerEntryHandler(
-                career=ENTERTAINER, assignment=ENTERTAINER.assignment('Performer'), qualification_roll=5
-            ),
-        )
-        events = [started, ucp, background, career]
+        driver = CharacterDriver()
+        driver.start(VILANI, MOCK_WORLD)
+        driver.ucp('7833A5')
+        driver.background_skills([Admin(), Athletics(), Carouse(), Drive()])
+        driver.career('Entertainer', 'Performer', roll=5)
 
-        projection = replay(1, events)
-
-        assert projection.summary.current_career is not None
-        assert projection.summary.current_career.name == 'Entertainer'
+        assert driver.projection.summary.current_career is not None
+        assert driver.projection.summary.current_career.name == 'Entertainer'
 
 
 def _full_setup(character_id: int = 1) -> list:
     """Return events that get a character through setup: started → ucp → background skills."""
     # STR=7 DEX=8 END=6 INT=9 EDU=10 SOC=5 → 4 background skills
-    started = _event(
-        id_=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')
-    )
-    ucp = _event(id_=2, fulfills=_pending(started, 0), handler=UcpHandler(ucp='7869A5'))
+    started = _event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'))
+    ucp = _event(fulfills=_pending(started, 0), handler=UcpHandler(ucp='7869A5'))
     background = _event(
-        id_=3,
         fulfills=_pending(ucp, 0),
         handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()]),
     )
@@ -168,14 +151,11 @@ def _scholar_setup(character_id: int = 1) -> list:
 
     Scholar service_skills row 1 offers Drive/Flyer. Using Drive in background causes Flyer to be
     auto-granted (only 1 option left). This setup preserves both options so Scholar initial training
-    creates two choice pendings: Drive/Flyer (id .0) and Science (id .1).
+    creates two choice pendings: Drive/Flyer and Science.
     """
-    started = _event(
-        id_=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')
-    )
-    ucp = _event(id_=2, fulfills=_pending(started, 0), handler=UcpHandler(ucp='7869A5'))
+    started = _event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'))
+    ucp = _event(fulfills=_pending(started, 0), handler=UcpHandler(ucp='7869A5'))
     background = _event(
-        id_=3,
         fulfills=_pending(ucp, 0),
         handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Medic()]),
     )
@@ -185,19 +165,25 @@ def _scholar_setup(character_id: int = 1) -> list:
 def _career_entry_events(career, assignment, qualification_roll: int = 7, setup: list | None = None) -> list:
     base = setup or _full_setup()
     entry = _event(
-        id_=4,
         fulfills=_pending(base[-1], 0),
         handler=CareerEntryHandler(career=career, assignment=assignment, qualification_roll=qualification_roll),
     )
     return [*base, entry]
 
 
+def _append_event(events: list, *, handler, pending_index: int = 0):
+    event = _event(fulfills=_pending(events[-1], pending_index), handler=handler)
+    events.append(event)
+    return event
+
+
 def _scout_life_event_events(roll: int) -> list:
     base = _career_entry_events(SCOUT, SCOUT.assignment('Courier'))
-    survive = _event(id_=5, fulfills=_pending(base[-1], 0), handler=SurviveHandler(roll=7))
-    term_event = _event(id_=6, fulfills=_pending(survive, 0), handler=TermEventHandler(roll=7))
-    life_event = _event(id_=7, fulfills=_pending(term_event, 0), handler=LifeEventHandler(roll=roll))
-    return [*base, survive, term_event, life_event]
+    events = [*base]
+    _append_event(events, handler=SurviveHandler(roll=7))
+    _append_event(events, handler=TermEventHandler(roll=7))
+    _append_event(events, handler=LifeEventHandler(roll=roll))
+    return events
 
 
 class TestQualification:
@@ -248,7 +234,6 @@ class TestQualification:
         # Fail Scout, then succeed Scholar
         base = _career_entry_events(SCOUT, SCOUT.assignment('Courier'), qualification_roll=3)
         scholar = _event(
-            id_=5,
             fulfills=_pending(base[-1], 0),
             handler=CareerEntryHandler(
                 career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
@@ -274,57 +259,34 @@ class TestSubsequentBasicTraining:
         Agent qualification: INT 5+, INT=9 DM+1, roll=4 → 5 >= 5 → pass.
         Agent advancement: INT 5+, roll=3 → 4 < 5 → fail.
         """
-        setup = _full_setup()
-        scout = _event(
-            id_=4,
-            fulfills=_pending(setup[-1], 0),
+        events = _full_setup()
+        _append_event(
+            events,
             handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
         )
-        scout_survive = _event(id_=5, fulfills=_pending(scout, 0), handler=SurviveHandler(roll=7))
-        scout_event = _event(id_=6, fulfills=_pending(scout_survive, 0), handler=TermEventHandler(roll=5))
-        scout_advancement = _event(id_=7, fulfills=_pending(scout_event, 0), handler=AdvancementHandler(roll=3))
-        scout_reenlist = _event(id_=8, fulfills=_pending(scout_advancement, 0), handler=ReenlistHandler(reenlist=False))
-        scout_cash = _event(id_=9, fulfills=_pending(scout_reenlist, 0), handler=MusterOutHandler(table='cash', roll=1))
+        _append_event(events, handler=SurviveHandler(roll=7))
+        _append_event(events, handler=TermEventHandler(roll=5))
+        _append_event(events, handler=AdvancementHandler(roll=3))
+        _append_event(events, handler=ReenlistHandler(reenlist=False))
+        _append_event(events, handler=MusterOutHandler(table='cash', roll=1))
 
-        agent = _event(
-            id_=10,
-            fulfills=_pending(scout_cash, 0),
+        _append_event(
+            events,
             handler=CareerEntryHandler(career=AGENT, assignment=AGENT.assignment('Intelligence'), qualification_roll=5),
         )
-        agent_training = _event(id_=11, fulfills=_pending(agent, 0), handler=SkillChoiceHandler(skill=Investigate()))
-        agent_survive = _event(id_=12, fulfills=_pending(agent_training, 0), handler=SurviveHandler(roll=9))
-        agent_event = _event(id_=13, fulfills=_pending(agent_survive, 0), handler=TermEventHandler(roll=4))
-        agent_advancement = _event(id_=14, fulfills=_pending(agent_event, 0), handler=AdvancementHandler(roll=3))
-        agent_reenlist = _event(
-            id_=15, fulfills=_pending(agent_advancement, 0), handler=ReenlistHandler(reenlist=False)
-        )
-        agent_cash = _event(
-            id_=16, fulfills=_pending(agent_reenlist, 0), handler=MusterOutHandler(table='cash', roll=1)
-        )
-
-        return [
-            *setup,
-            scout,
-            scout_survive,
-            scout_event,
-            scout_advancement,
-            scout_reenlist,
-            scout_cash,
-            agent,
-            agent_training,
-            agent_survive,
-            agent_event,
-            agent_advancement,
-            agent_reenlist,
-            agent_cash,
-        ]
+        _append_event(events, handler=SkillChoiceHandler(skill=Investigate()))
+        _append_event(events, handler=SurviveHandler(roll=9))
+        _append_event(events, handler=TermEventHandler(roll=4))
+        _append_event(events, handler=AdvancementHandler(roll=3))
+        _append_event(events, handler=ReenlistHandler(reenlist=False))
+        _append_event(events, handler=MusterOutHandler(table='cash', roll=1))
+        return events
 
     def test_scout_reentry_creates_survive_not_skill_table(self):
         """Re-entering Scout (all service skills already known) gives survival pending, not skill roll."""
         events = [
             *(base := self._setup_scout_then_agent_muster_out()),
             _event(
-                id_=17,
                 fulfills=_pending(base[-1], 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
@@ -335,11 +297,12 @@ class TestSubsequentBasicTraining:
         assert not any(isinstance(p, PendingSkillTable) for p in projection.pending_inputs)
 
     def test_scout_reentry_survival_id_from_career_event(self):
-        """Survival pending ID is career_event.id.0 — no skill table interleaved."""
+        """Survival pending ID is derived from the re-entry event."""
+        career_event_id = 17
         events = [
             *(base := self._setup_scout_then_agent_muster_out()),
             _event(
-                id_=17,
+                id_=career_event_id,
                 fulfills=_pending(base[-1], 0),
                 handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
             ),
@@ -347,7 +310,7 @@ class TestSubsequentBasicTraining:
         projection = replay(1, events)
 
         survive_pending = next(p for p in projection.pending_inputs if isinstance(p, PendingSurvive))
-        assert survive_pending.id == '17.0'
+        assert survive_pending.pending_id == _pending(career_event_id, 0)
 
 
 class TestCareerEntry:
@@ -399,8 +362,8 @@ class TestCareerEntry:
         projection = replay(1, events)
 
         survive_pending = next(p for p in projection.pending_inputs if isinstance(p, PendingSurvive))
-        # The survive pending is created by the career event (id=4), so it's 4.0
-        assert survive_pending.id == '4.0'
+        # The survive pending is created by the career event.
+        assert survive_pending.pending_id == _pending(events[-1], 0)
 
     def test_survive_pending_instruction_mentions_target(self):
         events = _career_entry_events(SCOUT, SCOUT.assignment('Courier'))

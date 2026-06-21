@@ -8,7 +8,9 @@ from ceres.character.input_specs import (
     AssignmentOption,
     CareerChoice,
     CareerOption,
+    InfoText,
     InputSpec,
+    NumberEntry,
     QualificationTarget,
     Reference,
     Select,
@@ -116,29 +118,57 @@ class PendingDraftChoice(PendingInputBase):
     can_draft: bool = True
 
     def event_from_form(self, form: Any) -> Event:
-        if form_str(form, 'choice', 'drifter') == 'draft':
-            from ceres.character.domain.career.loader import load_careers
+        from ceres.character.domain.career.draft import build_draft_table, get_draft_alternative
+        from ceres.character.domain.career.loader import load_careers
 
-            draft_careers = sorted(
-                [career for career in load_careers().values() if career.does_draft()],
-                key=lambda career: career.name,
-            )
+        careers = load_careers()
+        if form_str(form, 'choice', 'alternative') == 'draft':
+            table = build_draft_table(None, careers)
             roll = form_int(form, 'roll', 1)
-            career = draft_careers[max(0, min(roll, len(draft_careers)) - 1)]
+            career = table[max(0, min(roll, len(table)) - 1)]
             return Event(fulfills=self.pending_id, handler=DraftHandler(career=career))
-        from ceres.character.domain.career.drifter import DRIFTER
 
-        assignment_name = form_str(form, 'assignment', 'Wanderer')
-        assignment = DRIFTER.assignment(assignment_name)
+        alternative = get_draft_alternative(None, careers)
+        if alternative is None:
+            raise ReplayError('No draft alternative available')
+        default_assignment = alternative.assignments[0].name
+        assignment_name = form_str(form, 'assignment', default_assignment)
+        assignment = alternative.assignment(assignment_name)
         if assignment is None:
-            raise ReplayError(f'Unknown Drifter assignment {assignment_name!r}')
+            raise ReplayError(f'Unknown assignment {assignment_name!r} for {alternative.name!r}')
         return Event(
             fulfills=self.pending_id,
-            handler=CareerEntryHandler(career=DRIFTER, assignment=assignment, qualification_roll=2),
+            handler=CareerEntryHandler(career=alternative, assignment=assignment, qualification_roll=2),
         )
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
-        return []
+        from ceres.character.domain.career.draft import build_draft_table, get_draft_alternative
+        from ceres.character.domain.career.loader import load_careers
+
+        careers = load_careers()
+        alternative = get_draft_alternative(projection.summary, careers)
+        specs: list[InputSpec] = []
+
+        if self.can_draft:
+            table = build_draft_table(projection.summary, careers)
+            table_text = ' · '.join(f'{i + 1} {c.name}' for i, c in enumerate(table))
+            specs.append(InfoText(text=f'Draft table: {table_text}'))
+            choice_options: list[tuple[str, str]] = [('Submit to the draft', 'draft')]
+            if alternative is not None:
+                choice_options.append((f'Become a {alternative.name}', 'alternative'))
+            specs.append(Select(name='choice', label='Choice', options=choice_options))
+            specs.append(NumberEntry(name='roll', label='1D roll', min=1, max=len(table)))
+
+        if alternative is not None:
+            specs.append(
+                Select(
+                    name='assignment',
+                    label=f'{alternative.name} assignment',
+                    options=[(a.name, a.name) for a in alternative.assignments],
+                )
+            )
+
+        return specs
 
 
 class PendingDraftAssignmentChoice(PendingInputBase):

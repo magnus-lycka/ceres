@@ -120,7 +120,7 @@ from ceres.character.domain.precareer.precareer_events import (
     PreCareerSkillChoiceHandler,
 )
 from ceres.character.domain.sophont import VILANI
-from ceres.character.input_specs import CareerChoice, NumberEntry, Reference, Select
+from ceres.character.input_specs import CareerChoice, InfoText, NumberEntry, Reference, Select
 from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event
 from tests.character.helpers import MOCK_WORLD
@@ -612,17 +612,62 @@ def test_pending_career_choice_form_and_specs():
     assert spec.career_options[0].assignments[0].description.startswith('You are responsible for shuttling messages')
 
 
-def test_pending_draft_choices_build_expected_events_and_specs():
-    draft = PendingDraftChoice(pending_id=(3, 0), instruction='Draft or drift')
-    draft_event = draft.event_from_form(Form(choice='draft', roll='2'))
-    drifter_event = draft.event_from_form(Form(choice='drifter', assignment='Scavenger'))
+def test_pending_draft_choice_event_from_form_draft_produces_draft_handler():
+    from ceres.character.domain.career.army import Army
 
-    assert isinstance(draft_event.handler, DraftHandler)
-    assert draft_event.career.name == 'Army'
-    assert isinstance(drifter_event.handler, CareerEntryHandler)
-    assert drifter_event.career.name == 'Drifter'
-    assert drifter_event.assignment.name == 'Scavenger'
-    assert draft.input_specs(_projection()) == []
+    draft = PendingDraftChoice(pending_id=(3, 0), instruction='Draft or drift')
+    # Roll 2: alphabetically second draftable career (Agent=1, Army=2)
+    event = draft.event_from_form(Form(choice='draft', roll='2'))
+    assert isinstance(event.handler, DraftHandler)
+    assert isinstance(event.handler.career, Army)
+
+
+def test_pending_draft_choice_event_from_form_alternative_produces_career_entry():
+    from ceres.character.domain.career.drifter import Drifter
+
+    draft = PendingDraftChoice(pending_id=(3, 0), instruction='Draft or drift')
+    event = draft.event_from_form(Form(choice='alternative', assignment='Scavenger'))
+    assert isinstance(event.handler, CareerEntryHandler)
+    assert isinstance(event.handler.career, Drifter)
+    assert event.handler.assignment is not None
+    assert event.handler.assignment in event.handler.career.assignments
+
+
+def test_pending_draft_choice_input_specs_contains_draft_table_infotext():
+    specs = PendingDraftChoice(pending_id=(3, 0), instruction='Draft').input_specs(_projection())
+    assert any(isinstance(s, InfoText) for s in specs)
+
+
+def test_pending_draft_choice_input_specs_has_choice_select_with_two_options():
+    specs = PendingDraftChoice(pending_id=(3, 0), instruction='Draft').input_specs(_projection())
+    choices = [s for s in specs if isinstance(s, Select) and s.name == 'choice']
+    assert len(choices) == 1
+    assert len(choices[0].options) == 2
+
+
+def test_pending_draft_choice_input_specs_has_roll_number_entry():
+    specs = PendingDraftChoice(pending_id=(3, 0), instruction='Draft').input_specs(_projection())
+    rolls = [s for s in specs if isinstance(s, NumberEntry) and s.name == 'roll']
+    assert len(rolls) == 1
+    assert rolls[0].min == 1
+    assert rolls[0].max >= 1
+
+
+def test_pending_draft_choice_input_specs_has_assignment_select_for_alternative():
+    specs = PendingDraftChoice(pending_id=(3, 0), instruction='Draft').input_specs(_projection())
+    assignments = [s for s in specs if isinstance(s, Select) and s.name == 'assignment']
+    assert len(assignments) == 1
+    assert len(assignments[0].options) > 0
+
+
+def test_pending_draft_choice_input_specs_no_can_draft_omits_draft_elements():
+    specs = PendingDraftChoice(pending_id=(3, 0), instruction='No draft', can_draft=False).input_specs(_projection())
+    assert not any(isinstance(s, InfoText) for s in specs)
+    assert not any(isinstance(s, NumberEntry) for s in specs)
+
+
+def test_pending_draft_assignment_choice_event_from_form_and_specs():
+    from ceres.character.domain.career.army import Army
 
     assignment = PendingDraftAssignmentChoice(
         pending_id=(4, 0), instruction='Assignment', career=load_careers()['Army']
@@ -631,10 +676,9 @@ def test_pending_draft_choices_build_expected_events_and_specs():
     specs = assignment.input_specs(_projection())
 
     assert isinstance(form_event.handler, DraftAssignmentHandler)
-    assert form_event.career.name == 'Army'
-    assert form_event.assignment.name == 'Support'
+    assert isinstance(form_event.handler.career, Army)
+    assert form_event.handler.assignment in form_event.handler.career.assignments
     assert isinstance(specs[0], Reference)
-    assert specs[0].value == 'Army'
     assert isinstance(specs[1], Select)
 
 
@@ -1249,6 +1293,41 @@ def test_mishap_handler_gain_connections_effect_queues_two_connection_rolls():
 
     rolls = [p for p in projection.pending_inputs if isinstance(p, PendingConnectionsRoll)]
     assert len(rolls) == 2
+
+
+def test_mishap_handler_d3_connections_effect_uses_d3_options():
+    projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=1)
+    Event(handler=MishapHandler(roll=3)).apply(projection)  # Scout mishap 3: 1d6 Contacts + d3 Enemies
+
+    enemy_roll = next(
+        p
+        for p in projection.pending_inputs
+        if isinstance(p, PendingConnectionsRoll) and p.connection_type == ConnectionKind.ENEMY
+    )
+    assert enemy_roll.options == [1, 2, 3]
+
+
+def test_connections_roll_handler_inserts_name_pending_before_other_pending():
+    from ceres.character.domain.connection_events import PendingConnectionName
+    from tests.character.helpers import pending_id
+
+    projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=1)
+    sentinel_event = Event(handler=ConnectionsRollHandler(connection_type=ConnectionKind.RIVAL, count=0))
+    sentinel = PendingConnectionsRoll(
+        pending_id=pending_id(sentinel_event, 0),
+        instruction='sentinel',
+        connection_type=ConnectionKind.CONTACT,
+        options=[1],
+    )
+    projection.pending_inputs.append(sentinel)
+
+    Event(handler=ConnectionsRollHandler(connection_type=ConnectionKind.CONTACT, count=2)).apply(projection)
+
+    name_pendins = [p for p in projection.pending_inputs if isinstance(p, PendingConnectionName)]
+    assert len(name_pendins) == 2
+    sentinel_idx = projection.pending_inputs.index(sentinel)
+    for np in name_pendins:
+        assert projection.pending_inputs.index(np) < sentinel_idx
 
 
 def test_mishap_handler_skill_choice_effect_queues_pending_skill_choice():

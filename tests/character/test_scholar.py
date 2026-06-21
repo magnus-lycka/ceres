@@ -11,6 +11,7 @@ from ceres.character.domain.career.career_events import (
     MishapHandler,
     MusterOutHandler,
     PendingAdvancement,
+    PendingCareerChoice,
     PendingChoices,
     PendingInitialTrainingChoice,
     PendingRankBonusChoice,
@@ -39,7 +40,6 @@ from ceres.character.domain.career.scholar import (
     ScholarMishap5GiveUp,
     ScholarMishap5StartAgain,
 )
-from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.connection import (
     Ally,
@@ -97,8 +97,8 @@ _SCIENCES = sorted(['Life Science', 'Physical Science', 'Robotic Science', 'Soci
 _SCIENCE_CLASSES = set(_skill_classes(Sciences))
 
 
-def _append_event(events: list, *, handler, id_: int | None = None, pending_index: int = 0):
-    event = _event(id_=id_, fulfills=_pending(events[-1], pending_index), handler=handler)
+def _append_event(events: list, *, handler, pending_index: int = 0):
+    event = _event(fulfills=_pending(events[-1], pending_index), handler=handler)
     events.append(event)
     return event
 
@@ -106,13 +106,12 @@ def _append_event(events: list, *, handler, id_: int | None = None, pending_inde
 def _enter_scholar_assignment(assignment: str = 'Field Researcher') -> list:
     events = _scholar_setup()
     career = _event(
-        id_=4,
         fulfills=_pending(events[-1], 0),
         handler=CareerEntryHandler(career=SCHOLAR, assignment=SCHOLAR.assignment(assignment), qualification_roll=5),
     )
     events.append(career)
     _append_event(events, handler=SkillChoiceHandler(skill=Drive()))
-    science = _event(id_=6, fulfills=_pending(career, 1), handler=SkillChoiceHandler(skill=SpaceScience()))
+    science = _event(fulfills=_pending(career, 1), handler=SkillChoiceHandler(skill=SpaceScience()))
     events.append(science)
     return events
 
@@ -123,24 +122,24 @@ def _enter_scholar_field_researcher() -> list:
 
 def _scholar_one_term(assignment: str = 'Field Researcher', *, reenlist: bool) -> list:
     events = _enter_scholar_assignment(assignment)
-    _append_event(events, id_=7, handler=SurviveHandler(roll=7))
-    _append_event(events, id_=8, handler=TermEventHandler(roll=5))
-    _append_event(events, id_=9, handler=AdvancementHandler(roll=3))
-    _append_event(events, id_=10, handler=ReenlistHandler(reenlist=reenlist))
+    _append_event(events, handler=SurviveHandler(roll=7))
+    _append_event(events, handler=TermEventHandler(roll=5))
+    _append_event(events, handler=AdvancementHandler(roll=3))
+    _append_event(events, handler=ReenlistHandler(reenlist=reenlist))
     return events
 
 
 def _scholar_term_event(roll: int, *, survive_roll: int = 7) -> list:
     events = _enter_scholar_field_researcher()
-    _append_event(events, id_=7, handler=SurviveHandler(roll=survive_roll))
-    _append_event(events, id_=8, handler=TermEventHandler(roll=roll))
+    _append_event(events, handler=SurviveHandler(roll=survive_roll))
+    _append_event(events, handler=TermEventHandler(roll=roll))
     return events
 
 
 def _scholar_mishap(roll: int) -> list:
     events = _enter_scholar_field_researcher()
-    _append_event(events, id_=7, handler=SurviveHandler(roll=3))
-    _append_event(events, id_=8, handler=MishapHandler(roll=roll))
+    _append_event(events, handler=SurviveHandler(roll=3))
+    _append_event(events, handler=MishapHandler(roll=roll))
     return events
 
 
@@ -148,23 +147,14 @@ class TestScholarInitialTraining:
     """Scholar service_skills roll 1 (Drive/Flyer) and roll 6 (Science) require a player choice."""
 
     def _setup(self) -> list:
-        started = _event(
-            id_=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')
-        )
-        ucp = _event(id_=2, fulfills=_pending(started, 0), handler=UcpHandler(ucp='7869A5'))
-        background = _event(
-            id_=3,
-            fulfills=_pending(ucp, 0),
-            handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Medic()]),
-        )
+        events = _scholar_setup()
         career = _event(
-            id_=4,
-            fulfills=_pending(background, 0),
+            fulfills=_pending(events[-1], 0),
             handler=CareerEntryHandler(
                 career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
             ),
         )
-        return [started, ucp, background, career]
+        return [*events, career]
 
     def test_two_initial_training_choice_pendings_created(self):
         projection = replay(1, self._setup())
@@ -225,39 +215,29 @@ class TestScholarInitialTraining:
         events = [
             *(base := self._setup()),
             _event(fulfills=_pending(base[-1], 0), handler=SkillChoiceHandler(skill=Drive())),
-            _event(id_=6, fulfills=_pending(base[-1], 1), handler=SkillChoiceHandler(skill=SpaceScience())),
+            _event(fulfills=_pending(base[-1], 1), handler=SkillChoiceHandler(skill=SpaceScience())),
         ]
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
 
     def test_survive_pending_id_from_last_choice_event(self):
-        events = [
-            *(base := self._setup()),
-            _event(fulfills=_pending(base[-1], 0), handler=SkillChoiceHandler(skill=Drive())),
-            _event(id_=6, fulfills=_pending(base[-1], 1), handler=SkillChoiceHandler(skill=SpaceScience())),
-        ]
+        events = [*(base := self._setup())]
+        events.append(_event(fulfills=_pending(base[-1], 0), handler=SkillChoiceHandler(skill=Drive())))
+        science_choice = _event(fulfills=_pending(base[-1], 1), handler=SkillChoiceHandler(skill=SpaceScience()))
+        events.append(science_choice)
         projection = replay(1, events)
 
         survive = next(p for p in projection.pending_inputs if isinstance(p, PendingSurvive))
-        assert survive.id == '6.0'
+        assert survive.pending_id == _pending(science_choice, 0)
 
     def test_no_initial_training_choice_for_scout(self):
-        started = _event(
-            id_=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')
-        )
-        ucp = _event(id_=2, fulfills=_pending(started, 0), handler=UcpHandler(ucp='7869A5'))
-        background = _event(
-            id_=3,
-            fulfills=_pending(ucp, 0),
-            handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Medic()]),
-        )
+        events = _scholar_setup()
         career = _event(
-            id_=4,
-            fulfills=_pending(background, 0),
+            fulfills=_pending(events[-1], 0),
             handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
         )
-        events = [started, ucp, background, career]
+        events = [*events, career]
         projection = replay(1, events)
 
         assert not any(isinstance(p, PendingInitialTrainingChoice) for p in projection.pending_inputs)
@@ -285,7 +265,7 @@ class TestScholarTerm:
     def test_rank_1_bonus_creates_science_choice_pending(self):
         # Rank 1 bonus is Science 1 (player chooses which broad science) — Core p.43
         events = _scholar_term_event(5)  # benefit_dm → direct advancement
-        _append_event(events, id_=9, handler=AdvancementHandler(roll=7))  # INT=9 DM+1 → 8 >= 6
+        _append_event(events, handler=AdvancementHandler(roll=7))  # INT=9 DM+1 → 8 >= 6
         projection = replay(1, events)
 
         pending = next(
@@ -353,7 +333,7 @@ class TestScholarTerm:
 
     def test_mishap_4_skill_choice_grants_skill_and_no_advancement_pending(self):
         events = _scholar_mishap(4)
-        _append_event(events, id_=9, handler=SkillChoiceHandler(skill=Survival(level=Level(value=1))))
+        _append_event(events, handler=SkillChoiceHandler(skill=Survival(level=Level(value=1))))
         projection = replay(1, events)
 
         assert projection.summary.skill_level(Survival, -1) >= 1
@@ -372,8 +352,8 @@ class TestScholarTerm:
     def test_scholar_mishap_6_stays_even_without_explicit_flag(self):
         # MishapEntry.stay_in_career overrides player's default stay_in_career=False
         events = _enter_scholar_field_researcher()
-        _append_event(events, id_=7, handler=SurviveHandler(roll=3))
-        _append_event(events, id_=8, handler=MishapHandler(roll=6, stay_in_career=False))
+        _append_event(events, handler=SurviveHandler(roll=3))
+        _append_event(events, handler=MishapHandler(roll=6, stay_in_career=False))
         projection = replay(1, events)
 
         assert projection.summary.current_career is not None
@@ -394,7 +374,7 @@ class TestScholarEvent6:
     def test_success_creates_skill_choice_pending(self):
         # EDU=10 (DM+1), need 8+, modified_roll=8 → success
         events = self._setup_to_event_6()
-        _append_event(events, id_=9, handler=SkillRollHandler(skill=Chars.EDU, modified_roll=8))
+        _append_event(events, handler=SkillRollHandler(skill=Chars.EDU, modified_roll=8))
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
@@ -402,7 +382,7 @@ class TestScholarEvent6:
     def test_failure_creates_advancement_pending_not_skill_choice(self):
         # modified_roll=5 < 8 → failure
         events = self._setup_to_event_6()
-        _append_event(events, id_=9, handler=SkillRollHandler(skill=Chars.EDU, modified_roll=5))
+        _append_event(events, handler=SkillRollHandler(skill=Chars.EDU, modified_roll=5))
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
@@ -410,16 +390,16 @@ class TestScholarEvent6:
 
     def test_success_skill_choice_grants_skill_at_level_1(self):
         events = self._setup_to_event_6()
-        _append_event(events, id_=9, handler=SkillRollHandler(skill=Chars.EDU, modified_roll=8))
-        _append_event(events, id_=10, handler=SkillChoiceHandler(skill=Navigation(level=Level(value=1))))
+        _append_event(events, handler=SkillRollHandler(skill=Chars.EDU, modified_roll=8))
+        _append_event(events, handler=SkillChoiceHandler(skill=Navigation(level=Level(value=1))))
         projection = replay(1, events)
 
         assert projection.summary.skill_level(Navigation, -1) >= 1
 
     def test_success_skill_choice_creates_advancement_pending(self):
         events = self._setup_to_event_6()
-        _append_event(events, id_=9, handler=SkillRollHandler(skill=Chars.EDU, modified_roll=8))
-        _append_event(events, id_=10, handler=SkillChoiceHandler(skill=Navigation(level=Level(value=1))))
+        _append_event(events, handler=SkillRollHandler(skill=Chars.EDU, modified_roll=8))
+        _append_event(events, handler=SkillChoiceHandler(skill=Navigation(level=Level(value=1))))
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
@@ -430,12 +410,12 @@ class TestScholarMishap3:
 
     def _setup(self) -> list:
         events = _enter_scholar_field_researcher()
-        _append_event(events, id_=7, handler=SurviveHandler(roll=3))  # fail
+        _append_event(events, handler=SurviveHandler(roll=3))  # fail
         return events
 
     def test_creates_choice_pending_openly_or_secretly(self):
         events = self._setup()
-        _append_event(events, id_=8, handler=MishapHandler(roll=3))
+        _append_event(events, handler=MishapHandler(roll=3))
         projection = replay(1, events)
 
         pending = next(
@@ -447,7 +427,7 @@ class TestScholarMishap3:
 
     def test_stays_in_career_before_choice(self):
         events = self._setup()
-        _append_event(events, id_=8, handler=MishapHandler(roll=3))
+        _append_event(events, handler=MishapHandler(roll=3))
         projection = replay(1, events)
 
         assert projection.summary.current_career is not None
@@ -455,10 +435,9 @@ class TestScholarMishap3:
 
     def test_openly_adds_enemy_and_creates_science_pending(self):
         events = self._setup()
-        _append_event(events, id_=8, handler=MishapHandler(roll=3))
+        _append_event(events, handler=MishapHandler(roll=3))
         _append_event(
             events,
-            id_=9,
             handler=CareerChoiceHandler(choice=ScholarMishap3Openly.model_fields['kind'].default),
         )
         projection = replay(1, events)
@@ -480,10 +459,9 @@ class TestScholarMishap3:
 
     def test_secretly_creates_science_pending_and_decreases_soc(self):
         events = self._setup()
-        _append_event(events, id_=8, handler=MishapHandler(roll=3))
+        _append_event(events, handler=MishapHandler(roll=3))
         _append_event(
             events,
-            id_=9,
             handler=CareerChoiceHandler(choice=ScholarMishap3Secretly.model_fields['kind'].default),
         )
         projection = replay(1, events)
@@ -496,10 +474,9 @@ class TestScholarMishap3:
 
     def test_choice_creates_advancement_pending(self):
         events = self._setup()
-        _append_event(events, id_=8, handler=MishapHandler(roll=3))
+        _append_event(events, handler=MishapHandler(roll=3))
         _append_event(
             events,
-            id_=9,
             handler=CareerChoiceHandler(choice=ScholarMishap3Openly.model_fields['kind'].default),
         )
         projection = replay(1, events)
@@ -510,14 +487,26 @@ class TestScholarMishap3:
 class TestScholarMishap5:
     """Mishap 5: work sabotaged. Give up (leave) or start again (stay, lose benefit rolls)."""
 
+    def _driver_at_choice(self) -> CharacterDriver:
+        d = CharacterDriver()
+        d.start(VILANI, MOCK_WORLD)
+        d.ucp('7869A5')
+        d.background_skills([Admin(), Athletics(), Carouse(), Medic()])
+        d.career('Scholar', 'Field Researcher', roll=5)
+        d.initial_training(Drive())
+        d.initial_training(SpaceScience())
+        d.survive(3)
+        d.mishap(5)
+        return d
+
     def _setup(self) -> list:
         events = _enter_scholar_field_researcher()
-        _append_event(events, id_=7, handler=SurviveHandler(roll=3))  # fail
+        _append_event(events, handler=SurviveHandler(roll=3))  # fail
         return events
 
     def test_creates_give_up_or_start_again_pending(self):
         events = self._setup()
-        _append_event(events, id_=8, handler=MishapHandler(roll=5))
+        _append_event(events, handler=MishapHandler(roll=5))
         projection = replay(1, events)
 
         pending = next(
@@ -527,12 +516,50 @@ class TestScholarMishap5:
         assert pending is not None
         assert {type(c) for c in pending.choices} == {ScholarMishap5GiveUp, ScholarMishap5StartAgain}
 
+    def test_give_up_state_delta(self):
+        d = self._driver_at_choice()
+        before = d.snapshot()
+        d.career_choice(ScholarMishap5GiveUp)
+        diff = projection_diff(before, d.projection).to_dict()
+
+        pending_change = diff['values_changed'].pop("root['pending_inputs'][0]")
+        assert pending_change['old_value']['kind'] == PendingChoices.model_fields['kind'].default
+        assert pending_change['new_value']['kind'] == PendingCareerChoice.model_fields['kind'].default
+        assert pending_change['old_value']['pending_id'][0] != pending_change['new_value']['pending_id'][0]
+        assert pending_change['old_value']['pending_id'][1] == pending_change['new_value']['pending_id'][1] == 0
+
+        advancement_removed = diff['iterable_item_removed'].pop("root['pending_inputs'][1]")
+        assert advancement_removed['kind'] == PendingAdvancement.model_fields['kind'].default
+
+        last_career = diff['type_changes'].pop("root['summary']['last_career']")
+        assert last_career['old_value'] is None
+        assert last_career['new_value'] == {'type': SCHOLAR.type}
+
+        last_assignment = diff['type_changes'].pop("root['summary']['last_assignment']")
+        assert last_assignment['old_value'] is None
+        assert last_assignment['new_value']['name'] == 'Field Researcher'
+
+        assert diff == {
+            'iterable_item_removed': {},
+            'type_changes': {},
+            'values_changed': {
+                "root['summary']['age']": {'old_value': 18, 'new_value': 22},
+                "root['summary']['career_terms'][0]['muster_out']['lost_rolls']": {
+                    'old_value': 0,
+                    'new_value': 1,
+                },
+                "root['summary']['career_terms'][0]['muster_out']['used']": {
+                    'old_value': False,
+                    'new_value': True,
+                },
+            },
+        }
+
     def test_give_up_ends_career(self):
         events = self._setup()
-        _append_event(events, id_=8, handler=MishapHandler(roll=5))
+        _append_event(events, handler=MishapHandler(roll=5))
         _append_event(
             events,
-            id_=9,
             handler=CareerChoiceHandler(choice=ScholarMishap5GiveUp.model_fields['kind'].default),
         )
         projection = replay(1, events)
@@ -541,10 +568,9 @@ class TestScholarMishap5:
 
     def test_give_up_increments_age_by_4(self):
         events = self._setup()
-        _append_event(events, id_=8, handler=MishapHandler(roll=5))
+        _append_event(events, handler=MishapHandler(roll=5))
         _append_event(
             events,
-            id_=9,
             handler=CareerChoiceHandler(choice=ScholarMishap5GiveUp.model_fields['kind'].default),
         )
         projection = replay(1, events)
@@ -553,10 +579,9 @@ class TestScholarMishap5:
 
     def test_start_again_stays_in_career(self):
         events = self._setup()
-        _append_event(events, id_=8, handler=MishapHandler(roll=5))
+        _append_event(events, handler=MishapHandler(roll=5))
         _append_event(
             events,
-            id_=9,
             handler=CareerChoiceHandler(choice=ScholarMishap5StartAgain.model_fields['kind'].default),
         )
         projection = replay(1, events)
@@ -566,10 +591,9 @@ class TestScholarMishap5:
 
     def test_start_again_creates_advancement_pending(self):
         events = self._setup()
-        _append_event(events, id_=8, handler=MishapHandler(roll=5))
+        _append_event(events, handler=MishapHandler(roll=5))
         _append_event(
             events,
-            id_=9,
             handler=CareerChoiceHandler(choice=ScholarMishap5StartAgain.model_fields['kind'].default),
         )
         projection = replay(1, events)
@@ -739,7 +763,6 @@ class TestScholarEvent8:
         events = self._setup()
         _append_event(
             events,
-            id_=9,
             handler=CareerChoiceHandler(choice=ScholarEvent8Refuse.model_fields['kind'].default),
         )
         projection = replay(1, events)
@@ -750,7 +773,6 @@ class TestScholarEvent8:
         events = self._setup()
         _append_event(
             events,
-            id_=9,
             handler=CareerChoiceHandler(choice=ScholarEvent8Accept.model_fields['kind'].default),
         )
         projection = replay(1, events)
@@ -766,10 +788,9 @@ class TestScholarEvent8:
         events = self._setup()
         _append_event(
             events,
-            id_=9,
             handler=CareerChoiceHandler(choice=ScholarEvent8Accept.model_fields['kind'].default),
         )
-        _append_event(events, id_=10, handler=SkillRollHandler(skill=Deception(), modified_roll=9))
+        _append_event(events, handler=SkillRollHandler(skill=Deception(), modified_roll=9))
         projection = replay(1, events)
 
         assert any(isinstance(c, Enemy) for c in projection.summary.connections)
@@ -778,10 +799,9 @@ class TestScholarEvent8:
         events = self._setup()
         _append_event(
             events,
-            id_=9,
             handler=CareerChoiceHandler(choice=ScholarEvent8Accept.model_fields['kind'].default),
         )
-        _append_event(events, id_=10, handler=SkillRollHandler(skill=Deception(), modified_roll=9))
+        _append_event(events, handler=SkillRollHandler(skill=Deception(), modified_roll=9))
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
@@ -790,10 +810,9 @@ class TestScholarEvent8:
         events = self._setup()
         _append_event(
             events,
-            id_=9,
             handler=CareerChoiceHandler(choice=ScholarEvent8Accept.model_fields['kind'].default),
         )
-        _append_event(events, id_=10, handler=SkillRollHandler(skill=Deception(), modified_roll=5))
+        _append_event(events, handler=SkillRollHandler(skill=Deception(), modified_roll=5))
         projection = replay(1, events)
 
         assert any(isinstance(c, Enemy) for c in projection.summary.connections)
@@ -802,10 +821,9 @@ class TestScholarEvent8:
         events = self._setup()
         _append_event(
             events,
-            id_=9,
             handler=CareerChoiceHandler(choice=ScholarEvent8Accept.model_fields['kind'].default),
         )
-        _append_event(events, id_=10, handler=SkillRollHandler(skill=Deception(), modified_roll=5))
+        _append_event(events, handler=SkillRollHandler(skill=Deception(), modified_roll=5))
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
@@ -844,7 +862,6 @@ class TestScholarEvent11:
         events = self._setup()
         _append_event(
             events,
-            id_=9,
             handler=SkillChoiceHandler(skill=SpaceScience(planetology=Level(value=1))),
         )
         projection = replay(1, events)
@@ -853,20 +870,20 @@ class TestScholarEvent11:
 
     def test_choose_advancement_dm_adds_pending_advancement_dm(self):
         events = self._setup()
-        _append_event(events, id_=9, handler=AdvancementDmChoiceHandler())
+        _append_event(events, handler=AdvancementDmChoiceHandler())
         projection = replay(1, events)
 
         assert projection.pending_advancement_dm == 4
 
     def test_skill_choice_creates_advancement_pending(self):
         events = self._setup()
-        _append_event(events, id_=9, handler=SkillChoiceHandler(skill=LifeScience(biology=Level(value=1))))
+        _append_event(events, handler=SkillChoiceHandler(skill=LifeScience(biology=Level(value=1))))
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
     def test_advancement_dm_choice_creates_advancement_pending(self):
         events = self._setup()
-        _append_event(events, id_=9, handler=AdvancementDmChoiceHandler())
+        _append_event(events, handler=AdvancementDmChoiceHandler())
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
@@ -889,7 +906,7 @@ class TestFromTableInjury:
 
     def test_roll_6_lightly_injured_no_characteristic_change(self):
         events = self._setup_to_mishap_2()
-        _append_event(events, id_=9, handler=InjuryTableHandler(roll=6))
+        _append_event(events, handler=InjuryTableHandler(roll=6))
         projection = replay(1, events)
 
         # All characteristics unchanged from UCP '7869A5'
@@ -900,7 +917,7 @@ class TestFromTableInjury:
 
     def test_roll_5_creates_characteristic_choice_reduce_by_1(self):
         events = self._setup_to_mishap_2()
-        _append_event(events, id_=9, handler=InjuryTableHandler(roll=5))
+        _append_event(events, handler=InjuryTableHandler(roll=5))
         projection = replay(1, events)
 
         choice = next((p for p in projection.pending_inputs if isinstance(p, PendingCharacteristicChoice)), None)
@@ -910,15 +927,15 @@ class TestFromTableInjury:
 
     def test_roll_5_choice_reduces_by_1(self):
         events = self._setup_to_mishap_2()
-        _append_event(events, id_=9, handler=InjuryTableHandler(roll=5))
-        _append_event(events, id_=10, handler=CharacteristicChoiceHandler(characteristic=Chars.END, amount=1))
+        _append_event(events, handler=InjuryTableHandler(roll=5))
+        _append_event(events, handler=CharacteristicChoiceHandler(characteristic=Chars.END, amount=1))
         projection = replay(1, events)
 
         assert projection.summary.characteristics[Chars.END] == 5  # 6 - 1
 
     def test_roll_4_creates_characteristic_choice_reduce_by_2(self):
         events = self._setup_to_mishap_2()
-        _append_event(events, id_=9, handler=InjuryTableHandler(roll=4))
+        _append_event(events, handler=InjuryTableHandler(roll=4))
         projection = replay(1, events)
 
         choice = next((p for p in projection.pending_inputs if isinstance(p, PendingCharacteristicChoice)), None)
@@ -928,15 +945,15 @@ class TestFromTableInjury:
 
     def test_roll_4_choice_reduces_by_2(self):
         events = self._setup_to_mishap_2()
-        _append_event(events, id_=9, handler=InjuryTableHandler(roll=4))
-        _append_event(events, id_=10, handler=CharacteristicChoiceHandler(characteristic=Chars.STR, amount=2))
+        _append_event(events, handler=InjuryTableHandler(roll=4))
+        _append_event(events, handler=CharacteristicChoiceHandler(characteristic=Chars.STR, amount=2))
         projection = replay(1, events)
 
         assert projection.summary.characteristics[Chars.STR] == 5  # 7 - 2
 
     def test_roll_3_options_are_str_and_dex_only(self):
         events = self._setup_to_mishap_2()
-        _append_event(events, id_=9, handler=InjuryTableHandler(roll=3))
+        _append_event(events, handler=InjuryTableHandler(roll=3))
         projection = replay(1, events)
 
         choice = next((p for p in projection.pending_inputs if isinstance(p, PendingCharacteristicChoice)), None)
@@ -945,15 +962,15 @@ class TestFromTableInjury:
 
     def test_roll_3_choice_reduces_by_2(self):
         events = self._setup_to_mishap_2()
-        _append_event(events, id_=9, handler=InjuryTableHandler(roll=3))
-        _append_event(events, id_=10, handler=CharacteristicChoiceHandler(characteristic=Chars.DEX, amount=2))
+        _append_event(events, handler=InjuryTableHandler(roll=3))
+        _append_event(events, handler=CharacteristicChoiceHandler(characteristic=Chars.DEX, amount=2))
         projection = replay(1, events)
 
         assert projection.summary.characteristics[Chars.DEX] == 6  # 8 - 2
 
     def test_roll_2_creates_severely_injured_pending_for_1d_reduction(self):
         events = self._setup_to_mishap_2()
-        _append_event(events, id_=9, handler=InjuryTableHandler(roll=2))
+        _append_event(events, handler=InjuryTableHandler(roll=2))
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingSeverelyInjured) for p in projection.pending_inputs)
@@ -961,8 +978,8 @@ class TestFromTableInjury:
     def test_roll_2_choice_reduces_by_player_supplied_amount(self):
         # Player rolled 1D=4 for the reduction
         events = self._setup_to_mishap_2()
-        _append_event(events, id_=9, handler=InjuryTableHandler(roll=2))
-        _append_event(events, id_=10, handler=CharacteristicChoiceHandler(characteristic=Chars.DEX, amount=4))
+        _append_event(events, handler=InjuryTableHandler(roll=2))
+        _append_event(events, handler=CharacteristicChoiceHandler(characteristic=Chars.DEX, amount=4))
         projection = replay(1, events)
 
         assert projection.summary.characteristics[Chars.DEX] == 4  # 8 - 4
@@ -972,7 +989,7 @@ class TestFromTableInjury:
 
     def test_roll_1_creates_nearly_killed_pending(self):
         events = self._setup_to_mishap_2()
-        _append_event(events, id_=9, handler=InjuryTableHandler(roll=1))
+        _append_event(events, handler=InjuryTableHandler(roll=1))
         projection = replay(1, events)
 
         choice = next((p for p in projection.pending_inputs if isinstance(p, PendingNearlyKilled)), None)
@@ -981,8 +998,8 @@ class TestFromTableInjury:
     def test_roll_1_choice_reduces_chosen_by_player_amount_and_others_by_2(self):
         # Player rolled 1D=3 for the chosen stat (DEX); STR and END auto-reduced by 2
         events = self._setup_to_mishap_2()
-        _append_event(events, id_=9, handler=InjuryTableHandler(roll=1))
-        _append_event(events, id_=10, handler=CharacteristicChoiceHandler(characteristic=Chars.DEX, amount=3))
+        _append_event(events, handler=InjuryTableHandler(roll=1))
+        _append_event(events, handler=CharacteristicChoiceHandler(characteristic=Chars.DEX, amount=3))
         projection = replay(1, events)
 
         assert projection.summary.characteristics[Chars.DEX] == 5  # 8 - 3
@@ -996,51 +1013,25 @@ class TestScholarQualificationInt:
     def test_qualifies_using_int_dm(self):
         # UCP '786965': STR=7 DEX=8 END=6 INT=9 EDU=6 SOC=5
         # INT=9 → DM+1; EDU=6 → DM+0; target 6; roll 5 → 5+1=6 ≥ 6 with INT, 5+0=5 < 6 with EDU
-        started = _event(
-            id_=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')
-        )
-        ucp = _event(id_=2, fulfills=_pending(started, 0), handler=UcpHandler(ucp='786965'))
-        background = _event(
-            id_=3,
-            fulfills=_pending(ucp, 0),
-            handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse()]),
-        )
-        career = _event(
-            id_=4,
-            fulfills=_pending(background, 0),
-            handler=CareerEntryHandler(
-                career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
-            ),
-        )
-        events = [started, ucp, background, career]
-        projection = replay(1, events)
+        d = CharacterDriver()
+        d.start(VILANI, MOCK_WORLD)
+        d.ucp('786965')
+        d.background_skills([Admin(), Athletics(), Carouse()])
+        d.career('Scholar', 'Field Researcher', roll=5)
 
-        assert projection.summary.current_career is not None
-        assert projection.summary.current_career.name == 'Scholar'
+        assert d.projection.summary.current_career is not None
+        assert d.projection.summary.current_career.name == 'Scholar'
 
     def test_fails_when_int_is_low(self):
         # UCP '786695': STR=7 DEX=8 END=6 INT=6 EDU=9 SOC=5
         # INT=6 → DM+0; EDU=9 → DM+1; target 6; roll 5 → 5+0=5 < 6 → fails
-        started = _event(
-            id_=1, handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')
-        )
-        ucp = _event(id_=2, fulfills=_pending(started, 0), handler=UcpHandler(ucp='786695'))
-        background = _event(
-            id_=3,
-            fulfills=_pending(ucp, 0),
-            handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()]),
-        )
-        career = _event(
-            id_=4,
-            fulfills=_pending(background, 0),
-            handler=CareerEntryHandler(
-                career=SCHOLAR, assignment=SCHOLAR.assignment('Field Researcher'), qualification_roll=5
-            ),
-        )
-        events = [started, ucp, background, career]
-        projection = replay(1, events)
+        d = CharacterDriver()
+        d.start(VILANI, MOCK_WORLD)
+        d.ucp('786695')
+        d.background_skills([Admin(), Athletics(), Carouse(), Drive()])
+        d.career('Scholar', 'Field Researcher', roll=5)
 
-        assert projection.summary.current_career is None
+        assert d.projection.summary.current_career is None
 
 
 class TestScholarLabShip:
@@ -1136,21 +1127,20 @@ class TestScholarMishap3ScienceChoice:
         events = _scholar_mishap(3)
         _append_event(
             events,
-            id_=9,
             handler=CareerChoiceHandler(choice=choice_cls.model_fields['kind'].default),
         )
         return events
 
     def test_openly_choice_grants_chosen_science(self):
         events = self._setup_to_choice(ScholarMishap3Openly)
-        _append_event(events, id_=10, handler=SkillChoiceHandler(skill=LifeScience(biology=Level(value=1))))
+        _append_event(events, handler=SkillChoiceHandler(skill=LifeScience(biology=Level(value=1))))
         projection = replay(1, events)
 
         assert projection.summary.skill_level(LifeScience, -1) >= 1
 
     def test_secretly_choice_grants_chosen_science(self):
         events = self._setup_to_choice(ScholarMishap3Secretly)
-        _append_event(events, id_=10, handler=SkillChoiceHandler(skill=PhysicalScience(chemistry=Level(value=1))))
+        _append_event(events, handler=SkillChoiceHandler(skill=PhysicalScience(chemistry=Level(value=1))))
         projection = replay(1, events)
 
         assert projection.summary.skill_level(PhysicalScience, -1) >= 1
@@ -1158,7 +1148,7 @@ class TestScholarMishap3ScienceChoice:
     def test_openly_chosen_science_not_fixed_to_space_science(self):
         # Verify a non-space science can be chosen (science choice is free)
         events = self._setup_to_choice(ScholarMishap3Openly)
-        _append_event(events, id_=10, handler=SkillChoiceHandler(skill=SocialScience(economics=Level(value=1))))
+        _append_event(events, handler=SkillChoiceHandler(skill=SocialScience(economics=Level(value=1))))
         projection = replay(1, events)
 
         assert projection.summary.skill_level(SocialScience, -1) >= 1
@@ -1171,13 +1161,13 @@ class TestPhysicianRankBonuses:
 
     def _setup_to_advancement(self, assignment: str) -> list:
         events = _enter_scholar_assignment(assignment)
-        _append_event(events, id_=7, handler=SurviveHandler(roll=7))
-        _append_event(events, id_=8, handler=TermEventHandler(roll=5))
+        _append_event(events, handler=SurviveHandler(roll=7))
+        _append_event(events, handler=TermEventHandler(roll=5))
         return events
 
     def test_physician_rank_1_grants_medic_not_science_choice(self):
         events = self._setup_to_advancement('Physician')
-        _append_event(events, id_=9, handler=AdvancementHandler(roll=9))  # INT=9 DM+1 → 10 ≥ 8 → advance
+        _append_event(events, handler=AdvancementHandler(roll=9))  # INT=9 DM+1 → 10 ≥ 8 → advance
         projection = replay(1, events)
 
         # Physician rank 1 = Medic 1; no science choice pending should be created
@@ -1187,7 +1177,7 @@ class TestPhysicianRankBonuses:
 
     def test_field_researcher_rank_1_creates_science_choice_pending(self):
         events = self._setup_to_advancement('Field Researcher')
-        _append_event(events, id_=9, handler=AdvancementHandler(roll=5))  # INT=9 DM+1 → 6 ≥ 6 → advance
+        _append_event(events, handler=AdvancementHandler(roll=5))  # INT=9 DM+1 → 6 ≥ 6 → advance
         projection = replay(1, events)
 
         # Field Researcher rank 1 = Science 1 — player chooses which science

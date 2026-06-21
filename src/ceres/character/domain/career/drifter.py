@@ -515,6 +515,9 @@ class Drifter(CareerData):
         }
     )
 
+    def is_draft_alternative(self, summary) -> bool:
+        return True
+
     def _basic_training_table_name(self, assignment) -> str:
         return f'assignment{self.assignment_index(assignment)}'
 

@@ -201,7 +201,7 @@ class MishapHandler(EventHandlerBase):
                             pending_id=(event.id, pending_idx),
                             connection_type=effect.connection_type,
                             instruction=f'Roll {effect.dice.upper()} for number of {effect.connection_type}s',
-                            options=list(range(1, 7)),
+                            options=effect.roll_options(),
                         )
                     )
                     pending_idx += 1
@@ -315,13 +315,12 @@ class TermEventHandler(EventHandlerBase):
                 elif isinstance(effect, LifeEventEffect):
                     life_event_pending = True
                 elif isinstance(effect, GainConnectionsRolledEffect):
-                    max_count = {'d3': 3, '1d3': 3, 'd6': 6, '1d6': 6}.get(effect.dice.lower(), 6)
                     projection.pending_inputs.append(
                         PendingConnectionsRoll(
                             pending_id=(event.id, pending_idx),
                             connection_type=effect.connection_type,
                             instruction=f'Roll {effect.dice.upper()} for number of {effect.connection_type}s',
-                            options=list(range(1, max_count + 1)),
+                            options=effect.roll_options(),
                         )
                     )
                     pending_idx += 1
