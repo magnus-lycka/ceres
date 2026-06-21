@@ -36,7 +36,83 @@ They are **not** appropriate for single-effect actions. Those get plain
 assertions using `CharacterDriver`. The bar for an approval test is: "I care
 that *only* these things changed, not just that these things changed."
 
-## Architecture
+## Implementation Options
+
+Before building custom approval infrastructure, evaluate whether
+[`inline-snapshot`](https://pydantic.dev/articles/inline-snapshot) covers enough
+of the workflow.
+
+`inline-snapshot` stores the approved value directly in the test source and can
+update it with `pytest --inline-snapshot=fix`. For this project, the value under
+approval would usually be a normalised `projection_diff(before, after).to_dict()`
+rather than the full projection.
+
+Example shape:
+
+```python
+from inline_snapshot import snapshot
+
+
+def test_scholar_event3_accept_full_delta():
+    d = _setup_to_event_3_choice()
+    before = d.snapshot()
+
+    d.career_choice(ScholarEvent3Accept)
+    d.connections_roll(1)
+    d.choose_career_skill(SpaceScience(planetology=Level(value=1)))
+    d.choose_career_skill(LifeScience(biology=Level(value=1)))
+    d.name_connection()
+
+    assert stable_projection_diff(before, d.projection) == snapshot({...})
+```
+
+The expected helper would:
+
+- call `projection_diff(before, after).to_dict()`
+- convert Pydantic objects to built-in JSON-compatible values
+- normalise volatile event IDs, especially `pending_id[0]` values
+- optionally use `dirty-equals` matchers for values that should satisfy a shape
+  rather than equal a literal
+
+### Option A: Inline snapshots
+
+Advantages:
+
+- much less custom tooling than a bespoke approval system
+- approved expectations live beside the scenario setup
+- ordinary pytest failures show the mismatch
+- updates use an existing workflow instead of a custom review command
+- works well with focused diffs of complex Python data structures
+
+Risks:
+
+- large snapshots can make test files bulky
+- reviewers must still inspect generated updates carefully
+- volatile value handling needs a small normalisation helper
+- if snapshots become very large, separate fixture files may be easier to review
+
+Evaluation criteria:
+
+- Convert one existing `projection_diff` test, preferably Scholar event 3
+  accept, to `inline-snapshot`.
+- Confirm that normal pytest runs fail cleanly on mismatch.
+- Confirm that `pytest --inline-snapshot=fix` updates only the expected
+  snapshot.
+- Confirm that event IDs and other volatile values are stable after
+  normalisation.
+- Compare review ergonomics against the current inline expected-dict style.
+
+### Option B: Custom approval fixtures
+
+The custom fixture/review-tool approach below remains a fallback if inline
+snapshots are too noisy or too large. It gives more control over fixture file
+layout, volatile path metadata, and interactive review, but it also creates
+project-specific infrastructure to maintain.
+
+Do not implement Option B until Option A has been tried on at least one complex
+state-delta test.
+
+## Custom Approval Architecture
 
 ### Fixture files
 

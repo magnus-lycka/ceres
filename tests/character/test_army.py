@@ -90,6 +90,28 @@ class TestArmyMishap1:
         assert {type(c) for c in pending.choices} == {CommonMishap1Severe, CommonMishap1DoubleRoll}
 
 
+# ── mishap 3: skill choice and enemy ─────────────────────────────────────────
+
+
+class TestArmyMishap3:
+    def _setup_to_mishap(self) -> CharacterDriver:
+        # Infantry survival: STR 6+, STR=7 DM+0, roll 5 → 5 < 6 — fail
+        d = _enter_army('Infantry')
+        d.survive(5)
+        return d
+
+    def test_mishap_3_skill_choice_is_granted(self):
+        d = self._setup_to_mishap()
+        d.mishap(3)
+        d.choose_skill(Admin())
+        assert d.projection.summary.skill_level(Admin) is not None
+
+    def test_mishap_3_gains_enemy(self):
+        d = self._setup_to_mishap()
+        d.mishap(3)
+        assert any(c.kind == 'connection_enemy' for c in d.projection.summary.connections)
+
+
 # ── mishap 4: illegal activity ────────────────────────────────────────────────
 
 

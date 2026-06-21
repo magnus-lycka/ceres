@@ -443,6 +443,11 @@ class CharacterDriver:
         pending = self._find(CareerSkillChoicePendingBase)
         return self._add(Event(fulfills=pending.pending_id, handler=SkillChoiceHandler(skill=skill)))
 
+    def choose_skill(self, skill: AnySkill) -> CharacterDriver:
+        """Resolve a PendingSkillChoice (e.g. from a mishap or life event)."""
+        pending = self._find(PendingSkillChoice)
+        return self._add(Event(fulfills=pending.pending_id, handler=SkillChoiceHandler(skill=skill)))
+
     def snapshot(self) -> CharacterProjection:
         """Deep copy the current projection for before/after comparison."""
         return copy.deepcopy(self.projection)

@@ -1,4 +1,4 @@
-from typing import Any, cast
+from typing import Any, ClassVar, cast
 
 import pytest
 
@@ -6,21 +6,18 @@ from ceres.character.domain import skills as character_skills
 from ceres.character.domain.benefits import SHIP_SHARE, WEAPON
 from ceres.character.domain.career import ARMY, PRISONER, SCOUT
 from ceres.character.domain.career.career_data import (
-    AdvancementDmEffect,
     AdvancementDmOption,
     AssignmentData,
-    BenefitDmEffect,
+    AutoAdvanceEffect,
+    CareerData,
+    CareerEventEntry,
     CareerTerm,
     CharCheck,
-    DecreaseCharacteristicEffect,
-    GainAllyEffect,
-    GainContactEffect,
-    GainEnemyEffect,
-    GainRivalEffect,
-    GainSkillEffect,
-    ParoleThresholdChangeEffect,
+    LifeEventEffect,
     RankBonus,
     RankEntry,
+    RollMishapEffect,
+    SkillChoiceEffect,
     SkillTableOption,
 )
 from ceres.character.domain.career.career_events import (
@@ -207,34 +204,24 @@ def test_ucp_event_rejects_wrong_length():
         Event(handler=UcpHandler(ucp='77777')).apply(_projection())
 
 
-def test_effect_apply_methods_and_skill_entries():
-    projection = _projection(characteristics={Chars.STR: 1, Chars.SOC: 7}, term_count=1)
-
-    DecreaseCharacteristicEffect(characteristic=Chars.STR, amount=3).apply(projection)
-    GainContactEffect().apply(projection, source='contact source')
-    GainAllyEffect().apply(projection, source='ally source')
-    GainRivalEffect().apply(projection, source='rival source')
-    GainEnemyEffect().apply(projection, source='enemy source')
-    GainSkillEffect(skill=character_skills.Admin()).apply(projection)
-    AdvancementDmEffect(amount=2).apply(projection, source_event_id=10)
-    BenefitDmEffect(amount=1).apply(projection, source_event_id=11)
-    projection.summary.parole_threshold = 11
-    ParoleThresholdChangeEffect(amount=5).apply(projection)
-    ParoleThresholdChangeEffect(amount=-20).apply(projection)
+def test_apply_skill_table_entry_with_skill_increments_via_increment_skill():
+    projection = _projection()
     _apply_skill_table_entry(projection, character_skills.Electronics(comms=character_skills.Level(value=1)))
-
-    assert projection.summary.characteristics[Chars.STR] == 0
-    assert [connection.kind for connection in projection.summary.connections] == [
-        'connection_contact',
-        'connection_ally',
-        'connection_rival',
-        'connection_enemy',
-    ]
-    assert projection.summary.parole_threshold == 0
-    assert projection.summary.skill_level(character_skills.Admin) == 0
     assert projection.summary.skill_level(character_skills.Electronics) == 1
-    assert projection.pending_advancement_dm == 2
-    assert projection.summary.career_terms[-1].require_muster_out().benefit_roll_dms[0].amount == 1
+
+
+def test_apply_skill_table_entry_with_characteristic_increments_it():
+    projection = _projection(characteristics={Chars.STR: 4})
+    _apply_skill_table_entry(projection, Chars.STR)
+    assert projection.summary.characteristics[Chars.STR] == 5
+
+
+def test_apply_skill_table_entry_with_psi_raises():
+    from ceres.character.domain.psionics import Psi, Telepathy
+
+    projection = _projection()
+    with pytest.raises(ReplayError, match='training check'):
+        _apply_skill_table_entry(projection, Psi(root=Telepathy()))
 
 
 def test_auto_advance_can_apply_characteristic_rank_bonus():
@@ -1246,30 +1233,94 @@ def test_switch_assignment_handler_failure_queues_reenlist_with_current_name():
 
 # ── TermEventHandler effects ──────────────────────────────────────────────────
 
+# Minimal CareerData subclasses for TermEventHandler tests.
+# Using real careers would couple the tests to specific career event tables.
+
+_FAKE_TERM_ASSIGNMENT = AssignmentData(
+    name='FakeAssignment',
+    description='',
+    survival=CharCheck(characteristic=Chars.END, target=5),
+    advancement=CharCheck(characteristic=Chars.INT, target=8),
+)
+
+
+class _FakeEventCareer(CareerData):
+    """Minimal CareerData subclass for TermEventHandler tests. Not in registry."""
+
+    name: ClassVar[str] = 'FakeEventCareer'
+    assignments: ClassVar[list[AssignmentData]] = [_FAKE_TERM_ASSIGNMENT]
+    ranks: ClassVar[dict[int, RankEntry]] = {}
+    allows_assignment_change: ClassVar[bool] = False
+
+    def update_current_term_rank(self, projection: Any) -> None:
+        if projection.summary.career_terms:
+            projection.summary.career_terms[-1].rank_after_term = projection.summary.rank or 0
+
+    def current_ranks(self, projection: Any) -> dict[int, RankEntry]:
+        return {}
+
+    def available_tables(self, edu: int, assignment: Any) -> list:
+        return [SkillTableOption(label='Service Skills', key='service_skills')]
+
+
+class _LifeEventCareer(_FakeEventCareer):
+    events: ClassVar[dict[int, CareerEventEntry]] = {
+        1: CareerEventEntry(text='Life event', effects=[LifeEventEffect()])
+    }
+
+
+class _AutoAdvanceCareer(_FakeEventCareer):
+    events: ClassVar[dict[int, CareerEventEntry]] = {
+        1: CareerEventEntry(text='Auto advance', effects=[AutoAdvanceEffect()])
+    }
+
+
+class _MishapStayCareer(_FakeEventCareer):
+    events: ClassVar[dict[int, CareerEventEntry]] = {
+        1: CareerEventEntry(text='Mishap stay', effects=[RollMishapEffect(leave=False)])
+    }
+
+
+class _SkillChoiceCareer(_FakeEventCareer):
+    events: ClassVar[dict[int, CareerEventEntry]] = {
+        1: CareerEventEntry(
+            text='Skill choice',
+            effects=[SkillChoiceEffect(options=[character_skills.Admin()], level=1)],
+        )
+    }
+
+
+def _fake_career_projection(career_class: type[_FakeEventCareer]) -> CharacterProjection:
+    career = career_class()
+    return CharacterProjection(
+        character_id=1,
+        summary=CharacterSummary(
+            name='Test',
+            sophont=VILANI,
+            homeworld=MOCK_WORLD,
+            career_terms=[CareerTerm(career=career, assignment=_FAKE_TERM_ASSIGNMENT)],
+        ),
+    )
+
 
 def test_term_event_handler_life_event_effect_queues_life_event_pending():
-    projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=1)
-    Event(handler=TermEventHandler(roll=7)).apply(projection)  # Scout event 7: LifeEventEffect
+    projection = _fake_career_projection(_LifeEventCareer)
+    Event(handler=TermEventHandler(roll=1)).apply(projection)
 
     assert any(isinstance(p, PendingLifeEvent) for p in projection.pending_inputs)
 
 
 def test_term_event_handler_auto_advance_queues_skill_table_and_bumps_rank():
-    projection = _projection(
-        current_career=SCOUT,
-        current_assignment='Courier',
-        term_count=1,
-        characteristics={Chars.EDU: 10},
-    )
-    Event(handler=TermEventHandler(roll=12)).apply(projection)  # Scout event 12: AutoAdvanceEffect
+    projection = _fake_career_projection(_AutoAdvanceCareer)
+    Event(handler=TermEventHandler(roll=1)).apply(projection)
 
     assert projection.summary.rank == 1
     assert any(isinstance(p, PendingSkillTable) for p in projection.pending_inputs)
 
 
 def test_term_event_handler_roll_mishap_stay_in_career_queues_mishap_with_flag():
-    projection = _projection(current_career=ARMY, current_assignment='Infantry', term_count=1)
-    Event(handler=TermEventHandler(roll=2)).apply(projection)  # Army event 2: RollMishapEffect(leave=False)
+    projection = _fake_career_projection(_MishapStayCareer)
+    Event(handler=TermEventHandler(roll=1)).apply(projection)
 
     mishap_pendings = [p for p in projection.pending_inputs if isinstance(p, PendingMishap)]
     assert len(mishap_pendings) == 1
@@ -1277,65 +1328,11 @@ def test_term_event_handler_roll_mishap_stay_in_career_queues_mishap_with_flag()
 
 
 def test_term_event_handler_skill_choice_effect_queues_skill_choice():
-    projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=1)
-    Event(handler=TermEventHandler(roll=6)).apply(projection)  # Scout event 6: SkillChoiceEffect
+    projection = _fake_career_projection(_SkillChoiceCareer)
+    Event(handler=TermEventHandler(roll=1)).apply(projection)
 
     assert any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
     assert not any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
-
-
-# ── MishapHandler effects not yet covered ─────────────────────────────────────
-
-
-def test_mishap_handler_gain_connections_effect_queues_two_connection_rolls():
-    projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=1)
-    Event(handler=MishapHandler(roll=3)).apply(projection)  # Scout mishap 3: two GainConnectionsRolledEffect
-
-    rolls = [p for p in projection.pending_inputs if isinstance(p, PendingConnectionsRoll)]
-    assert len(rolls) == 2
-
-
-def test_mishap_handler_d3_connections_effect_uses_d3_options():
-    projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=1)
-    Event(handler=MishapHandler(roll=3)).apply(projection)  # Scout mishap 3: 1d6 Contacts + d3 Enemies
-
-    enemy_roll = next(
-        p
-        for p in projection.pending_inputs
-        if isinstance(p, PendingConnectionsRoll) and p.connection_type == ConnectionKind.ENEMY
-    )
-    assert enemy_roll.options == [1, 2, 3]
-
-
-def test_connections_roll_handler_inserts_name_pending_before_other_pending():
-    from ceres.character.domain.connection_events import PendingConnectionName
-    from tests.character.helpers import pending_id
-
-    projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=1)
-    sentinel_event = Event(handler=ConnectionsRollHandler(connection_type=ConnectionKind.RIVAL, count=0))
-    sentinel = PendingConnectionsRoll(
-        pending_id=pending_id(sentinel_event, 0),
-        instruction='sentinel',
-        connection_type=ConnectionKind.CONTACT,
-        options=[1],
-    )
-    projection.pending_inputs.append(sentinel)
-
-    Event(handler=ConnectionsRollHandler(connection_type=ConnectionKind.CONTACT, count=2)).apply(projection)
-
-    name_pendins = [p for p in projection.pending_inputs if isinstance(p, PendingConnectionName)]
-    assert len(name_pendins) == 2
-    sentinel_idx = projection.pending_inputs.index(sentinel)
-    for np in name_pendins:
-        assert projection.pending_inputs.index(np) < sentinel_idx
-
-
-def test_mishap_handler_skill_choice_effect_queues_pending_skill_choice():
-    projection = _projection(current_career=ARMY, current_assignment='Infantry', term_count=1)
-    Event(handler=MishapHandler(roll=3)).apply(projection)  # Army mishap 3: SkillChoiceEffect + GainEnemyEffect
-
-    assert any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
-    assert any(c.kind == 'connection_enemy' for c in projection.summary.connections)
 
 
 # ── ConnectionKindChoiceHandler narrative ─────────────────────────────────────

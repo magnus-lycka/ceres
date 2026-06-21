@@ -716,9 +716,7 @@ class TestReenlist:
 
         events = [
             *setup,
-            _event(
-                fulfills=pending.pending_id, handler=AssignmentChangeChoiceHandler(choice='switch')
-            ),
+            _event(fulfills=pending.pending_id, handler=AssignmentChangeChoiceHandler(choice='switch')),
         ]
         projection2 = replay(1, events)
         switch_pending = next(p for p in projection2.pending_inputs if isinstance(p, PendingSwitchAssignment))
@@ -755,9 +753,7 @@ class TestSkillTable:
         events = [
             *base,
             table,
-            _event(
-                fulfills=_pending(table, 0), handler=SkillChoiceHandler(skill=Electronics(comms=Level(value=1)))
-            ),
+            _event(fulfills=_pending(table, 0), handler=SkillChoiceHandler(skill=Electronics(comms=Level(value=1)))),
         ]
 
         projection = replay(1, events)
@@ -801,9 +797,7 @@ class TestSkillTable:
         assert not any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
 
         events.append(
-            _event(
-                fulfills=_pending(table, 0), handler=SkillChoiceHandler(skill=Electronics(comms=Level(value=1)))
-            )
+            _event(fulfills=_pending(table, 0), handler=SkillChoiceHandler(skill=Electronics(comms=Level(value=1))))
         )
         projection = replay(1, events)
         assert any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
@@ -959,9 +953,7 @@ class TestSkillTableIncrement:
         # Courier table roll 2: Flyer (specialised) → choice pending, then Flyer 1 after picking spec
         base = self._setup_in_term_2()
         table = _event(fulfills=_pending(base[-1], 0), handler=SkillTableHandler(table='assignment1', roll=2))
-        choice = _event(
-            fulfills=_pending(table, 0), handler=SkillChoiceHandler(skill=Flyer(grav=Level(value=1)))
-        )
+        choice = _event(fulfills=_pending(table, 0), handler=SkillChoiceHandler(skill=Flyer(grav=Level(value=1))))
         events = [*base, table, choice]
         projection = replay(1, events)
 
@@ -971,9 +963,7 @@ class TestSkillTableIncrement:
         # Courier table roll 3: Pilot (specialised, existing at 0) → choice pending, then Pilot 1
         base = self._setup_in_term_2()
         table = _event(fulfills=_pending(base[-1], 0), handler=SkillTableHandler(table='assignment1', roll=3))
-        choice = _event(
-            fulfills=_pending(table, 0), handler=SkillChoiceHandler(skill=Pilot(spacecraft=Level(value=1)))
-        )
+        choice = _event(fulfills=_pending(table, 0), handler=SkillChoiceHandler(skill=Pilot(spacecraft=Level(value=1))))
         events = [*base, table, choice]
         projection = replay(1, events)
 
@@ -1023,9 +1013,7 @@ class TestSkillTableChoice:
     def test_choice_increments_chosen_skill(self):
         # Scholar has Drive 0 from initial training → choose Drive → Drive 1
         base = self._setup_scholar_term_2()
-        table = _event(
-            fulfills=_pending(base[-1], 0), handler=SkillTableHandler(table='service_skills', roll=1)
-        )
+        table = _event(fulfills=_pending(base[-1], 0), handler=SkillTableHandler(table='service_skills', roll=1))
         events = [
             *base,
             table,
@@ -1072,9 +1060,7 @@ class TestSkillTableChoice:
 
         events = [
             *(base := self._setup_scholar_term_2()),
-            _event(
-                fulfills=_pending(base[-1], 0), handler=SkillTableHandler(table='advanced_education', roll=1)
-            ),
+            _event(fulfills=_pending(base[-1], 0), handler=SkillTableHandler(table='advanced_education', roll=1)),
         ]
         projection = replay(1, events)
 
@@ -1106,9 +1092,7 @@ class TestSkillTableChoice:
 
     def test_choice_creates_survive_pending_not_advancement(self):
         base = self._setup_scholar_term_2()
-        table = _event(
-            fulfills=_pending(base[-1], 0), handler=SkillTableHandler(table='service_skills', roll=1)
-        )
+        table = _event(fulfills=_pending(base[-1], 0), handler=SkillTableHandler(table='service_skills', roll=1))
         events = [
             *base,
             table,
@@ -1404,9 +1388,7 @@ class TestLifeEvents:
         base = _scout_life_event_events(roll=7)
         advancement = _event(fulfills=_pending(base[-1], 0), handler=AdvancementHandler(roll=3))
         same = _event(fulfills=_pending(advancement, 0), handler=AssignmentChangeChoiceHandler(choice='same'))
-        skill_table = _event(
-            fulfills=_pending(same, 0), handler=SkillTableHandler(table='service_skills', roll=2)
-        )
+        skill_table = _event(fulfills=_pending(same, 0), handler=SkillTableHandler(table='service_skills', roll=2))
         survive = _event(fulfills=_pending(skill_table, 0), handler=SurviveHandler(roll=7))
         term_event = _event(fulfills=_pending(survive, 0), handler=TermEventHandler(roll=7))
         return [*base, advancement, same, skill_table, survive, term_event]
@@ -1531,9 +1513,7 @@ class TestLifeEventCrime:
         # 2 terms rank 0 → lose-benefit-roll reduces 2 → 1 roll
         base = self._events_after_lost_benefit_choice()
         reenlist = _event(fulfills=_pending(base[-1], 0), handler=ReenlistHandler(reenlist=True))
-        skill_table = _event(
-            fulfills=_pending(reenlist, 0), handler=SkillTableHandler(table='service_skills', roll=5)
-        )
+        skill_table = _event(fulfills=_pending(reenlist, 0), handler=SkillTableHandler(table='service_skills', roll=5))
         survive = _event(fulfills=_pending(skill_table, 0), handler=SurviveHandler(roll=7))
         term_event = _event(fulfills=_pending(survive, 0), handler=TermEventHandler(roll=5))
         advancement = _event(fulfills=_pending(term_event, 0), handler=AdvancementHandler(roll=3))
@@ -1647,9 +1627,7 @@ class TestNoSpuriousSurviveAfterEndOfTermSkillTableChoice:
     def test_no_survive_after_choice_path_advanced_edu_language(self):
         """Choosing Language from advanced_education must not produce a spurious survive."""
         base = self._through_advancement()
-        table = _event(
-            fulfills=_pending(base[-1], 0), handler=SkillTableHandler(table='advanced_education', roll=2)
-        )
+        table = _event(fulfills=_pending(base[-1], 0), handler=SkillTableHandler(table='advanced_education', roll=2))
         events = [
             *base,
             table,
