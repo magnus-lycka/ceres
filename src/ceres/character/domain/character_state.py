@@ -4,7 +4,7 @@ from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, PlainSeriali
 
 from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.domain.benefits import ItemBenefit
-from ceres.character.domain.career.career_data import AssignmentData, CareerData, CareerTerm
+from ceres.character.domain.career.career_data import AssignmentData, BenefitRollDm, CareerData, CareerTerm
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.connection import AnyConnection
 from ceres.character.domain.psionics import Psionics
@@ -263,6 +263,40 @@ class CharacterProjection(BaseModel):
                 instruction=f'Name this {kind_label} ({origin})',
             ),
         )
+
+    def decrease_characteristic(self, characteristic: Chars, amount: int = 1) -> None:
+        current = self.summary.characteristics.get(characteristic, 0)
+        new_value = max(0, current - amount)
+        if characteristic is Chars.PSI and new_value == 0:
+            self.summary.characteristics.pop(Chars.PSI, None)
+            self.summary.psionics = None
+            return
+        self.summary.characteristics[characteristic] = new_value
+
+    def add_advancement_dm(self, amount: int) -> None:
+        self.pending_advancement_dm += amount
+
+    def add_qualification_dm(self, amount: int) -> None:
+        self.pending_qualification_dm += amount
+
+    def add_benefit_dm(self, amount: int) -> None:
+        if self.summary.career_terms:
+            self.summary.career_terms[-1].require_muster_out().benefit_roll_dms.append(BenefitRollDm(amount=amount))
+
+    def adjust_parole_threshold(self, amount: int) -> None:
+        if self.summary.parole_threshold is None:
+            return
+        self.summary.parole_threshold = max(0, min(12, self.summary.parole_threshold + amount))
+
+    def auto_qualify(self, career: type[CareerData]) -> None:
+        if career not in self.auto_qualify_careers:
+            self.auto_qualify_careers.append(career)
+
+    def forfeit_current_career_benefits(self) -> None:
+        career_name = self.get_current_career().name
+        for term in self.summary.career_terms:
+            if term.career.name == career_name and term.muster_out is not None:
+                term.muster_out.forfeit_all_rolls()
 
     def has_blocking_pending(self) -> bool:
         return any(p.blocking for p in self.pending_inputs)

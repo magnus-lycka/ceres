@@ -1,6 +1,12 @@
 """Tests for CharacterProjection.skill_choices and check_skill_choice."""
 
+import pytest
+
+from ceres.character.domain.career import SCOUT
+from ceres.character.domain.career.career_data import CareerTerm
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
+from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.psionics import Psionics
 from ceres.character.domain.skills import (
     Admin,
     Animals,
@@ -13,6 +19,7 @@ from ceres.character.domain.skills import (
     SpaceScience,
 )
 from ceres.character.domain.sophont import VILANI
+from ceres.character.mechanism.errors import ReplayError
 from tests.character.helpers import MOCK_WORLD
 
 
@@ -234,3 +241,130 @@ class TestCheckSkillChoice:
         )
 
         assert result is False
+
+
+class TestProjectionCharacteristicChanges:
+    def test_decrease_characteristic_reduces_by_amount(self):
+        proj = _projection()
+        proj.summary.characteristics[Chars.STR] = 7
+
+        proj.decrease_characteristic(Chars.STR, amount=3)
+
+        assert proj.summary.characteristics[Chars.STR] == 4
+
+    def test_decrease_characteristic_floors_at_zero(self):
+        proj = _projection()
+        proj.summary.characteristics[Chars.END] = 1
+
+        proj.decrease_characteristic(Chars.END, amount=5)
+
+        assert proj.summary.characteristics[Chars.END] == 0
+
+    def test_decrease_characteristic_defaults_to_one(self):
+        proj = _projection()
+        proj.summary.characteristics[Chars.DEX] = 8
+
+        proj.decrease_characteristic(Chars.DEX)
+
+        assert proj.summary.characteristics[Chars.DEX] == 7
+
+    def test_decrease_psi_to_zero_removes_psi_and_psionics(self):
+        proj = _projection()
+        proj.summary.characteristics[Chars.PSI] = 1
+        proj.summary.psionics = Psionics()
+
+        proj.decrease_characteristic(Chars.PSI)
+
+        assert Chars.PSI not in proj.summary.characteristics
+        assert proj.summary.psionics is None
+
+    def test_decrease_psi_not_to_zero_keeps_psi_and_psionics(self):
+        proj = _projection()
+        proj.summary.characteristics[Chars.PSI] = 3
+        proj.summary.psionics = Psionics()
+
+        proj.decrease_characteristic(Chars.PSI)
+
+        assert proj.summary.characteristics[Chars.PSI] == 2
+        assert proj.summary.psionics is not None
+
+
+class TestProjectionCareerModifiers:
+    def test_add_advancement_dm_accumulates(self):
+        proj = _projection()
+
+        proj.add_advancement_dm(2)
+        proj.add_advancement_dm(1)
+
+        assert proj.pending_advancement_dm == 3
+
+    def test_add_qualification_dm_accumulates(self):
+        proj = _projection()
+
+        proj.add_qualification_dm(3)
+        proj.add_qualification_dm(2)
+
+        assert proj.pending_qualification_dm == 5
+
+    def test_add_benefit_dm_adds_to_current_term_muster_out(self):
+        proj = _projection_with_career_term()
+
+        proj.add_benefit_dm(1)
+
+        dms = proj.summary.career_terms[-1].require_muster_out().benefit_roll_dms
+        assert len(dms) == 1
+        assert dms[0].amount == 1
+
+    def test_add_benefit_dm_without_career_term_is_noop(self):
+        proj = _projection()
+
+        proj.add_benefit_dm(1)
+
+        assert proj.summary.career_terms == []
+
+
+class TestProjectionCareerState:
+    def test_adjust_parole_threshold_clamps_to_zero_and_twelve(self):
+        proj = _projection()
+        proj.summary.parole_threshold = 2
+
+        proj.adjust_parole_threshold(-10)
+        assert proj.summary.parole_threshold == 0
+
+        proj.adjust_parole_threshold(20)
+        assert proj.summary.parole_threshold == 12
+
+    def test_adjust_parole_threshold_none_is_noop(self):
+        proj = _projection()
+
+        proj.adjust_parole_threshold(3)
+
+        assert proj.summary.parole_threshold is None
+
+    def test_auto_qualify_adds_career_once(self):
+        proj = _projection()
+
+        proj.auto_qualify(type(SCOUT))
+        proj.auto_qualify(type(SCOUT))
+
+        assert proj.auto_qualify_careers == [type(SCOUT)]
+
+    def test_forfeit_current_career_benefits_forfeits_current_career_terms(self):
+        proj = _projection_with_career_term()
+        muster_out = proj.summary.career_terms[-1].require_muster_out()
+
+        proj.forfeit_current_career_benefits()
+
+        assert muster_out.lost_rolls == 9999
+
+    def test_forfeit_current_career_benefits_raises_without_active_career(self):
+        proj = _projection()
+
+        with pytest.raises(ReplayError, match='No active career'):
+            proj.forfeit_current_career_benefits()
+
+
+def _projection_with_career_term() -> CharacterProjection:
+    proj = _projection()
+    proj.summary.career_terms.append(CareerTerm(career=SCOUT, assignment=SCOUT.assignment('Courier')))
+    return proj

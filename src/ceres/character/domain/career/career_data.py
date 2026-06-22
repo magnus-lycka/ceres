@@ -92,13 +92,7 @@ class DecreaseCharacteristicEffect(BaseModel):
     amount: int = 1
 
     def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
-        current = projection.summary.characteristics.get(self.characteristic, 0)
-        new_value = max(0, current - self.amount)
-        if self.characteristic is Chars.PSI and new_value == 0:
-            projection.summary.characteristics.pop(Chars.PSI, None)
-            projection.summary.psionics = None
-        else:
-            projection.summary.characteristics[self.characteristic] = new_value
+        projection.decrease_characteristic(self.characteristic, self.amount)
 
 
 class DecreaseCharacteristicChoiceEffect(BaseModel):
@@ -190,7 +184,7 @@ class AdvancementDmEffect(BaseModel):
     amount: int
 
     def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
-        projection.pending_advancement_dm += self.amount
+        projection.add_advancement_dm(self.amount)
 
 
 class QualificationDmEffect(BaseModel):
@@ -198,7 +192,7 @@ class QualificationDmEffect(BaseModel):
     amount: int
 
     def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
-        projection.pending_qualification_dm += self.amount
+        projection.add_qualification_dm(self.amount)
 
 
 class BenefitDmEffect(BaseModel):
@@ -206,10 +200,7 @@ class BenefitDmEffect(BaseModel):
     amount: int
 
     def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
-        if projection.summary.career_terms:
-            projection.summary.career_terms[-1].require_muster_out().benefit_roll_dms.append(
-                BenefitRollDm(amount=self.amount)
-            )
+        projection.add_benefit_dm(self.amount)
 
 
 class ParoleThresholdChangeEffect(BaseModel):
@@ -217,9 +208,7 @@ class ParoleThresholdChangeEffect(BaseModel):
     amount: int  # positive = increase PT, negative = decrease PT
 
     def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
-        if projection.summary.parole_threshold is not None:
-            new_pt = projection.summary.parole_threshold + self.amount
-            projection.summary.parole_threshold = max(0, min(12, new_pt))
+        projection.adjust_parole_threshold(self.amount)
 
 
 class AutoQualifyCareerEffect(BaseModel):
@@ -229,18 +218,14 @@ class AutoQualifyCareerEffect(BaseModel):
     career: Any
 
     def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
-        if self.career not in projection.auto_qualify_careers:
-            projection.auto_qualify_careers.append(self.career)
+        projection.auto_qualify(self.career)
 
 
 class LoseAllCareerBenefitsEffect(BaseModel):
     type: Literal['lose_all_career_benefits'] = 'lose_all_career_benefits'
 
     def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
-        career_name = projection.get_current_career().name
-        for ct in projection.summary.career_terms:
-            if ct.career.name == career_name and ct.muster_out is not None:
-                ct.muster_out.forfeit_all_rolls()
+        projection.forfeit_current_career_benefits()
 
 
 class CareerHandlerBase(BaseModel):
