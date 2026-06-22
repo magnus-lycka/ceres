@@ -58,6 +58,10 @@ add a `CharacterDriver` method.
   `GainSkillEffect`, characteristic decrease, connection gain effects,
   advancement/qualification/benefit DMs, parole threshold changes,
   auto-qualification, and benefit forfeiture.
+- Scout event 10 and event 11 career-rule tests were converted to
+  `CharacterDriver`. They no longer import Scout-specific pending classes,
+  assert raw pending types, or hand-build `SkillRollHandler` /
+  `AdvancementDmChoiceHandler` event chains.
 
 ### Current Implementation Audit
 
@@ -89,7 +93,15 @@ long-term abstractions.
 Do these before starting the entry-outcome refactor. The goal is to reduce
 noise, preserve behavior, and make failures point at the right layer.
 
+**Status:** gate satisfied. The remaining work in this section has been either
+completed or deliberately classified as non-blocking follow-up. Do not do more
+general test-suite cleanup before resuming `plan-career-entry-outcomes.md`
+unless a specific refactor step exposes a missing driver verb or misplaced
+test.
+
 ### 1. Finish Misclassified Test Extraction
+
+Status: **complete for the entry-outcome gate**.
 
 Scan `test_events_pending_inputs.py` for tests that fabricate a projection with
 `current_career=...` and then call a real career handler to assert a
@@ -114,7 +126,23 @@ Do not use `current_career=...` as a mechanical grep-and-move rule. It is only
 a smell. Several mechanics tests need a real-ish career so the handler can
 exercise generic event/pending machinery.
 
+Audit result:
+
+- The obvious connection-ordering and Army mishap 3 career-rule cases have
+  already been moved out of `test_events_pending_inputs.py`.
+- The remaining `current_career=...` cases in `test_events_pending_inputs.py`
+  are mechanics/error-path tests for ejection, commission, prisoner
+  advancement, reenlistment, advancement flags, assignment switching, muster
+  out setup, and pending-choice resolution. They may use Scout/Army/Prisoner
+  as concrete data, but they are checking event/pending behavior and should
+  stay in mechanics tests until the entry-outcome refactor gives them a better
+  contract.
+- If a future edit finds a test in this file that reads as "Scout event N
+  should do X", move it then; there is no known blocker left now.
+
 ### 2. Convert Obvious Career Rule Tests to `CharacterDriver`
+
+Status: **complete for the entry-outcome gate**.
 
 Do the easy, high-value conversions in career files, especially where tests
 already read as "do career thing, observe result."
@@ -129,7 +157,29 @@ Do **not** convert tests that genuinely verify event mechanics, form parsing,
 homeworld-change pending behavior, or pending ordering. Move or label those
 instead.
 
+Completed gate conversions:
+
+- `CharacterDriver.choose_skill()` resolves ordinary skill-choice pendings.
+- `CharacterDriver.choose_advancement_dm()` resolves advancement-DM choices
+  without exposing `AdvancementDmChoiceHandler` to career tests.
+- `CharacterDriver.available_career_skill_options()` lets career tests inspect
+  offered career-skill/DM options without naming the concrete pending class.
+- Scout event 10 now drives the skill roll, success skill choice, mishap branch,
+  and follow-on advancement through `CharacterDriver`.
+- Scout event 11 now drives both the Diplomat and advancement-DM branches
+  through `CharacterDriver`.
+
+Remaining raw event chains in career files are classified as one of:
+
+- event/pending mechanics that still need direct pending assertions
+- homeworld-change pending behavior
+- skill-table option/form tests
+- broader career-rule cleanup that should happen during the typed-entry TDD
+  migration, when the replacement abstraction is visible
+
 ### 3. Keep Transitional Effect Tests Focused
+
+Status: **complete**.
 
 Keep `test_career_data.py` effect tests small and factual while effects still
 exist. Their job is to pin current behavior before it moves.
@@ -142,7 +192,12 @@ The existing `test_career_data.py` tests are enough for the direct-mutation
 effects. New tests should usually target projection verbs or typed entries
 instead of adding more coverage for soon-to-be-deleted effect wrappers.
 
+Do not add more effect-wrapper tests before the entry-outcome refactor. When
+new behavior is needed, write projection-verb or typed-entry tests first.
+
 ### 4. Establish Snapshot/Approval Experiment
+
+Status: **deferred, non-blocking**.
 
 Try one complex state-delta test using the options in
 [plan-approval-testing.md](plan-approval-testing.md):
@@ -151,9 +206,20 @@ Try one complex state-delta test using the options in
 - Syrupy
 - custom approval fixtures only if the library options fail
 
-Use one existing `projection_diff` case such as Scholar event 3 accept. The
-goal is to decide the test style before the entry-outcome refactor creates more
-complex multi-effect migration tests.
+Later, use one existing `projection_diff` case such as Scholar event 3 accept.
+The goal is to decide the style before adding many complex multi-effect
+characterization tests, not before starting the entry-outcome refactor.
+
+This is useful, especially for complex events and mishaps, but it should not
+block the next entry-outcome steps. Defer it until after the initial typed-entry
+shape is in place unless a specific complex row genuinely needs approval-style
+coverage to migrate safely:
+
+- first compare `inline-snapshot` and Syrupy using the same
+  `projection_diff`/normalisation helper
+- prefer ordinary assertions for single-effect entries
+- use snapshot/approval style only where "nothing else changed" is part of the
+  invariant
 
 ## During `plan-career-entry-outcomes.md`
 
@@ -234,8 +300,10 @@ This keeps the test suite from preserving the old design by accident.
 
 ### 5. Use Snapshot/Approval Tests Sparingly
 
-Use snapshot/approval style only when a row has several simultaneous effects and
-"nothing else changed" is part of the invariant.
+Deferred until after the initial entry-outcome migration unless needed for a
+specific risky row. When it is picked up, use snapshot/approval style only when
+a row has several simultaneous effects and "nothing else changed" is part of
+the invariant.
 
 Good candidates:
 

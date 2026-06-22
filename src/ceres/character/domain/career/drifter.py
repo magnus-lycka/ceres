@@ -10,14 +10,15 @@ from ceres.character.domain.benefits import (
 from ceres.character.domain.career.career_data import (
     AssignmentData,
     AutoAdvanceEffect,
-    BenefitDmEffect,
+    BenefitDmEntry,
     CareerData,
     CareerEventEntry,
     CareerHandlerBase,
     CareerSkillTables,
+    CareerTableEntry,
+    CharacteristicLossEntry,
     CharCheck,
-    DecreaseCharacteristicEffect,
-    GainEnemyEffect,
+    GainConnectionEntry,
     InjuryEffect,
     LifeEventEffect,
     MishapEntry,
@@ -426,7 +427,7 @@ class Drifter(CareerData):
         },
     }
 
-    mishaps: ClassVar[dict[int, MishapEntry]] = {
+    mishaps: ClassVar[dict[int, CareerTableEntry]] = {
         1: MishapEntry(
             text='Severely injured.',
             effects=[CommonMishap1Handler()],
@@ -436,13 +437,14 @@ class Drifter(CareerData):
             text='Injured. Roll on the Injury table.',
             effects=[InjuryEffect(severity='from_table')],
         ),
-        3: MishapEntry(
+        3: GainConnectionEntry(
             text='You run afoul of a criminal gang, corrupt bureaucrat or other foe. Gain an Enemy.',
-            effects=[GainEnemyEffect()],
+            connection=ConnectionKind.ENEMY,
         ),
-        4: MishapEntry(
+        4: CharacteristicLossEntry(
             text='You suffer from a life-threatening illness. Reduce your END by 1.',
-            effects=[DecreaseCharacteristicEffect(characteristic=Chars.END, amount=1)],
+            characteristic=Chars.END,
+            amount=1,
         ),
         5: MishapEntry(
             text='Betrayed by a friend. Gain a Rival. Roll 2D — on a natural 2, '
@@ -456,7 +458,7 @@ class Drifter(CareerData):
         ),
     }
 
-    events: ClassVar[dict[int, CareerEventEntry]] = {
+    events: ClassVar[dict[int, CareerTableEntry]] = {
         2: CareerEventEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
             effects=[RollMishapEffect(leave=False)],
@@ -469,9 +471,9 @@ class Drifter(CareerData):
             text='You pick up a few useful skills here and there.',
             effects=[SkillChoiceEffect(options=[JackOfAllTrades(), Survival(), Streetwise(), Melee()], level=1)],
         ),
-        5: CareerEventEntry(
+        5: BenefitDmEntry(
             text='You manage to scavenge something of use.',
-            effects=[BenefitDmEffect(amount=1)],
+            amount=1,
         ),
         6: CareerEventEntry(
             text='You encounter something unusual.',

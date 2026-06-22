@@ -10,19 +10,19 @@ from ceres.character.domain.benefits import (
     ChoiceBenefit,
 )
 from ceres.character.domain.career.career_data import (
-    AdvancementDmEffect,
+    AdvancementDmEntry,
     AdvancementDmOption,
     AssignmentData,
     AutoAdvanceEffect,
-    BenefitDmEffect,
+    BenefitDmEntry,
     CareerData,
     CareerEventEntry,
     CareerHandlerBase,
     CareerSkillTables,
+    CareerTableEntry,
     CharCheck,
     GainConnectionsRolledEffect,
-    GainEnemyEffect,
-    GainSkillEffect,
+    GainSkillAndConnectionEntry,
     InjuryEffect,
     LifeEventEffect,
     MishapEntry,
@@ -487,7 +487,7 @@ class Agent(CareerData):
         }
     )
 
-    mishaps: ClassVar[dict[int, MishapEntry]] = {
+    mishaps: ClassVar[dict[int, CareerTableEntry]] = {
         1: MishapEntry(
             text='Severely injured (this is the same as a result of 2 on the Injury table). '
             'Alternatively, roll twice on the Injury table and take the lower result.',
@@ -513,10 +513,11 @@ class Agent(CareerData):
             defer_ejection=True,
             effects=[AgentMishap3Handler()],
         ),
-        4: MishapEntry(
+        4: GainSkillAndConnectionEntry(
             text='You learn something you should not know and people want to kill you for it. '
             'Gain an Enemy and Deception 1.',
-            effects=[GainEnemyEffect(), GainSkillEffect(skill=Deception(level=Level(value=1)))],
+            skill=Deception(level=Level(value=1)),
+            connection=ConnectionKind.ENEMY,
         ),
         5: MishapEntry(
             text=(
@@ -532,7 +533,7 @@ class Agent(CareerData):
         ),
     }
 
-    events: ClassVar[dict[int, CareerEventEntry]] = {
+    events: ClassVar[dict[int, CareerTableEntry]] = {
         2: CareerEventEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
             effects=[RollMishapEffect(leave=False)],
@@ -545,10 +546,10 @@ class Agent(CareerData):
             ),
             effects=[AgentEvent3Handler()],
         ),
-        4: CareerEventEntry(
+        4: BenefitDmEntry(
             text='You complete a mission for your superiors and are suitably rewarded. '
             'Gain DM+1 to any one Benefit roll from this career.',
-            effects=[BenefitDmEffect(amount=1)],
+            amount=1,
         ),
         5: CareerEventEntry(
             text='You establish a network of contacts. Gain D3 Contacts.',
@@ -571,9 +572,9 @@ class Agent(CareerData):
             ),
             effects=[AgentEvent8Handler()],
         ),
-        9: CareerEventEntry(
+        9: AdvancementDmEntry(
             text='You go above and beyond the call of duty. Gain DM+2 to your next advancement roll.',
-            effects=[AdvancementDmEffect(amount=2)],
+            amount=2,
         ),
         10: CareerEventEntry(
             text='You are given specialist training in vehicles. Gain one of Drive 1, Flyer 1, Pilot 1 or Gunner 1.',

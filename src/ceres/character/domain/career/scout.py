@@ -10,11 +10,12 @@ from ceres.character.domain.career.career_data import (
     AdvancementDmOption,
     AssignmentData,
     AutoAdvanceEffect,
-    BenefitDmEffect,
+    BenefitDmEntry,
     CareerData,
     CareerEventEntry,
     CareerHandlerBase,
     CareerSkillTables,
+    CareerTableEntry,
     CharCheck,
     DecreaseCharacteristicChoiceEffect,
     GainConnectionsRolledEffect,
@@ -440,7 +441,7 @@ class Scout(CareerData):
         ),
     }
 
-    events: ClassVar[dict[int, CareerEventEntry]] = {
+    events: ClassVar[dict[int, CareerTableEntry]] = {
         2: CareerEventEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
             effects=[RollMishapEffect(leave=False)],
@@ -458,9 +459,9 @@ class Scout(CareerData):
             text='You survey an alien world.',
             effects=[SkillChoiceEffect(options=[Animals(), Survival(), Recon(), SpaceScience()], level=1)],
         ),
-        5: CareerEventEntry(
+        5: BenefitDmEntry(
             text='You perform an exemplary service for the scouts.',
-            effects=[BenefitDmEffect(amount=1)],
+            amount=1,
         ),
         6: CareerEventEntry(
             text=(

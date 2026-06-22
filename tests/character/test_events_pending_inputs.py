@@ -11,8 +11,10 @@ from ceres.character.domain.career.career_data import (
     AutoAdvanceEffect,
     CareerData,
     CareerEventEntry,
+    CareerTableEntry,
     CareerTerm,
     CharCheck,
+    GainSkillEntry,
     LifeEventEffect,
     RankBonus,
     RankEntry,
@@ -1290,6 +1292,25 @@ class _SkillChoiceCareer(_FakeEventCareer):
     }
 
 
+class _TypedEntryCareer(_FakeEventCareer):
+    events: ClassVar[dict[int, CareerTableEntry]] = {
+        1: GainSkillEntry(
+            text='Typed event grants Admin.', skill=character_skills.Admin(level=character_skills.Level(value=1))
+        )
+    }
+
+
+class _TypedMishapCareer(_FakeEventCareer):
+    class _TypedMishapEntry(CareerTableEntry):
+        stay_in_career: bool = True
+
+        def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+            projection.grant_skill(character_skills.Admin(level=character_skills.Level(value=1)))
+            return pending_idx
+
+    mishaps: ClassVar[dict[int, CareerTableEntry]] = {1: _TypedMishapEntry(text='Typed mishap stays in career.')}
+
+
 def _fake_career_projection(career_class: type[_FakeEventCareer]) -> CharacterProjection:
     career = career_class()
     return CharacterProjection(
@@ -1333,6 +1354,26 @@ def test_term_event_handler_skill_choice_effect_queues_skill_choice():
 
     assert any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
     assert not any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+
+
+def test_term_event_handler_applies_typed_entry_and_queues_career_progress():
+    projection = _fake_career_projection(_TypedEntryCareer)
+
+    Event(handler=TermEventHandler(roll=1)).apply(projection)
+
+    assert projection.summary.skill_level(character_skills.Admin) == 1
+    assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+
+
+def test_mishap_handler_applies_typed_entry_framing():
+    projection = _fake_career_projection(_TypedMishapCareer)
+
+    Event(handler=MishapHandler(roll=1)).apply(projection)
+
+    assert projection.summary.problems == ['Typed mishap stays in career.']
+    assert projection.summary.skill_level(character_skills.Admin) == 1
+    assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+    assert projection.summary.current_career is not None
 
 
 # ── ConnectionKindChoiceHandler narrative ─────────────────────────────────────

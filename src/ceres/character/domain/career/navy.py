@@ -14,16 +14,17 @@ from ceres.character.domain.career.career_data import (
     AdvancementDmOption,
     AssignmentData,
     AutoAdvanceEffect,
-    BenefitDmEffect,
+    BenefitDmEntry,
     CareerData,
     CareerEventEntry,
     CareerHandlerBase,
     CareerSkillTables,
+    CareerTableEntry,
     CharCheck,
     DecreaseCharacteristicChoiceEffect,
+    GainConnectionEntry,
     GainContactEffect,
     GainEnemyEffect,
-    GainRivalEffect,
     InjuryEffect,
     LifeEventEffect,
     MishapEntry,
@@ -352,7 +353,7 @@ class Navy(CareerData):
         }
     )
 
-    mishaps: ClassVar[dict[int, MishapEntry]] = {
+    mishaps: ClassVar[dict[int, CareerTableEntry]] = {
         1: MishapEntry(
             text='Severely injured in action.',
             effects=[CommonMishap1Handler()],
@@ -373,9 +374,9 @@ class Navy(CareerData):
             defer_ejection=True,
             effects=[NavyMishap4Handler()],
         ),
-        5: MishapEntry(
+        5: GainConnectionEntry(
             text='You quarrel with an officer or fellow crewman. Gain a Rival.',
-            effects=[GainRivalEffect()],
+            connection=ConnectionKind.RIVAL,
         ),
         6: MishapEntry(
             text='Injured. Roll on the Injury table.',
@@ -383,7 +384,7 @@ class Navy(CareerData):
         ),
     }
 
-    events: ClassVar[dict[int, CareerEventEntry]] = {
+    events: ClassVar[dict[int, CareerTableEntry]] = {
         2: CareerEventEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
             effects=[RollMishapEffect(leave=False)],
@@ -392,9 +393,9 @@ class Navy(CareerData):
             text='You join a gambling circle on board.',
             effects=[SkillChoiceEffect(options=[Gambler(), Deception()], level=1)],
         ),
-        4: CareerEventEntry(
+        4: BenefitDmEntry(
             text='Given a special assignment or duty on board ship.',
-            effects=[BenefitDmEffect(amount=1)],
+            amount=1,
         ),
         5: CareerEventEntry(
             text='Advanced training in a specialist field.',

@@ -10,21 +10,34 @@ import pytest
 from ceres.character.domain.career import SCOUT
 from ceres.character.domain.career.career_data import (
     AdvancementDmEffect,
+    AdvancementDmEntry,
     AutoQualifyCareerEffect,
+    AutoQualifyCareerEntry,
     BenefitDmEffect,
+    BenefitDmEntry,
+    CareerEventEntry,
+    CareerTableEntry,
     CareerTerm,
+    CharacteristicLossEntry,
     DecreaseCharacteristicEffect,
     GainAllyEffect,
+    GainConnectionEntry,
     GainContactEffect,
     GainEnemyEffect,
     GainRivalEffect,
+    GainSkillAndConnectionEntry,
     GainSkillEffect,
+    GainSkillEntry,
     LoseAllCareerBenefitsEffect,
+    LoseAllCareerBenefitsEntry,
+    MishapEntry,
     ParoleThresholdChangeEffect,
+    ParoleThresholdChangeEntry,
     QualificationDmEffect,
+    QualificationDmEntry,
 )
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
-from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.psionics import Psionics
 from ceres.character.domain.skills import Admin, Electronics, Level
 from ceres.character.domain.sophont import VILANI
@@ -43,6 +56,106 @@ def _projection_with_career_term() -> CharacterProjection:
     p = _projection()
     p.summary.career_terms.append(CareerTerm(career=SCOUT, assignment=SCOUT.assignment('Courier')))
     return p
+
+
+# ── Career table entries ──────────────────────────────────────────────────────
+
+
+def test_legacy_entry_types_share_table_entry_base():
+    assert isinstance(CareerEventEntry(text='Event'), CareerTableEntry)
+    assert isinstance(MishapEntry(text='Mishap'), CareerTableEntry)
+
+
+def test_gain_skill_entry_grants_skill_and_returns_pending_index():
+    p = _projection()
+
+    next_idx = GainSkillEntry(text='Gain Admin.', skill=Admin(level=Level(value=1))).apply(p, event=None, pending_idx=2)
+
+    assert p.summary.skill_level(Admin) == 1
+    assert next_idx == 2
+
+
+def test_characteristic_loss_entry_decreases_characteristic():
+    p = _projection()
+    p.summary.characteristics[Chars.STR] = 7
+
+    CharacteristicLossEntry(text='Lose STR.', characteristic=Chars.STR, amount=2).apply(p, event=None, pending_idx=0)
+
+    assert p.summary.characteristics[Chars.STR] == 5
+
+
+def test_gain_connection_entry_adds_connection_with_text_as_origin():
+    p = _projection()
+
+    GainConnectionEntry(text='You gain a Rival.', connection=ConnectionKind.RIVAL).apply(p, event=None, pending_idx=0)
+
+    rival = next(c for c in p.summary.connections if c.kind == ConnectionKind.RIVAL.value)
+    assert rival.origin == 'You gain a Rival.'
+
+
+def test_gain_skill_and_connection_entry_applies_both_outcomes():
+    p = _projection()
+
+    GainSkillAndConnectionEntry(
+        text='Gain an Enemy and Admin 1.',
+        skill=Admin(level=Level(value=1)),
+        connection=ConnectionKind.ENEMY,
+    ).apply(p, event=None, pending_idx=0)
+
+    assert p.summary.skill_level(Admin) == 1
+    assert any(c.kind == ConnectionKind.ENEMY.value for c in p.summary.connections)
+
+
+def test_advancement_dm_entry_adds_dm():
+    p = _projection()
+
+    AdvancementDmEntry(text='DM+2 to advancement.', amount=2).apply(p, event=None, pending_idx=0)
+
+    assert p.pending_advancement_dm == 2
+
+
+def test_qualification_dm_entry_adds_dm():
+    p = _projection()
+
+    QualificationDmEntry(text='DM+3 to qualification.', amount=3).apply(p, event=None, pending_idx=0)
+
+    assert p.pending_qualification_dm == 3
+
+
+def test_benefit_dm_entry_adds_benefit_dm():
+    p = _projection_with_career_term()
+
+    BenefitDmEntry(text='DM+1 to benefit.', amount=1).apply(p, event=None, pending_idx=0)
+
+    dms = p.summary.career_terms[-1].require_muster_out().benefit_roll_dms
+    assert len(dms) == 1
+    assert dms[0].amount == 1
+
+
+def test_parole_threshold_change_entry_adjusts_parole_threshold():
+    p = _projection()
+    p.summary.parole_threshold = 5
+
+    ParoleThresholdChangeEntry(text='Parole threshold increases.', amount=2).apply(p, event=None, pending_idx=0)
+
+    assert p.summary.parole_threshold == 7
+
+
+def test_auto_qualify_career_entry_marks_career_for_auto_qualification():
+    p = _projection()
+
+    AutoQualifyCareerEntry(text='Auto qualify for Scout.', career=type(SCOUT)).apply(p, event=None, pending_idx=0)
+
+    assert type(SCOUT) in p.auto_qualify_careers
+
+
+def test_lose_all_career_benefits_entry_forfeits_benefits():
+    p = _projection_with_career_term()
+    muster_out = p.summary.career_terms[-1].require_muster_out()
+
+    LoseAllCareerBenefitsEntry(text='Lose all benefits.').apply(p, event=None, pending_idx=0)
+
+    assert muster_out.lost_rolls == 9999
 
 
 # ── GainSkillEffect ───────────────────────────────────────────────────────────

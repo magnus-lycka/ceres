@@ -212,6 +212,36 @@ class TestAgentSurvival:
         assert projection.summary.current_career.name == 'Agent'
 
 
+class TestAgentDirectOutcomeRows:
+    def _driver(self) -> CharacterDriver:
+        return (
+            CharacterDriver()
+            .start(VILANI, MOCK_WORLD, name='Sven')
+            .ucp('7869A5')
+            .background_skills([Admin(), Athletics(), Carouse(), Drive()])
+            .career('Agent', 'Law Enforcement', roll=5)
+        )
+
+    def test_mishap_4_gains_enemy_and_deception_1(self):
+        projection = self._driver().survive(5).mishap(4).projection
+
+        assert any(isinstance(c, Enemy) for c in projection.summary.connections)
+        assert projection.summary.skill_level(Deception) == 1
+        assert projection.summary.current_career is None
+
+    def test_event_4_adds_benefit_dm(self):
+        projection = self._driver().survive(6).term_event(4).projection
+
+        dms = projection.summary.career_terms[-1].require_muster_out().benefit_roll_dms
+        assert len(dms) == 1
+        assert dms[0].amount == 1
+
+    def test_event_9_adds_advancement_dm(self):
+        projection = self._driver().survive(6).term_event(9).projection
+
+        assert projection.pending_advancement_dm == 2
+
+
 # ── rank tables ───────────────────────────────────────────────────────────────
 
 

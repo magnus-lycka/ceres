@@ -28,6 +28,7 @@ from ceres.character.domain.connection import (
     Ally,
     Contact,
     Enemy,
+    Rival,
 )
 from ceres.character.domain.skills import (
     Admin,
@@ -186,6 +187,28 @@ class TestMarinesMishap4:
         projection = replay(1, events)
         assert projection.summary.current_career is None
         assert not any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
+
+
+class TestMarinesDirectOutcomeRows:
+    def _driver(self) -> CharacterDriver:
+        return (
+            CharacterDriver()
+            .start(VILANI, MOCK_WORLD, name='Cpl')
+            .ucp('7869A5')
+            .background_skills([Admin(), Athletics(), Carouse(), Drive()])
+            .career('Marines', 'Support', roll=6)
+        )
+
+    def test_mishap_5_adds_rival_and_ends_career(self):
+        driver = self._driver().survive(2).mishap(5)
+
+        assert any(isinstance(c, Rival) for c in driver.projection.summary.connections)
+        assert driver.projection.summary.current_career is None
+
+    def test_event_10_adds_advancement_dm(self):
+        projection = self._driver().survive(5).term_event(10).projection
+
+        assert projection.pending_advancement_dm == 2
 
 
 # ── event 5: advanced training ────────────────────────────────────────────────

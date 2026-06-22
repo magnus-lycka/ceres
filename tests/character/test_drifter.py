@@ -31,6 +31,7 @@ from ceres.character.domain.career.drifter import (
 )
 from ceres.character.domain.career.loader import load_careers, selectable_careers
 from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
+from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.connection import (
     Enemy,
     Rival,
@@ -123,6 +124,31 @@ def test_drifter_basic_training_defers_survival_for_assignment_skill_choices():
 
     assert any(isinstance(p, PendingInitialTrainingChoice) for p in projection.pending_inputs)
     assert not any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
+
+
+class TestDrifterDirectOutcomeRows:
+    def test_mishap_3_adds_enemy_and_ends_career(self):
+        base = _enter_drifter()
+        survive = Event(fulfills=(base[-1].id, 0), handler=SurviveHandler(roll=2))
+        projection = replay(1, [*base, survive, Event(fulfills=(survive.id, 0), handler=MishapHandler(roll=3))])
+
+        assert any(isinstance(c, Enemy) for c in projection.summary.connections)
+        assert projection.summary.current_career is None
+
+    def test_mishap_4_decreases_end_and_ends_career(self):
+        base = _enter_drifter()
+        survive = Event(fulfills=(base[-1].id, 0), handler=SurviveHandler(roll=2))
+        projection = replay(1, [*base, survive, Event(fulfills=(survive.id, 0), handler=MishapHandler(roll=4))])
+
+        assert projection.summary.characteristics[Chars.END] == 5
+        assert projection.summary.current_career is None
+
+    def test_event_5_adds_benefit_dm(self):
+        projection = replay(1, _through_term_event(5))
+
+        dms = projection.summary.career_terms[-1].require_muster_out().benefit_roll_dms
+        assert len(dms) == 1
+        assert dms[0].amount == 1
 
 
 # ── mishap 5: betrayed by a friend ───────────────────────────────────────────

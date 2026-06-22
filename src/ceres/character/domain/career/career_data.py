@@ -228,6 +228,103 @@ class LoseAllCareerBenefitsEffect(BaseModel):
         projection.forfeit_current_career_benefits()
 
 
+class CareerTableEntry(BaseModel):
+    text: str
+
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        return pending_idx
+
+    def continues_career_progress(self) -> bool:
+        return True
+
+
+class GainSkillEntry(CareerTableEntry):
+    skill: AnySkill
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        projection.grant_skill(self.skill)
+        return pending_idx
+
+
+class CharacteristicLossEntry(CareerTableEntry):
+    characteristic: Chars
+    amount: int = 1
+
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        projection.decrease_characteristic(self.characteristic, self.amount)
+        return pending_idx
+
+
+class GainConnectionEntry(CareerTableEntry):
+    connection: ConnectionKind
+
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        projection.add_connection(self.connection, origin=self.text)
+        return pending_idx
+
+
+class GainSkillAndConnectionEntry(CareerTableEntry):
+    skill: AnySkill
+    connection: ConnectionKind
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        projection.grant_skill(self.skill)
+        projection.add_connection(self.connection, origin=self.text)
+        return pending_idx
+
+
+class AdvancementDmEntry(CareerTableEntry):
+    amount: int
+
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        projection.add_advancement_dm(self.amount)
+        return pending_idx
+
+
+class QualificationDmEntry(CareerTableEntry):
+    amount: int
+
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        projection.add_qualification_dm(self.amount)
+        return pending_idx
+
+
+class BenefitDmEntry(CareerTableEntry):
+    amount: int
+
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        projection.add_benefit_dm(self.amount)
+        return pending_idx
+
+
+class ParoleThresholdChangeEntry(CareerTableEntry):
+    amount: int
+
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        projection.adjust_parole_threshold(self.amount)
+        return pending_idx
+
+
+class AutoQualifyCareerEntry(CareerTableEntry):
+    # Pydantic cannot use `type[CareerData]` here: the field named `type` shadows the builtin
+    # during annotation evaluation. Any is used; the value is always a CareerData subclass.
+    career: Any
+
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        projection.auto_qualify(self.career)
+        return pending_idx
+
+
+class LoseAllCareerBenefitsEntry(CareerTableEntry):
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        projection.forfeit_current_career_benefits()
+        return pending_idx
+
+
 class CareerHandlerBase(BaseModel):
     """Base for career-specific event/mishap effect handlers.
 
@@ -266,7 +363,7 @@ type AnyEffect = (
 )
 
 
-class CareerEventEntry(BaseModel):
+class CareerEventEntry(CareerTableEntry):
     text: str
     effects: list[AnyEffect] = []
 
@@ -277,7 +374,7 @@ class TermData(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
-class MishapEntry(BaseModel):
+class MishapEntry(CareerTableEntry):
     text: str
     stay_in_career: bool = False
     defer_ejection: bool = False  # handler owns ejection flow; no auto-purge or advancement pending

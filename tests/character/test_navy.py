@@ -24,7 +24,7 @@ from ceres.character.domain.career.navy import (
     PendingNavyMishap3SkillRoll,
 )
 from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
-from ceres.character.domain.connection import Enemy
+from ceres.character.domain.connection import Enemy, Rival
 from ceres.character.domain.skills import (
     Admin,
     Athletics,
@@ -79,6 +79,30 @@ def _through_survive(assignment: str = 'Line/Crew', survive_roll: int = 4) -> li
 def _through_term_event(event_roll: int, assignment: str = 'Line/Crew') -> list:
     base = _through_survive(assignment)
     return [*base, Event(fulfills=(base[-1].id, 0), handler=TermEventHandler(roll=event_roll))]
+
+
+class TestNavyDirectOutcomeRows:
+    def _driver(self) -> CharacterDriver:
+        return (
+            CharacterDriver()
+            .start(VILANI, MOCK_WORLD, name='Ens')
+            .ucp('7869A5')
+            .background_skills([Admin(), Athletics(), Carouse(), Drive()])
+            .career('Navy', 'Line/Crew', roll=5)
+        )
+
+    def test_mishap_5_adds_rival_and_ends_career(self):
+        projection = self._driver().survive(3).mishap(5).projection
+
+        assert any(isinstance(c, Rival) for c in projection.summary.connections)
+        assert projection.summary.current_career is None
+
+    def test_event_4_adds_benefit_dm(self):
+        projection = self._driver().survive(4).term_event(4).projection
+
+        dms = projection.summary.career_terms[-1].require_muster_out().benefit_roll_dms
+        assert len(dms) == 1
+        assert dms[0].amount == 1
 
 
 # ── mishap 3: battle skill check (assignment-specific) ───────────────────────

@@ -10,22 +10,23 @@ from ceres.character.domain.career.career_data import (
     AdvancementDmEffect,
     AssignmentData,
     AutoAdvanceEffect,
-    BenefitDmEffect,
+    BenefitDmEntry,
     CareerData,
     CareerEventEntry,
     CareerHandlerBase,
     CareerSkillTables,
+    CareerTableEntry,
+    CharacteristicLossEntry,
     CharCheck,
-    DecreaseCharacteristicEffect,
     GainAllyEffect,
+    GainConnectionEntry,
     GainConnectionsRolledEffect,
     GainContactEffect,
-    GainRivalEffect,
     LifeEventEffect,
     MishapEntry,
     MusterOutData,
     MusterOutRow,
-    QualificationDmEffect,
+    QualificationDmEntry,
     RankBonus,
     RankEntry,
     RollMishapEffect,
@@ -318,7 +319,7 @@ class Entertainer(CareerData):
         }
     )
 
-    mishaps: ClassVar[dict[int, MishapEntry]] = {
+    mishaps: ClassVar[dict[int, CareerTableEntry]] = {
         1: MishapEntry(
             text='Severely injured.',
             effects=[CommonMishap1Handler()],
@@ -328,25 +329,26 @@ class Entertainer(CareerData):
             text='You expose or are involved in a scandal of some sort.',
             effects=[],
         ),
-        3: MishapEntry(
+        3: CharacteristicLossEntry(
             text='Public opinion turns on you. Reduce SOC by 1.',
-            effects=[DecreaseCharacteristicEffect(characteristic=Chars.SOC, amount=1)],
+            characteristic=Chars.SOC,
+            amount=1,
         ),
-        4: MishapEntry(
+        4: GainConnectionEntry(
             text='You are betrayed by a peer. Gain a Rival or Enemy.',
-            effects=[GainRivalEffect()],
+            connection=ConnectionKind.RIVAL,
         ),
         5: MishapEntry(
             text='A project goes wrong, stranding you far from home.',
             effects=[SkillChoiceEffect(options=[Survival(), Pilot(), Persuade(), Streetwise()], level=1)],
         ),
-        6: MishapEntry(
+        6: QualificationDmEntry(
             text='You are forced out because of censorship or controversy. What truth did you get too close to?',
-            effects=[QualificationDmEffect(amount=2)],
+            amount=2,
         ),
     }
 
-    events: ClassVar[dict[int, CareerEventEntry]] = {
+    events: ClassVar[dict[int, CareerTableEntry]] = {
         2: CareerEventEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
             effects=[RollMishapEffect(leave=False)],
@@ -359,9 +361,9 @@ class Entertainer(CareerData):
             text="You are part of your homeworld's celebrity circles.",
             effects=[SkillChoiceEffect(options=[Carouse(), Persuade(), Steward()], level=1), GainContactEffect()],
         ),
-        5: CareerEventEntry(
+        5: BenefitDmEntry(
             text='One of your works is especially well received and popular.',
-            effects=[BenefitDmEffect(amount=1)],
+            amount=1,
         ),
         6: CareerEventEntry(
             text='You gain a patron in the arts.',

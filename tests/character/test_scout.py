@@ -4,27 +4,19 @@ from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.domain.career import SCOUT
 from ceres.character.domain.career.career_data import AdvancementDmOption
 from ceres.character.domain.career.career_events import (
-    AdvancementDmChoiceHandler,
     AdvancementHandler,
     CareerEntryHandler,
     MishapHandler,
-    PendingAdvancement,
     PendingChoices,
-    PendingMishap,
     PendingSkillChoice,
     PendingSkillTableChoice,
     ReenlistHandler,
     SkillChoiceHandler,
-    SkillRollHandler,
     SkillTableHandler,
     SurviveHandler,
     TermEventHandler,
 )
 from ceres.character.domain.career.common import CommonMishap1DoubleRoll, CommonMishap1Severe
-from ceres.character.domain.career.scout import (
-    PendingScoutEvent10SkillRoll,
-    PendingScoutEvent11,
-)
 from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.connection import (
@@ -105,10 +97,6 @@ def _failed_survive(assignment: str = 'Courier') -> list:
     return [*base, _event(fulfills=_pending(base[-1], 0), handler=SurviveHandler(roll=3))]
 
 
-def _skill_roll_event(source: Event, skill: AnySkill | Chars, modified_roll: int) -> Event:
-    return _event(fulfills=_pending(source, 0), handler=SkillRollHandler(skill=skill, modified_roll=modified_roll))
-
-
 def _mishap_event(source: Event, roll: int, stay_in_career: bool = False) -> Event:
     return _event(fulfills=_pending(source, 0), handler=MishapHandler(roll=roll, stay_in_career=stay_in_career))
 
@@ -127,10 +115,6 @@ def _advancement_event(source: Event, roll: int) -> Event:
 
 def _reenlist_event(source: Event, reenlist: bool) -> Event:
     return _event(fulfills=_pending(source, 0), handler=ReenlistHandler(reenlist=reenlist))
-
-
-def _advancement_dm_choice_event(source: Event) -> Event:
-    return _event(fulfills=_pending(source, 0), handler=AdvancementDmChoiceHandler())
 
 
 class TestScoutAmbush:
@@ -310,64 +294,42 @@ class TestScoutEvent9:
 class TestScoutEvent10:
     """Roll Survival 8+ or Pilot 8+. Success: alien Contact + any skill +1. Failure: mishap, stay."""
 
-    def _setup(self) -> list:
-        return _through_term_event(10)
+    def _setup(self) -> CharacterDriver:
+        return (
+            CharacterDriver()
+            .start(VILANI, MOCK_WORLD, name='Boss')
+            .ucp('7869A5')
+            .background_skills([Admin(), Athletics(), Carouse(), Drive()])
+            .career('Scout', 'Courier', roll=7)
+            .survive(7)
+            .term_event(10)
+        )
 
     def test_creates_pending_with_survival_and_pilot_options(self):
-        projection = replay(1, self._setup())
-
-        pending = next(p for p in projection.pending_inputs if isinstance(p, PendingScoutEvent10SkillRoll))
-        assert pending.options == [Survival(), Pilot()]
+        assert self._setup().available_skill_roll_options() == [Survival(), Pilot()]
 
     def test_success_gains_contact(self):
-        base = self._setup()
-        roll = _skill_roll_event(base[-1], Pilot(), 9)
-        projection = replay(1, [*base, roll])
+        projection = self._setup().skill_roll(Pilot(), 9).projection
 
         assert any(isinstance(c, Contact) for c in projection.summary.connections)
 
-    def test_success_creates_skill_choice_pending(self):
-        base = self._setup()
-        roll = _skill_roll_event(base[-1], Pilot(), 9)
-        projection = replay(1, [*base, roll])
-
-        assert any(isinstance(p, PendingSkillChoice) for p in projection.pending_inputs)
-
     def test_success_skill_choice_grants_skill_and_creates_advancement(self):
-        base = self._setup()
-        roll = _skill_roll_event(base[-1], Pilot(), 9)
-        events = [
-            *base,
-            roll,
-            _skill_choice_event(roll, Navigation(level=Level(value=1))),
-        ]
-
-        projection = replay(1, events)
+        driver = self._setup().skill_roll(Pilot(), 9).choose_skill(Navigation(level=Level(value=1)))
+        projection = driver.projection
 
         assert projection.summary.skill_level(Navigation, -1) >= 1
-        assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+        driver.advancement(3)
 
     def test_failure_creates_mishap_pending(self):
-        base = self._setup()
-        roll = _skill_roll_event(base[-1], Pilot(), 5)
-        projection = replay(1, [*base, roll])
-
-        assert any(isinstance(p, PendingMishap) for p in projection.pending_inputs)
+        self._setup().skill_roll(Pilot(), 5).mishap(5, stay_in_career=True)
 
     def test_failure_mishap_stay_keeps_career_active(self):
-        base = self._setup()
-        roll = _skill_roll_event(base[-1], Pilot(), 5)
-        events = [
-            *base,
-            roll,
-            _mishap_event(roll, 5, stay_in_career=True),
-        ]
-
-        projection = replay(1, events)
+        driver = self._setup().skill_roll(Pilot(), 5).mishap(5, stay_in_career=True)
+        projection = driver.projection
 
         assert projection.summary.current_career is not None
         assert projection.summary.current_career.name == 'Scout'
-        assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+        driver.advancement(3)
 
 
 class TestConnections:
@@ -454,44 +416,35 @@ class TestMishapWithChoice:
 class TestScoutEvent11:
     """Scout event 11: gain Diplomat 1 OR DM+4 to next advancement roll."""
 
-    def _setup_to_event_11(self) -> list:
-        return _through_term_event(11)
+    def _setup_to_event_11(self) -> CharacterDriver:
+        return (
+            CharacterDriver()
+            .start(VILANI, MOCK_WORLD, name='Boss')
+            .ucp('7869A5')
+            .background_skills([Admin(), Athletics(), Carouse(), Drive()])
+            .career('Scout', 'Courier', roll=7)
+            .survive(7)
+            .term_event(11)
+        )
 
     def test_creates_scout_event_11_pending_with_two_options(self):
-        projection = replay(1, self._setup_to_event_11())
-
-        pending = next(p for p in projection.pending_inputs if isinstance(p, PendingScoutEvent11))
-        assert pending.options == [Diplomat(), AdvancementDmOption()]
+        assert self._setup_to_event_11().available_career_skill_options() == [Diplomat(), AdvancementDmOption()]
 
     def test_choose_diplomat_grants_diplomat_1(self):
-        base = self._setup_to_event_11()
-        diplomat_choice = _skill_choice_event(base[-1], Diplomat(level=Level(value=1)))
-        events = [*base, diplomat_choice]
-        projection = replay(1, events)
+        projection = self._setup_to_event_11().choose_career_skill(Diplomat(level=Level(value=1))).projection
 
         assert projection.summary.skill_level(Diplomat, -1) >= 1
 
     def test_choose_advancement_dm_adds_pending_advancement_dm(self):
-        base = self._setup_to_event_11()
-        events = [*base, _advancement_dm_choice_event(base[-1])]
-        projection = replay(1, events)
+        projection = self._setup_to_event_11().choose_advancement_dm().projection
 
         assert projection.pending_advancement_dm == 4
 
     def test_diplomat_choice_creates_advancement_pending(self):
-        base = self._setup_to_event_11()
-        diplomat_choice = _skill_choice_event(base[-1], Diplomat(level=Level(value=1)))
-        events = [*base, diplomat_choice]
-        projection = replay(1, events)
-
-        assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+        self._setup_to_event_11().choose_career_skill(Diplomat(level=Level(value=1))).advancement(3)
 
     def test_advancement_dm_choice_creates_advancement_pending(self):
-        base = self._setup_to_event_11()
-        events = [*base, _advancement_dm_choice_event(base[-1])]
-        projection = replay(1, events)
-
-        assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+        self._setup_to_event_11().choose_advancement_dm().advancement(3)
 
 
 class TestScoutMishap6:

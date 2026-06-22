@@ -19,7 +19,8 @@ from ceres.character.domain.career.entertainer import (
     PendingEntertainerEvent8SkillRoll,
 )
 from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
-from ceres.character.domain.connection import Enemy
+from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.connection import Enemy, Rival
 from ceres.character.domain.skills import (
     Admin,
     Athletics,
@@ -229,6 +230,37 @@ class TestEntertainerMishap1:
         pending = next((p for p in d.projection.pending_inputs if isinstance(p, PendingChoices)), None)
         assert pending is not None
         assert {type(c) for c in pending.choices} == {CommonMishap1Severe, CommonMishap1DoubleRoll}
+
+
+class TestEntertainerDirectOutcomeRows:
+    def _driver(self) -> CharacterDriver:
+        return (
+            CharacterDriver()
+            .start(VILANI, MOCK_WORLD, name='Star')
+            .ucp('7869A5')
+            .background_skills([Admin(), Athletics(), Carouse(), Drive()])
+            .career('Entertainer', 'Artist', roll=4)
+            .initial_training(PerformingArt())
+        )
+
+    def test_mishap_3_decreases_soc_and_ends_career(self):
+        driver = self._driver().survive(2).mishap(3)
+
+        assert driver.projection.summary.characteristics[Chars.SOC] == 4
+        assert driver.projection.summary.current_career is None
+
+    def test_mishap_4_adds_rival_and_ends_career(self):
+        driver = self._driver().survive(2).mishap(4)
+
+        assert any(isinstance(c, Rival) for c in driver.projection.summary.connections)
+        assert driver.projection.summary.current_career is None
+
+    def test_event_5_adds_benefit_dm(self):
+        projection = self._driver().survive(7).term_event(5).projection
+
+        dms = projection.summary.career_terms[-1].require_muster_out().benefit_roll_dms
+        assert len(dms) == 1
+        assert dms[0].amount == 1
 
 
 # ── mishap 6: censorship or controversy ──────────────────────────────────────

@@ -170,6 +170,36 @@ anonymous effects inside a generic table row.
 
 ## Migration Strategy
 
+### Current Status
+
+- Phase 1 is partially complete: direct projection verbs exist for
+  characteristic loss, advancement/qualification/benefit DMs, parole threshold
+  changes, auto-qualification, and forfeiting current-career benefits.
+- Phase 2 has started: `CareerTableEntry` and the first shared direct-outcome
+  entry classes exist beside legacy effects, and `TermEventHandler` /
+  `MishapHandler` can dispatch both typed entries and legacy `effects=[...]`.
+- Phase 3 has started with real career data. Migrated examples include:
+  Marines mishap 5 (`GainConnectionEntry`), Marines event 10
+  (`AdvancementDmEntry`), Entertainer mishaps 3/4/6
+  (`CharacteristicLossEntry`, `GainConnectionEntry`, `QualificationDmEntry`),
+  Entertainer event 5 (`BenefitDmEntry`), Agent mishap 4
+  (`GainSkillAndConnectionEntry`), Agent event 4 (`BenefitDmEntry`), and Agent
+  event 9 (`AdvancementDmEntry`), Scout event 5 (`BenefitDmEntry`), Scholar
+  events 5/9 (`BenefitDmEntry`, `AdvancementDmEntry`), Drifter mishaps 3/4
+  (`GainConnectionEntry`, `CharacteristicLossEntry`), Drifter event 5
+  (`BenefitDmEntry`), Navy mishap 5 (`GainConnectionEntry`), and Navy event 4
+  (`BenefitDmEntry`).
+- Snapshot/approval experiments are intentionally deferred; use ordinary
+  focused assertions unless a complex row genuinely needs full state-delta
+  characterization.
+- Remaining direct-effect rows are now concentrated in Noble, Rogue, Army,
+  Citizen, Merchant, Psion, Prisoner, plus a few still-mixed rows in
+  Entertainer, Scholar, and Navy. Continue migrating single direct outcomes
+  with existing shared entries first. For mixed rows such as
+  connection+advancement DM, connection+benefit DM, connection+skill choice,
+  and benefit-forfeit+connection, add explicit shared entry classes instead of
+  recreating `effects=[...]` under a different name.
+
 ### Phase 1: Add projection verbs
 
 Add small projection methods or event helper functions for repeated operations.

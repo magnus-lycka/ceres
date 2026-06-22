@@ -7,15 +7,16 @@ from ceres.character.domain.benefits import (
     CharacteristicIncrease,
 )
 from ceres.character.domain.career.career_data import (
-    AdvancementDmEffect,
+    AdvancementDmEntry,
     AdvancementDmOption,
     AssignmentData,
     AutoAdvanceEffect,
-    BenefitDmEffect,
+    BenefitDmEntry,
     CareerData,
     CareerEventEntry,
     CareerHandlerBase,
     CareerSkillTables,
+    CareerTableEntry,
     CharCheck,
     GainAllyEffect,
     GainRivalEffect,
@@ -526,7 +527,7 @@ class Scholar(CareerData):
         ),
     }
 
-    events: ClassVar[dict[int, CareerEventEntry]] = {
+    events: ClassVar[dict[int, CareerTableEntry]] = {
         2: CareerEventEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
             effects=[RollMishapEffect(leave=False)],
@@ -544,9 +545,9 @@ class Scholar(CareerData):
                 )
             ],
         ),
-        5: CareerEventEntry(
+        5: BenefitDmEntry(
             text='You win a prestigious prize for your work.',
-            effects=[BenefitDmEffect(amount=1)],
+            amount=1,
         ),
         6: CareerEventEntry(
             text='You are given advanced training in a specialist field.',
@@ -560,9 +561,9 @@ class Scholar(CareerData):
             text='You have the opportunity to cheat in some fashion.',
             effects=[ScholarEvent8Handler()],
         ),
-        9: CareerEventEntry(
+        9: AdvancementDmEntry(
             text='You make a breakthrough in your field.',
-            effects=[AdvancementDmEffect(amount=2)],
+            amount=2,
         ),
         10: CareerEventEntry(
             text='You become entangled in a bureaucratic or legal morass.',

@@ -7,6 +7,7 @@ from deepdiff import DeepDiff
 
 from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.domain.career.career_events import (
+    AdvancementDmChoiceHandler,
     AdvancementHandler,
     AssignmentChangeChoiceHandler,
     BenefitChoiceHandler,
@@ -443,6 +444,14 @@ class CharacterDriver:
     def choose_career_skill(self, skill: AnySkill) -> CharacterDriver:
         pending = self._find(CareerSkillChoicePendingBase)
         return self._add(Event(fulfills=pending.pending_id, handler=SkillChoiceHandler(skill=skill)))
+
+    def choose_advancement_dm(self) -> CharacterDriver:
+        pending = self._find(CareerSkillChoicePendingBase)
+        return self._add(Event(fulfills=pending.pending_id, handler=AdvancementDmChoiceHandler()))
+
+    def available_career_skill_options(self) -> list[Any]:
+        pending = self._find(CareerSkillChoicePendingBase)
+        return list(pending.options)
 
     def choose_skill(self, skill: AnySkill) -> CharacterDriver:
         """Resolve a PendingSkillChoice (e.g. from a mishap or life event)."""

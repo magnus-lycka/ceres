@@ -8,7 +8,7 @@ from ceres.character.domain.benefits import (
     ChoiceBenefit,
 )
 from ceres.character.domain.career.career_data import (
-    AdvancementDmEffect,
+    AdvancementDmEntry,
     AdvancementDmOption,
     AssignmentData,
     AutoAdvanceEffect,
@@ -16,10 +16,11 @@ from ceres.character.domain.career.career_data import (
     CareerEventEntry,
     CareerHandlerBase,
     CareerSkillTables,
+    CareerTableEntry,
     CharCheck,
     DecreaseCharacteristicEffect,
+    GainConnectionEntry,
     GainEnemyEffect,
-    GainRivalEffect,
     InjuryEffect,
     LifeEventEffect,
     MishapEntry,
@@ -378,7 +379,7 @@ class Marines(CareerData):
         }
     )
 
-    mishaps: ClassVar[dict[int, MishapEntry]] = {
+    mishaps: ClassVar[dict[int, CareerTableEntry]] = {
         1: MishapEntry(
             text='Severely injured.',
             effects=[CommonMishap1Handler()],
@@ -401,9 +402,9 @@ class Marines(CareerData):
             defer_ejection=True,
             effects=[MarinesMishap4Handler()],
         ),
-        5: MishapEntry(
+        5: GainConnectionEntry(
             text='You quarrel with an officer or fellow marine. Gain a Rival.',
-            effects=[GainRivalEffect()],
+            connection=ConnectionKind.RIVAL,
         ),
         6: MishapEntry(
             text='Injured. Roll on the Injury table.',
@@ -411,7 +412,7 @@ class Marines(CareerData):
         ),
     }
 
-    events: ClassVar[dict[int, CareerEventEntry]] = {
+    events: ClassVar[dict[int, CareerTableEntry]] = {
         2: CareerEventEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
             effects=[RollMishapEffect(leave=False)],
@@ -444,9 +445,9 @@ class Marines(CareerData):
             text="A mission goes disastrously wrong due to your commander's error.",
             effects=[MarinesEvent9Handler()],
         ),
-        10: CareerEventEntry(
+        10: AdvancementDmEntry(
             text='Assigned to a black ops mission.',
-            effects=[AdvancementDmEffect(amount=2)],
+            amount=2,
         ),
         11: CareerEventEntry(
             text='Your commanding officer takes an interest in your career.',
