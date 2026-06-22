@@ -196,6 +196,8 @@ anonymous effects inside a generic table row.
 
 ### Phase 1: Add projection verbs
 
+Status: **complete for career tables**.
+
 Add small projection methods or event helper functions for repeated operations.
 Move behavior without changing career data yet.
 
@@ -216,6 +218,8 @@ indirect.
 
 ### Phase 2: Introduce entry classes beside effects
 
+Status: **complete for career tables**.
+
 Add `CareerTableEntry` and a few shared subclasses while keeping the existing
 `effects` field working.
 
@@ -233,9 +237,13 @@ else:
     apply_legacy_effects(entry.effects)
 ```
 
-Keep this compatibility temporary and remove it at the end.
+Career modules no longer need this compatibility. The compatibility remains in
+the shared data/events layer only because pre-career event tables still use
+legacy effects.
 
 ### Phase 3: Migrate direct-mutation effects
+
+Status: **complete for career tables**.
 
 Remove the obvious middlemen first:
 
@@ -273,6 +281,8 @@ GainSkillAndConnectionMishap(
 
 ### Phase 4: Migrate pending/control-flow effects
 
+Status: **complete for career tables**.
+
 Then migrate the remaining effect-like records:
 
 - `SkillChoiceEffect`
@@ -288,6 +298,9 @@ pending-input or career-flow behavior. Still, they should become explicit entry
 classes so the handlers no longer need large `isinstance(effect, ...)` loops.
 
 ### Phase 5: Remove legacy effect support
+
+Status: **not complete globally**. Career tables no longer use legacy effects,
+but pre-career events still do.
 
 When all career and pre-career tables are migrated:
 
@@ -323,9 +336,9 @@ nothing else changed" is an important invariant.
   real custom branching.
 - **Handler/projection boundary:** queueing pending inputs may belong in
   event-layer helpers rather than `CharacterProjection`; decide case by case.
-- **Pre-career reuse:** pre-career events currently reuse several career effect
-  classes. The new entry model should either support pre-career entries or
-  provide parallel `PreCareerTableEntry` classes sharing common helpers.
+- **Pre-career reuse:** pre-career events still reuse several career effect
+  classes. Removing the remaining legacy effect infrastructure requires a
+  separate pre-career table migration.
 - **Serialization:** if table entries are ever persisted or serialized, keep
   Pydantic discriminators. If they remain static Python data, prefer simple
   Python classes and clear methods.
@@ -335,10 +348,14 @@ nothing else changed" is an important invariant.
 ## Success Criteria
 
 - Career modules read as typed rule tables, not generic entries with effect
-  lists.
-- `MishapHandler`, `TermEventHandler`, and `PreCareerEventHandler` no longer
-  contain broad `isinstance(effect, ...)` interpreters.
-- Direct state changes are named projection methods, not tiny effect wrappers.
-- Custom career rows are explicit entry classes with domain names.
-- Tests are at the right abstraction level and no longer need dedicated tests
-  for pointless middleman effects.
+  lists. **Done.**
+- `MishapHandler` and `TermEventHandler` no longer need legacy effect
+  interpretation for career tables. **Done for career table data.**
+- `PreCareerEventHandler` still contains legacy effect interpretation because
+  pre-career event tables still use effects. **Separate follow-up.**
+- Direct career-table state changes are named projection methods or typed entry
+  outcomes, not tiny effect wrappers. **Done.**
+- Custom career rows are direct `CareerHandlerBase` table entries with domain
+  names. **Done.**
+- Tests are at the right abstraction level for the career-entry migration.
+  **Done for this refactor.**
