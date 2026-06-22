@@ -7,12 +7,9 @@ from ceres.character.domain.career.career_events import (
     AdvancementDmChoiceHandler,
     AdvancementHandler,
     CareerEntryHandler,
-    CharacteristicChoiceHandler,
-    ConnectionsRollHandler,
     MishapHandler,
     PendingAdvancement,
     PendingChoices,
-    PendingConnectionsRoll,
     PendingMishap,
     PendingSkillChoice,
     PendingSkillTableChoice,
@@ -134,13 +131,6 @@ def _reenlist_event(source: Event, reenlist: bool) -> Event:
 
 def _advancement_dm_choice_event(source: Event) -> Event:
     return _event(fulfills=_pending(source, 0), handler=AdvancementDmChoiceHandler())
-
-
-def _connections_roll_event(source: Event, index: int, connection_type: ConnectionKind, count: int) -> Event:
-    return _event(
-        fulfills=_pending(source, index),
-        handler=ConnectionsRollHandler(connection_type=connection_type, count=count),
-    )
 
 
 class TestScoutAmbush:
@@ -383,127 +373,82 @@ class TestScoutEvent10:
 class TestConnections:
     """Mishap and event effects that produce connections on the character sheet."""
 
-    def _setup_through_failed_survive(self) -> list:
-        return _failed_survive()
+    def _failed_survive_driver(self) -> CharacterDriver:
+        return (
+            CharacterDriver()
+            .start(VILANI, MOCK_WORLD, name='Boss')
+            .ucp('7869A5')
+            .background_skills([Admin(), Athletics(), Carouse(), Drive()])
+            .career('Scout', 'Courier', roll=7)
+            .survive(2)
+        )
 
     def test_mishap_4_adds_rival_immediately(self):
-        # Mishap 4: gain Diplomat 1 + Rival
-        base = self._setup_through_failed_survive()
-        events = [*base, _mishap_event(base[-1], 4)]
-
-        projection = replay(1, events)
-
-        rivals = [c for c in projection.summary.connections if isinstance(c, Rival)]
-        assert len(rivals) == 1
+        d = self._failed_survive_driver().mishap(4)
+        assert len([c for c in d.projection.summary.connections if isinstance(c, Rival)]) == 1
 
     def test_mishap_4_rival_source_is_mishap_text(self):
-        base = self._setup_through_failed_survive()
-        events = [*base, _mishap_event(base[-1], 4)]
-
-        projection = replay(1, events)
-
-        rival = next(c for c in projection.summary.connections if isinstance(c, Rival))
+        d = self._failed_survive_driver().mishap(4)
+        rival = next(c for c in d.projection.summary.connections if isinstance(c, Rival))
         assert 'conflict' in rival.origin.lower() or 'rival' in rival.origin.lower()
 
-    def test_mishap_3_creates_pending_for_contacts_roll(self):
-        # Mishap 3: Gain 1D Contacts and D3 Enemies
-        base = self._setup_through_failed_survive()
-        events = [*base, _mishap_event(base[-1], 3)]
+    def test_mishap_3_creates_two_connection_roll_pendings(self):
+        d = self._failed_survive_driver().mishap(3)
+        assert d.pending_connections_roll_count() == 2
 
-        projection = replay(1, events)
-
-        assert sum(isinstance(p, PendingConnectionsRoll) for p in projection.pending_inputs) == 2
-
-    def test_mishap_3_connections_roll_contact_adds_connections(self):
-        base = self._setup_through_failed_survive()
-        mishap = _mishap_event(base[-1], 3)
-        events = [
-            *base,
-            mishap,
-            _connections_roll_event(mishap, 0, ConnectionKind.CONTACT, 3),
-            _connections_roll_event(mishap, 1, ConnectionKind.ENEMY, 1),
-        ]
-
-        projection = replay(1, events)
-
-        contacts = [c for c in projection.summary.connections if isinstance(c, Contact)]
-        enemies = [c for c in projection.summary.connections if isinstance(c, Enemy)]
+    def test_mishap_3_connections_roll_adds_contacts_and_enemies(self):
+        d = self._failed_survive_driver().mishap(3)
+        d.connections_roll(3)
+        d.connections_roll(1)
+        contacts = [c for c in d.projection.summary.connections if isinstance(c, Contact)]
+        enemies = [c for c in d.projection.summary.connections if isinstance(c, Enemy)]
         assert len(contacts) == 3
         assert len(enemies) == 1
 
     def test_mishap_3_enemy_roll_has_d3_options(self):
-        # Mishap 3 gains D3 Enemies — the enemy roll pending must offer exactly options [1, 2, 3]
-        base = self._setup_through_failed_survive()
-        events = [*base, _mishap_event(base[-1], 3)]
-        projection = replay(1, events)
-
-        enemy_roll = next(
-            (
-                p
-                for p in projection.pending_inputs
-                if isinstance(p, PendingConnectionsRoll) and p.connection_type == ConnectionKind.ENEMY
-            ),
-            None,
-        )
-        assert enemy_roll is not None
-        assert enemy_roll.options == [1, 2, 3]
+        d = self._failed_survive_driver().mishap(3)
+        assert d.connections_roll_options(ConnectionKind.ENEMY) == [1, 2, 3]
 
     def test_event_3_scout_adds_enemy_unconditionally(self):
-        # Scout event 3: ambush, always gain an Enemy regardless of skill roll outcome
-        setup = _through_term_event(3)
-
-        projection = replay(1, setup)
-
-        enemies = [c for c in projection.summary.connections if isinstance(c, Enemy)]
-        assert len(enemies) == 1
+        d = (
+            CharacterDriver()
+            .start(VILANI, MOCK_WORLD, name='Boss')
+            .ucp('7869A5')
+            .background_skills([Admin(), Athletics(), Carouse(), Drive()])
+            .career('Scout', 'Courier', roll=7)
+            .survive(7)
+            .term_event(3)
+        )
+        assert len([c for c in d.projection.summary.connections if isinstance(c, Enemy)]) == 1
 
 
 class TestMishapWithChoice:
     """Mishap #2 for Scout: 'Reduce your INT or SOC by 1' — player chooses."""
 
-    def _setup_through_failed_survive(self) -> list:
-        return _failed_survive()
-
-    def test_mishap_2_creates_characteristic_choice_pending(self):
-        base = self._setup_through_failed_survive()
-        events = [*base, _mishap_event(base[-1], 2)]
-
-        projection = replay(1, events)
-
-        choice_pending = next(
-            (p for p in projection.pending_inputs if isinstance(p, PendingCharacteristicChoice)), None
+    def _failed_survive_driver(self) -> CharacterDriver:
+        return (
+            CharacterDriver()
+            .start(VILANI, MOCK_WORLD, name='Boss')
+            .ucp('7869A5')
+            .background_skills([Admin(), Athletics(), Carouse(), Drive()])
+            .career('Scout', 'Courier', roll=7)
+            .survive(2)
         )
-        assert choice_pending is not None
-        assert set(choice_pending.options) == {'INT', 'SOC'}
+
+    def test_mishap_2_offers_int_and_soc_choice(self):
+        d = self._failed_survive_driver().mishap(2)
+        assert set(d.characteristic_choice_options()) == {Chars.INT, Chars.SOC}
 
     def test_mishap_2_characteristic_choice_int_decreases_int(self):
-        base = self._setup_through_failed_survive()
-        mishap = _mishap_event(base[-1], 2)
-        events = [
-            *base,
-            mishap,
-            _event(fulfills=_pending(mishap, 0), handler=CharacteristicChoiceHandler(characteristic=Chars.INT)),
-        ]
-
-        projection = replay(1, events)
-
         # INT was 9 (from UCP '7869A5': STR=7, DEX=8, END=6, INT=9, EDU=10, SOC=5)
-        assert projection.summary.characteristics[Chars.INT] == 8
+        d = self._failed_survive_driver().mishap(2).choose_characteristic(Chars.INT)
+        assert d.projection.summary.characteristics[Chars.INT] == 8
 
     def test_mishap_2_characteristic_choice_soc_decreases_soc(self):
-        base = self._setup_through_failed_survive()
-        mishap = _mishap_event(base[-1], 2)
-        events = [
-            *base,
-            mishap,
-            _event(fulfills=_pending(mishap, 0), handler=CharacteristicChoiceHandler(characteristic=Chars.SOC)),
-        ]
-
-        projection = replay(1, events)
-
         # SOC was 5
-        assert projection.summary.characteristics[Chars.SOC] == 4
-        assert projection.summary.characteristics[Chars.INT] == 9  # unchanged
+        d = self._failed_survive_driver().mishap(2).choose_characteristic(Chars.SOC)
+        assert d.projection.summary.characteristics[Chars.SOC] == 4
+        assert d.projection.summary.characteristics[Chars.INT] == 9  # unchanged
 
 
 class TestScoutEvent11:
@@ -549,45 +494,33 @@ class TestScoutEvent11:
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
 
-class TestNormalInjury:
-    """Scout mishap 6: Injured — roll on Injury table (Core p.47)."""
-
-    def _setup_through_failed_survive(self) -> list:
-        return _failed_survive()
-
-    def test_mishap_6_creates_injury_table_pending(self):
-        base = self._setup_through_failed_survive()
-        events = [*base, _mishap_event(base[-1], 6)]
-        projection = replay(1, events)
-
-        assert any(isinstance(p, PendingInjuryTable) for p in projection.pending_inputs)
-
-    def test_mishap_6_still_ends_career(self):
-        base = self._setup_through_failed_survive()
-        events = [*base, _mishap_event(base[-1], 6)]
-        projection = replay(1, events)
-
-        assert projection.summary.current_career is None
-
-
-class TestScoutMishap6InjuryTable:
+class TestScoutMishap6:
     """Scout mishap 6: Injured — roll on Injury table (Core p.47), not a fixed normal injury."""
 
-    def _setup_to_mishap(self) -> list:
-        return _failed_survive()
+    def _failed_survive_driver(self) -> CharacterDriver:
+        return (
+            CharacterDriver()
+            .start(VILANI, MOCK_WORLD, name='Boss')
+            .ucp('7869A5')
+            .background_skills([Admin(), Athletics(), Carouse(), Drive()])
+            .career('Scout', 'Courier', roll=7)
+            .survive(2)
+        )
+
+    def test_mishap_6_ends_career(self):
+        d = self._failed_survive_driver().mishap(6)
+        assert d.projection.summary.current_career is None
 
     def test_mishap_6_creates_injury_table_pending(self):
-        base = self._setup_to_mishap()
+        base = _failed_survive()
         events = [*base, _mishap_event(base[-1], 6)]
         projection = replay(1, events)
-
         assert any(isinstance(p, PendingInjuryTable) for p in projection.pending_inputs)
 
     def test_mishap_6_does_not_create_characteristic_choice_directly(self):
-        base = self._setup_to_mishap()
+        base = _failed_survive()
         events = [*base, _mishap_event(base[-1], 6)]
         projection = replay(1, events)
-
         assert not any(isinstance(p, PendingCharacteristicChoice) for p in projection.pending_inputs)
 
 

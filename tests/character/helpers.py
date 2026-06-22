@@ -55,7 +55,7 @@ from ceres.character.domain.character_start import (
     UcpHandler,
 )
 from ceres.character.domain.character_state import CharacterProjection
-from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.connection_events import (
     ConnectionNameHandler,
     ConnectionsRollHandler,
@@ -69,6 +69,7 @@ from ceres.character.domain.health.health_events import (
     PendingAgingChoice,
     PendingAgingCrisis,
     PendingAgingRoll,
+    PendingCharacteristicChoice,
     PendingDoubleInjuryRoll,
 )
 from ceres.character.domain.skills import Admin, AnySkill, Athletics, Carouse, Medic
@@ -447,6 +448,37 @@ class CharacterDriver:
         """Resolve a PendingSkillChoice (e.g. from a mishap or life event)."""
         pending = self._find(PendingSkillChoice)
         return self._add(Event(fulfills=pending.pending_id, handler=SkillChoiceHandler(skill=skill)))
+
+    def choose_characteristic(self, characteristic: Chars, amount: int = 1) -> CharacterDriver:
+        """Resolve a PendingCharacteristicChoice (e.g. from a mishap or injury)."""
+        pending = self._find(PendingCharacteristicChoice)
+        return self._add(
+            Event(
+                fulfills=pending.pending_id,
+                handler=CharacteristicChoiceHandler(characteristic=characteristic, amount=amount),
+            )
+        )
+
+    def characteristic_choice_options(self) -> list[Chars]:
+        """Return the characteristic options from the current PendingCharacteristicChoice."""
+        pending = self._find(PendingCharacteristicChoice)
+        return list(pending.options)
+
+    def pending_connections_roll_count(self) -> int:
+        """Return how many PendingConnectionsRoll items are in the pending queue."""
+        return sum(isinstance(p, PendingConnectionsRoll) for p in self.projection.pending_inputs)
+
+    def connections_roll_options(self, kind: ConnectionKind) -> list[int]:
+        """Return the dice options of the PendingConnectionsRoll for the given connection kind."""
+        pending = next(
+            (p for p in self.projection.pending_inputs
+             if isinstance(p, PendingConnectionsRoll) and p.connection_type == kind),
+            None,
+        )
+        if pending is None:
+            present = [type(p).__name__ for p in self.projection.pending_inputs]
+            raise ValueError(f'No PendingConnectionsRoll for {kind} in pending inputs: {present}')
+        return list(pending.options)
 
     def snapshot(self) -> CharacterProjection:
         """Deep copy the current projection for before/after comparison."""
