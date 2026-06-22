@@ -1,213 +1,335 @@
 # Plan: Test Suite Improvements for ceres.character
 
-## Core principle
+## Purpose
+
+This plan supports [plan-career-entry-outcomes.md](plan-career-entry-outcomes.md).
+
+The old version of this plan treated `career_data.py` effect classes as a
+stable unit-test target. That is no longer the right destination. The new model
+will replace generic `CareerEventEntry` / `MishapEntry` rows with typed entry
+outcomes, and many `*Effect` classes should disappear.
+
+The test-suite work should therefore be split into three categories:
+
+1. **Before the entry-outcome refactor:** improve the safety net and remove
+   misleading tests that would fight the refactor.
+2. **During the refactor:** write TDD tests for projection verbs and typed entry
+   classes as they are introduced.
+3. **After the refactor:** prune transitional tests and broad structural tests
+   that no longer add value.
+
+## Core Principle
 
 **Test things in the right place.** Each class or module has one correct home
-for its unit tests. Implementation details of a class belong in that class's
-dedicated test file — not in some other test that happens to exercise the class
-as a side effect.
-
-When a test breaks because an internal of class X changed, but the observable
-behaviour of the system that USES X didn't change, the test was in the wrong
-place.
+for its tests. Implementation details of class X belong in tests for class X,
+not in a career rule test that happens to exercise X as a side effect.
 
 Applying this to the character domain:
 
-| What is being tested | Correct test file |
+| What is being tested | Correct home |
 | --- | --- |
 | `ConnectionsRollHandler` inserts name pendings before existing pendings | `test_connection_events.py` |
-| `GainSkillEffect.apply()` grants the right skill level | `test_career_data.py` |
-| `GainConnectionsRolledEffect` d3 vs d6 option generation | `test_career_data.py` |
-| Scout mishap 3 applies connections effects at all | `test_scout.py` (observable: connections are added) |
-| Army mishap 3 applies a skill choice and an enemy | `test_army.py` (observable: can choose skill, enemy appears) |
-| `PendingSkillChoice.input_specs()` builds the right form spec | `test_events_pending_inputs.py` or `test_input_specs.py` |
-| `AdvancementHandler.apply()` queues reenlist after a successful roll | `test_events_pending_inputs.py` |
+| Projection state operation, e.g. `decrease_characteristic()` | `test_character_projection.py` or equivalent focused state test |
+| Shared typed entry, e.g. `AdvancementDmEntry` | `test_career_data.py` while entries live in `career_data.py` |
+| Scout mishap 3 observable outcome | `test_scout.py` via `CharacterDriver` |
+| Army mishap 3 observable outcome | `test_army.py` via `CharacterDriver` |
+| `PendingSkillChoice.input_specs()` | `test_events_pending_inputs.py` or `test_input_specs.py` |
+| `AdvancementHandler.apply()` event/pending mechanics | `test_events_pending_inputs.py` |
 
-## Summary of findings
+Career rule tests should not name pending types, event IDs, fulfillment order,
+or concrete event classes. If a career rule test needs to drive a pending input,
+add a `CharacterDriver` method.
 
-The test suite has good overall coverage (97% total) but has structural issues
-from code reorganisation that the tests didn't fully follow. The improvements
-fall into four categories: coverage gaps, abstraction-level violations,
-structural/DRY issues, and low-value tests.
+## Current State
 
-## Coverage gaps (meaningful ones)
+### Completed
 
-| Module | Coverage | Issue |
-| --- | --- | --- |
-| `character/report.py` | 21% | Typst/PDF rendering paths essentially untested |
-| `character/domain/homeworld/homeworld_events.py` | 82% | `input_specs` branch paths at lines 66, 89–125 |
-| `character/domain/life_events.py` | 87% | Several outcome paths at lines 216, 298–333 |
-| `character/domain/psionics.py` | 88% | Gaps at 139–189, 219–232, 272–299, 363 |
-| `character/mechanism/store.py` | 86% | Serialisation/deserialisation edge paths |
-| `character/mechanism/pending_input.py` | 89% | Abstract base class branches |
-| `character/web/routes.py` | 88% | Error/edge case routes |
+- `test_scout.py` raw `Event(fulfills=(x.id, N), ...)` construction was migrated
+  to `_event(fulfills=_pending(x, N), ...)`.
+- Several misclassified tests were removed from `test_events_pending_inputs.py`:
+  connection ordering moved to `test_connection_events.py`, and Army mishap 3
+  moved to `test_army.py`.
+- `CharacterDriver.choose_skill()` was added so career tests can resolve a
+  skill-choice pending without importing `PendingSkillChoice`.
+- The `TermEventHandler` tests were decoupled from real Scout/Army career
+  tables by using small fake careers in `test_events_pending_inputs.py`.
+- `test_career_data.py` was created with focused tests for current effect
+  `apply()` behavior. It currently covers the direct-mutation effect classes:
+  `GainSkillEffect`, characteristic decrease, connection gain effects,
+  advancement/qualification/benefit DMs, parole threshold changes,
+  auto-qualification, and benefit forfeiture.
 
-`character/report.py` at 21% is the most concerning gap; it is probably
-untestable in the unit suite (requires Typst installed) and should be either
-explicitly marked as requiring a slow/integration test or covered by a
-generated-output test with `--with-generated-output`.
+### Current Implementation Audit
 
-## Abstraction-level violations
+The current implementation already matches several of this plan's prerequisites:
 
-### `test_events_pending_inputs.py` — mixed responsibilities
+- `tests/character/test_connection_events.py` exists and owns connection
+  pending-ordering mechanics.
+- `CharacterDriver.choose_skill()` exists and resolves `PendingSkillChoice`
+  without exposing that pending type to career tests.
+- `tests/character/test_events_pending_inputs.py` still has many
+  `_projection(current_career=...)` uses. Many are legitimate event/pending
+  mechanics tests, such as commission, reenlistment, advancement, assignment
+  switching, prisoner advancement, and pending-choice resolution. These should
+  be classified carefully; do not move them merely because a real career appears
+  in the fixture.
 
-This 1400+ line file mixes three different kinds of tests that belong in
-separate files:
+### Important Reclassification
 
-- **Career rule tests** that use `_projection(current_career=SCOUT)` or
-  `_projection(current_career=ARMY)` to test a specific mishap or event outcome.
-  These belong in the career test file for that career and should use
-  `CharacterDriver` so they assert observable outcomes, not implementation
-  details.
-- **Event/pending mechanics tests** that verify `apply()`/`resolve()` machinery,
-  `event_from_form` parsing, and form spec building. These are in the right
-  file.
-- **Connection event mechanics tests** that verify the ordering or content of
-  pending inputs produced by connection handlers. These belong in
-  `test_connection_events.py`.
+`test_career_data.py` effect tests are **transitional**. They are useful only as
+a safety net while behavior is moved from effect wrappers into projection verbs
+and typed entry classes.
 
-When moving a test, the question to ask is: *whose implementation detail is
-this testing?* A test that checks `PendingSkillChoice` appeared in the pending
-list is testing the internals of `MishapHandler` and should be near
-`MishapHandler`, not inside a Scout career test.
+They should not be treated as proof that `GainSkillEffect`,
+`AdvancementDmEffect`, `BenefitDmEffect`, and similar classes are good
+long-term abstractions.
 
-### Career rule tests using pending type names
+## Before `plan-career-entry-outcomes.md`
 
-CLAUDE.md requires career rule tests to use `CharacterDriver` and assert only
-observable outcomes — "does the career end?", "was an enemy gained?", "can the
-player choose a skill?". Checking `isinstance(p, PendingSkillChoice)` in a
-career test directly names an implementation detail of the event layer.
+Do these before starting the entry-outcome refactor. The goal is to reduce
+noise, preserve behavior, and make failures point at the right layer.
 
-Where `CharacterDriver` lacks a method to drive a scenario without naming a
-pending type, add the method. Example: `choose_skill()` was added to let Army
-mishap 3 tests assert that a skill was granted without importing
-`PendingSkillChoice`.
+### 1. Finish Misclassified Test Extraction
 
-## Structural and DRY issues
+Scan `test_events_pending_inputs.py` for tests that fabricate a projection with
+`current_career=...` and then call a real career handler to assert a
+career-specific outcome.
 
-### `test_scout.py` — Event() constructor migration ✅ DONE
+For each test:
 
-Migrated from raw `Event(fulfills=(x.id, 0), ...)` to
-`_event(fulfills=_pending(x, 0), ...)` throughout. This is transitional; the
-end state for career rule tests in `test_scout.py` is `CharacterDriver`.
-Tests that are event or homeworld mechanics should be explicitly classified and
-stay in (or move to) the appropriate mechanics file.
+- If it checks observable Traveller behavior, move it to the career-specific
+  file and rewrite it through `CharacterDriver`.
+- If it checks handler or pending-input mechanics, keep it in
+  `test_events_pending_inputs.py` or move it to a more specific mechanics file.
+- If it checks connection-event mechanics, move it to `test_connection_events.py`.
 
-### Duplicated setup functions across files
-
-Some test files define their own `_full_setup()` functions instead of using
-`CharacterDriver`. `CharacterDriver` is the single point of contact for career
-rule tests; private setup functions that build event lists belong only in files
-that genuinely test event machinery.
-
-### Missing dedicated test modules
-
-- **`test_career_data.py`**: No dedicated unit tests for `career_data.py`
-  effects (`GainSkillEffect`, `SkillChoiceEffect`, `GainConnectionsRolledEffect`,
-  etc.). These effects are only tested indirectly through career integration
-  tests. Direct unit tests would catch regressions in the effect machinery and
-  remove the need to test effect internals from career tests.
-- **`test_connection_events.py`**: Created with the connection-pending ordering
-  test. Further connection event mechanics belong here.
-
-## Low-value tests
-
-### `test_career_class.py` (337 lines)
-
-Mostly verifies structural properties: `isinstance(career, CareerData)`, names
-match strings, assignments exist. These are documentation, not safety net.
-Candidates for deletion or replacement with a single parametrised smoke test.
-
-## Completed work
-
-### Priority 3 — Migrate `test_scout.py` ✅ DONE
-
-All raw `Event(fulfills=(x.id, N), ...)` constructions replaced with
-`_event(fulfills=_pending(x, N), ...)`.
-
-### Priority 1 — Extract misclassified tests (partial) ✅
-
-Four career-rule tests removed from `test_events_pending_inputs.py`:
-
-- `test_mishap_handler_gain_connections_effect_queues_two_connection_rolls` —
-  deleted; already covered by `test_mishap_3_creates_pending_for_contacts_roll`
-  in `test_scout.py`.
-- `test_mishap_handler_d3_connections_effect_uses_d3_options` — moved to
-  `test_scout.py` as `test_mishap_3_enemy_roll_has_d3_options`.
-- `test_connections_roll_handler_inserts_name_pending_before_other_pending` —
-  reclassified as connection event mechanics and moved to
-  `test_connection_events.py`.
-- `test_mishap_handler_skill_choice_effect_queues_pending_skill_choice` —
-  reclassified as Army career rule and moved to `test_army.py` as
-  `TestArmyMishap3`, rewritten via `CharacterDriver.choose_skill()`.
-
-`CharacterDriver.choose_skill()` added to `helpers.py` to let career rule tests
-drive `PendingSkillChoice` resolution without naming the type.
-
-### Priority 1 — TermEventHandler tests decoupled from real careers ✅
-
-The four `TermEventHandler` effect tests used Scout/Army event tables to inject
-effects, coupling them to those career implementations. Each is now decoupled:
-
-- Added `_FakeEventCareer(CareerData)` — a minimal `CareerData` subclass with
-  only the interface `TermEventHandler` needs (`events`, `name`,
-  `available_tables`, `current_ranks`, `update_current_term_rank`). Not
-  registered in `CareerData._registry` (no `type` ClassVar set).
-- Added subclasses `_LifeEventCareer`, `_AutoAdvanceCareer`, `_MishapStayCareer`,
-  `_SkillChoiceCareer` — each with a single event at roll 1 with the relevant
-  effect.
-- Added `_fake_career_projection(career_class)` helper that constructs a minimal
-  projection using the fake career.
-- All four tests now use `TermEventHandler(roll=1)` against the matching fake
-  career, independent of Scout/Army event tables.
-
-### `test_career_data.py` created ✅
-
-29 focused unit tests for all `career_data.py` effect classes that have
-`apply()` methods: `GainSkillEffect`, `DecreaseCharacteristicEffect`,
-`GainContactEffect/AllyEffect/RivalEffect/EnemyEffect`, `AdvancementDmEffect`,
-`QualificationDmEffect`, `BenefitDmEffect`, `ParoleThresholdChangeEffect`,
-`AutoQualifyCareerEffect`, `LoseAllCareerBenefitsEffect`.
-
-The mega-test `test_effect_apply_methods_and_skill_entries` was dissolved: its
-effect `apply()` assertions moved to `test_career_data.py`; its
-`_apply_skill_table_entry` assertion split into three focused tests in
-`test_events_pending_inputs.py`.
-
-## Remaining improvements (priority order)
-
-### 1. Continue extracting misclassified tests from `test_events_pending_inputs.py`
-
-Scan remaining tests that use `_projection(current_career=X)`. Any test
-verifying a career-specific outcome by calling `.apply()` on a fabricated
-projection belongs in the career test file. Move it, rewrite it to use
-`CharacterDriver`, and assert observable outcomes.
-
-Add `CharacterDriver` methods as needed rather than letting tests name pending
+Add `CharacterDriver` methods instead of letting career tests import pending
 types.
 
-### 3. Address `character/report.py` coverage
+This work should happen before the entry-outcome refactor so that later changes
+to `MishapHandler`, `TermEventHandler`, and entry classes do not create
+misleading career-test failures.
 
-Determine whether the Typst rendering can be exercised in the existing
-`--with-generated-output` slow tests, or whether it needs explicit unit tests
-for the template-context building.
+Do not use `current_career=...` as a mechanical grep-and-move rule. It is only
+a smell. Several mechanics tests need a real-ish career so the handler can
+exercise generic event/pending machinery.
 
-### 4. Review `test_career_class.py` for pruning
+### 2. Convert Obvious Career Rule Tests to `CharacterDriver`
 
-Decide whether the structural assertions add enough value or whether a single
-parametrised smoke test covers the intent.
+Do the easy, high-value conversions in career files, especially where tests
+already read as "do career thing, observe result."
 
-### 5. Migrate `test_scout.py` career-rule tests to `CharacterDriver`
+Good candidates:
 
-The `_event`/`_pending` migration is transitional. Career rule tests should
-eventually use `CharacterDriver` exclusively, matching the pattern already in
-`test_army.py`. Homeworld and form mechanics tests may stay with the
-lower-level approach in their appropriate mechanics files.
+- remaining Scout career-rule tests that are still event-chain based
+- career tests that assert pending type names instead of driving the choice
+- simple survival, mishap, skill-choice, and advancement flows
 
-## Relationship to other plans
+Do **not** convert tests that genuinely verify event mechanics, form parsing,
+homeworld-change pending behavior, or pending ordering. Move or label those
+instead.
 
-- `plan-approval-testing.md`: `projection_diff`/DeepDiff is valuable for
-  complex state-transition tests where "nothing else changed" is part of the
-  behaviour under test — aim it at approval-style tests for complex
-  multi-effect events rather than spreading hand-written inline expected-dict
-  diffs.
+### 3. Keep Transitional Effect Tests Focused
+
+Keep `test_career_data.py` effect tests small and factual while effects still
+exist. Their job is to pin current behavior before it moves.
+
+Do not expand them into a large permanent test suite for the old effect model.
+In particular, avoid adding broad tests that make `effects=[...]` look like the
+desired future abstraction.
+
+The existing `test_career_data.py` tests are enough for the direct-mutation
+effects. New tests should usually target projection verbs or typed entries
+instead of adding more coverage for soon-to-be-deleted effect wrappers.
+
+### 4. Establish Snapshot/Approval Experiment
+
+Try one complex state-delta test using the options in
+[plan-approval-testing.md](plan-approval-testing.md):
+
+- `inline-snapshot`
+- Syrupy
+- custom approval fixtures only if the library options fail
+
+Use one existing `projection_diff` case such as Scholar event 3 accept. The
+goal is to decide the test style before the entry-outcome refactor creates more
+complex multi-effect migration tests.
+
+## During `plan-career-entry-outcomes.md`
+
+This is not separate cleanup. It is part of the TDD implementation of the
+entry-outcome refactor.
+
+### 1. Projection Verb Tests
+
+When adding projection verbs, add focused tests first.
+
+Examples:
+
+- `decrease_characteristic()` lowers a characteristic and removes PSI/psionics
+  when PSI reaches zero.
+- `add_advancement_dm()` and `add_qualification_dm()` accumulate modifiers.
+- `add_benefit_dm()` records the DM on the current muster-out record.
+- `adjust_parole_threshold()` clamps to the valid range.
+- `auto_qualify()` adds a career once.
+- `forfeit_current_career_benefits()` affects only the current career's terms.
+- `queue_skill_choice()` creates the expected pending input with stable
+  `pending_idx`.
+- `queue_connection_roll()` uses the dice roll options.
+
+These tests should live near the state/event layer, not in career-specific
+files.
+
+### 2. Shared Entry Class Tests
+
+As each shared entry class is introduced, test it directly before migrating
+career rows to it.
+
+Examples:
+
+- `GainSkillEntry` grants the skill.
+- `GainConnectionEntry` adds the connection with the entry text as origin.
+- `GainSkillAndConnectionEntry` does both.
+- `AdvancementDmEntry`, `QualificationDmEntry`, and `BenefitDmEntry` delegate to
+  the projection verbs.
+- `SkillChoiceEntry` queues the choice and returns the next pending index.
+- `RolledConnectionsEntry` queues a roll with d3/d6 options.
+- `LifeEventEntry`, `RollMishapEntry`, `InjuryEntry`, and `AutoAdvanceEntry`
+  produce the same pending/control-flow behavior as the old effects.
+
+These replace, rather than supplement forever, old effect tests.
+
+### 3. Characterize Migrated Career Rows
+
+For each migrated effect family, keep or add a small number of observable
+career tests through `CharacterDriver`.
+
+Example migrations:
+
+- `effects=[GainEnemyEffect(), GainSkillEffect(...)]`
+  becomes a typed entry and is covered by a career test that observes the enemy
+  and the granted skill.
+- `effects=[AdvancementDmEffect(amount=2)]`
+  becomes `AdvancementDmEntry` and is covered by a shared entry test plus one
+  representative career flow if needed.
+
+Avoid duplicating the same shared entry behavior across every career that uses
+it.
+
+Where an existing career test currently asserts a pending type, prefer to drive
+the pending through `CharacterDriver` and assert the resulting skill,
+connection, rank, career state, or benefit-roll state. Only mechanics tests
+should inspect pending classes directly.
+
+### 4. Migrate Transitional Effect Tests
+
+As each old effect class disappears:
+
+- delete its `test_career_data.py` tests
+- ensure equivalent projection verb or entry class tests exist
+- keep one observable career rule test only where the career behavior itself is
+  meaningful
+
+This keeps the test suite from preserving the old design by accident.
+
+### 5. Use Snapshot/Approval Tests Sparingly
+
+Use snapshot/approval style only when a row has several simultaneous effects and
+"nothing else changed" is part of the invariant.
+
+Good candidates:
+
+- Scholar event 3 accept
+- complex mishaps with multiple pending inputs, connections, skills, and
+  benefit-roll changes
+
+Single-effect entries should use ordinary assertions.
+
+## After `plan-career-entry-outcomes.md`
+
+Do these only after the old `effects=[...]` model and legacy support are gone.
+
+### 1. Delete Old Effect Tests
+
+Remove any tests whose only purpose was to verify deleted `*Effect.apply()`
+methods.
+
+The remaining tests should target:
+
+- projection verbs
+- typed entry classes
+- event/pending mechanics
+- observable career behavior
+
+### 2. Revisit `test_career_class.py`
+
+`test_career_class.py` mostly checks structural facts such as career names,
+assignments, and `CareerData` instances. After the entry-outcome refactor,
+replace broad repetitive assertions with a smaller smoke test if possible:
+
+- all careers load
+- all careers have six event rows and six mishap rows where applicable
+- entries are typed `CareerTableEntry` / `MishapEntry` subclasses
+- each entry can be inspected without importing string identifiers
+
+### 3. Prune Fake-Career Tests
+
+The fake careers added to decouple `TermEventHandler` tests are useful while the
+handler interprets old effects. After handlers dispatch to typed entries, those
+tests may become redundant or should be rewritten to test the handler/entry
+contract directly.
+
+### 4. Finish `test_scout.py` Classification
+
+After the entry model settles, revisit `test_scout.py`:
+
+- career-rule tests should use `CharacterDriver`
+- homeworld and form/pending mechanics should move or stay clearly separated
+- remaining `_event`/`_pending` helpers should exist only in mechanics tests
+
+### 5. Coverage Gap Follow-Up
+
+The coverage gaps below are not blockers for the entry-outcome refactor and
+should wait unless they become directly relevant:
+
+| Module | Issue |
+| --- | --- |
+| `character/report.py` | Typst/PDF rendering paths essentially untested |
+| `character/domain/homeworld/homeworld_events.py` | `input_specs` branch paths |
+| `character/domain/life_events.py` | several outcome paths |
+| `character/domain/psionics.py` | psionics edge paths |
+| `character/mechanism/store.py` | serialization/deserialization edge paths |
+| `character/mechanism/pending_input.py` | abstract/base branch paths |
+| `character/web/routes.py` | route error paths |
+
+## Work That Should Not Be Done Now
+
+- Do not create broad permanent tests for every current `*Effect` class.
+- Do not force every career test through low-level event chains just because
+  typed entries are not implemented yet.
+- Do not delete `test_career_class.py` before the entry refactor gives us a
+  better structural smoke test.
+- Do not build custom approval tooling before trying `inline-snapshot` and
+  Syrupy.
+- Do not mix entry-class internals into career-rule tests.
+
+## Success Criteria
+
+Before the entry-outcome refactor:
+
+- misclassified tests are reduced
+- obvious career-rule tests use `CharacterDriver`
+- transitional effect tests pin behavior without endorsing the old design
+
+During the refactor:
+
+- each new projection verb has focused tests
+- each shared entry class has focused tests
+- old effect tests disappear as replacement entry/projection tests appear
+
+After the refactor:
+
+- tests no longer preserve the old `effects=[...]` model
+- career tests assert observable behavior only
+- mechanics tests are in mechanics files
+- complex multi-effect rows use the chosen snapshot/approval style where useful
